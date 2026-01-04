@@ -1,0 +1,112 @@
+# See https://help.github.com/articles/ignoring-files/ for more about ignoring files.
+
+# ===============================
+# Dependencies
+# ===============================
+/node_modules
+/.pnp
+.pnp.*
+.yarn/*
+!.yarn/patches
+!.yarn/plugins
+!.yarn/releases
+!.yarn/versions
+
+# ===============================
+# Build Outputs
+# ===============================
+/.next/
+/out/
+/build
+/dist
+
+# ===============================
+# Database Files (SQLite)
+# ===============================
+*.db
+*.db-shm
+*.db-wal
+*.sqlite
+*.sqlite3
+
+# ===============================
+# Testing
+# ===============================
+/coverage
+
+# Playwright
+/playwright-report/
+/playwright/.cache/
+/test-results/
+/blob-report/
+
+# ===============================
+# Environment Variables
+# ===============================
+.env
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local
+.env*.local
+
+# ===============================
+# IDE & Editors
+# ===============================
+.vscode/*
+!.vscode/settings.json
+!.vscode/tasks.json
+!.vscode/launch.json
+!.vscode/extensions.json
+.idea/
+
+# ===============================
+# OS-generated Files
+# ===============================
+.DS_Store
+Thumbs.db
+Desktop.ini
+
+# ===============================
+# Logs
+# ===============================
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+.pnpm-debug.log*
+build_log.txt
+
+# ===============================
+# TypeScript
+# ===============================
+*.tsbuildinfo
+next-env.d.ts
+
+# ===============================
+# PWA / Service Worker
+# ===============================
+/public/sw.js
+/public/sw.js.map
+/public/workbox-*.js
+/public/workbox-*.js.map
+
+# ===============================
+# Certificates & Keys
+# ===============================
+/certificates/
+*.pem
+*.key
+*.crt
+
+# ===============================
+# Misc
+# ===============================
+.vercel
+.turbo
+.cache/
+/temp_backups/
+/tmp/
+
+# Debug files
+debug-*.js

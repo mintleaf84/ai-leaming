@@ -1,0 +1,578 @@
+import db from './db';
+
+const EMBEDDING_DIM = 768; // Default to 768 (common for local BERT/sentence-transformers)
+
+export function initDatabase() {
+  const initScript = `
+    -- Enable foreign keys
+    PRAGMA foreign_keys = ON;
+
+    -- Users Table
+    CREATE TABLE IF NOT EXISTS users (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      username TEXT UNIQUE NOT NULL,
+      password_hash TEXT NOT NULL,
+      role TEXT CHECK(role IN ('admin', 'student')) DEFAULT 'student',
+      created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+    );
+
+    -- Questions Table
+    CREATE TABLE IF NOT EXISTS questions (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      content TEXT NOT NULL,           -- The question text or JSON structure
+      options TEXT,                    -- JSON array of options if applicable
+      answer TEXT,                     -- Correct answer key or text
+      explanation TEXT,                -- Detailed explanation
+      tags TEXT,                       -- JSON array of strings (Knowledge Points)
+      dimension TEXT CHECK(dimension IN ('knowledge', 'understanding', 'application')), -- Cognitive dimension
+      type TEXT,                       -- e.g., 'single_choice', 'multi_choice', 'boolean'
+      created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+    );
+
+    -- Vector Table (sqlite-vec)
+    -- We use a separate virtual table linked by rowid (which corresponds to questions.id if we match them carefully, 
+    -- but safer to store question_id explicitly if supported, or just manage the mapping).
+    -- sqlite-vec creates a virtual table. 
+    -- Note: sqlite-vec v0.1.7 uses "vec0"
+    
+    -- We will handle vector table creation separately because IF NOT EXISTS might not work perfectly with virtual tables in all versions 
+    -- or we want to ensure it matches the dimension.
+  `;
+
+  db.exec(initScript);
+
+  // Define migration helper
+  const addColumnIfNotExists = (tableName: string, columnName: string, columnDef: string) => {
+    const info = db.prepare(`PRAGMA table_info(${tableName})`).all() as any[];
+    if (!info.find(c => c.name === columnName)) {
+      console.log(`Adding ${columnName} to ${tableName}...`);
+      db.exec(`ALTER TABLE ${tableName} ADD COLUMN ${columnName} ${columnDef}`);
+      // Default to user_id=1 for existing records
+      if (columnName === 'user_id') {
+        db.prepare(`UPDATE ${tableName} SET user_id = 1 WHERE user_id IS NULL`).run();
+      }
+    }
+  };
+
+  // Migrate users to include role
+  addColumnIfNotExists('users', 'role', "TEXT CHECK(role IN ('admin', 'student')) DEFAULT 'student'");
+
+  // 为 questions 表添加外部导入支持字段
+  addColumnIfNotExists('questions', 'external_id', 'TEXT');  // 外部系统 ID（如粉笔 globalId）
+  addColumnIfNotExists('questions', 'source', 'TEXT');       // 题目来源
+  addColumnIfNotExists('questions', 'correct_ratio', 'REAL');      // 全站正确率（百分比）
+  addColumnIfNotExists('questions', 'most_wrong_answer', 'TEXT');  // 易错项
+
+  // 创建 external_id 索引（如果不存在）
+  try {
+    db.exec('CREATE INDEX IF NOT EXISTS idx_questions_external_id ON questions(external_id)');
+  } catch (e) { /* 忽略已存在错误 */ }
+
+
+  db.prepare("UPDATE users SET role = 'admin' WHERE id = 1").run();
+
+  // Initialize Vector Table
+  // Check if table exists first to avoid error
+  const vecTableExists = db.prepare("SELECT count(*) as count FROM sqlite_master WHERE type='table' AND name='questions_vec'").get() as { count: number };
+
+  if (!vecTableExists.count) {
+    console.log('Creating questions_vec table...');
+    db.exec(`
+      CREATE VIRTUAL TABLE questions_vec USING vec0(
+        question_id INTEGER PRIMARY KEY,
+        embedding float[${EMBEDDING_DIM}]
+      );
+    `);
+  }
+
+  // User Mastery Table - Handle Primary Key change
+  const masteryInfo = db.prepare("PRAGMA table_info(user_mastery)").all() as any[];
+  const isMasteryMigrated = masteryInfo.some(c => c.name === 'user_id');
+
+  if (!masteryInfo.length) {
+    db.exec(`
+      CREATE TABLE IF NOT EXISTS user_mastery (
+        user_id INTEGER NOT NULL DEFAULT 1,
+        tag_name TEXT NOT NULL,
+        score REAL DEFAULT 0,
+        history TEXT,
+        last_updated DATETIME DEFAULT CURRENT_TIMESTAMP,
+        PRIMARY KEY (user_id, tag_name),
+        FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+      );
+    `);
+  } else if (!isMasteryMigrated) {
+    console.log('Migrating user_mastery table for multi-user support...');
+    db.exec(`
+      ALTER TABLE user_mastery RENAME TO user_mastery_old;
+      CREATE TABLE user_mastery (
+        user_id INTEGER NOT NULL DEFAULT 1,
+        tag_name TEXT NOT NULL,
+        score REAL DEFAULT 0,
+        history TEXT,
+        last_updated DATETIME DEFAULT CURRENT_TIMESTAMP,
+        PRIMARY KEY (user_id, tag_name),
+        FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+      );
+      INSERT INTO user_mastery (user_id, tag_name, score, history, last_updated)
+      SELECT 1, tag_name, score, history, last_updated FROM user_mastery_old;
+      DROP TABLE user_mastery_old;
+    `);
+  }
+
+  // Practice Sessions Table
+  db.exec(`
+    CREATE TABLE IF NOT EXISTS practice_sessions (
+      id TEXT PRIMARY KEY,
+      user_id INTEGER NOT NULL DEFAULT 1,
+      total_questions INTEGER DEFAULT 0,
+      correct_count INTEGER DEFAULT 0,
+      review_count INTEGER DEFAULT 0,
+      created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+      FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+    );
+  `);
+  addColumnIfNotExists('practice_sessions', 'user_id', 'INTEGER NOT NULL DEFAULT 1');
+
+  // Practice Logs Table
+  db.exec(`
+    CREATE TABLE IF NOT EXISTS practice_logs (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      session_id TEXT,
+      user_id INTEGER NOT NULL DEFAULT 1,
+      question_id INTEGER NOT NULL,
+      user_answer TEXT,
+      is_correct BOOLEAN NOT NULL,
+      is_monitored_correct BOOLEAN DEFAULT 0,
+      duration_ms INTEGER,
+      timestamp DATETIME DEFAULT CURRENT_TIMESTAMP,
+      FOREIGN KEY(question_id) REFERENCES questions(id),
+      FOREIGN KEY(session_id) REFERENCES practice_sessions(id),
+      FOREIGN KEY(user_id) REFERENCES users(id) ON DELETE CASCADE
+    );
+  `);
+  addColumnIfNotExists('practice_logs', 'user_id', 'INTEGER NOT NULL DEFAULT 1');
+
+  // Session Reviews Table (To store AI generated review content for history)
+  db.exec(`
+    CREATE TABLE IF NOT EXISTS session_reviews (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      session_id TEXT NOT NULL,
+      question_id INTEGER NOT NULL,
+      review_data TEXT, -- JSON string of { studyNote, quiz, regression }
+      created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+      FOREIGN KEY(session_id) REFERENCES practice_sessions(id)
+    );
+  `);
+
+  // Observation Zone Table - Handle Primary Key change
+  const obsInfo = db.prepare("PRAGMA table_info(observation_zone)").all() as any[];
+  const isObsMigrated = obsInfo.some(c => c.name === 'user_id');
+  if (obsInfo.length && !isObsMigrated) {
+    console.log('Migrating observation_zone table...');
+    db.exec(`
+      ALTER TABLE observation_zone RENAME TO observation_zone_old;
+      CREATE TABLE observation_zone (
+        user_id INTEGER NOT NULL DEFAULT 1,
+        tag_name TEXT NOT NULL,
+        reason TEXT,
+        entered_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+        status TEXT CHECK(status IN ('active', 'recovering', 'graduated')) DEFAULT 'active',
+        PRIMARY KEY (user_id, tag_name),
+        FOREIGN KEY(user_id, tag_name) REFERENCES user_mastery(user_id, tag_name) ON DELETE CASCADE
+      );
+      INSERT INTO observation_zone (user_id, tag_name, reason, entered_at, status)
+      SELECT 1, tag_name, reason, entered_at, status FROM observation_zone_old;
+      DROP TABLE observation_zone_old;
+    `);
+  } else if (!obsInfo.length) {
+    db.exec(`
+      CREATE TABLE IF NOT EXISTS observation_zone (
+        user_id INTEGER NOT NULL DEFAULT 1,
+        tag_name TEXT NOT NULL,
+        reason TEXT,
+        entered_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+        status TEXT CHECK(status IN ('active', 'recovering', 'graduated')) DEFAULT 'active',
+        PRIMARY KEY (user_id, tag_name),
+        FOREIGN KEY(user_id, tag_name) REFERENCES user_mastery(user_id, tag_name) ON DELETE CASCADE
+      );
+    `);
+  }
+
+  // System Settings Table - Handle Primary Key change
+  const settingsInfo = db.prepare("PRAGMA table_info(system_settings)").all() as any[];
+  const isSettingsMigrated = settingsInfo.some(c => c.name === 'user_id');
+  if (settingsInfo.length && !isSettingsMigrated) {
+    console.log('Migrating system_settings table for multi-user support...');
+    db.exec(`
+      ALTER TABLE system_settings RENAME TO system_settings_old;
+      CREATE TABLE system_settings (
+        user_id INTEGER NOT NULL DEFAULT 1,
+        key TEXT NOT NULL,
+        value TEXT,
+        updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+        PRIMARY KEY (user_id, key),
+        FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+      );
+      INSERT INTO system_settings (user_id, key, value, updated_at)
+      SELECT 1, key, value, updated_at FROM system_settings_old;
+      DROP TABLE system_settings_old;
+    `);
+  } else if (!settingsInfo.length) {
+    db.exec(`
+      CREATE TABLE IF NOT EXISTS system_settings (
+        user_id INTEGER NOT NULL DEFAULT 1,
+        key TEXT NOT NULL,
+        value TEXT,
+        updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+        PRIMARY KEY (user_id, key),
+        FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+      );
+    `);
+  }
+
+  // AI Configs Table (Multi-config support)
+  db.exec(`
+    CREATE TABLE IF NOT EXISTS ai_configs (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      name TEXT NOT NULL,
+      api_url TEXT NOT NULL,
+      api_key TEXT NOT NULL,
+      model_economy TEXT,
+      model_premium TEXT,
+      model_embedding TEXT,           -- New: Embedding model name
+      embedding_dimensions INTEGER,    -- New: Embedding dimensions
+      model_rerank TEXT,               -- New: Rerank model name
+      is_active BOOLEAN DEFAULT 0,
+      created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+    );
+  `);
+
+  // Prompt Templates Table
+  db.exec(`
+    CREATE TABLE IF NOT EXISTS prompt_templates (
+      key TEXT PRIMARY KEY,
+      template TEXT NOT NULL,
+      description TEXT,
+      variables TEXT, -- JSON array of variable names
+      updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
+    );
+  `);
+
+  // AI Model Routes Table
+  db.exec(`
+    CREATE TABLE IF NOT EXISTS ai_model_routes (
+      feature TEXT PRIMARY KEY, -- 'economy', 'premium', 'embedding', 'rerank', 'knowledge'
+      config_id INTEGER,
+      model_name TEXT,
+      updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+      FOREIGN KEY (config_id) REFERENCES ai_configs(id) ON DELETE SET NULL
+    );
+  `);
+
+  // Initialize routes if empty
+  const routeCount = db.prepare('SELECT COUNT(*) as count FROM ai_model_routes').get() as { count: number };
+  if (routeCount.count === 0) {
+    const activeConfig = db.prepare('SELECT * FROM ai_configs WHERE is_active = 1').get() as any;
+    if (activeConfig) {
+      console.log('Initializing ai_model_routes from active config...');
+      const features = [
+        { key: 'economy', model: activeConfig.model_economy },
+        { key: 'premium', model: activeConfig.model_premium },
+        { key: 'embedding', model: activeConfig.model_embedding },
+        { key: 'rerank', model: activeConfig.model_rerank },
+        { key: 'knowledge', model: activeConfig.model_knowledge }
+      ];
+
+      const insertRoute = db.prepare('INSERT INTO ai_model_routes (feature, config_id, model_name) VALUES (?, ?, ?)');
+      features.forEach(f => {
+        if (f.model) insertRoute.run(f.key, activeConfig.id, f.model);
+      });
+    }
+  }
+
+
+  // Migration: Move existing settings to ai_configs if ai_configs is empty
+  const configCount = db.prepare('SELECT COUNT(*) as count FROM ai_configs').get() as { count: number };
+  if (configCount.count === 0) {
+    console.log('Migrating existing AI settings to ai_configs...');
+    try {
+      const getSetting = (key: string) => {
+        const row = db.prepare('SELECT value FROM system_settings WHERE key = ?').get(key) as { value: string };
+        return row?.value;
+      };
+
+      const apiKey = getSetting('ai_api_key');
+      const apiUrl = getSetting('ai_api_url');
+
+      if (apiKey || apiUrl) {
+        db.prepare(`
+          INSERT INTO ai_configs (name, api_url, api_key, model_economy, model_premium, model_embedding, embedding_dimensions, model_rerank, is_active)
+          VALUES (?, ?, ?, ?, ?, ?, ?, ?, 1)
+        `).run(
+          'Default Config',
+          apiUrl || 'https://api.openai.com/v1',
+          apiKey || '',
+          getSetting('ai_model_economy') || 'gpt-4o-mini',
+          getSetting('ai_model_premium') || 'gpt-4o',
+          'text-embedding-3-small',
+          768,
+          ''
+        );
+        console.log('Migration completed: Created "Default Config" from system_settings.');
+      }
+    } catch (e) {
+      console.warn('Migration failed or no settings to migrate:', e);
+    }
+  }
+
+  // Chat功能表初始化
+  db.exec(`
+    -- 聊天会话表
+    CREATE TABLE IF NOT EXISTS chat_sessions (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      user_id INTEGER NOT NULL DEFAULT 1,
+      title TEXT NOT NULL DEFAULT '新对话',
+      created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+      updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+      message_count INTEGER DEFAULT 0,
+      FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+    );
+
+    -- 聊天消息表
+    CREATE TABLE IF NOT EXISTS chat_messages (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      session_id INTEGER NOT NULL,
+      role TEXT NOT NULL CHECK(role IN ('user', 'assistant', 'system')),
+      content TEXT NOT NULL,
+      is_favorite INTEGER DEFAULT 0,
+      created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+      FOREIGN KEY (session_id) REFERENCES chat_sessions(id) ON DELETE CASCADE
+    );
+  `);
+  addColumnIfNotExists('chat_sessions', 'user_id', 'INTEGER NOT NULL DEFAULT 1');
+
+  // 索引优化
+  db.exec(`
+    CREATE INDEX IF NOT EXISTS idx_chat_messages_session ON chat_messages(session_id, created_at);
+    CREATE INDEX IF NOT EXISTS idx_chat_sessions_updated ON chat_sessions(updated_at DESC);
+    CREATE INDEX IF NOT EXISTS idx_chat_sessions_user ON chat_sessions(user_id);
+  `);
+
+  // 管理员操作日志表
+  db.exec(`
+    CREATE TABLE IF NOT EXISTS admin_logs (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      user_id INTEGER NOT NULL,
+      username TEXT NOT NULL,
+      action TEXT NOT NULL,
+      target_type TEXT,
+      target_id TEXT,
+      details TEXT,
+      ip_address TEXT,
+      created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+      FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+    );
+    CREATE INDEX IF NOT EXISTS idx_admin_logs_created ON admin_logs(created_at DESC);
+    CREATE INDEX IF NOT EXISTS idx_admin_logs_user ON admin_logs(user_id);
+    CREATE INDEX IF NOT EXISTS idx_admin_logs_action ON admin_logs(action);
+  `);
+
+  // API 调用日志表（用于统计）
+  db.exec(`
+    CREATE TABLE IF NOT EXISTS api_call_logs (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      user_id INTEGER,
+      config_id INTEGER,
+      model TEXT NOT NULL,
+      endpoint TEXT,
+      input_tokens INTEGER DEFAULT 0,
+      output_tokens INTEGER DEFAULT 0,
+      duration_ms INTEGER,
+      success INTEGER DEFAULT 1,
+      error_message TEXT,
+      created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+    );
+    CREATE INDEX IF NOT EXISTS idx_api_logs_created ON api_call_logs(created_at DESC);
+    CREATE INDEX IF NOT EXISTS idx_api_logs_model ON api_call_logs(model);
+    CREATE INDEX IF NOT EXISTS idx_api_logs_date ON api_call_logs(date(created_at));
+  `);
+
+  // 知识卡片表
+  db.exec(`
+    CREATE TABLE IF NOT EXISTS knowledge_cards (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      user_id INTEGER NOT NULL DEFAULT 1,
+      session_id INTEGER,
+      title TEXT NOT NULL,
+      category TEXT,
+      tags TEXT,           -- JSON 数组
+      front TEXT,          -- 卡片正面（问题）
+      back TEXT,           -- 卡片背面（答案）
+      key_points TEXT,     -- JSON 数组 [{term, definition}]
+      source_content TEXT, -- 原始对话内容
+      created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+      updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+      FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
+      FOREIGN KEY (session_id) REFERENCES chat_sessions(id) ON DELETE SET NULL
+    );
+  `);
+  addColumnIfNotExists('knowledge_cards', 'user_id', 'INTEGER NOT NULL DEFAULT 1');
+
+  db.exec(`
+    CREATE INDEX IF NOT EXISTS idx_knowledge_cards_category ON knowledge_cards(category);
+    CREATE INDEX IF NOT EXISTS idx_knowledge_cards_created ON knowledge_cards(created_at DESC);
+    CREATE INDEX IF NOT EXISTS idx_knowledge_cards_user ON knowledge_cards(user_id);
+  `);
+
+  // 迁移：为 ai_configs 添加 model_rerank 字段
+  try {
+    const columns = db.prepare("PRAGMA table_info(ai_configs)").all() as { name: string }[];
+    const hasModelRerank = columns.some(col => col.name === 'model_rerank');
+    if (!hasModelRerank) {
+      console.log('Adding model_rerank column to ai_configs...');
+      db.exec(`ALTER TABLE ai_configs ADD COLUMN model_rerank TEXT`);
+    }
+  } catch (e) {
+    console.warn('Failed to add model_rerank column:', e);
+  }
+
+  // 迁移：为 ai_configs 添加 model_knowledge 字段
+  try {
+    const columns = db.prepare("PRAGMA table_info(ai_configs)").all() as { name: string }[];
+    const hasModelKnowledge = columns.some(col => col.name === 'model_knowledge');
+    if (!hasModelKnowledge) {
+      console.log('Adding model_knowledge column to ai_configs...');
+      db.exec(`ALTER TABLE ai_configs ADD COLUMN model_knowledge TEXT`);
+    }
+  } catch (e) {
+    console.warn('Failed to add model_knowledge column:', e);
+  }
+
+  // 迁移：为 chat_messages 添加 is_favorite 字段
+  try {
+    const columns = db.prepare("PRAGMA table_info(chat_messages)").all() as { name: string }[];
+    const hasIsFavorite = columns.some(col => col.name === 'is_favorite');
+    if (!hasIsFavorite) {
+      console.log('Adding is_favorite column to chat_messages...');
+      db.exec(`ALTER TABLE chat_messages ADD COLUMN is_favorite INTEGER DEFAULT 0`);
+    }
+  } catch (e) {
+    console.warn('Failed to add is_favorite column to chat_messages:', e);
+  }
+
+  // ==================== Phase 14: 订阅系统表 ====================
+
+  // 套餐定义表
+  db.exec(`
+    CREATE TABLE IF NOT EXISTS subscription_plans (
+      id TEXT PRIMARY KEY,                -- 'free', 'basic', 'pro'
+      name TEXT NOT NULL,                 -- '免费版', '基础版', '专业版'
+      tier TEXT NOT NULL,                 -- 'free', 'basic', 'pro', 'custom'
+      price_monthly INTEGER DEFAULT 0,    -- 单位：分
+      limits TEXT NOT NULL,               -- JSON: {"ai_chat": 10, "practice": -1}
+      features TEXT,                      -- JSON: ["特性1", "特性2"]
+      is_active INTEGER DEFAULT 1,
+      sort_order INTEGER DEFAULT 0,
+      created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+    );
+  `);
+
+  // 用户订阅状态表
+  db.exec(`
+    CREATE TABLE IF NOT EXISTS user_subscriptions (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      user_id INTEGER NOT NULL UNIQUE,    -- 一个用户只有一个有效订阅
+      plan_id TEXT NOT NULL DEFAULT 'free',
+      status TEXT CHECK(status IN ('active', 'expired', 'cancelled')) DEFAULT 'active',
+      started_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+      expires_at DATETIME,                -- NULL 表示永不过期
+      created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+      FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
+      FOREIGN KEY (plan_id) REFERENCES subscription_plans(id)
+    );
+  `);
+
+  // 每日用量记录表
+  db.exec(`
+    CREATE TABLE IF NOT EXISTS daily_usage (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      user_id INTEGER NOT NULL,
+      usage_date DATE NOT NULL,           -- 按日期聚合
+      usage_type TEXT NOT NULL,           -- 'ai_chat', 'practice', 'review', 'rag'
+      count INTEGER DEFAULT 0,
+      UNIQUE(user_id, usage_date, usage_type),
+      FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+    );
+    CREATE INDEX IF NOT EXISTS idx_daily_usage_user_date ON daily_usage(user_id, usage_date);
+  `);
+
+  // 支付记录表 (预留)
+  db.exec(`
+    CREATE TABLE IF NOT EXISTS payment_records (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      user_id INTEGER NOT NULL,
+      order_no TEXT UNIQUE NOT NULL,      -- 系统订单号
+      payment_no TEXT,                    -- 第三方支付流水号
+      plan_id TEXT NOT NULL,
+      amount INTEGER NOT NULL,            -- 单位：分
+      payment_method TEXT,                -- 'wechat', 'alipay', 'manual'
+      status TEXT CHECK(status IN ('pending', 'paid', 'failed', 'refunded')) DEFAULT 'pending',
+      created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+      paid_at DATETIME,
+      FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+    );
+    CREATE INDEX IF NOT EXISTS idx_payment_records_user ON payment_records(user_id);
+    CREATE INDEX IF NOT EXISTS idx_payment_records_order ON payment_records(order_no);
+  `);
+
+  // 初始化默认套餐 (如果不存在)
+  const planCount = db.prepare('SELECT COUNT(*) as count FROM subscription_plans').get() as { count: number };
+  if (planCount.count === 0) {
+    console.log('Initializing default subscription plans...');
+    const insertPlan = db.prepare(`
+      INSERT INTO subscription_plans (id, name, tier, price_monthly, limits, features, is_active, sort_order)
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+    `);
+
+    // 免费版
+    insertPlan.run(
+      'free', '免费版', 'free', 0,
+      JSON.stringify({ ai_chat: 10, practice: 30, review: 5, rag: 20 }),
+      JSON.stringify(['每日 10 次 AI 对话', '每日 30 道练习题', '基础知识库访问']),
+      1, 1
+    );
+
+    // 基础版
+    insertPlan.run(
+      'basic', '基础版', 'basic', 2900,
+      JSON.stringify({ ai_chat: 100, practice: -1, review: 50, rag: 100 }),
+      JSON.stringify(['每日 100 次 AI 对话', '无限练习题目', '每日 50 次 AI 复盘', '优先客服支持']),
+      1, 2
+    );
+
+    // 专业版
+    insertPlan.run(
+      'pro', '专业版', 'pro', 9900,
+      JSON.stringify({ ai_chat: -1, practice: -1, review: -1, rag: -1 }),
+      JSON.stringify(['无限 AI 对话', '无限练习题目', '无限 AI 复盘', '全部高级功能', '专属客服']),
+      1, 3
+    );
+
+    console.log('Default subscription plans created.');
+  }
+
+  // 为现有用户创建默认订阅 (免费版)
+  db.exec(`
+    INSERT OR IGNORE INTO user_subscriptions (user_id, plan_id, status)
+    SELECT id, 'free', 'active' FROM users 
+    WHERE id NOT IN (SELECT user_id FROM user_subscriptions)
+  `);
+
+  console.log('Database initialized successfully (including subscription tables).');
+}
+
+// Run initialization if this script is executed directly
+if (require.main === module) {
+  initDatabase();
+}

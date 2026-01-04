@@ -1,0 +1,164 @@
+'use client';
+
+import React, { useState } from 'react';
+import { BookOpen, Loader2, CheckCircle2, AlertCircle } from 'lucide-react';
+
+// Hooks
+import { useKnowledgeCards } from './hooks/useKnowledgeCards';
+import { useStudyMode } from './hooks/useStudyMode';
+
+// Components
+import { KnowledgeHeader } from './components/KnowledgeHeader';
+import { KnowledgeCardItem } from './components/KnowledgeCardItem';
+import { StudyModeOverlay } from './components/StudyModeOverlay';
+import { KnowledgeModal } from './components/KnowledgeModal';
+
+export default function KnowledgePage() {
+    const {
+        filteredCards,
+        categories,
+        stats,
+        loading,
+        selectedCategory,
+        setSelectedCategory,
+        searchQuery,
+        setSearchQuery,
+        editingCard,
+        setEditingCard,
+        isCreateModal,
+        setIsCreateModal,
+        exporting,
+        toast,
+        handleDelete,
+        handleSave,
+        handleExport
+    } = useKnowledgeCards();
+
+    const {
+        studyMode,
+        studyIndex,
+        studyFlipped,
+        toggleStudyFlip,
+        startStudy,
+        exitStudy,
+        nextCard,
+        prevCard
+    } = useStudyMode(filteredCards);
+
+    const [flippedCards, setFlippedCards] = useState<Set<number>>(new Set());
+
+    const toggleFlip = (id: number) => {
+        setFlippedCards(prev => {
+            const newSet = new Set(prev);
+            if (newSet.has(id)) newSet.delete(id);
+            else newSet.add(id);
+            return newSet;
+        });
+    };
+
+    // 获取分类对应的颜色 (保持逻辑一致)
+    const getCategoryColor = (category: string) => {
+        const colors = [
+            { bg: 'bg-blue-500/10', text: 'text-blue-600 dark:text-blue-400' },
+            { bg: 'bg-purple-500/10', text: 'text-purple-600 dark:text-purple-400' },
+            { bg: 'bg-green-500/10', text: 'text-green-600 dark:text-green-400' },
+            { bg: 'bg-orange-500/10', text: 'text-orange-600 dark:text-orange-400' },
+            { bg: 'bg-rose-500/10', text: 'text-rose-600 dark:text-rose-400' },
+            { bg: 'bg-indigo-500/10', text: 'text-indigo-600 dark:text-indigo-400' },
+        ];
+        const hash = category.split('').reduce((acc, char) => acc + char.charCodeAt(0), 0);
+        return colors[hash % colors.length];
+    };
+
+    return (
+        <div className="min-h-screen bg-background">
+            <KnowledgeHeader
+                stats={stats}
+                categories={categories}
+                selectedCategory={selectedCategory}
+                setSelectedCategory={setSelectedCategory}
+                searchQuery={searchQuery}
+                setSearchQuery={setSearchQuery}
+                onAdd={() => {
+                    setEditingCard({ title: '', category: '', tags: [], front: '', back: '', key_points: [] });
+                    setIsCreateModal(true);
+                }}
+                onStudy={startStudy}
+                onExport={handleExport}
+                exporting={exporting}
+                filteredCount={filteredCards.length}
+            />
+
+            <main className="max-w-7xl mx-auto px-4 py-8 pb-32">
+                {loading ? (
+                    <div className="flex flex-col items-center justify-center py-20">
+                        <Loader2 className="w-10 h-10 animate-spin text-primary" />
+                        <p className="mt-4 text-muted-foreground font-medium tracking-wide">加载知识库中...</p>
+                    </div>
+                ) : filteredCards.length === 0 ? (
+                    <div className="text-center py-24 bg-card/40 backdrop-blur-sm rounded-3xl border-2 border-dashed border-border">
+                        <div className="w-24 h-24 mx-auto mb-6 bg-muted rounded-full flex items-center justify-center shadow-inner">
+                            <BookOpen className="w-12 h-12 text-muted-foreground" />
+                        </div>
+                        <h3 className="text-xl font-bold text-foreground mb-2">未找到匹配的卡片</h3>
+                        <p className="text-muted-foreground max-w-sm mx-auto">尝试改变搜索词或切换分类。</p>
+                    </div>
+                ) : (
+                    <div className="grid gap-6 sm:grid-cols-1 md:grid-cols-2 lg:grid-cols-3">
+                        {filteredCards.map(card => (
+                            <KnowledgeCardItem
+                                key={card.id}
+                                card={card}
+                                isFlipped={flippedCards.has(card.id!)}
+                                onFlip={toggleFlip}
+                                onEdit={setEditingCard}
+                                onDelete={handleDelete}
+                                categoryColor={getCategoryColor(card.category || '默认')}
+                            />
+                        ))}
+                    </div>
+                )}
+            </main>
+
+            <KnowledgeModal
+                isOpen={!!editingCard || isCreateModal}
+                isCreate={isCreateModal}
+                card={editingCard}
+                onClose={() => { setEditingCard(null); setIsCreateModal(false); }}
+                onSave={handleSave}
+                onChange={setEditingCard}
+            />
+
+            {studyMode && (
+                <StudyModeOverlay
+                    cards={filteredCards}
+                    studyIndex={studyIndex}
+                    studyFlipped={studyFlipped}
+                    toggleFlip={toggleStudyFlip}
+                    onNext={nextCard}
+                    onPrev={prevCard}
+                    onExit={exitStudy}
+                />
+            )}
+
+            {toast && (
+                <div className={`fixed bottom-8 left-1/2 -translate-x-1/2 z-[100] px-6 py-3 rounded-2xl shadow-2xl flex items-center gap-3 animate-in fade-in slide-in-from-bottom-4 duration-300 ${toast.type === 'success' ? 'bg-zinc-900 border-t-2 border-emerald-400' : 'bg-red-600'
+                    }`}>
+                    {toast.type === 'success' ? (
+                        <CheckCircle2 className="w-5 h-5 text-emerald-400" />
+                    ) : (
+                        <AlertCircle className="w-5 h-5 text-white" />
+                    )}
+                    <span className="text-white font-bold text-sm">{toast.message}</span>
+                </div>
+            )}
+
+            <style jsx global>{`
+                .scrollbar-hide::-webkit-scrollbar { display: none; }
+                .scrollbar-hide { -ms-overflow-style: none; scrollbar-width: none; }
+                .scrollbar-thin::-webkit-scrollbar { width: 6px; }
+                .scrollbar-thin::-webkit-scrollbar-thumb { background: var(--border); border-radius: 10px; }
+            `}</style>
+        </div>
+    );
+}

@@ -1,0 +1,2195 @@
+curl ^"https://spa.fenbi.com/ti/exam/solution/1_32_1qnstnq?routecs=jsjyzhzz^" ^
+  -H ^"accept: text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.7^" ^
+  -H ^"accept-language: zh-CN,zh;q=0.9,en;q=0.8,en-GB;q=0.7,en-US;q=0.6,ja;q=0.5^" ^
+  -H ^"cache-control: no-cache^" ^
+  -b ^"sid=3495507; persistent=A5xj9BjQOm1EyQz8VPpRa/9riRSPdxEInSq2c4Yk0QsIiKWBkxItuaUmnAJiAgNCB2Hkfd12n3qLIwSzJKFVfw==; sensorsdata2015jssdkcross=^%^7B^%^22distinct_id^%^22^%^3A^%^2219b0e92dd27bb1-0985a81370bba38-4c657b58-1327104-19b0e92dd28fc3^%^22^%^2C^%^22first_id^%^22^%^3A^%^22^%^22^%^2C^%^22props^%^22^%^3A^%^7B^%^22^%^24latest_traffic_source_type^%^22^%^3A^%^22^%^E7^%^9B^%^B4^%^E6^%^8E^%^A5^%^E6^%^B5^%^81^%^E9^%^87^%^8F^%^22^%^2C^%^22^%^24latest_search_keyword^%^22^%^3A^%^22^%^E6^%^9C^%^AA^%^E5^%^8F^%^96^%^E5^%^88^%^B0^%^E5^%^80^%^BC_^%^E7^%^9B^%^B4^%^E6^%^8E^%^A5^%^E6^%^89^%^93^%^E5^%^BC^%^80^%^22^%^2C^%^22^%^24latest_referrer^%^22^%^3A^%^22^%^22^%^7D^%^2C^%^22^%^24device_id^%^22^%^3A^%^2219b0e92dd27bb1-0985a81370bba38-4c657b58-1327104-19b0e92dd28fc3^%^22^%^7D; sess=WLNjTh9mtYTzCDTkHUtClFUq3lPh8GrhfKUzfgBE/pDqA1upQK0rRwNVoogjnZS795fR9RRlhe/l31iNHFOw672bfpPwzzGwZJxNGOWuinY=; userid=152815018^" ^
+  -H ^"pragma: no-cache^" ^
+  -H ^"priority: u=0, i^" ^
+  -H ^"referer: https://www.fenbi.com/^" ^
+  -H ^"sec-ch-ua: ^\^"Microsoft Edge^\^";v=^\^"143^\^", ^\^"Chromium^\^";v=^\^"143^\^", ^\^"Not A(Brand^\^";v=^\^"24^\^"^" ^
+  -H ^"sec-ch-ua-mobile: ?0^" ^
+  -H ^"sec-ch-ua-platform: ^\^"Windows^\^"^" ^
+  -H ^"sec-fetch-dest: document^" ^
+  -H ^"sec-fetch-mode: navigate^" ^
+  -H ^"sec-fetch-site: same-origin^" ^
+  -H ^"sec-fetch-user: ?1^" ^
+  -H ^"upgrade-insecure-requests: 1^" ^
+  -H ^"user-agent: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/143.0.0.0 Safari/537.36 Edg/143.0.0.0^" &
+curl ^"https://nodestatic.fbstatic.cn/weblts_spa_online/ti/styles-6IAKUIYE.css^" ^
+  -H ^"accept: text/css,*/*;q=0.1^" ^
+  -H ^"accept-language: zh-CN,zh;q=0.9,en;q=0.8,en-GB;q=0.7,en-US;q=0.6,ja;q=0.5^" ^
+  -H ^"cache-control: no-cache^" ^
+  -H ^"pragma: no-cache^" ^
+  -H ^"priority: u=0^" ^
+  -H ^"referer: https://spa.fenbi.com/^" ^
+  -H ^"sec-ch-ua: ^\^"Microsoft Edge^\^";v=^\^"143^\^", ^\^"Chromium^\^";v=^\^"143^\^", ^\^"Not A(Brand^\^";v=^\^"24^\^"^" ^
+  -H ^"sec-ch-ua-mobile: ?0^" ^
+  -H ^"sec-ch-ua-platform: ^\^"Windows^\^"^" ^
+  -H ^"sec-fetch-dest: style^" ^
+  -H ^"sec-fetch-mode: no-cors^" ^
+  -H ^"sec-fetch-site: cross-site^" ^
+  -H ^"sec-fetch-storage-access: active^" ^
+  -H ^"user-agent: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/143.0.0.0 Safari/537.36 Edg/143.0.0.0^" &
+curl ^"https://nodestatic.fbstatic.cn/weblts_spa_online/ti/chunk-GEOMVOWK.js^" ^
+  -H ^"accept: */*^" ^
+  -H ^"accept-language: zh-CN,zh;q=0.9,en;q=0.8,en-GB;q=0.7,en-US;q=0.6,ja;q=0.5^" ^
+  -H ^"cache-control: no-cache^" ^
+  -H ^"origin: https://spa.fenbi.com^" ^
+  -H ^"pragma: no-cache^" ^
+  -H ^"priority: u=1^" ^
+  -H ^"referer: https://spa.fenbi.com/^" ^
+  -H ^"sec-ch-ua: ^\^"Microsoft Edge^\^";v=^\^"143^\^", ^\^"Chromium^\^";v=^\^"143^\^", ^\^"Not A(Brand^\^";v=^\^"24^\^"^" ^
+  -H ^"sec-ch-ua-mobile: ?0^" ^
+  -H ^"sec-ch-ua-platform: ^\^"Windows^\^"^" ^
+  -H ^"sec-fetch-dest: script^" ^
+  -H ^"sec-fetch-mode: cors^" ^
+  -H ^"sec-fetch-site: cross-site^" ^
+  -H ^"user-agent: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/143.0.0.0 Safari/537.36 Edg/143.0.0.0^" &
+curl ^"https://nodestatic.fbstatic.cn/weblts_spa_online/ti/chunk-B5H6FNNG.js^" ^
+  -H ^"accept: */*^" ^
+  -H ^"accept-language: zh-CN,zh;q=0.9,en;q=0.8,en-GB;q=0.7,en-US;q=0.6,ja;q=0.5^" ^
+  -H ^"cache-control: no-cache^" ^
+  -H ^"origin: https://spa.fenbi.com^" ^
+  -H ^"pragma: no-cache^" ^
+  -H ^"priority: u=1^" ^
+  -H ^"referer: https://spa.fenbi.com/^" ^
+  -H ^"sec-ch-ua: ^\^"Microsoft Edge^\^";v=^\^"143^\^", ^\^"Chromium^\^";v=^\^"143^\^", ^\^"Not A(Brand^\^";v=^\^"24^\^"^" ^
+  -H ^"sec-ch-ua-mobile: ?0^" ^
+  -H ^"sec-ch-ua-platform: ^\^"Windows^\^"^" ^
+  -H ^"sec-fetch-dest: script^" ^
+  -H ^"sec-fetch-mode: cors^" ^
+  -H ^"sec-fetch-site: cross-site^" ^
+  -H ^"user-agent: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/143.0.0.0 Safari/537.36 Edg/143.0.0.0^" &
+curl ^"https://nodestatic.fbstatic.cn/weblts_spa_online/ti/chunk-3SY2CFHE.js^" ^
+  -H ^"accept: */*^" ^
+  -H ^"accept-language: zh-CN,zh;q=0.9,en;q=0.8,en-GB;q=0.7,en-US;q=0.6,ja;q=0.5^" ^
+  -H ^"cache-control: no-cache^" ^
+  -H ^"origin: https://spa.fenbi.com^" ^
+  -H ^"pragma: no-cache^" ^
+  -H ^"priority: u=1^" ^
+  -H ^"referer: https://spa.fenbi.com/^" ^
+  -H ^"sec-ch-ua: ^\^"Microsoft Edge^\^";v=^\^"143^\^", ^\^"Chromium^\^";v=^\^"143^\^", ^\^"Not A(Brand^\^";v=^\^"24^\^"^" ^
+  -H ^"sec-ch-ua-mobile: ?0^" ^
+  -H ^"sec-ch-ua-platform: ^\^"Windows^\^"^" ^
+  -H ^"sec-fetch-dest: script^" ^
+  -H ^"sec-fetch-mode: cors^" ^
+  -H ^"sec-fetch-site: cross-site^" ^
+  -H ^"user-agent: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/143.0.0.0 Safari/537.36 Edg/143.0.0.0^" &
+curl ^"https://nodestatic.fbstatic.cn/weblts_spa_online/ti/chunk-OGJQPYMJ.js^" ^
+  -H ^"accept: */*^" ^
+  -H ^"accept-language: zh-CN,zh;q=0.9,en;q=0.8,en-GB;q=0.7,en-US;q=0.6,ja;q=0.5^" ^
+  -H ^"cache-control: no-cache^" ^
+  -H ^"origin: https://spa.fenbi.com^" ^
+  -H ^"pragma: no-cache^" ^
+  -H ^"priority: u=1^" ^
+  -H ^"referer: https://spa.fenbi.com/^" ^
+  -H ^"sec-ch-ua: ^\^"Microsoft Edge^\^";v=^\^"143^\^", ^\^"Chromium^\^";v=^\^"143^\^", ^\^"Not A(Brand^\^";v=^\^"24^\^"^" ^
+  -H ^"sec-ch-ua-mobile: ?0^" ^
+  -H ^"sec-ch-ua-platform: ^\^"Windows^\^"^" ^
+  -H ^"sec-fetch-dest: script^" ^
+  -H ^"sec-fetch-mode: cors^" ^
+  -H ^"sec-fetch-site: cross-site^" ^
+  -H ^"user-agent: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/143.0.0.0 Safari/537.36 Edg/143.0.0.0^" &
+curl ^"https://nodestatic.fbstatic.cn/weblts_spa_online/ti/polyfills-FFHMD2TL.js^" ^
+  -H ^"accept: */*^" ^
+  -H ^"accept-language: zh-CN,zh;q=0.9,en;q=0.8,en-GB;q=0.7,en-US;q=0.6,ja;q=0.5^" ^
+  -H ^"cache-control: no-cache^" ^
+  -H ^"origin: https://spa.fenbi.com^" ^
+  -H ^"pragma: no-cache^" ^
+  -H ^"priority: u=1^" ^
+  -H ^"referer: https://spa.fenbi.com/^" ^
+  -H ^"sec-ch-ua: ^\^"Microsoft Edge^\^";v=^\^"143^\^", ^\^"Chromium^\^";v=^\^"143^\^", ^\^"Not A(Brand^\^";v=^\^"24^\^"^" ^
+  -H ^"sec-ch-ua-mobile: ?0^" ^
+  -H ^"sec-ch-ua-platform: ^\^"Windows^\^"^" ^
+  -H ^"sec-fetch-dest: script^" ^
+  -H ^"sec-fetch-mode: cors^" ^
+  -H ^"sec-fetch-site: cross-site^" ^
+  -H ^"user-agent: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/143.0.0.0 Safari/537.36 Edg/143.0.0.0^" &
+curl ^"https://nodestatic.fbstatic.cn/weblts_spa_online/ti/main-3HOWPFCI.js^" ^
+  -H ^"accept: */*^" ^
+  -H ^"accept-language: zh-CN,zh;q=0.9,en;q=0.8,en-GB;q=0.7,en-US;q=0.6,ja;q=0.5^" ^
+  -H ^"cache-control: no-cache^" ^
+  -H ^"origin: https://spa.fenbi.com^" ^
+  -H ^"pragma: no-cache^" ^
+  -H ^"priority: u=1^" ^
+  -H ^"referer: https://spa.fenbi.com/^" ^
+  -H ^"sec-ch-ua: ^\^"Microsoft Edge^\^";v=^\^"143^\^", ^\^"Chromium^\^";v=^\^"143^\^", ^\^"Not A(Brand^\^";v=^\^"24^\^"^" ^
+  -H ^"sec-ch-ua-mobile: ?0^" ^
+  -H ^"sec-ch-ua-platform: ^\^"Windows^\^"^" ^
+  -H ^"sec-fetch-dest: script^" ^
+  -H ^"sec-fetch-mode: cors^" ^
+  -H ^"sec-fetch-site: cross-site^" ^
+  -H ^"user-agent: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/143.0.0.0 Safari/537.36 Edg/143.0.0.0^" &
+curl ^"chrome-extension://amkbmndfnliijdhojkpoglbnaaahippg/default_config.content.json^" ^
+  -H ^"User-Agent: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/143.0.0.0 Safari/537.36 Edg/143.0.0.0^" ^
+  -H ^"Referer;^" &
+curl ^"https://nodestatic.fbstatic.cn/pool/mathlive/mathlive-static.css^" ^
+  -H ^"accept: text/css,*/*;q=0.1^" ^
+  -H ^"accept-language: zh-CN,zh;q=0.9,en;q=0.8,en-GB;q=0.7,en-US;q=0.6,ja;q=0.5^" ^
+  -H ^"cache-control: no-cache^" ^
+  -H ^"pragma: no-cache^" ^
+  -H ^"priority: u=0^" ^
+  -H ^"referer: https://spa.fenbi.com/^" ^
+  -H ^"sec-ch-ua: ^\^"Microsoft Edge^\^";v=^\^"143^\^", ^\^"Chromium^\^";v=^\^"143^\^", ^\^"Not A(Brand^\^";v=^\^"24^\^"^" ^
+  -H ^"sec-ch-ua-mobile: ?0^" ^
+  -H ^"sec-ch-ua-platform: ^\^"Windows^\^"^" ^
+  -H ^"sec-fetch-dest: style^" ^
+  -H ^"sec-fetch-mode: no-cors^" ^
+  -H ^"sec-fetch-site: cross-site^" ^
+  -H ^"sec-fetch-storage-access: active^" ^
+  -H ^"user-agent: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/143.0.0.0 Safari/537.36 Edg/143.0.0.0^" &
+curl ^"https://nodestatic.fbstatic.cn/pool/umeditor_master/third-party/jquery.min.js^" ^
+  -H ^"accept: */*^" ^
+  -H ^"accept-language: zh-CN,zh;q=0.9,en;q=0.8,en-GB;q=0.7,en-US;q=0.6,ja;q=0.5^" ^
+  -H ^"cache-control: no-cache^" ^
+  -H ^"pragma: no-cache^" ^
+  -H ^"referer: https://spa.fenbi.com/^" ^
+  -H ^"sec-ch-ua: ^\^"Microsoft Edge^\^";v=^\^"143^\^", ^\^"Chromium^\^";v=^\^"143^\^", ^\^"Not A(Brand^\^";v=^\^"24^\^"^" ^
+  -H ^"sec-ch-ua-mobile: ?0^" ^
+  -H ^"sec-ch-ua-platform: ^\^"Windows^\^"^" ^
+  -H ^"sec-fetch-dest: script^" ^
+  -H ^"sec-fetch-mode: no-cors^" ^
+  -H ^"sec-fetch-site: cross-site^" ^
+  -H ^"sec-fetch-storage-access: active^" ^
+  -H ^"user-agent: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/143.0.0.0 Safari/537.36 Edg/143.0.0.0^" &
+curl ^"https://nodestatic.fbstatic.cn/weblts_spa_online/ti/dark.css^" ^
+  -H ^"accept: text/css,*/*;q=0.1^" ^
+  -H ^"accept-language: zh-CN,zh;q=0.9,en;q=0.8,en-GB;q=0.7,en-US;q=0.6,ja;q=0.5^" ^
+  -H ^"cache-control: no-cache^" ^
+  -H ^"pragma: no-cache^" ^
+  -H ^"priority: u=0^" ^
+  -H ^"referer: https://spa.fenbi.com/^" ^
+  -H ^"sec-ch-ua: ^\^"Microsoft Edge^\^";v=^\^"143^\^", ^\^"Chromium^\^";v=^\^"143^\^", ^\^"Not A(Brand^\^";v=^\^"24^\^"^" ^
+  -H ^"sec-ch-ua-mobile: ?0^" ^
+  -H ^"sec-ch-ua-platform: ^\^"Windows^\^"^" ^
+  -H ^"sec-fetch-dest: style^" ^
+  -H ^"sec-fetch-mode: no-cors^" ^
+  -H ^"sec-fetch-site: cross-site^" ^
+  -H ^"sec-fetch-storage-access: active^" ^
+  -H ^"user-agent: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/143.0.0.0 Safari/537.36 Edg/143.0.0.0^" &
+curl ^"https://nodestatic.fbstatic.cn/weblts_spa_online/ti/default.css^" ^
+  -H ^"accept: text/css,*/*;q=0.1^" ^
+  -H ^"accept-language: zh-CN,zh;q=0.9,en;q=0.8,en-GB;q=0.7,en-US;q=0.6,ja;q=0.5^" ^
+  -H ^"cache-control: no-cache^" ^
+  -H ^"pragma: no-cache^" ^
+  -H ^"priority: u=0^" ^
+  -H ^"referer: https://spa.fenbi.com/^" ^
+  -H ^"sec-ch-ua: ^\^"Microsoft Edge^\^";v=^\^"143^\^", ^\^"Chromium^\^";v=^\^"143^\^", ^\^"Not A(Brand^\^";v=^\^"24^\^"^" ^
+  -H ^"sec-ch-ua-mobile: ?0^" ^
+  -H ^"sec-ch-ua-platform: ^\^"Windows^\^"^" ^
+  -H ^"sec-fetch-dest: style^" ^
+  -H ^"sec-fetch-mode: no-cors^" ^
+  -H ^"sec-fetch-site: cross-site^" ^
+  -H ^"sec-fetch-storage-access: active^" ^
+  -H ^"user-agent: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/143.0.0.0 Safari/537.36 Edg/143.0.0.0^" &
+curl ^"https://login.fenbi.com/api/users/current?kav=125^&av=125^&hav=125^&app=web^" ^
+  -H ^"accept: application/json, text/plain, */*^" ^
+  -H ^"accept-language: zh-CN,zh;q=0.9,en;q=0.8,en-GB;q=0.7,en-US;q=0.6,ja;q=0.5^" ^
+  -H ^"cache-control: no-cache^" ^
+  -b ^"sid=3495507; persistent=A5xj9BjQOm1EyQz8VPpRa/9riRSPdxEInSq2c4Yk0QsIiKWBkxItuaUmnAJiAgNCB2Hkfd12n3qLIwSzJKFVfw==; sensorsdata2015jssdkcross=^%^7B^%^22distinct_id^%^22^%^3A^%^2219b0e92dd27bb1-0985a81370bba38-4c657b58-1327104-19b0e92dd28fc3^%^22^%^2C^%^22first_id^%^22^%^3A^%^22^%^22^%^2C^%^22props^%^22^%^3A^%^7B^%^22^%^24latest_traffic_source_type^%^22^%^3A^%^22^%^E7^%^9B^%^B4^%^E6^%^8E^%^A5^%^E6^%^B5^%^81^%^E9^%^87^%^8F^%^22^%^2C^%^22^%^24latest_search_keyword^%^22^%^3A^%^22^%^E6^%^9C^%^AA^%^E5^%^8F^%^96^%^E5^%^88^%^B0^%^E5^%^80^%^BC_^%^E7^%^9B^%^B4^%^E6^%^8E^%^A5^%^E6^%^89^%^93^%^E5^%^BC^%^80^%^22^%^2C^%^22^%^24latest_referrer^%^22^%^3A^%^22^%^22^%^7D^%^2C^%^22^%^24device_id^%^22^%^3A^%^2219b0e92dd27bb1-0985a81370bba38-4c657b58-1327104-19b0e92dd28fc3^%^22^%^7D; acw_tc=0bdd34ea17664432530031486e2cc4a300c4d5f1338975d986dc52f81e3542; sess=WLNjTh9mtYTzCDTkHUtClFUq3lPh8GrhfKUzfgBE/pDqA1upQK0rRwNVoogjnZS795fR9RRlhe/l31iNHFOw672bfpPwzzGwZJxNGOWuinY=; userid=152815018^" ^
+  -H ^"origin: https://spa.fenbi.com^" ^
+  -H ^"pragma: no-cache^" ^
+  -H ^"priority: u=1, i^" ^
+  -H ^"referer: https://spa.fenbi.com/^" ^
+  -H ^"sec-ch-ua: ^\^"Microsoft Edge^\^";v=^\^"143^\^", ^\^"Chromium^\^";v=^\^"143^\^", ^\^"Not A(Brand^\^";v=^\^"24^\^"^" ^
+  -H ^"sec-ch-ua-mobile: ?0^" ^
+  -H ^"sec-ch-ua-platform: ^\^"Windows^\^"^" ^
+  -H ^"sec-fetch-dest: empty^" ^
+  -H ^"sec-fetch-mode: cors^" ^
+  -H ^"sec-fetch-site: same-site^" ^
+  -H ^"user-agent: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/143.0.0.0 Safari/537.36 Edg/143.0.0.0^" &
+curl ^"https://nodestatic.fbstatic.cn/weblts_spa_online/ti/chunk-D2XZLP7D.js^" ^
+  -H ^"accept: */*^" ^
+  -H ^"accept-language: zh-CN,zh;q=0.9,en;q=0.8,en-GB;q=0.7,en-US;q=0.6,ja;q=0.5^" ^
+  -H ^"cache-control: no-cache^" ^
+  -H ^"origin: https://spa.fenbi.com^" ^
+  -H ^"pragma: no-cache^" ^
+  -H ^"priority: u=1^" ^
+  -H ^"referer: https://nodestatic.fbstatic.cn/weblts_spa_online/ti/main-3HOWPFCI.js^" ^
+  -H ^"sec-ch-ua: ^\^"Microsoft Edge^\^";v=^\^"143^\^", ^\^"Chromium^\^";v=^\^"143^\^", ^\^"Not A(Brand^\^";v=^\^"24^\^"^" ^
+  -H ^"sec-ch-ua-mobile: ?0^" ^
+  -H ^"sec-ch-ua-platform: ^\^"Windows^\^"^" ^
+  -H ^"sec-fetch-dest: script^" ^
+  -H ^"sec-fetch-mode: cors^" ^
+  -H ^"sec-fetch-site: cross-site^" ^
+  -H ^"user-agent: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/143.0.0.0 Safari/537.36 Edg/143.0.0.0^" &
+curl ^"https://nodestatic.fbstatic.cn/pool/umeditor_master/third-party/template.min.js^" ^
+  -H ^"accept: */*^" ^
+  -H ^"accept-language: zh-CN,zh;q=0.9,en;q=0.8,en-GB;q=0.7,en-US;q=0.6,ja;q=0.5^" ^
+  -H ^"cache-control: no-cache^" ^
+  -H ^"pragma: no-cache^" ^
+  -H ^"referer: https://spa.fenbi.com/^" ^
+  -H ^"sec-ch-ua: ^\^"Microsoft Edge^\^";v=^\^"143^\^", ^\^"Chromium^\^";v=^\^"143^\^", ^\^"Not A(Brand^\^";v=^\^"24^\^"^" ^
+  -H ^"sec-ch-ua-mobile: ?0^" ^
+  -H ^"sec-ch-ua-platform: ^\^"Windows^\^"^" ^
+  -H ^"sec-fetch-dest: script^" ^
+  -H ^"sec-fetch-mode: no-cors^" ^
+  -H ^"sec-fetch-site: cross-site^" ^
+  -H ^"sec-fetch-storage-access: active^" ^
+  -H ^"user-agent: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/143.0.0.0 Safari/537.36 Edg/143.0.0.0^" &
+curl ^"https://web.nofbcdn.cn/webtools/js/ubb-684c88c1.js^" ^
+  -H ^"accept: */*^" ^
+  -H ^"accept-language: zh-CN,zh;q=0.9,en;q=0.8,en-GB;q=0.7,en-US;q=0.6,ja;q=0.5^" ^
+  -H ^"cache-control: no-cache^" ^
+  -H ^"pragma: no-cache^" ^
+  -H ^"referer: https://spa.fenbi.com/^" ^
+  -H ^"sec-ch-ua: ^\^"Microsoft Edge^\^";v=^\^"143^\^", ^\^"Chromium^\^";v=^\^"143^\^", ^\^"Not A(Brand^\^";v=^\^"24^\^"^" ^
+  -H ^"sec-ch-ua-mobile: ?0^" ^
+  -H ^"sec-ch-ua-platform: ^\^"Windows^\^"^" ^
+  -H ^"sec-fetch-dest: script^" ^
+  -H ^"sec-fetch-mode: no-cors^" ^
+  -H ^"sec-fetch-site: cross-site^" ^
+  -H ^"sec-fetch-storage-access: active^" ^
+  -H ^"user-agent: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/143.0.0.0 Safari/537.36 Edg/143.0.0.0^" &
+curl ^"https://web.nofbcdn.cn/webtools/dist-249a0494fea7/mathlive.js^" ^
+  -H ^"accept: */*^" ^
+  -H ^"accept-language: zh-CN,zh;q=0.9,en;q=0.8,en-GB;q=0.7,en-US;q=0.6,ja;q=0.5^" ^
+  -H ^"cache-control: no-cache^" ^
+  -H ^"pragma: no-cache^" ^
+  -H ^"referer: https://spa.fenbi.com/^" ^
+  -H ^"sec-ch-ua: ^\^"Microsoft Edge^\^";v=^\^"143^\^", ^\^"Chromium^\^";v=^\^"143^\^", ^\^"Not A(Brand^\^";v=^\^"24^\^"^" ^
+  -H ^"sec-ch-ua-mobile: ?0^" ^
+  -H ^"sec-ch-ua-platform: ^\^"Windows^\^"^" ^
+  -H ^"sec-fetch-dest: script^" ^
+  -H ^"sec-fetch-mode: no-cors^" ^
+  -H ^"sec-fetch-site: cross-site^" ^
+  -H ^"sec-fetch-storage-access: active^" ^
+  -H ^"user-agent: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/143.0.0.0 Safari/537.36 Edg/143.0.0.0^" &
+curl ^"https://nodestatic.fbstatic.cn/pool/umeditor_master/umeditor_no_autoupload.js^" ^
+  -H ^"accept: */*^" ^
+  -H ^"accept-language: zh-CN,zh;q=0.9,en;q=0.8,en-GB;q=0.7,en-US;q=0.6,ja;q=0.5^" ^
+  -H ^"cache-control: no-cache^" ^
+  -H ^"pragma: no-cache^" ^
+  -H ^"referer: https://spa.fenbi.com/^" ^
+  -H ^"sec-ch-ua: ^\^"Microsoft Edge^\^";v=^\^"143^\^", ^\^"Chromium^\^";v=^\^"143^\^", ^\^"Not A(Brand^\^";v=^\^"24^\^"^" ^
+  -H ^"sec-ch-ua-mobile: ?0^" ^
+  -H ^"sec-ch-ua-platform: ^\^"Windows^\^"^" ^
+  -H ^"sec-fetch-dest: script^" ^
+  -H ^"sec-fetch-mode: no-cors^" ^
+  -H ^"sec-fetch-site: cross-site^" ^
+  -H ^"sec-fetch-storage-access: active^" ^
+  -H ^"user-agent: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/143.0.0.0 Safari/537.36 Edg/143.0.0.0^" &
+curl ^"https://nodestatic.fbstatic.cn/weblts_spa_online/ti/chunk-ZUQGULAZ.js^" ^
+  -H ^"accept: */*^" ^
+  -H ^"accept-language: zh-CN,zh;q=0.9,en;q=0.8,en-GB;q=0.7,en-US;q=0.6,ja;q=0.5^" ^
+  -H ^"cache-control: no-cache^" ^
+  -H ^"origin: https://spa.fenbi.com^" ^
+  -H ^"pragma: no-cache^" ^
+  -H ^"priority: u=1^" ^
+  -H ^"referer: https://nodestatic.fbstatic.cn/weblts_spa_online/ti/chunk-D2XZLP7D.js^" ^
+  -H ^"sec-ch-ua: ^\^"Microsoft Edge^\^";v=^\^"143^\^", ^\^"Chromium^\^";v=^\^"143^\^", ^\^"Not A(Brand^\^";v=^\^"24^\^"^" ^
+  -H ^"sec-ch-ua-mobile: ?0^" ^
+  -H ^"sec-ch-ua-platform: ^\^"Windows^\^"^" ^
+  -H ^"sec-fetch-dest: script^" ^
+  -H ^"sec-fetch-mode: cors^" ^
+  -H ^"sec-fetch-site: cross-site^" ^
+  -H ^"user-agent: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/143.0.0.0 Safari/537.36 Edg/143.0.0.0^" &
+curl ^"https://nodestatic.fbstatic.cn/weblts_spa_online/ti/chunk-SSOYFKAN.js^" ^
+  -H ^"accept: */*^" ^
+  -H ^"accept-language: zh-CN,zh;q=0.9,en;q=0.8,en-GB;q=0.7,en-US;q=0.6,ja;q=0.5^" ^
+  -H ^"cache-control: no-cache^" ^
+  -H ^"origin: https://spa.fenbi.com^" ^
+  -H ^"pragma: no-cache^" ^
+  -H ^"priority: u=1^" ^
+  -H ^"referer: https://nodestatic.fbstatic.cn/weblts_spa_online/ti/chunk-D2XZLP7D.js^" ^
+  -H ^"sec-ch-ua: ^\^"Microsoft Edge^\^";v=^\^"143^\^", ^\^"Chromium^\^";v=^\^"143^\^", ^\^"Not A(Brand^\^";v=^\^"24^\^"^" ^
+  -H ^"sec-ch-ua-mobile: ?0^" ^
+  -H ^"sec-ch-ua-platform: ^\^"Windows^\^"^" ^
+  -H ^"sec-fetch-dest: script^" ^
+  -H ^"sec-fetch-mode: cors^" ^
+  -H ^"sec-fetch-site: cross-site^" ^
+  -H ^"user-agent: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/143.0.0.0 Safari/537.36 Edg/143.0.0.0^" &
+curl ^"https://nodestatic.fbstatic.cn/weblts_spa_online/ti/chunk-NE2EZXVZ.js^" ^
+  -H ^"accept: */*^" ^
+  -H ^"accept-language: zh-CN,zh;q=0.9,en;q=0.8,en-GB;q=0.7,en-US;q=0.6,ja;q=0.5^" ^
+  -H ^"cache-control: no-cache^" ^
+  -H ^"origin: https://spa.fenbi.com^" ^
+  -H ^"pragma: no-cache^" ^
+  -H ^"priority: u=1^" ^
+  -H ^"referer: https://nodestatic.fbstatic.cn/weblts_spa_online/ti/chunk-D2XZLP7D.js^" ^
+  -H ^"sec-ch-ua: ^\^"Microsoft Edge^\^";v=^\^"143^\^", ^\^"Chromium^\^";v=^\^"143^\^", ^\^"Not A(Brand^\^";v=^\^"24^\^"^" ^
+  -H ^"sec-ch-ua-mobile: ?0^" ^
+  -H ^"sec-ch-ua-platform: ^\^"Windows^\^"^" ^
+  -H ^"sec-fetch-dest: script^" ^
+  -H ^"sec-fetch-mode: cors^" ^
+  -H ^"sec-fetch-site: cross-site^" ^
+  -H ^"user-agent: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/143.0.0.0 Safari/537.36 Edg/143.0.0.0^" &
+curl ^"https://nodestatic.fbstatic.cn/weblts_spa_online/ti/chunk-ZU4IYIMX.js^" ^
+  -H ^"accept: */*^" ^
+  -H ^"accept-language: zh-CN,zh;q=0.9,en;q=0.8,en-GB;q=0.7,en-US;q=0.6,ja;q=0.5^" ^
+  -H ^"cache-control: no-cache^" ^
+  -H ^"origin: https://spa.fenbi.com^" ^
+  -H ^"pragma: no-cache^" ^
+  -H ^"priority: u=1^" ^
+  -H ^"referer: https://nodestatic.fbstatic.cn/weblts_spa_online/ti/chunk-D2XZLP7D.js^" ^
+  -H ^"sec-ch-ua: ^\^"Microsoft Edge^\^";v=^\^"143^\^", ^\^"Chromium^\^";v=^\^"143^\^", ^\^"Not A(Brand^\^";v=^\^"24^\^"^" ^
+  -H ^"sec-ch-ua-mobile: ?0^" ^
+  -H ^"sec-ch-ua-platform: ^\^"Windows^\^"^" ^
+  -H ^"sec-fetch-dest: script^" ^
+  -H ^"sec-fetch-mode: cors^" ^
+  -H ^"sec-fetch-site: cross-site^" ^
+  -H ^"user-agent: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/143.0.0.0 Safari/537.36 Edg/143.0.0.0^" &
+curl ^"https://ke.fenbi.com/api/v3/members/member_static_config?kav=125^&av=125^&hav=125^&app=web^" ^
+  -H ^"accept: application/json, text/plain, */*^" ^
+  -H ^"accept-language: zh-CN,zh;q=0.9,en;q=0.8,en-GB;q=0.7,en-US;q=0.6,ja;q=0.5^" ^
+  -H ^"cache-control: no-cache^" ^
+  -b ^"sid=3495507; persistent=A5xj9BjQOm1EyQz8VPpRa/9riRSPdxEInSq2c4Yk0QsIiKWBkxItuaUmnAJiAgNCB2Hkfd12n3qLIwSzJKFVfw==; sensorsdata2015jssdkcross=^%^7B^%^22distinct_id^%^22^%^3A^%^2219b0e92dd27bb1-0985a81370bba38-4c657b58-1327104-19b0e92dd28fc3^%^22^%^2C^%^22first_id^%^22^%^3A^%^22^%^22^%^2C^%^22props^%^22^%^3A^%^7B^%^22^%^24latest_traffic_source_type^%^22^%^3A^%^22^%^E7^%^9B^%^B4^%^E6^%^8E^%^A5^%^E6^%^B5^%^81^%^E9^%^87^%^8F^%^22^%^2C^%^22^%^24latest_search_keyword^%^22^%^3A^%^22^%^E6^%^9C^%^AA^%^E5^%^8F^%^96^%^E5^%^88^%^B0^%^E5^%^80^%^BC_^%^E7^%^9B^%^B4^%^E6^%^8E^%^A5^%^E6^%^89^%^93^%^E5^%^BC^%^80^%^22^%^2C^%^22^%^24latest_referrer^%^22^%^3A^%^22^%^22^%^7D^%^2C^%^22^%^24device_id^%^22^%^3A^%^2219b0e92dd27bb1-0985a81370bba38-4c657b58-1327104-19b0e92dd28fc3^%^22^%^7D; sess=WLNjTh9mtYTzCDTkHUtClFUq3lPh8GrhfKUzfgBE/pDqA1upQK0rRwNVoogjnZS795fR9RRlhe/l31iNHFOw672bfpPwzzGwZJxNGOWuinY=; userid=152815018^" ^
+  -H ^"origin: https://spa.fenbi.com^" ^
+  -H ^"pragma: no-cache^" ^
+  -H ^"priority: u=1, i^" ^
+  -H ^"referer: https://spa.fenbi.com/^" ^
+  -H ^"sec-ch-ua: ^\^"Microsoft Edge^\^";v=^\^"143^\^", ^\^"Chromium^\^";v=^\^"143^\^", ^\^"Not A(Brand^\^";v=^\^"24^\^"^" ^
+  -H ^"sec-ch-ua-mobile: ?0^" ^
+  -H ^"sec-ch-ua-platform: ^\^"Windows^\^"^" ^
+  -H ^"sec-fetch-dest: empty^" ^
+  -H ^"sec-fetch-mode: cors^" ^
+  -H ^"sec-fetch-site: same-site^" ^
+  -H ^"user-agent: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/143.0.0.0 Safari/537.36 Edg/143.0.0.0^" &
+curl ^"https://nodestatic.fbstatic.cn/weblts_spa_online/ti/chunk-AC3LUDV5.js^" ^
+  -H ^"accept: */*^" ^
+  -H ^"accept-language: zh-CN,zh;q=0.9,en;q=0.8,en-GB;q=0.7,en-US;q=0.6,ja;q=0.5^" ^
+  -H ^"cache-control: no-cache^" ^
+  -H ^"origin: https://spa.fenbi.com^" ^
+  -H ^"pragma: no-cache^" ^
+  -H ^"priority: u=1^" ^
+  -H ^"referer: https://nodestatic.fbstatic.cn/weblts_spa_online/ti/main-3HOWPFCI.js^" ^
+  -H ^"sec-ch-ua: ^\^"Microsoft Edge^\^";v=^\^"143^\^", ^\^"Chromium^\^";v=^\^"143^\^", ^\^"Not A(Brand^\^";v=^\^"24^\^"^" ^
+  -H ^"sec-ch-ua-mobile: ?0^" ^
+  -H ^"sec-ch-ua-platform: ^\^"Windows^\^"^" ^
+  -H ^"sec-fetch-dest: script^" ^
+  -H ^"sec-fetch-mode: cors^" ^
+  -H ^"sec-fetch-site: cross-site^" ^
+  -H ^"user-agent: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/143.0.0.0 Safari/537.36 Edg/143.0.0.0^" &
+curl ^"https://tiku.fenbi.com/combine/exercise/getSolution?format=html^&key=1_32_1qnstnq^&routecs=jsjyzhzz^&kav=125^&av=125^&hav=125^&app=web^" ^
+  -H ^"accept: application/json, text/plain, */*^" ^
+  -H ^"accept-language: zh-CN,zh;q=0.9,en;q=0.8,en-GB;q=0.7,en-US;q=0.6,ja;q=0.5^" ^
+  -H ^"cache-control: no-cache^" ^
+  -b ^"sid=3495507; persistent=A5xj9BjQOm1EyQz8VPpRa/9riRSPdxEInSq2c4Yk0QsIiKWBkxItuaUmnAJiAgNCB2Hkfd12n3qLIwSzJKFVfw==; sensorsdata2015jssdkcross=^%^7B^%^22distinct_id^%^22^%^3A^%^2219b0e92dd27bb1-0985a81370bba38-4c657b58-1327104-19b0e92dd28fc3^%^22^%^2C^%^22first_id^%^22^%^3A^%^22^%^22^%^2C^%^22props^%^22^%^3A^%^7B^%^22^%^24latest_traffic_source_type^%^22^%^3A^%^22^%^E7^%^9B^%^B4^%^E6^%^8E^%^A5^%^E6^%^B5^%^81^%^E9^%^87^%^8F^%^22^%^2C^%^22^%^24latest_search_keyword^%^22^%^3A^%^22^%^E6^%^9C^%^AA^%^E5^%^8F^%^96^%^E5^%^88^%^B0^%^E5^%^80^%^BC_^%^E7^%^9B^%^B4^%^E6^%^8E^%^A5^%^E6^%^89^%^93^%^E5^%^BC^%^80^%^22^%^2C^%^22^%^24latest_referrer^%^22^%^3A^%^22^%^22^%^7D^%^2C^%^22^%^24device_id^%^22^%^3A^%^2219b0e92dd27bb1-0985a81370bba38-4c657b58-1327104-19b0e92dd28fc3^%^22^%^7D; sess=WLNjTh9mtYTzCDTkHUtClFUq3lPh8GrhfKUzfgBE/pDqA1upQK0rRwNVoogjnZS795fR9RRlhe/l31iNHFOw672bfpPwzzGwZJxNGOWuinY=; userid=152815018; acw_tc=0bd17c5217664432532552303ebe18ebe390fbf317c200464e993a0e9c1964^" ^
+  -H ^"origin: https://spa.fenbi.com^" ^
+  -H ^"pragma: no-cache^" ^
+  -H ^"priority: u=1, i^" ^
+  -H ^"referer: https://spa.fenbi.com/^" ^
+  -H ^"sec-ch-ua: ^\^"Microsoft Edge^\^";v=^\^"143^\^", ^\^"Chromium^\^";v=^\^"143^\^", ^\^"Not A(Brand^\^";v=^\^"24^\^"^" ^
+  -H ^"sec-ch-ua-mobile: ?0^" ^
+  -H ^"sec-ch-ua-platform: ^\^"Windows^\^"^" ^
+  -H ^"sec-fetch-dest: empty^" ^
+  -H ^"sec-fetch-mode: cors^" ^
+  -H ^"sec-fetch-site: same-site^" ^
+  -H ^"user-agent: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/143.0.0.0 Safari/537.36 Edg/143.0.0.0^" &
+curl ^"https://tiku.fenbi.com/combine/exercise/getReport?format=html^&key=1_32_1qnstnq^&routecs=jsjyzhzz^&no_toast^&kav=125^&av=125^&hav=125^&app=web^" ^
+  -H ^"accept: application/json, text/plain, */*^" ^
+  -H ^"accept-language: zh-CN,zh;q=0.9,en;q=0.8,en-GB;q=0.7,en-US;q=0.6,ja;q=0.5^" ^
+  -H ^"cache-control: no-cache^" ^
+  -b ^"sid=3495507; persistent=A5xj9BjQOm1EyQz8VPpRa/9riRSPdxEInSq2c4Yk0QsIiKWBkxItuaUmnAJiAgNCB2Hkfd12n3qLIwSzJKFVfw==; sensorsdata2015jssdkcross=^%^7B^%^22distinct_id^%^22^%^3A^%^2219b0e92dd27bb1-0985a81370bba38-4c657b58-1327104-19b0e92dd28fc3^%^22^%^2C^%^22first_id^%^22^%^3A^%^22^%^22^%^2C^%^22props^%^22^%^3A^%^7B^%^22^%^24latest_traffic_source_type^%^22^%^3A^%^22^%^E7^%^9B^%^B4^%^E6^%^8E^%^A5^%^E6^%^B5^%^81^%^E9^%^87^%^8F^%^22^%^2C^%^22^%^24latest_search_keyword^%^22^%^3A^%^22^%^E6^%^9C^%^AA^%^E5^%^8F^%^96^%^E5^%^88^%^B0^%^E5^%^80^%^BC_^%^E7^%^9B^%^B4^%^E6^%^8E^%^A5^%^E6^%^89^%^93^%^E5^%^BC^%^80^%^22^%^2C^%^22^%^24latest_referrer^%^22^%^3A^%^22^%^22^%^7D^%^2C^%^22^%^24device_id^%^22^%^3A^%^2219b0e92dd27bb1-0985a81370bba38-4c657b58-1327104-19b0e92dd28fc3^%^22^%^7D; sess=WLNjTh9mtYTzCDTkHUtClFUq3lPh8GrhfKUzfgBE/pDqA1upQK0rRwNVoogjnZS795fR9RRlhe/l31iNHFOw672bfpPwzzGwZJxNGOWuinY=; userid=152815018; acw_tc=0bd17c5217664432532552303ebe18ebe390fbf317c200464e993a0e9c1964^" ^
+  -H ^"origin: https://spa.fenbi.com^" ^
+  -H ^"pragma: no-cache^" ^
+  -H ^"priority: u=1, i^" ^
+  -H ^"referer: https://spa.fenbi.com/^" ^
+  -H ^"sec-ch-ua: ^\^"Microsoft Edge^\^";v=^\^"143^\^", ^\^"Chromium^\^";v=^\^"143^\^", ^\^"Not A(Brand^\^";v=^\^"24^\^"^" ^
+  -H ^"sec-ch-ua-mobile: ?0^" ^
+  -H ^"sec-ch-ua-platform: ^\^"Windows^\^"^" ^
+  -H ^"sec-fetch-dest: empty^" ^
+  -H ^"sec-fetch-mode: cors^" ^
+  -H ^"sec-fetch-site: same-site^" ^
+  -H ^"user-agent: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/143.0.0.0 Safari/537.36 Edg/143.0.0.0^" &
+curl ^"https://nodestatic.fbstatic.cn/weblts_spa_online/ti/media/report-score-info-left-bg-5ENTHNLB.png^" ^
+  -H ^"accept: image/avif,image/webp,image/apng,image/svg+xml,image/*,*/*;q=0.8^" ^
+  -H ^"accept-language: zh-CN,zh;q=0.9,en;q=0.8,en-GB;q=0.7,en-US;q=0.6,ja;q=0.5^" ^
+  -H ^"cache-control: no-cache^" ^
+  -H ^"pragma: no-cache^" ^
+  -H ^"priority: u=1, i^" ^
+  -H ^"referer: https://spa.fenbi.com/^" ^
+  -H ^"sec-ch-ua: ^\^"Microsoft Edge^\^";v=^\^"143^\^", ^\^"Chromium^\^";v=^\^"143^\^", ^\^"Not A(Brand^\^";v=^\^"24^\^"^" ^
+  -H ^"sec-ch-ua-mobile: ?0^" ^
+  -H ^"sec-ch-ua-platform: ^\^"Windows^\^"^" ^
+  -H ^"sec-fetch-dest: image^" ^
+  -H ^"sec-fetch-mode: no-cors^" ^
+  -H ^"sec-fetch-site: cross-site^" ^
+  -H ^"sec-fetch-storage-access: active^" ^
+  -H ^"user-agent: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/143.0.0.0 Safari/537.36 Edg/143.0.0.0^" &
+curl ^"https://nodestatic.fbstatic.cn/weblts_spa_online/ti/media/report-score-info-right-bg-BZ7P7E4N.png^" ^
+  -H ^"accept: image/avif,image/webp,image/apng,image/svg+xml,image/*,*/*;q=0.8^" ^
+  -H ^"accept-language: zh-CN,zh;q=0.9,en;q=0.8,en-GB;q=0.7,en-US;q=0.6,ja;q=0.5^" ^
+  -H ^"cache-control: no-cache^" ^
+  -H ^"pragma: no-cache^" ^
+  -H ^"priority: u=1, i^" ^
+  -H ^"referer: https://spa.fenbi.com/^" ^
+  -H ^"sec-ch-ua: ^\^"Microsoft Edge^\^";v=^\^"143^\^", ^\^"Chromium^\^";v=^\^"143^\^", ^\^"Not A(Brand^\^";v=^\^"24^\^"^" ^
+  -H ^"sec-ch-ua-mobile: ?0^" ^
+  -H ^"sec-ch-ua-platform: ^\^"Windows^\^"^" ^
+  -H ^"sec-fetch-dest: image^" ^
+  -H ^"sec-fetch-mode: no-cors^" ^
+  -H ^"sec-fetch-site: cross-site^" ^
+  -H ^"sec-fetch-storage-access: active^" ^
+  -H ^"user-agent: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/143.0.0.0 Safari/537.36 Edg/143.0.0.0^" &
+curl ^"https://nodestatic.fbstatic.cn/pan/downloads/2a811c6cd99f8a0fc5b38d8e7e1d5667.js^" ^
+  -H ^"accept: */*^" ^
+  -H ^"accept-language: zh-CN,zh;q=0.9,en;q=0.8,en-GB;q=0.7,en-US;q=0.6,ja;q=0.5^" ^
+  -H ^"cache-control: no-cache^" ^
+  -H ^"pragma: no-cache^" ^
+  -H ^"referer: https://spa.fenbi.com/^" ^
+  -H ^"sec-ch-ua: ^\^"Microsoft Edge^\^";v=^\^"143^\^", ^\^"Chromium^\^";v=^\^"143^\^", ^\^"Not A(Brand^\^";v=^\^"24^\^"^" ^
+  -H ^"sec-ch-ua-mobile: ?0^" ^
+  -H ^"sec-ch-ua-platform: ^\^"Windows^\^"^" ^
+  -H ^"sec-fetch-dest: script^" ^
+  -H ^"sec-fetch-mode: no-cors^" ^
+  -H ^"sec-fetch-site: cross-site^" ^
+  -H ^"sec-fetch-storage-access: active^" ^
+  -H ^"user-agent: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/143.0.0.0 Safari/537.36 Edg/143.0.0.0^" &
+curl ^"https://tiku.fenbi.com/combine/static/solution?key=K1k2KL2qVT21ozEEsDrITeb4l6WTYnPKwaqa50toHR2EpYV8SEWy5ING48eNn7VIU1kV3xCnqUPj-nm79jXcHdrTaTfin4PqVAcUNm7d2T-6hKBFo89B5VSu1COtOmxQ-7GQF7g2GqVspEzUZC0kRQnuMC9Y3FjFqoIjzdcVkR3EYrqeEuDCe8znhlPioGwNxn5uRfzfxhorIBRoku05Enp0qDWnr5bj0mFHU1Efx0ZhWlFKcJMqoFNbe4L-c0HzkvWtf53L6jmvMS2VEJM3xNTnDmAKy7Owrvj7em1Wvk0efhEaG_hYsxJMVV9603KE3TbPSRK1B4vYG6JLRAQO03Z_tBQZDP8U6Yy5XMpdr1ySSDjUUG9J0MlZQicYvV05OOU-ymad2qSay6-hUbAi2Jpe_Wl1SuAytn0DBioVTxBzJ-jtXewTNnO_tmsThAkUI8YYNtRRJNv-KQ7ejB09eCEgzD4z17IeAILNyVH9tOy0zHe9h35sHzMsXczDOyTDmM8-bkKZbNsefUy_u6gGVBjkY61s6pL3OfFGXWp37KiMTWPWmzTjnEaIItXe2qOKxg^&routecs=jsjyzhzz^&type=1^&kav=125^&av=125^&hav=125^&app=web^" ^
+  -H ^"accept: application/json, text/plain, */*^" ^
+  -H ^"accept-language: zh-CN,zh;q=0.9,en;q=0.8,en-GB;q=0.7,en-US;q=0.6,ja;q=0.5^" ^
+  -H ^"cache-control: no-cache^" ^
+  -b ^"sid=3495507; persistent=A5xj9BjQOm1EyQz8VPpRa/9riRSPdxEInSq2c4Yk0QsIiKWBkxItuaUmnAJiAgNCB2Hkfd12n3qLIwSzJKFVfw==; sensorsdata2015jssdkcross=^%^7B^%^22distinct_id^%^22^%^3A^%^2219b0e92dd27bb1-0985a81370bba38-4c657b58-1327104-19b0e92dd28fc3^%^22^%^2C^%^22first_id^%^22^%^3A^%^22^%^22^%^2C^%^22props^%^22^%^3A^%^7B^%^22^%^24latest_traffic_source_type^%^22^%^3A^%^22^%^E7^%^9B^%^B4^%^E6^%^8E^%^A5^%^E6^%^B5^%^81^%^E9^%^87^%^8F^%^22^%^2C^%^22^%^24latest_search_keyword^%^22^%^3A^%^22^%^E6^%^9C^%^AA^%^E5^%^8F^%^96^%^E5^%^88^%^B0^%^E5^%^80^%^BC_^%^E7^%^9B^%^B4^%^E6^%^8E^%^A5^%^E6^%^89^%^93^%^E5^%^BC^%^80^%^22^%^2C^%^22^%^24latest_referrer^%^22^%^3A^%^22^%^22^%^7D^%^2C^%^22^%^24device_id^%^22^%^3A^%^2219b0e92dd27bb1-0985a81370bba38-4c657b58-1327104-19b0e92dd28fc3^%^22^%^7D; sess=WLNjTh9mtYTzCDTkHUtClFUq3lPh8GrhfKUzfgBE/pDqA1upQK0rRwNVoogjnZS795fR9RRlhe/l31iNHFOw672bfpPwzzGwZJxNGOWuinY=; userid=152815018; acw_tc=0bd17c5217664432532552303ebe18ebe390fbf317c200464e993a0e9c1964^" ^
+  -H ^"origin: https://spa.fenbi.com^" ^
+  -H ^"pragma: no-cache^" ^
+  -H ^"priority: u=1, i^" ^
+  -H ^"referer: https://spa.fenbi.com/^" ^
+  -H ^"sec-ch-ua: ^\^"Microsoft Edge^\^";v=^\^"143^\^", ^\^"Chromium^\^";v=^\^"143^\^", ^\^"Not A(Brand^\^";v=^\^"24^\^"^" ^
+  -H ^"sec-ch-ua-mobile: ?0^" ^
+  -H ^"sec-ch-ua-platform: ^\^"Windows^\^"^" ^
+  -H ^"sec-fetch-dest: empty^" ^
+  -H ^"sec-fetch-mode: cors^" ^
+  -H ^"sec-fetch-site: same-site^" ^
+  -H ^"user-agent: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/143.0.0.0 Safari/537.36 Edg/143.0.0.0^" &
+curl ^"https://nodestatic.fbstatic.cn/weblts_spa_online/ti/media/report-difficulty-icon-7VYY2NGX.png^" ^
+  -H ^"accept: image/avif,image/webp,image/apng,image/svg+xml,image/*,*/*;q=0.8^" ^
+  -H ^"accept-language: zh-CN,zh;q=0.9,en;q=0.8,en-GB;q=0.7,en-US;q=0.6,ja;q=0.5^" ^
+  -H ^"cache-control: no-cache^" ^
+  -H ^"pragma: no-cache^" ^
+  -H ^"priority: i^" ^
+  -H ^"referer: https://spa.fenbi.com/^" ^
+  -H ^"sec-ch-ua: ^\^"Microsoft Edge^\^";v=^\^"143^\^", ^\^"Chromium^\^";v=^\^"143^\^", ^\^"Not A(Brand^\^";v=^\^"24^\^"^" ^
+  -H ^"sec-ch-ua-mobile: ?0^" ^
+  -H ^"sec-ch-ua-platform: ^\^"Windows^\^"^" ^
+  -H ^"sec-fetch-dest: image^" ^
+  -H ^"sec-fetch-mode: no-cors^" ^
+  -H ^"sec-fetch-site: cross-site^" ^
+  -H ^"sec-fetch-storage-access: active^" ^
+  -H ^"user-agent: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/143.0.0.0 Safari/537.36 Edg/143.0.0.0^" &
+curl ^"https://nodestatic.fbstatic.cn/weblts_spa_online/ti/media/report-overall-1-KPCWNQG6.png^" ^
+  -H ^"accept: image/avif,image/webp,image/apng,image/svg+xml,image/*,*/*;q=0.8^" ^
+  -H ^"accept-language: zh-CN,zh;q=0.9,en;q=0.8,en-GB;q=0.7,en-US;q=0.6,ja;q=0.5^" ^
+  -H ^"cache-control: no-cache^" ^
+  -H ^"pragma: no-cache^" ^
+  -H ^"priority: i^" ^
+  -H ^"referer: https://spa.fenbi.com/^" ^
+  -H ^"sec-ch-ua: ^\^"Microsoft Edge^\^";v=^\^"143^\^", ^\^"Chromium^\^";v=^\^"143^\^", ^\^"Not A(Brand^\^";v=^\^"24^\^"^" ^
+  -H ^"sec-ch-ua-mobile: ?0^" ^
+  -H ^"sec-ch-ua-platform: ^\^"Windows^\^"^" ^
+  -H ^"sec-fetch-dest: image^" ^
+  -H ^"sec-fetch-mode: no-cors^" ^
+  -H ^"sec-fetch-site: cross-site^" ^
+  -H ^"sec-fetch-storage-access: active^" ^
+  -H ^"user-agent: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/143.0.0.0 Safari/537.36 Edg/143.0.0.0^" &
+curl ^"https://nodestatic.fbstatic.cn/weblts_spa_online/ti/media/report-overall-2-ASSYR7OV.png^" ^
+  -H ^"accept: image/avif,image/webp,image/apng,image/svg+xml,image/*,*/*;q=0.8^" ^
+  -H ^"accept-language: zh-CN,zh;q=0.9,en;q=0.8,en-GB;q=0.7,en-US;q=0.6,ja;q=0.5^" ^
+  -H ^"cache-control: no-cache^" ^
+  -H ^"pragma: no-cache^" ^
+  -H ^"priority: i^" ^
+  -H ^"referer: https://spa.fenbi.com/^" ^
+  -H ^"sec-ch-ua: ^\^"Microsoft Edge^\^";v=^\^"143^\^", ^\^"Chromium^\^";v=^\^"143^\^", ^\^"Not A(Brand^\^";v=^\^"24^\^"^" ^
+  -H ^"sec-ch-ua-mobile: ?0^" ^
+  -H ^"sec-ch-ua-platform: ^\^"Windows^\^"^" ^
+  -H ^"sec-fetch-dest: image^" ^
+  -H ^"sec-fetch-mode: no-cors^" ^
+  -H ^"sec-fetch-site: cross-site^" ^
+  -H ^"sec-fetch-storage-access: active^" ^
+  -H ^"user-agent: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/143.0.0.0 Safari/537.36 Edg/143.0.0.0^" &
+curl ^"https://nodestatic.fbstatic.cn/weblts_spa_online/ti/media/report-overall-3-4MVPKIV4.png^" ^
+  -H ^"accept: image/avif,image/webp,image/apng,image/svg+xml,image/*,*/*;q=0.8^" ^
+  -H ^"accept-language: zh-CN,zh;q=0.9,en;q=0.8,en-GB;q=0.7,en-US;q=0.6,ja;q=0.5^" ^
+  -H ^"cache-control: no-cache^" ^
+  -H ^"pragma: no-cache^" ^
+  -H ^"priority: i^" ^
+  -H ^"referer: https://spa.fenbi.com/^" ^
+  -H ^"sec-ch-ua: ^\^"Microsoft Edge^\^";v=^\^"143^\^", ^\^"Chromium^\^";v=^\^"143^\^", ^\^"Not A(Brand^\^";v=^\^"24^\^"^" ^
+  -H ^"sec-ch-ua-mobile: ?0^" ^
+  -H ^"sec-ch-ua-platform: ^\^"Windows^\^"^" ^
+  -H ^"sec-fetch-dest: image^" ^
+  -H ^"sec-fetch-mode: no-cors^" ^
+  -H ^"sec-fetch-site: cross-site^" ^
+  -H ^"sec-fetch-storage-access: active^" ^
+  -H ^"user-agent: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/143.0.0.0 Safari/537.36 Edg/143.0.0.0^" &
+curl ^"https://nodestatic.fbstatic.cn/weblts_spa_online/ti/media/report-keypoint-icon-0-3Z65OB7X.png^" ^
+  -H ^"accept: image/avif,image/webp,image/apng,image/svg+xml,image/*,*/*;q=0.8^" ^
+  -H ^"accept-language: zh-CN,zh;q=0.9,en;q=0.8,en-GB;q=0.7,en-US;q=0.6,ja;q=0.5^" ^
+  -H ^"cache-control: no-cache^" ^
+  -H ^"pragma: no-cache^" ^
+  -H ^"priority: i^" ^
+  -H ^"referer: https://spa.fenbi.com/^" ^
+  -H ^"sec-ch-ua: ^\^"Microsoft Edge^\^";v=^\^"143^\^", ^\^"Chromium^\^";v=^\^"143^\^", ^\^"Not A(Brand^\^";v=^\^"24^\^"^" ^
+  -H ^"sec-ch-ua-mobile: ?0^" ^
+  -H ^"sec-ch-ua-platform: ^\^"Windows^\^"^" ^
+  -H ^"sec-fetch-dest: image^" ^
+  -H ^"sec-fetch-mode: no-cors^" ^
+  -H ^"sec-fetch-site: cross-site^" ^
+  -H ^"sec-fetch-storage-access: active^" ^
+  -H ^"user-agent: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/143.0.0.0 Safari/537.36 Edg/143.0.0.0^" &
+curl ^"https://nodestatic.fbstatic.cn/weblts_spa_online/ti/media/toggle-icon-0-XVF7KNDX.png^" ^
+  -H ^"accept: image/avif,image/webp,image/apng,image/svg+xml,image/*,*/*;q=0.8^" ^
+  -H ^"accept-language: zh-CN,zh;q=0.9,en;q=0.8,en-GB;q=0.7,en-US;q=0.6,ja;q=0.5^" ^
+  -H ^"cache-control: no-cache^" ^
+  -H ^"pragma: no-cache^" ^
+  -H ^"priority: i^" ^
+  -H ^"referer: https://spa.fenbi.com/^" ^
+  -H ^"sec-ch-ua: ^\^"Microsoft Edge^\^";v=^\^"143^\^", ^\^"Chromium^\^";v=^\^"143^\^", ^\^"Not A(Brand^\^";v=^\^"24^\^"^" ^
+  -H ^"sec-ch-ua-mobile: ?0^" ^
+  -H ^"sec-ch-ua-platform: ^\^"Windows^\^"^" ^
+  -H ^"sec-fetch-dest: image^" ^
+  -H ^"sec-fetch-mode: no-cors^" ^
+  -H ^"sec-fetch-site: cross-site^" ^
+  -H ^"sec-fetch-storage-access: active^" ^
+  -H ^"user-agent: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/143.0.0.0 Safari/537.36 Edg/143.0.0.0^" &
+curl ^"https://nodestatic.fbstatic.cn/weblts_spa_online/ti/media/toggle-icon-1-HCWEXQ3J.png^" ^
+  -H ^"accept: image/avif,image/webp,image/apng,image/svg+xml,image/*,*/*;q=0.8^" ^
+  -H ^"accept-language: zh-CN,zh;q=0.9,en;q=0.8,en-GB;q=0.7,en-US;q=0.6,ja;q=0.5^" ^
+  -H ^"cache-control: no-cache^" ^
+  -H ^"pragma: no-cache^" ^
+  -H ^"priority: i^" ^
+  -H ^"referer: https://spa.fenbi.com/^" ^
+  -H ^"sec-ch-ua: ^\^"Microsoft Edge^\^";v=^\^"143^\^", ^\^"Chromium^\^";v=^\^"143^\^", ^\^"Not A(Brand^\^";v=^\^"24^\^"^" ^
+  -H ^"sec-ch-ua-mobile: ?0^" ^
+  -H ^"sec-ch-ua-platform: ^\^"Windows^\^"^" ^
+  -H ^"sec-fetch-dest: image^" ^
+  -H ^"sec-fetch-mode: no-cors^" ^
+  -H ^"sec-fetch-site: cross-site^" ^
+  -H ^"sec-fetch-storage-access: active^" ^
+  -H ^"user-agent: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/143.0.0.0 Safari/537.36 Edg/143.0.0.0^" &
+curl ^"https://nodestatic.fbstatic.cn/weblts_spa_online/ti/media/toggle-icon-2-ACK7JBO6.png^" ^
+  -H ^"accept: image/avif,image/webp,image/apng,image/svg+xml,image/*,*/*;q=0.8^" ^
+  -H ^"accept-language: zh-CN,zh;q=0.9,en;q=0.8,en-GB;q=0.7,en-US;q=0.6,ja;q=0.5^" ^
+  -H ^"cache-control: no-cache^" ^
+  -H ^"pragma: no-cache^" ^
+  -H ^"priority: i^" ^
+  -H ^"referer: https://spa.fenbi.com/^" ^
+  -H ^"sec-ch-ua: ^\^"Microsoft Edge^\^";v=^\^"143^\^", ^\^"Chromium^\^";v=^\^"143^\^", ^\^"Not A(Brand^\^";v=^\^"24^\^"^" ^
+  -H ^"sec-ch-ua-mobile: ?0^" ^
+  -H ^"sec-ch-ua-platform: ^\^"Windows^\^"^" ^
+  -H ^"sec-fetch-dest: image^" ^
+  -H ^"sec-fetch-mode: no-cors^" ^
+  -H ^"sec-fetch-site: cross-site^" ^
+  -H ^"sec-fetch-storage-access: active^" ^
+  -H ^"user-agent: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/143.0.0.0 Safari/537.36 Edg/143.0.0.0^" &
+curl ^"https://nodestatic.fbstatic.cn/weblts_spa_online/ti/media/toggle-icon-2-no-PVGPKTOP.png^" ^
+  -H ^"accept: image/avif,image/webp,image/apng,image/svg+xml,image/*,*/*;q=0.8^" ^
+  -H ^"accept-language: zh-CN,zh;q=0.9,en;q=0.8,en-GB;q=0.7,en-US;q=0.6,ja;q=0.5^" ^
+  -H ^"cache-control: no-cache^" ^
+  -H ^"pragma: no-cache^" ^
+  -H ^"priority: i^" ^
+  -H ^"referer: https://spa.fenbi.com/^" ^
+  -H ^"sec-ch-ua: ^\^"Microsoft Edge^\^";v=^\^"143^\^", ^\^"Chromium^\^";v=^\^"143^\^", ^\^"Not A(Brand^\^";v=^\^"24^\^"^" ^
+  -H ^"sec-ch-ua-mobile: ?0^" ^
+  -H ^"sec-ch-ua-platform: ^\^"Windows^\^"^" ^
+  -H ^"sec-fetch-dest: image^" ^
+  -H ^"sec-fetch-mode: no-cors^" ^
+  -H ^"sec-fetch-site: cross-site^" ^
+  -H ^"sec-fetch-storage-access: active^" ^
+  -H ^"user-agent: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/143.0.0.0 Safari/537.36 Edg/143.0.0.0^" &
+curl ^"https://nodestatic.fbstatic.cn/weblts_spa_online/ti/media/toggle-icon-1-no-OYBHJAM4.png^" ^
+  -H ^"accept: image/avif,image/webp,image/apng,image/svg+xml,image/*,*/*;q=0.8^" ^
+  -H ^"accept-language: zh-CN,zh;q=0.9,en;q=0.8,en-GB;q=0.7,en-US;q=0.6,ja;q=0.5^" ^
+  -H ^"cache-control: no-cache^" ^
+  -H ^"pragma: no-cache^" ^
+  -H ^"priority: i^" ^
+  -H ^"referer: https://spa.fenbi.com/^" ^
+  -H ^"sec-ch-ua: ^\^"Microsoft Edge^\^";v=^\^"143^\^", ^\^"Chromium^\^";v=^\^"143^\^", ^\^"Not A(Brand^\^";v=^\^"24^\^"^" ^
+  -H ^"sec-ch-ua-mobile: ?0^" ^
+  -H ^"sec-ch-ua-platform: ^\^"Windows^\^"^" ^
+  -H ^"sec-fetch-dest: image^" ^
+  -H ^"sec-fetch-mode: no-cors^" ^
+  -H ^"sec-fetch-site: cross-site^" ^
+  -H ^"sec-fetch-storage-access: active^" ^
+  -H ^"user-agent: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/143.0.0.0 Safari/537.36 Edg/143.0.0.0^" &
+curl ^"https://ke.fenbi.com/api/v3/members/my?kav=125^&av=125^&hav=125^&app=web^" ^
+  -H ^"accept: application/json, text/plain, */*^" ^
+  -H ^"accept-language: zh-CN,zh;q=0.9,en;q=0.8,en-GB;q=0.7,en-US;q=0.6,ja;q=0.5^" ^
+  -H ^"cache-control: no-cache^" ^
+  -b ^"sid=3495507; persistent=A5xj9BjQOm1EyQz8VPpRa/9riRSPdxEInSq2c4Yk0QsIiKWBkxItuaUmnAJiAgNCB2Hkfd12n3qLIwSzJKFVfw==; sensorsdata2015jssdkcross=^%^7B^%^22distinct_id^%^22^%^3A^%^2219b0e92dd27bb1-0985a81370bba38-4c657b58-1327104-19b0e92dd28fc3^%^22^%^2C^%^22first_id^%^22^%^3A^%^22^%^22^%^2C^%^22props^%^22^%^3A^%^7B^%^22^%^24latest_traffic_source_type^%^22^%^3A^%^22^%^E7^%^9B^%^B4^%^E6^%^8E^%^A5^%^E6^%^B5^%^81^%^E9^%^87^%^8F^%^22^%^2C^%^22^%^24latest_search_keyword^%^22^%^3A^%^22^%^E6^%^9C^%^AA^%^E5^%^8F^%^96^%^E5^%^88^%^B0^%^E5^%^80^%^BC_^%^E7^%^9B^%^B4^%^E6^%^8E^%^A5^%^E6^%^89^%^93^%^E5^%^BC^%^80^%^22^%^2C^%^22^%^24latest_referrer^%^22^%^3A^%^22^%^22^%^7D^%^2C^%^22^%^24device_id^%^22^%^3A^%^2219b0e92dd27bb1-0985a81370bba38-4c657b58-1327104-19b0e92dd28fc3^%^22^%^7D; sess=WLNjTh9mtYTzCDTkHUtClFUq3lPh8GrhfKUzfgBE/pDqA1upQK0rRwNVoogjnZS795fR9RRlhe/l31iNHFOw672bfpPwzzGwZJxNGOWuinY=; userid=152815018^" ^
+  -H ^"origin: https://spa.fenbi.com^" ^
+  -H ^"pragma: no-cache^" ^
+  -H ^"priority: u=1, i^" ^
+  -H ^"referer: https://spa.fenbi.com/^" ^
+  -H ^"sec-ch-ua: ^\^"Microsoft Edge^\^";v=^\^"143^\^", ^\^"Chromium^\^";v=^\^"143^\^", ^\^"Not A(Brand^\^";v=^\^"24^\^"^" ^
+  -H ^"sec-ch-ua-mobile: ?0^" ^
+  -H ^"sec-ch-ua-platform: ^\^"Windows^\^"^" ^
+  -H ^"sec-fetch-dest: empty^" ^
+  -H ^"sec-fetch-mode: cors^" ^
+  -H ^"sec-fetch-site: same-site^" ^
+  -H ^"user-agent: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/143.0.0.0 Safari/537.36 Edg/143.0.0.0^" &
+curl ^"https://tiku.fenbi.com/combine/mark/getMark?exerciseKey=1_32_1qnstnq^&routecs=jsjyzhzz^&kav=125^&av=125^&hav=125^&app=web^" ^
+  -H ^"accept: application/json, text/plain, */*^" ^
+  -H ^"accept-language: zh-CN,zh;q=0.9,en;q=0.8,en-GB;q=0.7,en-US;q=0.6,ja;q=0.5^" ^
+  -H ^"cache-control: no-cache^" ^
+  -b ^"sid=3495507; persistent=A5xj9BjQOm1EyQz8VPpRa/9riRSPdxEInSq2c4Yk0QsIiKWBkxItuaUmnAJiAgNCB2Hkfd12n3qLIwSzJKFVfw==; sensorsdata2015jssdkcross=^%^7B^%^22distinct_id^%^22^%^3A^%^2219b0e92dd27bb1-0985a81370bba38-4c657b58-1327104-19b0e92dd28fc3^%^22^%^2C^%^22first_id^%^22^%^3A^%^22^%^22^%^2C^%^22props^%^22^%^3A^%^7B^%^22^%^24latest_traffic_source_type^%^22^%^3A^%^22^%^E7^%^9B^%^B4^%^E6^%^8E^%^A5^%^E6^%^B5^%^81^%^E9^%^87^%^8F^%^22^%^2C^%^22^%^24latest_search_keyword^%^22^%^3A^%^22^%^E6^%^9C^%^AA^%^E5^%^8F^%^96^%^E5^%^88^%^B0^%^E5^%^80^%^BC_^%^E7^%^9B^%^B4^%^E6^%^8E^%^A5^%^E6^%^89^%^93^%^E5^%^BC^%^80^%^22^%^2C^%^22^%^24latest_referrer^%^22^%^3A^%^22^%^22^%^7D^%^2C^%^22^%^24device_id^%^22^%^3A^%^2219b0e92dd27bb1-0985a81370bba38-4c657b58-1327104-19b0e92dd28fc3^%^22^%^7D; sess=WLNjTh9mtYTzCDTkHUtClFUq3lPh8GrhfKUzfgBE/pDqA1upQK0rRwNVoogjnZS795fR9RRlhe/l31iNHFOw672bfpPwzzGwZJxNGOWuinY=; userid=152815018; acw_tc=0bd17c5217664432532552303ebe18ebe390fbf317c200464e993a0e9c1964^" ^
+  -H ^"origin: https://spa.fenbi.com^" ^
+  -H ^"pragma: no-cache^" ^
+  -H ^"priority: u=1, i^" ^
+  -H ^"referer: https://spa.fenbi.com/^" ^
+  -H ^"sec-ch-ua: ^\^"Microsoft Edge^\^";v=^\^"143^\^", ^\^"Chromium^\^";v=^\^"143^\^", ^\^"Not A(Brand^\^";v=^\^"24^\^"^" ^
+  -H ^"sec-ch-ua-mobile: ?0^" ^
+  -H ^"sec-ch-ua-platform: ^\^"Windows^\^"^" ^
+  -H ^"sec-fetch-dest: empty^" ^
+  -H ^"sec-fetch-mode: cors^" ^
+  -H ^"sec-fetch-site: same-site^" ^
+  -H ^"user-agent: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/143.0.0.0 Safari/537.36 Edg/143.0.0.0^" &
+curl ^"https://tiku.fenbi.com/combine/collect/getCollect?requestKey=K1k2KL2qVT21ozEEsDrITeb4l6WTYnPKwaqa50toHR2EpYV8SEWy5ING48eNn7VIU1kV3xCnqUPj-nm79jXcHdrTaTfin4PqVAcUNm7d2T-6hKBFo89B5VSu1COtOmxQ-7GQF7g2GqVspEzUZC0kRQnuMC9Y3FjFqoIjzdcVkR3EYrqeEuDCe8znhlPioGwNxn5uRfzfxhorIBRoku05Enp0qDWnr5bj0mFHU1Efx0ZhWlFKcJMqoFNbe4L-c0HzkvWtf53L6jmvMS2VEJM3xNTnDmAKy7Owrvj7em1Wvk0efhEaG_hYsxJMVV9603KE3TbPSRK1B4vYG6JLRAQO03Z_tBQZDP8U6Yy5XMpdr1ySSDjUUG9J0MlZQicYvV05OOU-ymad2qSay6-hUbAi2Jpe_Wl1SuAytn0DBioVTxBzJ-jtXewTNnO_tmsThAkUI8YYNtRRJNv-KQ7ejB09eCEgzD4z17IeAILNyVH9tOy0zHe9h35sHzMsXczDOyTDmM8-bkKZbNsefUy_u6gGVBjkY61s6pL3OfFGXWp37KiMTWPWmzTjnEaIItXe2qOKxg^&routecs=jsjyzhzz^&kav=125^&av=125^&hav=125^&app=web^" ^
+  -H ^"accept: application/json, text/plain, */*^" ^
+  -H ^"accept-language: zh-CN,zh;q=0.9,en;q=0.8,en-GB;q=0.7,en-US;q=0.6,ja;q=0.5^" ^
+  -H ^"cache-control: no-cache^" ^
+  -b ^"sid=3495507; persistent=A5xj9BjQOm1EyQz8VPpRa/9riRSPdxEInSq2c4Yk0QsIiKWBkxItuaUmnAJiAgNCB2Hkfd12n3qLIwSzJKFVfw==; sensorsdata2015jssdkcross=^%^7B^%^22distinct_id^%^22^%^3A^%^2219b0e92dd27bb1-0985a81370bba38-4c657b58-1327104-19b0e92dd28fc3^%^22^%^2C^%^22first_id^%^22^%^3A^%^22^%^22^%^2C^%^22props^%^22^%^3A^%^7B^%^22^%^24latest_traffic_source_type^%^22^%^3A^%^22^%^E7^%^9B^%^B4^%^E6^%^8E^%^A5^%^E6^%^B5^%^81^%^E9^%^87^%^8F^%^22^%^2C^%^22^%^24latest_search_keyword^%^22^%^3A^%^22^%^E6^%^9C^%^AA^%^E5^%^8F^%^96^%^E5^%^88^%^B0^%^E5^%^80^%^BC_^%^E7^%^9B^%^B4^%^E6^%^8E^%^A5^%^E6^%^89^%^93^%^E5^%^BC^%^80^%^22^%^2C^%^22^%^24latest_referrer^%^22^%^3A^%^22^%^22^%^7D^%^2C^%^22^%^24device_id^%^22^%^3A^%^2219b0e92dd27bb1-0985a81370bba38-4c657b58-1327104-19b0e92dd28fc3^%^22^%^7D; sess=WLNjTh9mtYTzCDTkHUtClFUq3lPh8GrhfKUzfgBE/pDqA1upQK0rRwNVoogjnZS795fR9RRlhe/l31iNHFOw672bfpPwzzGwZJxNGOWuinY=; userid=152815018; acw_tc=0bd17c5217664432532552303ebe18ebe390fbf317c200464e993a0e9c1964^" ^
+  -H ^"origin: https://spa.fenbi.com^" ^
+  -H ^"pragma: no-cache^" ^
+  -H ^"priority: u=1, i^" ^
+  -H ^"referer: https://spa.fenbi.com/^" ^
+  -H ^"sec-ch-ua: ^\^"Microsoft Edge^\^";v=^\^"143^\^", ^\^"Chromium^\^";v=^\^"143^\^", ^\^"Not A(Brand^\^";v=^\^"24^\^"^" ^
+  -H ^"sec-ch-ua-mobile: ?0^" ^
+  -H ^"sec-ch-ua-platform: ^\^"Windows^\^"^" ^
+  -H ^"sec-fetch-dest: empty^" ^
+  -H ^"sec-fetch-mode: cors^" ^
+  -H ^"sec-fetch-site: same-site^" ^
+  -H ^"user-agent: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/143.0.0.0 Safari/537.36 Edg/143.0.0.0^" &
+curl ^"https://tiku.fenbi.com/combine/note/getNote?requestKey=K1k2KL2qVT21ozEEsDrITeb4l6WTYnPKwaqa50toHR2EpYV8SEWy5ING48eNn7VIU1kV3xCnqUPj-nm79jXcHdrTaTfin4PqVAcUNm7d2T-6hKBFo89B5VSu1COtOmxQ-7GQF7g2GqVspEzUZC0kRQnuMC9Y3FjFqoIjzdcVkR3EYrqeEuDCe8znhlPioGwNxn5uRfzfxhorIBRoku05Enp0qDWnr5bj0mFHU1Efx0ZhWlFKcJMqoFNbe4L-c0HzkvWtf53L6jmvMS2VEJM3xNTnDmAKy7Owrvj7em1Wvk0efhEaG_hYsxJMVV9603KE3TbPSRK1B4vYG6JLRAQO03Z_tBQZDP8U6Yy5XMpdr1ySSDjUUG9J0MlZQicYvV05OOU-ymad2qSay6-hUbAi2Jpe_Wl1SuAytn0DBioVTxBzJ-jtXewTNnO_tmsThAkUI8YYNtRRJNv-KQ7ejB09eCEgzD4z17IeAILNyVH9tOy0zHe9h35sHzMsXczDOyTDmM8-bkKZbNsefUy_u6gGVBjkY61s6pL3OfFGXWp37KiMTWPWmzTjnEaIItXe2qOKxg^&routecs=jsjyzhzz^&kav=125^&av=125^&hav=125^&app=web^" ^
+  -H ^"accept: application/json, text/plain, */*^" ^
+  -H ^"accept-language: zh-CN,zh;q=0.9,en;q=0.8,en-GB;q=0.7,en-US;q=0.6,ja;q=0.5^" ^
+  -H ^"cache-control: no-cache^" ^
+  -b ^"sid=3495507; persistent=A5xj9BjQOm1EyQz8VPpRa/9riRSPdxEInSq2c4Yk0QsIiKWBkxItuaUmnAJiAgNCB2Hkfd12n3qLIwSzJKFVfw==; sensorsdata2015jssdkcross=^%^7B^%^22distinct_id^%^22^%^3A^%^2219b0e92dd27bb1-0985a81370bba38-4c657b58-1327104-19b0e92dd28fc3^%^22^%^2C^%^22first_id^%^22^%^3A^%^22^%^22^%^2C^%^22props^%^22^%^3A^%^7B^%^22^%^24latest_traffic_source_type^%^22^%^3A^%^22^%^E7^%^9B^%^B4^%^E6^%^8E^%^A5^%^E6^%^B5^%^81^%^E9^%^87^%^8F^%^22^%^2C^%^22^%^24latest_search_keyword^%^22^%^3A^%^22^%^E6^%^9C^%^AA^%^E5^%^8F^%^96^%^E5^%^88^%^B0^%^E5^%^80^%^BC_^%^E7^%^9B^%^B4^%^E6^%^8E^%^A5^%^E6^%^89^%^93^%^E5^%^BC^%^80^%^22^%^2C^%^22^%^24latest_referrer^%^22^%^3A^%^22^%^22^%^7D^%^2C^%^22^%^24device_id^%^22^%^3A^%^2219b0e92dd27bb1-0985a81370bba38-4c657b58-1327104-19b0e92dd28fc3^%^22^%^7D; sess=WLNjTh9mtYTzCDTkHUtClFUq3lPh8GrhfKUzfgBE/pDqA1upQK0rRwNVoogjnZS795fR9RRlhe/l31iNHFOw672bfpPwzzGwZJxNGOWuinY=; userid=152815018; acw_tc=0bd17c5217664432532552303ebe18ebe390fbf317c200464e993a0e9c1964^" ^
+  -H ^"origin: https://spa.fenbi.com^" ^
+  -H ^"pragma: no-cache^" ^
+  -H ^"priority: u=1, i^" ^
+  -H ^"referer: https://spa.fenbi.com/^" ^
+  -H ^"sec-ch-ua: ^\^"Microsoft Edge^\^";v=^\^"143^\^", ^\^"Chromium^\^";v=^\^"143^\^", ^\^"Not A(Brand^\^";v=^\^"24^\^"^" ^
+  -H ^"sec-ch-ua-mobile: ?0^" ^
+  -H ^"sec-ch-ua-platform: ^\^"Windows^\^"^" ^
+  -H ^"sec-fetch-dest: empty^" ^
+  -H ^"sec-fetch-mode: cors^" ^
+  -H ^"sec-fetch-site: same-site^" ^
+  -H ^"user-agent: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/143.0.0.0 Safari/537.36 Edg/143.0.0.0^" &
+curl ^"https://tiku.fenbi.com/combine/question/getMeta?requestKey=K1k2KL2qVT21ozEEsDrITeb4l6WTYnPKwaqa50toHR2EpYV8SEWy5ING48eNn7VIU1kV3xCnqUPj-nm79jXcHdrTaTfin4PqVAcUNm7d2T-6hKBFo89B5VSu1COtOmxQ-7GQF7g2GqVspEzUZC0kRQnuMC9Y3FjFqoIjzdcVkR3EYrqeEuDCe8znhlPioGwNxn5uRfzfxhorIBRoku05Enp0qDWnr5bj0mFHU1Efx0ZhWlFKcJMqoFNbe4L-c0HzkvWtf53L6jmvMS2VEJM3xNTnDmAKy7Owrvj7em1Wvk0efhEaG_hYsxJMVV9603KE3TbPSRK1B4vYG6JLRAQO03Z_tBQZDP8U6Yy5XMpdr1ySSDjUUG9J0MlZQicYvV05OOU-ymad2qSay6-hUbAi2Jpe_Wl1SuAytn0DBioVTxBzJ-jtXewTNnO_tmsThAkUI8YYNtRRJNv-KQ7ejB09eCEgzD4z17IeAILNyVH9tOy0zHe9h35sHzMsXczDOyTDmM8-bkKZbNsefUy_u6gGVBjkY61s6pL3OfFGXWp37KiMTWPWmzTjnEaIItXe2qOKxg^&routecs=jsjyzhzz^&kav=125^&av=125^&hav=125^&app=web^" ^
+  -H ^"accept: application/json, text/plain, */*^" ^
+  -H ^"accept-language: zh-CN,zh;q=0.9,en;q=0.8,en-GB;q=0.7,en-US;q=0.6,ja;q=0.5^" ^
+  -H ^"cache-control: no-cache^" ^
+  -b ^"sid=3495507; persistent=A5xj9BjQOm1EyQz8VPpRa/9riRSPdxEInSq2c4Yk0QsIiKWBkxItuaUmnAJiAgNCB2Hkfd12n3qLIwSzJKFVfw==; sensorsdata2015jssdkcross=^%^7B^%^22distinct_id^%^22^%^3A^%^2219b0e92dd27bb1-0985a81370bba38-4c657b58-1327104-19b0e92dd28fc3^%^22^%^2C^%^22first_id^%^22^%^3A^%^22^%^22^%^2C^%^22props^%^22^%^3A^%^7B^%^22^%^24latest_traffic_source_type^%^22^%^3A^%^22^%^E7^%^9B^%^B4^%^E6^%^8E^%^A5^%^E6^%^B5^%^81^%^E9^%^87^%^8F^%^22^%^2C^%^22^%^24latest_search_keyword^%^22^%^3A^%^22^%^E6^%^9C^%^AA^%^E5^%^8F^%^96^%^E5^%^88^%^B0^%^E5^%^80^%^BC_^%^E7^%^9B^%^B4^%^E6^%^8E^%^A5^%^E6^%^89^%^93^%^E5^%^BC^%^80^%^22^%^2C^%^22^%^24latest_referrer^%^22^%^3A^%^22^%^22^%^7D^%^2C^%^22^%^24device_id^%^22^%^3A^%^2219b0e92dd27bb1-0985a81370bba38-4c657b58-1327104-19b0e92dd28fc3^%^22^%^7D; sess=WLNjTh9mtYTzCDTkHUtClFUq3lPh8GrhfKUzfgBE/pDqA1upQK0rRwNVoogjnZS795fR9RRlhe/l31iNHFOw672bfpPwzzGwZJxNGOWuinY=; userid=152815018; acw_tc=0bd17c5217664432532552303ebe18ebe390fbf317c200464e993a0e9c1964^" ^
+  -H ^"origin: https://spa.fenbi.com^" ^
+  -H ^"pragma: no-cache^" ^
+  -H ^"priority: u=1, i^" ^
+  -H ^"referer: https://spa.fenbi.com/^" ^
+  -H ^"sec-ch-ua: ^\^"Microsoft Edge^\^";v=^\^"143^\^", ^\^"Chromium^\^";v=^\^"143^\^", ^\^"Not A(Brand^\^";v=^\^"24^\^"^" ^
+  -H ^"sec-ch-ua-mobile: ?0^" ^
+  -H ^"sec-ch-ua-platform: ^\^"Windows^\^"^" ^
+  -H ^"sec-fetch-dest: empty^" ^
+  -H ^"sec-fetch-mode: cors^" ^
+  -H ^"sec-fetch-site: same-site^" ^
+  -H ^"user-agent: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/143.0.0.0 Safari/537.36 Edg/143.0.0.0^" &
+curl ^"https://ke.fenbi.com/api/gwy/v3/episodes/tiku_episodes_with_multi_type?tiku_ids=3657310,5879122,12897078,11196567,5683847,17765292,5412064,3673005,5900757,10687441,19843418,2455088,18015167,18898913,4971869,15187040,5681358,4086494,18784762,4704370,5876389,18930391,5899194,12533503,12204992,3610282,5394550,12401324,5813064,3537099,5817870,5054601,18862321,4841051,11983213,4153214,15639227,4572314,5543623,2393050,14607951,2466965,5436207,18015293,15996409,4438010,5848755,13283341,18930317,4826810,13231239,17684918,18057786,5683923,5859757,15187261,11102864,5558230,18294740,5543374,15682811,11586593,14999644,5852127,14791790,5393457,14489301,17721079,5071474,12536354,10980223,3765773,5048521,5910979,18067796,5854235,16985603,5542539,10821281,15682806,5721388,5728336,3673109,5716949,19780954,13369576,10151719,16544317,11197221,13358916,19508794,5542959,14433789,18946441,19441591,14489419,3768217,5398949,13692722,5577858^&tiku_prefix=jsjyzhzz^&tiku_type=5^&no_toast^&kav=125^&av=125^&hav=125^&app=web^" ^
+  -H ^"accept: application/json, text/plain, */*^" ^
+  -H ^"accept-language: zh-CN,zh;q=0.9,en;q=0.8,en-GB;q=0.7,en-US;q=0.6,ja;q=0.5^" ^
+  -H ^"cache-control: no-cache^" ^
+  -b ^"sid=3495507; persistent=A5xj9BjQOm1EyQz8VPpRa/9riRSPdxEInSq2c4Yk0QsIiKWBkxItuaUmnAJiAgNCB2Hkfd12n3qLIwSzJKFVfw==; sensorsdata2015jssdkcross=^%^7B^%^22distinct_id^%^22^%^3A^%^2219b0e92dd27bb1-0985a81370bba38-4c657b58-1327104-19b0e92dd28fc3^%^22^%^2C^%^22first_id^%^22^%^3A^%^22^%^22^%^2C^%^22props^%^22^%^3A^%^7B^%^22^%^24latest_traffic_source_type^%^22^%^3A^%^22^%^E7^%^9B^%^B4^%^E6^%^8E^%^A5^%^E6^%^B5^%^81^%^E9^%^87^%^8F^%^22^%^2C^%^22^%^24latest_search_keyword^%^22^%^3A^%^22^%^E6^%^9C^%^AA^%^E5^%^8F^%^96^%^E5^%^88^%^B0^%^E5^%^80^%^BC_^%^E7^%^9B^%^B4^%^E6^%^8E^%^A5^%^E6^%^89^%^93^%^E5^%^BC^%^80^%^22^%^2C^%^22^%^24latest_referrer^%^22^%^3A^%^22^%^22^%^7D^%^2C^%^22^%^24device_id^%^22^%^3A^%^2219b0e92dd27bb1-0985a81370bba38-4c657b58-1327104-19b0e92dd28fc3^%^22^%^7D; sess=WLNjTh9mtYTzCDTkHUtClFUq3lPh8GrhfKUzfgBE/pDqA1upQK0rRwNVoogjnZS795fR9RRlhe/l31iNHFOw672bfpPwzzGwZJxNGOWuinY=; userid=152815018^" ^
+  -H ^"origin: https://spa.fenbi.com^" ^
+  -H ^"pragma: no-cache^" ^
+  -H ^"priority: u=1, i^" ^
+  -H ^"referer: https://spa.fenbi.com/^" ^
+  -H ^"sec-ch-ua: ^\^"Microsoft Edge^\^";v=^\^"143^\^", ^\^"Chromium^\^";v=^\^"143^\^", ^\^"Not A(Brand^\^";v=^\^"24^\^"^" ^
+  -H ^"sec-ch-ua-mobile: ?0^" ^
+  -H ^"sec-ch-ua-platform: ^\^"Windows^\^"^" ^
+  -H ^"sec-fetch-dest: empty^" ^
+  -H ^"sec-fetch-mode: cors^" ^
+  -H ^"sec-fetch-site: same-site^" ^
+  -H ^"user-agent: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/143.0.0.0 Safari/537.36 Edg/143.0.0.0^" &
+curl ^"https://nodestatic.fbstatic.cn/weblts_spa_online/ti/media/chapter-bg-left-EKKOVTM4.png^" ^
+  -H ^"accept: image/avif,image/webp,image/apng,image/svg+xml,image/*,*/*;q=0.8^" ^
+  -H ^"accept-language: zh-CN,zh;q=0.9,en;q=0.8,en-GB;q=0.7,en-US;q=0.6,ja;q=0.5^" ^
+  -H ^"cache-control: no-cache^" ^
+  -H ^"pragma: no-cache^" ^
+  -H ^"priority: i^" ^
+  -H ^"referer: https://spa.fenbi.com/^" ^
+  -H ^"sec-ch-ua: ^\^"Microsoft Edge^\^";v=^\^"143^\^", ^\^"Chromium^\^";v=^\^"143^\^", ^\^"Not A(Brand^\^";v=^\^"24^\^"^" ^
+  -H ^"sec-ch-ua-mobile: ?0^" ^
+  -H ^"sec-ch-ua-platform: ^\^"Windows^\^"^" ^
+  -H ^"sec-fetch-dest: image^" ^
+  -H ^"sec-fetch-mode: no-cors^" ^
+  -H ^"sec-fetch-site: cross-site^" ^
+  -H ^"sec-fetch-storage-access: active^" ^
+  -H ^"user-agent: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/143.0.0.0 Safari/537.36 Edg/143.0.0.0^" &
+curl ^"https://nodestatic.fbstatic.cn/weblts_spa_online/ti/media/chapter-bg-right-C5SIMZEX.png^" ^
+  -H ^"accept: image/avif,image/webp,image/apng,image/svg+xml,image/*,*/*;q=0.8^" ^
+  -H ^"accept-language: zh-CN,zh;q=0.9,en;q=0.8,en-GB;q=0.7,en-US;q=0.6,ja;q=0.5^" ^
+  -H ^"cache-control: no-cache^" ^
+  -H ^"pragma: no-cache^" ^
+  -H ^"priority: i^" ^
+  -H ^"referer: https://spa.fenbi.com/^" ^
+  -H ^"sec-ch-ua: ^\^"Microsoft Edge^\^";v=^\^"143^\^", ^\^"Chromium^\^";v=^\^"143^\^", ^\^"Not A(Brand^\^";v=^\^"24^\^"^" ^
+  -H ^"sec-ch-ua-mobile: ?0^" ^
+  -H ^"sec-ch-ua-platform: ^\^"Windows^\^"^" ^
+  -H ^"sec-fetch-dest: image^" ^
+  -H ^"sec-fetch-mode: no-cors^" ^
+  -H ^"sec-fetch-site: cross-site^" ^
+  -H ^"sec-fetch-storage-access: active^" ^
+  -H ^"user-agent: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/143.0.0.0 Safari/537.36 Edg/143.0.0.0^" &
+curl ^"https://fb.fenbike.cn/api/planet/accessories/formulas?fontSize=18^&latex=j7OxNSdjM3BkA7M4qvOcPA^" ^
+  -H ^"accept: image/avif,image/webp,image/apng,image/svg+xml,image/*,*/*;q=0.8^" ^
+  -H ^"accept-language: zh-CN,zh;q=0.9,en;q=0.8,en-GB;q=0.7,en-US;q=0.6,ja;q=0.5^" ^
+  -H ^"cache-control: no-cache^" ^
+  -H ^"pragma: no-cache^" ^
+  -H ^"priority: i^" ^
+  -H ^"referer: https://spa.fenbi.com/^" ^
+  -H ^"sec-ch-ua: ^\^"Microsoft Edge^\^";v=^\^"143^\^", ^\^"Chromium^\^";v=^\^"143^\^", ^\^"Not A(Brand^\^";v=^\^"24^\^"^" ^
+  -H ^"sec-ch-ua-mobile: ?0^" ^
+  -H ^"sec-ch-ua-platform: ^\^"Windows^\^"^" ^
+  -H ^"sec-fetch-dest: image^" ^
+  -H ^"sec-fetch-mode: no-cors^" ^
+  -H ^"sec-fetch-site: cross-site^" ^
+  -H ^"sec-fetch-storage-access: active^" ^
+  -H ^"user-agent: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/143.0.0.0 Safari/537.36 Edg/143.0.0.0^" &
+curl ^"https://fb.fbstatic.cn/api/planet/accessories/formulas?fontSize=18^&latex=FxuxUGSTUrb6oFnm8R6yVzBZ9SzuINdw05bQKS1VPNs^" ^
+  -H ^"accept: image/avif,image/webp,image/apng,image/svg+xml,image/*,*/*;q=0.8^" ^
+  -H ^"accept-language: zh-CN,zh;q=0.9,en;q=0.8,en-GB;q=0.7,en-US;q=0.6,ja;q=0.5^" ^
+  -H ^"cache-control: no-cache^" ^
+  -H ^"pragma: no-cache^" ^
+  -H ^"priority: i^" ^
+  -H ^"referer: https://spa.fenbi.com/^" ^
+  -H ^"sec-ch-ua: ^\^"Microsoft Edge^\^";v=^\^"143^\^", ^\^"Chromium^\^";v=^\^"143^\^", ^\^"Not A(Brand^\^";v=^\^"24^\^"^" ^
+  -H ^"sec-ch-ua-mobile: ?0^" ^
+  -H ^"sec-ch-ua-platform: ^\^"Windows^\^"^" ^
+  -H ^"sec-fetch-dest: image^" ^
+  -H ^"sec-fetch-mode: no-cors^" ^
+  -H ^"sec-fetch-site: cross-site^" ^
+  -H ^"sec-fetch-storage-access: active^" ^
+  -H ^"user-agent: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/143.0.0.0 Safari/537.36 Edg/143.0.0.0^" &
+curl ^"https://fb.fbstatic.cn/api/planet/accessories/formulas?fontSize=18^&latex=0lovwGTHZIBvqhIklmfd2iFiYw2PStvoWApdXE05Jig^" ^
+  -H ^"accept: image/avif,image/webp,image/apng,image/svg+xml,image/*,*/*;q=0.8^" ^
+  -H ^"accept-language: zh-CN,zh;q=0.9,en;q=0.8,en-GB;q=0.7,en-US;q=0.6,ja;q=0.5^" ^
+  -H ^"cache-control: no-cache^" ^
+  -H ^"pragma: no-cache^" ^
+  -H ^"priority: i^" ^
+  -H ^"referer: https://spa.fenbi.com/^" ^
+  -H ^"sec-ch-ua: ^\^"Microsoft Edge^\^";v=^\^"143^\^", ^\^"Chromium^\^";v=^\^"143^\^", ^\^"Not A(Brand^\^";v=^\^"24^\^"^" ^
+  -H ^"sec-ch-ua-mobile: ?0^" ^
+  -H ^"sec-ch-ua-platform: ^\^"Windows^\^"^" ^
+  -H ^"sec-fetch-dest: image^" ^
+  -H ^"sec-fetch-mode: no-cors^" ^
+  -H ^"sec-fetch-site: cross-site^" ^
+  -H ^"sec-fetch-storage-access: active^" ^
+  -H ^"user-agent: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/143.0.0.0 Safari/537.36 Edg/143.0.0.0^" &
+curl ^"https://fb.fbstatic.cn/api/planet/accessories/formulas?fontSize=18^&latex=xC_t3ChkF4F_VF7wb0xg4fChWM9VlAsBEzI_2T_ToZA^" ^
+  -H ^"accept: image/avif,image/webp,image/apng,image/svg+xml,image/*,*/*;q=0.8^" ^
+  -H ^"accept-language: zh-CN,zh;q=0.9,en;q=0.8,en-GB;q=0.7,en-US;q=0.6,ja;q=0.5^" ^
+  -H ^"cache-control: no-cache^" ^
+  -H ^"pragma: no-cache^" ^
+  -H ^"priority: i^" ^
+  -H ^"referer: https://spa.fenbi.com/^" ^
+  -H ^"sec-ch-ua: ^\^"Microsoft Edge^\^";v=^\^"143^\^", ^\^"Chromium^\^";v=^\^"143^\^", ^\^"Not A(Brand^\^";v=^\^"24^\^"^" ^
+  -H ^"sec-ch-ua-mobile: ?0^" ^
+  -H ^"sec-ch-ua-platform: ^\^"Windows^\^"^" ^
+  -H ^"sec-fetch-dest: image^" ^
+  -H ^"sec-fetch-mode: no-cors^" ^
+  -H ^"sec-fetch-site: cross-site^" ^
+  -H ^"sec-fetch-storage-access: active^" ^
+  -H ^"user-agent: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/143.0.0.0 Safari/537.36 Edg/143.0.0.0^" &
+curl ^"https://fb.fbstatic.cn/api/planet/accessories/formulas?fontSize=18^&latex=HQhaxYvew7GcGML7cBc2WA^" ^
+  -H ^"accept: image/avif,image/webp,image/apng,image/svg+xml,image/*,*/*;q=0.8^" ^
+  -H ^"accept-language: zh-CN,zh;q=0.9,en;q=0.8,en-GB;q=0.7,en-US;q=0.6,ja;q=0.5^" ^
+  -H ^"cache-control: no-cache^" ^
+  -H ^"pragma: no-cache^" ^
+  -H ^"priority: i^" ^
+  -H ^"referer: https://spa.fenbi.com/^" ^
+  -H ^"sec-ch-ua: ^\^"Microsoft Edge^\^";v=^\^"143^\^", ^\^"Chromium^\^";v=^\^"143^\^", ^\^"Not A(Brand^\^";v=^\^"24^\^"^" ^
+  -H ^"sec-ch-ua-mobile: ?0^" ^
+  -H ^"sec-ch-ua-platform: ^\^"Windows^\^"^" ^
+  -H ^"sec-fetch-dest: image^" ^
+  -H ^"sec-fetch-mode: no-cors^" ^
+  -H ^"sec-fetch-site: cross-site^" ^
+  -H ^"sec-fetch-storage-access: active^" ^
+  -H ^"user-agent: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/143.0.0.0 Safari/537.36 Edg/143.0.0.0^" &
+curl ^"https://fb.fbstatic.cn/api/planet/accessories/formulas?fontSize=18^&latex=Jls_t1V-l9q8VvhhzcSmTA^" ^
+  -H ^"accept: image/avif,image/webp,image/apng,image/svg+xml,image/*,*/*;q=0.8^" ^
+  -H ^"accept-language: zh-CN,zh;q=0.9,en;q=0.8,en-GB;q=0.7,en-US;q=0.6,ja;q=0.5^" ^
+  -H ^"cache-control: no-cache^" ^
+  -H ^"pragma: no-cache^" ^
+  -H ^"priority: i^" ^
+  -H ^"referer: https://spa.fenbi.com/^" ^
+  -H ^"sec-ch-ua: ^\^"Microsoft Edge^\^";v=^\^"143^\^", ^\^"Chromium^\^";v=^\^"143^\^", ^\^"Not A(Brand^\^";v=^\^"24^\^"^" ^
+  -H ^"sec-ch-ua-mobile: ?0^" ^
+  -H ^"sec-ch-ua-platform: ^\^"Windows^\^"^" ^
+  -H ^"sec-fetch-dest: image^" ^
+  -H ^"sec-fetch-mode: no-cors^" ^
+  -H ^"sec-fetch-site: cross-site^" ^
+  -H ^"sec-fetch-storage-access: active^" ^
+  -H ^"user-agent: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/143.0.0.0 Safari/537.36 Edg/143.0.0.0^" &
+curl ^"https://ke.fenbi.com/api/v3/user_member/home?member_type=8^&kav=125^&av=125^&hav=125^&app=web^" ^
+  -H ^"accept: application/json, text/plain, */*^" ^
+  -H ^"accept-language: zh-CN,zh;q=0.9,en;q=0.8,en-GB;q=0.7,en-US;q=0.6,ja;q=0.5^" ^
+  -H ^"cache-control: no-cache^" ^
+  -b ^"sid=3495507; persistent=A5xj9BjQOm1EyQz8VPpRa/9riRSPdxEInSq2c4Yk0QsIiKWBkxItuaUmnAJiAgNCB2Hkfd12n3qLIwSzJKFVfw==; sensorsdata2015jssdkcross=^%^7B^%^22distinct_id^%^22^%^3A^%^2219b0e92dd27bb1-0985a81370bba38-4c657b58-1327104-19b0e92dd28fc3^%^22^%^2C^%^22first_id^%^22^%^3A^%^22^%^22^%^2C^%^22props^%^22^%^3A^%^7B^%^22^%^24latest_traffic_source_type^%^22^%^3A^%^22^%^E7^%^9B^%^B4^%^E6^%^8E^%^A5^%^E6^%^B5^%^81^%^E9^%^87^%^8F^%^22^%^2C^%^22^%^24latest_search_keyword^%^22^%^3A^%^22^%^E6^%^9C^%^AA^%^E5^%^8F^%^96^%^E5^%^88^%^B0^%^E5^%^80^%^BC_^%^E7^%^9B^%^B4^%^E6^%^8E^%^A5^%^E6^%^89^%^93^%^E5^%^BC^%^80^%^22^%^2C^%^22^%^24latest_referrer^%^22^%^3A^%^22^%^22^%^7D^%^2C^%^22^%^24device_id^%^22^%^3A^%^2219b0e92dd27bb1-0985a81370bba38-4c657b58-1327104-19b0e92dd28fc3^%^22^%^7D; sess=WLNjTh9mtYTzCDTkHUtClFUq3lPh8GrhfKUzfgBE/pDqA1upQK0rRwNVoogjnZS795fR9RRlhe/l31iNHFOw672bfpPwzzGwZJxNGOWuinY=; userid=152815018^" ^
+  -H ^"origin: https://spa.fenbi.com^" ^
+  -H ^"pragma: no-cache^" ^
+  -H ^"priority: u=1, i^" ^
+  -H ^"referer: https://spa.fenbi.com/^" ^
+  -H ^"sec-ch-ua: ^\^"Microsoft Edge^\^";v=^\^"143^\^", ^\^"Chromium^\^";v=^\^"143^\^", ^\^"Not A(Brand^\^";v=^\^"24^\^"^" ^
+  -H ^"sec-ch-ua-mobile: ?0^" ^
+  -H ^"sec-ch-ua-platform: ^\^"Windows^\^"^" ^
+  -H ^"sec-fetch-dest: empty^" ^
+  -H ^"sec-fetch-mode: cors^" ^
+  -H ^"sec-fetch-site: same-site^" ^
+  -H ^"user-agent: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/143.0.0.0 Safari/537.36 Edg/143.0.0.0^" &
+curl ^"https://nodestatic.fbstatic.cn/pan/downloads/b0b107ab7410fead6e91511f54dd6411.css^" ^
+  -H ^"accept: text/css,*/*;q=0.1^" ^
+  -H ^"accept-language: zh-CN,zh;q=0.9,en;q=0.8,en-GB;q=0.7,en-US;q=0.6,ja;q=0.5^" ^
+  -H ^"cache-control: no-cache^" ^
+  -H ^"pragma: no-cache^" ^
+  -H ^"priority: u=0^" ^
+  -H ^"referer: https://spa.fenbi.com/^" ^
+  -H ^"sec-ch-ua: ^\^"Microsoft Edge^\^";v=^\^"143^\^", ^\^"Chromium^\^";v=^\^"143^\^", ^\^"Not A(Brand^\^";v=^\^"24^\^"^" ^
+  -H ^"sec-ch-ua-mobile: ?0^" ^
+  -H ^"sec-ch-ua-platform: ^\^"Windows^\^"^" ^
+  -H ^"sec-fetch-dest: style^" ^
+  -H ^"sec-fetch-mode: no-cors^" ^
+  -H ^"sec-fetch-site: cross-site^" ^
+  -H ^"sec-fetch-storage-access: active^" ^
+  -H ^"user-agent: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/143.0.0.0 Safari/537.36 Edg/143.0.0.0^" &
+curl ^"https://nodestatic.fbstatic.cn/weblts_spa_online/ti/media/video-bg-OHH4Z5ZQ.png^" ^
+  -H ^"accept: image/avif,image/webp,image/apng,image/svg+xml,image/*,*/*;q=0.8^" ^
+  -H ^"accept-language: zh-CN,zh;q=0.9,en;q=0.8,en-GB;q=0.7,en-US;q=0.6,ja;q=0.5^" ^
+  -H ^"cache-control: no-cache^" ^
+  -H ^"pragma: no-cache^" ^
+  -H ^"priority: i^" ^
+  -H ^"referer: https://spa.fenbi.com/^" ^
+  -H ^"sec-ch-ua: ^\^"Microsoft Edge^\^";v=^\^"143^\^", ^\^"Chromium^\^";v=^\^"143^\^", ^\^"Not A(Brand^\^";v=^\^"24^\^"^" ^
+  -H ^"sec-ch-ua-mobile: ?0^" ^
+  -H ^"sec-ch-ua-platform: ^\^"Windows^\^"^" ^
+  -H ^"sec-fetch-dest: image^" ^
+  -H ^"sec-fetch-mode: no-cors^" ^
+  -H ^"sec-fetch-site: cross-site^" ^
+  -H ^"sec-fetch-storage-access: active^" ^
+  -H ^"user-agent: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/143.0.0.0 Safari/537.36 Edg/143.0.0.0^" &
+curl ^"https://nodestatic.fbstatic.cn/weblts_spa_online/ti/media/member-label-2-2AUQDD6N.png^" ^
+  -H ^"accept: image/avif,image/webp,image/apng,image/svg+xml,image/*,*/*;q=0.8^" ^
+  -H ^"accept-language: zh-CN,zh;q=0.9,en;q=0.8,en-GB;q=0.7,en-US;q=0.6,ja;q=0.5^" ^
+  -H ^"cache-control: no-cache^" ^
+  -H ^"pragma: no-cache^" ^
+  -H ^"priority: i^" ^
+  -H ^"referer: https://spa.fenbi.com/^" ^
+  -H ^"sec-ch-ua: ^\^"Microsoft Edge^\^";v=^\^"143^\^", ^\^"Chromium^\^";v=^\^"143^\^", ^\^"Not A(Brand^\^";v=^\^"24^\^"^" ^
+  -H ^"sec-ch-ua-mobile: ?0^" ^
+  -H ^"sec-ch-ua-platform: ^\^"Windows^\^"^" ^
+  -H ^"sec-fetch-dest: image^" ^
+  -H ^"sec-fetch-mode: no-cors^" ^
+  -H ^"sec-fetch-site: cross-site^" ^
+  -H ^"sec-fetch-storage-access: active^" ^
+  -H ^"user-agent: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/143.0.0.0 Safari/537.36 Edg/143.0.0.0^" &
+curl ^"https://nodestatic.fbstatic.cn/weblts_spa_online/ti/media/video-play-24YGKVSV.png^" ^
+  -H ^"accept: image/avif,image/webp,image/apng,image/svg+xml,image/*,*/*;q=0.8^" ^
+  -H ^"accept-language: zh-CN,zh;q=0.9,en;q=0.8,en-GB;q=0.7,en-US;q=0.6,ja;q=0.5^" ^
+  -H ^"cache-control: no-cache^" ^
+  -H ^"pragma: no-cache^" ^
+  -H ^"priority: i^" ^
+  -H ^"referer: https://spa.fenbi.com/^" ^
+  -H ^"sec-ch-ua: ^\^"Microsoft Edge^\^";v=^\^"143^\^", ^\^"Chromium^\^";v=^\^"143^\^", ^\^"Not A(Brand^\^";v=^\^"24^\^"^" ^
+  -H ^"sec-ch-ua-mobile: ?0^" ^
+  -H ^"sec-ch-ua-platform: ^\^"Windows^\^"^" ^
+  -H ^"sec-fetch-dest: image^" ^
+  -H ^"sec-fetch-mode: no-cors^" ^
+  -H ^"sec-fetch-site: cross-site^" ^
+  -H ^"sec-fetch-storage-access: active^" ^
+  -H ^"user-agent: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/143.0.0.0 Safari/537.36 Edg/143.0.0.0^" &
+curl ^"https://nodestatic.fbstatic.cn/weblts_spa_online/ti/media/member-open-vertical-V3GDJKZ3.png^" ^
+  -H ^"accept: image/avif,image/webp,image/apng,image/svg+xml,image/*,*/*;q=0.8^" ^
+  -H ^"accept-language: zh-CN,zh;q=0.9,en;q=0.8,en-GB;q=0.7,en-US;q=0.6,ja;q=0.5^" ^
+  -H ^"cache-control: no-cache^" ^
+  -H ^"pragma: no-cache^" ^
+  -H ^"priority: i^" ^
+  -H ^"referer: https://spa.fenbi.com/^" ^
+  -H ^"sec-ch-ua: ^\^"Microsoft Edge^\^";v=^\^"143^\^", ^\^"Chromium^\^";v=^\^"143^\^", ^\^"Not A(Brand^\^";v=^\^"24^\^"^" ^
+  -H ^"sec-ch-ua-mobile: ?0^" ^
+  -H ^"sec-ch-ua-platform: ^\^"Windows^\^"^" ^
+  -H ^"sec-fetch-dest: image^" ^
+  -H ^"sec-fetch-mode: no-cors^" ^
+  -H ^"sec-fetch-site: cross-site^" ^
+  -H ^"sec-fetch-storage-access: active^" ^
+  -H ^"user-agent: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/143.0.0.0 Safari/537.36 Edg/143.0.0.0^" &
+curl ^"https://nodestatic.fbstatic.cn/weblts_spa_online/ti/media/member-icon-N7JKBASS.png^" ^
+  -H ^"accept: image/avif,image/webp,image/apng,image/svg+xml,image/*,*/*;q=0.8^" ^
+  -H ^"accept-language: zh-CN,zh;q=0.9,en;q=0.8,en-GB;q=0.7,en-US;q=0.6,ja;q=0.5^" ^
+  -H ^"cache-control: no-cache^" ^
+  -H ^"pragma: no-cache^" ^
+  -H ^"priority: i^" ^
+  -H ^"referer: https://spa.fenbi.com/^" ^
+  -H ^"sec-ch-ua: ^\^"Microsoft Edge^\^";v=^\^"143^\^", ^\^"Chromium^\^";v=^\^"143^\^", ^\^"Not A(Brand^\^";v=^\^"24^\^"^" ^
+  -H ^"sec-ch-ua-mobile: ?0^" ^
+  -H ^"sec-ch-ua-platform: ^\^"Windows^\^"^" ^
+  -H ^"sec-fetch-dest: image^" ^
+  -H ^"sec-fetch-mode: no-cors^" ^
+  -H ^"sec-fetch-site: cross-site^" ^
+  -H ^"sec-fetch-storage-access: active^" ^
+  -H ^"user-agent: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/143.0.0.0 Safari/537.36 Edg/143.0.0.0^" &
+curl ^"https://nodestatic.fbstatic.cn/pool/umeditor_master/umeditor.config.js^" ^
+  -H ^"accept: */*^" ^
+  -H ^"accept-language: zh-CN,zh;q=0.9,en;q=0.8,en-GB;q=0.7,en-US;q=0.6,ja;q=0.5^" ^
+  -H ^"cache-control: no-cache^" ^
+  -H ^"pragma: no-cache^" ^
+  -H ^"referer: https://spa.fenbi.com/^" ^
+  -H ^"sec-ch-ua: ^\^"Microsoft Edge^\^";v=^\^"143^\^", ^\^"Chromium^\^";v=^\^"143^\^", ^\^"Not A(Brand^\^";v=^\^"24^\^"^" ^
+  -H ^"sec-ch-ua-mobile: ?0^" ^
+  -H ^"sec-ch-ua-platform: ^\^"Windows^\^"^" ^
+  -H ^"sec-fetch-dest: script^" ^
+  -H ^"sec-fetch-mode: no-cors^" ^
+  -H ^"sec-fetch-site: cross-site^" ^
+  -H ^"sec-fetch-storage-access: active^" ^
+  -H ^"user-agent: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/143.0.0.0 Safari/537.36 Edg/143.0.0.0^" &
+curl ^"https://nodestatic.fbstatic.cn/weblts_spa_online/ti/media/member-open-row-QQO4WQ7G.png^" ^
+  -H ^"accept: image/avif,image/webp,image/apng,image/svg+xml,image/*,*/*;q=0.8^" ^
+  -H ^"accept-language: zh-CN,zh;q=0.9,en;q=0.8,en-GB;q=0.7,en-US;q=0.6,ja;q=0.5^" ^
+  -H ^"cache-control: no-cache^" ^
+  -H ^"pragma: no-cache^" ^
+  -H ^"priority: i^" ^
+  -H ^"referer: https://spa.fenbi.com/^" ^
+  -H ^"sec-ch-ua: ^\^"Microsoft Edge^\^";v=^\^"143^\^", ^\^"Chromium^\^";v=^\^"143^\^", ^\^"Not A(Brand^\^";v=^\^"24^\^"^" ^
+  -H ^"sec-ch-ua-mobile: ?0^" ^
+  -H ^"sec-ch-ua-platform: ^\^"Windows^\^"^" ^
+  -H ^"sec-fetch-dest: image^" ^
+  -H ^"sec-fetch-mode: no-cors^" ^
+  -H ^"sec-fetch-site: cross-site^" ^
+  -H ^"sec-fetch-storage-access: active^" ^
+  -H ^"user-agent: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/143.0.0.0 Safari/537.36 Edg/143.0.0.0^" &
+curl ^"https://nodestatic.fbstatic.cn/weblts_spa_online/page/assets/fenbi32.ico^" ^
+  -H ^"accept: image/avif,image/webp,image/apng,image/svg+xml,image/*,*/*;q=0.8^" ^
+  -H ^"accept-language: zh-CN,zh;q=0.9,en;q=0.8,en-GB;q=0.7,en-US;q=0.6,ja;q=0.5^" ^
+  -H ^"cache-control: no-cache^" ^
+  -H ^"pragma: no-cache^" ^
+  -H ^"priority: u=1, i^" ^
+  -H ^"referer: https://spa.fenbi.com/^" ^
+  -H ^"sec-ch-ua: ^\^"Microsoft Edge^\^";v=^\^"143^\^", ^\^"Chromium^\^";v=^\^"143^\^", ^\^"Not A(Brand^\^";v=^\^"24^\^"^" ^
+  -H ^"sec-ch-ua-mobile: ?0^" ^
+  -H ^"sec-ch-ua-platform: ^\^"Windows^\^"^" ^
+  -H ^"sec-fetch-dest: image^" ^
+  -H ^"sec-fetch-mode: no-cors^" ^
+  -H ^"sec-fetch-site: cross-site^" ^
+  -H ^"sec-fetch-storage-access: active^" ^
+  -H ^"user-agent: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/143.0.0.0 Safari/537.36 Edg/143.0.0.0^" &
+curl ^"https://nodestatic.fbstatic.cn/weblts_spa_online/ti/chunk-VDLS5JAV.js^" ^
+  -H ^"accept: */*^" ^
+  -H ^"accept-language: zh-CN,zh;q=0.9,en;q=0.8,en-GB;q=0.7,en-US;q=0.6,ja;q=0.5^" ^
+  -H ^"cache-control: no-cache^" ^
+  -H ^"origin: https://spa.fenbi.com^" ^
+  -H ^"pragma: no-cache^" ^
+  -H ^"priority: u=1^" ^
+  -H ^"referer: https://nodestatic.fbstatic.cn/weblts_spa_online/ti/chunk-D2XZLP7D.js^" ^
+  -H ^"sec-ch-ua: ^\^"Microsoft Edge^\^";v=^\^"143^\^", ^\^"Chromium^\^";v=^\^"143^\^", ^\^"Not A(Brand^\^";v=^\^"24^\^"^" ^
+  -H ^"sec-ch-ua-mobile: ?0^" ^
+  -H ^"sec-ch-ua-platform: ^\^"Windows^\^"^" ^
+  -H ^"sec-fetch-dest: script^" ^
+  -H ^"sec-fetch-mode: cors^" ^
+  -H ^"sec-fetch-site: cross-site^" ^
+  -H ^"user-agent: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/143.0.0.0 Safari/537.36 Edg/143.0.0.0^" &
+curl ^"https://nodestatic.fbstatic.cn/weblts_spa_online/ti/chunk-OEYYZXMG.js^" ^
+  -H ^"accept: */*^" ^
+  -H ^"accept-language: zh-CN,zh;q=0.9,en;q=0.8,en-GB;q=0.7,en-US;q=0.6,ja;q=0.5^" ^
+  -H ^"cache-control: no-cache^" ^
+  -H ^"origin: https://spa.fenbi.com^" ^
+  -H ^"pragma: no-cache^" ^
+  -H ^"priority: u=1^" ^
+  -H ^"referer: https://nodestatic.fbstatic.cn/weblts_spa_online/ti/chunk-D2XZLP7D.js^" ^
+  -H ^"sec-ch-ua: ^\^"Microsoft Edge^\^";v=^\^"143^\^", ^\^"Chromium^\^";v=^\^"143^\^", ^\^"Not A(Brand^\^";v=^\^"24^\^"^" ^
+  -H ^"sec-ch-ua-mobile: ?0^" ^
+  -H ^"sec-ch-ua-platform: ^\^"Windows^\^"^" ^
+  -H ^"sec-fetch-dest: script^" ^
+  -H ^"sec-fetch-mode: cors^" ^
+  -H ^"sec-fetch-site: cross-site^" ^
+  -H ^"user-agent: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/143.0.0.0 Safari/537.36 Edg/143.0.0.0^" &
+curl ^"https://tiku.fenbi.com/api/jsjyzhzz/quizKeypoint?keypointId=631404^&quizId=876^&kav=125^&av=125^&hav=125^&app=web^" ^
+  -H ^"accept: application/json, text/plain, */*^" ^
+  -H ^"accept-language: zh-CN,zh;q=0.9,en;q=0.8,en-GB;q=0.7,en-US;q=0.6,ja;q=0.5^" ^
+  -H ^"cache-control: no-cache^" ^
+  -b ^"sid=3495507; persistent=A5xj9BjQOm1EyQz8VPpRa/9riRSPdxEInSq2c4Yk0QsIiKWBkxItuaUmnAJiAgNCB2Hkfd12n3qLIwSzJKFVfw==; sensorsdata2015jssdkcross=^%^7B^%^22distinct_id^%^22^%^3A^%^2219b0e92dd27bb1-0985a81370bba38-4c657b58-1327104-19b0e92dd28fc3^%^22^%^2C^%^22first_id^%^22^%^3A^%^22^%^22^%^2C^%^22props^%^22^%^3A^%^7B^%^22^%^24latest_traffic_source_type^%^22^%^3A^%^22^%^E7^%^9B^%^B4^%^E6^%^8E^%^A5^%^E6^%^B5^%^81^%^E9^%^87^%^8F^%^22^%^2C^%^22^%^24latest_search_keyword^%^22^%^3A^%^22^%^E6^%^9C^%^AA^%^E5^%^8F^%^96^%^E5^%^88^%^B0^%^E5^%^80^%^BC_^%^E7^%^9B^%^B4^%^E6^%^8E^%^A5^%^E6^%^89^%^93^%^E5^%^BC^%^80^%^22^%^2C^%^22^%^24latest_referrer^%^22^%^3A^%^22^%^22^%^7D^%^2C^%^22^%^24device_id^%^22^%^3A^%^2219b0e92dd27bb1-0985a81370bba38-4c657b58-1327104-19b0e92dd28fc3^%^22^%^7D; sess=WLNjTh9mtYTzCDTkHUtClFUq3lPh8GrhfKUzfgBE/pDqA1upQK0rRwNVoogjnZS795fR9RRlhe/l31iNHFOw672bfpPwzzGwZJxNGOWuinY=; userid=152815018; acw_tc=0bd17c5217664432532552303ebe18ebe390fbf317c200464e993a0e9c1964^" ^
+  -H ^"origin: https://spa.fenbi.com^" ^
+  -H ^"pragma: no-cache^" ^
+  -H ^"priority: u=1, i^" ^
+  -H ^"referer: https://spa.fenbi.com/^" ^
+  -H ^"sec-ch-ua: ^\^"Microsoft Edge^\^";v=^\^"143^\^", ^\^"Chromium^\^";v=^\^"143^\^", ^\^"Not A(Brand^\^";v=^\^"24^\^"^" ^
+  -H ^"sec-ch-ua-mobile: ?0^" ^
+  -H ^"sec-ch-ua-platform: ^\^"Windows^\^"^" ^
+  -H ^"sec-fetch-dest: empty^" ^
+  -H ^"sec-fetch-mode: cors^" ^
+  -H ^"sec-fetch-site: same-site^" ^
+  -H ^"user-agent: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/143.0.0.0 Safari/537.36 Edg/143.0.0.0^" &
+curl ^"https://tiku.fenbi.com/api/jsjyzhzz/quizKeypoint?keypointId=631336^&quizId=876^&kav=125^&av=125^&hav=125^&app=web^" ^
+  -H ^"accept: application/json, text/plain, */*^" ^
+  -H ^"accept-language: zh-CN,zh;q=0.9,en;q=0.8,en-GB;q=0.7,en-US;q=0.6,ja;q=0.5^" ^
+  -H ^"cache-control: no-cache^" ^
+  -b ^"sid=3495507; persistent=A5xj9BjQOm1EyQz8VPpRa/9riRSPdxEInSq2c4Yk0QsIiKWBkxItuaUmnAJiAgNCB2Hkfd12n3qLIwSzJKFVfw==; sensorsdata2015jssdkcross=^%^7B^%^22distinct_id^%^22^%^3A^%^2219b0e92dd27bb1-0985a81370bba38-4c657b58-1327104-19b0e92dd28fc3^%^22^%^2C^%^22first_id^%^22^%^3A^%^22^%^22^%^2C^%^22props^%^22^%^3A^%^7B^%^22^%^24latest_traffic_source_type^%^22^%^3A^%^22^%^E7^%^9B^%^B4^%^E6^%^8E^%^A5^%^E6^%^B5^%^81^%^E9^%^87^%^8F^%^22^%^2C^%^22^%^24latest_search_keyword^%^22^%^3A^%^22^%^E6^%^9C^%^AA^%^E5^%^8F^%^96^%^E5^%^88^%^B0^%^E5^%^80^%^BC_^%^E7^%^9B^%^B4^%^E6^%^8E^%^A5^%^E6^%^89^%^93^%^E5^%^BC^%^80^%^22^%^2C^%^22^%^24latest_referrer^%^22^%^3A^%^22^%^22^%^7D^%^2C^%^22^%^24device_id^%^22^%^3A^%^2219b0e92dd27bb1-0985a81370bba38-4c657b58-1327104-19b0e92dd28fc3^%^22^%^7D; sess=WLNjTh9mtYTzCDTkHUtClFUq3lPh8GrhfKUzfgBE/pDqA1upQK0rRwNVoogjnZS795fR9RRlhe/l31iNHFOw672bfpPwzzGwZJxNGOWuinY=; userid=152815018; acw_tc=0bd17c5217664432532552303ebe18ebe390fbf317c200464e993a0e9c1964^" ^
+  -H ^"origin: https://spa.fenbi.com^" ^
+  -H ^"pragma: no-cache^" ^
+  -H ^"priority: u=1, i^" ^
+  -H ^"referer: https://spa.fenbi.com/^" ^
+  -H ^"sec-ch-ua: ^\^"Microsoft Edge^\^";v=^\^"143^\^", ^\^"Chromium^\^";v=^\^"143^\^", ^\^"Not A(Brand^\^";v=^\^"24^\^"^" ^
+  -H ^"sec-ch-ua-mobile: ?0^" ^
+  -H ^"sec-ch-ua-platform: ^\^"Windows^\^"^" ^
+  -H ^"sec-fetch-dest: empty^" ^
+  -H ^"sec-fetch-mode: cors^" ^
+  -H ^"sec-fetch-site: same-site^" ^
+  -H ^"user-agent: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/143.0.0.0 Safari/537.36 Edg/143.0.0.0^"
+
+
+  {
+    "keypoint": {
+        "id": 631404,
+        "name": "教学组织形式与教学工作基本环节",
+        "count": 0,
+        "optional": false,
+        "children": null,
+        "requestNum": 0,
+        "requestType": 0,
+        "additional": false,
+        "keypointType": 0,
+        "parentId": 631258,
+        "level": 3,
+        "desc": null,
+        "giantOnly": false,
+        "choiceOnly": false
+    },
+    "frequency": 5,
+    "path": [
+        {
+            "id": 631226,
+            "name": "教育学",
+            "count": 0,
+            "optional": false,
+            "children": null,
+            "requestNum": 0,
+            "requestType": 0,
+            "additional": false,
+            "keypointType": 0,
+            "parentId": 0,
+            "level": 1,
+            "desc": null,
+            "giantOnly": false,
+            "choiceOnly": false
+        },
+        {
+            "id": 631258,
+            "name": "教学",
+            "count": 0,
+            "optional": false,
+            "children": null,
+            "requestNum": 0,
+            "requestType": 0,
+            "additional": false,
+            "keypointType": 0,
+            "parentId": 631226,
+            "level": 2,
+            "desc": null,
+            "giantOnly": false,
+            "choiceOnly": false
+        }
+    ]
+}
+
+
+
+
+
+curl ^"https://spa.fenbi.com/ti/exam/solution/1_32_1qnstnq?routecs=jsjyzhzz^" ^
+  -H ^"accept: text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.7^" ^
+  -H ^"accept-language: zh-CN,zh;q=0.9,en;q=0.8,en-GB;q=0.7,en-US;q=0.6,ja;q=0.5^" ^
+  -H ^"cache-control: no-cache^" ^
+  -b ^"sid=3495507; persistent=A5xj9BjQOm1EyQz8VPpRa/9riRSPdxEInSq2c4Yk0QsIiKWBkxItuaUmnAJiAgNCB2Hkfd12n3qLIwSzJKFVfw==; sensorsdata2015jssdkcross=^%^7B^%^22distinct_id^%^22^%^3A^%^2219b0e92dd27bb1-0985a81370bba38-4c657b58-1327104-19b0e92dd28fc3^%^22^%^2C^%^22first_id^%^22^%^3A^%^22^%^22^%^2C^%^22props^%^22^%^3A^%^7B^%^22^%^24latest_traffic_source_type^%^22^%^3A^%^22^%^E7^%^9B^%^B4^%^E6^%^8E^%^A5^%^E6^%^B5^%^81^%^E9^%^87^%^8F^%^22^%^2C^%^22^%^24latest_search_keyword^%^22^%^3A^%^22^%^E6^%^9C^%^AA^%^E5^%^8F^%^96^%^E5^%^88^%^B0^%^E5^%^80^%^BC_^%^E7^%^9B^%^B4^%^E6^%^8E^%^A5^%^E6^%^89^%^93^%^E5^%^BC^%^80^%^22^%^2C^%^22^%^24latest_referrer^%^22^%^3A^%^22^%^22^%^7D^%^2C^%^22^%^24device_id^%^22^%^3A^%^2219b0e92dd27bb1-0985a81370bba38-4c657b58-1327104-19b0e92dd28fc3^%^22^%^7D; sess=WLNjTh9mtYTzCDTkHUtClFUq3lPh8GrhfKUzfgBE/pDqA1upQK0rRwNVoogjnZS795fR9RRlhe/l31iNHFOw672bfpPwzzGwZJxNGOWuinY=; userid=152815018^" ^
+  -H ^"pragma: no-cache^" ^
+  -H ^"priority: u=0, i^" ^
+  -H ^"referer: https://www.fenbi.com/^" ^
+  -H ^"sec-ch-ua: ^\^"Microsoft Edge^\^";v=^\^"143^\^", ^\^"Chromium^\^";v=^\^"143^\^", ^\^"Not A(Brand^\^";v=^\^"24^\^"^" ^
+  -H ^"sec-ch-ua-mobile: ?0^" ^
+  -H ^"sec-ch-ua-platform: ^\^"Windows^\^"^" ^
+  -H ^"sec-fetch-dest: document^" ^
+  -H ^"sec-fetch-mode: navigate^" ^
+  -H ^"sec-fetch-site: same-origin^" ^
+  -H ^"sec-fetch-user: ?1^" ^
+  -H ^"upgrade-insecure-requests: 1^" ^
+  -H ^"user-agent: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/143.0.0.0 Safari/537.36 Edg/143.0.0.0^" &
+curl ^"https://nodestatic.fbstatic.cn/weblts_spa_online/ti/styles-6IAKUIYE.css^" ^
+  -H ^"accept: text/css,*/*;q=0.1^" ^
+  -H ^"accept-language: zh-CN,zh;q=0.9,en;q=0.8,en-GB;q=0.7,en-US;q=0.6,ja;q=0.5^" ^
+  -H ^"cache-control: no-cache^" ^
+  -H ^"pragma: no-cache^" ^
+  -H ^"priority: u=0^" ^
+  -H ^"referer: https://spa.fenbi.com/^" ^
+  -H ^"sec-ch-ua: ^\^"Microsoft Edge^\^";v=^\^"143^\^", ^\^"Chromium^\^";v=^\^"143^\^", ^\^"Not A(Brand^\^";v=^\^"24^\^"^" ^
+  -H ^"sec-ch-ua-mobile: ?0^" ^
+  -H ^"sec-ch-ua-platform: ^\^"Windows^\^"^" ^
+  -H ^"sec-fetch-dest: style^" ^
+  -H ^"sec-fetch-mode: no-cors^" ^
+  -H ^"sec-fetch-site: cross-site^" ^
+  -H ^"sec-fetch-storage-access: active^" ^
+  -H ^"user-agent: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/143.0.0.0 Safari/537.36 Edg/143.0.0.0^" &
+curl ^"https://nodestatic.fbstatic.cn/weblts_spa_online/ti/chunk-GEOMVOWK.js^" ^
+  -H ^"accept: */*^" ^
+  -H ^"accept-language: zh-CN,zh;q=0.9,en;q=0.8,en-GB;q=0.7,en-US;q=0.6,ja;q=0.5^" ^
+  -H ^"cache-control: no-cache^" ^
+  -H ^"origin: https://spa.fenbi.com^" ^
+  -H ^"pragma: no-cache^" ^
+  -H ^"priority: u=1^" ^
+  -H ^"referer: https://spa.fenbi.com/^" ^
+  -H ^"sec-ch-ua: ^\^"Microsoft Edge^\^";v=^\^"143^\^", ^\^"Chromium^\^";v=^\^"143^\^", ^\^"Not A(Brand^\^";v=^\^"24^\^"^" ^
+  -H ^"sec-ch-ua-mobile: ?0^" ^
+  -H ^"sec-ch-ua-platform: ^\^"Windows^\^"^" ^
+  -H ^"sec-fetch-dest: script^" ^
+  -H ^"sec-fetch-mode: cors^" ^
+  -H ^"sec-fetch-site: cross-site^" ^
+  -H ^"user-agent: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/143.0.0.0 Safari/537.36 Edg/143.0.0.0^" &
+curl ^"https://nodestatic.fbstatic.cn/weblts_spa_online/ti/chunk-B5H6FNNG.js^" ^
+  -H ^"accept: */*^" ^
+  -H ^"accept-language: zh-CN,zh;q=0.9,en;q=0.8,en-GB;q=0.7,en-US;q=0.6,ja;q=0.5^" ^
+  -H ^"cache-control: no-cache^" ^
+  -H ^"origin: https://spa.fenbi.com^" ^
+  -H ^"pragma: no-cache^" ^
+  -H ^"priority: u=1^" ^
+  -H ^"referer: https://spa.fenbi.com/^" ^
+  -H ^"sec-ch-ua: ^\^"Microsoft Edge^\^";v=^\^"143^\^", ^\^"Chromium^\^";v=^\^"143^\^", ^\^"Not A(Brand^\^";v=^\^"24^\^"^" ^
+  -H ^"sec-ch-ua-mobile: ?0^" ^
+  -H ^"sec-ch-ua-platform: ^\^"Windows^\^"^" ^
+  -H ^"sec-fetch-dest: script^" ^
+  -H ^"sec-fetch-mode: cors^" ^
+  -H ^"sec-fetch-site: cross-site^" ^
+  -H ^"user-agent: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/143.0.0.0 Safari/537.36 Edg/143.0.0.0^" &
+curl ^"https://nodestatic.fbstatic.cn/weblts_spa_online/ti/chunk-3SY2CFHE.js^" ^
+  -H ^"accept: */*^" ^
+  -H ^"accept-language: zh-CN,zh;q=0.9,en;q=0.8,en-GB;q=0.7,en-US;q=0.6,ja;q=0.5^" ^
+  -H ^"cache-control: no-cache^" ^
+  -H ^"origin: https://spa.fenbi.com^" ^
+  -H ^"pragma: no-cache^" ^
+  -H ^"priority: u=1^" ^
+  -H ^"referer: https://spa.fenbi.com/^" ^
+  -H ^"sec-ch-ua: ^\^"Microsoft Edge^\^";v=^\^"143^\^", ^\^"Chromium^\^";v=^\^"143^\^", ^\^"Not A(Brand^\^";v=^\^"24^\^"^" ^
+  -H ^"sec-ch-ua-mobile: ?0^" ^
+  -H ^"sec-ch-ua-platform: ^\^"Windows^\^"^" ^
+  -H ^"sec-fetch-dest: script^" ^
+  -H ^"sec-fetch-mode: cors^" ^
+  -H ^"sec-fetch-site: cross-site^" ^
+  -H ^"user-agent: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/143.0.0.0 Safari/537.36 Edg/143.0.0.0^" &
+curl ^"https://nodestatic.fbstatic.cn/weblts_spa_online/ti/chunk-OGJQPYMJ.js^" ^
+  -H ^"accept: */*^" ^
+  -H ^"accept-language: zh-CN,zh;q=0.9,en;q=0.8,en-GB;q=0.7,en-US;q=0.6,ja;q=0.5^" ^
+  -H ^"cache-control: no-cache^" ^
+  -H ^"origin: https://spa.fenbi.com^" ^
+  -H ^"pragma: no-cache^" ^
+  -H ^"priority: u=1^" ^
+  -H ^"referer: https://spa.fenbi.com/^" ^
+  -H ^"sec-ch-ua: ^\^"Microsoft Edge^\^";v=^\^"143^\^", ^\^"Chromium^\^";v=^\^"143^\^", ^\^"Not A(Brand^\^";v=^\^"24^\^"^" ^
+  -H ^"sec-ch-ua-mobile: ?0^" ^
+  -H ^"sec-ch-ua-platform: ^\^"Windows^\^"^" ^
+  -H ^"sec-fetch-dest: script^" ^
+  -H ^"sec-fetch-mode: cors^" ^
+  -H ^"sec-fetch-site: cross-site^" ^
+  -H ^"user-agent: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/143.0.0.0 Safari/537.36 Edg/143.0.0.0^" &
+curl ^"https://nodestatic.fbstatic.cn/weblts_spa_online/ti/polyfills-FFHMD2TL.js^" ^
+  -H ^"accept: */*^" ^
+  -H ^"accept-language: zh-CN,zh;q=0.9,en;q=0.8,en-GB;q=0.7,en-US;q=0.6,ja;q=0.5^" ^
+  -H ^"cache-control: no-cache^" ^
+  -H ^"origin: https://spa.fenbi.com^" ^
+  -H ^"pragma: no-cache^" ^
+  -H ^"priority: u=1^" ^
+  -H ^"referer: https://spa.fenbi.com/^" ^
+  -H ^"sec-ch-ua: ^\^"Microsoft Edge^\^";v=^\^"143^\^", ^\^"Chromium^\^";v=^\^"143^\^", ^\^"Not A(Brand^\^";v=^\^"24^\^"^" ^
+  -H ^"sec-ch-ua-mobile: ?0^" ^
+  -H ^"sec-ch-ua-platform: ^\^"Windows^\^"^" ^
+  -H ^"sec-fetch-dest: script^" ^
+  -H ^"sec-fetch-mode: cors^" ^
+  -H ^"sec-fetch-site: cross-site^" ^
+  -H ^"user-agent: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/143.0.0.0 Safari/537.36 Edg/143.0.0.0^" &
+curl ^"https://nodestatic.fbstatic.cn/weblts_spa_online/ti/main-3HOWPFCI.js^" ^
+  -H ^"accept: */*^" ^
+  -H ^"accept-language: zh-CN,zh;q=0.9,en;q=0.8,en-GB;q=0.7,en-US;q=0.6,ja;q=0.5^" ^
+  -H ^"cache-control: no-cache^" ^
+  -H ^"origin: https://spa.fenbi.com^" ^
+  -H ^"pragma: no-cache^" ^
+  -H ^"priority: u=1^" ^
+  -H ^"referer: https://spa.fenbi.com/^" ^
+  -H ^"sec-ch-ua: ^\^"Microsoft Edge^\^";v=^\^"143^\^", ^\^"Chromium^\^";v=^\^"143^\^", ^\^"Not A(Brand^\^";v=^\^"24^\^"^" ^
+  -H ^"sec-ch-ua-mobile: ?0^" ^
+  -H ^"sec-ch-ua-platform: ^\^"Windows^\^"^" ^
+  -H ^"sec-fetch-dest: script^" ^
+  -H ^"sec-fetch-mode: cors^" ^
+  -H ^"sec-fetch-site: cross-site^" ^
+  -H ^"user-agent: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/143.0.0.0 Safari/537.36 Edg/143.0.0.0^" &
+curl ^"chrome-extension://amkbmndfnliijdhojkpoglbnaaahippg/default_config.content.json^" ^
+  -H ^"User-Agent: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/143.0.0.0 Safari/537.36 Edg/143.0.0.0^" ^
+  -H ^"Referer;^" &
+curl ^"https://nodestatic.fbstatic.cn/pool/mathlive/mathlive-static.css^" ^
+  -H ^"accept: text/css,*/*;q=0.1^" ^
+  -H ^"accept-language: zh-CN,zh;q=0.9,en;q=0.8,en-GB;q=0.7,en-US;q=0.6,ja;q=0.5^" ^
+  -H ^"cache-control: no-cache^" ^
+  -H ^"pragma: no-cache^" ^
+  -H ^"priority: u=0^" ^
+  -H ^"referer: https://spa.fenbi.com/^" ^
+  -H ^"sec-ch-ua: ^\^"Microsoft Edge^\^";v=^\^"143^\^", ^\^"Chromium^\^";v=^\^"143^\^", ^\^"Not A(Brand^\^";v=^\^"24^\^"^" ^
+  -H ^"sec-ch-ua-mobile: ?0^" ^
+  -H ^"sec-ch-ua-platform: ^\^"Windows^\^"^" ^
+  -H ^"sec-fetch-dest: style^" ^
+  -H ^"sec-fetch-mode: no-cors^" ^
+  -H ^"sec-fetch-site: cross-site^" ^
+  -H ^"sec-fetch-storage-access: active^" ^
+  -H ^"user-agent: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/143.0.0.0 Safari/537.36 Edg/143.0.0.0^" &
+curl ^"https://nodestatic.fbstatic.cn/pool/umeditor_master/third-party/jquery.min.js^" ^
+  -H ^"accept: */*^" ^
+  -H ^"accept-language: zh-CN,zh;q=0.9,en;q=0.8,en-GB;q=0.7,en-US;q=0.6,ja;q=0.5^" ^
+  -H ^"cache-control: no-cache^" ^
+  -H ^"pragma: no-cache^" ^
+  -H ^"referer: https://spa.fenbi.com/^" ^
+  -H ^"sec-ch-ua: ^\^"Microsoft Edge^\^";v=^\^"143^\^", ^\^"Chromium^\^";v=^\^"143^\^", ^\^"Not A(Brand^\^";v=^\^"24^\^"^" ^
+  -H ^"sec-ch-ua-mobile: ?0^" ^
+  -H ^"sec-ch-ua-platform: ^\^"Windows^\^"^" ^
+  -H ^"sec-fetch-dest: script^" ^
+  -H ^"sec-fetch-mode: no-cors^" ^
+  -H ^"sec-fetch-site: cross-site^" ^
+  -H ^"sec-fetch-storage-access: active^" ^
+  -H ^"user-agent: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/143.0.0.0 Safari/537.36 Edg/143.0.0.0^" &
+curl ^"https://nodestatic.fbstatic.cn/weblts_spa_online/ti/dark.css^" ^
+  -H ^"accept: text/css,*/*;q=0.1^" ^
+  -H ^"accept-language: zh-CN,zh;q=0.9,en;q=0.8,en-GB;q=0.7,en-US;q=0.6,ja;q=0.5^" ^
+  -H ^"cache-control: no-cache^" ^
+  -H ^"pragma: no-cache^" ^
+  -H ^"priority: u=0^" ^
+  -H ^"referer: https://spa.fenbi.com/^" ^
+  -H ^"sec-ch-ua: ^\^"Microsoft Edge^\^";v=^\^"143^\^", ^\^"Chromium^\^";v=^\^"143^\^", ^\^"Not A(Brand^\^";v=^\^"24^\^"^" ^
+  -H ^"sec-ch-ua-mobile: ?0^" ^
+  -H ^"sec-ch-ua-platform: ^\^"Windows^\^"^" ^
+  -H ^"sec-fetch-dest: style^" ^
+  -H ^"sec-fetch-mode: no-cors^" ^
+  -H ^"sec-fetch-site: cross-site^" ^
+  -H ^"sec-fetch-storage-access: active^" ^
+  -H ^"user-agent: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/143.0.0.0 Safari/537.36 Edg/143.0.0.0^" &
+curl ^"https://nodestatic.fbstatic.cn/weblts_spa_online/ti/default.css^" ^
+  -H ^"accept: text/css,*/*;q=0.1^" ^
+  -H ^"accept-language: zh-CN,zh;q=0.9,en;q=0.8,en-GB;q=0.7,en-US;q=0.6,ja;q=0.5^" ^
+  -H ^"cache-control: no-cache^" ^
+  -H ^"pragma: no-cache^" ^
+  -H ^"priority: u=0^" ^
+  -H ^"referer: https://spa.fenbi.com/^" ^
+  -H ^"sec-ch-ua: ^\^"Microsoft Edge^\^";v=^\^"143^\^", ^\^"Chromium^\^";v=^\^"143^\^", ^\^"Not A(Brand^\^";v=^\^"24^\^"^" ^
+  -H ^"sec-ch-ua-mobile: ?0^" ^
+  -H ^"sec-ch-ua-platform: ^\^"Windows^\^"^" ^
+  -H ^"sec-fetch-dest: style^" ^
+  -H ^"sec-fetch-mode: no-cors^" ^
+  -H ^"sec-fetch-site: cross-site^" ^
+  -H ^"sec-fetch-storage-access: active^" ^
+  -H ^"user-agent: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/143.0.0.0 Safari/537.36 Edg/143.0.0.0^" &
+curl ^"https://login.fenbi.com/api/users/current?kav=125^&av=125^&hav=125^&app=web^" ^
+  -H ^"accept: application/json, text/plain, */*^" ^
+  -H ^"accept-language: zh-CN,zh;q=0.9,en;q=0.8,en-GB;q=0.7,en-US;q=0.6,ja;q=0.5^" ^
+  -H ^"cache-control: no-cache^" ^
+  -b ^"sid=3495507; persistent=A5xj9BjQOm1EyQz8VPpRa/9riRSPdxEInSq2c4Yk0QsIiKWBkxItuaUmnAJiAgNCB2Hkfd12n3qLIwSzJKFVfw==; sensorsdata2015jssdkcross=^%^7B^%^22distinct_id^%^22^%^3A^%^2219b0e92dd27bb1-0985a81370bba38-4c657b58-1327104-19b0e92dd28fc3^%^22^%^2C^%^22first_id^%^22^%^3A^%^22^%^22^%^2C^%^22props^%^22^%^3A^%^7B^%^22^%^24latest_traffic_source_type^%^22^%^3A^%^22^%^E7^%^9B^%^B4^%^E6^%^8E^%^A5^%^E6^%^B5^%^81^%^E9^%^87^%^8F^%^22^%^2C^%^22^%^24latest_search_keyword^%^22^%^3A^%^22^%^E6^%^9C^%^AA^%^E5^%^8F^%^96^%^E5^%^88^%^B0^%^E5^%^80^%^BC_^%^E7^%^9B^%^B4^%^E6^%^8E^%^A5^%^E6^%^89^%^93^%^E5^%^BC^%^80^%^22^%^2C^%^22^%^24latest_referrer^%^22^%^3A^%^22^%^22^%^7D^%^2C^%^22^%^24device_id^%^22^%^3A^%^2219b0e92dd27bb1-0985a81370bba38-4c657b58-1327104-19b0e92dd28fc3^%^22^%^7D; acw_tc=0bdd34ea17664432530031486e2cc4a300c4d5f1338975d986dc52f81e3542; sess=WLNjTh9mtYTzCDTkHUtClFUq3lPh8GrhfKUzfgBE/pDqA1upQK0rRwNVoogjnZS795fR9RRlhe/l31iNHFOw672bfpPwzzGwZJxNGOWuinY=; userid=152815018^" ^
+  -H ^"origin: https://spa.fenbi.com^" ^
+  -H ^"pragma: no-cache^" ^
+  -H ^"priority: u=1, i^" ^
+  -H ^"referer: https://spa.fenbi.com/^" ^
+  -H ^"sec-ch-ua: ^\^"Microsoft Edge^\^";v=^\^"143^\^", ^\^"Chromium^\^";v=^\^"143^\^", ^\^"Not A(Brand^\^";v=^\^"24^\^"^" ^
+  -H ^"sec-ch-ua-mobile: ?0^" ^
+  -H ^"sec-ch-ua-platform: ^\^"Windows^\^"^" ^
+  -H ^"sec-fetch-dest: empty^" ^
+  -H ^"sec-fetch-mode: cors^" ^
+  -H ^"sec-fetch-site: same-site^" ^
+  -H ^"user-agent: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/143.0.0.0 Safari/537.36 Edg/143.0.0.0^" &
+curl ^"https://nodestatic.fbstatic.cn/weblts_spa_online/ti/chunk-D2XZLP7D.js^" ^
+  -H ^"accept: */*^" ^
+  -H ^"accept-language: zh-CN,zh;q=0.9,en;q=0.8,en-GB;q=0.7,en-US;q=0.6,ja;q=0.5^" ^
+  -H ^"cache-control: no-cache^" ^
+  -H ^"origin: https://spa.fenbi.com^" ^
+  -H ^"pragma: no-cache^" ^
+  -H ^"priority: u=1^" ^
+  -H ^"referer: https://nodestatic.fbstatic.cn/weblts_spa_online/ti/main-3HOWPFCI.js^" ^
+  -H ^"sec-ch-ua: ^\^"Microsoft Edge^\^";v=^\^"143^\^", ^\^"Chromium^\^";v=^\^"143^\^", ^\^"Not A(Brand^\^";v=^\^"24^\^"^" ^
+  -H ^"sec-ch-ua-mobile: ?0^" ^
+  -H ^"sec-ch-ua-platform: ^\^"Windows^\^"^" ^
+  -H ^"sec-fetch-dest: script^" ^
+  -H ^"sec-fetch-mode: cors^" ^
+  -H ^"sec-fetch-site: cross-site^" ^
+  -H ^"user-agent: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/143.0.0.0 Safari/537.36 Edg/143.0.0.0^" &
+curl ^"https://nodestatic.fbstatic.cn/pool/umeditor_master/third-party/template.min.js^" ^
+  -H ^"accept: */*^" ^
+  -H ^"accept-language: zh-CN,zh;q=0.9,en;q=0.8,en-GB;q=0.7,en-US;q=0.6,ja;q=0.5^" ^
+  -H ^"cache-control: no-cache^" ^
+  -H ^"pragma: no-cache^" ^
+  -H ^"referer: https://spa.fenbi.com/^" ^
+  -H ^"sec-ch-ua: ^\^"Microsoft Edge^\^";v=^\^"143^\^", ^\^"Chromium^\^";v=^\^"143^\^", ^\^"Not A(Brand^\^";v=^\^"24^\^"^" ^
+  -H ^"sec-ch-ua-mobile: ?0^" ^
+  -H ^"sec-ch-ua-platform: ^\^"Windows^\^"^" ^
+  -H ^"sec-fetch-dest: script^" ^
+  -H ^"sec-fetch-mode: no-cors^" ^
+  -H ^"sec-fetch-site: cross-site^" ^
+  -H ^"sec-fetch-storage-access: active^" ^
+  -H ^"user-agent: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/143.0.0.0 Safari/537.36 Edg/143.0.0.0^" &
+curl ^"https://web.nofbcdn.cn/webtools/js/ubb-684c88c1.js^" ^
+  -H ^"accept: */*^" ^
+  -H ^"accept-language: zh-CN,zh;q=0.9,en;q=0.8,en-GB;q=0.7,en-US;q=0.6,ja;q=0.5^" ^
+  -H ^"cache-control: no-cache^" ^
+  -H ^"pragma: no-cache^" ^
+  -H ^"referer: https://spa.fenbi.com/^" ^
+  -H ^"sec-ch-ua: ^\^"Microsoft Edge^\^";v=^\^"143^\^", ^\^"Chromium^\^";v=^\^"143^\^", ^\^"Not A(Brand^\^";v=^\^"24^\^"^" ^
+  -H ^"sec-ch-ua-mobile: ?0^" ^
+  -H ^"sec-ch-ua-platform: ^\^"Windows^\^"^" ^
+  -H ^"sec-fetch-dest: script^" ^
+  -H ^"sec-fetch-mode: no-cors^" ^
+  -H ^"sec-fetch-site: cross-site^" ^
+  -H ^"sec-fetch-storage-access: active^" ^
+  -H ^"user-agent: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/143.0.0.0 Safari/537.36 Edg/143.0.0.0^" &
+curl ^"https://web.nofbcdn.cn/webtools/dist-249a0494fea7/mathlive.js^" ^
+  -H ^"accept: */*^" ^
+  -H ^"accept-language: zh-CN,zh;q=0.9,en;q=0.8,en-GB;q=0.7,en-US;q=0.6,ja;q=0.5^" ^
+  -H ^"cache-control: no-cache^" ^
+  -H ^"pragma: no-cache^" ^
+  -H ^"referer: https://spa.fenbi.com/^" ^
+  -H ^"sec-ch-ua: ^\^"Microsoft Edge^\^";v=^\^"143^\^", ^\^"Chromium^\^";v=^\^"143^\^", ^\^"Not A(Brand^\^";v=^\^"24^\^"^" ^
+  -H ^"sec-ch-ua-mobile: ?0^" ^
+  -H ^"sec-ch-ua-platform: ^\^"Windows^\^"^" ^
+  -H ^"sec-fetch-dest: script^" ^
+  -H ^"sec-fetch-mode: no-cors^" ^
+  -H ^"sec-fetch-site: cross-site^" ^
+  -H ^"sec-fetch-storage-access: active^" ^
+  -H ^"user-agent: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/143.0.0.0 Safari/537.36 Edg/143.0.0.0^" &
+curl ^"https://nodestatic.fbstatic.cn/pool/umeditor_master/umeditor_no_autoupload.js^" ^
+  -H ^"accept: */*^" ^
+  -H ^"accept-language: zh-CN,zh;q=0.9,en;q=0.8,en-GB;q=0.7,en-US;q=0.6,ja;q=0.5^" ^
+  -H ^"cache-control: no-cache^" ^
+  -H ^"pragma: no-cache^" ^
+  -H ^"referer: https://spa.fenbi.com/^" ^
+  -H ^"sec-ch-ua: ^\^"Microsoft Edge^\^";v=^\^"143^\^", ^\^"Chromium^\^";v=^\^"143^\^", ^\^"Not A(Brand^\^";v=^\^"24^\^"^" ^
+  -H ^"sec-ch-ua-mobile: ?0^" ^
+  -H ^"sec-ch-ua-platform: ^\^"Windows^\^"^" ^
+  -H ^"sec-fetch-dest: script^" ^
+  -H ^"sec-fetch-mode: no-cors^" ^
+  -H ^"sec-fetch-site: cross-site^" ^
+  -H ^"sec-fetch-storage-access: active^" ^
+  -H ^"user-agent: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/143.0.0.0 Safari/537.36 Edg/143.0.0.0^" &
+curl ^"https://nodestatic.fbstatic.cn/weblts_spa_online/ti/chunk-ZUQGULAZ.js^" ^
+  -H ^"accept: */*^" ^
+  -H ^"accept-language: zh-CN,zh;q=0.9,en;q=0.8,en-GB;q=0.7,en-US;q=0.6,ja;q=0.5^" ^
+  -H ^"cache-control: no-cache^" ^
+  -H ^"origin: https://spa.fenbi.com^" ^
+  -H ^"pragma: no-cache^" ^
+  -H ^"priority: u=1^" ^
+  -H ^"referer: https://nodestatic.fbstatic.cn/weblts_spa_online/ti/chunk-D2XZLP7D.js^" ^
+  -H ^"sec-ch-ua: ^\^"Microsoft Edge^\^";v=^\^"143^\^", ^\^"Chromium^\^";v=^\^"143^\^", ^\^"Not A(Brand^\^";v=^\^"24^\^"^" ^
+  -H ^"sec-ch-ua-mobile: ?0^" ^
+  -H ^"sec-ch-ua-platform: ^\^"Windows^\^"^" ^
+  -H ^"sec-fetch-dest: script^" ^
+  -H ^"sec-fetch-mode: cors^" ^
+  -H ^"sec-fetch-site: cross-site^" ^
+  -H ^"user-agent: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/143.0.0.0 Safari/537.36 Edg/143.0.0.0^" &
+curl ^"https://nodestatic.fbstatic.cn/weblts_spa_online/ti/chunk-SSOYFKAN.js^" ^
+  -H ^"accept: */*^" ^
+  -H ^"accept-language: zh-CN,zh;q=0.9,en;q=0.8,en-GB;q=0.7,en-US;q=0.6,ja;q=0.5^" ^
+  -H ^"cache-control: no-cache^" ^
+  -H ^"origin: https://spa.fenbi.com^" ^
+  -H ^"pragma: no-cache^" ^
+  -H ^"priority: u=1^" ^
+  -H ^"referer: https://nodestatic.fbstatic.cn/weblts_spa_online/ti/chunk-D2XZLP7D.js^" ^
+  -H ^"sec-ch-ua: ^\^"Microsoft Edge^\^";v=^\^"143^\^", ^\^"Chromium^\^";v=^\^"143^\^", ^\^"Not A(Brand^\^";v=^\^"24^\^"^" ^
+  -H ^"sec-ch-ua-mobile: ?0^" ^
+  -H ^"sec-ch-ua-platform: ^\^"Windows^\^"^" ^
+  -H ^"sec-fetch-dest: script^" ^
+  -H ^"sec-fetch-mode: cors^" ^
+  -H ^"sec-fetch-site: cross-site^" ^
+  -H ^"user-agent: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/143.0.0.0 Safari/537.36 Edg/143.0.0.0^" &
+curl ^"https://nodestatic.fbstatic.cn/weblts_spa_online/ti/chunk-NE2EZXVZ.js^" ^
+  -H ^"accept: */*^" ^
+  -H ^"accept-language: zh-CN,zh;q=0.9,en;q=0.8,en-GB;q=0.7,en-US;q=0.6,ja;q=0.5^" ^
+  -H ^"cache-control: no-cache^" ^
+  -H ^"origin: https://spa.fenbi.com^" ^
+  -H ^"pragma: no-cache^" ^
+  -H ^"priority: u=1^" ^
+  -H ^"referer: https://nodestatic.fbstatic.cn/weblts_spa_online/ti/chunk-D2XZLP7D.js^" ^
+  -H ^"sec-ch-ua: ^\^"Microsoft Edge^\^";v=^\^"143^\^", ^\^"Chromium^\^";v=^\^"143^\^", ^\^"Not A(Brand^\^";v=^\^"24^\^"^" ^
+  -H ^"sec-ch-ua-mobile: ?0^" ^
+  -H ^"sec-ch-ua-platform: ^\^"Windows^\^"^" ^
+  -H ^"sec-fetch-dest: script^" ^
+  -H ^"sec-fetch-mode: cors^" ^
+  -H ^"sec-fetch-site: cross-site^" ^
+  -H ^"user-agent: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/143.0.0.0 Safari/537.36 Edg/143.0.0.0^" &
+curl ^"https://nodestatic.fbstatic.cn/weblts_spa_online/ti/chunk-ZU4IYIMX.js^" ^
+  -H ^"accept: */*^" ^
+  -H ^"accept-language: zh-CN,zh;q=0.9,en;q=0.8,en-GB;q=0.7,en-US;q=0.6,ja;q=0.5^" ^
+  -H ^"cache-control: no-cache^" ^
+  -H ^"origin: https://spa.fenbi.com^" ^
+  -H ^"pragma: no-cache^" ^
+  -H ^"priority: u=1^" ^
+  -H ^"referer: https://nodestatic.fbstatic.cn/weblts_spa_online/ti/chunk-D2XZLP7D.js^" ^
+  -H ^"sec-ch-ua: ^\^"Microsoft Edge^\^";v=^\^"143^\^", ^\^"Chromium^\^";v=^\^"143^\^", ^\^"Not A(Brand^\^";v=^\^"24^\^"^" ^
+  -H ^"sec-ch-ua-mobile: ?0^" ^
+  -H ^"sec-ch-ua-platform: ^\^"Windows^\^"^" ^
+  -H ^"sec-fetch-dest: script^" ^
+  -H ^"sec-fetch-mode: cors^" ^
+  -H ^"sec-fetch-site: cross-site^" ^
+  -H ^"user-agent: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/143.0.0.0 Safari/537.36 Edg/143.0.0.0^" &
+curl ^"https://ke.fenbi.com/api/v3/members/member_static_config?kav=125^&av=125^&hav=125^&app=web^" ^
+  -H ^"accept: application/json, text/plain, */*^" ^
+  -H ^"accept-language: zh-CN,zh;q=0.9,en;q=0.8,en-GB;q=0.7,en-US;q=0.6,ja;q=0.5^" ^
+  -H ^"cache-control: no-cache^" ^
+  -b ^"sid=3495507; persistent=A5xj9BjQOm1EyQz8VPpRa/9riRSPdxEInSq2c4Yk0QsIiKWBkxItuaUmnAJiAgNCB2Hkfd12n3qLIwSzJKFVfw==; sensorsdata2015jssdkcross=^%^7B^%^22distinct_id^%^22^%^3A^%^2219b0e92dd27bb1-0985a81370bba38-4c657b58-1327104-19b0e92dd28fc3^%^22^%^2C^%^22first_id^%^22^%^3A^%^22^%^22^%^2C^%^22props^%^22^%^3A^%^7B^%^22^%^24latest_traffic_source_type^%^22^%^3A^%^22^%^E7^%^9B^%^B4^%^E6^%^8E^%^A5^%^E6^%^B5^%^81^%^E9^%^87^%^8F^%^22^%^2C^%^22^%^24latest_search_keyword^%^22^%^3A^%^22^%^E6^%^9C^%^AA^%^E5^%^8F^%^96^%^E5^%^88^%^B0^%^E5^%^80^%^BC_^%^E7^%^9B^%^B4^%^E6^%^8E^%^A5^%^E6^%^89^%^93^%^E5^%^BC^%^80^%^22^%^2C^%^22^%^24latest_referrer^%^22^%^3A^%^22^%^22^%^7D^%^2C^%^22^%^24device_id^%^22^%^3A^%^2219b0e92dd27bb1-0985a81370bba38-4c657b58-1327104-19b0e92dd28fc3^%^22^%^7D; sess=WLNjTh9mtYTzCDTkHUtClFUq3lPh8GrhfKUzfgBE/pDqA1upQK0rRwNVoogjnZS795fR9RRlhe/l31iNHFOw672bfpPwzzGwZJxNGOWuinY=; userid=152815018^" ^
+  -H ^"origin: https://spa.fenbi.com^" ^
+  -H ^"pragma: no-cache^" ^
+  -H ^"priority: u=1, i^" ^
+  -H ^"referer: https://spa.fenbi.com/^" ^
+  -H ^"sec-ch-ua: ^\^"Microsoft Edge^\^";v=^\^"143^\^", ^\^"Chromium^\^";v=^\^"143^\^", ^\^"Not A(Brand^\^";v=^\^"24^\^"^" ^
+  -H ^"sec-ch-ua-mobile: ?0^" ^
+  -H ^"sec-ch-ua-platform: ^\^"Windows^\^"^" ^
+  -H ^"sec-fetch-dest: empty^" ^
+  -H ^"sec-fetch-mode: cors^" ^
+  -H ^"sec-fetch-site: same-site^" ^
+  -H ^"user-agent: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/143.0.0.0 Safari/537.36 Edg/143.0.0.0^" &
+curl ^"https://nodestatic.fbstatic.cn/weblts_spa_online/ti/chunk-AC3LUDV5.js^" ^
+  -H ^"accept: */*^" ^
+  -H ^"accept-language: zh-CN,zh;q=0.9,en;q=0.8,en-GB;q=0.7,en-US;q=0.6,ja;q=0.5^" ^
+  -H ^"cache-control: no-cache^" ^
+  -H ^"origin: https://spa.fenbi.com^" ^
+  -H ^"pragma: no-cache^" ^
+  -H ^"priority: u=1^" ^
+  -H ^"referer: https://nodestatic.fbstatic.cn/weblts_spa_online/ti/main-3HOWPFCI.js^" ^
+  -H ^"sec-ch-ua: ^\^"Microsoft Edge^\^";v=^\^"143^\^", ^\^"Chromium^\^";v=^\^"143^\^", ^\^"Not A(Brand^\^";v=^\^"24^\^"^" ^
+  -H ^"sec-ch-ua-mobile: ?0^" ^
+  -H ^"sec-ch-ua-platform: ^\^"Windows^\^"^" ^
+  -H ^"sec-fetch-dest: script^" ^
+  -H ^"sec-fetch-mode: cors^" ^
+  -H ^"sec-fetch-site: cross-site^" ^
+  -H ^"user-agent: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/143.0.0.0 Safari/537.36 Edg/143.0.0.0^" &
+curl ^"https://tiku.fenbi.com/combine/exercise/getSolution?format=html^&key=1_32_1qnstnq^&routecs=jsjyzhzz^&kav=125^&av=125^&hav=125^&app=web^" ^
+  -H ^"accept: application/json, text/plain, */*^" ^
+  -H ^"accept-language: zh-CN,zh;q=0.9,en;q=0.8,en-GB;q=0.7,en-US;q=0.6,ja;q=0.5^" ^
+  -H ^"cache-control: no-cache^" ^
+  -b ^"sid=3495507; persistent=A5xj9BjQOm1EyQz8VPpRa/9riRSPdxEInSq2c4Yk0QsIiKWBkxItuaUmnAJiAgNCB2Hkfd12n3qLIwSzJKFVfw==; sensorsdata2015jssdkcross=^%^7B^%^22distinct_id^%^22^%^3A^%^2219b0e92dd27bb1-0985a81370bba38-4c657b58-1327104-19b0e92dd28fc3^%^22^%^2C^%^22first_id^%^22^%^3A^%^22^%^22^%^2C^%^22props^%^22^%^3A^%^7B^%^22^%^24latest_traffic_source_type^%^22^%^3A^%^22^%^E7^%^9B^%^B4^%^E6^%^8E^%^A5^%^E6^%^B5^%^81^%^E9^%^87^%^8F^%^22^%^2C^%^22^%^24latest_search_keyword^%^22^%^3A^%^22^%^E6^%^9C^%^AA^%^E5^%^8F^%^96^%^E5^%^88^%^B0^%^E5^%^80^%^BC_^%^E7^%^9B^%^B4^%^E6^%^8E^%^A5^%^E6^%^89^%^93^%^E5^%^BC^%^80^%^22^%^2C^%^22^%^24latest_referrer^%^22^%^3A^%^22^%^22^%^7D^%^2C^%^22^%^24device_id^%^22^%^3A^%^2219b0e92dd27bb1-0985a81370bba38-4c657b58-1327104-19b0e92dd28fc3^%^22^%^7D; sess=WLNjTh9mtYTzCDTkHUtClFUq3lPh8GrhfKUzfgBE/pDqA1upQK0rRwNVoogjnZS795fR9RRlhe/l31iNHFOw672bfpPwzzGwZJxNGOWuinY=; userid=152815018; acw_tc=0bd17c5217664432532552303ebe18ebe390fbf317c200464e993a0e9c1964^" ^
+  -H ^"origin: https://spa.fenbi.com^" ^
+  -H ^"pragma: no-cache^" ^
+  -H ^"priority: u=1, i^" ^
+  -H ^"referer: https://spa.fenbi.com/^" ^
+  -H ^"sec-ch-ua: ^\^"Microsoft Edge^\^";v=^\^"143^\^", ^\^"Chromium^\^";v=^\^"143^\^", ^\^"Not A(Brand^\^";v=^\^"24^\^"^" ^
+  -H ^"sec-ch-ua-mobile: ?0^" ^
+  -H ^"sec-ch-ua-platform: ^\^"Windows^\^"^" ^
+  -H ^"sec-fetch-dest: empty^" ^
+  -H ^"sec-fetch-mode: cors^" ^
+  -H ^"sec-fetch-site: same-site^" ^
+  -H ^"user-agent: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/143.0.0.0 Safari/537.36 Edg/143.0.0.0^" &
+curl ^"https://tiku.fenbi.com/combine/exercise/getReport?format=html^&key=1_32_1qnstnq^&routecs=jsjyzhzz^&no_toast^&kav=125^&av=125^&hav=125^&app=web^" ^
+  -H ^"accept: application/json, text/plain, */*^" ^
+  -H ^"accept-language: zh-CN,zh;q=0.9,en;q=0.8,en-GB;q=0.7,en-US;q=0.6,ja;q=0.5^" ^
+  -H ^"cache-control: no-cache^" ^
+  -b ^"sid=3495507; persistent=A5xj9BjQOm1EyQz8VPpRa/9riRSPdxEInSq2c4Yk0QsIiKWBkxItuaUmnAJiAgNCB2Hkfd12n3qLIwSzJKFVfw==; sensorsdata2015jssdkcross=^%^7B^%^22distinct_id^%^22^%^3A^%^2219b0e92dd27bb1-0985a81370bba38-4c657b58-1327104-19b0e92dd28fc3^%^22^%^2C^%^22first_id^%^22^%^3A^%^22^%^22^%^2C^%^22props^%^22^%^3A^%^7B^%^22^%^24latest_traffic_source_type^%^22^%^3A^%^22^%^E7^%^9B^%^B4^%^E6^%^8E^%^A5^%^E6^%^B5^%^81^%^E9^%^87^%^8F^%^22^%^2C^%^22^%^24latest_search_keyword^%^22^%^3A^%^22^%^E6^%^9C^%^AA^%^E5^%^8F^%^96^%^E5^%^88^%^B0^%^E5^%^80^%^BC_^%^E7^%^9B^%^B4^%^E6^%^8E^%^A5^%^E6^%^89^%^93^%^E5^%^BC^%^80^%^22^%^2C^%^22^%^24latest_referrer^%^22^%^3A^%^22^%^22^%^7D^%^2C^%^22^%^24device_id^%^22^%^3A^%^2219b0e92dd27bb1-0985a81370bba38-4c657b58-1327104-19b0e92dd28fc3^%^22^%^7D; sess=WLNjTh9mtYTzCDTkHUtClFUq3lPh8GrhfKUzfgBE/pDqA1upQK0rRwNVoogjnZS795fR9RRlhe/l31iNHFOw672bfpPwzzGwZJxNGOWuinY=; userid=152815018; acw_tc=0bd17c5217664432532552303ebe18ebe390fbf317c200464e993a0e9c1964^" ^
+  -H ^"origin: https://spa.fenbi.com^" ^
+  -H ^"pragma: no-cache^" ^
+  -H ^"priority: u=1, i^" ^
+  -H ^"referer: https://spa.fenbi.com/^" ^
+  -H ^"sec-ch-ua: ^\^"Microsoft Edge^\^";v=^\^"143^\^", ^\^"Chromium^\^";v=^\^"143^\^", ^\^"Not A(Brand^\^";v=^\^"24^\^"^" ^
+  -H ^"sec-ch-ua-mobile: ?0^" ^
+  -H ^"sec-ch-ua-platform: ^\^"Windows^\^"^" ^
+  -H ^"sec-fetch-dest: empty^" ^
+  -H ^"sec-fetch-mode: cors^" ^
+  -H ^"sec-fetch-site: same-site^" ^
+  -H ^"user-agent: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/143.0.0.0 Safari/537.36 Edg/143.0.0.0^" &
+curl ^"https://nodestatic.fbstatic.cn/weblts_spa_online/ti/media/report-score-info-left-bg-5ENTHNLB.png^" ^
+  -H ^"accept: image/avif,image/webp,image/apng,image/svg+xml,image/*,*/*;q=0.8^" ^
+  -H ^"accept-language: zh-CN,zh;q=0.9,en;q=0.8,en-GB;q=0.7,en-US;q=0.6,ja;q=0.5^" ^
+  -H ^"cache-control: no-cache^" ^
+  -H ^"pragma: no-cache^" ^
+  -H ^"priority: u=1, i^" ^
+  -H ^"referer: https://spa.fenbi.com/^" ^
+  -H ^"sec-ch-ua: ^\^"Microsoft Edge^\^";v=^\^"143^\^", ^\^"Chromium^\^";v=^\^"143^\^", ^\^"Not A(Brand^\^";v=^\^"24^\^"^" ^
+  -H ^"sec-ch-ua-mobile: ?0^" ^
+  -H ^"sec-ch-ua-platform: ^\^"Windows^\^"^" ^
+  -H ^"sec-fetch-dest: image^" ^
+  -H ^"sec-fetch-mode: no-cors^" ^
+  -H ^"sec-fetch-site: cross-site^" ^
+  -H ^"sec-fetch-storage-access: active^" ^
+  -H ^"user-agent: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/143.0.0.0 Safari/537.36 Edg/143.0.0.0^" &
+curl ^"https://nodestatic.fbstatic.cn/weblts_spa_online/ti/media/report-score-info-right-bg-BZ7P7E4N.png^" ^
+  -H ^"accept: image/avif,image/webp,image/apng,image/svg+xml,image/*,*/*;q=0.8^" ^
+  -H ^"accept-language: zh-CN,zh;q=0.9,en;q=0.8,en-GB;q=0.7,en-US;q=0.6,ja;q=0.5^" ^
+  -H ^"cache-control: no-cache^" ^
+  -H ^"pragma: no-cache^" ^
+  -H ^"priority: u=1, i^" ^
+  -H ^"referer: https://spa.fenbi.com/^" ^
+  -H ^"sec-ch-ua: ^\^"Microsoft Edge^\^";v=^\^"143^\^", ^\^"Chromium^\^";v=^\^"143^\^", ^\^"Not A(Brand^\^";v=^\^"24^\^"^" ^
+  -H ^"sec-ch-ua-mobile: ?0^" ^
+  -H ^"sec-ch-ua-platform: ^\^"Windows^\^"^" ^
+  -H ^"sec-fetch-dest: image^" ^
+  -H ^"sec-fetch-mode: no-cors^" ^
+  -H ^"sec-fetch-site: cross-site^" ^
+  -H ^"sec-fetch-storage-access: active^" ^
+  -H ^"user-agent: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/143.0.0.0 Safari/537.36 Edg/143.0.0.0^" &
+curl ^"https://nodestatic.fbstatic.cn/pan/downloads/2a811c6cd99f8a0fc5b38d8e7e1d5667.js^" ^
+  -H ^"accept: */*^" ^
+  -H ^"accept-language: zh-CN,zh;q=0.9,en;q=0.8,en-GB;q=0.7,en-US;q=0.6,ja;q=0.5^" ^
+  -H ^"cache-control: no-cache^" ^
+  -H ^"pragma: no-cache^" ^
+  -H ^"referer: https://spa.fenbi.com/^" ^
+  -H ^"sec-ch-ua: ^\^"Microsoft Edge^\^";v=^\^"143^\^", ^\^"Chromium^\^";v=^\^"143^\^", ^\^"Not A(Brand^\^";v=^\^"24^\^"^" ^
+  -H ^"sec-ch-ua-mobile: ?0^" ^
+  -H ^"sec-ch-ua-platform: ^\^"Windows^\^"^" ^
+  -H ^"sec-fetch-dest: script^" ^
+  -H ^"sec-fetch-mode: no-cors^" ^
+  -H ^"sec-fetch-site: cross-site^" ^
+  -H ^"sec-fetch-storage-access: active^" ^
+  -H ^"user-agent: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/143.0.0.0 Safari/537.36 Edg/143.0.0.0^" &
+curl ^"https://tiku.fenbi.com/combine/static/solution?key=K1k2KL2qVT21ozEEsDrITeb4l6WTYnPKwaqa50toHR2EpYV8SEWy5ING48eNn7VIU1kV3xCnqUPj-nm79jXcHdrTaTfin4PqVAcUNm7d2T-6hKBFo89B5VSu1COtOmxQ-7GQF7g2GqVspEzUZC0kRQnuMC9Y3FjFqoIjzdcVkR3EYrqeEuDCe8znhlPioGwNxn5uRfzfxhorIBRoku05Enp0qDWnr5bj0mFHU1Efx0ZhWlFKcJMqoFNbe4L-c0HzkvWtf53L6jmvMS2VEJM3xNTnDmAKy7Owrvj7em1Wvk0efhEaG_hYsxJMVV9603KE3TbPSRK1B4vYG6JLRAQO03Z_tBQZDP8U6Yy5XMpdr1ySSDjUUG9J0MlZQicYvV05OOU-ymad2qSay6-hUbAi2Jpe_Wl1SuAytn0DBioVTxBzJ-jtXewTNnO_tmsThAkUI8YYNtRRJNv-KQ7ejB09eCEgzD4z17IeAILNyVH9tOy0zHe9h35sHzMsXczDOyTDmM8-bkKZbNsefUy_u6gGVBjkY61s6pL3OfFGXWp37KiMTWPWmzTjnEaIItXe2qOKxg^&routecs=jsjyzhzz^&type=1^&kav=125^&av=125^&hav=125^&app=web^" ^
+  -H ^"accept: application/json, text/plain, */*^" ^
+  -H ^"accept-language: zh-CN,zh;q=0.9,en;q=0.8,en-GB;q=0.7,en-US;q=0.6,ja;q=0.5^" ^
+  -H ^"cache-control: no-cache^" ^
+  -b ^"sid=3495507; persistent=A5xj9BjQOm1EyQz8VPpRa/9riRSPdxEInSq2c4Yk0QsIiKWBkxItuaUmnAJiAgNCB2Hkfd12n3qLIwSzJKFVfw==; sensorsdata2015jssdkcross=^%^7B^%^22distinct_id^%^22^%^3A^%^2219b0e92dd27bb1-0985a81370bba38-4c657b58-1327104-19b0e92dd28fc3^%^22^%^2C^%^22first_id^%^22^%^3A^%^22^%^22^%^2C^%^22props^%^22^%^3A^%^7B^%^22^%^24latest_traffic_source_type^%^22^%^3A^%^22^%^E7^%^9B^%^B4^%^E6^%^8E^%^A5^%^E6^%^B5^%^81^%^E9^%^87^%^8F^%^22^%^2C^%^22^%^24latest_search_keyword^%^22^%^3A^%^22^%^E6^%^9C^%^AA^%^E5^%^8F^%^96^%^E5^%^88^%^B0^%^E5^%^80^%^BC_^%^E7^%^9B^%^B4^%^E6^%^8E^%^A5^%^E6^%^89^%^93^%^E5^%^BC^%^80^%^22^%^2C^%^22^%^24latest_referrer^%^22^%^3A^%^22^%^22^%^7D^%^2C^%^22^%^24device_id^%^22^%^3A^%^2219b0e92dd27bb1-0985a81370bba38-4c657b58-1327104-19b0e92dd28fc3^%^22^%^7D; sess=WLNjTh9mtYTzCDTkHUtClFUq3lPh8GrhfKUzfgBE/pDqA1upQK0rRwNVoogjnZS795fR9RRlhe/l31iNHFOw672bfpPwzzGwZJxNGOWuinY=; userid=152815018; acw_tc=0bd17c5217664432532552303ebe18ebe390fbf317c200464e993a0e9c1964^" ^
+  -H ^"origin: https://spa.fenbi.com^" ^
+  -H ^"pragma: no-cache^" ^
+  -H ^"priority: u=1, i^" ^
+  -H ^"referer: https://spa.fenbi.com/^" ^
+  -H ^"sec-ch-ua: ^\^"Microsoft Edge^\^";v=^\^"143^\^", ^\^"Chromium^\^";v=^\^"143^\^", ^\^"Not A(Brand^\^";v=^\^"24^\^"^" ^
+  -H ^"sec-ch-ua-mobile: ?0^" ^
+  -H ^"sec-ch-ua-platform: ^\^"Windows^\^"^" ^
+  -H ^"sec-fetch-dest: empty^" ^
+  -H ^"sec-fetch-mode: cors^" ^
+  -H ^"sec-fetch-site: same-site^" ^
+  -H ^"user-agent: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/143.0.0.0 Safari/537.36 Edg/143.0.0.0^" &
+curl ^"https://nodestatic.fbstatic.cn/weblts_spa_online/ti/media/report-difficulty-icon-7VYY2NGX.png^" ^
+  -H ^"accept: image/avif,image/webp,image/apng,image/svg+xml,image/*,*/*;q=0.8^" ^
+  -H ^"accept-language: zh-CN,zh;q=0.9,en;q=0.8,en-GB;q=0.7,en-US;q=0.6,ja;q=0.5^" ^
+  -H ^"cache-control: no-cache^" ^
+  -H ^"pragma: no-cache^" ^
+  -H ^"priority: i^" ^
+  -H ^"referer: https://spa.fenbi.com/^" ^
+  -H ^"sec-ch-ua: ^\^"Microsoft Edge^\^";v=^\^"143^\^", ^\^"Chromium^\^";v=^\^"143^\^", ^\^"Not A(Brand^\^";v=^\^"24^\^"^" ^
+  -H ^"sec-ch-ua-mobile: ?0^" ^
+  -H ^"sec-ch-ua-platform: ^\^"Windows^\^"^" ^
+  -H ^"sec-fetch-dest: image^" ^
+  -H ^"sec-fetch-mode: no-cors^" ^
+  -H ^"sec-fetch-site: cross-site^" ^
+  -H ^"sec-fetch-storage-access: active^" ^
+  -H ^"user-agent: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/143.0.0.0 Safari/537.36 Edg/143.0.0.0^" &
+curl ^"https://nodestatic.fbstatic.cn/weblts_spa_online/ti/media/report-overall-1-KPCWNQG6.png^" ^
+  -H ^"accept: image/avif,image/webp,image/apng,image/svg+xml,image/*,*/*;q=0.8^" ^
+  -H ^"accept-language: zh-CN,zh;q=0.9,en;q=0.8,en-GB;q=0.7,en-US;q=0.6,ja;q=0.5^" ^
+  -H ^"cache-control: no-cache^" ^
+  -H ^"pragma: no-cache^" ^
+  -H ^"priority: i^" ^
+  -H ^"referer: https://spa.fenbi.com/^" ^
+  -H ^"sec-ch-ua: ^\^"Microsoft Edge^\^";v=^\^"143^\^", ^\^"Chromium^\^";v=^\^"143^\^", ^\^"Not A(Brand^\^";v=^\^"24^\^"^" ^
+  -H ^"sec-ch-ua-mobile: ?0^" ^
+  -H ^"sec-ch-ua-platform: ^\^"Windows^\^"^" ^
+  -H ^"sec-fetch-dest: image^" ^
+  -H ^"sec-fetch-mode: no-cors^" ^
+  -H ^"sec-fetch-site: cross-site^" ^
+  -H ^"sec-fetch-storage-access: active^" ^
+  -H ^"user-agent: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/143.0.0.0 Safari/537.36 Edg/143.0.0.0^" &
+curl ^"https://nodestatic.fbstatic.cn/weblts_spa_online/ti/media/report-overall-2-ASSYR7OV.png^" ^
+  -H ^"accept: image/avif,image/webp,image/apng,image/svg+xml,image/*,*/*;q=0.8^" ^
+  -H ^"accept-language: zh-CN,zh;q=0.9,en;q=0.8,en-GB;q=0.7,en-US;q=0.6,ja;q=0.5^" ^
+  -H ^"cache-control: no-cache^" ^
+  -H ^"pragma: no-cache^" ^
+  -H ^"priority: i^" ^
+  -H ^"referer: https://spa.fenbi.com/^" ^
+  -H ^"sec-ch-ua: ^\^"Microsoft Edge^\^";v=^\^"143^\^", ^\^"Chromium^\^";v=^\^"143^\^", ^\^"Not A(Brand^\^";v=^\^"24^\^"^" ^
+  -H ^"sec-ch-ua-mobile: ?0^" ^
+  -H ^"sec-ch-ua-platform: ^\^"Windows^\^"^" ^
+  -H ^"sec-fetch-dest: image^" ^
+  -H ^"sec-fetch-mode: no-cors^" ^
+  -H ^"sec-fetch-site: cross-site^" ^
+  -H ^"sec-fetch-storage-access: active^" ^
+  -H ^"user-agent: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/143.0.0.0 Safari/537.36 Edg/143.0.0.0^" &
+curl ^"https://nodestatic.fbstatic.cn/weblts_spa_online/ti/media/report-overall-3-4MVPKIV4.png^" ^
+  -H ^"accept: image/avif,image/webp,image/apng,image/svg+xml,image/*,*/*;q=0.8^" ^
+  -H ^"accept-language: zh-CN,zh;q=0.9,en;q=0.8,en-GB;q=0.7,en-US;q=0.6,ja;q=0.5^" ^
+  -H ^"cache-control: no-cache^" ^
+  -H ^"pragma: no-cache^" ^
+  -H ^"priority: i^" ^
+  -H ^"referer: https://spa.fenbi.com/^" ^
+  -H ^"sec-ch-ua: ^\^"Microsoft Edge^\^";v=^\^"143^\^", ^\^"Chromium^\^";v=^\^"143^\^", ^\^"Not A(Brand^\^";v=^\^"24^\^"^" ^
+  -H ^"sec-ch-ua-mobile: ?0^" ^
+  -H ^"sec-ch-ua-platform: ^\^"Windows^\^"^" ^
+  -H ^"sec-fetch-dest: image^" ^
+  -H ^"sec-fetch-mode: no-cors^" ^
+  -H ^"sec-fetch-site: cross-site^" ^
+  -H ^"sec-fetch-storage-access: active^" ^
+  -H ^"user-agent: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/143.0.0.0 Safari/537.36 Edg/143.0.0.0^" &
+curl ^"https://nodestatic.fbstatic.cn/weblts_spa_online/ti/media/report-keypoint-icon-0-3Z65OB7X.png^" ^
+  -H ^"accept: image/avif,image/webp,image/apng,image/svg+xml,image/*,*/*;q=0.8^" ^
+  -H ^"accept-language: zh-CN,zh;q=0.9,en;q=0.8,en-GB;q=0.7,en-US;q=0.6,ja;q=0.5^" ^
+  -H ^"cache-control: no-cache^" ^
+  -H ^"pragma: no-cache^" ^
+  -H ^"priority: i^" ^
+  -H ^"referer: https://spa.fenbi.com/^" ^
+  -H ^"sec-ch-ua: ^\^"Microsoft Edge^\^";v=^\^"143^\^", ^\^"Chromium^\^";v=^\^"143^\^", ^\^"Not A(Brand^\^";v=^\^"24^\^"^" ^
+  -H ^"sec-ch-ua-mobile: ?0^" ^
+  -H ^"sec-ch-ua-platform: ^\^"Windows^\^"^" ^
+  -H ^"sec-fetch-dest: image^" ^
+  -H ^"sec-fetch-mode: no-cors^" ^
+  -H ^"sec-fetch-site: cross-site^" ^
+  -H ^"sec-fetch-storage-access: active^" ^
+  -H ^"user-agent: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/143.0.0.0 Safari/537.36 Edg/143.0.0.0^" &
+curl ^"https://nodestatic.fbstatic.cn/weblts_spa_online/ti/media/toggle-icon-0-XVF7KNDX.png^" ^
+  -H ^"accept: image/avif,image/webp,image/apng,image/svg+xml,image/*,*/*;q=0.8^" ^
+  -H ^"accept-language: zh-CN,zh;q=0.9,en;q=0.8,en-GB;q=0.7,en-US;q=0.6,ja;q=0.5^" ^
+  -H ^"cache-control: no-cache^" ^
+  -H ^"pragma: no-cache^" ^
+  -H ^"priority: i^" ^
+  -H ^"referer: https://spa.fenbi.com/^" ^
+  -H ^"sec-ch-ua: ^\^"Microsoft Edge^\^";v=^\^"143^\^", ^\^"Chromium^\^";v=^\^"143^\^", ^\^"Not A(Brand^\^";v=^\^"24^\^"^" ^
+  -H ^"sec-ch-ua-mobile: ?0^" ^
+  -H ^"sec-ch-ua-platform: ^\^"Windows^\^"^" ^
+  -H ^"sec-fetch-dest: image^" ^
+  -H ^"sec-fetch-mode: no-cors^" ^
+  -H ^"sec-fetch-site: cross-site^" ^
+  -H ^"sec-fetch-storage-access: active^" ^
+  -H ^"user-agent: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/143.0.0.0 Safari/537.36 Edg/143.0.0.0^" &
+curl ^"https://nodestatic.fbstatic.cn/weblts_spa_online/ti/media/toggle-icon-1-HCWEXQ3J.png^" ^
+  -H ^"accept: image/avif,image/webp,image/apng,image/svg+xml,image/*,*/*;q=0.8^" ^
+  -H ^"accept-language: zh-CN,zh;q=0.9,en;q=0.8,en-GB;q=0.7,en-US;q=0.6,ja;q=0.5^" ^
+  -H ^"cache-control: no-cache^" ^
+  -H ^"pragma: no-cache^" ^
+  -H ^"priority: i^" ^
+  -H ^"referer: https://spa.fenbi.com/^" ^
+  -H ^"sec-ch-ua: ^\^"Microsoft Edge^\^";v=^\^"143^\^", ^\^"Chromium^\^";v=^\^"143^\^", ^\^"Not A(Brand^\^";v=^\^"24^\^"^" ^
+  -H ^"sec-ch-ua-mobile: ?0^" ^
+  -H ^"sec-ch-ua-platform: ^\^"Windows^\^"^" ^
+  -H ^"sec-fetch-dest: image^" ^
+  -H ^"sec-fetch-mode: no-cors^" ^
+  -H ^"sec-fetch-site: cross-site^" ^
+  -H ^"sec-fetch-storage-access: active^" ^
+  -H ^"user-agent: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/143.0.0.0 Safari/537.36 Edg/143.0.0.0^" &
+curl ^"https://nodestatic.fbstatic.cn/weblts_spa_online/ti/media/toggle-icon-2-ACK7JBO6.png^" ^
+  -H ^"accept: image/avif,image/webp,image/apng,image/svg+xml,image/*,*/*;q=0.8^" ^
+  -H ^"accept-language: zh-CN,zh;q=0.9,en;q=0.8,en-GB;q=0.7,en-US;q=0.6,ja;q=0.5^" ^
+  -H ^"cache-control: no-cache^" ^
+  -H ^"pragma: no-cache^" ^
+  -H ^"priority: i^" ^
+  -H ^"referer: https://spa.fenbi.com/^" ^
+  -H ^"sec-ch-ua: ^\^"Microsoft Edge^\^";v=^\^"143^\^", ^\^"Chromium^\^";v=^\^"143^\^", ^\^"Not A(Brand^\^";v=^\^"24^\^"^" ^
+  -H ^"sec-ch-ua-mobile: ?0^" ^
+  -H ^"sec-ch-ua-platform: ^\^"Windows^\^"^" ^
+  -H ^"sec-fetch-dest: image^" ^
+  -H ^"sec-fetch-mode: no-cors^" ^
+  -H ^"sec-fetch-site: cross-site^" ^
+  -H ^"sec-fetch-storage-access: active^" ^
+  -H ^"user-agent: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/143.0.0.0 Safari/537.36 Edg/143.0.0.0^" &
+curl ^"https://nodestatic.fbstatic.cn/weblts_spa_online/ti/media/toggle-icon-2-no-PVGPKTOP.png^" ^
+  -H ^"accept: image/avif,image/webp,image/apng,image/svg+xml,image/*,*/*;q=0.8^" ^
+  -H ^"accept-language: zh-CN,zh;q=0.9,en;q=0.8,en-GB;q=0.7,en-US;q=0.6,ja;q=0.5^" ^
+  -H ^"cache-control: no-cache^" ^
+  -H ^"pragma: no-cache^" ^
+  -H ^"priority: i^" ^
+  -H ^"referer: https://spa.fenbi.com/^" ^
+  -H ^"sec-ch-ua: ^\^"Microsoft Edge^\^";v=^\^"143^\^", ^\^"Chromium^\^";v=^\^"143^\^", ^\^"Not A(Brand^\^";v=^\^"24^\^"^" ^
+  -H ^"sec-ch-ua-mobile: ?0^" ^
+  -H ^"sec-ch-ua-platform: ^\^"Windows^\^"^" ^
+  -H ^"sec-fetch-dest: image^" ^
+  -H ^"sec-fetch-mode: no-cors^" ^
+  -H ^"sec-fetch-site: cross-site^" ^
+  -H ^"sec-fetch-storage-access: active^" ^
+  -H ^"user-agent: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/143.0.0.0 Safari/537.36 Edg/143.0.0.0^" &
+curl ^"https://nodestatic.fbstatic.cn/weblts_spa_online/ti/media/toggle-icon-1-no-OYBHJAM4.png^" ^
+  -H ^"accept: image/avif,image/webp,image/apng,image/svg+xml,image/*,*/*;q=0.8^" ^
+  -H ^"accept-language: zh-CN,zh;q=0.9,en;q=0.8,en-GB;q=0.7,en-US;q=0.6,ja;q=0.5^" ^
+  -H ^"cache-control: no-cache^" ^
+  -H ^"pragma: no-cache^" ^
+  -H ^"priority: i^" ^
+  -H ^"referer: https://spa.fenbi.com/^" ^
+  -H ^"sec-ch-ua: ^\^"Microsoft Edge^\^";v=^\^"143^\^", ^\^"Chromium^\^";v=^\^"143^\^", ^\^"Not A(Brand^\^";v=^\^"24^\^"^" ^
+  -H ^"sec-ch-ua-mobile: ?0^" ^
+  -H ^"sec-ch-ua-platform: ^\^"Windows^\^"^" ^
+  -H ^"sec-fetch-dest: image^" ^
+  -H ^"sec-fetch-mode: no-cors^" ^
+  -H ^"sec-fetch-site: cross-site^" ^
+  -H ^"sec-fetch-storage-access: active^" ^
+  -H ^"user-agent: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/143.0.0.0 Safari/537.36 Edg/143.0.0.0^" &
+curl ^"https://ke.fenbi.com/api/v3/members/my?kav=125^&av=125^&hav=125^&app=web^" ^
+  -H ^"accept: application/json, text/plain, */*^" ^
+  -H ^"accept-language: zh-CN,zh;q=0.9,en;q=0.8,en-GB;q=0.7,en-US;q=0.6,ja;q=0.5^" ^
+  -H ^"cache-control: no-cache^" ^
+  -b ^"sid=3495507; persistent=A5xj9BjQOm1EyQz8VPpRa/9riRSPdxEInSq2c4Yk0QsIiKWBkxItuaUmnAJiAgNCB2Hkfd12n3qLIwSzJKFVfw==; sensorsdata2015jssdkcross=^%^7B^%^22distinct_id^%^22^%^3A^%^2219b0e92dd27bb1-0985a81370bba38-4c657b58-1327104-19b0e92dd28fc3^%^22^%^2C^%^22first_id^%^22^%^3A^%^22^%^22^%^2C^%^22props^%^22^%^3A^%^7B^%^22^%^24latest_traffic_source_type^%^22^%^3A^%^22^%^E7^%^9B^%^B4^%^E6^%^8E^%^A5^%^E6^%^B5^%^81^%^E9^%^87^%^8F^%^22^%^2C^%^22^%^24latest_search_keyword^%^22^%^3A^%^22^%^E6^%^9C^%^AA^%^E5^%^8F^%^96^%^E5^%^88^%^B0^%^E5^%^80^%^BC_^%^E7^%^9B^%^B4^%^E6^%^8E^%^A5^%^E6^%^89^%^93^%^E5^%^BC^%^80^%^22^%^2C^%^22^%^24latest_referrer^%^22^%^3A^%^22^%^22^%^7D^%^2C^%^22^%^24device_id^%^22^%^3A^%^2219b0e92dd27bb1-0985a81370bba38-4c657b58-1327104-19b0e92dd28fc3^%^22^%^7D; sess=WLNjTh9mtYTzCDTkHUtClFUq3lPh8GrhfKUzfgBE/pDqA1upQK0rRwNVoogjnZS795fR9RRlhe/l31iNHFOw672bfpPwzzGwZJxNGOWuinY=; userid=152815018^" ^
+  -H ^"origin: https://spa.fenbi.com^" ^
+  -H ^"pragma: no-cache^" ^
+  -H ^"priority: u=1, i^" ^
+  -H ^"referer: https://spa.fenbi.com/^" ^
+  -H ^"sec-ch-ua: ^\^"Microsoft Edge^\^";v=^\^"143^\^", ^\^"Chromium^\^";v=^\^"143^\^", ^\^"Not A(Brand^\^";v=^\^"24^\^"^" ^
+  -H ^"sec-ch-ua-mobile: ?0^" ^
+  -H ^"sec-ch-ua-platform: ^\^"Windows^\^"^" ^
+  -H ^"sec-fetch-dest: empty^" ^
+  -H ^"sec-fetch-mode: cors^" ^
+  -H ^"sec-fetch-site: same-site^" ^
+  -H ^"user-agent: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/143.0.0.0 Safari/537.36 Edg/143.0.0.0^" &
+curl ^"https://tiku.fenbi.com/combine/mark/getMark?exerciseKey=1_32_1qnstnq^&routecs=jsjyzhzz^&kav=125^&av=125^&hav=125^&app=web^" ^
+  -H ^"accept: application/json, text/plain, */*^" ^
+  -H ^"accept-language: zh-CN,zh;q=0.9,en;q=0.8,en-GB;q=0.7,en-US;q=0.6,ja;q=0.5^" ^
+  -H ^"cache-control: no-cache^" ^
+  -b ^"sid=3495507; persistent=A5xj9BjQOm1EyQz8VPpRa/9riRSPdxEInSq2c4Yk0QsIiKWBkxItuaUmnAJiAgNCB2Hkfd12n3qLIwSzJKFVfw==; sensorsdata2015jssdkcross=^%^7B^%^22distinct_id^%^22^%^3A^%^2219b0e92dd27bb1-0985a81370bba38-4c657b58-1327104-19b0e92dd28fc3^%^22^%^2C^%^22first_id^%^22^%^3A^%^22^%^22^%^2C^%^22props^%^22^%^3A^%^7B^%^22^%^24latest_traffic_source_type^%^22^%^3A^%^22^%^E7^%^9B^%^B4^%^E6^%^8E^%^A5^%^E6^%^B5^%^81^%^E9^%^87^%^8F^%^22^%^2C^%^22^%^24latest_search_keyword^%^22^%^3A^%^22^%^E6^%^9C^%^AA^%^E5^%^8F^%^96^%^E5^%^88^%^B0^%^E5^%^80^%^BC_^%^E7^%^9B^%^B4^%^E6^%^8E^%^A5^%^E6^%^89^%^93^%^E5^%^BC^%^80^%^22^%^2C^%^22^%^24latest_referrer^%^22^%^3A^%^22^%^22^%^7D^%^2C^%^22^%^24device_id^%^22^%^3A^%^2219b0e92dd27bb1-0985a81370bba38-4c657b58-1327104-19b0e92dd28fc3^%^22^%^7D; sess=WLNjTh9mtYTzCDTkHUtClFUq3lPh8GrhfKUzfgBE/pDqA1upQK0rRwNVoogjnZS795fR9RRlhe/l31iNHFOw672bfpPwzzGwZJxNGOWuinY=; userid=152815018; acw_tc=0bd17c5217664432532552303ebe18ebe390fbf317c200464e993a0e9c1964^" ^
+  -H ^"origin: https://spa.fenbi.com^" ^
+  -H ^"pragma: no-cache^" ^
+  -H ^"priority: u=1, i^" ^
+  -H ^"referer: https://spa.fenbi.com/^" ^
+  -H ^"sec-ch-ua: ^\^"Microsoft Edge^\^";v=^\^"143^\^", ^\^"Chromium^\^";v=^\^"143^\^", ^\^"Not A(Brand^\^";v=^\^"24^\^"^" ^
+  -H ^"sec-ch-ua-mobile: ?0^" ^
+  -H ^"sec-ch-ua-platform: ^\^"Windows^\^"^" ^
+  -H ^"sec-fetch-dest: empty^" ^
+  -H ^"sec-fetch-mode: cors^" ^
+  -H ^"sec-fetch-site: same-site^" ^
+  -H ^"user-agent: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/143.0.0.0 Safari/537.36 Edg/143.0.0.0^" &
+curl ^"https://tiku.fenbi.com/combine/collect/getCollect?requestKey=K1k2KL2qVT21ozEEsDrITeb4l6WTYnPKwaqa50toHR2EpYV8SEWy5ING48eNn7VIU1kV3xCnqUPj-nm79jXcHdrTaTfin4PqVAcUNm7d2T-6hKBFo89B5VSu1COtOmxQ-7GQF7g2GqVspEzUZC0kRQnuMC9Y3FjFqoIjzdcVkR3EYrqeEuDCe8znhlPioGwNxn5uRfzfxhorIBRoku05Enp0qDWnr5bj0mFHU1Efx0ZhWlFKcJMqoFNbe4L-c0HzkvWtf53L6jmvMS2VEJM3xNTnDmAKy7Owrvj7em1Wvk0efhEaG_hYsxJMVV9603KE3TbPSRK1B4vYG6JLRAQO03Z_tBQZDP8U6Yy5XMpdr1ySSDjUUG9J0MlZQicYvV05OOU-ymad2qSay6-hUbAi2Jpe_Wl1SuAytn0DBioVTxBzJ-jtXewTNnO_tmsThAkUI8YYNtRRJNv-KQ7ejB09eCEgzD4z17IeAILNyVH9tOy0zHe9h35sHzMsXczDOyTDmM8-bkKZbNsefUy_u6gGVBjkY61s6pL3OfFGXWp37KiMTWPWmzTjnEaIItXe2qOKxg^&routecs=jsjyzhzz^&kav=125^&av=125^&hav=125^&app=web^" ^
+  -H ^"accept: application/json, text/plain, */*^" ^
+  -H ^"accept-language: zh-CN,zh;q=0.9,en;q=0.8,en-GB;q=0.7,en-US;q=0.6,ja;q=0.5^" ^
+  -H ^"cache-control: no-cache^" ^
+  -b ^"sid=3495507; persistent=A5xj9BjQOm1EyQz8VPpRa/9riRSPdxEInSq2c4Yk0QsIiKWBkxItuaUmnAJiAgNCB2Hkfd12n3qLIwSzJKFVfw==; sensorsdata2015jssdkcross=^%^7B^%^22distinct_id^%^22^%^3A^%^2219b0e92dd27bb1-0985a81370bba38-4c657b58-1327104-19b0e92dd28fc3^%^22^%^2C^%^22first_id^%^22^%^3A^%^22^%^22^%^2C^%^22props^%^22^%^3A^%^7B^%^22^%^24latest_traffic_source_type^%^22^%^3A^%^22^%^E7^%^9B^%^B4^%^E6^%^8E^%^A5^%^E6^%^B5^%^81^%^E9^%^87^%^8F^%^22^%^2C^%^22^%^24latest_search_keyword^%^22^%^3A^%^22^%^E6^%^9C^%^AA^%^E5^%^8F^%^96^%^E5^%^88^%^B0^%^E5^%^80^%^BC_^%^E7^%^9B^%^B4^%^E6^%^8E^%^A5^%^E6^%^89^%^93^%^E5^%^BC^%^80^%^22^%^2C^%^22^%^24latest_referrer^%^22^%^3A^%^22^%^22^%^7D^%^2C^%^22^%^24device_id^%^22^%^3A^%^2219b0e92dd27bb1-0985a81370bba38-4c657b58-1327104-19b0e92dd28fc3^%^22^%^7D; sess=WLNjTh9mtYTzCDTkHUtClFUq3lPh8GrhfKUzfgBE/pDqA1upQK0rRwNVoogjnZS795fR9RRlhe/l31iNHFOw672bfpPwzzGwZJxNGOWuinY=; userid=152815018; acw_tc=0bd17c5217664432532552303ebe18ebe390fbf317c200464e993a0e9c1964^" ^
+  -H ^"origin: https://spa.fenbi.com^" ^
+  -H ^"pragma: no-cache^" ^
+  -H ^"priority: u=1, i^" ^
+  -H ^"referer: https://spa.fenbi.com/^" ^
+  -H ^"sec-ch-ua: ^\^"Microsoft Edge^\^";v=^\^"143^\^", ^\^"Chromium^\^";v=^\^"143^\^", ^\^"Not A(Brand^\^";v=^\^"24^\^"^" ^
+  -H ^"sec-ch-ua-mobile: ?0^" ^
+  -H ^"sec-ch-ua-platform: ^\^"Windows^\^"^" ^
+  -H ^"sec-fetch-dest: empty^" ^
+  -H ^"sec-fetch-mode: cors^" ^
+  -H ^"sec-fetch-site: same-site^" ^
+  -H ^"user-agent: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/143.0.0.0 Safari/537.36 Edg/143.0.0.0^" &
+curl ^"https://tiku.fenbi.com/combine/note/getNote?requestKey=K1k2KL2qVT21ozEEsDrITeb4l6WTYnPKwaqa50toHR2EpYV8SEWy5ING48eNn7VIU1kV3xCnqUPj-nm79jXcHdrTaTfin4PqVAcUNm7d2T-6hKBFo89B5VSu1COtOmxQ-7GQF7g2GqVspEzUZC0kRQnuMC9Y3FjFqoIjzdcVkR3EYrqeEuDCe8znhlPioGwNxn5uRfzfxhorIBRoku05Enp0qDWnr5bj0mFHU1Efx0ZhWlFKcJMqoFNbe4L-c0HzkvWtf53L6jmvMS2VEJM3xNTnDmAKy7Owrvj7em1Wvk0efhEaG_hYsxJMVV9603KE3TbPSRK1B4vYG6JLRAQO03Z_tBQZDP8U6Yy5XMpdr1ySSDjUUG9J0MlZQicYvV05OOU-ymad2qSay6-hUbAi2Jpe_Wl1SuAytn0DBioVTxBzJ-jtXewTNnO_tmsThAkUI8YYNtRRJNv-KQ7ejB09eCEgzD4z17IeAILNyVH9tOy0zHe9h35sHzMsXczDOyTDmM8-bkKZbNsefUy_u6gGVBjkY61s6pL3OfFGXWp37KiMTWPWmzTjnEaIItXe2qOKxg^&routecs=jsjyzhzz^&kav=125^&av=125^&hav=125^&app=web^" ^
+  -H ^"accept: application/json, text/plain, */*^" ^
+  -H ^"accept-language: zh-CN,zh;q=0.9,en;q=0.8,en-GB;q=0.7,en-US;q=0.6,ja;q=0.5^" ^
+  -H ^"cache-control: no-cache^" ^
+  -b ^"sid=3495507; persistent=A5xj9BjQOm1EyQz8VPpRa/9riRSPdxEInSq2c4Yk0QsIiKWBkxItuaUmnAJiAgNCB2Hkfd12n3qLIwSzJKFVfw==; sensorsdata2015jssdkcross=^%^7B^%^22distinct_id^%^22^%^3A^%^2219b0e92dd27bb1-0985a81370bba38-4c657b58-1327104-19b0e92dd28fc3^%^22^%^2C^%^22first_id^%^22^%^3A^%^22^%^22^%^2C^%^22props^%^22^%^3A^%^7B^%^22^%^24latest_traffic_source_type^%^22^%^3A^%^22^%^E7^%^9B^%^B4^%^E6^%^8E^%^A5^%^E6^%^B5^%^81^%^E9^%^87^%^8F^%^22^%^2C^%^22^%^24latest_search_keyword^%^22^%^3A^%^22^%^E6^%^9C^%^AA^%^E5^%^8F^%^96^%^E5^%^88^%^B0^%^E5^%^80^%^BC_^%^E7^%^9B^%^B4^%^E6^%^8E^%^A5^%^E6^%^89^%^93^%^E5^%^BC^%^80^%^22^%^2C^%^22^%^24latest_referrer^%^22^%^3A^%^22^%^22^%^7D^%^2C^%^22^%^24device_id^%^22^%^3A^%^2219b0e92dd27bb1-0985a81370bba38-4c657b58-1327104-19b0e92dd28fc3^%^22^%^7D; sess=WLNjTh9mtYTzCDTkHUtClFUq3lPh8GrhfKUzfgBE/pDqA1upQK0rRwNVoogjnZS795fR9RRlhe/l31iNHFOw672bfpPwzzGwZJxNGOWuinY=; userid=152815018; acw_tc=0bd17c5217664432532552303ebe18ebe390fbf317c200464e993a0e9c1964^" ^
+  -H ^"origin: https://spa.fenbi.com^" ^
+  -H ^"pragma: no-cache^" ^
+  -H ^"priority: u=1, i^" ^
+  -H ^"referer: https://spa.fenbi.com/^" ^
+  -H ^"sec-ch-ua: ^\^"Microsoft Edge^\^";v=^\^"143^\^", ^\^"Chromium^\^";v=^\^"143^\^", ^\^"Not A(Brand^\^";v=^\^"24^\^"^" ^
+  -H ^"sec-ch-ua-mobile: ?0^" ^
+  -H ^"sec-ch-ua-platform: ^\^"Windows^\^"^" ^
+  -H ^"sec-fetch-dest: empty^" ^
+  -H ^"sec-fetch-mode: cors^" ^
+  -H ^"sec-fetch-site: same-site^" ^
+  -H ^"user-agent: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/143.0.0.0 Safari/537.36 Edg/143.0.0.0^" &
+curl ^"https://tiku.fenbi.com/combine/question/getMeta?requestKey=K1k2KL2qVT21ozEEsDrITeb4l6WTYnPKwaqa50toHR2EpYV8SEWy5ING48eNn7VIU1kV3xCnqUPj-nm79jXcHdrTaTfin4PqVAcUNm7d2T-6hKBFo89B5VSu1COtOmxQ-7GQF7g2GqVspEzUZC0kRQnuMC9Y3FjFqoIjzdcVkR3EYrqeEuDCe8znhlPioGwNxn5uRfzfxhorIBRoku05Enp0qDWnr5bj0mFHU1Efx0ZhWlFKcJMqoFNbe4L-c0HzkvWtf53L6jmvMS2VEJM3xNTnDmAKy7Owrvj7em1Wvk0efhEaG_hYsxJMVV9603KE3TbPSRK1B4vYG6JLRAQO03Z_tBQZDP8U6Yy5XMpdr1ySSDjUUG9J0MlZQicYvV05OOU-ymad2qSay6-hUbAi2Jpe_Wl1SuAytn0DBioVTxBzJ-jtXewTNnO_tmsThAkUI8YYNtRRJNv-KQ7ejB09eCEgzD4z17IeAILNyVH9tOy0zHe9h35sHzMsXczDOyTDmM8-bkKZbNsefUy_u6gGVBjkY61s6pL3OfFGXWp37KiMTWPWmzTjnEaIItXe2qOKxg^&routecs=jsjyzhzz^&kav=125^&av=125^&hav=125^&app=web^" ^
+  -H ^"accept: application/json, text/plain, */*^" ^
+  -H ^"accept-language: zh-CN,zh;q=0.9,en;q=0.8,en-GB;q=0.7,en-US;q=0.6,ja;q=0.5^" ^
+  -H ^"cache-control: no-cache^" ^
+  -b ^"sid=3495507; persistent=A5xj9BjQOm1EyQz8VPpRa/9riRSPdxEInSq2c4Yk0QsIiKWBkxItuaUmnAJiAgNCB2Hkfd12n3qLIwSzJKFVfw==; sensorsdata2015jssdkcross=^%^7B^%^22distinct_id^%^22^%^3A^%^2219b0e92dd27bb1-0985a81370bba38-4c657b58-1327104-19b0e92dd28fc3^%^22^%^2C^%^22first_id^%^22^%^3A^%^22^%^22^%^2C^%^22props^%^22^%^3A^%^7B^%^22^%^24latest_traffic_source_type^%^22^%^3A^%^22^%^E7^%^9B^%^B4^%^E6^%^8E^%^A5^%^E6^%^B5^%^81^%^E9^%^87^%^8F^%^22^%^2C^%^22^%^24latest_search_keyword^%^22^%^3A^%^22^%^E6^%^9C^%^AA^%^E5^%^8F^%^96^%^E5^%^88^%^B0^%^E5^%^80^%^BC_^%^E7^%^9B^%^B4^%^E6^%^8E^%^A5^%^E6^%^89^%^93^%^E5^%^BC^%^80^%^22^%^2C^%^22^%^24latest_referrer^%^22^%^3A^%^22^%^22^%^7D^%^2C^%^22^%^24device_id^%^22^%^3A^%^2219b0e92dd27bb1-0985a81370bba38-4c657b58-1327104-19b0e92dd28fc3^%^22^%^7D; sess=WLNjTh9mtYTzCDTkHUtClFUq3lPh8GrhfKUzfgBE/pDqA1upQK0rRwNVoogjnZS795fR9RRlhe/l31iNHFOw672bfpPwzzGwZJxNGOWuinY=; userid=152815018; acw_tc=0bd17c5217664432532552303ebe18ebe390fbf317c200464e993a0e9c1964^" ^
+  -H ^"origin: https://spa.fenbi.com^" ^
+  -H ^"pragma: no-cache^" ^
+  -H ^"priority: u=1, i^" ^
+  -H ^"referer: https://spa.fenbi.com/^" ^
+  -H ^"sec-ch-ua: ^\^"Microsoft Edge^\^";v=^\^"143^\^", ^\^"Chromium^\^";v=^\^"143^\^", ^\^"Not A(Brand^\^";v=^\^"24^\^"^" ^
+  -H ^"sec-ch-ua-mobile: ?0^" ^
+  -H ^"sec-ch-ua-platform: ^\^"Windows^\^"^" ^
+  -H ^"sec-fetch-dest: empty^" ^
+  -H ^"sec-fetch-mode: cors^" ^
+  -H ^"sec-fetch-site: same-site^" ^
+  -H ^"user-agent: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/143.0.0.0 Safari/537.36 Edg/143.0.0.0^" &
+curl ^"https://ke.fenbi.com/api/gwy/v3/episodes/tiku_episodes_with_multi_type?tiku_ids=3657310,5879122,12897078,11196567,5683847,17765292,5412064,3673005,5900757,10687441,19843418,2455088,18015167,18898913,4971869,15187040,5681358,4086494,18784762,4704370,5876389,18930391,5899194,12533503,12204992,3610282,5394550,12401324,5813064,3537099,5817870,5054601,18862321,4841051,11983213,4153214,15639227,4572314,5543623,2393050,14607951,2466965,5436207,18015293,15996409,4438010,5848755,13283341,18930317,4826810,13231239,17684918,18057786,5683923,5859757,15187261,11102864,5558230,18294740,5543374,15682811,11586593,14999644,5852127,14791790,5393457,14489301,17721079,5071474,12536354,10980223,3765773,5048521,5910979,18067796,5854235,16985603,5542539,10821281,15682806,5721388,5728336,3673109,5716949,19780954,13369576,10151719,16544317,11197221,13358916,19508794,5542959,14433789,18946441,19441591,14489419,3768217,5398949,13692722,5577858^&tiku_prefix=jsjyzhzz^&tiku_type=5^&no_toast^&kav=125^&av=125^&hav=125^&app=web^" ^
+  -H ^"accept: application/json, text/plain, */*^" ^
+  -H ^"accept-language: zh-CN,zh;q=0.9,en;q=0.8,en-GB;q=0.7,en-US;q=0.6,ja;q=0.5^" ^
+  -H ^"cache-control: no-cache^" ^
+  -b ^"sid=3495507; persistent=A5xj9BjQOm1EyQz8VPpRa/9riRSPdxEInSq2c4Yk0QsIiKWBkxItuaUmnAJiAgNCB2Hkfd12n3qLIwSzJKFVfw==; sensorsdata2015jssdkcross=^%^7B^%^22distinct_id^%^22^%^3A^%^2219b0e92dd27bb1-0985a81370bba38-4c657b58-1327104-19b0e92dd28fc3^%^22^%^2C^%^22first_id^%^22^%^3A^%^22^%^22^%^2C^%^22props^%^22^%^3A^%^7B^%^22^%^24latest_traffic_source_type^%^22^%^3A^%^22^%^E7^%^9B^%^B4^%^E6^%^8E^%^A5^%^E6^%^B5^%^81^%^E9^%^87^%^8F^%^22^%^2C^%^22^%^24latest_search_keyword^%^22^%^3A^%^22^%^E6^%^9C^%^AA^%^E5^%^8F^%^96^%^E5^%^88^%^B0^%^E5^%^80^%^BC_^%^E7^%^9B^%^B4^%^E6^%^8E^%^A5^%^E6^%^89^%^93^%^E5^%^BC^%^80^%^22^%^2C^%^22^%^24latest_referrer^%^22^%^3A^%^22^%^22^%^7D^%^2C^%^22^%^24device_id^%^22^%^3A^%^2219b0e92dd27bb1-0985a81370bba38-4c657b58-1327104-19b0e92dd28fc3^%^22^%^7D; sess=WLNjTh9mtYTzCDTkHUtClFUq3lPh8GrhfKUzfgBE/pDqA1upQK0rRwNVoogjnZS795fR9RRlhe/l31iNHFOw672bfpPwzzGwZJxNGOWuinY=; userid=152815018^" ^
+  -H ^"origin: https://spa.fenbi.com^" ^
+  -H ^"pragma: no-cache^" ^
+  -H ^"priority: u=1, i^" ^
+  -H ^"referer: https://spa.fenbi.com/^" ^
+  -H ^"sec-ch-ua: ^\^"Microsoft Edge^\^";v=^\^"143^\^", ^\^"Chromium^\^";v=^\^"143^\^", ^\^"Not A(Brand^\^";v=^\^"24^\^"^" ^
+  -H ^"sec-ch-ua-mobile: ?0^" ^
+  -H ^"sec-ch-ua-platform: ^\^"Windows^\^"^" ^
+  -H ^"sec-fetch-dest: empty^" ^
+  -H ^"sec-fetch-mode: cors^" ^
+  -H ^"sec-fetch-site: same-site^" ^
+  -H ^"user-agent: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/143.0.0.0 Safari/537.36 Edg/143.0.0.0^" &
+curl ^"https://nodestatic.fbstatic.cn/weblts_spa_online/ti/media/chapter-bg-left-EKKOVTM4.png^" ^
+  -H ^"accept: image/avif,image/webp,image/apng,image/svg+xml,image/*,*/*;q=0.8^" ^
+  -H ^"accept-language: zh-CN,zh;q=0.9,en;q=0.8,en-GB;q=0.7,en-US;q=0.6,ja;q=0.5^" ^
+  -H ^"cache-control: no-cache^" ^
+  -H ^"pragma: no-cache^" ^
+  -H ^"priority: i^" ^
+  -H ^"referer: https://spa.fenbi.com/^" ^
+  -H ^"sec-ch-ua: ^\^"Microsoft Edge^\^";v=^\^"143^\^", ^\^"Chromium^\^";v=^\^"143^\^", ^\^"Not A(Brand^\^";v=^\^"24^\^"^" ^
+  -H ^"sec-ch-ua-mobile: ?0^" ^
+  -H ^"sec-ch-ua-platform: ^\^"Windows^\^"^" ^
+  -H ^"sec-fetch-dest: image^" ^
+  -H ^"sec-fetch-mode: no-cors^" ^
+  -H ^"sec-fetch-site: cross-site^" ^
+  -H ^"sec-fetch-storage-access: active^" ^
+  -H ^"user-agent: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/143.0.0.0 Safari/537.36 Edg/143.0.0.0^" &
+curl ^"https://nodestatic.fbstatic.cn/weblts_spa_online/ti/media/chapter-bg-right-C5SIMZEX.png^" ^
+  -H ^"accept: image/avif,image/webp,image/apng,image/svg+xml,image/*,*/*;q=0.8^" ^
+  -H ^"accept-language: zh-CN,zh;q=0.9,en;q=0.8,en-GB;q=0.7,en-US;q=0.6,ja;q=0.5^" ^
+  -H ^"cache-control: no-cache^" ^
+  -H ^"pragma: no-cache^" ^
+  -H ^"priority: i^" ^
+  -H ^"referer: https://spa.fenbi.com/^" ^
+  -H ^"sec-ch-ua: ^\^"Microsoft Edge^\^";v=^\^"143^\^", ^\^"Chromium^\^";v=^\^"143^\^", ^\^"Not A(Brand^\^";v=^\^"24^\^"^" ^
+  -H ^"sec-ch-ua-mobile: ?0^" ^
+  -H ^"sec-ch-ua-platform: ^\^"Windows^\^"^" ^
+  -H ^"sec-fetch-dest: image^" ^
+  -H ^"sec-fetch-mode: no-cors^" ^
+  -H ^"sec-fetch-site: cross-site^" ^
+  -H ^"sec-fetch-storage-access: active^" ^
+  -H ^"user-agent: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/143.0.0.0 Safari/537.36 Edg/143.0.0.0^" &
+curl ^"https://fb.fenbike.cn/api/planet/accessories/formulas?fontSize=18^&latex=j7OxNSdjM3BkA7M4qvOcPA^" ^
+  -H ^"accept: image/avif,image/webp,image/apng,image/svg+xml,image/*,*/*;q=0.8^" ^
+  -H ^"accept-language: zh-CN,zh;q=0.9,en;q=0.8,en-GB;q=0.7,en-US;q=0.6,ja;q=0.5^" ^
+  -H ^"cache-control: no-cache^" ^
+  -H ^"pragma: no-cache^" ^
+  -H ^"priority: i^" ^
+  -H ^"referer: https://spa.fenbi.com/^" ^
+  -H ^"sec-ch-ua: ^\^"Microsoft Edge^\^";v=^\^"143^\^", ^\^"Chromium^\^";v=^\^"143^\^", ^\^"Not A(Brand^\^";v=^\^"24^\^"^" ^
+  -H ^"sec-ch-ua-mobile: ?0^" ^
+  -H ^"sec-ch-ua-platform: ^\^"Windows^\^"^" ^
+  -H ^"sec-fetch-dest: image^" ^
+  -H ^"sec-fetch-mode: no-cors^" ^
+  -H ^"sec-fetch-site: cross-site^" ^
+  -H ^"sec-fetch-storage-access: active^" ^
+  -H ^"user-agent: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/143.0.0.0 Safari/537.36 Edg/143.0.0.0^" &
+curl ^"https://fb.fbstatic.cn/api/planet/accessories/formulas?fontSize=18^&latex=FxuxUGSTUrb6oFnm8R6yVzBZ9SzuINdw05bQKS1VPNs^" ^
+  -H ^"accept: image/avif,image/webp,image/apng,image/svg+xml,image/*,*/*;q=0.8^" ^
+  -H ^"accept-language: zh-CN,zh;q=0.9,en;q=0.8,en-GB;q=0.7,en-US;q=0.6,ja;q=0.5^" ^
+  -H ^"cache-control: no-cache^" ^
+  -H ^"pragma: no-cache^" ^
+  -H ^"priority: i^" ^
+  -H ^"referer: https://spa.fenbi.com/^" ^
+  -H ^"sec-ch-ua: ^\^"Microsoft Edge^\^";v=^\^"143^\^", ^\^"Chromium^\^";v=^\^"143^\^", ^\^"Not A(Brand^\^";v=^\^"24^\^"^" ^
+  -H ^"sec-ch-ua-mobile: ?0^" ^
+  -H ^"sec-ch-ua-platform: ^\^"Windows^\^"^" ^
+  -H ^"sec-fetch-dest: image^" ^
+  -H ^"sec-fetch-mode: no-cors^" ^
+  -H ^"sec-fetch-site: cross-site^" ^
+  -H ^"sec-fetch-storage-access: active^" ^
+  -H ^"user-agent: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/143.0.0.0 Safari/537.36 Edg/143.0.0.0^" &
+curl ^"https://fb.fbstatic.cn/api/planet/accessories/formulas?fontSize=18^&latex=0lovwGTHZIBvqhIklmfd2iFiYw2PStvoWApdXE05Jig^" ^
+  -H ^"accept: image/avif,image/webp,image/apng,image/svg+xml,image/*,*/*;q=0.8^" ^
+  -H ^"accept-language: zh-CN,zh;q=0.9,en;q=0.8,en-GB;q=0.7,en-US;q=0.6,ja;q=0.5^" ^
+  -H ^"cache-control: no-cache^" ^
+  -H ^"pragma: no-cache^" ^
+  -H ^"priority: i^" ^
+  -H ^"referer: https://spa.fenbi.com/^" ^
+  -H ^"sec-ch-ua: ^\^"Microsoft Edge^\^";v=^\^"143^\^", ^\^"Chromium^\^";v=^\^"143^\^", ^\^"Not A(Brand^\^";v=^\^"24^\^"^" ^
+  -H ^"sec-ch-ua-mobile: ?0^" ^
+  -H ^"sec-ch-ua-platform: ^\^"Windows^\^"^" ^
+  -H ^"sec-fetch-dest: image^" ^
+  -H ^"sec-fetch-mode: no-cors^" ^
+  -H ^"sec-fetch-site: cross-site^" ^
+  -H ^"sec-fetch-storage-access: active^" ^
+  -H ^"user-agent: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/143.0.0.0 Safari/537.36 Edg/143.0.0.0^" &
+curl ^"https://fb.fbstatic.cn/api/planet/accessories/formulas?fontSize=18^&latex=xC_t3ChkF4F_VF7wb0xg4fChWM9VlAsBEzI_2T_ToZA^" ^
+  -H ^"accept: image/avif,image/webp,image/apng,image/svg+xml,image/*,*/*;q=0.8^" ^
+  -H ^"accept-language: zh-CN,zh;q=0.9,en;q=0.8,en-GB;q=0.7,en-US;q=0.6,ja;q=0.5^" ^
+  -H ^"cache-control: no-cache^" ^
+  -H ^"pragma: no-cache^" ^
+  -H ^"priority: i^" ^
+  -H ^"referer: https://spa.fenbi.com/^" ^
+  -H ^"sec-ch-ua: ^\^"Microsoft Edge^\^";v=^\^"143^\^", ^\^"Chromium^\^";v=^\^"143^\^", ^\^"Not A(Brand^\^";v=^\^"24^\^"^" ^
+  -H ^"sec-ch-ua-mobile: ?0^" ^
+  -H ^"sec-ch-ua-platform: ^\^"Windows^\^"^" ^
+  -H ^"sec-fetch-dest: image^" ^
+  -H ^"sec-fetch-mode: no-cors^" ^
+  -H ^"sec-fetch-site: cross-site^" ^
+  -H ^"sec-fetch-storage-access: active^" ^
+  -H ^"user-agent: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/143.0.0.0 Safari/537.36 Edg/143.0.0.0^" &
+curl ^"https://fb.fbstatic.cn/api/planet/accessories/formulas?fontSize=18^&latex=HQhaxYvew7GcGML7cBc2WA^" ^
+  -H ^"accept: image/avif,image/webp,image/apng,image/svg+xml,image/*,*/*;q=0.8^" ^
+  -H ^"accept-language: zh-CN,zh;q=0.9,en;q=0.8,en-GB;q=0.7,en-US;q=0.6,ja;q=0.5^" ^
+  -H ^"cache-control: no-cache^" ^
+  -H ^"pragma: no-cache^" ^
+  -H ^"priority: i^" ^
+  -H ^"referer: https://spa.fenbi.com/^" ^
+  -H ^"sec-ch-ua: ^\^"Microsoft Edge^\^";v=^\^"143^\^", ^\^"Chromium^\^";v=^\^"143^\^", ^\^"Not A(Brand^\^";v=^\^"24^\^"^" ^
+  -H ^"sec-ch-ua-mobile: ?0^" ^
+  -H ^"sec-ch-ua-platform: ^\^"Windows^\^"^" ^
+  -H ^"sec-fetch-dest: image^" ^
+  -H ^"sec-fetch-mode: no-cors^" ^
+  -H ^"sec-fetch-site: cross-site^" ^
+  -H ^"sec-fetch-storage-access: active^" ^
+  -H ^"user-agent: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/143.0.0.0 Safari/537.36 Edg/143.0.0.0^" &
+curl ^"https://fb.fbstatic.cn/api/planet/accessories/formulas?fontSize=18^&latex=Jls_t1V-l9q8VvhhzcSmTA^" ^
+  -H ^"accept: image/avif,image/webp,image/apng,image/svg+xml,image/*,*/*;q=0.8^" ^
+  -H ^"accept-language: zh-CN,zh;q=0.9,en;q=0.8,en-GB;q=0.7,en-US;q=0.6,ja;q=0.5^" ^
+  -H ^"cache-control: no-cache^" ^
+  -H ^"pragma: no-cache^" ^
+  -H ^"priority: i^" ^
+  -H ^"referer: https://spa.fenbi.com/^" ^
+  -H ^"sec-ch-ua: ^\^"Microsoft Edge^\^";v=^\^"143^\^", ^\^"Chromium^\^";v=^\^"143^\^", ^\^"Not A(Brand^\^";v=^\^"24^\^"^" ^
+  -H ^"sec-ch-ua-mobile: ?0^" ^
+  -H ^"sec-ch-ua-platform: ^\^"Windows^\^"^" ^
+  -H ^"sec-fetch-dest: image^" ^
+  -H ^"sec-fetch-mode: no-cors^" ^
+  -H ^"sec-fetch-site: cross-site^" ^
+  -H ^"sec-fetch-storage-access: active^" ^
+  -H ^"user-agent: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/143.0.0.0 Safari/537.36 Edg/143.0.0.0^" &
+curl ^"https://ke.fenbi.com/api/v3/user_member/home?member_type=8^&kav=125^&av=125^&hav=125^&app=web^" ^
+  -H ^"accept: application/json, text/plain, */*^" ^
+  -H ^"accept-language: zh-CN,zh;q=0.9,en;q=0.8,en-GB;q=0.7,en-US;q=0.6,ja;q=0.5^" ^
+  -H ^"cache-control: no-cache^" ^
+  -b ^"sid=3495507; persistent=A5xj9BjQOm1EyQz8VPpRa/9riRSPdxEInSq2c4Yk0QsIiKWBkxItuaUmnAJiAgNCB2Hkfd12n3qLIwSzJKFVfw==; sensorsdata2015jssdkcross=^%^7B^%^22distinct_id^%^22^%^3A^%^2219b0e92dd27bb1-0985a81370bba38-4c657b58-1327104-19b0e92dd28fc3^%^22^%^2C^%^22first_id^%^22^%^3A^%^22^%^22^%^2C^%^22props^%^22^%^3A^%^7B^%^22^%^24latest_traffic_source_type^%^22^%^3A^%^22^%^E7^%^9B^%^B4^%^E6^%^8E^%^A5^%^E6^%^B5^%^81^%^E9^%^87^%^8F^%^22^%^2C^%^22^%^24latest_search_keyword^%^22^%^3A^%^22^%^E6^%^9C^%^AA^%^E5^%^8F^%^96^%^E5^%^88^%^B0^%^E5^%^80^%^BC_^%^E7^%^9B^%^B4^%^E6^%^8E^%^A5^%^E6^%^89^%^93^%^E5^%^BC^%^80^%^22^%^2C^%^22^%^24latest_referrer^%^22^%^3A^%^22^%^22^%^7D^%^2C^%^22^%^24device_id^%^22^%^3A^%^2219b0e92dd27bb1-0985a81370bba38-4c657b58-1327104-19b0e92dd28fc3^%^22^%^7D; sess=WLNjTh9mtYTzCDTkHUtClFUq3lPh8GrhfKUzfgBE/pDqA1upQK0rRwNVoogjnZS795fR9RRlhe/l31iNHFOw672bfpPwzzGwZJxNGOWuinY=; userid=152815018^" ^
+  -H ^"origin: https://spa.fenbi.com^" ^
+  -H ^"pragma: no-cache^" ^
+  -H ^"priority: u=1, i^" ^
+  -H ^"referer: https://spa.fenbi.com/^" ^
+  -H ^"sec-ch-ua: ^\^"Microsoft Edge^\^";v=^\^"143^\^", ^\^"Chromium^\^";v=^\^"143^\^", ^\^"Not A(Brand^\^";v=^\^"24^\^"^" ^
+  -H ^"sec-ch-ua-mobile: ?0^" ^
+  -H ^"sec-ch-ua-platform: ^\^"Windows^\^"^" ^
+  -H ^"sec-fetch-dest: empty^" ^
+  -H ^"sec-fetch-mode: cors^" ^
+  -H ^"sec-fetch-site: same-site^" ^
+  -H ^"user-agent: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/143.0.0.0 Safari/537.36 Edg/143.0.0.0^" &
+curl ^"https://nodestatic.fbstatic.cn/pan/downloads/b0b107ab7410fead6e91511f54dd6411.css^" ^
+  -H ^"accept: text/css,*/*;q=0.1^" ^
+  -H ^"accept-language: zh-CN,zh;q=0.9,en;q=0.8,en-GB;q=0.7,en-US;q=0.6,ja;q=0.5^" ^
+  -H ^"cache-control: no-cache^" ^
+  -H ^"pragma: no-cache^" ^
+  -H ^"priority: u=0^" ^
+  -H ^"referer: https://spa.fenbi.com/^" ^
+  -H ^"sec-ch-ua: ^\^"Microsoft Edge^\^";v=^\^"143^\^", ^\^"Chromium^\^";v=^\^"143^\^", ^\^"Not A(Brand^\^";v=^\^"24^\^"^" ^
+  -H ^"sec-ch-ua-mobile: ?0^" ^
+  -H ^"sec-ch-ua-platform: ^\^"Windows^\^"^" ^
+  -H ^"sec-fetch-dest: style^" ^
+  -H ^"sec-fetch-mode: no-cors^" ^
+  -H ^"sec-fetch-site: cross-site^" ^
+  -H ^"sec-fetch-storage-access: active^" ^
+  -H ^"user-agent: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/143.0.0.0 Safari/537.36 Edg/143.0.0.0^" &
+curl ^"https://nodestatic.fbstatic.cn/weblts_spa_online/ti/media/video-bg-OHH4Z5ZQ.png^" ^
+  -H ^"accept: image/avif,image/webp,image/apng,image/svg+xml,image/*,*/*;q=0.8^" ^
+  -H ^"accept-language: zh-CN,zh;q=0.9,en;q=0.8,en-GB;q=0.7,en-US;q=0.6,ja;q=0.5^" ^
+  -H ^"cache-control: no-cache^" ^
+  -H ^"pragma: no-cache^" ^
+  -H ^"priority: i^" ^
+  -H ^"referer: https://spa.fenbi.com/^" ^
+  -H ^"sec-ch-ua: ^\^"Microsoft Edge^\^";v=^\^"143^\^", ^\^"Chromium^\^";v=^\^"143^\^", ^\^"Not A(Brand^\^";v=^\^"24^\^"^" ^
+  -H ^"sec-ch-ua-mobile: ?0^" ^
+  -H ^"sec-ch-ua-platform: ^\^"Windows^\^"^" ^
+  -H ^"sec-fetch-dest: image^" ^
+  -H ^"sec-fetch-mode: no-cors^" ^
+  -H ^"sec-fetch-site: cross-site^" ^
+  -H ^"sec-fetch-storage-access: active^" ^
+  -H ^"user-agent: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/143.0.0.0 Safari/537.36 Edg/143.0.0.0^" &
+curl ^"https://nodestatic.fbstatic.cn/weblts_spa_online/ti/media/member-label-2-2AUQDD6N.png^" ^
+  -H ^"accept: image/avif,image/webp,image/apng,image/svg+xml,image/*,*/*;q=0.8^" ^
+  -H ^"accept-language: zh-CN,zh;q=0.9,en;q=0.8,en-GB;q=0.7,en-US;q=0.6,ja;q=0.5^" ^
+  -H ^"cache-control: no-cache^" ^
+  -H ^"pragma: no-cache^" ^
+  -H ^"priority: i^" ^
+  -H ^"referer: https://spa.fenbi.com/^" ^
+  -H ^"sec-ch-ua: ^\^"Microsoft Edge^\^";v=^\^"143^\^", ^\^"Chromium^\^";v=^\^"143^\^", ^\^"Not A(Brand^\^";v=^\^"24^\^"^" ^
+  -H ^"sec-ch-ua-mobile: ?0^" ^
+  -H ^"sec-ch-ua-platform: ^\^"Windows^\^"^" ^
+  -H ^"sec-fetch-dest: image^" ^
+  -H ^"sec-fetch-mode: no-cors^" ^
+  -H ^"sec-fetch-site: cross-site^" ^
+  -H ^"sec-fetch-storage-access: active^" ^
+  -H ^"user-agent: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/143.0.0.0 Safari/537.36 Edg/143.0.0.0^" &
+curl ^"https://nodestatic.fbstatic.cn/weblts_spa_online/ti/media/video-play-24YGKVSV.png^" ^
+  -H ^"accept: image/avif,image/webp,image/apng,image/svg+xml,image/*,*/*;q=0.8^" ^
+  -H ^"accept-language: zh-CN,zh;q=0.9,en;q=0.8,en-GB;q=0.7,en-US;q=0.6,ja;q=0.5^" ^
+  -H ^"cache-control: no-cache^" ^
+  -H ^"pragma: no-cache^" ^
+  -H ^"priority: i^" ^
+  -H ^"referer: https://spa.fenbi.com/^" ^
+  -H ^"sec-ch-ua: ^\^"Microsoft Edge^\^";v=^\^"143^\^", ^\^"Chromium^\^";v=^\^"143^\^", ^\^"Not A(Brand^\^";v=^\^"24^\^"^" ^
+  -H ^"sec-ch-ua-mobile: ?0^" ^
+  -H ^"sec-ch-ua-platform: ^\^"Windows^\^"^" ^
+  -H ^"sec-fetch-dest: image^" ^
+  -H ^"sec-fetch-mode: no-cors^" ^
+  -H ^"sec-fetch-site: cross-site^" ^
+  -H ^"sec-fetch-storage-access: active^" ^
+  -H ^"user-agent: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/143.0.0.0 Safari/537.36 Edg/143.0.0.0^" &
+curl ^"https://nodestatic.fbstatic.cn/weblts_spa_online/ti/media/member-open-vertical-V3GDJKZ3.png^" ^
+  -H ^"accept: image/avif,image/webp,image/apng,image/svg+xml,image/*,*/*;q=0.8^" ^
+  -H ^"accept-language: zh-CN,zh;q=0.9,en;q=0.8,en-GB;q=0.7,en-US;q=0.6,ja;q=0.5^" ^
+  -H ^"cache-control: no-cache^" ^
+  -H ^"pragma: no-cache^" ^
+  -H ^"priority: i^" ^
+  -H ^"referer: https://spa.fenbi.com/^" ^
+  -H ^"sec-ch-ua: ^\^"Microsoft Edge^\^";v=^\^"143^\^", ^\^"Chromium^\^";v=^\^"143^\^", ^\^"Not A(Brand^\^";v=^\^"24^\^"^" ^
+  -H ^"sec-ch-ua-mobile: ?0^" ^
+  -H ^"sec-ch-ua-platform: ^\^"Windows^\^"^" ^
+  -H ^"sec-fetch-dest: image^" ^
+  -H ^"sec-fetch-mode: no-cors^" ^
+  -H ^"sec-fetch-site: cross-site^" ^
+  -H ^"sec-fetch-storage-access: active^" ^
+  -H ^"user-agent: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/143.0.0.0 Safari/537.36 Edg/143.0.0.0^" &
+curl ^"https://nodestatic.fbstatic.cn/weblts_spa_online/ti/media/member-icon-N7JKBASS.png^" ^
+  -H ^"accept: image/avif,image/webp,image/apng,image/svg+xml,image/*,*/*;q=0.8^" ^
+  -H ^"accept-language: zh-CN,zh;q=0.9,en;q=0.8,en-GB;q=0.7,en-US;q=0.6,ja;q=0.5^" ^
+  -H ^"cache-control: no-cache^" ^
+  -H ^"pragma: no-cache^" ^
+  -H ^"priority: i^" ^
+  -H ^"referer: https://spa.fenbi.com/^" ^
+  -H ^"sec-ch-ua: ^\^"Microsoft Edge^\^";v=^\^"143^\^", ^\^"Chromium^\^";v=^\^"143^\^", ^\^"Not A(Brand^\^";v=^\^"24^\^"^" ^
+  -H ^"sec-ch-ua-mobile: ?0^" ^
+  -H ^"sec-ch-ua-platform: ^\^"Windows^\^"^" ^
+  -H ^"sec-fetch-dest: image^" ^
+  -H ^"sec-fetch-mode: no-cors^" ^
+  -H ^"sec-fetch-site: cross-site^" ^
+  -H ^"sec-fetch-storage-access: active^" ^
+  -H ^"user-agent: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/143.0.0.0 Safari/537.36 Edg/143.0.0.0^" &
+curl ^"https://nodestatic.fbstatic.cn/pool/umeditor_master/umeditor.config.js^" ^
+  -H ^"accept: */*^" ^
+  -H ^"accept-language: zh-CN,zh;q=0.9,en;q=0.8,en-GB;q=0.7,en-US;q=0.6,ja;q=0.5^" ^
+  -H ^"cache-control: no-cache^" ^
+  -H ^"pragma: no-cache^" ^
+  -H ^"referer: https://spa.fenbi.com/^" ^
+  -H ^"sec-ch-ua: ^\^"Microsoft Edge^\^";v=^\^"143^\^", ^\^"Chromium^\^";v=^\^"143^\^", ^\^"Not A(Brand^\^";v=^\^"24^\^"^" ^
+  -H ^"sec-ch-ua-mobile: ?0^" ^
+  -H ^"sec-ch-ua-platform: ^\^"Windows^\^"^" ^
+  -H ^"sec-fetch-dest: script^" ^
+  -H ^"sec-fetch-mode: no-cors^" ^
+  -H ^"sec-fetch-site: cross-site^" ^
+  -H ^"sec-fetch-storage-access: active^" ^
+  -H ^"user-agent: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/143.0.0.0 Safari/537.36 Edg/143.0.0.0^" &
+curl ^"https://nodestatic.fbstatic.cn/weblts_spa_online/ti/media/member-open-row-QQO4WQ7G.png^" ^
+  -H ^"accept: image/avif,image/webp,image/apng,image/svg+xml,image/*,*/*;q=0.8^" ^
+  -H ^"accept-language: zh-CN,zh;q=0.9,en;q=0.8,en-GB;q=0.7,en-US;q=0.6,ja;q=0.5^" ^
+  -H ^"cache-control: no-cache^" ^
+  -H ^"pragma: no-cache^" ^
+  -H ^"priority: i^" ^
+  -H ^"referer: https://spa.fenbi.com/^" ^
+  -H ^"sec-ch-ua: ^\^"Microsoft Edge^\^";v=^\^"143^\^", ^\^"Chromium^\^";v=^\^"143^\^", ^\^"Not A(Brand^\^";v=^\^"24^\^"^" ^
+  -H ^"sec-ch-ua-mobile: ?0^" ^
+  -H ^"sec-ch-ua-platform: ^\^"Windows^\^"^" ^
+  -H ^"sec-fetch-dest: image^" ^
+  -H ^"sec-fetch-mode: no-cors^" ^
+  -H ^"sec-fetch-site: cross-site^" ^
+  -H ^"sec-fetch-storage-access: active^" ^
+  -H ^"user-agent: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/143.0.0.0 Safari/537.36 Edg/143.0.0.0^" &
+curl ^"https://nodestatic.fbstatic.cn/weblts_spa_online/page/assets/fenbi32.ico^" ^
+  -H ^"accept: image/avif,image/webp,image/apng,image/svg+xml,image/*,*/*;q=0.8^" ^
+  -H ^"accept-language: zh-CN,zh;q=0.9,en;q=0.8,en-GB;q=0.7,en-US;q=0.6,ja;q=0.5^" ^
+  -H ^"cache-control: no-cache^" ^
+  -H ^"pragma: no-cache^" ^
+  -H ^"priority: u=1, i^" ^
+  -H ^"referer: https://spa.fenbi.com/^" ^
+  -H ^"sec-ch-ua: ^\^"Microsoft Edge^\^";v=^\^"143^\^", ^\^"Chromium^\^";v=^\^"143^\^", ^\^"Not A(Brand^\^";v=^\^"24^\^"^" ^
+  -H ^"sec-ch-ua-mobile: ?0^" ^
+  -H ^"sec-ch-ua-platform: ^\^"Windows^\^"^" ^
+  -H ^"sec-fetch-dest: image^" ^
+  -H ^"sec-fetch-mode: no-cors^" ^
+  -H ^"sec-fetch-site: cross-site^" ^
+  -H ^"sec-fetch-storage-access: active^" ^
+  -H ^"user-agent: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/143.0.0.0 Safari/537.36 Edg/143.0.0.0^" &
+curl ^"https://nodestatic.fbstatic.cn/weblts_spa_online/ti/chunk-VDLS5JAV.js^" ^
+  -H ^"accept: */*^" ^
+  -H ^"accept-language: zh-CN,zh;q=0.9,en;q=0.8,en-GB;q=0.7,en-US;q=0.6,ja;q=0.5^" ^
+  -H ^"cache-control: no-cache^" ^
+  -H ^"origin: https://spa.fenbi.com^" ^
+  -H ^"pragma: no-cache^" ^
+  -H ^"priority: u=1^" ^
+  -H ^"referer: https://nodestatic.fbstatic.cn/weblts_spa_online/ti/chunk-D2XZLP7D.js^" ^
+  -H ^"sec-ch-ua: ^\^"Microsoft Edge^\^";v=^\^"143^\^", ^\^"Chromium^\^";v=^\^"143^\^", ^\^"Not A(Brand^\^";v=^\^"24^\^"^" ^
+  -H ^"sec-ch-ua-mobile: ?0^" ^
+  -H ^"sec-ch-ua-platform: ^\^"Windows^\^"^" ^
+  -H ^"sec-fetch-dest: script^" ^
+  -H ^"sec-fetch-mode: cors^" ^
+  -H ^"sec-fetch-site: cross-site^" ^
+  -H ^"user-agent: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/143.0.0.0 Safari/537.36 Edg/143.0.0.0^" &
+curl ^"https://nodestatic.fbstatic.cn/weblts_spa_online/ti/chunk-OEYYZXMG.js^" ^
+  -H ^"accept: */*^" ^
+  -H ^"accept-language: zh-CN,zh;q=0.9,en;q=0.8,en-GB;q=0.7,en-US;q=0.6,ja;q=0.5^" ^
+  -H ^"cache-control: no-cache^" ^
+  -H ^"origin: https://spa.fenbi.com^" ^
+  -H ^"pragma: no-cache^" ^
+  -H ^"priority: u=1^" ^
+  -H ^"referer: https://nodestatic.fbstatic.cn/weblts_spa_online/ti/chunk-D2XZLP7D.js^" ^
+  -H ^"sec-ch-ua: ^\^"Microsoft Edge^\^";v=^\^"143^\^", ^\^"Chromium^\^";v=^\^"143^\^", ^\^"Not A(Brand^\^";v=^\^"24^\^"^" ^
+  -H ^"sec-ch-ua-mobile: ?0^" ^
+  -H ^"sec-ch-ua-platform: ^\^"Windows^\^"^" ^
+  -H ^"sec-fetch-dest: script^" ^
+  -H ^"sec-fetch-mode: cors^" ^
+  -H ^"sec-fetch-site: cross-site^" ^
+  -H ^"user-agent: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/143.0.0.0 Safari/537.36 Edg/143.0.0.0^" &
+curl ^"https://tiku.fenbi.com/api/jsjyzhzz/quizKeypoint?keypointId=631404^&quizId=876^&kav=125^&av=125^&hav=125^&app=web^" ^
+  -H ^"accept: application/json, text/plain, */*^" ^
+  -H ^"accept-language: zh-CN,zh;q=0.9,en;q=0.8,en-GB;q=0.7,en-US;q=0.6,ja;q=0.5^" ^
+  -H ^"cache-control: no-cache^" ^
+  -b ^"sid=3495507; persistent=A5xj9BjQOm1EyQz8VPpRa/9riRSPdxEInSq2c4Yk0QsIiKWBkxItuaUmnAJiAgNCB2Hkfd12n3qLIwSzJKFVfw==; sensorsdata2015jssdkcross=^%^7B^%^22distinct_id^%^22^%^3A^%^2219b0e92dd27bb1-0985a81370bba38-4c657b58-1327104-19b0e92dd28fc3^%^22^%^2C^%^22first_id^%^22^%^3A^%^22^%^22^%^2C^%^22props^%^22^%^3A^%^7B^%^22^%^24latest_traffic_source_type^%^22^%^3A^%^22^%^E7^%^9B^%^B4^%^E6^%^8E^%^A5^%^E6^%^B5^%^81^%^E9^%^87^%^8F^%^22^%^2C^%^22^%^24latest_search_keyword^%^22^%^3A^%^22^%^E6^%^9C^%^AA^%^E5^%^8F^%^96^%^E5^%^88^%^B0^%^E5^%^80^%^BC_^%^E7^%^9B^%^B4^%^E6^%^8E^%^A5^%^E6^%^89^%^93^%^E5^%^BC^%^80^%^22^%^2C^%^22^%^24latest_referrer^%^22^%^3A^%^22^%^22^%^7D^%^2C^%^22^%^24device_id^%^22^%^3A^%^2219b0e92dd27bb1-0985a81370bba38-4c657b58-1327104-19b0e92dd28fc3^%^22^%^7D; sess=WLNjTh9mtYTzCDTkHUtClFUq3lPh8GrhfKUzfgBE/pDqA1upQK0rRwNVoogjnZS795fR9RRlhe/l31iNHFOw672bfpPwzzGwZJxNGOWuinY=; userid=152815018; acw_tc=0bd17c5217664432532552303ebe18ebe390fbf317c200464e993a0e9c1964^" ^
+  -H ^"origin: https://spa.fenbi.com^" ^
+  -H ^"pragma: no-cache^" ^
+  -H ^"priority: u=1, i^" ^
+  -H ^"referer: https://spa.fenbi.com/^" ^
+  -H ^"sec-ch-ua: ^\^"Microsoft Edge^\^";v=^\^"143^\^", ^\^"Chromium^\^";v=^\^"143^\^", ^\^"Not A(Brand^\^";v=^\^"24^\^"^" ^
+  -H ^"sec-ch-ua-mobile: ?0^" ^
+  -H ^"sec-ch-ua-platform: ^\^"Windows^\^"^" ^
+  -H ^"sec-fetch-dest: empty^" ^
+  -H ^"sec-fetch-mode: cors^" ^
+  -H ^"sec-fetch-site: same-site^" ^
+  -H ^"user-agent: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/143.0.0.0 Safari/537.36 Edg/143.0.0.0^" &
+curl ^"https://tiku.fenbi.com/api/jsjyzhzz/quizKeypoint?keypointId=631336^&quizId=876^&kav=125^&av=125^&hav=125^&app=web^" ^
+  -H ^"accept: application/json, text/plain, */*^" ^
+  -H ^"accept-language: zh-CN,zh;q=0.9,en;q=0.8,en-GB;q=0.7,en-US;q=0.6,ja;q=0.5^" ^
+  -H ^"cache-control: no-cache^" ^
+  -b ^"sid=3495507; persistent=A5xj9BjQOm1EyQz8VPpRa/9riRSPdxEInSq2c4Yk0QsIiKWBkxItuaUmnAJiAgNCB2Hkfd12n3qLIwSzJKFVfw==; sensorsdata2015jssdkcross=^%^7B^%^22distinct_id^%^22^%^3A^%^2219b0e92dd27bb1-0985a81370bba38-4c657b58-1327104-19b0e92dd28fc3^%^22^%^2C^%^22first_id^%^22^%^3A^%^22^%^22^%^2C^%^22props^%^22^%^3A^%^7B^%^22^%^24latest_traffic_source_type^%^22^%^3A^%^22^%^E7^%^9B^%^B4^%^E6^%^8E^%^A5^%^E6^%^B5^%^81^%^E9^%^87^%^8F^%^22^%^2C^%^22^%^24latest_search_keyword^%^22^%^3A^%^22^%^E6^%^9C^%^AA^%^E5^%^8F^%^96^%^E5^%^88^%^B0^%^E5^%^80^%^BC_^%^E7^%^9B^%^B4^%^E6^%^8E^%^A5^%^E6^%^89^%^93^%^E5^%^BC^%^80^%^22^%^2C^%^22^%^24latest_referrer^%^22^%^3A^%^22^%^22^%^7D^%^2C^%^22^%^24device_id^%^22^%^3A^%^2219b0e92dd27bb1-0985a81370bba38-4c657b58-1327104-19b0e92dd28fc3^%^22^%^7D; sess=WLNjTh9mtYTzCDTkHUtClFUq3lPh8GrhfKUzfgBE/pDqA1upQK0rRwNVoogjnZS795fR9RRlhe/l31iNHFOw672bfpPwzzGwZJxNGOWuinY=; userid=152815018; acw_tc=0bd17c5217664432532552303ebe18ebe390fbf317c200464e993a0e9c1964^" ^
+  -H ^"origin: https://spa.fenbi.com^" ^
+  -H ^"pragma: no-cache^" ^
+  -H ^"priority: u=1, i^" ^
+  -H ^"referer: https://spa.fenbi.com/^" ^
+  -H ^"sec-ch-ua: ^\^"Microsoft Edge^\^";v=^\^"143^\^", ^\^"Chromium^\^";v=^\^"143^\^", ^\^"Not A(Brand^\^";v=^\^"24^\^"^" ^
+  -H ^"sec-ch-ua-mobile: ?0^" ^
+  -H ^"sec-ch-ua-platform: ^\^"Windows^\^"^" ^
+  -H ^"sec-fetch-dest: empty^" ^
+  -H ^"sec-fetch-mode: cors^" ^
+  -H ^"sec-fetch-site: same-site^" ^
+  -H ^"user-agent: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/143.0.0.0 Safari/537.36 Edg/143.0.0.0^" &
+curl ^"https://tiku.fenbi.com/activity/report/studyTime?kav=125^&av=125^&hav=125^&app=web^" ^
+  -X ^"OPTIONS^" ^
+  -H ^"accept: */*^" ^
+  -H ^"accept-language: zh-CN,zh;q=0.9,en;q=0.8,en-GB;q=0.7,en-US;q=0.6,ja;q=0.5^" ^
+  -H ^"access-control-request-headers: content-type^" ^
+  -H ^"access-control-request-method: POST^" ^
+  -H ^"cache-control: no-cache^" ^
+  -H ^"origin: https://spa.fenbi.com^" ^
+  -H ^"pragma: no-cache^" ^
+  -H ^"priority: u=1, i^" ^
+  -H ^"referer: https://spa.fenbi.com/^" ^
+  -H ^"sec-fetch-dest: empty^" ^
+  -H ^"sec-fetch-mode: cors^" ^
+  -H ^"sec-fetch-site: same-site^" ^
+  -H ^"user-agent: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/143.0.0.0 Safari/537.36 Edg/143.0.0.0^" &
+curl ^"https://tiku.fenbi.com/activity/report/studyTime?kav=125^&av=125^&hav=125^&app=web^" ^
+  -H ^"accept: application/json, text/plain, */*^" ^
+  -H ^"accept-language: zh-CN,zh;q=0.9,en;q=0.8,en-GB;q=0.7,en-US;q=0.6,ja;q=0.5^" ^
+  -H ^"cache-control: no-cache^" ^
+  -H ^"content-type: application/json^" ^
+  -b ^"sid=3495507; persistent=A5xj9BjQOm1EyQz8VPpRa/9riRSPdxEInSq2c4Yk0QsIiKWBkxItuaUmnAJiAgNCB2Hkfd12n3qLIwSzJKFVfw==; sensorsdata2015jssdkcross=^%^7B^%^22distinct_id^%^22^%^3A^%^2219b0e92dd27bb1-0985a81370bba38-4c657b58-1327104-19b0e92dd28fc3^%^22^%^2C^%^22first_id^%^22^%^3A^%^22^%^22^%^2C^%^22props^%^22^%^3A^%^7B^%^22^%^24latest_traffic_source_type^%^22^%^3A^%^22^%^E7^%^9B^%^B4^%^E6^%^8E^%^A5^%^E6^%^B5^%^81^%^E9^%^87^%^8F^%^22^%^2C^%^22^%^24latest_search_keyword^%^22^%^3A^%^22^%^E6^%^9C^%^AA^%^E5^%^8F^%^96^%^E5^%^88^%^B0^%^E5^%^80^%^BC_^%^E7^%^9B^%^B4^%^E6^%^8E^%^A5^%^E6^%^89^%^93^%^E5^%^BC^%^80^%^22^%^2C^%^22^%^24latest_referrer^%^22^%^3A^%^22^%^22^%^7D^%^2C^%^22^%^24device_id^%^22^%^3A^%^2219b0e92dd27bb1-0985a81370bba38-4c657b58-1327104-19b0e92dd28fc3^%^22^%^7D; sess=WLNjTh9mtYTzCDTkHUtClFUq3lPh8GrhfKUzfgBE/pDqA1upQK0rRwNVoogjnZS795fR9RRlhe/l31iNHFOw672bfpPwzzGwZJxNGOWuinY=; userid=152815018; acw_tc=0bd17c5217664432532552303ebe18ebe390fbf317c200464e993a0e9c1964^" ^
+  -H ^"origin: https://spa.fenbi.com^" ^
+  -H ^"pragma: no-cache^" ^
+  -H ^"priority: u=1, i^" ^
+  -H ^"referer: https://spa.fenbi.com/^" ^
+  -H ^"sec-ch-ua: ^\^"Microsoft Edge^\^";v=^\^"143^\^", ^\^"Chromium^\^";v=^\^"143^\^", ^\^"Not A(Brand^\^";v=^\^"24^\^"^" ^
+  -H ^"sec-ch-ua-mobile: ?0^" ^
+  -H ^"sec-ch-ua-platform: ^\^"Windows^\^"^" ^
+  -H ^"sec-fetch-dest: empty^" ^
+  -H ^"sec-fetch-mode: cors^" ^
+  -H ^"sec-fetch-site: same-site^" ^
+  -H ^"user-agent: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/143.0.0.0 Safari/537.36 Edg/143.0.0.0^" ^
+  --data-raw ^"^[^{^\^"studyTime^\^":120000,^\^"startTime^\^":1766444077179,^\^"subType^\^":1,^\^"tikuPrefix^\^":^\^"jsjyzhzz^\^",^\^"exerciseId^\^":1971222266,^\^"questionId^\^":0^}^]^" &
+curl ^"https://tiku.fenbi.com/activity/report/studyTime?kav=125^&av=125^&hav=125^&app=web^" ^
+  -X ^"OPTIONS^" ^
+  -H ^"accept: */*^" ^
+  -H ^"accept-language: zh-CN,zh;q=0.9,en;q=0.8,en-GB;q=0.7,en-US;q=0.6,ja;q=0.5^" ^
+  -H ^"access-control-request-headers: content-type^" ^
+  -H ^"access-control-request-method: POST^" ^
+  -H ^"cache-control: no-cache^" ^
+  -H ^"origin: https://spa.fenbi.com^" ^
+  -H ^"pragma: no-cache^" ^
+  -H ^"priority: u=1, i^" ^
+  -H ^"referer: https://spa.fenbi.com/^" ^
+  -H ^"sec-fetch-dest: empty^" ^
+  -H ^"sec-fetch-mode: cors^" ^
+  -H ^"sec-fetch-site: same-site^" ^
+  -H ^"user-agent: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/143.0.0.0 Safari/537.36 Edg/143.0.0.0^" &
+curl ^"https://tiku.fenbi.com/activity/report/studyTime?kav=125^&av=125^&hav=125^&app=web^" ^
+  -H ^"accept: application/json, text/plain, */*^" ^
+  -H ^"accept-language: zh-CN,zh;q=0.9,en;q=0.8,en-GB;q=0.7,en-US;q=0.6,ja;q=0.5^" ^
+  -H ^"cache-control: no-cache^" ^
+  -H ^"content-type: application/json^" ^
+  -b ^"sid=3495507; persistent=A5xj9BjQOm1EyQz8VPpRa/9riRSPdxEInSq2c4Yk0QsIiKWBkxItuaUmnAJiAgNCB2Hkfd12n3qLIwSzJKFVfw==; sensorsdata2015jssdkcross=^%^7B^%^22distinct_id^%^22^%^3A^%^2219b0e92dd27bb1-0985a81370bba38-4c657b58-1327104-19b0e92dd28fc3^%^22^%^2C^%^22first_id^%^22^%^3A^%^22^%^22^%^2C^%^22props^%^22^%^3A^%^7B^%^22^%^24latest_traffic_source_type^%^22^%^3A^%^22^%^E7^%^9B^%^B4^%^E6^%^8E^%^A5^%^E6^%^B5^%^81^%^E9^%^87^%^8F^%^22^%^2C^%^22^%^24latest_search_keyword^%^22^%^3A^%^22^%^E6^%^9C^%^AA^%^E5^%^8F^%^96^%^E5^%^88^%^B0^%^E5^%^80^%^BC_^%^E7^%^9B^%^B4^%^E6^%^8E^%^A5^%^E6^%^89^%^93^%^E5^%^BC^%^80^%^22^%^2C^%^22^%^24latest_referrer^%^22^%^3A^%^22^%^22^%^7D^%^2C^%^22^%^24device_id^%^22^%^3A^%^2219b0e92dd27bb1-0985a81370bba38-4c657b58-1327104-19b0e92dd28fc3^%^22^%^7D; sess=WLNjTh9mtYTzCDTkHUtClFUq3lPh8GrhfKUzfgBE/pDqA1upQK0rRwNVoogjnZS795fR9RRlhe/l31iNHFOw672bfpPwzzGwZJxNGOWuinY=; userid=152815018; acw_tc=0bd17c5217664432532552303ebe18ebe390fbf317c200464e993a0e9c1964^" ^
+  -H ^"origin: https://spa.fenbi.com^" ^
+  -H ^"pragma: no-cache^" ^
+  -H ^"priority: u=1, i^" ^
+  -H ^"referer: https://spa.fenbi.com/^" ^
+  -H ^"sec-ch-ua: ^\^"Microsoft Edge^\^";v=^\^"143^\^", ^\^"Chromium^\^";v=^\^"143^\^", ^\^"Not A(Brand^\^";v=^\^"24^\^"^" ^
+  -H ^"sec-ch-ua-mobile: ?0^" ^
+  -H ^"sec-ch-ua-platform: ^\^"Windows^\^"^" ^
+  -H ^"sec-fetch-dest: empty^" ^
+  -H ^"sec-fetch-mode: cors^" ^
+  -H ^"sec-fetch-site: same-site^" ^
+  -H ^"user-agent: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/143.0.0.0 Safari/537.36 Edg/143.0.0.0^" ^
+  --data-raw ^"^[^{^\^"studyTime^\^":120000,^\^"startTime^\^":1766444207418,^\^"subType^\^":1,^\^"tikuPrefix^\^":^\^"jsjyzhzz^\^",^\^"exerciseId^\^":1971222266,^\^"questionId^\^":0^}^]^"
+
+
+
+
+  

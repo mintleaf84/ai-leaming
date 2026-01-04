@@ -1,6 +1,6 @@
 
 import { useState, useCallback, useRef } from 'react';
-import { createChatSession, generateChatTitle } from '@/app/chat/actions';
+import { createChatSession, generateChatTitle } from '@/server/actions/chat';
 import type { ChatSession } from '@/lib/services/chat';
 
 export interface Message {

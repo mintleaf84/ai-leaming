@@ -8,7 +8,7 @@ import { KnowledgeModal } from '@/app/knowledge/components/KnowledgeModal';
 import type { KnowledgeCard } from '@/lib/services/knowledge';
 import { useToast } from '@/components/ui/use-toast';
 import ChatSidebar from '@/components/chat/ChatSidebar';
-import { toggleMessageFavoriteAction, getFavoriteMessagesAction } from './actions';
+import { toggleMessageFavoriteAction, getFavoriteMessagesAction } from '@/server/actions/chat';
 import { useChatSessions } from '@/hooks/chat/useChatSessions';
 import { useChatStream } from '@/hooks/chat/useChatStream';
 import { useChatScroll } from '@/hooks/chat/useChatScroll';

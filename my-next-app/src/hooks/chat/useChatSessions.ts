@@ -6,7 +6,7 @@ import {
     createChatSession,
     deleteChatSession,
     loadSessionMessages
-} from '@/app/chat/actions';
+} from '@/server/actions/chat';
 
 export function useChatSessions() {
     const [sessions, setSessions] = useState<ChatSession[]>([]);

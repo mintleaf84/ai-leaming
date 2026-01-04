@@ -2,8 +2,8 @@
 
 import db from '@/lib/db';
 import { revalidatePath } from 'next/cache';
-import { requireRole } from '@/lib/auth';
-import { logAdminAction } from '@/lib/audit-service';
+import { requireRole } from '@/lib/auth/auth';
+import { logAdminAction } from '@/lib/admin/audit';
 
 export type AiConfig = {
     id: number;

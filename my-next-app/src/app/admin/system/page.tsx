@@ -3,7 +3,7 @@
 import React, { useEffect, useState } from 'react';
 import { BackupManager } from '../components/BackupManager';
 import { getHealthStatsAction } from '@/server/actions/health';
-import { HealthStats } from '@/lib/health-service';
+import { HealthStats } from '@/lib/admin/health';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';

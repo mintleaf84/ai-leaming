@@ -2,8 +2,8 @@ import { NextResponse } from 'next/server';
 import db from '@/lib/db';
 import fs from 'fs';
 import path from 'path';
-import { requireRole } from '@/lib/auth';
-import { logAdminAction } from '@/lib/audit-service';
+import { requireRole } from '@/lib/auth/auth';
+import { logAdminAction } from '@/lib/admin/audit';
 
 export const dynamic = 'force-dynamic';
 

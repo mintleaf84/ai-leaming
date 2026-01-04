@@ -1,7 +1,7 @@
 
 import { useState, useCallback, useRef } from 'react';
 import { createChatSession, generateChatTitle } from '@/app/chat/actions';
-import type { ChatSession } from '@/lib/chat-service';
+import type { ChatSession } from '@/lib/services/chat';
 
 export interface Message {
     id: string;

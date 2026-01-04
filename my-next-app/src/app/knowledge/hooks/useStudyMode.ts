@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect, useCallback } from 'react';
-import type { KnowledgeCard } from '@/lib/knowledge-service';
+import type { KnowledgeCard } from '@/lib/services/knowledge';
 
 export function useStudyMode(cards: KnowledgeCard[]) {
     const [studyMode, setStudyMode] = useState(false);

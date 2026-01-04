@@ -1,4 +1,4 @@
-import db from './db';
+import db from '@/lib/db';
 
 /**
  * 聊天会话管理服务

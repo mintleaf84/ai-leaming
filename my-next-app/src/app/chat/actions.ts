@@ -1,9 +1,9 @@
 'use server';
 
-import { createSession, getRecentMessages, updateSessionTitle, listSessions, getSession, deleteSession, getSessionMessages } from '@/lib/chat-service';
-import { generateTextWrapper } from '@/lib/ai-client';
-import { parseCommand, handleQuizCommand, handleExplainCommand, searchKnowledgeBase } from '@/lib/chat-rag';
-import { requireUser } from '@/lib/auth';
+import { createSession, getRecentMessages, updateSessionTitle, listSessions, getSession, deleteSession, getSessionMessages } from '@/lib/services/chat';
+import { generateTextWrapper } from '@/lib/ai/client';
+import { parseCommand, handleQuizCommand, handleExplainCommand, searchKnowledgeBase } from '@/lib/services/chat-rag';
+import { requireUser } from '@/lib/auth/auth';
 
 /**
  * 聊天功能 Server Actions
@@ -160,7 +160,7 @@ export async function searchQuestions(query: string) {
 export async function toggleMessageFavoriteAction(messageId: number, isFavorite: boolean) {
     try {
         const user = await requireUser();
-        const { toggleMessageFavorite } = await import('@/lib/chat-service');
+        const { toggleMessageFavorite } = await import('@/lib/services/chat');
         toggleMessageFavorite(user.id, messageId, isFavorite);
         return { success: true };
     } catch (error) {
@@ -175,7 +175,7 @@ export async function toggleMessageFavoriteAction(messageId: number, isFavorite:
 export async function getFavoriteMessagesAction() {
     try {
         const user = await requireUser();
-        const { getFavoriteMessages } = await import('@/lib/chat-service');
+        const { getFavoriteMessages } = await import('@/lib/services/chat');
         return getFavoriteMessages(user.id);
     } catch (error) {
         console.error('[ChatActions] 获取收藏失败:', error);
@@ -189,7 +189,7 @@ export async function getFavoriteMessagesAction() {
 export async function searchMessagesAction(query: string) {
     try {
         const user = await requireUser();
-        const { searchMessages } = await import('@/lib/chat-service');
+        const { searchMessages } = await import('@/lib/services/chat');
         return searchMessages(user.id, query);
     } catch (error) {
         console.error('[ChatActions] 搜索失败:', error);

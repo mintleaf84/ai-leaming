@@ -1,4 +1,4 @@
-import { generateStructuredData } from './ai-client';
+import { generateStructuredData } from './client';
 import { z } from 'zod';
 
 const TaggingResultSchema = z.object({

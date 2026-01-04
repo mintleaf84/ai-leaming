@@ -4,9 +4,9 @@ import db from '@/lib/db';
 import { Question, UserRole } from '@/lib/types';
 import { z } from 'zod';
 import { QuestionSchema } from '@/lib/schemas';
-import { requireRole, getSession } from '@/lib/auth';
-import { hashPassword } from '@/lib/password';
-import { logAdminAction } from '@/lib/audit-service';
+import { requireRole, getSession } from '@/lib/auth/auth';
+import { hashPassword } from '@/lib/auth/password';
+import { logAdminAction } from '@/lib/admin/audit';
 
 // Schema for bulk import
 const ImportSchema = z.array(QuestionSchema);

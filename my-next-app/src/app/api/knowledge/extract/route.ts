@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { generateTextWrapper } from '@/lib/ai-client';
-import { createKnowledgeCard } from '@/lib/knowledge-service';
-import { getPromptFromDbSync, buildPrompt, DEFAULT_KNOWLEDGE_EXTRACT_PROMPT } from '@/lib/prompts';
+import { generateTextWrapper } from '@/lib/ai/client';
+import { createKnowledgeCard } from '@/lib/services/knowledge';
+import { getPromptFromDbSync, buildPrompt, DEFAULT_KNOWLEDGE_EXTRACT_PROMPT } from '@/lib/ai/prompts';
 import { z } from 'zod';
 
 // 知识卡片结构 Schema

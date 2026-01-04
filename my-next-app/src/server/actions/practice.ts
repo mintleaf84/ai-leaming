@@ -2,8 +2,8 @@
 
 import db from '@/lib/db';
 import { Question } from '@/lib/types';
-import { schedulingService } from '@/lib/scheduling-service';
-import { requireUser } from '@/lib/auth';
+import { schedulingService } from '@/lib/services/scheduling';
+import { requireUser } from '@/lib/auth/auth';
 
 export async function getPracticeSessionAction(forceNew: boolean = false): Promise<{
   questions: Question[];
@@ -96,7 +96,7 @@ export async function submitAnswerAction(questionId: number, userAnswer: string,
     const q = db.prepare('SELECT tags, dimension FROM questions WHERE id = ?').get(questionId) as { tags: string, dimension: string };
     if (q) {
       const tags = JSON.parse(q.tags);
-      const { masteryService } = await import('@/lib/mastery-service');
+      const { masteryService } = await import('@/lib/services/mastery');
 
       tags.forEach((tag: string) => {
         masteryService.updateMastery(user.id, tag, q.dimension as any, isCorrect);

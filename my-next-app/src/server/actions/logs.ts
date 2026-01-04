@@ -1,8 +1,8 @@
 'use server';
 
-import { getRecentLogs, getLogsByUser } from '@/lib/audit-service';
-import { AdminLogEntry } from '@/lib/audit-types';
-import { requireRole } from '@/lib/auth';
+import { getRecentLogs, getLogsByUser } from '@/lib/admin/audit';
+import { AdminLogEntry } from '@/lib/admin/audit-types';
+import { requireRole } from '@/lib/auth/auth';
 
 /**
  * 获取最近的管理员操作日志（仅限管理员）

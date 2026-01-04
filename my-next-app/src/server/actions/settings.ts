@@ -2,8 +2,8 @@
 
 import db from '@/lib/db';
 import { revalidatePath } from 'next/cache';
-import { generateTextWrapper } from '@/lib/ai-client';
-import { requireUser } from '@/lib/auth';
+import { generateTextWrapper } from '@/lib/ai/client';
+import { requireUser } from '@/lib/auth/auth';
 
 export type Settings = {
   reviewThreshold: number;

@@ -5,7 +5,7 @@ import { Send, Loader2, StopCircle, Bot, Menu, X, RotateCcw, Trash2 } from 'luci
 import { Button } from '@/components/ui/button';
 import ChatMessage from '@/components/chat/ChatMessage';
 import { KnowledgeModal } from '@/app/knowledge/components/KnowledgeModal';
-import type { KnowledgeCard } from '@/lib/knowledge-service';
+import type { KnowledgeCard } from '@/lib/services/knowledge';
 import { useToast } from '@/components/ui/use-toast';
 import ChatSidebar from '@/components/chat/ChatSidebar';
 import { toggleMessageFavoriteAction, getFavoriteMessagesAction } from './actions';

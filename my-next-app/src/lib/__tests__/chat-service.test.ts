@@ -5,12 +5,12 @@ import Database from 'better-sqlite3';
 // 注意：vi.mock 会被提升，所以不能引用外部变量。
 // 我们在工厂函数内部创建实例，或者让它返回一个新的。
 // 为了在测试中访问同一个实例，我们可以在导入时作为一个单例获取。
-vi.mock('@/lib/db', () => {
+vi.mock('@/li@/lib/db', () => {
     return { default: new Database(':memory:') };
 });
 
 // 2. 导入 Mock 后的模块
-import db from '@/lib/db';
+import db from '@/li@/lib/db';
 import {
     createSession,
     saveMessage,
@@ -18,7 +18,7 @@ import {
     listSessions,
     deleteSession,
     updateSessionTitle
-} from '../chat-service';
+} from '@/lib/services/chat';
 
 describe('ChatService', () => {
     // 3. 初始化数据库表结构

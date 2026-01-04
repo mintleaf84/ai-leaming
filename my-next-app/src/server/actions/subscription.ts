@@ -6,7 +6,7 @@
 'use server';
 
 import { revalidatePath } from 'next/cache';
-import { requireRole, requireUser } from '@/lib/auth';
+import { requireRole, requireUser } from '@/lib/auth/auth';
 import {
     getAllPlans,
     getPlanById,

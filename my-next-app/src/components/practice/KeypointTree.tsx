@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useMemo } from 'react';
 import { ChevronRight, ChevronDown, Check, Folder, FolderOpen, FileText } from 'lucide-react';
-import { cn } from '@/lib/utils';
+import { cn } from '@/lib/utils/utils';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';

@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { createUser, getUserByUsername } from '@/lib/user-service';
-import { login } from '@/lib/auth';
+import { createUser, getUserByUsername } from '@/lib/auth/user-service';
+import { login } from '@/lib/auth/auth';
 
 export async function POST(request: NextRequest) {
     try {

@@ -1,7 +1,7 @@
 'use server';
 
 import db from '@/lib/db';
-import { requireUser } from '@/lib/auth';
+import { requireUser } from '@/lib/auth/auth';
 
 // 错题项类型
 export type WrongQuestionItem = {

@@ -1,9 +1,9 @@
 'use server';
 
 import db from '@/lib/db';
-import { requireUser } from '@/lib/auth';
+import { requireUser } from '@/lib/auth/auth';
 import { parseFenbiData, validateFenbiJson, ParsedQuestion, ParsedRecord } from '@/lib/import/fenbi-parser';
-import { masteryService } from '@/lib/mastery-service';
+import { masteryService } from '@/lib/services/mastery';
 
 /**
  * 导入结果

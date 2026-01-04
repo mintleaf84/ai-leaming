@@ -1,4 +1,4 @@
-import db from './db';
+import db from '@/lib/db';
 
 /**
  * 知识卡片服务
@@ -23,7 +23,7 @@ export interface KnowledgeCard {
 /**
  * 创建知识卡片
  */
-import { ragService } from './rag-service';
+import { ragService } from '@/lib/ai/rag';
 
 /**
  * 创建知识卡片

@@ -1,4 +1,4 @@
-import { ragService, RagResult } from './rag-service';
+import { ragService, RagResult } from '@/lib/ai/rag';
 
 const CONFIDENCE_THRESHOLD = 0.6; // Threshold for RAG results
 

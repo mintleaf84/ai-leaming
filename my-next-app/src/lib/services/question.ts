@@ -1,5 +1,5 @@
-import db from './db';
-import { ragService } from './rag-service';
+import db from '@/lib/db';
+import { ragService } from '@/lib/ai/rag';
 
 export const questionService = {
   /**

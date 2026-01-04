@@ -1,6 +1,6 @@
-import { generateTextWrapper } from './ai-client';
-import { searchSimilarContent, ragService } from './rag-service'; // Import ragService
-import { getPromptFromDbSync } from './prompts';
+import { generateTextWrapper } from '@/lib/ai/client';
+import { searchSimilarContent, ragService } from '@/lib/ai/rag';
+import { getPromptFromDbSync } from '@/lib/ai/prompts';
 import { tool } from 'ai';
 import { z } from 'zod';
 

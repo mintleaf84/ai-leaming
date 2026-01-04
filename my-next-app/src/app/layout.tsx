@@ -41,7 +41,7 @@ export const viewport: Viewport = {
   viewportFit: "cover",
 };
 
-import { getSession } from "@/lib/auth";
+import { getSession } from "@/lib/auth/auth";
 import { initDatabase } from "@/lib/init-db";
 
 export default async function RootLayout({

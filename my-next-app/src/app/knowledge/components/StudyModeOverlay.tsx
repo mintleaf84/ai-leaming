@@ -5,7 +5,7 @@ import { X, Play, ChevronLeft, ChevronRight } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
-import type { KnowledgeCard } from '@/lib/knowledge-service';
+import type { KnowledgeCard } from '@/lib/services/knowledge';
 
 interface StudyModeOverlayProps {
     cards: KnowledgeCard[];

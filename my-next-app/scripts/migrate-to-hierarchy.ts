@@ -4,7 +4,7 @@
 
 import db from '../src/lib/db';
 import { findKeypointPathByName } from '../src/lib/import/keypoint-tree';
-import { masteryService } from '../src/lib/mastery-service';
+import { masteryService } from '../src/lib/services/mastery';
 
 async function migrateToHierarchy() {
     console.log('🔄 开始将知识点转换为层级路径格式...\n');

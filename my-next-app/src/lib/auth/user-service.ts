@@ -1,6 +1,6 @@
-import db from './db';
+import db from '@/lib/db';
 import { hashPassword } from './password';
-import { UserRole } from './types';
+import { UserRole } from '@/lib/types';
 
 // 数据库中的完整用户记录
 export interface UserRecord {

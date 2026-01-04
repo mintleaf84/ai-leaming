@@ -1,7 +1,7 @@
 import { embed } from 'ai';
 import { createOpenAI } from '@ai-sdk/openai';
-import { getAiConfig } from './ai-client';
-import db from './db';
+import { getAiConfig } from './client';
+import db from '@/lib/db';
 
 export interface RagResult {
   content: string;

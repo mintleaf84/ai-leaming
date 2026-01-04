@@ -1,7 +1,7 @@
 'use server';
 
 import db from '@/lib/db';
-import { requireUser } from '@/lib/auth';
+import { requireUser } from '@/lib/auth/auth';
 
 export async function moveToObservationZoneAction(tagName: string, reason: string) {
   const user = await requireUser();

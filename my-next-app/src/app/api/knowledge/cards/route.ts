@@ -7,7 +7,7 @@ import { NextRequest, NextResponse } from 'next/server';
  */
 export async function GET(request: NextRequest) {
     try {
-        const { getAllKnowledgeCards, getCategories, getKnowledgeStats, exportToAnkiTSV } = await import('@/lib/knowledge-service');
+        const { getAllKnowledgeCards, getCategories, getKnowledgeStats, exportToAnkiTSV } = await import('@/lib/services/knowledge');
 
         const { searchParams } = new URL(request.url);
         const category = searchParams.get('category') || undefined;
@@ -49,7 +49,7 @@ export async function GET(request: NextRequest) {
  */
 export async function POST(request: NextRequest) {
     try {
-        const { createKnowledgeCard } = await import('@/lib/knowledge-service');
+        const { createKnowledgeCard } = await import('@/lib/services/knowledge');
         const body = await request.json();
 
         const card = {

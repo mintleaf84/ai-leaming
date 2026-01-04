@@ -1,12 +1,12 @@
 'use server';
 
 import db from '@/lib/db';
-import { generateStructuredData, generateTextWrapper } from '@/lib/ai-client';
+import { generateStructuredData, generateTextWrapper } from '@/lib/ai/client';
 import { CorrectionQuizSchema, RegressionChallengeSchema } from '@/lib/schemas';
 import { z } from 'zod';
-import { buildPrompt, DEFAULT_CORRECTION_PROMPT, DEFAULT_REGRESSION_PROMPT, DEFAULT_KNOWLEDGE_EXTRACT_PROMPT, DEFAULT_CHAT_SYSTEM_PROMPT, PROMPT_VARIABLE_EXAMPLES } from '@/lib/prompts';
-import { requireRole } from '@/lib/auth';
-import { logAdminAction } from '@/lib/audit-service';
+import { buildPrompt, DEFAULT_CORRECTION_PROMPT, DEFAULT_REGRESSION_PROMPT, DEFAULT_KNOWLEDGE_EXTRACT_PROMPT, DEFAULT_CHAT_SYSTEM_PROMPT, PROMPT_VARIABLE_EXAMPLES } from '@/lib/ai/prompts';
+import { requireRole } from '@/lib/auth/auth';
+import { logAdminAction } from '@/lib/admin/audit';
 
 export interface PromptTemplate {
     key: string;
@@ -160,5 +160,5 @@ export async function debugPromptTemplateAction(
 }
 
 // Helper to get prompt (internal use)
-// Helper to get prompt (internal use) -> Moved to @/lib/prompts to avoid Server Action async requirement
+// Helper to get prompt (internal use) -> Moved to @/lib/ai/prompts to avoid Server Action async requirement
 // export function getPromptFromDbSync...

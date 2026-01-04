@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect, useCallback } from 'react';
 import { MessageSquarePlus, Trash2, MessageSquare, Star, Search, Loader2 } from 'lucide-react';
-import type { ChatSession, SearchResult } from '@/lib/chat-service';
+import type { ChatSession, SearchResult } from '@/lib/services/chat';
 import { searchMessagesAction } from '@/app/chat/actions';
 
 interface ChatSidebarProps {

@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { getUserByUsername } from '@/lib/user-service';
-import { comparePassword } from '@/lib/password';
-import { login } from '@/lib/auth';
+import { getUserByUsername } from '@/lib/auth/user-service';
+import { comparePassword } from '@/lib/auth/password';
+import { login } from '@/lib/auth/auth';
 
 export async function POST(request: NextRequest) {
     try {

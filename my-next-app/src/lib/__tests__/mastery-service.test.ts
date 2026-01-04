@@ -1,9 +1,9 @@
 
-import { masteryService } from './mastery-service';
-import db from './db';
+import { masteryService } from '@/lib/services/mastery';
+import db from '@/lib/db';
 
 // Mock the db module
-jest.mock('./db', () => ({
+jest.mock('@/lib/db', () => ({
   __esModule: true,
   default: {
     prepare: jest.fn(),

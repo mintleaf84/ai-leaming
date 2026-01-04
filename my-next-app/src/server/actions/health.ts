@@ -1,7 +1,7 @@
 'use server';
 
-import { getHealthStats, HealthStats } from '@/lib/health-service';
-import { requireRole } from '@/lib/auth';
+import { getHealthStats, HealthStats } from '@/lib/admin/health';
+import { requireRole } from '@/lib/auth/auth';
 
 /**
  * 获取系统健康统计信息（仅限管理员）

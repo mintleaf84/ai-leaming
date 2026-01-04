@@ -1,9 +1,9 @@
 
-import { schedulingService } from './scheduling-service';
-import db from './db';
+import { schedulingService } from '@/lib/services/scheduling';
+import db from '@/lib/db';
 
 // Mock DB
-jest.mock('./db', () => ({
+jest.mock('@/lib/db', () => ({
   __esModule: true,
   default: {
     prepare: jest.fn(),

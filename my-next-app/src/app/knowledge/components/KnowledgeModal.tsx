@@ -3,7 +3,7 @@
 import React from 'react';
 import { X, Plus, Edit2, Sparkles, Loader2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import type { KnowledgeCard } from '@/lib/knowledge-service';
+import type { KnowledgeCard } from '@/lib/services/knowledge';
 
 interface KnowledgeModalProps {
     isOpen: boolean;

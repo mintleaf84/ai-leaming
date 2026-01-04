@@ -4,7 +4,7 @@
  */
 
 import db from '../src/lib/db';
-import { masteryService } from '../src/lib/mastery-service';
+import { masteryService } from '../src/lib/services/mastery';
 
 async function recalculateMastery() {
     console.log('🔄 开始回溯更新掌握度...\n');

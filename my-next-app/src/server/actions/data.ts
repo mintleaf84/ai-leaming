@@ -2,7 +2,7 @@
 
 import db from '@/lib/db';
 import { z } from 'zod';
-import { requireUser } from '@/lib/auth';
+import { requireUser } from '@/lib/auth/auth';
 
 // --- Types ---
 

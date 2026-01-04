@@ -1,11 +1,11 @@
 'use server';
 
-import { generateStructuredData, generateTextWrapper } from '@/lib/ai-client';
+import { generateStructuredData, generateTextWrapper } from '@/lib/ai/client';
 import { CorrectionQuizSchema, RegressionChallengeSchema, CorrectionQuiz, RegressionChallenge } from '@/lib/schemas';
-import { questionService } from '@/lib/question-service';
-import { getPromptFromDbSync, buildPrompt, DEFAULT_CORRECTION_PROMPT, DEFAULT_REGRESSION_PROMPT } from '@/lib/prompts';
+import { questionService } from '@/lib/services/question';
+import { getPromptFromDbSync, buildPrompt, DEFAULT_CORRECTION_PROMPT, DEFAULT_REGRESSION_PROMPT } from '@/lib/ai/prompts';
 
-// Default Prompts imported from @/lib/prompts
+// Default Prompts imported from @/lib/ai/prompts
 
 export async function generateCorrectionQuizAction(
   questionContent: string,

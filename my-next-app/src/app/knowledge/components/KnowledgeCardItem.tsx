@@ -4,7 +4,7 @@ import React from 'react';
 import { Tag, Edit2, Trash2, CheckCircle2, AlertCircle } from 'lucide-react';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
-import type { KnowledgeCard } from '@/lib/knowledge-service';
+import type { KnowledgeCard } from '@/lib/services/knowledge';
 
 interface KnowledgeCardItemProps {
     card: KnowledgeCard;

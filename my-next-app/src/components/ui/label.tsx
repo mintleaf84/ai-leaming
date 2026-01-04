@@ -1,7 +1,7 @@
 "use client"
 
 import * as React from "react"
-import { cn } from "@/lib/utils"
+import { cn } from "@/lib/utils/utils"
 
 // 简化版 Label 组件 (不依赖 @radix-ui/react-label)
 const Label = React.forwardRef<

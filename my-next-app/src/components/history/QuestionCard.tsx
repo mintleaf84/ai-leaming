@@ -2,7 +2,7 @@
 
 import React from 'react';
 import { CheckCircle2, XCircle, BookOpen, ChevronDown, ChevronUp, BrainCircuit } from 'lucide-react';
-import { formatDuration, indexToLetter } from '@/lib/utils';
+import { formatDuration, indexToLetter } from '@/lib/utils/utils';
 
 export interface QuestionLogData {
     questionContent: string;

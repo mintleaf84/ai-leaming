@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { getKnowledgeCard, updateKnowledgeCard, deleteKnowledgeCard } from '@/lib/knowledge-service';
+import { getKnowledgeCard, updateKnowledgeCard, deleteKnowledgeCard } from '@/lib/services/knowledge';
 
 interface RouteParams {
     params: Promise<{ id: string }>;

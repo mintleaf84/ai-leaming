@@ -1,7 +1,7 @@
-import { streamChatWrapper } from '@/lib/ai-client';
-import { saveMessage } from '@/lib/chat-service';
-import { searchKnowledgeBase, buildEnhancedSystemPrompt, parseCommand, handleQuizCommand, handleExplainCommand } from '@/lib/chat-rag';
-import { getSession } from '@/lib/auth';
+import { streamChatWrapper } from '@/lib/ai/client';
+import { saveMessage } from '@/lib/services/chat';
+import { searchKnowledgeBase, buildEnhancedSystemPrompt, parseCommand, handleQuizCommand, handleExplainCommand } from '@/lib/services/chat-rag';
+import { getSession } from '@/lib/auth/auth';
 import { checkQuotaForApi } from '@/lib/billing/usage-middleware';
 
 // Allow streaming responses up to 60 seconds
@@ -73,7 +73,7 @@ export async function POST(req: Request) {
 
         // 如果启用了 RAG，注入知识库检索工具
         if (enableRag) {
-            const { knowledgeSearchTool } = await import('@/lib/chat-rag');
+            const { knowledgeSearchTool } = await import('@/lib/services/chat-rag');
             tools = {
                 knowledgeSearch: knowledgeSearchTool
             };

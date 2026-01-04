@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server';
 import type { NextRequest } from 'next/server';
-import { decrypt, COOKIE_NAME } from '@/lib/auth';
+import { decrypt, COOKIE_NAME } from '@/lib/auth/auth';
 
 // 1. Specify protected and public routes
 const protectedRoutes = ['/practice', '/dashboard', '/chat', '/history', '/knowledge', '/settings', '/admin'];

@@ -1,6 +1,6 @@
 import { useReducer, useEffect, useCallback } from 'react';
 import { PracticeState, Action, Question, ReviewItem } from '../lib/types';
-import { apiClient } from '../lib/api-client';
+import { apiClient } from '@/lib/utils/api-client';
 
 const INITIAL_STATE: PracticeState = {
   status: 'loading',

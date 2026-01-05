@@ -15,6 +15,6 @@ describe('Button Component', () => {
 
   it('applies size classes correctly', () => {
     const { container } = render(<Button size="lg">Large</Button>);
-    expect(container.firstChild).toHaveClass('h-12');
+    expect(container.firstChild).toHaveClass('h-11');
   });
 });

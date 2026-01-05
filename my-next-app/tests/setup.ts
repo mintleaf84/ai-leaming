@@ -14,4 +14,6 @@ global.fetch = global.fetch || (() => Promise.resolve({
 } as Response));
 
 // Mock scrollIntoView 因为 jsdom 不支持
-Element.prototype.scrollIntoView = () => { };
+if (typeof Element !== 'undefined') {
+    Element.prototype.scrollIntoView = () => { };
+}

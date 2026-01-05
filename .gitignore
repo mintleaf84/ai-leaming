@@ -20,6 +20,7 @@ node_modules/
 out/
 /build
 dist/
+.next-e2e/
 
 # Production
 *.tgz

@@ -16,9 +16,12 @@
 | **`/history/[id]`** | `src/app/history/[id]/page.tsx` | **会话详情**: 历史题目回溯与错因分析。 | ✅ | ✅ | 支持回顾复盘内容。 |
 | **`/practice/setup`** | `src/app/practice/setup/page.tsx` | **练习配置**: 模式选择与参数配置。 | ✅ | ✅ | Phase 16 新增。 |
 | **`/knowledge`** | `src/app/knowledge/page.tsx` | **知识库**: 知识卡片与概念学习。 | ✅ | ✅ | 支持 3D 旋转卡片。 |
+| **`/textbooks`** | `src/app/textbooks/page.tsx` | **教材库**: 教材列表与管理。 | ✅ | ✅ | 新增功能。 |
+| **`/textbooks/[id]`** | `src/app/textbooks/[id]/page.tsx` | **教材阅读**: 教材目录与内容阅读。 | ✅ | ✅ | 支持 Markdown 渲染与目录导航。 |
 | **`/chat`** | `src/app/chat/page.tsx` | **AI 助手**: 智能教研助手。 | ✅ | ✅ | 支持流式协议与思维链。 |
 | **`/profile`** | `src/app/profile/page.tsx` | **个人中心**: 账户、订阅、用量与学习成就。 | ✅ | ✅ | Phase 15 新增。 |
 | **`/settings`** | `src/app/settings/page.tsx` | **系统设置**: 偏好、外观与数据导出。 | ✅ | ✅ | 支持数据重置与导出。 |
+| **`/docs`** | `src/app/docs/page.tsx` | **使用文档**: 面向学生用户的功能使用说明。 | ✅ | ✅ | 包含侧边导航与章节锚点。 |
 
 ## 2. 管理与后台 (Admin)
 
@@ -42,6 +45,7 @@
 ## 维护检查表 (Checklist)
 
 每次新增页面或进行全局修改时，请检查：
+
 1. [x] 路由是否已注册到本表？
 2. [x] UI 文本是否全量提取并汉化？
 3. [x] 响应式布局在 `< 768px` 宽度下是否正常？

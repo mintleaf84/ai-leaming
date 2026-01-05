@@ -14,7 +14,9 @@ import {
   Bookmark,
   BookX,
   MoreHorizontal,
-  ChevronDown
+  ChevronDown,
+  FileText,
+  Book
 } from 'lucide-react';
 import { ThemeToggle } from './ThemeToggle';
 import {
@@ -38,7 +40,9 @@ const mainNavItems = [
 const moreNavItems = [
   { name: 'AI 助手', href: '/chat', icon: Bot },
   { name: '知识卡片', href: '/knowledge', icon: Bookmark },
+  { name: '教材库', href: '/textbooks', icon: Book },
   { name: '知识图谱', href: '/dashboard', icon: LayoutDashboard },
+  { name: '使用文档', href: '/docs', icon: FileText },
   { name: '设置', href: '/settings', icon: Settings },
 ];
 

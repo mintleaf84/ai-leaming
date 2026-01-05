@@ -9,6 +9,7 @@ const withSerwist = withSerwistInit({
 });
 
 const nextConfig: NextConfig = {
+  distDir: process.env.E2E_TEST === 'true' ? '.next-e2e' : undefined,
   /* config options here */
 };
 

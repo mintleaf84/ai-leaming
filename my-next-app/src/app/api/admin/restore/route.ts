@@ -19,9 +19,9 @@ export async function POST(req: Request) {
 
         console.log(`[Restore] Received file: ${file.name}, size: ${file.size}`);
 
-        const dbPath = path.resolve(process.cwd(), 'ai-learning.db');
-        const backupPath = path.resolve(process.cwd(), `ai-learning.db.bak-${Date.now()}`);
-        const tempPath = path.resolve(process.cwd(), 'temp_restore.db');
+        const dbPath = path.resolve(process.cwd(), 'data', 'ai-learning.db');
+        const backupPath = path.resolve(process.cwd(), 'data', `ai-learning.db.bak-${Date.now()}`);
+        const tempPath = path.resolve(process.cwd(), 'data', 'temp_restore.db');
 
         // 1. 保存上传文件到临时位置
         const buffer = Buffer.from(await file.arrayBuffer());

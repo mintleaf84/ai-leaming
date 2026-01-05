@@ -64,7 +64,10 @@ export async function searchKnowledgeBase(query: string, limit: number = 3) {
         // 知识卡片检索 (Vector based)
         const cardResults = await ragService.search(query, fetchLimit, 'card');
 
-        if (questionResults.length === 0 && cardResults.length === 0) {
+        // 教材内容检索 (Vector based)
+        const textbookResults = await ragService.search(query, fetchLimit, 'textbook_chapter');
+
+        if (questionResults.length === 0 && cardResults.length === 0 && textbookResults.length === 0) {
             return null;
         }
 
@@ -78,6 +81,10 @@ export async function searchKnowledgeBase(query: string, limit: number = 3) {
             ...cardResults.map(c => ({
                 ...c,
                 metadata: { ...c.metadata, source_type: 'card' }
+            })),
+            ...textbookResults.map(t => ({
+                ...t,
+                metadata: { ...t.metadata, source_type: 'textbook' }
             }))
         ];
 
@@ -90,6 +97,7 @@ export async function searchKnowledgeBase(query: string, limit: number = 3) {
         let contextParts: string[] = [];
         const cardDocs = topResults.filter(r => r.metadata?.source_type === 'card');
         const questionDocs = topResults.filter(r => r.metadata?.source_type === 'question');
+        const textbookDocs = topResults.filter(r => r.metadata?.source_type === 'textbook');
 
         // 格式化知识卡片
         if (cardDocs.length > 0) {
@@ -103,6 +111,19 @@ export async function searchKnowledgeBase(query: string, limit: number = 3) {
 ---`;
             }).join('\n');
             contextParts.push(`【相关知识卡片】\n${cardContext}`);
+        }
+
+        // 格式化教材内容
+        if (textbookDocs.length > 0) {
+            const tbContext = textbookDocs.map((item, index) => {
+                const meta = item.metadata || {};
+                return `
+[教材章节 ${index + 1}]
+章节: ${meta.title || '无标题'}
+内容: ${item.content}
+---`;
+            }).join('\n');
+            contextParts.push(`【相关教材内容】\n${tbContext}`);
         }
 
         // 格式化题库

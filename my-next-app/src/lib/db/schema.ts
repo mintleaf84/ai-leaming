@@ -246,6 +246,29 @@ export function createTables(db: Database.Database) {
       FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
       FOREIGN KEY (question_id) REFERENCES questions(id) ON DELETE CASCADE
     );
+
+    CREATE TABLE IF NOT EXISTS textbooks (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      title TEXT NOT NULL,
+      author TEXT,
+      description TEXT,
+      cover_url TEXT,
+      created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+      updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
+    );
+
+    CREATE TABLE IF NOT EXISTS textbook_chapters (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      textbook_id INTEGER NOT NULL,
+      title TEXT NOT NULL,
+      content TEXT NOT NULL,
+      order_index INTEGER DEFAULT 0,
+      parent_id INTEGER,
+      level INTEGER DEFAULT 1,
+      created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+      updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+      FOREIGN KEY (textbook_id) REFERENCES textbooks(id) ON DELETE CASCADE
+    );
   `;
 
   db.exec(initScript);

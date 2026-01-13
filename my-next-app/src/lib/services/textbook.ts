@@ -1,6 +1,9 @@
 
 import db from '@/lib/db';
 import { ragService } from '@/lib/ai/rag';
+import { splitText } from '@/lib/utils/text-splitter';
+import fs from 'fs';
+import path from 'path';
 
 export interface Textbook {
     id: number;
@@ -70,6 +73,18 @@ export const textbookService = {
         }
 
         db.prepare('DELETE FROM textbooks WHERE id = ?').run(id);
+
+        // Clean up file system (images)
+        // Path: public/books/[id]
+        const bookDir = path.join(process.cwd(), 'public', 'books', id.toString());
+        try {
+            if (fs.existsSync(bookDir)) {
+                fs.rmSync(bookDir, { recursive: true, force: true });
+                console.log(`[TextbookService] Deleted directory: ${bookDir}`);
+            }
+        } catch (error) {
+            console.error(`[TextbookService] Failed to delete directory ${bookDir}:`, error);
+        }
     },
 
     /**
@@ -91,14 +106,21 @@ export const textbookService = {
 
         const chapterId = result.lastInsertRowid as number;
 
-        // Index to RAG
+        // Index to RAG with semantic chunking
         if (data.content && data.content.trim().length > 0) {
-            await ragService.addChunk(data.content, {
-                source_type: 'textbook_chapter',
-                source_id: chapterId,
-                textbook_id: data.textbook_id,
-                title: data.title
-            });
+            const chunks = splitText(data.content);
+            console.log(`[RAG] Split chapter "${data.title}" into ${chunks.length} chunks.`);
+
+            for (let i = 0; i < chunks.length; i++) {
+                await ragService.addChunk(chunks[i], {
+                    source_type: 'textbook_chapter',
+                    source_id: chapterId,
+                    textbook_id: data.textbook_id,
+                    title: data.title,
+                    chunk_index: i,
+                    total_chunks: chunks.length
+                });
+            }
         }
 
         return chapterId;
@@ -132,12 +154,29 @@ export const textbookService = {
         const chapter = textbookService.getChapter(id);
         if (chapter) {
             ragService.deleteChunksBySource('textbook_chapter', id);
-            await ragService.addChunk(content, {
-                source_type: 'textbook_chapter',
-                source_id: id,
-                textbook_id: chapter.textbook_id,
-                title: chapter.title
-            });
+
+            if (content && content.trim().length > 0) {
+                const chunks = splitText(content);
+                console.log(`[RAG] Re-split chapter "${chapter.title}" into ${chunks.length} chunks.`);
+
+                for (let i = 0; i < chunks.length; i++) {
+                    await ragService.addChunk(chunks[i], {
+                        source_type: 'textbook_chapter',
+                        source_id: id,
+                        textbook_id: chapter.textbook_id,
+                        title: chapter.title,
+                        chunk_index: i,
+                        total_chunks: chunks.length
+                    });
+                }
+            }
         }
+    },
+
+    /**
+     * Update textbook cover
+     */
+    updateTextbookCover: async (id: number, coverUrl: string): Promise<void> => {
+        db.prepare('UPDATE textbooks SET cover_url = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?').run(coverUrl, id);
     }
 };

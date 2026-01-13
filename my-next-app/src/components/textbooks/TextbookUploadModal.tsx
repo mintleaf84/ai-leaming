@@ -14,6 +14,7 @@ import { useRouter } from 'next/navigation';
 export function TextbookUploadModal({ children, onSuccess }: { children: React.ReactNode, onSuccess?: () => void }) {
     const [open, setOpen] = useState(false);
     const [loading, setLoading] = useState(false);
+    const [activeTab, setActiveTab] = useState<'standard' | 'mineru'>('standard');
     const router = useRouter();
 
     const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
@@ -23,7 +24,10 @@ export function TextbookUploadModal({ children, onSuccess }: { children: React.R
         const formData = new FormData(e.currentTarget);
 
         try {
-            const res = await fetch('/api/textbook/upload', {
+            const isMineru = activeTab === 'mineru';
+            const endpoint = isMineru ? '/api/textbook/import/zip' : '/api/textbook/upload';
+
+            const res = await fetch(endpoint, {
                 method: 'POST',
                 body: formData,
             });
@@ -62,26 +66,83 @@ export function TextbookUploadModal({ children, onSuccess }: { children: React.R
                 <DialogHeader>
                     <DialogTitle>上传新教材</DialogTitle>
                 </DialogHeader>
+
+                <div className="flex space-x-1 rounded-lg bg-muted p-1">
+                    <button
+                        onClick={() => setActiveTab('standard')}
+                        type="button"
+                        className={`flex-1 rounded-md px-3 py-1.5 text-sm font-medium transition-all ${activeTab === 'standard'
+                                ? 'bg-background text-foreground shadow-sm'
+                                : 'text-muted-foreground hover:bg-background/50'
+                            }`}
+                    >
+                        普通上传 (PDF/MD)
+                    </button>
+                    <button
+                        onClick={() => setActiveTab('mineru')}
+                        type="button"
+                        className={`flex-1 rounded-md px-3 py-1.5 text-sm font-medium transition-all ${activeTab === 'mineru'
+                                ? 'bg-background text-foreground shadow-sm'
+                                : 'text-muted-foreground hover:bg-background/50'
+                            }`}
+                    >
+                        Mineru 导入 (Zip)
+                    </button>
+                </div>
+
                 <form onSubmit={handleSubmit} className="space-y-4 mt-4">
-                    <div className="grid w-full max-w-sm items-center gap-1.5">
-                        <Label htmlFor="file">教材文件 (PDF / Markdown)</Label>
-                        <Input id="file" name="file" type="file" accept=".pdf,.md,.txt" required />
-                    </div>
+                    {/* Hidden input to track type */}
+                    <input type="hidden" name="uploadType" value={activeTab} />
 
-                    <div className="grid w-full max-w-sm items-center gap-1.5">
-                        <Label htmlFor="title">教材标题</Label>
-                        <Input id="title" name="title" placeholder="如果不填则使用文件名" />
-                    </div>
+                    {activeTab === 'standard' ? (
+                        <>
+                            <div className="grid w-full max-w-sm items-center gap-1.5">
+                                <Label htmlFor="file">教材文件 (PDF / Markdown)</Label>
+                                <Input id="file" name="file" type="file" accept=".pdf,.md,.txt" required />
+                            </div>
 
-                    <div className="grid w-full max-w-sm items-center gap-1.5">
-                        <Label htmlFor="author">作者</Label>
-                        <Input id="author" name="author" placeholder="可选" />
-                    </div>
+                            <div className="grid w-full max-w-sm items-center gap-1.5">
+                                <Label htmlFor="title">教材标题</Label>
+                                <Input id="title" name="title" placeholder="如果不填则使用文件名" />
+                            </div>
 
-                    <div className="grid w-full max-w-sm items-center gap-1.5">
-                        <Label htmlFor="description">简介</Label>
-                        <Textarea id="description" name="description" placeholder="教材简介..." />
-                    </div>
+                            <div className="grid w-full max-w-sm items-center gap-1.5">
+                                <Label htmlFor="author">作者</Label>
+                                <Input id="author" name="author" placeholder="可选" />
+                            </div>
+
+                            <div className="grid w-full max-w-sm items-center gap-1.5">
+                                <Label htmlFor="description">简介</Label>
+                                <Textarea id="description" name="description" placeholder="教材简介..." />
+                            </div>
+                        </>
+                    ) : (
+                        <div className="space-y-4">
+                            <div className="rounded-md bg-blue-50 dark:bg-blue-900/20 p-4">
+                                <div className="flex">
+                                    <div className="flex-shrink-0">
+                                        <FileUp className="h-5 w-5 text-blue-400" aria-hidden="true" />
+                                    </div>
+                                    <div className="ml-3">
+                                        <h3 className="text-sm font-medium text-blue-800 dark:text-blue-200">
+                                            Mineru (Magic-PDF) 导入
+                                        </h3>
+                                        <div className="mt-2 text-sm text-blue-700 dark:text-blue-300">
+                                            <p>
+                                                请上传 Mineru 导出生成的 <strong>.zip</strong> 压缩包。
+                                                系统将自动解析包含的 full.md 和 images 目录，保留完美的公式和排版。
+                                            </p>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div className="grid w-full max-w-sm items-center gap-1.5">
+                                <Label htmlFor="zipFile">Mineru 导出包 (.zip)</Label>
+                                <Input id="zipFile" name="file" type="file" accept=".zip" required />
+                            </div>
+                        </div>
+                    )}
 
                     <div className="flex justify-end gap-2 pt-2">
                         <Button type="button" variant="outline" onClick={() => setOpen(false)}>取消</Button>

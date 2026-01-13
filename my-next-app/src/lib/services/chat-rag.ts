@@ -164,12 +164,12 @@ export function buildEnhancedSystemPrompt(context?: string): string {
     if (context) {
         return `${basePrompt}
 
-【相关题库参考】
-以下是系统从题库中检索到的相关内容，你可以参考这些题目和解析来回答用户的问题：
+【相关参考资料 (Reference Context)】
+以下是系统提供的相关背景信息（可能来自题库、知识卡片或当前阅读的教材章节）：
 
 ${context}
 
-请结合以上题库内容，为用户提供更准确和针对性的回答。`;
+请结合以上参考资料，为用户提供更准确和针对性的回答。`;
     }
 
     return basePrompt;

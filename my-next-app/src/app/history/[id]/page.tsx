@@ -1,13 +1,13 @@
 "use client";
 
 import React, { useEffect, useState, use, useRef, useCallback } from 'react';
-import { getSessionDetailAction, SessionDetail, deleteSessionAction } from '@/server/actions/history';
+import { getSessionDetailAction, SessionDetail, deleteSessionAction, exportSessionMarkdownAction } from '@/server/actions/history';
 import { generateDeepAnalysisAction, getAnalysisReportAction } from '@/server/actions/report';
 import { Button } from '@/components/ui/button';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { toast } from 'sonner';
-import { ArrowLeft, Trash2, Target, Sparkles, Loader2, ChevronDown, ChevronUp } from 'lucide-react';
+import { ArrowLeft, Trash2, Target, Sparkles, Loader2, ChevronDown, ChevronUp, Download } from 'lucide-react';
 import { SessionSummary, AnswerSheet, QuestionCard, QuestionLogData } from '@/components/history';
 import ReactMarkdown from 'react-markdown';
 
@@ -25,6 +25,9 @@ export default function SessionDetailPage({ params }: { params: Promise<{ id: st
   // AI 深度分析状态
   const [isAnalyzing, setIsAnalyzing] = useState(false);
   const [analysisReport, setAnalysisReport] = useState<string | null>(null);
+
+  // 导出状态
+  const [isExporting, setIsExporting] = useState(false);
   const [showAnalysis, setShowAnalysis] = useState(false);
 
   // 题目元素的 refs
@@ -110,6 +113,29 @@ export default function SessionDetailPage({ params }: { params: Promise<{ id: st
     }
   }, [id, analysisReport, showAnalysis]);
 
+  // 导出 Markdown
+  const handleExport = useCallback(async () => {
+    setIsExporting(true);
+    const result = await exportSessionMarkdownAction(id);
+    setIsExporting(false);
+
+    if (result.success && result.markdown && result.filename) {
+      // 创建 Blob 并下载
+      const blob = new Blob([result.markdown], { type: 'text/markdown;charset=utf-8' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = result.filename;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+      toast.success('导出成功');
+    } else {
+      toast.error(result.error || '导出失败');
+    }
+  }, [id]);
+
   // 加载状态
   if (isLoading) {
     return <div className="p-8 text-center text-muted-foreground">正在加载会话详情...</div>;
@@ -127,15 +153,26 @@ export default function SessionDetailPage({ params }: { params: Promise<{ id: st
           <ArrowLeft className="h-4 w-4 group-hover:-translate-x-1 transition-transform" />
           返回历史列表
         </Link>
-        <Button
-          variant="ghost"
-          className="text-muted-foreground hover:text-destructive hover:bg-destructive/10"
-          onClick={handleDelete}
-          disabled={isDeleting}
-        >
-          <Trash2 className="h-4 w-4 mr-2" />
-          {isDeleting ? '正在删除...' : '删除此记录'}
-        </Button>
+        <div className="flex items-center gap-2">
+          <Button
+            variant="ghost"
+            className="text-muted-foreground hover:text-blue-600 hover:bg-blue-500/10"
+            onClick={handleExport}
+            disabled={isExporting}
+          >
+            <Download className="h-4 w-4 mr-2" />
+            {isExporting ? '导出中...' : '导出 Markdown'}
+          </Button>
+          <Button
+            variant="ghost"
+            className="text-muted-foreground hover:text-destructive hover:bg-destructive/10"
+            onClick={handleDelete}
+            disabled={isDeleting}
+          >
+            <Trash2 className="h-4 w-4 mr-2" />
+            {isDeleting ? '正在删除...' : '删除此记录'}
+          </Button>
+        </div>
       </div>
 
       {/* 练习总结 */}

@@ -9,7 +9,9 @@ import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import remarkMath from 'remark-math';
 import rehypeKatex from 'rehype-katex';
+import rehypeRaw from 'rehype-raw';
 import { Drawer, DrawerContent, DrawerTrigger, DrawerHeader, DrawerTitle } from "@/components/ui/drawer";
+import { TextbookChat } from '@/components/textbooks/TextbookChat';
 
 // Force dynamic because we are reading from DB directly in Server Component
 export const dynamic = 'force-dynamic';
@@ -48,8 +50,8 @@ export default async function TextbookReaderPage({ params, searchParams }: PageP
                             key={chap.id}
                             href={`/textbooks/${textbookId}?chapter=${chap.id}`}
                             className={`block px-3 py-2 text-sm rounded-md mb-1 truncate transition-colors ${chap.id === currentChapterId
-                                    ? 'bg-primary/10 text-primary font-medium'
-                                    : 'text-muted-foreground hover:bg-muted hover:text-foreground'
+                                ? 'bg-primary/10 text-primary font-medium'
+                                : 'text-muted-foreground hover:bg-muted hover:text-foreground'
                                 }`}
                             title={chap.title}
                         >
@@ -81,8 +83,8 @@ export default async function TextbookReaderPage({ params, searchParams }: PageP
                                         key={chap.id}
                                         href={`/textbooks/${textbookId}?chapter=${chap.id}`}
                                         className={`block px-3 py-2 text-sm rounded-md mb-1 truncate ${chap.id === currentChapterId
-                                                ? 'bg-primary/10 text-primary font-medium'
-                                                : 'text-muted-foreground hover:bg-muted'
+                                            ? 'bg-primary/10 text-primary font-medium'
+                                            : 'text-muted-foreground hover:bg-muted'
                                             }`}
                                     >
                                         <div style={{ paddingLeft: `${(chap.level - 1) * 12}px` }}>
@@ -100,24 +102,30 @@ export default async function TextbookReaderPage({ params, searchParams }: PageP
                 <div className="flex-1 overflow-y-auto p-4 md:p-8 lg:p-12">
                     <div className="max-w-3xl mx-auto">
                         {currentChapter ? (
-                            <article className="prose dark:prose-invert max-w-none">
-                                <h1>{currentChapter.title}</h1>
-                                <ReactMarkdown
-                                    remarkPlugins={[remarkGfm, remarkMath]}
-                                    rehypePlugins={[rehypeKatex]}
-                                    components={{
-                                        code: ({ node, inline, className, children, ...props }: any) => {
-                                            return (
-                                                <code className={`${className} bg-muted px-1.5 py-0.5 rounded text-sm`} {...props}>
-                                                    {children}
-                                                </code>
-                                            )
-                                        }
-                                    }}
-                                >
-                                    {currentChapter.content}
-                                </ReactMarkdown>
-                            </article>
+                            <>
+                                <article className="prose dark:prose-invert max-w-none">
+                                    <h1>{currentChapter.title}</h1>
+                                    <ReactMarkdown
+                                        remarkPlugins={[remarkGfm, remarkMath]}
+                                        rehypePlugins={[rehypeKatex, rehypeRaw]}
+                                        components={{
+                                            code: ({ node, inline, className, children, ...props }: any) => {
+                                                return (
+                                                    <code className={`${className} bg-muted px-1.5 py-0.5 rounded text-sm`} {...props}>
+                                                        {children}
+                                                    </code>
+                                                )
+                                            }
+                                        }}
+                                    >
+                                        {currentChapter.content}
+                                    </ReactMarkdown>
+                                </article>
+                                <TextbookChat
+                                    context={currentChapter.content}
+                                    title={textbook.title}
+                                />
+                            </>
                         ) : (
                             <div className="flex flex-col items-center justify-center h-full text-muted-foreground">
                                 <p>请选择左侧章节开始阅读</p>

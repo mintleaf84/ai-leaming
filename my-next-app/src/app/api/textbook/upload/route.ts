@@ -2,6 +2,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { textbookService } from '@/lib/services/textbook';
 import { parseMarkdownToChapters } from '@/lib/utils/markdown-parser';
+import { performOCR } from '@/lib/ai/siliconflow-ocr';
 
 export async function POST(req: NextRequest) {
     try {
@@ -20,24 +21,15 @@ export async function POST(req: NextRequest) {
 
         if (file.type === 'application/pdf' || file.name.endsWith('.pdf')) {
             try {
-                // 使用 unpdf 提取 PDF 文本 (纯 JavaScript，无原生依赖)
-                const { extractText } = await import('unpdf');
-                const result = await extractText(buffer);
-                text = result.text || '';
+                // 使用 VLM (DeepSeek-OCR) 进行高精度解析
+                console.log('[PDF] 使用 VLM 模式 (DeepSeek-OCR) 解析 PDF...');
+                text = await performOCR(buffer);
 
-                if (!text || text.trim().length < 50) {
-                    // 如果提取的文本太少，可能是扫描件
-                    console.warn('[PDF] 提取的文本过少，可能是扫描版 PDF');
-                    return NextResponse.json({
-                        error: '此 PDF 可能是扫描件（图片型），无法直接提取文字。请上传文字版 PDF 或 Markdown/Text 格式文件。'
-                    }, { status: 400 });
-                }
-
-                console.log(`[PDF] 成功提取 ${text.length} 字符`);
+                console.log(`[PDF] VLM 解析完成，提取 ${text.length} 字符`);
             } catch (pdfError: any) {
-                console.error('[PDF] 解析失败:', pdfError);
+                console.error('[PDF] VLM 解析失败:', pdfError);
                 return NextResponse.json({
-                    error: `PDF 解析失败: ${pdfError.message}`
+                    error: `PDF 解析失败 (VLM Mode): ${pdfError.message}`
                 }, { status: 400 });
             }
         } else {

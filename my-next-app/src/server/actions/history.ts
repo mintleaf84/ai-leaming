@@ -234,3 +234,46 @@ export async function renameSessionAction(sessionId: string, newName: string) {
   }
 }
 
+/**
+ * 导出练习会话为 Markdown 格式
+ */
+export async function exportSessionMarkdownAction(sessionId: string): Promise<{
+  success: boolean;
+  markdown?: string;
+  filename?: string;
+  error?: string;
+}> {
+  try {
+    // 获取会话详情
+    const detail = await getSessionDetailAction(sessionId);
+    if (!detail) {
+      return { success: false, error: "找不到该练习记录" };
+    }
+
+    // 动态导入格式化工具（避免循环依赖）
+    const { formatSessionToMarkdown, generateExportFilename } = await import('@/lib/utils/export-markdown');
+
+    // 尝试获取 AI 分析报告
+    let analysisReport: string | null = null;
+    try {
+      const reportRow = db.prepare(`
+        SELECT report FROM analysis_reports WHERE session_id = ?
+      `).get(sessionId) as { report: string } | undefined;
+      if (reportRow) {
+        analysisReport = reportRow.report;
+      }
+    } catch {
+      // 分析报告表可能不存在，忽略错误
+    }
+
+    // 格式化为 Markdown
+    const markdown = formatSessionToMarkdown(detail, analysisReport);
+    const filename = generateExportFilename(detail.session.createdAt);
+
+    return { success: true, markdown, filename };
+  } catch (error) {
+    console.error("Failed to export session:", error);
+    return { success: false, error: "导出失败，请稍后重试" };
+  }
+}
+

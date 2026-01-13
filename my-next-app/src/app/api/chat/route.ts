@@ -66,7 +66,7 @@ export async function POST(req: Request) {
         }
 
         // 5. 准备流式聊天参数
-        const { enableRag } = await req.json().catch(() => ({}));
+        const { enableRag, context } = await req.json().catch(() => ({}));
 
         let tools = undefined;
         let systemPrompt = undefined;
@@ -77,11 +77,12 @@ export async function POST(req: Request) {
             tools = {
                 knowledgeSearch: knowledgeSearchTool
             };
-            // 使用支持工具的基础 Prompt (不再预先注入上下文)
-            systemPrompt = buildEnhancedSystemPrompt();
+            // RAG 模式下，context 可能是用户手动提供的（如阅读器上下文），也可能是后续工具调用产生的
+            // 这里优先使用用户提供的 context 作为初始系统提示词的一部分
+            systemPrompt = buildEnhancedSystemPrompt(context);
         } else {
-            // 未启用 RAG，使用基础 Prompt
-            systemPrompt = buildEnhancedSystemPrompt();
+            // 未启用 RAG，如果有 context 也注入
+            systemPrompt = buildEnhancedSystemPrompt(context);
         }
 
         // 流式生成回复

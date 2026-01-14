@@ -8,7 +8,6 @@ import {
   LayoutDashboard,
   Settings,
   Home,
-  GraduationCap,
   History,
   Bot,
   Bookmark,
@@ -31,7 +30,7 @@ import { Button } from './ui/button';
 import { LogOut, User } from 'lucide-react';
 
 const mainNavItems = [
-  { name: '首页', href: '/', icon: Home },
+  { name: '首页', href: '/dashboard', icon: Home },
   { name: '智能练习', href: '/practice', icon: BookOpen },
   { name: '错题本', href: '/wrong-book', icon: BookX },
   { name: '练习记录', href: '/history', icon: History },
@@ -41,7 +40,7 @@ const moreNavItems = [
   { name: 'AI 助手', href: '/chat', icon: Bot },
   { name: '知识卡片', href: '/knowledge', icon: Bookmark },
   { name: '教材库', href: '/textbooks', icon: Book },
-  { name: '知识图谱', href: '/dashboard', icon: LayoutDashboard },
+  { name: '知识图谱', href: '/knowledge-graph', icon: LayoutDashboard },
   { name: '使用文档', href: '/docs', icon: FileText },
   { name: '设置', href: '/settings', icon: Settings },
 ];
@@ -69,17 +68,21 @@ export function Navbar({ user }: NavbarProps) {
     }
   };
 
+  if (pathname === '/') {
+    return null;
+  }
+
   return (
     <nav className="sticky top-0 z-50 w-full border-b bg-white/95 backdrop-blur supports-[backdrop-filter]:bg-white/60 dark:bg-slate-950/95 dark:supports-[backdrop-filter]:bg-slate-950/60 transition-colors">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex h-16 items-center justify-between">
           <div className="flex items-center">
             <Link href="/" className="flex items-center gap-2 mr-6">
-              <div className="bg-blue-600 dark:bg-blue-500 p-1.5 rounded-lg">
-                <GraduationCap className="h-6 w-6 text-white" />
+              <div className="relative w-8 h-8 mr-2">
+                <img src="/logo.png" alt="琢玉 Logo" className="object-contain w-full h-full" />
               </div>
-              <span className="hidden lg:block font-bold text-xl bg-gradient-to-r from-blue-600 to-indigo-600 dark:from-blue-400 dark:to-indigo-400 bg-clip-text text-transparent">
-                AI 教招
+              <span className="hidden lg:block font-bold text-xl bg-gradient-to-r from-emerald-600 to-teal-600 dark:from-emerald-400 dark:to-teal-400 bg-clip-text text-transparent">
+                琢玉
               </span>
             </Link>
 

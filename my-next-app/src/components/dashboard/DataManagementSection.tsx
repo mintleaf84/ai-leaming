@@ -61,13 +61,16 @@ export function DataManagementSection({ onDataChange }: DataManagementSectionPro
     };
 
     return (
-        <div className="border-t border-border pt-8">
-            <h2 className="text-xl font-bold mb-4 text-foreground">数据管理</h2>
-            <div className="flex gap-4">
-                <Button onClick={handleExport}>
+        <div className="bg-white rounded-2xl border border-neutral-100 p-6 shadow-sm">
+            <h2 className="text-lg font-bold mb-4 text-neutral-800 flex items-center gap-2">
+                <span className="w-1 h-4 bg-emerald-500 rounded-full" />
+                数据管理
+            </h2>
+            <div className="flex flex-wrap gap-3">
+                <Button onClick={handleExport} className="bg-emerald-600 hover:bg-emerald-700 text-white shadow-emerald-200 shadow-md transition-all">
                     导出进度备份
                 </Button>
-                <Button variant="outline" onClick={handleImportClick}>
+                <Button variant="outline" onClick={handleImportClick} className="border-emerald-200 text-emerald-700 hover:bg-emerald-50">
                     导入进度备份
                 </Button>
                 <input
@@ -78,9 +81,9 @@ export function DataManagementSection({ onDataChange }: DataManagementSectionPro
                     className="hidden"
                 />
             </div>
-            <p className="mt-2 text-sm text-muted-foreground">
+            <p className="mt-4 text-xs text-neutral-400 leading-relaxed bg-neutral-50 p-3 rounded-lg border border-neutral-100">
                 您可以将当前的掌握度数据导出为 JSON 文件，或从之前的备份中恢复。<br />
-                <span className="text-destructive font-medium">警告：导入操作将覆盖当前的进度数据，请谨慎操作。</span>
+                <span className="text-rose-500 font-medium">⚠️ 警告：导入操作将覆盖当前的进度数据，请谨慎操作。</span>
             </p>
         </div>
     );

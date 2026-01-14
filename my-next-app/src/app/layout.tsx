@@ -2,9 +2,11 @@ import type { Metadata, Viewport } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import { Toaster } from "@/components/ui/sonner";
 import { ErrorBoundary } from "@/components/ErrorBoundary";
-import { Navbar } from "@/components/Navbar";
+// import { Navbar } from "@/components/Navbar";
+import { AppSidebar } from "@/components/layout/AppSidebar";
 import { MobileNav } from "@/components/MobileNav";
 import { ThemeProvider } from "@/components/theme-provider";
+import { TerminologyProvider } from "@/lib/hooks/use-terminology";
 import "./globals.css";
 
 const geistSans = Geist({
@@ -20,12 +22,12 @@ const geistMono = Geist_Mono({
 // ... existing imports
 
 export const metadata: Metadata = {
-  title: "AI 教招客观题智能提升系统",
-  description: "基于 RAG 与变式生成技术的智能化练习平台",
+  title: "琢玉 - AI 驱动的教师招聘备考助手",
+  description: "精琢每一分，只为成师。基于 RAG 与变式生成技术的智能化练习平台",
   appleWebApp: {
     capable: true,
     statusBarStyle: "default",
-    title: "AI 教招",
+    title: "琢玉",
   },
   formatDetection: {
     telephone: false,
@@ -33,7 +35,7 @@ export const metadata: Metadata = {
 };
 
 export const viewport: Viewport = {
-  themeColor: "#3b82f6",
+  themeColor: "#10b981",
   width: "device-width",
   initialScale: 1,
   maximumScale: 1,
@@ -60,22 +62,29 @@ export default async function RootLayout({
       <body
         className={`${geistSans.variable} ${geistMono.variable} antialiased min-h-screen bg-background text-foreground`}
       >
-        <ThemeProvider
-          attribute="class"
-          defaultTheme="system"
-          enableSystem
-          disableTransitionOnChange
-          themes={['light', 'dark', 'eye-care']}
-        >
-          <Navbar user={user as any} />
-          <main className="pb-16 md:pb-0">
-            <ErrorBoundary>
-              {children}
-            </ErrorBoundary>
-          </main>
-          <MobileNav user={user as any} />
-          <Toaster position="top-center" richColors />
-        </ThemeProvider>
+        <TerminologyProvider>
+          <ThemeProvider
+            attribute="class"
+            defaultTheme="system"
+            enableSystem
+            disableTransitionOnChange
+            themes={['light', 'dark', 'eye-care', 'zhuoyu']}
+          >
+            <div className="flex h-screen">
+              <AppSidebar user={user as any} />
+              <div className="flex-1 flex flex-col min-w-0">
+                {/* Mobile Header Placeholder if needed, or rely on MobileNav bottom */}
+                <main className="flex-1 pb-16 md:pb-0 relative">
+                  <ErrorBoundary>
+                    {children}
+                  </ErrorBoundary>
+                </main>
+              </div>
+            </div>
+            <MobileNav user={user as any} />
+            <Toaster position="top-center" richColors />
+          </ThemeProvider>
+        </TerminologyProvider>
       </body>
     </html>
   );

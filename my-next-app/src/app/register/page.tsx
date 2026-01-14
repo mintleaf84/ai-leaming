@@ -51,76 +51,76 @@ export default function RegisterPage() {
     };
 
     return (
-        <div className="min-h-screen flex items-center justify-center bg-muted/30 px-4">
-            <Card className="w-full max-w-md shadow-xl border-t-4 border-t-primary">
-                <CardHeader className="space-y-1 text-center">
-                    <div className="mx-auto bg-primary/10 p-3 rounded-full w-fit mb-2">
-                        <UserPlus className="w-6 h-6 text-primary" />
+        <div className="min-h-screen flex items-center justify-center bg-[#faf9f6] px-4 font-sans selection:bg-emerald-100 relative overflow-hidden">
+            {/* Background Decoration */}
+            <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[800px] h-[800px] bg-emerald-100/20 rounded-full blur-[100px] -z-10 pointer-events-none" />
+
+            <Card className="w-full max-w-[400px] shadow-2xl border border-white/60 bg-white/80 backdrop-blur-xl rounded-3xl p-2">
+                <CardHeader className="space-y-4 text-center pt-8 pb-4">
+                    {/* Logo */}
+                    <div className="mx-auto w-12 h-12 relative mb-2">
+                        <img src="/logo.png" alt="Logo" className="object-contain w-full h-full" />
                     </div>
-                    <CardTitle className="text-2xl font-bold">创建账号</CardTitle>
-                    <CardDescription>
-                        开启您的 AI 辅助学习体系，定制专属题库
-                    </CardDescription>
+                    <div>
+                        <CardTitle className="text-3xl font-bold font-serif text-neutral-800">加入琢玉</CardTitle>
+                        <CardDescription className="text-neutral-500 mt-2">
+                            开启您的数字化备考修行
+                        </CardDescription>
+                    </div>
                 </CardHeader>
                 <form onSubmit={handleRegister}>
-                    <CardContent className="space-y-4">
+                    <CardContent className="space-y-5">
                         {error && (
-                            <div className="bg-destructive/10 border border-destructive text-destructive px-4 py-2 rounded-lg flex items-center gap-2 text-sm">
+                            <div className="bg-red-50 border border-red-100 text-red-600 px-4 py-3 rounded-xl flex items-center gap-2 text-sm animate-in fade-in slide-in-from-top-2">
                                 <AlertCircle className="h-4 w-4" />
                                 {error}
                             </div>
                         )}
                         <div className="space-y-2">
-                            <label className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70">
-                                用户名
-                            </label>
                             <Input
                                 type="text"
-                                placeholder="至少3个字符"
+                                placeholder="用户名"
                                 value={username}
                                 onChange={(e) => setUsername(e.target.value)}
                                 required
                                 minLength={3}
-                                className="bg-background"
+                                className="h-12 rounded-xl bg-white/50 border-neutral-200 focus:border-emerald-500 focus:ring-emerald-500/20 transition-all text-base"
                             />
                         </div>
                         <div className="space-y-2">
-                            <label className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70">
-                                密码
-                            </label>
                             <Input
                                 type="password"
-                                placeholder="至少6个字符"
+                                placeholder="设置密码 (至少6位)"
                                 value={password}
                                 onChange={(e) => setPassword(e.target.value)}
                                 required
                                 minLength={6}
-                                className="bg-background"
+                                className="h-12 rounded-xl bg-white/50 border-neutral-200 focus:border-emerald-500 focus:ring-emerald-500/20 transition-all text-base"
                             />
                         </div>
                         <div className="space-y-2">
-                            <label className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70">
-                                确认密码
-                            </label>
                             <Input
                                 type="password"
-                                placeholder="请再次输入密码"
+                                placeholder="确认密码"
                                 value={confirmPassword}
                                 onChange={(e) => setConfirmPassword(e.target.value)}
                                 required
-                                className="bg-background"
+                                className="h-12 rounded-xl bg-white/50 border-neutral-200 focus:border-emerald-500 focus:ring-emerald-500/20 transition-all text-base"
                             />
                         </div>
                     </CardContent>
-                    <CardFooter className="flex flex-col gap-4">
-                        <Button type="submit" className="w-full gap-2 py-6 text-lg" disabled={loading}>
-                            {loading ? <Loader2 className="h-5 w-5 animate-spin" /> : <CheckCircle2 className="h-5 w-5" />}
-                            立即注册
+                    <CardFooter className="flex flex-col gap-6 pt-2 pb-8">
+                        <Button
+                            type="submit"
+                            className="w-full h-12 text-base font-medium rounded-full bg-emerald-600 hover:bg-emerald-700 text-white shadow-lg shadow-emerald-200/50 transition-all hover:scale-[1.02]"
+                            disabled={loading}
+                        >
+                            {loading ? <Loader2 className="h-5 w-5 animate-spin" /> : "立即注册"}
                         </Button>
-                        <div className="text-center text-sm text-muted-foreground w-full">
+                        <div className="text-center text-sm text-neutral-400">
                             已有账号？{' '}
-                            <Link href="/login" className="text-primary hover:underline font-medium inline-flex items-center gap-1">
-                                返回登录 <LogIn className="h-3 w-3" />
+                            <Link href="/login" className="text-emerald-600 hover:text-emerald-700 font-medium hover:underline underline-offset-4 transition-colors">
+                                直接登录
                             </Link>
                         </div>
                     </CardFooter>

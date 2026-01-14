@@ -14,64 +14,86 @@ import { getPracticeTrendAction, TrendDataItem } from '@/server/actions/stats';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Pagination } from '@/components/ui/pagination';
-import { CombinedTrendChart } from '@/components/charts/TrendChart';
+import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger, SheetDescription, SheetFooter } from '@/components/ui/sheet';
+import { Badge } from '@/components/ui/badge';
 import Link from 'next/link';
 import { toast } from 'sonner';
 import { ImportFenbiModal } from '@/components/import/ImportFenbiModal';
+import { cn } from '@/lib/utils';
 import {
   History as HistoryIcon,
   ChevronRight,
   Calendar,
   CheckCircle2,
-  XCircle,
-  Clock,
-  ArrowLeft,
-  BrainCircuit,
   Trash2,
   Filter,
-  X,
   Brain,
   RotateCcw,
   Target,
   FileCheck,
   Shuffle,
-  TrendingUp,
   Upload,
   Pencil,
-  Check
+  Check,
+  Search,
+  BookOpen
 } from 'lucide-react';
 
-// 练习模式标签映射
-const MODE_LABELS: Record<string, { label: string; icon: React.ReactNode; color: string }> = {
-  smart: { label: '智能刷题', icon: <Brain className="w-3 h-3" />, color: 'bg-blue-500/10 text-blue-600' },
-  review: { label: '错题回顾', icon: <RotateCcw className="w-3 h-3" />, color: 'bg-amber-500/10 text-amber-600' },
-  focus: { label: '专项突破', icon: <Target className="w-3 h-3" />, color: 'bg-green-500/10 text-green-600' },
-  exam: { label: '模拟考试', icon: <FileCheck className="w-3 h-3" />, color: 'bg-purple-500/10 text-purple-600' },
-  random: { label: '随机挑战', icon: <Shuffle className="w-3 h-3" />, color: 'bg-pink-500/10 text-pink-600' },
-  import: { label: '外部导入', icon: <Upload className="w-3 h-3" />, color: 'bg-cyan-500/10 text-cyan-600' },
+// 练习模式配置 (Neo-Chinese Palette)
+const MODE_CONFIG: Record<string, { label: string; icon: React.ReactNode; className: string }> = {
+  smart: {
+    label: '智能刷题',
+    icon: <Brain className="w-3.5 h-3.5" />,
+    className: 'bg-emerald-50 text-emerald-700 border-emerald-200'
+  },
+  review: {
+    label: '错题回顾',
+    icon: <RotateCcw className="w-3.5 h-3.5" />,
+    className: 'bg-amber-50 text-amber-700 border-amber-200'
+  },
+  focus: {
+    label: '专项突破',
+    icon: <Target className="w-3.5 h-3.5" />,
+    className: 'bg-teal-50 text-teal-700 border-teal-200'
+  },
+  exam: {
+    label: '模拟考试',
+    icon: <FileCheck className="w-3.5 h-3.5" />,
+    className: 'bg-indigo-50 text-indigo-700 border-indigo-200'
+  },
+  random: {
+    label: '随机挑战',
+    icon: <Shuffle className="w-3.5 h-3.5" />,
+    className: 'bg-neutral-100 text-neutral-600 border-neutral-200'
+  },
+  import: {
+    label: '外部导入',
+    icon: <Upload className="w-3.5 h-3.5" />,
+    className: 'bg-sky-50 text-sky-700 border-sky-200'
+  },
 };
 
 export default function HistoryPage() {
+  // State
   const [history, setHistory] = useState<PaginatedHistory>({
     items: [], total: 0, page: 1, pageSize: 10, totalPages: 0
   });
   const [isLoading, setIsLoading] = useState(true);
-  const [showFilters, setShowFilters] = useState(false);
   const [availableModes, setAvailableModes] = useState<string[]>([]);
-  const [trendData, setTrendData] = useState<TrendDataItem[]>([]);
-  const [showTrend, setShowTrend] = useState(true);
   const [showImportModal, setShowImportModal] = useState(false);
+  const [isFilterOpen, setIsFilterOpen] = useState(false);
 
-  // 编辑名称状态
+  // Editing State
   const [editingId, setEditingId] = useState<string | null>(null);
   const [editingName, setEditingName] = useState('');
 
-  // 筛选状态
+  // Filter State
   const [filter, setFilter] = useState<HistoryFilter>({
     page: 1,
     pageSize: 10
   });
 
+  // Load Data
   const loadHistory = useCallback(async () => {
     setIsLoading(true);
     const data = await getSessionHistoryAction(filter);
@@ -85,16 +107,13 @@ export default function HistoryPage() {
 
   useEffect(() => {
     getAvailableModesAction().then(setAvailableModes);
-    getPracticeTrendAction(14).then(setTrendData);
   }, []);
 
+  // Actions
   const handleDelete = async (e: React.MouseEvent, id: string) => {
     e.preventDefault();
     e.stopPropagation();
-
-    if (!confirm('确定要删除这条练习记录吗？此操作不可撤销（掌握度不受影响）。')) {
-      return;
-    }
+    if (!confirm('确定要删除这条练习记录吗？此操作不可撤销（掌握度不受影响）。')) return;
 
     const result = await deleteSessionAction(id);
     if (result.success) {
@@ -105,7 +124,6 @@ export default function HistoryPage() {
     }
   };
 
-  // 开始编辑名称
   const handleStartEdit = (e: React.MouseEvent, item: SessionHistoryItem) => {
     e.preventDefault();
     e.stopPropagation();
@@ -113,11 +131,9 @@ export default function HistoryPage() {
     setEditingName(item.sessionName || '');
   };
 
-  // 保存名称
   const handleSaveName = async (e: React.MouseEvent, id: string) => {
     e.preventDefault();
     e.stopPropagation();
-
     const result = await renameSessionAction(id, editingName);
     if (result.success) {
       toast.success('名称已更新');
@@ -130,291 +146,255 @@ export default function HistoryPage() {
 
   const handlePageChange = (page: number) => {
     setFilter(prev => ({ ...prev, page }));
+    window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
   const clearFilters = () => {
     setFilter({ page: 1, pageSize: 10 });
+    setIsFilterOpen(false);
   };
 
   const hasActiveFilters = filter.dateFrom || filter.dateTo || filter.mode ||
     filter.accuracyMin !== undefined || filter.accuracyMax !== undefined;
 
   return (
-    <div className="p-4 md:p-8 max-w-4xl mx-auto pb-20 min-h-[calc(100vh-64px)] bg-background">
-      {/* 头部 */}
-      <div className="flex items-center justify-between mb-6">
-        <div>
-          <h1 className="text-3xl font-bold text-foreground flex items-center gap-3">
-            <HistoryIcon className="text-blue-600 dark:text-blue-400 h-8 w-8" />
-            练习记录
-          </h1>
-          <p className="text-muted-foreground mt-1">
-            共 {history.total} 条记录 {hasActiveFilters && '(已筛选)'}
-          </p>
-        </div>
-        <div className="flex gap-2">
-          <Button
-            variant="outline"
-            onClick={() => setShowImportModal(true)}
-            className="gap-2"
-          >
-            <Upload className="h-4 w-4" />
-            <span className="hidden sm:inline">导入记录</span>
-          </Button>
-          <Button
-            variant={showFilters ? "secondary" : "outline"}
-            onClick={() => setShowFilters(!showFilters)}
-            className="gap-2"
-          >
-            <Filter className="h-4 w-4" />
-            <span className="hidden sm:inline">筛选</span>
-          </Button>
-          <Link href="/practice">
-            <Button className="bg-primary hover:bg-primary/90 text-primary-foreground">
-              开始新练习
-            </Button>
-          </Link>
-        </div>
-      </div>
+    <div className="min-h-screen bg-[#faf9f6]">
+      <div className="container mx-auto px-6 py-12 md:py-20 max-w-5xl">
 
-      {/* 筛选面板 */}
-      {showFilters && (
-        <div className="bg-card rounded-xl p-4 mb-6 border shadow-sm">
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-            {/* 日期范围 */}
-            <div>
-              <label className="text-xs font-medium text-muted-foreground mb-1 block">开始日期</label>
-              <Input
-                type="date"
-                value={filter.dateFrom || ''}
-                onChange={(e) => setFilter(prev => ({ ...prev, dateFrom: e.target.value || undefined, page: 1 }))}
-                className="h-9"
-              />
-            </div>
-            <div>
-              <label className="text-xs font-medium text-muted-foreground mb-1 block">结束日期</label>
-              <Input
-                type="date"
-                value={filter.dateTo || ''}
-                onChange={(e) => setFilter(prev => ({ ...prev, dateTo: e.target.value || undefined, page: 1 }))}
-                className="h-9"
-              />
-            </div>
-
-            {/* 正确率范围 */}
-            <div>
-              <label className="text-xs font-medium text-muted-foreground mb-1 block">最低正确率</label>
-              <Input
-                type="number"
-                min={0}
-                max={100}
-                placeholder="0%"
-                value={filter.accuracyMin ?? ''}
-                onChange={(e) => setFilter(prev => ({
-                  ...prev,
-                  accuracyMin: e.target.value ? Number(e.target.value) : undefined,
-                  page: 1
-                }))}
-                className="h-9"
-              />
-            </div>
-            <div>
-              <label className="text-xs font-medium text-muted-foreground mb-1 block">最高正确率</label>
-              <Input
-                type="number"
-                min={0}
-                max={100}
-                placeholder="100%"
-                value={filter.accuracyMax ?? ''}
-                onChange={(e) => setFilter(prev => ({
-                  ...prev,
-                  accuracyMax: e.target.value ? Number(e.target.value) : undefined,
-                  page: 1
-                }))}
-                className="h-9"
-              />
-            </div>
-          </div>
-
-          {/* 练习模式筛选 */}
-          {availableModes.length > 0 && (
-            <div className="mt-4">
-              <label className="text-xs font-medium text-muted-foreground mb-2 block">练习模式</label>
-              <div className="flex flex-wrap gap-2">
-                <button
-                  onClick={() => setFilter(prev => ({ ...prev, mode: undefined, page: 1 }))}
-                  className={`px-3 py-1.5 rounded-lg text-sm transition-all ${!filter.mode ? 'bg-primary text-primary-foreground' : 'bg-muted hover:bg-muted/80'
-                    }`}
-                >
-                  全部
-                </button>
-                {availableModes.map(mode => (
-                  <button
-                    key={mode}
-                    onClick={() => setFilter(prev => ({ ...prev, mode, page: 1 }))}
-                    className={`px-3 py-1.5 rounded-lg text-sm transition-all flex items-center gap-1.5 ${filter.mode === mode
-                      ? 'bg-primary text-primary-foreground'
-                      : MODE_LABELS[mode]?.color || 'bg-muted'
-                      }`}
-                  >
-                    {MODE_LABELS[mode]?.icon}
-                    {MODE_LABELS[mode]?.label || mode}
-                  </button>
-                ))}
+        {/* Header */}
+        <header className="flex flex-col md:flex-row md:items-center justify-between gap-6 mb-12">
+          <div>
+            <div className="flex items-center gap-3 mb-2">
+              <div className="w-10 h-10 bg-emerald-100 rounded-xl flex items-center justify-center text-emerald-700">
+                <HistoryIcon className="w-5 h-5" />
               </div>
+              <h1 className="text-3xl font-serif font-bold text-neutral-800">修习日志</h1>
             </div>
-          )}
-
-          {/* 清除筛选 */}
-          {hasActiveFilters && (
-            <div className="mt-4 pt-3 border-t flex justify-end">
-              <Button variant="ghost" size="sm" onClick={clearFilters} className="text-muted-foreground">
-                <X className="h-4 w-4 mr-1" />
-                清除筛选
-              </Button>
-            </div>
-          )}
-        </div>
-      )}
-
-      {/* 加载状态 */}
-      {isLoading ? (
-        <div className="p-8 text-center text-muted-foreground">正在加载练习历史...</div>
-      ) : history.items.length === 0 ? (
-        <div className="bg-card rounded-2xl p-12 text-center border border-dashed border-border">
-          <div className="mx-auto w-16 h-16 bg-muted rounded-full flex items-center justify-center mb-4">
-            <HistoryIcon className="text-muted-foreground h-8 w-8" />
+            <p className="text-neutral-500 ml-1">
+              记录每一次思考的痕迹，共 {history.total} 次练习
+            </p>
           </div>
-          <h3 className="text-lg font-medium text-foreground">
-            {hasActiveFilters ? '没有符合筛选条件的记录' : '暂无练习记录'}
-          </h3>
-          <p className="text-muted-foreground mt-2 mb-6">
-            {hasActiveFilters ? '尝试调整筛选条件' : '完成你的第一次智能练习，记录将出现在这里。'}
-          </p>
-          {hasActiveFilters ? (
-            <Button variant="outline" onClick={clearFilters}>清除筛选</Button>
-          ) : (
+
+          <div className="flex items-center gap-3">
+            <Button
+              variant="outline"
+              onClick={() => setShowImportModal(true)}
+              className="bg-white border-neutral-200 text-neutral-600 hover:bg-neutral-50"
+            >
+              <Upload className="w-4 h-4 mr-2" />
+              导入
+            </Button>
+
+            <Sheet open={isFilterOpen} onOpenChange={setIsFilterOpen}>
+              <SheetTrigger asChild>
+                <Button variant="outline" className={cn("bg-white border-neutral-200 text-neutral-600 hover:bg-neutral-50", hasActiveFilters && "text-emerald-600 border-emerald-200 bg-emerald-50")}>
+                  <Filter className="w-4 h-4 mr-2" />
+                  筛选
+                </Button>
+              </SheetTrigger>
+              <SheetContent>
+                <SheetHeader>
+                  <SheetTitle>筛选练习记录</SheetTitle>
+                  <SheetDescription>
+                    设定条件查找特定的练习历史。
+                  </SheetDescription>
+                </SheetHeader>
+                <div className="grid gap-6 py-6">
+                  <div className="space-y-2">
+                    <label className="text-sm font-medium text-neutral-700">日期范围</label>
+                    <div className="grid grid-cols-2 gap-2">
+                      <Input
+                        type="date"
+                        value={filter.dateFrom || ''}
+                        onChange={(e) => setFilter(prev => ({ ...prev, dateFrom: e.target.value || undefined }))}
+                      />
+                      <Input
+                        type="date"
+                        value={filter.dateTo || ''}
+                        onChange={(e) => setFilter(prev => ({ ...prev, dateTo: e.target.value || undefined }))}
+                      />
+                    </div>
+                  </div>
+
+                  <div className="space-y-2">
+                    <label className="text-sm font-medium text-neutral-700">正确率 (%)</label>
+                    <div className="flex items-center gap-2">
+                      <Input
+                        type="number" placeholder="Min" min={0} max={100}
+                        value={filter.accuracyMin ?? ''}
+                        onChange={(e) => setFilter(prev => ({ ...prev, accuracyMin: e.target.value ? Number(e.target.value) : undefined }))}
+                      />
+                      <span className="text-neutral-400">-</span>
+                      <Input
+                        type="number" placeholder="Max" min={0} max={100}
+                        value={filter.accuracyMax ?? ''}
+                        onChange={(e) => setFilter(prev => ({ ...prev, accuracyMax: e.target.value ? Number(e.target.value) : undefined }))}
+                      />
+                    </div>
+                  </div>
+
+                  <div className="space-y-2">
+                    <label className="text-sm font-medium text-neutral-700">练习模式</label>
+                    <div className="flex flex-wrap gap-2">
+                      <button
+                        onClick={() => setFilter(prev => ({ ...prev, mode: undefined }))}
+                        className={cn("px-3 py-1.5 text-xs rounded-full border transition-all", !filter.mode ? "bg-emerald-600 text-white border-emerald-600" : "border-neutral-200 text-neutral-600 hover:border-emerald-200")}
+                      >
+                        全部
+                      </button>
+                      {availableModes.map(mode => (
+                        <button
+                          key={mode}
+                          onClick={() => setFilter(prev => ({ ...prev, mode }))}
+                          className={cn("px-3 py-1.5 text-xs rounded-full border transition-all", filter.mode === mode ? "bg-emerald-600 text-white border-emerald-600" : "border-neutral-200 text-neutral-600 hover:border-emerald-200")}
+                        >
+                          {MODE_CONFIG[mode]?.label || mode}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                </div>
+                <SheetFooter>
+                  <Button variant="outline" onClick={clearFilters}>重置</Button>
+                  <Button onClick={() => { loadHistory(); setIsFilterOpen(false); }} className="bg-emerald-600 hover:bg-emerald-700">应用筛选</Button>
+                </SheetFooter>
+              </SheetContent>
+            </Sheet>
+
             <Link href="/practice">
-              <Button variant="outline">立即开启</Button>
+              <Button className="bg-emerald-600 hover:bg-emerald-700 text-white shadow-lg shadow-emerald-200/50 rounded-full px-6">
+                <Pencil className="w-4 h-4 mr-2" />
+                新练习
+              </Button>
             </Link>
-          )}
-        </div>
-      ) : (
-        <>
-          {/* 记录列表 */}
+          </div>
+        </header>
+
+        {/* List Content */}
+        {isLoading ? (
+          <div className="space-y-4">
+            {[1, 2, 3].map(i => (
+              <div key={i} className="h-32 bg-white rounded-2xl animate-pulse border border-neutral-100" />
+            ))}
+          </div>
+        ) : history.items.length === 0 ? (
+          <div className="flex flex-col items-center justify-center py-20 bg-white rounded-3xl border border-dashed border-neutral-200">
+            <div className="w-20 h-20 bg-neutral-50 rounded-full flex items-center justify-center mb-6">
+              <BookOpen className="w-8 h-8 text-neutral-300" />
+            </div>
+            <h3 className="text-lg font-medium text-neutral-900 mb-2">暂无练习记录</h3>
+            <p className="text-neutral-500 mb-6">千里之行，始于足下。</p>
+            <Link href="/practice">
+              <Button variant="outline" className="border-emerald-200 text-emerald-700 hover:bg-emerald-50">开始第一次练习</Button>
+            </Link>
+          </div>
+        ) : (
           <div className="space-y-4">
             {history.items.map((item) => (
               <Link
                 key={item.id}
                 href={`/history/${item.id}`}
-                className="group block bg-card p-6 rounded-2xl shadow-sm border border-border hover:border-blue-500/50 hover:shadow-md transition-all"
+                className="group block bg-white hover:bg-emerald-50/30 rounded-2xl p-6 border border-neutral-100 hover:border-emerald-200 hover:shadow-md transition-all duration-300"
               >
                 <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
-                  <div className="space-y-1">
-                    <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                      <Calendar className="h-4 w-4" />
-                      {new Date(item.createdAt).toLocaleString('zh-CN', {
-                        year: 'numeric',
-                        month: 'long',
-                        day: 'numeric',
-                        hour: '2-digit',
-                        minute: '2-digit'
-                      })}
-                      {/* 练习模式标识 */}
-                      {item.practiceMode && MODE_LABELS[item.practiceMode] && (
-                        <span className={`ml-2 px-2 py-0.5 rounded-full text-xs font-medium flex items-center gap-1 ${MODE_LABELS[item.practiceMode].color}`}>
-                          {MODE_LABELS[item.practiceMode].icon}
-                          {MODE_LABELS[item.practiceMode].label}
+                  <div className="space-y-3">
+                    <div className="flex items-center gap-3">
+                      {/* Mode Tag */}
+                      {item.practiceMode && MODE_CONFIG[item.practiceMode] && (
+                        <span className={cn("px-2.5 py-0.5 rounded-md text-xs font-medium border flex items-center gap-1.5", MODE_CONFIG[item.practiceMode].className)}>
+                          {MODE_CONFIG[item.practiceMode].icon}
+                          {MODE_CONFIG[item.practiceMode].label}
                         </span>
                       )}
+                      {/* Date */}
+                      <span className="text-sm text-neutral-400 font-medium">
+                        {new Date(item.createdAt).toLocaleString('zh-CN', {
+                          month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit'
+                        })}
+                      </span>
                     </div>
-                    <div className="flex items-center gap-4">
+
+                    <div className="flex items-center gap-3">
                       {editingId === item.id ? (
                         <div className="flex items-center gap-2" onClick={e => e.stopPropagation()}>
                           <Input
                             value={editingName}
                             onChange={e => setEditingName(e.target.value)}
-                            placeholder="输入练习名称..."
-                            className="h-8 w-48 text-sm"
+                            className="h-8 text-lg font-bold w-64 border-emerald-200 focus-visible:ring-emerald-200"
                             autoFocus
+                            onClick={e => e.stopPropagation()}
                             onKeyDown={e => {
-                              if (e.key === 'Enter') handleSaveName(e as any, item.id);
+                              if (e.key === 'Enter') handleSaveName(e, item.id);
                               if (e.key === 'Escape') setEditingId(null);
                             }}
                           />
-                          <button
-                            onClick={e => handleSaveName(e, item.id)}
-                            className="p-1.5 text-green-600 hover:bg-green-500/10 rounded-lg transition-all"
-                            title="保存"
-                          >
-                            <Check className="h-4 w-4" />
-                          </button>
+                          <Button size="sm" onClick={e => handleSaveName(e, item.id)} className="h-8 w-8 p-0 bg-emerald-600 hover:bg-emerald-700">
+                            <Check className="w-4 h-4" />
+                          </Button>
                         </div>
                       ) : (
-                        <>
-                          <span className="text-lg font-bold text-foreground">
-                            {item.sessionName || `本次练习: ${item.totalQuestions} 题`}
-                          </span>
+                        <div className="flex items-center gap-2 group/title">
+                          <h3 className="text-lg font-bold text-neutral-800 font-serif">
+                            {item.sessionName || "未命名练习"}
+                          </h3>
                           <button
                             onClick={e => handleStartEdit(e, item)}
-                            className="p-1 text-muted-foreground hover:text-primary hover:bg-primary/10 rounded transition-all opacity-0 group-hover:opacity-100"
-                            title="编辑名称"
+                            className="opacity-0 group-hover/title:opacity-100 text-neutral-400 hover:text-emerald-600 transition-opacity p-1"
                           >
-                            <Pencil className="h-3.5 w-3.5" />
+                            <Pencil className="w-3.5 h-3.5" />
                           </button>
-                        </>
+                        </div>
                       )}
-                      <div className={`flex items-center gap-1.5 px-2 py-0.5 rounded-full text-xs font-bold ${item.accuracy >= 80
-                        ? 'bg-green-500/10 text-green-600 dark:text-green-400'
-                        : item.accuracy >= 60
-                          ? 'bg-amber-500/10 text-amber-600 dark:text-amber-400'
-                          : 'bg-red-500/10 text-red-600 dark:text-red-400'
-                        }`}>
-                        <CheckCircle2 className="h-3 w-3" />
-                        正确率 {item.accuracy}%
-                      </div>
+                    </div>
+
+                    <div className="flex items-center gap-4 text-sm text-neutral-500">
+                      <span className="flex items-center gap-1.5">
+                        <CheckCircle2 className={cn("w-4 h-4", item.accuracy >= 60 ? "text-emerald-500" : "text-rose-500")} />
+                        正确率 <span className={cn("font-bold", item.accuracy >= 60 ? "text-emerald-700" : "text-rose-700")}>{item.accuracy}%</span>
+                      </span>
+                      <span className="w-1 h-1 bg-neutral-300 rounded-full" />
+                      <span>共 {item.totalQuestions} 题</span>
                     </div>
                   </div>
 
-                  <div className="flex items-center gap-6">
+                  <div className="flex items-center gap-4 self-end md:self-center">
                     <div className="text-right hidden md:block">
-                      <div className="text-sm text-muted-foreground flex items-center justify-end gap-1.5">
-                        <BrainCircuit className="h-3.5 w-3.5" />
-                        触发复盘
-                      </div>
-                      <div className="text-lg font-bold text-amber-600 dark:text-amber-400">{item.reviewCount} 次</div>
+                      <div className="text-xs text-neutral-400 uppercase tracking-wider mb-1">Reviews</div>
+                      <div className="text-xl font-bold text-amber-500 font-serif">{item.reviewCount}</div>
                     </div>
 
-                    <div className="flex items-center gap-2">
-                      <button
-                        onClick={(e) => handleDelete(e, item.id)}
-                        className="p-2 text-muted-foreground hover:text-destructive hover:bg-destructive/10 rounded-lg transition-all"
-                        title="删除记录"
-                      >
-                        <Trash2 className="h-5 w-5" />
-                      </button>
-                      <ChevronRight className="h-5 w-5 text-muted-foreground group-hover:text-blue-500 transition-colors" />
+                    <div className="h-10 w-[1px] bg-neutral-100 hidden md:block" />
+
+                    <button
+                      onClick={(e) => handleDelete(e, item.id)}
+                      className="p-2 text-neutral-300 hover:text-rose-500 hover:bg-rose-50 rounded-xl transition-colors"
+                      title="删除"
+                    >
+                      <Trash2 className="w-5 h-5" />
+                    </button>
+                    <div className="w-10 h-10 rounded-full bg-neutral-50 flex items-center justify-center group-hover:bg-emerald-600 group-hover:text-white transition-all text-neutral-400">
+                      <ChevronRight className="w-5 h-5" />
                     </div>
                   </div>
                 </div>
               </Link>
             ))}
           </div>
+        )}
 
-          {/* 分页 */}
-          {history.totalPages > 1 && (
-            <div className="mt-8">
-              <Pagination
-                currentPage={history.page}
-                totalPages={history.totalPages}
-                onPageChange={handlePageChange}
-              />
-            </div>
-          )}
-        </>
-      )}
+        {/* Pagination */}
+        {history.totalPages > 1 && (
+          <div className="mt-12 flex justify-center">
+            <Pagination
+              currentPage={history.page}
+              totalPages={history.totalPages}
+              onPageChange={handlePageChange}
+            />
+          </div>
+        )}
 
-      {/* 粉笔导入对话框 */}
+      </div>
+
       <ImportFenbiModal
         isOpen={showImportModal}
         onClose={() => setShowImportModal(false)}

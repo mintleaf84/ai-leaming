@@ -1,7 +1,6 @@
 "use client";
 
-import React, { useState, useEffect } from 'react';
-import Link from 'next/link';
+import React, { useState, useEffect, useRef } from 'react';
 import {
     BookOpen,
     Rocket,
@@ -10,12 +9,13 @@ import {
     GraduationCap,
     Settings,
     HelpCircle,
+    CheckCircle2,
     ChevronRight,
-    Menu,
-    X,
-    Home
+    Search
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { Badge } from '@/components/ui/badge';
+import { cn } from '@/lib/utils';
 
 // 文档章节配置
 const docSections = [
@@ -30,25 +30,37 @@ const docSections = [
 
 export default function DocsPage() {
     const [activeSection, setActiveSection] = useState('getting-started');
-    const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+    const observerRefs = useRef<Map<string, IntersectionObserverEntry>>(new Map());
 
-    // 监听滚动更新活动章节
+    // 使用 IntersectionObserver 监听章节可见性
     useEffect(() => {
-        const handleScroll = () => {
-            const sections = docSections.map(s => document.getElementById(s.id));
-            const scrollY = window.scrollY + 100;
+        const callback = (entries: IntersectionObserverEntry[]) => {
+            entries.forEach((entry) => {
+                observerRefs.current.set(entry.target.id, entry);
+            });
 
-            for (let i = sections.length - 1; i >= 0; i--) {
-                const section = sections[i];
-                if (section && section.offsetTop <= scrollY) {
-                    setActiveSection(docSections[i].id);
-                    break;
-                }
+            // 找到当前视口中可见比例最高或者最靠前的 section
+            const visibleSections = Array.from(observerRefs.current.values())
+                .filter(entry => entry.isIntersecting)
+                .sort((a, b) => b.intersectionRatio - a.intersectionRatio);
+
+            if (visibleSections.length > 0) {
+                setActiveSection(visibleSections[0].target.id);
             }
         };
 
-        window.addEventListener('scroll', handleScroll);
-        return () => window.removeEventListener('scroll', handleScroll);
+        const observer = new IntersectionObserver(callback, {
+            root: null, // viewport
+            rootMargin: '-20% 0px -60% 0px', // 调整判定区域，不仅是顶部
+            threshold: [0, 0.2, 0.4, 0.6, 0.8, 1]
+        });
+
+        docSections.forEach(section => {
+            const el = document.getElementById(section.id);
+            if (el) observer.observe(el);
+        });
+
+        return () => observer.disconnect();
     }, []);
 
     const scrollToSection = (id: string) => {
@@ -56,315 +68,234 @@ export default function DocsPage() {
         if (element) {
             element.scrollIntoView({ behavior: 'smooth', block: 'start' });
             setActiveSection(id);
-            setIsMobileMenuOpen(false);
         }
     };
 
     return (
-        <div className="min-h-screen bg-gradient-to-br from-slate-50 to-blue-50 dark:from-slate-950 dark:to-slate-900">
-            {/* 移动端菜单按钮 */}
-            <div className="lg:hidden fixed top-4 left-4 z-50">
-                <Button
-                    variant="outline"
-                    size="icon"
-                    onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
-                    className="bg-white/80 dark:bg-slate-800/80 backdrop-blur"
-                >
-                    {isMobileMenuOpen ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
-                </Button>
-            </div>
+        <div className="min-h-screen bg-[#faf9f6]">
+            <div className="container mx-auto px-6 py-12 md:py-20 flex flex-col lg:flex-row gap-12 max-w-7xl">
 
-            {/* 侧边导航 */}
-            <aside className={`
-        fixed top-0 left-0 h-full w-64 bg-white/95 dark:bg-slate-900/95 backdrop-blur
-        border-r border-slate-200 dark:border-slate-800 z-40
-        transform transition-transform duration-300 ease-in-out
-        ${isMobileMenuOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'}
-      `}>
-                <div className="p-6">
-                    <Link href="/" className="flex items-center gap-2 mb-8">
-                        <div className="bg-blue-600 p-1.5 rounded-lg">
-                            <GraduationCap className="h-5 w-5 text-white" />
-                        </div>
-                        <span className="font-bold text-lg">使用文档</span>
-                    </Link>
-
-                    <nav className="space-y-1">
-                        {docSections.map((section) => {
-                            const isActive = activeSection === section.id;
-                            return (
-                                <button
-                                    key={section.id}
-                                    onClick={() => scrollToSection(section.id)}
-                                    className={`
-                    w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium
-                    transition-all duration-200
-                    ${isActive
-                                            ? 'bg-blue-100 text-blue-700 dark:bg-blue-900/50 dark:text-blue-300'
-                                            : 'text-slate-600 hover:bg-slate-100 dark:text-slate-400 dark:hover:bg-slate-800'
-                                        }
-                  `}
-                                >
-                                    <section.icon className={`h-4 w-4 ${isActive ? 'text-blue-600 dark:text-blue-400' : ''}`} />
-                                    <span>{section.title}</span>
-                                    {isActive && <ChevronRight className="h-4 w-4 ml-auto" />}
-                                </button>
-                            );
-                        })}
-                    </nav>
-
-                    <div className="mt-8 pt-6 border-t border-slate-200 dark:border-slate-700">
-                        <Link
-                            href="/"
-                            className="flex items-center gap-2 text-sm text-slate-500 hover:text-blue-600 dark:hover:text-blue-400 transition-colors"
-                        >
-                            <Home className="h-4 w-4" />
-                            返回首页
-                        </Link>
-                    </div>
-                </div>
-            </aside>
-
-            {/* 移动端遮罩 */}
-            {isMobileMenuOpen && (
-                <div
-                    className="fixed inset-0 bg-black/50 z-30 lg:hidden"
-                    onClick={() => setIsMobileMenuOpen(false)}
-                />
-            )}
-
-            {/* 主内容区 */}
-            <main className="lg:ml-64 p-6 lg:p-12">
-                <div className="max-w-3xl mx-auto">
-
-                    {/* 页面标题 */}
-                    <header className="mb-12 text-center lg:text-left">
-                        <h1 className="text-3xl lg:text-4xl font-bold text-slate-900 dark:text-white mb-4">
-                            AI 教招 使用指南
+                {/* 左侧主要内容区 */}
+                <article className="flex-1 min-w-0">
+                    {/* Header */}
+                    <header className="mb-16 border-b border-neutral-200 pb-10">
+                        <Badge variant="outline" className="mb-4 px-3 py-1 border-emerald-200 text-emerald-700 bg-emerald-50/50 rounded-full font-serif">
+                            Documentation
+                        </Badge>
+                        <h1 className="text-4xl md:text-5xl font-bold text-neutral-800 font-serif mb-6 tracking-tight">
+                            使用指南
                         </h1>
-                        <p className="text-lg text-slate-600 dark:text-slate-400">
-                            欢迎使用 AI 教招学习系统！本文档将帮助你快速上手各项功能。
+                        <p className="text-xl text-neutral-500 leading-relaxed max-w-3xl">
+                            欢迎来到 AI 教招智学中心。这里汇集了所有功能的使用说明，帮助您高效利用 AI 技术备考。
                         </p>
                     </header>
 
                     {/* 快速开始 */}
-                    <section id="getting-started" className="mb-16 scroll-mt-20">
-                        <h2 className="text-2xl font-bold text-slate-900 dark:text-white mb-6 flex items-center gap-2">
-                            <Rocket className="h-6 w-6 text-blue-600" />
-                            快速开始
-                        </h2>
-                        <div className="prose dark:prose-invert max-w-none">
-                            <p className="text-slate-600 dark:text-slate-400 leading-relaxed">
-                                AI 教招是一款专为教师招聘考试设计的智能学习系统，结合 AI 技术帮助你高效备考。
+                    <section id="getting-started" className="mb-20 scroll-mt-24 group">
+                        <div className="flex items-center gap-3 mb-6">
+                            <div className="w-10 h-10 rounded-xl bg-emerald-100 flex items-center justify-center text-emerald-700">
+                                <Rocket className="w-5 h-5" />
+                            </div>
+                            <h2 className="text-2xl font-bold text-neutral-800 font-serif">快速开始</h2>
+                        </div>
+
+                        <div className="prose max-w-none text-neutral-600">
+                            <p className="leading-7 mb-6">
+                                AI 教招是一款专为教师招聘考试设计的智能学习系统。我们通过深度集成的 AI 技术，为您提供个性化的出题、批改和答疑服务。
                             </p>
 
-                            <div className="bg-white dark:bg-slate-800 rounded-xl p-6 mt-6 shadow-sm border border-slate-200 dark:border-slate-700">
-                                <h3 className="text-lg font-semibold mb-4">开始使用的三个步骤：</h3>
-                                <ol className="space-y-4">
-                                    <li className="flex items-start gap-3">
-                                        <span className="flex-shrink-0 w-7 h-7 bg-blue-100 dark:bg-blue-900 text-blue-600 dark:text-blue-300 rounded-full flex items-center justify-center text-sm font-bold">1</span>
-                                        <div>
-                                            <strong>注册账号</strong>
-                                            <p className="text-slate-500 text-sm mt-1">访问首页点击"注册"，填写用户名和密码即可创建账号。</p>
-                                        </div>
-                                    </li>
-                                    <li className="flex items-start gap-3">
-                                        <span className="flex-shrink-0 w-7 h-7 bg-blue-100 dark:bg-blue-900 text-blue-600 dark:text-blue-300 rounded-full flex items-center justify-center text-sm font-bold">2</span>
-                                        <div>
-                                            <strong>开始练习</strong>
-                                            <p className="text-slate-500 text-sm mt-1">进入"智能练习"，选择练习模式和题目数量，开始刷题。</p>
-                                        </div>
-                                    </li>
-                                    <li className="flex items-start gap-3">
-                                        <span className="flex-shrink-0 w-7 h-7 bg-blue-100 dark:bg-blue-900 text-blue-600 dark:text-blue-300 rounded-full flex items-center justify-center text-sm font-bold">3</span>
-                                        <div>
-                                            <strong>查看分析</strong>
-                                            <p className="text-slate-500 text-sm mt-1">练习结束后，系统会生成详细的分析报告，帮助你了解薄弱环节。</p>
-                                        </div>
-                                    </li>
-                                </ol>
+                            <div className="grid md:grid-cols-3 gap-6 my-8 not-prose">
+                                {[
+                                    { step: '01', title: '注册账号', desc: '创建您的专属学习档案，同步多端进度。' },
+                                    { step: '02', title: '智能练习', desc: '选择科目开始刷题，AI 实时分析薄弱项。' },
+                                    { step: '03', title: '查看报告', desc: '获取详细的能力分析报告，查漏补缺。' }
+                                ].map((item) => (
+                                    <div key={item.step} className="bg-white p-6 rounded-2xl border border-neutral-100 shadow-sm hover:shadow-md transition-shadow">
+                                        <div className="text-4xl font-serif font-bold text-emerald-100 mb-4">{item.step}</div>
+                                        <h3 className="text-lg font-bold text-neutral-800 mb-2">{item.title}</h3>
+                                        <p className="text-sm text-neutral-500">{item.desc}</p>
+                                    </div>
+                                ))}
                             </div>
                         </div>
                     </section>
 
                     {/* 智能练习 */}
-                    <section id="practice" className="mb-16 scroll-mt-20">
-                        <h2 className="text-2xl font-bold text-slate-900 dark:text-white mb-6 flex items-center gap-2">
-                            <BookOpen className="h-6 w-6 text-green-600" />
-                            智能练习
-                        </h2>
+                    <section id="practice" className="mb-20 scroll-mt-24">
+                        <div className="flex items-center gap-3 mb-6">
+                            <div className="w-10 h-10 rounded-xl bg-teal-100 flex items-center justify-center text-teal-700">
+                                <BookOpen className="w-5 h-5" />
+                            </div>
+                            <h2 className="text-2xl font-bold text-neutral-800 font-serif">智能练习</h2>
+                        </div>
+
                         <div className="space-y-6">
-                            <p className="text-slate-600 dark:text-slate-400 leading-relaxed">
-                                智能练习是系统的核心功能，支持多种练习模式和 AI 辅助复盘。
+                            <p className="text-neutral-600 leading-7">
+                                告别题海战术。我们的智能练习引擎会根据您的历史答题数据，动态调整题目难度和出题范围。
                             </p>
 
-                            <div className="grid gap-4">
-                                <div className="bg-white dark:bg-slate-800 rounded-xl p-5 shadow-sm border border-slate-200 dark:border-slate-700">
-                                    <h3 className="font-semibold text-slate-900 dark:text-white mb-2">🎯 练习模式</h3>
-                                    <ul className="text-slate-600 dark:text-slate-400 space-y-2 text-sm">
-                                        <li><strong>顺序练习</strong>：按题目顺序依次作答</li>
-                                        <li><strong>随机练习</strong>：随机抽取题目，模拟真实考试</li>
-                                        <li><strong>专项练习</strong>：针对特定知识点集中训练</li>
-                                        <li><strong>错题巩固</strong>：重做之前答错的题目</li>
-                                    </ul>
-                                </div>
-
-                                <div className="bg-white dark:bg-slate-800 rounded-xl p-5 shadow-sm border border-slate-200 dark:border-slate-700">
-                                    <h3 className="font-semibold text-slate-900 dark:text-white mb-2">🤖 AI 复盘</h3>
-                                    <p className="text-slate-600 dark:text-slate-400 text-sm">
-                                        答题后点击"AI 复盘"，系统会调用 AI 分析你的答题情况，给出详细解析和学习建议。
-                                    </p>
-                                </div>
-
-                                <div className="bg-white dark:bg-slate-800 rounded-xl p-5 shadow-sm border border-slate-200 dark:border-slate-700">
-                                    <h3 className="font-semibold text-slate-900 dark:text-white mb-2">📊 练习报告</h3>
-                                    <p className="text-slate-600 dark:text-slate-400 text-sm">
-                                        每次练习结束后，系统会生成包含正确率、用时分析、薄弱知识点等数据的报告。
-                                    </p>
+                            <div className="bg-white rounded-2xl border border-neutral-200 p-8 shadow-sm">
+                                <h3 className="font-bold text-neutral-800 mb-4 flex items-center gap-2">
+                                    <span className="w-1.5 h-1.5 rounded-full bg-emerald-500" />
+                                    练习模式详解
+                                </h3>
+                                <div className="grid sm:grid-cols-2 gap-x-8 gap-y-6">
+                                    <div>
+                                        <h4 className="font-medium text-neutral-900 mb-1">顺序练习</h4>
+                                        <p className="text-sm text-neutral-500">按章节顺序系统性刷题，打牢基础。</p>
+                                    </div>
+                                    <div>
+                                        <h4 className="font-medium text-neutral-900 mb-1">随机模拟</h4>
+                                        <p className="text-sm text-neutral-500">全真模拟考试环境，检测真实水平。</p>
+                                    </div>
+                                    <div>
+                                        <h4 className="font-medium text-neutral-900 mb-1">错题巩固</h4>
+                                        <p className="text-sm text-neutral-500">智能推荐易错题，定向爆破。</p>
+                                    </div>
+                                    <div>
+                                        <h4 className="font-medium text-neutral-900 mb-1">AI 专项</h4>
+                                        <p className="text-sm text-neutral-500">针对薄弱知识点生成变式题。</p>
+                                    </div>
                                 </div>
                             </div>
                         </div>
                     </section>
 
                     {/* 错题本 */}
-                    <section id="wrong-book" className="mb-16 scroll-mt-20">
-                        <h2 className="text-2xl font-bold text-slate-900 dark:text-white mb-6 flex items-center gap-2">
-                            <BookX className="h-6 w-6 text-red-600" />
-                            错题本
-                        </h2>
-                        <div className="space-y-4">
-                            <p className="text-slate-600 dark:text-slate-400 leading-relaxed">
-                                错题本自动收集你答错的题目，方便集中复习和巩固。
-                            </p>
-
-                            <div className="bg-white dark:bg-slate-800 rounded-xl p-5 shadow-sm border border-slate-200 dark:border-slate-700">
-                                <h3 className="font-semibold text-slate-900 dark:text-white mb-3">主要功能：</h3>
-                                <ul className="text-slate-600 dark:text-slate-400 space-y-2 text-sm">
-                                    <li>📌 <strong>自动收集</strong>：答错的题目自动加入错题本</li>
-                                    <li>🏷️ <strong>分类查看</strong>：按知识点筛选错题</li>
-                                    <li>🔄 <strong>重做练习</strong>：对错题进行针对性复习</li>
-                                    <li>✅ <strong>标记掌握</strong>：已掌握的题目可移出错题本</li>
-                                </ul>
+                    <section id="wrong-book" className="mb-20 scroll-mt-24">
+                        <div className="flex items-center gap-3 mb-6">
+                            <div className="w-10 h-10 rounded-xl bg-rose-100 flex items-center justify-center text-rose-700">
+                                <BookX className="w-5 h-5" />
                             </div>
+                            <h2 className="text-2xl font-bold text-neutral-800 font-serif">错题本</h2>
                         </div>
-                    </section>
-
-                    {/* AI 助手 */}
-                    <section id="ai-assistant" className="mb-16 scroll-mt-20">
-                        <h2 className="text-2xl font-bold text-slate-900 dark:text-white mb-6 flex items-center gap-2">
-                            <Bot className="h-6 w-6 text-purple-600" />
-                            AI 助手
-                        </h2>
-                        <div className="space-y-4">
-                            <p className="text-slate-600 dark:text-slate-400 leading-relaxed">
-                                AI 助手是你的智能学习伙伴，随时解答你的学习疑问。
-                            </p>
-
-                            <div className="bg-gradient-to-r from-purple-50 to-blue-50 dark:from-purple-900/20 dark:to-blue-900/20 rounded-xl p-6 border border-purple-200 dark:border-purple-800">
-                                <h3 className="font-semibold text-slate-900 dark:text-white mb-3">你可以这样使用：</h3>
-                                <ul className="text-slate-600 dark:text-slate-400 space-y-2 text-sm">
-                                    <li>💬 询问教育学、心理学相关概念</li>
-                                    <li>📝 请求解释某道题目的答案</li>
-                                    <li>🎯 获取针对性的学习建议</li>
-                                    <li>📚 让 AI 帮你总结知识点</li>
-                                </ul>
+                        <div className="bg-[#fff1f2] border border-rose-100 rounded-2xl p-6 flex gap-4">
+                            <div className="shrink-0 mt-1">
+                                <CheckCircle2 className="w-5 h-5 text-rose-500" />
                             </div>
-
-                            <div className="bg-white dark:bg-slate-800 rounded-xl p-5 shadow-sm border border-slate-200 dark:border-slate-700">
-                                <h3 className="font-semibold text-slate-900 dark:text-white mb-2">💡 小贴士</h3>
-                                <p className="text-slate-600 dark:text-slate-400 text-sm">
-                                    开启"知识增强"开关后，AI 会结合系统内的知识库给出更准确的回答。
+                            <div>
+                                <h3 className="font-bold text-rose-900 mb-1">自动化管理</h3>
+                                <p className="text-sm text-rose-700/80 leading-relaxed">
+                                    无需手动录入，系统会自动将您答错的题目加入错题本。当您在错题本中正确回答同一题目达到 3 次后，系统会建议将其移除。
                                 </p>
                             </div>
                         </div>
                     </section>
 
-                    {/* 知识学习 */}
-                    <section id="knowledge" className="mb-16 scroll-mt-20">
-                        <h2 className="text-2xl font-bold text-slate-900 dark:text-white mb-6 flex items-center gap-2">
-                            <GraduationCap className="h-6 w-6 text-amber-600" />
-                            知识学习
-                        </h2>
-                        <div className="space-y-4">
-                            <p className="text-slate-600 dark:text-slate-400 leading-relaxed">
-                                系统提供多种形式的知识学习工具，帮助你系统性地掌握考试内容。
+                    {/* AI 助手 */}
+                    <section id="ai-assistant" className="mb-20 scroll-mt-24">
+                        <div className="flex items-center gap-3 mb-6">
+                            <div className="w-10 h-10 rounded-xl bg-indigo-100 flex items-center justify-center text-indigo-700">
+                                <Bot className="w-5 h-5" />
+                            </div>
+                            <h2 className="text-2xl font-bold text-neutral-800 font-serif">AI 助手</h2>
+                        </div>
+                        <div className="space-y-4 text-neutral-600">
+                            <p className="leading-7">
+                                遇到不懂的概念？对解析有疑问？随时唤起右下角的 AI 助手。它不仅能回答具体问题，还能帮您拆解复杂的教心学理论。
                             </p>
-
-                            <div className="grid gap-4 md:grid-cols-2">
-                                <div className="bg-white dark:bg-slate-800 rounded-xl p-5 shadow-sm border border-slate-200 dark:border-slate-700">
-                                    <h3 className="font-semibold text-slate-900 dark:text-white mb-2">📇 知识卡片</h3>
-                                    <p className="text-slate-600 dark:text-slate-400 text-sm">
-                                        以卡片形式呈现核心概念，支持翻转查看详细解释，适合碎片化记忆。
-                                    </p>
-                                </div>
-
-                                <div className="bg-white dark:bg-slate-800 rounded-xl p-5 shadow-sm border border-slate-200 dark:border-slate-700">
-                                    <h3 className="font-semibold text-slate-900 dark:text-white mb-2">🗺️ 知识图谱</h3>
-                                    <p className="text-slate-600 dark:text-slate-400 text-sm">
-                                        可视化展示知识点之间的关联关系，帮助你建立系统的知识体系。
-                                    </p>
-                                </div>
+                            <div className="flex flex-wrap gap-3 mt-4">
+                                {['什么是皮亚杰的认知发展阶段？', '如何区分正强化和负强化？', '帮我总结一下班级管理的原则'].map(q => (
+                                    <span key={q} className="bg-white border border-neutral-200 px-4 py-2 rounded-full text-sm text-neutral-600 shadow-sm">
+                                        "{q}"
+                                    </span>
+                                ))}
                             </div>
                         </div>
                     </section>
 
-                    {/* 账户与设置 */}
-                    <section id="settings" className="mb-16 scroll-mt-20">
-                        <h2 className="text-2xl font-bold text-slate-900 dark:text-white mb-6 flex items-center gap-2">
-                            <Settings className="h-6 w-6 text-slate-600" />
-                            账户与设置
-                        </h2>
-                        <div className="space-y-4">
-                            <div className="bg-white dark:bg-slate-800 rounded-xl p-5 shadow-sm border border-slate-200 dark:border-slate-700">
-                                <h3 className="font-semibold text-slate-900 dark:text-white mb-3">个人中心</h3>
-                                <ul className="text-slate-600 dark:text-slate-400 space-y-2 text-sm">
-                                    <li>👤 查看和编辑个人信息</li>
-                                    <li>📈 查看学习统计和成就</li>
-                                    <li>💳 管理订阅状态</li>
-                                </ul>
+                    {/* 知识学习 */}
+                    <section id="knowledge" className="mb-20 scroll-mt-24">
+                        <div className="flex items-center gap-3 mb-6">
+                            <div className="w-10 h-10 rounded-xl bg-amber-100 flex items-center justify-center text-amber-700">
+                                <GraduationCap className="w-5 h-5" />
                             </div>
-
-                            <div className="bg-white dark:bg-slate-800 rounded-xl p-5 shadow-sm border border-slate-200 dark:border-slate-700">
-                                <h3 className="font-semibold text-slate-900 dark:text-white mb-3">系统设置</h3>
-                                <ul className="text-slate-600 dark:text-slate-400 space-y-2 text-sm">
-                                    <li>🌓 切换浅色/深色主题</li>
-                                    <li>📥 导出学习数据</li>
-                                    <li>🗑️ 重置练习记录</li>
-                                </ul>
+                            <h2 className="text-2xl font-bold text-neutral-800 font-serif">知识学习</h2>
+                        </div>
+                        <div className="grid md:grid-cols-2 gap-6">
+                            <div className="bg-white p-6 rounded-2xl border border-neutral-100 shadow-sm">
+                                <h3 className="font-bold text-neutral-800 mb-2">📇 知识卡片</h3>
+                                <p className="text-sm text-neutral-500">
+                                    碎片化学习利器。利用间隔重复记忆算法 (Spaced Repetition)，帮您高效记忆核心考点。
+                                </p>
+                            </div>
+                            <div className="bg-white p-6 rounded-2xl border border-neutral-100 shadow-sm">
+                                <h3 className="font-bold text-neutral-800 mb-2">🗺️ 知识图谱</h3>
+                                <p className="text-sm text-neutral-500">
+                                    上帝视角看考点。可视化展示知识点间的层级与关联，构建完整的知识大厦。
+                                </p>
                             </div>
                         </div>
                     </section>
 
                     {/* 常见问题 */}
-                    <section id="faq" className="mb-16 scroll-mt-20">
-                        <h2 className="text-2xl font-bold text-slate-900 dark:text-white mb-6 flex items-center gap-2">
-                            <HelpCircle className="h-6 w-6 text-cyan-600" />
-                            常见问题
-                        </h2>
+                    <section id="faq" className="mb-20 scroll-mt-24">
+                        <div className="flex items-center gap-3 mb-6">
+                            <div className="w-10 h-10 rounded-xl bg-neutral-100 flex items-center justify-center text-neutral-700">
+                                <HelpCircle className="w-5 h-5" />
+                            </div>
+                            <h2 className="text-2xl font-bold text-neutral-800 font-serif">常见问题</h2>
+                        </div>
                         <div className="space-y-4">
                             {[
-                                { q: 'AI 功能需要付费吗？', a: '基础版每天有一定的免费使用额度。如需更多使用次数，可升级到付费套餐。' },
-                                { q: '练习数据会同步吗？', a: '是的，你的所有练习记录都会保存在云端，可在任意设备登录后继续学习。' },
-                                { q: '如何反馈问题或建议？', a: '你可以通过 AI 助手留言，或联系系统管理员。' },
-                                { q: '支持移动端使用吗？', a: '支持！系统已针对手机和平板进行了响应式适配，使用浏览器访问即可。' },
+                                { q: 'AI 额度不够用怎么办？', a: '您可以前往订阅页面升级到 Pro 套餐，获取无限量的 AI 对话和高级复盘权益。' },
+                                { q: '可以离线使用吗？', a: '目前系统依赖云端 AI 算力，需要保持网络连接。未来我们会探索离线轻量化模型。' },
+                                { q: '数据安全吗？', a: '您的所有数据都经过加密传输和存储。我们不会将您的个人数据用于训练公共大模型。' },
                             ].map((item, i) => (
-                                <div key={i} className="bg-white dark:bg-slate-800 rounded-xl p-5 shadow-sm border border-slate-200 dark:border-slate-700">
-                                    <h3 className="font-semibold text-slate-900 dark:text-white mb-2">Q: {item.q}</h3>
-                                    <p className="text-slate-600 dark:text-slate-400 text-sm">A: {item.a}</p>
+                                <div key={i} className="bg-white rounded-xl p-6 border border-neutral-100 shadow-sm">
+                                    <h3 className="font-bold text-neutral-900 mb-2 text-sm">{item.q}</h3>
+                                    <p className="text-neutral-500 text-sm leading-relaxed">{item.a}</p>
                                 </div>
                             ))}
                         </div>
                     </section>
 
-                    {/* 底部导航 */}
-                    <footer className="text-center py-8 border-t border-slate-200 dark:border-slate-700">
-                        <p className="text-slate-500 dark:text-slate-400 text-sm">
-                            还有疑问？欢迎使用 <Link href="/chat" className="text-blue-600 hover:underline">AI 助手</Link> 获取帮助
-                        </p>
-                    </footer>
+                </article>
 
-                </div>
-            </main>
+                {/* 右侧悬浮目录 (Desktop Only) */}
+                <aside className="hidden lg:block w-64 min-w-[250px] relative">
+                    <div className="sticky top-24">
+                        <div className="text-xs font-bold text-neutral-400 uppercase tracking-wider mb-4 px-2">
+                            Table of Contents
+                        </div>
+                        <nav className="space-y-1 relative">
+                            {/* Active Indicator Line (Optional visual flair) */}
+                            <div className="absolute left-0 w-0.5 bg-emerald-200 h-full rounded-full opacity-20" />
+
+                            {docSections.map((section) => {
+                                const isActive = activeSection === section.id;
+                                return (
+                                    <button
+                                        key={section.id}
+                                        onClick={() => scrollToSection(section.id)}
+                                        className={cn(
+                                            "group flex items-center gap-3 w-full px-3 py-2 text-sm transition-all duration-200 rounded-lg text-left border-l-2 border-transparent -ml-[2px]",
+                                            isActive
+                                                ? "text-emerald-700 font-medium border-emerald-500 bg-emerald-50/50"
+                                                : "text-neutral-500 hover:text-neutral-900 hover:bg-neutral-100"
+                                        )}
+                                    >
+                                        <span className={cn(
+                                            "transition-transform duration-200",
+                                            isActive ? "translate-x-1" : ""
+                                        )}>
+                                            {section.title}
+                                        </span>
+                                    </button>
+                                );
+                            })}
+                        </nav>
+
+                        <div className="mt-8 p-4 bg-emerald-900 rounded-xl text-emerald-50 shadow-lg shadow-emerald-900/20">
+                            <p className="text-xs font-medium opacity-80 mb-1">Still need help?</p>
+                            <p className="text-sm font-bold mb-3">Ask our AI Assistant</p>
+                            <Button size="sm" variant="secondary" className="w-full bg-emerald-50 text-emerald-900 hover:bg-white" onClick={() => window.location.href = '/chat'}>
+                                Go to Chat
+                            </Button>
+                        </div>
+                    </div>
+                </aside>
+            </div>
         </div>
     );
 }

@@ -2,9 +2,9 @@ import { MetadataRoute } from 'next'
 
 export default function manifest(): MetadataRoute.Manifest {
     return {
-        name: 'AI 教招客观题智能提升系统',
-        short_name: 'AI 教招',
-        description: '基于 RAG 与变式生成技术的智能化练习平台',
+        name: '琢玉 - 教师招聘智能备考',
+        short_name: '琢玉',
+        description: '精琢每一分，只为成师',
         start_url: '/',
         display: 'standalone',
         background_color: '#ffffff',

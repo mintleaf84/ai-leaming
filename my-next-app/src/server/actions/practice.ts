@@ -149,6 +149,103 @@ export async function getAvailableTagsAction(): Promise<string[]> {
   }
 }
 
+export interface KnowledgeParams {
+  name: string;
+  path: string; // Full path for querying
+  children: KnowledgeParams[];
+  count: number; // Number of questions under this node (recursive)
+}
+
+/**
+ * 获取知识点树形结构
+ * Tags format: "Subject/Chapter/Topic"
+ */
+export async function getKnowledgeTreeAction(): Promise<KnowledgeParams[]> {
+  try {
+    const result = db.prepare(`
+      SELECT DISTINCT value as tag, COUNT(*) as count
+      FROM questions, json_each(questions.tags)
+      GROUP BY value
+      ORDER BY value
+    `).all() as { tag: string; count: number }[];
+
+    const root: KnowledgeParams[] = [];
+
+    result.forEach(({ tag, count }) => {
+      const parts = tag.split('/');
+      let currentLevel = root;
+      let currentPath = "";
+
+      parts.forEach((part, index) => {
+        currentPath = currentPath ? `${currentPath}/${part}` : part;
+        let existingNode = currentLevel.find(n => n.name === part);
+
+        if (!existingNode) {
+          existingNode = {
+            name: part,
+            path: currentPath,
+            children: [],
+            count: 0 // Will accumulate later or simplified here
+          };
+          currentLevel.push(existingNode);
+        }
+
+        // Simple addition: add the count of this specific tag occurrence to the node
+        // Note: multiple tags might share parents. Ideally we sum them up.
+        // For simplicity, we just ensure the node exists. The count logic can be refined if needed.
+        if (index === parts.length - 1) {
+          existingNode.count += count;
+        }
+
+        currentLevel = existingNode.children;
+      });
+    });
+
+    // Helper to sum up counts recursively
+    const calculateCounts = (nodes: KnowledgeParams[]): number => {
+      let sum = 0;
+      for (const node of nodes) {
+        const childrenSum = calculateCounts(node.children);
+        node.count = (node.count || 0) + childrenSum;
+        sum += node.count;
+      }
+      return sum;
+    }
+    // Note: The above count logic is imperfect because a parent might not have its own direct questions
+    // but we want to show how many questions are under it.
+    // Let's refine: leaf nodes have accurate counts from SQL. 
+    // Parent nodes should sum their children's counts + their own direct count (if any).
+
+    // Re-implement accumulation correctly
+    const recalculateTreeCounts = (nodes: KnowledgeParams[]): number => {
+      let total = 0;
+      for (const node of nodes) {
+        // Find the original count from result if this path matches exactly?
+        // Actually the 'result' loop already set count for exact matches.
+        // Now we just add up children.
+        let myTotal = node.count;
+        if (node.children.length > 0) {
+          // For intermediate nodes, their 'count' is purely from children in this simple model 
+          // unless they are also tagged directly (which the loop handles).
+          // However, we want 'count' to represent "total available questions under this branch".
+          // So we sum up children.
+          const childrenTotal = recalculateTreeCounts(node.children);
+          node.count += childrenTotal;
+        }
+        total += node.count;
+      }
+      return total;
+    }
+
+    recalculateTreeCounts(root);
+
+    return root;
+  } catch (error) {
+    console.error('获取知识树失败', error);
+    return [];
+  }
+}
+
 /**
  * 根据配置创建练习会话
  */

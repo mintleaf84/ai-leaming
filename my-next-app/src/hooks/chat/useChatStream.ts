@@ -90,7 +90,19 @@ export function useChatStream({
             });
 
             if (!response.ok) {
-                throw new Error(`HTTP error! status: ${response.status}`);
+                // 尝试解析服务器返回的错误信息
+                let errorMessage = `HTTP error! status: ${response.status}`;
+                try {
+                    const errorData = await response.json();
+                    if (errorData.error) {
+                        errorMessage = typeof errorData.error === 'string'
+                            ? errorData.error
+                            : errorData.error.message || errorData.message || errorMessage;
+                    }
+                } catch {
+                    // 如果无法解析 JSON，使用默认错误消息
+                }
+                throw new Error(errorMessage);
             }
 
             if (!response.body) {

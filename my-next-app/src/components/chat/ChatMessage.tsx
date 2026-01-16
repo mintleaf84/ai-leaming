@@ -20,8 +20,8 @@ interface ChatMessageProps {
     isLast: boolean;
     isLoading: boolean;
     onDelete?: () => void;
-    onSaveToKnowledge?: (content: string) => Promise<void>;
-    onToggleFavorite?: (messageId: number, isFavorite: boolean) => Promise<void>;
+    onSaveToKnowledge?: (content: string) => void | Promise<void>;
+    onToggleFavorite?: (messageId: number, isFavorite: boolean) => void | Promise<void>;
 }
 
 /**

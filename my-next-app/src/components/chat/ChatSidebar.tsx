@@ -5,10 +5,10 @@ import { useTerminology } from '@/lib/hooks/use-terminology';
 
 interface ChatSidebarProps {
     sessions: any[];
-    currentSessionId: string | null;
-    onSessionSelect: (sessionId: string, messageId?: string) => void;
+    currentSessionId: number | null;
+    onSessionSelect: (sessionId: number, messageId?: number) => void;
     onNewSession: () => void;
-    onDeleteSession: (sessionId: string) => void;
+    onDeleteSession: (sessionId: number) => void;
     showFavorites: boolean;
     onToggleShowFavorites: () => void;
 }

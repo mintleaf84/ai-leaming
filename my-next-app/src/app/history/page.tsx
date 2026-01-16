@@ -131,7 +131,7 @@ export default function HistoryPage() {
     setEditingName(item.sessionName || '');
   };
 
-  const handleSaveName = async (e: React.MouseEvent, id: string) => {
+  const handleSaveName = async (e: React.SyntheticEvent, id: string) => {
     e.preventDefault();
     e.stopPropagation();
     const result = await renameSessionAction(id, editingName);

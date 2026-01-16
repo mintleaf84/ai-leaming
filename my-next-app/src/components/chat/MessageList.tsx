@@ -9,8 +9,8 @@ interface MessageListProps {
     error: string | null;
     lastFailedMessage: string | null;
     onDeleteMessage: (id: string) => void;
-    onSaveToKnowledge: (content: string) => void;
-    onToggleFavorite: (id: number, isFav: boolean) => void;
+    onSaveToKnowledge: (content: string) => void | Promise<void>;
+    onToggleFavorite: (id: number, isFav: boolean) => void | Promise<void>;
     onRetry: () => void;
     messagesEndRef: React.RefObject<any>;
 }

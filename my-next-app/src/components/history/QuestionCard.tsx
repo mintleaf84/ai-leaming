@@ -204,8 +204,18 @@ export function QuestionCard({ log, index, isExpanded, onToggle, refCallback }: 
                         </div>
 
                         {fpAnalysis ? (
-                            <div className="text-sm text-foreground leading-relaxed whitespace-pre-wrap bg-card p-4 rounded-xl border border-amber-500/20 shadow-sm">
-                                {fpAnalysis}
+                            <div className="bg-card p-4 rounded-xl border border-amber-500/20 shadow-sm">
+                                {log.questionId ? (
+                                    <AnnotatableText
+                                        text={fpAnalysis}
+                                        questionId={-log.questionId}
+                                        className="text-sm text-foreground"
+                                    />
+                                ) : (
+                                    <div className="text-sm text-foreground leading-relaxed whitespace-pre-wrap">
+                                        {fpAnalysis}
+                                    </div>
+                                )}
                             </div>
                         ) : (
                             <div className="text-xs text-muted-foreground">

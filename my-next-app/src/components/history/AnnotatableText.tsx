@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState, useEffect, useCallback, useRef } from 'react';
-import { Highlighter, Underline, Waves, Trash2 } from 'lucide-react';
+import { Highlighter, Underline, Waves, Copy } from 'lucide-react';
 
 interface Annotation {
     id?: number;
@@ -31,6 +31,7 @@ const TAG_STYLES: Record<string, { className: string; color: string }> = {
 export function AnnotatableText({ text, questionId, className }: AnnotatableTextProps) {
     const [annotations, setAnnotations] = useState<Annotation[]>([]);
     const [selection, setSelection] = useState<{ start: number; end: number } | null>(null);
+    const [selectedText, setSelectedText] = useState<string>('');
     const [toolbarPosition, setToolbarPosition] = useState<{ x: number; y: number } | null>(null);
     const containerRef = useRef<HTMLDivElement>(null);
     const toolbarRef = useRef<HTMLDivElement>(null);
@@ -60,6 +61,7 @@ export function AnnotatableText({ text, questionId, className }: AnnotatableText
         const windowSelection = window.getSelection();
         if (!windowSelection || windowSelection.isCollapsed) {
             setSelection(null);
+            setSelectedText('');
             setToolbarPosition(null);
             return;
         }
@@ -79,11 +81,13 @@ export function AnnotatableText({ text, questionId, className }: AnnotatableText
 
         if (start === end) {
             setSelection(null);
+            setSelectedText('');
             setToolbarPosition(null);
             return;
         }
 
         setSelection({ start, end });
+        setSelectedText(text.slice(start, end));
 
         // 设置工具栏位置
         const rect = range.getBoundingClientRect();
@@ -144,6 +148,7 @@ export function AnnotatableText({ text, questionId, className }: AnnotatableText
         const handleClickOutside = (e: MouseEvent) => {
             if (toolbarRef.current && !toolbarRef.current.contains(e.target as Node)) {
                 setSelection(null);
+                setSelectedText('');
                 setToolbarPosition(null);
             }
         };
@@ -200,6 +205,7 @@ export function AnnotatableText({ text, questionId, className }: AnnotatableText
             <div
                 ref={containerRef}
                 onMouseUp={handleMouseUp}
+                onContextMenu={(e) => e.preventDefault()}
                 className={`select-text leading-relaxed whitespace-pre-wrap ${className || ''}`}
             >
                 {renderAnnotatedText()}
@@ -236,6 +242,20 @@ export function AnnotatableText({ text, questionId, className }: AnnotatableText
                         title="波浪线"
                     >
                         <Waves className="h-4 w-4 text-red-500" />
+                    </button>
+                    <div className="w-px bg-border mx-0.5" />
+                    <button
+                        onClick={() => {
+                            navigator.clipboard.writeText(selectedText);
+                            setSelection(null);
+                            setSelectedText('');
+                            setToolbarPosition(null);
+                            window.getSelection()?.removeAllRanges();
+                        }}
+                        className="p-2 hover:bg-muted rounded transition-colors"
+                        title="复制"
+                    >
+                        <Copy className="h-4 w-4 text-muted-foreground" />
                     </button>
                 </div>
             )}

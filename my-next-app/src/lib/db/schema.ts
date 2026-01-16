@@ -269,6 +269,22 @@ export function createTables(db: Database.Database) {
       updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
       FOREIGN KEY (textbook_id) REFERENCES textbooks(id) ON DELETE CASCADE
     );
+
+    CREATE TABLE IF NOT EXISTS text_annotations (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      user_id INTEGER NOT NULL,
+      question_id INTEGER NOT NULL,
+      start_offset INTEGER NOT NULL,
+      end_offset INTEGER NOT NULL,
+      tag TEXT NOT NULL CHECK(tag IN ('highlight', 'underline', 'wavy')),
+      color TEXT,
+      created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+      UNIQUE(user_id, question_id, start_offset, end_offset),
+      FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
+      FOREIGN KEY (question_id) REFERENCES questions(id) ON DELETE CASCADE
+    );
+
+    CREATE INDEX IF NOT EXISTS idx_text_annotations_user_question ON text_annotations(user_id, question_id);
   `;
 
   db.exec(initScript);

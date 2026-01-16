@@ -3,8 +3,10 @@
 import React, { useState } from 'react';
 import { CheckCircle2, XCircle, BookOpen, ChevronDown, ChevronUp, BrainCircuit, Lightbulb, Loader2 } from 'lucide-react';
 import { formatDuration, indexToLetter } from '@/lib/utils/utils';
+import { AnnotatableText } from './AnnotatableText';
 
 export interface QuestionLogData {
+    questionId?: number;           // 题目 ID (用于标注持久化)
     questionContent: string;
     options: string[];
     correctAnswer: string;
@@ -219,9 +221,17 @@ export function QuestionCard({ log, index, isExpanded, onToggle, refCallback }: 
                                 <BookOpen className="h-4 w-4" />
                                 详细解析
                             </div>
-                            <div className="text-sm text-foreground leading-relaxed whitespace-pre-wrap">
-                                {log.explanation}
-                            </div>
+                            {log.questionId ? (
+                                <AnnotatableText
+                                    text={log.explanation}
+                                    questionId={log.questionId}
+                                    className="text-sm text-foreground"
+                                />
+                            ) : (
+                                <div className="text-sm text-foreground leading-relaxed whitespace-pre-wrap">
+                                    {log.explanation}
+                                </div>
+                            )}
                         </div>
                     )}
 

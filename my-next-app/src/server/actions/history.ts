@@ -119,6 +119,7 @@ export async function getAvailableModesAction(): Promise<string[]> {
 export type SessionDetail = {
   session: SessionHistoryItem;
   logs: {
+    questionId: number;           // 题目 ID
     questionContent: string;
     options: string[];           // 选项
     correctAnswer: string;       // 正确答案
@@ -146,7 +147,7 @@ export async function getSessionDetailAction(sessionId: string): Promise<Session
     if (!sessionRow) return null;
 
     const logs = db.prepare(`
-      SELECT q.content as questionContent, q.options, q.answer as correctAnswer,
+      SELECT l.question_id as questionId, q.content as questionContent, q.options, q.answer as correctAnswer,
              l.user_answer as userAnswer, l.is_correct as isCorrect, l.duration_ms as duration, 
              q.tags, q.source, q.explanation, q.correct_ratio, q.most_wrong_answer,
              r.review_data as reviewData
@@ -162,6 +163,7 @@ export async function getSessionDetailAction(sessionId: string): Promise<Session
         accuracy: sessionRow.totalQuestions > 0 ? Math.round((sessionRow.correctCount / sessionRow.totalQuestions) * 100) : 0
       },
       logs: logs.map(l => ({
+        questionId: l.questionId,
         questionContent: l.questionContent,
         options: JSON.parse(l.options || '[]'),
         correctAnswer: l.correctAnswer || '',

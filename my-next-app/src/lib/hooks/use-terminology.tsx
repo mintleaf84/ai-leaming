@@ -18,8 +18,8 @@ const TERMS: Record<string, { standard: string; neo: string }> = {
     'nav.practice': { standard: '智能练习', neo: '精进' },
     'nav.wrong_book': { standard: '错题本', neo: '错题集' },
     'nav.history': { standard: '练习记录', neo: '日志' },
-    'nav.ai_tutor': { standard: 'AI 助教', neo: 'AI 助教' },
-    'nav.knowledge': { standard: '知识卡片', neo: '知识卡片' },
+    'nav.ai_tutor': { standard: 'AI 助教', neo: '灵犀' },
+    'nav.knowledge': { standard: '知识卡片', neo: '锦囊' },
     'nav.textbooks': { standard: '教材库', neo: '藏经阁' },
     'nav.graph': { standard: '知识图谱', neo: '脉络' },
     'nav.docs': { standard: '使用文档', neo: '指南' },
@@ -30,6 +30,31 @@ const TERMS: Record<string, { standard: string; neo: string }> = {
     'section.start': { standard: '开始', neo: '启程' },
     'section.knowledge': { standard: '知识库', neo: '智库' },
     'section.system': { standard: '系统', neo: '系统' },
+
+    // App Sidebar Dropdown
+    'app.account_type': { standard: '个人账号', neo: '个人修习' },
+    'app.settings': { standard: '系统设置', neo: '设置' },
+    'app.pricing': { standard: '升级订阅', neo: '祈福升级' },
+    'app.theme': { standard: '外观主题', neo: '界面风格' },
+    'app.logout': { standard: '退出登录', neo: '归隐' },
+    'app.login': { standard: '登录 / 注册', neo: '拜山 / 投帖' },
+    'app.preparing': { standard: '备考中', neo: '修习中' },
+
+    // Chat
+    'chat.new': { standard: '新建对话', neo: '问道' },
+    'chat.search': { standard: '搜索聊天记录...', neo: '寻觅往昔...' },
+    'chat.favorites': { standard: '我的收藏', neo: '珍藏' },
+    'chat.empty': { standard: '暂无历史对话', neo: '空山新雨' },
+    'chat.start_tip': { standard: '输入消息开始新对话', neo: '起笔论道' },
+
+    // Knowledge
+    'knowledge.title': { standard: '知识卡片库', neo: '锦囊智库' },
+    'knowledge.total': { standard: '共收录', neo: '汇集' },
+    'knowledge.add': { standard: '手动添加', neo: '手书' },
+    'knowledge.study': { standard: '复习模式', neo: '温故知新' },
+    'knowledge.export': { standard: '导出为 Anki', neo: '结集' },
+    'knowledge.search': { standard: '搜索卡片...', neo: '检视锦囊...' },
+    'knowledge.all_cats': { standard: '全部分类', neo: '万象' },
 };
 
 export function TerminologyProvider({ children }: { children: React.ReactNode }) {

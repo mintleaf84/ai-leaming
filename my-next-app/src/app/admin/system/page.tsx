@@ -1,333 +1,246 @@
 'use client';
 
 import React, { useEffect, useState } from 'react';
-import { BackupManager } from '../components/BackupManager';
-import { getHealthStatsAction } from '@/server/actions/health';
-import { HealthStats } from '@/lib/admin/health';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Activity, Cpu, Clock, Database, Coins, MessageSquare, AlertCircle } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { Skeleton } from '@/components/ui/skeleton';
-import { Badge } from '@/components/ui/badge';
-import { Progress } from '@/components/ui/progress';
 import {
-    Database,
-    HardDrive,
-    Cpu,
-    MemoryStick,
-    Clock,
-    RefreshCw,
     Table,
-    Activity,
-    Banknote
-} from 'lucide-react';
+    TableBody,
+    TableCell,
+    TableHead,
+    TableHeader,
+    TableRow,
+} from "@/components/ui/table";
+
+type SystemStatus = {
+    os: {
+        platform: string;
+        release: string;
+        uptime: number;
+        loadavg: number[];
+        cpus: number;
+        memory: {
+            total: number;
+            free: number;
+        };
+    };
+    db: {
+        size: number;
+    };
+    process: {
+        uptime: number;
+        memory: {
+            heapUsed: number;
+            rss: number;
+        };
+        version: string;
+    };
+    ai: {
+        today: {
+            totalCalls: number;
+            successCalls: number;
+            totalCost: number;
+            totalTokens: number;
+        };
+        total: {
+            totalCalls: number;
+            successCalls: number;
+            totalCost: number;
+            totalTokens: number;
+        };
+        byModel: {
+            model: string;
+            calls: number;
+            tokens: number;
+            cost: number;
+        }[];
+    };
+    timestamp: number;
+};
+
+function formatBytes(bytes: number) {
+    if (bytes === 0) return '0 B';
+    const k = 1024;
+    const sizes = ['B', 'KB', 'MB', 'GB', 'TB'];
+    const i = Math.floor(Math.log(bytes) / Math.log(k));
+    return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
+}
+
+function formatDuration(seconds: number) {
+    const d = Math.floor(seconds / (3600 * 24));
+    const h = Math.floor((seconds % (3600 * 24)) / 3600);
+    const m = Math.floor((seconds % 3600) / 60);
+    return `${d}天 ${h}小时 ${m}分`;
+}
 
 export default function SystemPage() {
-    const [health, setHealth] = useState<HealthStats | null>(null);
+    const [status, setStatus] = useState<SystemStatus | null>(null);
     const [loading, setLoading] = useState(true);
 
-    const loadHealth = async () => {
+    const loadStatus = async () => {
         setLoading(true);
         try {
-            const data = await getHealthStatsAction();
-            setHealth(data);
+            const res = await fetch('/api/admin/system');
+            if (!res.ok) throw new Error('Failed to fetch');
+            const data = await res.json();
+            setStatus(data);
         } catch (e) {
-            console.error('Failed to load health stats:', e);
+            console.error(e);
+        } finally {
+            setLoading(false);
         }
-        setLoading(false);
     };
 
     useEffect(() => {
-        loadHealth();
-        // 每30秒自动刷新
-        const interval = setInterval(loadHealth, 30000);
+        loadStatus();
+        const interval = setInterval(loadStatus, 5000); // Poll every 5s
         return () => clearInterval(interval);
     }, []);
 
+    if (loading && !status) return <div className="p-8">加载中...</div>;
+    if (!status) return <div className="p-8">无法获取系统状态</div>;
+
+    const memUsagePercent = ((status.os.memory.total - status.os.memory.free) / status.os.memory.total) * 100;
+
     return (
-        <div className="p-4 md:p-8 space-y-6">
-            <div className="flex items-center justify-between">
+        <div className="p-8 space-y-8">
+            <div className="flex justify-between items-center">
                 <div>
-                    <h2 className="text-2xl md:text-3xl font-bold tracking-tight">系统运维</h2>
+                    <h2 className="text-3xl font-bold tracking-tight">系统监控</h2>
                     <p className="text-muted-foreground mt-2">
-                        管理系统数据安全，监控系统运行状态。
+                        实时服务器资源、AI 成本与健康状态
                     </p>
                 </div>
-                <Button
-                    variant="outline"
-                    onClick={loadHealth}
-                    disabled={loading}
-                    className="gap-2"
-                >
-                    <RefreshCw className={`w-4 h-4 ${loading ? 'animate-spin' : ''}`} />
-                    刷新
-                </Button>
+                <Button variant="outline" onClick={loadStatus}>刷新</Button>
             </div>
 
-            {/* 系统健康监控面板 */}
+            {/* AI 成本概览 */}
+            <h3 className="text-lg font-semibold">AI 调用与成本 (今日)</h3>
             <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
-                {/* 数据库大小 */}
                 <Card>
-                    <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                        <CardTitle className="text-sm font-medium">数据库大小</CardTitle>
-                        <Database className="h-4 w-4 text-muted-foreground" />
+                    <CardHeader className="flex flex-row items-center justify-between pb-2">
+                        <CardTitle className="text-sm font-medium">今日预估成本</CardTitle>
+                        <Coins className="h-4 w-4 text-emerald-500" />
                     </CardHeader>
                     <CardContent>
-                        {loading ? (
-                            <Skeleton className="h-8 w-24" />
-                        ) : (
-                            <>
-                                <div className="text-2xl font-bold">{health?.database.sizeFormatted || '-'}</div>
-                                <p className="text-xs text-muted-foreground mt-1">
-                                    SQLite 数据库文件
-                                </p>
-                            </>
-                        )}
+                        <div className="text-2xl font-bold">¥{status.ai?.today.totalCost.toFixed(4) || '0.0000'}</div>
+                        <p className="text-xs text-muted-foreground">
+                            累计: ¥{status.ai?.total.totalCost.toFixed(2)}
+                        </p>
                     </CardContent>
                 </Card>
 
-                {/* 总数据量 */}
                 <Card>
-                    <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                        <CardTitle className="text-sm font-medium">总数据量</CardTitle>
-                        <Table className="h-4 w-4 text-muted-foreground" />
+                    <CardHeader className="flex flex-row items-center justify-between pb-2">
+                        <CardTitle className="text-sm font-medium">今日调用次数</CardTitle>
+                        <MessageSquare className="h-4 w-4 text-primary" />
                     </CardHeader>
                     <CardContent>
-                        {loading ? (
-                            <Skeleton className="h-8 w-24" />
-                        ) : (
-                            <>
-                                <div className="text-2xl font-bold">{health?.database.totalRows.toLocaleString() || 0} 行</div>
-                                <p className="text-xs text-muted-foreground mt-1">
-                                    来自 {health?.database.tables.length || 0} 个数据表
-                                </p>
-                            </>
-                        )}
+                        <div className="text-2xl font-bold">{status.ai?.today.totalCalls || 0}</div>
+                        <p className="text-xs text-muted-foreground">
+                            Token消耗: {status.ai?.today.totalTokens.toLocaleString()}
+                        </p>
                     </CardContent>
                 </Card>
 
-                {/* 内存使用 */}
                 <Card>
-                    <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                        <CardTitle className="text-sm font-medium">内存使用</CardTitle>
-                        <MemoryStick className="h-4 w-4 text-muted-foreground" />
-                    </CardHeader>
-                    <CardContent>
-                        {loading ? (
-                            <Skeleton className="h-8 w-24" />
-                        ) : (
-                            <>
-                                <div className="text-2xl font-bold">{health?.system.memoryUsage.formatted.heapUsed || '-'}</div>
-                                <div className="mt-2">
-                                    <Progress
-                                        value={health ? (health.system.memoryUsage.heapUsed / health.system.memoryUsage.heapTotal) * 100 : 0}
-                                        className="h-2"
-                                    />
-                                </div>
-                                <p className="text-xs text-muted-foreground mt-1">
-                                    共 {health?.system.memoryUsage.formatted.heapTotal || '-'}
-                                </p>
-                            </>
-                        )}
-                    </CardContent>
-                </Card>
-
-                {/* 运行时间 */}
-                <Card>
-                    <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                        <CardTitle className="text-sm font-medium">运行时间</CardTitle>
-                        <Clock className="h-4 w-4 text-muted-foreground" />
-                    </CardHeader>
-                    <CardContent>
-                        {loading ? (
-                            <Skeleton className="h-8 w-24" />
-                        ) : (
-                            <>
-                                <div className="text-2xl font-bold">{health?.system.uptimeFormatted || '-'}</div>
-                                <p className="text-xs text-muted-foreground mt-1">
-                                    Node {health?.system.nodeVersion || '-'}
-                                </p>
-                            </>
-                        )}
-                    </CardContent>
-                </Card>
-            </div>
-
-            {/* API 调用统计 */}
-            <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6">
-                {/* 今日调用 */}
-                <Card>
-                    <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                        <CardTitle className="text-sm font-medium">今日 API 调用</CardTitle>
-                        <Activity className="h-4 w-4 text-muted-foreground" />
-                    </CardHeader>
-                    <CardContent>
-                        {loading ? (
-                            <Skeleton className="h-8 w-24" />
-                        ) : (
-                            <>
-                                <div className="text-2xl font-bold">{health?.apiStats.today.totalCalls || 0}</div>
-                                <p className="text-xs text-muted-foreground mt-1">
-                                    成功 {health?.apiStats.today.successCalls || 0} / 失败 {health?.apiStats.today.errorCalls || 0}
-                                </p>
-                            </>
-                        )}
-                    </CardContent>
-                </Card>
-
-                {/* 总调用 */}
-                <Card>
-                    <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                        <CardTitle className="text-sm font-medium">累计 API 调用</CardTitle>
+                    <CardHeader className="flex flex-row items-center justify-between pb-2">
+                        <CardTitle className="text-sm font-medium">系统负载 (1min)</CardTitle>
                         <Cpu className="h-4 w-4 text-muted-foreground" />
                     </CardHeader>
                     <CardContent>
-                        {loading ? (
-                            <Skeleton className="h-8 w-24" />
-                        ) : (
-                            <>
-                                <div className="text-2xl font-bold">{health?.apiStats.total.totalCalls.toLocaleString() || 0}</div>
-                                <p className="text-xs text-muted-foreground mt-1">
-                                    历史所有调用
-                                </p>
-                            </>
-                        )}
+                        <div className="text-2xl font-bold">{status.os.loadavg[0].toFixed(2)}</div>
+                        <p className="text-xs text-muted-foreground">
+                            {status.os.cpus} Cores
+                        </p>
                     </CardContent>
                 </Card>
 
-                {/* 今日 Token */}
                 <Card>
-                    <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                        <CardTitle className="text-sm font-medium">今日 Token</CardTitle>
-                        <Database className="h-4 w-4 text-muted-foreground" />
+                    <CardHeader className="flex flex-row items-center justify-between pb-2">
+                        <CardTitle className="text-sm font-medium">内存使用率</CardTitle>
+                        <Activity className="h-4 w-4 text-muted-foreground" />
                     </CardHeader>
                     <CardContent>
-                        {loading ? (
-                            <Skeleton className="h-8 w-24" />
-                        ) : (
-                            <>
-                                <div className="text-2xl font-bold">
-                                    {health?.apiStats.today.totalTokens ?
-                                        (health.apiStats.today.totalTokens >= 1000 ?
-                                            (health.apiStats.today.totalTokens / 1000).toFixed(1) + 'K' :
-                                            health.apiStats.today.totalTokens)
-                                        : 0}
-                                </div>
-                                <p className="text-xs text-muted-foreground mt-1">
-                                    输入 + 输出 Token
-                                </p>
-                            </>
-                        )}
-                    </CardContent>
-                </Card>
-
-                {/* 累计 Token */}
-                <Card>
-                    <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                        <CardTitle className="text-sm font-medium">累计 Token</CardTitle>
-                        <HardDrive className="h-4 w-4 text-muted-foreground" />
-                    </CardHeader>
-                    <CardContent>
-                        {loading ? (
-                            <Skeleton className="h-8 w-24" />
-                        ) : (
-                            <>
-                                <div className="text-2xl font-bold">
-                                    {health?.apiStats.total.totalTokens ?
-                                        (health.apiStats.total.totalTokens >= 1000000 ?
-                                            (health.apiStats.total.totalTokens / 1000000).toFixed(2) + 'M' :
-                                            health.apiStats.total.totalTokens >= 1000 ?
-                                                (health.apiStats.total.totalTokens / 1000).toFixed(1) + 'K' :
-                                                health.apiStats.total.totalTokens)
-                                        : 0}
-                                </div>
-                                <p className="text-xs text-muted-foreground mt-1">
-                                    历史所有消耗
-                                </p>
-                            </>
-                        )}
-                    </CardContent>
-                </Card>
-
-                {/* 今日成本 */}
-                <Card className="border-primary/20 bg-primary/5">
-                    <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                        <CardTitle className="text-sm font-medium">今日预估成本</CardTitle>
-                        <Banknote className="h-4 w-4 text-primary" />
-                    </CardHeader>
-                    <CardContent>
-                        {loading ? (
-                            <Skeleton className="h-8 w-24" />
-                        ) : (
-                            <>
-                                <div className="text-2xl font-bold text-primary">
-                                    ¥{health?.apiStats.today.totalCost.toFixed(4) || '0.0000'}
-                                </div>
-                                <p className="text-xs text-muted-foreground mt-1">
-                                    按调用配置估算
-                                </p>
-                            </>
-                        )}
-                    </CardContent>
-                </Card>
-
-                {/* 累计成本 */}
-                <Card>
-                    <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                        <CardTitle className="text-sm font-medium">累计预估成本</CardTitle>
-                        <Banknote className="h-4 w-4 text-muted-foreground" />
-                    </CardHeader>
-                    <CardContent>
-                        {loading ? (
-                            <Skeleton className="h-8 w-24" />
-                        ) : (
-                            <>
-                                <div className="text-2xl font-bold">
-                                    ¥{health?.apiStats.total.totalCost.toFixed(2) || '0.00'}
-                                </div>
-                                <p className="text-xs text-muted-foreground mt-1">
-                                    全周期预估支出
-                                </p>
-                            </>
-                        )}
+                        <div className="text-2xl font-bold">{memUsagePercent.toFixed(1)}%</div>
+                        <p className="text-xs text-muted-foreground">
+                            {formatBytes(status.os.memory.total - status.os.memory.free)} / {formatBytes(status.os.memory.total)}
+                        </p>
                     </CardContent>
                 </Card>
             </div>
 
-            {/* 表统计详情 */}
-            <Card>
-                <CardHeader>
-                    <CardTitle className="flex items-center gap-2">
-                        <Activity className="w-5 h-5" />
-                        数据表统计
-                    </CardTitle>
-                </CardHeader>
-                <CardContent>
-                    {loading ? (
-                        <div className="grid gap-2 md:grid-cols-2 lg:grid-cols-3">
-                            {[...Array(6)].map((_, i) => (
-                                <Skeleton key={i} className="h-10 w-full" />
-                            ))}
+            <div className="grid gap-4 md:grid-cols-7">
+                {/* 资源详情 - 左侧 */}
+                <Card className="md:col-span-3">
+                    <CardHeader>
+                        <CardTitle>服务器资源</CardTitle>
+                    </CardHeader>
+                    <CardContent className="space-y-4">
+                        <div className="flex justify-between items-center border-b pb-2">
+                            <span className="text-sm font-medium flex items-center gap-2">
+                                <Clock className="w-3.5 h-3.5" /> 运行时间
+                            </span>
+                            <span className="font-mono text-sm">{formatDuration(status.os.uptime)}</span>
                         </div>
-                    ) : (
-                        <div className="grid gap-2 md:grid-cols-2 lg:grid-cols-3">
-                            {health?.database.tables.map((table) => (
-                                <div
-                                    key={table.name}
-                                    className="flex items-center justify-between p-3 bg-muted/50 rounded-lg"
-                                >
-                                    <code className="text-sm font-mono">{table.name}</code>
-                                    <Badge variant="secondary">
-                                        {table.rowCount.toLocaleString()} 行
-                                    </Badge>
-                                </div>
-                            ))}
+                        <div className="flex justify-between items-center border-b pb-2">
+                            <span className="text-sm font-medium flex items-center gap-2">
+                                <Database className="w-3.5 h-3.5" /> 数据库体积
+                            </span>
+                            <span className="font-mono text-sm">{formatBytes(status.db.size)}</span>
                         </div>
-                    )}
-                </CardContent>
-            </Card>
+                        <div className="flex justify-between items-center border-b pb-2">
+                            <span className="text-sm font-medium">Node 内存 (Heap)</span>
+                            <span className="font-mono text-sm">{formatBytes(status.process.memory.heapUsed)}</span>
+                        </div>
+                        <div className="flex justify-between items-center border-b pb-2">
+                            <span className="text-sm font-medium">Node 内存 (RSS)</span>
+                            <span className="font-mono text-sm">{formatBytes(status.process.memory.rss)}</span>
+                        </div>
+                        <div className="flex justify-between items-center pt-2">
+                            <span className="text-sm font-medium">操作系统</span>
+                            <span className="font-mono text-xs text-muted-foreground">{status.os.platform} ({status.os.release})</span>
+                        </div>
+                    </CardContent>
+                </Card>
 
-            {/* 备份管理 */}
-            <BackupManager />
+                {/* 模型消耗排行 - 右侧 */}
+                <Card className="md:col-span-4">
+                    <CardHeader>
+                        <CardTitle>模型消耗排行</CardTitle>
+                    </CardHeader>
+                    <CardContent>
+                        <Table>
+                            <TableHeader>
+                                <TableRow>
+                                    <TableHead>模型</TableHead>
+                                    <TableHead className="text-right">调用</TableHead>
+                                    <TableHead className="text-right">Tokens</TableHead>
+                                    <TableHead className="text-right">总成本</TableHead>
+                                </TableRow>
+                            </TableHeader>
+                            <TableBody>
+                                {status.ai?.byModel.map((m) => (
+                                    <TableRow key={m.model}>
+                                        <TableCell className="font-medium text-xs">{m.model}</TableCell>
+                                        <TableCell className="text-right text-xs">{m.calls}</TableCell>
+                                        <TableCell className="text-right text-xs">{m.tokens.toLocaleString()}</TableCell>
+                                        <TableCell className="text-right font-bold text-xs">¥{m.cost.toFixed(3)}</TableCell>
+                                    </TableRow>
+                                ))}
+                                {(!status.ai?.byModel || status.ai.byModel.length === 0) && (
+                                    <TableRow>
+                                        <TableCell colSpan={4} className="text-center text-muted-foreground h-24">
+                                            暂无调用记录
+                                        </TableCell>
+                                    </TableRow>
+                                )}
+                            </TableBody>
+                        </Table>
+                    </CardContent>
+                </Card>
+            </div>
         </div>
     );
 }

@@ -7,6 +7,7 @@ export interface User {
   id: number;
   username: string;
   role: UserRole;
+  token_version?: number;
 }
 
 export type Question = z.infer<typeof QuestionSchema> & { id: number };

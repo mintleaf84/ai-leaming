@@ -171,7 +171,7 @@ export default function ProfilePage() {
                             <Card>
                                 <CardHeader className="pb-2">
                                     <CardTitle className="flex items-center gap-2 text-base">
-                                        <Target className="w-4 h-4 text-blue-500" />
+                                        <Target className="w-4 h-4 text-primary" />
                                         今日用量
                                     </CardTitle>
                                 </CardHeader>
@@ -205,14 +205,14 @@ export default function ProfilePage() {
                         <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
                             <Card>
                                 <CardContent className="pt-6 text-center">
-                                    <BookOpen className="w-8 h-8 mx-auto mb-2 text-blue-500" />
+                                    <BookOpen className="w-8 h-8 mx-auto mb-2 text-primary" />
                                     <div className="text-2xl font-bold">{stats.total_questions}</div>
                                     <div className="text-xs text-muted-foreground">练习题目</div>
                                 </CardContent>
                             </Card>
                             <Card>
                                 <CardContent className="pt-6 text-center">
-                                    <CheckCircle2 className="w-8 h-8 mx-auto mb-2 text-green-500" />
+                                    <CheckCircle2 className="w-8 h-8 mx-auto mb-2 text-emerald-600 dark:text-emerald-400" />
                                     <div className="text-2xl font-bold">{stats.accuracy}%</div>
                                     <div className="text-xs text-muted-foreground">正确率</div>
                                 </CardContent>
@@ -226,7 +226,7 @@ export default function ProfilePage() {
                             </Card>
                             <Card>
                                 <CardContent className="pt-6 text-center">
-                                    <MessageSquare className="w-8 h-8 mx-auto mb-2 text-purple-500" />
+                                    <MessageSquare className="w-8 h-8 mx-auto mb-2 text-stone-600 dark:text-stone-400" />
                                     <div className="text-2xl font-bold">{stats.total_chats}</div>
                                     <div className="text-xs text-muted-foreground">AI 对话</div>
                                 </CardContent>

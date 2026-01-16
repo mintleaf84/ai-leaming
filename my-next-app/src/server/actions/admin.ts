@@ -86,25 +86,51 @@ export async function deleteQuestionAction(id: number) {
 
 // --- User Management ---
 
+// --- User Management ---
+// ... (UserAdminView definition remains, but we can reuse it or redefine it)
+
 export type UserAdminView = {
   id: number;
   username: string;
   role: string;
   created_at: string;
   is_admin: boolean;
+  token_version?: number;
 };
 
-export async function getUsersAction(): Promise<UserAdminView[]> {
+export async function getUsersAction(limit: number = 20, offset: number = 0, query: string = ''): Promise<{ users: UserAdminView[], total: number }> {
   await requireRole(['admin']);
   try {
-    const users = db.prepare('SELECT id, username, role, created_at FROM users ORDER BY id ASC').all() as any[];
-    return users.map(u => ({
-      ...u,
-      is_admin: u.role === 'admin'
-    }));
+    let sql = 'SELECT id, username, role, created_at FROM users';
+    const params: any[] = [];
+
+    if (query) {
+      sql += ' WHERE username LIKE ?';
+      params.push(`%${query}%`);
+    } else {
+      // Prevent full table scan on simple listing by ordering
+    }
+
+    // Count total matches first
+    const countSql = sql.replace('SELECT id, username, role, created_at', 'SELECT COUNT(*) as count');
+    const total = (db.prepare(countSql).get(...params) as { count: number }).count;
+
+    // Fetch page
+    sql += ' ORDER BY id DESC LIMIT ? OFFSET ?';
+    params.push(limit, offset);
+
+    const users = db.prepare(sql).all(...params) as any[];
+
+    return {
+      users: users.map(u => ({
+        ...u,
+        is_admin: u.role === 'admin'
+      })),
+      total
+    };
   } catch (error) {
     console.error('Failed to get users:', error);
-    return [];
+    return { users: [], total: 0 };
   }
 }
 
@@ -174,3 +200,26 @@ export async function updateUserRoleAction(id: number, role: UserRole) {
     return { success: false, error: '更新角色失败' };
   }
 }
+
+export async function revokeUserSessionAction(id: number) {
+  const user = await requireRole(['admin']);
+  try {
+    const targetUser = db.prepare('SELECT username, token_version FROM users WHERE id = ?').get(id) as { username: string; token_version: number } | undefined;
+
+    // Increment token_version to invalidate all existing sessions
+    const newVersion = (targetUser?.token_version || 0) + 1;
+    db.prepare('UPDATE users SET token_version = ? WHERE id = ?').run(newVersion, id);
+
+    logAdminAction(user.id, user.username, 'REVOKE_SESSION', 'user', id.toString(), {
+      target_username: targetUser?.username,
+      new_version: newVersion
+    });
+
+    return { success: true };
+  } catch (error) {
+    console.error('Failed to revoke session:', error);
+    return { success: false, error: '强制下线失败' };
+  }
+}
+
+

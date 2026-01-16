@@ -7,7 +7,8 @@
     "build": "next build --webpack",
     "start": "next start",
     "lint": "eslint",
-    "test": "vitest"
+    "test": "vitest",
+    "db:migrate": "npx tsx scripts/migrate-runner.ts"
   },
   "dependencies": {
     "@ai-sdk/anthropic": "^3.0.0",

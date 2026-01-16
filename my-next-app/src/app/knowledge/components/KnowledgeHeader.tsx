@@ -1,21 +1,21 @@
-'use client';
-
 import React from 'react';
-import { Search, Download, BookOpen, Plus, Play, Loader2 } from 'lucide-react';
+import { BookOpen, Plus, Play, Download, Loader2, Search } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { useTerminology } from '@/lib/hooks/use-terminology';
 
 interface KnowledgeHeaderProps {
     stats: { total: number };
     categories: string[];
     selectedCategory: string;
     setSelectedCategory: (cat: string) => void;
-    searchQuery: string;
-    setSearchQuery: (query: string) => void;
+    filteredCount: number;
     onAdd: () => void;
     onStudy: () => void;
     onExport: () => void;
     exporting: boolean;
-    filteredCount: number;
+    searchQuery?: string;
+    setSearchQuery?: (query: string) => void;
 }
 
 export const KnowledgeHeader: React.FC<KnowledgeHeaderProps> = ({
@@ -23,14 +23,16 @@ export const KnowledgeHeader: React.FC<KnowledgeHeaderProps> = ({
     categories,
     selectedCategory,
     setSelectedCategory,
-    searchQuery,
-    setSearchQuery,
+    filteredCount,
     onAdd,
     onStudy,
     onExport,
     exporting,
-    filteredCount
+    searchQuery = '',
+    setSearchQuery = () => { },
 }) => {
+    const { t } = useTerminology();
+
     return (
         <header className="bg-background/80 backdrop-blur-md border-b border-border sticky top-0 z-30 shadow-sm">
             <div className="max-w-7xl mx-auto px-4 py-4">
@@ -43,9 +45,9 @@ export const KnowledgeHeader: React.FC<KnowledgeHeaderProps> = ({
                         </div>
                         <div>
                             <h1 className="text-xl font-bold text-foreground">
-                                知识卡片库
+                                {t('knowledge.title')}
                             </h1>
-                            <p className="text-sm text-muted-foreground">共收录 <span className="font-semibold text-blue-600 dark:text-blue-400">{stats.total}</span> 张卡片</p>
+                            <p className="text-sm text-muted-foreground">{t('knowledge.total')} <span className="font-bold text-primary">{stats.total}</span> 张卡片</p>
                         </div>
                     </div>
 
@@ -56,7 +58,7 @@ export const KnowledgeHeader: React.FC<KnowledgeHeaderProps> = ({
                             className="gap-2 rounded-xl"
                         >
                             <Plus className="w-4 h-4" />
-                            <span className="hidden sm:inline">手动添加</span>
+                            <span className="hidden sm:inline">{t('knowledge.add')}</span>
                         </Button>
                         <Button
                             onClick={onStudy}
@@ -64,7 +66,7 @@ export const KnowledgeHeader: React.FC<KnowledgeHeaderProps> = ({
                             className="gap-2 bg-primary hover:bg-primary/90 text-primary-foreground shadow-md rounded-xl border-none"
                         >
                             <Play className="w-4 h-4" />
-                            <span className="hidden sm:inline">复习模式</span>
+                            <span className="hidden sm:inline">{t('knowledge.study')}</span>
                         </Button>
                         <Button
                             onClick={onExport}
@@ -73,7 +75,7 @@ export const KnowledgeHeader: React.FC<KnowledgeHeaderProps> = ({
                             className="gap-2 rounded-xl"
                         >
                             {exporting ? <Loader2 className="w-4 h-4 animate-spin text-muted-foreground" /> : <Download className="w-4 h-4" />}
-                            <span className="hidden md:inline">导出为 Anki</span>
+                            <span className="hidden md:inline">{t('knowledge.export')}</span>
                         </Button>
                     </div>
                 </div>
@@ -84,19 +86,19 @@ export const KnowledgeHeader: React.FC<KnowledgeHeaderProps> = ({
                         <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
                         <input
                             type="search"
-                            placeholder="搜索卡片..."
+                            placeholder={t('knowledge.search')}
                             value={searchQuery}
                             onChange={(e) => setSearchQuery(e.target.value)}
-                            className="w-full pl-10 pr-4 py-2.5 bg-muted/50 border border-border rounded-xl text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 focus:bg-background transition-all shadow-inner text-foreground placeholder:text-muted-foreground"
+                            className="w-full pl-10 pr-4 py-2.5 bg-muted/50 border border-border rounded-xl text-sm focus:ring-2 focus:ring-primary/20 focus:border-primary focus:bg-background transition-all shadow-inner text-foreground placeholder:text-muted-foreground"
                         />
                     </div>
 
                     <select
                         value={selectedCategory}
                         onChange={(e) => setSelectedCategory(e.target.value)}
-                        className="px-4 py-2.5 bg-muted/50 border border-border rounded-xl text-sm focus:ring-2 focus:ring-blue-500 focus:bg-background transition-all sm:min-w-[140px] shadow-sm text-foreground"
+                        className="px-4 py-2.5 bg-muted/50 border border-border rounded-xl text-sm focus:ring-2 focus:ring-primary/20 focus:border-primary focus:bg-background transition-all sm:min-w-[140px] shadow-sm text-foreground"
                     >
-                        <option value="">全部分类</option>
+                        <option value="">{t('knowledge.all_cats')}</option>
                         {categories.map(cat => (
                             <option key={cat} value={cat}>{cat}</option>
                         ))}

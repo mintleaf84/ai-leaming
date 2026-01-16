@@ -1,9 +1,8 @@
 'use client';
 
 import React, { useEffect, useState } from 'react';
-import { getUsersAction, deleteUserAction, resetUserPasswordAction, updateUserRoleAction, UserAdminView } from '@/server/actions/admin';
+import { getUsersAction, deleteUserAction, resetUserPasswordAction, updateUserRoleAction, revokeUserSessionAction, UserAdminView } from '@/server/actions/admin';
 import { getPlansAction, setUserSubscriptionAction } from '@/server/actions/subscription';
-import { getUserSubscriptionDetail } from '@/lib/billing/subscription-service';
 import { UserRole } from '@/lib/types';
 import { SubscriptionPlan } from '@/lib/billing/subscription-types';
 import { Button } from '@/components/ui/button';
@@ -11,7 +10,7 @@ import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { toast } from 'sonner';
-import { Loader2, Trash2, KeyRound, Shield, Search, CreditCard } from 'lucide-react';
+import { Loader2, Trash2, KeyRound, Shield, Search, CreditCard, LogOut } from 'lucide-react';
 import {
     Dialog,
     DialogContent,
@@ -43,6 +42,12 @@ export default function UsersPage() {
     const [plans, setPlans] = useState<SubscriptionPlan[]>([]);
     const [loading, setLoading] = useState(true);
     const [search, setSearch] = useState('');
+
+    // Pagination state
+    const [page, setPage] = useState(1);
+    const [total, setTotal] = useState(0);
+    const limit = 10;
+
     const [resetId, setResetId] = useState<number | null>(null);
     const [newPass, setNewPass] = useState('');
 
@@ -57,21 +62,38 @@ export default function UsersPage() {
     const loadUsers = async () => {
         setLoading(true);
         try {
-            const data = await getUsersAction();
+            const offset = (page - 1) * limit;
+            const res = await getUsersAction(limit, offset, search);
+
             // 获取每个用户的订阅信息 (简化版，实际应批量查询)
-            const usersWithSub: UserWithSubscription[] = data.map(u => ({
+            const usersWithSub: UserWithSubscription[] = res.users.map(u => ({
                 ...u,
                 plan_id: 'free',
                 plan_name: '免费版',
                 subscription_status: 'active'
             }));
             setUsers(usersWithSub);
+            setTotal(res.total);
         } catch (e) {
             toast.error("加载用户失败");
         } finally {
             setLoading(false);
         }
     };
+
+    // Debounce search
+    useEffect(() => {
+        const timer = setTimeout(() => {
+            setPage(1); // Reset to first page on search
+            loadUsers();
+        }, 500);
+        return () => clearTimeout(timer);
+    }, [search]);
+
+    // Reload when page changes
+    useEffect(() => {
+        loadUsers();
+    }, [page]);
 
     const loadPlans = async () => {
         try {
@@ -85,7 +107,6 @@ export default function UsersPage() {
     };
 
     useEffect(() => {
-        loadUsers();
         loadPlans();
     }, []);
 
@@ -119,6 +140,16 @@ export default function UsersPage() {
             loadUsers();
         } else {
             toast.error(res.error || "更新失败");
+        }
+    };
+
+    const handleRevokeSession = async (id: number) => {
+        if (!confirm(`确定要强制下线用户 ID:${id} 的所有活动会话吗？用户需要重新登录。`)) return;
+        const res = await revokeUserSessionAction(id);
+        if (res.success) {
+            toast.success("用户已强制下线");
+        } else {
+            toast.error(res.error || "操作失败");
         }
     };
 
@@ -158,7 +189,9 @@ export default function UsersPage() {
         }
     };
 
-    const filteredUsers = users.filter(u => u.username.toLowerCase().includes(search.toLowerCase()));
+    // const filteredUsers = users.filter(u => u.username.toLowerCase().includes(search.toLowerCase()));
+    // Server-side filtering is now in place
+    const filteredUsers = users;
 
     // 获取套餐徽章颜色
     const getPlanBadgeVariant = (planId: string) => {
@@ -295,6 +328,16 @@ export default function UsersPage() {
                                                     </DialogContent>
                                                 </Dialog>
 
+                                                <Button
+                                                    variant="ghost"
+                                                    size="sm"
+                                                    title="强制下线"
+                                                    className="text-orange-500 hover:bg-orange-50 hover:text-orange-600"
+                                                    onClick={() => handleRevokeSession(user.id)}
+                                                >
+                                                    <LogOut className="h-4 w-4" />
+                                                </Button>
+
                                                 {!user.is_admin && (
                                                     <Button
                                                         variant="ghost"
@@ -313,10 +356,33 @@ export default function UsersPage() {
                         </table>
                     </div>
                 </CardContent>
-            </Card>
+                <div className="flex items-center justify-between px-4 py-4 border-t">
+                    <div className="text-sm text-muted-foreground">
+                        显示 {users.length > 0 ? (page - 1) * limit + 1 : 0} 到 {Math.min(page * limit, total)} 条，共 {total} 条
+                    </div>
+                    <div className="flex gap-2">
+                        <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => setPage(p => Math.max(1, p - 1))}
+                            disabled={page === 1 || loading}
+                        >
+                            上一页
+                        </Button>
+                        <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => setPage(p => p + 1)}
+                            disabled={page * limit >= total || loading}
+                        >
+                            下一页
+                        </Button>
+                    </div>
+                </div>
+            </Card >
 
             {/* 订阅对话框 */}
-            <Dialog open={subDialogOpen} onOpenChange={setSubDialogOpen}>
+            < Dialog open={subDialogOpen} onOpenChange={setSubDialogOpen} >
                 <DialogContent>
                     <DialogHeader>
                         <DialogTitle>设置订阅 - {subUserName}</DialogTitle>
@@ -364,7 +430,7 @@ export default function UsersPage() {
                         </Button>
                     </DialogFooter>
                 </DialogContent>
-            </Dialog>
-        </div>
+            </Dialog >
+        </div >
     );
 }

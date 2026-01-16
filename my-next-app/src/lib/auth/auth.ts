@@ -1,32 +1,17 @@
-import { SignJWT, jwtVerify } from 'jose';
 import { cookies } from 'next/headers';
 import { NextRequest, NextResponse } from 'next/server';
 import { User, UserRole } from '@/lib/types';
+import { getUserById } from './user-service';
 
-const SECRET = new TextEncoder().encode(
-    process.env.JWT_SECRET || 'fallback-secret-for-development-only-replace-it-in-production'
-);
+// 从 Edge 兼容模块重新导出 JWT 相关功能
+export { encrypt, decrypt, COOKIE_NAME } from './auth-edge';
+import { encrypt, decrypt, COOKIE_NAME } from './auth-edge';
 
-export const COOKIE_NAME = 'auth_token';
-
-export async function encrypt(payload: any) {
-    return await new SignJWT(payload)
-        .setProtectedHeader({ alg: 'HS256' })
-        .setIssuedAt()
-        .setExpirationTime('7d')
-        .sign(SECRET);
-}
-
-export async function decrypt(input: string): Promise<any> {
-    const { payload } = await jwtVerify(input, SECRET, {
-        algorithms: ['HS256'],
-    });
-    return payload;
-}
 
 export async function login(user: User) {
     // Create the session
     const expires = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000);
+    // Include token_version in the session payload
     const session = await encrypt({ user, expires });
 
     // Save the session in a cookie
@@ -54,6 +39,19 @@ export async function requireUser(): Promise<User> {
     if (!session || !session.user) {
         throw new Error('Unauthorized');
     }
+
+    // Strict Mode: Check if token_version matches DB
+    // This allows identifying revoked sessions
+    const dbUser = getUserById(session.user.id);
+    if (!dbUser) {
+        throw new Error('Unauthorized: User not found');
+    }
+
+    // If DB has a version but session doesn't, or they don't match
+    if (dbUser.token_version !== (session.user.token_version || 0)) {
+        throw new Error('Unauthorized: Session revoked');
+    }
+
     return session.user;
 }
 

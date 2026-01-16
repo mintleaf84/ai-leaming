@@ -4,6 +4,7 @@
 -- 聊天会话表
 CREATE TABLE IF NOT EXISTS chat_sessions (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
+    user_id INTEGER NOT NULL DEFAULT 0,
     title TEXT NOT NULL DEFAULT '新对话',
     created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
     updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
@@ -23,4 +24,5 @@ CREATE TABLE IF NOT EXISTS chat_messages (
 
 -- 索引优化
 CREATE INDEX IF NOT EXISTS idx_chat_messages_session ON chat_messages(session_id, created_at);
+CREATE INDEX IF NOT EXISTS idx_chat_sessions_user ON chat_sessions(user_id, updated_at DESC);
 CREATE INDEX IF NOT EXISTS idx_chat_sessions_updated ON chat_sessions(updated_at DESC);

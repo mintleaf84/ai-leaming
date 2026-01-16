@@ -1,8 +1,28 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createUser, getUserByUsername } from '@/lib/auth/user-service';
 import { login } from '@/lib/auth/auth';
+import { checkRateLimit, getClientIP } from '@/lib/rate-limit';
 
 export async function POST(request: NextRequest) {
+    // Rate Limiting 检查
+    const clientIP = getClientIP(request);
+    const rateLimitResult = checkRateLimit(clientIP, '/api/auth/register');
+
+    if (!rateLimitResult.success) {
+        return NextResponse.json(
+            { error: '请求过于频繁，请稍后再试' },
+            {
+                status: 429,
+                headers: {
+                    'X-RateLimit-Limit': String(rateLimitResult.limit),
+                    'X-RateLimit-Remaining': '0',
+                    'X-RateLimit-Reset': String(Math.ceil(rateLimitResult.resetTime / 1000)),
+                    'Retry-After': String(Math.ceil((rateLimitResult.resetTime - Date.now()) / 1000)),
+                }
+            }
+        );
+    }
+
     try {
         const { username, password } = await request.json();
 

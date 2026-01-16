@@ -74,7 +74,7 @@ export const KnowledgeCardItem: React.FC<KnowledgeCardItemProps> = ({
                         {/* Markdown Question */}
                         <div className="flex-1 p-6 flex flex-col overflow-y-auto prose prose-slate dark:prose-invert max-w-none prose-p:leading-relaxed prose-p:text-lg scrollbar-hide">
                             <div className="flex items-center gap-2 mb-3 sticky top-0 bg-card/80 py-1 backdrop-blur-sm z-10">
-                                <span className="px-2 py-0.5 bg-blue-500/10 text-blue-600 dark:text-blue-400 text-[10px] font-black uppercase rounded">Front</span>
+                                <span className="px-2 py-0.5 bg-primary/10 text-primary text-[10px] font-black uppercase rounded">Front</span>
                                 <span className="text-[10px] text-muted-foreground font-medium">点击卡片正中央翻转答案</span>
                             </div>
                             <ReactMarkdown remarkPlugins={[remarkGfm]}>

@@ -17,6 +17,7 @@ export type AdminAction =
     | 'UPDATE_PROMPT'
     | 'BACKUP_DATABASE'
     | 'RESTORE_DATABASE'
+    | 'REVOKE_SESSION'
     | 'OTHER';
 
 // 目标类型枚举
@@ -41,6 +42,7 @@ export function formatActionName(action: AdminAction): string {
     const actionNames: Record<AdminAction, string> = {
         'DELETE_USER': '删除用户',
         'RESET_PASSWORD': '重置密码',
+        'REVOKE_SESSION': '强制下线',
         'CHANGE_ROLE': '变更角色',
         'DELETE_QUESTION': '删除题目',
         'UPDATE_QUESTION': '更新题目',

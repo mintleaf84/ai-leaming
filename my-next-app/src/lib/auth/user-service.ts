@@ -9,6 +9,7 @@ export interface UserRecord {
     password_hash: string;
     role: UserRole;
     created_at: string;
+    token_version: number;
 }
 
 // 简化的用户类型（不含密码）
@@ -16,6 +17,7 @@ export interface User {
     id: number;
     username: string;
     role: UserRole;
+    token_version?: number;
 }
 
 /**
@@ -23,12 +25,13 @@ export interface User {
  */
 export async function createUser(username: string, passwordPlain: string, role: UserRole = 'student'): Promise<User> {
     const passwordHash = await hashPassword(passwordPlain);
-    const result = db.prepare('INSERT INTO users (username, password_hash, role) VALUES (?, ?, ?)').run(username, passwordHash, role);
+    const result = db.prepare('INSERT INTO users (username, password_hash, role, token_version) VALUES (?, ?, ?, 0)').run(username, passwordHash, role);
 
     return {
         id: result.lastInsertRowid as number,
         username,
-        role
+        role,
+        token_version: 0
     };
 }
 
@@ -43,6 +46,6 @@ export function getUserByUsername(username: string): UserRecord | null {
  * 通过 ID 获取用户
  */
 export function getUserById(id: number): User | null {
-    const record = db.prepare('SELECT id, username, role FROM users WHERE id = ?').get(id) as User | null;
+    const record = db.prepare('SELECT id, username, role, token_version FROM users WHERE id = ?').get(id) as User | null;
     return record;
 }

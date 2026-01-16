@@ -81,7 +81,7 @@ export const KnowledgeModal: React.FC<KnowledgeModalProps> = ({
             <div className="bg-card rounded-3xl shadow-2xl max-w-2xl w-full max-h-[90vh] flex flex-col overflow-hidden animate-in zoom-in-95 duration-200 border border-border">
                 <div className="flex items-center justify-between p-6 border-b border-border bg-muted/30">
                     <div className="flex items-center gap-3">
-                        <div className={`w-10 h-10 rounded-xl flex items-center justify-center ${isCreate ? 'bg-blue-500/10 text-blue-600 dark:text-blue-400' : 'bg-purple-500/10 text-purple-600 dark:text-purple-400'}`}>
+                        <div className={`w-10 h-10 rounded-xl flex items-center justify-center ${isCreate ? 'bg-primary/10 text-primary' : 'bg-primary/10 text-primary'}`}>
                             {isCreate ? <Plus className="w-5 h-5" /> : <Edit2 className="w-5 h-5" />}
                         </div>
                         <div>
@@ -103,23 +103,22 @@ export const KnowledgeModal: React.FC<KnowledgeModalProps> = ({
                     </button>
                 </div>
 
-                {/* AI Regeneration Bar */}
                 {card?.source_content && (
-                    <div className="px-6 py-3 bg-blue-50/50 dark:bg-blue-900/10 border-b border-blue-100 dark:border-blue-900/20 flex gap-2">
+                    <div className="px-6 py-3 bg-muted/30 border-b border-border flex gap-2">
                         <input
                             type="text"
                             value={instruction}
                             onChange={(e) => setInstruction(e.target.value)}
                             onKeyDown={(e) => e.key === 'Enter' && handleRegenerate()}
                             placeholder="输入指令让 AI 重新生成，例如：'用更通俗的例子解释'..."
-                            className="flex-1 bg-background/50 border border-blue-200 dark:border-blue-800 rounded-lg px-3 py-2 text-xs focus:ring-1 focus:ring-blue-500 outline-none transition-all placeholder:text-muted-foreground/60"
+                            className="flex-1 bg-background/50 border border-border rounded-lg px-3 py-2 text-xs focus:ring-1 focus:ring-primary outline-none transition-all placeholder:text-muted-foreground/60"
                             disabled={isRegenerating}
                         />
                         <Button
                             size="sm"
                             onClick={() => handleRegenerate()}
                             disabled={!instruction.trim() || isRegenerating}
-                            className="h-auto py-1 px-3 bg-blue-600 hover:bg-blue-700 text-white text-xs gap-1.5 rounded-lg shadow-sm"
+                            className="h-auto py-1 px-3 bg-primary hover:bg-primary/90 text-primary-foreground text-xs gap-1.5 rounded-lg shadow-sm"
                         >
                             {isRegenerating ? <Loader2 className="w-3 h-3 animate-spin" /> : <Sparkles className="w-3 h-3" />}
                             {isRegenerating ? '生成中' : '优化'}
@@ -136,7 +135,7 @@ export const KnowledgeModal: React.FC<KnowledgeModalProps> = ({
                                 onClick={() => {
                                     handleRegenerate(suggestion);
                                 }}
-                                className="text-[10px] px-2 py-1 rounded-full bg-blue-50 text-blue-600 border border-blue-100 hover:bg-blue-100 dark:bg-blue-900/20 dark:text-blue-300 dark:border-blue-900/30 transition-colors animate-in fade-in slide-in-from-top-1 duration-300"
+                                className="text-[10px] px-2 py-1 rounded-full bg-primary/5 text-primary border border-primary/10 hover:bg-primary/10 transition-colors animate-in fade-in slide-in-from-top-1 duration-300"
                                 style={{ animationDelay: `${index * 100}ms` }}
                             >
                                 <Sparkles className="w-3 h-3 inline-block mr-1 opacity-70" />
@@ -154,7 +153,7 @@ export const KnowledgeModal: React.FC<KnowledgeModalProps> = ({
                                 placeholder="例如：广域课程的定义"
                                 value={card?.title || ''}
                                 onChange={(e) => onChange({ ...card, title: e.target.value })}
-                                className="w-full px-4 py-3 bg-muted/50 border border-border rounded-xl text-sm focus:ring-2 focus:ring-blue-500 focus:bg-background transition-all outline-none font-bold text-foreground"
+                                className="w-full px-4 py-3 bg-muted/50 border border-border rounded-xl text-sm focus:ring-2 focus:ring-primary/20 focus:border-primary focus:bg-background transition-all outline-none font-bold text-foreground"
                             />
                         </div>
                         <div className="space-y-2">
@@ -164,7 +163,7 @@ export const KnowledgeModal: React.FC<KnowledgeModalProps> = ({
                                 placeholder="教育学基础"
                                 value={card?.category || ''}
                                 onChange={(e) => onChange({ ...card, category: e.target.value })}
-                                className="w-full px-4 py-3 bg-muted/50 border border-border rounded-xl text-sm focus:ring-2 focus:ring-blue-500 focus:bg-background transition-all outline-none text-foreground"
+                                className="w-full px-4 py-3 bg-muted/50 border border-border rounded-xl text-sm focus:ring-2 focus:ring-primary/20 focus:border-primary focus:bg-background transition-all outline-none text-foreground"
                             />
                         </div>
                     </div>
@@ -176,7 +175,7 @@ export const KnowledgeModal: React.FC<KnowledgeModalProps> = ({
                             onChange={(e) => onChange({ ...card, front: e.target.value })}
                             rows={4}
                             placeholder="输入要记忆的问题，支持 **加粗** 等 Markdown..."
-                            className="w-full px-4 py-3 bg-muted/50 border-none rounded-2xl text-sm focus:ring-2 focus:ring-blue-500 focus:bg-background transition-all outline-none resize-none font-mono text-foreground placeholder:text-muted-foreground/50"
+                            className="w-full px-4 py-3 bg-muted/50 border-none rounded-2xl text-sm focus:ring-2 focus:ring-primary/20 focus:bg-background transition-all outline-none resize-none font-mono text-foreground placeholder:text-muted-foreground/50"
                         />
                     </div>
 
@@ -187,7 +186,7 @@ export const KnowledgeModal: React.FC<KnowledgeModalProps> = ({
                             onChange={(e) => onChange({ ...card, back: e.target.value })}
                             rows={6}
                             placeholder="输入详细的解释和答案..."
-                            className="w-full px-4 py-3 bg-muted/50 border-none rounded-2xl text-sm focus:ring-2 focus:ring-blue-500 focus:bg-background transition-all outline-none resize-none font-mono text-foreground placeholder:text-muted-foreground/50"
+                            className="w-full px-4 py-3 bg-muted/50 border-none rounded-2xl text-sm focus:ring-2 focus:ring-primary/20 focus:bg-background transition-all outline-none resize-none font-mono text-foreground placeholder:text-muted-foreground/50"
                         />
                     </div>
 
@@ -200,7 +199,7 @@ export const KnowledgeModal: React.FC<KnowledgeModalProps> = ({
                                 ...card,
                                 tags: e.target.value.split(/[ ,，]+/).filter(Boolean)
                             })}
-                            className="w-full px-4 py-3 bg-muted/50 border border-border rounded-xl text-sm focus:ring-2 focus:ring-blue-500 focus:bg-background transition-all outline-none text-foreground"
+                            className="w-full px-4 py-3 bg-muted/50 border border-border rounded-xl text-sm focus:ring-2 focus:ring-primary/20 focus:border-primary focus:bg-background transition-all outline-none text-foreground"
                         />
                     </div>
                 </div>

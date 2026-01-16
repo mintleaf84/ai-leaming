@@ -77,16 +77,12 @@ export default function SessionDetailPage({ params }: { params: Promise<{ id: st
     });
   }, []);
 
-  // 滚动到指定题目（考虑导航栏高度）
+  // 滚动到指定题目（使用 scrollIntoView 以兼容 main 容器滚动）
   const scrollToQuestion = useCallback((idx: number) => {
     const element = questionRefs.current[idx];
     if (element) {
-      const navbarHeight = 80; // 导航栏高度 + 额外间距
-      const elementTop = element.getBoundingClientRect().top + window.scrollY;
-      window.scrollTo({
-        top: elementTop - navbarHeight,
-        behavior: 'smooth'
-      });
+      // scrollIntoView 能够自动找到滚动的父容器，block: 'center' 避免被顶部/底部遮挡
+      element.scrollIntoView({ behavior: 'smooth', block: 'center' });
       setExpandedItems(prev => new Set(prev).add(idx));
     }
     setShowAnswerCard(false);

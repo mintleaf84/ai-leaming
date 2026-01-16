@@ -128,14 +128,14 @@ export function AppSidebar({ user }: UserProps) {
     );
 
     return (
-        <aside className="hidden md:flex w-64 flex-col border-r border-neutral-200 bg-[#fbfbf9] h-screen sticky top-0 overflow-hidden font-sans">
+        <aside className="hidden md:flex w-64 flex-col border-r border-sidebar-border bg-sidebar h-screen sticky top-0 overflow-hidden font-sans">
             {/* Logo Area */}
-            <div className="h-16 flex items-center px-6 border-b border-neutral-100/50">
+            <div className="h-16 flex items-center px-6 border-b border-sidebar-border">
                 <Link href="/" className="flex items-center gap-2 group">
                     <div className="relative w-7 h-7">
                         <img src="/logo.png" alt="琢玉 Logo" className="object-contain w-full h-full group-hover:scale-110 transition-transform" />
                     </div>
-                    <span className="font-bold text-lg bg-gradient-to-r from-emerald-700 to-teal-700 bg-clip-text text-transparent font-serif">
+                    <span className="font-bold text-lg bg-gradient-to-r from-emerald-700 to-teal-700 bg-clip-text text-transparent font-serif md:dark:from-emerald-400 md:dark:to-teal-400">
                         琢玉
                     </span>
                 </Link>
@@ -149,19 +149,19 @@ export function AppSidebar({ user }: UserProps) {
             </ScrollArea>
 
             {/* Footer / User Profile */}
-            <div className="p-4 border-t border-neutral-200 bg-[#fbfbf9]">
+            <div className="p-4 border-t border-sidebar-border bg-sidebar">
                 {user ? (
                     <DropdownMenu>
                         <DropdownMenuTrigger asChild>
-                            <div className="flex items-center gap-3 p-2 rounded-xl hover:bg-neutral-100 cursor-pointer transition-colors group data-[state=open]:bg-neutral-100">
-                                <div className="w-9 h-9 rounded-full bg-emerald-100 flex items-center justify-center text-emerald-700 font-bold text-sm shrink-0">
+                            <div className="flex items-center gap-3 p-2 rounded-xl hover:bg-sidebar-accent cursor-pointer transition-colors group data-[state=open]:bg-sidebar-accent">
+                                <div className="w-9 h-9 rounded-full bg-primary/10 flex items-center justify-center text-primary font-bold text-sm shrink-0">
                                     {user.username.slice(0, 1).toUpperCase()}
                                 </div>
                                 <div className="flex-1 min-w-0">
-                                    <div className="text-sm font-medium text-neutral-700 truncate">{user.username}</div>
-                                    <div className="text-xs text-neutral-400">备考中</div>
+                                    <div className="text-sm font-medium text-sidebar-foreground truncate">{user.username}</div>
+                                    <div className="text-xs text-muted-foreground">{t('app.preparing')}</div>
                                 </div>
-                                <ChevronsUpDown className="w-4 h-4 text-neutral-400 group-hover:text-neutral-600" />
+                                <ChevronsUpDown className="w-4 h-4 text-muted-foreground group-hover:text-sidebar-foreground" />
                             </div>
                         </DropdownMenuTrigger>
                         <DropdownMenuContent className="w-56" align="end" side="right" sideOffset={12}>
@@ -171,25 +171,25 @@ export function AppSidebar({ user }: UserProps) {
                                 </div>
                                 <div className="flex flex-col space-y-0.5">
                                     <span className="text-sm font-medium text-neutral-700">{user.username}</span>
-                                    <span className="text-xs text-neutral-400">个人账号</span>
+                                    <span className="text-xs text-neutral-400">{t('app.account_type')}</span>
                                 </div>
                             </div>
                             <DropdownMenuSeparator />
                             <DropdownMenuGroup>
                                 <DropdownMenuItem onClick={() => router.push('/settings')}>
                                     <Settings className="mr-2 h-4 w-4" />
-                                    <span>系统设置</span>
+                                    <span>{t('app.settings')}</span>
                                 </DropdownMenuItem>
                                 <DropdownMenuItem onClick={() => router.push('/pricing')}>
                                     <Sparkles className="mr-2 h-4 w-4" />
-                                    <span>升级订阅</span>
+                                    <span>{t('app.pricing')}</span>
                                 </DropdownMenuItem>
                             </DropdownMenuGroup>
                             <DropdownMenuSeparator />
                             <DropdownMenuSub>
                                 <DropdownMenuSubTrigger>
                                     <Palette className="mr-2 h-4 w-4" />
-                                    <span>外观主题</span>
+                                    <span>{t('app.theme')}</span>
                                 </DropdownMenuSubTrigger>
                                 <DropdownMenuSubContent>
                                     <DropdownMenuItem onClick={() => setTheme("light")}>
@@ -213,15 +213,14 @@ export function AppSidebar({ user }: UserProps) {
                             <DropdownMenuSeparator />
                             <DropdownMenuItem className="text-red-600 focus:text-red-700 focus:bg-red-50" onClick={handleLogout}>
                                 <LogOut className="mr-2 h-4 w-4" />
-                                <span className="mr-2 h-4 w-4" />
-                                <span>退出登录</span>
+                                <span>{t('app.logout')}</span>
                             </DropdownMenuItem>
                         </DropdownMenuContent>
                     </DropdownMenu>
                 ) : (
                     <Link href="/login">
-                        <Button className="w-full bg-emerald-600 hover:bg-emerald-700 text-white shadow-lg shadow-emerald-200/50">
-                            登录 / 注册
+                        <Button className="w-full bg-primary hover:bg-primary/90 text-primary-foreground shadow-lg shadow-primary/20">
+                            {t('app.login')}
                         </Button>
                     </Link>
                 )}

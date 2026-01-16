@@ -1,0 +1,26 @@
+services:
+  ai-learning:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: ai-learning-app
+    ports:
+      - "3000:3000"
+    volumes:
+      # 挂载宿主机 data 目录到容器，确保 SQLite 数据库持久化
+      - ./data:/app/data
+    environment:
+      # 从宿主机的环境变量或 .env 文件读取
+      - NODE_ENV=production
+      - DB_FILENAME=/app/data/ai-learning.db
+      - JWT_SECRET=${JWT_SECRET:-your-fallback-secret-change-me}
+      - AI_API_KEY=${AI_API_KEY}
+      - AI_API_URL=${AI_API_URL}
+    restart: always
+    # 网络配置（可选，单容器默认为 bridge）
+    networks:
+      - ai-network
+
+networks:
+  ai-network:
+    driver: bridge

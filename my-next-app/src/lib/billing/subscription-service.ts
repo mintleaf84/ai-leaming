@@ -4,6 +4,7 @@
  */
 
 import db from '../db';
+import { getBeijingDateString } from '../utils/datetime';
 import {
     SubscriptionPlan,
     UserSubscription,
@@ -173,7 +174,7 @@ export function cancelSubscription(userId: number): void {
  * 获取用户今日用量
  */
 export function getDailyUsage(userId: number): Record<UsageType, number> {
-    const today = new Date().toISOString().split('T')[0];
+    const today = getBeijingDateString();
     const rows = db.prepare(`
     SELECT usage_type, count FROM daily_usage
     WHERE user_id = ? AND usage_date = ?
@@ -199,7 +200,7 @@ export function getDailyUsage(userId: number): Record<UsageType, number> {
  * 增加用量计数
  */
 export function incrementUsage(userId: number, usageType: UsageType, amount = 1): void {
-    const today = new Date().toISOString().split('T')[0];
+    const today = getBeijingDateString();
 
     db.prepare(`
     INSERT INTO daily_usage (user_id, usage_date, usage_type, count)

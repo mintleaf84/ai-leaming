@@ -10,6 +10,8 @@ services:
       # 挂载宿主机 data 目录到容器，确保 SQLite 数据库持久化
       - ./data:/app/data
     environment:
+      # 时区设置：统一使用北京时间
+      - TZ=Asia/Shanghai
       # 从宿主机的环境变量或 .env 文件读取
       - NODE_ENV=production
       - DB_FILENAME=/app/data/ai-learning.db

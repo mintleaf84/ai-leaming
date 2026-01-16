@@ -4,6 +4,7 @@
  */
 
 import db from './db';
+import { getBeijingDateString } from './utils/datetime';
 
 export interface ApiCallLog {
   id: number;
@@ -109,8 +110,8 @@ export function getApiCallStats(): ApiCallStats {
     FROM api_call_logs
   `).all() as any[];
 
-  // 今日起始时间
-  const todayStr = new Date().toISOString().split('T')[0];
+  // 今日起始时间 (使用北京时间)
+  const todayStr = getBeijingDateString();
 
   const stats: ApiCallStats = {
     today: { totalCalls: 0, successCalls: 0, errorCalls: 0, totalTokens: 0, totalCost: 0 },

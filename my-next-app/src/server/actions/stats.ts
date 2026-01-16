@@ -2,6 +2,7 @@
 
 import db from '@/lib/db';
 import { requireUser } from '@/lib/auth/auth';
+import { getBeijingDateString, getBeijingYesterdayString, formatBeijingDisplayDate } from '@/lib/utils/datetime';
 
 export type UserStats = {
   totalPracticed: number;
@@ -35,8 +36,8 @@ export async function getUserStatsAction(): Promise<UserStats> {
     LIMIT 3
   `).all(user.id) as { tag: string; score: number }[];
 
-  // 4. Today practiced
-  const today = new Date().toISOString().split('T')[0];
+  // 4. Today practiced (使用北京时间)
+  const today = getBeijingDateString();
   const todayRow = db.prepare(`
     SELECT COUNT(*) as count 
     FROM practice_logs 
@@ -95,8 +96,9 @@ function calculateStreakDays(userId: number): number {
 
   if (rows.length === 0) return 0;
 
-  const today = new Date().toISOString().split('T')[0];
-  const yesterday = new Date(Date.now() - 86400000).toISOString().split('T')[0];
+  // 使用北京时间判断连续学习
+  const today = getBeijingDateString();
+  const yesterday = getBeijingYesterdayString();
 
   // 检查今天或昨天是否有练习
   const firstDate = rows[0].practice_date;
@@ -153,15 +155,14 @@ export async function getPracticeTrendAction(days: number = 14): Promise<TrendDa
       ORDER BY date ASC
     `).all(user.id) as { date: string; practiced: number; correct: number }[];
 
-    // 生成完整的日期序列
+    // 生成完整的日期序列 (使用北京时间)
     const result: TrendDataItem[] = [];
-    const today = new Date();
+    const now = new Date();
 
     for (let i = days - 1; i >= 0; i--) {
-      const d = new Date(today);
-      d.setDate(d.getDate() - i);
-      const dateStr = d.toISOString().split('T')[0];
-      const displayDate = `${d.getMonth() + 1}/${d.getDate()}`;
+      const d = new Date(now.getTime() - i * 86400000);
+      const dateStr = getBeijingDateString(d);
+      const displayDate = formatBeijingDisplayDate(d);
 
       const row = rows.find(r => r.date === dateStr);
       result.push({

@@ -11,6 +11,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Progress } from "@/components/ui/progress";
 import { Badge } from "@/components/ui/badge";
 import { KnowledgePointSelector } from "@/components/dashboard/KnowledgePointSelector";
+import { getBeijingHour } from "@/lib/utils/datetime";
 
 export default async function Home() {
   let stats;
@@ -20,8 +21,8 @@ export default async function Home() {
     redirect('/login');
   }
 
-  // Greeting logic
-  const hour = new Date().getHours();
+  // Greeting logic (使用北京时间)
+  const hour = getBeijingHour();
   let greeting = "早安";
   if (hour >= 11 && hour < 14) greeting = "午安";
   else if (hour >= 14 && hour < 19) greeting = "下午好";

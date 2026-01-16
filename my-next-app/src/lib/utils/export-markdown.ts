@@ -1,4 +1,5 @@
 import { SessionDetail } from '@/server/actions/history';
+import { getBeijingLocaleString } from './datetime';
 
 /**
  * 将练习会话详情格式化为 Markdown 文本
@@ -123,7 +124,7 @@ export function formatSessionToMarkdown(
     });
 
     // 页脚
-    lines.push(`*导出时间：${new Date().toLocaleString('zh-CN')}*`);
+    lines.push(`*导出时间：${getBeijingLocaleString()}*`);
 
     return lines.join('\n');
 }

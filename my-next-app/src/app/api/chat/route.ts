@@ -14,7 +14,9 @@ export async function POST(req: Request) {
             return new Response(JSON.stringify({ error: 'Unauthorized' }), { status: 401 });
         }
         const userId = session.user.id;
-        const { messages, sessionId } = await req.json();
+
+        // ✅ 修复：只解析一次请求体，提取所有字段
+        const { messages, sessionId, enableRag, context } = await req.json();
 
         // 用量检查：AI 对话配额
         const quotaCheck = checkQuotaForApi(userId, 'ai_chat');
@@ -65,9 +67,7 @@ export async function POST(req: Request) {
             });
         }
 
-        // 5. 准备流式聊天参数
-        const { enableRag, context } = await req.json().catch(() => ({}));
-
+        // 准备流式聊天参数
         let tools = undefined;
         let systemPrompt = undefined;
 
@@ -77,8 +77,7 @@ export async function POST(req: Request) {
             tools = {
                 knowledgeSearch: knowledgeSearchTool
             };
-            // RAG 模式下，context 可能是用户手动提供的（如阅读器上下文），也可能是后续工具调用产生的
-            // 这里优先使用用户提供的 context 作为初始系统提示词的一部分
+            // RAG 模式下，context 可能是用户手动提供的（如阅读器上下文）
             systemPrompt = buildEnhancedSystemPrompt(context);
         } else {
             // 未启用 RAG，如果有 context 也注入
@@ -112,4 +111,5 @@ export async function POST(req: Request) {
         });
     }
 }
+
 

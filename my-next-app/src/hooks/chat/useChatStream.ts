@@ -146,19 +146,22 @@ export function useChatStream({
                 ));
             }
 
-            // 生成标题（当这是对话的第一条用户消息时）
+            // ✅ 优化：标题生成改为非阻塞（fire-and-forget）
+            // 用户可以立即继续对话，无需等待标题生成完成
             if (isNewSession && !isGeneratingTitle && sessionIdToUse) {
-                setIsGeneratingTitle(true);
-                // 捕获当前的 sessionIdToUse，避免闭包过时问题
                 const targetSessionId = sessionIdToUse;
-                try {
-                    const newTitle = await generateChatTitle(targetSessionId);
-                    onTitleGenerated(targetSessionId, newTitle);
-                } catch (e) {
-                    console.error('生成标题失败:', e);
-                } finally {
-                    setIsGeneratingTitle(false);
-                }
+                // 使用 setTimeout 确保不阻塞主流程
+                setTimeout(async () => {
+                    setIsGeneratingTitle(true);
+                    try {
+                        const newTitle = await generateChatTitle(targetSessionId);
+                        onTitleGenerated(targetSessionId, newTitle);
+                    } catch (e) {
+                        console.error('生成标题失败:', e);
+                    } finally {
+                        setIsGeneratingTitle(false);
+                    }
+                }, 100); // 延迟 100ms，确保 UI 先响应
             }
 
         } catch (err: any) {

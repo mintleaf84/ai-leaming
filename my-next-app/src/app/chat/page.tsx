@@ -117,7 +117,6 @@ export default function ChatPage() {
     // 处理保存知识卡片（第一步：提取并预览）
     const handleSaveToKnowledge = useCallback(async (content: string) => {
         try {
-            // 显示加载状态（这里可以通过其他方式优化，暂时依赖 ChatMessage 的按钮 loading）
             const response = await fetch('/api/knowledge/extract', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
@@ -146,9 +145,13 @@ export default function ChatPage() {
 
         } catch (error) {
             console.error('Failed to extract card:', error);
-            // 这里最好有个 Toast 提示失败，暂时忽略
+            toast({
+                title: '提取失败',
+                description: '无法从消息中提取知识卡片，请重试',
+                variant: 'destructive',
+            });
         }
-    }, [currentSessionId]);
+    }, [currentSessionId, toast]);
 
     // 实际保存卡片（UI 回调）
     const handleActualSave = async () => {
@@ -166,12 +169,18 @@ export default function ChatPage() {
             setKnowledgeModalOpen(false);
             setCurrentCard(null);
 
-            // 可以触发一个全局 Toast
-            // alert('保存成功'); // 临时替代
+            toast({
+                title: '保存成功',
+                description: '知识卡片已添加到知识库',
+            });
 
         } catch (error) {
             console.error('保存失败:', error);
-            alert('保存失败，请重试');
+            toast({
+                title: '保存失败',
+                description: '无法保存知识卡片，请重试',
+                variant: 'destructive',
+            });
         }
     };
 

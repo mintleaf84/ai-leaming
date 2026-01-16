@@ -65,14 +65,8 @@ export default function UsersPage() {
             const offset = (page - 1) * limit;
             const res = await getUsersAction(limit, offset, search);
 
-            // 获取每个用户的订阅信息 (简化版，实际应批量查询)
-            const usersWithSub: UserWithSubscription[] = res.users.map(u => ({
-                ...u,
-                plan_id: 'free',
-                plan_name: '免费版',
-                subscription_status: 'active'
-            }));
-            setUsers(usersWithSub);
+            // 后端现在直接返回订阅信息，无需前端再处理
+            setUsers(res.users);
             setTotal(res.total);
         } catch (e) {
             toast.error("加载用户失败");

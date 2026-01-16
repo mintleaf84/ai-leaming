@@ -96,27 +96,43 @@ export type UserAdminView = {
   created_at: string;
   is_admin: boolean;
   token_version?: number;
+  plan_id?: string;
+  plan_name?: string;
+  subscription_status?: string;
+  expires_at?: string;
 };
 
 export async function getUsersAction(limit: number = 20, offset: number = 0, query: string = ''): Promise<{ users: UserAdminView[], total: number }> {
   await requireRole(['admin']);
   try {
-    let sql = 'SELECT id, username, role, created_at FROM users';
+    // 基础 SELECT 语句，LEFT JOIN 订阅信息
+    let sql = `
+      SELECT 
+        u.id, u.username, u.role, u.created_at,
+        us.plan_id,
+        sp.name as plan_name,
+        us.status as subscription_status,
+        us.expires_at
+      FROM users u
+      LEFT JOIN user_subscriptions us ON u.id = us.user_id
+      LEFT JOIN subscription_plans sp ON us.plan_id = sp.id
+    `;
     const params: any[] = [];
 
     if (query) {
-      sql += ' WHERE username LIKE ?';
+      sql += ' WHERE u.username LIKE ?';
       params.push(`%${query}%`);
-    } else {
-      // Prevent full table scan on simple listing by ordering
     }
 
-    // Count total matches first
-    const countSql = sql.replace('SELECT id, username, role, created_at', 'SELECT COUNT(*) as count');
-    const total = (db.prepare(countSql).get(...params) as { count: number }).count;
+    // Count total matches first (简化版，不包含 JOIN)
+    let countSql = 'SELECT COUNT(*) as count FROM users';
+    if (query) {
+      countSql += ' WHERE username LIKE ?';
+    }
+    const total = (db.prepare(countSql).get(...(query ? [`%${query}%`] : [])) as { count: number }).count;
 
     // Fetch page
-    sql += ' ORDER BY id DESC LIMIT ? OFFSET ?';
+    sql += ' ORDER BY u.id DESC LIMIT ? OFFSET ?';
     params.push(limit, offset);
 
     const users = db.prepare(sql).all(...params) as any[];
@@ -124,7 +140,9 @@ export async function getUsersAction(limit: number = 20, offset: number = 0, que
     return {
       users: users.map(u => ({
         ...u,
-        is_admin: u.role === 'admin'
+        is_admin: u.role === 'admin',
+        plan_id: u.plan_id || 'free',
+        plan_name: u.plan_name || '免费版'
       })),
       total
     };

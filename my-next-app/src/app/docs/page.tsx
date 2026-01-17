@@ -7,6 +7,7 @@ import {
     BookX,
     Bot,
     GraduationCap,
+    ScanText,
     Settings,
     HelpCircle,
     CheckCircle2,
@@ -23,6 +24,7 @@ const docSections = [
     { id: 'practice', title: '智能练习', icon: BookOpen },
     { id: 'wrong-book', title: '错题本', icon: BookX },
     { id: 'ai-assistant', title: 'AI 助手', icon: Bot },
+    { id: 'deep-dive', title: '深度解析', icon: ScanText },
     { id: 'knowledge', title: '知识学习', icon: GraduationCap },
     { id: 'settings', title: '账户与设置', icon: Settings },
     { id: 'faq', title: '常见问题', icon: HelpCircle },
@@ -204,6 +206,43 @@ export default function DocsPage() {
                         </div>
                     </section>
 
+                    {/* 深度解析 */}
+                    <section id="deep-dive" className="mb-20 scroll-mt-24">
+                        <div className="flex items-center gap-3 mb-6">
+                            <div className="w-10 h-10 rounded-xl bg-purple-100 flex items-center justify-center text-purple-700">
+                                <ScanText className="w-5 h-5" />
+                            </div>
+                            <h2 className="text-2xl font-bold text-neutral-800 font-serif">智能标注与深度解析</h2>
+                        </div>
+                        <div className="space-y-6">
+                            <p className="text-neutral-600 leading-7">
+                                我们不仅提供答案，更提供思维工具。在练习或阅读解析时，选中文本即可唤起智学工具栏。
+                            </p>
+
+                            <div className="grid md:grid-cols-2 gap-6">
+                                <div className="bg-white p-6 rounded-2xl border border-neutral-100 shadow-sm hover:border-purple-200 transition-colors">
+                                    <div className="flex items-center gap-2 mb-3">
+                                        <Badge variant="secondary" className="bg-purple-100 text-purple-700 hover:bg-purple-200">🧬 第一性原理</Badge>
+                                        <span className="text-xs text-neutral-400">First Principles</span>
+                                    </div>
+                                    <h3 className="font-bold text-neutral-800 mb-2">拒绝死记硬背</h3>
+                                    <p className="text-sm text-neutral-500 leading-relaxed">
+                                        选中任何晦涩的教育学概念，点击“第一性原理”，AI 将为您递归拆解，直到最底层的公理。帮您建立从 0 到 1 的认知链路。
+                                    </p>
+                                </div>
+                                <div className="bg-white p-6 rounded-2xl border border-neutral-100 shadow-sm hover:border-purple-200 transition-colors">
+                                    <div className="flex items-center gap-2 mb-3">
+                                        <Badge variant="secondary" className="bg-neutral-100 text-neutral-700 hover:bg-neutral-200">📋 智能摘录</Badge>
+                                    </div>
+                                    <h3 className="font-bold text-neutral-800 mb-2">所见即所得</h3>
+                                    <p className="text-sm text-neutral-500 leading-relaxed">
+                                        选中文本后可快速复制或添加到笔记（开发中）。工具栏智能跟随您的阅读视线，触手可及。
+                                    </p>
+                                </div>
+                            </div>
+                        </div>
+                    </section>
+
                     {/* 知识学习 */}
                     <section id="knowledge" className="mb-20 scroll-mt-24">
                         <div className="flex items-center gap-3 mb-6">
@@ -239,6 +278,7 @@ export default function DocsPage() {
                         <div className="space-y-4">
                             {[
                                 { q: 'AI 额度不够用怎么办？', a: '您可以前往订阅页面升级到 Pro 套餐，获取无限量的 AI 对话和高级复盘权益。' },
+                                { q: '统计数据的时间怎么算？', a: '系统统一使用北京时间 (UTC+8) 进行数据统计。每日练习记录会在凌晨 0:00 自动归档到新的一天，请注意保持签到连续性。' },
                                 { q: '可以离线使用吗？', a: '目前系统依赖云端 AI 算力，需要保持网络连接。未来我们会探索离线轻量化模型。' },
                                 { q: '数据安全吗？', a: '您的所有数据都经过加密传输和存储。我们不会将您的个人数据用于训练公共大模型。' },
                             ].map((item, i) => (

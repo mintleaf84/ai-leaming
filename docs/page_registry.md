@@ -10,7 +10,7 @@
 | **`/login`** | `src/app/login/page.tsx` | **登录页**: 用户身份验证。 | ✅ | ✅ | 包含基础表单校验。 |
 | **`/register`** | `src/app/register/page.tsx` | **注册页**: 新用户开户。 | ✅ | ✅ | 包含密码一致性校验。 |
 | **`/dashboard`** | `src/app/dashboard/page.tsx` | **仪表盘**: 知识概览与数据管理。 | ✅ | ✅ | 集成 D3.js 知识图谱。 |
-| **`/practice`** | `src/app/practice/page.tsx` | **练习引擎**: 核心答题页，包含复盘状态机。 | ✅ | ✅ | 支持单选、多选及 AI 复盘。 |
+| **`/practice`** | `src/app/practice/page.tsx` | **练习引擎**: 核心答题页，包含复盘状态机。 | ✅ | ✅ | 支持单选/多选、AI 复盘及第一性原理标注。 |
 | **`/report`** | `src/app/report/page.tsx` | **分析报告**: 练习结算与 AI 诊断展示。 | ✅ | ✅ | 包含维度雷达图。 |
 | **`/history`** | `src/app/history/page.tsx` | **练习记录**: 历史练习会话列表。 | ✅ | ✅ | 按时间倒序排列。 |
 | **`/history/[id]`** | `src/app/history/[id]/page.tsx` | **会话详情**: 历史题目回溯与错因分析。 | ✅ | ✅ | 支持回顾复盘内容。 |

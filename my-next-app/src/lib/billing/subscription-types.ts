@@ -7,14 +7,16 @@
 export type PlanTier = 'free' | 'basic' | 'pro' | 'custom';
 
 // 用量类型
-export type UsageType = 'ai_chat' | 'practice' | 'review' | 'rag';
+export type UsageType = 'ai_chat' | 'practice' | 'review' | 'rag' | 'mnemonic' | 'first_principles';
 
 // 用量类型中文映射
 export const USAGE_TYPE_LABELS: Record<UsageType, string> = {
     ai_chat: 'AI 对话',
     practice: '练习题目',
     review: 'AI 复盘',
-    rag: 'RAG 检索'
+    rag: 'RAG 检索',
+    mnemonic: 'AI 记忆大师',
+    first_principles: '第一性原理'
 };
 
 // 套餐等级中文映射
@@ -96,8 +98,8 @@ export const DEFAULT_PLANS: Omit<SubscriptionPlan, 'created_at'>[] = [
         name: '免费版',
         tier: 'free',
         price_monthly: 0,
-        limits: { ai_chat: 10, practice: 30, review: 5, rag: 20 },
-        features: ['每日 10 次 AI 对话', '每日 30 道练习题', '基础知识库访问'],
+        limits: { ai_chat: 10, practice: 30, review: 5, rag: 20, mnemonic: 5, first_principles: 3 },
+        features: ['每日 10 次 AI 对话', '每日 30 道练习题', '每日 5 次 AI 助记', '每日 3 次 第一性原理', '基础知识库访问'],
         is_active: true,
         sort_order: 1
     },
@@ -106,8 +108,8 @@ export const DEFAULT_PLANS: Omit<SubscriptionPlan, 'created_at'>[] = [
         name: '基础版',
         tier: 'basic',
         price_monthly: 2900, // ¥29
-        limits: { ai_chat: 100, practice: -1, review: 50, rag: 100 },
-        features: ['每日 100 次 AI 对话', '无限练习题目', '每日 50 次 AI 复盘', '优先客服支持'],
+        limits: { ai_chat: 100, practice: -1, review: 50, rag: 100, mnemonic: 50, first_principles: 30 },
+        features: ['每日 100 次 AI 对话', '无限练习题目', '每日 50 次 AI 助记', '每日 30 次 第一性原理', '每日 50 次 AI 复盘', '优先客服支持'],
         is_active: true,
         sort_order: 2
     },
@@ -116,8 +118,8 @@ export const DEFAULT_PLANS: Omit<SubscriptionPlan, 'created_at'>[] = [
         name: '专业版',
         tier: 'pro',
         price_monthly: 9900, // ¥99
-        limits: { ai_chat: -1, practice: -1, review: -1, rag: -1 },
-        features: ['无限 AI 对话', '无限练习题目', '无限 AI 复盘', '全部高级功能', '专属客服'],
+        limits: { ai_chat: -1, practice: -1, review: -1, rag: -1, mnemonic: -1, first_principles: -1 },
+        features: ['无限 AI 对话', '无限练习题目', '无限 AI 助记 & 第一性原理', '无限 AI 复盘', '全部高级功能', '专属客服'],
         is_active: true,
         sort_order: 3
     }

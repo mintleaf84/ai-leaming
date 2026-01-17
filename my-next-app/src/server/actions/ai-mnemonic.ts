@@ -3,10 +3,11 @@
 import db from '@/lib/db';
 import { requireUser } from '@/lib/auth/auth';
 import { generateTextWrapper } from '@/lib/ai/client';
+import { checkAndConsumeQuota } from '@/lib/billing/subscription-service';
 
 export async function generateMnemonicAction(questionId: string, forceRegenerate = false) {
     try {
-        await requireUser();
+        const user = await requireUser();
 
         // 1. 获取题目信息
         const question = db.prepare(`
@@ -24,7 +25,15 @@ export async function generateMnemonicAction(questionId: string, forceRegenerate
             return { success: true, content: question.ai_mnemonic, cached: true };
         }
 
-        // 3. 构建 Prompt
+        // 3. 构建 Prompt (如果未缓存或强制刷新，先检查配额)
+        const quotaResult = checkAndConsumeQuota(Number(user.id), 'mnemonic');
+        if (!quotaResult.allowed) {
+            return {
+                success: false,
+                message: quotaResult.message || '今日记忆大师使用次数已用完，请升级套餐解锁更多。'
+            };
+        }
+
         const prompt = `
 # Role
 你是一位顶级记忆大师，将枯燥的教育学、心理学理论转化为**过目不忘、甚至有点“洗脑”**的记忆钩子。
@@ -37,10 +46,12 @@ export async function generateMnemonicAction(questionId: string, forceRegenerate
 2. 尽量避免口诀里出现过多的原词或缩写！
 3. 优先寻找谐音，借用名人名字、热梗、广告词或生活常用语。
 4. 严禁只取每个词的首字凑成一段没意义的话
+
 # example
 1. 绅士的洛克在白板上画漫画（洛克、《教育漫话》、白板说、绅士教育）
 2. 人颁布，鬼实施，资本主义男女丑，戌美六三三。（壬寅学制，首次颁布，但未实施）、（癸卯学制，首个正式颁布并实施）、（壬子癸丑学制，男女同校，资本主义性质）、（壬戌学制，模仿美国，六三三学制）
 3. 斯宾塞准备生活 （斯宾塞准备生活说）
+
 # Input (在此输入知识点)
 - 题目内容: ${question.content}
 - 选项: ${question.options || '无'}

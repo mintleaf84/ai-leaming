@@ -221,7 +221,9 @@ export default function PricingPage() {
                                             ai_chat: 'AI 对话',
                                             practice: '练习题',
                                             review: 'AI 复盘',
-                                            rag: '知识检索'
+                                            rag: '知识检索',
+                                            mnemonic: 'AI 记忆',
+                                            first_principles: '第一性原理'
                                         };
                                         const percent = limit === -1 ? 0 : Math.min(100, (count / limit) * 100);
 

@@ -184,7 +184,9 @@ export function getDailyUsage(userId: number): Record<UsageType, number> {
         ai_chat: 0,
         practice: 0,
         review: 0,
-        rag: 0
+        rag: 0,
+        mnemonic: 0,
+        first_principles: 0
     };
 
     rows.forEach(row => {

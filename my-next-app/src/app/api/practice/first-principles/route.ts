@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { generateTextWrapper } from '@/lib/ai/client';
 import { getSession } from '@/lib/auth/auth';
 import db from '@/lib/db';
+import { checkAndConsumeQuota } from '@/lib/billing/subscription-service';
 
 // 确保缓存表存在
 function ensureCacheTable() {
@@ -59,6 +60,14 @@ export async function POST(req: NextRequest) {
         if (cached) {
             console.log('[FirstPrinciples] 命中缓存');
             return NextResponse.json({ analysis: cached.analysis, cached: true });
+        }
+
+        // 检查配额
+        const quotaResult = checkAndConsumeQuota(Number(session.user.id), 'first_principles');
+        if (!quotaResult.allowed) {
+            return NextResponse.json({
+                error: quotaResult.message || '今日第一性原理分析次数已用完，请升级套餐解锁更多。'
+            }, { status: 403 });
         }
 
         // 构建 Prompt

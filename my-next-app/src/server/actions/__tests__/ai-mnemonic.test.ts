@@ -11,12 +11,17 @@ const { mockDb } = vi.hoisted(() => {
 });
 
 // Mock AI client
-const { mockGenerateText } = vi.hoisted(() => ({
+const { mockGenerateText, mockCheckAndConsumeQuota } = vi.hoisted(() => ({
     mockGenerateText: vi.fn(),
+    mockCheckAndConsumeQuota: vi.fn(),
 }));
 
 vi.mock('@/lib/db', () => ({
     default: mockDb
+}));
+
+vi.mock('@/lib/billing/subscription-service', () => ({
+    checkAndConsumeQuota: mockCheckAndConsumeQuota
 }));
 
 vi.mock('@/lib/auth/auth', () => ({
@@ -30,6 +35,8 @@ vi.mock('@/lib/ai/client', () => ({
 describe('AI Mnemonic Action', () => {
     beforeEach(() => {
         vi.clearAllMocks();
+        // Default allow quota
+        mockCheckAndConsumeQuota.mockReturnValue({ allowed: true });
     });
 
     it('如果题目不存在应返回错误', async () => {
@@ -123,5 +130,31 @@ describe('AI Mnemonic Action', () => {
 
         expect(result.success).toBe(false);
         expect(result.message).toContain('生成失败');
+    });
+
+    it('如果配额不足应返回错误', async () => {
+        mockDb.prepare.mockReturnValue({
+            get: () => ({ id: 1, content: 'Test Question', ai_mnemonic: null })
+        });
+
+        mockCheckAndConsumeQuota.mockReturnValue({ allowed: false, message: '配额不足' });
+
+        const { generateMnemonicAction } = await import('../ai-mnemonic');
+        const result = await generateMnemonicAction('1');
+
+        expect(result.success).toBe(false);
+        expect(result.message).toBe('配额不足');
+        expect(mockGenerateText).not.toHaveBeenCalled();
+    });
+
+    it('命中缓存时不应消耗配额', async () => {
+        mockDb.prepare.mockReturnValue({
+            get: () => ({ id: 1, content: 'Test Question', ai_mnemonic: 'Cached' })
+        });
+
+        const { generateMnemonicAction } = await import('../ai-mnemonic');
+        await generateMnemonicAction('1');
+
+        expect(mockCheckAndConsumeQuota).not.toHaveBeenCalled();
     });
 });

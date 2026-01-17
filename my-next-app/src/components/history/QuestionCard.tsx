@@ -105,12 +105,16 @@ export function QuestionCard({ log, index, isExpanded, onToggle, refCallback }: 
                 }),
             });
 
-            if (!response.ok) throw new Error('分析失败');
+            if (!response.ok) {
+                const errorData = await response.json().catch(() => ({}));
+                throw new Error(errorData.error || '分析失败');
+            }
 
             const data = await response.json();
             setFpAnalysis(data.analysis);
-        } catch (error) {
+        } catch (error: any) {
             console.error('第一性原理分析失败:', error);
+            toast.error(error.message || '分析失败，请稍后重试');
         } finally {
             setIsLoadingFP(false);
         }

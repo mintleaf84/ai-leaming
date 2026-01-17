@@ -70,8 +70,7 @@ async function recalculateMastery() {
     // 4. 打印统计
     console.log('4. 掌握度统计:');
     const mastery = db.prepare(`
-    SELECT tag_name, score, 
-           json_array_length(history) as history_count
+    SELECT tag_name, score, correct_count, total_count
     FROM user_mastery 
     WHERE user_id = 1
     ORDER BY score DESC
@@ -82,7 +81,7 @@ async function recalculateMastery() {
     console.log('   ─────────────────────────────────────');
     for (const m of mastery) {
         const bar = '█'.repeat(Math.round(m.score / 10)) + '░'.repeat(10 - Math.round(m.score / 10));
-        console.log(`   ${bar} ${m.score.toFixed(1)}% - ${m.tag_name} (${m.history_count}次)`);
+        console.log(`   ${bar} ${m.score.toFixed(1)}% - ${m.tag_name} (${m.correct_count}/${m.total_count})`);
     }
 
     console.log('\n✅ 回溯更新完成！');

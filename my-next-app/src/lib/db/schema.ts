@@ -33,6 +33,8 @@ export function createTables(db: Database.Database) {
       user_id INTEGER NOT NULL DEFAULT 1,
       tag_name TEXT NOT NULL,
       score REAL DEFAULT 0,
+      correct_count INTEGER DEFAULT 0,
+      total_count INTEGER DEFAULT 0,
       history TEXT,
       last_updated DATETIME DEFAULT CURRENT_TIMESTAMP,
       PRIMARY KEY (user_id, tag_name),

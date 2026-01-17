@@ -3,11 +3,6 @@ import db from '@/lib/db';
 const DIMENSION_ORDER = ['knowledge', 'understanding', 'application'] as const;
 type Dimension = typeof DIMENSION_ORDER[number];
 
-const BASE_CORRECT_SCORE = 10;
-const BASE_INCORRECT_PENALTY = 30;
-const MAX_SCORE = 100;
-const MIN_SCORE = 0;
-
 export interface MasteryUpdateResult {
   tagName: string;
   previousScore: number;
@@ -25,50 +20,45 @@ export interface MasteryTreeNode {
 
 export const masteryService = {
   /**
-   * Update mastery for a specific tag and dimension
+   * 更新指定标签的掌握度（准确率算法）
+   * score = (correct_count / total_count) × 100
    */
-  updateMastery: (userId: number, tagName: string, dimension: Dimension, isCorrect: boolean, isMonitoredCorrect: boolean = false): MasteryUpdateResult[] => {
+  updateMastery: (userId: number, tagName: string, _dimension: Dimension, isCorrect: boolean, isMonitoredCorrect: boolean = false): MasteryUpdateResult[] => {
     const results: MasteryUpdateResult[] = [];
 
-    // 1. Get current score for the tag
-    const currentEntry = db.prepare('SELECT score FROM user_mastery WHERE user_id = ? AND tag_name = ?').get(userId, tagName) as { score: number } | undefined;
-    const currentScore = currentEntry?.score ?? 0;
+    // 1. 获取当前数据
+    const currentEntry = db.prepare(
+      'SELECT score, correct_count, total_count FROM user_mastery WHERE user_id = ? AND tag_name = ?'
+    ).get(userId, tagName) as { score: number; correct_count: number; total_count: number } | undefined;
 
-    let change = 0;
+    const previousScore = currentEntry?.score ?? 0;
+    const currentCorrect = currentEntry?.correct_count ?? 0;
+    const currentTotal = currentEntry?.total_count ?? 0;
 
-    if (isCorrect) {
-      // If suspicious (monitored correct), no score increase
-      change = isMonitoredCorrect ? 0 : BASE_CORRECT_SCORE;
-    } else {
-      // High Mastery Protection: If score is 100, k=1. Otherwise k=3 (penalty is 30)
-      const k = currentScore >= MAX_SCORE ? 1 : 3;
-      change = -(BASE_CORRECT_SCORE * k);
+    // 2. 更新计数
+    // 可疑答对（监控正确）时：不增加正确数，但增加总数
+    let newCorrect = currentCorrect;
+    if (isCorrect && !isMonitoredCorrect) {
+      newCorrect = currentCorrect + 1;
     }
+    const newTotal = currentTotal + 1;
 
-    let newScore = Math.max(MIN_SCORE, Math.min(MAX_SCORE + 10, currentScore + change));
+    // 3. 计算新分数（准确率 × 100）
+    const newScore = newTotal > 0 ? (newCorrect / newTotal) * 100 : 0;
+    const change = newScore - previousScore;
 
-    // Update the main tag
+    // 4. 更新数据库
     db.prepare(`
-      INSERT INTO user_mastery (user_id, tag_name, score, last_updated) 
-      VALUES (?, ?, ?, CURRENT_TIMESTAMP)
+      INSERT INTO user_mastery (user_id, tag_name, score, correct_count, total_count, last_updated) 
+      VALUES (?, ?, ?, ?, ?, CURRENT_TIMESTAMP)
       ON CONFLICT(user_id, tag_name) DO UPDATE SET 
         score = excluded.score,
+        correct_count = excluded.correct_count,
+        total_count = excluded.total_count,
         last_updated = CURRENT_TIMESTAMP
-    `).run(userId, tagName, newScore);
+    `).run(userId, tagName, newScore, newCorrect, newTotal);
 
-    results.push({ tagName, previousScore: currentScore, newScore, change });
-
-    // 2. Downward Penalty Logic
-    if (!isCorrect && dimension === 'application') {
-      const penaltyChange = -(currentScore * 0.3);
-      const afterPenaltyScore = Math.max(MIN_SCORE, newScore + penaltyChange);
-
-      db.prepare('UPDATE user_mastery SET score = ?, last_updated = CURRENT_TIMESTAMP WHERE user_id = ? AND tag_name = ?')
-        .run(afterPenaltyScore, userId, tagName);
-
-      results[0].newScore = afterPenaltyScore;
-      results[0].change += penaltyChange;
-    }
+    results.push({ tagName, previousScore, newScore, change });
 
     return results;
   },

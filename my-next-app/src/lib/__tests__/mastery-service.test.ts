@@ -30,73 +30,69 @@ describe('masteryService', () => {
     vi.clearAllMocks();
   });
 
-  describe('updateMastery', () => {
-    it('答对时应该增加 10 分', () => {
-      // 准备
-      mockGet.mockReturnValue({ score: 0 });
+  describe('updateMastery（准确率算法）', () => {
+    it('首次答对时分数应为 100（1/1 × 100）', () => {
+      // 准备：无现有记录
+      mockGet.mockReturnValue(undefined);
       mockRun.mockReturnValue({ changes: 1 });
 
       // 执行
       const result = masteryService.updateMastery(TEST_USER_ID, 'test-tag', 'knowledge', true);
 
-      // 验证
-      expect(result[0].newScore).toBe(10);
-      expect(result[0].change).toBe(10);
+      // 验证：1/1 = 100%
+      expect(result[0].newScore).toBe(100);
+      expect(result[0].change).toBe(100);
     });
 
-    it('可疑答对（监控正确）时不应增加分数', () => {
-      mockGet.mockReturnValue({ score: 20 });
+    it('答对后答错，分数应为 50（1/2 × 100）', () => {
+      // 准备：已有 1 correct / 1 total
+      mockGet.mockReturnValue({ score: 100, correct_count: 1, total_count: 1 });
       mockRun.mockReturnValue({ changes: 1 });
 
+      // 执行：答错
+      const result = masteryService.updateMastery(TEST_USER_ID, 'test-tag', 'knowledge', false);
+
+      // 验证：1/2 = 50%
+      expect(result[0].newScore).toBe(50);
+      expect(result[0].change).toBe(-50);
+    });
+
+    it('可疑答对（监控正确）时正确数不增加，总数增加', () => {
+      // 准备：已有 1 correct / 1 total
+      mockGet.mockReturnValue({ score: 100, correct_count: 1, total_count: 1 });
+      mockRun.mockReturnValue({ changes: 1 });
+
+      // 执行：可疑答对
       const result = masteryService.updateMastery(TEST_USER_ID, 'test-tag', 'knowledge', true, true);
 
-      expect(result[0].newScore).toBe(20);
-      expect(result[0].change).toBe(0);
+      // 验证：1/2 = 50%（正确数不变，总数+1）
+      expect(result[0].newScore).toBe(50);
+      expect(result[0].change).toBe(-50);
     });
 
-    it('答错时应该扣除 30 分（标准惩罚）', () => {
-      mockGet.mockReturnValue({ score: 50 });
+    it('连续答错时分数递减', () => {
+      // 准备：已有 2 correct / 4 total（50%）
+      mockGet.mockReturnValue({ score: 50, correct_count: 2, total_count: 4 });
       mockRun.mockReturnValue({ changes: 1 });
 
+      // 执行：答错
       const result = masteryService.updateMastery(TEST_USER_ID, 'test-tag', 'knowledge', false);
 
-      // 50 - 30 = 20
-      expect(result[0].newScore).toBe(20);
-      expect(result[0].change).toBe(-30);
-    });
-
-    it('高掌握度（≥100）答错时只扣 10 分（保护机制）', () => {
-      mockGet.mockReturnValue({ score: 100 });
-      mockRun.mockReturnValue({ changes: 1 });
-
-      const result = masteryService.updateMastery(TEST_USER_ID, 'test-tag', 'knowledge', false);
-
-      // 100 - 10 = 90
-      expect(result[0].newScore).toBe(90);
+      // 验证：2/5 = 40%
+      expect(result[0].newScore).toBe(40);
       expect(result[0].change).toBe(-10);
     });
 
-    it('应用题答错时应该额外扣除 30% 分数（向下惩罚）', () => {
-      mockGet.mockReturnValue({ score: 80 });
+    it('连续答对时分数递增', () => {
+      // 准备：已有 3 correct / 6 total（50%）
+      mockGet.mockReturnValue({ score: 50, correct_count: 3, total_count: 6 });
       mockRun.mockReturnValue({ changes: 1 });
 
-      const result = masteryService.updateMastery(TEST_USER_ID, 'test-tag', 'application', false);
+      // 执行：答对
+      const result = masteryService.updateMastery(TEST_USER_ID, 'test-tag', 'knowledge', true);
 
-      // 基础惩罚: 80 - 30 = 50
-      // 向下惩罚: 30% of 80 = 24
-      // 最终: 50 - 24 = 26
-      expect(result[0].newScore).toBe(26);
-      expect(result[0].change).toBe(-54); // -30 + -24
-    });
-
-    it('分数不应低于 0', () => {
-      mockGet.mockReturnValue({ score: 10 });
-      mockRun.mockReturnValue({ changes: 1 });
-
-      const result = masteryService.updateMastery(TEST_USER_ID, 'test-tag', 'knowledge', false);
-
-      // 10 - 30 = -20 -> 0
-      expect(result[0].newScore).toBe(0);
+      // 验证：4/7 ≈ 57.14%
+      expect(result[0].newScore).toBeCloseTo(57.14, 1);
     });
   });
 

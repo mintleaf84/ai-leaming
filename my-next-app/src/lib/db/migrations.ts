@@ -55,6 +55,10 @@ export function runMigrations(db: Database.Database) {
         }
     } catch { /* ignore */ }
 
+    // user_mastery 添加计数字段（准确率算法）
+    addColumnIfNotExists(db, 'user_mastery', 'correct_count', 'INTEGER DEFAULT 0');
+    addColumnIfNotExists(db, 'user_mastery', 'total_count', 'INTEGER DEFAULT 0');
+
     // user_mastery 多用户迁移
     migrateTableForMultiUser(db, 'user_mastery', 'user_id');
 

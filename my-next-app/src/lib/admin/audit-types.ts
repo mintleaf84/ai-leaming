@@ -18,6 +18,7 @@ export type AdminAction =
     | 'BACKUP_DATABASE'
     | 'RESTORE_DATABASE'
     | 'REVOKE_SESSION'
+    | 'BATCH_DELETE_QUESTION' // 批量删除题目
     | 'OTHER';
 
 // 目标类型枚举
@@ -53,6 +54,7 @@ export function formatActionName(action: AdminAction): string {
         'UPDATE_PROMPT': '更新提示词',
         'BACKUP_DATABASE': '备份数据库',
         'RESTORE_DATABASE': '恢复数据库',
+        'BATCH_DELETE_QUESTION': '批量删除题目',
         'OTHER': '其他操作',
     };
     return actionNames[action] || action;

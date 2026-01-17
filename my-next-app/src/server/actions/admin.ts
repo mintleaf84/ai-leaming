@@ -11,11 +11,46 @@ import { logAdminAction } from '@/lib/admin/audit';
 // Schema for bulk import
 const ImportSchema = z.array(QuestionSchema);
 
-export async function getQuestionsAction(limit: number = 50, offset: number = 0) {
+// 题目查询筛选参数
+export interface QuestionFilters {
+  search?: string;      // 关键词搜索
+  tag?: string;         // 标签筛选
+  dimension?: string;   // 维度筛选
+}
+
+export async function getQuestionsAction(
+  limit: number = 50,
+  offset: number = 0,
+  filters?: QuestionFilters
+) {
   await requireRole(['admin']);
   try {
-    const stmt = db.prepare('SELECT * FROM questions ORDER BY id DESC LIMIT ? OFFSET ?');
-    const questions = stmt.all(limit, offset) as Question[];
+    // 构建 WHERE 子句
+    const conditions: string[] = [];
+    const params: any[] = [];
+
+    if (filters?.search) {
+      conditions.push('content LIKE ?');
+      params.push(`%${filters.search}%`);
+    }
+    if (filters?.tag) {
+      conditions.push('tags LIKE ?');
+      params.push(`%${filters.tag}%`);
+    }
+    if (filters?.dimension) {
+      conditions.push('dimension = ?');
+      params.push(filters.dimension);
+    }
+
+    const whereClause = conditions.length > 0 ? `WHERE ${conditions.join(' AND ')}` : '';
+
+    // 查询总数
+    const countSql = `SELECT COUNT(*) as count FROM questions ${whereClause}`;
+    const total = db.prepare(countSql).get(...params) as { count: number };
+
+    // 查询数据
+    const dataSql = `SELECT * FROM questions ${whereClause} ORDER BY id DESC LIMIT ? OFFSET ?`;
+    const questions = db.prepare(dataSql).all(...params, limit, offset) as Question[];
 
     // Parse options back to array if stored as string (SQLite limitation)
     const parsedQuestions = questions.map(q => ({
@@ -23,8 +58,6 @@ export async function getQuestionsAction(limit: number = 50, offset: number = 0)
       options: typeof q.options === 'string' ? JSON.parse(q.options) : q.options,
       tags: typeof q.tags === 'string' ? JSON.parse(q.tags) : q.tags
     }));
-
-    const total = db.prepare('SELECT COUNT(*) as count FROM questions').get() as { count: number };
 
     return { questions: parsedQuestions, total: total.count };
   } catch (error) {
@@ -81,6 +114,75 @@ export async function deleteQuestionAction(id: number) {
     return { success: true };
   } catch (error) {
     return { success: false, error: 'Delete failed' };
+  }
+}
+
+// 题目更新参数
+export interface QuestionUpdateData {
+  content?: string;
+  options?: string[];
+  answer?: string;
+  explanation?: string;
+  tags?: string[];
+  dimension?: string;
+  type?: string;
+}
+
+export async function updateQuestionAction(id: number, data: QuestionUpdateData) {
+  const user = await requireRole(['admin']);
+  try {
+    // 构建动态 UPDATE 语句
+    const updates: string[] = [];
+    const params: any[] = [];
+
+    if (data.content !== undefined) { updates.push('content = ?'); params.push(data.content); }
+    if (data.options !== undefined) { updates.push('options = ?'); params.push(JSON.stringify(data.options)); }
+    if (data.answer !== undefined) { updates.push('answer = ?'); params.push(data.answer); }
+    if (data.explanation !== undefined) { updates.push('explanation = ?'); params.push(data.explanation); }
+    if (data.tags !== undefined) { updates.push('tags = ?'); params.push(JSON.stringify(data.tags)); }
+    if (data.dimension !== undefined) { updates.push('dimension = ?'); params.push(data.dimension); }
+    if (data.type !== undefined) { updates.push('type = ?'); params.push(data.type); }
+
+    if (updates.length === 0) {
+      return { success: false, error: '没有要更新的字段' };
+    }
+
+    params.push(id);
+    const sql = `UPDATE questions SET ${updates.join(', ')} WHERE id = ?`;
+    const result = db.prepare(sql).run(...params);
+
+    if (result.changes === 0) {
+      return { success: false, error: '题目不存在' };
+    }
+
+    // 记录操作日志
+    logAdminAction(user.id, user.username, 'UPDATE_QUESTION', 'question', id.toString(), data);
+
+    return { success: true };
+  } catch (error) {
+    console.error('Update question failed:', error);
+    return { success: false, error: '更新失败' };
+  }
+}
+
+export async function batchDeleteQuestionsAction(ids: number[]) {
+  const user = await requireRole(['admin']);
+  try {
+    if (ids.length === 0) {
+      return { success: true, deletedCount: 0 };
+    }
+
+    const placeholders = ids.map(() => '?').join(', ');
+    const sql = `DELETE FROM questions WHERE id IN (${placeholders})`;
+    const result = db.prepare(sql).run(...ids);
+
+    // 记录操作日志
+    logAdminAction(user.id, user.username, 'BATCH_DELETE_QUESTION', 'question', null, { ids, count: result.changes });
+
+    return { success: true, deletedCount: result.changes };
+  } catch (error) {
+    console.error('Batch delete failed:', error);
+    return { success: false, error: '批量删除失败', deletedCount: 0 };
   }
 }
 

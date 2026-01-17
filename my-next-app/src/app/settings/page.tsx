@@ -15,10 +15,13 @@ import {
   Database,
   Download,
   Loader2,
+  Smartphone,
+  CheckCircle2,
 } from 'lucide-react';
 import { useTheme } from 'next-themes';
 import { cn } from '@/lib/utils';
 import { useTerminology } from '@/lib/hooks/use-terminology';
+import { usePWAInstall } from '@/hooks/usePWAInstall';
 
 import { SettingsProfileTab } from './components/SettingsProfileTab';
 import { SettingsAIPreferencesTab } from './components/SettingsAIPreferencesTab';
@@ -41,6 +44,7 @@ export default function SettingsPage() {
   const [isSaving, setIsSaving] = useState(false);
   const { theme, setTheme } = useTheme();
   const terminology = useTerminology();
+  const { isInstallable, isInstalled, promptInstall } = usePWAInstall();
 
   useEffect(() => {
     getSettingsAction().then(setSettings);
@@ -167,31 +171,69 @@ export default function SettingsPage() {
           {/* --- Content: Data Management --- */}
           {activeTab === 'data' && (
             <div className="space-y-6 animate-in fade-in slide-in-from-right-4 duration-300">
-              <div className="bg-white rounded-2xl border border-neutral-100 p-6 shadow-sm">
-                <h3 className="font-bold text-neutral-700 mb-4 flex items-center gap-2">
-                  <Database className="w-4 h-4 text-emerald-600" />
+              {/* 安装应用卡片 */}
+              <div className="bg-card rounded-2xl border border-border p-6 shadow-sm">
+                <h3 className="font-bold text-foreground mb-4 flex items-center gap-2">
+                  <Smartphone className="w-4 h-4 text-primary" />
+                  安装应用
+                </h3>
+                <div className="p-4 bg-primary/5 rounded-xl border border-primary/20 flex items-center justify-between">
+                  <div>
+                    <div className="font-medium text-sm text-foreground">添加到桌面</div>
+                    <div className="text-xs text-muted-foreground">
+                      {isInstalled
+                        ? '应用已安装，可从桌面启动'
+                        : '像原生 App 一样使用琢玉'}
+                    </div>
+                  </div>
+                  {isInstalled ? (
+                    <div className="flex items-center gap-2 text-primary text-sm font-medium">
+                      <CheckCircle2 className="w-4 h-4" />
+                      已安装
+                    </div>
+                  ) : isInstallable ? (
+                    <Button
+                      onClick={promptInstall}
+                      size="sm"
+                      className="bg-primary hover:bg-primary/90"
+                    >
+                      <Smartphone className="w-4 h-4 mr-2" />
+                      立即安装
+                    </Button>
+                  ) : (
+                    <div className="text-xs text-muted-foreground max-w-[140px] text-right">
+                      请使用 Chrome/Edge 浏览器访问
+                    </div>
+                  )}
+                </div>
+              </div>
+
+              {/* 数据管理卡片 */}
+              <div className="bg-card rounded-2xl border border-border p-6 shadow-sm">
+                <h3 className="font-bold text-foreground mb-4 flex items-center gap-2">
+                  <Database className="w-4 h-4 text-primary" />
                   数据管理
                 </h3>
                 <div className="space-y-4">
-                  <div className="p-4 bg-neutral-50 rounded-xl border border-neutral-100 flex items-center justify-between">
+                  <div className="p-4 bg-muted/50 rounded-xl border border-border flex items-center justify-between">
                     <div>
-                      <div className="font-medium text-sm text-neutral-700">导出个人数据</div>
-                      <div className="text-xs text-neutral-400">下载您的所有学习记录与设置</div>
+                      <div className="font-medium text-sm text-foreground">导出个人数据</div>
+                      <div className="text-xs text-muted-foreground">下载您的所有学习记录与设置</div>
                     </div>
-                    <Button variant="outline" size="sm" className="hover:bg-white">
+                    <Button variant="outline" size="sm">
                       <Download className="w-4 h-4 mr-2" />
                       导出 CSV
                     </Button>
                   </div>
 
-                  <div className="p-4 bg-red-50 rounded-xl border border-red-100 flex items-center justify-between">
+                  <div className="p-4 bg-destructive/5 rounded-xl border border-destructive/20 flex items-center justify-between">
                     <div>
-                      <div className="font-medium text-sm text-red-700">危险操作</div>
-                      <div className="text-xs text-red-400">数据一旦删除将无法恢复</div>
+                      <div className="font-medium text-sm text-destructive">危险操作</div>
+                      <div className="text-xs text-destructive/70">数据一旦删除将无法恢复</div>
                     </div>
                     <Button variant="ghost" size="sm"
                       onClick={handleReset}
-                      className="text-red-600 hover:text-red-700 hover:bg-red-100"
+                      className="text-destructive hover:text-destructive hover:bg-destructive/10"
                     >
                       <Trash2 className="w-4 h-4 mr-2" />
                       清空数据

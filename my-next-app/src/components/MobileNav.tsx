@@ -5,7 +5,7 @@ import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { useTerminology } from '@/lib/hooks/use-terminology';
 import { cn } from '@/lib/utils';
-import { Home, BookOpen, Book, User } from 'lucide-react';
+import { Home, BookOpen, Book, User, Bot } from 'lucide-react';
 
 interface UserProps {
     user?: {
@@ -26,12 +26,13 @@ export function MobileNav({ user }: UserProps) {
     const navItems = [
         { name: t('nav.home'), href: '/dashboard', icon: Home },
         { name: t('nav.practice'), href: '/practice', icon: BookOpen },
+        { name: 'AI 助手', href: '/chat', icon: Bot },
         { name: t('nav.knowledge'), href: '/knowledge', icon: Book },
-        { name: t('nav.settings'), href: '/settings', icon: User },
+        { name: '我的', href: '/profile', icon: User },
     ];
 
     return (
-        <nav className="md:hidden fixed bottom-6 left-6 right-6 z-50 bg-white/90 backdrop-blur-md rounded-2xl shadow-xl shadow-neutral-200/50 border border-white/50 ring-1 ring-neutral-100">
+        <nav className="md:hidden fixed bottom-6 left-6 right-6 z-50 bg-card/95 backdrop-blur-md rounded-2xl shadow-xl shadow-black/10 dark:shadow-black/30 border border-border ring-1 ring-border/50">
             <div className="flex justify-around items-center h-16">
                 {navItems.map((item) => {
                     const isActive = pathname === item.href || pathname.startsWith(`${item.href}/`);

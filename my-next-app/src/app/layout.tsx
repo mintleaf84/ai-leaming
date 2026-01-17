@@ -71,7 +71,9 @@ export default async function RootLayout({
             themes={['light', 'dark', 'eye-care', 'zhuoyu']}
           >
             <div className="flex h-screen">
-              <AppSidebar user={user as any} />
+              <div className="hidden md:flex">
+                <AppSidebar user={user as any} />
+              </div>
               <div className="flex-1 flex flex-col min-w-0">
                 {/* Mobile Header Placeholder if needed, or rely on MobileNav bottom */}
                 <main className="flex-1 pb-16 md:pb-0 relative">

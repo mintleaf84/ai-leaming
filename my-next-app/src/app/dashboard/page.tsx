@@ -2,7 +2,7 @@ import Link from "next/link";
 import {
   ArrowRight, Brain, BarChart3, Target, Zap, AlertCircle,
   RotateCcw, FileCheck, Shuffle, Flame, Eye, BookOpen,
-  CheckCircle2, Book, GraduationCap, PlayCircle
+  CheckCircle2, Book, GraduationCap, PlayCircle, History
 } from "lucide-react";
 import { redirect } from "next/navigation";
 import { getUserStatsAction } from "@/server/actions/stats";
@@ -191,6 +191,7 @@ export default async function Home() {
           </h2>
           <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
             {[
+              { name: '练习记录', desc: '查看历史成绩', href: '/history', icon: History },
               { name: '教材库', desc: '学习资料导入', href: '/textbooks', icon: Book },
               { name: 'AI 助教', desc: '智能答疑解惑', href: '/chat', icon: Brain },
               { name: '知识卡片', desc: '碎片化记忆', href: '/knowledge', icon: GraduationCap },

@@ -76,7 +76,7 @@ export default async function RootLayout({
               </div>
               <div className="flex-1 flex flex-col min-w-0">
                 {/* Mobile Header Placeholder if needed, or rely on MobileNav bottom */}
-                <main className="flex-1 pb-16 md:pb-0 relative">
+                <main className="flex-1 pb-16 md:pb-0 relative overflow-y-auto">
                   <ErrorBoundary>
                     {children}
                   </ErrorBoundary>

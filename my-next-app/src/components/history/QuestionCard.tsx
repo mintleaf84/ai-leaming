@@ -69,7 +69,7 @@ export function QuestionCard({ log, index, isExpanded, onToggle, refCallback }: 
     return (
         <div
             ref={refCallback}
-            className="bg-card rounded-2xl shadow-sm border border-border overflow-hidden"
+            className="bg-card rounded-2xl shadow-sm border border-border overflow-hidden scroll-mt-24 md:scroll-mt-20"
         >
             {/* 题目头部 */}
             <div className={`p-5 ${log.isCorrect ? 'border-l-4 border-l-green-500' : 'border-l-4 border-l-red-500'}`}>

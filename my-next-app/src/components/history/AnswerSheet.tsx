@@ -19,7 +19,7 @@ export function AnswerSheet({ logs, isOpen, onToggle, onSelect }: AnswerSheetPro
     const wrongCount = logs.filter(l => !l.isCorrect).length;
 
     return (
-        <div className="fixed bottom-6 right-6 z-50">
+        <div className="fixed bottom-24 right-6 md:bottom-6 z-50">
             {/* 展开的答题卡 */}
             {isOpen && (
                 <div className="mb-3 bg-card rounded-2xl shadow-2xl border border-border w-80 overflow-hidden animate-in slide-in-from-bottom-4 duration-200">
@@ -49,8 +49,8 @@ export function AnswerSheet({ logs, isOpen, onToggle, onSelect }: AnswerSheetPro
                                     key={idx}
                                     onClick={() => onSelect(idx)}
                                     className={`w-8 h-8 rounded-md text-xs font-bold text-white transition-all hover:scale-110 hover:shadow-md ${log.isCorrect
-                                            ? 'bg-green-500 hover:bg-green-600'
-                                            : 'bg-red-500 hover:bg-red-600'
+                                        ? 'bg-green-500 hover:bg-green-600'
+                                        : 'bg-red-500 hover:bg-red-600'
                                         }`}
                                 >
                                     {idx + 1}
@@ -65,8 +65,8 @@ export function AnswerSheet({ logs, isOpen, onToggle, onSelect }: AnswerSheetPro
             <button
                 onClick={onToggle}
                 className={`w-14 h-14 rounded-full shadow-lg flex items-center justify-center transition-all hover:scale-110 ${isOpen
-                        ? 'bg-primary text-primary-foreground'
-                        : 'bg-card border border-border text-primary hover:bg-primary/10'
+                    ? 'bg-primary text-primary-foreground'
+                    : 'bg-card border border-border text-primary hover:bg-primary/10'
                     }`}
             >
                 {isOpen ? (

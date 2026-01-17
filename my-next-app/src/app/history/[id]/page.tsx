@@ -79,13 +79,16 @@ export default function SessionDetailPage({ params }: { params: Promise<{ id: st
 
   // 滚动到指定题目（使用 scrollIntoView 以兼容 main 容器滚动）
   const scrollToQuestion = useCallback((idx: number) => {
-    const element = questionRefs.current[idx];
-    if (element) {
-      // scrollIntoView 能够自动找到滚动的父容器，block: 'center' 避免被顶部/底部遮挡
-      element.scrollIntoView({ behavior: 'smooth', block: 'center' });
-      setExpandedItems(prev => new Set(prev).add(idx));
-    }
     setShowAnswerCard(false);
+    // 稍微延迟以等待答题卡关闭动画，避免布局冲突
+    setTimeout(() => {
+      const element = questionRefs.current[idx];
+      if (element) {
+        // scrollIntoView 能够自动找到滚动的父容器，block: 'center' 避免被顶部/底部遮挡
+        element.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        setExpandedItems(prev => new Set(prev).add(idx));
+      }
+    }, 100);
   }, []);
 
   // AI 深度分析

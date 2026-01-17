@@ -132,6 +132,7 @@ export type SessionDetail = {
     correctRatio: number | null; // 全站正确率
     mostWrongAnswer: string | null; // 易错项
     reviewData?: any;
+    aiMnemonic?: string | null; // 新增：AI 助记内容
   }[];
 };
 
@@ -148,8 +149,9 @@ export async function getSessionDetailAction(sessionId: string): Promise<Session
 
     const logs = db.prepare(`
       SELECT l.question_id as questionId, q.content as questionContent, q.options, q.answer as correctAnswer,
-             l.user_answer as userAnswer, l.is_correct as isCorrect, l.duration_ms as duration, 
+             l.user_answer as userAnswer, l.is_correct as isCorrect, l.duration_ms as duration,
              q.tags, q.source, q.explanation, q.correct_ratio, q.most_wrong_answer,
+             q.ai_mnemonic, -- 新增查询
              r.review_data as reviewData
       FROM practice_logs l
       JOIN questions q ON l.question_id = q.id
@@ -175,7 +177,8 @@ export async function getSessionDetailAction(sessionId: string): Promise<Session
         explanation: l.explanation || '',
         correctRatio: l.correct_ratio,
         mostWrongAnswer: l.most_wrong_answer,
-        reviewData: l.reviewData ? JSON.parse(l.reviewData) : undefined
+        reviewData: l.reviewData ? JSON.parse(l.reviewData) : undefined,
+        aiMnemonic: l.ai_mnemonic || null // 映射字段
       }))
     };
   } catch (error) {

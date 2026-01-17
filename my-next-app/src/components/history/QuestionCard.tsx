@@ -1,9 +1,12 @@
 "use client";
 
 import React, { useState } from 'react';
-import { CheckCircle2, XCircle, BookOpen, ChevronDown, ChevronUp, BrainCircuit, Lightbulb, Loader2 } from 'lucide-react';
+import { CheckCircle2, XCircle, BookOpen, ChevronDown, ChevronUp, BrainCircuit, Lightbulb, Loader2, Sparkles, RefreshCw } from 'lucide-react';
 import { formatDuration, indexToLetter } from '@/lib/utils/utils';
 import { AnnotatableText } from './AnnotatableText';
+import ReactMarkdown from 'react-markdown';
+import { generateMnemonicAction } from '@/server/actions/ai-mnemonic';
+import { toast } from 'sonner';
 
 export interface QuestionLogData {
     questionId?: number;           // 题目 ID (用于标注持久化)
@@ -19,6 +22,7 @@ export interface QuestionLogData {
     correctRatio?: number | null;      // 全站正确率
     mostWrongAnswer?: string | null;   // 易错项
     reviewData?: any;
+    aiMnemonic?: string | null;        // AI 助记
 }
 
 interface QuestionCardProps {
@@ -56,6 +60,33 @@ export function QuestionCard({ log, index, isExpanded, onToggle, refCallback }: 
     // 第一性原理分析状态
     const [fpAnalysis, setFpAnalysis] = useState<string | null>(null);
     const [isLoadingFP, setIsLoadingFP] = useState(false);
+
+    // AI 助记状态 (初始值来自服务端，如果为空则允许手动生成)
+    const [mnemonic, setMnemonic] = useState<string | null>(log.aiMnemonic || null);
+    const [isGeneratingMnemonic, setIsGeneratingMnemonic] = useState(false);
+
+    // 生成 AI 助记
+    const handleGenerateMnemonic = async (force: boolean = false) => {
+        if ((!force && mnemonic) || isGeneratingMnemonic || !log.questionId) return;
+
+        setIsGeneratingMnemonic(true);
+        try {
+            const result = await generateMnemonicAction(String(log.questionId), force);
+            if (result.success && result.content) {
+                setMnemonic(result.content);
+                if (!result.cached) {
+                    toast.success(force ? '重新生成成功！' : '记忆口诀生成成功！');
+                }
+            } else {
+                toast.error(result.message || '生成失败');
+            }
+        } catch (error) {
+            console.error('助记生成失败:', error);
+            toast.error('请求出错，请稍后重试');
+        } finally {
+            setIsGeneratingMnemonic(false);
+        }
+    };
 
     // 获取第一性原理分析
     const handleFirstPrinciples = async () => {
@@ -265,6 +296,53 @@ export function QuestionCard({ log, index, isExpanded, onToggle, refCallback }: 
                             )}
                         </div>
                     )}
+
+                    {/* AI 助记大师 */}
+                    <div className="p-5 bg-purple-500/5 border-t border-purple-500/10">
+                        <div className="flex items-center justify-between mb-3">
+                            <div className="flex items-center gap-2 text-purple-700 dark:text-purple-400 font-bold text-sm">
+                                <Sparkles className="h-4 w-4" />
+                                AI 记忆大师
+                            </div>
+                            {!mnemonic && log.questionId && (
+                                <button
+                                    onClick={() => handleGenerateMnemonic(false)}
+                                    disabled={isGeneratingMnemonic}
+                                    className="px-3 py-1.5 text-xs font-medium bg-purple-500/10 hover:bg-purple-500/20 text-purple-700 dark:text-purple-400 rounded-full border border-purple-500/20 transition-colors disabled:opacity-50 flex items-center gap-1.5"
+                                >
+                                    {isGeneratingMnemonic ? (
+                                        <>
+                                            <Loader2 className="h-3 w-3 animate-spin" />
+                                            生成中...
+                                        </>
+                                    ) : (
+                                        '生成记忆口诀'
+                                    )}
+                                </button>
+                            )}
+
+                            {mnemonic && log.questionId && (
+                                <button
+                                    onClick={() => handleGenerateMnemonic(true)}
+                                    disabled={isGeneratingMnemonic}
+                                    className="p-1.5 text-purple-400 hover:text-purple-600 dark:hover:text-purple-300 transition-colors disabled:opacity-50"
+                                    title="重新生成"
+                                >
+                                    <RefreshCw className={`h-4 w-4 ${isGeneratingMnemonic ? 'animate-spin' : ''}`} />
+                                </button>
+                            )}
+                        </div>
+
+                        {mnemonic ? (
+                            <div className="prose prose-sm dark:prose-invert max-w-none bg-card p-4 rounded-xl border border-purple-500/20 shadow-sm">
+                                <ReactMarkdown>{mnemonic}</ReactMarkdown>
+                            </div>
+                        ) : (
+                            <div className="text-xs text-muted-foreground">
+                                遇到难记的知识点？点击按钮，AI 为你生成趣味口诀和脑洞联想。
+                            </div>
+                        )}
+                    </div>
 
                     {/* 考点和来源 */}
                     <div className="p-5 bg-muted/30 space-y-3">

@@ -26,6 +26,7 @@ export function createTables(db: Database.Database) {
       tags TEXT,
       dimension TEXT CHECK(dimension IN ('knowledge', 'understanding', 'application')),
       type TEXT,
+      ai_mnemonic TEXT,
       created_at DATETIME DEFAULT CURRENT_TIMESTAMP
     );
 

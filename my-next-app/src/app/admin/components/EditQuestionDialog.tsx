@@ -20,6 +20,7 @@ import {
     SelectTrigger,
     SelectValue,
 } from "@/components/ui/select";
+import { Checkbox } from "@/components/ui/checkbox";
 import { toast } from "sonner";
 import { updateQuestionAction } from "@/server/actions/admin";
 
@@ -38,16 +39,21 @@ export function EditQuestionDialog({
 }: EditQuestionDialogProps) {
     const [formData, setFormData] = useState({
         content: "",
-        optionsStr: "", // 用换行符分隔的选项
+        optionsStr: "",
         answer: "",
         explanation: "",
-        tagsStr: "",    // 用逗号分隔的标签
-        dimension: "knowledge"
+        tagsStr: "",
+        dimension: "knowledge",
+        type: "single"
     });
     const [loading, setLoading] = useState(false);
 
     useEffect(() => {
         if (question && open) {
+            // 尝试自动识别类型（如果后端还没存type字段）
+            const isJsonAns = question.answer?.trim().startsWith('[') && question.answer?.includes('"');
+            const type = question.type || (isJsonAns ? 'multi' : 'single');
+
             setFormData({
                 content: question.content || "",
                 optionsStr: Array.isArray(question.options) ? question.options.join("\n") : "",
@@ -55,6 +61,7 @@ export function EditQuestionDialog({
                 explanation: question.explanation || "",
                 tagsStr: Array.isArray(question.tags) ? question.tags.join(", ") : "",
                 dimension: question.dimension || "knowledge",
+                type: type
             });
         }
     }, [question, open]);
@@ -69,7 +76,19 @@ export function EditQuestionDialog({
             if (!formData.content) throw new Error("题干不能为空");
             if (options.length < 2) throw new Error("至少需要2个选项");
             if (!formData.answer) throw new Error("答案不能为空");
-            if (!options.includes(formData.answer)) throw new Error("答案必须是选项之一");
+
+            // 校验答案
+            if (formData.type === 'single') {
+                if (!options.includes(formData.answer)) throw new Error("单选题答案必须是选项之一");
+            } else {
+                try {
+                    const ansArr = JSON.parse(formData.answer);
+                    if (!Array.isArray(ansArr) || ansArr.length === 0) throw new Error("多选题至少选择一个答案");
+                    if (!ansArr.every(a => options.includes(a))) throw new Error("多选题答案项必须存在于选项中");
+                } catch (e) {
+                    throw new Error("多选题答案格式错误");
+                }
+            }
 
             const updateData = {
                 content: formData.content,
@@ -77,7 +96,8 @@ export function EditQuestionDialog({
                 answer: formData.answer,
                 explanation: formData.explanation,
                 tags,
-                dimension: formData.dimension
+                dimension: formData.dimension,
+                type: formData.type // 传递 type
             };
 
             const res = await updateQuestionAction(question.id, updateData);
@@ -92,6 +112,26 @@ export function EditQuestionDialog({
             toast.error(error.message);
         } finally {
             setLoading(false);
+        }
+    };
+
+    // 实时解析选项以供选择
+    const parsedOptions = formData.optionsStr.split("\n").map(s => s.trim()).filter(Boolean);
+
+    // 处理多选变动
+    const handleMultiAnswerChange = (option: string, checked: boolean) => {
+        try {
+            const current = formData.answer ? JSON.parse(formData.answer) : [];
+            let next;
+            if (checked) {
+                next = [...current, option];
+            } else {
+                next = current.filter((o: string) => o !== option);
+            }
+            setFormData(prev => ({ ...prev, answer: JSON.stringify(next) }));
+        } catch {
+            // 如果解析失败，重置
+            setFormData(prev => ({ ...prev, answer: JSON.stringify([option]) }));
         }
     };
 
@@ -118,6 +158,26 @@ export function EditQuestionDialog({
 
                     <div className="grid grid-cols-2 gap-4">
                         <div className="space-y-2">
+                            <Label>题目类型</Label>
+                            <Select
+                                value={formData.type}
+                                onValueChange={(val) => setFormData(prev => ({
+                                    ...prev,
+                                    type: val,
+                                    answer: "" // 切换类型时清空答案
+                                }))}
+                            >
+                                <SelectTrigger>
+                                    <SelectValue />
+                                </SelectTrigger>
+                                <SelectContent>
+                                    <SelectItem value="single">单项选择</SelectItem>
+                                    <SelectItem value="multi">不定项选择 (多选)</SelectItem>
+                                </SelectContent>
+                            </Select>
+                        </div>
+
+                        <div className="space-y-2">
                             <Label htmlFor="dimension">维度</Label>
                             <Select
                                 value={formData.dimension}
@@ -133,17 +193,6 @@ export function EditQuestionDialog({
                                 </SelectContent>
                             </Select>
                         </div>
-
-                        <div className="space-y-2">
-                            <Label htmlFor="answer">正确答案</Label>
-                            <Input
-                                id="answer"
-                                value={formData.answer}
-                                onChange={(e) => setFormData(prev => ({ ...prev, answer: e.target.value }))}
-                                placeholder="必须与选项完全一致"
-                                required
-                            />
-                        </div>
                     </div>
 
                     <div className="space-y-2">
@@ -157,6 +206,56 @@ export function EditQuestionDialog({
                             required
                             className="font-mono text-sm"
                         />
+                    </div>
+
+                    <div className="space-y-2">
+                        <Label className="text-primary font-bold">正确答案 ({formData.type === 'single' ? '单选' : '多选'})</Label>
+
+                        {formData.type === 'single' ? (
+                            <Select
+                                value={formData.answer}
+                                onValueChange={(val) => setFormData(prev => ({ ...prev, answer: val }))}
+                            >
+                                <SelectTrigger className="border-primary/50">
+                                    <SelectValue placeholder="选择正确选项" />
+                                </SelectTrigger>
+                                <SelectContent>
+                                    {parsedOptions.length > 0 ? (
+                                        parsedOptions.map((opt, idx) => (
+                                            <SelectItem key={idx} value={opt}>{opt}</SelectItem>
+                                        ))
+                                    ) : (
+                                        <div className="p-2 text-xs text-muted-foreground">请先填写选项</div>
+                                    )}
+                                </SelectContent>
+                            </Select>
+                        ) : (
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-2 border border-primary/20 p-3 rounded-md bg-muted/10">
+                                {parsedOptions.length > 0 ? (
+                                    parsedOptions.map((opt, idx) => {
+                                        let isChecked = false;
+                                        try {
+                                            isChecked = JSON.parse(formData.answer || '[]').includes(opt);
+                                        } catch { }
+
+                                        return (
+                                            <div key={idx} className="flex items-center space-x-2">
+                                                <Checkbox
+                                                    id={`ans-${idx}`}
+                                                    checked={isChecked}
+                                                    onCheckedChange={(c) => handleMultiAnswerChange(opt, c === true)}
+                                                />
+                                                <Label htmlFor={`ans-${idx}`} className="font-normal cursor-pointer flex-1 truncate" title={opt}>
+                                                    {opt}
+                                                </Label>
+                                            </div>
+                                        );
+                                    })
+                                ) : (
+                                    <div className="p-2 text-xs text-muted-foreground">请先填写选项</div>
+                                )}
+                            </div>
+                        )}
                     </div>
 
                     <div className="space-y-2">

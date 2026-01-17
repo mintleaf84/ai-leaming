@@ -131,7 +131,37 @@ export interface QuestionUpdateData {
 export async function updateQuestionAction(id: number, data: QuestionUpdateData) {
   const user = await requireRole(['admin']);
   try {
-    // 构建动态 UPDATE 语句
+    // 1. 获取现有题目进行合并校验
+    const existing = db.prepare('SELECT * FROM questions WHERE id = ?').get(id) as any;
+    if (!existing) {
+      return { success: false, error: '题目不存在' };
+    }
+
+    // 解析 DB 中的 JSON 字符串字段
+    const currentQ = {
+      ...existing,
+      options: typeof existing.options === 'string' ? JSON.parse(existing.options) : existing.options,
+      tags: typeof existing.tags === 'string' ? JSON.parse(existing.tags) : existing.tags
+    };
+
+    // 合并数据
+    const merged = {
+      content: data.content ?? currentQ.content,
+      options: data.options ?? currentQ.options,
+      answer: data.answer ?? currentQ.answer,
+      explanation: data.explanation ?? currentQ.explanation,
+      tags: data.tags ?? currentQ.tags,
+      dimension: data.dimension ?? currentQ.dimension,
+      type: data.type ?? currentQ.type ?? 'single' // 兼容旧数据
+    };
+
+    // 2. 使用 Schema 校验
+    const validation = QuestionSchema.safeParse(merged);
+    if (!validation.success) {
+      return { success: false, error: validation.error.issues[0].message };
+    }
+
+    // 3. 构建动态 UPDATE 语句
     const updates: string[] = [];
     const params: any[] = [];
 
@@ -149,11 +179,7 @@ export async function updateQuestionAction(id: number, data: QuestionUpdateData)
 
     params.push(id);
     const sql = `UPDATE questions SET ${updates.join(', ')} WHERE id = ?`;
-    const result = db.prepare(sql).run(...params);
-
-    if (result.changes === 0) {
-      return { success: false, error: '题目不存在' };
-    }
+    db.prepare(sql).run(...params);
 
     // 记录操作日志
     logAdminAction(user.id, user.username, 'UPDATE_QUESTION', 'question', id.toString(), data);

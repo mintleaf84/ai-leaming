@@ -14,9 +14,18 @@ export const QuestionSchema = z.object({
   type: z.enum(['single', 'multi']).optional().default('single'),
 }).refine((data) => {
   // 验证答案是否在选项中
+  if (data.type === 'multi') {
+    try {
+      const answers = JSON.parse(data.answer);
+      if (!Array.isArray(answers) || answers.length < 1) return false;
+      return answers.every(a => data.options.includes(a));
+    } catch {
+      return false; // JSON 解析失败
+    }
+  }
   return data.options.includes(data.answer);
 }, {
-  message: "正确答案必须包含在选项列表中",
+  message: "正确答案（或所有多选答案）必须包含在选项列表中",
   path: ["answer"]
 });
 

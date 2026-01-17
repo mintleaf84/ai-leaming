@@ -30,6 +30,25 @@ interface QuestionCardProps {
 }
 
 /**
+ * 解析答案字符串（兼容单选和多选）
+ * 单选: "B" -> ["B"]
+ * 多选: '["A","B"]' -> ["A", "B"]
+ */
+export function parseAnswer(answer: string): string[] {
+    if (!answer) return [];
+    const trimmed = answer.trim();
+    if (trimmed.startsWith('[')) {
+        try {
+            const parsed = JSON.parse(trimmed);
+            return Array.isArray(parsed) ? parsed : [answer];
+        } catch {
+            return [answer];
+        }
+    }
+    return [answer];
+}
+
+/**
  * 单个题目卡片组件
  * 包含：题目内容、选项、统计栏、解析区域、AI复盘
  */
@@ -92,8 +111,10 @@ export function QuestionCard({ log, index, isExpanded, onToggle, refCallback }: 
                             <div className="mt-3 space-y-2">
                                 {log.options.map((opt, oi) => {
                                     const letter = indexToLetter(oi);
-                                    const isCorrectOption = log.correctAnswer.includes(letter);
-                                    const isUserChoice = log.userAnswer.includes(letter);
+                                    const correctAnswers = parseAnswer(log.correctAnswer);
+                                    const userAnswers = parseAnswer(log.userAnswer);
+                                    const isCorrectOption = correctAnswers.includes(letter);
+                                    const isUserChoice = userAnswers.includes(letter);
 
                                     return (
                                         <div
@@ -127,13 +148,13 @@ export function QuestionCard({ log, index, isExpanded, onToggle, refCallback }: 
                     <div className="grid grid-cols-3 md:grid-cols-5 gap-3 text-center">
                         <div>
                             <div className="text-lg font-bold text-green-600">
-                                {log.correctAnswer || '-'}
+                                {parseAnswer(log.correctAnswer).join(', ') || '-'}
                             </div>
                             <div className="text-xs text-muted-foreground">正确答案</div>
                         </div>
                         <div>
                             <div className={`text-lg font-bold ${log.isCorrect ? 'text-green-600' : 'text-red-500'}`}>
-                                {log.userAnswer || '未作答'}
+                                {parseAnswer(log.userAnswer).join(', ') || '未作答'}
                             </div>
                             <div className="text-xs text-muted-foreground">你的答案</div>
                         </div>

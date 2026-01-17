@@ -235,15 +235,25 @@ describe('Admin Actions', () => {
     });
 
     describe('updateQuestionAction - 编辑题目', () => {
+
         it('应该更新题目内容', async () => {
             vi.mocked(requireRole).mockResolvedValue({ id: 1, username: 'admin', role: 'admin' } as any);
 
             const mockRun = vi.fn().mockReturnValue({ changes: 1 });
-            mockDb.prepare.mockReturnValue({ run: mockRun });
+            const mockGet = vi.fn().mockReturnValue({
+                id: 1, content: 'Old Content', options: '["A","B"]', answer: 'A', type: 'single',
+                explanation: 'Existing explanation > 5 chars', tags: '["tag1"]', dimension: 'knowledge'
+            });
+
+            mockDb.prepare.mockImplementation((sql: string) => {
+                if (sql.includes('SELECT * FROM questions')) return { get: mockGet };
+                if (sql.includes('UPDATE questions')) return { run: mockRun };
+                return { get: vi.fn(), run: vi.fn() };
+            });
 
             const { updateQuestionAction } = await import('../admin');
             const result = await updateQuestionAction(1, {
-                content: '更新后的题干',
+                content: '更新后的题干内容长度足够',
                 answer: 'B'
             });
 
@@ -251,15 +261,82 @@ describe('Admin Actions', () => {
             expect(mockRun).toHaveBeenCalled();
         });
 
+        it('应该支持更新为不定项选择题', async () => {
+            vi.mocked(requireRole).mockResolvedValue({ id: 1, role: 'admin' } as any);
+
+            const mockRun = vi.fn().mockReturnValue({ changes: 1 });
+            const mockGet = vi.fn().mockReturnValue({
+                id: 1, content: 'Old Content', options: '["A","B"]', tags: '[]', type: 'single',
+                explanation: 'Old explanation > 5 chars', dimension: 'knowledge'
+            });
+
+            mockDb.prepare.mockImplementation((sql: string) => {
+                if (sql.includes('SELECT * FROM questions')) return { get: mockGet };
+                if (sql.includes('UPDATE questions')) return { run: mockRun };
+                return { get: vi.fn(), run: vi.fn() };
+            });
+
+            const updateData = {
+                id: 1,
+                content: '多选题测试内容长度足够',
+                options: ['A', 'B', 'C', 'D'],
+                type: 'multi' as const,
+                answer: JSON.stringify(['A', 'B']),
+                explanation: '多选解析内容长度足够',
+                tags: ['test'],
+                dimension: 'understanding' as const
+            };
+
+            const { updateQuestionAction } = await import('../admin');
+            const res = await updateQuestionAction(1, updateData);
+
+            expect(res.success).toBe(true);
+            expect(mockRun).toHaveBeenCalled();
+            // 验证 update SQL 中包含了 type 字段
+            const sql = mockDb.prepare.mock.calls[mockDb.prepare.mock.calls.length - 1][0];
+            expect(sql).toContain('type = ?');
+        });
+
+        it('不定项选择题答案不合法时应报错', async () => {
+            vi.mocked(requireRole).mockResolvedValue({ id: 1, role: 'admin' } as any);
+
+            const mockGet = vi.fn().mockReturnValue({
+                id: 1, content: 'Old Content', options: '["A","B","C","D"]', tags: '[]', type: 'multi',
+                explanation: 'Old explanation > 5 chars', dimension: 'knowledge'
+            });
+            mockDb.prepare.mockReturnValue({ get: mockGet } as any);
+
+            const updateData = {
+                id: 1,
+                content: '多选题测试内容长度足够',
+                options: ['A', 'B', 'C', 'D'],
+                type: 'multi' as const,
+                answer: JSON.stringify(['A', 'E']), // E 不在选项中
+                explanation: '多选解析内容长度足够',
+                tags: ['test'],
+                dimension: 'understanding' as const
+            };
+
+            const { updateQuestionAction } = await import('../admin');
+            const res = await updateQuestionAction(1, updateData);
+
+            expect(res.success).toBe(false);
+            expect(res.error).toContain('必须包含在选项列表中');
+        });
+
         it('题目不存在时应该返回错误', async () => {
             vi.mocked(requireRole).mockResolvedValue({ id: 1, username: 'admin', role: 'admin' } as any);
 
-            mockDb.prepare.mockReturnValue({ run: () => ({ changes: 0 }) });
+            mockDb.prepare.mockImplementation((sql: string) => {
+                if (sql.includes('SELECT * FROM questions')) return { get: () => null };
+                return { get: vi.fn(), run: vi.fn() };
+            });
 
             const { updateQuestionAction } = await import('../admin');
             const result = await updateQuestionAction(999, { content: '不存在的题目' });
 
             expect(result.success).toBe(false);
+            expect(result.error).toBe('题目不存在');
         });
     });
 

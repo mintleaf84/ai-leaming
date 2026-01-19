@@ -108,16 +108,28 @@ export async function importFenbiDataAction(
                     );
                 }
 
-                // 总是尝试更新材料和详情，以支持重新导入时修复数据
+                // 转换题目类型
+                const typeMap: Record<string, string> = {
+                    'single': 'single',
+                    'multi': 'multi',
+                    'boolean': 'single',
+                    'fill_blank': 'fill_blank'
+                };
+
+                // 总是尝试更新所有字段，以支持重新导入时修复数据
                 db.prepare(`
                     UPDATE questions 
-                    SET material = ?, material_html = ?, content = ?, explanation = ?
+                    SET material = ?, material_html = ?, content = ?, explanation = ?,
+                        type = ?, answer = ?, options = ?
                     WHERE id = ?
                 `).run(
                     question.material ?? null,
                     question.materialHtml ?? null,
                     question.content,
                     question.explanation,
+                    typeMap[question.type] || 'single',
+                    question.answer,
+                    JSON.stringify(question.options),
                     existing.id
                 );
 

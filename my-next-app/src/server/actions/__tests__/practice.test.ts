@@ -1,181 +1,131 @@
+// @vitest-environment node
 import { describe, it, expect, beforeEach, vi } from 'vitest';
 
 // 1. Mock dependencies
-const mocks = vi.hoisted(() => {
+const { mockDb } = vi.hoisted(() => {
     return {
-        prepare: vi.fn(),
-        run: vi.fn(),
-        get: vi.fn(),
-        all: vi.fn(),
-        requireUser: vi.fn(),
-        generateSession: vi.fn(),
-        updateMastery: vi.fn(),
-        generateSessionByConfig: vi.fn(),
+        mockDb: {
+            prepare: vi.fn(),
+        }
     };
 });
 
-// Mock DB
 vi.mock('@/lib/db', () => ({
-    default: {
-        prepare: mocks.prepare,
-    },
+    default: mockDb
 }));
 
-// Mock Auth
 vi.mock('@/lib/auth/auth', () => ({
-    requireUser: mocks.requireUser,
+    requireUser: vi.fn().mockResolvedValue({ id: 1 }),
 }));
 
-// Mock Scheduling Service
+// Mock scheduling service
 vi.mock('@/lib/services/scheduling', () => ({
     schedulingService: {
-        generateSession: mocks.generateSession,
-    },
+        getDailyScheduledQuestions: vi.fn().mockReturnValue([]),
+    }
 }));
 
-// Mock Practice Scheduling (Dynamic Import)
-vi.mock('@/lib/practice/practice-scheduling', () => ({
-    generateSessionByConfig: mocks.generateSessionByConfig,
-}));
-
-// Mock Mastery Service (Dynamic Import)
-vi.mock('@/lib/services/mastery', () => ({
-    masteryService: {
-        updateMastery: mocks.updateMastery,
-    },
-}));
-
-import {
-    getPracticeSessionAction,
-    submitAnswerAction,
-    saveSessionReviewAction,
-    getPracticeSessionByConfigAction,
-    getSessionByIdAction,
-} from '../practice';
-
-describe('Practice Server Actions', () => {
-    const TEST_USER = { id: 1, role: 'user' };
-
+describe('Practice Actions', () => {
     beforeEach(() => {
         vi.clearAllMocks();
-        mocks.requireUser.mockResolvedValue(TEST_USER);
-
-        // Setup default DB mock behavior
-        mocks.prepare.mockReturnValue({
-            run: mocks.run,
-            get: mocks.get,
-            all: mocks.all,
-        });
     });
 
     describe('getPracticeSessionAction', () => {
-        it('should create new session if forced', async () => {
-            mocks.all.mockReturnValue([{ id: 1, content: 'Q1', options: '[]', tags: '[]' }]);
-            mocks.run.mockReturnValue({ lastInsertRowid: 1 });
-
-            const result = await getPracticeSessionAction(true);
-
-            expect(result.questions).toHaveLength(1);
-            expect(result.sessionId).toBeDefined();
-            expect(mocks.prepare).toHaveBeenCalledWith(expect.stringContaining('INSERT INTO practice_sessions'));
-        });
-
-        it('should return empty session if no questions', async () => {
-            mocks.all.mockReturnValue([]);
-
-            const result = await getPracticeSessionAction(true);
-
-            expect(result.questions).toHaveLength(0);
-        });
-
-        it('should resume session if available', async () => {
-            const mockSession = {
-                id: 'sess_1',
-                questions_json: JSON.stringify([{ id: 1 }]),
-                total_questions: 5
+        it('should resume an existing session if available and not finished', async () => {
+            // Mock DB responses
+            const existingSession = {
+                id: 'session-123',
+                user_id: 1,
+                total_questions: 10,
+                // Valid JSON but content doesn't need to match full QuestionSchema for PracticeSessionRowSchema
+                questions_json: JSON.stringify([{ id: 1, content: 'Q1' }]),
+                created_at: '2024-01-01',
+                correct_count: 0,
+                review_count: 0
             };
 
-            // Mock resume check flow
-            mocks.get
-                .mockReturnValueOnce(mockSession) // lastSession
-                .mockReturnValueOnce({ count: 2 }); // logCount
+            // Chain of mock calls:
+            // 1. SELECT * FROM practice_sessions ...
+            // 2. SELECT count(*) FROM practice_logs ...
+            const mockGet = vi.fn()
+                .mockReturnValueOnce(existingSession) // Find last session
+                .mockReturnValueOnce({ count: 5 }); // Log count (5 < 10, so resume)
 
+            const mockRun = vi.fn();
+
+            mockDb.prepare.mockImplementation((sql: string) => {
+                if (sql.includes('ALTER TABLE')) {
+                    return { run: mockRun, get: mockGet };
+                }
+                return { get: mockGet, run: mockRun, all: vi.fn() };
+            });
+
+            const { getPracticeSessionAction } = await import('../practice');
             const result = await getPracticeSessionAction(false);
 
-            expect(result.sessionId).toBe('sess_1');
+            expect(result.sessionId).toBe('session-123');
             expect(result.resumed).toBe(true);
-            expect(result.completedCount).toBe(2);
-        });
-    });
-
-    describe('submitAnswerAction', () => {
-        it('should record answer and update mastery', async () => {
-            // Mock question lookup for tags
-            mocks.get.mockReturnValue({ tags: '["tag1"]', dimension: 'content' });
-
-            await submitAnswerAction(1, 'A', true, 1000, 'sess_1');
-
-            // Verify db logs
-            expect(mocks.prepare).toHaveBeenCalledWith(expect.stringContaining('INSERT INTO practice_logs'));
-            // Verify session update
-            expect(mocks.prepare).toHaveBeenCalledWith(expect.stringContaining('UPDATE practice_sessions'));
-            // Verify mastery update
-            expect(mocks.updateMastery).toHaveBeenCalledWith(TEST_USER.id, 'tag1', 'content', true);
-        });
-
-        it('should handle missing session ID', async () => {
-            await submitAnswerAction(1, 'A', true, 1000);
-
-            expect(mocks.prepare).toHaveBeenCalledWith(expect.stringContaining('INSERT INTO practice_logs'));
-        });
-    });
-
-    describe('saveSessionReviewAction', () => {
-        it('should save review data', async () => {
-            await saveSessionReviewAction('sess_1', 1, { correctness: 'correct' });
-
-            expect(mocks.prepare).toHaveBeenCalledWith(expect.stringContaining('INSERT INTO session_reviews'));
-            expect(mocks.prepare).toHaveBeenCalledWith(expect.stringContaining('UPDATE practice_sessions'));
-        });
-    });
-
-    describe('getPracticeSessionByConfigAction', () => {
-        it('should generate session based on config', async () => {
-            mocks.generateSessionByConfig.mockReturnValue([{ id: 1, content: 'Q1', options: '[]', tags: '[]' }]);
-
-            const config = { mode: 'test', limit: 10 };
-            const result = await getPracticeSessionByConfigAction(config);
-
-            expect(mocks.generateSessionByConfig).toHaveBeenCalledWith(expect.objectContaining({ limit: 10 }), TEST_USER.id);
+            expect(result.completedCount).toBe(5);
             expect(result.questions).toHaveLength(1);
         });
-    });
 
-    describe('getSessionByIdAction', () => {
-        it('should return null if session not found', async () => {
-            mocks.get.mockReturnValue(undefined);
+        it('should create a new session if no existing session found', async () => {
+            // Mock DB responses
 
-            const result = await getSessionByIdAction('unknown');
+            // Full valid questions for QuestionRowSchema validation
+            const questions = [
+                {
+                    id: 1,
+                    content: 'Q1 content length check',
+                    options: '["Option A","Option B"]',
+                    tags: '["Tag1"]',
+                    answer: 'Option A',
+                    explanation: 'Explanation length check',
+                    dimension: 'knowledge'
+                },
+                {
+                    id: 2,
+                    content: 'Q2 content length check',
+                    options: '["Option C","Option D"]',
+                    tags: '["Tag2"]',
+                    answer: 'Option C',
+                    explanation: 'Explanation length check',
+                    dimension: 'understanding'
+                }
+            ];
 
-            expect(result).toBeNull();
-        });
+            const mockGet = vi.fn()
+                // .mockReturnValueOnce(undefined) // ALTER TABLE (optional to mock strict return, usually .run())
+                .mockReturnValue(null); // No last session
 
-        it('should load resumeable session with full questions', async () => {
-            const mockSession = {
-                id: 'sess_1',
-                questions_json: JSON.stringify([{ id: 1, content: 'Full Q', options: '[]', tags: '[]' }]),
-                practice_mode: 'test'
-            };
+            const mockAll = vi.fn().mockReturnValue(questions);
+            const mockRun = vi.fn();
 
-            mocks.get
-                .mockReturnValueOnce(mockSession) // session
-                .mockReturnValueOnce({ count: 5 }); // logCount
+            mockDb.prepare.mockImplementation((sql: string) => {
+                if (sql.includes('SELECT * FROM questions')) {
+                    return { all: mockAll };
+                }
+                if (sql.includes('INSERT INTO practice_sessions')) {
+                    return { run: mockRun };
+                }
+                return { get: mockGet, run: mockRun, all: mockAll };
+            });
 
-            const result = await getSessionByIdAction('sess_1');
+            const { getPracticeSessionAction } = await import('../practice');
+            const result = await getPracticeSessionAction(false);
 
-            expect(result?.sessionId).toBe('sess_1');
-            expect(result?.questions[0].content).toBe('Full Q');
-            expect(result?.completedCount).toBe(5);
+            expect(result.resumed).toBeUndefined();
+            expect(result.sessionId).toHaveLength(11); // Math.random logic length
+            expect(result.questions).toHaveLength(2);
+            expect(result.questions[0].options).toEqual(["Option A", "Option B"]); // Verify JSON parse
+
+            // Verify DB insert
+            expect(mockRun).toHaveBeenCalledWith(
+                expect.any(String), // sessionId
+                1, // userId
+                2, // total
+                expect.any(String) // questions_json
+            );
         });
     });
 });

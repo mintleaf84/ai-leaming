@@ -2,7 +2,7 @@ import { z } from 'zod';
 
 // --- Base Schemas ---
 
-export const QuestionSchema = z.object({
+const BaseQuestionSchema = z.object({
   content: z.string().min(5, "题干长度至少为5个字符"),
   options: z.array(z.string().min(1, "选项内容不能为空")).min(2, "至少需要2个选项").max(10),
   answer: z.string().min(1, "必须指定正确答案"),
@@ -12,7 +12,9 @@ export const QuestionSchema = z.object({
     message: "维度必须是 'knowledge'、'understanding' 或 'application'"
   }),
   type: z.enum(['single', 'multi']).optional().default('single'),
-}).refine((data) => {
+});
+
+export const QuestionSchema = BaseQuestionSchema.refine((data) => {
   // 验证答案是否在选项中
   if (data.type === 'multi') {
     try {
@@ -61,3 +63,61 @@ export const RegressionChallengeSchema = z.object({
 
 export type CorrectionQuiz = z.infer<typeof CorrectionQuizSchema>;
 export type RegressionChallenge = z.infer<typeof RegressionChallengeSchema>;
+
+// --- Persistence Schemas (Database Rows) ---
+
+export const PracticeSessionRowSchema = z.object({
+  id: z.string(),
+  user_id: z.number(),
+  session_name: z.string().nullable().optional(),
+  total_questions: z.number(),
+  correct_count: z.number().default(0),
+  review_count: z.number().default(0),
+  created_at: z.string().optional(),
+  questions_json: z.string().transform((str, ctx) => {
+    try {
+      if (!str) return [];
+      return JSON.parse(str);
+    } catch (e) {
+      ctx.addIssue({ code: z.ZodIssueCode.custom, message: "Invalid JSON in questions_json" });
+      return [];
+    }
+  }),
+  practice_mode: z.string().nullable().optional(),
+});
+
+export const PracticeLogRowSchema = z.object({
+  id: z.number(),
+  session_id: z.string().nullable(),
+  user_id: z.number(),
+  question_id: z.number(),
+  user_answer: z.string(),
+  is_correct: z.number().transform(val => Boolean(val)), // SQLite stores boolean as 0/1
+  duration_ms: z.number(),
+  timestamp: z.string().optional()
+});
+
+// 数据库行 Schema，包含自动 JSON 解析
+export const QuestionRowSchema = BaseQuestionSchema.extend({
+  id: z.number(), // 数据库都有 ID
+  options: z.string().transform((str, ctx): string[] => {
+    try {
+      const parsed = JSON.parse(str);
+      return z.array(z.string()).parse(parsed);
+    } catch {
+      return [];
+    }
+  }).or(z.array(z.string())), // 兼容已经是数组的情况（虽然 sqlite 通常返回 string）
+  tags: z.string().transform((str, ctx): string[] => {
+    try {
+      const parsed = JSON.parse(str);
+      return z.array(z.string()).parse(parsed);
+    } catch {
+      return [];
+    }
+  }).or(z.array(z.string())),
+});
+
+export type PracticeSessionRow = z.infer<typeof PracticeSessionRowSchema>;
+export type PracticeLogRow = z.infer<typeof PracticeLogRowSchema>;
+export type QuestionRow = z.infer<typeof QuestionRowSchema>;

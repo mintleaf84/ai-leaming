@@ -5,11 +5,14 @@ import { getSessionDetailAction, SessionDetail, deleteSessionAction, exportSessi
 import { generateDeepAnalysisAction, getAnalysisReportAction } from '@/server/actions/report';
 import { Button } from '@/components/ui/button';
 import Link from 'next/link';
+
 import { useRouter } from 'next/navigation';
 import { toast } from 'sonner';
 import { ArrowLeft, Trash2, Target, Sparkles, Loader2, ChevronDown, ChevronUp, Download } from 'lucide-react';
 import { SessionSummary, AnswerSheet, QuestionCard, QuestionLogData } from '@/components/history';
 import ReactMarkdown from 'react-markdown';
+import { Checkbox } from "@/components/ui/checkbox";
+import { Label } from "@/components/ui/label";
 
 export default function SessionDetailPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = use(params);
@@ -21,6 +24,7 @@ export default function SessionDetailPage({ params }: { params: Promise<{ id: st
   const [isDeleting, setIsDeleting] = useState(false);
   const [expandedItems, setExpandedItems] = useState<Set<number>>(new Set());
   const [showAnswerCard, setShowAnswerCard] = useState(false);
+  const [showWrongOnly, setShowWrongOnly] = useState(false); // 新增：只看错题状态
 
   // AI 深度分析状态
   const [isAnalyzing, setIsAnalyzing] = useState(false);
@@ -80,7 +84,13 @@ export default function SessionDetailPage({ params }: { params: Promise<{ id: st
   // 滚动到指定题目（使用 scrollIntoView 以兼容 main 容器滚动）
   const scrollToQuestion = useCallback((idx: number) => {
     setShowAnswerCard(false);
-    // 稍微延迟以等待答题卡关闭动画，避免布局冲突
+    // 如果开启了只看错题，且该题是正确的，则先关闭只看错题模式
+    if (showWrongOnly && detail?.logs[idx].isCorrect) {
+      setShowWrongOnly(false);
+      toast.info('已自动切换显示所有题目');
+    }
+
+    // 稍微延迟以等待答题卡关闭动画及可能的列表渲染
     setTimeout(() => {
       const element = questionRefs.current[idx];
       if (element) {
@@ -88,8 +98,8 @@ export default function SessionDetailPage({ params }: { params: Promise<{ id: st
         element.scrollIntoView({ behavior: 'smooth', block: 'center' });
         setExpandedItems(prev => new Set(prev).add(idx));
       }
-    }, 100);
-  }, []);
+    }, 150);
+  }, [showWrongOnly, detail]);
 
   // AI 深度分析
   const handleAnalyze = useCallback(async () => {
@@ -143,6 +153,10 @@ export default function SessionDetailPage({ params }: { params: Promise<{ id: st
   if (!detail) {
     return <div className="p-8 text-center text-destructive">找不到该练习记录</div>;
   }
+
+  // 计算过滤后的题目列表（保留原始索引）
+  const displayedQuestions = detail.logs.map((log, index) => ({ log, index }))
+    .filter(item => !showWrongOnly || !item.log.isCorrect);
 
   return (
     <div className="p-4 md:p-8 max-w-4xl mx-auto pb-20 min-h-[calc(100vh-64px)] bg-background">
@@ -228,21 +242,42 @@ export default function SessionDetailPage({ params }: { params: Promise<{ id: st
 
       {/* 答题详情列表 */}
       <div className="space-y-6">
-        <h2 className="text-xl font-bold text-foreground flex items-center gap-2 px-2">
-          <Target className="h-5 w-5 text-blue-500" />
-          答题详情
-        </h2>
+        <div className="flex items-center justify-between px-2">
+          <h2 className="text-xl font-bold text-foreground flex items-center gap-2">
+            <Target className="h-5 w-5 text-blue-500" />
+            答题详情
+          </h2>
+          <div className="flex items-center space-x-2">
+            <Checkbox
+              id="show-wrong"
+              checked={showWrongOnly}
+              onCheckedChange={(checked) => setShowWrongOnly(!!checked)}
+            />
+            <Label
+              htmlFor="show-wrong"
+              className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70 cursor-pointer text-muted-foreground hover:text-foreground transition-colors"
+            >
+              只看错题
+            </Label>
+          </div>
+        </div>
 
-        {detail.logs.map((log, idx) => (
-          <QuestionCard
-            key={idx}
-            log={log as QuestionLogData}
-            index={idx}
-            isExpanded={expandedItems.has(idx)}
-            onToggle={() => toggleExpand(idx)}
-            refCallback={(el) => { questionRefs.current[idx] = el; }}
-          />
-        ))}
+        {displayedQuestions.length > 0 ? (
+          displayedQuestions.map(({ log, index }) => (
+            <QuestionCard
+              key={index} // 使用原始 index 作为 key 是安全的，因为数据是静态的
+              log={log as QuestionLogData}
+              index={index}
+              isExpanded={expandedItems.has(index)}
+              onToggle={() => toggleExpand(index)}
+              refCallback={(el) => { questionRefs.current[index] = el; }}
+            />
+          ))
+        ) : (
+          <div className="text-center py-12 text-muted-foreground bg-muted/20 rounded-xl border border-dashed border-border">
+            {showWrongOnly ? '太棒了！本次练习没有错题 🎉' : '暂无答题记录'}
+          </div>
+        )}
       </div>
 
       {/* 悬浮答题卡 */}

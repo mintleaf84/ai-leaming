@@ -2,7 +2,9 @@
 
 import db from '@/lib/db';
 import { Question } from '@/lib/types';
-import { schedulingService } from '@/lib/services/scheduling';
+import { safeGet, safeAll } from '@/lib/db/safe-query';
+import { PracticeSessionRowSchema, QuestionSchema, QuestionRowSchema } from '@/lib/schemas';
+import { z } from 'zod';
 import { requireUser } from '@/lib/auth/auth';
 
 export async function getPracticeSessionAction(forceNew: boolean = false): Promise<{
@@ -20,18 +22,27 @@ export async function getPracticeSessionAction(forceNew: boolean = false): Promi
 
     // 1. Try to resume latest session
     if (!forceNew) {
-      const lastSession = db.prepare(`
-        SELECT * FROM practice_sessions 
-        WHERE user_id = ? AND created_at > datetime('now', '-1 day') 
-        ORDER BY created_at DESC LIMIT 1
-      `).get(user.id) as any;
+      const lastSession = safeGet(
+        db.prepare(`
+          SELECT * FROM practice_sessions 
+          WHERE user_id = ? AND created_at > datetime('now', '-1 day') 
+          ORDER BY created_at DESC LIMIT 1
+        `),
+        [user.id],
+        PracticeSessionRowSchema
+      );
 
       if (lastSession && lastSession.questions_json) {
-        const logCount = db.prepare('SELECT count(*) as count FROM practice_logs WHERE session_id = ?').get(lastSession.id) as { count: number };
+        const logCount = safeGet(
+          db.prepare('SELECT count(*) as count FROM practice_logs WHERE session_id = ?'),
+          [lastSession.id],
+          z.object({ count: z.number() })
+        );
 
         // If not finished (logs < total), resume it
-        if (logCount.count < lastSession.total_questions) {
-          const questions = JSON.parse(lastSession.questions_json);
+        if (logCount && logCount.count < lastSession.total_questions) {
+          // questions_json is already parsed by Schema
+          const questions = lastSession.questions_json as unknown as Question[];
           return {
             questions,
             sessionId: lastSession.id,
@@ -47,20 +58,18 @@ export async function getPracticeSessionAction(forceNew: boolean = false): Promi
 
     // Use scheduling service logic if possible, or fallback to random
     // For now keeping the simple random logic but improving it to use questions_json
-    const stmt = db.prepare('SELECT * FROM questions ORDER BY RANDOM() LIMIT 10');
-    const rawQuestions = stmt.all() as any[];
+    const questions = safeAll(
+      db.prepare('SELECT * FROM questions ORDER BY RANDOM() LIMIT 10'),
+      [],
+      QuestionRowSchema
+    );
 
-    if (!rawQuestions || rawQuestions.length === 0) {
+    if (!questions || questions.length === 0) {
       return { questions: [], sessionId: "" };
     }
 
-    const questions = rawQuestions.map(q => ({
-      ...q,
-      options: typeof q.options === 'string' ? JSON.parse(q.options) : q.options,
-      tags: typeof q.tags === 'string' ? JSON.parse(q.tags) : q.tags
-    }));
-
     // Create session in DB with questions_json
+    // Use QuestionRowSchema parsed result which has correct types for JSON
     db.prepare(`
       INSERT INTO practice_sessions (id, user_id, total_questions, questions_json) 
       VALUES (?, ?, ?, ?)
@@ -329,62 +338,59 @@ export async function getSessionByIdAction(sessionId: string): Promise<{
     const user = await requireUser();
 
     // 查询会话
-    const session = db.prepare(`
-      SELECT * FROM practice_sessions 
-      WHERE id = ? AND user_id = ?
-    `).get(sessionId, user.id) as any;
+    const session = safeGet(
+      db.prepare(`
+        SELECT * FROM practice_sessions 
+        WHERE id = ? AND user_id = ?
+      `),
+      [sessionId, user.id],
+      PracticeSessionRowSchema
+    );
 
     if (!session || !session.questions_json) {
       return null;
     }
 
-    // 解析 questions_json
-    let questionsData = JSON.parse(session.questions_json);
+    // 解析 questions_json (already parsed by Schema)
+    let questionsData = session.questions_json as any[];
 
     // 检查是 ID 数组还是完整题目对象数组
     if (questionsData.length > 0 && typeof questionsData[0] === 'string') {
       // 是字符串 ID 数组，需要查询完整题目
       const placeholders = questionsData.map(() => '?').join(',');
-      const rawQuestions = db.prepare(`
-        SELECT * FROM questions WHERE id IN (${placeholders})
-      `).all(...questionsData) as any[];
-
-      questionsData = rawQuestions.map(q => ({
-        ...q,
-        options: typeof q.options === 'string' ? JSON.parse(q.options) : q.options,
-        tags: typeof q.tags === 'string' ? JSON.parse(q.tags) : q.tags
-      }));
+      const rawQuestions = safeAll(
+        db.prepare(`SELECT * FROM questions WHERE id IN (${placeholders})`),
+        questionsData,
+        QuestionRowSchema
+      );
+      questionsData = rawQuestions;
     } else if (questionsData.length > 0 && typeof questionsData[0] === 'number') {
       // 是数字 ID 数组
       const placeholders = questionsData.map(() => '?').join(',');
-      const rawQuestions = db.prepare(`
-        SELECT * FROM questions WHERE id IN (${placeholders})
-      `).all(...questionsData) as any[];
-
-      questionsData = rawQuestions.map(q => ({
-        ...q,
-        options: typeof q.options === 'string' ? JSON.parse(q.options) : q.options,
-        tags: typeof q.tags === 'string' ? JSON.parse(q.tags) : q.tags
-      }));
+      const rawQuestions = safeAll(
+        db.prepare(`SELECT * FROM questions WHERE id IN (${placeholders})`),
+        questionsData,
+        QuestionRowSchema
+      );
+      questionsData = rawQuestions;
     } else {
-      // 已经是完整题目对象，确保 JSON 字段已解析
-      questionsData = questionsData.map((q: any) => ({
-        ...q,
-        options: typeof q.options === 'string' ? JSON.parse(q.options) : q.options,
-        tags: typeof q.tags === 'string' ? JSON.parse(q.tags) : q.tags
-      }));
+      // 已经是完整题目对象，通过 Zod 校验
+      // questionsData is already parsed Question[] mostly, but we can re-validate if needed.
+      // Assuming trust logic from Schema transform.
     }
 
     // 获取已完成题目数
-    const logCount = db.prepare(
-      'SELECT count(*) as count FROM practice_logs WHERE session_id = ?'
-    ).get(sessionId) as { count: number };
+    const logResult = safeGet(
+      db.prepare('SELECT count(*) as count FROM practice_logs WHERE session_id = ?'),
+      [sessionId],
+      z.object({ count: z.number() })
+    );
 
     return {
       questions: questionsData as Question[],
       sessionId: session.id,
-      completedCount: logCount.count,
-      practiceMode: session.practice_mode
+      completedCount: logResult?.count || 0,
+      practiceMode: session.practice_mode || undefined // Handle null
     };
   } catch (error) {
     console.error('获取会话失败:', error);

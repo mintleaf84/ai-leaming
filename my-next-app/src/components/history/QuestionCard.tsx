@@ -7,6 +7,12 @@ import { AnnotatableText } from './AnnotatableText';
 import ReactMarkdown from 'react-markdown';
 import { generateMnemonicAction } from '@/server/actions/ai-mnemonic';
 import { toast } from 'sonner';
+import {
+    Tooltip,
+    TooltipContent,
+    TooltipProvider,
+    TooltipTrigger,
+} from "@/components/ui/tooltip";
 
 export interface QuestionLogData {
     questionId?: number;           // 题目 ID (用于标注持久化)
@@ -38,11 +44,14 @@ interface QuestionCardProps {
 /**
  * 解析答案字符串（兼容单选和多选）
  * 单选: "B" -> ["B"]
- * 多选: '["A","B"]' -> ["A", "B"]
+ * 多选 JSON: '["A","B"]' -> ["A", "B"]
+ * 多选逗号分隔: "A,B,C" -> ["A", "B", "C"]
  */
 export function parseAnswer(answer: string): string[] {
     if (!answer) return [];
     const trimmed = answer.trim();
+
+    // 1. JSON 数组格式 '["A","B"]'
     if (trimmed.startsWith('[')) {
         try {
             const parsed = JSON.parse(trimmed);
@@ -51,6 +60,13 @@ export function parseAnswer(answer: string): string[] {
             return [answer];
         }
     }
+
+    // 2. 逗号分隔格式 'A,B,C' (多选题/不定项选择题)
+    if (trimmed.includes(',')) {
+        return trimmed.split(',').map(s => s.trim());
+    }
+
+    // 3. 单选题 / 判断题：单个值
     return [answer];
 }
 
@@ -379,11 +395,26 @@ export function QuestionCard({ log, index, isExpanded, onToggle, refCallback }: 
                                     <div>
                                         <div className="text-xs font-bold text-muted-foreground mb-2">考点</div>
                                         <div className="flex flex-wrap gap-2">
-                                            {log.tags.map(tag => (
-                                                <span key={tag} className="px-3 py-1 bg-primary/10 text-primary text-sm font-medium rounded-full">
-                                                    {tag}
-                                                </span>
-                                            ))}
+                                            {log.tags.map((tag, i) => {
+                                                const parts = tag.split('/');
+                                                const leaf = parts[parts.length - 1];
+                                                const fullPath = parts.join(' > ');
+
+                                                return (
+                                                    <TooltipProvider key={i}>
+                                                        <Tooltip delayDuration={300}>
+                                                            <TooltipTrigger asChild>
+                                                                <span className="px-3 py-1 bg-primary/10 text-primary text-sm font-medium rounded-full cursor-help hover:bg-primary/20 transition-colors">
+                                                                    {leaf}
+                                                                </span>
+                                                            </TooltipTrigger>
+                                                            <TooltipContent>
+                                                                <p className="text-xs">{fullPath}</p>
+                                                            </TooltipContent>
+                                                        </Tooltip>
+                                                    </TooltipProvider>
+                                                );
+                                            })}
                                         </div>
                                     </div>
                                 )}

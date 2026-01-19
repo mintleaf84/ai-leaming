@@ -1,0 +1,128 @@
+<!DOCTYPE html>
+
+<html class="light" lang="zh-CN"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Notion Style Registration</title>
+<!-- Google Fonts -->
+<link href="https://fonts.googleapis.com" rel="preconnect"/>
+<link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect"/>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&amp;display=swap" rel="stylesheet"/>
+<!-- Material Symbols -->
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<!-- Tailwind CSS -->
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<!-- Theme Configuration -->
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    colors: {
+                        "primary": "#1a1a1a",
+                        "background-light": "#ffffff", /* Overriding to pure white for Notion feel */
+                        "background-dark": "#191919",
+                    },
+                    fontFamily: {
+                        "display": ["Inter", "sans-serif"]
+                    },
+                    borderRadius: {"DEFAULT": "0.25rem", "lg": "0.5rem", "xl": "0.75rem", "full": "9999px"},
+                },
+            },
+        }
+    </script>
+<style>
+        /* Custom styles to refine the Notion look */
+        .notion-input {
+            transition: border-color 0.2s ease, box-shadow 0.2s ease;
+        }
+        .notion-input:focus {
+            border-color: #1a1a1a;
+            box-shadow: 0 0 0 1px rgba(26, 26, 26, 0.1);
+        }
+        .dark .notion-input:focus {
+            border-color: #ffffff;
+            box-shadow: 0 0 0 1px rgba(255, 255, 255, 0.1);
+        }
+    </style>
+<style>
+    body {
+      min-height: max(884px, 100dvh);
+    }
+  </style>
+  </head>
+<body class="bg-background-light dark:bg-background-dark font-display antialiased text-primary dark:text-white transition-colors duration-200">
+<div class="relative flex min-h-screen w-full flex-col overflow-x-hidden max-w-md mx-auto">
+<!-- Top Navigation -->
+<div class="flex items-center p-4">
+<button class="flex size-10 items-center justify-center rounded-lg hover:bg-neutral-100 dark:hover:bg-neutral-800 transition-colors text-neutral-600 dark:text-neutral-400">
+<span class="material-symbols-outlined text-[24px]">arrow_back</span>
+</button>
+</div>
+<!-- Main Content -->
+<main class="flex-1 px-8 pt-4 pb-10 flex flex-col justify-center">
+<!-- Header Section -->
+<div class="flex flex-col items-center mb-10 space-y-4">
+<div class="text-[64px] leading-none animate-bounce-slow transform hover:scale-110 transition-transform cursor-default select-none">
+                    👋
+                </div>
+<div class="text-center space-y-2">
+<h1 class="text-[#1a1a1a] dark:text-white text-[28px] font-bold tracking-tight leading-tight">
+                        加入学习空间
+                    </h1>
+<p class="text-neutral-500 dark:text-neutral-400 text-sm font-normal">
+                        开启你的极简学习之旅
+                    </p>
+</div>
+</div>
+<!-- Form Section -->
+<form class="w-full space-y-5" onsubmit="event.preventDefault();">
+<!-- Username Field -->
+<div class="group">
+<label class="block text-xs font-medium text-neutral-500 dark:text-neutral-400 mb-1.5 ml-1">用户名</label>
+<div class="relative flex items-center">
+<span class="absolute left-3.5 text-neutral-400 material-symbols-outlined text-[20px]">person</span>
+<input class="notion-input w-full bg-white dark:bg-neutral-800 text-[#1a1a1a] dark:text-white border border-neutral-200 dark:border-neutral-700 rounded-lg h-12 pl-11 pr-4 text-[15px] placeholder:text-neutral-400 focus:outline-none focus:ring-0" placeholder="请输入用户名" type="text"/>
+</div>
+</div>
+<!-- Email Field -->
+<div class="group">
+<label class="block text-xs font-medium text-neutral-500 dark:text-neutral-400 mb-1.5 ml-1">电子邮箱</label>
+<div class="relative flex items-center">
+<span class="absolute left-3.5 text-neutral-400 material-symbols-outlined text-[20px]">mail</span>
+<input class="notion-input w-full bg-white dark:bg-neutral-800 text-[#1a1a1a] dark:text-white border border-neutral-200 dark:border-neutral-700 rounded-lg h-12 pl-11 pr-4 text-[15px] placeholder:text-neutral-400 focus:outline-none focus:ring-0" placeholder="example@email.com" type="email"/>
+</div>
+</div>
+<!-- Password Field -->
+<div class="group">
+<label class="block text-xs font-medium text-neutral-500 dark:text-neutral-400 mb-1.5 ml-1">密码</label>
+<div class="relative flex items-center">
+<span class="absolute left-3.5 text-neutral-400 material-symbols-outlined text-[20px]">lock</span>
+<input class="notion-input w-full bg-white dark:bg-neutral-800 text-[#1a1a1a] dark:text-white border border-neutral-200 dark:border-neutral-700 rounded-lg h-12 pl-11 pr-12 text-[15px] placeholder:text-neutral-400 focus:outline-none focus:ring-0" placeholder="设置密码" type="password"/>
+<button class="absolute right-0 top-0 h-full px-3 text-neutral-400 hover:text-neutral-600 dark:hover:text-neutral-200 flex items-center justify-center transition-colors" type="button">
+<span class="material-symbols-outlined text-[20px]">visibility</span>
+</button>
+</div>
+</div>
+<!-- Submit Button -->
+<div class="pt-4">
+<button class="w-full h-12 bg-[#1a1a1a] dark:bg-white hover:bg-neutral-800 dark:hover:bg-neutral-200 text-white dark:text-[#1a1a1a] font-medium rounded-lg text-[15px] shadow-sm transition-all active:scale-[0.98] flex items-center justify-center gap-2">
+                        创建账号
+                        <span class="material-symbols-outlined text-[18px]">arrow_forward</span>
+</button>
+</div>
+<!-- Footer Link -->
+<div class="pt-2 text-center">
+<a class="text-[13px] text-neutral-500 dark:text-neutral-400 hover:text-[#1a1a1a] dark:hover:text-white transition-colors" href="#">
+                        已有账号？<span class="underline decoration-1 underline-offset-2 font-medium text-[#1a1a1a] dark:text-white">立即登录</span>
+</a>
+</div>
+</form>
+<!-- Decorative Notion-style quote or element at bottom -->
+<div class="mt-auto pt-10 pb-4 flex justify-center opacity-60">
+<div class="h-1 w-12 rounded-full bg-neutral-200 dark:bg-neutral-700"></div>
+</div>
+</main>
+</div>
+</body></html>

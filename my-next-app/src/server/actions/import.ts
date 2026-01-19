@@ -79,8 +79,8 @@ export async function importFenbiDataAction(
         const questionIdMap = new Map<string, number>(); // externalId -> 内部 id
 
         const insertQuestion = db.prepare(`
-      INSERT INTO questions (content, options, answer, explanation, tags, dimension, type, external_id, source, correct_ratio, most_wrong_answer)
-      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+      INSERT INTO questions (content, options, answer, explanation, tags, dimension, type, external_id, source, correct_ratio, most_wrong_answer, material, material_html)
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
     `);
 
         const findQuestion = db.prepare(`
@@ -107,6 +107,20 @@ export async function importFenbiDataAction(
                         existing.id
                     );
                 }
+
+                // 总是尝试更新材料和详情，以支持重新导入时修复数据
+                db.prepare(`
+                    UPDATE questions 
+                    SET material = ?, material_html = ?, content = ?, explanation = ?
+                    WHERE id = ?
+                `).run(
+                    question.material ?? null,
+                    question.materialHtml ?? null,
+                    question.content,
+                    question.explanation,
+                    existing.id
+                );
+
                 skippedQuestionsCount++;
             } else {
                 // 转换题目类型以匹配系统格式
@@ -128,7 +142,9 @@ export async function importFenbiDataAction(
                     question.externalId,
                     question.source,
                     question.stats?.correctRatio ?? null,      // 全站正确率
-                    question.stats?.mostWrongAnswer ?? null    // 易错项
+                    question.stats?.mostWrongAnswer ?? null,   // 易错项
+                    question.material ?? null,                 // 材料内容（纯文本）
+                    question.materialHtml ?? null              // 材料内容（HTML）
                 );
 
                 questionIdMap.set(question.externalId, result.lastInsertRowid as number);

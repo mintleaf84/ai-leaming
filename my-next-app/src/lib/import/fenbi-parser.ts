@@ -20,6 +20,9 @@ export interface ParsedQuestion {
     source: string;               // 来源
     type: 'single' | 'multi' | 'boolean' | 'fill_blank';  // 题目类型
     dimension: 'knowledge' | 'understanding' | 'application';
+    // 材料内容（不定项选择题等有材料的题目）
+    material?: string;              // 材料内容（纯文本）
+    materialHtml?: string;          // 材料内容（原始 HTML）
     // 统计数据（可选）
     stats?: {
         totalAnswers: number;       // 全站总作答人数
@@ -67,7 +70,7 @@ interface FenbiSolution {
     id: number;
     globalId: string;
     content: string;
-    type: number;  // 1=单选, 2=多选, 5=判断, 61=填空
+    type: number;  // 1=单选, 2=多选, 3=不定项, 5=判断, 61=填空
     accessories: Array<{
         options?: string[];
         type: number;
@@ -82,6 +85,22 @@ interface FenbiSolution {
     };
 }
 
+// 材料类型
+interface FenbiMaterial {
+    id: number;
+    globalId: string;
+    content: string;          // 材料 HTML 内容
+    accessories: unknown[];
+}
+
+// 题目卡片节点（用于获取题目与材料的关联）
+interface FenbiCardNode {
+    key?: string;             // 题目 globalId
+    materialKeys?: string[];  // 关联的材料 globalId 数组
+    nodeType: number;
+    children?: FenbiCardNode[];
+}
+
 interface FenbiExerciseData {
     name?: string;
     userAnswers: Record<string, FenbiUserAnswer>;
@@ -90,6 +109,11 @@ interface FenbiExerciseData {
 interface FenbiSolutionsData {
     name?: string;
     solutions: FenbiSolution[];
+    materials?: FenbiMaterial[];  // 材料数组
+    card?: {                      // 题目卡片结构（包含题目与材料的关联）
+        children?: FenbiCardNode[];
+        nodeType: number;
+    };
 }
 
 // 题目统计数据类型
@@ -156,8 +180,8 @@ function inferQuestionType(fenbiType: number, accessories: FenbiSolution['access
     if (fenbiType === 61) return 'fill_blank';
     // 判断题
     if (fenbiType === 5) return 'boolean';
-    // 多选题
-    if (fenbiType === 2) return 'multi';
+    // 多选题 或 不定项选择题（type: 3 的答案格式与多选题相同）
+    if (fenbiType === 2 || fenbiType === 3) return 'multi';
     // 单选题
     if (fenbiType === 1) return 'single';
 
@@ -237,6 +261,35 @@ export function parseFenbiData(
 
     const userAnswers = exerciseData.userAnswers || {};
     const solutions = solutionsData.solutions || [];
+    const materials = solutionsData.materials || [];
+
+    // 构建材料映射表 (globalId -> material)
+    const materialMap = new Map<string, FenbiMaterial>();
+    for (const mat of materials) {
+        materialMap.set(mat.globalId, mat);
+    }
+    if (materials.length > 0) {
+        console.log('[fenbi-parser] 解析到', materials.length, '个材料');
+    }
+
+    // 从 card 结构中提取题目与材料的关联 (questionGlobalId -> materialGlobalIds)
+    const questionMaterialMap = new Map<string, string[]>();
+    function extractMaterialKeys(node: FenbiCardNode) {
+        if (node.key && node.materialKeys && node.materialKeys.length > 0) {
+            questionMaterialMap.set(node.key, node.materialKeys);
+        }
+        if (node.children) {
+            for (const child of node.children) {
+                extractMaterialKeys(child);
+            }
+        }
+    }
+    if (solutionsData.card?.children) {
+        for (const child of solutionsData.card.children) {
+            extractMaterialKeys(child);
+        }
+        console.log('[fenbi-parser] 解析到', questionMaterialMap.size, '个题目有材料关联');
+    }
 
     // 会话名称
     const sessionName = solutionsData.name || exerciseData.name || `粉笔导入 ${new Date().toLocaleDateString('zh-CN')}`;
@@ -314,6 +367,20 @@ export function parseFenbiData(
             console.log(`  - 匹配结果 questionStats:`, questionStats ? '有数据' : '无数据');
         }
 
+        // 获取关联的材料内容
+        const materialKeys = questionMaterialMap.get(externalId) || [];
+        let materialContent = '';
+        let materialHtml = '';
+        if (materialKeys.length > 0) {
+            const materialContents = materialKeys
+                .map(key => materialMap.get(key)?.content)
+                .filter(Boolean) as string[];
+            if (materialContents.length > 0) {
+                materialHtml = materialContents.join('\n');
+                materialContent = stripHtml(materialHtml);
+            }
+        }
+
         // 构建题目对象
         const question: ParsedQuestion = {
             externalId,
@@ -327,6 +394,9 @@ export function parseFenbiData(
             source: solution.source || '',
             type: questionType,
             dimension,
+            // 材料内容
+            material: materialContent || undefined,
+            materialHtml: materialHtml || undefined,
             // 统计数据
             stats: questionStats ? {
                 totalAnswers: questionStats.totalCount,

@@ -133,6 +133,8 @@ export type SessionDetail = {
     mostWrongAnswer: string | null; // 易错项
     reviewData?: any;
     aiMnemonic?: string | null; // 新增：AI 助记内容
+    material?: string | null;   // 新增：材料内容（纯文本）
+    materialHtml?: string | null; // 新增：材料内容（HTML）
   }[];
 };
 
@@ -152,6 +154,7 @@ export async function getSessionDetailAction(sessionId: string): Promise<Session
              l.user_answer as userAnswer, l.is_correct as isCorrect, l.duration_ms as duration,
              q.tags, q.source, q.explanation, q.correct_ratio, q.most_wrong_answer,
              q.ai_mnemonic, -- 新增查询
+             q.material, q.material_html, -- 新增查询
              r.review_data as reviewData
       FROM practice_logs l
       JOIN questions q ON l.question_id = q.id
@@ -178,7 +181,9 @@ export async function getSessionDetailAction(sessionId: string): Promise<Session
         correctRatio: l.correct_ratio,
         mostWrongAnswer: l.most_wrong_answer,
         reviewData: l.reviewData ? JSON.parse(l.reviewData) : undefined,
-        aiMnemonic: l.ai_mnemonic || null // 映射字段
+        aiMnemonic: l.ai_mnemonic || null, // 映射字段
+        material: l.material || null,
+        materialHtml: l.material_html || null
       }))
     };
   } catch (error) {

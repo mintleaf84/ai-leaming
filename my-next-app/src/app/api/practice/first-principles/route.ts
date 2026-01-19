@@ -74,6 +74,7 @@ export async function POST(req: NextRequest) {
         const prompt = `请用"第一性原理"解析这道题。要求：
 1. 直接给答案，只说底层逻辑，不超过200字
 2. 不要使用黑话，用通俗易懂的语言
+3. 严格基于提供的题目内容和选项进行分析，禁止引用题目中未提及的观点，禁止编造不存在的选项。
 
 题目：${questionContent}
 正确答案：${correctAnswer}

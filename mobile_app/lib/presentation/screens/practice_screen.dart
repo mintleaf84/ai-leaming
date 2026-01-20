@@ -170,21 +170,21 @@ class _PracticeScreenState extends ConsumerState<PracticeScreen> {
               IconButton(
                 onPressed: () => context.pop(),
                 icon: const Icon(Icons.close),
-                color: const Color(0xFF37352F).withOpacity(0.6),
+                color: const Color(0xFF37352F).withValues(alpha: 0.6),
               ),
               Text(
                 '刷题模式',
                 style: TextStyle(
                   fontSize: 12.sp,
                   fontWeight: FontWeight.w500,
-                  color: const Color(0xFF37352F).withOpacity(0.4),
+                  color: const Color(0xFF37352F).withValues(alpha: 0.4),
                   letterSpacing: 2,
                 ),
               ),
               IconButton(
                 onPressed: () {},
                 icon: const Icon(Icons.more_horiz),
-                color: const Color(0xFF37352F).withOpacity(0.6),
+                color: const Color(0xFF37352F).withValues(alpha: 0.6),
               ),
             ],
           ),
@@ -194,7 +194,7 @@ class _PracticeScreenState extends ConsumerState<PracticeScreen> {
             borderRadius: BorderRadius.circular(4.r),
             child: LinearProgressIndicator(
               value: state.progress,
-              backgroundColor: const Color(0xFF37352F).withOpacity(0.05),
+              backgroundColor: const Color(0xFF37352F).withValues(alpha: 0.05),
               color: const Color(0xFF37352F),
               minHeight: 6.h,
             ),
@@ -207,7 +207,7 @@ class _PracticeScreenState extends ConsumerState<PracticeScreen> {
                 '${state.currentIndex + 1} / ${state.questions.length}',
                 style: TextStyle(
                   fontSize: 10.sp,
-                  color: const Color(0xFF37352F).withOpacity(0.4),
+                  color: const Color(0xFF37352F).withValues(alpha: 0.4),
                   fontFamily: 'monospace',
                 ),
               ),
@@ -215,7 +215,7 @@ class _PracticeScreenState extends ConsumerState<PracticeScreen> {
                 '${(state.progress * 100).toInt()}%',
                 style: TextStyle(
                   fontSize: 10.sp,
-                  color: const Color(0xFF37352F).withOpacity(0.4),
+                  color: const Color(0xFF37352F).withValues(alpha: 0.4),
                   fontFamily: 'monospace',
                 ),
               ),
@@ -235,21 +235,21 @@ class _PracticeScreenState extends ConsumerState<PracticeScreen> {
           '综合练习',
           style: TextStyle(
             fontSize: 12.sp,
-            color: const Color(0xFF37352F).withOpacity(0.5),
+            color: const Color(0xFF37352F).withValues(alpha: 0.5),
           ),
         ),
         Text(
           ' / ',
           style: TextStyle(
             fontSize: 12.sp,
-            color: const Color(0xFF37352F).withOpacity(0.3),
+            color: const Color(0xFF37352F).withValues(alpha: 0.3),
           ),
         ),
         Text(
           '随机模式',
           style: TextStyle(
             fontSize: 12.sp,
-            color: const Color(0xFF37352F).withOpacity(0.5),
+            color: const Color(0xFF37352F).withValues(alpha: 0.5),
           ),
         ),
       ],
@@ -271,8 +271,8 @@ class _PracticeScreenState extends ConsumerState<PracticeScreen> {
 
     if (isCorrect) {
       bgColor = const Color(0xFFEDF6EE);
-      borderColor = const Color(0xFF5C9D6E).withOpacity(0.3);
-      ringColor = const Color(0xFF5C9D6E).withOpacity(0.5);
+      borderColor = const Color(0xFF5C9D6E).withValues(alpha: 0.3);
+      ringColor = const Color(0xFF5C9D6E).withValues(alpha: 0.5);
       leadingIcon = Container(
         width: 20.w,
         height: 20.h,
@@ -284,8 +284,8 @@ class _PracticeScreenState extends ConsumerState<PracticeScreen> {
       );
     } else if (isWrong) {
       bgColor = const Color(0xFFFBE4E4);
-      borderColor = const Color(0xFFE06C75).withOpacity(0.3);
-      ringColor = const Color(0xFFE06C75).withOpacity(0.5);
+      borderColor = const Color(0xFFE06C75).withValues(alpha: 0.3);
+      ringColor = const Color(0xFFE06C75).withValues(alpha: 0.5);
       leadingIcon = Container(
         width: 20.w,
         height: 20.h,
@@ -296,12 +296,12 @@ class _PracticeScreenState extends ConsumerState<PracticeScreen> {
         child: Icon(Icons.close, size: 14.sp, color: Colors.white),
       );
     } else if (isSelected) {
-      borderColor = const Color(0xFF37352F).withOpacity(0.4);
+      borderColor = const Color(0xFF37352F).withValues(alpha: 0.4);
       leadingIcon = Container(
         width: 20.w,
         height: 20.h,
-        decoration: BoxDecoration(
-          color: const Color(0xFF37352F),
+        decoration: const BoxDecoration(
+          color: Color(0xFF37352F),
           shape: BoxShape.circle,
         ),
         child: Icon(Icons.circle, size: 10.sp, color: Colors.white),
@@ -311,7 +311,9 @@ class _PracticeScreenState extends ConsumerState<PracticeScreen> {
         width: 20.w,
         height: 20.h,
         decoration: BoxDecoration(
-          border: Border.all(color: const Color(0xFF37352F).withOpacity(0.2)),
+          border: Border.all(
+            color: const Color(0xFF37352F).withValues(alpha: 0.2),
+          ),
           shape: BoxShape.circle,
         ),
       );
@@ -367,8 +369,10 @@ class _PracticeScreenState extends ConsumerState<PracticeScreen> {
         bottom: 32.h,
       ),
       decoration: BoxDecoration(
-        color: Colors.white.withOpacity(0.85),
-        border: Border(top: BorderSide(color: Colors.black.withOpacity(0.05))),
+        color: Colors.white.withValues(alpha: 0.85),
+        border: Border(
+          top: BorderSide(color: Colors.black.withValues(alpha: 0.05)),
+        ),
       ),
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -421,12 +425,14 @@ class _PracticeScreenState extends ConsumerState<PracticeScreen> {
             decoration: BoxDecoration(
               color: const Color(
                 0xFF37352F,
-              ).withOpacity(isEnabled ? 0.05 : 0.02),
+              ).withValues(alpha: isEnabled ? 0.05 : 0.02),
               borderRadius: BorderRadius.circular(12.r),
             ),
             child: Icon(
               icon,
-              color: const Color(0xFF37352F).withOpacity(isEnabled ? 1 : 0.3),
+              color: const Color(
+                0xFF37352F,
+              ).withValues(alpha: isEnabled ? 1 : 0.3),
             ),
           ),
           SizedBox(height: 4.h),
@@ -435,7 +441,9 @@ class _PracticeScreenState extends ConsumerState<PracticeScreen> {
             style: TextStyle(
               fontSize: 10.sp,
               fontWeight: FontWeight.w500,
-              color: const Color(0xFF37352F).withOpacity(isEnabled ? 0.6 : 0.3),
+              color: const Color(
+                0xFF37352F,
+              ).withValues(alpha: isEnabled ? 0.6 : 0.3),
             ),
           ),
         ],
@@ -465,7 +473,7 @@ class _PracticeScreenState extends ConsumerState<PracticeScreen> {
                 borderRadius: BorderRadius.circular(16.r),
                 boxShadow: [
                   BoxShadow(
-                    color: Colors.black.withOpacity(0.1),
+                    color: Colors.black.withValues(alpha: 0.1),
                     blurRadius: 8,
                     offset: const Offset(0, 2),
                   ),
@@ -511,12 +519,12 @@ class _PracticeScreenState extends ConsumerState<PracticeScreen> {
             decoration: BoxDecoration(
               color: selectedAnswer != null
                   ? const Color(0xFF37352F)
-                  : const Color(0xFF37352F).withOpacity(0.2),
+                  : const Color(0xFF37352F).withValues(alpha: 0.2),
               borderRadius: BorderRadius.circular(16.r),
               boxShadow: selectedAnswer != null
                   ? [
                       BoxShadow(
-                        color: Colors.black.withOpacity(0.1),
+                        color: Colors.black.withValues(alpha: 0.1),
                         blurRadius: 8,
                         offset: const Offset(0, 2),
                       ),
@@ -533,7 +541,7 @@ class _PracticeScreenState extends ConsumerState<PracticeScreen> {
               fontWeight: FontWeight.w600,
               color: selectedAnswer != null
                   ? const Color(0xFF37352F)
-                  : const Color(0xFF37352F).withOpacity(0.4),
+                  : const Color(0xFF37352F).withValues(alpha: 0.4),
             ),
           ),
         ],

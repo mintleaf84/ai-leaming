@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../core/network/dio_client.dart';
 import '../../data/datasources/api_client.dart';
@@ -142,7 +143,7 @@ class PracticeController extends Notifier<PracticeSessionState> {
       state = state.copyWith(results: newResults);
     } catch (e) {
       // 静默失败，不影响用户体验
-      print('提交答案失败: $e');
+      debugPrint('提交答案失败: $e');
     }
   }
 

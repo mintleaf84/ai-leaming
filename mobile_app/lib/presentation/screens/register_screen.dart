@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_hooks/flutter_hooks.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:go_router/go_router.dart';
@@ -172,11 +171,11 @@ class RegisterScreen extends HookConsumerWidget {
                                   color: Colors.grey,
                                   fontSize: 13.sp,
                                 ),
-                                children: [
+                                children: const [
                                   TextSpan(
                                     text: '立即登录',
                                     style: TextStyle(
-                                      color: const Color(0xFF1A1A1A),
+                                      color: Color(0xFF1A1A1A),
                                       fontWeight: FontWeight.w500,
                                       decoration: TextDecoration.underline,
                                     ),

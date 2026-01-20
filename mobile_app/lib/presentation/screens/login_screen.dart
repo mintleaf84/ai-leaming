@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_hooks/flutter_hooks.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:go_router/go_router.dart';
@@ -199,11 +198,11 @@ class LoginScreen extends HookConsumerWidget {
                               color: Colors.grey,
                               fontSize: 13.sp,
                             ),
-                            children: [
+                            children: const [
                               TextSpan(
                                 text: '立即注册',
                                 style: TextStyle(
-                                  color: const Color(0xFF135BEC),
+                                  color: Color(0xFF135BEC),
                                   fontWeight: FontWeight.w500,
                                   decoration: TextDecoration.underline,
                                 ),
@@ -238,7 +237,7 @@ class LoginScreen extends HookConsumerWidget {
         border: Border.all(color: Colors.grey[200]!),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.05),
+            color: Colors.black.withValues(alpha: 0.05),
             blurRadius: 2.r,
             offset: Offset(0, 1.h),
           ),

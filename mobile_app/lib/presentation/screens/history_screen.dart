@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:go_router/go_router.dart';
 import '../providers/history_provider.dart';
+import '../../domain/entities/history_item.dart';
 
 /// 历史记录列表页
 class HistoryScreen extends ConsumerStatefulWidget {
@@ -144,7 +145,7 @@ class _HistoryScreenState extends ConsumerState<HistoryScreen> {
         border: Border.all(color: const Color(0xFFE0E0E0)),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.02),
+            color: Colors.black.withValues(alpha: 0.02),
             blurRadius: 4,
             offset: const Offset(0, 2),
           ),
@@ -155,8 +156,7 @@ class _HistoryScreenState extends ConsumerState<HistoryScreen> {
         child: InkWell(
           borderRadius: BorderRadius.circular(12.r),
           onTap: () {
-            // TODO: 跳转详情页
-            // context.go('/history/${item.id}');
+            context.go('/history/${item.id}');
           },
           child: Padding(
             padding: EdgeInsets.all(16.w),
@@ -249,7 +249,7 @@ class _HistoryScreenState extends ConsumerState<HistoryScreen> {
     return Container(
       padding: EdgeInsets.symmetric(horizontal: 10.w, vertical: 4.h),
       decoration: BoxDecoration(
-        color: color.withOpacity(0.1),
+        color: color.withValues(alpha: 0.1),
         borderRadius: BorderRadius.circular(8.r),
       ),
       child: Text(

@@ -1,82 +1,24 @@
-import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:freezed_annotation/freezed_annotation.dart';
+import 'package:hooks_riverpod/hooks_riverpod.dart';
 import '../../core/network/dio_client.dart';
 import '../../data/datasources/api_client.dart';
+import '../../domain/entities/history_item.dart';
+import '../../domain/entities/practice_log.dart';
 
-/// 历史记录项
-class HistoryItem {
-  final String id;
-  final String? sessionName;
-  final int totalQuestions;
-  final int correctCount;
-  final int reviewCount;
-  final String createdAt;
-  final int accuracy;
-  final String? practiceMode;
-
-  HistoryItem({
-    required this.id,
-    this.sessionName,
-    required this.totalQuestions,
-    required this.correctCount,
-    required this.reviewCount,
-    required this.createdAt,
-    required this.accuracy,
-    this.practiceMode,
-  });
-
-  factory HistoryItem.fromJson(Map<String, dynamic> json) {
-    return HistoryItem(
-      id: json['id'] as String,
-      sessionName: json['sessionName'] as String?,
-      totalQuestions: json['totalQuestions'] as int,
-      correctCount: json['correctCount'] as int,
-      reviewCount: json['reviewCount'] as int? ?? 0,
-      createdAt: json['createdAt'] as String,
-      accuracy: json['accuracy'] as int,
-      practiceMode: json['practiceMode'] as String?,
-    );
-  }
-}
+part 'history_provider.freezed.dart';
 
 /// 历史列表状态
-class HistoryListState {
-  final List<HistoryItem> items;
-  final int total;
-  final int page;
-  final int pageSize;
-  final bool isLoading;
-  final bool hasMore;
-  final String? error;
-
-  const HistoryListState({
-    this.items = const [],
-    this.total = 0,
-    this.page = 1,
-    this.pageSize = 10,
-    this.isLoading = false,
-    this.hasMore = true,
-    this.error,
-  });
-
-  HistoryListState copyWith({
-    List<HistoryItem>? items,
-    int? total,
-    int? page,
-    int? pageSize,
-    bool? isLoading,
-    bool? hasMore,
+@freezed
+abstract class HistoryListState with _$HistoryListState {
+  const factory HistoryListState({
+    @Default([]) List<HistoryItem> items,
+    @Default(0) int total,
+    @Default(1) int page,
+    @Default(10) int pageSize,
+    @Default(false) bool isLoading,
+    @Default(true) bool hasMore,
     String? error,
-  }) {
-    return HistoryListState(
-      items: items ?? this.items,
-      total: total ?? this.total,
-      page: page ?? this.page,
-      pageSize: pageSize ?? this.pageSize,
-      isLoading: isLoading ?? this.isLoading,
-      hasMore: hasMore ?? this.hasMore,
-      error: error,
-    );
-  }
+  }) = _HistoryListState;
 }
 
 /// 历史记录控制器 (Riverpod 3.x Notifier pattern)
@@ -147,8 +89,45 @@ class HistoryController extends Notifier<HistoryListState> {
   }
 }
 
+/// 会话详情状态
+@freezed
+abstract class HistoryDetailState with _$HistoryDetailState {
+  const factory HistoryDetailState({
+    HistoryItem? session,
+    @Default([]) List<PracticeLog> logs,
+    @Default(false) bool isLoading,
+    String? error,
+  }) = _HistoryDetailState;
+}
+
+/// 历史详情加载函数
+Future<HistoryDetailState> _loadHistoryDetail(String sessionId, Ref ref) async {
+  try {
+    final dio = ref.watch(dioProvider);
+    final apiClient = ApiClient(dio);
+    final response = await apiClient.getHistoryDetail(sessionId);
+
+    final session = HistoryItem.fromJson(
+      response['session'] as Map<String, dynamic>,
+    );
+    final logs = (response['logs'] as List<dynamic>)
+        .map((e) => PracticeLog.fromJson(e as Map<String, dynamic>))
+        .toList();
+
+    return HistoryDetailState(isLoading: false, session: session, logs: logs);
+  } catch (e) {
+    return HistoryDetailState(isLoading: false, error: e.toString());
+  }
+}
+
 /// Provider (Riverpod 3.x pattern)
 final historyControllerProvider =
     NotifierProvider<HistoryController, HistoryListState>(
       HistoryController.new,
+    );
+
+/// Family Provider 支持带参数的详情页 (使用 FutureProvider.family)
+final historyDetailProvider = FutureProvider.autoDispose
+    .family<HistoryDetailState, String>(
+      (ref, sessionId) => _loadHistoryDetail(sessionId, ref),
     );

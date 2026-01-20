@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:go_router/go_router.dart';
@@ -146,7 +145,7 @@ class DashboardScreen extends HookConsumerWidget {
         border: Border.all(color: const Color(0xFFE0E0E0)),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.02),
+            color: Colors.black.withValues(alpha: 0.02),
             blurRadius: 4,
             offset: const Offset(0, 2),
           ),
@@ -263,7 +262,7 @@ class DashboardScreen extends HookConsumerWidget {
         border: Border.all(color: const Color(0xFFE0E0E0)),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.02),
+            color: Colors.black.withValues(alpha: 0.02),
             blurRadius: 4,
             offset: const Offset(0, 2),
           ),
@@ -373,7 +372,7 @@ class DashboardScreen extends HookConsumerWidget {
         border: Border.all(color: const Color(0xFFE0E0E0)),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.02),
+            color: Colors.black.withValues(alpha: 0.02),
             blurRadius: 4,
             offset: const Offset(0, 2),
           ),
@@ -387,7 +386,7 @@ class DashboardScreen extends HookConsumerWidget {
                 width: 40.w,
                 height: 40.h,
                 decoration: BoxDecoration(
-                  color: const Color(0xFF37352F).withOpacity(0.08),
+                  color: const Color(0xFF37352F).withValues(alpha: 0.08),
                   shape: BoxShape.circle,
                 ),
                 alignment: Alignment.center,
@@ -510,7 +509,7 @@ class DashboardScreen extends HookConsumerWidget {
         border: Border(top: BorderSide(color: Colors.grey[200]!)),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.02),
+            color: Colors.black.withValues(alpha: 0.02),
             offset: const Offset(0, -4),
             blurRadius: 6,
           ),
@@ -520,16 +519,36 @@ class DashboardScreen extends HookConsumerWidget {
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
           _buildNavItem(Icons.dashboard, '工作区', true, null),
-          _buildNavItem(Icons.history, '历史', false, () => context.go('/history')),
-          _buildNavItem(Icons.quiz, '题库', false, null),
-          _buildNavItem(Icons.bar_chart, '统计', false, null),
+          _buildNavItem(
+            Icons.history,
+            '历史',
+            false,
+            () => context.go('/history'),
+          ),
+          _buildNavItem(
+            Icons.book,
+            '知识库',
+            false,
+            () => context.go('/knowledge'),
+          ),
+          _buildNavItem(
+            Icons.bar_chart,
+            '掌握度',
+            false,
+            () => context.go('/mastery'),
+          ),
           _buildNavItem(Icons.settings, '设置', false, null),
         ],
       ),
     );
   }
 
-  Widget _buildNavItem(IconData icon, String label, bool isSelected, VoidCallback? onTap) {
+  Widget _buildNavItem(
+    IconData icon,
+    String label,
+    bool isSelected,
+    VoidCallback? onTap,
+  ) {
     return GestureDetector(
       onTap: onTap,
       child: Column(

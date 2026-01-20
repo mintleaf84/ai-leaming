@@ -8,9 +8,20 @@ part 'api_client.g.dart';
 abstract class ApiClient {
   factory ApiClient(Dio dio, {String baseUrl}) = _ApiClient;
 
+  // 认证相关
   @POST(ApiConstants.login)
   Future<dynamic> login(@Body() Map<String, dynamic> body);
 
   @POST('/auth/register')
   Future<dynamic> register(@Body() Map<String, dynamic> body);
+
+  // 练习相关
+  @POST('/practice/session')
+  Future<dynamic> createSession(@Body() Map<String, dynamic> body);
+
+  @POST('/practice/session/{sessionId}/submit')
+  Future<dynamic> submitAnswer(
+    @Path('sessionId') String sessionId,
+    @Body() Map<String, dynamic> body,
+  );
 }

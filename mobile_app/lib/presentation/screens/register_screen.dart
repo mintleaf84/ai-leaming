@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_hooks/flutter_hooks.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:flutter_screenutil/flutter_screenutil.dart';
 import '../providers/auth_provider.dart';
 
 class RegisterScreen extends HookConsumerWidget {
@@ -32,138 +33,157 @@ class RegisterScreen extends HookConsumerWidget {
       backgroundColor: Colors.white,
       body: SafeArea(
         child: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 32.0),
+          padding: EdgeInsets.symmetric(horizontal: 32.w),
           child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              // Back Button
+              // Top Back Button (Not Scrollable, Pinned to Top)
               IconButton(
                 onPressed: () => context.pop(),
                 icon: const Icon(Icons.arrow_back),
                 style: IconButton.styleFrom(
                   backgroundColor: Colors.grey[100],
-                  padding: const EdgeInsets.all(12),
+                  padding: EdgeInsets.all(12.w),
                 ),
               ),
-              const SizedBox(height: 40),
 
-              // Header
-              const Center(child: Text('👋', style: TextStyle(fontSize: 64))),
-              const SizedBox(height: 16),
-              const Center(
-                child: Text(
-                  '加入学习空间',
-                  style: TextStyle(
-                    fontSize: 28,
-                    fontWeight: FontWeight.bold,
-                    color: Color(0xFF1A1A1A),
-                    fontFamily: 'Inter',
-                  ),
-                ),
-              ),
-              const SizedBox(height: 8),
-              const Center(
-                child: Text(
-                  '开启你的极简学习之旅',
-                  style: TextStyle(fontSize: 14, color: Colors.grey),
-                ),
-              ),
-              const SizedBox(height: 40),
-
-              // Form
-              _buildInputGroup(
-                '用户名',
-                Icons.person_outline,
-                usernameController,
-                hint: '请输入用户名',
-              ),
-              const SizedBox(height: 20),
-              _buildInputGroup(
-                '电子邮箱',
-                Icons.mail_outline,
-                emailController,
-                hint: 'example@email.com',
-              ), // Email not sent to backend yet
-              const SizedBox(height: 20),
-              _buildInputGroup(
-                '密码',
-                Icons.lock_outline,
-                passwordController,
-                isPassword: true,
-                isVisible: isPasswordVisible.value,
-                onToggleVisibility: () =>
-                    isPasswordVisible.value = !isPasswordVisible.value,
-                hint: '设置密码',
-              ),
-
-              const SizedBox(height: 40),
-
-              // Submit Button
-              SizedBox(
-                width: double.infinity,
-                height: 48,
-                child: FilledButton(
-                  onPressed: authState.isLoading
-                      ? null
-                      : () {
-                          // Start registration
-                          ref
-                              .read(authControllerProvider.notifier)
-                              .register(
-                                usernameController.text,
-                                passwordController.text,
-                              );
-                        },
-                  style: FilledButton.styleFrom(
-                    backgroundColor: const Color(0xFF1A1A1A),
-                    foregroundColor: Colors.white,
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(8),
-                    ),
-                  ),
-                  child: authState.isLoading
-                      ? const SizedBox(
-                          width: 20,
-                          height: 20,
-                          child: CircularProgressIndicator(
-                            color: Colors.white,
-                            strokeWidth: 2,
+              // Centered Content (Scrollable)
+              Expanded(
+                child: Center(
+                  child: SingleChildScrollView(
+                    child: Column(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        // Header
+                        Center(
+                          child: Text('👋', style: TextStyle(fontSize: 64.sp)),
+                        ),
+                        SizedBox(height: 16.h),
+                        Center(
+                          child: Text(
+                            '加入学习空间',
+                            style: TextStyle(
+                              fontSize: 28.sp,
+                              fontWeight: FontWeight.bold,
+                              color: const Color(0xFF1A1A1A),
+                              fontFamily: 'Inter',
+                            ),
                           ),
-                        )
-                      : const Row(
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          children: [
-                            Text(
-                              '创建账号',
-                              style: TextStyle(
-                                fontSize: 15,
-                                fontWeight: FontWeight.w500,
+                        ),
+                        SizedBox(height: 8.h),
+                        Center(
+                          child: Text(
+                            '开启你的极简学习之旅',
+                            style: TextStyle(
+                              fontSize: 14.sp,
+                              color: Colors.grey,
+                            ),
+                          ),
+                        ),
+                        SizedBox(height: 40.h),
+
+                        // Form
+                        _buildInputGroup(
+                          '用户名',
+                          Icons.person_outline,
+                          usernameController,
+                          hint: '请输入用户名',
+                        ),
+                        SizedBox(height: 20.h),
+                        _buildInputGroup(
+                          '电子邮箱',
+                          Icons.mail_outline,
+                          emailController,
+                          hint: 'example@email.com',
+                        ),
+                        SizedBox(height: 20.h),
+                        _buildInputGroup(
+                          '密码',
+                          Icons.lock_outline,
+                          passwordController,
+                          isPassword: true,
+                          isVisible: isPasswordVisible.value,
+                          onToggleVisibility: () => isPasswordVisible.value =
+                              !isPasswordVisible.value,
+                          hint: '设置密码',
+                        ),
+
+                        SizedBox(height: 40.h),
+
+                        // Submit Button
+                        SizedBox(
+                          width: double.infinity,
+                          height: 48.h,
+                          child: FilledButton(
+                            onPressed: authState.isLoading
+                                ? null
+                                : () {
+                                    // Start registration
+                                    ref
+                                        .read(authControllerProvider.notifier)
+                                        .register(
+                                          usernameController.text,
+                                          passwordController.text,
+                                        );
+                                  },
+                            style: FilledButton.styleFrom(
+                              backgroundColor: const Color(0xFF1A1A1A),
+                              foregroundColor: Colors.white,
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(8.r),
                               ),
                             ),
-                            SizedBox(width: 8),
-                            Icon(Icons.arrow_forward, size: 18),
-                          ],
+                            child: authState.isLoading
+                                ? SizedBox(
+                                    width: 20.w,
+                                    height: 20.h,
+                                    child: const CircularProgressIndicator(
+                                      color: Colors.white,
+                                      strokeWidth: 2,
+                                    ),
+                                  )
+                                : Row(
+                                    mainAxisAlignment: MainAxisAlignment.center,
+                                    children: [
+                                      Text(
+                                        '创建账号',
+                                        style: TextStyle(
+                                          fontSize: 15.sp,
+                                          fontWeight: FontWeight.w500,
+                                        ),
+                                      ),
+                                      SizedBox(width: 8.w),
+                                      Icon(Icons.arrow_forward, size: 18.sp),
+                                    ],
+                                  ),
+                          ),
                         ),
-                ),
-              ),
 
-              // Footer
-              const SizedBox(height: 20),
-              Center(
-                child: GestureDetector(
-                  onTap: () => context.go('/login'),
-                  child: RichText(
-                    text: const TextSpan(
-                      text: '已有账号？ ',
-                      style: TextStyle(color: Colors.grey, fontSize: 13),
-                      children: [
-                        TextSpan(
-                          text: '立即登录',
-                          style: TextStyle(
-                            color: Color(0xFF1A1A1A),
-                            fontWeight: FontWeight.w500,
-                            decoration: TextDecoration.underline,
+                        // Footer
+                        SizedBox(height: 20.h),
+                        Center(
+                          child: GestureDetector(
+                            onTap: () => context.go('/login'),
+                            child: RichText(
+                              text: TextSpan(
+                                text: '已有账号？ ',
+                                style: TextStyle(
+                                  color: Colors.grey,
+                                  fontSize: 13.sp,
+                                ),
+                                children: [
+                                  TextSpan(
+                                    text: '立即登录',
+                                    style: TextStyle(
+                                      color: const Color(0xFF1A1A1A),
+                                      fontWeight: FontWeight.w500,
+                                      decoration: TextDecoration.underline,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
                           ),
                         ),
                       ],
@@ -171,19 +191,21 @@ class RegisterScreen extends HookConsumerWidget {
                   ),
                 ),
               ),
-              const Spacer(),
-              // Notion-style bottom line
-              Center(
-                child: Container(
-                  width: 48,
-                  height: 4,
-                  decoration: BoxDecoration(
-                    color: Colors.grey[300],
-                    borderRadius: BorderRadius.circular(2),
+
+              // Bottom Decorative Line (Pinned to bottom via Column layout)
+              Padding(
+                padding: EdgeInsets.only(bottom: 16.h),
+                child: Center(
+                  child: Container(
+                    width: 48.w,
+                    height: 4.h,
+                    decoration: BoxDecoration(
+                      color: Colors.grey[300],
+                      borderRadius: BorderRadius.circular(2.r),
+                    ),
                   ),
                 ),
               ),
-              const SizedBox(height: 16),
             ],
           ),
         ),
@@ -203,42 +225,40 @@ class RegisterScreen extends HookConsumerWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text(
-          label,
-          style: const TextStyle(
-            fontSize: 12,
-            fontWeight: FontWeight.w500,
-            color: Colors.grey,
-          ),
-        ),
-        const SizedBox(height: 6),
+        // Semantic label for accessibility (hidden visually to match reference)
+        Semantics(label: label, child: const SizedBox.shrink()),
         Container(
-          height: 48,
+          height: 48.h,
           decoration: BoxDecoration(
-            borderRadius: BorderRadius.circular(8),
-            border: Border.all(color: Colors.grey[300]!),
+            color: Colors.white,
+            borderRadius: BorderRadius.circular(8.r),
+            border: Border.all(color: Colors.grey[200]!),
+            // Removed BoxShadow to match the flat Notion reference
           ),
           child: Row(
             children: [
-              const SizedBox(width: 14),
-              Icon(icon, color: Colors.grey[400], size: 20),
-              const SizedBox(width: 10),
+              SizedBox(width: 14.w),
+              Icon(icon, color: Colors.grey[400], size: 20.sp),
+              SizedBox(width: 12.w),
               Expanded(
                 child: TextField(
                   controller: controller,
                   obscureText: isPassword && !isVisible,
                   decoration: InputDecoration(
                     border: InputBorder.none,
-                    hintText: hint,
-                    hintStyle: TextStyle(color: Colors.grey[400], fontSize: 15),
-                    contentPadding: const EdgeInsets.symmetric(
-                      vertical: 0,
-                    ), // Centering
+                    hintText: hint ?? label, // Use hint as the main label
+                    hintStyle: TextStyle(
+                      color: Colors.grey[400],
+                      fontSize: 15.sp,
+                    ),
+                    contentPadding: EdgeInsets.zero,
+                    isDense: true,
                   ),
-                  style: const TextStyle(
-                    fontSize: 15,
-                    color: Color(0xFF1A1A1A),
+                  style: TextStyle(
+                    fontSize: 16.sp,
+                    color: const Color(0xFF1A1A1A),
                   ),
+                  cursorColor: const Color(0xFF135BEC),
                 ),
               ),
               if (isPassword)
@@ -246,12 +266,16 @@ class RegisterScreen extends HookConsumerWidget {
                   icon: Icon(
                     isVisible ? Icons.visibility : Icons.visibility_off,
                     color: Colors.grey[400],
-                    size: 20,
+                    size: 20.sp,
                   ),
                   onPressed: onToggleVisibility,
+                  padding: EdgeInsets.zero,
+                  constraints: const BoxConstraints(),
+                  splashRadius: 20.r,
                 )
               else
-                const SizedBox(width: 14),
+                SizedBox(width: 14.w),
+              if (isPassword) SizedBox(width: 14.w),
             ],
           ),
         ),

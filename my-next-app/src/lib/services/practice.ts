@@ -118,5 +118,64 @@ export const practiceService = {
         }
 
         return { success: true };
+    },
+
+    /**
+     * Submit an answer with server-side validation
+     * Returns isCorrect and correctAnswer
+     */
+    async submitAnswerWithValidation(
+        userId: number,
+        sessionId: string | null,
+        questionId: number,
+        userAnswer: string,
+        duration: number
+    ) {
+        // 1. Fetch question's correct answer
+        const question = safeGet(
+            db.prepare('SELECT answer FROM questions WHERE id = ?'),
+            [questionId],
+            z.object({ answer: z.string() })
+        );
+
+        if (!question) {
+            throw new Error(`Question ${questionId} not found`);
+        }
+
+        const correctAnswer = question.answer;
+        const isCorrect = userAnswer === correctAnswer;
+
+        // 2. Log response
+        db.prepare(`
+      INSERT INTO practice_logs (session_id, user_id, question_id, user_answer, is_correct, duration_ms) 
+      VALUES (?, ?, ?, ?, ?, ?)
+    `).run(sessionId, userId, questionId, userAnswer, isCorrect ? 1 : 0, duration);
+
+        // 3. Update session stats
+        if (sessionId) {
+            db.prepare(`
+        UPDATE practice_sessions 
+        SET correct_count = correct_count + ?
+        WHERE id = ? AND user_id = ?
+      `).run(isCorrect ? 1 : 0, sessionId, userId);
+        }
+
+        // 4. Update mastery
+        const q = db.prepare('SELECT tags, dimension FROM questions WHERE id = ?').get(questionId) as { tags: string, dimension: string };
+        if (q) {
+            let tags: string[] = [];
+            try {
+                tags = JSON.parse(q.tags);
+            } catch (e) {
+                tags = [];
+            }
+
+            const { masteryService } = await import('@/lib/services/mastery');
+            tags.forEach((tag: string) => {
+                masteryService.updateMastery(userId, tag, q.dimension as any, isCorrect);
+            });
+        }
+
+        return { isCorrect, correctAnswer };
     }
 };

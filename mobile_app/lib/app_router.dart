@@ -1,24 +1,11 @@
 import 'package:go_router/go_router.dart';
-import 'package:flutter/material.dart';
 import 'presentation/screens/register_screen.dart';
-
-// Placeholder screens
-class LoginScreen extends StatelessWidget {
-  const LoginScreen({super.key});
-  @override
-  Widget build(BuildContext context) =>
-      const Scaffold(body: Center(child: Text("Login Screen")));
-}
-
-class DashboardScreen extends StatelessWidget {
-  const DashboardScreen({super.key});
-  @override
-  Widget build(BuildContext context) =>
-      const Scaffold(body: Center(child: Text("Dashboard Screen")));
-}
+import 'presentation/screens/login_screen.dart';
+import 'presentation/screens/dashboard_screen.dart';
+import 'presentation/screens/practice_screen.dart';
 
 final appRouter = GoRouter(
-  initialLocation: '/register',
+  initialLocation: '/login',
   routes: [
     GoRoute(path: '/login', builder: (context, state) => const LoginScreen()),
     GoRoute(
@@ -28,6 +15,10 @@ final appRouter = GoRouter(
     GoRoute(
       path: '/register',
       builder: (context, state) => const RegisterScreen(),
+    ),
+    GoRoute(
+      path: '/practice',
+      builder: (context, state) => const PracticeScreen(),
     ),
   ],
 );

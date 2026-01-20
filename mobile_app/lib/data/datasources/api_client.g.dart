@@ -12,7 +12,7 @@ part of 'api_client.dart';
 
 class _ApiClient implements ApiClient {
   _ApiClient(this._dio, {this.baseUrl, this.errorLogger}) {
-    baseUrl ??= 'http://10.0.2.2:3000/api/v1';
+    baseUrl ??= 'http://192.168.0.103:3000/api/v1';
   }
 
   final Dio _dio;
@@ -55,6 +55,53 @@ class _ApiClient implements ApiClient {
           .compose(
             _dio.options,
             '/auth/register',
+            queryParameters: queryParameters,
+            data: _data,
+          )
+          .copyWith(baseUrl: _combineBaseUrls(_dio.options.baseUrl, baseUrl)),
+    );
+    final _result = await _dio.fetch(_options);
+    final _value = _result.data;
+    return _value;
+  }
+
+  @override
+  Future<dynamic> createSession(Map<String, dynamic> body) async {
+    final _extra = <String, dynamic>{};
+    final queryParameters = <String, dynamic>{};
+    final _headers = <String, dynamic>{};
+    final _data = <String, dynamic>{};
+    _data.addAll(body);
+    final _options = _setStreamType<dynamic>(
+      Options(method: 'POST', headers: _headers, extra: _extra)
+          .compose(
+            _dio.options,
+            '/practice/session',
+            queryParameters: queryParameters,
+            data: _data,
+          )
+          .copyWith(baseUrl: _combineBaseUrls(_dio.options.baseUrl, baseUrl)),
+    );
+    final _result = await _dio.fetch(_options);
+    final _value = _result.data;
+    return _value;
+  }
+
+  @override
+  Future<dynamic> submitAnswer(
+    String sessionId,
+    Map<String, dynamic> body,
+  ) async {
+    final _extra = <String, dynamic>{};
+    final queryParameters = <String, dynamic>{};
+    final _headers = <String, dynamic>{};
+    final _data = <String, dynamic>{};
+    _data.addAll(body);
+    final _options = _setStreamType<dynamic>(
+      Options(method: 'POST', headers: _headers, extra: _extra)
+          .compose(
+            _dio.options,
+            '/practice/session/${sessionId}/submit',
             queryParameters: queryParameters,
             data: _data,
           )

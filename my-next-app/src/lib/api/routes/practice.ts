@@ -12,7 +12,6 @@ const CreateSessionSchema = z.object({
 const SubmitAnswerSchema = z.object({
     questionId: z.number(),
     userAnswer: z.string(),
-    isCorrect: z.boolean(),
     duration: z.number()
 })
 
@@ -96,7 +95,10 @@ const submitRoute = createRoute({
             description: 'Answer submitted',
             content: {
                 'application/json': {
-                    schema: z.object({ success: z.boolean() })
+                    schema: z.object({
+                        isCorrect: z.boolean(),
+                        correctAnswer: z.string()
+                    })
                 }
             }
         }
@@ -106,18 +108,17 @@ const submitRoute = createRoute({
 app.openapi(submitRoute, async (c) => {
     const user = getCurrentUser(c)
     const { sessionId } = c.req.valid('param')
-    const { questionId, userAnswer, isCorrect, duration } = c.req.valid('json')
+    const { questionId, userAnswer, duration } = c.req.valid('json')
 
-    await practiceService.submitAnswer(
+    const result = await practiceService.submitAnswerWithValidation(
         user.id,
         sessionId,
         questionId,
         userAnswer,
-        isCorrect,
         duration
     )
 
-    return c.json({ success: true })
+    return c.json({ isCorrect: result.isCorrect, correctAnswer: result.correctAnswer })
 })
 
 export default app

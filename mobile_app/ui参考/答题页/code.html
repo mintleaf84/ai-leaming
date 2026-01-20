@@ -1,0 +1,174 @@
+<!DOCTYPE html>
+<html class="dark" lang="zh-CN"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Notion Style Quiz Mode</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&amp;family=Merriweather:ital,wght@0,300;0,400;0,700;0,900;1,300&amp;family=Noto+Sans+SC:wght@300;400;500;700&amp;family=Noto+Serif+SC:wght@400;700&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    colors: {
+                        "primary": "#37352f", // Notion Black
+                        "notion-green": "#edf6ee",
+                        "notion-green-border": "#5c9d6e",
+                        "notion-red": "#fbe4e4",
+                        "notion-red-border": "#e06c75",
+                        "background-light": "#ffffff",
+                        "background-dark": "#191919",
+                        "notion-gray-light": "#f7f7f5", // Light mode block bg
+                        "notion-gray-dark": "#2f2f2f",  // Dark mode block bg
+                    },
+                    fontFamily: {
+                        "sans": ["Inter", "Noto Sans SC", "PingFang SC", "sans-serif"],
+                        "serif": ["Merriweather", "Noto Serif SC", "Songti SC", "serif"],
+                    },
+                    borderRadius: {"DEFAULT": "0.25rem", "lg": "0.5rem", "xl": "0.75rem", "full": "9999px"},
+                },
+            },
+        }
+    </script>
+<style>::-webkit-scrollbar {
+            width: 8px;
+        }
+        ::-webkit-scrollbar-track {
+            background: transparent;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #e1e1e1;
+            border-radius: 4px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: #d1d1d1;
+        }
+        .dark ::-webkit-scrollbar-thumb {
+            background: #373737;
+        }
+        .glass-panel {
+            background: rgba(255, 255, 255, 0.85);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            border-top: 1px solid rgba(0,0,0,0.05);
+        }
+        .dark .glass-panel {
+            background: rgba(25, 25, 25, 0.85);
+            border-top: 1px solid rgba(255,255,255,0.05);
+        }
+    </style>
+<style>
+    body {
+      min-height: max(884px, 100dvh);
+    }
+  </style>
+<style>
+    body {
+      min-height: max(884px, 100dvh);
+    }
+  </style>
+  </head>
+<body class="bg-background-light dark:bg-background-dark font-sans antialiased text-[#37352f] dark:text-[#d4d4d4] selection:bg-[#2eaadc]/30">
+<div class="relative flex h-full min-h-screen w-full flex-col max-w-md mx-auto bg-background-light dark:bg-background-dark overflow-x-hidden shadow-2xl border-x border-black/5 dark:border-white/5">
+<header class="sticky top-0 z-40 bg-background-light dark:bg-background-dark pt-safe-top">
+<div class="flex flex-col px-4 pt-3 pb-2">
+<div class="flex items-center justify-between mb-3">
+<button class="p-1 -ml-1 rounded hover:bg-[#efefef] dark:hover:bg-[#2f2f2f] text-[#37352f]/60 dark:text-[#d4d4d4]/60 transition-colors">
+<span class="material-symbols-outlined text-[20px]">close</span>
+</button>
+<div class="text-xs font-medium text-[#37352f]/40 dark:text-[#d4d4d4]/40 uppercase tracking-widest">刷题模式</div>
+<button class="p-1 -mr-1 rounded hover:bg-[#efefef] dark:hover:bg-[#2f2f2f] text-[#37352f]/60 dark:text-[#d4d4d4]/60 transition-colors">
+<span class="material-symbols-outlined text-[20px]">more_horiz</span>
+</button>
+</div>
+<div class="w-full bg-[#37352f]/5 dark:bg-[#d4d4d4]/10 h-1.5 rounded-full overflow-hidden">
+<div class="bg-[#37352f] dark:bg-[#d4d4d4] h-full rounded-full transition-all duration-500 ease-out" style="width: 42%"></div>
+</div>
+<div class="flex justify-between mt-1.5">
+<span class="text-[10px] text-[#37352f]/40 dark:text-[#d4d4d4]/40 font-mono">12 / 28</span>
+<span class="text-[10px] text-[#37352f]/40 dark:text-[#d4d4d4]/40 font-mono">42%</span>
+</div>
+</div>
+</header>
+<main class="flex-1 px-5 pb-32 pt-2">
+<div class="flex items-center gap-1.5 mb-6 text-xs text-[#37352f]/50 dark:text-[#d4d4d4]/50">
+<span class="hover:underline cursor-pointer flex items-center gap-1">
+<span class="text-[14px]">🇨🇳</span> 中国近代史
+            </span>
+<span class="opacity-40">/</span>
+<span class="hover:underline cursor-pointer">第一章</span>
+</div>
+<div class="mb-8">
+<div class="text-4xl mb-4 select-none">📜</div>
+<h1 class="font-serif text-[26px] font-semibold leading-[1.4] text-[#37352f] dark:text-[#d4d4d4] mb-2 tracking-wide">
+                以下哪项不属于《南京条约》开放的通商口岸？
+            </h1>
+</div>
+<div class="space-y-3 mb-8">
+<label class="group relative flex items-start gap-3 p-3.5 rounded-lg cursor-pointer transition-all duration-200 border bg-notion-green border-notion-green-border/30 dark:bg-[#1c2e21] dark:border-[#2e5c3c]">
+<div class="absolute inset-0 rounded-lg ring-1 ring-inset ring-notion-green-border/50 dark:ring-[#2e5c3c]/50 pointer-events-none"></div>
+<div class="flex items-center justify-center h-5 w-5 mt-0.5 rounded-full bg-[#4ea05e] text-white shrink-0">
+<span class="material-symbols-outlined text-[14px] font-bold">check</span>
+</div>
+<div class="flex-1">
+<span class="text-[15px] font-medium text-[#37352f] dark:text-[#d4d4d4]">C. 天津</span>
+<p class="text-xs text-[#37352f]/60 dark:text-[#d4d4d4]/60 mt-1 font-serif">回答正确。天津是在1860年《北京条约》中增开的口岸。</p>
+</div>
+</label>
+<label class="group relative flex items-start gap-3 p-3.5 rounded-lg cursor-pointer transition-all duration-200 border bg-notion-red border-notion-red-border/30 dark:bg-[#382020] dark:border-[#6e3535]">
+<div class="absolute inset-0 rounded-lg ring-1 ring-inset ring-notion-red-border/50 dark:ring-[#6e3535]/50 pointer-events-none"></div>
+<div class="flex items-center justify-center h-5 w-5 mt-0.5 rounded-full bg-[#d95656] text-white shrink-0">
+<span class="material-symbols-outlined text-[14px] font-bold">close</span>
+</div>
+<span class="text-[15px] font-medium text-[#37352f] dark:text-[#d4d4d4]">B. 厦门</span>
+</label>
+<label class="group relative flex items-start gap-3 p-3.5 rounded-lg cursor-pointer transition-all duration-200 border border-[#e1e1e1] dark:border-[#373737] hover:bg-[#efefef] dark:hover:bg-[#2f2f2f] bg-white dark:bg-[#191919]">
+<div class="flex items-center justify-center h-5 w-5 mt-0.5 rounded-full border border-[#37352f]/20 dark:border-[#d4d4d4]/20 text-transparent group-hover:border-[#37352f]/40 transition-colors shrink-0">
+<div class="w-2.5 h-2.5 rounded-full bg-[#37352f] dark:bg-[#d4d4d4] opacity-0"></div>
+</div>
+<span class="text-[15px] text-[#37352f] dark:text-[#d4d4d4]">A. 广州</span>
+</label>
+<label class="group relative flex items-start gap-3 p-3.5 rounded-lg cursor-pointer transition-all duration-200 border border-[#e1e1e1] dark:border-[#373737] hover:bg-[#efefef] dark:hover:bg-[#2f2f2f] bg-white dark:bg-[#191919]">
+<div class="flex items-center justify-center h-5 w-5 mt-0.5 rounded-full border border-[#37352f]/20 dark:border-[#d4d4d4]/20 text-transparent group-hover:border-[#37352f]/40 transition-colors shrink-0">
+<div class="w-2.5 h-2.5 rounded-full bg-[#37352f] dark:bg-[#d4d4d4] opacity-0"></div>
+</div>
+<span class="text-[15px] text-[#37352f] dark:text-[#d4d4d4]">D. 上海</span>
+</label>
+</div>
+<div class="h-px bg-[#37352f]/10 dark:bg-[#d4d4d4]/10 w-full mb-6"></div>
+<div class="flex flex-col gap-2 opacity-60 hover:opacity-100 transition-opacity">
+<div class="flex items-center gap-2 text-[#37352f]/40 dark:text-[#d4d4d4]/40 text-xs font-medium uppercase tracking-widest px-1">
+<span class="material-symbols-outlined text-[14px]">edit_note</span>
+                笔记草稿
+            </div>
+<div class="group relative min-h-[80px] p-2 -ml-2 rounded hover:bg-[#efefef] dark:hover:bg-[#2f2f2f] transition-colors cursor-text">
+<p class="text-sm text-[#37352f]/40 dark:text-[#d4d4d4]/40">输入 '/' 唤起命令...</p>
+</div>
+</div>
+</main>
+<div class="fixed bottom-0 left-0 right-0 z-50 flex justify-center pb-6 pt-4 pointer-events-none">
+<div class="glass-panel w-full max-w-md mx-auto px-6 py-3 flex items-center justify-between pointer-events-auto pb-safe-bottom">
+<button class="flex flex-col items-center justify-center gap-1 min-w-[64px] group">
+<div class="h-10 w-10 rounded-xl bg-[#37352f]/5 dark:bg-[#d4d4d4]/10 flex items-center justify-center text-[#37352f] dark:text-[#d4d4d4] group-hover:bg-[#37352f]/10 dark:group-hover:bg-[#d4d4d4]/20 transition-colors">
+<span class="material-symbols-outlined">chevron_left</span>
+</div>
+<span class="text-[10px] font-medium text-[#37352f]/60 dark:text-[#d4d4d4]/60">上一题</span>
+</button>
+<button class="flex flex-col items-center justify-center gap-1 -mt-6 group">
+<div class="h-14 w-14 rounded-2xl bg-[#37352f] dark:bg-[#d4d4d4] shadow-lg shadow-black/10 flex items-center justify-center text-white dark:text-[#191919] group-active:scale-95 transition-transform">
+<span class="material-symbols-outlined text-[28px]">sticky_note_2</span>
+</div>
+<span class="text-[10px] font-medium text-[#37352f] dark:text-[#d4d4d4]">记笔记</span>
+</button>
+<button class="flex flex-col items-center justify-center gap-1 min-w-[64px] group">
+<div class="h-10 w-10 rounded-xl bg-[#37352f]/5 dark:bg-[#d4d4d4]/10 flex items-center justify-center text-[#37352f] dark:text-[#d4d4d4] group-hover:bg-[#37352f]/10 dark:group-hover:bg-[#d4d4d4]/20 transition-colors">
+<span class="material-symbols-outlined">chevron_right</span>
+</div>
+<span class="text-[10px] font-medium text-[#37352f]/60 dark:text-[#d4d4d4]/60">下一题</span>
+</button>
+</div>
+</div>
+</div>
+
+</body></html>

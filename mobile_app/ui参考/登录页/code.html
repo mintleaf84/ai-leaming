@@ -1,0 +1,109 @@
+<!DOCTYPE html>
+
+<html class="dark" lang="zh-CN"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Notion Style Login</title>
+<link href="https://fonts.googleapis.com" rel="preconnect"/>
+<link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect"/>
+<link href="https://fonts.googleapis.com/css2?family=Newsreader:ital,opsz,wght@0,6..72,200..800;1,6..72,200..800&amp;family=Noto+Sans+SC:wght@300;400;500;700&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    colors: {
+                        "primary": "#135bec",
+                        "background-light": "#ffffff", 
+                        "background-dark": "#191919", /* Adjusted to match Notion dark mode better */
+                    },
+                    fontFamily: {
+                        "display": ["Newsreader", "Noto Sans SC", "serif"],
+                        "sans": ["Noto Sans SC", "sans-serif"],
+                    },
+                    borderRadius: {"DEFAULT": "0.25rem", "lg": "0.5rem", "xl": "0.75rem", "full": "9999px"},
+                },
+            },
+        }
+    </script>
+<style>
+    body {
+      min-height: max(884px, 100dvh);
+    }
+  </style>
+  </head>
+<body class="bg-background-light dark:bg-background-dark min-h-screen font-display text-[#37352f] dark:text-[#d9d9d9] antialiased selection:bg-primary/30">
+<div class="relative flex min-h-screen w-full flex-col justify-center items-center p-6 overflow-hidden">
+<!-- Main Container -->
+<div class="w-full max-w-[420px] mx-auto flex flex-col items-center">
+<!-- Hero Icon -->
+<div class="mb-6 text-[64px] leading-none animate-fade-in">
+                🗝️
+            </div>
+<!-- Headline -->
+<h1 class="text-3xl md:text-4xl font-bold tracking-tight text-center mb-10 text-black dark:text-white leading-tight">
+                欢迎回来
+            </h1>
+<!-- Form -->
+<form class="w-full flex flex-col gap-4">
+<!-- Email/User Input -->
+<div class="group relative">
+<label class="sr-only" for="username">邮箱/用户名</label>
+<div class="relative flex items-center">
+<span class="absolute left-4 text-gray-400 material-symbols-outlined text-[20px]">person</span>
+<input class="form-input block w-full rounded-lg border-gray-200 dark:border-[#373737] bg-white dark:bg-[#202020] text-base py-3 pl-11 pr-4 placeholder:text-gray-400 focus:border-primary focus:ring-1 focus:ring-primary dark:focus:border-primary dark:text-white transition-all shadow-sm hover:border-gray-300 dark:hover:border-[#505050]" id="username" placeholder="邮箱/用户名" type="text"/>
+</div>
+</div>
+<!-- Password Input -->
+<div class="group relative">
+<label class="sr-only" for="password">密码</label>
+<div class="relative flex items-center">
+<span class="absolute left-4 text-gray-400 material-symbols-outlined text-[20px]">lock</span>
+<input class="form-input block w-full rounded-lg border-gray-200 dark:border-[#373737] bg-white dark:bg-[#202020] text-base py-3 pl-11 pr-4 placeholder:text-gray-400 focus:border-primary focus:ring-1 focus:ring-primary dark:focus:border-primary dark:text-white transition-all shadow-sm hover:border-gray-300 dark:hover:border-[#505050]" id="password" placeholder="密码" type="password"/>
+</div>
+</div>
+<!-- Submit Button -->
+<button class="mt-4 w-full bg-primary hover:bg-primary/90 text-white font-medium py-3 px-4 rounded-lg transition-colors duration-200 shadow-sm flex items-center justify-center gap-2 text-[17px]" type="button">
+                    登录
+                    <span class="material-symbols-outlined text-[18px]">arrow_forward</span>
+</button>
+<!-- Forgot Password -->
+<div class="flex justify-center mt-2">
+<a class="text-sm text-gray-500 dark:text-gray-400 hover:text-primary dark:hover:text-primary transition-colors underline decoration-transparent hover:decoration-current underline-offset-4" href="#">
+                        忘记密码？
+                    </a>
+</div>
+</form>
+<!-- Divider -->
+<div class="relative w-full py-8 flex items-center">
+<div class="flex-grow border-t border-gray-200 dark:border-[#373737]"></div>
+<span class="flex-shrink-0 mx-4 text-xs text-gray-400 dark:text-gray-500 font-sans uppercase tracking-wider">或者</span>
+<div class="flex-grow border-t border-gray-200 dark:border-[#373737]"></div>
+</div>
+<!-- Social Logins -->
+<div class="w-full grid grid-cols-2 gap-3">
+<button class="flex items-center justify-center gap-2 px-4 py-2.5 border border-gray-200 dark:border-[#373737] rounded-lg hover:bg-gray-50 dark:hover:bg-[#262626] transition-colors bg-white dark:bg-[#202020] text-sm text-gray-700 dark:text-gray-200" type="button">
+<!-- Apple SVG Icon -->
+<svg class="w-5 h-5" fill="currentColor" viewbox="0 0 24 24">
+<path d="M17.05 20.28c-.98.95-2.05.8-3.08.35-1.09-.46-2.09-.48-3.24 0-1.44.62-2.2.44-3.06-.35C2.79 15.25 3.51 7.59 9.05 7.31c1.35.07 2.29.74 3.08.74 1.18 0 2.45-1.15 3.66-1.06 1.33.1 2.53.74 3.13 1.5-3.69 2.1-2.61 7.23 1.09 8.78-.65 1.59-1.51 2.97-2.96 3.01zM12.01 4.5c-.14-2.04 1.55-3.8 3.55-4.5.34 2.29-1.99 4.22-3.55 4.5z"></path>
+</svg>
+<span>Apple</span>
+</button>
+<button class="flex items-center justify-center gap-2 px-4 py-2.5 border border-gray-200 dark:border-[#373737] rounded-lg hover:bg-gray-50 dark:hover:bg-[#262626] transition-colors bg-white dark:bg-[#202020] text-sm text-gray-700 dark:text-gray-200" type="button">
+<!-- WeChat SVG Icon placeholder -->
+<svg class="w-5 h-5 text-[#07C160]" fill="currentColor" viewbox="0 0 24 24">
+<path d="M19.5 16.5c2.4 0 4.5-1.8 4.5-4.25 0-2.5-2.1-4.25-4.5-4.25-2.3 0-4.5 1.75-4.5 4.25 0 2.45 2.2 4.25 4.5 4.25.5 0 1.1-.1 1.6-.2l2.4 1.3-.4-1.8c.7-.8 1.1-1.8 1.1-2.6-.2-1-.2-1.1-.2-1zm-11 3.5c2.9 0 5.4-2.2 5.4-5.1 0-2.9-2.5-5.1-5.4-5.1-3 0-5.4 2.2-5.4 5.1 0 2.9 2.4 5.1 5.4 5.1.6 0 1.3-.1 1.9-.3l2.9 1.6-.5-2.2c.9-1 1.4-2.2 1.4-3.4 0-.1 0 0 0 .3l-.3.9z"></path>
+</svg>
+<span>微信</span>
+</button>
+</div>
+<!-- Footer Note (Subtle) -->
+<p class="mt-12 text-xs text-gray-400 dark:text-gray-600 text-center font-sans">
+                登录即代表您同意我们的<a class="hover:text-primary underline" href="#">服务条款</a>和<a class="hover:text-primary underline" href="#">隐私政策</a>
+</p>
+</div>
+</div>
+</body></html>

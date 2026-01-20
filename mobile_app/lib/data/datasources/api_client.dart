@@ -34,4 +34,25 @@ abstract class ApiClient {
 
   @GET('/history/{id}')
   Future<dynamic> getHistoryDetail(@Path('id') String id);
+
+  // 知识卡片
+  @POST(ApiConstants.knowledgeCards)
+  Future<dynamic> createKnowledgeCard(@Body() Map<String, dynamic> body);
+
+  @GET(ApiConstants.knowledgeCards)
+  Future<dynamic> getKnowledgeCards({
+    @Query('category') String? category,
+    @Query('limit') int? limit,
+  });
+
+  // 掌握度
+  @GET(ApiConstants.masteryTree)
+  Future<dynamic> getMasteryTree();
+
+  @GET(ApiConstants.masteryStats)
+  Future<dynamic> getMasteryStats(@Query('tag') String tag);
+
+  // 第一性原理
+  @POST(ApiConstants.firstPrinciples)
+  Future<dynamic> analyzeFirstPrinciples(@Body() Map<String, dynamic> body);
 }

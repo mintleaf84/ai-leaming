@@ -1,5 +1,6 @@
 import 'package:dio/dio.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import '../constants/api_constants.dart';
 
 final dioProvider = Provider<Dio>((ref) {
@@ -17,10 +18,27 @@ final dioProvider = Provider<Dio>((ref) {
     'Accept': 'application/json',
   };
 
+  // Add auth interceptor
+  dio.interceptors.add(AuthInterceptor());
+
   // Add logging interceptor
   dio.interceptors.add(LogInterceptor(requestBody: true, responseBody: true));
 
-  // TODO: Add AuthInterceptor here
-
   return dio;
 });
+
+class AuthInterceptor extends Interceptor {
+  final _storage = const FlutterSecureStorage();
+
+  @override
+  void onRequest(
+    RequestOptions options,
+    RequestInterceptorHandler handler,
+  ) async {
+    final token = await _storage.read(key: 'jwt_token');
+    if (token != null) {
+      options.headers['Authorization'] = 'Bearer $token';
+    }
+    handler.next(options);
+  }
+}

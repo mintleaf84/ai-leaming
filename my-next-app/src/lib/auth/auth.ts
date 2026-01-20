@@ -1,4 +1,4 @@
-import { cookies } from 'next/headers';
+import { cookies, headers } from 'next/headers';
 import { NextRequest, NextResponse } from 'next/server';
 import { User, UserRole } from '@/lib/types';
 import { getUserById } from './user-service';
@@ -16,6 +16,8 @@ export async function login(user: User) {
 
     // Save the session in a cookie
     (await cookies()).set(COOKIE_NAME, session, { expires, httpOnly: true, secure: process.env.NODE_ENV === 'production' });
+
+    return session;
 }
 
 export async function logout() {
@@ -24,7 +26,16 @@ export async function logout() {
 }
 
 export async function getSession() {
-    const session = (await cookies()).get(COOKIE_NAME)?.value;
+    let session = (await cookies()).get(COOKIE_NAME)?.value;
+
+    // Support Bearer Token for Mobile
+    if (!session) {
+        const authHeader = (await headers()).get('Authorization');
+        if (authHeader && authHeader.startsWith('Bearer ')) {
+            session = authHeader.split(' ')[1];
+        }
+    }
+
     if (!session) return null;
     try {
         const decrypted = await decrypt(session);

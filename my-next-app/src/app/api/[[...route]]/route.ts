@@ -31,6 +31,12 @@ app.route('/practice', practiceRoute)
 import historyRoute from '@/lib/api/routes/history'
 app.route('/history', historyRoute)
 
+import knowledgeRoute from '@/lib/api/routes/knowledge'
+app.route('/knowledge', knowledgeRoute)
+
+import masteryRoute from '@/lib/api/routes/mastery'
+app.route('/mastery', masteryRoute)
+
 
 
 

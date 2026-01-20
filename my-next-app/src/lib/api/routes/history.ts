@@ -54,7 +54,7 @@ app.openapi(listRoute, async (c) => {
     const pageNum = parseInt(page)
     const pageSizeNum = parseInt(pageSize)
 
-    const result = await historyService.getHistory(user.id, {
+    const result = await historyService.getHistory(Number(user.id), {
         page: pageNum,
         pageSize: pageSizeNum,
         mode: mode
@@ -124,7 +124,7 @@ app.openapi(getDetailRoute, async (c) => {
     const user = getCurrentUser(c)
     const { id } = c.req.valid('param')
 
-    const result = await historyService.getSessionDetail(id, user.id)
+    const result = await historyService.getSessionDetail(id, Number(user.id))
 
     if (!result) {
         return c.json({ error: 'Session not found' }, 404)

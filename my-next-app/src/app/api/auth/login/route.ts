@@ -41,11 +41,12 @@ export async function POST(request: NextRequest) {
             return NextResponse.json({ error: '用户名或密码不正确' }, { status: 401 });
         }
 
-        await login({ id: user.id, username: user.username, role: user.role });
+        const token = await login({ id: user.id, username: user.username, role: user.role });
 
         return NextResponse.json({
             message: '登录成功',
-            user: { id: user.id, username: user.username, role: user.role }
+            user: { id: user.id, username: user.username, role: user.role },
+            token
         });
     } catch (error: any) {
         console.error('Login error:', error);

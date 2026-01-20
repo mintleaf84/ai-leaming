@@ -77,6 +77,9 @@ export const historyService = {
         // Calculate accuracy and filter
         let items = rows.map(r => ({
             ...r,
+            id: String(r.id), // Ensure ID is string
+            // Convert timestamp/string to ISO string for API consistency
+            createdAt: new Date(r.createdAt).toISOString(),
             accuracy: r.totalQuestions > 0 ? Math.round((r.correctCount / r.totalQuestions) * 100) : 0
         }));
 
@@ -127,6 +130,8 @@ export const historyService = {
         return {
             session: {
                 ...sessionRow,
+                id: String(sessionRow.id), // Ensure ID is string
+                createdAt: new Date(sessionRow.createdAt).toISOString(),
                 accuracy: sessionRow.totalQuestions > 0 ? Math.round((sessionRow.correctCount / sessionRow.totalQuestions) * 100) : 0
             },
             logs: logs.map(l => ({

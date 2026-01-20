@@ -46,11 +46,12 @@ export async function POST(request: NextRequest) {
         const user = await createUser(username, password);
 
         // Auto login after registration
-        await login({ id: user.id, username: user.username, role: user.role });
+        const token = await login({ id: user.id, username: user.username, role: user.role });
 
         return NextResponse.json({
             message: '注册成功',
-            user: { id: user.id, username: user.username, role: user.role }
+            user: { id: user.id, username: user.username, role: user.role },
+            token
         });
     } catch (error: any) {
         console.error('Registration error detailed:', {

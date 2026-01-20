@@ -121,4 +121,145 @@ app.openapi(submitRoute, async (c) => {
     return c.json({ isCorrect: result.isCorrect, correctAnswer: result.correctAnswer })
 })
 
+// --- First Principles Logic ---
+
+import db from '@/lib/db';
+import { generateTextWrapper } from '@/lib/ai/client';
+import { checkAndConsumeQuota } from '@/lib/billing/subscription-service';
+
+// 确保缓存表存在
+function ensureCacheTable() {
+    try {
+        db.exec(`
+            CREATE TABLE IF NOT EXISTS first_principles_cache (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                question_hash TEXT UNIQUE NOT NULL,
+                analysis TEXT NOT NULL,
+                created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+            );
+            CREATE INDEX IF NOT EXISTS idx_fp_cache_hash ON first_principles_cache(question_hash);
+        `);
+    } catch (e) {
+        console.error('[FirstPrinciples] 创建缓存表失败:', e);
+    }
+}
+
+// 生成内容哈希
+function generateHash(content: string): string {
+    const normalized = content.trim().slice(0, 100) + content.length;
+    let hash = 0;
+    for (let i = 0; i < normalized.length; i++) {
+        const char = normalized.charCodeAt(i);
+        hash = ((hash << 5) - hash) + char;
+        hash = hash & hash;
+    }
+    return hash.toString(36);
+}
+
+const FirstPrinciplesSchema = z.object({
+    questionContent: z.string(),
+    explanation: z.string().optional(),
+    wrongAnswer: z.string().optional(),
+    correctAnswer: z.string()
+})
+
+const firstPrinciplesRoute = createRoute({
+    method: 'post',
+    path: '/first-principles',
+    middleware: [authMiddleware] as const,
+    request: {
+        body: {
+            content: {
+                'application/json': { schema: FirstPrinciplesSchema }
+            }
+        }
+    },
+    responses: {
+        200: {
+            description: 'Analysis result',
+            content: {
+                'application/json': {
+                    schema: z.object({
+                        analysis: z.string(),
+                        cached: z.boolean()
+                    })
+                }
+            }
+        },
+        403: {
+            description: 'Quota exceeded'
+        },
+        500: {
+            description: 'Server error'
+        }
+    }
+})
+
+app.openapi(firstPrinciplesRoute, async (c) => {
+    const user = getCurrentUser(c)
+    const { questionContent, explanation, wrongAnswer, correctAnswer } = c.req.valid('json')
+
+    try {
+        ensureCacheTable();
+        const cacheKey = generateHash(questionContent + correctAnswer + (wrongAnswer || ''));
+
+        // 检查缓存
+        const cached = db.prepare(
+            'SELECT analysis FROM first_principles_cache WHERE question_hash = ?'
+        ).get(cacheKey) as { analysis: string } | undefined;
+
+        if (cached) {
+            return c.json({ analysis: cached.analysis, cached: true });
+        }
+
+        // 检查配额
+        const quotaResult = checkAndConsumeQuota(Number(user.id), 'first_principles');
+        if (!quotaResult.allowed) {
+            return c.json({ error: quotaResult.message }, 403);
+        }
+
+        // 构建 Prompt
+        const prompt = `请用"第一性原理"解析这道题。要求：
+1. 直接给答案，只说底层逻辑，不超过200字
+2. 不要使用黑话，用通俗易懂的语言
+3. 严格基于提供的题目内容和选项进行分析，禁止引用题目中未提及的观点，禁止编造不存在的选项。
+
+题目：${questionContent}
+正确答案：${correctAnswer}
+${wrongAnswer ? `用户选择：${wrongAnswer}` : ''}
+${explanation ? `参考解析：${explanation}` : ''}
+
+回复格式：
+【答案】X
+【核心逻辑】...`;
+
+        // 调用 AI
+        let text: string;
+        try {
+            const result = await generateTextWrapper(prompt, 'economy', undefined, undefined, {
+                timeout: 30000,
+                retries: 1,
+            });
+            text = result.text;
+        } catch (aiError: any) {
+            return c.json({ error: `AI 分析失败: ${aiError.message}` }, 500);
+        }
+
+        // 保存到缓存
+        try {
+            db.prepare(
+                'INSERT OR REPLACE INTO first_principles_cache (question_hash, analysis) VALUES (?, ?)'
+            ).run(cacheKey, text);
+        } catch (cacheError) {
+            console.error('[FirstPrinciples] 缓存保存失败:', cacheError);
+        }
+
+        return c.json({ analysis: text, cached: false });
+
+    } catch (error: any) {
+        console.error('[FirstPrinciples API] error:', error);
+        return c.json({ error: error.message }, 500);
+    }
+})
+
 export default app

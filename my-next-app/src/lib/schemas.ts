@@ -10,8 +10,8 @@ const BaseQuestionSchema = z.object({
   tags: z.array(z.string().min(1, "标签内容不能为空")).min(1, "至少需要1个标签"),
   dimension: z.enum(['knowledge', 'understanding', 'application'], {
     message: "维度必须是 'knowledge'、'understanding' 或 'application'"
-  }),
-  type: z.enum(['single', 'multi']).optional().default('single'),
+  }).or(z.string()), // Relax dimension as well just in case
+  type: z.string().optional().default('single'), // Relax type to string to support legacy data
 });
 
 export const QuestionSchema = BaseQuestionSchema.refine((data) => {

@@ -74,6 +74,20 @@ export const DEFAULT_REGRESSION_PROMPT = `
 再次强调：必须生成完整的 3 道题目，缺一不可！
 `;
 
+export const DEFAULT_FIRST_PRINCIPLES_PROMPT = `
+你是一位精通教育学 / 心理学常考点“底层逻辑”的命题专家。请用“第一性原理”的思维方式，剖析这道题目背后的本质。
+
+题目内容: "\${questionContent}"
+解析: "\${explanation}"
+正确答案: "\${correctAnswer}"
+用户错误答案(可选): "\${wrongAnswer}"
+
+请用一段简练的话（200字以内）通过现象看本质，指出这道题到底在考什么核心概念，以及为什么其他选项是错误的干扰项（如果适用）。
+不要重复解析，而是提供一个更高维度的视角，比如“这道题本质上是在考察X与Y的边界...”。
+
+请直接输出分析内容，不需要任何格式包装。
+`;
+
 export const DEFAULT_KNOWLEDGE_EXTRACT_PROMPT = `你是一个知识提取专家。请从以下对话内容中提取核心知识，生成一张结构化的知识卡片。
 
 对话内容：
@@ -88,7 +102,7 @@ export const DEFAULT_KNOWLEDGE_EXTRACT_PROMPT = `你是一个知识提取专家�
   "front": "卡片正面：核心问题或概念",
   "back": "卡片背面：详细解答",
   "key_points": [
-    {"term": "术语2", "definition": "定义2"}
+    { "term": "术语2", "definition": "定义2" }
   ],
   "suggestions": ["提取关于XXX的知识点", "生成XXX的辨析题"]
 }
@@ -96,7 +110,7 @@ export const DEFAULT_KNOWLEDGE_EXTRACT_PROMPT = `你是一个知识提取专家�
 注意：
 1. front 应该是一个问题形式，适合用于复习测试
 2. back 应该是简洁但完整的答案
-3. key_points 提取 2-5 个关键知识点
+3. key_points 提取 2 - 5 个关键知识点
 4. suggestions: 如果对话中包含多个独立的知识点，或者当前提取的卡片只覆盖了一部分，请在这里列出其他值得提取的方向（3个以内），供用户点击生成。如果没有其他方向，数组留空。`;
 
 export const DEFAULT_CHAT_SYSTEM_PROMPT = `你是一位资深的教师招聘考试辅导专家，擅长教育学、心理学和教学法。请用专业、友好的语气回答学生的问题，帮助他们理解概念和解决疑难。
@@ -111,6 +125,12 @@ export const PROMPT_VARIABLE_EXAMPLES: Record<string, Record<string, string>> = 
     'questionContent': '文老师班里的小亮同学最近出现一些不良行为。文老师通过适当的表扬，惩戒和操行评定对小亮进行教育，使他的品德健康发展。文老师采用的德育方法属于（ ）。 A.说服教育法 B.情感陶冶法 C.榜样示范法 D.品德评价法',
     'wrongAnswer': 'A. 说服教育法',
     'correctAnswer': 'D. 品德评价法'
+  },
+  'first_principles': {
+    'questionContent': '...',
+    'explanation': '...',
+    'correctAnswer': '...',
+    'wrongAnswer': '...'
   },
   'regression_challenge': {
     'questionContent': '文老师通过表扬、惩戒和操行评定教育学生，这属于品德评价法。',

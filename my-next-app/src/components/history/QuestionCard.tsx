@@ -6,6 +6,7 @@ import { formatDuration, indexToLetter } from '@/lib/utils/utils';
 import { AnnotatableText } from './AnnotatableText';
 import ReactMarkdown from 'react-markdown';
 import { generateMnemonicAction } from '@/server/actions/ai-mnemonic';
+import { generateFirstPrinciplesAction } from '@/server/actions/ai';
 import { toast } from 'sonner';
 import {
     Tooltip,
@@ -111,25 +112,15 @@ export function QuestionCard({ log, index, isExpanded, onToggle, refCallback }: 
         if (fpAnalysis || isLoadingFP) return; // 已有结果或正在加载
 
         setIsLoadingFP(true);
+
         try {
-            const response = await fetch('/api/practice/first-principles', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({
-                    questionContent: log.questionContent,
-                    explanation: log.explanation,
-                    wrongAnswer: log.isCorrect ? null : log.userAnswer,
-                    correctAnswer: log.correctAnswer,
-                }),
-            });
-
-            if (!response.ok) {
-                const errorData = await response.json().catch(() => ({}));
-                throw new Error(errorData.error || '分析失败');
-            }
-
-            const data = await response.json();
-            setFpAnalysis(data.analysis);
+            const result = await generateFirstPrinciplesAction(
+                log.questionContent,
+                log.explanation,
+                log.correctAnswer,
+                log.isCorrect ? undefined : log.userAnswer
+            );
+            setFpAnalysis(result.analysis);
         } catch (error: any) {
             console.error('第一性原理分析失败:', error);
             toast.error(error.message || '分析失败，请稍后重试');

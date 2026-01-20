@@ -9,6 +9,7 @@ import '../../domain/entities/history_item.dart';
 import '../../domain/entities/practice_log.dart';
 import '../widgets/skeleton_loading.dart';
 import 'dart:math' as math;
+import '../widgets/first_principles_section.dart';
 
 class HistoryDetailScreen extends ConsumerStatefulWidget {
   final String sessionId;
@@ -57,15 +58,13 @@ class _HistoryDetailScreenState extends ConsumerState<HistoryDetailScreen> {
         ),
         centerTitle: true,
         actions: [
-          // 仅在清单模式显示只看错题，沉浸模式下可以在内部处理
-          if (reviewMode == ReviewMode.list)
-            IconButton(
-              icon: Icon(
-                _showWrongOnly ? Icons.filter_alt : Icons.filter_alt_outlined,
-              ),
-              color: _showWrongOnly ? const Color(0xFFEB5757) : textColor,
-              onPressed: () => setState(() => _showWrongOnly = !_showWrongOnly),
+          IconButton(
+            icon: Icon(
+              _showWrongOnly ? Icons.filter_alt : Icons.filter_alt_outlined,
             ),
+            color: _showWrongOnly ? const Color(0xFFEB5757) : textColor,
+            onPressed: () => setState(() => _showWrongOnly = !_showWrongOnly),
+          ),
         ],
       ),
       body: asyncState.when(
@@ -184,9 +183,13 @@ class _HistoryDetailScreenState extends ConsumerState<HistoryDetailScreen> {
       );
     }
 
-    final logs = state.logs;
+    final allLogs = state.logs;
+    final filteredLogs = _showWrongOnly
+        ? allLogs.where((log) => !log.isCorrect).toList()
+        : allLogs;
+
     // Page 0 is summary, Pages 1..N are questions
-    final totalPages = logs.length + 1;
+    final totalPages = filteredLogs.length + 1;
 
     return PageView.builder(
       itemCount: totalPages,
@@ -205,21 +208,31 @@ class _HistoryDetailScreenState extends ConsumerState<HistoryDetailScreen> {
                     secondaryColor,
                   ),
                   SizedBox(height: 48.h),
-                  Icon(Icons.swipe_left, size: 32.sp, color: secondaryColor),
-                  SizedBox(height: 8.h),
-                  Text(
-                    '左滑开始复习',
-                    style: TextStyle(fontSize: 14.sp, color: secondaryColor),
-                  ),
+                  if (filteredLogs.isNotEmpty) ...[
+                    Icon(Icons.swipe_left, size: 32.sp, color: secondaryColor),
+                    SizedBox(height: 8.h),
+                    Text(
+                      '左滑开始复习',
+                      style: TextStyle(fontSize: 14.sp, color: secondaryColor),
+                    ),
+                  ] else if (_showWrongOnly) ...[
+                    Text('🎉', style: TextStyle(fontSize: 40.sp)),
+                    SizedBox(height: 8.h),
+                    Text(
+                      '太棒了！没有错题',
+                      style: TextStyle(fontSize: 16.sp, color: secondaryColor),
+                    ),
+                  ],
                 ],
               ),
             ),
           );
         }
 
-        final log = logs[index - 1];
+        final log = filteredLogs[index - 1];
+        final actualIndex = allLogs.indexOf(log);
         return _buildImmersiveQuestionCard(
-          index,
+          actualIndex + 1,
           log,
           cardColor,
           textColor,
@@ -500,6 +513,7 @@ class _HistoryDetailScreenState extends ConsumerState<HistoryDetailScreen> {
                             textColor,
                             secondaryColor,
                           ),
+                        FirstPrinciplesSection(log: log),
                       ],
                     ),
                   ),
@@ -609,6 +623,7 @@ class _HistoryDetailScreenState extends ConsumerState<HistoryDetailScreen> {
                       textColor,
                       secondaryColor,
                     ),
+                  FirstPrinciplesSection(log: log),
                 ],
               ),
             ),

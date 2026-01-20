@@ -247,13 +247,15 @@ class _ApiClient implements ApiClient {
   }
 
   @override
-  Future<dynamic> analyzeFirstPrinciples(Map<String, dynamic> body) async {
+  Future<FirstPrinciplesResponse> analyzeFirstPrinciples(
+    Map<String, dynamic> body,
+  ) async {
     final _extra = <String, dynamic>{};
     final queryParameters = <String, dynamic>{};
     final _headers = <String, dynamic>{};
     final _data = <String, dynamic>{};
     _data.addAll(body);
-    final _options = _setStreamType<dynamic>(
+    final _options = _setStreamType<FirstPrinciplesResponse>(
       Options(method: 'POST', headers: _headers, extra: _extra)
           .compose(
             _dio.options,
@@ -263,8 +265,14 @@ class _ApiClient implements ApiClient {
           )
           .copyWith(baseUrl: _combineBaseUrls(_dio.options.baseUrl, baseUrl)),
     );
-    final _result = await _dio.fetch(_options);
-    final _value = _result.data;
+    final _result = await _dio.fetch<Map<String, dynamic>>(_options);
+    late FirstPrinciplesResponse _value;
+    try {
+      _value = FirstPrinciplesResponse.fromJson(_result.data!);
+    } on Object catch (e, s) {
+      errorLogger?.logError(e, s, _options, response: _result);
+      rethrow;
+    }
     return _value;
   }
 

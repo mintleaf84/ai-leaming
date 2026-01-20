@@ -1,6 +1,7 @@
 import 'package:dio/dio.dart';
 import 'package:retrofit/retrofit.dart';
 import '../../core/constants/api_constants.dart';
+import '../../domain/entities/first_principles_response.dart';
 
 part 'api_client.g.dart';
 
@@ -54,5 +55,7 @@ abstract class ApiClient {
 
   // 第一性原理
   @POST(ApiConstants.firstPrinciples)
-  Future<dynamic> analyzeFirstPrinciples(@Body() Map<String, dynamic> body);
+  Future<FirstPrinciplesResponse> analyzeFirstPrinciples(
+    @Body() Map<String, dynamic> body,
+  );
 }

@@ -537,7 +537,12 @@ class DashboardScreen extends HookConsumerWidget {
             false,
             () => context.go('/mastery'),
           ),
-          _buildNavItem(Icons.settings, '设置', false, null),
+          _buildNavItem(
+            Icons.settings,
+            '设置',
+            false,
+            () => context.go('/settings'),
+          ),
         ],
       ),
     );

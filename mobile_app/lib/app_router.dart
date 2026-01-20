@@ -8,6 +8,7 @@ import 'presentation/screens/history_screen.dart';
 import 'presentation/screens/history_detail_screen.dart';
 import 'presentation/screens/knowledge_screen.dart';
 import 'presentation/screens/mastery_screen.dart';
+import 'presentation/screens/settings_screen.dart';
 
 final appRouter = GoRouter(
   initialLocation: '/login',
@@ -46,6 +47,10 @@ final appRouter = GoRouter(
     GoRoute(
       path: '/mastery',
       builder: (context, state) => const MasteryScreen(),
+    ),
+    GoRoute(
+      path: '/settings',
+      builder: (context, state) => const SettingsScreen(),
     ),
   ],
 );

@@ -56,14 +56,18 @@ class PracticeSessionState {
   bool get hasPrev => currentIndex > 0;
 }
 
-/// 练习会话控制器
-class PracticeController extends StateNotifier<PracticeSessionState> {
-  final ApiClient _apiClient;
-  final FlutterSecureStorage _storage;
+/// 练习会话控制器 (Riverpod 3.x Notifier pattern)
+class PracticeController extends Notifier<PracticeSessionState> {
   DateTime? _questionStartTime;
+  final FlutterSecureStorage _storage = const FlutterSecureStorage();
 
-  PracticeController(this._apiClient, this._storage)
-    : super(const PracticeSessionState());
+  @override
+  PracticeSessionState build() => const PracticeSessionState();
+
+  ApiClient get _apiClient {
+    final dio = ref.watch(dioProvider);
+    return ApiClient(dio);
+  }
 
   /// 创建新会话
   Future<void> createSession({int limit = 10}) async {
@@ -164,10 +168,8 @@ class PracticeController extends StateNotifier<PracticeSessionState> {
   }
 }
 
-/// Provider
+/// Provider (Riverpod 3.x pattern)
 final practiceControllerProvider =
-    StateNotifierProvider<PracticeController, PracticeSessionState>((ref) {
-      final dio = ref.watch(dioProvider);
-      final apiClient = ApiClient(dio);
-      return PracticeController(apiClient, const FlutterSecureStorage());
-    });
+    NotifierProvider<PracticeController, PracticeSessionState>(
+      PracticeController.new,
+    );

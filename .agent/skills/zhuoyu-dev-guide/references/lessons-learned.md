@@ -30,6 +30,7 @@
 ## 工具链规范
 
 - **禁止占位符**: 使用 `replace` 工具编辑代码时，**严禁使用** `... existing code ...` 等占位符。必须提供完整的 `new_string`，或者对于大文件修改优先使用 `write_file` 全量覆盖。
+- **PowerShell 命令链**: PowerShell **不支持 `&&` 链接多条命令**。必须分开执行，例如先 `git add`，再 `git commit`。
 
 ## 其他陷阱
 

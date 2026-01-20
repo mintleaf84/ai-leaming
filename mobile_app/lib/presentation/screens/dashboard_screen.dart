@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
+import 'package:go_router/go_router.dart';
 
 class DashboardScreen extends HookConsumerWidget {
   const DashboardScreen({super.key});
@@ -30,7 +31,7 @@ class DashboardScreen extends HookConsumerWidget {
                         Divider(height: 1.h, color: Colors.grey[300]),
                         SizedBox(height: 24.h),
                         // Action Grid
-                        _buildActionGrid(),
+                        _buildActionGrid(context),
                         SizedBox(height: 32.h),
                         // Progress Card
                         _buildProgressCard(),
@@ -82,38 +83,47 @@ class DashboardScreen extends HookConsumerWidget {
     );
   }
 
-  Widget _buildActionGrid() {
+  Widget _buildActionGrid(BuildContext context) {
     return Column(
       children: [
         Row(
           children: [
             Expanded(
-              child: _buildActionCard(
-                icon: '✏️',
-                tag: '进行中',
-                tagColor: const Color(0xFFE8F3FF),
-                tagTextColor: const Color(0xFF135BEC),
-                title: '继续\n练习',
-                subtitleLabel: '下一项',
-                subtitleValue: '数学专项训练',
+              child: GestureDetector(
+                onTap: () => context.go('/practice'),
+                child: _buildActionCard(
+                  icon: '✏️',
+                  tag: '进行中',
+                  tagColor: const Color(0xFFE8F3FF),
+                  tagTextColor: const Color(0xFF135BEC),
+                  title: '继续\n练习',
+                  subtitleLabel: '下一项',
+                  subtitleValue: '数学专项训练',
+                ),
               ),
             ),
             SizedBox(width: 16.w),
             Expanded(
-              child: _buildActionCard(
-                icon: '🧠',
-                tag: '待复习',
-                tagColor: const Color(0xFFFFF4E5),
-                tagTextColor: const Color(0xFFFF9500),
-                title: '智能\n复习',
-                subtitleLabel: '今日待办',
-                subtitleValue: '12 个知识点',
+              child: GestureDetector(
+                onTap: () => context.go('/practice'),
+                child: _buildActionCard(
+                  icon: '🧠',
+                  tag: '待复习',
+                  tagColor: const Color(0xFFFFF4E5),
+                  tagTextColor: const Color(0xFFFF9500),
+                  title: '智能\n复习',
+                  subtitleLabel: '今日待办',
+                  subtitleValue: '12 个知识点',
+                ),
               ),
             ),
           ],
         ),
         SizedBox(height: 16.h),
-        _buildFullWidthCard(),
+        GestureDetector(
+          onTap: () => context.go('/practice'),
+          child: _buildFullWidthCard(),
+        ),
       ],
     );
   }
@@ -509,35 +519,38 @@ class DashboardScreen extends HookConsumerWidget {
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
-          _buildNavItem(Icons.dashboard, '工作区', true),
-          _buildNavItem(Icons.quiz, '题库', false),
-          _buildNavItem(Icons.description, '笔记', false),
-          _buildNavItem(Icons.bar_chart, '统计', false),
-          _buildNavItem(Icons.settings, '设置', false),
+          _buildNavItem(Icons.dashboard, '工作区', true, null),
+          _buildNavItem(Icons.history, '历史', false, () => context.go('/history')),
+          _buildNavItem(Icons.quiz, '题库', false, null),
+          _buildNavItem(Icons.bar_chart, '统计', false, null),
+          _buildNavItem(Icons.settings, '设置', false, null),
         ],
       ),
     );
   }
 
-  Widget _buildNavItem(IconData icon, String label, bool isSelected) {
-    return Column(
-      mainAxisSize: MainAxisSize.min,
-      children: [
-        Icon(
-          icon,
-          size: 24.sp,
-          color: isSelected ? const Color(0xFF37352F) : Colors.grey,
-        ),
-        SizedBox(height: 4.h),
-        Text(
-          label,
-          style: TextStyle(
-            fontSize: 10.sp,
-            fontWeight: isSelected ? FontWeight.w600 : FontWeight.w500,
+  Widget _buildNavItem(IconData icon, String label, bool isSelected, VoidCallback? onTap) {
+    return GestureDetector(
+      onTap: onTap,
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(
+            icon,
+            size: 24.sp,
             color: isSelected ? const Color(0xFF37352F) : Colors.grey,
           ),
-        ),
-      ],
+          SizedBox(height: 4.h),
+          Text(
+            label,
+            style: TextStyle(
+              fontSize: 10.sp,
+              fontWeight: isSelected ? FontWeight.w600 : FontWeight.w500,
+              color: isSelected ? const Color(0xFF37352F) : Colors.grey,
+            ),
+          ),
+        ],
+      ),
     );
   }
 }

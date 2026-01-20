@@ -24,4 +24,14 @@ abstract class ApiClient {
     @Path('sessionId') String sessionId,
     @Body() Map<String, dynamic> body,
   );
+
+  // 历史记录
+  @GET('/history')
+  Future<dynamic> getHistory(
+    @Query('page') int page,
+    @Query('pageSize') int pageSize,
+  );
+
+  @GET('/history/{id}')
+  Future<dynamic> getHistoryDetail(@Path('id') String id);
 }

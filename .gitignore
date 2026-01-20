@@ -165,7 +165,7 @@ debug-*.js
 # Reference project (not our code)
 cherry-studio-main/
 mineru导出/
-
+novel-main/
 # Textbook images (generated)
 my-next-app/public/books/
 

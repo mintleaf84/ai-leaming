@@ -3,6 +3,8 @@ import 'presentation/screens/register_screen.dart';
 import 'presentation/screens/login_screen.dart';
 import 'presentation/screens/dashboard_screen.dart';
 import 'presentation/screens/practice_screen.dart';
+import 'presentation/screens/result_screen.dart';
+import 'presentation/screens/history_screen.dart';
 
 final appRouter = GoRouter(
   initialLocation: '/login',
@@ -19,6 +21,11 @@ final appRouter = GoRouter(
     GoRoute(
       path: '/practice',
       builder: (context, state) => const PracticeScreen(),
+    ),
+    GoRoute(path: '/result', builder: (context, state) => const ResultScreen()),
+    GoRoute(
+      path: '/history',
+      builder: (context, state) => const HistoryScreen(),
     ),
   ],
 );

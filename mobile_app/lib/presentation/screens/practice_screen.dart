@@ -453,7 +453,7 @@ class _PracticeScreenState extends ConsumerState<PracticeScreen> {
       return GestureDetector(
         onTap: hasNext
             ? () => ref.read(practiceControllerProvider.notifier).nextQuestion()
-            : () => context.go('/dashboard'), // 完成所有题目
+            : () => context.go('/result'), // 完成所有题目，跳转结果页
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [

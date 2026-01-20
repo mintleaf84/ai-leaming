@@ -1,53 +1,31 @@
+import 'package:freezed_annotation/freezed_annotation.dart';
+
+part 'question.freezed.dart';
+part 'question.g.dart';
+
 /// 题目实体 - 用于答题页面展示
-class Question {
-  final int id;
-  final String content;
-  final List<String> options;
-  final String type; // 'single', 'multiple', 'truefalse'
-  final String? answer; // 正确答案 (提交后才有)
+@freezed
+abstract class Question with _$Question {
+  const factory Question({
+    required int id,
+    required String content,
+    required List<String> options,
+    @Default('single') String type, // 'single', 'multiple', 'truefalse'
+    String? answer, // 正确答案 (提交后才有)
+  }) = _Question;
 
-  Question({
-    required this.id,
-    required this.content,
-    required this.options,
-    this.type = 'single',
-    this.answer,
-  });
-
-  factory Question.fromJson(Map<String, dynamic> json) {
-    return Question(
-      id: json['id'] as int,
-      content: json['content'] as String,
-      options: (json['options'] as List<dynamic>).cast<String>(),
-      type: json['type'] as String? ?? 'single',
-      answer: json['answer'] as String?,
-    );
-  }
-
-  Map<String, dynamic> toJson() {
-    return {
-      'id': id,
-      'content': content,
-      'options': options,
-      'type': type,
-      'answer': answer,
-    };
-  }
+  factory Question.fromJson(Map<String, dynamic> json) =>
+      _$QuestionFromJson(json);
 }
 
 /// 练习会话响应
-class PracticeSessionResponse {
-  final String sessionId;
-  final List<Question> questions;
+@freezed
+abstract class PracticeSessionResponse with _$PracticeSessionResponse {
+  const factory PracticeSessionResponse({
+    required String sessionId,
+    required List<Question> questions,
+  }) = _PracticeSessionResponse;
 
-  PracticeSessionResponse({required this.sessionId, required this.questions});
-
-  factory PracticeSessionResponse.fromJson(Map<String, dynamic> json) {
-    return PracticeSessionResponse(
-      sessionId: json['sessionId'] as String,
-      questions: (json['questions'] as List<dynamic>)
-          .map((q) => Question.fromJson(q as Map<String, dynamic>))
-          .toList(),
-    );
-  }
+  factory PracticeSessionResponse.fromJson(Map<String, dynamic> json) =>
+      _$PracticeSessionResponseFromJson(json);
 }

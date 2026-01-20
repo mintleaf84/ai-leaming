@@ -4,6 +4,8 @@ import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:go_router/go_router.dart';
 import '../providers/history_provider.dart';
 import '../../domain/entities/history_item.dart';
+import '../widgets/skeleton_loading.dart';
+import '../widgets/empty_state.dart';
 
 /// 历史记录列表页
 class HistoryScreen extends ConsumerStatefulWidget {
@@ -71,8 +73,9 @@ class _HistoryScreenState extends ConsumerState<HistoryScreen> {
   }
 
   Widget _buildBody(HistoryListState state) {
+    // 加载状态：显示骨架屏
     if (state.isLoading && state.items.isEmpty) {
-      return const Center(child: CircularProgressIndicator());
+      return const HistorySkeletonList();
     }
 
     if (state.error != null && state.items.isEmpty) {
@@ -94,24 +97,14 @@ class _HistoryScreenState extends ConsumerState<HistoryScreen> {
       );
     }
 
+    // 空状态：显示引导组件
     if (state.items.isEmpty) {
-      return Center(
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Text('📚', style: TextStyle(fontSize: 64.sp)),
-            SizedBox(height: 16.h),
-            Text(
-              '暂无练习记录',
-              style: TextStyle(fontSize: 18.sp, color: Colors.grey),
-            ),
-            SizedBox(height: 8.h),
-            Text(
-              '完成一次练习后会显示在这里',
-              style: TextStyle(fontSize: 14.sp, color: Colors.grey[400]),
-            ),
-          ],
-        ),
+      return EmptyState(
+        icon: '📚',
+        title: '暂无练习记录',
+        subtitle: '完成一次练习后会显示在这里',
+        actionLabel: '开始练习',
+        onAction: () => context.go('/practice'),
       );
     }
 

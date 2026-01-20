@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:go_router/go_router.dart';
 import '../providers/practice_provider.dart';
+import '../widgets/animated_option_card.dart';
 
 class PracticeScreen extends ConsumerStatefulWidget {
   const PracticeScreen({super.key});
@@ -119,14 +120,14 @@ class _PracticeScreenState extends ConsumerState<PracticeScreen> {
                       ),
                     ),
                     SizedBox(height: 32.h),
-                    // Options
+                    // 选项卡片（带动效）
                     ...question.options.asMap().entries.map((entry) {
                       final index = entry.key;
                       final option = entry.value;
                       final optionLabel = String.fromCharCode(
                         65 + index,
                       ); // A, B, C, D
-                      return _buildOptionCard(
+                      return AnimatedOptionCard(
                         label: optionLabel,
                         text: option,
                         isSelected: selectedAnswer == optionLabel,
@@ -253,106 +254,6 @@ class _PracticeScreenState extends ConsumerState<PracticeScreen> {
           ),
         ),
       ],
-    );
-  }
-
-  Widget _buildOptionCard({
-    required String label,
-    required String text,
-    required bool isSelected,
-    required bool isCorrect,
-    required bool isWrong,
-    VoidCallback? onTap,
-  }) {
-    Color bgColor = Colors.white;
-    Color borderColor = const Color(0xFFE1E1E1);
-    Color? ringColor;
-    Widget? leadingIcon;
-
-    if (isCorrect) {
-      bgColor = const Color(0xFFEDF6EE);
-      borderColor = const Color(0xFF5C9D6E).withValues(alpha: 0.3);
-      ringColor = const Color(0xFF5C9D6E).withValues(alpha: 0.5);
-      leadingIcon = Container(
-        width: 20.w,
-        height: 20.h,
-        decoration: const BoxDecoration(
-          color: Color(0xFF4EA05E),
-          shape: BoxShape.circle,
-        ),
-        child: Icon(Icons.check, size: 14.sp, color: Colors.white),
-      );
-    } else if (isWrong) {
-      bgColor = const Color(0xFFFBE4E4);
-      borderColor = const Color(0xFFE06C75).withValues(alpha: 0.3);
-      ringColor = const Color(0xFFE06C75).withValues(alpha: 0.5);
-      leadingIcon = Container(
-        width: 20.w,
-        height: 20.h,
-        decoration: const BoxDecoration(
-          color: Color(0xFFD95656),
-          shape: BoxShape.circle,
-        ),
-        child: Icon(Icons.close, size: 14.sp, color: Colors.white),
-      );
-    } else if (isSelected) {
-      borderColor = const Color(0xFF37352F).withValues(alpha: 0.4);
-      leadingIcon = Container(
-        width: 20.w,
-        height: 20.h,
-        decoration: const BoxDecoration(
-          color: Color(0xFF37352F),
-          shape: BoxShape.circle,
-        ),
-        child: Icon(Icons.circle, size: 10.sp, color: Colors.white),
-      );
-    } else {
-      leadingIcon = Container(
-        width: 20.w,
-        height: 20.h,
-        decoration: BoxDecoration(
-          border: Border.all(
-            color: const Color(0xFF37352F).withValues(alpha: 0.2),
-          ),
-          shape: BoxShape.circle,
-        ),
-      );
-    }
-
-    return GestureDetector(
-      onTap: onTap,
-      child: Container(
-        margin: EdgeInsets.only(bottom: 12.h),
-        padding: EdgeInsets.all(14.w),
-        decoration: BoxDecoration(
-          color: bgColor,
-          borderRadius: BorderRadius.circular(8.r),
-          border: Border.all(color: borderColor),
-          boxShadow: ringColor != null
-              ? [BoxShadow(color: ringColor, blurRadius: 0, spreadRadius: 1)]
-              : null,
-        ),
-        child: Row(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Padding(
-              padding: EdgeInsets.only(top: 2.h),
-              child: leadingIcon,
-            ),
-            SizedBox(width: 12.w),
-            Expanded(
-              child: Text(
-                '$label. $text',
-                style: TextStyle(
-                  fontSize: 15.sp,
-                  fontWeight: FontWeight.w500,
-                  color: const Color(0xFF37352F),
-                ),
-              ),
-            ),
-          ],
-        ),
-      ),
     );
   }
 

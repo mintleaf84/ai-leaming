@@ -5,6 +5,7 @@ import 'package:go_router/go_router.dart';
 import '../providers/history_provider.dart';
 import '../../domain/entities/history_item.dart';
 import '../../domain/entities/practice_log.dart';
+import '../widgets/skeleton_loading.dart';
 
 class HistoryDetailScreen extends ConsumerStatefulWidget {
   final String sessionId;
@@ -41,7 +42,7 @@ class _HistoryDetailScreenState extends ConsumerState<HistoryDetailScreen> {
         centerTitle: true,
       ),
       body: asyncState.when(
-        loading: () => const Center(child: CircularProgressIndicator()),
+        loading: () => const HistoryDetailSkeletonList(),
         error: (error, _) => Center(
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
@@ -65,7 +66,7 @@ class _HistoryDetailScreenState extends ConsumerState<HistoryDetailScreen> {
 
   Widget _buildBody(HistoryDetailState state) {
     if (state.isLoading) {
-      return const Center(child: CircularProgressIndicator());
+      return const HistoryDetailSkeletonList();
     }
 
     if (state.error != null) {

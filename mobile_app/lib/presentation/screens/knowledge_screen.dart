@@ -3,6 +3,8 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 
 import '../providers/knowledge_provider.dart';
+import '../widgets/skeleton_loading.dart';
+import '../widgets/empty_state.dart';
 
 class KnowledgeScreen extends ConsumerStatefulWidget {
   const KnowledgeScreen({super.key});
@@ -93,11 +95,15 @@ class _KnowledgeScreenState extends ConsumerState<KnowledgeScreen> {
           // Content
           Expanded(
             child: state.isLoading
-                ? const Center(child: CircularProgressIndicator())
+                ? const KnowledgeSkeletonList()
                 : state.error != null
                 ? Center(child: Text('Error: ${state.error}'))
                 : state.cards.isEmpty
-                ? const Center(child: Text('暂无知识卡片'))
+                ? const EmptyState(
+                    icon: '🧠',
+                    title: '暂无知识卡片',
+                    subtitle: '知识卡片可以帮助你巩固概念',
+                  )
                 : ListView.separated(
                     padding: EdgeInsets.all(16.w),
                     itemCount: state.cards.length,

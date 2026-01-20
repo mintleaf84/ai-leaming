@@ -47,6 +47,7 @@ dependencies:
   url_launcher: ^6.3.2
   flutter_screenutil: ^5.9.3
   state_notifier: ^1.0.0
+  shimmer: ^3.0.0
 
 dev_dependencies:
   flutter_test:

@@ -10,6 +10,7 @@ import {
     Text,
     TextQuote,
     Minus,
+    BookOpen,
 } from 'lucide-react';
 import { Command, createSuggestionItems, renderItems } from 'novel';
 import { uploadFn } from './image-upload';
@@ -135,6 +136,20 @@ export const suggestionItems = createSuggestionItems([
         icon: <Minus size={18} />,
         command: ({ editor, range }) => {
             editor.chain().focus().deleteRange(range).setHorizontalRule().run();
+        },
+    },
+    {
+        title: '引用题目',
+        description: '插入题目引用卡片',
+        searchTerms: ['question', 'embed', '题目', '引用', 'timu'],
+        icon: <BookOpen size={18} />,
+        command: ({ editor, range }) => {
+            // 删除 / 命令字符
+            editor.chain().focus().deleteRange(range).run();
+            // 触发自定义事件打开题目选择器
+            if (typeof window !== 'undefined') {
+                window.dispatchEvent(new CustomEvent('open-question-picker'));
+            }
         },
     },
 ]);

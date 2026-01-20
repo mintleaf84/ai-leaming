@@ -21,6 +21,7 @@ import {
 
 import { cx } from 'class-variance-authority';
 import { common, createLowlight } from 'lowlight';
+import { QuestionEmbed } from './extensions/question-embed';
 
 // AI 高亮
 const aiHighlight = AIHighlight;
@@ -138,6 +139,7 @@ const characterCount = CharacterCount.configure();
 
 // 导出默认扩展
 export const defaultExtensions = [
+    QuestionEmbed,
     starterKit,
     placeholder,
     tiptapLink,

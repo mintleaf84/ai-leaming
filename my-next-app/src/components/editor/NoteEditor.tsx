@@ -14,13 +14,14 @@ import {
     handleImageDrop,
     handleImagePaste,
 } from 'novel';
-import { useState } from 'react';
+import { useState, useRef, useEffect, useCallback } from 'react';
 import { defaultExtensions } from './extensions';
 import { slashCommand, suggestionItems } from './slash-command';
 import { uploadFn } from './image-upload';
 import { NodeSelector, LinkSelector, ColorSelector, TextButtons } from './selectors';
 import { Separator } from '@/components/ui/separator';
 import GenerativeMenuSwitch from './generative/generative-menu-switch';
+import QuestionPicker from './QuestionPicker';
 
 const extensions = [...defaultExtensions, slashCommand];
 
@@ -46,8 +47,34 @@ export default function NoteEditor({ initialContent, onChange }: NoteEditorProps
     const [openLink, setOpenLink] = useState(false);
     const [openAI, setOpenAI] = useState(false);
 
+    // QuestionPicker 状态
+    const [showQuestionPicker, setShowQuestionPicker] = useState(false);
+    const editorRef = useRef<EditorInstance | null>(null);
+
+    // 处理插入题目引用
+    const handleInsertQuestion = useCallback((questionId: number) => {
+        if (editorRef.current) {
+            editorRef.current
+                .chain()
+                .focus()
+                .insertContent({
+                    type: 'questionEmbed',
+                    attrs: { questionId },
+                })
+                .run();
+        }
+    }, []);
+
+    // 监听自定义事件以打开 QuestionPicker
+    useEffect(() => {
+        const handleOpenPicker = () => setShowQuestionPicker(true);
+        window.addEventListener('open-question-picker', handleOpenPicker);
+        return () => window.removeEventListener('open-question-picker', handleOpenPicker);
+    }, []);
+
     // 防抖保存
     const handleUpdate = (editor: EditorInstance) => {
+        editorRef.current = editor;
         setSaveStatus('保存中...');
         const json = editor.getJSON();
 
@@ -123,6 +150,14 @@ export default function NoteEditor({ initialContent, onChange }: NoteEditorProps
                     </GenerativeMenuSwitch>
                 </EditorContent>
             </EditorRoot>
+
+            {/* 题目选择器弹窗 */}
+            <QuestionPicker
+                isOpen={showQuestionPicker}
+                onClose={() => setShowQuestionPicker(false)}
+                onSelect={handleInsertQuestion}
+            />
         </div>
     );
 }
+

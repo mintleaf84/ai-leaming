@@ -1,5 +1,5 @@
 import React from 'react';
-import { BookOpen, Plus, Play, Download, Loader2, Search } from 'lucide-react';
+import { BookOpen, Plus, Play, Download, Loader2, Search, Sparkles } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { useTerminology } from '@/lib/hooks/use-terminology';
@@ -11,6 +11,7 @@ interface KnowledgeHeaderProps {
     setSelectedCategory: (cat: string) => void;
     filteredCount: number;
     onAdd: () => void;
+    onAIGenerate: () => void;
     onStudy: () => void;
     onExport: () => void;
     exporting: boolean;
@@ -25,6 +26,7 @@ export const KnowledgeHeader: React.FC<KnowledgeHeaderProps> = ({
     setSelectedCategory,
     filteredCount,
     onAdd,
+    onAIGenerate,
     onStudy,
     onExport,
     exporting,
@@ -59,6 +61,14 @@ export const KnowledgeHeader: React.FC<KnowledgeHeaderProps> = ({
                         >
                             <Plus className="w-4 h-4" />
                             <span className="hidden sm:inline">{t('knowledge.add')}</span>
+                        </Button>
+                        <Button
+                            variant="outline"
+                            onClick={onAIGenerate}
+                            className="gap-2 rounded-xl bg-gradient-to-r from-primary/10 to-transparent hover:from-primary/20 border-primary/30"
+                        >
+                            <Sparkles className="w-4 h-4 text-primary" />
+                            <span className="hidden sm:inline">AI 生成</span>
                         </Button>
                         <Button
                             onClick={onStudy}

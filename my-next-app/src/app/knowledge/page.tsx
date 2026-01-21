@@ -13,6 +13,7 @@ import { KnowledgeHeader } from './components/KnowledgeHeader';
 import { KnowledgeCardItem } from './components/KnowledgeCardItem';
 import { StudyModeOverlay } from './components/StudyModeOverlay';
 import { KnowledgeModal } from './components/KnowledgeModal';
+import { AIGenerateModal } from './components/AIGenerateModal';
 
 export default function KnowledgePage() {
     const {
@@ -32,8 +33,27 @@ export default function KnowledgePage() {
         toast,
         handleDelete,
         handleSave,
-        handleExport
+        handleExport,
+        loadCards
     } = useKnowledgeCards();
+
+    // AI 生成弹窗状态
+    const [showAIModal, setShowAIModal] = useState(false);
+
+    // AI 生成保存处理
+    const handleAISave = async (card: Partial<typeof filteredCards[number]>) => {
+        try {
+            const resp = await fetch('/api/knowledge/cards', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(card),
+            });
+            if (!resp.ok) throw new Error('保存失败');
+            loadCards(); // 刷新卡片列表
+        } catch (error) {
+            console.error('AI 生成保存失败:', error);
+        }
+    };
 
     const {
         studyMode,
@@ -74,6 +94,7 @@ export default function KnowledgePage() {
                     setEditingCard({ title: '', category: '', tags: [], front: '', back: '', key_points: [] });
                     setIsCreateModal(true);
                 }}
+                onAIGenerate={() => setShowAIModal(true)}
                 onStudy={startStudy}
                 onExport={handleExport}
                 exporting={exporting}
@@ -118,6 +139,12 @@ export default function KnowledgePage() {
                 onClose={() => { setEditingCard(null); setIsCreateModal(false); }}
                 onSave={handleSave}
                 onChange={setEditingCard}
+            />
+
+            <AIGenerateModal
+                isOpen={showAIModal}
+                onClose={() => setShowAIModal(false)}
+                onSave={handleAISave}
             />
 
             {studyMode && (

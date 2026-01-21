@@ -108,8 +108,8 @@ export function QuestionCard({ log, index, isExpanded, onToggle, refCallback }: 
     };
 
     // 获取第一性原理分析
-    const handleFirstPrinciples = async () => {
-        if (fpAnalysis || isLoadingFP) return; // 已有结果或正在加载
+    const handleFirstPrinciples = async (force: boolean = false) => {
+        if ((!force && fpAnalysis) || isLoadingFP) return; // 已有结果且不强制重新生成，或正在加载
 
         setIsLoadingFP(true);
 
@@ -118,9 +118,13 @@ export function QuestionCard({ log, index, isExpanded, onToggle, refCallback }: 
                 log.questionContent,
                 log.explanation,
                 log.correctAnswer,
-                log.isCorrect ? undefined : log.userAnswer
+                log.isCorrect ? undefined : log.userAnswer,
+                force // 传递 force 参数
             );
             setFpAnalysis(result.analysis);
+            if (force && !result.cached) {
+                toast.success('重新解析成功！');
+            }
         } catch (error: any) {
             console.error('第一性原理分析失败:', error);
             toast.error(error.message || '分析失败，请稍后重试');
@@ -275,7 +279,7 @@ export function QuestionCard({ log, index, isExpanded, onToggle, refCallback }: 
                                     </div>
                                     {!fpAnalysis && (
                                         <button
-                                            onClick={handleFirstPrinciples}
+                                            onClick={() => handleFirstPrinciples(false)}
                                             disabled={isLoadingFP}
                                             className="px-3 py-1.5 text-xs font-medium bg-amber-500/10 hover:bg-amber-500/20 text-amber-700 dark:text-amber-400 rounded-full border border-amber-500/20 transition-colors disabled:opacity-50 flex items-center gap-1.5"
                                         >
@@ -287,6 +291,16 @@ export function QuestionCard({ log, index, isExpanded, onToggle, refCallback }: 
                                             ) : (
                                                 '一键解析'
                                             )}
+                                        </button>
+                                    )}
+                                    {fpAnalysis && (
+                                        <button
+                                            onClick={() => handleFirstPrinciples(true)}
+                                            disabled={isLoadingFP}
+                                            className="p-1.5 text-amber-400 hover:text-amber-600 dark:hover:text-amber-300 transition-colors disabled:opacity-50"
+                                            title="重新解析"
+                                        >
+                                            <RefreshCw className={`h-4 w-4 ${isLoadingFP ? 'animate-spin' : ''}`} />
                                         </button>
                                     )}
                                 </div>

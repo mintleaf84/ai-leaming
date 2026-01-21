@@ -167,7 +167,8 @@ export async function generateFirstPrinciplesAction(
   questionContent: string,
   explanation: string,
   correctAnswer: string,
-  wrongAnswer?: string
+  wrongAnswer?: string,
+  force: boolean = false
 ): Promise<{ analysis: string; cached?: boolean }> {
   const user = await requireUser();
 
@@ -177,15 +178,18 @@ export async function generateFirstPrinciplesAction(
 
   ensureFirstPrinciplesCacheTable();
 
-  // 1. Check Cache
+  // 1. Check Cache (skip if force=true)
   const cacheKey = generateHash(questionContent + correctAnswer + (wrongAnswer || ''));
-  const cached = db.prepare(
-    'SELECT analysis FROM first_principles_cache WHERE question_hash = ?'
-  ).get(cacheKey) as { analysis: string } | undefined;
 
-  if (cached) {
-    console.log('[FirstPrinciples] 命中缓存');
-    return { analysis: cached.analysis, cached: true };
+  if (!force) {
+    const cached = db.prepare(
+      'SELECT analysis FROM first_principles_cache WHERE question_hash = ?'
+    ).get(cacheKey) as { analysis: string } | undefined;
+
+    if (cached) {
+      console.log('[FirstPrinciples] 命中缓存');
+      return { analysis: cached.analysis, cached: true };
+    }
   }
 
   // 2. Check Quota

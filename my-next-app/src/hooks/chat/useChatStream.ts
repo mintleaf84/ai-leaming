@@ -2,6 +2,7 @@
 import { useState, useCallback, useRef } from 'react';
 import { createChatSession, generateChatTitle } from '@/server/actions/chat';
 import type { ChatSession } from '@/lib/services/chat';
+import type { ChatMode } from '@/components/chat/ChatModeToggle';
 
 export interface Message {
     id: string;
@@ -27,6 +28,7 @@ export function useChatStream({
     const [lastFailedMessage, setLastFailedMessage] = useState<string | null>(null);
     const [isGeneratingTitle, setIsGeneratingTitle] = useState(false);
     const [enableRag, setEnableRag] = useState(false); // Default to false (User opt-in)
+    const [mode, setMode] = useState<ChatMode>('standard');
 
     const abortControllerRef = useRef<AbortController | null>(null);
 
@@ -84,7 +86,8 @@ export function useChatStream({
                 body: JSON.stringify({
                     messages: [...messages, userMessage].map(m => ({ role: m.role, content: m.content })),
                     sessionId: sessionIdToUse,
-                    enableRag
+                    enableRag,
+                    mode
                 }),
                 signal: abortControllerRef.current.signal,
             });
@@ -221,6 +224,8 @@ export function useChatStream({
         setError,
         setLastFailedMessage,
         enableRag,
-        setEnableRag
+        setEnableRag,
+        mode,
+        setMode
     };
 }

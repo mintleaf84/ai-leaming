@@ -11,9 +11,11 @@ import { KnowledgeModal } from '@/app/knowledge/components/KnowledgeModal';
 import type { KnowledgeCard } from '@/lib/services/knowledge';
 
 // New Components
+
 import { ChatHeader } from '@/components/chat/ChatHeader';
 import { ChatInput, ChatInputHandle } from '@/components/chat/ChatInput';
 import { MessageList } from '@/components/chat/MessageList';
+import { ChatMode } from '@/components/chat/ChatModeToggle';
 
 export default function ChatPage() {
     // 1. Hooks 初始化
@@ -40,7 +42,9 @@ export default function ChatPage() {
         setError,
         setLastFailedMessage,
         enableRag,
-        setEnableRag
+        setEnableRag,
+        mode,
+        setMode
     } = useChatStream({
         currentSessionId,
         onNewSessionCreated: addSession,
@@ -256,6 +260,8 @@ export default function ChatPage() {
                     showFavorites={showFavorites}
                     hasMessages={messages.length > 0}
                     onClearChat={handleClearChat}
+                    mode={mode}
+                    setMode={setMode}
                 />
 
                 <MessageList

@@ -1,6 +1,6 @@
 import { generateTextWrapper } from '@/lib/ai/client';
 import { searchSimilarContent, ragService } from '@/lib/ai/rag';
-import { getPromptFromDbSync } from '@/lib/ai/prompts';
+import { getPromptFromDbSync, SOCRATIC_TUTOR_PROMPT } from '@/lib/ai/prompts';
 import { tool } from 'ai';
 import { z } from 'zod';
 
@@ -150,8 +150,8 @@ ${q.explanation ? `解析: ${q.explanation}` : ''}
 /**
  * 构建增强型 System Prompt
  */
-export function buildEnhancedSystemPrompt(context?: string): string {
-    const defaultPrompt = `你是一位资深的教师招聘考试辅导专家，擅长教育学、心理学和教学法。请用专业、友好的语气回答学生的问题，帮助他们理解概念和解决疑难。
+export function buildEnhancedSystemPrompt(context?: string, mode: 'standard' | 'socratic' = 'standard'): string {
+    const standardPrompt = `你是一位资深的教师招聘考试辅导专家，擅长教育学、心理学和教学法。请用专业、友好的语气回答学生的问题，帮助他们理解概念和解决疑难。
 
 特点：
 - 回答简洁明了，重点突出
@@ -159,7 +159,9 @@ export function buildEnhancedSystemPrompt(context?: string): string {
 - 如果涉及考点，指出考试中的常见陷阱
 `;
 
-    const basePrompt = getPromptFromDbSync('chat_system') || defaultPrompt;
+    const basePrompt = mode === 'socratic'
+        ? (getPromptFromDbSync('chat_system_socratic') || SOCRATIC_TUTOR_PROMPT)
+        : (getPromptFromDbSync('chat_system') || standardPrompt);
 
     if (context) {
         return `${basePrompt}

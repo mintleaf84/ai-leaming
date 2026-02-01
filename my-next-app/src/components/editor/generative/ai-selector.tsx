@@ -1,6 +1,6 @@
 'use client';
 
-import { Command, CommandInput } from '@/components/ui/command';
+import { Command, CommandInput, CommandList } from '@/components/ui/command';
 import { useCompletion } from '@ai-sdk/react';
 import { ArrowUp } from 'lucide-react';
 import { addAIHighlight, useEditor } from 'novel';
@@ -25,8 +25,13 @@ export function AISelector({ onOpenChange }: AISelectorProps) {
 
     const { completion, complete, isLoading, stop, setCompletion } = useCompletion({
         api: '/api/generate',
+        streamProtocol: 'text', // 匹配后端 toTextStreamResponse() 格式
         onError: (e: Error) => {
+            console.error('[AI Selector] Error:', e);
             toast.error(e.message);
+        },
+        onFinish: (_prompt, completion) => {
+            console.log('[AI Selector] Finished. Completion length:', completion.length);
         },
     });
 
@@ -87,17 +92,21 @@ export function AISelector({ onOpenChange }: AISelectorProps) {
                         </Button>
                     </div>
                     {hasCompletion ? (
-                        <AICompletionCommands
-                            onDiscard={() => {
-                                stop(); // 停止正在进行的生成
-                                setCompletion(''); // 清理 completion 状态
-                                editor.chain().unsetHighlight().focus().run();
-                                onOpenChange(false);
-                            }}
-                            completion={completion}
-                        />
+                        <CommandList>
+                            <AICompletionCommands
+                                onDiscard={() => {
+                                    stop(); // 停止正在进行的生成
+                                    setCompletion(''); // 清理 completion 状态
+                                    editor.chain().unsetHighlight().focus().run();
+                                    onOpenChange(false);
+                                }}
+                                completion={completion}
+                            />
+                        </CommandList>
                     ) : (
-                        <AISelectorCommands onSelect={(value, option) => complete(value, { body: { option } })} />
+                        <CommandList>
+                            <AISelectorCommands onSelect={(value, option) => complete(value, { body: { option } })} />
+                        </CommandList>
                     )}
                 </>
             )}

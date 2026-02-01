@@ -16,7 +16,7 @@ export async function POST(req: Request) {
         const userId = session.user.id;
 
         // ✅ 修复：只解析一次请求体，提取所有字段
-        const { messages, sessionId, enableRag, context } = await req.json();
+        const { messages, sessionId, enableRag, context, mode } = await req.json();
 
         // 用量检查：AI 对话配额
         const quotaCheck = checkQuotaForApi(userId, 'ai_chat');
@@ -78,10 +78,10 @@ export async function POST(req: Request) {
                 knowledgeSearch: knowledgeSearchTool
             };
             // RAG 模式下，context 可能是用户手动提供的（如阅读器上下文）
-            systemPrompt = buildEnhancedSystemPrompt(context);
+            systemPrompt = buildEnhancedSystemPrompt(context, mode);
         } else {
             // 未启用 RAG，如果有 context 也注入
-            systemPrompt = buildEnhancedSystemPrompt(context);
+            systemPrompt = buildEnhancedSystemPrompt(context, mode);
         }
 
         // 流式生成回复

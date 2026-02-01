@@ -43,6 +43,10 @@ const AISelectorCommands = ({ onSelect }: AISelectorCommandsProps) => {
                             const slice = editor.state.selection.content();
                             // 使用安全的 textBetween 方法，避免依赖可能不存在的 markdown 扩展
                             const text = slice.content.textBetween(0, slice.content.size, '\n');
+                            console.log('[AISelectorCommands] Selected text:', text, 'Option:', option.value);
+                            if (!text.trim()) {
+                                console.warn('[AISelectorCommands] No text selected!');
+                            }
                             onSelect(text, option.value);
                         }}
                         className="flex gap-2 px-4"

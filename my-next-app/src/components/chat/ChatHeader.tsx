@@ -1,5 +1,6 @@
 import React from 'react';
 import { Bot, Menu, Trash2, X } from 'lucide-react';
+import { ChatModeToggle, ChatMode } from './ChatModeToggle';
 
 interface ChatHeaderProps {
     sidebarOpen: boolean;
@@ -7,6 +8,8 @@ interface ChatHeaderProps {
     showFavorites: boolean;
     hasMessages: boolean;
     onClearChat: () => void;
+    mode: ChatMode;
+    setMode: (mode: ChatMode) => void;
 }
 
 export function ChatHeader({
@@ -14,7 +17,9 @@ export function ChatHeader({
     setSidebarOpen,
     showFavorites,
     hasMessages,
-    onClearChat
+    onClearChat,
+    mode,
+    setMode
 }: ChatHeaderProps) {
     return (
         <header className="bg-background border-b border-border px-4 md:px-6 py-3 flex items-center justify-between z-10 sticky top-0">
@@ -38,16 +43,20 @@ export function ChatHeader({
                 </div>
             </div>
 
-            {/* 清空对话按钮 */}
-            {hasMessages && (
-                <button
-                    onClick={onClearChat}
-                    className="flex items-center gap-1 px-3 py-1.5 text-xs text-muted-foreground hover:text-destructive hover:bg-destructive/10 rounded-lg transition-colors"
-                >
-                    <Trash2 className="w-3.5 h-3.5" />
-                    <span>清空对话</span>
-                </button>
-            )}
+            {/* 模式切换与清空对话 */}
+            <div className="flex items-center gap-2">
+                {!showFavorites && <ChatModeToggle mode={mode} onModeChange={setMode} />}
+
+                {hasMessages && (
+                    <button
+                        onClick={onClearChat}
+                        className="flex items-center gap-1 px-3 py-1.5 text-xs text-muted-foreground hover:text-destructive hover:bg-destructive/10 rounded-lg transition-colors"
+                    >
+                        <Trash2 className="w-3.5 h-3.5" />
+                        <span>清空对话</span>
+                    </button>
+                )}
+            </div>
         </header>
     );
 }

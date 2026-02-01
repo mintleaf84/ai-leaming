@@ -1,5 +1,5 @@
 import { ArrowDownWideNarrow, CheckCheck, RefreshCcwDot, StepForward, WrapText } from 'lucide-react';
-import { getPrevText, useEditor } from 'novel';
+import { useEditor } from 'novel';
 import { CommandGroup, CommandItem, CommandSeparator } from '@/components/ui/command';
 
 const options = [
@@ -63,7 +63,9 @@ const AISelectorCommands = ({ onSelect }: AISelectorCommandsProps) => {
                 <CommandItem
                     onSelect={() => {
                         const pos = editor.state.selection.from;
-                        const text = getPrevText(editor, pos);
+                        // 使用安全的 textBetween 方法获取光标前的文本，避免 getPrevText 的 serializer 错误
+                        const start = Math.max(0, pos - 5000); // 最多获取前5000个字符
+                        const text = editor.state.doc.textBetween(start, pos, '\n');
                         onSelect(text, 'continue');
                     }}
                     value="continue"

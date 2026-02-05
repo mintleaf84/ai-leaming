@@ -150,11 +150,114 @@ analyzer:
 
 在提交代码前，确认以下事项：
 
-| 检查项 | 说明 |
-|--------|------|
 | ✅ 运行 `flutter analyze` | 确保 0 个问题 |
 | ✅ 无 `print()` 语句 | 使用 `debugPrint` |
 | ✅ 无 `withOpacity()` | 使用 `withValues()` |
 | ✅ 适当使用 `const` | 字面量和常量构造函数 |
 | ✅ 无冗余导入 | 检查 hooks_riverpod |
 | ✅ Provider 模式正确 | Family 带参数 |
+| ✅ Freezed 类使用 `abstract` | 见下文 |
+
+---
+
+## Freezed 3.x 最佳实践
+
+### 1. 必须使用 `abstract class` 声明
+
+Freezed 3.x 生成的 mixin 要求基类为 `abstract class`。
+
+```dart
+// ❌ 错误 - Freezed 2.x 旧语法，3.x 会报错
+@freezed
+class User with _$User {
+  const factory User({required String name}) = _User;
+}
+
+// ✅ 正确 - Freezed 3.x 语法
+@freezed
+abstract class User with _$User {
+  const factory User({required String name}) = _User;
+}
+```
+
+**错误信息**: `non_abstract_class_inherits_abstract_member`
+
+**诊断技巧**: 当遇到此错误时，检查项目中已有的 Freezed 类写法，**优先参考现有代码而非依赖记忆**。
+
+---
+
+### 2. build_runner 常见问题
+
+#### 问题 1: `wrote 0 outputs`
+
+新创建的 Freezed 文件可能不会被 build_runner 立即检测到。
+
+```bash
+# 解决方案：清理缓存后重新生成
+flutter pub run build_runner clean
+flutter pub run build_runner build --delete-conflicting-outputs
+```
+
+#### 问题 2: 生成代码不更新
+
+当修改 Freezed 类定义后，生成代码未更新。
+
+```bash
+# 解决方案：强制删除冲突输出
+flutter pub run build_runner build --delete-conflicting-outputs
+```
+
+---
+
+### 3. Freezed 类作为 Provider.family 的 Key
+
+当 Freezed 类用作 `FutureProvider.family` 的参数时，Freezed 自动生成的 `==` 和 `hashCode` 可确保正确的缓存行为。
+
+```dart
+@freezed
+abstract class AnalysisParams with _$AnalysisParams {
+  const factory AnalysisParams({
+    required String question,
+    required String answer,
+  }) = _AnalysisParams;
+
+  factory AnalysisParams.fromJson(Map<String, dynamic> json) =>
+      _$AnalysisParamsFromJson(json);
+}
+
+// ✅ 可直接作为 family key
+final analysisProvider = FutureProvider.family<Result, AnalysisParams>(
+  (ref, params) async => api.analyze(params.toJson()),
+);
+```
+
+---
+
+### 4. Freezed 编码模板
+
+创建新 Freezed 类时，使用以下模板：
+
+```dart
+import 'package:freezed_annotation/freezed_annotation.dart';
+
+part 'your_class.freezed.dart';
+part 'your_class.g.dart';
+
+@freezed
+abstract class YourClass with _$YourClass {
+  const factory YourClass({
+    required String field1,
+    String? optionalField,
+    @Default(0) int fieldWithDefault,
+  }) = _YourClass;
+
+  factory YourClass.fromJson(Map<String, dynamic> json) =>
+      _$YourClassFromJson(json);
+}
+```
+
+创建后立即运行：
+
+```bash
+flutter pub run build_runner build --delete-conflicting-outputs
+```

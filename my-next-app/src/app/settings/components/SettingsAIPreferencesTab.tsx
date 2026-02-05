@@ -11,33 +11,33 @@ interface SettingsAIPreferencesTabProps {
 export function SettingsAIPreferencesTab({ settings, setSettings }: SettingsAIPreferencesTabProps) {
     return (
         <div className="space-y-6 animate-in fade-in slide-in-from-right-4 duration-300">
-            <div className="bg-white rounded-2xl border border-neutral-100 p-6 shadow-sm">
-                <h3 className="font-bold text-neutral-700 mb-4 flex items-center gap-2">
-                    <BrainCircuit className="w-4 h-4 text-emerald-600" />
+            <div className="bg-card rounded-2xl border border-border p-6 shadow-sm">
+                <h3 className="font-bold text-foreground mb-4 flex items-center gap-2">
+                    <BrainCircuit className="w-4 h-4 text-primary" />
                     AI 辅导强度
                 </h3>
                 <div className="space-y-6">
                     <div className="space-y-3">
                         <div className="flex justify-between items-end">
-                            <label className="text-sm font-medium text-neutral-600">自动复盘触发阈值</label>
-                            <span className="text-2xl font-serif font-bold text-emerald-600">
+                            <label className="text-sm font-medium text-muted-foreground">自动复盘触发阈值</label>
+                            <span className="text-2xl font-serif font-bold text-primary">
                                 {settings.reviewThreshold}
-                                <span className="text-sm font-sans text-neutral-400 ml-1">分</span>
+                                <span className="text-sm font-sans text-muted-foreground ml-1">分</span>
                             </span>
                         </div>
                         <input
                             type="range" min="30" max="90" step="5"
                             value={settings.reviewThreshold}
                             onChange={(e) => setSettings({ ...settings, reviewThreshold: parseInt(e.target.value) })}
-                            className="w-full h-2 bg-neutral-100 rounded-lg appearance-none cursor-pointer accent-emerald-600"
+                            className="w-full h-2 bg-muted rounded-lg appearance-none cursor-pointer accent-primary"
                         />
-                        <p className="text-xs text-neutral-400">
+                        <p className="text-xs text-muted-foreground">
                             当您对某个知识点的掌握度低于此分数时，AI 会在错题解析中自动触发深度复盘模式。
                         </p>
                     </div>
 
-                    <div className="pt-4 border-t border-neutral-50 space-y-3">
-                        <label className="text-sm font-medium text-neutral-600">AI 严厉程度</label>
+                    <div className="pt-4 border-t border-border space-y-3">
+                        <label className="text-sm font-medium text-muted-foreground">AI 严厉程度</label>
                         <div className="grid grid-cols-3 gap-3">
                             {[
                                 { id: 'low', label: '温柔鼓励', desc: '以鼓励为主' },
@@ -50,8 +50,8 @@ export function SettingsAIPreferencesTab({ settings, setSettings }: SettingsAIPr
                                     className={cn(
                                         "flex flex-col items-center justify-center p-3 rounded-xl border text-sm transition-all h-20",
                                         settings.aiSeverity === level.id
-                                            ? "bg-emerald-50 border-emerald-500 text-emerald-700 ring-2 ring-emerald-200"
-                                            : "bg-white border-neutral-200 text-neutral-500 hover:border-emerald-300 hover:bg-emerald-50/50"
+                                            ? "bg-primary/10 border-primary text-primary ring-2 ring-primary/20"
+                                            : "bg-card border-border text-muted-foreground hover:border-primary/50 hover:bg-primary/5"
                                     )}
                                 >
                                     <span className="font-bold">{level.label}</span>

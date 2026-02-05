@@ -96,7 +96,7 @@ export function AppSidebar({ user }: UserProps) {
     const NavGroup = ({ title, items }: { title?: string, items: typeof mainNavItems }) => (
         <div className="mb-6">
             {title && (
-                <h3 className="px-4 mb-2 text-xs font-semibold text-neutral-400 uppercase tracking-wider">
+                <h3 className="px-4 mb-2 text-xs font-semibold text-muted-foreground uppercase tracking-wider">
                     {title}
                 </h3>
             )}
@@ -110,16 +110,16 @@ export function AppSidebar({ user }: UserProps) {
                             className={cn(
                                 "flex items-center gap-3 px-3 py-2 mx-2 rounded-lg text-sm font-medium transition-colors group",
                                 isActive
-                                    ? "bg-emerald-50 text-emerald-900"
-                                    : "text-neutral-600 hover:bg-neutral-100 hover:text-neutral-900"
+                                    ? "bg-primary/10 text-primary"
+                                    : "text-muted-foreground hover:bg-accent hover:text-foreground"
                             )}
                         >
                             <item.icon className={cn(
                                 "h-4 w-4 transition-colors",
-                                isActive ? "text-emerald-600" : "text-neutral-400 group-hover:text-neutral-600"
+                                isActive ? "text-primary" : "text-muted-foreground group-hover:text-foreground"
                             )} />
                             <span>{item.name}</span>
-                            {isActive && <div className="ml-auto w-1 h-1 rounded-full bg-emerald-500" />}
+                            {isActive && <div className="ml-auto w-1 h-1 rounded-full bg-primary" />}
                         </Link>
                     );
                 })}
@@ -166,12 +166,12 @@ export function AppSidebar({ user }: UserProps) {
                         </DropdownMenuTrigger>
                         <DropdownMenuContent className="w-56" align="end" side="right" sideOffset={12}>
                             <div className="flex items-center gap-2 p-2">
-                                <div className="w-8 h-8 rounded-full bg-emerald-100 flex items-center justify-center text-emerald-700 font-bold text-xs">
+                                <div className="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center text-primary font-bold text-xs">
                                     {user.username.slice(0, 1).toUpperCase()}
                                 </div>
                                 <div className="flex flex-col space-y-0.5">
-                                    <span className="text-sm font-medium text-neutral-700">{user.username}</span>
-                                    <span className="text-xs text-neutral-400">{t('app.account_type')}</span>
+                                    <span className="text-sm font-medium text-foreground">{user.username}</span>
+                                    <span className="text-xs text-muted-foreground">{t('app.account_type')}</span>
                                 </div>
                             </div>
                             <DropdownMenuSeparator />

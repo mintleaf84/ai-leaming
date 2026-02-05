@@ -97,7 +97,7 @@ export default function SettingsPage() {
   if (!settings) return (
     <div className="flex h-[calc(100vh-64px)] w-full items-center justify-center">
       <Loader2 className="h-6 w-6 animate-spin text-primary" />
-      <span className="ml-2 text-neutral-400 text-sm">正在加载配置...</span>
+      <span className="ml-2 text-muted-foreground text-sm">正在加载配置...</span>
     </div>
   );
 
@@ -250,7 +250,7 @@ export default function SettingsPage() {
               <Button
                 onClick={handleSave}
                 disabled={isSaving}
-                className="shadow-2xl shadow-emerald-200 bg-emerald-600 hover:bg-emerald-700 text-white rounded-full px-6 py-6 h-auto text-lg transition-transform hover:scale-105 active:scale-95"
+                className="shadow-2xl shadow-primary/20 dark:shadow-primary/10 bg-primary hover:bg-primary/90 text-primary-foreground rounded-full px-6 py-6 h-auto text-lg transition-transform hover:scale-105 active:scale-95"
               >
                 {isSaving ? <Loader2 className="w-6 h-6 animate-spin" /> : <Save className="w-6 h-6" />}
               </Button>

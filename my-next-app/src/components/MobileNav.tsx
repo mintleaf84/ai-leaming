@@ -42,7 +42,7 @@ export function MobileNav({ user }: UserProps) {
                             href={item.href}
                             className={cn(
                                 "flex flex-col items-center justify-center w-full h-full gap-1 transition-all duration-300",
-                                isActive ? "text-emerald-600" : "text-neutral-400 hover:text-neutral-600"
+                                isActive ? "text-primary" : "text-muted-foreground hover:text-foreground"
                             )}
                         >
                             <div className={cn(

@@ -34,7 +34,7 @@ function TreeNode({
             <div
                 className={cn(
                     "flex items-center gap-2 py-1.5 px-2 rounded-md transition-colors cursor-pointer text-sm",
-                    isSelected ? "bg-emerald-50 text-emerald-700" : "hover:bg-neutral-100/80 text-neutral-700"
+                    isSelected ? "bg-primary/10 text-primary" : "hover:bg-accent text-foreground"
                 )}
                 style={{ paddingLeft: `${level * 16 + 8}px` }}
                 onClick={(e) => {
@@ -65,8 +65,8 @@ function TreeNode({
                     className={cn(
                         "w-4 h-4 rounded border flex items-center justify-center transition-all",
                         isSelected
-                            ? "bg-emerald-500 border-emerald-500 text-white"
-                            : "border-neutral-300 bg-white hover:border-emerald-400"
+                            ? "bg-primary border-primary text-primary-foreground"
+                            : "border-border bg-card hover:border-primary/50"
                     )}
                     onClick={(e) => {
                         e.stopPropagation();
@@ -79,21 +79,21 @@ function TreeNode({
                 {/* 图标与文本 */}
                 <span className="flex items-center gap-2 flex-1">
                     {hasChildren ? (
-                        <Folder className={cn("w-4 h-4", isSelected ? "text-emerald-500" : "text-amber-400")} />
+                        <Folder className={cn("w-4 h-4", isSelected ? "text-primary" : "text-amber-400")} />
                     ) : (
-                        <FileText className={cn("w-4 h-4", isSelected ? "text-emerald-500" : "text-neutral-400")} />
+                        <FileText className={cn("w-4 h-4", isSelected ? "text-primary" : "text-muted-foreground")} />
                     )}
-                    <span className={cn("font-medium", isSelected && "text-emerald-700")}>
+                    <span className={cn("font-medium", isSelected && "text-primary")}>
                         {node.name}
                     </span>
-                    <span className="text-xs text-neutral-400 ml-auto">
+                    <span className="text-xs text-muted-foreground ml-auto">
                         {node.count}题
                     </span>
                 </span>
             </div>
 
             {hasChildren && expanded && (
-                <div className="border-l border-neutral-100 ml-5 my-1">
+                <div className="border-l border-border ml-5 my-1">
                     {node.children.map(child => (
                         <TreeNode
                             key={child.path}
@@ -167,7 +167,7 @@ export function KnowledgePointSelector({ children }: { children: React.ReactNode
                             <Loader2 className="w-8 h-8 animate-spin text-emerald-600" />
                         </div>
                     ) : (
-                        <ScrollArea className="h-[400px] w-full rounded-xl border border-neutral-100 bg-neutral-50/30 p-2">
+                        <ScrollArea className="h-[400px] w-full rounded-xl border border-border bg-muted/30 p-2">
                             {treeData.length > 0 ? (
                                 <div className="space-y-1">
                                     {treeData.map(node => (
@@ -180,7 +180,7 @@ export function KnowledgePointSelector({ children }: { children: React.ReactNode
                                     ))}
                                 </div>
                             ) : (
-                                <div className="h-full flex flex-col items-center justify-center text-neutral-400 space-y-2 py-10">
+                                <div className="h-full flex flex-col items-center justify-center text-muted-foreground space-y-2 py-10">
                                     <Folder className="w-10 h-10 opacity-20" />
                                     <span>暂无知识点数据，请先导入教材</span>
                                 </div>
@@ -190,13 +190,13 @@ export function KnowledgePointSelector({ children }: { children: React.ReactNode
                 </div>
 
                 <div className="flex justify-between items-center pt-2">
-                    <div className="text-xs text-neutral-500">
-                        已选 <span className="font-bold text-emerald-600">{selectedTags.length}</span> 个考点
+                    <div className="text-xs text-muted-foreground">
+                        已选 <span className="font-bold text-primary">{selectedTags.length}</span> 个考点
                     </div>
                     <Button
                         onClick={handleStart}
                         disabled={selectedTags.length === 0}
-                        className="bg-emerald-600 hover:bg-emerald-700 text-white shadow-lg shadow-emerald-200/50 rounded-full px-6"
+                        className="bg-primary hover:bg-primary/90 text-primary-foreground shadow-lg shadow-primary/20 rounded-full px-6"
                     >
                         开始练习
                     </Button>

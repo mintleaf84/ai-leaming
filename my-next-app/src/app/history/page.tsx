@@ -64,7 +64,7 @@ const MODE_CONFIG: Record<string, { label: string; icon: React.ReactNode; classN
   random: {
     label: '随机挑战',
     icon: <Shuffle className="w-3.5 h-3.5" />,
-    className: 'bg-neutral-100 text-neutral-600 border-neutral-200'
+    className: 'bg-muted text-muted-foreground border-border'
   },
   import: {
     label: '外部导入',
@@ -158,7 +158,7 @@ export default function HistoryPage() {
     filter.accuracyMin !== undefined || filter.accuracyMax !== undefined;
 
   return (
-    <div className="min-h-screen bg-[#faf9f6]">
+    <div className="min-h-screen bg-background">
       <div className="container mx-auto px-6 py-12 md:py-20 max-w-5xl">
 
         {/* Header */}
@@ -168,9 +168,9 @@ export default function HistoryPage() {
               <div className="w-10 h-10 bg-emerald-100 rounded-xl flex items-center justify-center text-emerald-700">
                 <HistoryIcon className="w-5 h-5" />
               </div>
-              <h1 className="text-3xl font-serif font-bold text-neutral-800">修习日志</h1>
+              <h1 className="text-3xl font-serif font-bold text-foreground">修习日志</h1>
             </div>
-            <p className="text-neutral-500 ml-1">
+            <p className="text-muted-foreground ml-1">
               记录每一次思考的痕迹，共 {history.total} 次练习
             </p>
           </div>
@@ -179,7 +179,7 @@ export default function HistoryPage() {
             <Button
               variant="outline"
               onClick={() => setShowImportModal(true)}
-              className="bg-white border-neutral-200 text-neutral-600 hover:bg-neutral-50"
+              className="bg-card border-border text-muted-foreground hover:bg-accent"
             >
               <Upload className="w-4 h-4 mr-2" />
               导入
@@ -187,7 +187,7 @@ export default function HistoryPage() {
 
             <Sheet open={isFilterOpen} onOpenChange={setIsFilterOpen}>
               <SheetTrigger asChild>
-                <Button variant="outline" className={cn("bg-white border-neutral-200 text-neutral-600 hover:bg-neutral-50", hasActiveFilters && "text-emerald-600 border-emerald-200 bg-emerald-50")}>
+                <Button variant="outline" className={cn("bg-card border-border text-muted-foreground hover:bg-accent", hasActiveFilters && "text-primary border-primary/30 bg-primary/10")}>
                   <Filter className="w-4 h-4 mr-2" />
                   筛选
                 </Button>
@@ -201,7 +201,7 @@ export default function HistoryPage() {
                 </SheetHeader>
                 <div className="grid gap-6 py-6">
                   <div className="space-y-2">
-                    <label className="text-sm font-medium text-neutral-700">日期范围</label>
+                    <label className="text-sm font-medium text-foreground">日期范围</label>
                     <div className="grid grid-cols-2 gap-2">
                       <Input
                         type="date"
@@ -217,7 +217,7 @@ export default function HistoryPage() {
                   </div>
 
                   <div className="space-y-2">
-                    <label className="text-sm font-medium text-neutral-700">正确率 (%)</label>
+                    <label className="text-sm font-medium text-foreground">正确率 (%)</label>
                     <div className="flex items-center gap-2">
                       <Input
                         type="number" placeholder="Min" min={0} max={100}
@@ -234,11 +234,11 @@ export default function HistoryPage() {
                   </div>
 
                   <div className="space-y-2">
-                    <label className="text-sm font-medium text-neutral-700">练习模式</label>
+                    <label className="text-sm font-medium text-foreground">练习模式</label>
                     <div className="flex flex-wrap gap-2">
                       <button
                         onClick={() => setFilter(prev => ({ ...prev, mode: undefined }))}
-                        className={cn("px-3 py-1.5 text-xs rounded-full border transition-all", !filter.mode ? "bg-emerald-600 text-white border-emerald-600" : "border-neutral-200 text-neutral-600 hover:border-emerald-200")}
+                        className={cn("px-3 py-1.5 text-xs rounded-full border transition-all", !filter.mode ? "bg-primary text-primary-foreground border-primary" : "border-border text-muted-foreground hover:border-primary/50")}
                       >
                         全部
                       </button>
@@ -246,7 +246,7 @@ export default function HistoryPage() {
                         <button
                           key={mode}
                           onClick={() => setFilter(prev => ({ ...prev, mode }))}
-                          className={cn("px-3 py-1.5 text-xs rounded-full border transition-all", filter.mode === mode ? "bg-emerald-600 text-white border-emerald-600" : "border-neutral-200 text-neutral-600 hover:border-emerald-200")}
+                          className={cn("px-3 py-1.5 text-xs rounded-full border transition-all", filter.mode === mode ? "bg-primary text-primary-foreground border-primary" : "border-border text-muted-foreground hover:border-primary/50")}
                         >
                           {MODE_CONFIG[mode]?.label || mode}
                         </button>
@@ -262,7 +262,7 @@ export default function HistoryPage() {
             </Sheet>
 
             <Link href="/practice">
-              <Button className="bg-emerald-600 hover:bg-emerald-700 text-white shadow-lg shadow-emerald-200/50 rounded-full px-6">
+              <Button className="bg-primary hover:bg-primary/90 text-primary-foreground shadow-lg shadow-primary/20 rounded-full px-6">
                 <Pencil className="w-4 h-4 mr-2" />
                 新练习
               </Button>
@@ -274,11 +274,11 @@ export default function HistoryPage() {
         {isLoading ? (
           <div className="space-y-4">
             {[1, 2, 3].map(i => (
-              <div key={i} className="h-32 bg-white rounded-2xl animate-pulse border border-neutral-100" />
+              <div key={i} className="h-32 bg-card rounded-2xl animate-pulse border border-border" />
             ))}
           </div>
         ) : history.items.length === 0 ? (
-          <div className="flex flex-col items-center justify-center py-20 bg-white rounded-3xl border border-dashed border-neutral-200">
+          <div className="flex flex-col items-center justify-center py-20 bg-card rounded-3xl border border-dashed border-border">
             <div className="w-20 h-20 bg-neutral-50 rounded-full flex items-center justify-center mb-6">
               <BookOpen className="w-8 h-8 text-neutral-300" />
             </div>
@@ -294,7 +294,7 @@ export default function HistoryPage() {
               <Link
                 key={item.id}
                 href={`/history/${item.id}`}
-                className="group block bg-white hover:bg-emerald-50/30 rounded-2xl p-6 border border-neutral-100 hover:border-emerald-200 hover:shadow-md transition-all duration-300"
+                className="group block bg-card hover:bg-primary/5 rounded-2xl p-6 border border-border hover:border-primary/30 hover:shadow-md transition-all duration-300"
               >
                 <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
                   <div className="space-y-3">
@@ -334,12 +334,12 @@ export default function HistoryPage() {
                         </div>
                       ) : (
                         <div className="flex items-center gap-2 group/title">
-                          <h3 className="text-lg font-bold text-neutral-800 font-serif">
+                          <h3 className="text-lg font-bold text-foreground font-serif">
                             {item.sessionName || "未命名练习"}
                           </h3>
                           <button
                             onClick={e => handleStartEdit(e, item)}
-                            className="opacity-0 group-hover/title:opacity-100 text-neutral-400 hover:text-emerald-600 transition-opacity p-1"
+                            className="opacity-0 group-hover/title:opacity-100 text-muted-foreground hover:text-primary transition-opacity p-1"
                           >
                             <Pencil className="w-3.5 h-3.5" />
                           </button>
@@ -347,12 +347,12 @@ export default function HistoryPage() {
                       )}
                     </div>
 
-                    <div className="flex items-center gap-4 text-sm text-neutral-500">
+                    <div className="flex items-center gap-4 text-sm text-muted-foreground">
                       <span className="flex items-center gap-1.5">
                         <CheckCircle2 className={cn("w-4 h-4", item.accuracy >= 60 ? "text-emerald-500" : "text-rose-500")} />
-                        正确率 <span className={cn("font-bold", item.accuracy >= 60 ? "text-emerald-700" : "text-rose-700")}>{item.accuracy}%</span>
+                        正确率 <span className={cn("font-bold", item.accuracy >= 60 ? "text-emerald-600 dark:text-emerald-400" : "text-rose-600 dark:text-rose-400")}>{item.accuracy}%</span>
                       </span>
-                      <span className="w-1 h-1 bg-neutral-300 rounded-full" />
+                      <span className="w-1 h-1 bg-muted-foreground/50 rounded-full" />
                       <span>共 {item.totalQuestions} 题</span>
                     </div>
                   </div>

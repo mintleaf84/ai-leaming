@@ -1,7 +1,7 @@
 import { describe, it, expect, vi } from 'vitest';
 import { POST as register } from '@/app/api/auth/register/route';
 import { POST as login } from '@/app/api/auth/login/route';
-import { POST as firstPrinciples } from '@/app/api/practice/first-principles/route';
+// import { POST as firstPrinciples } from '@/app/api/practice/first-principles/route'; // TODO: 恢复此导入当路由创建后
 import { NextRequest } from 'next/server';
 
 // Mock DB interactions to avoid polluting the real DB or needing a running DB

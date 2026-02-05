@@ -66,7 +66,7 @@ describe('Question Service', () => {
                 .mockReturnValueOnce({ all: mockAll })
                 .mockReturnValueOnce({ get: mockGetCount });
 
-            const result = await questionService.list({ page: 1, limit: 10 });
+            const result = await questionService.list({ offset: 0, limit: 10 });
 
             expect(result.items).toEqual(mockItems);
             expect(result.total).toBe(10);

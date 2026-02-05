@@ -37,7 +37,7 @@ const emptyPlan: Omit<SubscriptionPlan, 'created_at'> = {
     name: '',
     tier: 'basic',
     price_monthly: 0,
-    limits: { ai_chat: -1, practice: -1, review: -1, rag: -1 },
+    limits: { ai_chat: -1, practice: -1, review: -1, rag: -1, mnemonic: -1, first_principles: -1 },
     features: [],
     is_active: true,
     sort_order: 0

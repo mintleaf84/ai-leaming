@@ -8,7 +8,7 @@ interface PracticeCardProps {
         id: number;
         content: string;
         options: string[];
-        type: 'single' | 'multi';
+        type: string;  // 与 Question 类型保持一致
         dimension: string;
     };
     isMulti: boolean;

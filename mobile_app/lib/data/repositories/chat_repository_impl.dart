@@ -2,6 +2,7 @@ import 'package:dio/dio.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../core/network/dio_client.dart';
 import '../../domain/repositories/chat_repository.dart';
+import '../../domain/entities/chat_message.dart';
 import 'dart:convert';
 import 'dart:async';
 
@@ -23,23 +24,31 @@ final chatRepositoryProvider = Provider<ChatRepository>((ref) {
     }
   }
 
-  return ChatRepositoryImpl(streamDio);
+  // 还需要一个用于普通 JSON 请求的基础 Dio
+  return ChatRepositoryImpl(streamDio, baseDio);
 });
 
 class ChatRepositoryImpl implements ChatRepository {
-  final Dio _dio;
+  final Dio _streamDio;
+  final Dio _baseDio;
 
-  ChatRepositoryImpl(this._dio);
+  ChatRepositoryImpl(this._streamDio, this._baseDio);
 
   @override
   Stream<String> sendMessageStream(
     List<Map<String, dynamic>> messages, {
     bool enableRag = false,
+    String? sessionId,
   }) async* {
     try {
-      final response = await _dio.post(
+      final data = {'messages': messages, 'enableRag': enableRag};
+      if (sessionId != null) {
+        data['sessionId'] = sessionId;
+      }
+
+      final response = await _streamDio.post(
         '/chat',
-        data: {'messages': messages, 'enableRag': enableRag},
+        data: data,
         options: Options(
           responseType: ResponseType.stream,
           headers: {
@@ -77,6 +86,59 @@ class ChatRepositoryImpl implements ChatRepository {
       }
     } catch (e) {
       throw Exception('Failed to send message: $e');
+    }
+  }
+
+  @override
+  Future<List<Map<String, dynamic>>> getSessions({int limit = 20}) async {
+    try {
+      final response = await _baseDio.get(
+        '/chat/sessions',
+        queryParameters: {'limit': limit},
+      );
+      if (response.statusCode == 200 && response.data['sessions'] != null) {
+        return List<Map<String, dynamic>>.from(response.data['sessions']);
+      }
+      throw Exception('Failed to load sessions');
+    } catch (e) {
+      throw Exception('Failed to load sessions: $e');
+    }
+  }
+
+  @override
+  Future<Map<String, dynamic>> createSession({String? title}) async {
+    try {
+      final data = title != null ? {'title': title} : {};
+      final response = await _baseDio.post('/chat/sessions', data: data);
+      if (response.statusCode == 200 && response.data['sessionId'] != null) {
+        return response.data as Map<String, dynamic>;
+      }
+      throw Exception('Failed to create session');
+    } catch (e) {
+      throw Exception('Failed to create session: $e');
+    }
+  }
+
+  @override
+  Future<List<ChatMessage>> getSessionMessages(String sessionId) async {
+    try {
+      final response = await _baseDio.get('/chat/sessions/$sessionId');
+      if (response.statusCode == 200 && response.data['messages'] != null) {
+        final messagesList = response.data['messages'] as List;
+        return messagesList.map((m) => ChatMessage.fromJson(m)).toList();
+      }
+      throw Exception('Failed to load session messages');
+    } catch (e) {
+      throw Exception('Failed to load session messages: $e');
+    }
+  }
+
+  @override
+  Future<void> deleteSession(String sessionId) async {
+    try {
+      await _baseDio.delete('/chat/sessions/$sessionId');
+    } catch (e) {
+      throw Exception('Failed to delete session: $e');
     }
   }
 }

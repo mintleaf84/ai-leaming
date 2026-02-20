@@ -1,6 +1,6 @@
-fix(chat): 修复AI助手流式响应挂起及历史页面导航丢失问题
+feat(chat): 对接后端多会话与增加移动端 UX 交互细节
 
-1. 修复 ChatRepositoryImpl 中的流解析 Bug，移除错误的 Vercel AI 0: 头校验，改为直接抛出原始 TextChunk。
-2. 为 Dio 网络层配置禁用 GZip 缓冲头。
-3. 调整工作区界面排版，将历史记录入口以卡片形式加回首页。
-4. 修复 ChatScreen 返回按钮失效问题，改为显式跳转回 /dashboard。
+1. 在 Next.js 后端创建 /api/chat/sessions 相关的增删查改 REST API 供 Flutter 移动端调用。
+2. Flutter 接入 API 并实装 drawer 分页形式的历史会话流转控制（支持选中、新建与删除）。
+3. 使用 HookConsumerWidget 引入 flutter_hooks 并添加 useState 管理 RAG 检索知识库增强参数。
+4. 加入文本域发送时的网络请求禁用转圈状态及使用 addPostFrameCallback 处理的流式内容生成追底自动滚屏。

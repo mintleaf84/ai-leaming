@@ -7,14 +7,43 @@ final chatProvider = AsyncNotifierProvider<ChatNotifier, List<ChatMessage>>(() {
   return ChatNotifier();
 });
 
+final chatSessionsProvider =
+    FutureProvider.autoDispose<List<Map<String, dynamic>>>((ref) async {
+      final repo = ref.watch(chatRepositoryProvider);
+      // 当我们发送新消息或删除会话时，可能需要使此 provider 失效，可以通过 ref.invalidate 来做
+      return await repo.getSessions();
+    });
+
 class ChatNotifier extends AsyncNotifier<List<ChatMessage>> {
+  String? _currentSessionId;
+
+  String? get currentSessionId => _currentSessionId;
+
   @override
   FutureOr<List<ChatMessage>> build() {
     return [];
   }
 
   void clearMessages() {
+    _currentSessionId = null;
     state = const AsyncData([]);
+  }
+
+  Future<void> createNewSession() async {
+    _currentSessionId = null;
+    state = const AsyncData([]);
+  }
+
+  Future<void> loadSession(String sessionId) async {
+    state = const AsyncLoading();
+    try {
+      final repo = ref.read(chatRepositoryProvider);
+      final messages = await repo.getSessionMessages(sessionId);
+      _currentSessionId = sessionId;
+      state = AsyncData(messages);
+    } catch (e) {
+      state = AsyncError('Failed to load session: $e', StackTrace.current);
+    }
   }
 
   Future<void> sendMessage(String text, {bool enableRag = false}) async {
@@ -44,6 +73,14 @@ class ChatNotifier extends AsyncNotifier<List<ChatMessage>> {
     try {
       final repo = ref.read(chatRepositoryProvider);
 
+      // 如果当前没有会话 ID，先创建一个新会话
+      if (_currentSessionId == null) {
+        // 先简单使用用户发送的第一句话的截断作为 title
+        String title = text.length > 10 ? text.substring(0, 10) : text;
+        final res = await repo.createSession(title: title);
+        _currentSessionId = res['sessionId']?.toString();
+      }
+
       // 构造要发送的上下文明文列表
       final reqMessages = newMessages
           // 不传还没生成内容的 assistant placeholder，否则会被当出 user 对话上下文
@@ -51,8 +88,12 @@ class ChatNotifier extends AsyncNotifier<List<ChatMessage>> {
           .map((m) => {'role': m.role, 'content': m.content})
           .toList();
 
-      // 请求流式数据
-      final stream = repo.sendMessageStream(reqMessages, enableRag: enableRag);
+      // 请求流式数据，传入当前的 sessionId 让后端存库
+      final stream = repo.sendMessageStream(
+        reqMessages,
+        enableRag: enableRag,
+        sessionId: _currentSessionId,
+      );
 
       String accumulatedContent = '';
 

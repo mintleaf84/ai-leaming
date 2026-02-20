@@ -1,8 +1,32 @@
 import { OpenAPIHono, createRoute, z } from '@hono/zod-openapi'
 import { authService } from '@/lib/services/auth'
 import { sign } from 'hono/jwt'
+import { checkRateLimit, getClientIP } from '@/lib/rate-limit'
 
 const app = new OpenAPIHono()
+
+// Rate Limiting 中间件
+app.use('*', async (c, next) => {
+    // 构建标准的 fetch API Request 对象以符合 getClientIP 签名
+    const reqInfo = { headers: c.req.raw.headers } as any;
+    const clientIP = getClientIP(reqInfo);
+
+    // 我们在 /api 挂载点下，原始路径 c.req.path 可能是 /api/auth/login。
+    // 但是这里中间件获取的可能是 /login。这里兼容一下：
+    const routePath = `/api/auth${c.req.path}`;
+    const rateLimitResult = checkRateLimit(clientIP, routePath);
+
+    if (!rateLimitResult.success) {
+        c.header('X-RateLimit-Limit', String(rateLimitResult.limit));
+        c.header('X-RateLimit-Remaining', '0');
+        c.header('X-RateLimit-Reset', String(Math.ceil(rateLimitResult.resetTime / 1000)));
+        c.header('Retry-After', String(Math.ceil((rateLimitResult.resetTime - Date.now()) / 1000)));
+
+        return c.json({ error: '请求过于频繁，请稍后再试' }, 429);
+    }
+
+    await next();
+})
 
 const JWT_SECRET = process.env.JWT_SECRET || 'fallback-secret-for-development-only-replace-it-in-production'
 
@@ -43,6 +67,9 @@ const loginRoute = createRoute({
         },
         401: {
             description: 'Invalid credentials'
+        },
+        429: {
+            description: 'Too Many Requests'
         }
     }
 })
@@ -95,6 +122,9 @@ const registerRoute = createRoute({
         },
         400: {
             description: 'Username already exists or invalid input'
+        },
+        429: {
+            description: 'Too Many Requests'
         }
     }
 })

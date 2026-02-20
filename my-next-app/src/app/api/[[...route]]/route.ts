@@ -4,10 +4,10 @@ import { swaggerUI } from '@hono/swagger-ui'
 
 export const runtime = 'nodejs'
 
-const app = new OpenAPIHono().basePath('/api/v1')
+const app = new OpenAPIHono().basePath('/api')
 
 // 注册 Swagger UI
-app.get('/doc', swaggerUI({ url: '/api/v1/openapi.json' }))
+app.get('/doc', swaggerUI({ url: '/api/openapi.json' }))
 
 // 注册 OpenAPI 文档端点
 app.doc('/openapi.json', {
@@ -19,6 +19,7 @@ app.doc('/openapi.json', {
   },
 })
 
+// 统一的 auth 路由 (具备 rate limiting & token generator)
 import authRoute from '@/lib/api/routes/auth'
 app.route('/auth', authRoute)
 

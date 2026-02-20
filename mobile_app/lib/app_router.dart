@@ -1,15 +1,15 @@
 import 'package:go_router/go_router.dart';
-import 'presentation/screens/register_screen.dart';
-import 'presentation/screens/login_screen.dart';
-import 'presentation/screens/dashboard_screen.dart';
-import 'presentation/screens/practice_screen.dart';
-import 'presentation/screens/result_screen.dart';
-import 'presentation/screens/history_screen.dart';
-import 'presentation/screens/history_detail_screen.dart';
-import 'presentation/screens/knowledge_screen.dart';
-import 'presentation/screens/mastery_screen.dart';
-import 'presentation/screens/settings_screen.dart';
-import 'presentation/screens/chat_screen.dart';
+import 'features/auth/presentation/register_screen.dart';
+import 'features/auth/presentation/login_screen.dart';
+import 'features/dashboard/presentation/dashboard_screen.dart';
+import 'features/practice/presentation/practice_screen.dart';
+import 'features/practice/presentation/result_screen.dart';
+import 'features/history/presentation/history_screen.dart';
+import 'features/history/presentation/history_detail_screen.dart';
+import 'features/knowledge/presentation/knowledge_screen.dart';
+import 'features/mastery/presentation/mastery_screen.dart';
+import 'features/settings/presentation/settings_screen.dart';
+import 'features/chat/presentation/chat_screen.dart';
 
 final appRouter = GoRouter(
   initialLocation: '/login',

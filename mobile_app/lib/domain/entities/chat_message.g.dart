@@ -7,16 +7,18 @@ part of 'chat_message.dart';
 // **************************************************************************
 
 _ChatMessage _$ChatMessageFromJson(Map<String, dynamic> json) => _ChatMessage(
-  id: json['id'] as String,
+  id: const StringIdConverter().fromJson(json['id']),
   role: json['role'] as String,
   content: json['content'] as String,
-  isFavorite: json['isFavorite'] as bool? ?? false,
+  isFavorite: json['is_favorite'] == null
+      ? false
+      : _boolFromInt(json['is_favorite']),
 );
 
 Map<String, dynamic> _$ChatMessageToJson(_ChatMessage instance) =>
     <String, dynamic>{
-      'id': instance.id,
+      'id': const StringIdConverter().toJson(instance.id),
       'role': instance.role,
       'content': instance.content,
-      'isFavorite': instance.isFavorite,
+      'is_favorite': instance.isFavorite,
     };

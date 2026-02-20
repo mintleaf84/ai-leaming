@@ -15,7 +15,8 @@ T _$identity<T>(T value) => value;
 /// @nodoc
 mixin _$ChatMessage {
 
- String get id; String get role; String get content; bool get isFavorite;
+@StringIdConverter() String get id; String get role; String get content;// ignore: invalid_annotation_target
+@JsonKey(name: 'is_favorite', fromJson: _boolFromInt) bool get isFavorite;
 /// Create a copy of ChatMessage
 /// with the given fields replaced by the non-null parameter values.
 @JsonKey(includeFromJson: false, includeToJson: false)
@@ -48,7 +49,7 @@ abstract mixin class $ChatMessageCopyWith<$Res>  {
   factory $ChatMessageCopyWith(ChatMessage value, $Res Function(ChatMessage) _then) = _$ChatMessageCopyWithImpl;
 @useResult
 $Res call({
- String id, String role, String content, bool isFavorite
+@StringIdConverter() String id, String role, String content,@JsonKey(name: 'is_favorite', fromJson: _boolFromInt) bool isFavorite
 });
 
 
@@ -156,7 +157,7 @@ return $default(_that);case _:
 /// }
 /// ```
 
-@optionalTypeArgs TResult maybeWhen<TResult extends Object?>(TResult Function( String id,  String role,  String content,  bool isFavorite)?  $default,{required TResult orElse(),}) {final _that = this;
+@optionalTypeArgs TResult maybeWhen<TResult extends Object?>(TResult Function(@StringIdConverter()  String id,  String role,  String content, @JsonKey(name: 'is_favorite', fromJson: _boolFromInt)  bool isFavorite)?  $default,{required TResult orElse(),}) {final _that = this;
 switch (_that) {
 case _ChatMessage() when $default != null:
 return $default(_that.id,_that.role,_that.content,_that.isFavorite);case _:
@@ -177,7 +178,7 @@ return $default(_that.id,_that.role,_that.content,_that.isFavorite);case _:
 /// }
 /// ```
 
-@optionalTypeArgs TResult when<TResult extends Object?>(TResult Function( String id,  String role,  String content,  bool isFavorite)  $default,) {final _that = this;
+@optionalTypeArgs TResult when<TResult extends Object?>(TResult Function(@StringIdConverter()  String id,  String role,  String content, @JsonKey(name: 'is_favorite', fromJson: _boolFromInt)  bool isFavorite)  $default,) {final _that = this;
 switch (_that) {
 case _ChatMessage():
 return $default(_that.id,_that.role,_that.content,_that.isFavorite);case _:
@@ -197,7 +198,7 @@ return $default(_that.id,_that.role,_that.content,_that.isFavorite);case _:
 /// }
 /// ```
 
-@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>(TResult? Function( String id,  String role,  String content,  bool isFavorite)?  $default,) {final _that = this;
+@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>(TResult? Function(@StringIdConverter()  String id,  String role,  String content, @JsonKey(name: 'is_favorite', fromJson: _boolFromInt)  bool isFavorite)?  $default,) {final _that = this;
 switch (_that) {
 case _ChatMessage() when $default != null:
 return $default(_that.id,_that.role,_that.content,_that.isFavorite);case _:
@@ -212,13 +213,14 @@ return $default(_that.id,_that.role,_that.content,_that.isFavorite);case _:
 @JsonSerializable()
 
 class _ChatMessage implements ChatMessage {
-  const _ChatMessage({required this.id, required this.role, required this.content, this.isFavorite = false});
+  const _ChatMessage({@StringIdConverter() required this.id, required this.role, required this.content, @JsonKey(name: 'is_favorite', fromJson: _boolFromInt) this.isFavorite = false});
   factory _ChatMessage.fromJson(Map<String, dynamic> json) => _$ChatMessageFromJson(json);
 
-@override final  String id;
+@override@StringIdConverter() final  String id;
 @override final  String role;
 @override final  String content;
-@override@JsonKey() final  bool isFavorite;
+// ignore: invalid_annotation_target
+@override@JsonKey(name: 'is_favorite', fromJson: _boolFromInt) final  bool isFavorite;
 
 /// Create a copy of ChatMessage
 /// with the given fields replaced by the non-null parameter values.
@@ -253,7 +255,7 @@ abstract mixin class _$ChatMessageCopyWith<$Res> implements $ChatMessageCopyWith
   factory _$ChatMessageCopyWith(_ChatMessage value, $Res Function(_ChatMessage) _then) = __$ChatMessageCopyWithImpl;
 @override @useResult
 $Res call({
- String id, String role, String content, bool isFavorite
+@StringIdConverter() String id, String role, String content,@JsonKey(name: 'is_favorite', fromJson: _boolFromInt) bool isFavorite
 });
 
 

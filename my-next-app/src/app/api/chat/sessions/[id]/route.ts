@@ -8,7 +8,7 @@ import { NextResponse } from 'next/server';
  */
 export async function GET(
     req: Request,
-    { params }: { params: { id: string } }
+    { params }: { params: Promise<{ id: string }> }
 ) {
     try {
         const authSession = await getAuthSession();
@@ -16,7 +16,8 @@ export async function GET(
             return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
         }
 
-        const sessionId = parseInt(params.id, 10);
+        const resolvedParams = await params;
+        const sessionId = parseInt(resolvedParams.id, 10);
         if (isNaN(sessionId)) {
             return NextResponse.json({ error: 'Invalid session ID' }, { status: 400 });
         }
@@ -32,7 +33,7 @@ export async function GET(
 
         return NextResponse.json({ session, messages });
     } catch (error: any) {
-        console.error(`[ChatSessionAPI] 获取会话详情失败 (ID: ${params?.id}):`, error);
+        console.error(`[ChatSessionAPI] 获取会话详情失败:`, error);
         return NextResponse.json({ error: error.message || 'Internal Server Error' }, { status: 500 });
     }
 }
@@ -43,7 +44,7 @@ export async function GET(
  */
 export async function DELETE(
     req: Request,
-    { params }: { params: { id: string } }
+    { params }: { params: Promise<{ id: string }> }
 ) {
     try {
         const authSession = await getAuthSession();
@@ -51,7 +52,8 @@ export async function DELETE(
             return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
         }
 
-        const sessionId = parseInt(params.id, 10);
+        const resolvedParams = await params;
+        const sessionId = parseInt(resolvedParams.id, 10);
         if (isNaN(sessionId)) {
             return NextResponse.json({ error: 'Invalid session ID' }, { status: 400 });
         }
@@ -61,7 +63,7 @@ export async function DELETE(
 
         return NextResponse.json({ success: true, message: 'Session deleted successfully' });
     } catch (error: any) {
-        console.error(`[ChatSessionAPI] 删除会话失败 (ID: ${params?.id}):`, error);
+        console.error(`[ChatSessionAPI] 删除会话失败:`, error);
         return NextResponse.json({ error: error.message || 'Internal Server Error' }, { status: 500 });
     }
 }

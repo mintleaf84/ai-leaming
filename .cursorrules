@@ -1,0 +1,25 @@
+# AI Learning Project Rules
+
+## API Development Architecture (CRITICAL)
+
+This project strictly uses the **Hono** framework for REST APIs, encapsulated within a single Next.js catch-all route.
+**NEVER** create standard Next.js API Routes (e.g., `src/app/api/your-feature/route.ts`).
+
+### How to Create a New API Endpoint:
+
+1. **Create exactly one Hono route file** in `src/lib/api/routes/<feature>.ts` using `@hono/zod-openapi`.
+2. **Mount the route** in the main router file `src/app/api/[[...route]]/route.ts`:
+   ```typescript
+   import featureRoute from '@/lib/api/routes/<feature>'
+   app.route('/<feature>', featureRoute)
+   ```
+3. **Global Rate Limiting**: Is applied in `route.ts`. Do not build your own edge cases unless necessary.
+
+## Flutter Mobile App Architecture
+
+The `mobile_app` uses a **Feature-First** directory structure. 
+- Use `lib/features/<feature>/` for module-specific logic (domain, data, presentation).
+- Use `lib/shared/` for cross-module singletons (e.g., `ApiClient`).
+- **NEVER** move Dart files using PowerShell string manipulation. Always use `git mv`.
+
+When making changes, always search for the relevant specialized skills (`.agent/skills/`) to adhere to our conventions.

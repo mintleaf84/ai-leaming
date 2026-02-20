@@ -1,0 +1,6 @@
+fix(chat): 修复AI助手流式响应挂起及历史页面导航丢失问题
+
+1. 修复 ChatRepositoryImpl 中的流解析 Bug，移除错误的 Vercel AI 0: 头校验，改为直接抛出原始 TextChunk。
+2. 为 Dio 网络层配置禁用 GZip 缓冲头。
+3. 调整工作区界面排版，将历史记录入口以卡片形式加回首页。
+4. 修复 ChatScreen 返回按钮失效问题，改为显式跳转回 /dashboard。

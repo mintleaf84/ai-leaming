@@ -123,6 +123,11 @@ class DashboardScreen extends HookConsumerWidget {
           onTap: () => context.go('/practice'),
           child: _buildFullWidthCard(),
         ),
+        SizedBox(height: 16.h),
+        GestureDetector(
+          onTap: () => context.go('/history'),
+          child: _buildHistoryCard(),
+        ),
       ],
     );
   }
@@ -363,6 +368,116 @@ class DashboardScreen extends HookConsumerWidget {
     );
   }
 
+  Widget _buildHistoryCard() {
+    return Container(
+      height: 96.h,
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(16.r),
+        border: Border.all(color: const Color(0xFFE0E0E0)),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.02),
+            blurRadius: 4,
+            offset: const Offset(0, 2),
+          ),
+        ],
+      ),
+      child: Stack(
+        children: [
+          Positioned(
+            right: 40.w,
+            top: 0,
+            bottom: 0,
+            child: Center(
+              child: Opacity(
+                opacity: 0.1,
+                child: Text('⏳', style: TextStyle(fontSize: 60.sp)),
+              ),
+            ),
+          ),
+          Padding(
+            padding: EdgeInsets.all(16.w),
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Container(
+                      padding: EdgeInsets.symmetric(
+                        horizontal: 6.w,
+                        vertical: 2.h,
+                      ),
+                      decoration: BoxDecoration(
+                        color: const Color(0xFFF3F4F6),
+                        borderRadius: BorderRadius.circular(4.r),
+                      ),
+                      child: Text(
+                        '温故知新',
+                        style: TextStyle(
+                          fontSize: 10.sp,
+                          color: const Color(0xFF4B5563),
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                    ),
+                    SizedBox(height: 4.h),
+                    Text(
+                      '练习历史',
+                      style: TextStyle(
+                        fontSize: 18.sp,
+                        fontWeight: FontWeight.bold,
+                        color: const Color(0xFF37352F),
+                      ),
+                    ),
+                  ],
+                ),
+                Container(
+                  decoration: BoxDecoration(
+                    border: Border(left: BorderSide(color: Colors.grey[200]!)),
+                  ),
+                  padding: EdgeInsets.only(left: 16.w),
+                  child: Row(
+                    children: [
+                      Column(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        crossAxisAlignment: CrossAxisAlignment.end,
+                        children: [
+                          Text(
+                            '最近',
+                            style: TextStyle(
+                              fontSize: 10.sp,
+                              color: Colors.grey,
+                            ),
+                          ),
+                          Text(
+                            '回顾',
+                            style: TextStyle(
+                              fontSize: 14.sp,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                        ],
+                      ),
+                      SizedBox(width: 8.w),
+                      Icon(
+                        Icons.chevron_right,
+                        size: 20.sp,
+                        color: const Color(0xFF37352F),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
   Widget _buildProgressCard() {
     return Container(
       padding: EdgeInsets.all(20.w),
@@ -520,10 +635,10 @@ class DashboardScreen extends HookConsumerWidget {
         children: [
           _buildNavItem(Icons.dashboard, '工作区', true, null),
           _buildNavItem(
-            Icons.history,
-            '历史',
+            Icons.smart_toy,
+            'AI助手',
             false,
-            () => context.go('/history'),
+            () => context.go('/chat'),
           ),
           _buildNavItem(
             Icons.book,

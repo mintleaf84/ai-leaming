@@ -1,8 +1,8 @@
 class ApiConstants {
   // Use 10.0.2.2 for Android Emulator to access localhost
   // Use localhost for iOS Simulator
-  // Use actual IP for physical device
-  static const String baseUrl = 'http://192.168.0.101:3000/api/v1';
+  // Use actual IP for physical device / Windows Desktop apps
+  static const String baseUrl = 'http://192.168.0.101:3000/api';
 
   static const int connectTimeout = 5000;
   static const int receiveTimeout = 3000;

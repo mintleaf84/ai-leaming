@@ -4,6 +4,7 @@ import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:go_router/go_router.dart';
 import 'settings_provider.dart';
 import '../../../core/theme/theme_provider.dart';
+import '../../auth/presentation/auth_provider.dart';
 
 /// 设置页面
 ///
@@ -514,9 +515,12 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
             child: const Text('取消'),
           ),
           TextButton(
-            onPressed: () {
+            onPressed: () async {
               Navigator.pop(context);
-              context.go('/login');
+              await ref.read(authControllerProvider.notifier).logout();
+              if (context.mounted) {
+                context.go('/login');
+              }
             },
             child: const Text('退出', style: TextStyle(color: Color(0xFFEB5757))),
           ),

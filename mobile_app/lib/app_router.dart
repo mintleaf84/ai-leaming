@@ -1,4 +1,5 @@
 import 'package:go_router/go_router.dart';
+import 'features/auth/presentation/splash_screen.dart';
 import 'features/auth/presentation/register_screen.dart';
 import 'features/auth/presentation/login_screen.dart';
 import 'features/dashboard/presentation/dashboard_screen.dart';
@@ -12,8 +13,9 @@ import 'features/settings/presentation/settings_screen.dart';
 import 'features/chat/presentation/chat_screen.dart';
 
 final appRouter = GoRouter(
-  initialLocation: '/login',
+  initialLocation: '/',
   routes: [
+    GoRoute(path: '/', builder: (context, state) => const SplashScreen()),
     GoRoute(path: '/login', builder: (context, state) => const LoginScreen()),
     GoRoute(
       path: '/dashboard',

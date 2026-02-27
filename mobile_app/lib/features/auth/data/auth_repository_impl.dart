@@ -34,4 +34,14 @@ class AuthRepositoryImpl implements AuthRepository {
     final token = response['token'];
     await _storage.write(key: 'jwt_token', value: token);
   }
+
+  @override
+  Future<String?> getToken() async {
+    return await _storage.read(key: 'jwt_token');
+  }
+
+  @override
+  Future<void> logout() async {
+    await _storage.delete(key: 'jwt_token');
+  }
 }

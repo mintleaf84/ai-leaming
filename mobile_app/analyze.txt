@@ -1,0 +1,41 @@
+﻿Analyzing mobile_app...                                         
+
+   info - Don't invoke 'print' in production code - lib\features\chat\data\chat_repository_impl.dart:70:9 - avoid_print
+   info - Don't invoke 'print' in production code - lib\features\chat\data\chat_repository_impl.dart:75:9 - avoid_print
+   info - Don't invoke 'print' in production code - lib\features\chat\data\chat_repository_impl.dart:78:7 - avoid_print
+warning - The diagnostic 'invalid_annotation_target' doesn't need to be ignored here because it's already being ignored - lib\features\chat\domain\chat_message.freezed.dart:18:84 - duplicate_ignore
+warning - The diagnostic 'invalid_annotation_target' doesn't need to be ignored here because it's already being ignored - lib\features\chat\domain\chat_message.freezed.dart:222:12 - duplicate_ignore
+   info - Local variables should be final - lib\features\chat\presentation\chat_provider.dart:79:9 - prefer_final_locals
+   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss - lib\features\chat\presentation\chat_screen.dart:143:39 - deprecated_member_use
+   info - 'activeColor' is deprecated and shouldn't be used. Use activeThumbColor instead. This feature was deprecated after v3.31.0-2.0.pre - lib\features\chat\presentation\chat_screen.dart:186:29 - deprecated_member_use
+   info - Missing an 'await' for the 'Future' computed by this expression - lib\features\chat\presentation\chat_screen.dart:384:40 - unawaited_futures
+  error - Missing concrete implementations of 'getter mixin _$PracticeSession on Object.questions', 'getter mixin _$PracticeSession on Object.sessionId', and 'mixin _$PracticeSession on Object.toJson' - lib\features\practice\domain\practice_session.dart:8:7 - non_abstract_class_inherits_abstract_member
+  error - Missing concrete implementations of 'getter mixin _$Question on Object.answer', 'getter mixin _$Question on Object.content', 'getter mixin _$Question on Object.dimension', 'getter mixin _$Question on Object.explanation', and 5 more - lib\features\practice\domain\question.dart:8:7 - non_abstract_class_inherits_abstract_member
+  error - Missing concrete implementations of 'getter mixin _$QuestionListResponse on Object.items', 'getter mixin _$QuestionListResponse on Object.total', and 'mixin _$QuestionListResponse on Object.toJson' - lib\features\practice\domain\question.dart:25:7 - non_abstract_class_inherits_abstract_member
+   info - Don't invoke 'print' in production code - test\api_integration_test.dart:20:7 - avoid_print
+   info - Don't invoke 'print' in production code - test\api_integration_test.dart:29:9 - avoid_print
+   info - Don't invoke 'print' in production code - test\api_integration_test.dart:34:11 - avoid_print
+   info - Unnecessary use of double quotes - test\api_integration_test.dart:47:11 - prefer_single_quotes
+   info - Unnecessary use of double quotes - test\api_integration_test.dart:47:19 - prefer_single_quotes
+   info - Unnecessary use of double quotes - test\api_integration_test.dart:48:11 - prefer_single_quotes
+   info - Unnecessary use of double quotes - test\api_integration_test.dart:48:22 - prefer_single_quotes
+   info - Don't invoke 'print' in production code - test\api_integration_test.dart:50:9 - avoid_print
+   info - Don't invoke 'print' in production code - test\api_integration_test.dart:53:11 - avoid_print
+   info - Don't invoke 'print' in production code - test\api_integration_test.dart:62:9 - avoid_print
+   info - Don't invoke 'print' in production code - test\api_integration_test.dart:65:9 - avoid_print
+   info - Don't invoke 'print' in production code - test\api_integration_test.dart:70:9 - avoid_print
+   info - Don't invoke 'print' in production code - test\chat_stream_test.dart:32:5 - avoid_print
+   info - Unnecessary use of double quotes - test\chat_stream_test.dart:37:11 - prefer_single_quotes
+   info - Unnecessary use of double quotes - test\chat_stream_test.dart:38:14 - prefer_single_quotes
+   info - Unnecessary use of double quotes - test\chat_stream_test.dart:38:22 - prefer_single_quotes
+   info - Unnecessary use of double quotes - test\chat_stream_test.dart:38:30 - prefer_single_quotes
+   info - Unnecessary use of double quotes - test\chat_stream_test.dart:38:41 - prefer_single_quotes
+   info - Unnecessary use of double quotes - test\chat_stream_test.dart:40:11 - prefer_single_quotes
+   info - Don't invoke 'print' in production code - test\chat_stream_test.dart:44:7 - avoid_print
+   info - Don't invoke 'print' in production code - test\chat_stream_test.dart:56:9 - avoid_print
+   info - Don't invoke 'print' in production code - test\chat_stream_test.dart:59:7 - avoid_print
+   info - Don't invoke 'print' in production code - test\chat_stream_test.dart:60:7 - avoid_print
+   info - Don't invoke 'print' in production code - test\chat_stream_test.dart:64:7 - avoid_print
+   info - Use 'const' with the constructor to improve performance - test\features\practice\questions_provider_test.dart:28:24 - prefer_const_constructors
+   info - Use 'const' with the constructor to improve performance - test\features\practice\questions_provider_test.dart:36:24 - prefer_const_constructors
+

@@ -1,7 +1,7 @@
 import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import '../../../core/network/dio_client.dart';
-import '../../../shared/datasources/api_client.dart';
+import '../data/practice_repository_impl.dart';
+import '../domain/practice_repository.dart';
 import '../domain/question.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 
@@ -10,8 +10,10 @@ class PracticeSessionState {
   final String? sessionId;
   final List<Question> questions;
   final int currentIndex;
-  final Map<int, String> userAnswers; // questionId -> userAnswer
-  final Map<int, bool> results; // questionId -> isCorrect
+  final Map<String, String> userAnswers; // questionId -> userAnswer
+  final Map<String, bool> results; // questionId -> isCorrect
+  final Map<String, String> correctAnswers; // questionId -> correctAnswer
+  final Map<String, String> explanations; // questionId -> explanation
   final bool isLoading;
   final String? error;
 
@@ -21,6 +23,8 @@ class PracticeSessionState {
     this.currentIndex = 0,
     this.userAnswers = const {},
     this.results = const {},
+    this.correctAnswers = const {},
+    this.explanations = const {},
     this.isLoading = false,
     this.error,
   });
@@ -29,8 +33,10 @@ class PracticeSessionState {
     String? sessionId,
     List<Question>? questions,
     int? currentIndex,
-    Map<int, String>? userAnswers,
-    Map<int, bool>? results,
+    Map<String, String>? userAnswers,
+    Map<String, bool>? results,
+    Map<String, String>? correctAnswers,
+    Map<String, String>? explanations,
     bool? isLoading,
     String? error,
   }) {
@@ -40,6 +46,8 @@ class PracticeSessionState {
       currentIndex: currentIndex ?? this.currentIndex,
       userAnswers: userAnswers ?? this.userAnswers,
       results: results ?? this.results,
+      correctAnswers: correctAnswers ?? this.correctAnswers,
+      explanations: explanations ?? this.explanations,
       isLoading: isLoading ?? this.isLoading,
       error: error,
     );
@@ -65,10 +73,7 @@ class PracticeController extends Notifier<PracticeSessionState> {
   @override
   PracticeSessionState build() => const PracticeSessionState();
 
-  ApiClient get _apiClient {
-    final dio = ref.watch(dioProvider);
-    return ApiClient(dio);
-  }
+  PracticeRepository get _repository => ref.read(practiceRepositoryProvider);
 
   /// 创建新会话
   Future<void> createSession({int limit = 10}) async {
@@ -81,12 +86,7 @@ class PracticeController extends Notifier<PracticeSessionState> {
         return;
       }
 
-      final response = await _apiClient.createSession({
-        'mode': 'random',
-        'limit': limit,
-      });
-
-      final sessionResponse = PracticeSessionResponse.fromJson(response);
+      final sessionResponse = await _repository.createSession(limit: limit);
 
       state = state.copyWith(
         isLoading: false,
@@ -95,6 +95,8 @@ class PracticeController extends Notifier<PracticeSessionState> {
         currentIndex: 0,
         userAnswers: {},
         results: {},
+        correctAnswers: {},
+        explanations: {},
       );
 
       _questionStartTime = DateTime.now();
@@ -108,7 +110,7 @@ class PracticeController extends Notifier<PracticeSessionState> {
     final question = state.currentQuestion;
     if (question == null) return;
 
-    final newAnswers = Map<int, String>.from(state.userAnswers);
+    final newAnswers = Map<String, String>.from(state.userAnswers);
     newAnswers[question.id] = answer;
 
     state = state.copyWith(userAnswers: newAnswers);
@@ -127,20 +129,41 @@ class PracticeController extends Notifier<PracticeSessionState> {
         : 0;
 
     try {
-      final response = await _apiClient.submitAnswer(state.sessionId!, {
-        'questionId': question.id,
-        'userAnswer': userAnswer,
-        'duration': duration,
-      });
+      final response = await _repository.submitAnswer(
+        sessionId: state.sessionId!,
+        questionId: question.id,
+        userAnswer: userAnswer,
+        duration: duration,
+      );
 
       // 从后端响应获取正确性和正确答案
       final isCorrect = response['isCorrect'] as bool;
-      // final correctAnswer = response['correctAnswer'] as String; // 可用于显示
+      final correctAnswer = response['correctAnswer'] as String;
 
-      final newResults = Map<int, bool>.from(state.results);
+      state = state.copyWith(isLoading: true);
+      String explanation = '';
+      try {
+        final detail = await _repository.getQuestionDetail(question.id);
+        explanation = detail.explanation ?? '暂无权威解析';
+      } catch (e) {
+        explanation = '无法获取解析内容';
+      }
+
+      final newResults = Map<String, bool>.from(state.results);
       newResults[question.id] = isCorrect;
 
-      state = state.copyWith(results: newResults);
+      final newCorrectAnswers = Map<String, String>.from(state.correctAnswers);
+      newCorrectAnswers[question.id] = correctAnswer;
+
+      final newExplanations = Map<String, String>.from(state.explanations);
+      newExplanations[question.id] = explanation;
+
+      state = state.copyWith(
+        results: newResults,
+        correctAnswers: newCorrectAnswers,
+        explanations: newExplanations,
+        isLoading: false,
+      );
     } catch (e) {
       // 静默失败，不影响用户体验
       debugPrint('提交答案失败: $e');

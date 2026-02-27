@@ -7,33 +7,38 @@ part of 'question.dart';
 // **************************************************************************
 
 _Question _$QuestionFromJson(Map<String, dynamic> json) => _Question(
-  id: (json['id'] as num).toInt(),
+  id: const StringIdConverter().fromJson(json['id']),
   content: json['content'] as String,
   options: (json['options'] as List<dynamic>).map((e) => e as String).toList(),
   type: json['type'] as String? ?? 'single',
+  tags:
+      (json['tags'] as List<dynamic>?)?.map((e) => e as String).toList() ??
+      const [],
+  dimension: json['dimension'] as String?,
+  explanation: json['explanation'] as String?,
   answer: json['answer'] as String?,
 );
 
 Map<String, dynamic> _$QuestionToJson(_Question instance) => <String, dynamic>{
-  'id': instance.id,
+  'id': const StringIdConverter().toJson(instance.id),
   'content': instance.content,
   'options': instance.options,
   'type': instance.type,
+  'tags': instance.tags,
+  'dimension': instance.dimension,
+  'explanation': instance.explanation,
   'answer': instance.answer,
 };
 
-_PracticeSessionResponse _$PracticeSessionResponseFromJson(
+_QuestionListResponse _$QuestionListResponseFromJson(
   Map<String, dynamic> json,
-) => _PracticeSessionResponse(
-  sessionId: json['sessionId'] as String,
-  questions: (json['questions'] as List<dynamic>)
+) => _QuestionListResponse(
+  items: (json['items'] as List<dynamic>)
       .map((e) => Question.fromJson(e as Map<String, dynamic>))
       .toList(),
+  total: (json['total'] as num).toInt(),
 );
 
-Map<String, dynamic> _$PracticeSessionResponseToJson(
-  _PracticeSessionResponse instance,
-) => <String, dynamic>{
-  'sessionId': instance.sessionId,
-  'questions': instance.questions,
-};
+Map<String, dynamic> _$QuestionListResponseToJson(
+  _QuestionListResponse instance,
+) => <String, dynamic>{'items': instance.items, 'total': instance.total};

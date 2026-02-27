@@ -89,15 +89,15 @@ class DashboardScreen extends HookConsumerWidget {
           children: [
             Expanded(
               child: GestureDetector(
-                onTap: () => context.go('/practice'),
+                onTap: () => context.go('/questions'),
                 child: _buildActionCard(
-                  icon: '✏️',
-                  tag: '进行中',
+                  icon: '📚',
+                  tag: '查缺补漏',
                   tagColor: const Color(0xFFE8F3FF),
                   tagTextColor: const Color(0xFF135BEC),
-                  title: '继续\n练习',
-                  subtitleLabel: '下一项',
-                  subtitleValue: '数学专项训练',
+                  title: '全量\n题库',
+                  subtitleLabel: '探索',
+                  subtitleValue: '获取所有题目',
                 ),
               ),
             ),

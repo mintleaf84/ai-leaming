@@ -12,6 +12,8 @@ import 'features/mastery/presentation/mastery_screen.dart';
 import 'features/settings/presentation/settings_screen.dart';
 import 'features/chat/presentation/chat_screen.dart';
 
+import 'features/practice/presentation/question_list_screen.dart';
+
 final appRouter = GoRouter(
   initialLocation: '/',
   routes: [
@@ -24,6 +26,10 @@ final appRouter = GoRouter(
     GoRoute(
       path: '/register',
       builder: (context, state) => const RegisterScreen(),
+    ),
+    GoRoute(
+      path: '/questions',
+      builder: (context, state) => const QuestionListScreen(),
     ),
     GoRoute(
       path: '/practice',

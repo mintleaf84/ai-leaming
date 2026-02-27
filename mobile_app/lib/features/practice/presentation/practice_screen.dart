@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:go_router/go_router.dart';
 import 'practice_provider.dart';
+import '../domain/question.dart';
 import '../../../shared/widgets/animated_option_card.dart';
 
 class PracticeScreen extends ConsumerStatefulWidget {
@@ -142,6 +143,10 @@ class _PracticeScreenState extends ConsumerState<PracticeScreen> {
                             : null,
                       );
                     }),
+                    if (result != null) ...[
+                      SizedBox(height: 32.h),
+                      _buildExplanationPanel(state, question, result),
+                    ],
                     SizedBox(height: 120.h), // Space for bottom nav
                   ],
                 ),
@@ -254,6 +259,112 @@ class _PracticeScreenState extends ConsumerState<PracticeScreen> {
           ),
         ),
       ],
+    );
+  }
+
+  Widget _buildExplanationPanel(
+    PracticeSessionState state,
+    Question question,
+    bool isCorrect,
+  ) {
+    final correctAnswer = state.correctAnswers[question.id] ?? '...';
+    final explanation = state.explanations[question.id];
+
+    return Container(
+      width: double.infinity,
+      padding: EdgeInsets.all(16.w),
+      decoration: BoxDecoration(
+        color: isCorrect ? const Color(0xFFF6FFED) : const Color(0xFFFFF1F0),
+        borderRadius: BorderRadius.circular(12.r),
+        border: Border.all(
+          color: isCorrect ? const Color(0xFFB7EB8F) : const Color(0xFFFFA39E),
+        ),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Icon(
+                isCorrect ? Icons.check_circle : Icons.cancel,
+                color: isCorrect
+                    ? const Color(0xFF52C41A)
+                    : const Color(0xFFFF4D4F),
+                size: 20.sp,
+              ),
+              SizedBox(width: 8.w),
+              Text(
+                isCorrect ? '回答正确' : '回答错误',
+                style: TextStyle(
+                  fontSize: 16.sp,
+                  fontWeight: FontWeight.bold,
+                  color: isCorrect
+                      ? const Color(0xFF52C41A)
+                      : const Color(0xFFFF4D4F),
+                ),
+              ),
+            ],
+          ),
+          SizedBox(height: 12.h),
+          Text(
+            '正确答案：$correctAnswer',
+            style: TextStyle(
+              fontSize: 14.sp,
+              fontWeight: FontWeight.w600,
+              color: const Color(0xFF37352F),
+            ),
+          ),
+          SizedBox(height: 8.h),
+          if (state.isLoading)
+            const Padding(
+              padding: EdgeInsets.symmetric(vertical: 8.0),
+              child: SizedBox(
+                height: 16,
+                width: 16,
+                child: CircularProgressIndicator(strokeWidth: 2),
+              ),
+            )
+          else if (explanation != null)
+            Text(
+              explanation,
+              style: TextStyle(
+                fontSize: 14.sp,
+                height: 1.5,
+                color: const Color(0xFF37352F).withValues(alpha: 0.8),
+              ),
+            ),
+          SizedBox(height: 16.h),
+          SizedBox(
+            width: double.infinity,
+            child: OutlinedButton.icon(
+              onPressed: () {
+                // TODO: 第一性原理
+                ScaffoldMessenger.of(
+                  context,
+                ).showSnackBar(const SnackBar(content: Text('第一性原理透视开发中...')));
+              },
+              icon: Icon(
+                Icons.smart_toy,
+                color: const Color(0xFF135BEC),
+                size: 18.sp,
+              ),
+              label: Text(
+                'AI 第一性原理解读',
+                style: TextStyle(
+                  color: const Color(0xFF135BEC),
+                  fontSize: 13.sp,
+                ),
+              ),
+              style: OutlinedButton.styleFrom(
+                side: const BorderSide(color: Color(0xFF135BEC)),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(8.r),
+                ),
+              ),
+            ),
+          ),
+        ],
+      ),
     );
   }
 

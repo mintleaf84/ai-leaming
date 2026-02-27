@@ -2,6 +2,8 @@ import 'package:dio/dio.dart';
 import 'package:retrofit/retrofit.dart';
 import '../../core/constants/api_constants.dart';
 import '../../features/practice/domain/first_principles_response.dart';
+import '../../features/practice/domain/question.dart';
+import '../../features/practice/domain/practice_session.dart';
 
 part 'api_client.g.dart';
 
@@ -16,9 +18,21 @@ abstract class ApiClient {
   @POST('/auth/register')
   Future<dynamic> register(@Body() Map<String, dynamic> body);
 
+  // 题库相关
+  @GET(ApiConstants.questions)
+  Future<QuestionListResponse> getQuestions({
+    @Query('page') int? page,
+    @Query('limit') int? limit,
+    @Query('search') String? search,
+    @Query('type') String? type,
+  });
+
+  @GET('${ApiConstants.questions}/{id}')
+  Future<Question> getQuestionDetail(@Path('id') String id);
+
   // 练习相关
   @POST('/practice/session')
-  Future<dynamic> createSession(@Body() Map<String, dynamic> body);
+  Future<PracticeSession> createSession(@Body() Map<String, dynamic> body);
 
   @POST('/practice/session/{sessionId}/submit')
   Future<dynamic> submitAnswer(

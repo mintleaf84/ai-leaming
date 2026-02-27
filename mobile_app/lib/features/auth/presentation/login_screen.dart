@@ -3,6 +3,7 @@ import 'package:flutter_hooks/flutter_hooks.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
+import 'package:dio/dio.dart';
 import 'auth_provider.dart';
 
 class LoginScreen extends HookConsumerWidget {
@@ -12,16 +13,37 @@ class LoginScreen extends HookConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final usernameController = useTextEditingController();
     final passwordController = useTextEditingController();
+    final isPasswordVisible = useState(false);
     final authState = ref.watch(authControllerProvider);
 
-    // Listen to Auth State changes for navigation
+    // Listen to Auth State changes for navigation & error handling
     ref.listen<AsyncValue<void>>(authControllerProvider, (previous, next) {
       if (next is AsyncData) {
         context.go('/dashboard');
       } else if (next is AsyncError) {
-        ScaffoldMessenger.of(
-          context,
-        ).showSnackBar(SnackBar(content: Text('Error: ${next.error}')));
+        String errorMessage = '发生未知错误，请稍后重试';
+        final error = next.error;
+        if (error is DioException) {
+          if (error.type == DioExceptionType.connectionTimeout ||
+              error.type == DioExceptionType.receiveTimeout) {
+            errorMessage = '网络连接超时，请检查您的网络';
+          } else if (error.response?.statusCode == 401) {
+            errorMessage = '账号或密码错误';
+          } else if (error.type == DioExceptionType.connectionError) {
+            errorMessage = '网络开了小差，请检查网络设置';
+          } else {
+            errorMessage = '服务器打盹了 (${error.response?.statusCode ?? "未知"})';
+          }
+        } else {
+          errorMessage = error.toString();
+        }
+
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(errorMessage),
+            backgroundColor: const Color(0xFFEB5757),
+          ),
+        );
       }
     });
 
@@ -68,6 +90,10 @@ class LoginScreen extends HookConsumerWidget {
                           Icons.lock_outline,
                           passwordController,
                           isPassword: true,
+                          obscureText: !isPasswordVisible.value,
+                          onToggleVisibility: () {
+                            isPasswordVisible.value = !isPasswordVisible.value;
+                          },
                           hint: '密码',
                         ),
 
@@ -96,17 +122,36 @@ class LoginScreen extends HookConsumerWidget {
                             onPressed: authState.isLoading
                                 ? null
                                 : () {
+                                    final username = usernameController.text
+                                        .trim();
+                                    final password = passwordController.text
+                                        .trim();
+
+                                    if (username.isEmpty) {
+                                      ScaffoldMessenger.of(
+                                        context,
+                                      ).showSnackBar(
+                                        const SnackBar(
+                                          content: Text('请输入邮箱或用户名'),
+                                        ),
+                                      );
+                                      return;
+                                    }
+                                    if (password.isEmpty) {
+                                      ScaffoldMessenger.of(
+                                        context,
+                                      ).showSnackBar(
+                                        const SnackBar(content: Text('请输入密码')),
+                                      );
+                                      return;
+                                    }
+
                                     ref
                                         .read(authControllerProvider.notifier)
-                                        .login(
-                                          usernameController.text,
-                                          passwordController.text,
-                                        );
+                                        .login(username, password);
                                   },
                             style: FilledButton.styleFrom(
-                              backgroundColor: const Color(
-                                0xFF135BEC,
-                              ), // Primary Color from reference
+                              backgroundColor: const Color(0xFF135BEC),
                               foregroundColor: Colors.white,
                               shape: RoundedRectangleBorder(
                                 borderRadius: BorderRadius.circular(8.r),
@@ -227,6 +272,8 @@ class LoginScreen extends HookConsumerWidget {
     IconData icon,
     TextEditingController controller, {
     bool isPassword = false,
+    bool? obscureText,
+    VoidCallback? onToggleVisibility,
     String? hint,
   }) {
     return Container(
@@ -251,20 +298,34 @@ class LoginScreen extends HookConsumerWidget {
           Expanded(
             child: TextField(
               controller: controller,
-              obscureText: isPassword,
+              obscureText: obscureText ?? isPassword,
               showCursor: true,
               decoration: InputDecoration(
                 border: InputBorder.none,
                 hintText: hint ?? label,
                 hintStyle: TextStyle(color: Colors.grey[400], fontSize: 16.sp),
-                contentPadding: EdgeInsets.zero,
+                contentPadding: isPassword
+                    ? EdgeInsets.only(top: 14.h)
+                    : EdgeInsets.zero,
                 isDense: true,
+                suffixIcon: isPassword
+                    ? IconButton(
+                        icon: Icon(
+                          (obscureText ?? true)
+                              ? Icons.visibility_off
+                              : Icons.visibility,
+                          color: Colors.grey[400],
+                          size: 20.sp,
+                        ),
+                        onPressed: onToggleVisibility,
+                      )
+                    : null,
               ),
               style: TextStyle(fontSize: 16.sp, color: const Color(0xFF1A1A1A)),
               cursorColor: const Color(0xFF135BEC),
             ),
           ),
-          SizedBox(width: 14.w),
+          if (!isPassword) SizedBox(width: 14.w),
         ],
       ),
     );

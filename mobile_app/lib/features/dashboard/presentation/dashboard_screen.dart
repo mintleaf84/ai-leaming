@@ -58,13 +58,34 @@ class DashboardScreen extends HookConsumerWidget {
   }
 
   Widget _buildHeader() {
+    final now = DateTime.now();
+    final hour = now.hour;
+    String greeting = '我的学习\n空间';
+    String emoji = '📖';
+    if (hour < 5) {
+      greeting = '夜深了,\n还在学习吗?';
+      emoji = '🦉';
+    } else if (hour < 12) {
+      greeting = '早上好,\n开始学习吧!';
+      emoji = '🌅';
+    } else if (hour < 18) {
+      greeting = '下午好,\n继续保持!';
+      emoji = '☀️';
+    } else {
+      greeting = '晚上好,\n总结今日所学';
+      emoji = '🌙';
+    }
+
+    final weekDays = ['一', '二', '三', '四', '五', '六', '日'];
+    final dateStr = '${now.month}月${now.day}日 星期${weekDays[now.weekday - 1]}';
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text('📖', style: TextStyle(fontSize: 48.sp)),
+        Text(emoji, style: TextStyle(fontSize: 48.sp)),
         SizedBox(height: 8.h),
         Text(
-          '我的学习\n空间',
+          greeting,
           style: TextStyle(
             fontSize: 36.sp,
             fontWeight: FontWeight.bold,
@@ -75,7 +96,7 @@ class DashboardScreen extends HookConsumerWidget {
         ),
         SizedBox(height: 4.h),
         Text(
-          '10月24日 星期一', // Dynamic date can be added later
+          dateStr,
           style: TextStyle(fontSize: 14.sp, color: const Color(0xFF9B9A97)),
         ),
       ],
@@ -112,7 +133,7 @@ class DashboardScreen extends HookConsumerWidget {
                   tagTextColor: const Color(0xFFFF9500),
                   title: '智能\n复习',
                   subtitleLabel: '今日待办',
-                  subtitleValue: '12 个知识点',
+                  subtitleValue: '开始练习',
                 ),
               ),
             ),
@@ -120,7 +141,7 @@ class DashboardScreen extends HookConsumerWidget {
         ),
         SizedBox(height: 16.h),
         GestureDetector(
-          onTap: () => context.go('/practice'),
+          onTap: () => context.go('/wrong-book'),
           child: _buildFullWidthCard(),
         ),
         SizedBox(height: 16.h),
@@ -343,7 +364,7 @@ class DashboardScreen extends HookConsumerWidget {
                             ),
                           ),
                           Text(
-                            '24 题',
+                            '--',
                             style: TextStyle(
                               fontSize: 14.sp,
                               fontWeight: FontWeight.bold,
@@ -512,14 +533,14 @@ class DashboardScreen extends HookConsumerWidget {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
-                    '保持状态！',
+                    '开始今日学习！',
                     style: TextStyle(
                       fontSize: 18.sp,
                       fontWeight: FontWeight.bold,
                     ),
                   ),
                   Text(
-                    '已连续学习 5 天',
+                    '完成练习后这里会显示进度',
                     style: TextStyle(fontSize: 12.sp, color: Colors.grey),
                   ),
                 ],
@@ -530,7 +551,7 @@ class DashboardScreen extends HookConsumerWidget {
           ClipRRect(
             borderRadius: BorderRadius.circular(5.r),
             child: LinearProgressIndicator(
-              value: 0.48,
+              value: 0,
               backgroundColor: const Color(0xFFF0F0F0),
               color: const Color(0xFF37352F),
               minHeight: 10.h,
@@ -541,11 +562,11 @@ class DashboardScreen extends HookConsumerWidget {
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
               Text(
-                '今日目标：已完成 24/50',
+                '今日目标：尚未开始',
                 style: TextStyle(fontSize: 12.sp, color: Colors.grey),
               ),
               Text(
-                '48%',
+                '0%',
                 style: TextStyle(fontSize: 12.sp, fontWeight: FontWeight.bold),
               ),
             ],
@@ -569,45 +590,32 @@ class DashboardScreen extends HookConsumerWidget {
                 color: Colors.grey,
               ),
             ),
-            Icon(Icons.add, size: 20.sp, color: Colors.grey),
           ],
         ),
         SizedBox(height: 12.h),
-        _buildTodoItem('复习生物第四章', false),
-        SizedBox(height: 8.h),
-        _buildTodoItem('完成 20 道微积分题', false),
-        SizedBox(height: 8.h),
-        _buildTodoItem('晨间单词回顾', true),
+        Container(
+          padding: EdgeInsets.all(16.w),
+          decoration: BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.circular(8.r),
+            border: Border.all(color: const Color(0xFFE8E8E5)),
+          ),
+          child: Row(
+            children: [
+              Icon(
+                Icons.check_circle_outline,
+                size: 20.sp,
+                color: Colors.grey[400],
+              ),
+              SizedBox(width: 12.w),
+              Text(
+                '完成今日练习后自动生成待办项',
+                style: TextStyle(fontSize: 14.sp, color: Colors.grey[400]),
+              ),
+            ],
+          ),
+        ),
       ],
-    );
-  }
-
-  Widget _buildTodoItem(String text, bool completed) {
-    return Container(
-      padding: EdgeInsets.all(12.w),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(8.r),
-        border: Border.all(color: Colors.transparent), // Simplified for now
-      ),
-      child: Row(
-        children: [
-          Icon(
-            completed ? Icons.check_box : Icons.check_box_outline_blank,
-            size: 20.sp,
-            color: const Color(0xFF37352F),
-          ),
-          SizedBox(width: 12.w),
-          Text(
-            text,
-            style: TextStyle(
-              fontSize: 16.sp,
-              color: completed ? Colors.grey : const Color(0xFF37352F),
-              decoration: completed ? TextDecoration.lineThrough : null,
-            ),
-          ),
-        ],
-      ),
     );
   }
 

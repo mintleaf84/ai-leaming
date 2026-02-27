@@ -11,6 +11,7 @@ import 'features/knowledge/presentation/knowledge_screen.dart';
 import 'features/mastery/presentation/mastery_screen.dart';
 import 'features/settings/presentation/settings_screen.dart';
 import 'features/chat/presentation/chat_screen.dart';
+import 'features/wrong_book/presentation/wrong_book_screen.dart';
 
 import 'features/practice/presentation/question_list_screen.dart';
 
@@ -62,5 +63,9 @@ final appRouter = GoRouter(
       builder: (context, state) => const SettingsScreen(),
     ),
     GoRoute(path: '/chat', builder: (context, state) => const ChatScreen()),
+    GoRoute(
+      path: '/wrong-book',
+      builder: (context, state) => const WrongBookScreen(),
+    ),
   ],
 );

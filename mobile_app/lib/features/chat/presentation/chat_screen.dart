@@ -118,13 +118,76 @@ class ChatScreen extends HookConsumerWidget {
                   itemBuilder: (context, index) {
                     final msg = messages[index];
                     final isUser = msg.role == 'user';
+                    final isFailed = !isUser && msg.content.startsWith('⚠️');
 
-                    return _buildMessageBubble(isUser, msg.content);
+                    return Column(
+                      crossAxisAlignment: CrossAxisAlignment.stretch,
+                      children: [
+                        _buildMessageBubble(isUser, msg.content),
+                        // 失败消息下方显示重试按钮
+                        if (isFailed && index == messages.length - 1)
+                          Padding(
+                            padding: EdgeInsets.only(top: 8.h, left: 8.w),
+                            child: Align(
+                              alignment: Alignment.centerLeft,
+                              child: TextButton.icon(
+                                onPressed: () {
+                                  ref
+                                      .read(chatProvider.notifier)
+                                      .retryLastMessage();
+                                },
+                                icon: Icon(Icons.refresh, size: 16.sp),
+                                label: Text(
+                                  '重试',
+                                  style: TextStyle(fontSize: 13.sp),
+                                ),
+                                style: TextButton.styleFrom(
+                                  foregroundColor: const Color(0xFF135BEC),
+                                ),
+                              ),
+                            ),
+                          ),
+                      ],
+                    );
                   },
                 );
               },
               loading: () => const Center(child: CircularProgressIndicator()),
-              error: (err, stack) => Center(child: Text('错误：$err')),
+              error: (err, stack) => Center(
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Icon(
+                      Icons.error_outline,
+                      size: 48.sp,
+                      color: Colors.red[300],
+                    ),
+                    SizedBox(height: 16.h),
+                    Text(
+                      '加载失败',
+                      style: TextStyle(
+                        fontSize: 16.sp,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                    SizedBox(height: 8.h),
+                    Text(
+                      '请检查网络后重试',
+                      style: TextStyle(fontSize: 13.sp, color: Colors.grey),
+                    ),
+                    SizedBox(height: 16.h),
+                    ElevatedButton.icon(
+                      onPressed: () => ref.invalidate(chatProvider),
+                      icon: const Icon(Icons.refresh, size: 16),
+                      label: const Text('重试'),
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: const Color(0xFF135BEC),
+                        foregroundColor: Colors.white,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
             ),
           ),
 
@@ -140,7 +203,7 @@ class ChatScreen extends HookConsumerWidget {
               color: Colors.white,
               boxShadow: [
                 BoxShadow(
-                  color: Colors.black.withOpacity(0.05),
+                  color: Colors.black.withValues(alpha: 0.05),
                   offset: const Offset(0, -4),
                   blurRadius: 8,
                 ),
@@ -183,7 +246,7 @@ class ChatScreen extends HookConsumerWidget {
                           child: Switch(
                             value: isRagEnabled.value,
                             onChanged: (val) => isRagEnabled.value = val,
-                            activeColor: const Color(0xFF135BEC),
+                            activeTrackColor: const Color(0xFF135BEC),
                           ),
                         ),
                       ),
@@ -232,33 +295,32 @@ class ChatScreen extends HookConsumerWidget {
                     SizedBox(width: 12.w),
                     GestureDetector(
                       onTap: () {
+                        final notifier = ref.read(chatProvider.notifier);
+                        // 生成中 → 停止；否则 → 发送
+                        if (notifier.isGenerating) {
+                          notifier.stopGeneration();
+                          return;
+                        }
                         final val = textController.text;
                         if (val.trim().isNotEmpty) {
-                          ref
-                              .read(chatProvider.notifier)
-                              .sendMessage(
-                                val.trim(),
-                                enableRag: isRagEnabled.value,
-                              );
+                          notifier.sendMessage(
+                            val.trim(),
+                            enableRag: isRagEnabled.value,
+                          );
                           textController.clear();
                           ref.invalidate(chatSessionsProvider);
                         }
                       },
                       child: Container(
                         padding: EdgeInsets.all(12.w),
-                        decoration: const BoxDecoration(
-                          color: Color(0xFF37352F),
+                        decoration: BoxDecoration(
+                          color: ref.watch(chatProvider.notifier).isGenerating
+                              ? const Color(0xFFDC2626)
+                              : const Color(0xFF37352F),
                           shape: BoxShape.circle,
                         ),
-                        child: chatState is AsyncLoading
-                            ? SizedBox(
-                                width: 20.sp,
-                                height: 20.sp,
-                                child: const CircularProgressIndicator(
-                                  color: Colors.white,
-                                  strokeWidth: 2,
-                                ),
-                              )
+                        child: ref.watch(chatProvider.notifier).isGenerating
+                            ? Icon(Icons.stop, color: Colors.white, size: 20.sp)
                             : Icon(
                                 Icons.send,
                                 color: Colors.white,
@@ -379,7 +441,7 @@ class ChatScreen extends HookConsumerWidget {
                                     .deleteSession(sessionId);
                                 ref.invalidate(chatSessionsProvider);
                                 if (isSelected) {
-                                  ref
+                                  await ref
                                       .read(chatProvider.notifier)
                                       .createNewSession();
                                 }

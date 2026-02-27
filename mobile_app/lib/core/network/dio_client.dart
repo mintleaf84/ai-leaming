@@ -36,29 +36,39 @@ class AuthInterceptor extends Interceptor {
   AuthInterceptor(this.ref);
 
   @override
-  void onRequest(
-    RequestOptions options,
-    RequestInterceptorHandler handler,
-  ) async {
-    final token = await _storage.read(key: 'jwt_token');
-    if (token != null) {
-      options.headers['Authorization'] = 'Bearer $token';
-    }
-    handler.next(options);
+  void onRequest(RequestOptions options, RequestInterceptorHandler handler) {
+    _storage
+        .read(key: 'jwt_token')
+        .then((token) {
+          if (token != null) {
+            options.headers['Authorization'] = 'Bearer $token';
+          }
+          handler.next(options);
+        })
+        .catchError((_) {
+          // token 读取失败仍继续发出请求（无 token）
+          handler.next(options);
+        });
   }
 
   @override
-  void onError(DioException err, ErrorInterceptorHandler handler) async {
-    // 拦截 401 未授权 / 登录过期错误
+  void onError(DioException err, ErrorInterceptorHandler handler) {
     if (err.response?.statusCode == 401) {
-      final token = await _storage.read(key: 'jwt_token');
-      if (token != null) {
-        // 清除本地异常无效的 Token
-        await ref.read(authControllerProvider.notifier).logout();
-        // 强制重定向回登录页
-        appRouter.go('/login');
-      }
+      _storage
+          .read(key: 'jwt_token')
+          .then((token) {
+            if (token != null) {
+              ref.read(authControllerProvider.notifier).logout().then((_) {
+                appRouter.go('/login');
+              });
+            }
+            handler.next(err);
+          })
+          .catchError((_) {
+            handler.next(err);
+          });
+    } else {
+      handler.next(err);
     }
-    handler.next(err);
   }
 }

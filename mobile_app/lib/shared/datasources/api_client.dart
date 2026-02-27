@@ -7,7 +7,7 @@ import '../../features/practice/domain/practice_session.dart';
 
 part 'api_client.g.dart';
 
-@RestApi(baseUrl: ApiConstants.baseUrl)
+@RestApi()
 abstract class ApiClient {
   factory ApiClient(Dio dio, {String baseUrl}) = _ApiClient;
 

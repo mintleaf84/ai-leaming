@@ -1,3 +1,4 @@
+import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
@@ -5,6 +6,7 @@ import 'package:go_router/go_router.dart';
 import 'practice_provider.dart';
 import '../domain/question.dart';
 import '../../../shared/widgets/animated_option_card.dart';
+import '../../../shared/widgets/skeleton_widgets.dart';
 
 class PracticeScreen extends ConsumerStatefulWidget {
   const PracticeScreen({super.key});
@@ -23,21 +25,52 @@ class _PracticeScreenState extends ConsumerState<PracticeScreen> {
     });
   }
 
+  Future<bool?> _showExitDialog() {
+    return showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('退出练习'),
+        content: const Text('当前的练习进度将会丢失，确认退出吗？'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(false),
+            child: const Text('继续练习'),
+          ),
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(true),
+            style: TextButton.styleFrom(foregroundColor: Colors.red),
+            child: const Text('确认退出'),
+          ),
+        ],
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final state = ref.watch(practiceControllerProvider);
 
-    return Scaffold(
-      backgroundColor: const Color(0xFFFFFFFF),
-      body: SafeArea(
-        bottom: false,
-        child: state.isLoading
-            ? const Center(child: CircularProgressIndicator())
-            : state.error != null
-            ? _buildErrorView(state.error!)
-            : state.questions.isEmpty
-            ? _buildEmptyView()
-            : _buildQuestionView(state),
+    return PopScope(
+      canPop: false,
+      onPopInvokedWithResult: (didPop, result) async {
+        if (didPop) return;
+        final shouldPop = await _showExitDialog();
+        if (shouldPop ?? false) {
+          if (context.mounted) context.pop();
+        }
+      },
+      child: Scaffold(
+        backgroundColor: const Color(0xFFFFFFFF),
+        body: SafeArea(
+          bottom: false,
+          child: state.isLoading && state.questions.isEmpty
+              ? const PracticeSkeleton()
+              : state.error != null && state.questions.isEmpty
+              ? _buildErrorView(state.error!)
+              : state.questions.isEmpty
+              ? _buildEmptyView()
+              : _buildQuestionView(state),
+        ),
       ),
     );
   }
@@ -47,7 +80,7 @@ class _PracticeScreenState extends ConsumerState<PracticeScreen> {
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          Icon(Icons.error_outline, size: 48.sp, color: Colors.red),
+          Icon(Icons.error_outline, size: 48.sp, color: Colors.red[300]),
           SizedBox(height: 16.h),
           Text(
             '加载失败',
@@ -55,14 +88,30 @@ class _PracticeScreenState extends ConsumerState<PracticeScreen> {
           ),
           SizedBox(height: 8.h),
           Text(
-            error,
+            '请检查网络后重试',
             style: TextStyle(fontSize: 14.sp, color: Colors.grey),
           ),
           SizedBox(height: 24.h),
-          ElevatedButton(
+          ElevatedButton.icon(
             onPressed: () =>
                 ref.read(practiceControllerProvider.notifier).createSession(),
-            child: const Text('重试'),
+            icon: const Icon(Icons.refresh, size: 18),
+            label: const Text('重试'),
+            style: ElevatedButton.styleFrom(
+              backgroundColor: const Color(0xFF135BEC),
+              foregroundColor: Colors.white,
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(8.r),
+              ),
+            ),
+          ),
+          SizedBox(height: 12.h),
+          TextButton(
+            onPressed: () => context.go('/dashboard'),
+            child: Text(
+              '返回首页',
+              style: TextStyle(fontSize: 14.sp, color: Colors.grey),
+            ),
           ),
         ],
       ),
@@ -80,6 +129,20 @@ class _PracticeScreenState extends ConsumerState<PracticeScreen> {
             '题库中暂无题目',
             style: TextStyle(fontSize: 18.sp, fontWeight: FontWeight.bold),
           ),
+          SizedBox(height: 8.h),
+          Text(
+            '请稍后再试',
+            style: TextStyle(fontSize: 14.sp, color: Colors.grey),
+          ),
+          SizedBox(height: 24.h),
+          TextButton.icon(
+            onPressed: () => context.go('/dashboard'),
+            icon: const Icon(Icons.arrow_back, size: 18),
+            label: const Text('返回首页'),
+            style: TextButton.styleFrom(
+              foregroundColor: const Color(0xFF37352F),
+            ),
+          ),
         ],
       ),
     );
@@ -87,8 +150,19 @@ class _PracticeScreenState extends ConsumerState<PracticeScreen> {
 
   Widget _buildQuestionView(PracticeSessionState state) {
     final question = state.currentQuestion!;
-    final selectedAnswer = state.userAnswers[question.id];
+    final selectedAnswers = state.userAnswers[question.id] ?? [];
     final result = state.results[question.id];
+    final isMulti = question.type == 'multi';
+    // 正确答案列表（多选可能是 JSON 数组）
+    final correctAnswerRaw = state.correctAnswers[question.id];
+    List<String> correctAnswerList = [];
+    if (correctAnswerRaw != null) {
+      try {
+        correctAnswerList = List<String>.from(jsonDecode(correctAnswerRaw));
+      } catch (_) {
+        correctAnswerList = [correctAnswerRaw];
+      }
+    }
 
     return Stack(
       children: [
@@ -107,6 +181,30 @@ class _PracticeScreenState extends ConsumerState<PracticeScreen> {
                     // Breadcrumb (placeholder)
                     _buildBreadcrumb(),
                     SizedBox(height: 24.h),
+                    // 题型标签
+                    Container(
+                      padding: EdgeInsets.symmetric(
+                        horizontal: 8.w,
+                        vertical: 3.h,
+                      ),
+                      decoration: BoxDecoration(
+                        color: isMulti
+                            ? const Color(0xFFF3E5F5)
+                            : const Color(0xFFE3F2FD),
+                        borderRadius: BorderRadius.circular(4.r),
+                      ),
+                      child: Text(
+                        isMulti ? '多选题' : '单选题',
+                        style: TextStyle(
+                          fontSize: 11.sp,
+                          fontWeight: FontWeight.w600,
+                          color: isMulti
+                              ? const Color(0xFF7B1FA2)
+                              : const Color(0xFF1976D2),
+                        ),
+                      ),
+                    ),
+                    SizedBox(height: 12.h),
                     // Question Icon & Text
                     Text('📜', style: TextStyle(fontSize: 40.sp)),
                     SizedBox(height: 16.h),
@@ -128,18 +226,24 @@ class _PracticeScreenState extends ConsumerState<PracticeScreen> {
                       final optionLabel = String.fromCharCode(
                         65 + index,
                       ); // A, B, C, D
+                      final isSelected = selectedAnswers.contains(optionLabel);
+                      // 多选时：高亮所有正确选项
+                      final isCorrectOption =
+                          result != null &&
+                          correctAnswerList.contains(optionLabel);
                       return AnimatedOptionCard(
                         label: optionLabel,
                         text: option,
-                        isSelected: selectedAnswer == optionLabel,
-                        isCorrect:
-                            result == true && selectedAnswer == optionLabel,
+                        isSelected: isSelected,
+                        isMultiSelect: isMulti,
+                        isCorrect: isCorrectOption && isSelected,
                         isWrong:
-                            result == false && selectedAnswer == optionLabel,
+                            result == false && isSelected && !isCorrectOption,
+                        showCorrectHint: result != null && isCorrectOption,
                         onTap: result == null
                             ? () => ref
                                   .read(practiceControllerProvider.notifier)
-                                  .selectAnswer(optionLabel)
+                                  .toggleAnswer(optionLabel)
                             : null,
                       );
                     }),
@@ -159,7 +263,7 @@ class _PracticeScreenState extends ConsumerState<PracticeScreen> {
           left: 0,
           right: 0,
           bottom: 0,
-          child: _buildBottomNav(state, selectedAnswer, result),
+          child: _buildBottomNav(state, selectedAnswers, result),
         ),
       ],
     );
@@ -174,7 +278,12 @@ class _PracticeScreenState extends ConsumerState<PracticeScreen> {
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
               IconButton(
-                onPressed: () => context.pop(),
+                onPressed: () async {
+                  final shouldPop = await _showExitDialog();
+                  if (shouldPop ?? false) {
+                    if (context.mounted) context.pop();
+                  }
+                },
                 icon: const Icon(Icons.close),
                 color: const Color(0xFF37352F).withValues(alpha: 0.6),
               ),
@@ -267,100 +376,144 @@ class _PracticeScreenState extends ConsumerState<PracticeScreen> {
     Question question,
     bool isCorrect,
   ) {
-    final correctAnswer = state.correctAnswers[question.id] ?? '...';
+    final correctAnswerRaw = state.correctAnswers[question.id] ?? '...';
+    // 多选题格式化显示
+    String displayAnswer;
+    try {
+      final parsed = jsonDecode(correctAnswerRaw);
+      if (parsed is List) {
+        displayAnswer = parsed.join(', ');
+      } else {
+        displayAnswer = correctAnswerRaw;
+      }
+    } catch (_) {
+      displayAnswer = correctAnswerRaw;
+    }
     final explanation = state.explanations[question.id];
 
     return Container(
       width: double.infinity,
       padding: EdgeInsets.all(16.w),
       decoration: BoxDecoration(
-        color: isCorrect ? const Color(0xFFF6FFED) : const Color(0xFFFFF1F0),
-        borderRadius: BorderRadius.circular(12.r),
+        color: isCorrect ? const Color(0xFFF6FFED) : const Color(0xFFFEF2F2),
+        borderRadius: BorderRadius.circular(8.r),
         border: Border.all(
-          color: isCorrect ? const Color(0xFFB7EB8F) : const Color(0xFFFFA39E),
+          color: isCorrect ? const Color(0xFFB7EB8F) : const Color(0xFFFECACA),
+          width: 0.5,
         ),
       ),
-      child: Column(
+      child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Row(
-            children: [
-              Icon(
-                isCorrect ? Icons.check_circle : Icons.cancel,
-                color: isCorrect
-                    ? const Color(0xFF52C41A)
-                    : const Color(0xFFFF4D4F),
-                size: 20.sp,
-              ),
-              SizedBox(width: 8.w),
-              Text(
-                isCorrect ? '回答正确' : '回答错误',
-                style: TextStyle(
-                  fontSize: 16.sp,
-                  fontWeight: FontWeight.bold,
-                  color: isCorrect
-                      ? const Color(0xFF52C41A)
-                      : const Color(0xFFFF4D4F),
-                ),
-              ),
-            ],
-          ),
-          SizedBox(height: 12.h),
-          Text(
-            '正确答案：$correctAnswer',
-            style: TextStyle(
-              fontSize: 14.sp,
-              fontWeight: FontWeight.w600,
-              color: const Color(0xFF37352F),
+          Padding(
+            padding: EdgeInsets.only(top: 2.h),
+            child: Text(
+              isCorrect ? '💡' : '⚠️',
+              style: TextStyle(fontSize: 18.sp),
             ),
           ),
-          SizedBox(height: 8.h),
-          if (state.isLoading)
-            const Padding(
-              padding: EdgeInsets.symmetric(vertical: 8.0),
-              child: SizedBox(
-                height: 16,
-                width: 16,
-                child: CircularProgressIndicator(strokeWidth: 2),
-              ),
-            )
-          else if (explanation != null)
-            Text(
-              explanation,
-              style: TextStyle(
-                fontSize: 14.sp,
-                height: 1.5,
-                color: const Color(0xFF37352F).withValues(alpha: 0.8),
-              ),
-            ),
-          SizedBox(height: 16.h),
-          SizedBox(
-            width: double.infinity,
-            child: OutlinedButton.icon(
-              onPressed: () {
-                // TODO: 第一性原理
-                ScaffoldMessenger.of(
-                  context,
-                ).showSnackBar(const SnackBar(content: Text('第一性原理透视开发中...')));
-              },
-              icon: Icon(
-                Icons.smart_toy,
-                color: const Color(0xFF135BEC),
-                size: 18.sp,
-              ),
-              label: Text(
-                'AI 第一性原理解读',
-                style: TextStyle(
-                  color: const Color(0xFF135BEC),
-                  fontSize: 13.sp,
+          SizedBox(width: 12.w),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  isCorrect ? '回答正确' : '回答错误',
+                  style: TextStyle(
+                    fontSize: 15.sp,
+                    fontWeight: FontWeight.w600,
+                    color: isCorrect
+                        ? const Color(0xFF237804)
+                        : const Color(0xFFB91C1C),
+                  ),
                 ),
-              ),
-              style: OutlinedButton.styleFrom(
-                side: const BorderSide(color: Color(0xFF135BEC)),
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(8.r),
+                SizedBox(height: 8.h),
+                Text(
+                  '正确答案：$displayAnswer',
+                  style: TextStyle(
+                    fontSize: 14.sp,
+                    fontWeight: FontWeight.w600,
+                    color: const Color(0xFF37352F),
+                  ),
                 ),
-              ),
+                if (state.isLoading || explanation != null) ...[
+                  SizedBox(height: 12.h),
+                  Container(
+                    width: double.infinity,
+                    padding: EdgeInsets.all(12.w),
+                    decoration: BoxDecoration(
+                      color: Colors.white.withValues(alpha: 0.6),
+                      borderRadius: BorderRadius.circular(6.r),
+                    ),
+                    child: state.isLoading
+                        ? Row(
+                            children: [
+                              SizedBox(
+                                height: 14.w,
+                                width: 14.w,
+                                child: const CircularProgressIndicator(
+                                  strokeWidth: 2,
+                                  color: Color(0xFF135BEC),
+                                ),
+                              ),
+                              SizedBox(width: 8.w),
+                              Text(
+                                '正在生成解析...',
+                                style: TextStyle(
+                                  fontSize: 13.sp,
+                                  color: const Color(0xFF787774),
+                                ),
+                              ),
+                            ],
+                          )
+                        : Text(
+                            explanation!,
+                            style: TextStyle(
+                              fontSize: 14.sp,
+                              height: 1.6,
+                              color: const Color(
+                                0xFF37352F,
+                              ).withValues(alpha: 0.9),
+                            ),
+                          ),
+                  ),
+                ],
+                SizedBox(height: 16.h),
+                SizedBox(
+                  width: double.infinity,
+                  child: OutlinedButton.icon(
+                    onPressed: () {
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        const SnackBar(content: Text('第一性原理透视开发中...')),
+                      );
+                    },
+                    icon: Icon(
+                      Icons.smart_toy,
+                      color: const Color(0xFF135BEC),
+                      size: 16.sp,
+                    ),
+                    label: Text(
+                      'AI 第一性原理解读',
+                      style: TextStyle(
+                        color: const Color(0xFF135BEC),
+                        fontSize: 13.sp,
+                        fontWeight: FontWeight.w500,
+                      ),
+                    ),
+                    style: OutlinedButton.styleFrom(
+                      backgroundColor: Colors.white,
+                      side: const BorderSide(
+                        color: Color(0xFF135BEC),
+                        width: 1,
+                      ),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(6.r),
+                      ),
+                      padding: EdgeInsets.symmetric(vertical: 10.h),
+                    ),
+                  ),
+                ),
+              ],
             ),
           ),
         ],
@@ -370,7 +523,7 @@ class _PracticeScreenState extends ConsumerState<PracticeScreen> {
 
   Widget _buildBottomNav(
     PracticeSessionState state,
-    String? selectedAnswer,
+    List<String> selectedAnswers,
     bool? result,
   ) {
     return Container(
@@ -401,9 +554,11 @@ class _PracticeScreenState extends ConsumerState<PracticeScreen> {
           ),
           // 确认/下一题
           _buildCenterButton(
-            selectedAnswer: selectedAnswer,
+            selectedAnswers: selectedAnswers,
             result: result,
             hasNext: state.hasNext,
+            isConfirming: state.isLoading,
+            isMulti: state.currentQuestion?.type == 'multi',
           ),
           // 下一题
           _buildNavButton(
@@ -464,10 +619,19 @@ class _PracticeScreenState extends ConsumerState<PracticeScreen> {
   }
 
   Widget _buildCenterButton({
-    required String? selectedAnswer,
+    required List<String> selectedAnswers,
     required bool? result,
     required bool hasNext,
+    required bool isConfirming,
+    bool isMulti = false,
   }) {
+    // 判断是否可以提交
+    final bool canSubmit;
+    if (isMulti) {
+      canSubmit = selectedAnswers.length >= 2; // 多选至少选2项
+    } else {
+      canSubmit = selectedAnswers.isNotEmpty;
+    }
     // 已提交则显示下一题
     if (result != null) {
       return GestureDetector(
@@ -512,9 +676,9 @@ class _PracticeScreenState extends ConsumerState<PracticeScreen> {
     }
 
     // 未选择则显示确认按钮 (禁用)
-    // 已选择则显示确认按钮 (启用)
+    // 已选择则显示确认按钮 (启用，如果不在判卷中)
     return GestureDetector(
-      onTap: selectedAnswer != null
+      onTap: (canSubmit && !isConfirming)
           ? () {
               // 服务端校验正确答案
               ref
@@ -529,11 +693,11 @@ class _PracticeScreenState extends ConsumerState<PracticeScreen> {
             width: 56.w,
             height: 56.h,
             decoration: BoxDecoration(
-              color: selectedAnswer != null
+              color: canSubmit
                   ? const Color(0xFF37352F)
                   : const Color(0xFF37352F).withValues(alpha: 0.2),
               borderRadius: BorderRadius.circular(16.r),
-              boxShadow: selectedAnswer != null
+              boxShadow: (canSubmit && !isConfirming)
                   ? [
                       BoxShadow(
                         color: Colors.black.withValues(alpha: 0.1),
@@ -543,15 +707,23 @@ class _PracticeScreenState extends ConsumerState<PracticeScreen> {
                     ]
                   : null,
             ),
-            child: Icon(Icons.check, color: Colors.white, size: 28.sp),
+            child: isConfirming
+                ? Padding(
+                    padding: EdgeInsets.all(16.w),
+                    child: const CircularProgressIndicator(
+                      color: Colors.white,
+                      strokeWidth: 2,
+                    ),
+                  )
+                : Icon(Icons.check, color: Colors.white, size: 28.sp),
           ),
           SizedBox(height: 4.h),
           Text(
-            '确认',
+            isConfirming ? '判卷中...' : '确认',
             style: TextStyle(
               fontSize: 10.sp,
               fontWeight: FontWeight.w600,
-              color: selectedAnswer != null
+              color: canSubmit
                   ? const Color(0xFF37352F)
                   : const Color(0xFF37352F).withValues(alpha: 0.4),
             ),

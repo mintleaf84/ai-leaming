@@ -96,7 +96,10 @@ class _HistoryDetailScreenState extends ConsumerState<HistoryDetailScreen> {
         children: [
           Icon(Icons.error_outline, size: 48.sp, color: Colors.red),
           SizedBox(height: 16.h),
-          Text('加载失败: $error', style: TextStyle(color: textColor)),
+          Text(
+            '加载失败',
+            style: TextStyle(fontSize: 18.sp, color: textColor),
+          ),
           SizedBox(height: 16.h),
           ElevatedButton(
             onPressed: () =>

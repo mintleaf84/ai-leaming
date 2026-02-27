@@ -1,3 +1,4 @@
+import 'dart:convert';
 import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../data/practice_repository_impl.dart';
@@ -5,12 +6,15 @@ import '../domain/practice_repository.dart';
 import '../domain/question.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 
+/// 防重复提交标志
+bool _isSubmitting = false;
+
 /// 练习会话状态
 class PracticeSessionState {
   final String? sessionId;
   final List<Question> questions;
   final int currentIndex;
-  final Map<String, String> userAnswers; // questionId -> userAnswer
+  final Map<String, List<String>> userAnswers; // questionId -> 选中的选项列表
   final Map<String, bool> results; // questionId -> isCorrect
   final Map<String, String> correctAnswers; // questionId -> correctAnswer
   final Map<String, String> explanations; // questionId -> explanation
@@ -33,7 +37,7 @@ class PracticeSessionState {
     String? sessionId,
     List<Question>? questions,
     int? currentIndex,
-    Map<String, String>? userAnswers,
+    Map<String, List<String>>? userAnswers,
     Map<String, bool>? results,
     Map<String, String>? correctAnswers,
     Map<String, String>? explanations,
@@ -105,29 +109,60 @@ class PracticeController extends Notifier<PracticeSessionState> {
     }
   }
 
-  /// 选择答案
-  void selectAnswer(String answer) {
+  /// 切换选项（单选覆盖，多选 toggle）
+  void toggleAnswer(String answer) {
     final question = state.currentQuestion;
     if (question == null) return;
 
-    final newAnswers = Map<String, String>.from(state.userAnswers);
-    newAnswers[question.id] = answer;
+    final newAnswers = Map<String, List<String>>.from(
+      state.userAnswers.map((k, v) => MapEntry(k, List<String>.from(v))),
+    );
+
+    if (question.type == 'multi') {
+      // 多选：toggle
+      final current = List<String>.from(newAnswers[question.id] ?? []);
+      if (current.contains(answer)) {
+        current.remove(answer);
+      } else {
+        current.add(answer);
+      }
+      newAnswers[question.id] = current;
+    } else {
+      // 单选：直接覆盖
+      newAnswers[question.id] = [answer];
+    }
 
     state = state.copyWith(userAnswers: newAnswers);
   }
 
+  /// 向后兼容的别名
+  void selectAnswer(String answer) => toggleAnswer(answer);
+
   /// 提交当前题目答案 (服务端校验)
   Future<void> submitCurrentAnswer() async {
+    // 防重复提交
+    if (_isSubmitting) return;
+
     final question = state.currentQuestion;
     if (question == null || state.sessionId == null) return;
 
-    final userAnswer = state.userAnswers[question.id];
-    if (userAnswer == null) return;
+    final selectedList = state.userAnswers[question.id];
+    if (selectedList == null || selectedList.isEmpty) return;
+
+    // 单选取首个，多选排序后 JSON 序列化
+    final String userAnswer;
+    if (question.type == 'multi') {
+      final sorted = List<String>.from(selectedList)..sort();
+      userAnswer = jsonEncode(sorted);
+    } else {
+      userAnswer = selectedList.first;
+    }
 
     final duration = _questionStartTime != null
         ? DateTime.now().difference(_questionStartTime!).inSeconds
         : 0;
 
+    _isSubmitting = true;
     try {
       final response = await _repository.submitAnswer(
         sessionId: state.sessionId!,
@@ -167,6 +202,8 @@ class PracticeController extends Notifier<PracticeSessionState> {
     } catch (e) {
       // 静默失败，不影响用户体验
       debugPrint('提交答案失败: $e');
+    } finally {
+      _isSubmitting = false;
     }
   }
 

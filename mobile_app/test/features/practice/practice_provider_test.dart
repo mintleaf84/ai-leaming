@@ -112,7 +112,7 @@ void main() {
 
       // 3. Assert state after select
       var state = container.read(practiceControllerProvider);
-      expect(state.userAnswers['1'], 'A'); // 第一题被选中了 A
+      expect(state.userAnswers['1'], ['A']); // 第一题被选中了 A
 
       // 4. Act: 提交答案
       await notifier.submitCurrentAnswer();
@@ -142,6 +142,40 @@ void main() {
       expect(state.currentQuestion?.id, '2');
       expect(state.hasNext, false); // 只有两题，现在在第2题，不能继续往下了
       expect(state.hasPrev, true);
+    });
+
+    test('toggleAnswer() 多选题 toggle 行为', () async {
+      final multiQuestions = [
+        const Question(
+          id: '10',
+          content: '多选题测试',
+          options: ['A', 'B', 'C', 'D'],
+          type: 'multi',
+        ),
+      ];
+
+      final container = makeProviderContainer(mockRepository);
+      when(() => mockRepository.createSession(limit: 1)).thenAnswer(
+        (_) async => PracticeSession(sessionId: 's', questions: multiQuestions),
+      );
+
+      final notifier = container.read(practiceControllerProvider.notifier);
+      await notifier.createSession(limit: 1);
+
+      // 选 A
+      notifier.toggleAnswer('A');
+      var state = container.read(practiceControllerProvider);
+      expect(state.userAnswers['10'], ['A']);
+
+      // 再选 C
+      notifier.toggleAnswer('C');
+      state = container.read(practiceControllerProvider);
+      expect(state.userAnswers['10'], ['A', 'C']);
+
+      // 取消 A
+      notifier.toggleAnswer('A');
+      state = container.read(practiceControllerProvider);
+      expect(state.userAnswers['10'], ['C']);
     });
   });
 }

@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
+import 'package:go_router/go_router.dart';
 
 import 'knowledge_provider.dart';
 import '../../../shared/widgets/skeleton_loading.dart';
@@ -35,6 +36,10 @@ class _KnowledgeScreenState extends ConsumerState<KnowledgeScreen> {
         title: const Text('知识卡片'),
         backgroundColor: Colors.white,
         elevation: 0,
+        leading: IconButton(
+          icon: const Icon(Icons.arrow_back, color: Color(0xFF37352F)),
+          onPressed: () => context.go('/dashboard'),
+        ),
         titleTextStyle: TextStyle(
           color: const Color(0xFF37352F),
           fontSize: 18.sp,
@@ -97,7 +102,47 @@ class _KnowledgeScreenState extends ConsumerState<KnowledgeScreen> {
             child: state.isLoading
                 ? const KnowledgeSkeletonList()
                 : state.error != null
-                ? Center(child: Text('Error: ${state.error}'))
+                ? Center(
+                    child: Column(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        Icon(
+                          Icons.error_outline,
+                          size: 48.sp,
+                          color: Colors.red[300],
+                        ),
+                        SizedBox(height: 16.h),
+                        Text(
+                          '加载失败',
+                          style: TextStyle(
+                            fontSize: 18.sp,
+                            fontWeight: FontWeight.w600,
+                            color: const Color(0xFF37352F),
+                          ),
+                        ),
+                        SizedBox(height: 8.h),
+                        Text(
+                          '请检查网络后重试',
+                          style: TextStyle(fontSize: 14.sp, color: Colors.grey),
+                        ),
+                        SizedBox(height: 24.h),
+                        ElevatedButton.icon(
+                          onPressed: () => ref
+                              .read(knowledgeControllerProvider.notifier)
+                              .loadCards(category: selectedCategory),
+                          icon: const Icon(Icons.refresh, size: 18),
+                          label: const Text('重试'),
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: const Color(0xFF135BEC),
+                            foregroundColor: Colors.white,
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(8.r),
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                  )
                 : state.cards.isEmpty
                 ? const EmptyState(
                     icon: '🧠',

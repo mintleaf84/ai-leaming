@@ -1,10 +1,14 @@
 import { OpenAPIHono } from '@hono/zod-openapi'
 import { handle } from 'hono/vercel'
 import { swaggerUI } from '@hono/swagger-ui'
+import { cors } from 'hono/cors'
 
 export const runtime = 'nodejs'
 
 const app = new OpenAPIHono().basePath('/api')
+
+// 开启跨域 (CORS) 支持，主要用于解决 Flutter Web 在 localhost 调试时的安全拦截
+app.use('*', cors())
 
 // 注册 Swagger UI
 app.get('/doc', swaggerUI({ url: '/api/openapi.json' }))
@@ -38,6 +42,9 @@ app.route('/knowledge', knowledgeRoute)
 import masteryRoute from '@/lib/api/routes/mastery'
 app.route('/mastery', masteryRoute)
 
+import wrongBookRoute from '@/lib/api/routes/wrong-book'
+app.route('/wrong-book', wrongBookRoute)
+
 
 
 
@@ -62,3 +69,4 @@ export const POST = handle(app)
 export const PUT = handle(app)
 export const DELETE = handle(app)
 export const PATCH = handle(app)
+export const OPTIONS = handle(app)

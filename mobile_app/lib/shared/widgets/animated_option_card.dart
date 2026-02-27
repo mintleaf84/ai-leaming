@@ -15,6 +15,8 @@ class AnimatedOptionCard extends StatefulWidget {
   final bool isSelected;
   final bool isCorrect;
   final bool isWrong;
+  final bool isMultiSelect;
+  final bool showCorrectHint;
   final VoidCallback? onTap;
 
   const AnimatedOptionCard({
@@ -24,6 +26,8 @@ class AnimatedOptionCard extends StatefulWidget {
     required this.isSelected,
     required this.isCorrect,
     required this.isWrong,
+    this.isMultiSelect = false,
+    this.showCorrectHint = false,
     this.onTap,
   });
 
@@ -177,9 +181,12 @@ class _AnimatedOptionCardState extends State<AnimatedOptionCard>
       leadingIcon = Container(
         width: 20.w,
         height: 20.h,
-        decoration: const BoxDecoration(
-          color: Color(0xFF4EA05E),
-          shape: BoxShape.circle,
+        decoration: BoxDecoration(
+          color: const Color(0xFF4EA05E),
+          shape: widget.isMultiSelect ? BoxShape.rectangle : BoxShape.circle,
+          borderRadius: widget.isMultiSelect
+              ? BorderRadius.circular(4.r)
+              : null,
         ),
         child: Icon(Icons.check, size: 14.sp, color: Colors.white),
       );
@@ -190,22 +197,48 @@ class _AnimatedOptionCardState extends State<AnimatedOptionCard>
       leadingIcon = Container(
         width: 20.w,
         height: 20.h,
-        decoration: const BoxDecoration(
-          color: Color(0xFFD95656),
-          shape: BoxShape.circle,
+        decoration: BoxDecoration(
+          color: const Color(0xFFD95656),
+          shape: widget.isMultiSelect ? BoxShape.rectangle : BoxShape.circle,
+          borderRadius: widget.isMultiSelect
+              ? BorderRadius.circular(4.r)
+              : null,
         ),
         child: Icon(Icons.close, size: 14.sp, color: Colors.white),
+      );
+    } else if (widget.showCorrectHint && !widget.isSelected) {
+      // 未选中但是正确答案（多选时提示用户漏选）
+      bgColor = const Color(0xFFF0F9F1);
+      borderColor = const Color(0xFF5C9D6E).withValues(alpha: 0.2);
+      leadingIcon = Container(
+        width: 20.w,
+        height: 20.h,
+        decoration: BoxDecoration(
+          border: Border.all(color: const Color(0xFF4EA05E), width: 1.5),
+          shape: widget.isMultiSelect ? BoxShape.rectangle : BoxShape.circle,
+          borderRadius: widget.isMultiSelect
+              ? BorderRadius.circular(4.r)
+              : null,
+        ),
+        child: Icon(Icons.check, size: 12.sp, color: const Color(0xFF4EA05E)),
       );
     } else if (widget.isSelected) {
       borderColor = const Color(0xFF37352F).withValues(alpha: 0.4);
       leadingIcon = Container(
         width: 20.w,
         height: 20.h,
-        decoration: const BoxDecoration(
-          color: Color(0xFF37352F),
-          shape: BoxShape.circle,
+        decoration: BoxDecoration(
+          color: const Color(0xFF37352F),
+          shape: widget.isMultiSelect ? BoxShape.rectangle : BoxShape.circle,
+          borderRadius: widget.isMultiSelect
+              ? BorderRadius.circular(4.r)
+              : null,
         ),
-        child: Icon(Icons.circle, size: 10.sp, color: Colors.white),
+        child: Icon(
+          widget.isMultiSelect ? Icons.check : Icons.circle,
+          size: widget.isMultiSelect ? 14.sp : 10.sp,
+          color: Colors.white,
+        ),
       );
     } else {
       leadingIcon = Container(
@@ -215,7 +248,10 @@ class _AnimatedOptionCardState extends State<AnimatedOptionCard>
           border: Border.all(
             color: const Color(0xFF37352F).withValues(alpha: 0.2),
           ),
-          shape: BoxShape.circle,
+          shape: widget.isMultiSelect ? BoxShape.rectangle : BoxShape.circle,
+          borderRadius: widget.isMultiSelect
+              ? BorderRadius.circular(4.r)
+              : null,
         ),
       );
     }

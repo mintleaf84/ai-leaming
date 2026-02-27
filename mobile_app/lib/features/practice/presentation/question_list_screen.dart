@@ -2,7 +2,9 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:go_router/go_router.dart';
+import '../domain/question.dart';
 import 'questions_provider.dart';
+import '../../../shared/widgets/skeleton_widgets.dart';
 
 class QuestionListScreen extends ConsumerStatefulWidget {
   const QuestionListScreen({super.key});
@@ -121,11 +123,7 @@ class _QuestionListScreenState extends ConsumerState<QuestionListScreen> {
                     ref.read(questionsControllerProvider.notifier).refresh(),
                 color: const Color(0xFF135BEC),
                 child: questionsState.items.isEmpty && questionsState.isLoading
-                    ? const Center(
-                        child: CircularProgressIndicator(
-                          color: Color(0xFF135BEC),
-                        ),
-                      )
+                    ? const QuestionListSkeleton()
                     : questionsState.items.isEmpty &&
                           questionsState.error != null
                     ? Center(
@@ -188,7 +186,7 @@ class _QuestionListScreenState extends ConsumerState<QuestionListScreen> {
                               color: Colors.transparent,
                               child: InkWell(
                                 onTap: () {
-                                  // TODO: Go to question detail or start practice session
+                                  _showQuestionPreview(context, question);
                                 },
                                 borderRadius: BorderRadius.circular(8.r),
                                 child: Padding(
@@ -292,6 +290,248 @@ class _QuestionListScreenState extends ConsumerState<QuestionListScreen> {
           ],
         ),
       ),
+    );
+  }
+
+  void _showQuestionPreview(BuildContext context, Question question) {
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (context) {
+        final theme = Theme.of(context);
+        final isDarkMode = theme.brightness == Brightness.dark;
+        return DraggableScrollableSheet(
+          initialChildSize: 0.8,
+          minChildSize: 0.4,
+          maxChildSize: 0.95,
+          builder: (context, scrollController) {
+            return Container(
+              decoration: BoxDecoration(
+                color: theme.scaffoldBackgroundColor,
+                borderRadius: BorderRadius.vertical(top: Radius.circular(20.r)),
+              ),
+              child: Column(
+                children: [
+                  // 拖拽手柄（Drag Handle）
+                  GestureDetector(
+                    behavior: HitTestBehavior.opaque,
+                    child: Container(
+                      width: double.infinity,
+                      padding: EdgeInsets.symmetric(vertical: 12.h),
+                      alignment: Alignment.center,
+                      child: Container(
+                        width: 40.w,
+                        height: 4.h,
+                        decoration: BoxDecoration(
+                          color: isDarkMode
+                              ? const Color(0xFF424242)
+                              : const Color(0xFFD0D0D0),
+                          borderRadius: BorderRadius.circular(2.r),
+                        ),
+                      ),
+                    ),
+                  ),
+                  // 可滚动内容（使用 DraggableScrollableSheet 的 scrollController）
+                  Expanded(
+                    child: ListView(
+                      controller: scrollController,
+                      padding: EdgeInsets.all(24.w),
+                      children: [
+                        Row(
+                          children: [
+                            Container(
+                              padding: EdgeInsets.symmetric(
+                                horizontal: 8.w,
+                                vertical: 4.h,
+                              ),
+                              decoration: BoxDecoration(
+                                color: question.type == 'single'
+                                    ? const Color(0xFFE3F2FD)
+                                    : const Color(0xFFF3E5F5),
+                                borderRadius: BorderRadius.circular(6.r),
+                              ),
+                              child: Text(
+                                question.type == 'single' ? '单选' : '多选',
+                                style: TextStyle(
+                                  fontSize: 12.sp,
+                                  color: question.type == 'single'
+                                      ? const Color(0xFF1976D2)
+                                      : const Color(0xFF7B1FA2),
+                                  fontWeight: FontWeight.bold,
+                                ),
+                              ),
+                            ),
+                            SizedBox(width: 12.w),
+                            Expanded(
+                              child: Text(
+                                question.dimension ?? '综合',
+                                style: TextStyle(
+                                  fontSize: 14.sp,
+                                  color: isDarkMode
+                                      ? Colors.grey[400]
+                                      : Colors.grey[600],
+                                ),
+                              ),
+                            ),
+                          ],
+                        ),
+                        SizedBox(height: 24.h),
+                        Text(
+                          question.content,
+                          style: TextStyle(
+                            fontSize: 20.sp,
+                            fontWeight: FontWeight.w600,
+                            height: 1.5,
+                            color: theme.colorScheme.onSurface,
+                          ),
+                        ),
+                        SizedBox(height: 32.h),
+                        ...question.options.asMap().entries.map((e) {
+                          return Container(
+                            width: double.infinity,
+                            margin: EdgeInsets.only(bottom: 12.h),
+                            padding: EdgeInsets.all(16.w),
+                            decoration: BoxDecoration(
+                              color: isDarkMode
+                                  ? const Color(0xFF2C2C2C)
+                                  : const Color(0xFFF8F9FA),
+                              borderRadius: BorderRadius.circular(12.r),
+                              border: Border.all(
+                                color: isDarkMode
+                                    ? const Color(0xFF424242)
+                                    : const Color(0xFFEEEEEE),
+                              ),
+                            ),
+                            child: Text(
+                              '${String.fromCharCode(65 + e.key)}. ${e.value}',
+                              style: TextStyle(
+                                fontSize: 16.sp,
+                                color: theme.colorScheme.onSurface,
+                              ),
+                            ),
+                          );
+                        }),
+                        if (question.explanation != null) ...[
+                          SizedBox(height: 24.h),
+                          Container(
+                            width: double.infinity,
+                            padding: EdgeInsets.all(16.w),
+                            decoration: BoxDecoration(
+                              color: isDarkMode
+                                  ? const Color(
+                                      0xFF1E3A8A,
+                                    ).withValues(alpha: 0.2)
+                                  : const Color(0xFFEDF2FF),
+                              borderRadius: BorderRadius.circular(12.r),
+                            ),
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Row(
+                                  children: [
+                                    Icon(
+                                      Icons.lightbulb_outline,
+                                      color: const Color(0xFF135BEC),
+                                      size: 20.sp,
+                                    ),
+                                    SizedBox(width: 8.w),
+                                    Text(
+                                      '解析',
+                                      style: TextStyle(
+                                        fontSize: 16.sp,
+                                        fontWeight: FontWeight.bold,
+                                        color: const Color(0xFF135BEC),
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                                SizedBox(height: 12.h),
+                                Text(
+                                  question.explanation!,
+                                  style: TextStyle(
+                                    fontSize: 15.sp,
+                                    height: 1.5,
+                                    color: theme.colorScheme.onSurface
+                                        .withValues(alpha: 0.8),
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ],
+                        SizedBox(height: 48.h),
+                      ],
+                    ),
+                  ),
+                  // 底部按钮
+                  Container(
+                    padding: EdgeInsets.all(24.w),
+                    decoration: BoxDecoration(
+                      color: theme.scaffoldBackgroundColor,
+                      boxShadow: [
+                        BoxShadow(
+                          color: Colors.black.withValues(alpha: 0.05),
+                          offset: const Offset(0, -4),
+                          blurRadius: 8,
+                        ),
+                      ],
+                    ),
+                    child: Row(
+                      children: [
+                        Expanded(
+                          child: OutlinedButton(
+                            onPressed: () => Navigator.pop(context),
+                            style: OutlinedButton.styleFrom(
+                              padding: EdgeInsets.symmetric(vertical: 16.h),
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(12.r),
+                              ),
+                            ),
+                            child: Text(
+                              '关闭',
+                              style: TextStyle(fontSize: 16.sp),
+                            ),
+                          ),
+                        ),
+                        SizedBox(width: 16.w),
+                        Expanded(
+                          flex: 2,
+                          child: ElevatedButton(
+                            onPressed: () {
+                              Navigator.pop(context);
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                const SnackBar(
+                                  content: Text('单题练习跳转功能准备接管...'),
+                                ),
+                              );
+                            },
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: const Color(0xFF135BEC),
+                              foregroundColor: Colors.white,
+                              padding: EdgeInsets.symmetric(vertical: 16.h),
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(12.r),
+                              ),
+                            ),
+                            child: Text(
+                              '加入练习',
+                              style: TextStyle(
+                                fontSize: 16.sp,
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
+            );
+          },
+        );
+      },
     );
   }
 }

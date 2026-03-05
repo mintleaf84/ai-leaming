@@ -22,8 +22,14 @@ COPY . .
 
 # Environment variables for build time
 ENV NEXT_TELEMETRY_DISABLED=1
+# 构建时需要跳过数据库连接等运行时逻辑，提供占位环境变量
+ENV NODE_ENV=production
+ENV DB_FILENAME=build-placeholder.db
 
-RUN npm run build
+# 创建临时 data 目录，防止 Next.js 预渲染页面时 initDatabase() 找不到路径
+RUN mkdir -p /app/data
+
+RUN npm run build 2>&1 || (echo "=== BUILD FAILED ===" && cat /app/.next/build-error.log 2>/dev/null; exit 1)
 
 # ========================================
 # Stage 3: Runner

@@ -66,6 +66,8 @@ COPY --from=builder /app/.next/static ./.next/static
 COPY --from=builder --chown=nextjs:nodejs /app/.next/standalone ./
 
 # Next.js standalone mode excludes dev files; copy necessary files for runtime migration
+# Copy ALL node_modules to ensure tsx and migration scripts can find dependencies like sqlite-vec
+COPY --from=deps --chown=nextjs:nodejs /app/node_modules ./node_modules
 COPY --from=builder --chown=nextjs:nodejs /app/scripts ./scripts
 COPY --from=builder --chown=nextjs:nodejs /app/src/lib/migrations ./src/lib/migrations
 COPY --from=builder --chown=nextjs:nodejs /app/src/lib/db.ts ./src/lib/db.ts

@@ -17,6 +17,11 @@ RUN npm ci --legacy-peer-deps
 # ========================================
 FROM node:20-slim AS builder
 WORKDIR /app
+
+# Builder 阶段也需要系统库：Next.js 打包时会预渲染页面，
+# 执行到 initDatabase() 和 sqlite-vec 扩展加载，需要 openssl 等 C 运行时
+RUN apt-get update && apt-get install -y openssl && rm -rf /var/lib/apt/lists/*
+
 COPY --from=deps /app/node_modules ./node_modules
 COPY . .
 

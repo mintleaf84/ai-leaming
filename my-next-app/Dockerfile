@@ -34,7 +34,7 @@ ENV DB_FILENAME=build-placeholder.db
 # 创建临时 data 目录，防止 Next.js 预渲染页面时 initDatabase() 找不到路径
 RUN mkdir -p /app/data
 
-RUN npm run build > /tmp/build.log 2>&1 || (echo "=== BUILD FAILED - Last 200 lines ===" && tail -200 /tmp/build.log && exit 1)
+RUN npm run build
 
 # ========================================
 # Stage 3: Runner
@@ -71,6 +71,10 @@ COPY --from=builder --chown=nextjs:nodejs /app/src/lib/migrations ./src/lib/migr
 COPY --from=builder --chown=nextjs:nodejs /app/src/lib/db.ts ./src/lib/db.ts
 COPY --from=builder --chown=nextjs:nodejs /app/tsconfig.json ./
 
+# COPY start script
+COPY start.sh .
+RUN chmod +x start.sh
+
 USER nextjs
 
 EXPOSE 3000
@@ -79,8 +83,5 @@ ENV PORT=3000
 # Ensure Hostname is 0.0.0.0 for Docker
 ENV HOSTNAME="0.0.0.0"
 
-# Copy start script
-COPY start.sh .
-RUN chmod +x start.sh
 
 CMD ["./start.sh"]

@@ -1,9 +1,15 @@
 import { OpenAPIHono, createRoute, z } from '@hono/zod-openapi'
 import { authService } from '@/lib/services/auth'
 import { sign } from 'hono/jwt'
+import { setCookie } from 'hono/cookie'
+import { logger as honoLogger } from 'hono/logger'
 import { checkRateLimit, getClientIP } from '@/lib/rate-limit'
+import { COOKIE_NAME } from '@/lib/auth/auth-edge'
 
 const app = new OpenAPIHono()
+
+// 注入日志
+app.use('*', honoLogger())
 
 // Rate Limiting 中间件
 app.use('*', async (c, next) => {
@@ -87,6 +93,16 @@ app.openapi(loginRoute, async (c) => {
         exp: Math.floor(Date.now() / 1000) + 60 * 60 * 24 * 7 // 7 days
     }, JWT_SECRET)
 
+    // 设置 Cookie
+    setCookie(c, COOKIE_NAME, token, {
+        path: '/',
+        httpOnly: true,
+        maxAge: 60 * 60 * 24 * 7, // 7 days
+        sameSite: 'Lax',
+        // 如果是生产环境且通过 https 访问，建议开启 secure
+        // 但为了兼容简单的 docker ip 访问，这里暂时不强制
+    })
+
     return c.json({
         token,
         user
@@ -139,6 +155,14 @@ app.openapi(registerRoute, async (c) => {
             user: user,
             exp: Math.floor(Date.now() / 1000) + 60 * 60 * 24 * 7 // 7 days
         }, JWT_SECRET)
+
+        // 设置 Cookie
+        setCookie(c, COOKIE_NAME, token, {
+            path: '/',
+            httpOnly: true,
+            maxAge: 60 * 60 * 24 * 7, // 7 days
+            sameSite: 'Lax',
+        })
 
         return c.json({
             token,

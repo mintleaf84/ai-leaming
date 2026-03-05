@@ -2,6 +2,7 @@ import fs from 'fs';
 import path from 'path';
 import { pathToFileURL } from 'url';
 import db from '../src/lib/db';
+import { createTables } from '../src/lib/db/schema';
 
 // Migration Interface
 interface Migration {
@@ -11,6 +12,10 @@ interface Migration {
 
 async function run() {
     console.log('🚀 Starting database migration...');
+
+    // 0. Ensure base tables exist
+    console.log('📦 Initializing base tables...');
+    createTables(db);
 
     // 1. Ensure migrations table exists
     db.exec(`

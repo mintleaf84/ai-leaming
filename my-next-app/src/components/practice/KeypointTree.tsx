@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { ChevronRight, ChevronDown, Check, Folder, FolderOpen, FileText } from 'lucide-react';
 import { cn } from '@/lib/utils/utils';
@@ -25,15 +25,22 @@ interface KeypointTreeProps {
     maxHeight?: string;
 }
 
+// 预计算的节点树属性字典
+interface TreePropsMap {
+    selectedCounts: Map<number, number>;
+    matchingNodes: Set<number>;
+}
+
 // 递归组件：渲染单个节点
-function TreeNode({
+const TreeNode = React.memo(function TreeNode({
     node,
     level,
     selectedTags,
     expandedIds,
     onToggleExpand,
     onToggleSelect,
-    searchTerm
+    searchTerm,
+    treePropsMap
 }: {
     node: KeypointNode;
     level: number;
@@ -42,41 +49,19 @@ function TreeNode({
     onToggleExpand: (id: number) => void;
     onToggleSelect: (name: string, node: KeypointNode) => void;
     searchTerm: string;
+    treePropsMap: TreePropsMap;
 }) {
     const hasChildren = node.children && node.children.length > 0;
     const isExpanded = expandedIds.has(node.id);
     const isSelected = selectedTags.includes(node.name);
 
-    // 检查是否有匹配搜索的子节点
-    const matchesSearch = searchTerm === '' || node.name.toLowerCase().includes(searchTerm.toLowerCase());
-    const hasMatchingDescendant = useMemo(() => {
-        if (searchTerm === '') return true;
-        const checkDescendants = (n: KeypointNode): boolean => {
-            if (n.name.toLowerCase().includes(searchTerm.toLowerCase())) return true;
-            if (n.children) {
-                return n.children.some(child => checkDescendants(child));
-            }
-            return false;
-        };
-        return checkDescendants(node);
-    }, [node, searchTerm]);
+    // 从 O(N) 的顶层映射表中直接读取该节点状态，消灭 O(N^2) 瓶颈
+    const isVisible = treePropsMap.matchingNodes.has(node.id);
+    if (!isVisible && searchTerm !== '') return null;
 
-    // 如果不匹配搜索且没有匹配的子节点，不渲染
-    if (searchTerm !== '' && !matchesSearch && !hasMatchingDescendant) {
-        return null;
-    }
-
-    // 计算选中的子节点数量
-    const selectedChildCount = useMemo(() => {
-        const countSelected = (n: KeypointNode): number => {
-            let count = selectedTags.includes(n.name) ? 1 : 0;
-            if (n.children) {
-                count += n.children.reduce((acc, child) => acc + countSelected(child), 0);
-            }
-            return count;
-        };
-        return hasChildren ? node.children!.reduce((acc, child) => acc + countSelected(child), 0) : 0;
-    }, [node, selectedTags, hasChildren]);
+    // self 选中状态不包含在 descendants 中展现
+    const nodeTotalSelected = treePropsMap.selectedCounts.get(node.id) || 0;
+    const selectedChildCount = nodeTotalSelected - (isSelected ? 1 : 0);
 
     return (
         <div className="select-none">
@@ -162,13 +147,14 @@ function TreeNode({
                             onToggleExpand={onToggleExpand}
                             onToggleSelect={onToggleSelect}
                             searchTerm={searchTerm}
+                            treePropsMap={treePropsMap}
                         />
                     ))}
                 </div>
             )}
         </div>
     );
-}
+});
 
 export function KeypointTree({ selectedTags, onSelectionChange, maxHeight = "400px" }: KeypointTreeProps) {
     const [expandedIds, setExpandedIds] = useState<Set<number>>(new Set());
@@ -188,7 +174,34 @@ export function KeypointTree({ selectedTags, onSelectionChange, maxHeight = "400
         }
     }, [keypointData, expandedIds.size]);
 
-    const handleToggleExpand = (id: number) => {
+    // O(N) 一次性计算整棵树的所有节点可见性和选中数量字典
+    const treePropsMap = useMemo(() => {
+        const selectedCounts = new Map<number, number>();
+        const matchingNodes = new Set<number>();
+        const lowerSearch = searchTerm.toLowerCase();
+
+        const traverse = (n: KeypointNode): { sel: number, match: boolean } => {
+            let sel = selectedTags.includes(n.name) ? 1 : 0;
+            let match = lowerSearch === '' || n.name.toLowerCase().includes(lowerSearch);
+
+            if (n.children) {
+                for (const child of n.children) {
+                    const res = traverse(child);
+                    sel += res.sel;
+                    match = match || res.match;
+                }
+            }
+
+            selectedCounts.set(n.id, sel);
+            if (match) matchingNodes.add(n.id);
+            return { sel, match };
+        };
+
+        keypointData.forEach(traverse);
+        return { selectedCounts, matchingNodes };
+    }, [keypointData, selectedTags, searchTerm]);
+
+    const handleToggleExpand = useCallback((id: number) => {
         setExpandedIds(prev => {
             const next = new Set(prev);
             if (next.has(id)) {
@@ -198,14 +211,15 @@ export function KeypointTree({ selectedTags, onSelectionChange, maxHeight = "400
             }
             return next;
         });
-    };
+    }, []);
 
-    const handleToggleSelect = (name: string, node: KeypointNode) => {
-        const newSelection = selectedTags.includes(name)
-            ? selectedTags.filter(t => t !== name)
-            : [...selectedTags, name];
-        onSelectionChange(newSelection);
-    };
+    const handleToggleSelect = useCallback((name: string, node: KeypointNode) => {
+        onSelectionChange(
+            selectedTags.includes(name)
+                ? selectedTags.filter(t => t !== name)
+                : [...selectedTags, name]
+        );
+    }, [selectedTags, onSelectionChange]);
 
     // 全选/取消该分类下所有叶子节点
     const selectAllLeaves = (node: KeypointNode) => {
@@ -316,6 +330,7 @@ export function KeypointTree({ selectedTags, onSelectionChange, maxHeight = "400
                             onToggleExpand={handleToggleExpand}
                             onToggleSelect={handleToggleSelect}
                             searchTerm={searchTerm}
+                            treePropsMap={treePropsMap}
                         />
                     ))}
                 </div>

@@ -186,7 +186,7 @@ export function QuestionCard({ log, index, isExpanded, onToggle, refCallback }: 
                                             const correctAnswers = parseAnswer(log.correctAnswer);
                                             const userAnswers = parseAnswer(log.userAnswer);
                                             const isCorrectOption = correctAnswers.includes(letter);
-                                            const isUserChoice = userAnswers.includes(letter);
+                                            const isUserChoice = userAnswers.includes(letter) || userAnswers.includes(opt);
 
                                             return (
                                                 <div

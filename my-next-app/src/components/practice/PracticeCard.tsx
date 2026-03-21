@@ -73,13 +73,14 @@ export function PracticeCard({
 
             <div className="grid grid-cols-1 gap-3 mb-6">
                 {options.map((option, idx) => {
-                    const isSelected = selectedOptions.includes(option);
+                    const letter = String.fromCharCode(65 + idx);
+                    const isSelected = selectedOptions.includes(letter);
                     const isExcluded = excludedOptions.includes(option);
 
                     return (
                         <div
                             key={idx}
-                            onClick={() => !isExcluded && onOptionClick(option, isMulti ? 'multi' : 'single')}
+                            onClick={() => !isExcluded && onOptionClick(letter, isMulti ? 'multi' : 'single')}
                             onContextMenu={(e) => toggleExclude(e, option)}
                             className={`w-full text-left p-3 md:p-4 rounded border transition-all flex items-center group relative cursor-pointer min-h-[48px]
                                 ${isExcluded ? 'opacity-40 grayscale bg-muted border-border cursor-not-allowed' :
@@ -92,7 +93,7 @@ export function PracticeCard({
                                 ${isExcluded ? 'bg-muted text-muted-foreground' :
                                     isMulti && isSelected ? 'bg-blue-500 text-white' : 'bg-muted/50 text-muted-foreground group-hover:bg-blue-500/10 group-hover:text-blue-600 dark:group-hover:text-blue-400'}
                             `}>
-                                {isMulti ? (isSelected ? <Check className="w-4 h-4" /> : <Circle className="w-4 h-4" />) : String.fromCharCode(65 + idx)}
+                                {isMulti ? (isSelected ? <Check className="w-4 h-4" /> : <Circle className="w-4 h-4" />) : letter}
                             </span>
 
                             <span className={`text-foreground flex-1 ${isExcluded ? 'line-through decoration-2' : ''}`}>

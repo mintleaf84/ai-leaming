@@ -172,9 +172,41 @@ export function usePracticeController() {
         try {
             const currentQuestion = state.sessionQueue[state.currentIndex];
             // Basic check
-            let isCorrect = currentQuestion.type === 'multi'
-                ? answer === currentQuestion.answer
-                : answer === currentQuestion.answer;
+            // 增强的比对逻辑：支持标号(A/B/C)与文本的双向匹配
+            const checkCorrect = (userAns: string, targetAns: string, options: string[]) => {
+                if (userAns === targetAns) return true;
+
+                // 如果用户提交的是标号 (A, B, C...)
+                if (userAns.length === 1 && userAns >= 'A' && userAns <= 'Z') {
+                    const idx = userAns.charCodeAt(0) - 65;
+                    if (options[idx] === targetAns) return true;
+                }
+
+                // 如果正确答案是标号 (A, B, C...)
+                if (targetAns.length === 1 && targetAns >= 'A' && targetAns <= 'Z') {
+                    const idx = targetAns.charCodeAt(0) - 65;
+                    if (options[idx] === userAns) return true;
+                }
+
+                return false;
+            };
+
+            let isCorrect = false;
+            if (currentQuestion.type === 'multi') {
+                try {
+                    const correctArr = JSON.parse(currentQuestion.answer).sort();
+                    const answerArr = JSON.parse(answer).sort();
+
+                    // 多选同样需要增强比对，有些导入题目可能存的是文本数组
+                    if (correctArr.length === answerArr.length) {
+                        isCorrect = answerArr.every((v: string, i: number) => checkCorrect(v, correctArr[i], currentQuestion.options));
+                    }
+                } catch {
+                    isCorrect = answer === currentQuestion.answer;
+                }
+            } else {
+                isCorrect = checkCorrect(answer, currentQuestion.answer, currentQuestion.options);
+            }
 
             // 兼容两种格式：JSON数组 ["A","B"] 或逗号分隔 "A,B,C"
             if (currentQuestion.type === 'multi') {

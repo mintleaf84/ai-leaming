@@ -15,19 +15,28 @@ const BaseQuestionSchema = z.object({
 });
 
 export const QuestionSchema = BaseQuestionSchema.refine((data) => {
-  // 验证答案是否在选项中
+  // 通用匹配逻辑：支持内容匹配标号 或 标号匹配内容
+  const isMatch = (ans: string) => {
+    if (data.options.includes(ans)) return true;
+    if (ans.length === 1 && ans >= 'A' && ans <= 'Z') {
+      const idx = ans.charCodeAt(0) - 65;
+      return !!data.options[idx];
+    }
+    return false;
+  };
+
   if (data.type === 'multi') {
     try {
       const answers = JSON.parse(data.answer);
       if (!Array.isArray(answers) || answers.length < 1) return false;
-      return answers.every(a => data.options.includes(a));
+      return answers.every(a => isMatch(a));
     } catch {
-      return false; // JSON 解析失败
+      return false;
     }
   }
-  return data.options.includes(data.answer);
+  return isMatch(data.answer);
 }, {
-  message: "正确答案（或所有多选答案）必须包含在选项列表中",
+  message: "正确答案必须是选项之一或有效的选项标号(A/B/C/D)",
   path: ["answer"]
 });
 

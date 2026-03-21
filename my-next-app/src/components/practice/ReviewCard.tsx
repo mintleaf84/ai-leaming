@@ -159,31 +159,43 @@ export function ReviewCard({ currentItem, sessionQueue, isLoadingAI, onReviewSte
                                                 const correctAnsRaw = q.answer;
                                                 const isMulti = q.type === 'multi';
 
-                                                // 解析答案
-                                                let userAnsLabel = userAnsRaw;
-                                                let correctAnsLabel = correctAnsRaw;
-                                                let userAnsContent = "无法解析选项内容";
-                                                let correctAnsContent = "无法解析选项内容";
+                                                // 解析答案显示逻辑 (通用版本)
+                                                const getAnswerDisplay = (raw: string) => {
+                                                    try {
+                                                        const arr = isMulti ? JSON.parse(raw) : [raw];
+                                                        const labels: string[] = [];
+                                                        const contents: string[] = [];
 
-                                                try {
-                                                    if (isMulti) {
-                                                        const u = JSON.parse(userAnsRaw) as string[];
-                                                        const c = JSON.parse(correctAnsRaw) as string[];
-                                                        userAnsLabel = u.join(' + ');
-                                                        correctAnsLabel = c.join(' + ');
-                                                        // 多选暂时不展示完整内容，只展示标号，或者需要更复杂的逻辑拼接
-                                                        userAnsContent = u.map(opt => q.options.find(o => o.startsWith(opt) || q.options.indexOf(o) === opt.charCodeAt(0) - 65) || opt).join('; ');
-                                                    } else {
-                                                        userAnsContent = userAnsRaw;
-                                                        correctAnsContent = correctAnsRaw;
+                                                        arr.forEach((val: string) => {
+                                                            if (val.length === 1 && val >= 'A' && val <= 'Z') {
+                                                                const idx = val.charCodeAt(0) - 65;
+                                                                if (q.options[idx]) {
+                                                                    labels.push(val);
+                                                                    contents.push(q.options[idx]);
+                                                                    return;
+                                                                }
+                                                            }
+                                                            const idx = q.options.indexOf(val);
+                                                            if (idx !== -1) {
+                                                                labels.push(String.fromCharCode(65 + idx));
+                                                                contents.push(val);
+                                                            } else {
+                                                                labels.push('?');
+                                                                contents.push(val);
+                                                            }
+                                                        });
 
-                                                        // 计算 ABCD 标号
-                                                        const userIdx = q.options.indexOf(userAnsRaw);
-                                                        const correctIdx = q.options.indexOf(correctAnsRaw);
-                                                        if (userIdx !== -1) userAnsLabel = String.fromCharCode(65 + userIdx);
-                                                        if (correctIdx !== -1) correctAnsLabel = String.fromCharCode(65 + correctIdx);
+                                                        return {
+                                                            label: labels.join(isMulti ? ' + ' : ''),
+                                                            content: contents.join(isMulti ? '; ' : '')
+                                                        };
+                                                    } catch (e) {
+                                                        return { label: raw, content: raw };
                                                     }
-                                                } catch (e) { }
+                                                };
+
+                                                const userAns = getAnswerDisplay(userAnsRaw);
+                                                const correctAns = getAnswerDisplay(correctAnsRaw);
 
                                                 return (
                                                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -194,10 +206,10 @@ export function ReviewCard({ currentItem, sessionQueue, isLoadingAI, onReviewSte
                                                             </div>
                                                             <div className="flex items-start gap-3 mt-2">
                                                                 <div className="w-8 h-8 rounded-full bg-red-500/20 text-red-700 dark:text-red-400 flex items-center justify-center font-bold text-sm shrink-0">
-                                                                    {userAnsLabel.length < 3 ? userAnsLabel : <span className="text-[10px]">❌</span>}
+                                                                    {userAns.label}
                                                                 </div>
                                                                 <div className="text-sm text-red-700 dark:text-red-300 leading-relaxed opacity-80 line-through decoration-red-300">
-                                                                    {userAnsContent}
+                                                                    {userAns.content}
                                                                 </div>
                                                             </div>
                                                         </div>
@@ -209,10 +221,10 @@ export function ReviewCard({ currentItem, sessionQueue, isLoadingAI, onReviewSte
                                                             </div>
                                                             <div className="flex items-start gap-3 mt-2">
                                                                 <div className="w-8 h-8 rounded-full bg-green-500/20 text-green-700 dark:text-green-400 flex items-center justify-center font-bold text-sm shrink-0">
-                                                                    {correctAnsLabel.length < 3 ? correctAnsLabel : <span className="text-[10px]">✔</span>}
+                                                                    {correctAns.label}
                                                                 </div>
                                                                 <div className="text-sm text-green-700 dark:text-green-300 leading-relaxed font-medium">
-                                                                    {correctAnsContent}
+                                                                    {correctAns.content}
                                                                 </div>
                                                             </div>
                                                         </div>

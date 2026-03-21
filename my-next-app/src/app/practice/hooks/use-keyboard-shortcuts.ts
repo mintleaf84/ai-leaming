@@ -24,10 +24,7 @@ export function useKeyboardShortcuts(
             const key = e.key;
             const index = parseInt(key) - 1;
             if (index >= 0 && index < (currentQ?.options?.length || 0)) {
-                const options = currentQ?.options;
-                if (options && options[index]) {
-                    submitAnswer(options[index]);
-                }
+                submitAnswer(String.fromCharCode(65 + index));
             }
         };
         window.addEventListener('keydown', handleKeyDown);

@@ -22,7 +22,7 @@ describe('History Service', () => {
     describe('getHistory', () => {
         it('should return paginated history', async () => {
             const mockCount = { count: 20 };
-            const mockItems = [{ id: 's1', totalQuestions: 10, correctCount: 8, createdApp: '2023-01-01' }];
+            const mockItems = [{ id: 's1', totalQuestions: 10, correctCount: 8, createdAt: '2023-01-01T00:00:00Z', reviewCount: 0 }];
 
             mockDb.prepare
                 .mockReturnValueOnce({ get: () => mockCount })
@@ -38,7 +38,7 @@ describe('History Service', () => {
 
         it('should apply filters', async () => {
             const mockCount = { count: 1 };
-            const mockItems = [{ id: 's1', totalQuestions: 10, correctCount: 10 }]; // 100% acc
+            const mockItems = [{ id: 's1', totalQuestions: 10, correctCount: 10, createdAt: '2023-01-01T00:00:00Z', reviewCount: 0 }]; // 100% acc
 
             mockDb.prepare
                 .mockReturnValueOnce({ get: () => mockCount })
@@ -59,7 +59,7 @@ describe('History Service', () => {
 
         it('should filter out items by accuracy', async () => {
             const mockCount = { count: 1 };
-            const mockItems = [{ id: 's1', totalQuestions: 10, correctCount: 5 }]; // 50% acc
+            const mockItems = [{ id: 's1', totalQuestions: 10, correctCount: 5, createdAt: '2023-01-01T00:00:00Z', reviewCount: 0 }]; // 50% acc
 
             mockDb.prepare
                 .mockReturnValueOnce({ get: () => mockCount })
@@ -73,7 +73,7 @@ describe('History Service', () => {
 
     describe('getSessionDetail', () => {
         it('should return session and logs', async () => {
-            const mockSession = { id: 's1', totalQuestions: 10, correctCount: 8 };
+            const mockSession = { id: 's1', totalQuestions: 10, correctCount: 8, createdAt: '2023-01-01T00:00:00Z', reviewCount: 0 };
             const mockLogs = [
                 {
                     questionId: 1,

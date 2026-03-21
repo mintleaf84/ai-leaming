@@ -13,6 +13,7 @@ const mockCookieStore = {
 
 vi.mock('next/headers', () => ({
     cookies: vi.fn(() => Promise.resolve(mockCookieStore)),
+    headers: vi.fn(() => Promise.resolve(new Map())),
 }));
 
 // Mock NextRequest/NextResponse

@@ -321,7 +321,7 @@ describe('Admin Actions', () => {
             const res = await updateQuestionAction(1, updateData);
 
             expect(res.success).toBe(false);
-            expect(res.error).toContain('必须包含在选项列表中');
+            expect(res.error).toContain('正确答案必须是选项之一或有效的选项标号');
         });
 
         it('题目不存在时应该返回错误', async () => {

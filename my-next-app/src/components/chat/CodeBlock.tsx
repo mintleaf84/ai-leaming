@@ -1,9 +1,22 @@
 'use client';
 
 import React, { useState } from 'react';
-import { Prism as SyntaxHighlighter } from 'react-syntax-highlighter';
-import { vscDarkPlus } from 'react-syntax-highlighter/dist/esm/styles/prism';
+import dynamic from 'next/dynamic';
 import { Check, Copy } from 'lucide-react';
+
+// 动态导入 react-syntax-highlighter，避免其庞大的正则库进入主 Bundle
+const SyntaxHighlighter = dynamic(
+    () => import('react-syntax-highlighter').then(mod => mod.Prism),
+    {
+        ssr: false,
+        loading: () => (
+            <div className="animate-pulse bg-zinc-800 rounded-b-lg p-4 min-h-[3rem]" />
+        ),
+    }
+);
+
+// 主题样式单独异步导入
+const themePromise = import('react-syntax-highlighter/dist/esm/styles/prism').then(mod => mod.vscDarkPlus);
 
 interface CodeBlockProps {
     language: string;
@@ -16,6 +29,12 @@ interface CodeBlockProps {
  */
 export default function CodeBlock({ language, value }: CodeBlockProps) {
     const [copied, setCopied] = useState(false);
+    const [theme, setTheme] = useState<Record<string, React.CSSProperties> | null>(null);
+
+    // 懒加载主题
+    React.useEffect(() => {
+        themePromise.then(setTheme);
+    }, []);
 
     const handleCopy = () => {
         navigator.clipboard.writeText(value);
@@ -48,19 +67,25 @@ export default function CodeBlock({ language, value }: CodeBlockProps) {
             </div>
 
             {/* Code Content */}
-            <SyntaxHighlighter
-                language={language || 'text'}
-                style={vscDarkPlus}
-                customStyle={{
-                    margin: 0,
-                    padding: '1rem',
-                    fontSize: '0.875rem',
-                    lineHeight: '1.5',
-                }}
-                showLineNumbers={value.split('\n').length > 3}
-            >
-                {value}
-            </SyntaxHighlighter>
+            {theme ? (
+                <SyntaxHighlighter
+                    language={language || 'text'}
+                    style={theme}
+                    customStyle={{
+                        margin: 0,
+                        padding: '1rem',
+                        fontSize: '0.875rem',
+                        lineHeight: '1.5',
+                    }}
+                    showLineNumbers={value.split('\n').length > 3}
+                >
+                    {value}
+                </SyntaxHighlighter>
+            ) : (
+                <pre className="p-4 bg-zinc-900 text-zinc-300 text-sm font-mono overflow-x-auto">
+                    <code>{value}</code>
+                </pre>
+            )}
         </div>
     );
 }

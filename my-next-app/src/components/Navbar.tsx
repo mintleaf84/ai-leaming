@@ -2,6 +2,7 @@
 
 import React from 'react';
 import Link from 'next/link';
+import Image from 'next/image';
 import { usePathname } from 'next/navigation';
 import {
   BookOpen,
@@ -79,7 +80,7 @@ export function Navbar({ user }: NavbarProps) {
           <div className="flex items-center">
             <Link href="/" className="flex items-center gap-2 mr-6">
               <div className="relative w-8 h-8 mr-2">
-                <img src="/logo.png" alt="琢玉 Logo" className="object-contain w-full h-full" />
+                <Image src="/logo.png" alt="琢玉 Logo" width={32} height={32} className="object-contain" />
               </div>
               <span className="hidden lg:block font-bold text-xl bg-gradient-to-r from-emerald-600 to-teal-600 dark:from-emerald-400 dark:to-teal-400 bg-clip-text text-transparent">
                 琢玉

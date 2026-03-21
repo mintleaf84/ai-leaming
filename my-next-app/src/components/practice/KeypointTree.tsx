@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect, useMemo } from 'react';
+import { useQuery } from '@tanstack/react-query';
 import { ChevronRight, ChevronDown, Check, Folder, FolderOpen, FileText } from 'lucide-react';
 import { cn } from '@/lib/utils/utils';
 import { Checkbox } from '@/components/ui/checkbox';
@@ -8,6 +9,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Badge } from '@/components/ui/badge';
+import { fetchJson } from '@/lib/utils/api-client';
 
 // 知识点节点类型
 export interface KeypointNode {
@@ -169,27 +171,22 @@ function TreeNode({
 }
 
 export function KeypointTree({ selectedTags, onSelectionChange, maxHeight = "400px" }: KeypointTreeProps) {
-    const [keypointData, setKeypointData] = useState<KeypointNode[]>([]);
-    const [loading, setLoading] = useState(true);
     const [expandedIds, setExpandedIds] = useState<Set<number>>(new Set());
     const [searchTerm, setSearchTerm] = useState('');
 
-    // 加载知识点数据
+    // 使用 useQuery 加载静态知识点数据，staleTime: Infinity 保证应用生命周期内只请求一次
+    const { data: keypointData = [], isLoading: loading } = useQuery({
+        queryKey: ['keypoints-tree'],
+        queryFn: () => fetchJson<KeypointNode[]>('/data/keypoints.json'),
+        staleTime: Infinity,
+    });
+
+    // 数据加载完成后默认展开第一层
     useEffect(() => {
-        fetch('/data/keypoints.json')
-            .then(res => res.json())
-            .then((data: KeypointNode[]) => {
-                setKeypointData(data);
-                // 默认展开第一层
-                const firstLevelIds = new Set(data.map(node => node.id));
-                setExpandedIds(firstLevelIds);
-                setLoading(false);
-            })
-            .catch(err => {
-                console.error('加载知识点数据失败', err);
-                setLoading(false);
-            });
-    }, []);
+        if (keypointData.length > 0 && expandedIds.size === 0) {
+            setExpandedIds(new Set(keypointData.map(node => node.id)));
+        }
+    }, [keypointData, expandedIds.size]);
 
     const handleToggleExpand = (id: number) => {
         setExpandedIds(prev => {

@@ -176,17 +176,14 @@ export function usePracticeController() {
                 ? answer === currentQuestion.answer
                 : answer === currentQuestion.answer;
 
-            // Refined check for multi
+            // 兼容两种格式：JSON数组 ["A","B"] 或逗号分隔 "A,B,C"
             if (currentQuestion.type === 'multi') {
-                try {
-                    const correctArr = JSON.parse(currentQuestion.answer);
-                    const answerArr = JSON.parse(answer);
-                    // Sort both to compare
-                    isCorrect = JSON.stringify(correctArr.sort()) === JSON.stringify(answerArr.sort());
-                } catch (e) {
-                    console.error("Error parsing multi answer", e);
-                    isCorrect = answer === currentQuestion.answer;
-                }
+                const parseAnswer = (val: string): string[] => {
+                    try { return JSON.parse(val); } catch { return val.split(',').map(s => s.trim()); }
+                };
+                const correctArr = parseAnswer(currentQuestion.answer);
+                const answerArr = parseAnswer(answer);
+                isCorrect = JSON.stringify(correctArr.sort()) === JSON.stringify(answerArr.sort());
             }
 
             const duration = Math.floor((Date.now() - (state.startTime || Date.now())) / 1000);

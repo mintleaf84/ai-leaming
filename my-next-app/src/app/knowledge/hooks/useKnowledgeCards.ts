@@ -1,13 +1,19 @@
 'use client';
 
-import { useState, useEffect, useCallback, useMemo } from 'react';
+import { useState, useCallback, useMemo } from 'react';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import type { KnowledgeCard } from '@/lib/services/knowledge';
+import { fetchJson } from '@/lib/utils/api-client';
 
+/** React Query 的 Query Key 常量 */
+const KNOWLEDGE_CARDS_KEY = 'knowledge-cards';
+
+/**
+ * 知识卡片的数据获取与操作 Hook（React Query 版本）。
+ * 利用 useQuery 自动缓存卡片列表，useMutation 处理增删改后自动刷新。
+ */
 export function useKnowledgeCards() {
-    const [cards, setCards] = useState<KnowledgeCard[]>([]);
-    const [categories, setCategories] = useState<string[]>([]);
-    const [stats, setStats] = useState<{ total: number; byCategory: { category: string; count: number }[] }>({ total: 0, byCategory: [] });
-    const [loading, setLoading] = useState(true);
+    const queryClient = useQueryClient();
     const [selectedCategory, setSelectedCategory] = useState<string>('');
     const [searchQuery, setSearchQuery] = useState('');
     const [editingCard, setEditingCard] = useState<Partial<KnowledgeCard> | null>(null);
@@ -20,31 +26,25 @@ export function useKnowledgeCards() {
         setTimeout(() => setToast(null), 3000);
     }, []);
 
-    const loadCards = useCallback(async () => {
-        setLoading(true);
-        try {
+    // ---- 查询：使用 useQuery 自动缓存 ----
+    const { data, isLoading: loading } = useQuery({
+        queryKey: [KNOWLEDGE_CARDS_KEY, selectedCategory],
+        queryFn: async () => {
             const params = new URLSearchParams();
             if (selectedCategory) params.set('category', selectedCategory);
+            return fetchJson<{
+                cards: KnowledgeCard[];
+                categories: string[];
+                stats: { total: number; byCategory: { category: string; count: number }[] };
+            }>(`/api/knowledge/cards?${params.toString()}`);
+        },
+    });
 
-            const response = await fetch(`/api/knowledge/cards?${params.toString()}`);
-            if (!response.ok) throw new Error(`API error: ${response.status}`);
+    const cards = data?.cards ?? [];
+    const categories = data?.categories ?? [];
+    const stats = data?.stats ?? { total: 0, byCategory: [] };
 
-            const data = await response.json();
-            setCards(data.cards || []);
-            setCategories(data.categories || []);
-            setStats(data.stats || { total: 0, byCategory: [] });
-        } catch (error) {
-            console.error('[useKnowledgeCards] 加载失败:', error);
-            showToast('加载失败，请检查网络', 'error');
-        } finally {
-            setLoading(false);
-        }
-    }, [selectedCategory, showToast]);
-
-    useEffect(() => {
-        loadCards();
-    }, [loadCards]);
-
+    // ---- 客户端搜索过滤 ----
     const filteredCards = useMemo(() => {
         if (!cards) return [];
         return cards.filter(card => {
@@ -58,44 +58,60 @@ export function useKnowledgeCards() {
         });
     }, [cards, searchQuery]);
 
-    const handleDelete = async (id: number) => {
-        if (!confirm('确定删除这张知识卡片吗？')) return;
-        try {
+    // ---- 删除：useMutation + 自动刷新 ----
+    const deleteMutation = useMutation({
+        mutationFn: async (id: number) => {
             const resp = await fetch(`/api/knowledge/cards/${id}`, { method: 'DELETE' });
             if (!resp.ok) throw new Error('删除失败');
-            setCards(prev => prev.filter(c => c.id !== id));
+        },
+        onSuccess: () => {
+            queryClient.invalidateQueries({ queryKey: [KNOWLEDGE_CARDS_KEY] });
             showToast('已删除知识卡片');
-            loadCards(); // 刷新统计
-        } catch (error) {
+        },
+        onError: (error) => {
             console.error('删除失败:', error);
             showToast('删除失败', 'error');
-        }
+        },
+    });
+
+    const handleDelete = async (id: number) => {
+        if (!confirm('确定删除这张知识卡片吗？')) return;
+        deleteMutation.mutate(id);
     };
 
-    const handleSave = async () => {
-        if (!editingCard) return;
-        try {
-            const isUpdate = !!editingCard.id;
-            const url = isUpdate ? `/api/knowledge/cards/${editingCard.id}` : `/api/knowledge/cards`;
+    // ---- 保存（创建/更新）：useMutation + 自动刷新 ----
+    const saveMutation = useMutation({
+        mutationFn: async (card: Partial<KnowledgeCard>) => {
+            const isUpdate = !!card.id;
+            const url = isUpdate ? `/api/knowledge/cards/${card.id}` : `/api/knowledge/cards`;
             const method = isUpdate ? 'PUT' : 'POST';
 
             const resp = await fetch(url, {
                 method,
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify(editingCard),
+                body: JSON.stringify(card),
             });
             if (!resp.ok) throw new Error('保存失败');
-
+        },
+        onSuccess: (_, card) => {
+            const isUpdate = !!card.id;
             showToast(isUpdate ? '卡片更新成功' : '卡片创建成功');
             setEditingCard(null);
             setIsCreateModal(false);
-            loadCards();
-        } catch (error) {
+            queryClient.invalidateQueries({ queryKey: [KNOWLEDGE_CARDS_KEY] });
+        },
+        onError: (error) => {
             console.error('保存失败:', error);
             showToast('保存失败', 'error');
-        }
+        },
+    });
+
+    const handleSave = async () => {
+        if (!editingCard) return;
+        saveMutation.mutate(editingCard);
     };
 
+    // ---- 导出（保持原逻辑，非缓存相关） ----
     const handleExport = async () => {
         setExporting(true);
         try {
@@ -124,6 +140,11 @@ export function useKnowledgeCards() {
             setExporting(false);
         }
     };
+
+    // 提供给外部手动刷新的方法（完全兼容原有 API）
+    const loadCards = useCallback(() => {
+        queryClient.invalidateQueries({ queryKey: [KNOWLEDGE_CARDS_KEY] });
+    }, [queryClient]);
 
     return {
         cards,

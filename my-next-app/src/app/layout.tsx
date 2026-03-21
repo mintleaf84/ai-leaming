@@ -7,6 +7,7 @@ import { AppSidebar } from "@/components/layout/AppSidebar";
 import { MobileNav } from "@/components/MobileNav";
 import { ThemeProvider } from "@/components/theme-provider";
 import { TerminologyProvider } from "@/lib/hooks/use-terminology";
+import { QueryProvider } from "@/lib/providers/QueryProvider";
 import "./globals.css";
 
 const geistSans = localFont({
@@ -64,6 +65,7 @@ export default async function RootLayout({
       <body
         className={`${geistSans.variable} ${geistMono.variable} antialiased min-h-screen bg-background text-foreground`}
       >
+        <QueryProvider>
         <TerminologyProvider>
           <ThemeProvider
             attribute="class"
@@ -89,6 +91,7 @@ export default async function RootLayout({
             <Toaster position="top-center" richColors />
           </ThemeProvider>
         </TerminologyProvider>
+        </QueryProvider>
       </body>
     </html>
   );

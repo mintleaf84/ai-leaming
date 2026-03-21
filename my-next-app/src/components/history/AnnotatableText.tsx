@@ -1,7 +1,9 @@
 "use client";
 
 import React, { useState, useEffect, useCallback, useRef } from 'react';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { Highlighter, Underline, Waves, Copy } from 'lucide-react';
+import { fetchJson } from '@/lib/utils/api-client';
 
 interface Annotation {
     id?: number;
@@ -29,6 +31,7 @@ const TAG_STYLES: Record<string, { className: string; color: string }> = {
  * 支持划词后添加高亮、下划线、波浪线标记
  */
 export function AnnotatableText({ text, questionId, className }: AnnotatableTextProps) {
+    const queryClient = useQueryClient();
     const [annotations, setAnnotations] = useState<Annotation[]>([]);
     const [selection, setSelection] = useState<{ start: number; end: number } | null>(null);
     const [selectedText, setSelectedText] = useState<string>('');
@@ -36,25 +39,26 @@ export function AnnotatableText({ text, questionId, className }: AnnotatableText
     const containerRef = useRef<HTMLDivElement>(null);
     const toolbarRef = useRef<HTMLDivElement>(null);
 
-    // 加载已有标注
-    useEffect(() => {
-        if (!questionId) return;
+    // 使用 useQuery 加载标注数据，5 分钟缓存
+    const { data: annotationData } = useQuery({
+        queryKey: ['annotations', questionId],
+        queryFn: () => fetchJson<{ annotations: any[] }>(`/api/annotations?questionId=${questionId}`),
+        staleTime: 5 * 60 * 1000,
+        enabled: !!questionId,
+    });
 
-        fetch(`/api/annotations?questionId=${questionId}`)
-            .then(res => res.json())
-            .then(data => {
-                if (data.annotations) {
-                    setAnnotations(data.annotations.map((a: any) => ({
-                        id: a.id,
-                        start: a.start_offset,
-                        end: a.end_offset,
-                        tag: a.tag,
-                        color: a.color,
-                    })));
-                }
-            })
-            .catch(console.error);
-    }, [questionId]);
+    // 将查询结果同步到本地 state（因为增删操作需要乐观更新）
+    useEffect(() => {
+        if (annotationData?.annotations) {
+            setAnnotations(annotationData.annotations.map((a: any) => ({
+                id: a.id,
+                start: a.start_offset,
+                end: a.end_offset,
+                tag: a.tag,
+                color: a.color,
+            })));
+        }
+    }, [annotationData]);
 
     // 处理文本选择
     const handleMouseUp = useCallback(() => {

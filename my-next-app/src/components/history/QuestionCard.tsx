@@ -139,6 +139,7 @@ export function QuestionCard({ log, index, isExpanded, onToggle, refCallback }: 
         <div
             ref={refCallback}
             className="bg-card rounded-2xl shadow-sm border border-border overflow-hidden scroll-mt-24 md:scroll-mt-20"
+            style={{ contentVisibility: 'auto', containIntrinsicSize: '0 300px' }}
         >
             <div className={`flex flex-col md:flex-row ${hasMaterial ? 'md:h-[600px]' : ''}`}>
 

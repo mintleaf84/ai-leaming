@@ -7,6 +7,79 @@ import { PracticeSessionRowSchema, QuestionSchema, QuestionRowSchema } from '@/l
 import { z } from 'zod';
 import { requireUser } from '@/lib/auth/auth';
 
+// ===== 演示模式辅助函数 =====
+
+/** 检查全局演示模式是否开启 */
+function isDemoModeEnabled(): boolean {
+  try {
+    const row = db.prepare("SELECT value FROM system_settings WHERE key = 'demo_mode_enabled'").get() as { value: string } | undefined;
+    return row?.value === 'true';
+  } catch {
+    return false;
+  }
+}
+
+/** 确保 is_demo 列存在 */
+function ensureDemoColumn() {
+  try {
+    db.prepare("ALTER TABLE practice_sessions ADD COLUMN is_demo INTEGER DEFAULT 0").run();
+  } catch { /* 列已存在 */ }
+}
+
+/** 获取或创建演示会话：返回固定题目集并重置进度 */
+async function getDemoSession(userId: string | number): Promise<{
+  questions: Question[];
+  sessionId: string;
+} | null> {
+  ensureDemoColumn();
+
+  // 查找已有的演示会话
+  const existing = db.prepare(`
+    SELECT id, questions_json FROM practice_sessions
+    WHERE user_id = ? AND is_demo = 1
+    ORDER BY created_at DESC LIMIT 1
+  `).get(userId) as { id: string; questions_json: string } | undefined;
+
+  if (existing && existing.questions_json) {
+    // 清空该会话的答题记录，让用户从头开始
+    db.prepare('DELETE FROM practice_logs WHERE session_id = ?').run(existing.id);
+    db.prepare('UPDATE practice_sessions SET correct_count = 0 WHERE id = ?').run(existing.id);
+    console.log('[DemoMode] 复用演示会话:', existing.id);
+
+    let questions: Question[];
+    try {
+      questions = typeof existing.questions_json === 'string'
+        ? JSON.parse(existing.questions_json)
+        : existing.questions_json;
+    } catch {
+      return null;
+    }
+    return { questions, sessionId: existing.id };
+  }
+
+  // 没有演示会话，创建一个新的
+  const sessionId = 'demo-' + Math.random().toString(36).substring(2, 12);
+  const questions = safeAll(
+    db.prepare('SELECT * FROM questions ORDER BY RANDOM() LIMIT 10'),
+    [],
+    QuestionRowSchema
+  );
+
+  if (!questions || questions.length === 0) return null;
+
+  // 确保 questions_json 和 practice_mode 列存在
+  try { db.prepare("ALTER TABLE practice_sessions ADD COLUMN questions_json TEXT").run(); } catch { }
+  try { db.prepare("ALTER TABLE practice_sessions ADD COLUMN practice_mode TEXT").run(); } catch { }
+
+  db.prepare(`
+    INSERT INTO practice_sessions (id, user_id, total_questions, questions_json, practice_mode, is_demo)
+    VALUES (?, ?, ?, ?, 'smart', 1)
+  `).run(sessionId, userId, questions.length, JSON.stringify(questions));
+
+  console.log('[DemoMode] 创建新演示会话:', sessionId);
+  return { questions, sessionId };
+}
+
 export async function getPracticeSessionAction(forceNew: boolean = false): Promise<{
   questions: Question[];
   sessionId: string;
@@ -15,6 +88,13 @@ export async function getPracticeSessionAction(forceNew: boolean = false): Promi
 }> {
   try {
     const user = await requireUser();
+
+    // 演示模式拦截：如果全局开启，返回固定的演示数据集
+    if (isDemoModeEnabled()) {
+      const demoResult = await getDemoSession(user.id);
+      if (demoResult) return { ...demoResult, resumed: false, completedCount: 0 };
+    }
+
     // 0. Migration: Ensure questions_json column exists
     try {
       db.prepare("ALTER TABLE practice_sessions ADD COLUMN questions_json TEXT").run();
@@ -273,6 +353,13 @@ export async function getPracticeSessionByConfigAction(config: {
 }> {
   try {
     const user = await requireUser();
+
+    // 演示模式拦截
+    if (isDemoModeEnabled()) {
+      const demoResult = await getDemoSession(user.id);
+      if (demoResult) return { ...demoResult, config };
+    }
+
     const { generateSessionByConfig } = await import('@/lib/practice/practice-scheduling');
 
     // 构建配置

@@ -13,8 +13,32 @@ import { checkAndConsumeQuota } from '@/lib/billing/subscription-service';
 export async function generateCorrectionQuizAction(
   questionContent: string,
   wrongAnswer: string,
-  correctAnswer: string
+  correctAnswer: string,
+  force: boolean = false
 ): Promise<CorrectionQuiz> {
+  // 1. Ensure Table
+  try {
+    db.exec(`
+      CREATE TABLE IF NOT EXISTS ai_quiz_cache (
+        hash TEXT PRIMARY KEY,
+        data TEXT NOT NULL,
+        created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+      );
+    `);
+  } catch (e) {
+    console.error('[QuizCache] Error creating table:', e);
+  }
+
+  // 2. Check Cache
+  const cacheKey = generateHash(questionContent + wrongAnswer + correctAnswer);
+  if (!force) {
+    const cached = db.prepare('SELECT data FROM ai_quiz_cache WHERE hash = ?').get(cacheKey) as { data: string } | undefined;
+    if (cached) {
+      console.log('[QuizCache] 命中缓存');
+      return JSON.parse(cached.data) as CorrectionQuiz;
+    }
+  }
+
   const dbTemplate = getPromptFromDbSync('correction_quiz');
   const template = dbTemplate || DEFAULT_CORRECTION_PROMPT;
 
@@ -25,7 +49,14 @@ export async function generateCorrectionQuizAction(
   });
 
   try {
-    return await generateStructuredData(CorrectionQuizSchema, prompt, 'premium');
+    const result = await generateStructuredData(CorrectionQuizSchema, prompt, 'premium');
+    // 4. Save to Cache
+    try {
+      db.prepare('INSERT OR REPLACE INTO ai_quiz_cache (hash, data) VALUES (?, ?)').run(cacheKey, JSON.stringify(result));
+    } catch (e) {
+      console.error('[QuizCache] 保存失败:', e);
+    }
+    return result;
   } catch (error) {
     console.warn('Correction Quiz AI generation failed, using RAG fallback.');
     const similar = await questionService.searchSimilarQuestions(questionContent, 1);
@@ -57,8 +88,32 @@ export async function generateCorrectionQuizAction(
 
 export async function generateRegressionChallengeAction(
   questionContent: string,
-  tags: string[]
+  tags: string[],
+  force: boolean = false
 ): Promise<RegressionChallenge> {
+  // 1. Ensure Table
+  try {
+    db.exec(`
+      CREATE TABLE IF NOT EXISTS ai_challenge_cache (
+        hash TEXT PRIMARY KEY,
+        data TEXT NOT NULL,
+        created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+      );
+    `);
+  } catch (e) {
+    console.error('[ChallengeCache] Error creating table:', e);
+  }
+
+  // 2. Check Cache
+  const cacheKey = generateHash(questionContent + tags.join('|'));
+  if (!force) {
+    const cached = db.prepare('SELECT data FROM ai_challenge_cache WHERE hash = ?').get(cacheKey) as { data: string } | undefined;
+    if (cached) {
+      console.log('[ChallengeCache] 命中缓存');
+      return JSON.parse(cached.data) as RegressionChallenge;
+    }
+  }
+
   const dbTemplate = getPromptFromDbSync('regression_challenge');
   const template = dbTemplate || DEFAULT_REGRESSION_PROMPT;
 
@@ -85,6 +140,12 @@ export async function generateRegressionChallengeAction(
     const { text: validationResult } = await generateTextWrapper(validationPrompt, 'premium');
 
     if (validationResult.includes('YES')) {
+      // 4. Save Cache only if valid
+      try {
+        db.prepare('INSERT OR REPLACE INTO ai_challenge_cache (hash, data) VALUES (?, ?)').run(cacheKey, JSON.stringify(challenge));
+      } catch (e) {
+        console.error('[ChallengeCache] 保存失败:', e);
+      }
       return challenge;
     } else {
       console.warn('Double Insurance failed: API B rejected API A. Falling back to library retrieval.');

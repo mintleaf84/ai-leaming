@@ -2,6 +2,7 @@
 
 import React from 'react';
 import Link from 'next/link';
+import Image from 'next/image';
 import { usePathname } from 'next/navigation';
 import {
     BookOpen,
@@ -133,7 +134,7 @@ export function AppSidebar({ user }: UserProps) {
             <div className="h-16 flex items-center px-6 border-b border-sidebar-border">
                 <Link href="/" className="flex items-center gap-2 group">
                     <div className="relative w-7 h-7">
-                        <img src="/logo.png" alt="琢玉 Logo" className="object-contain w-full h-full group-hover:scale-110 transition-transform" />
+                        <Image src="/logo.png" alt="琢玉 Logo" width={28} height={28} className="object-contain group-hover:scale-110 transition-transform" />
                     </div>
                     <span className="font-bold text-lg bg-gradient-to-r from-emerald-700 to-teal-700 bg-clip-text text-transparent font-serif md:dark:from-emerald-400 md:dark:to-teal-400">
                         琢玉

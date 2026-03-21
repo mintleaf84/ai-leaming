@@ -23,6 +23,14 @@ export async function GET() {
         // ignore
     }
 
+    // App Version
+    const pkgPath = path.resolve(process.cwd(), 'package.json');
+    let appVersion = 'v1.0.0';
+    try {
+        const pkg = JSON.parse(fs.readFileSync(pkgPath, 'utf8'));
+        if (pkg.version) appVersion = `v${pkg.version}`;
+    } catch { }
+
     return NextResponse.json({
         os: {
             platform: os.platform(),
@@ -46,6 +54,7 @@ export async function GET() {
         },
         ai: getApiCallStats(),
         demoMode: getDemoModeStatus(),
+        appVersion: appVersion,
         timestamp: Date.now()
     });
 }

@@ -57,6 +57,7 @@ type SystemStatus = {
         }[];
     };
     demoMode?: boolean;
+    appVersion: string;
     timestamp: number;
 };
 
@@ -230,6 +231,10 @@ export default function SystemPage() {
                         <div className="flex justify-between items-center border-b pb-2">
                             <span className="text-sm font-medium">Node 内存 (RSS)</span>
                             <span className="font-mono text-sm">{formatBytes(status.process.memory.rss)}</span>
+                        </div>
+                        <div className="flex justify-between items-center pt-2">
+                            <span className="text-sm font-medium">应用版本</span>
+                            <span className="font-mono text-xs font-semibold px-2 py-0.5 bg-primary/10 text-primary rounded-md">{status.appVersion}</span>
                         </div>
                         <div className="flex justify-between items-center pt-2">
                             <span className="text-sm font-medium">操作系统</span>

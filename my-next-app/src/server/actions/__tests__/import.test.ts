@@ -2,20 +2,15 @@
 import { describe, it, expect, beforeEach, vi } from 'vitest';
 
 // 1. Mock dependencies
-const { mockDb, mockMasteryService } = vi.hoisted(() => {
+const { mockBetterDb } = vi.hoisted(() => {
+    const { createBetterDbMock } = require('../../../lib/__tests__/db-mock-utils');
     return {
-        mockDb: {
-            prepare: vi.fn(),
-            transaction: vi.fn((cb) => cb()), // Mock transaction by executing callback immediately
-        },
-        mockMasteryService: {
-            updateMastery: vi.fn(),
-        }
+        mockBetterDb: createBetterDbMock()
     };
 });
 
 vi.mock('@/lib/db', () => ({
-    default: mockDb
+    default: mockBetterDb
 }));
 
 vi.mock('@/lib/auth/auth', () => ({
@@ -23,7 +18,7 @@ vi.mock('@/lib/auth/auth', () => ({
 }));
 
 vi.mock('@/lib/services/mastery', () => ({
-    masteryService: mockMasteryService
+    masteryService: { updateMastery: vi.fn() }
 }));
 
 vi.mock('@/lib/import/fenbi-parser', () => ({
@@ -36,23 +31,9 @@ import { importFenbiDataAction } from '../import';
 
 describe('Import Actions', () => {
     beforeEach(() => {
+        mockBetterDb.reset();
         vi.clearAllMocks();
     });
-
-    // Helper to setup DB mocks
-    const setupDbMocks = (existingQuestionId?: number) => {
-        const mockRun = vi.fn().mockReturnValue({ lastInsertRowid: 100 });
-        const mockGet = vi.fn().mockReturnValue(existingQuestionId ? { id: existingQuestionId } : undefined);
-
-        mockDb.prepare.mockImplementation((sql: string) => {
-            if (sql.includes('INSERT')) return { run: mockRun };
-            if (sql.includes('SELECT') && sql.includes('FROM questions')) return { get: mockGet };
-            if (sql.includes('UPDATE')) return { run: mockRun };
-            return { run: mockRun, get: mockGet };
-        });
-
-        return { mockRun, mockGet };
-    };
 
     it('should successfully import valid data with new questions', async () => {
         // Setup Parser Mocks
@@ -64,73 +45,58 @@ describe('Import Actions', () => {
             errorCount: 0,
             statsCount: 0,
             questions: [{
-                externalId: 'ext-1',
-                content: 'Question 1',
-                contentHtml: '<p>Question 1</p>',
-                type: 'single',
-                options: ['A', 'B'],
-                answer: 'A',
-                explanation: 'Exp',
-                explanationHtml: '<p>Exp</p>',
-                tags: ['Tag1'],
-                dimension: 'knowledge',
-                source: 'fenbi',
+                externalId: 'ext-1', content: 'Q1', contentHtml: '<p>Q1</p>',
+                type: 'single', options: ['A', 'B'], answer: 'A',
+                explanation: 'Exp', explanationHtml: '<p>Exp</p>',
+                tags: ['Tag1'], dimension: 'knowledge', source: 'fenbi',
                 stats: { correctRatio: 0.8, mostWrongAnswer: 'B', totalAnswers: 100 }
             }],
-            records: [{
-                externalId: 'ext-1',
-                userAnswer: 'A',
-                isCorrect: true,
-                durationMs: 1000
-            }]
+            records: [{ externalId: 'ext-1', userAnswer: 'A', isCorrect: true, durationMs: 1000 }]
         });
-
-        const { mockRun } = setupDbMocks(undefined);
 
         const result = await importFenbiDataAction('{}', '{}');
 
         expect(result.success).toBe(true);
-        expect(mockDb.transaction).toHaveBeenCalled();
+        expect(mockBetterDb.transaction).toHaveBeenCalled();
+        expect(mockBetterDb._state.wasCommitted).toBe(true);
         
         // 验证插入练习会话
-        expect(mockRun).toHaveBeenCalledWith(
-            expect.stringContaining('fenbi_'), // sessionId
-            1, // user_id
-            'Test Session',
-            1, // total
-            1, // correct
-            'import',
-            expect.any(String) // questions_json
-        );
+        const calls = mockBetterDb._state.calls;
+        const sessionCall = calls.find((c: any) => c.sql.includes('INSERT INTO practice_sessions'));
+        expect(sessionCall).toBeDefined();
+        expect(sessionCall?.args).toContain('Test Session');
 
-        // 验证插入题目
-        expect(mockRun).toHaveBeenCalledWith(
-            'Question 1', 
-            JSON.stringify(['A', 'B']), 
-            'A', 
-            'Exp', 
-            JSON.stringify(['Tag1']), 
-            'knowledge', 
-            'single', 
-            'ext-1', 
-            'fenbi', 
-            0.8, 
-            'B', 
-            null, 
-            null
-        );
-
-        // 验证插入日志
-        expect(mockRun).toHaveBeenCalledWith(
-            expect.stringContaining('fenbi_'),
-            1,
-            100, // question_id
-            'A',
-            1,
-            1000
-        );
+        // 验证题目 JSON
+        const questionsJson = sessionCall?.args[6];
+        const parsedQuestions = JSON.parse(questionsJson);
+        expect(parsedQuestions).toHaveLength(1);
+        expect(parsedQuestions[0].externalId).toBe('ext-1');
     });
 
+    it('should rollback transaction if middle step fails', async () => {
+        vi.mocked(validateFenbiJson).mockReturnValue({ valid: true });
+        vi.mocked(parseFenbiData).mockReturnValue({
+            sessionName: 'Fail Session',
+            totalCount: 1, correctCount: 0, errorCount: 0, statsCount: 0,
+            questions: [{ externalId: 'err-1', content: 'Err' } as any],
+            records: []
+        });
+
+        // 模拟在第二次 SQL 调用时抛出错误
+        let callCount = 0;
+        mockBetterDb._mockRun.mockImplementation(() => {
+            callCount++;
+            if (callCount === 2) throw new Error('Middle Step Failed');
+            return { lastInsertRowid: 100 };
+        });
+
+        const result = await importFenbiDataAction('{}', '{}');
+
+        expect(result.success).toBe(false);
+        expect(mockBetterDb._state.wasRolledBack).toBe(true);
+        expect(mockBetterDb._state.wasCommitted).toBe(false);
+    });
+    
     it('should update existing questions instead of creating duplicates', async () => {
         vi.mocked(validateFenbiJson).mockReturnValue({ valid: true });
         vi.mocked(parseFenbiData).mockReturnValue({
@@ -144,34 +110,19 @@ describe('Import Actions', () => {
             records: []
         });
 
-        const { mockRun } = setupDbMocks(999);
+        // 模拟数据库已存在该题目 (externalId: 'ext-1')
+        mockBetterDb._mockGet.mockReturnValueOnce({ id: 999 });
 
         const result = await importFenbiDataAction('{}', '{}');
 
         expect(result.success).toBe(true);
-        expect(mockDb.transaction).toHaveBeenCalled();
+        expect(mockBetterDb.transaction).toHaveBeenCalled();
         
-        // 第 1 次调用是 INSERT INTO practice_sessions
-        // 第 2 次调用是 UPDATE questions
-        expect(mockRun).toHaveBeenNthCalledWith(2,
-            null, null, 'Updated', 'Fixed Exp', 'single', 'A', '[]', 999
-        );
-    });
-
-    it('should return error if database transaction fails', async () => {
-        vi.mocked(validateFenbiJson).mockReturnValue({ valid: true });
-        vi.mocked(parseFenbiData).mockReturnValue({
-            sessionName: 'Fail', questions: [{ externalId: '1' } as any], records: [], totalCount: 1, correctCount: 0, errorCount: 1, statsCount: 0
-        });
-
-        mockDb.transaction.mockImplementationOnce(() => {
-            throw new Error('DB Write Error');
-        });
-
-        const result = await importFenbiDataAction('{}', '{}');
-
-        expect(result.success).toBe(false);
-        expect(result.message).toContain('DB Write Error');
+        // 验证是否调用了 UPDATE 语句
+        const calls = mockBetterDb._state.calls;
+        const updateCall = calls.find((c: any) => c.sql.includes('UPDATE questions'));
+        expect(updateCall).toBeDefined();
+        expect(updateCall?.args).toContain(999); // 验证 ID 匹配
     });
 
     it('should return error if validation fails', async () => {

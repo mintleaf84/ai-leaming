@@ -16,7 +16,7 @@ export default async function LandingPage() {
             <nav className="flex items-center justify-between px-6 py-6 max-w-7xl mx-auto">
                 <div className="flex items-center gap-2">
                     <div className="relative w-8 h-8">
-                        <Image src="/logo.png" alt="ZhuoYu Logo" width={32} height={32} className="object-contain" />
+                        <Image src="/logo.png" alt="ZhuoYu Logo" width={32} height={32} className="object-contain" priority />
                     </div>
                     <span className="font-bold text-xl font-serif">ZhuoYu</span>
                 </div>
@@ -73,8 +73,8 @@ export default async function LandingPage() {
 
                 {/* Right Visual: Floating Cards */}
                 <div className="flex-1 w-full relative h-[500px] flex items-center justify-center animate-in fade-in justify-self-end duration-1000 delay-200">
-                    {/* Background Glow */}
-                    <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[500px] h-[500px] bg-emerald-100/30 rounded-full blur-3xl -z-10" />
+                    {/* Background Glow - GPU Accelerated to prevent paint penalty */}
+                    <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[500px] h-[500px] bg-emerald-100/30 rounded-full blur-3xl -z-10 will-change-transform transform-gpu backface-hidden" />
 
                     {/* Stacked Cards */}
                     <div className="relative w-80 md:w-96 perspective-1000">

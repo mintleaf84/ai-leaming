@@ -2,11 +2,11 @@ import { cookies, headers } from 'next/headers';
 import { NextRequest, NextResponse } from 'next/server';
 import { User, UserRole } from '@/lib/types';
 import { getUserById } from './user-service';
+import { cache } from 'react';
 
 // 从 Edge 兼容模块重新导出 JWT 相关功能
 export { encrypt, decrypt, COOKIE_NAME } from './auth-edge';
 import { encrypt, decrypt, COOKIE_NAME } from './auth-edge';
-
 
 export async function login(user: User) {
     // Create the session
@@ -25,7 +25,7 @@ export async function logout() {
     (await cookies()).set(COOKIE_NAME, '', { expires: new Date(0) });
 }
 
-export async function getSession() {
+export const getSession = cache(async () => {
     let session = (await cookies()).get(COOKIE_NAME)?.value;
 
     // Support Bearer Token for Mobile
@@ -43,7 +43,7 @@ export async function getSession() {
     } catch (e) {
         return null;
     }
-}
+});
 
 export async function requireUser(): Promise<User> {
     const session = await getSession();

@@ -1,6 +1,6 @@
 import type { Metadata, Viewport } from "next";
 import localFont from "next/font/local";
-import { Toaster } from "@/components/ui/sonner";
+import dynamic from 'next/dynamic';
 import { ErrorBoundary } from "@/components/ErrorBoundary";
 // import { Navbar } from "@/components/Navbar";
 import { AppSidebar } from "@/components/layout/AppSidebar";
@@ -9,6 +9,8 @@ import { ThemeProvider } from "@/components/theme-provider";
 import { TerminologyProvider } from "@/lib/hooks/use-terminology";
 import { QueryProvider } from "@/lib/providers/QueryProvider";
 import "./globals.css";
+
+import { Toaster } from "@/components/ui/sonner";
 
 const geistSans = localFont({
   src: "../../public/fonts/GeistVF.woff2",

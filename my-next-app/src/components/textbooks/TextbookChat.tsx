@@ -13,8 +13,8 @@ import {
     SheetTitle,
     SheetTrigger,
 } from "@/components/ui/sheet";
-import ReactMarkdown from 'react-markdown';
-import remarkGfm from 'remark-gfm';
+import dynamic from 'next/dynamic';
+const MarkdownViewer = dynamic(() => import('@/components/chat/MarkdownViewer'), { ssr: false });
 
 interface Message {
     id: string;
@@ -140,15 +140,7 @@ export function TextbookChat({ context, title }: TextbookChatProps) {
                                     }`}>
                                     {m.role === 'assistant' ? (
                                         <div className="prose dark:prose-invert max-w-none text-sm leading-relaxed">
-                                            <ReactMarkdown
-                                                remarkPlugins={[remarkGfm]}
-                                                components={{
-                                                    // Prevent default paragraph margin for cleaner chat
-                                                    p: ({ children }) => <p className="mb-2 last:mb-0">{children}</p>
-                                                }}
-                                            >
-                                                {m.content}
-                                            </ReactMarkdown>
+                                            <MarkdownViewer content={m.content} />
                                         </div>
                                     ) : (
                                         m.content

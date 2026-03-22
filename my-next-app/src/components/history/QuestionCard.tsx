@@ -4,7 +4,8 @@ import React, { useState } from 'react';
 import { CheckCircle2, XCircle, BookOpen, ChevronDown, ChevronUp, BrainCircuit, Lightbulb, Loader2, Sparkles, RefreshCw } from 'lucide-react';
 import { formatDuration, indexToLetter } from '@/lib/utils/utils';
 import { AnnotatableText } from './AnnotatableText';
-import ReactMarkdown from 'react-markdown';
+import dynamic from 'next/dynamic';
+const MarkdownViewer = dynamic(() => import('@/components/chat/MarkdownViewer'), { ssr: false });
 import { generateMnemonicAction } from '@/server/actions/ai-mnemonic';
 import { generateFirstPrinciplesAction } from '@/server/actions/ai';
 import { toast } from 'sonner';
@@ -385,9 +386,7 @@ export function QuestionCard({ log, index, isExpanded, onToggle, refCallback }: 
                                 </div>
 
                                 {mnemonic ? (
-                                    <div className="prose prose-sm dark:prose-invert max-w-none bg-card p-4 rounded-xl border border-purple-500/20 shadow-sm">
-                                        <ReactMarkdown>{mnemonic}</ReactMarkdown>
-                                    </div>
+                                        <MarkdownViewer content={mnemonic} />
                                 ) : (
                                     <div className="text-xs text-muted-foreground">
                                         遇到难记的知识点？点击按钮，AI 为你生成趣味口诀和脑洞联想。

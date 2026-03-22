@@ -18,7 +18,7 @@ interface MarkdownViewerProps {
  * Markdown 渲染组件（独立拆分，支持 next/dynamic 懒加载）
  * 包含 GFM 表格、数学公式（KaTeX）、代码高亮等插件
  */
-export default function MarkdownViewer({ content, isUser = false }: MarkdownViewerProps) {
+const MarkdownViewer = ({ content, isUser = false }: MarkdownViewerProps) => {
     return (
         <ReactMarkdown
             remarkPlugins={[remarkGfm, remarkMath]}
@@ -130,3 +130,7 @@ export default function MarkdownViewer({ content, isUser = false }: MarkdownView
         </ReactMarkdown>
     );
 }
+
+export default React.memo(MarkdownViewer, (prevProps, nextProps) => {
+    return prevProps.content === nextProps.content && prevProps.isUser === nextProps.isUser;
+});

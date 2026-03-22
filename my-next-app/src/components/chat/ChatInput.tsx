@@ -1,4 +1,4 @@
-import React, { useState, useRef, useEffect, useCallback, forwardRef, useImperativeHandle } from 'react';
+import React, { useState, useRef, useEffect, useCallback, forwardRef, useImperativeHandle, memo } from 'react';
 import { Send, Loader2, StopCircle } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 
@@ -22,7 +22,7 @@ const COMMANDS = [
     { command: '/explain', description: '解释概念', example: '/explain 认知发展理论' },
 ];
 
-export const ChatInput = forwardRef<ChatInputHandle, ChatInputProps>(({
+export const ChatInput = memo(forwardRef<ChatInputHandle, ChatInputProps>(({
     isLoading,
     showFavorites,
     enableRag,
@@ -193,6 +193,6 @@ export const ChatInput = forwardRef<ChatInputHandle, ChatInputProps>(({
             </div>
         </footer>
     );
-});
+}));
 
 ChatInput.displayName = 'ChatInput';

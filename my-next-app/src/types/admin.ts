@@ -19,10 +19,13 @@ export type AdminAction =
     | 'RESTORE_DATABASE'
     | 'REVOKE_SESSION'
     | 'BATCH_DELETE_QUESTION'
+    | 'CREATE_API_KEY'
+    | 'TOGGLE_API_KEY'
+    | 'DELETE_API_KEY'
     | 'OTHER';
 
 // 目标类型枚举
-export type TargetType = 'user' | 'question' | 'ai_config' | 'ai_model_route' | 'prompt' | 'system' | null;
+export type TargetType = 'user' | 'question' | 'ai_config' | 'ai_model_route' | 'prompt' | 'system' | 'api_key' | null;
 
 // 审计日志条目
 export interface AdminLogEntry {
@@ -53,6 +56,9 @@ export const ADMIN_ACTION_LABELS: Record<AdminAction, string> = {
     'BACKUP_DATABASE': '备份数据库',
     'RESTORE_DATABASE': '恢复数据库',
     'BATCH_DELETE_QUESTION': '批量删除题目',
+    'CREATE_API_KEY': '创建API密钥',
+    'TOGGLE_API_KEY': '切换API密钥状态',
+    'DELETE_API_KEY': '删除API密钥',
     'OTHER': '其他操作',
 };
 

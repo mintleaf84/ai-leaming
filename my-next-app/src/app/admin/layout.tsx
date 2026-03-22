@@ -13,7 +13,8 @@ import {
     Cpu,
     Menu,
     X,
-    CreditCard
+    CreditCard,
+    Key
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useRouter } from 'next/navigation';
@@ -34,6 +35,7 @@ export default function AdminLayout({
         { href: '/admin/questions', label: '题库管理', icon: BookOpen },
         { href: '/admin/ai', label: 'AI 与提示词', icon: Cpu },
         { href: '/admin/system', label: '系统运维', icon: Activity },
+        { href: '/admin/api-keys', label: 'API Key 管理', icon: Key },
         { href: '/admin/logs', label: '操作日志', icon: Settings },
     ];
 

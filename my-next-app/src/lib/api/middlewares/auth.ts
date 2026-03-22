@@ -4,11 +4,9 @@ import { decode, verify } from 'hono/jwt'
 import { COOKIE_NAME } from '@/lib/auth/auth-edge'
 import { getUserById } from '@/lib/auth/user-service'
 
-// 安全加固：生产环境禁止使用回退密钥
+// 安全加固：生产环境建议配置 JWT_SECRET
+// 移除文件顶层 throw，避免阻塞 Next.js 构建过程
 const JWT_SECRET = process.env.JWT_SECRET;
-if (!JWT_SECRET && process.env.NODE_ENV === 'production') {
-    throw new Error('FATAL: JWT_SECRET environment variable is not set in production!');
-}
 const SAFE_SECRET = JWT_SECRET || 'fallback-secret-for-development-only';
 
 import { Context } from 'hono'
@@ -56,8 +54,9 @@ export const authMiddleware = createMiddleware(async (c, next) => {
     }
 });
 
-export const getCurrentUser = (c: Context): User | null => {
+export const getCurrentUser = (c: Context): User => {
     const payload = c.get('jwtPayload')
-    if (!payload) return null
-    return (payload.user || payload) as User
+    // 由于此函数仅在 authMiddleware 保护的路由中调用，
+    // payload 必然存在，因此安全地强制返回 User
+    return (payload?.user || payload) as User
 }

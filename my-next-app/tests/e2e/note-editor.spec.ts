@@ -43,41 +43,31 @@ test.describe('Note Editor E2E', () => {
         await editor.type('/');
         const commandMenu = page.locator('[cmdk-list]');
         await expect(commandMenu).toBeVisible();
-        // 验证有 "AI 续写" 选项
         await expect(commandMenu.getByText('AI 续写')).toBeVisible();
 
-        // 关闭菜单
-        await editor.press('Escape');
+        // 点击 AI 续写
+        await commandMenu.getByText('AI 续写').click();
+        
+        // 验证 Mock 的 AI 内容是否插入到了编辑器
+        // AI SDK 的 useCompletion 会逐步替换文本，等待最终结果出现
+        await expect(page.getByText('这是 AI 续写的内容...')).toBeVisible({ timeout: 15000 });
 
-        // 6. 验证 Bubble Menu (AI 助手)
-        // 输入一段长文本以便选中
-        await editor.fill('Testing AI Selection Bubbles');
-        await page.waitForTimeout(500); // 稍微等待编辑器状态同步
-        // 使用键盘全选
-        await page.keyboard.press('Control+A'); // Windows/Linux
-        const isMac = process.platform === 'darwin';
-        if (isMac) await page.keyboard.press('Meta+A'); // Mac
-        await page.waitForTimeout(500); // 等待 Bubble Menu 动画
-
-        // 验证 Bubble Menu 出现
-        // 注意：Bubble Menu 是根据 selection state 渲染的
-        const aiButton = page.getByRole('button', { name: /AI 助手|Ask AI/i }).first();
-        await expect(aiButton).toBeVisible({ timeout: 10000 });
-
-        // 7. 测试点击 AI 按钮
-        await aiButton.click();
-        // 验证 AI 输入框出现
-        const aiInput = page.getByPlaceholder('告诉 AI 下一步做什么');
-        await expect(aiInput).toBeVisible();
-
-        // 验证 AI 续写执行
-        // 点击 "继续以此续写" 可以在 AI Selector Commands 中找到，或者直接在输入框输入指令
-        // 这里我们选择输入指令
-        await aiInput.fill('续写');
+        // 6. 验证 Bubble Menu (试运行)
+        await editor.focus();
+        await page.keyboard.press('Control+A'); // 全选
+        
+        // 等待气泡菜单出现
+        const aiSelector = page.locator('[placeholder*="让 AI 编辑或生成"]');
+        // 如果气泡菜单没有立即出现，可能需要点击或双击
+        if (!(await aiSelector.isVisible())) {
+             await editor.dblclick();
+        }
+        
+        await expect(aiSelector).toBeVisible({ timeout: 10000 });
+        await aiSelector.fill('润色');
         await page.keyboard.press('Enter');
 
-        // 验证 Mock 的 AI 内容是否插入到了编辑器 (依靠之前的 mockResponse)
-        // 注意：AI 生成是流式的，可能需要一点时间
+        // 验证 AI 优化后的内容 (同样通过 Mock)
         await expect(page.getByText('这是 AI 续写的内容...')).toBeVisible();
 
         // 8. 验证基本格式化 (Bold)

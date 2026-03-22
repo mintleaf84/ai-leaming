@@ -49,3 +49,9 @@ export function getUserById(id: number): User | null {
     const record = db.prepare('SELECT id, username, role, token_version FROM users WHERE id = ?').get(id) as User | null;
     return record;
 }
+/**
+ * 撤销用户的所有会话 (通过增加版本号)
+ */
+export function revokeUserSessions(userId: number): void {
+  db.prepare('UPDATE users SET token_version = token_version + 1 WHERE id = ?').run(userId);
+}

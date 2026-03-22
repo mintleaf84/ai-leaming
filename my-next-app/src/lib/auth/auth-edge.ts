@@ -5,8 +5,12 @@
  */
 import { SignJWT, jwtVerify } from 'jose';
 
+const JWT_SECRET_ENV = process.env.JWT_SECRET;
+if (!JWT_SECRET_ENV && process.env.NODE_ENV === 'production') {
+    throw new Error('FATAL: JWT_SECRET environment variable is not set in production!');
+}
 const SECRET = new TextEncoder().encode(
-    process.env.JWT_SECRET || 'fallback-secret-for-development-only-replace-it-in-production'
+    JWT_SECRET_ENV || 'fallback-secret-for-development-only'
 );
 
 export const COOKIE_NAME = 'auth_token';

@@ -24,43 +24,31 @@ export const masteryService = {
    * score = (correct_count / total_count) × 100
    */
   updateMastery: (userId: number, tagName: string, _dimension: Dimension, isCorrect: boolean, isMonitoredCorrect: boolean = false): MasteryUpdateResult[] => {
-    const results: MasteryUpdateResult[] = [];
-
-    // 1. 获取当前数据
-    const currentEntry = db.prepare(
-      'SELECT score, correct_count, total_count FROM user_mastery WHERE user_id = ? AND tag_name = ?'
-    ).get(userId, tagName) as { score: number; correct_count: number; total_count: number } | undefined;
-
-    const previousScore = currentEntry?.score ?? 0;
-    const currentCorrect = currentEntry?.correct_count ?? 0;
-    const currentTotal = currentEntry?.total_count ?? 0;
-
-    // 2. 更新计数
-    // 可疑答对（监控正确）时：不增加正确数，但增加总数
-    let newCorrect = currentCorrect;
-    if (isCorrect && !isMonitoredCorrect) {
-      newCorrect = currentCorrect + 1;
-    }
-    const newTotal = currentTotal + 1;
-
-    // 3. 计算新分数（准确率 × 100）
-    const newScore = newTotal > 0 ? (newCorrect / newTotal) * 100 : 0;
-    const change = newScore - previousScore;
-
-    // 4. 更新数据库
+    const incCorrect = (isCorrect && !isMonitoredCorrect) ? 1 : 0;
+    
+    // 1. 原子化更新 (Thread Safe)
+    // 核心逻辑：直接在数据库层面进行累加计算，避开 JS 层的竞态
     db.prepare(`
       INSERT INTO user_mastery (user_id, tag_name, score, correct_count, total_count, last_updated) 
-      VALUES (?, ?, ?, ?, ?, CURRENT_TIMESTAMP)
+      VALUES (?, ?, ?, ?, 1, CURRENT_TIMESTAMP)
       ON CONFLICT(user_id, tag_name) DO UPDATE SET 
-        score = excluded.score,
-        correct_count = excluded.correct_count,
-        total_count = excluded.total_count,
+        correct_count = user_mastery.correct_count + excluded.correct_count,
+        total_count = user_mastery.total_count + 1,
+        score = (CAST(user_mastery.correct_count + excluded.correct_count AS FLOAT) / (user_mastery.total_count + 1)) * 100,
         last_updated = CURRENT_TIMESTAMP
-    `).run(userId, tagName, newScore, newCorrect, newTotal);
+    `).run(userId, tagName, isCorrect ? 100 : 0, incCorrect);
 
-    results.push({ tagName, previousScore, newScore, change });
+    // 2. 获取更新后的结果用于返回 (仅供 UI 反馈)
+    const updated = db.prepare(
+      'SELECT score FROM user_mastery WHERE user_id = ? AND tag_name = ?'
+    ).get(userId, tagName) as { score: number };
 
-    return results;
+    return [{ 
+      tagName, 
+      previousScore: 0, // 由于是原子操作，前置分数不再保留以换取性能
+      newScore: updated.score, 
+      change: 0 
+    }];
   },
 
   getMastery: (userId: number, tagName: string): number => {

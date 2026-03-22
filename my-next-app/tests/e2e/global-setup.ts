@@ -31,13 +31,34 @@ async function globalSetup(config: FullConfig) {
   const db = new Database(dbPath);
   db.pragma('journal_mode = WAL');
 
+  // 1.0 加载向量扩展 (以支持虚拟表)
+  try {
+    const platform = process.platform;
+    const arch = process.arch;
+    let binaryName = 'vec0.so';
+    let packageName = 'sqlite-vec-linux-x64';
+    if (platform === 'win32') {
+      binaryName = 'vec0.dll';
+      packageName = arch === 'x64' ? 'sqlite-vec-windows-x64' : `sqlite-vec-win32-${arch}`;
+    } else if (platform === 'darwin') {
+      binaryName = 'vec0.dylib';
+      packageName = `sqlite-vec-darwin-${arch}`;
+    }
+    const loadablePath = path.resolve(process.cwd(), 'node_modules', packageName, binaryName);
+    console.log(`[E2E Setup] 正在加载向量扩展: ${loadablePath}`);
+    db.loadExtension(loadablePath);
+    console.log('[E2E Setup] ✅ sqlite-vec 扩展加载成功');
+  } catch (err) {
+    console.warn('[E2E Setup] ⚠️ 向量扩展加载失败，RAG 测试可能受限:', err);
+  }
+
   // 1.1 清理旧数据（代替 fs.unlinkSync，以兼容 Windows 锁定情况）
   console.log('[E2E Setup] 正在清理旧测试数据...');
   const tables = [
     'users', 'notes', 'note_tags', 'note_tag_relations', 'questions', 'practice_sessions', 
-    'practice_logs', 'ai_configs', 'chat_sessions', 'chat_messages', 'user_mastery',
+    'practice_logs', 'ai_configs', 'ai_model_routes', 'chat_sessions', 'chat_messages', 'user_mastery',
     'subscription_plans', 'user_subscriptions', 'prompt_templates',
-    'system_settings', 'daily_usage'
+    'system_settings', 'daily_usage', 'knowledge_cards', 'content_chunks', 'content_vec'
 
   ];
   
@@ -187,6 +208,53 @@ async function globalSetup(config: FullConfig) {
       updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
     );
 
+    CREATE TABLE IF NOT EXISTS note_tags (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      name TEXT UNIQUE NOT NULL,
+      user_id INTEGER NOT NULL DEFAULT 1,
+      created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+    );
+
+    CREATE TABLE IF NOT EXISTS note_tag_relations (
+      note_id INTEGER NOT NULL,
+      tag_id INTEGER NOT NULL,
+      PRIMARY KEY (note_id, tag_id),
+      FOREIGN KEY (note_id) REFERENCES notes(id) ON DELETE CASCADE,
+      FOREIGN KEY (tag_id) REFERENCES note_tags(id) ON DELETE CASCADE
+    );
+
+    CREATE TABLE IF NOT EXISTS knowledge_cards (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      session_id INTEGER,
+      title TEXT NOT NULL,
+      category TEXT,
+      tags TEXT,
+      front TEXT NOT NULL,
+      back TEXT NOT NULL,
+      key_points TEXT,
+      source_content TEXT,
+      created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+      updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
+    );
+
+    CREATE TABLE IF NOT EXISTS ai_model_routes (
+      feature TEXT PRIMARY KEY,
+      config_id INTEGER,
+      model_name TEXT,
+      updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+      FOREIGN KEY (config_id) REFERENCES ai_configs(id) ON DELETE SET NULL
+    );
+
+    CREATE TABLE IF NOT EXISTS content_chunks (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      content TEXT NOT NULL,
+      metadata TEXT
+    );
+
+    CREATE VIRTUAL TABLE IF NOT EXISTS content_vec USING vec0(
+      embedding float[1024]
+    );
+
     CREATE TABLE IF NOT EXISTS daily_usage (
       id INTEGER PRIMARY KEY AUTOINCREMENT,
       user_id INTEGER NOT NULL,
@@ -247,6 +315,17 @@ async function globalSetup(config: FullConfig) {
   `).run('测试AI配置', 'https://mock-api.test.com/v1', 'sk-test-mock-key', 'gpt-3.5-turbo', 'gpt-4', 1);
 
   console.log('[E2E Setup] 已创建 AI 配置');
+
+  // 3.3.1 创建 AI 模型路由
+  db.prepare(`
+    INSERT OR REPLACE INTO ai_model_routes (feature, config_id, model_name)
+    VALUES (?, ?, ?), (?, ?, ?), (?, ?, ?)
+  `).run(
+    'ai_chat', 1, 'gpt-3.5-turbo',
+    'embedding', 1, 'text-embedding-3-small',
+    'rerank', 1, 'bge-reranker-v2-m3'
+  );
+  console.log('[E2E Setup] 已创建 AI 模型路由');
 
   // 3.4 创建订阅计划
   db.prepare(`

@@ -1,7 +1,7 @@
 import { cookies, headers } from 'next/headers';
 import { NextRequest, NextResponse } from 'next/server';
 import { User, UserRole } from '@/lib/types';
-import { getUserById } from './user-service';
+import { getUserById, revokeUserSessions } from './user-service';
 import { cache } from 'react';
 
 // 从 Edge 兼容模块重新导出 JWT 相关功能
@@ -21,7 +21,11 @@ export async function login(user: User) {
 }
 
 export async function logout() {
-    // Destroy the session
+    const session = await getSession();
+    if (session?.user?.id) {
+        revokeUserSessions(session.user.id);
+    }
+    // Destroy the session in cookie
     (await cookies()).set(COOKIE_NAME, '', { expires: new Date(0) });
 }
 

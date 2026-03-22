@@ -15,7 +15,7 @@ services:
       # 从宿主机的环境变量或 .env 文件读取
       - NODE_ENV=production
       - DB_FILENAME=/app/data/ai-learning.db
-      - JWT_SECRET=${JWT_SECRET:-your-fallback-secret-change-me}
+      - JWT_SECRET=${JWT_SECRET}
       - AI_API_KEY=${AI_API_KEY}
       - AI_API_URL=${AI_API_URL}
     restart: always

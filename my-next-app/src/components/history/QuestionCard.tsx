@@ -9,6 +9,7 @@ const MarkdownViewer = dynamic(() => import('@/components/chat/MarkdownViewer'),
 import { generateMnemonicAction } from '@/server/actions/ai-mnemonic';
 import { generateFirstPrinciplesAction } from '@/server/actions/ai';
 import { toast } from 'sonner';
+import { sanitizeHtml } from '@/lib/utils/security';
 import {
     Tooltip,
     TooltipContent,
@@ -154,7 +155,7 @@ export function QuestionCard({ log, index, isExpanded, onToggle, refCallback }: 
                         </div>
                         <div
                             className="prose prose-sm dark:prose-invert max-w-none text-foreground leading-relaxed"
-                            dangerouslySetInnerHTML={{ __html: log.materialHtml || '' }}
+                            dangerouslySetInnerHTML={{ __html: sanitizeHtml(log.materialHtml || '') }}
                         />
                     </div>
                 )}
@@ -176,7 +177,7 @@ export function QuestionCard({ log, index, isExpanded, onToggle, refCallback }: 
                                 {/* 题干内容 */}
                                 <div
                                     className="font-medium text-foreground leading-relaxed"
-                                    dangerouslySetInnerHTML={{ __html: log.questionContent }}
+                                    dangerouslySetInnerHTML={{ __html: sanitizeHtml(log.questionContent) }}
                                 />
 
                                 {/* 选项列表 */}

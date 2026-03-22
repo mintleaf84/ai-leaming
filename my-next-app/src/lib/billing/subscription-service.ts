@@ -261,17 +261,20 @@ export function checkAndConsumeQuota(
     userId: number,
     usageType: UsageType
 ): UsageCheckResult {
-    const result = checkUsageQuota(userId, usageType);
+    // 使用事务确保检查与扣费的原子性，防止并发下的配额绕过 (Race Condition)
+    return db.transaction(() => {
+        const result = checkUsageQuota(userId, usageType);
 
-    if (result.allowed) {
-        incrementUsage(userId, usageType);
-        result.current += 1;
-        if (result.remaining !== -1) {
-            result.remaining -= 1;
+        if (result.allowed) {
+            incrementUsage(userId, usageType);
+            result.current += 1;
+            if (result.remaining !== -1) {
+                result.remaining -= 1;
+            }
         }
-    }
 
-    return result;
+        return result;
+    })();
 }
 
 // ==================== 统计查询 ====================

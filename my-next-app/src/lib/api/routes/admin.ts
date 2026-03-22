@@ -180,6 +180,12 @@ adminRoute.openapi(restoreDef, async (c) => {
         const file = body['file'] as File;
         if (!file) return c.json({ error: 'No file uploaded' }, 400);
 
+        // 安全加固：限制最大上传大小为 100MB，防止磁盘耗尽攻击 (DoS)
+        const MAX_SIZE = 100 * 1024 * 1024;
+        if (file.size > MAX_SIZE) {
+            return c.json({ error: `文件过大 (${(file.size / 1024 / 1024).toFixed(2)}MB)，上限 100MB` }, 400);
+        }
+
         const dbPath = path.resolve(process.cwd(), 'data', 'ai-learning.db');
         const backupPath = path.resolve(process.cwd(), 'data', `ai-learning.db.bak-${Date.now()}`);
         const tempPath = path.resolve(process.cwd(), 'data', 'temp_restore.db');

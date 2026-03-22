@@ -4,6 +4,7 @@ import db from '@/lib/db';
 import { requireUser } from '@/lib/auth/auth';
 import { parseFenbiData, validateFenbiJson, ParsedQuestion, ParsedRecord } from '@/lib/import/fenbi-parser';
 import { masteryService } from '@/lib/services/mastery';
+import { sanitizeHtml } from '@/lib/utils/security';
 
 /**
  * 导入结果
@@ -120,10 +121,10 @@ export async function importFenbiDataAction(
                     };
 
                     updateFullQuestion.run(
-                        question.material ?? null,
-                        question.materialHtml ?? null,
-                        question.content,
-                        question.explanation,
+                        question.material ? sanitizeHtml(question.material) : null,
+                        question.materialHtml ? sanitizeHtml(question.materialHtml) : null,
+                        sanitizeHtml(question.content),
+                        sanitizeHtml(question.explanation),
                         typeMap[question.type] || 'single',
                         question.answer,
                         JSON.stringify(question.options),
@@ -136,19 +137,19 @@ export async function importFenbiDataAction(
                     };
 
                     const result = insertQuestion.run(
-                        question.content,
+                        sanitizeHtml(question.content),
                         JSON.stringify(question.options),
                         question.answer,
-                        question.explanation,
+                        sanitizeHtml(question.explanation),
                         JSON.stringify(question.tags),
                         question.dimension,
                         typeMap[question.type] || 'single',
                         question.externalId,
-                        question.source,
+                        question.externalId, // source
                         question.stats?.correctRatio ?? null,
                         question.stats?.mostWrongAnswer ?? null,
-                        question.material ?? null,
-                        question.materialHtml ?? null
+                        question.material ? sanitizeHtml(question.material) : null,
+                        question.materialHtml ? sanitizeHtml(question.materialHtml) : null
                     );
 
                     questionIdMap.set(question.externalId, result.lastInsertRowid as number);

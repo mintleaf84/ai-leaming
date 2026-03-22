@@ -56,6 +56,15 @@ export const historyService = {
             params.push(filter.mode);
         }
 
+        if (filter.accuracyMin !== undefined) {
+            conditions.push('(CASE WHEN total_questions > 0 THEN ROUND((CAST(correct_count AS FLOAT) / total_questions) * 100) ELSE 0 END) >= ?');
+            params.push(filter.accuracyMin);
+        }
+        if (filter.accuracyMax !== undefined) {
+            conditions.push('(CASE WHEN total_questions > 0 THEN ROUND((CAST(correct_count AS FLOAT) / total_questions) * 100) ELSE 0 END) <= ?');
+            params.push(filter.accuracyMax);
+        }
+
         const whereClause = conditions.join(' AND ');
 
         // Get Total Count
@@ -82,15 +91,6 @@ export const historyService = {
             createdAt: new Date(r.createdAt).toISOString(),
             accuracy: r.totalQuestions > 0 ? Math.round((r.correctCount / r.totalQuestions) * 100) : 0
         }));
-
-        // In-memory filtering for computed fields (accuracy)
-        // Note: Doing this in SQL would be more efficient but requires subquery or generated columns
-        if (filter.accuracyMin !== undefined) {
-            items = items.filter(i => i.accuracy >= filter.accuracyMin!);
-        }
-        if (filter.accuracyMax !== undefined) {
-            items = items.filter(i => i.accuracy <= filter.accuracyMax!);
-        }
 
         return {
             items,

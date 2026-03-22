@@ -52,14 +52,15 @@ describe('History Service', () => {
             // Verify SQL contains date filter
             const sqlCall = mockDb.prepare.mock.calls[0][0];
             expect(sqlCall).toContain('date(created_at) >= date(?)');
+            expect(sqlCall).toContain('CAST(correct_count AS FLOAT)');
 
-            // Verify accuracy filtering (in memory)
+            // Since it's SQL filtered, mocked result directly returns 1
             expect(result.items).toHaveLength(1);
         });
 
-        it('should filter out items by accuracy', async () => {
-            const mockCount = { count: 1 };
-            const mockItems = [{ id: 's1', totalQuestions: 10, correctCount: 5, createdAt: '2023-01-01T00:00:00Z', reviewCount: 0 }]; // 50% acc
+        it('should filter out items by accuracy (SQL verify)', async () => {
+            const mockCount = { count: 0 };
+            const mockItems: any[] = []; // Filtered out by DB
 
             mockDb.prepare
                 .mockReturnValueOnce({ get: () => mockCount })
@@ -67,6 +68,8 @@ describe('History Service', () => {
 
             const result = await historyService.getHistory(1, { accuracyMin: 80 });
 
+            const sqlCall = mockDb.prepare.mock.calls[0][0];
+            expect(sqlCall).toContain('CAST(correct_count AS FLOAT)');
             expect(result.items).toHaveLength(0); // Filtered out
         });
     });

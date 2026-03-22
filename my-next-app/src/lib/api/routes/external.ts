@@ -90,9 +90,9 @@ app.openapi(listRoute, async (c) => {
     const params: any[] = []
 
     if (tag) {
-        // tags 在数据库中以 JSON 数组字符串存储，使用 LIKE 模糊匹配
-        whereClause = 'WHERE tags LIKE ?'
-        params.push(`%"${tag}"%`)
+        // tags 在数据库中以 JSON 数组字符串存储，使用 SQLite json_each 进行精准匹配
+        whereClause = 'WHERE EXISTS (SELECT 1 FROM json_each(tags) WHERE value = ?)'
+        params.push(tag)
     }
 
     const totalRow = db.prepare(

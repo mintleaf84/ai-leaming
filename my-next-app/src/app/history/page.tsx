@@ -290,11 +290,14 @@ export default function HistoryPage() {
           </div>
         ) : (
           <div className="space-y-4">
-            {history.items.map((item) => (
+            {history.items.map((item, index) => (
               <Link
                 key={item.id}
                 href={`/history/${item.id}`}
-                className="group block bg-card hover:bg-primary/5 rounded-2xl p-6 border border-border hover:border-primary/30 hover:shadow-md transition-all duration-300"
+                className={cn(
+                  "group block bg-card hover:bg-primary/5 rounded-2xl p-6 border border-border hover:border-primary/30 hover:shadow-md transition-all duration-300 animate-fade-in-up",
+                  index < 5 && `stagger-${index + 1}`
+                )}
               >
                 <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
                   <div className="space-y-3">

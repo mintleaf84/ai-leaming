@@ -117,16 +117,20 @@ export default function KnowledgePage() {
                     </div>
                 ) : (
                     <div className="grid gap-6 sm:grid-cols-1 md:grid-cols-2 lg:grid-cols-3">
-                        {filteredCards.map(card => (
-                            <KnowledgeCardItem
-                                key={card.id}
-                                card={card}
-                                isFlipped={flippedCards.has(card.id!)}
-                                onFlip={toggleFlip}
-                                onEdit={setEditingCard}
-                                onDelete={handleDelete}
-                                categoryColor={getCategoryColor(card.category || '默认')}
-                            />
+                        {filteredCards.map((card, index) => (
+                            <div 
+                                key={card.id} 
+                                className={`animate-fade-in-up ${index < 5 ? `stagger-${index + 1}` : ''}`}
+                            >
+                                <KnowledgeCardItem
+                                    card={card}
+                                    isFlipped={flippedCards.has(card.id!)}
+                                    onFlip={toggleFlip}
+                                    onEdit={setEditingCard}
+                                    onDelete={handleDelete}
+                                    categoryColor={getCategoryColor(card.category || '默认')}
+                                />
+                            </div>
                         ))}
                     </div>
                 )}

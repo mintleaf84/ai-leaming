@@ -153,19 +153,23 @@ export default function WrongBookPage() {
                         {/* 列表视图 */}
                         {viewMode === 'list' && (
                             <div className="space-y-3">
-                                {questions.map((q) => (
-                                    <WrongQuestionCard
-                                        key={q.questionId}
-                                        question={q}
-                                        isSelected={selectedIds.has(q.questionId)}
-                                        isExpanded={expandedQuestionId === q.questionId}
-                                        detail={expandedQuestionId === q.questionId ? questionDetail : null}
-                                        isLoadingDetail={isLoadingDetail}
-                                        onToggleSelect={() => toggleSelect(q.questionId)}
-                                        onToggleDetail={() => toggleQuestionDetail(q.questionId)}
-                                        onPractice={() => startPractice([q.questionId])}
-                                        onMarkAsMastered={() => handleMarkAsMastered(q.questionId)}
-                                    />
+                                {questions.map((q, index) => (
+                                    <div 
+                                        key={q.questionId} 
+                                        className={`animate-fade-in-up ${index < 5 ? `stagger-${index + 1}` : ''}`}
+                                    >
+                                        <WrongQuestionCard
+                                            question={q}
+                                            isSelected={selectedIds.has(q.questionId)}
+                                            isExpanded={expandedQuestionId === q.questionId}
+                                            detail={expandedQuestionId === q.questionId ? questionDetail : null}
+                                            isLoadingDetail={isLoadingDetail}
+                                            onToggleSelect={() => toggleSelect(q.questionId)}
+                                            onToggleDetail={() => toggleQuestionDetail(q.questionId)}
+                                            onPractice={() => startPractice([q.questionId])}
+                                            onMarkAsMastered={() => handleMarkAsMastered(q.questionId)}
+                                        />
+                                    </div>
                                 ))}
                             </div>
                         )}

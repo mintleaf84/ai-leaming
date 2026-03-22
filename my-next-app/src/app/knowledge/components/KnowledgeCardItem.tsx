@@ -45,7 +45,7 @@ export const KnowledgeCardItem: React.FC<KnowledgeCardItemProps> = ({
                     className="absolute inset-0 backface-hidden"
                     style={{ backfaceVisibility: 'hidden' }}
                 >
-                    <div className="h-full bg-card rounded-2xl border border-border shadow-lg hover:shadow-2xl transition-all overflow-hidden flex flex-col group/card">
+                    <div className="h-full bg-card rounded-2xl border border-border shadow-lg hover:shadow-2xl hover:scale-[1.02] transition-all duration-300 overflow-hidden flex flex-col group/card">
                         {/* Card Header */}
                         <div className="px-6 py-4 bg-muted/30 border-b border-border relative">
                             <div className="flex items-start justify-between relative z-10">

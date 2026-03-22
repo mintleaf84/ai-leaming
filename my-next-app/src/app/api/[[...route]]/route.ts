@@ -8,7 +8,10 @@ export const runtime = 'nodejs'
 const app = new OpenAPIHono().basePath('/api')
 
 // 开启跨域 (CORS) 支持，主要用于解决 Flutter Web 在 localhost 调试时的安全拦截
-app.use('*', cors())
+app.use('*', cors({
+  origin: (origin) => origin, // 允许所有来源（仅限开发/受控环境）
+  credentials: true,
+}))
 
 // 注册 Swagger UI
 app.get('/doc', swaggerUI({ url: '/api/openapi.json' }))

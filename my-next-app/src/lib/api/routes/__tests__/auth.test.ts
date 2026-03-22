@@ -2,13 +2,16 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import app from '../auth';
 
-// Mock dependencies
-const { mockAuthService, mockCookies } = vi.hoisted(() => {
+// 1. Mock dependencies
+const { mockAuthService, mockAuthEdge, mockCookies } = vi.hoisted(() => {
     return {
         mockAuthService: {
             validateCredentials: vi.fn(),
             register: vi.fn(),
-            encrypt: vi.fn().mockResolvedValue('fake-token'),
+        },
+        mockAuthEdge: {
+            encrypt: vi.fn().mockResolvedValue('fake-edge-token'),
+            COOKIE_NAME: 'session'
         },
         mockCookies: {
             setCookie: vi.fn(),
@@ -21,9 +24,16 @@ vi.mock('@/lib/services/auth', () => ({
     authService: mockAuthService
 }));
 
+vi.mock('@/lib/auth/auth-edge', () => mockAuthEdge);
+
 vi.mock('hono/cookie', () => ({
     setCookie: mockCookies.setCookie,
     deleteCookie: mockCookies.deleteCookie,
+}));
+
+// Mock hono/jwt sign
+vi.mock('hono/jwt', () => ({
+    sign: vi.fn().mockResolvedValue('fake-jwt-token')
 }));
 
 describe('Auth Hono Routes', () => {
@@ -32,8 +42,8 @@ describe('Auth Hono Routes', () => {
     });
 
     describe('POST /login', () => {
-        it('should return 200 and set cookie on successful login', async () => {
-            mockAuthService.validateCredentials.mockResolvedValue({ id: 1, username: 'test' });
+        it('should return 200 and set cookie with encrypted token', async () => {
+            mockAuthService.validateCredentials.mockResolvedValue({ id: 1, username: 'test', role: 'user' });
             
             const res = await app.request('/login', {
                 method: 'POST',
@@ -42,32 +52,68 @@ describe('Auth Hono Routes', () => {
             });
 
             expect(res.status).toBe(200);
-            expect(mockCookies.setCookie).toHaveBeenCalled();
+            // 验证 Cookie 是否正确设置了加密后的 Token
+            expect(mockCookies.setCookie).toHaveBeenCalledWith(
+                expect.anything(), 
+                'session', 
+                'fake-edge-token',
+                expect.objectContaining({ httpOnly: true, path: '/' })
+            );
+            
             const data = await res.json();
-            expect(data.user.id).toBe(1);
+            expect(data.token).toBe('fake-edge-token');
         });
 
         it('should return 401 on invalid credentials', async () => {
             mockAuthService.validateCredentials.mockResolvedValue(null);
-
             const res = await app.request('/login', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ username: 'wrong', password: 'wrong' })
             });
-
             expect(res.status).toBe(401);
+        });
+    });
+
+    describe('POST /register', () => {
+        it('should successfuly register and set cookie', async () => {
+            mockAuthService.register.mockResolvedValue({ id: 2, username: 'newuser', role: 'user' });
+            
+            const res = await app.request('/register', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ username: 'newuser', password: 'password123' })
+            });
+
+            expect(res.status).toBe(200);
+            expect(mockAuthService.register).toHaveBeenCalledWith('newuser', 'password123');
+            // 注意：由于 register 目前使用的是 JWT sign 而不是 auth-edge encrypt，
+            // 它的 token 会是 mockJwtSign 返回的 fake-jwt-token
+            expect(mockCookies.setCookie).toHaveBeenCalledWith(
+                expect.anything(),
+                'session',
+                'fake-jwt-token',
+                expect.anything()
+            );
+        });
+
+        it('should return 400 if user already exists', async () => {
+            mockAuthService.register.mockRejectedValue(new Error('User exists'));
+            const res = await app.request('/register', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ username: 'existing', password: 'password' })
+            });
+            expect(res.status).toBe(400);
+            expect(await res.json()).toEqual({ error: 'User exists' });
         });
     });
 
     describe('POST /logout', () => {
         it('should call deleteCookie and return 200', async () => {
-            const res = await app.request('/logout', {
-                method: 'POST'
-            });
-
+            const res = await app.request('/logout', { method: 'POST' });
             expect(res.status).toBe(200);
-            expect(mockCookies.deleteCookie).toHaveBeenCalled();
+            expect(mockCookies.deleteCookie).toHaveBeenCalledWith(expect.anything(), 'session', expect.anything());
         });
     });
 });

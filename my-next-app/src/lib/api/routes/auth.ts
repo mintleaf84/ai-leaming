@@ -85,7 +85,7 @@ app.openapi(loginRoute, async (c) => {
 
     const user = await authService.validateCredentials(username, password)
     if (!user) {
-        return c.json({ error: 'Invalid credentials' }, 401)
+        return c.json({ error: '用户名或密码不正确' }, 401)
     }
 
     // 使用统一的 encrypt 方法确保与 middleware 兼容
@@ -171,7 +171,7 @@ app.openapi(registerRoute, async (c) => {
             user
         })
     } catch (e: any) {
-        return c.json({ error: e.message || 'Registration failed' }, 400)
+        return c.json({ error: e.message || '注册失败' }, 400)
     }
 })
 

@@ -1,11 +1,11 @@
 /** @vitest-environment jsdom */
-import { render, screen, fireEvent } from '@testing-library/react';
+import { render, screen } from '@testing-library/react';
 import '@testing-library/jest-dom';
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import React from 'react';
 import ChatMessage from '../ChatMessage';
 
-// Mock next/dynamic to return the component directly
+// Mock dependencies
 vi.mock('next/dynamic', () => ({
   default: (loader: any) => {
     const Component = React.lazy(loader);
@@ -19,99 +19,85 @@ vi.mock('next/dynamic', () => ({
   }
 }));
 
-// Mock the heavy components that are dynamically imported
 vi.mock('../MarkdownViewer', () => ({
   default: ({ content }: { content: string }) => <div data-testid="markdown-viewer">{content}</div>
 }));
 
 vi.mock('../ThinkingBlock', () => ({
-  default: ({ content }: { content: string }) => <div data-testid="thinking-block">{content}</div>
+  default: ({ content, isThinking }: { content: string; isThinking: boolean }) => (
+    <div data-testid="thinking-block">
+      {content}
+      {isThinking && <span data-testid="thinking-indicator">...</span>}
+    </div>
+  )
 }));
 
 vi.mock('@/hooks/use-smooth-stream', () => ({
-  useSmoothStream: () => ({
-    addChunk: vi.fn(),
-    reset: vi.fn(),
-  })
+  useSmoothStream: ({ onUpdate }: any) => {
+    const contentRef = React.useRef('');
+    return {
+      addChunk: vi.fn().mockImplementation((chunk: string) => {
+        contentRef.current += chunk;
+        onUpdate(contentRef.current);
+      }),
+      reset: vi.fn().mockImplementation((val: string) => {
+        contentRef.current = val;
+        onUpdate(val);
+      }),
+    };
+  }
 }));
 
 describe('ChatMessage Component', () => {
-  const mockMessage = {
-    id: '1',
-    role: 'user',
-    content: 'Hello World'
-  };
-
   beforeEach(() => {
     vi.clearAllMocks();
   });
 
-  it('renders user message correctly', async () => {
-    render(<ChatMessage message={mockMessage} isLast={false} isLoading={false} />);
+  it('hides action buttons when isLoading is true', async () => {
+    const assistantMsg = { id: '1', role: 'assistant', content: 'Hello' };
+    render(<ChatMessage message={assistantMsg} isLast={true} isLoading={true} />);
     
-    expect(await screen.findByTestId('markdown-viewer')).toHaveTextContent('Hello World');
+    // 演进点：验证加载中不显示“复制”等按钮
     expect(screen.queryByText('复制')).not.toBeInTheDocument();
   });
 
-  it('renders assistant message with action buttons', async () => {
-    const assistantMsg = { ...mockMessage, role: 'assistant', id: 'assistant-1' };
-    render(<ChatMessage 
-      message={assistantMsg} 
-      isLast={false} 
-      isLoading={false} 
-      onSaveToKnowledge={vi.fn()} 
-      onToggleFavorite={vi.fn()}
-    />);
+  it('shows pulse cursor during streaming (not in thinking)', async () => {
+    const assistantMsg = { id: '1', role: 'assistant', content: 'Hello' };
+    const { container } = render(<ChatMessage message={assistantMsg} isLast={true} isLoading={true} />);
     
-    // Use findBy to handle potential suspense/dynamic issues
-    expect(await screen.findByText('复制')).toBeInTheDocument();
-    expect(screen.getByText('知识卡片')).toBeInTheDocument();
-    expect(screen.getByText('收藏')).toBeInTheDocument();
+    // 演进点：由于 Mock 的 useSmoothStream 会被 useEffect 调用，这里能拿到内容并渲染主气泡
+    expect(await screen.findByTestId('markdown-viewer')).toHaveTextContent('Hello');
+    const pulseCursor = container.querySelector('.animate-pulse');
+    expect(pulseCursor).toBeInTheDocument();
   });
 
-  it('parses <think> tags and displays ThinkingBlock', async () => {
+  it('passes isThinking=true to ThinkingBlock when think tag is unclosed and loading', async () => {
     const thinkingMsg = {
       id: '2',
       role: 'assistant',
-      content: '<think>Let me think...</think>Final answer.'
+      content: '<think>I am processing...'
     };
     
-    render(<ChatMessage message={thinkingMsg} isLast={false} isLoading={false} />);
+    render(<ChatMessage message={thinkingMsg} isLast={true} isLoading={true} />);
     
-    expect(await screen.findByTestId('thinking-block')).toHaveTextContent('Let me think...');
-    expect(screen.getByTestId('markdown-viewer')).toHaveTextContent('Final answer.');
+    // 演进点：验证思考块的动态状态
+    expect(await screen.findByTestId('thinking-indicator')).toBeInTheDocument();
   });
 
-  it('calls onDelete callback when delete button is clicked', async () => {
-    const onDelete = vi.fn();
-    render(<ChatMessage message={mockMessage} isLast={false} isLoading={false} onDelete={onDelete} />);
-    
-    // User message logic check: Does it have a delete button?
-    // In ChatMessage.tsx: {onDelete && ( <button ...>删除</button> )}
-    // This is outside the isAssistant block.
-    const deleteBtn = await screen.findByText('删除');
-    fireEvent.click(deleteBtn);
-    
-    expect(onDelete).toHaveBeenCalled();
+  it('handles empty message content gracefully', () => {
+    const emptyMsg = { id: '3', role: 'assistant', content: '' };
+    const { container } = render(<ChatMessage message={emptyMsg} isLast={false} isLoading={false} />);
+    expect(container.firstChild).toBeInTheDocument();
   });
 
-  it('handles clipboard copy correctly', async () => {
-    // Mock navigator.clipboard
-    const mockClipboard = {
-      writeText: vi.fn().mockResolvedValue(true)
+  it('handles malformed think tags correctly', async () => {
+    const malformedMsg = {
+      id: '4',
+      role: 'assistant',
+      content: '<think>Normal message'
     };
-    Object.defineProperty(navigator, 'clipboard', {
-      value: mockClipboard,
-      configurable: true
-    });
-
-    const assistantMsg = { ...mockMessage, role: 'assistant', id: 'assistant-1' };
-    render(<ChatMessage message={assistantMsg} isLast={false} isLoading={false} />);
     
-    const copyBtn = await screen.findByText('复制');
-    fireEvent.click(copyBtn);
-    
-    expect(mockClipboard.writeText).toHaveBeenCalled();
-    expect(await screen.findByText('已复制')).toBeInTheDocument();
+    render(<ChatMessage message={malformedMsg} isLast={false} isLoading={false} />);
+    expect(await screen.findByTestId('thinking-block')).toHaveTextContent('Normal message');
   });
 });

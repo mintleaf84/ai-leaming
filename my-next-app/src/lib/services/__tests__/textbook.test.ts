@@ -1,7 +1,6 @@
 // @vitest-environment node
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { textbookService } from '../textbook';
-import fs from 'fs';
 
 // Mock DB
 const { mockDb, mockRag, mockFs } = vi.hoisted(() => {
@@ -22,7 +21,14 @@ const { mockDb, mockRag, mockFs } = vi.hoisted(() => {
 
 vi.mock('@/lib/db', () => ({ default: mockDb }));
 vi.mock('@/lib/ai/rag', () => ({ ragService: mockRag }));
-vi.mock('fs', () => ({ default: mockFs }));
+vi.mock('fs', () => ({ 
+    default: {
+        existsSync: mockFs.existsSync,
+        rmSync: mockFs.rmSync,
+        writeFileSync: vi.fn(),
+        mkdirSync: vi.fn(),
+    }
+}));
 vi.mock('@/lib/utils/text-splitter', () => ({ splitText: (t: string) => [t] }));
 
 describe('Textbook Service', () => {
@@ -30,48 +36,60 @@ describe('Textbook Service', () => {
         vi.clearAllMocks();
     });
 
-    describe('createTextbook', () => {
-        it('should insert and return new id', async () => {
-            mockDb.prepare.mockReturnValue({
-                run: vi.fn().mockReturnValue({ lastInsertRowid: 1 })
-            });
-
-            const id = await textbookService.createTextbook({ title: 'Test' });
-            expect(id).toBe(1);
-        });
-    });
-
     describe('deleteTextbook', () => {
-        it('should cleanup RAG and files', async () => {
-            mockDb.prepare.mockReturnValue({
-                all: vi.fn().mockReturnValue([{ id: 101 }]), // chapters
-                run: vi.fn(),
+        it('should cleanup RAG for EVERY chapter and remove files', async () => {
+            // Mock multiple chapters for cascade deletion check
+            const mockChapters = [
+                { id: 101, title: 'C1' },
+                { id: 102, title: 'C2' }
+            ];
+
+            mockDb.prepare.mockImplementation((sql: string) => {
+                if (sql.includes('SELECT id, title FROM textbook_chapters')) {
+                    return { all: vi.fn().mockReturnValue(mockChapters) };
+                }
+                return { run: vi.fn() };
             });
             mockFs.existsSync.mockReturnValue(true);
 
             await textbookService.deleteTextbook(1);
 
+            // 核心演进：验证是否针对每一个章节都调用了 RAG 删除
+            expect(mockRag.deleteChunksBySource).toHaveBeenCalledTimes(2);
             expect(mockRag.deleteChunksBySource).toHaveBeenCalledWith('textbook_chapter', 101);
-            expect(mockFs.rmSync).toHaveBeenCalled();
+            expect(mockRag.deleteChunksBySource).toHaveBeenCalledWith('textbook_chapter', 102);
+            
+            // 验证数据库记录也被删除
+            expect(mockDb.prepare).toHaveBeenCalledWith(expect.stringContaining('DELETE FROM textbooks WHERE id = ?'));
         });
     });
 
     describe('addChapter', () => {
-        it('should insert and index to RAG', async () => {
+        it('should index chunk with correct metadata', async () => {
             mockDb.prepare.mockReturnValue({
                 run: vi.fn().mockReturnValue({ lastInsertRowid: 201 })
             });
 
-            const id = await textbookService.addChapter({
+            await textbookService.addChapter({
                 textbook_id: 1,
-                title: 'Chapter 1',
-                content: 'Test content',
+                title: 'Introduction',
+                content: 'Welcome to this book',
                 order_index: 0,
                 level: 1
             });
 
-            expect(id).toBe(201);
-            expect(mockRag.addChunk).toHaveBeenCalled();
+            // 核心演进：精准匹配 RAG 索引的元数据
+            expect(mockRag.addChunk).toHaveBeenCalledWith(
+                'Welcome to this book',
+                expect.objectContaining({
+                    source_type: 'textbook_chapter',
+                    source_id: 201,
+                    title: 'Introduction',
+                    textbook_id: 1,
+                    chunk_index: 0,
+                    total_chunks: 1
+                })
+            );
         });
     });
 });

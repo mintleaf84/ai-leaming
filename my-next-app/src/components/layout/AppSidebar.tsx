@@ -3,7 +3,7 @@
 import React from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
-import { usePathname } from 'next/navigation';
+import { usePathname, useRouter } from 'next/navigation';
 import { motion } from 'framer-motion';
 import {
     BookOpen,
@@ -17,7 +17,6 @@ import {
     FileText,
     Book,
     LogOut,
-    User,
     Sparkles,
     ChevronsUpDown,
     Palette,
@@ -41,7 +40,6 @@ import {
 import { useTheme } from "next-themes";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { cn } from "@/lib/utils";
-import { useRouter } from 'next/navigation';
 import { useTerminology } from "@/lib/hooks/use-terminology";
 
 interface UserProps {
@@ -51,13 +49,72 @@ interface UserProps {
     } | null;
 }
 
+// --- Helper Components Moved Outside to Avoid Remounting ---
+const NavGroup = ({ 
+    title, 
+    items, 
+    pathname 
+}: { 
+    title?: string, 
+    items: { name: string, href: string, icon: any }[],
+    pathname: string 
+}) => (
+    <div className="mb-6">
+        {title && (
+            <h3 className="px-4 mb-2 text-xs font-semibold text-muted-foreground uppercase tracking-wider">
+                {title}
+            </h3>
+        )}
+        <div className="space-y-1">
+            {items.map((item) => {
+                const isActive = pathname === item.href || pathname.startsWith(`${item.href}/`);
+                return (
+                    <Link
+                        key={item.href}
+                        href={item.href}
+                        className={cn(
+                            "flex items-center gap-3 px-3 py-2 mx-2 rounded-lg text-sm font-medium transition-colors group relative",
+                            isActive
+                                ? "text-primary dark:text-primary-foreground"
+                                : "text-muted-foreground hover:bg-accent hover:text-foreground"
+                        )}
+                    >
+                        {isActive && (
+                            <motion.div
+                                layoutId="sidebar-active-pill"
+                                initial={false}
+                                className="absolute inset-0 bg-primary/10 dark:bg-primary/20 rounded-lg -z-10"
+                                transition={{
+                                    type: "spring",
+                                    stiffness: 350,
+                                    damping: 40
+                                }}
+                            />
+                        )}
+                        <item.icon className={cn(
+                            "h-4 w-4 transition-colors",
+                            isActive ? "text-primary" : "text-muted-foreground group-hover:text-foreground"
+                        )} />
+                        <span>{item.name}</span>
+                        {isActive && <div className="ml-auto w-1 h-1 rounded-full bg-primary" />}
+                    </Link>
+                );
+            })}
+        </div>
+    </div>
+);
+
 export function AppSidebar({ user }: UserProps) {
     const pathname = usePathname();
     const router = useRouter();
     const { setTheme } = useTheme();
     const { t } = useTerminology();
 
-    // Define nav items inside the component to use the hook
+    // Hide sidebar on landing page, login, and register
+    if (pathname === '/' || pathname === '/login' || pathname === '/register') {
+        return null;
+    }
+
     const mainNavItems = [
         { name: t('nav.home'), href: '/dashboard', icon: Home },
         { name: t('nav.practice'), href: '/practice', icon: BookOpen },
@@ -78,11 +135,6 @@ export function AppSidebar({ user }: UserProps) {
         { name: t('nav.settings'), href: '/settings', icon: Settings },
     ];
 
-    // Hide sidebar on landing page, login, and register
-    if (pathname === '/' || pathname === '/login' || pathname === '/register') {
-        return null;
-    }
-
     const handleLogout = async () => {
         try {
             const res = await fetch('/api/auth/logout', { method: 'POST' });
@@ -94,51 +146,6 @@ export function AppSidebar({ user }: UserProps) {
             console.error('Logout failed:', error);
         }
     };
-
-    const NavGroup = ({ title, items }: { title?: string, items: typeof mainNavItems }) => (
-        <div className="mb-6">
-            {title && (
-                <h3 className="px-4 mb-2 text-xs font-semibold text-muted-foreground uppercase tracking-wider">
-                    {title}
-                </h3>
-            )}
-            <div className="space-y-1">
-                {items.map((item) => {
-                    const isActive = pathname === item.href || pathname.startsWith(`${item.href}/`);
-                    return (
-                        <Link
-                            key={item.href}
-                            href={item.href}
-                            className={cn(
-                                "flex items-center gap-3 px-3 py-2 mx-2 rounded-lg text-sm font-medium transition-colors group relative",
-                                isActive
-                                    ? "text-primary dark:text-primary-foreground"
-                                    : "text-muted-foreground hover:bg-accent hover:text-foreground"
-                            )}
-                        >
-                            {isActive && (
-                                <motion.div
-                                    layoutId="sidebar-active-pill"
-                                    className="absolute inset-0 bg-primary/10 dark:bg-primary/20 rounded-lg -z-10"
-                                    transition={{
-                                        type: "spring",
-                                        stiffness: 400,
-                                        damping: 30
-                                    }}
-                                />
-                            )}
-                            <item.icon className={cn(
-                                "h-4 w-4 transition-colors",
-                                isActive ? "text-primary" : "text-muted-foreground group-hover:text-foreground"
-                            )} />
-                            <span>{item.name}</span>
-                            {isActive && <div className="ml-auto w-1 h-1 rounded-full bg-primary" />}
-                        </Link>
-                    );
-                })}
-            </div>
-        </div>
-    );
 
     return (
         <aside className="hidden md:flex w-64 flex-col border-r border-sidebar-border bg-sidebar h-screen sticky top-0 overflow-hidden font-sans">
@@ -156,9 +163,9 @@ export function AppSidebar({ user }: UserProps) {
 
             {/* Main Navigation */}
             <ScrollArea className="flex-1 py-6 scrollbar-thin">
-                <NavGroup title={t('section.start')} items={mainNavItems} />
-                <NavGroup title={t('section.knowledge')} items={knowledgeItems} />
-                <NavGroup title={t('section.system')} items={systemItems} />
+                <NavGroup title={t('section.start')} items={mainNavItems} pathname={pathname} />
+                <NavGroup title={t('section.knowledge')} items={knowledgeItems} pathname={pathname} />
+                <NavGroup title={t('section.system')} items={systemItems} pathname={pathname} />
             </ScrollArea>
 
             {/* Footer / User Profile */}

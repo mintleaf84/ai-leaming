@@ -11,7 +11,7 @@ import {
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import {
-    Trash2, Upload, Search, Filter,
+    Trash2, Upload, Download, Search, Filter,
     ChevronLeft, ChevronRight, ChevronsLeft, ChevronsRight,
     Loader2, MoreHorizontal, Edit
 } from 'lucide-react';
@@ -139,6 +139,16 @@ export function QuestionManager() {
         reader.readAsText(file);
     };
 
+    // 导出 CSV
+    const handleExportCsv = () => {
+        const params = new URLSearchParams();
+        if (filters.search) params.append('search', filters.search);
+        if (filters.dimension) params.append('dimension', filters.dimension);
+        if (filters.tag) params.append('tag', filters.tag);
+        
+        window.location.href = `/api/admin/export/questions?${params.toString()}`;
+    };
+
     const totalPages = Math.ceil(total / pageSize);
 
     return (
@@ -198,6 +208,11 @@ export function QuestionManager() {
                             导入
                         </Button>
                     </div>
+
+                    <Button variant="outline" size="sm" onClick={handleExportCsv} title="根据当前筛选条件导出全量数据">
+                        <Download className="w-4 h-4 mr-2" />
+                        导出 CSV
+                    </Button>
                 </div>
             </div>
 

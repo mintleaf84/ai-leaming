@@ -48,6 +48,9 @@ app.route('/wrong-book', wrongBookRoute)
 // 外部开放接口（题库暴露，独立鉴权，不走用户登录体系）
 import externalRoute from '@/lib/api/routes/external'
 app.route('/external', externalRoute)
+// 管理员专属接口
+import { adminRoute } from '@/lib/api/routes/admin'
+app.route('/admin', adminRoute)
 
 
 

@@ -156,11 +156,14 @@ export async function importFenbiDataAction(
                 }
             }
 
-            // 5. 记录日志
+            // 5. 记录日志并累计 Mastery 变化
             const insertLog = db.prepare(`
               INSERT INTO practice_logs (session_id, user_id, question_id, user_answer, is_correct, duration_ms)
               VALUES (?, ?, ?, ?, ?, ?)
             `);
+
+            // 维护一个内存中的 tag 计数器以减少数据库写入
+            const masteryChanges = new Map<string, { correct: number; total: number; dimension: string }>();
 
             for (const record of parsed.records) {
                 const questionId = questionIdMap.get(record.externalId);
@@ -177,10 +180,36 @@ export async function importFenbiDataAction(
                     const question = parsed.questions.find(q => q.externalId === record.externalId);
                     if (question && question.tags.length > 0) {
                         for (const tag of question.tags) {
-                            masteryService.updateMastery(user.id, tag, question.dimension, record.isCorrect);
+                            const current = masteryChanges.get(tag) || { correct: 0, total: 0, dimension: question.dimension };
+                            current.total += 1;
+                            if (record.isCorrect) current.correct += 1;
+                            masteryChanges.set(tag, current);
                         }
                     }
                 }
+            }
+
+            // 批量应用 Mastery 变化 (显著减少数据库 IO)
+            for (const [tag, stats] of masteryChanges.entries()) {
+                // 这里我们稍微修改逻辑：如果导入量很大，这样能节省大量事务内开销
+                // 我们调用一个新的批量更新方法或模拟它
+                const currentEntry = db.prepare(
+                    'SELECT score, correct_count, total_count FROM user_mastery WHERE user_id = ? AND tag_name = ?'
+                ).get(user.id, tag) as { score: number; correct_count: number; total_count: number } | undefined;
+
+                const newCorrect = (currentEntry?.correct_count ?? 0) + stats.correct;
+                const newTotal = (currentEntry?.total_count ?? 0) + stats.total;
+                const newScore = newTotal > 0 ? (newCorrect / newTotal) * 100 : 0;
+
+                db.prepare(`
+                    INSERT INTO user_mastery (user_id, tag_name, score, correct_count, total_count, last_updated) 
+                    VALUES (?, ?, ?, ?, ?, CURRENT_TIMESTAMP)
+                    ON CONFLICT(user_id, tag_name) DO UPDATE SET 
+                      score = excluded.score,
+                      correct_count = excluded.correct_count,
+                      total_count = excluded.total_count,
+                      last_updated = CURRENT_TIMESTAMP
+                `).run(user.id, tag, newScore, newCorrect, newTotal);
             }
         });
 

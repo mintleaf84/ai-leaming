@@ -244,7 +244,10 @@ adminRoute.openapi(exportQuestionsDef, async (c) => {
     const params: any[] = []
 
     if (search) { conditions.push('content LIKE ?'); params.push(`%${search}%`); }
-    if (tag) { conditions.push('tags LIKE ?'); params.push(`%${tag}%`); }
+    if (tag) { 
+        conditions.push('EXISTS (SELECT 1 FROM json_each(questions.tags) WHERE value = ?)'); 
+        params.push(tag); 
+    }
     if (dimension) { conditions.push('dimension = ?'); params.push(dimension); }
 
     const whereClause = conditions.length > 0 ? `WHERE ${conditions.join(' AND ')}` : ''

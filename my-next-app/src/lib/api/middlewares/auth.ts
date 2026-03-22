@@ -15,6 +15,12 @@ import { User } from '@/lib/auth/user-service'
 // ... (existing code)
 
 export const authMiddleware = createMiddleware(async (c, next) => {
+    // 强制运行时安全扫描：生产环境禁止缺乏密钥
+    if (!JWT_SECRET && process.env.NODE_ENV === 'production') {
+        console.error('[SECURITY FATAL] 生产环境缺少 JWT_SECRET，拒绝所有鉴权请求');
+        return c.json({ error: '系统配置错误：生产环境未配置 JWT 密钥，拒绝验证凭证' }, 500);
+    }
+
     // 灵活支持 Header 或 Cookie
     const token = c.req.header('Authorization')?.replace('Bearer ', '') || getCookie(c, COOKIE_NAME);
 

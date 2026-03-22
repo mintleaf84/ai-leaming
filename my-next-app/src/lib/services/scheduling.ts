@@ -11,14 +11,22 @@ export interface Question {
   type: string;
 }
 
+/**
+ * 计算三种类型题目的权重比例 (40/40/20)
+ */
+export function calculateSessionRatios(limit: number): { stubborn: number; blind: number; regular: number } {
+  const stubborn = Math.floor(limit * 0.4);
+  const blind = Math.floor(limit * 0.4);
+  const regular = limit - stubborn - blind;
+  return { stubborn, blind, regular };
+}
+
 export const schedulingService = {
   /**
    * Generate a session of questions based on 40/40/20 rule
    */
   generateSession: (limit: number = 35): Question[] => {
-    const stubbornCount = Math.floor(limit * 0.4);
-    const blindCount = Math.floor(limit * 0.4);
-    const regularCount = limit - stubbornCount - blindCount;
+    const { stubborn: stubbornCount, blind: blindCount, regular: regularCount } = calculateSessionRatios(limit);
 
     // 1. Stubborn Questions (High error rate or in observation zone tags)
     // For simplicity: Questions where user has missed them before OR questions belonging to tags in observation_zone

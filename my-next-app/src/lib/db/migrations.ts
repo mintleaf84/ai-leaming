@@ -9,6 +9,8 @@ export function runMigrations(db: Database.Database) {
 
     // users 表
     addColumnIfNotExists(db, 'users', 'role', "TEXT CHECK(role IN ('admin', 'student')) DEFAULT 'student'");
+    addColumnIfNotExists(db, 'users', 'token_version', 'INTEGER DEFAULT 0');
+
 
     // questions 表
     addColumnIfNotExists(db, 'questions', 'external_id', 'TEXT');

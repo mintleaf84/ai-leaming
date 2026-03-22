@@ -1,119 +1,122 @@
 // @vitest-environment node
-import { describe, it, expect, vi, beforeEach } from 'vitest';
+import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
+import { setupTestDb, type TestDbHelper } from '../../__tests__/test-db-utils';
+
+// 必须在导入 service 之前进行 Mock
+const { mockDbInstance } = vi.hoisted(() => ({
+    mockDbInstance: {
+        db: null as any,
+        prepare: (sql: string) => mockDbInstance.db.prepare(sql),
+        transaction: (fn: any) => mockDbInstance.db.transaction(fn)
+    }
+}));
+
+vi.mock('@/lib/db', () => ({
+    default: mockDbInstance
+}));
+
 import { masteryService } from '../mastery';
 
-// Mock DB
-const { mockDb } = vi.hoisted(() => {
-    return {
-        mockDb: {
-            prepare: vi.fn(),
-        }
-    };
-});
+describe('Mastery Service (Integration)', () => {
+    let helper: TestDbHelper;
 
-vi.mock('@/lib/db', () => ({ default: mockDb }));
-
-describe('Mastery Service', () => {
     beforeEach(() => {
-        vi.clearAllMocks();
+        helper = setupTestDb();
+        mockDbInstance.db = helper.db;
+        helper.seedUser(1, 'testuser');
+    });
+
+    afterEach(() => {
+        helper.close();
     });
 
     describe('updateMastery', () => {
-        it('should calculate new score correctly on correct answer', () => {
-            const mockRun = vi.fn();
-            mockDb.prepare.mockReturnValue({
-                get: vi.fn().mockReturnValue({ score: 50, correct_count: 5, total_count: 10 }),
-                run: mockRun
-            });
-
-            const result = masteryService.updateMastery(1, 'Tag1', 'knowledge', true);
+        it('应该能够正确持久化分数（初始更新）', () => {
+            masteryService.updateMastery(1, '教育心理学', 'knowledge', true);
             
-            // New total = 11, New correct = 6. Score = (6/11)*100 approx 54.5454
-            expect(result[0].newScore).toBeCloseTo(54.54, 1);
-            expect(result[0].tagName).toBe('Tag1');
-
-            // 验证数据库更新
-            expect(mockDb.prepare).toHaveBeenCalledWith(expect.stringContaining('INSERT INTO user_mastery'));
-            expect(mockRun).toHaveBeenCalledWith(
-                1, 
-                'Tag1', 
-                expect.closeTo(54.54, 1), 
-                6, 
-                11
-            );
-        });
-
-        it('should not increase correct_count if isMonitoredCorrect is true', () => {
-            const mockRun = vi.fn();
-            mockDb.prepare.mockReturnValue({
-                get: vi.fn().mockReturnValue({ score: 50, correct_count: 5, total_count: 10 }),
-                run: mockRun
-            });
-
-            const result = masteryService.updateMastery(1, 'Tag1', 'knowledge', true, true);
+            const row = helper.db.prepare('SELECT score, correct_count, total_count FROM user_mastery WHERE user_id = 1 AND tag_name = ?')
+                .get('教育心理学') as any;
             
-            // New total = 11, New correct = 5. Score = (5/11)*100 approx 45.4545
-            expect(result[0].newScore).toBeCloseTo(45.45, 1);
-            expect(mockRun).toHaveBeenCalledWith(
-                1, 
-                'Tag1', 
-                expect.closeTo(45.45, 1), 
-                5, 
-                11
-            );
-        });
-    });
-
-    describe('getMasteryTree', () => {
-        it('should build recursive tree from flat tags', () => {
-            const mockRows = [
-                { tag_name: 'CS', score: 80 },
-                { tag_name: 'CS/Algorithms', score: 70 },
-                { tag_name: 'CS/Algorithms/Sort', score: 90 },
-                { tag_name: 'Math', score: 60 },
-            ];
-
-            mockDb.prepare.mockReturnValue({
-                all: vi.fn().mockReturnValue(mockRows)
-            });
-
-            const tree = masteryService.getMasteryTree(1);
-
-            expect(tree).toHaveLength(2); // CS and Math
-            const csNode = tree.find(n => n.name === 'CS');
-            expect(csNode?.children).toHaveLength(1);
-            expect(csNode?.children[0].name).toBe('Algorithms');
-            expect(csNode?.children[0].children[0].name).toBe('Sort');
+            expect(row.score).toBe(100);
+            expect(row.correct_count).toBe(1);
+            expect(row.total_count).toBe(1);
         });
 
-        it('should handle orphaned children as roots', () => {
-            const mockRows = [
-                { tag_name: 'A/B/C', score: 100 },
-            ];
-            mockDb.prepare.mockReturnValue({
-                all: vi.fn().mockReturnValue(mockRows)
-            });
+        it('多次更新后分数计算应复合预期（准确率逻辑）', () => {
+            // 答对一次
+            masteryService.updateMastery(1, '教育心理学', 'knowledge', true);
+            // 答错一次
+            masteryService.updateMastery(1, '教育心理学', 'knowledge', false);
+            // 答错一次
+            masteryService.updateMastery(1, '教育心理学', 'knowledge', false);
+            
+            const row = helper.db.prepare('SELECT score, correct_count, total_count FROM user_mastery WHERE user_id = 1 AND tag_name = ?')
+                .get('教育心理学') as any;
+            
+            // 1/3 = 33.333...
+            expect(row.score).toBeCloseTo(33.33, 1);
+            expect(row.correct_count).toBe(1);
+            expect(row.total_count).toBe(3);
+        });
 
-            const tree = masteryService.getMasteryTree(1);
-            expect(tree).toHaveLength(1);
-            expect(tree[0].name).toBe('C');
+        it('isMonitoredCorrect 为 true 时应增加总数但不增加正确数', () => {
+            // 模拟“可疑正确”（可能是 AI 辅助或侥幸）
+            masteryService.updateMastery(1, '教育心理学', 'knowledge', true, true);
+            
+            const row = helper.db.prepare('SELECT score FROM user_mastery WHERE user_id = 1 AND tag_name = ?').get('教育心理学') as any;
+            
+            expect(row.score).toBe(0); // 0/1 = 0
         });
     });
 
     describe('getHierarchyMastery', () => {
-        it('should return avg score for hierarchy', () => {
-            mockDb.prepare.mockReturnValue({
-                get: vi.fn().mockReturnValue({ avgScore: 75, count: 3 })
-            });
+        beforeEach(() => {
+            const stmt = helper.db.prepare('INSERT INTO user_mastery (user_id, tag_name, score) VALUES (1, ?, ?)');
+            stmt.run('教育心理学', 80);
+            stmt.run('教育心理学/学习动机', 60);
+            stmt.run('教育心理学/学习动机/强化理论', 100);
+            stmt.run('教育学原理', 40); // 干扰项
+        });
 
-            const result = masteryService.getHierarchyMastery(1, 'Tag1');
-            expect(result.avgScore).toBe(75);
+        it('应该通过 LIKE 算子正确统计父子层级的平均分', () => {
+            // 应该包含 教育心理学(80), 学习动机(60), 强化理论(100)
+            const result = masteryService.getHierarchyMastery(1, '教育心理学');
+            
             expect(result.count).toBe(3);
+            expect(result.avgScore).toBe(80); // (80+60+100)/3 = 80
+        });
 
-            // 验证 SQL 参数传递
-            expect(mockDb.prepare).toHaveBeenCalledWith(expect.stringContaining('AVG(score)'));
-            const lastCall = vi.mocked(mockDb.prepare).mock.results.at(-1)?.value;
-            expect(lastCall.get).toHaveBeenCalledWith(1, 'Tag1', 'Tag1/%');
+        it('如果没有匹配项应返回 0', () => {
+            const result = masteryService.getHierarchyMastery(1, '不存在的路径');
+            expect(result.avgScore).toBe(0);
+            expect(result.count).toBe(0);
+        });
+    });
+
+    describe('getMasteryTree', () => {
+        it('应该正确还原分级路径为树形结构', () => {
+            const stmt = helper.db.prepare('INSERT INTO user_mastery (user_id, tag_name, score) VALUES (1, ?, ?)');
+            stmt.run('A', 10);
+            stmt.run('A/B', 20);
+            stmt.run('A/B/C', 30);
+
+            const tree = masteryService.getMasteryTree(1);
+
+            expect(tree).toHaveLength(1);
+            expect(tree[0].name).toBe('A');
+            expect(tree[0].children[0].name).toBe('B');
+            expect(tree[0].children[0].children[0].name).toBe('C');
+            expect(tree[0].children[0].children[0].score).toBe(30);
+        });
+
+        it('能够兼容处理非标准路径（父节点缺失）情况', () => {
+            const stmt = helper.db.prepare('INSERT INTO user_mastery (user_id, tag_name, score) VALUES (1, ?, ?)');
+            stmt.run('X/Y/Z', 100);
+
+            const tree = masteryService.getMasteryTree(1);
+            // 按照目前逻辑，父节点不存在时会作为根节点
+            expect(tree).toHaveLength(1);
+            expect(tree[0].name).toBe('Z');
         });
     });
 });

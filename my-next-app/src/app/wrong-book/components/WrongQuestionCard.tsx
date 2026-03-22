@@ -2,6 +2,7 @@
 
 import React from 'react';
 import { CheckSquare, Square, Play, AlertTriangle, Clock } from 'lucide-react';
+import { motion, AnimatePresence } from 'framer-motion';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { QuestionDetailPanel } from './QuestionDetailPanel';
@@ -92,24 +93,33 @@ export function WrongQuestionCard({
                 </Button>
             </div>
 
-            {/* 展开的详情区域 */}
-            {isExpanded && detail && (
-                <QuestionDetailPanel
-                    detail={detail}
-                    isLoading={isLoadingDetail}
-                    onPractice={onPractice}
-                    onMarkAsMastered={onMarkAsMastered}
-                />
-            )}
-
-            {/* 加载状态 */}
-            {isExpanded && !detail && isLoadingDetail && (
-                <div className="border-t bg-muted/30 p-4">
-                    <div className="text-center text-muted-foreground py-4">
-                        加载中...
-                    </div>
-                </div>
-            )}
+            {/* 展开的详情区域与加载状态 */}
+            <AnimatePresence>
+                {isExpanded && (
+                    <motion.div
+                        initial={{ height: 0, opacity: 0 }}
+                        animate={{ height: 'auto', opacity: 1 }}
+                        exit={{ height: 0, opacity: 0 }}
+                        transition={{ duration: 0.3, ease: 'easeInOut' }}
+                        className="overflow-hidden border-t"
+                    >
+                        {detail ? (
+                            <QuestionDetailPanel
+                                detail={detail}
+                                isLoading={isLoadingDetail}
+                                onPractice={onPractice}
+                                onMarkAsMastered={onMarkAsMastered}
+                            />
+                        ) : isLoadingDetail ? (
+                            <div className="bg-muted/30 p-4">
+                                <div className="text-center text-muted-foreground py-4">
+                                    加载中...
+                                </div>
+                            </div>
+                        ) : null}
+                    </motion.div>
+                )}
+            </AnimatePresence>
         </div>
     );
 }

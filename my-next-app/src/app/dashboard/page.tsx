@@ -12,6 +12,7 @@ import { Progress } from "@/components/ui/progress";
 import { Badge } from "@/components/ui/badge";
 import { KnowledgePointSelector } from "@/components/dashboard/KnowledgePointSelector";
 import { getBeijingHour } from "@/lib/utils/datetime";
+import { AnimatedNumber } from "@/components/ui/animated-number";
 
 export default async function Home() {
   let stats;
@@ -57,18 +58,23 @@ export default async function Home() {
               <div>
                 <div className="flex items-end justify-between mb-2">
                   <div className="flex items-end gap-2">
-                    <span className="text-4xl font-serif font-bold text-foreground">{stats.dailyProgress}%</span>
+                    <span className="text-4xl font-serif font-bold text-foreground">
+                      <AnimatedNumber value={stats.dailyProgress} suffix="%" />
+                    </span>
                     <span className="text-sm text-muted-foreground mb-1">完成度</span>
                   </div>
                   <div className="text-right">
-                    <div className="text-2xl font-serif font-bold text-primary">{stats.averageMastery}<span className="text-xs text-primary/70 ml-1">%</span></div>
+                    <div className="text-2xl font-serif font-bold text-primary">
+                      <AnimatedNumber value={stats.averageMastery} />
+                      <span className="text-xs text-primary/70 ml-1">%</span>
+                    </div>
                     <div className="text-[10px] text-muted-foreground">平均掌握率</div>
                   </div>
                 </div>
                 <Progress value={stats.dailyProgress} className="h-2.5 bg-primary/20 [&>div]:bg-primary rounded-full" />
                 <div className="flex justify-between items-center mt-2 text-xs text-muted-foreground font-medium">
-                  <span>已练 {stats.todayPracticed} / {stats.dailyGoal} 题</span>
-                  <span>累计 {stats.totalPracticed} 题</span>
+                  <span>已练 <AnimatedNumber value={stats.todayPracticed} duration={1} /> / {stats.dailyGoal} 题</span>
+                  <span>累计 <AnimatedNumber value={stats.totalPracticed} duration={1} /> 题</span>
                 </div>
 
                 {stats.lastSessionId && (

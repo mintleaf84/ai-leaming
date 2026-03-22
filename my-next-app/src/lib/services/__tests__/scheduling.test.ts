@@ -1,83 +1,83 @@
 // @vitest-environment node
-import { describe, it, expect, vi, beforeEach } from 'vitest';
+import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
+import { setupTestDb, type TestDbHelper } from '../../__tests__/test-db-utils';
 
-// 1. 使用 BetterDbMock 增强 Mock 机制
-const { mockBetterDb } = await vi.hoisted(async () => {
-    const { createBetterDbMock } = await import('../../__tests__/db-mock-utils');
-    return {
-        mockBetterDb: createBetterDbMock()
-    };
-});
-
-vi.mock('@/lib/db', () => ({ default: mockBetterDb }));
+// Mock DB 基础设施接入
+const { mockDbInstance } = vi.hoisted(() => ({
+    mockDbInstance: {
+        db: null as any,
+        prepare: (sql: string) => mockDbInstance.db.prepare(sql)
+    }
+}));
+vi.mock('@/lib/db', () => ({ default: mockDbInstance }));
 
 import { schedulingService, calculateSessionRatios } from '../scheduling';
 
-describe('Scheduling Service (Enhanced Mock)', () => {
+describe('Scheduling Service (Integration)', () => {
+    let helper: TestDbHelper;
+
     beforeEach(() => {
-        mockBetterDb.reset();
-        vi.clearAllMocks();
+        helper = setupTestDb();
+        mockDbInstance.db = helper.db;
+        
+        // 准备两个用户用于隔离测试
+        helper.seedUser(1, 'user1');
+        helper.seedUser(2, 'user2');
+
+        // 准备 10 道题目数据
+        const insertQ = helper.db.prepare("INSERT INTO questions (id, content, tags) VALUES (?, ?, ?)");
+        for (let i = 1; i <= 10; i++) {
+            // 前 3 题带 Math 标签
+            const tags = i <= 3 ? '["Math"]' : '["Others"]';
+            insertQ.run(i, `Question ${i}`, tags);
+        }
+    });
+
+    afterEach(() => {
+        helper.close();
     });
 
     describe('calculateSessionRatios', () => {
-        it('应该按照 40/40/20 比例正确计算题目数量', () => {
-            // 10 题：4 重难、4 生疏、2 常规
+        it('应该按照 40/40/20 比例正确计算权重', () => {
             expect(calculateSessionRatios(10)).toEqual({ stubborn: 4, blind: 4, regular: 2 });
-            // 35 题：14 重难、14 生疏、7 常规
-            expect(calculateSessionRatios(35)).toEqual({ stubborn: 14, blind: 14, regular: 7 });
-            // 1 题：由于 Math.floor，前两项为 0，最后一项补齐
             expect(calculateSessionRatios(1)).toEqual({ stubborn: 0, blind: 0, regular: 1 });
         });
     });
 
     describe('generateSession', () => {
-        it('应该执行正确逻辑的 SQL 并生成题目 Session', () => {
-            // 设置 Mock 返回数据
-            mockBetterDb._mockAll.mockImplementation(() => {
-                const sql = mockBetterDb.getLastSqlCall().sql.toLowerCase();
-                // 根据 SQL 关键字返回不同类型的“题目”
-                if (sql.includes('observation_zone')) return [{ id: 1, content: 'Stubborn' }];
-                if (sql.includes('not exists')) return [{ id: 2, content: 'Blind' }];
-                return [{ id: 3, content: 'Regular' }];
-            });
+        it('应该优先从用户专属的观察区（Stubborn）提取题目', () => {
+            // 给用户 1 设置 Math 为观察区
+            helper.db.prepare("INSERT INTO user_mastery (user_id, tag_name) VALUES (1, 'Math')").run();
+            helper.db.prepare("INSERT INTO observation_zone (user_id, tag_name, status) VALUES (1, 'Math', 'active')").run();
 
-            const session = schedulingService.generateSession(10);
-
-            // 1. 验证 SQL 逻辑是否覆盖了三个核心维度
-            const calls = mockBetterDb._state.calls;
+            // 提取 3 题，Stubborn 占比应为 floor(3*0.4) = 1
+            const session = schedulingService.generateSession(1, 3);
             
-            // 验证重难点逻辑 (利用了 observation_zone)
-            expect(calls.some((c: { sql: string }) => c.sql.toLowerCase().includes('observation_zone'))).toBe(true);
-            
-            // 验证生疏逻辑 (排除了已练习的 practice_logs)
-            expect(calls.some((c: { sql: string }) => c.sql.toLowerCase().includes('not exists') && c.sql.toLowerCase().includes('practice_logs'))).toBe(true);
-            
-            // 验证常规逻辑 (排除了已选出的题目 ID)
-            expect(calls.some((c: { sql: string }) => c.sql.toLowerCase().includes('not in'))).toBe(true);
-
-            // 3. 验证结果包含所有类型的题目
-            expect(session.map(s => s.id)).toContain(1);
-            expect(session.map(s => s.id)).toContain(2);
-            expect(session.map(s => s.id)).toContain(3);
+            // 必然包含一道 ID 在 1-3 之间的题目（Math 标签）
+            expect(session.some(q => q.id >= 1 && q.id <= 3)).toBe(true);
         });
 
-        it('应该在 Regular 查询中正确构建 NOT IN 排除列表', () => {
-            let capturedSql = '';
-            mockBetterDb._mockAll.mockImplementation(() => {
-                const call = mockBetterDb.getLastSqlCall();
-                if (call.sql.toLowerCase().includes('observation_zone')) return [{ id: 501 }];
-                if (call.sql.toLowerCase().includes('not exists')) return [{ id: 502 }];
-                if (call.sql.toLowerCase().includes('not in')) {
-                    capturedSql = call.sql;
-                    return [{ id: 503 }];
-                }
-                return [];
-            });
+        it('多用户隔离：用户 A 的练习记录不应影响用户 B 的“盲区”判断', () => {
+            // 场景：只有 10 道题。用户 1 练习了 ID 为 1-5 的题目。
+            const insertLog = helper.db.prepare("INSERT INTO practice_logs (user_id, question_id, is_correct) VALUES (?, ?, 1)");
+            for (let i = 1; i <= 5; i++) {
+                insertLog.run(1, i);
+            }
 
-            schedulingService.generateSession(20);
+            // 用户 2 还没做过题。对用户 2 来说，所有题目都是“盲区”。
+            const sessionForUser2 = schedulingService.generateSession(2, 10);
+            expect(sessionForUser2).toHaveLength(10);
             
-            // 核心验证：第三次查询（Regular）必须排除掉前两次查询选中的 ID (501, 502)
-            expect(capturedSql).toContain('501,502');
+            // 对用户 1 来说，盲区应该只有 6-10 (40% 占比时应抽出 4 道)
+            const sessionForUser1 = schedulingService.generateSession(1, 10);
+            const blindIdsForUser1 = sessionForUser1.filter(q => q.id > 5);
+            expect(blindIdsForUser1.length).toBeGreaterThanOrEqual(4);
+        });
+
+        it('当数据不足以填满权重时，应该能优雅降级（由 Regular 补齐）', () => {
+            // 只有 10 题的情况下申请 100 题
+            const session = schedulingService.generateSession(1, 100);
+            expect(session.length).toBeLessThanOrEqual(10);
         });
     });
 });

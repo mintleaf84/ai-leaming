@@ -169,6 +169,7 @@ export default function ChatSidebar({
 
                                         {/* Delete Button */}
                                         <button
+                                            aria-label="删除会话"
                                             onClick={(e) => {
                                                 e.stopPropagation();
                                                 if (confirm('确定要删除这个对话吗？')) {

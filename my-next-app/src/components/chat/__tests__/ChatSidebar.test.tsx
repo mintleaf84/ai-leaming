@@ -71,10 +71,8 @@ describe('ChatSidebar Component', () => {
   it('calls onDeleteSession when delete button is clicked and confirmed', () => {
     render(<ChatSidebar {...defaultProps} />);
     
-    // Deletion button is usually visible on hover (opacity-0 group-hover). 
-    // In JSDOM we can still find it.
-    // In the component, it's the 2nd button in the group for session 1.
-    const deleteBtns = screen.getAllByRole('button').filter(btn => btn.querySelector('svg.lucide-trash2'));
+    // Deletion button is now accessible via aria-label
+    const deleteBtns = screen.getAllByRole('button', { name: '删除会话' });
     fireEvent.click(deleteBtns[0]);
     
     expect(window.confirm).toHaveBeenCalled();

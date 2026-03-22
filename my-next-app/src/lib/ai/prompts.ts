@@ -182,3 +182,36 @@ export function buildPrompt(template: string, variables: Record<string, string>)
   }
   return prompt;
 }
+
+// ==========================================
+// Generate Route Prompts
+// ==========================================
+
+export type GenerateOption = 'continue' | 'improve' | 'fix' | 'shorter' | 'longer' | 'zap';
+
+export const BASE_SYSTEM_PROMPT = "你是一个专业的 AI 写作助手，致力于帮助用户优化、续写和完善 Markdown 格式的笔记。直接输出结果，不要包含任何解释性语言。";
+
+export const OPTION_PROMPTS: Record<GenerateOption, string> = {
+    continue: "请根据提供的上下文继续写作。只输出续写的内容，不要重复上文。",
+    improve: "请润色以下文本，提高可读性和专业度，保持原意不变。只输出修改后的文本。",
+    fix: "请检查并修复以下文本的语法、拼写和标点错误。只输出修改后的文本。",
+    shorter: "请精简以下文本，保留核心信息，使其更简洁。只输出修改后的文本。",
+    longer: "请扩充以下文本，在保持原意的基础上增加相关细节和描述。只输出修改后的文本。",
+    zap: "请严格按照用户指令处理以下文本。"
+};
+
+/**
+ * 根据选项和额外指令构建完整的 System Prompt
+ */
+export function buildSystemPrompt(option: GenerateOption, command?: string): string {
+    let prompt = BASE_SYSTEM_PROMPT;
+    const optionPrompt = OPTION_PROMPTS[option];
+    
+    if (option === 'zap' && command) {
+        prompt += ` 用户指令：${command}。${optionPrompt}`;
+    } else {
+        prompt += ` ${optionPrompt}`;
+    }
+    
+    return prompt;
+}

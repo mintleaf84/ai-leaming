@@ -4,6 +4,7 @@ import React from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
 import { usePathname } from 'next/navigation';
+import { motion } from 'framer-motion';
 import {
     BookOpen,
     LayoutDashboard,
@@ -109,12 +110,23 @@ export function AppSidebar({ user }: UserProps) {
                             key={item.href}
                             href={item.href}
                             className={cn(
-                                "flex items-center gap-3 px-3 py-2 mx-2 rounded-lg text-sm font-medium transition-colors group",
+                                "flex items-center gap-3 px-3 py-2 mx-2 rounded-lg text-sm font-medium transition-colors group relative",
                                 isActive
-                                    ? "bg-primary/10 text-primary"
+                                    ? "text-primary dark:text-primary-foreground"
                                     : "text-muted-foreground hover:bg-accent hover:text-foreground"
                             )}
                         >
+                            {isActive && (
+                                <motion.div
+                                    layoutId="sidebar-active-pill"
+                                    className="absolute inset-0 bg-primary/10 dark:bg-primary/20 rounded-lg -z-10"
+                                    transition={{
+                                        type: "spring",
+                                        stiffness: 400,
+                                        damping: 30
+                                    }}
+                                />
+                            )}
                             <item.icon className={cn(
                                 "h-4 w-4 transition-colors",
                                 isActive ? "text-primary" : "text-muted-foreground group-hover:text-foreground"

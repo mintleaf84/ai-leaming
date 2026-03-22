@@ -1,10 +1,9 @@
 import { OpenAPIHono, createRoute, z } from '@hono/zod-openapi'
 import { authService } from '@/lib/services/auth'
-import { sign } from 'hono/jwt'
 import { setCookie, deleteCookie } from 'hono/cookie'
 import { logger as honoLogger } from 'hono/logger'
 import { checkRateLimit, getClientIP } from '@/lib/rate-limit'
-import { COOKIE_NAME } from '@/lib/auth/auth-edge'
+import { COOKIE_NAME, encrypt } from '@/lib/auth/auth-edge'
 
 const app = new OpenAPIHono()
 
@@ -34,7 +33,7 @@ app.use('*', async (c, next) => {
     await next();
 })
 
-const JWT_SECRET = process.env.JWT_SECRET || 'fallback-secret-for-development-only-replace-it-in-production'
+// 移除冗余的 JWT_SECRET，改为统一使用 auth-edge 内部的配置
 
 const LoginSchema = z.object({
     username: z.string(),
@@ -89,10 +88,11 @@ app.openapi(loginRoute, async (c) => {
     }
 
     // 使用统一的 encrypt 方法确保与 middleware 兼容
-    const { encrypt } = await import('@/lib/auth/auth-edge')
+    const expires = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString()
     const token = await encrypt({
         user: user,
-        exp: Math.floor(Date.now() / 1000) + 60 * 60 * 24 * 7 // 7 days
+        expires,
+        exp: Math.floor(Date.now() / 1000) + 60 * 60 * 24 * 7 // 7 days (keep exp for standard tools)
     })
 
     console.log(`[Auth API] Login success for ${username}, token generated`);
@@ -153,10 +153,12 @@ app.openapi(registerRoute, async (c) => {
     try {
         const user = await authService.register(username, password)
 
-        const token = await sign({
+        const expires = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString()
+        const token = await encrypt({
             user: user,
+            expires,
             exp: Math.floor(Date.now() / 1000) + 60 * 60 * 24 * 7 // 7 days
-        }, JWT_SECRET)
+        })
 
         // 设置 Cookie
         setCookie(c, COOKIE_NAME, token, {

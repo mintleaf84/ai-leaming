@@ -31,10 +31,7 @@ vi.mock('hono/cookie', () => ({
     deleteCookie: mockCookies.deleteCookie,
 }));
 
-// Mock hono/jwt sign
-vi.mock('hono/jwt', () => ({
-    sign: vi.fn().mockResolvedValue('fake-jwt-token')
-}));
+// 移除不再使用的 hono/jwt sign Mock
 
 describe('Auth Hono Routes', () => {
     beforeEach(() => {
@@ -87,12 +84,10 @@ describe('Auth Hono Routes', () => {
 
             expect(res.status).toBe(200);
             expect(mockAuthService.register).toHaveBeenCalledWith('newuser', 'password123');
-            // 注意：由于 register 目前使用的是 JWT sign 而不是 auth-edge encrypt，
-            // 它的 token 会是 mockJwtSign 返回的 fake-jwt-token
             expect(mockCookies.setCookie).toHaveBeenCalledWith(
                 expect.anything(),
                 'session',
-                'fake-jwt-token',
+                'fake-edge-token',
                 expect.anything()
             );
         });

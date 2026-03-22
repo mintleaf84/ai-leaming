@@ -17,10 +17,11 @@ test.describe('Note Editor E2E', () => {
 
         // 1. 进入笔记列表页
         await page.goto('/notes');
+        await page.waitForLoadState('domcontentloaded');
 
         // 2. 新建笔记
-        const createBtn = page.getByText('新建笔记');
-        await expect(createBtn).toBeVisible();
+        const createBtn = page.getByRole('button', { name: /新建笔记/i });
+        await expect(createBtn).toBeVisible({ timeout: 15000 });
         await createBtn.click();
 
         // 等待跳转到笔记详情页
@@ -51,15 +52,17 @@ test.describe('Note Editor E2E', () => {
         // 6. 验证 Bubble Menu (AI 助手)
         // 输入一段长文本以便选中
         await editor.fill('Testing AI Selection Bubbles');
-        // 双击选中 "Selection" (模拟)
-        await editor.dblclick();
-        // 或者使用 selectText
-        // await editor.selectText(); 
+        await page.waitForTimeout(500); // 稍微等待编辑器状态同步
+        // 使用键盘全选
+        await page.keyboard.press('Control+A'); // Windows/Linux
+        const isMac = process.platform === 'darwin';
+        if (isMac) await page.keyboard.press('Meta+A'); // Mac
+        await page.waitForTimeout(500); // 等待 Bubble Menu 动画
 
         // 验证 Bubble Menu 出现
         // 注意：Bubble Menu 是根据 selection state 渲染的
-        const aiButton = page.getByText('AI 助手'); // 或 Ask AI
-        await expect(aiButton).toBeVisible();
+        const aiButton = page.getByRole('button', { name: /AI 助手|Ask AI/i }).first();
+        await expect(aiButton).toBeVisible({ timeout: 10000 });
 
         // 7. 测试点击 AI 按钮
         await aiButton.click();

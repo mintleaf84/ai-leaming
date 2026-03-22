@@ -9,7 +9,7 @@ test.describe('Admin 提示词管理', () => {
         await adminPage.waitForTimeout(2000);
 
         // 点击 AI 与提示词 菜单
-        const aiMenu = adminPage.getByText('AI 与提示词');
+        const aiMenu = adminPage.getByText('AI 与提示词').first();
         if (await aiMenu.isVisible()) {
             await aiMenu.click();
             await adminPage.waitForTimeout(1000);

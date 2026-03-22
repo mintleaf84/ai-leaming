@@ -27,24 +27,32 @@ async function globalSetup(config: FullConfig) {
 
   const dbPath = path.resolve(process.cwd(), 'data', 'test-e2e.db');
 
-  // 1. 清理旧数据库
-  try {
-    if (fs.existsSync(dbPath)) {
-      fs.unlinkSync(dbPath);
-      console.log('[E2E Setup] 已删除旧测试数据库');
-    }
-    ['-wal', '-shm'].forEach(suffix => {
-      const file = dbPath + suffix;
-      if (fs.existsSync(file)) fs.unlinkSync(file);
-    });
-  } catch (error) {
-    console.warn('[E2E Setup] 清理旧数据库失败（可能正在使用）');
-  }
-
-  // 2. 创建新数据库并初始化表结构
-  console.log('[E2E Setup] 创建数据库并初始化表结构...');
+  // 1. 尝试初始化数据库连接
   const db = new Database(dbPath);
   db.pragma('journal_mode = WAL');
+
+  // 1.1 清理旧数据（代替 fs.unlinkSync，以兼容 Windows 锁定情况）
+  console.log('[E2E Setup] 正在清理旧测试数据...');
+  const tables = [
+    'users', 'notes', 'note_tags', 'note_tag_relations', 'questions', 'practice_sessions', 
+    'practice_logs', 'ai_configs', 'chat_sessions', 'chat_messages', 'user_mastery',
+    'subscription_plans', 'user_subscriptions', 'prompt_templates',
+    'system_settings', 'daily_usage'
+
+  ];
+  
+  db.transaction(() => {
+    for (const table of tables) {
+      try {
+        db.prepare(`DROP TABLE IF EXISTS ${table}`).run();
+      } catch (e) {
+        // 忽略错误
+      }
+    }
+  })();
+  console.log('[E2E Setup] 旧表已删除');
+
+
 
   // 创建表结构（简化版本，包含关键表）
   db.exec(`
@@ -55,10 +63,22 @@ async function globalSetup(config: FullConfig) {
       username TEXT UNIQUE NOT NULL,
       password_hash TEXT NOT NULL,
       role TEXT CHECK(role IN ('admin', 'student')) DEFAULT 'student',
+      token_version INTEGER DEFAULT 0,
       created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+    );
+    
+    CREATE TABLE IF NOT EXISTS notes (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      user_id INTEGER NOT NULL,
+      title TEXT NOT NULL,
+      content TEXT,
+      created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+      updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+      FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
     );
 
     CREATE TABLE IF NOT EXISTS questions (
+
       id INTEGER PRIMARY KEY AUTOINCREMENT,
       content TEXT NOT NULL,
       options TEXT,
@@ -161,6 +181,12 @@ async function globalSetup(config: FullConfig) {
       updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
     );
 
+    CREATE TABLE IF NOT EXISTS system_settings (
+      key TEXT PRIMARY KEY,
+      value TEXT NOT NULL,
+      updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
+    );
+
     CREATE TABLE IF NOT EXISTS daily_usage (
       id INTEGER PRIMARY KEY AUTOINCREMENT,
       user_id INTEGER NOT NULL,
@@ -174,17 +200,18 @@ async function globalSetup(config: FullConfig) {
   // 3. 插入种子数据
   console.log('[E2E Setup] 插入种子数据...');
 
-  // 3.1 创建测试用户
+  // 3.1 创建测试用户（使用 INSERT OR REPLACE 确保幂等）
   const userPasswordHash = bcrypt.hashSync(TEST_USER.password, 10);
   const adminPasswordHash = bcrypt.hashSync(TEST_ADMIN.password, 10);
 
   db.prepare(`
-    INSERT OR IGNORE INTO users (username, password_hash, role) VALUES (?, ?, ?)
-  `).run(TEST_USER.username, userPasswordHash, TEST_USER.role);
+    INSERT OR REPLACE INTO users (id, username, password_hash, role, token_version) VALUES (?, ?, ?, ?, ?)
+  `).run(1, TEST_USER.username, userPasswordHash, TEST_USER.role, 0);
 
   db.prepare(`
-    INSERT OR IGNORE INTO users (username, password_hash, role) VALUES (?, ?, ?)
-  `).run(TEST_ADMIN.username, adminPasswordHash, TEST_ADMIN.role);
+    INSERT OR REPLACE INTO users (id, username, password_hash, role, token_version) VALUES (?, ?, ?, ?, ?)
+  `).run(2, TEST_ADMIN.username, adminPasswordHash, TEST_ADMIN.role, 0);
+
 
   console.log('[E2E Setup] 已创建测试用户: testuser, testadmin');
 
@@ -241,6 +268,14 @@ async function globalSetup(config: FullConfig) {
   `).run(2, 'free', 'active');
 
   console.log('[E2E Setup] 已为用户创建订阅');
+
+  // 3.6 初始化系统设置
+  db.prepare(`
+    INSERT OR IGNORE INTO system_settings (key, value)
+    VALUES (?, ?)
+  `).run('demo_mode_enabled', 'false');
+
+  console.log('[E2E Setup] 已初始化演示模式开关');
 
   // 关闭数据库连接
   db.close();

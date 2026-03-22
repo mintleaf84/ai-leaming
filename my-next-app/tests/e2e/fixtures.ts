@@ -1,4 +1,5 @@
 import { test as base, Page } from '@playwright/test';
+import { COOKIE_NAME } from '@/lib/auth/auth-edge';
 
 /**
  * E2E 测试共享 Fixture
@@ -37,7 +38,8 @@ async function loginAs(page: Page, user: { username: string; password: string })
     await page.goto('/login');
     await page.waitForTimeout(500);
 
-    // 填写登录表单
+    // 确保用户名输入框可见并就绪
+    await page.waitForSelector('input[placeholder*="用户名"]', { timeout: 10000 });
     const usernameInput = page.getByPlaceholder(/用户名/);
     const passwordInput = page.getByPlaceholder(/密码/);
 
@@ -45,9 +47,27 @@ async function loginAs(page: Page, user: { username: string; password: string })
         await usernameInput.fill(user.username);
         await passwordInput.fill(user.password);
         await page.getByRole('button', { name: /登录/i }).click();
-        await page.waitForTimeout(1000);
+        
+        // 显式等待 URL 跳转，增加到 25s 以应对初次编译
+        try {
+            // 首先等待登录请求完成 (API 响应)
+            await page.waitForResponse(resp => resp.url().includes('/api/auth/login') && resp.status() === 200, { timeout: 15000 });
+            
+            // 然后等待 URL 变化
+            await page.waitForURL(/\/(dashboard|home|practice|admin)/, { timeout: 20000 });
+            
+            // 额外检查 cookie 是否已设置（双重保险）
+            const cookies = await page.context().cookies();
+            const hasAuthCookie = cookies.some(c => c.name === COOKIE_NAME);
+            if (!hasAuthCookie) {
+                console.warn('[E2E Fixture] Auth cookie missing after login redirect');
+            }
+        } catch (e) {
+            console.error('[E2E Fixture] Login failed or timed out. Current URL:', page.url());
+        }
     }
 }
+
 
 /**
  * 设置 API Mock

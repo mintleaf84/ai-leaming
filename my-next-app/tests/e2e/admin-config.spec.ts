@@ -9,7 +9,7 @@ test.describe('Admin AI 配置管理', () => {
         await adminPage.waitForTimeout(2000);
 
         // 验证管理后台加载
-        await expect(adminPage.getByText(/管理后台|概览/)).toBeVisible({ timeout: 10000 });
+        await expect(adminPage.getByRole('heading', { name: '概览', exact: true }).first()).toBeVisible({ timeout: 10000 });
     });
 
     test('管理员能访问 AI 配置页面', async ({ adminPage }) => {

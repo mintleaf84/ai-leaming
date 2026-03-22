@@ -3,6 +3,7 @@
 import db from '@/lib/db';
 import { requireUser } from '@/lib/auth/auth';
 import { getBeijingDateString, getBeijingYesterdayString, formatBeijingDisplayDate } from '@/lib/utils/datetime';
+import { calculateStreakFromDates } from '@/lib/utils/stats-utils';
 
 export type UserStats = {
   totalPracticed: number;
@@ -62,7 +63,7 @@ export async function getUserStatsAction(): Promise<UserStats> {
   `).get(user.id) as { count: number };
 
   // 7. 连续学习天数
-  const streakDays = calculateStreakDays(user.id);
+  const streakDays = getStreakDaysInternal(user.id);
 
   // 8. 每日目标 (从设置读取，默认 25)
   const dailyGoal = 25;
@@ -83,10 +84,13 @@ export async function getUserStatsAction(): Promise<UserStats> {
 }
 
 /**
- * 计算连续学习天数
+ * 计算连续学习天数 (内部调用)
  */
-function calculateStreakDays(userId: number): number {
-  // 获取最近 30 天内有练习记录的日期
+function getStreakDaysInternal(userId: number): number {
+  const today = getBeijingDateString();
+  const yesterday = getBeijingYesterdayString();
+
+  // 获取最近 30 天内有练习记录的日期 (倒序)
   const rows = db.prepare(`
     SELECT DISTINCT date(timestamp) as practice_date 
     FROM practice_logs 
@@ -94,37 +98,8 @@ function calculateStreakDays(userId: number): number {
     ORDER BY practice_date DESC
   `).all(userId) as { practice_date: string }[];
 
-  if (rows.length === 0) return 0;
-
-  // 使用北京时间判断连续学习
-  const today = getBeijingDateString();
-  const yesterday = getBeijingYesterdayString();
-
-  // 检查今天或昨天是否有练习
-  const firstDate = rows[0].practice_date;
-  if (firstDate !== today && firstDate !== yesterday) {
-    return 0; // 连续中断
-  }
-
-  let streak = 0;
-  let checkDate = new Date(firstDate);
-
-  for (const row of rows) {
-    const rowDate = new Date(row.practice_date);
-    const diffDays = Math.floor((checkDate.getTime() - rowDate.getTime()) / 86400000);
-
-    if (diffDays === 0) {
-      streak++;
-      checkDate = new Date(rowDate.getTime() - 86400000);
-    } else if (diffDays === 1) {
-      streak++;
-      checkDate = rowDate;
-    } else {
-      break; // 连续中断
-    }
-  }
-
-  return streak;
+  const dates = rows.map(r => r.practice_date);
+  return calculateStreakFromDates(dates, today, yesterday);
 }
 
 // 趋势数据项类型

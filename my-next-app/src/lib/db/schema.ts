@@ -288,6 +288,15 @@ export function createTables(db: Database.Database) {
     );
 
     CREATE INDEX IF NOT EXISTS idx_text_annotations_user_question ON text_annotations(user_id, question_id);
+
+    CREATE TABLE IF NOT EXISTS api_keys (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      key_string TEXT UNIQUE NOT NULL,
+      description TEXT DEFAULT '',
+      is_active INTEGER DEFAULT 1,
+      created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+      updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
+    );
   `;
 
   db.exec(initScript);

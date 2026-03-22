@@ -45,6 +45,10 @@ app.route('/mastery', masteryRoute)
 import wrongBookRoute from '@/lib/api/routes/wrong-book'
 app.route('/wrong-book', wrongBookRoute)
 
+// 外部开放接口（题库暴露，独立鉴权，不走用户登录体系）
+import externalRoute from '@/lib/api/routes/external'
+app.route('/external', externalRoute)
+
 
 
 

@@ -179,11 +179,11 @@ async function globalSetup(config: FullConfig) {
   const adminPasswordHash = bcrypt.hashSync(TEST_ADMIN.password, 10);
 
   db.prepare(`
-    INSERT INTO users (username, password_hash, role) VALUES (?, ?, ?)
+    INSERT OR IGNORE INTO users (username, password_hash, role) VALUES (?, ?, ?)
   `).run(TEST_USER.username, userPasswordHash, TEST_USER.role);
 
   db.prepare(`
-    INSERT INTO users (username, password_hash, role) VALUES (?, ?, ?)
+    INSERT OR IGNORE INTO users (username, password_hash, role) VALUES (?, ?, ?)
   `).run(TEST_ADMIN.username, adminPasswordHash, TEST_ADMIN.role);
 
   console.log('[E2E Setup] 已创建测试用户: testuser, testadmin');
@@ -203,7 +203,7 @@ async function globalSetup(config: FullConfig) {
   ];
 
   const insertQuestion = db.prepare(`
-    INSERT INTO questions (content, options, answer, explanation, tags, dimension, type)
+    INSERT OR IGNORE INTO questions (content, options, answer, explanation, tags, dimension, type)
     VALUES (?, ?, ?, ?, ?, ?, ?)
   `);
 
@@ -215,7 +215,7 @@ async function globalSetup(config: FullConfig) {
 
   // 3.3 创建 AI 配置（Mock 配置）
   db.prepare(`
-    INSERT INTO ai_configs (name, api_url, api_key, model_economy, model_premium, is_active)
+    INSERT OR IGNORE INTO ai_configs (name, api_url, api_key, model_economy, model_premium, is_active)
     VALUES (?, ?, ?, ?, ?, ?)
   `).run('测试AI配置', 'https://mock-api.test.com/v1', 'sk-test-mock-key', 'gpt-3.5-turbo', 'gpt-4', 1);
 
@@ -231,12 +231,12 @@ async function globalSetup(config: FullConfig) {
 
   // 3.5 为测试用户创建订阅
   db.prepare(`
-    INSERT INTO user_subscriptions (user_id, plan_id, status)
+    INSERT OR IGNORE INTO user_subscriptions (user_id, plan_id, status)
     VALUES (?, ?, ?)
   `).run(1, 'free', 'active');
 
   db.prepare(`
-    INSERT INTO user_subscriptions (user_id, plan_id, status)
+    INSERT OR IGNORE INTO user_subscriptions (user_id, plan_id, status)
     VALUES (?, ?, ?)
   `).run(2, 'free', 'active');
 

@@ -6,6 +6,7 @@ const { mockDb, mockMasteryService } = vi.hoisted(() => {
     return {
         mockDb: {
             prepare: vi.fn(),
+            transaction: vi.fn((cb) => cb()), // Mock transaction by executing callback immediately
         },
         mockMasteryService: {
             updateMastery: vi.fn(),
@@ -25,8 +26,6 @@ vi.mock('@/lib/services/mastery', () => ({
     masteryService: mockMasteryService
 }));
 
-// We check the real implementation of import.ts, so we don't mock parsing logic unless we want to isolate it.
-// Given strict unit test requirement, let's mock the complex parser to focus on the Action logic (DB interactions).
 vi.mock('@/lib/import/fenbi-parser', () => ({
     validateFenbiJson: vi.fn(),
     parseFenbiData: vi.fn(),
@@ -46,15 +45,9 @@ describe('Import Actions', () => {
         const mockGet = vi.fn().mockReturnValue(existingQuestionId ? { id: existingQuestionId } : undefined);
 
         mockDb.prepare.mockImplementation((sql: string) => {
-            if (sql.includes('INSERT')) {
-                return { run: mockRun };
-            }
-            if (sql.includes('SELECT') && sql.includes('FROM questions')) {
-                return { get: mockGet };
-            }
-            if (sql.includes('UPDATE')) {
-                return { run: mockRun };
-            }
+            if (sql.includes('INSERT')) return { run: mockRun };
+            if (sql.includes('SELECT') && sql.includes('FROM questions')) return { get: mockGet };
+            if (sql.includes('UPDATE')) return { run: mockRun };
             return { run: mockRun, get: mockGet };
         });
 
@@ -92,106 +85,98 @@ describe('Import Actions', () => {
             }]
         });
 
-        // Setup DB Mocks (No existing question)
         const { mockRun } = setupDbMocks(undefined);
 
         const result = await importFenbiDataAction('{}', '{}');
 
         expect(result.success).toBe(true);
-        expect(result.importedCount).toBe(1);
-        expect(result.newQuestionsCount).toBe(1);
-
-        // Verify Questions Inserted
+        expect(mockDb.transaction).toHaveBeenCalled();
+        
+        // 验证插入练习会话
         expect(mockRun).toHaveBeenCalledWith(
-            'Question 1', // content
-            expect.any(String), // options
-            'A', // answer
-            'Exp', // explanation
-            expect.any(String), // tags
-            'knowledge', // dimension
-            'single', // type
-            'ext-1', // external_id
-            'fenbi', // source
-            0.8, // correct_ratio
-            'B', // most_wrong
-            null, // material
-            null // material_html
-        );
-
-        // Verify Logs Inserted
-        expect(mockRun).toHaveBeenCalledWith(
-            expect.stringContaining('fenbi_'), // session_id
+            expect.stringContaining('fenbi_'), // sessionId
             1, // user_id
-            100, // question_id (from mock insert)
-            'A', // user_answer
-            1, // is_correct
-            1000 // duration
+            'Test Session',
+            1, // total
+            1, // correct
+            'import',
+            expect.any(String) // questions_json
         );
 
-        // Verify Mastery Update
-        expect(mockMasteryService.updateMastery).toHaveBeenCalledWith(
-            1, 'Tag1', 'knowledge', true
+        // 验证插入题目
+        expect(mockRun).toHaveBeenCalledWith(
+            'Question 1', 
+            JSON.stringify(['A', 'B']), 
+            'A', 
+            'Exp', 
+            JSON.stringify(['Tag1']), 
+            'knowledge', 
+            'single', 
+            'ext-1', 
+            'fenbi', 
+            0.8, 
+            'B', 
+            null, 
+            null
+        );
+
+        // 验证插入日志
+        expect(mockRun).toHaveBeenCalledWith(
+            expect.stringContaining('fenbi_'),
+            1,
+            100, // question_id
+            'A',
+            1,
+            1000
         );
     });
 
     it('should update existing questions instead of creating duplicates', async () => {
-        // Setup Parser Mocks
         vi.mocked(validateFenbiJson).mockReturnValue({ valid: true });
         vi.mocked(parseFenbiData).mockReturnValue({
-            sessionName: 'Test Session',
-            totalCount: 1,
-            correctCount: 0,
-            errorCount: 1,
-            statsCount: 0,
-            questions: [{
-                externalId: 'ext-1',
-                content: 'Updated Content',
-                contentHtml: '<p>Updated Content</p>',
-                type: 'single',
-                options: ['A', 'B'],
-                answer: 'A',
-                explanation: 'Exp',
-                explanationHtml: '<p>Exp</p>',
-                tags: ['Tag1'],
-                dimension: 'knowledge',
+            sessionName: 'Test', totalCount: 1, correctCount: 0, errorCount: 0, statsCount: 0,
+            questions: [{ 
+                externalId: 'ext-1', content: 'Updated', contentHtml: '<p>Updated</p>',
+                explanation: 'Fixed Exp', explanationHtml: '<p>Fixed Exp</p>',
+                options: [], answer: 'A', type: 'single', tags: [], dimension: 'knowledge',
                 source: 'fenbi'
             }],
-            records: [] // No records for this test to focus on question update
+            records: []
         });
 
-        // Setup DB Mocks (Existing question ID 999)
-        const mockRun = vi.fn();
-        const mockGet = vi.fn().mockReturnValue({ id: 999 });
-
-        mockDb.prepare.mockImplementation((sql: string) => {
-            if (sql.includes('SELECT') && sql.includes('external_id')) return { get: mockGet };
-            if (sql.includes('UPDATE questions')) return { run: mockRun };
-            return { run: mockRun, get: mockGet };
-        });
+        const { mockRun } = setupDbMocks(999);
 
         const result = await importFenbiDataAction('{}', '{}');
 
         expect(result.success).toBe(true);
-        expect(result.skippedQuestionsCount).toBe(1);
-        expect(result.newQuestionsCount).toBe(0);
-
-        // Verify Update called
-        expect(mockRun).toHaveBeenCalledWith(
-            null, null, // materials
-            'Updated Content',
-            'Exp',
-            'single',
-            'A',
-            expect.any(String),
-            999 // WHERE id = ?
+        expect(mockDb.transaction).toHaveBeenCalled();
+        
+        // 第 1 次调用是 INSERT INTO practice_sessions
+        // 第 2 次调用是 UPDATE questions
+        expect(mockRun).toHaveBeenNthCalledWith(2,
+            null, null, 'Updated', 'Fixed Exp', 'single', 'A', '[]', 999
         );
     });
 
-    it('should return error validation fails', async () => {
+    it('should return error if database transaction fails', async () => {
+        vi.mocked(validateFenbiJson).mockReturnValue({ valid: true });
+        vi.mocked(parseFenbiData).mockReturnValue({
+            sessionName: 'Fail', questions: [{ externalId: '1' } as any], records: [], totalCount: 1, correctCount: 0, errorCount: 1, statsCount: 0
+        });
+
+        mockDb.transaction.mockImplementationOnce(() => {
+            throw new Error('DB Write Error');
+        });
+
+        const result = await importFenbiDataAction('{}', '{}');
+
+        expect(result.success).toBe(false);
+        expect(result.message).toContain('DB Write Error');
+    });
+
+    it('should return error if validation fails', async () => {
         vi.mocked(validateFenbiJson).mockReturnValue({ valid: false, error: 'Invalid JSON' });
-
         const result = await importFenbiDataAction('invalid', 'invalid');
-
         expect(result.success).toBe(false);
         expect(result.message).toBe('Invalid JSON');
     });

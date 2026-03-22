@@ -86,8 +86,7 @@ describe('Practice Service', () => {
         });
     });
 
-    describe('submitAnswer', () => {
-        it('should log answer and update stats', async () => {
+        it('should log answer and update stats with correct parameters', async () => {
             const mockRunLog = vi.fn();
             const mockRunSession = vi.fn();
             const mockQ = { tags: '["tag1"]', dimension: 'knowledge' };
@@ -99,9 +98,15 @@ describe('Practice Service', () => {
 
             await practiceService.submitAnswer(1, 's1', 101, 'A', true, 1000);
 
-            expect(mockRunLog).toHaveBeenCalled();
-            expect(mockRunSession).toHaveBeenCalled();
+            // 验证日志写入
+            expect(mockDb.prepare).toHaveBeenCalledWith(expect.stringContaining('INSERT INTO practice_logs'));
+            expect(mockRunLog).toHaveBeenCalledWith('s1', 1, 101, 'A', 1, 1000);
+
+            // 验证会话更新
+            expect(mockDb.prepare).toHaveBeenCalledWith(expect.stringContaining('UPDATE practice_sessions'));
+            expect(mockRunSession).toHaveBeenCalledWith(1, 's1', 1);
+
+            // 验证掌握度更新
             expect(mockMasteryService.updateMastery).toHaveBeenCalledWith(1, 'tag1', 'knowledge', true);
         });
-    });
 });

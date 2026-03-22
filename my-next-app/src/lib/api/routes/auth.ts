@@ -88,10 +88,14 @@ app.openapi(loginRoute, async (c) => {
         return c.json({ error: 'Invalid credentials' }, 401)
     }
 
-    const token = await sign({
+    // 使用统一的 encrypt 方法确保与 middleware 兼容
+    const { encrypt } = await import('@/lib/auth/auth-edge')
+    const token = await encrypt({
         user: user,
         exp: Math.floor(Date.now() / 1000) + 60 * 60 * 24 * 7 // 7 days
-    }, JWT_SECRET)
+    })
+
+    console.log(`[Auth API] Login success for ${username}, token generated`);
 
     // 设置 Cookie
     setCookie(c, COOKIE_NAME, token, {
@@ -99,8 +103,6 @@ app.openapi(loginRoute, async (c) => {
         httpOnly: true,
         maxAge: 60 * 60 * 24 * 7, // 7 days
         sameSite: 'Lax',
-        // 如果是生产环境且通过 https 访问，建议开启 secure
-        // 但为了兼容简单的 docker ip 访问，这里暂时不强制
     })
 
     return c.json({

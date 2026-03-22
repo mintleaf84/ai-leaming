@@ -53,149 +53,136 @@ export async function importFenbiDataAction(
             };
         }
 
-        // 3. 创建练习会话
+        // 3. 准备导入上下文
         const sessionId = `fenbi_${Date.now()}_${Math.random().toString(36).substring(2, 8)}`;
-
-        db.prepare(`
-      INSERT INTO practice_sessions (id, user_id, session_name, total_questions, correct_count, practice_mode, questions_json)
-      VALUES (?, ?, ?, ?, ?, ?, ?)
-    `).run(
-            sessionId,
-            user.id,
-            parsed.sessionName,  // 保存会话名称
-            parsed.totalCount,
-            parsed.correctCount,
-            'import',  // 标记为导入模式
-            JSON.stringify(parsed.questions.map(q => ({
-                externalId: q.externalId,
-                content: q.content,
-                type: q.type
-            })))
-        );
-
-        // 4. 处理题目（插入新题目或获取已有题目 ID）
         let newQuestionsCount = 0;
         let skippedQuestionsCount = 0;
         const questionIdMap = new Map<string, number>(); // externalId -> 内部 id
 
-        const insertQuestion = db.prepare(`
-      INSERT INTO questions (content, options, answer, explanation, tags, dimension, type, external_id, source, correct_ratio, most_wrong_answer, material, material_html)
-      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-    `);
+        // 5. 使用事务执行所有数据库操作
+        db.transaction(() => {
+            // 3. 创建练习会话
+            db.prepare(`
+              INSERT INTO practice_sessions (id, user_id, session_name, total_questions, correct_count, practice_mode, questions_json)
+              VALUES (?, ?, ?, ?, ?, ?, ?)
+            `).run(
+                sessionId,
+                user.id,
+                parsed.sessionName,
+                parsed.totalCount,
+                parsed.correctCount,
+                'import',
+                JSON.stringify(parsed.questions.map(q => ({
+                    externalId: q.externalId,
+                    content: q.content,
+                    type: q.type
+                })))
+            );
 
-        const findQuestion = db.prepare(`
-      SELECT id FROM questions WHERE external_id = ?
-    `);
+            // 4. 处理题目
+            const insertQuestion = db.prepare(`
+              INSERT INTO questions (content, options, answer, explanation, tags, dimension, type, external_id, source, correct_ratio, most_wrong_answer, material, material_html)
+              VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+            `);
 
-        const updateQuestionStats = db.prepare(`
-            UPDATE questions 
-            SET correct_ratio = ?, most_wrong_answer = ?
-            WHERE id = ?
-        `);
+            const findQuestion = db.prepare(`
+              SELECT id FROM questions WHERE external_id = ?
+            `);
 
-        for (const question of parsed.questions) {
-            // 检查是否已存在
-            const existing = findQuestion.get(question.externalId) as { id: number } | undefined;
+            const updateQuestionStats = db.prepare(`
+                UPDATE questions 
+                SET correct_ratio = ?, most_wrong_answer = ?
+                WHERE id = ?
+            `);
 
-            if (existing) {
-                questionIdMap.set(question.externalId, existing.id);
-                // 如果有统计数据，则更新
-                if (question.stats?.correctRatio != null || question.stats?.mostWrongAnswer != null) {
-                    updateQuestionStats.run(
-                        question.stats?.correctRatio ?? null,
-                        question.stats?.mostWrongAnswer ?? null,
+            const updateFullQuestion = db.prepare(`
+                UPDATE questions 
+                SET material = ?, material_html = ?, content = ?, explanation = ?,
+                    type = ?, answer = ?, options = ?
+                WHERE id = ?
+            `);
+
+            for (const question of parsed.questions) {
+                const existing = findQuestion.get(question.externalId) as { id: number } | undefined;
+
+                if (existing) {
+                    questionIdMap.set(question.externalId, existing.id);
+                    if (question.stats?.correctRatio != null || question.stats?.mostWrongAnswer != null) {
+                        updateQuestionStats.run(
+                            question.stats?.correctRatio ?? null,
+                            question.stats?.mostWrongAnswer ?? null,
+                            existing.id
+                        );
+                    }
+
+                    const typeMap: Record<string, string> = {
+                        'single': 'single', 'multi': 'multi', 'boolean': 'single', 'fill_blank': 'fill_blank'
+                    };
+
+                    updateFullQuestion.run(
+                        question.material ?? null,
+                        question.materialHtml ?? null,
+                        question.content,
+                        question.explanation,
+                        typeMap[question.type] || 'single',
+                        question.answer,
+                        JSON.stringify(question.options),
                         existing.id
                     );
+                    skippedQuestionsCount++;
+                } else {
+                    const typeMap: Record<string, string> = {
+                        'single': 'single', 'multi': 'multi', 'boolean': 'single', 'fill_blank': 'fill_blank'
+                    };
+
+                    const result = insertQuestion.run(
+                        question.content,
+                        JSON.stringify(question.options),
+                        question.answer,
+                        question.explanation,
+                        JSON.stringify(question.tags),
+                        question.dimension,
+                        typeMap[question.type] || 'single',
+                        question.externalId,
+                        question.source,
+                        question.stats?.correctRatio ?? null,
+                        question.stats?.mostWrongAnswer ?? null,
+                        question.material ?? null,
+                        question.materialHtml ?? null
+                    );
+
+                    questionIdMap.set(question.externalId, result.lastInsertRowid as number);
+                    newQuestionsCount++;
                 }
-
-                // 转换题目类型
-                const typeMap: Record<string, string> = {
-                    'single': 'single',
-                    'multi': 'multi',
-                    'boolean': 'single',
-                    'fill_blank': 'fill_blank'
-                };
-
-                // 总是尝试更新所有字段，以支持重新导入时修复数据
-                db.prepare(`
-                    UPDATE questions 
-                    SET material = ?, material_html = ?, content = ?, explanation = ?,
-                        type = ?, answer = ?, options = ?
-                    WHERE id = ?
-                `).run(
-                    question.material ?? null,
-                    question.materialHtml ?? null,
-                    question.content,
-                    question.explanation,
-                    typeMap[question.type] || 'single',
-                    question.answer,
-                    JSON.stringify(question.options),
-                    existing.id
-                );
-
-                skippedQuestionsCount++;
-            } else {
-                // 转换题目类型以匹配系统格式
-                const typeMap: Record<string, string> = {
-                    'single': 'single',
-                    'multi': 'multi',
-                    'boolean': 'single',     // 判断题在系统中作为单选处理
-                    'fill_blank': 'fill_blank'  // 填空题
-                };
-
-                const result = insertQuestion.run(
-                    question.content,
-                    JSON.stringify(question.options),
-                    question.answer,
-                    question.explanation,
-                    JSON.stringify(question.tags),
-                    question.dimension,
-                    typeMap[question.type] || 'single',
-                    question.externalId,
-                    question.source,
-                    question.stats?.correctRatio ?? null,      // 全站正确率
-                    question.stats?.mostWrongAnswer ?? null,   // 易错项
-                    question.material ?? null,                 // 材料内容（纯文本）
-                    question.materialHtml ?? null              // 材料内容（HTML）
-                );
-
-                questionIdMap.set(question.externalId, result.lastInsertRowid as number);
-                newQuestionsCount++;
             }
-        }
 
-        // 5. 记录作答日志
-        const insertLog = db.prepare(`
-      INSERT INTO practice_logs (session_id, user_id, question_id, user_answer, is_correct, duration_ms)
-      VALUES (?, ?, ?, ?, ?, ?)
-    `);
+            // 5. 记录日志
+            const insertLog = db.prepare(`
+              INSERT INTO practice_logs (session_id, user_id, question_id, user_answer, is_correct, duration_ms)
+              VALUES (?, ?, ?, ?, ?, ?)
+            `);
 
-        for (const record of parsed.records) {
-            const questionId = questionIdMap.get(record.externalId);
-            if (questionId) {
-                insertLog.run(
-                    sessionId,
-                    user.id,
-                    questionId,
-                    record.userAnswer,
-                    record.isCorrect ? 1 : 0,
-                    record.durationMs
-                );
+            for (const record of parsed.records) {
+                const questionId = questionIdMap.get(record.externalId);
+                if (questionId) {
+                    insertLog.run(
+                        sessionId,
+                        user.id,
+                        questionId,
+                        record.userAnswer,
+                        record.isCorrect ? 1 : 0,
+                        record.durationMs
+                    );
 
-                // 6. 更新掌握度（正确和错误都会更新）
-                const question = parsed.questions.find(q => q.externalId === record.externalId);
-                if (question && question.tags.length > 0) {
-                    for (const tag of question.tags) {
-                        masteryService.updateMastery(
-                            user.id,
-                            tag,
-                            question.dimension,
-                            record.isCorrect  // 正确会提升，错误会降低
-                        );
+                    const question = parsed.questions.find(q => q.externalId === record.externalId);
+                    if (question && question.tags.length > 0) {
+                        for (const tag of question.tags) {
+                            masteryService.updateMastery(user.id, tag, question.dimension, record.isCorrect);
+                        }
                     }
                 }
             }
-        }
+        });
 
         return {
             success: true,
@@ -203,7 +190,7 @@ export async function importFenbiDataAction(
             importedCount: parsed.records.length,
             newQuestionsCount,
             skippedQuestionsCount,
-            message: `成功导入 ${parsed.records.length} 条作答记录，新增 ${newQuestionsCount} 道题目（统计数据: ${parsed.statsCount}/${parsed.totalCount}）`
+            message: `成功导入 ${parsed.records.length} 条作答记录，新增 ${newQuestionsCount} 道题目`
         };
 
     } catch (error) {

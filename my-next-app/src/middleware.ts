@@ -25,9 +25,12 @@ export async function middleware(req: NextRequest) {
         try {
             session = await decrypt(cookie);
             userId = session?.user?.id ? String(session.user.id) : 'anonymous';
-        } catch (e) {
-            // Token invalid or expired
+            console.log(`[Middleware] Token valid for user: ${userId}`);
+        } catch (e: any) {
+            console.warn(`[Middleware] Token decryption failed: ${e.message}`);
         }
+    } else {
+        console.log(`[Middleware] No auth cookie found for path: ${path}`);
     }
 
     // 4. Redirect to /login if the user is not authenticated

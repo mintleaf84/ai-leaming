@@ -35,15 +35,18 @@ describe('schedulingService', () => {
       // 执行
       const session = schedulingService.generateSession(35);
 
-      // 验证 - 调用次数
-      expect(mockPrepare).toHaveBeenCalledTimes(3);
-
-      // 验证 - 各类题目请求数量
-      // 35 * 0.4 = 14 顽固题
-      // 35 * 0.4 = 14 盲区题
-      // 35 - 14 - 14 = 7 常规题
+      // 验证 - 各类题目请求数量及 SQL 逻辑
+      // 35 * 0.4 = 14 顽固题 (JOIN observation_zone)
+      expect(mockPrepare).toHaveBeenNthCalledWith(1, expect.stringContaining('observation_zone'));
       expect(mockAll).toHaveBeenNthCalledWith(1, 14);
+
+      // 35 * 0.4 = 14 盲区题 (NOT EXISTS practice_logs)
+      expect(mockPrepare).toHaveBeenNthCalledWith(2, expect.stringContaining('NOT EXISTS'));
+      expect(mockPrepare).toHaveBeenNthCalledWith(2, expect.stringContaining('practice_logs'));
       expect(mockAll).toHaveBeenNthCalledWith(2, 14);
+
+      // 35 - 14 - 14 = 7 常规题 (NOT IN ...)
+      expect(mockPrepare).toHaveBeenNthCalledWith(3, expect.stringContaining('NOT IN'));
       expect(mockAll).toHaveBeenNthCalledWith(3, 7);
 
       // 验证 - 返回结果数量

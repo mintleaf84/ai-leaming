@@ -193,29 +193,17 @@ export function usePracticeController() {
 
             let isCorrect = false;
             if (currentQuestion.type === 'multi') {
-                try {
-                    const correctArr = JSON.parse(currentQuestion.answer).sort();
-                    const answerArr = JSON.parse(answer).sort();
-
-                    // 多选同样需要增强比对，有些导入题目可能存的是文本数组
-                    if (correctArr.length === answerArr.length) {
-                        isCorrect = answerArr.every((v: string, i: number) => checkCorrect(v, correctArr[i], currentQuestion.options));
-                    }
-                } catch {
-                    isCorrect = answer === currentQuestion.answer;
-                }
-            } else {
-                isCorrect = checkCorrect(answer, currentQuestion.answer, currentQuestion.options);
-            }
-
-            // 兼容两种格式：JSON数组 ["A","B"] 或逗号分隔 "A,B,C"
-            if (currentQuestion.type === 'multi') {
                 const parseAnswer = (val: string): string[] => {
                     try { return JSON.parse(val); } catch { return val.split(',').map(s => s.trim()); }
                 };
-                const correctArr = parseAnswer(currentQuestion.answer);
-                const answerArr = parseAnswer(answer);
-                isCorrect = JSON.stringify(correctArr.sort()) === JSON.stringify(answerArr.sort());
+                const correctArr = parseAnswer(currentQuestion.answer).sort();
+                const answerArr = parseAnswer(answer).sort();
+
+                if (correctArr.length === answerArr.length) {
+                    isCorrect = answerArr.every((v, i) => checkCorrect(v, correctArr[i], currentQuestion.options));
+                }
+            } else {
+                isCorrect = checkCorrect(answer, currentQuestion.answer, currentQuestion.options);
             }
 
             const duration = Math.floor((Date.now() - (state.startTime || Date.now())) / 1000);

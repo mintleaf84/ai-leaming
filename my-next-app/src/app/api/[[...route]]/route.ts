@@ -52,6 +52,18 @@ app.route('/external', externalRoute)
 import { adminRoute } from '@/lib/api/routes/admin'
 app.route('/admin', adminRoute)
 
+import textbookRoute from '@/lib/api/routes/textbook'
+app.route('/textbook', textbookRoute)
+
+import annotationsRoute from '@/lib/api/routes/annotations'
+app.route('/annotations', annotationsRoute)
+
+import chatRoute from '@/lib/api/routes/chat'
+app.route('/chat', chatRoute)
+
+import generateRoute from '@/lib/api/routes/generate'
+app.route('/generate', generateRoute)
+
 
 
 

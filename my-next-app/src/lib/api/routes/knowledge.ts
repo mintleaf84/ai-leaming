@@ -160,11 +160,122 @@ app.openapi(createCardRoute, async (c) => {
         }
 
         const id = await createKnowledgeCard(card)
-
         return c.json({ id, message: '知识卡片创建成功' })
     } catch (error: any) {
         console.error('[Knowledge API] POST error:', error)
-        return c.json({ error: error.message }, 500) // Hono handles 500 automatically generally, but explicit return is safer for OpenAPI type inference if schema defined
+        return c.json({ error: error.message }, 500)
+    }
+})
+
+// --- Extract Logic ---
+
+const ExtractRequestSchema = z.object({
+    content: z.string(),
+    sessionId: z.number().optional(),
+    instruction: z.string().optional(),
+    save: z.boolean().optional().default(true)
+})
+
+const extractRoute = createRoute({
+    method: 'post',
+    path: '/extract',
+    middleware: [authMiddleware] as const,
+    request: {
+        body: {
+            content: {
+                'application/json': {
+                    schema: ExtractRequestSchema
+                }
+            }
+        }
+    },
+    responses: {
+        200: {
+            description: 'Knowledge extracted',
+            content: {
+                'application/json': {
+                    schema: z.object({
+                        id: z.number().optional(),
+                        card: KnowledgeCardSchema.extend({ source_content: z.string().optional() }),
+                        suggestions: z.array(z.string()).optional(),
+                        message: z.string()
+                    })
+                }
+            }
+        },
+        422: { description: 'Parsing failed' },
+        500: { description: 'Server error' }
+    }
+})
+
+import { generateTextWrapper } from '@/lib/ai/client'
+import { getPromptFromDbSync, buildPrompt, DEFAULT_KNOWLEDGE_EXTRACT_PROMPT } from '@/lib/ai/prompts'
+
+app.openapi(extractRoute, async (c) => {
+    const { content, sessionId, instruction, save } = c.req.valid('json')
+
+    try {
+        const templateFromDb = getPromptFromDbSync('knowledge_extract')
+        const template = templateFromDb || DEFAULT_KNOWLEDGE_EXTRACT_PROMPT
+
+        const extractPrompt = buildPrompt(template, {
+            content,
+            instruction: instruction ? `\n\n特别指令：${instruction}` : ''
+        })
+
+        const { text } = await generateTextWrapper(extractPrompt, 'economy', undefined, undefined, {
+            timeout: 30000,
+            retries: 1,
+        })
+
+        let cardData: any
+        const jsonMatch = text.match(/\{[\s\S]*\}/)
+        if (jsonMatch) {
+            try {
+                cardData = JSON.parse(jsonMatch[0])
+            } catch (e) {
+                return c.json({ error: '解析知识卡片失败', raw: text }, 422)
+            }
+        } else {
+            return c.json({ error: '无法解析 AI 返回的 JSON', raw: text }, 422)
+        }
+
+        // 基本校验与填充
+        cardData = {
+            title: cardData.title || '未命名卡片',
+            category: cardData.category || '',
+            tags: cardData.tags || [],
+            front: cardData.front || cardData.title || '',
+            back: cardData.back || '',
+            key_points: cardData.key_points || [],
+            suggestions: cardData.suggestions || [],
+            source_content: content
+        }
+
+        const suggestions = cardData.suggestions
+        delete cardData.suggestions
+
+        if (!save) {
+            return c.json({
+                card: cardData,
+                suggestions,
+                message: '知识卡片提取成功（预览）'
+            })
+        }
+
+        const id = await createKnowledgeCard({
+            ...cardData,
+            session_id: sessionId
+        })
+
+        return c.json({
+            id,
+            card: { id, ...cardData },
+            message: '知识卡片提取成功'
+        })
+    } catch (error: any) {
+        console.error('[Knowledge Extract API] error:', error)
+        return c.json({ error: error.message }, 500)
     }
 })
 

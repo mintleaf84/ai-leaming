@@ -1,0 +1,77 @@
+import { OpenAPIHono, createRoute, z } from '@hono/zod-openapi'
+import { authMiddleware, getCurrentUser } from '@/lib/api/middlewares/auth'
+import { createOpenAI } from '@ai-sdk/openai'
+import { streamText } from 'ai'
+import { getAiConfig } from '@/lib/ai/client'
+import { checkAndConsumeQuota } from '@/lib/billing/subscription-service'
+
+const app = new OpenAPIHono()
+
+const GenerateSchema = z.object({
+    prompt: z.string(),
+    option: z.enum(['continue', 'improve', 'fix', 'shorter', 'longer', 'zap']),
+    command: z.string().optional()
+})
+
+const generateRoute = createRoute({
+    method: 'post',
+    path: '/',
+    middleware: [authMiddleware] as const,
+    request: {
+        body: {
+            content: {
+                'application/json': {
+                    schema: GenerateSchema
+                }
+            }
+        }
+    },
+    responses: {
+        200: { description: '成功 (流式响应)' },
+        401: { description: '未授权' },
+        403: { description: '配额不足' },
+        500: { description: '服务器错误' }
+    }
+})
+
+app.openapi(generateRoute, async (c) => {
+    const user = getCurrentUser(c)
+    if (!user) return c.json({ error: 'Unauthorized' }, 401)
+    const userId = Number(user.id)
+
+    const quota = checkAndConsumeQuota(userId, 'ai_chat')
+    if (!quota.allowed) return c.text('配额不足，请升级套餐', 403)
+
+    const { prompt, option, command } = c.req.valid('json')
+    const config = getAiConfig('premium')
+
+    const openai = createOpenAI({
+        apiKey: config.apiKey,
+        baseURL: config.baseURL,
+    })
+
+    let systemPrompt = "你是一个专业的 AI 写作助手，致力于帮助用户优化、续写和完善 Markdown 格式的笔记。直接输出结果，不要包含任何解释性语言。"
+
+    if (option === 'continue') systemPrompt += " 请根据提供的上下文继续写作。只输出续写的内容，不要重复上文。"
+    else if (option === 'improve') systemPrompt += " 请润色以下文本，提高可读性和专业度，保持原意不变。只输出修改后的文本。"
+    else if (option === 'fix') systemPrompt += " 请检查并修复以下文本的语法、拼写和标点错误。只输出修改后的文本。"
+    else if (option === 'shorter') systemPrompt += " 请精简以下文本，保留核心信息，使其更简洁。只输出修改后的文本。"
+    else if (option === 'longer') systemPrompt += " 请扩充以下文本，在保持原意的基础上增加相关细节和描述。只输出修改后的文本。"
+    else if (option === 'zap' && command) systemPrompt += ` 用户指令：${command}。请严格按照用户指令处理以下文本。`
+
+    try {
+        const response = streamText({
+            model: openai.chat(config.modelName),
+            messages: [
+                { role: 'system', content: systemPrompt },
+                { role: 'user', content: prompt }
+            ],
+        })
+        return response.toTextStreamResponse()
+    } catch (error: any) {
+        console.error('[Hono Generate API] error:', error)
+        return c.json({ error: error.message }, 500)
+    }
+})
+
+export default app

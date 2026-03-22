@@ -1,7 +1,7 @@
 import { OpenAPIHono, createRoute, z } from '@hono/zod-openapi'
 import { authService } from '@/lib/services/auth'
 import { sign } from 'hono/jwt'
-import { setCookie } from 'hono/cookie'
+import { setCookie, deleteCookie } from 'hono/cookie'
 import { logger as honoLogger } from 'hono/logger'
 import { checkRateLimit, getClientIP } from '@/lib/rate-limit'
 import { COOKIE_NAME } from '@/lib/auth/auth-edge'
@@ -171,6 +171,28 @@ app.openapi(registerRoute, async (c) => {
     } catch (e: any) {
         return c.json({ error: e.message || 'Registration failed' }, 400)
     }
+})
+
+const logoutRoute = createRoute({
+    method: 'post',
+    path: '/logout',
+    responses: {
+        200: {
+            content: {
+                'application/json': {
+                    schema: z.object({ success: z.boolean() })
+                }
+            },
+            description: 'Logout successful'
+        }
+    }
+})
+
+app.openapi(logoutRoute, async (c) => {
+    deleteCookie(c, COOKIE_NAME, {
+        path: '/',
+    })
+    return c.json({ success: true })
 })
 
 export default app

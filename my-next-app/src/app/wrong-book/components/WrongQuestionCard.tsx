@@ -2,7 +2,6 @@
 
 import React from 'react';
 import { CheckSquare, Square, Play, AlertTriangle, Clock } from 'lucide-react';
-import { motion, AnimatePresence } from 'framer-motion';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { QuestionDetailPanel } from './QuestionDetailPanel';
@@ -36,9 +35,7 @@ export function WrongQuestionCard({
     onMarkAsMastered
 }: WrongQuestionCardProps) {
     return (
-        <motion.div
-            layout
-            initial={false}
+        <div
             className={`bg-card rounded-xl border shadow-sm transition-shadow ${isSelected ? 'border-primary ring-1 ring-primary/20' : ''
                 }`}
         >
@@ -95,33 +92,25 @@ export function WrongQuestionCard({
                 </Button>
             </div>
 
-            {/* 展开的详情区域与加载状态 */}
-            <AnimatePresence initial={false}>
-                {isExpanded && (
-                    <motion.div
-                        initial={{ opacity: 0, y: -4 }}
-                        animate={{ opacity: 1, y: 0 }}
-                        exit={{ opacity: 0, y: -4 }}
-                        transition={{ duration: 0.2 }}
-                        className="overflow-hidden border-t"
-                    >
-                        {detail ? (
-                            <QuestionDetailPanel
-                                detail={detail}
-                                isLoading={isLoadingDetail}
-                                onPractice={onPractice}
-                                onMarkAsMastered={onMarkAsMastered}
-                            />
-                        ) : isLoadingDetail ? (
-                            <div className="bg-muted/30 p-4">
-                                <div className="text-center text-muted-foreground py-4">
-                                    加载中...
-                                </div>
+            {/* 展开的详情区域与加载状态 (瞬间切换) */}
+            {isExpanded && (
+                <div className="border-t">
+                    {detail ? (
+                        <QuestionDetailPanel
+                            detail={detail}
+                            isLoading={isLoadingDetail}
+                            onPractice={onPractice}
+                            onMarkAsMastered={onMarkAsMastered}
+                        />
+                    ) : isLoadingDetail ? (
+                        <div className="bg-muted/30 p-4">
+                            <div className="text-center text-muted-foreground py-4">
+                                加载中...
                             </div>
-                        ) : null}
-                    </motion.div>
-                )}
-            </AnimatePresence>
-        </motion.div>
+                        </div>
+                    ) : null}
+                </div>
+            )}
+        </div>
     );
 }

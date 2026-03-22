@@ -18,6 +18,7 @@ import { Badge } from '@/components/ui/badge';
 import { useWrongBookController } from './hooks/use-wrong-book-controller';
 import { WrongQuestionCard } from './components/WrongQuestionCard';
 import { TagTreeView } from './components/TagTreeView';
+import { WrongBookSkeleton } from './components/WrongBookSkeleton';
 
 export default function WrongBookPage() {
     const {
@@ -49,11 +50,7 @@ export default function WrongBookPage() {
 
     // 加载状态
     if (isLoading) {
-        return (
-            <div className="min-h-screen flex items-center justify-center text-muted-foreground">
-                正在加载错题数据...
-            </div>
-        );
+        return <WrongBookSkeleton />;
     }
 
     return (

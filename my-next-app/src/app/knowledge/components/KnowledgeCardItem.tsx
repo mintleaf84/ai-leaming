@@ -2,8 +2,12 @@
 
 import React from 'react';
 import { Tag, Edit2, Trash2, CheckCircle2, AlertCircle } from 'lucide-react';
-import ReactMarkdown from 'react-markdown';
-import remarkGfm from 'remark-gfm';
+import dynamic from 'next/dynamic';
+
+const MarkdownViewer = dynamic(() => import('@/components/chat/MarkdownViewer'), {
+    ssr: false,
+    loading: () => <div className="h-10 animate-pulse bg-muted rounded-md" />
+});
 import type { KnowledgeCard } from '@/lib/services/knowledge';
 
 interface KnowledgeCardItemProps {
@@ -77,9 +81,7 @@ export const KnowledgeCardItem: React.FC<KnowledgeCardItemProps> = ({
                                 <span className="px-2 py-0.5 bg-primary/10 text-primary text-[10px] font-black uppercase rounded">Front</span>
                                 <span className="text-[10px] text-muted-foreground font-medium">点击卡片正中央翻转答案</span>
                             </div>
-                            <ReactMarkdown remarkPlugins={[remarkGfm]}>
-                                {card.front || card.title}
-                            </ReactMarkdown>
+                            <MarkdownViewer content={card.front || card.title} />
 
                             {/* Tags */}
                             {card.tags && card.tags.length > 0 && (
@@ -112,9 +114,7 @@ export const KnowledgeCardItem: React.FC<KnowledgeCardItemProps> = ({
 
                         {/* Markdown Answer Content */}
                         <div className="flex-1 p-6 overflow-y-auto prose prose-slate dark:prose-invert max-w-none prose-p:text-lg prose-headings:text-foreground prose-ul:list-disc">
-                            <ReactMarkdown remarkPlugins={[remarkGfm]}>
-                                {card.back || '暂无答案'}
-                            </ReactMarkdown>
+                            <MarkdownViewer content={card.back || '暂无答案'} />
 
                             {card.key_points && card.key_points.length > 0 && (
                                 <div className="mt-6 pt-4 border-t border-border">

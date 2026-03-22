@@ -10,7 +10,12 @@ import { useRouter } from 'next/navigation';
 import { toast } from 'sonner';
 import { ArrowLeft, Trash2, Target, Sparkles, Loader2, ChevronDown, ChevronUp, Download } from 'lucide-react';
 import { SessionSummary, AnswerSheet, QuestionCard, QuestionLogData } from '@/components/history';
-import ReactMarkdown from 'react-markdown';
+import dynamic from 'next/dynamic';
+
+const MarkdownViewer = dynamic(() => import('@/components/chat/MarkdownViewer'), {
+    ssr: false,
+    loading: () => <div className="h-40 animate-pulse bg-muted rounded-xl" />
+});
 import { Checkbox } from "@/components/ui/checkbox";
 import { Label } from "@/components/ui/label";
 
@@ -233,7 +238,7 @@ export default function SessionDetailPage({ params }: { params: Promise<{ id: st
               </div>
             ) : analysisReport ? (
               <div className="prose prose-sm dark:prose-invert max-w-none">
-                <ReactMarkdown>{analysisReport}</ReactMarkdown>
+                <MarkdownViewer content={analysisReport} />
               </div>
             ) : null}
           </div>

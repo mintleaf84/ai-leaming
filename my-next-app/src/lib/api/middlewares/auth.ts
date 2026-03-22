@@ -12,6 +12,15 @@ const SAFE_SECRET = JWT_SECRET || 'fallback-secret-for-development-only';
 import { Context } from 'hono'
 import { User } from '@/lib/auth/user-service'
 
+// --- 鉴权内存缓存机制 ---
+interface CachedUser {
+    exists: boolean;
+    token_version?: number;
+    expiresAt: number;
+}
+const authCache = new Map<number, CachedUser>();
+const CACHE_TTL_MS = 60 * 1000; // 60秒过期
+
 // ... (existing code)
 
 export const authMiddleware = createMiddleware(async (c, next) => {
@@ -42,13 +51,34 @@ export const authMiddleware = createMiddleware(async (c, next) => {
         }
 
         // 核心加固：确保 ID 为数字类型
-        const dbUser = getUserById(Number(user.id));
-        if (!dbUser) {
+        const userId = Number(user.id);
+        const now = Date.now();
+
+        // 使用内存缓存，减轻 SQLite 库并发压力，避免每路由强制 DB 读取
+        let cached = authCache.get(userId);
+        if (!cached || cached.expiresAt < now) {
+            const dbUser = getUserById(userId);
+            cached = {
+                exists: !!dbUser,
+                token_version: dbUser?.token_version,
+                expiresAt: now + CACHE_TTL_MS
+            };
+            authCache.set(userId, cached);
+            
+            // 被动防重：如果体积过大，实施被动 GC
+            if (authCache.size > 5000) {
+                for (const [k, v] of authCache.entries()) {
+                    if (v.expiresAt < now) authCache.delete(k);
+                }
+            }
+        }
+
+        if (!cached.exists) {
             return c.json({ error: 'Unauthorized: User no longer exists' }, 401);
         }
 
         // 检查版本号是否一致
-        if (dbUser.token_version !== (user.token_version || 0)) {
+        if (cached.token_version !== (user.token_version || 0)) {
             console.warn(`[Auth] Session revoked for user ${user.id} due to version mismatch`);
             return c.json({ error: 'Unauthorized: Session revoked' }, 401);
         }

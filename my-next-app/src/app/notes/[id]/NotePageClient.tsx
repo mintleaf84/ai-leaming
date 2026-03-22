@@ -1,7 +1,12 @@
 'use client';
 
 import React, { useCallback, useRef, useState } from 'react';
-import NoteEditor from '@/components/editor/NoteEditor';
+import dynamic from 'next/dynamic';
+
+const NoteEditor = dynamic(() => import('@/components/editor/NoteEditor'), {
+    ssr: false,
+    loading: () => <div className="h-64 flex items-center justify-center text-muted-foreground animate-pulse">编辑器加载中...</div>
+});
 import { TagSelector } from '@/components/notes/TagSelector';
 import { updateNoteAction } from '@/server/actions/note';
 import { toast } from 'sonner';

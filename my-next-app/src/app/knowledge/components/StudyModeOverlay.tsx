@@ -3,8 +3,12 @@
 import React from 'react';
 import { X, Play, ChevronLeft, ChevronRight } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import ReactMarkdown from 'react-markdown';
-import remarkGfm from 'remark-gfm';
+import dynamic from 'next/dynamic';
+
+const MarkdownViewer = dynamic(() => import('@/components/chat/MarkdownViewer'), {
+    ssr: false,
+    loading: () => <div className="h-20 animate-pulse bg-muted rounded-xl" />
+});
 import type { KnowledgeCard } from '@/lib/services/knowledge';
 
 interface StudyModeOverlayProps {
@@ -76,9 +80,7 @@ export const StudyModeOverlay: React.FC<StudyModeOverlayProps> = ({
                             </div>
                             <div className="flex-1 flex flex-col justify-center">
                                 <div className="prose prose-2xl max-w-none text-foreground font-medium leading-loose prose-headings:text-foreground prose-p:my-6 prose-p:text-3xl dark:prose-invert">
-                                    <ReactMarkdown remarkPlugins={[remarkGfm]}>
-                                        {currentCard.front || currentCard.title}
-                                    </ReactMarkdown>
+                                    <MarkdownViewer content={currentCard.front || currentCard.title} />
                                 </div>
                             </div>
                             <div className="mt-8 text-center animate-bounce">
@@ -92,9 +94,7 @@ export const StudyModeOverlay: React.FC<StudyModeOverlayProps> = ({
                                 <span className="px-4 py-1.5 bg-emerald-500 text-white text-sm font-black rounded-2xl shadow-lg uppercase tracking-widest">Answer</span>
                             </div>
                             <div className="flex-1 prose prose-2xl max-w-none text-foreground leading-loose prose-headings:text-foreground prose-ul:space-y-4 prose-p:text-2xl dark:prose-invert">
-                                <ReactMarkdown remarkPlugins={[remarkGfm]}>
-                                    {currentCard.back || '暂无答案'}
-                                </ReactMarkdown>
+                                <MarkdownViewer content={currentCard.back || '暂无答案'} />
 
                                 {currentCard.key_points && currentCard.key_points.length > 0 && (
                                     <div className="mt-12 pt-8 border-t border-border/50">

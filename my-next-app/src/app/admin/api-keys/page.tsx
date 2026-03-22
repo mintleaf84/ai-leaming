@@ -4,7 +4,7 @@ import React, { useState, useEffect, useCallback } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import {
-    Key, Plus, Trash2, Copy, Check, Eye, EyeOff, ShieldCheck, ShieldOff, Loader2
+    Key, Plus, Trash2, Copy, Check, Eye, EyeOff, ShieldCheck, ShieldOff, Loader2, Terminal
 } from 'lucide-react';
 import {
     getApiKeysAction,
@@ -26,6 +26,7 @@ export default function ApiKeysPage() {
     const [visibleKeys, setVisibleKeys] = useState<Set<number>>(new Set());
     // 已复制状态
     const [copiedId, setCopiedId] = useState<number | null>(null);
+    const [copiedCurlId, setCopiedCurlId] = useState<number | null>(null);
 
     const fetchKeys = useCallback(async () => {
         setLoading(true);
@@ -72,6 +73,15 @@ export default function ApiKeysPage() {
         setTimeout(() => setCopiedId(null), 2000);
     };
 
+    // 复制 cURL 测试命令
+    const handleCopyCurl = async (key: string, id: number) => {
+        const baseUrl = typeof window !== 'undefined' ? window.location.origin : '';
+        const curlCommand = `curl -H "Authorization: Bearer ${key}" "${baseUrl}/api/external/questions?page=1&limit=5"`;
+        await navigator.clipboard.writeText(curlCommand);
+        setCopiedCurlId(id);
+        setTimeout(() => setCopiedCurlId(null), 2000);
+    };
+
     // 脱敏显示
     const maskKey = (key: string) => {
         if (key.length <= 8) return '••••••••';
@@ -112,9 +122,18 @@ export default function ApiKeysPage() {
                         <Button
                             variant="outline"
                             size="sm"
+                            title="复制纯密钥"
                             onClick={() => handleCopy(newlyCreatedKey, -1)}
                         >
                             {copiedId === -1 ? <Check className="w-4 h-4 text-green-600" /> : <Copy className="w-4 h-4" />}
+                        </Button>
+                        <Button
+                            variant="outline"
+                            size="sm"
+                            title="复制 cURL 测试命令"
+                            onClick={() => handleCopyCurl(newlyCreatedKey, -1)}
+                        >
+                            {copiedCurlId === -1 ? <Check className="w-4 h-4 text-green-600" /> : <Terminal className="w-4 h-4" />}
                         </Button>
                     </div>
                 </div>
@@ -202,12 +221,26 @@ export default function ApiKeysPage() {
                                                 variant="ghost"
                                                 size="icon"
                                                 className="h-7 w-7"
+                                                title="复制纯密钥"
                                                 onClick={() => handleCopy(apiKey.key_string, apiKey.id)}
                                             >
                                                 {copiedId === apiKey.id ? (
                                                     <Check className="w-3.5 h-3.5 text-green-600" />
                                                 ) : (
                                                     <Copy className="w-3.5 h-3.5" />
+                                                )}
+                                            </Button>
+                                            <Button
+                                                variant="ghost"
+                                                size="icon"
+                                                className="h-7 w-7"
+                                                title="复制 cURL 测试命令"
+                                                onClick={() => handleCopyCurl(apiKey.key_string, apiKey.id)}
+                                            >
+                                                {copiedCurlId === apiKey.id ? (
+                                                    <Check className="w-3.5 h-3.5 text-green-600" />
+                                                ) : (
+                                                    <Terminal className="w-3.5 h-3.5" />
                                                 )}
                                             </Button>
                                         </div>

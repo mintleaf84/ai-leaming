@@ -90,10 +90,6 @@ adminRoute.openapi(systemActionDef, async (c) => {
     try { await requireRole(['admin']); } catch { return c.json({ error: 'Unauthorized' }, 401); }
     const { action } = await c.req.json();
 
-    try {
-        db.exec(`CREATE TABLE IF NOT EXISTS system_settings (key TEXT PRIMARY KEY, value TEXT, updated_at DATETIME DEFAULT CURRENT_TIMESTAMP)`);
-    } catch { }
-
     if (action === 'toggle_demo_mode') {
         const current = getDemoModeStatus();
         const newValue = !current;

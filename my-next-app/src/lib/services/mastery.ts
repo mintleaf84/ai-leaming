@@ -36,7 +36,7 @@ export const masteryService = {
         total_count = user_mastery.total_count + 1,
         score = (CAST(user_mastery.correct_count + excluded.correct_count AS FLOAT) / (user_mastery.total_count + 1)) * 100,
         last_updated = CURRENT_TIMESTAMP
-    `).run(userId, tagName, isCorrect ? 100 : 0, incCorrect);
+    `).run(userId, tagName, incCorrect ? 100 : 0, incCorrect);
 
     // 2. 获取更新后的结果用于返回 (仅供 UI 反馈)
     const updated = db.prepare(

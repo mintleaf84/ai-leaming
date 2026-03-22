@@ -103,8 +103,13 @@ export async function importFenbiDataAction(
                 WHERE id = ?
             `);
 
+            const ALLOWED_DIMENSIONS = ['knowledge', 'understanding', 'application'];
+
             for (const question of parsed.questions) {
                 const existing = findQuestion.get(question.externalId) as { id: number } | undefined;
+                
+                // 维度合法性校验：如果维度不在白名单内，回退到 'knowledge'
+                const safeDimension = ALLOWED_DIMENSIONS.includes(question.dimension) ? question.dimension : 'knowledge';
 
                 if (existing) {
                     questionIdMap.set(question.externalId, existing.id);
@@ -142,10 +147,10 @@ export async function importFenbiDataAction(
                         question.answer,
                         sanitizeHtml(question.explanation),
                         JSON.stringify(question.tags),
-                        question.dimension,
+                        safeDimension,
                         typeMap[question.type] || 'single',
                         question.externalId,
-                        question.externalId, // source
+                        'fenbi_import', // 明确来源
                         question.stats?.correctRatio ?? null,
                         question.stats?.mostWrongAnswer ?? null,
                         question.material ? sanitizeHtml(question.material) : null,

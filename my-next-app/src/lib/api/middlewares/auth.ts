@@ -11,6 +11,11 @@ if (!JWT_SECRET && process.env.NODE_ENV === 'production') {
 }
 const SAFE_SECRET = JWT_SECRET || 'fallback-secret-for-development-only';
 
+import { Context } from 'hono'
+import { User } from '@/lib/auth/user-service'
+
+// ... (existing code)
+
 export const authMiddleware = createMiddleware(async (c, next) => {
     // 灵活支持 Header 或 Cookie
     const token = c.req.header('Authorization')?.replace('Bearer ', '') || getCookie(c, COOKIE_NAME);
@@ -25,12 +30,14 @@ export const authMiddleware = createMiddleware(async (c, next) => {
         c.set('jwtPayload', payload);
 
         // 2. 数据库状态校验 (核心加固：Session 撤销检查)
-        const user = (payload.user || payload) as any;
+        // 显式断言或解构以获得更好的类型提示
+        const user = (payload.user || payload) as User;
         
         if (!user || !user.id) {
             return c.json({ error: 'Unauthorized: Invalid payload' }, 401);
         }
 
+        // 核心加固：确保 ID 为数字类型
         const dbUser = getUserById(Number(user.id));
         if (!dbUser) {
             return c.json({ error: 'Unauthorized: User no longer exists' }, 401);
@@ -49,8 +56,8 @@ export const authMiddleware = createMiddleware(async (c, next) => {
     }
 });
 
-export const getCurrentUser = (c: any) => {
+export const getCurrentUser = (c: Context): User | null => {
     const payload = c.get('jwtPayload')
     if (!payload) return null
-    return payload.user || payload
+    return (payload.user || payload) as User
 }

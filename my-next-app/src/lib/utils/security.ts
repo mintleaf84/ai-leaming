@@ -20,7 +20,7 @@ export function sanitizeHtml(html: string): string {
             if (match.toLowerCase().startsWith('<img')) {
                 const srcMatch = match.match(/src\s*=\s*(['"])(.*?)\1/i);
                 if (srcMatch && !srcMatch[2].toLowerCase().startsWith('javascript:')) {
-                    return `<img src="${srcMatch[2]}" className="max-w-full h-auto rounded-lg" />`;
+                    return `<img src="${srcMatch[2]}" class="max-w-full h-auto rounded-lg" />`;
                 }
             }
             return '';

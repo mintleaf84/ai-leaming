@@ -36,8 +36,10 @@ export function WrongQuestionCard({
     onMarkAsMastered
 }: WrongQuestionCardProps) {
     return (
-        <div
-            className={`bg-card rounded-xl border shadow-sm transition-all ${isSelected ? 'border-primary ring-1 ring-primary/20' : ''
+        <motion.div
+            layout
+            initial={false}
+            className={`bg-card rounded-xl border shadow-sm transition-shadow ${isSelected ? 'border-primary ring-1 ring-primary/20' : ''
                 }`}
         >
             {/* 题目摘要行 */}
@@ -45,7 +47,7 @@ export function WrongQuestionCard({
                 {/* 选择按钮 */}
                 <button
                     onClick={(e) => { e.stopPropagation(); onToggleSelect(); }}
-                    className="mt-1 text-muted-foreground hover:text-primary"
+                    className="mt-1 text-muted-foreground hover:text-primary active:scale-95 transition-transform"
                 >
                     {isSelected ? (
                         <CheckSquare className="w-5 h-5 text-primary" />
@@ -76,7 +78,7 @@ export function WrongQuestionCard({
                             <Clock className="w-3 h-3" />
                             {new Date(question.lastWrongAt).toLocaleDateString()}
                         </span>
-                        <span className="text-xs text-blue-500 ml-auto">
+                        <span className="text-xs text-blue-500 ml-auto font-medium">
                             {isExpanded ? '收起详情' : '查看详情'}
                         </span>
                     </div>
@@ -94,13 +96,13 @@ export function WrongQuestionCard({
             </div>
 
             {/* 展开的详情区域与加载状态 */}
-            <AnimatePresence>
+            <AnimatePresence initial={false}>
                 {isExpanded && (
                     <motion.div
-                        initial={{ height: 0, opacity: 0 }}
-                        animate={{ height: 'auto', opacity: 1 }}
-                        exit={{ height: 0, opacity: 0 }}
-                        transition={{ duration: 0.3, ease: 'easeInOut' }}
+                        initial={{ opacity: 0, y: -4 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        exit={{ opacity: 0, y: -4 }}
+                        transition={{ duration: 0.2 }}
                         className="overflow-hidden border-t"
                     >
                         {detail ? (
@@ -120,6 +122,6 @@ export function WrongQuestionCard({
                     </motion.div>
                 )}
             </AnimatePresence>
-        </div>
+        </motion.div>
     );
 }

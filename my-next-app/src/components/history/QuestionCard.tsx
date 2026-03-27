@@ -229,39 +229,39 @@ export const QuestionCard = React.memo(({ log, index, isExpanded, onToggle, refC
 
                         {/* 统计栏 */}
                         <div className="mt-6 pt-4 border-t border-border">
-                            <div className="grid grid-cols-3 md:grid-cols-5 gap-3 text-center">
+                            <div className="grid grid-cols-3 md:grid-cols-5 gap-2 md:gap-4 text-center">
                                 <div>
-                                    <div className="text-lg font-bold text-green-600">
+                                    <div className="text-base md:text-lg font-bold text-green-600">
                                         {parseAnswer(log.correctAnswer).join(', ') || '-'}
                                     </div>
-                                    <div className="text-xs text-muted-foreground">正确答案</div>
+                                    <div className="text-[10px] text-muted-foreground">正确答案</div>
                                 </div>
                                 <div>
-                                    <div className={`text-lg font-bold ${log.isCorrect ? 'text-green-600' : 'text-red-500'}`}>
+                                    <div className={cn("text-base md:text-lg font-bold", log.isCorrect ? "text-green-600" : "text-rose-500")}>
                                         {parseAnswer(log.userAnswer).join(', ') || '未作答'}
                                     </div>
-                                    <div className="text-xs text-muted-foreground">你的答案</div>
+                                    <div className="text-[10px] text-muted-foreground">你的答案</div>
                                 </div>
                                 {log.correctRatio != null && (
                                     <div>
-                                        <div className="text-lg font-bold text-purple-600">
+                                        <div className="text-base md:text-lg font-bold text-purple-600">
                                             {log.correctRatio}%
                                         </div>
-                                        <div className="text-xs text-muted-foreground">全站正确率</div>
+                                        <div className="text-[10px] text-muted-foreground">正确率</div>
                                     </div>
                                 )}
                                 <div>
-                                    <div className="text-lg font-bold text-blue-600">
+                                    <div className="text-base md:text-lg font-bold text-blue-600">
                                         {formatDuration(log.duration)}
                                     </div>
-                                    <div className="text-xs text-muted-foreground">答题用时</div>
+                                    <div className="text-[10px] text-muted-foreground">用时</div>
                                 </div>
                                 {log.mostWrongAnswer && (
-                                    <div className="hidden md:block">
-                                        <div className="text-lg font-bold text-amber-600">
+                                    <div>
+                                        <div className="text-base md:text-lg font-bold text-amber-600">
                                             {log.mostWrongAnswer}
                                         </div>
-                                        <div className="text-xs text-muted-foreground">易错项</div>
+                                        <div className="text-[10px] text-muted-foreground">易错项</div>
                                     </div>
                                 )}
                             </div>

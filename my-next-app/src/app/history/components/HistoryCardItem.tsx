@@ -79,7 +79,7 @@ const HistoryCardItemComponent: React.FC<HistoryCardItemProps> = ({
                                 <input
                                     value={editingName}
                                     onChange={e => setEditingName(e.target.value)}
-                                    className="h-8 text-lg font-bold w-64 bg-transparent border-b-2 border-primary focus:outline-none"
+                                    className="h-8 text-lg font-bold w-full max-w-[200px] bg-transparent border-b-2 border-primary focus:outline-none"
                                     autoFocus
                                     onKeyDown={e => {
                                       if (e.key === 'Enter') onSaveName(e, item.id);
@@ -95,7 +95,7 @@ const HistoryCardItemComponent: React.FC<HistoryCardItemProps> = ({
                                 </h3>
                                 <button
                                     onClick={e => onStartEdit(e, item)}
-                                    className="opacity-0 group-hover/title:opacity-100 text-muted-foreground hover:text-primary transition-opacity p-1"
+                                    className="opacity-100 md:opacity-0 md:group-hover/title:opacity-100 text-muted-foreground hover:text-primary transition-opacity p-1"
                                 >
                                     <Pencil className="w-3.5 h-3.5" />
                                 </button>
@@ -118,8 +118,8 @@ const HistoryCardItemComponent: React.FC<HistoryCardItemProps> = ({
                     </div>
                 </div>
 
-                <div className="flex items-center gap-4 self-end md:self-center">
-                    <div className="text-right hidden md:block">
+                <div className="flex items-center gap-3 md:gap-4 self-end md:self-center">
+                    <div className="text-right">
                         <div className="text-[10px] text-neutral-400 font-black uppercase tracking-widest mb-1 opacity-50">Reviews</div>
                         <div className="text-2xl font-black text-amber-500 font-serif">{item.reviewCount}</div>
                     </div>
@@ -133,8 +133,8 @@ const HistoryCardItemComponent: React.FC<HistoryCardItemProps> = ({
                     >
                         <Trash2 className="w-5 h-5" />
                     </button>
-                    <div className="w-12 h-12 rounded-full bg-muted flex items-center justify-center group-hover:bg-primary group-hover:text-primary-foreground shadow-sm transition-all text-muted-foreground">
-                        <ChevronRight className="w-6 h-6" />
+                    <div className="w-10 h-10 md:w-12 md:h-12 rounded-full bg-muted flex items-center justify-center group-hover:bg-primary group-hover:text-primary-foreground shadow-sm transition-all text-muted-foreground">
+                        <ChevronRight className="w-5 h-5 md:w-6 md:h-6" />
                     </div>
                 </div>
             </div>

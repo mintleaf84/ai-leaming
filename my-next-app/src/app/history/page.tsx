@@ -139,14 +139,14 @@ export default function HistoryPage() {
               <div className="w-12 h-12 bg-emerald-100 rounded-2xl flex items-center justify-center text-emerald-700 shadow-sm">
                 <HistoryIcon className="w-6 h-6" />
               </div>
-              <h1 className="text-4xl font-serif font-black text-foreground tracking-tight">练习记录</h1>
+              <h1 className="text-3xl md:text-4xl font-serif font-black text-foreground tracking-tight">练习记录</h1>
             </div>
             <p className="text-muted-foreground ml-1 font-medium opacity-80">
               记录每一次思考的痕迹，共 {history.total} 次练习
             </p>
           </div>
 
-          <div className="flex items-center gap-4">
+          <div className="flex flex-wrap items-center gap-3 md:gap-4">
             <Button
               variant="outline"
               onClick={() => setShowImportModal(true)}

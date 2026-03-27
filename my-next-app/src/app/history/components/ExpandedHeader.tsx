@@ -32,13 +32,13 @@ export const ExpandedHeader: React.FC<ExpandedHeaderProps> = ({
     const accuracy = detail?.session.accuracy ?? initialData.accuracy;
 
     return (
-        <div className="p-8 md:p-12 bg-muted/20 border-b border-border/40 relative">
+        <div className="p-6 md:p-12 bg-muted/20 border-b border-border/40 relative">
             <motion.button 
                 initial={{ opacity: 0, scale: 0.8 }}
                 animate={{ opacity: 1, scale: 1 }}
                 exit={{ opacity: 0, scale: 0.8 }}
                 onClick={onClose}
-                className="absolute right-6 top-6 md:right-10 md:top-10 p-3 rounded-full bg-background/80 hover:bg-background shadow-sm transition-colors z-20"
+                className="absolute right-4 top-4 md:right-10 md:top-10 p-2.5 md:p-3 rounded-full bg-background/80 hover:bg-background shadow-sm transition-colors z-20"
             >
                 <X className="w-6 h-6" />
             </motion.button>
@@ -59,7 +59,7 @@ export const ExpandedHeader: React.FC<ExpandedHeaderProps> = ({
             )}
 
             <h3 
-                className="text-3xl md:text-5xl font-black text-foreground font-serif mb-6 pr-12 leading-tight animate-fade-in"
+                className="text-2xl md:text-5xl font-black text-foreground font-serif mb-6 pr-16 leading-tight animate-fade-in"
                 style={{ animationDelay: '150ms', animationFillMode: 'backwards' }}
             >
                 {sessionName || "练习详情"}

@@ -16,6 +16,7 @@ import { Label } from "@/components/ui/label";
 import { toast } from 'sonner';
 import { ExpandedHeader } from './ExpandedHeader';
 import { QuestionsListHeader } from './QuestionsListHeader';
+import { CardSwipeView } from './CardSwipeView';
 
 interface HistoryCardExpandedProps {
     sessionId: string;
@@ -32,6 +33,8 @@ export const HistoryCardExpanded: React.FC<HistoryCardExpandedProps> = ({ sessio
     const [analysisReport, setAnalysisReport] = useState<string | null>(null);
     const [showAnalysis, setShowAnalysis] = useState(false);
     const [isAnswerSheetOpen, setIsAnswerSheetOpen] = useState(false);
+    const [viewMode, setViewMode] = useState<'list' | 'card'>('list');
+    const [currentCardIndex, setCurrentCardIndex] = useState(0);
     const [scrollParent, setScrollParent] = useState<HTMLDivElement | null>(null);
     const virtuosoRef = useRef<any>(null);
     
@@ -135,45 +138,75 @@ export const HistoryCardExpanded: React.FC<HistoryCardExpandedProps> = ({ sessio
                             </div>
                         ) : (
                             scrollParent && (
-                                <div className="flex-1 flex flex-col overflow-hidden animate-fade-in">
-                                    <Virtuoso
-                                        ref={virtuosoRef}
-                                        style={{ height: 'auto', minHeight: '60vh' }}
-                                        useWindowScroll={false}
-                                        customScrollParent={scrollParent || undefined}
-                                        data={displayedQuestions}
-                                        increaseViewportBy={300}
-                                        components={{
-                                            Header: () => (
-                                                <QuestionsListHeader
-                                                    isAnalyzing={isAnalyzing}
-                                                    analysisReport={analysisReport}
-                                                    showAnalysis={showAnalysis}
-                                                    onAnalyze={handleAnalyze}
-                                                    showWrongOnly={showWrongOnly}
-                                                    onShowWrongOnlyChange={setShowWrongOnly}
-                                                />
-                                            ),
-                                            Footer: () => <div className="h-20" />
-                                        }}
-                                        itemContent={(_, { log, index }) => (
-                                            <div className="px-8 md:px-12 pb-8">
-                                                <QuestionCard
-                                                    log={log as QuestionLogData}
-                                                    index={index}
-                                                    isExpanded={expandedItems.has(index)}
-                                                    onToggle={() => {
-                                                        setExpandedItems(prev => {
-                                                            const next = new Set(prev);
-                                                            if (next.has(index)) next.delete(index);
-                                                            else next.add(index);
-                                                            return next;
-                                                        });
+                                <div className="flex-1 flex flex-col overflow-hidden">
+                                    {viewMode === 'list' ? (
+                                        <div className="flex-1 flex flex-col overflow-hidden animate-fade-in">
+                                            <Virtuoso
+                                                ref={virtuosoRef}
+                                                style={{ height: 'auto', minHeight: '60vh' }}
+                                                useWindowScroll={false}
+                                                customScrollParent={scrollParent || undefined}
+                                                data={displayedQuestions}
+                                                increaseViewportBy={300}
+                                                components={{
+                                                    Header: () => (
+                                                        <QuestionsListHeader
+                                                            isAnalyzing={isAnalyzing}
+                                                            analysisReport={analysisReport}
+                                                            showAnalysis={showAnalysis}
+                                                            onAnalyze={handleAnalyze}
+                                                            showWrongOnly={showWrongOnly}
+                                                            onShowWrongOnlyChange={setShowWrongOnly}
+                                                            viewMode={viewMode}
+                                                            onViewModeChange={setViewMode}
+                                                        />
+                                                    ),
+                                                    Footer: () => <div className="h-20" />
+                                                }}
+                                                itemContent={(_, { log, index }) => (
+                                                    <div className="px-5 md:px-12 pb-8">
+                                                        <QuestionCard
+                                                            log={log as QuestionLogData}
+                                                            index={index}
+                                                            isExpanded={expandedItems.has(index)}
+                                                            onToggle={() => {
+                                                                setExpandedItems(prev => {
+                                                                    const next = new Set(prev);
+                                                                    if (next.has(index)) next.delete(index);
+                                                                    else next.add(index);
+                                                                    return next;
+                                                                });
+                                                            }}
+                                                        />
+                                                    </div>
+                                                )}
+                                            />
+                                        </div>
+                                    ) : (
+                                        <div className="flex-1 flex flex-col overflow-hidden animate-fade-in">
+                                            <QuestionsListHeader
+                                                isAnalyzing={isAnalyzing}
+                                                analysisReport={analysisReport}
+                                                showAnalysis={showAnalysis}
+                                                onAnalyze={handleAnalyze}
+                                                showWrongOnly={showWrongOnly}
+                                                onShowWrongOnlyChange={setShowWrongOnly}
+                                                viewMode={viewMode}
+                                                onViewModeChange={setViewMode}
+                                            />
+                                            <div className="flex-1 py-4">
+                                                <CardSwipeView
+                                                    questions={displayedQuestions as any}
+                                                    initialIndex={currentCardIndex}
+                                                    onIndexChange={(idx) => {
+                                                        const dispIdx = displayedQuestions.findIndex(q => q.index === idx);
+                                                        if (dispIdx !== -1) setCurrentCardIndex(dispIdx);
                                                     }}
                                                 />
                                             </div>
-                                        )}
-                                    />
+                                            <div className="h-20" />
+                                        </div>
+                                    )}
                                 </div>
                             )
                         )}
@@ -190,8 +223,12 @@ export const HistoryCardExpanded: React.FC<HistoryCardExpandedProps> = ({ sessio
                     onSelect={(idx) => {
                         const displayIdx = displayedQuestions.findIndex((q: { index: number }) => q.index === idx);
                         if (displayIdx !== -1) {
-                            virtuosoRef.current?.scrollToIndex({ index: displayIdx, align: 'start', behavior: 'smooth' });
-                            setExpandedItems(prev => new Set(prev).add(idx));
+                            if (viewMode === 'list') {
+                                virtuosoRef.current?.scrollToIndex({ index: displayIdx, align: 'start', behavior: 'smooth' });
+                                setExpandedItems(prev => new Set(prev).add(idx));
+                            } else {
+                                setCurrentCardIndex(displayIdx);
+                            }
                         } else {
                             toast.info("该题目在当前过滤条件下不可见");
                         }

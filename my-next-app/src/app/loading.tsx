@@ -3,8 +3,7 @@ export default function RootLoading() {
     <div className="fixed inset-0 z-50 flex items-start justify-center pointer-events-none">
       {/* 顶部加载进度条 (模拟) */}
       <div className="absolute top-0 left-0 right-0 h-1 bg-primary/20 overflow-hidden">
-        <div className="h-full bg-primary animate-[shimmer_1.5s_infinite] origin-left w-full translate-x-[-100%]" 
-             style={{ animation: 'loading-bar 2s ease-in-out infinite' }} />
+        <div className="h-full bg-primary animate-loading-bar origin-left w-full translate-x-[-100%]" />
       </div>
 
       {/* 中心轻量级加载指示器 */}
@@ -15,14 +14,6 @@ export default function RootLoading() {
         </div>
         <p className="text-sm font-medium text-muted-foreground animate-pulse">正在加载...</p>
       </div>
-
-      <style jsx>{`
-        @keyframes loading-bar {
-          0% { transform: translateX(-100%); }
-          50% { transform: translateX(0); }
-          100% { transform: translateX(100%); }
-        }
-      `}</style>
     </div>
   );
 }

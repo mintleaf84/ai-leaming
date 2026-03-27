@@ -88,6 +88,6 @@ export function reinitDb() {
 }
 
 const db = globalForDb.db || initDb();
-if (process.env.NODE_ENV !== 'production') globalForDb.db = db;
+globalForDb.db = db;
 
 export default db;

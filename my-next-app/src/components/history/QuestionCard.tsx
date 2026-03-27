@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect, useRef } from 'react';
 import { CheckCircle2, XCircle, BookOpen, ChevronDown, ChevronUp, BrainCircuit, Lightbulb, Loader2, Sparkles, RefreshCw } from 'lucide-react';
-import { formatDuration, indexToLetter } from '@/lib/utils/utils';
+import { formatDuration, indexToLetter, cn } from '@/lib/utils/utils';
 import { AnnotatableText } from './AnnotatableText';
 import dynamic from 'next/dynamic';
 const MarkdownViewer = dynamic(() => import('@/components/chat/MarkdownViewer'), { ssr: false });

@@ -70,8 +70,9 @@ const NavGroup = ({
                                 className="absolute inset-0 bg-primary/10 dark:bg-primary/20 rounded-lg -z-10"
                                 transition={{
                                     type: "spring",
-                                    stiffness: 350,
-                                    damping: 40
+                                    stiffness: 450, // 增加刚度，使其移动更平衡
+                                    damping: 35,    // 调整阻尼，减少回弹感
+                                    mass: 0.8       // 减小质量，响应更快
                                 }}
                             />
                         )}

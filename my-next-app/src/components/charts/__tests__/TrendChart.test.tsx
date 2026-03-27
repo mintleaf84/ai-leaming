@@ -35,9 +35,9 @@ vi.mock('recharts', () => ({
 }));
 
 const mockData = [
-    { displayDate: '2023-01-01', accuracy: 80, practiced: 10, correct: 8 },
-    { displayDate: '2023-01-02', accuracy: 90, practiced: 20, correct: 18 },
-];
+    { displayDate: '2023-01-01', accuracy: 80, practiced: 10, correct: 8, timestamp: Date.now() },
+    { displayDate: '2023-01-02', accuracy: 90, practiced: 20, correct: 18, timestamp: Date.now() },
+] as any;
 
 describe('TrendChart Components', () => {
     it('renders AccuracyTrendChart correctly', () => {

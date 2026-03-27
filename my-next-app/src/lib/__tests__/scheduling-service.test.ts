@@ -33,7 +33,7 @@ describe('schedulingService', () => {
         .mockReturnValueOnce([{ id: 5 }]);             // 常规题 1 道
 
       // 执行
-      const session = schedulingService.generateSession(35);
+      const session = schedulingService.generateSession(1, 35);
 
       // 验证 - 各类题目请求数量及 SQL 逻辑
       // 35 * 0.4 = 14 顽固题 (JOIN observation_zone)
@@ -56,7 +56,7 @@ describe('schedulingService', () => {
     it('默认应该生成 35 道题', () => {
       mockAll.mockReturnValue([]);
 
-      schedulingService.generateSession();
+      schedulingService.generateSession(1);
 
       // 默认 limit = 35
       // 应该请求 14 + 14 + 7 = 35
@@ -68,7 +68,7 @@ describe('schedulingService', () => {
     it('应该支持自定义题目数量', () => {
       mockAll.mockReturnValue([]);
 
-      schedulingService.generateSession(10);
+      schedulingService.generateSession(1, 10);
 
       // 10 * 0.4 = 4 顽固题
       // 10 * 0.4 = 4 盲区题
@@ -88,7 +88,7 @@ describe('schedulingService', () => {
         .mockReturnValueOnce(blindQ)
         .mockReturnValueOnce(regularQ);
 
-      const session = schedulingService.generateSession(10);
+      const session = schedulingService.generateSession(1, 10);
 
       // 应该包含所有题目
       expect(session).toHaveLength(3);

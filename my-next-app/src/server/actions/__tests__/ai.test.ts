@@ -1,6 +1,6 @@
 // @vitest-environment node
 import { describe, it, expect, beforeEach, vi } from 'vitest';
-import { createBetterDbMock } from '../../../../tests/utils/db-mock-utils';
+import { createBetterDbMock } from '../../../lib/__tests__/db-mock-utils';
 
 const betterDb = createBetterDbMock();
 
@@ -18,7 +18,7 @@ function generateHash(content: string): string {
 
 // 1. Mock dependencies
 const { mockBetterDb } = vi.hoisted(() => {
-    const { createBetterDbMock } = require('../../../../tests/utils/db-mock-utils');
+    const { createBetterDbMock } = require('../../../lib/__tests__/db-mock-utils');
     return {
         mockBetterDb: createBetterDbMock()
     };

@@ -31,8 +31,11 @@ export const metadata: Metadata = {
   description: "精琢每一分，只为成师。基于 RAG 与变式生成技术的智能化练习平台",
   appleWebApp: {
     capable: true,
-    statusBarStyle: "default",
+    statusBarStyle: "black-translucent",
     title: "琢玉",
+  },
+  icons: {
+    apple: "/icons/icon-192x192.png",
   },
   formatDetection: {
     telephone: false,

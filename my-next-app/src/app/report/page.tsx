@@ -3,9 +3,19 @@
 import React, { useEffect, useState } from 'react';
 import { useSearchParams } from 'next/navigation';
 import dynamic from 'next/dynamic';
+const RadarChartSkeleton = () => (
+    <div className="relative w-full h-[300px] flex items-center justify-center animate-pulse">
+        <div className="absolute w-[280px] h-[280px] border border-slate-700 rounded-full" />
+        <div className="absolute w-[200px] h-[200px] border border-slate-700 rounded-full" />
+        <div className="absolute w-[120px] h-[120px] border border-slate-700 rounded-full" />
+        <div className="absolute w-[40px] h-[40px] border border-slate-700 rounded-full" />
+        <div className="p-4 text-xs text-slate-500 text-center">正在加载可视化组件...</div>
+    </div>
+);
+
 const RadarChart = dynamic(
   () => import('@/components/viz/RadarChart').then(mod => mod.RadarChart),
-  { ssr: false, loading: () => <div className="animate-pulse w-full h-[300px] bg-slate-800 rounded-full" /> }
+  { ssr: false, loading: () => <RadarChartSkeleton /> }
 );
 import { generateDiagnosticReportAction, getSessionReportAction, SessionReportData } from '@/server/actions/report';
 import { Button } from '@/components/ui/button';

@@ -3,7 +3,7 @@
 import React from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
-import { usePathname, useRouter } from 'next/navigation';
+import { usePathname } from 'next/navigation';
 import { motion } from 'framer-motion';
 import {
     BookOpen,
@@ -16,7 +16,6 @@ import {
     BookX,
     FileText,
     Book,
-    LogOut,
     Sparkles,
     ChevronsUpDown,
     Palette,
@@ -26,27 +25,12 @@ import {
     Monitor
 } from 'lucide-react';
 import { Button } from "@/components/ui/button";
-import {
-    DropdownMenu,
-    DropdownMenuContent,
-    DropdownMenuGroup,
-    DropdownMenuItem,
-    DropdownMenuSeparator,
-    DropdownMenuTrigger,
-    DropdownMenuSub,
-    DropdownMenuSubTrigger,
-    DropdownMenuSubContent,
-} from "@/components/ui/dropdown-menu";
-import { useTheme } from "next-themes";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { cn } from "@/lib/utils";
 import { useTerminology } from "@/lib/hooks/use-terminology";
 
-interface UserProps {
-    user?: {
-        username: string;
-        id: number;
-    } | null;
+interface SidebarProps {
+    userSection?: React.ReactNode;
 }
 
 // --- Helper Components Moved Outside to Avoid Remounting ---
@@ -104,10 +88,8 @@ const NavGroup = ({
     </div>
 );
 
-export function AppSidebar({ user }: UserProps) {
+export function AppSidebar({ userSection }: SidebarProps) {
     const pathname = usePathname();
-    const router = useRouter();
-    const { setTheme } = useTheme();
     const { t } = useTerminology();
 
     // Hide sidebar on landing page, login, and register
@@ -135,18 +117,6 @@ export function AppSidebar({ user }: UserProps) {
         { name: t('nav.settings'), href: '/settings', icon: Settings },
     ];
 
-    const handleLogout = async () => {
-        try {
-            const res = await fetch('/api/auth/logout', { method: 'POST' });
-            if (res.ok) {
-                router.push('/login');
-                router.refresh();
-            }
-        } catch (error) {
-            console.error('Logout failed:', error);
-        }
-    };
-
     return (
         <aside className="hidden md:flex w-64 flex-col border-r border-sidebar-border bg-sidebar h-screen sticky top-0 overflow-hidden font-sans">
             {/* Logo Area */}
@@ -168,83 +138,9 @@ export function AppSidebar({ user }: UserProps) {
                 <NavGroup title={t('section.system')} items={systemItems} pathname={pathname} />
             </ScrollArea>
 
-            {/* Footer / User Profile */}
-            <div className="p-4 border-t border-sidebar-border bg-sidebar">
-                {user ? (
-                    <DropdownMenu>
-                        <DropdownMenuTrigger asChild>
-                            <div className="flex items-center gap-3 p-2 rounded-xl hover:bg-sidebar-accent cursor-pointer transition-colors group data-[state=open]:bg-sidebar-accent">
-                                <div className="w-9 h-9 rounded-full bg-primary/10 flex items-center justify-center text-primary font-bold text-sm shrink-0">
-                                    {user.username.slice(0, 1).toUpperCase()}
-                                </div>
-                                <div className="flex-1 min-w-0">
-                                    <div className="text-sm font-medium text-sidebar-foreground truncate">{user.username}</div>
-                                    <div className="text-xs text-muted-foreground">{t('app.preparing')}</div>
-                                </div>
-                                <ChevronsUpDown className="w-4 h-4 text-muted-foreground group-hover:text-sidebar-foreground" />
-                            </div>
-                        </DropdownMenuTrigger>
-                        <DropdownMenuContent className="w-56" align="end" side="right" sideOffset={12}>
-                            <div className="flex items-center gap-2 p-2">
-                                <div className="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center text-primary font-bold text-xs">
-                                    {user.username.slice(0, 1).toUpperCase()}
-                                </div>
-                                <div className="flex flex-col space-y-0.5">
-                                    <span className="text-sm font-medium text-foreground">{user.username}</span>
-                                    <span className="text-xs text-muted-foreground">{t('app.account_type')}</span>
-                                </div>
-                            </div>
-                            <DropdownMenuSeparator />
-                            <DropdownMenuGroup>
-                                <DropdownMenuItem onClick={() => router.push('/settings')}>
-                                    <Settings className="mr-2 h-4 w-4" />
-                                    <span>{t('app.settings')}</span>
-                                </DropdownMenuItem>
-                                <DropdownMenuItem onClick={() => router.push('/pricing')}>
-                                    <Sparkles className="mr-2 h-4 w-4" />
-                                    <span>{t('app.pricing')}</span>
-                                </DropdownMenuItem>
-                            </DropdownMenuGroup>
-                            <DropdownMenuSeparator />
-                            <DropdownMenuSub>
-                                <DropdownMenuSubTrigger>
-                                    <Palette className="mr-2 h-4 w-4" />
-                                    <span>{t('app.theme')}</span>
-                                </DropdownMenuSubTrigger>
-                                <DropdownMenuSubContent>
-                                    <DropdownMenuItem onClick={() => setTheme("light")}>
-                                        <Sun className="mr-2 h-4 w-4" />
-                                        <span>明亮模式</span>
-                                    </DropdownMenuItem>
-                                    <DropdownMenuItem onClick={() => setTheme("dark")}>
-                                        <Moon className="mr-2 h-4 w-4" />
-                                        <span>深色模式</span>
-                                    </DropdownMenuItem>
-                                    <DropdownMenuItem onClick={() => setTheme("eye-care")}>
-                                        <Eye className="mr-2 h-4 w-4" />
-                                        <span>护眼模式</span>
-                                    </DropdownMenuItem>
-                                    <DropdownMenuItem onClick={() => setTheme("system")}>
-                                        <Monitor className="mr-2 h-4 w-4" />
-                                        <span>跟随系统</span>
-                                    </DropdownMenuItem>
-                                </DropdownMenuSubContent>
-                            </DropdownMenuSub>
-                            <DropdownMenuSeparator />
-                            <DropdownMenuItem className="text-red-600 focus:text-red-700 focus:bg-red-50" onClick={handleLogout}>
-                                <LogOut className="mr-2 h-4 w-4" />
-                                <span>{t('app.logout')}</span>
-                            </DropdownMenuItem>
-                        </DropdownMenuContent>
-                    </DropdownMenu>
-                ) : (
-                    <Link href="/login">
-                        <Button className="w-full bg-primary hover:bg-primary/90 text-primary-foreground shadow-lg shadow-primary/20">
-                            {t('app.login')}
-                        </Button>
-                    </Link>
-                )}
-            </div>
+            {/* Footer / User Profile Slot */}
+            {userSection}
         </aside>
     );
 }
+

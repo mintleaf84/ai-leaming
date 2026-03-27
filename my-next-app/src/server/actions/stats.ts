@@ -4,6 +4,7 @@ import db from '@/lib/db';
 import { requireUser } from '@/lib/auth/auth';
 import { getBeijingDateString, getBeijingYesterdayString, formatBeijingDisplayDate } from '@/lib/utils/datetime';
 import { calculateStreakFromDates } from '@/lib/utils/stats-utils';
+import { cache } from 'react';
 
 export type UserStats = {
   totalPracticed: number;
@@ -19,7 +20,7 @@ export type UserStats = {
   dailyProgress: number;         // 今日进度百分比
 };
 
-export async function getUserStatsAction(): Promise<UserStats> {
+export const getUserStatsAction = cache(async (): Promise<UserStats> => {
   const user = await requireUser();
 
   // 1. Total practiced
@@ -81,7 +82,7 @@ export async function getUserStatsAction(): Promise<UserStats> {
     dailyGoal,
     dailyProgress
   };
-}
+});
 
 /**
  * 计算连续学习天数 (内部调用)
@@ -112,9 +113,9 @@ export type TrendDataItem = {
 };
 
 /**
- * 获取练习趋势数据 (近 N 天)
+ * 获取练习趋势数据 (近 N 天) (Cached per request)
  */
-export async function getPracticeTrendAction(days: number = 14): Promise<TrendDataItem[]> {
+export const getPracticeTrendAction = cache(async (days: number = 14): Promise<TrendDataItem[]> => {
   try {
     const user = await requireUser();
 
@@ -154,4 +155,4 @@ export async function getPracticeTrendAction(days: number = 14): Promise<TrendDa
     console.error("Failed to fetch practice trend:", error);
     return [];
   }
-}
+});

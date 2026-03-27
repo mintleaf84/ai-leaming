@@ -1,6 +1,7 @@
 import db from '@/lib/db';
 import { hashPassword } from './password';
 import { UserRole } from '@/lib/types';
+import { cache } from 'react';
 
 // 数据库中的完整用户记录
 export interface UserRecord {
@@ -36,19 +37,19 @@ export async function createUser(username: string, passwordPlain: string, role: 
 }
 
 /**
- * 通过用户名获取用户（包含密码 hash，仅用于内部验证）
+ * 通过用户名获取用户（包含密码 hash，仅用于内部验证）(Cached per request)
  */
-export function getUserByUsername(username: string): UserRecord | null {
+export const getUserByUsername = cache((username: string): UserRecord | null => {
     return db.prepare('SELECT * FROM users WHERE username = ?').get(username) as UserRecord | null;
-}
+});
 
 /**
- * 通过 ID 获取用户
+ * 通过 ID 获取用户 (Cached per request)
  */
-export function getUserById(id: number): User | null {
+export const getUserById = cache((id: number): User | null => {
     const record = db.prepare('SELECT id, username, role, token_version FROM users WHERE id = ?').get(id) as User | null;
     return record;
-}
+});
 /**
  * 撤销用户的所有会话 (通过增加版本号)
  */

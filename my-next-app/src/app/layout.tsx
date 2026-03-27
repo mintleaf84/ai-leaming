@@ -48,7 +48,9 @@ export const viewport: Viewport = {
   viewportFit: "cover",
 };
 
-import { getSession } from "@/lib/auth/auth";
+import { Suspense } from 'react';
+import { SidebarUser } from "@/components/layout/SidebarUser";
+import { SidebarUserSkeleton } from "@/components/layout/SidebarUserSkeleton";
 import { initDatabase } from "@/lib/init-db";
 
 export default async function RootLayout({
@@ -58,9 +60,6 @@ export default async function RootLayout({
 }>) {
   // Initialize database once on server start (or per request, but initDatabase handles idempotency)
   initDatabase();
-
-  const session = await getSession();
-  const user = session?.user ? { id: session.user.id, username: session.user.username, role: session.user.role } : null;
 
   return (
     <html lang="zh-CN" suppressHydrationWarning>
@@ -78,7 +77,13 @@ export default async function RootLayout({
           >
             <div className="flex h-screen">
               <div className="hidden md:flex">
-                <AppSidebar user={user as any} />
+                <AppSidebar 
+                  userSection={
+                    <Suspense fallback={<SidebarUserSkeleton />}>
+                      <SidebarUser />
+                    </Suspense>
+                  } 
+                />
               </div>
               <div className="flex-1 flex flex-col min-w-0">
                 {/* Mobile Header Placeholder if needed, or rely on MobileNav bottom */}
@@ -89,7 +94,7 @@ export default async function RootLayout({
                 </main>
               </div>
             </div>
-            <MobileNav user={user as any} />
+            <MobileNav />
             <Toaster position="top-center" richColors />
           </ThemeProvider>
         </TerminologyProvider>

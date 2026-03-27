@@ -1,9 +1,9 @@
-
 import db from '@/lib/db';
 import { ragService } from '@/lib/ai/rag';
 import { splitText } from '@/lib/utils/text-splitter';
 import fs from 'fs';
 import path from 'path';
+import { cache } from 'react';
 
 export interface Textbook {
     id: number;
@@ -41,18 +41,18 @@ export const textbookService = {
     },
 
     /**
-     * Get all textbooks
+     * Get all textbooks (Cached per request)
      */
-    getAllTextbooks: (): Textbook[] => {
+    getAllTextbooks: cache((): Textbook[] => {
         return db.prepare('SELECT * FROM textbooks ORDER BY created_at DESC').all() as Textbook[];
-    },
+    }),
 
     /**
-     * Get a textbook by ID
+     * Get a textbook by ID (Cached per request)
      */
-    getTextbook: (id: number): Textbook | undefined => {
+    getTextbook: cache((id: number): Textbook | undefined => {
         return db.prepare('SELECT * FROM textbooks WHERE id = ?').get(id) as Textbook | undefined;
-    },
+    }),
 
     /**
      * Delete a textbook
@@ -127,22 +127,22 @@ export const textbookService = {
     },
 
     /**
-     * Get chapters for a textbook (ordered)
+     * Get chapters for a textbook (ordered) (Cached per request)
      */
-    getChapters: (textbookId: number): TextbookChapter[] => {
+    getChapters: cache((textbookId: number): TextbookChapter[] => {
         return db.prepare(`
       SELECT * FROM textbook_chapters 
       WHERE textbook_id = ? 
       ORDER BY order_index, id
     `).all(textbookId) as TextbookChapter[];
-    },
+    }),
 
     /**
-     * Get single chapter
+     * Get single chapter (Cached per request)
      */
-    getChapter: (id: number): TextbookChapter | undefined => {
+    getChapter: cache((id: number): TextbookChapter | undefined => {
         return db.prepare('SELECT * FROM textbook_chapters WHERE id = ?').get(id) as TextbookChapter | undefined;
-    },
+    }),
 
     /**
      * Update chapter content

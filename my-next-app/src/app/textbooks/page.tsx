@@ -1,10 +1,10 @@
-
 import React from 'react';
+import Image from 'next/image';
+import Link from 'next/link';
 import { textbookService } from '@/lib/services/textbook';
 import { TextbookUploadModal } from '@/components/textbooks/TextbookUploadModal';
 import { Button } from '@/components/ui/button';
 import { Plus, Book, User, Calendar } from 'lucide-react';
-import Link from 'next/link';
 import { DeleteTextbookButton } from '@/components/textbooks/DeleteTextbookButton';
 
 // Force dynamic because we are reading from DB directly in Server Component
@@ -53,7 +53,14 @@ export default function TextbooksPage() {
                                     <div className="aspect-[4/5] bg-muted relative overflow-hidden">
                                         {/* Placeholder Cover or Image */}
                                         {book.cover_url ? (
-                                            <img src={book.cover_url} alt={book.title} className="w-full h-full object-cover transition-transform group-hover:scale-105" />
+                                            <Image 
+                                                src={book.cover_url} 
+                                                alt={book.title} 
+                                                fill
+                                                priority={index < 4}
+                                                sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 25vw"
+                                                className="object-cover transition-transform group-hover:scale-105" 
+                                            />
                                         ) : (
                                             <div className="w-full h-full flex items-center justify-center bg-gradient-to-br from-indigo-100 to-blue-50 dark:from-indigo-950 dark:to-slate-900">
                                                 <Book className="h-16 w-16 text-primary/20" />

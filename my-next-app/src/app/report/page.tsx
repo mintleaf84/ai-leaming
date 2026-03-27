@@ -2,7 +2,11 @@
 
 import React, { useEffect, useState } from 'react';
 import { useSearchParams } from 'next/navigation';
-import { RadarChart } from '@/components/viz/RadarChart';
+import dynamic from 'next/dynamic';
+const RadarChart = dynamic(
+  () => import('@/components/viz/RadarChart').then(mod => mod.RadarChart),
+  { ssr: false, loading: () => <div className="animate-pulse w-full h-[300px] bg-slate-800 rounded-full" /> }
+);
 import { generateDiagnosticReportAction, getSessionReportAction, SessionReportData } from '@/server/actions/report';
 import { Button } from '@/components/ui/button';
 import { Loader2, AlertCircle, TrendingUp, Clock, Target, CheckCircle2 } from 'lucide-react';

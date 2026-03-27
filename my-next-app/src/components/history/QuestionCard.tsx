@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { CheckCircle2, XCircle, BookOpen, ChevronDown, ChevronUp, BrainCircuit, Lightbulb, Loader2, Sparkles, RefreshCw } from 'lucide-react';
 import { formatDuration, indexToLetter } from '@/lib/utils/utils';
 import { AnnotatableText } from './AnnotatableText';
@@ -77,7 +77,7 @@ export function parseAnswer(answer: string): string[] {
  * 单个题目卡片组件
  * 包含：题目内容、选项、统计栏、解析区域、AI复盘
  */
-export function QuestionCard({ log, index, isExpanded, onToggle, refCallback }: QuestionCardProps) {
+export const QuestionCard = React.memo(({ log, index, isExpanded, onToggle, refCallback }: QuestionCardProps) => {
     // 第一性原理分析状态
     const [fpAnalysis, setFpAnalysis] = useState<string | null>(null);
     const [isLoadingFP, setIsLoadingFP] = useState(false);
@@ -86,6 +86,12 @@ export function QuestionCard({ log, index, isExpanded, onToggle, refCallback }: 
     const [mnemonic, setMnemonic] = useState<string | null>(log.aiMnemonic || null);
     const [isGeneratingMnemonic, setIsGeneratingMnemonic] = useState(false);
 
+    const isMounted = useRef(true);
+    useEffect(() => {
+        isMounted.current = true;
+        return () => { isMounted.current = false; };
+    }, []);
+
     // 生成 AI 助记
     const handleGenerateMnemonic = async (force: boolean = false) => {
         if ((!force && mnemonic) || isGeneratingMnemonic || !log.questionId) return;
@@ -93,6 +99,8 @@ export function QuestionCard({ log, index, isExpanded, onToggle, refCallback }: 
         setIsGeneratingMnemonic(true);
         try {
             const result = await generateMnemonicAction(String(log.questionId), force);
+            if (!isMounted.current) return;
+            
             if (result.success && result.content) {
                 setMnemonic(result.content);
                 if (!result.cached) {
@@ -103,9 +111,9 @@ export function QuestionCard({ log, index, isExpanded, onToggle, refCallback }: 
             }
         } catch (error) {
             console.error('助记生成失败:', error);
-            toast.error('请求出错，请稍后重试');
+            if (isMounted.current) toast.error('请求出错，请稍后重试');
         } finally {
-            setIsGeneratingMnemonic(false);
+            if (isMounted.current) setIsGeneratingMnemonic(false);
         }
     };
 
@@ -123,15 +131,17 @@ export function QuestionCard({ log, index, isExpanded, onToggle, refCallback }: 
                 log.isCorrect ? undefined : log.userAnswer,
                 force // 传递 force 参数
             );
+            if (!isMounted.current) return;
+            
             setFpAnalysis(result.analysis);
             if (force && !result.cached) {
                 toast.success('重新解析成功！');
             }
         } catch (error: any) {
             console.error('第一性原理分析失败:', error);
-            toast.error(error.message || '分析失败，请稍后重试');
+            if (isMounted.current) toast.error(error.message || '分析失败，请稍后重试');
         } finally {
-            setIsLoadingFP(false);
+            if (isMounted.current) setIsLoadingFP(false);
         }
     };
 
@@ -471,4 +481,4 @@ export function QuestionCard({ log, index, isExpanded, onToggle, refCallback }: 
             </div>
         </div>
     );
-}
+});

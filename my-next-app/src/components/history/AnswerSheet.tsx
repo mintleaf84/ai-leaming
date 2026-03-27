@@ -19,7 +19,7 @@ export function AnswerSheet({ logs, isOpen, onToggle, onSelect }: AnswerSheetPro
     const wrongCount = logs.filter(l => !l.isCorrect).length;
 
     return (
-        <div className="fixed bottom-24 right-6 md:bottom-6 z-50">
+        <div className="fixed bottom-24 right-6 md:bottom-6 z-[170]">
             {/* 展开的答题卡 */}
             {isOpen && (
                 <div className="mb-3 bg-card rounded-2xl shadow-2xl border border-border w-80 overflow-hidden animate-in slide-in-from-bottom-4 duration-200">

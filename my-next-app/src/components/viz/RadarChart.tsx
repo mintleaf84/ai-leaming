@@ -1,18 +1,21 @@
 "use client";
 
 import React, { useEffect, useRef } from 'react';
-import * as d3 from 'd3';
+import { select, selectAll } from 'd3-selection';
+import { scaleLinear } from 'd3-scale';
+import { lineRadial, curveLinearClosed } from 'd3-shape';
+import type { LineRadial } from 'd3-shape';
 
-interface RadarData {
+export interface RadarData {
   axis: string;
   value: number;
 }
 
-interface RadarChartProps {
+export interface RadarChartProps {
   data: RadarData[];
 }
 
-export function RadarChart({ data }: RadarChartProps) {
+export default function RadarChart({ data }: RadarChartProps) {
   const svgRef = useRef<SVGSVGElement>(null);
 
   useEffect(() => {
@@ -24,10 +27,10 @@ export function RadarChart({ data }: RadarChartProps) {
     const radius = Math.min(width, height) / 2 - margin;
     
     // Clear
-    d3.select(svgRef.current).selectAll("*").remove();
+    select(svgRef.current).selectAll("*").remove();
 
-    const svg = d3.select(svgRef.current)
-      .attr("viewBox", [0, 0, width, height])
+    const svg = select(svgRef.current)
+      .attr("viewBox", [0, 0, width, height] as any)
       .append("g")
       .attr("transform", `translate(${width/2},${height/2})`);
 
@@ -35,7 +38,7 @@ export function RadarChart({ data }: RadarChartProps) {
     const angleSlice = (Math.PI * 2) / axes.length;
 
     // Scale
-    const rScale = d3.scaleLinear().range([0, radius]).domain([0, 100]);
+    const rScale = scaleLinear().range([0, radius]).domain([0, 100]);
 
     // Draw Axes
     const axisGrid = svg.append("g").attr("class", "axisWrapper");
@@ -80,8 +83,8 @@ export function RadarChart({ data }: RadarChartProps) {
       .text(d => d);
 
     // Draw The Area
-    const radarLine = d3.lineRadial<RadarData>()
-      .curve(d3.curveLinearClosed)
+    const radarLine = lineRadial<RadarData>()
+      .curve(curveLinearClosed)
       .radius(d => rScale(d.value))
       .angle((d, i) => i * angleSlice);
 

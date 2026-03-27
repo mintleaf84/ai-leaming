@@ -8,7 +8,7 @@ import Link from 'next/link';
 import { DeleteTextbookButton } from '@/components/textbooks/DeleteTextbookButton';
 
 // Force dynamic because we are reading from DB directly in Server Component
-export const dynamic = 'force-dynamic';
+export const revalidate = 60; // 开启 ISR，每 60 秒可以在后台重头生成一次，其余时间享受瞬时访问速度
 
 export default function TextbooksPage() {
     const textbooks = textbookService.getAllTextbooks();

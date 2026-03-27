@@ -2,7 +2,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Users, BookOpen, Activity, Cpu } from "lucide-react";
 import db from "@/lib/db";
 
-export const dynamic = 'force-dynamic';
+export const revalidate = 60;
 
 async function getAdminStats() {
     'use server';

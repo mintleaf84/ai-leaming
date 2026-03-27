@@ -14,7 +14,7 @@ import { Drawer, DrawerContent, DrawerTrigger, DrawerHeader, DrawerTitle } from 
 import { TextbookChat } from '@/components/textbooks/TextbookChat';
 
 // Force dynamic because we are reading from DB directly in Server Component
-export const dynamic = 'force-dynamic';
+export const revalidate = 60; // 开启 ISR，每 60 秒可以在后台重头生成一次，提升首屏响应速度
 
 interface PageProps {
     params: Promise<{ id: string }>;

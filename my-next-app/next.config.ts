@@ -11,6 +11,9 @@ const withSerwist = withSerwistInit({
 const nextConfig: NextConfig = {
   output: "standalone",
   distDir: process.env.E2E_TEST === 'true' ? '.next-e2e' : undefined,
+  experimental: {
+    viewTransition: true,
+  },
   /* config options here */
 };
 

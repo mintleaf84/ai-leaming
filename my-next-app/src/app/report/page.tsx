@@ -1,8 +1,12 @@
 "use client";
 
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, Suspense } from 'react';
 import { useSearchParams } from 'next/navigation';
 import dynamic from 'next/dynamic';
+import { generateDiagnosticReportAction, getSessionReportAction, SessionReportData } from '@/server/actions/report';
+import { Button } from '@/components/ui/button';
+import { Loader2, AlertCircle, TrendingUp, Clock, Target, CheckCircle2 } from 'lucide-react';
+
 const RadarChartSkeleton = () => (
     <div className="relative w-full h-[300px] flex items-center justify-center animate-pulse">
         <div className="absolute w-[280px] h-[280px] border border-slate-700 rounded-full" />
@@ -17,11 +21,8 @@ const RadarChart = dynamic(
   () => import('@/components/viz/RadarChart').then(mod => mod.RadarChart),
   { ssr: false, loading: () => <RadarChartSkeleton /> }
 );
-import { generateDiagnosticReportAction, getSessionReportAction, SessionReportData } from '@/server/actions/report';
-import { Button } from '@/components/ui/button';
-import { Loader2, AlertCircle, TrendingUp, Clock, Target, CheckCircle2 } from 'lucide-react';
 
-export default function ReportPage() {
+function ReportContent() {
   const searchParams = useSearchParams();
   const sessionId = searchParams.get('sessionId') || undefined;
 
@@ -85,9 +86,14 @@ export default function ReportPage() {
       <div className="min-h-screen flex flex-col items-center justify-center gap-4 p-8">
         <AlertCircle className="w-12 h-12 text-amber-500" />
         <p className="text-lg text-muted-foreground">{error || '暂无报告数据'}</p>
-        <Button onClick={() => window.location.href = '/practice/setup'}>
-          开始练习
-        </Button>
+        <div className="mt-4 flex gap-3">
+          <Button variant="outline" onClick={() => window.location.href = '/dashboard'}>
+            返回首页
+          </Button>
+          <Button onClick={() => window.location.href = '/practice/setup'}>
+            开始练习
+          </Button>
+        </div>
       </div>
     );
   }
@@ -217,5 +223,18 @@ export default function ReportPage() {
         </div>
       </div>
     </div>
+  );
+}
+
+export default function ReportPage() {
+  return (
+    <Suspense fallback={
+      <div className="min-h-screen flex flex-col items-center justify-center gap-4 text-muted-foreground">
+        <Loader2 className="w-8 h-8 animate-spin text-primary" />
+        <p>正在初始化报告...</p>
+      </div>
+    }>
+      <ReportContent />
+    </Suspense>
   );
 }

@@ -1,8 +1,10 @@
 'use client';
 
 import React, { useState } from 'react';
-import { BookOpen, Loader2, CheckCircle2, AlertCircle } from 'lucide-react';
+import { BookOpen, Loader2, CheckCircle2, AlertCircle, X } from 'lucide-react';
+import { motion, AnimatePresence } from 'framer-motion';
 import { getCategoryColor } from '@/lib/utils/category-colors';
+import { APPLE_SPRING } from '@/lib/configs/motion-config';
 
 // Hooks
 import { useKnowledgeCards } from './hooks/useKnowledgeCards';
@@ -14,8 +16,11 @@ import { KnowledgeCardItem } from './components/KnowledgeCardItem';
 import { StudyModeOverlay } from './components/StudyModeOverlay';
 import { KnowledgeModal } from './components/KnowledgeModal';
 import { AIGenerateModal } from './components/AIGenerateModal';
+import { KnowledgeCardExpanded } from './components/KnowledgeCardExpanded';
+import MarkdownViewer from '@/components/chat/MarkdownViewer';
 
 export default function KnowledgePage() {
+    const [selectedCard, setSelectedCard] = useState<any>(null);
     const {
         filteredCards,
         categories,
@@ -117,24 +122,34 @@ export default function KnowledgePage() {
                     </div>
                 ) : (
                     <div className="grid gap-6 sm:grid-cols-1 md:grid-cols-2 lg:grid-cols-3">
-                        {filteredCards.map((card, index) => (
-                            <div 
+                        {filteredCards.map((card: any, index: number) => (
+                            <motion.div 
                                 key={card.id} 
-                                className={`animate-fade-in-up ${index < 5 ? `stagger-${index + 1}` : ''}`}
+                                initial={{ opacity: 0, y: 20 }}
+                                animate={{ opacity: 1, y: 0 }}
+                                transition={{ delay: index * 0.05, duration: 0.5 }}
                             >
                                 <KnowledgeCardItem
                                     card={card}
-                                    isFlipped={flippedCards.has(card.id!)}
-                                    onFlip={toggleFlip}
+                                    onExpand={setSelectedCard}
                                     onEdit={setEditingCard}
-                                    onDelete={handleDelete}
                                     categoryColor={getCategoryColor(card.category || '默认')}
                                 />
-                            </div>
+                            </motion.div>
                         ))}
                     </div>
                 )}
             </main>
+
+            {/* SHARED LAYOUT OVERLAY */}
+            <AnimatePresence>
+                {selectedCard && (
+                    <KnowledgeCardExpanded 
+                        card={selectedCard} 
+                        onClose={() => setSelectedCard(null)} 
+                    />
+                )}
+            </AnimatePresence>
 
             <KnowledgeModal
                 isOpen={!!editingCard || isCreateModal}

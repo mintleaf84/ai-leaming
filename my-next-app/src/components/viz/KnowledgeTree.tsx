@@ -84,12 +84,44 @@ export function KnowledgeTree({ data }: KnowledgeTreeProps) {
     ctx.stroke();
 
     // 绘制标签
-    ctx.font = `${node.group < 2 ? 'bold' : 'normal'} ${fontSize}px sans-serif`;
-    ctx.textAlign = 'center';
-    ctx.textBaseline = 'bottom';
-    ctx.fillStyle = '#475569';
-    ctx.fillText(label, node.x, node.y - nodeRadius - 2);
+    const shouldShowLabel = globalScale > 1.2 || node.group < 2;
+    if (shouldShowLabel) {
+      ctx.font = `${node.group < 2 ? 'bold' : 'normal'} ${fontSize}px sans-serif`;
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'bottom';
+
+      // 绘制文字阴影/背景以提升对比度
+      ctx.shadowColor = 'rgba(255, 255, 255, 0.8)';
+      ctx.shadowBlur = 4;
+      ctx.fillStyle = node.group === 0 ? '#1e293b' : '#475569';
+      ctx.fillText(label, node.x, node.y - nodeRadius - 2);
+
+      // 重置阴影
+      ctx.shadowBlur = 0;
+    }
   }, [getNodeColor]);
+
+  // 配置 D3 物理引擎
+  React.useEffect(() => {
+    if (graphRef.current) {
+      const fg = graphRef.current;
+      
+      // 增强电荷斥力 (Repulsion)
+      fg.d3Force('charge').strength(-400);
+
+      // 增加链路距离 (Link Distance)
+      fg.d3Force('link').distance(80);
+
+      // 引入节点碰撞检测 (Collision)，防止重叠
+      fg.d3Force('collide', (node: any) => {
+         // 碰撞半径：节点半径 + 较大的保护边距（为文字留白）
+         return node.val + 25;
+      });
+
+      // 重新预热引擎以应用新参数
+      fg.d3ReheatSimulation();
+    }
+  }, [graphData]); // 当数据变化时重新应用力场
 
   return (
     <div className="w-full h-full relative">
@@ -112,6 +144,9 @@ export function KnowledgeTree({ data }: KnowledgeTreeProps) {
         onEngineStop={() => graphRef.current?.zoomToFit(400, 50)}
         enableZoomInteraction={true}
         enablePanInteraction={true}
+        // 微调仿真参数
+        d3AlphaDecay={0.02}
+        d3VelocityDecay={0.4}
       />
 
       <Drawer open={drawerOpen} onOpenChange={setDrawerOpen}>

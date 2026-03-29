@@ -77,6 +77,11 @@ COPY --from=builder /app/.next/static ./.next/static
 # https://nextjs.org/docs/advanced-features/output-file-tracing
 COPY --from=builder --chown=nextjs:nodejs /app/.next/standalone ./
 
+# 补回 esbuild 标记为 external 的原生模块（standalone trace 可能遗漏 sqlite-vec）
+# 这两个包加起来只有 ~2MB，远小于之前的完整 node_modules
+COPY --from=deps /app/node_modules/sqlite-vec ./node_modules/sqlite-vec
+COPY --from=deps /app/node_modules/sqlite-vec-linux-x64 ./node_modules/sqlite-vec-linux-x64
+
 # COPY start script
 COPY start.sh .
 RUN chmod +x start.sh

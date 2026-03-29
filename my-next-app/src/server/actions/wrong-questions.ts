@@ -309,3 +309,71 @@ export async function getMasteredQuestionsAction(): Promise<{
         return [];
     }
 }
+
+/**
+ * 智能加权随机获取一组错题
+ * 算法逻辑：
+ * 1. 权重由“答错次数”和“遗忘时长”共同决定
+ * 2. 结合随机扰动因子，实现智能推荐
+ */
+export async function getRandomWrongQuestionsAction(options: { 
+    count?: number; 
+    tag?: string; 
+    mode?: 'priority' | 'random' 
+} = {}): Promise<WrongQuestionItem[]> {
+    try {
+        const user = await requireUser();
+        const { count = 10, tag, mode = 'priority' } = options;
+        const limitNum = Math.min(count, 50);
+
+        // 核心加权随机 SQL
+        const priorityOrder = `
+            (
+                COUNT(*) * 5.0 + 
+                (JULIANDAY('now') - JULIANDAY(MAX(l.timestamp))) * 2.0
+            ) * (ABS(RANDOM() % 1000) / 1000.0) DESC
+        `;
+        const randomOrder = `RANDOM()`;
+
+        const tagFilter = tag ? `AND EXISTS (SELECT 1 FROM json_each(q.tags) WHERE value = ?)` : '';
+        const params: (string | number)[] = [user.id, user.id, user.id, user.id];
+        if (tag) params.push(tag);
+        params.push(limitNum);
+
+        const sql = `
+            SELECT 
+                l.question_id as questionId,
+                q.content as questionContent,
+                q.tags,
+                q.answer as correctAnswer,
+                COUNT(*) as wrongCount,
+                MAX(l.timestamp) as lastWrongAt,
+                (SELECT user_answer FROM practice_logs 
+                 WHERE question_id = l.question_id AND user_id = l.user_id AND is_correct = 0 
+                 ORDER BY timestamp DESC LIMIT 1) as userLastAnswer
+            FROM practice_logs l
+            JOIN questions q ON l.question_id = q.id
+            WHERE l.user_id = ? AND l.is_correct = 0
+                AND l.question_id NOT IN (SELECT question_id FROM mastered_questions WHERE user_id = ?)
+                ${tagFilter}
+            GROUP BY l.question_id
+            ORDER BY ${mode === 'priority' ? priorityOrder : randomOrder}
+            LIMIT ?
+        `;
+
+        const rows = db.prepare(sql).all(...params) as any[];
+
+        return rows.map(r => ({
+            questionId: String(r.questionId),
+            questionContent: r.questionContent,
+            tags: JSON.parse(r.tags || '[]'),
+            wrongCount: r.wrongCount,
+            lastWrongAt: r.lastWrongAt || '',
+            correctAnswer: r.correctAnswer,
+            userLastAnswer: r.userLastAnswer || '',
+        }));
+    } catch (error) {
+        console.error("Failed to fetch random wrong questions:", error);
+        return [];
+    }
+}

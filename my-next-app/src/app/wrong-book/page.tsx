@@ -34,6 +34,7 @@ export default function WrongBookPage() {
         expandedTags,
         selectedIds,
         isCreating,
+        isRandomLoading,
         // 详情状态
         expandedQuestionId,
         questionDetail,
@@ -43,6 +44,7 @@ export default function WrongBookPage() {
         toggleSelect,
         selectAll,
         startPractice,
+        startRandomPractice,
         toggleQuestionDetail,
         handleMarkAsMastered,
         handleUnmarkMastered
@@ -69,28 +71,43 @@ export default function WrongBookPage() {
 
                 {/* 统计卡片 */}
                 {stats.total > 0 && (
-                    <div className="grid grid-cols-3 gap-4 mb-6">
-                        <div className="bg-card rounded-xl p-4 border shadow-sm">
-                            <div className="flex items-center gap-2 text-muted-foreground text-sm mb-1">
-                                <AlertTriangle className="w-4 h-4" />
-                                累计错题
+                    <div className="mb-8">
+                        <div className="grid grid-cols-3 gap-4 mb-4">
+                            <div className="bg-card rounded-xl p-4 border shadow-sm">
+                                <div className="flex items-center gap-2 text-muted-foreground text-sm mb-1">
+                                    <AlertTriangle className="w-4 h-4" />
+                                    累计错题
+                                </div>
+                                <div className="text-2xl font-bold text-foreground">{stats.total}</div>
                             </div>
-                            <div className="text-2xl font-bold text-foreground">{stats.total}</div>
-                        </div>
-                        <div className="bg-card rounded-xl p-4 border shadow-sm">
-                            <div className="flex items-center gap-2 text-muted-foreground text-sm mb-1">
-                                <Calendar className="w-4 h-4" />
-                                本周新增
+                            <div className="bg-card rounded-xl p-4 border shadow-sm">
+                                <div className="flex items-center gap-2 text-muted-foreground text-sm mb-1">
+                                    <Calendar className="w-4 h-4" />
+                                    本周新增
+                                </div>
+                                <div className="text-2xl font-bold text-amber-600">{stats.recent}</div>
                             </div>
-                            <div className="text-2xl font-bold text-amber-600">{stats.recent}</div>
-                        </div>
-                        <div className="bg-card rounded-xl p-4 border shadow-sm">
-                            <div className="flex items-center gap-2 text-muted-foreground text-sm mb-1">
-                                <Flame className="w-4 h-4" />
-                                高频错题
+                            <div className="bg-card rounded-xl p-4 border shadow-sm">
+                                <div className="flex items-center gap-2 text-muted-foreground text-sm mb-1">
+                                    <Flame className="w-4 h-4" />
+                                    高频错题
+                                </div>
+                                <div className="text-2xl font-bold text-red-600">{stats.frequent}</div>
                             </div>
-                            <div className="text-2xl font-bold text-red-600">{stats.frequent}</div>
                         </div>
+
+                        {/* 智能随机练习入口 */}
+                        <Button
+                            onClick={() => startRandomPractice(15)}
+                            className="w-full h-14 text-lg bg-red-600 hover:bg-red-700 shadow-lg shadow-red-500/20"
+                            disabled={isRandomLoading}
+                        >
+                            <Play className={`w-5 h-5 mr-2 ${isRandomLoading ? 'animate-pulse' : 'fill-current'}`} />
+                            {isRandomLoading ? '智能抽题中...' : '智能随机复习 (15 题)'}
+                        </Button>
+                        <p className="text-center text-[10px] text-muted-foreground mt-2 opacity-70">
+                            系统将综合“错误频次”与“遗忘时长”为你挑选最急需复习的题目
+                        </p>
                     </div>
                 )}
 

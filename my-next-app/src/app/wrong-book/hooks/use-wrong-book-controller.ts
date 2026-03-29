@@ -12,6 +12,7 @@ import {
     getWrongQuestionDetailAction,
     markAsMasteredAction,
     unmarkMasteredAction,
+    getRandomWrongQuestionsAction,
     WrongQuestionItem,
     WrongQuestionsByTag,
     WrongQuestionDetail
@@ -55,6 +56,7 @@ export function useWrongBookController() {
     const [expandedTags, setExpandedTags] = useState<Set<string>>(new Set());
     const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
     const [isCreating, setIsCreating] = useState(false);
+    const [isRandomLoading, setIsRandomLoading] = useState(false);
 
     // 详情展开状态
     const [expandedQuestionId, setExpandedQuestionId] = useState<string | null>(null);
@@ -136,6 +138,35 @@ export function useWrongBookController() {
         }
     }, [selectedIds, router]);
 
+    // 开始随机练习
+    const startRandomPractice = useCallback(async (count: number = 15, tag?: string) => {
+        setIsRandomLoading(true);
+        try {
+            // 1. 获取随机题目
+            const randomQuestions = await getRandomWrongQuestionsAction({ count, tag });
+            
+            if (randomQuestions.length === 0) {
+                toast.error('未找到符合条件的错题，快去练习吧！');
+                return;
+            }
+
+            // 2. 创建练习会话
+            const ids = randomQuestions.map(q => q.questionId);
+            const result = await createWrongQuestionsPracticeAction(ids);
+
+            if (result.success) {
+                router.push(`/practice?sessionId=${result.sessionId}`);
+            } else {
+                toast.error(result.message || '创建随机练习失败');
+            }
+        } catch (error) {
+            console.error("Random practice error:", error);
+            toast.error('操作失败，请重试');
+        } finally {
+            setIsRandomLoading(false);
+        }
+    }, [router]);
+
     // 展开/收起题目详情
     const toggleQuestionDetail = useCallback(async (questionId: string) => {
         if (expandedQuestionId === questionId) {
@@ -189,6 +220,7 @@ export function useWrongBookController() {
         expandedTags,
         selectedIds,
         isCreating,
+        isRandomLoading,
 
         // 详情状态
         expandedQuestionId,
@@ -201,6 +233,7 @@ export function useWrongBookController() {
         toggleSelect,
         selectAll,
         startPractice,
+        startRandomPractice,
         toggleQuestionDetail,
         handleMarkAsMastered,
         handleUnmarkMastered

@@ -61,7 +61,7 @@ export async function importFenbiDataAction(
         const questionIdMap = new Map<string, number>(); // externalId -> 内部 id
 
         // 5. 使用事务执行所有数据库操作
-        db.transaction(() => {
+        const executeTransaction = db.transaction(() => {
             // 3. 创建练习会话
             db.prepare(`
               INSERT INTO practice_sessions (id, user_id, session_name, total_questions, correct_count, practice_mode, questions_json)
@@ -218,6 +218,8 @@ export async function importFenbiDataAction(
                 `).run(user.id, tag, newScore, newCorrect, newTotal);
             }
         });
+
+        executeTransaction();
 
         return {
             success: true,

@@ -68,4 +68,34 @@ describe('Annotations Hono Routes', () => {
             expect(data.id).toBe(42);
         });
     });
+
+    describe('DELETE /', () => {
+        it('should delete an annotation', async () => {
+            const mockPrepare = mockDb.prepare as any;
+            mockPrepare.mockReturnValue({
+                run: vi.fn().mockReturnValue({ changes: 1 })
+            });
+
+            const res = await app.request('/?id=1', {
+                method: 'DELETE'
+            });
+
+            expect(res.status).toBe(200);
+            const data = await res.json();
+            expect(data.message).toBe('标注已删除');
+        });
+
+        it('should return 404 if annotation not found', async () => {
+            const mockPrepare = mockDb.prepare as any;
+            mockPrepare.mockReturnValue({
+                run: vi.fn().mockReturnValue({ changes: 0 })
+            });
+
+            const res = await app.request('/?id=999', {
+                method: 'DELETE'
+            });
+
+            expect(res.status).toBe(404);
+        });
+    });
 });

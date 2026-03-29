@@ -38,13 +38,21 @@ async function run() {
     }
 
     const files = fs.readdirSync(migrationsDir)
-        .filter(f => f.endsWith('.ts'))
-        .sort(); // Run in alphabetical order (timestamp prefix ensures chronological order)
+        .filter(f => f.endsWith('.ts') || f.endsWith('.js'))
+        // 去重：如果同时存在 foo.ts 和 foo.js，只保留一个
+        .reduce((acc: string[], f) => {
+            const base = f.replace(/\.(ts|js)$/, '');
+            if (!acc.some(x => x.replace(/\.(ts|js)$/, '') === base)) acc.push(f);
+            return acc;
+        }, [])
+        .sort(); // 按时间戳前缀的字母序保证执行顺序
 
     let count = 0;
 
     for (const file of files) {
-        if (executed.has(file)) {
+        // 去掉扩展名后作为唯一标识（兼容 .ts/.js 共存场景）
+        const migrationName = file.replace(/\.(ts|js)$/, '') + '.ts'; // 统一记录为 .ts
+        if (executed.has(migrationName) || executed.has(file)) {
             continue;
         }
 
@@ -65,8 +73,8 @@ async function run() {
             // Execute 'up'
             await migrationModule.up(db);
 
-            // Record success
-            db.prepare('INSERT INTO schema_migrations (name) VALUES (?)').run(file);
+            // Record success（统一记录为 .ts 名称，保持与开发环境一致）
+            db.prepare('INSERT INTO schema_migrations (name) VALUES (?)').run(migrationName);
 
             console.log(`✅ Completed: ${file}`);
             count++;

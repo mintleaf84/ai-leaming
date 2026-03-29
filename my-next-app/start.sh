@@ -22,11 +22,10 @@ fi
 
 # 1. Run Migrations
 echo "🔄 Running database migrations..."
-if command -v tsx >/dev/null 2>&1; then
-  tsx scripts/migrate-runner.ts
+if [ -f "migrate-runner.js" ]; then
+  node migrate-runner.js
 else
-  # 降级到 npx tsx 作为备选措施
-  npx tsx scripts/migrate-runner.ts
+  echo "⚠️ migrate-runner.js not found, skipping migration."
 fi
 
 # 2. Start Application

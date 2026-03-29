@@ -36,6 +36,19 @@ RUN mkdir -p /app/data
 
 RUN npm run build
 
+# 使用 esbuild 将迁移脚本编译为单文件 JS（排除 C++ 原生扩展 better-sqlite3 避免打包错误）
+# 注意：esbuild 只会打包 TypeScript 源码，运行时的 native 模块由 standalone 的 node_modules 提供
+RUN npx esbuild scripts/migrate-runner.ts --bundle --platform=node --target=node20 \
+    --external:better-sqlite3 --external:sqlite-vec \
+    --outfile=.next/standalone/migrate-runner.js
+
+# 将迁移文件逐个编译为 JS（它们是运行时动态加载的，无法打包进主 bundle）
+RUN mkdir -p .next/standalone/src/lib/migrations \
+    && for f in src/lib/migrations/*.ts; do \
+         npx esbuild "$f" --platform=node --target=node20 \
+           --outdir=.next/standalone/src/lib/migrations/; \
+       done
+
 # ========================================
 # Stage 3: Runner
 # ========================================
@@ -48,7 +61,6 @@ ENV NEXT_TELEMETRY_DISABLED=1
 # Install runtime dependencies for sqlite-vec or other native modules
 # openssl is usually required by Prisma (if used later) or native networking
 RUN apt-get update && apt-get install -y openssl && rm -rf /var/lib/apt/lists/*
-RUN npm install -g tsx
 
 RUN addgroup --system --gid 1001 nodejs
 RUN adduser --system --uid 1001 nextjs
@@ -64,13 +76,6 @@ COPY --from=builder /app/.next/static ./.next/static
 # Automatically leverage output traces to reduce image size
 # https://nextjs.org/docs/advanced-features/output-file-tracing
 COPY --from=builder --chown=nextjs:nodejs /app/.next/standalone ./
-
-# Next.js standalone mode excludes dev files; copy necessary files for runtime migration
-# Copy ALL node_modules and src to ensure tsx and migration scripts can find dependencies
-COPY --from=deps --chown=nextjs:nodejs /app/node_modules ./node_modules
-COPY --from=builder --chown=nextjs:nodejs /app/scripts ./scripts
-COPY --from=builder --chown=nextjs:nodejs /app/src ./src
-COPY --from=builder --chown=nextjs:nodejs /app/tsconfig.json ./
 
 # COPY start script
 COPY start.sh .

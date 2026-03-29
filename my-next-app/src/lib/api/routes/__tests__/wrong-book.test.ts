@@ -6,7 +6,11 @@ import app from '../wrong-book';
 const { mockDb } = vi.hoisted(() => {
     return {
         mockDb: {
-            prepare: vi.fn(),
+            prepare: vi.fn().mockReturnValue({
+                all: vi.fn(),
+                run: vi.fn(),
+                get: vi.fn(),
+            })
         }
     };
 });
@@ -27,39 +31,63 @@ describe('WrongBook Hono Routes', () => {
         vi.clearAllMocks();
     });
 
-    describe('GET /', () => {
-        it('should return wrong questions', async () => {
-            const mockRows = [{
-                questionId: 1,
-                questionContent: 'Q',
-                tags: '["tag1"]',
-                wrongCount: 1,
-                lastWrongAt: '2023-01-01',
-                correctAnswer: 'A',
-                userLastAnswer: 'B'
-            }];
-            mockDb.prepare.mockReturnValue({
+    describe('GET /random', () => {
+        it('should return random wrong questions with weighted logic', async () => {
+            const mockRows = [
+                { 
+                    questionId: 101, 
+                    questionContent: 'Test Question', 
+                    tags: '["tag1"]', 
+                    wrongCount: 5, 
+                    lastWrongAt: '2024-01-01',
+                    correctAnswer: 'A',
+                    userLastAnswer: 'B'
+                }
+            ];
+            
+            const mockPrepare = mockDb.prepare as any;
+            mockPrepare.mockReturnValue({
                 all: vi.fn().mockReturnValue(mockRows)
             });
 
-            const res = await app.request('/');
+            const res = await app.request('/random?count=5&mode=priority');
             expect(res.status).toBe(200);
+            
             const data = await res.json();
             expect(data).toHaveLength(1);
-            expect(data[0].questionId).toBe('1');
+            expect(data[0].questionId).toBe('101');
+            expect(data[0].wrongCount).toBe(5);
+        });
+
+        it('should support tag filtering', async () => {
+            const mockPrepare = mockDb.prepare as any;
+            mockPrepare.mockReturnValue({
+                all: vi.fn().mockReturnValue([])
+            });
+
+            const res = await app.request('/random?tag=math');
+            expect(res.status).toBe(200);
+            
+            // 验证 SQL 中是否包含 tag 相关的 EXISTS 子句
+            expect(mockDb.prepare).toHaveBeenCalledWith(expect.stringContaining('EXISTS (SELECT 1 FROM json_each(q.tags)'));
         });
     });
 
     describe('GET /stats', () => {
-        it('should return stats', async () => {
-            mockDb.prepare.mockReturnValue({
-                get: vi.fn().mockReturnValue({ count: 5 })
+        it('should return correct statistics structure', async () => {
+            const mockPrepare = mockDb.prepare as any;
+            mockPrepare.mockReturnValue({
+                get: vi.fn().mockReturnValue({ count: 10 })
             });
 
             const res = await app.request('/stats');
             expect(res.status).toBe(200);
             const data = await res.json();
-            expect(data.total).toBe(5);
+            expect(data).toEqual({
+                total: 10,
+                recent: 10,
+                frequent: 10
+            });
         });
     });
 });

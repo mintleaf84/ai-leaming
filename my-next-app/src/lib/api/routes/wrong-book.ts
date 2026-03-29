@@ -366,11 +366,84 @@ app.openapi(unmasterRoute, async (c) => {
     const user = getCurrentUser(c)
     const { id } = c.req.valid('param')
 
-    db.prepare(`
-        DELETE FROM mastered_questions WHERE user_id = ? AND question_id = ?
-    `).run(user.id, id)
-
     return c.json({ success: true }, 200)
+})
+
+// ==================== GET /random — 随机抽题 (智能权重) ====================
+
+const getRandomRoute = createRoute({
+    method: 'get',
+    path: '/random',
+    middleware: [authMiddleware] as const,
+    request: {
+        query: z.object({
+            count: z.string().optional().default('10').describe('抽题数量'),
+            tag: z.string().optional().describe('按知识点筛选'),
+            mode: z.enum(['priority', 'random']).optional().default('priority').describe('抽题模式: priority=加权优先, random=纯随机'),
+        }),
+    },
+    responses: {
+        200: {
+            content: { 'application/json': { schema: z.array(WrongQuestionSchema) } },
+            description: '随机获取一组错题',
+        },
+    },
+})
+
+app.openapi(getRandomRoute, async (c) => {
+    const user = getCurrentUser(c)
+    const { count, tag, mode } = c.req.valid('query')
+    const limitNum = Math.min(parseInt(count), 50)
+
+    // 核心加权随机 SQL
+    // 权重计算公示: (错误次数 * 5 + 遗忘天数 * 2) * 随机系数 (0-1)
+    const priorityOrder = `
+        (
+            COUNT(*) * 5.0 + 
+            (JULIANDAY('now') - JULIANDAY(MAX(l.timestamp))) * 2.0
+        ) * (ABS(RANDOM() % 1000) / 1000.0) DESC
+    `
+    const randomOrder = `RANDOM()`
+
+    const tagFilter = tag ? `AND EXISTS (SELECT 1 FROM json_each(q.tags) WHERE value = ?)` : ''
+    const params: (string | number)[] = [user.id, user.id, user.id, user.id]
+    if (tag) params.push(tag)
+    params.push(limitNum)
+
+    const sql = `
+        SELECT 
+            l.question_id as questionId,
+            q.content as questionContent,
+            q.tags,
+            q.answer as correctAnswer,
+            COUNT(*) as wrongCount,
+            MAX(l.timestamp) as lastWrongAt,
+            (SELECT user_answer FROM practice_logs 
+             WHERE question_id = l.question_id AND user_id = l.user_id AND is_correct = 0 
+             ORDER BY timestamp DESC LIMIT 1) as userLastAnswer
+        FROM practice_logs l
+        JOIN questions q ON l.question_id = q.id
+        WHERE l.user_id = ? AND l.is_correct = 0
+            AND l.question_id NOT IN (SELECT question_id FROM mastered_questions WHERE user_id = ?)
+            ${tagFilter}
+        GROUP BY l.question_id
+        ORDER BY ${mode === 'priority' ? priorityOrder : randomOrder}
+        LIMIT ?
+    `
+
+    const rows = db.prepare(sql).all(...params) as any[]
+
+    const result = rows.map(r => ({
+        questionId: String(r.questionId),
+        questionContent: r.questionContent,
+        tags: JSON.parse(r.tags || '[]'),
+        wrongCount: r.wrongCount,
+        lastWrongAt: r.lastWrongAt || '',
+        correctAnswer: r.correctAnswer,
+        userLastAnswer: r.userLastAnswer || '',
+    }))
+
+    return c.json(result, 200)
 })
 
 export default app

@@ -316,15 +316,15 @@ export function parseFenbiData(
         let correctAnswer: string;
         if (questionType === 'fill_blank') {
             // 填空题：从 blanks 数组提取
-            correctAnswer = solution.correctAnswer.blanks?.join('；') || '';
+            correctAnswer = solution.correctAnswer?.blanks?.join('；') || '';
         } else if (questionType === 'boolean') {
-            correctAnswer = indexToBoolean(solution.correctAnswer.choice || '0');
+            correctAnswer = indexToBoolean(solution.correctAnswer?.choice || '0');
         } else if (questionType === 'multi') {
             // 多选题：逗号分隔的索引转字母
-            correctAnswer = multiIndexToLetters(solution.correctAnswer.choice || '');
+            correctAnswer = multiIndexToLetters(solution.correctAnswer?.choice || '');
         } else {
             // 单选题
-            correctAnswer = indexToLetter(solution.correctAnswer.choice || '');
+            correctAnswer = indexToLetter(solution.correctAnswer?.choice || '');
         }
 
         // 提取知识点（使用层级树查找完整路径）
@@ -418,15 +418,15 @@ export function parseFenbiData(
             let userChoice: string;
             if (questionType === 'fill_blank') {
                 // 填空题：从 blanks 数组提取
-                userChoice = userAnswer.answer.blanks?.join('；') || '';
+                userChoice = userAnswer.answer?.blanks?.join('；') || '';
             } else if (questionType === 'boolean') {
-                userChoice = indexToBoolean(userAnswer.answer.choice || '0');
+                userChoice = indexToBoolean(userAnswer.answer?.choice || '0');
             } else if (questionType === 'multi') {
                 // 多选题
-                userChoice = multiIndexToLetters(userAnswer.answer.choice || '');
+                userChoice = multiIndexToLetters(userAnswer.answer?.choice || '');
             } else {
                 // 单选题
-                userChoice = indexToLetter(userAnswer.answer.choice || '');
+                userChoice = indexToLetter(userAnswer.answer?.choice || '');
             }
 
             const isCorrect = userAnswer.status === 1;

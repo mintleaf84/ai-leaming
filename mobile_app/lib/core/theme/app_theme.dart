@@ -18,10 +18,11 @@ class AppTheme {
 
   // 暗色模式颜色
   static const Color _darkBackground = Color(0xFF191919);
-  static const Color _darkSurface = Color(0xFF262626);
+  static const Color _darkSurface = Color(0xFF222222); // 稍微深一点
+  static const Color _darkCard = Color(0xFF2C2C2C); // 增加层次感
   static const Color _darkText = Color(0xFFE6E6E6);
-  static const Color _darkTextSecondary = Color(0xFF8A8A8A);
-  static const Color _darkBorder = Color(0xFF3D3D3D);
+  static const Color _darkTextSecondary = Color(0xFFA0A0A0);
+  static const Color _darkBorder = Color(0xFF333333); // 更细腻的边框
 
   // 通用强调色
   static const Color primaryColor = Color(0xFF37352F);
@@ -119,6 +120,7 @@ class AppTheme {
         primary: Color(0xFFE6E6E6),
         secondary: accentColor,
         surface: _darkSurface,
+        surfaceContainer: _darkCard, // 新增
         error: errorColor,
         onPrimary: _darkBackground,
         onSecondary: Colors.white,
@@ -142,7 +144,7 @@ class AppTheme {
 
       // 卡片主题
       cardTheme: CardThemeData(
-        color: _darkSurface,
+        color: _darkCard,
         elevation: 0,
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(12.r),

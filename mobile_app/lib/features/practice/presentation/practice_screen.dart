@@ -3,10 +3,12 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:go_router/go_router.dart';
-import 'practice_provider.dart';
-import '../domain/question.dart';
-import '../../../shared/widgets/animated_option_card.dart';
-import '../../../shared/widgets/skeleton_widgets.dart';
+import 'package:mobile_app/features/practice/presentation/practice_provider.dart';
+import 'package:mobile_app/features/practice/domain/question.dart';
+import 'package:mobile_app/core/theme/app_theme.dart';
+import 'package:mobile_app/shared/widgets/animated_option_card.dart';
+import 'package:mobile_app/shared/widgets/skeleton_widgets.dart';
+import 'package:mobile_app/features/practice/presentation/widgets/first_principles_panel.dart';
 
 class PracticeScreen extends ConsumerStatefulWidget {
   const PracticeScreen({super.key});
@@ -483,8 +485,13 @@ class _PracticeScreenState extends ConsumerState<PracticeScreen> {
                   width: double.infinity,
                   child: OutlinedButton.icon(
                     onPressed: () {
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        const SnackBar(content: Text('第一性原理透视开发中...')),
+                      // 触发并显示 AI 分析
+                      ref.read(practiceControllerProvider.notifier).fetchFirstPrinciples(question.id);
+                      showModalBottomSheet(
+                        context: context,
+                        isScrollControlled: true,
+                        backgroundColor: Colors.transparent,
+                        builder: (context) => FirstPrinciplesPanel(questionId: question.id),
                       );
                     },
                     icon: Icon(

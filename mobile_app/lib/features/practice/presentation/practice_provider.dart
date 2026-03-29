@@ -4,6 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../data/practice_repository_impl.dart';
 import '../domain/practice_repository.dart';
 import '../domain/question.dart';
+import '../domain/first_principles_response.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 
 /// 防重复提交标志
@@ -18,6 +19,8 @@ class PracticeSessionState {
   final Map<String, bool> results; // questionId -> isCorrect
   final Map<String, String> correctAnswers; // questionId -> correctAnswer
   final Map<String, String> explanations; // questionId -> explanation
+  final Map<String, FirstPrinciplesResponse> firstPrinciples; // questionId -> AI分析
+  final bool isAnalyzingFirstPrinciples;
   final bool isLoading;
   final String? error;
 
@@ -29,6 +32,8 @@ class PracticeSessionState {
     this.results = const {},
     this.correctAnswers = const {},
     this.explanations = const {},
+    this.firstPrinciples = const {},
+    this.isAnalyzingFirstPrinciples = false,
     this.isLoading = false,
     this.error,
   });
@@ -41,6 +46,8 @@ class PracticeSessionState {
     Map<String, bool>? results,
     Map<String, String>? correctAnswers,
     Map<String, String>? explanations,
+    Map<String, FirstPrinciplesResponse>? firstPrinciples,
+    bool? isAnalyzingFirstPrinciples,
     bool? isLoading,
     String? error,
   }) {
@@ -52,6 +59,8 @@ class PracticeSessionState {
       results: results ?? this.results,
       correctAnswers: correctAnswers ?? this.correctAnswers,
       explanations: explanations ?? this.explanations,
+      firstPrinciples: firstPrinciples ?? this.firstPrinciples,
+      isAnalyzingFirstPrinciples: isAnalyzingFirstPrinciples ?? this.isAnalyzingFirstPrinciples,
       isLoading: isLoading ?? this.isLoading,
       error: error,
     );
@@ -220,6 +229,38 @@ class PracticeController extends Notifier<PracticeSessionState> {
     if (state.hasPrev) {
       state = state.copyWith(currentIndex: state.currentIndex - 1);
       _questionStartTime = DateTime.now();
+    }
+  }
+
+  /// 获取第一性原理分析
+  Future<void> fetchFirstPrinciples(String questionId) async {
+    final question = state.questions.firstWhere((q) => q.id == questionId);
+    
+    // 如果已经有缓存，则不再请求
+    if (state.firstPrinciples.containsKey(questionId)) return;
+
+    state = state.copyWith(isAnalyzingFirstPrinciples: true);
+
+    try {
+      final response = await _repository.analyzeFirstPrinciples(
+        questionId: questionId,
+        content: question.content,
+      );
+
+      final newFirstPrinciples = Map<String, FirstPrinciplesResponse>.from(
+        state.firstPrinciples,
+      );
+      newFirstPrinciples[questionId] = response;
+
+      state = state.copyWith(
+        firstPrinciples: newFirstPrinciples,
+        isAnalyzingFirstPrinciples: false,
+      );
+    } catch (e) {
+      state = state.copyWith(
+        isAnalyzingFirstPrinciples: false,
+        error: '获取 AI 分析失败: $e',
+      );
     }
   }
 

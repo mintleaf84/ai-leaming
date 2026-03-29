@@ -1,5 +1,6 @@
 import 'question.dart';
 import 'practice_session.dart';
+import 'first_principles_response.dart';
 
 abstract class PracticeRepository {
   Future<QuestionListResponse> getQuestions({
@@ -18,5 +19,10 @@ abstract class PracticeRepository {
     required String questionId,
     required String userAnswer,
     required int duration,
+  });
+
+  Future<FirstPrinciplesResponse> analyzeFirstPrinciples({
+    required String questionId,
+    required String content,
   });
 }

@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
+import '../../core/utils/haptic_util.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 
 /// 带动画效果的选项卡片
@@ -88,13 +88,13 @@ class _AnimatedOptionCardState extends State<AnimatedOptionCard>
     // 答对时触发弹跳动画
     if (widget.isCorrect && !oldWidget.isCorrect) {
       _triggerBounce();
-      HapticFeedback.mediumImpact();
+      HapticUtil.medium();
     }
 
     // 答错时触发抖动动画
     if (widget.isWrong && !oldWidget.isWrong) {
       _triggerShake();
-      HapticFeedback.heavyImpact();
+      HapticUtil.heavy();
     }
   }
 
@@ -149,7 +149,7 @@ class _AnimatedOptionCardState extends State<AnimatedOptionCard>
         onTapDown: widget.onTap != null
             ? (_) {
                 _scaleController.forward();
-                HapticFeedback.lightImpact();
+                HapticUtil.light();
               }
             : null,
         onTapUp: widget.onTap != null

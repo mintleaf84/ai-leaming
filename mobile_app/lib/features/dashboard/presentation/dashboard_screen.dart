@@ -677,26 +677,39 @@ class DashboardScreen extends HookConsumerWidget {
     bool isSelected,
     VoidCallback? onTap,
   ) {
+    final activeColor = const Color(0xFF37352F);
+    final inactiveColor = const Color(0xFF9B9A97);
+
     return GestureDetector(
       onTap: onTap,
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Icon(
-            icon,
-            size: 24.sp,
-            color: isSelected ? const Color(0xFF37352F) : Colors.grey,
-          ),
-          SizedBox(height: 4.h),
-          Text(
-            label,
-            style: TextStyle(
-              fontSize: 10.sp,
-              fontWeight: isSelected ? FontWeight.w600 : FontWeight.w500,
-              color: isSelected ? const Color(0xFF37352F) : Colors.grey,
+      behavior: HitTestBehavior.opaque,
+      child: Container(
+        padding: EdgeInsets.symmetric(horizontal: 12.w, vertical: 4.h),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            AnimatedScale(
+              scale: isSelected ? 1.1 : 1.0,
+              duration: const Duration(milliseconds: 200),
+              curve: Curves.easeOutBack,
+              child: Icon(
+                icon,
+                size: 24.sp,
+                color: isSelected ? activeColor : inactiveColor,
+              ),
             ),
-          ),
-        ],
+            SizedBox(height: 4.h),
+            AnimatedDefaultTextStyle(
+              duration: const Duration(milliseconds: 200),
+              style: TextStyle(
+                fontSize: 10.sp,
+                fontWeight: isSelected ? FontWeight.w700 : FontWeight.w500,
+                color: isSelected ? activeColor : inactiveColor,
+              ),
+              child: Text(label),
+            ),
+          ],
+        ),
       ),
     );
   }

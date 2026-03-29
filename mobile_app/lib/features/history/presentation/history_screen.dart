@@ -130,82 +130,85 @@ class _HistoryScreenState extends ConsumerState<HistoryScreen> {
         ? '${date.month}月${date.day}日 ${date.hour}:${date.minute.toString().padLeft(2, '0')}'
         : item.createdAt;
 
-    return Container(
-      margin: EdgeInsets.only(bottom: 12.h),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(12.r),
-        border: Border.all(color: const Color(0xFFE0E0E0)),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withValues(alpha: 0.02),
-            blurRadius: 4,
-            offset: const Offset(0, 2),
-          ),
-        ],
-      ),
-      child: Material(
-        color: Colors.transparent,
-        child: InkWell(
+    return Hero(
+      tag: 'history_item_${item.id}',
+      child: Container(
+        margin: EdgeInsets.only(bottom: 12.h),
+        decoration: BoxDecoration(
+          color: Colors.white,
           borderRadius: BorderRadius.circular(12.r),
-          onTap: () {
-            context.go('/history/${item.id}');
-          },
-          child: Padding(
-            padding: EdgeInsets.all(16.w),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                // 标题行
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    Row(
-                      children: [
-                        _buildModeTag(item.practiceMode ?? 'random'),
-                        SizedBox(width: 8.w),
-                        Text(
-                          dateStr,
-                          style: TextStyle(fontSize: 12.sp, color: Colors.grey),
-                        ),
-                      ],
-                    ),
-                    Icon(Icons.chevron_right, size: 20.sp, color: Colors.grey),
-                  ],
-                ),
-                SizedBox(height: 12.h),
-                // 统计行
-                Row(
-                  children: [
-                    // 正确率
-                    _buildStatBadge(
-                      '${item.accuracy}%',
-                      _getAccuracyColor(item.accuracy),
-                    ),
-                    SizedBox(width: 16.w),
-                    // 正确/总数
-                    Text(
-                      '${item.correctCount}/${item.totalQuestions} 正确',
-                      style: TextStyle(
-                        fontSize: 14.sp,
-                        fontWeight: FontWeight.w500,
-                        color: const Color(0xFF37352F),
+          border: Border.all(color: const Color(0xFFE0E0E0)),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withValues(alpha: 0.02),
+              blurRadius: 4,
+              offset: const Offset(0, 2),
+            ),
+          ],
+        ),
+        child: Material(
+          color: Colors.transparent,
+          child: InkWell(
+            borderRadius: BorderRadius.circular(12.r),
+            onTap: () {
+              context.go('/history/${item.id}');
+            },
+            child: Padding(
+              padding: EdgeInsets.all(16.w),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  // 标题行
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Row(
+                        children: [
+                          _buildModeTag(item.practiceMode ?? 'random'),
+                          SizedBox(width: 8.w),
+                          Text(
+                            dateStr,
+                            style: TextStyle(fontSize: 12.sp, color: Colors.grey),
+                          ),
+                        ],
                       ),
-                    ),
-                  ],
-                ),
-                SizedBox(height: 8.h),
-                // 进度条
-                ClipRRect(
-                  borderRadius: BorderRadius.circular(4.r),
-                  child: LinearProgressIndicator(
-                    value: item.accuracy / 100,
-                    backgroundColor: const Color(0xFFF0F0F0),
-                    color: _getAccuracyColor(item.accuracy),
-                    minHeight: 6.h,
+                      Icon(Icons.chevron_right, size: 20.sp, color: Colors.grey),
+                    ],
                   ),
-                ),
-              ],
+                  SizedBox(height: 12.h),
+                  // 统计行
+                  Row(
+                    children: [
+                      // 正确率
+                      _buildStatBadge(
+                        '${item.accuracy}%',
+                        _getAccuracyColor(item.accuracy),
+                      ),
+                      SizedBox(width: 16.w),
+                      // 正确/总数
+                      Text(
+                        '${item.correctCount}/${item.totalQuestions} 正确',
+                        style: TextStyle(
+                          fontSize: 14.sp,
+                          fontWeight: FontWeight.w500,
+                          color: const Color(0xFF37352F),
+                        ),
+                      ),
+                    ],
+                  ),
+                  SizedBox(height: 8.h),
+                  // 进度条
+                  ClipRRect(
+                    borderRadius: BorderRadius.circular(4.r),
+                    child: LinearProgressIndicator(
+                      value: item.accuracy / 100,
+                      backgroundColor: const Color(0xFFF0F0F0),
+                      color: _getAccuracyColor(item.accuracy),
+                      minHeight: 6.h,
+                    ),
+                  ),
+                ],
+              ),
             ),
           ),
         ),

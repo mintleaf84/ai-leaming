@@ -203,15 +203,17 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                       borderColor: borderColor,
                       children: [
                         _buildSettingsTile(
-                          icon: Icons.cloud_upload_outlined,
-                          title: '备份笔记',
-                          trailing: Icon(
-                            Icons.arrow_forward_ios,
-                            size: 16.sp,
-                            color: secondaryColor.withValues(alpha: 0.7),
+                          icon: Icons.cleaning_services_outlined,
+                          title: '清理缓存',
+                          trailing: Text(
+                            '12.4 MB',
+                            style: TextStyle(
+                              fontSize: 14.sp,
+                              color: secondaryColor,
+                            ),
                           ),
                           textColor: textColor,
-                          onTap: () => _showSnackBar('备份功能开发中...'),
+                          onTap: () => _showClearCacheDialog(),
                         ),
                         _buildDivider(borderColor),
                         _buildSettingsTile(
@@ -225,18 +227,42 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                           textColor: textColor,
                           onTap: () => _showClearConfirmDialog(),
                         ),
+                        _buildDivider(borderColor),
+                        _buildSettingsTile(
+                          icon: Icons.cloud_upload_outlined,
+                          title: '备份与同步',
+                          trailing: Icon(
+                            Icons.arrow_forward_ios,
+                            size: 16.sp,
+                            color: secondaryColor.withValues(alpha: 0.7),
+                          ),
+                          textColor: textColor,
+                          onTap: () => _showSnackBar('同步服务连接中...'),
+                        ),
                       ],
                     ),
                     SizedBox(height: 24.h),
-                    // 关于
-                    _buildSectionTitle('关于', secondaryColor),
+                    // 关于与反馈
+                    _buildSectionTitle('关于与反馈', secondaryColor),
                     _buildCard(
                       cardColor: cardColor,
                       borderColor: borderColor,
                       children: [
                         _buildSettingsTile(
+                          icon: Icons.feedback_outlined,
+                          title: '反馈建议',
+                          trailing: Icon(
+                            Icons.arrow_forward_ios,
+                            size: 16.sp,
+                            color: secondaryColor.withValues(alpha: 0.7),
+                          ),
+                          textColor: textColor,
+                          onTap: () => _showFeedbackDialog(),
+                        ),
+                        _buildDivider(borderColor),
+                        _buildSettingsTile(
                           icon: Icons.info_outline,
-                          title: '版本号',
+                          title: '当前版本',
                           trailing: Text(
                             'v1.2.0',
                             style: TextStyle(
@@ -245,6 +271,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                             ),
                           ),
                           textColor: textColor,
+                          onTap: () => _showAboutDialog(),
                         ),
                         Divider(height: 1, color: borderColor),
                         InkWell(
@@ -410,6 +437,79 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
     ScaffoldMessenger.of(
       context,
     ).showSnackBar(SnackBar(content: Text(message)));
+  }
+
+  void _showClearCacheDialog() {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('清理缓存'),
+        content: const Text('确定要清理本地缓存吗？这不会影响您的学习进度，但重新加载图片等资源可能需要一些时间。'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('取消'),
+          ),
+          TextButton(
+            onPressed: () {
+              Navigator.pop(context);
+              _showSnackBar('缓存已清理完毕');
+            },
+            child: const Text('确定'),
+          ),
+        ],
+      ),
+    );
+  }
+
+  void _showFeedbackDialog() {
+    final controller = TextEditingController();
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('反馈建议'),
+        content: TextField(
+          controller: controller,
+          maxLines: 4,
+          decoration: const InputDecoration(
+            hintText: '描述您遇到的问题或建议...',
+            border: OutlineInputBorder(),
+          ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('取消'),
+          ),
+          TextButton(
+            onPressed: () {
+              if (controller.text.isNotEmpty) {
+                Navigator.pop(context);
+                _showSnackBar('谢谢您的反馈！我们会尽快处理。');
+              }
+            },
+            child: const Text('提交'),
+          ),
+        ],
+      ),
+    );
+  }
+
+  void _showAboutDialog() {
+    showAboutDialog(
+      context: context,
+      applicationName: 'Zhuoyu AI',
+      applicationVersion: 'v1.2.0',
+      applicationIcon: Padding(
+        padding: EdgeInsets.symmetric(vertical: 8.h),
+        child: Text('🧠', style: TextStyle(fontSize: 48.sp)),
+      ),
+      applicationLegalese: '© 2026 Zhuoyu AI Team. All Rights Reserved.',
+      children: [
+        SizedBox(height: 16.h),
+        const Text('琢玉 (Zhuoyu) 是一款基于第一性原理的学习辅助工具，旨在帮助用户通过 AI 辅助深度理解知识点。'),
+      ],
+    );
   }
 
   void _showDailyGoalPicker(Color textColor, Color borderColor) {

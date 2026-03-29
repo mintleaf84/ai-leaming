@@ -265,97 +265,106 @@ class _HistoryDetailScreenState extends ConsumerState<HistoryDetailScreen> {
     final accuracy = session.accuracy / 100.0;
     final accuracyColor = _getAccuracyColor(session.accuracy);
 
-    return Container(
-      padding: EdgeInsets.all(20.w),
-      decoration: BoxDecoration(
-        color: cardColor,
-        borderRadius: BorderRadius.circular(16.r),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withValues(alpha: 0.05),
-            blurRadius: 10,
-            offset: const Offset(0, 4),
-          ),
-        ],
-      ),
-      child: Column(
-        children: [
-          Row(
-            children: [
-              Icon(Icons.access_time, size: 16.sp, color: secondaryColor),
-              SizedBox(width: 6.w),
-              Text(
-                formattedTime,
-                style: TextStyle(fontSize: 13.sp, color: secondaryColor),
-              ),
-            ],
-          ),
-          SizedBox(height: 20.h),
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-            children: [
-              SizedBox(
-                width: 100.w,
-                height: 100.h,
-                child: CustomPaint(
-                  painter: _CircularProgressPainter(
-                    progress: accuracy,
-                    progressColor: accuracyColor,
-                    backgroundColor: secondaryColor.withValues(alpha: 0.2),
-                    strokeWidth: 8.w,
+    return Hero(
+      tag: 'history_item_${session.id}',
+      child: Container(
+        padding: EdgeInsets.all(20.w),
+        decoration: BoxDecoration(
+          color: cardColor,
+          borderRadius: BorderRadius.circular(16.r),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withValues(alpha: 0.05),
+              blurRadius: 10,
+              offset: const Offset(0, 4),
+            ),
+          ],
+        ),
+        child: Column(
+          children: [
+            Row(
+              children: [
+                Icon(Icons.access_time, size: 16.sp, color: secondaryColor),
+                SizedBox(width: 6.w),
+                Text(
+                  formattedTime,
+                  style: TextStyle(
+                    fontSize: 13.sp,
+                    color: secondaryColor,
+                    decoration: TextDecoration.none,
                   ),
-                  child: Center(
-                    child: Column(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        Text(
-                          '${session.accuracy}%',
-                          style: TextStyle(
-                            fontSize: 24.sp,
-                            fontWeight: FontWeight.bold,
-                            color: accuracyColor,
+                ),
+              ],
+            ),
+            SizedBox(height: 20.h),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+              children: [
+                SizedBox(
+                  width: 100.w,
+                  height: 100.h,
+                  child: CustomPaint(
+                    painter: _CircularProgressPainter(
+                      progress: accuracy,
+                      progressColor: accuracyColor,
+                      backgroundColor: secondaryColor.withValues(alpha: 0.2),
+                      strokeWidth: 8.w,
+                    ),
+                    child: Center(
+                      child: Column(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Text(
+                            '${session.accuracy}%',
+                            style: TextStyle(
+                              fontSize: 24.sp,
+                              fontWeight: FontWeight.bold,
+                              color: accuracyColor,
+                              decoration: TextDecoration.none,
+                            ),
                           ),
-                        ),
-                        Text(
-                          '正确率',
-                          style: TextStyle(
-                            fontSize: 10.sp,
-                            color: secondaryColor,
+                          Text(
+                            '正确率',
+                            style: TextStyle(
+                              fontSize: 10.sp,
+                              color: secondaryColor,
+                              decoration: TextDecoration.none,
+                            ),
                           ),
-                        ),
-                      ],
+                        ],
+                      ),
                     ),
                   ),
                 ),
-              ),
-              Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  _buildStatRow(
-                    '✓ 答对',
-                    '${session.correctCount}',
-                    const Color(0xFF4EA05E),
-                    textColor,
-                  ),
-                  SizedBox(height: 8.h),
-                  _buildStatRow(
-                    '✗ 答错',
-                    '${session.totalQuestions - session.correctCount}',
-                    const Color(0xFFD95656),
-                    textColor,
-                  ),
-                  SizedBox(height: 8.h),
-                  _buildStatRow(
-                    '总题数',
-                    '${session.totalQuestions}',
-                    secondaryColor,
-                    textColor,
-                  ),
-                ],
-              ),
-            ],
-          ),
-        ],
+                Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    _buildStatRow(
+                      '✓ 答对',
+                      '${session.correctCount}',
+                      const Color(0xFF4EA05E),
+                      textColor,
+                    ),
+                    SizedBox(height: 8.h),
+                    _buildStatRow(
+                      '✗ 答错',
+                      '${session.totalQuestions - session.correctCount}',
+                      const Color(0xFFD95656),
+                      textColor,
+                    ),
+                    SizedBox(height: 8.h),
+                    _buildStatRow(
+                      '总题数',
+                      '${session.totalQuestions}',
+                      secondaryColor,
+                      textColor,
+                    ),
+                  ],
+                ),
+              ],
+            ),
+          ],
+        ),
       ),
     );
   }

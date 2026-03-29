@@ -1,15 +1,50 @@
 import 'package:flutter/material.dart';
+import 'dart:math' as math;
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:go_router/go_router.dart';
+import 'package:confetti/confetti.dart';
 import 'practice_provider.dart';
+import '../../../core/utils/haptic_util.dart';
 
 /// 练习结果页面
-class ResultScreen extends ConsumerWidget {
+class ResultScreen extends ConsumerStatefulWidget {
   const ResultScreen({super.key});
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  ConsumerState<ResultScreen> createState() => _ResultScreenState();
+}
+
+class _ResultScreenState extends ConsumerState<ResultScreen> {
+  late ConfettiController _confettiController;
+
+  @override
+  void initState() {
+    super.initState();
+    _confettiController = ConfettiController(duration: const Duration(seconds: 3));
+    
+    // 页面加载后延迟触发庆祝
+    Future.delayed(const Duration(milliseconds: 500), () {
+      final state = ref.read(practiceControllerProvider);
+      final totalQuestions = state.questions.length;
+      final correctCount = state.results.values.where((v) => v).length;
+      final accuracy = totalQuestions > 0 ? (correctCount / totalQuestions * 100).toInt() : 0;
+      
+      if (accuracy >= 80) {
+        _confettiController.play();
+        HapticUtil.success();
+      }
+    });
+  }
+
+  @override
+  void dispose() {
+    _confettiController.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
     final state = ref.watch(practiceControllerProvider);
 
     // 计算统计数据
@@ -22,50 +57,108 @@ class ResultScreen extends ConsumerWidget {
 
     return Scaffold(
       backgroundColor: const Color(0xFFF7F7F5),
-      body: SafeArea(
-        child: Padding(
-          padding: EdgeInsets.symmetric(horizontal: 24.w),
-          child: Column(
-            children: [
-              SizedBox(height: 48.h),
-              // 成功图标
-              _buildResultIcon(accuracy),
-              SizedBox(height: 24.h),
-              // 标题
-              Text(
-                _getResultTitle(accuracy),
-                style: TextStyle(
-                  fontSize: 28.sp,
-                  fontWeight: FontWeight.bold,
-                  color: const Color(0xFF37352F),
-                ),
+      body: Stack(
+        children: [
+          SafeArea(
+            child: Padding(
+              padding: EdgeInsets.symmetric(horizontal: 24.w),
+              child: Column(
+                children: [
+                  SizedBox(height: 48.h),
+                  // 成功图标
+                  TweenAnimationBuilder<double>(
+                    tween: Tween(begin: 0.0, end: 1.0),
+                    duration: const Duration(seconds: 1),
+                    curve: Curves.elasticOut,
+                    builder: (context, value, child) {
+                      return Transform.scale(scale: value, child: child);
+                    },
+                    child: _buildResultIcon(accuracy),
+                  ),
+                  SizedBox(height: 24.h),
+                  // 标题
+                  Text(
+                    _getResultTitle(accuracy),
+                    style: TextStyle(
+                      fontSize: 28.sp,
+                      fontWeight: FontWeight.bold,
+                      color: const Color(0xFF37352F),
+                    ),
+                  ),
+                  SizedBox(height: 8.h),
+                  Text(
+                    _getResultSubtitle(accuracy),
+                    style: TextStyle(
+                      fontSize: 14.sp,
+                      color: const Color(0xFF9B9A97),
+                    ),
+                    textAlign: TextAlign.center,
+                  ),
+                  SizedBox(height: 48.h),
+                  // 统计卡片
+                  _buildStatsCard(
+                    totalQuestions,
+                    correctCount,
+                    incorrectCount,
+                    accuracy,
+                  ),
+                  const Spacer(),
+                  // 操作按钮
+                  _buildActionButtons(context, ref),
+                  SizedBox(height: 32.h),
+                ],
               ),
-              SizedBox(height: 8.h),
-              Text(
-                _getResultSubtitle(accuracy),
-                style: TextStyle(
-                  fontSize: 14.sp,
-                  color: const Color(0xFF9B9A97),
-                ),
-                textAlign: TextAlign.center,
-              ),
-              SizedBox(height: 48.h),
-              // 统计卡片
-              _buildStatsCard(
-                totalQuestions,
-                correctCount,
-                incorrectCount,
-                accuracy,
-              ),
-              const Spacer(),
-              // 操作按钮
-              _buildActionButtons(context, ref),
-              SizedBox(height: 32.h),
-            ],
+            ),
           ),
-        ),
+          // 顶部对齐的纸屑
+          Align(
+            alignment: Alignment.topCenter,
+            child: ConfettiWidget(
+              confettiController: _confettiController,
+              blastDirectionality: BlastDirectionality.explosive,
+              shouldLoop: false,
+              colors: const [
+                Colors.green,
+                Colors.blue,
+                Colors.pink,
+                Colors.orange,
+                Colors.purple,
+                Colors.yellow,
+              ],
+              createParticlePath: _drawStar,
+            ),
+          ),
+        ],
       ),
     );
+  }
+
+  /// 绘制星形粒子
+  Path _drawStar(Size size) {
+    double degToRad(double deg) => deg * (3.1415926535897932 / 180.0);
+
+    const numberOfPoints = 5;
+    final halfWidth = size.width / 2;
+    final externalRadius = halfWidth;
+    final internalRadius = halfWidth / 2.5;
+    final degreesPerStep = degToRad(360 / numberOfPoints);
+    final halfDegreesPerStep = degreesPerStep / 2;
+    final path = Path();
+    final fullAngle = degToRad(360);
+    path.moveTo(size.width, halfWidth);
+
+    for (double step = 0; step < fullAngle; step += degreesPerStep) {
+      path.lineTo(
+        halfWidth + externalRadius * math.cos(step),
+        halfWidth + externalRadius * math.sin(step),
+      );
+      path.lineTo(
+        halfWidth + internalRadius * math.cos(step + halfDegreesPerStep),
+        halfWidth + internalRadius * math.sin(step + halfDegreesPerStep),
+      );
+    }
+    path.close();
+    return path;
   }
 
   Widget _buildResultIcon(int accuracy) {

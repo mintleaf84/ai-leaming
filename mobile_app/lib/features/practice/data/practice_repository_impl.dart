@@ -4,6 +4,7 @@ import '../../../shared/datasources/api_client.dart';
 import '../domain/practice_repository.dart';
 import '../domain/question.dart';
 import '../domain/practice_session.dart';
+import '../domain/first_principles_response.dart';
 
 final practiceRepositoryProvider = Provider<PracticeRepository>((ref) {
   final dio = ref.watch(dioProvider);
@@ -55,5 +56,16 @@ class PracticeRepositoryImpl implements PracticeRepository {
       'duration': duration,
     });
     return response;
+  }
+
+  @override
+  Future<FirstPrinciplesResponse> analyzeFirstPrinciples({
+    required String questionId,
+    required String content,
+  }) async {
+    return await _apiClient.analyzeFirstPrinciples({
+      'questionId': questionId,
+      'content': content,
+    });
   }
 }

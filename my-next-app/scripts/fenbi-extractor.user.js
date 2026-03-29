@@ -51,22 +51,39 @@
         if (isUpdated) updateUI();
     }
 
-    // --- 核心武器 1：劫持 XMLHttpRequest ---
-    const OriginXHR = window.XMLHttpRequest;
-    window.XMLHttpRequest = function() {
-        const xhr = new OriginXHR();
-        xhr.addEventListener('load', function() {
-            if (xhr.responseURL && xhr.responseURL.includes('tiku.fenbi.com')) {
-                let responseText = '';
-                if (xhr.responseType === '' || xhr.responseType === 'text' || xhr.responseType === 'json') {
-                    responseText = xhr.responseType === 'json' ? JSON.stringify(xhr.response) : xhr.responseText;
-                    processInterceptedData(xhr.responseURL, responseText);
-                }
-            }
-        });
-        return xhr;
+    // --- 核心武器 1：劫持 XMLHttpRequest（原型链劫持，最稳健模式） ---
+    const _origOpen = XMLHttpRequest.prototype.open;
+    const _origSend = XMLHttpRequest.prototype.send;
+
+    XMLHttpRequest.prototype.open = function(method, url) {
+        this._interceptedUrl = url; // 记住请求 URL
+        return _origOpen.apply(this, arguments);
     };
-    Object.assign(window.XMLHttpRequest, OriginXHR);
+
+    XMLHttpRequest.prototype.send = function() {
+        const xhr = this;
+        const url = xhr._interceptedUrl || '';
+
+        if (typeof url === 'string' && url.includes('tiku.fenbi.com')) {
+            xhr.addEventListener('load', function() {
+                try {
+                    let responseText = '';
+                    if (xhr.responseType === '' || xhr.responseType === 'text') {
+                        responseText = xhr.responseText;
+                    } else if (xhr.responseType === 'json') {
+                        responseText = JSON.stringify(xhr.response);
+                    }
+                    if (responseText) {
+                        processInterceptedData(url, responseText);
+                    }
+                } catch(e) {
+                    console.error('[嗅探] XHR load 处理异常:', e);
+                }
+            });
+        }
+
+        return _origSend.apply(this, arguments);
+    };
 
     // --- 核心武器 2：劫持 Fetch ---
     const originFetch = window.fetch;
@@ -213,6 +230,16 @@
         document.body.appendChild(panel);
 
         document.getElementById('btn-push-server').onclick = () => pushToServer('btn-push-server');
+
+        // 输入框失焦时自动保存配置（一劳永逸，再也不用重复填写）
+        document.getElementById('fb-server-url').addEventListener('change', function() {
+            GM_setValue('fb_server_url', this.value.trim());
+            console.log('💾 服务器地址已保存');
+        });
+        document.getElementById('fb-api-token').addEventListener('change', function() {
+            GM_setValue('fb_api_token', this.value.trim());
+            console.log('💾 通信凭证已保存');
+        });
     }
 
     // 更新面板状态灯

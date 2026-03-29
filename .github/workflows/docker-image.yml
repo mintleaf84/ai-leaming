@@ -29,12 +29,14 @@ jobs:
         run: |
           echo "REPO=${GITHUB_REPOSITORY,,}" >> $GITHUB_ENV
 
-      # 使用原生 docker build，--progress=plain 强制输出完整日志
-      - name: Build Docker image
-        run: |
-          cd my-next-app
-          DOCKER_BUILDKIT=1 docker build --progress=plain --no-cache -t ghcr.io/${{ env.REPO }}:latest .
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
 
-      # 推送到 GHCR
-      - name: Push Docker image
-        run: docker push ghcr.io/${{ env.REPO }}:latest
+      - name: Build and push Docker image
+        uses: docker/build-push-action@v5
+        with:
+          context: ./my-next-app
+          push: true
+          tags: ghcr.io/${{ env.REPO }}:latest
+          cache-from: type=gha
+          cache-to: type=gha,mode=max

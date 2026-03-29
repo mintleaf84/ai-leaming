@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useCallback } from 'react';
+import React, { useState, useCallback, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import {
     Upload,
@@ -9,13 +9,14 @@ import {
     CheckCircle2,
     AlertCircle,
     Loader2,
+    Copy,
     FileText,
     Target,
     Percent,
     BarChart3
 } from 'lucide-react';
 import { toast } from 'sonner';
-import { importFenbiDataAction, previewFenbiDataAction } from '@/server/actions/import';
+import { importFenbiDataAction, previewFenbiDataAction, getImportTokenAction } from '@/server/actions/import';
 
 interface ImportFenbiModalProps {
     isOpen: boolean;
@@ -38,6 +39,24 @@ export function ImportFenbiModal({ isOpen, onClose, onSuccess }: ImportFenbiModa
         sampleQuestions: Array<{ content: string; type: string; tags: string[] }>;
     } | null>(null);
     const [error, setError] = useState<string | null>(null);
+    const [importToken, setImportToken] = useState<string>('');
+
+    // 获取导入 Token
+    useEffect(() => {
+        if (isOpen) {
+            getImportTokenAction().then(token => {
+                if (token) setImportToken(token);
+            });
+        }
+    }, [isOpen]);
+
+    // 复制 Token
+    const handleCopyToken = useCallback(() => {
+        if (!importToken) return;
+        navigator.clipboard.writeText(importToken).then(() => {
+            toast.success('已复制通信凭证，请前往油猴脚本填写！');
+        });
+    }, [importToken]);
 
     // 验证并预览
     const handleValidate = useCallback(async () => {
@@ -131,9 +150,28 @@ export function ImportFenbiModal({ isOpen, onClose, onSuccess }: ImportFenbiModa
 
                 {/* 内容 */}
                 <div className="flex-1 overflow-y-auto p-6 space-y-6">
+                    {/* 一键导入凭证 (新功能) */}
+                    {importToken && (
+                        <div className="bg-primary/5 border border-primary/20 rounded-lg p-4">
+                            <div className="flex items-center justify-between mb-2">
+                                <p className="font-medium text-primary">⚡ 一键推流导入配置</p>
+                                <Button size="sm" variant="outline" className="h-7 text-xs" onClick={handleCopyToken}>
+                                    <Copy className="w-3 h-3 mr-1" /> 复制通信凭证
+                                </Button>
+                            </div>
+                            <p className="text-xs text-muted-foreground mb-2">
+                                将下方通讯凭证配置到“粉笔数据提取器 3.0”中，即可实现免粘贴的直接推送入库，再也无需往返复制！
+                            </p>
+                            <div className="bg-muted p-2 rounded text-xs font-mono text-muted-foreground break-all max-h-16 overflow-hidden relative">
+                                {importToken}
+                                <div className="absolute inset-0 bg-gradient-to-b from-transparent to-muted" />
+                            </div>
+                        </div>
+                    )}
+
                     {/* 说明 */}
                     <div className="bg-blue-500/5 border border-blue-500/20 rounded-lg p-4 text-sm">
-                        <p className="font-medium text-blue-600 dark:text-blue-400 mb-2">📋 数据获取方式</p>
+                        <p className="font-medium text-blue-600 dark:text-blue-400 mb-2">📋 手动数据获取方式（备用）</p>
                         <ol className="list-decimal list-inside space-y-1 text-muted-foreground">
                             <li>在粉笔 APP 中完成练习</li>
                             <li>通过抓包工具获取以下 API 响应：</li>

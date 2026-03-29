@@ -5,6 +5,8 @@ import { requireUser } from '@/lib/auth/auth';
 import { parseFenbiData, validateFenbiJson, ParsedQuestion, ParsedRecord } from '@/lib/import/fenbi-parser';
 import { masteryService } from '@/lib/services/mastery';
 import { sanitizeHtml } from '@/lib/utils/security';
+import { cookies } from 'next/headers';
+import { COOKIE_NAME } from '@/lib/auth/auth-edge';
 
 /**
  * 导入结果
@@ -16,6 +18,14 @@ export interface ImportResult {
     newQuestionsCount: number;
     skippedQuestionsCount: number;
     message: string;
+}
+
+/**
+ * 获取当前用户的导入鉴权 Token
+ */
+export async function getImportTokenAction(): Promise<string | null> {
+    const sessionCookie = (await cookies()).get(COOKIE_NAME)?.value;
+    return sessionCookie || null;
 }
 
 /**
@@ -150,7 +160,7 @@ export async function importFenbiDataAction(
                         safeDimension,
                         typeMap[question.type] || 'single',
                         question.externalId,
-                        'fenbi_import', // 明确来源
+                        question.source || 'fenbi_import', // 取题目真实的来源，无则降级为fenbi_import
                         question.stats?.correctRatio ?? null,
                         question.stats?.mostWrongAnswer ?? null,
                         question.material ? sanitizeHtml(question.material) : null,

@@ -79,7 +79,7 @@ app.openapi(createAnnotationDef, async (c) => {
         VALUES (?, ?, ?, ?, ?, ?)
     `).run(user.id, questionId, startOffset, endOffset, tag, color || null)
 
-    return c.json({ id: result.lastInsertRowid, message: '标注已保存' })
+    return c.json({ id: Number(result.lastInsertRowid), message: '标注已保存' })
 })
 
 /** DELETE /api/annotations */

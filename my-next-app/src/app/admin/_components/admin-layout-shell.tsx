@@ -31,12 +31,13 @@ export function AdminLayoutShell({
     const menuItems = [
         { href: '/admin', label: '概览', icon: LayoutDashboard },
         { href: '/admin/users', label: '用户管理', icon: Users },
+        { href: '/admin/activity', label: '用户行为', icon: Activity }, // 使用 Activity 更有动感
         { href: '/admin/plans', label: '套餐管理', icon: CreditCard },
         { href: '/admin/questions', label: '题库管理', icon: BookOpen },
         { href: '/admin/ai', label: 'AI 与提示词', icon: Cpu },
-        { href: '/admin/system', label: '系统运维', icon: Activity },
+        { href: '/admin/system', label: '系统运维', icon: Settings }, // 修改图标避免重复
         { href: '/admin/api-keys', label: 'API Key 管理', icon: Key },
-        { href: '/admin/logs', label: '操作日志', icon: Settings },
+        { href: '/admin/logs', label: '操作日志', icon: LayoutDashboard }, // 修改图标
     ];
 
     const handleLogout = async () => {

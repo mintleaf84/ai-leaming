@@ -3,7 +3,7 @@
 import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { Highlighter, Underline, Waves, Copy } from 'lucide-react';
-import { fetchJson } from '@/lib/utils/api-client';
+import { fetchJson, apiClient } from '@/lib/utils/api-client';
 
 interface Annotation {
     id?: number;
@@ -114,38 +114,40 @@ export function AnnotatableText({ text, questionId, className }: AnnotatableText
 
         // 保存到服务器
         try {
-            const res = await fetch('/api/annotations', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({
-                    questionId,
-                    startOffset: selection.start,
-                    endOffset: selection.end,
-                    tag,
-                    color: TAG_STYLES[tag].color,
-                }),
+            const res = await apiClient.post('/api/annotations', {
+                questionId,
+                startOffset: selection.start,
+                endOffset: selection.end,
+                tag,
+                color: TAG_STYLES[tag].color,
             });
-            const data = await res.json();
+            const data = await res.json() as { id: number };
+            
             newAnnotation.id = data.id;
+            setAnnotations(prev => [...prev, newAnnotation]);
+            
+            // 乐观更新后刷新缓存
+            queryClient.invalidateQueries({ queryKey: ['annotations', questionId] });
         } catch (error) {
             console.error('保存标注失败:', error);
         }
 
-        setAnnotations(prev => [...prev, newAnnotation]);
         setSelection(null);
         setToolbarPosition(null);
         window.getSelection()?.removeAllRanges();
-    }, [selection, questionId]);
+    }, [selection, questionId, queryClient]);
 
     // 删除标注
     const deleteAnnotation = useCallback(async (id: number) => {
         try {
-            await fetch(`/api/annotations?id=${id}`, { method: 'DELETE' });
+            await apiClient.delete(`/api/annotations?id=${id}`);
             setAnnotations(prev => prev.filter(a => a.id !== id));
+            // 关键：务必刷新 React Query 缓存，否则重新进入页面或触发更新时，旧数据会重新填充 state
+            queryClient.invalidateQueries({ queryKey: ['annotations', questionId] });
         } catch (error) {
             console.error('删除标注失败:', error);
         }
-    }, []);
+    }, [queryClient, questionId]);
 
     // 点击外部关闭工具栏
     useEffect(() => {
@@ -172,6 +174,16 @@ export function AnnotatableText({ text, questionId, className }: AnnotatableText
         let lastEnd = 0;
 
         sorted.forEach((ann, idx) => {
+            // 处理重叠情况：如果当前标注的开始位置早于上一个标注的结束位置，说明重叠
+            // 我们目前简单处理：跳过重叠部分的绘制，优先保证文本在 UI 上不重复
+            if (ann.start < lastEnd) {
+                // 如果这个标注完全被上一个覆盖了，直接跳过
+                if (ann.end <= lastEnd) return;
+                
+                // 如果只是部分重叠，目前暂时跳过整个标注，优先保证文本正确
+                return; 
+            }
+
             // 添加未标注部分
             if (ann.start > lastEnd) {
                 parts.push(
@@ -185,7 +197,11 @@ export function AnnotatableText({ text, questionId, className }: AnnotatableText
                 <span
                     key={`ann-${ann.id || idx}`}
                     className={`${style.className} cursor-pointer group relative`}
-                    onClick={() => ann.id && deleteAnnotation(ann.id)}
+                    onClick={(e) => {
+                        e.stopPropagation(); // 防止触发父容器的事件
+                        e.preventDefault();
+                        if (ann.id) deleteAnnotation(ann.id);
+                    }}
                     title="点击删除标注"
                 >
                     {text.slice(ann.start, ann.end)}

@@ -119,12 +119,17 @@ export function useWrongBookController() {
         }
     }, [selectedIds.size, questions]);
 
-    // 开始练习
-    const startPractice = useCallback(async (ids?: string[]) => {
-        const practiceIds = ids || Array.from(selectedIds);
+    // 开始练习（支持 limit 控制题量）
+    const startPractice = useCallback(async (ids?: string[], limit?: number) => {
+        let practiceIds = ids || Array.from(selectedIds);
         if (practiceIds.length === 0) {
             toast.error('请先选择要练习的错题');
             return;
+        }
+
+        // 按 limit 截取题目数量
+        if (limit && limit < practiceIds.length) {
+            practiceIds = practiceIds.slice(0, limit);
         }
 
         setIsCreating(true);

@@ -19,6 +19,7 @@ import { useWrongBookController } from './hooks/use-wrong-book-controller';
 import { WrongQuestionCard } from './components/WrongQuestionCard';
 import { TagTreeView } from './components/TagTreeView';
 import { WrongBookSkeleton } from './components/WrongBookSkeleton';
+import { QuestionCountPicker } from './components/QuestionCountPicker';
 
 export default function WrongBookPage() {
     const {
@@ -96,17 +97,22 @@ export default function WrongBookPage() {
                             </div>
                         </div>
 
-                        {/* 智能随机练习入口 */}
-                        <Button
-                            onClick={() => startRandomPractice(15)}
-                            className="w-full h-14 text-lg bg-red-600 hover:bg-red-700 shadow-lg shadow-red-500/20"
+                        {/* 智能随机练习入口 - 带题量选择 */}
+                        <QuestionCountPicker
+                            totalCount={stats.total}
+                            onConfirm={(count) => startRandomPractice(count)}
                             disabled={isRandomLoading}
                         >
-                            <Play className={`w-5 h-5 mr-2 ${isRandomLoading ? 'animate-pulse' : 'fill-current'}`} />
-                            {isRandomLoading ? '智能抽题中...' : '智能随机复习 (15 题)'}
-                        </Button>
+                            <Button
+                                className="w-full h-14 text-lg bg-red-600 hover:bg-red-700 shadow-lg shadow-red-500/20"
+                                disabled={isRandomLoading}
+                            >
+                                <Play className={`w-5 h-5 mr-2 ${isRandomLoading ? 'animate-pulse' : 'fill-current'}`} />
+                                {isRandomLoading ? '智能抽题中...' : '智能随机复习'}
+                            </Button>
+                        </QuestionCountPicker>
                         <p className="text-center text-[10px] text-muted-foreground mt-2 opacity-70">
-                            系统将综合“错误频次”与“遗忘时长”为你挑选最急需复习的题目
+                            点击后选择题量，系统将综合“错误频次”与“遗忘时长”为你挑选最急需复习的题目
                         </p>
                     </div>
                 )}
@@ -260,15 +266,20 @@ export default function WrongBookPage() {
             {questions.length > 0 && viewMode === 'list' && selectedIds.size > 0 && (
                 <div className="fixed bottom-0 left-0 right-0 p-4 bg-background/80 backdrop-blur-sm border-t">
                     <div className="container mx-auto max-w-4xl">
-                        <Button
-                            size="lg"
-                            className="w-full h-14 text-lg"
-                            onClick={() => startPractice()}
+                        <QuestionCountPicker
+                            totalCount={selectedIds.size}
+                            onConfirm={(count) => startPractice(undefined, count)}
                             disabled={isCreating}
                         >
-                            {isCreating ? '正在创建...' : `开始练习选中的 ${selectedIds.size} 道错题`}
-                            <Play className="w-5 h-5 ml-2" />
-                        </Button>
+                            <Button
+                                size="lg"
+                                className="w-full h-14 text-lg"
+                                disabled={isCreating}
+                            >
+                                {isCreating ? '正在创建...' : `开始练习选中的 ${selectedIds.size} 道错题`}
+                                <Play className="w-5 h-5 ml-2" />
+                            </Button>
+                        </QuestionCountPicker>
                     </div>
                 </div>
             )}

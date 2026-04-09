@@ -34,14 +34,14 @@ interface SidebarProps {
 }
 
 // --- Helper Components Moved Outside to Avoid Remounting ---
-const NavGroup = ({ 
-    title, 
-    items, 
-    pathname 
-}: { 
-    title?: string, 
+const NavGroup = ({
+    title,
+    items,
+    pathname
+}: {
+    title?: string,
     items: { name: string, href: string, icon: any }[],
-    pathname: string 
+    pathname: string
 }) => (
     <div className="mb-6">
         {title && (

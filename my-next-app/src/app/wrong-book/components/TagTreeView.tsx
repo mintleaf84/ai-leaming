@@ -5,6 +5,7 @@ import { ChevronDown, ChevronRight, Play } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { WrongQuestionsByTag, WrongQuestionItem } from '@/server/actions/wrong-questions';
+import { QuestionCountPicker } from './QuestionCountPicker';
 
 interface TagTreeNode {
     name: string;          // 当前节点名称
@@ -16,7 +17,7 @@ interface TagTreeNode {
 
 interface TagTreeViewProps {
     groupedQuestions: WrongQuestionsByTag[];
-    onStartPractice: (questionIds: string[]) => void;
+    onStartPractice: (questionIds: string[], limit?: number) => void;
 }
 
 /**
@@ -76,7 +77,7 @@ function collectQuestionIds(node: TagTreeNode): string[] {
 interface TreeNodeProps {
     node: TagTreeNode;
     level: number;
-    onStartPractice: (questionIds: string[]) => void;
+    onStartPractice: (questionIds: string[], limit?: number) => void;
 }
 
 function TreeNode({ node, level, onStartPractice }: TreeNodeProps) {
@@ -115,17 +116,19 @@ function TreeNode({ node, level, onStartPractice }: TreeNodeProps) {
                     </Badge>
                 </div>
 
-                {/* 练习按钮 */}
-                <Button
-                    size="sm"
-                    variant="ghost"
-                    onClick={(e) => {
-                        e.stopPropagation();
-                        onStartPractice(allQuestionIds);
-                    }}
+                {/* 练习按钮 - 带题量选择 */}
+                <QuestionCountPicker
+                    totalCount={allQuestionIds.length}
+                    onConfirm={(count) => onStartPractice(allQuestionIds, count)}
                 >
-                    <Play className="w-4 h-4" />
-                </Button>
+                    <Button
+                        size="sm"
+                        variant="ghost"
+                        onClick={(e) => e.stopPropagation()}
+                    >
+                        <Play className="w-4 h-4" />
+                    </Button>
+                </QuestionCountPicker>
             </div>
 
             {/* 子节点 */}

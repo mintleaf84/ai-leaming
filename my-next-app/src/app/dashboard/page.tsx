@@ -2,7 +2,7 @@ import Link from "next/link";
 import {
   ArrowRight, Brain, BarChart3, Target, Zap, AlertCircle,
   RotateCcw, FileCheck, Shuffle, Flame, Eye, BookOpen,
-  CheckCircle2, Book, GraduationCap, PlayCircle, History
+  CheckCircle2, Book, GraduationCap, PlayCircle, History, Sparkles
 } from "lucide-react";
 import { redirect } from "next/navigation";
 import { getUserStatsAction } from "@/server/actions/stats";
@@ -216,6 +216,34 @@ export default async function Home() {
               </Link>
             ))}
           </div>
+        </div>
+
+        {/* Cultivation Entry (Final Section) */}
+        <div className="pt-8 pb-12">
+          <Link href="/cultivation">
+            <div className="group relative overflow-hidden rounded-[32px] bg-zinc-950 border border-emerald-500/20 p-8 flex flex-col md:flex-row items-center justify-between gap-6 cursor-pointer hover:border-emerald-500/40 transition-all shadow-lg hover:shadow-emerald-500/10">
+              {/* Background Glow */}
+              <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,rgba(16,185,129,0.08)_0%,transparent_100%)] opacity-0 group-hover:opacity-100 transition-opacity" />
+              
+              <div className="flex items-center gap-6 relative z-10">
+                <div className="w-16 h-16 rounded-2xl bg-emerald-500/10 flex items-center justify-center text-emerald-500 group-hover:scale-110 transition-transform">
+                  <Sparkles className="w-8 h-8" />
+                </div>
+                <div className="text-center md:text-left">
+                  <h3 className="text-xl font-serif font-bold text-emerald-500 tracking-tight mb-1">
+                    进入修仙世界
+                  </h3>
+                  <p className="text-zinc-500 text-sm italic">
+                    “炼魂塑玉，证道成仙。查看您的修习境界。”
+                  </p>
+                </div>
+              </div>
+
+              <Button variant="outline" className="relative z-10 rounded-full border-emerald-500/30 text-emerald-500 hover:bg-emerald-500/10 hover:text-emerald-400 px-8 group-hover:px-10 transition-all">
+                开启修行 <ArrowRight className="w-4 h-4 ml-2" />
+              </Button>
+            </div>
+          </Link>
         </div>
 
       </div>

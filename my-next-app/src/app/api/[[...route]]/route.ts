@@ -20,7 +20,7 @@ app.use('*', cors({
 
     if (process.env.NODE_ENV === 'development') return origin; // 开发模式放行以便调试
     if (allowedOrigins.includes(origin)) return origin;
-    
+
     return allowedOrigins[0]; // 默认返回第一个受信地址
   },
   credentials: true,

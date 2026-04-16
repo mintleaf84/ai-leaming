@@ -7,8 +7,10 @@ describe('sanitizeHtml（HTML 清洗）', () => {
     });
 
     it('null/undefined 应返回空字符串', () => {
-        expect(sanitizeHtml(null as any)).toBe('');
-        expect(sanitizeHtml(undefined as any)).toBe('');
+        // @ts-expect-error 故意测试运行时传入 null 的边界行为
+        expect(sanitizeHtml(null)).toBe('');
+        // @ts-expect-error 故意测试运行时传入 undefined 的边界行为
+        expect(sanitizeHtml(undefined)).toBe('');
     });
 
     it('应移除 <script> 标签及其内容', () => {

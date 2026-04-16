@@ -1,13 +1,43 @@
 // @vitest-environment node
-import { describe, it, expect, vi, beforeEach } from 'vitest';
+import { describe, it, expect, vi } from 'vitest';
 
 // Mock 服务端模块（含 'use server' 指令和 db 依赖）
 vi.mock('@/server/actions/history', () => ({}));
 
 import { formatSessionToMarkdown, generateExportFilename } from '../export-markdown';
 
+// 定义测试专用的会话详情类型（与 SessionDetail 结构保持一致）
+type TestLogItem = {
+    questionId: number;
+    questionContent: string;
+    options: string[];
+    correctAnswer: string;
+    userAnswer: string;
+    isCorrect: boolean;
+    duration: number;
+    tags: string[];
+    source: string;
+    explanation: string;
+    correctRatio: number | null;
+    mostWrongAnswer: string | null;
+    reviewData?: unknown;
+};
+
+type TestSessionDetail = {
+    session: {
+        id: string;
+        totalQuestions: number;
+        correctCount: number;
+        reviewCount: number;
+        createdAt: string;
+        accuracy: number;
+        practiceMode?: string;
+    };
+    logs: TestLogItem[];
+};
+
 // 构造测试用 SessionDetail 数据
-const mockSessionDetail = {
+const mockSessionDetail: TestSessionDetail = {
     session: {
         id: 'sess-001',
         totalQuestions: 3,
@@ -77,7 +107,7 @@ describe('generateExportFilename（导出文件名生成）', () => {
 
 describe('formatSessionToMarkdown（会话 Markdown 格式化）', () => {
     it('应生成包含会话概览的 Markdown', () => {
-        const result = formatSessionToMarkdown(mockSessionDetail as any);
+        const result = formatSessionToMarkdown(mockSessionDetail as Parameters<typeof formatSessionToMarkdown>[0]);
         expect(result).toContain('## 📊 练习概览');
         expect(result).toContain('题目总数');
         expect(result).toContain('3 题');
@@ -85,52 +115,52 @@ describe('formatSessionToMarkdown（会话 Markdown 格式化）', () => {
     });
 
     it('应包含题目详情章节', () => {
-        const result = formatSessionToMarkdown(mockSessionDetail as any);
+        const result = formatSessionToMarkdown(mockSessionDetail as Parameters<typeof formatSessionToMarkdown>[0]);
         expect(result).toContain('## 📝 题目详情');
         expect(result).toContain('第 1 题');
         expect(result).toContain('第 2 题');
     });
 
     it('答对的题目应标记 ✅', () => {
-        const result = formatSessionToMarkdown(mockSessionDetail as any);
+        const result = formatSessionToMarkdown(mockSessionDetail as Parameters<typeof formatSessionToMarkdown>[0]);
         expect(result).toContain('✅ 正确');
     });
 
     it('答错的题目应标记 ❌', () => {
-        const result = formatSessionToMarkdown(mockSessionDetail as any);
+        const result = formatSessionToMarkdown(mockSessionDetail as Parameters<typeof formatSessionToMarkdown>[0]);
         expect(result).toContain('❌ 错误');
     });
 
     it('应包含题目内容', () => {
-        const result = formatSessionToMarkdown(mockSessionDetail as any);
+        const result = formatSessionToMarkdown(mockSessionDetail as Parameters<typeof formatSessionToMarkdown>[0]);
         expect(result).toContain('以下哪项是正确的');
         expect(result).toContain('下列说法错误的是');
     });
 
     it('应包含解析内容', () => {
-        const result = formatSessionToMarkdown(mockSessionDetail as any);
+        const result = formatSessionToMarkdown(mockSessionDetail as Parameters<typeof formatSessionToMarkdown>[0]);
         expect(result).toContain('选项一是正确的');
     });
 
     it('标签应以代码块格式输出', () => {
-        const result = formatSessionToMarkdown(mockSessionDetail as any);
+        const result = formatSessionToMarkdown(mockSessionDetail as Parameters<typeof formatSessionToMarkdown>[0]);
         expect(result).toContain('`知识点A`');
         expect(result).toContain('`知识点B`');
     });
 
     it('有 AI 分析报告时应包含分析章节', () => {
-        const result = formatSessionToMarkdown(mockSessionDetail as any, '这是 AI 分析内容');
+        const result = formatSessionToMarkdown(mockSessionDetail as Parameters<typeof formatSessionToMarkdown>[0], '这是 AI 分析内容');
         expect(result).toContain('## 🤖 AI 深度分析');
         expect(result).toContain('这是 AI 分析内容');
     });
 
     it('无 AI 分析报告时不应包含分析章节', () => {
-        const result = formatSessionToMarkdown(mockSessionDetail as any);
+        const result = formatSessionToMarkdown(mockSessionDetail as Parameters<typeof formatSessionToMarkdown>[0]);
         expect(result).not.toContain('## 🤖 AI 深度分析');
     });
 
     it('应包含导出时间页脚', () => {
-        const result = formatSessionToMarkdown(mockSessionDetail as any);
+        const result = formatSessionToMarkdown(mockSessionDetail as Parameters<typeof formatSessionToMarkdown>[0]);
         expect(result).toContain('导出时间');
     });
 });

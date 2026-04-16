@@ -12,7 +12,8 @@ describe('cn（className 合并）', () => {
     });
 
     it('应过滤 falsy 值（undefined、false、null）', () => {
-        expect(cn('foo', undefined, false, null as any, 'bar')).toBe('foo bar');
+        // @ts-expect-error 故意测试运行时传入 null 的边界行为
+        expect(cn('foo', undefined, false, null, 'bar')).toBe('foo bar');
     });
 
     it('应支持条件类名对象语法', () => {

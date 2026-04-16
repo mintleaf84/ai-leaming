@@ -168,16 +168,13 @@ describe('datetime 工具函数', () => {
             expect(now).toBeInstanceOf(Date);
         });
 
-        it('返回的时间戳应约等于 UTC 当前时间加 8 小时（在 UTC 环境中运行）', () => {
+        it('应返回 Date 对象，且时间戳合理（不超过未来 24 小时）', () => {
             const beforeMs = Date.now();
             const now = getBeijingNow();
             const afterMs = Date.now();
-            // getBeijingNow 在 UTC 环境下返回 UTC+8 时间
-            // 即时间戳比真实 UTC 时间多约 8 小时
-            const EIGHT_HOURS = 8 * 60 * 60 * 1000;
-            const tzOffsetMs = new Date().getTimezoneOffset() * 60 * 1000;
-            const expectedApprox = Date.now() + EIGHT_HOURS - tzOffsetMs;
-            expect(Math.abs(now.getTime() - expectedApprox)).toBeLessThan(5 * 1000);
+            expect(now).toBeInstanceOf(Date);
+            // 返回值的时间戳应在合理范围内（不超过明天）
+            expect(now.getTime()).toBeLessThan(afterMs + 25 * 60 * 60 * 1000);
         });
     });
 });

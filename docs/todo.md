@@ -82,6 +82,18 @@
   - 新增“标记已掌握”功能，移除已攻克错题并归档。
   - 新增错题详情页，支持查看完整题目、选顶、解析及历史作答记录。
 
+### Phase 14: 智能练习流程降级与功能开关 (Feature Toggles)
+
+- [ ] **Task 14.1: 构建全局特性开关配置 (Feature Flags)**
+  - 新建 `src/lib/configs/features.ts`，定义 `ENABLE_INTELLIGENT_REVIEW` 常量并默认置为 `false`。
+- [ ] **Task 14.2: 练习引擎状态机短路 (Engine Bypass)**
+  - 修改 `src/hooks/use-practice-engine.ts` 中的状态机制。
+  - 在 `ANSWER_QUESTION` 时增加开关逻辑判定：只有当开关启用的情况下才允许因错题量达到阈值或刷题结束时切换至 `reviewing` 状态，否则一做到底直接结算（`finished`）。
+- [ ] **Task 14.3: 动态隐藏复盘类 UI 组件 (UI Degradation)**
+  - 修改 `src/app/practice/page.tsx` 这类强关联老架构的页面。
+  - 当开关关闭时，隐藏界面底部的倒数第二次复盘警告框。
+  - 防御性隐藏 `<ReviewCard />` 组件的渲染入口。
+
 ---
 
 ### 后续展望 (Future Roadmap)

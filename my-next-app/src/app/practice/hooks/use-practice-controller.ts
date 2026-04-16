@@ -10,10 +10,10 @@ import { getPracticeSessionAction, getPracticeSessionByConfigAction, submitAnswe
 import { moveToObservationZoneAction } from '@/server/actions/zone';
 import { PRACTICE_MODE_LABELS, PracticeMode } from '@/lib/practice/practice-types';
 
-export function usePracticeController() {
+export function usePracticeController(enableIntelligentReview: boolean = false) {
     const router = useRouter();
     const searchParams = useSearchParams();
-    const { state, dispatch } = usePracticeEngine();
+    const { state, dispatch } = usePracticeEngine(enableIntelligentReview);
 
     // Extracted AI Generation Logic
     const { isLoadingAI } = useReviewGeneration(state as any, dispatch);

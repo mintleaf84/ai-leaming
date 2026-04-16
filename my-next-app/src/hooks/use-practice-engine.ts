@@ -1,7 +1,6 @@
-import { useReducer, useEffect, useCallback } from 'react';
+import React, { useReducer, useEffect, useCallback, useMemo } from 'react';
 import { PracticeState, Action, Question, ReviewItem } from '../lib/types';
 import { apiClient } from '@/lib/utils/api-client';
-
 export const INITIAL_STATE: PracticeState = {
   status: 'loading',
   sessionId: null,
@@ -14,7 +13,7 @@ export const INITIAL_STATE: PracticeState = {
   reviewTriggeredAt: 25, // Hardcoded per PRD
 };
 
-export function practiceReducer(state: PracticeState, action: Action): PracticeState {
+export const createPracticeReducer = (enableIntelligentReview: boolean) => (state: PracticeState, action: Action): PracticeState => {
   switch (action.type) {
     case 'INIT_SESSION':
       return {
@@ -54,7 +53,7 @@ export function practiceReducer(state: PracticeState, action: Action): PracticeS
       }
 
       // Transition Logic
-      if (questionsAnswered >= state.reviewTriggeredAt && updatedReviewQueue.length > 0 && state.status === 'practicing') {
+      if (enableIntelligentReview && questionsAnswered >= state.reviewTriggeredAt && updatedReviewQueue.length > 0 && state.status === 'practicing') {
         // Sort Review Queue: Risk First (Placeholder logic)
         // In real app, we might sort by tag mastery score here.
         return {
@@ -78,7 +77,7 @@ export function practiceReducer(state: PracticeState, action: Action): PracticeS
         };
       } else {
         // End of Queue
-        if (updatedReviewQueue.length > 0) {
+        if (enableIntelligentReview && updatedReviewQueue.length > 0) {
           return {
             ...state,
             answers: newAnswers,
@@ -129,7 +128,7 @@ export function practiceReducer(state: PracticeState, action: Action): PracticeS
             currentItem.regressionSubIndex += 1;
           } else {
             // Done with all 3 regression questions
-            const nextState = practiceReducer(state, { type: 'NEXT_REVIEW_ITEM' });
+            const nextState = createPracticeReducer(enableIntelligentReview)(state, { type: 'NEXT_REVIEW_ITEM' });
             return nextState;
           }
         }
@@ -137,7 +136,7 @@ export function practiceReducer(state: PracticeState, action: Action): PracticeS
         // Failed Step
         currentItem.failedAttempts += 1;
         if (currentItem.failedAttempts >= 3) {
-          const nextState = practiceReducer(state, { type: 'NEXT_REVIEW_ITEM' });
+          const nextState = createPracticeReducer(enableIntelligentReview)(state, { type: 'NEXT_REVIEW_ITEM' });
           return nextState;
         }
       }
@@ -150,8 +149,8 @@ export function practiceReducer(state: PracticeState, action: Action): PracticeS
       const nextIndex = state.currentReviewIndex + 1;
       if (nextIndex < state.reviewQueue.length) {
         return { ...state, currentReviewIndex: nextIndex };
-        return practiceReducer(state, { type: 'RESUME_PRACTICE' });
       }
+      return createPracticeReducer(enableIntelligentReview)(state, { type: 'RESUME_PRACTICE' });
     }
 
     case 'RESUME_PRACTICE':
@@ -177,8 +176,9 @@ export function practiceReducer(state: PracticeState, action: Action): PracticeS
   }
 }
 
-export function usePracticeEngine() {
-  const [state, dispatch] = useReducer(practiceReducer, INITIAL_STATE);
+export function usePracticeEngine(enableIntelligentReview: boolean = false) {
+  const reducer = useMemo(() => createPracticeReducer(enableIntelligentReview), [enableIntelligentReview]);
+  const [state, dispatch] = useReducer(reducer, INITIAL_STATE);
 
   // Initialize (Mock)
   useEffect(() => {

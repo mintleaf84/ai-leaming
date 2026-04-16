@@ -2,8 +2,10 @@
 
 import React, { useEffect, useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Activity, Cpu, Clock, Database, Coins, MessageSquare, AlertCircle } from 'lucide-react';
+import { Activity, Cpu, Clock, Database, Coins, MessageSquare, AlertCircle, Sparkles } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { toast } from 'sonner';
+import { toggleGlobalFeatureFlag, getGlobalFeatureFlag } from '@/server/actions/feature-flags';
 import {
     Table,
     TableBody,
@@ -79,6 +81,12 @@ function formatDuration(seconds: number) {
 export default function SystemPage() {
     const [status, setStatus] = useState<SystemStatus | null>(null);
     const [loading, setLoading] = useState(true);
+    const [intelligentReviewEnabled, setIntelligentReviewEnabled] = useState(false);
+
+    const loadFlags = async () => {
+        const flag = await getGlobalFeatureFlag('ENABLE_INTELLIGENT_REVIEW', false);
+        setIntelligentReviewEnabled(flag);
+    };
 
     const loadStatus = async () => {
         setLoading(true);
@@ -96,6 +104,7 @@ export default function SystemPage() {
 
     useEffect(() => {
         loadStatus();
+        loadFlags();
         const interval = setInterval(loadStatus, 5000); // Poll every 5s
         return () => clearInterval(interval);
     }, []);
@@ -129,6 +138,17 @@ export default function SystemPage() {
             }
         } catch (e) {
             console.error(e);
+        }
+    };
+
+    const handleToggleIntelligentReview = async () => {
+        const newVal = !intelligentReviewEnabled;
+        const res = await toggleGlobalFeatureFlag('ENABLE_INTELLIGENT_REVIEW', newVal);
+        if (res.success) {
+            setIntelligentReviewEnabled(newVal);
+            toast.success(newVal ? '智能复盘中断机制已开启' : '智能复盘中断机制已关闭');
+        } else {
+            toast.error(res.error || '切换失败');
         }
     };
 
@@ -312,6 +332,33 @@ export default function SystemPage() {
                             </div>
                             <Button variant="outline" onClick={resetDemoSession}>
                                 重置并重新生成套题
+                            </Button>
+                        </div>
+                    </CardContent>
+                </Card>
+
+                {/* 功能开关实验场 */}
+                <Card className="md:col-span-7 border-purple-200 shadow-sm">
+                    <CardHeader className="bg-purple-50/50">
+                        <CardTitle className="flex items-center gap-2 text-purple-700">
+                            <Sparkles className="w-5 h-5" />
+                            核心功能实验场 (Feature Flags)
+                        </CardTitle>
+                    </CardHeader>
+                    <CardContent className="space-y-4 pt-6">
+                        <div className="flex items-center justify-between p-4 border rounded-lg bg-card">
+                            <div>
+                                <h4 className="font-semibold mb-1">强制打断与复盘机制 (Intelligent Review)</h4>
+                                <p className="text-sm text-muted-foreground max-w-3xl">
+                                    【练习页降级保护】：当关闭时，前端会短路状态机，屏蔽由于错题积攒触发的强制复盘（知识点研读、变式、盲区等界面），让学员专注于连续刷题，直接进入成绩结算。适用于路演或希望练习流畅度优先的场景。
+                                </p>
+                            </div>
+                            <Button
+                                variant={intelligentReviewEnabled ? "default" : "outline"}
+                                onClick={handleToggleIntelligentReview}
+                                className={intelligentReviewEnabled ? "bg-purple-600 hover:bg-purple-700" : ""}
+                            >
+                                {intelligentReviewEnabled ? '已开启自动复盘' : '已降级为纯净刷题'}
                             </Button>
                         </div>
                     </CardContent>

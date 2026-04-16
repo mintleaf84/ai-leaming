@@ -1,0 +1,126 @@
+﻿node.exe : [@serwist/next]
+ WARNING: You are using '@
+serwist/next' with `next d
+ev --turbopack`, but Serwi
+st doesn't support Turbopa
+ck at the moment. It is re
+commended that you set `di
+sable` to `process.env.NOD
+E_ENV !== "production"`. F
+ollow https://github.com/s
+erwist/serwist/issues/54 f
+or progress on Serwist + T
+urbopack. You can also sup
+press this warning by sett
+ing SERWIST_SUPPRESS_TURBO
+PACK_WARNING=1.
+所在位置 E:\nodejs\npx.ps1:29 
+字符: 3
++   & $NODE_EXE $NPX_CLI_J
+S $args
++   ~~~~~~~~~~~~~~~~~~~~~~
+~~~~~~~
+    + CategoryInfo        
+      : NotSpecified: ([  
+  @serwist/next]...PACK   
+ _WARNING=1.:String) [    
+], RemoteException
+    + FullyQualifiedError 
+   Id : NativeCommandErr  
+  or
+ 
+鈿?Warning: Next.js inferre
+d your workspace root, but
+ it may not be correct.
+ We detected multiple lock
+files and selected the dir
+ectory of E:\code\ai-leami
+ng\package-lock.json as th
+e root directory.
+ To silence this warning, 
+set `turbopack.root` in yo
+ur Next.js config, or cons
+ider removing one of the l
+ockfiles if it's not neede
+d.
+   See https://nextjs.org/
+docs/app/api-reference/con
+fig/next-config-js/turbopa
+ck#root-directory for more
+ information.
+ Detected additional lockf
+iles: 
+   * E:\code\ai-leaming\my
+-next-app\package-lock.jso
+n
+
+鈻?Next.js 16.1.1 (Turbopack)
+- Environments: .env.local
+- Experiments (use with caution):
+  鉁?viewTransition
+
+鈿?The "middleware" file co
+nvention is deprecated. Pl
+ease use "proxy" instead. 
+Learn more: https://nextjs
+.org/docs/messages/middlew
+are-to-proxy
+  Creating an optimized production build ...
+[@serwist/next] WARNING: Y
+ou are using '@serwist/nex
+t' with `next dev --turbop
+ack`, but Serwist doesn't 
+support Turbopack at the m
+oment. It is recommended t
+hat you set `disable` to `
+process.env.NODE_ENV !== "
+production"`. Follow https
+://github.com/serwist/serw
+ist/issues/54 for progress
+ on Serwist + Turbopack. Y
+ou can also suppress this 
+warning by setting SERWIST
+_SUPPRESS_TURBOPACK_WARNIN
+G=1.
+猕?ERROR: This build is usi
+ng Turbopack, with a `webp
+ack` config and no `turbop
+ack` config.
+   This may be a mistake.
+
+   As of Next.js 16 Turbop
+ack is enabled by default 
+and
+   custom webpack configur
+ations may need to be migr
+ated to Turbopack.
+
+   NOTE: your `webpack` co
+nfig may have been added b
+y a configuration plugin.
+
+   To configure Turbopack,
+ see https://nextjs.org/do
+cs/app/api-reference/next-
+config-js/turbopack
+
+   TIP: Many applications 
+work fine under Turbopack 
+with no configuration,
+   if that is the case for
+ you, you can silence this
+ error by passing the
+   `--turbopack` or `--web
+pack` flag explicitly or s
+imply setting an 
+   empty turbopack config 
+in your Next config file (
+e.g. `turbopack: {}`).
+
+> Build error occurred
+Error: Call retries were e
+xceeded
+    at ignore-listed frame
+s {
+  type: 'WorkerError'
+}

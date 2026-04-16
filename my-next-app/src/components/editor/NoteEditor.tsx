@@ -31,13 +31,21 @@ interface NoteEditorProps {
 }
 
 export default function NoteEditor({ initialContent, onChange }: NoteEditorProps) {
-    const [content, setContent] = useState<JSONContent | string | null>(() => {
+    const [content, setContent] = useState<JSONContent | null>(() => {
         if (!initialContent) return null;
         try {
             return JSON.parse(initialContent);
         } catch (e) {
-            // 如果不是合法的 JSON，就当做普通的 Markdown/文本字符串处理，不直接丢弃
-            return initialContent;
+            // 兼容历史纯文本内容，转换为最小合法文档结构
+            return {
+                type: 'doc',
+                content: [
+                    {
+                        type: 'paragraph',
+                        content: [{ type: 'text', text: initialContent }],
+                    },
+                ],
+            };
         }
     });
     const [saveStatus, setSaveStatus] = useState('已保存');

@@ -44,10 +44,11 @@ export function MarkmapViewer({ markdown, className = '', fileName = '' }: Markm
         } else {
             const mm = Markmap.create(svgRef.current, {
                 // 可在此处调整导图颜色、间距等
-                color: (node) => {
+                color: (node: { state?: { depth?: number } }) => {
                     // 简单的按层级给颜色，或者返回一个固定数组
                     const colors = ['#3b82f6', '#10b981', '#8b5cf6', '#f59e0b', '#ec4899'];
-                    return colors[node.depth % colors.length];
+                    const depth = node.state?.depth ?? 0;
+                    return colors[depth % colors.length];
                 },
                 // 为了避免过密，增加一点间距
                 nodeMinHeight: 20,

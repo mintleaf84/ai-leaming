@@ -13,7 +13,6 @@ import { toast } from 'sonner';
 import { Network, FileText } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { tiptapToMarkdown } from '@/lib/utils/tiptapToMarkdown';
-import dynamic from 'next/dynamic';
 
 const SimpleMindMapViewer = dynamic(
     () => import('@/components/ocr/SimpleMindMapViewer').then(mod => mod.SimpleMindMapViewer),

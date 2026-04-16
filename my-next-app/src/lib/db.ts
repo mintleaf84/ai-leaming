@@ -1,6 +1,9 @@
+import 'server-only';
+
 import Database from 'better-sqlite3';
 import * as sqliteVec from 'sqlite-vec';
 import path from 'path';
+import { fileURLToPath } from 'url';
 
 // 使用全局变量防止热重载时重复初始化导致的 Panic
 const globalForDb = global as unknown as { db: Database.Database | null };
@@ -48,7 +51,6 @@ function initDb() {
 
     // 修复 Windows 下可能返回 URL 对象导致的问题
     if (loadablePath && typeof loadablePath !== 'string') {
-      const { fileURLToPath } = require('url');
       try {
         loadablePath = fileURLToPath(loadablePath);
       } catch (e) {

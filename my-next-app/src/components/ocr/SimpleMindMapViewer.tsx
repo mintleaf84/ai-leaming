@@ -34,13 +34,11 @@ export function SimpleMindMapViewer({ markdown, onChange, className = '', readOn
         if (!containerRef.current) return;
 
         // 初始化
-        const mindMap = new MindMap({
+        const mindMap = new (MindMap as any)({
             el: containerRef.current,
             fit: true,
             theme: 'classic2', // 内置高颜值主题
             readonly: readOnly,
-            // 关闭默认的水印等
-            watermarkConfig: { show: false }
         });
         
         mindMapRef.current = mindMap;

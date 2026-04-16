@@ -1,3 +1,5 @@
+import 'server-only';
+
 import { getAiConfig } from '@/lib/ai/client';
 // Dynamic import used inside function
 // import * as mupdf from 'mupdf';

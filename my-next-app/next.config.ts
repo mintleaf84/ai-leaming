@@ -11,6 +11,7 @@ const withSerwist = withSerwistInit({
 const nextConfig: NextConfig = {
   output: "standalone",
   distDir: process.env.E2E_TEST === 'true' ? '.next-e2e' : undefined,
+  turbopack: {},
   experimental: {
     viewTransition: true,
   },

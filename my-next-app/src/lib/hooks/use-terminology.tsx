@@ -25,10 +25,13 @@ const TERMS: Record<string, { standard: string; neo: string }> = {
     'nav.docs': { standard: '使用文档', neo: '指南' },
     'nav.pricing': { standard: '订阅与升级', neo: '祈福' },
     'nav.settings': { standard: '设置', neo: '设置' },
+    'nav.ocr': { standard: '文字识别', neo: '观文' },
+    'nav.mindmap': { standard: '思维导图工作台', neo: '道图' },
 
     // Sections
     'section.start': { standard: '开始', neo: '启程' },
     'section.knowledge': { standard: '知识库', neo: '智库' },
+    'section.more': { standard: '更多功能', neo: '百宝' },
     'section.system': { standard: '系统', neo: '系统' },
 
     // App Sidebar Dropdown

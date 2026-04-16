@@ -1,14 +1,13 @@
 /**
  * PaddleOCR-VL 集成服务
- * 基于百度飞桨 PaddleOCR 的异步 Job API
- * 流程：提交任务 → 轮询状态 → 获取结果
+ * 基于百度飞桨 PaddleOCR 的同步 layout-parsing API
+ * 直接发送请求并获取结果，无需轮询
  */
 
-const JOB_URL = "https://paddleocr.aistudio-app.com/api/v2/ocr/jobs";
-const DEFAULT_MODEL = "PaddleOCR-VL-1.5";
-// 轮询间隔 3 秒，最多等待 5 分钟
-const POLL_INTERVAL_MS = 3000;
-const MAX_POLL_TIME_MS = 5 * 60 * 1000;
+const API_URL = "https://8fybmegb491cz67c.aistudio-app.com/layout-parsing";
+
+// 请求超时时间：3 分钟（大文件识别可能较慢）
+const REQUEST_TIMEOUT_MS = 3 * 60 * 1000;
 
 /**
  * 使用 PaddleOCR-VL 识别文件内容
@@ -24,117 +23,96 @@ export async function performPaddleOCR(
         throw new Error('缺少 PADDLE_OCR_TOKEN 环境变量，请在 .env.local 中配置');
     }
 
-    // 1. 提交 OCR 任务
-    console.log(`[PaddleOCR] 提交任务: ${fileName} (${mimeType}, ${Math.round(fileBuffer.length / 1024)}KB)`);
+    // 判断文件类型：0 = PDF, 1 = 图片
+    const fileType = mimeType === 'application/pdf' ? 0 : 1;
 
-    const formData = new FormData();
-    const blob = new Blob([new Uint8Array(fileBuffer)], { type: mimeType });
-    formData.append('file', blob, fileName);
-    formData.append('model', DEFAULT_MODEL);
-    formData.append('optionalPayload', JSON.stringify({
+    console.log(`[PaddleOCR] 开始识别: ${fileName} (${mimeType}, ${Math.round(fileBuffer.length / 1024)}KB)`);
+
+    // 将文件转为 Base64
+    const fileData = Buffer.from(fileBuffer).toString('base64');
+
+    const payload = {
+        file: fileData,
+        fileType,
+        // --- 版式清洗：仅过滤页码，保留其余内容 ---
+        // 注意：对于截图类输入，过滤过多标签会导致正文丢失
+        markdownIgnoreLabels: [
+            "number",          // 页码
+        ],
         useDocOrientationClassify: false,  // 截图方向已正确
         useDocUnwarping: false,            // 数字图片无需矫正
-        useChartRecognition: true,         // 开启图表识别，支持树状图/思维导图
-    }));
+        useLayoutDetection: true,          // 开启版式检测
+        useChartRecognition: true,         // 开启图表识别（支持树状图/思维导图）
+        useSealRecognition: false,         // 不需要印章识别
+        useOcrForImageBlock: true,         // 对图片块也做 OCR（截图中可能有嵌套图片）
+        relevelTitles: true,               // 自动调整 Markdown 标题层级
+        mergeTables: true,                 // 合并跨页表格
+        layoutNms: true,                   // 布局去重
+        restructurePages: true,            // 重构页面结构
+        layoutShapeMode: "auto",           // 自动检测版式形状
+        promptLabel: "ocr",                // OCR 模式提示
+        // --- 分辨率控制 ---
+        minPixels: 147384,                 // 最小像素量（保证小图也有足够精度）
+        maxPixels: 2822400,                // 最大像素量（约 1680x1680）
+    };
 
-    const jobResponse = await fetch(JOB_URL, {
-        method: 'POST',
-        headers: { 'Authorization': `bearer ${token}` },
-        body: formData,
-    });
+    const controller = new AbortController();
+    const timeout = setTimeout(() => controller.abort(), REQUEST_TIMEOUT_MS);
 
-    if (!jobResponse.ok) {
-        const errText = await jobResponse.text();
-        console.error('[PaddleOCR] 提交失败:', errText);
-        throw new Error(`PaddleOCR 任务提交失败: ${jobResponse.status}`);
-    }
-
-    const jobData = await jobResponse.json();
-    const jobId = jobData.data?.jobId;
-    if (!jobId) {
-        throw new Error('PaddleOCR 返回数据异常：缺少 jobId');
-    }
-
-    console.log(`[PaddleOCR] 任务已提交: ${jobId}，开始轮询...`);
-
-    // 2. 轮询等待任务完成
-    const startTime = Date.now();
-    while (Date.now() - startTime < MAX_POLL_TIME_MS) {
-        await new Promise(r => setTimeout(r, POLL_INTERVAL_MS));
-
-        const statusResponse = await fetch(`${JOB_URL}/${jobId}`, {
-            headers: { 'Authorization': `bearer ${token}` },
+    try {
+        const response = await fetch(API_URL, {
+            method: 'POST',
+            headers: {
+                'Authorization': `token ${token}`,
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify(payload),
+            signal: controller.signal,
         });
 
-        if (!statusResponse.ok) {
-            console.warn('[PaddleOCR] 轮询请求失败，重试中...');
-            continue;
+        if (!response.ok) {
+            const errText = await response.text();
+            console.error('[PaddleOCR] 请求失败:', errText);
+            throw new Error(`PaddleOCR 识别失败: ${response.status}`);
         }
 
-        const statusData = (await statusResponse.json()).data;
-        const state = statusData.state;
-
-        if (state === 'pending') {
-            console.log('[PaddleOCR] 状态: 排队中...');
-        } else if (state === 'running') {
-            const progress = statusData.extractProgress;
-            if (progress?.totalPages) {
-                console.log(`[PaddleOCR] 状态: 处理中 (${progress.extractedPages}/${progress.totalPages} 页)`);
-            } else {
-                console.log('[PaddleOCR] 状态: 处理中...');
-            }
-        } else if (state === 'done') {
-            console.log('[PaddleOCR] 任务完成，获取结果...');
-            const jsonlUrl = statusData.resultUrl?.jsonUrl;
-            if (!jsonlUrl) {
-                throw new Error('PaddleOCR 结果 URL 缺失');
-            }
-            return await fetchPaddleResult(jsonlUrl);
-        } else if (state === 'failed') {
-            throw new Error(`PaddleOCR 识别失败: ${statusData.errorMsg || '未知错误'}`);
+        const result = (await response.json()).result;
+        return extractMarkdown(result);
+    } catch (error: any) {
+        if (error.name === 'AbortError') {
+            throw new Error(`PaddleOCR 请求超时（超过 ${REQUEST_TIMEOUT_MS / 1000} 秒）`);
         }
+        throw error;
+    } finally {
+        clearTimeout(timeout);
     }
-
-    throw new Error('PaddleOCR 任务超时（超过 5 分钟）');
 }
 
 /**
- * 解析 PaddleOCR 的 JSONL 结果，提取所有页面的 Markdown 文本
+ * 从 PaddleOCR 响应中提取所有页面的 Markdown 文本
  */
-async function fetchPaddleResult(jsonlUrl: string): Promise<string> {
-    const response = await fetch(jsonlUrl);
-    if (!response.ok) {
-        throw new Error(`获取 PaddleOCR 结果失败: ${response.status}`);
-    }
-
-    const text = await response.text();
-    const lines = text.trim().split('\n');
-
+function extractMarkdown(result: any): string {
+    const pages = result?.layoutParsingResults || [];
     let fullText = '';
-    for (const line of lines) {
-        if (!line.trim()) continue;
-        try {
-            const parsed = JSON.parse(line);
-            const results = parsed.result?.layoutParsingResults || [];
-            for (const res of results) {
-                const markdown = res.markdown?.text || '';
-                if (markdown) {
-                    fullText += markdown + '\n\n';
-                }
-            }
-        } catch (e) {
-            console.warn('[PaddleOCR] 解析结果行失败:', e);
+
+    for (const page of pages) {
+        const markdown = page.markdown?.text || '';
+        if (markdown) {
+            fullText += markdown + '\n\n';
         }
     }
 
-    console.log(`[PaddleOCR] 提取完成，共 ${fullText.length} 字符`);
+    console.log(`[PaddleOCR] 原始提取: ${fullText.length} 字符`);
 
-    // 清理无法访问的临时图片引用（PaddleOCR 返回的图片 URL 是临时链接，浏览器无法访问）
+    // 清理无法访问的临时图片引用和残留 HTML 标签
     const cleaned = fullText
-        .replace(/!\[.*?\]\(.*?\)/g, '')       // 移除 ![alt](url) 格式
-        .replace(/<img[^>]*>/gi, '')            // 移除 <img> 标签
-        .replace(/\n{3,}/g, '\n\n')            // 合并多余空行
+        .replace(/!\[.*?\]\(.*?\)/g, '')           // 移除 ![alt](url) 格式的图片
+        .replace(/<img[^>]*>/gi, '')                // 移除 <img> 标签
+        .replace(/<div[^>]*>\s*<\/div>/gi, '')      // 移除空 <div> 标签
+        .replace(/<\/?(?:div|span|p|br\s*\/?)[^>]*>/gi, '\n')  // 将块级 HTML 标签转为换行
+        .replace(/\n{3,}/g, '\n\n')                // 合并多余空行
         .trim();
 
+    console.log(`[PaddleOCR] 清理后: ${cleaned.length} 字符`);
     return cleaned;
 }

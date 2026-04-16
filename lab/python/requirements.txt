@@ -1,0 +1,21 @@
+# Python 研究实验室基础依赖
+
+# 数据处理与分析
+pandas>=2.0.0
+numpy>=1.24.0
+
+# 数据获取 (使用内置 sqlite3 或 SQLAlchemy)
+sqlalchemy>=2.0.0
+
+# 可视化
+matplotlib>=3.7.0
+seaborn>=0.12.0
+
+# 终端输出美化
+tabulate>=0.9.0
+
+# 进度条
+tqdm>=4.65.0
+
+# 贝叶斯知识追踪模型
+pyBKT>=1.0.0

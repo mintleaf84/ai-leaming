@@ -2,7 +2,7 @@ import Link from "next/link";
 import {
   ArrowRight, Brain, BarChart3, Target, Zap, AlertCircle,
   RotateCcw, FileCheck, Shuffle, Flame, Eye, BookOpen,
-  CheckCircle2, Book, GraduationCap, PlayCircle, History, Sparkles
+  CheckCircle2, Book, GraduationCap, PlayCircle, History, Sparkles, ScanLine, Network
 } from "lucide-react";
 import { redirect } from "next/navigation";
 import { getUserStatsAction } from "@/server/actions/stats";
@@ -202,6 +202,8 @@ export default async function Home() {
               { name: 'AI 助教', desc: '智能答疑解惑', href: '/chat', icon: Brain },
               { name: '知识卡片', desc: '碎片化记忆', href: '/knowledge', icon: GraduationCap },
               { name: '知识图谱', desc: '全局思维导图', href: '/knowledge-graph', icon: BarChart3 },
+              { name: '文字识别', desc: '图片/PDF 转文字', href: '/ocr', icon: ScanLine },
+              { name: '思维导图', desc: '生成结构化脑图', href: '/mindmap', icon: Network },
             ].map((item) => (
               <Link key={item.name} href={item.href} className="group">
                 <div className="flex items-center gap-4 p-4 rounded-2xl bg-card border border-border hover:border-primary/50 hover:shadow-sm transition-all">

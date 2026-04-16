@@ -22,7 +22,9 @@ import {
     Moon,
     Sun,
     Eye,
-    Monitor
+    Monitor,
+    ScanLine,
+    Network
 } from 'lucide-react';
 import { Button } from "@/components/ui/button";
 import { ScrollArea } from "@/components/ui/scroll-area";
@@ -112,6 +114,11 @@ export function AppSidebar({ userSection }: SidebarProps) {
         { name: t('nav.graph'), href: '/knowledge-graph', icon: LayoutDashboard },
     ];
 
+    const moreItems = [
+        { name: t('nav.ocr'), href: '/ocr', icon: ScanLine },
+        { name: t('nav.mindmap'), href: '/mindmap', icon: Network },
+    ];
+
     const systemItems = [
         { name: t('nav.docs'), href: '/docs', icon: FileText },
         { name: t('nav.pricing'), href: '/pricing', icon: Sparkles },
@@ -136,6 +143,7 @@ export function AppSidebar({ userSection }: SidebarProps) {
             <ScrollArea className="flex-1 py-6 scrollbar-thin">
                 <NavGroup title={t('section.start')} items={mainNavItems} pathname={pathname} />
                 <NavGroup title={t('section.knowledge')} items={knowledgeItems} pathname={pathname} />
+                <NavGroup title={t('section.more')} items={moreItems} pathname={pathname} />
                 <NavGroup title={t('section.system')} items={systemItems} pathname={pathname} />
             </ScrollArea>
 

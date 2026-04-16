@@ -74,6 +74,12 @@ app.route('/admin', adminRoute)
 import textbookRoute from '@/lib/api/routes/textbook'
 app.route('/textbook', textbookRoute)
 
+import statsRoute from '@/lib/api/routes/stats'
+app.route('/stats', statsRoute)
+
+import profileRoute from '@/lib/api/routes/profile'
+app.route('/profile', profileRoute)
+
 import annotationsRoute from '@/lib/api/routes/annotations'
 app.route('/annotations', annotationsRoute)
 

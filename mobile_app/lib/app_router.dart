@@ -12,6 +12,9 @@ import 'features/mastery/presentation/mastery_screen.dart';
 import 'features/settings/presentation/settings_screen.dart';
 import 'features/chat/presentation/chat_screen.dart';
 import 'features/wrong_book/presentation/wrong_book_screen.dart';
+import 'features/profile/presentation/profile_screen.dart';
+import 'features/textbook/presentation/textbook_list_screen.dart';
+import 'features/textbook/presentation/textbook_detail_screen.dart';
 
 import 'features/practice/presentation/question_list_screen.dart';
 
@@ -66,6 +69,23 @@ final appRouter = GoRouter(
     GoRoute(
       path: '/wrong-book',
       builder: (context, state) => const WrongBookScreen(),
+    ),
+    GoRoute(
+      path: '/profile',
+      builder: (context, state) => const ProfileScreen(),
+    ),
+    GoRoute(
+      path: '/textbooks',
+      builder: (context, state) => const TextbookListScreen(),
+      routes: [
+        GoRoute(
+          path: ':id',
+          builder: (context, state) {
+            final id = int.parse(state.pathParameters['id']!);
+            return TextbookDetailScreen(textbookId: id);
+          },
+        ),
+      ],
     ),
   ],
 );

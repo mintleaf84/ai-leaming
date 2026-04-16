@@ -2,12 +2,24 @@ import 'package:flutter/material.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:go_router/go_router.dart';
+import 'package:flutter_hooks/flutter_hooks.dart';
+import '../../stats/presentation/stats_provider.dart';
+import '../../stats/domain/learning_stats.dart';
 
 class DashboardScreen extends HookConsumerWidget {
   const DashboardScreen({super.key});
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    // 页面挂载时加载统计数据
+    useEffect(() {
+      Future.microtask(
+        () => ref.read(statsControllerProvider.notifier).load(),
+      );
+      return null;
+    }, const []);
+
+    final statsState = ref.watch(statsControllerProvider);
     return Scaffold(
       backgroundColor: const Color(0xFFF7F7F5), // Notion-like background
       body: Stack(
@@ -33,7 +45,7 @@ class DashboardScreen extends HookConsumerWidget {
                         _buildActionGrid(context),
                         SizedBox(height: 32.h),
                         // Progress Card
-                        _buildProgressCard(),
+                        _buildProgressCard(statsState.stats),
                         SizedBox(height: 32.h),
                         // Todo List
                         _buildTodoList(),
@@ -499,7 +511,19 @@ class DashboardScreen extends HookConsumerWidget {
     );
   }
 
-  Widget _buildProgressCard() {
+  Widget _buildProgressCard(LearningStats stats) {
+    final todayCount = stats.todayCount;
+    final todayAccuracy = stats.todayAccuracy;
+    final streakDays = stats.streakDays;
+
+    // 今日进度：假设每日目标 20 题
+    const dailyGoal = 20;
+    final progress = (todayCount / dailyGoal).clamp(0.0, 1.0);
+    final progressText = todayCount > 0 ? '今日已练习 $todayCount 题' : '今日目标：尚未开始';
+    final accuracyText = todayCount > 0
+        ? '${(todayAccuracy * 100).toStringAsFixed(1)}%'
+        : '0%';
+
     return Container(
       padding: EdgeInsets.all(20.w),
       decoration: BoxDecoration(
@@ -533,14 +557,14 @@ class DashboardScreen extends HookConsumerWidget {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
-                    '开始今日学习！',
+                    streakDays > 0 ? '连续学习 $streakDays 天！' : '开始今日学习！',
                     style: TextStyle(
                       fontSize: 18.sp,
                       fontWeight: FontWeight.bold,
                     ),
                   ),
                   Text(
-                    '完成练习后这里会显示进度',
+                    progressText,
                     style: TextStyle(fontSize: 12.sp, color: Colors.grey),
                   ),
                 ],
@@ -551,7 +575,7 @@ class DashboardScreen extends HookConsumerWidget {
           ClipRRect(
             borderRadius: BorderRadius.circular(5.r),
             child: LinearProgressIndicator(
-              value: 0,
+              value: progress,
               backgroundColor: const Color(0xFFF0F0F0),
               color: const Color(0xFF37352F),
               minHeight: 10.h,
@@ -562,11 +586,11 @@ class DashboardScreen extends HookConsumerWidget {
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
               Text(
-                '今日目标：尚未开始',
+                progressText,
                 style: TextStyle(fontSize: 12.sp, color: Colors.grey),
               ),
               Text(
-                '0%',
+                accuracyText,
                 style: TextStyle(fontSize: 12.sp, fontWeight: FontWeight.bold),
               ),
             ],
@@ -655,16 +679,16 @@ class DashboardScreen extends HookConsumerWidget {
             () => context.go('/knowledge'),
           ),
           _buildNavItem(
-            Icons.bar_chart,
-            '掌握度',
+            Icons.library_books,
+            '教材',
             false,
-            () => context.go('/mastery'),
+            () => context.go('/textbooks'),
           ),
           _buildNavItem(
-            Icons.settings,
-            '设置',
+            Icons.person_outline,
+            '我的',
             false,
-            () => context.go('/settings'),
+            () => context.go('/profile'),
           ),
         ],
       ),

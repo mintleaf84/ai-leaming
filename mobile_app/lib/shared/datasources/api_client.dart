@@ -72,4 +72,19 @@ abstract class ApiClient {
   Future<FirstPrinciplesResponse> analyzeFirstPrinciples(
     @Body() Map<String, dynamic> body,
   );
+
+  // 学习统计（Dashboard 数据）
+  @GET('/stats')
+  Future<dynamic> getStats();
+
+  // 个人信息
+  @GET('/profile')
+  Future<dynamic> getProfile();
+
+  // 教材库
+  @GET('/textbook')
+  Future<dynamic> getTextbooks();
+
+  @GET('/textbook/{id}')
+  Future<dynamic> getTextbookDetail(@Path('id') int id);
 }

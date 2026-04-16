@@ -1,11 +1,6 @@
----
-name: flutter-directory-migration
-description: Flutter 项目目录结构迁移的最佳实践与常见陷阱。在需要重构 Flutter/Dart 项目目录结构（如从层级优先改为功能优先）时使用。适用于：(1) 大规模文件移动与 import 路径修正，(2) 处理 Freezed/Retrofit/json_serializable 生成文件的迁移，(3) 避免 PowerShell 编码陷阱和 build_runner 已知 bug。
----
+# Part 2: 项目迁移与维护
 
-# Flutter 目录迁移指南
-
-## 文件移动：使用 `git mv`
+## 2.1 文件移动：使用 `git mv`
 
 用 `git mv` 移动文件（二进制安全，保留编码，保留 git 历史）：
 
@@ -14,7 +9,9 @@ New-Item -ItemType Directory -Path "lib/features/auth/data" -Force
 git mv lib/data/repositories/auth_repository_impl.dart lib/features/auth/data/
 ```
 
-## Import 路径批量修正：避免 PowerShell 编码陷阱
+---
+
+## 2.2 Import 路径批量修正：避免 PowerShell 编码陷阱
 
 > [!CAUTION]
 > PowerShell 的 `Set-Content` 默认用 UTF-16LE 编码写入，会损坏含中文的 `.dart` 文件。
@@ -31,12 +28,16 @@ $content = $content -replace "import '../../old/path.dart';", "import '../new/pa
 [System.IO.File]::WriteAllText($f, $content, $utf8)
 ```
 
-## 生成文件（`.g.dart` / `.freezed.dart`）
+---
+
+## 2.3 生成文件（`.g.dart` / `.freezed.dart`）迁移
 
 这些文件通过 `part of 'xxx.dart'` 关联到源文件，内部不含 import。
 直接 `git mv` 即可，移动后 `part of` 仍然有效（只引用文件名，不含路径）。
 
-## build_runner 递归 Bug
+---
+
+## 2.4 build_runner 递归 Bug
 
 `build_runner` 2.10.x ~ 2.11.x 存在 `LibraryCycleGraphLoader` 递归死锁：
 
@@ -48,7 +49,9 @@ Bad state: Cannot recurse at later or equal phase 2, already running at: [2]
 
 **解决**：删除 `test/widget_test.dart`（`flutter create` 生成的无用模板）。
 
-## 迁移检查清单
+---
+
+## 2.5 迁移检查清单
 
 1. `grep_search` 扫描 `import '../` 确认需修改的文件清单
 2. 编写 `.ps1` 脚本用 `git mv` 批量移动 + 创建目录 + 清理空目录

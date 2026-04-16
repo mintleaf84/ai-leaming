@@ -1,15 +1,8 @@
----
-name: flutter-code-quality
-description: Flutter 代码质量检查与最佳实践指南。在编写 Flutter/Dart 代码时使用，确保代码符合现代 Flutter 规范。适用于：(1) 修复 flutter analyze 警告，(2) 代码审查，(3) 重构遗留代码，(4) 编写新的 Flutter Widget 和 Provider。
----
-
-# Flutter 代码质量最佳实践
-
-本 Skill 提供 Flutter 代码质量检查的核心规则和修复模式。
+# Part 1: 单端代码质量
 
 ## 核心规则
 
-### 1. 使用 `debugPrint` 替代 `print`
+### 1.1 使用 `debugPrint` 替代 `print`
 
 ```dart
 // ❌ 避免 - 生产环境有性能开销
@@ -23,7 +16,7 @@ debugPrint('调试: $data');
 
 ---
 
-### 2. 使用 `withValues()` 替代 `withOpacity()`
+### 1.2 使用 `withValues()` 替代 `withOpacity()`
 
 `withOpacity()` 在 Flutter 3.27+ 已废弃，存在浮点数精度损失。
 
@@ -39,7 +32,7 @@ Colors.black.withValues(alpha: 0.5)
 
 ---
 
-### 3. 尽量使用 `const` 构造函数
+### 1.3 尽量使用 `const` 构造函数
 
 `const` 可让编译器在编译期优化，减少运行时开销。
 
@@ -58,7 +51,7 @@ Text('Hello', style: TextStyle(fontSize: 16.sp))  // 这里无法 const
 
 ---
 
-### 4. 避免冗余导入
+### 1.4 避免冗余导入
 
 当使用 `hooks_riverpod` 时，无需同时导入 `flutter_riverpod`。
 
@@ -75,7 +68,7 @@ import 'package:hooks_riverpod/hooks_riverpod.dart';
 
 ---
 
-### 5. 局部变量命名规范
+### 1.5 局部变量命名规范
 
 Dart 约定：`_` 前缀表示私有成员，局部变量不应使用。
 
@@ -91,7 +84,7 @@ separatorBuilder: (_, i) => SizedBox(width: 8)
 
 ---
 
-### 6. Riverpod Family Provider 模式
+### 1.6 Riverpod Family Provider 模式
 
 当 Provider 需要参数时，必须使用 Family 模式。
 
@@ -146,23 +139,9 @@ analyzer:
 
 ---
 
-## 编码检查清单
-
-在提交代码前，确认以下事项：
-
-| ✅ 运行 `flutter analyze` | 确保 0 个问题 |
-| ✅ 无 `print()` 语句 | 使用 `debugPrint` |
-| ✅ 无 `withOpacity()` | 使用 `withValues()` |
-| ✅ 适当使用 `const` | 字面量和常量构造函数 |
-| ✅ 无冗余导入 | 检查 hooks_riverpod |
-| ✅ Provider 模式正确 | Family 带参数 |
-| ✅ Freezed 类使用 `abstract` | 见下文 |
-
----
-
 ## Freezed 3.x 最佳实践
 
-### 1. 必须使用 `abstract class` 声明
+### A. 必须使用 `abstract class` 声明
 
 Freezed 3.x 生成的 mixin 要求基类为 `abstract class`。
 
@@ -186,7 +165,7 @@ abstract class User with _$User {
 
 ---
 
-### 2. build_runner 常见问题
+### B. build_runner 常见问题
 
 #### 问题 1: `wrote 0 outputs`
 
@@ -209,7 +188,7 @@ flutter pub run build_runner build --delete-conflicting-outputs
 
 ---
 
-### 3. Freezed 类作为 Provider.family 的 Key
+### C. Freezed 类作为 Provider.family 的 Key
 
 当 Freezed 类用作 `FutureProvider.family` 的参数时，Freezed 自动生成的 `==` 和 `hashCode` 可确保正确的缓存行为。
 
@@ -233,7 +212,7 @@ final analysisProvider = FutureProvider.family<Result, AnalysisParams>(
 
 ---
 
-### 4. Freezed 编码模板
+### D. Freezed 编码模板
 
 创建新 Freezed 类时，使用以下模板：
 
@@ -261,3 +240,17 @@ abstract class YourClass with _$YourClass {
 ```bash
 flutter pub run build_runner build --delete-conflicting-outputs
 ```
+
+---
+
+## 编码检查清单
+
+在提交代码前，确认以下事项：
+
+| ✅ 运行 `flutter analyze` | 确保 0 个问题 |
+| ✅ 无 `print()` 语句 | 使用 `debugPrint` |
+| ✅ 无 `withOpacity()` | 使用 `withValues()` |
+| ✅ 适当使用 `const` | 字面量和常量构造函数 |
+| ✅ 无冗余导入 | 检查 hooks_riverpod |
+| ✅ Provider 模式正确 | Family 带参数 |
+| ✅ Freezed 类使用 `abstract` | 使用 Freezed 3.x 语法 |

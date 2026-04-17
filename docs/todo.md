@@ -82,14 +82,14 @@
   - 新增“标记已掌握”功能，移除已攻克错题并归档。
   - 新增错题详情页，支持查看完整题目、选顶、解析及历史作答记录。
 
-### Phase 14: 智能练习流程降级与功能开关 (Feature Toggles)
+### Phase 14: 智能练习流程降级与功能开关 (Feature Toggles) — Completed
 
-- [ ] **Task 14.1: 构建全局特性开关配置 (Feature Flags)**
+- [x] **Task 14.1: 构建全局特性开关配置 (Feature Flags)**
   - 新建 `src/lib/configs/features.ts`，定义 `ENABLE_INTELLIGENT_REVIEW` 常量并默认置为 `false`。
-- [ ] **Task 14.2: 练习引擎状态机短路 (Engine Bypass)**
+- [x] **Task 14.2: 练习引擎状态机短路 (Engine Bypass)**
   - 修改 `src/hooks/use-practice-engine.ts` 中的状态机制。
   - 在 `ANSWER_QUESTION` 时增加开关逻辑判定：只有当开关启用的情况下才允许因错题量达到阈值或刷题结束时切换至 `reviewing` 状态，否则一做到底直接结算（`finished`）。
-- [ ] **Task 14.3: 动态隐藏复盘类 UI 组件 (UI Degradation)**
+- [x] **Task 14.3: 动态隐藏复盘类 UI 组件 (UI Degradation)**
   - 修改 `src/app/practice/page.tsx` 这类强关联老架构的页面。
   - 当开关关闭时，隐藏界面底部的倒数第二次复盘警告框。
   - 防御性隐藏 `<ReviewCard />` 组件的渲染入口。
@@ -101,3 +101,23 @@
 - [ ] **多端同步方案**: 适配移动端 App (Capacitor/React Native)。
 - [ ] **协作学习模式**: 允许分享薄弱知识点或进行组队练习。
 - [ ] **AI 导师增强**: 引入多模态解析（上传错题图片）。
+
+### Phase 15: 判断题（TrueFalse）全栈实现 (Completed)
+
+- [x] **Task 15.1**: `src/types/question.ts` 新增 `'truefalse'` 类型。
+- [x] **Task 15.2**: `src/lib/schemas.ts` Zod 校验新增 truefalse 分支（选项固定2个，答案 A/B）。
+- [x] **Task 15.3**: Admin `EditQuestionDialog.tsx` 判断题专属 UI（自动填充固定选项，A/B 答案选择器）。
+- [x] **Task 15.4**: `PracticeCard.tsx` 判断题渲染（橙色标签，双大按钮 ✓正确/✗错误）。
+- [x] **Task 15.5**: `practice/setup/page.tsx` 与 `src/types/practice.ts` 新增 truefalse 类型筛选。
+- [x] **Task 15.6**: Flutter `practice_screen.dart` 显示判断题橙色标签。
+- [x] **Task 15.7**: 补充 `PracticeCard.test.tsx` 及 `use-practice-engine.test.ts` 判断题测试用例（全部通过）。
+
+### Phase 16: Flutter 与 Web 功能对齐 (Completed)
+
+- [x] **Task 16.1**: 删除 `/admin-demo` 演示页面。
+- [x] **Task 16.2**: 新增 Flutter `practice_setup_screen.dart`（练习配置页，含模式选择与题目数量）。
+- [x] **Task 16.3**: Flutter `practice_screen.dart` 接收配置参数；`practice_provider.dart` 支持 `mode` 参数。
+- [x] **Task 16.4**: Dashboard 练习入口改为 `/practice/setup`（配置后再进入练习）。
+- [x] **Task 16.5**: 新增 Flutter `pricing_screen.dart`（定价页，优先展示后端数据，降级展示内置套餐）。
+- [x] **Task 16.6**: Profile 快捷导航新增"订阅套餐"入口。
+- [x] **Task 16.7**: `app_router.dart` 注册 `/practice/setup` 和 `/pricing` 路由。

@@ -37,8 +37,8 @@ class PracticeRepositoryImpl implements PracticeRepository {
   }
 
   @override
-  Future<PracticeSession> createSession({required int limit}) async {
-    return await _apiClient.createSession({'mode': 'random', 'limit': limit});
+  Future<PracticeSession> createSession({required int limit, String mode = 'random'}) async {
+    return await _apiClient.createSession({'mode': mode, 'limit': limit});
   }
 
   @override

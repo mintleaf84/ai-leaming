@@ -4,6 +4,7 @@ import 'features/auth/presentation/register_screen.dart';
 import 'features/auth/presentation/login_screen.dart';
 import 'features/dashboard/presentation/dashboard_screen.dart';
 import 'features/practice/presentation/practice_screen.dart';
+import 'features/practice/presentation/practice_setup_screen.dart';
 import 'features/practice/presentation/result_screen.dart';
 import 'features/history/presentation/history_screen.dart';
 import 'features/history/presentation/history_detail_screen.dart';
@@ -15,6 +16,7 @@ import 'features/wrong_book/presentation/wrong_book_screen.dart';
 import 'features/profile/presentation/profile_screen.dart';
 import 'features/textbook/presentation/textbook_list_screen.dart';
 import 'features/textbook/presentation/textbook_detail_screen.dart';
+import 'features/pricing/presentation/pricing_screen.dart';
 
 import 'features/practice/presentation/question_list_screen.dart';
 
@@ -36,8 +38,16 @@ final appRouter = GoRouter(
       builder: (context, state) => const QuestionListScreen(),
     ),
     GoRoute(
+      path: '/practice/setup',
+      builder: (context, state) => const PracticeSetupScreen(),
+    ),
+    GoRoute(
       path: '/practice',
-      builder: (context, state) => const PracticeScreen(),
+      builder: (context, state) {
+        // 接收来自练习配置页的参数
+        final config = state.extra as Map<String, dynamic>?;
+        return PracticeScreen(config: config);
+      },
     ),
     GoRoute(path: '/result', builder: (context, state) => const ResultScreen()),
     GoRoute(
@@ -73,6 +83,10 @@ final appRouter = GoRouter(
     GoRoute(
       path: '/profile',
       builder: (context, state) => const ProfileScreen(),
+    ),
+    GoRoute(
+      path: '/pricing',
+      builder: (context, state) => const PricingScreen(),
     ),
     GoRoute(
       path: '/textbooks',

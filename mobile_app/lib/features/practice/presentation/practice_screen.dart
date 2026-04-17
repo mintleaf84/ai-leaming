@@ -11,7 +11,10 @@ import 'package:mobile_app/shared/widgets/skeleton_widgets.dart';
 import 'package:mobile_app/features/practice/presentation/widgets/first_principles_panel.dart';
 
 class PracticeScreen extends ConsumerStatefulWidget {
-  const PracticeScreen({super.key});
+  /// 来自配置页的练习参数（可选，默认随机10题）
+  final Map<String, dynamic>? config;
+
+  const PracticeScreen({super.key, this.config});
 
   @override
   ConsumerState<PracticeScreen> createState() => _PracticeScreenState();
@@ -21,9 +24,14 @@ class _PracticeScreenState extends ConsumerState<PracticeScreen> {
   @override
   void initState() {
     super.initState();
-    // 页面加载时创建会话
+    // 页面加载时创建会话，优先使用配置参数
+    final limit = (widget.config?['limit'] as int?) ?? 10;
+    final mode = (widget.config?['mode'] as String?) ?? 'random';
     Future.microtask(() {
-      ref.read(practiceControllerProvider.notifier).createSession(limit: 10);
+      ref.read(practiceControllerProvider.notifier).createSession(
+        limit: limit,
+        mode: mode,
+      );
     });
   }
 

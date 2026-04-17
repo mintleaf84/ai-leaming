@@ -28,4 +28,4 @@ export const DIMENSION_LABELS: Record<Dimension, string> = {
 };
 
 // 题目类型
-export type QuestionType = 'single' | 'multi';
+export type QuestionType = 'single' | 'multi' | 'truefalse';

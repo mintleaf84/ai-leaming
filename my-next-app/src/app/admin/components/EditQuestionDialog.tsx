@@ -54,9 +54,14 @@ export function EditQuestionDialog({
             const isJsonAns = question.answer?.trim().startsWith('[') && question.answer?.includes('"');
             const type = question.type || (isJsonAns ? 'multi' : 'single');
 
+            // 判断题：选项固定为 ["正确", "错误"]
+            const optionsStr = type === 'truefalse'
+                ? '正确\n错误'
+                : (Array.isArray(question.options) ? question.options.join("\n") : "");
+
             setFormData({
                 content: question.content || "",
-                optionsStr: Array.isArray(question.options) ? question.options.join("\n") : "",
+                optionsStr,
                 answer: question.answer || "",
                 explanation: question.explanation || "",
                 tagsStr: Array.isArray(question.tags) ? question.tags.join(", ") : "",
@@ -70,15 +75,21 @@ export function EditQuestionDialog({
         e.preventDefault();
         setLoading(true);
         try {
-            const options = formData.optionsStr.split("\n").map(s => s.trim()).filter(Boolean);
+            const isTrueFalse = formData.type === 'truefalse';
+            // 判断题选项固定为 ["正确", "错误"]
+            const options = isTrueFalse
+                ? ['正确', '错误']
+                : formData.optionsStr.split("\n").map(s => s.trim()).filter(Boolean);
             const tags = formData.tagsStr.split(/[,，]/).map(s => s.trim()).filter(Boolean);
 
             if (!formData.content) throw new Error("题干不能为空");
-            if (options.length < 2) throw new Error("至少需要2个选项");
+            if (!isTrueFalse && options.length < 2) throw new Error("至少需要2个选项");
             if (!formData.answer) throw new Error("答案不能为空");
 
             // 校验答案
-            if (formData.type === 'single') {
+            if (formData.type === 'truefalse') {
+                if (formData.answer !== 'A' && formData.answer !== 'B') throw new Error("判断题答案必须为 A（正确）或 B（错误）");
+            } else if (formData.type === 'single') {
                 if (!options.includes(formData.answer)) throw new Error("单选题答案必须是选项之一");
             } else {
                 try {
@@ -161,11 +172,16 @@ export function EditQuestionDialog({
                             <Label>题目类型</Label>
                             <Select
                                 value={formData.type}
-                                onValueChange={(val) => setFormData(prev => ({
-                                    ...prev,
-                                    type: val,
-                                    answer: "" // 切换类型时清空答案
-                                }))}
+                                onValueChange={(val) => {
+                                    // 切换到判断题时自动填充固定选项，并清空答案
+                                    const newOptionsStr = val === 'truefalse' ? '正确\n错误' : (val !== formData.type ? '' : formData.optionsStr);
+                                    setFormData(prev => ({
+                                        ...prev,
+                                        type: val,
+                                        optionsStr: newOptionsStr,
+                                        answer: "" // 切换类型时清空答案
+                                    }));
+                                }}
                             >
                                 <SelectTrigger>
                                     <SelectValue />
@@ -173,6 +189,7 @@ export function EditQuestionDialog({
                                 <SelectContent>
                                     <SelectItem value="single">单项选择</SelectItem>
                                     <SelectItem value="multi">不定项选择 (多选)</SelectItem>
+                                    <SelectItem value="truefalse">判断题</SelectItem>
                                 </SelectContent>
                             </Select>
                         </div>
@@ -195,23 +212,49 @@ export function EditQuestionDialog({
                         </div>
                     </div>
 
-                    <div className="space-y-2">
-                        <Label htmlFor="options">选项列表 (每行一个)</Label>
-                        <Textarea
-                            id="options"
-                            value={formData.optionsStr}
-                            onChange={(e) => setFormData(prev => ({ ...prev, optionsStr: e.target.value }))}
-                            rows={4}
-                            placeholder="选项A&#10;选项B&#10;选项C&#10;选项D"
-                            required
-                            className="font-mono text-sm"
-                        />
-                    </div>
+                    {/* 判断题时隐藏选项编辑区，显示固定提示 */}
+                    {formData.type === 'truefalse' ? (
+                        <div className="space-y-2">
+                            <Label>选项 (判断题固定)</Label>
+                            <div className="p-3 rounded-md border bg-muted/30 text-sm text-muted-foreground">
+                                A. 正确 &nbsp;/&nbsp; B. 错误（系统自动填充，无需手动修改）
+                            </div>
+                        </div>
+                    ) : (
+                        <div className="space-y-2">
+                            <Label htmlFor="options">选项列表 (每行一个)</Label>
+                            <Textarea
+                                id="options"
+                                value={formData.optionsStr}
+                                onChange={(e) => setFormData(prev => ({ ...prev, optionsStr: e.target.value }))}
+                                rows={4}
+                                placeholder="选项A&#10;选项B&#10;选项C&#10;选项D"
+                                required
+                                className="font-mono text-sm"
+                            />
+                        </div>
+                    )}
 
                     <div className="space-y-2">
-                        <Label className="text-primary font-bold">正确答案 ({formData.type === 'single' ? '单选' : '多选'})</Label>
+                        <Label className="text-primary font-bold">
+                            正确答案 ({formData.type === 'single' ? '单选' : formData.type === 'truefalse' ? '判断' : '多选'})
+                        </Label>
 
-                        {formData.type === 'single' ? (
+                        {formData.type === 'truefalse' ? (
+                            /* 判断题：只允许选 A（正确）或 B（错误） */
+                            <Select
+                                value={formData.answer}
+                                onValueChange={(val) => setFormData(prev => ({ ...prev, answer: val }))}
+                            >
+                                <SelectTrigger className="border-primary/50">
+                                    <SelectValue placeholder="选择正确答案" />
+                                </SelectTrigger>
+                                <SelectContent>
+                                    <SelectItem value="A">A — 正确</SelectItem>
+                                    <SelectItem value="B">B — 错误</SelectItem>
+                                </SelectContent>
+                            </Select>
+                        ) : formData.type === 'single' ? (
                             <Select
                                 value={formData.answer}
                                 onValueChange={(val) => setFormData(prev => ({ ...prev, answer: val }))}

@@ -15,6 +15,11 @@ const BaseQuestionSchema = z.object({
 });
 
 export const QuestionSchema = BaseQuestionSchema.refine((data) => {
+  // 判断题：选项固定为 ["正确", "错误"]，答案只能是 "A" 或 "B"
+  if (data.type === 'truefalse') {
+    return (data.answer === 'A' || data.answer === 'B') && data.options.length === 2;
+  }
+
   // 通用匹配逻辑：支持内容匹配标号 或 标号匹配内容
   const isMatch = (ans: string) => {
     if (data.options.includes(ans)) return true;

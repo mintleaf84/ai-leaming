@@ -1,5 +1,5 @@
 import { defaultCache } from "@serwist/next/worker";
-import type { PrecacheEntry, SerwistGlobalConfig } from "@serwist/precaching";
+import type { PrecacheEntry } from "@serwist/precaching";
 import { installSerwist } from "@serwist/sw";
 import { NetworkFirst, CacheFirst, StaleWhileRevalidate } from "@serwist/strategies";
 import { ExpirationPlugin } from "@serwist/expiration";

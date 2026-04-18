@@ -42,6 +42,7 @@ describe('masteryService', () => {
       // 验证：1/1 = 100%
       expect(result[0].newScore).toBe(100);
       expect(result[0].change).toBe(100);
+      expect(result[0].previousScore).toBe(0);
     });
 
     it('答对后答错，分数应为 50（1/2 × 100）', () => {
@@ -55,6 +56,7 @@ describe('masteryService', () => {
       // 验证：1/2 = 50%
       expect(result[0].newScore).toBe(50);
       expect(result[0].change).toBe(-50);
+      expect(result[0].previousScore).toBe(100);
     });
 
     it('可疑答对（监控正确）时正确数不增加，总数增加', () => {
@@ -62,7 +64,7 @@ describe('masteryService', () => {
       mockGet.mockReturnValue({ score: 100, correct_count: 1, total_count: 1 });
       mockRun.mockReturnValue({ changes: 1 });
 
-      // 执行：可疑答对
+      // 执行：可疑答对（isMonitoredCorrect=true）
       const result = masteryService.updateMastery(TEST_USER_ID, 'test-tag', 'knowledge', true, true);
 
       // 验证：1/2 = 50%（正确数不变，总数+1）

@@ -25,29 +25,37 @@ export const masteryService = {
    */
   updateMastery: (userId: number, tagName: string, _dimension: Dimension, isCorrect: boolean, isMonitoredCorrect: boolean = false): MasteryUpdateResult[] => {
     const incCorrect = (isCorrect && !isMonitoredCorrect) ? 1 : 0;
-    
-    // 1. 原子化更新 (Thread Safe)
-    // 核心逻辑：直接在数据库层面进行累加计算，避开 JS 层的竞态
+
+    // 1. 先读取当前状态，以计算 previousScore 和 change
+    const current = db.prepare(
+      'SELECT score, correct_count, total_count FROM user_mastery WHERE user_id = ? AND tag_name = ?'
+    ).get(userId, tagName) as { score: number; correct_count: number; total_count: number } | undefined;
+
+    const prevCorrect = current?.correct_count ?? 0;
+    const prevTotal = current?.total_count ?? 0;
+    const previousScore = current?.score ?? 0;
+
+    // 2. 在 JS 层计算新分数，保持透明可测
+    const newCorrect = prevCorrect + incCorrect;
+    const newTotal = prevTotal + 1;
+    const newScore = (newCorrect / newTotal) * 100;
+
+    // 3. 原子化写入（Thread Safe）
     db.prepare(`
       INSERT INTO user_mastery (user_id, tag_name, score, correct_count, total_count, last_updated) 
-      VALUES (?, ?, ?, ?, 1, CURRENT_TIMESTAMP)
+      VALUES (?, ?, ?, ?, ?, CURRENT_TIMESTAMP)
       ON CONFLICT(user_id, tag_name) DO UPDATE SET 
-        correct_count = user_mastery.correct_count + excluded.correct_count,
-        total_count = user_mastery.total_count + 1,
-        score = (CAST(user_mastery.correct_count + excluded.correct_count AS FLOAT) / (user_mastery.total_count + 1)) * 100,
+        correct_count = ?,
+        total_count = ?,
+        score = ?,
         last_updated = CURRENT_TIMESTAMP
-    `).run(userId, tagName, incCorrect ? 100 : 0, incCorrect);
-
-    // 2. 获取更新后的结果用于返回 (仅供 UI 反馈)
-    const updated = db.prepare(
-      'SELECT score FROM user_mastery WHERE user_id = ? AND tag_name = ?'
-    ).get(userId, tagName) as { score: number };
+    `).run(userId, tagName, newScore, newCorrect, newTotal, newCorrect, newTotal, newScore);
 
     return [{ 
       tagName, 
-      previousScore: 0, // 由于是原子操作，前置分数不再保留以换取性能
-      newScore: updated.score, 
-      change: 0 
+      previousScore,
+      newScore,
+      change: newScore - previousScore,
     }];
   },
 

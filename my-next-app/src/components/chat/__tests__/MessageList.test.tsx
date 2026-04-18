@@ -2,7 +2,7 @@ import { describe, expect, it, vi } from 'vitest'
 import { render, screen, fireEvent } from '@testing-library/react'
 
 // Mock ChatMessage component before importing MessageList
-vi.mock('./ChatMessage', () => ({
+vi.mock('../ChatMessage', () => ({
     __esModule: true,
     default: ({ message, onDelete }: any) => (
         <div data-testid="chat-message">

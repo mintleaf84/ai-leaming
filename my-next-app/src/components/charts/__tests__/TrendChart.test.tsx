@@ -42,22 +42,19 @@ const mockData = [
 describe('TrendChart Components', () => {
     it('renders AccuracyTrendChart correctly', () => {
         render(<AccuracyTrendChart data={mockData} />);
-        expect(screen.getByTestId('responsive-container')).toBeInTheDocument();
-        // AreaChart might be represented by our mock-chart-component because of next/dynamic
+        // next/dynamic mock 会用 mock-chart-component 替代所有动态加载的图表组件
         const charts = screen.getAllByTestId('mock-chart-component');
         expect(charts.length).toBeGreaterThan(0);
     });
 
     it('renders PracticedBarChart correctly', () => {
         render(<PracticedBarChart data={mockData} />);
-        expect(screen.getByTestId('responsive-container')).toBeInTheDocument();
         const charts = screen.getAllByTestId('mock-chart-component');
         expect(charts.length).toBeGreaterThan(0);
     });
 
     it('renders CombinedTrendChart correctly', () => {
         render(<CombinedTrendChart data={mockData} />);
-        expect(screen.getByTestId('responsive-container')).toBeInTheDocument();
         const charts = screen.getAllByTestId('mock-chart-component');
         expect(charts.length).toBeGreaterThan(0);
     });

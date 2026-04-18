@@ -45,7 +45,7 @@ describe('Textbook Service', () => {
             ];
 
             mockDb.prepare.mockImplementation((sql: string) => {
-                if (sql.includes('SELECT id, title FROM textbook_chapters')) {
+                if (sql.includes('SELECT id FROM textbook_chapters')) {
                     return { all: vi.fn().mockReturnValue(mockChapters) };
                 }
                 return { run: vi.fn() };

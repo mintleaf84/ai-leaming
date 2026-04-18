@@ -16,4 +16,8 @@ global.fetch = global.fetch || (() => Promise.resolve({
 // Mock scrollIntoView 因为 jsdom 不支持
 if (typeof Element !== 'undefined') {
     Element.prototype.scrollIntoView = () => { };
+    // Radix UI 需要 pointer event API，jsdom 不支持
+    Element.prototype.hasPointerCapture = () => false;
+    (Element.prototype as any).setPointerCapture = () => { };
+    (Element.prototype as any).releasePointerCapture = () => { };
 }

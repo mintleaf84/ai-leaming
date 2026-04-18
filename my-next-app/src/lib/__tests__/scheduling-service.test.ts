@@ -26,11 +26,13 @@ describe('schedulingService', () => {
 
   describe('generateSession', () => {
     it('应该按 40/40/20 规则分配题目数量', () => {
-      // 准备 - 模拟三类题目的返回
+      // 准备 - 模拟三类题目的返回（模拟各返回 14 道）
+      const stubborn14 = Array.from({ length: 14 }, (_, i) => ({ id: i + 1 }));
+      const blind14 = Array.from({ length: 14 }, (_, i) => ({ id: i + 100 }));
       mockAll
-        .mockReturnValueOnce([{ id: 1 }, { id: 2 }])   // 顽固题 2 道
-        .mockReturnValueOnce([{ id: 3 }, { id: 4 }])   // 盲区题 2 道
-        .mockReturnValueOnce([{ id: 5 }]);             // 常规题 1 道
+        .mockReturnValueOnce(stubborn14)   // 顽固题 14 道
+        .mockReturnValueOnce(blind14)      // 盲区题 14 道
+        .mockReturnValueOnce([{ id: 201 }]); // 常规题 1 道
 
       // 执行
       const session = schedulingService.generateSession(1, 35);
@@ -38,43 +40,54 @@ describe('schedulingService', () => {
       // 验证 - 各类题目请求数量及 SQL 逻辑
       // 35 * 0.4 = 14 顽固题 (JOIN observation_zone)
       expect(mockPrepare).toHaveBeenNthCalledWith(1, expect.stringContaining('observation_zone'));
-      expect(mockAll).toHaveBeenNthCalledWith(1, 14);
+      expect(mockAll).toHaveBeenNthCalledWith(1, 1, 14);
 
       // 35 * 0.4 = 14 盲区题 (NOT EXISTS practice_logs)
       expect(mockPrepare).toHaveBeenNthCalledWith(2, expect.stringContaining('NOT EXISTS'));
       expect(mockPrepare).toHaveBeenNthCalledWith(2, expect.stringContaining('practice_logs'));
-      expect(mockAll).toHaveBeenNthCalledWith(2, 14);
+      expect(mockAll).toHaveBeenNthCalledWith(2, 1, 14);
 
       // 35 - 14 - 14 = 7 常规题 (NOT IN ...)
       expect(mockPrepare).toHaveBeenNthCalledWith(3, expect.stringContaining('NOT IN'));
       expect(mockAll).toHaveBeenNthCalledWith(3, 7);
 
-      // 验证 - 返回结果数量
-      expect(session).toHaveLength(5); // 2+2+1
+      // 验证 - 返回结果数量（14+14+1）
+      expect(session).toHaveLength(29);
     });
 
     it('默认应该生成 35 道题', () => {
-      mockAll.mockReturnValue([]);
+      // 模拟各返回 14 道，以确保 remainingCount 计算为 35-28=7
+      const stubborn14 = Array.from({ length: 14 }, (_, i) => ({ id: i + 1 }));
+      const blind14 = Array.from({ length: 14 }, (_, i) => ({ id: i + 100 }));
+      mockAll
+        .mockReturnValueOnce(stubborn14)
+        .mockReturnValueOnce(blind14)
+        .mockReturnValue([]);
 
       schedulingService.generateSession(1);
 
-      // 默认 limit = 35
-      // 应该请求 14 + 14 + 7 = 35
-      expect(mockAll).toHaveBeenNthCalledWith(1, 14);
-      expect(mockAll).toHaveBeenNthCalledWith(2, 14);
+      // 默认 limit = 35: stubbornTarget=14, blindTarget=14, remaining=7
+      expect(mockAll).toHaveBeenNthCalledWith(1, 1, 14);
+      expect(mockAll).toHaveBeenNthCalledWith(2, 1, 14);
       expect(mockAll).toHaveBeenNthCalledWith(3, 7);
     });
 
     it('应该支持自定义题目数量', () => {
-      mockAll.mockReturnValue([]);
+      // 模拟各返回 4 道，以确保 remainingCount 计算为 10-8=2
+      const stubborn4 = Array.from({ length: 4 }, (_, i) => ({ id: i + 1 }));
+      const blind4 = Array.from({ length: 4 }, (_, i) => ({ id: i + 100 }));
+      mockAll
+        .mockReturnValueOnce(stubborn4)
+        .mockReturnValueOnce(blind4)
+        .mockReturnValue([]);
 
       schedulingService.generateSession(1, 10);
 
       // 10 * 0.4 = 4 顽固题
       // 10 * 0.4 = 4 盲区题
       // 10 - 4 - 4 = 2 常规题
-      expect(mockAll).toHaveBeenNthCalledWith(1, 4);
-      expect(mockAll).toHaveBeenNthCalledWith(2, 4);
+      expect(mockAll).toHaveBeenNthCalledWith(1, 1, 4);
+      expect(mockAll).toHaveBeenNthCalledWith(2, 1, 4);
       expect(mockAll).toHaveBeenNthCalledWith(3, 2);
     });
 

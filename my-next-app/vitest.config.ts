@@ -12,4 +12,10 @@ export default defineConfig({
         // 排除 e2e 测试
         exclude: ['**/node_modules/**', '**/e2e/**', '**/playwright/**'],
     },
+    resolve: {
+        alias: {
+            // 在测试环境中，将 server-only 映射到空模块存根
+            'server-only': new URL('./__mocks__/server-only.js', import.meta.url).pathname,
+        },
+    },
 })

@@ -1,8 +1,5 @@
 // @vitest-environment node
 import { describe, it, expect, beforeEach, vi } from 'vitest';
-import { createBetterDbMock } from '../../../lib/__tests__/db-mock-utils';
-
-const betterDb = createBetterDbMock();
 
 // 辅助函数：复用源码中的哈希逻辑以验证 Key
 function generateHash(content: string): string {
@@ -16,11 +13,53 @@ function generateHash(content: string): string {
   return hash.toString(36);
 }
 
-// 1. Mock dependencies
+// 1. Mock dependencies - 使用 vi.hoisted 内联创建，避免 require() 路径问题
 const { mockBetterDb } = vi.hoisted(() => {
-    const { createBetterDbMock } = require('../../../lib/__tests__/db-mock-utils');
+    const calls: { sql: string; args: any[] }[] = [];
+
+    const mockRun = vi.fn().mockImplementation(() => ({ lastInsertRowid: 100, changes: 1 }));
+    const mockGet = vi.fn();
+    const mockAll = vi.fn();
+
+    const prepare = vi.fn().mockImplementation((sql: string) => ({
+        run: vi.fn().mockImplementation((...args: any[]) => {
+            calls.push({ sql, args });
+            return mockRun(...args);
+        }),
+        get: vi.fn().mockImplementation((...args: any[]) => {
+            calls.push({ sql, args });
+            return mockGet(...args);
+        }),
+        all: vi.fn().mockImplementation((...args: any[]) => {
+            calls.push({ sql, args });
+            return mockAll(...args);
+        }),
+    }));
+
+    // better-sqlite3 的 transaction() 返回一个函数，调用该函数时才执行事务
+    const transaction = vi.fn().mockImplementation((cb: () => any) => {
+        return vi.fn().mockImplementation((...args: any[]) => cb(...args));
+    });
+
     return {
-        mockBetterDb: createBetterDbMock()
+        mockBetterDb: {
+            prepare,
+            transaction,
+            exec: vi.fn(),
+            _mockRun: mockRun,
+            _mockGet: mockGet,
+            _mockAll: mockAll,
+            _state: { get calls() { return calls; } },
+            reset: () => {
+                calls.length = 0;
+                mockRun.mockReset();
+                mockRun.mockImplementation(() => ({ lastInsertRowid: 100, changes: 1 }));
+                mockGet.mockReset();
+                mockAll.mockReset();
+                prepare.mockClear();
+                transaction.mockClear();
+            },
+        }
     };
 });
 

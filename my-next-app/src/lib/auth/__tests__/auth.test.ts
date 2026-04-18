@@ -1,6 +1,16 @@
 // @vitest-environment node
 import { describe, it, expect, beforeEach, vi, afterEach } from 'vitest';
 
+// Mock user-service 防止依赖真实数据库（必须用 vi.hoisted 保证在 vi.mock 之前初始化）
+const { mockGetUserById, mockRevokeUserSessions } = vi.hoisted(() => ({
+    mockGetUserById: vi.fn(),
+    mockRevokeUserSessions: vi.fn(),
+}));
+
+vi.mock('@/lib/auth/user-service', () => ({
+    getUserById: mockGetUserById,
+    revokeUserSessions: mockRevokeUserSessions,
+}));
 
 // 1. Mock dependencies
 const mockCookieStore = {
@@ -108,6 +118,8 @@ describe('Auth Service', () => {
         it('should return user if session exists', async () => {
             const token = await encrypt({ user: TEST_USER, expires: new Date() });
             mockCookieStore.get.mockReturnValue({ value: token });
+            // 模拟用户在数据库中存在，且 token_version 匹配
+            mockGetUserById.mockReturnValue({ ...TEST_USER, token_version: 0 });
 
             const user = await requireUser();
             expect(user.id).toBe(1);
@@ -124,6 +136,7 @@ describe('Auth Service', () => {
         it('should return user if role matches', async () => {
             const token = await encrypt({ user: { ...TEST_USER, role: 'admin' }, expires: new Date() });
             mockCookieStore.get.mockReturnValue({ value: token });
+            mockGetUserById.mockReturnValue({ ...TEST_USER, role: 'admin', token_version: 0 });
 
             const user = await requireRole(['admin']);
             expect(user.role).toBe('admin');
@@ -132,6 +145,7 @@ describe('Auth Service', () => {
         it('should throw Forbidden if role does not match', async () => {
             const token = await encrypt({ user: { ...TEST_USER, role: 'user' }, expires: new Date() });
             mockCookieStore.get.mockReturnValue({ value: token });
+            mockGetUserById.mockReturnValue({ ...TEST_USER, role: 'user', token_version: 0 });
 
             await expect(requireRole(['admin'])).rejects.toThrow('Forbidden');
         });

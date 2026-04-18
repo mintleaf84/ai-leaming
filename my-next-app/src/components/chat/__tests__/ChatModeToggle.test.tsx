@@ -15,16 +15,14 @@ describe('ChatModeToggle Component', () => {
         expect(screen.getByText('苏格拉底导师')).toBeInTheDocument()
     })
 
-    // Dropdown testing can be tricky with JSDOM if radicals/portals are used.
-    // shadcn/ui uses Radix UI which might need special handling or just testing the trigger.
+    // Radix UI DropdownMenu 需要 pointerdown 事件才能正确开关
     it('shows dropdown items when clicked', async () => {
         render(<ChatModeToggle mode="standard" onModeChange={mockOnModeChange} />)
         
         const trigger = screen.getByRole('button')
-        fireEvent.click(trigger)
+        fireEvent.pointerDown(trigger, { button: 0, ctrlKey: false })
         
-        // In JSDOM, Radix might render the content in a portal. 
-        // We look for the menu items.
+        // 等待 Radix UI 渲染下拉菜单项
         expect(await screen.findByText('直接回答，简洁明了')).toBeInTheDocument()
         expect(await screen.findByText('循循善诱，启发思考')).toBeInTheDocument()
 

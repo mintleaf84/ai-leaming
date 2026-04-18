@@ -12,9 +12,21 @@
 
 * **SQLite 配置**: 数据文件路径 `data/ai-learning.db`，启用 WAL 模式。
 - **多选题支持**:
-  - `questions` 表 `type` 字段: `single` | `multi`
-  - `answer` 字段: 支持 JSON 数组字符串 (e.g. `["A","B"]`)
+  - `questions` 表 `type` 字段: `single` | `multi` | `truefalse`
+  - `answer` 字段: 支持 JSON 数组字符串 (e.g. `["A","B"]`)；判断题时为 `"A"` 或 `"B"`
   - 全链路支持: Zod Schema (`QuestionSchema`) -> Admin UI -> DB -> History UI (`QuestionCard`)
+- **新增表结构（Phase 11-16）**:
+  - `users` — 用户账号与权限
+  - `practice_sessions` — 练习会话（含题目快照 JSON）
+  - `practice_logs` — 每道题答题记录
+  - `subscription_plans` — 订阅套餐定义
+  - `user_subscriptions` — 用户订阅关系
+  - `textbooks` — 教材库
+  - `textbook_sections` — 教材章节
+  - `notes` — 学习笔记
+  - `mindmaps` — 思维导图
+  - `text_annotations` — 文本标注
+  - `api_keys` — AI 服务商密钥
 
 ### 2. 前端架构
 
@@ -28,8 +40,8 @@
 
 ## 核心地图
 
-- **前端页面注册表**: [page_registry.md](file:///e:/code/ai-leaming/docs/page_registry.md)
-- **参考项目**: `E:\code\ai-leaming\cherry-studio-main` (仅供逻辑参考，非当前项目代码库)。
+- **前端页面注册表**: [page_registry.md](../../../docs/page_registry.md)
+- **参考项目**: `cherry-studio-main/` (仅供逻辑参考，非当前项目代码库)。
 
 ## 设计语言
 

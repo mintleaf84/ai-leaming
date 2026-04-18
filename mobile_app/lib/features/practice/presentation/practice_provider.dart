@@ -89,7 +89,7 @@ class PracticeController extends Notifier<PracticeSessionState> {
   PracticeRepository get _repository => ref.read(practiceRepositoryProvider);
 
   /// 创建新会话
-  Future<void> createSession({int limit = 10}) async {
+  Future<void> createSession({int limit = 10, String mode = 'random'}) async {
     state = state.copyWith(isLoading: true, error: null);
 
     try {
@@ -99,7 +99,10 @@ class PracticeController extends Notifier<PracticeSessionState> {
         return;
       }
 
-      final sessionResponse = await _repository.createSession(limit: limit);
+      final sessionResponse = await _repository.createSession(
+        limit: limit,
+        mode: mode,
+      );
 
       state = state.copyWith(
         isLoading: false,

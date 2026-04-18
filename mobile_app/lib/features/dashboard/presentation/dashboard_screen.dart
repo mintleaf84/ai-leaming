@@ -137,7 +137,7 @@ class DashboardScreen extends HookConsumerWidget {
             SizedBox(width: 16.w),
             Expanded(
               child: GestureDetector(
-                onTap: () => context.go('/practice'),
+                onTap: () => context.go('/practice/setup'),
                 child: _buildActionCard(
                   icon: '🧠',
                   tag: '待复习',

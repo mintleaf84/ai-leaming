@@ -12,7 +12,7 @@ abstract class PracticeRepository {
 
   Future<Question> getQuestionDetail(String id);
 
-  Future<PracticeSession> createSession({required int limit});
+  Future<PracticeSession> createSession({required int limit, String mode = 'random'});
 
   Future<Map<String, dynamic>> submitAnswer({
     required String sessionId,

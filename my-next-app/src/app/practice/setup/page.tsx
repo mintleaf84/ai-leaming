@@ -98,7 +98,7 @@ export default function PracticeSetupPage() {
     };
 
     // 切换题目类型
-    const toggleType = (type: 'single' | 'multi') => {
+    const toggleType = (type: 'single' | 'multi' | 'truefalse') => {
         setConfig(prev => ({
             ...prev,
             types: prev.types?.includes(type)
@@ -253,6 +253,13 @@ export default function PracticeSetupPage() {
                                                 onCheckedChange={() => toggleType('multi')}
                                             />
                                             <span>多选题</span>
+                                        </label>
+                                        <label className="flex items-center gap-2 cursor-pointer">
+                                            <Checkbox
+                                                checked={config.types?.includes('truefalse') ?? true}
+                                                onCheckedChange={() => toggleType('truefalse')}
+                                            />
+                                            <span>判断题</span>
                                         </label>
                                     </div>
                                 </div>

@@ -138,4 +138,45 @@ describe('usePracticeEngine Reducer', () => {
         expect(state.status).toBe('practicing'); // Should resume to practicing if no more items
         expect(state.reviewTriggeredAt).toBe(35); // Threshold bumped
     });
+
+    it('判断题：正确答案 A 应通过校验，答错应进入错题队列', () => {
+        // 判断题模型：answer 为 "A"（正确），type 为 truefalse
+        const trueFalseQuestion: Question = {
+            id: 99,
+            content: '行为主义认为学习是刺激-反应的联结。',
+            type: 'truefalse',
+            options: ['正确', '错误'],
+            answer: 'A',
+            tags: ['心理学'],
+            dimension: 'knowledge',
+            explanation: '正确，行为主义核心观点。'
+        } as any;
+
+        const startState: PracticeState = {
+            ...INITIAL_STATE,
+            status: 'practicing',
+            sessionQueue: [trueFalseQuestion],
+            currentIndex: 0,
+            reviewTriggeredAt: 25,
+        };
+
+        // 答对
+        const correctAction: Action = {
+            type: 'ANSWER_QUESTION',
+            payload: { questionId: 99, answer: 'A', isCorrect: true, duration: 500 }
+        };
+        const stateAfterCorrect = practiceReducer(startState, correctAction);
+        expect(stateAfterCorrect.answers[99].isCorrect).toBe(true);
+        expect(stateAfterCorrect.reviewQueue).toHaveLength(0);
+
+        // 答错（选 B）
+        const wrongAction: Action = {
+            type: 'ANSWER_QUESTION',
+            payload: { questionId: 99, answer: 'B', isCorrect: false, duration: 500 }
+        };
+        const stateAfterWrong = practiceReducer(startState, wrongAction);
+        expect(stateAfterWrong.answers[99].isCorrect).toBe(false);
+        expect(stateAfterWrong.reviewQueue).toHaveLength(1);
+        expect(stateAfterWrong.reviewQueue[0].originalQuestionId).toBe(99);
+    });
 });

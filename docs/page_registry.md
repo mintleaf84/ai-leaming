@@ -11,7 +11,7 @@
 | **`/register`** | `src/app/register/page.tsx` | **注册页**: 新用户开户。 | ✅ | ✅ | 包含密码一致性校验。 |
 | **`/dashboard`** | `src/app/dashboard/page.tsx` | **仪表盘**: 知识概览与数据管理。 | ✅ | ✅ | 集成 D3.js 知识图谱。 |
 | **`/practice`** | `src/app/practice/page.tsx` | **练习引擎**: 核心答题页，包含复盘状态机。 | ✅ | ✅ | 支持单选/多选、AI 复盘及第一性原理标注。 |
-| **`/practice/setup`** | `src/app/practice/setup/page.tsx` | **练习配置**: 模式选择与参数配置。 | ✅ | ✅ | Phase 16 新增。 |
+| **`/practice/setup`** | `src/app/practice/setup/page.tsx` | **练习配置**: 模式选择与参数配置。 | ✅ | ✅ | Phase 16 新增；Flutter 端已同步（`practice_setup_screen.dart`）。 |
 | **`/report`** | `src/app/report/page.tsx` | **分析报告**: 练习结算与 AI 诊断展示。 | ✅ | ✅ | 包含维度雷达图。 |
 | **`/history`** | `src/app/history/page.tsx` | **练习记录**: 历史练习会话列表。 | ✅ | ✅ | 按时间倒序排列。 |
 | **`/history/[id]`** | `src/app/history/[id]/page.tsx` | **会话详情**: 历史题目回溯与错因分析。 | ✅ | ✅ | 支持回顾复盘内容。 |
@@ -35,9 +35,14 @@
 | 路由路径 | 页面组件文件 | 功能描述 | 汉化 | 移动端适配 | 备注 |
 | :--- | :--- | :--- | :--- | :--- | :--- |
 | **`/admin`** | `src/app/admin/page.tsx` | **题库概览**: 试题统计与管理入口。 | ✅ | ❌ | 已完成基本汉化。 |
+| **`/admin/questions`** | `src/app/admin/questions/page.tsx` | **题目管理**: 题目 CRUD、批量导入/导出。 | ✅ | ❌ | 支持单选/多选/判断题管理。 |
 | **`/admin/users`** | `src/app/admin/users/page.tsx` | **用户管理**: 查看用户、订阅状态及权限。 | ✅ | ❌ | 新增订阅管理功能。 |
 | **`/admin/plans`** | `src/app/admin/plans/page.tsx` | **套餐管理**: 配置订阅套餐与用量限制。 | ✅ | ❌ | Phase 14 新增。 |
-| **`/pricing`** | `src/app/pricing/page.tsx` | **定价页面**: 套餐对比与订阅信息。 | ✅ | ✅ | Phase 14 新增。 |
+| **`/admin/system`** | `src/app/admin/system/page.tsx` | **系统配置**: 功能开关与系统健康监控。 | ✅ | ❌ | 含 `ENABLE_INTELLIGENT_REVIEW` 开关。 |
+| **`/admin/ai`** | `src/app/admin/ai/page.tsx` | **AI 管理**: Prompt 管理与调试操场。 | ✅ | ❌ | 支持模型路由与 Rerank 配置。 |
+| **`/admin/activity`** | `src/app/admin/activity/page.tsx` | **操作日志**: 管理员行为审计。 | ✅ | ❌ | 按时间倒序排列。 |
+| **`/admin/api-keys`** | `src/app/admin/api-keys/page.tsx` | **API 密钥**: 管理 AI 服务商密钥。 | ✅ | ❌ | 支持多服务商密钥切换。 |
+| **`/pricing`** | `src/app/pricing/page.tsx` | **定价页面**: 套餐对比与订阅信息。 | ✅ | ✅ | Phase 14 新增；Flutter 端已同步。 |
 
 ## 3. 系统级页面 (System)
 

@@ -298,6 +298,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
       (icon: Icons.history, label: '练习历史', route: '/history'),
       (icon: Icons.book_outlined, label: '错题本', route: '/wrong-book'),
       (icon: Icons.style_outlined, label: '知识卡片', route: '/knowledge'),
+      (icon: Icons.workspace_premium_outlined, label: '订阅套餐', route: '/pricing'),
       (icon: Icons.settings_outlined, label: '设置', route: '/settings'),
     ];
 

@@ -11,7 +11,10 @@ import 'package:mobile_app/shared/widgets/skeleton_widgets.dart';
 import 'package:mobile_app/features/practice/presentation/widgets/first_principles_panel.dart';
 
 class PracticeScreen extends ConsumerStatefulWidget {
-  const PracticeScreen({super.key});
+  /// 来自配置页的练习参数（可选，默认随机10题）
+  final Map<String, dynamic>? config;
+
+  const PracticeScreen({super.key, this.config});
 
   @override
   ConsumerState<PracticeScreen> createState() => _PracticeScreenState();
@@ -21,9 +24,14 @@ class _PracticeScreenState extends ConsumerState<PracticeScreen> {
   @override
   void initState() {
     super.initState();
-    // 页面加载时创建会话
+    // 页面加载时创建会话，优先使用配置参数
+    final limit = (widget.config?['limit'] as int?) ?? 10;
+    final mode = (widget.config?['mode'] as String?) ?? 'random';
     Future.microtask(() {
-      ref.read(practiceControllerProvider.notifier).createSession(limit: 10);
+      ref.read(practiceControllerProvider.notifier).createSession(
+        limit: limit,
+        mode: mode,
+      );
     });
   }
 
@@ -155,6 +163,7 @@ class _PracticeScreenState extends ConsumerState<PracticeScreen> {
     final selectedAnswers = state.userAnswers[question.id] ?? [];
     final result = state.results[question.id];
     final isMulti = question.type == 'multi';
+    final isTrueFalse = question.type == 'truefalse';
     // 正确答案列表（多选可能是 JSON 数组）
     final correctAnswerRaw = state.correctAnswers[question.id];
     List<String> correctAnswerList = [];
@@ -190,19 +199,23 @@ class _PracticeScreenState extends ConsumerState<PracticeScreen> {
                         vertical: 3.h,
                       ),
                       decoration: BoxDecoration(
-                        color: isMulti
-                            ? const Color(0xFFF3E5F5)
-                            : const Color(0xFFE3F2FD),
+                        color: isTrueFalse
+                            ? const Color(0xFFFFF3E0) // 判断题：橙色背景
+                            : isMulti
+                                ? const Color(0xFFF3E5F5)
+                                : const Color(0xFFE3F2FD),
                         borderRadius: BorderRadius.circular(4.r),
                       ),
                       child: Text(
-                        isMulti ? '多选题' : '单选题',
+                        isTrueFalse ? '判断题' : isMulti ? '多选题' : '单选题',
                         style: TextStyle(
                           fontSize: 11.sp,
                           fontWeight: FontWeight.w600,
-                          color: isMulti
-                              ? const Color(0xFF7B1FA2)
-                              : const Color(0xFF1976D2),
+                          color: isTrueFalse
+                              ? const Color(0xFFE65100) // 判断题：橙色文字
+                              : isMulti
+                                  ? const Color(0xFF7B1FA2)
+                                  : const Color(0xFF1976D2),
                         ),
                       ),
                     ),

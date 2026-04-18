@@ -109,3 +109,56 @@ describe('schedulingService', () => {
     });
   });
 });
+
+// ==================== calculateSessionRatios 单独测试 ====================
+import { calculateSessionRatios } from '@/lib/services/scheduling';
+
+describe('calculateSessionRatios（40/40/20 比例分配）', () => {
+  it('标准 35 题的分配', () => {
+    const ratios = calculateSessionRatios(35);
+    // 35 * 0.4 = 14 → stubborn=14, blind=14, regular=35-28=7
+    expect(ratios.stubborn).toBe(14);
+    expect(ratios.blind).toBe(14);
+    expect(ratios.regular).toBe(7);
+    expect(ratios.stubborn + ratios.blind + ratios.regular).toBe(35);
+  });
+
+  it('10 题的分配', () => {
+    const ratios = calculateSessionRatios(10);
+    expect(ratios.stubborn).toBe(4);
+    expect(ratios.blind).toBe(4);
+    expect(ratios.regular).toBe(2);
+    expect(ratios.stubborn + ratios.blind + ratios.regular).toBe(10);
+  });
+
+  it('5 题的分配（边界值）', () => {
+    const ratios = calculateSessionRatios(5);
+    // 5 * 0.4 = 2 → stubborn=2, blind=2, regular=5-4=1
+    expect(ratios.stubborn).toBe(2);
+    expect(ratios.blind).toBe(2);
+    expect(ratios.regular).toBe(1);
+  });
+
+  it('3 题的分配（奇数边界）', () => {
+    const ratios = calculateSessionRatios(3);
+    // 3 * 0.4 = 1.2 → floor=1; stubborn=1, blind=1, regular=3-2=1
+    expect(ratios.stubborn).toBe(1);
+    expect(ratios.blind).toBe(1);
+    expect(ratios.regular).toBe(1);
+  });
+
+  it('1 题的分配（最小值）', () => {
+    const ratios = calculateSessionRatios(1);
+    // 1 * 0.4 = 0.4 → floor=0; stubborn=0, blind=0, regular=1-0=1
+    expect(ratios.stubborn).toBe(0);
+    expect(ratios.blind).toBe(0);
+    expect(ratios.regular).toBe(1);
+  });
+
+  it('分配总数应始终等于 limit', () => {
+    for (const limit of [1, 5, 10, 20, 35, 100]) {
+      const { stubborn, blind, regular } = calculateSessionRatios(limit);
+      expect(stubborn + blind + regular).toBe(limit);
+    }
+  });
+});

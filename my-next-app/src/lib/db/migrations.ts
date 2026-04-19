@@ -92,11 +92,7 @@ export function runMigrations(db: Database.Database) {
       CREATE INDEX IF NOT EXISTS idx_api_logs_date ON api_call_logs(date(created_at));
       CREATE INDEX IF NOT EXISTS idx_practice_logs_user_ts ON practice_logs(user_id, timestamp DESC);
       CREATE INDEX IF NOT EXISTS idx_practice_logs_correct ON practice_logs(is_correct);
-      CREATE INDEX IF NOT EXISTS idx_practice_logs_question ON practice_logs(question_id);
-      CREATE INDEX IF NOT EXISTS idx_practice_logs_user_correct ON practice_logs(user_id, is_correct);
       CREATE INDEX IF NOT EXISTS idx_practice_sessions_user_ts ON practice_sessions(user_id, created_at DESC);
-      CREATE INDEX IF NOT EXISTS idx_mastered_questions_user ON mastered_questions(user_id);
-      CREATE INDEX IF NOT EXISTS idx_mastered_questions_user_q ON mastered_questions(user_id, question_id);
       CREATE INDEX IF NOT EXISTS idx_knowledge_cards_category ON knowledge_cards(category);
       CREATE INDEX IF NOT EXISTS idx_knowledge_cards_created ON knowledge_cards(created_at DESC);
       CREATE INDEX IF NOT EXISTS idx_knowledge_cards_user ON knowledge_cards(user_id);

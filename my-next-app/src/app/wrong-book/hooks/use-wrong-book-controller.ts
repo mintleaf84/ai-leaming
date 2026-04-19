@@ -143,16 +143,12 @@ export function useWrongBookController() {
         }
     }, [selectedIds, router]);
 
-    // 开始随机练习（支持 priority/random 两种排序模式）
-    const startRandomPractice = useCallback(async (
-        count: number = 15,
-        tag?: string,
-        mode: 'priority' | 'random' = 'priority'
-    ) => {
+    // 开始随机练习
+    const startRandomPractice = useCallback(async (count: number = 15, tag?: string) => {
         setIsRandomLoading(true);
         try {
             // 1. 获取随机题目
-            const randomQuestions = await getRandomWrongQuestionsAction({ count, tag, mode });
+            const randomQuestions = await getRandomWrongQuestionsAction({ count, tag });
             
             if (randomQuestions.length === 0) {
                 toast.error('未找到符合条件的错题，快去练习吧！');

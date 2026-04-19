@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState } from 'react';
+import React from 'react';
 import Link from 'next/link';
 import {
     BookOpen,
@@ -11,9 +11,7 @@ import {
     Layers,
     CheckCircle2,
     Archive,
-    RotateCcw,
-    Shuffle,
-    SortDesc
+    RotateCcw
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -24,9 +22,6 @@ import { WrongBookSkeleton } from './components/WrongBookSkeleton';
 import { QuestionCountPicker } from './components/QuestionCountPicker';
 
 export default function WrongBookPage() {
-    // 复练排序模式：priority = 按错误频次+遗忘权重，random = 纯随机
-    const [practiceMode, setPracticeMode] = useState<'priority' | 'random'>('priority');
-
     const {
         // 数据
         questions,
@@ -102,54 +97,23 @@ export default function WrongBookPage() {
                             </div>
                         </div>
 
-                        {/* 复练模式选择 + 智能随机练习入口 */}
-                        <div className="space-y-2">
-                            {/* 排序模式切换 */}
-                            <div className="flex items-center gap-2 bg-muted/50 rounded-xl p-1">
-                                <button
-                                    onClick={() => setPracticeMode('priority')}
-                                    className={`flex-1 flex items-center justify-center gap-1.5 px-3 py-2 rounded-lg text-sm font-medium transition-all ${
-                                        practiceMode === 'priority'
-                                            ? 'bg-card shadow text-foreground'
-                                            : 'text-muted-foreground hover:text-foreground'
-                                    }`}
-                                >
-                                    <SortDesc className="w-3.5 h-3.5" />
-                                    优先复习
-                                </button>
-                                <button
-                                    onClick={() => setPracticeMode('random')}
-                                    className={`flex-1 flex items-center justify-center gap-1.5 px-3 py-2 rounded-lg text-sm font-medium transition-all ${
-                                        practiceMode === 'random'
-                                            ? 'bg-card shadow text-foreground'
-                                            : 'text-muted-foreground hover:text-foreground'
-                                    }`}
-                                >
-                                    <Shuffle className="w-3.5 h-3.5" />
-                                    随机顺序
-                                </button>
-                            </div>
-
-                            {/* 智能随机练习入口 - 带题量选择 */}
-                            <QuestionCountPicker
-                                totalCount={stats.total}
-                                onConfirm={(count) => startRandomPractice(count, undefined, practiceMode)}
+                        {/* 智能随机练习入口 - 带题量选择 */}
+                        <QuestionCountPicker
+                            totalCount={stats.total}
+                            onConfirm={(count) => startRandomPractice(count)}
+                            disabled={isRandomLoading}
+                        >
+                            <Button
+                                className="w-full h-14 text-lg bg-red-600 hover:bg-red-700 shadow-lg shadow-red-500/20"
                                 disabled={isRandomLoading}
                             >
-                                <Button
-                                    className="w-full h-14 text-lg bg-red-600 hover:bg-red-700 shadow-lg shadow-red-500/20"
-                                    disabled={isRandomLoading}
-                                >
-                                    <Play className={`w-5 h-5 mr-2 ${isRandomLoading ? 'animate-pulse' : 'fill-current'}`} />
-                                    {isRandomLoading ? '智能抽题中...' : practiceMode === 'priority' ? '智能优先复习' : '随机顺序复习'}
-                                </Button>
-                            </QuestionCountPicker>
-                            <p className="text-center text-[10px] text-muted-foreground opacity-70">
-                                {practiceMode === 'priority'
-                                    ? '综合"错误频次"与"遗忘时长"为你挑选最急需复习的题目'
-                                    : '随机抽取指定数量的错题进行练习'}
-                            </p>
-                        </div>
+                                <Play className={`w-5 h-5 mr-2 ${isRandomLoading ? 'animate-pulse' : 'fill-current'}`} />
+                                {isRandomLoading ? '智能抽题中...' : '智能随机复习'}
+                            </Button>
+                        </QuestionCountPicker>
+                        <p className="text-center text-[10px] text-muted-foreground mt-2 opacity-70">
+                            点击后选择题量，系统将综合“错误频次”与“遗忘时长”为你挑选最急需复习的题目
+                        </p>
                     </div>
                 )}
 

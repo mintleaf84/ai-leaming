@@ -21,7 +21,7 @@ function getDemoModeStatus(): boolean {
     }
 }
 
-function escapeCsv(field: any): string {
+function escapeCsv(field: unknown): string {
     if (field === null || field === undefined) return '';
     const str = String(field);
     if (str.includes('"') || str.includes(',') || str.includes('\n') || str.includes('\r')) {

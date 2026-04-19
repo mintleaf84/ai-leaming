@@ -174,7 +174,7 @@ async function getExecutor(apiKey: string, baseURL: string) {
 /**
  * 健壮的 JSON 提取工具 (借鉴 Cherry Studio)
  */
-function extractJson(text: string): any {
+function extractJson(text: string): unknown {
   // 1. 移除 DeepSeek 等模型的 <think> 标签内容
   const cleanedText = text.replace(/<think>[\s\S]*?<\/think>/g, '').trim();
 
@@ -394,9 +394,9 @@ export async function generateTextWrapper(
  * 支持工具调用和多步执行
  */
 export async function streamChatWrapper(
-  messages: any[],
+  messages: { role: string; content: string }[],
   onFinish?: (text: string) => void,
-  tools?: any,
+  tools?: Record<string, unknown>,
   system?: string // 允许覆盖默认 system prompt
 ) {
   const { apiKey, baseURL, modelName } = getAiConfig('premium');

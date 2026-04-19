@@ -17,6 +17,9 @@ function initDb() {
 
   const db = new Database(dbPath);
   db.pragma('journal_mode = WAL');
+  db.pragma('cache_size = -20000');   // 20MB 内存缓存，减少磁盘 I/O
+  db.pragma('temp_store = MEMORY');   // 临时表放内存，提升排序/聚合性能
+  db.pragma('synchronous = NORMAL');  // WAL 模式下 NORMAL 安全且更快
 
   try {
     // 显式加载向量扩展

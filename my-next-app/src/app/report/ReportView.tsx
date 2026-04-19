@@ -3,8 +3,10 @@
 import React, { useEffect, useState } from 'react';
 import dynamic from 'next/dynamic';
 import { generateDiagnosticReportAction, SessionReportData } from '@/server/actions/report';
+import { getPracticeTrendAction, TrendDataItem } from '@/server/actions/stats';
 import { Button } from '@/components/ui/button';
-import { Loader2, TrendingUp, Clock, Target, CheckCircle2 } from 'lucide-react';
+import { TrendingUp, Clock, Target, CheckCircle2 } from 'lucide-react';
+import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
 import type { RadarChartProps } from '@/components/viz/RadarChart';
 
 const RadarChartSkeleton = () => (
@@ -29,6 +31,7 @@ interface ReportViewProps {
 export function ReportView({ initialData: reportData }: ReportViewProps) {
   const [aiReport, setAiReport] = useState<string>('');
   const [isGeneratingAI, setIsGeneratingAI] = useState(false);
+  const [trendData, setTrendData] = useState<TrendDataItem[]>([]);
 
   useEffect(() => {
     async function generateAI() {
@@ -48,7 +51,19 @@ export function ReportView({ initialData: reportData }: ReportViewProps) {
         setIsGeneratingAI(false);
       }
     }
+
+    // 并行加载 AI 报告和历史趋势数据
+    async function loadTrend() {
+      try {
+        const data = await getPracticeTrendAction(14);
+        // 只展示有练习数据的天
+        const filtered = data.filter(d => d.practiced > 0);
+        setTrendData(filtered);
+      } catch { /* 趋势数据加载失败不影响主体报告 */ }
+    }
+
     generateAI();
+    loadTrend();
   }, [reportData]);
 
   return (
@@ -158,6 +173,52 @@ export function ReportView({ initialData: reportData }: ReportViewProps) {
             )}
           </div>
         </div>
+
+        {/* 历史趋势折线图 */}
+        {trendData.length >= 2 && (
+          <div className="mt-8 bg-card rounded-xl p-6 shadow-sm border border-border">
+            <h2 className="text-base font-semibold mb-4 text-foreground flex items-center gap-2">
+              <TrendingUp className="w-4 h-4 text-primary" />
+              近期练习趋势（近 14 天）
+            </h2>
+            <ResponsiveContainer width="100%" height={180}>
+              <LineChart data={trendData} margin={{ top: 5, right: 10, left: -20, bottom: 0 }}>
+                <CartesianGrid strokeDasharray="3 3" stroke="currentColor" strokeOpacity={0.1} />
+                <XAxis
+                  dataKey="displayDate"
+                  tick={{ fontSize: 11, fill: 'currentColor', opacity: 0.5 }}
+                  axisLine={false}
+                  tickLine={false}
+                />
+                <YAxis
+                  domain={[0, 100]}
+                  tick={{ fontSize: 11, fill: 'currentColor', opacity: 0.5 }}
+                  axisLine={false}
+                  tickLine={false}
+                  tickFormatter={(v) => `${v}%`}
+                />
+                <Tooltip
+                  formatter={(value: number) => [`${value}%`, '正确率']}
+                  labelStyle={{ color: 'hsl(var(--foreground))' }}
+                  contentStyle={{
+                    backgroundColor: 'hsl(var(--card))',
+                    border: '1px solid hsl(var(--border))',
+                    borderRadius: '8px',
+                    fontSize: '12px',
+                  }}
+                />
+                <Line
+                  type="monotone"
+                  dataKey="accuracy"
+                  stroke="#10b981"
+                  strokeWidth={2}
+                  dot={{ r: 3, fill: '#10b981' }}
+                  activeDot={{ r: 5 }}
+                />
+              </LineChart>
+            </ResponsiveContainer>
+          </div>
+        )}
 
         <div className="mt-10 flex flex-col sm:flex-row gap-4 justify-end">
           <Button variant="outline" className="rounded-full px-6" onClick={() => window.location.href = '/history'}>

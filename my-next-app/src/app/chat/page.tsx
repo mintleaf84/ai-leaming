@@ -238,6 +238,7 @@ export default function ChatPage() {
                     onSessionSelect={handleSessionSelect}
                     onNewSession={handleNewSession}
                     onDeleteSession={handleDeleteSession}
+                    onRenameSession={updateSessionTitle}
                     showFavorites={showFavorites}
                     onToggleShowFavorites={handleToggleShowFavorites}
                 />

@@ -117,6 +117,21 @@ export async function handleChatCommand(input: string): Promise<string | null> {
 }
 
 /**
+ * 重命名聊天会话
+ */
+export async function renameChatSessionAction(sessionId: number, newTitle: string) {
+    try {
+        const user = await requireUser();
+        const title = newTitle.trim() || '新对话';
+        updateSessionTitle(user.id, sessionId, title);
+        return { success: true, title };
+    } catch (error) {
+        console.error('[ChatActions] 重命名会话失败:', error);
+        return { success: false };
+    }
+}
+
+/**
  * 删除会话
  */
 export async function deleteChatSession(sessionId: number) {

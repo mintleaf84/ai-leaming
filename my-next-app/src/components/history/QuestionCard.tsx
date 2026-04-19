@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useState, useEffect, useRef } from 'react';
+import { getErrorMessage } from '@/lib/utils/error';
 import { CheckCircle2, XCircle, BookOpen, ChevronDown, ChevronUp, BrainCircuit, Lightbulb, Loader2, Sparkles, RefreshCw } from 'lucide-react';
 import { formatDuration, indexToLetter, cn } from '@/lib/utils/utils';
 import { AnnotatableText } from './AnnotatableText';
@@ -137,9 +138,9 @@ export const QuestionCard = React.memo(({ log, index, isExpanded, onToggle, refC
             if (force && !result.cached) {
                 toast.success('重新解析成功！');
             }
-        } catch (error: any) {
+        } catch (error: unknown) {
             console.error('第一性原理分析失败:', error);
-            if (isMounted.current) toast.error(error.message || '分析失败，请稍后重试');
+            if (isMounted.current) toast.error(getErrorMessage(error, '分析失败，请稍后重试'));
         } finally {
             if (isMounted.current) setIsLoadingFP(false);
         }

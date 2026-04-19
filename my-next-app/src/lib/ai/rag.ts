@@ -1,12 +1,13 @@
 import { embed } from 'ai';
 import { createOpenAI } from '@ai-sdk/openai';
+import { getErrorMessage } from '@/lib/utils/error';
 import { getAiConfig } from './client';
 import db from '@/lib/db';
 
 export interface RagResult {
   content: string;
   score: number;
-  metadata?: any;
+  metadata?: Record<string, unknown>;
 }
 
 export const ragService = {
@@ -28,8 +29,8 @@ export const ragService = {
       });
 
       return embedding;
-    } catch (error: any) {
-      console.warn('[RAG] Embedding 失败，原因:', error.message);
+    } catch (error: unknown) {
+      console.warn('[RAG] Embedding 失败，原因:', getErrorMessage(error));
       // 保持原有的模拟逻辑，但需要适配维度
       const { embeddingDimensions } = getAiConfig();
       return new Array(embeddingDimensions || 1024).fill(0).map((_, i) => {
@@ -80,7 +81,7 @@ export const ragService = {
   /**
    * 添加知识块
    */
-  addChunk: async (content: string, metadata: any = {}) => {
+  addChunk: async (content: string, metadata: Record<string, unknown> = {}) => {
     const embedding = await ragService.getEmbedding(content);
     const infoVec = db.prepare('INSERT INTO content_vec(embedding) VALUES (?)').run(JSON.stringify(embedding));
     const vecRowid = infoVec.lastInsertRowid;
@@ -207,7 +208,7 @@ export const ragService = {
       // 适配标准的 rerank API 返回格式 (如 Jina, SiliconFlow 等)
       // 通常格式为 { results: [{ index: 0, relevance_score: 0.9 }, ...] }
       if (data.results && Array.isArray(data.results)) {
-        const reranked = data.results.map((item: any) => {
+        const reranked = data.results.map((item: Record<string, unknown>) => {
           const original = results[item.index];
           return {
             ...original,
@@ -216,12 +217,12 @@ export const ragService = {
         });
 
         // 按分数排序并返回
-        return reranked.sort((a: any, b: any) => b.score - a.score);
+        return reranked.sort((a: Record<string, unknown>, b: Record<string, unknown>) => (b.score as number) - (a.score as number));
       }
 
       return results;
-    } catch (error: any) {
-      console.warn('[RAG] Rerank 失败，原因:', error.message);
+    } catch (error: unknown) {
+      console.warn('[RAG] Rerank 失败，原因:', getErrorMessage(error));
       return results;
     }
   }
@@ -239,7 +240,7 @@ export async function searchSimilarContent(query: string, limit: number = 3) {
       FROM questions
       WHERE content LIKE ? OR explanation LIKE ? OR tags LIKE ?
       LIMIT ?
-    `).all(`%${query}%`, `%${query}%`, `%${query}%`, limit) as any[];
+    `).all(`%${query}%`, `%${query}%`, `%${query}%`, limit) as Record<string, unknown>[];
 
     return results;
   } catch (error) {

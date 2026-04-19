@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useState, useCallback, useRef } from 'react';
+import { getErrorMessage } from '@/lib/utils/error';
 import { Network, Wand2, Trash2, AlignLeft } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import dynamic from 'next/dynamic';
@@ -79,8 +80,8 @@ export default function MindmapEditorClient({ mindmap }: MindmapEditorClientProp
             } else {
                 toast.error(res.error || '生成失败', { id: loadingToast });
             }
-        } catch (error: any) {
-            toast.error(error.message || '生成过程中发生意外错误', { id: loadingToast });
+        } catch (error: unknown) {
+            toast.error(getErrorMessage(error, '生成过程中发生意外错误'), { id: loadingToast });
         } finally {
             setIsGenerating(false);
         }

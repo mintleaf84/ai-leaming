@@ -1,6 +1,6 @@
 import db from '@/lib/db';
 import { hashPassword } from './password';
-import { UserRole } from '@/lib/types';
+import { UserRole } from '@/types';
 import { cache } from 'react';
 
 // 数据库中的完整用户记录

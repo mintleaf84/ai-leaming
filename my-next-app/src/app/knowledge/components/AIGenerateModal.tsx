@@ -1,4 +1,5 @@
 'use client';
+import { getErrorMessage } from '@/lib/utils/error';
 
 import React, { useState } from 'react';
 import { X, Sparkles, Loader2, Wand2, Save, RotateCcw } from 'lucide-react';
@@ -68,9 +69,9 @@ export const AIGenerateModal: React.FC<AIGenerateModalProps> = ({
                 });
                 setStep('preview');
             }
-        } catch (err: any) {
+        } catch (err: unknown) {
             console.error('[AIGenerateModal] 生成失败:', err);
-            setError(err.message || '生成失败，请重试');
+            setError(getErrorMessage(err, '生成失败，请重试'));
         } finally {
             setIsGenerating(false);
         }

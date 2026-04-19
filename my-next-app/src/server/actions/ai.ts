@@ -1,6 +1,8 @@
 'use server';
+import logger from '@/lib/logger';
 
 import { generateStructuredData, generateTextWrapper } from '@/lib/ai/client';
+import { getErrorMessage } from '@/lib/utils/error';
 import { CorrectionQuizSchema, RegressionChallengeSchema, CorrectionQuiz, RegressionChallenge } from '@/lib/schemas';
 import { questionService } from '@/lib/services/question';
 import { getPromptFromDbSync, buildPrompt, DEFAULT_CORRECTION_PROMPT, DEFAULT_REGRESSION_PROMPT } from '@/lib/ai/prompts';
@@ -26,7 +28,7 @@ export async function generateCorrectionQuizAction(
       );
     `);
   } catch (e) {
-    console.error('[QuizCache] Error creating table:', e);
+    logger.error('[QuizCache] Error creating table:', e);
   }
 
   // 2. Check Cache
@@ -34,7 +36,7 @@ export async function generateCorrectionQuizAction(
   if (!force) {
     const cached = db.prepare('SELECT data FROM ai_quiz_cache WHERE hash = ?').get(cacheKey) as { data: string } | undefined;
     if (cached) {
-      console.log('[QuizCache] 命中缓存');
+      logger.info('[QuizCache] 命中缓存');
       return JSON.parse(cached.data) as CorrectionQuiz;
     }
   }
@@ -54,11 +56,11 @@ export async function generateCorrectionQuizAction(
     try {
       db.prepare('INSERT OR REPLACE INTO ai_quiz_cache (hash, data) VALUES (?, ?)').run(cacheKey, JSON.stringify(result));
     } catch (e) {
-      console.error('[QuizCache] 保存失败:', e);
+      logger.error('[QuizCache] 保存失败:', e);
     }
     return result;
   } catch (error) {
-    console.warn('Correction Quiz AI generation failed, using RAG fallback.');
+    logger.warn('Correction Quiz AI generation failed, using RAG fallback.');
     const similar = await questionService.searchSimilarQuestions(questionContent, 1);
 
     if (similar && similar.length > 0) {
@@ -101,7 +103,7 @@ export async function generateRegressionChallengeAction(
       );
     `);
   } catch (e) {
-    console.error('[ChallengeCache] Error creating table:', e);
+    logger.error('[ChallengeCache] Error creating table:', e);
   }
 
   // 2. Check Cache
@@ -109,7 +111,7 @@ export async function generateRegressionChallengeAction(
   if (!force) {
     const cached = db.prepare('SELECT data FROM ai_challenge_cache WHERE hash = ?').get(cacheKey) as { data: string } | undefined;
     if (cached) {
-      console.log('[ChallengeCache] 命中缓存');
+      logger.info('[ChallengeCache] 命中缓存');
       return JSON.parse(cached.data) as RegressionChallenge;
     }
   }
@@ -144,16 +146,16 @@ export async function generateRegressionChallengeAction(
       try {
         db.prepare('INSERT OR REPLACE INTO ai_challenge_cache (hash, data) VALUES (?, ?)').run(cacheKey, JSON.stringify(challenge));
       } catch (e) {
-        console.error('[ChallengeCache] 保存失败:', e);
+        logger.error('[ChallengeCache] 保存失败:', e);
       }
       return challenge;
     } else {
-      console.warn('Double Insurance failed: API B rejected API A. Falling back to library retrieval.');
+      logger.warn('Double Insurance failed: API B rejected API A. Falling back to library retrieval.');
       throw new Error('Double Insurance rejected');
     }
 
   } catch (error) {
-    console.warn('AI Generation failed or rejected, falling back to RAG similarity search:', error);
+    logger.warn('AI Generation failed or rejected, falling back to RAG similarity search:', error);
 
     // Fallback: Retrieve similar real questions from the database
     const similarQuestions = await questionService.searchSimilarQuestions(questionContent, 5);
@@ -189,7 +191,7 @@ export async function generateRegressionChallengeAction(
     }
 
     // 最终兜底
-    console.error('Final fallback failed: AI and RAG both unavailable.');
+    logger.error('Final fallback failed: AI and RAG both unavailable.');
     throw new Error('无法生成挑战且本地题库检索失败，请检查 AI 配置');
   }
 }
@@ -208,7 +210,7 @@ function ensureFirstPrinciplesCacheTable() {
           CREATE INDEX IF NOT EXISTS idx_fp_cache_hash ON first_principles_cache(question_hash);
       `);
   } catch (e) {
-    console.error('[FirstPrinciples] 创建缓存表失败:', e);
+    logger.error('[FirstPrinciples] 创建缓存表失败:', e);
   }
 }
 
@@ -248,7 +250,7 @@ export async function generateFirstPrinciplesAction(
     ).get(cacheKey) as { analysis: string } | undefined;
 
     if (cached) {
-      console.log('[FirstPrinciples] 命中缓存');
+      logger.info('[FirstPrinciples] 命中缓存');
       return { analysis: cached.analysis, cached: true };
     }
   }
@@ -293,14 +295,14 @@ ${explanation ? `参考解析：${explanation}` : ''}
   }
 
   try {
-    console.log('[FirstPrinciples] 开始调用 AI...');
+    logger.info('[FirstPrinciples] 开始调用 AI...');
     // User requested 'economy' model with specific timeout
     const result = await generateTextWrapper(prompt, 'economy', undefined, undefined, {
       timeout: 30000,
       retries: 1,
     });
     const text = result.text;
-    console.log('[FirstPrinciples] AI 调用成功，长度:', text.length);
+    logger.info('[FirstPrinciples] AI 调用成功，长度:', text.length);
 
     // 4. Save to Cache
     try {
@@ -308,13 +310,13 @@ ${explanation ? `参考解析：${explanation}` : ''}
         'INSERT OR REPLACE INTO first_principles_cache (question_hash, analysis) VALUES (?, ?)'
       ).run(cacheKey, text);
     } catch (cacheError) {
-      console.error('[FirstPrinciples] 缓存保存失败:', cacheError);
+      logger.error('[FirstPrinciples] 缓存保存失败:', cacheError);
     }
 
     return { analysis: text, cached: false };
-  } catch (error: any) {
-    console.error('First Principles analysis failed:', error);
-    throw new Error(`AI 分析失败: ${error.message || '请稍后重试'}`);
+  } catch (error: unknown) {
+    logger.error('First Principles analysis failed:', error);
+    throw new Error(`AI 分析失败: ${getErrorMessage(error, '请稍后重试')}`);
   }
 }
 

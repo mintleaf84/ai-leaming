@@ -1,4 +1,5 @@
 import { OpenAPIHono, createRoute, z } from '@hono/zod-openapi'
+import { getErrorMessage } from '@/lib/utils/error';
 import { textbookService } from '@/lib/services/textbook'
 import { authMiddleware } from '@/lib/api/middlewares/auth'
 import db from '@/lib/db'
@@ -155,8 +156,8 @@ app.openapi(deleteTextbookDef, async (c) => {
 
         await textbookService.deleteTextbook(textbookId)
         return c.json({ success: true })
-    } catch (error: any) {
-        return c.json({ error: error.message }, 500)
+    } catch (error: unknown) {
+        return c.json({ error: getErrorMessage(error) }, 500)
     }
 })
 

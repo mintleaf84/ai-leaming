@@ -1,12 +1,14 @@
 'use server';
+import logger from '@/lib/logger';
 
 import db from '@/lib/db';
-import { generateStructuredData, generateTextWrapper } from '@/lib/ai/client';
+import { generateStructuredData, generateTextWrapper, AiRawResponseError } from '@/lib/ai/client';
 import { CorrectionQuizSchema, RegressionChallengeSchema } from '@/lib/schemas';
 import { z } from 'zod';
 import { buildPrompt, DEFAULT_CORRECTION_PROMPT, DEFAULT_REGRESSION_PROMPT, DEFAULT_KNOWLEDGE_EXTRACT_PROMPT, DEFAULT_CHAT_SYSTEM_PROMPT, PROMPT_VARIABLE_EXAMPLES } from '@/lib/ai/prompts';
 import { requireRole } from '@/lib/auth/auth';
 import { logAdminAction } from '@/lib/admin/audit';
+import { getErrorMessage } from '@/lib/utils/error';
 
 export interface PromptTemplate {
     key: string;
@@ -20,7 +22,7 @@ export interface PromptTemplate {
 
 export async function getPromptTemplatesAction(): Promise<PromptTemplate[]> {
     try {
-        const rows = db.prepare('SELECT * FROM prompt_templates ORDER BY key').all() as any[];
+        const rows = db.prepare('SELECT * FROM prompt_templates ORDER BY key').all() as Partial<PromptTemplate>[];
 
         // Let's first cast rows to partial objects
         const dbRows = rows.map(row => ({
@@ -81,7 +83,7 @@ export async function getPromptTemplatesAction(): Promise<PromptTemplate[]> {
 
         return combined as PromptTemplate[];
     } catch (error) {
-        console.error('Failed to get prompt templates:', error);
+        logger.error('Failed to get prompt templates:', error);
         return [];
     }
 }
@@ -108,9 +110,9 @@ export async function savePromptTemplateAction(
         logAdminAction(user.id, user.username, 'UPDATE_PROMPT', 'prompt', key, { description });
 
         return { success: true };
-    } catch (error: any) {
-        console.error('Failed to save prompt template:', error);
-        return { success: false, error: error.message };
+    } catch (error: unknown) {
+        logger.error('Failed to save prompt template:', error);
+        return { success: false, error: getErrorMessage(error) };
     }
 }
 
@@ -123,8 +125,8 @@ export async function resetPromptTemplateAction(key: string): Promise<{ success:
         logAdminAction(user.id, user.username, 'UPDATE_PROMPT', 'prompt', key, { action: 'reset_to_default' });
 
         return { success: true };
-    } catch (error: any) {
-        return { success: false, error: error.message };
+    } catch (error: unknown) {
+        return { success: false, error: getErrorMessage(error) };
     }
 }
 
@@ -133,12 +135,12 @@ export async function debugPromptTemplateAction(
     key: string,
     template: string,
     inputVariables: Record<string, string>
-): Promise<{ success: boolean; result?: any; error?: string }> {
+): Promise<{ success: boolean; result?: unknown; error?: string }> {
     try {
         // 1. Interpolate variables
         const interpolatedPrompt = buildPrompt(template, inputVariables);
 
-        console.log(`[DebugPrompt] Running for ${key} with prompt length ${interpolatedPrompt.length}`);
+        logger.info(`[DebugPrompt] Running for ${key} with prompt length ${interpolatedPrompt.length}`);
 
         // 2. Select Schema based on key
         let result;
@@ -153,9 +155,14 @@ export async function debugPromptTemplateAction(
         }
 
         return { success: true, result };
-    } catch (error: any) {
-        console.error('Debug prompt failed:', error);
-        return { success: false, error: error.message, result: error.rawResponse ? `[RAW RESPONSE]\n${error.rawResponse}` : undefined };
+    } catch (error: unknown) {
+        logger.error('Debug prompt failed:', error);
+        const rawResponse = error instanceof AiRawResponseError ? error.rawResponse : undefined;
+        return {
+            success: false,
+            error: getErrorMessage(error),
+            result: rawResponse ? `[RAW RESPONSE]\n${rawResponse}` : undefined,
+        };
     }
 }
 

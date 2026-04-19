@@ -17,6 +17,7 @@ interface ChatMessageProps {
         id: string;
         role: string;
         content: string;
+        is_favorite?: number;
     };
     isLast: boolean;
     isLoading: boolean;
@@ -164,15 +165,15 @@ export default function ChatMessage({ message, isLast, isLoading, onDelete, onSa
                                             onClick={() => {
                                                 const numericId = parseInt(message.id.replace('assistant-', ''));
                                                 if (!isNaN(numericId)) {
-                                                    onToggleFavorite(numericId, !(message as any).is_favorite);
+                                                    onToggleFavorite(numericId, !message.is_favorite);
                                                 }
                                             }}
-                                            className={`flex items-center gap-1 px-2 py-1 text-xs rounded transition-colors ${(message as any).is_favorite
+                                            className={`flex items-center gap-1 px-2 py-1 text-xs rounded transition-colors ${message.is_favorite
                                                 ? 'text-yellow-500 bg-yellow-50 dark:bg-yellow-900/30'
                                                 : 'text-muted-foreground hover:text-yellow-600 hover:bg-yellow-50 dark:hover:bg-yellow-900/20'
                                                 }`}
                                         >
-                                            <Star className={`w-3 h-3 ${(message as any).is_favorite ? 'fill-yellow-500' : ''}`} />
+                                            <Star className={`w-3 h-3 ${message.is_favorite ? 'fill-yellow-500' : ''}`} />
                                             <span>收藏</span>
                                         </button>
                                     )}

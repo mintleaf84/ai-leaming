@@ -1,7 +1,64 @@
 'use server';
+import logger from '@/lib/logger';
 
 import db from '@/lib/db';
 import { requireUser } from '@/lib/auth/auth';
+
+/** 错题查询的 DB 行类型 */
+interface WrongQuestionRow {
+    questionId: string;
+    questionContent: string;
+    tags: string;
+    correctAnswer: string;
+    wrongCount: number;
+    lastWrongAt: string;
+    userLastAnswer: string | null;
+}
+
+/** 题目详情 DB 行 */
+interface QuestionDetailRow {
+    id: string;
+    content: string;
+    type: string;
+    options: string;
+    answer: string;
+    explanation: string;
+    tags: string;
+    source: string;
+}
+
+/** 错题本列表行（含掌握状态） */
+interface WrongBookItemRow {
+    questionId: string;
+    questionContent: string;
+    tags: string;
+    questionType: string;
+    options: string;
+    correctAnswer: string;
+    explanation: string;
+    source: string;
+    wrongCount: number;
+    lastWrongAt: string;
+    userLastAnswer: string | null;
+    isMastered: number;
+}
+
+/** 错题分析练习行（带过滤参数） */
+interface WrongBookFilteredRow {
+    questionId: string;
+    questionContent: string;
+    tags: string;
+    questionType: string;
+    options: string;
+    correctAnswer: string;
+    explanation: string;
+    source: string;
+    wrongCount: number;
+    lastWrongAt: string;
+    userLastAnswer: string | null;
+    isMastered: number;
+    tagCategory?: string;
+}
 
 // 错题项类型
 export type WrongQuestionItem = {
@@ -44,7 +101,7 @@ export async function getWrongQuestionsAction(): Promise<WrongQuestionItem[]> {
         AND l.question_id NOT IN (SELECT question_id FROM mastered_questions WHERE user_id = ?)
       GROUP BY l.question_id
       ORDER BY wrongCount DESC, lastWrongAt DESC
-    `).all(user.id, user.id, user.id) as any[];
+    `).all(user.id, user.id, user.id) as WrongQuestionRow[];
 
         return rows.map(r => ({
             questionId: r.questionId,
@@ -56,7 +113,7 @@ export async function getWrongQuestionsAction(): Promise<WrongQuestionItem[]> {
             userLastAnswer: r.userLastAnswer || ''
         }));
     } catch (error) {
-        console.error("Failed to fetch wrong questions:", error);
+        logger.error("Failed to fetch wrong questions:", error);
         return [];
     }
 }
@@ -87,7 +144,7 @@ export async function getWrongQuestionsByTagAction(): Promise<WrongQuestionsByTa
             }))
             .sort((a, b) => b.count - a.count);
     } catch (error) {
-        console.error("Failed to fetch wrong questions by tag:", error);
+        logger.error("Failed to fetch wrong questions by tag:", error);
         return [];
     }
 }
@@ -129,7 +186,7 @@ export async function getWrongQuestionsStatsAction() {
             frequent: frequentRow.count
         };
     } catch (error) {
-        console.error("Failed to fetch wrong questions stats:", error);
+        logger.error("Failed to fetch wrong questions stats:", error);
         return { total: 0, recent: 0, frequent: 0 };
     }
 }
@@ -153,7 +210,7 @@ export async function createWrongQuestionsPracticeAction(questionIds: string[]) 
 
         return { success: true, sessionId };
     } catch (error) {
-        console.error("Failed to create wrong questions practice:", error);
+        logger.error("Failed to create wrong questions practice:", error);
         return { success: false, message: '创建练习失败' };
     }
 }
@@ -181,7 +238,7 @@ export async function getWrongQuestionDetailAction(questionId: string): Promise<
                 id, content, options, answer, explanation, tags, type
             FROM questions 
             WHERE id = ?
-        `).get(questionId) as any;
+        `).get(questionId) as QuestionDetailRow | undefined;
 
         if (!question) {
             return null;
@@ -194,7 +251,7 @@ export async function getWrongQuestionDetailAction(questionId: string): Promise<
                 MAX(timestamp) as lastWrongAt
             FROM practice_logs 
             WHERE question_id = ? AND user_id = ? AND is_correct = 0
-        `).get(questionId, user.id) as any;
+        `).get(questionId, user.id) as QuestionDetailRow | undefined;
 
         // 获取历史作答记录
         const historyLogs = db.prepare(`
@@ -206,7 +263,7 @@ export async function getWrongQuestionDetailAction(questionId: string): Promise<
             WHERE question_id = ? AND user_id = ?
             ORDER BY timestamp DESC
             LIMIT 20
-        `).all(questionId, user.id) as any[];
+        `).all(questionId, user.id) as { id: string; is_correct: number; timestamp: string; user_answer: string }[];
 
         // 获取用户最近一次错误答案
         const lastWrongAnswer = db.prepare(`
@@ -214,7 +271,7 @@ export async function getWrongQuestionDetailAction(questionId: string): Promise<
             FROM practice_logs 
             WHERE question_id = ? AND user_id = ? AND is_correct = 0 
             ORDER BY timestamp DESC LIMIT 1
-        `).get(questionId, user.id) as any;
+        `).get(questionId, user.id) as { id: string; question_id: string } | undefined;
 
         return {
             questionId: String(question.id),
@@ -234,7 +291,7 @@ export async function getWrongQuestionDetailAction(questionId: string): Promise<
             }))
         };
     } catch (error) {
-        console.error("Failed to fetch wrong question detail:", error);
+        logger.error("Failed to fetch wrong question detail:", error);
         return null;
     }
 }
@@ -251,7 +308,7 @@ export async function markAsMasteredAction(questionId: string, note?: string): P
 
         return { success: true };
     } catch (error) {
-        console.error("Failed to mark as mastered:", error);
+        logger.error("Failed to mark as mastered:", error);
         return { success: false, message: '标记失败' };
     }
 }
@@ -268,7 +325,7 @@ export async function unmarkMasteredAction(questionId: string): Promise<{ succes
 
         return { success: true };
     } catch (error) {
-        console.error("Failed to unmark mastered:", error);
+        logger.error("Failed to unmark mastered:", error);
         return { success: false, message: '取消标记失败' };
     }
 }
@@ -295,7 +352,7 @@ export async function getMasteredQuestionsAction(): Promise<{
             JOIN questions q ON m.question_id = q.id
             WHERE m.user_id = ?
             ORDER BY m.mastered_at DESC
-        `).all(user.id) as any[];
+        `).all(user.id) as WrongBookItemRow[];
 
         return rows.map(r => ({
             questionId: String(r.questionId),
@@ -305,7 +362,7 @@ export async function getMasteredQuestionsAction(): Promise<{
             note: r.note
         }));
     } catch (error) {
-        console.error("Failed to fetch mastered questions:", error);
+        logger.error("Failed to fetch mastered questions:", error);
         return [];
     }
 }
@@ -361,7 +418,7 @@ export async function getRandomWrongQuestionsAction(options: {
             LIMIT ?
         `;
 
-        const rows = db.prepare(sql).all(...params) as any[];
+        const rows = db.prepare(sql).all(...params) as WrongBookFilteredRow[];
 
         return rows.map(r => ({
             questionId: String(r.questionId),
@@ -373,7 +430,7 @@ export async function getRandomWrongQuestionsAction(options: {
             userLastAnswer: r.userLastAnswer || '',
         }));
     } catch (error) {
-        console.error("Failed to fetch random wrong questions:", error);
+        logger.error("Failed to fetch random wrong questions:", error);
         return [];
     }
 }

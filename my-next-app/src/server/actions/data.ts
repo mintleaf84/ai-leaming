@@ -1,4 +1,5 @@
 'use server';
+import logger from '@/lib/logger';
 
 import db from '@/lib/db';
 import { z } from 'zod';
@@ -6,12 +7,39 @@ import { requireUser } from '@/lib/auth/auth';
 
 // --- Types ---
 
+/** user_mastery 表行 */
+interface UserMasteryRow {
+    tag_name: string;
+    score: number;
+    history: string;
+    last_updated: string;
+}
+
+/** practice_logs 表行（备份相关字段） */
+interface PracticeLogBackupRow {
+    session_id: string;
+    question_id: number;
+    user_answer: string;
+    is_correct: number;
+    is_monitored_correct: number;
+    duration_ms: number;
+    timestamp: string;
+}
+
+/** observation_zone 表行 */
+interface ObservationZoneRow {
+    tag_name: string;
+    reason: string;
+    entered_at: string;
+    status: string;
+}
+
 export interface BackupData {
-  version: number;
-  timestamp: string;
-  user_mastery: any[];
-  practice_logs: any[];
-  observation_zone: any[];
+    version: number;
+    timestamp: string;
+    user_mastery: UserMasteryRow[];
+    practice_logs: PracticeLogBackupRow[];
+    observation_zone: ObservationZoneRow[];
 }
 
 // --- Actions ---
@@ -31,7 +59,7 @@ export async function exportUserDataAction(): Promise<BackupData> {
       observation_zone
     };
   } catch (error) {
-    console.error("Export failed:", error);
+    logger.error("Export failed:", error);
     throw new Error("Failed to export data");
   }
 }
@@ -81,7 +109,7 @@ export async function importUserDataAction(data: BackupData): Promise<{ success:
     transaction();
     return { success: true, message: "Data imported successfully." };
   } catch (error) {
-    console.error("Import failed:", error);
-    return { success: false, message: `Import failed: ${(error as Error).message}` };
+    logger.error("Import failed:", error);
+    return { success: false, message: `Import failed: ${error instanceof Error ? error.message : String(error)}` };
   }
 }

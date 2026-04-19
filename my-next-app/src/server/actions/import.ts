@@ -1,4 +1,5 @@
 'use server';
+import logger from '@/lib/logger';
 
 import db from '@/lib/db';
 import { requireUser } from '@/lib/auth/auth';
@@ -132,7 +133,7 @@ export async function importFenbiDataAction(
                     }
 
                     const typeMap: Record<string, string> = {
-                        'single': 'single', 'multi': 'multi', 'boolean': 'single', 'fill_blank': 'fill_blank'
+                        'single': 'single', 'multi': 'multi', 'truefalse': 'truefalse', 'fill_blank': 'single'
                     };
 
                     updateFullQuestion.run(
@@ -148,7 +149,7 @@ export async function importFenbiDataAction(
                     skippedQuestionsCount++;
                 } else {
                     const typeMap: Record<string, string> = {
-                        'single': 'single', 'multi': 'multi', 'boolean': 'single', 'fill_blank': 'fill_blank'
+                        'single': 'single', 'multi': 'multi', 'truefalse': 'truefalse', 'fill_blank': 'single'
                     };
 
                     const result = insertQuestion.run(
@@ -241,7 +242,7 @@ export async function importFenbiDataAction(
         };
 
     } catch (error) {
-        console.error('粉笔数据导入失败:', error);
+        logger.error('粉笔数据导入失败:', error);
         return {
             success: false,
             importedCount: 0,

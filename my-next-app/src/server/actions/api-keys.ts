@@ -1,9 +1,11 @@
 'use server';
+import logger from '@/lib/logger';
 
 import db from '@/lib/db';
 import { requireRole } from '@/lib/auth/auth';
 import { logAdminAction } from '@/lib/admin/audit';
 import crypto from 'crypto';
+import { getErrorMessage } from '@/lib/utils/error';
 
 export interface ApiKeyView {
     id: number;
@@ -25,7 +27,7 @@ export async function getApiKeysAction(): Promise<ApiKeyView[]> {
         ).all() as ApiKeyView[];
         return rows;
     } catch (error) {
-        console.error('[ApiKeys] 获取列表失败:', error);
+        logger.error('[ApiKeys] 获取列表失败:', error);
         return [];
     }
 }
@@ -48,9 +50,9 @@ export async function createApiKeyAction(
         logAdminAction(user.id, user.username, 'CREATE_API_KEY', 'api_key', null, { description });
 
         return { success: true, key: keyString };
-    } catch (error: any) {
-        console.error('[ApiKeys] 创建失败:', error);
-        return { success: false, error: error.message };
+    } catch (error: unknown) {
+        logger.error('[ApiKeys] 创建失败:', error);
+        return { success: false, error: getErrorMessage(error) };
     }
 }
 
@@ -72,9 +74,9 @@ export async function toggleApiKeyAction(
         });
 
         return { success: true };
-    } catch (error: any) {
-        console.error('[ApiKeys] 切换状态失败:', error);
-        return { success: false, error: error.message };
+    } catch (error: unknown) {
+        logger.error('[ApiKeys] 切换状态失败:', error);
+        return { success: false, error: getErrorMessage(error) };
     }
 }
 
@@ -91,8 +93,8 @@ export async function deleteApiKeyAction(
         logAdminAction(user.id, user.username, 'DELETE_API_KEY', 'api_key', id.toString());
 
         return { success: true };
-    } catch (error: any) {
-        console.error('[ApiKeys] 删除失败:', error);
-        return { success: false, error: error.message };
+    } catch (error: unknown) {
+        logger.error('[ApiKeys] 删除失败:', error);
+        return { success: false, error: getErrorMessage(error) };
     }
 }

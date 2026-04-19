@@ -2,7 +2,7 @@
 
 import { use, useEffect, useState } from 'react';
 import { getQuestionByIdAction } from '@/server/actions/question-detail';
-import { Question } from '@/lib/types';
+import { Question } from '@/types';
 import { ArrowLeft, BookOpen, CheckCircle2, XCircle, Loader2 } from 'lucide-react';
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';

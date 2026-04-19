@@ -6,6 +6,51 @@ import db from '@/lib/db';
 import { logApiCall } from '@/lib/api-stats-service';
 
 /**
+ * AI 原始响应错误 - 携带服务端返回的原始文本，便于调试
+ */
+export class AiRawResponseError extends Error {
+    rawResponse?: string;
+    constructor(message: string, rawResponse?: string) {
+        super(message);
+        this.name = 'AiRawResponseError';
+        this.rawResponse = rawResponse;
+    }
+}
+
+/** AI 模型路由记录（来自 ai_model_routes + ai_configs JOIN 查询） */
+interface AiModelRouteRow {
+    model_name: string | null;
+    api_key: string;
+    api_url: string;
+    model_economy: string | null;
+    model_premium: string | null;
+    model_embedding: string | null;
+    model_rerank: string | null;
+    model_knowledge: string | null;
+    embedding_dimensions: number | null;
+}
+
+/** ai_configs 表行 */
+interface AiConfigRow {
+    id: number;
+    name: string;
+    api_url: string;
+    api_key: string;
+    model_economy: string | null;
+    model_premium: string | null;
+    model_embedding: string | null;
+    model_rerank: string | null;
+    model_knowledge: string | null;
+    embedding_dimensions: number | null;
+    is_active: number;
+}
+
+/** feature_flags / ai_model_routes 中的功能开关行 */
+interface FeatureFlagRow {
+    enabled: number;
+}
+
+/**
  * 确保数据库表存在 (容错处理)
  */
 function ensureSettingsTable() {
@@ -67,7 +112,7 @@ export function getAiConfig(feature?: string, overrideKey?: string, overrideUrl?
         FROM ai_model_routes r
         JOIN ai_configs c ON r.config_id = c.id
         WHERE r.feature = ?
-      `).get(feature) as any;
+      `).get(feature) as AiModelRouteRow | undefined;
 
       if (route) {
         return {
@@ -86,7 +131,7 @@ export function getAiConfig(feature?: string, overrideKey?: string, overrideUrl?
     }
 
     // 3. 兜底：获取当前激活的全局配置
-    const activeConfig = db.prepare("SELECT * FROM ai_configs WHERE is_active = 1").get() as any;
+    const activeConfig = db.prepare("SELECT * FROM ai_configs WHERE is_active = 1").get() as AiConfigRow | undefined;
 
     if (activeConfig) {
       const result = {
@@ -129,7 +174,7 @@ async function getExecutor(apiKey: string, baseURL: string) {
 /**
  * 健壮的 JSON 提取工具 (借鉴 Cherry Studio)
  */
-function extractJson(text: string): any {
+function extractJson(text: string): unknown {
   // 1. 移除 DeepSeek 等模型的 <think> 标签内容
   const cleanedText = text.replace(/<think>[\s\S]*?<\/think>/g, '').trim();
 
@@ -167,15 +212,16 @@ async function withRetry<T>(
 ): Promise<T> {
   try {
     return await fn();
-  } catch (error: any) {
+  } catch (error: unknown) {
     if (retries <= 0) throw error;
 
     // 仅针对可重试的错误进行重试 (如 429, 500, 502, 503, 504)
-    const status = error.status;
+    const status = error instanceof Error ? (error as Error & { status?: number }).status : undefined;
     const isRetryable = !status || [429, 500, 502, 503, 504].includes(status);
 
     if (isRetryable) {
-      console.warn(`[AiRetry] 发生错误，正在重试 (${retries} 次剩余):`, error.message);
+      const msg = error instanceof Error ? error.message : String(error);
+      console.warn(`[AiRetry] 发生错误，正在重试 (${retries} 次剩余):`, msg);
       await new Promise(resolve => setTimeout(resolve, delay));
       return withRetry(fn, retries - 1, delay * 2);
     }
@@ -234,8 +280,8 @@ export async function generateStructuredData<T>(
 
     // 否则直接进入“文本生成 + 清洗提取”模式，避免 400 报错
     throw new Error('Using fallback mode for compatibility');
-  } catch (error: any) {
-    if (error.message !== 'Using fallback mode for compatibility') {
+  } catch (error: unknown) {
+    if (error instanceof Error && error.message !== 'Using fallback mode for compatibility') {
       console.warn('[AiCore] 尝试原生生成失败，切换至兼容模式:', error.message);
     }
 
@@ -278,15 +324,14 @@ export async function generateStructuredData<T>(
       // Zod 校验确保数据完整性
       try {
         return schema.parse(parsed) as T;
-      } catch (zodError: any) {
+      } catch (zodError: unknown) {
         console.error('[AiCore] Zod 校验失败，解析后的对象为:', JSON.stringify(parsed, null, 2));
         throw zodError;
       }
-    } catch (fallbackError: any) {
-      console.error('[AiCore] 文本清洗解析也失败:', fallbackError.message);
-      const errorWithRaw = new Error(`AI 生成失败: ${fallbackError.message}`);
-      (errorWithRaw as any).rawResponse = rawText;
-      throw errorWithRaw;
+    } catch (fallbackError: unknown) {
+      const msg = fallbackError instanceof Error ? fallbackError.message : String(fallbackError);
+      console.error('[AiCore] 文本清洗解析也失败:', msg);
+      throw new AiRawResponseError(`AI 生成失败: ${msg}`, rawText);
     }
   }
 }
@@ -330,16 +375,16 @@ export async function generateTextWrapper(
     });
 
     return { text };
-  } catch (error: any) {
+  } catch (error: unknown) {
     // 记录失败的调用
     logApiCall({
       model: modelName,
       endpoint: 'generateText',
       durationMs: Date.now() - startTime,
       success: false,
-      errorMessage: error.message,
+      errorMessage: error instanceof Error ? error.message : String(error),
     });
-    console.error('[AiCore] Connection Error:', error.message);
+    console.error('[AiCore] Connection Error:', error instanceof Error ? error.message : error);
     throw error;
   }
 }
@@ -349,9 +394,9 @@ export async function generateTextWrapper(
  * 支持工具调用和多步执行
  */
 export async function streamChatWrapper(
-  messages: any[],
+  messages: { role: string; content: string }[],
   onFinish?: (text: string) => void,
-  tools?: any,
+  tools?: Record<string, unknown>,
   system?: string // 允许覆盖默认 system prompt
 ) {
   const { apiKey, baseURL, modelName } = getAiConfig('premium');
@@ -377,6 +422,8 @@ export async function streamChatWrapper(
     system,
     tools,
     maxSteps: tools ? 5 : 1,
-    onFinish: onFinish ? (result: any) => onFinish(result.text) : undefined,
-  } as any);
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    onFinish: onFinish ? (result: { text: string }) => onFinish(result.text) : undefined,
+  // @ts-expect-error - cherrystudio executor 类型未完全匹配 ai-sdk，实际运行兼容
+  } as Parameters<typeof executor.streamText>[0]);
 }

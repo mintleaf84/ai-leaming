@@ -1,4 +1,5 @@
 'use server';
+import logger from '@/lib/logger';
 
 import db from '@/lib/db';
 import { requireUser } from '@/lib/auth/auth';
@@ -152,7 +153,7 @@ export const getPracticeTrendAction = cache(async (days: number = 14): Promise<T
 
     return result;
   } catch (error) {
-    console.error("Failed to fetch practice trend:", error);
+    logger.error("Failed to fetch practice trend:", error);
     return [];
   }
 });

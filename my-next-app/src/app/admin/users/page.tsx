@@ -3,7 +3,7 @@
 import React, { useEffect, useState } from 'react';
 import { getUsersAction, deleteUserAction, resetUserPasswordAction, updateUserRoleAction, revokeUserSessionAction, UserAdminView } from '@/server/actions/admin';
 import { getPlansAction, setUserSubscriptionAction } from '@/server/actions/subscription';
-import { UserRole } from '@/lib/types';
+import { UserRole } from '@/types';
 import { SubscriptionPlan } from '@/lib/billing/subscription-types';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';

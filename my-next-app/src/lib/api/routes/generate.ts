@@ -1,4 +1,5 @@
 import { OpenAPIHono, createRoute, z } from '@hono/zod-openapi'
+import { getErrorMessage } from '@/lib/utils/error';
 import { authMiddleware, getCurrentUser } from '@/lib/api/middlewares/auth'
 import { createOpenAI } from '@ai-sdk/openai'
 import { streamText } from 'ai'
@@ -63,9 +64,9 @@ app.openapi(generateRoute, async (c) => {
             ],
         })
         return response.toTextStreamResponse()
-    } catch (error: any) {
+    } catch (error: unknown) {
         console.error('[Hono Generate API] error:', error)
-        return c.json({ error: error.message }, 500)
+        return c.json({ error: getErrorMessage(error) }, 500)
     }
 })
 

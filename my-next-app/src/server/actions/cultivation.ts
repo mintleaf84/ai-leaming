@@ -1,4 +1,5 @@
 'use server';
+import logger from '@/lib/logger';
 
 import db from '@/lib/db';
 import { calculateCultivation } from '@/lib/cultivation/engine';
@@ -38,7 +39,7 @@ export async function getLeaderboardAction(): Promise<LeaderboardEntry[]> {
 
     return leaderboard;
   } catch (error) {
-    console.error('Failed to fetch leaderboard:', error);
+    logger.error('Failed to fetch leaderboard:', error);
     return [];
   }
 }

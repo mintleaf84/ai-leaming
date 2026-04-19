@@ -1,8 +1,10 @@
 'use server';
+import logger from '@/lib/logger';
 
 import db from '@/lib/db';
-import { Question, UserRole } from '@/lib/types';
+import { Question, UserRole } from '@/types';
 import { z } from 'zod';
+import { getErrorMessage } from '@/lib/utils/error';
 import { QuestionSchema } from '@/lib/schemas';
 import { requireRole, getSession } from '@/lib/auth/auth';
 import { hashPassword } from '@/lib/auth/password';
@@ -27,7 +29,7 @@ export async function getQuestionsAction(
   try {
     // 构建 WHERE 子句
     const conditions: string[] = [];
-    const params: any[] = [];
+    const params: (string | number | null)[] = [];
 
     if (filters?.search) {
       conditions.push('content LIKE ?');
@@ -61,7 +63,7 @@ export async function getQuestionsAction(
 
     return { questions: parsedQuestions, total: total.count };
   } catch (error) {
-    console.error('Failed to fetch questions:', error);
+    logger.error('Failed to fetch questions:', error);
     throw new Error('Failed to fetch questions');
   }
 }
@@ -98,8 +100,8 @@ export async function importQuestionsAction(jsonData: unknown) {
 
     return { success: true, count: parsedData.length };
   } catch (error) {
-    console.error('Import failed:', error);
-    return { success: false, error: error instanceof Error ? error.message : 'Unknown error' };
+    logger.error('Import failed:', error);
+    return { success: false, error: getErrorMessage(error, 'Unknown error') };
   }
 }
 
@@ -132,7 +134,7 @@ export async function updateQuestionAction(id: number, data: QuestionUpdateData)
   const user = await requireRole(['admin']);
   try {
     // 1. 获取现有题目进行合并校验
-    const existing = db.prepare('SELECT * FROM questions WHERE id = ?').get(id) as any;
+    const existing = db.prepare('SELECT * FROM questions WHERE id = ?').get(id) as Question | undefined;
     if (!existing) {
       return { success: false, error: '题目不存在' };
     }
@@ -163,7 +165,7 @@ export async function updateQuestionAction(id: number, data: QuestionUpdateData)
 
     // 3. 构建动态 UPDATE 语句
     const updates: string[] = [];
-    const params: any[] = [];
+    const params: (string | number | null)[] = [];
 
     if (data.content !== undefined) { updates.push('content = ?'); params.push(data.content); }
     if (data.options !== undefined) { updates.push('options = ?'); params.push(JSON.stringify(data.options)); }
@@ -186,7 +188,7 @@ export async function updateQuestionAction(id: number, data: QuestionUpdateData)
 
     return { success: true };
   } catch (error) {
-    console.error('Update question failed:', error);
+    logger.error('Update question failed:', error);
     return { success: false, error: '更新失败' };
   }
 }
@@ -207,7 +209,7 @@ export async function batchDeleteQuestionsAction(ids: number[]) {
 
     return { success: true, deletedCount: result.changes };
   } catch (error) {
-    console.error('Batch delete failed:', error);
+    logger.error('Batch delete failed:', error);
     return { success: false, error: '批量删除失败', deletedCount: 0 };
   }
 }
@@ -245,7 +247,7 @@ export async function getUsersAction(limit: number = 20, offset: number = 0, que
       LEFT JOIN user_subscriptions us ON u.id = us.user_id
       LEFT JOIN subscription_plans sp ON us.plan_id = sp.id
     `;
-    const params: any[] = [];
+    const params: (string | number | null)[] = [];
 
     if (query) {
       sql += ' WHERE u.username LIKE ?';
@@ -263,7 +265,7 @@ export async function getUsersAction(limit: number = 20, offset: number = 0, que
     sql += ' ORDER BY u.id DESC LIMIT ? OFFSET ?';
     params.push(limit, offset);
 
-    const users = db.prepare(sql).all(...params) as any[];
+    const users = db.prepare(sql).all(...params) as UserAdminView[];
 
     return {
       users: users.map(u => ({
@@ -275,7 +277,7 @@ export async function getUsersAction(limit: number = 20, offset: number = 0, que
       total
     };
   } catch (error) {
-    console.error('Failed to get users:', error);
+    logger.error('Failed to get users:', error);
     return { users: [], total: 0 };
   }
 }
@@ -297,7 +299,7 @@ export async function deleteUserAction(id: number) {
 
     return { success: true };
   } catch (error) {
-    console.error('Failed to delete user:', error);
+    logger.error('Failed to delete user:', error);
     return { success: false, error: 'Delete failed' };
   }
 }
@@ -318,7 +320,7 @@ export async function resetUserPasswordAction(id: number, newPassword: string) {
 
     return { success: true };
   } catch (error) {
-    console.error('Failed to reset password:', error);
+    logger.error('Failed to reset password:', error);
     return { success: false, error: '重置失败' };
   }
 }
@@ -342,7 +344,7 @@ export async function updateUserRoleAction(id: number, role: UserRole) {
 
     return { success: true };
   } catch (error) {
-    console.error('Failed to update role:', error);
+    logger.error('Failed to update role:', error);
     return { success: false, error: '更新角色失败' };
   }
 }
@@ -363,9 +365,41 @@ export async function revokeUserSessionAction(id: number) {
 
     return { success: true };
   } catch (error) {
-    console.error('Failed to revoke session:', error);
+    logger.error('Failed to revoke session:', error);
     return { success: false, error: '强制下线失败' };
   }
 }
 
 
+
+/** 管理后台统计数据 */
+export interface AdminStats {
+    users: number;
+    questions: number;
+    practices: number;
+    activeAi: number;
+}
+
+/**
+ * 获取管理后台概览统计数据
+ * 从 admin/page.tsx 提取，避免在 Server Component 内使用内联 'use server'
+ */
+export async function getAdminStatsAction(): Promise<AdminStats> {
+    await requireRole(['admin']);
+    try {
+        const userCount = db.prepare('SELECT COUNT(*) as count FROM users').get() as { count: number };
+        const questionCount = db.prepare('SELECT COUNT(*) as count FROM questions').get() as { count: number };
+        const practiceCount = db.prepare('SELECT COUNT(*) as count FROM practice_logs').get() as { count: number };
+        const aiConfigCount = db.prepare('SELECT COUNT(*) as count FROM ai_configs WHERE is_active = 1').get() as { count: number };
+
+        return {
+            users: userCount.count,
+            questions: questionCount.count,
+            practices: practiceCount.count,
+            activeAi: aiConfigCount.count,
+        };
+    } catch (error: unknown) {
+        logger.error('无法获取后台统计信息:', error);
+        return { users: 0, questions: 0, practices: 0, activeAi: 0 };
+    }
+}

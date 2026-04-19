@@ -1,4 +1,5 @@
 import { OpenAPIHono, createRoute, z } from '@hono/zod-openapi'
+import { getErrorMessage } from '@/lib/utils/error';
 import db, { closeDb, reinitDb } from '@/lib/db'
 import { requireRole } from '@/lib/auth/auth'
 import os from 'os'
@@ -20,7 +21,7 @@ function getDemoModeStatus(): boolean {
     }
 }
 
-function escapeCsv(field: any): string {
+function escapeCsv(field: unknown): string {
     if (field === null || field === undefined) return '';
     const str = String(field);
     if (str.includes('"') || str.includes(',') || str.includes('\n') || str.includes('\r')) {
@@ -210,9 +211,9 @@ adminRoute.openapi(restoreDef, async (c) => {
             if (fs.existsSync(tempPath)) fs.unlinkSync(tempPath);
             return c.json({ error: 'Restore failed: ' + e.message }, 500);
         }
-    } catch (error: any) {
+    } catch (error: unknown) {
         try { reinitDb(); } catch { }
-        return c.json({ error: 'Restore failed: ' + error.message }, 500);
+        return c.json({ error: 'Restore failed: ' + getErrorMessage(error) }, 500);
     }
 })
 

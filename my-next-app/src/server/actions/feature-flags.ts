@@ -1,4 +1,5 @@
 'use server';
+import logger from '@/lib/logger';
 
 import db from '@/lib/db';
 import { revalidatePath } from 'next/cache';
@@ -18,7 +19,7 @@ export async function getGlobalFeatureFlag(key: string, defaultValue: boolean = 
     }
     return row.value === 'true';
   } catch (error) {
-    console.error(`Failed to fetch feature flag [${key}]:`, error);
+    logger.error(`Failed to fetch feature flag [${key}]:`, error);
     return defaultValue;
   }
 }
@@ -39,7 +40,7 @@ export async function toggleGlobalFeatureFlag(key: string, value: boolean) {
     revalidatePath('/', 'layout');
     return { success: true, value };
   } catch (error) {
-    console.error(`Failed to toggle feature flag [${key}]:`, error);
+    logger.error(`Failed to toggle feature flag [${key}]:`, error);
     return { success: false, error: '数据库更新开关失败' };
   }
 }

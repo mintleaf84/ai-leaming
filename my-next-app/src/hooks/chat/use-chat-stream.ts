@@ -179,12 +179,12 @@ export function useChatStream({
                 }, 100); // 延迟 100ms，确保 UI 先响应
             }
 
-        } catch (err: any) {
-            if (err.name === 'AbortError') {
+        } catch (err: unknown) {
+            if (err instanceof Error && err.name === 'AbortError') {
                 console.log('Request aborted');
             } else {
                 console.error('Chat error:', err);
-                setError(err.message || '发送消息失败');
+                setError(err instanceof Error ? err.message : '发送消息失败');
                 setLastFailedMessage(content);
             }
         } finally {

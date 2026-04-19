@@ -1,7 +1,7 @@
 import React from 'react';
 import { Bot, RotateCcw } from 'lucide-react';
 import ChatMessage from './ChatMessage';
-import { Message } from '@/hooks/chat/useChatStream';
+import { Message } from '@/hooks/chat/use-chat-stream';
 
 interface MessageListProps {
     messages: Message[];

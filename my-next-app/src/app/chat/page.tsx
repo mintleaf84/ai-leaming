@@ -2,11 +2,11 @@
 
 import React, { useRef, useState, useCallback } from 'react';
 import ChatSidebar from '@/components/chat/ChatSidebar';
-import { useToast } from '@/components/ui/use-toast';
+import { toast } from 'sonner';
 import { toggleMessageFavoriteAction, getFavoriteMessagesAction } from '@/server/actions/chat';
-import { useChatSessions } from '@/hooks/chat/useChatSessions';
-import { useChatStream } from '@/hooks/chat/useChatStream';
-import { useChatScroll } from '@/hooks/chat/useChatScroll';
+import { useChatSessions } from '@/hooks/chat/use-chat-sessions';
+import { useChatStream } from '@/hooks/chat/use-chat-stream';
+import { useChatScroll } from '@/hooks/chat/use-chat-scroll';
 import { KnowledgeModal } from '@/app/knowledge/components/KnowledgeModal';
 import type { KnowledgeCard } from '@/lib/services/knowledge';
 
@@ -64,7 +64,6 @@ export default function ChatPage() {
     // 知识卡片 Modal 状态
     const [knowledgeModalOpen, setKnowledgeModalOpen] = useState(false);
     const [currentCard, setCurrentCard] = useState<Partial<KnowledgeCard> | null>(null);
-    const { toast } = useToast();
 
     const inputRef = useRef<ChatInputHandle>(null);
 
@@ -149,13 +148,11 @@ export default function ChatPage() {
 
         } catch (error) {
             console.error('Failed to extract card:', error);
-            toast({
-                title: '提取失败',
+            toast.error('提取失败', {
                 description: '无法从消息中提取知识卡片，请重试',
-                variant: 'destructive',
             });
         }
-    }, [currentSessionId, toast]);
+    }, [currentSessionId]);
 
     // 实际保存卡片（UI 回调）
     const handleActualSave = async () => {
@@ -173,17 +170,14 @@ export default function ChatPage() {
             setKnowledgeModalOpen(false);
             setCurrentCard(null);
 
-            toast({
-                title: '保存成功',
+            toast.success('保存成功', {
                 description: '知识卡片已添加到知识库',
             });
 
         } catch (error) {
             console.error('保存失败:', error);
-            toast({
-                title: '保存失败',
+            toast.error('保存失败', {
                 description: '无法保存知识卡片，请重试',
-                variant: 'destructive',
             });
         }
     };

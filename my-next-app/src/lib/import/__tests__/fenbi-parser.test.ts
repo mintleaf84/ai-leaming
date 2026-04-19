@@ -103,7 +103,7 @@ describe('parseFenbiData（主解析函数）', () => {
 
         const result = parseFenbiData(exercise, solutions);
         const q = result.questions[0];
-        expect(q.type).toBe('boolean');
+        expect(q.type).toBe('truefalse');
         expect(q.answer).toBe('正确');   // '0' → '正确'
         expect(q.options).toEqual(['正确', '错误']);
     });

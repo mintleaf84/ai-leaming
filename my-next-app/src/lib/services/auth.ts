@@ -1,6 +1,6 @@
 import { getUserByUsername, createUser as createDbUser, User } from '@/lib/auth/user-service';
 import { comparePassword, hashPassword } from '@/lib/auth/password';
-import { UserRole } from '@/lib/types';
+import { UserRole } from '@/types';
 
 export class AuthError extends Error {
     constructor(message: string) {

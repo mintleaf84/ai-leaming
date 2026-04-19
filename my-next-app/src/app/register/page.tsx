@@ -3,6 +3,7 @@
 import React, { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
+import Image from 'next/image';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card, CardHeader, CardTitle, CardDescription, CardContent, CardFooter } from '@/components/ui/card';
@@ -59,7 +60,7 @@ export default function RegisterPage() {
                 <CardHeader className="space-y-4 text-center pt-8 pb-4">
                     {/* Logo */}
                     <div className="mx-auto w-12 h-12 relative mb-2">
-                        <img src="/logo.png" alt="Logo" className="object-contain w-full h-full" />
+                        <Image src="/logo.png" alt="Logo" fill className="object-contain" />
                     </div>
                     <div>
                         <CardTitle className="text-3xl font-bold font-serif text-neutral-800">加入琢玉</CardTitle>

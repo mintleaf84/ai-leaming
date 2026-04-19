@@ -1,6 +1,6 @@
 import db from '@/lib/db';
 import { ragService } from '@/lib/ai/rag';
-import { Question } from '@/lib/types';
+import { Question } from '@/types';
 import { safeGet, safeAll } from '@/lib/db/safe-query';
 import { QuestionRowSchema } from '@/lib/schemas';
 

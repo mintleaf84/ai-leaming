@@ -1,4 +1,5 @@
 'use server';
+import logger from '@/lib/logger';
 
 import { generateTextWrapper } from '@/lib/ai/client';
 import db from '@/lib/db';
@@ -99,7 +100,7 @@ export async function getSessionReportAction(sessionId?: string): Promise<Sessio
       accuracy: Math.round((sessionStats.correct / sessionStats.total) * 100)
     };
   } catch (error) {
-    console.error('获取会话报告数据失败:', error);
+    logger.error('获取会话报告数据失败:', error);
     return null;
   }
 }
@@ -133,7 +134,7 @@ export async function generateDiagnosticReportAction(
     const { text } = await generateTextWrapper(prompt, 'economy');
     return text;
   } catch (error) {
-    console.error("Diagnostic Report Generation Error:", error);
+    logger.error("Diagnostic Report Generation Error:", error);
     // Return a structured error message that the UI can handle
     throw new Error("AI 诊断服务暂时不可用，请稍后再试或联系技术支持。");
   }
@@ -332,7 +333,7 @@ ${repeatedErrorsList}
 
     return { success: true, report: text };
   } catch (error) {
-    console.error('AI 深度分析失败:', error);
+    logger.error('AI 深度分析失败:', error);
     return { success: false, error: 'AI 分析服务暂时不可用，请稍后再试。' };
   }
 }

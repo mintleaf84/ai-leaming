@@ -19,7 +19,7 @@ export async function createChatSession(): Promise<number> {
         const sessionId = createSession(user.id, '新对话');
         return sessionId;
     } catch (error) {
-        logger.error('[ChatActions] 创建会话失败:', error);
+        logger.error({ err: error }, '[ChatActions] 创建会话失败');
         throw new Error('创建会话失败');
     }
 }
@@ -32,7 +32,7 @@ export async function getChatSessions() {
         const user = await requireUser();
         return listSessions(user.id, 50);
     } catch (error) {
-        logger.error('[ChatActions] 获取会话列表失败:', error);
+        logger.error({ err: error }, '[ChatActions] 获取会话列表失败');
         return [];
     }
 }
@@ -45,7 +45,7 @@ export async function getChatSession(sessionId: number) {
         const user = await requireUser();
         return getSession(user.id, sessionId);
     } catch (error) {
-        logger.error('[ChatActions] 获取会话详情失败:', error);
+        logger.error({ err: error }, '[ChatActions] 获取会话详情失败');
         return null;
     }
 }
@@ -87,7 +87,7 @@ ${context}
 
         return title;
     } catch (error) {
-        logger.error('[ChatActions] 生成标题失败:', error);
+        logger.error({ err: error }, '[ChatActions] 生成标题失败');
         return '新对话';
     }
 }
@@ -110,7 +110,7 @@ export async function handleChatCommand(input: string): Promise<string | null> {
             return await handleExplainCommand(keyword);
         }
     } catch (error) {
-        logger.error('[ChatActions] 指令处理失败:', error);
+        logger.error({ err: error }, '[ChatActions] 指令处理失败');
         return '抱歉，指令执行失败，请稍后重试。';
     }
 
@@ -127,7 +127,7 @@ export async function renameChatSessionAction(sessionId: number, newTitle: strin
         updateSessionTitle(user.id, sessionId, title);
         return { success: true, title };
     } catch (error) {
-        logger.error('[ChatActions] 重命名会话失败:', error);
+        logger.error({ err: error }, '[ChatActions] 重命名会话失败');
         return { success: false };
     }
 }
@@ -140,7 +140,7 @@ export async function deleteChatSession(sessionId: number) {
         const user = await requireUser();
         deleteSession(user.id, sessionId);
     } catch (error) {
-        logger.error('[ChatActions] 删除会话失败:', error);
+        logger.error({ err: error }, '[ChatActions] 删除会话失败');
     }
 }
 
@@ -152,7 +152,7 @@ export async function loadSessionMessages(sessionId: number) {
         const user = await requireUser();
         return getSessionMessages(user.id, sessionId);
     } catch (error) {
-        logger.error('[ChatActions] 加载消息失败:', error);
+        logger.error({ err: error }, '[ChatActions] 加载消息失败');
         return [];
     }
 }
@@ -165,7 +165,7 @@ export async function searchQuestions(query: string) {
         const context = await searchKnowledgeBase(query, 5);
         return context;
     } catch (error) {
-        logger.error('[ChatActions] 题库检索失败:', error);
+        logger.error({ err: error }, '[ChatActions] 题库检索失败');
         return null;
     }
 }
@@ -180,7 +180,7 @@ export async function toggleMessageFavoriteAction(messageId: number, isFavorite:
         toggleMessageFavorite(user.id, messageId, isFavorite);
         return { success: true };
     } catch (error) {
-        logger.error('[ChatActions] 切换收藏失败:', error);
+        logger.error({ err: error }, '[ChatActions] 切换收藏失败');
         return { success: false };
     }
 }
@@ -194,7 +194,7 @@ export async function getFavoriteMessagesAction() {
         const { getFavoriteMessages } = await import('@/lib/services/chat');
         return getFavoriteMessages(user.id);
     } catch (error) {
-        logger.error('[ChatActions] 获取收藏失败:', error);
+        logger.error({ err: error }, '[ChatActions] 获取收藏失败');
         return [];
     }
 }
@@ -208,7 +208,7 @@ export async function searchMessagesAction(query: string) {
         const { searchMessages } = await import('@/lib/services/chat');
         return searchMessages(user.id, query);
     } catch (error) {
-        logger.error('[ChatActions] 搜索失败:', error);
+        logger.error({ err: error }, '[ChatActions] 搜索失败');
         return [];
     }
 }

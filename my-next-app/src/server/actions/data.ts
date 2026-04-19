@@ -59,7 +59,7 @@ export async function exportUserDataAction(): Promise<BackupData> {
       observation_zone
     };
   } catch (error) {
-    logger.error("Export failed:", error);
+    logger.error({ err: error }, "Export failed");
     throw new Error("Failed to export data");
   }
 }
@@ -109,7 +109,7 @@ export async function importUserDataAction(data: BackupData): Promise<{ success:
     transaction();
     return { success: true, message: "Data imported successfully." };
   } catch (error) {
-    logger.error("Import failed:", error);
+    logger.error({ err: error }, "Import failed");
     return { success: false, message: `Import failed: ${error instanceof Error ? error.message : String(error)}` };
   }
 }

@@ -198,7 +198,7 @@ export function ReportView({ initialData: reportData }: ReportViewProps) {
                   tickFormatter={(v) => `${v}%`}
                 />
                 <Tooltip
-                  formatter={(value: number) => [`${value}%`, '正确率']}
+                  formatter={(value: number) => [`${value}%`, '正确率'] as [string, string]}
                   labelStyle={{ color: 'hsl(var(--foreground))' }}
                   contentStyle={{
                     backgroundColor: 'hsl(var(--card))',

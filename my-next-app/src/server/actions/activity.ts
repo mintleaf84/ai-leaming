@@ -92,7 +92,7 @@ export async function getUserActivityAction(
             total: total.count
         };
     } catch (error) {
-        logger.error('Failed to fetch user activity:', error);
+        logger.error({ err: error }, 'Failed to fetch user activity');
         throw new Error('获取用户活动失败');
     }
 }
@@ -144,7 +144,7 @@ export async function getActivityStatsAction() {
             aiTokensToday: aiCalls.tokens || 0
         };
     } catch (error) {
-        logger.error('Failed to fetch activity stats:', error);
+        logger.error({ err: error }, 'Failed to fetch activity stats');
         return {
             todayCount: 0,
             accuracyRate: 0,

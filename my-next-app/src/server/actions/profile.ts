@@ -117,7 +117,7 @@ export async function updateProfileAction(data: { username: string }) {
 
     return { success: true, message: '个人资料已更新' };
   } catch (error) {
-    logger.error('更新资料失败:', error);
+    logger.error({ err: error }, '更新资料失败');
     return { success: false, error: '更新失败，请稍后重试' };
   }
 }

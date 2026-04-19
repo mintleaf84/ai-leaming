@@ -39,7 +39,7 @@ export async function getLeaderboardAction(): Promise<LeaderboardEntry[]> {
 
     return leaderboard;
   } catch (error) {
-    logger.error('Failed to fetch leaderboard:', error);
+    logger.error({ err: error }, 'Failed to fetch leaderboard');
     return [];
   }
 }

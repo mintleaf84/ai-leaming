@@ -40,7 +40,7 @@ export async function createMindmapAction(input: CreateMindmapInput = {}) {
         revalidatePath('/mindmap');
         return { success: true, id: result.lastInsertRowid as number };
     } catch (error: unknown) {
-        logger.error('Create mindmap failed:', error);
+        logger.error({ err: error }, 'Create mindmap failed');
         return { success: false, message: '创建思维导图失败' };
     }
 }
@@ -84,7 +84,7 @@ export async function updateMindmapAction(input: UpdateMindmapInput) {
         revalidatePath(`/mindmap/${id}`);
         return { success: true };
     } catch (error: unknown) {
-        logger.error('Update mindmap failed:', error);
+        logger.error({ err: error }, 'Update mindmap failed');
         return { success: false, message: '保存思维导图失败' };
     }
 }
@@ -103,7 +103,7 @@ export async function deleteMindmapAction(id: number) {
         revalidatePath('/mindmap');
         return { success: true };
     } catch (error: unknown) {
-        logger.error('Delete mindmap failed:', error);
+        logger.error({ err: error }, 'Delete mindmap failed');
         return { success: false, message: '删除失败' };
     }
 }
@@ -121,7 +121,7 @@ export async function getMindmapsAction() {
 
         return { success: true, records };
     } catch (error: unknown) {
-        logger.error('Get mindmaps failed:', error);
+        logger.error({ err: error }, 'Get mindmaps failed');
         return { success: false, message: '获取图谱列表失败' };
     }
 }
@@ -140,7 +140,7 @@ export async function getMindmapDetailAction(id: number) {
 
         return { success: true, data: record };
     } catch (error: unknown) {
-        logger.error('Get mindmap detail failed:', error);
+        logger.error({ err: error }, 'Get mindmap detail failed');
         return { success: false, message: '获取详情失败' };
     }
 }

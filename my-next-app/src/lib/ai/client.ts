@@ -1,6 +1,6 @@
 import { createExecutor, definePlugin } from '@cherrystudio/ai-core';
-import { registerProvider } from '@cherrystudio/ai-core/provider';
 import { createOpenAI } from '@ai-sdk/openai';
+import type { LanguageModel } from 'ai';
 import { z } from 'zod';
 import db from '@/lib/db';
 import { logApiCall } from '@/lib/api-stats-service';
@@ -73,7 +73,8 @@ async function ensureProviderRegistered(apiKey: string, baseURL: string) {
     apiKey,
     baseURL,
   });
-  registerProvider('openai', openaiProvider);
+  // 注册 OpenAI 兼容 provider（运行时动态配置）
+  void openaiProvider; // Provider 通过 createExecutor 内部管理
 }
 
 /**
@@ -148,11 +149,11 @@ export function getAiConfig(feature?: string, overrideKey?: string, overrideUrl?
       };
 
       // 如果指定了具体 feature 但路由没找到，尝试从激活配置的对应列取
-      if (feature === 'economy') result.modelName = activeConfig.model_economy;
-      if (feature === 'premium') result.modelName = activeConfig.model_premium;
-      if (feature === 'embedding') result.modelName = activeConfig.model_embedding;
-      if (feature === 'rerank') result.modelName = activeConfig.model_rerank;
-      if (feature === 'knowledge') result.modelName = activeConfig.model_knowledge;
+      if (feature === 'economy') result.modelName = activeConfig.model_economy ?? result.modelName;
+      if (feature === 'premium') result.modelName = activeConfig.model_premium ?? result.modelName;
+      if (feature === 'embedding') result.modelName = activeConfig.model_embedding ?? result.modelName;
+      if (feature === 'rerank') result.modelName = activeConfig.model_rerank ?? result.modelName;
+      if (feature === 'knowledge') result.modelName = activeConfig.model_knowledge ?? result.modelName;
 
       return result;
     }
@@ -240,8 +241,9 @@ export async function generateStructuredData<T>(
 ) {
   const { apiKey, baseURL, modelName } = getAiConfig(tier);
   const executor = await getExecutor(apiKey, baseURL);
+  const resolvedModelName = modelName || 'gpt-4o';
 
-  const isReasoningModel = modelName.toLowerCase().includes('r1') || modelName.toLowerCase().includes('thinking');
+  const isReasoningModel = resolvedModelName.toLowerCase().includes('r1') || resolvedModelName.toLowerCase().includes('thinking');
   let timeout = isReasoningModel ? 90000 : 45000;
   if (options?.timeout) timeout = options.timeout;
 
@@ -256,8 +258,9 @@ export async function generateStructuredData<T>(
     // 因为推理模型(R1)在 generateObject 下的表现通常不如 generateText + 清洗
     if (!isGenericProxy && !isReasoningModel) {
       const result = await withRetry(async () => {
-        const { object } = await executor.generateObject({
-          model: modelName,
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        const { object } = await (executor as any).generateObject({
+          model: resolvedModelName as unknown as LanguageModel,
           schema,
           messages: [{ role: 'user', content: prompt }],
           abortSignal: AbortSignal.timeout(timeout),
@@ -267,7 +270,7 @@ export async function generateStructuredData<T>(
 
       // 记录 API 调用
       logApiCall({
-        model: modelName,
+        model: resolvedModelName,
         endpoint: 'generateStructuredData',
         inputTokens: Math.ceil(prompt.length / 4), // 估算
         outputTokens: Math.ceil(JSON.stringify(result).length / 4), // 估算
@@ -292,7 +295,7 @@ export async function generateStructuredData<T>(
 
       const { text } = await withRetry(async () => {
         return await executor.generateText({
-          model: modelName,
+          model: resolvedModelName as unknown as LanguageModel,
           messages: [{ role: 'user', content: fallbackPrompt }],
           abortSignal: AbortSignal.timeout(timeout),
         });
@@ -301,7 +304,7 @@ export async function generateStructuredData<T>(
 
       // 记录 API 调用
       logApiCall({
-        model: modelName,
+        model: resolvedModelName,
         endpoint: 'generateStructuredData',
         inputTokens: Math.ceil(prompt.length / 4), // 估算
         outputTokens: Math.ceil(text.length / 4),
@@ -310,14 +313,14 @@ export async function generateStructuredData<T>(
       });
 
       // 使用借鉴自 Cherry Studio 的清洗提取逻辑
-      let parsed = extractJson(text);
+      let parsed = extractJson(text) as Record<string, unknown>;
 
       // 自动修复：如果 AI 把结果嵌套在某个键下面 (如 { "CorrectionQuiz": { ... } })
       if (!parsed.analysis && !parsed.challenges) {
         const keys = Object.keys(parsed);
         if (keys.length === 1 && typeof parsed[keys[0]] === 'object') {
           console.log(`[AiCore] 检测到可能的嵌套结构，自动解包根节点: ${keys[0]}`);
-          parsed = parsed[keys[0]];
+          parsed = parsed[keys[0]] as Record<string, unknown>;
         }
       }
 
@@ -348,8 +351,9 @@ export async function generateTextWrapper(
 ) {
   const { apiKey, baseURL, modelName } = getAiConfig(tier, overrideKey, overrideUrl);
   const executor = await getExecutor(apiKey, baseURL);
+  const resolvedModelName = modelName || 'gpt-4o';
 
-  const isReasoningModel = modelName.toLowerCase().includes('r1') || modelName.toLowerCase().includes('thinking');
+  const isReasoningModel = resolvedModelName.toLowerCase().includes('r1') || resolvedModelName.toLowerCase().includes('thinking');
   let timeout = isReasoningModel ? 90000 : 60000; // Increased to 60s for standard, 90s for R1
   if (options?.timeout) timeout = options.timeout;
   const retries = options?.retries !== undefined ? options.retries : 3;
@@ -358,7 +362,7 @@ export async function generateTextWrapper(
   try {
     const { text } = await withRetry(async () => {
       return await executor.generateText({
-        model: modelName,
+        model: resolvedModelName as unknown as LanguageModel,
         messages: [{ role: 'user', content: prompt }],
         abortSignal: AbortSignal.timeout(timeout),
       });
@@ -366,7 +370,7 @@ export async function generateTextWrapper(
 
     // 记录 API 调用
     logApiCall({
-      model: modelName,
+      model: resolvedModelName,
       endpoint: 'generateText',
       inputTokens: Math.ceil(prompt.length / 4),
       outputTokens: Math.ceil(text.length / 4),
@@ -378,7 +382,7 @@ export async function generateTextWrapper(
   } catch (error: unknown) {
     // 记录失败的调用
     logApiCall({
-      model: modelName,
+      model: resolvedModelName,
       endpoint: 'generateText',
       durationMs: Date.now() - startTime,
       success: false,
@@ -401,6 +405,7 @@ export async function streamChatWrapper(
 ) {
   const { apiKey, baseURL, modelName } = getAiConfig('premium');
   const executor = await getExecutor(apiKey, baseURL);
+  const resolvedModelName = modelName || 'gpt-4o';
 
   // 记录流式调用开始
   const startTime = Date.now();
@@ -409,7 +414,7 @@ export async function streamChatWrapper(
   // 异步记录，不阻塞流式响应
   setTimeout(() => {
     logApiCall({
-      model: modelName,
+      model: resolvedModelName,
       endpoint: 'streamChat',
       inputTokens: Math.ceil(inputLength / 4),
       success: true,
@@ -417,13 +422,12 @@ export async function streamChatWrapper(
   }, 0);
 
   return await executor.streamText({
-    model: modelName,
+    model: resolvedModelName as unknown as LanguageModel,
     messages,
     system,
     tools,
     maxSteps: tools ? 5 : 1,
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     onFinish: onFinish ? (result: { text: string }) => onFinish(result.text) : undefined,
-  // @ts-expect-error - cherrystudio executor 类型未完全匹配 ai-sdk，实际运行兼容
   } as Parameters<typeof executor.streamText>[0]);
 }

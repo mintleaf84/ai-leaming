@@ -89,7 +89,7 @@ export function BackupManager() {
 
         } catch (error: unknown) {
             console.error(error);
-            toast.error(`恢复失败: ${error.message}`, { id: toastId });
+            toast.error(`恢复失败: ${error instanceof Error ? error.message : String(error)}`, { id: toastId });
             setIsRestoring(false);
             if (fileInputRef.current) fileInputRef.current.value = '';
         }

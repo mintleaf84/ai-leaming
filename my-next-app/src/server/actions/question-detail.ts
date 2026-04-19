@@ -21,7 +21,7 @@ export async function getQuestionByIdAction(id: number): Promise<{
 
         return { success: true, question };
     } catch (error: unknown) {
-        logger.error('[getQuestionByIdAction] 错误:', error);
+        logger.error({ err: error }, '[getQuestionByIdAction] 错误');
         return { success: false, message: '获取题目失败' };
     }
 }

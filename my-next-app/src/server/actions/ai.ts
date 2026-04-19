@@ -28,7 +28,7 @@ export async function generateCorrectionQuizAction(
       );
     `);
   } catch (e) {
-    logger.error('[QuizCache] Error creating table:', e);
+    logger.error({ err: e }, '[QuizCache] Error creating table');
   }
 
   // 2. Check Cache
@@ -56,7 +56,7 @@ export async function generateCorrectionQuizAction(
     try {
       db.prepare('INSERT OR REPLACE INTO ai_quiz_cache (hash, data) VALUES (?, ?)').run(cacheKey, JSON.stringify(result));
     } catch (e) {
-      logger.error('[QuizCache] 保存失败:', e);
+      logger.error({ err: e }, '[QuizCache] 保存失败');
     }
     return result;
   } catch (error) {
@@ -103,7 +103,7 @@ export async function generateRegressionChallengeAction(
       );
     `);
   } catch (e) {
-    logger.error('[ChallengeCache] Error creating table:', e);
+    logger.error({ err: e }, '[ChallengeCache] Error creating table');
   }
 
   // 2. Check Cache
@@ -146,7 +146,7 @@ export async function generateRegressionChallengeAction(
       try {
         db.prepare('INSERT OR REPLACE INTO ai_challenge_cache (hash, data) VALUES (?, ?)').run(cacheKey, JSON.stringify(challenge));
       } catch (e) {
-        logger.error('[ChallengeCache] 保存失败:', e);
+        logger.error({ err: e }, '[ChallengeCache] 保存失败');
       }
       return challenge;
     } else {
@@ -155,7 +155,7 @@ export async function generateRegressionChallengeAction(
     }
 
   } catch (error) {
-    logger.warn('AI Generation failed or rejected, falling back to RAG similarity search:', error);
+    logger.warn({ err: error }, 'AI Generation failed or rejected, falling back to RAG similarity search');
 
     // Fallback: Retrieve similar real questions from the database
     const similarQuestions = await questionService.searchSimilarQuestions(questionContent, 5);
@@ -210,7 +210,7 @@ function ensureFirstPrinciplesCacheTable() {
           CREATE INDEX IF NOT EXISTS idx_fp_cache_hash ON first_principles_cache(question_hash);
       `);
   } catch (e) {
-    logger.error('[FirstPrinciples] 创建缓存表失败:', e);
+    logger.error({ err: e }, '[FirstPrinciples] 创建缓存表失败');
   }
 }
 
@@ -302,7 +302,7 @@ ${explanation ? `参考解析：${explanation}` : ''}
       retries: 1,
     });
     const text = result.text;
-    logger.info('[FirstPrinciples] AI 调用成功，长度:', text.length);
+    logger.info({ value: text.length }, '[FirstPrinciples] AI 调用成功，长度');
 
     // 4. Save to Cache
     try {
@@ -310,12 +310,12 @@ ${explanation ? `参考解析：${explanation}` : ''}
         'INSERT OR REPLACE INTO first_principles_cache (question_hash, analysis) VALUES (?, ?)'
       ).run(cacheKey, text);
     } catch (cacheError) {
-      logger.error('[FirstPrinciples] 缓存保存失败:', cacheError);
+      logger.error({ err: cacheError }, '[FirstPrinciples] 缓存保存失败');
     }
 
     return { analysis: text, cached: false };
   } catch (error: unknown) {
-    logger.error('First Principles analysis failed:', error);
+    logger.error({ err: error }, 'First Principles analysis failed');
     throw new Error(`AI 分析失败: ${getErrorMessage(error, '请稍后重试')}`);
   }
 }

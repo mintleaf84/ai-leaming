@@ -97,7 +97,7 @@ export async function performOcrAction(
         logger.info(`[OCR Action] 识别完成: ${text.length} 字符`);
         return { success: true, text };
     } catch (error: unknown) {
-        logger.error('[OCR Action] 识别失败:', error);
+        logger.error({ err: error }, '[OCR Action] 识别失败');
         return {
             success: false,
             error: getErrorMessage(error, 'OCR 识别失败，请稍后重试'),

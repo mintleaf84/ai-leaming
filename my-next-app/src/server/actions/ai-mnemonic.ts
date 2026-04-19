@@ -82,7 +82,7 @@ export async function generateMnemonicAction(questionId: string, forceRegenerate
         return { success: true, content: text, cached: false };
 
     } catch (error) {
-        logger.error('[generateMnemonicAction] Error:', error);
+        logger.error({ err: error }, '[generateMnemonicAction] Error');
         return { success: false, message: '生成失败，请稍后重试' };
     }
 }

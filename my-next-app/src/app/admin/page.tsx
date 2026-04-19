@@ -1,32 +1,11 @@
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Users, BookOpen, Activity, Cpu } from "lucide-react";
-import db from "@/lib/db";
+import { getAdminStatsAction } from "@/server/actions/admin";
 
 export const revalidate = 60;
 
-async function getAdminStats() {
-    'use server';
-    // 尝试从数据库获取统计信息，如果表不存在（初始生命周期）则返回默认值
-    try {
-        const userCount = db.prepare('SELECT COUNT(*) as count FROM users').get() as { count: number };
-        const questionCount = db.prepare('SELECT COUNT(*) as count FROM questions').get() as { count: number };
-        const practiceCount = db.prepare('SELECT COUNT(*) as count FROM practice_logs').get() as { count: number };
-        const aiConfigCount = db.prepare('SELECT COUNT(*) as count FROM ai_configs WHERE is_active = 1').get() as { count: number };
-
-        return {
-            users: userCount.count,
-            questions: questionCount.count,
-            practices: practiceCount.count,
-            activeAi: aiConfigCount.count
-        };
-    } catch (error) {
-        console.error("无法获取后台统计信息", error);
-        return { users: 0, questions: 0, practices: 0, activeAi: 0 };
-    }
-}
-
 export default async function AdminDashboardPage() {
-    const stats = await getAdminStats();
+    const stats = await getAdminStatsAction();
 
     return (
         <div className="p-4 md:p-8 space-y-8">

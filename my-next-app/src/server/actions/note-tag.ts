@@ -1,4 +1,5 @@
 'use server';
+import logger from '@/lib/logger';
 
 import db from '@/lib/db';
 import { requireUser } from '@/lib/auth/auth';
@@ -15,7 +16,7 @@ export async function getTagsAction() {
         `).all(user.id) as NoteTag[];
         return { success: true, tags };
     } catch (error: unknown) {
-        console.error('Get tags failed:', error);
+        logger.error('Get tags failed:', error);
         return { success: false, message: '获取标签失败' };
     }
 }
@@ -37,7 +38,7 @@ export async function createTagAction(name: string, color?: string) {
         if (isSqliteConstraintError(error, 'SQLITE_CONSTRAINT_UNIQUE')) {
             return { success: false, message: '标签名已存在' };
         }
-        console.error('Create tag failed:', error);
+        logger.error('Create tag failed:', error);
         return { success: false, message: '创建标签失败' };
     }
 }
@@ -58,7 +59,7 @@ export async function deleteTagAction(tagId: number) {
         revalidatePath('/notes');
         return { success: true };
     } catch (error: unknown) {
-        console.error('Delete tag failed:', error);
+        logger.error('Delete tag failed:', error);
         return { success: false, message: '删除标签失败' };
     }
 }
@@ -82,7 +83,7 @@ export async function getNoteTagsAction(noteId: number) {
 
         return { success: true, tags };
     } catch (error: unknown) {
-        console.error('Get note tags failed:', error);
+        logger.error('Get note tags failed:', error);
         return { success: false, message: '获取笔记标签失败' };
     }
 }
@@ -116,7 +117,7 @@ export async function setNoteTagsAction(noteId: number, tagIds: number[]) {
         revalidatePath(`/notes/${noteId}`);
         return { success: true };
     } catch (error: unknown) {
-        console.error('Set note tags failed:', error);
+        logger.error('Set note tags failed:', error);
         return { success: false, message: '设置标签失败' };
     }
 }
@@ -132,11 +133,11 @@ export async function getNotesByTagAction(tagId: number) {
             JOIN note_tag_relations r ON n.id = r.note_id
             WHERE n.user_id = ? AND r.tag_id = ?
             ORDER BY n.updated_at DESC
-        `).all(user.id, tagId) as any[];
+        `).all(user.id, tagId) as { id: number; title: string; updated_at: string; preview: string | null }[];
 
         return { success: true, notes };
     } catch (error: unknown) {
-        console.error('Get notes by tag failed:', error);
+        logger.error('Get notes by tag failed:', error);
         return { success: false, message: '获取笔记失败' };
     }
 }

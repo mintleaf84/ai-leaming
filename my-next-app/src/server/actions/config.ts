@@ -1,4 +1,5 @@
 'use server';
+import logger from '@/lib/logger';
 
 import { getErrorMessage } from '@/lib/utils/error';
 import db from '@/lib/db';
@@ -84,7 +85,7 @@ export async function saveAiConfigAction(config: Partial<AiConfig>) {
 
         return { success: true };
     } catch (error: unknown) {
-        console.error('saveAiConfigAction error:', error);
+        logger.error('saveAiConfigAction error:', error);
         return { success: false, error: getErrorMessage(error) };
     }
 }

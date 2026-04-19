@@ -1,4 +1,5 @@
 'use server';
+import logger from '@/lib/logger';
 
 import { generateTextWrapper } from '@/lib/ai/client';
 import { requireUser } from '@/lib/auth/auth';
@@ -53,7 +54,7 @@ ${ocrText}
         return { success: true, data: cleanText };
 
     } catch (error: unknown) {
-        console.error('[Mindmap Action] 生成思维导图失败:', error);
+        logger.error('[Mindmap Action] 生成思维导图失败:', error);
         return {
             success: false,
             error: getErrorMessage(error, '生成结构化思维导图失败')

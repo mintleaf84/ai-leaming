@@ -1,7 +1,7 @@
 'use client';
 
 import { Command, CommandInput, CommandList } from '@/components/ui/command';
-import { useCompletion } from '@ai-sdk/react';
+import { useCompletion } from '@/hooks/use-completion';
 import { ArrowUp } from 'lucide-react';
 import { addAIHighlight, useEditor } from 'novel';
 import { useState } from 'react';

@@ -42,7 +42,7 @@ const NavGroup = ({
     pathname
 }: {
     title?: string,
-    items: { name: string, href: string, icon: any }[],
+    items: { name: string, href: string, icon: React.ComponentType<{ className?: string }> }[],
     pathname: string
 }) => (
     <div className="mb-6">

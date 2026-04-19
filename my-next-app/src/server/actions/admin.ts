@@ -1,4 +1,5 @@
 'use server';
+import logger from '@/lib/logger';
 
 import db from '@/lib/db';
 import { Question, UserRole } from '@/types';
@@ -62,7 +63,7 @@ export async function getQuestionsAction(
 
     return { questions: parsedQuestions, total: total.count };
   } catch (error) {
-    console.error('Failed to fetch questions:', error);
+    logger.error('Failed to fetch questions:', error);
     throw new Error('Failed to fetch questions');
   }
 }
@@ -99,7 +100,7 @@ export async function importQuestionsAction(jsonData: unknown) {
 
     return { success: true, count: parsedData.length };
   } catch (error) {
-    console.error('Import failed:', error);
+    logger.error('Import failed:', error);
     return { success: false, error: getErrorMessage(error, 'Unknown error') };
   }
 }
@@ -187,7 +188,7 @@ export async function updateQuestionAction(id: number, data: QuestionUpdateData)
 
     return { success: true };
   } catch (error) {
-    console.error('Update question failed:', error);
+    logger.error('Update question failed:', error);
     return { success: false, error: '更新失败' };
   }
 }
@@ -208,7 +209,7 @@ export async function batchDeleteQuestionsAction(ids: number[]) {
 
     return { success: true, deletedCount: result.changes };
   } catch (error) {
-    console.error('Batch delete failed:', error);
+    logger.error('Batch delete failed:', error);
     return { success: false, error: '批量删除失败', deletedCount: 0 };
   }
 }
@@ -276,7 +277,7 @@ export async function getUsersAction(limit: number = 20, offset: number = 0, que
       total
     };
   } catch (error) {
-    console.error('Failed to get users:', error);
+    logger.error('Failed to get users:', error);
     return { users: [], total: 0 };
   }
 }
@@ -298,7 +299,7 @@ export async function deleteUserAction(id: number) {
 
     return { success: true };
   } catch (error) {
-    console.error('Failed to delete user:', error);
+    logger.error('Failed to delete user:', error);
     return { success: false, error: 'Delete failed' };
   }
 }
@@ -319,7 +320,7 @@ export async function resetUserPasswordAction(id: number, newPassword: string) {
 
     return { success: true };
   } catch (error) {
-    console.error('Failed to reset password:', error);
+    logger.error('Failed to reset password:', error);
     return { success: false, error: '重置失败' };
   }
 }
@@ -343,7 +344,7 @@ export async function updateUserRoleAction(id: number, role: UserRole) {
 
     return { success: true };
   } catch (error) {
-    console.error('Failed to update role:', error);
+    logger.error('Failed to update role:', error);
     return { success: false, error: '更新角色失败' };
   }
 }
@@ -364,9 +365,41 @@ export async function revokeUserSessionAction(id: number) {
 
     return { success: true };
   } catch (error) {
-    console.error('Failed to revoke session:', error);
+    logger.error('Failed to revoke session:', error);
     return { success: false, error: '强制下线失败' };
   }
 }
 
 
+
+/** 管理后台统计数据 */
+export interface AdminStats {
+    users: number;
+    questions: number;
+    practices: number;
+    activeAi: number;
+}
+
+/**
+ * 获取管理后台概览统计数据
+ * 从 admin/page.tsx 提取，避免在 Server Component 内使用内联 'use server'
+ */
+export async function getAdminStatsAction(): Promise<AdminStats> {
+    await requireRole(['admin']);
+    try {
+        const userCount = db.prepare('SELECT COUNT(*) as count FROM users').get() as { count: number };
+        const questionCount = db.prepare('SELECT COUNT(*) as count FROM questions').get() as { count: number };
+        const practiceCount = db.prepare('SELECT COUNT(*) as count FROM practice_logs').get() as { count: number };
+        const aiConfigCount = db.prepare('SELECT COUNT(*) as count FROM ai_configs WHERE is_active = 1').get() as { count: number };
+
+        return {
+            users: userCount.count,
+            questions: questionCount.count,
+            practices: practiceCount.count,
+            activeAi: aiConfigCount.count,
+        };
+    } catch (error: unknown) {
+        logger.error('无法获取后台统计信息:', error);
+        return { users: 0, questions: 0, practices: 0, activeAi: 0 };
+    }
+}

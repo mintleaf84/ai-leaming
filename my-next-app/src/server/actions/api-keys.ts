@@ -1,4 +1,5 @@
 'use server';
+import logger from '@/lib/logger';
 
 import db from '@/lib/db';
 import { requireRole } from '@/lib/auth/auth';
@@ -26,7 +27,7 @@ export async function getApiKeysAction(): Promise<ApiKeyView[]> {
         ).all() as ApiKeyView[];
         return rows;
     } catch (error) {
-        console.error('[ApiKeys] 获取列表失败:', error);
+        logger.error('[ApiKeys] 获取列表失败:', error);
         return [];
     }
 }
@@ -50,7 +51,7 @@ export async function createApiKeyAction(
 
         return { success: true, key: keyString };
     } catch (error: unknown) {
-        console.error('[ApiKeys] 创建失败:', error);
+        logger.error('[ApiKeys] 创建失败:', error);
         return { success: false, error: getErrorMessage(error) };
     }
 }
@@ -74,7 +75,7 @@ export async function toggleApiKeyAction(
 
         return { success: true };
     } catch (error: unknown) {
-        console.error('[ApiKeys] 切换状态失败:', error);
+        logger.error('[ApiKeys] 切换状态失败:', error);
         return { success: false, error: getErrorMessage(error) };
     }
 }
@@ -93,7 +94,7 @@ export async function deleteApiKeyAction(
 
         return { success: true };
     } catch (error: unknown) {
-        console.error('[ApiKeys] 删除失败:', error);
+        logger.error('[ApiKeys] 删除失败:', error);
         return { success: false, error: getErrorMessage(error) };
     }
 }

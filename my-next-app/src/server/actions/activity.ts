@@ -1,4 +1,5 @@
 'use server';
+import logger from '@/lib/logger';
 
 import db from '@/lib/db';
 import { requireRole } from '@/lib/auth/auth';
@@ -40,7 +41,7 @@ export async function getUserActivityAction(
 
     try {
         const conditions: string[] = [];
-        const params: any[] = [];
+        const params: (string | number | null)[] = [];
 
         if (filters?.userId) {
             conditions.push('pl.user_id = ?');
@@ -91,7 +92,7 @@ export async function getUserActivityAction(
             total: total.count
         };
     } catch (error) {
-        console.error('Failed to fetch user activity:', error);
+        logger.error('Failed to fetch user activity:', error);
         throw new Error('获取用户活动失败');
     }
 }
@@ -143,7 +144,7 @@ export async function getActivityStatsAction() {
             aiTokensToday: aiCalls.tokens || 0
         };
     } catch (error) {
-        console.error('Failed to fetch activity stats:', error);
+        logger.error('Failed to fetch activity stats:', error);
         return {
             todayCount: 0,
             accuracyRate: 0,

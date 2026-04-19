@@ -1,7 +1,51 @@
 'use server';
+import logger from '@/lib/logger';
 
 import db from '@/lib/db';
 import { requireUser } from '@/lib/auth/auth';
+
+/** practice_sessions 表行（查询的字段子集） */
+interface PracticeSessionRow {
+    id: string;
+    totalQuestions: number;
+    correctCount: number;
+    reviewCount: number;
+    createdAt: string;
+    practiceMode?: string;
+    sessionName?: string;
+    accuracy?: number;
+}
+
+/** 历史记录列表查询行 */
+interface SessionListRow {
+    id: string;
+    sessionName?: string;
+    totalQuestions: number;
+    correctCount: number;
+    reviewCount: number;
+    createdAt: string;
+    practiceMode?: string;
+}
+
+/** 练习日志 + 题目信息联合查询行 */
+interface PracticeLogRow {
+    questionId: number;
+    questionContent: string;
+    options: string;
+    correctAnswer: string;
+    userAnswer: string;
+    isCorrect: number;
+    duration: number;
+    tags: string;
+    source: string;
+    explanation: string;
+    correct_ratio: number | null;
+    most_wrong_answer: string | null;
+    ai_mnemonic: string | null;
+    material: string | null;
+    material_html: string | null;
+    reviewData: string | null;
+}
 
 // 筛选参数类型
 export type HistoryFilter = {
@@ -42,7 +86,7 @@ export async function getSessionHistoryAction(filter?: HistoryFilter): Promise<P
 
     // 构建动态 WHERE 子句
     const conditions: string[] = ['user_id = ?'];
-    const params: any[] = [user.id];
+    const params: (string | number | null)[] = [user.id];
 
     if (filter?.dateFrom) {
       conditions.push('date(created_at) >= date(?)');
@@ -73,7 +117,7 @@ export async function getSessionHistoryAction(filter?: HistoryFilter): Promise<P
       WHERE ${whereClause}
       ORDER BY created_at DESC
       LIMIT ? OFFSET ?
-    `).all(...params, pageSize, offset) as any[];
+    `).all(...params, pageSize, offset) as SessionListRow[];
 
     // 计算正确率并过滤
     let items = rows.map(r => ({
@@ -97,7 +141,7 @@ export async function getSessionHistoryAction(filter?: HistoryFilter): Promise<P
       totalPages: Math.ceil(countRow.count / pageSize)
     };
   } catch (error) {
-    console.error("Failed to fetch session history:", error);
+    logger.error("Failed to fetch session history:", error);
     return { items: [], total: 0, page: 1, pageSize: 10, totalPages: 0 };
   }
 }
@@ -131,7 +175,7 @@ export type SessionDetail = {
     explanation: string;         // 解析
     correctRatio: number | null; // 全站正确率
     mostWrongAnswer: string | null; // 易错项
-    reviewData?: any;
+    reviewData?: Record<string, unknown>;
     aiMnemonic?: string | null; // 新增：AI 助记内容
     material?: string | null;   // 新增：材料内容（纯文本）
     materialHtml?: string | null; // 新增：材料内容（HTML）
@@ -145,7 +189,7 @@ export async function getSessionDetailAction(sessionId: string): Promise<Session
       SELECT id, total_questions as totalQuestions, correct_count as correctCount, 
              review_count as reviewCount, created_at as createdAt 
       FROM practice_sessions WHERE id = ? AND user_id = ?
-    `).get(sessionId, user.id) as any;
+    `).get(sessionId, user.id) as PracticeSessionRow | undefined;
 
     if (!sessionRow) return null;
 
@@ -160,7 +204,7 @@ export async function getSessionDetailAction(sessionId: string): Promise<Session
       JOIN questions q ON l.question_id = q.id
       LEFT JOIN session_reviews r ON l.session_id = r.session_id AND l.question_id = r.question_id
       WHERE l.session_id = ?
-    `).all(sessionId) as any[];
+    `).all(sessionId) as PracticeLogRow[];
 
     return {
       session: {
@@ -187,7 +231,7 @@ export async function getSessionDetailAction(sessionId: string): Promise<Session
       }))
     };
   } catch (error) {
-    console.error("Failed to fetch session detail:", error);
+    logger.error("Failed to fetch session detail:", error);
     return null;
   }
 }
@@ -216,7 +260,7 @@ export async function deleteSessionAction(sessionId: string) {
     transaction(sessionId, user.id);
     return { success: true };
   } catch (error) {
-    console.error("Failed to delete session:", error);
+    logger.error("Failed to delete session:", error);
     return { success: false, message: "删除失败，请稍后重试" };
   }
 }
@@ -239,7 +283,7 @@ export async function renameSessionAction(sessionId: string, newName: string) {
 
     return { success: true };
   } catch (error) {
-    console.error("Failed to rename session:", error);
+    logger.error("Failed to rename session:", error);
     return { success: false, message: "重命名失败，请稍后重试" };
   }
 }
@@ -282,7 +326,7 @@ export async function exportSessionMarkdownAction(sessionId: string): Promise<{
 
     return { success: true, markdown, filename };
   } catch (error) {
-    console.error("Failed to export session:", error);
+    logger.error("Failed to export session:", error);
     return { success: false, error: "导出失败，请稍后重试" };
   }
 }

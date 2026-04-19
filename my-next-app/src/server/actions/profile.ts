@@ -1,4 +1,5 @@
 'use server';
+import logger from '@/lib/logger';
 
 import db from '@/lib/db';
 import { requireUser } from '@/lib/auth/auth';
@@ -116,7 +117,7 @@ export async function updateProfileAction(data: { username: string }) {
 
     return { success: true, message: '个人资料已更新' };
   } catch (error) {
-    console.error('更新资料失败:', error);
+    logger.error('更新资料失败:', error);
     return { success: false, error: '更新失败，请稍后重试' };
   }
 }

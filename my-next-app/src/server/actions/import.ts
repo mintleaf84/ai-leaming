@@ -1,4 +1,5 @@
 'use server';
+import logger from '@/lib/logger';
 
 import db from '@/lib/db';
 import { requireUser } from '@/lib/auth/auth';
@@ -241,7 +242,7 @@ export async function importFenbiDataAction(
         };
 
     } catch (error) {
-        console.error('粉笔数据导入失败:', error);
+        logger.error('粉笔数据导入失败:', error);
         return {
             success: false,
             importedCount: 0,

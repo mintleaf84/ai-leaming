@@ -4,9 +4,9 @@ import React, { useRef, useState, useCallback } from 'react';
 import ChatSidebar from '@/components/chat/ChatSidebar';
 import { toast } from 'sonner';
 import { toggleMessageFavoriteAction, getFavoriteMessagesAction } from '@/server/actions/chat';
-import { useChatSessions } from '@/hooks/chat/useChatSessions';
-import { useChatStream } from '@/hooks/chat/useChatStream';
-import { useChatScroll } from '@/hooks/chat/useChatScroll';
+import { useChatSessions } from '@/hooks/chat/use-chat-sessions';
+import { useChatStream } from '@/hooks/chat/use-chat-stream';
+import { useChatScroll } from '@/hooks/chat/use-chat-scroll';
 import { KnowledgeModal } from '@/app/knowledge/components/KnowledgeModal';
 import type { KnowledgeCard } from '@/lib/services/knowledge';
 

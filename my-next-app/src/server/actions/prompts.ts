@@ -1,4 +1,5 @@
 'use server';
+import logger from '@/lib/logger';
 
 import db from '@/lib/db';
 import { generateStructuredData, generateTextWrapper, AiRawResponseError } from '@/lib/ai/client';
@@ -21,7 +22,7 @@ export interface PromptTemplate {
 
 export async function getPromptTemplatesAction(): Promise<PromptTemplate[]> {
     try {
-        const rows = db.prepare('SELECT * FROM prompt_templates ORDER BY key').all() as any[];
+        const rows = db.prepare('SELECT * FROM prompt_templates ORDER BY key').all() as Partial<PromptTemplate>[];
 
         // Let's first cast rows to partial objects
         const dbRows = rows.map(row => ({
@@ -82,7 +83,7 @@ export async function getPromptTemplatesAction(): Promise<PromptTemplate[]> {
 
         return combined as PromptTemplate[];
     } catch (error) {
-        console.error('Failed to get prompt templates:', error);
+        logger.error('Failed to get prompt templates:', error);
         return [];
     }
 }
@@ -110,7 +111,7 @@ export async function savePromptTemplateAction(
 
         return { success: true };
     } catch (error: unknown) {
-        console.error('Failed to save prompt template:', error);
+        logger.error('Failed to save prompt template:', error);
         return { success: false, error: getErrorMessage(error) };
     }
 }
@@ -139,7 +140,7 @@ export async function debugPromptTemplateAction(
         // 1. Interpolate variables
         const interpolatedPrompt = buildPrompt(template, inputVariables);
 
-        console.log(`[DebugPrompt] Running for ${key} with prompt length ${interpolatedPrompt.length}`);
+        logger.info(`[DebugPrompt] Running for ${key} with prompt length ${interpolatedPrompt.length}`);
 
         // 2. Select Schema based on key
         let result;
@@ -155,7 +156,7 @@ export async function debugPromptTemplateAction(
 
         return { success: true, result };
     } catch (error: unknown) {
-        console.error('Debug prompt failed:', error);
+        logger.error('Debug prompt failed:', error);
         const rawResponse = error instanceof AiRawResponseError ? error.rawResponse : undefined;
         return {
             success: false,

@@ -1,4 +1,5 @@
 'use server';
+import logger from '@/lib/logger';
 
 import { questionService } from '@/lib/services/question';
 import { Question } from '@/types';
@@ -20,7 +21,7 @@ export async function getQuestionByIdAction(id: number): Promise<{
 
         return { success: true, question };
     } catch (error: unknown) {
-        console.error('[getQuestionByIdAction] 错误:', error);
+        logger.error('[getQuestionByIdAction] 错误:', error);
         return { success: false, message: '获取题目失败' };
     }
 }

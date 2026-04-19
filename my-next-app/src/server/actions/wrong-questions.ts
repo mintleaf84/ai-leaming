@@ -1,4 +1,5 @@
 'use server';
+import logger from '@/lib/logger';
 
 import db from '@/lib/db';
 import { requireUser } from '@/lib/auth/auth';
@@ -56,7 +57,7 @@ export async function getWrongQuestionsAction(): Promise<WrongQuestionItem[]> {
             userLastAnswer: r.userLastAnswer || ''
         }));
     } catch (error) {
-        console.error("Failed to fetch wrong questions:", error);
+        logger.error("Failed to fetch wrong questions:", error);
         return [];
     }
 }
@@ -87,7 +88,7 @@ export async function getWrongQuestionsByTagAction(): Promise<WrongQuestionsByTa
             }))
             .sort((a, b) => b.count - a.count);
     } catch (error) {
-        console.error("Failed to fetch wrong questions by tag:", error);
+        logger.error("Failed to fetch wrong questions by tag:", error);
         return [];
     }
 }
@@ -129,7 +130,7 @@ export async function getWrongQuestionsStatsAction() {
             frequent: frequentRow.count
         };
     } catch (error) {
-        console.error("Failed to fetch wrong questions stats:", error);
+        logger.error("Failed to fetch wrong questions stats:", error);
         return { total: 0, recent: 0, frequent: 0 };
     }
 }
@@ -153,7 +154,7 @@ export async function createWrongQuestionsPracticeAction(questionIds: string[]) 
 
         return { success: true, sessionId };
     } catch (error) {
-        console.error("Failed to create wrong questions practice:", error);
+        logger.error("Failed to create wrong questions practice:", error);
         return { success: false, message: '创建练习失败' };
     }
 }
@@ -234,7 +235,7 @@ export async function getWrongQuestionDetailAction(questionId: string): Promise<
             }))
         };
     } catch (error) {
-        console.error("Failed to fetch wrong question detail:", error);
+        logger.error("Failed to fetch wrong question detail:", error);
         return null;
     }
 }
@@ -251,7 +252,7 @@ export async function markAsMasteredAction(questionId: string, note?: string): P
 
         return { success: true };
     } catch (error) {
-        console.error("Failed to mark as mastered:", error);
+        logger.error("Failed to mark as mastered:", error);
         return { success: false, message: '标记失败' };
     }
 }
@@ -268,7 +269,7 @@ export async function unmarkMasteredAction(questionId: string): Promise<{ succes
 
         return { success: true };
     } catch (error) {
-        console.error("Failed to unmark mastered:", error);
+        logger.error("Failed to unmark mastered:", error);
         return { success: false, message: '取消标记失败' };
     }
 }
@@ -305,7 +306,7 @@ export async function getMasteredQuestionsAction(): Promise<{
             note: r.note
         }));
     } catch (error) {
-        console.error("Failed to fetch mastered questions:", error);
+        logger.error("Failed to fetch mastered questions:", error);
         return [];
     }
 }
@@ -373,7 +374,7 @@ export async function getRandomWrongQuestionsAction(options: {
             userLastAnswer: r.userLastAnswer || '',
         }));
     } catch (error) {
-        console.error("Failed to fetch random wrong questions:", error);
+        logger.error("Failed to fetch random wrong questions:", error);
         return [];
     }
 }

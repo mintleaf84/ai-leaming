@@ -65,3 +65,7 @@ export {
     ADMIN_ACTION_LABELS,
     formatActionName,
 } from './admin';
+
+// Server Action 统一返回类型
+export type { ActionResult } from './action-result';
+export { ok, fail } from './action-result';

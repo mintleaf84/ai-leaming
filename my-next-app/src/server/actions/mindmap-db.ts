@@ -1,4 +1,5 @@
 'use server';
+import logger from '@/lib/logger';
 
 import db from '@/lib/db';
 import { requireUser } from '@/lib/auth/auth';
@@ -39,7 +40,7 @@ export async function createMindmapAction(input: CreateMindmapInput = {}) {
         revalidatePath('/mindmap');
         return { success: true, id: result.lastInsertRowid as number };
     } catch (error: unknown) {
-        console.error('Create mindmap failed:', error);
+        logger.error('Create mindmap failed:', error);
         return { success: false, message: '创建思维导图失败' };
     }
 }
@@ -83,7 +84,7 @@ export async function updateMindmapAction(input: UpdateMindmapInput) {
         revalidatePath(`/mindmap/${id}`);
         return { success: true };
     } catch (error: unknown) {
-        console.error('Update mindmap failed:', error);
+        logger.error('Update mindmap failed:', error);
         return { success: false, message: '保存思维导图失败' };
     }
 }
@@ -102,7 +103,7 @@ export async function deleteMindmapAction(id: number) {
         revalidatePath('/mindmap');
         return { success: true };
     } catch (error: unknown) {
-        console.error('Delete mindmap failed:', error);
+        logger.error('Delete mindmap failed:', error);
         return { success: false, message: '删除失败' };
     }
 }
@@ -116,11 +117,11 @@ export async function getMindmapsAction() {
             FROM mindmaps 
             WHERE user_id = ? 
             ORDER BY updated_at DESC
-        `).all(user.id) as any[];
+        `).all(user.id) as Pick<Mindmap, 'id' | 'title' | 'updated_at'>[];
 
         return { success: true, records };
     } catch (error: unknown) {
-        console.error('Get mindmaps failed:', error);
+        logger.error('Get mindmaps failed:', error);
         return { success: false, message: '获取图谱列表失败' };
     }
 }
@@ -139,7 +140,7 @@ export async function getMindmapDetailAction(id: number) {
 
         return { success: true, data: record };
     } catch (error: unknown) {
-        console.error('Get mindmap detail failed:', error);
+        logger.error('Get mindmap detail failed:', error);
         return { success: false, message: '获取详情失败' };
     }
 }

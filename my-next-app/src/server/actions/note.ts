@@ -1,4 +1,5 @@
 'use server';
+import logger from '@/lib/logger';
 
 import db from '@/lib/db';
 import { requireUser } from '@/lib/auth/auth';
@@ -55,7 +56,7 @@ export async function createNoteAction(input: CreateNoteInput = {}) {
         revalidatePath('/notes');
         return { success: true, noteId: result.lastInsertRowid };
     } catch (error: unknown) {
-        console.error('Create note failed:', error);
+        logger.error('Create note failed:', error);
         return { success: false, message: '创建笔记失败' };
     }
 }
@@ -100,7 +101,7 @@ export async function updateNoteAction(input: UpdateNoteInput) {
         revalidatePath(`/notes/${id}`);
         return { success: true };
     } catch (error: unknown) {
-        console.error('Update note failed:', error);
+        logger.error('Update note failed:', error);
         return { success: false, message: '保存笔记失败' };
     }
 }
@@ -119,7 +120,7 @@ export async function deleteNoteAction(id: number) {
         revalidatePath('/notes');
         return { success: true };
     } catch (error: unknown) {
-        console.error('Delete note failed:', error);
+        logger.error('Delete note failed:', error);
         return { success: false, message: '删除笔记失败' };
     }
 }
@@ -137,7 +138,7 @@ export async function getNotesAction() {
 
         return { success: true, notes };
     } catch (error: unknown) {
-        console.error('Get notes failed:', error);
+        logger.error('Get notes failed:', error);
         return { success: false, message: '获取笔记列表失败' };
     }
 }
@@ -156,7 +157,7 @@ export async function getNoteDetailAction(id: number) {
 
         return { success: true, note };
     } catch (error: unknown) {
-        console.error('Get note detail failed:', error);
+        logger.error('Get note detail failed:', error);
         return { success: false, message: '获取笔记详情失败' };
     }
 }
@@ -182,7 +183,7 @@ export async function searchNotesAction(query: string) {
 
         return { success: true, notes };
     } catch (error: unknown) {
-        console.error('Search notes failed:', error);
+        logger.error('Search notes failed:', error);
         return { success: false, message: '搜索笔记失败' };
     }
 }

@@ -1,4 +1,5 @@
 'use server';
+import logger from '@/lib/logger';
 
 import { getErrorMessage } from '@/lib/utils/error';
 import { performPaddleOCR } from '@/lib/ai/paddle-ocr';
@@ -75,7 +76,7 @@ export async function performOcrAction(
         // 将 Base64 转为 Buffer
         const fileBuffer = Buffer.from(fileBase64, 'base64');
 
-        console.log(`[OCR Action] 开始识别: ${fileName} (${mimeType}, ${Math.round(fileBuffer.length / 1024)}KB, 模型: ${model})`);
+        logger.info(`[OCR Action] 开始识别: ${fileName} (${mimeType}, ${Math.round(fileBuffer.length / 1024)}KB, 模型: ${model})`);
 
         let text: string;
 
@@ -93,10 +94,10 @@ export async function performOcrAction(
             return { success: false, error: '未能识别出任何文本内容，请检查文件是否包含可识别的文字' };
         }
 
-        console.log(`[OCR Action] 识别完成: ${text.length} 字符`);
+        logger.info(`[OCR Action] 识别完成: ${text.length} 字符`);
         return { success: true, text };
     } catch (error: unknown) {
-        console.error('[OCR Action] 识别失败:', error);
+        logger.error('[OCR Action] 识别失败:', error);
         return {
             success: false,
             error: getErrorMessage(error, 'OCR 识别失败，请稍后重试'),

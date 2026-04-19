@@ -1,4 +1,5 @@
 'use server';
+import logger from '@/lib/logger';
 
 import db from '@/lib/db';
 import { requireUser } from '@/lib/auth/auth';
@@ -81,7 +82,7 @@ export async function generateMnemonicAction(questionId: string, forceRegenerate
         return { success: true, content: text, cached: false };
 
     } catch (error) {
-        console.error('[generateMnemonicAction] Error:', error);
+        logger.error('[generateMnemonicAction] Error:', error);
         return { success: false, message: '生成失败，请稍后重试' };
     }
 }

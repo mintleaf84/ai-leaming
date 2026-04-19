@@ -1,4 +1,5 @@
 'use server';
+import logger from '@/lib/logger';
 
 import { getErrorMessage } from '@/lib/utils/error';
 import db from '@/lib/db';
@@ -73,7 +74,7 @@ export async function testAiConnectionAction(apiKey: string, apiUrl: string, mod
     const { text } = await generateTextWrapper(prompt, 'economy', apiKey, apiUrl);
     return { success: true, message: text };
   } catch (error: unknown) {
-    console.error("Connection Test Failed:", error);
+    logger.error("Connection Test Failed:", error);
     return { success: false, error: getErrorMessage(error, 'Connection failed') };
   }
 }

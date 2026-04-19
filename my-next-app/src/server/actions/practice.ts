@@ -1,7 +1,8 @@
 'use server';
+import logger from '@/lib/logger';
 
 import db from '@/lib/db';
-import { Question } from '@/types';
+import { Question, Dimension } from "@/types";
 import { safeGet, safeAll } from '@/lib/db/safe-query';
 import { PracticeSessionRowSchema, QuestionSchema, QuestionRowSchema } from '@/lib/schemas';
 import { z } from 'zod';
@@ -44,7 +45,7 @@ async function getDemoSession(userId: string | number): Promise<{
     // 清空该会话的答题记录，让用户从头开始
     db.prepare('DELETE FROM practice_logs WHERE session_id = ?').run(existing.id);
     db.prepare('UPDATE practice_sessions SET correct_count = 0 WHERE id = ?').run(existing.id);
-    console.log('[DemoMode] 复用演示会话:', existing.id);
+    logger.info('[DemoMode] 复用演示会话:', existing.id);
 
     let questions: Question[];
     try {
@@ -76,7 +77,7 @@ async function getDemoSession(userId: string | number): Promise<{
     VALUES (?, ?, ?, ?, 'smart', 1)
   `).run(sessionId, userId, questions.length, JSON.stringify(questions));
 
-  console.log('[DemoMode] 创建新演示会话:', sessionId);
+  logger.info('[DemoMode] 创建新演示会话:', sessionId);
   return { questions, sessionId };
 }
 
@@ -157,7 +158,7 @@ export async function getPracticeSessionAction(forceNew: boolean = false): Promi
 
     return { questions, sessionId };
   } catch (error) {
-    console.error('Failed to create/resume practice session:', error);
+    logger.error('Failed to create/resume practice session:', error);
     throw new Error('无法创建练习会话，请稍后重试。');
   }
 }
@@ -188,17 +189,17 @@ export async function submitAnswerAction(questionId: number, userAnswer: string,
       const { masteryService } = await import('@/lib/services/mastery');
 
       tags.forEach((tag: string) => {
-        masteryService.updateMastery(user.id, tag, q.dimension as any, isCorrect);
+        masteryService.updateMastery(user.id, tag, q.dimension as Dimension, isCorrect);
       });
     }
     return { success: true };
   } catch (e) {
-    console.error("Submit answer failed", e);
+    logger.error("Submit answer failed", e);
     return { success: false };
   }
 }
 
-export async function saveSessionReviewAction(sessionId: string, questionId: number, reviewData: any) {
+export async function saveSessionReviewAction(sessionId: string, questionId: number, reviewData: Record<string, unknown>) {
   try {
     const user = await requireUser();
 
@@ -215,7 +216,7 @@ export async function saveSessionReviewAction(sessionId: string, questionId: num
 
     return { success: true };
   } catch (e) {
-    console.error("Failed to save review data", e);
+    logger.error("Failed to save review data", e);
     return { success: false };
   }
 }
@@ -233,7 +234,7 @@ export async function getAvailableTagsAction(): Promise<string[]> {
 
     return result.map(r => r.tag);
   } catch (error) {
-    console.error('获取标签失败', error);
+    logger.error('获取标签失败', error);
     return [];
   }
 }
@@ -330,7 +331,7 @@ export async function getKnowledgeTreeAction(): Promise<KnowledgeParams[]> {
 
     return root;
   } catch (error) {
-    console.error('获取知识树失败', error);
+    logger.error('获取知识树失败', error);
     return [];
   }
 }
@@ -364,11 +365,11 @@ export async function getPracticeSessionByConfigAction(config: {
 
     // 构建配置
     const practiceConfig = {
-      mode: config.mode as any,
+      mode: config.mode,
       limit: config.limit,
-      types: config.types as any,
+      types: config.types,
       tags: config.tags,
-      dimensions: config.dimensions as any,
+      dimensions: config.dimensions,
       enableReview: config.enableReview ?? true,
       enableTimer: config.enableTimer ?? false
     };
@@ -406,7 +407,7 @@ export async function getPracticeSessionByConfigAction(config: {
 
     return { questions, sessionId, config };
   } catch (error) {
-    console.error('创建练习会话失败:', error);
+    logger.error('创建练习会话失败:', error);
     throw new Error('无法创建练习会话，请稍后重试。');
   }
 }
@@ -439,7 +440,7 @@ export async function getSessionByIdAction(sessionId: string): Promise<{
     }
 
     // 解析 questions_json (already parsed by Schema)
-    let questionsData = session.questions_json as any[];
+    let questionsData = session.questions_json as unknown[];
 
     // 检查是 ID 数组还是完整题目对象数组
     if (questionsData.length > 0 && typeof questionsData[0] === 'string') {
@@ -480,7 +481,7 @@ export async function getSessionByIdAction(sessionId: string): Promise<{
       practiceMode: session.practice_mode || undefined // Handle null
     };
   } catch (error) {
-    console.error('获取会话失败:', error);
+    logger.error('获取会话失败:', error);
     return null;
   }
 }

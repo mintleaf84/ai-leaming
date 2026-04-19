@@ -78,9 +78,9 @@ export function usePracticeController(enableIntelligentReview: boolean = false) 
                     const config = {
                         mode,
                         limit: parseInt(limit) || 25,
-                        types: searchParams.get('types')?.split(',') as any,
+                        types: searchParams.get('types')?.split(',') as ('single' | 'multi' | 'truefalse')[] | undefined,
                         tags: searchParams.get('tags')?.split(',').filter(Boolean),
-                        dimensions: searchParams.get('dimensions')?.split(',') as any,
+                        dimensions: searchParams.get('dimensions')?.split(',') as import('@/types').Dimension[] | undefined,
                         enableReview: !noReview,
                         enableTimer
                     };

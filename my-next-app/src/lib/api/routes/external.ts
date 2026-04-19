@@ -87,7 +87,7 @@ app.openapi(listRoute, async (c) => {
 
     // 构建查询（白名单字段，物理隔绝用户信息）
     let whereClause = ''
-    const params: any[] = []
+    const params: (string | number | null)[] = []
 
     if (tag) {
         // tags 在数据库中以 JSON 数组字符串存储，使用 SQLite json_each 进行精准匹配
@@ -104,7 +104,7 @@ app.openapi(listRoute, async (c) => {
          FROM questions ${whereClause}
          ORDER BY id ASC
          LIMIT ? OFFSET ?`
-    ).all(...params, limitNum, offset) as any[]
+    ).all(...params, limitNum, offset) as Record<string, unknown>[]
 
     // 反序列化 JSON 字符串字段
     const data = rows.map((row) => ({
@@ -153,7 +153,7 @@ app.openapi(getRoute, async (c) => {
     const row = db.prepare(
         `SELECT id, type, dimension, content, options, answer, explanation, tags
          FROM questions WHERE id = ?`
-    ).get(parseInt(id)) as any | undefined
+    ).get(parseInt(id)) as Record<string, unknown> | undefined
 
     if (!row) {
         return c.json({ error: '题目不存在' }, 404)

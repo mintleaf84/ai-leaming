@@ -3,7 +3,7 @@
 import React, { useCallback, useMemo, useRef } from 'react';
 import dynamic from 'next/dynamic';
 import { Target, BookOpen } from 'lucide-react';
-import { KnowledgeGraphData, KnowledgeNode } from '@/server/actions/viz';
+import { KnowledgeGraphData, KnowledgeNode, KnowledgeLink } from '@/server/actions/viz';
 import {
   Drawer,
   DrawerClose,
@@ -31,7 +31,7 @@ interface KnowledgeTreeProps {
 }
 
 export function KnowledgeTree({ data }: KnowledgeTreeProps) {
-  const graphRef = useRef<any>(null);
+  const graphRef = useRef<{ d3Force: (name: string, fn: unknown) => void } | null>(null);
   const router = useRouter();
   const [selectedNode, setSelectedNode] = React.useState<KnowledgeNode | null>(null);
   const [drawerOpen, setDrawerOpen] = React.useState(false);
@@ -51,7 +51,7 @@ export function KnowledgeTree({ data }: KnowledgeTreeProps) {
   }), [data]);
 
   // 节点颜色逻辑
-  const getNodeColor = useCallback((node: any) => {
+  const getNodeColor = useCallback((node: KnowledgeNode) => {
     if (node.group === 0) return '#0f172a'; // 根节点
     if (node.group === 1) return '#2563eb'; // 分类节点
     // 叶子节点基于分数着色
@@ -61,7 +61,7 @@ export function KnowledgeTree({ data }: KnowledgeTreeProps) {
   }, []);
 
   // 节点点击处理
-  const handleNodeClick = useCallback((node: any) => {
+  const handleNodeClick = useCallback((node: KnowledgeNode) => {
     if (node.group === 2) {
       setSelectedNode(node as KnowledgeNode);
       setDrawerOpen(true);
@@ -69,7 +69,7 @@ export function KnowledgeTree({ data }: KnowledgeTreeProps) {
   }, []);
 
   // 节点绘制（自定义 Canvas 渲染）
-  const paintNode = useCallback((node: any, ctx: CanvasRenderingContext2D, globalScale: number) => {
+  const paintNode = useCallback((node: KnowledgeNode, ctx: CanvasRenderingContext2D, globalScale: number) => {
     const label = node.id.split('/').pop() || node.id;
     const fontSize = node.group === 0 ? 14 / globalScale : 10 / globalScale;
     const nodeRadius = node.val;
@@ -113,7 +113,7 @@ export function KnowledgeTree({ data }: KnowledgeTreeProps) {
       fg.d3Force('link').distance(80);
 
       // 引入节点碰撞检测 (Collision)，防止重叠
-      fg.d3Force('collide', (node: any) => {
+      fg.d3Force('collide', (_node: KnowledgeNode) => {
          // 碰撞半径：节点半径 + 较大的保护边距（为文字留白）
          return node.val + 25;
       });
@@ -131,14 +131,14 @@ export function KnowledgeTree({ data }: KnowledgeTreeProps) {
         nodeRelSize={1}
         nodeVal="val"
         nodeCanvasObject={paintNode}
-        nodePointerAreaPaint={(node: any, color, ctx) => {
+        nodePointerAreaPaint={(node: KnowledgeNode, color, ctx) => {
           ctx.beginPath();
           ctx.arc(node.x, node.y, node.val, 0, 2 * Math.PI, false);
           ctx.fillStyle = color;
           ctx.fill();
         }}
         linkColor={() => '#e2e8f0'}
-        linkWidth={(link: any) => Math.sqrt(link.value) * 1.5}
+        linkWidth={(link: KnowledgeLink) => Math.sqrt(link.value) * 1.5}
         onNodeClick={handleNodeClick}
         cooldownTicks={100}
         onEngineStop={() => graphRef.current?.zoomToFit(400, 50)}

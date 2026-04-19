@@ -67,7 +67,7 @@ export async function createKnowledgeCard(card: KnowledgeCard): Promise<number> 
  */
 export function getAllKnowledgeCards(category?: string, limit: number = 100, ids?: number[]): KnowledgeCard[] {
     let query = 'SELECT * FROM knowledge_cards';
-    const params: any[] = [];
+    const params: (string | number | null)[] = [];
     const conditions: string[] = [];
 
     if (category) {
@@ -87,7 +87,7 @@ export function getAllKnowledgeCards(category?: string, limit: number = 100, ids
     query += ' ORDER BY created_at DESC LIMIT ?';
     params.push(limit);
 
-    const rows = db.prepare(query).all(...params) as any[];
+    const rows = db.prepare(query).all(...params) as Record<string, unknown>[];
 
     return rows.map(row => ({
         ...row,
@@ -100,7 +100,7 @@ export function getAllKnowledgeCards(category?: string, limit: number = 100, ids
  * 获取单个知识卡片
  */
 export function getKnowledgeCard(id: number): KnowledgeCard | null {
-    const row = db.prepare('SELECT * FROM knowledge_cards WHERE id = ?').get(id) as any;
+    const row = db.prepare('SELECT * FROM knowledge_cards WHERE id = ?').get(id) as Record<string, unknown> | undefined;
 
     if (!row) return null;
 
@@ -116,7 +116,7 @@ export function getKnowledgeCard(id: number): KnowledgeCard | null {
  */
 export async function updateKnowledgeCard(id: number, updates: Partial<KnowledgeCard>): Promise<boolean> {
     const fields: string[] = [];
-    const values: any[] = [];
+    const values: (string | number | null)[] = [];
 
     if (updates.title !== undefined) {
         fields.push('title = ?');

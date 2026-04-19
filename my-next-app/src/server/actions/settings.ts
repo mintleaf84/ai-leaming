@@ -20,7 +20,7 @@ export async function getSettingsAction(): Promise<Settings> {
 
   return {
     reviewThreshold: parseInt(settingsMap.get('review_threshold') || '60'),
-    aiSeverity: (settingsMap.get('ai_severity') as any) || 'medium',
+    aiSeverity: (settingsMap.get('ai_severity') as 'low' | 'medium' | 'high' | undefined) ?? 'medium',
     darkMode: settingsMap.get('dark_mode') === 'true',
   };
 }

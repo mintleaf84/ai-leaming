@@ -1,5 +1,5 @@
 import { generateTextWrapper } from '@/lib/ai/client';
-import { searchSimilarContent, ragService } from '@/lib/ai/rag';
+import { searchSimilarContent, ragService, type RagResult } from '@/lib/ai/rag';
 import { getPromptFromDbSync, SOCRATIC_TUTOR_PROMPT } from '@/lib/ai/prompts';
 import { tool } from 'ai';
 import { z } from 'zod';
@@ -72,7 +72,7 @@ export async function searchKnowledgeBase(query: string, limit: number = 3) {
         }
 
         // 2. 统一格式并准备重排序
-        const allResults: any[] = [
+        const allResults: RagResult[] = [
             ...questionResults.map(q => ({
                 content: typeof q.content === 'string' ? q.content : JSON.stringify(q.content),
                 score: 1, // 初始分数
@@ -128,7 +128,7 @@ export async function searchKnowledgeBase(query: string, limit: number = 3) {
 
         // 格式化题库
         if (questionDocs.length > 0) {
-            const questionContext = questionDocs.map((item: any, index: number) => {
+            const questionContext = questionDocs.map((item: RagResult, index: number) => {
                 const q = item.metadata;
                 return `
 [题目 ${index + 1}]
@@ -191,7 +191,7 @@ export async function handleQuizCommand(keyword: string): Promise<string> {
 
     let response = `📚 为您找到 ${results.length} 道关于"${keyword}"的相关题目：\n\n`;
 
-    results.forEach((item: any, index: number) => {
+    results.forEach((item: RagResult, index: number) => {
         const content = typeof item.content === 'string'
             ? item.content
             : JSON.stringify(item.content);

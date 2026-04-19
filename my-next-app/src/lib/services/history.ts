@@ -41,7 +41,7 @@ export const historyService = {
 
         // Build dynamic WHERE clause
         const conditions: string[] = ['user_id = ?'];
-        const params: any[] = [userId];
+        const params: (string | number | null)[] = [userId];
 
         if (filter.dateFrom) {
             conditions.push('date(created_at) >= date(?)');
@@ -81,7 +81,7 @@ export const historyService = {
       WHERE ${whereClause}
       ORDER BY created_at DESC
       LIMIT ? OFFSET ?
-    `).all(...params, pageSize, offset) as any[];
+    `).all(...params, pageSize, offset) as Record<string, unknown>[];
 
         // Calculate accuracy and filter
         let items = rows.map(r => ({
@@ -110,7 +110,7 @@ export const historyService = {
                 review_count as reviewCount, created_at as createdAt,
                 practice_mode as practiceMode, session_name as sessionName
         FROM practice_sessions WHERE id = ? AND user_id = ?
-    `).get(sessionId, userId) as any;
+    `).get(sessionId, userId) as Record<string, unknown> | undefined;
 
         if (!sessionRow) return null;
 
@@ -125,7 +125,7 @@ export const historyService = {
         JOIN questions q ON l.question_id = q.id
         LEFT JOIN session_reviews r ON l.session_id = r.session_id AND l.question_id = r.question_id
         WHERE l.session_id = ?
-    `).all(sessionId) as any[];
+    `).all(sessionId) as Record<string, unknown>[];
 
         return {
             session: {

@@ -25,7 +25,7 @@ export function getAllPlans(activeOnly = true): SubscriptionPlan[] {
         ? 'SELECT * FROM subscription_plans WHERE is_active = 1 ORDER BY sort_order ASC'
         : 'SELECT * FROM subscription_plans ORDER BY sort_order ASC';
 
-    const rows = db.prepare(sql).all() as any[];
+    const rows = db.prepare(sql).all() as Record<string, unknown>[];
     return rows.map(parsePlanRow);
 }
 
@@ -33,7 +33,7 @@ export function getAllPlans(activeOnly = true): SubscriptionPlan[] {
  * 根据 ID 获取套餐
  */
 export function getPlanById(planId: string): SubscriptionPlan | null {
-    const row = db.prepare('SELECT * FROM subscription_plans WHERE id = ?').get(planId) as any;
+    const row = db.prepare('SELECT * FROM subscription_plans WHERE id = ?').get(planId) as Record<string, unknown> | undefined;
     return row ? parsePlanRow(row) : null;
 }
 
@@ -89,7 +89,7 @@ export function deletePlan(planId: string): { success: boolean; error?: string }
 export function getUserSubscription(userId: number): UserSubscription | null {
     const row = db.prepare(`
     SELECT * FROM user_subscriptions WHERE user_id = ?
-  `).get(userId) as any;
+  `).get(userId) as Record<string, unknown> | undefined;
     return row || null;
 }
 
@@ -301,7 +301,7 @@ export function getSubscriptionStats(): {
 
 // ==================== 辅助函数 ====================
 
-function parsePlanRow(row: any): SubscriptionPlan {
+function parsePlanRow(row: Record<string, unknown>): SubscriptionPlan {
     return {
         ...row,
         limits: JSON.parse(row.limits || '{}'),

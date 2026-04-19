@@ -1,4 +1,5 @@
 import { test, expect } from './fixtures';
+import type { Page } from '@playwright/test';
 
 /**
  * 历史记录与会话详情 E2E 测试（模块四：H-01 ~ H-04）
@@ -9,7 +10,7 @@ test.describe('历史记录管理', () => {
     /**
      * 辅助函数：先做一道题以确保有历史记录
      */
-    async function ensureHistoryRecord(page: any) {
+    async function ensureHistoryRecord(page: Page) {
         await page.goto('/practice?new=true');
         const hasQuestion = await page.locator('h2, h1').first().isVisible({ timeout: 10000 }).catch(() => false);
         if (hasQuestion) {

@@ -4,6 +4,9 @@ import { test, expect } from './fixtures';
  * 全局与系统级 E2E 测试（模块十：G-01 ~ G-06）
  * 覆盖 404 页面、首页渲染、移动端响应式布局、文本标注和 PWA 离线页
  */
+
+/** 移动端触摸目标最小高度（px）：基于 Apple HIG 44px 指南，测试中取 40px 宽松阈值 */
+const MIN_TOUCH_TARGET_HEIGHT = 40;
 test.describe('全局与系统级', () => {
 
     // G-01：404 页面
@@ -88,8 +91,8 @@ test.describe('全局与系统级', () => {
         if (hasOptions) {
             const optionBox = await options.first().boundingBox();
             if (optionBox) {
-                // 触摸目标高度应 ≥ 44px（Apple 人机界面指南）
-                expect(optionBox.height).toBeGreaterThanOrEqual(40);
+                // 触摸目标高度应 ≥ MIN_TOUCH_TARGET_HEIGHT（基于 Apple HIG 44px，取宽松值）
+                expect(optionBox.height).toBeGreaterThanOrEqual(MIN_TOUCH_TARGET_HEIGHT);
             }
         }
 

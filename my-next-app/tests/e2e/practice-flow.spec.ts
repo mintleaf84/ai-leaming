@@ -4,6 +4,12 @@ import { test, expect } from './fixtures';
  * 练习核心引擎 E2E 测试（模块二：P-01 ~ P-10）
  * 模拟真实用户答题的完整连贯流程
  */
+
+/**
+ * P-10 答题循环最大次数：种子数据共 10 题，设为 12 保留安全缓冲
+ * （以防部分题目触发复盘后重复展示）
+ */
+const MAX_QUESTIONS_TO_COMPLETE = 12;
 test.describe('练习核心引擎', () => {
 
     // P-01：完整单选题答题流程（正确路径）
@@ -248,8 +254,8 @@ test.describe('练习核心引擎', () => {
         await loggedInPage.goto('/practice?new=true');
         await expect(loggedInPage.locator('h2, h1').first()).toBeVisible({ timeout: 15000 });
 
-        // 快速答完所有题目（种子数据共 10 题）
-        for (let i = 0; i < 12; i++) {
+        // 快速答完所有题目（种子数据共 10 题，最多尝试 MAX_QUESTIONS_TO_COMPLETE 次）
+        for (let i = 0; i < MAX_QUESTIONS_TO_COMPLETE; i++) {
             const options = loggedInPage.locator('div[role="button"]');
             const hasOptions = await options.first().isVisible({ timeout: 5000 }).catch(() => false);
 

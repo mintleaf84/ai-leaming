@@ -1,4 +1,5 @@
 import { test, expect } from './fixtures';
+import type { Page } from '@playwright/test';
 
 /**
  * 错题本 E2E 测试（模块八：WB-01 ~ WB-02）
@@ -9,7 +10,7 @@ test.describe('错题本', () => {
     /**
      * 辅助函数：答错若干题以生成错题记录
      */
-    async function generateWrongAnswers(page: any) {
+    async function generateWrongAnswers(page: Page) {
         await page.goto('/practice?new=true');
         const hasQuestion = await page.locator('h2, h1').first().isVisible({ timeout: 10000 }).catch(() => false);
         if (!hasQuestion) return;

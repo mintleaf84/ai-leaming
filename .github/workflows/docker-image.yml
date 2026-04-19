@@ -1,7 +1,10 @@
 name: Build and Push Docker Image to GHCR
 
 on:
-  push:
+  # 仅在 CI 工作流成功完成后触发（push 到 master/main）
+  workflow_run:
+    workflows: [ "CI" ]
+    types: [ completed ]
     branches: [ "master", "main" ]
   workflow_dispatch:
 
@@ -11,6 +14,8 @@ permissions:
 
 jobs:
   build:
+    # 只有 CI 成功时才执行（workflow_dispatch 直接运行）
+    if: ${{ github.event_name == 'workflow_dispatch' || github.event.workflow_run.conclusion == 'success' }}
     runs-on: ubuntu-latest
     steps:
       - name: Check out code

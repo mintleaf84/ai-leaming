@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import { getErrorMessage } from '@/lib/utils/error';
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -119,8 +120,8 @@ export function EditQuestionDialog({
             } else {
                 toast.error(res.error || "更新失败");
             }
-        } catch (error: any) {
-            toast.error(error.message);
+        } catch (error: unknown) {
+            toast.error(getErrorMessage(error));
         } finally {
             setLoading(false);
         }

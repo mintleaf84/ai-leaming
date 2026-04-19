@@ -1,5 +1,6 @@
 'use server';
 
+import { getErrorMessage } from '@/lib/utils/error';
 import db from '@/lib/db';
 import { revalidatePath } from 'next/cache';
 import { generateTextWrapper } from '@/lib/ai/client';
@@ -71,8 +72,8 @@ export async function testAiConnectionAction(apiKey: string, apiUrl: string, mod
     const prompt = "Please respond with 'Pong' to verify the connection.";
     const { text } = await generateTextWrapper(prompt, 'economy', apiKey, apiUrl);
     return { success: true, message: text };
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error("Connection Test Failed:", error);
-    return { success: false, error: error.message || "Connection failed" };
+    return { success: false, error: getErrorMessage(error, 'Connection failed') };
   }
 }

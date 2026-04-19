@@ -1,4 +1,5 @@
 import { OpenAPIHono, createRoute, z } from '@hono/zod-openapi'
+import { getErrorMessage } from '@/lib/utils/error';
 import {
     createKnowledgeCard,
     getAllKnowledgeCards,
@@ -161,9 +162,9 @@ app.openapi(createCardRoute, async (c) => {
 
         const id = await createKnowledgeCard(card)
         return c.json({ id, message: '知识卡片创建成功' })
-    } catch (error: any) {
+    } catch (error: unknown) {
         console.error('[Knowledge API] POST error:', error)
-        return c.json({ error: error.message }, 500)
+        return c.json({ error: getErrorMessage(error) }, 500)
     }
 })
 
@@ -273,9 +274,9 @@ app.openapi(extractRoute, async (c) => {
             card: { id, ...cardData },
             message: '知识卡片提取成功'
         })
-    } catch (error: any) {
+    } catch (error: unknown) {
         console.error('[Knowledge Extract API] error:', error)
-        return c.json({ error: error.message }, 500)
+        return c.json({ error: getErrorMessage(error) }, 500)
     }
 })
 

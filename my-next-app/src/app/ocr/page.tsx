@@ -147,7 +147,7 @@ export default function OcrPage() {
             } else {
                 toast.error(response.error || '识别失败');
             }
-        } catch (error: any) {
+        } catch (error: unknown) {
             toast.error(error.message || '识别过程中发生错误');
         } finally {
             setIsProcessing(false);
@@ -176,7 +176,7 @@ export default function OcrPage() {
             } else {
                 toast.error(res.error || '生成思维导图失败');
             }
-        } catch (error: any) {
+        } catch (error: unknown) {
             toast.error(error.message || '生成过程中发生错误');
         } finally {
             setIsGeneratingMindmap(false);

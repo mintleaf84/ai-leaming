@@ -1,4 +1,5 @@
 import { OpenAPIHono, createRoute, z } from '@hono/zod-openapi'
+import { getErrorMessage } from '@/lib/utils/error';
 import { authMiddleware, getCurrentUser } from '@/lib/api/middlewares/auth'
 import { streamChatWrapper } from '@/lib/ai/client'
 import { saveMessage } from '@/lib/services/chat'
@@ -98,9 +99,9 @@ app.openapi(chatRoute, async (c) => {
 
         // Hono 允许返回原生的 Response 对象
         return result.toTextStreamResponse()
-    } catch (error: any) {
+    } catch (error: unknown) {
         console.error('[Hono Chat API] error:', error)
-        return c.json({ error: error.message }, 500)
+        return c.json({ error: getErrorMessage(error) }, 500)
     }
 })
 

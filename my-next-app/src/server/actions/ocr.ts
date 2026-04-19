@@ -1,5 +1,6 @@
 'use server';
 
+import { getErrorMessage } from '@/lib/utils/error';
 import { performPaddleOCR } from '@/lib/ai/paddle-ocr';
 import { performOCR as performSiliconFlowOCR } from '@/lib/ai/siliconflow-ocr';
 import { requireUser } from '@/lib/auth/auth';
@@ -94,11 +95,11 @@ export async function performOcrAction(
 
         console.log(`[OCR Action] 识别完成: ${text.length} 字符`);
         return { success: true, text };
-    } catch (error: any) {
+    } catch (error: unknown) {
         console.error('[OCR Action] 识别失败:', error);
         return {
             success: false,
-            error: error.message || 'OCR 识别失败，请稍后重试',
+            error: getErrorMessage(error, 'OCR 识别失败，请稍后重试'),
         };
     }
 }

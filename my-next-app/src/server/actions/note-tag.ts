@@ -4,6 +4,7 @@ import db from '@/lib/db';
 import { requireUser } from '@/lib/auth/auth';
 import { revalidatePath } from 'next/cache';
 import { TAG_COLORS, type NoteTag } from '@/lib/types/note-tag';
+import { isSqliteConstraintError } from '@/lib/utils/error';
 
 // 获取用户的所有标签
 export async function getTagsAction() {
@@ -13,7 +14,7 @@ export async function getTagsAction() {
             SELECT * FROM note_tags WHERE user_id = ? ORDER BY name
         `).all(user.id) as NoteTag[];
         return { success: true, tags };
-    } catch (error: any) {
+    } catch (error: unknown) {
         console.error('Get tags failed:', error);
         return { success: false, message: '获取标签失败' };
     }
@@ -32,8 +33,8 @@ export async function createTagAction(name: string, color?: string) {
 
         revalidatePath('/notes');
         return { success: true, tagId: result.lastInsertRowid };
-    } catch (error: any) {
-        if (error.code === 'SQLITE_CONSTRAINT_UNIQUE') {
+    } catch (error: unknown) {
+        if (isSqliteConstraintError(error, 'SQLITE_CONSTRAINT_UNIQUE')) {
             return { success: false, message: '标签名已存在' };
         }
         console.error('Create tag failed:', error);
@@ -56,7 +57,7 @@ export async function deleteTagAction(tagId: number) {
 
         revalidatePath('/notes');
         return { success: true };
-    } catch (error: any) {
+    } catch (error: unknown) {
         console.error('Delete tag failed:', error);
         return { success: false, message: '删除标签失败' };
     }
@@ -80,7 +81,7 @@ export async function getNoteTagsAction(noteId: number) {
         `).all(noteId) as NoteTag[];
 
         return { success: true, tags };
-    } catch (error: any) {
+    } catch (error: unknown) {
         console.error('Get note tags failed:', error);
         return { success: false, message: '获取笔记标签失败' };
     }
@@ -114,7 +115,7 @@ export async function setNoteTagsAction(noteId: number, tagIds: number[]) {
         revalidatePath('/notes');
         revalidatePath(`/notes/${noteId}`);
         return { success: true };
-    } catch (error: any) {
+    } catch (error: unknown) {
         console.error('Set note tags failed:', error);
         return { success: false, message: '设置标签失败' };
     }
@@ -134,7 +135,7 @@ export async function getNotesByTagAction(tagId: number) {
         `).all(user.id, tagId) as any[];
 
         return { success: true, notes };
-    } catch (error: any) {
+    } catch (error: unknown) {
         console.error('Get notes by tag failed:', error);
         return { success: false, message: '获取笔记失败' };
     }

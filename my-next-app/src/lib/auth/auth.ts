@@ -1,6 +1,6 @@
 import { cookies, headers } from 'next/headers';
 import { NextRequest, NextResponse } from 'next/server';
-import { User, UserRole } from '@/lib/types';
+import { User, UserRole } from '@/types';
 import { getUserById, revokeUserSessions } from './user-service';
 import { cache } from 'react';
 

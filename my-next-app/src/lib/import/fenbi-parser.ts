@@ -18,7 +18,7 @@ export interface ParsedQuestion {
     explanationHtml: string;      // 解析（原始 HTML）
     tags: string[];               // 知识点
     source: string;               // 来源
-    type: 'single' | 'multi' | 'boolean' | 'fill_blank';  // 题目类型
+    type: 'single' | 'multi' | 'truefalse' | 'fill_blank';  // 题目类型
     dimension: 'knowledge' | 'understanding' | 'application';
     // 材料内容（不定项选择题等有材料的题目）
     material?: string;              // 材料内容（纯文本）
@@ -175,11 +175,11 @@ function multiIndexToLetters(indices: string): string {
 /**
  * 推断题目类型
  */
-function inferQuestionType(fenbiType: number, accessories: FenbiSolution['accessories']): 'single' | 'multi' | 'boolean' | 'fill_blank' {
+function inferQuestionType(fenbiType: number, accessories: FenbiSolution['accessories']): 'single' | 'multi' | 'truefalse' | 'fill_blank' {
     // 填空题
     if (fenbiType === 61) return 'fill_blank';
     // 判断题
-    if (fenbiType === 5) return 'boolean';
+    if (fenbiType === 5) return 'truefalse';
     // 多选题 或 不定项选择题（type: 3 的答案格式与多选题相同）
     if (fenbiType === 2 || fenbiType === 3) return 'multi';
     // 单选题
@@ -188,7 +188,7 @@ function inferQuestionType(fenbiType: number, accessories: FenbiSolution['access
     // 根据选项数量推断
     const options = accessories?.[0]?.options;
     if (!options || options.length === 0) return 'fill_blank';
-    if (options.length === 2) return 'boolean';
+    if (options.length === 2) return 'truefalse';
     return 'single';
 }
 
@@ -306,7 +306,7 @@ export function parseFenbiData(
 
         // 获取选项
         let options: string[] = [];
-        if (questionType === 'boolean') {
+        if (questionType === 'truefalse') {
             options = ['正确', '错误'];
         } else if (questionType !== 'fill_blank') {
             options = solution.accessories?.[0]?.options || [];
@@ -317,7 +317,7 @@ export function parseFenbiData(
         if (questionType === 'fill_blank') {
             // 填空题：从 blanks 数组提取
             correctAnswer = solution.correctAnswer?.blanks?.join('；') || '';
-        } else if (questionType === 'boolean') {
+        } else if (questionType === 'truefalse') {
             correctAnswer = indexToBoolean(solution.correctAnswer?.choice || '0');
         } else if (questionType === 'multi') {
             // 多选题：逗号分隔的索引转字母
@@ -402,7 +402,7 @@ export function parseFenbiData(
                 totalAnswers: questionStats.totalCount,
                 correctRatio: Math.round(questionStats.correctRatio * 10) / 10,  // 保留一位小数即可
                 mostWrongAnswer: questionStats.mostWrongAnswer
-                    ? (questionType === 'boolean'
+                    ? (questionType === 'truefalse'
                         ? indexToBoolean(questionStats.mostWrongAnswer.choice)
                         : questionType === 'multi'
                             ? multiIndexToLetters(questionStats.mostWrongAnswer.choice)
@@ -419,7 +419,7 @@ export function parseFenbiData(
             if (questionType === 'fill_blank') {
                 // 填空题：从 blanks 数组提取
                 userChoice = userAnswer.answer?.blanks?.join('；') || '';
-            } else if (questionType === 'boolean') {
+            } else if (questionType === 'truefalse') {
                 userChoice = indexToBoolean(userAnswer.answer?.choice || '0');
             } else if (questionType === 'multi') {
                 // 多选题

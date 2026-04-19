@@ -1,5 +1,6 @@
 import { embed } from 'ai';
 import { createOpenAI } from '@ai-sdk/openai';
+import { getErrorMessage } from '@/lib/utils/error';
 import { getAiConfig } from './client';
 import db from '@/lib/db';
 
@@ -28,8 +29,8 @@ export const ragService = {
       });
 
       return embedding;
-    } catch (error: any) {
-      console.warn('[RAG] Embedding 失败，原因:', error.message);
+    } catch (error: unknown) {
+      console.warn('[RAG] Embedding 失败，原因:', getErrorMessage(error));
       // 保持原有的模拟逻辑，但需要适配维度
       const { embeddingDimensions } = getAiConfig();
       return new Array(embeddingDimensions || 1024).fill(0).map((_, i) => {
@@ -220,8 +221,8 @@ export const ragService = {
       }
 
       return results;
-    } catch (error: any) {
-      console.warn('[RAG] Rerank 失败，原因:', error.message);
+    } catch (error: unknown) {
+      console.warn('[RAG] Rerank 失败，原因:', getErrorMessage(error));
       return results;
     }
   }

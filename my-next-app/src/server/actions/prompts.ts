@@ -1,12 +1,13 @@
 'use server';
 
 import db from '@/lib/db';
-import { generateStructuredData, generateTextWrapper } from '@/lib/ai/client';
+import { generateStructuredData, generateTextWrapper, AiRawResponseError } from '@/lib/ai/client';
 import { CorrectionQuizSchema, RegressionChallengeSchema } from '@/lib/schemas';
 import { z } from 'zod';
 import { buildPrompt, DEFAULT_CORRECTION_PROMPT, DEFAULT_REGRESSION_PROMPT, DEFAULT_KNOWLEDGE_EXTRACT_PROMPT, DEFAULT_CHAT_SYSTEM_PROMPT, PROMPT_VARIABLE_EXAMPLES } from '@/lib/ai/prompts';
 import { requireRole } from '@/lib/auth/auth';
 import { logAdminAction } from '@/lib/admin/audit';
+import { getErrorMessage } from '@/lib/utils/error';
 
 export interface PromptTemplate {
     key: string;
@@ -108,9 +109,9 @@ export async function savePromptTemplateAction(
         logAdminAction(user.id, user.username, 'UPDATE_PROMPT', 'prompt', key, { description });
 
         return { success: true };
-    } catch (error: any) {
+    } catch (error: unknown) {
         console.error('Failed to save prompt template:', error);
-        return { success: false, error: error.message };
+        return { success: false, error: getErrorMessage(error) };
     }
 }
 
@@ -123,8 +124,8 @@ export async function resetPromptTemplateAction(key: string): Promise<{ success:
         logAdminAction(user.id, user.username, 'UPDATE_PROMPT', 'prompt', key, { action: 'reset_to_default' });
 
         return { success: true };
-    } catch (error: any) {
-        return { success: false, error: error.message };
+    } catch (error: unknown) {
+        return { success: false, error: getErrorMessage(error) };
     }
 }
 
@@ -133,7 +134,7 @@ export async function debugPromptTemplateAction(
     key: string,
     template: string,
     inputVariables: Record<string, string>
-): Promise<{ success: boolean; result?: any; error?: string }> {
+): Promise<{ success: boolean; result?: unknown; error?: string }> {
     try {
         // 1. Interpolate variables
         const interpolatedPrompt = buildPrompt(template, inputVariables);
@@ -153,9 +154,14 @@ export async function debugPromptTemplateAction(
         }
 
         return { success: true, result };
-    } catch (error: any) {
+    } catch (error: unknown) {
         console.error('Debug prompt failed:', error);
-        return { success: false, error: error.message, result: error.rawResponse ? `[RAW RESPONSE]\n${error.rawResponse}` : undefined };
+        const rawResponse = error instanceof AiRawResponseError ? error.rawResponse : undefined;
+        return {
+            success: false,
+            error: getErrorMessage(error),
+            result: rawResponse ? `[RAW RESPONSE]\n${rawResponse}` : undefined,
+        };
     }
 }
 

@@ -2,6 +2,7 @@
 
 import { generateTextWrapper } from '@/lib/ai/client';
 import { requireUser } from '@/lib/auth/auth';
+import { getErrorMessage } from '@/lib/utils/error';
 
 /**
  * 将 OCR 文本转化为结构化思维导图 Markdown
@@ -51,11 +52,11 @@ ${ocrText}
 
         return { success: true, data: cleanText };
 
-    } catch (error: any) {
+    } catch (error: unknown) {
         console.error('[Mindmap Action] 生成思维导图失败:', error);
         return {
             success: false,
-            error: error.message || '生成结构化思维导图失败'
+            error: getErrorMessage(error, '生成结构化思维导图失败')
         };
     }
 }

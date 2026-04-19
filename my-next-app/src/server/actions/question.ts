@@ -51,7 +51,7 @@ export async function getQuestionSummaryAction(questionId: number): Promise<{
         };
 
         return { success: true, summary };
-    } catch (error: any) {
+    } catch (error: unknown) {
         console.error('[getQuestionSummaryAction] 错误:', error);
         return { success: false, message: '获取题目摘要失败' };
     }
@@ -97,7 +97,7 @@ export async function searchQuestionsAction(query: string, limit: number = 10): 
         });
 
         return { success: true, questions };
-    } catch (error: any) {
+    } catch (error: unknown) {
         console.error('[searchQuestionsAction] 错误:', error);
         return { success: false, message: '搜索题目失败' };
     }

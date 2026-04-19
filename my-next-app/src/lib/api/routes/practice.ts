@@ -1,4 +1,5 @@
 import { OpenAPIHono, createRoute, z } from '@hono/zod-openapi'
+import { getErrorMessage } from '@/lib/utils/error';
 import { practiceService } from '@/lib/services/practice'
 import { authMiddleware, getCurrentUser } from '@/lib/api/middlewares/auth'
 
@@ -256,9 +257,9 @@ ${explanation ? `参考解析：${explanation}` : ''}
 
         return c.json({ analysis: text, cached: false });
 
-    } catch (error: any) {
+    } catch (error: unknown) {
         console.error('[FirstPrinciples API] error:', error);
-        return c.json({ error: error.message }, 500);
+        return c.json({ error: getErrorMessage(error) }, 500);
     }
 })
 

@@ -78,7 +78,7 @@ export async function performPaddleOCR(
 
         const result = (await response.json()).result;
         return extractMarkdown(result);
-    } catch (error: any) {
+    } catch (error: unknown) {
         if (error.name === 'AbortError') {
             throw new Error(`PaddleOCR 请求超时（超过 ${REQUEST_TIMEOUT_MS / 1000} 秒）`);
         }

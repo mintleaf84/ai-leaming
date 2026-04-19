@@ -1,7 +1,7 @@
 // @vitest-environment node
 import { describe, it, expect } from 'vitest';
 import { createPracticeReducer, INITIAL_STATE } from '../use-practice-engine';
-import { Action, PracticeState, Question } from '@/lib/types';
+import { Action, PracticeState, Question } from '@/types';
 
 const practiceReducer = createPracticeReducer(true);
 

@@ -1,8 +1,9 @@
 'use server';
 
 import db from '@/lib/db';
-import { Question, UserRole } from '@/lib/types';
+import { Question, UserRole } from '@/types';
 import { z } from 'zod';
+import { getErrorMessage } from '@/lib/utils/error';
 import { QuestionSchema } from '@/lib/schemas';
 import { requireRole, getSession } from '@/lib/auth/auth';
 import { hashPassword } from '@/lib/auth/password';
@@ -27,7 +28,7 @@ export async function getQuestionsAction(
   try {
     // 构建 WHERE 子句
     const conditions: string[] = [];
-    const params: any[] = [];
+    const params: (string | number | null)[] = [];
 
     if (filters?.search) {
       conditions.push('content LIKE ?');
@@ -99,7 +100,7 @@ export async function importQuestionsAction(jsonData: unknown) {
     return { success: true, count: parsedData.length };
   } catch (error) {
     console.error('Import failed:', error);
-    return { success: false, error: error instanceof Error ? error.message : 'Unknown error' };
+    return { success: false, error: getErrorMessage(error, 'Unknown error') };
   }
 }
 
@@ -132,7 +133,7 @@ export async function updateQuestionAction(id: number, data: QuestionUpdateData)
   const user = await requireRole(['admin']);
   try {
     // 1. 获取现有题目进行合并校验
-    const existing = db.prepare('SELECT * FROM questions WHERE id = ?').get(id) as any;
+    const existing = db.prepare('SELECT * FROM questions WHERE id = ?').get(id) as Question | undefined;
     if (!existing) {
       return { success: false, error: '题目不存在' };
     }
@@ -163,7 +164,7 @@ export async function updateQuestionAction(id: number, data: QuestionUpdateData)
 
     // 3. 构建动态 UPDATE 语句
     const updates: string[] = [];
-    const params: any[] = [];
+    const params: (string | number | null)[] = [];
 
     if (data.content !== undefined) { updates.push('content = ?'); params.push(data.content); }
     if (data.options !== undefined) { updates.push('options = ?'); params.push(JSON.stringify(data.options)); }
@@ -245,7 +246,7 @@ export async function getUsersAction(limit: number = 20, offset: number = 0, que
       LEFT JOIN user_subscriptions us ON u.id = us.user_id
       LEFT JOIN subscription_plans sp ON us.plan_id = sp.id
     `;
-    const params: any[] = [];
+    const params: (string | number | null)[] = [];
 
     if (query) {
       sql += ' WHERE u.username LIKE ?';
@@ -263,7 +264,7 @@ export async function getUsersAction(limit: number = 20, offset: number = 0, que
     sql += ' ORDER BY u.id DESC LIMIT ? OFFSET ?';
     params.push(limit, offset);
 
-    const users = db.prepare(sql).all(...params) as any[];
+    const users = db.prepare(sql).all(...params) as UserAdminView[];
 
     return {
       users: users.map(u => ({

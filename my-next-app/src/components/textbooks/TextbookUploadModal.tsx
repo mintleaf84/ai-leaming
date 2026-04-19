@@ -2,6 +2,7 @@
 "use client";
 
 import React, { useState } from 'react';
+import { getErrorMessage } from '@/lib/utils/error';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -50,8 +51,8 @@ export function TextbookUploadModal({ children, onSuccess }: { children: React.R
             setOpen(false);
             router.refresh();
             if (onSuccess) onSuccess();
-        } catch (error: any) {
-            toast.error(error.message);
+        } catch (error: unknown) {
+            toast.error(getErrorMessage(error));
         } finally {
             setLoading(false);
         }

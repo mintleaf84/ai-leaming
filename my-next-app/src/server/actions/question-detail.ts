@@ -1,7 +1,7 @@
 'use server';
 
 import { questionService } from '@/lib/services/question';
-import { Question } from '@/lib/types';
+import { Question } from '@/types';
 
 /**
  * 获取单个题目的完整信息
@@ -19,7 +19,7 @@ export async function getQuestionByIdAction(id: number): Promise<{
         }
 
         return { success: true, question };
-    } catch (error: any) {
+    } catch (error: unknown) {
         console.error('[getQuestionByIdAction] 错误:', error);
         return { success: false, message: '获取题目失败' };
     }

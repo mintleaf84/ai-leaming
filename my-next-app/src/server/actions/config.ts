@@ -1,5 +1,6 @@
 'use server';
 
+import { getErrorMessage } from '@/lib/utils/error';
 import db from '@/lib/db';
 import { revalidatePath } from 'next/cache';
 import { requireRole } from '@/lib/auth/auth';
@@ -82,9 +83,9 @@ export async function saveAiConfigAction(config: Partial<AiConfig>) {
         logAdminAction(user.id, user.username, 'UPDATE_AI_CONFIG', 'ai_config', config.id?.toString() || 'new', { name: config.name });
 
         return { success: true };
-    } catch (error: any) {
+    } catch (error: unknown) {
         console.error('saveAiConfigAction error:', error);
-        return { success: false, error: error.message };
+        return { success: false, error: getErrorMessage(error) };
     }
 }
 

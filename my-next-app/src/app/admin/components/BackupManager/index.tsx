@@ -87,7 +87,7 @@ export function BackupManager() {
                 window.location.reload();
             }, 3000);
 
-        } catch (error: any) {
+        } catch (error: unknown) {
             console.error(error);
             toast.error(`恢复失败: ${error.message}`, { id: toastId });
             setIsRestoring(false);

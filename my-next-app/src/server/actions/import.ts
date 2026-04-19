@@ -132,7 +132,7 @@ export async function importFenbiDataAction(
                     }
 
                     const typeMap: Record<string, string> = {
-                        'single': 'single', 'multi': 'multi', 'boolean': 'single', 'fill_blank': 'fill_blank'
+                        'single': 'single', 'multi': 'multi', 'truefalse': 'truefalse', 'fill_blank': 'single'
                     };
 
                     updateFullQuestion.run(
@@ -148,7 +148,7 @@ export async function importFenbiDataAction(
                     skippedQuestionsCount++;
                 } else {
                     const typeMap: Record<string, string> = {
-                        'single': 'single', 'multi': 'multi', 'boolean': 'single', 'fill_blank': 'fill_blank'
+                        'single': 'single', 'multi': 'multi', 'truefalse': 'truefalse', 'fill_blank': 'single'
                     };
 
                     const result = insertQuestion.run(

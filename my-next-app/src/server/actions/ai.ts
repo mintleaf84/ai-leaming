@@ -1,6 +1,7 @@
 'use server';
 
 import { generateStructuredData, generateTextWrapper } from '@/lib/ai/client';
+import { getErrorMessage } from '@/lib/utils/error';
 import { CorrectionQuizSchema, RegressionChallengeSchema, CorrectionQuiz, RegressionChallenge } from '@/lib/schemas';
 import { questionService } from '@/lib/services/question';
 import { getPromptFromDbSync, buildPrompt, DEFAULT_CORRECTION_PROMPT, DEFAULT_REGRESSION_PROMPT } from '@/lib/ai/prompts';
@@ -312,9 +313,9 @@ ${explanation ? `参考解析：${explanation}` : ''}
     }
 
     return { analysis: text, cached: false };
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error('First Principles analysis failed:', error);
-    throw new Error(`AI 分析失败: ${error.message || '请稍后重试'}`);
+    throw new Error(`AI 分析失败: ${getErrorMessage(error, '请稍后重试')}`);
   }
 }
 

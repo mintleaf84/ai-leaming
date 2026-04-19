@@ -21,6 +21,14 @@ export interface Note {
     updated_at: string;
 }
 
+/** 笔记列表项（不含完整内容） */
+export interface NotePreview {
+    id: number;
+    title: string;
+    updated_at: string;
+    preview: string | null;
+}
+
 export type CreateNoteInput = {
     title?: string;
     content?: string;
@@ -46,7 +54,7 @@ export async function createNoteAction(input: CreateNoteInput = {}) {
 
         revalidatePath('/notes');
         return { success: true, noteId: result.lastInsertRowid };
-    } catch (error: any) {
+    } catch (error: unknown) {
         console.error('Create note failed:', error);
         return { success: false, message: '创建笔记失败' };
     }
@@ -64,7 +72,7 @@ export async function updateNoteAction(input: UpdateNoteInput) {
         }
 
         const updates: string[] = [];
-        const params: any[] = [];
+        const params: (string | number | null)[] = [];
 
         if (title !== undefined) {
             updates.push('title = ?');
@@ -91,7 +99,7 @@ export async function updateNoteAction(input: UpdateNoteInput) {
         revalidatePath('/notes');
         revalidatePath(`/notes/${id}`);
         return { success: true };
-    } catch (error: any) {
+    } catch (error: unknown) {
         console.error('Update note failed:', error);
         return { success: false, message: '保存笔记失败' };
     }
@@ -110,7 +118,7 @@ export async function deleteNoteAction(id: number) {
 
         revalidatePath('/notes');
         return { success: true };
-    } catch (error: any) {
+    } catch (error: unknown) {
         console.error('Delete note failed:', error);
         return { success: false, message: '删除笔记失败' };
     }
@@ -125,10 +133,10 @@ export async function getNotesAction() {
             FROM notes 
             WHERE user_id = ? 
             ORDER BY updated_at DESC
-        `).all(user.id) as any[];
+        `).all(user.id) as NotePreview[];
 
         return { success: true, notes };
-    } catch (error: any) {
+    } catch (error: unknown) {
         console.error('Get notes failed:', error);
         return { success: false, message: '获取笔记列表失败' };
     }
@@ -147,7 +155,7 @@ export async function getNoteDetailAction(id: number) {
         }
 
         return { success: true, note };
-    } catch (error: any) {
+    } catch (error: unknown) {
         console.error('Get note detail failed:', error);
         return { success: false, message: '获取笔记详情失败' };
     }
@@ -170,10 +178,10 @@ export async function searchNotesAction(query: string) {
             WHERE user_id = ? AND (title LIKE ? OR content LIKE ?)
             ORDER BY updated_at DESC
             LIMIT 50
-        `).all(user.id, searchPattern, searchPattern) as any[];
+        `).all(user.id, searchPattern, searchPattern) as NotePreview[];
 
         return { success: true, notes };
-    } catch (error: any) {
+    } catch (error: unknown) {
         console.error('Search notes failed:', error);
         return { success: false, message: '搜索笔记失败' };
     }

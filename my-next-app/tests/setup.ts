@@ -8,11 +8,6 @@ afterEach(() => {
     cleanup()
 })
 
-// Mock 全局 fetch (如果尚未存在)
-global.fetch = global.fetch || (() => Promise.resolve({
-    json: () => Promise.resolve({}),
-} as Response));
-
 // Mock scrollIntoView 因为 jsdom 不支持
 if (typeof Element !== 'undefined') {
     Element.prototype.scrollIntoView = () => { };

@@ -39,7 +39,7 @@ interface KnowledgeTreeProps {
 }
 
 export function KnowledgeTree({ data }: KnowledgeTreeProps) {
-  const graphRef = useRef<ForceGraphMethods<NodeObject<KnowledgeNode>>>();
+  const graphRef = useRef<ForceGraphMethods<NodeObject<KnowledgeNode>> | undefined>(undefined);
   const router = useRouter();
   const [selectedNode, setSelectedNode] = React.useState<KnowledgeNode | null>(null);
   const [drawerOpen, setDrawerOpen] = React.useState(false);
@@ -123,11 +123,12 @@ export function KnowledgeTree({ data }: KnowledgeTreeProps) {
       (fg.d3Force('link') as any)?.distance(80);
 
       // 引入节点碰撞检测 (Collision)，防止重叠
-      fg.d3Force('collide', (_node: NodeObject<KnowledgeNode>) => {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      fg.d3Force('collide', ((_node: NodeObject<KnowledgeNode>) => {
          // 碰撞半径：节点半径 + 较大的保护边距（为文字留白）
          const n = _node as ForceKnowledgeNode;
          return n.val + 25;
-      });
+      }) as any);
 
       // 重新预热引擎以应用新参数
       fg.d3ReheatSimulation();
@@ -137,7 +138,8 @@ export function KnowledgeTree({ data }: KnowledgeTreeProps) {
   return (
     <div className="w-full h-full relative">
       <ForceGraph2D
-        ref={graphRef}
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        ref={graphRef as any}
         graphData={graphData}
         nodeRelSize={1}
         nodeVal="val"

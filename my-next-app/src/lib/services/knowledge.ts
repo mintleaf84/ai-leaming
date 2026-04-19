@@ -87,12 +87,12 @@ export function getAllKnowledgeCards(category?: string, limit: number = 100, ids
     query += ' ORDER BY created_at DESC LIMIT ?';
     params.push(limit);
 
-    const rows = db.prepare(query).all(...params) as Record<string, unknown>[];
+    const rows = db.prepare(query).all(...params) as (Omit<KnowledgeCard, 'tags' | 'key_points'> & { tags: string; key_points: string })[];
 
     return rows.map(row => ({
         ...row,
-        tags: JSON.parse(row.tags || '[]'),
-        key_points: JSON.parse(row.key_points || '[]'),
+        tags: JSON.parse(row.tags || '[]') as string[],
+        key_points: JSON.parse(row.key_points || '[]') as { term: string; definition: string }[],
     }));
 }
 
@@ -100,14 +100,15 @@ export function getAllKnowledgeCards(category?: string, limit: number = 100, ids
  * 获取单个知识卡片
  */
 export function getKnowledgeCard(id: number): KnowledgeCard | null {
-    const row = db.prepare('SELECT * FROM knowledge_cards WHERE id = ?').get(id) as Record<string, unknown> | undefined;
+    type KnowledgeCardRow = Omit<KnowledgeCard, 'tags' | 'key_points'> & { tags: string; key_points: string };
+    const row = db.prepare('SELECT * FROM knowledge_cards WHERE id = ?').get(id) as KnowledgeCardRow | undefined;
 
     if (!row) return null;
 
     return {
         ...row,
-        tags: JSON.parse(row.tags || '[]'),
-        key_points: JSON.parse(row.key_points || '[]'),
+        tags: JSON.parse(row.tags || '[]') as string[],
+        key_points: JSON.parse(row.key_points || '[]') as { term: string; definition: string }[],
     };
 }
 

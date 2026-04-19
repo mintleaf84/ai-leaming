@@ -3,6 +3,7 @@ import logger from '@/lib/logger';
 
 import db from '@/lib/db';
 import { Question, Dimension } from "@/types";
+import type { PracticeMode } from "@/types";
 import { safeGet, safeAll } from '@/lib/db/safe-query';
 import { PracticeSessionRowSchema, QuestionSchema, QuestionRowSchema } from '@/lib/schemas';
 import { z } from 'zod';
@@ -365,7 +366,7 @@ export async function getPracticeSessionByConfigAction(config: {
 
     // 构建配置
     const practiceConfig = {
-      mode: config.mode,
+      mode: config.mode as PracticeMode,
       limit: config.limit,
       types: config.types,
       tags: config.tags,

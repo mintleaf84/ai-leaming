@@ -47,9 +47,9 @@ export interface BackupData {
 export async function exportUserDataAction(): Promise<BackupData> {
   try {
     const user = await requireUser();
-    const user_mastery = db.prepare('SELECT * FROM user_mastery WHERE user_id = ?').all(user.id);
-    const practice_logs = db.prepare('SELECT * FROM practice_logs WHERE user_id = ?').all(user.id);
-    const observation_zone = db.prepare('SELECT * FROM observation_zone WHERE user_id = ?').all(user.id);
+    const user_mastery = db.prepare('SELECT * FROM user_mastery WHERE user_id = ?').all(user.id) as UserMasteryRow[];
+    const practice_logs = db.prepare('SELECT * FROM practice_logs WHERE user_id = ?').all(user.id) as PracticeLogBackupRow[];
+    const observation_zone = db.prepare('SELECT * FROM observation_zone WHERE user_id = ?').all(user.id) as ObservationZoneRow[];
 
     return {
       version: 1,

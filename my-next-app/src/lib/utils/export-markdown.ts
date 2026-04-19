@@ -113,8 +113,8 @@ export function formatSessionToMarkdown(
             lines.push('');
             if (typeof log.reviewData === 'string') {
                 lines.push(log.reviewData);
-            } else if (log.reviewData.review) {
-                lines.push(log.reviewData.review);
+            } else if ((log.reviewData as { review?: string }).review) {
+                lines.push((log.reviewData as { review: string }).review);
             }
             lines.push('');
         }

@@ -91,7 +91,7 @@ export const authMiddleware = createMiddleware(async (c, next) => {
 });
 
 export const getCurrentUser = (c: Context): User => {
-    const payload = c.get('jwtPayload')
+    const payload = c.get('jwtPayload') as { user?: User } | undefined
     // 由于此函数仅在 authMiddleware 保护的路由中调用，
     // payload 必然存在，因此安全地强制返回 User
     return (payload?.user || payload) as User

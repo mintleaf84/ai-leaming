@@ -161,7 +161,7 @@ describe('usePracticeEngine Reducer', () => {
         };
 
         // 答对
-        const correctAction: Action = {
+        const correctAction: PracticeAction = {
             type: 'ANSWER_QUESTION',
             payload: { questionId: 99, answer: 'A', isCorrect: true, duration: 500 }
         };
@@ -170,7 +170,7 @@ describe('usePracticeEngine Reducer', () => {
         expect(stateAfterCorrect.reviewQueue).toHaveLength(0);
 
         // 答错（选 B）
-        const wrongAction: Action = {
+        const wrongAction: PracticeAction = {
             type: 'ANSWER_QUESTION',
             payload: { questionId: 99, answer: 'B', isCorrect: false, duration: 500 }
         };

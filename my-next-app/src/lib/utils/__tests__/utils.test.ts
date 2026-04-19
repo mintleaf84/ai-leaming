@@ -12,7 +12,7 @@ describe('cn（className 合并）', () => {
     });
 
     it('应过滤 falsy 值（undefined、false、null）', () => {
-        // @ts-expect-error 故意测试运行时传入 null 的边界行为
+        // 测试运行时传入 null 的边界行为
         expect(cn('foo', undefined, false, null, 'bar')).toBe('foo bar');
     });
 

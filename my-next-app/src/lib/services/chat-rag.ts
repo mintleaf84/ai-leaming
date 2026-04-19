@@ -129,12 +129,12 @@ export async function searchKnowledgeBase(query: string, limit: number = 3) {
         // 格式化题库
         if (questionDocs.length > 0) {
             const questionContext = questionDocs.map((item: RagResult, index: number) => {
-                const q = item.metadata;
+                const q = item.metadata || {};
                 return `
 [题目 ${index + 1}]
 ${item.content}
-${q.explanation ? `解析: ${q.explanation}` : ''}
-标签: ${Array.isArray(q.tags) ? q.tags.join(', ') : q.tags || '无'}
+${q['explanation'] ? `解析: ${q['explanation']}` : ''}
+标签: ${Array.isArray(q['tags']) ? (q['tags'] as string[]).join(', ') : String(q['tags'] || '无')}
 ---`;
             }).join('\n');
             contextParts.push(`【相关真题库】\n${questionContext}`);
@@ -191,14 +191,15 @@ export async function handleQuizCommand(keyword: string): Promise<string> {
 
     let response = `📚 为您找到 ${results.length} 道关于"${keyword}"的相关题目：\n\n`;
 
-    results.forEach((item: RagResult, index: number) => {
+    (results as RagResult[]).forEach((item: RagResult, index: number) => {
         const content = typeof item.content === 'string'
             ? item.content
             : JSON.stringify(item.content);
 
+        const meta = item.metadata || {};
         response += `**${index + 1}. ${content.substring(0, 50)}...**\n`;
-        response += `   - 难度层级: ${item.dimension || '未标注'}\n`;
-        response += `   - 知识点: ${Array.isArray(item.tags) ? item.tags.join(', ') : item.tags || '未分类'}\n\n`;
+        response += `   - 难度层级: ${meta['dimension'] || '未标注'}\n`;
+        response += `   - 知识点: ${Array.isArray(meta['tags']) ? (meta['tags'] as string[]).join(', ') : String(meta['tags'] || '未分类')}\n\n`;
     });
 
     response += `\n💡 建议：前往 [练习页面](/practice) 进行系统化训练，AI 会根据您的掌握度智能推荐题目。`;

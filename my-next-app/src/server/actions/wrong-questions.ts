@@ -251,7 +251,7 @@ export async function getWrongQuestionDetailAction(questionId: string): Promise<
                 MAX(timestamp) as lastWrongAt
             FROM practice_logs 
             WHERE question_id = ? AND user_id = ? AND is_correct = 0
-        `).get(questionId, user.id) as QuestionDetailRow | undefined;
+        `).get(questionId, user.id) as { wrongCount: number; lastWrongAt: string } | undefined;
 
         // 获取历史作答记录
         const historyLogs = db.prepare(`
@@ -263,7 +263,7 @@ export async function getWrongQuestionDetailAction(questionId: string): Promise<
             WHERE question_id = ? AND user_id = ?
             ORDER BY timestamp DESC
             LIMIT 20
-        `).all(questionId, user.id) as { id: string; is_correct: number; timestamp: string; user_answer: string }[];
+        `).all(questionId, user.id) as { timestamp: string; userAnswer: string; isCorrect: number }[];
 
         // 获取用户最近一次错误答案
         const lastWrongAnswer = db.prepare(`
@@ -271,7 +271,7 @@ export async function getWrongQuestionDetailAction(questionId: string): Promise<
             FROM practice_logs 
             WHERE question_id = ? AND user_id = ? AND is_correct = 0 
             ORDER BY timestamp DESC LIMIT 1
-        `).get(questionId, user.id) as { id: string; question_id: string } | undefined;
+        `).get(questionId, user.id) as { user_answer: string } | undefined;
 
         return {
             questionId: String(question.id),
@@ -352,7 +352,7 @@ export async function getMasteredQuestionsAction(): Promise<{
             JOIN questions q ON m.question_id = q.id
             WHERE m.user_id = ?
             ORDER BY m.mastered_at DESC
-        `).all(user.id) as WrongBookItemRow[];
+        `).all(user.id) as { questionId: string; questionContent: string; tags: string; masteredAt: string; note: string | null }[];
 
         return rows.map(r => ({
             questionId: String(r.questionId),

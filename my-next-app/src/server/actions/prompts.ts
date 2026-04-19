@@ -27,7 +27,7 @@ export async function getPromptTemplatesAction(): Promise<PromptTemplate[]> {
         // Let's first cast rows to partial objects
         const dbRows = rows.map(row => ({
             ...row,
-            variables: JSON.parse(row.variables || '[]')
+            variables: JSON.parse((row.variables as string | undefined) || '[]')
         }));
 
         const existingKeys = new Set(dbRows.map(r => r.key));

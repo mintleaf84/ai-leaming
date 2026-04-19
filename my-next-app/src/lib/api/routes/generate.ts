@@ -57,7 +57,7 @@ app.openapi(generateRoute, async (c) => {
 
     try {
         const response = streamText({
-            model: openai.chat(config.modelName),
+            model: openai.chat(config.modelName || 'gpt-4o'),
             messages: [
                 { role: 'system', content: systemPrompt },
                 { role: 'user', content: prompt }

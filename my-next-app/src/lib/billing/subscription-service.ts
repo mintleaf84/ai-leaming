@@ -89,7 +89,7 @@ export function deletePlan(planId: string): { success: boolean; error?: string }
 export function getUserSubscription(userId: number): UserSubscription | null {
     const row = db.prepare(`
     SELECT * FROM user_subscriptions WHERE user_id = ?
-  `).get(userId) as Record<string, unknown> | undefined;
+  `).get(userId) as UserSubscription | undefined;
     return row || null;
 }
 
@@ -303,9 +303,14 @@ export function getSubscriptionStats(): {
 
 function parsePlanRow(row: Record<string, unknown>): SubscriptionPlan {
     return {
-        ...row,
-        limits: JSON.parse(row.limits || '{}'),
-        features: JSON.parse(row.features || '[]'),
+        id: row.id as string,
+        name: row.name as string,
+        tier: row.tier as SubscriptionPlan['tier'],
+        price_monthly: row.price_monthly as number,
+        sort_order: row.sort_order as number | undefined,
+        created_at: row.created_at as string | undefined,
+        limits: JSON.parse(row.limits as string || '{}'),
+        features: JSON.parse(row.features as string || '[]'),
         is_active: Boolean(row.is_active)
     };
 }

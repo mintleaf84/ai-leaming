@@ -209,7 +209,7 @@ export const ragService = {
       // 通常格式为 { results: [{ index: 0, relevance_score: 0.9 }, ...] }
       if (data.results && Array.isArray(data.results)) {
         const reranked = data.results.map((item: Record<string, unknown>) => {
-          const original = results[item.index];
+          const original = results[item.index as number];
           return {
             ...original,
             score: item.relevance_score // 使用重排序的分数

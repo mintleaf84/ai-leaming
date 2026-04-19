@@ -20,6 +20,7 @@ export const TEST_ADMIN = {
 // Mock 响应数据
 export const MOCK_CHAT_RESPONSE = '这是一条来自 Mock AI 的测试回复。我可以帮助你解答问题。';
 
+/** 纠偏题 Mock 数据 */
 export const MOCK_CORRECTION_QUIZ = {
     analysis: 'Mock 分析：这道题考察的是基础概念理解。',
     distinctionPoint: '概念辨析',
@@ -29,6 +30,31 @@ export const MOCK_CORRECTION_QUIZ = {
         answer: 'C',
         explanation: 'E2E（端到端）测试通过模拟真实用户操作来验证整个应用流程。'
     }
+};
+
+/** 回归挑战 Mock 数据 */
+export const MOCK_REGRESSION_CHALLENGE = {
+    logicType: 'reverse',
+    challenges: [
+        {
+            content: 'Mock 回归挑战题1：以下关于单元测试的说法，错误的是？',
+            options: ['A. 单元测试隔离外部依赖', 'B. 单元测试速度快', 'C. 单元测试覆盖整个系统', 'D. 单元测试便于定位问题'],
+            answer: 'C',
+            explanation: '单元测试只测试单个函数或模块，不覆盖整个系统。'
+        },
+        {
+            content: 'Mock 回归挑战题2：集成测试的主要目的是？',
+            options: ['A. 测试UI渲染', 'B. 验证模块间协作', 'C. 压力测试', 'D. 安全扫描'],
+            answer: 'B',
+            explanation: '集成测试验证不同模块之间的协作是否正常。'
+        },
+        {
+            content: 'Mock 回归挑战题3：E2E测试的最大价值在于？',
+            options: ['A. 运行速度快', 'B. 模拟真实用户流程', 'C. 减少代码量', 'D. 自动修复Bug'],
+            answer: 'B',
+            explanation: 'E2E测试通过模拟真实用户操作，验证从前端到后端的完整流程。'
+        }
+    ]
 };
 
 /**

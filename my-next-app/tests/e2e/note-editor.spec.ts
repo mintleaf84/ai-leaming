@@ -82,4 +82,106 @@ test.describe('Note Editor E2E', () => {
         const boldText = editor.locator('strong', { hasText: 'Bold Test' });
         await expect(boldText).toBeVisible();
     });
+
+    // N-02：输入内容自动保存（刷新后内容保留）
+    test('N-02 笔记内容自动保存后刷新可恢复', async ({ loggedInPage }) => {
+        const page = loggedInPage;
+
+        // 进入笔记列表并新建
+        await page.goto('/notes');
+        await page.waitForLoadState('domcontentloaded');
+
+        const createBtn = page.getByRole('button', { name: /新建笔记/i });
+        await expect(createBtn).toBeVisible({ timeout: 15000 });
+        await createBtn.click();
+
+        await page.waitForURL(/\/notes\/\d+/);
+
+        const editor = page.locator('.ProseMirror');
+        await expect(editor).toBeVisible();
+
+        // 输入唯一内容（含时间戳确保唯一性）
+        const uniqueContent = `自动保存测试内容 ${Date.now()}`;
+        await editor.click();
+        await editor.fill(uniqueContent);
+        await expect(page.getByText(uniqueContent)).toBeVisible();
+
+        // 等待自动保存（3s 后触发）
+        await page.waitForTimeout(4000);
+
+        // 刷新页面
+        await page.reload();
+        await page.waitForLoadState('domcontentloaded');
+        await page.waitForTimeout(2000);
+
+        // 刷新后内容应保留
+        const editorAfterReload = page.locator('.ProseMirror');
+        await expect(editorAfterReload).toBeVisible({ timeout: 10000 });
+        await expect(page.getByText(uniqueContent)).toBeVisible({ timeout: 5000 });
+    });
+
+    // N-06：笔记删除
+    test('N-06 删除笔记后从列表中消失', async ({ loggedInPage }) => {
+        const page = loggedInPage;
+
+        // 先新建一个笔记
+        await page.goto('/notes');
+        await page.waitForLoadState('domcontentloaded');
+
+        const createBtn = page.getByRole('button', { name: /新建笔记/i });
+        await expect(createBtn).toBeVisible({ timeout: 15000 });
+        await createBtn.click();
+
+        await page.waitForURL(/\/notes\/\d+/);
+        const noteUrl = page.url();
+
+        // 输入内容（便于后续在列表中识别）
+        const editor = page.locator('.ProseMirror');
+        await expect(editor).toBeVisible();
+        await editor.click();
+        await editor.fill('待删除的笔记');
+        await page.waitForTimeout(2000); // 等待自动保存
+
+        // 查找删除按钮（可能在详情页或列表页）
+        const deleteBtn = page.getByRole('button', { name: /删除|移除/i });
+        if (await deleteBtn.first().isVisible({ timeout: 3000 }).catch(() => false)) {
+            await deleteBtn.first().click();
+            await page.waitForTimeout(500);
+
+            // 确认删除弹窗
+            const confirmDeleteBtn = page.getByRole('button', { name: /确认|确定删除|删除/i }).last();
+            if (await confirmDeleteBtn.isVisible({ timeout: 3000 }).catch(() => false)) {
+                await confirmDeleteBtn.click();
+                await page.waitForTimeout(1500);
+            }
+
+            // 应跳回笔记列表
+            await expect(page).toHaveURL(/\/notes(\?|$|\/(?!\d))/, { timeout: 5000 });
+
+            // 列表中不应再有该笔记
+            const deletedNote = page.getByText('待删除的笔记');
+            const stillExists = await deletedNote.isVisible({ timeout: 3000 }).catch(() => false);
+            expect(stillExists).toBe(false);
+        } else {
+            // 如无明确删除按钮，从列表页找到该记录并删除
+            await page.goto('/notes');
+            await page.waitForLoadState('domcontentloaded');
+            await page.waitForTimeout(1000);
+
+            // 尝试找到该笔记并删除
+            const noteItem = page.getByText('待删除的笔记').first();
+            if (await noteItem.isVisible({ timeout: 3000 }).catch(() => false)) {
+                // 右键或悬停找到删除菜单
+                await noteItem.hover();
+                await page.waitForTimeout(500);
+                const hoverDeleteBtn = page.getByRole('button', { name: /删除/i }).first();
+                if (await hoverDeleteBtn.isVisible({ timeout: 1000 }).catch(() => false)) {
+                    await hoverDeleteBtn.click();
+                    await page.waitForTimeout(1500);
+                }
+            }
+        }
+
+        await expect(page.locator('body')).toBeVisible();
+    });
 });

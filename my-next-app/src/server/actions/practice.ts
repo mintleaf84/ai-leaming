@@ -368,9 +368,9 @@ export async function getPracticeSessionByConfigAction(config: {
     const practiceConfig = {
       mode: config.mode as PracticeMode,
       limit: config.limit,
-      types: config.types,
+      types: config.types as ('single' | 'multi' | 'truefalse')[] | undefined,
       tags: config.tags,
-      dimensions: config.dimensions,
+      dimensions: config.dimensions as import('@/types').Dimension[] | undefined,
       enableReview: config.enableReview ?? true,
       enableTimer: config.enableTimer ?? false
     };

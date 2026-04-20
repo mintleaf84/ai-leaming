@@ -18,6 +18,7 @@ import { Button } from "@/components/ui/button";
 import { useRouter } from 'next/navigation';
 
 // 动态导入 ForceGraph2D，禁用 SSR（因为它依赖 canvas）
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
 const ForceGraph2D = dynamic(() => import('react-force-graph-2d'), {
   ssr: false,
   loading: () => (
@@ -25,7 +26,8 @@ const ForceGraph2D = dynamic(() => import('react-force-graph-2d'), {
       <div className="text-muted-foreground">加载知识图谱...</div>
     </div>
   ),
-});
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+}) as any;
 
 // react-force-graph 运行时会注入 x、y、val 等属性
 type ForceKnowledgeNode = KnowledgeNode & {
@@ -144,7 +146,7 @@ export function KnowledgeTree({ data }: KnowledgeTreeProps) {
         nodeRelSize={1}
         nodeVal="val"
         nodeCanvasObject={paintNode as (node: NodeObject<KnowledgeNode>, ctx: CanvasRenderingContext2D, globalScale: number) => void}
-        nodePointerAreaPaint={(node: NodeObject<KnowledgeNode>, color, ctx) => {
+        nodePointerAreaPaint={(node: NodeObject<KnowledgeNode>, color: string, ctx: CanvasRenderingContext2D) => {
           const n = node as ForceKnowledgeNode;
           ctx.beginPath();
           ctx.arc(n.x, n.y, n.val, 0, 2 * Math.PI, false);
@@ -153,7 +155,7 @@ export function KnowledgeTree({ data }: KnowledgeTreeProps) {
         }}
         linkColor={() => '#e2e8f0'}
         linkWidth={(link: KnowledgeLink) => Math.sqrt(link.value) * 1.5}
-        onNodeClick={(node) => handleNodeClick(node as unknown as KnowledgeNode)}
+        onNodeClick={(node: KnowledgeNode) => handleNodeClick(node as unknown as KnowledgeNode)}
         cooldownTicks={100}
         onEngineStop={() => graphRef.current?.zoomToFit(400, 50)}
         enableZoomInteraction={true}

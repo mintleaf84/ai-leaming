@@ -191,7 +191,7 @@ export async function handleQuizCommand(keyword: string): Promise<string> {
 
     let response = `📚 为您找到 ${results.length} 道关于"${keyword}"的相关题目：\n\n`;
 
-    (results as RagResult[]).forEach((item: RagResult, index: number) => {
+    (results as unknown as RagResult[]).forEach((item: RagResult, index: number) => {
         const content = typeof item.content === 'string'
             ? item.content
             : JSON.stringify(item.content);

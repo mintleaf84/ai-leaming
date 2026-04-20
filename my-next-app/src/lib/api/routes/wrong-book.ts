@@ -332,7 +332,7 @@ app.openapi(getDetailRoute, async (c) => {
     const question = db.prepare(`
         SELECT id, content, options, answer, explanation, tags, type
         FROM questions WHERE id = ?
-    `).get(id) as Record<string, unknown> | undefined
+    `).get(id) as QuestionDetailRow | undefined
 
     if (!question) return c.json({ error: '未找到题目' }, 404)
 
@@ -340,14 +340,14 @@ app.openapi(getDetailRoute, async (c) => {
         SELECT COUNT(*) as wrongCount, MAX(timestamp) as lastWrongAt
         FROM practice_logs 
         WHERE question_id = ? AND user_id = ? AND is_correct = 0
-    `).get(id, user.id) as Record<string, unknown> | undefined
+    `).get(id, user.id) as WrongStatsRow | undefined
 
     const historyLogs = db.prepare(`
         SELECT timestamp, user_answer as userAnswer, is_correct as isCorrect
         FROM practice_logs 
         WHERE question_id = ? AND user_id = ?
         ORDER BY timestamp DESC LIMIT 20
-    `).all(id, user.id) as Record<string, unknown>[]
+    `).all(id, user.id) as HistoryLogRow[]
 
     const lastWrongAnswer = db.prepare(`
         SELECT user_answer FROM practice_logs 

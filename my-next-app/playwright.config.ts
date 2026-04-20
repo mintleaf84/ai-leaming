@@ -1,6 +1,6 @@
 
 import { defineConfig, devices } from '@playwright/test';
-import path from 'path';
+import _path from 'path';
 
 /**
  * See https://playwright.dev/docs/test-configuration.

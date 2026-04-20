@@ -16,8 +16,18 @@ const eslintConfig = defineConfig([
   {
     rules: {
       "@typescript-eslint/no-explicit-any": "warn",
-      "@typescript-eslint/no-unused-vars": "warn",
+      "@typescript-eslint/no-unused-vars": ["warn", { 
+        "argsIgnorePattern": "^_",
+        "varsIgnorePattern": "^_",
+        "caughtErrorsIgnorePattern": "^_"
+      }],
       "@typescript-eslint/no-require-imports": "warn"
+    }
+  },
+  {
+    files: ["tests/**"],
+    rules: {
+      "react-hooks/rules-of-hooks": "off"
     }
   }
 ]);

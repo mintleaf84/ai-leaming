@@ -1,7 +1,7 @@
 import fs from 'fs';
 import path from 'path';
 import db from '../src/lib/db';
-import { _z } from 'zod';
+import { z } from 'zod';
 
 // Define Fenbi Source Schema (Partial)
 interface FenbiQuestion {

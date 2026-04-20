@@ -1,10 +1,9 @@
 'use client';
 
 import React, { useState } from 'react';
-import { BookOpen, Loader2, CheckCircle2, AlertCircle, _X } from 'lucide-react';
+import { BookOpen, Loader2, CheckCircle2, AlertCircle } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { getCategoryColor } from '@/lib/utils/category-colors';
-import { _APPLE_SPRING } from '@/lib/configs/motion-config';
 
 // Hooks
 import { useKnowledgeCards } from './hooks/useKnowledgeCards';
@@ -36,7 +35,7 @@ export default function KnowledgePage() {
         setIsCreateModal,
         exporting,
         toast,
-        _handleDelete,
+        handleDelete,
         handleSave,
         handleExport,
         loadCards

@@ -17,7 +17,7 @@ const DEFAULT_OPTIONS: SplitterOptions = {
  */
 export function splitText(text: string, options: Partial<SplitterOptions> = {}): string[] {
     const finalOptions = { ...DEFAULT_OPTIONS, ...options };
-    const { chunkSize, chunkOverlap, _separators } = finalOptions;
+    const { chunkSize, chunkOverlap, separators } = finalOptions;
 
     const finalChunks: string[] = [];
     const _goodSplits: string[] = [text];

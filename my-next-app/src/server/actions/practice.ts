@@ -5,7 +5,7 @@ import db from '@/lib/db';
 import { Question, Dimension } from "@/types";
 import type { PracticeMode } from "@/types";
 import { safeGet, safeAll } from '@/lib/db/safe-query';
-import { PracticeSessionRowSchema, _QuestionSchema, QuestionRowSchema } from '@/lib/schemas';
+import { PracticeSessionRowSchema, QuestionRowSchema } from '@/lib/schemas';
 import { z } from 'zod';
 import { requireUser } from '@/lib/auth/auth';
 
@@ -293,7 +293,7 @@ export async function getKnowledgeTreeAction(): Promise<KnowledgeParams[]> {
     });
 
     // Helper to sum up counts recursively
-    const _calculateCounts = (nodes: KnowledgeParams[]): number => {
+    const calculateCounts = (nodes: KnowledgeParams[]): number => {
       let sum = 0;
       for (const node of nodes) {
         const childrenSum = calculateCounts(node.children);

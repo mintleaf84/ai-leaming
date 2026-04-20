@@ -15,14 +15,13 @@ import type { KnowledgeCard } from '@/lib/services/knowledge';
 import { ChatHeader } from '@/components/chat/ChatHeader';
 import { ChatInput, ChatInputHandle } from '@/components/chat/ChatInput';
 import { MessageList } from '@/components/chat/MessageList';
-import { _ChatMode } from '@/components/chat/ChatModeToggle';
 
 export default function ChatPage() {
     // 1. Hooks 初始化
     const {
         sessions,
         currentSessionId,
-        _loadSessions,
+        loadSessions,
         handleNewSession: resetSessionId,
         handleSessionSelect: selectSession,
         handleDeleteSession,

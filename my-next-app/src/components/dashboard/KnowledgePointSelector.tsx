@@ -118,6 +118,7 @@ export function KnowledgePointSelector({ children }: { children: React.ReactNode
 
     useEffect(() => {
         if (open && treeData.length === 0) {
+            // eslint-disable-next-line react-hooks/set-state-in-effect
             setLoading(true);
             getKnowledgeTreeAction()
                 .then(setTreeData)

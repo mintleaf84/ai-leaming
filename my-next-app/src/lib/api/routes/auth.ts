@@ -13,7 +13,7 @@ app.use('*', honoLogger())
 // Rate Limiting 中间件
 app.use('*', async (c, next) => {
     // 构建标准的 fetch API Request 对象以符合 getClientIP 签名
-    const reqInfo = { headers: c.req.raw.headers } as any;
+    const reqInfo = { headers: c.req.raw.headers } as unknown;
     const clientIP = getClientIP(reqInfo);
 
     // 我们在 /api 挂载点下，原始路径 c.req.path 可能是 /api/auth/login。
@@ -172,7 +172,7 @@ app.openapi(registerRoute, async (c) => {
             token,
             user
         })
-    } catch (e: any) {
+    } catch (e: unknown) {
         return c.json({ error: e.message || '注册失败' }, 400)
     }
 })

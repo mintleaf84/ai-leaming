@@ -1,5 +1,5 @@
 import { render, screen, fireEvent } from '@testing-library/react'
-import { describe, expect, it, vi } from 'vitest'
+import { describe, expect, it, _vi } from 'vitest'
 import { Input } from '../input'
 import { Checkbox } from '../checkbox'
 import { Badge } from '../badge'

@@ -6,7 +6,7 @@ import { getUserProfileAction, updateProfileAction } from '@/server/actions/prof
 import { Button } from '@/components/ui/button';
 import { toast } from 'sonner';
 import {
-  ShieldAlert,
+  _ShieldAlert,
   Trash2,
   BrainCircuit,
   Gauge,
@@ -40,7 +40,7 @@ const TABS: { id: SettingsTab; label: string; icon: React.ElementType }[] = [
 export default function SettingsPage() {
   const [activeTab, setActiveTab] = useState<SettingsTab>('ai');
   const [settings, setSettings] = useState<Settings | null>(null);
-  const [profile, setProfile] = useState<any | null>(null);
+  const [profile, setProfile] = useState<unknown | null>(null);
   const [isSaving, setIsSaving] = useState(false);
   const { theme, setTheme } = useTheme();
   const terminology = useTerminology();
@@ -64,7 +64,7 @@ export default function SettingsPage() {
       }
 
       const results = await Promise.all(promises);
-      const profileResult = results[1] as any; // updateProfileAction result
+      const profileResult = results[1] as unknown; // updateProfileAction result
 
       if (profileResult && !profileResult.success) {
         toast.error(profileResult.error || "资料更新失败");
@@ -73,7 +73,7 @@ export default function SettingsPage() {
         // Refresh to sync sidebar
         if (profileResult) window.location.reload();
       }
-    } catch (e) {
+    } catch (_e) {
       toast.error("保存失败");
     } finally {
       setIsSaving(false);
@@ -89,7 +89,7 @@ export default function SettingsPage() {
         toast.success(res.message);
         window.location.reload();
       }
-    } catch (e) {
+    } catch (_e) {
       toast.error("重置失败");
     }
   };

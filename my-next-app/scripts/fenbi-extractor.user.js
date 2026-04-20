@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-this-alias */
 // ==UserScript==
 // @name         粉笔 JSON 全能嗅探提取器 (直推 ai-leaming 版)
 // @namespace    http://tampermonkey.net/
@@ -47,7 +48,7 @@
                 }
                 return 'hash_' + Math.abs(hash).toString(36);
             }
-        } catch(e) {}
+        } catch(_e) {}
         return null;
     }
 
@@ -198,7 +199,7 @@
                             btn.style.background = '#ff4d4f';
                             alert(res.message || '返回了失败标识');
                         }
-                    } catch(e) {
+                    } catch(_e) {
                         btn.innerText = '✅ 请求成功(解析异常)';
                         btn.style.background = '#52c41a';
                         markAsPushed(getCurrentExerciseKey());

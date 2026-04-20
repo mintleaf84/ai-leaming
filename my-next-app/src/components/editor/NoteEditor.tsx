@@ -31,11 +31,11 @@ interface NoteEditorProps {
 }
 
 export default function NoteEditor({ initialContent, onChange }: NoteEditorProps) {
-    const [content, setContent] = useState<JSONContent | null>(() => {
+    const [content, _setContent] = useState<JSONContent | null>(() => {
         if (!initialContent) return null;
         try {
             return JSON.parse(initialContent);
-        } catch (e) {
+        } catch (_e) {
             // 兼容历史纯文本内容，转换为最小合法文档结构
             return {
                 type: 'doc',

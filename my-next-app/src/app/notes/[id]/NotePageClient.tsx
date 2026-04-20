@@ -33,7 +33,7 @@ export default function NotePageClient({ note }: NotePageClientProps) {
     const [currentContent, setCurrentContent] = useState(note.content || '');
     
     // Use 'any' for timeout to avoid NodeJS vs Window type issues in frontend
-    const saveTimeoutRef = useRef<any>(null);
+    const saveTimeoutRef = useRef<unknown>(null);
 
     const handleSave = useCallback((newContent?: string, newTitle?: string) => {
         if (saveTimeoutRef.current) clearTimeout(saveTimeoutRef.current);

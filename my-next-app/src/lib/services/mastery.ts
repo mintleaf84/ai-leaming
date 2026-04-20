@@ -1,6 +1,6 @@
 import db from '@/lib/db';
 
-const DIMENSION_ORDER = ['knowledge', 'understanding', 'application'] as const;
+const _DIMENSION_ORDER = ['knowledge', 'understanding', 'application'] as const;
 type Dimension = typeof DIMENSION_ORDER[number];
 
 export interface MasteryUpdateResult {

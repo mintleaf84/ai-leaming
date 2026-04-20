@@ -7,7 +7,7 @@ import {
     getKnowledgeStats,
     exportToAnkiTSV
 } from '@/lib/services/knowledge'
-import { authMiddleware, getCurrentUser } from '@/lib/api/middlewares/auth'
+import { authMiddleware, _getCurrentUser } from '@/lib/api/middlewares/auth'
 
 const app = new OpenAPIHono()
 
@@ -229,12 +229,12 @@ app.openapi(extractRoute, async (c) => {
             retries: 1,
         })
 
-        let cardData: any
+        let cardData: unknown
         const jsonMatch = text.match(/\{[\s\S]*\}/)
         if (jsonMatch) {
             try {
                 cardData = JSON.parse(jsonMatch[0])
-            } catch (e) {
+            } catch (_e) {
                 return c.json({ error: '解析知识卡片失败', raw: text }, 422)
             }
         } else {

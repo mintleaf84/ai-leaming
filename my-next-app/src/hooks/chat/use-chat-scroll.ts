@@ -23,6 +23,7 @@ export function useChatScroll({ messagesLength }: UseChatScrollProps) {
                     element.classList.remove('bg-blue-50/50');
                 }, 2000);
 
+                // eslint-disable-next-line react-hooks/set-state-in-effect
                 setTargetMessageId(null); // 清除目标状态
                 ignoreScrollRef.current = true; // 标记下一次渲染忽略滚动到底部
                 return;

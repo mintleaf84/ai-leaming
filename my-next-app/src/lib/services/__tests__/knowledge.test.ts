@@ -1,6 +1,6 @@
 // @vitest-environment node
 import { describe, it, expect, beforeEach, vi } from 'vitest';
-import { createKnowledgeCard, updateKnowledgeCard, deleteKnowledgeCard, getKnowledgeCard } from '../knowledge';
+import { createKnowledgeCard, updateKnowledgeCard, deleteKnowledgeCard, _getKnowledgeCard } from '../knowledge';
 
 // Mock dependencies
 const { mockDb, mockRagService } = vi.hoisted(() => {

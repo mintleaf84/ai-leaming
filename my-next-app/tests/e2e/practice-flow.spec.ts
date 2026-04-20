@@ -20,7 +20,7 @@ test.describe('练习核心引擎', () => {
         await expect(loggedInPage.locator('h2, h1').first()).toBeVisible({ timeout: 15000 });
 
         // 获取当前题目文本（用于后续比对）
-        const firstQuestionText = await loggedInPage.locator('h2, h1').first().textContent();
+        const _firstQuestionText = await loggedInPage.locator('h2, h1').first().textContent();
 
         // 点击第一个选项（种子数据中 A 为正确答案）
         const options = loggedInPage.locator('div[role="button"]');

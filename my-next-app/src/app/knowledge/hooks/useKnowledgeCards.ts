@@ -40,7 +40,7 @@ export function useKnowledgeCards() {
         },
     });
 
-    const cards = data?.cards ?? [];
+    const cards = useMemo(() => data?.cards ?? [], [data?.cards]);
     const categories = data?.categories ?? [];
     const stats = data?.stats ?? { total: 0, byCategory: [] };
 

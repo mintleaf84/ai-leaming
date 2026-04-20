@@ -68,7 +68,7 @@ export async function resetUserDataAction() {
   return { success: true, message: "您的学习数据已重置" };
 }
 
-export async function testAiConnectionAction(apiKey: string, apiUrl: string, model: string) {
+export async function testAiConnectionAction(apiKey: string, apiUrl: string, _model: string) {
   try {
     const prompt = "Please respond with 'Pong' to verify the connection.";
     const { text } = await generateTextWrapper(prompt, 'economy', apiKey, apiUrl);

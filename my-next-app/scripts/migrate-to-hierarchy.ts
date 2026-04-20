@@ -124,7 +124,7 @@ async function migrateToHierarchy() {
     console.log('3. 新的掌握度树:');
     const tree = masteryService.getMasteryTree(1);
 
-    function printTree(nodes: any[], indent: string = '') {
+    function printTree(nodes: unknown[], indent: string = '') {
         for (const node of nodes.slice(0, 10)) { // 只打印前10个
             const bar = '█'.repeat(Math.round(node.score / 10)) + '░'.repeat(10 - Math.round(node.score / 10));
             console.log(`${indent}${bar} ${node.score.toFixed(0)}% - ${node.name}`);

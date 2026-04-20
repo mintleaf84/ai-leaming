@@ -127,7 +127,7 @@ interface FenbiStatsItem {
     };
 }
 
-interface FenbiStatsData {
+interface _FenbiStatsData {
     data: Record<string, FenbiStatsItem>;
 }
 
@@ -195,7 +195,7 @@ function inferQuestionType(fenbiType: number, accessories: FenbiSolution['access
 /**
  * 推断认知维度（默认理解）
  */
-function inferDimension(content: string, tags: string[]): 'knowledge' | 'understanding' | 'application' {
+function inferDimension(content: string, _tags: string[]): 'knowledge' | 'understanding' | 'application' {
     const contentLower = content.toLowerCase();
 
     // 应用类关键词
@@ -353,7 +353,7 @@ export function parseFenbiData(
 
         // 获取统计数据（如有）- 尝试多种 key 形式匹配
         // statsData 的 key 可能是数字 id 或字符串 globalId，需要全面兼容
-        let questionStats = statsData[externalId]                       // 尝试 globalId（字符串）
+        const questionStats = statsData[externalId]                       // 尝试 globalId（字符串）
             || statsData[String(solution.id)]                            // 尝试 id 转字符串
             || statsData[solution.id as unknown as string]               // 尝试 id 直接访问
             || (typeof solution.id === 'number' && statsData[solution.id]); // 尝试数字 key 直接匹配

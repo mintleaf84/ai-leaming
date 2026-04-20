@@ -75,7 +75,7 @@ describe('Question Service', () => {
         it('should apply mode filter', async () => {
             const mockAll = vi.fn().mockReturnValue([]);
             const mockGetCount = vi.fn().mockReturnValue({ count: 0 });
-            mockDb.prepare.mockReturnValue({ all: mockAll, get: mockGetCount } as any);
+            mockDb.prepare.mockReturnValue({ all: mockAll, get: mockGetCount } as unknown);
 
             await questionService.list({ type: ['single'] });
 

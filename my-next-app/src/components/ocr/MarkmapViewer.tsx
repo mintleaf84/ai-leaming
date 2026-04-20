@@ -35,7 +35,7 @@ export function MarkmapViewer({ markdown, className = '', fileName = '' }: Markm
         if (!svgRef.current) return;
 
         // 1. 解析 Markdown 获取 node 结构
-        const { root, features } = transformer.transform(markdown);
+        const { root, _features } = transformer.transform(markdown);
 
         // 2. 初始化或更新 Markmap 实例
         if (mmRef.current) {
@@ -158,7 +158,7 @@ body { font-family: sans-serif; }
             } else {
                 toast.error(result.message || '保存失败', { id: loadingToast });
             }
-        } catch (error) {
+        } catch (_error) {
             toast.error('保存过程中出错', { id: loadingToast });
         }
     };

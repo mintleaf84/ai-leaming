@@ -42,7 +42,7 @@ export function AnnotatableText({ text, questionId, className }: AnnotatableText
     // 使用 useQuery 加载标注数据，5 分钟缓存
     const { data: annotationData } = useQuery({
         queryKey: ['annotations', questionId],
-        queryFn: () => fetchJson<{ annotations: any[] }>(`/api/annotations?questionId=${questionId}`),
+        queryFn: () => fetchJson<{ annotations: unknown[] }>(`/api/annotations?questionId=${questionId}`),
         staleTime: 5 * 60 * 1000,
         enabled: !!questionId,
     });
@@ -50,7 +50,8 @@ export function AnnotatableText({ text, questionId, className }: AnnotatableText
     // 将查询结果同步到本地 state（因为增删操作需要乐观更新）
     useEffect(() => {
         if (annotationData?.annotations) {
-            setAnnotations(annotationData.annotations.map((a: any) => ({
+            // eslint-disable-next-line react-hooks/set-state-in-effect
+            setAnnotations(annotationData.annotations.map((a: unknown) => ({
                 id: a.id,
                 start: a.start_offset,
                 end: a.end_offset,
@@ -99,7 +100,7 @@ export function AnnotatableText({ text, questionId, className }: AnnotatableText
             x: rect.left + rect.width / 2,
             y: rect.top - 10,
         });
-    }, []);
+    }, [text]);
 
     // 添加标注
     const addAnnotation = useCallback(async (tag: 'highlight' | 'underline' | 'wavy') => {

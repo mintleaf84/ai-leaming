@@ -15,14 +15,14 @@ import type { KnowledgeCard } from '@/lib/services/knowledge';
 import { ChatHeader } from '@/components/chat/ChatHeader';
 import { ChatInput, ChatInputHandle } from '@/components/chat/ChatInput';
 import { MessageList } from '@/components/chat/MessageList';
-import { ChatMode } from '@/components/chat/ChatModeToggle';
+import { _ChatMode } from '@/components/chat/ChatModeToggle';
 
 export default function ChatPage() {
     // 1. Hooks 初始化
     const {
         sessions,
         currentSessionId,
-        loadSessions,
+        _loadSessions,
         handleNewSession: resetSessionId,
         handleSessionSelect: selectSession,
         handleDeleteSession,
@@ -70,14 +70,14 @@ export default function ChatPage() {
     // 3. 业务逻辑组合
 
     // 处理新建会话
-    const handleNewSession = async () => {
+    const handleNewSession = useCallback(async () => {
         resetSessionId();
         setMessages([]);
         setError(null);
         setLastFailedMessage(null);
         setShowFavorites(false);
         inputRef.current?.focus();
-    };
+    }, [resetSessionId, setMessages, setError, setLastFailedMessage]);
 
     // 处理会话选择与跳转
     const handleSessionSelect = async (sessionId: number, messageId?: number) => {

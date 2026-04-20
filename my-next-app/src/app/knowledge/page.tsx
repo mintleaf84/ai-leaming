@@ -1,10 +1,10 @@
 'use client';
 
 import React, { useState } from 'react';
-import { BookOpen, Loader2, CheckCircle2, AlertCircle, X } from 'lucide-react';
+import { BookOpen, Loader2, CheckCircle2, AlertCircle, _X } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { getCategoryColor } from '@/lib/utils/category-colors';
-import { APPLE_SPRING } from '@/lib/configs/motion-config';
+import { _APPLE_SPRING } from '@/lib/configs/motion-config';
 
 // Hooks
 import { useKnowledgeCards } from './hooks/useKnowledgeCards';
@@ -17,10 +17,10 @@ import { StudyModeOverlay } from './components/StudyModeOverlay';
 import { KnowledgeModal } from './components/KnowledgeModal';
 import { AIGenerateModal } from './components/AIGenerateModal';
 import { KnowledgeCardExpanded } from './components/KnowledgeCardExpanded';
-import MarkdownViewer from '@/components/chat/MarkdownViewer';
+import _MarkdownViewer from '@/components/chat/MarkdownViewer';
 
 export default function KnowledgePage() {
-    const [selectedCard, setSelectedCard] = useState<any>(null);
+    const [selectedCard, setSelectedCard] = useState<unknown>(null);
     const {
         filteredCards,
         categories,
@@ -36,7 +36,7 @@ export default function KnowledgePage() {
         setIsCreateModal,
         exporting,
         toast,
-        handleDelete,
+        _handleDelete,
         handleSave,
         handleExport,
         loadCards
@@ -71,9 +71,9 @@ export default function KnowledgePage() {
         prevCard
     } = useStudyMode(filteredCards);
 
-    const [flippedCards, setFlippedCards] = useState<Set<number>>(new Set());
+    const [_flippedCards, setFlippedCards] = useState<Set<number>>(new Set());
 
-    const toggleFlip = (id: number) => {
+    const _toggleFlip = (id: number) => {
         setFlippedCards(prev => {
             const newSet = new Set(prev);
             if (newSet.has(id)) newSet.delete(id);
@@ -122,7 +122,7 @@ export default function KnowledgePage() {
                     </div>
                 ) : (
                     <div className="grid gap-6 sm:grid-cols-1 md:grid-cols-2 lg:grid-cols-3">
-                        {filteredCards.map((card: any, index: number) => (
+                        {filteredCards.map((card: unknown, index: number) => (
                             <motion.div 
                                 key={card.id} 
                                 initial={{ opacity: 0, y: 20 }}

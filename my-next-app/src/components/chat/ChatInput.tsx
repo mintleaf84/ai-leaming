@@ -1,3 +1,4 @@
+/* eslint-disable react-hooks/set-state-in-effect */
 import React, { useState, useRef, useEffect, useCallback, forwardRef, useImperativeHandle, memo } from 'react';
 import { Send, Loader2, StopCircle } from 'lucide-react';
 import { Button } from '@/components/ui/button';

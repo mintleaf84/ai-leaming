@@ -1,4 +1,4 @@
-export async function up(db: any) {
+export async function up(db: unknown) {
     console.log('Migrating: Updating plan limits with new AI features...');
 
     const updates: Record<string, { mnemonic: number; first_principles: number }> = {
@@ -7,7 +7,7 @@ export async function up(db: any) {
         'pro': { mnemonic: -1, first_principles: -1 }
     };
 
-    const plans = db.prepare('SELECT id, limits FROM subscription_plans').all() as any[];
+    const plans = db.prepare('SELECT id, limits FROM subscription_plans').all() as unknown[];
 
     for (const plan of plans) {
         if (!updates[plan.id]) continue;

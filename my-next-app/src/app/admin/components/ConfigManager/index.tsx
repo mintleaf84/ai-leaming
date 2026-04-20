@@ -33,7 +33,7 @@ export function ConfigManager() {
         try {
             const data = await getAiConfigsAction();
             setConfigs(data);
-        } catch (e) {
+        } catch (_e) {
             toast.error("配置加载失败");
         }
     };
@@ -102,7 +102,7 @@ export function ConfigManager() {
             } else {
                 toast.error("保存失败: " + res.error);
             }
-        } catch (e) {
+        } catch (_e) {
             toast.error("请求失败");
         } finally {
             setIsSaving(false);
@@ -119,7 +119,7 @@ export function ConfigManager() {
             } else {
                 toast.error(res.error || "删除失败");
             }
-        } catch (e) {
+        } catch (_e) {
             toast.error("操作失败");
         }
     };
@@ -129,7 +129,7 @@ export function ConfigManager() {
             await setActiveAiConfigAction(id);
             toast.success("已切换激活配置");
             loadSettings();
-        } catch (e) {
+        } catch (_e) {
             toast.error("切换失败");
         }
     };
@@ -151,7 +151,7 @@ export function ConfigManager() {
             } else {
                 toast.error(`连接失败: ${res.error}`);
             }
-        } catch (e) {
+        } catch (_e) {
             toast.error("测试请求发送失败");
         } finally {
             setIsTesting(false);
@@ -204,7 +204,7 @@ export function ConfigManager() {
                                     const { generateCorrectionQuizAction } = await import('@/server/actions/ai');
                                     await generateCorrectionQuizAction("Test", "Wrong", "Correct");
                                     toast.success("纠偏功能正常", { id });
-                                } catch (e: any) { toast.error("失败: " + e.message, { id }); }
+                                } catch (e: unknown) { toast.error("失败: " + e.message, { id }); }
                             }}>纠偏测试</Button>
                             <Button size="sm" variant="ghost" onClick={async () => {
                                 const id = toast.loading("测试回归生成...");
@@ -212,7 +212,7 @@ export function ConfigManager() {
                                     const { generateRegressionChallengeAction } = await import('@/server/actions/ai');
                                     await generateRegressionChallengeAction("Test", ["tag1"]);
                                     toast.success("回归功能正常", { id });
-                                } catch (e: any) { toast.error("失败: " + e.message, { id }); }
+                                } catch (e: unknown) { toast.error("失败: " + e.message, { id }); }
                             }}>回归测试</Button>
                         </div>
                     </div>

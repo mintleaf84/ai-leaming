@@ -24,7 +24,7 @@ vi.mock('@/lib/services/textbook', () => ({ textbookService: mockTextbookService
 
 // Mock Auth 中间件
 vi.mock('@/lib/api/middlewares/auth', () => ({
-    authMiddleware: async (c: any, next: any) => {
+    authMiddleware: async (c: unknown, next: unknown) => {
         await next();
     }
 }));

@@ -3,7 +3,7 @@
 import React from 'react';
 import dynamic from 'next/dynamic';
 import { TrendDataItem } from '@/server/actions/stats';
-import { Loader2 } from 'lucide-react';
+import { _Loader2 } from 'lucide-react';
 
 // 动态提取所需的 recharts 组件以实现包体积懒加载
 const AreaChart = dynamic(() => import('recharts').then(mod => mod.AreaChart), { ssr: false });
@@ -25,12 +25,12 @@ interface TrendChartProps {
 }
 
 // 自定义 Tooltip
-const CustomTooltip = ({ active, payload, label }: any) => {
+const CustomTooltip = ({ active, payload, label }: unknown) => {
     if (active && payload && payload.length) {
         return (
             <div className="bg-card border rounded-lg shadow-lg p-3 text-sm">
                 <p className="font-medium text-foreground mb-1">{label}</p>
-                {payload.map((entry: any, index: number) => (
+                {payload.map((entry: unknown, index: number) => (
                     <p key={index} style={{ color: entry.color }}>
                         {entry.name}: {entry.value}{entry.name === '正确率' ? '%' : ' 题'}
                     </p>

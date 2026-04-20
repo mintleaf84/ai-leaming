@@ -14,7 +14,7 @@ vi.mock('@/lib/utils/datetime', () => ({
 
 // Mock Auth 中间件
 vi.mock('@/lib/api/middlewares/auth', () => ({
-    authMiddleware: async (c: any, next: any) => {
+    authMiddleware: async (c: unknown, next: unknown) => {
         c.set('user', { id: 1 });
         await next();
     },
@@ -32,7 +32,7 @@ describe('Stats Hono 路由', () => {
      * 辅助函数：构造 mockDb.prepare 的链式调用桩
      * prepare(sql).get(...) => returnValue
      */
-    function mockPrepareGet(returnValue: any) {
+    function mockPrepareGet(returnValue: unknown) {
         return {
             get: vi.fn().mockReturnValue(returnValue)
         };

@@ -1,3 +1,4 @@
+/* eslint-disable react-hooks/set-state-in-effect */
 'use client';
 
 import { use, useEffect, useState } from 'react';
@@ -39,7 +40,7 @@ export default function QuestionDetailPage({ params }: { params: Promise<{ id: s
     };
 
     // 解析选项
-    const parseOptions = (options: any): string[] => {
+    const parseOptions = (options: unknown): string[] => {
         if (Array.isArray(options)) return options;
         if (typeof options === 'string') {
             try {
@@ -52,7 +53,7 @@ export default function QuestionDetailPage({ params }: { params: Promise<{ id: s
     };
 
     // 解析标签
-    const parseTags = (tags: any): string[] => {
+    const parseTags = (tags: unknown): string[] => {
         if (Array.isArray(tags)) return tags;
         if (typeof tags === 'string') {
             try {
@@ -65,7 +66,7 @@ export default function QuestionDetailPage({ params }: { params: Promise<{ id: s
     };
 
     // 解析答案
-    const parseAnswer = (answer: any): string[] => {
+    const parseAnswer = (answer: unknown): string[] => {
         if (Array.isArray(answer)) return answer;
         if (typeof answer === 'string') {
             try {

@@ -6,7 +6,7 @@ async function migrate() {
 
     try {
         // 1. Check if user_id column exists
-        const tableInfo = db.prepare('PRAGMA table_info(chat_sessions)').all() as any[];
+        const tableInfo = db.prepare('PRAGMA table_info(chat_sessions)').all() as unknown[];
         const hasUserId = tableInfo.some(col => col.name === 'user_id');
 
         if (!hasUserId) {

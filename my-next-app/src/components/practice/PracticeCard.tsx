@@ -29,6 +29,7 @@ export function PracticeCard({
 
     // 当题目更换时，重置排除状态
     useEffect(() => {
+        // eslint-disable-next-line react-hooks/set-state-in-effect
         setExcludedOptions([]);
     }, [question.id]);
 
@@ -73,7 +74,7 @@ export function PracticeCard({
                 </div>
                 {!isTrueFalse && (
                     <div className="text-[10px] text-muted-foreground/50 italic">
-                        提示: 点击选项右侧眼睛图标或右键可"排除"
+                        提示: 点击选项右侧眼睛图标或右键可&quot;排除&quot;
                     </div>
                 )}
             </div>

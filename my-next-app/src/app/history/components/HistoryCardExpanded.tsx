@@ -3,16 +3,16 @@
 import React, { useEffect, useState, useRef, useMemo } from 'react';
 import { motion } from 'framer-motion';
 import { Virtuoso } from 'react-virtuoso';
-import { X, Target, Sparkles, Loader2, FileCheck } from 'lucide-react';
+import { _X, _Target, _Sparkles, Loader2, _FileCheck } from 'lucide-react';
 
-import { cn } from '@/lib/utils';
+import { _cn } from '@/lib/utils';
 import { getSessionDetailAction, SessionDetail } from '@/server/actions/history';
-import { MODE_CONFIG } from './HistoryCardItem';
+import { _MODE_CONFIG } from './HistoryCardItem';
 import { generateDeepAnalysisAction, getAnalysisReportAction } from '@/server/actions/report';
-import { SessionSummary, QuestionCard, QuestionLogData, AnswerSheet } from '@/components/history';
-import { Button } from '@/components/ui/button';
-import { Checkbox } from "@/components/ui/checkbox";
-import { Label } from "@/components/ui/label";
+import { _SessionSummary, QuestionCard, QuestionLogData, AnswerSheet } from '@/components/history';
+import { _Button } from '@/components/ui/button';
+import { _Checkbox } from "@/components/ui/checkbox";
+import { _Label } from "@/components/ui/label";
 import { toast } from 'sonner';
 import { ExpandedHeader } from './ExpandedHeader';
 import { QuestionsListHeader } from './QuestionsListHeader';
@@ -36,7 +36,7 @@ export const HistoryCardExpanded: React.FC<HistoryCardExpandedProps> = ({ sessio
     const [viewMode, setViewMode] = useState<'list' | 'card'>('list');
     const [currentCardIndex, setCurrentCardIndex] = useState(0);
     const [scrollParent, setScrollParent] = useState<HTMLDivElement | null>(null);
-    const virtuosoRef = useRef<any>(null);
+    const virtuosoRef = useRef<unknown>(null);
     
     // Scroll lock
     useEffect(() => {
@@ -196,7 +196,7 @@ export const HistoryCardExpanded: React.FC<HistoryCardExpandedProps> = ({ sessio
                                             />
                                             <div className="flex-1 py-4">
                                                 <CardSwipeView
-                                                    questions={displayedQuestions as any}
+                                                    questions={displayedQuestions as unknown}
                                                     initialIndex={currentCardIndex}
                                                     onIndexChange={(idx) => {
                                                         const dispIdx = displayedQuestions.findIndex(q => q.index === idx);

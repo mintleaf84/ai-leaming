@@ -21,8 +21,10 @@ function createWrapper() {
             queries: { retry: false, staleTime: 0 },
         },
     });
-    return ({ children }: { children: React.ReactNode }) =>
+    const Wrapper = ({ children }: { children: React.ReactNode }) =>
         React.createElement(QueryClientProvider, { client: queryClient }, children);
+    Wrapper.displayName = 'QueryClientWrapper';
+    return Wrapper;
 }
 
 // 模拟 API 返回数据
@@ -95,7 +97,7 @@ describe('useKnowledgeCards', () => {
         // 验证"删除"请求发送了
         await waitFor(() => {
             const deleteCalls = mockFetch.mock.calls.filter(
-                (call: any[]) => call[1]?.method === 'DELETE'
+                (call: unknown[]) => call[1]?.method === 'DELETE'
             );
             expect(deleteCalls.length).toBeGreaterThanOrEqual(1);
         });

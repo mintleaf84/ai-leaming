@@ -50,7 +50,7 @@ export function AdminLayoutShell({
         }
     };
 
-    const NavContent = () => (
+    const navContent = (
         <>
             <nav className="flex-1 p-4 space-y-2 overflow-y-auto">
                 {menuItems.map((item) => {
@@ -99,7 +99,7 @@ export function AdminLayoutShell({
                     </h1>
                     <p className="text-xs text-muted-foreground mt-1">系统管理中心</p>
                 </div>
-                <NavContent />
+                {navContent}
             </aside>
 
             {/* Mobile Sidebar Overlay */}
@@ -124,7 +124,7 @@ export function AdminLayoutShell({
                         <X className="w-5 h-5" />
                     </Button>
                 </div>
-                <NavContent />
+                {navContent}
             </aside>
 
             {/* Main Content Area */}

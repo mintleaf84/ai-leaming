@@ -2,7 +2,7 @@
 
 import React, { useState, useCallback, useRef } from 'react';
 import { getErrorMessage } from '@/lib/utils/error';
-import { Network, Wand2, Trash2, AlignLeft } from 'lucide-react';
+import { _Network, Wand2, Trash2, AlignLeft } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import dynamic from 'next/dynamic';
 import { generateMindmapAction } from '@/server/actions/mindmap';
@@ -148,7 +148,7 @@ export default function MindmapEditorClient({ mindmap }: MindmapEditorClientProp
                 <div className="flex-1 bg-[#fafafa] dark:bg-black/20 p-6 relative overflow-hidden flex flex-col">
                     <SimpleMindMapViewer
                         markdown={markdown}
-                        onChange={(m) => handleMarkdownChange({ target: { value: m } } as any)}
+                        onChange={(m) => handleMarkdownChange({ target: { value: m } } as unknown)}
                         className="shadow-xl shadow-primary/5 w-full flex-1 rounded-2xl bg-card border-border/50"
                     />
                 </div>

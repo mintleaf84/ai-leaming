@@ -1,12 +1,12 @@
 /** @vitest-environment jsdom */
-import { render, screen, fireEvent, waitFor, act } from '@testing-library/react';
+import { render, screen, fireEvent, waitFor, _act } from '@testing-library/react';
 import '@testing-library/jest-dom';
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import React from 'react';
 import { KnowledgePointSelector } from '../KnowledgePointSelector';
 import { useRouter } from 'next/navigation';
 import { getKnowledgeTreeAction } from '@/server/actions/practice';
-import { toast } from 'sonner';
+import { _toast } from 'sonner';
 
 // Mock next/navigation
 vi.mock('next/navigation', () => ({
@@ -50,8 +50,8 @@ describe('KnowledgePointSelector Component', () => {
 
     beforeEach(() => {
         vi.clearAllMocks();
-        (useRouter as any).mockReturnValue({ push: mockPush });
-        (getKnowledgeTreeAction as any).mockResolvedValue(mockTreeData);
+        (useRouter as unknown).mockReturnValue({ push: mockPush });
+        (getKnowledgeTreeAction as unknown).mockResolvedValue(mockTreeData);
     });
 
     it('opens dialog when trigger is clicked', async () => {

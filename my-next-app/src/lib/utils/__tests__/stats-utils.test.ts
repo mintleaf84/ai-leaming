@@ -34,7 +34,7 @@ describe('stats-utils: calculateStreakFromDates', () => {
     // 假设今天是 2024-02-01
     const feb01 = '2024-02-01';
     const jan31 = '2024-01-31';
-    const jan30 = '2024-01-30';
+    const _jan30 = '2024-01-30';
     const dates = ['2024-02-01', '2024-01-31', '2024-01-30'];
     expect(calculateStreakFromDates(dates, feb01, jan31)).toBe(3);
   });

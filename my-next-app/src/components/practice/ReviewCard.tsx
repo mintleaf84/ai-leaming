@@ -189,7 +189,7 @@ export function ReviewCard({ currentItem, sessionQueue, isLoadingAI, onReviewSte
                                                             label: labels.join(isMulti ? ' + ' : ''),
                                                             content: contents.join(isMulti ? '; ' : '')
                                                         };
-                                                    } catch (e) {
+                                                    } catch (_e) {
                                                         return { label: raw, content: raw };
                                                     }
                                                 };

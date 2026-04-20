@@ -374,6 +374,7 @@ export default function OcrPage() {
                             {/* 图片预览 */}
                             {previewUrl && (
                                 <div className="mb-4 rounded-xl overflow-hidden border border-border bg-muted/30 max-h-[400px] flex items-center justify-center">
+                                    {/* eslint-disable-next-line @next/next/no-img-element */}
                                     <img
                                         src={previewUrl}
                                         alt="预览"

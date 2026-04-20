@@ -72,7 +72,7 @@ export const ragService = {
         if (schema && !schema.sql.includes(`float[${dim}]`)) {
           console.error(`[RAG] 维度不匹配！配置要求 ${dim} 维，但数据库现存模型不一致。建议清空 content_vec 表重构。`);
         }
-      } catch (e) {
+      } catch (_e) {
         console.warn('[RAG] 无法验证向量维度状态');
       }
     }
@@ -126,12 +126,12 @@ export const ragService = {
       // 检查 vec0 模块是否可用
       try {
         db.prepare('SELECT vec_version()').get();
-      } catch (e) {
+      } catch (_e) {
         console.error('[RAGService] sqlite-vec 扩展未加载，无法进行向量检索');
         return [];
       }
 
-      let sql = `
+      const sql = `
         SELECT 
           c.content,
           v.distance,

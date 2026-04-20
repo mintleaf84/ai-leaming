@@ -9,7 +9,7 @@ export function addColumnIfNotExists(
     columnName: string,
     columnDef: string
 ) {
-    const info = db.prepare(`PRAGMA table_info(${tableName})`).all() as any[];
+    const info = db.prepare(`PRAGMA table_info(${tableName})`).all() as unknown[];
     if (!info.find(c => c.name === columnName)) {
         console.log(`[DB Migration] Adding ${columnName} to ${tableName}...`);
         db.exec(`ALTER TABLE ${tableName} ADD COLUMN ${columnName} ${columnDef}`);

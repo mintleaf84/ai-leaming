@@ -1,14 +1,14 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
+import React, { useState, _useEffect } from 'react';
+import { motion, _AnimatePresence } from 'framer-motion';
 import { X, CheckCircle2, RotateCw } from 'lucide-react';
 import { APPLE_SPRING } from '@/lib/configs/motion-config';
 import { getCategoryColor } from '@/lib/utils/category-colors';
 import MarkdownViewer from '@/components/chat/MarkdownViewer';
 
 interface KnowledgeCardExpandedProps {
-    card: any;
+    card: unknown;
     onClose: () => void;
 }
 
@@ -119,7 +119,7 @@ export const KnowledgeCardExpanded: React.FC<KnowledgeCardExpandedProps> = ({ ca
 
                                 {card.key_points && card.key_points.length > 0 && (
                                     <div className="grid grid-cols-2 gap-4 text-left">
-                                        {card.key_points.slice(0, 2).map((kp: any, i: number) => (
+                                        {card.key_points.slice(0, 2).map((kp: unknown, i: number) => (
                                             <div key={i} className="bg-black/20 p-5 rounded-2xl border border-white/10 backdrop-blur-sm">
                                                 <span className="block text-xs font-black text-white/50 uppercase mb-2">#{kp.term}</span>
                                                 <span className="block text-sm text-white/90 leading-snug">{kp.definition}</span>

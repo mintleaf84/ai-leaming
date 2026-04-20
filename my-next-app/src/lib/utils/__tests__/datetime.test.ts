@@ -169,7 +169,7 @@ describe('datetime 工具函数', () => {
         });
 
         it('应返回 Date 对象，且时间戳合理（不超过未来 24 小时）', () => {
-            const beforeMs = Date.now();
+            const _beforeMs = Date.now();
             const now = getBeijingNow();
             const afterMs = Date.now();
             expect(now).toBeInstanceOf(Date);

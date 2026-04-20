@@ -12,7 +12,7 @@ import { getAiConfig } from '@/lib/ai/client';
 export async function performOCR(pdfBuffer: Buffer): Promise<string> {
     try {
 
-        const { apiKey, baseURL } = getAiConfig('premium');
+        const { apiKey, _baseURL } = getAiConfig('premium');
 
         if (!apiKey) {
             throw new Error('Missing API Key for OCR');
@@ -39,7 +39,7 @@ export async function performOCR(pdfBuffer: Buffer): Promise<string> {
                 console.log(`[OCR] 处理第 ${i + 1}/${pageCount} 页...`);
 
                 const page = doc.loadPage(i);
-                const bounds = page.getBounds();
+                const _bounds = page.getBounds();
 
                 // 创建 Pixmap (图像)
                 const pixmap = page.toPixmap(

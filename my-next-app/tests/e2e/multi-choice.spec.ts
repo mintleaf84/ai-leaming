@@ -1,4 +1,4 @@
-import { test, expect, TEST_ADMIN } from './fixtures';
+import { test, expect, _TEST_ADMIN } from './fixtures';
 
 /**
  * 多选题全链路 E2E 测试
@@ -6,7 +6,7 @@ import { test, expect, TEST_ADMIN } from './fixtures';
  */
 test.describe('多选题支持', () => {
     // 测试用的多选题数据
-    const MULTI_CHOICE_QUESTION = {
+    const _MULTI_CHOICE_QUESTION = {
         content: 'E2E测试多选题：下列选项中正确的是哪几个？（多选）',
         options: ['选项A正确', '选项B正确', '选项C错误', '选项D错误'],
         correctAnswers: ['A', 'B'],
@@ -93,7 +93,7 @@ test.describe('多选题支持', () => {
             if (await detailPage.isVisible().catch(() => false)) {
                 // 检查答案显示格式（不应该显示 JSON 括号）
                 const answerDisplay = loggedInPage.locator('text=/\\[.*\\]/');
-                const hasJsonBrackets = await answerDisplay.isVisible().catch(() => false);
+                const _hasJsonBrackets = await answerDisplay.isVisible().catch(() => false);
 
                 // 期望：不应该直接显示 JSON 格式
                 // 但由于测试数据不确定，这里只验证页面能正常加载

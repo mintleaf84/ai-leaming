@@ -18,8 +18,8 @@ import {
     CheckCircle2
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Badge } from '@/components/ui/badge';
+import { Card, CardContent, _CardDescription, _CardHeader, _CardTitle } from '@/components/ui/card';
+import { _Badge } from '@/components/ui/badge';
 import { Checkbox } from '@/components/ui/checkbox';
 import {
     PracticeMode,
@@ -56,7 +56,7 @@ const ModeColors: Record<PracticeMode, string> = {
 export default function PracticeSetupPage() {
     const router = useRouter();
     const [config, setConfig] = useState<PracticeConfig>(DEFAULT_PRACTICE_CONFIG);
-    const [availableTags, setAvailableTags] = useState<string[]>([]);
+    const [_availableTags, setAvailableTags] = useState<string[]>([]);
     const [loading, setLoading] = useState(true);
     const [showAdvanced, setShowAdvanced] = useState(false);
 
@@ -88,7 +88,7 @@ export default function PracticeSetupPage() {
     };
 
     // 切换知识点选择
-    const toggleTag = (tag: string) => {
+    const _toggleTag = (tag: string) => {
         setConfig(prev => ({
             ...prev,
             tags: prev.tags?.includes(tag)

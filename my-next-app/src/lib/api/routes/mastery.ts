@@ -9,7 +9,7 @@ const app = new OpenAPIHono()
 // Recursive schema definition in Zod is tricky for OpenAPI generation sometimes.
 // simpler approach: output flat arrays or limited depth for API if recursive fails, 
 // but let's try defining the node schema.
-const MasteryNodeSchema = z.object({
+const _MasteryNodeSchema = z.object({
     name: z.string(),
     path: z.string(),
     score: z.number(),

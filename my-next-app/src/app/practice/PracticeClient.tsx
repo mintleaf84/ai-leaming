@@ -69,7 +69,7 @@ function PracticeContent({ enableIntelligentReview }: { enableIntelligentReview:
 
                         {enableIntelligentReview && state.status === 'reviewing' && (
                             <ReviewCard
-                                currentItem={state.reviewQueue[state.currentReviewIndex] as any}
+                                currentItem={state.reviewQueue[state.currentReviewIndex] as unknown}
                                 sessionQueue={state.sessionQueue}
                                 isLoadingAI={isLoadingAI}
                                 onReviewStep={actions.handleReviewStep}

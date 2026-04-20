@@ -13,7 +13,7 @@ export function LeaderboardItem({ entry, rank }: LeaderboardItemProps) {
   const isTop3 = rank <= 3;
   
   // 决定颜色
-  const getRankColor = () => {
+  const _getRankColor = () => {
     if (rank === 1) return 'text-amber-400';
     if (rank === 2) return 'text-zinc-300';
     if (rank === 3) return 'text-orange-400';

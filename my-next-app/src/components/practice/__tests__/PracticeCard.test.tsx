@@ -27,8 +27,8 @@ const mockQuestionTrueFalse = {
 }
 
 describe('PracticeCard Component', () => {
-    let mockOnOptionClick = vi.fn();
-    let mockOnSubmitMulti = vi.fn();
+    const mockOnOptionClick = vi.fn();
+    const mockOnSubmitMulti = vi.fn();
 
     beforeEach(() => {
         mockOnOptionClick.mockClear()

@@ -37,7 +37,7 @@ export default function WrongBookPage() {
         isLoading,
         viewMode,
         setViewMode,
-        expandedTags,
+        _expandedTags,
         selectedIds,
         isCreating,
         isRandomLoading,
@@ -46,7 +46,7 @@ export default function WrongBookPage() {
         questionDetail,
         isLoadingDetail,
         // 方法
-        toggleTag,
+        _toggleTag,
         toggleSelect,
         selectAll,
         startPractice,
@@ -251,7 +251,7 @@ export default function WrongBookPage() {
                                         </div>
                                         <h3 className="text-lg font-medium">暂无已掌握的错题</h3>
                                         <p className="text-muted-foreground mt-2">
-                                            在错题详情中点击"标记为已掌握"可将攻克的题目归档
+                                            在错题详情中点击&quot;标记为已掌握&quot;可将攻克的题目归档
                                         </p>
                                     </div>
                                 ) : (

@@ -46,7 +46,7 @@ export function SettingsAIPreferencesTab({ settings, setSettings }: SettingsAIPr
                             ].map((level) => (
                                 <button
                                     key={level.id}
-                                    onClick={() => setSettings({ ...settings, aiSeverity: level.id as any })}
+                                    onClick={() => setSettings({ ...settings, aiSeverity: level.id as unknown })}
                                     className={cn(
                                         "flex flex-col items-center justify-center p-3 rounded-xl border text-sm transition-all h-20",
                                         settings.aiSeverity === level.id

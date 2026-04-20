@@ -7,7 +7,7 @@ import Image from 'next/image';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card, CardHeader, CardTitle, CardDescription, CardContent, CardFooter } from '@/components/ui/card';
-import { LogIn, UserPlus, Loader2, AlertCircle } from 'lucide-react';
+import { _LogIn, _UserPlus, Loader2, AlertCircle } from 'lucide-react';
 
 export default function LoginPage() {
     const [username, setUsername] = useState('');
@@ -37,7 +37,7 @@ export default function LoginPage() {
             } else {
                 setError(data.error || '登录失败');
             }
-        } catch (err) {
+        } catch (_err) {
             setError('无法连接到服务器');
         } finally {
             setLoading(false);

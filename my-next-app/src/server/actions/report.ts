@@ -73,7 +73,7 @@ export async function getSessionReportAction(sessionId?: string): Promise<Sessio
     `).all(targetSessionId, user.id) as { dimension: string; total: number; correct: number }[];
 
     // 维度中文映射
-    const dimensionLabels: Record<string, string> = {
+    const _dimensionLabels: Record<string, string> = {
       knowledge: '识记',
       understanding: '理解',
       application: '应用'

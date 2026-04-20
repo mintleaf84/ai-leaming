@@ -5,7 +5,7 @@ import db from '@/lib/db';
 import { Question, Dimension } from "@/types";
 import type { PracticeMode } from "@/types";
 import { safeGet, safeAll } from '@/lib/db/safe-query';
-import { PracticeSessionRowSchema, QuestionSchema, QuestionRowSchema } from '@/lib/schemas';
+import { PracticeSessionRowSchema, _QuestionSchema, QuestionRowSchema } from '@/lib/schemas';
 import { z } from 'zod';
 import { requireUser } from '@/lib/auth/auth';
 
@@ -100,7 +100,7 @@ export async function getPracticeSessionAction(forceNew: boolean = false): Promi
     // 0. Migration: Ensure questions_json column exists
     try {
       db.prepare("ALTER TABLE practice_sessions ADD COLUMN questions_json TEXT").run();
-    } catch (e) { /* ignore if column exists */ }
+    } catch (_e) { /* ignore if column exists */ }
 
     // 1. Try to resume latest session
     if (!forceNew) {
@@ -293,7 +293,7 @@ export async function getKnowledgeTreeAction(): Promise<KnowledgeParams[]> {
     });
 
     // Helper to sum up counts recursively
-    const calculateCounts = (nodes: KnowledgeParams[]): number => {
+    const _calculateCounts = (nodes: KnowledgeParams[]): number => {
       let sum = 0;
       for (const node of nodes) {
         const childrenSum = calculateCounts(node.children);
@@ -314,7 +314,7 @@ export async function getKnowledgeTreeAction(): Promise<KnowledgeParams[]> {
         // Find the original count from result if this path matches exactly?
         // Actually the 'result' loop already set count for exact matches.
         // Now we just add up children.
-        let myTotal = node.count;
+        const _myTotal = node.count;
         if (node.children.length > 0) {
           // For intermediate nodes, their 'count' is purely from children in this simple model 
           // unless they are also tagged directly (which the loop handles).
@@ -395,11 +395,11 @@ export async function getPracticeSessionByConfigAction(config: {
     // 确保 questions_json 列存在
     try {
       db.prepare("ALTER TABLE practice_sessions ADD COLUMN questions_json TEXT").run();
-    } catch (e) { /* ignore if exists */ }
+    } catch (_e) { /* ignore if exists */ }
 
     try {
       db.prepare("ALTER TABLE practice_sessions ADD COLUMN practice_mode TEXT").run();
-    } catch (e) { /* ignore if exists */ }
+    } catch (_e) { /* ignore if exists */ }
 
     db.prepare(`
       INSERT INTO practice_sessions (id, user_id, total_questions, questions_json, practice_mode) 

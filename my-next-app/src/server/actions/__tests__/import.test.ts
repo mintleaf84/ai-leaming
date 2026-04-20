@@ -3,32 +3,32 @@ import { describe, it, expect, beforeEach, vi } from 'vitest';
 
 // 1. Mock dependencies - 使用 vi.hoisted 内联创建，避免 require() 路径问题
 const { mockBetterDb } = vi.hoisted(() => {
-    const calls: { sql: string; args: any[] }[] = [];
+    const calls: { sql: string; args: unknown[] }[] = [];
     let wasCommitted = false;
     let wasRolledBack = false;
 
-    const mockRun = vi.fn().mockImplementation((...args: any[]) => ({ lastInsertRowid: 100, changes: 1 }));
+    const mockRun = vi.fn().mockImplementation((..._args: unknown[]) => ({ lastInsertRowid: 100, changes: 1 }));
     const mockGet = vi.fn();
     const mockAll = vi.fn();
 
     const prepare = vi.fn().mockImplementation((sql: string) => ({
-        run: vi.fn().mockImplementation((...args: any[]) => {
+        run: vi.fn().mockImplementation((...args: unknown[]) => {
             calls.push({ sql, args });
             return mockRun(...args);
         }),
-        get: vi.fn().mockImplementation((...args: any[]) => {
+        get: vi.fn().mockImplementation((...args: unknown[]) => {
             calls.push({ sql, args });
             return mockGet(...args);
         }),
-        all: vi.fn().mockImplementation((...args: any[]) => {
+        all: vi.fn().mockImplementation((...args: unknown[]) => {
             calls.push({ sql, args });
             return mockAll(...args);
         }),
     }));
 
     // better-sqlite3 的 transaction() 返回一个函数，调用该函数时才执行事务
-    const transaction = vi.fn().mockImplementation((cb: (...args: any[]) => any) => {
-        return vi.fn().mockImplementation((...args: any[]) => {
+    const transaction = vi.fn().mockImplementation((cb: (...args: unknown[]) => unknown) => {
+        return vi.fn().mockImplementation((...args: unknown[]) => {
             try {
                 const result = cb(...args);
                 wasCommitted = true;
@@ -117,7 +117,7 @@ describe('Import Actions', () => {
         
         // 验证插入练习会话
         const calls = mockBetterDb._state.calls;
-        const sessionCall = calls.find((c: any) => c.sql.includes('INSERT INTO practice_sessions'));
+        const sessionCall = calls.find((c: unknown) => c.sql.includes('INSERT INTO practice_sessions'));
         expect(sessionCall).toBeDefined();
         expect(sessionCall?.args).toContain('Test Session');
 
@@ -133,7 +133,7 @@ describe('Import Actions', () => {
         vi.mocked(parseFenbiData).mockReturnValue({
             sessionName: 'Fail Session',
             totalCount: 1, correctCount: 0, errorCount: 0, statsCount: 0,
-            questions: [{ externalId: 'err-1', content: 'Err' } as any],
+            questions: [{ externalId: 'err-1', content: 'Err' } as unknown],
             records: []
         });
 
@@ -175,7 +175,7 @@ describe('Import Actions', () => {
         
         // 验证是否调用了 UPDATE 语句
         const calls = mockBetterDb._state.calls;
-        const updateCall = calls.find((c: any) => c.sql.includes('UPDATE questions'));
+        const updateCall = calls.find((c: unknown) => c.sql.includes('UPDATE questions'));
         expect(updateCall).toBeDefined();
         expect(updateCall?.args).toContain(999); // 验证 ID 匹配
     });

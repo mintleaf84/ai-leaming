@@ -24,7 +24,7 @@ import { requireUser } from '@/lib/auth/auth';
 describe('Wrong Questions Actions', () => {
     beforeEach(() => {
         vi.clearAllMocks();
-        vi.mocked(requireUser).mockResolvedValue({ id: 1, username: 'testuser' } as any);
+        vi.mocked(requireUser).mockResolvedValue({ id: 1, username: 'testuser' } as unknown);
     });
 
     // ========== getWrongQuestionsAction 测试 ==========

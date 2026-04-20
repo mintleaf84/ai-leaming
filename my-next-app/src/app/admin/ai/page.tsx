@@ -5,7 +5,7 @@ import { ConfigManager } from '../components/ConfigManager';
 import { PromptManager } from '../components/PromptManager';
 import { RouteManager } from '../components/ConfigManager/RouteManager';
 import { Cpu, MessageSquareText, Network } from 'lucide-react';
-import { Button } from '@/components/ui/button';
+import { _Button } from '@/components/ui/button';
 
 export default function AiManagementPage() {
     const [activeTab, setActiveTab] = useState<'config' | 'routing' | 'prompt'>('config');

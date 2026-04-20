@@ -22,7 +22,7 @@ export const questionService = {
 
       try {
         db.prepare('SELECT vec_version()').get();
-      } catch (e) {
+      } catch (_e) {
         console.error('[QuestionService] sqlite-vec 扩展未加载，无法进行向量检索');
         return [];
       }
@@ -36,7 +36,7 @@ export const questionService = {
         WHERE v.embedding MATCH ?
           AND k = ?
         ORDER BY v.distance
-      `).all(JSON.stringify(embedding), limit) as any[];
+      `).all(JSON.stringify(embedding), limit) as unknown[];
 
       return results;
     } catch (error) {
@@ -62,7 +62,7 @@ export const questionService = {
   list: async (filter: QuestionFilter = {}): Promise<{ items: Question[]; total: number }> => {
     let query = 'SELECT * FROM questions WHERE 1=1';
     let countQuery = 'SELECT COUNT(*) as count FROM questions WHERE 1=1';
-    const params: any[] = [];
+    const params: unknown[] = [];
 
     if (filter.search) {
       const searchCondition = ' AND content LIKE ?';

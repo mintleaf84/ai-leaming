@@ -12,7 +12,7 @@ import {
     getNoteTagsAction,
     setNoteTagsAction,
 } from '@/server/actions/note-tag';
-import { TAG_COLORS, type NoteTag } from '@/lib/types/note-tag';
+import { _TAG_COLORS, type NoteTag } from '@/lib/types/note-tag';
 import { toast } from 'sonner';
 
 interface TagSelectorProps {

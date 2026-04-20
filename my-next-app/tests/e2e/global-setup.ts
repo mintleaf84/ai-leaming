@@ -1,6 +1,6 @@
 import { type FullConfig } from '@playwright/test';
 import path from 'path';
-import fs from 'fs';
+import _fs from 'fs';
 import Database from 'better-sqlite3';
 import bcrypt from 'bcryptjs';
 
@@ -22,7 +22,7 @@ export const TEST_ADMIN = {
   role: 'admin'
 };
 
-async function globalSetup(config: FullConfig) {
+async function globalSetup(_config: FullConfig) {
   console.log('[E2E Setup] 开始初始化测试环境...');
 
   const dbPath = path.resolve(process.cwd(), 'data', 'test-e2e.db');
@@ -66,7 +66,7 @@ async function globalSetup(config: FullConfig) {
     for (const table of tables) {
       try {
         db.prepare(`DROP TABLE IF EXISTS ${table}`).run();
-      } catch (e) {
+      } catch (_e) {
         // 忽略错误
       }
     }

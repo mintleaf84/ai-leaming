@@ -34,6 +34,7 @@ export function Timer({
     // 重置计时器（当 initialSeconds 变化时）
     useEffect(() => {
         if (mode === 'count_down') {
+            // eslint-disable-next-line react-hooks/set-state-in-effect
             setSeconds(initialSeconds);
             setHasTriggeredTimeUp(false);
         }
@@ -64,6 +65,7 @@ export function Timer({
     // 倒计时归零回调
     useEffect(() => {
         if (mode === 'count_down' && seconds === 0 && !hasTriggeredTimeUp && onTimeUp) {
+            // eslint-disable-next-line react-hooks/set-state-in-effect
             setHasTriggeredTimeUp(true);
             onTimeUp();
         }

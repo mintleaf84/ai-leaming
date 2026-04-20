@@ -8,7 +8,7 @@ import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle }
 import { Badge } from '@/components/ui/badge';
 import { getActivePlansAction, getMySubscriptionAction } from '@/server/actions/subscription';
 import { SubscriptionPlan, UserSubscriptionDetail } from '@/lib/billing/subscription-types';
-import Link from 'next/link';
+import _Link from 'next/link';
 
 // 套餐图标映射
 const planIcons: Record<string, React.ReactNode> = {
@@ -18,14 +18,14 @@ const planIcons: Record<string, React.ReactNode> = {
 };
 
 // 套餐颜色映射
-const planColors: Record<string, string> = {
+const _planColors: Record<string, string> = {
     free: 'from-slate-500 to-slate-600',
     basic: 'from-blue-500 to-indigo-600',
     pro: 'from-amber-500 to-orange-600'
 };
 
 export default function PricingPage() {
-    const router = useRouter();
+    const _router = useRouter();
     const [plans, setPlans] = useState<SubscriptionPlan[]>([]);
     const [currentSub, setCurrentSub] = useState<UserSubscriptionDetail | null>(null);
     const [loading, setLoading] = useState(true);

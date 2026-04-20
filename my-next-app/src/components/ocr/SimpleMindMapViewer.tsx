@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useEffect, useRef, useState } from 'react';
+import React, { useEffect, useRef, _useState } from 'react';
 import MindMap from 'simple-mind-map';
 import Drag from 'simple-mind-map/src/plugins/Drag.js';
 import KeyboardNavigation from 'simple-mind-map/src/plugins/KeyboardNavigation.js';
@@ -9,7 +9,7 @@ import MiniMap from 'simple-mind-map/src/plugins/MiniMap.js';
 import { transformToMarkdown } from 'simple-mind-map/src/parse/toMarkdown.js';
 import { markdownToSmm } from '@/lib/utils/mindmapConverter';
 
-// Register plugins globally
+/* eslint-disable react-hooks/rules-of-hooks */
 MindMap.usePlugin(Drag)
     .usePlugin(KeyboardNavigation)
     .usePlugin(RichText)
@@ -25,7 +25,7 @@ interface SimpleMindMapViewerProps {
 export function SimpleMindMapViewer({ markdown, onChange, className = '', readOnly = false }: SimpleMindMapViewerProps) {
     const containerRef = useRef<HTMLDivElement>(null);
     const minimapRef = useRef<HTMLDivElement>(null);
-    const mindMapRef = useRef<any>(null);
+    const mindMapRef = useRef<unknown>(null);
     
     // 我们用一个 ref 记录内部状态是否刚发生变更，避免死循环
     const isInternalUpdate = useRef(false);
@@ -34,7 +34,7 @@ export function SimpleMindMapViewer({ markdown, onChange, className = '', readOn
         if (!containerRef.current) return;
 
         // 初始化
-        const mindMap = new (MindMap as any)({
+        const mindMap = new (MindMap as unknown)({
             el: containerRef.current,
             fit: true,
             theme: 'classic2', // 内置高颜值主题

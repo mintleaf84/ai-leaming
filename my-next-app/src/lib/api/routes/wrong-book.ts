@@ -474,8 +474,8 @@ const unmasterRoute = createRoute({
 })
 
 app.openapi(unmasterRoute, async (c) => {
-    const user = getCurrentUser(c)
-    const { id } = c.req.valid('param')
+    const _user = getCurrentUser(c)
+    const { _id } = c.req.valid('param')
 
     return c.json({ success: true }, 200)
 })

@@ -9,10 +9,10 @@ export const createBetterDbMock = () => {
     isTransactionOpen: false,
     wasCommitted: false,
     wasRolledBack: false,
-    calls: [] as { sql: string; args: any[] }[],
+    calls: [] as { sql: string; args: unknown[] }[],
   };
 
-  const mockRun = vi.fn().mockImplementation((...args: any[]) => {
+  const mockRun = vi.fn().mockImplementation((..._args: unknown[]) => {
     return { lastInsertRowid: 100, changes: 1 };
   });
 
@@ -21,22 +21,22 @@ export const createBetterDbMock = () => {
 
   const prepare = vi.fn().mockImplementation((sql: string) => {
     return {
-      run: vi.fn().mockImplementation((...args: any[]) => {
+      run: vi.fn().mockImplementation((...args: unknown[]) => {
         state.calls.push({ sql, args });
         return mockRun(...args);
       }),
-      get: vi.fn().mockImplementation((...args: any[]) => {
+      get: vi.fn().mockImplementation((...args: unknown[]) => {
         state.calls.push({ sql, args });
         return mockGet(...args);
       }),
-      all: vi.fn().mockImplementation((...args: any[]) => {
+      all: vi.fn().mockImplementation((...args: unknown[]) => {
         state.calls.push({ sql, args });
         return mockAll(...args);
       }),
     };
   });
 
-  const transaction = vi.fn().mockImplementation((cb: () => any) => {
+  const transaction = vi.fn().mockImplementation((cb: () => unknown) => {
     state.isTransactionOpen = true;
     try {
       const result = cb();

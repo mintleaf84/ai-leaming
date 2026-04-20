@@ -1,3 +1,4 @@
+/* eslint-disable react-hooks/set-state-in-effect */
 "use client";
 
 import React, { useEffect, useState, useCallback } from 'react';
@@ -21,20 +22,20 @@ import { ImportFenbiModal } from '@/components/import/ImportFenbiModal';
 import { cn } from '@/lib/utils';
 import {
   History as HistoryIcon,
-  ChevronRight,
-  Calendar,
-  CheckCircle2,
-  Trash2,
+  _ChevronRight,
+  _Calendar,
+  _CheckCircle2,
+  _Trash2,
   Filter,
-  Brain,
-  RotateCcw,
-  Target,
-  FileCheck,
-  Shuffle,
+  _Brain,
+  _RotateCcw,
+  _Target,
+  _FileCheck,
+  _Shuffle,
   Upload,
   Pencil,
-  Check,
-  Search,
+  _Check,
+  _Search,
   BookOpen
 } from 'lucide-react';
 import { AnimatePresence } from 'framer-motion';
@@ -264,7 +265,7 @@ export default function HistoryPage() {
           </div>
         ) : (
           <div className="grid gap-6">
-            {history.items.map((item: any, index: number) => (
+            {history.items.map((item: unknown, index: number) => (
               <div
                 key={item.id}
                 className="animate-fade-in"

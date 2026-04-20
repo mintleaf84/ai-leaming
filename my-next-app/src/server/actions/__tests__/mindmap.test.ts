@@ -19,12 +19,12 @@ describe('generateMindmapAction', () => {
 
     it('应该成功生成并清理 Markdown 文本', async () => {
         // Mock 用户已登录
-        vi.mocked(requireUser).mockResolvedValue({ id: 'user-1' } as any);
+        vi.mocked(requireUser).mockResolvedValue({ id: 'user-1' } as unknown);
         
         // Mock AI 返回带代码块的 Markdown
         vi.mocked(generateTextWrapper).mockResolvedValue({
             text: '```markdown\n# 核心主题\n- 点 1\n```',
-        } as any);
+        } as unknown);
 
         const result = await generateMindmapAction('原始 OCR 文本');
 
@@ -50,7 +50,7 @@ describe('generateMindmapAction', () => {
     });
 
     it('如果 AI 调用失败应该返回错误', async () => {
-        vi.mocked(requireUser).mockResolvedValue({ id: 'user-1' } as any);
+        vi.mocked(requireUser).mockResolvedValue({ id: 'user-1' } as unknown);
         vi.mocked(generateTextWrapper).mockRejectedValue(new Error('AI 调用超时'));
 
         const result = await generateMindmapAction('文本');

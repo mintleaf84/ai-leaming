@@ -20,6 +20,7 @@ export function usePWAInstall() {
     useEffect(() => {
         // 检查是否已安装（standalone 模式运行）
         if (window.matchMedia('(display-mode: standalone)').matches) {
+            // eslint-disable-next-line react-hooks/set-state-in-effect
             setIsInstalled(true);
             return;
         }

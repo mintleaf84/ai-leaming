@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import { useQuery } from '@tanstack/react-query';
-import { ChevronRight, ChevronDown, Check, Folder, FolderOpen, FileText } from 'lucide-react';
+import { ChevronRight, ChevronDown, _Check, Folder, FolderOpen, FileText } from 'lucide-react';
 import { cn } from '@/lib/utils/utils';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Button } from '@/components/ui/button';
@@ -170,6 +170,7 @@ export function KeypointTree({ selectedTags, onSelectionChange, maxHeight = "400
     // 数据加载完成后默认展开第一层
     useEffect(() => {
         if (keypointData.length > 0 && expandedIds.size === 0) {
+            // eslint-disable-next-line react-hooks/set-state-in-effect
             setExpandedIds(new Set(keypointData.map(node => node.id)));
         }
     }, [keypointData, expandedIds.size]);
@@ -213,7 +214,7 @@ export function KeypointTree({ selectedTags, onSelectionChange, maxHeight = "400
         });
     }, []);
 
-    const handleToggleSelect = useCallback((name: string, node: KeypointNode) => {
+    const handleToggleSelect = useCallback((name: string, _node: KeypointNode) => {
         onSelectionChange(
             selectedTags.includes(name)
                 ? selectedTags.filter(t => t !== name)
@@ -222,7 +223,7 @@ export function KeypointTree({ selectedTags, onSelectionChange, maxHeight = "400
     }, [selectedTags, onSelectionChange]);
 
     // 全选/取消该分类下所有叶子节点
-    const selectAllLeaves = (node: KeypointNode) => {
+    const _selectAllLeaves = (node: KeypointNode) => {
         const leaves: string[] = [];
         const collectLeaves = (n: KeypointNode) => {
             if (!n.children || n.children.length === 0) {

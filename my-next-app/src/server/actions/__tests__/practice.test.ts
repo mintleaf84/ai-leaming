@@ -3,32 +3,32 @@ import { describe, it, expect, beforeEach, vi } from 'vitest';
 
 // 1. Mock dependencies - 使用 vi.hoisted 内联创建，避免 require() 路径问题
 const { mockBetterDb } = vi.hoisted(() => {
-    const calls: { sql: string; args: any[] }[] = [];
+    const calls: { sql: string; args: unknown[] }[] = [];
     let wasCommitted = false;
     let wasRolledBack = false;
 
-    const mockRun = vi.fn().mockImplementation((...args: any[]) => ({ lastInsertRowid: 100, changes: 1 }));
+    const mockRun = vi.fn().mockImplementation((..._args: unknown[]) => ({ lastInsertRowid: 100, changes: 1 }));
     const mockGet = vi.fn();
     const mockAll = vi.fn();
 
     const prepare = vi.fn().mockImplementation((sql: string) => ({
-        run: vi.fn().mockImplementation((...args: any[]) => {
+        run: vi.fn().mockImplementation((...args: unknown[]) => {
             calls.push({ sql, args });
             return mockRun(...args);
         }),
-        get: vi.fn().mockImplementation((...args: any[]) => {
+        get: vi.fn().mockImplementation((...args: unknown[]) => {
             calls.push({ sql, args });
             return mockGet(...args);
         }),
-        all: vi.fn().mockImplementation((...args: any[]) => {
+        all: vi.fn().mockImplementation((...args: unknown[]) => {
             calls.push({ sql, args });
             return mockAll(...args);
         }),
     }));
 
     // better-sqlite3 的 transaction() 返回一个函数，调用该函数时才执行事务
-    const transaction = vi.fn().mockImplementation((cb: (...args: any[]) => any) => {
-        return vi.fn().mockImplementation((...args: any[]) => {
+    const transaction = vi.fn().mockImplementation((cb: (...args: unknown[]) => unknown) => {
+        return vi.fn().mockImplementation((...args: unknown[]) => {
             try {
                 const result = cb(...args);
                 wasCommitted = true;
@@ -139,7 +139,7 @@ describe('Practice Actions', () => {
             
             // 验证 DB insert 是否包含正确的题目 JSON
             const calls = mockBetterDb._state.calls;
-            const insertCall = calls.find((c: any) => c.sql.includes('INSERT INTO practice_sessions'));
+            const insertCall = calls.find((c: unknown) => c.sql.includes('INSERT INTO practice_sessions'));
             expect(insertCall).toBeDefined();
             
             const questionsJson = insertCall?.args[3]; // sessionId, userId, total, questions_json

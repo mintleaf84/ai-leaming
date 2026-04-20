@@ -18,7 +18,7 @@ export function logAdminAction(
     action: AdminAction,
     targetType: TargetType = null,
     targetId: string | null = null,
-    details: Record<string, any> | null = null,
+    details: Record<string, unknown> | null = null,
     ipAddress: string | null = null
 ): void {
     try {

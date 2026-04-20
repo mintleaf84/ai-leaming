@@ -60,7 +60,7 @@ describe('History Service', () => {
 
         it('should filter out items by accuracy (SQL verify)', async () => {
             const mockCount = { count: 0 };
-            const mockItems: any[] = []; // Filtered out by DB
+            const mockItems: unknown[] = []; // Filtered out by DB
 
             mockDb.prepare
                 .mockReturnValueOnce({ get: () => mockCount })

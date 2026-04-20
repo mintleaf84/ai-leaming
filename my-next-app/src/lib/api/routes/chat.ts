@@ -78,7 +78,7 @@ app.openapi(chatRoute, async (c) => {
 
     // 4. 流式生成
     let tools = undefined
-    let systemPrompt = buildEnhancedSystemPrompt(context, mode)
+    const systemPrompt = buildEnhancedSystemPrompt(context, mode)
 
     if (enableRag) {
         const { knowledgeSearchTool } = await import('@/lib/services/chat-rag')

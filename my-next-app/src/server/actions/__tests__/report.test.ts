@@ -29,7 +29,7 @@ describe('Report Actions', () => {
     });
 
     // Helper to setup DB mocks
-    const setupDbMocks = (overrides: any = {}) => {
+    const setupDbMocks = (overrides: unknown = {}) => {
         const mockGet = vi.fn();
         const mockAll = vi.fn();
         const mockRun = vi.fn();

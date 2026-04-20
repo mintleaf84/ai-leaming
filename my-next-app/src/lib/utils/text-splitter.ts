@@ -17,14 +17,14 @@ const DEFAULT_OPTIONS: SplitterOptions = {
  */
 export function splitText(text: string, options: Partial<SplitterOptions> = {}): string[] {
     const finalOptions = { ...DEFAULT_OPTIONS, ...options };
-    const { chunkSize, chunkOverlap, separators } = finalOptions;
+    const { chunkSize, chunkOverlap, _separators } = finalOptions;
 
     const finalChunks: string[] = [];
-    let goodSplits: string[] = [text];
+    const _goodSplits: string[] = [text];
 
     // Recursive split function
     const _split = (text: string, separators: string[]): string[] => {
-        const finalChunks: string[] = [];
+        const _finalChunks: string[] = [];
         let separator = separators[separators.length - 1];
         let newSeparators: string[] = [];
 
@@ -38,7 +38,7 @@ export function splitText(text: string, options: Partial<SplitterOptions> = {}):
         }
 
         const splits = text.split(separator);
-        let goodSplits: string[] = [];
+        const goodSplits: string[] = [];
 
         // Merge splits back together until they reach chunk size
         let currentChunk = '';

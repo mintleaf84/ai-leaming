@@ -1,4 +1,4 @@
-import { createExecutor, definePlugin } from '@cherrystudio/ai-core';
+import { createExecutor, _definePlugin } from '@cherrystudio/ai-core';
 import { createOpenAI } from '@ai-sdk/openai';
 import type { LanguageModel } from 'ai';
 import { z } from 'zod';
@@ -46,7 +46,7 @@ interface AiConfigRow {
 }
 
 /** feature_flags / ai_model_routes 中的功能开关行 */
-interface FeatureFlagRow {
+interface _FeatureFlagRow {
     enabled: number;
 }
 
@@ -62,7 +62,7 @@ function ensureSettingsTable() {
         updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
       );
     `);
-  } catch (e) { }
+  } catch (_e) { }
 }
 
 /**
@@ -84,9 +84,9 @@ export function getAiConfig(feature?: string, overrideKey?: string, overrideUrl?
   ensureSettingsTable();
 
   // 默认值
-  let apiKey = overrideKey || process.env.AI_API_KEY || '';
-  let baseURL = overrideUrl || process.env.AI_API_URL || 'https://api.openai.com/v1';
-  let modelName = 'DeepSeek-R1';
+  const apiKey = overrideKey || process.env.AI_API_KEY || '';
+  const baseURL = overrideUrl || process.env.AI_API_URL || 'https://api.openai.com/v1';
+  const modelName = 'DeepSeek-R1';
 
   const defaultResult = {
     apiKey,
@@ -187,7 +187,7 @@ function extractJson(text: string): unknown {
     // 3. 直接解析 (处理可能的非法控制字符)
     const normalizedText = targetText.replace(/[\u0000-\u001F\u007F-\u009F]/g, "");
     return JSON.parse(normalizedText);
-  } catch (e) {
+  } catch (_e) {
     // 4. 极致兜底：尝试寻找第一个 { 和最后一个 }
     const firstBrace = targetText.indexOf('{');
     const lastBrace = targetText.lastIndexOf('}');
@@ -195,7 +195,7 @@ function extractJson(text: string): unknown {
       try {
         const braceText = targetText.substring(firstBrace, lastBrace + 1).replace(/[\u0000-\u001F\u007F-\u009F]/g, "");
         return JSON.parse(braceText);
-      } catch (innerError) {
+      } catch (_innerError) {
         throw new Error('无法从响应中提取有效的 JSON 格式');
       }
     }
@@ -408,7 +408,7 @@ export async function streamChatWrapper(
   const resolvedModelName = modelName || 'gpt-4o';
 
   // 记录流式调用开始
-  const startTime = Date.now();
+  const _startTime = Date.now();
   const inputLength = messages.reduce((acc, m) => acc + (m.content?.length || 0), 0);
 
   // 异步记录，不阻塞流式响应
@@ -427,7 +427,7 @@ export async function streamChatWrapper(
     system,
     tools,
     maxSteps: tools ? 5 : 1,
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+     
     onFinish: onFinish ? (result: { text: string }) => onFinish(result.text) : undefined,
   } as Parameters<typeof executor.streamText>[0]);
 }

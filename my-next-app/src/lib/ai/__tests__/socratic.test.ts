@@ -24,14 +24,14 @@ describe('Socratic Tutor Mode', () => {
 
     // We anticipate modifying buildEnhancedSystemPrompt or a similar function to accept a 'mode'
     it('should return socratic prompt when mode is socratic', () => {
-        // @ts-ignore - we haven't updated the signature yet, so TS will complain, but this is TDD
+        // @ts-expect-error - we haven't updated the signature yet, so TS will complain, but this is TDD
         const prompt = buildEnhancedSystemPrompt(undefined, 'socratic');
         expect(prompt).toContain('苏格拉底');
         expect(prompt).not.toContain('资深的教师招聘考试辅导专家'); // Should not have default system prompt content if possible, or mixed is fine but main persona should change
     });
 
     it('should return default prompt when mode is standard or undefined', () => {
-        // @ts-ignore
+        // @ts-expect-error - testing invalid mode input
         const prompt = buildEnhancedSystemPrompt(undefined, 'standard');
         expect(prompt).toContain('资深的教师招聘考试辅导专家');
         expect(prompt).not.toContain('苏格拉底');

@@ -15,30 +15,30 @@ function generateHash(content: string): string {
 
 // 1. Mock dependencies - 使用 vi.hoisted 内联创建，避免 require() 路径问题
 const { mockBetterDb } = vi.hoisted(() => {
-    const calls: { sql: string; args: any[] }[] = [];
+    const calls: { sql: string; args: unknown[] }[] = [];
 
     const mockRun = vi.fn().mockImplementation(() => ({ lastInsertRowid: 100, changes: 1 }));
     const mockGet = vi.fn();
     const mockAll = vi.fn();
 
     const prepare = vi.fn().mockImplementation((sql: string) => ({
-        run: vi.fn().mockImplementation((...args: any[]) => {
+        run: vi.fn().mockImplementation((...args: unknown[]) => {
             calls.push({ sql, args });
             return mockRun(...args);
         }),
-        get: vi.fn().mockImplementation((...args: any[]) => {
+        get: vi.fn().mockImplementation((...args: unknown[]) => {
             calls.push({ sql, args });
             return mockGet(...args);
         }),
-        all: vi.fn().mockImplementation((...args: any[]) => {
+        all: vi.fn().mockImplementation((...args: unknown[]) => {
             calls.push({ sql, args });
             return mockAll(...args);
         }),
     }));
 
     // better-sqlite3 的 transaction() 返回一个函数，调用该函数时才执行事务
-    const transaction = vi.fn().mockImplementation((cb: (...args: any[]) => any) => {
-        return vi.fn().mockImplementation((...args: any[]) => cb(...args));
+    const transaction = vi.fn().mockImplementation((cb: (...args: unknown[]) => unknown) => {
+        return vi.fn().mockImplementation((...args: unknown[]) => cb(...args));
     });
 
     return {
@@ -91,7 +91,7 @@ vi.mock('@/lib/services/question', () => ({
 
 vi.mock('@/lib/ai/prompts', () => ({
     getPromptFromDbSync: mockGetPromptFromDbSync,
-    buildPrompt: vi.fn((template, vars) => template),
+    buildPrompt: vi.fn((template, _vars) => template),
     DEFAULT_CORRECTION_PROMPT: 'default correction prompt',
     DEFAULT_REGRESSION_PROMPT: 'default regression prompt'
 }));
@@ -128,7 +128,7 @@ describe('AI Actions', () => {
             
             // 验证缓存写入使用了正确的 Key
             const calls = mockBetterDb._state.calls;
-            const insertCall = calls.find((c: any) => c.sql.includes('INSERT OR REPLACE INTO ai_quiz_cache'));
+            const insertCall = calls.find((c: unknown) => c.sql.includes('INSERT OR REPLACE INTO ai_quiz_cache'));
             expect(insertCall?.args[0]).toBe(expectedKey);
             expect(insertCall?.args[1]).toBe(JSON.stringify(mockQuiz));
         });
@@ -149,7 +149,7 @@ describe('AI Actions', () => {
             
             // 验证缓存写入
             const calls = mockBetterDb._state.calls;
-            const insertCall = calls.find((c: any) => c.sql.includes('INSERT OR REPLACE INTO first_principles_cache'));
+            const insertCall = calls.find((c: unknown) => c.sql.includes('INSERT OR REPLACE INTO first_principles_cache'));
             expect(insertCall?.args[0]).toBe(expectedKey);
         });
     });

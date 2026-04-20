@@ -69,7 +69,7 @@ export async function generateCorrectionQuizAction(
       try {
         options = typeof q.options === 'string' ? JSON.parse(q.options) : q.options;
         if (!Array.isArray(options)) options = [];
-      } catch (e) {
+      } catch (_e) {
         options = [];
       }
 
@@ -167,7 +167,7 @@ export async function generateRegressionChallengeAction(
         try {
           options = typeof q.options === 'string' ? JSON.parse(q.options) : q.options;
           if (!Array.isArray(options)) options = [];
-        } catch (e) {
+        } catch (_e) {
           options = [];
         }
 

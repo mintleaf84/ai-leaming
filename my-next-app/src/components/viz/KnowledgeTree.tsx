@@ -10,7 +10,7 @@ import {
   DrawerClose,
   DrawerContent,
   DrawerDescription,
-  DrawerFooter,
+  _DrawerFooter,
   DrawerHeader,
   DrawerTitle,
 } from "@/components/ui/drawer";
@@ -18,7 +18,7 @@ import { Button } from "@/components/ui/button";
 import { useRouter } from 'next/navigation';
 
 // 动态导入 ForceGraph2D，禁用 SSR（因为它依赖 canvas）
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
+ 
 const ForceGraph2D = dynamic(() => import('react-force-graph-2d'), {
   ssr: false,
   loading: () => (
@@ -125,12 +125,12 @@ export function KnowledgeTree({ data }: KnowledgeTreeProps) {
       (fg.d3Force('link') as any)?.distance(80);
 
       // 引入节点碰撞检测 (Collision)，防止重叠
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+       
       fg.d3Force('collide', ((_node: NodeObject<KnowledgeNode>) => {
          // 碰撞半径：节点半径 + 较大的保护边距（为文字留白）
          const n = _node as ForceKnowledgeNode;
          return n.val + 25;
-      }) as any);
+      }) as unknown);
 
       // 重新预热引擎以应用新参数
       fg.d3ReheatSimulation();

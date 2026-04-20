@@ -242,7 +242,7 @@ ${explanation ? `参考解析：${explanation}` : ''}
                 retries: 1,
             });
             text = result.text;
-        } catch (aiError: any) {
+        } catch (aiError: unknown) {
             return c.json({ error: `AI 分析失败: ${aiError.message}` }, 500);
         }
 

@@ -6,7 +6,7 @@ import { Question, UserRole } from '@/types';
 import { z } from 'zod';
 import { getErrorMessage } from '@/lib/utils/error';
 import { QuestionSchema } from '@/lib/schemas';
-import { requireRole, getSession } from '@/lib/auth/auth';
+import { requireRole, _getSession } from '@/lib/auth/auth';
 import { hashPassword } from '@/lib/auth/password';
 import { logAdminAction } from '@/lib/admin/audit';
 
@@ -114,7 +114,7 @@ export async function deleteQuestionAction(id: number) {
     logAdminAction(user.id, user.username, 'DELETE_QUESTION', 'question', id.toString());
 
     return { success: true };
-  } catch (error) {
+  } catch (_error) {
     return { success: false, error: 'Delete failed' };
   }
 }

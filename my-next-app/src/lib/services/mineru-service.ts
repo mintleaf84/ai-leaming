@@ -14,7 +14,7 @@ export const mineruService = {
         const zipEntries = zip.getEntries();
 
         // 1. Find full.md to identify the root folder or main content
-        let fullMdEntry = zipEntries.find(entry => entry.entryName.endsWith('full.md') && !entry.entryName.includes('__MACOSX'));
+        const fullMdEntry = zipEntries.find(entry => entry.entryName.endsWith('full.md') && !entry.entryName.includes('__MACOSX'));
 
         if (!fullMdEntry) {
             throw new Error('Invalid Mineru Export: full.md not found in zip');
@@ -85,7 +85,7 @@ export const mineruService = {
         // We need to be careful with paths if rootDir is involved in Markdown? 
         // Usually full.md references images relatively like "images/xxx.jpg"
 
-        let processedMarkdown = markdownContent.replace(
+        const processedMarkdown = markdownContent.replace(
             /!\[(.*?)\]\((?:.*?\/)?images\/(.*?)\)/g,
             (match, alt, filename) => {
                 return `![${alt}](/books/${bookId}/images/${filename})`;

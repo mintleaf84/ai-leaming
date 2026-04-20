@@ -1,7 +1,7 @@
 /** @vitest-environment jsdom */
 import { renderHook, act, waitFor } from '@testing-library/react';
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import React from 'react';
+import _React from 'react';
 
 // --- vi.hoisted for stable references across mocks ---
 const { mockDispatch, mockState, mockRouter } = vi.hoisted(() => ({

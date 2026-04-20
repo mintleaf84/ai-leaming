@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useCallback } from 'react';
 import { getUsersAction, deleteUserAction, resetUserPasswordAction, updateUserRoleAction, revokeUserSessionAction, UserAdminView } from '@/server/actions/admin';
 import { getPlansAction, setUserSubscriptionAction } from '@/server/actions/subscription';
 import { UserRole } from '@/types';
@@ -59,7 +59,7 @@ export default function UsersPage() {
     const [subDuration, setSubDuration] = useState('0'); // 0 表示永久
     const [savingSub, setSavingSub] = useState(false);
 
-    const loadUsers = async () => {
+    const loadUsers = useCallback(async () => {
         setLoading(true);
         try {
             const offset = (page - 1) * limit;
@@ -68,12 +68,12 @@ export default function UsersPage() {
             // 后端现在直接返回订阅信息，无需前端再处理
             setUsers(res.users);
             setTotal(res.total);
-        } catch (e) {
+        } catch (_e) {
             toast.error("加载用户失败");
         } finally {
             setLoading(false);
         }
-    };
+    }, [page, limit, search]);
 
     // Debounce search
     useEffect(() => {
@@ -82,12 +82,14 @@ export default function UsersPage() {
             loadUsers();
         }, 500);
         return () => clearTimeout(timer);
+        // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [search]);
 
     // Reload when page changes
     useEffect(() => {
         loadUsers();
-    }, [page]);
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [page, limit]);
 
     const loadPlans = async () => {
         try {
@@ -176,7 +178,7 @@ export default function UsersPage() {
             } else {
                 toast.error(res.error || '操作失败');
             }
-        } catch (e) {
+        } catch (_e) {
             toast.error('操作失败');
         } finally {
             setSavingSub(false);

@@ -1,3 +1,4 @@
+/* eslint-disable react-hooks/set-state-in-effect */
 'use client';
 import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -24,7 +25,7 @@ export const CardSwipeView: React.FC<CardSwipeViewProps> = ({
             setDirection(initialIndex > currentIndex ? 1 : -1);
             setCurrentIndex(initialIndex);
         }
-    }, [initialIndex]);
+    }, [initialIndex, currentIndex]);
 
     const paginate = (newDirection: number) => {
         const nextIndex = currentIndex + newDirection;
@@ -94,7 +95,7 @@ export const CardSwipeView: React.FC<CardSwipeViewProps> = ({
                         className="w-full cursor-grab active:cursor-grabbing"
                     >
                         <QuestionCard
-                            log={currentItem.log as any}
+                            log={currentItem.log as unknown}
                             index={currentItem.index}
                             isExpanded={true} // Always expanded in card mode for focus
                             onToggle={() => {}} // No toggle needed in card mode

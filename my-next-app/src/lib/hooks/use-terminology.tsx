@@ -68,6 +68,7 @@ export function TerminologyProvider({ children }: { children: React.ReactNode })
         // Sync with localStorage on client mount
         const saved = localStorage.getItem("terminology-mode") as TerminologyMode;
         if (saved) {
+            // eslint-disable-next-line react-hooks/set-state-in-effect
             setModeState(saved);
         }
     }, []);

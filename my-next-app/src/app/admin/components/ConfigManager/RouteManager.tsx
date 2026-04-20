@@ -39,14 +39,14 @@ export function RouteManager() {
             ]);
             setConfigs(configsData);
             setRoutes(routesData);
-        } catch (e) {
+        } catch (_e) {
             toast.error("加载路由配置失败");
         } finally {
             setIsLoading(false);
         }
     };
 
-    const handleRouteChange = (feature: string, field: 'config_id' | 'model_name', value: any) => {
+    const handleRouteChange = (feature: string, field: 'config_id' | 'model_name', value: unknown) => {
         setRoutes(prev => {
             const existing = prev.find(r => r.feature === feature);
             if (existing) {
@@ -73,7 +73,7 @@ export function RouteManager() {
             } else {
                 toast.error("保存失败");
             }
-        } catch (e) {
+        } catch (_e) {
             toast.error("请求失败");
         } finally {
             setIsSaving(false);
@@ -116,7 +116,7 @@ export function RouteManager() {
                         <tbody className="divide-y divide-border">
                             {features.map(feat => {
                                 const route = routes.find(r => r.feature === feat.id);
-                                const selectedConfig = configs.find(c => c.id === route?.config_id);
+                                const _selectedConfig = configs.find(c => c.id === route?.config_id);
 
                                 return (
                                     <tr key={feat.id} className="hover:bg-muted/30 transition-colors">

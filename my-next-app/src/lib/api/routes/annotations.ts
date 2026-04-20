@@ -4,7 +4,7 @@ import db from '@/lib/db'
 
 const app = new OpenAPIHono()
 
-const AnnotationSchema = z.object({
+const _AnnotationSchema = z.object({
     id: z.number().optional(),
     startOffset: z.number(),
     endOffset: z.number(),

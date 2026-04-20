@@ -3,7 +3,7 @@ import logger from '@/lib/logger';
 
 import db from '@/lib/db';
 import { calculateCultivation } from '@/lib/cultivation/engine';
-import { CultivationState, LeaderboardEntry } from '@/lib/cultivation/types';
+import { _CultivationState, LeaderboardEntry } from '@/lib/cultivation/types';
 
 /**
  * 获取封神榜数据 (前 20 名)

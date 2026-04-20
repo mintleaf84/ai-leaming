@@ -146,7 +146,7 @@ adminRoute.openapi(backupDef, async (c) => {
             'Content-Disposition': `attachment; filename="${filename}"`,
             'Content-Type': 'application/x-sqlite3',
         });
-    } catch (error) {
+    } catch (_error) {
         if (fs.existsSync(tempPath)) try { fs.unlinkSync(tempPath); } catch { }
         return c.json({ error: 'Backup failed' }, 500);
     }
@@ -205,7 +205,7 @@ adminRoute.openapi(restoreDef, async (c) => {
                 backupCreated: path.basename(backupPath)
             });
             return c.json({ success: true, backupCreated: path.basename(backupPath) });
-        } catch (e: any) {
+        } catch (e: unknown) {
             try { if (fs.existsSync(backupPath) && !fs.existsSync(dbPath)) fs.copyFileSync(backupPath, dbPath); } catch { }
             try { reinitDb(); } catch { }
             if (fs.existsSync(tempPath)) fs.unlinkSync(tempPath);
@@ -244,7 +244,7 @@ adminRoute.openapi(exportQuestionsDef, async (c) => {
     }
     const { search, tag, dimension } = c.req.valid('query')
     const conditions: string[] = []
-    const params: any[] = []
+    const params: unknown[] = []
 
     if (search) { conditions.push('content LIKE ?'); params.push(`%${search}%`); }
     if (tag) { 
@@ -254,7 +254,7 @@ adminRoute.openapi(exportQuestionsDef, async (c) => {
     if (dimension) { conditions.push('dimension = ?'); params.push(dimension); }
 
     const whereClause = conditions.length > 0 ? `WHERE ${conditions.join(' AND ')}` : ''
-    const questions = db.prepare(`SELECT * FROM questions ${whereClause} ORDER BY id DESC`).all(...params) as any[];
+    const questions = db.prepare(`SELECT * FROM questions ${whereClause} ORDER BY id DESC`).all(...params) as unknown[];
 
     const headers = ['ID', '类型', '维度', '题干', '选项', '答案', '解析', '标签', '正确率(%)', '创建时间'];
     let csvContent = '\uFEFF' + headers.map(escapeCsv).join(',') + '\n';

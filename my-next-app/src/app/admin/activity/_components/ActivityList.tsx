@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { getUserActivityAction, UserActivityEntry, ActivityFilters } from '@/server/actions/activity';
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
@@ -31,19 +31,19 @@ export function ActivityList() {
         isCorrect: undefined
     });
 
-    const loadActivities = async (currentPage = page, currentFilters = filters) => {
+    const loadActivities = useCallback(async (currentPage = page, currentFilters = filters) => {
         setLoading(true);
         try {
             const offset = (currentPage - 1) * pageSize;
             const res = await getUserActivityAction(pageSize, offset, currentFilters);
             setActivities(res.logs);
             setTotal(res.total);
-        } catch (error) {
+        } catch (_error) {
             toast.error("加载记录失败");
         } finally {
             setLoading(false);
         }
-    };
+    }, [page, filters]);
 
     useEffect(() => {
         loadActivities();
@@ -54,7 +54,8 @@ export function ActivityList() {
             }
         }, 30000); // 30s 自动刷新首页
         return () => clearInterval(timer);
-    }, [page]);
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [page, pageSize]); // 筛选变化由 handleSearch 手动触发
 
     const handleSearch = () => {
         setPage(1);

@@ -1,11 +1,11 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { MessageSquarePlus, Search, Loader2, Star, MessageSquare, Trash2, Pencil, Check, X } from 'lucide-react';
-import { cn } from '@/lib/utils';
+import { _cn } from '@/lib/utils';
 import { useTerminology } from '@/lib/hooks/use-terminology';
 import { renameChatSessionAction } from '@/server/actions/chat';
 
 interface ChatSidebarProps {
-    sessions: any[];
+    sessions: unknown[];
     currentSessionId: number | null;
     onSessionSelect: (sessionId: number, messageId?: number) => void;
     onNewSession: () => void;
@@ -43,7 +43,7 @@ function SessionItem({
     onDelete,
     onRename,
 }: {
-    session: any;
+    session: unknown;
     isActive: boolean;
     onSelect: () => void;
     onDelete: () => void;
@@ -163,8 +163,8 @@ export default function ChatSidebar({
 }: ChatSidebarProps) {
     const { t } = useTerminology();
     const [searchQuery, setSearchQuery] = useState('');
-    const [isSearching, setIsSearching] = useState(false);
-    const [searchResults, setSearchResults] = useState<any[]>([]);
+    const [isSearching, _setIsSearching] = useState(false);
+    const [searchResults, _setSearchResults] = useState<unknown[]>([]);
 
     // 执行重命名（调用服务端 Action 并通知父组件）
     const handleRename = async (sessionId: number, newTitle: string) => {

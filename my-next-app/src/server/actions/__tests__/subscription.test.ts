@@ -34,7 +34,7 @@ import {
     getMySubscriptionAction,
     checkQuotaAction
 } from '../subscription';
-import { UsageType } from '@/lib/billing/subscription-types';
+import { _UsageType } from '@/lib/billing/subscription-types';
 
 describe('Subscription Actions', () => {
     beforeEach(() => {
@@ -43,7 +43,7 @@ describe('Subscription Actions', () => {
 
     describe('getPlansAction', () => {
         it('should return plans for admin', async () => {
-            vi.mocked(requireRole).mockResolvedValue({ id: 1, role: 'admin' } as any);
+            vi.mocked(requireRole).mockResolvedValue({ id: 1, role: 'admin' } as unknown);
             mockBillingService.getAllPlans.mockReturnValue([{ id: 'pro', name: 'Pro' }]);
 
             const result = await getPlansAction();
@@ -65,7 +65,7 @@ describe('Subscription Actions', () => {
 
     describe('deletePlanAction', () => {
         it('should delete plan successfully', async () => {
-            vi.mocked(requireRole).mockResolvedValue({ id: 1, role: 'admin' } as any);
+            vi.mocked(requireRole).mockResolvedValue({ id: 1, role: 'admin' } as unknown);
             mockBillingService.deletePlan.mockReturnValue({ success: true });
 
             const result = await deletePlanAction('plan_123');
@@ -75,7 +75,7 @@ describe('Subscription Actions', () => {
         });
 
         it('should return error if service fails', async () => {
-            vi.mocked(requireRole).mockResolvedValue({ id: 1, role: 'admin' } as any);
+            vi.mocked(requireRole).mockResolvedValue({ id: 1, role: 'admin' } as unknown);
             mockBillingService.deletePlan.mockReturnValue({ success: false, error: 'In use' });
 
             const result = await deletePlanAction('plan_123');
@@ -87,7 +87,7 @@ describe('Subscription Actions', () => {
 
     describe('getMySubscriptionAction', () => {
         it('should return user subscription', async () => {
-            vi.mocked(requireUser).mockResolvedValue({ id: 10 } as any);
+            vi.mocked(requireUser).mockResolvedValue({ id: 10 } as unknown);
             mockBillingService.getUserSubscriptionDetail.mockReturnValue({ plan: { name: 'Free' } });
 
             const result = await getMySubscriptionAction();
@@ -100,10 +100,10 @@ describe('Subscription Actions', () => {
 
     describe('checkQuotaAction', () => {
         it('should return true if quota allows', async () => {
-            vi.mocked(requireUser).mockResolvedValue({ id: 10 } as any);
+            vi.mocked(requireUser).mockResolvedValue({ id: 10 } as unknown);
             mockBillingService.checkUsageQuota.mockReturnValue({ allowed: true, remaining: 5 });
 
-            // @ts-ignore - enum usage in test
+            // @ts-expect-error - enum usage in test
             const result = await checkQuotaAction('ai_chat');
 
             expect(result.success).toBe(true);
@@ -112,10 +112,10 @@ describe('Subscription Actions', () => {
         });
 
         it('should return false if quota exceeded', async () => {
-            vi.mocked(requireUser).mockResolvedValue({ id: 10 } as any);
+            vi.mocked(requireUser).mockResolvedValue({ id: 10 } as unknown);
             mockBillingService.checkUsageQuota.mockReturnValue({ allowed: false, remaining: 0 });
 
-            // @ts-ignore
+            // @ts-expect-error - intentional test input
             const result = await checkQuotaAction('ai_chat');
 
             expect(result.success).toBe(true); // Action succeeded, but result is not allowed
@@ -125,7 +125,7 @@ describe('Subscription Actions', () => {
         it('should handle unauthenticated user', async () => {
             vi.mocked(requireUser).mockRejectedValue(new Error('Unauthorized'));
 
-            // @ts-ignore
+            // @ts-expect-error - intentional test input
             const result = await checkQuotaAction('ai_chat');
 
             expect(result.success).toBe(false);

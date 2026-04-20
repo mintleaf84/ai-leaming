@@ -16,7 +16,7 @@ export function usePracticeController(enableIntelligentReview: boolean = false) 
     const { state, dispatch } = usePracticeEngine(enableIntelligentReview);
 
     // Extracted AI Generation Logic
-    const { isLoadingAI } = useReviewGeneration(state as any, dispatch);
+    const { isLoadingAI } = useReviewGeneration(state as unknown, dispatch);
 
     const isHandlingRef = useRef(false);
     const [showExitConfirm, setShowExitConfirm] = useState(false);
@@ -106,7 +106,7 @@ export function usePracticeController(enableIntelligentReview: boolean = false) 
                     result = await getPracticeSessionAction(forceNew);
                 }
 
-                const { questions, sessionId, resumed, completedCount } = result as any;
+                const { questions, sessionId, resumed, completedCount } = result as unknown;
 
                 if (questions.length > 0) {
                     dispatch({
@@ -275,7 +275,7 @@ export function usePracticeController(enableIntelligentReview: boolean = false) 
     };
 
     // Keyboard Shortcuts
-    useKeyboardShortcuts(state as any, submitAnswer);
+    useKeyboardShortcuts(state as unknown, submitAnswer);
 
     return {
         state,

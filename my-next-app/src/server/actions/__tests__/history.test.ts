@@ -25,7 +25,7 @@ describe('History Actions', () => {
     beforeEach(() => {
         vi.clearAllMocks();
         // 默认 Mock 登录用户
-        vi.mocked(requireUser).mockResolvedValue({ id: 1, username: 'testuser' } as any);
+        vi.mocked(requireUser).mockResolvedValue({ id: 1, username: 'testuser' } as unknown);
     });
 
     // ========== getSessionHistoryAction 测试 ==========
@@ -159,9 +159,9 @@ describe('History Actions', () => {
             });
 
             // Mock db.transaction 返回一个可调用的函数
-            mockDb.transaction.mockImplementation((fn: Function) => {
+            mockDb.transaction.mockImplementation((fn: (...args: unknown[]) => unknown) => {
                 // 返回一个函数，当被调用时执行 fn
-                return (...args: any[]) => fn(...args);
+                return (...args: unknown[]) => fn(...args);
             });
 
             const { deleteSessionAction } = await import('../history');

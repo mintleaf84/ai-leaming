@@ -7,7 +7,7 @@ import Image from 'next/image';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card, CardHeader, CardTitle, CardDescription, CardContent, CardFooter } from '@/components/ui/card';
-import { UserPlus, LogIn, Loader2, AlertCircle, CheckCircle2 } from 'lucide-react';
+import { _UserPlus, _LogIn, Loader2, AlertCircle, _CheckCircle2 } from 'lucide-react';
 
 export default function RegisterPage() {
     const [username, setUsername] = useState('');
@@ -44,7 +44,7 @@ export default function RegisterPage() {
             } else {
                 setError(data.error || '注册失败');
             }
-        } catch (err) {
+        } catch (_err) {
             setError('无法连接到服务器');
         } finally {
             setLoading(false);

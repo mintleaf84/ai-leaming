@@ -28,7 +28,7 @@ import { updateQuestionAction } from "@/server/actions/admin";
 interface EditQuestionDialogProps {
     open: boolean;
     onOpenChange: (open: boolean) => void;
-    question: any;
+    question: unknown;
     onSuccess: () => void;
 }
 
@@ -97,7 +97,7 @@ export function EditQuestionDialog({
                     const ansArr = JSON.parse(formData.answer);
                     if (!Array.isArray(ansArr) || ansArr.length === 0) throw new Error("多选题至少选择一个答案");
                     if (!ansArr.every(a => options.includes(a))) throw new Error("多选题答案项必须存在于选项中");
-                } catch (e) {
+                } catch (_e) {
                     throw new Error("多选题答案格式错误");
                 }
             }

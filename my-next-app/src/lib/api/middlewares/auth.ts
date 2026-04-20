@@ -1,6 +1,6 @@
 import { createMiddleware } from 'hono/factory'
 import { getCookie } from 'hono/cookie'
-import { decode, verify } from 'hono/jwt'
+import { _decode, verify } from 'hono/jwt'
 import { COOKIE_NAME } from '@/lib/auth/auth-edge'
 import { getUserById } from '@/lib/auth/user-service'
 

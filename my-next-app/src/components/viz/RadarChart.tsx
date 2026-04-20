@@ -1,10 +1,10 @@
 "use client";
 
 import React, { useEffect, useRef } from 'react';
-import { select, selectAll } from 'd3-selection';
+import { select, _selectAll } from 'd3-selection';
 import { scaleLinear } from 'd3-scale';
 import { lineRadial, curveLinearClosed } from 'd3-shape';
-import type { LineRadial } from 'd3-shape';
+import type { _LineRadial } from 'd3-shape';
 
 export interface RadarData {
   axis: string;
@@ -30,7 +30,7 @@ export default function RadarChart({ data }: RadarChartProps) {
     select(svgRef.current).selectAll("*").remove();
 
     const svg = select(svgRef.current)
-      .attr("viewBox", [0, 0, width, height] as any)
+      .attr("viewBox", [0, 0, width, height] as unknown)
       .append("g")
       .attr("transform", `translate(${width/2},${height/2})`);
 

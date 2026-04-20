@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useRef } from 'react';
+import React, { _useRef } from 'react';
 import { useSwipeable } from 'react-swipeable';
 
 interface SwipeableContainerProps {

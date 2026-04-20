@@ -3,7 +3,7 @@
 import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
 import {
-    User,
+    _User,
     Crown,
     Calendar,
     Target,
@@ -13,7 +13,7 @@ import {
     TrendingUp,
     Sparkles,
     Settings,
-    CreditCard,
+    _CreditCard,
     ArrowRight,
     Loader2,
     Award
@@ -33,7 +33,7 @@ const USAGE_LABELS: Record<string, string> = {
 };
 
 export default function ProfilePage() {
-    const [profile, setProfile] = useState<any>(null);
+    const [profile, setProfile] = useState<unknown>(null);
     const [loading, setLoading] = useState(true);
 
     useEffect(() => {

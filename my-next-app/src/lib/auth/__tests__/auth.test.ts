@@ -1,5 +1,5 @@
 // @vitest-environment node
-import { describe, it, expect, beforeEach, vi, afterEach } from 'vitest';
+import { describe, it, expect, beforeEach, vi, _afterEach } from 'vitest';
 
 // Mock user-service 防止依赖真实数据库（必须用 vi.hoisted 保证在 vi.mock 之前初始化）
 const { mockGetUserById, mockRevokeUserSessions } = vi.hoisted(() => ({
@@ -61,7 +61,7 @@ describe('Auth Service', () => {
 
     describe('login', () => {
         it('should set httpOnly cookie with session', async () => {
-            await login(TEST_USER as any);
+            await login(TEST_USER as unknown);
 
             expect(mockCookieStore.set).toHaveBeenCalledWith(
                 COOKIE_NAME,
@@ -165,7 +165,7 @@ describe('Auth Service', () => {
                 cookies: {
                     get: vi.fn().mockReturnValue({ value: token }),
                 }
-            } as any;
+            } as unknown;
 
             const res = await updateSession(mockRequest);
 
@@ -182,7 +182,7 @@ describe('Auth Service', () => {
                 cookies: {
                     get: vi.fn().mockReturnValue(undefined),
                 }
-            } as any;
+            } as unknown;
 
             const res = await updateSession(mockRequest);
 

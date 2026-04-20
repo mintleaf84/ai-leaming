@@ -31,7 +31,7 @@ export interface QuestionLogData {
     explanation: string;
     correctRatio?: number | null;      // 全站正确率
     mostWrongAnswer?: string | null;   // 易错项
-    reviewData?: any;
+    reviewData?: unknown;
     aiMnemonic?: string | null;        // AI 助记
     material?: string | null;          // 材料内容（纯文本）
     materialHtml?: string | null;      // 材料内容（HTML）
@@ -466,7 +466,7 @@ export const QuestionCard = React.memo(({ log, index, isExpanded, onToggle, refC
                                         <div>
                                             <div className="text-xs font-bold text-purple-700 dark:text-purple-400 mb-1">回归挑战变式</div>
                                             <div className="space-y-2">
-                                                {log.reviewData.regression.challenges.map((c: any, ci: number) => (
+                                                {log.reviewData.regression.challenges.map((c: unknown, ci: number) => (
                                                     <div key={ci} className="text-sm text-foreground bg-card p-3 rounded-xl border border-purple-500/20 shadow-sm">
                                                         {c.content}
                                                     </div>
@@ -483,3 +483,5 @@ export const QuestionCard = React.memo(({ log, index, isExpanded, onToggle, refC
         </div>
     );
 });
+
+QuestionCard.displayName = 'QuestionCard';

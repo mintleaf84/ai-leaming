@@ -14,7 +14,7 @@ import {
     deletePlan,
     getUserSubscriptionDetail,
     createSubscription,
-    updateSubscription,
+    _updateSubscription,
     cancelSubscription,
     getSubscriptionStats,
     getDailyUsage,

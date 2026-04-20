@@ -1,4 +1,4 @@
-export async function up(db: any) {
+export async function up(db: unknown) {
     console.log('Migrating: Updating plan features with new AI descriptions...');
 
     const updates: Record<string, string[]> = {

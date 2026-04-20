@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
 import {
     getQuestionsAction,
     importQuestionsAction,
@@ -31,7 +31,7 @@ export function QuestionManager() {
     const [questions, setQuestions] = useState<any[]>([]);
     const [total, setTotal] = useState(0);
     const [loading, setLoading] = useState(false);
-    const [editingQuestion, setEditingQuestion] = useState<any>(null);
+    const [editingQuestion, setEditingQuestion] = useState<unknown>(null);
 
     // 分页与筛选
     const [page, setPage] = useState(1);
@@ -44,11 +44,7 @@ export function QuestionManager() {
     const fileInputRef = useRef<HTMLInputElement>(null);
 
     // 加载数据
-    useEffect(() => {
-        loadQuestions();
-    }, [page, pageSize]); // 分页变化时重新加载（筛选变化需手动触发或防抖）
-
-    const loadQuestions = async (currentFilters = filters) => {
+    const loadQuestions = useCallback(async (currentFilters = filters) => {
         setLoading(true);
         try {
             const offset = (page - 1) * pageSize;
@@ -57,12 +53,17 @@ export function QuestionManager() {
             setTotal(res.total);
             // 清空选中状态
             setSelectedIds([]);
-        } catch (e) {
+        } catch (_e) {
             toast.error("题目列表加载失败");
         } finally {
             setLoading(false);
         }
-    };
+    }, [page, pageSize, filters]);
+
+    useEffect(() => {
+        loadQuestions();
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [page, pageSize]); // 筛选变化由 handleSearch 手动触发
 
     // 搜索处理
     const handleSearch = () => {
@@ -131,7 +132,7 @@ export function QuestionManager() {
                 } else {
                     toast.error(`导入失败: ${res.error}`);
                 }
-            } catch (e) {
+            } catch (_e) {
                 toast.error("无效的 JSON 文件格式");
             }
             if (fileInputRef.current) fileInputRef.current.value = "";

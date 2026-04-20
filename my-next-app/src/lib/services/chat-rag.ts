@@ -94,7 +94,7 @@ export async function searchKnowledgeBase(query: string, limit: number = 3) {
         // 4. 取 Top N 并分门别类格式化
         const topResults = rerankedResults.slice(0, limit);
 
-        let contextParts: string[] = [];
+        const contextParts: string[] = [];
         const cardDocs = topResults.filter(r => r.metadata?.source_type === 'card');
         const questionDocs = topResults.filter(r => r.metadata?.source_type === 'question');
         const textbookDocs = topResults.filter(r => r.metadata?.source_type === 'textbook');
@@ -191,11 +191,14 @@ export async function handleQuizCommand(keyword: string): Promise<string> {
 
     let response = `📚 为您找到 ${results.length} 道关于"${keyword}"的相关题目：\n\n`;
 
-    (results as unknown as RagResult[]).forEach((item: RagResult, index: number) => {
-        const content = typeof item.content === 'string'
-            ? item.content
-            : JSON.stringify(item.content);
+    const ragResults: RagResult[] = results.map(q => ({
+        content: typeof q.content === 'string' ? q.content : JSON.stringify(q.content),
+        score: 1,
+        metadata: { ...q }
+    }));
 
+    ragResults.forEach((item: RagResult, index: number) => {
+        const content = item.content;
         const meta = item.metadata || {};
         response += `**${index + 1}. ${content.substring(0, 50)}...**\n`;
         response += `   - 难度层级: ${meta['dimension'] || '未标注'}\n`;
@@ -233,7 +236,7 @@ ${context}
     try {
         const { text } = await generateTextWrapper(prompt, 'premium');
         return text;
-    } catch (error) {
+    } catch (_error) {
         return `抱歉，生成解释时遇到错误。请稍后重试或直接提问。`;
     }
 }

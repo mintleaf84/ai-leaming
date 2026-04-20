@@ -1,4 +1,4 @@
-import { test, expect, TEST_USER, TEST_ADMIN } from './fixtures';
+import { test, expect, TEST_USER, _TEST_ADMIN } from './fixtures';
 
 /**
  * 认证流程 E2E 测试（模块一：A-01 ~ A-09）
@@ -34,7 +34,7 @@ test.describe('认证流程', () => {
 
         // auth cookie 已写入
         const cookies = await mockPage.context().cookies();
-        const hasAuth = cookies.some(c => c.name.toLowerCase().includes('token') || c.name.toLowerCase().includes('auth') || c.name.toLowerCase().includes('session'));
+        const _hasAuth = cookies.some(c => c.name.toLowerCase().includes('token') || c.name.toLowerCase().includes('auth') || c.name.toLowerCase().includes('session'));
         // 宽松校验：只要能跳转，说明鉴权成功
         expect(mockPage.url()).not.toContain('/login');
     });

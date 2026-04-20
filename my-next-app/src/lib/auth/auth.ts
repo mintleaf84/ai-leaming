@@ -44,7 +44,7 @@ export const getSession = cache(async () => {
     try {
         const decrypted = await decrypt(session);
         return decrypted as { user: User; expires: string };
-    } catch (e) {
+    } catch (_e) {
         return null;
     }
 });

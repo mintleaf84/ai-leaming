@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
-import { Plus, Edit2, Trash2, ToggleLeft, ToggleRight, Check, X, Loader2 } from 'lucide-react';
+import { Plus, Edit2, Trash2, ToggleLeft, ToggleRight, Check, _X, Loader2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -66,7 +66,7 @@ export default function PlansPage() {
             if (statsRes.success && statsRes.stats) {
                 setStats(statsRes.stats);
             }
-        } catch (error) {
+        } catch (_error) {
             toast.error('加载数据失败');
         } finally {
             setLoading(false);
@@ -119,7 +119,7 @@ export default function PlansPage() {
             } else {
                 toast.error(res.error || '保存失败');
             }
-        } catch (error) {
+        } catch (_error) {
             toast.error('保存失败');
         } finally {
             setSaving(false);
@@ -138,7 +138,7 @@ export default function PlansPage() {
             } else {
                 toast.error(res.error || '删除失败');
             }
-        } catch (error) {
+        } catch (_error) {
             toast.error('删除失败');
         }
     };
@@ -151,7 +151,7 @@ export default function PlansPage() {
                 toast.success(plan.is_active ? '已禁用' : '已启用');
                 loadData();
             }
-        } catch (error) {
+        } catch (_error) {
             toast.error('操作失败');
         }
     };

@@ -4,7 +4,7 @@ import { render, screen, fireEvent } from '@testing-library/react'
 // Mock ChatMessage component before importing MessageList
 vi.mock('../ChatMessage', () => ({
     __esModule: true,
-    default: ({ message, onDelete }: any) => (
+    default: ({ message, onDelete }: unknown) => (
         <div data-testid="chat-message">
             <span>{message.content}</span>
             <button onClick={onDelete}>Delete</button>
@@ -19,7 +19,7 @@ describe('MessageList Component', () => {
     const mockOnSaveToKnowledge = vi.fn()
     const mockOnToggleFavorite = vi.fn()
     const mockOnRetry = vi.fn()
-    const messagesEndRef = { current: null } as any
+    const messagesEndRef = { current: null } as unknown
 
     const mockMessages = [
         { id: '1', role: 'user' as const, content: 'Hello', timestamp: Date.now() },

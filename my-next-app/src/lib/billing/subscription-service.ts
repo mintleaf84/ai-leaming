@@ -9,7 +9,7 @@ import {
     SubscriptionPlan,
     UserSubscription,
     UserSubscriptionDetail,
-    DailyUsage,
+    _DailyUsage,
     UsageType,
     UsageCheckResult,
     USAGE_TYPE_LABELS

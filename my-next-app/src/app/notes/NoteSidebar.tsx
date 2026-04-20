@@ -62,7 +62,7 @@ export function NoteSidebar({ notes: initialNotes }: NoteSidebarProps) {
             } else {
                 toast.error(result.message || '创建失败');
             }
-        } catch (error) {
+        } catch (_error) {
             toast.error('请求失败');
         } finally {
             setIsCreating(false);
@@ -85,7 +85,7 @@ export function NoteSidebar({ notes: initialNotes }: NoteSidebarProps) {
             } else {
                 toast.error(result.message || '删除失败');
             }
-        } catch (error) {
+        } catch (_error) {
             toast.error('删除出错');
         }
     };
@@ -171,7 +171,7 @@ export function NoteSidebar({ notes: initialNotes }: NoteSidebarProps) {
                             } else {
                                 toast.error('创建失败', { id: loadingToast });
                             }
-                        } catch (e) {
+                        } catch (_e) {
                             toast.error('请求出错', { id: loadingToast });
                         }
                     }}

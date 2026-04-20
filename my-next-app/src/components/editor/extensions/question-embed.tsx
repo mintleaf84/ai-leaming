@@ -1,3 +1,4 @@
+/* eslint-disable react-hooks/set-state-in-effect */
 'use client';
 
 import { Node, mergeAttributes } from '@tiptap/core';
@@ -10,7 +11,7 @@ import Link from 'next/link';
 /**
  * 题目引用卡片渲染组件
  */
-function QuestionEmbedView({ node }: { node: any }) {
+function QuestionEmbedView({ node }: { node: unknown }) {
     const questionId = node.attrs.questionId;
     const [summary, setSummary] = useState<QuestionSummary | null>(null);
     const [loading, setLoading] = useState(true);

@@ -3,7 +3,7 @@ import { describe, expect, it, vi, beforeEach } from 'vitest'
 import { useKeyboardShortcuts } from '../use-keyboard-shortcuts'
 
 describe('useKeyboardShortcuts', () => {
-    let mockSubmitAnswer = vi.fn()
+    const mockSubmitAnswer = vi.fn()
 
     beforeEach(() => {
         mockSubmitAnswer.mockClear()

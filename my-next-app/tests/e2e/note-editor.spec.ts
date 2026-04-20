@@ -133,7 +133,7 @@ test.describe('Note Editor E2E', () => {
         await createBtn.click();
 
         await page.waitForURL(/\/notes\/\d+/);
-        const noteUrl = page.url();
+        const _noteUrl = page.url();
 
         // 输入内容（便于后续在列表中识别）
         const editor = page.locator('.ProseMirror');

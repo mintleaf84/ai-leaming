@@ -4,7 +4,7 @@
  */
 
 import db from '@/lib/db';
-import { PracticeConfig, PracticeMode } from './practice-types';
+import { PracticeConfig, _PracticeMode } from './practice-types';
 
 export interface Question {
     id: number;
@@ -20,9 +20,9 @@ export interface Question {
 /**
  * 构建基础筛选条件
  */
-function buildWhereClause(config: PracticeConfig): { where: string; params: any[] } {
+function buildWhereClause(config: PracticeConfig): { where: string; params: unknown[] } {
     const conditions: string[] = [];
-    const params: any[] = [];
+    const params: unknown[] = [];
 
     // 题目类型筛选
     if (config.types && config.types.length > 0) {
@@ -146,7 +146,7 @@ function generateFocusSession(config: PracticeConfig, userId: number): Question[
  * 模拟考试模式
  * 随机抽题，按 ID 顺序排列（模拟真实考试）
  */
-function generateExamSession(config: PracticeConfig, userId: number): Question[] {
+function generateExamSession(config: PracticeConfig, _userId: number): Question[] {
     const { where, params } = buildWhereClause(config);
 
     const questions = db.prepare(`
@@ -164,7 +164,7 @@ function generateExamSession(config: PracticeConfig, userId: number): Question[]
  * 随机挑战模式
  * 完全随机
  */
-function generateRandomSession(config: PracticeConfig, userId: number): Question[] {
+function generateRandomSession(config: PracticeConfig, _userId: number): Question[] {
     const { where, params } = buildWhereClause(config);
 
     const questions = db.prepare(`

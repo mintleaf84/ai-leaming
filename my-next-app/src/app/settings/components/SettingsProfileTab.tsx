@@ -6,8 +6,8 @@ import { Label } from '@/components/ui/label';
 import { Loader2 } from 'lucide-react';
 
 interface SettingsProfileTabProps {
-    profile: any;
-    setProfile: (profile: any) => void;
+    profile: unknown;
+    setProfile: (profile: unknown) => void;
     onSave: () => void;
     isSaving: boolean;
 }

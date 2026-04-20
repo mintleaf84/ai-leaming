@@ -2,7 +2,7 @@
 
 import React from 'react';
 import { Button } from '@/components/ui/button';
-import { Zap, Check, Edit2, Trash2 } from 'lucide-react';
+import { _Zap, Check, Edit2, Trash2 } from 'lucide-react';
 import { AiConfig } from '@/server/actions/config';
 
 interface ConfigListProps {

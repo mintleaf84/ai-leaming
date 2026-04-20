@@ -88,7 +88,7 @@ describe('Database Integration Test (In-Memory SQLite)', () => {
                     SELECT 1 FROM json_each(q.tags) WHERE value = oz.tag_name
                 )
                 WHERE oz.status = 'active'
-            `).all() as any[];
+            `).all() as unknown[];
             
             expect(stubborn).toHaveLength(1);
             expect(stubborn[0].id).toBe(1);
@@ -100,7 +100,7 @@ describe('Database Integration Test (In-Memory SQLite)', () => {
                 WHERE NOT EXISTS (
                     SELECT 1 FROM practice_logs pl WHERE pl.question_id = q.id
                 )
-            `).all() as any[];
+            `).all() as unknown[];
             
             expect(blind).toHaveLength(1);
             expect(blind[0].id).toBe(2);

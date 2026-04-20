@@ -1,4 +1,4 @@
-import { test, expect, MOCK_CHAT_RESPONSE } from './fixtures';
+import { test, expect, _MOCK_CHAT_RESPONSE } from './fixtures';
 
 /**
  * AI 聊天助手 E2E 测试（模块五：C-01 ~ C-08）
@@ -15,7 +15,7 @@ test.describe('AI 聊天助手', () => {
 
         // 发送按钮可见
         const sendBtn = loggedInPage.locator('button[type="submit"], button:has([data-lucide="send"]), [data-testid="send-button"]').first();
-        const hasSendBtn = await sendBtn.isVisible({ timeout: 5000 }).catch(() => false);
+        const _hasSendBtn = await sendBtn.isVisible({ timeout: 5000 }).catch(() => false);
         // 宽松验证：至少有 textarea 即可
         await expect(loggedInPage.locator('textarea')).toBeVisible();
     });

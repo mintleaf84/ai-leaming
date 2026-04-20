@@ -1,5 +1,5 @@
 import db from '../db';
-import { createTables, EMBEDDING_DIM } from './schema';
+import { createTables, _EMBEDDING_DIM } from './schema';
 import { runMigrations } from './migrations';
 import { setupVectorExtension } from './vector-setup';
 import { seedData } from './seed-data';

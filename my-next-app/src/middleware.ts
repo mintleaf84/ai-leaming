@@ -26,7 +26,7 @@ export async function middleware(req: NextRequest) {
             session = await decrypt(cookie);
             userId = session?.user?.id ? String(session.user.id) : 'anonymous';
             console.log(`[Middleware] Token valid for user: ${userId}`);
-        } catch (e: any) {
+        } catch (e: unknown) {
             console.warn(`[Middleware] Token decryption failed: ${e.message}`);
         }
     } else {

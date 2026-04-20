@@ -51,7 +51,7 @@ test.describe('AI 聊天 RAG 功能', () => {
                 `这里的秘密答案是：${uniqueKey}_SECRET_ANSWER。`,
                 "希望这能帮到你！"
             ].map((text, i) => {
-                const data = JSON.stringify({
+                const _data = JSON.stringify({
                     id: `mock-rag-${i}`,
                     object: 'chat.completion.chunk',
                     choices: [{ delta: { content: text }, index: 0 }]

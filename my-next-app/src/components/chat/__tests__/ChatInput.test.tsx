@@ -3,9 +3,9 @@ import { describe, expect, it, vi, beforeEach } from 'vitest'
 import { ChatInput } from '../ChatInput'
 
 describe('ChatInput Component', () => {
-    let mockOnSendMessage = vi.fn()
-    let mockOnStopGeneration = vi.fn()
-    let mockSetEnableRag = vi.fn()
+    const mockOnSendMessage = vi.fn()
+    const mockOnStopGeneration = vi.fn()
+    const mockSetEnableRag = vi.fn()
 
     const defaultProps = {
         isLoading: false,

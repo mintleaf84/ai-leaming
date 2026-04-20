@@ -8,8 +8,8 @@ interface ReviewItem {
     originalQuestionContent: string;
     wrongAnswer: string;
     currentStep: 'study' | 'quiz' | 'regression';
-    quiz?: any;
-    regression?: any;
+    quiz?: unknown;
+    regression?: unknown;
     tags: string[];
 }
 
@@ -26,7 +26,7 @@ interface PracticeState {
     sessionQueue: SessionQuestion[];
 }
 
-export function useReviewGeneration(state: PracticeState, dispatch: React.Dispatch<any>) {
+export function useReviewGeneration(state: PracticeState, dispatch: React.Dispatch<unknown>) {
     const [isLoadingAI, setIsLoadingAI] = useState(false);
     const generationTracker = useRef<Set<string>>(new Set());
 
@@ -112,7 +112,7 @@ export function useReviewGeneration(state: PracticeState, dispatch: React.Dispat
         };
 
         checkAndGenerate();
-    }, [state.status, state.currentReviewIndex, state.reviewQueue, state.sessionQueue, isLoadingAI]); // Intentionally kept isLoadingAI to check re-entry
+    }, [state.status, state.currentReviewIndex, state.reviewQueue, state.sessionQueue, isLoadingAI, dispatch]); // Intentionally kept isLoadingAI to check re-entry
 
     return { isLoadingAI };
 }

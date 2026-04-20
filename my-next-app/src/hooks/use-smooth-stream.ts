@@ -39,8 +39,14 @@ export const useSmoothStream = ({ onUpdate, streamDone, minDelay = 10, initialTe
         [onUpdate]
     );
 
+    const renderLoopRef = useRef<(t: number) => void>(() => { });
+
     const renderLoop = useCallback(
         (currentTime: number) => {
+            const nextFrame = () => {
+                animationFrameRef.current = requestAnimationFrame(renderLoopRef.current);
+            };
+
             // 1. 如果队列为空
             if (chunkQueueRef.current.length === 0) {
                 // 如果流已结束，确保显示最终状态并停止循环
@@ -50,13 +56,13 @@ export const useSmoothStream = ({ onUpdate, streamDone, minDelay = 10, initialTe
                     return;
                 }
                 // 如果流还没结束但队列空了，持续循环等待下一帧
-                animationFrameRef.current = requestAnimationFrame(renderLoop);
+                nextFrame();
                 return;
             }
 
             // 2. 时间控制，确保最小延迟（打字的速度）
             if (currentTime - lastUpdateTimeRef.current < minDelay) {
-                animationFrameRef.current = requestAnimationFrame(renderLoop);
+                nextFrame();
                 return;
             }
             lastUpdateTimeRef.current = currentTime;
@@ -80,10 +86,14 @@ export const useSmoothStream = ({ onUpdate, streamDone, minDelay = 10, initialTe
 
             // 6. 持续循环
             if (animationFrameRef.current) cancelAnimationFrame(animationFrameRef.current);
-            animationFrameRef.current = requestAnimationFrame(renderLoop);
+            nextFrame();
         },
         [streamDone, onUpdate, minDelay]
     );
+
+    useEffect(() => {
+        renderLoopRef.current = renderLoop;
+    }, [renderLoop]);
 
     useEffect(() => {
         // 启动渲染循环

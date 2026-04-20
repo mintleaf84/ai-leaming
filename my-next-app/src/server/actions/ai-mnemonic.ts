@@ -15,7 +15,7 @@ export async function generateMnemonicAction(questionId: string, forceRegenerate
       SELECT id, content, options, answer, explanation, tags, ai_mnemonic
       FROM questions
       WHERE id = ?
-    `).get(questionId) as any;
+    `).get(questionId) as unknown;
 
         if (!question) {
             return { success: false, message: '题目不存在' };

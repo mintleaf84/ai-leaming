@@ -9,7 +9,7 @@ vi.mock('@/lib/db', () => ({ default: mockDb }));
 
 // Mock Auth 中间件
 vi.mock('@/lib/api/middlewares/auth', () => ({
-    authMiddleware: async (c: any, next: any) => {
+    authMiddleware: async (c: unknown, next: unknown) => {
         c.set('user', { id: 1 });
         await next();
     },
@@ -23,7 +23,7 @@ describe('Profile Hono 路由', () => {
         vi.clearAllMocks();
     });
 
-    function mockPrepareGet(returnValue: any) {
+    function mockPrepareGet(returnValue: unknown) {
         return { get: vi.fn().mockReturnValue(returnValue) };
     }
 

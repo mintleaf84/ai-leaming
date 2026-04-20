@@ -167,7 +167,7 @@ export function getPromptFromDbSync(key: string): string | null {
   try {
     const row = db.prepare('SELECT template FROM prompt_templates WHERE key = ?').get(key) as { template: string };
     return row ? row.template : null;
-  } catch (e) {
+  } catch (_e) {
     return null;
   }
 }

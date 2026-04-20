@@ -104,7 +104,7 @@ export async function getActivityStatsAction() {
     await requireRole(['admin']);
 
     try {
-        const today = new Date().toISOString().split('T')[0];
+        const _today = new Date().toISOString().split('T')[0];
 
         // 今日练习总数
         const todayCount = db.prepare(`

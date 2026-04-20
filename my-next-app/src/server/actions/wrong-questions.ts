@@ -28,7 +28,7 @@ interface QuestionDetailRow {
 }
 
 /** 错题本列表行（含掌握状态） */
-interface WrongBookItemRow {
+interface _WrongBookItemRow {
     questionId: string;
     questionContent: string;
     tags: string;

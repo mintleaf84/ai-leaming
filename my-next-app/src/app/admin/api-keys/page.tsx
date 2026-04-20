@@ -36,6 +36,7 @@ export default function ApiKeysPage() {
     }, []);
 
     useEffect(() => {
+        // eslint-disable-next-line react-hooks/set-state-in-effect
         fetchKeys();
     }, [fetchKeys]);
 
@@ -169,7 +170,7 @@ export default function ApiKeysPage() {
                 <div className="text-center py-12 text-muted-foreground">
                     <Key className="w-12 h-12 mx-auto mb-3 opacity-30" />
                     <p>暂无 API Key</p>
-                    <p className="text-sm mt-1">点击上方"生成新密钥"按钮创建第一个</p>
+                    <p className="text-sm mt-1">点击上方&quot;生成新密钥&quot;按钮创建第一个</p>
                 </div>
             ) : (
                 <div className="space-y-3">
@@ -211,7 +212,11 @@ export default function ApiKeysPage() {
                                                 className="h-7 w-7"
                                                 onClick={() => {
                                                     const next = new Set(visibleKeys);
-                                                    isVisible ? next.delete(apiKey.id) : next.add(apiKey.id);
+                                                    if (isVisible) {
+                                                        next.delete(apiKey.id);
+                                                    } else {
+                                                        next.add(apiKey.id);
+                                                    }
                                                     setVisibleKeys(next);
                                                 }}
                                             >

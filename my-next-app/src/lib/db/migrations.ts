@@ -140,7 +140,7 @@ export function runMigrations(db: Database.Database) {
 
 function migrateTableForMultiUser(db: Database.Database, tableName: string, columnName: string) {
     try {
-        const info = db.prepare(`PRAGMA table_info(${tableName})`).all() as any[];
+        const info = db.prepare(`PRAGMA table_info(${tableName})`).all() as unknown[];
         if (info.length && !info.some(c => c.name === columnName)) {
             console.log(`[DB Migration] Table ${tableName} needs multi-user migration (skipped - requires manual intervention)`);
         }

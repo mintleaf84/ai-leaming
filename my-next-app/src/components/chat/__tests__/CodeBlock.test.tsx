@@ -1,7 +1,7 @@
 
 import { render, screen, fireEvent } from '@testing-library/react';
 import CodeBlock from '../CodeBlock';
-import { vi, describe, it, expect, beforeEach, afterEach } from 'vitest';
+import { vi, describe, it, expect, beforeEach, _afterEach } from 'vitest';
 
 // Mock Navigator Clipboard
 const mockWriteText = vi.fn();

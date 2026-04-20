@@ -108,7 +108,7 @@ export function getApiCallStats(): ApiCallStats {
   const logs = db.prepare(`
     SELECT model, input_tokens, output_tokens, success, created_at
     FROM api_call_logs
-  `).all() as any[];
+  `).all() as unknown[];
 
   // 今日起始时间 (使用北京时间)
   const todayStr = getBeijingDateString();
@@ -171,7 +171,7 @@ export function getApiCallStats(): ApiCallStats {
     WHERE success = 0 AND error_message IS NOT NULL
     ORDER BY created_at DESC
     LIMIT 5
-  `).all() as any[];
+  `).all() as unknown[];
 
   return stats;
 }

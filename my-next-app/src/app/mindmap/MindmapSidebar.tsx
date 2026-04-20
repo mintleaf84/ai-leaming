@@ -26,7 +26,7 @@ export function MindmapSidebar({ records }: MindmapSidebarProps) {
             } else {
                 toast.error(result.message || '创建失败', { id: loading });
             }
-        } catch (error) {
+        } catch (_error) {
             toast.error('请求失败', { id: loading });
         }
     };
@@ -46,7 +46,7 @@ export function MindmapSidebar({ records }: MindmapSidebarProps) {
             } else {
                 toast.error(result.message || '删除失败');
             }
-        } catch (error) {
+        } catch (_error) {
             toast.error('请求失败');
         }
     };

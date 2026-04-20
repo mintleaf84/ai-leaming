@@ -1,6 +1,6 @@
 import type { Metadata, Viewport } from "next";
 import localFont from "next/font/local";
-import dynamic from 'next/dynamic';
+import _dynamic from 'next/dynamic';
 import { ErrorBoundary } from "@/components/ErrorBoundary";
 // import { Navbar } from "@/components/Navbar";
 import { AppSidebar } from "@/components/layout/AppSidebar";

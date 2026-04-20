@@ -1,5 +1,5 @@
 
-import db, { closeDb } from '../src/lib/db';
+import _db, { closeDb } from '../src/lib/db';
 import { createSession, listSessions, getSession, saveMessage } from '../src/lib/services/chat';
 import { createUser } from '../src/lib/auth/user-service';
 

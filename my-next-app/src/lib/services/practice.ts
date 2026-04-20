@@ -107,13 +107,13 @@ export const practiceService = {
             let tags: string[] = [];
             try {
                 tags = JSON.parse(q.tags);
-            } catch (e) {
+            } catch (_e) {
                 tags = [];
             }
 
             const { masteryService } = await import('@/lib/services/mastery');
             tags.forEach((tag: string) => {
-                masteryService.updateMastery(userId, tag, q.dimension as any, isCorrect);
+                masteryService.updateMastery(userId, tag, q.dimension as unknown, isCorrect);
             });
         }
 
@@ -166,13 +166,13 @@ export const practiceService = {
             let tags: string[] = [];
             try {
                 tags = JSON.parse(q.tags);
-            } catch (e) {
+            } catch (_e) {
                 tags = [];
             }
 
             const { masteryService } = await import('@/lib/services/mastery');
             tags.forEach((tag: string) => {
-                masteryService.updateMastery(userId, tag, q.dimension as any, isCorrect);
+                masteryService.updateMastery(userId, tag, q.dimension as unknown, isCorrect);
             });
         }
 

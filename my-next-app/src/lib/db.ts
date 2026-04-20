@@ -26,7 +26,7 @@ function initDb() {
     let loadablePath;
     try {
       loadablePath = sqliteVec.getLoadablePath();
-    } catch (e) {
+    } catch (_e) {
       console.warn('[DB] sqliteVec.getLoadablePath() failed, attempting fallback...');
     }
 
@@ -56,7 +56,7 @@ function initDb() {
     if (loadablePath && typeof loadablePath !== 'string') {
       try {
         loadablePath = fileURLToPath(loadablePath);
-      } catch (e) {
+      } catch (_e) {
         loadablePath = String(loadablePath).replace(/^file:\/\/\/?/, '');
       }
     }

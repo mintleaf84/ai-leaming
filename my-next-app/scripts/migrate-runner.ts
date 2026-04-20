@@ -5,9 +5,9 @@ import db from '../src/lib/db';
 import { createTables } from '../src/lib/db/schema';
 
 // Migration Interface
-interface Migration {
-    up: (db: any) => void | Promise<void>;
-    down?: (db: any) => void | Promise<void>;
+interface _Migration {
+    up: (db: unknown) => void | Promise<void>;
+    down?: (db: unknown) => void | Promise<void>;
 }
 
 async function run() {

@@ -91,7 +91,7 @@ export async function performPaddleOCR(
 /**
  * 从 PaddleOCR 响应中提取所有页面的 Markdown 文本
  */
-function extractMarkdown(result: any): string {
+function extractMarkdown(result: unknown): string {
     const pages = result?.layoutParsingResults || [];
     let fullText = '';
 

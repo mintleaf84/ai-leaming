@@ -75,14 +75,14 @@ test.describe('全局与系统级', () => {
         await expect(loggedInPage.locator('h2, h1').first()).toBeVisible({ timeout: 15000 });
 
         // 检查是否有水平滚动条（overflow-x 不应有滚动）
-        const hasHorizontalScroll = await loggedInPage.evaluate(() => {
+        const _hasHorizontalScroll = await loggedInPage.evaluate(() => {
             return document.documentElement.scrollWidth > document.documentElement.clientWidth;
         });
 
         // 宽松验证：移动端宽度下不应有明显横向溢出
         // 注意：某些第三方组件可能有轻微溢出，这里只验证主内容区域
         const mainContent = loggedInPage.locator('main, [role="main"], #main-content').first();
-        const hasMain = await mainContent.isVisible({ timeout: 3000 }).catch(() => false);
+        const _hasMain = await mainContent.isVisible({ timeout: 3000 }).catch(() => false);
 
         // 选项按钮应可点击（触摸区域足够大）
         const options = loggedInPage.locator('div[role="button"]');
@@ -154,7 +154,7 @@ test.describe('全局与系统级', () => {
 
         // 应有离线相关提示文字
         const offlineText = page.getByText(/离线|offline|网络|连接/i);
-        const hasOfflineText = await offlineText.first().isVisible({ timeout: 5000 }).catch(() => false);
+        const _hasOfflineText = await offlineText.first().isVisible({ timeout: 5000 }).catch(() => false);
 
         // 宽松验证：页面有内容即可（可能被重定向到首页）
         const bodyContent = await page.locator('body').textContent();

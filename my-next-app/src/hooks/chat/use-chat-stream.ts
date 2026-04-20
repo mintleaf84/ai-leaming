@@ -143,7 +143,7 @@ export function useChatStream({
                             const jsonStr = line.slice(2);
                             const text = JSON.parse(jsonStr);
                             accumulatedContent += text;
-                        } catch (e) {
+                        } catch (_e) {
                             accumulatedContent += line.slice(2);
                         }
                     } else if (line.startsWith('e:') || line.startsWith('d:')) {
@@ -191,7 +191,7 @@ export function useChatStream({
             setIsLoading(false);
             abortControllerRef.current = null;
         }
-    }, [messages, currentSessionId, isLoading, isGeneratingTitle, onNewSessionCreated, onTitleGenerated]);
+    }, [messages, currentSessionId, isLoading, isGeneratingTitle, onNewSessionCreated, onTitleGenerated, enableRag, mode]);
 
     // 停止生成
     const stopGeneration = useCallback(() => {

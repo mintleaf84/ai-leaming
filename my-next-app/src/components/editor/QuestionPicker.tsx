@@ -46,6 +46,7 @@ export default function QuestionPicker({ isOpen, onClose, onSelect }: QuestionPi
     // 初次打开时加载最近题目
     useEffect(() => {
         if (isOpen && !searched) {
+            // eslint-disable-next-line react-hooks/set-state-in-effect
             handleSearch();
         }
     }, [isOpen, searched, handleSearch]);
@@ -53,6 +54,7 @@ export default function QuestionPicker({ isOpen, onClose, onSelect }: QuestionPi
     // 关闭时重置状态
     useEffect(() => {
         if (!isOpen) {
+            // eslint-disable-next-line react-hooks/set-state-in-effect
             setQuery('');
             setQuestions([]);
             setSearched(false);

@@ -31,7 +31,7 @@ export function calculateStreakFromDates(
     return new Date(y, m - 1, day);
   };
 
-  let expectedDate = parseDate(latestPractice);
+  const expectedDate = parseDate(latestPractice);
 
   for (const dateStr of practiceDates) {
     const currentDate = parseDate(dateStr);

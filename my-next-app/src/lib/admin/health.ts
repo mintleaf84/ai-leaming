@@ -100,7 +100,7 @@ export function getDatabaseStats(): DatabaseStats {
         try {
             const result = db.prepare(`SELECT COUNT(*) as count FROM ${t.name}`).get() as { count: number };
             return { name: t.name, rowCount: result.count };
-        } catch (e) {
+        } catch (_e) {
             return { name: t.name, rowCount: 0 };
         }
     });

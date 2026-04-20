@@ -28,7 +28,7 @@ test.describe('后台管理权限', () => {
 
         // 检查是否显示题目内容（种子数据有 10 道题）
         const questionItems = adminPage.getByText(/测试题\d+|题目/i);
-        const hasQuestions = await questionItems.first().isVisible({ timeout: 10000 }).catch(() => false);
+        const _hasQuestions = await questionItems.first().isVisible({ timeout: 10000 }).catch(() => false);
 
         // 宽松验证：页面正常加载即可
         await expect(adminPage.locator('main, [role="main"], .container').first()).toBeVisible({ timeout: 10000 });
@@ -154,7 +154,7 @@ test.describe('后台管理权限', () => {
 
         // 系统配置页应有功能开关相关内容
         const systemContent = adminPage.getByText(/系统|功能|开关|配置/i);
-        const hasContent = await systemContent.first().isVisible({ timeout: 5000 }).catch(() => false);
+        const _hasContent = await systemContent.first().isVisible({ timeout: 5000 }).catch(() => false);
 
         await expect(adminPage.locator('body')).toBeVisible();
     });

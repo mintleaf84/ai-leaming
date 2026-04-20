@@ -7,9 +7,9 @@ import ChatMessage from '../ChatMessage';
 
 // Mock dependencies
 vi.mock('next/dynamic', () => ({
-  default: (loader: any) => {
+  default: (loader: unknown) => {
     const Component = React.lazy(loader);
-    return function MockDynamic(props: any) {
+    return function MockDynamic(props: unknown) {
       return (
         <React.Suspense fallback={null}>
           <Component {...props} />
@@ -33,7 +33,7 @@ vi.mock('../ThinkingBlock', () => ({
 }));
 
 vi.mock('@/hooks/use-smooth-stream', () => ({
-  useSmoothStream: ({ onUpdate }: any) => {
+  useSmoothStream: ({ onUpdate }: unknown) => {
     const contentRef = React.useRef('');
     return {
       addChunk: vi.fn().mockImplementation((chunk: string) => {

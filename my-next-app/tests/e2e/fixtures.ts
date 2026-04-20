@@ -88,7 +88,7 @@ async function loginAs(page: Page, user: { username: string; password: string })
             if (!hasAuthCookie) {
                 console.warn('[E2E Fixture] Auth cookie missing after login redirect');
             }
-        } catch (e) {
+        } catch (_e) {
             console.error('[E2E Fixture] Login failed or timed out. Current URL:', page.url());
         }
     }

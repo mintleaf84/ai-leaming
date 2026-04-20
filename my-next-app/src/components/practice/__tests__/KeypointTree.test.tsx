@@ -1,5 +1,5 @@
 /** @vitest-environment jsdom */
-import { render, screen, fireEvent, waitFor } from '@testing-library/react';
+import { render, screen, fireEvent, _waitFor } from '@testing-library/react';
 import '@testing-library/jest-dom';
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import React from 'react';
@@ -8,7 +8,7 @@ import { KeypointTree, KeypointNode } from '../KeypointTree';
 // Mock useQuery
 const mockUseQuery = vi.fn();
 vi.mock('@tanstack/react-query', () => ({
-    useQuery: (...args: any[]) => mockUseQuery(...args),
+    useQuery: (...args: unknown[]) => mockUseQuery(...args),
 }));
 
 // Mock fetchJson
@@ -88,7 +88,7 @@ describe('KeypointTree Component', () => {
 
         // Find the expand button for '代数'
         // In the code, it's a button with ChevronRight/Down
-        const toggleButtons = screen.getAllByRole('button');
+        const _toggleButtons = screen.getAllByRole('button');
         // This is a bit brittle, let's find by clicking the name if it's supposed to expand?
         // No, clicking the name toggles SELECT. Clicking the Chevron toggles EXPAND.
         

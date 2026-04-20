@@ -48,7 +48,7 @@ export async function getKnowledgeGraphData(): Promise<KnowledgeGraphData> {
     // 1: A/B
     // 2: A/B/C
     let currentPath = "";
-    let parentPath = "核心知识体系";
+    const _parentPath = "核心知识体系";
 
     for (let i = 0; i < parts.length; i++) {
       const nodeName = parts.slice(0, i + 1).join('/'); // 使用完整路径作为 ID
@@ -88,7 +88,7 @@ export async function getKnowledgeGraphData(): Promise<KnowledgeGraphData> {
 
     for (let i = 0; i < parts.length; i++) {
       const currentId = parts.slice(0, i + 1).join('/'); // 完整路径作为 ID
-      const displayName = parts[i]; // 显示名称
+      const _displayName = parts[i]; // 显示名称
 
       // 添加节点
       if (!addedNodes.has(currentId)) {

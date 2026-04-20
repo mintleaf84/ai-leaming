@@ -1,4 +1,4 @@
-import { test, expect, MOCK_CORRECTION_QUIZ, MOCK_REGRESSION_CHALLENGE } from './fixtures';
+import { test, expect, _MOCK_CORRECTION_QUIZ, _MOCK_REGRESSION_CHALLENGE } from './fixtures';
 import type { Page } from '@playwright/test';
 
 /**
@@ -11,7 +11,7 @@ test.describe('智能复盘引擎', () => {
     /**
      * 辅助函数：答错若干题，使复盘队列中积累错题
      */
-    async function answerQuestionsWithErrors(page: Page, wrongCount = 2) {
+    async function _answerQuestionsWithErrors(page: Page, wrongCount = 2) {
         await page.goto('/practice?new=true');
         await expect(page.locator('h2, h1').first()).toBeVisible({ timeout: 15000 });
 

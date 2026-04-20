@@ -29,7 +29,7 @@ export function PromptManager() {
         try {
             const data = await getPromptTemplatesAction();
             setPrompts(data);
-        } catch (e) {
+        } catch (_e) {
             toast.error("提示词加载失败");
         }
     };
@@ -61,7 +61,7 @@ export function PromptManager() {
             } else {
                 toast.error("保存失败: " + res.error);
             }
-        } catch (e: any) {
+        } catch (e: unknown) {
             toast.error("请求失败: " + e.message);
         } finally {
             setIsSaving(false);
@@ -78,7 +78,7 @@ export function PromptManager() {
             const all = await getPromptTemplatesAction();
             const fresh = all.find(x => x.key === editingPrompt.key);
             if (fresh) setEditingPrompt(fresh);
-        } catch (e) {
+        } catch (_e) {
             toast.error("重置失败");
         }
     };
@@ -99,7 +99,7 @@ export function PromptManager() {
                 }
                 setDebugResult(errorMsg);
             }
-        } catch (e: any) {
+        } catch (e: unknown) {
             toast.error("调试请求失败");
             setDebugResult("Request Error: " + e.message);
         } finally {

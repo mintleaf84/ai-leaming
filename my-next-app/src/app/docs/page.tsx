@@ -11,8 +11,8 @@ import {
     Settings,
     HelpCircle,
     CheckCircle2,
-    ChevronRight,
-    Search
+    _ChevronRight,
+    _Search
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -199,7 +199,7 @@ export default function DocsPage() {
                             <div className="flex flex-wrap gap-3 mt-4">
                                 {['什么是皮亚杰的认知发展阶段？', '如何区分正强化和负强化？', '帮我总结一下班级管理的原则'].map(q => (
                                     <span key={q} className="bg-white border border-neutral-200 px-4 py-2 rounded-full text-sm text-neutral-600 shadow-sm">
-                                        "{q}"
+                                        &quot;{q}&quot;
                                     </span>
                                 ))}
                             </div>

@@ -92,7 +92,7 @@ export const PracticeSessionRowSchema = z.object({
     try {
       if (!str) return [];
       return JSON.parse(str);
-    } catch (e) {
+    } catch (_e) {
       ctx.addIssue({ code: z.ZodIssueCode.custom, message: "Invalid JSON in questions_json" });
       return [];
     }
@@ -114,7 +114,7 @@ export const PracticeLogRowSchema = z.object({
 // 数据库行 Schema，包含自动 JSON 解析
 export const QuestionRowSchema = BaseQuestionSchema.extend({
   id: z.number(), // 数据库都有 ID
-  options: z.string().transform((str, ctx): string[] => {
+  options: z.string().transform((str, _ctx): string[] => {
     try {
       const parsed = JSON.parse(str);
       return z.array(z.string()).parse(parsed);
@@ -122,7 +122,7 @@ export const QuestionRowSchema = BaseQuestionSchema.extend({
       return [];
     }
   }).or(z.array(z.string())), // 兼容已经是数组的情况（虽然 sqlite 通常返回 string）
-  tags: z.string().transform((str, ctx): string[] => {
+  tags: z.string().transform((str, _ctx): string[] => {
     try {
       const parsed = JSON.parse(str);
       return z.array(z.string()).parse(parsed);

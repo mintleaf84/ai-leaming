@@ -12,6 +12,10 @@ const eslintConfig = defineConfig([
     "out/**",
     "build/**",
     "next-env.d.ts",
+    // 忽略辅助脚本目录及文件
+    "scripts/**",
+    "eslint_cleanup.js",
+    "eslint_cleanup.py",
   ]),
   {
     rules: {

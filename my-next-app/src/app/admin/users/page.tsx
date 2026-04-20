@@ -81,10 +81,11 @@ export default function UsersPage() {
             setPage(1); // Reset to first page on search
         }, 500);
         return () => clearTimeout(timer);
-        // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [search]);
 
     // Reload when page or search changes (after debounce)
+    useEffect(() => {
+        loadUsers();
     }, [page, loadUsers]);
 
     const loadPlans = async () => {

@@ -54,8 +54,7 @@ export function ActivityList() {
             }
         }, 30000); // 30s 自动刷新首页
         return () => clearInterval(timer);
-        // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [page]); // 筛选变化由 handleSearch 手动触发
+    }, [loadActivities, page, filters]);
 
     const handleSearch = () => {
         setPage(1);
@@ -174,7 +173,7 @@ export function ActivityList() {
                                         {getTimeAgo(log.timestamp)}
                                     </span>
                                     <Button variant="ghost" size="icon" className="h-8 w-8 self-end opacity-0 group-hover:opacity-100 transition-opacity">
-                                        <MoreHorizontal className="w-4 h-4" />
+                                        <Search className="w-4 h-4" />
                                     </Button>
                                 </div>
                             </div>

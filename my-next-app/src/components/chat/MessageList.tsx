@@ -75,3 +75,5 @@ export function MessageList({
         </main>
     );
 }
+
+MessageList.displayName = 'MessageList';

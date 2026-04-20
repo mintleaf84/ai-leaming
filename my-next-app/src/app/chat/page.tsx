@@ -77,10 +77,10 @@ export default function ChatPage() {
         setLastFailedMessage(null);
         setShowFavorites(false);
         inputRef.current?.focus();
-    }, [resetSessionId, setMessages, setError, setLastFailedMessage]);
+    }, [resetSessionId, setMessages, setError, setLastFailedMessage, setShowFavorites]);
 
     // 处理会话选择与跳转
-    const handleSessionSelect = async (sessionId: number, messageId?: number) => {
+    const handleSessionSelect = useCallback(async (sessionId: number, messageId?: number) => {
         // 先切换会话并加载消息
         const history = await selectSession(sessionId);
         setMessages(history.map(msg => ({
@@ -101,7 +101,7 @@ export default function ChatPage() {
             // 普通切换，稍微延迟滚动到底部（等待渲染）
             setTimeout(scrollToBottom, 100);
         }
-    };
+    }, [selectSession, setMessages, setShowFavorites, setError, setLastFailedMessage, setTargetMessageId, scrollToBottom]);
 
     // 处理清除对话
     const handleClearChat = useCallback(() => {

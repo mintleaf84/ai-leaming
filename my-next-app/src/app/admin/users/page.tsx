@@ -73,23 +73,19 @@ export default function UsersPage() {
         } finally {
             setLoading(false);
         }
-    }, [page, limit, search]);
+    }, [page, search]);
 
-    // Debounce search
+    // Debounce search resets page
     useEffect(() => {
         const timer = setTimeout(() => {
             setPage(1); // Reset to first page on search
-            loadUsers();
         }, 500);
         return () => clearTimeout(timer);
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [search]);
 
-    // Reload when page changes
-    useEffect(() => {
-        loadUsers();
-        // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [page, limit]);
+    // Reload when page or search changes (after debounce)
+    }, [page, loadUsers]);
 
     const loadPlans = async () => {
         try {

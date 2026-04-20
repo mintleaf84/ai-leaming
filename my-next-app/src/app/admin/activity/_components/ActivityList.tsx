@@ -7,7 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { 
     Search, CheckCircle2, XCircle, Clock, User, 
-    MoreHorizontal, RefreshCw, ChevronLeft, ChevronRight,
+    RefreshCw, ChevronLeft, ChevronRight,
     Loader2
 } from "lucide-react";
 import { toast } from "sonner";
@@ -55,7 +55,7 @@ export function ActivityList() {
         }, 30000); // 30s 自动刷新首页
         return () => clearInterval(timer);
         // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [page, pageSize]); // 筛选变化由 handleSearch 手动触发
+    }, [page]); // 筛选变化由 handleSearch 手动触发
 
     const handleSearch = () => {
         setPage(1);

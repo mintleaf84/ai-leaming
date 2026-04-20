@@ -1,11 +1,12 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { MessageSquarePlus, Search, Loader2, Star, MessageSquare, Trash2, Pencil, Check, X } from 'lucide-react';
-import { _cn } from '@/lib/utils';
+import { cn } from '@/lib/utils';
 import { useTerminology } from '@/lib/hooks/use-terminology';
 import { renameChatSessionAction } from '@/server/actions/chat';
+import type { ChatSession } from '@/lib/services/chat';
 
 interface ChatSidebarProps {
-    sessions: unknown[];
+    sessions: ChatSession[];
     currentSessionId: number | null;
     onSessionSelect: (sessionId: number, messageId?: number) => void;
     onNewSession: () => void;
@@ -43,7 +44,11 @@ function SessionItem({
     onDelete,
     onRename,
 }: {
+<<<<<<< HEAD
     session: unknown;
+=======
+    session: ChatSession;
+>>>>>>> 2b5108e (fix: 规范化核心业务组件 Hook 依赖、类型定义及 displayName (TypeScript 检查通过))
     isActive: boolean;
     onSelect: () => void;
     onDelete: () => void;
@@ -147,9 +152,10 @@ function SessionItem({
                     </button>
                 </div>
             )}
-        </div>
     );
 }
+
+SessionItem.displayName = 'SessionItem';
 
 export default function ChatSidebar({
     sessions,
@@ -292,3 +298,5 @@ export default function ChatSidebar({
         </div>
     );
 }
+
+ChatSidebar.displayName = 'ChatSidebar';

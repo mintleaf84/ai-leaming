@@ -54,3 +54,5 @@ export function ChatModeToggle({ mode, onModeChange }: ChatModeToggleProps) {
         </DropdownMenu>
     );
 }
+
+ChatModeToggle.displayName = 'ChatModeToggle';

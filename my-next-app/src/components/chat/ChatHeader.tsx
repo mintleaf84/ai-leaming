@@ -60,3 +60,5 @@ export function ChatHeader({
         </header>
     );
 }
+
+ChatHeader.displayName = 'ChatHeader';

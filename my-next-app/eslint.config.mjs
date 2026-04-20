@@ -25,7 +25,7 @@ const eslintConfig = defineConfig([
     }
   },
   {
-    files: ["tests/**"],
+    files: ["tests/**", "**/*.test.ts", "**/*.test.tsx"],
     rules: {
       "react-hooks/rules-of-hooks": "off"
     }

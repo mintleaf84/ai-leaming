@@ -7,7 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { 
     Search, CheckCircle2, XCircle, Clock, User, 
-    MoreHorizontal, Filter, RefreshCw, ChevronLeft, ChevronRight,
+    MoreHorizontal, RefreshCw, ChevronLeft, ChevronRight,
     Loader2
 } from "lucide-react";
 import { toast } from "sonner";

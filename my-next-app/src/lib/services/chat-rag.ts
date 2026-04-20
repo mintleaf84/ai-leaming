@@ -1,7 +1,7 @@
 import { generateTextWrapper } from '@/lib/ai/client';
 import { searchSimilarContent, ragService, type RagResult } from '@/lib/ai/rag';
 import { getPromptFromDbSync, SOCRATIC_TUTOR_PROMPT } from '@/lib/ai/prompts';
-import { tool } from 'ai';
+// import { tool } from 'ai'; // Removed unused tool import
 import { z } from 'zod';
 
 /**

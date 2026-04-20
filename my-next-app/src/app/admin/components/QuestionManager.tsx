@@ -8,12 +8,13 @@ import {
     batchDeleteQuestionsAction,
     QuestionFilters
 } from '@/server/actions/admin';
+import { Question } from '@/types';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import {
-    Trash2, Upload, Download, Search, Filter,
+    Trash2, Upload, Download, Search,
     ChevronLeft, ChevronRight, ChevronsLeft, ChevronsRight,
-    Loader2, MoreHorizontal, Edit
+    Loader2, Edit
 } from 'lucide-react';
 import { toast } from 'sonner';
 import {
@@ -28,7 +29,7 @@ import { EditQuestionDialog } from './EditQuestionDialog';
 
 export function QuestionManager() {
     // 状态管理
-    const [questions, setQuestions] = useState<any[]>([]);
+    const [questions, setQuestions] = useState<Question[]>([]);
     const [total, setTotal] = useState(0);
     const [loading, setLoading] = useState(false);
     const [editingQuestion, setEditingQuestion] = useState<unknown>(null);

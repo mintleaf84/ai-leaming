@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useEffect, useRef, _useState } from 'react';
+import React, { useEffect, useRef } from 'react';
 import MindMap from 'simple-mind-map';
 import Drag from 'simple-mind-map/src/plugins/Drag.js';
 import KeyboardNavigation from 'simple-mind-map/src/plugins/KeyboardNavigation.js';

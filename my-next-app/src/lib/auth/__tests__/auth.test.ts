@@ -1,5 +1,5 @@
 // @vitest-environment node
-import { describe, it, expect, beforeEach, vi, _afterEach } from 'vitest';
+import { describe, it, expect, beforeEach, vi } from 'vitest';
 
 // Mock user-service 防止依赖真实数据库（必须用 vi.hoisted 保证在 vi.mock 之前初始化）
 const { mockGetUserById, mockRevokeUserSessions } = vi.hoisted(() => ({

@@ -1,4 +1,4 @@
-import { test, expect, _TEST_ADMIN } from './fixtures';
+import { test, expect } from './fixtures';
 
 /**
  * 多选题全链路 E2E 测试

@@ -1,4 +1,4 @@
-import { Card, CardContent, _CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Users, BookOpen, Activity, Cpu } from "lucide-react";
 import { getAdminStatsAction } from "@/server/actions/admin";
 

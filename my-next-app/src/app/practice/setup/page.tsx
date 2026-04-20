@@ -18,8 +18,7 @@ import {
     CheckCircle2
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent, _CardDescription, _CardHeader, _CardTitle } from '@/components/ui/card';
-import { _Badge } from '@/components/ui/badge';
+import { Card, CardContent } from '@/components/ui/card';
 import { Checkbox } from '@/components/ui/checkbox';
 import {
     PracticeMode,

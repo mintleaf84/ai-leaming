@@ -22,7 +22,7 @@ interface KnowledgeCardItemProps {
 export const KnowledgeCardItem: React.FC<KnowledgeCardItemProps> = ({
     card,
     onExpand,
-    onEdit: _onEdit,
+    onEdit: _,
     categoryColor
 }) => {
     return (

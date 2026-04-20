@@ -1,10 +1,9 @@
 "use client";
 
 import React, { useEffect, useRef } from 'react';
-import { select, _selectAll } from 'd3-selection';
+import { select } from 'd3-selection';
 import { scaleLinear } from 'd3-scale';
 import { lineRadial, curveLinearClosed } from 'd3-shape';
-import type { _LineRadial } from 'd3-shape';
 
 export interface RadarData {
   axis: string;

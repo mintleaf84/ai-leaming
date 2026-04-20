@@ -6,7 +6,7 @@ import { Question, UserRole } from '@/types';
 import { z } from 'zod';
 import { getErrorMessage } from '@/lib/utils/error';
 import { QuestionSchema } from '@/lib/schemas';
-import { requireRole, _getSession } from '@/lib/auth/auth';
+import { requireRole } from '@/lib/auth/auth';
 import { hashPassword } from '@/lib/auth/password';
 import { logAdminAction } from '@/lib/admin/audit';
 

@@ -34,7 +34,6 @@ import {
     getMySubscriptionAction,
     checkQuotaAction
 } from '../subscription';
-import { _UsageType } from '@/lib/billing/subscription-types';
 
 describe('Subscription Actions', () => {
     beforeEach(() => {

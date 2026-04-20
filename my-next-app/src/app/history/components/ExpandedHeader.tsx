@@ -21,7 +21,7 @@ interface ExpandedHeaderProps {
 }
 
 export const ExpandedHeader: React.FC<ExpandedHeaderProps> = ({
-    sessionId: _sessionId,
+    sessionId: _,
     detail,
     initialData,
     isLoading,

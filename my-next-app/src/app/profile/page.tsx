@@ -3,7 +3,6 @@
 import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
 import {
-    _User,
     Crown,
     Calendar,
     Target,
@@ -13,7 +12,6 @@ import {
     TrendingUp,
     Sparkles,
     Settings,
-    _CreditCard,
     ArrowRight,
     Loader2,
     Award

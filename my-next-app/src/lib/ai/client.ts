@@ -1,4 +1,4 @@
-import { createExecutor, _definePlugin } from '@cherrystudio/ai-core';
+import { createExecutor } from '@cherrystudio/ai-core';
 import { createOpenAI } from '@ai-sdk/openai';
 import type { LanguageModel } from 'ai';
 import { z } from 'zod';

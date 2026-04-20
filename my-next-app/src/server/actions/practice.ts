@@ -296,7 +296,7 @@ export async function getKnowledgeTreeAction(): Promise<KnowledgeParams[]> {
     const calculateCounts = (nodes: KnowledgeParams[]): number => {
       let sum = 0;
       for (const node of nodes) {
-        const childrenSum = calculateCounts(node.children);
+        const childrenSum = node.children ? calculateCounts(node.children) : 0;
         node.count = (node.count || 0) + childrenSum;
         sum += node.count;
       }

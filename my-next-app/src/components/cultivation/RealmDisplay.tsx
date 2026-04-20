@@ -2,7 +2,6 @@
 
 import { motion } from 'framer-motion';
 import { CultivationState } from '@/lib/cultivation/types';
-import { _Progress } from '@/components/ui/progress';
 
 interface RealmDisplayProps {
   state: CultivationState;

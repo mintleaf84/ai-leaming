@@ -1,4 +1,4 @@
-import { test, expect, TEST_USER, _TEST_ADMIN } from './fixtures';
+import { test, expect, TEST_USER } from './fixtures';
 
 /**
  * 认证流程 E2E 测试（模块一：A-01 ~ A-09）

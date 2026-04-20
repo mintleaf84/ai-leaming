@@ -3,16 +3,11 @@
 import React, { useEffect, useState, useRef, useMemo } from 'react';
 import { motion } from 'framer-motion';
 import { Virtuoso } from 'react-virtuoso';
-import { _X, _Target, _Sparkles, Loader2, _FileCheck } from 'lucide-react';
+import { Loader2 } from 'lucide-react';
 
-import { _cn } from '@/lib/utils';
 import { getSessionDetailAction, SessionDetail } from '@/server/actions/history';
-import { _MODE_CONFIG } from './HistoryCardItem';
 import { generateDeepAnalysisAction, getAnalysisReportAction } from '@/server/actions/report';
-import { _SessionSummary, QuestionCard, QuestionLogData, AnswerSheet } from '@/components/history';
-import { _Button } from '@/components/ui/button';
-import { _Checkbox } from "@/components/ui/checkbox";
-import { _Label } from "@/components/ui/label";
+import { QuestionCard, QuestionLogData, AnswerSheet } from '@/components/history';
 import { toast } from 'sonner';
 import { ExpandedHeader } from './ExpandedHeader';
 import { QuestionsListHeader } from './QuestionsListHeader';

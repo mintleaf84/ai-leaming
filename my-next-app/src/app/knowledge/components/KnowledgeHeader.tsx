@@ -1,7 +1,6 @@
 import React from 'react';
 import { BookOpen, Plus, Play, Download, Loader2, Search, Sparkles } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { _Input } from '@/components/ui/input';
 import { useTerminology } from '@/lib/hooks/use-terminology';
 
 interface KnowledgeHeaderProps {

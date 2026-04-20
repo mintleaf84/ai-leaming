@@ -1,7 +1,6 @@
-import _React, { useReducer, useEffect, _useCallback, useMemo } from 'react';
+import _React, { useReducer, useEffect, useMemo } from 'react';
 import { PracticeState, PracticeAction, ReviewItem } from '@/types';
 import type { Question } from '@/types';
-import { _apiClient } from '@/lib/utils/api-client';
 export const INITIAL_STATE: PracticeState = {
   status: 'loading',
   sessionId: null,

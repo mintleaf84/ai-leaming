@@ -10,7 +10,6 @@ import {
   DrawerClose,
   DrawerContent,
   DrawerDescription,
-  _DrawerFooter,
   DrawerHeader,
   DrawerTitle,
 } from "@/components/ui/drawer";

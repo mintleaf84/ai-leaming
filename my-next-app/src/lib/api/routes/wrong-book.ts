@@ -4,6 +4,39 @@ import { authMiddleware, getCurrentUser } from '@/lib/api/middlewares/auth'
 
 const app = new OpenAPIHono()
 
+// ==================== DB 行类型定义 ====================
+
+type WrongBookRow = {
+    questionId: string | number;
+    questionContent: string;
+    tags: string;
+    wrongCount: number;
+    lastWrongAt: string;
+    correctAnswer: string;
+    userLastAnswer: string | null;
+};
+
+type QuestionDetailRow = {
+    id: string | number;
+    content: string;
+    options: string;
+    answer: string;
+    explanation: string | null;
+    tags: string;
+    type: string | null;
+};
+
+type WrongStatsRow = {
+    wrongCount: number;
+    lastWrongAt: string | null;
+};
+
+type HistoryLogRow = {
+    timestamp: string;
+    userAnswer: string;
+    isCorrect: number;
+};
+
 // ==================== Schema 定义 ====================
 
 const WrongQuestionSchema = z.object({
@@ -72,15 +105,15 @@ app.openapi(getListRoute, async (c) => {
             AND l.question_id NOT IN (SELECT question_id FROM mastered_questions WHERE user_id = ?)
         GROUP BY l.question_id
         ORDER BY wrongCount DESC, lastWrongAt DESC
-    `).all(user.id, user.id, user.id) as Record<string, unknown>[]
+    `).all(user.id, user.id, user.id) as WrongBookRow[]
 
     const result = rows.map(r => ({
         questionId: String(r.questionId),
-        questionContent: r.questionContent,
-        tags: JSON.parse(r.tags || '[]'),
-        wrongCount: r.wrongCount,
+        questionContent: String(r.questionContent),
+        tags: JSON.parse(r.tags || '[]') as string[],
+        wrongCount: Number(r.wrongCount),
         lastWrongAt: r.lastWrongAt || '',
-        correctAnswer: r.correctAnswer,
+        correctAnswer: String(r.correctAnswer),
         userLastAnswer: r.userLastAnswer || '',
     }))
 
@@ -121,15 +154,15 @@ app.openapi(getByTagRoute, async (c) => {
             AND l.question_id NOT IN (SELECT question_id FROM mastered_questions WHERE user_id = ?)
         GROUP BY l.question_id
         ORDER BY wrongCount DESC, lastWrongAt DESC
-    `).all(user.id, user.id, user.id) as Record<string, unknown>[]
+    `).all(user.id, user.id, user.id) as WrongBookRow[]
 
     const questions = rows.map(r => ({
         questionId: String(r.questionId),
-        questionContent: r.questionContent,
+        questionContent: String(r.questionContent),
         tags: JSON.parse(r.tags || '[]') as string[],
-        wrongCount: r.wrongCount,
+        wrongCount: Number(r.wrongCount),
         lastWrongAt: r.lastWrongAt || '',
-        correctAnswer: r.correctAnswer,
+        correctAnswer: String(r.correctAnswer),
         userLastAnswer: r.userLastAnswer || '',
     }))
 
@@ -259,15 +292,15 @@ app.openapi(getRandomRoute, async (c) => {
         LIMIT ?
     `
 
-    const rows = db.prepare(sql).all(...params) as Record<string, unknown>[]
+    const rows = db.prepare(sql).all(...params) as WrongBookRow[]
 
     const result = rows.map(r => ({
         questionId: String(r.questionId),
-        questionContent: r.questionContent,
-        tags: JSON.parse(r.tags || '[]'),
-        wrongCount: r.wrongCount,
+        questionContent: String(r.questionContent),
+        tags: JSON.parse(r.tags || '[]') as string[],
+        wrongCount: Number(r.wrongCount),
         lastWrongAt: r.lastWrongAt || '',
-        correctAnswer: r.correctAnswer,
+        correctAnswer: String(r.correctAnswer),
         userLastAnswer: r.userLastAnswer || '',
     }))
 
@@ -299,7 +332,7 @@ app.openapi(getDetailRoute, async (c) => {
     const question = db.prepare(`
         SELECT id, content, options, answer, explanation, tags, type
         FROM questions WHERE id = ?
-    `).get(id) as Record<string, unknown> | undefined
+    `).get(id) as QuestionDetailRow | undefined
 
     if (!question) return c.json({ error: '未找到题目' }, 404)
 
@@ -307,30 +340,30 @@ app.openapi(getDetailRoute, async (c) => {
         SELECT COUNT(*) as wrongCount, MAX(timestamp) as lastWrongAt
         FROM practice_logs 
         WHERE question_id = ? AND user_id = ? AND is_correct = 0
-    `).get(id, user.id) as Record<string, unknown> | undefined
+    `).get(id, user.id) as WrongStatsRow | undefined
 
     const historyLogs = db.prepare(`
         SELECT timestamp, user_answer as userAnswer, is_correct as isCorrect
         FROM practice_logs 
         WHERE question_id = ? AND user_id = ?
         ORDER BY timestamp DESC LIMIT 20
-    `).all(id, user.id) as Record<string, unknown>[]
+    `).all(id, user.id) as HistoryLogRow[]
 
     const lastWrongAnswer = db.prepare(`
         SELECT user_answer FROM practice_logs 
         WHERE question_id = ? AND user_id = ? AND is_correct = 0 
         ORDER BY timestamp DESC LIMIT 1
-    `).get(id, user.id) as Record<string, unknown> | undefined
+    `).get(id, user.id) as { user_answer: string } | undefined
 
     return c.json({
         questionId: String(question.id),
-        questionContent: question.content,
-        options: JSON.parse(question.options || '[]'),
-        correctAnswer: question.answer,
+        questionContent: String(question.content),
+        options: JSON.parse(question.options || '[]') as string[],
+        correctAnswer: String(question.answer),
         explanation: question.explanation || '',
-        tags: JSON.parse(question.tags || '[]'),
+        tags: JSON.parse(question.tags || '[]') as string[],
         questionType: question.type || 'single',
-        wrongCount: wrongStats?.wrongCount || 0,
+        wrongCount: Number(wrongStats?.wrongCount ?? 0),
         lastWrongAt: wrongStats?.lastWrongAt || '',
         userLastAnswer: lastWrongAnswer?.user_answer || '',
         historyLogs: historyLogs.map(log => ({

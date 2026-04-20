@@ -47,9 +47,9 @@ export interface BackupData {
 export async function exportUserDataAction(): Promise<BackupData> {
   try {
     const user = await requireUser();
-    const user_mastery = db.prepare('SELECT * FROM user_mastery WHERE user_id = ?').all(user.id);
-    const practice_logs = db.prepare('SELECT * FROM practice_logs WHERE user_id = ?').all(user.id);
-    const observation_zone = db.prepare('SELECT * FROM observation_zone WHERE user_id = ?').all(user.id);
+    const user_mastery = db.prepare('SELECT * FROM user_mastery WHERE user_id = ?').all(user.id) as UserMasteryRow[];
+    const practice_logs = db.prepare('SELECT * FROM practice_logs WHERE user_id = ?').all(user.id) as PracticeLogBackupRow[];
+    const observation_zone = db.prepare('SELECT * FROM observation_zone WHERE user_id = ?').all(user.id) as ObservationZoneRow[];
 
     return {
       version: 1,
@@ -59,7 +59,7 @@ export async function exportUserDataAction(): Promise<BackupData> {
       observation_zone
     };
   } catch (error) {
-    logger.error("Export failed:", error);
+    logger.error({ err: error }, "Export failed");
     throw new Error("Failed to export data");
   }
 }
@@ -109,7 +109,7 @@ export async function importUserDataAction(data: BackupData): Promise<{ success:
     transaction();
     return { success: true, message: "Data imported successfully." };
   } catch (error) {
-    logger.error("Import failed:", error);
+    logger.error({ err: error }, "Import failed");
     return { success: false, message: `Import failed: ${error instanceof Error ? error.message : String(error)}` };
   }
 }

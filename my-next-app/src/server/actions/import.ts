@@ -242,7 +242,7 @@ export async function importFenbiDataAction(
         };
 
     } catch (error) {
-        logger.error('粉笔数据导入失败:', error);
+        logger.error({ err: error }, '粉笔数据导入失败');
         return {
             success: false,
             importedCount: 0,

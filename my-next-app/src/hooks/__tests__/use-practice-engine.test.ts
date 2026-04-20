@@ -1,7 +1,7 @@
 // @vitest-environment node
 import { describe, it, expect } from 'vitest';
 import { createPracticeReducer, INITIAL_STATE } from '../use-practice-engine';
-import { Action, PracticeState, Question } from '@/types';
+import { PracticeAction, PracticeState, Question } from "@/types";
 
 const practiceReducer = createPracticeReducer(true);
 
@@ -15,7 +15,7 @@ describe('usePracticeEngine Reducer', () => {
     ];
 
     it('should initialize session correctly', () => {
-        const action: Action = {
+        const action: PracticeAction = {
             type: 'INIT_SESSION',
             payload: { sessionId: 'sess-1', questions: mockQuestions, startIndex: 0 }
         };
@@ -35,7 +35,7 @@ describe('usePracticeEngine Reducer', () => {
             currentIndex: 0
         };
 
-        const action: Action = {
+        const action: PracticeAction = {
             type: 'ANSWER_QUESTION',
             payload: { questionId: 1, answer: 'A', isCorrect: true, duration: 1000 }
         };
@@ -56,7 +56,7 @@ describe('usePracticeEngine Reducer', () => {
             reviewTriggeredAt: 25
         };
 
-        const action: Action = {
+        const action: PracticeAction = {
             type: 'ANSWER_QUESTION',
             payload: { questionId: 1, answer: 'wrong', isCorrect: false, duration: 1000 }
         };
@@ -89,7 +89,7 @@ describe('usePracticeEngine Reducer', () => {
         for (let i = 0; i < 24; i++) mockAnswers[i] = { isCorrect: true };
         startState.answers = mockAnswers;
 
-        const action: Action = {
+        const action: PracticeAction = {
             type: 'ANSWER_QUESTION',
             payload: { questionId: 24, answer: 'wrong', isCorrect: false, duration: 1000 }
         };
@@ -161,7 +161,7 @@ describe('usePracticeEngine Reducer', () => {
         };
 
         // 答对
-        const correctAction: Action = {
+        const correctAction: PracticeAction = {
             type: 'ANSWER_QUESTION',
             payload: { questionId: 99, answer: 'A', isCorrect: true, duration: 500 }
         };
@@ -170,7 +170,7 @@ describe('usePracticeEngine Reducer', () => {
         expect(stateAfterCorrect.reviewQueue).toHaveLength(0);
 
         // 答错（选 B）
-        const wrongAction: Action = {
+        const wrongAction: PracticeAction = {
             type: 'ANSWER_QUESTION',
             payload: { questionId: 99, answer: 'B', isCorrect: false, duration: 500 }
         };

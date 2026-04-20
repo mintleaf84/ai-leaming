@@ -53,7 +53,7 @@ export async function getQuestionSummaryAction(questionId: number): Promise<{
 
         return { success: true, summary };
     } catch (error: unknown) {
-        logger.error('[getQuestionSummaryAction] 错误:', error);
+        logger.error({ err: error }, '[getQuestionSummaryAction] 错误');
         return { success: false, message: '获取题目摘要失败' };
     }
 }
@@ -99,7 +99,7 @@ export async function searchQuestionsAction(query: string, limit: number = 10): 
 
         return { success: true, questions };
     } catch (error: unknown) {
-        logger.error('[searchQuestionsAction] 错误:', error);
+        logger.error({ err: error }, '[searchQuestionsAction] 错误');
         return { success: false, message: '搜索题目失败' };
     }
 }

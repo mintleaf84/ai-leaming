@@ -63,7 +63,7 @@ export async function getQuestionsAction(
 
     return { questions: parsedQuestions, total: total.count };
   } catch (error) {
-    logger.error('Failed to fetch questions:', error);
+    logger.error({ err: error }, 'Failed to fetch questions');
     throw new Error('Failed to fetch questions');
   }
 }
@@ -100,7 +100,7 @@ export async function importQuestionsAction(jsonData: unknown) {
 
     return { success: true, count: parsedData.length };
   } catch (error) {
-    logger.error('Import failed:', error);
+    logger.error({ err: error }, 'Import failed');
     return { success: false, error: getErrorMessage(error, 'Unknown error') };
   }
 }
@@ -188,7 +188,7 @@ export async function updateQuestionAction(id: number, data: QuestionUpdateData)
 
     return { success: true };
   } catch (error) {
-    logger.error('Update question failed:', error);
+    logger.error({ err: error }, 'Update question failed');
     return { success: false, error: '更新失败' };
   }
 }
@@ -209,7 +209,7 @@ export async function batchDeleteQuestionsAction(ids: number[]) {
 
     return { success: true, deletedCount: result.changes };
   } catch (error) {
-    logger.error('Batch delete failed:', error);
+    logger.error({ err: error }, 'Batch delete failed');
     return { success: false, error: '批量删除失败', deletedCount: 0 };
   }
 }
@@ -277,7 +277,7 @@ export async function getUsersAction(limit: number = 20, offset: number = 0, que
       total
     };
   } catch (error) {
-    logger.error('Failed to get users:', error);
+    logger.error({ err: error }, 'Failed to get users');
     return { users: [], total: 0 };
   }
 }
@@ -299,7 +299,7 @@ export async function deleteUserAction(id: number) {
 
     return { success: true };
   } catch (error) {
-    logger.error('Failed to delete user:', error);
+    logger.error({ err: error }, 'Failed to delete user');
     return { success: false, error: 'Delete failed' };
   }
 }
@@ -320,7 +320,7 @@ export async function resetUserPasswordAction(id: number, newPassword: string) {
 
     return { success: true };
   } catch (error) {
-    logger.error('Failed to reset password:', error);
+    logger.error({ err: error }, 'Failed to reset password');
     return { success: false, error: '重置失败' };
   }
 }
@@ -344,7 +344,7 @@ export async function updateUserRoleAction(id: number, role: UserRole) {
 
     return { success: true };
   } catch (error) {
-    logger.error('Failed to update role:', error);
+    logger.error({ err: error }, 'Failed to update role');
     return { success: false, error: '更新角色失败' };
   }
 }
@@ -365,7 +365,7 @@ export async function revokeUserSessionAction(id: number) {
 
     return { success: true };
   } catch (error) {
-    logger.error('Failed to revoke session:', error);
+    logger.error({ err: error }, 'Failed to revoke session');
     return { success: false, error: '强制下线失败' };
   }
 }
@@ -399,7 +399,7 @@ export async function getAdminStatsAction(): Promise<AdminStats> {
             activeAi: aiConfigCount.count,
         };
     } catch (error: unknown) {
-        logger.error('无法获取后台统计信息:', error);
+        logger.error({ err: error }, '无法获取后台统计信息');
         return { users: 0, questions: 0, practices: 0, activeAi: 0 };
     }
 }

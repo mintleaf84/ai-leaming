@@ -27,7 +27,7 @@ export async function getPromptTemplatesAction(): Promise<PromptTemplate[]> {
         // Let's first cast rows to partial objects
         const dbRows = rows.map(row => ({
             ...row,
-            variables: JSON.parse(row.variables || '[]')
+            variables: JSON.parse((row.variables as string | undefined) || '[]')
         }));
 
         const existingKeys = new Set(dbRows.map(r => r.key));
@@ -83,7 +83,7 @@ export async function getPromptTemplatesAction(): Promise<PromptTemplate[]> {
 
         return combined as PromptTemplate[];
     } catch (error) {
-        logger.error('Failed to get prompt templates:', error);
+        logger.error({ err: error }, 'Failed to get prompt templates');
         return [];
     }
 }
@@ -111,7 +111,7 @@ export async function savePromptTemplateAction(
 
         return { success: true };
     } catch (error: unknown) {
-        logger.error('Failed to save prompt template:', error);
+        logger.error({ err: error }, 'Failed to save prompt template');
         return { success: false, error: getErrorMessage(error) };
     }
 }
@@ -156,7 +156,7 @@ export async function debugPromptTemplateAction(
 
         return { success: true, result };
     } catch (error: unknown) {
-        logger.error('Debug prompt failed:', error);
+        logger.error({ err: error }, 'Debug prompt failed');
         const rawResponse = error instanceof AiRawResponseError ? error.rawResponse : undefined;
         return {
             success: false,

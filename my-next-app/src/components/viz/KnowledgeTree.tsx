@@ -4,6 +4,7 @@ import React, { useCallback, useMemo, useRef } from 'react';
 import dynamic from 'next/dynamic';
 import { Target, BookOpen } from 'lucide-react';
 import { KnowledgeGraphData, KnowledgeNode, KnowledgeLink } from '@/server/actions/viz';
+import type { ForceGraphMethods, NodeObject } from 'react-force-graph-2d';
 import {
   Drawer,
   DrawerClose,
@@ -17,6 +18,7 @@ import { Button } from "@/components/ui/button";
 import { useRouter } from 'next/navigation';
 
 // 动态导入 ForceGraph2D，禁用 SSR（因为它依赖 canvas）
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
 const ForceGraph2D = dynamic(() => import('react-force-graph-2d'), {
   ssr: false,
   loading: () => (
@@ -24,14 +26,22 @@ const ForceGraph2D = dynamic(() => import('react-force-graph-2d'), {
       <div className="text-muted-foreground">加载知识图谱...</div>
     </div>
   ),
-});
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+}) as any;
+
+// react-force-graph 运行时会注入 x、y、val 等属性
+type ForceKnowledgeNode = KnowledgeNode & {
+  x: number;
+  y: number;
+  val: number;
+};
 
 interface KnowledgeTreeProps {
   data: KnowledgeGraphData;
 }
 
 export function KnowledgeTree({ data }: KnowledgeTreeProps) {
-  const graphRef = useRef<{ d3Force: (name: string, fn: unknown) => void } | null>(null);
+  const graphRef = useRef<ForceGraphMethods<NodeObject<KnowledgeNode>> | undefined>(undefined);
   const router = useRouter();
   const [selectedNode, setSelectedNode] = React.useState<KnowledgeNode | null>(null);
   const [drawerOpen, setDrawerOpen] = React.useState(false);
@@ -69,7 +79,7 @@ export function KnowledgeTree({ data }: KnowledgeTreeProps) {
   }, []);
 
   // 节点绘制（自定义 Canvas 渲染）
-  const paintNode = useCallback((node: KnowledgeNode, ctx: CanvasRenderingContext2D, globalScale: number) => {
+  const paintNode = useCallback((node: ForceKnowledgeNode, ctx: CanvasRenderingContext2D, globalScale: number) => {
     const label = node.id.split('/').pop() || node.id;
     const fontSize = node.group === 0 ? 14 / globalScale : 10 / globalScale;
     const nodeRadius = node.val;
@@ -107,16 +117,20 @@ export function KnowledgeTree({ data }: KnowledgeTreeProps) {
       const fg = graphRef.current;
       
       // 增强电荷斥力 (Repulsion)
-      fg.d3Force('charge').strength(-400);
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      (fg.d3Force('charge') as any)?.strength(-400);
 
       // 增加链路距离 (Link Distance)
-      fg.d3Force('link').distance(80);
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      (fg.d3Force('link') as any)?.distance(80);
 
       // 引入节点碰撞检测 (Collision)，防止重叠
-      fg.d3Force('collide', (_node: KnowledgeNode) => {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      fg.d3Force('collide', ((_node: NodeObject<KnowledgeNode>) => {
          // 碰撞半径：节点半径 + 较大的保护边距（为文字留白）
-         return node.val + 25;
-      });
+         const n = _node as ForceKnowledgeNode;
+         return n.val + 25;
+      }) as any);
 
       // 重新预热引擎以应用新参数
       fg.d3ReheatSimulation();
@@ -126,20 +140,22 @@ export function KnowledgeTree({ data }: KnowledgeTreeProps) {
   return (
     <div className="w-full h-full relative">
       <ForceGraph2D
-        ref={graphRef}
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        ref={graphRef as any}
         graphData={graphData}
         nodeRelSize={1}
         nodeVal="val"
-        nodeCanvasObject={paintNode}
-        nodePointerAreaPaint={(node: KnowledgeNode, color, ctx) => {
+        nodeCanvasObject={paintNode as (node: NodeObject<KnowledgeNode>, ctx: CanvasRenderingContext2D, globalScale: number) => void}
+        nodePointerAreaPaint={(node: NodeObject<KnowledgeNode>, color: string, ctx: CanvasRenderingContext2D) => {
+          const n = node as ForceKnowledgeNode;
           ctx.beginPath();
-          ctx.arc(node.x, node.y, node.val, 0, 2 * Math.PI, false);
+          ctx.arc(n.x, n.y, n.val, 0, 2 * Math.PI, false);
           ctx.fillStyle = color;
           ctx.fill();
         }}
         linkColor={() => '#e2e8f0'}
         linkWidth={(link: KnowledgeLink) => Math.sqrt(link.value) * 1.5}
-        onNodeClick={handleNodeClick}
+        onNodeClick={(node: KnowledgeNode) => handleNodeClick(node as unknown as KnowledgeNode)}
         cooldownTicks={100}
         onEngineStop={() => graphRef.current?.zoomToFit(400, 50)}
         enableZoomInteraction={true}

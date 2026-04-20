@@ -3,6 +3,7 @@ import logger from '@/lib/logger';
 
 import db from '@/lib/db';
 import { Question, Dimension } from "@/types";
+import type { PracticeMode } from "@/types";
 import { safeGet, safeAll } from '@/lib/db/safe-query';
 import { PracticeSessionRowSchema, QuestionSchema, QuestionRowSchema } from '@/lib/schemas';
 import { z } from 'zod';
@@ -45,7 +46,7 @@ async function getDemoSession(userId: string | number): Promise<{
     // 清空该会话的答题记录，让用户从头开始
     db.prepare('DELETE FROM practice_logs WHERE session_id = ?').run(existing.id);
     db.prepare('UPDATE practice_sessions SET correct_count = 0 WHERE id = ?').run(existing.id);
-    logger.info('[DemoMode] 复用演示会话:', existing.id);
+    logger.info({ value: existing.id }, '[DemoMode] 复用演示会话');
 
     let questions: Question[];
     try {
@@ -77,7 +78,7 @@ async function getDemoSession(userId: string | number): Promise<{
     VALUES (?, ?, ?, ?, 'smart', 1)
   `).run(sessionId, userId, questions.length, JSON.stringify(questions));
 
-  logger.info('[DemoMode] 创建新演示会话:', sessionId);
+  logger.info({ value: sessionId }, '[DemoMode] 创建新演示会话');
   return { questions, sessionId };
 }
 
@@ -158,7 +159,7 @@ export async function getPracticeSessionAction(forceNew: boolean = false): Promi
 
     return { questions, sessionId };
   } catch (error) {
-    logger.error('Failed to create/resume practice session:', error);
+    logger.error({ err: error }, 'Failed to create/resume practice session');
     throw new Error('无法创建练习会话，请稍后重试。');
   }
 }
@@ -194,7 +195,7 @@ export async function submitAnswerAction(questionId: number, userAnswer: string,
     }
     return { success: true };
   } catch (e) {
-    logger.error("Submit answer failed", e);
+    logger.error({ err: e }, "Submit answer failed");
     return { success: false };
   }
 }
@@ -216,7 +217,7 @@ export async function saveSessionReviewAction(sessionId: string, questionId: num
 
     return { success: true };
   } catch (e) {
-    logger.error("Failed to save review data", e);
+    logger.error({ err: e }, "Failed to save review data");
     return { success: false };
   }
 }
@@ -234,7 +235,7 @@ export async function getAvailableTagsAction(): Promise<string[]> {
 
     return result.map(r => r.tag);
   } catch (error) {
-    logger.error('获取标签失败', error);
+    logger.error({ err: error }, '获取标签失败');
     return [];
   }
 }
@@ -331,7 +332,7 @@ export async function getKnowledgeTreeAction(): Promise<KnowledgeParams[]> {
 
     return root;
   } catch (error) {
-    logger.error('获取知识树失败', error);
+    logger.error({ err: error }, '获取知识树失败');
     return [];
   }
 }
@@ -365,11 +366,11 @@ export async function getPracticeSessionByConfigAction(config: {
 
     // 构建配置
     const practiceConfig = {
-      mode: config.mode,
+      mode: config.mode as PracticeMode,
       limit: config.limit,
-      types: config.types,
+      types: config.types as ('single' | 'multi' | 'truefalse')[] | undefined,
       tags: config.tags,
-      dimensions: config.dimensions,
+      dimensions: config.dimensions as import('@/types').Dimension[] | undefined,
       enableReview: config.enableReview ?? true,
       enableTimer: config.enableTimer ?? false
     };
@@ -407,7 +408,7 @@ export async function getPracticeSessionByConfigAction(config: {
 
     return { questions, sessionId, config };
   } catch (error) {
-    logger.error('创建练习会话失败:', error);
+    logger.error({ err: error }, '创建练习会话失败');
     throw new Error('无法创建练习会话，请稍后重试。');
   }
 }
@@ -481,7 +482,7 @@ export async function getSessionByIdAction(sessionId: string): Promise<{
       practiceMode: session.practice_mode || undefined // Handle null
     };
   } catch (error) {
-    logger.error('获取会话失败:', error);
+    logger.error({ err: error }, '获取会话失败');
     return null;
   }
 }

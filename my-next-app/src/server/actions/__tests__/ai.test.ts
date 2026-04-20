@@ -37,7 +37,7 @@ const { mockBetterDb } = vi.hoisted(() => {
     }));
 
     // better-sqlite3 的 transaction() 返回一个函数，调用该函数时才执行事务
-    const transaction = vi.fn().mockImplementation((cb: () => any) => {
+    const transaction = vi.fn().mockImplementation((cb: (...args: any[]) => any) => {
         return vi.fn().mockImplementation((...args: any[]) => cb(...args));
     });
 

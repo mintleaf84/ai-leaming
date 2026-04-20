@@ -1,5 +1,6 @@
 import React, { useReducer, useEffect, useCallback, useMemo } from 'react';
-import { PracticeState, Action, Question, ReviewItem } from '../lib/types';
+import { PracticeState, PracticeAction, ReviewItem } from '@/types';
+import type { Question } from '@/types';
 import { apiClient } from '@/lib/utils/api-client';
 export const INITIAL_STATE: PracticeState = {
   status: 'loading',
@@ -13,7 +14,7 @@ export const INITIAL_STATE: PracticeState = {
   reviewTriggeredAt: 25, // Hardcoded per PRD
 };
 
-export const createPracticeReducer = (enableIntelligentReview: boolean) => (state: PracticeState, action: Action): PracticeState => {
+export const createPracticeReducer = (enableIntelligentReview: boolean) => (state: PracticeState, action: PracticeAction): PracticeState => {
   switch (action.type) {
     case 'INIT_SESSION':
       return {
@@ -37,7 +38,7 @@ export const createPracticeReducer = (enableIntelligentReview: boolean) => (stat
       // Let's build reviewQueue incrementally to allow "Risk First" sort later.
       let updatedReviewQueue = state.reviewQueue;
       if (!isCorrect) {
-        const q = state.sessionQueue.find(q => q.id === questionId);
+        const q = state.sessionQueue.find((q: Question) => q.id === questionId);
         if (q) {
           const newItem: ReviewItem = {
             originalQuestionId: q.id,

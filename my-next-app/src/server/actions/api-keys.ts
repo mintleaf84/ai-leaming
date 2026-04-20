@@ -27,7 +27,7 @@ export async function getApiKeysAction(): Promise<ApiKeyView[]> {
         ).all() as ApiKeyView[];
         return rows;
     } catch (error) {
-        logger.error('[ApiKeys] 获取列表失败:', error);
+        logger.error({ err: error }, '[ApiKeys] 获取列表失败');
         return [];
     }
 }
@@ -51,7 +51,7 @@ export async function createApiKeyAction(
 
         return { success: true, key: keyString };
     } catch (error: unknown) {
-        logger.error('[ApiKeys] 创建失败:', error);
+        logger.error({ err: error }, '[ApiKeys] 创建失败');
         return { success: false, error: getErrorMessage(error) };
     }
 }
@@ -75,7 +75,7 @@ export async function toggleApiKeyAction(
 
         return { success: true };
     } catch (error: unknown) {
-        logger.error('[ApiKeys] 切换状态失败:', error);
+        logger.error({ err: error }, '[ApiKeys] 切换状态失败');
         return { success: false, error: getErrorMessage(error) };
     }
 }
@@ -94,7 +94,7 @@ export async function deleteApiKeyAction(
 
         return { success: true };
     } catch (error: unknown) {
-        logger.error('[ApiKeys] 删除失败:', error);
+        logger.error({ err: error }, '[ApiKeys] 删除失败');
         return { success: false, error: getErrorMessage(error) };
     }
 }

@@ -19,7 +19,7 @@ import { render, screen, waitFor, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest'
 import { http, HttpResponse } from 'msw'
-import { server } from '../../../../tests/msw/server'
+import { server } from '../../../../../tests/msw/server'
 
 // ============================================================
 // Server Actions Mock 配置
@@ -380,7 +380,7 @@ describe('QuestionManager 集成测试', () => {
 
         // 通过分页信息所在的容器找到分页按钮区域
         // 分页信息和按钮都在底部 flex 容器（p-4 border-t）中
-        const paginationFooter = paginationInfo.closest('div.flex')!
+        const paginationFooter = paginationInfo.closest('div.flex') as HTMLElement
         const paginationBtns = within(paginationFooter).getAllByRole('button')
 
         // 第 1 页时分页按钮顺序：[首页(disabled), 上一页(disabled), 下一页(enabled), 末页(enabled)]

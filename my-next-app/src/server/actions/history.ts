@@ -141,7 +141,7 @@ export async function getSessionHistoryAction(filter?: HistoryFilter): Promise<P
       totalPages: Math.ceil(countRow.count / pageSize)
     };
   } catch (error) {
-    logger.error("Failed to fetch session history:", error);
+    logger.error({ err: error }, "Failed to fetch session history");
     return { items: [], total: 0, page: 1, pageSize: 10, totalPages: 0 };
   }
 }
@@ -231,7 +231,7 @@ export async function getSessionDetailAction(sessionId: string): Promise<Session
       }))
     };
   } catch (error) {
-    logger.error("Failed to fetch session detail:", error);
+    logger.error({ err: error }, "Failed to fetch session detail");
     return null;
   }
 }
@@ -260,7 +260,7 @@ export async function deleteSessionAction(sessionId: string) {
     transaction(sessionId, user.id);
     return { success: true };
   } catch (error) {
-    logger.error("Failed to delete session:", error);
+    logger.error({ err: error }, "Failed to delete session");
     return { success: false, message: "删除失败，请稍后重试" };
   }
 }
@@ -283,7 +283,7 @@ export async function renameSessionAction(sessionId: string, newName: string) {
 
     return { success: true };
   } catch (error) {
-    logger.error("Failed to rename session:", error);
+    logger.error({ err: error }, "Failed to rename session");
     return { success: false, message: "重命名失败，请稍后重试" };
   }
 }
@@ -326,7 +326,7 @@ export async function exportSessionMarkdownAction(sessionId: string): Promise<{
 
     return { success: true, markdown, filename };
   } catch (error) {
-    logger.error("Failed to export session:", error);
+    logger.error({ err: error }, "Failed to export session");
     return { success: false, error: "导出失败，请稍后重试" };
   }
 }

@@ -54,7 +54,7 @@ ${ocrText}
         return { success: true, data: cleanText };
 
     } catch (error: unknown) {
-        logger.error('[Mindmap Action] 生成思维导图失败:', error);
+        logger.error({ err: error }, '[Mindmap Action] 生成思维导图失败');
         return {
             success: false,
             error: getErrorMessage(error, '生成结构化思维导图失败')

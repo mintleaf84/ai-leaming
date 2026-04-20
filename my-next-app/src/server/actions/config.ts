@@ -85,7 +85,7 @@ export async function saveAiConfigAction(config: Partial<AiConfig>) {
 
         return { success: true };
     } catch (error: unknown) {
-        logger.error('saveAiConfigAction error:', error);
+        logger.error({ err: error }, 'saveAiConfigAction error');
         return { success: false, error: getErrorMessage(error) };
     }
 }

@@ -16,7 +16,7 @@ export async function getTagsAction() {
         `).all(user.id) as NoteTag[];
         return { success: true, tags };
     } catch (error: unknown) {
-        logger.error('Get tags failed:', error);
+        logger.error({ err: error }, 'Get tags failed');
         return { success: false, message: '获取标签失败' };
     }
 }
@@ -38,7 +38,7 @@ export async function createTagAction(name: string, color?: string) {
         if (isSqliteConstraintError(error, 'SQLITE_CONSTRAINT_UNIQUE')) {
             return { success: false, message: '标签名已存在' };
         }
-        logger.error('Create tag failed:', error);
+        logger.error({ err: error }, 'Create tag failed');
         return { success: false, message: '创建标签失败' };
     }
 }
@@ -59,7 +59,7 @@ export async function deleteTagAction(tagId: number) {
         revalidatePath('/notes');
         return { success: true };
     } catch (error: unknown) {
-        logger.error('Delete tag failed:', error);
+        logger.error({ err: error }, 'Delete tag failed');
         return { success: false, message: '删除标签失败' };
     }
 }
@@ -83,7 +83,7 @@ export async function getNoteTagsAction(noteId: number) {
 
         return { success: true, tags };
     } catch (error: unknown) {
-        logger.error('Get note tags failed:', error);
+        logger.error({ err: error }, 'Get note tags failed');
         return { success: false, message: '获取笔记标签失败' };
     }
 }
@@ -117,7 +117,7 @@ export async function setNoteTagsAction(noteId: number, tagIds: number[]) {
         revalidatePath(`/notes/${noteId}`);
         return { success: true };
     } catch (error: unknown) {
-        logger.error('Set note tags failed:', error);
+        logger.error({ err: error }, 'Set note tags failed');
         return { success: false, message: '设置标签失败' };
     }
 }
@@ -137,7 +137,7 @@ export async function getNotesByTagAction(tagId: number) {
 
         return { success: true, notes };
     } catch (error: unknown) {
-        logger.error('Get notes by tag failed:', error);
+        logger.error({ err: error }, 'Get notes by tag failed');
         return { success: false, message: '获取笔记失败' };
     }
 }

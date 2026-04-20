@@ -112,10 +112,10 @@ app.openapi(listRoute, async (c) => {
         type: row.type || null,
         dimension: row.dimension || null,
         content: row.content,
-        options: safeJsonParse(row.options, []),
+        options: safeJsonParse(row.options as string | null | undefined, []),
         answer: row.answer,
         explanation: row.explanation || null,
-        tags: safeJsonParse(row.tags, []),
+        tags: safeJsonParse(row.tags as string | null | undefined, []),
     }))
 
     return c.json({
@@ -164,10 +164,10 @@ app.openapi(getRoute, async (c) => {
         type: row.type || null,
         dimension: row.dimension || null,
         content: row.content,
-        options: safeJsonParse(row.options, []),
+        options: safeJsonParse(row.options as string | null | undefined, []),
         answer: row.answer,
         explanation: row.explanation || null,
-        tags: safeJsonParse(row.tags, []),
+        tags: safeJsonParse(row.tags as string | null | undefined, []),
     })
 })
 

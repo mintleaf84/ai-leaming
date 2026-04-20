@@ -19,7 +19,7 @@ export async function getGlobalFeatureFlag(key: string, defaultValue: boolean = 
     }
     return row.value === 'true';
   } catch (error) {
-    logger.error(`Failed to fetch feature flag [${key}]:`, error);
+    logger.error({ err: error }, `Failed to fetch feature flag [${key}]`);
     return defaultValue;
   }
 }
@@ -40,7 +40,7 @@ export async function toggleGlobalFeatureFlag(key: string, value: boolean) {
     revalidatePath('/', 'layout');
     return { success: true, value };
   } catch (error) {
-    logger.error(`Failed to toggle feature flag [${key}]:`, error);
+    logger.error({ err: error }, `Failed to toggle feature flag [${key}]`);
     return { success: false, error: '数据库更新开关失败' };
   }
 }

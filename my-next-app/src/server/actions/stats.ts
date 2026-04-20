@@ -153,7 +153,7 @@ export const getPracticeTrendAction = cache(async (days: number = 14): Promise<T
 
     return result;
   } catch (error) {
-    logger.error("Failed to fetch practice trend:", error);
+    logger.error({ err: error }, "Failed to fetch practice trend");
     return [];
   }
 });

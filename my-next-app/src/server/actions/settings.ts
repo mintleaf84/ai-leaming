@@ -74,7 +74,7 @@ export async function testAiConnectionAction(apiKey: string, apiUrl: string, mod
     const { text } = await generateTextWrapper(prompt, 'economy', apiKey, apiUrl);
     return { success: true, message: text };
   } catch (error: unknown) {
-    logger.error("Connection Test Failed:", error);
+    logger.error({ err: error }, "Connection Test Failed");
     return { success: false, error: getErrorMessage(error, 'Connection failed') };
   }
 }

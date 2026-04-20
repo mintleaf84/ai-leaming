@@ -1,6 +1,36 @@
 
 import db from '@/lib/db';
 
+// DB 行类型定义
+type SessionRow = {
+    id: number | string;
+    sessionName?: string;
+    totalQuestions: number;
+    correctCount: number;
+    reviewCount: number;
+    createdAt: string;
+    practiceMode?: string;
+};
+
+type SessionLogRow = {
+    questionId: string;
+    questionContent: string;
+    options: string;
+    correctAnswer: string;
+    userAnswer: string;
+    isCorrect: number;
+    duration: number;
+    tags: string;
+    source: string;
+    explanation: string;
+    correct_ratio: number;
+    most_wrong_answer: string;
+    reviewData: string;
+    ai_mnemonic: string | null;
+    material: string | null;
+    material_html: string | null;
+};
+
 export type HistoryFilter = {
     dateFrom?: string;       // YYYY-MM-DD
     dateTo?: string;         // YYYY-MM-DD
@@ -81,15 +111,18 @@ export const historyService = {
       WHERE ${whereClause}
       ORDER BY created_at DESC
       LIMIT ? OFFSET ?
-    `).all(...params, pageSize, offset) as Record<string, unknown>[];
+    `).all(...params, pageSize, offset) as SessionRow[];
 
-        // Calculate accuracy and filter
-        let items = rows.map(r => ({
-            ...r,
-            id: String(r.id), // Ensure ID is string
-            // Convert timestamp/string to ISO string for API consistency
+        // 정확도 계산 후 SessionHistoryItem 배열로 변환
+        const items: SessionHistoryItem[] = rows.map(r => ({
+            id: String(r.id),
+            sessionName: r.sessionName,
+            totalQuestions: r.totalQuestions,
+            correctCount: r.correctCount,
+            reviewCount: r.reviewCount,
             createdAt: new Date(r.createdAt).toISOString(),
-            accuracy: r.totalQuestions > 0 ? Math.round((r.correctCount / r.totalQuestions) * 100) : 0
+            accuracy: r.totalQuestions > 0 ? Math.round((r.correctCount / r.totalQuestions) * 100) : 0,
+            practiceMode: r.practiceMode,
         }));
 
         return {
@@ -110,7 +143,7 @@ export const historyService = {
                 review_count as reviewCount, created_at as createdAt,
                 practice_mode as practiceMode, session_name as sessionName
         FROM practice_sessions WHERE id = ? AND user_id = ?
-    `).get(sessionId, userId) as Record<string, unknown> | undefined;
+    `).get(sessionId, userId) as SessionRow | undefined;
 
         if (!sessionRow) return null;
 
@@ -125,14 +158,18 @@ export const historyService = {
         JOIN questions q ON l.question_id = q.id
         LEFT JOIN session_reviews r ON l.session_id = r.session_id AND l.question_id = r.question_id
         WHERE l.session_id = ?
-    `).all(sessionId) as Record<string, unknown>[];
+    `).all(sessionId) as SessionLogRow[];
 
         return {
             session: {
-                ...sessionRow,
-                id: String(sessionRow.id), // Ensure ID is string
+                id: String(sessionRow.id),
+                sessionName: sessionRow.sessionName,
+                totalQuestions: sessionRow.totalQuestions,
+                correctCount: sessionRow.correctCount,
+                reviewCount: sessionRow.reviewCount,
                 createdAt: new Date(sessionRow.createdAt).toISOString(),
-                accuracy: sessionRow.totalQuestions > 0 ? Math.round((sessionRow.correctCount / sessionRow.totalQuestions) * 100) : 0
+                accuracy: sessionRow.totalQuestions > 0 ? Math.round((sessionRow.correctCount / sessionRow.totalQuestions) * 100) : 0,
+                practiceMode: sessionRow.practiceMode,
             },
             logs: logs.map(l => ({
                 questionId: l.questionId,

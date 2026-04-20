@@ -6,7 +6,7 @@ async function migrate() {
 
     try {
         // Check if token_version column exists
-        const tableInfo = db.prepare('PRAGMA table_info(users)').all() as unknown[];
+        const tableInfo = db.prepare('PRAGMA table_info(users)').all() as any[];
         const hasTokenVersion = tableInfo.some(col => col.name === 'token_version');
 
         if (!hasTokenVersion) {

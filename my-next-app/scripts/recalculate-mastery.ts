@@ -26,7 +26,7 @@ async function recalculateMastery() {
     FROM practice_logs l
     JOIN questions q ON l.question_id = q.id
     ORDER BY l.timestamp ASC
-  `).all() as unknown[];
+  `).all() as any[];
 
     console.log(`   找到 ${logs.length} 条练习记录\n`);
 
@@ -75,7 +75,7 @@ async function recalculateMastery() {
     WHERE user_id = 1
     ORDER BY score DESC
     LIMIT 10
-  `).all() as unknown[];
+  `).all() as any[];
 
     console.log('\n   前10个知识点掌握度:');
     console.log('   ─────────────────────────────────────');

@@ -11,8 +11,8 @@ vi.mock('novel', () => {
         extend: vi.fn().mockReturnThis(),
     };
     return {
-        EditorRoot: ({ children }: unknown) => <div data-testid="editor-root">{children}</div>,
-        EditorContent: ({ onUpdate, slotAfter, initialContent }: unknown) => (
+        EditorRoot: ({ children }: any) => <div data-testid="editor-root">{children}</div>,
+        EditorContent: ({ onUpdate, slotAfter, initialContent }: any) => (
             <div data-testid="editor-content">
                 <button 
                     data-testid="simulate-update" 
@@ -28,10 +28,10 @@ vi.mock('novel', () => {
                 <div data-testid="initial-content-passed">{JSON.stringify(initialContent || null)}</div>
             </div>
         ),
-        EditorCommand: ({ children }: unknown) => <div data-testid="editor-command">{children}</div>,
-        EditorCommandEmpty: ({ children }: unknown) => <div>{children}</div>,
-        EditorCommandItem: ({ children }: unknown) => <div>{children}</div>,
-        EditorCommandList: ({ children }: unknown) => <div>{children}</div>,
+        EditorCommand: ({ children }: any) => <div data-testid="editor-command">{children}</div>,
+        EditorCommandEmpty: ({ children }: any) => <div>{children}</div>,
+        EditorCommandItem: ({ children }: any) => <div>{children}</div>,
+        EditorCommandList: ({ children }: any) => <div>{children}</div>,
         ImageResizer: () => <div data-testid="image-resizer" />,
         handleCommandNavigation: vi.fn(),
         handleImageDrop: vi.fn(),
@@ -73,10 +73,10 @@ vi.mock('../selectors', () => ({
     TextButtons: () => <div />,
 }));
 vi.mock('../generative/generative-menu-switch', () => ({
-    default: ({ children }: unknown) => <div>{children}</div>
+    default: ({ children }: any) => <div>{children}</div>
 }));
 vi.mock('../QuestionPicker', () => ({
-    default: ({ isOpen, onClose }: unknown) => (
+    default: ({ isOpen, onClose }: any) => (
         isOpen ? (
             <div data-testid="question-picker">
                 Question Picker Open

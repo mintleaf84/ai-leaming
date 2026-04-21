@@ -7,7 +7,7 @@ import { AccuracyTrendChart, PracticedBarChart, CombinedTrendChart } from '../Tr
 
 // Mock next/dynamic to render components synchronously
 vi.mock('next/dynamic', () => ({
-    default: (_loader: unknown) => {
+    default: (_loader: any) => {
         // Simple mock that renders children or a div
         const MockComponent = (props: any) => (
             <div data-testid="mock-chart-component" {...props}>
@@ -21,23 +21,23 @@ vi.mock('next/dynamic', () => ({
 
 // Mock recharts (though next/dynamic mock should handle most of it)
 vi.mock('recharts', () => ({
-    ResponsiveContainer: ({ children }: unknown) => <div data-testid="responsive-container">{children}</div>,
-    AreaChart: ({ children }: unknown) => <div data-testid="area-chart">{children}</div>,
+    ResponsiveContainer: ({ children }: any) => <div data-testid="responsive-container">{children}</div>,
+    AreaChart: ({ children }: any) => <div data-testid="area-chart">{children}</div>,
     Area: () => <div />,
     XAxis: () => <div />,
     YAxis: () => <div />,
     CartesianGrid: () => <div />,
     Tooltip: () => <div />,
-    BarChart: ({ children }: unknown) => <div data-testid="bar-chart">{children}</div>,
+    BarChart: ({ children }: any) => <div data-testid="bar-chart">{children}</div>,
     Bar: () => <div />,
-    ComposedChart: ({ children }: unknown) => <div data-testid="composed-chart">{children}</div>,
+    ComposedChart: ({ children }: any) => <div data-testid="composed-chart">{children}</div>,
     Line: () => <div />,
 }));
 
 const mockData = [
     { displayDate: '2023-01-01', accuracy: 80, practiced: 10, correct: 8, timestamp: Date.now() },
     { displayDate: '2023-01-02', accuracy: 90, practiced: 20, correct: 18, timestamp: Date.now() },
-] as unknown;
+] as any;
 
 describe('TrendChart Components', () => {
     it('renders AccuracyTrendChart correctly', () => {

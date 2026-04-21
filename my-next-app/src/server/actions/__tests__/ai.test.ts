@@ -128,7 +128,7 @@ describe('AI Actions', () => {
             
             // 验证缓存写入使用了正确的 Key
             const calls = mockBetterDb._state.calls;
-            const insertCall = calls.find((c: unknown) => c.sql.includes('INSERT OR REPLACE INTO ai_quiz_cache'));
+            const insertCall = calls.find((c: any) => c.sql.includes('INSERT OR REPLACE INTO ai_quiz_cache'));
             expect(insertCall?.args[0]).toBe(expectedKey);
             expect(insertCall?.args[1]).toBe(JSON.stringify(mockQuiz));
         });
@@ -149,7 +149,7 @@ describe('AI Actions', () => {
             
             // 验证缓存写入
             const calls = mockBetterDb._state.calls;
-            const insertCall = calls.find((c: unknown) => c.sql.includes('INSERT OR REPLACE INTO first_principles_cache'));
+            const insertCall = calls.find((c: any) => c.sql.includes('INSERT OR REPLACE INTO first_principles_cache'));
             expect(insertCall?.args[0]).toBe(expectedKey);
         });
     });

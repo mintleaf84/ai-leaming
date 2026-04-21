@@ -129,7 +129,7 @@ export function KnowledgeTree({ data }: KnowledgeTreeProps) {
          // 碰撞半径：节点半径 + 较大的保护边距（为文字留白）
          const n = _node as ForceKnowledgeNode;
          return n.val + 25;
-      }) as unknown);
+      }) as any);
 
       // 重新预热引擎以应用新参数
       fg.d3ReheatSimulation();

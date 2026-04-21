@@ -5,11 +5,11 @@ import { ReviewCard } from '../ReviewCard'
 // Mock framer-motion to avoid animation issues in tests
 vi.mock('framer-motion', () => ({
     motion: {
-        div: ({ children, ...props }: unknown) => <div {...props}>{children}</div>,
-        button: ({ children, ...props }: unknown) => <button {...props}>{children}</button>,
-        span: ({ children, ...props }: unknown) => <span {...props}>{children}</span>,
+        div: ({ children, ...props }: any) => <div {...props}>{children}</div>,
+        button: ({ children, ...props }: any) => <button {...props}>{children}</button>,
+        span: ({ children, ...props }: any) => <span {...props}>{children}</span>,
     },
-    AnimatePresence: ({ children }: unknown) => <>{children}</>,
+    AnimatePresence: ({ children }: any) => <>{children}</>,
 }))
 
 const mockQuestion = {

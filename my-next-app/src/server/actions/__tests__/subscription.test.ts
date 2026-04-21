@@ -102,7 +102,7 @@ describe('Subscription Actions', () => {
             vi.mocked(requireUser).mockResolvedValue({ id: 10 } as any);
             mockBillingService.checkUsageQuota.mockReturnValue({ allowed: true, remaining: 5 });
 
-            // @ts-expect-error - enum usage in test
+            // @ts-ignore - enum usage in test
             const result = await checkQuotaAction('ai_chat');
 
             expect(result.success).toBe(true);
@@ -114,7 +114,7 @@ describe('Subscription Actions', () => {
             vi.mocked(requireUser).mockResolvedValue({ id: 10 } as any);
             mockBillingService.checkUsageQuota.mockReturnValue({ allowed: false, remaining: 0 });
 
-            // @ts-expect-error - intentional test input
+            // @ts-ignore - intentional test input
             const result = await checkQuotaAction('ai_chat');
 
             expect(result.success).toBe(true); // Action succeeded, but result is not allowed
@@ -124,7 +124,7 @@ describe('Subscription Actions', () => {
         it('should handle unauthenticated user', async () => {
             vi.mocked(requireUser).mockRejectedValue(new Error('Unauthorized'));
 
-            // @ts-expect-error - intentional test input
+            // @ts-ignore - intentional test input
             const result = await checkQuotaAction('ai_chat');
 
             expect(result.success).toBe(false);

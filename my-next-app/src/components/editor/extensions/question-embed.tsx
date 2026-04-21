@@ -11,7 +11,7 @@ import Link from 'next/link';
 /**
  * 题目引用卡片渲染组件
  */
-function QuestionEmbedView({ node }: { node: unknown }) {
+function QuestionEmbedView({ node }: { node: any }) {
     const questionId = node.attrs.questionId;
     const [summary, setSummary] = useState<QuestionSummary | null>(null);
     const [loading, setLoading] = useState(true);

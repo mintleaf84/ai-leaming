@@ -117,13 +117,13 @@ describe('Import Actions', () => {
         
         // 验证插入练习会话
         const calls = mockBetterDb._state.calls;
-        const sessionCall = calls.find((c: unknown) => c.sql.includes('INSERT INTO practice_sessions'));
+        const sessionCall = calls.find((c: any) => c.sql.includes('INSERT INTO practice_sessions'));
         expect(sessionCall).toBeDefined();
         expect(sessionCall?.args).toContain('Test Session');
 
         // 验证题目 JSON
         const questionsJson = sessionCall?.args[6];
-        const parsedQuestions = JSON.parse(questionsJson);
+        const parsedQuestions = JSON.parse(questionsJson as string);
         expect(parsedQuestions).toHaveLength(1);
         expect(parsedQuestions[0].externalId).toBe('ext-1');
     });
@@ -175,7 +175,7 @@ describe('Import Actions', () => {
         
         // 验证是否调用了 UPDATE 语句
         const calls = mockBetterDb._state.calls;
-        const updateCall = calls.find((c: unknown) => c.sql.includes('UPDATE questions'));
+        const updateCall = calls.find((c: any) => c.sql.includes('UPDATE questions'));
         expect(updateCall).toBeDefined();
         expect(updateCall?.args).toContain(999); // 验证 ID 匹配
     });

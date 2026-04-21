@@ -54,7 +54,7 @@ describe('Auth Service', () => {
 
             expect(typeof token).toBe('string');
 
-            const decrypted = await decrypt(token);
+            const decrypted = await decrypt(token) as any;
             expect(decrypted.foo).toBe('bar');
         });
     });

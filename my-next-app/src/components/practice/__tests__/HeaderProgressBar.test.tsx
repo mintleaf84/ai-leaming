@@ -5,7 +5,7 @@ import { HeaderProgressBar } from '../HeaderProgressBar'
 // Mock framer-motion
 vi.mock('framer-motion', () => ({
     motion: {
-        div: ({ children, style, className, animate }: unknown) => (
+        div: ({ children, style, className, animate }: any) => (
             <div className={className} style={{ ...style, width: animate?.width }}>
                 {children}
             </div>

@@ -77,7 +77,7 @@ describe('Admin Actions', () => {
 
             // Verify LIKE clause was used
             const calls = mockDb.prepare.mock.calls;
-            const hasWhereClause = calls.some((call: unknown[]) => call[0].includes('WHERE username LIKE ?'));
+            const hasWhereClause = calls.some((call: any[]) => call[0].includes('WHERE username LIKE ?'));
 
             expect(hasWhereClause).toBe(true);
         });
@@ -139,7 +139,7 @@ describe('Admin Actions', () => {
             expect(result.success).toBe(true);
 
             // Should increment version 5 -> 6
-            const updateCall = mockDb.prepare.mock.calls.find((call: unknown[]) => call[0].includes('UPDATE users'));
+            const updateCall = mockDb.prepare.mock.calls.find((call: any[]) => call[0].includes('UPDATE users'));
             expect(updateCall).toBeDefined();
 
             // Verify run was called with new version

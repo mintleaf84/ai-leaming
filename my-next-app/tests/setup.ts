@@ -13,6 +13,6 @@ if (typeof Element !== 'undefined') {
     Element.prototype.scrollIntoView = () => { };
     // Radix UI 需要 pointer event API，jsdom 不支持
     Element.prototype.hasPointerCapture = () => false;
-    (Element.prototype as unknown).setPointerCapture = () => { };
-    (Element.prototype as unknown).releasePointerCapture = () => { };
+    (Element.prototype as any).setPointerCapture = () => { };
+    (Element.prototype as any).releasePointerCapture = () => { };
 }

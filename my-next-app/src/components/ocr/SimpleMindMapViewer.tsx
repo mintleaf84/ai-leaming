@@ -34,7 +34,7 @@ export function SimpleMindMapViewer({ markdown, onChange, className = '', readOn
         if (!containerRef.current) return;
 
         // 初始化
-        const mindMap = new (MindMap as unknown)({
+        const mindMap = new (MindMap as any)({
             el: containerRef.current,
             fit: true,
             theme: 'classic2', // 内置高颜值主题

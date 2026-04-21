@@ -139,11 +139,11 @@ describe('Practice Actions', () => {
             
             // 验证 DB insert 是否包含正确的题目 JSON
             const calls = mockBetterDb._state.calls;
-            const insertCall = calls.find((c: unknown) => c.sql.includes('INSERT INTO practice_sessions'));
+            const insertCall = calls.find((c: any) => c.sql.includes('INSERT INTO practice_sessions'));
             expect(insertCall).toBeDefined();
             
             const questionsJson = insertCall?.args[3]; // sessionId, userId, total, questions_json
-            const parsed = JSON.parse(questionsJson);
+            const parsed = JSON.parse(questionsJson as string);
             expect(parsed).toHaveLength(1);
             expect(parsed[0].id).toBe(1);
         });

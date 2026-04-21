@@ -7,7 +7,7 @@ const { mockDbInstance } = vi.hoisted(() => ({
     mockDbInstance: {
         db: null as any,
         prepare: (sql: string) => mockDbInstance.db.prepare(sql),
-        transaction: (fn: unknown) => mockDbInstance.db.transaction(fn)
+        transaction: (fn: any) => mockDbInstance.db.transaction(fn)
     }
 }));
 

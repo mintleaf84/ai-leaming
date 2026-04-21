@@ -4,7 +4,7 @@ import { render, screen, fireEvent } from '@testing-library/react'
 // Mock ChatMessage component before importing MessageList
 vi.mock('../ChatMessage', () => ({
     __esModule: true,
-    default: ({ message, onDelete }: unknown) => (
+    default: ({ message, onDelete }: any) => (
         <div data-testid="chat-message">
             <span>{message.content}</span>
             <button onClick={onDelete}>Delete</button>

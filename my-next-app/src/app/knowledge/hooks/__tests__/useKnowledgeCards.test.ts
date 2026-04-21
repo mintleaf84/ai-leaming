@@ -97,7 +97,7 @@ describe('useKnowledgeCards', () => {
         // 验证"删除"请求发送了
         await waitFor(() => {
             const deleteCalls = mockFetch.mock.calls.filter(
-                (call: unknown[]) => call[1]?.method === 'DELETE'
+                (call: any[]) => call[1]?.method === 'DELETE'
             );
             expect(deleteCalls.length).toBeGreaterThanOrEqual(1);
         });

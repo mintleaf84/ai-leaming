@@ -20,7 +20,7 @@ interface SessionQuestion {
 }
 
 interface PracticeState {
-    status: 'loading' | 'practicing' | 'reviewing' | 'finished';
+    status: 'loading' | 'idle' | 'practicing' | 'reviewing' | 'finished' | 'error';
     currentReviewIndex: number;
     reviewQueue: ReviewItem[];
     sessionQueue: SessionQuestion[];

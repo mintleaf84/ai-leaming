@@ -30,8 +30,33 @@ const USAGE_LABELS: Record<string, string> = {
     rag: 'RAG 检索'
 };
 
+export interface UserProfile {
+    id: string | number;
+    username: string;
+    role: string;
+    created_at: string;
+    subscription: {
+        plan_name: string;
+        plan_id: string;
+        status: string;
+        expires_at: string | null;
+        usage_today: Record<string, number>;
+        limits: Record<string, number>;
+    } | null;
+    stats: {
+        total_questions: number;
+        correct_count: number;
+        accuracy: number;
+        practice_days: number;
+        total_sessions: number;
+        total_tags: number;
+        mastered_tags: number;
+        total_chats: number;
+    };
+}
+
 export default function ProfilePage() {
-    const [profile, setProfile] = useState<unknown>(null);
+    const [profile, setProfile] = useState<UserProfile | null>(null);
     const [loading, setLoading] = useState(true);
 
     useEffect(() => {

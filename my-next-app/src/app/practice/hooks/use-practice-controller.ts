@@ -6,6 +6,7 @@ import { toast } from 'sonner';
 import { usePracticeEngine } from '../../../hooks/use-practice-engine';
 import { useReviewGeneration } from './use-review-generation';
 import { useKeyboardShortcuts } from './use-keyboard-shortcuts';
+import { Question, PracticeState } from '@/types';
 import { getPracticeSessionAction, getPracticeSessionByConfigAction, submitAnswerAction, getSessionByIdAction } from '@/server/actions/practice';
 import { moveToObservationZoneAction } from '@/server/actions/zone';
 import { PRACTICE_MODE_LABELS, PracticeMode } from '@/lib/practice/practice-types';
@@ -16,7 +17,7 @@ export function usePracticeController(enableIntelligentReview: boolean = false) 
     const { state, dispatch } = usePracticeEngine(enableIntelligentReview);
 
     // Extracted AI Generation Logic
-    const { isLoadingAI } = useReviewGeneration(state as unknown, dispatch);
+    const { isLoadingAI } = useReviewGeneration(state, dispatch);
 
     const isHandlingRef = useRef(false);
     const [showExitConfirm, setShowExitConfirm] = useState(false);
@@ -72,7 +73,6 @@ export function usePracticeController(enableIntelligentReview: boolean = false) 
                 const enableTimer = searchParams.get('timer') === '1';
 
                 let result;
-
                 if (mode && limit) {
                     // 使用配置化选题
                     const config = {
@@ -106,7 +106,9 @@ export function usePracticeController(enableIntelligentReview: boolean = false) 
                     result = await getPracticeSessionAction(forceNew);
                 }
 
-                const { questions, sessionId, resumed, completedCount } = result as unknown;
+                const { questions, sessionId } = result;
+                const resumed = 'resumed' in result ? (result as any).resumed : false;
+                const completedCount = 'completedCount' in result ? (result as any).completedCount : 0;
 
                 if (questions.length > 0) {
                     dispatch({
@@ -275,7 +277,7 @@ export function usePracticeController(enableIntelligentReview: boolean = false) 
     };
 
     // Keyboard Shortcuts
-    useKeyboardShortcuts(state as unknown, submitAnswer);
+    useKeyboardShortcuts(state, submitAnswer);
 
     return {
         state,

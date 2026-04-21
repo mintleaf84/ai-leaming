@@ -1,13 +1,13 @@
 import React from 'react';
-import { Camera, Save } from 'lucide-react';
+import { Camera, Save, Loader2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Loader2 } from 'lucide-react';
+import type { UserProfile } from '../../profile/page';
 
 interface SettingsProfileTabProps {
-    profile: unknown;
-    setProfile: (profile: unknown) => void;
+    profile: UserProfile;
+    setProfile: (profile: UserProfile) => void;
     onSave: () => void;
     isSaving: boolean;
 }

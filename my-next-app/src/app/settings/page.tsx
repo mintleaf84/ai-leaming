@@ -39,7 +39,7 @@ const TABS: { id: SettingsTab; label: string; icon: React.ElementType }[] = [
 export default function SettingsPage() {
   const [activeTab, setActiveTab] = useState<SettingsTab>('ai');
   const [settings, setSettings] = useState<Settings | null>(null);
-  const [profile, setProfile] = useState<unknown | null>(null);
+  const [profile, setProfile] = useState<import('../profile/page').UserProfile | null>(null);
   const [isSaving, setIsSaving] = useState(false);
   const { theme, setTheme } = useTheme();
   const terminology = useTerminology();
@@ -48,7 +48,7 @@ export default function SettingsPage() {
   useEffect(() => {
     getSettingsAction().then(setSettings);
     getUserProfileAction().then((res) => {
-      if (res.success) setProfile(res.profile);
+      if (res.success && res.profile) setProfile(res.profile as import('../profile/page').UserProfile);
     });
   }, []);
 
@@ -63,7 +63,7 @@ export default function SettingsPage() {
       }
 
       const results = await Promise.all(promises);
-      const profileResult = results[1] as unknown; // updateProfileAction result
+      const profileResult = results[1] as { success: boolean, error?: string } | undefined;
 
       if (profileResult && !profileResult.success) {
         toast.error(profileResult.error || "资料更新失败");
@@ -158,7 +158,7 @@ export default function SettingsPage() {
           )}
 
           {/* --- Content: Profile --- */}
-          {activeTab === 'profile' && (
+          {activeTab === 'profile' && profile && (
             <SettingsProfileTab
               profile={profile}
               setProfile={setProfile}

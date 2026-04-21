@@ -6,7 +6,7 @@ interface Question {
 }
 
 interface PracticeState {
-    status: 'loading' | 'practicing' | 'reviewing' | 'finished';
+    status: 'loading' | 'idle' | 'practicing' | 'reviewing' | 'finished' | 'error';
     currentIndex: number;
     sessionQueue: Question[];
 }

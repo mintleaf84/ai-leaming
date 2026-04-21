@@ -11,11 +11,21 @@ export async function generateMnemonicAction(questionId: string, forceRegenerate
         const user = await requireUser();
 
         // 1. 获取题目信息
+        interface QuestionRow {
+            id: number;
+            content: string;
+            options: string;
+            answer: string;
+            explanation: string;
+            tags: string;
+            ai_mnemonic: string | null;
+        }
+
         const question = db.prepare(`
       SELECT id, content, options, answer, explanation, tags, ai_mnemonic
       FROM questions
       WHERE id = ?
-    `).get(questionId) as unknown;
+    `).get(questionId) as QuestionRow | undefined;
 
         if (!question) {
             return { success: false, message: '题目不存在' };

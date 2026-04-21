@@ -67,7 +67,7 @@ export async function generateCorrectionQuizAction(
       const q = similar[0];
       let options = [];
       try {
-        options = typeof q.options === 'string' ? JSON.parse(q.options) : q.options;
+        options = typeof (q as any).options === 'string' ? JSON.parse((q as any).options) : (q as any).options;
         if (!Array.isArray(options)) options = [];
       } catch (_e) {
         options = [];
@@ -77,10 +77,10 @@ export async function generateCorrectionQuizAction(
         analysis: "AI 生成暂时不可用，我们为您检索了一道相关的强化训练题。",
         distinctionPoint: "知识点辨析",
         quiz: {
-          content: q.content,
+          content: (q as any).content,
           options: options,
-          answer: q.answer,
-          explanation: q.explanation || '库内相似真题解析'
+          answer: (q as any).answer,
+          explanation: (q as any).explanation || '库内相似真题解析'
         }
       };
     }
@@ -165,17 +165,17 @@ export async function generateRegressionChallengeAction(
       const mappedChallenges = similarQuestions.map(q => {
         let options = [];
         try {
-          options = typeof q.options === 'string' ? JSON.parse(q.options) : q.options;
+          options = typeof (q as any).options === 'string' ? JSON.parse((q as any).options) : (q as any).options;
           if (!Array.isArray(options)) options = [];
         } catch (_e) {
           options = [];
         }
 
         return {
-          content: q.content,
+          content: (q as any).content,
           options: options,
-          answer: q.answer,
-          explanation: q.explanation || '库内相似真题解析，建议巩固相关知识点。'
+          answer: (q as any).answer,
+          explanation: (q as any).explanation || '库内相似真题解析，建议巩固相关知识点。'
         };
       });
 

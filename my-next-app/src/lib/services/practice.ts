@@ -113,7 +113,7 @@ export const practiceService = {
 
             const { masteryService } = await import('@/lib/services/mastery');
             tags.forEach((tag: string) => {
-                masteryService.updateMastery(userId, tag, q.dimension as unknown, isCorrect);
+                masteryService.updateMastery(userId, tag, q.dimension as any, isCorrect);
             });
         }
 
@@ -172,7 +172,7 @@ export const practiceService = {
 
             const { masteryService } = await import('@/lib/services/mastery');
             tags.forEach((tag: string) => {
-                masteryService.updateMastery(userId, tag, q.dimension as unknown, isCorrect);
+                masteryService.updateMastery(userId, tag, q.dimension as any, isCorrect);
             });
         }
 

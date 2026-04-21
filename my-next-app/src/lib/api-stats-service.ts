@@ -104,11 +104,19 @@ function calculateCost(model: string, inputTokens: number, outputTokens: number)
  * 获取 API 调用统计
  */
 export function getApiCallStats(): ApiCallStats {
+  interface LogRow {
+    model: string;
+    input_tokens: number;
+    output_tokens: number;
+    success: number;
+    created_at: string;
+  }
+
   // 基础查询：获取所有成功的调用记录
   const logs = db.prepare(`
     SELECT model, input_tokens, output_tokens, success, created_at
     FROM api_call_logs
-  `).all() as unknown[];
+  `).all() as LogRow[];
 
   // 今日起始时间 (使用北京时间)
   const todayStr = getBeijingDateString();
@@ -171,7 +179,7 @@ export function getApiCallStats(): ApiCallStats {
     WHERE success = 0 AND error_message IS NOT NULL
     ORDER BY created_at DESC
     LIMIT 5
-  `).all() as unknown[];
+  `).all() as { model: string; error: string; time: string }[];
 
   return stats;
 }

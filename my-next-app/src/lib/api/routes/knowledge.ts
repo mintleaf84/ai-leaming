@@ -229,11 +229,21 @@ app.openapi(extractRoute, async (c) => {
             retries: 1,
         })
 
-        let cardData: unknown
+        interface ExtractedCard {
+            title?: string;
+            category?: string;
+            tags?: string[];
+            front?: string;
+            back?: string;
+            key_points?: { term: string; definition: string }[];
+            suggestions?: string[];
+        }
+
+        let rawCardData: ExtractedCard;
         const jsonMatch = text.match(/\{[\s\S]*\}/)
         if (jsonMatch) {
             try {
-                cardData = JSON.parse(jsonMatch[0])
+                rawCardData = JSON.parse(jsonMatch[0]);
             } catch (_e) {
                 return c.json({ error: '解析知识卡片失败', raw: text }, 422)
             }
@@ -242,18 +252,19 @@ app.openapi(extractRoute, async (c) => {
         }
 
         // 基本校验与填充
-        cardData = {
-            title: cardData.title || '未命名卡片',
-            category: cardData.category || '',
-            tags: cardData.tags || [],
-            front: cardData.front || cardData.title || '',
-            back: cardData.back || '',
-            key_points: cardData.key_points || [],
-            suggestions: cardData.suggestions || [],
+        const cardData = {
+            title: rawCardData.title || '未命名卡片',
+            category: rawCardData.category || '',
+            tags: rawCardData.tags || [],
+            front: rawCardData.front || rawCardData.title || '',
+            back: rawCardData.back || '',
+            key_points: rawCardData.key_points || [],
+            suggestions: rawCardData.suggestions || [],
             source_content: content
         }
 
         const suggestions = cardData.suggestions
+        // @ts-ignore - suggestions is not part of createKnowledgeCard input
         delete cardData.suggestions
 
         if (!save) {

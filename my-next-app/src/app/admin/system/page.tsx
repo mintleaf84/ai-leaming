@@ -82,10 +82,13 @@ export default function SystemPage() {
     const [status, setStatus] = useState<SystemStatus | null>(null);
     const [loading, setLoading] = useState(true);
     const [intelligentReviewEnabled, setIntelligentReviewEnabled] = useState(false);
+    const [cultivationEnabled, setCultivationEnabled] = useState(false);
 
     const loadFlags = async () => {
-        const flag = await getGlobalFeatureFlag('ENABLE_INTELLIGENT_REVIEW', false);
-        setIntelligentReviewEnabled(flag);
+        const reviewFlag = await getGlobalFeatureFlag('ENABLE_INTELLIGENT_REVIEW', false);
+        setIntelligentReviewEnabled(reviewFlag);
+        const cultivationFlag = await getGlobalFeatureFlag('ENABLE_CULTIVATION', false); // 默认关闭
+        setCultivationEnabled(cultivationFlag);
     };
 
     const loadStatus = async () => {
@@ -147,6 +150,17 @@ export default function SystemPage() {
         if (res.success) {
             setIntelligentReviewEnabled(newVal);
             toast.success(newVal ? '智能复盘中断机制已开启' : '智能复盘中断机制已关闭');
+        } else {
+            toast.error(res.error || '切换失败');
+        }
+    };
+
+    const handleToggleCultivation = async () => {
+        const newVal = !cultivationEnabled;
+        const res = await toggleGlobalFeatureFlag('ENABLE_CULTIVATION', newVal);
+        if (res.success) {
+            setCultivationEnabled(newVal);
+            toast.success(newVal ? '修仙中心功能已开启' : '修仙中心功能已下线');
         } else {
             toast.error(res.error || '切换失败');
         }
@@ -359,6 +373,23 @@ export default function SystemPage() {
                                 className={intelligentReviewEnabled ? "bg-purple-600 hover:bg-purple-700" : ""}
                             >
                                 {intelligentReviewEnabled ? '已开启自动复盘' : '已降级为纯净刷题'}
+                            </Button>
+                        </div>
+
+                        {/* 新增：修仙中心开关 */}
+                        <div className="flex items-center justify-between p-4 border rounded-lg bg-card">
+                            <div>
+                                <h4 className="font-semibold mb-1">修仙中心 (Cultivation Center)</h4>
+                                <p className="text-sm text-muted-foreground max-w-3xl">
+                                    【趣味模块管理】：控制仪表盘底部的“修仙中心”入口卡片。关闭后，该模块将对所有用户隐藏，且直接访问相关页面将被跳回首页。适用于需要保持学术严肃性或临时下线内容的场景。
+                                </p>
+                            </div>
+                            <Button
+                                variant={cultivationEnabled ? "default" : "outline"}
+                                onClick={handleToggleCultivation}
+                                className={cultivationEnabled ? "bg-emerald-600 hover:bg-emerald-700" : ""}
+                            >
+                                {cultivationEnabled ? '已开启修仙世界' : '已降级/下线'}
                             </Button>
                         </div>
                     </CardContent>

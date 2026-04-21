@@ -7,8 +7,15 @@ import { Button } from '@/components/ui/button';
 import Link from 'next/link';
 import { ChevronLeft, ScrollText } from 'lucide-react';
 import { LeaderboardModal } from '@/components/cultivation/LeaderboardModal';
+import { getGlobalFeatureFlag } from '@/server/actions/feature-flags';
+import { redirect } from 'next/navigation';
 
 export default async function CultivationPage() {
+  const isEnabled = await getGlobalFeatureFlag('ENABLE_CULTIVATION', false);
+  if (!isEnabled) {
+    redirect('/dashboard');
+  }
+
   const stats = await getUserStatsAction();
   const state = calculateCultivation(stats.totalPracticed, stats.averageMastery);
 

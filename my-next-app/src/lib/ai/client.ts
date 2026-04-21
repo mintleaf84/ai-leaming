@@ -249,6 +249,24 @@ export async function generateStructuredData<T>(
 
   const retries = options?.retries !== undefined ? options.retries : 3;
 
+  // E2E 测试模式：禁用真实 AI 调用，返回模拟数据
+  if (process.env.E2E_TEST === 'true') {
+    console.log('[AiCore] E2E 模式：返回模拟结构化数据');
+    // 这里我们可以根据 schema 生成一些基础数据，或者针对已知测试 Prompt 返回固定数据
+    // 简单的做法是：尝试返回一个满足基本结构的对象
+    // 更好的做法是：让测试用例通过某种方式注入期望的返回
+    return {
+      analysis: "E2E 模拟分析报告：这是一个自动生成的模拟回复，用于测试流程。",
+      challenges: [],
+      score: 85,
+      is_correct: true,
+      explanation: "E2E 模拟解析：为了确保测试流程畅通，我们跳过了真实的 AI 调用。",
+      summary: "E2E 模拟总结",
+      key_points: ["测试点1", "测试点2"],
+      recommendations: ["建议1"]
+    } as unknown as T;
+  }
+
   // 检查是否为已知可能不支持原生 JSON Schema 的接口 (如 DeepSeek 或自定义中转)
   const isGenericProxy = baseURL.includes('deepseek') || !baseURL.includes('openai.com');
 
@@ -406,6 +424,29 @@ export async function streamChatWrapper(
   const { apiKey, baseURL, modelName } = getAiConfig('premium');
   const executor = await getExecutor(apiKey, baseURL);
   const resolvedModelName = modelName || 'gpt-4o';
+
+  // E2E 测试模式：禁用真实流式调用
+  if (process.env.E2E_TEST === 'true') {
+    console.log('[AiCore] E2E 模式：模拟流式响应');
+    // 注意：这里需要模拟流式返回的对象结构
+    // 简单的处理方案：直接调用 onFinish 并返回一个兼容的 textStream
+    if (onFinish) {
+      setTimeout(() => onFinish("E2E 模拟流式回复：测试通过。"), 100);
+    }
+    
+    return {
+      textStream: (async function* () {
+        yield "E2E ";
+        yield "模拟";
+        yield "流式";
+        yield "回复。";
+      })(),
+      fullStream: (async function* () {
+        yield { type: 'text-delta', textDelta: "E2E 模拟流式回复。" };
+      })(),
+      onFinish: Promise.resolve()
+    } as any;
+  }
 
   // 记录流式调用开始
   const _startTime = Date.now();

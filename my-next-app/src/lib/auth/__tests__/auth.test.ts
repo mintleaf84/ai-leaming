@@ -61,7 +61,7 @@ describe('Auth Service', () => {
 
     describe('login', () => {
         it('should set httpOnly cookie with session', async () => {
-            await login(TEST_USER as unknown);
+            await login(TEST_USER as any);
 
             expect(mockCookieStore.set).toHaveBeenCalledWith(
                 COOKIE_NAME,
@@ -165,7 +165,7 @@ describe('Auth Service', () => {
                 cookies: {
                     get: vi.fn().mockReturnValue({ value: token }),
                 }
-            } as unknown;
+            } as any;
 
             const res = await updateSession(mockRequest);
 
@@ -182,7 +182,7 @@ describe('Auth Service', () => {
                 cookies: {
                     get: vi.fn().mockReturnValue(undefined),
                 }
-            } as unknown;
+            } as any;
 
             const res = await updateSession(mockRequest);
 

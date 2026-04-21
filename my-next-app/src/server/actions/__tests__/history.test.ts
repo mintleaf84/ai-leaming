@@ -25,7 +25,7 @@ describe('History Actions', () => {
     beforeEach(() => {
         vi.clearAllMocks();
         // 默认 Mock 登录用户
-        vi.mocked(requireUser).mockResolvedValue({ id: 1, username: 'testuser' } as unknown);
+        vi.mocked(requireUser).mockResolvedValue({ id: 1, username: 'testuser' } as any);
     });
 
     // ========== getSessionHistoryAction 测试 ==========

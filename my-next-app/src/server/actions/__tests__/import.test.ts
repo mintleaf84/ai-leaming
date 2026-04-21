@@ -133,7 +133,7 @@ describe('Import Actions', () => {
         vi.mocked(parseFenbiData).mockReturnValue({
             sessionName: 'Fail Session',
             totalCount: 1, correctCount: 0, errorCount: 0, statsCount: 0,
-            questions: [{ externalId: 'err-1', content: 'Err' } as unknown],
+            questions: [{ externalId: 'err-1', content: 'Err' } as any],
             records: []
         });
 

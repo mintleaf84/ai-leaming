@@ -1,11 +1,11 @@
 {
-  "ts": "2026-04-21T09:26:37.376Z",
+  "ts": "2026-04-21T09:59:13.724Z",
   "source": "auto-on-generation-start",
   "contexts": [
     {
       "ctxId": "main",
       "frameUrl": "vscode-file://vscode-app/c:/Users/cjb/AppData/Local/Programs/Antigravity/resources/app/out/vs/code/electron-browser/workbench/workbench.html",
-      "totalBtns": 142,
+      "totalBtns": 166,
       "inputBoxFound": true,
       "inputBoxBtns": [
         {
@@ -484,12 +484,12 @@
           "innerHTML": "",
           "hasSvg": false,
           "dataAttrs": {},
-          "visible": true,
+          "visible": false,
           "rect": {
-            "x": 228,
-            "y": 229,
-            "w": 20,
-            "h": 20
+            "x": 0,
+            "y": 0,
+            "w": 0,
+            "h": 0
           }
         },
         {
@@ -500,12 +500,12 @@
           "innerHTML": "",
           "hasSvg": false,
           "dataAttrs": {},
-          "visible": true,
+          "visible": false,
           "rect": {
-            "x": 248,
-            "y": 229,
-            "w": 20,
-            "h": 20
+            "x": 0,
+            "y": 0,
+            "w": 0,
+            "h": 0
           }
         },
         {
@@ -516,12 +516,108 @@
           "innerHTML": "",
           "hasSvg": false,
           "dataAttrs": {},
-          "visible": true,
+          "visible": false,
           "rect": {
-            "x": 268,
-            "y": 229,
-            "w": 20,
-            "h": 20
+            "x": 0,
+            "y": 0,
+            "w": 0,
+            "h": 0
+          }
+        },
+        {
+          "aria": "打开文件",
+          "title": "",
+          "cls": "action-label codicon codicon-go-to-file",
+          "text": "",
+          "innerHTML": "",
+          "hasSvg": false,
+          "dataAttrs": {},
+          "visible": false,
+          "rect": {
+            "x": 0,
+            "y": 0,
+            "w": 0,
+            "h": 0
+          }
+        },
+        {
+          "aria": "放弃更改",
+          "title": "",
+          "cls": "action-label codicon codicon-discard",
+          "text": "",
+          "innerHTML": "",
+          "hasSvg": false,
+          "dataAttrs": {},
+          "visible": false,
+          "rect": {
+            "x": 0,
+            "y": 0,
+            "w": 0,
+            "h": 0
+          }
+        },
+        {
+          "aria": "暂存更改",
+          "title": "",
+          "cls": "action-label codicon codicon-add",
+          "text": "",
+          "innerHTML": "",
+          "hasSvg": false,
+          "dataAttrs": {},
+          "visible": false,
+          "rect": {
+            "x": 0,
+            "y": 0,
+            "w": 0,
+            "h": 0
+          }
+        },
+        {
+          "aria": "打开文件",
+          "title": "",
+          "cls": "action-label codicon codicon-go-to-file",
+          "text": "",
+          "innerHTML": "",
+          "hasSvg": false,
+          "dataAttrs": {},
+          "visible": false,
+          "rect": {
+            "x": 0,
+            "y": 0,
+            "w": 0,
+            "h": 0
+          }
+        },
+        {
+          "aria": "放弃更改",
+          "title": "",
+          "cls": "action-label codicon codicon-discard",
+          "text": "",
+          "innerHTML": "",
+          "hasSvg": false,
+          "dataAttrs": {},
+          "visible": false,
+          "rect": {
+            "x": 0,
+            "y": 0,
+            "w": 0,
+            "h": 0
+          }
+        },
+        {
+          "aria": "暂存更改",
+          "title": "",
+          "cls": "action-label codicon codicon-add",
+          "text": "",
+          "innerHTML": "",
+          "hasSvg": false,
+          "dataAttrs": {},
+          "visible": false,
+          "rect": {
+            "x": 0,
+            "y": 0,
+            "w": 0,
+            "h": 0
           }
         },
         {
@@ -634,102 +730,6 @@
             "y": 279,
             "w": 20,
             "h": 20
-          }
-        },
-        {
-          "aria": "更多操作...",
-          "title": "",
-          "cls": "action-label codicon codicon-toolbar-more",
-          "text": "",
-          "innerHTML": "",
-          "hasSvg": false,
-          "dataAttrs": {},
-          "visible": true,
-          "rect": {
-            "x": 284,
-            "y": 279,
-            "w": 20,
-            "h": 20
-          }
-        },
-        {
-          "aria": "打开更改",
-          "title": "",
-          "cls": "action-label codicon codicon-diff-multiple",
-          "text": "",
-          "innerHTML": "",
-          "hasSvg": false,
-          "dataAttrs": {},
-          "visible": false,
-          "rect": {
-            "x": 0,
-            "y": 0,
-            "w": 0,
-            "h": 0
-          }
-        },
-        {
-          "aria": "打开更改",
-          "title": "",
-          "cls": "action-label codicon codicon-diff-multiple",
-          "text": "",
-          "innerHTML": "",
-          "hasSvg": false,
-          "dataAttrs": {},
-          "visible": false,
-          "rect": {
-            "x": 0,
-            "y": 0,
-            "w": 0,
-            "h": 0
-          }
-        },
-        {
-          "aria": "打开更改",
-          "title": "",
-          "cls": "action-label codicon codicon-diff-multiple",
-          "text": "",
-          "innerHTML": "",
-          "hasSvg": false,
-          "dataAttrs": {},
-          "visible": false,
-          "rect": {
-            "x": 0,
-            "y": 0,
-            "w": 0,
-            "h": 0
-          }
-        },
-        {
-          "aria": "打开更改",
-          "title": "",
-          "cls": "action-label codicon codicon-diff-multiple",
-          "text": "",
-          "innerHTML": "",
-          "hasSvg": false,
-          "dataAttrs": {},
-          "visible": false,
-          "rect": {
-            "x": 0,
-            "y": 0,
-            "w": 0,
-            "h": 0
-          }
-        },
-        {
-          "aria": "打开更改",
-          "title": "",
-          "cls": "action-label codicon codicon-diff-multiple",
-          "text": "",
-          "innerHTML": "",
-          "hasSvg": false,
-          "dataAttrs": {},
-          "visible": false,
-          "rect": {
-            "x": 0,
-            "y": 0,
-            "w": 0,
-            "h": 0
           }
         }
       ]
@@ -737,7 +737,7 @@
     {
       "ctxId": 2,
       "frameUrl": "vscode-file://vscode-app/c:/Users/cjb/AppData/Local/Programs/Antigravity/resources/app/out/vs/code/electron-browser/workbench/workbench.html",
-      "totalBtns": 142,
+      "totalBtns": 166,
       "inputBoxFound": true,
       "inputBoxBtns": [
         {
@@ -1216,12 +1216,12 @@
           "innerHTML": "",
           "hasSvg": false,
           "dataAttrs": {},
-          "visible": true,
+          "visible": false,
           "rect": {
-            "x": 228,
-            "y": 229,
-            "w": 20,
-            "h": 20
+            "x": 0,
+            "y": 0,
+            "w": 0,
+            "h": 0
           }
         },
         {
@@ -1232,12 +1232,12 @@
           "innerHTML": "",
           "hasSvg": false,
           "dataAttrs": {},
-          "visible": true,
+          "visible": false,
           "rect": {
-            "x": 248,
-            "y": 229,
-            "w": 20,
-            "h": 20
+            "x": 0,
+            "y": 0,
+            "w": 0,
+            "h": 0
           }
         },
         {
@@ -1248,12 +1248,108 @@
           "innerHTML": "",
           "hasSvg": false,
           "dataAttrs": {},
-          "visible": true,
+          "visible": false,
           "rect": {
-            "x": 268,
-            "y": 229,
-            "w": 20,
-            "h": 20
+            "x": 0,
+            "y": 0,
+            "w": 0,
+            "h": 0
+          }
+        },
+        {
+          "aria": "打开文件",
+          "title": "",
+          "cls": "action-label codicon codicon-go-to-file",
+          "text": "",
+          "innerHTML": "",
+          "hasSvg": false,
+          "dataAttrs": {},
+          "visible": false,
+          "rect": {
+            "x": 0,
+            "y": 0,
+            "w": 0,
+            "h": 0
+          }
+        },
+        {
+          "aria": "放弃更改",
+          "title": "",
+          "cls": "action-label codicon codicon-discard",
+          "text": "",
+          "innerHTML": "",
+          "hasSvg": false,
+          "dataAttrs": {},
+          "visible": false,
+          "rect": {
+            "x": 0,
+            "y": 0,
+            "w": 0,
+            "h": 0
+          }
+        },
+        {
+          "aria": "暂存更改",
+          "title": "",
+          "cls": "action-label codicon codicon-add",
+          "text": "",
+          "innerHTML": "",
+          "hasSvg": false,
+          "dataAttrs": {},
+          "visible": false,
+          "rect": {
+            "x": 0,
+            "y": 0,
+            "w": 0,
+            "h": 0
+          }
+        },
+        {
+          "aria": "打开文件",
+          "title": "",
+          "cls": "action-label codicon codicon-go-to-file",
+          "text": "",
+          "innerHTML": "",
+          "hasSvg": false,
+          "dataAttrs": {},
+          "visible": false,
+          "rect": {
+            "x": 0,
+            "y": 0,
+            "w": 0,
+            "h": 0
+          }
+        },
+        {
+          "aria": "放弃更改",
+          "title": "",
+          "cls": "action-label codicon codicon-discard",
+          "text": "",
+          "innerHTML": "",
+          "hasSvg": false,
+          "dataAttrs": {},
+          "visible": false,
+          "rect": {
+            "x": 0,
+            "y": 0,
+            "w": 0,
+            "h": 0
+          }
+        },
+        {
+          "aria": "暂存更改",
+          "title": "",
+          "cls": "action-label codicon codicon-add",
+          "text": "",
+          "innerHTML": "",
+          "hasSvg": false,
+          "dataAttrs": {},
+          "visible": false,
+          "rect": {
+            "x": 0,
+            "y": 0,
+            "w": 0,
+            "h": 0
           }
         },
         {
@@ -1366,102 +1462,6 @@
             "y": 279,
             "w": 20,
             "h": 20
-          }
-        },
-        {
-          "aria": "更多操作...",
-          "title": "",
-          "cls": "action-label codicon codicon-toolbar-more",
-          "text": "",
-          "innerHTML": "",
-          "hasSvg": false,
-          "dataAttrs": {},
-          "visible": true,
-          "rect": {
-            "x": 284,
-            "y": 279,
-            "w": 20,
-            "h": 20
-          }
-        },
-        {
-          "aria": "打开更改",
-          "title": "",
-          "cls": "action-label codicon codicon-diff-multiple",
-          "text": "",
-          "innerHTML": "",
-          "hasSvg": false,
-          "dataAttrs": {},
-          "visible": false,
-          "rect": {
-            "x": 0,
-            "y": 0,
-            "w": 0,
-            "h": 0
-          }
-        },
-        {
-          "aria": "打开更改",
-          "title": "",
-          "cls": "action-label codicon codicon-diff-multiple",
-          "text": "",
-          "innerHTML": "",
-          "hasSvg": false,
-          "dataAttrs": {},
-          "visible": false,
-          "rect": {
-            "x": 0,
-            "y": 0,
-            "w": 0,
-            "h": 0
-          }
-        },
-        {
-          "aria": "打开更改",
-          "title": "",
-          "cls": "action-label codicon codicon-diff-multiple",
-          "text": "",
-          "innerHTML": "",
-          "hasSvg": false,
-          "dataAttrs": {},
-          "visible": false,
-          "rect": {
-            "x": 0,
-            "y": 0,
-            "w": 0,
-            "h": 0
-          }
-        },
-        {
-          "aria": "打开更改",
-          "title": "",
-          "cls": "action-label codicon codicon-diff-multiple",
-          "text": "",
-          "innerHTML": "",
-          "hasSvg": false,
-          "dataAttrs": {},
-          "visible": false,
-          "rect": {
-            "x": 0,
-            "y": 0,
-            "w": 0,
-            "h": 0
-          }
-        },
-        {
-          "aria": "打开更改",
-          "title": "",
-          "cls": "action-label codicon codicon-diff-multiple",
-          "text": "",
-          "innerHTML": "",
-          "hasSvg": false,
-          "dataAttrs": {},
-          "visible": false,
-          "rect": {
-            "x": 0,
-            "y": 0,
-            "w": 0,
-            "h": 0
           }
         }
       ]
@@ -1469,7 +1469,7 @@
     {
       "ctxId": 1,
       "frameUrl": "vscode-file://vscode-app/c:/Users/cjb/AppData/Local/Programs/Antigravity/resources/app/out/vs/code/electron-browser/workbench/workbench.html",
-      "totalBtns": 142,
+      "totalBtns": 166,
       "inputBoxFound": true,
       "inputBoxBtns": [
         {
@@ -1948,12 +1948,12 @@
           "innerHTML": "",
           "hasSvg": false,
           "dataAttrs": {},
-          "visible": true,
+          "visible": false,
           "rect": {
-            "x": 228,
-            "y": 229,
-            "w": 20,
-            "h": 20
+            "x": 0,
+            "y": 0,
+            "w": 0,
+            "h": 0
           }
         },
         {
@@ -1964,12 +1964,12 @@
           "innerHTML": "",
           "hasSvg": false,
           "dataAttrs": {},
-          "visible": true,
+          "visible": false,
           "rect": {
-            "x": 248,
-            "y": 229,
-            "w": 20,
-            "h": 20
+            "x": 0,
+            "y": 0,
+            "w": 0,
+            "h": 0
           }
         },
         {
@@ -1980,12 +1980,108 @@
           "innerHTML": "",
           "hasSvg": false,
           "dataAttrs": {},
-          "visible": true,
+          "visible": false,
           "rect": {
-            "x": 268,
-            "y": 229,
-            "w": 20,
-            "h": 20
+            "x": 0,
+            "y": 0,
+            "w": 0,
+            "h": 0
+          }
+        },
+        {
+          "aria": "打开文件",
+          "title": "",
+          "cls": "action-label codicon codicon-go-to-file",
+          "text": "",
+          "innerHTML": "",
+          "hasSvg": false,
+          "dataAttrs": {},
+          "visible": false,
+          "rect": {
+            "x": 0,
+            "y": 0,
+            "w": 0,
+            "h": 0
+          }
+        },
+        {
+          "aria": "放弃更改",
+          "title": "",
+          "cls": "action-label codicon codicon-discard",
+          "text": "",
+          "innerHTML": "",
+          "hasSvg": false,
+          "dataAttrs": {},
+          "visible": false,
+          "rect": {
+            "x": 0,
+            "y": 0,
+            "w": 0,
+            "h": 0
+          }
+        },
+        {
+          "aria": "暂存更改",
+          "title": "",
+          "cls": "action-label codicon codicon-add",
+          "text": "",
+          "innerHTML": "",
+          "hasSvg": false,
+          "dataAttrs": {},
+          "visible": false,
+          "rect": {
+            "x": 0,
+            "y": 0,
+            "w": 0,
+            "h": 0
+          }
+        },
+        {
+          "aria": "打开文件",
+          "title": "",
+          "cls": "action-label codicon codicon-go-to-file",
+          "text": "",
+          "innerHTML": "",
+          "hasSvg": false,
+          "dataAttrs": {},
+          "visible": false,
+          "rect": {
+            "x": 0,
+            "y": 0,
+            "w": 0,
+            "h": 0
+          }
+        },
+        {
+          "aria": "放弃更改",
+          "title": "",
+          "cls": "action-label codicon codicon-discard",
+          "text": "",
+          "innerHTML": "",
+          "hasSvg": false,
+          "dataAttrs": {},
+          "visible": false,
+          "rect": {
+            "x": 0,
+            "y": 0,
+            "w": 0,
+            "h": 0
+          }
+        },
+        {
+          "aria": "暂存更改",
+          "title": "",
+          "cls": "action-label codicon codicon-add",
+          "text": "",
+          "innerHTML": "",
+          "hasSvg": false,
+          "dataAttrs": {},
+          "visible": false,
+          "rect": {
+            "x": 0,
+            "y": 0,
+            "w": 0,
+            "h": 0
           }
         },
         {
@@ -2098,102 +2194,6 @@
             "y": 279,
             "w": 20,
             "h": 20
-          }
-        },
-        {
-          "aria": "更多操作...",
-          "title": "",
-          "cls": "action-label codicon codicon-toolbar-more",
-          "text": "",
-          "innerHTML": "",
-          "hasSvg": false,
-          "dataAttrs": {},
-          "visible": true,
-          "rect": {
-            "x": 284,
-            "y": 279,
-            "w": 20,
-            "h": 20
-          }
-        },
-        {
-          "aria": "打开更改",
-          "title": "",
-          "cls": "action-label codicon codicon-diff-multiple",
-          "text": "",
-          "innerHTML": "",
-          "hasSvg": false,
-          "dataAttrs": {},
-          "visible": false,
-          "rect": {
-            "x": 0,
-            "y": 0,
-            "w": 0,
-            "h": 0
-          }
-        },
-        {
-          "aria": "打开更改",
-          "title": "",
-          "cls": "action-label codicon codicon-diff-multiple",
-          "text": "",
-          "innerHTML": "",
-          "hasSvg": false,
-          "dataAttrs": {},
-          "visible": false,
-          "rect": {
-            "x": 0,
-            "y": 0,
-            "w": 0,
-            "h": 0
-          }
-        },
-        {
-          "aria": "打开更改",
-          "title": "",
-          "cls": "action-label codicon codicon-diff-multiple",
-          "text": "",
-          "innerHTML": "",
-          "hasSvg": false,
-          "dataAttrs": {},
-          "visible": false,
-          "rect": {
-            "x": 0,
-            "y": 0,
-            "w": 0,
-            "h": 0
-          }
-        },
-        {
-          "aria": "打开更改",
-          "title": "",
-          "cls": "action-label codicon codicon-diff-multiple",
-          "text": "",
-          "innerHTML": "",
-          "hasSvg": false,
-          "dataAttrs": {},
-          "visible": false,
-          "rect": {
-            "x": 0,
-            "y": 0,
-            "w": 0,
-            "h": 0
-          }
-        },
-        {
-          "aria": "打开更改",
-          "title": "",
-          "cls": "action-label codicon codicon-diff-multiple",
-          "text": "",
-          "innerHTML": "",
-          "hasSvg": false,
-          "dataAttrs": {},
-          "visible": false,
-          "rect": {
-            "x": 0,
-            "y": 0,
-            "w": 0,
-            "h": 0
           }
         }
       ]

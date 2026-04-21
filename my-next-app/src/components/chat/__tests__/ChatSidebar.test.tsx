@@ -22,8 +22,8 @@ vi.mock('@/lib/hooks/use-terminology', () => ({
 
 describe('ChatSidebar Component', () => {
   const mockSessions = [
-    { id: 1, title: 'Session 1', updated_at: '2023-01-01T10:00:00Z', message_count: 5 },
-    { id: 2, title: 'Session 2', updated_at: '2023-01-02T11:00:00Z', message_count: 2 },
+    { id: 1, title: 'Session 1', updated_at: '2023-01-01T10:00:00Z', message_count: 5, user_id: 1, created_at: '2023-01-01T10:00:00Z' },
+    { id: 2, title: 'Session 2', updated_at: '2023-01-02T11:00:00Z', message_count: 2, user_id: 1, created_at: '2023-01-02T11:00:00Z' },
   ];
 
   const defaultProps = {

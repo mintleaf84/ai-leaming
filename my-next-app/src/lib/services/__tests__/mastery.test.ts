@@ -5,7 +5,7 @@ import { setupTestDb, type TestDbHelper } from '../../__tests__/test-db-utils';
 // 必须在导入 service 之前进行 Mock
 const { mockDbInstance } = vi.hoisted(() => ({
     mockDbInstance: {
-        db: null as unknown,
+        db: null as any,
         prepare: (sql: string) => mockDbInstance.db.prepare(sql),
         transaction: (fn: unknown) => mockDbInstance.db.transaction(fn)
     }
@@ -35,7 +35,7 @@ describe('Mastery Service (Integration)', () => {
             masteryService.updateMastery(1, '教育心理学', 'knowledge', true);
             
             const row = helper.db.prepare('SELECT score, correct_count, total_count FROM user_mastery WHERE user_id = 1 AND tag_name = ?')
-                .get('教育心理学') as unknown;
+                .get('教育心理学') as any;
             
             expect(row.score).toBe(100);
             expect(row.correct_count).toBe(1);
@@ -51,7 +51,7 @@ describe('Mastery Service (Integration)', () => {
             masteryService.updateMastery(1, '教育心理学', 'knowledge', false);
             
             const row = helper.db.prepare('SELECT score, correct_count, total_count FROM user_mastery WHERE user_id = 1 AND tag_name = ?')
-                .get('教育心理学') as unknown;
+                .get('教育心理学') as any;
             
             // 1/3 = 33.333...
             expect(row.score).toBeCloseTo(33.33, 1);
@@ -63,7 +63,7 @@ describe('Mastery Service (Integration)', () => {
             // 模拟“可疑正确”（可能是 AI 辅助或侥幸）
             masteryService.updateMastery(1, '教育心理学', 'knowledge', true, true);
             
-            const row = helper.db.prepare('SELECT score FROM user_mastery WHERE user_id = 1 AND tag_name = ?').get('教育心理学') as unknown;
+            const row = helper.db.prepare('SELECT score FROM user_mastery WHERE user_id = 1 AND tag_name = ?').get('教育心理学') as any;
             
             expect(row.score).toBe(0); // 0/1 = 0
         });

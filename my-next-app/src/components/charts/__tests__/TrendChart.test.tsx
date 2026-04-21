@@ -9,7 +9,7 @@ import { AccuracyTrendChart, PracticedBarChart, CombinedTrendChart } from '../Tr
 vi.mock('next/dynamic', () => ({
     default: (_loader: unknown) => {
         // Simple mock that renders children or a div
-        const MockComponent = (props: unknown) => (
+        const MockComponent = (props: any) => (
             <div data-testid="mock-chart-component" {...props}>
                 {props.children}
             </div>

@@ -5,7 +5,7 @@ import { setupTestDb, type TestDbHelper } from '../../__tests__/test-db-utils';
 // Mock DB 基础设施接入
 const { mockDbInstance } = vi.hoisted(() => ({
     mockDbInstance: {
-        db: null as unknown,
+        db: null as any,
         prepare: (sql: string) => mockDbInstance.db.prepare(sql)
     }
 }));

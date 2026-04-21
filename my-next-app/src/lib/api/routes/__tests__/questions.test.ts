@@ -16,7 +16,7 @@ vi.mock('@/lib/services/question', () => ({ questionService: mockQuestionService
 
 // Mock Auth Middleware
 vi.mock('@/lib/api/middlewares/auth', () => ({
-    authMiddleware: async (c: unknown, next: unknown) => {
+    authMiddleware: async (c: any, next: any) => {
         await next();
     }
 }));

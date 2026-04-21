@@ -19,7 +19,7 @@ vi.mock('@/lib/db', () => ({ default: mockDb }));
 
 // Mock Auth Middleware
 vi.mock('@/lib/api/middlewares/auth', () => ({
-    authMiddleware: async (c: unknown, next: unknown) => {
+    authMiddleware: async (c: any, next: any) => {
         c.set('user', { id: 1, role: 'user' });
         await next();
     },
@@ -45,7 +45,7 @@ describe('WrongBook Hono Routes', () => {
                 }
             ];
             
-            const mockPrepare = mockDb.prepare as unknown;
+            const mockPrepare = mockDb.prepare as any;
             mockPrepare.mockReturnValue({
                 all: vi.fn().mockReturnValue(mockRows)
             });
@@ -60,7 +60,7 @@ describe('WrongBook Hono Routes', () => {
         });
 
         it('should support tag filtering', async () => {
-            const mockPrepare = mockDb.prepare as unknown;
+            const mockPrepare = mockDb.prepare as any;
             mockPrepare.mockReturnValue({
                 all: vi.fn().mockReturnValue([])
             });
@@ -75,7 +75,7 @@ describe('WrongBook Hono Routes', () => {
 
     describe('GET /stats', () => {
         it('should return correct statistics structure', async () => {
-            const mockPrepare = mockDb.prepare as unknown;
+            const mockPrepare = mockDb.prepare as any;
             mockPrepare.mockReturnValue({
                 get: vi.fn().mockReturnValue({ count: 10 })
             });

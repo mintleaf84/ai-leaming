@@ -29,7 +29,7 @@ describe('Activity Actions', () => {
     describe('getUserActivityAction', () => {
         it('应该返回分页的练习流水记录', async () => {
             // Mock 权限检查
-            vi.mocked(requireRole).mockResolvedValue({ id: 1, role: 'admin' } as unknown);
+            vi.mocked(requireRole).mockResolvedValue({ id: 1, role: 'admin' } as any);
 
             // Mock DB
             mockDb.prepare.mockImplementation((sql: string) => {
@@ -66,7 +66,7 @@ describe('Activity Actions', () => {
         });
 
         it('应该支持按用户筛选', async () => {
-            vi.mocked(requireRole).mockResolvedValue({ id: 1, role: 'admin' } as unknown);
+            vi.mocked(requireRole).mockResolvedValue({ id: 1, role: 'admin' } as any);
 
             mockDb.prepare.mockImplementation(() => ({
                 get: () => ({ count: 5 }),
@@ -80,7 +80,7 @@ describe('Activity Actions', () => {
         });
 
         it('应该支持按对错筛选', async () => {
-            vi.mocked(requireRole).mockResolvedValue({ id: 1, role: 'admin' } as unknown);
+            vi.mocked(requireRole).mockResolvedValue({ id: 1, role: 'admin' } as any);
 
             mockDb.prepare.mockImplementation(() => ({
                 get: () => ({ count: 5 }),
@@ -94,7 +94,7 @@ describe('Activity Actions', () => {
         });
 
         it('应该支持关键词搜索 (用户名和题干)', async () => {
-            vi.mocked(requireRole).mockResolvedValue({ id: 1, role: 'admin' } as unknown);
+            vi.mocked(requireRole).mockResolvedValue({ id: 1, role: 'admin' } as any);
 
             mockDb.prepare.mockImplementation(() => ({
                 get: () => ({ count: 5 }),
@@ -110,7 +110,7 @@ describe('Activity Actions', () => {
 
     describe('getActivityStatsAction', () => {
         it('应该返回今日统计概览', async () => {
-            vi.mocked(requireRole).mockResolvedValue({ id: 1, role: 'admin' } as unknown);
+            vi.mocked(requireRole).mockResolvedValue({ id: 1, role: 'admin' } as any);
 
             mockDb.prepare.mockImplementation((sql: string) => {
                 const s = sql.toLowerCase();
@@ -136,7 +136,7 @@ describe('Activity Actions', () => {
         });
 
         it('当今日无数据时应返回默认值 0', async () => {
-            vi.mocked(requireRole).mockResolvedValue({ id: 1, role: 'admin' } as unknown);
+            vi.mocked(requireRole).mockResolvedValue({ id: 1, role: 'admin' } as any);
 
             mockDb.prepare.mockImplementation(() => ({
                 get: () => ({ count: 0, rate: 0, avg_time: null, tokens: null })

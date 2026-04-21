@@ -43,7 +43,7 @@ describe('Admin Actions', () => {
     describe('getUsersAction', () => {
         it('should return paginated users', async () => {
             // Mock requireRole
-            vi.mocked(requireRole).mockResolvedValue({ id: 1, role: 'admin' } as unknown);
+            vi.mocked(requireRole).mockResolvedValue({ id: 1, role: 'admin', username: 'admin' } as any);
 
             // Mock DB count
             mockDb.prepare.mockImplementation((sql: string) => {
@@ -64,7 +64,7 @@ describe('Admin Actions', () => {
         });
 
         it('should handle search query', async () => {
-            vi.mocked(requireRole).mockResolvedValue({ id: 1, role: 'admin' } as unknown);
+            vi.mocked(requireRole).mockResolvedValue({ id: 1, role: 'admin', username: 'admin' } as any);
 
             mockDb.prepare.mockImplementation((sql: string) => {
                 if (sql.includes('SELECT COUNT(*)')) {
@@ -85,7 +85,7 @@ describe('Admin Actions', () => {
 
     describe('deleteUserAction', () => {
         it('should prevent deleting admin (id=1)', async () => {
-            vi.mocked(requireRole).mockResolvedValue({ id: 1, role: 'admin' } as unknown);
+            vi.mocked(requireRole).mockResolvedValue({ id: 1, role: 'admin', username: 'admin' } as any);
 
             const result = await deleteUserAction(1);
 
@@ -95,7 +95,7 @@ describe('Admin Actions', () => {
 
         it('should delete normal user and log audit', async () => {
             const adminUser = { id: 1, username: 'admin', role: 'admin' };
-            vi.mocked(requireRole).mockResolvedValue(adminUser as unknown);
+            vi.mocked(requireRole).mockResolvedValue(adminUser as any);
 
             // Mock getting target user
             mockDb.prepare.mockImplementation((sql: string) => {
@@ -121,7 +121,7 @@ describe('Admin Actions', () => {
     describe('revokeUserSessionAction', () => {
         it('should increment token version', async () => {
             const adminUser = { id: 1, username: 'admin', role: 'admin' };
-            vi.mocked(requireRole).mockResolvedValue(adminUser as unknown);
+            vi.mocked(requireRole).mockResolvedValue(adminUser as any);
 
             // Mock user lookup
             mockDb.prepare.mockImplementation((sql: string) => {
@@ -157,7 +157,7 @@ describe('Admin Actions', () => {
 
     describe('getQuestionsAction - 分页与搜索', () => {
         it('应该返回分页的题目列表', async () => {
-            vi.mocked(requireRole).mockResolvedValue({ id: 1, role: 'admin' } as unknown);
+            vi.mocked(requireRole).mockResolvedValue({ id: 1, role: 'admin', username: 'admin' } as any);
 
             mockDb.prepare.mockImplementation((sql: string) => {
                 if (sql.includes('SELECT COUNT(*)')) {
@@ -182,7 +182,7 @@ describe('Admin Actions', () => {
         });
 
         it('应该支持关键词搜索', async () => {
-            vi.mocked(requireRole).mockResolvedValue({ id: 1, role: 'admin' } as unknown);
+            vi.mocked(requireRole).mockResolvedValue({ id: 1, role: 'admin', username: 'admin' } as any);
 
             mockDb.prepare.mockImplementation((sql: string) => {
                 if (sql.includes('SELECT COUNT(*)') && sql.includes('WHERE content LIKE')) {
@@ -202,7 +202,7 @@ describe('Admin Actions', () => {
         });
 
         it('应该支持按标签筛选', async () => {
-            vi.mocked(requireRole).mockResolvedValue({ id: 1, role: 'admin' } as unknown);
+            vi.mocked(requireRole).mockResolvedValue({ id: 1, role: 'admin', username: 'admin' } as any);
 
             mockDb.prepare.mockImplementation((sql: string) => {
                 if (sql.includes("tags LIKE '%心理学%'") || sql.includes('tags LIKE ?')) {
@@ -218,7 +218,7 @@ describe('Admin Actions', () => {
         });
 
         it('应该支持按维度筛选', async () => {
-            vi.mocked(requireRole).mockResolvedValue({ id: 1, role: 'admin' } as unknown);
+            vi.mocked(requireRole).mockResolvedValue({ id: 1, role: 'admin', username: 'admin' } as any);
 
             mockDb.prepare.mockImplementation((sql: string) => {
                 if (sql.includes("dimension = 'application'") || sql.includes('dimension = ?')) {
@@ -237,7 +237,7 @@ describe('Admin Actions', () => {
     describe('updateQuestionAction - 编辑题目', () => {
 
         it('应该更新题目内容', async () => {
-            vi.mocked(requireRole).mockResolvedValue({ id: 1, username: 'admin', role: 'admin' } as unknown);
+            vi.mocked(requireRole).mockResolvedValue({ id: 1, username: 'admin', role: 'admin' } as any);
 
             const mockRun = vi.fn().mockReturnValue({ changes: 1 });
             const mockGet = vi.fn().mockReturnValue({
@@ -262,7 +262,7 @@ describe('Admin Actions', () => {
         });
 
         it('应该支持更新为不定项选择题', async () => {
-            vi.mocked(requireRole).mockResolvedValue({ id: 1, role: 'admin' } as unknown);
+            vi.mocked(requireRole).mockResolvedValue({ id: 1, role: 'admin', username: 'admin' } as any);
 
             const mockRun = vi.fn().mockReturnValue({ changes: 1 });
             const mockGet = vi.fn().mockReturnValue({
@@ -298,13 +298,13 @@ describe('Admin Actions', () => {
         });
 
         it('不定项选择题答案不合法时应报错', async () => {
-            vi.mocked(requireRole).mockResolvedValue({ id: 1, role: 'admin' } as unknown);
+            vi.mocked(requireRole).mockResolvedValue({ id: 1, role: 'admin', username: 'admin' } as any);
 
             const mockGet = vi.fn().mockReturnValue({
                 id: 1, content: 'Old Content', options: '["A","B","C","D"]', tags: '[]', type: 'multi',
                 explanation: 'Old explanation > 5 chars', dimension: 'knowledge'
             });
-            mockDb.prepare.mockReturnValue({ get: mockGet } as unknown);
+            mockDb.prepare.mockReturnValue({ get: mockGet } as any);
 
             const updateData = {
                 id: 1,
@@ -325,7 +325,7 @@ describe('Admin Actions', () => {
         });
 
         it('题目不存在时应该返回错误', async () => {
-            vi.mocked(requireRole).mockResolvedValue({ id: 1, username: 'admin', role: 'admin' } as unknown);
+            vi.mocked(requireRole).mockResolvedValue({ id: 1, username: 'admin', role: 'admin' } as any);
 
             mockDb.prepare.mockImplementation((sql: string) => {
                 if (sql.includes('SELECT * FROM questions')) return { get: () => null };
@@ -342,7 +342,7 @@ describe('Admin Actions', () => {
 
     describe('batchDeleteQuestionsAction - 批量删除', () => {
         it('应该批量删除多道题目', async () => {
-            vi.mocked(requireRole).mockResolvedValue({ id: 1, username: 'admin', role: 'admin' } as unknown);
+            vi.mocked(requireRole).mockResolvedValue({ id: 1, username: 'admin', role: 'admin' } as any);
 
             const mockRun = vi.fn().mockReturnValue({ changes: 3 });
             mockDb.prepare.mockReturnValue({ run: mockRun });
@@ -355,7 +355,7 @@ describe('Admin Actions', () => {
         });
 
         it('空数组应该返回成功但删除 0 条', async () => {
-            vi.mocked(requireRole).mockResolvedValue({ id: 1, username: 'admin', role: 'admin' } as unknown);
+            vi.mocked(requireRole).mockResolvedValue({ id: 1, username: 'admin', role: 'admin' } as any);
 
             const { batchDeleteQuestionsAction } = await import('../admin');
             const result = await batchDeleteQuestionsAction([]);

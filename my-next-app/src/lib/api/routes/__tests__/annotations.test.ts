@@ -18,7 +18,7 @@ vi.mock('@/lib/db', () => ({ default: mockDb }));
 
 // Mock Auth Middleware
 vi.mock('@/lib/api/middlewares/auth', () => ({
-    authMiddleware: async (c: unknown, next: unknown) => {
+    authMiddleware: async (c: any, next: any) => {
         c.set('user', { id: 1, role: 'user' });
         await next();
     },
@@ -33,7 +33,7 @@ describe('Annotations Hono Routes', () => {
     describe('GET /', () => {
         it('should return list of annotations', async () => {
             const mockRows = [{ id: 1, startOffset: 10, endOffset: 20 }];
-            const mockPrepare = mockDb.prepare as unknown;
+            const mockPrepare = mockDb.prepare as any;
             mockPrepare.mockReturnValue({
                 all: vi.fn().mockReturnValue(mockRows)
             });
@@ -47,7 +47,7 @@ describe('Annotations Hono Routes', () => {
 
     describe('POST /', () => {
         it('should create an annotation', async () => {
-            const mockPrepare = mockDb.prepare as unknown;
+            const mockPrepare = mockDb.prepare as any;
             mockPrepare.mockReturnValue({
                 run: vi.fn().mockReturnValue({ lastInsertRowid: 42 })
             });
@@ -71,7 +71,7 @@ describe('Annotations Hono Routes', () => {
 
     describe('DELETE /', () => {
         it('should delete an annotation', async () => {
-            const mockPrepare = mockDb.prepare as unknown;
+            const mockPrepare = mockDb.prepare as any;
             mockPrepare.mockReturnValue({
                 run: vi.fn().mockReturnValue({ changes: 1 })
             });
@@ -86,7 +86,7 @@ describe('Annotations Hono Routes', () => {
         });
 
         it('should return 404 if annotation not found', async () => {
-            const mockPrepare = mockDb.prepare as unknown;
+            const mockPrepare = mockDb.prepare as any;
             mockPrepare.mockReturnValue({
                 run: vi.fn().mockReturnValue({ changes: 0 })
             });

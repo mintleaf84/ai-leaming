@@ -19,7 +19,7 @@ vi.mock('@/lib/services/knowledge', () => mockKnowledgeService);
 
 // Mock Auth Middleware
 vi.mock('@/lib/api/middlewares/auth', () => ({
-    authMiddleware: async (c: unknown, next: unknown) => {
+    authMiddleware: async (c: any, next: any) => {
         c.set('user', { id: 1, role: 'user' });
         await next();
     },

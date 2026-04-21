@@ -19,7 +19,7 @@ describe('MessageList Component', () => {
     const mockOnSaveToKnowledge = vi.fn()
     const mockOnToggleFavorite = vi.fn()
     const mockOnRetry = vi.fn()
-    const messagesEndRef = { current: null } as unknown
+    const messagesEndRef = { current: null } as any
 
     const mockMessages = [
         { id: '1', role: 'user' as const, content: 'Hello', timestamp: Date.now() },

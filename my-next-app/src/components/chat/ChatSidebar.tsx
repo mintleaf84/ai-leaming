@@ -163,10 +163,19 @@ export default function ChatSidebar({
     showFavorites,
     onToggleShowFavorites,
 }: ChatSidebarProps) {
+    interface SearchResult {
+        messageId: number;
+        sessionId: number;
+        sessionTitle: string;
+        role: 'user' | 'assistant';
+        content: string;
+        created_at: string;
+    }
+
     const { t } = useTerminology();
     const [searchQuery, setSearchQuery] = useState('');
     const [isSearching, _setIsSearching] = useState(false);
-    const [searchResults, _setSearchResults] = useState<unknown[]>([]);
+    const [searchResults, _setSearchResults] = useState<SearchResult[]>([]);
 
     // 执行重命名（调用服务端 Action 并通知父组件）
     const handleRename = async (sessionId: number, newTitle: string) => {

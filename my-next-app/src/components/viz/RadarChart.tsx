@@ -29,7 +29,7 @@ export default function RadarChart({ data }: RadarChartProps) {
     select(svgRef.current).selectAll("*").remove();
 
     const svg = select(svgRef.current)
-      .attr("viewBox", [0, 0, width, height] as unknown)
+      .attr("viewBox", `0 0 ${width} ${height}`)
       .append("g")
       .attr("transform", `translate(${width/2},${height/2})`);
 

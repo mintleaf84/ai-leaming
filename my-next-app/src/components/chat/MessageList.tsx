@@ -12,7 +12,7 @@ interface MessageListProps {
     onSaveToKnowledge: (content: string) => void | Promise<void>;
     onToggleFavorite: (id: number, isFav: boolean) => void | Promise<void>;
     onRetry: () => void;
-    messagesEndRef: React.RefObject<unknown>;
+    messagesEndRef: React.RefObject<HTMLDivElement | null>;
 }
 
 export function MessageList({

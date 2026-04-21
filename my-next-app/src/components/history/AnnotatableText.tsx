@@ -50,13 +50,20 @@ export function AnnotatableText({ text, questionId, className }: AnnotatableText
     // 将查询结果同步到本地 state（因为增删操作需要乐观更新）
     useEffect(() => {
         if (annotationData?.annotations) {
+            interface AnnotationRow {
+                id: number;
+                start_offset: number;
+                end_offset: number;
+                tag: 'highlight' | 'underline' | 'wavy';
+                color?: string;
+            }
             // eslint-disable-next-line react-hooks/set-state-in-effect
-            setAnnotations(annotationData.annotations.map((a: unknown) => ({
-                id: a.id,
-                start: a.start_offset,
-                end: a.end_offset,
-                tag: a.tag,
-                color: a.color,
+            setAnnotations(annotationData.annotations.map((a: any) => ({
+                id: (a as AnnotationRow).id,
+                start: (a as AnnotationRow).start_offset,
+                end: (a as AnnotationRow).end_offset,
+                tag: (a as AnnotationRow).tag,
+                color: (a as AnnotationRow).color,
             })));
         }
     }, [annotationData]);

@@ -6,7 +6,7 @@ import { CheckCircle2, XCircle, BookOpen, ChevronDown, ChevronUp, BrainCircuit, 
 import { formatDuration, indexToLetter, cn } from '@/lib/utils/utils';
 import { AnnotatableText } from './AnnotatableText';
 import dynamic from 'next/dynamic';
-const MarkdownViewer = dynamic(() => import('@/components/chat/MarkdownViewer'), { ssr: false });
+const MarkdownViewer = dynamic<{ content: string; isUser?: boolean }>(() => import('@/components/chat/MarkdownViewer'), { ssr: false });
 import { generateMnemonicAction } from '@/server/actions/ai-mnemonic';
 import { generateFirstPrinciplesAction } from '@/server/actions/ai';
 import { toast } from 'sonner';
@@ -36,6 +36,231 @@ export interface QuestionLogData {
     material?: string | null;          // 材料内容（纯文本）
     materialHtml?: string | null;      // 材料内容（HTML）
 }
+
+interface ReviewData {
+    quiz?: {
+        quiz: {
+            content: string;
+        };
+    };
+    regression?: {
+        challenges: {
+            content: string;
+        }[];
+    };
+}
+
+/**
+ * 统计栏子组件
+ */
+const StatsBar = ({ log }: { log: QuestionLogData }) => (
+    <div className="mt-6 pt-4 border-t border-border">
+        <div className="grid grid-cols-3 md:grid-cols-5 gap-2 md:gap-4 text-center">
+            <div>
+                <div className="text-base md:text-lg font-bold text-green-600">
+                    {parseAnswer(log.correctAnswer).join(', ') || '-'}
+                </div>
+                <div className="text-[10px] text-muted-foreground">正确答案</div>
+            </div>
+            <div>
+                <div className={cn("text-base md:text-lg font-bold", log.isCorrect ? "text-green-600" : "text-rose-500")}>
+                    {parseAnswer(log.userAnswer).join(', ') || '未作答'}
+                </div>
+                <div className="text-[10px] text-muted-foreground">你的答案</div>
+            </div>
+            {log.correctRatio != null && (
+                <div>
+                    <div className="text-base md:text-lg font-bold text-purple-600">
+                        {log.correctRatio}%
+                    </div>
+                    <div className="text-[10px] text-muted-foreground">正确率</div>
+                </div>
+            )}
+            <div>
+                <div className="text-base md:text-lg font-bold text-blue-600">
+                    {formatDuration(log.duration)}
+                </div>
+                <div className="text-[10px] text-muted-foreground">用时</div>
+            </div>
+            {log.mostWrongAnswer && (
+                <div>
+                    <div className="text-base md:text-lg font-bold text-amber-600">
+                        {log.mostWrongAnswer}
+                    </div>
+                    <div className="text-[10px] text-muted-foreground">易错项</div>
+                </div>
+            )}
+        </div>
+    </div>
+);
+
+/**
+ * 第一性原理分析区域
+ */
+const AIAnalysisSection = ({ 
+    fpAnalysis, 
+    isLoading, 
+    onGenerate, 
+    questionId 
+}: { 
+    fpAnalysis: string | null; 
+    isLoading: boolean; 
+    onGenerate: (force?: boolean) => void; 
+    questionId?: number;
+}) => (
+    <div className="p-5 bg-gradient-to-r from-amber-500/5 to-orange-500/5 border-b border-amber-500/10">
+        <div className="flex items-center justify-between mb-3">
+            <div className="flex items-center gap-2 text-amber-700 dark:text-amber-400 font-bold text-sm">
+                <Lightbulb className="h-4 w-4" />
+                第一性原理
+            </div>
+            {!fpAnalysis ? (
+                <button
+                    onClick={() => onGenerate(false)}
+                    disabled={isLoading}
+                    className="px-3 py-1.5 text-xs font-medium bg-amber-500/10 hover:bg-amber-500/20 text-amber-700 dark:text-amber-400 rounded-full border border-amber-500/20 transition-colors disabled:opacity-50 flex items-center gap-1.5"
+                >
+                    {isLoading ? (
+                        <>
+                            <Loader2 className="h-3 w-3 animate-spin" />
+                            分析中...
+                        </>
+                    ) : (
+                        '一键解析'
+                    )}
+                </button>
+            ) : (
+                <button
+                    onClick={() => onGenerate(true)}
+                    disabled={isLoading}
+                    className="p-1.5 text-amber-400 hover:text-amber-600 dark:hover:text-amber-300 transition-colors disabled:opacity-50"
+                    title="重新解析"
+                >
+                    <RefreshCw className={`h-4 w-4 ${isLoading ? 'animate-spin' : ''}`} />
+                </button>
+            )}
+        </div>
+
+        {fpAnalysis ? (
+            <div className="bg-card p-4 rounded-xl border border-amber-500/20 shadow-sm">
+                {questionId ? (
+                    <AnnotatableText
+                        text={fpAnalysis}
+                        questionId={-questionId}
+                        className="text-sm text-foreground"
+                    />
+                ) : (
+                    <div className="text-sm text-foreground leading-relaxed whitespace-pre-wrap">
+                        {fpAnalysis}
+                    </div>
+                )}
+            </div>
+        ) : (
+            <div className="text-xs text-muted-foreground">
+                点击上方按钮，AI 将用底层逻辑为你解析这道题（≤200字）
+            </div>
+        )}
+    </div>
+);
+
+/**
+ * AI 助记口诀区域
+ */
+const AIMnemonicSection = ({
+    mnemonic,
+    isGenerating,
+    onGenerate,
+    questionId
+}: {
+    mnemonic: string | null;
+    isGenerating: boolean;
+    onGenerate: (force?: boolean) => void;
+    questionId?: number;
+}) => (
+    <div className="p-5 bg-purple-500/5 border-t border-purple-500/10">
+        <div className="flex items-center justify-between mb-3">
+            <div className="flex items-center gap-2 text-purple-700 dark:text-purple-400 font-bold text-sm">
+                <Sparkles className="h-4 w-4" />
+                AI 记忆大师
+            </div>
+            {!mnemonic && questionId && (
+                <button
+                    onClick={() => onGenerate(false)}
+                    disabled={isGenerating}
+                    className="px-3 py-1.5 text-xs font-medium bg-purple-500/10 hover:bg-purple-500/20 text-purple-700 dark:text-purple-400 rounded-full border border-purple-500/20 transition-colors disabled:opacity-50 flex items-center gap-1.5"
+                >
+                    {isGenerating ? (
+                        <>
+                            <Loader2 className="h-3 w-3 animate-spin" />
+                            生成中...
+                        </>
+                    ) : (
+                        '生成记忆口诀'
+                    )}
+                </button>
+            )}
+
+            {mnemonic && questionId && (
+                <button
+                    onClick={() => onGenerate(true)}
+                    disabled={isGenerating}
+                    className="p-1.5 text-purple-400 hover:text-purple-600 dark:hover:text-purple-300 transition-colors disabled:opacity-50"
+                    title="重新生成"
+                >
+                    <RefreshCw className={`h-4 w-4 ${isGenerating ? 'animate-spin' : ''}`} />
+                </button>
+            )}
+        </div>
+
+        {mnemonic ? (
+            <MarkdownViewer content={mnemonic} />
+        ) : (
+            <div className="text-xs text-muted-foreground">
+                遇到难记的知识点？点击按钮，AI 为你生成趣味口诀和脑洞联想。
+            </div>
+        )}
+    </div>
+);
+
+/**
+ * AI 复盘子组件
+ */
+const AIReviewSection = ({ reviewDataRaw }: { reviewDataRaw: unknown }) => {
+    if (!reviewDataRaw) return null;
+    const reviewData = reviewDataRaw as ReviewData;
+    
+    return (
+        <div className="p-5 bg-amber-500/5 border-t border-amber-500/20">
+            <div className="flex items-center gap-2 mb-3 text-amber-700 dark:text-amber-300 font-bold text-sm">
+                <BrainCircuit className="h-4 w-4" />
+                AI 复盘档案
+            </div>
+
+            {reviewData.quiz && (
+                <div className="mb-4">
+                    <div className="text-xs font-bold text-amber-700 dark:text-amber-400 mb-1">纠偏找茬变式</div>
+                    <div className="text-sm text-foreground bg-card p-3 rounded-xl border border-amber-500/20 shadow-sm">
+                        {reviewData.quiz.quiz.content}
+                    </div>
+                </div>
+            )}
+
+            {reviewData.regression && (
+                <div>
+                    <div className="text-xs font-bold text-purple-700 dark:text-purple-400 mb-1">回归挑战变式</div>
+                    <div className="space-y-2">
+                        {reviewData.regression.challenges.map((c, ci: number) => (
+                            <div key={ci} className="text-sm text-foreground bg-card p-3 rounded-xl border border-purple-500/20 shadow-sm">
+                                {c.content}
+                            </div>
+                        ))}
+                    </div>
+                </div>
+            )}
+        </div>
+    );
+};
+
 
 interface QuestionCardProps {
     log: QuestionLogData;
@@ -229,44 +454,7 @@ export const QuestionCard = React.memo(({ log, index, isExpanded, onToggle, refC
                         </div>
 
                         {/* 统计栏 */}
-                        <div className="mt-6 pt-4 border-t border-border">
-                            <div className="grid grid-cols-3 md:grid-cols-5 gap-2 md:gap-4 text-center">
-                                <div>
-                                    <div className="text-base md:text-lg font-bold text-green-600">
-                                        {parseAnswer(log.correctAnswer).join(', ') || '-'}
-                                    </div>
-                                    <div className="text-[10px] text-muted-foreground">正确答案</div>
-                                </div>
-                                <div>
-                                    <div className={cn("text-base md:text-lg font-bold", log.isCorrect ? "text-green-600" : "text-rose-500")}>
-                                        {parseAnswer(log.userAnswer).join(', ') || '未作答'}
-                                    </div>
-                                    <div className="text-[10px] text-muted-foreground">你的答案</div>
-                                </div>
-                                {log.correctRatio != null && (
-                                    <div>
-                                        <div className="text-base md:text-lg font-bold text-purple-600">
-                                            {log.correctRatio}%
-                                        </div>
-                                        <div className="text-[10px] text-muted-foreground">正确率</div>
-                                    </div>
-                                )}
-                                <div>
-                                    <div className="text-base md:text-lg font-bold text-blue-600">
-                                        {formatDuration(log.duration)}
-                                    </div>
-                                    <div className="text-[10px] text-muted-foreground">用时</div>
-                                </div>
-                                {log.mostWrongAnswer && (
-                                    <div>
-                                        <div className="text-base md:text-lg font-bold text-amber-600">
-                                            {log.mostWrongAnswer}
-                                        </div>
-                                        <div className="text-[10px] text-muted-foreground">易错项</div>
-                                    </div>
-                                )}
-                            </div>
-                        </div>
+                        <StatsBar log={log} />
 
                         {/* 展开按钮 */}
                         <button
@@ -285,60 +473,14 @@ export const QuestionCard = React.memo(({ log, index, isExpanded, onToggle, refC
                     {isExpanded && (
                         <div className="border-t border-border">
                             {/* 第一性原理分析 */}
-                            <div className="p-5 bg-gradient-to-r from-amber-500/5 to-orange-500/5 border-b border-amber-500/10">
-                                <div className="flex items-center justify-between mb-3">
-                                    <div className="flex items-center gap-2 text-amber-700 dark:text-amber-400 font-bold text-sm">
-                                        <Lightbulb className="h-4 w-4" />
-                                        第一性原理
-                                    </div>
-                                    {!fpAnalysis && (
-                                        <button
-                                            onClick={() => handleFirstPrinciples(false)}
-                                            disabled={isLoadingFP}
-                                            className="px-3 py-1.5 text-xs font-medium bg-amber-500/10 hover:bg-amber-500/20 text-amber-700 dark:text-amber-400 rounded-full border border-amber-500/20 transition-colors disabled:opacity-50 flex items-center gap-1.5"
-                                        >
-                                            {isLoadingFP ? (
-                                                <>
-                                                    <Loader2 className="h-3 w-3 animate-spin" />
-                                                    分析中...
-                                                </>
-                                            ) : (
-                                                '一键解析'
-                                            )}
-                                        </button>
-                                    )}
-                                    {fpAnalysis && (
-                                        <button
-                                            onClick={() => handleFirstPrinciples(true)}
-                                            disabled={isLoadingFP}
-                                            className="p-1.5 text-amber-400 hover:text-amber-600 dark:hover:text-amber-300 transition-colors disabled:opacity-50"
-                                            title="重新解析"
-                                        >
-                                            <RefreshCw className={`h-4 w-4 ${isLoadingFP ? 'animate-spin' : ''}`} />
-                                        </button>
-                                    )}
-                                </div>
+                            <AIAnalysisSection
+                                fpAnalysis={fpAnalysis}
+                                isLoading={isLoadingFP}
+                                onGenerate={handleFirstPrinciples}
+                                questionId={log.questionId}
+                            />
 
-                                {fpAnalysis ? (
-                                    <div className="bg-card p-4 rounded-xl border border-amber-500/20 shadow-sm">
-                                        {log.questionId ? (
-                                            <AnnotatableText
-                                                text={fpAnalysis}
-                                                questionId={-log.questionId}
-                                                className="text-sm text-foreground"
-                                            />
-                                        ) : (
-                                            <div className="text-sm text-foreground leading-relaxed whitespace-pre-wrap">
-                                                {fpAnalysis}
-                                            </div>
-                                        )}
-                                    </div>
-                                ) : (
-                                    <div className="text-xs text-muted-foreground">
-                                        点击上方按钮，AI 将用底层逻辑为你解析这道题（≤200字）
-                                    </div>
-                                )}
-                            </div>
+                            {/* 解析 */}
 
                             {/* 解析 */}
                             {log.explanation && (
@@ -361,50 +503,14 @@ export const QuestionCard = React.memo(({ log, index, isExpanded, onToggle, refC
                                 </div>
                             )}
 
-                            {/* AI 助记大师 */}
-                            <div className="p-5 bg-purple-500/5 border-t border-purple-500/10">
-                                <div className="flex items-center justify-between mb-3">
-                                    <div className="flex items-center gap-2 text-purple-700 dark:text-purple-400 font-bold text-sm">
-                                        <Sparkles className="h-4 w-4" />
-                                        AI 记忆大师
-                                    </div>
-                                    {!mnemonic && log.questionId && (
-                                        <button
-                                            onClick={() => handleGenerateMnemonic(false)}
-                                            disabled={isGeneratingMnemonic}
-                                            className="px-3 py-1.5 text-xs font-medium bg-purple-500/10 hover:bg-purple-500/20 text-purple-700 dark:text-purple-400 rounded-full border border-purple-500/20 transition-colors disabled:opacity-50 flex items-center gap-1.5"
-                                        >
-                                            {isGeneratingMnemonic ? (
-                                                <>
-                                                    <Loader2 className="h-3 w-3 animate-spin" />
-                                                    生成中...
-                                                </>
-                                            ) : (
-                                                '生成记忆口诀'
-                                            )}
-                                        </button>
-                                    )}
 
-                                    {mnemonic && log.questionId && (
-                                        <button
-                                            onClick={() => handleGenerateMnemonic(true)}
-                                            disabled={isGeneratingMnemonic}
-                                            className="p-1.5 text-purple-400 hover:text-purple-600 dark:hover:text-purple-300 transition-colors disabled:opacity-50"
-                                            title="重新生成"
-                                        >
-                                            <RefreshCw className={`h-4 w-4 ${isGeneratingMnemonic ? 'animate-spin' : ''}`} />
-                                        </button>
-                                    )}
-                                </div>
-
-                                {mnemonic ? (
-                                        <MarkdownViewer content={mnemonic} />
-                                ) : (
-                                    <div className="text-xs text-muted-foreground">
-                                        遇到难记的知识点？点击按钮，AI 为你生成趣味口诀和脑洞联想。
-                                    </div>
-                                )}
-                            </div>
+                            {/* AI 助记 */}
+                            <AIMnemonicSection
+                                mnemonic={mnemonic}
+                                isGenerating={isGeneratingMnemonic}
+                                onGenerate={handleGenerateMnemonic}
+                                questionId={log.questionId}
+                            />
 
                             {/* 考点和来源 */}
                             <div className="p-5 bg-muted/30 space-y-3">
@@ -445,37 +551,8 @@ export const QuestionCard = React.memo(({ log, index, isExpanded, onToggle, refC
                                 )}
                             </div>
 
-                            {/* AI复盘 */}
-                            {log.reviewData && (
-                                <div className="p-5 bg-amber-500/5 border-t border-amber-500/20">
-                                    <div className="flex items-center gap-2 mb-3 text-amber-700 dark:text-amber-300 font-bold text-sm">
-                                        <BrainCircuit className="h-4 w-4" />
-                                        AI 复盘档案
-                                    </div>
-
-                                    {log.reviewData.quiz && (
-                                        <div className="mb-4">
-                                            <div className="text-xs font-bold text-amber-700 dark:text-amber-400 mb-1">纠偏找茬变式</div>
-                                            <div className="text-sm text-foreground bg-card p-3 rounded-xl border border-amber-500/20 shadow-sm">
-                                                {log.reviewData.quiz.quiz.content}
-                                            </div>
-                                        </div>
-                                    )}
-
-                                    {log.reviewData.regression && (
-                                        <div>
-                                            <div className="text-xs font-bold text-purple-700 dark:text-purple-400 mb-1">回归挑战变式</div>
-                                            <div className="space-y-2">
-                                                {log.reviewData.regression.challenges.map((c: unknown, ci: number) => (
-                                                    <div key={ci} className="text-sm text-foreground bg-card p-3 rounded-xl border border-purple-500/20 shadow-sm">
-                                                        {c.content}
-                                                    </div>
-                                                ))}
-                                            </div>
-                                        </div>
-                                    )}
-                                </div>
-                            )}
+                            {/* AI 复盘 */}
+                            <AIReviewSection reviewDataRaw={log.reviewData} />
                         </div>
                     )}
                 </div>

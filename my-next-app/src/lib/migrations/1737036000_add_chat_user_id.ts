@@ -1,8 +1,8 @@
 
-export async function up(db: unknown) {
+export async function up(db: any) {
     // 1. Check if user_id column exists
-    const tableInfo = db.prepare('PRAGMA table_info(chat_sessions)').all() as unknown[];
-    const hasUserId = tableInfo.some((col: unknown) => col.name === 'user_id');
+    const tableInfo = db.prepare('PRAGMA table_info(chat_sessions)').all() as any[];
+    const hasUserId = tableInfo.some((col: any) => col.name === 'user_id');
 
     if (!hasUserId) {
         console.log('📝 Adding user_id column to chat_sessions...');

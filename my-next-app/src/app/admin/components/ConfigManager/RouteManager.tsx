@@ -46,7 +46,7 @@ export function RouteManager() {
         }
     };
 
-    const handleRouteChange = (feature: string, field: 'config_id' | 'model_name', value: unknown) => {
+    const handleRouteChange = (feature: string, field: 'config_id' | 'model_name', value: string | number) => {
         setRoutes(prev => {
             const existing = prev.find(r => r.feature === feature);
             if (existing) {

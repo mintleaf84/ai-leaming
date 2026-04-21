@@ -61,8 +61,8 @@ export function PromptManager() {
             } else {
                 toast.error("保存失败: " + res.error);
             }
-        } catch (e: unknown) {
-            toast.error("请求失败: " + e.message);
+        } catch (e) {
+            toast.error("请求失败: " + (e as Error).message);
         } finally {
             setIsSaving(false);
         }
@@ -99,9 +99,9 @@ export function PromptManager() {
                 }
                 setDebugResult(errorMsg);
             }
-        } catch (e: unknown) {
+        } catch (e) {
             toast.error("调试请求失败");
-            setDebugResult("Request Error: " + e.message);
+            setDebugResult("Request Error: " + (e as Error).message);
         } finally {
             setIsDebugLoading(false);
         }

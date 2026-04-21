@@ -28,7 +28,7 @@ import { updateQuestionAction } from "@/server/actions/admin";
 interface EditQuestionDialogProps {
     open: boolean;
     onOpenChange: (open: boolean) => void;
-    question: unknown;
+    question: any;
     onSuccess: () => void;
 }
 

@@ -15,6 +15,12 @@ export const ragService = {
    * 获取文本向量 (使用标准 SDK)
    */
   getEmbedding: async (text: string): Promise<number[]> => {
+    // E2E 测试模式：禁用真实 Embedding 调用
+    if (process.env.E2E_TEST === 'true') {
+      const { embeddingDimensions } = getAiConfig();
+      return new Array(embeddingDimensions || 1024).fill(0).map((_, i) => Math.sin(i));
+    }
+
     const { apiKey, baseURL, modelName } = getAiConfig('embedding');
 
     try {
@@ -176,6 +182,11 @@ export const ragService = {
    * 提升检索结果的准确度
    */
   rerank: async (query: string, results: RagResult[]): Promise<RagResult[]> => {
+    // E2E 测试模式：禁用真实 Rerank 调用
+    if (process.env.E2E_TEST === 'true') {
+      return results;
+    }
+
     const { apiKey, baseURL, modelName } = getAiConfig('rerank');
 
     // 如果未配置重排序模型，直接返回原结果

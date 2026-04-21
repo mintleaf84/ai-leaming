@@ -43,7 +43,7 @@ export default defineConfig({
   webServer: {
     command: 'npm run dev -- -p 3001',
     url: 'http://localhost:3001',
-    reuseExistingServer: true,
+    reuseExistingServer: false,
     timeout: 180 * 1000,
     stdout: 'pipe',
     env: {

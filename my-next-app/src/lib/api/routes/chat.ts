@@ -1,6 +1,9 @@
 import { OpenAPIHono, createRoute, z } from '@hono/zod-openapi'
 import { getErrorMessage } from '@/lib/utils/error';
 import { authMiddleware, getCurrentUser } from '@/lib/api/middlewares/auth'
+import { convertToModelMessages, createUIMessageStream, createUIMessageStreamResponse } from 'ai'
+import type { UIMessage } from 'ai'
+import type { ToolSet } from 'ai'
 import { streamChatWrapper } from '@/lib/ai/client'
 import { saveMessage } from '@/lib/services/chat'
 import { 
@@ -49,21 +52,55 @@ app.openapi(chatRoute, async (c) => {
 
     const { messages, sessionId, enableRag, context, mode } = c.req.valid('json')
 
+    const toUiMessage = (raw: unknown, index: number): UIMessage => {
+        const msg = raw as Record<string, unknown>
+        const id = typeof msg.id === 'string' && msg.id ? msg.id : `legacy-${Date.now()}-${index}`
+        const role = msg.role === 'assistant' || msg.role === 'system' ? msg.role : 'user'
+
+        if (Array.isArray(msg.parts)) {
+            return {
+                id,
+                role,
+                parts: msg.parts,
+            } as UIMessage
+        }
+
+        return {
+            id,
+            role,
+            parts: [{ type: 'text', text: typeof msg.content === 'string' ? msg.content : '' }],
+        } as UIMessage
+    }
+
+    const uiMessages = (Array.isArray(messages) ? messages : []).map((m, i) => toUiMessage(m, i))
+
+    const extractTextFromMessage = (message: UIMessage | undefined): string => {
+        if (!message || !Array.isArray(message.parts)) return ''
+        return message.parts
+            .map((part) => {
+                const p = part as Record<string, unknown>
+                if (p.type === 'text' && typeof p.text === 'string') {
+                    return p.text
+                }
+                return ''
+            })
+            .join('')
+    }
+
     // 1. 用量检查
     const quotaCheck = checkQuotaForApi(userId, 'ai_chat')
     if (quotaCheck) return c.json(quotaCheck.error, 429)
 
     // 2. 保存用户消息
-    if (sessionId && messages.length > 0) {
-        const lastMessage = messages[messages.length - 1]
-        if (lastMessage.role === 'user') {
-            try { saveMessage(userId, sessionId, 'user', lastMessage.content) } catch {}
-        }
+    const lastUserMessage = [...uiMessages].reverse().find((m) => m.role === 'user')
+    const lastUserText = extractTextFromMessage(lastUserMessage)
+
+    if (sessionId && lastUserText) {
+        try { saveMessage(userId, sessionId, 'user', lastUserText) } catch {}
     }
 
     // 3. 检查指令
-    const userMessage = messages[messages.length - 1]?.content || ''
-    const { type, keyword } = parseCommand(userMessage)
+    const { type, keyword } = parseCommand(lastUserText)
 
     if (type !== 'none') {
         let commandResponse = ''
@@ -73,32 +110,64 @@ app.openapi(chatRoute, async (c) => {
         if (sessionId) {
             try { saveMessage(userId, sessionId, 'assistant', commandResponse) } catch {}
         }
-        return c.text(commandResponse, 200, { 'Content-Type': 'text/plain; charset=utf-8' })
+
+        const commandStream = createUIMessageStream({
+            execute: ({ writer }) => {
+                const textId = `cmd-${Date.now()}`
+                writer.write({ type: 'start' })
+                writer.write({ type: 'start-step' })
+                writer.write({ type: 'text-start', id: textId })
+                writer.write({ type: 'text-delta', id: textId, delta: commandResponse })
+                writer.write({ type: 'text-end', id: textId })
+                writer.write({ type: 'finish-step' })
+                writer.write({ type: 'finish', finishReason: 'stop' })
+            },
+        })
+
+        return createUIMessageStreamResponse({ stream: commandStream })
     }
 
     // 4. 流式生成
-    let tools = undefined
+    let tools: ToolSet | undefined = undefined
     const systemPrompt = buildEnhancedSystemPrompt(context, mode)
 
     if (enableRag) {
         const { knowledgeSearchTool } = await import('@/lib/services/chat-rag')
-        tools = { knowledgeSearch: knowledgeSearchTool }
+        tools = { knowledgeSearch: knowledgeSearchTool } as unknown as ToolSet
     }
 
     try {
-        const result = await streamChatWrapper(
-            messages,
-            (fullResponse) => {
-                if (sessionId) {
-                    try { saveMessage(userId, sessionId, 'assistant', fullResponse) } catch {}
-                }
-            },
-            tools,
-            systemPrompt
-        )
+        const modelMessages = await convertToModelMessages(uiMessages)
 
-        // Hono 允许返回原生的 Response 对象
-        return result.toTextStreamResponse()
+        const stream = createUIMessageStream({
+            execute: async ({ writer }) => {
+                writer.write({
+                    type: 'data-chat-meta',
+                    data: {
+                        sessionId: sessionId ?? null,
+                        ragEnabled: Boolean(enableRag),
+                        mode: mode ?? 'standard',
+                        quotaType: 'ai_chat',
+                    },
+                })
+
+                const result = await streamChatWrapper(
+                    modelMessages,
+                    (fullResponse) => {
+                        if (sessionId) {
+                            try { saveMessage(userId, sessionId, 'assistant', fullResponse) } catch {}
+                        }
+                    },
+                    tools,
+                    systemPrompt
+                )
+
+                writer.merge(result.toUIMessageStream())
+            },
+            originalMessages: uiMessages,
+        })
+
+        return createUIMessageStreamResponse({ stream })
     } catch (error: unknown) {
         console.error('[Hono Chat API] error:', error)
         return c.json({ error: getErrorMessage(error) }, 500)

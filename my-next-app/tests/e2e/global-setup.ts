@@ -87,7 +87,7 @@ async function globalSetup(_config: FullConfig) {
       token_version INTEGER DEFAULT 0,
       created_at DATETIME DEFAULT CURRENT_TIMESTAMP
     );
-    
+
     CREATE TABLE IF NOT EXISTS notes (
       id INTEGER PRIMARY KEY AUTOINCREMENT,
       user_id INTEGER NOT NULL,
@@ -99,7 +99,6 @@ async function globalSetup(_config: FullConfig) {
     );
 
     CREATE TABLE IF NOT EXISTS questions (
-
       id INTEGER PRIMARY KEY AUTOINCREMENT,
       content TEXT NOT NULL,
       options TEXT,
@@ -108,7 +107,20 @@ async function globalSetup(_config: FullConfig) {
       tags TEXT,
       dimension TEXT CHECK(dimension IN ('knowledge', 'understanding', 'application')),
       type TEXT,
+      ai_mnemonic TEXT,
       created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+    );
+
+    CREATE TABLE IF NOT EXISTS user_mastery (
+      user_id INTEGER NOT NULL DEFAULT 1,
+      tag_name TEXT NOT NULL,
+      score REAL DEFAULT 0,
+      correct_count INTEGER DEFAULT 0,
+      total_count INTEGER DEFAULT 0,
+      history TEXT,
+      last_updated DATETIME DEFAULT CURRENT_TIMESTAMP,
+      PRIMARY KEY (user_id, tag_name),
+      FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
     );
 
     CREATE TABLE IF NOT EXISTS practice_sessions (
@@ -118,9 +130,8 @@ async function globalSetup(_config: FullConfig) {
       total_questions INTEGER DEFAULT 0,
       correct_count INTEGER DEFAULT 0,
       review_count INTEGER DEFAULT 0,
-      questions_json TEXT,
-      practice_mode TEXT,
-      created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+      created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+      FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
     );
 
     CREATE TABLE IF NOT EXISTS practice_logs (
@@ -130,8 +141,40 @@ async function globalSetup(_config: FullConfig) {
       question_id INTEGER NOT NULL,
       user_answer TEXT,
       is_correct BOOLEAN NOT NULL,
+      is_monitored_correct BOOLEAN DEFAULT 0,
       duration_ms INTEGER,
-      timestamp DATETIME DEFAULT CURRENT_TIMESTAMP
+      timestamp DATETIME DEFAULT CURRENT_TIMESTAMP,
+      FOREIGN KEY(question_id) REFERENCES questions(id),
+      FOREIGN KEY(session_id) REFERENCES practice_sessions(id),
+      FOREIGN KEY(user_id) REFERENCES users(id) ON DELETE CASCADE
+    );
+
+    CREATE TABLE IF NOT EXISTS session_reviews (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      session_id TEXT NOT NULL,
+      question_id INTEGER NOT NULL,
+      review_data TEXT,
+      created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+      FOREIGN KEY(session_id) REFERENCES practice_sessions(id)
+    );
+
+    CREATE TABLE IF NOT EXISTS observation_zone (
+      user_id INTEGER NOT NULL DEFAULT 1,
+      tag_name TEXT NOT NULL,
+      reason TEXT,
+      entered_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+      status TEXT CHECK(status IN ('active', 'recovering', 'graduated')) DEFAULT 'active',
+      PRIMARY KEY (user_id, tag_name),
+      FOREIGN KEY(user_id, tag_name) REFERENCES user_mastery(user_id, tag_name) ON DELETE CASCADE
+    );
+
+    CREATE TABLE IF NOT EXISTS system_settings (
+      user_id INTEGER NOT NULL DEFAULT 1,
+      key TEXT NOT NULL,
+      value TEXT,
+      updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+      PRIMARY KEY (user_id, key),
+      FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
     );
 
     CREATE TABLE IF NOT EXISTS ai_configs (
@@ -141,8 +184,28 @@ async function globalSetup(_config: FullConfig) {
       api_key TEXT NOT NULL,
       model_economy TEXT,
       model_premium TEXT,
+      model_embedding TEXT,
+      embedding_dimensions INTEGER,
+      model_rerank TEXT,
+      model_knowledge TEXT,
       is_active BOOLEAN DEFAULT 0,
       created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+    );
+
+    CREATE TABLE IF NOT EXISTS prompt_templates (
+      key TEXT PRIMARY KEY,
+      template TEXT NOT NULL,
+      description TEXT,
+      variables TEXT,
+      updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
+    );
+
+    CREATE TABLE IF NOT EXISTS ai_model_routes (
+      feature TEXT PRIMARY KEY,
+      config_id INTEGER,
+      model_name TEXT,
+      updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+      FOREIGN KEY (config_id) REFERENCES ai_configs(id) ON DELETE SET NULL
     );
 
     CREATE TABLE IF NOT EXISTS chat_sessions (
@@ -151,7 +214,8 @@ async function globalSetup(_config: FullConfig) {
       title TEXT NOT NULL DEFAULT '新对话',
       created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
       updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-      message_count INTEGER DEFAULT 0
+      message_count INTEGER DEFAULT 0,
+      FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
     );
 
     CREATE TABLE IF NOT EXISTS chat_messages (
@@ -160,16 +224,52 @@ async function globalSetup(_config: FullConfig) {
       role TEXT NOT NULL CHECK(role IN ('user', 'assistant', 'system')),
       content TEXT NOT NULL,
       is_favorite INTEGER DEFAULT 0,
-      created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+      created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+      FOREIGN KEY (session_id) REFERENCES chat_sessions(id) ON DELETE CASCADE
     );
 
-    CREATE TABLE IF NOT EXISTS user_mastery (
+    CREATE TABLE IF NOT EXISTS knowledge_cards (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
       user_id INTEGER NOT NULL DEFAULT 1,
-      tag_name TEXT NOT NULL,
-      score REAL DEFAULT 0,
-      history TEXT,
-      last_updated DATETIME DEFAULT CURRENT_TIMESTAMP,
-      PRIMARY KEY (user_id, tag_name)
+      session_id INTEGER,
+      title TEXT NOT NULL,
+      category TEXT,
+      tags TEXT,
+      front TEXT,
+      back TEXT,
+      key_points TEXT,
+      source_content TEXT,
+      created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+      updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+      FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
+      FOREIGN KEY (session_id) REFERENCES chat_sessions(id) ON DELETE SET NULL
+    );
+
+    CREATE TABLE IF NOT EXISTS admin_logs (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      user_id INTEGER NOT NULL,
+      username TEXT NOT NULL,
+      action TEXT NOT NULL,
+      target_type TEXT,
+      target_id TEXT,
+      details TEXT,
+      ip_address TEXT,
+      created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+      FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+    );
+
+    CREATE TABLE IF NOT EXISTS api_call_logs (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      user_id INTEGER,
+      config_id INTEGER,
+      model TEXT NOT NULL,
+      endpoint TEXT,
+      input_tokens INTEGER DEFAULT 0,
+      output_tokens INTEGER DEFAULT 0,
+      duration_ms INTEGER,
+      success INTEGER DEFAULT 1,
+      error_message TEXT,
+      created_at DATETIME DEFAULT CURRENT_TIMESTAMP
     );
 
     CREATE TABLE IF NOT EXISTS subscription_plans (
@@ -191,58 +291,53 @@ async function globalSetup(_config: FullConfig) {
       status TEXT CHECK(status IN ('active', 'expired', 'cancelled')) DEFAULT 'active',
       started_at DATETIME DEFAULT CURRENT_TIMESTAMP,
       expires_at DATETIME,
-      created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+      created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+      FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
+      FOREIGN KEY (plan_id) REFERENCES subscription_plans(id)
     );
 
-    CREATE TABLE IF NOT EXISTS prompt_templates (
-      key TEXT PRIMARY KEY,
-      template TEXT NOT NULL,
-      description TEXT,
-      variables TEXT,
-      updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
-    );
-
-    CREATE TABLE IF NOT EXISTS system_settings (
-      key TEXT PRIMARY KEY,
-      value TEXT NOT NULL,
-      updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
-    );
-
-    CREATE TABLE IF NOT EXISTS note_tags (
+    CREATE TABLE IF NOT EXISTS daily_usage (
       id INTEGER PRIMARY KEY AUTOINCREMENT,
-      name TEXT UNIQUE NOT NULL,
-      user_id INTEGER NOT NULL DEFAULT 1,
-      created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+      user_id INTEGER NOT NULL,
+      usage_date DATE NOT NULL,
+      usage_type TEXT NOT NULL,
+      count INTEGER DEFAULT 0,
+      UNIQUE(user_id, usage_date, usage_type),
+      FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
     );
 
-    CREATE TABLE IF NOT EXISTS note_tag_relations (
-      note_id INTEGER NOT NULL,
-      tag_id INTEGER NOT NULL,
-      PRIMARY KEY (note_id, tag_id),
-      FOREIGN KEY (note_id) REFERENCES notes(id) ON DELETE CASCADE,
-      FOREIGN KEY (tag_id) REFERENCES note_tags(id) ON DELETE CASCADE
-    );
-
-    CREATE TABLE IF NOT EXISTS knowledge_cards (
+    CREATE TABLE IF NOT EXISTS payment_records (
       id INTEGER PRIMARY KEY AUTOINCREMENT,
-      session_id INTEGER,
-      title TEXT NOT NULL,
-      category TEXT,
-      tags TEXT,
-      front TEXT NOT NULL,
-      back TEXT NOT NULL,
-      key_points TEXT,
-      source_content TEXT,
+      user_id INTEGER NOT NULL,
+      order_no TEXT UNIQUE NOT NULL,
+      payment_no TEXT,
+      plan_id TEXT NOT NULL,
+      amount INTEGER NOT NULL,
+      payment_method TEXT,
+      status TEXT CHECK(status IN ('pending', 'paid', 'failed', 'refunded')) DEFAULT 'pending',
+      created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+      paid_at DATETIME,
+      FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+    );
+
+    CREATE TABLE IF NOT EXISTS mastered_questions (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      user_id INTEGER NOT NULL,
+      question_id INTEGER NOT NULL,
+      mastered_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+      note TEXT,
+      UNIQUE(user_id, question_id),
+      FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
+      FOREIGN KEY (question_id) REFERENCES questions(id) ON DELETE CASCADE
+    );
+
+    CREATE TABLE IF NOT EXISTS api_keys (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      key_string TEXT UNIQUE NOT NULL,
+      description TEXT DEFAULT '',
+      is_active INTEGER DEFAULT 1,
       created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
       updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
-    );
-
-    CREATE TABLE IF NOT EXISTS ai_model_routes (
-      feature TEXT PRIMARY KEY,
-      config_id INTEGER,
-      model_name TEXT,
-      updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-      FOREIGN KEY (config_id) REFERENCES ai_configs(id) ON DELETE SET NULL
     );
 
     CREATE TABLE IF NOT EXISTS content_chunks (
@@ -253,15 +348,6 @@ async function globalSetup(_config: FullConfig) {
 
     CREATE VIRTUAL TABLE IF NOT EXISTS content_vec USING vec0(
       embedding float[1024]
-    );
-
-    CREATE TABLE IF NOT EXISTS daily_usage (
-      id INTEGER PRIMARY KEY AUTOINCREMENT,
-      user_id INTEGER NOT NULL,
-      usage_date DATE NOT NULL,
-      usage_type TEXT NOT NULL,
-      count INTEGER DEFAULT 0,
-      UNIQUE(user_id, usage_date, usage_type)
     );
   `);
 
@@ -310,9 +396,9 @@ async function globalSetup(_config: FullConfig) {
 
   // 3.3 创建 AI 配置（Mock 配置）
   db.prepare(`
-    INSERT OR IGNORE INTO ai_configs (name, api_url, api_key, model_economy, model_premium, is_active)
-    VALUES (?, ?, ?, ?, ?, ?)
-  `).run('测试AI配置', 'https://mock-api.test.com/v1', 'sk-test-mock-key', 'gpt-3.5-turbo', 'gpt-4', 1);
+    INSERT OR IGNORE INTO ai_configs (name, api_url, api_key, model_economy, model_premium, model_embedding, model_rerank, model_knowledge, is_active)
+    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+  `).run('测试AI配置', 'https://mock-api.test.com/v1', 'sk-test-mock-key', 'gpt-3.5-turbo', 'gpt-4', 'text-embedding-3-small', 'bge-reranker-v2-m3', 'gpt-4o', 1);
 
   console.log('[E2E Setup] 已创建 AI 配置');
 
@@ -350,8 +436,8 @@ async function globalSetup(_config: FullConfig) {
 
   // 3.6 初始化系统设置
   db.prepare(`
-    INSERT OR IGNORE INTO system_settings (key, value)
-    VALUES (?, ?)
+    INSERT OR IGNORE INTO system_settings (user_id, key, value)
+    VALUES (1, ?, ?)
   `).run('demo_mode_enabled', 'false');
 
   console.log('[E2E Setup] 已初始化演示模式开关');

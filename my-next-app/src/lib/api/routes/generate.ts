@@ -1,9 +1,8 @@
 import { OpenAPIHono, createRoute, z } from '@hono/zod-openapi'
 import { getErrorMessage } from '@/lib/utils/error';
 import { authMiddleware, getCurrentUser } from '@/lib/api/middlewares/auth'
-import { createOpenAI } from '@ai-sdk/openai'
 import { streamText } from 'ai'
-import { getAiConfig } from '@/lib/ai/client'
+import { getAiConfig, getModel } from '@/lib/ai/client'
 import { checkAndConsumeQuota } from '@/lib/billing/subscription-service'
 
 const app = new OpenAPIHono()
@@ -48,16 +47,14 @@ app.openapi(generateRoute, async (c) => {
     const { prompt, option, command } = c.req.valid('json')
     const config = getAiConfig('premium')
 
-    const openai = createOpenAI({
-        apiKey: config.apiKey,
-        baseURL: config.baseURL,
-    })
-
     const systemPrompt = buildSystemPrompt(option, command)
 
     try {
+        // 使用 getModel 以兼容不同 provider 形态
+        const model = getModel(config.apiKey, config.baseURL, config.modelName || 'gpt-4o')
+
         const response = streamText({
-            model: openai.chat(config.modelName || 'gpt-4o'),
+            model,
             messages: [
                 { role: 'system', content: systemPrompt },
                 { role: 'user', content: prompt }

@@ -14,7 +14,10 @@ const { mockAiLib } = vi.hoisted(() => {
 });
 
 vi.mock('ai', () => ({ streamText: mockAiLib.streamText }));
-vi.mock('@/lib/ai/client', () => ({ getAiConfig: vi.fn().mockReturnValue({ apiKey: 'key', baseURL: 'base', modelName: 'm' }) }));
+vi.mock('@/lib/ai/client', () => ({
+    getAiConfig: vi.fn().mockReturnValue({ apiKey: 'key', baseURL: 'base', modelName: 'm' }),
+    getModel: vi.fn().mockReturnValue({}),
+}));
 vi.mock('@/lib/billing/subscription-service', () => ({ checkAndConsumeQuota: vi.fn().mockReturnValue({ allowed: true }) }));
 
 // Mock Auth Middleware

@@ -94,7 +94,7 @@ test.describe('认证流程', () => {
         await expect(usernameInput).toBeVisible({ timeout: 10000 });
 
         await usernameInput.fill(uniqueUsername);
-        await mockPage.getByPlaceholder(/密码/).fill('Pass@123456');
+        await mockPage.getByPlaceholder('设置密码', { exact: false }).fill('Pass@123456');
 
         // 确认密码（如有此字段）
         const confirmInput = mockPage.getByPlaceholder(/确认密码|再次输入/);
@@ -124,7 +124,7 @@ test.describe('认证流程', () => {
         await expect(usernameInput).toBeVisible({ timeout: 10000 });
 
         await usernameInput.fill(`e2e_mismatch_${Date.now()}`);
-        await mockPage.getByPlaceholder(/密码/).fill('Pass@123456');
+        await mockPage.getByPlaceholder('设置密码', { exact: false }).fill('Pass@123456');
 
         // 确认密码填写不同的值
         const confirmInput = mockPage.getByPlaceholder(/确认密码|再次输入/);

@@ -18,7 +18,18 @@ vi.mock('@/lib/services/chat', () => ({ saveMessage: mockChatService.saveMessage
 vi.mock('@/lib/billing/usage-middleware', () => ({ checkQuotaForApi: mockQuota.checkQuotaForApi }));
 vi.mock('@/lib/ai/client', () => ({
     streamChatWrapper: vi.fn().mockResolvedValue({
-        toTextStreamResponse: () => new Response('ai response')
+        toUIMessageStream: () => new ReadableStream({
+            start(controller) {
+                controller.enqueue({ type: 'start' });
+                controller.enqueue({ type: 'start-step' });
+                controller.enqueue({ type: 'text-start', id: 't1' });
+                controller.enqueue({ type: 'text-delta', id: 't1', delta: 'ai response' });
+                controller.enqueue({ type: 'text-end', id: 't1' });
+                controller.enqueue({ type: 'finish-step' });
+                controller.enqueue({ type: 'finish', finishReason: 'stop' });
+                controller.close();
+            }
+        })
     })
 }));
 
@@ -48,8 +59,10 @@ describe('Chat Hono Routes', () => {
             });
 
             expect(res.status).toBe(200);
+            expect(res.headers.get('content-type')).toContain('text/event-stream');
             const text = await res.text();
-            expect(text).toBe('ai response');
+            expect(text).toContain('"type":"text-delta"');
+            expect(text).toContain('ai response');
         });
 
         it('should return 429 when quota exceeded', async () => {

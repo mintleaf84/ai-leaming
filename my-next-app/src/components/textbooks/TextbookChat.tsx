@@ -76,6 +76,7 @@ export function TextbookChat({ context, title }: TextbookChatProps) {
             const reader = response.body?.getReader();
             const decoder = new TextDecoder();
             let aiMessageContent = '';
+            let streamBuffer = '';
 
             // Add placeholder AI message
             const aiMessageId = (Date.now() + 1).toString();
@@ -85,8 +86,36 @@ export function TextbookChat({ context, title }: TextbookChatProps) {
                 const { done, value } = await reader.read();
                 if (done) break;
 
-                const chunk = decoder.decode(value, { stream: true });
-                aiMessageContent += chunk;
+                streamBuffer += decoder.decode(value, { stream: true });
+                const events = streamBuffer.split('\n\n');
+                streamBuffer = events.pop() || '';
+
+                for (const eventBlock of events) {
+                    const dataLines = eventBlock
+                        .split('\n')
+                        .filter(line => line.startsWith('data: '))
+                        .map(line => line.slice(6).trim());
+
+                    if (dataLines.length === 0) {
+                        // 兼容纯文本流
+                        aiMessageContent += eventBlock;
+                        continue;
+                    }
+
+                    for (const payload of dataLines) {
+                        if (!payload || payload === '[DONE]') continue;
+
+                        try {
+                            const parsed = JSON.parse(payload) as { type?: string; delta?: string };
+                            if (parsed.type === 'text-delta' && typeof parsed.delta === 'string') {
+                                aiMessageContent += parsed.delta;
+                            }
+                        } catch {
+                            // 兼容旧文本协议
+                            aiMessageContent += payload;
+                        }
+                    }
+                }
 
                 setMessages(prev => prev.map(m =>
                     m.id === aiMessageId ? { ...m, content: aiMessageContent } : m

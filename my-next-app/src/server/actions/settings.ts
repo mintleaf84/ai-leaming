@@ -4,7 +4,8 @@ import logger from '@/lib/logger';
 import { getErrorMessage } from '@/lib/utils/error';
 import db from '@/lib/db';
 import { revalidatePath } from 'next/cache';
-import { generateTextWrapper } from '@/lib/ai/client';
+import { getAiConfig, getModel } from '@/lib/ai/client';
+import { generateText } from 'ai';
 import { requireUser } from '@/lib/auth/auth';
 
 export type Settings = {
@@ -68,10 +69,18 @@ export async function resetUserDataAction() {
   return { success: true, message: "您的学习数据已重置" };
 }
 
-export async function testAiConnectionAction(apiKey: string, apiUrl: string, _model: string) {
+export async function testAiConnectionAction(apiKey: string, apiUrl: string, modelName: string) {
   try {
     const prompt = "Please respond with 'Pong' to verify the connection.";
-    const { text } = await generateTextWrapper(prompt, 'economy', apiKey, apiUrl);
+    const config = getAiConfig('economy', apiKey, apiUrl);
+    const model = getModel(config.apiKey, config.baseURL, modelName || config.modelName);
+
+    const { text } = await generateText({
+      model,
+      messages: [{ role: 'user', content: prompt }],
+      abortSignal: AbortSignal.timeout(10000),
+    });
+
     return { success: true, message: text };
   } catch (error: unknown) {
     logger.error({ err: error }, "Connection Test Failed");

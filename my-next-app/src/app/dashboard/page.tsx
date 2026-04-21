@@ -1,8 +1,8 @@
 import Link from "next/link";
 import { Suspense } from "react";
 import {
-  ArrowRight, Brain, BarChart3, Target, Zap, _AlertCircle,
-  RotateCcw, FileCheck, Shuffle, Flame, _Eye, _BookOpen,
+  ArrowRight, Brain, BarChart3, Target, Zap,
+  RotateCcw, FileCheck, Shuffle, Flame,
   CheckCircle2, Book, GraduationCap, PlayCircle, History, Sparkles, ScanLine, Network
 } from "lucide-react";
 import { redirect } from "next/navigation";

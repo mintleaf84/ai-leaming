@@ -12,7 +12,7 @@ import { getAiConfig } from '@/lib/ai/client';
 export async function performOCR(pdfBuffer: Buffer): Promise<string> {
     try {
 
-        const { apiKey, _baseURL } = getAiConfig('premium');
+        const { apiKey, baseURL } = getAiConfig('premium');
 
         if (!apiKey) {
             throw new Error('Missing API Key for OCR');

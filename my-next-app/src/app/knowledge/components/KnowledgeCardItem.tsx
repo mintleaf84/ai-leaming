@@ -1,7 +1,7 @@
 'use client';
 
 import React from 'react';
-import { Tag, _Edit2, CheckCircle2, Maximize2 } from 'lucide-react';
+import { Tag, CheckCircle2, Maximize2 } from 'lucide-react';
 import { motion } from 'framer-motion';
 import dynamic from 'next/dynamic';
 import { APPLE_SPRING } from '@/lib/configs/motion-config';
@@ -22,7 +22,7 @@ interface KnowledgeCardItemProps {
 export const KnowledgeCardItem: React.FC<KnowledgeCardItemProps> = ({
     card,
     onExpand,
-    _onEdit,
+    onEdit: _,
     categoryColor
 }) => {
     return (

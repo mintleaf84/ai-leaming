@@ -1,12 +1,11 @@
 /** @vitest-environment jsdom */
-import { render, screen, fireEvent, waitFor, _act } from '@testing-library/react';
+import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 import '@testing-library/jest-dom';
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import React from 'react';
 import { KnowledgePointSelector } from '../KnowledgePointSelector';
 import { useRouter } from 'next/navigation';
 import { getKnowledgeTreeAction } from '@/server/actions/practice';
-import { _toast } from 'sonner';
 
 // Mock next/navigation
 vi.mock('next/navigation', () => ({

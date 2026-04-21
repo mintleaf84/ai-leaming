@@ -3,7 +3,7 @@
  * 仅包含不依赖 Node.js 原生模块的 JWT 操作
  * 供 middleware.ts 使用
  */
-import { SignJWT, jwtVerify } from 'jose';
+import { SignJWT, jwtVerify, type JWTPayload } from 'jose';
 
 const JWT_SECRET_ENV = process.env.JWT_SECRET;
 const SECRET = new TextEncoder().encode(
@@ -15,7 +15,7 @@ export const COOKIE_NAME = 'auth_token';
 /**
  * 加密 JWT payload
  */
-export async function encrypt(payload: unknown) {
+export async function encrypt(payload: JWTPayload | undefined) {
     if (!JWT_SECRET_ENV && process.env.NODE_ENV === 'production') {
         throw new Error('系统安全配置严重错误：生产环境缺少 JWT_SECRET，为防止伪造凭证已拒绝签发 Token！');
     }

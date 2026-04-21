@@ -4,7 +4,7 @@
  */
 
 import db from '@/lib/db';
-import { PracticeConfig, _PracticeMode } from './practice-types';
+import { PracticeConfig } from './practice-types';
 
 export interface Question {
     id: number;

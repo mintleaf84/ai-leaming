@@ -1,4 +1,4 @@
-import { test, expect, _MOCK_CORRECTION_QUIZ, _MOCK_REGRESSION_CHALLENGE } from './fixtures';
+import { test, expect } from './fixtures';
 import type { Page } from '@playwright/test';
 
 /**

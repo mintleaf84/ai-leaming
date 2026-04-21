@@ -7,7 +7,7 @@ import {
     getKnowledgeStats,
     exportToAnkiTSV
 } from '@/lib/services/knowledge'
-import { authMiddleware, _getCurrentUser } from '@/lib/api/middlewares/auth'
+import { authMiddleware } from '@/lib/api/middlewares/auth'
 
 const app = new OpenAPIHono()
 

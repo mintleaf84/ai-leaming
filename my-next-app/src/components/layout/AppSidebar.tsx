@@ -17,16 +17,9 @@ import {
     FileText,
     Book,
     Sparkles,
-    _ChevronsUpDown,
-    _Palette,
-    _Moon,
-    _Sun,
-    _Eye,
-    _Monitor,
     ScanLine,
     Network
 } from 'lucide-react';
-import { _Button } from "@/components/ui/button";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { cn } from "@/lib/utils";
 import { useTerminology } from "@/lib/hooks/use-terminology";

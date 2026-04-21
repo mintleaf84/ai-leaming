@@ -14,7 +14,7 @@ interface UserProps {
     } | null;
 }
 
-export function MobileNav({ _user }: UserProps) {
+export function MobileNav({ user: _user }: UserProps) {
     const pathname = usePathname();
     const { t } = useTerminology();
 

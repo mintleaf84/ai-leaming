@@ -11,7 +11,7 @@ export function tiptapToMarkdown(content: string | null): string {
     }
 }
 
-function convertNode(node: unknown, listLevel = 0): string {
+function convertNode(node: any, listLevel = 0): string {
     if (!node) return '';
     
     if (node.type === 'text') {
@@ -20,7 +20,7 @@ function convertNode(node: unknown, listLevel = 0): string {
     
     let text = '';
     if (Array.isArray(node.content)) {
-        text = node.content.map((n: unknown) => convertNode(n, listLevel + (node.type === 'bulletList' || node.type === 'orderedList' ? 1 : 0))).join('');
+        text = node.content.map((n: any) => convertNode(n, listLevel + (node.type === 'bulletList' || node.type === 'orderedList' ? 1 : 0))).join('');
     }
     
     switch (node.type) {

@@ -1,4 +1,4 @@
-import { test, expect, _MOCK_CHAT_RESPONSE } from './fixtures';
+import { test, expect } from './fixtures';
 
 /**
  * AI 聊天助手 E2E 测试（模块五：C-01 ~ C-08）

@@ -4,7 +4,7 @@ import logger from '@/lib/logger';
 import db from '@/lib/db';
 import { generateStructuredData, generateTextWrapper, AiRawResponseError } from '@/lib/ai/client';
 import { CorrectionQuizSchema, RegressionChallengeSchema } from '@/lib/schemas';
-import { _z } from 'zod';
+import { z } from 'zod';
 import { buildPrompt, DEFAULT_CORRECTION_PROMPT, DEFAULT_REGRESSION_PROMPT, DEFAULT_KNOWLEDGE_EXTRACT_PROMPT, DEFAULT_CHAT_SYSTEM_PROMPT, PROMPT_VARIABLE_EXAMPLES } from '@/lib/ai/prompts';
 import { requireRole } from '@/lib/auth/auth';
 import { logAdminAction } from '@/lib/admin/audit';

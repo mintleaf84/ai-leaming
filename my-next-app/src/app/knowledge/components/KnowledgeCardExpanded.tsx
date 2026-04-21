@@ -1,7 +1,7 @@
 'use client';
 
-import React, { useState, _useEffect } from 'react';
-import { motion, _AnimatePresence } from 'framer-motion';
+import React, { useState } from 'react';
+import { motion } from 'framer-motion';
 import { X, CheckCircle2, RotateCw } from 'lucide-react';
 import { APPLE_SPRING } from '@/lib/configs/motion-config';
 import { getCategoryColor } from '@/lib/utils/category-colors';

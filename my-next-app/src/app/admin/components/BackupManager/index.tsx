@@ -2,7 +2,7 @@
 
 import React, { useState, useRef } from 'react';
 import { Button } from '@/components/ui/button';
-import { Download, Upload, ShieldAlert, Database, FileUp, Loader2, _CheckCircle2 } from 'lucide-react';
+import { Download, Upload, ShieldAlert, Database, FileUp, Loader2 } from 'lucide-react';
 import { toast } from 'sonner';
 
 export function BackupManager() {

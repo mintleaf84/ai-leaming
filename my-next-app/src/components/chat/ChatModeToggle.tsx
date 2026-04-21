@@ -7,8 +7,7 @@ import {
     DropdownMenuItem,
     DropdownMenuTrigger
 } from '@/components/ui/dropdown-menu';
-import { Brain, GraduationCap, _Sparkles } from 'lucide-react';
-import { _cn } from '@/lib/utils';
+import { Brain, GraduationCap } from 'lucide-react';
 
 export type ChatMode = 'standard' | 'socratic';
 

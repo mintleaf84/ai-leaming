@@ -22,20 +22,9 @@ import { ImportFenbiModal } from '@/components/import/ImportFenbiModal';
 import { cn } from '@/lib/utils';
 import {
   History as HistoryIcon,
-  _ChevronRight,
-  _Calendar,
-  _CheckCircle2,
-  _Trash2,
   Filter,
-  _Brain,
-  _RotateCcw,
-  _Target,
-  _FileCheck,
-  _Shuffle,
   Upload,
   Pencil,
-  _Check,
-  _Search,
   BookOpen
 } from 'lucide-react';
 import { AnimatePresence } from 'framer-motion';

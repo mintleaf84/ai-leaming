@@ -45,7 +45,7 @@ function initializeRoutes(db: Database.Database) {
     try {
         const routeCount = db.prepare('SELECT COUNT(*) as count FROM ai_model_routes').get() as { count: number };
         if (routeCount.count === 0) {
-            const activeConfig = db.prepare('SELECT * FROM ai_configs WHERE is_active = 1').get() as unknown;
+            const activeConfig = db.prepare('SELECT * FROM ai_configs WHERE is_active = 1').get() as any;
             if (activeConfig) {
                 console.log('[DB Seed] Initializing ai_model_routes...');
                 const insertRoute = db.prepare('INSERT INTO ai_model_routes (feature, config_id, model_name) VALUES (?, ?, ?)');

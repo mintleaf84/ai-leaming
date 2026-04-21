@@ -8,7 +8,7 @@ try {
 
     // Print current tables
     const tables = db.prepare("SELECT name FROM sqlite_master WHERE type='table'").all();
-    console.log('Current tables:', tables.map((t: unknown) => t.name));
+    console.log('Current tables:', tables.map((t: any) => t.name));
 
 } catch (error) {
     console.error('Database initialization failed:', error);

@@ -11,8 +11,7 @@ export function markdownToSmm(markdown: string) {
     const transformer = new Transformer();
     const { root } = transformer.transform(markdown);
 
-    const convertNode = (node: unknown): unknown => {
-        // markmap 的节点内容会有包裹，简单清洗掉首尾空白
+    const convertNode = (node: any): any => {        // markmap 的节点内容会有包裹，简单清洗掉首尾空白
         let content = typeof node.content === 'string' ? node.content.trim() : '';
 
         // 解码 HTML 实体 (例如 &#x7b2c; -> 第)

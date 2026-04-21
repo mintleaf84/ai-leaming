@@ -23,11 +23,11 @@ export async function middleware(req: NextRequest) {
 
     if (cookie) {
         try {
-            session = await decrypt(cookie);
+            session = await decrypt(cookie) as any;
             userId = session?.user?.id ? String(session.user.id) : 'anonymous';
             console.log(`[Middleware] Token valid for user: ${userId}`);
         } catch (e: unknown) {
-            console.warn(`[Middleware] Token decryption failed: ${e.message}`);
+            console.warn(`[Middleware] Token decryption failed: ${(e as Error).message}`);
         }
     } else {
         console.log(`[Middleware] No auth cookie found for path: ${path}`);

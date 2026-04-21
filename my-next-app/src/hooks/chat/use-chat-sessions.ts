@@ -3,7 +3,6 @@ import { useState, useEffect, useCallback } from 'react';
 import type { ChatSession } from '@/lib/services/chat';
 import {
     getChatSessions,
-    _createChatSession,
     deleteChatSession,
     loadSessionMessages
 } from '@/server/actions/chat';

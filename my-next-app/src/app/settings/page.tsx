@@ -6,7 +6,6 @@ import { getUserProfileAction, updateProfileAction } from '@/server/actions/prof
 import { Button } from '@/components/ui/button';
 import { toast } from 'sonner';
 import {
-  _ShieldAlert,
   Trash2,
   BrainCircuit,
   Gauge,

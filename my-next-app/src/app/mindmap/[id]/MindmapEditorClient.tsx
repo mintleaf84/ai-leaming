@@ -2,7 +2,7 @@
 
 import React, { useState, useCallback, useRef } from 'react';
 import { getErrorMessage } from '@/lib/utils/error';
-import { _Network, Wand2, Trash2, AlignLeft } from 'lucide-react';
+import { Wand2, Trash2, AlignLeft } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import dynamic from 'next/dynamic';
 import { generateMindmapAction } from '@/server/actions/mindmap';

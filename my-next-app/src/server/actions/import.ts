@@ -3,8 +3,7 @@ import logger from '@/lib/logger';
 
 import db from '@/lib/db';
 import { requireUser } from '@/lib/auth/auth';
-import { parseFenbiData, validateFenbiJson, _ParsedQuestion, _ParsedRecord } from '@/lib/import/fenbi-parser';
-import { _masteryService } from '@/lib/services/mastery';
+import { parseFenbiData, validateFenbiJson } from '@/lib/import/fenbi-parser';
 import { sanitizeHtml } from '@/lib/utils/security';
 import { cookies } from 'next/headers';
 import { COOKIE_NAME } from '@/lib/auth/auth-edge';

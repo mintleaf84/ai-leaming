@@ -18,8 +18,6 @@ import React from 'react'
 import { render, screen, waitFor, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest'
-import { _http, _HttpResponse } from 'msw'
-import { _server } from '../../../../../tests/msw/server'
 
 // ============================================================
 // Server Actions Mock 配置

@@ -2,7 +2,7 @@
 
 import React, { useEffect, useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Activity, CheckCircle2, _XCircle, Clock, Cpu, Zap } from "lucide-react";
+import { Activity, CheckCircle2, Clock, Cpu, Zap } from "lucide-react";
 import { getActivityStatsAction } from '@/server/actions/activity';
 import { ActivityList } from './_components/ActivityList';
 

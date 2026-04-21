@@ -184,7 +184,7 @@ export async function updateQuestionAction(id: number, data: QuestionUpdateData)
     db.prepare(sql).run(...params);
 
     // 记录操作日志
-    logAdminAction(user.id, user.username, 'UPDATE_QUESTION', 'question', id.toString(), data);
+    logAdminAction(user.id, user.username, 'UPDATE_QUESTION', 'question', id.toString(), data as unknown as Record<string, unknown>);
 
     return { success: true };
   } catch (error) {
@@ -398,7 +398,7 @@ export async function getAdminStatsAction(): Promise<AdminStats> {
             practices: practiceCount.count,
             activeAi: aiConfigCount.count,
         };
-    } catch (error: unknown) {
+    } catch (error: any) {
         logger.error({ err: error }, '无法获取后台统计信息');
         return { users: 0, questions: 0, practices: 0, activeAi: 0 };
     }

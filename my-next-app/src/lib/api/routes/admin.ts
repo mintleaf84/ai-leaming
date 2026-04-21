@@ -205,11 +205,11 @@ adminRoute.openapi(restoreDef, async (c) => {
                 backupCreated: path.basename(backupPath)
             });
             return c.json({ success: true, backupCreated: path.basename(backupPath) });
-        } catch (e: unknown) {
+        } catch (e: any) {
             try { if (fs.existsSync(backupPath) && !fs.existsSync(dbPath)) fs.copyFileSync(backupPath, dbPath); } catch { }
             try { reinitDb(); } catch { }
             if (fs.existsSync(tempPath)) fs.unlinkSync(tempPath);
-            return c.json({ error: 'Restore failed: ' + e.message }, 500);
+            return c.json({ error: 'Restore failed: ' + (e.message || 'Unknown error') }, 500);
         }
     } catch (error: unknown) {
         try { reinitDb(); } catch { }
@@ -254,7 +254,7 @@ adminRoute.openapi(exportQuestionsDef, async (c) => {
     if (dimension) { conditions.push('dimension = ?'); params.push(dimension); }
 
     const whereClause = conditions.length > 0 ? `WHERE ${conditions.join(' AND ')}` : ''
-    const questions = db.prepare(`SELECT * FROM questions ${whereClause} ORDER BY id DESC`).all(...params) as unknown[];
+    const questions = db.prepare(`SELECT * FROM questions ${whereClause} ORDER BY id DESC`).all(...params) as any[];
 
     const headers = ['ID', '类型', '维度', '题干', '选项', '答案', '解析', '标签', '正确率(%)', '创建时间'];
     let csvContent = '\uFEFF' + headers.map(escapeCsv).join(',') + '\n';

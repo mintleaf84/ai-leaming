@@ -61,7 +61,7 @@ app.openapi(listRoute, async (c) => {
         id: q.id,
         content: q.content,
         options: q.options,
-        type: q.type as unknown,
+        type: (q.type === 'single' || q.type === 'multi') ? q.type : undefined,
         tags: q.tags,
         dimension: q.dimension
     }))
@@ -113,7 +113,7 @@ app.openapi(getRoute, async (c) => {
         id: question.id,
         content: question.content,
         options: question.options,
-        type: question.type as unknown,
+        type: (question.type === 'single' || question.type === 'multi') ? question.type : undefined,
         tags: question.tags,
         dimension: question.dimension,
         explanation: question.explanation,

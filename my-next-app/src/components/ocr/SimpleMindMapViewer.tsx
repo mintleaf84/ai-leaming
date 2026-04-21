@@ -25,7 +25,7 @@ interface SimpleMindMapViewerProps {
 export function SimpleMindMapViewer({ markdown, onChange, className = '', readOnly = false }: SimpleMindMapViewerProps) {
     const containerRef = useRef<HTMLDivElement>(null);
     const minimapRef = useRef<HTMLDivElement>(null);
-    const mindMapRef = useRef<unknown>(null);
+    const mindMapRef = useRef<any>(null);
     
     // 我们用一个 ref 记录内部状态是否刚发生变更，避免死循环
     const isInternalUpdate = useRef(false);
@@ -81,7 +81,7 @@ export function SimpleMindMapViewer({ markdown, onChange, className = '', readOn
         // 我们粗略比较去掉空格和换行后的字符串
         if (existingMD.replace(/\s/g, '') !== markdown.replace(/\s/g, '')) {
              isInternalUpdate.current = true;
-             mindMapRef.current.setData(markdownToSmm(markdown));
+             mindMapRef.current?.setData(markdownToSmm(markdown));
         }
     }, [markdown]);
 

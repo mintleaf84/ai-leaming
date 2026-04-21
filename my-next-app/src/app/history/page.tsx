@@ -254,7 +254,7 @@ export default function HistoryPage() {
           </div>
         ) : (
           <div className="grid gap-6">
-            {history.items.map((item: unknown, index: number) => (
+            {history.items.map((item, index: number) => (
               <div
                 key={item.id}
                 className="animate-fade-in"
@@ -291,7 +291,7 @@ export default function HistoryPage() {
         {selectedHistoryId && (
             <HistoryCardExpanded
                 sessionId={selectedHistoryId}
-                initialData={history.items.find(h => h.id === selectedHistoryId) || {}}
+                initialData={history.items.find((h: SessionHistoryItem) => h.id === selectedHistoryId) || {}}
                 onClose={() => setSelectedHistoryId(null)}
             />
         )}

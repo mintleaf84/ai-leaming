@@ -17,9 +17,10 @@ import { KnowledgeModal } from './components/KnowledgeModal';
 import { AIGenerateModal } from './components/AIGenerateModal';
 import { KnowledgeCardExpanded } from './components/KnowledgeCardExpanded';
 import _MarkdownViewer from '@/components/chat/MarkdownViewer';
+import type { KnowledgeCard } from '@/lib/services/knowledge';
 
 export default function KnowledgePage() {
-    const [selectedCard, setSelectedCard] = useState<unknown>(null);
+    const [selectedCard, setSelectedCard] = useState<KnowledgeCard | null>(null);
     const {
         filteredCards,
         categories,
@@ -121,7 +122,7 @@ export default function KnowledgePage() {
                     </div>
                 ) : (
                     <div className="grid gap-6 sm:grid-cols-1 md:grid-cols-2 lg:grid-cols-3">
-                        {filteredCards.map((card: unknown, index: number) => (
+                        {filteredCards.map((card, index: number) => (
                             <motion.div 
                                 key={card.id} 
                                 initial={{ opacity: 0, y: 20 }}

@@ -95,7 +95,7 @@ export const CardSwipeView: React.FC<CardSwipeViewProps> = ({
                         className="w-full cursor-grab active:cursor-grabbing"
                     >
                         <QuestionCard
-                            log={currentItem.log as unknown}
+                            log={currentItem.log}
                             index={currentItem.index}
                             isExpanded={true} // Always expanded in card mode for focus
                             onToggle={() => {}} // No toggle needed in card mode

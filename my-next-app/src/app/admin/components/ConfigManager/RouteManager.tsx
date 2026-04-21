@@ -50,9 +50,14 @@ export function RouteManager() {
         setRoutes(prev => {
             const existing = prev.find(r => r.feature === feature);
             if (existing) {
-                return prev.map(r => r.feature === feature ? { ...r, [field]: value } : r);
+                return prev.map(r => r.feature === feature ? { ...r, [field]: value } : r) as AiModelRoute[];
             } else {
-                return [...prev, { feature, config_id: field === 'config_id' ? value : 0, model_name: field === 'model_name' ? value : '' }];
+                const newRoute: AiModelRoute = {
+                    feature,
+                    config_id: field === 'config_id' ? Number(value) : 0,
+                    model_name: field === 'model_name' ? String(value) : ''
+                };
+                return [...prev, newRoute];
             }
         });
     };

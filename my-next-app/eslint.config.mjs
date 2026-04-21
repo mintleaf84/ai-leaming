@@ -1,14 +1,16 @@
 import { defineConfig, globalIgnores } from "eslint/config";
 import nextVitals from "eslint-config-next/core-web-vitals";
-import nextTs from "eslint-config-next/typescript";
+import tsPlugin from "@typescript-eslint/eslint-plugin";
+// 注意：不引入 eslint-config-next/typescript，它会触发全项目类型检查导致卡死
+// 改为手动引入插件，只使用语法层面的规则（不需要 parserOptions.project）
 
 const eslintConfig = defineConfig([
   ...nextVitals,
-  ...nextTs,
   // Override default ignores of eslint-config-next.
   globalIgnores([
     // Default ignores of eslint-config-next:
     ".next/**",
+    ".next-e2e/**",   // E2E 测试编译产物，勿扫描
     "out/**",
     "build/**",
     "next-env.d.ts",
@@ -18,6 +20,9 @@ const eslintConfig = defineConfig([
     "eslint_cleanup.py",
   ]),
   {
+    plugins: {
+      "@typescript-eslint": tsPlugin,
+    },
     rules: {
       "@typescript-eslint/no-explicit-any": "warn",
       "@typescript-eslint/no-unused-vars": ["warn", { 

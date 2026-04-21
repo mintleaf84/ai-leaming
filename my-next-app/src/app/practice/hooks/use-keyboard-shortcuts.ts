@@ -1,15 +1,6 @@
 import { useEffect } from 'react';
 
-interface Question {
-    type: 'single' | 'multi' | 'boolean';
-    options?: string[];
-}
-
-interface PracticeState {
-    status: 'loading' | 'idle' | 'practicing' | 'reviewing' | 'finished' | 'error';
-    currentIndex: number;
-    sessionQueue: Question[];
-}
+import { PracticeState } from '@/types';
 
 export function useKeyboardShortcuts(
     state: PracticeState,

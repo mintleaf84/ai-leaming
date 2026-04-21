@@ -8,8 +8,8 @@ const practiceReducer = createPracticeReducer(true);
 describe('usePracticeEngine Reducer', () => {
 
     const mockQuestions: Question[] = [
-        { id: 1, content: 'Q1', type: 'single', options: [], answer: 'A', tags: ['T1'], dimension: 'knowledge' } as unknown,
-        { id: 2, content: 'Q2', type: 'single', options: [], answer: 'B', tags: ['T1'], dimension: 'knowledge' } as unknown,
+        { id: 1, content: 'Q1', type: 'single', options: [], answer: 'A', tags: ['T1'], dimension: 'knowledge' } as any,
+        { id: 2, content: 'Q2', type: 'single', options: [], answer: 'B', tags: ['T1'], dimension: 'knowledge' } as any,
         // ... need enough questions to trigger review if testing 25th question trigger, 
         // but can mock state directly to test transition logic.
     ];
@@ -76,16 +76,15 @@ describe('usePracticeEngine Reducer', () => {
         const startState: PracticeState = {
             ...INITIAL_STATE,
             status: 'practicing',
-            sessionQueue: Array(30).fill({}).map((_, i) => ({ id: i, content: `Q${i}` } as unknown)),
+            sessionQueue: Array(30).fill({}).map((_, i) => ({ id: i, content: `Q${i}` } as any)),
             currentIndex: 24,
             reviewTriggeredAt: 25,
-            reviewQueue: [{ originalQuestionId: 1 } as unknown], // Assume 1 error existed
+            reviewQueue: [{ originalQuestionId: 1 } as any], // Assume 1 error existed
             answers: {} // Populate dummy answers count logic if needed
         };
 
-        // We need 24 answers already. Logic: questionsAnswered >= state.reviewTriggeredAt
         // Let's mock answers having 24 entries
-        const mockAnswers: unknown = {};
+        const mockAnswers: any = {};
         for (let i = 0; i < 24; i++) mockAnswers[i] = { isCorrect: true };
         startState.answers = mockAnswers;
 
@@ -109,8 +108,8 @@ describe('usePracticeEngine Reducer', () => {
                 currentStep: 'study',
                 regressionSubIndex: 0,
                 failedAttempts: 0
-            } as unknown],
-            sessionQueue: [{}, {}] as unknown, // 2 items so index 0 is not finished
+            } as any],
+            sessionQueue: [{}, {}] as any, // 2 items so index 0 is not finished
             currentReviewIndex: 0
         };
 
@@ -150,7 +149,7 @@ describe('usePracticeEngine Reducer', () => {
             tags: ['心理学'],
             dimension: 'knowledge',
             explanation: '正确，行为主义核心观点。'
-        } as unknown;
+        } as any;
 
         const startState: PracticeState = {
             ...INITIAL_STATE,

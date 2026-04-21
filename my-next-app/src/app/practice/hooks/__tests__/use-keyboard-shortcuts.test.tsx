@@ -15,12 +15,17 @@ describe('useKeyboardShortcuts', () => {
     }
 
     it('submits answer when pressing valid number keys during practicing', () => {
-        const state = {
+        const state: any = {
             status: 'practicing' as const,
             currentIndex: 0,
             sessionQueue: [
                 { type: 'single' as const, options: ['A', 'B', 'C', 'D'] }
-            ]
+            ],
+            sessionId: 'test-session',
+            startTime: Date.now(),
+            answers: {},
+            reviewQueue: [],
+            reviewTriggeredAt: 25
         }
         
         renderHook(() => useKeyboardShortcuts(state, mockSubmitAnswer))
@@ -33,12 +38,17 @@ describe('useKeyboardShortcuts', () => {
     })
 
     it('ignores input when not practicing', () => {
-        const state = {
+        const state: any = {
             status: 'reviewing' as const,
             currentIndex: 0,
             sessionQueue: [
                 { type: 'single' as const, options: ['A', 'B', 'C', 'D'] }
-            ]
+            ],
+            sessionId: 'test-session',
+            startTime: Date.now(),
+            answers: {},
+            reviewQueue: [],
+            reviewTriggeredAt: 25
         }
         
         renderHook(() => useKeyboardShortcuts(state, mockSubmitAnswer))
@@ -48,12 +58,17 @@ describe('useKeyboardShortcuts', () => {
     })
 
     it('ignores input for multi choice questions', () => {
-        const state = {
+        const state: any = {
             status: 'practicing' as const,
             currentIndex: 0,
             sessionQueue: [
                 { type: 'multi' as const, options: ['A', 'B', 'C', 'D'] }
-            ]
+            ],
+            sessionId: 'test-session',
+            startTime: Date.now(),
+            answers: {},
+            reviewQueue: [],
+            reviewTriggeredAt: 25
         }
         
         renderHook(() => useKeyboardShortcuts(state, mockSubmitAnswer))
@@ -63,12 +78,17 @@ describe('useKeyboardShortcuts', () => {
     })
 
     it('ignores input out of bounds of options length', () => {
-        const state = {
+        const state: any = {
             status: 'practicing' as const,
             currentIndex: 0,
             sessionQueue: [
-                { type: 'boolean' as const, options: ['True', 'False'] }
-            ]
+                { type: 'truefalse' as const, options: ['True', 'False'] }
+            ],
+            sessionId: 'test-session',
+            startTime: Date.now(),
+            answers: {},
+            reviewQueue: [],
+            reviewTriggeredAt: 25
         }
         
         renderHook(() => useKeyboardShortcuts(state, mockSubmitAnswer))
@@ -81,12 +101,17 @@ describe('useKeyboardShortcuts', () => {
     })
     
     it('cleans up event listeners on unmount', () => {
-        const state = {
+        const state: any = {
             status: 'practicing' as const,
             currentIndex: 0,
             sessionQueue: [
                 { type: 'single' as const, options: ['A', 'B', 'C', 'D'] }
-            ]
+            ],
+            sessionId: 'test-session',
+            startTime: Date.now(),
+            answers: {},
+            reviewQueue: [],
+            reviewTriggeredAt: 25
         }
         
         const { unmount } = renderHook(() => useKeyboardShortcuts(state, mockSubmitAnswer))

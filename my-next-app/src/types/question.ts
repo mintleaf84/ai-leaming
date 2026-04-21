@@ -5,8 +5,11 @@
 import { z } from 'zod';
 import { QuestionSchema, QuestionRowSchema, CorrectionQuizSchema, RegressionChallengeSchema } from '@/lib/schemas';
 
-// 基础题目类型（从 Zod schema 推导）
-export type Question = z.infer<typeof QuestionSchema> & { id: number };
+// 基础题目类型（从 Zod schema 推导并细化）
+export type Question = Omit<z.infer<typeof QuestionSchema>, 'type'> & { 
+    id: number;
+    type: QuestionType; 
+};
 
 // 数据库行类型
 export type QuestionRow = z.infer<typeof QuestionRowSchema>;

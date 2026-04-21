@@ -2,31 +2,9 @@ import { useEffect, useRef, useState } from 'react';
 import { toast } from 'sonner';
 import { generateCorrectionQuizAction, generateRegressionChallengeAction } from '@/server/actions/ai';
 
-// Define minimal types needed from state
-interface ReviewItem {
-    originalQuestionId: number;
-    originalQuestionContent: string;
-    wrongAnswer: string;
-    currentStep: 'study' | 'quiz' | 'regression';
-    quiz?: unknown;
-    regression?: unknown;
-    tags: string[];
-}
+import { PracticeState, PracticeAction } from '@/types';
 
-interface SessionQuestion {
-    id: number;
-    answer: string;
-    content: string;
-}
-
-interface PracticeState {
-    status: 'loading' | 'idle' | 'practicing' | 'reviewing' | 'finished' | 'error';
-    currentReviewIndex: number;
-    reviewQueue: ReviewItem[];
-    sessionQueue: SessionQuestion[];
-}
-
-export function useReviewGeneration(state: PracticeState, dispatch: React.Dispatch<unknown>) {
+export function useReviewGeneration(state: PracticeState, dispatch: React.Dispatch<PracticeAction>) {
     const [isLoadingAI, setIsLoadingAI] = useState(false);
     const generationTracker = useRef<Set<string>>(new Set());
 

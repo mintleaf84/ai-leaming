@@ -11,7 +11,7 @@ const BaseQuestionSchema = z.object({
   dimension: z.enum(['knowledge', 'understanding', 'application'], {
     message: "维度必须是 'knowledge'、'understanding' 或 'application'"
   }).or(z.string()), // Relax dimension as well just in case
-  type: z.string().optional().default('single'), // Relax type to string to support legacy data
+  type: z.enum(['single', 'multi', 'truefalse']).optional().default('single'),
 });
 
 export const QuestionSchema = BaseQuestionSchema.refine((data) => {

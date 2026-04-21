@@ -1,6 +1,6 @@
 
 import db from '@/lib/db';
-import { Question } from '@/types';
+import { Question, Dimension } from '@/types';
 import { safeGet, safeAll } from '@/lib/db/safe-query';
 import { PracticeSessionRowSchema, QuestionRowSchema } from '@/lib/schemas';
 import { z } from 'zod';
@@ -113,7 +113,7 @@ export const practiceService = {
 
             const { masteryService } = await import('@/lib/services/mastery');
             tags.forEach((tag: string) => {
-                masteryService.updateMastery(userId, tag, q.dimension as any, isCorrect);
+                masteryService.updateMastery(userId, tag, q.dimension as Dimension, isCorrect);
             });
         }
 
@@ -172,7 +172,7 @@ export const practiceService = {
 
             const { masteryService } = await import('@/lib/services/mastery');
             tags.forEach((tag: string) => {
-                masteryService.updateMastery(userId, tag, q.dimension as any, isCorrect);
+                masteryService.updateMastery(userId, tag, q.dimension as Dimension, isCorrect);
             });
         }
 

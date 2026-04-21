@@ -1,0 +1,24 @@
+﻿
+C:\Users\cjb\Documents\code\ai-leaming\my-next-app\src\lib\api\routes\knowledge.ts
+  267:9  error  Use "@ts-expect-error" instead of "@ts-ignore", as "@ts-ignore" will do nothing if the following line is error-free  @typescript-eslint/ban-ts-comment
+
+C:\Users\cjb\Documents\code\ai-leaming\my-next-app\src\lib\services\practice.ts
+  116:74  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  175:74  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+
+C:\Users\cjb\Documents\code\ai-leaming\my-next-app\src\server\actions\ai.ts
+   70:32   warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+   70:77   warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+   70:99   warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+   80:26   warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+   82:25   warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+   83:30   warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  168:34   warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  168:79   warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  168:101  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  175:26   warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  177:25   warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  178:30   warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+
+鉁?15 problems (1 error, 14 warnings)
+

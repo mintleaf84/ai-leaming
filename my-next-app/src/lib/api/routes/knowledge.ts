@@ -264,7 +264,7 @@ app.openapi(extractRoute, async (c) => {
         }
 
         const suggestions = cardData.suggestions
-        // @ts-ignore - suggestions is not part of createKnowledgeCard input
+        // @ts-expect-error - suggestions is not part of createKnowledgeCard input
         delete cardData.suggestions
 
         if (!save) {

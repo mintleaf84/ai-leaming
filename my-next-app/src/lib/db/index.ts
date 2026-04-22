@@ -83,6 +83,12 @@ export function closeDb() {
   }
 }
 
+export function reinitDb() {
+    closeDb();
+    globalForDb.db = initDb();
+    return globalForDb.db;
+}
+
 // --- Drizzle ORM Initialization ---
 
 export const drizzleDb = drizzle(db, { schema });

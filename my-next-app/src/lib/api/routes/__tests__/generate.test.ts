@@ -7,7 +7,7 @@ const { mockAiLib } = vi.hoisted(() => {
     return {
         mockAiLib: {
             streamText: vi.fn().mockReturnValue({
-                toDataStreamResponse: () => new Response('0:"generated content"\n')
+                toTextStreamResponse: () => new Response('generated content')
             })
         }
     };
@@ -47,7 +47,7 @@ describe('Generate Hono Routes', () => {
 
             expect(res.status).toBe(200);
             const text = await res.text();
-            expect(text).toBe('0:"generated content"\n');
+            expect(text).toBe('generated content');
         });
     });
 });

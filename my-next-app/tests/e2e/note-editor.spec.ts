@@ -4,7 +4,7 @@ test.describe('Note Editor E2E', () => {
     // 自动 mock /api/generate
     test.beforeEach(async ({ loggedInPage }) => {
         await loggedInPage.route('/api/generate', async (route) => {
-            const mockResponse = '0:"这是 AI 续写的内容..."\n';
+            const mockResponse = '这是 AI 续写的内容...';
             await route.fulfill({
                 status: 200,
                 contentType: 'text/plain; charset=utf-8',

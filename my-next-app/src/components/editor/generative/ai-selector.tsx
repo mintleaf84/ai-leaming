@@ -26,6 +26,7 @@ export function AISelector({ onOpenChange }: AISelectorProps) {
 
     const { completion, complete, isLoading, stop, setCompletion } = useCompletion({
         api: '/api/generate',
+        streamProtocol: 'text',
         onError: (e: Error) => {
             console.error('[AI Selector] Error:', e);
             toast.error(e.message);

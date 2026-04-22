@@ -5,7 +5,7 @@
 import { generateText, streamText, generateObject, stepCountIs } from 'ai';
 import type { ModelMessage, ToolSet } from 'ai';
 import { z } from 'zod';
-import { logApiCall } from '@/lib/api-stats-service';
+import { logApiCall } from '@/lib/admin/api-stats-service';
 
 // 内部模块导入
 import { AiRawResponseError } from './types';

@@ -6,7 +6,7 @@ import os from 'os'
 import fs from 'fs'
 import path from 'path'
 import { logAdminAction } from '@/lib/admin/audit'
-import { getApiCallStats } from '@/lib/api-stats-service'
+import { getApiCallStats } from '@/lib/admin/api-stats-service'
 
 export const adminRoute = new OpenAPIHono()
 

@@ -6,7 +6,7 @@
 import { db } from '@/lib/db';
 import * as fs from 'fs';
 import * as path from 'path';
-import { getApiCallStats, ApiCallStats } from '@/lib/api-stats-service';
+import { getApiCallStats, ApiCallStats } from '@/lib/admin/api-stats-service';
 
 export interface TableStats {
     name: string;

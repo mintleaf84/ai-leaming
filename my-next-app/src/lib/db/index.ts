@@ -119,7 +119,7 @@ let isInitialized = false;
 /**
  * 初始化数据库
  */
-export function initDatabase() {
+export async function initDatabase() {
     // 检查是否在构建阶段或已经初始化
     if (
         process.env.NEXT_PHASE === 'phase-production-build' || 
@@ -135,7 +135,7 @@ export function initDatabase() {
     try {
         // 1. 运行 Drizzle 自动化迁移 (包含 IF NOT EXISTS 补强)
         console.log('[DB] Running Drizzle migrations...');
-        migrate(drizzleDb, { migrationsFolder: path.resolve(process.cwd(), 'drizzle') });
+        await migrate(drizzleDb, { migrationsFolder: path.resolve(process.cwd(), 'drizzle') });
         console.log('[DB] Drizzle migrations completed');
 
         // 2. 运行旧版迁移作为存量数据库兜底（幂等，可安全重复执行）

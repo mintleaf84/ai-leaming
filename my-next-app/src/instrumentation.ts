@@ -8,7 +8,7 @@ export async function register() {
     const { initDatabase } = await import('@/lib/db');
     try {
       console.log('🚀 [Instrumentation] 正在初始化应用环境...');
-      initDatabase();
+      await initDatabase();
       console.log('✅ [Instrumentation] 全局初始化完成');
     } catch (error) {
       console.error('❌ [Instrumentation] 初始化失败:', error);

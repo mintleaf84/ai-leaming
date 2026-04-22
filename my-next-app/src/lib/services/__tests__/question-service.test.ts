@@ -110,7 +110,7 @@ describe('Question Service', () => {
             const mockResults = [
                 { id: 1, content: 'Test1内容足够长', options: ['A', 'B'], answer: 'A', explanation: '解析内容足够长', tags: ['test'], type: 'single', dimension: 'knowledge', distance: 0.5 }
             ];
-            (mockDrizzleDb.execute as any).mockResolvedValue(mockResults);
+            (mockDrizzleDb.all as any).mockResolvedValue(mockResults);
 
             const result = await questionService.searchSimilarQuestions('content');
 
@@ -121,7 +121,7 @@ describe('Question Service', () => {
 
         it('should return empty list if vector extension missing', async () => {
             mockRagService.getEmbedding.mockResolvedValue([0.1]);
-            (mockDrizzleDb.execute as any).mockRejectedValueOnce(new Error('no vec'));
+            (mockDrizzleDb.all as any).mockRejectedValueOnce(new Error('no vec'));
 
             const result = await questionService.searchSimilarQuestions('content');
 

@@ -3,9 +3,9 @@
  * 记录和统计 AI API 的调用情况
  */
 
-import { drizzleDb, drizzleSchema } from './db';
+import { drizzleDb, drizzleSchema } from '../db';
 import { eq, and, sql, desc } from 'drizzle-orm';
-import { getBeijingDateString } from './utils/datetime';
+import { getBeijingDateString } from '../utils/datetime';
 
 const { api_call_logs } = drizzleSchema;
 

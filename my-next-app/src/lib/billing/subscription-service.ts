@@ -13,7 +13,7 @@ import {
     UsageType,
     UsageCheckResult,
     USAGE_TYPE_LABELS
-} from './subscription-types';
+} from '../../types/subscription';
 
 const { subscription_plans, user_subscriptions, daily_usage } = drizzleSchema;
 

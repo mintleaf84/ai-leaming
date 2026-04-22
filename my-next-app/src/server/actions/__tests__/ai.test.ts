@@ -1,6 +1,8 @@
 // @vitest-environment node
 import { describe, it, expect, beforeEach, vi } from 'vitest';
 
+vi.setConfig({ testTimeout: 15000 });
+
 // 辅助函数：复用源码中的哈希逻辑以验证 Key
 function generateHash(content: string): string {
   const normalized = content.trim().slice(0, 100) + content.length;

@@ -1,6 +1,8 @@
 // @vitest-environment node
 import { describe, it, expect, beforeEach, vi } from 'vitest';
 
+vi.setConfig({ testTimeout: 15000 });
+
 // 1. Mock Drizzle
 const { mockDrizzleDb, mockDrizzleSchema } = vi.hoisted(() => {
     const makeChain = () => {

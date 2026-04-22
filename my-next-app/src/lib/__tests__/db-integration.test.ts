@@ -1,6 +1,6 @@
 import { describe, it, expect, beforeEach, afterEach } from 'vitest';
 import Database from 'better-sqlite3';
-import { createTables } from '../db/schema';
+import { createTestTables as createTables } from '../db/test-schema-utils';
 import { calculateStreakFromDates } from '../utils/stats-utils';
 
 /**

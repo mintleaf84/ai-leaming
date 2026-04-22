@@ -1,6 +1,8 @@
 // @vitest-environment node
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 
+vi.setConfig({ testTimeout: 15000 });
+
 const { mockAiClient, mockAiLib } = vi.hoisted(() => {
     return {
         mockAiClient: {

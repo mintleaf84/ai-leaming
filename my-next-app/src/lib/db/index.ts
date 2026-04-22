@@ -6,7 +6,6 @@ import { fileURLToPath } from 'url';
 import { drizzle } from 'drizzle-orm/better-sqlite3';
 import { migrate } from 'drizzle-orm/better-sqlite3/migrator';
 import * as schema from './drizzle-schema';
-import { createTables } from './schema';
 import { runMigrations as runOldMigrations } from './migrations';
 import { setupVectorExtension } from './vector-setup';
 import { seedData } from './seed-data';
@@ -134,7 +133,6 @@ export function initDatabase() {
 // --- Exports ---
 
 export default db; // 默认导出 legacyDb 以兼容旧代码
-export { createTables, EMBEDDING_DIM } from './schema';
 export { runOldMigrations as runMigrations };
 export { setupVectorExtension } from './vector-setup';
 export { seedData } from './seed-data';

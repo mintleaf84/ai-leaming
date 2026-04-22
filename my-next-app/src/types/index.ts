@@ -66,6 +66,10 @@ export {
     formatActionName,
 } from './admin';
 
+// 标签类型
+export type { NoteTag } from './note-tag';
+export { TAG_COLORS } from './note-tag';
+
 // Server Action 统一返回类型
 export type { ActionResult } from './action-result';
 export { ok, fail } from './action-result';

@@ -1,5 +1,6 @@
 import Database from 'better-sqlite3';
-import { EMBEDDING_DIM } from './schema';
+
+const EMBEDDING_DIM = 1536; // OpenAI text-embedding-3-small dimension
 
 /**
  * 初始化 sqlite-vec 向量扩展和向量表

@@ -3,7 +3,7 @@ import logger from '@/lib/logger';
 
 import { generateStructuredData, generateTextWrapper } from '@/lib/ai/client';
 import { getErrorMessage } from '@/lib/utils/error';
-import { CorrectionQuizSchema, RegressionChallengeSchema, CorrectionQuiz, RegressionChallenge } from '@/lib/schemas';
+import { CorrectionQuizSchema, RegressionChallengeSchema, CorrectionQuiz, RegressionChallenge, QuestionRow } from '@/lib/schemas';
 import { questionService } from '@/lib/services/question';
 import { getPromptFromDb, buildPrompt, DEFAULT_CORRECTION_PROMPT, DEFAULT_REGRESSION_PROMPT } from '@/lib/ai/prompts';
 import { requireUser } from '@/lib/auth/auth';
@@ -68,10 +68,10 @@ export async function generateCorrectionQuizAction(
     const similar = await questionService.searchSimilarQuestions(questionContent, 1);
 
     if (similar && similar.length > 0) {
-      const q = similar[0];
-      let options = [];
+      const q = similar[0] as QuestionRow;
+      let options: string[] = [];
       try {
-        options = typeof (q as any).options === 'string' ? JSON.parse((q as any).options) : (q as any).options;
+        options = typeof q.options === 'string' ? JSON.parse(q.options) : q.options;
         if (!Array.isArray(options)) options = [];
       } catch (_e) {
         options = [];
@@ -81,10 +81,10 @@ export async function generateCorrectionQuizAction(
         analysis: "AI 生成暂时不可用，我们为您检索了一道相关的强化训练题。",
         distinctionPoint: "知识点辨析",
         quiz: {
-          content: (q as any).content,
+          content: q.content,
           options: options,
-          answer: (q as any).answer,
-          explanation: (q as any).explanation || '库内相似真题解析'
+          answer: q.answer,
+          explanation: q.explanation || '库内相似真题解析'
         }
       };
     }
@@ -169,20 +169,20 @@ export async function generateRegressionChallengeAction(
 
     if (similarQuestions && similarQuestions.length > 0) {
       // 提取并填充，确保满足 Schema 要求的 3 道题
-      const mappedChallenges = similarQuestions.map(q => {
-        let options = [];
+      const mappedChallenges = (similarQuestions as QuestionRow[]).map(q => {
+        let options: string[] = [];
         try {
-          options = typeof (q as any).options === 'string' ? JSON.parse((q as any).options) : (q as any).options;
+          options = typeof q.options === 'string' ? JSON.parse(q.options) : q.options;
           if (!Array.isArray(options)) options = [];
         } catch (_e) {
           options = [];
         }
 
         return {
-          content: (q as any).content,
+          content: q.content,
           options: options,
-          answer: (q as any).answer,
-          explanation: (q as any).explanation || '库内相似真题解析，建议巩固相关知识点。'
+          answer: q.answer,
+          explanation: q.explanation || '库内相似真题解析，建议巩固相关知识点。'
         };
       });
 

@@ -23,9 +23,17 @@ interface TrendChartProps {
     height?: number;
 }
 
+interface PayloadEntry {
+    color: string;
+    value: number;
+    name: string;
+    dataKey: string;
+    payload: TrendDataItem;
+}
+
 interface CustomTooltipProps {
     active?: boolean;
-    payload?: any[];
+    payload?: PayloadEntry[];
     label?: string;
 }
 
@@ -35,7 +43,7 @@ const CustomTooltip = ({ active, payload, label }: CustomTooltipProps) => {
         return (
             <div className="bg-card border rounded-lg shadow-lg p-3 text-sm">
                 <p className="font-medium text-foreground mb-1">{label}</p>
-                {payload.map((entry: any, index: number) => (
+                {payload.map((entry: PayloadEntry, index: number) => (
                     <p key={index} style={{ color: entry.color }}>
                         {entry.name}: {entry.value}{entry.name === '正确率' ? '%' : ' 题'}
                     </p>

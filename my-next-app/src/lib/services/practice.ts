@@ -20,17 +20,18 @@ export interface PracticeSessionConfig {
 /**
  * 将数据库原始行映射为业务 Question 类型
  */
-function mapQuestion(q: any): Question {
+function mapQuestion(q: unknown): Question {
+    const data = q as Record<string, any>;
     try {
-        return QuestionRowSchema.parse(q);
+        return QuestionRowSchema.parse(data);
     } catch (err) {
-        logger.error({ err, questionId: q.id }, 'Question mapping failed in practiceService');
+        logger.error({ err, questionId: data.id }, 'Question mapping failed in practiceService');
         return {
-            ...q,
-            options: typeof q.options === 'string' ? JSON.parse(q.options) : (q.options || []),
-            tags: typeof q.tags === 'string' ? JSON.parse(q.tags) : (q.tags || []),
-            type: q.type || 'single',
-            dimension: q.dimension || 'knowledge'
+            ...data,
+            options: typeof data.options === 'string' ? JSON.parse(data.options) : (data.options || []),
+            tags: typeof data.tags === 'string' ? JSON.parse(data.tags) : (data.tags || []),
+            type: data.type || 'single',
+            dimension: data.dimension || 'knowledge'
         } as Question;
     }
 }
@@ -243,7 +244,7 @@ export const practiceService = {
             questions = rawQuestions.map(q => mapQuestion(q));
         } else {
             // 如果存储的是完整对象，确保进行 mapQuestion 校验/修复
-            questions = questions.map((q: any) => mapQuestion(q));
+            questions = questions.map((q: unknown) => mapQuestion(q));
         }
 
         const logResult = await drizzleDb.select({ count: sql<number>`count(*)` })

@@ -4,7 +4,7 @@ import logger from '@/lib/logger';
 import { db } from '@/lib/db';
 import { requireUser } from '@/lib/auth/auth';
 import { revalidatePath } from 'next/cache';
-import { TAG_COLORS, type NoteTag } from '@/lib/types/note-tag';
+import { TAG_COLORS, type NoteTag } from '@/types';
 import { isSqliteConstraintError } from '@/lib/utils/error';
 
 // 获取用户的所有标签

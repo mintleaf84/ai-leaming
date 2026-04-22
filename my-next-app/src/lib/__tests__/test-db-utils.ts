@@ -1,5 +1,5 @@
 import Database from 'better-sqlite3';
-import { createTables } from '../db/schema';
+import { createTestTables as createTables } from '../db/test-schema-utils';
 
 export interface TestDbHelper {
     db: Database.Database;

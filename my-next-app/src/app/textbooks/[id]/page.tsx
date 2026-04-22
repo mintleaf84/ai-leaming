@@ -109,7 +109,7 @@ export default async function TextbookReaderPage({ params, searchParams }: PageP
                                         remarkPlugins={[remarkGfm, remarkMath]}
                                         rehypePlugins={[rehypeKatex, rehypeRaw]}
                                         components={{
-                                            code: ({ className, children, ...props }: any) => {
+                                            code: ({ className, children, ...props }: React.HTMLAttributes<HTMLElement>) => {
                                                 return (
                                                     <code className={`${className} bg-muted px-1.5 py-0.5 rounded text-sm`} {...props}>
                                                         {children}

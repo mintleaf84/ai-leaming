@@ -19,7 +19,7 @@ import {
     getDailyUsage,
     checkUsageQuota
 } from '@/lib/billing/subscription-service';
-import { SubscriptionPlan, UsageType } from '@/lib/billing/subscription-types';
+import { SubscriptionPlan, UsageType } from '@/types';
 
 // ==================== 套餐管理 (管理员) ====================
 

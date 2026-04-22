@@ -29,7 +29,7 @@ import {
     deletePlanAction,
     getSubscriptionStatsAction
 } from '@/server/actions/subscription';
-import { SubscriptionPlan, PlanTier, UsageType, USAGE_TYPE_LABELS, PLAN_TIER_LABELS } from '@/lib/billing/subscription-types';
+import { SubscriptionPlan, PlanTier, UsageType, USAGE_TYPE_LABELS, PLAN_TIER_LABELS } from '@/types';
 
 // 默认空套餐表单
 const emptyPlan: Omit<SubscriptionPlan, 'created_at'> = {

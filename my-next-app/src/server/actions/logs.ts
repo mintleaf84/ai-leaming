@@ -1,7 +1,7 @@
 'use server';
 
 import { getRecentLogs, getLogsByUser } from '@/lib/admin/audit';
-import { AdminLogEntry } from '@/lib/admin/audit-types';
+import { AdminLogEntry } from '@/types';
 import { requireRole } from '@/lib/auth/auth';
 
 /**

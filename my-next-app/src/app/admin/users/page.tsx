@@ -4,7 +4,7 @@ import React, { useEffect, useState, useCallback } from 'react';
 import { getUsersAction, deleteUserAction, resetUserPasswordAction, updateUserRoleAction, revokeUserSessionAction, UserAdminView } from '@/server/actions/admin';
 import { getPlansAction, setUserSubscriptionAction } from '@/server/actions/subscription';
 import { UserRole } from '@/types';
-import { SubscriptionPlan } from '@/lib/billing/subscription-types';
+import { SubscriptionPlan } from '@/types';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';

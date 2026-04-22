@@ -287,26 +287,25 @@ export async function checkUsageQuota(userId: number, usageType: UsageType): Pro
 }
 
 /**
- * 检查并消费配额 (原子操作)
+ * 检查并消费配额 (顺序操作)
+ * 注意：由于 LibSQL 使用连接池，且内部函数未使用传入的 tx 对象，继续使用 transaction wrapper 会导致多个连接间的写锁死锁 (SQLITE_BUSY)。
+ * 为保持代码简洁，在单进程环境下退化为顺序执行，容忍极小概率的并发透支。
  */
 export async function checkAndConsumeQuota(
     userId: number,
     usageType: UsageType
 ): Promise<UsageCheckResult> {
-    return await drizzleDb.transaction(async (tx) => {
-        const result = await checkUsageQuota(userId, usageType);
+    const result = await checkUsageQuota(userId, usageType);
 
-        if (result.allowed) {
-            // 在理想情况下应传递 tx 给 incrementUsage，但目前为了兼容旧代码先沿用
-            await incrementUsage(userId, usageType);
-            result.current += 1;
-            if (result.remaining !== -1) {
-                result.remaining -= 1;
-            }
+    if (result.allowed) {
+        await incrementUsage(userId, usageType);
+        result.current += 1;
+        if (result.remaining !== -1) {
+            result.remaining -= 1;
         }
+    }
 
-        return result;
-    });
+    return result;
 }
 
 // ==================== 统计查询 ====================

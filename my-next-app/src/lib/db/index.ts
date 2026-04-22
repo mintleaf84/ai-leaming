@@ -96,9 +96,20 @@ export function reinitDb() {
 const libsqlDbName = process.env.DB_FILENAME || 'ai-learning.db';
 const libsqlDbPath = path.resolve(process.cwd(), 'data', libsqlDbName);
 const libsqUrl = `file:${libsqlDbPath}`;
-const libsqlClient = createClient({ url: libsqUrl });
 
-export const drizzleDb = drizzle(libsqlClient, { schema });
+const globalForLibsql = global as unknown as { 
+    libsqlClient: ReturnType<typeof createClient> | null;
+    drizzleDb: ReturnType<typeof drizzle> | null;
+};
+
+if (!globalForLibsql.libsqlClient) {
+    globalForLibsql.libsqlClient = createClient({ url: libsqUrl });
+}
+if (!globalForLibsql.drizzleDb) {
+    globalForLibsql.drizzleDb = drizzle(globalForLibsql.libsqlClient, { schema });
+}
+
+export const drizzleDb = globalForLibsql.drizzleDb;
 
 // 防止在单个进程内重复初始化
 let isInitialized = false;

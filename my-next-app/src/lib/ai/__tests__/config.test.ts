@@ -8,12 +8,18 @@ const { mockPrepare, mockGet } = vi.hoisted(() => ({
     })
 }));
 
-vi.mock('@/lib/db', () => ({
-    default: {
+vi.mock('@/lib/db', () => {
+    const mock = {
         prepare: mockPrepare,
         exec: vi.fn()
-    }
-}));
+    };
+    return {
+        default: mock,
+        db: mock,
+        drizzleDb: mock,
+        drizzleSchema: {}
+    };
+});
 
 import { getAiConfig, clearAiConfigCache } from '../config';
 

@@ -47,10 +47,11 @@ const { mockDrizzleDb, mockDrizzleSchema, mockBetterDb } = vi.hoisted(() => {
     return { mockDrizzleDb, mockDrizzleSchema, mockBetterDb };
 });
 
-vi.mock('@/lib/db', () => ({
-    default: mockBetterDb,
+vi.mock('@/lib/db', () => ({ 
+    default: mockDrizzleDb,
+    db: mockBetterDb,
     drizzleDb: mockDrizzleDb,
-    drizzleSchema: mockDrizzleSchema,
+    drizzleSchema: mockDrizzleSchema 
 }));
 
 // 2. Mock AI Client & Prompts

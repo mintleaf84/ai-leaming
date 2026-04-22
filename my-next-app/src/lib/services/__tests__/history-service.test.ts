@@ -10,9 +10,7 @@ const { mockDb } = vi.hoisted(() => {
     };
 });
 
-vi.mock('@/lib/db', () => ({
-    default: mockDb
-}));
+vi.mock('@/lib/db', () => ({ default: mockDb, db: mockDb, drizzleDb: {}, drizzleSchema: {} }));
 
 describe('History Service', () => {
     beforeEach(() => {

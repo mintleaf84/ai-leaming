@@ -2,7 +2,7 @@
 import logger from '@/lib/logger';
 
 import { getErrorMessage } from '@/lib/utils/error';
-import db from '@/lib/db';
+import { db } from '@/lib/db';
 import { revalidatePath } from 'next/cache';
 import { getAiConfig, getModel } from '@/lib/ai/client';
 import { generateText } from 'ai';

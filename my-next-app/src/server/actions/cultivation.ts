@@ -1,7 +1,7 @@
 'use server';
 import logger from '@/lib/logger';
 
-import db from '@/lib/db';
+import { db } from '@/lib/db';
 import { calculateCultivation } from '@/lib/cultivation/engine';
 import { LeaderboardEntry } from '@/lib/cultivation/types';
 

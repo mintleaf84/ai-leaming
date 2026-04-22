@@ -1,6 +1,6 @@
 import { OpenAPIHono, createRoute, z } from '@hono/zod-openapi'
 import { getErrorMessage } from '@/lib/utils/error';
-import db, { closeDb, reinitDb } from '@/lib/db'
+import { db,  closeDb, reinitDb } from '@/lib/db'
 import { requireRole } from '@/lib/auth/auth'
 import os from 'os'
 import fs from 'fs'

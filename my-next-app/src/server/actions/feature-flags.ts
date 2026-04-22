@@ -1,7 +1,7 @@
 'use server';
 import logger from '@/lib/logger';
 
-import db from '@/lib/db';
+import { db } from '@/lib/db';
 import { revalidatePath } from 'next/cache';
 
 const GLOBAL_USER_ID = 0; // 用 0 代表全局系统配置

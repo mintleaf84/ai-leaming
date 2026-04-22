@@ -1,7 +1,7 @@
 'use server';
 import logger from '@/lib/logger';
 
-import db from '@/lib/db';
+import { db } from '@/lib/db';
 import { Question, UserRole } from '@/types';
 import { z } from 'zod';
 import { getErrorMessage } from '@/lib/utils/error';

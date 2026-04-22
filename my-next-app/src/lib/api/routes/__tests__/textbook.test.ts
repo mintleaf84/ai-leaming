@@ -6,7 +6,7 @@ import app from '../textbook';
 const mockDb = vi.hoisted(() => ({
     prepare: vi.fn()
 }));
-vi.mock('@/lib/db', () => ({ default: mockDb }));
+vi.mock('@/lib/db', () => ({ default: mockDb, db: mockDb, drizzleDb: {}, drizzleSchema: {} }));
 
 // Mock textbookService
 const { mockTextbookService } = vi.hoisted(() => {

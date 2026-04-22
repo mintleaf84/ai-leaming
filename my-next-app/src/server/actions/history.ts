@@ -1,7 +1,7 @@
 'use server';
 import logger from '@/lib/logger';
 
-import db, { drizzleDb, drizzleSchema } from '@/lib/db';
+import { db,  drizzleDb, drizzleSchema } from '@/lib/db';
 import { eq, and, desc, sql, gte, lte, count } from 'drizzle-orm';
 import { requireUser } from '@/lib/auth/auth';
 

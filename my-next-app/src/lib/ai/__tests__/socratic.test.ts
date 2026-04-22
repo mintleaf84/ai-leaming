@@ -3,17 +3,21 @@ import { SOCRATIC_TUTOR_PROMPT } from '../prompts';
 import { buildEnhancedSystemPrompt } from '@/lib/services/chat-rag';
 
 // Mock DB because buildEnhancedSystemPrompt calls getPromptFromDb
-vi.mock('@/lib/db', () => ({
-    default: {},
-    drizzleDb: {
+vi.mock('@/lib/db', () => {
+    const mockDrizzleDb = {
         query: {
             prompt_templates: { findFirst: vi.fn().mockResolvedValue(null) }
         }
-    },
-    drizzleSchema: {
-        prompt_templates: { key: 'key', template: 'template' }
-    }
-}));
+    };
+    return {
+        default: mockDrizzleDb,
+        db: {},
+        drizzleDb: mockDrizzleDb,
+        drizzleSchema: {
+            prompt_templates: { key: 'key', template: 'template' }
+        }
+    };
+});
 
 describe('Socratic Tutor Mode', () => {
     beforeEach(() => {

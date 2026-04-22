@@ -124,7 +124,7 @@ app.openapi(submitRoute, async (c) => {
 
 // --- First Principles Logic ---
 
-import db from '@/lib/db';
+import { db } from '@/lib/db';
 import { generateTextWrapper } from '@/lib/ai/client';
 import { checkAndConsumeQuota } from '@/lib/billing/subscription-service';
 

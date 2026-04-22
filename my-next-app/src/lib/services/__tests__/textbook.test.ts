@@ -19,7 +19,7 @@ const { mockDb, mockRag, mockFs } = vi.hoisted(() => {
     };
 });
 
-vi.mock('@/lib/db', () => ({ default: mockDb }));
+vi.mock('@/lib/db', () => ({ default: mockDb, db: mockDb, drizzleDb: {}, drizzleSchema: {} }));
 vi.mock('@/lib/ai/rag', () => ({ ragService: mockRag }));
 vi.mock('fs', () => ({ 
     default: {

@@ -7,7 +7,7 @@ import { CorrectionQuizSchema, RegressionChallengeSchema, CorrectionQuiz, Regres
 import { questionService } from '@/lib/services/question';
 import { getPromptFromDb, buildPrompt, DEFAULT_CORRECTION_PROMPT, DEFAULT_REGRESSION_PROMPT } from '@/lib/ai/prompts';
 import { requireUser } from '@/lib/auth/auth';
-import db, { drizzleDb, drizzleSchema } from '@/lib/db';
+import { db,  drizzleDb, drizzleSchema } from '@/lib/db';
 import { eq, and, sql } from 'drizzle-orm';
 import { checkAndConsumeQuota } from '@/lib/billing/subscription-service';
 

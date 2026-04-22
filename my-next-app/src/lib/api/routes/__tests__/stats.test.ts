@@ -5,7 +5,7 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
 const mockDb = vi.hoisted(() => ({
     prepare: vi.fn()
 }));
-vi.mock('@/lib/db', () => ({ default: mockDb }));
+vi.mock('@/lib/db', () => ({ default: mockDb, db: mockDb, drizzleDb: {}, drizzleSchema: {} }));
 
 // Mock datetime 工具（无参数返回今天，有 Date 参数返回昨天）
 vi.mock('@/lib/utils/datetime', () => ({

@@ -2,7 +2,7 @@
  * AI 配置与路由管理 (带缓存)
  */
 
-import db from '@/lib/db';
+import { db } from '@/lib/db';
 import { AiModelRouteRow, AiConfigRow, AiConfigResult } from './types';
 
 // 简单的进程内缓存

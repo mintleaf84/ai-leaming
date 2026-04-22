@@ -1,4 +1,4 @@
-import db, { drizzleDb, drizzleSchema } from '@/lib/db';
+import { db,  drizzleDb, drizzleSchema } from '@/lib/db';
 import { eq, and, desc, sql, like } from 'drizzle-orm';
 
 /**

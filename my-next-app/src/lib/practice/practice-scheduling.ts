@@ -3,7 +3,7 @@
  * 支持多种练习模式的选题逻辑
  */
 
-import db from '@/lib/db';
+import { db } from '@/lib/db';
 import { PracticeConfig } from './practice-types';
 
 export interface Question {

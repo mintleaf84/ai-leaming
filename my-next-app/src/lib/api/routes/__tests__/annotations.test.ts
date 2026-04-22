@@ -14,7 +14,7 @@ const { mockDb } = vi.hoisted(() => {
     };
 });
 
-vi.mock('@/lib/db', () => ({ default: mockDb }));
+vi.mock('@/lib/db', () => ({ default: mockDb, db: mockDb, drizzleDb: {}, drizzleSchema: {} }));
 
 // Mock Auth Middleware
 vi.mock('@/lib/api/middlewares/auth', () => ({

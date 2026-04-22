@@ -1,4 +1,4 @@
-import db from '@/lib/db';
+import { db } from '@/lib/db';
 import { ragService } from '@/lib/ai/rag';
 import { splitText } from '@/lib/utils/text-splitter';
 import fs from 'fs';

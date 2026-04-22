@@ -1,7 +1,7 @@
 'use server';
 
 import logger from '@/lib/logger';
-import db, { drizzleDb, drizzleSchema } from '@/lib/db';
+import { db,  drizzleDb, drizzleSchema } from '@/lib/db';
 import { eq, and, desc, gt, sql } from 'drizzle-orm';
 import { Question, Dimension } from "@/types";
 import type { PracticeMode } from "@/types";

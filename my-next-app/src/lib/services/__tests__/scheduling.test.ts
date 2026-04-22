@@ -9,7 +9,7 @@ const { mockDbInstance } = vi.hoisted(() => ({
         prepare: (sql: string) => mockDbInstance.db.prepare(sql)
     }
 }));
-vi.mock('@/lib/db', () => ({ default: mockDbInstance }));
+vi.mock('@/lib/db', () => ({ default: mockDbInstance, db: mockDbInstance, drizzleDb: {}, drizzleSchema: {} }));
 
 import { schedulingService, calculateSessionRatios } from '../scheduling';
 

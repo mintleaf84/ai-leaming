@@ -15,7 +15,7 @@ const { mockAiClient, mockAiLib } = vi.hoisted(() => {
 
 vi.mock('@/lib/ai/client', () => mockAiClient);
 vi.mock('ai', () => mockAiLib);
-vi.mock('@/lib/db', () => ({ default: { prepare: vi.fn(), exec: vi.fn() } }));
+vi.mock('@/lib/db', () => ({ default: { prepare: vi.fn(), exec: vi.fn() }, db: { prepare: vi.fn(), exec: vi.fn() }, drizzleDb: { prepare: vi.fn(), exec: vi.fn() }, drizzleSchema: {} }));
 vi.mock('@/lib/logger', () => ({ default: { error: vi.fn(), info: vi.fn(), warn: vi.fn() } }));
 vi.mock('@/lib/auth/auth', () => ({ requireUser: vi.fn() }));
 

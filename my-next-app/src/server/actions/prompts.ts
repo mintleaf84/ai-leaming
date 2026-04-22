@@ -1,7 +1,7 @@
 'use server';
 import logger from '@/lib/logger';
 
-import db from '@/lib/db';
+import { db } from '@/lib/db';
 import { generateStructuredData, generateTextWrapper, AiRawResponseError } from '@/lib/ai/client';
 import { CorrectionQuizSchema, RegressionChallengeSchema } from '@/lib/schemas';
 import { z } from 'zod';

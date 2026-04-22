@@ -1,5 +1,5 @@
 
-import db from '@/lib/db';
+import { db } from '@/lib/db';
 
 // DB 行类型定义
 type SessionRow = {

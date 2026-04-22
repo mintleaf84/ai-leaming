@@ -1,4 +1,4 @@
-import db from '@/lib/db';
+import { db } from '@/lib/db';
 import { hashPassword } from './password';
 import { UserRole } from '@/types';
 import { cache } from 'react';

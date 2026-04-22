@@ -1,5 +1,5 @@
 
-import db from '@/lib/db';
+import { db } from '@/lib/db';
 import { Question, Dimension } from '@/types';
 import { safeGet, safeAll } from '@/lib/db/safe-query';
 import { PracticeSessionRowSchema, QuestionRowSchema } from '@/lib/schemas';

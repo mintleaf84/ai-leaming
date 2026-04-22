@@ -14,11 +14,15 @@ const { mockPrepare, mockRun, mockGet, mockAll } = vi.hoisted(() => {
 });
 
 // Mock db 模块
-vi.mock('@/lib/db', () => ({
-  default: {
-    prepare: mockPrepare,
-  },
-}));
+vi.mock('@/lib/db', () => {
+  const mock = { prepare: mockPrepare };
+  return {
+    default: mock,
+    db: mock,
+    drizzleDb: mock,
+    drizzleSchema: {}
+  };
+});
 
 // 导入被测试的模块
 import { masteryService } from '@/lib/services/mastery';

@@ -1,7 +1,7 @@
 'use server';
 import logger from '@/lib/logger';
 
-import db from '@/lib/db';
+import { db } from '@/lib/db';
 import { requireRole } from '@/lib/auth/auth';
 
 /**

@@ -1,6 +1,6 @@
 import { OpenAPIHono, createRoute, z } from '@hono/zod-openapi'
 import { authMiddleware, getCurrentUser } from '@/lib/api/middlewares/auth'
-import db from '@/lib/db'
+import { db } from '@/lib/db'
 
 const app = new OpenAPIHono()
 

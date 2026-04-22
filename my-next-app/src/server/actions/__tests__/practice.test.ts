@@ -41,9 +41,10 @@ const { mockDb, mockRequireUser, mockDemoService, mockUpdateMastery, mockDrizzle
 
 // 2. Apply Mocks
 vi.mock('@/lib/db', () => ({ 
-  default: mockDb, 
+  default: mockDrizzleDb,
+  db: mockDb,
   drizzleDb: mockDrizzleDb,
-  drizzleSchema: mockDrizzleSchema
+  drizzleSchema: mockDrizzleSchema 
 }));
 vi.mock('@/lib/auth/auth', () => ({ requireUser: mockRequireUser }));
 vi.mock('@/lib/practice/demo', () => ({ DemoService: mockDemoService }));

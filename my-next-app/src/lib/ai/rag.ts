@@ -2,7 +2,7 @@ import { embed } from 'ai';
 import { createOpenAI } from '@ai-sdk/openai';
 import { getErrorMessage } from '@/lib/utils/error';
 import { getAiConfig } from './client';
-import db from '@/lib/db';
+import { db } from '@/lib/db';
 
 export interface RagResult {
   content: string;

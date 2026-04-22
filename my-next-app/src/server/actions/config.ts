@@ -2,7 +2,7 @@
 import logger from '@/lib/logger';
 
 import { getErrorMessage } from '@/lib/utils/error';
-import db, { drizzleDb, drizzleSchema } from '@/lib/db';
+import { db,  drizzleDb, drizzleSchema } from '@/lib/db';
 import { eq, desc, sql, count } from 'drizzle-orm';
 import { revalidatePath } from 'next/cache';
 import { requireRole } from '@/lib/auth/auth';

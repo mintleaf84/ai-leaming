@@ -10,11 +10,13 @@ const { mockPrepare, mockAll } = vi.hoisted(() => {
 });
 
 // Mock db 模块
-vi.mock('@/lib/db', () => ({
-  default: {
+vi.mock('@/lib/db', () => ({ default: {
     prepare: mockPrepare,
-  },
-}));
+  }, db: {
+    prepare: mockPrepare,
+  }, drizzleDb: {
+    prepare: mockPrepare,
+  }, drizzleSchema: {} }));
 
 // 导入被测试的模块
 import { schedulingService } from '@/lib/services/scheduling';

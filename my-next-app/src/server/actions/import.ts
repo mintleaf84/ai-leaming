@@ -1,7 +1,7 @@
 'use server';
 import logger from '@/lib/logger';
 
-import db from '@/lib/db';
+import { db } from '@/lib/db';
 import { requireUser } from '@/lib/auth/auth';
 import { parseFenbiData, validateFenbiJson } from '@/lib/import/fenbi-parser';
 import { sanitizeHtml } from '@/lib/utils/security';

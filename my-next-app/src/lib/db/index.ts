@@ -72,8 +72,10 @@ function initDb() {
   return db;
 }
 
-export const db = globalForDb.db || initDb();
-globalForDb.db = db;
+export const legacyDb = globalForDb.db || initDb();
+/** @deprecated 请优先使用 drizzleDb 或默认导出的 drizzleDb 实例 */
+export const db = legacyDb;
+globalForDb.db = legacyDb;
 
 export function closeDb() {
   if (globalForDb.db) {
@@ -120,7 +122,7 @@ export function initDatabase() {
 
 // --- Exports ---
 
-export default db;
+export default drizzleDb;
 export { createTables, EMBEDDING_DIM } from './schema';
 export { runOldMigrations as runMigrations };
 export { setupVectorExtension } from './vector-setup';

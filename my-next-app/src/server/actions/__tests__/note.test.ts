@@ -6,9 +6,7 @@ const mockDb = {
     transaction: vi.fn((cb) => cb()),
 };
 
-vi.mock('@/lib/db', () => ({
-    default: mockDb,
-}));
+vi.mock('@/lib/db', () => ({ default: mockDb, db: mockDb, drizzleDb: {}, drizzleSchema: {} }));
 
 // Mock Auth
 vi.mock('@/lib/auth/auth', () => ({

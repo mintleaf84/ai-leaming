@@ -3,7 +3,7 @@
  * 提供数据库统计、系统信息等监控指标
  */
 
-import db from '@/lib/db';
+import { db } from '@/lib/db';
 import * as fs from 'fs';
 import * as path from 'path';
 import { getApiCallStats, ApiCallStats } from '@/lib/api-stats-service';

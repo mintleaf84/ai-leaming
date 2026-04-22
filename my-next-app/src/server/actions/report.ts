@@ -2,7 +2,7 @@
 import logger from '@/lib/logger';
 
 import { generateTextWrapper } from '@/lib/ai/client';
-import db from '@/lib/db';
+import { db } from '@/lib/db';
 import { requireUser } from '@/lib/auth/auth';
 
 // 会话报告数据类型

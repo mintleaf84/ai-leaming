@@ -16,9 +16,7 @@ const { mockGenerateText, mockCheckAndConsumeQuota } = vi.hoisted(() => ({
     mockCheckAndConsumeQuota: vi.fn(),
 }));
 
-vi.mock('@/lib/db', () => ({
-    default: mockDb
-}));
+vi.mock('@/lib/db', () => ({ default: mockDb, db: mockDb, drizzleDb: {}, drizzleSchema: {} }));
 
 vi.mock('@/lib/billing/subscription-service', () => ({
     checkAndConsumeQuota: mockCheckAndConsumeQuota

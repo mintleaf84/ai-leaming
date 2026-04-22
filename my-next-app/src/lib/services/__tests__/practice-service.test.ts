@@ -14,9 +14,7 @@ const { mockDb, mockMasteryService } = vi.hoisted(() => {
     };
 });
 
-vi.mock('@/lib/db', () => ({
-    default: mockDb
-}));
+vi.mock('@/lib/db', () => ({ default: mockDb, db: mockDb, drizzleDb: {}, drizzleSchema: {} }));
 
 // Mock dynamic import for mastery
 vi.mock('@/lib/services/mastery', () => ({

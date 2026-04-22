@@ -5,7 +5,7 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
 const mockDb = vi.hoisted(() => ({
     prepare: vi.fn()
 }));
-vi.mock('@/lib/db', () => ({ default: mockDb }));
+vi.mock('@/lib/db', () => ({ default: mockDb, db: mockDb, drizzleDb: {}, drizzleSchema: {} }));
 
 // Mock Auth 中间件
 vi.mock('@/lib/api/middlewares/auth', () => ({

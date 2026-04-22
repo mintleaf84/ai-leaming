@@ -1,7 +1,7 @@
 'use server';
 import logger from '@/lib/logger';
 
-import db from '@/lib/db';
+import { db } from '@/lib/db';
 import { requireUser } from '@/lib/auth/auth';
 import { getBeijingDateString, getBeijingYesterdayString, formatBeijingDisplayDate } from '@/lib/utils/datetime';
 import { calculateStreakFromDates } from '@/lib/utils/stats-utils';

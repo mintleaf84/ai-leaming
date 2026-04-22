@@ -14,7 +14,7 @@ const { mockDb, mockRequireRole, mockLogAdminAction } = vi.hoisted(() => {
     };
 });
 
-vi.mock('@/lib/db', () => ({ default: mockDb, closeDb: vi.fn(), reinitDb: vi.fn() }));
+vi.mock('@/lib/db', () => ({ default: mockDb, closeDb: vi.fn(), reinitDb: vi.fn(), db: mockDb, drizzleDb: {}, drizzleSchema: {} }));
 vi.mock('@/lib/auth/auth', () => ({ requireRole: mockRequireRole }));
 vi.mock('@/lib/admin/audit', () => ({ logAdminAction: mockLogAdminAction }));
 vi.mock('@/lib/api-stats-service', () => ({ getApiCallStats: vi.fn().mockReturnValue({ total: 100 }) }));

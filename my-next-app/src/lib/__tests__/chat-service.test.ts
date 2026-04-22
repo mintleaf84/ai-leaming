@@ -40,10 +40,11 @@ const { mockDrizzleDb, mockDrizzleSchema } = vi.hoisted(() => {
 });
 
 // Mock @/lib/db，同时提供 default、drizzleDb、drizzleSchema 三个导出
-vi.mock('@/lib/db', () => ({
-    default: {},
-    drizzleDb: mockDrizzleDb,
-    drizzleSchema: mockDrizzleSchema,
+vi.mock('@/lib/db', () => ({ 
+    default: mockDrizzleDb,
+    db: {}, 
+    drizzleDb: mockDrizzleDb, 
+    drizzleSchema: mockDrizzleSchema 
 }));
 
 // 导入被测模块（必须在 mock 之后）

@@ -2,7 +2,7 @@ import { OpenAPIHono, createRoute, z } from '@hono/zod-openapi'
 import { getErrorMessage } from '@/lib/utils/error';
 import { textbookService } from '@/lib/services/textbook'
 import { authMiddleware } from '@/lib/api/middlewares/auth'
-import db from '@/lib/db'
+import { db } from '@/lib/db'
 
 const app = new OpenAPIHono()
 

@@ -1,4 +1,4 @@
-import db from '@/lib/db';
+import { db } from '@/lib/db';
 import { ragService } from '@/lib/ai/rag';
 import { Question } from '@/types';
 import { safeGet, safeAll } from '@/lib/db/safe-query';

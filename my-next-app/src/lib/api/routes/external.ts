@@ -1,5 +1,5 @@
 import { OpenAPIHono, createRoute, z } from '@hono/zod-openapi'
-import db from '@/lib/db'
+import { db } from '@/lib/db'
 
 const app = new OpenAPIHono()
 

@@ -3,7 +3,7 @@
  * 记录管理员在后台的所有操作，便于审计和问题追溯
  */
 
-import db from '@/lib/db';
+import { db } from '@/lib/db';
 import { AdminAction, TargetType, AdminLogEntry, formatActionName } from './audit-types';
 
 export type { AdminAction, TargetType, AdminLogEntry };

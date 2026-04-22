@@ -64,9 +64,7 @@ const { mockBetterDb } = vi.hoisted(() => {
     };
 });
 
-vi.mock('@/lib/db', () => ({
-    default: mockBetterDb
-}));
+vi.mock('@/lib/db', () => ({ default: mockBetterDb, db: mockBetterDb, drizzleDb: {}, drizzleSchema: {} }));
 
 vi.mock('@/lib/auth/auth', () => ({
     requireUser: vi.fn().mockResolvedValue({ id: 1 }),

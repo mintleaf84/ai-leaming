@@ -1,6 +1,6 @@
 'use server';
 
-import db from '@/lib/db';
+import { db } from '@/lib/db';
 import { requireUser } from '@/lib/auth/auth';
 
 // ... existing actions

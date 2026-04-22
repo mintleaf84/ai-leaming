@@ -1,3 +1,8 @@
+/**
+ * @deprecated 此文件（legacy SQL schema）已过时，不再参与数据库初始化流程。
+ * 数据库结构现由 Drizzle ORM 统一管理，请使用 `drizzle-schema.ts`。
+ * 此文件仅作历史参考，请勿修改或依赖其中的 `createTables()` 函数。
+ */
 import Database from 'better-sqlite3';
 
 export const EMBEDDING_DIM = 768;

@@ -9,9 +9,9 @@ import {
     saveAiConfigAction,
     deleteAiConfigAction,
     setActiveAiConfigAction,
+    testAiConnectionAction,
     AiConfig
 } from '@/server/actions/config';
-import { testAiConnectionAction } from '@/server/actions/settings';
 import { ConfigList } from './ConfigList';
 import { ConfigForm } from './ConfigForm';
 import { QuickAddModals } from './QuickAddModals';

@@ -61,8 +61,8 @@ export default async function RootLayout({
 }: Readonly<{
   children: React.ReactNode;
 }>) {
-  // Initialize database once on server start (or per request, but initDatabase handles idempotency)
-  initDatabase();
+  // Initialize database is now handled by src/instrumentation.ts
+  // initDatabase();
 
   return (
     <html lang="zh-CN" suppressHydrationWarning>

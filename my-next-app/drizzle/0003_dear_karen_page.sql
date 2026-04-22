@@ -1,4 +1,4 @@
-CREATE TABLE `mindmaps` (
+CREATE TABLE IF NOT EXISTS `mindmaps` (
 	`id` integer PRIMARY KEY AUTOINCREMENT NOT NULL,
 	`user_id` integer NOT NULL,
 	`title` text NOT NULL,
@@ -8,7 +8,7 @@ CREATE TABLE `mindmaps` (
 	FOREIGN KEY (`user_id`) REFERENCES `users`(`id`) ON UPDATE no action ON DELETE cascade
 );
 --> statement-breakpoint
-CREATE TABLE `note_tag_relations` (
+CREATE TABLE IF NOT EXISTS `note_tag_relations` (
 	`note_id` integer NOT NULL,
 	`tag_id` integer NOT NULL,
 	PRIMARY KEY(`note_id`, `tag_id`),
@@ -16,9 +16,9 @@ CREATE TABLE `note_tag_relations` (
 	FOREIGN KEY (`tag_id`) REFERENCES `note_tags`(`id`) ON UPDATE no action ON DELETE cascade
 );
 --> statement-breakpoint
-CREATE INDEX `idx_note_tag_relations_note` ON `note_tag_relations` (`note_id`);--> statement-breakpoint
-CREATE INDEX `idx_note_tag_relations_tag` ON `note_tag_relations` (`tag_id`);--> statement-breakpoint
-CREATE TABLE `note_tags` (
+CREATE INDEX IF NOT EXISTS `idx_note_tag_relations_note` ON `note_tag_relations` (`note_id`);--> statement-breakpoint
+CREATE INDEX IF NOT EXISTS `idx_note_tag_relations_tag` ON `note_tag_relations` (`tag_id`);--> statement-breakpoint
+CREATE TABLE IF NOT EXISTS `note_tags` (
 	`id` integer PRIMARY KEY AUTOINCREMENT NOT NULL,
 	`user_id` integer NOT NULL,
 	`name` text NOT NULL,
@@ -27,6 +27,6 @@ CREATE TABLE `note_tags` (
 	FOREIGN KEY (`user_id`) REFERENCES `users`(`id`) ON UPDATE no action ON DELETE cascade
 );
 --> statement-breakpoint
-CREATE INDEX `idx_note_tags_user` ON `note_tags` (`user_id`);--> statement-breakpoint
-CREATE UNIQUE INDEX `note_tags_user_id_name_unique` ON `note_tags` (`user_id`,`name`);--> statement-breakpoint
+CREATE INDEX IF NOT EXISTS `idx_note_tags_user` ON `note_tags` (`user_id`);--> statement-breakpoint
+CREATE UNIQUE INDEX IF NOT EXISTS `note_tags_user_id_name_unique` ON `note_tags` (`user_id`,`name`);--> statement-breakpoint
 ALTER TABLE `practice_sessions` ADD `analysis_report` text;

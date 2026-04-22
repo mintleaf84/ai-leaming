@@ -7,38 +7,30 @@ import type { LanguageModel } from 'ai';
 
 /**
  * 获取 LanguageModel 实例
- * 通过绑定特定的 provider 配置来避免 "No providers registered" 错误
+ * 针对新版 SDK (ai@6.x) 优化了自定义 baseURL 的识别逻辑
  */
 export function getModel(apiKey: string, baseURL: string, modelName: string): LanguageModel {
-    const provider: unknown = createOpenAI({
+    // 创建 OpenAI 兼容供应商实例
+    const openai = createOpenAI({
         apiKey,
         baseURL,
+        compatibility: 'compatible', // 强制开启兼容模式，解决非官方接口的路径识别问题
     });
 
-    // 兼容不同版本/导出形式：
     try {
-        if (typeof provider === 'function') {
-            return (provider as Function)(modelName) as LanguageModel;
+        // 显式指定使用 Chat 协议 (解决 /v1/responses 404 问题的关键)
+        // 在新版 SDK 中，针对自定义 BaseURL，使用 .chat() 能确保走 /chat/completions 路径
+        if (typeof (openai as any).chat === 'function') {
+            return (openai as any).chat(modelName);
         }
 
-        const provObj = provider as Record<string, unknown> | undefined;
-        if (provObj && typeof provObj.chat === 'function') {
-            return (provObj.chat as Function)(modelName) as LanguageModel;
-        }
-
-        if (provObj && typeof provObj.model === 'function') {
-            return (provObj.model as Function)(modelName) as LanguageModel;
-        }
-
-        if (provObj && provObj.default) {
-            const d = provObj.default as unknown;
-            if (typeof d === 'function') return (d as Function)(modelName) as LanguageModel;
-            const dObj = d as Record<string, unknown> | undefined;
-            if (dObj && typeof dObj.chat === 'function') return (dObj.chat as Function)(modelName) as LanguageModel;
+        // 兜底：如果 chat 属性不存在，尝试作为函数直接调用
+        if (typeof openai === 'function') {
+            return (openai as any)(modelName);
         }
     } catch (err) {
-        console.warn('[AiProvider] getModel provider 调用失败，尝试兼容路径失败:', err);
+        console.warn('[AiProvider] 初始化模型失败，尝试路径不匹配:', err);
     }
 
-    throw new Error('Unsupported OpenAI provider shape returned by createOpenAI');
+    throw new Error(`无法初始化 AI 模型: ${modelName}。请检查 SDK 版本或配置。`);
 }

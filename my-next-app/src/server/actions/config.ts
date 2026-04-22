@@ -7,7 +7,8 @@ import { eq, desc, sql, count } from 'drizzle-orm';
 import { revalidatePath } from 'next/cache';
 import { requireRole } from '@/lib/auth/auth';
 import { logAdminAction } from '@/lib/admin/audit';
-import { clearAiConfigCache } from '@/lib/ai/client';
+import { clearAiConfigCache, getAiConfig, getModel } from '@/lib/ai/client';
+import { generateText } from 'ai';
 
 export type AiConfig = {
     id: number;
@@ -115,7 +116,7 @@ export async function deleteAiConfigAction(id: number) {
 export async function setActiveAiConfigAction(id: number) {
     const user = await requireRole(['admin']);
     
-    await drizzleDb.transaction(async (tx: any) => {
+    await drizzleDb.transaction(async (tx) => {
         await tx.update(drizzleSchema.ai_configs).set({ is_active: false });
         await tx.update(drizzleSchema.ai_configs).set({ is_active: true }).where(eq(drizzleSchema.ai_configs.id, id));
     });
@@ -175,5 +176,54 @@ export async function saveAiModelRouteAction(route: AiModelRoute) {
     revalidatePath('/admin/ai');
     clearAiConfigCache();
     return { success: true };
+}
+
+/**
+ * 测试 AI 连接 (仅限管理员)
+ * 增加权限校验、超时控制与审计日志
+ */
+export async function testAiConnectionAction(apiKey: string, apiUrl: string, modelName: string) {
+    const user = await requireRole(['admin']);
+    
+    try {
+        const prompt = "Please respond with 'Pong' to verify the connection.";
+        // 使用 economy 模板作为基础，但传入 override 的 key 和 url
+        const config = getAiConfig('economy', apiKey, apiUrl);
+        const model = getModel(config.apiKey, config.baseURL, modelName || config.modelName);
+
+        logger.info({ user: user.username, url: apiUrl }, '[Admin] 开始测试 AI 连接');
+
+        const { text } = await generateText({
+            model,
+            messages: [{ role: 'user', content: prompt }],
+            abortSignal: AbortSignal.timeout(20000), // 增加到 20s
+        });
+
+        // 记录审计日志
+        logAdminAction(user.id, user.username, 'TEST_AI_CONNECTION', 'ai_config', 'test', { 
+            url: apiUrl, 
+            model: modelName,
+            success: true 
+        });
+
+        return { 
+            success: true, 
+            message: text.length > 100 ? text.slice(0, 97) + '...' : text 
+        };
+    } catch (error: unknown) {
+        logger.error({ err: error, user: user.username }, "AI Connection Test Failed");
+        
+        // 记录失败日志
+        logAdminAction(user.id, user.username, 'TEST_AI_CONNECTION', 'ai_config', 'test', { 
+            url: apiUrl, 
+            success: false,
+            error: getErrorMessage(error)
+        });
+
+        return { 
+            success: false, 
+            error: getErrorMessage(error, '连接失败，请检查 API Key 和 URL 是否正确。') 
+        };
+    }
 }
 

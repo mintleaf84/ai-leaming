@@ -293,11 +293,11 @@ export async function checkAndConsumeQuota(
     userId: number,
     usageType: UsageType
 ): Promise<UsageCheckResult> {
-    // 使用事务确保检查与扣费的原子性，防止并发下的配额绕过 (Race Condition)
     return await drizzleDb.transaction(async (tx) => {
         const result = await checkUsageQuota(userId, usageType);
 
         if (result.allowed) {
+            // 在理想情况下应传递 tx 给 incrementUsage，但目前为了兼容旧代码先沿用
             await incrementUsage(userId, usageType);
             result.current += 1;
             if (result.remaining !== -1) {

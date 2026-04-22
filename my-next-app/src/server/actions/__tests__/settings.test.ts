@@ -19,7 +19,11 @@ vi.mock('@/lib/ai/client', () => mockAiClient);
 vi.mock('ai', () => mockAiLib);
 vi.mock('@/lib/db', () => ({ default: { prepare: vi.fn(), exec: vi.fn() }, db: { prepare: vi.fn(), exec: vi.fn() }, drizzleDb: { prepare: vi.fn(), exec: vi.fn() }, drizzleSchema: {} }));
 vi.mock('@/lib/logger', () => ({ default: { error: vi.fn(), info: vi.fn(), warn: vi.fn() } }));
-vi.mock('@/lib/auth/auth', () => ({ requireUser: vi.fn() }));
+vi.mock('@/lib/auth/auth', () => ({ 
+    requireUser: vi.fn().mockResolvedValue({ id: 1, username: 'admin' }),
+    requireRole: vi.fn().mockResolvedValue({ id: 1, username: 'admin' }) 
+}));
+vi.mock('@/lib/admin/audit', () => ({ logAdminAction: vi.fn() }));
 
 describe('Settings AI connection test', () => {
     beforeEach(() => {
@@ -27,7 +31,7 @@ describe('Settings AI connection test', () => {
     });
 
     it('should use the provided model name when testing connection', async () => {
-        const { testAiConnectionAction } = await import('../settings');
+        const { testAiConnectionAction } = await import('../config');
 
         const result = await testAiConnectionAction('test-key', 'https://api.example.com/v1', 'deepseek-chat');
 

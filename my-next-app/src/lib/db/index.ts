@@ -3,8 +3,9 @@ import Database from 'better-sqlite3';
 import * as sqliteVec from 'sqlite-vec';
 import path from 'path';
 import { fileURLToPath } from 'url';
-import { drizzle } from 'drizzle-orm/better-sqlite3';
-import { migrate } from 'drizzle-orm/better-sqlite3/migrator';
+import { drizzle } from 'drizzle-orm/libsql';
+import { migrate } from 'drizzle-orm/libsql/migrator';
+import { createClient } from '@libsql/client';
 import * as schema from './drizzle-schema';
 import { runMigrations as runOldMigrations } from './migrations';
 import { setupVectorExtension } from './vector-setup';
@@ -92,17 +93,30 @@ export function reinitDb() {
 
 // --- Drizzle ORM Initialization ---
 
-export const drizzleDb = drizzle(db, { schema });
+const libsqlDbName = process.env.DB_FILENAME || 'ai-learning.db';
+const libsqlDbPath = path.resolve(process.cwd(), 'data', libsqlDbName);
+const libsqUrl = `file:${libsqlDbPath}`;
+const libsqlClient = createClient({ url: libsqUrl });
+
+export const drizzleDb = drizzle(libsqlClient, { schema });
+
+// 防止在单个进程内重复初始化
+let isInitialized = false;
 
 /**
  * 初始化数据库
  */
 export function initDatabase() {
-    // 检查是否在构建阶段
-    if (process.env.NEXT_PHASE === 'phase-production-build' || process.env.IS_BUILDING === 'true') {
+    // 检查是否在构建阶段或已经初始化
+    if (
+        process.env.NEXT_PHASE === 'phase-production-build' || 
+        process.env.IS_BUILDING === 'true' ||
+        isInitialized
+    ) {
         return;
     }
 
+    isInitialized = true;
     console.log('[DB] Starting database initialization...');
 
     try {

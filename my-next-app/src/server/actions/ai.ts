@@ -41,6 +41,16 @@ export async function generateCorrectionQuizAction(
     }
   }
 
+  // 3. Quota Check (Only if cache miss)
+  const user = await requireUser();
+  const userIdNum = typeof user.id === 'string' ? parseInt(user.id, 10) : user.id;
+  if (!isNaN(userIdNum)) {
+    const quotaResult = checkAndConsumeQuota(userIdNum, 'review');
+    if (!quotaResult.allowed) {
+      throw new Error(quotaResult.message || '今日 AI 复盘次数已用完，请升级套餐解锁更多。');
+    }
+  }
+
   const dbTemplate = getPromptFromDbSync('correction_quiz');
   const template = dbTemplate || DEFAULT_CORRECTION_PROMPT;
 
@@ -113,6 +123,16 @@ export async function generateRegressionChallengeAction(
     if (cached) {
       logger.info('[ChallengeCache] 命中缓存');
       return JSON.parse(cached.data) as RegressionChallenge;
+    }
+  }
+
+  // 3. Quota Check (Only if cache miss)
+  const user = await requireUser();
+  const userIdNum = typeof user.id === 'string' ? parseInt(user.id, 10) : user.id;
+  if (!isNaN(userIdNum)) {
+    const quotaResult = checkAndConsumeQuota(userIdNum, 'review');
+    if (!quotaResult.allowed) {
+      throw new Error(quotaResult.message || '今日 AI 复盘次数已用完，请升级套餐解锁更多。');
     }
   }
 

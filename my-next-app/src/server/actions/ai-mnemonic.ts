@@ -37,7 +37,12 @@ export async function generateMnemonicAction(questionId: string, forceRegenerate
         }
 
         // 3. 构建 Prompt (如果未缓存或强制刷新，先检查配额)
-        const quotaResult = checkAndConsumeQuota(Number(user.id), 'mnemonic');
+        const userIdNum = typeof user.id === 'string' ? parseInt(user.id, 10) : user.id;
+        if (isNaN(userIdNum)) {
+            return { success: false, message: '无效的用户 ID' };
+        }
+
+        const quotaResult = checkAndConsumeQuota(userIdNum, 'mnemonic');
         if (!quotaResult.allowed) {
             return {
                 success: false,

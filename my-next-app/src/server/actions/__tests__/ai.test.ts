@@ -107,6 +107,7 @@ vi.mock('@/lib/billing/subscription-service', () => ({
 describe('AI Actions', () => {
     beforeEach(() => {
         mockBetterDb.reset();
+        mockCheckAndConsumeQuota.mockReturnValue({ allowed: true });
         vi.clearAllMocks();
     });
 
@@ -126,11 +127,23 @@ describe('AI Actions', () => {
             
             expect(result).toEqual(mockQuiz);
             
+            // 验证配额消费
+            expect(mockCheckAndConsumeQuota).toHaveBeenCalledWith(1, 'review');
+
             // 验证缓存写入使用了正确的 Key
             const calls = mockBetterDb._state.calls;
             const insertCall = calls.find((c: any) => c.sql.includes('INSERT OR REPLACE INTO ai_quiz_cache'));
             expect(insertCall?.args[0]).toBe(expectedKey);
             expect(insertCall?.args[1]).toBe(JSON.stringify(mockQuiz));
+        });
+
+        it('should throw error when quota is exhausted', async () => {
+            mockCheckAndConsumeQuota.mockReturnValue({ allowed: false, message: 'Quota exhausted' });
+
+            const { generateCorrectionQuizAction } = await import('../ai');
+            
+            await expect(generateCorrectionQuizAction('Q', 'W', 'C'))
+                .rejects.toThrow('Quota exhausted');
         });
     });
 

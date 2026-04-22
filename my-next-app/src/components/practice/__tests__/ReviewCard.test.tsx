@@ -16,9 +16,11 @@ const mockQuestion = {
     id: 101,
     content: '什么是 React Hook?',
     options: ['一种钩子', '一种函数', '一种状态', '一种模式'],
-    type: 'single',
+    type: 'single' as const,
     answer: 'B',
-    explanation: 'React Hook 是在函数组件中“钩入” React 状态及生命周期等特性的函数。'
+    explanation: 'React Hook 是在函数组件中“钩入” React 状态及生命周期等特性的函数。',
+    dimension: 'knowledge',
+    tags: ['基础', 'Hook']
 }
 
 const mockCurrentItemBase = {
@@ -27,7 +29,8 @@ const mockCurrentItemBase = {
     currentStep: 'study' as const,
     wrongAnswer: 'A',
     tags: ['基础', 'Hook'],
-    regressionSubIndex: 0
+    regressionSubIndex: 0,
+    failedAttempts: 0
 }
 
 describe('ReviewCard Component', () => {
@@ -84,10 +87,12 @@ describe('ReviewCard Component', () => {
             currentStep: 'quiz' as const,
             quiz: {
                 analysis: '你可能混淆了 Hook 的概念',
+                distinctionPoint: 'Hook 与普通函数的区别',
                 quiz: {
                     content: 'Hook 只能在什么组件中使用？',
                     options: ['函数组件', '类组件', '两者皆可'],
-                    answer: '函数组件'
+                    answer: '函数组件',
+                    explanation: 'Hook 只能在 React 函数组件或自定义 Hook 中调用。'
                 }
             }
         }
@@ -119,12 +124,25 @@ describe('ReviewCard Component', () => {
             ...mockCurrentItemBase,
             currentStep: 'regression' as const,
             regression: {
-                logicType: 'reverse',
+                logicType: 'reverse' as const,
                 challenges: [
                     {
                         content: '下列哪个不属于 Hook？',
                         options: ['useState', 'useEffect', 'useAction'],
-                        answer: 'useAction'
+                        answer: 'useAction',
+                        explanation: 'useAction 并非官方 Hook。'
+                    },
+                    {
+                        content: 'Regression 2',
+                        options: ['A', 'B'],
+                        answer: 'A',
+                        explanation: 'Exp'
+                    },
+                    {
+                        content: 'Regression 3',
+                        options: ['A', 'B'],
+                        answer: 'A',
+                        explanation: 'Exp'
                     }
                 ]
             },

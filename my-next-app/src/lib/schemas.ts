@@ -112,26 +112,34 @@ export const PracticeLogRowSchema = z.object({
   timestamp: z.string().optional()
 });
 
-// 数据库行 Schema，包含自动 JSON 解析
+// 数据库行 Schema，包含自动 JSON 解析和所有扩展字段
 export const QuestionRowSchema = BaseQuestionSchema.extend({
-  id: z.number(), // 数据库都有 ID
+  id: z.number(),
+  source: z.string().nullable().optional(),
+  correct_ratio: z.number().nullable().optional(),
+  most_wrong_answer: z.string().nullable().optional(),
+  material: z.string().nullable().optional(),
+  material_html: z.string().nullable().optional(),
+  ai_mnemonic: z.string().nullable().optional(),
+  created_at: z.string().optional(),
   options: z.string().transform((str, _ctx): string[] => {
     try {
       const parsed = JSON.parse(str);
-      return z.array(z.string()).parse(parsed);
+      return Array.isArray(parsed) ? parsed : [];
     } catch {
       return [];
     }
-  }).or(z.array(z.string())), // 兼容已经是数组的情况（虽然 sqlite 通常返回 string）
+  }).or(z.array(z.string())),
   tags: z.string().transform((str, _ctx): string[] => {
     try {
       const parsed = JSON.parse(str);
-      return z.array(z.string()).parse(parsed);
+      return Array.isArray(parsed) ? parsed : [];
     } catch {
       return [];
     }
   }).or(z.array(z.string())),
 });
+
 
 export type PracticeSessionRow = z.infer<typeof PracticeSessionRowSchema>;
 export type PracticeLogRow = z.infer<typeof PracticeLogRowSchema>;

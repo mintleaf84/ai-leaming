@@ -3,40 +3,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { Database, BookOpen, Target, ShieldCheck, Check } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 
-// Define minimal types to avoid deep dependency
-interface Question {
-    id: number;
-    content: string;
-    options: string[];
-    type: string;
-    answer: string;
-    explanation?: string;
-}
-
-interface ReviewItem {
-    originalQuestionId: number;
-    originalQuestionContent: string;
-    currentStep: 'study' | 'quiz' | 'regression';
-    wrongAnswer: string;
-    tags: string[];
-    quiz?: {
-        analysis: string;
-        quiz: {
-            content: string;
-            options: string[];
-            answer: string;
-        };
-    };
-    regression?: {
-        logicType: string;
-        challenges: {
-            content: string;
-            options: string[];
-            answer: string;
-        }[];
-    };
-    regressionSubIndex: number;
-}
+import { Question, ReviewItem } from '@/types';
 
 interface ReviewCardProps {
     currentItem: ReviewItem;
@@ -44,6 +11,7 @@ interface ReviewCardProps {
     isLoadingAI: boolean;
     onReviewStep: (success: boolean) => void;
 }
+
 
 export function ReviewCard({ currentItem, sessionQueue, isLoadingAI, onReviewStep }: ReviewCardProps) {
     if (!currentItem) return null;

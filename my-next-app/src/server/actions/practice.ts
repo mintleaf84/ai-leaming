@@ -18,15 +18,25 @@ import { KnowledgeTreeService, KnowledgeNode } from '@/lib/services/knowledge-tr
 /**
  * 将数据库原始题目行映射为业务 Question 类型
  */
+/**
+ * 将数据库原始题目行映射为业务 Question 类型
+ */
 function mapQuestion(q: any): Question {
-  return {
-    ...q,
-    options: typeof q.options === 'string' ? JSON.parse(q.options) : (q.options || []),
-    tags: typeof q.tags === 'string' ? JSON.parse(q.tags) : (q.tags || []),
-    type: (q.type as any) || 'single',
-    dimension: (q.dimension as any) || 'knowledge'
-  };
+  try {
+    return QuestionRowSchema.parse(q);
+  } catch (err) {
+    logger.error({ err, questionId: q.id }, 'Question mapping failed');
+    // 回退逻辑，确保程序不崩溃
+    return {
+      ...q,
+      options: typeof q.options === 'string' ? JSON.parse(q.options) : (q.options || []),
+      tags: typeof q.tags === 'string' ? JSON.parse(q.tags) : (q.tags || []),
+      type: q.type || 'single',
+      dimension: q.dimension || 'knowledge'
+    } as Question;
+  }
 }
+
 
 /**
  * 获取或恢复练习会话

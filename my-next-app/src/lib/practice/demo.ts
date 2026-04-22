@@ -1,18 +1,38 @@
 /**
- * 演示模式服务
+ * 演示模式服务 (Drizzle 版)
  */
 
-import Database from 'better-sqlite3';
+import { drizzleDb, drizzleSchema } from '@/lib/db';
+import { eq, and, desc, sql } from 'drizzle-orm';
 import logger from '@/lib/logger';
 import { Question } from '@/types';
 import { QuestionRowSchema } from '@/lib/schemas';
-import { safeAll } from '@/lib/db/safe-query';
+
+/**
+ * 将数据库原始行映射为业务 Question 类型
+ */
+function mapQuestion(q: any): Question {
+    try {
+        return QuestionRowSchema.parse(q);
+    } catch (err) {
+        logger.error({ err, questionId: q.id }, '[DemoService] Question mapping failed');
+        return {
+            ...q,
+            options: typeof q.options === 'string' ? JSON.parse(q.options) : (q.options || []),
+            tags: typeof q.tags === 'string' ? JSON.parse(q.tags) : (q.tags || []),
+            type: q.type || 'single',
+            dimension: q.dimension || 'knowledge'
+        } as Question;
+    }
+}
 
 export const DemoService = {
   /** 检查全局演示模式是否开启 */
-  isDemoModeEnabled(db: Database.Database): boolean {
+  async isDemoModeEnabled(): Promise<boolean> {
     try {
-      const row = db.prepare("SELECT value FROM system_settings WHERE key = 'demo_mode_enabled'").get() as { value: string } | undefined;
+      const row = await drizzleDb.query.system_settings.findFirst({
+        where: eq(drizzleSchema.system_settings.key, 'demo_mode_enabled')
+      });
       return row?.value === 'true';
     } catch {
       return false;
@@ -20,21 +40,27 @@ export const DemoService = {
   },
 
   /** 获取或创建演示会话 */
-  async getDemoSession(db: Database.Database, userId: string | number): Promise<{
+  async getDemoSession(userId: number): Promise<{
     questions: Question[];
     sessionId: string;
   } | null> {
     // 1. 查找已有的演示会话
-    const existing = db.prepare(`
-      SELECT id, questions_json FROM practice_sessions
-      WHERE user_id = ? AND is_demo = 1
-      ORDER BY created_at DESC LIMIT 1
-    `).get(userId) as { id: string; questions_json: string } | undefined;
+    const existing = await drizzleDb.query.practice_sessions.findFirst({
+      where: and(
+        eq(drizzleSchema.practice_sessions.user_id, userId),
+        eq(drizzleSchema.practice_sessions.is_demo, 1)
+      ),
+      orderBy: [desc(drizzleSchema.practice_sessions.created_at)]
+    });
 
     if (existing && existing.questions_json) {
       // 重置演示进度，让用户每次进入都能从头体验
-      db.prepare('DELETE FROM practice_logs WHERE session_id = ?').run(existing.id);
-      db.prepare('UPDATE practice_sessions SET correct_count = 0 WHERE id = ?').run(existing.id);
+      await drizzleDb.delete(drizzleSchema.practice_logs)
+        .where(eq(drizzleSchema.practice_logs.session_id, existing.id));
+      
+      await drizzleDb.update(drizzleSchema.practice_sessions)
+        .set({ correct_count: 0 })
+        .where(eq(drizzleSchema.practice_sessions.id, existing.id));
       
       logger.info({ sessionId: existing.id }, '[DemoMode] 重置并复用演示会话');
 
@@ -42,7 +68,10 @@ export const DemoService = {
         const questions = typeof existing.questions_json === 'string'
           ? JSON.parse(existing.questions_json)
           : existing.questions_json;
-        return { questions, sessionId: existing.id };
+        return { 
+          questions: questions.map((q: any) => mapQuestion(q)), 
+          sessionId: existing.id 
+        };
       } catch (e) {
         logger.error({ err: e }, '[DemoMode] 解析演示会话题目失败');
         return null;
@@ -51,20 +80,27 @@ export const DemoService = {
 
     // 2. 创建新演示会话 (从题库随机选 10 题)
     const sessionId = `demo-${Math.random().toString(36).substring(2, 12)}`;
-    const questions = safeAll(
-      db.prepare('SELECT * FROM questions ORDER BY RANDOM() LIMIT 10'),
-      [],
-      QuestionRowSchema
-    );
+    
+    const rawQuestions = await drizzleDb.select()
+        .from(drizzleSchema.questions)
+        .orderBy(sql`RANDOM()`)
+        .limit(10);
 
-    if (!questions || questions.length === 0) return null;
+    if (!rawQuestions || rawQuestions.length === 0) return null;
 
-    db.prepare(`
-      INSERT INTO practice_sessions (id, user_id, total_questions, questions_json, practice_mode, is_demo)
-      VALUES (?, ?, ?, ?, 'smart', 1)
-    `).run(sessionId, userId, questions.length, JSON.stringify(questions));
+    const questions = rawQuestions.map(q => mapQuestion(q));
+
+    await drizzleDb.insert(drizzleSchema.practice_sessions).values({
+      id: sessionId,
+      user_id: userId,
+      total_questions: questions.length,
+      questions_json: JSON.stringify(questions),
+      practice_mode: 'smart',
+      is_demo: 1
+    });
 
     logger.info({ sessionId }, '[DemoMode] 创建新演示会话');
     return { questions, sessionId };
   }
 };
+

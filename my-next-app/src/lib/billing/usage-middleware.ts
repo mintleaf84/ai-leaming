@@ -12,8 +12,8 @@ import { UsageType, UsageCheckResult, USAGE_TYPE_LABELS } from './subscription-t
  * @param usageType 用量类型
  * @returns 检查结果
  */
-export function checkQuota(userId: number, usageType: UsageType): UsageCheckResult {
-    return checkUsageQuota(userId, usageType);
+export async function checkQuota(userId: number, usageType: UsageType): Promise<UsageCheckResult> {
+    return await checkUsageQuota(userId, usageType);
 }
 
 /**
@@ -22,8 +22,8 @@ export function checkQuota(userId: number, usageType: UsageType): UsageCheckResu
  * @param usageType 用量类型
  * @returns 检查结果，如果允许则已自动消费 1 次配额
  */
-export function consumeQuota(userId: number, usageType: UsageType): UsageCheckResult {
-    return checkAndConsumeQuota(userId, usageType);
+export async function consumeQuota(userId: number, usageType: UsageType): Promise<UsageCheckResult> {
+    return await checkAndConsumeQuota(userId, usageType);
 }
 
 /**
@@ -55,7 +55,7 @@ export async function withQuotaCheck<T>(
     usageType: UsageType,
     operation: () => Promise<T>
 ): Promise<T | ReturnType<typeof createQuotaExceededResponse>> {
-    const result = consumeQuota(userId, usageType);
+    const result = await consumeQuota(userId, usageType);
 
     if (!result.allowed) {
         return createQuotaExceededResponse(usageType, result);
@@ -68,11 +68,11 @@ export async function withQuotaCheck<T>(
  * 用于 API Route 的中间件辅助函数
  * 返回 null 表示可以继续，否则返回错误响应
  */
-export function checkQuotaForApi(
+export async function checkQuotaForApi(
     userId: number,
     usageType: UsageType
-): { error: ReturnType<typeof createQuotaExceededResponse> } | null {
-    const result = consumeQuota(userId, usageType);
+): Promise<{ error: ReturnType<typeof createQuotaExceededResponse> } | null> {
+    const result = await consumeQuota(userId, usageType);
 
     if (!result.allowed) {
         return { error: createQuotaExceededResponse(usageType, result) };

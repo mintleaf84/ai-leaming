@@ -14,7 +14,7 @@ export async function getUserProfileAction() {
     const user = await requireUser();
 
     // 获取用户订阅详情
-    const subscription = getUserSubscriptionDetail(user.id);
+    const subscription = await getUserSubscriptionDetail(user.id);
 
     // 获取学习统计
     const practiceStats = db.prepare(`

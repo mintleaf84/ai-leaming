@@ -88,7 +88,7 @@ app.openapi(chatRoute, async (c) => {
     }
 
     // 1. 用量检查
-    const quotaCheck = checkQuotaForApi(userId, 'ai_chat')
+    const quotaCheck = await checkQuotaForApi(userId, 'ai_chat')
     if (quotaCheck) return c.json(quotaCheck.error, 429)
 
     // 2. 保存用户消息

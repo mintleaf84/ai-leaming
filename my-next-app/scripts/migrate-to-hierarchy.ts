@@ -2,7 +2,7 @@
  * 更新旧数据的知识点为层级路径格式
  */
 
-import db from '../src/lib/db';
+import { db } from '../src/lib/db';
 import { findKeypointPathByName } from '../src/lib/import/keypoint-tree';
 import { masteryService } from '../src/lib/services/mastery';
 

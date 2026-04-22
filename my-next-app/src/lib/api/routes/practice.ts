@@ -214,7 +214,7 @@ app.openapi(firstPrinciplesRoute, async (c) => {
         }
 
         // 检查配额
-        const quotaResult = checkAndConsumeQuota(Number(user.id), 'first_principles');
+        const quotaResult = await checkAndConsumeQuota(Number(user.id), 'first_principles');
         if (!quotaResult.allowed) {
             return c.json({ error: quotaResult.message }, 403);
         }

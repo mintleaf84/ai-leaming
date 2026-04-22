@@ -1,7 +1,7 @@
 import fs from 'fs';
 import path from 'path';
 import { pathToFileURL } from 'url';
-import db from '../src/lib/db';
+import { db } from '../src/lib/db';
 import { createTables } from '../src/lib/db/schema';
 
 // Migration Interface

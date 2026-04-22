@@ -3,7 +3,8 @@
  * 核心订阅逻辑：套餐管理、用户订阅、用量统计
  */
 
-import db from '../db';
+import drizzleDb, { drizzleSchema } from '../db';
+import { eq, and, sql, asc } from 'drizzle-orm';
 import { getBeijingDateString } from '../utils/datetime';
 import {
     SubscriptionPlan,
@@ -14,69 +15,81 @@ import {
     USAGE_TYPE_LABELS
 } from './subscription-types';
 
+const { subscription_plans, user_subscriptions, daily_usage } = drizzleSchema;
+
 // ==================== 套餐管理 ====================
 
 /**
  * 获取所有套餐 (可选只返回激活的)
  */
-export function getAllPlans(activeOnly = true): SubscriptionPlan[] {
-    const sql = activeOnly
-        ? 'SELECT * FROM subscription_plans WHERE is_active = 1 ORDER BY sort_order ASC'
-        : 'SELECT * FROM subscription_plans ORDER BY sort_order ASC';
-
-    const rows = db.prepare(sql).all() as Record<string, unknown>[];
+export async function getAllPlans(activeOnly = true): Promise<SubscriptionPlan[]> {
+    const query = drizzleDb.select().from(subscription_plans);
+    
+    if (activeOnly) {
+        query.where(eq(subscription_plans.is_active, 1));
+    }
+    
+    const rows = await query.orderBy(asc(subscription_plans.sort_order));
     return rows.map(parsePlanRow);
 }
 
 /**
  * 根据 ID 获取套餐
  */
-export function getPlanById(planId: string): SubscriptionPlan | null {
-    const row = db.prepare('SELECT * FROM subscription_plans WHERE id = ?').get(planId) as Record<string, unknown> | undefined;
-    return row ? parsePlanRow(row) : null;
+export async function getPlanById(planId: string): Promise<SubscriptionPlan | null> {
+    const rows = await drizzleDb.select()
+        .from(subscription_plans)
+        .where(eq(subscription_plans.id, planId))
+        .limit(1);
+    
+    return rows.length > 0 ? parsePlanRow(rows[0]) : null;
 }
 
 /**
  * 创建或更新套餐
  */
-export function upsertPlan(plan: Omit<SubscriptionPlan, 'created_at'>): void {
-    db.prepare(`
-    INSERT INTO subscription_plans (id, name, tier, price_monthly, limits, features, is_active, sort_order)
-    VALUES (?, ?, ?, ?, ?, ?, ?, ?)
-    ON CONFLICT(id) DO UPDATE SET
-      name = excluded.name,
-      tier = excluded.tier,
-      price_monthly = excluded.price_monthly,
-      limits = excluded.limits,
-      features = excluded.features,
-      is_active = excluded.is_active,
-      sort_order = excluded.sort_order
-  `).run(
-        plan.id,
-        plan.name,
-        plan.tier,
-        plan.price_monthly,
-        JSON.stringify(plan.limits),
-        JSON.stringify(plan.features),
-        plan.is_active ? 1 : 0,
-        plan.sort_order ?? 0
-    );
+export async function upsertPlan(plan: Omit<SubscriptionPlan, 'created_at'>): Promise<void> {
+    await drizzleDb.insert(subscription_plans)
+        .values({
+            id: plan.id,
+            name: plan.name,
+            tier: plan.tier,
+            price_monthly: plan.price_monthly,
+            limits: JSON.stringify(plan.limits),
+            features: JSON.stringify(plan.features),
+            is_active: plan.is_active ? 1 : 0,
+            sort_order: plan.sort_order ?? 0
+        })
+        .onConflictDoUpdate({
+            target: subscription_plans.id,
+            set: {
+                name: sql`excluded.name`,
+                tier: sql`excluded.tier`,
+                price_monthly: sql`excluded.price_monthly`,
+                limits: sql`excluded.limits`,
+                features: sql`excluded.features`,
+                is_active: sql`excluded.is_active`,
+                sort_order: sql`excluded.sort_order`
+            }
+        });
 }
 
 /**
  * 删除套餐 (不能删除有用户订阅的套餐)
  */
-export function deletePlan(planId: string): { success: boolean; error?: string } {
+export async function deletePlan(planId: string): Promise<{ success: boolean; error?: string }> {
     // 检查是否有用户订阅此套餐
-    const subCount = db.prepare(
-        'SELECT COUNT(*) as count FROM user_subscriptions WHERE plan_id = ?'
-    ).get(planId) as { count: number };
+    const rows = await drizzleDb.select({ count: sql<number>`count(*)` })
+        .from(user_subscriptions)
+        .where(eq(user_subscriptions.plan_id, planId));
+    
+    const subCount = rows[0]?.count ?? 0;
 
-    if (subCount.count > 0) {
-        return { success: false, error: `该套餐下有 ${subCount.count} 个用户，无法删除` };
+    if (subCount > 0) {
+        return { success: false, error: `该套餐下有 ${subCount} 个用户，无法删除` };
     }
 
-    db.prepare('DELETE FROM subscription_plans WHERE id = ?').run(planId);
+    await drizzleDb.delete(subscription_plans).where(eq(subscription_plans.id, planId));
     return { success: true };
 }
 
@@ -85,35 +98,37 @@ export function deletePlan(planId: string): { success: boolean; error?: string }
 /**
  * 获取用户订阅状态
  */
-export function getUserSubscription(userId: number): UserSubscription | null {
-    const row = db.prepare(`
-    SELECT * FROM user_subscriptions WHERE user_id = ?
-  `).get(userId) as UserSubscription | undefined;
-    return row || null;
+export async function getUserSubscription(userId: number): Promise<UserSubscription | null> {
+    const rows = await drizzleDb.select()
+        .from(user_subscriptions)
+        .where(eq(user_subscriptions.user_id, userId))
+        .limit(1);
+    
+    return rows.length > 0 ? (rows[0] as unknown as UserSubscription) : null;
 }
 
 /**
  * 获取用户订阅详情 (包含套餐信息和今日用量)
  */
-export function getUserSubscriptionDetail(userId: number): UserSubscriptionDetail | null {
-    const sub = getUserSubscription(userId);
+export async function getUserSubscriptionDetail(userId: number): Promise<UserSubscriptionDetail | null> {
+    const sub = await getUserSubscription(userId);
     if (!sub) {
         // 自动为用户创建免费订阅
-        createSubscription(userId, 'free');
+        await createSubscription(userId, 'free');
         return getUserSubscriptionDetail(userId);
     }
 
-    const plan = getPlanById(sub.plan_id);
+    const plan = await getPlanById(sub.plan_id);
     if (!plan) return null;
 
     // 检查订阅是否过期
     if (sub.expires_at && new Date(sub.expires_at) < new Date()) {
         // 订阅已过期，降级到免费版
-        updateSubscription(userId, 'free', null);
+        await updateSubscription(userId, 'free', null);
         return getUserSubscriptionDetail(userId);
     }
 
-    const usageToday = getDailyUsage(userId);
+    const usageToday = await getDailyUsage(userId);
 
     return {
         ...sub,
@@ -125,46 +140,58 @@ export function getUserSubscriptionDetail(userId: number): UserSubscriptionDetai
 /**
  * 创建用户订阅
  */
-export function createSubscription(
+export async function createSubscription(
     userId: number,
     planId: string,
     expiresAt: string | null = null
-): void {
-    db.prepare(`
-    INSERT INTO user_subscriptions (user_id, plan_id, status, expires_at)
-    VALUES (?, ?, 'active', ?)
-    ON CONFLICT(user_id) DO UPDATE SET
-      plan_id = excluded.plan_id,
-      status = 'active',
-      started_at = CURRENT_TIMESTAMP,
-      expires_at = excluded.expires_at
-  `).run(userId, planId, expiresAt);
+): Promise<void> {
+    await drizzleDb.insert(user_subscriptions)
+        .values({
+            user_id: userId,
+            plan_id: planId,
+            status: 'active',
+            expires_at: expiresAt
+        })
+        .onConflictDoUpdate({
+            target: user_subscriptions.user_id,
+            set: {
+                plan_id: sql`excluded.plan_id`,
+                status: 'active',
+                started_at: sql`CURRENT_TIMESTAMP`,
+                expires_at: sql`excluded.expires_at`
+            }
+        });
 }
 
 /**
  * 更新用户订阅
  */
-export function updateSubscription(
+export async function updateSubscription(
     userId: number,
     planId: string,
     expiresAt: string | null
-): void {
-    db.prepare(`
-    UPDATE user_subscriptions
-    SET plan_id = ?, expires_at = ?, status = 'active', started_at = CURRENT_TIMESTAMP
-    WHERE user_id = ?
-  `).run(planId, expiresAt, userId);
+): Promise<void> {
+    await drizzleDb.update(user_subscriptions)
+        .set({
+            plan_id: planId,
+            expires_at: expiresAt,
+            status: 'active',
+            started_at: sql`CURRENT_TIMESTAMP`
+        })
+        .where(eq(user_subscriptions.user_id, userId));
 }
 
 /**
  * 取消用户订阅 (降级到免费版)
  */
-export function cancelSubscription(userId: number): void {
-    db.prepare(`
-    UPDATE user_subscriptions
-    SET plan_id = 'free', status = 'cancelled', expires_at = NULL
-    WHERE user_id = ?
-  `).run(userId);
+export async function cancelSubscription(userId: number): Promise<void> {
+    await drizzleDb.update(user_subscriptions)
+        .set({
+            plan_id: 'free',
+            status: 'cancelled',
+            expires_at: null
+        })
+        .where(eq(user_subscriptions.user_id, userId));
 }
 
 // ==================== 用量管理 ====================
@@ -172,12 +199,11 @@ export function cancelSubscription(userId: number): void {
 /**
  * 获取用户今日用量
  */
-export function getDailyUsage(userId: number): Record<UsageType, number> {
+export async function getDailyUsage(userId: number): Promise<Record<UsageType, number>> {
     const today = getBeijingDateString();
-    const rows = db.prepare(`
-    SELECT usage_type, count FROM daily_usage
-    WHERE user_id = ? AND usage_date = ?
-  `).all(userId, today) as { usage_type: string; count: number }[];
+    const rows = await drizzleDb.select({ usage_type: daily_usage.usage_type, count: daily_usage.count })
+        .from(daily_usage)
+        .where(and(eq(daily_usage.user_id, userId), eq(daily_usage.usage_date, today)));
 
     const result: Record<UsageType, number> = {
         ai_chat: 0,
@@ -189,8 +215,8 @@ export function getDailyUsage(userId: number): Record<UsageType, number> {
     };
 
     rows.forEach(row => {
-        if (row.usage_type in result) {
-            result[row.usage_type as UsageType] = row.count;
+        if (row.usage_type && row.usage_type in result) {
+            result[row.usage_type as UsageType] = row.count ?? 0;
         }
     });
 
@@ -200,22 +226,29 @@ export function getDailyUsage(userId: number): Record<UsageType, number> {
 /**
  * 增加用量计数
  */
-export function incrementUsage(userId: number, usageType: UsageType, amount = 1): void {
+export async function incrementUsage(userId: number, usageType: UsageType, amount = 1): Promise<void> {
     const today = getBeijingDateString();
 
-    db.prepare(`
-    INSERT INTO daily_usage (user_id, usage_date, usage_type, count)
-    VALUES (?, ?, ?, ?)
-    ON CONFLICT(user_id, usage_date, usage_type) DO UPDATE SET
-      count = count + ?
-  `).run(userId, today, usageType, amount, amount);
+    await drizzleDb.insert(daily_usage)
+        .values({
+            user_id: userId,
+            usage_date: today,
+            usage_type: usageType,
+            count: amount
+        })
+        .onConflictDoUpdate({
+            target: [daily_usage.user_id, daily_usage.usage_date, daily_usage.usage_type],
+            set: {
+                count: sql`${daily_usage.count} + ${amount}`
+            }
+        });
 }
 
 /**
  * 检查用量配额
  */
-export function checkUsageQuota(userId: number, usageType: UsageType): UsageCheckResult {
-    const subDetail = getUserSubscriptionDetail(userId);
+export async function checkUsageQuota(userId: number, usageType: UsageType): Promise<UsageCheckResult> {
+    const subDetail = await getUserSubscriptionDetail(userId);
     if (!subDetail) {
         return {
             allowed: false,
@@ -256,16 +289,16 @@ export function checkUsageQuota(userId: number, usageType: UsageType): UsageChec
 /**
  * 检查并消费配额 (原子操作)
  */
-export function checkAndConsumeQuota(
+export async function checkAndConsumeQuota(
     userId: number,
     usageType: UsageType
-): UsageCheckResult {
+): Promise<UsageCheckResult> {
     // 使用事务确保检查与扣费的原子性，防止并发下的配额绕过 (Race Condition)
-    return db.transaction(() => {
-        const result = checkUsageQuota(userId, usageType);
+    return await drizzleDb.transaction(async (tx) => {
+        const result = await checkUsageQuota(userId, usageType);
 
         if (result.allowed) {
-            incrementUsage(userId, usageType);
+            await incrementUsage(userId, usageType);
             result.current += 1;
             if (result.remaining !== -1) {
                 result.remaining -= 1;
@@ -273,7 +306,7 @@ export function checkAndConsumeQuota(
         }
 
         return result;
-    })();
+    });
 }
 
 // ==================== 统计查询 ====================
@@ -281,26 +314,29 @@ export function checkAndConsumeQuota(
 /**
  * 获取订阅统计数据
  */
-export function getSubscriptionStats(): {
+export async function getSubscriptionStats(): Promise<{
     totalUsers: number;
     byPlan: { plan_id: string; plan_name: string; count: number }[];
-} {
-    const totalUsers = (db.prepare('SELECT COUNT(*) as count FROM user_subscriptions').get() as { count: number }).count;
+}> {
+    const userCountRows = await drizzleDb.select({ count: sql<number>`count(*)` }).from(user_subscriptions);
+    const totalUsers = userCountRows[0]?.count ?? 0;
 
-    const byPlan = db.prepare(`
-    SELECT us.plan_id, sp.name as plan_name, COUNT(*) as count
-    FROM user_subscriptions us
-    LEFT JOIN subscription_plans sp ON us.plan_id = sp.id
-    GROUP BY us.plan_id
-    ORDER BY count DESC
-  `).all() as { plan_id: string; plan_name: string; count: number }[];
+    const byPlan = await drizzleDb.select({
+        plan_id: user_subscriptions.plan_id,
+        plan_name: subscription_plans.name,
+        count: sql<number>`count(*)`
+    })
+    .from(user_subscriptions)
+    .leftJoin(subscription_plans, eq(user_subscriptions.plan_id, subscription_plans.id))
+    .groupBy(user_subscriptions.plan_id)
+    .orderBy(sql`count(*) DESC`) as any[];
 
     return { totalUsers, byPlan };
 }
 
 // ==================== 辅助函数 ====================
 
-function parsePlanRow(row: Record<string, unknown>): SubscriptionPlan {
+function parsePlanRow(row: any): SubscriptionPlan {
     return {
         id: row.id as string,
         name: row.name as string,
@@ -308,8 +344,8 @@ function parsePlanRow(row: Record<string, unknown>): SubscriptionPlan {
         price_monthly: row.price_monthly as number,
         sort_order: row.sort_order as number | undefined,
         created_at: row.created_at as string | undefined,
-        limits: JSON.parse(row.limits as string || '{}'),
-        features: JSON.parse(row.features as string || '[]'),
+        limits: typeof row.limits === 'string' ? JSON.parse(row.limits || '{}') : row.limits,
+        features: typeof row.features === 'string' ? JSON.parse(row.features || '[]') : row.features,
         is_active: Boolean(row.is_active)
     };
 }

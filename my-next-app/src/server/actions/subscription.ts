@@ -29,7 +29,7 @@ import { SubscriptionPlan, UsageType } from '@/lib/billing/subscription-types';
 export async function getPlansAction(activeOnly = false) {
     try {
         await requireRole(['admin']);
-        const plans = getAllPlans(activeOnly);
+        const plans = await getAllPlans(activeOnly);
         return { success: true, plans };
     } catch (error) {
         return { success: false, error: (error as Error).message };
@@ -42,7 +42,7 @@ export async function getPlansAction(activeOnly = false) {
 export async function savePlanAction(plan: Omit<SubscriptionPlan, 'created_at'>) {
     try {
         await requireRole(['admin']);
-        upsertPlan(plan);
+        await upsertPlan(plan);
         revalidatePath('/admin/plans');
         revalidatePath('/pricing');
         return { success: true };
@@ -57,7 +57,7 @@ export async function savePlanAction(plan: Omit<SubscriptionPlan, 'created_at'>)
 export async function deletePlanAction(planId: string) {
     try {
         await requireRole(['admin']);
-        const result = deletePlan(planId);
+        const result = await deletePlan(planId);
         if (!result.success) {
             return { success: false, error: result.error };
         }
@@ -91,12 +91,12 @@ export async function setUserSubscriptionAction(
         }
 
         // 检查套餐是否存在
-        const plan = getPlanById(planId);
+        const plan = await getPlanById(planId);
         if (!plan) {
             return { success: false, error: '套餐不存在' };
         }
 
-        createSubscription(userId, planId, expiresAt);
+        await createSubscription(userId, planId, expiresAt);
         revalidatePath('/admin/users');
         return { success: true };
     } catch (error) {
@@ -110,7 +110,7 @@ export async function setUserSubscriptionAction(
 export async function cancelUserSubscriptionAction(userId: number) {
     try {
         await requireRole(['admin']);
-        cancelSubscription(userId);
+        await cancelSubscription(userId);
         revalidatePath('/admin/users');
         return { success: true };
     } catch (error) {
@@ -124,7 +124,7 @@ export async function cancelUserSubscriptionAction(userId: number) {
 export async function getSubscriptionStatsAction() {
     try {
         await requireRole(['admin']);
-        const stats = getSubscriptionStats();
+        const stats = await getSubscriptionStats();
         return { success: true, stats };
     } catch (error) {
         return { success: false, error: (error as Error).message };
@@ -139,7 +139,7 @@ export async function getSubscriptionStatsAction() {
 export async function getMySubscriptionAction() {
     try {
         const user = await requireUser();
-        const detail = getUserSubscriptionDetail(user.id);
+        const detail = await getUserSubscriptionDetail(user.id);
         return { success: true, subscription: detail };
     } catch (error) {
         return { success: false, error: (error as Error).message };
@@ -152,8 +152,8 @@ export async function getMySubscriptionAction() {
 export async function getMyUsageAction() {
     try {
         const user = await requireUser();
-        const usage = getDailyUsage(user.id);
-        const detail = getUserSubscriptionDetail(user.id);
+        const usage = await getDailyUsage(user.id);
+        const detail = await getUserSubscriptionDetail(user.id);
         return {
             success: true,
             usage,
@@ -170,7 +170,7 @@ export async function getMyUsageAction() {
 export async function checkQuotaAction(usageType: UsageType) {
     try {
         const user = await requireUser();
-        const result = checkUsageQuota(user.id, usageType);
+        const result = await checkUsageQuota(user.id, usageType);
         return { success: true, ...result };
     } catch (error) {
         return { success: false, error: (error as Error).message, allowed: false };
@@ -184,7 +184,7 @@ export async function checkQuotaAction(usageType: UsageType) {
  */
 export async function getActivePlansAction() {
     try {
-        const plans = getAllPlans(true);
+        const plans = await getAllPlans(true);
         return { success: true, plans };
     } catch (error) {
         return { success: false, error: (error as Error).message };

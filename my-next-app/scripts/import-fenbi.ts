@@ -1,6 +1,6 @@
 import fs from 'fs';
 import path from 'path';
-import db from '../src/lib/db';
+import { db } from '../src/lib/db';
 import { z } from 'zod';
 
 // Define Fenbi Source Schema (Partial)

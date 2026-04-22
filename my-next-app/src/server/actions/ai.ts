@@ -37,7 +37,7 @@ export async function generateCorrectionQuizAction(
   const user = await requireUser();
   const userIdNum = typeof user.id === 'string' ? parseInt(user.id, 10) : user.id;
   if (!isNaN(userIdNum)) {
-    const quotaResult = checkAndConsumeQuota(userIdNum, 'review');
+    const quotaResult = await checkAndConsumeQuota(userIdNum, 'review');
     if (!quotaResult.allowed) {
       throw new Error(quotaResult.message || '今日 AI 复盘次数已用完，请升级套餐解锁更多。');
     }
@@ -115,7 +115,7 @@ export async function generateRegressionChallengeAction(
   const user = await requireUser();
   const userIdNum = typeof user.id === 'string' ? parseInt(user.id, 10) : user.id;
   if (!isNaN(userIdNum)) {
-    const quotaResult = checkAndConsumeQuota(userIdNum, 'review');
+    const quotaResult = await checkAndConsumeQuota(userIdNum, 'review');
     if (!quotaResult.allowed) {
       throw new Error(quotaResult.message || '今日 AI 复盘次数已用完，请升级套餐解锁更多。');
     }
@@ -249,7 +249,7 @@ export async function generateFirstPrinciplesAction(
   // Note: Cast user.id to number as checkAndConsumeQuota expects number
   const userIdNum = typeof user.id === 'string' ? parseInt(user.id, 10) : user.id;
   if (!isNaN(userIdNum)) {
-    const quotaResult = checkAndConsumeQuota(userIdNum, 'first_principles');
+    const quotaResult = await checkAndConsumeQuota(userIdNum, 'first_principles');
     if (!quotaResult.allowed) {
       throw new Error(quotaResult.message || '今日第一性原理分析次数已用完，请升级套餐解锁更多。');
     }

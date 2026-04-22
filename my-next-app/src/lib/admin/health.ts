@@ -143,11 +143,11 @@ export function getSystemInfo(): SystemInfo {
 /**
  * 获取完整的健康统计信息
  */
-export function getHealthStats(): HealthStats {
+export async function getHealthStats(): Promise<HealthStats> {
     return {
         database: getDatabaseStats(),
         system: getSystemInfo(),
-        apiStats: getApiCallStats(),
+        apiStats: await getApiCallStats(),
         timestamp: new Date().toISOString(),
     };
 }

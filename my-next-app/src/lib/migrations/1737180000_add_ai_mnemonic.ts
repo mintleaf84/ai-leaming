@@ -1,4 +1,4 @@
-import db from '../db';
+import { db } from '../db';
 
 export function up() {
     console.log('Running migration: add_ai_mnemonic_to_questions');

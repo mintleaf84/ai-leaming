@@ -8,5 +8,5 @@ import { requireRole } from '@/lib/auth/auth';
  */
 export async function getHealthStatsAction(): Promise<HealthStats> {
     await requireRole(['admin']);
-    return getHealthStats();
+    return await getHealthStats();
 }

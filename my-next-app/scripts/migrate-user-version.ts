@@ -1,5 +1,5 @@
 
-import db, { closeDb } from '../src/lib/db';
+import { db, closeDb } from '../src/lib/db';
 
 async function migrate() {
     console.log('🔄 Starting user schema migration (token_version)...');

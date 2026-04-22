@@ -3,8 +3,11 @@
  * 记录和统计 AI API 的调用情况
  */
 
-import db from './db';
+import drizzleDb, { drizzleSchema } from './db';
+import { eq, and, sql, desc } from 'drizzle-orm';
 import { getBeijingDateString } from './utils/datetime';
+
+const { api_call_logs } = drizzleSchema;
 
 export interface ApiCallLog {
   id: number;
@@ -54,7 +57,7 @@ export interface ApiCallStats {
 /**
  * 记录 API 调用
  */
-export function logApiCall(params: {
+export async function logApiCall(params: {
   userId?: number | null;
   configId?: number | null;
   model: string;
@@ -64,25 +67,19 @@ export function logApiCall(params: {
   durationMs?: number;
   success?: boolean;
   errorMessage?: string;
-}): void {
+}): Promise<void> {
   try {
-    const stmt = db.prepare(`
-      INSERT INTO api_call_logs 
-        (user_id, config_id, model, endpoint, input_tokens, output_tokens, duration_ms, success, error_message)
-      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
-    `);
-
-    stmt.run(
-      params.userId ?? null,
-      params.configId ?? null,
-      params.model,
-      params.endpoint ?? null,
-      params.inputTokens ?? 0,
-      params.outputTokens ?? 0,
-      params.durationMs ?? null,
-      params.success !== false ? 1 : 0,
-      params.errorMessage ?? null
-    );
+    await drizzleDb.insert(api_call_logs).values({
+      user_id: params.userId ?? null,
+      config_id: params.configId ?? null,
+      model: params.model,
+      endpoint: params.endpoint ?? null,
+      input_tokens: params.inputTokens ?? 0,
+      output_tokens: params.outputTokens ?? 0,
+      duration_ms: params.durationMs ?? null,
+      success: params.success !== false ? 1 : 0,
+      error_message: params.errorMessage ?? null
+    });
   } catch (error) {
     console.error('Failed to log API call:', error);
   }
@@ -103,20 +100,23 @@ function calculateCost(model: string, inputTokens: number, outputTokens: number)
 /**
  * 获取 API 调用统计
  */
-export function getApiCallStats(): ApiCallStats {
+export async function getApiCallStats(): Promise<ApiCallStats> {
   interface LogRow {
     model: string;
-    input_tokens: number;
-    output_tokens: number;
-    success: number;
-    created_at: string;
+    input_tokens: number | null;
+    output_tokens: number | null;
+    success: number | null;
+    created_at: string | null;
   }
 
-  // 基础查询：获取所有成功的调用记录
-  const logs = db.prepare(`
-    SELECT model, input_tokens, output_tokens, success, created_at
-    FROM api_call_logs
-  `).all() as LogRow[];
+  // 基础查询：获取所有调用记录 (优化建议：如果数据量大，应该使用聚合查询)
+  const logs = await drizzleDb.select({
+    model: api_call_logs.model,
+    input_tokens: api_call_logs.input_tokens,
+    output_tokens: api_call_logs.output_tokens,
+    success: api_call_logs.success,
+    created_at: api_call_logs.created_at
+  }).from(api_call_logs) as LogRow[];
 
   // 今日起始时间 (使用北京时间)
   const todayStr = getBeijingDateString();
@@ -131,7 +131,7 @@ export function getApiCallStats(): ApiCallStats {
   const modelMap = new Map<string, { calls: number; tokens: number; cost: number }>();
 
   logs.forEach(log => {
-    const isToday = log.created_at.startsWith(todayStr);
+    const isToday = log.created_at?.startsWith(todayStr);
     const tokens = (log.input_tokens || 0) + (log.output_tokens || 0);
     const cost = calculateCost(log.model, log.input_tokens || 0, log.output_tokens || 0);
 
@@ -172,14 +172,22 @@ export function getApiCallStats(): ApiCallStats {
     ...data
   })).sort((a, b) => b.calls - a.calls);
 
-  // 获取最近错误 (维持数据库查询，减少全量处理错误信息的负担)
-  stats.recentErrors = db.prepare(`
-    SELECT model, error_message as error, created_at as time
-    FROM api_call_logs
-    WHERE success = 0 AND error_message IS NOT NULL
-    ORDER BY created_at DESC
-    LIMIT 5
-  `).all() as { model: string; error: string; time: string }[];
+  // 获取最近错误 (维护数据库查询，减少全量处理错误信息的负担)
+  const errorRows = await drizzleDb.select({
+    model: api_call_logs.model,
+    error: api_call_logs.error_message,
+    time: api_call_logs.created_at
+  })
+  .from(api_call_logs)
+  .where(and(eq(api_call_logs.success, 0), sql`${api_call_logs.error_message} IS NOT NULL`))
+  .orderBy(desc(api_call_logs.created_at))
+  .limit(5);
+
+  stats.recentErrors = errorRows.map(row => ({
+    model: row.model,
+    error: row.error || '',
+    time: row.time || ''
+  }));
 
   return stats;
 }

@@ -42,7 +42,7 @@ export async function generateMnemonicAction(questionId: string, forceRegenerate
             return { success: false, message: '无效的用户 ID' };
         }
 
-        const quotaResult = checkAndConsumeQuota(userIdNum, 'mnemonic');
+        const quotaResult = await checkAndConsumeQuota(userIdNum, 'mnemonic');
         if (!quotaResult.allowed) {
             return {
                 success: false,

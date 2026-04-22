@@ -41,7 +41,7 @@ app.openapi(generateRoute, async (c) => {
     if (!user) return c.json({ error: 'Unauthorized' }, 401)
     const userId = Number(user.id)
 
-    const quota = checkAndConsumeQuota(userId, 'ai_chat')
+    const quota = await checkAndConsumeQuota(userId, 'ai_chat')
     if (!quota.allowed) return c.text('配额不足，请升级套餐', 403)
 
     const { prompt, option, command } = c.req.valid('json')

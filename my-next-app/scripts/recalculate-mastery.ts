@@ -3,7 +3,7 @@
  * 根据历史练习记录重新计算所有知识点的掌握度
  */
 
-import db from '../src/lib/db';
+import { db } from '../src/lib/db';
 import { masteryService } from '../src/lib/services/mastery';
 
 async function recalculateMastery() {

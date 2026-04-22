@@ -9,8 +9,18 @@ description: 琢玉项目开发指南。包含核心开发理念（KISS）、强
 
 ## 核心理念与原则
 
-- **简洁至上 (KISS)**：遵守 Keep It Simple, Stupid 原则。崇尚简洁与可维护性，避免过度工程化。
-- **深度分析**：立足于第一性原理（First Principles Thinking）剖析问题。
+## 核心开发原则 (KISS)
+
+- **简洁至上**：遵守 Keep It Simple, Stupid 原则。优先使用 Drizzle ORM 的声明式查询，避免过度工程化。
+- **类型安全**：所有数据库操作必须经过 Drizzle Schema 约束，严禁绕过类型检查。
+- **深度分析**：立足于第一性原理 (First Principles Thinking) 剖析问题。
+- **异步优先**：所有 Service 层函数必须设计为 `async`，并确保调用链完整 `await`。
+
+## 技能关联
+
+- **数据库开发**：遵循 `drizzle-orm-engineering` 技能。
+- **单元测试**：遵循 `vitest-mock-patterns` 技能。
+- **UI 设计**：遵循 `web-design-guidelines` 技能。
 - **事实为本**：以事实为最高准则。接受事实并快速修正谬误。
 
 ## 开发工作流

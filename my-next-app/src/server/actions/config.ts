@@ -6,6 +6,7 @@ import db from '@/lib/db';
 import { revalidatePath } from 'next/cache';
 import { requireRole } from '@/lib/auth/auth';
 import { logAdminAction } from '@/lib/admin/audit';
+import { clearAiConfigCache } from '@/lib/ai/client';
 
 export type AiConfig = {
     id: number;
@@ -79,6 +80,7 @@ export async function saveAiConfigAction(config: Partial<AiConfig>) {
         }
 
         revalidatePath('/admin');
+        clearAiConfigCache();
 
         // 记录日志
         logAdminAction(user.id, user.username, 'UPDATE_AI_CONFIG', 'ai_config', config.id?.toString() || 'new', { name: config.name });
@@ -105,6 +107,7 @@ export async function deleteAiConfigAction(id: number) {
     logAdminAction(user.id, user.username, 'DELETE_AI_CONFIG', 'ai_config', id.toString());
 
     revalidatePath('/admin');
+    clearAiConfigCache();
     return { success: true };
 }
 
@@ -122,6 +125,7 @@ export async function setActiveAiConfigAction(id: number) {
     logAdminAction(user.id, user.username, 'UPDATE_AI_CONFIG', 'ai_config', id.toString(), { action: 'set_active' });
 
     revalidatePath('/admin');
+    clearAiConfigCache();
     return { success: true };
 }
 
@@ -168,6 +172,7 @@ export async function saveAiModelRouteAction(route: AiModelRoute) {
     );
 
     revalidatePath('/admin/ai');
+    clearAiConfigCache();
     return { success: true };
 }
 

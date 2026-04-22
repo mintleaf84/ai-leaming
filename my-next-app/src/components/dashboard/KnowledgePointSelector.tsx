@@ -2,7 +2,8 @@
 
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
-import { getKnowledgeTreeAction, KnowledgeParams } from "@/server/actions/practice";
+import { getKnowledgeTreeAction } from "@/server/actions/practice";
+import type { KnowledgeNode } from "@/lib/services/knowledge-tree";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { ScrollArea } from "@/components/ui/scroll-area";
@@ -17,7 +18,7 @@ function TreeNode({
     selectedTags,
     toggleTag
 }: {
-    node: KnowledgeParams;
+    node: KnowledgeNode;
     level?: number;
     selectedTags: string[];
     toggleTag: (tag: string) => void;
@@ -94,7 +95,7 @@ function TreeNode({
 
             {hasChildren && expanded && (
                 <div className="border-l border-border ml-5 my-1">
-                    {node.children.map(child => (
+                    {node.children.map((child: KnowledgeNode) => (
                         <TreeNode
                             key={child.path}
                             node={child}
@@ -112,7 +113,7 @@ function TreeNode({
 export function KnowledgePointSelector({ children }: { children: React.ReactNode }) {
     const router = useRouter();
     const [open, setOpen] = useState(false);
-    const [treeData, setTreeData] = useState<KnowledgeParams[]>([]);
+    const [treeData, setTreeData] = useState<KnowledgeNode[]>([]);
     const [selectedTags, setSelectedTags] = useState<string[]>([]);
     const [loading, setLoading] = useState(false);
 

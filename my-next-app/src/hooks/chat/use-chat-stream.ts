@@ -69,7 +69,7 @@ export function useChatStream({
         setMessages: setUiMessages,
     } = useChat({
         transport: new DefaultChatTransport({ api: '/api/chat' }),
-        onFinish: ({ message }) => {
+        onFinish: ({ message }: { message: UIMessage }) => {
             const completedText = extractTextFromUiMessage(message);
             const targetSessionId = pendingTitleSessionIdRef.current;
 
@@ -170,7 +170,7 @@ export function useChatStream({
     }, [lastFailedMessage, sendMessage]);
 
     const setMessages = useCallback((updater: Message[] | ((prev: Message[]) => Message[])) => {
-        setUiMessages((prevUi) => {
+        setUiMessages((prevUi: UIMessage[]) => {
             const prevSimple = toSimpleMessages(prevUi);
             const nextSimple = typeof updater === 'function'
                 ? updater(prevSimple)

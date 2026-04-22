@@ -203,6 +203,9 @@ export const practiceService = {
         const isCorrect = userAnswer === question.answer;
         await this.submitAnswer(userId, sessionId, questionId, userAnswer, isCorrect, duration);
 
+        return { isCorrect, correctAnswer: question.answer };
+    },
+
     /**
      * 获取可用标签
      */
@@ -254,6 +257,27 @@ export const practiceService = {
             completedCount: logResult?.count || 0,
             practiceMode: session.practice_mode || undefined
         };
+    },
+
+    /**
+     * 保存会话回顾信息
+     */
+    async saveSessionReview(userId: number, sessionId: string, questionId: number, reviewData: Record<string, unknown>) {
+        await drizzleDb.insert(drizzleSchema.session_reviews).values({
+            session_id: sessionId,
+            question_id: questionId,
+            review_data: JSON.stringify(reviewData)
+        });
+
+        await drizzleDb.update(drizzleSchema.practice_sessions)
+            .set({ 
+                review_count: sql`${drizzleSchema.practice_sessions.review_count} + 1` 
+            })
+            .where(and(
+                eq(drizzleSchema.practice_sessions.id, sessionId),
+                eq(drizzleSchema.practice_sessions.user_id, userId)
+            ));
+        return { success: true };
     }
 };
 

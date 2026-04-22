@@ -148,7 +148,7 @@ describe('Import Service', () => {
         await importService.importFenbiData(userId, data);
 
         // 两个 tag，应该调用两次 insert 到 user_mastery (或者批量插入，但当前实现是循环调用)
-        const masteryInserts = vi.mocked(mockDrizzleDb.insert).mock.calls.filter(c => c[0] === mockDrizzleSchema.user_mastery);
+        const masteryInserts = vi.mocked(mockDrizzleDb.insert).mock.calls.filter((c: any) => c[0] === mockDrizzleSchema.user_mastery);
         expect(masteryInserts.length).toBe(2);
     });
 });

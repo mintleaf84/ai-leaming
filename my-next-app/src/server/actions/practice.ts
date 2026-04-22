@@ -124,35 +124,20 @@ export async function getSessionByIdAction(sessionId: string) {
  */
 export async function saveSessionReviewAction(sessionId: string, questionId: number, reviewData: Record<string, unknown>) {
   try {
-    const { drizzleDb, drizzleSchema } = await import('@/lib/db');
-    const { and, eq, sql } = await import('drizzle-orm');
     const user = await requireUser();
-    
-    await drizzleDb.insert(drizzleSchema.session_reviews).values({
-      session_id: sessionId,
-      question_id: questionId,
-      review_data: JSON.stringify(reviewData)
-    });
-
-    await drizzleDb.update(drizzleSchema.practice_sessions)
-      .set({ review_count: sql`${drizzleSchema.practice_sessions.review_count} + 1` })
-      .where(and(
-        eq(drizzleSchema.practice_sessions.id, sessionId),
-        eq(drizzleSchema.practice_sessions.user_id, user.id)
-      ));
-    return { success: true };
+    return await practiceService.saveSessionReview(user.id, sessionId, questionId, reviewData);
   } catch (e) {
+    logger.error({ err: e }, "Action: saveSessionReviewAction failed");
     return { success: false };
   }
 }
 
 export async function getAvailableTagsAction(): Promise<string[]> {
-  const result = await drizzleDb.selectDistinct({
-    tag: sql<string>`json_each.value`
-  })
-  .from(sql`${drizzleSchema.questions} AS q, json_each(q.tags)`)
-  .orderBy(sql`json_each.value`)
-  .all();
-  
-  return result.map(r => r.tag);
+  try {
+    return await practiceService.getAvailableTags();
+  } catch (error) {
+    logger.error({ err: error }, '获取可用标签失败');
+    return [];
+  }
 }
+

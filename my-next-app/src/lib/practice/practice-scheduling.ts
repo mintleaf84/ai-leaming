@@ -5,16 +5,24 @@
 
 import { db } from '@/lib/db';
 import { PracticeConfig } from './practice-types';
+import { Question } from '@/types';
+import { QuestionRowSchema } from '@/lib/schemas';
 
-export interface Question {
-    id: number;
-    content: string;
-    options: string;
-    answer: string;
-    explanation: string;
-    tags: string;
-    dimension: string;
-    type: string;
+/**
+ * 将数据库原始行映射为业务 Question 类型
+ */
+function mapRawToQuestion(q: any): Question {
+    try {
+        return QuestionRowSchema.parse(q);
+    } catch (err) {
+        return {
+            ...q,
+            options: typeof q.options === 'string' ? JSON.parse(q.options) : (q.options || []),
+            tags: typeof q.tags === 'string' ? JSON.parse(q.tags) : (q.tags || []),
+            type: q.type || 'single',
+            dimension: q.dimension || 'knowledge'
+        } as Question;
+    }
 }
 
 /**
@@ -70,7 +78,7 @@ function generateSmartSession(config: PracticeConfig, userId: number): Question[
     ${where ? where + ' AND oz.status = ? AND oz.user_id = ?' : 'WHERE oz.status = ? AND oz.user_id = ?'}
     ORDER BY RANDOM()
     LIMIT ?
-  `).all(...params, 'active', userId, stubbornCount) as Question[];
+  `).all(...params, 'active', userId, stubbornCount).map(mapRawToQuestion);
 
     const usedIds = stubbornQuestions.map(q => q.id);
 
@@ -83,7 +91,7 @@ function generateSmartSession(config: PracticeConfig, userId: number): Question[
     ${usedIds.length > 0 ? `AND q.id NOT IN (${usedIds.join(',')})` : ''}
     ORDER BY RANDOM()
     LIMIT ?
-  `).all(...params, userId, blindCount) as Question[];
+  `).all(...params, userId, blindCount).map(mapRawToQuestion);
 
     usedIds.push(...blindQuestions.map(q => q.id));
 
@@ -93,7 +101,7 @@ function generateSmartSession(config: PracticeConfig, userId: number): Question[
     ${where} ${where ? 'AND' : 'WHERE'} q.id NOT IN (${usedIds.length > 0 ? usedIds.join(',') : '0'})
     ORDER BY RANDOM()
     LIMIT ?
-  `).all(...params, regularCount) as Question[];
+  `).all(...params, regularCount).map(mapRawToQuestion);
 
     // 合并并打乱
     const session = [...stubbornQuestions, ...blindQuestions, ...regularQuestions];
@@ -115,7 +123,7 @@ function generateReviewSession(config: PracticeConfig, userId: number): Question
     GROUP BY q.id
     ORDER BY error_count DESC, RANDOM()
     LIMIT ?
-  `).all(...params, userId, config.limit) as Question[];
+  `).all(...params, userId, config.limit).map(mapRawToQuestion);
 
     return questions;
 }

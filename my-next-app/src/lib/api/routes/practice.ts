@@ -119,7 +119,7 @@ app.openapi(submitRoute, async (c) => {
         duration
     )
 
-    return c.json({ isCorrect: result.isCorrect, correctAnswer: result.correctAnswer })
+    return c.json({ isCorrect: result.isCorrect, correctAnswer: result.correctAnswer || '' }, 200)
 })
 
 // --- First Principles Logic ---

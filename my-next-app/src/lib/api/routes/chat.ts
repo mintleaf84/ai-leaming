@@ -96,7 +96,7 @@ app.openapi(chatRoute, async (c) => {
     const lastUserText = extractTextFromMessage(lastUserMessage)
 
     if (sessionId && lastUserText) {
-        try { saveMessage(userId, sessionId, 'user', lastUserText) } catch {}
+        try { await saveMessage(userId, sessionId, 'user', lastUserText) } catch {}
     }
 
     // 3. 检查指令
@@ -108,7 +108,7 @@ app.openapi(chatRoute, async (c) => {
         else if (type === 'explain') commandResponse = await handleExplainCommand(keyword)
 
         if (sessionId) {
-            try { saveMessage(userId, sessionId, 'assistant', commandResponse) } catch {}
+            try { await saveMessage(userId, sessionId, 'assistant', commandResponse) } catch {}
         }
 
         const commandStream = createUIMessageStream({
@@ -129,7 +129,7 @@ app.openapi(chatRoute, async (c) => {
 
     // 4. 流式生成
     let tools: ToolSet | undefined = undefined
-    const systemPrompt = buildEnhancedSystemPrompt(context, mode)
+    const systemPrompt = await buildEnhancedSystemPrompt(context, mode)
 
     if (enableRag) {
         const { knowledgeSearchTool } = await import('@/lib/services/chat-rag')
@@ -153,9 +153,9 @@ app.openapi(chatRoute, async (c) => {
 
                 const result = await streamChatWrapper(
                     modelMessages,
-                    (fullResponse) => {
+                    async (fullResponse) => {
                         if (sessionId) {
-                            try { saveMessage(userId, sessionId, 'assistant', fullResponse) } catch {}
+                            try { await saveMessage(userId, sessionId, 'assistant', fullResponse) } catch {}
                         }
                     },
                     tools,

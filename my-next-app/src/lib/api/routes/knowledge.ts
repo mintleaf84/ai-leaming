@@ -92,7 +92,7 @@ app.openapi(listRoute, async (c) => {
     const limitNum = parseInt(limit)
     const idList = ids ? ids.split(',').map(id => parseInt(id)).filter(id => !isNaN(id)) : undefined
 
-    const cards = getAllKnowledgeCards(category, limitNum, idList)
+    const cards = await getAllKnowledgeCards(category, limitNum, idList)
 
     // Export to Anki
     if (format === 'anki') {
@@ -103,8 +103,8 @@ app.openapi(listRoute, async (c) => {
         })
     }
 
-    const stats = getKnowledgeStats()
-    const categories = getCategories()
+    const stats = await getKnowledgeStats()
+    const categories = await getCategories()
 
     return c.json({
         cards,
@@ -210,13 +210,13 @@ const extractRoute = createRoute({
 })
 
 import { generateTextWrapper } from '@/lib/ai/client'
-import { getPromptFromDbSync, buildPrompt, DEFAULT_KNOWLEDGE_EXTRACT_PROMPT } from '@/lib/ai/prompts'
+import { getPromptFromDb, buildPrompt, DEFAULT_KNOWLEDGE_EXTRACT_PROMPT } from '@/lib/ai/prompts'
 
 app.openapi(extractRoute, async (c) => {
     const { content, sessionId, instruction, save } = c.req.valid('json')
 
     try {
-        const templateFromDb = getPromptFromDbSync('knowledge_extract')
+        const templateFromDb = await getPromptFromDb('knowledge_extract')
         const template = templateFromDb || DEFAULT_KNOWLEDGE_EXTRACT_PROMPT
 
         const extractPrompt = buildPrompt(template, {

@@ -68,7 +68,7 @@ adminRoute.openapi(systemStatusDef, async (c) => {
         },
         db: { size: dbSize, walSize: 0 },
         process: { uptime: process.uptime(), memory: process.memoryUsage(), version: process.version },
-        ai: getApiCallStats(),
+        ai: await getApiCallStats(),
         demoMode: getDemoModeStatus(),
         appVersion,
         timestamp: Date.now()

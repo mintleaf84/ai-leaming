@@ -192,9 +192,9 @@ export default function SystemPage() {
                         <Coins className="h-4 w-4 text-emerald-500" />
                     </CardHeader>
                     <CardContent>
-                        <div className="text-2xl font-bold">¥{status.ai?.today.totalCost.toFixed(4) || '0.0000'}</div>
+                        <div className="text-2xl font-bold">¥{status.ai?.today?.totalCost?.toFixed(4) || '0.0000'}</div>
                         <p className="text-xs text-muted-foreground">
-                            累计: ¥{status.ai?.total.totalCost.toFixed(2)}
+                            累计: ¥{status.ai?.total?.totalCost?.toFixed(2) || '0.00'}
                         </p>
                     </CardContent>
                 </Card>
@@ -205,9 +205,9 @@ export default function SystemPage() {
                         <MessageSquare className="h-4 w-4 text-primary" />
                     </CardHeader>
                     <CardContent>
-                        <div className="text-2xl font-bold">{status.ai?.today.totalCalls || 0}</div>
+                        <div className="text-2xl font-bold">{status.ai?.today?.totalCalls || 0}</div>
                         <p className="text-xs text-muted-foreground">
-                            Token消耗: {status.ai?.today.totalTokens.toLocaleString()}
+                            Token消耗: {status.ai?.today?.totalTokens?.toLocaleString() || 0}
                         </p>
                     </CardContent>
                 </Card>
@@ -293,7 +293,7 @@ export default function SystemPage() {
                                 </TableRow>
                             </TableHeader>
                             <TableBody>
-                                {status.ai?.byModel.map((m) => (
+                                {status.ai?.byModel?.map((m) => (
                                     <TableRow key={m.model}>
                                         <TableCell className="font-medium text-xs">{m.model}</TableCell>
                                         <TableCell className="text-right text-xs">{m.calls}</TableCell>
@@ -301,7 +301,7 @@ export default function SystemPage() {
                                         <TableCell className="text-right font-bold text-xs">¥{m.cost.toFixed(3)}</TableCell>
                                     </TableRow>
                                 ))}
-                                {(!status.ai?.byModel || status.ai.byModel.length === 0) && (
+                                {(!status.ai?.byModel || status.ai?.byModel?.length === 0) && (
                                     <TableRow>
                                         <TableCell colSpan={4} className="text-center text-muted-foreground h-24">
                                             暂无调用记录

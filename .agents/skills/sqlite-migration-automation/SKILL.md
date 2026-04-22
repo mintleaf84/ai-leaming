@@ -74,3 +74,21 @@ export function initDatabase() {
 -   **幂等性**: Drizzle `migrate()` 函数会自动记录已执行的迁移，确保不会重复运行。
 -   **破坏性变更**: `drizzle-kit push` 在开发环境下非常快，但如果涉及数据删除，它会警告。
 -   **手动干预**: 严禁直接使用 DB 工具修改表结构。所有修改必须通过 Schema 代码 -> 迁移文件。
+
+## 深度排坑经验 (Lessons Learned)
+
+在真实的高并发与长链路开发中，必须注意以下致命陷阱：
+
+1. **Next.js 异步仪表盘 (Instrumentation) 陷阱**
+   - **坑点**：`drizzle-orm` 的 `migrate()` 函数是**异步**的。如果在 `src/instrumentation.ts` 调用数据库初始化时忘记加 `await`，Next.js 会在迁移还在后台运行甚至失败时直接启动服务。这会导致运行时的表结构和 Schema 不一致（如“找不到某列”）。
+   - **对策**：必须确保 `initDatabase()` 是 `async` 并在 `instrumentation.ts` 中被严格 `await`。
+
+2. **Next.js 热重载 (HMR) 导致的连接池死锁**
+   - **坑点**：在开发环境下 (`npm run dev`)，频繁保存代码会导致多次初始化 `libsqlClient`。这些失去引用的幽灵连接池会一直锁住 SQLite 文件，导致后续的任何事务立即报出 `SQLITE_BUSY: database is locked`。
+   - **对策**：
+     - 必须将 `libsqlClient` 缓存到 `global` 单例对象中。
+     - 强制执行 `client.execute('PRAGMA busy_timeout = 5000;')`，让高并发时主动排队而不是立刻报错崩溃。
+
+3. **ORM 报错混淆视听**
+   - **坑点**：Drizzle 抛出的错误 `error.message` 通常只会把执行失败的 SQL 字符串塞进去（如 `Failed query: insert into...`），而把真正的报错原因（如缺字段、缺索引）隐藏在 `error.cause` 中。
+   - **对策**：遇到数据库报错，永远不要光看第一层的 `message`，一定要强行捕获并打印出底层的 `error.cause`。

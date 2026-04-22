@@ -63,3 +63,18 @@ async function importItem(item: any) {
 - [ ] 首次导入错误（如 `type` 标错）后，重导入能否修复？
 - [ ] `onConflictDoUpdate` 的 `set` 子句是否包含所有业务核心字段？
 - [ ] 字段解析逻辑（如 `JSON.parse`）是否有健壮性处理，防止重导入时崩溃？
+
+## 深度踩坑教训 (Lessons Learned)
+
+大批量数据（如题库、记录）导入时，极易触发以下灾难：
+
+### 1. Upsert (ON CONFLICT) 的强制“唯一约束”陷阱
+- **现象**：执行 `.onConflictDoUpdate({ target: column })` 时，终端抛出 `SQLITE_ERROR: ON CONFLICT clause does not match any PRIMARY KEY or UNIQUE constraint`，并且所有明细数据均插入失败。
+- **真相**：SQLite 和绝大部分关系型数据库一样，只有在 `target` 列明确具备 **唯一约束 (UNIQUE INDEX / UNIQUE CONSTRAINT)** 时，才允许执行 Upsert。如果旧版 SQL 脚本错误地只建了一个普通索引，ORM 层面看不出毛病，但运行时会被底层拦截。
+- **对策**：必须通过 `npx drizzle-kit generate` 或原生 SQL 检查物理数据库表，确认 `target` 列绝对是唯一的。
+
+### 2. 长事务包揽大批量 JS 计算造成的 SQLITE_BUSY 死锁
+- **现象**：如果将整个由数百道题组成的循环（里面含有大量的业务拼接、循环嵌套等计算）包在 `await drizzleDb.transaction(async (tx) => { ... })` 内部，会导致 Next.js 的其他普通并发查询全面爆出 `SQLITE_BUSY: database is locked`。
+- **真相**：单文件的 SQLite（甚至 LibSQL）极度畏惧长命名的排他写锁。在事务内部跑费时的 JS 异步和计算逻辑，实际上是霸占了数据库写入权不放手。
+- **对策 (K.I.S.S.)**：
+  - **拆解事务**：如果底层插入全都是高健壮性的幂等 Upsert，对于不需要强一致原子回滚的辅助场景（比如导自己的个人题库），应**果断剥离长事务包装**。改为小批量顺序提交，用微不足道的性能损耗换取系统的永生死锁免疫。

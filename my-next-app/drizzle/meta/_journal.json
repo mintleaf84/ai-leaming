@@ -15,6 +15,13 @@
       "when": 1776844975766,
       "tag": "0001_old_bishop",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "6",
+      "when": 1776859305254,
+      "tag": "0002_cultured_skrulls",
+      "breakpoints": true
     }
   ]
 }

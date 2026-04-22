@@ -37,8 +37,11 @@ export const questions = sqliteTable('questions', {
   material: text('material'),
   material_html: text('material_html'),
   ai_mnemonic: text('ai_mnemonic'),
+  external_id: text('external_id'),
   created_at: text('created_at').default(sql`CURRENT_TIMESTAMP`),
-});
+}, (table) => ({
+  unq_ext: unique().on(table.external_id),
+}));
 
 // --- 用户掌握度表 ---
 export const user_mastery = sqliteTable('user_mastery', {

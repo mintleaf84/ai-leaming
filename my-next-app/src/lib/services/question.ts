@@ -1,112 +1,169 @@
-import { db } from '@/lib/db';
+import { drizzleDb, drizzleSchema } from '@/lib/db';
+import { eq, like, and, sql, desc, inArray } from 'drizzle-orm';
 import { ragService } from '@/lib/ai/rag';
 import { Question } from '@/types';
-import { safeGet, safeAll } from '@/lib/db/safe-query';
 import { QuestionRowSchema } from '@/lib/schemas';
+import logger from '@/lib/logger';
+
+/**
+ * 将数据库原始行映射为业务 Question 类型
+ */
+function mapQuestion(q: any): Question {
+    try {
+        return QuestionRowSchema.parse(q);
+    } catch (err) {
+        logger.error({ err, questionId: q.id }, '[QuestionService] Question mapping failed');
+        return {
+            ...q,
+            options: typeof q.options === 'string' ? JSON.parse(q.options) : (q.options || []),
+            tags: typeof q.tags === 'string' ? JSON.parse(q.tags) : (q.tags || []),
+            type: q.type || 'single',
+            dimension: q.dimension || 'knowledge'
+        } as Question;
+    }
+}
 
 export interface QuestionFilter {
-  limit?: number;
-  offset?: number;
-  tags?: string[];
-  type?: string[];
-  search?: string;
+    limit?: number;
+    offset?: number;
+    tags?: string[];
+    type?: string[];
+    search?: string;
+    dimension?: string;
 }
 
 export const questionService = {
-  /**
-   * Search for similar questions in the database as fallback
-   */
-  searchSimilarQuestions: async (content: string, limit: number = 3) => {
-    try {
-      const embedding = await ragService.getEmbedding(content);
+    /**
+     * 搜索相似题目 (向量检索回退)
+     */
+    searchSimilarQuestions: async (content: string, limit: number = 3) => {
+        try {
+            const embedding = await ragService.getEmbedding(content);
+            
+            // 检查向量插件是否存在 (由于 Drizzle 不直接暴露 raw db handle 检查，通常在 init 时检查)
+            // 这里使用 sql raw 尝试
+            const results = await drizzleDb.execute(sql`
+                SELECT q.*, v.distance
+                FROM questions_vec v
+                JOIN questions q ON q.id = v.rowid
+                WHERE v.embedding MATCH ${JSON.stringify(embedding)}
+                  AND k = ${limit}
+                ORDER BY v.distance
+            `);
 
-      try {
-        db.prepare('SELECT vec_version()').get();
-      } catch (_e) {
-        console.error('[QuestionService] sqlite-vec 扩展未加载，无法进行向量检索');
-        return [];
-      }
+            return results.map(q => mapQuestion(q));
+        } catch (error) {
+            logger.error({ err: error }, '[QuestionService] 相似题目检索失败');
+            return [];
+        }
+    },
 
-      const results = db.prepare(`
-        SELECT 
-          q.*,
-          v.distance
-        FROM questions_vec v
-        JOIN questions q ON q.id = v.rowid
-        WHERE v.embedding MATCH ?
-          AND k = ?
-        ORDER BY v.distance
-      `).all(JSON.stringify(embedding), limit) as unknown[];
+    /**
+     * 获取单个题目
+     */
+    async getById(id: number): Promise<Question | null> {
+        const result = await drizzleDb.query.questions.findFirst({
+            where: eq(drizzleSchema.questions.id, id)
+        });
+        return result ? mapQuestion(result) : null;
+    },
 
-      return results;
-    } catch (error) {
-      console.error('[QuestionService] 相似题目检索失败:', error);
-      return [];
+    /**
+     * 列表查询
+     */
+    async list(filter: QuestionFilter = {}): Promise<{ items: Question[]; total: number }> {
+        const conditions = [];
+
+        if (filter.search) {
+            conditions.push(like(drizzleSchema.questions.content, `%${filter.search}%`));
+        }
+
+        if (filter.dimension) {
+            conditions.push(eq(drizzleSchema.questions.dimension, filter.dimension));
+        }
+
+        if (filter.type && filter.type.length > 0) {
+            conditions.push(inArray(drizzleSchema.questions.type, filter.type as any));
+        }
+
+        if (filter.tags && filter.tags.length > 0) {
+            // SQLite JSON 数组筛选
+            filter.tags.forEach(tag => {
+                conditions.push(sql`EXISTS (SELECT 1 FROM json_each(${drizzleSchema.questions.tags}) WHERE value = ${tag})`);
+            });
+        }
+
+        const where = conditions.length > 0 ? and(...conditions) : undefined;
+
+        // 并发查询总数和数据
+        const [items, totalResult] = await Promise.all([
+            drizzleDb.query.questions.findMany({
+                where,
+                orderBy: [desc(drizzleSchema.questions.id)],
+                limit: filter.limit || 20,
+                offset: filter.offset || 0
+            }),
+            drizzleDb.select({ count: sql<number>`count(*)` })
+                .from(drizzleSchema.questions)
+                .where(where)
+                .get()
+        ]);
+
+        return {
+            items: items.map(q => mapQuestion(q)),
+            total: totalResult?.count || 0
+        };
+    },
+
+    /**
+     * 创建题目 (管理后台)
+     */
+    async create(data: Partial<Question>) {
+        const result = await drizzleDb.insert(drizzleSchema.questions).values({
+            ...data,
+            options: JSON.stringify(data.options),
+            tags: JSON.stringify(data.tags),
+        } as any).returning();
+        return result[0];
+    },
+
+    /**
+     * 更新题目 (管理后台)
+     */
+    async update(id: number, data: Partial<Question>) {
+        const updateData: any = { ...data };
+        if (data.options) updateData.options = JSON.stringify(data.options);
+        if (data.tags) updateData.tags = JSON.stringify(data.tags);
+
+        await drizzleDb.update(drizzleSchema.questions)
+            .set(updateData)
+            .where(eq(drizzleSchema.questions.id, id));
+        return true;
+    },
+
+    /**
+     * 删除题目 (管理后台)
+     */
+    async delete(id: number) {
+        await drizzleDb.delete(drizzleSchema.questions)
+            .where(eq(drizzleSchema.questions.id, id));
+        return true;
+    },
+
+    /**
+     * 批量导入 (管理后台)
+     */
+    async bulkCreate(questions: any[]) {
+        return await drizzleDb.transaction(async (tx) => {
+            const values = questions.map(q => ({
+                ...q,
+                options: JSON.stringify(q.options),
+                tags: JSON.stringify(q.tags),
+                created_at: sql`CURRENT_TIMESTAMP`
+            }));
+            
+            // SQLite 批量插入限制 (通常为 999 变量，Drizzle 会自动分批)
+            return await tx.insert(drizzleSchema.questions).values(values);
+        });
     }
-  },
-
-  /**
-   * Get a question by ID
-   */
-  getById: async (id: number): Promise<Question | null> => {
-    return safeGet(
-      db.prepare('SELECT * FROM questions WHERE id = ?'),
-      [id],
-      QuestionRowSchema
-    );
-  },
-
-  /**
-   * List questions with filtering
-   */
-  list: async (filter: QuestionFilter = {}): Promise<{ items: Question[]; total: number }> => {
-    let query = 'SELECT * FROM questions WHERE 1=1';
-    let countQuery = 'SELECT COUNT(*) as count FROM questions WHERE 1=1';
-    const params: unknown[] = [];
-
-    if (filter.search) {
-      const searchCondition = ' AND content LIKE ?';
-      query += searchCondition;
-      countQuery += searchCondition;
-      params.push(`%${filter.search}%`);
-    }
-
-    if (filter.type && filter.type.length > 0) {
-      const placeholders = filter.type.map(() => '?').join(',');
-      const typeCondition = ` AND type IN (${placeholders})`;
-      query += typeCondition;
-      countQuery += typeCondition;
-      params.push(...filter.type);
-    }
-
-    // Note: Tag filtering in SQLite JSON text is complex, handled naively here
-    // Optimally use FTS5 or separate tables
-    if (filter.tags && filter.tags.length > 0) {
-      // Very simple partial match for now
-      for (const tag of filter.tags) {
-        query += ' AND tags LIKE ?';
-        countQuery += ' AND tags LIKE ?';
-        params.push(`%${tag}%`);
-      }
-    }
-
-    // Clone params for count query before adding limit/offset
-    const countParams = [...params];
-
-    query += ' ORDER BY id DESC LIMIT ? OFFSET ?';
-    params.push(filter.limit || 20, filter.offset || 0);
-
-    const items = safeAll(
-      db.prepare(query),
-      params,
-      QuestionRowSchema
-    );
-
-    const totalResult = db.prepare(countQuery).get(...countParams) as { count: number };
-
-    return {
-      items,
-      total: totalResult.count
-    };
-  }
-};
+};

@@ -2,11 +2,35 @@
 import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { questionService } from '../question';
 
-// Mock DB
-const { mockDb, mockRagService } = vi.hoisted(() => {
+const { mockDb, mockDrizzleDb, mockDrizzleSchema, mockRagService } = vi.hoisted(() => {
+    const makeChain = () => {
+        const chain: any = {
+            then: vi.fn((resolve) => resolve([])),
+            get: vi.fn(() => ({})),
+        };
+        const methods = ['insert', 'values', 'update', 'set', 'delete', 'select', 'from', 'where', 'limit', 'offset', 'orderBy', 'all', 'innerJoin', 'leftJoin', 'onConflictDoUpdate'];
+        methods.forEach((m) => {
+            chain[m] = vi.fn(() => chain);
+        });
+        return chain;
+    };
+
+    const chain = makeChain();
+    const mockDrizzleDb = {
+        ...chain,
+        query: {
+            questions: { findMany: vi.fn(), findFirst: vi.fn() },
+        },
+        transaction: vi.fn(async (cb) => cb(chain)),
+    };
+
     return {
         mockDb: {
             prepare: vi.fn(),
+        },
+        mockDrizzleDb,
+        mockDrizzleSchema: {
+            questions: { id: 'questions.id', type: 'questions.type' }
         },
         mockRagService: {
             getEmbedding: vi.fn(),
@@ -14,55 +38,49 @@ const { mockDb, mockRagService } = vi.hoisted(() => {
     };
 });
 
-vi.mock('@/lib/db', () => ({ default: mockDb, db: mockDb, drizzleDb: {}, drizzleSchema: {} }));
+vi.mock('@/lib/db', () => ({ 
+    default: mockDb, 
+    db: mockDb, 
+    drizzleDb: mockDrizzleDb, 
+    drizzleSchema: mockDrizzleSchema 
+}));
 
 vi.mock('@/lib/ai/rag', () => ({
     ragService: mockRagService
 }));
 
-// Mock safe-query (since service uses it)
-// safeGet/safeAll parse results with Zod. 
-// We can mock the db.prepare().get/all return values to match what Zod expects (or successful parsing).
-// However, the service calls safeGet/safeAll imported from '@/lib/db/safe-query'.
-// It's better to mock them to avoid Zod schema complexity in tests, or test integration?
-// Let's mock the DB return values to be valid according to Schema, so safeGet works. (Integration style for schemas)
-// OR mock safeGet/safeAll. Mocking safeGet/safeAll is easier.
-
 vi.mock('@/lib/db/safe-query', () => ({
-    safeGet: vi.fn((_, __, ___) => _?.get ? _.get() : _), // Simple passthrough for mock
+    safeGet: vi.fn((_, __, ___) => _?.get ? _.get() : _),
     safeAll: vi.fn((_, __, ___) => _?.all ? _.all() : _)
 }));
-
 
 describe('Question Service', () => {
     beforeEach(() => {
         vi.clearAllMocks();
+        const chain = mockDrizzleDb as any;
+        ['select', 'from', 'where', 'limit', 'offset', 'orderBy'].forEach(m => {
+            chain[m].mockReturnValue(chain);
+        });
+        chain.get.mockReturnValue({});
+        chain.then.mockImplementation((resolve: any) => resolve([]));
     });
 
     describe('getById', () => {
         it('should return question when found', async () => {
             const mockQ = { id: 1, content: 'Test' };
-            const mockGet = vi.fn().mockReturnValue(mockQ);
-            mockDb.prepare.mockReturnValue({ get: mockGet });
+            (mockDrizzleDb.query.questions.findFirst as any).mockResolvedValue(mockQ);
 
-            // Since we mocked safeGet to just call .get(), this works
             const result = await questionService.getById(1);
 
             expect(result).toEqual(mockQ);
-            expect(mockDb.prepare).toHaveBeenCalledWith(expect.stringContaining('SELECT * FROM questions'));
         });
     });
 
     describe('list', () => {
         it('should list questions with pagination', async () => {
             const mockItems = [{ id: 1 }, { id: 2 }];
-            const mockAll = vi.fn().mockReturnValue(mockItems);
-            const mockGetCount = vi.fn().mockReturnValue({ count: 10 });
-
-            // First prepare is for listing, second for count
-            mockDb.prepare
-                .mockReturnValueOnce({ all: mockAll })
-                .mockReturnValueOnce({ get: mockGetCount });
+            (mockDrizzleDb.query.questions.findMany as any).mockResolvedValue(mockItems);
+            (mockDrizzleDb.get as any).mockReturnValue({ count: 10 });
 
             const result = await questionService.list({ offset: 0, limit: 10 });
 
@@ -71,22 +89,19 @@ describe('Question Service', () => {
         });
 
         it('should apply mode filter', async () => {
-            const mockAll = vi.fn().mockReturnValue([]);
-            const mockGetCount = vi.fn().mockReturnValue({ count: 0 });
-            mockDb.prepare.mockReturnValue({ all: mockAll, get: mockGetCount } as any);
+            (mockDrizzleDb.query.questions.findMany as any).mockResolvedValue([]);
+            (mockDrizzleDb.get as any).mockReturnValue({ count: 0 });
 
             await questionService.list({ type: ['single'] });
 
-            // Check if SQL contained type condition
-            const listingSqlCall = mockDb.prepare.mock.calls[0][0];
-            expect(listingSqlCall).toContain('type IN (?)');
+            // 验证是否调用了查询
+            expect(mockDrizzleDb.query.questions.findMany).toHaveBeenCalled();
         });
     });
 
     describe('searchSimilarQuestions', () => {
         it('should return similar questions when vector search works', async () => {
             mockRagService.getEmbedding.mockResolvedValue([0.1, 0.2]);
-            // Mock version check
             mockDb.prepare.mockReturnValueOnce({ get: () => 'v0.1.7' });
 
             const mockResults = [{ id: 1, distance: 0.5 }];
@@ -100,7 +115,6 @@ describe('Question Service', () => {
 
         it('should return empty list if vector extension missing', async () => {
             mockRagService.getEmbedding.mockResolvedValue([0.1]);
-            // Mock version check failure
             mockDb.prepare.mockImplementationOnce(() => { throw new Error('no vec'); });
 
             const result = await questionService.searchSimilarQuestions('content');

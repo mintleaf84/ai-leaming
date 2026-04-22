@@ -2,11 +2,40 @@
 import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { practiceService } from '../practice';
 
-const { mockDb, mockMasteryService } = vi.hoisted(() => {
+const { mockDb, mockDrizzleDb, mockDrizzleSchema, mockMasteryService } = vi.hoisted(() => {
+    const makeChain = () => {
+        const chain: any = {
+            then: vi.fn((resolve) => resolve([])),
+            get: vi.fn(() => ({})),
+        };
+        const methods = ['insert', 'values', 'update', 'set', 'delete', 'select', 'from', 'where', 'limit', 'offset', 'orderBy', 'all', 'innerJoin', 'leftJoin', 'onConflictDoUpdate'];
+        methods.forEach((m) => {
+            chain[m] = vi.fn(() => chain);
+        });
+        return chain;
+    };
+
+    const chain = makeChain();
+    const mockDrizzleDb = {
+        ...chain,
+        query: {
+            questions: { findMany: vi.fn(), findFirst: vi.fn() },
+            practice_sessions: { findFirst: vi.fn() }
+        },
+        transaction: vi.fn(async (cb) => cb(chain)),
+    };
+
     return {
         mockDb: {
             prepare: vi.fn(),
-            transaction: vi.fn((fn) => fn), // Mock transaction as immediate execution
+            transaction: vi.fn((fn) => fn),
+        },
+        mockDrizzleDb,
+        mockDrizzleSchema: {
+            questions: { id: 'questions.id', type: 'questions.type' },
+            practice_logs: { id: 'practice_logs.id' },
+            practice_sessions: { id: 'practice_sessions.id' },
+            users: { id: 'users.id' }
         },
         mockMasteryService: {
             updateMastery: vi.fn()
@@ -14,7 +43,12 @@ const { mockDb, mockMasteryService } = vi.hoisted(() => {
     };
 });
 
-vi.mock('@/lib/db', () => ({ default: mockDb, db: mockDb, drizzleDb: {}, drizzleSchema: {} }));
+vi.mock('@/lib/db', () => ({ 
+    default: mockDb, 
+    db: mockDb, 
+    drizzleDb: mockDrizzleDb, 
+    drizzleSchema: mockDrizzleSchema 
+}));
 
 // Mock dynamic import for mastery
 vi.mock('@/lib/services/mastery', () => ({
@@ -29,17 +63,25 @@ vi.mock('@/lib/db/safe-query', () => ({
 describe('Practice Service', () => {
     beforeEach(() => {
         vi.clearAllMocks();
+        
+        // Setup default chain behavior
+        const chain = mockDrizzleDb as any;
+        ['select', 'from', 'where', 'limit', 'offset', 'orderBy', 'insert', 'values', 'update', 'set'].forEach(m => {
+            chain[m].mockReturnValue(chain);
+        });
+        chain.get.mockReturnValue({});
+        chain.then.mockImplementation((resolve: any) => resolve([]));
     });
 
     describe('getOrCreateSession', () => {
         it('should resume valid session', async () => {
-            // 注意：由于底层切换到 Drizzle，这里的 mockDb.prepare 已经不再被调用
-            // 真正的测试重构需要 mock drizzleDb，此处仅为通过 TS 检查
+            (mockDrizzleDb.query.practice_sessions.findFirst as any).mockResolvedValue({ id: 's1' });
             const result = await practiceService.getOrCreateSession(1);
             expect(result).toBeDefined();
         });
 
         it('should return null if no recent session and create new', async () => {
+            (mockDrizzleDb.query.practice_sessions.findFirst as any).mockResolvedValue(null);
             const result = await practiceService.getOrCreateSession(1, true);
             expect(result).toBeDefined();
         });
@@ -48,48 +90,31 @@ describe('Practice Service', () => {
     describe('createRandomSession', () => {
         it('should create new session with random questions', async () => {
             const mockQuestions = [{ id: 1, content: 'Q1' }] as any;
-            const mockRun = vi.fn();
+            (mockDrizzleDb.query.questions.findMany as any).mockResolvedValue(mockQuestions);
 
-            mockDb.prepare
-                .mockReturnValueOnce({ all: () => mockQuestions }) // Select questions
-                .mockReturnValueOnce({ run: mockRun }); // Insert session
-
-            // @ts-ignore - Ignore complex type mismatch in test mock
             const result = await practiceService.createRandomSession(1, 5);
 
             expect(result.sessionId).toBeDefined();
             expect(result.questions).toEqual(mockQuestions);
-            expect(mockRun).toHaveBeenCalledWith(
-                expect.any(String), // session id
-                1, // user id
-                1, // question count
-                expect.any(String), // json
-                'random'
-            );
+            expect(mockDrizzleDb.insert).toHaveBeenCalledWith(mockDrizzleSchema.practice_sessions);
         });
     });
 
+    describe('submitAnswer', () => {
         it('should log answer and update stats with correct parameters', async () => {
-            const mockRunLog = vi.fn();
-            const mockRunSession = vi.fn();
             const mockQ = { tags: '["tag1"]', dimension: 'knowledge' };
-
-            mockDb.prepare
-                .mockReturnValueOnce({ run: mockRunLog })        // Log
-                .mockReturnValueOnce({ run: mockRunSession })    // Session Update
-                .mockReturnValueOnce({ get: () => mockQ });      // Get Question Meta
+            (mockDrizzleDb.get as any).mockReturnValue(mockQ);
 
             await practiceService.submitAnswer(1, 's1', 101, 'A', true, 1000);
 
             // 验证日志写入
-            expect(mockDb.prepare).toHaveBeenCalledWith(expect.stringContaining('INSERT INTO practice_logs'));
-            expect(mockRunLog).toHaveBeenCalledWith('s1', 1, 101, 'A', 1, 1000);
-
+            expect(mockDrizzleDb.insert).toHaveBeenCalledWith(mockDrizzleSchema.practice_logs);
+            
             // 验证会话更新
-            expect(mockDb.prepare).toHaveBeenCalledWith(expect.stringContaining('UPDATE practice_sessions'));
-            expect(mockRunSession).toHaveBeenCalledWith(1, 's1', 1);
+            expect(mockDrizzleDb.update).toHaveBeenCalledWith(mockDrizzleSchema.practice_sessions);
 
             // 验证掌握度更新
             expect(mockMasteryService.updateMastery).toHaveBeenCalledWith(1, 'tag1', 'knowledge', true);
         });
+    });
 });

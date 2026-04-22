@@ -16,7 +16,7 @@ import { requireUser } from '@/lib/auth/auth';
 export async function createChatSession(): Promise<number> {
     try {
         const user = await requireUser();
-        const sessionId = createSession(user.id, '新对话');
+        const sessionId = await createSession(user.id, '新对话');
         return sessionId;
     } catch (error) {
         logger.error({ err: error }, '[ChatActions] 创建会话失败');
@@ -30,7 +30,7 @@ export async function createChatSession(): Promise<number> {
 export async function getChatSessions() {
     try {
         const user = await requireUser();
-        return listSessions(user.id, 50);
+        return await listSessions(user.id, 50);
     } catch (error) {
         logger.error({ err: error }, '[ChatActions] 获取会话列表失败');
         return [];
@@ -43,7 +43,7 @@ export async function getChatSessions() {
 export async function getChatSession(sessionId: number) {
     try {
         const user = await requireUser();
-        return getSession(user.id, sessionId);
+        return await getSession(user.id, sessionId);
     } catch (error) {
         logger.error({ err: error }, '[ChatActions] 获取会话详情失败');
         return null;
@@ -57,7 +57,7 @@ export async function getChatSession(sessionId: number) {
 export async function generateChatTitle(sessionId: number): Promise<string> {
     try {
         const user = await requireUser();
-        const messages = getRecentMessages(user.id, sessionId, 6);
+        const messages = await getRecentMessages(user.id, sessionId, 6);
 
         if (messages.length === 0) {
             return '新对话';
@@ -83,7 +83,7 @@ ${context}
         const title = text.trim().replace(/^["']|["']$/g, '').substring(0, 20) || '新对话';
 
         // 更新数据库
-        updateSessionTitle(user.id, sessionId, title);
+        await updateSessionTitle(user.id, sessionId, title);
 
         return title;
     } catch (error) {
@@ -124,7 +124,7 @@ export async function renameChatSessionAction(sessionId: number, newTitle: strin
     try {
         const user = await requireUser();
         const title = newTitle.trim() || '新对话';
-        updateSessionTitle(user.id, sessionId, title);
+        await updateSessionTitle(user.id, sessionId, title);
         return { success: true, title };
     } catch (error) {
         logger.error({ err: error }, '[ChatActions] 重命名会话失败');
@@ -138,7 +138,7 @@ export async function renameChatSessionAction(sessionId: number, newTitle: strin
 export async function deleteChatSession(sessionId: number) {
     try {
         const user = await requireUser();
-        deleteSession(user.id, sessionId);
+        await deleteSession(user.id, sessionId);
     } catch (error) {
         logger.error({ err: error }, '[ChatActions] 删除会话失败');
     }
@@ -150,7 +150,7 @@ export async function deleteChatSession(sessionId: number) {
 export async function loadSessionMessages(sessionId: number) {
     try {
         const user = await requireUser();
-        return getSessionMessages(user.id, sessionId);
+        return await getSessionMessages(user.id, sessionId);
     } catch (error) {
         logger.error({ err: error }, '[ChatActions] 加载消息失败');
         return [];
@@ -177,7 +177,7 @@ export async function toggleMessageFavoriteAction(messageId: number, isFavorite:
     try {
         const user = await requireUser();
         const { toggleMessageFavorite } = await import('@/lib/services/chat');
-        toggleMessageFavorite(user.id, messageId, isFavorite);
+        await toggleMessageFavorite(user.id, messageId, isFavorite);
         return { success: true };
     } catch (error) {
         logger.error({ err: error }, '[ChatActions] 切换收藏失败');
@@ -192,7 +192,7 @@ export async function getFavoriteMessagesAction() {
     try {
         const user = await requireUser();
         const { getFavoriteMessages } = await import('@/lib/services/chat');
-        return getFavoriteMessages(user.id);
+        return await getFavoriteMessages(user.id);
     } catch (error) {
         logger.error({ err: error }, '[ChatActions] 获取收藏失败');
         return [];
@@ -206,7 +206,7 @@ export async function searchMessagesAction(query: string) {
     try {
         const user = await requireUser();
         const { searchMessages } = await import('@/lib/services/chat');
-        return searchMessages(user.id, query);
+        return await searchMessages(user.id, query);
     } catch (error) {
         logger.error({ err: error }, '[ChatActions] 搜索失败');
         return [];

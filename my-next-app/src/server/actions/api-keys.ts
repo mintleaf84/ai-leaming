@@ -1,7 +1,8 @@
 'use server';
 import logger from '@/lib/logger';
 
-import db from '@/lib/db';
+import db, { drizzleDb, drizzleSchema } from '@/lib/db';
+import { eq, desc, sql } from 'drizzle-orm';
 import { requireRole } from '@/lib/auth/auth';
 import { logAdminAction } from '@/lib/admin/audit';
 import crypto from 'crypto';
@@ -22,10 +23,10 @@ export interface ApiKeyView {
 export async function getApiKeysAction(): Promise<ApiKeyView[]> {
     await requireRole(['admin']);
     try {
-        const rows = db.prepare(
-            'SELECT id, key_string, description, is_active, created_at, updated_at FROM api_keys ORDER BY created_at DESC'
-        ).all() as ApiKeyView[];
-        return rows;
+        const rows = await drizzleDb.query.api_keys.findMany({
+            orderBy: [desc(drizzleSchema.api_keys.created_at)]
+        });
+        return rows as ApiKeyView[];
     } catch (error) {
         logger.error({ err: error }, '[ApiKeys] 获取列表失败');
         return [];
@@ -43,9 +44,10 @@ export async function createApiKeyAction(
         // 生成 32 字节的随机密钥（以 hex 编码，共 64 字符）
         const keyString = `sk_${crypto.randomBytes(24).toString('hex')}`;
 
-        db.prepare(
-            'INSERT INTO api_keys (key_string, description) VALUES (?, ?)'
-        ).run(keyString, description || '未命名密钥');
+        await drizzleDb.insert(drizzleSchema.api_keys).values({
+            key_string: keyString,
+            description: description || '未命名密钥'
+        });
 
         logAdminAction(user.id, user.username, 'CREATE_API_KEY', 'api_key', null, { description });
 
@@ -65,9 +67,12 @@ export async function toggleApiKeyAction(
 ): Promise<{ success: boolean; error?: string }> {
     const user = await requireRole(['admin']);
     try {
-        db.prepare(
-            'UPDATE api_keys SET is_active = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?'
-        ).run(isActive ? 1 : 0, id);
+        await drizzleDb.update(drizzleSchema.api_keys)
+            .set({ 
+                is_active: isActive ? 1 : 0, 
+                updated_at: sql`CURRENT_TIMESTAMP` 
+            })
+            .where(eq(drizzleSchema.api_keys.id, id));
 
         logAdminAction(user.id, user.username, 'TOGGLE_API_KEY', 'api_key', id.toString(), {
             is_active: isActive,
@@ -88,7 +93,8 @@ export async function deleteApiKeyAction(
 ): Promise<{ success: boolean; error?: string }> {
     const user = await requireRole(['admin']);
     try {
-        db.prepare('DELETE FROM api_keys WHERE id = ?').run(id);
+        await drizzleDb.delete(drizzleSchema.api_keys)
+            .where(eq(drizzleSchema.api_keys.id, id));
 
         logAdminAction(user.id, user.username, 'DELETE_API_KEY', 'api_key', id.toString());
 

@@ -1,7 +1,8 @@
 'use server';
 import logger from '@/lib/logger';
 
-import db from '@/lib/db';
+import db, { drizzleDb, drizzleSchema } from '@/lib/db';
+import { eq, and, desc, sql, gte, lte, count } from 'drizzle-orm';
 import { requireUser } from '@/lib/auth/auth';
 
 /** practice_sessions 表行（查询的字段子集） */
@@ -84,61 +85,65 @@ export async function getSessionHistoryAction(filter?: HistoryFilter): Promise<P
     const pageSize = filter?.pageSize || 10;
     const offset = (page - 1) * pageSize;
 
-    // 构建动态 WHERE 子句
-    const conditions: string[] = ['user_id = ?'];
-    const params: (string | number | null)[] = [user.id];
+    // 构建动态条件
+    const conditions = [eq(drizzleSchema.practice_sessions.user_id, user.id)];
 
     if (filter?.dateFrom) {
-      conditions.push('date(created_at) >= date(?)');
-      params.push(filter.dateFrom);
+      conditions.push(sql`date(${drizzleSchema.practice_sessions.created_at}) >= date(${filter.dateFrom})`);
     }
     if (filter?.dateTo) {
-      conditions.push('date(created_at) <= date(?)');
-      params.push(filter.dateTo);
+      conditions.push(sql`date(${drizzleSchema.practice_sessions.created_at}) <= date(${filter.dateTo})`);
     }
     if (filter?.mode) {
-      conditions.push('practice_mode = ?');
-      params.push(filter.mode);
+      conditions.push(eq(drizzleSchema.practice_sessions.practice_mode, filter.mode));
     }
 
-    const whereClause = conditions.join(' AND ');
+    const whereCondition = and(...conditions);
 
     // 获取总数
-    const countRow = db.prepare(`
-      SELECT COUNT(*) as count FROM practice_sessions WHERE ${whereClause}
-    `).get(...params) as { count: number };
+    const [countResult] = await drizzleDb.select({ value: count() })
+      .from(drizzleSchema.practice_sessions)
+      .where(whereCondition);
 
     // 获取分页数据
-    const rows = db.prepare(`
-      SELECT id, session_name as sessionName, total_questions as totalQuestions, correct_count as correctCount, 
-             review_count as reviewCount, created_at as createdAt,
-             practice_mode as practiceMode
-      FROM practice_sessions 
-      WHERE ${whereClause}
-      ORDER BY created_at DESC
-      LIMIT ? OFFSET ?
-    `).all(...params, pageSize, offset) as SessionListRow[];
+    const rows = await drizzleDb.select({
+      id: drizzleSchema.practice_sessions.id,
+      sessionName: drizzleSchema.practice_sessions.session_name,
+      totalQuestions: drizzleSchema.practice_sessions.total_questions,
+      correctCount: drizzleSchema.practice_sessions.correct_count,
+      reviewCount: drizzleSchema.practice_sessions.review_count,
+      createdAt: drizzleSchema.practice_sessions.created_at,
+      practiceMode: drizzleSchema.practice_sessions.practice_mode
+    })
+    .from(drizzleSchema.practice_sessions)
+    .where(whereCondition)
+    .orderBy(desc(drizzleSchema.practice_sessions.created_at))
+    .limit(pageSize)
+    .offset(offset);
 
     // 计算正确率并过滤
-    let items = rows.map(r => ({
+    let items = rows.map((r: any) => ({
       ...r,
+      id: String(r.id),
+      sessionName: r.sessionName || undefined,
+      practiceMode: r.practiceMode || undefined,
       accuracy: r.totalQuestions > 0 ? Math.round((r.correctCount / r.totalQuestions) * 100) : 0
     }));
 
-    // 正确率筛选 (在应用层处理，因为 accuracy 是计算字段)
+    // 正确率筛选
     if (filter?.accuracyMin !== undefined) {
-      items = items.filter(i => i.accuracy >= filter.accuracyMin!);
+      items = items.filter((i: any) => i.accuracy >= filter.accuracyMin!);
     }
     if (filter?.accuracyMax !== undefined) {
-      items = items.filter(i => i.accuracy <= filter.accuracyMax!);
+      items = items.filter((i: any) => i.accuracy <= filter.accuracyMax!);
     }
 
     return {
       items,
-      total: countRow.count,
+      total: countResult.value,
       page,
       pageSize,
-      totalPages: Math.ceil(countRow.count / pageSize)
+      totalPages: Math.ceil(countResult.value / pageSize)
     };
   } catch (error) {
     logger.error({ err: error }, "Failed to fetch session history");
@@ -150,11 +155,15 @@ export async function getSessionHistoryAction(filter?: HistoryFilter): Promise<P
 export async function getAvailableModesAction(): Promise<string[]> {
   try {
     const user = await requireUser();
-    const rows = db.prepare(`
-      SELECT DISTINCT practice_mode FROM practice_sessions 
-      WHERE user_id = ? AND practice_mode IS NOT NULL
-    `).all(user.id) as { practice_mode: string }[];
-    return rows.map(r => r.practice_mode).filter(Boolean);
+    const rows = await drizzleDb.select({ practice_mode: drizzleSchema.practice_sessions.practice_mode })
+      .from(drizzleSchema.practice_sessions)
+      .where(and(
+        eq(drizzleSchema.practice_sessions.user_id, user.id),
+        sql`${drizzleSchema.practice_sessions.practice_mode} IS NOT NULL`
+      ))
+      .groupBy(drizzleSchema.practice_sessions.practice_mode)
+      .all();
+    return rows.map((r: any) => r.practice_mode as string).filter(Boolean);
   } catch {
     return [];
   }
@@ -185,33 +194,59 @@ export type SessionDetail = {
 export async function getSessionDetailAction(sessionId: string): Promise<SessionDetail | null> {
   try {
     const user = await requireUser();
-    const sessionRow = db.prepare(`
-      SELECT id, total_questions as totalQuestions, correct_count as correctCount, 
-             review_count as reviewCount, created_at as createdAt 
-      FROM practice_sessions WHERE id = ? AND user_id = ?
-    `).get(sessionId, user.id) as PracticeSessionRow | undefined;
+    const sessionRow = await drizzleDb.query.practice_sessions.findFirst({
+      where: and(
+        eq(drizzleSchema.practice_sessions.id, sessionId),
+        eq(drizzleSchema.practice_sessions.user_id, user.id)
+      ),
+      columns: {
+        id: true,
+        total_questions: true,
+        correct_count: true,
+        review_count: true,
+        created_at: true
+      }
+    });
 
     if (!sessionRow) return null;
 
-    const logs = db.prepare(`
-      SELECT l.question_id as questionId, q.content as questionContent, q.options, q.answer as correctAnswer,
-             l.user_answer as userAnswer, l.is_correct as isCorrect, l.duration_ms as duration,
-             q.tags, q.source, q.explanation, q.correct_ratio, q.most_wrong_answer,
-             q.ai_mnemonic, -- 新增查询
-             q.material, q.material_html, -- 新增查询
-             r.review_data as reviewData
-      FROM practice_logs l
-      JOIN questions q ON l.question_id = q.id
-      LEFT JOIN session_reviews r ON l.session_id = r.session_id AND l.question_id = r.question_id
-      WHERE l.session_id = ?
-    `).all(sessionId) as PracticeLogRow[];
+    const logs = await drizzleDb.select({
+      questionId: drizzleSchema.practice_logs.question_id,
+      questionContent: drizzleSchema.questions.content,
+      options: drizzleSchema.questions.options,
+      correctAnswer: drizzleSchema.questions.answer,
+      userAnswer: drizzleSchema.practice_logs.user_answer,
+      isCorrect: drizzleSchema.practice_logs.is_correct,
+      duration: drizzleSchema.practice_logs.duration_ms,
+      tags: drizzleSchema.questions.tags,
+      source: drizzleSchema.questions.source,
+      explanation: drizzleSchema.questions.explanation,
+      correct_ratio: drizzleSchema.questions.correct_ratio,
+      most_wrong_answer: drizzleSchema.questions.most_wrong_answer,
+      ai_mnemonic: drizzleSchema.questions.ai_mnemonic,
+      material: drizzleSchema.questions.material,
+      material_html: drizzleSchema.questions.material_html,
+      reviewData: drizzleSchema.session_reviews.review_data
+    })
+    .from(drizzleSchema.practice_logs)
+    .innerJoin(drizzleSchema.questions, eq(drizzleSchema.practice_logs.question_id, drizzleSchema.questions.id))
+    .leftJoin(drizzleSchema.session_reviews, and(
+      eq(drizzleSchema.practice_logs.session_id, drizzleSchema.session_reviews.session_id),
+      eq(drizzleSchema.practice_logs.question_id, drizzleSchema.session_reviews.question_id)
+    ))
+    .where(eq(drizzleSchema.practice_logs.session_id, sessionId))
+    .all();
 
     return {
       session: {
-        ...sessionRow,
-        accuracy: sessionRow.totalQuestions > 0 ? Math.round((sessionRow.correctCount / sessionRow.totalQuestions) * 100) : 0
+        id: String(sessionRow.id),
+        totalQuestions: sessionRow.total_questions || 0,
+        correctCount: sessionRow.correct_count || 0,
+        reviewCount: sessionRow.review_count || 0,
+        createdAt: sessionRow.created_at as string,
+        accuracy: (sessionRow.total_questions || 0) > 0 ? Math.round(((sessionRow.correct_count || 0) / (sessionRow.total_questions || 0)) * 100) : 0
       },
-      logs: logs.map(l => ({
+      logs: logs.map((l: any) => ({
         questionId: l.questionId,
         questionContent: l.questionContent,
         options: JSON.parse(l.options || '[]'),
@@ -225,7 +260,7 @@ export async function getSessionDetailAction(sessionId: string): Promise<Session
         correctRatio: l.correct_ratio,
         mostWrongAnswer: l.most_wrong_answer,
         reviewData: l.reviewData ? JSON.parse(l.reviewData) : undefined,
-        aiMnemonic: l.ai_mnemonic || null, // 映射字段
+        aiMnemonic: l.ai_mnemonic || null,
         material: l.material || null,
         materialHtml: l.material_html || null
       }))
@@ -241,23 +276,31 @@ export async function deleteSessionAction(sessionId: string) {
     const user = await requireUser();
 
     // Check ownership
-    const session = db.prepare('SELECT id FROM practice_sessions WHERE id = ? AND user_id = ?').get(sessionId, user.id);
+    const session = await drizzleDb.query.practice_sessions.findFirst({
+      where: and(
+        eq(drizzleSchema.practice_sessions.id, sessionId),
+        eq(drizzleSchema.practice_sessions.user_id, user.id)
+      ),
+      columns: { id: true }
+    });
+
     if (!session) {
       return { success: false, message: "权限不足或会话不存在" };
     }
 
     // 开启事务确保数据完整性
-    const deleteReviews = db.prepare('DELETE FROM session_reviews WHERE session_id = ?');
-    const deleteLogs = db.prepare('DELETE FROM practice_logs WHERE session_id = ? AND user_id = ?');
-    const deleteSession = db.prepare('DELETE FROM practice_sessions WHERE id = ? AND user_id = ?');
-
-    const transaction = db.transaction((id: string, uid: number) => {
-      deleteReviews.run(id);
-      deleteLogs.run(id, uid);
-      deleteSession.run(id, uid);
+    await drizzleDb.transaction(async (tx: any) => {
+      await tx.delete(drizzleSchema.session_reviews).where(eq(drizzleSchema.session_reviews.session_id, sessionId));
+      await tx.delete(drizzleSchema.practice_logs).where(and(
+        eq(drizzleSchema.practice_logs.session_id, sessionId),
+        eq(drizzleSchema.practice_logs.user_id, user.id)
+      ));
+      await tx.delete(drizzleSchema.practice_sessions).where(and(
+        eq(drizzleSchema.practice_sessions.id, sessionId),
+        eq(drizzleSchema.practice_sessions.user_id, user.id)
+      ));
     });
 
-    transaction(sessionId, user.id);
     return { success: true };
   } catch (error) {
     logger.error({ err: error }, "Failed to delete session");
@@ -273,13 +316,22 @@ export async function renameSessionAction(sessionId: string, newName: string) {
     const user = await requireUser();
 
     // 检查权限
-    const session = db.prepare('SELECT id FROM practice_sessions WHERE id = ? AND user_id = ?').get(sessionId, user.id);
+    const session = await drizzleDb.query.practice_sessions.findFirst({
+      where: and(
+        eq(drizzleSchema.practice_sessions.id, sessionId),
+        eq(drizzleSchema.practice_sessions.user_id, user.id)
+      ),
+      columns: { id: true }
+    });
+    
     if (!session) {
       return { success: false, message: "权限不足或会话不存在" };
     }
 
     // 更新名称
-    db.prepare('UPDATE practice_sessions SET session_name = ? WHERE id = ?').run(newName.trim() || null, sessionId);
+    await drizzleDb.update(drizzleSchema.practice_sessions)
+      .set({ session_name: newName.trim() || null })
+      .where(eq(drizzleSchema.practice_sessions.id, sessionId));
 
     return { success: true };
   } catch (error) {

@@ -1,4 +1,5 @@
-import db from '@/lib/db';
+import db, { drizzleDb, drizzleSchema } from '@/lib/db';
+import { eq, and, desc, sql, like } from 'drizzle-orm';
 
 /**
  * 聊天会话管理服务
@@ -35,156 +36,212 @@ export interface SearchResult {
 /**
  * 创建新会话
  */
-export function createSession(userId: number, title: string = '新对话'): number {
-  const result = db.prepare(`
-    INSERT INTO chat_sessions (user_id, title, created_at, updated_at)
-    VALUES (?, ?, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)
-  `).run(userId, title);
+export async function createSession(userId: number, title: string = '新对话'): Promise<number> {
+  const result = await drizzleDb.insert(drizzleSchema.chat_sessions).values({
+    user_id: userId,
+    title,
+  });
 
-  return result.lastInsertRowid as number;
+  return Number(result.lastInsertRowid);
 }
 
 /**
  * 保存单条消息
  */
-export function saveMessage(
+export async function saveMessage(
   userId: number,
   sessionId: number,
   role: 'user' | 'assistant' | 'system',
   content: string
-): number {
+): Promise<number> {
   // 检查权限
-  const session = db.prepare('SELECT id FROM chat_sessions WHERE id = ? AND user_id = ?').get(sessionId, userId);
+  const session = await drizzleDb.query.chat_sessions.findFirst({
+    where: and(
+      eq(drizzleSchema.chat_sessions.id, sessionId),
+      eq(drizzleSchema.chat_sessions.user_id, userId)
+    ),
+    columns: { id: true }
+  });
+  
   if (!session) throw new Error('Unauthorized or session not found');
 
   // 保存消息
-  const result = db.prepare(`
-    INSERT INTO chat_messages (session_id, role, content, created_at)
-    VALUES (?, ?, ?, CURRENT_TIMESTAMP)
-  `).run(sessionId, role, content);
+  const result = await drizzleDb.insert(drizzleSchema.chat_messages).values({
+    session_id: sessionId,
+    role,
+    content,
+  });
 
   // 更新会话的最后活跃时间和消息计数
-  db.prepare(`
-    UPDATE chat_sessions 
-    SET updated_at = CURRENT_TIMESTAMP,
-        message_count = message_count + 1
-    WHERE id = ? AND user_id = ?
-  `).run(sessionId, userId);
+  await drizzleDb.update(drizzleSchema.chat_sessions)
+    .set({ 
+      updated_at: sql`CURRENT_TIMESTAMP`,
+      message_count: sql`${drizzleSchema.chat_sessions.message_count} + 1`
+    })
+    .where(and(
+      eq(drizzleSchema.chat_sessions.id, sessionId),
+      eq(drizzleSchema.chat_sessions.user_id, userId)
+    ));
 
-  return result.lastInsertRowid as number;
+  return Number(result.lastInsertRowid);
 }
 
 /**
  * 获取会话的所有消息
  */
-export function getSessionMessages(userId: number, sessionId: number): ChatMessage[] {
-  return db.prepare(`
-    SELECT m.id, m.session_id, m.role, m.content, m.is_favorite, m.created_at
-    FROM chat_messages m
-    JOIN chat_sessions s ON m.session_id = s.id
-    WHERE m.session_id = ? AND s.user_id = ?
-    ORDER BY m.created_at ASC
-  `).all(sessionId, userId) as ChatMessage[];
+export async function getSessionMessages(userId: number, sessionId: number): Promise<ChatMessage[]> {
+  return await drizzleDb.select({
+    id: drizzleSchema.chat_messages.id,
+    session_id: drizzleSchema.chat_messages.session_id,
+    role: drizzleSchema.chat_messages.role,
+    content: drizzleSchema.chat_messages.content,
+    is_favorite: drizzleSchema.chat_messages.is_favorite,
+    created_at: drizzleSchema.chat_messages.created_at
+  })
+  .from(drizzleSchema.chat_messages)
+  .innerJoin(drizzleSchema.chat_sessions, eq(drizzleSchema.chat_messages.session_id, drizzleSchema.chat_sessions.id))
+  .where(and(
+    eq(drizzleSchema.chat_messages.session_id, sessionId),
+    eq(drizzleSchema.chat_sessions.user_id, userId)
+  ))
+  .orderBy(drizzleSchema.chat_messages.created_at)
+  .all() as ChatMessage[];
 }
 
 /**
  * 获取会话列表（按更新时间倒序）
  */
-export function listSessions(userId: number, limit: number = 50): ChatSession[] {
-  return db.prepare(`
-    SELECT id, title, created_at, updated_at, message_count
-    FROM chat_sessions
-    WHERE user_id = ?
-    ORDER BY updated_at DESC
-    LIMIT ?
-  `).all(userId, limit) as ChatSession[];
+export async function listSessions(userId: number, limit: number = 50): Promise<ChatSession[]> {
+  return await drizzleDb.query.chat_sessions.findMany({
+    where: eq(drizzleSchema.chat_sessions.user_id, userId),
+    orderBy: [desc(drizzleSchema.chat_sessions.updated_at)],
+    limit
+  }) as ChatSession[];
 }
 
 /**
  * 获取单个会话详情
  */
-export function getSession(userId: number, sessionId: number): ChatSession | null {
-  const session = db.prepare(`
-    SELECT id, title, created_at, updated_at, message_count
-    FROM chat_sessions
-    WHERE id = ? AND user_id = ?
-  `).get(sessionId, userId) as ChatSession | undefined;
+export async function getSession(userId: number, sessionId: number): Promise<ChatSession | null> {
+  const session = await drizzleDb.query.chat_sessions.findFirst({
+    where: and(
+      eq(drizzleSchema.chat_sessions.id, sessionId),
+      eq(drizzleSchema.chat_sessions.user_id, userId)
+    )
+  });
 
-  return session || null;
+  return session as ChatSession || null;
 }
 
 /**
  * 删除会话（级联删除消息）
  */
-export function deleteSession(userId: number, sessionId: number): void {
-  db.prepare('DELETE FROM chat_sessions WHERE id = ? AND user_id = ?').run(sessionId, userId);
+export async function deleteSession(userId: number, sessionId: number): Promise<void> {
+  await drizzleDb.delete(drizzleSchema.chat_sessions)
+    .where(and(
+      eq(drizzleSchema.chat_sessions.id, sessionId),
+      eq(drizzleSchema.chat_sessions.user_id, userId)
+    ));
 }
 
 /**
  * 更新会话标题
  */
-export function updateSessionTitle(userId: number, sessionId: number, title: string): void {
-  db.prepare(`
-    UPDATE chat_sessions 
-    SET title = ?, updated_at = CURRENT_TIMESTAMP
-    WHERE id = ? AND user_id = ?
-  `).run(title, sessionId, userId);
+export async function updateSessionTitle(userId: number, sessionId: number, title: string): Promise<void> {
+  await drizzleDb.update(drizzleSchema.chat_sessions)
+    .set({ 
+      title, 
+      updated_at: sql`CURRENT_TIMESTAMP` 
+    })
+    .where(and(
+      eq(drizzleSchema.chat_sessions.id, sessionId),
+      eq(drizzleSchema.chat_sessions.user_id, userId)
+    ));
 }
 
 /**
  * 获取会话的最新 N 条消息（用于生成标题等场景）
  */
-export function getRecentMessages(userId: number, sessionId: number, limit: number = 10): ChatMessage[] {
-  return db.prepare(`
-    SELECT m.id, m.session_id, m.role, m.content, m.is_favorite, m.created_at
-    FROM chat_messages m
-    JOIN chat_sessions s ON m.session_id = s.id
-    WHERE m.session_id = ? AND s.user_id = ?
-    ORDER BY m.created_at DESC
-    LIMIT ?
-  `).all(sessionId, userId, limit) as ChatMessage[];
+export async function getRecentMessages(userId: number, sessionId: number, limit: number = 10): Promise<ChatMessage[]> {
+  return await drizzleDb.select({
+    id: drizzleSchema.chat_messages.id,
+    session_id: drizzleSchema.chat_messages.session_id,
+    role: drizzleSchema.chat_messages.role,
+    content: drizzleSchema.chat_messages.content,
+    is_favorite: drizzleSchema.chat_messages.is_favorite,
+    created_at: drizzleSchema.chat_messages.created_at
+  })
+  .from(drizzleSchema.chat_messages)
+  .innerJoin(drizzleSchema.chat_sessions, eq(drizzleSchema.chat_messages.session_id, drizzleSchema.chat_sessions.id))
+  .where(and(
+    eq(drizzleSchema.chat_messages.session_id, sessionId),
+    eq(drizzleSchema.chat_sessions.user_id, userId)
+  ))
+  .orderBy(desc(drizzleSchema.chat_messages.created_at))
+  .limit(limit)
+  .all() as ChatMessage[];
 }
 
 /**
  * 切换消息收藏状态
  */
-export function toggleMessageFavorite(userId: number, messageId: number, isFavorite: boolean): void {
-  db.prepare(`
-    UPDATE chat_messages
-    SET is_favorite = ?
-    WHERE id = ? AND session_id IN (SELECT id FROM chat_sessions WHERE user_id = ?)
-  `).run(isFavorite ? 1 : 0, messageId, userId);
+export async function toggleMessageFavorite(userId: number, messageId: number, isFavorite: boolean): Promise<void> {
+  const subquery = drizzleDb.select({ id: drizzleSchema.chat_sessions.id })
+    .from(drizzleSchema.chat_sessions)
+    .where(eq(drizzleSchema.chat_sessions.user_id, userId));
+
+  await drizzleDb.update(drizzleSchema.chat_messages)
+    .set({ is_favorite: isFavorite ? 1 : 0 })
+    .where(and(
+      eq(drizzleSchema.chat_messages.id, messageId),
+      sql`${drizzleSchema.chat_messages.session_id} IN ${subquery}`
+    ));
 }
 
 /**
  * 获取所有收藏的助手消息
  */
-export function getFavoriteMessages(userId: number): ChatMessage[] {
-  return db.prepare(`
-    SELECT m.id, m.session_id, m.role, m.content, m.is_favorite, m.created_at
-    FROM chat_messages m
-    JOIN chat_sessions s ON m.session_id = s.id
-    WHERE m.is_favorite = 1 AND m.role = 'assistant' AND s.user_id = ?
-    ORDER BY m.created_at DESC
-  `).all(userId) as ChatMessage[];
+export async function getFavoriteMessages(userId: number): Promise<ChatMessage[]> {
+  return await drizzleDb.select({
+    id: drizzleSchema.chat_messages.id,
+    session_id: drizzleSchema.chat_messages.session_id,
+    role: drizzleSchema.chat_messages.role,
+    content: drizzleSchema.chat_messages.content,
+    is_favorite: drizzleSchema.chat_messages.is_favorite,
+    created_at: drizzleSchema.chat_messages.created_at
+  })
+  .from(drizzleSchema.chat_messages)
+  .innerJoin(drizzleSchema.chat_sessions, eq(drizzleSchema.chat_messages.session_id, drizzleSchema.chat_sessions.id))
+  .where(and(
+    eq(drizzleSchema.chat_messages.is_favorite, 1),
+    eq(drizzleSchema.chat_messages.role, 'assistant'),
+    eq(drizzleSchema.chat_sessions.user_id, userId)
+  ))
+  .orderBy(desc(drizzleSchema.chat_messages.created_at))
+  .all() as ChatMessage[];
 }
 
 /**
  * 搜索聊天记录
  */
-export function searchMessages(userId: number, query: string): SearchResult[] {
-  return db.prepare(`
-    SELECT
-      m.id as messageId,
-      m.session_id as sessionId,
-      s.title as sessionTitle,
-      m.content,
-      m.role,
-      m.created_at
-    FROM chat_messages m
-    JOIN chat_sessions s ON m.session_id = s.id
-    WHERE m.content LIKE ? AND s.user_id = ?
-    ORDER BY m.created_at DESC
-    LIMIT 50
-  `).all(`%${query}%`, userId) as SearchResult[];
+export async function searchMessages(userId: number, query: string): Promise<SearchResult[]> {
+  const result = await drizzleDb.select({
+    messageId: drizzleSchema.chat_messages.id,
+    sessionId: drizzleSchema.chat_messages.session_id,
+    sessionTitle: drizzleSchema.chat_sessions.title,
+    content: drizzleSchema.chat_messages.content,
+    role: drizzleSchema.chat_messages.role,
+    created_at: drizzleSchema.chat_messages.created_at
+  })
+  .from(drizzleSchema.chat_messages)
+  .innerJoin(drizzleSchema.chat_sessions, eq(drizzleSchema.chat_messages.session_id, drizzleSchema.chat_sessions.id))
+  .where(and(
+    like(drizzleSchema.chat_messages.content, `%${query}%`),
+    eq(drizzleSchema.chat_sessions.user_id, userId)
+  ))
+  .orderBy(desc(drizzleSchema.chat_messages.created_at))
+  .limit(50)
+  .all();
+
+  return result as SearchResult[];
 }

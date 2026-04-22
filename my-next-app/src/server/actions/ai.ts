@@ -5,9 +5,10 @@ import { generateStructuredData, generateTextWrapper } from '@/lib/ai/client';
 import { getErrorMessage } from '@/lib/utils/error';
 import { CorrectionQuizSchema, RegressionChallengeSchema, CorrectionQuiz, RegressionChallenge } from '@/lib/schemas';
 import { questionService } from '@/lib/services/question';
-import { getPromptFromDbSync, buildPrompt, DEFAULT_CORRECTION_PROMPT, DEFAULT_REGRESSION_PROMPT } from '@/lib/ai/prompts';
+import { getPromptFromDb, buildPrompt, DEFAULT_CORRECTION_PROMPT, DEFAULT_REGRESSION_PROMPT } from '@/lib/ai/prompts';
 import { requireUser } from '@/lib/auth/auth';
-import db from '@/lib/db';
+import db, { drizzleDb, drizzleSchema } from '@/lib/db';
+import { eq, and, sql } from 'drizzle-orm';
 import { checkAndConsumeQuota } from '@/lib/billing/subscription-service';
 
 // Default Prompts imported from @/lib/ai/prompts
@@ -18,23 +19,14 @@ export async function generateCorrectionQuizAction(
   correctAnswer: string,
   force: boolean = false
 ): Promise<CorrectionQuiz> {
-  // 1. Ensure Table
-  try {
-    db.exec(`
-      CREATE TABLE IF NOT EXISTS ai_quiz_cache (
-        hash TEXT PRIMARY KEY,
-        data TEXT NOT NULL,
-        created_at DATETIME DEFAULT CURRENT_TIMESTAMP
-      );
-    `);
-  } catch (e) {
-    logger.error({ err: e }, '[QuizCache] Error creating table');
-  }
+  // 1. Ensure Table (handled by Drizzle migrations)
 
   // 2. Check Cache
   const cacheKey = generateHash(questionContent + wrongAnswer + correctAnswer);
   if (!force) {
-    const cached = db.prepare('SELECT data FROM ai_quiz_cache WHERE hash = ?').get(cacheKey) as { data: string } | undefined;
+    const cached = await drizzleDb.query.ai_quiz_cache.findFirst({
+      where: eq(drizzleSchema.ai_quiz_cache.hash, cacheKey)
+    });
     if (cached) {
       logger.info('[QuizCache] 命中缓存');
       return JSON.parse(cached.data) as CorrectionQuiz;
@@ -51,7 +43,7 @@ export async function generateCorrectionQuizAction(
     }
   }
 
-  const dbTemplate = getPromptFromDbSync('correction_quiz');
+  const dbTemplate = await getPromptFromDb('correction_quiz');
   const template = dbTemplate || DEFAULT_CORRECTION_PROMPT;
 
   const prompt = buildPrompt(template, {
@@ -64,7 +56,9 @@ export async function generateCorrectionQuizAction(
     const result = await generateStructuredData(CorrectionQuizSchema, prompt, 'premium');
     // 4. Save to Cache
     try {
-      db.prepare('INSERT OR REPLACE INTO ai_quiz_cache (hash, data) VALUES (?, ?)').run(cacheKey, JSON.stringify(result));
+      await drizzleDb.insert(drizzleSchema.ai_quiz_cache)
+        .values({ hash: cacheKey, data: JSON.stringify(result) })
+        .onConflictDoUpdate({ target: drizzleSchema.ai_quiz_cache.hash, set: { data: JSON.stringify(result) } });
     } catch (e) {
       logger.error({ err: e }, '[QuizCache] 保存失败');
     }
@@ -103,23 +97,14 @@ export async function generateRegressionChallengeAction(
   tags: string[],
   force: boolean = false
 ): Promise<RegressionChallenge> {
-  // 1. Ensure Table
-  try {
-    db.exec(`
-      CREATE TABLE IF NOT EXISTS ai_challenge_cache (
-        hash TEXT PRIMARY KEY,
-        data TEXT NOT NULL,
-        created_at DATETIME DEFAULT CURRENT_TIMESTAMP
-      );
-    `);
-  } catch (e) {
-    logger.error({ err: e }, '[ChallengeCache] Error creating table');
-  }
+  // 1. Ensure Table (handled by Drizzle migrations)
 
   // 2. Check Cache
   const cacheKey = generateHash(questionContent + tags.join('|'));
   if (!force) {
-    const cached = db.prepare('SELECT data FROM ai_challenge_cache WHERE hash = ?').get(cacheKey) as { data: string } | undefined;
+    const cached = await drizzleDb.query.ai_challenge_cache.findFirst({
+      where: eq(drizzleSchema.ai_challenge_cache.hash, cacheKey)
+    });
     if (cached) {
       logger.info('[ChallengeCache] 命中缓存');
       return JSON.parse(cached.data) as RegressionChallenge;
@@ -136,7 +121,7 @@ export async function generateRegressionChallengeAction(
     }
   }
 
-  const dbTemplate = getPromptFromDbSync('regression_challenge');
+  const dbTemplate = await getPromptFromDb('regression_challenge');
   const template = dbTemplate || DEFAULT_REGRESSION_PROMPT;
 
   const prompt = buildPrompt(template, {
@@ -164,7 +149,9 @@ export async function generateRegressionChallengeAction(
     if (validationResult.includes('YES')) {
       // 4. Save Cache only if valid
       try {
-        db.prepare('INSERT OR REPLACE INTO ai_challenge_cache (hash, data) VALUES (?, ?)').run(cacheKey, JSON.stringify(challenge));
+        await drizzleDb.insert(drizzleSchema.ai_challenge_cache)
+          .values({ hash: cacheKey, data: JSON.stringify(challenge) })
+          .onConflictDoUpdate({ target: drizzleSchema.ai_challenge_cache.hash, set: { data: JSON.stringify(challenge) } });
       } catch (e) {
         logger.error({ err: e }, '[ChallengeCache] 保存失败');
       }
@@ -217,22 +204,7 @@ export async function generateRegressionChallengeAction(
 }
 
 
-// 确保缓存表存在
-function ensureFirstPrinciplesCacheTable() {
-  try {
-    db.exec(`
-          CREATE TABLE IF NOT EXISTS first_principles_cache (
-              id INTEGER PRIMARY KEY AUTOINCREMENT,
-              question_hash TEXT UNIQUE NOT NULL,
-              analysis TEXT NOT NULL,
-              created_at DATETIME DEFAULT CURRENT_TIMESTAMP
-          );
-          CREATE INDEX IF NOT EXISTS idx_fp_cache_hash ON first_principles_cache(question_hash);
-      `);
-  } catch (e) {
-    logger.error({ err: e }, '[FirstPrinciples] 创建缓存表失败');
-  }
-}
+// (ensureFirstPrinciplesCacheTable 移除，已由 Drizzle 管理)
 
 // 生成内容哈希
 function generateHash(content: string): string {
@@ -259,15 +231,13 @@ export async function generateFirstPrinciplesAction(
     throw new Error('缺少题目内容');
   }
 
-  ensureFirstPrinciplesCacheTable();
-
   // 1. Check Cache (skip if force=true)
   const cacheKey = generateHash(questionContent + correctAnswer + (wrongAnswer || ''));
 
   if (!force) {
-    const cached = db.prepare(
-      'SELECT analysis FROM first_principles_cache WHERE question_hash = ?'
-    ).get(cacheKey) as { analysis: string } | undefined;
+    const cached = await drizzleDb.query.first_principles_cache.findFirst({
+      where: eq(drizzleSchema.first_principles_cache.question_hash, cacheKey)
+    });
 
     if (cached) {
       logger.info('[FirstPrinciples] 命中缓存');
@@ -287,7 +257,7 @@ export async function generateFirstPrinciplesAction(
 
   // 3. Build Prompt (User's original prompt logic)
   // Use DB template if exists, otherwise use hardcoded logic from user request to ensure fidelity
-  const dbTemplate = getPromptFromDbSync('first_principles');
+  const dbTemplate = await getPromptFromDb('first_principles');
 
   let prompt: string;
   if (dbTemplate) {
@@ -326,9 +296,9 @@ ${explanation ? `参考解析：${explanation}` : ''}
 
     // 4. Save to Cache
     try {
-      db.prepare(
-        'INSERT OR REPLACE INTO first_principles_cache (question_hash, analysis) VALUES (?, ?)'
-      ).run(cacheKey, text);
+      await drizzleDb.insert(drizzleSchema.first_principles_cache)
+        .values({ question_hash: cacheKey, analysis: text })
+        .onConflictDoUpdate({ target: drizzleSchema.first_principles_cache.question_hash, set: { analysis: text } });
     } catch (cacheError) {
       logger.error({ err: cacheError }, '[FirstPrinciples] 缓存保存失败');
     }

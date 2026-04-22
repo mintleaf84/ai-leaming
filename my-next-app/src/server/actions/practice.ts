@@ -1,7 +1,8 @@
 'use server';
 
 import logger from '@/lib/logger';
-import db from '@/lib/db';
+import db, { drizzleDb, drizzleSchema } from '@/lib/db';
+import { eq, and, desc, gt, sql } from 'drizzle-orm';
 import { Question, Dimension } from "@/types";
 import type { PracticeMode } from "@/types";
 import { safeGet, safeAll } from '@/lib/db/safe-query';
@@ -13,6 +14,19 @@ import { revalidatePath } from 'next/cache';
 // 导入解耦后的服务
 import { DemoService } from '@/lib/practice/demo';
 import { KnowledgeTreeService, KnowledgeNode } from '@/lib/services/knowledge-tree';
+
+/**
+ * 将数据库原始题目行映射为业务 Question 类型
+ */
+function mapQuestion(q: any): Question {
+  return {
+    ...q,
+    options: typeof q.options === 'string' ? JSON.parse(q.options) : (q.options || []),
+    tags: typeof q.tags === 'string' ? JSON.parse(q.tags) : (q.tags || []),
+    type: (q.type as any) || 'single',
+    dimension: (q.dimension as any) || 'knowledge'
+  };
+}
 
 /**
  * 获取或恢复练习会话
@@ -34,50 +48,51 @@ export async function getPracticeSessionAction(forceNew: boolean = false): Promi
 
     // 2. 尝试恢复最近 24 小时内未完成的会话
     if (!forceNew) {
-      const lastSession = safeGet(
-        db.prepare(`
-          SELECT * FROM practice_sessions 
-          WHERE user_id = ? AND is_demo = 0 AND created_at > datetime('now', '-1 day') 
-          ORDER BY created_at DESC LIMIT 1
-        `),
-        [user.id],
-        PracticeSessionRowSchema
-      );
+      const lastSession = await drizzleDb.query.practice_sessions.findFirst({
+        where: and(
+          eq(drizzleSchema.practice_sessions.user_id, user.id),
+          eq(drizzleSchema.practice_sessions.is_demo, 0),
+          gt(drizzleSchema.practice_sessions.created_at, sql`datetime('now', '-1 day')`)
+        ),
+        orderBy: [desc(drizzleSchema.practice_sessions.created_at)]
+      });
 
       if (lastSession && lastSession.questions_json) {
-        const logCount = safeGet(
-          db.prepare('SELECT count(*) as count FROM practice_logs WHERE session_id = ?'),
-          [lastSession.id],
-          z.object({ count: z.number() })
-        );
+        const logResult = await drizzleDb.select({ count: sql<number>`count(*)` })
+          .from(drizzleSchema.practice_logs)
+          .where(eq(drizzleSchema.practice_logs.session_id, lastSession.id))
+          .get();
 
-        if (logCount && logCount.count < lastSession.total_questions) {
+        if (logResult && logResult.count < (lastSession.total_questions || 0)) {
           return {
-            questions: lastSession.questions_json as unknown as Question[],
+            questions: JSON.parse(lastSession.questions_json) as Question[],
             sessionId: lastSession.id,
             resumed: true,
-            completedCount: logCount.count
+            completedCount: logResult.count
           };
         }
       }
     }
 
-    // 3. 创建全新随机练习会话
     const sessionId = Math.random().toString(36).substring(2, 15);
-    const questions = safeAll(
-      db.prepare('SELECT * FROM questions ORDER BY RANDOM() LIMIT 10'),
-      [],
-      QuestionRowSchema
-    );
+    const rawQuestions = await drizzleDb.select()
+      .from(drizzleSchema.questions)
+      .orderBy(sql`RANDOM()`)
+      .limit(10);
 
-    if (!questions || questions.length === 0) {
-      return { questions: [], sessionId: "" };
+    if (!rawQuestions || rawQuestions.length === 0) {
+      return { questions: [] as Question[], sessionId: "" };
     }
 
-    db.prepare(`
-      INSERT INTO practice_sessions (id, user_id, total_questions, questions_json, is_demo) 
-      VALUES (?, ?, ?, ?, 0)
-    `).run(sessionId, user.id, questions.length, JSON.stringify(questions));
+    const questions = rawQuestions.map((q: any) => mapQuestion(q));
+
+    await drizzleDb.insert(drizzleSchema.practice_sessions).values({
+      id: sessionId,
+      user_id: user.id,
+      total_questions: questions.length,
+      questions_json: JSON.stringify(questions),
+      is_demo: 0
+    });
 
     return { questions, sessionId };
   } catch (error) {
@@ -100,23 +115,32 @@ export async function submitAnswerAction(
     const user = await requireUser();
 
     // 1. 记录答题日志
-    db.prepare(`
-      INSERT INTO practice_logs (session_id, user_id, question_id, user_answer, is_correct, duration_ms) 
-      VALUES (?, ?, ?, ?, ?, ?)
-    `).run(sessionId || null, user.id, questionId, userAnswer, isCorrect ? 1 : 0, duration);
+    await drizzleDb.insert(drizzleSchema.practice_logs).values({
+      session_id: sessionId || null,
+      user_id: user.id,
+      question_id: questionId,
+      user_answer: userAnswer,
+      is_correct: isCorrect,
+      duration_ms: duration
+    });
 
     // 2. 更新会话正确数
     if (sessionId) {
-      db.prepare(`
-        UPDATE practice_sessions 
-        SET correct_count = correct_count + ?
-        WHERE id = ? AND user_id = ?
-      `).run(isCorrect ? 1 : 0, sessionId, user.id);
+      await drizzleDb.update(drizzleSchema.practice_sessions)
+        .set({ correct_count: sql`${drizzleSchema.practice_sessions.correct_count} + ${isCorrect ? 1 : 0}` })
+        .where(and(
+          eq(drizzleSchema.practice_sessions.id, sessionId),
+          eq(drizzleSchema.practice_sessions.user_id, user.id)
+        ));
     }
 
-    // 3. 异步更新掌握度 (通过 import 避免循环依赖)
-    const q = db.prepare('SELECT tags, dimension FROM questions WHERE id = ?').get(questionId) as { tags: string, dimension: string };
-    if (q) {
+    // 3. 异步更新掌握度
+    const q = await drizzleDb.query.questions.findFirst({
+      where: eq(drizzleSchema.questions.id, questionId),
+      columns: { tags: true, dimension: true }
+    });
+
+    if (q && q.tags) {
       const tags = JSON.parse(q.tags);
       const { masteryService } = await import('@/lib/services/mastery');
 
@@ -137,14 +161,16 @@ export async function submitAnswerAction(
  */
 export async function getKnowledgeTreeAction(): Promise<KnowledgeNode[]> {
   try {
-    const rawTags = db.prepare(`
-      SELECT DISTINCT value as tag, COUNT(*) as count
-      FROM questions, json_each(questions.tags)
-      GROUP BY value
-      ORDER BY value
-    `).all() as { tag: string; count: number }[];
+    const rawTags = await drizzleDb.select({
+      tag: sql<string>`json_each.value`,
+      count: sql<number>`count(*)`
+    })
+    .from(sql`${drizzleSchema.questions} AS q, json_each(q.tags)`)
+    .groupBy(sql`json_each.value`)
+    .orderBy(sql`json_each.value`)
+    .all();
 
-    return KnowledgeTreeService.buildKnowledgeTree(rawTags);
+    return KnowledgeTreeService.buildKnowledgeTree(rawTags as any);
   } catch (error) {
     logger.error({ err: error }, '获取知识树失败');
     return [];
@@ -186,17 +212,17 @@ export async function getPracticeSessionByConfigAction(config: {
       return { questions: [], sessionId: '', config };
     }
 
-    const questions = rawQuestions.map(q => ({
-      ...q,
-      options: typeof q.options === 'string' ? JSON.parse(q.options) : q.options,
-      tags: typeof q.tags === 'string' ? JSON.parse(q.tags) : q.tags
-    })) as Question[];
+    const questions = rawQuestions.map((q: any) => mapQuestion(q));
 
     const sessionId = Math.random().toString(36).substring(2, 15);
-    db.prepare(`
-      INSERT INTO practice_sessions (id, user_id, total_questions, questions_json, practice_mode, is_demo) 
-      VALUES (?, ?, ?, ?, ?, 0)
-    `).run(sessionId, user.id, questions.length, JSON.stringify(questions), config.mode);
+    await drizzleDb.insert(drizzleSchema.practice_sessions).values({
+      id: sessionId,
+      user_id: user.id,
+      total_questions: questions.length,
+      questions_json: JSON.stringify(questions),
+      practice_mode: config.mode,
+      is_demo: 0
+    });
 
     return { questions, sessionId, config };
   } catch (error) {
@@ -212,34 +238,31 @@ export async function getSessionByIdAction(sessionId: string) {
   try {
     const user = await requireUser();
 
-    const session = safeGet(
-      db.prepare(`SELECT * FROM practice_sessions WHERE id = ? AND user_id = ?`),
-      [sessionId, user.id],
-      PracticeSessionRowSchema
-    );
+    const session = await drizzleDb.query.practice_sessions.findFirst({
+      where: and(
+        eq(drizzleSchema.practice_sessions.id, sessionId),
+        eq(drizzleSchema.practice_sessions.user_id, user.id)
+      )
+    });
 
     if (!session || !session.questions_json) return null;
 
-    let questions = session.questions_json as unknown as any[];
+    let questions = session.questions_json ? JSON.parse(session.questions_json) : [];
     
     // 如果存储的是 ID 列表，则查询完整题目 (向下兼容旧逻辑)
     if (questions.length > 0 && (typeof questions[0] === 'string' || typeof questions[0] === 'number')) {
-      const placeholders = questions.map(() => '?').join(',');
-      questions = safeAll(
-        db.prepare(`SELECT * FROM questions WHERE id IN (${placeholders})`),
-        questions,
-        QuestionRowSchema
-      );
+      questions = await drizzleDb.select()
+        .from(drizzleSchema.questions)
+        .where(sql`${drizzleSchema.questions.id} IN (${sql.join(questions, sql`, `)})`);
     }
 
-    const logResult = safeGet(
-      db.prepare('SELECT count(*) as count FROM practice_logs WHERE session_id = ?'),
-      [sessionId],
-      z.object({ count: z.number() })
-    );
+    const logResult = await drizzleDb.select({ count: sql<number>`count(*)` })
+      .from(drizzleSchema.practice_logs)
+      .where(eq(drizzleSchema.practice_logs.session_id, sessionId))
+      .get();
 
     return {
-      questions: questions as Question[],
+      questions: questions.map((q: any) => mapQuestion(q)),
       sessionId: session.id,
       completedCount: logResult?.count || 0,
       practiceMode: session.practice_mode || undefined
@@ -254,8 +277,18 @@ export async function getSessionByIdAction(sessionId: string) {
 export async function saveSessionReviewAction(sessionId: string, questionId: number, reviewData: Record<string, unknown>) {
   try {
     const user = await requireUser();
-    db.prepare(`INSERT INTO session_reviews (session_id, question_id, review_data) VALUES (?, ?, ?)`).run(sessionId, questionId, JSON.stringify(reviewData));
-    db.prepare(`UPDATE practice_sessions SET review_count = review_count + 1 WHERE id = ? AND user_id = ?`).run(sessionId, user.id);
+    await drizzleDb.insert(drizzleSchema.session_reviews).values({
+      session_id: sessionId,
+      question_id: questionId,
+      review_data: JSON.stringify(reviewData)
+    });
+
+    await drizzleDb.update(drizzleSchema.practice_sessions)
+      .set({ review_count: sql`${drizzleSchema.practice_sessions.review_count} + 1` })
+      .where(and(
+        eq(drizzleSchema.practice_sessions.id, sessionId),
+        eq(drizzleSchema.practice_sessions.user_id, user.id)
+      ));
     return { success: true };
   } catch (e) {
     return { success: false };
@@ -263,6 +296,12 @@ export async function saveSessionReviewAction(sessionId: string, questionId: num
 }
 
 export async function getAvailableTagsAction(): Promise<string[]> {
-  const result = db.prepare(`SELECT DISTINCT value as tag FROM questions, json_each(questions.tags) ORDER BY value`).all() as { tag: string }[];
+  const result = await drizzleDb.selectDistinct({
+    tag: sql<string>`json_each.value`
+  })
+  .from(sql`${drizzleSchema.questions} AS q, json_each(q.tags)`)
+  .orderBy(sql`json_each.value`)
+  .all();
+  
   return result.map(r => r.tag);
 }

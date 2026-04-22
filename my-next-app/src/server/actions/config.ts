@@ -2,7 +2,8 @@
 import logger from '@/lib/logger';
 
 import { getErrorMessage } from '@/lib/utils/error';
-import db from '@/lib/db';
+import db, { drizzleDb, drizzleSchema } from '@/lib/db';
+import { eq, desc, sql, count } from 'drizzle-orm';
 import { revalidatePath } from 'next/cache';
 import { requireRole } from '@/lib/auth/auth';
 import { logAdminAction } from '@/lib/admin/audit';
@@ -25,11 +26,13 @@ export type AiConfig = {
 
 // 获取所有配置
 export async function getAiConfigsAction(): Promise<AiConfig[]> {
-    const settings = db.prepare('SELECT * FROM ai_configs ORDER BY created_at DESC').all() as AiConfig[];
-    return settings.map(s => ({
+    const settings = await drizzleDb.query.ai_configs.findMany({
+        orderBy: [desc(drizzleSchema.ai_configs.created_at)]
+    });
+    return settings.map((s: any) => ({
         ...s,
         is_active: Boolean(s.is_active)
-    }));
+    })) as AiConfig[];
 }
 
 // 保存配置（新增或更新）
@@ -38,45 +41,37 @@ export async function saveAiConfigAction(config: Partial<AiConfig>) {
     try {
         if (config.id) {
             // Update
-            const stmt = db.prepare(`
-      UPDATE ai_configs 
-      SET name = ?, api_url = ?, api_key = ?, model_economy = ?, model_premium = ?, model_embedding = ?, embedding_dimensions = ?, model_knowledge = ?, model_rerank = ?
-      WHERE id = ?
-    `);
-            stmt.run(
-                config.name,
-                config.api_url,
-                config.api_key,
-                config.model_economy || 'gpt-4o-mini',
-                config.model_premium || 'gpt-4o',
-                config.model_embedding || 'text-embedding-3-small',
-                config.embedding_dimensions || 768,
-                config.model_knowledge || '',
-                config.model_rerank || '',
-                config.id
-            );
+            await drizzleDb.update(drizzleSchema.ai_configs)
+                .set({
+                    name: config.name,
+                    api_url: config.api_url,
+                    api_key: config.api_key,
+                    model_economy: config.model_economy || 'gpt-4o-mini',
+                    model_premium: config.model_premium || 'gpt-4o',
+                    model_embedding: config.model_embedding || 'text-embedding-3-small',
+                    embedding_dimensions: config.embedding_dimensions || 768,
+                    model_knowledge: config.model_knowledge || '',
+                    model_rerank: config.model_rerank || ''
+                })
+                .where(eq(drizzleSchema.ai_configs.id, config.id));
         } else {
             // Insert
             // First check if it's the first config, if so make it active
-            const count = db.prepare('SELECT COUNT(*) as count FROM ai_configs').get() as { count: number };
-            const isActive = count.count === 0 ? 1 : 0;
+            const [countResult] = await drizzleDb.select({ value: count() }).from(drizzleSchema.ai_configs);
+            const isActive = countResult.value === 0 ? 1 : 0;
 
-            const stmt = db.prepare(`
-      INSERT INTO ai_configs (name, api_url, api_key, model_economy, model_premium, model_embedding, embedding_dimensions, model_knowledge, model_rerank, is_active)
-      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-    `);
-            stmt.run(
-                config.name,
-                config.api_url,
-                config.api_key,
-                config.model_economy || 'gpt-4o-mini',
-                config.model_premium || 'gpt-4o',
-                config.model_embedding || 'text-embedding-3-small',
-                config.embedding_dimensions || 768,
-                config.model_knowledge || '',
-                config.model_rerank || '',
-                isActive
-            );
+            await drizzleDb.insert(drizzleSchema.ai_configs).values({
+                name: config.name as string,
+                api_url: config.api_url as string,
+                api_key: config.api_key as string,
+                model_economy: config.model_economy || 'gpt-4o-mini',
+                model_premium: config.model_premium || 'gpt-4o',
+                model_embedding: config.model_embedding || 'text-embedding-3-small',
+                embedding_dimensions: config.embedding_dimensions || 768,
+                model_knowledge: config.model_knowledge || '',
+                model_rerank: config.model_rerank || '',
+                is_active: isActive
+            });
         }
 
         revalidatePath('/admin');
@@ -96,12 +91,17 @@ export async function saveAiConfigAction(config: Partial<AiConfig>) {
 export async function deleteAiConfigAction(id: number) {
     const user = await requireRole(['admin']);
     // Check if active
-    const config = db.prepare('SELECT is_active FROM ai_configs WHERE id = ?').get(id) as { is_active: number };
+    const config = await drizzleDb.query.ai_configs.findFirst({
+        where: eq(drizzleSchema.ai_configs.id, id),
+        columns: { is_active: true }
+    });
+    
     if (config && config.is_active) {
         return { success: false, error: "无法删除当前激活的配置，请先切换到其他配置。" };
     }
 
-    db.prepare('DELETE FROM ai_configs WHERE id = ?').run(id);
+    await drizzleDb.delete(drizzleSchema.ai_configs)
+        .where(eq(drizzleSchema.ai_configs.id, id));
 
     // 记录日志
     logAdminAction(user.id, user.username, 'DELETE_AI_CONFIG', 'ai_config', id.toString());
@@ -114,12 +114,11 @@ export async function deleteAiConfigAction(id: number) {
 // 设置激活配置
 export async function setActiveAiConfigAction(id: number) {
     const user = await requireRole(['admin']);
-    const transaction = db.transaction(() => {
-        db.prepare('UPDATE ai_configs SET is_active = 0').run();
-        db.prepare('UPDATE ai_configs SET is_active = 1 WHERE id = ?').run(id);
+    
+    await drizzleDb.transaction(async (tx: any) => {
+        await tx.update(drizzleSchema.ai_configs).set({ is_active: 0 });
+        await tx.update(drizzleSchema.ai_configs).set({ is_active: 1 }).where(eq(drizzleSchema.ai_configs.id, id));
     });
-
-    transaction();
 
     // 记录日志
     logAdminAction(user.id, user.username, 'UPDATE_AI_CONFIG', 'ai_config', id.toString(), { action: 'set_active' });
@@ -141,7 +140,7 @@ export interface AiModelRoute {
  */
 export async function getAiModelRoutesAction(): Promise<AiModelRoute[]> {
     await requireRole(['admin']);
-    return db.prepare('SELECT * FROM ai_model_routes').all() as AiModelRoute[];
+    return await drizzleDb.query.ai_model_routes.findMany() as AiModelRoute[];
 }
 
 /**
@@ -150,16 +149,18 @@ export async function getAiModelRoutesAction(): Promise<AiModelRoute[]> {
 export async function saveAiModelRouteAction(route: AiModelRoute) {
     const user = await requireRole(['admin']);
 
-    const stmt = db.prepare(`
-        INSERT INTO ai_model_routes (feature, config_id, model_name, updated_at)
-        VALUES (?, ?, ?, CURRENT_TIMESTAMP)
-        ON CONFLICT(feature) DO UPDATE SET
-            config_id = excluded.config_id,
-            model_name = excluded.model_name,
-            updated_at = CURRENT_TIMESTAMP
-    `);
-
-    stmt.run(route.feature, route.config_id, route.model_name);
+    await drizzleDb.insert(drizzleSchema.ai_model_routes).values({
+        feature: route.feature,
+        config_id: route.config_id,
+        model_name: route.model_name
+    }).onConflictDoUpdate({
+        target: drizzleSchema.ai_model_routes.feature,
+        set: {
+            config_id: route.config_id,
+            model_name: route.model_name,
+            updated_at: sql`CURRENT_TIMESTAMP`
+        }
+    });
 
     // 记录日志
     logAdminAction(

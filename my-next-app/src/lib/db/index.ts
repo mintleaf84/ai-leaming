@@ -99,24 +99,29 @@ export const drizzleDb = drizzle(db, { schema });
  * 初始化数据库
  */
 export function initDatabase() {
+    // 检查是否在构建阶段
+    if (process.env.NEXT_PHASE === 'phase-production-build' || process.env.IS_BUILDING === 'true') {
+        return;
+    }
+
     console.log('[DB] Starting database initialization...');
 
     try {
-        // 1. 运行旧的 SQL 脚本 (确保地基)
-        createTables(db);
-        runOldMigrations(db);
-
-        // 2. 运行 Drizzle 自动化迁移
+        // 1. 运行 Drizzle 自动化迁移 (包含 IF NOT EXISTS 补强)
         console.log('[DB] Running Drizzle migrations...');
         migrate(drizzleDb, { migrationsFolder: path.resolve(process.cwd(), 'drizzle') });
         console.log('[DB] Drizzle migrations completed');
 
+        // 2. 补全向量扩展和种子数据
         setupVectorExtension(db);
         seedData(db);
         console.log('[DB] Database initialization completed');
     } catch (error) {
         console.error('[DB] Database initialization failed:', error);
-        throw error;
+        // 不在构建期间抛出致命错误，但在运行时需要抛出
+        if (process.env.NODE_ENV === 'production') {
+            throw error;
+        }
     }
 }
 

@@ -1,4 +1,4 @@
-CREATE TABLE `admin_logs` (
+CREATE TABLE IF NOT EXISTS `admin_logs` (
 	`id` integer PRIMARY KEY AUTOINCREMENT NOT NULL,
 	`user_id` integer NOT NULL,
 	`username` text NOT NULL,
@@ -11,7 +11,7 @@ CREATE TABLE `admin_logs` (
 	FOREIGN KEY (`user_id`) REFERENCES `users`(`id`) ON UPDATE no action ON DELETE cascade
 );
 --> statement-breakpoint
-CREATE TABLE `ai_configs` (
+CREATE TABLE IF NOT EXISTS `ai_configs` (
 	`id` integer PRIMARY KEY AUTOINCREMENT NOT NULL,
 	`name` text NOT NULL,
 	`api_url` text NOT NULL,
@@ -26,7 +26,7 @@ CREATE TABLE `ai_configs` (
 	`created_at` text DEFAULT CURRENT_TIMESTAMP
 );
 --> statement-breakpoint
-CREATE TABLE `ai_model_routes` (
+CREATE TABLE IF NOT EXISTS `ai_model_routes` (
 	`feature` text PRIMARY KEY NOT NULL,
 	`config_id` integer,
 	`model_name` text,
@@ -34,7 +34,7 @@ CREATE TABLE `ai_model_routes` (
 	FOREIGN KEY (`config_id`) REFERENCES `ai_configs`(`id`) ON UPDATE no action ON DELETE set null
 );
 --> statement-breakpoint
-CREATE TABLE `api_call_logs` (
+CREATE TABLE IF NOT EXISTS `api_call_logs` (
 	`id` integer PRIMARY KEY AUTOINCREMENT NOT NULL,
 	`user_id` integer,
 	`config_id` integer,
@@ -48,7 +48,7 @@ CREATE TABLE `api_call_logs` (
 	`created_at` text DEFAULT CURRENT_TIMESTAMP
 );
 --> statement-breakpoint
-CREATE TABLE `api_keys` (
+CREATE TABLE IF NOT EXISTS `api_keys` (
 	`id` integer PRIMARY KEY AUTOINCREMENT NOT NULL,
 	`key_string` text NOT NULL,
 	`description` text DEFAULT '',
@@ -57,8 +57,8 @@ CREATE TABLE `api_keys` (
 	`updated_at` text DEFAULT CURRENT_TIMESTAMP
 );
 --> statement-breakpoint
-CREATE UNIQUE INDEX `api_keys_key_string_unique` ON `api_keys` (`key_string`);--> statement-breakpoint
-CREATE TABLE `chat_messages` (
+CREATE UNIQUE INDEX IF NOT EXISTS `api_keys_key_string_unique` ON `api_keys` (`key_string`);--> statement-breakpoint
+CREATE TABLE IF NOT EXISTS `chat_messages` (
 	`id` integer PRIMARY KEY AUTOINCREMENT NOT NULL,
 	`session_id` integer NOT NULL,
 	`role` text NOT NULL,
@@ -68,7 +68,7 @@ CREATE TABLE `chat_messages` (
 	FOREIGN KEY (`session_id`) REFERENCES `chat_sessions`(`id`) ON UPDATE no action ON DELETE cascade
 );
 --> statement-breakpoint
-CREATE TABLE `chat_sessions` (
+CREATE TABLE IF NOT EXISTS `chat_sessions` (
 	`id` integer PRIMARY KEY AUTOINCREMENT NOT NULL,
 	`user_id` integer DEFAULT 1 NOT NULL,
 	`title` text DEFAULT '新对话' NOT NULL,
@@ -78,7 +78,7 @@ CREATE TABLE `chat_sessions` (
 	FOREIGN KEY (`user_id`) REFERENCES `users`(`id`) ON UPDATE no action ON DELETE cascade
 );
 --> statement-breakpoint
-CREATE TABLE `daily_usage` (
+CREATE TABLE IF NOT EXISTS `daily_usage` (
 	`id` integer PRIMARY KEY AUTOINCREMENT NOT NULL,
 	`user_id` integer NOT NULL,
 	`usage_date` text NOT NULL,
@@ -87,8 +87,8 @@ CREATE TABLE `daily_usage` (
 	FOREIGN KEY (`user_id`) REFERENCES `users`(`id`) ON UPDATE no action ON DELETE cascade
 );
 --> statement-breakpoint
-CREATE UNIQUE INDEX `daily_usage_user_id_usage_date_usage_type_unique` ON `daily_usage` (`user_id`,`usage_date`,`usage_type`);--> statement-breakpoint
-CREATE TABLE `knowledge_cards` (
+CREATE UNIQUE INDEX IF NOT EXISTS `daily_usage_user_id_usage_date_usage_type_unique` ON `daily_usage` (`user_id`,`usage_date`,`usage_type`);--> statement-breakpoint
+CREATE TABLE IF NOT EXISTS `knowledge_cards` (
 	`id` integer PRIMARY KEY AUTOINCREMENT NOT NULL,
 	`user_id` integer DEFAULT 1 NOT NULL,
 	`session_id` integer,
@@ -105,7 +105,7 @@ CREATE TABLE `knowledge_cards` (
 	FOREIGN KEY (`session_id`) REFERENCES `chat_sessions`(`id`) ON UPDATE no action ON DELETE set null
 );
 --> statement-breakpoint
-CREATE TABLE `mastered_questions` (
+CREATE TABLE IF NOT EXISTS `mastered_questions` (
 	`id` integer PRIMARY KEY AUTOINCREMENT NOT NULL,
 	`user_id` integer NOT NULL,
 	`question_id` integer NOT NULL,
@@ -115,8 +115,8 @@ CREATE TABLE `mastered_questions` (
 	FOREIGN KEY (`question_id`) REFERENCES `questions`(`id`) ON UPDATE no action ON DELETE cascade
 );
 --> statement-breakpoint
-CREATE UNIQUE INDEX `mastered_questions_user_id_question_id_unique` ON `mastered_questions` (`user_id`,`question_id`);--> statement-breakpoint
-CREATE TABLE `notes` (
+CREATE UNIQUE INDEX IF NOT EXISTS `mastered_questions_user_id_question_id_unique` ON `mastered_questions` (`user_id`,`question_id`);--> statement-breakpoint
+CREATE TABLE IF NOT EXISTS `notes` (
 	`id` integer PRIMARY KEY AUTOINCREMENT NOT NULL,
 	`user_id` integer NOT NULL,
 	`title` text NOT NULL,
@@ -126,7 +126,7 @@ CREATE TABLE `notes` (
 	FOREIGN KEY (`user_id`) REFERENCES `users`(`id`) ON UPDATE no action ON DELETE cascade
 );
 --> statement-breakpoint
-CREATE TABLE `observation_zone` (
+CREATE TABLE IF NOT EXISTS `observation_zone` (
 	`user_id` integer DEFAULT 1 NOT NULL,
 	`tag_name` text NOT NULL,
 	`reason` text,
@@ -135,7 +135,7 @@ CREATE TABLE `observation_zone` (
 	PRIMARY KEY(`user_id`, `tag_name`)
 );
 --> statement-breakpoint
-CREATE TABLE `payment_records` (
+CREATE TABLE IF NOT EXISTS `payment_records` (
 	`id` integer PRIMARY KEY AUTOINCREMENT NOT NULL,
 	`user_id` integer NOT NULL,
 	`order_no` text NOT NULL,
@@ -149,8 +149,8 @@ CREATE TABLE `payment_records` (
 	FOREIGN KEY (`user_id`) REFERENCES `users`(`id`) ON UPDATE no action ON DELETE cascade
 );
 --> statement-breakpoint
-CREATE UNIQUE INDEX `payment_records_order_no_unique` ON `payment_records` (`order_no`);--> statement-breakpoint
-CREATE TABLE `practice_logs` (
+CREATE UNIQUE INDEX IF NOT EXISTS `payment_records_order_no_unique` ON `payment_records` (`order_no`);--> statement-breakpoint
+CREATE TABLE IF NOT EXISTS `practice_logs` (
 	`id` integer PRIMARY KEY AUTOINCREMENT NOT NULL,
 	`session_id` text,
 	`user_id` integer DEFAULT 1 NOT NULL,
@@ -165,7 +165,7 @@ CREATE TABLE `practice_logs` (
 	FOREIGN KEY (`question_id`) REFERENCES `questions`(`id`) ON UPDATE no action ON DELETE no action
 );
 --> statement-breakpoint
-CREATE TABLE `practice_sessions` (
+CREATE TABLE IF NOT EXISTS `practice_sessions` (
 	`id` text PRIMARY KEY NOT NULL,
 	`user_id` integer DEFAULT 1 NOT NULL,
 	`session_name` text,
@@ -179,7 +179,7 @@ CREATE TABLE `practice_sessions` (
 	FOREIGN KEY (`user_id`) REFERENCES `users`(`id`) ON UPDATE no action ON DELETE cascade
 );
 --> statement-breakpoint
-CREATE TABLE `prompt_templates` (
+CREATE TABLE IF NOT EXISTS `prompt_templates` (
 	`key` text PRIMARY KEY NOT NULL,
 	`template` text NOT NULL,
 	`description` text,
@@ -187,7 +187,7 @@ CREATE TABLE `prompt_templates` (
 	`updated_at` text DEFAULT CURRENT_TIMESTAMP
 );
 --> statement-breakpoint
-CREATE TABLE `questions` (
+CREATE TABLE IF NOT EXISTS `questions` (
 	`id` integer PRIMARY KEY AUTOINCREMENT NOT NULL,
 	`content` text NOT NULL,
 	`options` text,
@@ -200,7 +200,7 @@ CREATE TABLE `questions` (
 	`created_at` text DEFAULT CURRENT_TIMESTAMP
 );
 --> statement-breakpoint
-CREATE TABLE `session_reviews` (
+CREATE TABLE IF NOT EXISTS `session_reviews` (
 	`id` integer PRIMARY KEY AUTOINCREMENT NOT NULL,
 	`session_id` text NOT NULL,
 	`question_id` integer NOT NULL,
@@ -209,7 +209,7 @@ CREATE TABLE `session_reviews` (
 	FOREIGN KEY (`session_id`) REFERENCES `practice_sessions`(`id`) ON UPDATE no action ON DELETE no action
 );
 --> statement-breakpoint
-CREATE TABLE `subscription_plans` (
+CREATE TABLE IF NOT EXISTS `subscription_plans` (
 	`id` text PRIMARY KEY NOT NULL,
 	`name` text NOT NULL,
 	`tier` text NOT NULL,
@@ -221,7 +221,7 @@ CREATE TABLE `subscription_plans` (
 	`created_at` text DEFAULT CURRENT_TIMESTAMP
 );
 --> statement-breakpoint
-CREATE TABLE `system_settings` (
+CREATE TABLE IF NOT EXISTS `system_settings` (
 	`user_id` integer DEFAULT 1 NOT NULL,
 	`key` text NOT NULL,
 	`value` text,
@@ -230,7 +230,7 @@ CREATE TABLE `system_settings` (
 	FOREIGN KEY (`user_id`) REFERENCES `users`(`id`) ON UPDATE no action ON DELETE cascade
 );
 --> statement-breakpoint
-CREATE TABLE `text_annotations` (
+CREATE TABLE IF NOT EXISTS `text_annotations` (
 	`id` integer PRIMARY KEY AUTOINCREMENT NOT NULL,
 	`user_id` integer NOT NULL,
 	`question_id` integer NOT NULL,
@@ -243,9 +243,9 @@ CREATE TABLE `text_annotations` (
 	FOREIGN KEY (`question_id`) REFERENCES `questions`(`id`) ON UPDATE no action ON DELETE cascade
 );
 --> statement-breakpoint
-CREATE INDEX `idx_text_annotations_user_question` ON `text_annotations` (`user_id`,`question_id`);--> statement-breakpoint
-CREATE UNIQUE INDEX `text_annotations_user_id_question_id_start_offset_end_offset_unique` ON `text_annotations` (`user_id`,`question_id`,`start_offset`,`end_offset`);--> statement-breakpoint
-CREATE TABLE `textbook_chapters` (
+CREATE INDEX IF NOT EXISTS `idx_text_annotations_user_question` ON `text_annotations` (`user_id`,`question_id`);--> statement-breakpoint
+CREATE UNIQUE INDEX IF NOT EXISTS `text_annotations_user_id_question_id_start_offset_end_offset_unique` ON `text_annotations` (`user_id`,`question_id`,`start_offset`,`end_offset`);--> statement-breakpoint
+CREATE TABLE IF NOT EXISTS `textbook_chapters` (
 	`id` integer PRIMARY KEY AUTOINCREMENT NOT NULL,
 	`textbook_id` integer NOT NULL,
 	`title` text NOT NULL,
@@ -258,7 +258,7 @@ CREATE TABLE `textbook_chapters` (
 	FOREIGN KEY (`textbook_id`) REFERENCES `textbooks`(`id`) ON UPDATE no action ON DELETE cascade
 );
 --> statement-breakpoint
-CREATE TABLE `textbooks` (
+CREATE TABLE IF NOT EXISTS `textbooks` (
 	`id` integer PRIMARY KEY AUTOINCREMENT NOT NULL,
 	`title` text NOT NULL,
 	`author` text,
@@ -268,7 +268,7 @@ CREATE TABLE `textbooks` (
 	`updated_at` text DEFAULT CURRENT_TIMESTAMP
 );
 --> statement-breakpoint
-CREATE TABLE `user_mastery` (
+CREATE TABLE IF NOT EXISTS `user_mastery` (
 	`user_id` integer DEFAULT 1 NOT NULL,
 	`tag_name` text NOT NULL,
 	`score` real DEFAULT 0,
@@ -280,7 +280,7 @@ CREATE TABLE `user_mastery` (
 	FOREIGN KEY (`user_id`) REFERENCES `users`(`id`) ON UPDATE no action ON DELETE cascade
 );
 --> statement-breakpoint
-CREATE TABLE `user_subscriptions` (
+CREATE TABLE IF NOT EXISTS `user_subscriptions` (
 	`id` integer PRIMARY KEY AUTOINCREMENT NOT NULL,
 	`user_id` integer NOT NULL,
 	`plan_id` text DEFAULT 'free' NOT NULL,
@@ -292,8 +292,8 @@ CREATE TABLE `user_subscriptions` (
 	FOREIGN KEY (`plan_id`) REFERENCES `subscription_plans`(`id`) ON UPDATE no action ON DELETE no action
 );
 --> statement-breakpoint
-CREATE UNIQUE INDEX `user_subscriptions_user_id_unique` ON `user_subscriptions` (`user_id`);--> statement-breakpoint
-CREATE TABLE `users` (
+CREATE UNIQUE INDEX IF NOT EXISTS `user_subscriptions_user_id_unique` ON `user_subscriptions` (`user_id`);--> statement-breakpoint
+CREATE TABLE IF NOT EXISTS `users` (
 	`id` integer PRIMARY KEY AUTOINCREMENT NOT NULL,
 	`username` text NOT NULL,
 	`password_hash` text NOT NULL,
@@ -302,4 +302,4 @@ CREATE TABLE `users` (
 	`created_at` text DEFAULT CURRENT_TIMESTAMP
 );
 --> statement-breakpoint
-CREATE UNIQUE INDEX `users_username_unique` ON `users` (`username`);
+CREATE UNIQUE INDEX IF NOT EXISTS `users_username_unique` ON `users` (`username`);

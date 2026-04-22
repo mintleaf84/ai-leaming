@@ -1,5 +1,5 @@
 import type { NextConfig } from "next";
-
+import { PHASE_PRODUCTION_BUILD } from "next/constants";
 import withSerwistInit from "@serwist/next";
 
 const withSerwist = withSerwistInit({
@@ -8,14 +8,20 @@ const withSerwist = withSerwistInit({
   disable: process.env.NODE_ENV === "development",
 });
 
-const nextConfig: NextConfig = {
-  output: "standalone",
-  distDir: process.env.E2E_TEST === 'true' ? '.next-e2e' : undefined,
-  turbopack: {},
-  experimental: {
-    viewTransition: true,
-  },
-  /* config options here */
-};
+export default (phase: string) => {
+  const isBuilding = phase === PHASE_PRODUCTION_BUILD;
 
-export default withSerwist(nextConfig);
+  const nextConfig: NextConfig = {
+    output: "standalone",
+    distDir: process.env.E2E_TEST === 'true' ? '.next-e2e' : undefined,
+    turbopack: {},
+    experimental: {
+      viewTransition: true,
+    },
+    env: {
+      IS_BUILDING: isBuilding ? 'true' : 'false',
+    }
+  };
+
+  return withSerwist(nextConfig);
+};

@@ -104,8 +104,12 @@ const globalForLibsql = global as unknown as {
 
 if (!globalForLibsql.libsqlClient) {
     globalForLibsql.libsqlClient = createClient({ url: libsqUrl });
+    // 设置忙碌超时时间，防止并发写入导致 SQLITE_BUSY
+    globalForLibsql.libsqlClient.execute('PRAGMA busy_timeout = 5000;');
 }
 if (!globalForLibsql.drizzleDb) {
+    globalForLibsql.drizzleDb = drizzle(globalForLibsql.libsqlClient, { schema });
+}
     globalForLibsql.drizzleDb = drizzle(globalForLibsql.libsqlClient, { schema });
 }
 

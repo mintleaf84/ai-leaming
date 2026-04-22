@@ -112,7 +112,13 @@ export function initDatabase() {
         migrate(drizzleDb, { migrationsFolder: path.resolve(process.cwd(), 'drizzle') });
         console.log('[DB] Drizzle migrations completed');
 
-        // 2. 补全向量扩展和种子数据
+        // 2. 运行旧版迁移作为存量数据库兜底（幂等，可安全重复执行）
+        //    确保旧数据库中缺失的字段/索引/表能够补全
+        console.log('[DB] Running legacy migrations for backward compatibility...');
+        runOldMigrations(db);
+        console.log('[DB] Legacy migrations completed');
+
+        // 3. 补全向量扩展和种子数据
         setupVectorExtension(db);
         seedData(db);
         console.log('[DB] Database initialization completed');

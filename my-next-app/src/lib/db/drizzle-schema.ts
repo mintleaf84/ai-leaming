@@ -67,6 +67,7 @@ export const practice_sessions = sqliteTable('practice_sessions', {
   questions_json: text('questions_json'),
   practice_mode: text('practice_mode'),
   is_demo: integer('is_demo').default(0),
+  analysis_report: text('analysis_report'), // AI 深度分析报告（JSON）
   created_at: text('created_at').default(sql`CURRENT_TIMESTAMP`),
 });
 
@@ -339,4 +340,36 @@ export const first_principles_cache = sqliteTable('first_principles_cache', {
   created_at: text('created_at').default(sql`CURRENT_TIMESTAMP`),
 }, (table) => ({
   idx_fp_hash: index('idx_fp_cache_hash').on(table.question_hash),
+}));
+
+// --- 思维导图表 ---
+export const mindmaps = sqliteTable('mindmaps', {
+  id: integer('id').primaryKey({ autoIncrement: true }),
+  user_id: integer('user_id').notNull().references(() => users.id, { onDelete: 'cascade' }),
+  title: text('title').notNull(),
+  content: text('content'), // 思维导图 JSON 数据
+  created_at: text('created_at').default(sql`CURRENT_TIMESTAMP`),
+  updated_at: text('updated_at').default(sql`CURRENT_TIMESTAMP`),
+});
+
+// --- 笔记标签表 ---
+export const note_tags = sqliteTable('note_tags', {
+  id: integer('id').primaryKey({ autoIncrement: true }),
+  user_id: integer('user_id').notNull().references(() => users.id, { onDelete: 'cascade' }),
+  name: text('name').notNull(),
+  color: text('color').default('#6b7280'),
+  created_at: text('created_at').default(sql`CURRENT_TIMESTAMP`),
+}, (table) => ({
+  unq: unique().on(table.user_id, table.name),
+  idx_note_tags_user: index('idx_note_tags_user').on(table.user_id),
+}));
+
+// --- 笔记标签关联表 ---
+export const note_tag_relations = sqliteTable('note_tag_relations', {
+  note_id: integer('note_id').notNull().references(() => notes.id, { onDelete: 'cascade' }),
+  tag_id: integer('tag_id').notNull().references(() => note_tags.id, { onDelete: 'cascade' }),
+}, (table) => ({
+  pk: primaryKey({ columns: [table.note_id, table.tag_id] }),
+  idx_note_tag_rel_note: index('idx_note_tag_relations_note').on(table.note_id),
+  idx_note_tag_rel_tag: index('idx_note_tag_relations_tag').on(table.tag_id),
 }));

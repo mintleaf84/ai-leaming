@@ -21,7 +21,8 @@ export function runMigrations(db: Database.Database) {
     addColumnIfNotExists(db, 'questions', 'material_html', 'TEXT');   // 材料内容（HTML）
 
     try {
-        db.exec('CREATE INDEX IF NOT EXISTS idx_questions_external_id ON questions(external_id)');
+        // 修复：必须是 UNIQUE INDEX，否则 Drizzle 的 onConflictDoUpdate 会报错
+        db.exec('CREATE UNIQUE INDEX IF NOT EXISTS questions_external_id_unique ON questions(external_id)');
     } catch { /* ignore */ }
 
     // practice_sessions 表

@@ -90,12 +90,14 @@ describe('Practice Service', () => {
     describe('createRandomSession', () => {
         it('should create new session with random questions', async () => {
             const mockQuestions = [{ id: 1, content: 'Q1' }] as any;
-            (mockDrizzleDb.query.questions.findMany as any).mockResolvedValue(mockQuestions);
+            // practice.ts 使用的是 select().from().orderBy().limit()，所以需要 mock chain.then
+            (mockDrizzleDb.then as any).mockImplementation((resolve: any) => resolve(mockQuestions));
 
             const result = await practiceService.createRandomSession(1, 5);
 
             expect(result.sessionId).toBeDefined();
-            expect(result.questions).toEqual(mockQuestions);
+            expect(result.questions).toHaveLength(1);
+            expect(result.questions[0].id).toBe(1);
             expect(mockDrizzleDb.insert).toHaveBeenCalledWith(mockDrizzleSchema.practice_sessions);
         });
     });
@@ -103,7 +105,8 @@ describe('Practice Service', () => {
     describe('submitAnswer', () => {
         it('should log answer and update stats with correct parameters', async () => {
             const mockQ = { tags: '["tag1"]', dimension: 'knowledge' };
-            (mockDrizzleDb.get as any).mockReturnValue(mockQ);
+            // submitAnswer 使用的是 query.questions.findFirst
+            (mockDrizzleDb.query.questions.findFirst as any).mockResolvedValue(mockQ);
 
             await practiceService.submitAnswer(1, 's1', 101, 'A', true, 1000);
 

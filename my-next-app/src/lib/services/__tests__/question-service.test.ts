@@ -22,6 +22,7 @@ const { mockDb, mockDrizzleDb, mockDrizzleSchema, mockRagService } = vi.hoisted(
             questions: { findMany: vi.fn(), findFirst: vi.fn() },
         },
         transaction: vi.fn(async (cb) => cb(chain)),
+        execute: vi.fn(async () => []),
     };
 
     return {
@@ -67,7 +68,7 @@ describe('Question Service', () => {
 
     describe('getById', () => {
         it('should return question when found', async () => {
-            const mockQ = { id: 1, content: 'Test' };
+            const mockQ = { id: 1, content: 'Test题干内容足够长', options: ['A', 'B'], answer: 'A', explanation: '解析内容足够长', tags: ['test'], type: 'single', dimension: 'knowledge' };
             (mockDrizzleDb.query.questions.findFirst as any).mockResolvedValue(mockQ);
 
             const result = await questionService.getById(1);
@@ -78,7 +79,10 @@ describe('Question Service', () => {
 
     describe('list', () => {
         it('should list questions with pagination', async () => {
-            const mockItems = [{ id: 1 }, { id: 2 }];
+            const mockItems = [
+                { id: 1, content: 'Test1内容足够长', options: ['A', 'B'], answer: 'A', explanation: '解析内容足够长', tags: ['test'], type: 'single', dimension: 'knowledge' },
+                { id: 2, content: 'Test2内容足够长', options: ['A', 'B'], answer: 'A', explanation: '解析内容足够长', tags: ['test'], type: 'single', dimension: 'knowledge' }
+            ];
             (mockDrizzleDb.query.questions.findMany as any).mockResolvedValue(mockItems);
             (mockDrizzleDb.get as any).mockReturnValue({ count: 10 });
 
@@ -102,20 +106,22 @@ describe('Question Service', () => {
     describe('searchSimilarQuestions', () => {
         it('should return similar questions when vector search works', async () => {
             mockRagService.getEmbedding.mockResolvedValue([0.1, 0.2]);
-            mockDb.prepare.mockReturnValueOnce({ get: () => 'v0.1.7' });
-
-            const mockResults = [{ id: 1, distance: 0.5 }];
-            mockDb.prepare.mockReturnValueOnce({ all: () => mockResults });
+            
+            const mockResults = [
+                { id: 1, content: 'Test1内容足够长', options: ['A', 'B'], answer: 'A', explanation: '解析内容足够长', tags: ['test'], type: 'single', dimension: 'knowledge', distance: 0.5 }
+            ];
+            (mockDrizzleDb.execute as any).mockResolvedValue(mockResults);
 
             const result = await questionService.searchSimilarQuestions('content');
 
-            expect(result).toEqual(mockResults);
+            expect(result).toHaveLength(1);
+            expect(result[0].id).toBe(1);
             expect(mockRagService.getEmbedding).toHaveBeenCalledWith('content');
         });
 
         it('should return empty list if vector extension missing', async () => {
             mockRagService.getEmbedding.mockResolvedValue([0.1]);
-            mockDb.prepare.mockImplementationOnce(() => { throw new Error('no vec'); });
+            (mockDrizzleDb.execute as any).mockRejectedValueOnce(new Error('no vec'));
 
             const result = await questionService.searchSimilarQuestions('content');
 

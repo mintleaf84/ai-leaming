@@ -62,6 +62,9 @@ export function createTables(db: Database.Database) {
       total_questions INTEGER DEFAULT 0,
       correct_count INTEGER DEFAULT 0,
       review_count INTEGER DEFAULT 0,
+      questions_json TEXT,
+      practice_mode TEXT,
+      is_demo INTEGER DEFAULT 0,
       created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
       FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
     );

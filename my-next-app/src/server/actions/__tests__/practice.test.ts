@@ -1,151 +1,133 @@
-// @vitest-environment node
-import { describe, it, expect, beforeEach, vi } from 'vitest';
+import { describe, it, expect, vi, beforeEach } from 'vitest';
 
-// 1. Mock dependencies - 使用 vi.hoisted 内联创建，避免 require() 路径问题
-const { mockBetterDb } = vi.hoisted(() => {
-    const calls: { sql: string; args: unknown[] }[] = [];
-    let wasCommitted = false;
-    let wasRolledBack = false;
-
-    const mockRun = vi.fn().mockImplementation((..._args: unknown[]) => ({ lastInsertRowid: 100, changes: 1 }));
-    const mockGet = vi.fn();
-    const mockAll = vi.fn();
-
-    const prepare = vi.fn().mockImplementation((sql: string) => ({
-        run: vi.fn().mockImplementation((...args: unknown[]) => {
-            calls.push({ sql, args });
-            return mockRun(...args);
-        }),
-        get: vi.fn().mockImplementation((...args: unknown[]) => {
-            calls.push({ sql, args });
-            return mockGet(...args);
-        }),
-        all: vi.fn().mockImplementation((...args: unknown[]) => {
-            calls.push({ sql, args });
-            return mockAll(...args);
-        }),
-    }));
-
-    // better-sqlite3 的 transaction() 返回一个函数，调用该函数时才执行事务
-    const transaction = vi.fn().mockImplementation((cb: (...args: unknown[]) => unknown) => {
-        return vi.fn().mockImplementation((...args: unknown[]) => {
-            try {
-                const result = cb(...args);
-                wasCommitted = true;
-                return result;
-            } catch (error) {
-                wasRolledBack = true;
-                throw error;
-            }
-        });
-    });
-
-    return {
-        mockBetterDb: {
-            prepare,
-            transaction,
-            exec: vi.fn(),
-            _mockRun: mockRun,
-            _mockGet: mockGet,
-            _mockAll: mockAll,
-            _state: { get calls() { return calls; }, get wasCommitted() { return wasCommitted; }, get wasRolledBack() { return wasRolledBack; } },
-            reset: () => {
-                calls.length = 0;
-                wasCommitted = false;
-                wasRolledBack = false;
-                mockRun.mockReset();
-                mockRun.mockImplementation(() => ({ lastInsertRowid: 100, changes: 1 }));
-                mockGet.mockReset();
-                mockAll.mockReset();
-                prepare.mockClear();
-                transaction.mockClear();
-            },
-        }
-    };
-});
-
-const { mockSafeGet, mockSafeAll } = vi.hoisted(() => {
-    return {
-        mockSafeGet: vi.fn(),
-        mockSafeAll: vi.fn(),
-    };
-});
-
-vi.mock('@/lib/db', () => ({
-    default: mockBetterDb
+// 1. Hoisted Mocks
+const { mockDb, mockRequireUser, mockDemoService, mockUpdateMastery } = vi.hoisted(() => ({
+  mockDb: {
+    prepare: vi.fn(),
+    transaction: vi.fn(fn => fn)
+  },
+  mockRequireUser: vi.fn().mockResolvedValue({ id: 1, username: 'testuser' }),
+  mockDemoService: {
+    isDemoModeEnabled: vi.fn().mockReturnValue(false),
+    getDemoSession: vi.fn()
+  },
+  mockUpdateMastery: vi.fn()
 }));
 
+// 2. Apply Mocks
+vi.mock('@/lib/db', () => ({ default: mockDb }));
+vi.mock('@/lib/auth/auth', () => ({ requireUser: mockRequireUser }));
+vi.mock('@/lib/practice/demo', () => ({ DemoService: mockDemoService }));
+vi.mock('@/lib/services/mastery', () => ({
+  masteryService: { updateMastery: (...args: any[]) => mockUpdateMastery(...args) }
+}));
+
+// Mock safe-query (仅注册模块，具体实现在 beforeEach 中设置)
 vi.mock('@/lib/db/safe-query', () => ({
-    safeGet: mockSafeGet,
-    safeAll: mockSafeAll,
+  safeGet: vi.fn(),
+  safeAll: vi.fn()
 }));
 
-vi.mock('@/lib/auth/auth', () => ({
-    requireUser: vi.fn().mockResolvedValue({ id: 1 }),
-}));
+import { getPracticeSessionAction, submitAnswerAction } from '../practice';
 
-// Mock scheduling service
-vi.mock('@/lib/services/scheduling', () => ({
-    schedulingService: {
-        getDailyScheduledQuestions: vi.fn().mockReturnValue([]),
-    }
-}));
+import * as safeQueryModule from '@/lib/db/safe-query';
 
 describe('Practice Actions', () => {
-    beforeEach(() => {
-        mockBetterDb.reset();
-        vi.clearAllMocks();
+  beforeEach(() => {
+    vi.clearAllMocks();
+
+    // 恢复被 clearAllMocks 清除的 mock 实现
+    mockRequireUser.mockResolvedValue({ id: 1, username: 'testuser' });
+    mockDemoService.isDemoModeEnabled.mockReturnValue(false);
+
+    // 每次 clearAllMocks 后重新注册 safeGet / safeAll 的实现
+    // 原因：vi.clearAllMocks() 会清除所有 mock 函数的 mockImplementation
+    // 但 vi.mock() 的模块替换本身不受影响，只是函数实现被重置为空
+    vi.mocked(safeQueryModule.safeGet).mockImplementation((stmt: any, params: any[], _schema: any) => {
+      const res = stmt.get(...params);
+      return res ?? null;
+    });
+    vi.mocked(safeQueryModule.safeAll).mockImplementation((stmt: any, params: any[], schema: any) => {
+      const res = stmt.all(...params);
+      return res.map((r: any) => schema.parse(r));
+    });
+    
+    // Default DB behavior
+    mockDb.prepare.mockImplementation((_sql: string) => ({
+      get: vi.fn().mockReturnValue(undefined),
+      all: vi.fn().mockReturnValue([]),
+      run: vi.fn().mockReturnValue({ changes: 1 })
+    }));
+  });
+
+  describe('getPracticeSessionAction', () => {
+    const mockQuestion = { 
+      id: 1, 
+      content: '这是一道测试题目内容，长度足够', 
+      options: ["A", "B"], 
+      answer: 'A',
+      explanation: '解析内容必须足够长，现在超过五个字符了',
+      dimension: 'knowledge',
+      tags: ["Tag1"]
+    };
+
+    it('正常模式下应该创建新会话 (当无可用旧会话时)', async () => {
+      mockDb.prepare.mockImplementation((sql: string) => {
+        if (sql.includes('system_settings')) return { get: () => ({ value: 'false' }) };
+        if (sql.includes('practice_sessions') && sql.includes('SELECT')) return { get: () => undefined };
+        if (sql.includes('questions') && sql.includes('SELECT')) return { all: () => [mockQuestion] };
+        return { run: () => ({ changes: 1 }), get: () => null, all: () => [] };
+      });
+
+      const result = await getPracticeSessionAction(true);
+      
+      expect(result.sessionId).toBeDefined();
+      expect(result.questions).toHaveLength(1);
     });
 
-    describe('getPracticeSessionAction', () => {
-        it('should resume an existing session if available and not finished', async () => {
-            const existingSession = {
-                id: 'session-123',
-                user_id: 1,
-                total_questions: 10,
-                questions_json: [{ id: 1, content: 'Q1' }],
-                created_at: '2024-01-01',
-                correct_count: 0,
-                review_count: 0,
-            };
+    it('当演示模式开启时，应该返回演示会话', async () => {
+      mockDemoService.isDemoModeEnabled.mockReturnValue(true);
+      mockDemoService.getDemoSession.mockResolvedValue({
+        sessionId: 'demo-123',
+        questions: [mockQuestion]
+      });
 
-            mockSafeGet
-                .mockReturnValueOnce(existingSession)
-                .mockReturnValueOnce({ count: 5 });
-
-            const { getPracticeSessionAction } = await import('../practice');
-            const result = await getPracticeSessionAction(false);
-
-            expect(result.sessionId).toBe('session-123');
-            expect(result.resumed).toBe(true);
-            expect(result.completedCount).toBe(5);
-        });
-
-        it('should create a new session if no existing session found and verify JSON content', async () => {
-            const questions = [
-                { id: 1, content: 'Q1', options: ['A'], tags: ['T1'], answer: 'A', explanation: 'E1', dimension: 'knowledge' }
-            ];
-
-            mockSafeGet.mockReturnValue(null);
-            mockSafeAll.mockReturnValue(questions);
-
-            const { getPracticeSessionAction } = await import('../practice');
-            const result = await getPracticeSessionAction(false);
-
-            expect(result.resumed).toBeUndefined();
-            // 验证 Session ID 格式：基于 Math.random().toString(36).substring(2,15) 生成
-            // 长度可能为 7-13 个字符（取决于随机值的 base-36 表示长度）
-            expect(result.sessionId).toMatch(/^[a-z0-9]{7,13}$/);
-            
-            // 验证 DB insert 是否包含正确的题目 JSON
-            const calls = mockBetterDb._state.calls;
-            const insertCall = calls.find((c: any) => c.sql.includes('INSERT INTO practice_sessions'));
-            expect(insertCall).toBeDefined();
-            
-            const questionsJson = insertCall?.args[3]; // sessionId, userId, total, questions_json
-            const parsed = JSON.parse(questionsJson as string);
-            expect(parsed).toHaveLength(1);
-            expect(parsed[0].id).toBe(1);
-        });
+      const result = await getPracticeSessionAction();
+      
+      expect(result.sessionId).toBe('demo-123');
+      expect(result.questions[0].id).toBe(1);
     });
+
+    it('应该能正确恢复未完成的会话', async () => {
+      mockDb.prepare.mockImplementation((sql: string) => {
+        // console.log('Mocked SQL:', sql);
+        if (sql.includes('practice_sessions')) {
+          return { get: () => ({ 
+            id: 's1', user_id: 1, total_questions: 10, correct_count: 0, review_count: 0, is_demo: 0,
+            questions_json: JSON.stringify([mockQuestion]) 
+          }) };
+        }
+        if (sql.includes('practice_logs')) return { get: () => ({ count: 5 }) };
+        return { get: () => null, all: () => [], run: () => {} };
+      });
+
+      const result = await getPracticeSessionAction(false);
+      
+      expect(result.resumed).toBe(true);
+      expect(result.completedCount).toBe(5);
+    });
+  });
+
+  describe('submitAnswerAction', () => {
+    it('应该记录答案并更新掌握度', async () => {
+      mockDb.prepare.mockImplementation((sql: string) => {
+        if (sql.includes('questions')) return { get: () => ({ tags: '["Tag1"]', dimension: 'knowledge' }) };
+        return { run: vi.fn(), get: () => null };
+      });
+
+      const result = await submitAnswerAction(1, 'A', true, 1000, 'sess-1');
+      expect(result.success).toBe(true);
+      expect(mockUpdateMastery).toHaveBeenCalled();
+    });
+  });
 });

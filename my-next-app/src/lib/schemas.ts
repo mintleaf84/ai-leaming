@@ -98,6 +98,7 @@ export const PracticeSessionRowSchema = z.object({
     }
   }),
   practice_mode: z.string().nullable().optional(),
+  is_demo: z.number().default(0),
 });
 
 export const PracticeLogRowSchema = z.object({

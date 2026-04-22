@@ -1,90 +1,76 @@
 ---
 name: sqlite-migration-automation
-description: Best practices and workflow for automated SQLite schema migrations in persistent Docker environments. Use when you need to modify the database structure, add new tables/columns, or debug migration issues in the SQLite + Docker setup.
+description: Drizzle ORM 驱动的 SQLite 数据库迁移标准流程。涵盖 Drizzle Kit 生成迁移、自动化执行机制、以及与旧版 SQL 迁移的共存模式。
 ---
 
-# SQLite Migration Automation
+# SQLite 迁移自动化指南 (Drizzle 版)
 
-This skill defines the standard workflow for managing SQLite database schema changes in a persistent containerized environment (e.g., Docker with Volumes).
+本指南定义了在 Drizzle ORM 架构下管理 SQLite 数据库变更的标准流程。
 
-## 核心原则 (Core Principles)
+## 核心原则
 
-1. **自动化 (Automated)**: 迁移应当在应用启动前自动执行，无需人工干预。
-2. **幂等性 (Idempotent)**: 脚本需记录执行状态（`schema_migrations` 表），确保每个脚本只运行一次。
-3. **持久化 (Persistent)**: 配合 Docker Volume，确保升级容器时数据不丢失。
+1.  **代码即 Schema**: `drizzle-schema.ts` 是数据库结构的唯一事实来源。
+2.  **版本化迁移**: 所有变更必须通过 Drizzle Kit 生成 SQL 迁移文件。
+3.  **双轨并行**: 保留旧版 `migrations/` 脚本作为基础地基，新变更使用 Drizzle 迁移。
+4.  **启动即执行**: 应用启动时自动运行 `migrate()` 函数，确保环境一致。
 
-## 目录结构 (Directory Structure)
+## 目录结构
 
 ```text
-project-root/
-├── src/
-│   └── lib/
-│       └── migrations/          <-- [Store] 存放所有迁移脚本
-│           ├── 1737036000_init_schema.ts
-│           └── 1737036666_add_column.ts
-├── scripts/
-│   └── migrate-runner.ts        <-- [Runner] 核心调度器
-├── start.sh                     <-- [Entrypoint] 启动脚本
-├── Dockerfile                   <-- [Config] 镜像构建配置
-└── package.json                 <-- [Script] 定义 db:migrate
+my-next-app/
+├── drizzle/                     <-- [Generated] Drizzle Kit 生成的 SQL 迁移文件
+├── src/lib/db/
+│   ├── drizzle-schema.ts        <-- [Source] 数据库定义文件
+│   └── index.ts                 <-- [Runner] 包含 initDatabase() 逻辑
+├── drizzle.config.ts            <-- [Config] Drizzle Kit 配置文件
+└── scripts/
+    └── migrate-runner.ts        <-- [CLI] 供 npm run db:migrate 使用的脚本
 ```
 
-## 工作流 (Workflow)
+## 工作流
 
-### 1. 创建新迁移脚本
+### 1. 修改 Schema
+在 `src/lib/db/drizzle-schema.ts` 中修改表定义。
 
-在 `src/lib/migrations/` 下新建 TypeScript 文件。
-**命名规范**: `UnixTimestamp_Description.ts` (时间戳确保执行顺序)。
+### 2. 生成迁移文件
+运行 Drizzle Kit 检查差异并生成 SQL。
 
-**模板**:
+```bash
+npx drizzle-kit generate
+```
+生成的 SQL 文件将存放在 `drizzle/` 目录下。**务必检查生成的 SQL 是否符合预期。**
+
+### 3. 本地测试与同步
+在开发环境下同步数据库：
+
+```bash
+# 方案 A: 运行迁移逻辑（生产推荐）
+npx tsx scripts/migrate-runner.ts
+
+# 方案 B: 强制同步 Schema（开发调试推荐）
+npx drizzle-kit push
+```
+
+### 4. 自动执行逻辑 (initDatabase)
+在 `src/lib/db/index.ts` 中确保包含以下逻辑：
 
 ```typescript
-import db from '../db'; // 或传入的 db 实例
+import { migrate } from 'drizzle-orm/better-sqlite3/migrator';
+import path from 'path';
 
-export async function up(db: any) {
-    // 检查列是否存在（幂等性双重保障）
-    const info = db.prepare("PRAGMA table_info(users)").all();
-    if (!info.some((c: any) => c.name === 'new_col')) {
-        db.exec("ALTER TABLE users ADD COLUMN new_col TEXT");
-    }
+export function initDatabase() {
+    // 1. 执行旧版 SQL 地基 (可选)
+    runOldMigrations(db);
+
+    // 2. 执行 Drizzle 迁移 (核心)
+    migrate(drizzleDb, { 
+        migrationsFolder: path.resolve(process.cwd(), 'drizzle') 
+    });
 }
 ```
 
-### 2. 本地验证
+## 注意事项
 
-运行 Runner 检查是否有语法错误并测试逻辑：
-
-```bash
-npm run db:migrate
-```
-
-### 3. 部署上线
-
-不需要额外操作。
-提交代码并部署后，`Dockerfile` defined `CMD ["./start.sh"]` 会自动触发：
-
-1. 运行 `npm run db:migrate`
-2. 若成功，启动 `node server.js`
-3. 若失败，容器启动终止（防止坏数据启动）
-
-## 关键文件参考 (Reference Implementations)
-
-### `scripts/migrate-runner.ts` (Simplified)
-
-```typescript
-// Auto-creates schema_migrations table
-// Scans src/lib/migrations/*.ts
-// Compares against DB records
-// Executes new scripts in strict alphabetical order
-```
-
-### `start.sh`
-
-```bash
-#!/bin/sh
-set -e
-echo "Running migrations..."
-npm run db:migrate
-echo "Starting app..."
-node server.js
-```
+-   **幂等性**: Drizzle `migrate()` 函数会自动记录已执行的迁移，确保不会重复运行。
+-   **破坏性变更**: `drizzle-kit push` 在开发环境下非常快，但如果涉及数据删除，它会警告。
+-   **手动干预**: 严禁直接使用 DB 工具修改表结构。所有修改必须通过 Schema 代码 -> 迁移文件。

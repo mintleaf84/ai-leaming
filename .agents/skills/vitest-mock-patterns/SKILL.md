@@ -1,6 +1,6 @@
 ---
 name: vitest-mock-patterns
-description: Vitest 单元测试中 Mock 的最佳实践与常见陷阱。在为 Server Actions、Service 模块或含依赖注入的函数编写 Vitest 测试时使用。核心场景：(1) 使用 vi.hoisted + vi.mock 模拟模块，(2) 使用 vi.clearAllMocks 清理测试状态，(3) 模拟数据库（better-sqlite3）或第三方服务。
+description: Vitest 单元测试中 Mock 的最佳实践与常见陷阱。涵盖 Drizzle ORM 的链式 Mock 模式、异步 Service 模拟、以及 vi.hoisted 的正确用法。
 ---
 
 # Vitest Mock 模式指南
@@ -36,7 +36,78 @@ beforeEach(() => {
 });
 ```
 
-### 三个清除函数的语义
+## Drizzle ORM 链式 Mock 模式
+
+Drizzle 的链式调用（如 `.select().from().where().all()`）需要特殊的 Mock 结构。
+
+### 1. 定义通用链式 Mock (在 `vi.hoisted` 中)
+
+```typescript
+const { mockDrizzleDb, mockDrizzleSchema } = vi.hoisted(() => {
+    const makeChain = () => {
+        const chain: any = {
+            // 使其成为 thenable 以支持直接 await 链
+            then: vi.fn((resolve) => resolve([])),
+        };
+        const methods = ['insert', 'values', 'update', 'set', 'delete', 'select', 'from', 'where', 'limit', 'offset', 'orderBy', 'all', 'innerJoin', 'leftJoin', 'onConflictDoUpdate'];
+        methods.forEach((m) => {
+            chain[m] = vi.fn(() => chain); // 默认返回自身
+        });
+        return chain;
+    };
+
+    const chain = makeChain();
+    const mockDrizzleDb = {
+        ...chain,
+        query: {
+            users: { findFirst: vi.fn(), findMany: vi.fn() }, // Mock 关系查询
+        },
+        transaction: vi.fn(async (cb) => cb(chain)), // 事务传入链对象
+    };
+
+    return { mockDrizzleDb, mockDrizzleSchema: { /* 映射表字段 */ } };
+});
+
+vi.mock('@/lib/db', () => ({
+    drizzleDb: mockDrizzleDb,
+    drizzleSchema: mockDrizzleSchema,
+}));
+```
+
+### 2. 在 `beforeEach` 中重置链行为
+
+```typescript
+beforeEach(() => {
+    vi.clearAllMocks();
+    
+    // 确保每个链式方法仍然返回链对象（防止被 mockReturnValueOnce 破坏）
+    const chain = mockDrizzleDb as any;
+    ['select', 'from', 'where', 'limit'].forEach(m => chain[m].mockReturnValue(chain));
+    
+    // 设置默认返回结果
+    chain.all.mockResolvedValue([]);
+    chain.then.mockImplementation((resolve: any) => resolve([]));
+});
+```
+
+## 模拟异步 Service
+
+当 Service 相互依赖时，确保 Mock 返回正确的 Promise。
+
+```typescript
+import { getPromptFromDb } from '@/lib/ai/prompts';
+vi.mock('@/lib/ai/prompts', () => ({
+    getPromptFromDb: vi.fn()
+}));
+
+it('should handle async prompts', async () => {
+    vi.mocked(getPromptFromDb).mockResolvedValue('My Custom Prompt');
+    const result = await myService.execute();
+    expect(result).toContain('My Custom Prompt');
+});
+```
+
+## 三个清除函数的语义
 
 | 函数 | 清除内容 |
 |---|---|
@@ -44,69 +115,13 @@ beforeEach(() => {
 | `vi.resetAllMocks()` | 同上（行为基本相同）|
 | `vi.restoreAllMocks()` | 还原原始实现（仅对 `vi.spyOn` 有效）|
 
-## 模拟动态导入的模块（`vi.mock` + `vi.mocked`）
+## 模拟 Legacy better-sqlite3
 
-对于在模块级注册的 `vi.mock`，`clearAllMocks` 不会撤销模块替换本身，但会清空函数实现。
-需要在 `beforeEach` 中用 `vi.mocked()` 重新注册：
-
-```typescript
-import * as safeQueryModule from '@/lib/db/safe-query';
-vi.mock('@/lib/db/safe-query', () => ({ safeGet: vi.fn(), safeAll: vi.fn() }));
-
-beforeEach(() => {
-  vi.clearAllMocks();
-  // clearAllMocks 后必须重新注册实现
-  vi.mocked(safeQueryModule.safeGet).mockImplementation((stmt, params, _schema) => {
-    return stmt.get(...params) ?? null;
-  });
-});
-```
-
-## 模拟 better-sqlite3 数据库
-
-按 SQL 内容分发不同的 Mock 返回值：
+如果某些模块仍在使用原始 `db.prepare`，参考以下模式：
 
 ```typescript
 mockDb.prepare.mockImplementation((sql: string) => {
-  if (sql.includes('practice_sessions')) return { get: () => ({ id: 's1', ... }) };
-  if (sql.includes('practice_logs'))     return { get: () => ({ count: 5 }) };
-  if (sql.includes('questions'))         return { all: () => [mockQuestion] };
+  if (sql.includes('users')) return { get: () => ({ id: 1 }) };
   return { get: () => null, all: () => [], run: () => ({ changes: 1 }) };
-});
-```
-
-**注意**：如果业务逻辑里有多次查询同一张表，`sql.includes('表名')` 会匹配到所有调用，导致 Mock 结果混淆。此时改用 `mockReturnValueOnce` 按顺序模拟：
-
-```typescript
-mockDb.prepare
-  .mockReturnValueOnce({ get: () => sessionData })   // 第一次查 sessions
-  .mockReturnValueOnce({ get: () => ({ count: 5 }) }); // 第二次查 logs
-```
-
-## 完整的 beforeEach 模板
-
-```typescript
-describe('MyAction', () => {
-  beforeEach(() => {
-    vi.clearAllMocks();
-
-    // 1. 重新设置身份认证 mock
-    mockRequireUser.mockResolvedValue({ id: 1, username: 'test' });
-
-    // 2. 重新设置外部服务 mock
-    mockExternalService.someMethod.mockReturnValue(false);
-
-    // 3. 重新设置工具函数 mock（如 safeGet）
-    vi.mocked(safeQueryModule.safeGet).mockImplementation((stmt, params) => {
-      return stmt.get(...params) ?? null;
-    });
-
-    // 4. 默认数据库行为
-    mockDb.prepare.mockImplementation((_sql: string) => ({
-      get: vi.fn().mockReturnValue(undefined),
-      all: vi.fn().mockReturnValue([]),
-      run: vi.fn().mockReturnValue({ changes: 1 })
-    }));
-  });
 });
 ```

@@ -122,7 +122,7 @@ export function initDatabase() {
 
 // --- Exports ---
 
-export default drizzleDb;
+export default db; // 默认导出 legacyDb 以兼容旧代码
 export { createTables, EMBEDDING_DIM } from './schema';
 export { runOldMigrations as runMigrations };
 export { setupVectorExtension } from './vector-setup';

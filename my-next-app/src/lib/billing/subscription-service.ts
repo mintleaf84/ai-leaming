@@ -3,7 +3,7 @@
  * 核心订阅逻辑：套餐管理、用户订阅、用量统计
  */
 
-import drizzleDb, { drizzleSchema } from '../db';
+import { drizzleDb, drizzleSchema } from '../db';
 import { eq, and, sql, asc } from 'drizzle-orm';
 import { getBeijingDateString } from '../utils/datetime';
 import {

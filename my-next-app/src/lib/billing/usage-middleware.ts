@@ -4,7 +4,7 @@
  */
 
 import { checkAndConsumeQuota, checkUsageQuota } from './subscription-service';
-import { UsageType, UsageCheckResult, USAGE_TYPE_LABELS } from './subscription-types';
+import { UsageType, UsageCheckResult, USAGE_TYPE_LABELS } from '@/types/subscription';
 
 /**
  * 检查用量配额 (不消费)

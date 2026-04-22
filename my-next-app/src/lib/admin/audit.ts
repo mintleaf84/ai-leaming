@@ -4,7 +4,7 @@
  */
 
 import { db } from '@/lib/db';
-import { AdminAction, TargetType, AdminLogEntry, formatActionName } from './audit-types';
+import { AdminAction, TargetType, AdminLogEntry, formatActionName } from '@/types/admin';
 
 export type { AdminAction, TargetType, AdminLogEntry };
 export { formatActionName };

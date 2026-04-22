@@ -6,7 +6,8 @@ import { getErrorMessage } from '@/lib/utils/error';
 import { QuestionSchema } from '@/lib/schemas';
 import { requireRole } from '@/lib/auth/auth';
 import { logAdminAction } from '@/lib/admin/audit';
-import { adminService, QuestionFilters } from '@/lib/services/admin-service';
+import { adminService, type QuestionFilters } from '@/lib/services/admin-service';
+export type { QuestionFilters };
 
 // Schema for bulk import
 const ImportSchema = z.array(QuestionSchema);

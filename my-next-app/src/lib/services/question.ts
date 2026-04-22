@@ -1,7 +1,7 @@
 import { drizzleDb, drizzleSchema } from '@/lib/db';
 import { eq, like, and, sql, desc, inArray } from 'drizzle-orm';
 import { ragService } from '@/lib/ai/rag';
-import { Question } from '@/types';
+import { Question, Dimension } from '@/types';
 import { QuestionRowSchema } from '@/lib/schemas';
 import logger from '@/lib/logger';
 
@@ -29,7 +29,7 @@ export interface QuestionFilter {
     tags?: string[];
     type?: string[];
     search?: string;
-    dimension?: string;
+    dimension?: Dimension;
 }
 
 export const questionService = {
@@ -42,7 +42,7 @@ export const questionService = {
             
             // 检查向量插件是否存在 (由于 Drizzle 不直接暴露 raw db handle 检查，通常在 init 时检查)
             // 这里使用 sql raw 尝试
-            const results = await drizzleDb.execute(sql`
+            const results = await drizzleDb.all<any>(sql`
                 SELECT q.*, v.distance
                 FROM questions_vec v
                 JOIN questions q ON q.id = v.rowid
@@ -51,7 +51,7 @@ export const questionService = {
                 ORDER BY v.distance
             `);
 
-            return results.map(q => mapQuestion(q));
+            return results.map((q: any) => mapQuestion(q));
         } catch (error) {
             logger.error({ err: error }, '[QuestionService] 相似题目检索失败');
             return [];

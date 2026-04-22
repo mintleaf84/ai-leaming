@@ -8,7 +8,7 @@ import {
     batchDeleteQuestionsAction,
     QuestionFilters
 } from '@/server/actions/admin';
-import { Question } from '@/types';
+import { Question, Dimension } from '@/types';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import {
@@ -112,7 +112,7 @@ export function QuestionManager() {
     };
 
     const toggleSelect = (id: number) => {
-        setSelectedIds(prev =>
+        setSelectedIds((prev: number[]) =>
             prev.includes(id) ? prev.filter(i => i !== id) : [...prev, id]
         );
     };
@@ -164,14 +164,14 @@ export function QuestionManager() {
                             placeholder="搜索题干内容..."
                             className="pl-9"
                             value={filters.search || ''}
-                            onChange={(e) => setFilters(prev => ({ ...prev, search: e.target.value }))}
+                            onChange={(e) => setFilters((prev: QuestionFilters) => ({ ...prev, search: e.target.value }))}
                             onKeyDown={handleKeyDown}
                         />
                     </div>
 
                     <Select
                         value={filters.dimension || 'all'}
-                        onValueChange={(val) => setFilters(prev => ({ ...prev, dimension: val === 'all' ? undefined : val }))}
+                        onValueChange={(val) => setFilters((prev: QuestionFilters) => ({ ...prev, dimension: val === 'all' ? undefined : val as Dimension }))}
                     >
                         <SelectTrigger className="w-[120px]">
                             <SelectValue placeholder="维度" />

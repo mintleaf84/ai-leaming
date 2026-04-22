@@ -1,4 +1,4 @@
-import { initDatabase } from '../src/lib/init-db';
+import { initDatabase } from '../src/lib/db';
 import { db } from '../src/lib/db';
 
 console.log('Starting manual database initialization...');

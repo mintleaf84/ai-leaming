@@ -4,7 +4,7 @@
  */
 
 import { db } from '@/lib/db';
-import { PracticeConfig } from './practice-types';
+import { PracticeConfig } from '@/types/practice';
 import { Question } from '@/types';
 import { QuestionRowSchema } from '@/lib/schemas';
 

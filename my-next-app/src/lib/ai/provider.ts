@@ -15,7 +15,7 @@ export function getModel(apiKey: string, baseURL: string, modelName: string): La
         apiKey,
         baseURL,
         compatibility: 'compatible', // 强制开启兼容模式，解决非官方接口的路径识别问题
-    });
+    } as any);
 
     try {
         // 显式指定使用 Chat 协议 (解决 /v1/responses 404 问题的关键)

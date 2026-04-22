@@ -110,7 +110,7 @@ export const questionService = {
         ]);
 
         return {
-            items: items.map(q => mapQuestion(q)),
+            items: items.map((q: any) => mapQuestion(q)),
             total: totalResult?.count || 0
         };
     },

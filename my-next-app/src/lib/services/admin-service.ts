@@ -166,7 +166,7 @@ export const adminService = {
         const result = await drizzleDb.delete(drizzleSchema.questions)
             .where(inArray(drizzleSchema.questions.id, ids));
         // Drizzle-orm-better-sqlite3 的 delete 返回的是 RunResult 对象 (由 better-sqlite3 返回)
-        return (result as any).changes || ids.length;
+        return (result as any).rowsAffected || ids.length;
     },
 
     /**

@@ -121,7 +121,7 @@ export async function updateKnowledgeCard(id: number, updates: Partial<Knowledge
         .set(updatesObj)
         .where(eq(drizzleSchema.knowledge_cards.id, id));
     
-    const success = result.changes > 0;
+    const success = result.rowsAffected > 0;
 
     if (success) {
         // RAG Sync: Delete old, add new
@@ -154,7 +154,7 @@ export async function updateKnowledgeCard(id: number, updates: Partial<Knowledge
 export async function deleteKnowledgeCard(id: number): Promise<boolean> {
     const result = await drizzleDb.delete(drizzleSchema.knowledge_cards)
         .where(eq(drizzleSchema.knowledge_cards.id, id));
-    const success = result.changes > 0;
+    const success = result.rowsAffected > 0;
 
     if (success) {
         try {

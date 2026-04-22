@@ -3,7 +3,7 @@ import Database from 'better-sqlite3';
 import * as sqliteVec from 'sqlite-vec';
 import path from 'path';
 import { fileURLToPath } from 'url';
-import { drizzle } from 'drizzle-orm/libsql';
+import { drizzle, LibSQLDatabase } from 'drizzle-orm/libsql';
 import { migrate } from 'drizzle-orm/libsql/migrator';
 import { createClient } from '@libsql/client';
 import * as schema from './drizzle-schema';
@@ -99,7 +99,7 @@ const libsqUrl = `file:${libsqlDbPath}`;
 
 const globalForLibsql = global as unknown as { 
     libsqlClient: ReturnType<typeof createClient> | null;
-    drizzleDb: ReturnType<typeof drizzle> | null;
+    drizzleDb: LibSQLDatabase<typeof schema> | null;
 };
 
 if (!globalForLibsql.libsqlClient) {
@@ -111,7 +111,7 @@ if (!globalForLibsql.drizzleDb) {
     globalForLibsql.drizzleDb = drizzle(globalForLibsql.libsqlClient, { schema });
 }
 
-export const drizzleDb = globalForLibsql.drizzleDb;
+export const drizzleDb = globalForLibsql.drizzleDb!;
 
 // 防止在单个进程内重复初始化
 let isInitialized = false;

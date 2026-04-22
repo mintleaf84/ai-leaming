@@ -110,8 +110,6 @@ if (!globalForLibsql.libsqlClient) {
 if (!globalForLibsql.drizzleDb) {
     globalForLibsql.drizzleDb = drizzle(globalForLibsql.libsqlClient, { schema });
 }
-    globalForLibsql.drizzleDb = drizzle(globalForLibsql.libsqlClient, { schema });
-}
 
 export const drizzleDb = globalForLibsql.drizzleDb;
 

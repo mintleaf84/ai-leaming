@@ -1,8 +1,91 @@
-import db from '../db';
+import 'server-only';
+import Database from 'better-sqlite3';
+import * as sqliteVec from 'sqlite-vec';
+import path from 'path';
+import { fileURLToPath } from 'url';
+import { drizzle } from 'drizzle-orm/better-sqlite3';
+import { migrate } from 'drizzle-orm/better-sqlite3/migrator';
+import * as schema from './drizzle-schema';
 import { createTables } from './schema';
-import { runMigrations } from './migrations';
+import { runMigrations as runOldMigrations } from './migrations';
 import { setupVectorExtension } from './vector-setup';
 import { seedData } from './seed-data';
+
+// --- Legacy Better-SQLite3 Initialization (from old db.ts) ---
+
+const globalForDb = global as unknown as { db: Database.Database | null };
+
+function initDb() {
+  if (globalForDb.db) return globalForDb.db;
+
+  const dbName = process.env.DB_FILENAME || 'ai-learning.db';
+  const dbPath = path.resolve(process.cwd(), 'data', dbName);
+  console.log(`[DB] 正在连接数据库: ${dbPath}`);
+
+  const db = new Database(dbPath);
+  db.pragma('journal_mode = WAL');
+  db.pragma('cache_size = -20000');
+  db.pragma('temp_store = MEMORY');
+  db.pragma('synchronous = NORMAL');
+
+  try {
+    let loadablePath;
+    try {
+      loadablePath = sqliteVec.getLoadablePath();
+    } catch (_e) {
+      console.warn('[DB] sqliteVec.getLoadablePath() failed, attempting fallback...');
+    }
+
+    if (!loadablePath) {
+      const platform = process.platform;
+      const arch = process.arch;
+      let binaryName = 'vec0.so';
+      let packageName = 'sqlite-vec-linux-x64';
+
+      if (platform === 'win32') {
+        binaryName = 'vec0.dll';
+        packageName = arch === 'x64' ? 'sqlite-vec-windows-x64' : `sqlite-vec-win32-${arch}`;
+      } else if (platform === 'darwin') {
+        binaryName = 'vec0.dylib';
+        packageName = `sqlite-vec-darwin-${arch}`;
+      }
+      loadablePath = path.resolve(process.cwd(), 'node_modules', packageName, binaryName);
+    }
+
+    if (loadablePath && typeof loadablePath !== 'string') {
+      try {
+        loadablePath = fileURLToPath(loadablePath as unknown as URL);
+      } catch (_e) {
+        loadablePath = String(loadablePath).replace(/^file:\/\/\/?/, '');
+      }
+    }
+
+    console.log(`[DB] 正在加载向量扩展: ${loadablePath}`);
+    db.loadExtension(loadablePath);
+
+    const version = db.prepare('SELECT vec_version() as version').get() as { version: string };
+    console.log(`✅ sqlite-vec 扩展加载成功, 版本: ${version.version}`);
+  } catch (err) {
+    console.error('⚠️ 向量扩展加载失败，将无法使用 AI 检索功能:', err);
+  }
+
+  return db;
+}
+
+export const db = globalForDb.db || initDb();
+globalForDb.db = db;
+
+export function closeDb() {
+  if (globalForDb.db) {
+    console.log('[DB] Closing database connection...');
+    globalForDb.db.close();
+    globalForDb.db = null;
+  }
+}
+
+// --- Drizzle ORM Initialization ---
+
+export const drizzleDb = drizzle(db, { schema });
 
 /**
  * 初始化数据库
@@ -11,8 +94,15 @@ export function initDatabase() {
     console.log('[DB] Starting database initialization...');
 
     try {
+        // 1. 运行旧的 SQL 脚本 (确保地基)
         createTables(db);
-        runMigrations(db);
+        runOldMigrations(db);
+
+        // 2. 运行 Drizzle 自动化迁移
+        console.log('[DB] Running Drizzle migrations...');
+        migrate(drizzleDb, { migrationsFolder: path.resolve(process.cwd(), 'drizzle') });
+        console.log('[DB] Drizzle migrations completed');
+
         setupVectorExtension(db);
         seedData(db);
         console.log('[DB] Database initialization completed');
@@ -22,12 +112,15 @@ export function initDatabase() {
     }
 }
 
-// 导出
+// --- Exports ---
+
+export default db;
 export { createTables, EMBEDDING_DIM } from './schema';
-export { runMigrations } from './migrations';
+export { runOldMigrations as runMigrations };
 export { setupVectorExtension } from './vector-setup';
 export { seedData } from './seed-data';
 export { addColumnIfNotExists, getSetting, setSetting } from './utils';
+export * as drizzleSchema from './drizzle-schema';
 
 if (require.main === module) {
     initDatabase();

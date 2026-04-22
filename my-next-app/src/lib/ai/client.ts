@@ -218,5 +218,3 @@ export async function streamChatWrapper(
         onFinish: onFinish ? (result) => onFinish(result.text) : undefined,
     });
 }
-// Note: streamText was not imported in the original view, I need to add it
-import { streamText } from 'ai';

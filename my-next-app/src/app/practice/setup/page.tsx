@@ -30,7 +30,7 @@ import {
     QUESTION_LIMIT_OPTIONS,
     DIMENSION_LABELS,
     Dimension
-} from '@/lib/practice/practice-types';
+} from '@/types';
 import { getAvailableTagsAction } from '@/server/actions/practice';
 import { KeypointTree } from '@/components/practice/KeypointTree';
 

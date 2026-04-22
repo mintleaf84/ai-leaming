@@ -2,7 +2,7 @@
 
 import React, { useEffect, useState } from 'react';
 import { getAdminLogsAction } from '@/server/actions/logs';
-import { AdminLogEntry, formatActionName } from '@/lib/admin/audit-types';
+import { AdminLogEntry, formatActionName } from '@/types';
 import { Loader2, User, FileQuestion, Cpu, MessageSquare, Database, RefreshCw } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';

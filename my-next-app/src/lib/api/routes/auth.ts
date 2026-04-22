@@ -2,7 +2,7 @@ import { OpenAPIHono, createRoute, z } from '@hono/zod-openapi'
 import { authService } from '@/lib/services/auth'
 import { setCookie, deleteCookie } from 'hono/cookie'
 import { logger as honoLogger } from 'hono/logger'
-import { checkRateLimit, getClientIP } from '@/lib/rate-limit'
+import { checkRateLimit, getClientIP } from '@/lib/auth/rate-limit'
 import { COOKIE_NAME, encrypt } from '@/lib/auth/auth-edge'
 
 const app = new OpenAPIHono()

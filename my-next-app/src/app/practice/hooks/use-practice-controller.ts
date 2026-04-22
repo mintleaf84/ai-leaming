@@ -9,7 +9,7 @@ import { useKeyboardShortcuts } from './use-keyboard-shortcuts';
 import { Question, PracticeState } from '@/types';
 import { getPracticeSessionAction, getPracticeSessionByConfigAction, submitAnswerAction, getSessionByIdAction } from '@/server/actions/practice';
 import { moveToObservationZoneAction } from '@/server/actions/zone';
-import { PRACTICE_MODE_LABELS, PracticeMode } from '@/lib/practice/practice-types';
+import { PRACTICE_MODE_LABELS, PracticeMode } from '@/types';
 
 export function usePracticeController(enableIntelligentReview: boolean = false) {
     const router = useRouter();

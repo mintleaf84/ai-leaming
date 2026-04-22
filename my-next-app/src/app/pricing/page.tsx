@@ -7,7 +7,7 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { getActivePlansAction, getMySubscriptionAction } from '@/server/actions/subscription';
-import { SubscriptionPlan, UserSubscriptionDetail } from '@/lib/billing/subscription-types';
+import { SubscriptionPlan, UserSubscriptionDetail } from '@/types';
 import _Link from 'next/link';
 
 // 套餐图标映射

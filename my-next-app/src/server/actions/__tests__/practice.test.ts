@@ -1,7 +1,7 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 
 // 1. Hoisted Mocks
-const { mockDb, mockRequireUser, mockDemoService, mockUpdateMastery } = vi.hoisted(() => ({
+const { mockDb, mockRequireUser, mockDemoService, mockUpdateMastery, mockDrizzleDb, mockDrizzleSchema } = vi.hoisted(() => ({
   mockDb: {
     prepare: vi.fn(),
     transaction: vi.fn(fn => fn)
@@ -11,11 +11,40 @@ const { mockDb, mockRequireUser, mockDemoService, mockUpdateMastery } = vi.hoist
     isDemoModeEnabled: vi.fn().mockReturnValue(false),
     getDemoSession: vi.fn()
   },
-  mockUpdateMastery: vi.fn()
+  mockUpdateMastery: vi.fn(),
+  mockDrizzleDb: {
+    query: {
+      practice_sessions: {
+        findFirst: vi.fn()
+      },
+      questions: {
+        findFirst: vi.fn()
+      }
+    },
+    select: vi.fn().mockReturnThis(),
+    from: vi.fn().mockReturnThis(),
+    where: vi.fn().mockReturnThis(),
+    get: vi.fn(),
+    insert: vi.fn().mockReturnThis(),
+    update: vi.fn().mockReturnThis(),
+    set: vi.fn().mockReturnThis(),
+    values: vi.fn().mockReturnThis(),
+    orderBy: vi.fn().mockReturnThis(),
+    limit: vi.fn().mockReturnThis(),
+  },
+  mockDrizzleSchema: {
+    practice_sessions: { user_id: 'user_id', is_demo: 'is_demo', created_at: 'created_at' },
+    practice_logs: { session_id: 'session_id' },
+    questions: { id: 'id' }
+  }
 }));
 
 // 2. Apply Mocks
-vi.mock('@/lib/db', () => ({ default: mockDb }));
+vi.mock('@/lib/db', () => ({ 
+  default: mockDb, 
+  drizzleDb: mockDrizzleDb,
+  drizzleSchema: mockDrizzleSchema
+}));
 vi.mock('@/lib/auth/auth', () => ({ requireUser: mockRequireUser }));
 vi.mock('@/lib/practice/demo', () => ({ DemoService: mockDemoService }));
 vi.mock('@/lib/services/mastery', () => ({
@@ -58,6 +87,19 @@ describe('Practice Actions', () => {
       all: vi.fn().mockReturnValue([]),
       run: vi.fn().mockReturnValue({ changes: 1 })
     }));
+
+    // Drizzle default behavior
+    mockDrizzleDb.query.practice_sessions.findFirst.mockResolvedValue(null);
+    mockDrizzleDb.get.mockResolvedValue(null);
+    mockDrizzleDb.select.mockReturnThis();
+    mockDrizzleDb.from.mockReturnThis();
+    mockDrizzleDb.where.mockReturnThis();
+    mockDrizzleDb.insert.mockReturnThis();
+    mockDrizzleDb.update.mockReturnThis();
+    mockDrizzleDb.set.mockReturnThis();
+    mockDrizzleDb.values.mockResolvedValue({ changes: 1 });
+    mockDrizzleDb.orderBy.mockReturnThis();
+    mockDrizzleDb.limit.mockReturnThis();
   });
 
   describe('getPracticeSessionAction', () => {
@@ -72,12 +114,13 @@ describe('Practice Actions', () => {
     };
 
     it('正常模式下应该创建新会话 (当无可用旧会话时)', async () => {
-      mockDb.prepare.mockImplementation((sql: string) => {
-        if (sql.includes('system_settings')) return { get: () => ({ value: 'false' }) };
-        if (sql.includes('practice_sessions') && sql.includes('SELECT')) return { get: () => undefined };
-        if (sql.includes('questions') && sql.includes('SELECT')) return { all: () => [mockQuestion] };
-        return { run: () => ({ changes: 1 }), get: () => null, all: () => [] };
-      });
+      mockDrizzleDb.select.mockReturnThis();
+      mockDrizzleDb.from.mockReturnThis();
+      mockDrizzleDb.orderBy.mockReturnThis();
+      mockDrizzleDb.limit.mockResolvedValue([mockQuestion]);
+      
+      mockDrizzleDb.insert.mockReturnThis();
+      mockDrizzleDb.values.mockResolvedValue({ changes: 1 });
 
       const result = await getPracticeSessionAction(true);
       
@@ -99,17 +142,11 @@ describe('Practice Actions', () => {
     });
 
     it('应该能正确恢复未完成的会话', async () => {
-      mockDb.prepare.mockImplementation((sql: string) => {
-        // console.log('Mocked SQL:', sql);
-        if (sql.includes('practice_sessions')) {
-          return { get: () => ({ 
-            id: 's1', user_id: 1, total_questions: 10, correct_count: 0, review_count: 0, is_demo: 0,
-            questions_json: JSON.stringify([mockQuestion]) 
-          }) };
-        }
-        if (sql.includes('practice_logs')) return { get: () => ({ count: 5 }) };
-        return { get: () => null, all: () => [], run: () => {} };
+      mockDrizzleDb.query.practice_sessions.findFirst.mockResolvedValue({ 
+        id: 's1', user_id: 1, total_questions: 10, correct_count: 0, review_count: 0, is_demo: 0,
+        questions_json: JSON.stringify([mockQuestion]) 
       });
+      mockDrizzleDb.get.mockResolvedValue({ count: 5 });
 
       const result = await getPracticeSessionAction(false);
       
@@ -120,9 +157,9 @@ describe('Practice Actions', () => {
 
   describe('submitAnswerAction', () => {
     it('应该记录答案并更新掌握度', async () => {
-      mockDb.prepare.mockImplementation((sql: string) => {
-        if (sql.includes('questions')) return { get: () => ({ tags: '["Tag1"]', dimension: 'knowledge' }) };
-        return { run: vi.fn(), get: () => null };
+      mockDrizzleDb.query.questions.findFirst.mockResolvedValue({ 
+        tags: '["Tag1"]', 
+        dimension: 'knowledge' 
       });
 
       const result = await submitAnswerAction(1, 'A', true, 1000, 'sess-1');

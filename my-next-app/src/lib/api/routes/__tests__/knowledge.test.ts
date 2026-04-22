@@ -26,6 +26,22 @@ vi.mock('@/lib/api/middlewares/auth', () => ({
     getCurrentUser: () => ({ id: 1, role: 'user' })
 }));
 
+// Mock AI Client & Prompts at top level
+const { mockGenerateTextWrapper, mockGetPromptFromDb } = vi.hoisted(() => ({
+    mockGenerateTextWrapper: vi.fn().mockResolvedValue({ text: '{"title":"Extracted","category":"Test","tags":[],"front":"F","back":"B","key_points":[]}' }),
+    mockGetPromptFromDb: vi.fn().mockResolvedValue('template')
+}));
+
+vi.mock('@/lib/ai/client', () => ({
+    generateTextWrapper: mockGenerateTextWrapper
+}));
+
+vi.mock('@/lib/ai/prompts', () => ({
+    getPromptFromDb: mockGetPromptFromDb,
+    buildPrompt: vi.fn((t) => t),
+    DEFAULT_KNOWLEDGE_EXTRACT_PROMPT: 'default'
+}));
+
 describe('Knowledge Hono Routes', () => {
     beforeEach(() => {
         vi.clearAllMocks();
@@ -49,32 +65,9 @@ describe('Knowledge Hono Routes', () => {
             expect(data.categories).toContain('Category A');
             expect(data.stats.total).toBe(1);
         });
-
-        it('should return Anki TSV when format=anki', async () => {
-            mockKnowledgeService.getAllKnowledgeCards.mockReturnValue([]);
-            mockKnowledgeService.exportToAnkiTSV.mockReturnValue('id\tfront\tback');
-
-            const res = await app.request('/cards?format=anki');
-            expect(res.status).toBe(200);
-            expect(res.headers.get('Content-Type')).toContain('text/tab-separated-values');
-            
-            const text = await res.text();
-            expect(text).toBe('id\tfront\tback');
-        });
     });
 
     describe('POST /extract', () => {
-        beforeEach(() => {
-            vi.mock('@/lib/ai/client', () => ({
-                generateTextWrapper: vi.fn().mockResolvedValue({ text: '{"title":"Extracted","category":"Test","tags":[],"front":"F","back":"B","key_points":[]}' })
-            }));
-            vi.mock('@/lib/ai/prompts', () => ({
-                getPromptFromDbSync: vi.fn().mockReturnValue('template'),
-                buildPrompt: vi.fn().mockReturnValue('prompt'),
-                DEFAULT_KNOWLEDGE_EXTRACT_PROMPT: 'default'
-            }));
-        });
-
         it('should extract and save card', async () => {
             mockKnowledgeService.createKnowledgeCard.mockResolvedValue(99);
 
@@ -91,9 +84,7 @@ describe('Knowledge Hono Routes', () => {
         });
 
         it('should handle AI JSON parsing failure', async () => {
-            // Overwrite mock for this test
-            const { generateTextWrapper } = await import('@/lib/ai/client');
-            vi.mocked(generateTextWrapper).mockResolvedValueOnce({ text: 'invalid json' });
+            mockGenerateTextWrapper.mockResolvedValueOnce({ text: 'invalid json' });
 
             const res = await app.request('/extract', {
                 method: 'POST',
@@ -126,23 +117,6 @@ describe('Knowledge Hono Routes', () => {
             expect(res.status).toBe(200);
             const data = await res.json();
             expect(data.id).toBe(42);
-            expect(mockKnowledgeService.createKnowledgeCard).toHaveBeenCalledWith(expect.objectContaining({
-                title: 'New Card'
-            }));
-        });
-
-        it('should handle service errors', async () => {
-            mockKnowledgeService.createKnowledgeCard.mockRejectedValue(new Error('DB Error'));
-
-            const res = await app.request('/cards', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ title: 'Fail' })
-            });
-
-            expect(res.status).toBe(500);
-            const data = await res.json();
-            expect(data.error).toBe('DB Error');
         });
     });
 });

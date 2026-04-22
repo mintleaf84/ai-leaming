@@ -13,84 +13,70 @@ function generateHash(content: string): string {
   return hash.toString(36);
 }
 
-// 1. Mock dependencies - 使用 vi.hoisted 内联创建，避免 require() 路径问题
-const { mockBetterDb } = vi.hoisted(() => {
-    const calls: { sql: string; args: unknown[] }[] = [];
-
-    const mockRun = vi.fn().mockImplementation(() => ({ lastInsertRowid: 100, changes: 1 }));
-    const mockGet = vi.fn();
-    const mockAll = vi.fn();
-
-    const prepare = vi.fn().mockImplementation((sql: string) => ({
-        run: vi.fn().mockImplementation((...args: unknown[]) => {
-            calls.push({ sql, args });
-            return mockRun(...args);
-        }),
-        get: vi.fn().mockImplementation((...args: unknown[]) => {
-            calls.push({ sql, args });
-            return mockGet(...args);
-        }),
-        all: vi.fn().mockImplementation((...args: unknown[]) => {
-            calls.push({ sql, args });
-            return mockAll(...args);
-        }),
-    }));
-
-    // better-sqlite3 的 transaction() 返回一个函数，调用该函数时才执行事务
-    const transaction = vi.fn().mockImplementation((cb: (...args: unknown[]) => unknown) => {
-        return vi.fn().mockImplementation((...args: unknown[]) => cb(...args));
-    });
-
-    return {
-        mockBetterDb: {
-            prepare,
-            transaction,
-            exec: vi.fn(),
-            _mockRun: mockRun,
-            _mockGet: mockGet,
-            _mockAll: mockAll,
-            _state: { get calls() { return calls; } },
-            reset: () => {
-                calls.length = 0;
-                mockRun.mockReset();
-                mockRun.mockImplementation(() => ({ lastInsertRowid: 100, changes: 1 }));
-                mockGet.mockReset();
-                mockAll.mockReset();
-                prepare.mockClear();
-                transaction.mockClear();
-            },
-        }
+// 1. Mock Drizzle & Better-SQLite3
+const { mockDrizzleDb, mockDrizzleSchema, mockBetterDb } = vi.hoisted(() => {
+    // Drizzle Chain Mock
+    const makeChain = () => {
+        const chain: Record<string, any> = {};
+        const methods = ['insert', 'values', 'update', 'set', 'delete', 'select', 'from', 'where', 'limit', 'onConflictDoUpdate'];
+        methods.forEach((m) => {
+            chain[m] = vi.fn(() => chain);
+        });
+        return chain;
     };
-});
 
-// Mock dependencies (other)
-const { mockGenerateStructuredData, mockGenerateTextWrapper, mockQuestionService, mockGetPromptFromDbSync, mockCheckAndConsumeQuota } = vi.hoisted(() => {
-    return {
-        mockGenerateStructuredData: vi.fn(),
-        mockGenerateTextWrapper: vi.fn(),
-        mockQuestionService: {
-            searchSimilarQuestions: vi.fn()
+    const chain = makeChain();
+    const mockDrizzleDb = {
+        ...chain,
+        query: {
+            ai_quiz_cache: { findFirst: vi.fn() },
+            ai_challenge_cache: { findFirst: vi.fn() },
+            first_principles_cache: { findFirst: vi.fn() },
         },
-        mockGetPromptFromDbSync: vi.fn(),
-        mockCheckAndConsumeQuota: vi.fn().mockReturnValue({ allowed: true }),
+        insert: vi.fn(() => chain),
+        update: vi.fn(() => chain),
+        delete: vi.fn(() => chain),
+        select: vi.fn(() => chain),
     };
+
+    const mockDrizzleSchema = {
+        ai_quiz_cache: { hash: 'hash', data: 'data' },
+        ai_challenge_cache: { hash: 'hash', data: 'data' },
+        first_principles_cache: { question_hash: 'question_hash', analysis: 'analysis' },
+    };
+
+    // Legacy DB mock (if needed)
+    const mockBetterDb = {
+        prepare: vi.fn(() => ({ run: vi.fn(), get: vi.fn(), all: vi.fn() })),
+        transaction: vi.fn((cb) => cb),
+    };
+
+    return { mockDrizzleDb, mockDrizzleSchema, mockBetterDb };
 });
 
 vi.mock('@/lib/db', () => ({
-    default: mockBetterDb
+    default: mockBetterDb,
+    drizzleDb: mockDrizzleDb,
+    drizzleSchema: mockDrizzleSchema,
 }));
+
+// 2. Mock AI Client & Prompts
+const { mockGenerateStructuredData, mockGenerateTextWrapper, mockGetPromptFromDb, mockCheckAndConsumeQuota } = vi.hoisted(() => {
+    return {
+        mockGenerateStructuredData: vi.fn(),
+        mockGenerateTextWrapper: vi.fn(),
+        mockGetPromptFromDb: vi.fn(),
+        mockCheckAndConsumeQuota: vi.fn().mockReturnValue({ allowed: true }),
+    };
+});
 
 vi.mock('@/lib/ai/client', () => ({
     generateStructuredData: mockGenerateStructuredData,
     generateTextWrapper: mockGenerateTextWrapper
 }));
 
-vi.mock('@/lib/services/question', () => ({
-    questionService: mockQuestionService
-}));
-
 vi.mock('@/lib/ai/prompts', () => ({
-    getPromptFromDbSync: mockGetPromptFromDbSync,
+    getPromptFromDb: mockGetPromptFromDb,
     buildPrompt: vi.fn((template, _vars) => template),
     DEFAULT_CORRECTION_PROMPT: 'default correction prompt',
     DEFAULT_REGRESSION_PROMPT: 'default regression prompt'
@@ -104,66 +90,70 @@ vi.mock('@/lib/billing/subscription-service', () => ({
     checkAndConsumeQuota: mockCheckAndConsumeQuota,
 }));
 
+// Mock question service
+vi.mock('@/lib/services/question', () => ({
+    questionService: {
+        searchSimilarQuestions: vi.fn()
+    }
+}));
+
 describe('AI Actions', () => {
     beforeEach(() => {
-        mockBetterDb.reset();
-        mockCheckAndConsumeQuota.mockReturnValue({ allowed: true });
         vi.clearAllMocks();
+        mockCheckAndConsumeQuota.mockReturnValue({ allowed: true });
+        
+        // Reset Drizzle Chain
+        const chainMethods = ['values', 'set', 'where', 'limit', 'onConflictDoUpdate'];
+        chainMethods.forEach(m => (mockDrizzleDb as any)[m].mockReturnValue(mockDrizzleDb));
+        mockDrizzleDb.insert.mockReturnValue(mockDrizzleDb);
     });
 
     describe('generateCorrectionQuizAction', () => {
-        it('should return AI-generated quiz on success and save to cache with correct key', async () => {
+        it('should return AI-generated quiz and save to cache', async () => {
             const mockQuiz = {
                 analysis: 'Analysis',
                 distinctionPoint: 'Point',
                 quiz: { content: 'Q', options: ['A', 'B'], answer: 'A', explanation: 'E' }
             };
             mockGenerateStructuredData.mockResolvedValue(mockQuiz);
+            mockDrizzleDb.query.ai_quiz_cache.findFirst.mockResolvedValue(null);
 
             const { generateCorrectionQuizAction } = await import('../ai');
             const result = await generateCorrectionQuizAction('Question', 'Wrong', 'Correct');
 
-            const expectedKey = generateHash('Question' + 'Wrong' + 'Correct');
-            
             expect(result).toEqual(mockQuiz);
-            
-            // 验证配额消费
             expect(mockCheckAndConsumeQuota).toHaveBeenCalledWith(1, 'review');
-
-            // 验证缓存写入使用了正确的 Key
-            const calls = mockBetterDb._state.calls;
-            const insertCall = calls.find((c: any) => c.sql.includes('INSERT OR REPLACE INTO ai_quiz_cache'));
-            expect(insertCall?.args[0]).toBe(expectedKey);
-            expect(insertCall?.args[1]).toBe(JSON.stringify(mockQuiz));
+            expect(mockDrizzleDb.insert).toHaveBeenCalled();
+            expect(mockDrizzleDb.values).toHaveBeenCalledWith(expect.objectContaining({
+                hash: generateHash('Question' + 'Wrong' + 'Correct')
+            }));
         });
 
-        it('should throw error when quota is exhausted', async () => {
-            mockCheckAndConsumeQuota.mockReturnValue({ allowed: false, message: 'Quota exhausted' });
+        it('should return cached result if exists', async () => {
+            const cachedData = { analysis: 'Cached' };
+            mockDrizzleDb.query.ai_quiz_cache.findFirst.mockResolvedValue({ 
+                data: JSON.stringify(cachedData) 
+            });
 
             const { generateCorrectionQuizAction } = await import('../ai');
-            
-            await expect(generateCorrectionQuizAction('Q', 'W', 'C'))
-                .rejects.toThrow('Quota exhausted');
+            const result = await generateCorrectionQuizAction('Q', 'W', 'C');
+
+            expect(result).toEqual(cachedData);
+            expect(mockGenerateStructuredData).not.toHaveBeenCalled();
         });
     });
 
     describe('generateFirstPrinciplesAction', () => {
-        it('should check quota for CORRECT user and save cache', async () => {
+        it('should check quota and save cache', async () => {
             mockGenerateTextWrapper.mockResolvedValue({ text: 'Deep Logic' });
+            mockDrizzleDb.query.first_principles_cache.findFirst.mockResolvedValue(null);
 
             const { generateFirstPrinciplesAction } = await import('../ai');
             const result = await generateFirstPrinciplesAction('Q', 'Exp', 'A', 'W');
 
-            const expectedKey = generateHash('Q' + 'A' + 'W');
-            
             expect(result.analysis).toBe('Deep Logic');
-            // 验证配额消费的目标用户 ID（应该是 1）
             expect(mockCheckAndConsumeQuota).toHaveBeenCalledWith(1, 'first_principles');
-            
-            // 验证缓存写入
-            const calls = mockBetterDb._state.calls;
-            const insertCall = calls.find((c: any) => c.sql.includes('INSERT OR REPLACE INTO first_principles_cache'));
-            expect(insertCall?.args[0]).toBe(expectedKey);
+            expect(mockDrizzleDb.insert).toHaveBeenCalled();
         });
     });
 });

@@ -1,4 +1,5 @@
-import db from '@/lib/db';
+import db, { drizzleDb, drizzleSchema } from '@/lib/db';
+import { eq } from 'drizzle-orm';
 
 export const DEFAULT_CORRECTION_PROMPT = `
     你是一个教育专家。用户在做题时出现逻辑混淆。
@@ -163,9 +164,12 @@ export const SOCRATIC_TUTOR_PROMPT = `
 苏格拉底：“这是一个有趣的观察。请通过窗户看看外面的空气，它是无色的，对吗？那么你认为阳光在穿过大气层时，发生了什么变化？”
 `;
 
-export function getPromptFromDbSync(key: string): string | null {
+export async function getPromptFromDb(key: string): Promise<string | null> {
   try {
-    const row = db.prepare('SELECT template FROM prompt_templates WHERE key = ?').get(key) as { template: string };
+    const row = await drizzleDb.query.prompt_templates.findFirst({
+      where: eq(drizzleSchema.prompt_templates.key, key),
+      columns: { template: true }
+    });
     return row ? row.template : null;
   } catch (_e) {
     return null;

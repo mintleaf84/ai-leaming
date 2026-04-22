@@ -1,7 +1,7 @@
 // @vitest-environment node
 import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { searchKnowledgeBase, parseCommand, handleQuizCommand, buildEnhancedSystemPrompt } from '../chat-rag';
-import { getPromptFromDbSync } from '@/lib/ai/prompts';
+import { getPromptFromDb } from '@/lib/ai/prompts';
 
 // Mock dependencies
 const { mockRagService, mockSearchSimilarContent, mockGenerateTextWrapper } = vi.hoisted(() => {
@@ -25,14 +25,14 @@ vi.mock('@/lib/ai/client', () => ({
 }));
 
 vi.mock('@/lib/ai/prompts', () => ({
-    getPromptFromDbSync: vi.fn(),
+    getPromptFromDb: vi.fn(),
     SOCRATIC_TUTOR_PROMPT: 'Default Socratic'
 }));
 
 describe('Chat RAG Service', () => {
     beforeEach(() => {
         vi.clearAllMocks();
-        vi.mocked(getPromptFromDbSync).mockImplementation((key) => {
+        vi.mocked(getPromptFromDb).mockImplementation(async (key) => {
             if (key === 'chat_system') return 'DB Prompt';
             return null;
         });
@@ -81,15 +81,15 @@ describe('Chat RAG Service', () => {
     });
 
     describe('buildEnhancedSystemPrompt', () => {
-        it('should prioritize DB prompt and append context', () => {
-            const prompt = buildEnhancedSystemPrompt('Sample Context');
+        it('should prioritize DB prompt and append context', async () => {
+            const prompt = await buildEnhancedSystemPrompt('Sample Context');
             expect(prompt).toContain('DB Prompt');
             expect(prompt).toContain('Sample Context');
         });
 
-        it('should use default prompt if DB prompt missing', () => {
-            vi.mocked(getPromptFromDbSync).mockReturnValue(null);
-            const prompt = buildEnhancedSystemPrompt();
+        it('should use default prompt if DB prompt missing', async () => {
+            vi.mocked(getPromptFromDb).mockResolvedValue(null);
+            const prompt = await buildEnhancedSystemPrompt();
             expect(prompt).toContain('资深的教师招聘考试辅导专家');
         });
     });

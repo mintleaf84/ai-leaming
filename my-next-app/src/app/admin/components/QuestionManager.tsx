@@ -6,8 +6,8 @@ import {
     importQuestionsAction,
     deleteQuestionAction,
     batchDeleteQuestionsAction,
-    QuestionFilters
 } from '@/server/actions/admin';
+import { type QuestionFilters } from '@/lib/services/admin-service';
 import { Question, Dimension } from '@/types';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';

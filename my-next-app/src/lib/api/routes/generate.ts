@@ -60,7 +60,7 @@ app.openapi(generateRoute, async (c) => {
                 { role: 'user', content: prompt }
             ],
         })
-        return response.toTextStreamResponse()
+        return response.toDataStreamResponse()
     } catch (error: unknown) {
         console.error('[Hono Generate API] error:', error)
         return c.json({ error: getErrorMessage(error) }, 500)

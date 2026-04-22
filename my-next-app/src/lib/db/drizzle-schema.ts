@@ -31,6 +31,11 @@ export const questions = sqliteTable('questions', {
   tags: text('tags'), // JSON string
   dimension: text('dimension', { enum: ['knowledge', 'understanding', 'application'] }),
   type: text('type'),
+  source: text('source'),
+  correct_ratio: real('correct_ratio'),
+  most_wrong_answer: text('most_wrong_answer'),
+  material: text('material'),
+  material_html: text('material_html'),
   ai_mnemonic: text('ai_mnemonic'),
   created_at: text('created_at').default(sql`CURRENT_TIMESTAMP`),
 });

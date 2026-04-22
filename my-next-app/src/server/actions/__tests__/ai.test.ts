@@ -15,17 +15,13 @@ function generateHash(content: string): string {
 
 // 1. Mock Drizzle & Better-SQLite3
 const { mockDrizzleDb, mockDrizzleSchema, mockBetterDb } = vi.hoisted(() => {
-    // Drizzle Chain Mock
-    const makeChain = () => {
-        const chain: Record<string, any> = {};
-        const methods = ['insert', 'values', 'update', 'set', 'delete', 'select', 'from', 'where', 'limit', 'onConflictDoUpdate'];
-        methods.forEach((m) => {
-            chain[m] = vi.fn(() => chain);
-        });
-        return chain;
-    };
+    // 建立通用链式 Mock
+    const chain: any = {};
+    const methods = ['insert', 'values', 'update', 'set', 'delete', 'select', 'from', 'where', 'limit', 'onConflictDoUpdate'];
+    methods.forEach((m) => {
+        chain[m] = vi.fn(() => chain);
+    });
 
-    const chain = makeChain();
     const mockDrizzleDb = {
         ...chain,
         query: {
@@ -33,10 +29,7 @@ const { mockDrizzleDb, mockDrizzleSchema, mockBetterDb } = vi.hoisted(() => {
             ai_challenge_cache: { findFirst: vi.fn() },
             first_principles_cache: { findFirst: vi.fn() },
         },
-        insert: vi.fn(() => chain),
-        update: vi.fn(() => chain),
-        delete: vi.fn(() => chain),
-        select: vi.fn(() => chain),
+        transaction: vi.fn((cb) => cb(chain)),
     };
 
     const mockDrizzleSchema = {
@@ -103,9 +96,8 @@ describe('AI Actions', () => {
         mockCheckAndConsumeQuota.mockReturnValue({ allowed: true });
         
         // Reset Drizzle Chain
-        const chainMethods = ['values', 'set', 'where', 'limit', 'onConflictDoUpdate'];
-        chainMethods.forEach(m => (mockDrizzleDb as any)[m].mockReturnValue(mockDrizzleDb));
-        mockDrizzleDb.insert.mockReturnValue(mockDrizzleDb);
+        const methods = ['insert', 'values', 'update', 'set', 'delete', 'select', 'from', 'where', 'limit', 'onConflictDoUpdate'];
+        methods.forEach(m => (mockDrizzleDb as any)[m].mockReturnValue(mockDrizzleDb));
     });
 
     describe('generateCorrectionQuizAction', () => {

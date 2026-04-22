@@ -1,7 +1,7 @@
 'use client';
 
 import { Command, CommandInput, CommandList } from '@/components/ui/command';
-import { useCompletion } from '@/hooks/use-completion';
+import { useCompletion } from '@ai-sdk/react';
 import { ArrowUp } from 'lucide-react';
 import { addAIHighlight, useEditor } from 'novel';
 import { useState } from 'react';
@@ -26,12 +26,11 @@ export function AISelector({ onOpenChange }: AISelectorProps) {
 
     const { completion, complete, isLoading, stop, setCompletion } = useCompletion({
         api: '/api/generate',
-        streamProtocol: 'text', // 匹配后端 toTextStreamResponse() 格式
         onError: (e: Error) => {
             console.error('[AI Selector] Error:', e);
             toast.error(e.message);
         },
-        onFinish: (_prompt, completion) => {
+        onFinish: (prompt, completion) => {
             console.log('[AI Selector] Finished. Completion length:', completion.length);
         },
     });

@@ -58,7 +58,7 @@ export async function saveAiConfigAction(config: Partial<AiConfig>) {
             // Insert
             // First check if it's the first config, if so make it active
             const [countResult] = await drizzleDb.select({ value: count() }).from(drizzleSchema.ai_configs);
-            const isActive = countResult.value === 0 ? 1 : 0;
+            const isActive = countResult.value === 0;
 
             await drizzleDb.insert(drizzleSchema.ai_configs).values({
                 name: config.name as string,
@@ -116,8 +116,8 @@ export async function setActiveAiConfigAction(id: number) {
     const user = await requireRole(['admin']);
     
     await drizzleDb.transaction(async (tx: any) => {
-        await tx.update(drizzleSchema.ai_configs).set({ is_active: 0 });
-        await tx.update(drizzleSchema.ai_configs).set({ is_active: 1 }).where(eq(drizzleSchema.ai_configs.id, id));
+        await tx.update(drizzleSchema.ai_configs).set({ is_active: false });
+        await tx.update(drizzleSchema.ai_configs).set({ is_active: true }).where(eq(drizzleSchema.ai_configs.id, id));
     });
 
     // 记录日志

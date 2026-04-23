@@ -1,4 +1,3 @@
-import 'server-only';
 import Database from 'better-sqlite3';
 import * as sqliteVec from 'sqlite-vec';
 import path from 'path';

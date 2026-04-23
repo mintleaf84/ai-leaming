@@ -119,12 +119,8 @@ let isInitialized = false;
  * 初始化数据库
  */
 export async function initDatabase() {
-    // 检查是否在构建阶段或已经初始化
-    if (
-        process.env.NEXT_PHASE === 'phase-production-build' || 
-        process.env.IS_BUILDING === 'true' ||
-        isInitialized
-    ) {
+    // 检查是否已经初始化
+    if (isInitialized) {
         return;
     }
 

@@ -79,5 +79,8 @@ jobs:
       - name: 安装依赖
         run: npm ci
 
+      - name: 运行数据库迁移
+        run: npm run db:migrate
+
       - name: 构建 Next.js
         run: npm run build

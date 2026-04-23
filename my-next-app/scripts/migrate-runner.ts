@@ -15,7 +15,7 @@ async function run() {
 
     // 0. Ensure base tables exist
     console.log('📦 Initializing base tables...');
-    initDatabase();
+    await initDatabase();
 
     // 1. Ensure migrations table exists
     db.exec(`

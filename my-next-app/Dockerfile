@@ -34,6 +34,9 @@ ENV DB_FILENAME=build-placeholder.db
 # 创建临时 data 目录，防止 Next.js 预渲染页面时 initDatabase() 找不到路径
 RUN mkdir -p /app/data
 
+# 执行数据库迁移，确保构建阶段（如静态生成）所需的表结构已创建
+RUN npm run db:migrate
+
 RUN npm run build
 
 # 使用 esbuild 将迁移脚本编译为单文件 JS（排除 C++ 原生扩展 better-sqlite3 避免打包错误）

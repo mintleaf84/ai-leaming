@@ -6,11 +6,18 @@ import { TextbookUploadModal } from '@/components/textbooks/TextbookUploadModal'
 import { Button } from '@/components/ui/button';
 import { Plus, Book, User, Calendar } from 'lucide-react';
 import { DeleteTextbookButton } from '@/components/textbooks/DeleteTextbookButton';
+import { getGlobalFeatureFlag } from '@/server/actions/feature-flags';
+import { redirect } from 'next/navigation';
 
 // Force dynamic because we are reading from DB directly in Server Component
 export const revalidate = 60; // 开启 ISR，每 60 秒可以在后台重头生成一次，其余时间享受瞬时访问速度
 
-export default function TextbooksPage() {
+export default async function TextbooksPage() {
+    const isEnabled = await getGlobalFeatureFlag('ENABLE_TEXTBOOK', true);
+    if (!isEnabled) {
+        redirect('/dashboard');
+    }
+
     const textbooks = textbookService.getAllTextbooks();
 
     return (

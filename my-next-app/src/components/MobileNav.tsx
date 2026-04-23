@@ -5,16 +5,20 @@ import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { useTerminology } from '@/lib/hooks/use-terminology';
 import { cn } from '@/lib/utils';
-import { Home, BookOpen, Book, User, Bot } from 'lucide-react';
+import { Home, BookOpen, Book, User, Bot, FileText } from 'lucide-react';
 
 interface UserProps {
     user?: {
         username: string;
         id: number;
     } | null;
+    featureFlags?: {
+        ENABLE_TEXTBOOK: boolean;
+        ENABLE_NOTES: boolean;
+    };
 }
 
-export function MobileNav({ user: _user }: UserProps) {
+export function MobileNav({ user: _user, featureFlags }: UserProps) {
     const pathname = usePathname();
     const { t } = useTerminology();
 
@@ -27,9 +31,9 @@ export function MobileNav({ user: _user }: UserProps) {
         { name: t('nav.home'), href: '/dashboard', icon: Home },
         { name: t('nav.practice'), href: '/practice', icon: BookOpen },
         { name: 'AI 助手', href: '/chat', icon: Bot },
+        { name: t('nav.notes'), href: '/notes', icon: FileText, enabled: featureFlags?.ENABLE_NOTES ?? true },
         { name: t('nav.knowledge'), href: '/knowledge', icon: Book },
-        { name: '我的', href: '/profile', icon: User },
-    ];
+    ].filter(item => item.enabled !== false);
 
     return (
         <nav className="md:hidden fixed bottom-6 left-6 right-6 z-50 bg-card/95 backdrop-blur-md rounded-2xl shadow-xl shadow-black/10 dark:shadow-black/30 border border-border ring-1 ring-border/50">

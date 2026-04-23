@@ -309,7 +309,7 @@ describe('AdminService', () => {
         });
 
         it('修改超级管理员（ID=1）应抛出错误', async () => {
-            await expect(adminService.updateUserRole(1, 'user'))
+            await expect(adminService.updateUserRole(1, 'student'))
                 .rejects.toThrow('Cannot change super admin role');
         });
     });

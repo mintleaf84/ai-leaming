@@ -11,6 +11,7 @@ import { QueryProvider } from "@/lib/providers/QueryProvider";
 import "./globals.css";
 
 import { Toaster } from "@/components/ui/sonner";
+import { getGlobalFeatureFlag } from "@/server/actions/feature-flags";
 
 const geistSans = localFont({
   src: "../../public/fonts/GeistVF.woff2",
@@ -64,6 +65,10 @@ export default async function RootLayout({
   // Initialize database is now handled by src/instrumentation.ts
   // initDatabase();
 
+  const isTextbookEnabled = await getGlobalFeatureFlag('ENABLE_TEXTBOOK', true);
+  const isNotesEnabled = await getGlobalFeatureFlag('ENABLE_NOTES', true);
+  const featureFlags = { ENABLE_TEXTBOOK: isTextbookEnabled, ENABLE_NOTES: isNotesEnabled };
+
   return (
     <html lang="zh-CN" suppressHydrationWarning>
       <body
@@ -86,6 +91,7 @@ export default async function RootLayout({
                       <SidebarUser />
                     </Suspense>
                   } 
+                  featureFlags={featureFlags}
                 />
               </div>
               <div className="flex-1 flex flex-col min-w-0">
@@ -97,7 +103,7 @@ export default async function RootLayout({
                 </main>
               </div>
             </div>
-            <MobileNav />
+            <MobileNav featureFlags={featureFlags} />
             <Toaster position="top-center" richColors />
           </ThemeProvider>
         </TerminologyProvider>

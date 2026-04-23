@@ -20,6 +20,7 @@ const TERMS: Record<string, { standard: string; neo: string }> = {
     'nav.history': { standard: '练习记录', neo: '日志' },
     'nav.ai_tutor': { standard: 'AI 助教', neo: '灵犀' },
     'nav.knowledge': { standard: '知识卡片', neo: '锦囊' },
+    'nav.notes': { standard: '智能笔记', neo: '笔记' },
     'nav.textbooks': { standard: '教材库', neo: '藏经阁' },
     'nav.graph': { standard: '知识图谱', neo: '脉络' },
     'nav.docs': { standard: '使用文档', neo: '指南' },

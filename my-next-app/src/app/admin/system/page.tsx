@@ -83,12 +83,18 @@ export default function SystemPage() {
     const [loading, setLoading] = useState(true);
     const [intelligentReviewEnabled, setIntelligentReviewEnabled] = useState(false);
     const [cultivationEnabled, setCultivationEnabled] = useState(false);
+    const [textbookEnabled, setTextbookEnabled] = useState(false);
+    const [notesEnabled, setNotesEnabled] = useState(false);
 
     const loadFlags = async () => {
         const reviewFlag = await getGlobalFeatureFlag('ENABLE_INTELLIGENT_REVIEW', false);
         setIntelligentReviewEnabled(reviewFlag);
         const cultivationFlag = await getGlobalFeatureFlag('ENABLE_CULTIVATION', false); // 默认关闭
         setCultivationEnabled(cultivationFlag);
+        const textbookFlag = await getGlobalFeatureFlag('ENABLE_TEXTBOOK', true); // 默认开启
+        setTextbookEnabled(textbookFlag);
+        const notesFlag = await getGlobalFeatureFlag('ENABLE_NOTES', true); // 默认开启
+        setNotesEnabled(notesFlag);
     };
 
     const loadStatus = async () => {
@@ -161,6 +167,28 @@ export default function SystemPage() {
         if (res.success) {
             setCultivationEnabled(newVal);
             toast.success(newVal ? '修仙中心功能已开启' : '修仙中心功能已下线');
+        } else {
+            toast.error(res.error || '切换失败');
+        }
+    };
+
+    const handleToggleTextbook = async () => {
+        const newVal = !textbookEnabled;
+        const res = await toggleGlobalFeatureFlag('ENABLE_TEXTBOOK', newVal);
+        if (res.success) {
+            setTextbookEnabled(newVal);
+            toast.success(newVal ? '教材库功能已开启' : '教材库功能已关闭');
+        } else {
+            toast.error(res.error || '切换失败');
+        }
+    };
+
+    const handleToggleNotes = async () => {
+        const newVal = !notesEnabled;
+        const res = await toggleGlobalFeatureFlag('ENABLE_NOTES', newVal);
+        if (res.success) {
+            setNotesEnabled(newVal);
+            toast.success(newVal ? '智能笔记功能已开启' : '智能笔记功能已关闭');
         } else {
             toast.error(res.error || '切换失败');
         }
@@ -390,6 +418,40 @@ export default function SystemPage() {
                                 className={cultivationEnabled ? "bg-emerald-600 hover:bg-emerald-700" : ""}
                             >
                                 {cultivationEnabled ? '已开启修仙世界' : '已降级/下线'}
+                            </Button>
+                        </div>
+
+                        {/* 新增：教材库开关 */}
+                        <div className="flex items-center justify-between p-4 border rounded-lg bg-card">
+                            <div>
+                                <h4 className="font-semibold mb-1">教材库 (Textbook Library)</h4>
+                                <p className="text-sm text-muted-foreground max-w-3xl">
+                                    【核心资源管理】：控制侧边栏及仪表盘的“教材库”入口。关闭后，教材上传、目录解析及 AI 辅助阅读功能将不可用，已有教材数据将被安全隐藏。
+                                </p>
+                            </div>
+                            <Button
+                                variant={textbookEnabled ? "default" : "outline"}
+                                onClick={handleToggleTextbook}
+                                className={textbookEnabled ? "bg-blue-600 hover:bg-blue-700" : ""}
+                            >
+                                {textbookEnabled ? '已启用教材库' : '已禁用'}
+                            </Button>
+                        </div>
+
+                        {/* 新增：智能笔记开关 */}
+                        <div className="flex items-center justify-between p-4 border rounded-lg bg-card">
+                            <div>
+                                <h4 className="font-semibold mb-1">智能笔记 (Smart Notes)</h4>
+                                <p className="text-sm text-muted-foreground max-w-3xl">
+                                    【学习辅助工具】：控制全站笔记功能。关闭后，笔记列表、编辑器及题目引用标注功能将被隐藏。
+                                </p>
+                            </div>
+                            <Button
+                                variant={notesEnabled ? "default" : "outline"}
+                                onClick={handleToggleNotes}
+                                className={notesEnabled ? "bg-amber-600 hover:bg-amber-700" : ""}
+                            >
+                                {notesEnabled ? '已启用智能笔记' : '已禁用'}
                             </Button>
                         </div>
                     </CardContent>

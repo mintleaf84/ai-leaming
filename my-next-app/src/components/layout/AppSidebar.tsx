@@ -26,6 +26,10 @@ import { useTerminology } from "@/lib/hooks/use-terminology";
 
 interface SidebarProps {
     userSection?: React.ReactNode;
+    featureFlags?: {
+        ENABLE_TEXTBOOK: boolean;
+        ENABLE_NOTES: boolean;
+    };
 }
 
 // --- Helper Components Moved Outside to Avoid Remounting ---
@@ -84,7 +88,7 @@ const NavGroup = ({
     </div>
 );
 
-export function AppSidebar({ userSection }: SidebarProps) {
+export function AppSidebar({ userSection, featureFlags }: SidebarProps) {
     const pathname = usePathname();
     const { t } = useTerminology();
 
@@ -103,9 +107,10 @@ export function AppSidebar({ userSection }: SidebarProps) {
     const knowledgeItems = [
         { name: t('nav.ai_tutor'), href: '/chat', icon: Bot },
         { name: t('nav.knowledge'), href: '/knowledge', icon: Bookmark },
-        { name: t('nav.textbooks'), href: '/textbooks', icon: Book },
+        { name: t('nav.notes'), href: '/notes', icon: FileText, enabled: featureFlags?.ENABLE_NOTES ?? true },
+        { name: t('nav.textbooks'), href: '/textbooks', icon: Book, enabled: featureFlags?.ENABLE_TEXTBOOK ?? true },
         { name: t('nav.graph'), href: '/knowledge-graph', icon: LayoutDashboard },
-    ];
+    ].filter(item => item.enabled !== false);
 
     const moreItems = [
         { name: t('nav.ocr'), href: '/ocr', icon: ScanLine },

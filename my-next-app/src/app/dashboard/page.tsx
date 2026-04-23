@@ -3,7 +3,7 @@ import { Suspense } from "react";
 import {
   ArrowRight, Brain, BarChart3, Target, Zap,
   RotateCcw, FileCheck, Shuffle, Flame,
-  CheckCircle2, Book, GraduationCap, PlayCircle, History, Sparkles, ScanLine, Network
+  CheckCircle2, Book, GraduationCap, PlayCircle, History, Sparkles, ScanLine, Network, FileText
 } from "lucide-react";
 import { redirect } from "next/navigation";
 import { getUserStatsAction } from "@/server/actions/stats";
@@ -191,6 +191,8 @@ async function DashboardStatsCards() {
 export default async function Home() {
   // 获取特性开关状态
   const isCultivationEnabled = await getGlobalFeatureFlag('ENABLE_CULTIVATION', false);
+  const isTextbookEnabled = await getGlobalFeatureFlag('ENABLE_TEXTBOOK', true);
+  const isNotesEnabled = await getGlobalFeatureFlag('ENABLE_NOTES', true);
 
   // 问候语直接根据服务器时间计算，无需等待数据库
   const hour = getBeijingHour();
@@ -226,13 +228,14 @@ export default async function Home() {
           <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
             {[
               { name: '练习记录', desc: '查看历史成绩', href: '/history', icon: History },
-              { name: '教材库', desc: '学习资料导入', href: '/textbooks', icon: Book },
+              { name: '教材库', desc: '学习资料导入', href: '/textbooks', icon: Book, enabled: isTextbookEnabled },
+              { name: '智能笔记', desc: '记录灵感与知识', href: '/notes', icon: FileText, enabled: isNotesEnabled },
               { name: 'AI 助教', desc: '智能答疑解惑', href: '/chat', icon: Brain },
               { name: '知识卡片', desc: '碎片化记忆', href: '/knowledge', icon: GraduationCap },
               { name: '知识图谱', desc: '全局思维导图', href: '/knowledge-graph', icon: BarChart3 },
               { name: '文字识别', desc: '图片/PDF 转文字', href: '/ocr', icon: ScanLine },
               { name: '思维导图', desc: '生成结构化脑图', href: '/mindmap', icon: Network },
-            ].map((item) => (
+            ].filter(item => item.enabled !== false).map((item) => (
               <Link key={item.name} href={item.href} className="group">
                 <div className="flex items-center gap-4 p-4 rounded-2xl bg-card border border-border hover:border-primary/50 hover:shadow-sm transition-all">
                   <div className="w-10 h-10 rounded-full bg-muted flex items-center justify-center text-muted-foreground group-hover:bg-primary/10 group-hover:text-primary transition-colors">

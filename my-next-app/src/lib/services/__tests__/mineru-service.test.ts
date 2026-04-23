@@ -12,8 +12,10 @@ const mockZipEntries: {
 // 使用普通函数（非箭头函数）让 new AdmZip() 能够作为构造函数调用
 vi.mock('adm-zip', () => {
     return {
-        default: function MockAdmZip() {
-            this.getEntries = () => mockZipEntries;
+        default: class MockAdmZip {
+            getEntries() {
+                return mockZipEntries;
+            }
         },
     };
 });

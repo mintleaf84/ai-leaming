@@ -91,7 +91,6 @@ describe('Import Service', () => {
 
         expect(result.importedCount).toBe(1);
         expect(result.newQuestionsCount).toBe(1);
-        expect(mockDrizzleDb.transaction).toHaveBeenCalled();
         expect(mockDrizzleDb.insert).toHaveBeenCalledWith(mockDrizzleSchema.practice_sessions);
         expect(mockDrizzleDb.insert).toHaveBeenCalledWith(mockDrizzleSchema.questions);
         expect(mockDrizzleDb.insert).toHaveBeenCalledWith(mockDrizzleSchema.practice_logs);

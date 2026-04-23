@@ -77,6 +77,8 @@ describe('AdminService', () => {
         vi.clearAllMocks();
 
         // 重置链式调用
+        // chainMethods：需要在 beforeEach 中覆盖为返回 mockDrizzleDb 的中间链式方法
+        // （不含终端方法 all/get，终端方法在各测试中按需单独设置）
         const chainMethods = ['values', 'set', 'from', 'where', 'leftJoin',
             'orderBy', 'limit', 'offset'];
         chainMethods.forEach((m) => { chain[m].mockReturnValue(mockDrizzleDb); });

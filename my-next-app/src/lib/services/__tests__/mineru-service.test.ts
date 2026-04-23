@@ -1,7 +1,8 @@
 // @vitest-environment node
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 
-// ---- AdmZip 状态：在 vi.hoisted 外部维护，便于每个测试动态修改 ----
+// ---- AdmZip 状态：使用模块级共享数组，vi.mock 回调中直接引用同一引用 ----
+// beforeEach 通过 mockZipEntries.length = 0 清空，保持测试隔离性
 const mockZipEntries: {
     entryName: string;
     isDirectory: boolean;

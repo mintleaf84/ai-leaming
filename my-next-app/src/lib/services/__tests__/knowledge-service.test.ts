@@ -81,6 +81,8 @@ describe('KnowledgeService', () => {
         vi.clearAllMocks();
 
         // 重置链式调用
+        // chainMethods：需要在 beforeEach 中覆盖为返回 mockDrizzleDb 的中间链式方法
+        // （不含终端方法 all/get，终端方法在各测试中按需单独设置）
         const chainMethods = ['values', 'set', 'from', 'where', 'orderBy', 'limit', 'groupBy'];
         chainMethods.forEach((m) => { chain[m].mockReturnValue(mockDrizzleDb); });
         mockDrizzleDb.insert.mockReturnValue(mockDrizzleDb);
@@ -248,11 +250,13 @@ describe('KnowledgeService', () => {
     // ────────────────────────────
     describe('getCategories', () => {
         it('应该返回分类列表', async () => {
-            // getCategories 的终端方法是 all()，使用 mockImplementationOnce 避免队列污染
-            chain['all'].mockImplementationOnce(() => Promise.resolve([
+            // getCategories 的终端方法是 all()
+            // 注意：这里不能使用 mockResolvedValueOnce，因为前面的 getAllKnowledgeCards
+            // 测试已修复为使用 limit() 作为终端，确保 all() 队列干净，两种写法均可
+            chain['all'].mockResolvedValueOnce([
                 { category: '数学' },
                 { category: '语文' },
-            ]));
+            ]);
 
             const result = await getCategories();
 

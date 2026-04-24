@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
-import { Check, Circle, EyeOff, Eye, CheckCircle2, XCircle } from 'lucide-react';
+import { Check, Circle, EyeOff, Eye, CheckCircle2, XCircle, Brain, Calendar, Zap, History } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 
 interface PracticeCardProps {
@@ -10,6 +10,13 @@ interface PracticeCardProps {
         options: string[];
         type: string;  // 与 Question 类型保持一致
         dimension: string;
+        srs?: {
+            stability: number;
+            difficulty: number;
+            due_date: string;
+            state: number;
+            last_review?: string;
+        };
     };
     isMulti: boolean;
     selectedOptions: string[];
@@ -72,7 +79,25 @@ export function PracticeCard({
                         认知维度: {question.dimension === 'knowledge' ? '识记' : question.dimension === 'application' ? '应用' : '理解'}
                     </span>
                 </div>
-                {!isTrueFalse && (
+                {question.srs && (
+                    <div className="flex items-center gap-3 bg-muted/30 px-3 py-1.5 rounded-lg border border-border/50">
+                        <div className="flex items-center gap-1.5" title="记忆稳定性 (Stability): 数值越高代表掌握越牢固">
+                            <Brain className="w-3.5 h-3.5 text-blue-500" />
+                            <span className="text-[10px] font-medium">{question.srs.stability.toFixed(1)}d</span>
+                        </div>
+                        <div className="flex items-center gap-1.5" title="题目难度 (Difficulty): 算法感知的挑战程度 (1-10)">
+                            <Zap className="w-3.5 h-3.5 text-amber-500" />
+                            <span className="text-[10px] font-medium">{question.srs.difficulty.toFixed(1)}</span>
+                        </div>
+                        <div className="flex items-center gap-1.5" title={`下次复习日期: ${new Date(question.srs.due_date).toLocaleDateString()}`}>
+                            <Calendar className="w-3.5 h-3.5 text-emerald-500" />
+                            <span className="text-[10px] font-medium">
+                                {Math.ceil((new Date(question.srs.due_date).getTime() - Date.now()) / (1000 * 60 * 60 * 24))}d
+                            </span>
+                        </div>
+                    </div>
+                )}
+                {!isTrueFalse && !question.srs && (
                     <div className="text-[10px] text-muted-foreground/50 italic">
                         提示: 点击选项右侧眼睛图标或右键可&quot;排除&quot;
                     </div>

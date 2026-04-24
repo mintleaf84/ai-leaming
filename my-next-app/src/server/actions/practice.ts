@@ -99,7 +99,10 @@ export async function getPracticeSessionByConfigAction(config: any) {
       is_demo: 0
     });
 
-    return { questions: rawQuestions, sessionId, config };
+    // 挂载 SRS 数据以便前端展示
+    const questionsWithSrs = await practiceService.attachSrsData(user.id, rawQuestions);
+
+    return { questions: questionsWithSrs, sessionId, config };
   } catch (error) {
     logger.error({ err: error }, 'Action: getPracticeSessionByConfigAction failed');
     throw new Error('无法创建配置练习会话，请稍后重试。');

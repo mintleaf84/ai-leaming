@@ -109,23 +109,43 @@ function generateSmartSession(config: PracticeConfig, userId: number): Question[
 }
 
 /**
- * 错题强化模式
- * 只练习历史错题，按错误次数排序
+ * 错题强化模式 (FSRS 驱动)
+ * 优先练习到期复习的题目，辅助参考错误次数
  */
 function generateReviewSession(config: PracticeConfig, userId: number): Question[] {
     const { where, params } = buildWhereClause(config);
+    const now = new Date().toISOString();
 
-    const questions = db.prepare(`
+    // 1. 优先获取 FSRS 到期的错题
+    const dueQuestions = db.prepare(`
+    SELECT q.*, srs.due_date, srs.stability
+    FROM questions q
+    JOIN question_srs srs ON srs.question_id = q.id
+    ${where ? where + ' AND' : 'WHERE'} srs.user_id = ? AND srs.due_date <= ?
+    ORDER BY srs.due_date ASC
+    LIMIT ?
+  `).all(...params, userId, now, config.limit).map(mapRawToQuestion);
+
+    if (dueQuestions.length >= config.limit) {
+        return dueQuestions;
+    }
+
+    // 2. 如果到期题目不足，补充从未进入 SRS 循环但有错误记录的题目
+    const usedIds = dueQuestions.map(q => q.id);
+    const remainingLimit = config.limit - dueQuestions.length;
+
+    const backlogQuestions = db.prepare(`
     SELECT q.*, COUNT(pl.id) as error_count
     FROM questions q
     JOIN practice_logs pl ON pl.question_id = q.id
-    ${where} ${where ? 'AND' : 'WHERE'} pl.user_id = ? AND pl.is_correct = 0
+    ${where ? where + ' AND' : 'WHERE'} pl.user_id = ? AND pl.is_correct = 0
+    AND q.id NOT IN (${usedIds.length > 0 ? usedIds.join(',') : '0'})
     GROUP BY q.id
     ORDER BY error_count DESC, RANDOM()
     LIMIT ?
-  `).all(...params, userId, config.limit).map(mapRawToQuestion);
+  `).all(...params, userId, remainingLimit).map(mapRawToQuestion);
 
-    return questions;
+    return [...dueQuestions, ...backlogQuestions];
 }
 
 /**

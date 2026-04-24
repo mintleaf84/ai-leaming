@@ -13,6 +13,9 @@ interface WrongQuestionRow {
     wrongCount: number;
     lastWrongAt: string;
     userLastAnswer: string | null;
+    stability: number | null;
+    difficulty: number | null;
+    due_date: string | null;
 }
 
 /** 题目详情 DB 行 */
@@ -25,6 +28,10 @@ interface QuestionDetailRow {
     explanation: string;
     tags: string;
     source: string;
+    stability: number | null;
+    difficulty: number | null;
+    due_date: string | null;
+    state: number | null;
 }
 
 /** 错题本列表行（含掌握状态） */
@@ -69,6 +76,11 @@ export type WrongQuestionItem = {
     lastWrongAt: string;      // 最近答错时间
     correctAnswer: string;    // 正确答案
     userLastAnswer: string;   // 用户最近答案
+    srs?: {
+        stability: number;
+        difficulty: number;
+        due_date: string;
+    };
 };
 
 // 按知识点分组的错题
@@ -94,9 +106,13 @@ export async function getWrongQuestionsAction(): Promise<WrongQuestionItem[]> {
         MAX(l.timestamp) as lastWrongAt,
         (SELECT user_answer FROM practice_logs 
          WHERE question_id = l.question_id AND user_id = ? AND is_correct = 0 
-         ORDER BY timestamp DESC LIMIT 1) as userLastAnswer
+         ORDER BY timestamp DESC LIMIT 1) as userLastAnswer,
+        s.stability,
+        s.difficulty,
+        s.due_date
       FROM practice_logs l
       JOIN questions q ON l.question_id = q.id
+      LEFT JOIN question_srs s ON l.question_id = s.question_id AND l.user_id = s.user_id
       WHERE l.user_id = ? AND l.is_correct = 0
         AND l.question_id NOT IN (SELECT question_id FROM mastered_questions WHERE user_id = ?)
       GROUP BY l.question_id
@@ -110,7 +126,12 @@ export async function getWrongQuestionsAction(): Promise<WrongQuestionItem[]> {
             wrongCount: r.wrongCount,
             lastWrongAt: r.lastWrongAt,
             correctAnswer: r.correctAnswer,
-            userLastAnswer: r.userLastAnswer || ''
+            userLastAnswer: r.userLastAnswer || '',
+            srs: r.stability ? {
+                stability: r.stability,
+                difficulty: r.difficulty || 0,
+                due_date: r.due_date || ''
+            } : undefined
         }));
     } catch (error) {
         logger.error({ err: error }, "Failed to fetch wrong questions");
@@ -235,10 +256,12 @@ export async function getWrongQuestionDetailAction(questionId: string): Promise<
         // 获取题目基本信息
         const question = db.prepare(`
             SELECT 
-                id, content, options, answer, explanation, tags, type
-            FROM questions 
-            WHERE id = ?
-        `).get(questionId) as QuestionDetailRow | undefined;
+                q.id, q.content, q.options, q.answer, q.explanation, q.tags, q.type,
+                s.stability, s.difficulty, s.due_date, s.state
+            FROM questions q
+            LEFT JOIN question_srs s ON q.id = s.question_id AND s.user_id = ?
+            WHERE q.id = ?
+        `).get(user.id, questionId) as QuestionDetailRow | undefined;
 
         if (!question) {
             return null;
@@ -288,7 +311,12 @@ export async function getWrongQuestionDetailAction(questionId: string): Promise<
                 timestamp: log.timestamp,
                 userAnswer: log.userAnswer,
                 isCorrect: Boolean(log.isCorrect)
-            }))
+            })),
+            srs: question.stability ? {
+                stability: question.stability,
+                difficulty: question.difficulty || 0,
+                due_date: question.due_date || ''
+            } : undefined
         };
     } catch (error) {
         logger.error({ err: error }, "Failed to fetch wrong question detail");

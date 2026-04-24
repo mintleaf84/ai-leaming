@@ -1,6 +1,6 @@
 
 import { drizzleDb, drizzleSchema } from '@/lib/db';
-import { eq, and, desc, gt, sql } from 'drizzle-orm';
+import { eq, and, desc, gt, sql, inArray } from 'drizzle-orm';
 import { Question, Dimension } from '@/types';
 import { PracticeSessionRowSchema, QuestionRowSchema } from '@/lib/schemas';
 import { z } from 'zod';
@@ -77,8 +77,9 @@ export const practiceService = {
                 if (completedCount < totalQuestions) {
                     try {
                         const questions = JSON.parse(lastSession.questions_json) as Question[];
+                        const mappedQuestions = questions.map(q => mapQuestion(q));
                         return {
-                            questions: questions.map(q => mapQuestion(q)),
+                            questions: await this.attachSrsData(userId, mappedQuestions),
                             sessionId: lastSession.id,
                             resumed: true,
                             completedCount
@@ -91,7 +92,45 @@ export const practiceService = {
         }
 
         // 3. 创建新随机会话
-        return this.createRandomSession(userId);
+        const result = await this.createRandomSession(userId);
+        
+        // 4. 挂载 SRS 数据
+        result.questions = await this.attachSrsData(userId, result.questions);
+        return result;
+    },
+
+    /**
+     * 为题目列表挂载 SRS 记忆状态
+     */
+    async attachSrsData(userId: number, questions: Question[]): Promise<Question[]> {
+        if (questions.length === 0) return [];
+        
+        const qIds = questions.map(q => q.id);
+        const srsRows = await drizzleDb.query.question_srs.findMany({
+            where: and(
+                eq(drizzleSchema.question_srs.user_id, userId),
+                inArray(drizzleSchema.question_srs.question_id, qIds)
+            )
+        });
+
+        const srsMap = new Map(srsRows.map(row => [row.question_id, row]));
+
+        return questions.map(q => {
+            const srs = srsMap.get(q.id);
+            if (srs) {
+                return {
+                    ...q,
+                    srs: {
+                        stability: srs.stability,
+                        difficulty: srs.difficulty,
+                        due_date: srs.due_date,
+                        state: srs.state,
+                        last_review: srs.last_review || undefined
+                    }
+                };
+            }
+            return q;
+        });
     },
 
     /**
@@ -179,6 +218,19 @@ export const practiceService = {
             });
         }
 
+        // 4. 更新 FSRS 状态（错题强化逻辑）
+        // 只有当题目已经被记为错题（或者在复习模式下）才更新 FSRS 可能是个选择，
+        // 但为了完整追踪记忆，通常建议对所有练习过的题都进行 FSRS 追踪。
+        try {
+            const { srsService } = await import('@/lib/services/srs');
+            // 异步执行，不阻塞主流程
+            srsService.updateQuestionSrs(userId, questionId, isCorrect, duration).catch(err => {
+                logger.error({ err, questionId, userId }, 'Failed to update SRS state');
+            });
+        } catch (e) {
+            logger.error({ err: e }, 'Failed to import srsService');
+        }
+
         return { success: true };
     },
 
@@ -253,7 +305,7 @@ export const practiceService = {
             .get();
 
         return {
-            questions,
+            questions: await this.attachSrsData(userId, questions),
             sessionId: session.id,
             completedCount: logResult?.count || 0,
             practiceMode: session.practice_mode || undefined

@@ -157,6 +157,15 @@ export const importService = {
         // 计算新增和跳过的数量 (简单估算)
         newQuestionsCount = questionIdMap.size; 
         
+        // 5. 自动同步到 SRS 系统
+        try {
+            const { srsService } = await import('./srs');
+            await srsService.syncFromPracticeLogs(userId);
+        } catch (e) {
+            console.error('[Import] SRS 同步失败:', e);
+            // 不影响主流程导入
+        }
+
         return {
             sessionId,
             newQuestionsCount,

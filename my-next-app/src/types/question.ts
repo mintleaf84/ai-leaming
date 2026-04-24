@@ -6,7 +6,15 @@ import { z } from 'zod';
 import { QuestionSchema, QuestionRowSchema, CorrectionQuizSchema, RegressionChallengeSchema } from '@/lib/schemas';
 
 // 基础题目类型（直接从 Zod schema 推导，确保单源真相）
-export type Question = z.infer<typeof QuestionRowSchema>;
+export type Question = z.infer<typeof QuestionRowSchema> & {
+    srs?: {
+        stability: number;
+        difficulty: number;
+        due_date: string;
+        state: number;
+        last_review?: string;
+    }
+};
 
 // 数据库行类型（保持兼容性）
 export type QuestionRow = Question;

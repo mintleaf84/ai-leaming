@@ -373,3 +373,22 @@ export const note_tag_relations = sqliteTable('note_tag_relations', {
   idx_note_tag_rel_note: index('idx_note_tag_relations_note').on(table.note_id),
   idx_note_tag_rel_tag: index('idx_note_tag_relations_tag').on(table.tag_id),
 }));
+
+// --- 题目 FSRS 状态表 ---
+export const question_srs = sqliteTable('question_srs', {
+  id: integer('id').primaryKey({ autoIncrement: true }),
+  user_id: integer('user_id').notNull().references(() => users.id, { onDelete: 'cascade' }),
+  question_id: integer('question_id').notNull().references(() => questions.id, { onDelete: 'cascade' }),
+  stability: real('stability').notNull().default(0),
+  difficulty: real('difficulty').notNull().default(0),
+  elapsed_days: integer('elapsed_days').notNull().default(0),
+  scheduled_days: integer('scheduled_days').notNull().default(0),
+  reps: integer('reps').notNull().default(0),
+  lapses: integer('lapses').notNull().default(0),
+  state: integer('state').notNull().default(0), // 0: New, 1: Learning, 2: Review, 3: Relearning
+  last_review: text('last_review'),
+  due_date: text('due_date').notNull().default(sql`CURRENT_TIMESTAMP`),
+}, (table) => ({
+  unq_user_q: unique().on(table.user_id, table.question_id),
+  idx_due: index('idx_question_srs_due').on(table.due_date),
+}));

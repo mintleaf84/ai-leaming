@@ -1,7 +1,7 @@
 'use client';
 
 import React from 'react';
-import { CheckSquare, Square, Play, AlertTriangle, Clock } from 'lucide-react';
+import { CheckSquare, Square, Play, AlertTriangle, Clock, Brain, Zap } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { QuestionDetailPanel } from './QuestionDetailPanel';
@@ -75,6 +75,18 @@ export function WrongQuestionCard({
                             <Clock className="w-3 h-3" />
                             {new Date(question.lastWrongAt).toLocaleDateString()}
                         </span>
+                        {question.srs && (
+                            <div className="flex items-center gap-2 border-l pl-2 ml-1">
+                                <span className="text-[10px] text-blue-500 flex items-center gap-1 font-medium" title="记忆稳定性 (天)">
+                                    <Brain className="w-3 h-3" />
+                                    {question.srs.stability.toFixed(1)}d
+                                </span>
+                                <span className="text-[10px] text-amber-500 flex items-center gap-1 font-medium" title="题目难度">
+                                    <Zap className="w-3 h-3" />
+                                    {question.srs.difficulty.toFixed(1)}
+                                </span>
+                            </div>
+                        )}
                         <span className="text-xs text-blue-500 ml-auto font-medium">
                             {isExpanded ? '收起详情' : '查看详情'}
                         </span>

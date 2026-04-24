@@ -11,6 +11,7 @@ import {
     Settings,
     HelpCircle,
     CheckCircle2,
+    Brain,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -24,6 +25,7 @@ const docSections = [
     { id: 'ai-assistant', title: 'AI 助手', icon: Bot },
     { id: 'deep-dive', title: '深度解析', icon: ScanText },
     { id: 'knowledge', title: '知识学习', icon: GraduationCap },
+    { id: 'fsrs', title: 'FSRS 算法', icon: Brain },
     { id: 'settings', title: '账户与设置', icon: Settings },
     { id: 'faq', title: '常见问题', icon: HelpCircle },
 ];
@@ -261,6 +263,80 @@ export default function DocsPage() {
                                 <p className="text-sm text-neutral-500">
                                     上帝视角看考点。可视化展示知识点间的层级与关联，构建完整的知识大厦。
                                 </p>
+                            </div>
+                        </div>
+                    </section>
+
+                    {/* FSRS 算法 */}
+                    <section id="fsrs" className="mb-20 scroll-mt-24">
+                        <div className="flex items-center gap-3 mb-6">
+                            <div className="w-10 h-10 rounded-xl bg-cyan-100 flex items-center justify-center text-cyan-700">
+                                <Brain className="w-5 h-5" />
+                            </div>
+                            <h2 className="text-2xl font-bold text-neutral-800 font-serif">FSRS 记忆算法</h2>
+                        </div>
+                        <div className="space-y-8">
+                            <div className="prose max-w-none text-neutral-600">
+                                <p className="leading-7">
+                                    FSRS (Free Spaced Repetition Scheduler) 是目前最先进的间隔重复算法之一。我们将其深度集成到系统中，为您提供科学的复习规划。
+                                </p>
+                            </div>
+
+                            <div className="grid md:grid-cols-3 gap-6">
+                                <div className="bg-white p-6 rounded-2xl border border-neutral-100 shadow-sm">
+                                    <h3 className="font-bold text-neutral-800 mb-2 flex items-center gap-2">
+                                        <span className="text-xl">⏱️</span> 零感知评分
+                                    </h3>
+                                    <p className="text-sm text-neutral-500 leading-relaxed">
+                                        系统通过计算您的<b>纯思考时间</b>自动打分，无需手动点击“难”或“易”，让练习流更加顺畅。
+                                    </p>
+                                </div>
+                                <div className="bg-white p-6 rounded-2xl border border-neutral-100 shadow-sm">
+                                    <h3 className="font-bold text-neutral-800 mb-2 flex items-center gap-2">
+                                        <span className="text-xl">📊</span> 全站数据驱动
+                                    </h3>
+                                    <p className="text-sm text-neutral-500 leading-relaxed">
+                                        新题目不再使用默认难度，而是参考<b>全站平均正确率</b>进行智能初始化，让学习曲线更丝滑。
+                                    </p>
+                                </div>
+                                <div className="bg-white p-6 rounded-2xl border border-neutral-100 shadow-sm">
+                                    <h3 className="font-bold text-neutral-800 mb-2 flex items-center gap-2">
+                                        <span className="text-xl">🧬</span> 记忆状态透明
+                                    </h3>
+                                    <p className="text-sm text-neutral-500 leading-relaxed">
+                                        每道题都有专属的<b>稳定性 (Stability)</b> 和<b>难度 (Difficulty)</b> 指标，精准量化您的掌握程度。
+                                    </p>
+                                </div>
+                            </div>
+
+                            <div className="bg-neutral-50 rounded-2xl p-8 border border-neutral-200">
+                                <h3 className="font-bold text-neutral-800 mb-6 flex items-center gap-2">
+                                    <span className="w-1.5 h-1.5 rounded-full bg-cyan-500" />
+                                    自动评分逻辑详解
+                                </h3>
+                                <div className="space-y-6">
+                                    <div className="flex gap-4">
+                                        <Badge className="h-fit bg-emerald-100 text-emerald-700 hover:bg-emerald-100 border-none">简单 (Easy)</Badge>
+                                        <p className="text-sm text-neutral-600">纯思考时间 &lt; 2秒。代表您已形成肌肉记忆。</p>
+                                    </div>
+                                    <div className="flex gap-4">
+                                        <Badge className="h-fit bg-blue-100 text-blue-700 hover:bg-blue-100 border-none">良好 (Good)</Badge>
+                                        <p className="text-sm text-neutral-600">纯思考时间 2-8秒。代表您掌握稳固，需轻微思考。</p>
+                                    </div>
+                                    <div className="flex gap-4">
+                                        <Badge className="h-fit bg-orange-100 text-orange-700 hover:bg-orange-100 border-none">困难 (Hard)</Badge>
+                                        <p className="text-sm text-neutral-600">纯思考时间 &gt; 8秒。代表您思考过程较吃力。</p>
+                                    </div>
+                                    <div className="flex gap-4">
+                                        <Badge className="h-fit bg-rose-100 text-rose-700 hover:bg-rose-100 border-none">重学 (Again)</Badge>
+                                        <p className="text-sm text-neutral-600">只要答题错误，系统即自动标记为重学，重新排程。</p>
+                                    </div>
+                                </div>
+                                <div className="mt-8 pt-6 border-t border-neutral-200">
+                                    <p className="text-xs text-neutral-400 leading-relaxed">
+                                        * 纯思考时间 = 总耗时 - (题目总字数 / 平均阅读速度)。系统会根据判断题、多选题等不同题型自动调整判定灵敏度。
+                                    </p>
+                                </div>
                             </div>
                         </div>
                     </section>

@@ -1,0 +1,209 @@
+"use client";
+
+import React from 'react';
+import { 
+    PieChart, Pie, Cell, ResponsiveContainer, Tooltip as RechartsTooltip, 
+    BarChart, Bar, XAxis, YAxis, CartesianGrid, AreaChart, Area 
+} from 'recharts';
+import { 
+    Brain, Target, Zap, Clock, Calendar, 
+    TrendingUp, ShieldCheck, AlertCircle, Info, ChevronRight
+} from 'lucide-react';
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
+import { SrsGlobalStats } from '@/server/actions/srs';
+
+const STATE_COLORS = {
+    new: '#94a3b8',       // slate-400
+    learning: '#38bdf8',  // sky-400
+    review: '#10b981',    // emerald-500
+    relearning: '#f43f5e', // rose-500
+};
+
+export default function SrsAnalysisClient({ stats }: { stats: SrsGlobalStats }) {
+    const stateData = [
+        { name: '新题目', value: stats.stateDistribution.new, color: STATE_COLORS.new },
+        { name: '学习中', value: stats.stateDistribution.learning, color: STATE_COLORS.learning },
+        { name: '已掌握', value: stats.stateDistribution.review, color: STATE_COLORS.review },
+        { name: '重学中', value: stats.stateDistribution.relearning, color: STATE_COLORS.relearning },
+    ].filter(d => d.value > 0);
+
+    return (
+        <div className="space-y-8 pb-12">
+            {/* Header Area */}
+            <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+                <div>
+                    <h1 className="text-3xl font-serif font-bold text-foreground tracking-tight flex items-center gap-3">
+                        <Brain className="w-8 h-8 text-primary" />
+                        记忆引擎分析
+                    </h1>
+                    <p className="text-muted-foreground text-sm mt-1">
+                        基于 FSRS 算法的个性化记忆状态深度分析
+                    </p>
+                </div>
+                <div className="flex items-center gap-2">
+                    <Badge variant="outline" className="bg-primary/5 text-primary border-primary/20 px-3 py-1">
+                        <ShieldCheck className="w-3.5 h-3.5 mr-1.5" />
+                        算法状态: 运行良好
+                    </Badge>
+                </div>
+            </div>
+
+            {/* Top Metrics */}
+            <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+                {[
+                    { label: '总掌握题目', value: stats.totalCards, icon: Target, color: 'text-blue-500', bg: 'bg-blue-500/10' },
+                    { label: '真实保留率', value: `${stats.retentionStats.trueRetention.toFixed(1)}%`, icon: TrendingUp, color: 'text-emerald-500', bg: 'bg-emerald-500/10', sub: `近 30 天 ${stats.retentionStats.totalReviews} 次复习` },
+                    { label: '当前稳定性', value: stats.stabilityDistribution[stats.stabilityDistribution.length - 1].count > 0 ? '极佳' : '稳步提升', icon: Zap, color: 'text-amber-500', bg: 'bg-amber-500/10' },
+                    { label: '今日待复习', value: stats.futureReviews[0]?.count || 0, icon: Clock, color: 'text-purple-500', bg: 'bg-purple-500/10' },
+                ].map((m, i) => (
+                    <Card key={i} className="border-border/50 bg-card/50 backdrop-blur-sm">
+                        <CardContent className="pt-6">
+                            <div className="flex items-center justify-between">
+                                <div>
+                                    <p className="text-xs font-medium text-muted-foreground uppercase tracking-wider">{m.label}</p>
+                                    <h3 className="text-2xl font-bold mt-1">{m.value}</h3>
+                                    {m.sub && <p className="text-[10px] text-muted-foreground mt-1">{m.sub}</p>}
+                                </div>
+                                <div className={`p-3 rounded-2xl ${m.bg} ${m.color}`}>
+                                    <m.icon className="w-5 h-5" />
+                                </div>
+                            </div>
+                        </CardContent>
+                    </Card>
+                ))}
+            </div>
+
+            {/* Main Charts Row */}
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                {/* State Distribution */}
+                <Card className="border-border/50 shadow-sm overflow-hidden group">
+                    <CardHeader className="border-b border-border/50 bg-muted/20">
+                        <CardTitle className="text-base flex items-center gap-2">
+                            <Info className="w-4 h-4 text-primary" />
+                            记忆状态分布
+                        </CardTitle>
+                        <CardDescription>展示您当前所有题目的记忆阶段比例</CardDescription>
+                    </CardHeader>
+                    <CardContent className="pt-6 h-[300px]">
+                        <ResponsiveContainer width="100%" height="100%">
+                            <PieChart>
+                                <Pie
+                                    data={stateData}
+                                    cx="50%"
+                                    cy="50%"
+                                    innerRadius={60}
+                                    outerRadius={80}
+                                    paddingAngle={5}
+                                    dataKey="value"
+                                >
+                                    {stateData.map((entry, index) => (
+                                        <Cell key={`cell-${index}`} fill={entry.color} />
+                                    ))}
+                                </Pie>
+                                <RechartsTooltip 
+                                    contentStyle={{ borderRadius: '12px', border: 'none', boxShadow: '0 10px 15px -3px rgb(0 0 0 / 0.1)' }}
+                                />
+                            </PieChart>
+                        </ResponsiveContainer>
+                        <div className="flex justify-center gap-4 mt-[-40px] relative z-10">
+                            {stateData.map(d => (
+                                <div key={d.name} className="flex items-center gap-1.5">
+                                    <div className="w-2 h-2 rounded-full" style={{ backgroundColor: d.color }} />
+                                    <span className="text-[10px] text-muted-foreground font-medium">{d.name}</span>
+                                </div>
+                            ))}
+                        </div>
+                    </CardContent>
+                </Card>
+
+                {/* Stability Distribution */}
+                <Card className="border-border/50 shadow-sm overflow-hidden">
+                    <CardHeader className="border-b border-border/50 bg-muted/20">
+                        <CardTitle className="text-base flex items-center gap-2">
+                            <TrendingUp className="w-4 h-4 text-primary" />
+                            稳定性强度 (Stability)
+                        </CardTitle>
+                        <CardDescription>数值越高代表记忆越牢固，复习间隔越长</CardDescription>
+                    </CardHeader>
+                    <CardContent className="pt-6 h-[300px]">
+                        <ResponsiveContainer width="100%" height="100%">
+                            <BarChart data={stats.stabilityDistribution}>
+                                <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="rgba(0,0,0,0.05)" />
+                                <XAxis dataKey="range" axisLine={false} tickLine={false} fontSize={10} tick={{ fill: '#888' }} />
+                                <YAxis axisLine={false} tickLine={false} fontSize={10} tick={{ fill: '#888' }} />
+                                <RechartsTooltip 
+                                    cursor={{ fill: 'rgba(0,0,0,0.02)' }}
+                                    contentStyle={{ borderRadius: '12px', border: 'none', boxShadow: '0 10px 15px -3px rgb(0 0 0 / 0.1)' }}
+                                />
+                                <Bar dataKey="count" fill="var(--color-primary)" radius={[4, 4, 0, 0]} barSize={30} fillOpacity={0.8} />
+                            </BarChart>
+                        </ResponsiveContainer>
+                    </CardContent>
+                </Card>
+            </div>
+
+            {/* Future Reviews Forecast */}
+            <Card className="border-border/50 shadow-sm overflow-hidden">
+                <CardHeader className="border-b border-border/50 bg-muted/20">
+                    <CardTitle className="text-base flex items-center gap-2">
+                        <Calendar className="w-4 h-4 text-primary" />
+                        未来复习计划预估
+                    </CardTitle>
+                    <CardDescription>根据 FSRS 算法预测未来一周的每日复习量</CardDescription>
+                </CardHeader>
+                <CardContent className="pt-6 h-[260px]">
+                    <ResponsiveContainer width="100%" height="100%">
+                        <AreaChart data={stats.futureReviews}>
+                            <defs>
+                                <linearGradient id="colorCount" x1="0" y1="0" x2="0" y2="1">
+                                    <stop offset="5%" stopColor="#3b82f6" stopOpacity={0.3}/>
+                                    <stop offset="95%" stopColor="#3b82f6" stopOpacity={0}/>
+                                </linearGradient>
+                            </defs>
+                            <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="rgba(0,0,0,0.05)" />
+                            <XAxis 
+                                dataKey="date" 
+                                axisLine={false} 
+                                tickLine={false} 
+                                fontSize={10} 
+                                tick={{ fill: '#888' }} 
+                                tickFormatter={(val) => val.split('-').slice(1).join('/')}
+                            />
+                            <YAxis axisLine={false} tickLine={false} fontSize={10} tick={{ fill: '#888' }} />
+                            <RechartsTooltip 
+                                contentStyle={{ borderRadius: '12px', border: 'none', boxShadow: '0 10px 15px -3px rgb(0 0 0 / 0.1)' }}
+                            />
+                            <Area type="monotone" dataKey="count" stroke="#3b82f6" strokeWidth={2} fillOpacity={1} fill="url(#colorCount)" />
+                        </AreaChart>
+                    </ResponsiveContainer>
+                </CardContent>
+            </Card>
+
+            {/* Explanation Section */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div className="p-6 rounded-3xl bg-primary/5 border border-primary/10">
+                    <h4 className="font-bold flex items-center gap-2 mb-3">
+                        <AlertCircle className="w-4 h-4 text-primary" />
+                        什么是稳定性 (Stability)?
+                    </h4>
+                    <p className="text-sm text-muted-foreground leading-relaxed">
+                        稳定性代表您遗忘该知识点的概率降至 10% 所需的时间（天数）。
+                        例如，如果稳定性为 15d，意味着算法预测在 15 天后您仍有 90% 的概率能回想起它。
+                        每一次成功的复习都会显著增加稳定性。
+                    </p>
+                </div>
+                <div className="p-6 rounded-3xl bg-amber-500/5 border border-amber-500/10">
+                    <h4 className="font-bold flex items-center gap-2 mb-3 text-amber-700 dark:text-amber-400">
+                        <Zap className="w-4 h-4" />
+                        难度 (Difficulty) 是如何计算的?
+                    </h4>
+                    <p className="text-sm text-muted-foreground leading-relaxed">
+                        难度反映了知识点的认知负荷。它是动态学习的：如果您在答题时思考时间过长或回答错误，
+                        算法会自动调高难度；反之，如果您能瞬间秒杀，难度会逐渐降低。
+                    </p>
+                </div>
+            </div>
+        </div>
+    );
+}

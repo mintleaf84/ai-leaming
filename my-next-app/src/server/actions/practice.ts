@@ -29,7 +29,16 @@ export async function submitAnswerAction(
   duration: number, 
   sessionId?: string,
   totalDurationMs?: number
-) {
+): Promise<{ 
+  success: boolean; 
+  srs?: { 
+    stability: number; 
+    difficulty: number; 
+    due_date: string; 
+    state: number; 
+    nextInterval: number; 
+  } 
+}> {
   try {
     const user = await requireUser();
     return await practiceService.submitAnswer(

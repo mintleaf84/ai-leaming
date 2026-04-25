@@ -221,19 +221,24 @@ export const practiceService = {
         }
 
         // 4. 更新 FSRS 状态（错题强化逻辑）
-        // 只有当题目已经被记为错题（或者在复习模式下）才更新 FSRS 可能是个选择，
-        // 但为了完整追踪记忆，通常建议对所有练习过的题都进行 FSRS 追踪。
+        let updatedSrs = undefined;
         try {
             const { srsService } = await import('@/lib/services/srs');
-            // 异步执行，不阻塞主流程
-            srsService.updateQuestionSrs(userId, questionId, isCorrect, duration).catch(err => {
-                logger.error({ err, questionId, userId }, 'Failed to update SRS state');
-            });
+            updatedSrs = await srsService.updateQuestionSrs(userId, questionId, isCorrect, duration);
         } catch (e) {
-            logger.error({ err: e }, 'Failed to import srsService');
+            logger.error({ err: e }, 'Failed to update SRS state in submitAnswer');
         }
 
-        return { success: true };
+        return { 
+            success: true,
+            srs: updatedSrs ? {
+                stability: updatedSrs.stability,
+                difficulty: updatedSrs.difficulty,
+                due_date: updatedSrs.due.toISOString(),
+                state: updatedSrs.state,
+                nextInterval: updatedSrs.scheduled_days
+            } : undefined
+        };
     },
 
     /**

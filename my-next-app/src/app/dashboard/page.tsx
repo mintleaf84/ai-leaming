@@ -227,6 +227,7 @@ export default async function Home() {
           </h2>
           <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
             {[
+              { name: '记忆分析', desc: 'FSRS 算法深度报告', href: '/dashboard/srs', icon: Brain },
               { name: '练习记录', desc: '查看历史成绩', href: '/history', icon: History },
               { name: '教材库', desc: '学习资料导入', href: '/textbooks', icon: Book, enabled: isTextbookEnabled },
               { name: '智能笔记', desc: '记录灵感与知识', href: '/notes', icon: FileText, enabled: isNotesEnabled },

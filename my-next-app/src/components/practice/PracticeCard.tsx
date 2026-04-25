@@ -2,6 +2,9 @@ import React, { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { Check, Circle, EyeOff, Eye, CheckCircle2, XCircle, Brain, Calendar, Zap, History } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { SrsHistoryModal } from './SrsHistoryModal';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
+import { Info } from 'lucide-react';
 
 interface PracticeCardProps {
     question: {
@@ -33,6 +36,7 @@ export function PracticeCard({
 }: PracticeCardProps) {
     // 排除法状态：存储被划掉的选项（判断题不需要此功能）
     const [excludedOptions, setExcludedOptions] = useState<string[]>([]);
+    const [isHistoryOpen, setIsHistoryOpen] = useState(false);
 
     // 当题目更换时，重置排除状态
     useEffect(() => {
@@ -82,22 +86,55 @@ export function PracticeCard({
                     </span>
                 </div>
                 {question.srs && (
-                    <div className="flex items-center gap-3 bg-muted/30 px-3 py-1.5 rounded-lg border border-border/50">
-                        <div className="flex items-center gap-1.5" title="记忆稳定性 (Stability): 数值越高代表掌握越牢固">
-                            <Brain className="w-3.5 h-3.5 text-blue-500" />
-                            <span className="text-[10px] font-medium">{question.srs.stability.toFixed(1)}d</span>
+                    <TooltipProvider>
+                        <div className="flex items-center gap-3 bg-muted/30 px-3 py-1.5 rounded-lg border border-border/50">
+                            <Tooltip>
+                                <TooltipTrigger asChild>
+                                    <div className="flex items-center gap-1.5 cursor-help">
+                                        <Brain className="w-3.5 h-3.5 text-blue-500" />
+                                        <span className="text-[10px] font-medium">{question.srs.stability.toFixed(1)}d</span>
+                                    </div>
+                                </TooltipTrigger>
+                                <TooltipContent>
+                                    <p className="text-xs">记忆稳定性 (Stability): 数值越高代表掌握越牢固</p>
+                                </TooltipContent>
+                            </Tooltip>
+
+                            <Tooltip>
+                                <TooltipTrigger asChild>
+                                    <div className="flex items-center gap-1.5 cursor-help">
+                                        <Zap className="w-3.5 h-3.5 text-amber-500" />
+                                        <span className="text-[10px] font-medium">{question.srs.difficulty.toFixed(1)}</span>
+                                    </div>
+                                </TooltipTrigger>
+                                <TooltipContent>
+                                    <p className="text-xs">题目难度 (Difficulty): 算法感知的挑战程度 (1-10)</p>
+                                </TooltipContent>
+                            </Tooltip>
+
+                            <Tooltip>
+                                <TooltipTrigger asChild>
+                                    <div className="flex items-center gap-1.5 cursor-help">
+                                        <Calendar className="w-3.5 h-3.5 text-emerald-500" />
+                                        <span className="text-[10px] font-medium">
+                                            {Math.ceil((new Date(question.srs.due_date).getTime() - now) / (1000 * 60 * 60 * 24))}d
+                                        </span>
+                                    </div>
+                                </TooltipTrigger>
+                                <TooltipContent>
+                                    <p className="text-xs">下次复习: {new Date(question.srs.due_date).toLocaleDateString()}</p>
+                                </TooltipContent>
+                            </Tooltip>
+
+                            <div className="w-[1px] h-3 bg-border mx-1" />
+                            <button 
+                                onClick={() => setIsHistoryOpen(true)}
+                                className="p-1 hover:bg-primary/10 rounded-md text-muted-foreground hover:text-primary transition-colors"
+                            >
+                                <History className="w-3.5 h-3.5" />
+                            </button>
                         </div>
-                        <div className="flex items-center gap-1.5" title="题目难度 (Difficulty): 算法感知的挑战程度 (1-10)">
-                            <Zap className="w-3.5 h-3.5 text-amber-500" />
-                            <span className="text-[10px] font-medium">{question.srs.difficulty.toFixed(1)}</span>
-                        </div>
-                        <div className="flex items-center gap-1.5" title={`下次复习日期: ${new Date(question.srs.due_date).toLocaleDateString()}`}>
-                            <Calendar className="w-3.5 h-3.5 text-emerald-500" />
-                            <span className="text-[10px] font-medium">
-                                {Math.ceil((new Date(question.srs.due_date).getTime() - now) / (1000 * 60 * 60 * 24))}d
-                            </span>
-                        </div>
-                    </div>
+                    </TooltipProvider>
                 )}
                 {!isTrueFalse && !question.srs && (
                     <div className="text-[10px] text-muted-foreground/50 italic">
@@ -186,6 +223,12 @@ export function PracticeCard({
                     确认提交
                 </Button>
             )}
+
+            <SrsHistoryModal 
+                questionId={question.id}
+                isOpen={isHistoryOpen}
+                onClose={() => setIsHistoryOpen(false)}
+            />
         </motion.div>
     );
 }

@@ -174,7 +174,8 @@ export const practiceService = {
         questionId: number,
         userAnswer: string,
         isCorrect: boolean,
-        duration: number
+        duration: number,
+        totalDurationMs?: number
     ) {
         // 1. 记录答题日志
         await drizzleDb.insert(drizzleSchema.practice_logs).values({
@@ -190,7 +191,8 @@ export const practiceService = {
         if (sessionId) {
             await drizzleDb.update(drizzleSchema.practice_sessions)
                 .set({ 
-                    correct_count: sql`${drizzleSchema.practice_sessions.correct_count} + ${isCorrect ? 1 : 0}` 
+                    correct_count: sql`${drizzleSchema.practice_sessions.correct_count} + ${isCorrect ? 1 : 0}`,
+                    total_duration_ms: totalDurationMs ?? undefined
                 })
                 .where(and(
                     eq(drizzleSchema.practice_sessions.id, sessionId),

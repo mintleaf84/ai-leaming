@@ -27,7 +27,8 @@ export async function submitAnswerAction(
   userAnswer: string, 
   isCorrect: boolean, 
   duration: number, 
-  sessionId?: string
+  sessionId?: string,
+  totalDurationMs?: number
 ) {
   try {
     const user = await requireUser();
@@ -37,7 +38,8 @@ export async function submitAnswerAction(
         questionId, 
         userAnswer, 
         isCorrect, 
-        duration
+        duration,
+        totalDurationMs
     );
   } catch (e) {
     logger.error({ err: e }, "Action: submitAnswerAction failed");

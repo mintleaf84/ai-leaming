@@ -14,8 +14,10 @@ interface HeaderProgressBarProps {
     timerMode?: 'count_up' | 'count_down';
     /** 每题倒计时秒数（倒计时模式） */
     timerSeconds?: number;
-    /** 当前题目 ID（用于重置倒计时） */
+    /** 当前题目 ID（用于重置计时器） */
     currentQuestionId?: number;
+    /** 累计答题时间（ms） */
+    accumulatedTime?: number;
     /** 倒计时归零回调 */
     onTimerUp?: () => void;
 }
@@ -29,6 +31,7 @@ export function HeaderProgressBar({
     timerMode = 'count_up',
     timerSeconds = 60,
     currentQuestionId,
+    accumulatedTime = 0,
     onTimerUp
 }: HeaderProgressBarProps) {
     const progress = totalCount > 0 ? ((currentIndex + (status === 'finished' ? 1 : 0)) / totalCount) * 100 : 0;
@@ -57,13 +60,18 @@ export function HeaderProgressBar({
                     <div className="flex items-center gap-3">
                         {/* 计时器 */}
                         {showTimer && (
-                            <Timer
-                                key={timerMode === 'count_down' ? currentQuestionId : 'session'}
-                                mode={timerMode}
-                                initialSeconds={timerSeconds}
-                                onTimeUp={onTimerUp}
-                                paused={status !== 'practicing'}
-                            />
+                            <div className="flex flex-col items-end">
+                                <Timer
+                                    key={currentQuestionId || 'current'}
+                                    mode={timerMode}
+                                    initialSeconds={timerSeconds}
+                                    onTimeUp={onTimerUp}
+                                    paused={status !== 'practicing'}
+                                />
+                                <span className="text-[10px] text-muted-foreground font-mono mt-0.5">
+                                    总计: {Math.floor(accumulatedTime / 60000)}分{Math.floor((accumulatedTime % 60000) / 1000)}秒
+                                </span>
+                            </div>
                         )}
 
                         <button

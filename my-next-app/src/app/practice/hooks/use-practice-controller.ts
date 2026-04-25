@@ -6,7 +6,6 @@ import { toast } from 'sonner';
 import { usePracticeEngine } from '../../../hooks/use-practice-engine';
 import { useReviewGeneration } from './use-review-generation';
 import { useKeyboardShortcuts } from './use-keyboard-shortcuts';
-import { Question, PracticeState } from '@/types';
 import { getPracticeSessionAction, getPracticeSessionByConfigAction, submitAnswerAction, getSessionByIdAction } from '@/server/actions/practice';
 import { moveToObservationZoneAction } from '@/server/actions/zone';
 import { PRACTICE_MODE_LABELS, PracticeMode } from '@/types';
@@ -208,7 +207,8 @@ export function usePracticeController(enableIntelligentReview: boolean = false) 
                 isCorrect = checkCorrect(answer, currentQuestion.answer, currentQuestion.options);
             }
 
-            const duration = Math.floor((Date.now() - (state.startTime || Date.now())) / 1000);
+            const duration = Date.now() - (state.startTime || Date.now());
+            const totalDuration = state.accumulatedTime + duration;
 
             dispatch({
                 type: 'ANSWER_QUESTION',
@@ -221,7 +221,7 @@ export function usePracticeController(enableIntelligentReview: boolean = false) 
             });
 
             // Async save
-            submitAnswerAction(currentQuestion.id, answer, isCorrect, duration, state.sessionId || undefined).catch(console.error);
+            submitAnswerAction(currentQuestion.id, answer, isCorrect, duration, state.sessionId || undefined, totalDuration).catch(console.error);
         } catch (e) {
             console.error("Submit answer error:", e);
         } finally {

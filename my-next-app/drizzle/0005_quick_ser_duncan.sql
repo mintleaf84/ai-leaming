@@ -1,0 +1,1 @@
+ALTER TABLE `practice_sessions` ADD `total_duration_ms` integer DEFAULT 0;

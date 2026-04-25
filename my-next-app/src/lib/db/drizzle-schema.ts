@@ -68,6 +68,7 @@ export const practice_sessions = sqliteTable('practice_sessions', {
   practice_mode: text('practice_mode'),
   is_demo: integer('is_demo').default(0),
   analysis_report: text('analysis_report'), // AI 深度分析报告（JSON）
+  total_duration_ms: integer('total_duration_ms').default(0),
   created_at: text('created_at').default(sql`CURRENT_TIMESTAMP`),
 });
 

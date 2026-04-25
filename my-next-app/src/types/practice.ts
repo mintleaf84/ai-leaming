@@ -122,7 +122,9 @@ export interface PracticeState {
     // Standard Practice
     sessionQueue: Question[];
     currentIndex: number;
-    startTime: number; // For duration tracking
+    startTime: number; // For current question duration tracking
+    sessionStartTime: number; // For total session duration tracking
+    accumulatedTime: number; // Total accumulated time spent in practicing status
     answers: Record<number, { answer: string; isCorrect: boolean; duration: number }>;
 
     // Review Logic

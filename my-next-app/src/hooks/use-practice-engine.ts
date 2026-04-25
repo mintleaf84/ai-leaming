@@ -7,6 +7,8 @@ export const INITIAL_STATE: PracticeState = {
   sessionQueue: [],
   currentIndex: 0,
   startTime: Date.now(),
+  sessionStartTime: Date.now(),
+  accumulatedTime: 0,
   answers: {},
   reviewQueue: [],
   currentReviewIndex: 0,
@@ -23,6 +25,8 @@ export const createPracticeReducer = (enableIntelligentReview: boolean) => (stat
         sessionQueue: action.payload.questions,
         currentIndex: action.payload.startIndex || 0,
         startTime: Date.now(),
+        sessionStartTime: Date.now(),
+        accumulatedTime: 0,
       };
 
     case 'ANSWER_QUESTION': {
@@ -54,12 +58,11 @@ export const createPracticeReducer = (enableIntelligentReview: boolean) => (stat
 
       // Transition Logic
       if (enableIntelligentReview && questionsAnswered >= state.reviewTriggeredAt && updatedReviewQueue.length > 0 && state.status === 'practicing') {
-        // Sort Review Queue: Risk First (Placeholder logic)
-        // In real app, we might sort by tag mastery score here.
         return {
           ...state,
           answers: newAnswers,
           reviewQueue: updatedReviewQueue,
+          accumulatedTime: state.accumulatedTime + duration,
           status: 'reviewing',
           currentReviewIndex: 0,
           startTime: Date.now(), // Reset timer for review
@@ -72,16 +75,19 @@ export const createPracticeReducer = (enableIntelligentReview: boolean) => (stat
           ...state,
           answers: newAnswers,
           reviewQueue: updatedReviewQueue,
+          accumulatedTime: state.accumulatedTime + duration,
           currentIndex: state.currentIndex + 1,
           startTime: Date.now(), // Reset timer for next question
         };
       } else {
         // End of Queue
+        const finalAccumulatedTime = state.accumulatedTime + duration;
         if (enableIntelligentReview && updatedReviewQueue.length > 0) {
           return {
             ...state,
             answers: newAnswers,
             reviewQueue: updatedReviewQueue,
+            accumulatedTime: finalAccumulatedTime,
             status: 'reviewing',
             currentReviewIndex: 0
           };
@@ -89,6 +95,7 @@ export const createPracticeReducer = (enableIntelligentReview: boolean) => (stat
         return {
           ...state,
           answers: newAnswers,
+          accumulatedTime: finalAccumulatedTime,
           status: 'finished'
         };
       }
@@ -160,12 +167,9 @@ export const createPracticeReducer = (enableIntelligentReview: boolean) => (stat
       return {
         ...state,
         status: 'practicing',
-        // "If all correct, extend to 35". 
-        // If we are resuming, we clear the active review queue because we processed them.
         reviewQueue: [],
-        // PRD says "25题后若出现错题即触发复盘". 
-        // If we handled them, we continue.
-        reviewTriggeredAt: 35 // Bump trigger to end
+        reviewTriggeredAt: 35, // Bump trigger to end
+        startTime: Date.now(), // CRITICAL: Reset timer when resuming from review
       };
 
     case 'FINISH_SESSION':

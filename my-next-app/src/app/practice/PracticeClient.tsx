@@ -47,7 +47,6 @@ function PracticeContent({ enableIntelligentReview }: { enableIntelligentReview:
                     timerSeconds={timerConfig.secondsPerQuestion}
                     currentQuestionId={state.sessionQueue[state.currentIndex]?.id}
                     accumulatedTime={state.accumulatedTime}
-                    startTime={state.startTime}
                 />
 
                 <div className="p-4 md:p-8 max-w-2xl mx-auto">

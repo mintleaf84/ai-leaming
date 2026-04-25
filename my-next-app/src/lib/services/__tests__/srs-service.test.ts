@@ -79,7 +79,7 @@ describe('SRS Service', () => {
             const content = '1+1=?';
             const options = '["2","3"]';
             // 字数少，阅读时间近乎 0，500ms 答完属于秒杀
-            const rating = srsService.calculateRating(content, options, 500);
+            const rating = srsService.calculateRating(content, options, 500, 7);
             expect(rating).toBe(Rating.Easy);
         });
 
@@ -88,7 +88,7 @@ describe('SRS Service', () => {
             const options = '[]';
             // 100字 / 7 = 14.2s 阅读时间
             // 总耗时 20s，纯思考时间 5.8s -> Good
-            const rating = srsService.calculateRating(content, options, 20000);
+            const rating = srsService.calculateRating(content, options, 20000, 7);
             expect(rating).toBe(Rating.Good);
         });
 
@@ -96,7 +96,7 @@ describe('SRS Service', () => {
             const content = '1+1=?';
             const options = '[]';
             // 总耗时 15s，纯思考时间 14s+ -> Hard
-            const rating = srsService.calculateRating(content, options, 15000);
+            const rating = srsService.calculateRating(content, options, 15000, 7);
             expect(rating).toBe(Rating.Hard);
         });
     });

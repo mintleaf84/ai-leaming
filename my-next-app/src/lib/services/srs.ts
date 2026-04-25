@@ -18,20 +18,36 @@ const THINKING_TIME_THRESHOLDS = {
 /**
  * 内部辅助：获取用户当前的基准阅读速度
  */
-async function getReadingSpeed(userId: number): Promise<number> {
+async function getReadingSpeed(userId: number, questionType?: string): Promise<number> {
+    const key = questionType === 'multi' ? 'reading_speed_multi' : 
+                questionType === 'truefalse' ? 'reading_speed_truefalse' : 
+                'reading_speed_base';
+
     const setting = await drizzleDb.query?.system_settings?.findFirst({
         where: and(
             eq(drizzleSchema.system_settings.user_id, userId),
-            eq(drizzleSchema.system_settings.key, 'reading_speed_base')
+            eq(drizzleSchema.system_settings.key, key)
         )
     });
+
+    // Fallback: 如果特定类型的速度不存在，尝试获取基础速度
+    if (!setting && key !== 'reading_speed_base') {
+        const baseSetting = await drizzleDb.query?.system_settings?.findFirst({
+            where: and(
+                eq(drizzleSchema.system_settings.user_id, userId),
+                eq(drizzleSchema.system_settings.key, 'reading_speed_base')
+            )
+        });
+        return baseSetting?.value ? parseFloat(baseSetting.value) : DEFAULT_READING_SPEED;
+    }
+
     return setting?.value ? parseFloat(setting.value) : DEFAULT_READING_SPEED;
 }
 
 /**
  * 内部辅助：根据本次表现更新基准速度 (EMA 算法)
  */
-async function learnReadingSpeed(userId: number, questionContent: string, optionsJson: string, durationMs: number) {
+async function learnReadingSpeed(userId: number, questionContent: string, optionsJson: string, durationMs: number, questionType?: string) {
     // 1. 计算字数
     let optionsText = '';
     try {
@@ -47,7 +63,7 @@ async function learnReadingSpeed(userId: number, questionContent: string, option
     if (totalChars < 10 || durationMs < 1000 || durationMs > 60000) return;
 
     const currentSpeed = totalChars / (durationMs / 1000);
-    const oldSpeed = await getReadingSpeed(userId);
+    const oldSpeed = await getReadingSpeed(userId, questionType);
     
     // 3. EMA 计算
     let newSpeed = oldSpeed * (1 - READING_SPEED_ALPHA) + currentSpeed * READING_SPEED_ALPHA;
@@ -55,9 +71,13 @@ async function learnReadingSpeed(userId: number, questionContent: string, option
     // 4. 约束并保存
     newSpeed = Math.max(SPEED_LIMITS.MIN, Math.min(SPEED_LIMITS.MAX, newSpeed));
 
+    const key = questionType === 'multi' ? 'reading_speed_multi' : 
+                questionType === 'truefalse' ? 'reading_speed_truefalse' : 
+                'reading_speed_base';
+
     await drizzleDb.insert(drizzleSchema.system_settings).values({
         user_id: userId,
-        key: 'reading_speed_base',
+        key: key,
         value: newSpeed.toFixed(2),
     }).onConflictDoUpdate({
         target: [drizzleSchema.system_settings.user_id, drizzleSchema.system_settings.key],
@@ -179,7 +199,7 @@ export const srsService = {
             rating = Rating.Again; // 1
         } else {
             // 获取个体化阅读速度
-            const readingSpeed = await getReadingSpeed(userId);
+            const readingSpeed = await getReadingSpeed(userId, question.type || undefined);
             rating = srsService.calculateRating(
                 question.content, 
                 question.options || '[]', 
@@ -189,7 +209,7 @@ export const srsService = {
             );
 
             // 异步学习新的速度基准
-            learnReadingSpeed(userId, question.content, question.options || '[]', durationMs).catch(err => {
+            learnReadingSpeed(userId, question.content, question.options || '[]', durationMs, question.type || undefined).catch(err => {
                 console.error('[SRS] Learn reading speed failed:', err);
             });
         }

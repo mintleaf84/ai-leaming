@@ -87,6 +87,56 @@ describe('srsService - Speed Learning Logic', () => {
         expect(parseFloat(speedUpdate.value)).toBeCloseTo(8.2, 1);
     });
 
+    it('should learn speed for MULTI questions independently', async () => {
+        const userId = 1;
+        const questionId = 201;
+        
+        (drizzleDb.query.questions.findFirst as any).mockResolvedValue({
+            id: questionId,
+            content: '多选题题干内容', // 7 chars
+            options: '["选项A", "选项B"]', // 6 chars, total 13
+            type: 'multi'
+        });
+        (drizzleDb.query.question_srs.findFirst as any).mockResolvedValue({
+            stability: 1, difficulty: 5, state: 0, reps: 0, lapses: 0, due_date: new Date().toISOString()
+        });
+        (drizzleDb.query.system_settings.findFirst as any).mockResolvedValue(null);
+
+        // 耗时 1300ms -> 10 chars/s
+        // EMA: 7 * 0.9 + 10 * 0.1 = 6.3 + 1 = 7.3
+        await srsService.updateQuestionSrs(userId, questionId, true, 1300);
+        await wait(50);
+
+        const speedUpdate = capturedValues.find(v => v.key === 'reading_speed_multi');
+        expect(speedUpdate).toBeDefined();
+        expect(parseFloat(speedUpdate.value)).toBeCloseTo(7.3, 1);
+    });
+
+    it('should learn speed for TRUEFALSE questions independently', async () => {
+        const userId = 1;
+        const questionId = 301;
+        
+        (drizzleDb.query.questions.findFirst as any).mockResolvedValue({
+            id: questionId,
+            content: '判断题题干内容', // 7 chars
+            options: '["正确", "错误"]', // 4 chars, total 11
+            type: 'truefalse'
+        });
+        (drizzleDb.query.question_srs.findFirst as any).mockResolvedValue({
+            stability: 1, difficulty: 5, state: 0, reps: 0, lapses: 0, due_date: new Date().toISOString()
+        });
+        (drizzleDb.query.system_settings.findFirst as any).mockResolvedValue(null);
+
+        // 耗时 1100ms -> 10 chars/s
+        // EMA: 7 * 0.9 + 10 * 0.1 = 6.3 + 1 = 7.3
+        await srsService.updateQuestionSrs(userId, questionId, true, 1100);
+        await wait(50);
+
+        const speedUpdate = capturedValues.find(v => v.key === 'reading_speed_truefalse');
+        expect(speedUpdate).toBeDefined();
+        expect(parseFloat(speedUpdate.value)).toBeCloseTo(7.3, 1);
+    });
+
     it('should NOT learn speed when answer is incorrect', async () => {
         const userId = 1;
         const questionId = 102;
@@ -94,7 +144,9 @@ describe('srsService - Speed Learning Logic', () => {
         (drizzleDb.query.questions.findFirst as any).mockResolvedValue({
             id: questionId, content: '测试内容测试内容', options: '[]'
         });
-        (drizzleDb.query.question_srs.findFirst as any).mockResolvedValue({ state: 0 });
+        (drizzleDb.query.question_srs.findFirst as any).mockResolvedValue({
+            stability: 1, difficulty: 5, state: 0, reps: 0, lapses: 0, due_date: new Date().toISOString()
+        });
 
         await srsService.updateQuestionSrs(userId, questionId, false, 2000);
         await wait(50);
@@ -110,7 +162,9 @@ describe('srsService - Speed Learning Logic', () => {
         (drizzleDb.query.questions.findFirst as any).mockResolvedValue({
             id: questionId, content: '测试内容测试内容', options: '[]'
         });
-        (drizzleDb.query.question_srs.findFirst as any).mockResolvedValue({ state: 0 });
+        (drizzleDb.query.question_srs.findFirst as any).mockResolvedValue({
+            stability: 1, difficulty: 5, state: 0, reps: 0, lapses: 0, due_date: new Date().toISOString()
+        });
 
         // 耗时 120s 超过 60s 限制
         await srsService.updateQuestionSrs(userId, questionId, true, 120000);

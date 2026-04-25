@@ -6,12 +6,64 @@ import { eq, and, sql, lte, desc } from 'drizzle-orm';
 const f = fsrs(generatorParameters());
 
 // 认知参数配置
-const READING_SPEED_CHARS_PER_SEC = 7; // 平均阅读速度：7字/秒
+const DEFAULT_READING_SPEED = 7; // 默认阅读速度：7字/秒
+const READING_SPEED_ALPHA = 0.1; // EMA 平滑系数
+const SPEED_LIMITS = { MIN: 3, MAX: 20 }; // 速度约束区间
 const THINKING_TIME_THRESHOLDS = {
     EASY: 2,   // 纯思考时间 < 2s 为简单
     GOOD: 8,   // 2s <= 纯思考时间 <= 8s 为正常
     // > 8s 为困难
 };
+
+/**
+ * 内部辅助：获取用户当前的基准阅读速度
+ */
+async function getReadingSpeed(userId: number): Promise<number> {
+    const setting = await drizzleDb.query?.system_settings?.findFirst({
+        where: and(
+            eq(drizzleSchema.system_settings.user_id, userId),
+            eq(drizzleSchema.system_settings.key, 'reading_speed_base')
+        )
+    });
+    return setting?.value ? parseFloat(setting.value) : DEFAULT_READING_SPEED;
+}
+
+/**
+ * 内部辅助：根据本次表现更新基准速度 (EMA 算法)
+ */
+async function learnReadingSpeed(userId: number, questionContent: string, optionsJson: string, durationMs: number) {
+    // 1. 计算字数
+    let optionsText = '';
+    try {
+        const options = JSON.parse(optionsJson);
+        if (Array.isArray(options)) optionsText = options.join('');
+    } catch (e) {
+        optionsText = optionsJson || '';
+    }
+    const totalChars = questionContent.length + optionsText.length;
+
+    // 2. 噪声过滤 (正态分布思想：只学习正常范围内的表现)
+    // 过滤条件：字数过少(<10)、耗时极短(<1s，可能是背答案)或耗时过长(>60s，可能是挂机)
+    if (totalChars < 10 || durationMs < 1000 || durationMs > 60000) return;
+
+    const currentSpeed = totalChars / (durationMs / 1000);
+    const oldSpeed = await getReadingSpeed(userId);
+    
+    // 3. EMA 计算
+    let newSpeed = oldSpeed * (1 - READING_SPEED_ALPHA) + currentSpeed * READING_SPEED_ALPHA;
+    
+    // 4. 约束并保存
+    newSpeed = Math.max(SPEED_LIMITS.MIN, Math.min(SPEED_LIMITS.MAX, newSpeed));
+
+    await drizzleDb.insert(drizzleSchema.system_settings).values({
+        user_id: userId,
+        key: 'reading_speed_base',
+        value: newSpeed.toFixed(2),
+    }).onConflictDoUpdate({
+        target: [drizzleSchema.system_settings.user_id, drizzleSchema.system_settings.key],
+        set: { value: newSpeed.toFixed(2), updated_at: sql`CURRENT_TIMESTAMP` }
+    });
+}
 
 export interface SRSCardState extends Card {
     question_id: number;
@@ -22,7 +74,7 @@ export const srsService = {
     /**
      * 根据答题耗时和题目长度计算 FSRS 评分 (Rating)
      */
-    calculateRating: (questionContent: string, optionsJson: string, durationMs: number, questionType?: string): Rating => {
+    calculateRating: (questionContent: string, optionsJson: string, durationMs: number, readingSpeed: number, questionType?: string): Rating => {
         // 1. 计算总字数（题干 + 选项）
         let optionsText = '';
         try {
@@ -36,8 +88,8 @@ export const srsService = {
         
         const totalChars = questionContent.length + optionsText.length;
         
-        // 2. 估算阅读时间 (秒)
-        const readingTimeSec = totalChars / READING_SPEED_CHARS_PER_SEC;
+        // 2. 使用动态阅读速度估算阅读时间 (秒)
+        const readingTimeSec = totalChars / readingSpeed;
         
         // 3. 计算纯思考时间 (秒)
         const totalDurationSec = durationMs / 1000;
@@ -126,7 +178,20 @@ export const srsService = {
         if (!isCorrect) {
             rating = Rating.Again; // 1
         } else {
-            rating = srsService.calculateRating(question.content, question.options || '[]', durationMs, question.type || undefined);
+            // 获取个体化阅读速度
+            const readingSpeed = await getReadingSpeed(userId);
+            rating = srsService.calculateRating(
+                question.content, 
+                question.options || '[]', 
+                durationMs, 
+                readingSpeed,
+                question.type || undefined
+            );
+
+            // 异步学习新的速度基准
+            learnReadingSpeed(userId, question.content, question.options || '[]', durationMs).catch(err => {
+                console.error('[SRS] Learn reading speed failed:', err);
+            });
         }
 
         // 4. 调用 FSRS 计算新状态

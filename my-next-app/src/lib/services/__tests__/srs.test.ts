@@ -37,7 +37,7 @@ describe('srsService - Core Logic', () => {
         
         it('should judge normal time as GOOD for single choice', () => {
             // Duration 10s - 3.1s reading = 6.9s thinking. (Threshold GOOD is 2-8s)
-            const rating = srsService.calculateRating(content, options, 10000, 'single');
+            const rating = srsService.calculateRating(content, options, 10000, 7, 'single');
             expect(rating).toBe(Rating.Good);
         });
 
@@ -45,7 +45,7 @@ describe('srsService - Core Logic', () => {
             // Duration 15s - 3.1s reading = 11.9s thinking.
             // With 0.6x multiplier: 11.9 * 0.6 = 7.14s. (Threshold GOOD is 2-8s)
             // If it were single choice, 11.9s would be HARD (>8s).
-            const rating = srsService.calculateRating(content, options, 15000, 'multi');
+            const rating = srsService.calculateRating(content, options, 15000, 7, 'multi');
             expect(rating).toBe(Rating.Good);
         });
 
@@ -54,10 +54,10 @@ describe('srsService - Core Logic', () => {
             // With 2.0x multiplier: 2.9 * 2.0 = 5.8s.
             // But if the user takes just a bit longer, e.g., 8s:
             // 8s - 3.1s = 4.9s. 4.9 * 2.0 = 9.8s -> HARD.
-            const ratingNormal = srsService.calculateRating(content, options, 6000, 'truefalse');
+            const ratingNormal = srsService.calculateRating(content, options, 6000, 7, 'truefalse');
             expect(ratingNormal).toBe(Rating.Good);
             
-            const ratingSlow = srsService.calculateRating(content, options, 8000, 'truefalse');
+            const ratingSlow = srsService.calculateRating(content, options, 8000, 7, 'truefalse');
             expect(ratingSlow).toBe(Rating.Hard);
         });
     });

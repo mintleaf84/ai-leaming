@@ -17,7 +17,6 @@ vi.mock('@/lib/auth/auth', () => ({
 }));
 
 vi.mock('@/lib/utils/datetime', () => ({
-    getBeijingNow: vi.fn(),
     getBeijingDateString: vi.fn((d) => d ? d.toISOString().split('T')[0] : '2024-01-15'),
     getBeijingYesterdayString: vi.fn().mockReturnValue('2024-01-14'),
     formatBeijingDisplayDate: vi.fn((_d) => '01/15')

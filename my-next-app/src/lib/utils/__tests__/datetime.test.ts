@@ -8,7 +8,6 @@ import {
     getBeijingDaysAgoString,
     formatBeijingDisplayDate,
     getBeijingLocaleString,
-    getBeijingNow,
 } from '../datetime';
 
 // 辅助：创建固定 UTC 时间的 Date 对象
@@ -159,22 +158,6 @@ describe('datetime 工具函数', () => {
             expect(result).toContain('2024');
             expect(result).toContain('6');
             expect(result).toContain('15');
-        });
-    });
-
-    describe('getBeijingNow', () => {
-        it('应返回 Date 对象', () => {
-            const now = getBeijingNow();
-            expect(now).toBeInstanceOf(Date);
-        });
-
-        it('应返回 Date 对象，且时间戳合理（不超过未来 24 小时）', () => {
-            const _beforeMs = Date.now();
-            const now = getBeijingNow();
-            const afterMs = Date.now();
-            expect(now).toBeInstanceOf(Date);
-            // 返回值的时间戳应在合理范围内（不超过明天）
-            expect(now.getTime()).toBeLessThan(afterMs + 25 * 60 * 60 * 1000);
         });
     });
 });

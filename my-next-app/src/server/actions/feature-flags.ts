@@ -30,6 +30,12 @@ export async function getGlobalFeatureFlag(key: string, defaultValue: boolean = 
  */
 export async function toggleGlobalFeatureFlag(key: string, value: boolean) {
   try {
+    // 确保存在一个 id=0 的系统级虚拟用户，以满足 system_settings 表的外键约束
+    db.prepare(`
+      INSERT OR IGNORE INTO users (id, username, password_hash, role) 
+      VALUES (0, 'system_global_user', 'none', 'admin')
+    `).run();
+
     db.prepare(`
       INSERT INTO system_settings (user_id, key, value) 
       VALUES (?, ?, ?) 

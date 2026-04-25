@@ -80,6 +80,7 @@ describe('Feature Flags Actions', () => {
 
             expect(result.success).toBe(true);
             expect(result.value).toBe(true);
+            expect(db.prepare).toHaveBeenCalledWith(expect.stringContaining('INSERT OR IGNORE INTO users'));
             expect(db.prepare).toHaveBeenCalledWith(expect.stringContaining('INSERT INTO system_settings'));
             expect(mockRun).toHaveBeenCalledWith(0, 'TEST_FLAG', 'true');
         });

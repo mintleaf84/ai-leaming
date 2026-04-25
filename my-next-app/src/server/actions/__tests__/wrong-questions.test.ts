@@ -181,7 +181,8 @@ describe('Wrong Questions Actions', () => {
     describe('getWrongQuestionDetailAction', () => {
         it('应该返回错题详情', async () => {
             mockDb.prepare.mockImplementation((sql: string) => {
-                if (sql.includes('FROM questions') && sql.includes('WHERE id')) {
+                const s = sql.toLowerCase();
+                if (s.includes('from questions') && (s.includes('where q.id') || s.includes('where id'))) {
                     return {
                         get: () => ({
                             id: 1,
@@ -194,12 +195,12 @@ describe('Wrong Questions Actions', () => {
                         })
                     };
                 }
-                if (sql.includes('COUNT(*)') && sql.includes('wrongCount')) {
+                if (s.includes('count(*)') && s.includes('practice_logs') && s.includes('is_correct = 0')) {
                     return {
                         get: () => ({ wrongCount: 2, lastWrongAt: '2026-01-17' })
                     };
                 }
-                if (sql.includes('FROM practice_logs') && sql.includes('ORDER BY timestamp DESC') && sql.includes('LIMIT 20')) {
+                if (s.includes('from practice_logs') && s.includes('order by timestamp desc') && s.includes('limit 20')) {
                     return {
                         all: () => [
                             { timestamp: '2026-01-17', userAnswer: 'B', isCorrect: 0 },
@@ -207,7 +208,7 @@ describe('Wrong Questions Actions', () => {
                         ]
                     };
                 }
-                if (sql.includes('SELECT user_answer') && sql.includes('is_correct = 0')) {
+                if (s.includes('select user_answer') && s.includes('is_correct = 0')) {
                     return {
                         get: () => ({ user_answer: 'B' })
                     };

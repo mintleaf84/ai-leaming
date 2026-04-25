@@ -23,15 +23,25 @@ const { mockDrizzleDb, mockDrizzleSchema } = vi.hoisted(() => {
     const mockDrizzleDb = {
         ...chain,
         transaction: vi.fn(async (cb) => cb(chain)),
+        query: {
+            question_srs: {
+                findFirst: vi.fn().mockResolvedValue(null),
+                findMany: vi.fn().mockResolvedValue([])
+            },
+            questions: {
+                findFirst: vi.fn().mockResolvedValue(null)
+            }
+        }
     };
-
+    
     return { 
         mockDrizzleDb, 
         mockDrizzleSchema: {
             practice_sessions: { id: 'id' },
             questions: { id: 'id', external_id: 'external_id' },
-            practice_logs: { id: 'id' },
-            user_mastery: { id: 'id', user_id: 'user_id', tag_name: 'tag_name' }
+            practice_logs: { id: 'id', question_id: 'question_id', user_id: 'user_id' },
+            user_mastery: { id: 'id', user_id: 'user_id', tag_name: 'tag_name' },
+            question_srs: { user_id: 'user_id', question_id: 'question_id', due_date: 'due_date' }
         } 
     };
 });

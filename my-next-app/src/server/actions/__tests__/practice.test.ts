@@ -19,6 +19,10 @@ const { mockDb, mockRequireUser, mockDemoService, mockUpdateMastery, mockDrizzle
       },
       questions: {
         findFirst: vi.fn()
+      },
+      question_srs: {
+        findFirst: vi.fn(),
+        findMany: vi.fn()
       }
     },
     select: vi.fn().mockReturnThis(),
@@ -33,9 +37,10 @@ const { mockDb, mockRequireUser, mockDemoService, mockUpdateMastery, mockDrizzle
     limit: vi.fn().mockReturnThis(),
   },
   mockDrizzleSchema: {
-    practice_sessions: { user_id: 'user_id', is_demo: 'is_demo', created_at: 'created_at' },
+    practice_sessions: { user_id: 'user_id', is_demo: 'is_demo', created_at: 'created_at', id: 'id', total_questions: 'total_questions', correct_count: 'correct_count' },
     practice_logs: { session_id: 'session_id' },
-    questions: { id: 'id' }
+    questions: { id: 'id' },
+    question_srs: { user_id: 'user_id', question_id: 'question_id', due_date: 'due_date' }
   }
 }));
 
@@ -91,6 +96,8 @@ describe('Practice Actions', () => {
 
     // Drizzle default behavior
     mockDrizzleDb.query.practice_sessions.findFirst.mockResolvedValue(null);
+    mockDrizzleDb.query.question_srs.findFirst.mockResolvedValue(null);
+    mockDrizzleDb.query.question_srs.findMany.mockResolvedValue([]);
     mockDrizzleDb.get.mockResolvedValue(null);
     mockDrizzleDb.select.mockReturnThis();
     mockDrizzleDb.from.mockReturnThis();

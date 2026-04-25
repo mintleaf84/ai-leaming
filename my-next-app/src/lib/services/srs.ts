@@ -65,7 +65,7 @@ export const srsService = {
      * 获取或初始化题目的 SRS 状态
      */
     getOrCreateSrsCard: async (userId: number, questionId: number): Promise<Card> => {
-        const row = await drizzleDb.query.question_srs.findFirst({
+        const row = await drizzleDb.query?.question_srs?.findFirst({
             where: and(
                 eq(drizzleSchema.question_srs.user_id, userId),
                 eq(drizzleSchema.question_srs.question_id, questionId)
@@ -90,7 +90,7 @@ export const srsService = {
         const emptyCard = createEmptyCard();
         
         // 尝试利用“全站正确率”初始化难度
-        const question = await drizzleDb.query.questions.findFirst({
+        const question = await drizzleDb.query?.questions?.findFirst({
             where: eq(drizzleSchema.questions.id, questionId),
             columns: { correct_ratio: true }
         });
@@ -113,7 +113,7 @@ export const srsService = {
      */
     updateQuestionSrs: async (userId: number, questionId: number, isCorrect: boolean, durationMs: number, reviewDate?: Date) => {
         // 1. 获取题目内容用于计算评分
-        const question = await drizzleDb.query.questions.findFirst({
+        const question = await drizzleDb.query?.questions?.findFirst({
             where: eq(drizzleSchema.questions.id, questionId)
         });
         if (!question) return;

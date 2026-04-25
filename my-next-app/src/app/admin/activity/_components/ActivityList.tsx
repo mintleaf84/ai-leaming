@@ -1,6 +1,14 @@
 'use client';
 
 import React, { useState, useEffect, useCallback } from 'react';
+import dayjs from 'dayjs';
+import utc from 'dayjs/plugin/utc';
+import relativeTime from 'dayjs/plugin/relativeTime';
+import 'dayjs/locale/zh-cn';
+
+dayjs.extend(utc);
+dayjs.extend(relativeTime);
+dayjs.locale('zh-cn');
 import { getUserActivityAction, UserActivityEntry, ActivityFilters } from '@/server/actions/activity';
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
@@ -67,14 +75,7 @@ export function ActivityList() {
     };
 
     const getTimeAgo = (timestamp: string) => {
-        const diff = Date.now() - new Date(timestamp).getTime();
-        const seconds = Math.floor(diff / 1000);
-        if (seconds < 60) return '刚刚';
-        const minutes = Math.floor(seconds / 60);
-        if (minutes < 60) return `${minutes}分钟前`;
-        const hours = Math.floor(minutes / 60);
-        if (hours < 24) return `${hours}小时前`;
-        return new Date(timestamp).toLocaleDateString('zh-CN');
+        return dayjs.utc(timestamp).fromNow();
     };
 
     return (

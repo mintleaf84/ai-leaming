@@ -1,5 +1,8 @@
-
 import { db } from '@/lib/db';
+import dayjs from 'dayjs';
+import utc from 'dayjs/plugin/utc';
+
+dayjs.extend(utc);
 
 // DB 行类型定义
 type SessionRow = {
@@ -120,7 +123,7 @@ export const historyService = {
             totalQuestions: r.totalQuestions,
             correctCount: r.correctCount,
             reviewCount: r.reviewCount,
-            createdAt: new Date(r.createdAt).toISOString(),
+            createdAt: dayjs.utc(r.createdAt).toISOString(),
             accuracy: r.totalQuestions > 0 ? Math.round((r.correctCount / r.totalQuestions) * 100) : 0,
             practiceMode: r.practiceMode,
         }));
@@ -167,7 +170,7 @@ export const historyService = {
                 totalQuestions: sessionRow.totalQuestions,
                 correctCount: sessionRow.correctCount,
                 reviewCount: sessionRow.reviewCount,
-                createdAt: new Date(sessionRow.createdAt).toISOString(),
+                createdAt: dayjs.utc(sessionRow.createdAt).toISOString(),
                 accuracy: sessionRow.totalQuestions > 0 ? Math.round((sessionRow.correctCount / sessionRow.totalQuestions) * 100) : 0,
                 practiceMode: sessionRow.practiceMode,
             },

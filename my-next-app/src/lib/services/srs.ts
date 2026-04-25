@@ -1,4 +1,8 @@
 import { FSRS, Rating, createEmptyCard, Card, State, fsrs, generatorParameters } from 'ts-fsrs';
+import dayjs from 'dayjs';
+import utc from 'dayjs/plugin/utc';
+
+dayjs.extend(utc);
 import { db, drizzleDb, drizzleSchema } from '@/lib/db';
 import { eq, and, sql, lte, desc } from 'drizzle-orm';
 
@@ -304,7 +308,7 @@ export const srsService = {
         for (const [qId, qLogs] of questionGroups.entries()) {
             // 对每个题目，按时间顺序模拟它的记忆曲线
             for (const log of qLogs) {
-                const reviewDate = log.timestamp ? new Date(log.timestamp) : undefined;
+                const reviewDate = log.timestamp ? dayjs.utc(log.timestamp).toDate() : undefined;
                 await srsService.updateQuestionSrs(userId, qId, log.isCorrect, log.durationMs || 0, reviewDate);
             }
             syncCount++;

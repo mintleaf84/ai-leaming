@@ -1,5 +1,9 @@
 import { type ClassValue, clsx } from "clsx"
 import { twMerge } from "tailwind-merge"
+import dayjs from 'dayjs';
+import utc from 'dayjs/plugin/utc';
+
+dayjs.extend(utc);
 
 export function cn(...inputs: ClassValue[]) {
     return twMerge(clsx(inputs))
@@ -26,4 +30,13 @@ export function formatDuration(ms: number): string {
 export function indexToLetter(index: number): string {
     if (index < 0 || index > 25) return String(index);
     return String.fromCharCode(65 + index);  // A=65
+}
+
+/**
+ * 将 SQLite 的 UTC 时间字符串转换为本地 Date 对象
+ * 使用 dayjs 确保跨浏览器兼容性和准确的 UTC 解析
+ */
+export function parseUTCDate(dateStr: string): Date {
+    if (!dateStr) return new Date();
+    return dayjs.utc(dateStr).local().toDate();
 }

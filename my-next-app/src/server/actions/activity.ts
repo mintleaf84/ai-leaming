@@ -109,7 +109,7 @@ export async function getActivityStatsAction() {
         // 今日练习总数
         const todayCount = db.prepare(`
             SELECT COUNT(*) as count FROM practice_logs 
-            WHERE date(timestamp) = date('now', 'localtime')
+            WHERE date(timestamp, 'localtime') = date('now', 'localtime')
         `).get() as { count: number };
 
         // 今日正确率
@@ -119,21 +119,21 @@ export async function getActivityStatsAction() {
                 THEN (SUM(CASE WHEN is_correct = 1 THEN 1 ELSE 0 END) * 100.0 / COUNT(*))
                 ELSE 0 END as rate
             FROM practice_logs
-            WHERE date(timestamp) = date('now', 'localtime')
+            WHERE date(timestamp, 'localtime') = date('now', 'localtime')
         `).get() as { rate: number };
 
         // 平均耗时
         const avgDuration = db.prepare(`
             SELECT AVG(duration_ms) as avg_time 
             FROM practice_logs 
-            WHERE date(timestamp) = date('now', 'localtime')
+            WHERE date(timestamp, 'localtime') = date('now', 'localtime')
         `).get() as { avg_time: number };
 
         // AI 资源使用 (今日)
         const aiCalls = db.prepare(`
             SELECT COUNT(*) as count, SUM(input_tokens + output_tokens) as tokens
             FROM api_call_logs
-            WHERE date(created_at) = date('now', 'localtime') AND success = 1
+            WHERE date(created_at, 'localtime') = date('now', 'localtime') AND success = 1
         `).get() as { count: number, tokens: number };
 
         return {

@@ -1,6 +1,10 @@
 "use client";
 
 import React from 'react';
+import dayjs from 'dayjs';
+import utc from 'dayjs/plugin/utc';
+
+dayjs.extend(utc);
 
 interface SessionSummaryProps {
     createdAt: string;
@@ -26,7 +30,7 @@ export function SessionSummary({ createdAt, totalQuestions, accuracy, reviewCoun
             <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
                 <div>
                     <div className="text-sm text-muted-foreground mb-1">
-                        练习总结 · {new Date(createdAt).toLocaleDateString()}
+                        练习总结 · {dayjs.utc(createdAt).local().format('YYYY/M/D')}
                     </div>
                     <h1 className="text-3xl font-bold text-foreground">
                         {getMessage()}

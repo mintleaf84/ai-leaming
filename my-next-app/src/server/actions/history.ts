@@ -1,5 +1,9 @@
 'use server';
 import logger from '@/lib/logger';
+import dayjs from 'dayjs';
+import utc from 'dayjs/plugin/utc';
+
+dayjs.extend(utc);
 
 import { db,  drizzleDb, drizzleSchema } from '@/lib/db';
 import { eq, and, desc, sql, gte, lte, count } from 'drizzle-orm';
@@ -126,7 +130,7 @@ export async function getSessionHistoryAction(filter?: HistoryFilter): Promise<P
       ...r,
       id: String(r.id),
       sessionName: r.sessionName || undefined,
-      practiceMode: r.practiceMode || undefined,
+      createdAt: dayjs.utc(r.createdAt).toISOString(),
       accuracy: r.totalQuestions > 0 ? Math.round((r.correctCount / r.totalQuestions) * 100) : 0
     }));
 
@@ -243,7 +247,7 @@ export async function getSessionDetailAction(sessionId: string): Promise<Session
         totalQuestions: sessionRow.total_questions || 0,
         correctCount: sessionRow.correct_count || 0,
         reviewCount: sessionRow.review_count || 0,
-        createdAt: sessionRow.created_at as string,
+        createdAt: dayjs.utc(sessionRow.created_at).toISOString(),
         accuracy: (sessionRow.total_questions || 0) > 0 ? Math.round(((sessionRow.correct_count || 0) / (sessionRow.total_questions || 0)) * 100) : 0
       },
       logs: logs.map((l: any) => ({

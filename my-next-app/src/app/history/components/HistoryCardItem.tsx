@@ -15,6 +15,10 @@ import {
 } from 'lucide-react';
 
 import { cn } from '@/lib/utils';
+import dayjs from 'dayjs';
+import utc from 'dayjs/plugin/utc';
+
+dayjs.extend(utc);
 import { SessionHistoryItem } from '@/server/actions/history';
 
 // 模式配置
@@ -67,9 +71,7 @@ const HistoryCardItemComponent: React.FC<HistoryCardItemProps> = ({
                         )}
                         {/* Date */}
                         <span className="text-xs text-neutral-400 font-bold uppercase tracking-widest">
-                            {new Date(item.createdAt).toLocaleString('zh-CN', {
-                                month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit'
-                            })}
+                            {dayjs.utc(item.createdAt).local().format('MMM D, HH:mm')}
                         </span>
                     </div>
 

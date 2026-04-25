@@ -1,6 +1,6 @@
 'use client';
 
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { CheckCircle2, X, Lightbulb, History, Brain, Zap, Calendar } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { WrongQuestionDetail } from '@/server/actions/wrong-questions';
@@ -56,7 +56,9 @@ export function QuestionDetailPanel({
     onPractice,
     onMarkAsMastered
 }: QuestionDetailPanelProps) {
-    if (isLoading) {
+    const [now] = useState(() => Date.now());
+
+    if (isLoading || !detail) {
         return (
             <div className="border-t bg-muted/30 p-4">
                 <div className="text-center text-muted-foreground py-4">
@@ -65,6 +67,11 @@ export function QuestionDetailPanel({
             </div>
         );
     }
+
+    const getDaysUntil = (dueDate: string) => {
+        const diff = new Date(dueDate).getTime() - now;
+        return Math.ceil(diff / (1000 * 60 * 60 * 24));
+    };
 
     return (
         <div className="border-t bg-muted/30 p-4">
@@ -152,7 +159,7 @@ export function QuestionDetailPanel({
                                     <span className="font-medium text-foreground">
                                         {new Date(detail.srs.due_date).toLocaleDateString()}
                                         <span className="ml-1 opacity-60">
-                                            ({Math.ceil((new Date(detail.srs.due_date).getTime() - Date.now()) / (1000 * 60 * 60 * 24))}d)
+                                            ({getDaysUntil(detail.srs.due_date)}d)
                                         </span>
                                     </span>
                                 </div>

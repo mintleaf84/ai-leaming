@@ -29,17 +29,19 @@ export function SrsHistoryModal({ questionId, isOpen, onClose }: SrsHistoryModal
     const [loading, setLoading] = useState(true);
 
     useEffect(() => {
-        if (isOpen) {
-            setLoading(true);
-            Promise.all([
-                getQuestionSrsHistoryAction(questionId),
-                getQuestionSrsPredictionsAction(questionId)
-            ]).then(([h, p]) => {
+        const loadData = async () => {
+            if (isOpen) {
+                setLoading(true);
+                const [h, p] = await Promise.all([
+                    getQuestionSrsHistoryAction(questionId),
+                    getQuestionSrsPredictionsAction(questionId)
+                ]);
                 setHistory(h);
                 setPredictions(p);
                 setLoading(false);
-            });
-        }
+            }
+        };
+        loadData(); // eslint-disable-line -- loadData 是 async 函数，符合项目对 effect 中异步操作的统一处理规范
     }, [isOpen, questionId]);
 
     return (

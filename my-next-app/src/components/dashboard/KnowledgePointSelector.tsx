@@ -116,6 +116,11 @@ export function KnowledgePointSelector({ children }: { children: React.ReactNode
     const [treeData, setTreeData] = useState<KnowledgeNode[]>([]);
     const [selectedTags, setSelectedTags] = useState<string[]>([]);
     const [loading, setLoading] = useState(false);
+    const [mounted, setMounted] = useState(false);
+
+    useEffect(() => {
+        setMounted(true);
+    }, []);
 
     useEffect(() => {
         if (open && treeData.length === 0) {
@@ -149,6 +154,10 @@ export function KnowledgePointSelector({ children }: { children: React.ReactNode
         });
         router.push(`/practice?${params.toString()}`);
     };
+
+    if (!mounted) {
+        return <>{children}</>;
+    }
 
     return (
         <Dialog open={open} onOpenChange={setOpen}>

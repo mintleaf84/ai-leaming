@@ -130,10 +130,10 @@ async function DashboardStatsCards() {
             </div>
           </Link>
           <KnowledgePointSelector>
-            <div className="group h-full flex flex-col items-center justify-center p-3 rounded-2xl bg-card border border-border hover:border-cyan-500/50 hover:shadow-sm hover:translate-y-[-1px] transition-all cursor-pointer">
+            <button className="group h-full flex flex-col items-center justify-center p-3 rounded-2xl bg-card border border-border hover:border-cyan-500/50 hover:shadow-sm hover:translate-y-[-1px] transition-all cursor-pointer">
               <Target className="w-5 h-5 text-cyan-600 dark:text-cyan-500 mb-1 group-hover:scale-110 transition-transform" />
               <span className="text-xs font-bold text-foreground">专项突破</span>
-            </div>
+            </button>
           </KnowledgePointSelector>
           <Link href="/practice?mode=exam" className="group">
             <div className="h-full flex flex-col items-center justify-center p-3 rounded-2xl bg-card border border-border hover:border-blue-500/50 hover:shadow-sm hover:translate-y-[-1px] transition-all cursor-pointer">

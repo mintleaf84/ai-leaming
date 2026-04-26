@@ -24,6 +24,7 @@ export type SrsGlobalStats = {
   futureReviews: {
     date: string;
     count: number;
+    estimatedMinutes: number;
   }[];
   retentionStats: {
     trueRetention: number;
@@ -88,17 +89,39 @@ export const getSrsGlobalStatsAction = cache(async (): Promise<SrsGlobalStats> =
     ORDER BY range ASC
   `).all(user.id) as { range: number; count: number }[];
 
-  // 4. 未来 7 天复习计划
-  const futureRows = db.prepare(`
+  // 4. 未来 7 天复习计划 (包含今日逾期题目)
+  const futureDays = Array.from({ length: 7 }, (_, i) => {
+    const d = new Date();
+    d.setDate(d.getDate() + i);
+    return d.toISOString().split('T')[0];
+  });
+
+  const rawFutureRows = db.prepare(`
     SELECT 
-      date(due_date) as date,
+      CASE 
+        WHEN date(due_date) <= date('now') THEN date('now')
+        ELSE date(due_date)
+      END as date,
       COUNT(*) as count
-    FROM question_srs
-    WHERE user_id = ? AND date(due_date) >= date('now')
+    FROM question_srs srs
+    WHERE srs.user_id = ? 
+    AND date(srs.due_date) <= date('now', '+7 days')
+    AND EXISTS (
+      SELECT 1 FROM practice_logs pl 
+      WHERE pl.question_id = srs.question_id 
+      AND pl.user_id = srs.user_id 
+      AND pl.is_correct = 0
+    )
     GROUP BY date
-    ORDER BY date ASC
-    LIMIT 7
   `).all(user.id) as { date: string; count: number }[];
+
+  const futureRows = futureDays.map(day => {
+    const row = rawFutureRows.find(r => r.date === day);
+    return {
+      date: day,
+      count: row?.count || 0
+    };
+  });
 
   // 5. 真实保留率 (最近 30 天)
   const retentionRow = db.prepare(`
@@ -132,6 +155,17 @@ export const getSrsGlobalStatsAction = cache(async (): Promise<SrsGlobalStats> =
     AND l.duration_ms >= 1000 AND l.duration_ms <= 60000
   `).get(user.id) as { count: number };
 
+  // 8. 平均答题耗时 (用于预计时间预估)
+  // 过滤掉异常值 (1s以下可能是秒杀，60s以上可能是挂机)
+  const avgDurationRow = db.prepare(`
+    SELECT AVG(duration_ms) as avg_duration
+    FROM practice_logs
+    WHERE user_id = ? AND timestamp > datetime('now', '-30 days')
+    AND duration_ms >= 1000 AND duration_ms <= 60000
+  `).get(user.id) as { avg_duration: number | null };
+
+  const avgDurationMs = avgDurationRow?.avg_duration || 15000; // 默认 15s
+
   return {
     totalCards: Object.values(stateDist).reduce((a, b) => a + b, 0),
     stateDistribution: stateDist,
@@ -145,7 +179,10 @@ export const getSrsGlobalStatsAction = cache(async (): Promise<SrsGlobalStats> =
       { range: '90d+', count: stabilityRows.find(r => r.range === '90d+')?.count || 0 },
     ],
     difficultyDistribution: difficultyRows.map(r => ({ range: r.range.toString(), count: r.count })),
-    futureReviews: futureRows,
+    futureReviews: futureRows.map(r => ({
+      ...r,
+      estimatedMinutes: Math.ceil((r.count * avgDurationMs) / 60000)
+    })),
     retentionStats: {
       trueRetention: retentionRow.total > 0 ? (retentionRow.correct / retentionRow.total) * 100 : 100,
       totalReviews: retentionRow.total

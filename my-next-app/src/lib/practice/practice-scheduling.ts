@@ -149,6 +149,26 @@ function generateReviewSession(config: PracticeConfig, userId: number): Question
 }
 
 /**
+ * 纯错题专项模式
+ * 只练习历史上做错过的题目
+ */
+function generateMistakesSession(config: PracticeConfig, userId: number): Question[] {
+    const { where, params } = buildWhereClause(config);
+
+    const questions = db.prepare(`
+    SELECT q.*, COUNT(pl.id) as error_count
+    FROM questions q
+    JOIN practice_logs pl ON pl.question_id = q.id
+    ${where ? where + ' AND' : 'WHERE'} pl.user_id = ? AND pl.is_correct = 0
+    GROUP BY q.id
+    ORDER BY error_count DESC, RANDOM()
+    LIMIT ?
+  `).all(...params, userId, config.limit).map(mapRawToQuestion);
+
+    return questions;
+}
+
+/**
  * 专项突破模式
  * 按指定知识点或维度筛选
  */
@@ -214,6 +234,8 @@ export function generateSessionByConfig(config: PracticeConfig, userId: number):
             return generateSmartSession(config, userId);
         case 'review':
             return generateReviewSession(config, userId);
+        case 'mistakes':
+            return generateMistakesSession(config, userId);
         case 'focus':
             return generateFocusSession(config, userId);
         case 'exam':

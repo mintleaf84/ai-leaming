@@ -7,7 +7,8 @@ import type { Question, CorrectionQuiz, RegressionChallenge, Dimension } from '.
 // 练习模式
 export type PracticeMode =
     | 'smart'      // 智能刷题 (40/40/20)
-    | 'review'     // 错题强化
+    | 'review'     // 错题强化 (FSRS 驱动)
+    | 'mistakes'   // 纯错题专项
     | 'focus'      // 专项突破
     | 'exam'       // 模拟考试
     | 'random';    // 随机挑战
@@ -15,7 +16,8 @@ export type PracticeMode =
 // 练习模式中文映射
 export const PRACTICE_MODE_LABELS: Record<PracticeMode, string> = {
     smart: '智能刷题',
-    review: '错题强化',
+    review: '记忆复习',
+    mistakes: '错题专项',
     focus: '专项突破',
     exam: '模拟考试',
     random: '随机挑战'
@@ -24,7 +26,8 @@ export const PRACTICE_MODE_LABELS: Record<PracticeMode, string> = {
 // 练习模式描述
 export const PRACTICE_MODE_DESCRIPTIONS: Record<PracticeMode, string> = {
     smart: '40% 顽固题 + 40% 盲区 + 20% 随机，AI 深度复盘',
-    review: '专练历史错题，按错误次数排序',
+    review: '基于 FSRS 算法，优先复习即将遗忘的知识点',
+    mistakes: '专门针对历史练习中做错的题目进行强化',
     focus: '聚焦指定知识点或维度，精准突破',
     exam: '模拟真实考试，计时顺序作答，无提示',
     random: '完全随机抽题，快速查漏补缺'
@@ -34,6 +37,7 @@ export const PRACTICE_MODE_DESCRIPTIONS: Record<PracticeMode, string> = {
 export const PRACTICE_MODE_ICONS: Record<PracticeMode, string> = {
     smart: 'Brain',
     review: 'RotateCcw',
+    mistakes: 'AlertCircle',
     focus: 'Target',
     exam: 'FileCheck',
     random: 'Shuffle'
@@ -69,6 +73,11 @@ export const PRESET_CONFIGS: Record<PracticeMode, Partial<PracticeConfig>> = {
         enableTimer: false
     },
     review: {
+        limit: 20,
+        enableReview: true,
+        enableTimer: false
+    },
+    mistakes: {
         limit: 20,
         enableReview: true,
         enableTimer: false

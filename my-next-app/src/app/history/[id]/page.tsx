@@ -140,9 +140,15 @@ export default function SessionDetailPage({ params }: { params: Promise<{ id: st
       const a = document.createElement('a');
       a.href = url;
       a.download = result.filename;
-      document.body.appendChild(a);
-      a.click();
-      document.body.removeChild(a);
+      
+      if (document.body) {
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+      } else {
+        a.click();
+      }
+      
       URL.revokeObjectURL(url);
       toast.success('导出成功');
     } else {

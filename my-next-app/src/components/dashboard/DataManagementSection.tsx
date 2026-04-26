@@ -1,3 +1,5 @@
+'use client';
+
 import React, { useRef } from 'react';
 import { Button } from '@/components/ui/button';
 import { toast } from 'sonner';
@@ -18,9 +20,16 @@ export function DataManagementSection({ onDataChange }: DataManagementSectionPro
             const a = document.createElement('a');
             a.href = url;
             a.download = `ai-learning-backup-${new Date().toISOString().split('T')[0]}.json`;
-            document.body.appendChild(a);
-            a.click();
-            document.body.removeChild(a);
+            
+            if (document.body) {
+                document.body.appendChild(a);
+                a.click();
+                document.body.removeChild(a);
+            } else {
+                // 回退方案：如果 body 还没准备好，尝试直接点击
+                a.click();
+            }
+            
             URL.revokeObjectURL(url);
             toast.success("进度备份导出成功");
         } catch (error) {

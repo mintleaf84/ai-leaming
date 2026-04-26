@@ -59,12 +59,26 @@ export function MarkmapViewer({ markdown, className = '', fileName = '' }: Markm
 
             // 3. 挂载 Toolbar（仅挂载一次）
             if (toolbarRef.current) {
+                // 清理旧的内容以防万一
+                toolbarRef.current.innerHTML = '';
                 const toolbar = new Toolbar();
                 toolbar.attach(mm);
                 toolbar.setItems([...Toolbar.defaultItems]);
-                toolbarRef.current.appendChild(toolbar.render());
+                const el = toolbar.render();
+                if (el) {
+                    toolbarRef.current.appendChild(el);
+                }
             }
         }
+
+        // 清理函数：在组件卸载或 markdown 变化导致 mm 重新创建时运行
+        return () => {
+            // 注意：如果 mmRef.current 没变，我们其实不需要 destroy
+            // 但如果 toolbar 容器会被销毁，我们最好清空它
+            if (toolbarRef.current) {
+                toolbarRef.current.innerHTML = '';
+            }
+        };
     }, [markdown]);
 
     // 下载为交互式 HTML (推荐，样式最完整且支持交互)

@@ -29,10 +29,16 @@ export function BackupManager() {
                 if (match) filename = match[1];
             }
             a.download = filename;
-            document.body.appendChild(a);
-            a.click();
+            
+            if (document.body) {
+                document.body.appendChild(a);
+                a.click();
+                document.body.removeChild(a);
+            } else {
+                a.click();
+            }
+            
             window.URL.revokeObjectURL(url);
-            document.body.removeChild(a);
 
             toast.success("备份已下载", { id: toastId });
         } catch (error) {

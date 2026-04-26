@@ -127,9 +127,15 @@ export function useKnowledgeCards() {
             const a = document.createElement('a');
             a.href = url;
             a.download = `knowledge_cards_${Date.now()}.txt`;
-            document.body.appendChild(a);
-            a.click();
-            document.body.removeChild(a);
+            
+            if (document.body) {
+                document.body.appendChild(a);
+                a.click();
+                document.body.removeChild(a);
+            } else {
+                a.click();
+            }
+            
             window.URL.revokeObjectURL(url);
 
             showToast('导出成功！已保存为 Anki 格式');

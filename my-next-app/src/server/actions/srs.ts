@@ -4,7 +4,6 @@ import { db } from '@/lib/db';
 import { requireUser } from '@/lib/auth/auth';
 import { cache } from 'react';
 import { State, Rating } from 'ts-fsrs';
-import dayjs from 'dayjs';
 
 export type SrsGlobalStats = {
   totalCards: number;

@@ -11,7 +11,9 @@ import {
 } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { SrsGlobalStats } from '@/server/actions/srs';
+import { SrsGlobalStats, syncSrsDataAction } from '@/server/actions/srs';
+import { toast } from 'sonner';
+import { useRouter } from 'next/navigation';
 
 const STATE_COLORS = {
     new: '#94a3b8',       // slate-400
@@ -21,6 +23,25 @@ const STATE_COLORS = {
 };
 
 export default function SrsAnalysisClient({ stats }: { stats: SrsGlobalStats }) {
+    const router = useRouter();
+    const [isSyncing, setIsSyncing] = React.useState(false);
+
+    const handleSync = async () => {
+        try {
+            setIsSyncing(true);
+            const count = await syncSrsDataAction();
+            toast.success(`同步完成！`, {
+                description: `已为 ${count} 道题目更新了记忆状态与阅读速度参数。`
+            });
+            router.refresh();
+        } catch (err) {
+            console.error('Sync failed:', err);
+            toast.error('同步失败，请稍后重试');
+        } finally {
+            setIsSyncing(false);
+        }
+    };
+
     const stateData = [
         { name: '新题目', value: stats.stateDistribution.new, color: STATE_COLORS.new },
         { name: '学习中', value: stats.stateDistribution.learning, color: STATE_COLORS.learning },
@@ -184,11 +205,23 @@ export default function SrsAnalysisClient({ stats }: { stats: SrsGlobalStats }) 
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                 <Card className="md:col-span-1 border-border/50 shadow-sm overflow-hidden flex flex-col">
                     <CardHeader className="border-b border-border/50 bg-muted/20 pb-4">
-                        <CardTitle className="text-base flex items-center gap-2">
-                            <Zap className="w-4 h-4 text-amber-500" />
-                            认知效率分析
+                        <CardTitle className="text-base flex items-center justify-between">
+                            <div className="flex items-center gap-2">
+                                <Zap className="w-4 h-4 text-amber-500" />
+                                认知效率分析
+                            </div>
+                            <button 
+                                onClick={handleSync}
+                                disabled={isSyncing}
+                                className="text-[10px] bg-primary/10 hover:bg-primary/20 text-primary px-2 py-1 rounded-md transition-colors flex items-center gap-1 disabled:opacity-50"
+                            >
+                                <Clock className={`w-2.5 h-2.5 ${isSyncing ? 'animate-spin' : ''}`} />
+                                {isSyncing ? '同步中...' : '同步历史数据'}
+                            </button>
                         </CardTitle>
-                        <CardDescription>算法根据您的答题表现实时估算的阅读速度</CardDescription>
+                        <CardDescription>
+                            基于 {stats.learnedCount} 道题目的表现实时估算
+                        </CardDescription>
                     </CardHeader>
                     <CardContent className="pt-6 flex-1 flex flex-col justify-between">
                         <div className="space-y-4">

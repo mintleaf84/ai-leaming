@@ -51,7 +51,7 @@ async function getReadingSpeed(userId: number, questionType?: string): Promise<n
 /**
  * 内部辅助：根据本次表现更新基准速度 (EMA 算法)
  */
-async function learnReadingSpeed(userId: number, questionContent: string, optionsJson: string, durationMs: number, questionType?: string) {
+export async function learnReadingSpeed(userId: number, questionContent: string, optionsJson: string, durationMs: number, questionType?: string) {
     // 1. 计算字数
     let optionsText = '';
     try {
@@ -165,21 +165,6 @@ export const srsService = {
         // 初始化新卡片
         const emptyCard = createEmptyCard();
         
-        // 尝试利用“全站正确率”初始化难度
-        const question = await drizzleDb.query?.questions?.findFirst({
-            where: eq(drizzleSchema.questions.id, questionId),
-            columns: { correct_ratio: true }
-        });
-
-        if (question?.correct_ratio !== null && question?.correct_ratio !== undefined) {
-            // 归一化正确率：如果是百分比 (0-100) 则转换为 0-1
-            let ratio = question.correct_ratio;
-            if (ratio > 1) ratio = ratio / 100;
-            
-            // 简单线性映射：正确率 100% -> 难度 1.0; 正确率 0% -> 难度 10.0
-            const initialDifficulty = 10 - (ratio * 9);
-            emptyCard.difficulty = Math.max(1, Math.min(10, initialDifficulty));
-        }
 
         return emptyCard;
     },
@@ -212,10 +197,8 @@ export const srsService = {
                 question.type || undefined
             );
 
-            // 异步学习新的速度基准
-            learnReadingSpeed(userId, question.content, question.options || '[]', durationMs, question.type || undefined).catch(err => {
-                console.error('[SRS] Learn reading speed failed:', err);
-            });
+            // 学习新的速度基准
+            await learnReadingSpeed(userId, question.content, question.options || '[]', durationMs, question.type || undefined);
         }
 
         // 4. 调用 FSRS 计算新状态

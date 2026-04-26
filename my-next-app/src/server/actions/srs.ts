@@ -34,6 +34,7 @@ export type SrsGlobalStats = {
     multi: number;
     truefalse: number;
   };
+  learnedCount: number;
 };
 
 /**
@@ -121,6 +122,16 @@ export const getSrsGlobalStatsAction = cache(async (): Promise<SrsGlobalStats> =
     truefalse: parseFloat(speedSettings.find(s => s.key === 'reading_speed_truefalse')?.value || '7.0'),
   };
 
+  // 7. 学习样本数 (用于阅读速度)
+  const learnedCountRow = db.prepare(`
+    SELECT COUNT(*) as count
+    FROM practice_logs l
+    JOIN questions q ON l.question_id = q.id
+    WHERE l.user_id = ? AND l.is_correct = 1
+    AND (LENGTH(q.content) + LENGTH(COALESCE(q.options, ''))) >= 10
+    AND l.duration_ms >= 1000 AND l.duration_ms <= 60000
+  `).get(user.id) as { count: number };
+
   return {
     totalCards: Object.values(stateDist).reduce((a, b) => a + b, 0),
     stateDistribution: stateDist,
@@ -139,7 +150,8 @@ export const getSrsGlobalStatsAction = cache(async (): Promise<SrsGlobalStats> =
       trueRetention: retentionRow.total > 0 ? (retentionRow.correct / retentionRow.total) * 100 : 100,
       totalReviews: retentionRow.total
     },
-    readingSpeed
+    readingSpeed,
+    learnedCount: learnedCountRow.count
   };
 });
 
@@ -207,4 +219,12 @@ export const getQuestionSrsPredictionsAction = async (questionId: number): Promi
             interval: item.scheduled_days
         };
     });
+};
+/**
+ * 同步历史练习记录到 SRS (冷启动)
+ */
+export const syncSrsDataAction = async () => {
+  const user = await requireUser();
+  const { srsService } = await import('@/lib/services/srs');
+  return await srsService.syncFromPracticeLogs(user.id);
 };

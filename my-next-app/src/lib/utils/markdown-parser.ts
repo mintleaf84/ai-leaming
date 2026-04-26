@@ -1,4 +1,11 @@
 
+import { unified } from 'unified';
+import remarkParse from 'remark-parse';
+import remarkStringify from 'remark-stringify';
+import remarkGfm from 'remark-gfm';
+import remarkMath from 'remark-math';
+import { Root, Content, Heading } from 'mdast';
+
 export interface ParsedChapter {
     title: string;
     content: string;
@@ -7,49 +14,71 @@ export interface ParsedChapter {
 
 /**
  * Split text into chapters based on Markdown headers (#, ##, ###)
+ * Using AST-based parsing for robustness
  */
 export function parseMarkdownToChapters(text: string): ParsedChapter[] {
-    const lines = text.split('\n');
+    if (!text) return [];
+
+    const processor = unified()
+        .use(remarkParse)
+        .use(remarkGfm)
+        .use(remarkMath)
+        .use(remarkStringify);
+    
+    const ast = processor.parse(text) as Root;
     const chapters: ParsedChapter[] = [];
 
-    let currentTitle = '前言';
-    let currentLevel = 1;
-    let currentContent: string[] = [];
+    let currentChapter: ParsedChapter = {
+        title: '前言',
+        content: '',
+        level: 1
+    };
+    
+    let currentContentNodes: Content[] = [];
 
-    // Regex to match headers: # Title, ## Title
-    const headerRegex = /^(#{1,6})\s+(.+)$/;
+    const flushChapter = () => {
+        const content = processor.stringify({
+            type: 'root',
+            children: currentContentNodes
+        } as Root).trim();
 
-    for (const line of lines) {
-        const match = line.match(headerRegex);
-        if (match) {
-            // If we have accumulated content for the previous section, save it
-            if (currentContent.length > 0 || currentTitle !== '前言') {
-                chapters.push({
-                    title: currentTitle,
-                    content: currentContent.join('\n').trim(),
-                    level: currentLevel
-                });
-            }
+        if (currentChapter.title !== '前言' || content) {
+            chapters.push({
+                ...currentChapter,
+                content
+            });
+        }
+    };
 
-            // Start new section
-            currentLevel = match[1].length;
-            currentTitle = match[2].trim();
-            currentContent = [];
+    for (const node of ast.children) {
+        if (node.type === 'heading') {
+            // Found a new heading - flush previous chapter
+            flushChapter();
+
+            // Start new chapter
+            const headingNode = node as Heading;
+            // Convert heading children back to text for the title
+            const title = processor.stringify({
+                type: 'root',
+                children: headingNode.children as Content[]
+            } as Root).trim();
+
+            currentChapter = {
+                title,
+                level: headingNode.depth,
+                content: ''
+            };
+            currentContentNodes = [];
         } else {
-            currentContent.push(line);
+            // Accumulate content nodes
+            currentContentNodes.push(node);
         }
     }
 
-    // Push the last chapter
-    if (currentContent.length > 0 || currentTitle) {
-        chapters.push({
-            title: currentTitle,
-            content: currentContent.join('\n').trim(),
-            level: currentLevel
-        });
-    }
+    // Flush last chapter
+    flushChapter();
 
-    // Remove empty '前言' if it has no content (often happens if file starts with # Title)
+    // Remove empty '前言' if it has no content
     if (chapters.length > 0 && chapters[0].title === '前言' && !chapters[0].content) {
         chapters.shift();
     }

@@ -61,4 +61,18 @@ describe('parseMarkdownToChapters（Markdown 解析为章节）', () => {
         expect(result).toHaveLength(1);
         expect(result[0].content).toBe('');
     });
+
+    it('不应解析代码块内部的 # 为章节标题', () => {
+        const md = '# 第一章\n\n```python\n# 这是一个注释\nprint("Hello")\n```\n\n## 第二章';
+        const result = parseMarkdownToChapters(md);
+
+        // 如果解析正确，应该只有 2 个章节
+        expect(result).toHaveLength(2);
+        expect(result[0].title).toBe('第一章');
+        expect(result[1].title).toBe('第二章');
+        
+        // 验证代码块内容被完整保留在第一章
+        expect(result[0].content).toContain('```python');
+        expect(result[0].content).toContain('# 这是一个注释');
+    });
 });

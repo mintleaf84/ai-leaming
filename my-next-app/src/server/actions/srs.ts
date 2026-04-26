@@ -30,6 +30,11 @@ export type SrsGlobalStats = {
     trueRetention: number;
     totalReviews: number;
   };
+  readingSpeed: {
+    base: number;
+    multi: number;
+    truefalse: number;
+  };
 };
 
 /**
@@ -104,6 +109,19 @@ export const getSrsGlobalStatsAction = cache(async (): Promise<SrsGlobalStats> =
     WHERE user_id = ? AND timestamp > datetime('now', '-30 days')
   `).get(user.id) as { total: number; correct: number };
 
+  // 6. 个体阅读速度
+  const speedSettings = db.prepare(`
+    SELECT key, value 
+    FROM system_settings 
+    WHERE user_id = ? AND key LIKE 'reading_speed_%'
+  `).all(user.id) as { key: string; value: string }[];
+
+  const readingSpeed = {
+    base: parseFloat(speedSettings.find(s => s.key === 'reading_speed_base')?.value || '7.0'),
+    multi: parseFloat(speedSettings.find(s => s.key === 'reading_speed_multi')?.value || '7.0'),
+    truefalse: parseFloat(speedSettings.find(s => s.key === 'reading_speed_truefalse')?.value || '7.0'),
+  };
+
   return {
     totalCards: Object.values(stateDist).reduce((a, b) => a + b, 0),
     stateDistribution: stateDist,
@@ -121,7 +139,8 @@ export const getSrsGlobalStatsAction = cache(async (): Promise<SrsGlobalStats> =
     retentionStats: {
       trueRetention: retentionRow.total > 0 ? (retentionRow.correct / retentionRow.total) * 100 : 100,
       totalReviews: retentionRow.total
-    }
+    },
+    readingSpeed
   };
 });
 

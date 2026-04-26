@@ -180,9 +180,49 @@ export default function SrsAnalysisClient({ stats }: { stats: SrsGlobalStats }) 
                 </CardContent>
             </Card>
 
-            {/* Explanation Section */}
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                <div className="p-6 rounded-3xl bg-primary/5 border border-primary/10">
+            {/* Cognitive Efficiency & Explanation Section */}
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                <Card className="md:col-span-1 border-border/50 shadow-sm overflow-hidden flex flex-col">
+                    <CardHeader className="border-b border-border/50 bg-muted/20 pb-4">
+                        <CardTitle className="text-base flex items-center gap-2">
+                            <Zap className="w-4 h-4 text-amber-500" />
+                            认知效率分析
+                        </CardTitle>
+                        <CardDescription>算法根据您的答题表现实时估算的阅读速度</CardDescription>
+                    </CardHeader>
+                    <CardContent className="pt-6 flex-1 flex flex-col justify-between">
+                        <div className="space-y-4">
+                            <div className="flex items-center justify-between">
+                                <span className="text-sm text-muted-foreground">基础阅读速度</span>
+                                <div className="flex items-end gap-1">
+                                    <span className="text-xl font-bold">{stats.readingSpeed.base.toFixed(1)}</span>
+                                    <span className="text-[10px] text-muted-foreground mb-1">字/s</span>
+                                </div>
+                            </div>
+                            <div className="flex items-center justify-between">
+                                <span className="text-sm text-muted-foreground">多选题效率</span>
+                                <div className="flex items-end gap-1">
+                                    <span className="text-xl font-bold">{stats.readingSpeed.multi.toFixed(1)}</span>
+                                    <span className="text-[10px] text-muted-foreground mb-1">字/s</span>
+                                </div>
+                            </div>
+                            <div className="flex items-center justify-between">
+                                <span className="text-sm text-muted-foreground">判断题效率</span>
+                                <div className="flex items-end gap-1">
+                                    <span className="text-xl font-bold">{stats.readingSpeed.truefalse.toFixed(1)}</span>
+                                    <span className="text-[10px] text-muted-foreground mb-1">字/s</span>
+                                </div>
+                            </div>
+                        </div>
+                        <div className="mt-6 pt-4 border-t border-border/50">
+                            <p className="text-[10px] text-muted-foreground italic">
+                                * 阅读速度越快，算法分配给“思考”的时间比例就越高，评分越灵敏。
+                            </p>
+                        </div>
+                    </CardContent>
+                </Card>
+
+                <div className="md:col-span-1 p-6 rounded-3xl bg-primary/5 border border-primary/10">
                     <h4 className="font-bold flex items-center gap-2 mb-3">
                         <AlertCircle className="w-4 h-4 text-primary" />
                         什么是稳定性 (Stability)?
@@ -193,7 +233,7 @@ export default function SrsAnalysisClient({ stats }: { stats: SrsGlobalStats }) 
                         每一次成功的复习都会显著增加稳定性。
                     </p>
                 </div>
-                <div className="p-6 rounded-3xl bg-amber-500/5 border border-amber-500/10">
+                <div className="md:col-span-1 p-6 rounded-3xl bg-amber-500/5 border border-amber-500/10">
                     <h4 className="font-bold flex items-center gap-2 mb-3 text-amber-700 dark:text-amber-400">
                         <Zap className="w-4 h-4" />
                         难度 (Difficulty) 是如何计算的?

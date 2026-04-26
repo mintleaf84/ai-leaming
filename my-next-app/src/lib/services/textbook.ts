@@ -108,7 +108,7 @@ export const textbookService = {
 
         // Index to RAG with semantic chunking
         if (data.content && data.content.trim().length > 0) {
-            const chunks = splitText(data.content);
+            const chunks = await splitText(data.content);
             console.log(`[RAG] Split chapter "${data.title}" into ${chunks.length} chunks.`);
 
             for (let i = 0; i < chunks.length; i++) {
@@ -156,7 +156,7 @@ export const textbookService = {
             ragService.deleteChunksBySource('textbook_chapter', id);
 
             if (content && content.trim().length > 0) {
-                const chunks = splitText(content);
+                const chunks = await splitText(content);
                 console.log(`[RAG] Re-split chapter "${chapter.title}" into ${chunks.length} chunks.`);
 
                 for (let i = 0; i < chunks.length; i++) {

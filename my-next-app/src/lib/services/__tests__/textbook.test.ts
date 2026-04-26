@@ -29,7 +29,7 @@ vi.mock('fs', () => ({
         mkdirSync: vi.fn(),
     }
 }));
-vi.mock('@/lib/utils/text-splitter', () => ({ splitText: (t: string) => [t] }));
+vi.mock('@/lib/utils/text-splitter', () => ({ splitText: async (t: string) => [t] }));
 
 describe('Textbook Service', () => {
     beforeEach(() => {

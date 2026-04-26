@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
-import { useRouter } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 import {
     Brain,
@@ -15,7 +15,8 @@ import {
     Loader2,
     Tag,
     BookOpen,
-    CheckCircle2
+    CheckCircle2,
+    AlertCircle
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
@@ -38,6 +39,7 @@ import { KeypointTree } from '@/components/practice/KeypointTree';
 const ModeIcons: Record<PracticeMode, React.ReactNode> = {
     smart: <Brain className="w-6 h-6" />,
     review: <RotateCcw className="w-6 h-6" />,
+    mistakes: <AlertCircle className="w-6 h-6" />,
     focus: <Target className="w-6 h-6" />,
     exam: <FileCheck className="w-6 h-6" />,
     random: <Shuffle className="w-6 h-6" />
@@ -47,6 +49,7 @@ const ModeIcons: Record<PracticeMode, React.ReactNode> = {
 const ModeColors: Record<PracticeMode, string> = {
     smart: 'from-blue-500 to-indigo-600',
     review: 'from-amber-500 to-orange-600',
+    mistakes: 'from-rose-500 to-red-600',
     focus: 'from-green-500 to-emerald-600',
     exam: 'from-purple-500 to-violet-600',
     random: 'from-pink-500 to-rose-600'
@@ -59,20 +62,35 @@ export default function PracticeSetupPage() {
     const [loading, setLoading] = useState(true);
     const [showAdvanced, setShowAdvanced] = useState(false);
 
-    // 加载可用标签
+    const searchParams = useSearchParams();
+
+    // 加载可用标签并处理初始模式
     useEffect(() => {
-        const loadTags = async () => {
+        const init = async () => {
             try {
+                // 处理初始模式
+                const initialMode = searchParams.get('mode') as PracticeMode;
+                if (initialMode && PRESET_CONFIGS[initialMode]) {
+                    const preset = PRESET_CONFIGS[initialMode];
+                    setConfig(prev => ({
+                        ...prev,
+                        mode: initialMode,
+                        limit: preset.limit ?? prev.limit,
+                        enableReview: preset.enableReview ?? prev.enableReview,
+                        enableTimer: preset.enableTimer ?? prev.enableTimer
+                    }));
+                }
+
                 const tags = await getAvailableTagsAction();
                 setAvailableTags(tags);
             } catch (error) {
-                console.error('加载标签失败', error);
+                console.error('加载初始化数据失败', error);
             } finally {
                 setLoading(false);
             }
         };
-        loadTags();
-    }, []);
+        init();
+    }, [searchParams]);
 
     // 切换模式时应用预设配置
     const handleModeChange = (mode: PracticeMode) => {

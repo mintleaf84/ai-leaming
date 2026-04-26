@@ -7,7 +7,7 @@ import {
 } from 'recharts';
 import { 
     Brain, Target, Zap, Clock, Calendar, 
-    TrendingUp, ShieldCheck, AlertCircle, Info, ChevronRight
+    TrendingUp, ShieldCheck, AlertCircle, Info, ChevronRight, RotateCcw
 } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -76,7 +76,7 @@ export default function SrsAnalysisClient({ stats }: { stats: SrsGlobalStats }) 
                     { label: '总掌握题目', value: stats.totalCards, icon: Target, color: 'text-blue-500', bg: 'bg-blue-500/10' },
                     { label: '真实保留率', value: `${stats.retentionStats.trueRetention.toFixed(1)}%`, icon: TrendingUp, color: 'text-emerald-500', bg: 'bg-emerald-500/10', sub: `近 30 天 ${stats.retentionStats.totalReviews} 次复习` },
                     { label: '当前稳定性', value: stats.stabilityDistribution[stats.stabilityDistribution.length - 1].count > 0 ? '极佳' : '稳步提升', icon: Zap, color: 'text-amber-500', bg: 'bg-amber-500/10' },
-                    { label: '今日待复习', value: stats.futureReviews[0]?.count || 0, icon: Clock, color: 'text-purple-500', bg: 'bg-purple-500/10' },
+                    { label: '待复习错题', value: stats.futureReviews[0]?.count || 0, icon: Clock, color: 'text-purple-500', bg: 'bg-purple-500/10', sub: stats.futureReviews[0] ? `预计耗时 ${stats.futureReviews[0].estimatedMinutes} min` : '暂无待办' },
                 ].map((m, i) => (
                     <Card key={i} className="border-border/50 bg-card/50 backdrop-blur-sm">
                         <CardContent className="pt-6">
@@ -169,9 +169,9 @@ export default function SrsAnalysisClient({ stats }: { stats: SrsGlobalStats }) 
                 <CardHeader className="border-b border-border/50 bg-muted/20">
                     <CardTitle className="text-base flex items-center gap-2">
                         <Calendar className="w-4 h-4 text-primary" />
-                        未来复习计划预估
+                        未来错题复习预估
                     </CardTitle>
-                    <CardDescription>根据 FSRS 算法预测未来一周的每日复习量</CardDescription>
+                    <CardDescription>根据 FSRS 算法预测未来一周历史错题的复习量与耗时</CardDescription>
                 </CardHeader>
                 <CardContent className="pt-6 h-[260px]">
                     <ResponsiveContainer width="100%" height="100%">
@@ -194,8 +194,14 @@ export default function SrsAnalysisClient({ stats }: { stats: SrsGlobalStats }) 
                             <YAxis axisLine={false} tickLine={false} fontSize={10} tick={{ fill: '#888' }} />
                             <RechartsTooltip 
                                 contentStyle={{ borderRadius: '12px', border: 'none', boxShadow: '0 10px 15px -3px rgb(0 0 0 / 0.1)' }}
+                                labelFormatter={(label) => `日期: ${label}`}
+                                formatter={(value, name) => [
+                                    name === 'count' ? `${value} 题` : `${value} min`,
+                                    name === 'count' ? '复习数量' : '预计耗时'
+                                ]}
                             />
                             <Area type="monotone" dataKey="count" stroke="#3b82f6" strokeWidth={2} fillOpacity={1} fill="url(#colorCount)" />
+                            <Area type="monotone" dataKey="estimatedMinutes" stroke="#8b5cf6" strokeWidth={2} fill="transparent" strokeDasharray="5 5" />
                         </AreaChart>
                     </ResponsiveContainer>
                 </CardContent>
@@ -276,6 +282,45 @@ export default function SrsAnalysisClient({ stats }: { stats: SrsGlobalStats }) 
                         算法会自动调高难度；反之，如果您能瞬间秒杀，难度会逐渐降低。
                     </p>
                 </div>
+            </div>
+            
+            {/* Action Area */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <Card 
+                    className="cursor-pointer border-primary/20 bg-primary/5 hover:bg-primary/10 transition-all hover:scale-[1.02] active:scale-[0.98] group"
+                    onClick={() => router.push('/practice/setup?mode=review')}
+                >
+                    <CardContent className="p-6 flex items-center gap-4">
+                        <div className="p-3 rounded-2xl bg-primary text-white shadow-lg shadow-primary/20">
+                            <RotateCcw className="w-6 h-6" />
+                        </div>
+                        <div className="flex-1">
+                            <h3 className="font-bold text-lg flex items-center justify-between">
+                                开始记忆复习
+                                <ChevronRight className="w-5 h-5 text-muted-foreground group-hover:translate-x-1 transition-transform" />
+                            </h3>
+                            <p className="text-xs text-muted-foreground mt-1">基于 FSRS 算法，优先复习即将遗忘的知识点</p>
+                        </div>
+                    </CardContent>
+                </Card>
+
+                <Card 
+                    className="cursor-pointer border-rose-500/20 bg-rose-500/5 hover:bg-rose-500/10 transition-all hover:scale-[1.02] active:scale-[0.98] group"
+                    onClick={() => router.push('/practice/setup?mode=mistakes')}
+                >
+                    <CardContent className="p-6 flex items-center gap-4">
+                        <div className="p-3 rounded-2xl bg-rose-500 text-white shadow-lg shadow-rose-500/20">
+                            <AlertCircle className="w-6 h-6" />
+                        </div>
+                        <div className="flex-1">
+                            <h3 className="font-bold text-lg flex items-center justify-between">
+                                错题专项强化
+                                <ChevronRight className="w-5 h-5 text-muted-foreground group-hover:translate-x-1 transition-transform" />
+                            </h3>
+                            <p className="text-xs text-muted-foreground mt-1">专门针对历史练习中做错的题目进行强化练习</p>
+                        </div>
+                    </CardContent>
+                </Card>
             </div>
         </div>
     );

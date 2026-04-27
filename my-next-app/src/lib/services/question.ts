@@ -6,6 +6,16 @@ import { QuestionRowSchema } from '@/lib/schemas';
 import logger from '@/lib/logger';
 
 /**
+ * 题目摘要（用于卡片展示）
+ */
+export interface QuestionSummary {
+    id: number;
+    content: string;      // 题目内容（截取前 100 字）
+    type: string;         // 题型
+    tags: string[];       // 知识点标签
+}
+
+/**
  * 将数据库原始行映射为业务 Question 类型
  */
 function mapQuestion(q: any): Question {
@@ -21,6 +31,18 @@ function mapQuestion(q: any): Question {
             dimension: q.dimension || 'knowledge'
         } as Question;
     }
+}
+
+/**
+ * 将题目对象映射为摘要对象
+ */
+function mapToSummary(q: Question): QuestionSummary {
+    return {
+        id: q.id,
+        content: q.content.slice(0, 100) + (q.content.length > 100 ? '...' : ''),
+        type: q.type,
+        tags: q.tags,
+    };
 }
 
 export interface QuestionFilter {
@@ -66,6 +88,14 @@ export const questionService = {
             where: eq(drizzleSchema.questions.id, id)
         });
         return result ? mapQuestion(result) : null;
+    },
+
+    /**
+     * 获取题目摘要
+     */
+    async getSummary(id: number): Promise<QuestionSummary | null> {
+        const q = await this.getById(id);
+        return q ? mapToSummary(q) : null;
     },
 
     /**

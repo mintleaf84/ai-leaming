@@ -1,6 +1,7 @@
 import { OpenAPIHono, createRoute, z } from '@hono/zod-openapi'
 import { authMiddleware, getCurrentUser } from '@/lib/api/middlewares/auth'
-import { db } from '@/lib/db'
+import { drizzleDb, drizzleSchema } from '@/lib/db'
+import { eq, and, asc } from 'drizzle-orm'
 
 const app = new OpenAPIHono()
 
@@ -33,12 +34,20 @@ app.openapi(listAnnotationsDef, async (c) => {
     if (!user) return c.json({ error: 'Unauthorized' }, 401)
     
     const { questionId } = c.req.valid('query')
-    const annotations = db.prepare(`
-        SELECT id, start_offset as startOffset, end_offset as endOffset, tag, color, created_at
-        FROM text_annotations
-        WHERE user_id = ? AND question_id = ?
-        ORDER BY start_offset ASC
-    `).all(user.id, parseInt(questionId))
+    const annotations = await drizzleDb.select({
+        id: drizzleSchema.text_annotations.id,
+        startOffset: drizzleSchema.text_annotations.start_offset,
+        endOffset: drizzleSchema.text_annotations.end_offset,
+        tag: drizzleSchema.text_annotations.tag,
+        color: drizzleSchema.text_annotations.color,
+        created_at: drizzleSchema.text_annotations.created_at
+    })
+    .from(drizzleSchema.text_annotations)
+    .where(and(
+        eq(drizzleSchema.text_annotations.user_id, user.id),
+        eq(drizzleSchema.text_annotations.question_id, parseInt(questionId))
+    ))
+    .orderBy(asc(drizzleSchema.text_annotations.start_offset));
 
     return c.json({ annotations })
 })
@@ -74,10 +83,26 @@ app.openapi(createAnnotationDef, async (c) => {
     if (!user) return c.json({ error: 'Unauthorized' }, 401)
 
     const { questionId, startOffset, endOffset, tag, color } = c.req.valid('json')
-    const result = db.prepare(`
-        INSERT OR REPLACE INTO text_annotations (user_id, question_id, start_offset, end_offset, tag, color)
-        VALUES (?, ?, ?, ?, ?, ?)
-    `).run(user.id, questionId, startOffset, endOffset, tag, color || null)
+    
+    const result = await drizzleDb.insert(drizzleSchema.text_annotations).values({
+        user_id: user.id,
+        question_id: questionId,
+        start_offset: startOffset,
+        end_offset: endOffset,
+        tag: tag,
+        color: color || null
+    }).onConflictDoUpdate({
+        target: [
+            drizzleSchema.text_annotations.user_id,
+            drizzleSchema.text_annotations.question_id,
+            drizzleSchema.text_annotations.start_offset,
+            drizzleSchema.text_annotations.end_offset
+        ],
+        set: {
+            tag: tag,
+            color: color || null
+        }
+    });
 
     return c.json({ id: Number(result.lastInsertRowid), message: '标注已保存' })
 })
@@ -103,12 +128,13 @@ app.openapi(deleteAnnotationDef, async (c) => {
     if (!user) return c.json({ error: 'Unauthorized' }, 401)
 
     const { id } = c.req.valid('query')
-    const result = db.prepare(`
-        DELETE FROM text_annotations
-        WHERE id = ? AND user_id = ?
-    `).run(parseInt(id), user.id)
+    const result = await drizzleDb.delete(drizzleSchema.text_annotations)
+        .where(and(
+            eq(drizzleSchema.text_annotations.id, parseInt(id)),
+            eq(drizzleSchema.text_annotations.user_id, user.id)
+        ));
 
-    if (result.changes === 0) return c.json({ error: '标注不存在或无权删除' }, 404)
+    if (result.rowsAffected === 0) return c.json({ error: '标注不存在或无权删除' }, 404)
     return c.json({ message: '标注已删除' })
 })
 

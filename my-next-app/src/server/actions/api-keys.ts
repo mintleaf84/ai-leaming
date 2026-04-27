@@ -1,7 +1,8 @@
 'use server';
 import logger from '@/lib/logger';
 
-import { db,  drizzleDb, drizzleSchema } from '@/lib/db';
+import { drizzleDb } from '@/lib/db';
+import { api_keys } from '@/lib/db/drizzle-schema';
 import { eq, desc, sql } from 'drizzle-orm';
 import { requireRole } from '@/lib/auth/auth';
 import { logAdminAction } from '@/lib/admin/audit';
@@ -23,12 +24,12 @@ export interface ApiKeyView {
 export async function getApiKeysAction(): Promise<ApiKeyView[]> {
     await requireRole(['admin']);
     try {
-        const rows = await drizzleDb.query.api_keys.findMany({
-            orderBy: [desc(drizzleSchema.api_keys.created_at)]
-        });
+        const rows = await drizzleDb.select()
+            .from(api_keys)
+            .orderBy(desc(api_keys.created_at));
         return rows as ApiKeyView[];
     } catch (error) {
-        logger.error({ err: error }, '[ApiKeys] 获取列表失败');
+        logger.error({ err: error }, '[Admin][ApiKeys] 获取列表失败');
         return [];
     }
 }
@@ -44,7 +45,7 @@ export async function createApiKeyAction(
         // 生成 32 字节的随机密钥（以 hex 编码，共 64 字符）
         const keyString = `sk_${crypto.randomBytes(24).toString('hex')}`;
 
-        await drizzleDb.insert(drizzleSchema.api_keys).values({
+        await drizzleDb.insert(api_keys).values({
             key_string: keyString,
             description: description || '未命名密钥'
         });
@@ -53,7 +54,7 @@ export async function createApiKeyAction(
 
         return { success: true, key: keyString };
     } catch (error: unknown) {
-        logger.error({ err: error }, '[ApiKeys] 创建失败');
+        logger.error({ err: error }, '[Admin][ApiKeys] 创建失败');
         return { success: false, error: getErrorMessage(error) };
     }
 }
@@ -67,12 +68,12 @@ export async function toggleApiKeyAction(
 ): Promise<{ success: boolean; error?: string }> {
     const user = await requireRole(['admin']);
     try {
-        await drizzleDb.update(drizzleSchema.api_keys)
+        await drizzleDb.update(api_keys)
             .set({ 
                 is_active: isActive ? 1 : 0, 
                 updated_at: sql`CURRENT_TIMESTAMP` 
             })
-            .where(eq(drizzleSchema.api_keys.id, id));
+            .where(eq(api_keys.id, id));
 
         logAdminAction(user.id, user.username, 'TOGGLE_API_KEY', 'api_key', id.toString(), {
             is_active: isActive,
@@ -80,7 +81,7 @@ export async function toggleApiKeyAction(
 
         return { success: true };
     } catch (error: unknown) {
-        logger.error({ err: error }, '[ApiKeys] 切换状态失败');
+        logger.error({ err: error }, '[Admin][ApiKeys] 切换状态失败');
         return { success: false, error: getErrorMessage(error) };
     }
 }
@@ -93,14 +94,14 @@ export async function deleteApiKeyAction(
 ): Promise<{ success: boolean; error?: string }> {
     const user = await requireRole(['admin']);
     try {
-        await drizzleDb.delete(drizzleSchema.api_keys)
-            .where(eq(drizzleSchema.api_keys.id, id));
+        await drizzleDb.delete(api_keys)
+            .where(eq(api_keys.id, id));
 
         logAdminAction(user.id, user.username, 'DELETE_API_KEY', 'api_key', id.toString());
 
         return { success: true };
     } catch (error: unknown) {
-        logger.error({ err: error }, '[ApiKeys] 删除失败');
+        logger.error({ err: error }, '[Admin][ApiKeys] 删除失败');
         return { success: false, error: getErrorMessage(error) };
     }
 }

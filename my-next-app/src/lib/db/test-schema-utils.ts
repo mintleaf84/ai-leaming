@@ -3,6 +3,7 @@ import Database from 'better-sqlite3';
 /**
  * 仅供集成测试使用的基础表结构定义。
  * 它反映了数据库的核心字段，用于测试复杂的原生 SQL 逻辑。
+ * 注意：必须与 src/lib/db/drizzle-schema.ts 保持关键字段同步。
  */
 export function createTestTables(db: Database.Database) {
     db.exec(`
@@ -10,6 +11,8 @@ export function createTestTables(db: Database.Database) {
             id INTEGER PRIMARY KEY AUTOINCREMENT,
             username TEXT UNIQUE NOT NULL,
             password_hash TEXT NOT NULL,
+            role TEXT DEFAULT 'student',
+            token_version INTEGER DEFAULT 0,
             created_at DATETIME DEFAULT CURRENT_TIMESTAMP
         );
 
@@ -22,7 +25,7 @@ export function createTestTables(db: Database.Database) {
             tags TEXT,    -- JSON array
             type TEXT DEFAULT 'single',
             dimension TEXT DEFAULT 'knowledge',
-            difficulty INTEGER DEFAULT 1,
+            difficulty REAL DEFAULT 1.0,
             created_at DATETIME DEFAULT CURRENT_TIMESTAMP
         );
 
@@ -40,28 +43,33 @@ export function createTestTables(db: Database.Database) {
         );
 
         CREATE TABLE IF NOT EXISTS user_mastery (
-            id INTEGER PRIMARY KEY AUTOINCREMENT,
             user_id INTEGER NOT NULL,
             tag_name TEXT NOT NULL,
-            dimension TEXT,
-            score INTEGER DEFAULT 0,
+            score REAL DEFAULT 0,
             correct_count INTEGER DEFAULT 0,
             total_count INTEGER DEFAULT 0,
+            history TEXT,
             last_updated DATETIME DEFAULT CURRENT_TIMESTAMP,
-            created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-            updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-            UNIQUE(user_id, tag_name),
+            PRIMARY KEY(user_id, tag_name),
             FOREIGN KEY(user_id) REFERENCES users(id)
         );
 
         CREATE TABLE IF NOT EXISTS observation_zone (
-            id INTEGER PRIMARY KEY AUTOINCREMENT,
             user_id INTEGER NOT NULL,
             tag_name TEXT NOT NULL,
             reason TEXT,
             status TEXT DEFAULT 'active',
-            created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+            entered_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+            PRIMARY KEY(user_id, tag_name),
+            FOREIGN KEY(user_id) REFERENCES users(id)
+        );
+
+        CREATE TABLE IF NOT EXISTS system_settings (
+            user_id INTEGER NOT NULL,
+            key TEXT NOT NULL,
+            value TEXT,
             updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+            PRIMARY KEY(user_id, key),
             FOREIGN KEY(user_id) REFERENCES users(id)
         );
     `);

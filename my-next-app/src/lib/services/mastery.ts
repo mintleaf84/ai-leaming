@@ -1,4 +1,5 @@
-import { db } from '@/lib/db';
+import { drizzleDb, drizzleSchema } from '@/lib/db';
+import { eq, and, sql, or, like } from 'drizzle-orm';
 
 const DIMENSION_ORDER = ['knowledge', 'understanding', 'application'] as const;
 type Dimension = typeof DIMENSION_ORDER[number];
@@ -18,38 +19,52 @@ export interface MasteryTreeNode {
   children: MasteryTreeNode[];
 }
 
+/**
+ * 掌握度服务 (Drizzle LibSQL 版)
+ */
 export const masteryService = {
   /**
    * 更新指定标签的掌握度（准确率算法）
    * score = (correct_count / total_count) × 100
    */
-  updateMastery: (userId: number, tagName: string, _dimension: Dimension, isCorrect: boolean, isMonitoredCorrect: boolean = false): MasteryUpdateResult[] => {
+  updateMastery: async (userId: number, tagName: string, _dimension: Dimension, isCorrect: boolean, isMonitoredCorrect: boolean = false): Promise<MasteryUpdateResult[]> => {
     const incCorrect = (isCorrect && !isMonitoredCorrect) ? 1 : 0;
 
-    // 1. 先读取当前状态，以计算 previousScore 和 change
-    const current = db.prepare(
-      'SELECT score, correct_count, total_count FROM user_mastery WHERE user_id = ? AND tag_name = ?'
-    ).get(userId, tagName) as { score: number; correct_count: number; total_count: number } | undefined;
+    // 1. 先读取当前状态
+    const [current] = await drizzleDb.select()
+      .from(drizzleSchema.user_mastery)
+      .where(and(
+        eq(drizzleSchema.user_mastery.user_id, userId),
+        eq(drizzleSchema.user_mastery.tag_name, tagName)
+      ))
+      .limit(1);
 
     const prevCorrect = current?.correct_count ?? 0;
     const prevTotal = current?.total_count ?? 0;
     const previousScore = current?.score ?? 0;
 
-    // 2. 在 JS 层计算新分数，保持透明可测
+    // 2. 在 JS 层计算新分数
     const newCorrect = prevCorrect + incCorrect;
     const newTotal = prevTotal + 1;
     const newScore = (newCorrect / newTotal) * 100;
 
-    // 3. 原子化写入（Thread Safe）
-    db.prepare(`
-      INSERT INTO user_mastery (user_id, tag_name, score, correct_count, total_count, last_updated) 
-      VALUES (?, ?, ?, ?, ?, CURRENT_TIMESTAMP)
-      ON CONFLICT(user_id, tag_name) DO UPDATE SET 
-        correct_count = ?,
-        total_count = ?,
-        score = ?,
-        last_updated = CURRENT_TIMESTAMP
-    `).run(userId, tagName, newScore, newCorrect, newTotal, newCorrect, newTotal, newScore);
+    // 3. 原子化写入 (Upsert)
+    await drizzleDb.insert(drizzleSchema.user_mastery).values({
+      user_id: userId,
+      tag_name: tagName,
+      score: newScore,
+      correct_count: newCorrect,
+      total_count: newTotal,
+      last_updated: sql`CURRENT_TIMESTAMP`
+    }).onConflictDoUpdate({
+      target: [drizzleSchema.user_mastery.user_id, drizzleSchema.user_mastery.tag_name],
+      set: {
+        correct_count: newCorrect,
+        total_count: newTotal,
+        score: newScore,
+        last_updated: sql`CURRENT_TIMESTAMP`
+      }
+    });
 
     return [{ 
       tagName, 
@@ -59,33 +74,50 @@ export const masteryService = {
     }];
   },
 
-  getMastery: (userId: number, tagName: string): number => {
-    const row = db.prepare('SELECT score FROM user_mastery WHERE user_id = ? AND tag_name = ?').get(userId, tagName) as { score: number } | undefined;
+  /**
+   * 获取单体掌握度
+   */
+  getMastery: async (userId: number, tagName: string): Promise<number> => {
+    const [row] = await drizzleDb.select({ score: drizzleSchema.user_mastery.score })
+      .from(drizzleSchema.user_mastery)
+      .where(and(
+        eq(drizzleSchema.user_mastery.user_id, userId),
+        eq(drizzleSchema.user_mastery.tag_name, tagName)
+      ))
+      .limit(1);
     return row?.score ?? 0;
   },
 
   /**
    * 获取某个知识点及其所有子知识点的平均掌握度
    */
-  getHierarchyMastery: (userId: number, parentPath: string): { avgScore: number; count: number } => {
-    const result = db.prepare(`
-      SELECT AVG(score) as avgScore, COUNT(*) as count 
-      FROM user_mastery 
-      WHERE user_id = ? AND (tag_name = ? OR tag_name LIKE ?)
-    `).get(userId, parentPath, parentPath + '/%') as { avgScore: number | null; count: number };
-    return { avgScore: result.avgScore ?? 0, count: result.count };
+  getHierarchyMastery: async (userId: number, parentPath: string): Promise<{ avgScore: number; count: number }> => {
+    const [result] = await drizzleDb.select({ 
+        avgScore: sql<number>`AVG(${drizzleSchema.user_mastery.score})`, 
+        count: sql<number>`COUNT(*)` 
+      })
+      .from(drizzleSchema.user_mastery)
+      .where(and(
+        eq(drizzleSchema.user_mastery.user_id, userId),
+        or(
+          eq(drizzleSchema.user_mastery.tag_name, parentPath),
+          like(drizzleSchema.user_mastery.tag_name, parentPath + '/%')
+        )
+      ));
+    return { avgScore: result?.avgScore ?? 0, count: result?.count ?? 0 };
   },
 
   /**
    * 获取知识点树形结构
    */
-  getMasteryTree: (userId: number): MasteryTreeNode[] => {
-    const rows = db.prepare(`
-      SELECT tag_name, score 
-      FROM user_mastery 
-      WHERE user_id = ?
-      ORDER BY tag_name
-    `).all(userId) as { tag_name: string; score: number }[];
+  getMasteryTree: async (userId: number): Promise<MasteryTreeNode[]> => {
+    const rows = await drizzleDb.select({ 
+        tag_name: drizzleSchema.user_mastery.tag_name, 
+        score: drizzleSchema.user_mastery.score 
+      })
+      .from(drizzleSchema.user_mastery)
+      .where(eq(drizzleSchema.user_mastery.user_id, userId))
+      .orderBy(drizzleSchema.user_mastery.tag_name);
 
     // 构建树形结构
     const nodeMap = new Map<string, MasteryTreeNode>();
@@ -96,7 +128,7 @@ export const masteryService = {
       const node: MasteryTreeNode = {
         name: parts[parts.length - 1],
         path: row.tag_name,
-        score: row.score,
+        score: row.score || 0,
         level: parts.length - 1,
         children: []
       };

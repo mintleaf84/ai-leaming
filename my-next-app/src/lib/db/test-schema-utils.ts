@@ -5,72 +5,107 @@ import Database from 'better-sqlite3';
  * 它反映了数据库的核心字段，用于测试复杂的原生 SQL 逻辑。
  * 注意：必须与 src/lib/db/drizzle-schema.ts 保持关键字段同步。
  */
+export const TEST_SCHEMA_SQL = `
+    CREATE TABLE IF NOT EXISTS users (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        username TEXT UNIQUE NOT NULL,
+        password_hash TEXT NOT NULL,
+        role TEXT DEFAULT 'student',
+        token_version INTEGER DEFAULT 0,
+        created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+    );
+
+    CREATE TABLE IF NOT EXISTS questions (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        content TEXT NOT NULL,
+        options TEXT,
+        answer TEXT,
+        explanation TEXT,
+        tags TEXT,
+        dimension TEXT,
+        type TEXT DEFAULT 'single',
+        source TEXT,
+        correct_ratio REAL,
+        most_wrong_answer TEXT,
+        material TEXT,
+        material_html TEXT,
+        ai_mnemonic TEXT,
+        external_id TEXT UNIQUE,
+        created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+    );
+
+    CREATE TABLE IF NOT EXISTS practice_sessions (
+        id TEXT PRIMARY KEY,
+        user_id INTEGER NOT NULL REFERENCES users(id),
+        session_name TEXT,
+        total_questions INTEGER DEFAULT 0,
+        correct_count INTEGER DEFAULT 0,
+        review_count INTEGER DEFAULT 0,
+        questions_json TEXT,
+        practice_mode TEXT,
+        is_demo INTEGER DEFAULT 0,
+        analysis_report TEXT,
+        total_duration_ms INTEGER DEFAULT 0,
+        created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+    );
+
+    CREATE TABLE IF NOT EXISTS practice_logs (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        session_id TEXT REFERENCES practice_sessions(id),
+        user_id INTEGER NOT NULL REFERENCES users(id),
+        question_id INTEGER NOT NULL REFERENCES questions(id),
+        user_answer TEXT,
+        is_correct INTEGER NOT NULL,
+        is_monitored_correct INTEGER DEFAULT 0,
+        duration_ms INTEGER,
+        timestamp DATETIME DEFAULT CURRENT_TIMESTAMP
+    );
+
+    CREATE TABLE IF NOT EXISTS user_mastery (
+        user_id INTEGER NOT NULL REFERENCES users(id),
+        tag_name TEXT NOT NULL,
+        score REAL DEFAULT 0,
+        correct_count INTEGER DEFAULT 0,
+        total_count INTEGER DEFAULT 0,
+        history TEXT,
+        last_updated DATETIME DEFAULT CURRENT_TIMESTAMP,
+        PRIMARY KEY(user_id, tag_name)
+    );
+
+    CREATE TABLE IF NOT EXISTS observation_zone (
+        user_id INTEGER NOT NULL REFERENCES users(id),
+        tag_name TEXT NOT NULL,
+        reason TEXT,
+        status TEXT DEFAULT 'active',
+        entered_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+        PRIMARY KEY(user_id, tag_name)
+    );
+
+    CREATE TABLE IF NOT EXISTS question_srs (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        user_id INTEGER NOT NULL REFERENCES users(id),
+        question_id INTEGER NOT NULL REFERENCES questions(id),
+        stability REAL NOT NULL DEFAULT 0,
+        difficulty REAL NOT NULL DEFAULT 0,
+        elapsed_days INTEGER NOT NULL DEFAULT 0,
+        scheduled_days INTEGER NOT NULL DEFAULT 0,
+        reps INTEGER NOT NULL DEFAULT 0,
+        lapses INTEGER NOT NULL DEFAULT 0,
+        state INTEGER NOT NULL DEFAULT 0,
+        last_review TEXT,
+        due_date TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+        UNIQUE(user_id, question_id)
+    );
+
+    CREATE TABLE IF NOT EXISTS system_settings (
+        user_id INTEGER NOT NULL REFERENCES users(id),
+        key TEXT NOT NULL,
+        value TEXT,
+        updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+        PRIMARY KEY(user_id, key)
+    );
+`;
+
 export function createTestTables(db: Database.Database) {
-    db.exec(`
-        CREATE TABLE IF NOT EXISTS users (
-            id INTEGER PRIMARY KEY AUTOINCREMENT,
-            username TEXT UNIQUE NOT NULL,
-            password_hash TEXT NOT NULL,
-            role TEXT DEFAULT 'student',
-            token_version INTEGER DEFAULT 0,
-            created_at DATETIME DEFAULT CURRENT_TIMESTAMP
-        );
-
-        CREATE TABLE IF NOT EXISTS questions (
-            id INTEGER PRIMARY KEY AUTOINCREMENT,
-            content TEXT NOT NULL,
-            answer TEXT,
-            explanation TEXT,
-            options TEXT, -- JSON array
-            tags TEXT,    -- JSON array
-            type TEXT DEFAULT 'single',
-            dimension TEXT DEFAULT 'knowledge',
-            difficulty REAL DEFAULT 1.0,
-            created_at DATETIME DEFAULT CURRENT_TIMESTAMP
-        );
-
-        CREATE TABLE IF NOT EXISTS practice_logs (
-            id INTEGER PRIMARY KEY AUTOINCREMENT,
-            session_id TEXT,
-            user_id INTEGER NOT NULL,
-            question_id INTEGER NOT NULL,
-            user_answer TEXT,
-            is_correct INTEGER,
-            duration_ms INTEGER,
-            timestamp DATETIME DEFAULT CURRENT_TIMESTAMP,
-            FOREIGN KEY(user_id) REFERENCES users(id),
-            FOREIGN KEY(question_id) REFERENCES questions(id)
-        );
-
-        CREATE TABLE IF NOT EXISTS user_mastery (
-            user_id INTEGER NOT NULL,
-            tag_name TEXT NOT NULL,
-            score REAL DEFAULT 0,
-            correct_count INTEGER DEFAULT 0,
-            total_count INTEGER DEFAULT 0,
-            history TEXT,
-            last_updated DATETIME DEFAULT CURRENT_TIMESTAMP,
-            PRIMARY KEY(user_id, tag_name),
-            FOREIGN KEY(user_id) REFERENCES users(id)
-        );
-
-        CREATE TABLE IF NOT EXISTS observation_zone (
-            user_id INTEGER NOT NULL,
-            tag_name TEXT NOT NULL,
-            reason TEXT,
-            status TEXT DEFAULT 'active',
-            entered_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-            PRIMARY KEY(user_id, tag_name),
-            FOREIGN KEY(user_id) REFERENCES users(id)
-        );
-
-        CREATE TABLE IF NOT EXISTS system_settings (
-            user_id INTEGER NOT NULL,
-            key TEXT NOT NULL,
-            value TEXT,
-            updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-            PRIMARY KEY(user_id, key),
-            FOREIGN KEY(user_id) REFERENCES users(id)
-        );
-    `);
+    db.exec(TEST_SCHEMA_SQL);
 }

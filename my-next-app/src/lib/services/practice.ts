@@ -279,14 +279,8 @@ export const practiceService = {
      * 获取可用标签
      */
     async getAvailableTags(): Promise<string[]> {
-        const result = await drizzleDb.selectDistinct({
-            tag: sql<string>`json_each.value`
-        })
-        .from(sql`${questions} AS q, json_each(q.tags)`)
-        .orderBy(sql`json_each.value`)
-        .all();
-        
-        return result.map(r => r.tag);
+        const { getAllTags } = await import('@/lib/practice/practice-scheduling');
+        return await getAllTags();
     },
 
     /**
@@ -370,8 +364,8 @@ export const practiceService = {
             dimensions: config.dimensions as any
         };
 
-        const { generateSessionByConfig } = await import('@/lib/practice/practice-scheduling');
-        const rawQuestions = await generateSessionByConfig(practiceConfig, userId);
+        const { practiceSchedulingService } = await import('@/lib/practice/practice-scheduling');
+        const rawQuestions = await practiceSchedulingService.generateSessionByConfig(practiceConfig, userId);
 
         if (!rawQuestions || rawQuestions.length === 0) {
             return { questions: [], sessionId: '', config };

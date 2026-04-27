@@ -1,12 +1,15 @@
 /**
- * 扩展选题服务
+ * 扩展选题服务 (Drizzle LibSQL 异步版)
  * 支持多种练习模式的选题逻辑
  */
 
-import { db } from '@/lib/db';
+import { drizzleDb, drizzleSchema } from '@/lib/db';
+import { eq, and, sql, inArray, or, desc, lte } from 'drizzle-orm';
 import { PracticeConfig } from '@/types/practice';
 import { Question } from '@/types';
 import { QuestionRowSchema } from '@/lib/schemas';
+
+const { questions, practice_logs, observation_zone, question_srs } = drizzleSchema;
 
 /**
  * 将数据库原始行映射为业务 Question 类型
@@ -26,253 +29,250 @@ function mapRawToQuestion(q: any): Question {
 }
 
 /**
- * 构建基础筛选条件
+ * 构建基础筛选条件 (Drizzle SQL 对象数组)
  */
-function buildWhereClause(config: PracticeConfig): { where: string; params: unknown[] } {
-    const conditions: string[] = [];
-    const params: unknown[] = [];
+function buildConditions(config: PracticeConfig) {
+    const conditions: any[] = [];
 
     // 题目类型筛选
     if (config.types && config.types.length > 0) {
-        conditions.push(`q.type IN (${config.types.map(() => '?').join(', ')})`);
-        params.push(...config.types);
+        conditions.push(inArray(questions.type, config.types));
     }
 
     // 维度筛选
     if (config.dimensions && config.dimensions.length > 0) {
-        conditions.push(`q.dimension IN (${config.dimensions.map(() => '?').join(', ')})`);
-        params.push(...config.dimensions);
+        conditions.push(inArray(questions.dimension, config.dimensions));
     }
 
-    // 知识点筛选
+    // 知识点筛选 (json_each)
     if (config.tags && config.tags.length > 0) {
-        const tagConditions = config.tags.map(() =>
-            `EXISTS (SELECT 1 FROM json_each(q.tags) WHERE value = ?)`
-        ).join(' OR ');
-        conditions.push(`(${tagConditions})`);
-        params.push(...config.tags);
+        const tagConditions = config.tags.map(tag => 
+            sql`EXISTS (SELECT 1 FROM json_each(${questions.tags}) WHERE value = ${tag})`
+        );
+        conditions.push(or(...tagConditions));
     }
 
-    const where = conditions.length > 0 ? `WHERE ${conditions.join(' AND ')}` : '';
-    return { where, params };
+    return conditions;
 }
 
-/**
- * 智能刷题模式 (40/40/20)
- * 40% 顽固题 + 40% 盲区 + 20% 随机
- */
-function generateSmartSession(config: PracticeConfig, userId: number): Question[] {
-    const { limit } = config;
-    const stubbornCount = Math.floor(limit * 0.4);
-    const blindCount = Math.floor(limit * 0.4);
-    const regularCount = limit - stubbornCount - blindCount;
+export const practiceSchedulingService = {
+    /**
+     * 智能刷题模式 (40/40/20)
+     */
+    async generateSmartSession(config: PracticeConfig, userId: number): Promise<Question[]> {
+        const { limit } = config;
+        const stubbornCount = Math.floor(limit * 0.4);
+        const blindCount = Math.floor(limit * 0.4);
+        const regularCount = limit - stubbornCount - blindCount;
 
-    const { where, params } = buildWhereClause(config);
+        const baseConditions = buildConditions(config);
 
-    // 1. 顽固题：观察区知识点的题目
-    const stubbornQuestions = db.prepare(`
-    SELECT DISTINCT q.* FROM questions q
-    JOIN observation_zone oz ON EXISTS (
-      SELECT 1 FROM json_each(q.tags) WHERE value = oz.tag_name
-    )
-    ${where ? where + ' AND oz.status = ? AND oz.user_id = ?' : 'WHERE oz.status = ? AND oz.user_id = ?'}
-    ORDER BY RANDOM()
-    LIMIT ?
-  `).all(...params, 'active', userId, stubbornCount).map(mapRawToQuestion);
+        // 1. 顽固题
+        const stubbornRows = await drizzleDb.selectDistinct({ q: questions })
+            .from(questions)
+            .innerJoin(observation_zone, sql`EXISTS (SELECT 1 FROM json_each(${questions.tags}) WHERE value = ${observation_zone.tag_name})`)
+            .where(and(
+                ...baseConditions,
+                eq(observation_zone.status, 'active'),
+                eq(observation_zone.user_id, userId)
+            ))
+            .orderBy(sql`RANDOM()`)
+            .limit(stubbornCount);
+        
+        const stubbornQuestions = stubbornRows.map(r => mapRawToQuestion(r.q));
+        const usedIds = stubbornQuestions.map(q => q.id);
 
-    const usedIds = stubbornQuestions.map(q => q.id);
+        // 2. 盲区题
+        const blindRows = await drizzleDb.select()
+            .from(questions)
+            .where(and(
+                ...baseConditions,
+                sql`NOT EXISTS (SELECT 1 FROM practice_logs WHERE question_id = ${questions.id} AND user_id = ${userId})`,
+                usedIds.length > 0 ? sql`${questions.id} NOT IN (${sql.join(usedIds, sql`, `)})` : sql`1=1`
+            ))
+            .orderBy(sql`RANDOM()`)
+            .limit(blindCount);
+        
+        const blindQuestions = blindRows.map(mapRawToQuestion);
+        usedIds.push(...blindQuestions.map(q => q.id));
 
-    // 2. 盲区题：从未练习过的题目
-    const blindQuestions = db.prepare(`
-    SELECT q.* FROM questions q
-    ${where} ${where ? 'AND' : 'WHERE'} NOT EXISTS (
-      SELECT 1 FROM practice_logs pl WHERE pl.question_id = q.id AND pl.user_id = ?
-    )
-    ${usedIds.length > 0 ? `AND q.id NOT IN (${usedIds.join(',')})` : ''}
-    ORDER BY RANDOM()
-    LIMIT ?
-  `).all(...params, userId, blindCount).map(mapRawToQuestion);
+        // 3. 常规题
+        const regularRows = await drizzleDb.select()
+            .from(questions)
+            .where(and(
+                ...baseConditions,
+                usedIds.length > 0 ? sql`${questions.id} NOT IN (${sql.join(usedIds, sql`, `)})` : sql`1=1`
+            ))
+            .orderBy(sql`RANDOM()`)
+            .limit(regularCount);
+        
+        const regularQuestions = regularRows.map(mapRawToQuestion);
 
-    usedIds.push(...blindQuestions.map(q => q.id));
+        return [...stubbornQuestions, ...blindQuestions, ...regularQuestions].sort(() => Math.random() - 0.5);
+    },
 
-    // 3. 常规题：随机
-    const regularQuestions = db.prepare(`
-    SELECT q.* FROM questions q
-    ${where} ${where ? 'AND' : 'WHERE'} q.id NOT IN (${usedIds.length > 0 ? usedIds.join(',') : '0'})
-    ORDER BY RANDOM()
-    LIMIT ?
-  `).all(...params, regularCount).map(mapRawToQuestion);
+    /**
+     * 错题强化模式 (FSRS 驱动)
+     */
+    async generateReviewSession(config: PracticeConfig, userId: number): Promise<Question[]> {
+        const baseConditions = buildConditions(config);
+        const now = new Date().toISOString();
 
-    // 合并并打乱
-    const session = [...stubbornQuestions, ...blindQuestions, ...regularQuestions];
-    return session.sort(() => Math.random() - 0.5);
-}
+        // 1. FSRS 到期题目
+        const dueRows = await drizzleDb.select({ q: questions })
+            .from(questions)
+            .innerJoin(question_srs, eq(question_srs.question_id, questions.id))
+            .where(and(
+                ...baseConditions,
+                eq(question_srs.user_id, userId),
+                lte(question_srs.due_date, now)
+            ))
+            .orderBy(question_srs.due_date)
+            .limit(config.limit);
+        
+        const dueQuestions = dueRows.map(r => mapRawToQuestion(r.q));
+        if (dueQuestions.length >= config.limit) return dueQuestions;
 
-/**
- * 错题强化模式 (FSRS 驱动)
- * 优先练习到期复习的题目，辅助参考错误次数
- */
-function generateReviewSession(config: PracticeConfig, userId: number): Question[] {
-    const { where, params } = buildWhereClause(config);
-    const now = new Date().toISOString();
+        // 2. 补充错题记录
+        const usedIds = dueQuestions.map(q => q.id);
+        const remainingLimit = config.limit - dueQuestions.length;
 
-    // 1. 优先获取 FSRS 到期的错题
-    const dueQuestions = db.prepare(`
-    SELECT q.*, srs.due_date, srs.stability
-    FROM questions q
-    JOIN question_srs srs ON srs.question_id = q.id
-    ${where ? where + ' AND' : 'WHERE'} srs.user_id = ? AND srs.due_date <= ?
-    ORDER BY srs.due_date ASC
-    LIMIT ?
-  `).all(...params, userId, now, config.limit).map(mapRawToQuestion);
+        const backlogRows = await drizzleDb.select({
+                q: questions,
+                error_count: sql<number>`COUNT(${practice_logs.id})`
+            })
+            .from(questions)
+            .innerJoin(practice_logs, eq(practice_logs.question_id, questions.id))
+            .where(and(
+                ...baseConditions,
+                eq(practice_logs.user_id, userId),
+                eq(practice_logs.is_correct, false),
+                usedIds.length > 0 ? sql`${questions.id} NOT IN (${sql.join(usedIds, sql`, `)})` : sql`1=1`
+            ))
+            .groupBy(questions.id)
+            .orderBy(desc(sql`error_count`), sql`RANDOM()`)
+            .limit(remainingLimit);
+        
+        const backlogQuestions = backlogRows.map(r => mapRawToQuestion(r.q));
+        return [...dueQuestions, ...backlogQuestions];
+    },
 
-    if (dueQuestions.length >= config.limit) {
-        return dueQuestions;
+    /**
+     * 纯错题专项模式
+     */
+    async generateMistakesSession(config: PracticeConfig, userId: number): Promise<Question[]> {
+        const baseConditions = buildConditions(config);
+
+        const rows = await drizzleDb.select({
+                q: questions,
+                error_count: sql<number>`COUNT(${practice_logs.id})`
+            })
+            .from(questions)
+            .innerJoin(practice_logs, eq(practice_logs.question_id, questions.id))
+            .where(and(
+                ...baseConditions,
+                eq(practice_logs.user_id, userId),
+                eq(practice_logs.is_correct, false)
+            ))
+            .groupBy(questions.id)
+            .orderBy(desc(sql`error_count`), sql`RANDOM()`)
+            .limit(config.limit);
+
+        return rows.map(r => mapRawToQuestion(r.q));
+    },
+
+    /**
+     * 专项突破模式
+     */
+    async generateFocusSession(config: PracticeConfig, userId: number): Promise<Question[]> {
+        const baseConditions = buildConditions(config);
+        if (baseConditions.length === 0) return this.generateRandomSession(config, userId);
+
+        const rows = await drizzleDb.select()
+            .from(questions)
+            .where(and(...baseConditions))
+            .orderBy(sql`RANDOM()`)
+            .limit(config.limit);
+
+        return rows.map(mapRawToQuestion);
+    },
+
+    /**
+     * 模拟考试模式
+     */
+    async generateExamSession(config: PracticeConfig, _userId: number): Promise<Question[]> {
+        const baseConditions = buildConditions(config);
+        const rows = await drizzleDb.select()
+            .from(questions)
+            .where(and(...baseConditions))
+            .orderBy(sql`RANDOM()`)
+            .limit(config.limit);
+
+        return rows.map(mapRawToQuestion).sort((a, b) => a.id - b.id);
+    },
+
+    /**
+     * 随机挑战模式
+     */
+    async generateRandomSession(config: PracticeConfig, _userId: number): Promise<Question[]> {
+        const baseConditions = buildConditions(config);
+        const rows = await drizzleDb.select()
+            .from(questions)
+            .where(and(...baseConditions))
+            .orderBy(sql`RANDOM()`)
+            .limit(config.limit);
+
+        return rows.map(mapRawToQuestion);
+    },
+
+    /**
+     * 根据配置生成练习会话
+     */
+    async generateSessionByConfig(config: PracticeConfig, userId: number): Promise<Question[]> {
+        switch (config.mode) {
+            case 'smart': return this.generateSmartSession(config, userId);
+            case 'review': return this.generateReviewSession(config, userId);
+            case 'mistakes': return this.generateMistakesSession(config, userId);
+            case 'focus': return this.generateFocusSession(config, userId);
+            case 'exam': return this.generateExamSession(config, userId);
+            case 'random': return this.generateRandomSession(config, userId);
+            default: return this.generateSmartSession(config, userId);
+        }
     }
-
-    // 2. 如果到期题目不足，补充从未进入 SRS 循环但有错误记录的题目
-    const usedIds = dueQuestions.map(q => q.id);
-    const remainingLimit = config.limit - dueQuestions.length;
-
-    const backlogQuestions = db.prepare(`
-    SELECT q.*, COUNT(pl.id) as error_count
-    FROM questions q
-    JOIN practice_logs pl ON pl.question_id = q.id
-    ${where ? where + ' AND' : 'WHERE'} pl.user_id = ? AND pl.is_correct = 0
-    AND q.id NOT IN (${usedIds.length > 0 ? usedIds.join(',') : '0'})
-    GROUP BY q.id
-    ORDER BY error_count DESC, RANDOM()
-    LIMIT ?
-  `).all(...params, userId, remainingLimit).map(mapRawToQuestion);
-
-    return [...dueQuestions, ...backlogQuestions];
-}
-
-/**
- * 纯错题专项模式
- * 只练习历史上做错过的题目
- */
-function generateMistakesSession(config: PracticeConfig, userId: number): Question[] {
-    const { where, params } = buildWhereClause(config);
-
-    const questions = db.prepare(`
-    SELECT q.*, COUNT(pl.id) as error_count
-    FROM questions q
-    JOIN practice_logs pl ON pl.question_id = q.id
-    ${where ? where + ' AND' : 'WHERE'} pl.user_id = ? AND pl.is_correct = 0
-    GROUP BY q.id
-    ORDER BY error_count DESC, RANDOM()
-    LIMIT ?
-  `).all(...params, userId, config.limit).map(mapRawToQuestion);
-
-    return questions;
-}
-
-/**
- * 专项突破模式
- * 按指定知识点或维度筛选
- */
-function generateFocusSession(config: PracticeConfig, userId: number): Question[] {
-    const { where, params } = buildWhereClause(config);
-
-    if (!where) {
-        // 如果没有筛选条件，回退到随机模式
-        return generateRandomSession(config, userId);
-    }
-
-    const questions = db.prepare(`
-    SELECT q.* FROM questions q
-    ${where}
-    ORDER BY RANDOM()
-    LIMIT ?
-  `).all(...params, config.limit) as Question[];
-
-    return questions;
-}
-
-/**
- * 模拟考试模式
- * 随机抽题，按 ID 顺序排列（模拟真实考试）
- */
-function generateExamSession(config: PracticeConfig, _userId: number): Question[] {
-    const { where, params } = buildWhereClause(config);
-
-    const questions = db.prepare(`
-    SELECT q.* FROM questions q
-    ${where}
-    ORDER BY RANDOM()
-    LIMIT ?
-  `).all(...params, config.limit) as Question[];
-
-    // 模拟考试按 ID 排序，保持一致性
-    return questions.sort((a, b) => a.id - b.id);
-}
-
-/**
- * 随机挑战模式
- * 完全随机
- */
-function generateRandomSession(config: PracticeConfig, _userId: number): Question[] {
-    const { where, params } = buildWhereClause(config);
-
-    const questions = db.prepare(`
-    SELECT q.* FROM questions q
-    ${where}
-    ORDER BY RANDOM()
-    LIMIT ?
-  `).all(...params, config.limit) as Question[];
-
-    return questions;
-}
-
-/**
- * 根据配置生成练习会话
- */
-export function generateSessionByConfig(config: PracticeConfig, userId: number): Question[] {
-    switch (config.mode) {
-        case 'smart':
-            return generateSmartSession(config, userId);
-        case 'review':
-            return generateReviewSession(config, userId);
-        case 'mistakes':
-            return generateMistakesSession(config, userId);
-        case 'focus':
-            return generateFocusSession(config, userId);
-        case 'exam':
-            return generateExamSession(config, userId);
-        case 'random':
-            return generateRandomSession(config, userId);
-        default:
-            return generateSmartSession(config, userId);
-    }
-}
+};
 
 /**
  * 获取所有可用的知识点标签
  */
-export function getAllTags(): string[] {
-    const result = db.prepare(`
-    SELECT DISTINCT value as tag
-    FROM questions, json_each(questions.tags)
-    ORDER BY value
-  `).all() as { tag: string }[];
-
+export async function getAllTags(): Promise<string[]> {
+    const result = await drizzleDb.selectDistinct({
+        tag: sql<string>`json_each.value`
+    })
+    .from(sql`${questions}, json_each(${questions.tags})`)
+    .orderBy(sql`json_each.value`)
+    .all();
+    
     return result.map(r => r.tag);
 }
 
 /**
  * 获取用户错题知识点统计
  */
-export function getUserWrongTags(userId: number): { tag: string; count: number }[] {
-    const result = db.prepare(`
-    SELECT je.value as tag, COUNT(*) as count
-    FROM practice_logs pl
-    JOIN questions q ON q.id = pl.question_id
-    JOIN json_each(q.tags) je
-    WHERE pl.user_id = ? AND pl.is_correct = 0
-    GROUP BY je.value
-    ORDER BY count DESC
-  `).all(userId) as { tag: string; count: number }[];
+export async function getUserWrongTags(userId: number): Promise<{ tag: string; count: number }[]> {
+    const result = await drizzleDb.select({
+        tag: sql<string>`je.value`,
+        count: sql<number>`COUNT(*)`
+    })
+    .from(practice_logs)
+    .innerJoin(questions, eq(questions.id, practice_logs.question_id))
+    .innerJoin(sql`json_each(${questions.tags}) AS je`, sql`1=1`)
+    .where(and(
+        eq(practice_logs.user_id, userId),
+        eq(practice_logs.is_correct, false)
+    ))
+    .groupBy(sql`je.value`)
+    .orderBy(desc(sql`count`))
+    .all();
 
     return result;
 }

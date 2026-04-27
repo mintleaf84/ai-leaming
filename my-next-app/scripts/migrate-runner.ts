@@ -1,7 +1,7 @@
 import fs from 'fs';
 import path from 'path';
 import { pathToFileURL } from 'url';
-import { db } from '../src/lib/db';
+import { getLegacyDb } from '../src/lib/db';
 import { initDatabase } from '../src/lib/db';
 
 // Migration Interface
@@ -17,6 +17,7 @@ async function run() {
     console.log('📦 Initializing base tables...');
     await initDatabase();
 
+    const db = getLegacyDb();
     // 1. Ensure migrations table exists
     db.exec(`
     CREATE TABLE IF NOT EXISTS schema_migrations (

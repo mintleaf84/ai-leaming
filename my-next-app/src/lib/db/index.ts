@@ -71,10 +71,15 @@ function initDb() {
   return db;
 }
 
-export const legacyDb = globalForDb.db || initDb();
+export function getLegacyDb() {
+  if (globalForDb.db) return globalForDb.db;
+  globalForDb.db = initDb();
+  return globalForDb.db;
+}
+
 /** @deprecated 请优先使用 drizzleDb 或默认导出的 drizzleDb 实例 */
-export const db = legacyDb;
-globalForDb.db = legacyDb;
+export const db = globalForDb.db || (typeof window === 'undefined' ? null : undefined);
+// 注意：这里不再自动初始化，由调用方通过 getLegacyDb() 获取或在 initDatabase 后使用
 
 export function closeDb() {
   if (globalForDb.db) {
@@ -103,8 +108,6 @@ const globalForLibsql = global as unknown as {
 
 if (!globalForLibsql.libsqlClient) {
     globalForLibsql.libsqlClient = createClient({ url: libsqUrl });
-    // 设置忙碌超时时间，防止并发写入导致 SQLITE_BUSY
-    globalForLibsql.libsqlClient.execute('PRAGMA busy_timeout = 5000;');
 }
 if (!globalForLibsql.drizzleDb) {
     globalForLibsql.drizzleDb = drizzle(globalForLibsql.libsqlClient, { schema });
@@ -130,25 +133,29 @@ export async function initDatabase() {
     try {
         // 1. 运行 Drizzle 自动化迁移 (包含 IF NOT EXISTS 补强)
         console.log('[DB] Running Drizzle migrations...');
+        // 设置忙碌超时时间，防止并发写入导致 SQLITE_BUSY
+        await globalForLibsql.libsqlClient?.execute('PRAGMA busy_timeout = 5000;');
+        
         await migrate(drizzleDb, { migrationsFolder: path.resolve(process.cwd(), 'drizzle') });
         console.log('[DB] Drizzle migrations completed');
 
         // 2. 运行旧版迁移作为存量数据库兜底（幂等，可安全重复执行）
         //    确保旧数据库中缺失的字段/索引/表能够补全
         console.log('[DB] Running legacy migrations for backward compatibility...');
-        runOldMigrations(db);
+        runOldMigrations(getLegacyDb());
         console.log('[DB] Legacy migrations completed');
 
         // 3. 补全向量扩展和种子数据
-        setupVectorExtension(db);
-        seedData(db);
+        setupVectorExtension(getLegacyDb());
+        seedData(getLegacyDb());
         console.log('[DB] Database initialization completed');
-    } catch (error) {
-        console.error('[DB] Database initialization failed:', error);
-        // 不在构建期间抛出致命错误，但在运行时需要抛出
-        if (process.env.NODE_ENV === 'production') {
-            throw error;
+    } catch (error: any) {
+        console.error('[DB] Database initialization failed:', error.message);
+        if (error.cause) {
+            console.error('[DB] Detailed Cause:', error.cause);
         }
+        // 在所有环境下都抛出错误，确保迁移失败时能及时发现
+        throw error;
     }
 }
 

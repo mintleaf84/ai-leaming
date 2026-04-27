@@ -1,5 +1,5 @@
 import { SessionDetail } from '@/server/actions/history';
-import { getBeijingLocaleString } from './datetime';
+import { getBeijingLocaleString, formatBeijingDate } from './datetime';
 
 /**
  * 将练习会话详情格式化为 Markdown 文本
@@ -12,14 +12,7 @@ export function formatSessionToMarkdown(
     const { session, logs } = detail;
 
     // 格式化日期
-    const date = new Date(session.createdAt);
-    const dateStr = date.toLocaleString('zh-CN', {
-        year: 'numeric',
-        month: '2-digit',
-        day: '2-digit',
-        hour: '2-digit',
-        minute: '2-digit'
-    });
+    const dateStr = formatBeijingDate(session.createdAt, 'YYYY/MM/DD HH:mm');
 
     // 标题
     lines.push(`# 练习记录 - ${dateStr}`);
@@ -49,7 +42,7 @@ export function formatSessionToMarkdown(
     lines.push('## 📝 题目详情');
     lines.push('');
 
-    logs.forEach((log, idx) => {
+    logs.forEach((log: SessionDetail['logs'][number], idx: number) => {
         const status = log.isCorrect ? '✅ 正确' : '❌ 错误';
 
         lines.push(`### 第 ${idx + 1} 题 ${status}`);
@@ -65,7 +58,7 @@ export function formatSessionToMarkdown(
         if (log.options && log.options.length > 0) {
             lines.push('**选项**');
             lines.push('');
-            log.options.forEach((opt, i) => {
+            log.options.forEach((opt: string, i: number) => {
                 const letter = String.fromCharCode(65 + i); // A, B, C, D...
                 const isUserAnswer = log.userAnswer === letter;
                 const isCorrectAnswer = log.correctAnswer === letter;
@@ -103,7 +96,7 @@ export function formatSessionToMarkdown(
         if (log.tags && log.tags.length > 0) {
             lines.push('**考点标签**');
             lines.push('');
-            lines.push(log.tags.map(t => `\`${t}\``).join(' '));
+            lines.push(log.tags.map((t: string) => `\`${t}\``).join(' '));
             lines.push('');
         }
 
@@ -133,12 +126,5 @@ export function formatSessionToMarkdown(
  * 生成导出文件名
  */
 export function generateExportFilename(createdAt: string): string {
-    const date = new Date(createdAt);
-    const y = date.getFullYear();
-    const m = String(date.getMonth() + 1).padStart(2, '0');
-    const d = String(date.getDate()).padStart(2, '0');
-    const h = String(date.getHours()).padStart(2, '0');
-    const min = String(date.getMinutes()).padStart(2, '0');
-
-    return `练习记录_${y}-${m}-${d}_${h}-${min}.md`;
+    return `练习记录_${formatBeijingDate(createdAt, 'YYYY-MM-DD_HH-mm')}.md`;
 }

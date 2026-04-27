@@ -13,6 +13,37 @@ dayjs.extend(timezone);
 const BEIJING_TIMEZONE = 'Asia/Shanghai';
 
 /**
+ * 获取北京时间的当前 dayjs 对象
+ */
+export function getBeijingNow() {
+    return dayjs().tz(BEIJING_TIMEZONE);
+}
+
+/**
+ * 获取北京时间某日的 0 点 (常用于日期比较的基准)
+ */
+export function getBeijingStartOfDay(date?: Date | string) {
+    return dayjs(date).tz(BEIJING_TIMEZONE).startOf('day');
+}
+
+/**
+ * 计算两个日期之间相差的天数 (date1 - date2)
+ * 结果为整数，基于“自然日”概念
+ */
+export function getBeijingDiffDays(date1: Date | string | number, date2: Date | string | number): number {
+    const d1 = dayjs(date1).tz(BEIJING_TIMEZONE).startOf('day');
+    const d2 = dayjs(date2).tz(BEIJING_TIMEZONE).startOf('day');
+    return d1.diff(d2, 'day');
+}
+
+/**
+ * 通用的北京时间格式化函数
+ */
+export function formatBeijingDate(date: Date | string | number | undefined, pattern: string): string {
+    return dayjs(date).tz(BEIJING_TIMEZONE).format(pattern);
+}
+
+/**
  * 获取北京时间的日期字符串 (YYYY-MM-DD)
  * 这是最常用的函数，用于日期比较和数据库查询
  */

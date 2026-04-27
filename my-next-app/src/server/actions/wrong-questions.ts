@@ -19,7 +19,7 @@ export type WrongQuestionsByTag = {
 /**
  * 错题详情类型
  */
-export type WrongQuestionDetail = any; // 以后端 Service 返回为准
+export type WrongQuestionDetail = NonNullable<Awaited<ReturnType<typeof wrongQuestionService.getDetail>>>;
 
 /**
  * 获取错题列表

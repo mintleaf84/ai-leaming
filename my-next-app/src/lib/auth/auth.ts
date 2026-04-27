@@ -1,4 +1,5 @@
 import { cookies, headers } from 'next/headers';
+import dayjs from 'dayjs';
 import { NextRequest, NextResponse } from 'next/server';
 import { User, UserRole } from '@/types';
 import { getUserById, revokeUserSessions } from './user-service';
@@ -10,7 +11,7 @@ import { encrypt, decrypt, COOKIE_NAME } from './auth-edge';
 
 export async function login(user: User) {
     // Create the session
-    const expires = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000);
+    const expires = dayjs().add(7, 'day').toDate();
     // Include token_version in the session payload
     const session = await encrypt({ user, expires });
 
@@ -84,7 +85,7 @@ export async function updateSession(request: NextRequest) {
 
     // Refresh the session so it doesn't expire
     const parsed = await decrypt(session) as any;
-    parsed.expires = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000);
+    parsed.expires = dayjs().add(7, 'day').toDate();
     const res = NextResponse.next();
     res.cookies.set({
         name: COOKIE_NAME,

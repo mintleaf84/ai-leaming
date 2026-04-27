@@ -16,6 +16,11 @@ import {
 export type { HistoryFilter, SessionHistoryItem, PaginatedHistory };
 
 /**
+ * 会话详情类型
+ */
+export type SessionDetail = NonNullable<Awaited<ReturnType<typeof historyService.getSessionDetail>>>;
+
+/**
  * 获取练习历史记录
  */
 export async function getSessionHistoryAction(filter?: HistoryFilter): Promise<PaginatedHistory> {

@@ -224,9 +224,9 @@ export const practiceService = {
             }
 
             const { masteryService } = await import('@/lib/services/mastery');
-            tags.forEach((tag: string) => {
-                masteryService.updateMastery(userId, tag, q.dimension as Dimension, isCorrect);
-            });
+            await Promise.all(tags.map(async (tag: string) => {
+                await masteryService.updateMastery(userId, tag, q.dimension as Dimension, isCorrect);
+            }));
         }
 
         // 4. 更新 FSRS 状态（错题强化逻辑）

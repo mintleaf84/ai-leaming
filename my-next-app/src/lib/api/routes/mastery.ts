@@ -54,7 +54,7 @@ const getTreeRoute = createRoute({
 
 app.openapi(getTreeRoute, async (c) => {
     const user = getCurrentUser(c)
-    const tree = masteryService.getMasteryTree(Number(user.id))
+    const tree = await masteryService.getMasteryTree(Number(user.id))
     return c.json(tree)
 })
 
@@ -84,7 +84,7 @@ app.openapi(getStatsRoute, async (c) => {
     const user = getCurrentUser(c)
     const { tag } = c.req.valid('query')
 
-    const stats = masteryService.getHierarchyMastery(Number(user.id), tag)
+    const stats = await masteryService.getHierarchyMastery(Number(user.id), tag)
     return c.json(stats)
 })
 

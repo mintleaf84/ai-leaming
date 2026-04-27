@@ -47,18 +47,18 @@ export const ragService = {
   /**
    * 初始化 RAG 表
    */
-  initRagTable: () => {
+  initRagTable: async () => {
     const { embeddingDimensions } = getAiConfig();
     const dim = embeddingDimensions || 1024;
 
     // 使用 drizzleDb.run 执行 DDL
-    const tableExists = drizzleDb.select({ count: sql`count(*)` })
+    const tableExists = await drizzleDb.select({ count: sql<number>`count(*)` })
       .from(sql`sqlite_master`)
       .where(sql`type='table' AND name='content_chunks'`)
-      .get() as { count: number };
+      .get();
 
-    if (!tableExists.count) {
-      drizzleDb.run(sql`
+    if (!tableExists || Number(tableExists.count) === 0) {
+      await drizzleDb.run(sql`
         CREATE TABLE IF NOT EXISTS content_chunks (
           id INTEGER PRIMARY KEY AUTOINCREMENT,
           content TEXT NOT NULL,
@@ -79,11 +79,11 @@ export const ragService = {
     const embedding = await ragService.getEmbedding(content);
     
     // 向量表 insert
-    const infoVec = drizzleDb.run(sql`INSERT INTO content_vec(embedding) VALUES (${JSON.stringify(embedding)})`);
-    const vecRowid = infoVec.lastInsertRowid;
+    const infoVec = await drizzleDb.run(sql`INSERT INTO content_vec(embedding) VALUES (${JSON.stringify(embedding)})`);
+    const vecRowid = (infoVec as any).lastInsertRowid;
     
     // 基础表 insert
-    drizzleDb.run(sql`INSERT INTO content_chunks (id, content, metadata) VALUES (${Number(vecRowid)}, ${content}, ${JSON.stringify(metadata)})`);
+    await drizzleDb.run(sql`INSERT INTO content_chunks (id, content, metadata) VALUES (${Number(vecRowid)}, ${content}, ${JSON.stringify(metadata)})`);
   },
 
   /**
@@ -102,8 +102,8 @@ export const ragService = {
         const ids = chunks.map(c => c.id);
         
         // 删除基础表和向量表 (向量表 rowid 与基础表 id 对应)
-        drizzleDb.run(sql`DELETE FROM content_chunks WHERE id IN (${sql.join(ids, sql`, `)})`);
-        drizzleDb.run(sql`DELETE FROM content_vec WHERE rowid IN (${sql.join(ids, sql`, `)})`);
+        await drizzleDb.run(sql`DELETE FROM content_chunks WHERE id IN (${sql.join(ids, sql`, `)})`);
+        await drizzleDb.run(sql`DELETE FROM content_vec WHERE rowid IN (${sql.join(ids, sql`, `)})`);
 
         console.log(`[RAG] Deleted ${chunks.length} chunks for ${sourceType}:${sourceId}`);
       }
@@ -121,7 +121,7 @@ export const ragService = {
 
       // 检查 vec0 模块
       try {
-        drizzleDb.run(sql`SELECT vec_version()`);
+        await drizzleDb.run(sql`SELECT vec_version()`);
       } catch (_e) {
         console.error('[RAGService] sqlite-vec 扩展未加载，无法进行向量检索');
         return [];

@@ -1,20 +1,26 @@
 'use server';
 import logger from '@/lib/logger';
 
-import { db } from '@/lib/db';
+import { drizzleDb } from '@/lib/db';
+import { notes, note_tags, note_tag_relations } from '@/lib/db/drizzle-schema';
+import { eq, and, asc, desc, sql } from 'drizzle-orm';
 import { requireUser } from '@/lib/auth/auth';
 import { revalidatePath } from 'next/cache';
-import { TAG_COLORS, type NoteTag } from '@/types';
+import { TAG_COLORS } from '@/types';
+import type { NoteTag } from '@/types';
 import { isSqliteConstraintError } from '@/lib/utils/error';
+import type { NotePreview } from './note';
 
 // 获取用户的所有标签
 export async function getTagsAction() {
     try {
         const user = await requireUser();
-        const tags = db.prepare(`
-            SELECT * FROM note_tags WHERE user_id = ? ORDER BY name
-        `).all(user.id) as NoteTag[];
-        return { success: true, tags };
+        const tags = await drizzleDb.select()
+            .from(note_tags)
+            .where(eq(note_tags.user_id, user.id))
+            .orderBy(asc(note_tags.name));
+            
+        return { success: true, tags: tags as NoteTag[] };
     } catch (error: unknown) {
         logger.error({ err: error }, 'Get tags failed');
         return { success: false, message: '获取标签失败' };
@@ -27,13 +33,14 @@ export async function createTagAction(name: string, color?: string) {
         const user = await requireUser();
         const tagColor = color || TAG_COLORS[Math.floor(Math.random() * TAG_COLORS.length)];
 
-        const stmt = db.prepare(`
-            INSERT INTO note_tags (user_id, name, color) VALUES (?, ?, ?)
-        `);
-        const result = stmt.run(user.id, name.trim(), tagColor);
+        const [result] = await drizzleDb.insert(note_tags).values({
+            user_id: user.id,
+            name: name.trim(),
+            color: tagColor,
+        }).returning({ id: note_tags.id });
 
         revalidatePath('/notes');
-        return { success: true, tagId: result.lastInsertRowid };
+        return { success: true, tagId: result.id };
     } catch (error: unknown) {
         if (isSqliteConstraintError(error, 'SQLITE_CONSTRAINT_UNIQUE')) {
             return { success: false, message: '标签名已存在' };
@@ -47,14 +54,9 @@ export async function createTagAction(name: string, color?: string) {
 export async function deleteTagAction(tagId: number) {
     try {
         const user = await requireUser();
-        const stmt = db.prepare(`
-            DELETE FROM note_tags WHERE id = ? AND user_id = ?
-        `);
-        const result = stmt.run(tagId, user.id);
-
-        if (result.changes === 0) {
-            return { success: false, message: '标签不存在或无权限' };
-        }
+        
+        await drizzleDb.delete(note_tags)
+            .where(and(eq(note_tags.id, tagId), eq(note_tags.user_id, user.id)));
 
         revalidatePath('/notes');
         return { success: true };
@@ -70,18 +72,27 @@ export async function getNoteTagsAction(noteId: number) {
         const user = await requireUser();
 
         // 验证笔记所有权
-        const note = db.prepare('SELECT id FROM notes WHERE id = ? AND user_id = ?').get(noteId, user.id);
+        const [note] = await drizzleDb.select({ id: notes.id })
+            .from(notes)
+            .where(and(eq(notes.id, noteId), eq(notes.user_id, user.id)))
+            .limit(1);
+
         if (!note) {
             return { success: false, message: '笔记不存在' };
         }
 
-        const tags = db.prepare(`
-            SELECT t.* FROM note_tags t
-            JOIN note_tag_relations r ON t.id = r.tag_id
-            WHERE r.note_id = ?
-        `).all(noteId) as NoteTag[];
+        const tags = await drizzleDb.select({
+                id: note_tags.id,
+                user_id: note_tags.user_id,
+                name: note_tags.name,
+                color: note_tags.color,
+                created_at: note_tags.created_at
+            })
+            .from(note_tags)
+            .innerJoin(note_tag_relations, eq(note_tags.id, note_tag_relations.tag_id))
+            .where(eq(note_tag_relations.note_id, noteId));
 
-        return { success: true, tags };
+        return { success: true, tags: tags as NoteTag[] };
     } catch (error: unknown) {
         logger.error({ err: error }, 'Get note tags failed');
         return { success: false, message: '获取笔记标签失败' };
@@ -94,24 +105,30 @@ export async function setNoteTagsAction(noteId: number, tagIds: number[]) {
         const user = await requireUser();
 
         // 验证笔记所有权
-        const note = db.prepare('SELECT id FROM notes WHERE id = ? AND user_id = ?').get(noteId, user.id);
+        const [note] = await drizzleDb.select({ id: notes.id })
+            .from(notes)
+            .where(and(eq(notes.id, noteId), eq(notes.user_id, user.id)))
+            .limit(1);
+
         if (!note) {
             return { success: false, message: '笔记不存在' };
         }
 
         // 使用事务
-        db.transaction(() => {
+        await drizzleDb.transaction(async (tx) => {
             // 删除现有关联
-            db.prepare('DELETE FROM note_tag_relations WHERE note_id = ?').run(noteId);
+            await tx.delete(note_tag_relations).where(eq(note_tag_relations.note_id, noteId));
 
             // 添加新关联
             if (tagIds.length > 0) {
-                const insertStmt = db.prepare('INSERT OR IGNORE INTO note_tag_relations (note_id, tag_id) VALUES (?, ?)');
-                for (const tagId of tagIds) {
-                    insertStmt.run(noteId, tagId);
-                }
+                const values = tagIds.map(tagId => ({
+                    note_id: noteId,
+                    tag_id: tagId,
+                }));
+                // Drizzle 的 insert().values() 支持数组批量插入
+                await tx.insert(note_tag_relations).values(values).onConflictDoNothing();
             }
-        })();
+        });
 
         revalidatePath('/notes');
         revalidatePath(`/notes/${noteId}`);
@@ -127,15 +144,18 @@ export async function getNotesByTagAction(tagId: number) {
     try {
         const user = await requireUser();
 
-        const notes = db.prepare(`
-            SELECT n.id, n.title, n.updated_at, substr(n.content, 1, 100) as preview
-            FROM notes n
-            JOIN note_tag_relations r ON n.id = r.note_id
-            WHERE n.user_id = ? AND r.tag_id = ?
-            ORDER BY n.updated_at DESC
-        `).all(user.id, tagId) as { id: number; title: string; updated_at: string; preview: string | null }[];
+        const result = await drizzleDb.select({
+                id: notes.id,
+                title: notes.title,
+                updated_at: notes.updated_at,
+                preview: sql<string>`substr(${notes.content}, 1, 200)` // 统一使用 200 字预览
+            })
+            .from(notes)
+            .innerJoin(note_tag_relations, eq(notes.id, note_tag_relations.note_id))
+            .where(and(eq(notes.user_id, user.id), eq(note_tag_relations.tag_id, tagId)))
+            .orderBy(desc(notes.updated_at));
 
-        return { success: true, notes };
+        return { success: true, notes: result as NotePreview[] };
     } catch (error: unknown) {
         logger.error({ err: error }, 'Get notes by tag failed');
         return { success: false, message: '获取笔记失败' };

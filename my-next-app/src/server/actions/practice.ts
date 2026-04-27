@@ -2,9 +2,8 @@
 
 import logger from '@/lib/logger';
 import { requireUser } from '@/lib/auth/auth';
-import { practiceService } from '@/lib/services/practice';
-import { Question } from "@/types";
-import { KnowledgeTreeService, KnowledgeNode } from '@/lib/services/knowledge-tree';
+import { practiceService, type PracticeSessionConfig } from '@/lib/services/practice';
+import { KnowledgeTreeService, type KnowledgeNode } from '@/lib/services/knowledge-tree';
 
 /**
  * 获取或恢复练习会话
@@ -14,7 +13,7 @@ export async function getPracticeSessionAction(forceNew: boolean = false) {
     const user = await requireUser();
     return await practiceService.getOrCreateSession(user.id, forceNew);
   } catch (error) {
-    logger.error({ err: error }, 'Action: getPracticeSessionAction failed');
+    logger.error({ err: error }, '[PracticeAction] 获取练习会话失败');
     throw new Error('无法创建练习会话，请稍后重试。');
   }
 }
@@ -29,16 +28,7 @@ export async function submitAnswerAction(
   duration: number, 
   sessionId?: string,
   totalDurationMs?: number
-): Promise<{ 
-  success: boolean; 
-  srs?: { 
-    stability: number; 
-    difficulty: number; 
-    due_date: string; 
-    state: number; 
-    nextInterval: number; 
-  } 
-}> {
+) {
   try {
     const user = await requireUser();
     return await practiceService.submitAnswer(
@@ -51,7 +41,7 @@ export async function submitAnswerAction(
         totalDurationMs
     );
   } catch (e) {
-    logger.error({ err: e }, "Action: submitAnswerAction failed");
+    logger.error({ err: e }, "[PracticeAction] 提交答案失败");
     return { success: false };
   }
 }
@@ -61,22 +51,10 @@ export async function submitAnswerAction(
  */
 export async function getKnowledgeTreeAction(): Promise<KnowledgeNode[]> {
   try {
-    // 依然委托给专门的 KnowledgeTreeService
-    const { drizzleDb, drizzleSchema } = await import('@/lib/db');
-    const { sql } = await import('drizzle-orm');
-    
-    const rawTags = await drizzleDb.select({
-      tag: sql<string>`json_each.value`,
-      count: sql<number>`count(*)`
-    })
-    .from(sql`${drizzleSchema.questions} AS q, json_each(q.tags)`)
-    .groupBy(sql`json_each.value`)
-    .orderBy(sql`json_each.value`)
-    .all();
-
-    return KnowledgeTreeService.buildKnowledgeTree(rawTags as any);
+    const rawTags = await KnowledgeTreeService.getAggregatedTags();
+    return KnowledgeTreeService.buildKnowledgeTree(rawTags);
   } catch (error) {
-    logger.error({ err: error }, '获取知识树失败');
+    logger.error({ err: error }, '[PracticeAction] 构建知识树失败');
     return [];
   }
 }
@@ -84,38 +62,12 @@ export async function getKnowledgeTreeAction(): Promise<KnowledgeNode[]> {
 /**
  * 根据自定义配置创建会话
  */
-export async function getPracticeSessionByConfigAction(config: any) {
+export async function getPracticeSessionByConfigAction(config: PracticeSessionConfig) {
   try {
     const user = await requireUser();
-    
-    // 如果 practiceService 还没有实现 createSessionByConfig，暂时保持原有调用逻辑
-    // 但迁移到 Service 内部是下一步的目标
-    const { generateSessionByConfig } = await import('@/lib/practice/practice-scheduling');
-    const rawQuestions = generateSessionByConfig(config, user.id);
-
-    if (!rawQuestions || rawQuestions.length === 0) {
-      return { questions: [], sessionId: '', config };
-    }
-
-    // 复用 Service 的会话创建能力
-    const { drizzleDb, drizzleSchema } = await import('@/lib/db');
-    const sessionId = Math.random().toString(36).substring(2, 15);
-    
-    await drizzleDb.insert(drizzleSchema.practice_sessions).values({
-      id: sessionId,
-      user_id: user.id,
-      total_questions: rawQuestions.length,
-      questions_json: JSON.stringify(rawQuestions),
-      practice_mode: config.mode,
-      is_demo: 0
-    });
-
-    // 挂载 SRS 数据以便前端展示
-    const questionsWithSrs = await practiceService.attachSrsData(user.id, rawQuestions);
-
-    return { questions: questionsWithSrs, sessionId, config };
+    return await practiceService.createSessionFromConfig(user.id, config);
   } catch (error) {
-    logger.error({ err: error }, 'Action: getPracticeSessionByConfigAction failed');
+    logger.error({ err: error }, '[PracticeAction] 创建配置化练习失败');
     throw new Error('无法创建配置练习会话，请稍后重试。');
   }
 }
@@ -128,7 +80,7 @@ export async function getSessionByIdAction(sessionId: string) {
     const user = await requireUser();
     return await practiceService.getSessionById(user.id, sessionId);
   } catch (error) {
-    logger.error({ err: error }, 'Action: getSessionByIdAction failed');
+    logger.error({ err: error }, '[PracticeAction] 获取会话详情失败');
     return null;
   }
 }
@@ -141,17 +93,19 @@ export async function saveSessionReviewAction(sessionId: string, questionId: num
     const user = await requireUser();
     return await practiceService.saveSessionReview(user.id, sessionId, questionId, reviewData);
   } catch (e) {
-    logger.error({ err: e }, "Action: saveSessionReviewAction failed");
+    logger.error({ err: e }, "[PracticeAction] 保存回顾信息失败");
     return { success: false };
   }
 }
 
+/**
+ * 获取可用标签列表
+ */
 export async function getAvailableTagsAction(): Promise<string[]> {
   try {
     return await practiceService.getAvailableTags();
   } catch (error) {
-    logger.error({ err: error }, '获取可用标签失败');
+    logger.error({ err: error }, '[PracticeAction] 获取可用标签失败');
     return [];
   }
 }
-

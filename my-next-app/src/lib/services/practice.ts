@@ -397,6 +397,24 @@ export const practiceService = {
         const questionsWithSrs = await this.attachSrsData(userId, questionData);
 
         return { questions: questionsWithSrs, sessionId, config };
+    },
+
+    /**
+     * 创建专项复习会话 (基于给定的题目 ID 列表)
+     */
+    async createReviewSession(userId: number, questionIds: number[]) {
+        const sessionId = `review-${Math.random().toString(36).substring(2, 10)}`;
+        
+        await drizzleDb.insert(practice_sessions).values({
+            id: sessionId,
+            user_id: userId,
+            total_questions: questionIds.length,
+            questions_json: JSON.stringify(questionIds), // 存储 ID 列表，getSessionById 会自动解析
+            practice_mode: 'review',
+            is_demo: 0
+        });
+
+        return sessionId;
     }
 };
 

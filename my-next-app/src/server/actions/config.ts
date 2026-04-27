@@ -2,7 +2,8 @@
 import logger from '@/lib/logger';
 
 import { getErrorMessage } from '@/lib/utils/error';
-import { db,  drizzleDb, drizzleSchema } from '@/lib/db';
+import { drizzleDb } from '@/lib/db';
+import { ai_configs, ai_model_routes } from '@/lib/db/drizzle-schema';
 import { eq, desc, sql, count } from 'drizzle-orm';
 import { revalidatePath } from 'next/cache';
 import { requireRole } from '@/lib/auth/auth';
@@ -25,12 +26,13 @@ export type AiConfig = {
     created_at?: string;
 };
 
-// 获取所有配置
+// 获取所有 AI 配置
 export async function getAiConfigsAction(): Promise<AiConfig[]> {
-    const settings = await drizzleDb.query.ai_configs.findMany({
-        orderBy: [desc(drizzleSchema.ai_configs.created_at)]
-    });
-    return settings.map((s: any) => ({
+    const settings = await drizzleDb.select()
+        .from(ai_configs)
+        .orderBy(desc(ai_configs.created_at));
+    
+    return settings.map(s => ({
         ...s,
         is_active: Boolean(s.is_active)
     })) as AiConfig[];
@@ -41,27 +43,30 @@ export async function saveAiConfigAction(config: Partial<AiConfig>) {
     const user = await requireRole(['admin']);
     try {
         if (config.id) {
-            // Update
-            await drizzleDb.update(drizzleSchema.ai_configs)
-                .set({
-                    name: config.name,
-                    api_url: config.api_url,
-                    api_key: config.api_key,
-                    model_economy: config.model_economy || 'gpt-4o-mini',
-                    model_premium: config.model_premium || 'gpt-4o',
-                    model_embedding: config.model_embedding || 'text-embedding-3-small',
-                    embedding_dimensions: config.embedding_dimensions || 768,
-                    model_knowledge: config.model_knowledge || '',
-                    model_rerank: config.model_rerank || ''
-                })
-                .where(eq(drizzleSchema.ai_configs.id, config.id));
+            // 更新逻辑：仅设置传入的非空字段
+            const updateData: any = {};
+            if (config.name !== undefined) updateData.name = config.name;
+            if (config.api_url !== undefined) updateData.api_url = config.api_url;
+            if (config.api_key !== undefined) updateData.api_key = config.api_key;
+            if (config.model_economy !== undefined) updateData.model_economy = config.model_economy;
+            if (config.model_premium !== undefined) updateData.model_premium = config.model_premium;
+            if (config.model_embedding !== undefined) updateData.model_embedding = config.model_embedding;
+            if (config.embedding_dimensions !== undefined) updateData.embedding_dimensions = config.embedding_dimensions;
+            if (config.model_knowledge !== undefined) updateData.model_knowledge = config.model_knowledge;
+            if (config.model_rerank !== undefined) updateData.model_rerank = config.model_rerank;
+
+            if (Object.keys(updateData).length > 0) {
+                await drizzleDb.update(ai_configs)
+                    .set(updateData)
+                    .where(eq(ai_configs.id, config.id));
+            }
         } else {
-            // Insert
-            // First check if it's the first config, if so make it active
-            const [countResult] = await drizzleDb.select({ value: count() }).from(drizzleSchema.ai_configs);
+            // 新增逻辑
+            // 检查是否为第一个配置，若是则默认激活
+            const [countResult] = await drizzleDb.select({ value: count() }).from(ai_configs);
             const isActive = countResult.value === 0;
 
-            await drizzleDb.insert(drizzleSchema.ai_configs).values({
+            await drizzleDb.insert(ai_configs).values({
                 name: config.name as string,
                 api_url: config.api_url as string,
                 api_key: config.api_key as string,
@@ -78,12 +83,12 @@ export async function saveAiConfigAction(config: Partial<AiConfig>) {
         revalidatePath('/admin');
         clearAiConfigCache();
 
-        // 记录日志
+        // 记录操作日志
         logAdminAction(user.id, user.username, 'UPDATE_AI_CONFIG', 'ai_config', config.id?.toString() || 'new', { name: config.name });
 
         return { success: true };
     } catch (error: unknown) {
-        logger.error({ err: error }, 'saveAiConfigAction error');
+        logger.error({ err: error }, '[AiConfig] 保存失败');
         return { success: false, error: getErrorMessage(error) };
     }
 }
@@ -91,20 +96,21 @@ export async function saveAiConfigAction(config: Partial<AiConfig>) {
 // 删除配置
 export async function deleteAiConfigAction(id: number) {
     const user = await requireRole(['admin']);
-    // Check if active
-    const config = await drizzleDb.query.ai_configs.findFirst({
-        where: eq(drizzleSchema.ai_configs.id, id),
-        columns: { is_active: true }
-    });
+    
+    // 检查是否为激活状态
+    const [config] = await drizzleDb.select({ is_active: ai_configs.is_active })
+        .from(ai_configs)
+        .where(eq(ai_configs.id, id))
+        .limit(1);
     
     if (config && config.is_active) {
         return { success: false, error: "无法删除当前激活的配置，请先切换到其他配置。" };
     }
 
-    await drizzleDb.delete(drizzleSchema.ai_configs)
-        .where(eq(drizzleSchema.ai_configs.id, id));
+    await drizzleDb.delete(ai_configs)
+        .where(eq(ai_configs.id, id));
 
-    // 记录日志
+    // 记录操作日志
     logAdminAction(user.id, user.username, 'DELETE_AI_CONFIG', 'ai_config', id.toString());
 
     revalidatePath('/admin');
@@ -117,8 +123,8 @@ export async function setActiveAiConfigAction(id: number) {
     const user = await requireRole(['admin']);
     
     await drizzleDb.transaction(async (tx) => {
-        await tx.update(drizzleSchema.ai_configs).set({ is_active: false });
-        await tx.update(drizzleSchema.ai_configs).set({ is_active: true }).where(eq(drizzleSchema.ai_configs.id, id));
+        await tx.update(ai_configs).set({ is_active: false });
+        await tx.update(ai_configs).set({ is_active: true }).where(eq(ai_configs.id, id));
     });
 
     // 记录日志
@@ -141,7 +147,7 @@ export interface AiModelRoute {
  */
 export async function getAiModelRoutesAction(): Promise<AiModelRoute[]> {
     await requireRole(['admin']);
-    return await drizzleDb.query.ai_model_routes.findMany() as AiModelRoute[];
+    return await drizzleDb.select().from(ai_model_routes) as AiModelRoute[];
 }
 
 /**
@@ -150,12 +156,12 @@ export async function getAiModelRoutesAction(): Promise<AiModelRoute[]> {
 export async function saveAiModelRouteAction(route: AiModelRoute) {
     const user = await requireRole(['admin']);
 
-    await drizzleDb.insert(drizzleSchema.ai_model_routes).values({
+    await drizzleDb.insert(ai_model_routes).values({
         feature: route.feature,
         config_id: route.config_id,
         model_name: route.model_name
     }).onConflictDoUpdate({
-        target: drizzleSchema.ai_model_routes.feature,
+        target: ai_model_routes.feature,
         set: {
             config_id: route.config_id,
             model_name: route.model_name,

@@ -9,7 +9,27 @@ export interface KnowledgeNode {
   count: number; // 该节点及其子节点下的题目总数
 }
 
+import { drizzleDb } from '@/lib/db';
+import { questions } from '@/lib/db/drizzle-schema';
+import { sql } from 'drizzle-orm';
+
 export const KnowledgeTreeService = {
+  /**
+   * 从数据库获取所有标签的聚合统计
+   */
+  async getAggregatedTags(): Promise<{ tag: string; count: number }[]> {
+    const rawTags = await drizzleDb.select({
+      tag: sql<string>`json_each.value`,
+      count: sql<number>`count(*)`
+    })
+    .from(sql`${questions} AS q, json_each(q.tags)`)
+    .groupBy(sql`json_each.value`)
+    .orderBy(sql`json_each.value`)
+    .all();
+
+    return rawTags as { tag: string; count: number }[];
+  },
+
   /**
    * 将平铺的标签列表转换为树形结构
    * 标签格式示例: "数学/几何/三角形"

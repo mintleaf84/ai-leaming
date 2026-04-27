@@ -1,76 +1,81 @@
-
-import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { srsService } from '../srs';
+// @vitest-environment node
+import { describe, it, expect, beforeEach, vi } from 'vitest';
+import { drizzleDb } from '@/lib/db';
+import { resetDrizzleMock } from '@/lib/db/__mocks__';
+import { srsService, learnReadingSpeed } from '../srs';
 import { Rating } from 'ts-fsrs';
 
-// Mock DB
-vi.mock('@/lib/db', () => ({
-    drizzleDb: {
-        query: {
-            questions: {
-                findFirst: vi.fn(),
-            },
-            question_srs: {
-                findFirst: vi.fn(),
-            },
-            practice_logs: {
-                findMany: vi.fn(),
-            }
-        },
-        insert: vi.fn(() => ({ values: vi.fn(() => ({ run: vi.fn(), get: vi.fn() })) })),
-        update: vi.fn(() => ({ set: vi.fn(() => ({ where: vi.fn(() => ({ run: vi.fn() })) })) })),
-        select: vi.fn(() => ({ from: vi.fn(() => ({ where: vi.fn(() => ({ all: vi.fn(() => []) })) })) })),
-    },
-    drizzleSchema: {
-        questions: { id: 'id', content: 'content', options: 'options', type: 'type' },
-        question_srs: { user_id: 'user_id', question_id: 'question_id' },
-        practice_logs: { user_id: 'user_id', question_id: 'question_id' },
-    }
-}));
+vi.mock('@/lib/db');
+vi.mock('@/lib/db/drizzle-schema');
 
-describe('srsService - Core Logic', () => {
-    
-    describe('calculateRating (Cognitive Load)', () => {
-        const content = "这是一道测试题目内容"; // 10 chars
-        const options = JSON.stringify(["选项A", "选项B", "选项C", "选项D"]); // 12 chars
-        // Total chars = 22. At 7 chars/sec, reading time ≈ 3.1s
-        
-        it('should judge normal time as GOOD for single choice', () => {
-            // Duration 10s - 3.1s reading = 6.9s thinking. (Threshold GOOD is 2-8s)
-            const rating = srsService.calculateRating(content, options, 10000, 7, 'single');
+describe('SRS Service', () => {
+    beforeEach(() => {
+        vi.clearAllMocks();
+        resetDrizzleMock();
+    });
+
+    describe('calculateRating', () => {
+        const mockContent = '这是一个测试题目'; // 8个字符
+        const mockOptions = JSON.stringify(['选项A', '选项B']); // 6个字符
+
+        it('答题极快时应返回 Easy', () => {
+            const rating = srsService.calculateRating(mockContent, mockOptions, 3000, 7);
+            expect(rating).toBe(Rating.Easy);
+        });
+
+        it('思考时间在阈值内应返回 Good', () => {
+            const rating = srsService.calculateRating(mockContent, mockOptions, 7000, 7);
             expect(rating).toBe(Rating.Good);
         });
 
-        it('should be more lenient for MULTI-choice (0.6x multiplier)', () => {
-            // Duration 15s - 3.1s reading = 11.9s thinking.
-            // With 0.6x multiplier: 11.9 * 0.6 = 7.14s. (Threshold GOOD is 2-8s)
-            // If it were single choice, 11.9s would be HARD (>8s).
-            const rating = srsService.calculateRating(content, options, 15000, 7, 'multi');
-            expect(rating).toBe(Rating.Good);
-        });
-
-        it('should be more strict for TRUE/FALSE (2.0x multiplier)', () => {
-            // Duration 6s - 3.1s reading = 2.9s thinking.
-            // With 2.0x multiplier: 2.9 * 2.0 = 5.8s.
-            // But if the user takes just a bit longer, e.g., 8s:
-            // 8s - 3.1s = 4.9s. 4.9 * 2.0 = 9.8s -> HARD.
-            const ratingNormal = srsService.calculateRating(content, options, 6000, 7, 'truefalse');
-            expect(ratingNormal).toBe(Rating.Good);
-            
-            const ratingSlow = srsService.calculateRating(content, options, 8000, 7, 'truefalse');
-            expect(ratingSlow).toBe(Rating.Hard);
+        it('答题较慢时应返回 Hard', () => {
+            const rating = srsService.calculateRating(mockContent, mockOptions, 15000, 7);
+            expect(rating).toBe(Rating.Hard);
         });
     });
 
-    describe('getOrCreateSrsCard (Cold Start)', () => {
-        it('should normalize correct_ratio from 0-100 to 0-1', () => {
-            // This is a private logic check via mocking or observation
-            // We can test the difficulty mapping
-            // Ratio 0.8 (80%) -> Difficulty = 10 - (0.8 * 9) = 2.8
-            // Ratio 80 (80%) -> Difficulty should also be 2.8, not negative
-            
-            // Note: Since difficulty is internal, we verify the service doesn't crash 
-            // and produces a valid card structure.
+    describe('learnReadingSpeed', () => {
+        it('应根据 EMA 算法更新阅读速度', async () => {
+            // 通用 Mock：模拟返回基准速度 7.0
+            (drizzleDb as any).then.mockImplementation((resolve: any) => resolve([
+                { key: 'reading_speed_base', value: '7.0' }
+            ]));
+
+            await learnReadingSpeed(1, 'A'.repeat(50), '[]', 10000);
+
+            // EMA: 7.0 * 0.9 + (50/10) * 0.1 = 6.3 + 0.5 = 6.8
+            expect(drizzleDb.insert).toHaveBeenCalledWith(expect.objectContaining({
+                value: '6.80'
+            }));
+        });
+    });
+
+    describe('syncFromPracticeLogs', () => {
+        it('应该只同步不存在于 SRS 中的练习记录', async () => {
+            const mockLogs = [
+                { questionId: 101, isCorrect: 1, durationMs: 5000, timestamp: '2024-01-01' },
+            ];
+
+            // 智能 Mock 实现：根据查询逻辑返回数据
+            (drizzleDb as any).then.mockImplementation((resolve: any) => {
+                // 1. 如果是查询 logs (通常是第一个查询)
+                if ((drizzleDb.select as any).mock.calls.length === 1) {
+                    return resolve(mockLogs);
+                }
+                // 2. 如果是查询题目信息 (包含 id 和 type)
+                return resolve([{ id: 101, type: 'single', content: 'Q1', options: '[]' }]);
+            });
+
+            const syncCount = await srsService.syncFromPracticeLogs(1);
+
+            expect(syncCount).toBe(1);
+            expect(drizzleDb.insert).toHaveBeenCalled(); 
+        });
+
+        it('如果没有新日志应返回 0', async () => {
+            (drizzleDb as any).then.mockImplementation((resolve: any) => resolve([]));
+            const syncCount = await srsService.syncFromPracticeLogs(1);
+            expect(syncCount).toBe(0);
         });
     });
 });

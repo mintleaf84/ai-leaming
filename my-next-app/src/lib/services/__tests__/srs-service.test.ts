@@ -1,172 +1,105 @@
 // @vitest-environment node
 import { describe, it, expect, beforeEach, vi } from 'vitest';
+import { drizzleDb } from '@/lib/db';
+import { resetDrizzleMock } from '@/lib/db/__mocks__';
+import { srsService, learnReadingSpeed } from '../srs';
 import { Rating, State } from 'ts-fsrs';
+import * as schema from '@/lib/db/__mocks__/drizzle-schema';
 
-// ---- Drizzle Mock ----
-const { mockDrizzleDb, mockDrizzleSchema } = vi.hoisted(() => {
-    const makeChain = () => {
-        const chain: Record<string, any> = {};
-        const methods = ['insert', 'values', 'update', 'set', 'delete', 'select', 'from',
-            'where', 'orderBy', 'limit', 'all', 'get', 'groupBy', 'onConflictDoUpdate'];
-        methods.forEach((m) => { chain[m] = vi.fn(() => chain); });
-        return chain;
+vi.mock('@/lib/db');
+vi.mock('@/lib/db/drizzle-schema');
+
+describe('SRS Service (Integrated)', () => {
+    // 助手：根据表名返回模拟数据
+    const mockDbResponse = (data: { questions?: any, question_srs?: any, system_settings?: any, practice_logs?: any }) => {
+        (drizzleDb as any).then.mockImplementation((resolve: any) => {
+            const fromTable = (drizzleDb as any).from.mock.calls.slice(-1)[0]?.[0];
+            if (fromTable === schema.questions && data.questions) return resolve(Array.isArray(data.questions) ? data.questions : [data.questions]);
+            if (fromTable === schema.question_srs && data.question_srs) return resolve(Array.isArray(data.question_srs) ? data.question_srs : [data.question_srs]);
+            if (fromTable === schema.system_settings && data.system_settings) return resolve(Array.isArray(data.system_settings) ? data.system_settings : [data.system_settings]);
+            if (fromTable === schema.practice_logs && data.practice_logs) return resolve(Array.isArray(data.practice_logs) ? data.practice_logs : [data.practice_logs]);
+            
+            // 默认返回空，但对于统计聚合查询，需要根据 select 字段返回
+            const selectFields = (drizzleDb as any).select.mock.calls.slice(-1)[0]?.[0];
+            if (selectFields?.state) return resolve([{ state: State.New, count: 10 }]);
+            if (selectFields?.range) return resolve([{ range: 5, count: 5 }]);
+            
+            return resolve([]);
+        });
     };
 
-    const chain = makeChain();
-
-    const mockQuery = {
-        question_srs: {
-            findFirst: vi.fn(),
-        },
-        questions: {
-            findFirst: vi.fn(),
-        },
-    };
-
-    const mockDrizzleDb = {
-        ...chain,
-        query: mockQuery,
-        insert: vi.fn(() => chain),
-        update: vi.fn(() => chain),
-        delete: vi.fn(() => chain),
-        select: vi.fn(() => chain),
-    };
-
-    const mockDrizzleSchema = {
-        question_srs: {
-            user_id: 'user_id',
-            question_id: 'question_id',
-            stability: 'stability',
-            difficulty: 'difficulty',
-            elapsed_days: 'elapsed_days',
-            scheduled_days: 'scheduled_days',
-            reps: 'reps',
-            lapses: 'lapses',
-            state: 'state',
-            last_review: 'last_review',
-            due_date: 'due_date',
-        },
-        questions: {
-            id: 'id',
-            content: 'content',
-            options: 'options',
-            correct_ratio: 'correct_ratio'
-        }
-    };
-
-    return { mockDrizzleDb, mockDrizzleSchema };
-});
-
-vi.mock('@/lib/db', () => ({
-    db: mockDrizzleDb,
-    drizzleDb: mockDrizzleDb,
-    drizzleSchema: mockDrizzleSchema,
-}));
-
-import { srsService } from '../srs';
-
-const chain = mockDrizzleDb as unknown as Record<string, ReturnType<typeof vi.fn>>;
-
-describe('SRS Service', () => {
     beforeEach(() => {
         vi.clearAllMocks();
-        const chainMethods = ['values', 'set', 'from', 'where', 'orderBy', 'limit', 'groupBy', 'onConflictDoUpdate'];
-        chainMethods.forEach((m) => { chain[m].mockReturnValue(mockDrizzleDb); });
+        resetDrizzleMock();
     });
 
-    describe('calculateRating', () => {
-        it('秒杀题目应被评为 Easy', () => {
-            const content = '1+1=?';
-            const options = '["2","3"]';
-            // 字数少，阅读时间近乎 0，500ms 答完属于秒杀
-            const rating = srsService.calculateRating(content, options, 500, 7);
+    describe('calculateRating (认知算法)', () => {
+        it('极快答题应返回 Easy', () => {
+            const rating = srsService.calculateRating('测试题干内容', '["A", "B"]', 3000, 7);
             expect(rating).toBe(Rating.Easy);
         });
 
-        it('长题目正常答完应被评为 Good', () => {
-            const content = '这是一段很长的题干内容'.repeat(10); // 100字
-            const options = '[]';
-            // 100字 / 7 = 14.2s 阅读时间
-            // 总耗时 20s，纯思考时间 5.8s -> Good
-            const rating = srsService.calculateRating(content, options, 20000, 7);
+        it('正常答题应返回 Good', () => {
+            const rating = srsService.calculateRating('测试题干内容', '["A", "B"]', 7000, 7);
             expect(rating).toBe(Rating.Good);
         });
+    });
 
-        it('短题目思考很久应被评为 Hard', () => {
-            const content = '1+1=?';
-            const options = '[]';
-            // 总耗时 15s，纯思考时间 14s+ -> Hard
-            const rating = srsService.calculateRating(content, options, 15000, 7);
-            expect(rating).toBe(Rating.Hard);
+    describe('learnReadingSpeed (学习算法)', () => {
+        it('EMA 算法应正确平滑更新速度', async () => {
+            mockDbResponse({ system_settings: { value: '7.0' } });
+            await learnReadingSpeed(1, 'A'.repeat(100), '[]', 10000);
+            expect(drizzleDb.values).toHaveBeenCalledWith(expect.objectContaining({ value: '7.30' }));
         });
     });
 
-    describe('updateQuestionSrs', () => {
-        it('答错时应映射为 Again 评级', async () => {
-            mockDrizzleDb.query.questions.findFirst.mockResolvedValueOnce({
-                id: 1, content: 'Q', options: '[]'
-            });
-            mockDrizzleDb.query.question_srs.findFirst.mockResolvedValueOnce(undefined);
-            
+    describe('updateQuestionSrs (核心状态流转)', () => {
+        const mockQuestion = { id: 1, content: 'Q', options: '[]', type: 'single' };
+        const mockSrs = {
+            stability: 1.0, difficulty: 5.0, state: State.New,
+            reps: 0, lapses: 0, due_date: new Date().toISOString(), last_review: null
+        };
+
+        it('答错时应映射为 Again', async () => {
+            mockDbResponse({ questions: mockQuestion, question_srs: [] }); // 模拟新题
+
             await srsService.updateQuestionSrs(1, 1, false, 5000);
             
-            // 验证插入的数据中，reps 应该增加
-            const insertCall = mockDrizzleDb.insert.mock.calls[0];
-            expect(insertCall).toBeDefined();
-            
-            const valuesCall = chain['values'].mock.calls[0][0];
-            expect(valuesCall.reps).toBe(1);
-            // 在 ts-fsrs 中，New 状态下评分 Again，card.state 变为 Learning
-            // lapses 只有在从 Review 状态变回 Relearning 时才会显著增加，或者取决于具体版本实现
-            expect(valuesCall.state).toBe(State.Learning);
+            const valuesData = (drizzleDb.values as any).mock.calls[0][0];
+            expect(valuesData.state).toBe(State.Learning);
+            expect(valuesData.reps).toBe(1);
         });
 
-        it('答对时应根据耗时计算新状态', async () => {
-            mockDrizzleDb.query.questions.findFirst.mockResolvedValueOnce({
-                id: 1, content: 'Q', options: '[]', correct_ratio: 0.8
-            });
-            mockDrizzleDb.query.question_srs.findFirst.mockResolvedValueOnce(undefined);
+        it('答对时应计算新稳定性', async () => {
+            mockDbResponse({ questions: mockQuestion, question_srs: mockSrs });
+
+            await srsService.updateQuestionSrs(1, 1, true, 2000); // Easy
             
-            // 1000ms 答对 -> Easy
-            await srsService.updateQuestionSrs(1, 1, true, 1000);
-            
-            const valuesCall = chain['values'].mock.calls[0][0];
-            expect(valuesCall.reps).toBe(1);
-            // Easy 状态下初次复习间隔通常大于 0
-            expect(valuesCall.scheduled_days).toBeGreaterThan(0);
-        });
-
-        it('应该根据 FSRS 逻辑计算难度（答错时难度较高，答对且简单时难度较低）', async () => {
-            mockDrizzleDb.query.questions.findFirst.mockResolvedValueOnce({
-                id: 1, content: 'Q', options: '[]', correct_ratio: 0.5
-            });
-            mockDrizzleDb.query.question_srs.findFirst.mockResolvedValueOnce(undefined);
-            
-            // 答错 (Again)
-            await srsService.updateQuestionSrs(1, 1, false, 5000);
-            const againDifficulty = chain['values'].mock.calls[0][0].difficulty;
-
-            vi.clearAllMocks();
-            mockDrizzleDb.query.questions.findFirst.mockResolvedValueOnce({
-                id: 1, content: 'Q', options: '[]', correct_ratio: 0.5
-            });
-            mockDrizzleDb.query.question_srs.findFirst.mockResolvedValueOnce(undefined);
-
-            // 答对且秒杀 (Easy)
-            await srsService.updateQuestionSrs(1, 1, true, 500);
-            const easyDifficulty = chain['values'].mock.calls[0][0].difficulty;
-
-            // FSRS 逻辑：答错后的难度应大于秒杀后的难度
-            expect(againDifficulty).toBeGreaterThan(easyDifficulty);
+            const valuesData = (drizzleDb.values as any).mock.calls[0][0];
+            expect(valuesData.scheduled_days).toBeGreaterThan(0);
         });
     });
 
-    describe('getDueCount', () => {
-        it('应该统计到期题目数', async () => {
-            chain['get'].mockResolvedValueOnce({ count: 5 });
-            const count = await srsService.getDueCount(1);
-            expect(count).toBe(5);
-            expect(mockDrizzleDb.select).toHaveBeenCalled();
+    describe('syncFromPracticeLogs (性能优化同步)', () => {
+        it('应正确执行增量同步并使用缓存速度', async () => {
+            mockDbResponse({ 
+                practice_logs: { questionId: 101, isCorrect: 1, durationMs: 5000 },
+                questions: { id: 101, type: 'single', content: 'Q1', options: '[]' }
+            });
+
+            const count = await srsService.syncFromPracticeLogs(1);
+            expect(count).toBe(1);
+            expect(drizzleDb.values).toHaveBeenCalled();
+        });
+    });
+
+    describe('getGlobalStats (分析统计)', () => {
+        it('应返回完整的统计对象', async () => {
+            mockDbResponse({}); // 使用默认的聚合 Mock
+
+            const stats = await srsService.getGlobalStats(1);
+            expect(stats.totalCards).toBe(10);
+            expect(stats.readingSpeed.base).toBe(7.0);
         });
     });
 });

@@ -1,10 +1,11 @@
-import { FSRS, Rating, createEmptyCard, Card, State, fsrs, generatorParameters } from 'ts-fsrs';
+import { Rating, createEmptyCard, Card, State, fsrs, generatorParameters } from 'ts-fsrs';
 import dayjs from 'dayjs';
 import utc from 'dayjs/plugin/utc';
 
 dayjs.extend(utc);
-import { db, drizzleDb, drizzleSchema } from '@/lib/db';
-import { eq, and, sql, lte, desc } from 'drizzle-orm';
+import { drizzleDb } from '@/lib/db';
+import { questions, question_srs, practice_logs, system_settings } from '@/lib/db/drizzle-schema';
+import { eq, and, sql, lte, isNull, desc, count, gte } from 'drizzle-orm';
 
 // FSRS 基础配置
 const f = fsrs(generatorParameters());
@@ -16,7 +17,6 @@ const SPEED_LIMITS = { MIN: 3, MAX: 20 }; // 速度约束区间
 const THINKING_TIME_THRESHOLDS = {
     EASY: 2,   // 纯思考时间 < 2s 为简单
     GOOD: 8,   // 2s <= 纯思考时间 <= 8s 为正常
-    // > 8s 为困难
 };
 
 /**
@@ -27,21 +27,22 @@ async function getReadingSpeed(userId: number, questionType?: string): Promise<n
                 questionType === 'truefalse' ? 'reading_speed_truefalse' : 
                 'reading_speed_base';
 
-    const setting = await drizzleDb.query?.system_settings?.findFirst({
-        where: and(
-            eq(drizzleSchema.system_settings.user_id, userId),
-            eq(drizzleSchema.system_settings.key, key)
-        )
-    });
+    const [setting] = await drizzleDb.select()
+        .from(system_settings)
+        .where(and(
+            eq(system_settings.user_id, userId),
+            eq(system_settings.key, key)
+        ))
+        .limit(1);
 
-    // Fallback: 如果特定类型的速度不存在，尝试获取基础速度
     if (!setting && key !== 'reading_speed_base') {
-        const baseSetting = await drizzleDb.query?.system_settings?.findFirst({
-            where: and(
-                eq(drizzleSchema.system_settings.user_id, userId),
-                eq(drizzleSchema.system_settings.key, 'reading_speed_base')
-            )
-        });
+        const [baseSetting] = await drizzleDb.select()
+            .from(system_settings)
+            .where(and(
+                eq(system_settings.user_id, userId),
+                eq(system_settings.key, 'reading_speed_base')
+            ))
+            .limit(1);
         return baseSetting?.value ? parseFloat(baseSetting.value) : DEFAULT_READING_SPEED;
     }
 
@@ -52,7 +53,6 @@ async function getReadingSpeed(userId: number, questionType?: string): Promise<n
  * 内部辅助：根据本次表现更新基准速度 (EMA 算法)
  */
 export async function learnReadingSpeed(userId: number, questionContent: string, optionsJson: string, durationMs: number, questionType?: string) {
-    // 1. 计算字数
     let optionsText = '';
     try {
         const options = JSON.parse(optionsJson);
@@ -62,29 +62,24 @@ export async function learnReadingSpeed(userId: number, questionContent: string,
     }
     const totalChars = questionContent.length + optionsText.length;
 
-    // 2. 噪声过滤 (正态分布思想：只学习正常范围内的表现)
-    // 过滤条件：字数过少(<10)、耗时极短(<1s，可能是背答案)或耗时过长(>60s，可能是挂机)
     if (totalChars < 10 || durationMs < 1000 || durationMs > 60000) return;
 
     const currentSpeed = totalChars / (durationMs / 1000);
     const oldSpeed = await getReadingSpeed(userId, questionType);
     
-    // 3. EMA 计算
     let newSpeed = oldSpeed * (1 - READING_SPEED_ALPHA) + currentSpeed * READING_SPEED_ALPHA;
-    
-    // 4. 约束并保存
     newSpeed = Math.max(SPEED_LIMITS.MIN, Math.min(SPEED_LIMITS.MAX, newSpeed));
 
     const key = questionType === 'multi' ? 'reading_speed_multi' : 
                 questionType === 'truefalse' ? 'reading_speed_truefalse' : 
                 'reading_speed_base';
 
-    await drizzleDb.insert(drizzleSchema.system_settings).values({
+    await drizzleDb.insert(system_settings).values({
         user_id: userId,
         key: key,
         value: newSpeed.toFixed(2),
     }).onConflictDoUpdate({
-        target: [drizzleSchema.system_settings.user_id, drizzleSchema.system_settings.key],
+        target: [system_settings.user_id, system_settings.key],
         set: { value: newSpeed.toFixed(2), updated_at: sql`CURRENT_TIMESTAMP` }
     });
 }
@@ -94,46 +89,53 @@ export interface SRSCardState extends Card {
     due_date: Date;
 }
 
+// 统计数据类型定义
+export interface SrsGlobalStats {
+  totalCards: number;
+  stateDistribution: {
+    new: number;
+    learning: number;
+    review: number;
+    relearning: number;
+  };
+  stabilityDistribution: { range: string; count: number; }[];
+  difficultyDistribution: { range: string; count: number; }[];
+  futureReviews: { date: string; count: number; estimatedMinutes: number; }[];
+  retentionStats: { trueRetention: number; totalReviews: number; };
+  readingSpeed: { base: number; multi: number; truefalse: number; };
+  learnedCount: number;
+}
+
 export const srsService = {
     /**
      * 根据答题耗时和题目长度计算 FSRS 评分 (Rating)
      */
     calculateRating: (questionContent: string, optionsJson: string, durationMs: number, readingSpeed: number, questionType?: string): Rating => {
-        // 1. 计算总字数（题干 + 选项）
         let optionsText = '';
         try {
             const options = JSON.parse(optionsJson);
-            if (Array.isArray(options)) {
-                optionsText = options.join('');
-            }
+            if (Array.isArray(options)) optionsText = options.join('');
         } catch (e) {
             optionsText = optionsJson || '';
         }
         
         const totalChars = questionContent.length + optionsText.length;
-        
-        // 2. 使用动态阅读速度估算阅读时间 (秒)
         const readingTimeSec = totalChars / readingSpeed;
-        
-        // 3. 计算纯思考时间 (秒)
         const totalDurationSec = durationMs / 1000;
         let thinkingTimeSec = Math.max(0, totalDurationSec - readingTimeSec);
 
-        // 4. 题型系数修正
-        // 多选题决策成本高，给予 0.6x 宽容度；判断题决策极快，给予 2.0x 灵敏度
         if (questionType === 'multi') {
             thinkingTimeSec *= 0.6;
         } else if (questionType === 'truefalse') {
             thinkingTimeSec *= 2.0;
         }
         
-        // 5. 映射到 FSRS Rating
         if (thinkingTimeSec < THINKING_TIME_THRESHOLDS.EASY) {
-            return Rating.Easy; // 4
+            return Rating.Easy;
         } else if (thinkingTimeSec <= THINKING_TIME_THRESHOLDS.GOOD) {
-            return Rating.Good; // 3
+            return Rating.Good;
         } else {
-            return Rating.Hard; // 2
+            return Rating.Hard;
         }
     },
 
@@ -141,12 +143,13 @@ export const srsService = {
      * 获取或初始化题目的 SRS 状态
      */
     getOrCreateSrsCard: async (userId: number, questionId: number): Promise<Card> => {
-        const row = await drizzleDb.query?.question_srs?.findFirst({
-            where: and(
-                eq(drizzleSchema.question_srs.user_id, userId),
-                eq(drizzleSchema.question_srs.question_id, questionId)
-            )
-        });
+        const [row] = await drizzleDb.select()
+            .from(question_srs)
+            .where(and(
+                eq(question_srs.user_id, userId),
+                eq(question_srs.question_id, questionId)
+            ))
+            .limit(1);
 
         if (row) {
             const card = createEmptyCard();
@@ -162,33 +165,26 @@ export const srsService = {
             return card;
         }
 
-        // 初始化新卡片
-        const emptyCard = createEmptyCard();
-        
-
-        return emptyCard;
+        return createEmptyCard();
     },
 
     /**
      * 更新题目 SRS 状态
      */
-    updateQuestionSrs: async (userId: number, questionId: number, isCorrect: boolean, durationMs: number, reviewDate?: Date) => {
-        // 1. 获取题目内容用于计算评分
-        const question = await drizzleDb.query?.questions?.findFirst({
-            where: eq(drizzleSchema.questions.id, questionId)
-        });
+    updateQuestionSrs: async (userId: number, questionId: number, isCorrect: boolean, durationMs: number, reviewDate?: Date, cachedReadingSpeed?: number) => {
+        const [question] = await drizzleDb.select()
+            .from(questions)
+            .where(eq(questions.id, questionId))
+            .limit(1);
         if (!question) return;
 
-        // 2. 获取当前 SRS 状态
         const card = await srsService.getOrCreateSrsCard(userId, questionId);
 
-        // 3. 确定评分
         let rating: Rating;
         if (!isCorrect) {
-            rating = Rating.Again; // 1
+            rating = Rating.Again;
         } else {
-            // 获取个体化阅读速度
-            const readingSpeed = await getReadingSpeed(userId, question.type || undefined);
+            const readingSpeed = cachedReadingSpeed ?? await getReadingSpeed(userId, question.type || undefined);
             rating = srsService.calculateRating(
                 question.content, 
                 question.options || '[]', 
@@ -197,17 +193,14 @@ export const srsService = {
                 question.type || undefined
             );
 
-            // 学习新的速度基准
             await learnReadingSpeed(userId, question.content, question.options || '[]', durationMs, question.type || undefined);
         }
 
-        // 4. 调用 FSRS 计算新状态
         const now = reviewDate || new Date();
         const schedulingCards = f.repeat(card, now);
         const item = (schedulingCards as any)[rating].card;
 
-        // 5. 保存回数据库
-        await drizzleDb.insert(drizzleSchema.question_srs).values({
+        await drizzleDb.insert(question_srs).values({
             user_id: userId,
             question_id: questionId,
             stability: item.stability,
@@ -220,7 +213,7 @@ export const srsService = {
             last_review: item.last_review?.toISOString(),
             due_date: item.due.toISOString(),
         }).onConflictDoUpdate({
-            target: [drizzleSchema.question_srs.user_id, drizzleSchema.question_srs.question_id],
+            target: [question_srs.user_id, question_srs.question_id],
             set: {
                 stability: item.stability,
                 difficulty: item.difficulty,
@@ -241,44 +234,189 @@ export const srsService = {
      * 获取当前到期的错题数量
      */
     getDueCount: async (userId: number): Promise<number> => {
-        const result = await drizzleDb.select({ count: sql<number>`count(*)` })
-            .from(drizzleSchema.question_srs)
+        const [result] = await drizzleDb.select({ count: sql<number>`count(*)` })
+            .from(question_srs)
             .where(and(
-                eq(drizzleSchema.question_srs.user_id, userId),
-                lte(drizzleSchema.question_srs.due_date, new Date().toISOString())
-            ))
-            .get();
-        return result?.count || 0;
+                eq(question_srs.user_id, userId),
+                lte(question_srs.due_date, new Date().toISOString())
+            ));
+        return Number(result?.count) || 0;
     },
 
     /**
-     * 从练习日志中同步数据到 SRS (用于导入数据后的冷启动)
+     * 获取全局统计数据
+     */
+    getGlobalStats: async (userId: number): Promise<SrsGlobalStats> => {
+        // 1. 状态分布
+        const states = await drizzleDb.select({ state: question_srs.state, count: count() })
+            .from(question_srs)
+            .where(eq(question_srs.user_id, userId))
+            .groupBy(question_srs.state);
+
+        const stateDist = {
+            new: Number(states.find(s => s.state === State.New)?.count || 0),
+            learning: Number(states.find(s => s.state === State.Learning)?.count || 0),
+            review: Number(states.find(s => s.state === State.Review)?.count || 0),
+            relearning: Number(states.find(s => s.state === State.Relearning)?.count || 0),
+        };
+
+        // 2. 稳定性分布
+        const stabilityRows = await drizzleDb.select({
+            range: sql<string>`
+                CASE 
+                    WHEN ${question_srs.stability} < 1 THEN '<1d'
+                    WHEN ${question_srs.stability} < 3 THEN '1-3d'
+                    WHEN ${question_srs.stability} < 7 THEN '3-7d'
+                    WHEN ${question_srs.stability} < 15 THEN '7-15d'
+                    WHEN ${question_srs.stability} < 30 THEN '15-30d'
+                    WHEN ${question_srs.stability} < 90 THEN '30-90d'
+                    ELSE '90d+' 
+                END`,
+            count: count()
+        })
+        .from(question_srs)
+        .where(eq(question_srs.user_id, userId))
+        .groupBy(sql`range`);
+
+        // 3. 难度分布
+        const difficultyRows = await drizzleDb.select({
+            range: sql<number>`CAST(${question_srs.difficulty} AS INTEGER)`,
+            count: count()
+        })
+        .from(question_srs)
+        .where(eq(question_srs.user_id, userId))
+        .groupBy(sql`range`)
+        .orderBy(sql`range ASC`);
+
+        // 4. 未来 7 天计划
+        const futureDays = Array.from({ length: 7 }, (_, i) => {
+            const d = new Date();
+            d.setDate(d.getDate() + i);
+            return d.toISOString().split('T')[0];
+        });
+
+        const rawFutureRows = await drizzleDb.select({
+            date: sql<string>`
+                CASE 
+                    WHEN date(${question_srs.due_date}) <= date('now') THEN date('now')
+                    ELSE date(${question_srs.due_date})
+                END`,
+            count: count()
+        })
+        .from(question_srs)
+        .where(and(
+            eq(question_srs.user_id, userId),
+            sql`date(${question_srs.due_date}) <= date('now', '+7 days')`
+        ))
+        .groupBy(sql`date`);
+
+        // 5. 真实保留率 (最近 30 天)
+        const [retentionRow] = await drizzleDb.select({
+            total: count(),
+            correct: sql<number>`SUM(CASE WHEN ${practice_logs.is_correct} = 1 THEN 1 ELSE 0 END)`
+        })
+        .from(practice_logs)
+        .where(and(
+            eq(practice_logs.user_id, userId),
+            sql`${practice_logs.timestamp} > datetime('now', '-30 days')`
+        ));
+
+        // 6. 阅读速度
+        const speedSettings = await drizzleDb.select()
+            .from(system_settings)
+            .where(and(
+                eq(system_settings.user_id, userId),
+                sql`${system_settings.key} LIKE 'reading_speed_%'`
+            ));
+
+        const readingSpeed = {
+            base: parseFloat(speedSettings.find(s => s.key === 'reading_speed_base')?.value || '7.0'),
+            multi: parseFloat(speedSettings.find(s => s.key === 'reading_speed_multi')?.value || '7.0'),
+            truefalse: parseFloat(speedSettings.find(s => s.key === 'reading_speed_truefalse')?.value || '7.0'),
+        };
+
+        // 7. 样本数
+        const [learnedCountRow] = await drizzleDb.select({ count: count() })
+            .from(practice_logs)
+            .innerJoin(questions, eq(practice_logs.question_id, questions.id))
+            .where(and(
+                eq(practice_logs.user_id, userId),
+                eq(practice_logs.is_correct, true),
+                sql`(LENGTH(${questions.content}) + LENGTH(COALESCE(${questions.options}, ''))) >= 10`,
+                gte(practice_logs.duration_ms, 1000),
+                lte(practice_logs.duration_ms, 60000)
+            ));
+
+        // 8. 预计复习耗时
+        const [avgDurationRow] = await drizzleDb.select({
+            avg_duration: sql<number>`AVG(${practice_logs.duration_ms})`
+        })
+        .from(practice_logs)
+        .where(and(
+            eq(practice_logs.user_id, userId),
+            sql`${practice_logs.timestamp} > datetime('now', '-30 days')`,
+            gte(practice_logs.duration_ms, 1000),
+            lte(practice_logs.duration_ms, 60000)
+        ));
+
+        const avgDurationMs = avgDurationRow?.avg_duration || 15000;
+
+        return {
+            totalCards: Object.values(stateDist).reduce((a, b) => a + b, 0),
+            stateDistribution: stateDist,
+            stabilityDistribution: [
+                { range: '<1d', count: stabilityRows.find(r => r.range === '<1d')?.count || 0 },
+                { range: '1-3d', count: stabilityRows.find(r => r.range === '1-3d')?.count || 0 },
+                { range: '3-7d', count: stabilityRows.find(r => r.range === '3-7d')?.count || 0 },
+                { range: '7-15d', count: stabilityRows.find(r => r.range === '7-15d')?.count || 0 },
+                { range: '15-30d', count: stabilityRows.find(r => r.range === '15-30d')?.count || 0 },
+                { range: '30-90d', count: stabilityRows.find(r => r.range === '30-90d')?.count || 0 },
+                { range: '90d+', count: stabilityRows.find(r => r.range === '90d+')?.count || 0 },
+            ],
+            difficultyDistribution: (difficultyRows || []).map(r => ({ range: (r.range ?? 0).toString(), count: r.count })),
+            futureReviews: futureDays.map(day => {
+                const count = rawFutureRows.find(r => r.date === day)?.count || 0;
+                return {
+                    date: day,
+                    count,
+                    estimatedMinutes: Math.ceil((count * avgDurationMs) / 60000)
+                };
+            }),
+            retentionStats: {
+                trueRetention: (retentionRow?.total || 0) > 0 ? ((retentionRow?.correct || 0) / (retentionRow?.total || 1)) * 100 : 100,
+                totalReviews: retentionRow?.total || 0
+            },
+            readingSpeed,
+            learnedCount: learnedCountRow?.count || 0
+        };
+    },
+
+    /**
+     * 从练习日志中同步数据到 SRS
      */
     syncFromPracticeLogs: async (userId: number) => {
-        // 1. 查找所有有练习记录但没有 SRS 记录的题目
         const logs = await drizzleDb.select({
-            questionId: drizzleSchema.practice_logs.question_id,
-            isCorrect: drizzleSchema.practice_logs.is_correct,
-            durationMs: drizzleSchema.practice_logs.duration_ms,
-            timestamp: drizzleSchema.practice_logs.timestamp
+            questionId: practice_logs.question_id,
+            isCorrect: practice_logs.is_correct,
+            durationMs: practice_logs.duration_ms,
+            timestamp: practice_logs.timestamp
         })
-        .from(drizzleSchema.practice_logs)
+        .from(practice_logs)
         .leftJoin(
-            drizzleSchema.question_srs, 
+            question_srs, 
             and(
-                eq(drizzleSchema.question_srs.question_id, drizzleSchema.practice_logs.question_id),
-                eq(drizzleSchema.question_srs.user_id, userId)
+                eq(question_srs.question_id, practice_logs.question_id),
+                eq(question_srs.user_id, userId)
             )
         )
         .where(and(
-            eq(drizzleSchema.practice_logs.user_id, userId),
-            sql`${drizzleSchema.question_srs.question_id} IS NULL`
+            eq(practice_logs.user_id, userId),
+            isNull(question_srs.question_id)
         ))
-        .orderBy(drizzleSchema.practice_logs.timestamp);
+        .orderBy(practice_logs.timestamp);
 
         if (logs.length === 0) return 0;
 
-        // 2. 按题目分组并按时间顺序重播
         const questionGroups = new Map<number, any[]>();
         for (const log of logs) {
             if (!questionGroups.has(log.questionId)) {
@@ -287,17 +425,28 @@ export const srsService = {
             questionGroups.get(log.questionId)!.push(log);
         }
 
+        const speedCache: Record<string, number> = {
+            'base': await getReadingSpeed(userId),
+            'multi': await getReadingSpeed(userId, 'multi'),
+            'truefalse': await getReadingSpeed(userId, 'truefalse')
+        };
+
         let syncCount = 0;
         for (const [qId, qLogs] of questionGroups.entries()) {
-            // 对每个题目，按时间顺序模拟它的记忆曲线
+            const [qInfo] = await drizzleDb.select({ type: questions.type })
+                .from(questions)
+                .where(eq(questions.id, qId))
+                .limit(1);
+            
+            const speed = speedCache[qInfo?.type || 'base'] || speedCache['base'];
+
             for (const log of qLogs) {
                 const reviewDate = log.timestamp ? dayjs.utc(log.timestamp).toDate() : undefined;
-                await srsService.updateQuestionSrs(userId, qId, log.isCorrect, log.durationMs || 0, reviewDate);
+                await srsService.updateQuestionSrs(userId, qId, log.isCorrect, log.durationMs || 0, reviewDate, speed);
             }
             syncCount++;
         }
         
-        console.log(`[SRS] 同步完成: 为 ${syncCount} 道题目初始化了 SRS 状态`);
         return syncCount;
     }
 };

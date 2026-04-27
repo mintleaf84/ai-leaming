@@ -1,195 +1,16 @@
 'use server';
 
-import { db } from '@/lib/db';
 import { requireUser } from '@/lib/auth/auth';
 import { cache } from 'react';
-import { State, Rating } from 'ts-fsrs';
-
-export type SrsGlobalStats = {
-  totalCards: number;
-  stateDistribution: {
-    new: number;
-    learning: number;
-    review: number;
-    relearning: number;
-  };
-  stabilityDistribution: {
-    range: string;
-    count: number;
-  }[];
-  difficultyDistribution: {
-    range: string;
-    count: number;
-  }[];
-  futureReviews: {
-    date: string;
-    count: number;
-    estimatedMinutes: number;
-  }[];
-  retentionStats: {
-    trueRetention: number;
-    totalReviews: number;
-  };
-  readingSpeed: {
-    base: number;
-    multi: number;
-    truefalse: number;
-  };
-  learnedCount: number;
-};
+import { Rating } from 'ts-fsrs';
+import { srsService, type SrsGlobalStats } from '@/lib/services/srs';
 
 /**
  * 获取全局 SRS 统计数据
  */
 export const getSrsGlobalStatsAction = cache(async (): Promise<SrsGlobalStats> => {
   const user = await requireUser();
-
-  // 1. 状态分布
-  const states = db.prepare(`
-    SELECT state, COUNT(*) as count 
-    FROM question_srs 
-    WHERE user_id = ? 
-    GROUP BY state
-  `).all(user.id) as { state: number; count: number }[];
-
-  const stateDist = {
-    new: states.find(s => s.state === State.New)?.count || 0,
-    learning: states.find(s => s.state === State.Learning)?.count || 0,
-    review: states.find(s => s.state === State.Review)?.count || 0,
-    relearning: states.find(s => s.state === State.Relearning)?.count || 0,
-  };
-
-  // 2. 稳定性分布
-  // 划分区间: <1d, 1-3d, 3-7d, 7-15d, 15-30d, 30-90d, 90d+
-  const stabilityRows = db.prepare(`
-    SELECT 
-      CASE 
-        WHEN stability < 1 THEN '<1d'
-        WHEN stability < 3 THEN '1-3d'
-        WHEN stability < 7 THEN '3-7d'
-        WHEN stability < 15 THEN '7-15d'
-        WHEN stability < 30 THEN '15-30d'
-        WHEN stability < 90 THEN '30-90d'
-        ELSE '90d+' 
-      END as range,
-      COUNT(*) as count
-    FROM question_srs
-    WHERE user_id = ?
-    GROUP BY range
-  `).all(user.id) as { range: string; count: number }[];
-
-  // 3. 难度分布
-  const difficultyRows = db.prepare(`
-    SELECT 
-      CAST(difficulty AS INTEGER) as range,
-      COUNT(*) as count
-    FROM question_srs
-    WHERE user_id = ?
-    GROUP BY range
-    ORDER BY range ASC
-  `).all(user.id) as { range: number; count: number }[];
-
-  // 4. 未来 7 天复习计划 (包含今日逾期题目)
-  const futureDays = Array.from({ length: 7 }, (_, i) => {
-    const d = new Date();
-    d.setDate(d.getDate() + i);
-    return d.toISOString().split('T')[0];
-  });
-
-  const rawFutureRows = db.prepare(`
-    SELECT 
-      CASE 
-        WHEN date(due_date) <= date('now') THEN date('now')
-        ELSE date(due_date)
-      END as date,
-      COUNT(*) as count
-    FROM question_srs srs
-    WHERE srs.user_id = ? 
-    AND date(srs.due_date) <= date('now', '+7 days')
-    AND EXISTS (
-      SELECT 1 FROM practice_logs pl 
-      WHERE pl.question_id = srs.question_id 
-      AND pl.user_id = srs.user_id 
-      AND pl.is_correct = 0
-    )
-    GROUP BY date
-  `).all(user.id) as { date: string; count: number }[];
-
-  const futureRows = futureDays.map(day => {
-    const row = rawFutureRows.find(r => r.date === day);
-    return {
-      date: day,
-      count: row?.count || 0
-    };
-  });
-
-  // 5. 真实保留率 (最近 30 天)
-  const retentionRow = db.prepare(`
-    SELECT 
-      COUNT(*) as total,
-      SUM(CASE WHEN is_correct = 1 THEN 1 ELSE 0 END) as correct
-    FROM practice_logs
-    WHERE user_id = ? AND timestamp > datetime('now', '-30 days')
-  `).get(user.id) as { total: number; correct: number };
-
-  // 6. 个体阅读速度
-  const speedSettings = db.prepare(`
-    SELECT key, value 
-    FROM system_settings 
-    WHERE user_id = ? AND key LIKE 'reading_speed_%'
-  `).all(user.id) as { key: string; value: string }[];
-
-  const readingSpeed = {
-    base: parseFloat(speedSettings.find(s => s.key === 'reading_speed_base')?.value || '7.0'),
-    multi: parseFloat(speedSettings.find(s => s.key === 'reading_speed_multi')?.value || '7.0'),
-    truefalse: parseFloat(speedSettings.find(s => s.key === 'reading_speed_truefalse')?.value || '7.0'),
-  };
-
-  // 7. 学习样本数 (用于阅读速度)
-  const learnedCountRow = db.prepare(`
-    SELECT COUNT(*) as count
-    FROM practice_logs l
-    JOIN questions q ON l.question_id = q.id
-    WHERE l.user_id = ? AND l.is_correct = 1
-    AND (LENGTH(q.content) + LENGTH(COALESCE(q.options, ''))) >= 10
-    AND l.duration_ms >= 1000 AND l.duration_ms <= 60000
-  `).get(user.id) as { count: number };
-
-  // 8. 平均答题耗时 (用于预计时间预估)
-  // 过滤掉异常值 (1s以下可能是秒杀，60s以上可能是挂机)
-  const avgDurationRow = db.prepare(`
-    SELECT AVG(duration_ms) as avg_duration
-    FROM practice_logs
-    WHERE user_id = ? AND timestamp > datetime('now', '-30 days')
-    AND duration_ms >= 1000 AND duration_ms <= 60000
-  `).get(user.id) as { avg_duration: number | null };
-
-  const avgDurationMs = avgDurationRow?.avg_duration || 15000; // 默认 15s
-
-  return {
-    totalCards: Object.values(stateDist).reduce((a, b) => a + b, 0),
-    stateDistribution: stateDist,
-    stabilityDistribution: [
-      { range: '<1d', count: stabilityRows.find(r => r.range === '<1d')?.count || 0 },
-      { range: '1-3d', count: stabilityRows.find(r => r.range === '1-3d')?.count || 0 },
-      { range: '3-7d', count: stabilityRows.find(r => r.range === '3-7d')?.count || 0 },
-      { range: '7-15d', count: stabilityRows.find(r => r.range === '7-15d')?.count || 0 },
-      { range: '15-30d', count: stabilityRows.find(r => r.range === '15-30d')?.count || 0 },
-      { range: '30-90d', count: stabilityRows.find(r => r.range === '30-90d')?.count || 0 },
-      { range: '90d+', count: stabilityRows.find(r => r.range === '90d+')?.count || 0 },
-    ],
-    difficultyDistribution: difficultyRows.map(r => ({ range: r.range.toString(), count: r.count })),
-    futureReviews: futureRows.map(r => ({
-      ...r,
-      estimatedMinutes: Math.ceil((r.count * avgDurationMs) / 60000)
-    })),
-    retentionStats: {
-      trueRetention: retentionRow.total > 0 ? (retentionRow.correct / retentionRow.total) * 100 : 100,
-      totalReviews: retentionRow.total
-    },
-    readingSpeed,
-    learnedCount: learnedCountRow.count
-  };
+  return await srsService.getGlobalStats(user.id);
 });
 
 export type SrsHistoryEntry = {
@@ -204,18 +25,26 @@ export type SrsHistoryEntry = {
  */
 export const getQuestionSrsHistoryAction = async (questionId: number): Promise<SrsHistoryEntry[]> => {
   const user = await requireUser();
+  const { drizzleDb } = await import('@/lib/db');
+  const { practice_logs } = await import('@/lib/db/drizzle-schema');
+  const { eq, and } = await import('drizzle-orm');
 
-  const logs = db.prepare(`
-    SELECT timestamp as date, is_correct as isCorrect, duration_ms as duration
-    FROM practice_logs
-    WHERE user_id = ? AND question_id = ?
-    ORDER BY timestamp ASC
-  `).all(user.id, questionId) as { date: string; isCorrect: number; duration: number }[];
+  const logs = await drizzleDb.select({
+      date: practice_logs.timestamp,
+      isCorrect: practice_logs.is_correct,
+      duration: practice_logs.duration_ms
+    })
+    .from(practice_logs)
+    .where(and(
+      eq(practice_logs.user_id, user.id),
+      eq(practice_logs.question_id, questionId)
+    ))
+    .orderBy(practice_logs.timestamp);
 
   return logs.map(l => ({
-    date: l.date,
+    date: l.date || '',
     isCorrect: !!l.isCorrect,
-    duration: l.duration,
+    duration: l.duration || 0,
     rating: l.isCorrect ? 'Good' : 'Again' 
   }));
 };
@@ -232,7 +61,6 @@ export type SrsPrediction = {
  */
 export const getQuestionSrsPredictionsAction = async (questionId: number): Promise<SrsPrediction[]> => {
     const user = await requireUser();
-    const { srsService } = await import('@/lib/services/srs');
     const { fsrs, generatorParameters } = await import('ts-fsrs');
 
     const card = await srsService.getOrCreateSrsCard(user.id, questionId);
@@ -257,11 +85,11 @@ export const getQuestionSrsPredictionsAction = async (questionId: number): Promi
         };
     });
 };
+
 /**
  * 同步历史练习记录到 SRS (冷启动)
  */
 export const syncSrsDataAction = async () => {
   const user = await requireUser();
-  const { srsService } = await import('@/lib/services/srs');
   return await srsService.syncFromPracticeLogs(user.id);
 };

@@ -70,3 +70,52 @@ export const createBetterDbMock = () => {
     getLastSqlCall: () => state.calls[state.calls.length - 1],
   };
 };
+
+/**
+ * 创建一个支持 Drizzle ORM 链式调用的增强型 Mock 对象。
+ * 支持：select, insert, update, delete, join, where, limit, orderBy, onConflictDoUpdate 等。
+ */
+export const createDrizzleMock = () => {
+  const chain: any = {
+    // 默认返回空数组的异步 Promise，使其可被直接 await
+    then: vi.fn((resolve) => resolve([])),
+  };
+
+  const methods = [
+    'insert', 'values', 'returning', 'update', 'set', 'delete',
+    'select', 'from', 'where', 'limit', 'offset', 'orderBy',
+    'onConflictDoUpdate', 'innerJoin', 'leftJoin', 'rightJoin', 'fullJoin'
+  ];
+
+  methods.forEach((m) => {
+    chain[m] = vi.fn(() => chain);
+  });
+
+  // 支持事务模拟 (默认同步执行回调)
+  chain.transaction = vi.fn((cb) => cb(chain));
+
+  return chain;
+};
+
+/**
+ * 重置 Drizzle Mock 的所有链式调用状态，使其恢复默认的链式行为。
+ * @param mockObject createDrizzleMock 生成的对象
+ * @param defaultReturn 默认的 Await 返回值（默认为空数组）
+ */
+export const resetDrizzleMock = (mockObject: any, defaultReturn: any = []) => {
+  const methods = [
+    'insert', 'values', 'returning', 'update', 'set', 'delete',
+    'select', 'from', 'where', 'limit', 'offset', 'orderBy',
+    'onConflictDoUpdate', 'innerJoin', 'leftJoin', 'rightJoin', 'fullJoin'
+  ];
+
+  methods.forEach((m) => {
+    if (mockObject[m] && mockObject[m].mockReturnValue) {
+      mockObject[m].mockReturnValue(mockObject);
+    }
+  });
+
+  if (mockObject.then && mockObject.then.mockImplementation) {
+    mockObject.then.mockImplementation((resolve: any) => resolve(defaultReturn));
+  }
+};

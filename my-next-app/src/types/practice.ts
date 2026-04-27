@@ -11,7 +11,8 @@ export type PracticeMode =
     | 'mistakes'   // 纯错题专项
     | 'focus'      // 专项突破
     | 'exam'       // 模拟考试
-    | 'random';    // 随机挑战
+    | 'random'     // 随机挑战
+    | 'first-principles'; // 第一性原理分析
 
 // 练习模式中文映射
 export const PRACTICE_MODE_LABELS: Record<PracticeMode, string> = {
@@ -20,7 +21,8 @@ export const PRACTICE_MODE_LABELS: Record<PracticeMode, string> = {
     mistakes: '错题专项',
     focus: '专项突破',
     exam: '模拟考试',
-    random: '随机挑战'
+    random: '随机挑战',
+    'first-principles': '第一性原理'
 };
 
 // 练习模式描述
@@ -30,7 +32,8 @@ export const PRACTICE_MODE_DESCRIPTIONS: Record<PracticeMode, string> = {
     mistakes: '专门针对历史练习中做错的题目进行强化',
     focus: '聚焦指定知识点或维度，精准突破',
     exam: '模拟真实考试，计时顺序作答，无提示',
-    random: '完全随机抽题，快速查漏补缺'
+    random: '完全随机抽题，快速查漏补缺',
+    'first-principles': '从底层逻辑出发，深度拆解核心概念'
 };
 
 // 练习模式图标 (Lucide 图标名)
@@ -40,7 +43,8 @@ export const PRACTICE_MODE_ICONS: Record<PracticeMode, string> = {
     mistakes: 'AlertCircle',
     focus: 'Target',
     exam: 'FileCheck',
-    random: 'Shuffle'
+    random: 'Shuffle',
+    'first-principles': 'Atom'
 };
 
 // 练习配置
@@ -95,6 +99,11 @@ export const PRESET_CONFIGS: Record<PracticeMode, Partial<PracticeConfig>> = {
     random: {
         limit: 10,
         enableReview: false,
+        enableTimer: false
+    },
+    'first-principles': {
+        limit: 10,
+        enableReview: true,
         enableTimer: false
     }
 };

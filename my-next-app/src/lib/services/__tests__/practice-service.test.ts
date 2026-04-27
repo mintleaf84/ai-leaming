@@ -50,6 +50,8 @@ vi.mock('@/lib/db', () => ({
     drizzleSchema: mockDrizzleSchema 
 }));
 
+vi.mock('@/lib/db/drizzle-schema', () => mockDrizzleSchema);
+
 // Mock dynamic import for mastery
 vi.mock('@/lib/services/mastery', () => ({
     masteryService: mockMasteryService
@@ -105,8 +107,8 @@ describe('Practice Service', () => {
     describe('submitAnswer', () => {
         it('should log answer and update stats with correct parameters', async () => {
             const mockQ = { tags: '["tag1"]', dimension: 'knowledge' };
-            // submitAnswer 使用的是 query.questions.findFirst
-            (mockDrizzleDb.query.questions.findFirst as any).mockResolvedValue(mockQ);
+            // submitAnswer 使用的是 select().from().where().limit()
+            (mockDrizzleDb.then as any).mockImplementation((resolve: any) => resolve([mockQ]));
 
             await practiceService.submitAnswer(1, 's1', 101, 'A', true, 1000);
 

@@ -146,6 +146,16 @@ export const questionService = {
     },
 
     /**
+     * 更新题目助记词
+     */
+    async updateMnemonic(id: number, mnemonic: string) {
+        await drizzleDb.update(drizzleSchema.questions)
+            .set({ ai_mnemonic: mnemonic })
+            .where(eq(drizzleSchema.questions.id, id));
+        return true;
+    },
+
+    /**
      * 创建题目 (管理后台)
      */
     async create(data: Partial<Question>) {

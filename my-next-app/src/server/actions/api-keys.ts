@@ -50,7 +50,7 @@ export async function createApiKeyAction(
             description: description || '未命名密钥'
         });
 
-        logAdminAction(user.id, user.username, 'CREATE_API_KEY', 'api_key', null, { description });
+        await logAdminAction(user.id, user.username, 'CREATE_API_KEY', 'api_key', null, { description });
 
         return { success: true, key: keyString };
     } catch (error: unknown) {
@@ -75,7 +75,7 @@ export async function toggleApiKeyAction(
             })
             .where(eq(api_keys.id, id));
 
-        logAdminAction(user.id, user.username, 'TOGGLE_API_KEY', 'api_key', id.toString(), {
+        await logAdminAction(user.id, user.username, 'TOGGLE_API_KEY', 'api_key', id.toString(), {
             is_active: isActive,
         });
 
@@ -97,7 +97,7 @@ export async function deleteApiKeyAction(
         await drizzleDb.delete(api_keys)
             .where(eq(api_keys.id, id));
 
-        logAdminAction(user.id, user.username, 'DELETE_API_KEY', 'api_key', id.toString());
+        await logAdminAction(user.id, user.username, 'DELETE_API_KEY', 'api_key', id.toString());
 
         return { success: true };
     } catch (error: unknown) {

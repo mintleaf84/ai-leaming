@@ -39,7 +39,7 @@ export async function importQuestionsAction(jsonData: unknown) {
     const count = await adminService.importQuestions(parsedData);
 
     // 记录操作日志
-    logAdminAction(user.id, user.username, 'CREATE_QUESTION', 'question', null, { count });
+    await logAdminAction(user.id, user.username, 'CREATE_QUESTION', 'question', null, { count });
 
     return { success: true, count };
   } catch (error) {
@@ -57,7 +57,7 @@ export async function deleteQuestionAction(id: number) {
     await adminService.deleteQuestion(id);
 
     // 记录操作日志
-    logAdminAction(user.id, user.username, 'DELETE_QUESTION', 'question', id.toString());
+    await logAdminAction(user.id, user.username, 'DELETE_QUESTION', 'question', id.toString());
 
     return { success: true };
   } catch (error) {
@@ -107,7 +107,7 @@ export async function updateQuestionAction(id: number, data: QuestionUpdateData)
     await adminService.updateQuestion(id, data);
 
     // 记录操作日志
-    logAdminAction(user.id, user.username, 'UPDATE_QUESTION', 'question', id.toString(), data as any);
+    await logAdminAction(user.id, user.username, 'UPDATE_QUESTION', 'question', id.toString(), data as any);
 
     return { success: true };
   } catch (error) {
@@ -127,7 +127,7 @@ export async function batchDeleteQuestionsAction(ids: number[]) {
     const deletedCount = await adminService.batchDeleteQuestions(ids);
 
     // 记录操作日志
-    logAdminAction(user.id, user.username, 'BATCH_DELETE_QUESTION', 'question', null, { ids, count: deletedCount });
+    await logAdminAction(user.id, user.username, 'BATCH_DELETE_QUESTION', 'question', null, { ids, count: deletedCount });
 
     return { success: true, deletedCount };
   } catch (error) {
@@ -174,7 +174,7 @@ export async function deleteUserAction(id: number) {
     await adminService.deleteUser(id);
 
     // 记录操作日志
-    logAdminAction(user.id, user.username, 'DELETE_USER', 'user', id.toString());
+    await logAdminAction(user.id, user.username, 'DELETE_USER', 'user', id.toString());
 
     return { success: true };
   } catch (error) {
@@ -192,7 +192,7 @@ export async function resetUserPasswordAction(id: number, newPassword: string) {
     await adminService.resetPassword(id, newPassword);
 
     // 记录操作日志
-    logAdminAction(user.id, user.username, 'RESET_PASSWORD', 'user', id.toString());
+    await logAdminAction(user.id, user.username, 'RESET_PASSWORD', 'user', id.toString());
 
     return { success: true };
   } catch (error) {
@@ -210,7 +210,7 @@ export async function updateUserRoleAction(id: number, role: UserRole) {
     await adminService.updateUserRole(id, role);
 
     // 记录操作日志
-    logAdminAction(user.id, user.username, 'CHANGE_ROLE', 'user', id.toString(), { role });
+    await logAdminAction(user.id, user.username, 'CHANGE_ROLE', 'user', id.toString(), { role });
 
     return { success: true };
   } catch (error) {
@@ -227,7 +227,7 @@ export async function revokeUserSessionAction(id: number) {
   try {
     await adminService.revokeUserSessions(id);
 
-    logAdminAction(user.id, user.username, 'REVOKE_SESSION', 'user', id.toString());
+    await logAdminAction(user.id, user.username, 'REVOKE_SESSION', 'user', id.toString());
 
     return { success: true };
   } catch (error) {

@@ -1,11 +1,13 @@
-import { db,  drizzleDb, drizzleSchema } from '@/lib/db';
-import { eq, and, desc, inArray, sql } from 'drizzle-orm';
+import { drizzleDb, drizzleSchema } from '@/lib/db';
+import { notes, note_tags, note_tag_relations } from '@/lib/db/drizzle-schema';
+import { eq, and, desc, asc, sql, inArray } from 'drizzle-orm';
+import type { InferSelectModel } from 'drizzle-orm';
+import { TAG_COLORS } from '@/types';
+import { ragService } from '@/lib/ai/rag';
 
 /**
- * 知识卡片服务
- * 负责知识卡片的 CRUD 和导出操作
+ * 知识卡片相关类型
  */
-
 export interface KnowledgeCard {
     id?: number;
     session_id?: number;
@@ -22,9 +24,29 @@ export interface KnowledgeCard {
 }
 
 /**
- * 创建知识卡片
+ * 笔记相关类型
  */
-import { ragService } from '@/lib/ai/rag';
+export type Note = InferSelectModel<typeof notes>;
+export type NoteTag = InferSelectModel<typeof note_tags>;
+
+export type NotePreview = Pick<Note, 'id' | 'title' | 'updated_at'> & {
+    preview: string | null;
+};
+
+export interface CreateNoteInput {
+    title?: string;
+    content?: string;
+}
+
+export interface UpdateNoteInput {
+    id: number;
+    title?: string;
+    content?: string;
+}
+
+/**
+ * --- 知识卡片服务函数 ---
+ */
 
 /**
  * 创建知识卡片
@@ -244,3 +266,192 @@ export async function getKnowledgeStats(): Promise<{ total: number; byCategory: 
         byCategory: byCategory as { category: string; count: number }[] 
     };
 }
+
+/**
+ * --- 笔记服务 (knowledgeService 对象) ---
+ */
+export const knowledgeService = {
+    /**
+     * 创建笔记
+     */
+    async createNote(userId: number, title: string = '无标题', content: string | null = null) {
+        const [result] = await drizzleDb.insert(notes).values({
+            user_id: userId,
+            title,
+            content,
+        }).returning({ id: notes.id });
+        return result.id;
+    },
+
+    /**
+     * 更新笔记 (带所有权校验)
+     */
+    async updateNote(userId: number, noteId: number, data: { title?: string; content?: string }) {
+        const [existing] = await drizzleDb.select({ id: notes.id })
+            .from(notes)
+            .where(and(eq(notes.id, noteId), eq(notes.user_id, userId)))
+            .limit(1);
+
+        if (!existing) throw new Error('笔记不存在或无权限');
+
+        const updateData: any = {
+            updated_at: sql`CURRENT_TIMESTAMP`
+        };
+        if (data.title !== undefined) updateData.title = data.title;
+        if (data.content !== undefined) updateData.content = data.content;
+
+        await drizzleDb.update(notes).set(updateData).where(eq(notes.id, noteId));
+        return true;
+    },
+
+    /**
+     * 删除笔记 (带所有权校验)
+     */
+    async deleteNote(userId: number, noteId: number) {
+        await drizzleDb.delete(notes)
+            .where(and(eq(notes.id, noteId), eq(notes.user_id, userId)));
+        return true;
+    },
+
+    /**
+     * 获取笔记列表
+     */
+    async getNoteList(userId: number): Promise<NotePreview[]> {
+        return await drizzleDb.select({
+            id: notes.id,
+            title: notes.title,
+            updated_at: notes.updated_at,
+            preview: sql<string>`substr(${notes.content}, 1, 200)`
+        })
+        .from(notes)
+        .where(eq(notes.user_id, userId))
+        .orderBy(desc(notes.updated_at)) as NotePreview[];
+    },
+
+    /**
+     * 搜索笔记
+     */
+    async searchNotes(userId: number, query: string): Promise<NotePreview[]> {
+        const searchPattern = `%${query}%`;
+        return await drizzleDb.select({
+            id: notes.id,
+            title: notes.title,
+            updated_at: notes.updated_at,
+            preview: sql<string>`substr(${notes.content}, 1, 200)`
+        })
+        .from(notes)
+        .where(
+            and(
+                eq(notes.user_id, userId),
+                sql`(${notes.title} LIKE ${searchPattern} OR ${notes.content} LIKE ${searchPattern})`
+            )
+        )
+        .orderBy(desc(notes.updated_at))
+        .limit(50) as NotePreview[];
+    },
+
+    /**
+     * 获取笔记详情
+     */
+    async getNoteDetail(userId: number, noteId: number): Promise<Note> {
+        const [note] = await drizzleDb.select()
+            .from(notes)
+            .where(and(eq(notes.id, noteId), eq(notes.user_id, userId)))
+            .limit(1);
+
+        if (!note) throw new Error('笔记不存在');
+        return note as Note;
+    },
+
+    /** --- 标签相关 --- **/
+
+    /**
+     * 获取用户所有标签
+     */
+    async getTags(userId: number): Promise<NoteTag[]> {
+        return await drizzleDb.select()
+            .from(note_tags)
+            .where(eq(note_tags.user_id, userId))
+            .orderBy(asc(note_tags.name)) as NoteTag[];
+    },
+
+    /**
+     * 创建标签
+     */
+    async createTag(userId: number, name: string, color?: string) {
+        const tagColor = color || TAG_COLORS[Math.floor(Math.random() * TAG_COLORS.length)];
+        const [result] = await drizzleDb.insert(note_tags).values({
+            user_id: userId,
+            name: name.trim(),
+            color: tagColor,
+        }).returning({ id: note_tags.id });
+        return result.id;
+    },
+
+    /**
+     * 删除标签
+     */
+    async deleteTag(userId: number, tagId: number) {
+        await drizzleDb.delete(note_tags)
+            .where(and(eq(note_tags.id, tagId), eq(note_tags.user_id, userId)));
+        return true;
+    },
+
+    /**
+     * 获取笔记关联的标签
+     */
+    async getNoteTags(userId: number, noteId: number): Promise<NoteTag[]> {
+        return await drizzleDb.select({
+            id: note_tags.id,
+            user_id: note_tags.user_id,
+            name: note_tags.name,
+            color: note_tags.color,
+            created_at: note_tags.created_at
+        })
+        .from(note_tags)
+        .innerJoin(note_tag_relations, eq(note_tags.id, note_tag_relations.tag_id))
+        .where(eq(note_tag_relations.note_id, noteId)) as NoteTag[];
+    },
+
+    /**
+     * 核心事务：设置笔记标签
+     */
+    async setNoteTags(userId: number, noteId: number, tagIds: number[]) {
+        // 1. 所有权校验
+        const [note] = await drizzleDb.select({ id: notes.id })
+            .from(notes)
+            .where(and(eq(notes.id, noteId), eq(notes.user_id, userId)))
+            .limit(1);
+
+        if (!note) throw new Error('笔记不存在');
+
+        // 2. 事务更新
+        await drizzleDb.transaction(async (tx) => {
+            await tx.delete(note_tag_relations).where(eq(note_tag_relations.note_id, noteId));
+            if (tagIds.length > 0) {
+                const values = tagIds.map(tagId => ({
+                    note_id: noteId,
+                    tag_id: tagId,
+                }));
+                await tx.insert(note_tag_relations).values(values).onConflictDoNothing();
+            }
+        });
+        return true;
+    },
+
+    /**
+     * 按标签筛选笔记
+     */
+    async getNotesByTag(userId: number, tagId: number): Promise<NotePreview[]> {
+        return await drizzleDb.select({
+            id: notes.id,
+            title: notes.title,
+            updated_at: notes.updated_at,
+            preview: sql<string>`substr(${notes.content}, 1, 200)`
+        })
+        .from(notes)
+        .innerJoin(note_tag_relations, eq(notes.id, note_tag_relations.note_id))
+        .where(and(eq(notes.user_id, userId), eq(note_tag_relations.tag_id, tagId)))
+        .orderBy(desc(notes.updated_at)) as NotePreview[];
+    }
+};

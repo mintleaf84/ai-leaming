@@ -59,6 +59,10 @@ export const resetDrizzleMock = (defaultReturn: any = []) => {
   }
 };
 
+// 导出 drizzleSchema
+import * as schema from './drizzle-schema';
+export const drizzleSchema = schema;
+
 // 兼容多种导出方式
 export default db;
 export const getLegacyDb = () => db;

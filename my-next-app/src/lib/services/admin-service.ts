@@ -245,5 +245,90 @@ export const adminService = {
         await drizzleDb.delete(drizzleSchema.users)
             .where(eq(drizzleSchema.users.id, userId));
         return true;
+    },
+
+    /**
+     * 获取全局活动流水 (管理员)
+     */
+    async getActivityLogs(limit: number = 50, offset: number = 0, filters?: { userId?: number; isCorrect?: boolean; search?: string }) {
+        const whereConditions = [];
+        if (filters?.userId) whereConditions.push(eq(drizzleSchema.practice_logs.user_id, filters.userId));
+        if (filters?.isCorrect !== undefined) whereConditions.push(eq(drizzleSchema.practice_logs.is_correct, filters.isCorrect));
+        if (filters?.search) {
+            whereConditions.push(
+                sql`(${drizzleSchema.users.username} LIKE ${`%${filters.search}%`} OR ${drizzleSchema.questions.content} LIKE ${`%${filters.search}%`})`
+            );
+        }
+
+        const where = whereConditions.length > 0 ? and(...whereConditions) : undefined;
+
+        const [totalRes, logs] = await Promise.all([
+            drizzleDb.select({ count: count() })
+                .from(drizzleSchema.practice_logs)
+                .leftJoin(drizzleSchema.users, eq(drizzleSchema.practice_logs.user_id, drizzleSchema.users.id))
+                .leftJoin(drizzleSchema.questions, eq(drizzleSchema.practice_logs.question_id, drizzleSchema.questions.id))
+                .where(where).get(),
+            
+            drizzleDb.select({
+                id: drizzleSchema.practice_logs.id,
+                user_id: drizzleSchema.practice_logs.user_id,
+                username: drizzleSchema.users.username,
+                question_id: drizzleSchema.practice_logs.question_id,
+                question_content: drizzleSchema.questions.content,
+                dimension: drizzleSchema.questions.dimension,
+                user_answer: drizzleSchema.practice_logs.user_answer,
+                is_correct: drizzleSchema.practice_logs.is_correct,
+                duration_ms: drizzleSchema.practice_logs.duration_ms,
+                timestamp: drizzleSchema.practice_logs.timestamp
+            })
+            .from(drizzleSchema.practice_logs)
+            .leftJoin(drizzleSchema.users, eq(drizzleSchema.practice_logs.user_id, drizzleSchema.users.id))
+            .leftJoin(drizzleSchema.questions, eq(drizzleSchema.practice_logs.question_id, drizzleSchema.questions.id))
+            .where(where)
+            .orderBy(desc(drizzleSchema.practice_logs.timestamp))
+            .limit(limit)
+            .offset(offset)
+        ]);
+
+        return {
+            logs: logs.map(l => ({ ...l, is_correct: Boolean(l.is_correct) })),
+            total: totalRes?.count || 0
+        };
+    },
+
+    /**
+     * 获取全站活动统计 (今日)
+     */
+    async getActivityStats() {
+        const todayPredicate = sql`date(${drizzleSchema.practice_logs.timestamp}, 'localtime') = date('now', 'localtime')`;
+        const aiTodayPredicate = sql`date(${drizzleSchema.api_call_logs.created_at}, 'localtime') = date('now', 'localtime')`;
+
+        const [practiceRes, statsRes, aiRes] = await Promise.all([
+            drizzleDb.select({ count: count() })
+                .from(drizzleSchema.practice_logs)
+                .where(todayPredicate).get(),
+            
+            drizzleDb.select({
+                accuracy: sql<number>`(SUM(CASE WHEN ${drizzleSchema.practice_logs.is_correct} = 1 THEN 1 ELSE 0 END) * 100.0 / COUNT(*))`,
+                avgDuration: sql<number>`AVG(${drizzleSchema.practice_logs.duration_ms})`
+            })
+            .from(drizzleSchema.practice_logs)
+            .where(todayPredicate).get(),
+
+            drizzleDb.select({
+                count: count(),
+                tokens: sql<number>`SUM(${drizzleSchema.api_call_logs.input_tokens} + ${drizzleSchema.api_call_logs.output_tokens})`
+            })
+            .from(drizzleSchema.api_call_logs)
+            .where(and(aiTodayPredicate, eq(drizzleSchema.api_call_logs.success, 1))).get()
+        ]);
+
+        return {
+            todayCount: practiceRes?.count || 0,
+            accuracyRate: Math.round(statsRes?.accuracy || 0),
+            avgDurationMs: Math.round(statsRes?.avgDuration || 0),
+            aiCallsToday: aiRes?.count || 0,
+            aiTokensToday: Number(aiRes?.tokens) || 0
+        };
     }
 };

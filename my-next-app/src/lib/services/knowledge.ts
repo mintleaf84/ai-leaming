@@ -453,5 +453,68 @@ export const knowledgeService = {
         .innerJoin(note_tag_relations, eq(notes.id, note_tag_relations.note_id))
         .where(and(eq(notes.user_id, userId), eq(note_tag_relations.tag_id, tagId)))
         .orderBy(desc(notes.updated_at)) as NotePreview[];
+    },
+
+    /**
+     * 获取知识图谱数据
+     */
+    async getKnowledgeGraphData(userId: number) {
+        const masteryData = await drizzleDb.select({ 
+            tag_name: drizzleSchema.user_mastery.tag_name, 
+            score: drizzleSchema.user_mastery.score 
+        })
+        .from(drizzleSchema.user_mastery)
+        .where(eq(drizzleSchema.user_mastery.user_id, userId))
+        .all();
+
+        const nodes: any[] = [{ id: "核心知识体系", group: 0, score: 100 }];
+        const links: any[] = [];
+        const nodeMap = new Map<string, { score: number; count: number }>();
+
+        nodeMap.set("核心知识体系", { score: 100, count: 1 });
+
+        masteryData.forEach(m => {
+            const parts = m.tag_name.split('/');
+            for (let i = 0; i < parts.length; i++) {
+                const currentPath = parts.slice(0, i + 1).join('/');
+                if (!nodeMap.has(currentPath)) {
+                    nodeMap.set(currentPath, { score: 0, count: 0 });
+                }
+                if (currentPath === m.tag_name) {
+                    const node = nodeMap.get(currentPath)!;
+                    node.score = m.score || 0;
+                    node.count = 1;
+                }
+            }
+        });
+
+        const addedNodes = new Set<string>();
+        addedNodes.add("核心知识体系");
+
+        masteryData.forEach(m => {
+            const parts = m.tag_name.split('/');
+            let parentId = "核心知识体系";
+
+            for (let i = 0; i < parts.length; i++) {
+                const currentId = parts.slice(0, i + 1).join('/');
+                if (!addedNodes.has(currentId)) {
+                    const nodeData = nodeMap.get(currentId);
+                    nodes.push({
+                        id: currentId,
+                        group: i === 0 ? 1 : 2,
+                        score: nodeData?.count ? nodeData.score : 0
+                    });
+                    addedNodes.add(currentId);
+                }
+
+                const linkExists = links.some(l => l.source === parentId && l.target === currentId);
+                if (!linkExists) {
+                    links.push({ source: parentId, target: currentId, value: i === 0 ? 2 : 1 });
+                }
+                parentId = currentId;
+            }
+        });
+
+        return { nodes, links };
     }
 };

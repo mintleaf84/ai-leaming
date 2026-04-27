@@ -1,70 +1,66 @@
 'use server';
-import logger from '@/lib/logger';
 
-import { getErrorMessage } from '@/lib/utils/error';
-import { db } from '@/lib/db';
+import logger from '@/lib/logger';
 import { revalidatePath } from 'next/cache';
 import { requireUser } from '@/lib/auth/auth';
+import { settingsService, type SystemSettings } from '@/lib/services/settings';
 
-export type Settings = {
-  reviewThreshold: number;
-  aiSeverity: 'low' | 'medium' | 'high';
-  darkMode: boolean;
-};
+/**
+ * 导出类型
+ */
+export type Settings = SystemSettings;
 
+/**
+ * 获取系统设置
+ */
 export async function getSettingsAction(): Promise<Settings> {
-  const user = await requireUser();
-  const rows = db.prepare('SELECT key, value FROM system_settings WHERE user_id = ?').all(user.id) as { key: string; value: string }[];
-  const settingsMap = new Map(rows.map(r => [r.key, r.value]));
-
-  return {
-    reviewThreshold: parseInt(settingsMap.get('review_threshold') || '60'),
-    aiSeverity: (settingsMap.get('ai_severity') as 'low' | 'medium' | 'high' | undefined) ?? 'medium',
-    darkMode: settingsMap.get('dark_mode') === 'true',
-  };
+    try {
+        const user = await requireUser();
+        return await settingsService.getSettings(user.id);
+    } catch (error) {
+        logger.error({ err: error }, '[SettingsAction] 获取设置失败');
+        return {
+            reviewThreshold: 60,
+            aiSeverity: 'medium',
+            darkMode: false
+        };
+    }
 }
 
+/**
+ * 更新系统设置
+ */
 export async function updateSettingsAction(settings: Partial<Settings>) {
-  const user = await requireUser();
-  const stmt = db.prepare(`
-    INSERT INTO system_settings (user_id, key, value, updated_at) 
-    VALUES (?, ?, ?, CURRENT_TIMESTAMP)
-    ON CONFLICT(user_id, key) DO UPDATE SET
-      value = excluded.value,
-      updated_at = CURRENT_TIMESTAMP
-  `);
-
-  if (settings.reviewThreshold !== undefined) {
-    stmt.run(user.id, 'review_threshold', settings.reviewThreshold.toString());
-  }
-  if (settings.aiSeverity !== undefined) {
-    stmt.run(user.id, 'ai_severity', settings.aiSeverity);
-  }
-  if (settings.darkMode !== undefined) {
-    stmt.run(user.id, 'dark_mode', settings.darkMode.toString());
-  }
-
-  revalidatePath('/settings');
-  return { success: true };
+    try {
+        const user = await requireUser();
+        await settingsService.updateSettings(user.id, settings);
+        
+        revalidatePath('/settings');
+        return { success: true };
+    } catch (error) {
+        logger.error({ err: error }, '[SettingsAction] 更新设置失败');
+        return { success: false, error: '更新失败' };
+    }
 }
 
+/**
+ * 重置用户所有数据 (危险操作)
+ */
 export async function resetUserDataAction() {
-  const user = await requireUser();
+    try {
+        const user = await requireUser();
+        await settingsService.resetUserData(user.id);
 
-  db.prepare('DELETE FROM practice_logs WHERE user_id = ?').run(user.id);
-  db.prepare('DELETE FROM practice_sessions WHERE user_id = ?').run(user.id);
-  db.prepare('DELETE FROM user_mastery WHERE user_id = ?').run(user.id);
-  db.prepare('DELETE FROM observation_zone WHERE user_id = ?').run(user.id);
-  db.prepare('DELETE FROM chat_sessions WHERE user_id = ?').run(user.id);
-  db.prepare('DELETE FROM knowledge_cards WHERE user_id = ?').run(user.id);
+        // 刷新所有相关路由
+        revalidatePath('/');
+        revalidatePath('/dashboard');
+        revalidatePath('/chat');
+        revalidatePath('/history');
+        revalidatePath('/knowledge');
 
-  revalidatePath('/');
-  revalidatePath('/dashboard');
-  revalidatePath('/chat');
-  revalidatePath('/history');
-  revalidatePath('/knowledge');
-
-  return { success: true, message: "您的学习数据已重置" };
+        return { success: true, message: "您的学习数据已重置" };
+    } catch (error) {
+        logger.error({ err: error }, '[SettingsAction] 数据重置失败');
+        return { success: false, error: '重置失败，请稍后重试' };
+    }
 }
-
-

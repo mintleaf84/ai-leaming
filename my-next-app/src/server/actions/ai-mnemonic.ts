@@ -1,12 +1,10 @@
 'use server';
-import logger from '@/lib/logger';
 
-import { drizzleDb } from '@/lib/db';
-import { questions } from '@/lib/db/drizzle-schema';
-import { eq } from 'drizzle-orm';
+import logger from '@/lib/logger';
 import { requireUser } from '@/lib/auth/auth';
 import { generateTextWrapper } from '@/lib/ai/client';
 import { checkAndConsumeQuota } from '@/lib/billing/subscription-service';
+import { questionService } from '@/lib/services/question';
 
 /**
  * 为题目生成 AI 助记词
@@ -17,18 +15,7 @@ export async function generateMnemonicAction(questionId: string, forceRegenerate
         const idNum = parseInt(questionId, 10);
 
         // 1. 获取题目核心信息
-        const [question] = await drizzleDb.select({
-                id: questions.id,
-                content: questions.content,
-                options: questions.options,
-                answer: questions.answer,
-                explanation: questions.explanation,
-                tags: questions.tags,
-                ai_mnemonic: questions.ai_mnemonic
-            })
-            .from(questions)
-            .where(eq(questions.id, idNum))
-            .limit(1);
+        const question = await questionService.getById(idNum);
 
         if (!question) {
             return { success: false, message: '题目不存在' };
@@ -74,10 +61,10 @@ export async function generateMnemonicAction(questionId: string, forceRegenerate
 
 # Input (在此输入知识点)
 - 题目内容: ${question.content}
-- 选项: ${question.options || '无'}
+- 选项: ${JSON.stringify(question.options) || '无'}
 - 正确答案: ${question.answer}
 - 解析: ${question.explanation || '无'}
-- 标签: ${question.tags || '无'}
+- 标签: ${JSON.stringify(question.tags) || '无'}
 
 # Output Format
 请直接输出 Markdown 内容，不要包含任何其他废话。格式如下：
@@ -95,10 +82,8 @@ export async function generateMnemonicAction(questionId: string, forceRegenerate
         // 5. 调用 AI 生成
         const { text } = await generateTextWrapper(prompt, 'premium');
 
-        // 6. 保存至数据库
-        await drizzleDb.update(questions)
-            .set({ ai_mnemonic: text })
-            .where(eq(questions.id, idNum));
+        // 6. 通过 Service 保存
+        await questionService.updateMnemonic(idNum, text);
 
         return { success: true, content: text, cached: false };
 

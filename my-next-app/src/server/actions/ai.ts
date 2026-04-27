@@ -7,33 +7,35 @@ import { CorrectionQuizSchema, RegressionChallengeSchema, CorrectionQuiz, Regres
 import { questionService } from '@/lib/services/question';
 import { getPromptFromDb, buildPrompt, DEFAULT_CORRECTION_PROMPT, DEFAULT_REGRESSION_PROMPT } from '@/lib/ai/prompts';
 import { requireUser } from '@/lib/auth/auth';
-import { db,  drizzleDb, drizzleSchema } from '@/lib/db';
+import { drizzleDb } from '@/lib/db';
+import { ai_quiz_cache, ai_challenge_cache, first_principles_cache } from '@/lib/db/drizzle-schema';
 import { eq, and, sql } from 'drizzle-orm';
 import { checkAndConsumeQuota } from '@/lib/billing/subscription-service';
 
-// Default Prompts imported from @/lib/ai/prompts
-
+/**
+ * 生成错题强化练习
+ */
 export async function generateCorrectionQuizAction(
   questionContent: string,
   wrongAnswer: string,
   correctAnswer: string,
   force: boolean = false
 ): Promise<CorrectionQuiz> {
-  // 1. Ensure Table (handled by Drizzle migrations)
-
-  // 2. Check Cache
+  // 1. 检查缓存
   const cacheKey = generateHash(questionContent + wrongAnswer + correctAnswer);
   if (!force) {
-    const cached = await drizzleDb.query.ai_quiz_cache.findFirst({
-      where: eq(drizzleSchema.ai_quiz_cache.hash, cacheKey)
-    });
+    const [cached] = await drizzleDb.select()
+      .from(ai_quiz_cache)
+      .where(eq(ai_quiz_cache.hash, cacheKey))
+      .limit(1);
+
     if (cached) {
       logger.info('[QuizCache] 命中缓存');
       return JSON.parse(cached.data) as CorrectionQuiz;
     }
   }
 
-  // 3. Quota Check (Only if cache miss)
+  // 2. 配额检查 (仅在缓存未命中时)
   const user = await requireUser();
   const userIdNum = typeof user.id === 'string' ? parseInt(user.id, 10) : user.id;
   if (!isNaN(userIdNum)) {
@@ -43,6 +45,7 @@ export async function generateCorrectionQuizAction(
     }
   }
 
+  // 3. 获取 Prompt 模板
   const dbTemplate = await getPromptFromDb('correction_quiz');
   const template = dbTemplate || DEFAULT_CORRECTION_PROMPT;
 
@@ -53,17 +56,20 @@ export async function generateCorrectionQuizAction(
   });
 
   try {
+    // 4. 调用 AI 生成结构化数据
     const result = await generateStructuredData(CorrectionQuizSchema, prompt, 'premium');
-    // 4. Save to Cache
+    
+    // 5. 保存到缓存
     try {
-      await drizzleDb.insert(drizzleSchema.ai_quiz_cache)
+      await drizzleDb.insert(ai_quiz_cache)
         .values({ hash: cacheKey, data: JSON.stringify(result) })
-        .onConflictDoUpdate({ target: drizzleSchema.ai_quiz_cache.hash, set: { data: JSON.stringify(result) } });
+        .onConflictDoUpdate({ target: ai_quiz_cache.hash, set: { data: JSON.stringify(result) } });
     } catch (e) {
       logger.error({ err: e }, '[QuizCache] 保存失败');
     }
     return result;
   } catch (error) {
+    // 6. 兜底方案：RAG 检索相似题
     logger.warn('Correction Quiz AI generation failed, using RAG fallback.');
     const similar = await questionService.searchSimilarQuestions(questionContent, 1);
 
@@ -92,26 +98,29 @@ export async function generateCorrectionQuizAction(
   }
 }
 
+/**
+ * 生成回归挑战练习
+ */
 export async function generateRegressionChallengeAction(
   questionContent: string,
   tags: string[],
   force: boolean = false
 ): Promise<RegressionChallenge> {
-  // 1. Ensure Table (handled by Drizzle migrations)
-
-  // 2. Check Cache
+  // 1. 检查缓存
   const cacheKey = generateHash(questionContent + tags.join('|'));
   if (!force) {
-    const cached = await drizzleDb.query.ai_challenge_cache.findFirst({
-      where: eq(drizzleSchema.ai_challenge_cache.hash, cacheKey)
-    });
+    const [cached] = await drizzleDb.select()
+      .from(ai_challenge_cache)
+      .where(eq(ai_challenge_cache.hash, cacheKey))
+      .limit(1);
+
     if (cached) {
       logger.info('[ChallengeCache] 命中缓存');
       return JSON.parse(cached.data) as RegressionChallenge;
     }
   }
 
-  // 3. Quota Check (Only if cache miss)
+  // 2. 配额检查
   const user = await requireUser();
   const userIdNum = typeof user.id === 'string' ? parseInt(user.id, 10) : user.id;
   if (!isNaN(userIdNum)) {
@@ -130,10 +139,11 @@ export async function generateRegressionChallengeAction(
   });
 
   try {
-    // API A: Generate
+    // 3. 双重保险：生成与校验
+    // API A: 生成
     const challenge = await generateStructuredData(RegressionChallengeSchema, prompt, 'premium');
 
-    // API B: Validate
+    // API B: 校验
     const validationPrompt = `
       作为质量审计专家，请评估以下回归挑战题目的质量。
       
@@ -147,11 +157,11 @@ export async function generateRegressionChallengeAction(
     const { text: validationResult } = await generateTextWrapper(validationPrompt, 'premium');
 
     if (validationResult.includes('YES')) {
-      // 4. Save Cache only if valid
+      // 4. 校验通过，保存到缓存
       try {
-        await drizzleDb.insert(drizzleSchema.ai_challenge_cache)
+        await drizzleDb.insert(ai_challenge_cache)
           .values({ hash: cacheKey, data: JSON.stringify(challenge) })
-          .onConflictDoUpdate({ target: drizzleSchema.ai_challenge_cache.hash, set: { data: JSON.stringify(challenge) } });
+          .onConflictDoUpdate({ target: ai_challenge_cache.hash, set: { data: JSON.stringify(challenge) } });
       } catch (e) {
         logger.error({ err: e }, '[ChallengeCache] 保存失败');
       }
@@ -162,9 +172,9 @@ export async function generateRegressionChallengeAction(
     }
 
   } catch (error) {
+    // 5. 兜底方案：RAG 相似题库检索
     logger.warn({ err: error }, 'AI Generation failed or rejected, falling back to RAG similarity search');
 
-    // Fallback: Retrieve similar real questions from the database
     const similarQuestions = await questionService.searchSimilarQuestions(questionContent, 5);
 
     if (similarQuestions && similarQuestions.length > 0) {
@@ -203,9 +213,6 @@ export async function generateRegressionChallengeAction(
   }
 }
 
-
-// (ensureFirstPrinciplesCacheTable 移除，已由 Drizzle 管理)
-
 // 生成内容哈希
 function generateHash(content: string): string {
   const normalized = content.trim().slice(0, 100) + content.length;
@@ -218,6 +225,9 @@ function generateHash(content: string): string {
   return hash.toString(36);
 }
 
+/**
+ * 生成第一性原理分析
+ */
 export async function generateFirstPrinciplesAction(
   questionContent: string,
   explanation: string,
@@ -231,13 +241,14 @@ export async function generateFirstPrinciplesAction(
     throw new Error('缺少题目内容');
   }
 
-  // 1. Check Cache (skip if force=true)
+  // 1. 检查缓存 (force=true 时跳过)
   const cacheKey = generateHash(questionContent + correctAnswer + (wrongAnswer || ''));
 
   if (!force) {
-    const cached = await drizzleDb.query.first_principles_cache.findFirst({
-      where: eq(drizzleSchema.first_principles_cache.question_hash, cacheKey)
-    });
+    const [cached] = await drizzleDb.select()
+      .from(first_principles_cache)
+      .where(eq(first_principles_cache.question_hash, cacheKey))
+      .limit(1);
 
     if (cached) {
       logger.info('[FirstPrinciples] 命中缓存');
@@ -245,8 +256,7 @@ export async function generateFirstPrinciplesAction(
     }
   }
 
-  // 2. Check Quota
-  // Note: Cast user.id to number as checkAndConsumeQuota expects number
+  // 2. 配额检查
   const userIdNum = typeof user.id === 'string' ? parseInt(user.id, 10) : user.id;
   if (!isNaN(userIdNum)) {
     const quotaResult = await checkAndConsumeQuota(userIdNum, 'first_principles');
@@ -255,8 +265,7 @@ export async function generateFirstPrinciplesAction(
     }
   }
 
-  // 3. Build Prompt (User's original prompt logic)
-  // Use DB template if exists, otherwise use hardcoded logic from user request to ensure fidelity
+  // 3. 构建 Prompt
   const dbTemplate = await getPromptFromDb('first_principles');
 
   let prompt: string;
@@ -268,7 +277,7 @@ export async function generateFirstPrinciplesAction(
       wrongAnswer: wrongAnswer || '无'
     });
   } else {
-    // User's requested specific prompt format
+    // 默认第一性原理 Prompt 格式
     prompt = `请用"第一性原理"解析这道题。要求：
 1. 直接给答案，只说底层逻辑，不超过200字
 2. 不要使用黑话，用通俗易懂的语言
@@ -286,7 +295,7 @@ ${explanation ? `参考解析：${explanation}` : ''}
 
   try {
     logger.info('[FirstPrinciples] 开始调用 AI...');
-    // User requested 'economy' model with specific timeout
+    // 使用 economy 模型调用
     const result = await generateTextWrapper(prompt, 'economy', undefined, undefined, {
       timeout: 30000,
       retries: 1,
@@ -294,11 +303,11 @@ ${explanation ? `参考解析：${explanation}` : ''}
     const text = result.text;
     logger.info({ value: text.length }, '[FirstPrinciples] AI 调用成功，长度');
 
-    // 4. Save to Cache
+    // 4. 保存到缓存
     try {
-      await drizzleDb.insert(drizzleSchema.first_principles_cache)
+      await drizzleDb.insert(first_principles_cache)
         .values({ question_hash: cacheKey, analysis: text })
-        .onConflictDoUpdate({ target: drizzleSchema.first_principles_cache.question_hash, set: { analysis: text } });
+        .onConflictDoUpdate({ target: first_principles_cache.question_hash, set: { analysis: text } });
     } catch (cacheError) {
       logger.error({ err: cacheError }, '[FirstPrinciples] 缓存保存失败');
     }
@@ -309,5 +318,3 @@ ${explanation ? `参考解析：${explanation}` : ''}
     throw new Error(`AI 分析失败: ${getErrorMessage(error, '请稍后重试')}`);
   }
 }
-
-

@@ -15,7 +15,7 @@ export const authService = {
      * @returns 用户对象或 null (验证失败)
      */
     async validateCredentials(username: string, passwordPlain: string): Promise<User | null> {
-        const userRecord = getUserByUsername(username);
+        const userRecord = await getUserByUsername(username);
         if (!userRecord) {
             return null;
         }
@@ -38,7 +38,7 @@ export const authService = {
      * 注册新用户
      */
     async register(username: string, passwordPlain: string, role: UserRole = 'student'): Promise<User> {
-        const existing = getUserByUsername(username);
+        const existing = await getUserByUsername(username);
         if (existing) {
             throw new AuthError('Username already exists');
         }

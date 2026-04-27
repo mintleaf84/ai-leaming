@@ -57,7 +57,7 @@ export const authMiddleware = createMiddleware(async (c, next) => {
         // 使用内存缓存，减轻 SQLite 库并发压力，避免每路由强制 DB 读取
         let cached = authCache.get(userId);
         if (!cached || cached.expiresAt < now) {
-            const dbUser = getUserById(userId);
+            const dbUser = await getUserById(userId);
             cached = {
                 exists: !!dbUser,
                 token_version: dbUser?.token_version,

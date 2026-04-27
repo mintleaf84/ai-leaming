@@ -1,4 +1,5 @@
-import { db } from '@/lib/db';
+import { drizzleDb, drizzleSchema } from '@/lib/db';
+import { eq, sql } from 'drizzle-orm';
 import { hashPassword } from './password';
 import { UserRole } from '@/types';
 import { cache } from 'react';
@@ -22,14 +23,23 @@ export interface User {
 }
 
 /**
- * 创建新用户
+ * 创建新用户 (LibSQL 异步版)
  */
 export async function createUser(username: string, passwordPlain: string, role: UserRole = 'student'): Promise<User> {
     const passwordHash = await hashPassword(passwordPlain);
-    const result = db.prepare('INSERT INTO users (username, password_hash, role, token_version) VALUES (?, ?, ?, 0)').run(username, passwordHash, role);
+    
+    const result = await drizzleDb.insert(drizzleSchema.users).values({
+        username,
+        password_hash: passwordHash,
+        role,
+        token_version: 0
+    });
+
+    // 处理 LibSQL 的 lastInsertRowid (兼容性处理)
+    const lastId = (result as any).lastInsertRowid || (result as any).rowsAffected;
 
     return {
-        id: result.lastInsertRowid as number,
+        id: Number(lastId),
         username,
         role,
         token_version: 0
@@ -37,22 +47,41 @@ export async function createUser(username: string, passwordPlain: string, role: 
 }
 
 /**
- * 通过用户名获取用户（包含密码 hash，仅用于内部验证）(Cached per request)
+ * 通过用户名获取用户（包含密码 hash，仅用于内部验证）(Cached per request, Async)
  */
-export const getUserByUsername = cache((username: string): UserRecord | null => {
-    return db.prepare('SELECT * FROM users WHERE username = ?').get(username) as UserRecord | null;
+export const getUserByUsername = cache(async (username: string): Promise<UserRecord | null> => {
+    const [user] = await drizzleDb.select()
+        .from(drizzleSchema.users)
+        .where(eq(drizzleSchema.users.username, username))
+        .limit(1);
+    
+    return (user as UserRecord) || null;
 });
 
 /**
- * 通过 ID 获取用户 (Cached per request)
+ * 通过 ID 获取用户 (Cached per request, Async)
  */
-export const getUserById = cache((id: number): User | null => {
-    const record = db.prepare('SELECT id, username, role, token_version FROM users WHERE id = ?').get(id) as User | null;
-    return record;
+export const getUserById = cache(async (id: number): Promise<User | null> => {
+    const [user] = await drizzleDb.select({
+            id: drizzleSchema.users.id,
+            username: drizzleSchema.users.username,
+            role: drizzleSchema.users.role,
+            token_version: drizzleSchema.users.token_version
+        })
+        .from(drizzleSchema.users)
+        .where(eq(drizzleSchema.users.id, id))
+        .limit(1);
+    
+    return (user as User) || null;
 });
+
 /**
  * 撤销用户的所有会话 (通过增加版本号)
  */
-export function revokeUserSessions(userId: number): void {
-  db.prepare('UPDATE users SET token_version = token_version + 1 WHERE id = ?').run(userId);
+export async function revokeUserSessions(userId: number): Promise<void> {
+    await drizzleDb.update(drizzleSchema.users)
+        .set({ 
+            token_version: sql`${drizzleSchema.users.token_version} + 1` 
+        })
+        .where(eq(drizzleSchema.users.id, userId));
 }

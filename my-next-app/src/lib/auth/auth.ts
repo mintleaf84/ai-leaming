@@ -23,7 +23,7 @@ export async function login(user: User) {
 export async function logout() {
     const session = await getSession();
     if (session?.user?.id) {
-        revokeUserSessions(session.user.id);
+        await revokeUserSessions(session.user.id);
     }
     // Destroy the session in cookie
     (await cookies()).set(COOKIE_NAME, '', { expires: new Date(0) });
@@ -57,7 +57,7 @@ export async function requireUser(): Promise<User> {
 
     // Strict Mode: Check if token_version matches DB
     // 安全加固：显式将 ID 转为数字，防止 JWT 序列化导致的类型不匹配
-    const dbUser = getUserById(Number(session.user.id));
+    const dbUser = await getUserById(Number(session.user.id));
     if (!dbUser) {
         throw new Error('Unauthorized: User not found');
     }

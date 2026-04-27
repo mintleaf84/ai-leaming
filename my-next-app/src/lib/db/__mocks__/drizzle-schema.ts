@@ -49,3 +49,17 @@ export const ai_challenge_cache = { hash: 'ai_challenge_cache.hash', data: 'ai_c
 export const first_principles_cache = { question_hash: 'first_principles_cache.question_hash', analysis: 'first_principles_cache.analysis' };
 export const prompt_templates = { key: 'prompt_templates.key', template: 'prompt_templates.template' };
 export const mindmaps = { id: 'mindmaps.id', user_id: 'mindmaps.user_id' };
+export const question_srs = {
+    user_id: 'question_srs.user_id',
+    question_id: 'question_srs.question_id',
+    due_date: 'question_srs.due_date',
+    state: 'question_srs.state',
+    stability: 'question_srs.stability',
+    difficulty: 'question_srs.difficulty',
+    last_review: 'question_srs.last_review',
+};
+export const system_settings = {
+    user_id: 'system_settings.user_id',
+    key: 'system_settings.key',
+    value: 'system_settings.value',
+};

@@ -12,7 +12,7 @@ function createDrizzleMock() {
   const methods = [
     'insert', 'values', 'returning', 'update', 'set', 'delete',
     'select', 'from', 'where', 'limit', 'offset', 'orderBy',
-    'onConflictDoUpdate', 'innerJoin', 'leftJoin', 'rightJoin', 'fullJoin'
+    'onConflictDoUpdate', 'innerJoin', 'leftJoin', 'rightJoin', 'fullJoin', 'groupBy'
   ];
 
   methods.forEach((m) => {
@@ -45,7 +45,7 @@ export const resetDrizzleMock = (defaultReturn: any = []) => {
   const methods = [
     'insert', 'values', 'returning', 'update', 'set', 'delete',
     'select', 'from', 'where', 'limit', 'offset', 'orderBy',
-    'onConflictDoUpdate', 'innerJoin', 'leftJoin', 'rightJoin', 'fullJoin'
+    'onConflictDoUpdate', 'innerJoin', 'leftJoin', 'rightJoin', 'fullJoin', 'groupBy'
   ];
 
   methods.forEach((m) => {

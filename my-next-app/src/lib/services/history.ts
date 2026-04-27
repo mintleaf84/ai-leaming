@@ -1,49 +1,12 @@
-import { db } from '@/lib/db';
+import { drizzleDb, drizzleSchema } from '@/lib/db';
+import { eq, and, desc, sql, count } from 'drizzle-orm';
+import { practice_sessions, practice_logs, questions, session_reviews } from '@/lib/db/drizzle-schema';
 import dayjs from 'dayjs';
 import utc from 'dayjs/plugin/utc';
 
 dayjs.extend(utc);
 
-// DB 行类型定义
-type SessionRow = {
-    id: number | string;
-    sessionName?: string;
-    totalQuestions: number;
-    correctCount: number;
-    reviewCount: number;
-    createdAt: string;
-    practiceMode?: string;
-};
-
-type SessionLogRow = {
-    questionId: string;
-    questionContent: string;
-    options: string;
-    correctAnswer: string;
-    userAnswer: string;
-    isCorrect: number;
-    duration: number;
-    tags: string;
-    source: string;
-    explanation: string;
-    correct_ratio: number;
-    most_wrong_answer: string;
-    reviewData: string;
-    ai_mnemonic: string | null;
-    material: string | null;
-    material_html: string | null;
-};
-
-export type HistoryFilter = {
-    dateFrom?: string;       // YYYY-MM-DD
-    dateTo?: string;         // YYYY-MM-DD
-    accuracyMin?: number;
-    accuracyMax?: number;
-    mode?: string;
-    page?: number;
-    pageSize?: number;
-};
-
+/** 历史记录列表项类型 */
 export type SessionHistoryItem = {
     id: string;
     sessionName?: string;
@@ -55,6 +18,7 @@ export type SessionHistoryItem = {
     practiceMode?: string;
 };
 
+/** 分页历史记录类型 */
 export type PaginatedHistory = {
     items: SessionHistoryItem[];
     total: number;
@@ -63,126 +27,156 @@ export type PaginatedHistory = {
     totalPages: number;
 };
 
+/** 历史筛选参数 */
+export type HistoryFilter = {
+    dateFrom?: string;
+    dateTo?: string;
+    accuracyMin?: number;
+    accuracyMax?: number;
+    mode?: string;
+    page?: number;
+    pageSize?: number;
+};
+
+/**
+ * 练习历史服务 - 管理练习会话的查询、统计与维护
+ */
 export const historyService = {
     /**
-     * Get paginated practice history for a user
+     * 获取分页历史记录 (含高级筛选)
      */
-    getHistory: async (userId: number, filter: HistoryFilter = {}): Promise<PaginatedHistory> => {
+    async getHistory(userId: number, filter: HistoryFilter = {}): Promise<PaginatedHistory> {
         const page = filter.page || 1;
         const pageSize = filter.pageSize || 10;
         const offset = (page - 1) * pageSize;
 
-        // Build dynamic WHERE clause
-        const conditions: string[] = ['user_id = ?'];
-        const params: (string | number | null)[] = [userId];
+        // 1. 构建动态条件
+        const conditions = [eq(practice_sessions.user_id, userId)];
 
         if (filter.dateFrom) {
-            conditions.push('date(created_at) >= date(?)');
-            params.push(filter.dateFrom);
+            conditions.push(sql`date(${practice_sessions.created_at}) >= date(${filter.dateFrom})`);
         }
         if (filter.dateTo) {
-            conditions.push('date(created_at) <= date(?)');
-            params.push(filter.dateTo);
+            conditions.push(sql`date(${practice_sessions.created_at}) <= date(${filter.dateTo})`);
         }
         if (filter.mode) {
-            conditions.push('practice_mode = ?');
-            params.push(filter.mode);
+            conditions.push(eq(practice_sessions.practice_mode, filter.mode));
         }
 
+        // 性能优化：将正确率筛选下沉到 SQL 层
         if (filter.accuracyMin !== undefined) {
-            conditions.push('(CASE WHEN total_questions > 0 THEN ROUND((CAST(correct_count AS FLOAT) / total_questions) * 100) ELSE 0 END) >= ?');
-            params.push(filter.accuracyMin);
+            conditions.push(sql`(CASE WHEN ${practice_sessions.total_questions} > 0 THEN ROUND((CAST(${practice_sessions.correct_count} AS FLOAT) / ${practice_sessions.total_questions}) * 100) ELSE 0 END) >= ${filter.accuracyMin}`);
         }
         if (filter.accuracyMax !== undefined) {
-            conditions.push('(CASE WHEN total_questions > 0 THEN ROUND((CAST(correct_count AS FLOAT) / total_questions) * 100) ELSE 0 END) <= ?');
-            params.push(filter.accuracyMax);
+            conditions.push(sql`(CASE WHEN ${practice_sessions.total_questions} > 0 THEN ROUND((CAST(${practice_sessions.correct_count} AS FLOAT) / ${practice_sessions.total_questions}) * 100) ELSE 0 END) <= ${filter.accuracyMax}`);
         }
 
-        const whereClause = conditions.join(' AND ');
+        const where = and(...conditions);
 
-        // Get Total Count
-        const countRow = db.prepare(`
-      SELECT COUNT(*) as count FROM practice_sessions WHERE ${whereClause}
-    `).get(...params) as { count: number };
+        // 2. 并发查询总数和列表数据
+        const [totalResult, rows] = await Promise.all([
+            drizzleDb.select({ value: count() }).from(practice_sessions).where(where).get(),
+            drizzleDb.select({
+                id: practice_sessions.id,
+                sessionName: practice_sessions.session_name,
+                totalQuestions: practice_sessions.total_questions,
+                correctCount: practice_sessions.correct_count,
+                reviewCount: practice_sessions.review_count,
+                createdAt: practice_sessions.created_at,
+                practiceMode: practice_sessions.practice_mode
+            })
+            .from(practice_sessions)
+            .where(where)
+            .orderBy(desc(practice_sessions.created_at))
+            .limit(pageSize)
+            .offset(offset)
+        ]);
 
-        // Get Paginated Data
-        const rows = db.prepare(`
-      SELECT id, session_name as sessionName, total_questions as totalQuestions, correct_count as correctCount, 
-             review_count as reviewCount, created_at as createdAt,
-             practice_mode as practiceMode
-      FROM practice_sessions 
-      WHERE ${whereClause}
-      ORDER BY created_at DESC
-      LIMIT ? OFFSET ?
-    `).all(...params, pageSize, offset) as SessionRow[];
+        const total = totalResult?.value || 0;
 
-        // 정확도 계산 후 SessionHistoryItem 배열로 변환
+        // 3. 格式化结果
         const items: SessionHistoryItem[] = rows.map(r => ({
             id: String(r.id),
-            sessionName: r.sessionName,
-            totalQuestions: r.totalQuestions,
-            correctCount: r.correctCount,
-            reviewCount: r.reviewCount,
+            sessionName: r.sessionName || undefined,
+            totalQuestions: r.totalQuestions || 0,
+            correctCount: r.correctCount || 0,
+            reviewCount: r.reviewCount || 0,
             createdAt: dayjs.utc(r.createdAt).toISOString(),
-            accuracy: r.totalQuestions > 0 ? Math.round((r.correctCount / r.totalQuestions) * 100) : 0,
-            practiceMode: r.practiceMode,
+            accuracy: (r.totalQuestions || 0) > 0 ? Math.round(((r.correctCount || 0) / (r.totalQuestions || 0)) * 100) : 0,
+            practiceMode: r.practiceMode || undefined
         }));
 
         return {
             items,
-            total: countRow.count,
+            total,
             page,
             pageSize,
-            totalPages: Math.ceil(countRow.count / pageSize)
+            totalPages: Math.ceil(total / pageSize)
         };
     },
 
     /**
-     * Get details of a specific session
+     * 获取会话详情 (含题目与练习日志)
      */
-    getSessionDetail: async (sessionId: string, userId: number) => {
-        const sessionRow = db.prepare(`
-        SELECT id, total_questions as totalQuestions, correct_count as correctCount, 
-                review_count as reviewCount, created_at as createdAt,
-                practice_mode as practiceMode, session_name as sessionName
-        FROM practice_sessions WHERE id = ? AND user_id = ?
-    `).get(sessionId, userId) as SessionRow | undefined;
+    async getSessionDetail(userId: number, sessionId: string) {
+        // 1. 获取会话基础信息
+        const sessionRow = await drizzleDb.query.practice_sessions.findFirst({
+            where: and(
+                eq(practice_sessions.id, sessionId),
+                eq(practice_sessions.user_id, userId)
+            )
+        });
 
         if (!sessionRow) return null;
 
-        const logs = db.prepare(`
-        SELECT l.question_id as questionId, q.content as questionContent, q.options, q.answer as correctAnswer,
-                l.user_answer as userAnswer, l.is_correct as isCorrect, l.duration_ms as duration,
-                q.tags, q.source, q.explanation, q.correct_ratio, q.most_wrong_answer,
-                q.ai_mnemonic,
-                q.material, q.material_html,
-                r.review_data as reviewData
-        FROM practice_logs l
-        JOIN questions q ON l.question_id = q.id
-        LEFT JOIN session_reviews r ON l.session_id = r.session_id AND l.question_id = r.question_id
-        WHERE l.session_id = ?
-    `).all(sessionId) as SessionLogRow[];
+        // 2. 联合查询日志、题目及回顾数据
+        const logs = await drizzleDb.select({
+            questionId: practice_logs.question_id,
+            questionContent: questions.content,
+            options: questions.options,
+            correctAnswer: questions.answer,
+            userAnswer: practice_logs.user_answer,
+            isCorrect: practice_logs.is_correct,
+            duration: practice_logs.duration_ms,
+            tags: questions.tags,
+            source: questions.source,
+            explanation: questions.explanation,
+            correct_ratio: questions.correct_ratio,
+            most_wrong_answer: questions.most_wrong_answer,
+            ai_mnemonic: questions.ai_mnemonic,
+            material: questions.material,
+            material_html: questions.material_html,
+            reviewData: session_reviews.review_data
+        })
+        .from(practice_logs)
+        .innerJoin(questions, eq(practice_logs.question_id, questions.id))
+        .leftJoin(session_reviews, and(
+            eq(practice_logs.session_id, session_reviews.session_id),
+            eq(practice_logs.question_id, session_reviews.question_id)
+        ))
+        .where(eq(practice_logs.session_id, sessionId))
+        .all();
 
         return {
             session: {
                 id: String(sessionRow.id),
-                sessionName: sessionRow.sessionName,
-                totalQuestions: sessionRow.totalQuestions,
-                correctCount: sessionRow.correctCount,
-                reviewCount: sessionRow.reviewCount,
-                createdAt: dayjs.utc(sessionRow.createdAt).toISOString(),
-                accuracy: sessionRow.totalQuestions > 0 ? Math.round((sessionRow.correctCount / sessionRow.totalQuestions) * 100) : 0,
-                practiceMode: sessionRow.practiceMode,
+                sessionName: sessionRow.session_name || undefined,
+                totalQuestions: sessionRow.total_questions || 0,
+                correctCount: sessionRow.correct_count || 0,
+                reviewCount: sessionRow.review_count || 0,
+                createdAt: dayjs.utc(sessionRow.created_at).toISOString(),
+                accuracy: (sessionRow.total_questions || 0) > 0 ? Math.round(((sessionRow.correct_count || 0) / (sessionRow.total_questions || 0)) * 100) : 0,
+                practiceMode: sessionRow.practice_mode || undefined
             },
             logs: logs.map(l => ({
                 questionId: l.questionId,
                 questionContent: l.questionContent,
-                options: JSON.parse(l.options || '[]'),
+                options: typeof l.options === 'string' ? JSON.parse(l.options) : (l.options || []),
                 correctAnswer: l.correctAnswer || '',
                 userAnswer: l.userAnswer || '',
-                isCorrect: !!l.isCorrect,
+                isCorrect: Boolean(l.isCorrect),
                 duration: l.duration || 0,
-                tags: JSON.parse(l.tags || '[]'),
+                tags: typeof l.tags === 'string' ? JSON.parse(l.tags) : (l.tags || []),
                 source: l.source || '',
                 explanation: l.explanation || '',
                 correctRatio: l.correct_ratio,
@@ -193,5 +187,69 @@ export const historyService = {
                 materialHtml: l.material_html || null
             }))
         };
+    },
+
+    /**
+     * 删除练习会话 (级联删除相关日志与回顾)
+     */
+    async deleteSession(userId: number, sessionId: string) {
+        return await drizzleDb.transaction(async (tx) => {
+            // 1. 删除回顾
+            await tx.delete(session_reviews).where(eq(session_reviews.session_id, sessionId));
+            // 2. 删除日志
+            await tx.delete(practice_logs).where(and(
+                eq(practice_logs.session_id, sessionId),
+                eq(practice_logs.user_id, userId)
+            ));
+            // 3. 删除会话
+            const result = await tx.delete(practice_sessions).where(and(
+                eq(practice_sessions.id, sessionId),
+                eq(practice_sessions.user_id, userId)
+            ));
+            return result.rowsAffected > 0;
+        });
+    },
+
+    /**
+     * 重命名会话
+     */
+    async renameSession(userId: number, sessionId: string, newName: string) {
+        const result = await drizzleDb.update(practice_sessions)
+            .set({ session_name: newName.trim() || null })
+            .where(and(
+                eq(practice_sessions.id, sessionId),
+                eq(practice_sessions.user_id, userId)
+            ));
+        return result.rowsAffected > 0;
+    },
+
+    /**
+     * 获取用户所有使用过的练习模式
+     */
+    async getAvailableModes(userId: number): Promise<string[]> {
+        const rows = await drizzleDb.select({ mode: practice_sessions.practice_mode })
+            .from(practice_sessions)
+            .where(and(
+                eq(practice_sessions.user_id, userId),
+                sql`${practice_sessions.practice_mode} IS NOT NULL`
+            ))
+            .groupBy(practice_sessions.practice_mode)
+            .all();
+        return rows.map(r => r.mode as string).filter(Boolean);
+    },
+
+    /**
+     * 获取 AI 分析报告 (辅助 Markdown 导出)
+     */
+    async getAnalysisReport(sessionId: string): Promise<string | null> {
+        try {
+            // 这里为了兼容性保持原有的 table 动态检查
+            const [reportRow] = await drizzleDb.all<any>(sql`
+                SELECT report FROM analysis_reports WHERE session_id = ${sessionId} LIMIT 1
+            `);
+            return reportRow?.report || null;
+        } catch {
+            return null;
+        }
     }
 };

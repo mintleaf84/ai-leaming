@@ -3,7 +3,7 @@ import { Suspense } from "react";
 import {
   ArrowRight, Brain, BarChart3, Target, Zap,
   RotateCcw, FileCheck, Shuffle, Flame,
-  CheckCircle2, Book, GraduationCap, PlayCircle, History, Sparkles, ScanLine, Network, FileText
+  CheckCircle2, Book, GraduationCap, PlayCircle, History, Sparkles, ScanLine, Network, FileText, BookX
 } from "lucide-react";
 import { redirect } from "next/navigation";
 import { getUserStatsAction } from "@/server/actions/stats";
@@ -229,6 +229,7 @@ export default async function Home() {
             {[
               { name: '记忆分析', desc: 'FSRS 算法深度报告', href: '/dashboard/srs', icon: Brain },
               { name: '练习记录', desc: '查看历史成绩', href: '/history', icon: History },
+              { name: '错题本', desc: '查看并管理错题', href: '/wrong-book', icon: BookX },
               { name: '教材库', desc: '学习资料导入', href: '/textbooks', icon: Book, enabled: isTextbookEnabled },
               { name: '智能笔记', desc: '记录灵感与知识', href: '/notes', icon: FileText, enabled: isNotesEnabled },
               { name: 'AI 助教', desc: '智能答疑解惑', href: '/chat', icon: Brain },

@@ -74,47 +74,51 @@ export const StudyModeOverlay: React.FC<StudyModeOverlayProps> = ({
                         onClick={toggleFlip}
                     >
                         {/* Study Front */}
-                        <div className="absolute inset-0 backface-hidden bg-card rounded-[40px] border-4 border-border/50 p-12 overflow-y-auto flex flex-col shadow-2xl" style={{ backfaceVisibility: 'hidden' }}>
-                            <div className="mb-8">
-                                <span className="px-4 py-1.5 bg-blue-600 text-white text-sm font-black rounded-2xl shadow-lg uppercase tracking-widest">Question</span>
-                            </div>
-                            <div className="flex-1 flex flex-col justify-center">
-                                <div className="prose prose-2xl max-w-none text-foreground font-medium leading-loose prose-headings:text-foreground prose-p:my-6 prose-p:text-3xl dark:prose-invert">
-                                    <MarkdownViewer content={currentCard.front || currentCard.title} />
+                        <div className="absolute inset-0 backface-hidden bg-card rounded-[40px] border-4 border-border/50 overflow-y-auto scrollbar-thin shadow-2xl" style={{ backfaceVisibility: 'hidden' }}>
+                            <div className="min-h-full p-12 flex flex-col">
+                                <div className="mb-8 shrink-0">
+                                    <span className="px-4 py-1.5 bg-blue-600 text-white text-sm font-black rounded-2xl shadow-lg uppercase tracking-widest">Question</span>
                                 </div>
-                            </div>
-                            <div className="mt-8 text-center animate-bounce">
-                                <p className="text-sm text-muted-foreground font-medium">点击卡片或按“空格键”揭晓答案</p>
+                                <div className="flex-1 flex flex-col justify-center">
+                                    <div className="prose prose-2xl max-w-none text-foreground font-medium leading-loose prose-headings:text-foreground prose-p:my-6 prose-p:text-3xl dark:prose-invert">
+                                        <MarkdownViewer content={currentCard.front || currentCard.title} />
+                                    </div>
+                                </div>
+                                <div className="mt-8 text-center animate-bounce shrink-0">
+                                    <p className="text-sm text-muted-foreground font-medium">点击卡片或按“空格键”揭晓答案</p>
+                                </div>
                             </div>
                         </div>
 
                         {/* Study Back */}
-                        <div className="absolute inset-0 backface-hidden rotate-y-180 bg-muted/30 rounded-[40px] border-4 border-emerald-500/30 p-12 overflow-y-auto flex flex-col shadow-2xl" style={{ backfaceVisibility: 'hidden', transform: 'rotateY(180deg)' }}>
-                            <div className="mb-8">
-                                <span className="px-4 py-1.5 bg-emerald-500 text-white text-sm font-black rounded-2xl shadow-lg uppercase tracking-widest">Answer</span>
-                            </div>
-                            <div className="flex-1 prose prose-2xl max-w-none text-foreground leading-loose prose-headings:text-foreground prose-ul:space-y-4 prose-p:text-2xl dark:prose-invert">
-                                <MarkdownViewer content={currentCard.back || '暂无答案'} />
+                        <div className="absolute inset-0 backface-hidden rotate-y-180 bg-muted/30 rounded-[40px] border-4 border-emerald-500/30 overflow-y-auto scrollbar-thin shadow-2xl" style={{ backfaceVisibility: 'hidden', transform: 'rotateY(180deg)' }}>
+                            <div className="min-h-full p-12 flex flex-col">
+                                <div className="mb-8 shrink-0">
+                                    <span className="px-4 py-1.5 bg-emerald-500 text-white text-sm font-black rounded-2xl shadow-lg uppercase tracking-widest">Answer</span>
+                                </div>
+                                <div className="flex-1 prose prose-2xl max-w-none text-foreground leading-loose prose-headings:text-foreground prose-ul:space-y-4 prose-p:text-2xl dark:prose-invert">
+                                    <MarkdownViewer content={currentCard.back || '暂无答案'} />
 
-                                {currentCard.key_points && currentCard.key_points.length > 0 && (
-                                    <div className="mt-12 pt-8 border-t border-border/50">
-                                        <h4 className="text-xs font-black text-muted-foreground uppercase tracking-widest mb-6 px-1">要点回顾</h4>
-                                        <div className="grid gap-4">
-                                            {currentCard.key_points.map((kp, i) => (
-                                                <div key={i} className="flex gap-4 p-5 bg-card rounded-3xl border border-border shadow-sm">
-                                                    <div className="w-2 h-2 rounded-full bg-emerald-500 mt-2 shrink-0"></div>
-                                                    <div>
-                                                        <span className="block text-lg font-bold text-foreground mb-1">{kp.term}</span>
-                                                        <span className="block text-base text-muted-foreground leading-normal">{kp.definition}</span>
+                                    {currentCard.key_points && currentCard.key_points.length > 0 && (
+                                        <div className="mt-12 pt-8 border-t border-border/50">
+                                            <h4 className="text-xs font-black text-muted-foreground uppercase tracking-widest mb-6 px-1">要点回顾</h4>
+                                            <div className="grid gap-4">
+                                                {currentCard.key_points.map((kp, i) => (
+                                                    <div key={i} className="flex gap-4 p-5 bg-card rounded-3xl border border-border shadow-sm">
+                                                        <div className="w-2 h-2 rounded-full bg-emerald-500 mt-2 shrink-0"></div>
+                                                        <div>
+                                                            <span className="block text-lg font-bold text-foreground mb-1">{kp.term}</span>
+                                                            <span className="block text-base text-muted-foreground leading-normal">{kp.definition}</span>
+                                                        </div>
                                                     </div>
-                                                </div>
-                                            ))}
+                                                ))}
+                                            </div>
                                         </div>
-                                    </div>
-                                )}
-                            </div>
-                            <div className="mt-8 text-center text-muted-foreground/60">
-                                <p className="text-sm font-medium">再次点击回到问题</p>
+                                    )}
+                                </div>
+                                <div className="mt-8 text-center text-muted-foreground/60 shrink-0">
+                                    <p className="text-sm font-medium">再次点击回到问题</p>
+                                </div>
                             </div>
                         </div>
                     </div>

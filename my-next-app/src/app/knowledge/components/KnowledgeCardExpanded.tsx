@@ -105,33 +105,35 @@ export const KnowledgeCardExpanded: React.FC<KnowledgeCardExpandedProps> = ({ ca
 
                         {/* BACK SIDE */}
                         <div 
-                            className="absolute inset-0 backface-hidden bg-primary rounded-[3rem] shadow-2xl overflow-hidden flex flex-col items-center justify-center p-12 text-center"
+                            className="absolute inset-0 backface-hidden bg-primary rounded-[3rem] shadow-2xl overflow-y-auto scrollbar-thin flex flex-col items-center text-center"
                             style={{ backfaceVisibility: 'hidden', transform: 'rotateY(180deg)' }}
                         >
-                            <div className="w-20 h-20 bg-white/10 rounded-full flex items-center justify-center mb-8 backdrop-blur-md border border-white/20">
-                                <CheckCircle2 className="w-10 h-10 text-white" />
-                            </div>
-
-                            <div className="max-w-2xl w-full">
-                                <h4 className="text-white/40 text-[10px] font-black uppercase tracking-[0.3em] mb-6">参考答案</h4>
-                                <div className="text-white text-2xl font-medium leading-relaxed mb-12 prose-invert prose-p:text-white/90">
-                                    <MarkdownViewer content={card.back || '暂无答案'} />
+                            <div className="w-full min-h-full p-12 flex flex-col items-center justify-center">
+                                <div className="w-20 h-20 bg-white/10 rounded-full flex items-center justify-center mb-8 backdrop-blur-md border border-white/20 shrink-0">
+                                    <CheckCircle2 className="w-10 h-10 text-white" />
                                 </div>
 
-                                {card.key_points && card.key_points.length > 0 && (
-                                    <div className="grid grid-cols-2 gap-4 text-left">
-                                        {card.key_points.slice(0, 2).map((kp, i) => (
-                                            <div key={i} className="bg-black/20 p-5 rounded-2xl border border-white/10 backdrop-blur-sm">
-                                                <span className="block text-xs font-black text-white/50 uppercase mb-2">#{kp.term}</span>
-                                                <span className="block text-sm text-white/90 leading-snug">{kp.definition}</span>
-                                            </div>
-                                        ))}
+                                <div className="max-w-2xl w-full">
+                                    <h4 className="text-white/40 text-[10px] font-black uppercase tracking-[0.3em] mb-6">参考答案</h4>
+                                    <div className="text-white text-2xl font-medium leading-relaxed mb-12 prose-invert prose-p:text-white/90">
+                                        <MarkdownViewer content={card.back || '暂无答案'} />
                                     </div>
-                                )}
-                            </div>
 
-                            <div className="absolute bottom-12 text-[10px] text-white/30 font-black uppercase tracking-[0.2em]">
-                                点击返回正面
+                                    {card.key_points && card.key_points.length > 0 && (
+                                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-left">
+                                            {card.key_points.slice(0, 4).map((kp, i) => (
+                                                <div key={i} className="bg-black/20 p-5 rounded-2xl border border-white/10 backdrop-blur-sm">
+                                                    <span className="block text-xs font-black text-white/50 uppercase mb-2">#{kp.term}</span>
+                                                    <span className="block text-sm text-white/90 leading-snug">{kp.definition}</span>
+                                                </div>
+                                            ))}
+                                        </div>
+                                    )}
+                                </div>
+
+                                <div className="mt-12 text-[10px] text-white/30 font-black uppercase tracking-[0.2em] shrink-0">
+                                    点击返回正面
+                                </div>
                             </div>
                             
                             <button 

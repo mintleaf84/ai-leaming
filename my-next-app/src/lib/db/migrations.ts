@@ -107,34 +107,6 @@ export function runMigrations(db: Database.Database) {
     `);
     } catch { /* ignore */ }
 
-    // 创建笔记标签表
-    try {
-        db.exec(`
-            CREATE TABLE IF NOT EXISTS note_tags (
-                id INTEGER PRIMARY KEY AUTOINCREMENT,
-                user_id INTEGER NOT NULL,
-                name TEXT NOT NULL,
-                color TEXT DEFAULT '#6b7280',
-                created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-                UNIQUE(user_id, name),
-                FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
-            );
-        `);
-        db.exec(`
-            CREATE TABLE IF NOT EXISTS note_tag_relations (
-                note_id INTEGER NOT NULL,
-                tag_id INTEGER NOT NULL,
-                PRIMARY KEY (note_id, tag_id),
-                FOREIGN KEY (note_id) REFERENCES notes(id) ON DELETE CASCADE,
-                FOREIGN KEY (tag_id) REFERENCES note_tags(id) ON DELETE CASCADE
-            );
-        `);
-        db.exec(`
-            CREATE INDEX IF NOT EXISTS idx_note_tags_user ON note_tags(user_id);
-            CREATE INDEX IF NOT EXISTS idx_note_tag_relations_note ON note_tag_relations(note_id);
-            CREATE INDEX IF NOT EXISTS idx_note_tag_relations_tag ON note_tag_relations(tag_id);
-        `);
-    } catch { /* ignore */ }
 
     console.log('[DB] Migrations completed');
 }

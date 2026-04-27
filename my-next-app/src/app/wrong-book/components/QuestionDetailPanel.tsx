@@ -4,6 +4,7 @@ import React, { useState, useEffect } from 'react';
 import { CheckCircle2, X, Lightbulb, History, Brain, Zap, Calendar } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { WrongQuestionDetail } from '@/server/actions/wrong-questions';
+import { getBeijingDiffDays, formatBeijingDate } from '@/lib/utils/datetime';
 
 interface QuestionDetailPanelProps {
     detail: WrongQuestionDetail;
@@ -56,7 +57,7 @@ export function QuestionDetailPanel({
     onPractice,
     onMarkAsMastered
 }: QuestionDetailPanelProps) {
-    const [now] = useState(() => Date.now());
+    const [now] = useState(() => new Date());
 
     if (isLoading || !detail) {
         return (
@@ -69,8 +70,7 @@ export function QuestionDetailPanel({
     }
 
     const getDaysUntil = (dueDate: string) => {
-        const diff = new Date(dueDate).getTime() - now;
-        return Math.ceil(diff / (1000 * 60 * 60 * 24));
+        return getBeijingDiffDays(dueDate, now);
     };
 
     return (
@@ -92,7 +92,7 @@ export function QuestionDetailPanel({
                         选项
                     </h4>
                     <div className="space-y-2">
-                        {detail.options.map((opt, idx) => {
+                        {detail.options.map((opt: string, idx: number) => {
                             const isCorrect = isCorrectOption(opt, detail.correctAnswer);
                             const isUserWrong = isUserWrongOption(opt, detail.userLastAnswer) && !isCorrect;
 
@@ -157,7 +157,7 @@ export function QuestionDetailPanel({
                                         <Calendar className="w-3 h-3 text-emerald-500" /> 下次复习
                                     </span>
                                     <span className="font-medium text-foreground">
-                                        {new Date(detail.srs.due_date).toLocaleDateString()}
+                                        {formatBeijingDate(detail.srs.due_date, 'YYYY/M/D')}
                                         <span className="ml-1 opacity-60">
                                             ({getDaysUntil(detail.srs.due_date)}d)
                                         </span>
@@ -174,11 +174,11 @@ export function QuestionDetailPanel({
                                 历史作答
                             </h4>
                             <div className="space-y-1 max-h-32 overflow-y-auto">
-                                {detail.historyLogs.slice(0, 10).map((log, idx) => (
+                                {detail.historyLogs.slice(0, 10).map((log: WrongQuestionDetail['historyLogs'][number], idx: number) => (
                                     <div key={idx} className="flex items-center gap-2 text-xs">
                                         <span className={`w-2 h-2 rounded-full ${log.isCorrect ? 'bg-green-500' : 'bg-red-500'}`} />
                                         <span className="text-muted-foreground">
-                                            {new Date(log.timestamp).toLocaleString()}
+                                            {formatBeijingDate(log.timestamp, 'YYYY/M/D HH:mm')}
                                         </span>
                                         <span className={log.isCorrect ? 'text-green-600' : 'text-red-600'}>
                                             {log.isCorrect ? '正确' : '错误'}

@@ -71,10 +71,10 @@ function initDb() {
   return db;
 }
 
-export function getLegacyDb() {
+export function getLegacyDb(): Database.Database {
   if (globalForDb.db) return globalForDb.db;
   globalForDb.db = initDb();
-  return globalForDb.db;
+  return globalForDb.db!;
 }
 
 /** @deprecated 请优先使用 drizzleDb 或默认导出的 drizzleDb 实例 */

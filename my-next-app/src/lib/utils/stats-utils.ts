@@ -1,3 +1,5 @@
+import dayjs from 'dayjs';
+
 /**
  * 统计相关的辅助函数 (纯函数)
  */
@@ -24,32 +26,24 @@ export function calculateStreakFromDates(
   }
 
   let streak = 0;
-  // 从最近的有记录的日期开始检查
-  // 转换 YYYY-MM-DD 为 Date 对象时，为了避免时区问题，建议补全时间或使用 UTC
-  const parseDate = (d: string) => {
-    const [y, m, day] = d.split('-').map(Number);
-    return new Date(y, m - 1, day);
-  };
-
-  const expectedDate = parseDate(latestPractice);
+  // 使用 dayjs 处理日期以确保一致性
+  let expectedDate = dayjs(latestPractice);
 
   for (const dateStr of practiceDates) {
-    const currentDate = parseDate(dateStr);
+    const currentDate = dayjs(dateStr);
     
-    // 计算差距
-    const diffMs = expectedDate.getTime() - currentDate.getTime();
-    const diffDays = Math.round(diffMs / (1000 * 60 * 60 * 24));
+    // 计算天数差
+    const diffDays = expectedDate.diff(currentDate, 'day');
 
     if (diffDays === 0) {
       // 找到了期望的日期
       streak++;
       // 期望日期推向更早的一天
-      expectedDate.setDate(expectedDate.getDate() - 1);
+      expectedDate = expectedDate.subtract(1, 'day');
     } else if (diffDays > 0) {
       // 当前日期比期望日期还早，说明中间断开了
       break;
     }
-    // 如果 diffDays < 0 (理论上不应该，因为输入是倒序的) 则继续
   }
 
   return streak;

@@ -5,6 +5,7 @@ import { Button } from '@/components/ui/button';
 import { SrsHistoryModal } from './SrsHistoryModal';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { Info } from 'lucide-react';
+import { getBeijingDiffDays, formatBeijingDate } from '@/lib/utils/datetime';
 
 interface PracticeCardProps {
     question: {
@@ -65,7 +66,7 @@ export function PracticeCard({
             ? 'bg-purple-500/10 text-purple-600 dark:text-purple-400'
             : 'bg-blue-500/10 text-blue-600 dark:text-blue-400';
 
-    const [now] = useState(() => Date.now());
+    const [now] = useState(() => new Date());
 
     return (
         <motion.div
@@ -117,12 +118,12 @@ export function PracticeCard({
                                     <div className="flex items-center gap-1.5 cursor-help">
                                         <Calendar className="w-3.5 h-3.5 text-emerald-500" />
                                         <span className="text-[10px] font-medium">
-                                            {Math.ceil((new Date(question.srs.due_date).getTime() - now) / (1000 * 60 * 60 * 24))}d
+                                            {getBeijingDiffDays(question.srs.due_date, now)}d
                                         </span>
                                     </div>
                                 </TooltipTrigger>
                                 <TooltipContent>
-                                    <p className="text-xs">下次复习: {new Date(question.srs.due_date).toLocaleDateString()}</p>
+                                    <p className="text-xs">下次复习: {formatBeijingDate(question.srs.due_date, 'YYYY/M/D')}</p>
                                 </TooltipContent>
                             </Tooltip>
 

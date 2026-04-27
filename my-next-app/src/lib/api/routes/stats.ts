@@ -1,7 +1,7 @@
 import { OpenAPIHono, createRoute, z } from '@hono/zod-openapi'
-import { db } from '@/lib/db'
+import { getLegacyDb } from '@/lib/db'
 import { authMiddleware, getCurrentUser } from '@/lib/api/middlewares/auth'
-import { getBeijingDateString } from '@/lib/utils/datetime'
+import { getBeijingDateString, getBeijingYesterdayString, getBeijingDiffDays } from '@/lib/utils/datetime'
 
 const app = new OpenAPIHono()
 
@@ -38,6 +38,7 @@ app.openapi(getStatsRoute, async (c) => {
     const today = getBeijingDateString()
 
     // 今日统计
+    const db = getLegacyDb();
     const todayRow = db.prepare(`
         SELECT 
             COUNT(*) as count,
@@ -80,16 +81,14 @@ app.openapi(getStatsRoute, async (c) => {
     let streakDays = 0
     if (activeDays.length > 0) {
         // 检查今天或昨天是否有记录（支持当天还没做题但昨天有的情况）
-        const yesterday = getBeijingDateString(new Date(Date.now() - 86400000))
+        const yesterday = getBeijingYesterdayString()
         const firstDay = activeDays[0].day
         if (firstDay !== today && firstDay !== yesterday) {
             streakDays = 0
         } else {
             streakDays = 1
             for (let i = 1; i < activeDays.length; i++) {
-                const prev = new Date(activeDays[i - 1].day)
-                const curr = new Date(activeDays[i].day)
-                const diffDays = Math.round((prev.getTime() - curr.getTime()) / 86400000)
+                const diffDays = getBeijingDiffDays(activeDays[i - 1].day, activeDays[i].day)
                 if (diffDays === 1) {
                     streakDays++
                 } else {

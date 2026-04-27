@@ -1,7 +1,7 @@
 import { drizzleDb } from '@/lib/db';
 import { eq, and, desc, sql, gte, count, avg } from 'drizzle-orm';
 import { practice_logs, user_mastery, practice_sessions, observation_zone } from '@/lib/db/drizzle-schema';
-import { getBeijingDateString, getBeijingYesterdayString, formatBeijingDisplayDate } from '@/lib/utils/datetime';
+import { getBeijingDateString, getBeijingYesterdayString, formatBeijingDisplayDate, getBeijingNow } from '@/lib/utils/datetime';
 import { calculateStreakFromDates } from '@/lib/utils/stats-utils';
 
 export interface UserStats {
@@ -120,12 +120,12 @@ export const statsService = {
 
         // 填充完整日期序列 (使用北京时间)
         const result: TrendDataItem[] = [];
-        const now = new Date();
+        const now = getBeijingNow();
 
         for (let i = days - 1; i >= 0; i--) {
-            const d = new Date(now.getTime() - i * 86400000);
-            const dateStr = getBeijingDateString(d);
-            const displayDate = formatBeijingDisplayDate(d);
+            const d = now.subtract(i, 'day');
+            const dateStr = d.format('YYYY-MM-DD');
+            const displayDate = d.format('M/D');
 
             const row = rows.find(r => r.date === dateStr);
             result.push({

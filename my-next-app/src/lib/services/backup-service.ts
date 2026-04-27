@@ -1,5 +1,6 @@
 import { createClient, WebDAVClient } from 'webdav';
-import db, { getSetting, setSetting } from '@/lib/db';
+import dayjs from 'dayjs';
+import { getLegacyDb, getSetting, setSetting } from '@/lib/db';
 import { encrypt, decrypt } from '@/lib/utils/encryption';
 import fs from 'fs/promises';
 import { createReadStream, createWriteStream } from 'fs';
@@ -43,6 +44,7 @@ export class BackupService {
      * 获取备份配置
      */
     static async getConfig(): Promise<BackupConfig> {
+        const db = getLegacyDb();
         const url = getSetting(db, SETTING_KEYS.URL) || '';
         const user = getSetting(db, SETTING_KEYS.USER) || '';
         const encryptedPass = getSetting(db, SETTING_KEYS.PASS) || '';
@@ -66,6 +68,7 @@ export class BackupService {
      * 保存备份配置
      */
     static async saveConfig(config: Partial<BackupConfig>) {
+        const db = getLegacyDb();
         if (config.url !== undefined) setSetting(db, SETTING_KEYS.URL, config.url);
         if (config.user !== undefined) setSetting(db, SETTING_KEYS.USER, config.user);
         if (config.pass !== undefined) {
@@ -103,7 +106,7 @@ export class BackupService {
             throw new Error('Backup configuration is incomplete');
         }
 
-        const timestamp = new Date().toISOString().replace(/[:.]/g, '-');
+        const timestamp = dayjs().format('YYYY-MM-DD-HH-mm-ss');
         const dbName = process.env.DB_FILENAME || 'ai-learning.db';
         const tempDir = path.resolve(process.cwd(), 'data', 'temp_backups');
         const backupPath = path.join(tempDir, `${dbName}.${timestamp}.bak`);
@@ -116,7 +119,7 @@ export class BackupService {
             // 2. SQLite 备份 (VACUUM INTO)
             console.log(`[Backup] Creating database snapshot: ${backupPath}`);
             // 使用 better-sqlite3 的 backup 方法
-            await db.backup(backupPath);
+            await getLegacyDb().backup(backupPath);
 
             // 3. 压缩
             console.log(`[Backup] Compressing backup: ${zipPath}`);
@@ -171,14 +174,13 @@ export class BackupService {
         try {
             console.log(`[Backup] Checking for old backups (retention: ${config.retentionDays} days)`);
             const items = await client.getDirectoryContents(config.remotePath) as any[];
-            const now = new Date();
-            const threshold = config.retentionDays * 24 * 60 * 60 * 1000;
+            const now = dayjs();
 
             for (const item of items) {
                 if (item.type !== 'file' || !item.lastmod) continue;
                 
-                const lastModDate = new Date(item.lastmod);
-                if (now.getTime() - lastModDate.getTime() > threshold) {
+                const lastModDate = dayjs(item.lastmod);
+                if (now.diff(lastModDate, 'day') > config.retentionDays) {
                     console.log(`[Backup] Deleting old backup: ${item.filename}`);
                     await client.deleteFile(item.filename);
                 }

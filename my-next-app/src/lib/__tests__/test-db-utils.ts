@@ -1,10 +1,11 @@
 import Database from 'better-sqlite3';
-import { createTestTables as createTables } from '../db/test-schema-utils';
+import { createTestTables as createTables, TEST_SCHEMA_SQL } from '../db/test-schema-utils';
 
 export interface TestDbHelper {
     db: Database.Database;
     close: () => void;
     seedUser: (id: number, username: string) => void;
+    getSchemaSql: () => string;
 }
 
 /**
@@ -22,6 +23,7 @@ export function setupTestDb(): TestDbHelper {
         seedUser: (id: number, username: string) => {
             db.prepare('INSERT INTO users (id, username, password_hash) VALUES (?, ?, ?)')
               .run(id, username, 'test-hash');
-        }
+        },
+        getSchemaSql: () => TEST_SCHEMA_SQL
     };
 }

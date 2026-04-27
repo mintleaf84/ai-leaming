@@ -1,14 +1,20 @@
-
-import { drizzleDb, drizzleSchema } from '@/lib/db';
+import { drizzleDb } from '@/lib/db';
+import { 
+    practice_sessions, 
+    practice_logs, 
+    questions, 
+    question_srs, 
+    session_reviews 
+} from '@/lib/db/drizzle-schema';
 import { eq, and, desc, gt, sql, inArray } from 'drizzle-orm';
 import { Question, Dimension } from '@/types';
-import { PracticeSessionRowSchema, QuestionRowSchema } from '@/lib/schemas';
-import { z } from 'zod';
+import { PracticeMode, PracticeConfig } from '@/types/practice';
+import { QuestionRowSchema } from '@/lib/schemas';
 import logger from '@/lib/logger';
 import { DemoService } from '@/lib/practice/demo';
 
 export interface PracticeSessionConfig {
-    mode: 'random' | 'wrong' | 'tag' | 'first-principles' | 'smart' | 'review' | 'focus' | 'exam';
+    mode: PracticeMode;
     limit: number;
     types?: string[];
     tags?: string[];
@@ -55,29 +61,29 @@ export const practiceService = {
 
         // 2. 尝试恢复最近 24 小时内未完成的会话
         if (!forceNew) {
-            const lastSession = await drizzleDb.query.practice_sessions.findFirst({
-                where: and(
-                    eq(drizzleSchema.practice_sessions.user_id, userId),
-                    eq(drizzleSchema.practice_sessions.is_demo, 0),
-                    gt(drizzleSchema.practice_sessions.created_at, sql`datetime('now', '-1 day')`)
-                ),
-                orderBy: [desc(drizzleSchema.practice_sessions.created_at)]
-            });
+            const [lastSession] = await drizzleDb.select()
+                .from(practice_sessions)
+                .where(and(
+                    eq(practice_sessions.user_id, userId),
+                    eq(practice_sessions.is_demo, 0),
+                    gt(practice_sessions.created_at, sql`datetime('now', '-1 day')`)
+                ))
+                .orderBy(desc(practice_sessions.created_at))
+                .limit(1);
 
             if (lastSession && lastSession.questions_json) {
                 // 查询已完成的题目数
-                const logResult = await drizzleDb.select({ count: sql<number>`count(*)` })
-                    .from(drizzleSchema.practice_logs)
-                    .where(eq(drizzleSchema.practice_logs.session_id, lastSession.id))
-                    .get();
+                const [logResult] = await drizzleDb.select({ count: sql<number>`count(*)` })
+                    .from(practice_logs)
+                    .where(eq(practice_logs.session_id, lastSession.id));
 
                 const totalQuestions = lastSession.total_questions || 0;
-                const completedCount = logResult?.count || 0;
+                const completedCount = Number(logResult?.count) || 0;
 
                 if (completedCount < totalQuestions) {
                     try {
-                        const questions = JSON.parse(lastSession.questions_json) as Question[];
-                        const mappedQuestions = questions.map(q => mapQuestion(q));
+                        const questionsData = JSON.parse(lastSession.questions_json) as Question[];
+                        const mappedQuestions = questionsData.map(q => mapQuestion(q));
                         return {
                             questions: await this.attachSrsData(userId, mappedQuestions),
                             sessionId: lastSession.id,
@@ -102,20 +108,20 @@ export const practiceService = {
     /**
      * 为题目列表挂载 SRS 记忆状态
      */
-    async attachSrsData(userId: number, questions: Question[]): Promise<Question[]> {
-        if (questions.length === 0) return [];
+    async attachSrsData(userId: number, questionList: Question[]): Promise<Question[]> {
+        if (questionList.length === 0) return [];
         
-        const qIds = questions.map(q => q.id);
-        const srsRows = await drizzleDb.query.question_srs.findMany({
-            where: and(
-                eq(drizzleSchema.question_srs.user_id, userId),
-                inArray(drizzleSchema.question_srs.question_id, qIds)
-            )
-        });
+        const qIds = questionList.map(q => q.id);
+        const srsRows = await drizzleDb.select()
+            .from(question_srs)
+            .where(and(
+                eq(question_srs.user_id, userId),
+                inArray(question_srs.question_id, qIds)
+            ));
 
         const srsMap = new Map(srsRows.map(row => [row.question_id, row]));
 
-        return questions.map(q => {
+        return questionList.map(q => {
             const srs = srsMap.get(q.id);
             if (srs) {
                 return {
@@ -143,7 +149,7 @@ export const practiceService = {
         const sessionId = Math.random().toString(36).substring(2, 15);
         
         const rawQuestions = await drizzleDb.select()
-            .from(drizzleSchema.questions)
+            .from(questions)
             .orderBy(sql`RANDOM()`)
             .limit(limit);
 
@@ -151,18 +157,18 @@ export const practiceService = {
             return { questions: [], sessionId: "" };
         }
 
-        const questions = rawQuestions.map(q => mapQuestion(q));
+        const questionData = rawQuestions.map(q => mapQuestion(q));
 
-        await drizzleDb.insert(drizzleSchema.practice_sessions).values({
+        await drizzleDb.insert(practice_sessions).values({
             id: sessionId,
             user_id: userId,
-            total_questions: questions.length,
-            questions_json: JSON.stringify(questions),
+            total_questions: questionData.length,
+            questions_json: JSON.stringify(questionData),
             practice_mode: 'random',
             is_demo: 0
         });
 
-        return { questions, sessionId };
+        return { questions: questionData, sessionId };
     },
 
     /**
@@ -178,7 +184,7 @@ export const practiceService = {
         totalDurationMs?: number
     ) {
         // 1. 记录答题日志
-        await drizzleDb.insert(drizzleSchema.practice_logs).values({
+        await drizzleDb.insert(practice_logs).values({
             session_id: sessionId,
             user_id: userId,
             question_id: questionId,
@@ -189,27 +195,30 @@ export const practiceService = {
 
         // 2. 更新会话统计
         if (sessionId) {
-            await drizzleDb.update(drizzleSchema.practice_sessions)
+            await drizzleDb.update(practice_sessions)
                 .set({ 
-                    correct_count: sql`${drizzleSchema.practice_sessions.correct_count} + ${isCorrect ? 1 : 0}`,
+                    correct_count: sql`${practice_sessions.correct_count} + ${isCorrect ? 1 : 0}`,
                     total_duration_ms: totalDurationMs ?? undefined
                 })
                 .where(and(
-                    eq(drizzleSchema.practice_sessions.id, sessionId),
-                    eq(drizzleSchema.practice_sessions.user_id, userId)
+                    eq(practice_sessions.id, sessionId),
+                    eq(practice_sessions.user_id, userId)
                 ));
         }
 
         // 3. 异步更新掌握度
-        const q = await drizzleDb.query.questions.findFirst({
-            where: eq(drizzleSchema.questions.id, questionId),
-            columns: { tags: true, dimension: true }
-        });
+        const [q] = await drizzleDb.select({
+                tags: questions.tags,
+                dimension: questions.dimension
+            })
+            .from(questions)
+            .where(eq(questions.id, questionId))
+            .limit(1);
 
         if (q && q.tags) {
             let tags: string[] = [];
             try {
-                tags = JSON.parse(q.tags);
+                tags = typeof q.tags === 'string' ? JSON.parse(q.tags) : q.tags;
             } catch (_e) {
                 tags = [];
             }
@@ -251,10 +260,10 @@ export const practiceService = {
         userAnswer: string,
         duration: number
     ) {
-        const question = await drizzleDb.query.questions.findFirst({
-            where: eq(drizzleSchema.questions.id, questionId),
-            columns: { answer: true }
-        });
+        const [question] = await drizzleDb.select({ answer: questions.answer })
+            .from(questions)
+            .where(eq(questions.id, questionId))
+            .limit(1);
 
         if (!question) {
             throw new Error(`Question ${questionId} not found`);
@@ -273,7 +282,7 @@ export const practiceService = {
         const result = await drizzleDb.selectDistinct({
             tag: sql<string>`json_each.value`
         })
-        .from(sql`${drizzleSchema.questions} AS q, json_each(q.tags)`)
+        .from(sql`${questions} AS q, json_each(q.tags)`)
         .orderBy(sql`json_each.value`)
         .all();
         
@@ -284,37 +293,37 @@ export const practiceService = {
      * 以后台 ID 获取完整会话内容
      */
     async getSessionById(userId: number, sessionId: string) {
-        const session = await drizzleDb.query.practice_sessions.findFirst({
-            where: and(
-                eq(drizzleSchema.practice_sessions.id, sessionId),
-                eq(drizzleSchema.practice_sessions.user_id, userId)
-            )
-        });
+        const [session] = await drizzleDb.select()
+            .from(practice_sessions)
+            .where(and(
+                eq(practice_sessions.id, sessionId),
+                eq(practice_sessions.user_id, userId)
+            ))
+            .limit(1);
 
         if (!session || !session.questions_json) return null;
 
-        let questions = session.questions_json ? JSON.parse(session.questions_json) : [];
+        let questionData = session.questions_json ? JSON.parse(session.questions_json) : [];
         
         // 如果存储的是 ID 列表，则查询完整题目 (向下兼容旧逻辑)
-        if (questions.length > 0 && (typeof questions[0] === 'string' || typeof questions[0] === 'number')) {
+        if (questionData.length > 0 && (typeof questionData[0] === 'string' || typeof questionData[0] === 'number')) {
             const rawQuestions = await drizzleDb.select()
-                .from(drizzleSchema.questions)
-                .where(sql`${drizzleSchema.questions.id} IN (${sql.join(questions, sql`, `)})`);
-            questions = rawQuestions.map(q => mapQuestion(q));
+                .from(questions)
+                .where(inArray(questions.id, questionData));
+            questionData = rawQuestions.map(q => mapQuestion(q));
         } else {
             // 如果存储的是完整对象，确保进行 mapQuestion 校验/修复
-            questions = questions.map((q: unknown) => mapQuestion(q));
+            questionData = questionData.map((q: unknown) => mapQuestion(q));
         }
 
-        const logResult = await drizzleDb.select({ count: sql<number>`count(*)` })
-            .from(drizzleSchema.practice_logs)
-            .where(eq(drizzleSchema.practice_logs.session_id, sessionId))
-            .get();
+        const [logResult] = await drizzleDb.select({ count: sql<number>`count(*)` })
+            .from(practice_logs)
+            .where(eq(practice_logs.session_id, sessionId));
 
         return {
-            questions: await this.attachSrsData(userId, questions),
+            questions: await this.attachSrsData(userId, questionData),
             sessionId: session.id,
-            completedCount: logResult?.count || 0,
+            completedCount: Number(logResult?.count) || 0,
             practiceMode: session.practice_mode || undefined
         };
     },
@@ -323,21 +332,71 @@ export const practiceService = {
      * 保存会话回顾信息
      */
     async saveSessionReview(userId: number, sessionId: string, questionId: number, reviewData: Record<string, unknown>) {
-        await drizzleDb.insert(drizzleSchema.session_reviews).values({
+        await drizzleDb.insert(session_reviews).values({
             session_id: sessionId,
             question_id: questionId,
             review_data: JSON.stringify(reviewData)
         });
 
-        await drizzleDb.update(drizzleSchema.practice_sessions)
+        await drizzleDb.update(practice_sessions)
             .set({ 
-                review_count: sql`${drizzleSchema.practice_sessions.review_count} + 1` 
+                review_count: sql`${practice_sessions.review_count} + 1` 
             })
             .where(and(
-                eq(drizzleSchema.practice_sessions.id, sessionId),
-                eq(drizzleSchema.practice_sessions.user_id, userId)
+                eq(practice_sessions.id, sessionId),
+                eq(practice_sessions.user_id, userId)
             ));
         return { success: true };
+    },
+
+    /**
+     * 根据自定义配置创建练习会话
+     */
+    async createSessionFromConfig(userId: number, config: PracticeSessionConfig): Promise<{
+        questions: Question[];
+        sessionId: string;
+        config: PracticeSessionConfig;
+    }> {
+        // 1. 模式映射 (兼容旧名称)
+        let mode = config.mode;
+        if ((mode as string) === 'wrong') mode = 'mistakes';
+        if ((mode as string) === 'tag') mode = 'focus';
+
+        // 2. 准备配置对象并调用调度算法
+        const practiceConfig: PracticeConfig = {
+            ...config,
+            mode,
+            types: config.types as any, // 内部转换
+            dimensions: config.dimensions as any
+        };
+
+        const { generateSessionByConfig } = await import('@/lib/practice/practice-scheduling');
+        const rawQuestions = await generateSessionByConfig(practiceConfig, userId);
+
+        if (!rawQuestions || rawQuestions.length === 0) {
+            return { questions: [], sessionId: '', config };
+        }
+
+        // 2. 生成会话 ID
+        const sessionId = Math.random().toString(36).substring(2, 15);
+        
+        // 3. 映射并校验题目数据
+        const questionData = rawQuestions.map(q => mapQuestion(q));
+
+        // 4. 持久化会话
+        await drizzleDb.insert(practice_sessions).values({
+            id: sessionId,
+            user_id: userId,
+            total_questions: questionData.length,
+            questions_json: JSON.stringify(questionData),
+            practice_mode: mode,
+            is_demo: 0
+        });
+
+        // 5. 挂载 SRS 数据并返回
+        const questionsWithSrs = await this.attachSrsData(userId, questionData);
+
+        return { questions: questionsWithSrs, sessionId, config };
     }
 };
 

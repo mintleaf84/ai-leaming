@@ -1,31 +1,34 @@
 'use server';
 import logger from '@/lib/logger';
 
-import { db } from '@/lib/db';
+import { drizzleDb } from '@/lib/db';
+import { questions } from '@/lib/db/drizzle-schema';
+import { eq } from 'drizzle-orm';
 import { requireUser } from '@/lib/auth/auth';
 import { generateTextWrapper } from '@/lib/ai/client';
 import { checkAndConsumeQuota } from '@/lib/billing/subscription-service';
 
+/**
+ * 为题目生成 AI 助记词
+ */
 export async function generateMnemonicAction(questionId: string, forceRegenerate = false) {
     try {
         const user = await requireUser();
+        const idNum = parseInt(questionId, 10);
 
-        // 1. 获取题目信息
-        interface QuestionRow {
-            id: number;
-            content: string;
-            options: string;
-            answer: string;
-            explanation: string;
-            tags: string;
-            ai_mnemonic: string | null;
-        }
-
-        const question = db.prepare(`
-      SELECT id, content, options, answer, explanation, tags, ai_mnemonic
-      FROM questions
-      WHERE id = ?
-    `).get(questionId) as QuestionRow | undefined;
+        // 1. 获取题目核心信息
+        const [question] = await drizzleDb.select({
+                id: questions.id,
+                content: questions.content,
+                options: questions.options,
+                answer: questions.answer,
+                explanation: questions.explanation,
+                tags: questions.tags,
+                ai_mnemonic: questions.ai_mnemonic
+            })
+            .from(questions)
+            .where(eq(questions.id, idNum))
+            .limit(1);
 
         if (!question) {
             return { success: false, message: '题目不存在' };
@@ -36,7 +39,7 @@ export async function generateMnemonicAction(questionId: string, forceRegenerate
             return { success: true, content: question.ai_mnemonic, cached: true };
         }
 
-        // 3. 构建 Prompt (如果未缓存或强制刷新，先检查配额)
+        // 3. 配额检查
         const userIdNum = typeof user.id === 'string' ? parseInt(user.id, 10) : user.id;
         if (isNaN(userIdNum)) {
             return { success: false, message: '无效的用户 ID' };
@@ -50,6 +53,7 @@ export async function generateMnemonicAction(questionId: string, forceRegenerate
             };
         }
 
+        // 4. 构建助记词 Prompt
         const prompt = `
 # Role
 你是一位顶级记忆大师，将枯燥的教育学、心理学理论转化为**过目不忘、甚至有点“洗脑”**的记忆钩子。
@@ -88,11 +92,13 @@ export async function generateMnemonicAction(questionId: string, forceRegenerate
 [描述那个让你忘不掉的场景]
 `;
 
-        // 4. 调用 AI
+        // 5. 调用 AI 生成
         const { text } = await generateTextWrapper(prompt, 'premium');
 
-        // 5. 保存结果
-        db.prepare('UPDATE questions SET ai_mnemonic = ? WHERE id = ?').run(text, questionId);
+        // 6. 保存至数据库
+        await drizzleDb.update(questions)
+            .set({ ai_mnemonic: text })
+            .where(eq(questions.id, idNum));
 
         return { success: true, content: text, cached: false };
 

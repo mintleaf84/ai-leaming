@@ -2,16 +2,46 @@
 import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { getPromptTemplatesAction, savePromptTemplateAction, resetPromptTemplateAction } from '../prompts';
 
-// Mock dependencies
-const { mockDb, mockRequireRole, mockLogAdminAction } = vi.hoisted(() => {
+// 1. 使用 hoisted 定义 Drizzle Mock 链
+const { mockDrizzleDb } = vi.hoisted(() => {
+    const makeChain = () => {
+        const chain: any = {
+            then: vi.fn((resolve) => resolve([])),
+        };
+        const methods = [
+            'insert', 'values', 'update', 'set', 'delete', 'select', 'from', 
+            'where', 'limit', 'onConflictDoUpdate', 'returning', 'orderBy'
+        ];
+        methods.forEach((m) => {
+            chain[m] = vi.fn(() => chain);
+        });
+        return chain;
+    };
+    return { mockDrizzleDb: makeChain() };
+});
+
+// 2. 注册 Mock
+vi.mock('@/lib/db', () => ({ 
+    drizzleDb: mockDrizzleDb,
+}));
+
+vi.mock('@/lib/db/drizzle-schema', () => ({
+    prompt_templates: { 
+        key: 'prompt_templates.key', 
+        template: 'prompt_templates.template',
+        variables: 'prompt_templates.variables',
+        description: 'prompt_templates.description',
+        updated_at: 'prompt_templates.updated_at'
+    },
+}));
+
+const { mockRequireRole, mockLogAdminAction } = vi.hoisted(() => {
     return {
-        mockDb: { prepare: vi.fn() },
         mockRequireRole: vi.fn().mockResolvedValue({ id: 1, username: 'admin' }),
         mockLogAdminAction: vi.fn()
     };
 });
 
-vi.mock('@/lib/db', () => ({ default: mockDb, db: mockDb, drizzleDb: {}, drizzleSchema: {} }));
 vi.mock('@/lib/auth/auth', () => ({ requireRole: mockRequireRole }));
 vi.mock('@/lib/admin/audit', () => ({ logAdminAction: mockLogAdminAction }));
 
@@ -29,22 +59,26 @@ vi.mock('@/lib/ai/client', () => ({
     generateTextWrapper: vi.fn()
 }));
 
-describe('Prompts Actions', () => {
+describe('Prompts Actions (Drizzle 重构版)', () => {
     beforeEach(() => {
         vi.clearAllMocks();
+        const chain = mockDrizzleDb as any;
+        [
+            'insert', 'values', 'update', 'set', 'delete', 'select', 'from', 
+            'where', 'limit', 'onConflictDoUpdate', 'returning', 'orderBy'
+        ].forEach(m => chain[m].mockReturnValue(chain));
+        chain.then.mockImplementation((resolve: any) => resolve([]));
     });
 
     describe('getPromptTemplatesAction', () => {
-        it('should merge DB templates with system defaults', async () => {
-            mockDb.prepare.mockReturnValue({
-                all: vi.fn().mockReturnValue([
-                    { key: 'correction_quiz', template: 'custom', variables: '[]', description: 'D', updated_at: '2024-01-01' }
-                ])
-            });
+        it('应该合并数据库模板与系统默认模板', async () => {
+            const chain = mockDrizzleDb as any;
+            chain.then.mockImplementationOnce((resolve: any) => resolve([
+                { key: 'correction_quiz', template: 'custom', variables: '[]', description: 'D', updated_at: '2024-01-01' }
+            ]));
 
             const result = await getPromptTemplatesAction();
 
-            // Should have custom template + other defaults
             expect(result.length).toBeGreaterThanOrEqual(4);
             const correctionQuiz = result.find(r => r.key === 'correction_quiz');
             expect(correctionQuiz?.template).toBe('custom');
@@ -53,27 +87,21 @@ describe('Prompts Actions', () => {
     });
 
     describe('savePromptTemplateAction', () => {
-        it('should upsert template and log action', async () => {
-            const mockRun = vi.fn();
-            mockDb.prepare.mockReturnValue({ run: mockRun });
-
+        it('应该执行 upsert 操作并记录日志', async () => {
             const result = await savePromptTemplateAction('test_key', 'template', 'desc', ['var1']);
 
             expect(result.success).toBe(true);
-            expect(mockRun).toHaveBeenCalled();
+            expect(mockDrizzleDb.insert).toHaveBeenCalled();
             expect(mockLogAdminAction).toHaveBeenCalledWith(1, 'admin', 'UPDATE_PROMPT', 'prompt', 'test_key', expect.any(Object));
         });
     });
 
     describe('resetPromptTemplateAction', () => {
-        it('should delete template from DB', async () => {
-            const mockRun = vi.fn();
-            mockDb.prepare.mockReturnValue({ run: mockRun });
-
+        it('应该从数据库删除模板记录', async () => {
             const result = await resetPromptTemplateAction('test_key');
 
             expect(result.success).toBe(true);
-            expect(mockRun).toHaveBeenCalledWith('test_key');
+            expect(mockDrizzleDb.delete).toHaveBeenCalled();
         });
     });
 });

@@ -1,33 +1,35 @@
 'use server';
 import logger from '@/lib/logger';
 
-import { db } from '@/lib/db';
+import { drizzleDb } from '@/lib/db';
+import { prompt_templates } from '@/lib/db/drizzle-schema';
+import { eq, asc, sql } from 'drizzle-orm';
 import { generateStructuredData, generateTextWrapper, AiRawResponseError } from '@/lib/ai/client';
 import { CorrectionQuizSchema, RegressionChallengeSchema } from '@/lib/schemas';
-import { z } from 'zod';
 import { buildPrompt, DEFAULT_CORRECTION_PROMPT, DEFAULT_REGRESSION_PROMPT, DEFAULT_KNOWLEDGE_EXTRACT_PROMPT, DEFAULT_CHAT_SYSTEM_PROMPT, PROMPT_VARIABLE_EXAMPLES } from '@/lib/ai/prompts';
 import { requireRole } from '@/lib/auth/auth';
 import { logAdminAction } from '@/lib/admin/audit';
 import { getErrorMessage } from '@/lib/utils/error';
+import type { InferSelectModel } from 'drizzle-orm';
 
-export interface PromptTemplate {
-    key: string;
-    template: string;
-    description: string;
-    variables: string[];
-    updated_at: string;
+export type PromptTemplate = InferSelectModel<typeof prompt_templates> & {
+    variables: string[]; // 覆盖为解析后的数组
     systemDefault?: string;
-    variableExamples?: Record<string, string>; // New field for examples
-}
+    variableExamples?: Record<string, string>;
+};
 
+/**
+ * 获取所有 Prompt 模板（包含数据库覆盖和系统默认）
+ */
 export async function getPromptTemplatesAction(): Promise<PromptTemplate[]> {
     try {
-        const rows = db.prepare('SELECT * FROM prompt_templates ORDER BY key').all() as Partial<PromptTemplate>[];
+        const rows = await drizzleDb.select()
+            .from(prompt_templates)
+            .orderBy(asc(prompt_templates.key));
 
-        // Let's first cast rows to partial objects
         const dbRows = rows.map(row => ({
             ...row,
-            variables: JSON.parse((row.variables as string | undefined) || '[]')
+            variables: JSON.parse(row.variables || '[]') as string[]
         }));
 
         const existingKeys = new Set(dbRows.map(r => r.key));
@@ -58,7 +60,7 @@ export async function getPromptTemplatesAction(): Promise<PromptTemplate[]> {
             }
         ];
 
-        const combined = [...dbRows];
+        const combined: any[] = [...dbRows];
 
         for (const def of defaults) {
             if (!existingKeys.has(def.key)) {
@@ -72,7 +74,6 @@ export async function getPromptTemplatesAction(): Promise<PromptTemplate[]> {
                     variableExamples: PROMPT_VARIABLE_EXAMPLES[def.key] || {}
                 });
             } else {
-                // Attach system default to existing row too
                 const row = combined.find(r => r.key === def.key);
                 if (row) {
                     row.systemDefault = def.template;
@@ -88,6 +89,9 @@ export async function getPromptTemplatesAction(): Promise<PromptTemplate[]> {
     }
 }
 
+/**
+ * 保存或更新 Prompt 模板
+ */
 export async function savePromptTemplateAction(
     key: string,
     template: string,
@@ -96,17 +100,22 @@ export async function savePromptTemplateAction(
 ): Promise<{ success: boolean; error?: string }> {
     const user = await requireRole(['admin']);
     try {
-        db.prepare(`
-      INSERT INTO prompt_templates (key, template, description, variables, updated_at)
-      VALUES (?, ?, ?, ?, CURRENT_TIMESTAMP)
-      ON CONFLICT(key) DO UPDATE SET
-        template = excluded.template,
-        description = excluded.description,
-        variables = excluded.variables,
-        updated_at = CURRENT_TIMESTAMP
-    `).run(key, template, description, JSON.stringify(variables));
+        await drizzleDb.insert(prompt_templates).values({
+            key,
+            template,
+            description,
+            variables: JSON.stringify(variables),
+        }).onConflictDoUpdate({
+            target: prompt_templates.key,
+            set: {
+                template: sql`excluded.template`,
+                description: sql`excluded.description`,
+                variables: sql`excluded.variables`,
+                updated_at: sql`CURRENT_TIMESTAMP`,
+            }
+        });
 
-        // 记录日志
+        // 记录管理员操作日志
         logAdminAction(user.id, user.username, 'UPDATE_PROMPT', 'prompt', key, { description });
 
         return { success: true };
@@ -116,12 +125,15 @@ export async function savePromptTemplateAction(
     }
 }
 
+/**
+ * 重置 Prompt 模板至系统默认（从数据库删除覆盖记录）
+ */
 export async function resetPromptTemplateAction(key: string): Promise<{ success: boolean; error?: string }> {
     const user = await requireRole(['admin']);
     try {
-        db.prepare('DELETE FROM prompt_templates WHERE key = ?').run(key);
+        await drizzleDb.delete(prompt_templates).where(eq(prompt_templates.key, key));
 
-        // 记录日志
+        // 记录管理员操作日志
         logAdminAction(user.id, user.username, 'UPDATE_PROMPT', 'prompt', key, { action: 'reset_to_default' });
 
         return { success: true };
@@ -130,26 +142,28 @@ export async function resetPromptTemplateAction(key: string): Promise<{ success:
     }
 }
 
-// Debug Action
+/**
+ * 调试 Prompt 模板
+ */
 export async function debugPromptTemplateAction(
     key: string,
     template: string,
     inputVariables: Record<string, string>
 ): Promise<{ success: boolean; result?: unknown; error?: string }> {
     try {
-        // 1. Interpolate variables
+        // 1. 变量插值
         const interpolatedPrompt = buildPrompt(template, inputVariables);
 
         logger.info(`[DebugPrompt] Running for ${key} with prompt length ${interpolatedPrompt.length}`);
 
-        // 2. Select Schema based on key
+        // 2. 根据 Key 选择对应的 Schema
         let result;
         if (key === 'correction_quiz') {
             result = await generateStructuredData(CorrectionQuizSchema, interpolatedPrompt, 'premium', { retries: 0 });
         } else if (key === 'regression_challenge') {
             result = await generateStructuredData(RegressionChallengeSchema, interpolatedPrompt, 'premium', { retries: 0 });
         } else {
-            // Default to text if unknown key
+            // 未知 Key 默认按文本处理
             const { text } = await generateTextWrapper(interpolatedPrompt, 'premium', undefined, undefined, { retries: 0 });
             result = text;
         }
@@ -165,7 +179,3 @@ export async function debugPromptTemplateAction(
         };
     }
 }
-
-// Helper to get prompt (internal use)
-// Helper to get prompt (internal use) -> Moved to @/lib/ai/prompts to avoid Server Action async requirement
-// export function getPromptFromDbSync...

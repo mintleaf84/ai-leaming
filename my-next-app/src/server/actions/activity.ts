@@ -1,7 +1,9 @@
 'use server';
 import logger from '@/lib/logger';
 
-import { db } from '@/lib/db';
+import { drizzleDb } from '@/lib/db';
+import { users, questions, practice_logs, api_call_logs } from '@/lib/db/drizzle-schema';
+import { eq, and, desc, like, sql, count, avg, sum } from 'drizzle-orm';
 import { requireRole } from '@/lib/auth/auth';
 
 /**
@@ -13,11 +15,11 @@ export interface UserActivityEntry {
     username: string;
     question_id: number;
     question_content: string;
-    user_answer: string;
+    user_answer: string | null;
     is_correct: boolean;
-    duration_ms: number;
-    timestamp: string;
-    dimension: string;
+    duration_ms: number | null;
+    timestamp: string | null;
+    dimension: string | null;
 }
 
 /**
@@ -40,56 +42,56 @@ export async function getUserActivityAction(
     await requireRole(['admin']);
 
     try {
-        const conditions: string[] = [];
-        const params: (string | number | null)[] = [];
+        const whereConditions = [];
 
         if (filters?.userId) {
-            conditions.push('pl.user_id = ?');
-            params.push(filters.userId);
+            whereConditions.push(eq(practice_logs.user_id, filters.userId));
         }
         if (filters?.isCorrect !== undefined) {
-            conditions.push('pl.is_correct = ?');
-            params.push(filters.isCorrect ? 1 : 0);
+            whereConditions.push(eq(practice_logs.is_correct, filters.isCorrect));
         }
         if (filters?.search) {
-            conditions.push('(u.username LIKE ? OR q.content LIKE ?)');
-            params.push(`%${filters.search}%`, `%${filters.search}%`);
+            whereConditions.push(
+                sql`(${users.username} LIKE ${`%${filters.search}%`} OR ${questions.content} LIKE ${`%${filters.search}%`})`
+            );
         }
 
-        const whereClause = conditions.length > 0 ? `WHERE ${conditions.join(' AND ')}` : '';
+        const whereClause = whereConditions.length > 0 ? and(...whereConditions) : undefined;
 
         // 查询总数
-        const countSql = `
-            SELECT COUNT(*) as count 
-            FROM practice_logs pl
-            LEFT JOIN users u ON pl.user_id = u.id
-            LEFT JOIN questions q ON pl.question_id = q.id
-            ${whereClause}
-        `;
-        const total = db.prepare(countSql).get(...params) as { count: number };
+        const [totalResult] = await drizzleDb.select({ count: count() })
+            .from(practice_logs)
+            .leftJoin(users, eq(practice_logs.user_id, users.id))
+            .leftJoin(questions, eq(practice_logs.question_id, questions.id))
+            .where(whereClause);
 
         // 分页查询流水线
-        const dataSql = `
-            SELECT 
-                pl.id, pl.user_id, u.username, 
-                pl.question_id, q.content as question_content, q.dimension,
-                pl.user_answer, pl.is_correct, pl.duration_ms, pl.timestamp
-            FROM practice_logs pl
-            LEFT JOIN users u ON pl.user_id = u.id
-            LEFT JOIN questions q ON pl.question_id = q.id
-            ${whereClause}
-            ORDER BY pl.timestamp DESC
-            LIMIT ? OFFSET ?
-        `;
-        
-        const logs = db.prepare(dataSql).all(...params, limit, offset) as UserActivityEntry[];
+        const logs = await drizzleDb.select({
+                id: practice_logs.id,
+                user_id: practice_logs.user_id,
+                username: users.username,
+                question_id: practice_logs.question_id,
+                question_content: questions.content,
+                dimension: questions.dimension,
+                user_answer: practice_logs.user_answer,
+                is_correct: practice_logs.is_correct,
+                duration_ms: practice_logs.duration_ms,
+                timestamp: practice_logs.timestamp
+            })
+            .from(practice_logs)
+            .leftJoin(users, eq(practice_logs.user_id, users.id))
+            .leftJoin(questions, eq(practice_logs.question_id, questions.id))
+            .where(whereClause)
+            .orderBy(desc(practice_logs.timestamp))
+            .limit(limit)
+            .offset(offset);
 
         return {
             logs: logs.map(log => ({
                 ...log,
                 is_correct: Boolean(log.is_correct)
-            })),
-            total: total.count
+            })) as UserActivityEntry[],
+            total: totalResult.count
         };
     } catch (error) {
         logger.error({ err: error }, 'Failed to fetch user activity');
@@ -104,44 +106,37 @@ export async function getActivityStatsAction() {
     await requireRole(['admin']);
 
     try {
-        const _today = new Date().toISOString().split('T')[0];
+        // 使用 SQLite 的 date() 函数进行当日统计
+        const todayPredicate = sql`date(${practice_logs.timestamp}, 'localtime') = date('now', 'localtime')`;
+        const aiTodayPredicate = sql`date(${api_call_logs.created_at}, 'localtime') = date('now', 'localtime')`;
 
         // 今日练习总数
-        const todayCount = db.prepare(`
-            SELECT COUNT(*) as count FROM practice_logs 
-            WHERE date(timestamp, 'localtime') = date('now', 'localtime')
-        `).get() as { count: number };
+        const [todayCountResult] = await drizzleDb.select({ count: count() })
+            .from(practice_logs)
+            .where(todayPredicate);
 
-        // 今日正确率
-        const accuracy = db.prepare(`
-            SELECT 
-                CASE WHEN COUNT(*) > 0 
-                THEN (SUM(CASE WHEN is_correct = 1 THEN 1 ELSE 0 END) * 100.0 / COUNT(*))
-                ELSE 0 END as rate
-            FROM practice_logs
-            WHERE date(timestamp, 'localtime') = date('now', 'localtime')
-        `).get() as { rate: number };
-
-        // 平均耗时
-        const avgDuration = db.prepare(`
-            SELECT AVG(duration_ms) as avg_time 
-            FROM practice_logs 
-            WHERE date(timestamp, 'localtime') = date('now', 'localtime')
-        `).get() as { avg_time: number };
+        // 今日正确率与平均耗时
+        const [statsResult] = await drizzleDb.select({
+                accuracy: sql<number>`(SUM(CASE WHEN ${practice_logs.is_correct} = 1 THEN 1 ELSE 0 END) * 100.0 / COUNT(*))`,
+                avgDuration: avg(practice_logs.duration_ms)
+            })
+            .from(practice_logs)
+            .where(todayPredicate);
 
         // AI 资源使用 (今日)
-        const aiCalls = db.prepare(`
-            SELECT COUNT(*) as count, SUM(input_tokens + output_tokens) as tokens
-            FROM api_call_logs
-            WHERE date(created_at, 'localtime') = date('now', 'localtime') AND success = 1
-        `).get() as { count: number, tokens: number };
+        const [aiStatsResult] = await drizzleDb.select({
+                count: count(),
+                tokens: sum(sql`${api_call_logs.input_tokens} + ${api_call_logs.output_tokens}`)
+            })
+            .from(api_call_logs)
+            .where(and(aiTodayPredicate, eq(api_call_logs.success, 1)));
 
         return {
-            todayCount: todayCount.count,
-            accuracyRate: Math.round(accuracy.rate),
-            avgDurationMs: Math.round(avgDuration.avg_time || 0),
-            aiCallsToday: aiCalls.count,
-            aiTokensToday: aiCalls.tokens || 0
+            todayCount: todayCountResult.count,
+            accuracyRate: Math.round(statsResult?.accuracy || 0),
+            avgDurationMs: Math.round(Number(statsResult?.avgDuration) || 0),
+            aiCallsToday: aiStatsResult.count,
+            aiTokensToday: Number(aiStatsResult.tokens) || 0
         };
     } catch (error) {
         logger.error({ err: error }, 'Failed to fetch activity stats');

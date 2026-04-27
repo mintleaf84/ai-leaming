@@ -1,18 +1,14 @@
 'use server';
 import logger from '@/lib/logger';
 
-import { db } from '@/lib/db';
+import { drizzleDb } from '@/lib/db';
+import { mindmaps } from '@/lib/db/drizzle-schema';
+import { eq, and, desc, sql } from 'drizzle-orm';
 import { requireUser } from '@/lib/auth/auth';
 import { revalidatePath } from 'next/cache';
+import type { InferSelectModel } from 'drizzle-orm';
 
-export interface Mindmap {
-    id: number;
-    user_id: number;
-    title: string;
-    content: string | null;
-    created_at: string;
-    updated_at: string;
-}
+export type Mindmap = InferSelectModel<typeof mindmaps>;
 
 export type CreateMindmapInput = {
     title?: string;
@@ -30,15 +26,14 @@ export async function createMindmapAction(input: CreateMindmapInput = {}) {
         const user = await requireUser();
         const { title = '未命名思维导图', content = '# 新建导图\n\n- 在此输入内容' } = input;
 
-        const stmt = db.prepare(`
-            INSERT INTO mindmaps (user_id, title, content)
-            VALUES (?, ?, ?)
-        `);
-
-        const result = stmt.run(user.id, title, content);
+        const [result] = await drizzleDb.insert(mindmaps).values({
+            user_id: user.id,
+            title,
+            content,
+        }).returning({ id: mindmaps.id });
 
         revalidatePath('/mindmap');
-        return { success: true, id: result.lastInsertRowid as number };
+        return { success: true, id: result.id };
     } catch (error: unknown) {
         logger.error({ err: error }, 'Create mindmap failed');
         return { success: false, message: '创建思维导图失败' };
@@ -50,35 +45,27 @@ export async function updateMindmapAction(input: UpdateMindmapInput) {
         const user = await requireUser();
         const { id, title, content } = input;
 
-        const existing = db.prepare('SELECT id FROM mindmaps WHERE id = ? AND user_id = ?').get(id, user.id);
+        const [existing] = await drizzleDb.select({ id: mindmaps.id })
+            .from(mindmaps)
+            .where(and(eq(mindmaps.id, id), eq(mindmaps.user_id, user.id)))
+            .limit(1);
+
         if (!existing) {
             return { success: false, message: '脑图不存在或无权限' };
         }
 
-        const updates: string[] = [];
-        const params: (string | number | null)[] = [];
+        const updateData: Partial<typeof mindmaps.$inferInsert> = {};
+        if (title !== undefined) updateData.title = title;
+        if (content !== undefined) updateData.content = content;
 
-        if (title !== undefined) {
-            updates.push('title = ?');
-            params.push(title);
-        }
-        if (content !== undefined) {
-            updates.push('content = ?');
-            params.push(content);
-        }
+        if (Object.keys(updateData).length === 0) return { success: true };
 
-        if (updates.length === 0) return { success: true };
-
-        updates.push('updated_at = CURRENT_TIMESTAMP');
-        params.push(id);
-
-        const stmt = db.prepare(`
-            UPDATE mindmaps 
-            SET ${updates.join(', ')} 
-            WHERE id = ?
-        `);
-
-        stmt.run(...params);
+        await drizzleDb.update(mindmaps)
+            .set({
+                ...updateData,
+                updated_at: sql`CURRENT_TIMESTAMP`,
+            })
+            .where(and(eq(mindmaps.id, id), eq(mindmaps.user_id, user.id)));
 
         revalidatePath('/mindmap');
         revalidatePath(`/mindmap/${id}`);
@@ -93,12 +80,8 @@ export async function deleteMindmapAction(id: number) {
     try {
         const user = await requireUser();
 
-        const stmt = db.prepare('DELETE FROM mindmaps WHERE id = ? AND user_id = ?');
-        const result = stmt.run(id, user.id);
-
-        if (result.changes === 0) {
-            return { success: false, message: '导图不存在或无权限' };
-        }
+        await drizzleDb.delete(mindmaps)
+            .where(and(eq(mindmaps.id, id), eq(mindmaps.user_id, user.id)));
 
         revalidatePath('/mindmap');
         return { success: true };
@@ -112,12 +95,14 @@ export async function getMindmapsAction() {
     try {
         const user = await requireUser();
 
-        const records = db.prepare(`
-            SELECT id, title, updated_at
-            FROM mindmaps 
-            WHERE user_id = ? 
-            ORDER BY updated_at DESC
-        `).all(user.id) as Pick<Mindmap, 'id' | 'title' | 'updated_at'>[];
+        const records = await drizzleDb.select({
+                id: mindmaps.id,
+                title: mindmaps.title,
+                updated_at: mindmaps.updated_at
+            })
+            .from(mindmaps)
+            .where(eq(mindmaps.user_id, user.id))
+            .orderBy(desc(mindmaps.updated_at));
 
         return { success: true, records };
     } catch (error: unknown) {
@@ -130,15 +115,16 @@ export async function getMindmapDetailAction(id: number) {
     try {
         const user = await requireUser();
 
-        const record = db.prepare(`
-            SELECT * FROM mindmaps WHERE id = ? AND user_id = ?
-        `).get(id, user.id) as Mindmap | undefined;
+        const [record] = await drizzleDb.select()
+            .from(mindmaps)
+            .where(and(eq(mindmaps.id, id), eq(mindmaps.user_id, user.id)))
+            .limit(1);
 
         if (!record) {
             return { success: false, message: '导图不存在' };
         }
 
-        return { success: true, data: record };
+        return { success: true, data: record as Mindmap };
     } catch (error: unknown) {
         logger.error({ err: error }, 'Get mindmap detail failed');
         return { success: false, message: '获取详情失败' };

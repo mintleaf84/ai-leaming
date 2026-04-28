@@ -1,4 +1,6 @@
-import { db } from '@/lib/db';
+import { drizzleDb } from '@/lib/db';
+import { textbooks, textbook_chapters } from '@/lib/db/drizzle-schema';
+import { eq, desc, asc, and } from 'drizzle-orm';
 import { ragService } from '@/lib/ai/rag';
 import { splitText } from '@/lib/utils/text-splitter';
 import fs from 'fs';
@@ -8,11 +10,11 @@ import { cache } from 'react';
 export interface Textbook {
     id: number;
     title: string;
-    author?: string;
-    description?: string;
-    cover_url?: string;
-    created_at: string;
-    updated_at: string;
+    author?: string | null;
+    description?: string | null;
+    cover_url?: string | null;
+    created_at: string | null;
+    updated_at: string | null;
 }
 
 export interface TextbookChapter {
@@ -20,11 +22,11 @@ export interface TextbookChapter {
     textbook_id: number;
     title: string;
     content: string;
-    order_index: number;
-    parent_id?: number;
-    level: number;
-    created_at: string;
-    updated_at: string;
+    order_index: number | null;
+    parent_id?: number | null;
+    level: number | null;
+    created_at: string | null;
+    updated_at: string | null;
 }
 
 export const textbookService = {
@@ -32,26 +34,28 @@ export const textbookService = {
      * Create a new textbook
      */
     createTextbook: async (data: Partial<Textbook>): Promise<number> => {
-        const result = db.prepare(`
-      INSERT INTO textbooks (title, author, description, cover_url)
-      VALUES (?, ?, ?, ?)
-    `).run(data.title, data.author || '', data.description || '', data.cover_url || '');
+        const result = await drizzleDb.insert(textbooks).values({
+            title: data.title!,
+            author: data.author || '',
+            description: data.description || '',
+            cover_url: data.cover_url || ''
+        }).returning({ id: textbooks.id });
 
-        return result.lastInsertRowid as number;
+        return result[0].id;
     },
 
     /**
      * Get all textbooks (Cached per request)
      */
-    getAllTextbooks: cache((): Textbook[] => {
-        return db.prepare('SELECT * FROM textbooks ORDER BY created_at DESC').all() as Textbook[];
+    getAllTextbooks: cache(async (): Promise<Textbook[]> => {
+        return await drizzleDb.select().from(textbooks).orderBy(desc(textbooks.created_at)).all() as Textbook[];
     }),
 
     /**
      * Get a textbook by ID (Cached per request)
      */
-    getTextbook: cache((id: number): Textbook | undefined => {
-        return db.prepare('SELECT * FROM textbooks WHERE id = ?').get(id) as Textbook | undefined;
+    getTextbook: cache(async (id: number): Promise<Textbook | undefined> => {
+        return await drizzleDb.select().from(textbooks).where(eq(textbooks.id, id)).get() as Textbook | undefined;
     }),
 
     /**
@@ -60,22 +64,18 @@ export const textbookService = {
      */
     deleteTextbook: async (id: number): Promise<void> => {
         // Clean up RAG chunks first
-        const chapters = db.prepare('SELECT id FROM textbook_chapters WHERE textbook_id = ?').all(id) as { id: number }[];
+        const chapters = await drizzleDb.select({ id: textbook_chapters.id })
+            .from(textbook_chapters)
+            .where(eq(textbook_chapters.textbook_id, id))
+            .all();
 
-        // Deleting by source_type 'textbook' and source_id as textbook_id might be cleaner if we use textbook_id as grouping
-        // But in rag.ts we might have stored it by chapter_id?
-        // Let's decide convention: source_type='textbook_chapter', source_id={chapter_id}
-        // OR source_type='textbook', source_id={textbook_id} but metadata has chapter_id
-
-        // In addChapter implementation below, I used source_type='textbook_chapter'
         for (const chapter of chapters) {
-            ragService.deleteChunksBySource('textbook_chapter', chapter.id);
+            await ragService.deleteChunksBySource('textbook_chapter', chapter.id);
         }
 
-        db.prepare('DELETE FROM textbooks WHERE id = ?').run(id);
+        await drizzleDb.delete(textbooks).where(eq(textbooks.id, id));
 
         // Clean up file system (images)
-        // Path: public/books/[id]
         const bookDir = path.join(process.cwd(), 'public', 'books', id.toString());
         try {
             if (fs.existsSync(bookDir)) {
@@ -92,19 +92,16 @@ export const textbookService = {
      * Automatically indexes content to RAG
      */
     addChapter: async (data: Omit<TextbookChapter, 'id' | 'created_at' | 'updated_at'>): Promise<number> => {
-        const result = db.prepare(`
-      INSERT INTO textbook_chapters (textbook_id, title, content, order_index, parent_id, level)
-      VALUES (?, ?, ?, ?, ?, ?)
-    `).run(
-            data.textbook_id,
-            data.title,
-            data.content,
-            data.order_index,
-            data.parent_id || null,
-            data.level
-        );
+        const result = await drizzleDb.insert(textbook_chapters).values({
+            textbook_id: data.textbook_id,
+            title: data.title,
+            content: data.content,
+            order_index: data.order_index,
+            parent_id: data.parent_id || null,
+            level: data.level
+        }).returning({ id: textbook_chapters.id });
 
-        const chapterId = result.lastInsertRowid as number;
+        const chapterId = result[0].id;
 
         // Index to RAG with semantic chunking
         if (data.content && data.content.trim().length > 0) {
@@ -129,31 +126,33 @@ export const textbookService = {
     /**
      * Get chapters for a textbook (ordered) (Cached per request)
      */
-    getChapters: cache((textbookId: number): TextbookChapter[] => {
-        return db.prepare(`
-      SELECT * FROM textbook_chapters 
-      WHERE textbook_id = ? 
-      ORDER BY order_index, id
-    `).all(textbookId) as TextbookChapter[];
+    getChapters: cache(async (textbookId: number): Promise<TextbookChapter[]> => {
+        return await drizzleDb.select()
+            .from(textbook_chapters)
+            .where(eq(textbook_chapters.textbook_id, textbookId))
+            .orderBy(asc(textbook_chapters.order_index), asc(textbook_chapters.id))
+            .all() as TextbookChapter[];
     }),
 
     /**
      * Get single chapter (Cached per request)
      */
-    getChapter: cache((id: number): TextbookChapter | undefined => {
-        return db.prepare('SELECT * FROM textbook_chapters WHERE id = ?').get(id) as TextbookChapter | undefined;
+    getChapter: cache(async (id: number): Promise<TextbookChapter | undefined> => {
+        return await drizzleDb.select().from(textbook_chapters).where(eq(textbook_chapters.id, id)).get() as TextbookChapter | undefined;
     }),
 
     /**
      * Update chapter content
      */
     updateChapter: async (id: number, content: string): Promise<void> => {
-        db.prepare('UPDATE textbook_chapters SET content = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?').run(content, id);
+        await drizzleDb.update(textbook_chapters)
+            .set({ content, updated_at: new Date().toISOString() })
+            .where(eq(textbook_chapters.id, id));
 
         // Re-index RAG
-        const chapter = textbookService.getChapter(id);
+        const chapter = await textbookService.getChapter(id);
         if (chapter) {
-            ragService.deleteChunksBySource('textbook_chapter', id);
+            await ragService.deleteChunksBySource('textbook_chapter', id);
 
             if (content && content.trim().length > 0) {
                 const chunks = await splitText(content);
@@ -177,6 +176,8 @@ export const textbookService = {
      * Update textbook cover
      */
     updateTextbookCover: async (id: number, coverUrl: string): Promise<void> => {
-        db.prepare('UPDATE textbooks SET cover_url = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?').run(coverUrl, id);
+        await drizzleDb.update(textbooks)
+            .set({ cover_url: coverUrl, updated_at: new Date().toISOString() })
+            .where(eq(textbooks.id, id));
     }
 };

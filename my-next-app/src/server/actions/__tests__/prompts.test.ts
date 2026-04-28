@@ -1,11 +1,22 @@
 // @vitest-environment node
 import { describe, it, expect, beforeEach, vi } from 'vitest';
-import { drizzleDb } from '@/lib/db';
-import { resetDrizzleMock } from '@/lib/db/__mocks__';
-import { getPromptTemplatesAction, savePromptTemplateAction, resetPromptTemplateAction } from '../prompts';
+// 1. 设置 Mock
+const { actualSchema, mockDb } = await vi.hoisted(async () => {
+    const modSchema = await import('@/lib/db/drizzle-schema');
+    const modUtils = await import('@/lib/__tests__/db-mock-utils');
+    const mock = modUtils.createTableAwareDrizzleMock();
+    return { 
+        actualSchema: modSchema,
+        mockDb: mock
+    };
+});
 
-vi.mock('@/lib/db');
-vi.mock('@/lib/db/drizzle-schema');
+vi.mock('@/lib/db', () => ({
+    drizzleDb: mockDb,
+    drizzleSchema: actualSchema
+}));
+
+vi.mock('@/lib/db/drizzle-schema', () => actualSchema);
 
 const { mockRequireRole, mockLogAdminAction } = vi.hoisted(() => ({
     mockRequireRole: vi.fn().mockResolvedValue({ id: 1, username: 'admin' }),
@@ -21,7 +32,9 @@ vi.mock('@/lib/ai/prompts', () => ({
     DEFAULT_REGRESSION_PROMPT: 'default_regression',
     DEFAULT_KNOWLEDGE_EXTRACT_PROMPT: 'default_knowledge',
     DEFAULT_CHAT_SYSTEM_PROMPT: 'default_chat',
-    PROMPT_VARIABLE_EXAMPLES: {}
+    PROMPT_VARIABLE_EXAMPLES: {
+        correction_quiz: {}
+    }
 }));
 
 vi.mock('@/lib/ai/client', () => ({
@@ -29,15 +42,19 @@ vi.mock('@/lib/ai/client', () => ({
     generateTextWrapper: vi.fn()
 }));
 
-describe('Prompts Actions (使用全局 Manual Mock)', () => {
+import { getPromptTemplatesAction, savePromptTemplateAction, resetPromptTemplateAction } from '../prompts';
+import { resetDrizzleMock } from '@/lib/__tests__/db-mock-utils';
+
+describe('Prompts Actions', () => {
     beforeEach(() => {
+        resetDrizzleMock(mockDb);
+        mockDb.resetTableData?.();
         vi.clearAllMocks();
-        resetDrizzleMock();
     });
 
     describe('getPromptTemplatesAction', () => {
         it('应该合并数据库模板与系统默认模板', async () => {
-            (drizzleDb as any).then.mockImplementationOnce((resolve: any) => resolve([
+            mockDb.then.mockImplementationOnce((resolve: any) => resolve([
                 { key: 'correction_quiz', template: 'custom', variables: '[]', description: 'D', updated_at: '2024-01-01' }
             ]));
 
@@ -53,7 +70,7 @@ describe('Prompts Actions (使用全局 Manual Mock)', () => {
         it('应该执行 upsert 操作并记录日志', async () => {
             const result = await savePromptTemplateAction('test_key', 'template', 'desc', ['var1']);
             expect(result.success).toBe(true);
-            expect(drizzleDb.insert).toHaveBeenCalled();
+            expect(mockDb.insert).toHaveBeenCalled();
         });
     });
 
@@ -61,7 +78,7 @@ describe('Prompts Actions (使用全局 Manual Mock)', () => {
         it('应该从数据库删除模板记录', async () => {
             const result = await resetPromptTemplateAction('test_key');
             expect(result.success).toBe(true);
-            expect(drizzleDb.delete).toHaveBeenCalled();
+            expect(mockDb.delete).toHaveBeenCalled();
         });
     });
 });

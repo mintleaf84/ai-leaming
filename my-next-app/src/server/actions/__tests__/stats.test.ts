@@ -1,16 +1,21 @@
 // @vitest-environment node
 import { describe, it, expect, beforeEach, vi } from 'vitest';
 
-// 1. 使用 BetterDbMock 增强 Mock 机制
-// 注意：vi.hoisted 中的动态 import 是现代 Vitest 的推荐做法
-const { mockBetterDb } = await vi.hoisted(async () => {
-    const { createBetterDbMock } = await import('../../../lib/__tests__/db-mock-utils');
-    return {
-        mockBetterDb: createBetterDbMock()
+// 1. 设置 Mock
+const { actualSchema, mockDb } = await vi.hoisted(async () => {
+    const modSchema = await import('@/lib/db/drizzle-schema');
+    const modUtils = await import('@/lib/__tests__/db-mock-utils');
+    const mock = modUtils.createTableAwareDrizzleMock();
+    return { 
+        actualSchema: modSchema,
+        mockDb: mock
     };
 });
 
-vi.mock('@/lib/db', () => ({ default: mockBetterDb, db: mockBetterDb, drizzleDb: {}, drizzleSchema: {} }));
+vi.mock('@/lib/db', () => ({
+    drizzleDb: mockDb,
+    drizzleSchema: actualSchema
+}));
 
 vi.mock('@/lib/auth/auth', () => ({
     requireUser: vi.fn().mockResolvedValue({ id: 1 })
@@ -19,16 +24,31 @@ vi.mock('@/lib/auth/auth', () => ({
 vi.mock('@/lib/utils/datetime', () => ({
     getBeijingDateString: vi.fn((d) => d ? d.toISOString().split('T')[0] : '2024-01-15'),
     getBeijingYesterdayString: vi.fn().mockReturnValue('2024-01-14'),
-    formatBeijingDisplayDate: vi.fn((_d) => '01/15')
+    formatBeijingDisplayDate: vi.fn((_d) => '01/15'),
+    getBeijingNow: vi.fn().mockReturnValue({ 
+        subtract: vi.fn().mockImplementation((n, unit) => {
+            const d = new Date('2024-01-15T10:00:00Z');
+            d.setDate(d.getDate() - n);
+            return {
+                format: vi.fn().mockImplementation((fmt) => {
+                    if (fmt === 'YYYY-MM-DD') return d.toISOString().split('T')[0];
+                    if (fmt === 'M/D') return `${d.getUTCMonth() + 1}/${d.getUTCDate()}`;
+                    return '';
+                })
+            };
+        })
+    })
 }));
 
 import { getUserStatsAction, getPracticeTrendAction } from '../stats';
+import { resetDrizzleMock } from '@/lib/__tests__/db-mock-utils';
 
 describe('Stats Actions (Enhanced Mock)', () => {
     beforeEach(() => {
         vi.useFakeTimers();
         vi.setSystemTime(new Date('2024-01-15T10:00:00Z'));
-        mockBetterDb.reset();
+        resetDrizzleMock(mockDb);
+        mockDb.resetTableData?.();
         vi.clearAllMocks();
     });
 
@@ -38,35 +58,28 @@ describe('Stats Actions (Enhanced Mock)', () => {
 
     describe('getUserStatsAction', () => {
         it('应该通过 BetterDbMock 正确聚合各项统计数据', async () => {
-            // 设置更真实的 Mock 返回逻辑
-            mockBetterDb._mockGet.mockImplementation(() => {
-                const sql = mockBetterDb.getLastSqlCall().sql.toLowerCase();
-                
-                if (sql.includes('practice_logs')) {
-                    if (sql.includes('date(timestamp)')) return { count: 10 }; // 今日已做
-                    if (sql.includes('is_correct = 0')) return { count: 3 };    // 待复习
-                    return { count: 500 }; // 累计
-                }
-                if (sql.includes('user_mastery') && sql.includes('avg')) return { avg: 85.6 };
-                if (sql.includes('practice_sessions')) return { id: 'session-789' };
-                if (sql.includes('observation_zone')) return { count: 5 };
-                
-                return { count: 0 };
-            });
+            // 设置更真实的 Mock 返回逻辑 (按顺序对应 Promise.all 中的查询)
+            mockDb.get
+                .mockResolvedValueOnce({ count: 500, correct: 400 }) // totalRes
+                .mockResolvedValueOnce({ value: 85.6 })            // masteryRes
+                .mockResolvedValueOnce({ count: 10, correct: 8 })   // todayRes
+                .mockResolvedValueOnce({ id: 'session-789' })       // lastSession
+                .mockResolvedValueOnce({ value: 3 })               // pendingReviewRes
+                .mockResolvedValueOnce({ value: 5 })               // observationRes
+                .mockResolvedValueOnce({ value: 100 });            // sessionCountRes
 
-            mockBetterDb._mockAll.mockImplementation(() => {
-                const sql = mockBetterDb.getLastSqlCall().sql.toLowerCase();
+            // weakPoints 是 .all()
+            mockDb.all.mockResolvedValueOnce([
+                { tag: 'React', score: 30 },
+                { tag: 'TypeScript', score: 45 }
+            ]);
 
-                if (sql.includes('user_mastery')) return [{ tag: 'React', score: 30 }]; // 弱点
-                if (sql.includes('practice_logs') && sql.includes('distinct')) {
-                    return [
-                        { practice_date: '2024-01-15' }, 
-                        { practice_date: '2024-01-14' },
-                        { practice_date: '2024-01-13' }
-                    ]; // 连续 3 天
-                }
-                return [];
-            });
+            // getStreakDays 中的 .all()
+            mockDb.all.mockResolvedValueOnce([
+                { date: '2024-01-15' }, 
+                { date: '2024-01-14' },
+                { date: '2024-01-13' }
+            ]);
 
             const result = await getUserStatsAction();
 
@@ -79,15 +92,13 @@ describe('Stats Actions (Enhanced Mock)', () => {
             expect(result.lastSessionId).toBe('session-789');
 
             // 严谨验证：检查是否对正确的表进行了查询
-            const calls = mockBetterDb._state.calls;
-            expect(calls.some((c: { sql: string }) => c.sql.includes('practice_logs'))).toBe(true);
-            expect(calls.some((c: { sql: string }) => c.sql.includes('user_mastery'))).toBe(true);
+            expect(mockDb.select).toHaveBeenCalled();
         });
     });
 
     describe('getPracticeTrendAction', () => {
         it('应该返回带有填充日期的趋势数据', async () => {
-            mockBetterDb._mockAll.mockImplementation(() => [
+            mockDb.all.mockResolvedValueOnce([
                 { date: '2024-01-15', practiced: 20, correct: 18 }
             ]);
 

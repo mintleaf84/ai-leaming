@@ -36,122 +36,146 @@ beforeEach(() => {
 });
 ```
 
-## Drizzle ORM 高级链式 Mock (Table-Aware Proxy)
+## Drizzle ORM 高级链式 Mock (Stable Proxy Pattern)
 
-Drizzle 的链式调用（如 `.select().from().where().all()`）容易受到测试间异步竞争（Race Condition）的影响。如果简单地使用顺序的 `mockReturnValueOnce`，一旦内部有异步（Fire-and-Forget）任务并发执行，就会导致 Mock 数据错乱（如著名的 `(intermediate value) is not iterable` 错误）。
+Drizzle 的链式调用（如 `.select().from().where().all()`）如果使用简单的 `vi.fn()` 模拟，在处理多个测试用例时非常脆弱。
 
-### 最佳实践：基于表名的智能路由 (Table-Aware Mock)
+### 核心挑战
+1.  **Mock 不稳定**: 如果每次访问 `get()` 或 `all()` 都返回一个新的 `vi.fn()`，则测试中通过 `mockResolvedValueOnce` 设置的手动 Mock 会失效。
+2.  **数据泄漏**: 测试间注入的模拟数据（如 `injectTableData`）如果不清理，会导致后续测试污染。
+3.  **Await 挂起**: 直接 `await` 一个 query builder 会触发 `.then()` 调用，如果 Mock 处理不当会导致测试超时。
 
-不要假设 SQL 的执行顺序，而是让 Mock 引擎根据 `from(table)` 自动决定返回什么数据：
+### 最佳实践：Proxy Apply Trap 模式
+通过 Proxy 的 `apply` 陷阱拦截对稳定 Mock 函数的调用，既能实现动态逻辑，又能保留手动配置的能力。
 
 ```typescript
-vi.mock('@/lib/db', () => {
-    const drizzleMock: any = {
-        select: vi.fn(() => {
-            const chain: any = {
-                from: vi.fn((table) => {
-                    // 核心：智能捕获表名
-                    const tableName = (table as any).name || (table as any)[Symbol.for('drizzle:Name')] || (table as any)._?.name;
-                    
-                    const tableChain: any = {
-                        where: vi.fn(() => {
-                            const whereChain: any = {
-                                limit: vi.fn(() => ({
-                                    // limit(1) 通常被解构：const [row] = await ...
-                                    then: (resolve: any) => {
-                                        if (tableName === 'users') return resolve([{ id: 1 }]);
-                                        if (tableName === 'settings') return resolve([]);
-                                        return resolve([]);
-                                    }
-                                })),
-                                all: vi.fn().mockImplementation(() => {
-                                    if (tableName === 'settings') return [{ key: 'theme', value: 'dark' }];
-                                    return [];
-                                }),
-                            };
-                            return whereChain;
-                        }),
-                        then: (resolve: any) => resolve([]) // 兜底直接 await select().from()
-                    };
-                    return tableChain;
-                })
-            };
-            return chain;
-        }),
-        insert: vi.fn(() => { /* 类似逻辑，可通过 Proxy 拦截 values 和 onConflictDoUpdate */ }),
-    };
-    return { drizzleDb: drizzleMock };
+// db-mock-utils.ts 中的核心逻辑
+export const createTableAwareDrizzleMock = (initialTableData = {}) => {
+  const baseMock = createDrizzleMock(); // 返回一个带有很多 vi.fn() 的对象
+  const tableData = { ...initialTableData };
+  let currentTable: string | null = null;
+
+  return new Proxy(baseMock, {
+    get: (target, prop) => {
+      // 1. 拦截执行方法 (get, all, run, execute)
+      if (['get', 'all', 'run', 'execute'].includes(prop)) {
+        return new Proxy(target[prop], {
+          apply: (fnTarget, thisArg, args) => {
+            const table = currentTable;
+            currentTable = null; // 消费后重置
+            
+            // 优先级 A: 注入的表数据
+            if (table && tableData[table]) {
+              const data = tableData[table];
+              return Promise.resolve(prop === 'get' ? (data[0] || null) : data);
+            }
+            
+            // 优先级 B: 手动配置的 Mock (mockResolvedValueOnce 等)
+            return Reflect.apply(fnTarget, thisArg, args);
+          }
+        });
+      }
+
+      // 2. 拦截表名识别 (from, update 等)
+      if (['from', 'update', 'insert', 'delete'].includes(prop)) {
+        return (table: any) => {
+          const tableName = typeof table === 'string' ? table : (table?.name || table?._?.name);
+          if (tableName) currentTable = tableName;
+          return target[prop](table);
+        };
+      }
+      
+      return target[prop];
+    }
+  });
+};
+```
+
+## 处理 Awaitable Query Builder (Mocking `.then`)
+
+当代码中出现 `const logs = await drizzleDb.select().from(table)` 时，JavaScript 引擎会调用 `proxy.then(resolve, reject)`。
+
+### ❌ 错误做法：使用 `mockResolvedValue`
+```typescript
+// 会导致测试超时！因为 await 期待 resolve 被调用，而 mockResolvedValue 只是返回一个 Promise
+mockDb.then.mockResolvedValueOnce(mockLogs); 
+```
+
+### ✅ 正确做法：使用 `mockImplementation`
+```typescript
+// 显式调用 resolve，让 await 语句继续执行
+mockDb.then.mockImplementationOnce((resolve) => resolve(mockLogs));
+```
+
+## 测试间的清理 (Clean Slate)
+
+当使用 Proxy 或单例 Mock 时，必须在 `beforeEach` 中彻底重置。
+
+```typescript
+beforeEach(() => {
+    // 1. 重置链式调用的返回值 (如 get 默认返回 [])
+    resetDrizzleMock(mockDb); 
+    // 2. 清空 Proxy 内部注入的 Table 数据
+    mockDb.resetTableData?.(); 
+    // 3. 清除调用记录与 implementation
+    vi.clearAllMocks(); 
 });
 ```
 
-## 处理“Fire-and-Forget”异步副作用
+## LibSQL 内存数据库陷阱：避免使用 `file::memory:`
 
-在业务代码中，非关键路径的后台任务（如记录日志、更新统计、计算 EMA 阅读速度）通常会去掉 `await` 以防阻塞主流程：
-`learnReadingSpeed(...).catch(console.error);`
+当我们在 Vitest 中放弃全量 Mock，转而使用真实的内存数据库（如使用 `@libsql/client` 配合 Drizzle）时，有一个极易踩坑的反模式。
 
-**致命陷阱**：在测试中，这个后台任务可能会在下一个 `it` 块中才被事件循环挑起执行。此时前一个测试的 Mock 已被重置，导致后台任务拿到错误数据或污染后续测试。
-
-### 最佳实践：显式等待副作用 (`vi.waitFor`)
-
-绝不要在测试结束时就以为流程结束了。必须主动等待预期的副作用实际写入（或等待微任务队列清空）：
+### ❌ 错误做法：使用 `file::memory:`
 
 ```typescript
-it('should perform background update', async () => {
-    // 触发带有后台更新的服务
-    await myService.updateData();
+// 这种写法会导致“跨事务丢表”的诡异 Bug
+const client = createClient({ url: 'file::memory:' });
+const db = drizzle(client, { schema });
+```
 
-    // ❌ 错误做法：直接断言，此时后台的 insert 可能还没执行
-    // expect(capturedValues).toHaveLength(1); 
+**坑点剖析**：
+LibSQL 的客户端内部实现了连接池（Connection Pool）。对于 `file::memory:` 而言，由于它不像原生 SQLite 支持 `cache=shared` 的内存共享，**每一个底层连接都会获得一个全新、完全隔离且为空的内存数据库**。
+这就导致：当你执行 `await db.transaction(...)` 时，驱动可能会从连接池分配一个连接（事务执行成功）；而事务结束后的下一次查询 `await db.select()...`，驱动可能会分配一个**新的连接**，面对一个空库，从而抛出令人费解的 `SQLITE_ERROR: no such table`。
 
-    // ✅ 正确做法：不断轮询直到副作用落地，带有自动超时
-    await vi.waitFor(() => {
-        const update = capturedValues.find(v => v.key === 'expected_key');
-        if (!update) throw new Error('Not updated yet'); // 抛出错误以触发重试
-        expect(update.value).toBe('success');
-    }, { timeout: 1000 });
-});
+### ✅ 正确做法：为每个测试生成临时物理文件
 
-it('should NOT update if failed', async () => {
-    await myService.updateData(true); // 传入失败条件
+放弃 `file::memory:`，使用每次测试唯一的真实本地 `.db` 文件，并在 `afterEach` 中严格清理。
+
+```typescript
+// db-utils.ts
+import fs from 'fs';
+import path from 'path';
+
+export async function setupTestDb() {
+    // 1. 为每个测试生成独一无二的文件名，确保并发测试互相隔离
+    const dbFileName = `test-${Date.now()}-${Math.random().toString(36).substring(7)}.db`;
+    const dbPath = path.join(process.cwd(), dbFileName);
     
-    // 如果期望【不发生】某事，必须使用 setTimeout 延迟一下，否则假阳性
-    await new Promise(r => setTimeout(r, 50)); 
-    expect(capturedValues).toHaveLength(0);
-});
+    // 2. 连接真实的物理文件
+    const client = createClient({ url: `file:${dbFileName}` });
+    const db = drizzle(client, { schema });
+    
+    // 3. 运行迁移...
+    // ...
+
+    return {
+        client,
+        db,
+        close: async () => { 
+            client.close(); 
+            // 4. 测试结束后，清理临时文件及其副产物 (WAL/SHM)
+            try {
+                if (fs.existsSync(dbPath)) fs.unlinkSync(dbPath);
+                if (fs.existsSync(dbPath + '-journal')) fs.unlinkSync(dbPath + '-journal');
+                if (fs.existsSync(dbPath + '-wal')) fs.unlinkSync(dbPath + '-wal');
+                if (fs.existsSync(dbPath + '-shm')) fs.unlinkSync(dbPath + '-shm');
+            } catch (e) {
+                console.error(`Failed to cleanup temp db ${dbFileName}`, e);
+            }
+        }
+    };
+}
 ```
+因为是真实物理文件，无论连接池开多少个连接，它们访问的都是**同一个数据库**，完美避免了连接池带来的幽灵丢表问题。
 
-## 模拟异步 Service
-
-当 Service 相互依赖时，确保 Mock 返回正确的 Promise。
-
-```typescript
-import { getPromptFromDb } from '@/lib/ai/prompts';
-vi.mock('@/lib/ai/prompts', () => ({
-    getPromptFromDb: vi.fn()
-}));
-
-it('should handle async prompts', async () => {
-    vi.mocked(getPromptFromDb).mockResolvedValue('My Custom Prompt');
-    const result = await myService.execute();
-    expect(result).toContain('My Custom Prompt');
-});
-```
-
-## 三个清除函数的语义
-
-| 函数 | 清除内容 |
-|---|---|
-| `vi.clearAllMocks()` | 调用记录 + **mockImplementation / mockReturnValue** |
-| `vi.resetAllMocks()` | 同上（行为基本相同）|
-| `vi.restoreAllMocks()` | 还原原始实现（仅对 `vi.spyOn` 有效）|
-
-## 模拟 Legacy better-sqlite3
-
-如果某些模块仍在使用原始 `db.prepare`，参考以下模式：
-
-```typescript
-mockDb.prepare.mockImplementation((sql: string) => {
-  if (sql.includes('users')) return { get: () => ({ id: 1 }) };
-  return { get: () => null, all: () => [], run: () => ({ changes: 1 }) };
-});
-```

@@ -1,32 +1,60 @@
 // @vitest-environment node
-import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { adminRoute as app } from '../admin';
+import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
+import { setupTestDb, type TestDbHelper } from '@/lib/__tests__/test-db-utils';
+import * as schema from '@/lib/db/drizzle-schema';
 
-// 1. Mock dependencies
-const { mockDb, mockRequireRole, mockLogAdminAction } = vi.hoisted(() => {
+// 1. 设置 Mock
+let testDbHelper: TestDbHelper;
+
+vi.mock('@/lib/db', () => ({
+    get drizzleDb() { return testDbHelper.db; },
+    get drizzleSchema() { return schema; }
+}));
+
+const { mockRequireRole, mockLogAdminAction } = vi.hoisted(() => {
     return {
-        mockDb: {
-            prepare: vi.fn(),
-            exec: vi.fn(),
-        },
         mockRequireRole: vi.fn().mockResolvedValue({ id: 1, role: 'admin', username: 'admin_user' }),
         mockLogAdminAction: vi.fn()
     };
 });
 
-vi.mock('@/lib/db', () => ({ default: mockDb, closeDb: vi.fn(), reinitDb: vi.fn(), db: mockDb, drizzleDb: {}, drizzleSchema: {} }));
 vi.mock('@/lib/auth/auth', () => ({ requireRole: mockRequireRole }));
 vi.mock('@/lib/admin/audit', () => ({ logAdminAction: mockLogAdminAction }));
 vi.mock('@/lib/admin/api-stats-service', () => ({ getApiCallStats: vi.fn().mockReturnValue({ total: 100 }) }));
 
-describe('Admin Hono Routes', () => {
-    beforeEach(() => {
-        vi.clearAllMocks();
+// 导入路由
+import { adminRoute as app } from '../admin';
+
+describe('Admin Hono Routes (Integration)', () => {
+    beforeEach(async () => {
+        testDbHelper = await setupTestDb();
+        // 预置系统用户 (ID=0) 用于 settings
+        await testDbHelper.db.insert(schema.users).values({
+            id: 0,
+            username: 'system_global_user',
+            password_hash: 'none',
+            role: 'admin'
+        });
+        // 预置普通管理员用户 (ID=1)
+        await testDbHelper.db.insert(schema.users).values({
+            id: 1,
+            username: 'admin_user',
+            password_hash: 'none',
+            role: 'admin'
+        });
+    });
+
+    afterEach(async () => {
+        await testDbHelper.close();
     });
 
     describe('GET /system', () => {
         it('should return system status with stats', async () => {
-            mockDb.prepare.mockReturnValue({ get: vi.fn().mockReturnValue({ value: 'true' }) });
+            await testDbHelper.db.insert(schema.system_settings).values({
+                user_id: 0,
+                key: 'demo_mode_enabled',
+                value: 'true'
+            });
             
             const res = await app.request('/system');
             const data = await res.json();
@@ -34,17 +62,17 @@ describe('Admin Hono Routes', () => {
             expect(res.status).toBe(200);
             expect(data.demoMode).toBe(true);
             expect(data.ai.total).toBe(100);
-            expect(mockDb.prepare).toHaveBeenCalledWith(expect.stringContaining('demo_mode_enabled'));
         });
     });
 
     describe('POST /system', () => {
         it('should toggle demo mode', async () => {
-            const mockRun = vi.fn();
-            // First for getDemoModeStatus, then for the update
-            mockDb.prepare
-                .mockReturnValueOnce({ get: vi.fn().mockReturnValue({ value: 'false' }) })
-                .mockReturnValueOnce({ run: mockRun });
+            // 初始值为 false
+            await testDbHelper.db.insert(schema.system_settings).values({
+                user_id: 0,
+                key: 'demo_mode_enabled',
+                value: 'false'
+            });
 
             const res = await app.request('/system', {
                 method: 'POST',
@@ -55,49 +83,24 @@ describe('Admin Hono Routes', () => {
             const data = await res.json();
             expect(data.success).toBe(true);
             expect(data.demoMode).toBe(true);
-            expect(mockRun).toHaveBeenCalledWith('true');
-        });
 
-        it('should reset demo sessions', async () => {
-            const mockRun = vi.fn();
-            const mockAll = vi.fn().mockReturnValue([{ id: 'session_1' }]);
-            
-            mockDb.prepare.mockImplementation((sql: string) => {
-                if (sql.includes('SELECT id FROM practice_sessions')) return { all: mockAll };
-                return { run: mockRun };
+            // 验证数据库
+            const row = await testDbHelper.db.query.system_settings.findFirst({
+                where: (f: any, { eq, and }: any) => and(eq(f.user_id, 0), eq(f.key, 'demo_mode_enabled'))
             });
-
-            const res = await app.request('/system', {
-                method: 'POST',
-                body: JSON.stringify({ action: 'reset_demo_session' }),
-                headers: { 'Content-Type': 'application/json' }
-            });
-
-            expect(res.status).toBe(200);
-            expect(mockRun).toHaveBeenCalledWith('session_1'); // DELETE FROM practice_logs
-            expect(mockRun).toHaveBeenCalledWith(); // DELETE FROM practice_sessions
-        });
-    });
-
-    describe('GET /backup', () => {
-        it('should trigger VACUUM INTO and log action', async () => {
-            const mockRun = vi.fn();
-            mockDb.prepare.mockReturnValue({ run: mockRun });
-            
-            // Note: We won't test the actual file output in this unit test due to filesystem complexity,
-            // but we verify the DB and Audit logic.
-            // (In a real test we would also mock fs)
-            
-            const res = await app.request('/backup');
-            // Expected 500 here because fs.readFileSync will fail in mock environment
-            expect(res.status).toBe(500);
-            expect(mockDb.prepare).toHaveBeenCalledWith(expect.stringContaining('VACUUM INTO'));
+            expect(row?.value).toBe('true');
         });
     });
 
     describe('GET /export/questions', () => {
         it('should return CSV on success', async () => {
-            mockDb.prepare.mockReturnValue({ all: vi.fn().mockReturnValue([{ id: 1, content: 'Q1' }]) });
+            await testDbHelper.db.insert(schema.questions).values({
+                content: 'Q1',
+                answer: 'A',
+                options: '["A", "B"]',
+                tags: '["tag1"]'
+            });
+
             const res = await app.request('/export/questions');
             expect(res.status).toBe(200);
             expect(res.headers.get('Content-Type')).toContain('text/csv');

@@ -1,55 +1,50 @@
 // @vitest-environment node
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 import { setupTestDb, type TestDbHelper } from '../../__tests__/test-db-utils';
-import { drizzle } from 'drizzle-orm/better-sqlite3';
+import { sql } from 'drizzle-orm';
 
-// 创建一个持久的引用对象，避免 hoisted 作用域问题
-const state = {
-    drizzleDb: null as any,
-    legacyDb: null as any
-};
+// 使用 vi.hoisted 定义 Mock 容器，确保在 vi.mock 提升时已就绪
+const { mockContainer } = vi.hoisted(() => ({
+    mockContainer: {
+        drizzleDb: null as any,
+        drizzleSchema: null as any
+    }
+}));
 
 vi.mock('@/lib/db', async () => {
     const schema = await vi.importActual('@/lib/db/drizzle-schema');
+    mockContainer.drizzleSchema = schema;
     return {
-        // 使用 Proxy 动态转发调用到 state.drizzleDb
         drizzleDb: new Proxy({}, {
-            get: (_, prop) => {
-                if (prop === 'then') return undefined; // 避免被误认为 Promise
-                return state.drizzleDb?.[prop];
-            }
+            get: (_, prop) => mockContainer.drizzleDb?.[prop]
         }),
         drizzleSchema: schema,
-        db: new Proxy({}, {
-            get: (_, prop) => state.legacyDb?.[prop]
-        })
+        getLegacyDb: () => null,
     };
 });
 
 import { masteryService } from '../mastery';
-import * as schema from '@/lib/db/drizzle-schema';
+import { user_mastery } from '@/lib/db/drizzle-schema';
 
 describe('Mastery Service (Integration with Drizzle)', () => {
     let helper: TestDbHelper;
 
-    beforeEach(() => {
-        helper = setupTestDb();
-        // 初始化真正的 Drizzle 实例并挂载到 state
-        state.drizzleDb = drizzle(helper.db, { schema });
-        state.legacyDb = helper.db;
-        helper.seedUser(1, 'testuser');
+    beforeEach(async () => {
+        helper = await setupTestDb();
+        mockContainer.drizzleDb = helper.db;
+        await helper.seedUser(1, 'testuser');
     });
 
-    afterEach(() => {
-        helper.close();
+    afterEach(async () => {
+        await helper.close();
     });
 
     describe('updateMastery', () => {
         it('应该能够正确持久化分数（初始更新）', async () => {
             await masteryService.updateMastery(1, '教育心理学', 'knowledge', true);
             
-            const row = helper.db.prepare('SELECT score, correct_count, total_count FROM user_mastery WHERE user_id = 1 AND tag_name = ?')
-                .get('教育心理学') as any;
+            const result = await helper.db.run(sql`SELECT score, correct_count, total_count FROM user_mastery WHERE user_id = 1 AND tag_name = '教育心理学'`);
+            const row = result.rows[0] as any;
             
             expect(row.score).toBe(100);
             expect(row.correct_count).toBe(1);
@@ -64,8 +59,8 @@ describe('Mastery Service (Integration with Drizzle)', () => {
             // 答错一次
             await masteryService.updateMastery(1, '教育心理学', 'knowledge', false);
             
-            const row = helper.db.prepare('SELECT score, correct_count, total_count FROM user_mastery WHERE user_id = 1 AND tag_name = ?')
-                .get('教育心理学') as any;
+            const result = await helper.db.run(sql`SELECT score, correct_count, total_count FROM user_mastery WHERE user_id = 1 AND tag_name = '教育心理学'`);
+            const row = result.rows[0] as any;
             
             // 1/3 = 33.333...
             expect(row.score).toBeCloseTo(33.33, 1);
@@ -77,19 +72,20 @@ describe('Mastery Service (Integration with Drizzle)', () => {
             // 模拟“可疑正确”（可能是 AI 辅助或侥幸）
             await masteryService.updateMastery(1, '教育心理学', 'knowledge', true, true);
             
-            const row = helper.db.prepare('SELECT score FROM user_mastery WHERE user_id = 1 AND tag_name = ?').get('教育心理学') as any;
+            const result = await helper.db.run(sql`SELECT score FROM user_mastery WHERE user_id = 1 AND tag_name = '教育心理学'`);
+            const row = result.rows[0] as any;
             
             expect(row.score).toBe(0); // 0/1 = 0
         });
     });
 
     describe('getHierarchyMastery', () => {
-        beforeEach(() => {
-            const stmt = helper.db.prepare('INSERT INTO user_mastery (user_id, tag_name, score) VALUES (1, ?, ?)');
-            stmt.run('教育心理学', 80);
-            stmt.run('教育心理学/学习动机', 60);
-            stmt.run('教育心理学/学习动机/强化理论', 100);
-            stmt.run('教育学原理', 40); // 干扰项
+        beforeEach(async () => {
+            await helper.db.run(sql`INSERT INTO user_mastery (user_id, tag_name, score) VALUES 
+                (1, '教育心理学', 80),
+                (1, '教育心理学/学习动机', 60),
+                (1, '教育心理学/学习动机/强化理论', 100),
+                (1, '教育学原理', 40)`);
         });
 
         it('应该通过 LIKE 算子正确统计父子层级的平均分', async () => {
@@ -109,10 +105,10 @@ describe('Mastery Service (Integration with Drizzle)', () => {
 
     describe('getMasteryTree', () => {
         it('应该正确还原分级路径为树形结构', async () => {
-            const stmt = helper.db.prepare('INSERT INTO user_mastery (user_id, tag_name, score) VALUES (1, ?, ?)');
-            stmt.run('A', 10);
-            stmt.run('A/B', 20);
-            stmt.run('A/B/C', 30);
+            await helper.db.run(sql`INSERT INTO user_mastery (user_id, tag_name, score) VALUES 
+                (1, 'A', 10),
+                (1, 'A/B', 20),
+                (1, 'A/B/C', 30)`);
 
             const tree = await masteryService.getMasteryTree(1);
 
@@ -124,8 +120,7 @@ describe('Mastery Service (Integration with Drizzle)', () => {
         });
 
         it('能够兼容处理非标准路径（父节点缺失）情况', async () => {
-            const stmt = helper.db.prepare('INSERT INTO user_mastery (user_id, tag_name, score) VALUES (1, ?, ?)');
-            stmt.run('X/Y/Z', 100);
+            await helper.db.run(sql`INSERT INTO user_mastery (user_id, tag_name, score) VALUES (1, 'X/Y/Z', 100)`);
 
             const tree = await masteryService.getMasteryTree(1);
             // 按照目前逻辑，父节点不存在时会作为根节点

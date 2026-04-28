@@ -163,3 +163,6 @@ export * as drizzleSchema from './drizzle-schema';
 if (require.main === module) {
     initDatabase();
 }
+
+// 导出占位符供测试环境类型检查使用
+export const resetDrizzleMock = (_defaultReturn?: any) => { };

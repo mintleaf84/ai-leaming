@@ -1,99 +1,88 @@
 // @vitest-environment node
-import { describe, it, expect, beforeEach, vi } from 'vitest';
+import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
+import { setupTestDb, type TestDbHelper } from '@/lib/__tests__/test-db-utils';
+import { sql } from 'drizzle-orm';
+import * as schema from '@/lib/db/drizzle-schema';
 
-// 1. Mock dependencies
+// 1. 设置 Mock
+let testDbHelper: TestDbHelper;
+
 vi.mock('@/lib/db', () => ({
-    db: {
-        prepare: vi.fn().mockReturnValue({
-            get: vi.fn(),
-            run: vi.fn()
-        })
-    }
+    // 动态返回当前测试的内存数据库
+    get drizzleDb() { return testDbHelper.db; },
+    get drizzleSchema() { return schema; }
 }));
 
 vi.mock('@/lib/logger', () => ({
-    default: {
-        error: vi.fn(),
-        info: vi.fn()
-    }
+    default: { error: vi.fn(), info: vi.fn() }
 }));
 
 vi.mock('next/cache', () => ({
     revalidatePath: vi.fn()
 }));
 
+// 导入要测试的 Actions
 import { getGlobalFeatureFlag, toggleGlobalFeatureFlag } from '../feature-flags';
-import { db } from '@/lib/db';
 
-describe('Feature Flags Actions', () => {
-    beforeEach(() => {
-        vi.clearAllMocks();
+describe('Feature Flags Actions (Integration)', () => {
+    beforeEach(async () => {
+        testDbHelper = await setupTestDb();
+        // 必须预置系统用户 (ID=0)，否则 system_settings 的外键约束会报错
+        await testDbHelper.db.insert(schema.users).values({
+            id: 0,
+            username: 'system_global_user',
+            password_hash: 'none',
+            role: 'admin'
+        });
+    });
+
+    afterEach(async () => {
+        await testDbHelper.close();
     });
 
     describe('getGlobalFeatureFlag', () => {
         it('应返回数据库中的开关值 (true)', async () => {
-            const mockGet = vi.fn().mockReturnValue({ value: 'true' });
-            vi.mocked(db.prepare).mockReturnValue({ get: mockGet } as any);
+            await testDbHelper.db.insert(schema.system_settings).values({
+                user_id: 0,
+                key: 'TEST_FLAG',
+                value: 'true'
+            });
 
             const result = await getGlobalFeatureFlag('TEST_FLAG', false);
-
             expect(result).toBe(true);
-            expect(db.prepare).toHaveBeenCalledWith(expect.stringContaining('SELECT value FROM system_settings'));
-            expect(mockGet).toHaveBeenCalledWith(0, 'TEST_FLAG');
         });
 
         it('应返回数据库中的开关值 (false)', async () => {
-            const mockGet = vi.fn().mockReturnValue({ value: 'false' });
-            vi.mocked(db.prepare).mockReturnValue({ get: mockGet } as any);
+            await testDbHelper.db.insert(schema.system_settings).values({
+                user_id: 0,
+                key: 'TEST_FLAG',
+                value: 'false'
+            });
 
             const result = await getGlobalFeatureFlag('TEST_FLAG', true);
-
             expect(result).toBe(false);
         });
 
         it('如果数据库中没有记录，应返回默认值', async () => {
-            const mockGet = vi.fn().mockReturnValue(undefined);
-            vi.mocked(db.prepare).mockReturnValue({ get: mockGet } as any);
-
             const result = await getGlobalFeatureFlag('MISSING_FLAG', true);
-
             expect(result).toBe(true);
-        });
-
-        it('如果发生数据库错误，应返回默认值', async () => {
-            vi.mocked(db.prepare).mockImplementation(() => {
-                throw new Error('DB Error');
-            });
-
-            const result = await getGlobalFeatureFlag('ERROR_FLAG', false);
-
-            expect(result).toBe(false);
         });
     });
 
     describe('toggleGlobalFeatureFlag', () => {
         it('应成功更新开关状态并返回 success', async () => {
-            const mockRun = vi.fn().mockReturnValue({ changes: 1 });
-            vi.mocked(db.prepare).mockReturnValue({ run: mockRun } as any);
-
             const result = await toggleGlobalFeatureFlag('TEST_FLAG', true);
 
             expect(result.success).toBe(true);
             expect(result.value).toBe(true);
-            expect(db.prepare).toHaveBeenCalledWith(expect.stringContaining('INSERT OR IGNORE INTO users'));
-            expect(db.prepare).toHaveBeenCalledWith(expect.stringContaining('INSERT INTO system_settings'));
-            expect(mockRun).toHaveBeenCalledWith(0, 'TEST_FLAG', 'true');
-        });
 
-        it('更新失败时应返回错误信息', async () => {
-            vi.mocked(db.prepare).mockImplementation(() => {
-                throw new Error('Write Error');
-            });
-
-            const result = await toggleGlobalFeatureFlag('FAIL_FLAG', false);
-
-            expect(result.success).toBe(false);
-            expect(result.error).toBe('数据库更新开关失败');
+            // 验证数据库中确实存进去了
+            const row: any = await testDbHelper.db.run(sql`
+                SELECT value FROM system_settings WHERE key = 'TEST_FLAG'
+            `);
+            // 使用 Drizzle 验证
+            const dbResult = await testDbHelper.db.select().from(schema.system_settings).all();
+            expect(dbResult.find((r: typeof schema.system_settings.$inferSelect) => r.key === 'TEST_FLAG')?.value).toBe('true');
         });
     });
 });

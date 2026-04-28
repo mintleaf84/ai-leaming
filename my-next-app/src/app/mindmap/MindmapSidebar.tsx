@@ -5,7 +5,7 @@ import Link from 'next/link';
 import { useRouter, usePathname } from 'next/navigation';
 import { Plus, Trash2, Network } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { createMindmapAction, deleteMindmapAction } from '@/server/actions/mindmap-db';
+import { createMindmapAction, deleteMindmapAction } from '@/server/actions/mindmap';
 import { toast } from 'sonner';
 
 interface MindmapSidebarProps {

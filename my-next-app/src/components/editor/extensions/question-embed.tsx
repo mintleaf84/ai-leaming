@@ -4,7 +4,8 @@
 import { Node, mergeAttributes } from '@tiptap/core';
 import { ReactNodeViewRenderer, NodeViewWrapper } from '@tiptap/react';
 import { useEffect, useState } from 'react';
-import { getQuestionSummaryAction, QuestionSummary } from '@/server/actions/question';
+import { getQuestionSummaryAction } from '@/server/actions/question';
+import { type QuestionSummary } from '@/lib/services/question';
 import { BookOpen, ExternalLink, Loader2, AlertCircle } from 'lucide-react';
 import Link from 'next/link';
 

@@ -4,7 +4,7 @@ import React, { useMemo, useState } from 'react';
 import { ChevronDown, ChevronRight, Play } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { WrongQuestionsByTag, WrongQuestionItem } from '@/server/actions/wrong-questions';
+import { type WrongQuestionsByTag, type WrongQuestionItem } from '@/lib/services/wrong-question';
 import { QuestionCountPicker } from './QuestionCountPicker';
 
 interface TagTreeNode {
@@ -17,7 +17,7 @@ interface TagTreeNode {
 
 interface TagTreeViewProps {
     groupedQuestions: WrongQuestionsByTag[];
-    onStartPractice: (questionIds: string[], limit?: number) => void;
+    onStartPractice: (questionIds: number[], limit?: number) => void;
 }
 
 /**
@@ -66,7 +66,7 @@ function buildTagTree(groups: WrongQuestionsByTag[]): TagTreeNode[] {
 /**
  * 从树节点收集所有题目 ID
  */
-function collectQuestionIds(node: TagTreeNode): string[] {
+function collectQuestionIds(node: TagTreeNode): number[] {
     const ids = node.questions.map(q => q.questionId);
     for (const child of node.children) {
         ids.push(...collectQuestionIds(child));
@@ -77,7 +77,7 @@ function collectQuestionIds(node: TagTreeNode): string[] {
 interface TreeNodeProps {
     node: TagTreeNode;
     level: number;
-    onStartPractice: (questionIds: string[], limit?: number) => void;
+    onStartPractice: (questionIds: number[], limit?: number) => void;
 }
 
 function TreeNode({ node, level, onStartPractice }: TreeNodeProps) {

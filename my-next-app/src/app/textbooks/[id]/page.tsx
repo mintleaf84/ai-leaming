@@ -26,13 +26,13 @@ export default async function TextbookReaderPage({ params, searchParams }: PageP
     const { chapter } = await searchParams;
     const textbookId = parseInt(id);
 
-    const textbook = textbookService.getTextbook(textbookId);
+    const textbook = await textbookService.getTextbook(textbookId);
     if (!textbook) notFound();
 
-    const chapters = textbookService.getChapters(textbookId);
+    const chapters = await textbookService.getChapters(textbookId);
     const currentChapterId = chapter ? parseInt(chapter) : (chapters.length > 0 ? chapters[0].id : null);
 
-    const currentChapter = currentChapterId ? textbookService.getChapter(currentChapterId) : null;
+    const currentChapter = currentChapterId ? await textbookService.getChapter(currentChapterId) : null;
 
     return (
         <div className="flex h-[calc(100vh-4rem)]">
@@ -55,7 +55,7 @@ export default async function TextbookReaderPage({ params, searchParams }: PageP
                                 }`}
                             title={chap.title}
                         >
-                            <div style={{ paddingLeft: `${(chap.level - 1) * 12}px` }}>
+                            <div style={{ paddingLeft: `${((chap.level || 1) - 1) * 12}px` }}>
                                 {chap.title}
                             </div>
                         </Link>
@@ -87,7 +87,7 @@ export default async function TextbookReaderPage({ params, searchParams }: PageP
                                             : 'text-muted-foreground hover:bg-muted'
                                             }`}
                                     >
-                                        <div style={{ paddingLeft: `${(chap.level - 1) * 12}px` }}>
+                                        <div style={{ paddingLeft: `${((chap.level || 1) - 1) * 12}px` }}>
                                             {chap.title}
                                         </div>
                                     </Link>

@@ -36,11 +36,13 @@ export function TagSelector({ noteId, onTagsChange }: TagSelectorProps) {
             ]);
 
             if (allResult.success && allResult.tags) {
-                setAllTags(allResult.tags);
+                const formattedTags = allResult.tags.map(t => ({ ...t, color: t.color ?? '' })) as NoteTag[];
+                setAllTags(formattedTags);
             }
             if (noteResult.success && noteResult.tags) {
-                setSelectedTagIds(new Set(noteResult.tags.map(t => t.id)));
-                onTagsChange?.(noteResult.tags);
+                const formattedTags = noteResult.tags.map(t => ({ ...t, color: t.color ?? '' })) as NoteTag[];
+                setSelectedTagIds(new Set(formattedTags.map(t => t.id)));
+                onTagsChange?.(formattedTags);
             }
         };
         loadTags();
@@ -79,7 +81,8 @@ export function TagSelector({ noteId, onTagsChange }: TagSelectorProps) {
             // 刷新标签列表
             const tagsResult = await getTagsAction();
             if (tagsResult.success && tagsResult.tags) {
-                setAllTags(tagsResult.tags);
+                const formattedTags = tagsResult.tags.map(t => ({ ...t, color: t.color ?? '' })) as NoteTag[];
+                setAllTags(formattedTags);
             }
             setNewTagName('');
             toast.success('标签已创建');
@@ -99,7 +102,7 @@ export function TagSelector({ noteId, onTagsChange }: TagSelectorProps) {
                     key={tag.id}
                     variant="secondary"
                     className="gap-1 pr-1"
-                    style={{ backgroundColor: tag.color + '20', color: tag.color, borderColor: tag.color }}
+                    style={{ backgroundColor: (tag.color ?? '') + '20', color: tag.color ?? '', borderColor: tag.color ?? '' }}
                 >
                     {tag.name}
                     <button
@@ -155,7 +158,7 @@ export function TagSelector({ noteId, onTagsChange }: TagSelectorProps) {
                                 <span className="flex items-center gap-2">
                                     <span
                                         className="w-3 h-3 rounded-full"
-                                        style={{ backgroundColor: tag.color }}
+                                        style={{ backgroundColor: tag.color ?? '' }}
                                     />
                                     {tag.name}
                                 </span>

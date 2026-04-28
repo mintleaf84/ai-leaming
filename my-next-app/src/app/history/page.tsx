@@ -5,12 +5,14 @@ import React, { useEffect, useState, useCallback } from 'react';
 import {
   getSessionHistoryAction,
   getAvailableModesAction,
-  SessionHistoryItem,
-  HistoryFilter,
-  PaginatedHistory,
   deleteSessionAction,
   renameSessionAction
 } from '@/server/actions/history';
+import { 
+  type SessionHistoryItem, 
+  type HistoryFilter, 
+  type PaginatedHistory 
+} from '@/lib/services/history';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Pagination } from '@/components/ui/pagination';

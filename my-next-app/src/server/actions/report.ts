@@ -5,7 +5,6 @@ import { generateTextWrapper } from '@/lib/ai/client';
 import { requireUser } from '@/lib/auth/auth';
 import { reportService, type SessionReportData, type DeepAnalysisData } from '@/lib/services/report';
 
-export type { SessionReportData, DeepAnalysisData };
 
 /**
  * 获取指定会话的报告数据

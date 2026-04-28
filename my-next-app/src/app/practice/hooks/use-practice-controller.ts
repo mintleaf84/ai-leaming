@@ -222,13 +222,8 @@ export function usePracticeController(enableIntelligentReview: boolean = false) 
 
             // Async save
             submitAnswerAction(currentQuestion.id, answer, isCorrect, duration, state.sessionId || undefined, totalDuration).then(res => {
-                if (res && res.success && res.srs) {
-                    const { srs } = res;
-                    const ratingLabels = ['忘记', '忘记', '吃力', '良好', '简单']; // FSRS ratings: 0:New, 1:Again, 2:Hard, 3:Good, 4:Easy
-                    
-                    // 获取计算出的 Rating
-                    // 由于目前 rating 是在 server 端根据 time 计算的，我们这里简单根据 isCorrect 展示
-                    // 理想情况下 server 应该返回计算出的 Rating 枚举值
+                if (res && res.success && 'srs' in res && res.srs) {
+                    const srs = (res as any).srs;
                     
                     toast.success(isCorrect ? "回答正确！" : "回答错误", {
                         description: `下次复习: ${srs.nextInterval} 天后 (稳定性: ${srs.stability.toFixed(1)}d)`,

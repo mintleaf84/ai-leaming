@@ -7,7 +7,7 @@ import { Plus, FileText, Trash2, BookOpen, Search } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { createNoteAction, deleteNoteAction, createWelcomeNoteAction, searchNotesAction } from '@/server/actions/note';
-import type { NotePreview } from '@/server/actions/note';
+import { type NotePreview } from '@/lib/services/knowledge';
 import { toast } from 'sonner';
 import { useDebouncedCallback } from 'use-debounce';
 

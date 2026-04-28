@@ -6,14 +6,9 @@ import { requireUser } from '@/lib/auth/auth';
 import { settingsService, type SystemSettings } from '@/lib/services/settings';
 
 /**
- * 导出类型
- */
-export type Settings = SystemSettings;
-
-/**
  * 获取系统设置
  */
-export async function getSettingsAction(): Promise<Settings> {
+export async function getSettingsAction(): Promise<SystemSettings> {
     try {
         const user = await requireUser();
         return await settingsService.getSettings(user.id);
@@ -30,7 +25,7 @@ export async function getSettingsAction(): Promise<Settings> {
 /**
  * 更新系统设置
  */
-export async function updateSettingsAction(settings: Partial<Settings>) {
+export async function updateSettingsAction(settings: Partial<SystemSettings>) {
     try {
         const user = await requireUser();
         await settingsService.updateSettings(user.id, settings);

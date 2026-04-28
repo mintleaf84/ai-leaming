@@ -1,7 +1,8 @@
 'use client';
 
 import { useState, useEffect, useCallback } from 'react';
-import { searchQuestionsAction, QuestionSummary } from '@/server/actions/question';
+import { searchQuestionsAction } from '@/server/actions/question';
+import { type QuestionSummary } from '@/lib/services/question';
 import { Search, Loader2, BookOpen, X } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';

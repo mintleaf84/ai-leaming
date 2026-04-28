@@ -5,8 +5,7 @@ import { getErrorMessage } from '@/lib/utils/error';
 import { Wand2, Trash2, AlignLeft } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import dynamic from 'next/dynamic';
-import { generateMindmapAction } from '@/server/actions/mindmap';
-import { updateMindmapAction } from '@/server/actions/mindmap-db';
+import { generateMindmapAction, updateMindmapAction } from '@/server/actions/mindmap';
 import { toast } from 'sonner';
 
 const SimpleMindMapViewer = dynamic(

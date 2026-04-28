@@ -3,7 +3,7 @@
 import React, { useState, useEffect } from 'react';
 import { CheckCircle2, X, Lightbulb, History, Brain, Zap, Calendar } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { WrongQuestionDetail } from '@/server/actions/wrong-questions';
+import { type WrongQuestionDetail } from '@/lib/services/wrong-question';
 import { getBeijingDiffDays, formatBeijingDate } from '@/lib/utils/datetime';
 
 interface QuestionDetailPanelProps {
@@ -16,7 +16,8 @@ interface QuestionDetailPanelProps {
 /**
  * 判断选项是否为正确答案
  */
-function isCorrectOption(opt: string, correctAnswer: string): boolean {
+function isCorrectOption(opt: string, correctAnswer: string | null): boolean {
+    if (!correctAnswer) return false;
     if (opt === correctAnswer) return true;
 
     if (correctAnswer.trim().startsWith('[')) {
@@ -178,7 +179,7 @@ export function QuestionDetailPanel({
                                     <div key={idx} className="flex items-center gap-2 text-xs">
                                         <span className={`w-2 h-2 rounded-full ${log.isCorrect ? 'bg-green-500' : 'bg-red-500'}`} />
                                         <span className="text-muted-foreground">
-                                            {formatBeijingDate(log.timestamp, 'YYYY/M/D HH:mm')}
+                                            {log.timestamp ? formatBeijingDate(log.timestamp, 'YYYY/M/D HH:mm') : '未知时间'}
                                         </span>
                                         <span className={log.isCorrect ? 'text-green-600' : 'text-red-600'}>
                                             {log.isCorrect ? '正确' : '错误'}

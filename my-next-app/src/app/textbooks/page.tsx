@@ -18,7 +18,7 @@ export default async function TextbooksPage() {
         redirect('/dashboard');
     }
 
-    const textbooks = textbookService.getAllTextbooks();
+    const textbooks = await textbookService.getAllTextbooks();
 
     return (
         <div className="container py-8 max-w-7xl mx-auto">
@@ -85,7 +85,7 @@ export default async function TextbooksPage() {
                                             </div>
                                             <div className="flex items-center">
                                                 <Calendar className="h-3 w-3 mr-1" />
-                                                <span>{new Date(book.created_at).toLocaleDateString()}</span>
+                                                <span>{new Date(book.created_at || Date.now()).toLocaleDateString()}</span>
                                             </div>
                                         </div>
                                         {book.description && (

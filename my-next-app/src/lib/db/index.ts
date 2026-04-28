@@ -6,7 +6,6 @@ import { drizzle, LibSQLDatabase } from 'drizzle-orm/libsql';
 import { migrate } from 'drizzle-orm/libsql/migrator';
 import { createClient } from '@libsql/client';
 import * as schema from './drizzle-schema';
-import { runMigrations as runOldMigrations } from './migrations';
 import { setupVectorExtension } from './vector-setup';
 import { seedData } from './seed-data';
 
@@ -139,13 +138,7 @@ export async function initDatabase() {
         await migrate(drizzleDb, { migrationsFolder: path.resolve(process.cwd(), 'drizzle') });
         console.log('[DB] Drizzle migrations completed');
 
-        // 2. 运行旧版迁移作为存量数据库兜底（幂等，可安全重复执行）
-        //    确保旧数据库中缺失的字段/索引/表能够补全
-        console.log('[DB] Running legacy migrations for backward compatibility...');
-        await runOldMigrations();
-        console.log('[DB] Legacy migrations completed');
-
-        // 3. 补全向量扩展和种子数据
+        // 2. 补全向量扩展和种子数据
         await setupVectorExtension();
         await seedData();
         console.log('[DB] Database initialization completed');
@@ -162,10 +155,9 @@ export async function initDatabase() {
 // --- Exports ---
 
 export default db; // 默认导出 legacyDb 以兼容旧代码
-export { runOldMigrations as runMigrations };
 export { setupVectorExtension } from './vector-setup';
 export { seedData } from './seed-data';
-export { addColumnIfNotExists, getSetting, setSetting } from './utils-drizzle';
+export { getSetting, setSetting } from './utils-drizzle';
 export * as drizzleSchema from './drizzle-schema';
 
 if (require.main === module) {

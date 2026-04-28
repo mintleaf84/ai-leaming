@@ -40,7 +40,7 @@ export const questions = sqliteTable('questions', {
   external_id: text('external_id'),
   created_at: text('created_at').default(sql`CURRENT_TIMESTAMP`),
 }, (table) => ({
-  unq_ext: unique().on(table.external_id),
+  unq_ext: unique('questions_external_id_unique').on(table.external_id),
 }));
 
 // --- 用户掌握度表 ---
@@ -70,7 +70,9 @@ export const practice_sessions = sqliteTable('practice_sessions', {
   analysis_report: text('analysis_report'), // AI 深度分析报告（JSON）
   total_duration_ms: integer('total_duration_ms').default(0),
   created_at: text('created_at').default(sql`CURRENT_TIMESTAMP`),
-});
+}, (table) => ({
+  idx_user_ts: index('idx_practice_sessions_user_ts').on(table.user_id, sql`${table.created_at} DESC`),
+}));
 
 // --- 练习日志表 ---
 export const practice_logs = sqliteTable('practice_logs', {
@@ -83,7 +85,12 @@ export const practice_logs = sqliteTable('practice_logs', {
   is_monitored_correct: integer('is_monitored_correct', { mode: 'boolean' }).default(false),
   duration_ms: integer('duration_ms'),
   timestamp: text('timestamp').default(sql`CURRENT_TIMESTAMP`),
-});
+}, (table) => ({
+  idx_user_ts: index('idx_practice_logs_user_ts').on(table.user_id, sql`${table.timestamp} DESC`),
+  idx_correct: index('idx_practice_logs_correct').on(table.is_correct),
+  idx_question: index('idx_practice_logs_question').on(table.question_id),
+  idx_user_correct: index('idx_practice_logs_user_correct').on(table.user_id, table.is_correct),
+}));
 
 // --- 错题/回顾表 ---
 export const session_reviews = sqliteTable('session_reviews', {
@@ -156,7 +163,10 @@ export const chat_sessions = sqliteTable('chat_sessions', {
   created_at: text('created_at').default(sql`CURRENT_TIMESTAMP`),
   updated_at: text('updated_at').default(sql`CURRENT_TIMESTAMP`),
   message_count: integer('message_count').default(0),
-});
+}, (table) => ({
+  idx_updated: index('idx_chat_sessions_updated').on(sql`${table.updated_at} DESC`),
+  idx_user: index('idx_chat_sessions_user').on(table.user_id),
+}));
 
 // --- 聊天消息 ---
 export const chat_messages = sqliteTable('chat_messages', {
@@ -166,7 +176,9 @@ export const chat_messages = sqliteTable('chat_messages', {
   content: text('content').notNull(),
   is_favorite: integer('is_favorite').default(0),
   created_at: text('created_at').default(sql`CURRENT_TIMESTAMP`),
-});
+}, (table) => ({
+  idx_session: index('idx_chat_messages_session').on(table.session_id, table.created_at),
+}));
 
 // --- 知识卡片 ---
 export const knowledge_cards = sqliteTable('knowledge_cards', {
@@ -182,7 +194,11 @@ export const knowledge_cards = sqliteTable('knowledge_cards', {
   source_content: text('source_content'),
   created_at: text('created_at').default(sql`CURRENT_TIMESTAMP`),
   updated_at: text('updated_at').default(sql`CURRENT_TIMESTAMP`),
-});
+}, (table) => ({
+  idx_category: index('idx_knowledge_cards_category').on(table.category),
+  idx_created: index('idx_knowledge_cards_created').on(sql`${table.created_at} DESC`),
+  idx_user: index('idx_knowledge_cards_user').on(table.user_id),
+}));
 
 // --- 管理日志 ---
 export const admin_logs = sqliteTable('admin_logs', {
@@ -195,7 +211,11 @@ export const admin_logs = sqliteTable('admin_logs', {
   details: text('details'),
   ip_address: text('ip_address'),
   created_at: text('created_at').default(sql`CURRENT_TIMESTAMP`),
-});
+}, (table) => ({
+  idx_created: index('idx_admin_logs_created').on(sql`${table.created_at} DESC`),
+  idx_user: index('idx_admin_logs_user').on(table.user_id),
+  idx_action: index('idx_admin_logs_action').on(table.action),
+}));
 
 // --- API 调用日志 ---
 export const api_call_logs = sqliteTable('api_call_logs', {
@@ -210,7 +230,12 @@ export const api_call_logs = sqliteTable('api_call_logs', {
   success: integer('success').default(1),
   error_message: text('error_message'),
   created_at: text('created_at').default(sql`CURRENT_TIMESTAMP`),
-});
+}, (table) => ({
+  idx_created: index('idx_api_logs_created').on(sql`${table.created_at} DESC`),
+  idx_user_created: index('idx_api_logs_user_created').on(table.user_id, sql`${table.created_at} DESC`),
+  idx_model: index('idx_api_logs_model').on(table.model),
+  idx_date: index('idx_api_logs_date').on(sql`date(${table.created_at})`),
+}));
 
 // --- 订阅计划 ---
 export const subscription_plans = sqliteTable('subscription_plans', {
@@ -245,6 +270,7 @@ export const daily_usage = sqliteTable('daily_usage', {
   count: integer('count').default(0),
 }, (table) => ({
   unq: unique().on(table.user_id, table.usage_date, table.usage_type),
+  idx_user_date: index('idx_daily_usage_user_date').on(table.user_id, table.usage_date),
 }));
 
 // --- 支付记录 ---
@@ -259,7 +285,10 @@ export const payment_records = sqliteTable('payment_records', {
   status: text('status', { enum: ['pending', 'paid', 'failed', 'refunded'] }).default('pending'),
   created_at: text('created_at').default(sql`CURRENT_TIMESTAMP`),
   paid_at: text('paid_at'),
-});
+}, (table) => ({
+  idx_user: index('idx_payment_records_user').on(table.user_id),
+  idx_order: index('idx_payment_records_order').on(table.order_no),
+}));
 
 // --- 已掌握题目 ---
 export const mastered_questions = sqliteTable('mastered_questions', {
@@ -270,6 +299,8 @@ export const mastered_questions = sqliteTable('mastered_questions', {
   note: text('note'),
 }, (table) => ({
   unq: unique().on(table.user_id, table.question_id),
+  idx_user: index('idx_mastered_questions_user').on(table.user_id),
+  idx_user_q: index('idx_mastered_questions_user_q').on(table.user_id, table.question_id),
 }));
 
 // --- 教材表 ---

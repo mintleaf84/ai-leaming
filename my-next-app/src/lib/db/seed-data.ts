@@ -12,8 +12,16 @@ export async function seedData() {
     await initializeRoutes();
     await initializeSubscriptionPlans();
     await initializeUserSubscriptions();
+    await ensureAdminUser();
 
     console.log('[DB] Seeding completed');
+}
+
+async function ensureAdminUser() {
+    try {
+        await drizzleDb.run(sql`UPDATE users SET role = 'admin' WHERE id = 1`);
+        console.log('[DB Seed] Ensured user 1 is admin');
+    } catch { /* ignore */ }
 }
 
 async function migrateAIConfig() {

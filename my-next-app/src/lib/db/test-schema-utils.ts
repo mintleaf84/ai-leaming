@@ -12,7 +12,7 @@ export const TEST_SCHEMA_SQL = `
         password_hash TEXT NOT NULL,
         role TEXT DEFAULT 'student',
         token_version INTEGER DEFAULT 0,
-        created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+        created_at TEXT DEFAULT CURRENT_TIMESTAMP
     );
 
     CREATE TABLE IF NOT EXISTS questions (
@@ -31,7 +31,7 @@ export const TEST_SCHEMA_SQL = `
         material_html TEXT,
         ai_mnemonic TEXT,
         external_id TEXT UNIQUE,
-        created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+        created_at TEXT DEFAULT CURRENT_TIMESTAMP
     );
 
     CREATE TABLE IF NOT EXISTS practice_sessions (
@@ -46,7 +46,7 @@ export const TEST_SCHEMA_SQL = `
         is_demo INTEGER DEFAULT 0,
         analysis_report TEXT,
         total_duration_ms INTEGER DEFAULT 0,
-        created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+        created_at TEXT DEFAULT CURRENT_TIMESTAMP
     );
 
     CREATE TABLE IF NOT EXISTS practice_logs (
@@ -58,7 +58,7 @@ export const TEST_SCHEMA_SQL = `
         is_correct INTEGER NOT NULL,
         is_monitored_correct INTEGER DEFAULT 0,
         duration_ms INTEGER,
-        timestamp DATETIME DEFAULT CURRENT_TIMESTAMP
+        timestamp TEXT DEFAULT CURRENT_TIMESTAMP
     );
 
     CREATE TABLE IF NOT EXISTS user_mastery (
@@ -68,7 +68,7 @@ export const TEST_SCHEMA_SQL = `
         correct_count INTEGER DEFAULT 0,
         total_count INTEGER DEFAULT 0,
         history TEXT,
-        last_updated DATETIME DEFAULT CURRENT_TIMESTAMP,
+        last_updated TEXT DEFAULT CURRENT_TIMESTAMP,
         PRIMARY KEY(user_id, tag_name)
     );
 
@@ -77,7 +77,7 @@ export const TEST_SCHEMA_SQL = `
         tag_name TEXT NOT NULL,
         reason TEXT,
         status TEXT DEFAULT 'active',
-        entered_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+        entered_at TEXT DEFAULT CURRENT_TIMESTAMP,
         PRIMARY KEY(user_id, tag_name)
     );
 
@@ -101,7 +101,7 @@ export const TEST_SCHEMA_SQL = `
         user_id INTEGER NOT NULL REFERENCES users(id),
         key TEXT NOT NULL,
         value TEXT,
-        updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+        updated_at TEXT DEFAULT CURRENT_TIMESTAMP,
         PRIMARY KEY(user_id, key)
     );
 
@@ -110,8 +110,16 @@ export const TEST_SCHEMA_SQL = `
         key_string TEXT UNIQUE NOT NULL,
         description TEXT DEFAULT '',
         is_active INTEGER DEFAULT 1,
-        created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-        updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
+        created_at TEXT DEFAULT CURRENT_TIMESTAMP,
+        updated_at TEXT DEFAULT CURRENT_TIMESTAMP
+    );
+
+    CREATE TABLE IF NOT EXISTS session_reviews (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        session_id TEXT NOT NULL REFERENCES practice_sessions(id),
+        question_id INTEGER NOT NULL,
+        review_data TEXT,
+        created_at TEXT DEFAULT CURRENT_TIMESTAMP
     );
 `;
 

@@ -66,12 +66,16 @@ export async function deleteSessionAction(sessionId: string) {
   try {
     const user = await requireUser();
     const success = await historyService.deleteSession(user.id, sessionId);
+    console.log(`[HistoryAction] deleteSession success:`, success);
 
     if (success) {
       revalidatePath('/history');
     }
     return { success };
   } catch (error) {
+    const fs = require('fs');
+    fs.writeFileSync('delete-debug.log', `Error: ${error instanceof Error ? error.stack : String(error)}\n`, { flag: 'a' });
+    console.error(`[HistoryAction] deleteSession error:`, error);
     logger.error({ err: error }, "[HistoryAction] 删除失败");
     return { success: false, message: "删除失败，请稍后重试" };
   }

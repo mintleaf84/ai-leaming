@@ -29,6 +29,4 @@ CREATE TABLE IF NOT EXISTS `note_tags` (
 --> statement-breakpoint
 CREATE INDEX IF NOT EXISTS `idx_note_tags_user` ON `note_tags` (`user_id`);--> statement-breakpoint
 CREATE UNIQUE INDEX IF NOT EXISTS `note_tags_user_id_name_unique` ON `note_tags` (`user_id`,`name`);--> statement-breakpoint
-/* Conflicts with legacy migrations:
 ALTER TABLE `practice_sessions` ADD `analysis_report` text;
-*/

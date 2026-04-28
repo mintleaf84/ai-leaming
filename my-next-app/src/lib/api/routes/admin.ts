@@ -16,7 +16,10 @@ export const adminRoute = new OpenAPIHono()
 async function getDemoModeStatus(): Promise<boolean> {
     try {
         const row = await drizzleDb.query.system_settings.findFirst({
-            where: eq(drizzleSchema.system_settings.key, 'demo_mode_enabled')
+            where: and(
+                eq(drizzleSchema.system_settings.key, 'demo_mode_enabled'),
+                eq(drizzleSchema.system_settings.user_id, 0)
+            )
         });
         return row?.value === 'true';
     } catch {
@@ -98,6 +101,7 @@ adminRoute.openapi(systemActionDef, async (c) => {
         const current = await getDemoModeStatus();
         const newValue = !current;
         await drizzleDb.insert(drizzleSchema.system_settings).values({
+            user_id: 0,
             key: 'demo_mode_enabled',
             value: String(newValue)
         }).onConflictDoUpdate({

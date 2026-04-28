@@ -104,6 +104,15 @@ export const TEST_SCHEMA_SQL = `
         updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
         PRIMARY KEY(user_id, key)
     );
+
+    CREATE TABLE IF NOT EXISTS api_keys (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        key_string TEXT UNIQUE NOT NULL,
+        description TEXT DEFAULT '',
+        is_active INTEGER DEFAULT 1,
+        created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+        updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
+    );
 `;
 
 export function createTestTables(db: Database.Database) {

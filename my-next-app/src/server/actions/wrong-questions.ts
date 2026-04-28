@@ -1,7 +1,7 @@
 'use server';
 
-import logger from '@/lib/logger';
-import { requireUser } from '@/lib/auth/auth';
+import { authenticatedAction } from '@/lib/safe-action';
+import { z } from 'zod';
 import { 
     wrongQuestionService, 
     type WrongQuestionItem, 
@@ -9,26 +9,24 @@ import {
     type WrongQuestionDetail 
 } from '@/lib/services/wrong-question';
 import { practiceService } from '@/lib/services/practice';
+import { RandomWrongQuestionsSchema, MarkMasteredSchema } from '@/lib/validations/wrong-questions';
 
 /**
  * 获取错题列表
  */
-export async function getWrongQuestionsAction(): Promise<WrongQuestionItem[]> {
-    try {
-        const user = await requireUser();
+export const getWrongQuestionsAction = authenticatedAction
+    .action(async ({ ctx }) => {
+        const { user } = ctx;
         return await wrongQuestionService.getList(user.id);
-    } catch (error) {
-        logger.error({ err: error }, "[WrongQuestionAction] 获取错题列表失败");
-        return [];
-    }
-}
+    });
 
 /**
  * 获取按知识点分组的错题
  */
-export async function getWrongQuestionsByTagAction(): Promise<WrongQuestionsByTag[]> {
-    try {
-        const questions = await getWrongQuestionsAction();
+export const getWrongQuestionsByTagAction = authenticatedAction
+    .action(async ({ ctx }) => {
+        const { user } = ctx;
+        const questions = await wrongQuestionService.getList(user.id);
         const tagMap = new Map<string, WrongQuestionItem[]>();
 
         questions.forEach(q => {
@@ -45,104 +43,77 @@ export async function getWrongQuestionsByTagAction(): Promise<WrongQuestionsByTa
                 questions
             }))
             .sort((a, b) => b.count - a.count);
-    } catch (error) {
-        logger.error({ err: error }, "[WrongQuestionAction] 获取分组错题失败");
-        return [];
-    }
-}
+    });
 
 /**
  * 获取错题统计
  */
-export async function getWrongQuestionsStatsAction() {
-    try {
-        const user = await requireUser();
+export const getWrongQuestionsStatsAction = authenticatedAction
+    .action(async ({ ctx }) => {
+        const { user } = ctx;
         return await wrongQuestionService.getStats(user.id);
-    } catch (error) {
-        logger.error({ err: error }, "[WrongQuestionAction] 获取统计失败");
-        return { total: 0, recent: 0, frequent: 0 };
-    }
-}
+    });
 
 /**
  * 创建错题专项练习会话
  */
-export async function createWrongQuestionsPracticeAction(questionIds: number[]) {
-    try {
-        const user = await requireUser();
+export const createWrongQuestionsPracticeAction = authenticatedAction
+    .inputSchema(z.array(z.number()))
+    .action(async ({ parsedInput: questionIds, ctx }) => {
+        const { user } = ctx;
         if (questionIds.length === 0) return { success: false, message: '请选择题目' };
 
         const sessionId = await practiceService.createReviewSession(user.id, questionIds);
         return { success: true, sessionId };
-    } catch (error) {
-        logger.error({ err: error }, "[WrongQuestionAction] 创建练习失败");
-        return { success: false, message: '创建练习失败' };
-    }
-}
+    });
 
 /**
  * 获取错题详情
  */
-export async function getWrongQuestionDetailAction(questionId: number) {
-    try {
-        const user = await requireUser();
+export const getWrongQuestionDetailAction = authenticatedAction
+    .inputSchema(z.number())
+    .action(async ({ parsedInput: questionId, ctx }) => {
+        const { user } = ctx;
         return await wrongQuestionService.getDetail(user.id, questionId);
-    } catch (error) {
-        logger.error({ err: error }, "[WrongQuestionAction] 获取详情失败");
-        return null;
-    }
-}
+    });
 
 /**
  * 标记为已掌握
  */
-export async function markAsMasteredAction(questionId: number, note?: string) {
-    try {
-        const user = await requireUser();
-        await wrongQuestionService.markAsMastered(user.id, questionId, note);
-        return { success: true };
-    } catch (error) {
-        logger.error({ err: error }, "[WrongQuestionAction] 标记失败");
-        return { success: false, message: '标记失败' };
-    }
-}
+export const markAsMasteredAction = authenticatedAction
+    .inputSchema(z.number()) // 兼容单数字输入
+    .action(async ({ parsedInput: questionId, ctx }) => {
+        const { user } = ctx;
+        await wrongQuestionService.markAsMastered(user.id, questionId);
+        return { success: true, message: '已标记为掌握' };
+    });
 
 /**
  * 取消掌握标记
  */
-export async function unmarkMasteredAction(questionId: number) {
-    try {
-        const user = await requireUser();
+export const unmarkMasteredAction = authenticatedAction
+    .inputSchema(z.number())
+    .action(async ({ parsedInput: questionId, ctx }) => {
+        const { user } = ctx;
         await wrongQuestionService.unmarkMastered(user.id, questionId);
-        return { success: true };
-    } catch (error) {
-        logger.error({ err: error }, "[WrongQuestionAction] 取消标记失败");
-        return { success: false, message: '取消标记失败' };
-    }
-}
+        return { success: true, message: '已取消掌握标记' };
+    });
 
 /**
  * 智能获取一组推荐错题
  */
-export async function getRandomWrongQuestionsAction(options: any = {}) {
-    try {
-        const user = await requireUser();
+export const getRandomWrongQuestionsAction = authenticatedAction
+    .inputSchema(RandomWrongQuestionsSchema)
+    .action(async ({ parsedInput: options, ctx }) => {
+        const { user } = ctx;
         return await wrongQuestionService.getRandomRecommended(user.id, options);
-    } catch (error) {
-        logger.error({ err: error }, "[WrongQuestionAction] 获取推荐失败");
-        return [];
-    }
-}
+    });
 
 /**
  * 获取已掌握题目列表
  */
-export async function getMasteredQuestionsAction(): Promise<WrongQuestionItem[]> {
-    try {
-        const user = await requireUser();
+export const getMasteredQuestionsAction = authenticatedAction
+    .action(async ({ ctx }) => {
+        const { user } = ctx;
         return await wrongQuestionService.getMasteredQuestions(user.id);
-    } catch (error) {
-        logger.error({ err: error }, "[WrongQuestionAction] 获取已掌握列表失败");
-        return [];
-    }
-}
+    });

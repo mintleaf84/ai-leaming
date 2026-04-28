@@ -4,6 +4,7 @@ import React, { useEffect, useState, useRef, useMemo } from 'react';
 import { motion } from 'framer-motion';
 import { Virtuoso, VirtuosoHandle } from 'react-virtuoso';
 import { Loader2 } from 'lucide-react';
+import { useQuery } from '@tanstack/react-query';
 import { getSessionDetailAction } from '@/server/actions/history';
 import { type SessionDetail } from '@/lib/services/history';
 import { generateDeepAnalysisAction, getAnalysisReportAction } from '@/server/actions/report';
@@ -20,8 +21,6 @@ interface HistoryCardExpandedProps {
 }
 
 export const HistoryCardExpanded: React.FC<HistoryCardExpandedProps> = ({ sessionId, initialData, onClose }) => {
-    const [detail, setDetail] = useState<SessionDetail | null>(null);
-    const [isLoading, setIsLoading] = useState(true);
     const [expandedItems, setExpandedItems] = useState<Set<number>>(new Set());
     const [showWrongOnly, setShowWrongOnly] = useState(false);
     const [isAnalyzing, setIsAnalyzing] = useState(false);
@@ -46,18 +45,23 @@ export const HistoryCardExpanded: React.FC<HistoryCardExpandedProps> = ({ sessio
         };
     }, []);
 
+    // 1. Data Fetching via React Query
+    const { data: detail, isLoading } = useQuery({
+        queryKey: ['sessionDetail', sessionId],
+        queryFn: async () => {
+            const res = await getSessionDetailAction(sessionId);
+            if (res?.serverError) throw new Error(res.serverError);
+            return res?.data || null;
+        },
+        enabled: !!sessionId
+    });
+
+    // 2. Load cached report on mount
     useEffect(() => {
         let isMounted = true;
-        
-        getSessionDetailAction(sessionId).then(data => {
-            if (isMounted) {
-                setDetail(data);
-                setIsLoading(false);
-            }
-        });
         getAnalysisReportAction(sessionId).then(result => {
-            if (isMounted && result.success && result.report) {
-                setAnalysisReport(result.report);
+            if (isMounted && result.data?.success && result.data?.report) {
+                setAnalysisReport(result.data.report);
             }
         });
 
@@ -73,14 +77,14 @@ export const HistoryCardExpanded: React.FC<HistoryCardExpandedProps> = ({ sessio
         }
         setIsAnalyzing(true);
         setShowAnalysis(true);
-        const result = await generateDeepAnalysisAction(sessionId);
+        const result = await generateDeepAnalysisAction({ sessionId });
         setIsAnalyzing(false);
-        if (result.success && result.report) setAnalysisReport(result.report);
+        if (result.data?.success && result.data?.report) setAnalysisReport(result.data.report);
         else toast.error('AI 分析失败');
     };
 
     const displayedQuestions = useMemo(() => {
-        if (!detail) return [];
+        if (!detail?.logs) return [];
         return detail.logs
             .map((log, index) => ({ log, index }))
             .filter(item => !showWrongOnly || !item.log.isCorrect);
@@ -119,7 +123,7 @@ export const HistoryCardExpanded: React.FC<HistoryCardExpandedProps> = ({ sessio
                         {/* 1. Header Area (Extracted) */}
                         <ExpandedHeader
                             sessionId={sessionId}
-                            detail={detail}
+                            detail={detail ?? null}
                             initialData={initialData}
                             isLoading={isLoading}
                             onClose={onClose}
@@ -210,7 +214,7 @@ export const HistoryCardExpanded: React.FC<HistoryCardExpandedProps> = ({ sessio
             </motion.div>
 
             {/* 3. Floating Answer Sheet (Always on top when ready) */}
-            {!isLoading && detail && (
+            {!isLoading && detail?.logs && (
                 <AnswerSheet 
                     logs={detail.logs}
                     isOpen={isAnswerSheetOpen}

@@ -68,16 +68,16 @@ export function useWrongBookController() {
     // 加载数据
     const loadData = useCallback(async () => {
         setIsLoading(true);
-        const [questionsData, groupedData, statsData, masteredData] = await Promise.all([
+        const [qRes, gRes, sRes, mRes] = await Promise.all([
             getWrongQuestionsAction(),
             getWrongQuestionsByTagAction(),
             getWrongQuestionsStatsAction(),
             getMasteredQuestionsAction()
         ]);
-        setQuestions(questionsData);
-        setGroupedQuestions(groupedData);
-        setStats(statsData);
-        setMasteredQuestions(masteredData);
+        setQuestions(qRes?.data || []);
+        setGroupedQuestions(gRes?.data || []);
+        setStats(sRes?.data || { total: 0, recent: 0, frequent: 0 });
+        setMasteredQuestions(mRes?.data || []);
         setIsLoading(false);
     }, []);
 
@@ -138,10 +138,10 @@ export function useWrongBookController() {
         const result = await createWrongQuestionsPracticeAction(practiceIds);
         setIsCreating(false);
 
-        if (result.success) {
-            router.push(`/practice?sessionId=${result.sessionId}`);
+        if (result.data?.success) {
+            router.push(`/practice?sessionId=${result.data?.sessionId}`);
         } else {
-            toast.error(result.message || '创建练习失败');
+            toast.error(result.data?.message || '创建练习失败');
         }
     }, [selectedIds, router]);
 
@@ -154,7 +154,8 @@ export function useWrongBookController() {
         setIsRandomLoading(true);
         try {
             // 1. 获取随机题目
-            const randomQuestions = await getRandomWrongQuestionsAction({ count, tag, mode });
+            const res = await getRandomWrongQuestionsAction({ count, tag, mode });
+            const randomQuestions = res?.data || [];
             
             if (randomQuestions.length === 0) {
                 toast.error('未找到符合条件的错题，快去练习吧！');
@@ -165,10 +166,10 @@ export function useWrongBookController() {
             const ids = randomQuestions.map(q => q.questionId);
             const result = await createWrongQuestionsPracticeAction(ids);
 
-            if (result.success) {
-                router.push(`/practice?sessionId=${result.sessionId}`);
+            if (result.data?.success) {
+                router.push(`/practice?sessionId=${result.data?.sessionId}`);
             } else {
-                toast.error(result.message || '创建随机练习失败');
+                toast.error(result.data?.message || '创建随机练习失败');
             }
         } catch (error) {
             console.error("Random practice error:", error);
@@ -188,32 +189,32 @@ export function useWrongBookController() {
 
         setExpandedQuestionId(questionId);
         setIsLoadingDetail(true);
-        const detail = await getWrongQuestionDetailAction(questionId);
-        setQuestionDetail(detail);
+        const result = await getWrongQuestionDetailAction(questionId);
+        setQuestionDetail(result?.data || null);
         setIsLoadingDetail(false);
     }, [expandedQuestionId]);
 
     // 标记为已掌握
     const handleMarkAsMastered = useCallback(async (questionId: number) => {
         const result = await markAsMasteredAction(questionId);
-        if (result.success) {
+        if (result.data?.success) {
             toast.success('已标记为掌握！该题目已移至归档。');
             setExpandedQuestionId(null);
             setQuestionDetail(null);
             await loadData();
         } else {
-            toast.error(result.message || '标记失败');
+            toast.error(result.data?.message || '标记失败');
         }
     }, [loadData]);
 
     // 取消已掌握标记
     const handleUnmarkMastered = useCallback(async (questionId: number) => {
         const result = await unmarkMasteredAction(questionId);
-        if (result.success) {
+        if (result.data?.success) {
             toast.success('已恢复到错题本');
             await loadData();
         } else {
-            toast.error(result.message || '操作失败');
+            toast.error(result.data?.message || '操作失败');
         }
     }, [loadData]);
 

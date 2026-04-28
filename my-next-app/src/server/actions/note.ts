@@ -1,50 +1,57 @@
 'use server';
 
-import logger from '@/lib/logger';
-import { requireUser } from '@/lib/auth/auth';
+import { authenticatedAction } from '@/lib/safe-action';
+import { z } from 'zod';
 import { revalidatePath } from 'next/cache';
 import { WELCOME_NOTE_CONTENT } from '@/lib/content/welcome';
 import { 
     knowledgeService, 
     type Note, 
     type NotePreview, 
-    type CreateNoteInput, 
-    type UpdateNoteInput 
 } from '@/lib/services/knowledge';
-
 
 /**
  * 创建欢迎笔记
  */
-export async function createWelcomeNoteAction() {
-    return createNoteAction({
-        title: '👋 欢迎使用智能笔记',
-        content: JSON.stringify(WELCOME_NOTE_CONTENT),
+export const createWelcomeNoteAction = authenticatedAction
+    .action(async ({ ctx }) => {
+        const { user } = ctx;
+        const noteId = await knowledgeService.createNote(
+            user.id, 
+            '👋 欢迎使用智能笔记', 
+            JSON.stringify(WELCOME_NOTE_CONTENT)
+        );
+        revalidatePath('/notes');
+        return { success: true, noteId };
     });
-}
 
 /**
  * 创建笔记
  */
-export async function createNoteAction(input: CreateNoteInput = {}) {
-    try {
-        const user = await requireUser();
+export const createNoteAction = authenticatedAction
+    .inputSchema(z.object({
+        title: z.string().optional(),
+        content: z.string().optional()
+    }).default({}))
+    .action(async ({ parsedInput: input, ctx }) => {
+        const { user } = ctx;
         const noteId = await knowledgeService.createNote(user.id, input.title, input.content);
 
         revalidatePath('/notes');
-        return { success: true, noteId };
-    } catch (error: unknown) {
-        logger.error({ err: error }, '[NoteAction] 创建笔记失败');
-        return { success: false, message: '创建笔记失败' };
-    }
-}
+        return { success: true, noteId, message: '笔记已创建' };
+    });
 
 /**
  * 更新笔记
  */
-export async function updateNoteAction(input: UpdateNoteInput) {
-    try {
-        const user = await requireUser();
+export const updateNoteAction = authenticatedAction
+    .inputSchema(z.object({
+        id: z.number().int(),
+        title: z.string().optional(),
+        content: z.string().optional()
+    }))
+    .action(async ({ parsedInput: input, ctx }) => {
+        const { user } = ctx;
         await knowledgeService.updateNote(user.id, input.id, { 
             title: input.title, 
             content: input.content 
@@ -52,71 +59,50 @@ export async function updateNoteAction(input: UpdateNoteInput) {
 
         revalidatePath('/notes');
         revalidatePath(`/notes/${input.id}`);
-        return { success: true };
-    } catch (error: unknown) {
-        logger.error({ err: error }, '[NoteAction] 更新笔记失败');
-        const message = error instanceof Error ? error.message : '保存笔记失败';
-        return { success: false, message };
-    }
-}
+        return { success: true, message: '笔记已更新' };
+    });
 
 /**
  * 删除笔记
  */
-export async function deleteNoteAction(id: number) {
-    try {
-        const user = await requireUser();
+export const deleteNoteAction = authenticatedAction
+    .inputSchema(z.number().int())
+    .action(async ({ parsedInput: id, ctx }) => {
+        const { user } = ctx;
         await knowledgeService.deleteNote(user.id, id);
 
         revalidatePath('/notes');
-        return { success: true };
-    } catch (error: unknown) {
-        logger.error({ err: error }, '[NoteAction] 删除笔记失败');
-        return { success: false, message: '删除笔记失败' };
-    }
-}
+        return { success: true, message: '笔记已删除' };
+    });
 
 /**
  * 获取笔记列表
  */
-export async function getNotesAction() {
-    try {
-        const user = await requireUser();
-        const notes = await knowledgeService.getNoteList(user.id);
-        return { success: true, notes };
-    } catch (error: unknown) {
-        logger.error({ err: error }, '[NoteAction] 获取列表失败');
-        return { success: false, message: '获取笔记列表失败' };
-    }
-}
+export const getNotesAction = authenticatedAction
+    .action(async ({ ctx }) => {
+        const { user } = ctx;
+        return await knowledgeService.getNoteList(user.id);
+    });
 
 /**
  * 获取笔记详情
  */
-export async function getNoteDetailAction(id: number) {
-    try {
-        const user = await requireUser();
-        const note = await knowledgeService.getNoteDetail(user.id, id);
-        return { success: true, note };
-    } catch (error: unknown) {
-        logger.error({ err: error }, '[NoteAction] 获取详情失败');
-        const message = error instanceof Error ? error.message : '获取笔记详情失败';
-        return { success: false, message };
-    }
-}
+export const getNoteDetailAction = authenticatedAction
+    .inputSchema(z.number().int())
+    .action(async ({ parsedInput: id, ctx }) => {
+        const { user } = ctx;
+        return await knowledgeService.getNoteDetail(user.id, id);
+    });
 
 /**
  * 搜索笔记
  */
-export async function searchNotesAction(query: string) {
-    try {
-        const user = await requireUser();
-        if (!query.trim()) return getNotesAction();
-
-        const notes = await knowledgeService.searchNotes(user.id, query);
-        return { success: true, notes };
-    } catch (error: unknown) {
-        logger.error({ err: error }, '[NoteAction] 搜索失败');
-        return { success: false, message: '搜索笔记失败' };
-    }
-}
+export const searchNotesAction = authenticatedAction
+    .inputSchema(z.string())
+    .action(async ({ parsedInput: query, ctx }) => {
+        const { user } = ctx;
+        if (!query.trim()) {
+            return await knowledgeService.getNoteList(user.id);
+        }
+        return await knowledgeService.searchNotes(user.id, query);
+    });

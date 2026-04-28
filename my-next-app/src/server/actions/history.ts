@@ -1,99 +1,83 @@
 'use server';
 
-import logger from '@/lib/logger';
-import { requireUser } from '@/lib/auth/auth';
+import { authenticatedAction } from '@/lib/safe-action';
+import { z } from 'zod';
 import { revalidatePath } from 'next/cache';
 import { 
     historyService, 
-    type HistoryFilter, 
     type PaginatedHistory, 
 } from '@/lib/services/history';
+import { HistoryFilterSchema } from '@/lib/validations/history';
 
 /**
  * 获取练习历史记录
  */
-export async function getSessionHistoryAction(filter?: HistoryFilter): Promise<PaginatedHistory> {
-  try {
-    const user = await requireUser();
-    return await historyService.getHistory(user.id, filter);
-  } catch (error) {
-    logger.error({ err: error }, "[HistoryAction] 获取练习历史失败");
-    return { items: [], total: 0, page: 1, pageSize: 10, totalPages: 0 };
-  }
-}
+export const getSessionHistoryAction = authenticatedAction
+  .inputSchema(HistoryFilterSchema.optional())
+  .action(async ({ parsedInput: filter, ctx }) => {
+    const { user } = ctx;
+    return await historyService.getHistory(user.id, filter || {});
+  });
 
 /**
  * 获取可用的练习模式列表
  */
-export async function getAvailableModesAction(): Promise<string[]> {
-  try {
-    const user = await requireUser();
+export const getAvailableModesAction = authenticatedAction
+  .action(async ({ ctx }) => {
+    const { user } = ctx;
     return await historyService.getAvailableModes(user.id);
-  } catch (error) {
-    logger.error({ err: error }, "[HistoryAction] 获取模式列表失败");
-    return [];
-  }
-}
+  });
 
 /**
  * 获取会话详情
  */
-export async function getSessionDetailAction(sessionId: string) {
-  try {
-    const user = await requireUser();
+export const getSessionDetailAction = authenticatedAction
+  .inputSchema(z.string())
+  .action(async ({ parsedInput: sessionId, ctx }) => {
+    const { user } = ctx;
     return await historyService.getSessionDetail(user.id, sessionId);
-  } catch (error) {
-    logger.error({ err: error }, "[HistoryAction] 获取会话详情失败");
-    return null;
-  }
-}
+  });
 
 /**
  * 删除练习会话
  */
-export async function deleteSessionAction(sessionId: string) {
-  try {
-    const user = await requireUser();
+export const deleteSessionAction = authenticatedAction
+  .inputSchema(z.string())
+  .action(async ({ parsedInput: sessionId, ctx }) => {
+    const { user } = ctx;
     const success = await historyService.deleteSession(user.id, sessionId);
-    console.log(`[HistoryAction] deleteSession success:`, success);
 
     if (success) {
       revalidatePath('/history');
     }
-    return { success };
-  } catch (error) {
-    const fs = require('fs');
-    fs.writeFileSync('delete-debug.log', `Error: ${error instanceof Error ? error.stack : String(error)}\n`, { flag: 'a' });
-    console.error(`[HistoryAction] deleteSession error:`, error);
-    logger.error({ err: error }, "[HistoryAction] 删除失败");
-    return { success: false, message: "删除失败，请稍后重试" };
-  }
-}
+    return { success, message: success ? '删除成功' : '删除失败' };
+  });
 
 /**
  * 重命名练习会话
  */
-export async function renameSessionAction(sessionId: string, newName: string) {
-  try {
-    const user = await requireUser();
+export const renameSessionAction = authenticatedAction
+  .inputSchema(z.object({
+    sessionId: z.string(),
+    newName: z.string().min(1)
+  }))
+  .action(async ({ parsedInput: { sessionId, newName }, ctx }) => {
+    const { user } = ctx;
     const success = await historyService.renameSession(user.id, sessionId, newName);
 
     if (success) {
       revalidatePath('/history');
     }
-    return { success };
-  } catch (error) {
-    logger.error({ err: error }, "[HistoryAction] 重命名失败");
-    return { success: false, message: "重命名失败，请稍后重试" };
-  }
-}
+    return { success, message: success ? '重命名成功' : '重命名失败' };
+  });
 
 /**
  * 导出练习会话为 Markdown 格式
  */
-export async function exportSessionMarkdownAction(sessionId: string) {
-  try {
-    const user = await requireUser();
+export const exportSessionMarkdownAction = authenticatedAction
+  .inputSchema(z.string())
+  .action(async ({ parsedInput: sessionId, ctx }) => {
+    const { user } = ctx;
     
     // 1. 获取会话详情
     const detail = await historyService.getSessionDetail(user.id, sessionId);
@@ -112,8 +96,4 @@ export async function exportSessionMarkdownAction(sessionId: string) {
     const filename = generateExportFilename(detail.session.createdAt);
 
     return { success: true, markdown, filename };
-  } catch (error) {
-    logger.error({ err: error }, "[HistoryAction] 导出失败");
-    return { success: false, error: "导出失败，请稍后重试" };
-  }
-}
+  });

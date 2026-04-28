@@ -47,7 +47,7 @@ export default function NotePageClient({ note }: NotePageClientProps) {
             if (newContent !== undefined) {
                 setCurrentContent(newContent);
             }
-            if (!result.success) {
+            if (!result.data?.success) {
                 toast.error('保存失败');
             }
         }, 1000);

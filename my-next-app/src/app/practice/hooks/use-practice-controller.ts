@@ -33,7 +33,8 @@ export function usePracticeController(enableIntelligentReview: boolean = false) 
                 // 优先检查是否有 sessionId 参数（用于错题本等已创建会话的场景）
                 const sessionIdParam = searchParams.get('sessionId');
                 if (sessionIdParam) {
-                    const session = await getSessionByIdAction(sessionIdParam);
+                    const res = await getSessionByIdAction(sessionIdParam);
+                    const session = res?.data;
                     if (session && session.questions.length > 0) {
                         setPracticeMode((session.practiceMode as PracticeMode) || 'review');
                         dispatch({
@@ -84,7 +85,8 @@ export function usePracticeController(enableIntelligentReview: boolean = false) 
                         enableTimer
                     };
 
-                    result = await getPracticeSessionByConfigAction(config);
+                    const res = await getPracticeSessionByConfigAction(config);
+                    result = res?.data;
                     setPracticeMode(mode);
 
                     // 设置计时器
@@ -96,13 +98,19 @@ export function usePracticeController(enableIntelligentReview: boolean = false) 
 
                     // 显示模式提示
                     const modeLabel = PRACTICE_MODE_LABELS[mode] || mode;
-                    toast.success(`${modeLabel}模式已启动，共 ${result.questions.length} 题`, {
+                    toast.success(`${modeLabel}模式已启动，共 ${result?.questions.length || 0} 题`, {
                         duration: 3000,
                         icon: '🎯'
                     });
                 } else {
                     // 传统选题（兼容旧入口）
-                    result = await getPracticeSessionAction(forceNew);
+                    const res = await getPracticeSessionAction(forceNew);
+                    result = res?.data;
+                }
+
+                if (!result) {
+                    toast.error("初始化练习失败，未获取到题目数据");
+                    return;
                 }
 
                 const { questions, sessionId } = result;
@@ -221,9 +229,16 @@ export function usePracticeController(enableIntelligentReview: boolean = false) 
             });
 
             // Async save
-            submitAnswerAction(currentQuestion.id, answer, isCorrect, duration, state.sessionId || undefined, totalDuration).then(res => {
-                if (res && res.success && 'srs' in res && res.srs) {
-                    const srs = (res as any).srs;
+            submitAnswerAction({
+                questionId: currentQuestion.id,
+                userAnswer: answer,
+                isCorrect,
+                duration,
+                sessionId: state.sessionId || undefined,
+                totalDurationMs: totalDuration
+            }).then(res => {
+                if (res && res.data?.success && res.data?.srs) {
+                    const srs = res.data.srs;
                     
                     toast.success(isCorrect ? "回答正确！" : "回答错误", {
                         description: `下次复习: ${srs.nextInterval} 天后 (稳定性: ${srs.stability.toFixed(1)}d)`,

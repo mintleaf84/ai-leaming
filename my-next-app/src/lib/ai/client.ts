@@ -28,7 +28,7 @@ export async function generateStructuredData<T>(
     tier: 'economy' | 'premium' = 'economy',
     options?: { retries?: number; timeout?: number }
 ) {
-    const config = getAiConfig(tier);
+    const config = await getAiConfig(tier);
     const model = getModel(config.apiKey, config.baseURL, config.modelName);
 
     const isReasoningModel = config.modelName.toLowerCase().includes('r1') || config.modelName.toLowerCase().includes('thinking');
@@ -133,7 +133,7 @@ export async function generateTextWrapper(
     overrideUrl?: string,
     options?: { retries?: number; timeout?: number }
 ) {
-    const config = getAiConfig(tier, overrideKey, overrideUrl);
+    const config = await getAiConfig(tier, overrideKey, overrideUrl);
     const model = getModel(config.apiKey, config.baseURL, config.modelName);
 
     const isReasoningModel = config.modelName.toLowerCase().includes('r1') || config.modelName.toLowerCase().includes('thinking');
@@ -187,7 +187,7 @@ export async function streamChatWrapper(
     tools?: ToolSet,
     system?: string
 ) {
-    const config = getAiConfig('premium');
+    const config = await getAiConfig('premium');
     const model = getModel(config.apiKey, config.baseURL, config.modelName);
 
     if (process.env.E2E_TEST === 'true') {

@@ -17,11 +17,11 @@ export const ragService = {
    */
   getEmbedding: async (text: string): Promise<number[]> => {
     if (process.env.E2E_TEST === 'true') {
-      const { embeddingDimensions } = getAiConfig();
+      const { embeddingDimensions } = await getAiConfig();
       return new Array(embeddingDimensions || 1024).fill(0).map((_, i) => Math.sin(i));
     }
 
-    const { apiKey, baseURL, modelName } = getAiConfig('embedding');
+    const { apiKey, baseURL, modelName } = await getAiConfig('embedding');
 
     try {
       const openai = createOpenAI({ apiKey, baseURL });
@@ -32,7 +32,7 @@ export const ragService = {
       return embedding;
     } catch (error: unknown) {
       console.warn('[RAG] Embedding 失败，原因:', getErrorMessage(error));
-      const { embeddingDimensions } = getAiConfig();
+      const { embeddingDimensions } = await getAiConfig();
       return new Array(embeddingDimensions || 1024).fill(0).map((_, i) => {
         let hash = 0;
         for (let charIndex = 0; charIndex < text.length; charIndex++) {
@@ -48,7 +48,7 @@ export const ragService = {
    * 初始化 RAG 表
    */
   initRagTable: async () => {
-    const { embeddingDimensions } = getAiConfig();
+    const { embeddingDimensions } = await getAiConfig();
     const dim = embeddingDimensions || 1024;
 
     // 使用 drizzleDb.run 执行 DDL
@@ -167,7 +167,7 @@ export const ragService = {
   rerank: async (query: string, results: RagResult[]): Promise<RagResult[]> => {
     if (process.env.E2E_TEST === 'true') return results;
 
-    const { apiKey, baseURL, modelName } = getAiConfig('rerank');
+    const { apiKey, baseURL, modelName } = await getAiConfig('rerank');
     if (!modelName || results.length <= 1) return results;
 
     try {

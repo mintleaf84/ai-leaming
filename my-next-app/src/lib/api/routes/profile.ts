@@ -1,6 +1,7 @@
 import { OpenAPIHono, createRoute, z } from '@hono/zod-openapi'
-import { db } from '@/lib/db'
+import { drizzleDb, drizzleSchema } from '@/lib/db'
 import { authMiddleware, getCurrentUser } from '@/lib/api/middlewares/auth'
+import { eq, count, sum, sql, and, notInArray } from 'drizzle-orm'
 
 const app = new OpenAPIHono()
 
@@ -41,57 +42,69 @@ app.openapi(getProfileRoute, async (c) => {
     const userId = Number(user.id)
 
     // 查询用户基础信息
-    const userRow = db.prepare(`
-        SELECT id, username, role, created_at FROM users WHERE id = ?
-    `).get(userId) as { id: number; username: string; role: string; created_at: string } | undefined
+    const userRow = await drizzleDb.query.users.findFirst({
+        where: eq(drizzleSchema.users.id, userId),
+        columns: { id: true, username: true, role: true, created_at: true }
+    });
 
     if (!userRow) {
         return c.json({ error: '用户不存在' }, 404)
     }
 
     // 总会话数
-    const sessionRow = db.prepare(`
-        SELECT COUNT(*) as count FROM practice_sessions WHERE user_id = ?
-    `).get(userId) as { count: number }
+    const sessionCount = await drizzleDb
+        .select({ count: count() })
+        .from(drizzleSchema.practice_sessions)
+        .where(eq(drizzleSchema.practice_sessions.user_id, userId));
 
     // 答题总数 & 正确数
-    const answerRow = db.prepare(`
-        SELECT 
-            COUNT(*) as total,
-            SUM(CASE WHEN is_correct = 1 THEN 1 ELSE 0 END) as correct
-        FROM practice_logs
-        WHERE user_id = ?
-    `).get(userId) as { total: number; correct: number | null }
+    const answerStats = await drizzleDb
+        .select({
+            total: count(),
+            correct: sum(sql`CASE WHEN ${drizzleSchema.practice_logs.is_correct} = 1 THEN 1 ELSE 0 END`)
+        })
+        .from(drizzleSchema.practice_logs)
+        .where(eq(drizzleSchema.practice_logs.user_id, userId));
 
-    const totalAnswered = answerRow.total
-    const totalCorrect = answerRow.correct ?? 0
-    const overallAccuracy = totalAnswered > 0 ? totalCorrect / totalAnswered : 0
+    const totalAnswered = answerStats[0]?.total ?? 0;
+    const totalCorrect = Number(answerStats[0]?.correct ?? 0);
+    const overallAccuracy = totalAnswered > 0 ? totalCorrect / totalAnswered : 0;
 
     // 知识卡片数量
-    const cardRow = db.prepare(`
-        SELECT COUNT(*) as count FROM knowledge_cards WHERE user_id = ?
-    `).get(userId) as { count: number }
+    const cardCount = await drizzleDb
+        .select({ count: count() })
+        .from(drizzleSchema.knowledge_cards)
+        .where(eq(drizzleSchema.knowledge_cards.user_id, userId));
 
     // 未掌握错题数
-    const wrongRow = db.prepare(`
-        SELECT COUNT(DISTINCT question_id) as count
-        FROM practice_logs
-        WHERE user_id = ? AND is_correct = 0
-            AND question_id NOT IN (SELECT question_id FROM mastered_questions WHERE user_id = ?)
-    `).get(userId, userId) as { count: number }
+    const masteredSubquery = drizzleDb
+        .select({ question_id: drizzleSchema.mastered_questions.question_id })
+        .from(drizzleSchema.mastered_questions)
+        .where(eq(drizzleSchema.mastered_questions.user_id, userId));
+
+    const wrongBookCount = await drizzleDb
+        .select({ count: sql`COUNT(DISTINCT ${drizzleSchema.practice_logs.question_id})` })
+        .from(drizzleSchema.practice_logs)
+        .where(
+            and(
+                eq(drizzleSchema.practice_logs.user_id, userId),
+                eq(drizzleSchema.practice_logs.is_correct, false),
+                notInArray(drizzleSchema.practice_logs.question_id, masteredSubquery)
+            )
+        );
 
     return c.json({
         id: userRow.id,
         username: userRow.username,
         role: userRow.role,
-        createdAt: userRow.created_at,
+        createdAt: userRow.created_at || '',
         stats: {
-            totalSessions: sessionRow.count,
+            totalSessions: sessionCount[0]?.count ?? 0,
             totalAnswered,
             totalCorrect,
             overallAccuracy: parseFloat(overallAccuracy.toFixed(4)),
-            knowledgeCardCount: cardRow.count,
-            wrongBookCount: wrongRow.count,
+            knowledgeCardCount: cardCount[0]?.count ?? 0,
+            wrongBookCount: Number(wrongBookCount[0]?.count ?? 0),
         }
     })
 })

@@ -1,7 +1,8 @@
 import { OpenAPIHono, createRoute, z } from '@hono/zod-openapi'
 import { getErrorMessage } from '@/lib/utils/error';
-import { db,  closeDb, reinitDb } from '@/lib/db'
+import { db, drizzleDb, drizzleSchema, closeDb, reinitDb } from '@/lib/db'
 import { requireRole } from '@/lib/auth/auth'
+import { eq, and, sql, desc, like, exists } from 'drizzle-orm'
 import os from 'os'
 import fs from 'fs'
 import path from 'path'
@@ -12,9 +13,11 @@ export const adminRoute = new OpenAPIHono()
 
 // --- Helper Functions ---
 
-function getDemoModeStatus(): boolean {
+async function getDemoModeStatus(): Promise<boolean> {
     try {
-        const row = db.prepare("SELECT value FROM system_settings WHERE key = 'demo_mode_enabled'").get() as { value: string } | undefined;
+        const row = await drizzleDb.query.system_settings.findFirst({
+            where: eq(drizzleSchema.system_settings.key, 'demo_mode_enabled')
+        });
         return row?.value === 'true';
     } catch {
         return false;
@@ -69,7 +72,7 @@ adminRoute.openapi(systemStatusDef, async (c) => {
         db: { size: dbSize, walSize: 0 },
         process: { uptime: process.uptime(), memory: process.memoryUsage(), version: process.version },
         ai: await getApiCallStats(),
-        demoMode: getDemoModeStatus(),
+        demoMode: await getDemoModeStatus(),
         appVersion,
         timestamp: Date.now()
     });
@@ -92,19 +95,29 @@ adminRoute.openapi(systemActionDef, async (c) => {
     const { action } = await c.req.json();
 
     if (action === 'toggle_demo_mode') {
-        const current = getDemoModeStatus();
+        const current = await getDemoModeStatus();
         const newValue = !current;
-        db.prepare(`INSERT OR REPLACE INTO system_settings (key, value, updated_at) VALUES ('demo_mode_enabled', ?, datetime('now'))`).run(String(newValue));
+        await drizzleDb.insert(drizzleSchema.system_settings).values({
+            key: 'demo_mode_enabled',
+            value: String(newValue)
+        }).onConflictDoUpdate({
+            target: [drizzleSchema.system_settings.user_id, drizzleSchema.system_settings.key],
+            set: { value: String(newValue), updated_at: sql`CURRENT_TIMESTAMP` }
+        });
         return c.json({ success: true, demoMode: newValue });
     }
 
     if (action === 'reset_demo_session') {
-        try { db.prepare("ALTER TABLE practice_sessions ADD COLUMN is_demo INTEGER DEFAULT 0").run(); } catch { }
-        const demoSessions = db.prepare('SELECT id FROM practice_sessions WHERE is_demo = 1').all() as { id: string }[];
+        // 批量删除逻辑
+        const demoSessions = await drizzleDb.query.practice_sessions.findMany({
+            where: eq(sql`is_demo`, 1),
+            columns: { id: true }
+        });
+        
         for (const s of demoSessions) {
-            db.prepare('DELETE FROM practice_logs WHERE session_id = ?').run(s.id);
+            await drizzleDb.delete(drizzleSchema.practice_logs).where(eq(drizzleSchema.practice_logs.session_id, s.id));
         }
-        db.prepare('DELETE FROM practice_sessions WHERE is_demo = 1').run();
+        await drizzleDb.delete(drizzleSchema.practice_sessions).where(eq(sql`is_demo`, 1));
         return c.json({ success: true, message: '演示数据集已重置' });
     }
 
@@ -137,7 +150,7 @@ adminRoute.openapi(backupDef, async (c) => {
 
     try {
         if (!fs.existsSync(tempDir)) fs.mkdirSync(tempDir, { recursive: true });
-        db.prepare(`VACUUM INTO ?`).run(tempPath);
+        await drizzleDb.run(sql`VACUUM INTO ${tempPath}`);
         logAdminAction(user.id, user.username, 'BACKUP_DATABASE', 'system', 'database', { filename });
         const fileBuffer = fs.readFileSync(tempPath);
         fs.unlinkSync(tempPath);
@@ -243,18 +256,19 @@ adminRoute.openapi(exportQuestionsDef, async (c) => {
         return c.json({ error: 'Unauthorized' }, 401);
     }
     const { search, tag, dimension } = c.req.valid('query')
-    const conditions: string[] = []
-    const params: unknown[] = []
+    
+    let query = drizzleDb.select().from(drizzleSchema.questions);
+    const conditions = [];
 
-    if (search) { conditions.push('content LIKE ?'); params.push(`%${search}%`); }
-    if (tag) { 
-        conditions.push('EXISTS (SELECT 1 FROM json_each(questions.tags) WHERE value = ?)'); 
-        params.push(tag); 
+    if (search) conditions.push(like(drizzleSchema.questions.content, `%${search}%`));
+    if (tag) conditions.push(sql`EXISTS (SELECT 1 FROM json_each(${drizzleSchema.questions.tags}) WHERE value = ${tag})`);
+    if (dimension) conditions.push(eq(drizzleSchema.questions.dimension, dimension as any));
+
+    if (conditions.length > 0) {
+        query = query.where(and(...conditions)) as any;
     }
-    if (dimension) { conditions.push('dimension = ?'); params.push(dimension); }
 
-    const whereClause = conditions.length > 0 ? `WHERE ${conditions.join(' AND ')}` : ''
-    const questions = db.prepare(`SELECT * FROM questions ${whereClause} ORDER BY id DESC`).all(...params) as any[];
+    const questions = await query.orderBy(desc(drizzleSchema.questions.id)).all();
 
     const headers = ['ID', '类型', '维度', '题干', '选项', '答案', '解析', '标签', '正确率(%)', '创建时间'];
     let csvContent = '\uFEFF' + headers.map(escapeCsv).join(',') + '\n';

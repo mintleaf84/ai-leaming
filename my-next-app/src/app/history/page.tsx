@@ -56,8 +56,8 @@ export default function HistoryPage() {
   // Load Data
   const loadHistory = useCallback(async () => {
     setIsLoading(true);
-    const data = await getSessionHistoryAction(filter);
-    setHistory(data);
+    const res = await getSessionHistoryAction(filter);
+    setHistory(res?.data || { items: [], total: 0, page: 1, pageSize: 10, totalPages: 0 });
     setIsLoading(false);
   }, [filter]);
 
@@ -66,7 +66,7 @@ export default function HistoryPage() {
   }, [loadHistory]);
 
   useEffect(() => {
-    getAvailableModesAction().then(setAvailableModes);
+    getAvailableModesAction().then(res => setAvailableModes(res?.data || []));
   }, []);
 
   // Actions
@@ -76,11 +76,11 @@ export default function HistoryPage() {
     if (!confirm('确定要删除这条练习记录吗？此操作不可撤销（掌握度不受影响）。')) return;
 
     const result = await deleteSessionAction(id);
-    if (result.success) {
+    if (result.data?.success) {
       toast.success('记录已成功删除');
       loadHistory();
     } else {
-      toast.error(result.message || '删除失败');
+      toast.error(result.data?.message || '删除失败');
     }
   };
 
@@ -94,13 +94,13 @@ export default function HistoryPage() {
   const handleSaveName = async (e: React.SyntheticEvent, id: string) => {
     e.preventDefault();
     e.stopPropagation();
-    const result = await renameSessionAction(id, editingName);
-    if (result.success) {
+    const result = await renameSessionAction({ sessionId: id, newName: editingName });
+    if (result.data?.success) {
       toast.success('名称已更新');
       setEditingId(null);
       loadHistory();
     } else {
-      toast.error(result.message || '更新失败');
+      toast.error(result.data?.message || '更新失败');
     }
   };
 

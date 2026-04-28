@@ -40,8 +40,8 @@ export function NoteSidebar({ notes: initialNotes }: NoteSidebarProps) {
 
         setIsSearching(true);
         const result = await searchNotesAction(query);
-        if (result.success && result.notes) {
-            setFilteredNotes(result.notes);
+        if (result.data) {
+            setFilteredNotes(result.data);
         }
         setIsSearching(false);
     }, 300);
@@ -55,12 +55,12 @@ export function NoteSidebar({ notes: initialNotes }: NoteSidebarProps) {
     const handleCreate = async () => {
         setIsCreating(true);
         try {
-            const result = await createNoteAction();
-            if (result.success && result.noteId) {
-                router.push(`/notes/${result.noteId}`);
+            const result = await createNoteAction({});
+            if (result.data?.success && result.data?.noteId) {
+                router.push(`/notes/${result.data.noteId}`);
                 toast.success('新笔记已创建');
             } else {
-                toast.error(result.message || '创建失败');
+                toast.error(result.data?.message || '创建失败');
             }
         } catch (_error) {
             toast.error('请求失败');
@@ -76,14 +76,14 @@ export function NoteSidebar({ notes: initialNotes }: NoteSidebarProps) {
 
         try {
             const result = await deleteNoteAction(id);
-            if (result.success) {
+            if (result.data?.success) {
                 toast.success('删除成功');
                 if (pathname === `/notes/${id}`) {
                     router.push('/notes');
                 }
                 router.refresh();
             } else {
-                toast.error(result.message || '删除失败');
+                toast.error(result.data?.message || '删除失败');
             }
         } catch (_error) {
             toast.error('删除出错');
@@ -165,8 +165,8 @@ export function NoteSidebar({ notes: initialNotes }: NoteSidebarProps) {
                         const loadingToast = toast.loading('正在创建示例文档...');
                         try {
                             const result = await createWelcomeNoteAction();
-                            if (result.success && result.noteId) {
-                                router.push(`/notes/${result.noteId}`);
+                            if (result.data?.success && result.data?.noteId) {
+                                router.push(`/notes/${result.data.noteId}`);
                                 toast.success('示例文档已创建', { id: loadingToast });
                             } else {
                                 toast.error('创建失败', { id: loadingToast });

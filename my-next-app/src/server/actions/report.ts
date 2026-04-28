@@ -1,80 +1,77 @@
 'use server';
 
-import logger from '@/lib/logger';
+import { authenticatedAction } from '@/lib/safe-action';
+import { z } from 'zod';
 import { generateTextWrapper } from '@/lib/ai/client';
-import { requireUser } from '@/lib/auth/auth';
-import { reportService, type SessionReportData, type DeepAnalysisData } from '@/lib/services/report';
-
+import { reportService, type SessionReportData } from '@/lib/services/report';
 
 /**
  * 获取指定会话的报告数据
  */
-export async function getSessionReportAction(sessionId?: string): Promise<SessionReportData | null> {
-    try {
-        const user = await requireUser();
+export const getSessionReportAction = authenticatedAction
+    .inputSchema(z.string().optional())
+    .action(async ({ parsedInput: sessionId, ctx }) => {
+        const { user } = ctx;
         return await reportService.getSessionReportData(user.id, sessionId);
-    } catch (error) {
-        logger.error({ err: error }, '[ReportAction] 获取会话报告失败');
-        return null;
-    }
-}
+    });
 
 /**
  * 生成简易诊断报告 (AI)
  */
-export async function generateDiagnosticReportAction(
-    sessionSummary: {
-        totalQuestions: number;
-        correctCount: number;
-        errorTags: string[];
-        avgDuration: number;
-    }
-): Promise<string> {
-    const prompt = `
-    请为用户生成一份本次练习的“AI 诊断性叙述报告”。
-    
-    练习数据:
-    - 总题数: ${sessionSummary.totalQuestions}
-    - 正确数: ${sessionSummary.correctCount}
-    - 错误考点: ${sessionSummary.errorTags.join(', ')}
-    - 平均耗时: ${sessionSummary.avgDuration}ms
-    
-    请包含以下内容：
-    1. 总体表现点评（严肃、客观）。
-    2. 核心病灶定位（指出最薄弱的环节）。
-    3. 次日复习建议（具体到知识点）。
-    
-    请用Markdown格式输出，字数控制在200字以内。
-  `;
+export const generateDiagnosticReportAction = authenticatedAction
+    .inputSchema(z.object({
+        totalQuestions: z.number(),
+        correctCount: z.number(),
+        errorTags: z.array(z.string()),
+        avgDuration: z.number(),
+    }))
+    .action(async ({ parsedInput: sessionSummary }) => {
+        const prompt = `
+        请为用户生成一份本次练习的“AI 诊断性叙述报告”。
+        
+        练习数据:
+        - 总题数: ${sessionSummary.totalQuestions}
+        - 正确数: ${sessionSummary.correctCount}
+        - 错误考点: ${sessionSummary.errorTags.join(', ')}
+        - 平均耗时: ${sessionSummary.avgDuration}ms
+        
+        请包含以下内容：
+        1. 总体表现点评（严肃、客观）。
+        2. 核心病灶定位（指出最薄弱的环节）。
+        3. 次日复习建议（具体到知识点）。
+        
+        请用Markdown格式输出，字数控制在200字以内。
+      `;
 
-    try {
-        const { text } = await generateTextWrapper(prompt, 'economy');
-        return text;
-    } catch (error: unknown) {
-        logger.error({ err: error }, "[ReportAction] 诊断报告生成失败");
-        throw new Error("AI 诊断服务暂时不可用，请稍后再试。");
-    }
-}
+        try {
+            const { text } = await generateTextWrapper(prompt, 'economy');
+            return text;
+        } catch (error: unknown) {
+            throw new Error("AI 诊断服务暂时不可用，请稍后再试。");
+        }
+    });
 
 /**
  * 获取已保存的深度分析报告
  */
-export async function getAnalysisReportAction(sessionId: string): Promise<{ success: boolean; report?: string }> {
-    try {
-        const user = await requireUser();
+export const getAnalysisReportAction = authenticatedAction
+    .inputSchema(z.string())
+    .action(async ({ parsedInput: sessionId, ctx }) => {
+        const { user } = ctx;
         const report = await reportService.getSavedReport(user.id, sessionId);
         return { success: !!report, report: report || undefined };
-    } catch {
-        return { success: false };
-    }
-}
+    });
 
 /**
  * 生成 AI 深度分析报告
  */
-export async function generateDeepAnalysisAction(sessionId: string, forceRegenerate = false): Promise<{ success: boolean; report?: string; error?: string }> {
-    try {
-        const user = await requireUser();
+export const generateDeepAnalysisAction = authenticatedAction
+    .inputSchema(z.object({
+        sessionId: z.string(),
+        forceRegenerate: z.boolean().default(false)
+    }))
+    .action(async ({ parsedInput: { sessionId, forceRegenerate }, ctx }) => {
+        const { user } = ctx;
 
         // 1. 检查缓存
         if (!forceRegenerate) {
@@ -88,7 +85,7 @@ export async function generateDeepAnalysisAction(sessionId: string, forceRegener
             return { success: false, error: '未找到该练习记录' };
         }
 
-        // 3. 构建 Prompt (逻辑保留自原 Action)
+        // 3. 构建 Prompt
         const tagTableRows = analysisData.tagStats.slice(0, 10).map(t =>
             `| ${t.tag} | ${t.total} | ${t.correct} | ${t.accuracy}% |`
         ).join('\n');
@@ -135,8 +132,4 @@ ${repeatedErrorsList}
         await reportService.saveReport(user.id, sessionId, text);
 
         return { success: true, report: text };
-    } catch (error: unknown) {
-        logger.error({ err: error }, '[ReportAction] 深度分析失败');
-        return { success: false, error: 'AI 分析服务暂时不可用，请稍后再试。' };
-    }
-}
+    });

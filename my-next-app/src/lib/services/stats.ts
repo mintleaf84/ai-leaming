@@ -130,7 +130,7 @@ export const statsService = {
             sql`${practice_logs.timestamp} > datetime('now', '-' || ${days} || ' days')`
         ))
         .groupBy(sql`date(${practice_logs.timestamp})`)
-        .orderBy(sql`date`)
+        .orderBy(sql`date(${practice_logs.timestamp})`)
         .all();
 
         // 填充完整日期序列 (使用北京时间)
@@ -163,15 +163,15 @@ export const statsService = {
         const yesterday = getBeijingYesterdayString();
 
         // 获取最近 30 天内有练习记录的日期 (倒序)
-        const rows = await drizzleDb.select({
-            date: sql<string>`DISTINCT date(${practice_logs.timestamp})`
+        const rows = await drizzleDb.selectDistinct({
+            date: sql<string>`date(${practice_logs.timestamp})`
         })
         .from(practice_logs)
         .where(and(
             eq(practice_logs.user_id, userId),
             sql`${practice_logs.timestamp} > datetime('now', '-30 days')`
         ))
-        .orderBy(desc(sql`date`))
+        .orderBy(desc(sql`date(${practice_logs.timestamp})`))
         .all();
 
         const dates = rows.map(r => r.date);

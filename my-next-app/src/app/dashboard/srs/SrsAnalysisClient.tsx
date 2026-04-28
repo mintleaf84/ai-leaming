@@ -30,7 +30,8 @@ export default function SrsAnalysisClient({ stats }: { stats: SrsGlobalStats }) 
     const handleSync = async () => {
         try {
             setIsSyncing(true);
-            const count = await syncSrsDataAction();
+            const res = await syncSrsDataAction();
+            const count = res?.data || 0;
             toast.success(`同步完成！`, {
                 description: `已为 ${count} 道题目更新了记忆状态与阅读速度参数。`
             });

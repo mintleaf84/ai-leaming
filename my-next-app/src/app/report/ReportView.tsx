@@ -39,13 +39,13 @@ export function ReportView({ initialData: reportData }: ReportViewProps) {
     async function generateAI() {
       setIsGeneratingAI(true);
       try {
-        const text = await generateDiagnosticReportAction({
+        const res = await generateDiagnosticReportAction({
           totalQuestions: reportData.totalQuestions,
           correctCount: reportData.correctCount,
           errorTags: reportData.errorTags,
           avgDuration: reportData.avgDuration
         });
-        setAiReport(text);
+        setAiReport(res?.data || 'AI 诊断报告生成失败。');
       } catch (e) {
         console.error('AI 报告生成失败:', e);
         setAiReport('AI 诊断报告生成失败，请稍后重试。');
@@ -57,12 +57,8 @@ export function ReportView({ initialData: reportData }: ReportViewProps) {
     // 并行加载 AI 报告和历史趋势数据
     async function loadTrend() {
       try {
-        const result = await getPracticeTrendAction(14);
-        if (result.data) {
-          // 只展示有练习数据的天
-          const filtered = result.data.filter((d: { practiced: number }) => d.practiced > 0);
-          setTrendData(filtered);
-        }
+        const res = await getPracticeTrendAction(14);
+        setTrendData(res?.data || []);
       } catch { /* 趋势数据加载失败不影响主体报告 */ }
     }
 

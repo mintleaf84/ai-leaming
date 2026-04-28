@@ -43,6 +43,13 @@
       "when": 1777139383366,
       "tag": "0005_quick_ser_duncan",
       "breakpoints": true
+    },
+    {
+      "idx": 6,
+      "version": "6",
+      "when": 1777369920997,
+      "tag": "0006_normal_celestials",
+      "breakpoints": true
     }
   ]
 }

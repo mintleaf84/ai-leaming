@@ -44,13 +44,12 @@ export class BackupService {
      * 获取备份配置
      */
     static async getConfig(): Promise<BackupConfig> {
-        const db = getLegacyDb();
-        const url = getSetting(db, SETTING_KEYS.URL) || '';
-        const user = getSetting(db, SETTING_KEYS.USER) || '';
-        const encryptedPass = getSetting(db, SETTING_KEYS.PASS) || '';
-        const remotePath = getSetting(db, SETTING_KEYS.PATH) || '/backups';
-        const enabled = getSetting(db, SETTING_KEYS.ENABLED) === 'true';
-        const retentionDays = parseInt(getSetting(db, SETTING_KEYS.RETENTION) || '365', 10);
+        const url = await getSetting(SETTING_KEYS.URL) || '';
+        const user = await getSetting(SETTING_KEYS.USER) || '';
+        const encryptedPass = await getSetting(SETTING_KEYS.PASS) || '';
+        const remotePath = await getSetting(SETTING_KEYS.PATH) || '/backups';
+        const enabled = await getSetting(SETTING_KEYS.ENABLED) === 'true';
+        const retentionDays = parseInt(await getSetting(SETTING_KEYS.RETENTION) || '365', 10);
 
         let pass = '';
         if (encryptedPass) {
@@ -68,16 +67,15 @@ export class BackupService {
      * 保存备份配置
      */
     static async saveConfig(config: Partial<BackupConfig>) {
-        const db = getLegacyDb();
-        if (config.url !== undefined) setSetting(db, SETTING_KEYS.URL, config.url);
-        if (config.user !== undefined) setSetting(db, SETTING_KEYS.USER, config.user);
+        if (config.url !== undefined) await setSetting(SETTING_KEYS.URL, config.url);
+        if (config.user !== undefined) await setSetting(SETTING_KEYS.USER, config.user);
         if (config.pass !== undefined) {
             const encrypted = encrypt(config.pass, SECRET);
-            setSetting(db, SETTING_KEYS.PASS, encrypted);
+            await setSetting(SETTING_KEYS.PASS, encrypted);
         }
-        if (config.remotePath !== undefined) setSetting(db, SETTING_KEYS.PATH, config.remotePath);
-        if (config.enabled !== undefined) setSetting(db, SETTING_KEYS.ENABLED, config.enabled ? 'true' : 'false');
-        if (config.retentionDays !== undefined) setSetting(db, SETTING_KEYS.RETENTION, config.retentionDays.toString());
+        if (config.remotePath !== undefined) await setSetting(SETTING_KEYS.PATH, config.remotePath);
+        if (config.enabled !== undefined) await setSetting(SETTING_KEYS.ENABLED, config.enabled ? 'true' : 'false');
+        if (config.retentionDays !== undefined) await setSetting(SETTING_KEYS.RETENTION, config.retentionDays.toString());
     }
 
     /**

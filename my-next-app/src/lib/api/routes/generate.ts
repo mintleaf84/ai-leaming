@@ -45,7 +45,7 @@ app.openapi(generateRoute, async (c) => {
     if (!quota.allowed) return c.text('配额不足，请升级套餐', 403)
 
     const { prompt, option, command } = c.req.valid('json')
-    const config = getAiConfig('premium')
+    const config = await getAiConfig('premium')
 
     const systemPrompt = buildSystemPrompt(option, command)
 

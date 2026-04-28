@@ -1,8 +1,5 @@
-/**
- * AI 配置与路由管理 (带缓存)
- */
-
-import { db } from '@/lib/db';
+import { drizzleDb, drizzleSchema } from '@/lib/db';
+import { eq, and } from 'drizzle-orm';
 import { AiModelRouteRow, AiConfigRow, AiConfigResult } from './types';
 
 // 简单的进程内缓存
@@ -14,29 +11,12 @@ const configCache = new Map<string, CacheEntry<AiConfigResult>>();
 const CACHE_TTL = 60 * 1000; // 1 分钟过期
 
 /**
- * 确保数据库表存在 (容错处理)
- */
-function ensureSettingsTable() {
-    try {
-        db.exec(`
-      CREATE TABLE IF NOT EXISTS system_settings (
-        key TEXT PRIMARY KEY,
-        value TEXT,
-        updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
-      );
-    `);
-    } catch (_e) { }
-}
-
-/**
  * 动态获取配置 (支持多服务商路由)
  */
-export function getAiConfig(feature?: string, overrideKey?: string, overrideUrl?: string): AiConfigResult {
-    ensureSettingsTable();
-
+export async function getAiConfig(feature?: string, overrideKey?: string, overrideUrl?: string): Promise<AiConfigResult> {
     // 如果有 override，不使用缓存
     if (overrideKey && overrideUrl) {
-        return fetchConfigFromDb(feature, overrideKey, overrideUrl);
+        return await fetchConfigFromDb(feature, overrideKey, overrideUrl);
     }
 
     const cacheKey = feature || 'global_active';
@@ -46,7 +26,7 @@ export function getAiConfig(feature?: string, overrideKey?: string, overrideUrl?
         return cached.data;
     }
 
-    const result = fetchConfigFromDb(feature);
+    const result = await fetchConfigFromDb(feature);
     
     // 写入缓存
     configCache.set(cacheKey, {
@@ -60,7 +40,7 @@ export function getAiConfig(feature?: string, overrideKey?: string, overrideUrl?
 /**
  * 从数据库实际读取配置
  */
-function fetchConfigFromDb(feature?: string, overrideKey?: string, overrideUrl?: string): AiConfigResult {
+async function fetchConfigFromDb(feature?: string, overrideKey?: string, overrideUrl?: string): Promise<AiConfigResult> {
     const envKey = process.env.AI_API_KEY || '';
     const envUrl = process.env.AI_API_URL || 'https://api.openai.com/v1';
 
@@ -83,31 +63,45 @@ function fetchConfigFromDb(feature?: string, overrideKey?: string, overrideUrl?:
     try {
         // 1. 尝试从路由表获取
         if (feature) {
-            const route = db.prepare(`
-        SELECT r.model_name, c.api_key, c.api_url, c.model_economy, c.model_premium, c.model_embedding, c.model_rerank, c.model_knowledge, c.embedding_dimensions
-        FROM ai_model_routes r
-        JOIN ai_configs c ON r.config_id = c.id
-        WHERE r.feature = ?
-      `).get(feature) as AiModelRouteRow | undefined;
+            const route = await drizzleDb
+                .select({
+                    model_name: drizzleSchema.ai_model_routes.model_name,
+                    api_key: drizzleSchema.ai_configs.api_key,
+                    api_url: drizzleSchema.ai_configs.api_url,
+                    model_economy: drizzleSchema.ai_configs.model_economy,
+                    model_premium: drizzleSchema.ai_configs.model_premium,
+                    model_embedding: drizzleSchema.ai_configs.model_embedding,
+                    model_rerank: drizzleSchema.ai_configs.model_rerank,
+                    model_knowledge: drizzleSchema.ai_configs.model_knowledge,
+                    embedding_dimensions: drizzleSchema.ai_configs.embedding_dimensions
+                })
+                .from(drizzleSchema.ai_model_routes)
+                .innerJoin(drizzleSchema.ai_configs, eq(drizzleSchema.ai_model_routes.config_id, drizzleSchema.ai_configs.id))
+                .where(eq(drizzleSchema.ai_model_routes.feature, feature))
+                .limit(1)
+                .all();
 
-            if (route) {
+            if (route.length > 0) {
+                const r = route[0];
                 return {
                     ...defaultResult,
-                    apiKey: route.api_key || defaultResult.apiKey,
-                    baseURL: route.api_url || defaultResult.baseURL,
-                    modelName: route.model_name || defaultResult.modelName,
-                    modelEconomy: route.model_economy,
-                    modelPremium: route.model_premium,
-                    modelEmbedding: route.model_embedding,
-                    modelRerank: route.model_rerank,
-                    modelKnowledge: route.model_knowledge,
-                    embeddingDimensions: route.embedding_dimensions || 1024
+                    apiKey: r.api_key || defaultResult.apiKey,
+                    baseURL: r.api_url || defaultResult.baseURL,
+                    modelName: r.model_name || defaultResult.modelName,
+                    modelEconomy: r.model_economy || 'gpt-4o-mini',
+                    modelPremium: r.model_premium || 'gpt-4o',
+                    modelEmbedding: r.model_embedding || 'text-embedding-3-small',
+                    modelRerank: r.model_rerank || '',
+                    modelKnowledge: r.model_knowledge || '',
+                    embeddingDimensions: r.embedding_dimensions || 1024
                 };
             }
         }
 
         // 2. 兜底获取激活的全局配置
-        const activeConfig = db.prepare("SELECT * FROM ai_configs WHERE is_active = 1").get() as AiConfigRow | undefined;
+        const activeConfig = await drizzleDb.query.ai_configs.findFirst({
+            where: eq(drizzleSchema.ai_configs.is_active, true)
+        });
 
         if (activeConfig) {
             const result: AiConfigResult = {
@@ -115,19 +109,19 @@ function fetchConfigFromDb(feature?: string, overrideKey?: string, overrideUrl?:
                 apiKey: activeConfig.api_key || defaultResult.apiKey,
                 baseURL: activeConfig.api_url || defaultResult.baseURL,
                 modelName: activeConfig.model_premium || 'gpt-4o',
-                modelEconomy: activeConfig.model_economy,
-                modelPremium: activeConfig.model_premium,
-                modelEmbedding: activeConfig.model_embedding,
-                modelRerank: activeConfig.model_rerank,
-                modelKnowledge: activeConfig.model_knowledge,
+                modelEconomy: activeConfig.model_economy || 'gpt-4o-mini',
+                modelPremium: activeConfig.model_premium || 'gpt-4o',
+                modelEmbedding: activeConfig.model_embedding || 'text-embedding-3-small',
+                modelRerank: activeConfig.model_rerank || '',
+                modelKnowledge: activeConfig.model_knowledge || '',
                 embeddingDimensions: activeConfig.embedding_dimensions || 1024
             };
 
-            if (feature === 'economy') result.modelName = activeConfig.model_economy ?? result.modelName;
-            if (feature === 'premium') result.modelName = activeConfig.model_premium ?? result.modelName;
-            if (feature === 'embedding') result.modelName = activeConfig.model_embedding ?? result.modelName;
-            if (feature === 'rerank') result.modelName = activeConfig.model_rerank ?? result.modelName;
-            if (feature === 'knowledge') result.modelName = activeConfig.model_knowledge ?? result.modelName;
+            if (feature === 'economy') result.modelName = activeConfig.model_economy || result.modelName;
+            if (feature === 'premium') result.modelName = activeConfig.model_premium || result.modelName;
+            if (feature === 'embedding') result.modelName = activeConfig.model_embedding || result.modelName;
+            if (feature === 'rerank') result.modelName = activeConfig.model_rerank || result.modelName;
+            if (feature === 'knowledge') result.modelName = activeConfig.model_knowledge || result.modelName;
 
             return result;
         }

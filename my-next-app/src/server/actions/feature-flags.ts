@@ -1,7 +1,8 @@
 'use server';
 import logger from '@/lib/logger';
 
-import { db } from '@/lib/db';
+import { drizzleDb, drizzleSchema } from '@/lib/db';
+import { eq, and, sql } from 'drizzle-orm';
 import { revalidatePath } from 'next/cache';
 
 const GLOBAL_USER_ID = 0; // 用 0 代表全局系统配置
@@ -13,11 +14,22 @@ const GLOBAL_USER_ID = 0; // 用 0 代表全局系统配置
  */
 export async function getGlobalFeatureFlag(key: string, defaultValue: boolean = false): Promise<boolean> {
   try {
-    const row = db.prepare('SELECT value FROM system_settings WHERE user_id = ? AND key = ?').get(GLOBAL_USER_ID, key) as { value: string } | undefined;
-    if (!row) {
+    const row = await drizzleDb
+      .select({ value: drizzleSchema.system_settings.value })
+      .from(drizzleSchema.system_settings)
+      .where(
+        and(
+          eq(drizzleSchema.system_settings.user_id, GLOBAL_USER_ID),
+          eq(drizzleSchema.system_settings.key, key)
+        )
+      )
+      .limit(1)
+      .all();
+
+    if (row.length === 0) {
       return defaultValue;
     }
-    return row.value === 'true';
+    return row[0].value === 'true';
   } catch (error) {
     logger.error({ err: error }, `Failed to fetch feature flag [${key}]`);
     return defaultValue;
@@ -31,16 +43,21 @@ export async function getGlobalFeatureFlag(key: string, defaultValue: boolean = 
 export async function toggleGlobalFeatureFlag(key: string, value: boolean) {
   try {
     // 确保存在一个 id=0 的系统级虚拟用户，以满足 system_settings 表的外键约束
-    db.prepare(`
-      INSERT OR IGNORE INTO users (id, username, password_hash, role) 
-      VALUES (0, 'system_global_user', 'none', 'admin')
-    `).run();
+    await drizzleDb.insert(drizzleSchema.users).values({
+      id: GLOBAL_USER_ID,
+      username: 'system_global_user',
+      password_hash: 'none',
+      role: 'admin'
+    }).onConflictDoNothing();
 
-    db.prepare(`
-      INSERT INTO system_settings (user_id, key, value) 
-      VALUES (?, ?, ?) 
-      ON CONFLICT(user_id, key) DO UPDATE SET value = excluded.value, updated_at = CURRENT_TIMESTAMP
-    `).run(GLOBAL_USER_ID, key, String(value));
+    await drizzleDb.insert(drizzleSchema.system_settings).values({
+      user_id: GLOBAL_USER_ID,
+      key,
+      value: String(value)
+    }).onConflictDoUpdate({
+      target: [drizzleSchema.system_settings.user_id, drizzleSchema.system_settings.key],
+      set: { value: String(value), updated_at: sql`CURRENT_TIMESTAMP` }
+    });
     
     // 清除应用路由缓存级别，让依赖开关的页面能够无缝响应热更新
     revalidatePath('/', 'layout');

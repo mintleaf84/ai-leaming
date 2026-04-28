@@ -1,41 +1,9 @@
 import { OpenAPIHono, createRoute, z } from '@hono/zod-openapi'
-import { db } from '@/lib/db'
+import { drizzleDb, drizzleSchema } from '@/lib/db'
 import { authMiddleware, getCurrentUser } from '@/lib/api/middlewares/auth'
+import { eq, and, sql, desc, count, notInArray, inArray } from 'drizzle-orm'
 
 const app = new OpenAPIHono()
-
-// ==================== DB 行类型定义 ====================
-
-type WrongBookRow = {
-    questionId: string | number;
-    questionContent: string;
-    tags: string;
-    wrongCount: number;
-    lastWrongAt: string;
-    correctAnswer: string;
-    userLastAnswer: string | null;
-};
-
-type QuestionDetailRow = {
-    id: string | number;
-    content: string;
-    options: string;
-    answer: string;
-    explanation: string | null;
-    tags: string;
-    type: string | null;
-};
-
-type WrongStatsRow = {
-    wrongCount: number;
-    lastWrongAt: string | null;
-};
-
-type HistoryLogRow = {
-    timestamp: string;
-    userAnswer: string;
-    isCorrect: number;
-};
 
 // ==================== Schema 定义 ====================
 
@@ -88,24 +56,36 @@ const getListRoute = createRoute({
 
 app.openapi(getListRoute, async (c) => {
     const user = getCurrentUser(c)
-    const rows = db.prepare(`
-        SELECT 
-            l.question_id as questionId,
-            q.content as questionContent,
-            q.tags,
-            q.answer as correctAnswer,
-            COUNT(*) as wrongCount,
-            MAX(l.timestamp) as lastWrongAt,
-            (SELECT user_answer FROM practice_logs 
-             WHERE question_id = l.question_id AND user_id = ? AND is_correct = 0 
-             ORDER BY timestamp DESC LIMIT 1) as userLastAnswer
-        FROM practice_logs l
-        JOIN questions q ON l.question_id = q.id
-        WHERE l.user_id = ? AND l.is_correct = 0
-            AND l.question_id NOT IN (SELECT question_id FROM mastered_questions WHERE user_id = ?)
-        GROUP BY l.question_id
-        ORDER BY wrongCount DESC, lastWrongAt DESC
-    `).all(user.id, user.id, user.id) as WrongBookRow[]
+    const userId = Number(user.id)
+
+    const masteredSubquery = drizzleDb
+        .select({ id: drizzleSchema.mastered_questions.question_id })
+        .from(drizzleSchema.mastered_questions)
+        .where(eq(drizzleSchema.mastered_questions.user_id, userId));
+
+    const rows = await drizzleDb
+        .select({
+            questionId: drizzleSchema.practice_logs.question_id,
+            questionContent: drizzleSchema.questions.content,
+            tags: drizzleSchema.questions.tags,
+            correctAnswer: drizzleSchema.questions.answer,
+            wrongCount: count(),
+            lastWrongAt: sql<string>`MAX(${drizzleSchema.practice_logs.timestamp})`,
+            userLastAnswer: sql<string>`(SELECT user_answer FROM practice_logs 
+                             WHERE question_id = ${drizzleSchema.practice_logs.question_id} 
+                             AND user_id = ${userId} AND is_correct = 0 
+                             ORDER BY timestamp DESC LIMIT 1)`
+        })
+        .from(drizzleSchema.practice_logs)
+        .innerJoin(drizzleSchema.questions, eq(drizzleSchema.practice_logs.question_id, drizzleSchema.questions.id))
+        .where(and(
+            eq(drizzleSchema.practice_logs.user_id, userId),
+            eq(drizzleSchema.practice_logs.is_correct, false),
+            notInArray(drizzleSchema.practice_logs.question_id, masteredSubquery)
+        ))
+        .groupBy(drizzleSchema.practice_logs.question_id)
+        .orderBy(desc(sql`wrongCount`), desc(sql`lastWrongAt`))
+        .all();
 
     const result = rows.map(r => ({
         questionId: String(r.questionId),
@@ -136,25 +116,36 @@ const getByTagRoute = createRoute({
 
 app.openapi(getByTagRoute, async (c) => {
     const user = getCurrentUser(c)
-    // 复用上面的查询逻辑
-    const rows = db.prepare(`
-        SELECT 
-            l.question_id as questionId,
-            q.content as questionContent,
-            q.tags,
-            q.answer as correctAnswer,
-            COUNT(*) as wrongCount,
-            MAX(l.timestamp) as lastWrongAt,
-            (SELECT user_answer FROM practice_logs 
-             WHERE question_id = l.question_id AND user_id = ? AND is_correct = 0 
-             ORDER BY timestamp DESC LIMIT 1) as userLastAnswer
-        FROM practice_logs l
-        JOIN questions q ON l.question_id = q.id
-        WHERE l.user_id = ? AND l.is_correct = 0
-            AND l.question_id NOT IN (SELECT question_id FROM mastered_questions WHERE user_id = ?)
-        GROUP BY l.question_id
-        ORDER BY wrongCount DESC, lastWrongAt DESC
-    `).all(user.id, user.id, user.id) as WrongBookRow[]
+    const userId = Number(user.id)
+
+    const masteredSubquery = drizzleDb
+        .select({ id: drizzleSchema.mastered_questions.question_id })
+        .from(drizzleSchema.mastered_questions)
+        .where(eq(drizzleSchema.mastered_questions.user_id, userId));
+
+    const rows = await drizzleDb
+        .select({
+            questionId: drizzleSchema.practice_logs.question_id,
+            questionContent: drizzleSchema.questions.content,
+            tags: drizzleSchema.questions.tags,
+            correctAnswer: drizzleSchema.questions.answer,
+            wrongCount: count(),
+            lastWrongAt: sql<string>`MAX(${drizzleSchema.practice_logs.timestamp})`,
+            userLastAnswer: sql<string>`(SELECT user_answer FROM practice_logs 
+                             WHERE question_id = ${drizzleSchema.practice_logs.question_id} 
+                             AND user_id = ${userId} AND is_correct = 0 
+                             ORDER BY timestamp DESC LIMIT 1)`
+        })
+        .from(drizzleSchema.practice_logs)
+        .innerJoin(drizzleSchema.questions, eq(drizzleSchema.practice_logs.question_id, drizzleSchema.questions.id))
+        .where(and(
+            eq(drizzleSchema.practice_logs.user_id, userId),
+            eq(drizzleSchema.practice_logs.is_correct, false),
+            notInArray(drizzleSchema.practice_logs.question_id, masteredSubquery)
+        ))
+        .groupBy(drizzleSchema.practice_logs.question_id)
+        .orderBy(desc(sql`wrongCount`), desc(sql`lastWrongAt`))
+        .all();
 
     const questions = rows.map(r => ({
         questionId: String(r.questionId),
@@ -198,39 +189,38 @@ const getStatsRoute = createRoute({
 
 app.openapi(getStatsRoute, async (c) => {
     const user = getCurrentUser(c)
+    const userId = Number(user.id)
 
-    const totalRow = db.prepare(`
-        SELECT COUNT(DISTINCT question_id) as count
-        FROM practice_logs
-        WHERE user_id = ? AND is_correct = 0
-    `).get(user.id) as { count: number }
+    const totalStats = await drizzleDb
+        .select({ count: sql<number>`COUNT(DISTINCT ${drizzleSchema.practice_logs.question_id})` })
+        .from(drizzleSchema.practice_logs)
+        .where(and(eq(drizzleSchema.practice_logs.user_id, userId), eq(drizzleSchema.practice_logs.is_correct, false)));
 
-    const recentRow = db.prepare(`
-        SELECT COUNT(DISTINCT question_id) as count
-        FROM practice_logs
-        WHERE user_id = ? AND is_correct = 0 
-        AND date(timestamp) >= date('now', '-7 days')
-    `).get(user.id) as { count: number }
+    const recentStats = await drizzleDb
+        .select({ count: sql<number>`COUNT(DISTINCT ${drizzleSchema.practice_logs.question_id})` })
+        .from(drizzleSchema.practice_logs)
+        .where(and(
+            eq(drizzleSchema.practice_logs.user_id, userId),
+            eq(drizzleSchema.practice_logs.is_correct, false),
+            sql`date(${drizzleSchema.practice_logs.timestamp}) >= date('now', '-7 days')`
+        ));
 
-    const frequentRow = db.prepare(`
-        SELECT COUNT(*) as count FROM (
-            SELECT question_id, COUNT(*) as cnt
-            FROM practice_logs
-            WHERE user_id = ? AND is_correct = 0
-            GROUP BY question_id
-            HAVING cnt >= 2
-        )
-    `).get(user.id) as { count: number }
+    const frequentRows = await drizzleDb
+        .select({ cnt: count() })
+        .from(drizzleSchema.practice_logs)
+        .where(and(eq(drizzleSchema.practice_logs.user_id, userId), eq(drizzleSchema.practice_logs.is_correct, false)))
+        .groupBy(drizzleSchema.practice_logs.question_id)
+        .having(sql`count(*) >= 2`)
+        .all();
 
     return c.json({
-        total: totalRow.count,
-        recent: recentRow.count,
-        frequent: frequentRow.count,
+        total: Number(totalStats[0]?.count ?? 0),
+        recent: Number(recentStats[0]?.count ?? 0),
+        frequent: frequentRows.length,
     }, 200)
 })
 
 // ==================== GET /random — 随机抽题 (智能权重) ====================
-// 注意：必须在 /:id 路由之前注册，否则 /random 会被 /:id 误捕获
 
 const getRandomRoute = createRoute({
     method: 'get',
@@ -253,46 +243,48 @@ const getRandomRoute = createRoute({
 
 app.openapi(getRandomRoute, async (c) => {
     const user = getCurrentUser(c)
-    const { count, tag, mode } = c.req.valid('query')
-    const limitNum = Math.min(parseInt(count), 50)
+    const userId = Number(user.id)
+    const { count: limitStr, tag, mode } = c.req.valid('query')
+    const limitNum = Math.min(parseInt(limitStr), 50)
 
-    // 核心加权随机 SQL
-    // 权重计算公示: (错误次数 * 5 + 遗忘天数 * 2) * 随机系数 (0-1)
-    const priorityOrder = `
-        (
+    const priorityOrder = sql`(
             COUNT(*) * 5.0 + 
-            (JULIANDAY('now') - JULIANDAY(MAX(l.timestamp))) * 2.0
-        ) * (ABS(RANDOM() % 1000) / 1000.0) DESC
-    `
-    const randomOrder = `RANDOM()`
+            (JULIANDAY('now') - JULIANDAY(MAX(${drizzleSchema.practice_logs.timestamp}))) * 2.0
+        ) * (ABS(RANDOM() % 1000) / 1000.0) DESC`
+    
+    const randomOrder = sql`RANDOM()`
 
-    const tagFilter = tag ? `AND EXISTS (SELECT 1 FROM json_each(q.tags) WHERE value = ?)` : ''
-    const params: (string | number)[] = [user.id, user.id, user.id, user.id]
-    if (tag) params.push(tag)
-    params.push(limitNum)
+    const masteredSubquery = drizzleDb
+        .select({ id: drizzleSchema.mastered_questions.question_id })
+        .from(drizzleSchema.mastered_questions)
+        .where(eq(drizzleSchema.mastered_questions.user_id, userId));
 
-    const sql = `
-        SELECT 
-            l.question_id as questionId,
-            q.content as questionContent,
-            q.tags,
-            q.answer as correctAnswer,
-            COUNT(*) as wrongCount,
-            MAX(l.timestamp) as lastWrongAt,
-            (SELECT user_answer FROM practice_logs 
-             WHERE question_id = l.question_id AND user_id = l.user_id AND is_correct = 0 
-             ORDER BY timestamp DESC LIMIT 1) as userLastAnswer
-        FROM practice_logs l
-        JOIN questions q ON l.question_id = q.id
-        WHERE l.user_id = ? AND l.is_correct = 0
-            AND l.question_id NOT IN (SELECT question_id FROM mastered_questions WHERE user_id = ?)
-            ${tagFilter}
-        GROUP BY l.question_id
-        ORDER BY ${mode === 'priority' ? priorityOrder : randomOrder}
-        LIMIT ?
-    `
+    let query = drizzleDb
+        .select({
+            questionId: drizzleSchema.practice_logs.question_id,
+            questionContent: drizzleSchema.questions.content,
+            tags: drizzleSchema.questions.tags,
+            correctAnswer: drizzleSchema.questions.answer,
+            wrongCount: count(),
+            lastWrongAt: sql<string>`MAX(${drizzleSchema.practice_logs.timestamp})`,
+            userLastAnswer: sql<string>`(SELECT user_answer FROM practice_logs 
+                             WHERE question_id = ${drizzleSchema.practice_logs.question_id} 
+                             AND user_id = ${userId} AND is_correct = 0 
+                             ORDER BY timestamp DESC LIMIT 1)`
+        })
+        .from(drizzleSchema.practice_logs)
+        .innerJoin(drizzleSchema.questions, eq(drizzleSchema.practice_logs.question_id, drizzleSchema.questions.id))
+        .where(and(
+            eq(drizzleSchema.practice_logs.user_id, userId),
+            eq(drizzleSchema.practice_logs.is_correct, false),
+            notInArray(drizzleSchema.practice_logs.question_id, masteredSubquery),
+            tag ? sql`EXISTS (SELECT 1 FROM json_each(${drizzleSchema.questions.tags}) WHERE value = ${tag})` : sql`1=1`
+        ))
+        .groupBy(drizzleSchema.practice_logs.question_id)
+        .orderBy(mode === 'priority' ? priorityOrder : randomOrder)
+        .limit(limitNum);
 
-    const rows = db.prepare(sql).all(...params) as WrongBookRow[]
+    const rows = await query.all();
 
     const result = rows.map(r => ({
         questionId: String(r.questionId),
@@ -327,33 +319,54 @@ const getDetailRoute = createRoute({
 
 app.openapi(getDetailRoute, async (c) => {
     const user = getCurrentUser(c)
+    const userId = Number(user.id)
     const { id } = c.req.valid('param')
+    const qId = Number(id)
 
-    const question = db.prepare(`
-        SELECT id, content, options, answer, explanation, tags, type
-        FROM questions WHERE id = ?
-    `).get(id) as QuestionDetailRow | undefined
+    const question = await drizzleDb.query.questions.findFirst({
+        where: eq(drizzleSchema.questions.id, qId)
+    });
 
     if (!question) return c.json({ error: '未找到题目' }, 404)
 
-    const wrongStats = db.prepare(`
-        SELECT COUNT(*) as wrongCount, MAX(timestamp) as lastWrongAt
-        FROM practice_logs 
-        WHERE question_id = ? AND user_id = ? AND is_correct = 0
-    `).get(id, user.id) as WrongStatsRow | undefined
+    const stats = await drizzleDb
+        .select({
+            wrongCount: count(),
+            lastWrongAt: sql<string>`MAX(${drizzleSchema.practice_logs.timestamp})`
+        })
+        .from(drizzleSchema.practice_logs)
+        .where(and(
+            eq(drizzleSchema.practice_logs.question_id, qId),
+            eq(drizzleSchema.practice_logs.user_id, userId),
+            eq(drizzleSchema.practice_logs.is_correct, false)
+        ));
 
-    const historyLogs = db.prepare(`
-        SELECT timestamp, user_answer as userAnswer, is_correct as isCorrect
-        FROM practice_logs 
-        WHERE question_id = ? AND user_id = ?
-        ORDER BY timestamp DESC LIMIT 20
-    `).all(id, user.id) as HistoryLogRow[]
+    const historyLogs = await drizzleDb
+        .select({
+            timestamp: drizzleSchema.practice_logs.timestamp,
+            userAnswer: drizzleSchema.practice_logs.user_answer,
+            isCorrect: drizzleSchema.practice_logs.is_correct
+        })
+        .from(drizzleSchema.practice_logs)
+        .where(and(
+            eq(drizzleSchema.practice_logs.question_id, qId),
+            eq(drizzleSchema.practice_logs.user_id, userId)
+        ))
+        .orderBy(desc(drizzleSchema.practice_logs.timestamp))
+        .limit(20)
+        .all();
 
-    const lastWrongAnswer = db.prepare(`
-        SELECT user_answer FROM practice_logs 
-        WHERE question_id = ? AND user_id = ? AND is_correct = 0 
-        ORDER BY timestamp DESC LIMIT 1
-    `).get(id, user.id) as { user_answer: string } | undefined
+    const lastWrongRow = await drizzleDb
+        .select({ user_answer: drizzleSchema.practice_logs.user_answer })
+        .from(drizzleSchema.practice_logs)
+        .where(and(
+            eq(drizzleSchema.practice_logs.question_id, qId),
+            eq(drizzleSchema.practice_logs.user_id, userId),
+            eq(drizzleSchema.practice_logs.is_correct, false)
+        ))
+        .orderBy(desc(drizzleSchema.practice_logs.timestamp))
+        .limit(1)
+        .all();
 
     return c.json({
         questionId: String(question.id),
@@ -363,12 +376,12 @@ app.openapi(getDetailRoute, async (c) => {
         explanation: question.explanation || '',
         tags: JSON.parse(question.tags || '[]') as string[],
         questionType: question.type || 'single',
-        wrongCount: Number(wrongStats?.wrongCount ?? 0),
-        lastWrongAt: wrongStats?.lastWrongAt || '',
-        userLastAnswer: lastWrongAnswer?.user_answer || '',
+        wrongCount: Number(stats[0]?.wrongCount ?? 0),
+        lastWrongAt: stats[0]?.lastWrongAt || '',
+        userLastAnswer: lastWrongRow[0]?.user_answer || '',
         historyLogs: historyLogs.map(log => ({
-            timestamp: log.timestamp,
-            userAnswer: log.userAnswer,
+            timestamp: log.timestamp || '',
+            userAnswer: log.userAnswer || '',
             isCorrect: Boolean(log.isCorrect),
         })),
     }, 200)
@@ -411,10 +424,13 @@ app.openapi(createPracticeRoute, async (c) => {
 
     const sessionId = `wrong-${Date.now()}`
 
-    db.prepare(`
-        INSERT INTO practice_sessions (id, user_id, total_questions, correct_count, review_count, practice_mode, questions_json)
-        VALUES (?, ?, ?, 0, 0, 'review', ?)
-    `).run(sessionId, user.id, questionIds.length, JSON.stringify(questionIds))
+    await drizzleDb.insert(drizzleSchema.practice_sessions).values({
+        id: sessionId,
+        user_id: Number(user.id),
+        total_questions: questionIds.length,
+        practice_mode: 'review',
+        questions_json: JSON.stringify(questionIds)
+    });
 
     return c.json({ success: true, sessionId }, 200)
 })
@@ -444,10 +460,13 @@ app.openapi(masterRoute, async (c) => {
     const user = getCurrentUser(c)
     const { id } = c.req.valid('param')
 
-    db.prepare(`
-        INSERT OR REPLACE INTO mastered_questions (user_id, question_id, note, mastered_at)
-        VALUES (?, ?, NULL, CURRENT_TIMESTAMP)
-    `).run(user.id, id)
+    await drizzleDb.insert(drizzleSchema.mastered_questions).values({
+        user_id: Number(user.id),
+        question_id: Number(id),
+    }).onConflictDoUpdate({
+        target: [drizzleSchema.mastered_questions.user_id, drizzleSchema.mastered_questions.question_id],
+        set: { mastered_at: sql`CURRENT_TIMESTAMP` }
+    });
 
     return c.json({ success: true }, 200)
 })
@@ -474,9 +493,14 @@ const unmasterRoute = createRoute({
 })
 
 app.openapi(unmasterRoute, async (c) => {
-    const _user = getCurrentUser(c)
+    const user = getCurrentUser(c)
     const { id } = c.req.valid('param')
-    void id;
+    
+    await drizzleDb.delete(drizzleSchema.mastered_questions)
+        .where(and(
+            eq(drizzleSchema.mastered_questions.user_id, Number(user.id)),
+            eq(drizzleSchema.mastered_questions.question_id, Number(id))
+        ));
 
     return c.json({ success: true }, 200)
 })

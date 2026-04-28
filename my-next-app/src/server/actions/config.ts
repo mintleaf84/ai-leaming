@@ -129,7 +129,7 @@ export async function testAiConnectionAction(apiKey: string, apiUrl: string, mod
     
     try {
         const prompt = "Please respond with 'Pong' to verify the connection.";
-        const config = getAiConfig('economy', apiKey, apiUrl);
+        const config = await getAiConfig('economy', apiKey, apiUrl);
         const model = getModel(config.apiKey, config.baseURL, modelName || config.modelName);
 
         const { text } = await generateText({

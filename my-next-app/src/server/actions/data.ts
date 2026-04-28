@@ -1,8 +1,7 @@
 'use server';
 import logger from '@/lib/logger';
-
-import { db } from '@/lib/db';
-import { z } from 'zod';
+import { drizzleDb, drizzleSchema } from '@/lib/db';
+import { eq, sql } from 'drizzle-orm';
 import { requireUser } from '@/lib/auth/auth';
 
 // --- Types ---
@@ -31,7 +30,7 @@ interface ObservationZoneRow {
     tag_name: string;
     reason: string;
     entered_at: string;
-    status: string;
+    status: 'active' | 'recovering' | 'graduated';
 }
 
 export interface BackupData {
@@ -47,16 +46,36 @@ export interface BackupData {
 export async function exportUserDataAction(): Promise<BackupData> {
   try {
     const user = await requireUser();
-    const user_mastery = db.prepare('SELECT * FROM user_mastery WHERE user_id = ?').all(user.id) as UserMasteryRow[];
-    const practice_logs = db.prepare('SELECT * FROM practice_logs WHERE user_id = ?').all(user.id) as PracticeLogBackupRow[];
-    const observation_zone = db.prepare('SELECT * FROM observation_zone WHERE user_id = ?').all(user.id) as ObservationZoneRow[];
+    const userId = Number(user.id);
+
+    const masteryRows = await drizzleDb.select().from(drizzleSchema.user_mastery).where(eq(drizzleSchema.user_mastery.user_id, userId));
+    const logRows = await drizzleDb.select().from(drizzleSchema.practice_logs).where(eq(drizzleSchema.practice_logs.user_id, userId));
+    const obsRows = await drizzleDb.select().from(drizzleSchema.observation_zone).where(eq(drizzleSchema.observation_zone.user_id, userId));
 
     return {
       version: 1,
       timestamp: new Date().toISOString(),
-      user_mastery,
-      practice_logs,
-      observation_zone
+      user_mastery: masteryRows.map(r => ({
+          tag_name: r.tag_name,
+          score: r.score || 0,
+          history: r.history || '',
+          last_updated: r.last_updated || ''
+      })),
+      practice_logs: logRows.map(r => ({
+          session_id: r.session_id || '',
+          question_id: r.question_id,
+          user_answer: r.user_answer || '',
+          is_correct: r.is_correct ? 1 : 0,
+          is_monitored_correct: r.is_monitored_correct ? 1 : 0,
+          duration_ms: r.duration_ms || 0,
+          timestamp: r.timestamp || ''
+      })),
+      observation_zone: obsRows.map(r => ({
+          tag_name: r.tag_name,
+          reason: r.reason || '',
+          entered_at: r.entered_at || '',
+          status: r.status as 'active' | 'recovering' | 'graduated'
+      }))
     };
   } catch (error) {
     logger.error({ err: error }, "Export failed");
@@ -71,42 +90,57 @@ export async function importUserDataAction(data: BackupData): Promise<{ success:
 
   try {
     const user = await requireUser();
+    const userId = Number(user.id);
 
-    const transaction = db.transaction(() => {
+    await drizzleDb.transaction(async (tx) => {
       // 1. Clear existing user data
-      db.prepare('DELETE FROM user_mastery WHERE user_id = ?').run(user.id);
-      db.prepare('DELETE FROM practice_logs WHERE user_id = ?').run(user.id);
-      db.prepare('DELETE FROM observation_zone WHERE user_id = ?').run(user.id);
+      await tx.delete(drizzleSchema.user_mastery).where(eq(drizzleSchema.user_mastery.user_id, userId));
+      await tx.delete(drizzleSchema.practice_logs).where(eq(drizzleSchema.practice_logs.user_id, userId));
+      await tx.delete(drizzleSchema.observation_zone).where(eq(drizzleSchema.observation_zone.user_id, userId));
 
       // 2. Insert User Mastery
-      const insertMastery = db.prepare(`
-        INSERT INTO user_mastery (user_id, tag_name, score, history, last_updated)
-        VALUES (?, @tag_name, @score, @history, @last_updated)
-      `);
-      for (const row of data.user_mastery) {
-        insertMastery.run(user.id, row);
+      if (data.user_mastery.length > 0) {
+        await tx.insert(drizzleSchema.user_mastery).values(
+          data.user_mastery.map(row => ({
+            user_id: userId,
+            tag_name: row.tag_name,
+            score: row.score,
+            history: row.history,
+            last_updated: row.last_updated
+          }))
+        );
       }
 
       // 3. Insert Practice Logs
-      const insertLog = db.prepare(`
-        INSERT INTO practice_logs (user_id, session_id, question_id, user_answer, is_correct, is_monitored_correct, duration_ms, timestamp)
-        VALUES (?, @session_id, @question_id, @user_answer, @is_correct, @is_monitored_correct, @duration_ms, @timestamp)
-      `);
-      for (const row of data.practice_logs) {
-        insertLog.run(user.id, row);
+      if (data.practice_logs.length > 0) {
+        await tx.insert(drizzleSchema.practice_logs).values(
+          data.practice_logs.map(row => ({
+            user_id: userId,
+            session_id: row.session_id,
+            question_id: row.question_id,
+            user_answer: row.user_answer,
+            is_correct: Boolean(row.is_correct),
+            is_monitored_correct: Boolean(row.is_monitored_correct),
+            duration_ms: row.duration_ms,
+            timestamp: row.timestamp
+          }))
+        );
       }
 
       // 4. Insert Observation Zone
-      const insertObs = db.prepare(`
-        INSERT INTO observation_zone (user_id, tag_name, reason, entered_at, status)
-        VALUES (?, @tag_name, @reason, @entered_at, @status)
-      `);
-      for (const row of data.observation_zone) {
-        insertObs.run(user.id, row);
+      if (data.observation_zone.length > 0) {
+        await tx.insert(drizzleSchema.observation_zone).values(
+          data.observation_zone.map(row => ({
+            user_id: userId,
+            tag_name: row.tag_name,
+            reason: row.reason,
+            entered_at: row.entered_at,
+            status: row.status
+          }))
+        );
       }
     });
 
-    transaction();
     return { success: true, message: "Data imported successfully." };
   } catch (error) {
     logger.error({ err: error }, "Import failed");

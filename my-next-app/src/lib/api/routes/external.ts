@@ -1,5 +1,6 @@
 import { OpenAPIHono, createRoute, z } from '@hono/zod-openapi'
-import { db } from '@/lib/db'
+import { drizzleDb, drizzleSchema } from '@/lib/db'
+import { eq, sql, count, desc } from 'drizzle-orm'
 
 const app = new OpenAPIHono()
 
@@ -14,9 +15,10 @@ app.use('*', async (c, next) => {
 
     const token = authHeader.slice(7) // 去掉 "Bearer "
     try {
-        const row = db.prepare(
-            'SELECT id, is_active FROM api_keys WHERE key_string = ?'
-        ).get(token) as { id: number; is_active: number } | undefined
+        const row = await drizzleDb.query.api_keys.findFirst({
+            where: eq(drizzleSchema.api_keys.key_string, token),
+            columns: { id: true, is_active: true }
+        });
 
         if (!row) {
             return c.json({ error: 'API Key 无效' }, 401)
@@ -85,35 +87,37 @@ app.openapi(listRoute, async (c) => {
     const limitNum = Math.min(100, Math.max(1, parseInt(limit))) // 限制最大 100
     const offset = (pageNum - 1) * limitNum
 
-    // 构建查询（白名单字段，物理隔绝用户信息）
-    let whereClause = ''
-    const params: (string | number | null)[] = []
+    const whereClause = tag ? sql`EXISTS (SELECT 1 FROM json_each(${drizzleSchema.questions.tags}) WHERE value = ${tag})` : undefined;
 
-    if (tag) {
-        // tags 在数据库中以 JSON 数组字符串存储，使用 SQLite json_each 进行精准匹配
-        whereClause = 'WHERE EXISTS (SELECT 1 FROM json_each(tags) WHERE value = ?)'
-        params.push(tag)
-    }
+    const [totalRow] = await drizzleDb.select({ value: count() })
+        .from(drizzleSchema.questions)
+        .where(whereClause);
 
-    const totalRow = db.prepare(
-        `SELECT COUNT(*) as count FROM questions ${whereClause}`
-    ).get(...params) as { count: number }
-
-    const rows = db.prepare(
-        `SELECT id, type, dimension, content, options, answer, explanation, tags
-         FROM questions ${whereClause}
-         ORDER BY id ASC
-         LIMIT ? OFFSET ?`
-    ).all(...params, limitNum, offset) as Record<string, unknown>[]
+    const rows = await drizzleDb.select({
+        id: drizzleSchema.questions.id,
+        type: drizzleSchema.questions.type,
+        dimension: drizzleSchema.questions.dimension,
+        content: drizzleSchema.questions.content,
+        options: drizzleSchema.questions.options,
+        answer: drizzleSchema.questions.answer,
+        explanation: drizzleSchema.questions.explanation,
+        tags: drizzleSchema.questions.tags
+    })
+    .from(drizzleSchema.questions)
+    .where(whereClause)
+    .orderBy(drizzleSchema.questions.id)
+    .limit(limitNum)
+    .offset(offset)
+    .all();
 
     // 反序列化 JSON 字符串字段
     const data = rows.map((row) => ({
         id: row.id,
         type: row.type || null,
-        dimension: row.dimension || null,
+        dimension: (row.dimension as string) || null,
         content: row.content,
         options: safeJsonParse(row.options as string | null | undefined, []),
-        answer: row.answer,
+        answer: row.answer || '',
         explanation: row.explanation || null,
         tags: safeJsonParse(row.tags as string | null | undefined, []),
     }))
@@ -123,8 +127,8 @@ app.openapi(listRoute, async (c) => {
         pagination: {
             page: pageNum,
             limit: limitNum,
-            total: totalRow.count,
-            totalPages: Math.ceil(totalRow.count / limitNum),
+            total: totalRow.value,
+            totalPages: Math.ceil(totalRow.value / limitNum),
         },
     })
 })
@@ -150,10 +154,10 @@ const getRoute = createRoute({
 
 app.openapi(getRoute, async (c) => {
     const { id } = c.req.valid('param')
-    const row = db.prepare(
-        `SELECT id, type, dimension, content, options, answer, explanation, tags
-         FROM questions WHERE id = ?`
-    ).get(parseInt(id)) as Record<string, unknown> | undefined
+    
+    const row = await drizzleDb.query.questions.findFirst({
+        where: eq(drizzleSchema.questions.id, parseInt(id))
+    });
 
     if (!row) {
         return c.json({ error: '题目不存在' }, 404)
@@ -162,10 +166,10 @@ app.openapi(getRoute, async (c) => {
     return c.json({
         id: row.id,
         type: row.type || null,
-        dimension: row.dimension || null,
+        dimension: (row.dimension as string) || null,
         content: row.content,
         options: safeJsonParse(row.options as string | null | undefined, []),
-        answer: row.answer,
+        answer: row.answer || '',
         explanation: row.explanation || null,
         tags: safeJsonParse(row.tags as string | null | undefined, []),
     })

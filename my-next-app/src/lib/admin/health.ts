@@ -3,10 +3,11 @@
  * 提供数据库统计、系统信息等监控指标
  */
 
-import { db } from '@/lib/db';
+import { drizzleDb } from '@/lib/db';
 import * as fs from 'fs';
 import * as path from 'path';
 import { getApiCallStats, ApiCallStats } from '@/lib/admin/api-stats-service';
+import { sql } from 'drizzle-orm';
 
 export interface TableStats {
     name: string;
@@ -74,36 +75,41 @@ function formatUptime(seconds: number): string {
 /**
  * 获取数据库统计信息
  */
-export function getDatabaseStats(): DatabaseStats {
+export async function getDatabaseStats(): Promise<DatabaseStats> {
     // 获取数据库文件大小
-    const dbPath = path.join(process.cwd(), 'database.sqlite');
+    const dbName = process.env.DB_FILENAME || 'ai-learning.db';
+    const dbPath = path.resolve(process.cwd(), 'data', dbName);
     let sizeBytes = 0;
 
     try {
-        const stats = fs.statSync(dbPath);
-        sizeBytes = stats.size;
+        if (fs.existsSync(dbPath)) {
+            const stats = fs.statSync(dbPath);
+            sizeBytes = stats.size;
+        }
     } catch (e) {
         console.warn('无法获取数据库文件大小:', e);
     }
 
     // 获取所有表名
-    const tables = db.prepare(`
-    SELECT name FROM sqlite_master 
-    WHERE type='table' 
-    AND name NOT LIKE 'sqlite_%'
-    AND name NOT LIKE '%_vec%'
-    ORDER BY name
-  `).all() as { name: string }[];
+    const tablesResult = await drizzleDb.run(sql`
+        SELECT name FROM sqlite_master 
+        WHERE type='table' 
+        AND name NOT LIKE 'sqlite_%'
+        AND name NOT LIKE '%_vec%'
+        ORDER BY name
+    `);
+    
+    const tables = tablesResult.rows as unknown as { name: string }[];
 
     // 获取每个表的行数
-    const tableStats: TableStats[] = tables.map(t => {
+    const tableStats: TableStats[] = await Promise.all(tables.map(async t => {
         try {
-            const result = db.prepare(`SELECT COUNT(*) as count FROM ${t.name}`).get() as { count: number };
-            return { name: t.name, rowCount: result.count };
+            const result = await drizzleDb.get<{ count: number }>(sql.raw(`SELECT COUNT(*) as count FROM ${t.name}`));
+            return { name: t.name, rowCount: result?.count || 0 };
         } catch (_e) {
             return { name: t.name, rowCount: 0 };
         }
-    });
+    }));
 
     const totalRows = tableStats.reduce((sum, t) => sum + t.rowCount, 0);
 
@@ -145,7 +151,7 @@ export function getSystemInfo(): SystemInfo {
  */
 export async function getHealthStats(): Promise<HealthStats> {
     return {
-        database: getDatabaseStats(),
+        database: await getDatabaseStats(),
         system: getSystemInfo(),
         apiStats: await getApiCallStats(),
         timestamp: new Date().toISOString(),

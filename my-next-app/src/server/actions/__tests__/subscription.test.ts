@@ -45,20 +45,20 @@ describe('Subscription Actions', () => {
             vi.mocked(requireRole).mockResolvedValue({ id: 1, role: 'admin' } as any);
             mockBillingService.getAllPlans.mockReturnValue([{ id: 'pro', name: 'Pro' }]);
 
-            const result = await getPlansAction();
+            const result = await getPlansAction(false);
 
-            expect(result.success).toBe(true);
-            expect(result.plans).toHaveLength(1);
+            expect(result.data?.success).toBe(true);
+            expect(result.data?.plans).toHaveLength(1);
             expect(requireRole).toHaveBeenCalledWith(['admin']);
         });
 
         it('should handle errors', async () => {
             vi.mocked(requireRole).mockRejectedValue(new Error('Forbidden'));
 
-            const result = await getPlansAction();
+            const result = await getPlansAction(false);
 
-            expect(result.success).toBe(false);
-            expect(result.error).toBe('Forbidden');
+            expect(result.data?.success).toBeFalsy();
+            expect(result.serverError).toBe('Forbidden');
         });
     });
 
@@ -69,7 +69,7 @@ describe('Subscription Actions', () => {
 
             const result = await deletePlanAction('plan_123');
 
-            expect(result.success).toBe(true);
+            expect(result.data?.success).toBe(true);
             expect(mockBillingService.deletePlan).toHaveBeenCalledWith('plan_123');
         });
 
@@ -79,8 +79,8 @@ describe('Subscription Actions', () => {
 
             const result = await deletePlanAction('plan_123');
 
-            expect(result.success).toBe(false);
-            expect(result.error).toBe('In use');
+            expect(result.data?.success).toBeFalsy();
+            expect(result.serverError).toBe('In use');
         });
     });
 
@@ -91,8 +91,8 @@ describe('Subscription Actions', () => {
 
             const result = await getMySubscriptionAction();
 
-            expect(result.success).toBe(true);
-            expect(result.subscription).toBeDefined();
+            expect(result.data?.success).toBe(true);
+            expect(result.data?.subscription).toBeDefined();
             expect(mockBillingService.getUserSubscriptionDetail).toHaveBeenCalledWith(10);
         });
     });
@@ -105,8 +105,8 @@ describe('Subscription Actions', () => {
             // @ts-ignore - enum usage in test
             const result = await checkQuotaAction('ai_chat');
 
-            expect(result.success).toBe(true);
-            expect(result.allowed).toBe(true);
+            expect(result.data?.success).toBe(true);
+            expect(result.data?.allowed).toBe(true);
             expect(mockBillingService.checkUsageQuota).toHaveBeenCalledWith(10, 'ai_chat');
         });
 
@@ -117,8 +117,8 @@ describe('Subscription Actions', () => {
             // @ts-ignore - intentional test input
             const result = await checkQuotaAction('ai_chat');
 
-            expect(result.success).toBe(true); // Action succeeded, but result is not allowed
-            expect(result.allowed).toBe(false);
+            expect(result.data?.success).toBe(true); // Action succeeded, but result is not allowed
+            expect(result.data?.allowed).toBe(false);
         });
 
         it('should handle unauthenticated user', async () => {
@@ -127,8 +127,8 @@ describe('Subscription Actions', () => {
             // @ts-ignore - intentional test input
             const result = await checkQuotaAction('ai_chat');
 
-            expect(result.success).toBe(false);
-            expect(result.allowed).toBe(false);
+            expect(result.data?.success).toBeFalsy();
+            expect(result.data?.allowed).toBeFalsy();
         });
     });
 });

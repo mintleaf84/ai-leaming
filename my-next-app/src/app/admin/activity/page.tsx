@@ -18,8 +18,10 @@ export default function ActivityMonitoringPage() {
 
     const loadStats = async () => {
         try {
-            const data = await getActivityStatsAction();
-            setStats(data);
+            const result = await getActivityStatsAction();
+            if (result.data) {
+                setStats(result.data);
+            }
         } catch (error) {
             console.error('加载统计数据失败', error);
         } finally {

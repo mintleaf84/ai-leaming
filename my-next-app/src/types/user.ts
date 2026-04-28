@@ -1,12 +1,39 @@
+/** 用户角色 */
+export type UserRole = 'admin' | 'student' | 'teacher' | 'user' | 'vip' | 'editor';
+
+/** 基础用户接口 */
+export interface User {
+    id: number;
+    username: string;
+    role: UserRole;
+    token_version: number;
+    created_at: string;
+}
+
 /** 用户个人资料类型 */
 export interface UserProfile {
     id: number;
-    email: string | null;
-    name: string | null;
-    image: string | null;
-    role: string | null;
-    createdAt: string;
-    updatedAt: string;
+    username: string;
+    role: UserRole;
+    created_at: string;
+    subscription: {
+        plan_name: string;
+        plan_id: string;
+        status: string;
+        expires_at: string | null;
+        usage_today: Record<string, number>;
+        limits: any;
+    } | null;
+    stats: {
+        total_questions: number;
+        correct_count: number;
+        accuracy: number;
+        practice_days: number;
+        total_sessions: number;
+        total_tags: number;
+        mastered_tags: number;
+        total_chats: number;
+    };
 }
 
 /** 用户设置项 */

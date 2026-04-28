@@ -13,9 +13,14 @@ export function DataManagementSection({ onDataChange }: DataManagementSectionPro
     const fileInputRef = useRef<HTMLInputElement>(null);
 
     const handleExport = async () => {
-        try {
-            const backup = await exportUserDataAction();
-            const blob = new Blob([JSON.stringify(backup, null, 2)], { type: 'application/json' });
+        const result = await exportUserDataAction();
+        if (result.serverError) {
+            toast.error(result.serverError || "导出失败");
+            return;
+        }
+
+        if (result.data) {
+            const blob = new Blob([JSON.stringify(result.data, null, 2)], { type: 'application/json' });
             const url = URL.createObjectURL(blob);
             const a = document.createElement('a');
             a.href = url;
@@ -32,9 +37,6 @@ export function DataManagementSection({ onDataChange }: DataManagementSectionPro
             
             URL.revokeObjectURL(url);
             toast.success("进度备份导出成功");
-        } catch (error) {
-            toast.error("导出失败");
-            console.error(error);
         }
     };
 
@@ -53,13 +55,13 @@ export function DataManagementSection({ onDataChange }: DataManagementSectionPro
                 const backupData = JSON.parse(content);
                 const result = await importUserDataAction(backupData);
 
-                if (result.success) {
-                    toast.success(result.message);
+                if (result.serverError) {
+                    toast.error(result.serverError || "导入失败");
+                } else if (result.data?.success) {
+                    toast.success(result.data.message);
                     onDataChange();
                     // Reset file input
                     if (fileInputRef.current) fileInputRef.current.value = '';
-                } else {
-                    toast.error(result.message);
                 }
             } catch (error) {
                 toast.error("无效的 JSON 备份文件");

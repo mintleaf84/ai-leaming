@@ -55,10 +55,10 @@ describe('Admin Actions', () => {
                 total: 100
             });
 
-            const result = await getUsersAction(10, 0);
+            const result = await getUsersAction({ limit: 10, offset: 0 });
 
-            expect(result.total).toBe(100);
-            expect(result.users).toHaveLength(1);
+            expect(result.data?.total).toBe(100);
+            expect(result.data?.users).toHaveLength(1);
             expect(adminService.getUsers).toHaveBeenCalledWith(10, 0, '');
         });
 
@@ -66,7 +66,7 @@ describe('Admin Actions', () => {
             vi.mocked(requireRole).mockResolvedValue({ id: 1, role: 'admin', username: 'admin' } as any);
             vi.mocked(adminService.getUsers).mockResolvedValue({ items: [], total: 5 });
 
-            await getUsersAction(10, 0, 'john');
+            await getUsersAction({ limit: 10, offset: 0, query: 'john' });
 
             expect(adminService.getUsers).toHaveBeenCalledWith(10, 0, 'john');
         });
@@ -79,8 +79,8 @@ describe('Admin Actions', () => {
 
             const result = await deleteUserAction(1);
 
-            expect(result.success).toBe(false);
-            expect(result.error).toContain('Cannot delete super admin');
+            expect(result.data?.success).toBeFalsy();
+            expect(result.serverError).toContain('Cannot delete super admin');
         });
 
         it('should delete normal user and log audit', async () => {
@@ -90,7 +90,7 @@ describe('Admin Actions', () => {
 
             const result = await deleteUserAction(2);
 
-            expect(result.success).toBe(true);
+            expect(result.data?.success).toBe(true);
             expect(logAdminAction).toHaveBeenCalledWith(
                 1, 'admin', 'DELETE_USER', 'user', '2'
             );
@@ -105,7 +105,7 @@ describe('Admin Actions', () => {
 
             const result = await revokeUserSessionAction(2);
 
-            expect(result.success).toBe(true);
+            expect(result.data?.success).toBe(true);
             expect(adminService.revokeUserSessions).toHaveBeenCalledWith(2);
             expect(logAdminAction).toHaveBeenCalledWith(
                 1, 'admin', 'REVOKE_SESSION', 'user', '2'
@@ -123,20 +123,20 @@ describe('Admin Actions', () => {
                 total: 150
             });
 
-            const result = await getQuestionsAction(20, 0);
+            const result = await getQuestionsAction({ limit: 20, offset: 0 });
 
-            expect(result.total).toBe(150);
-            expect(result.questions).toHaveLength(1);
-            expect(result.questions[0].options).toEqual(['A', 'B']);
+            expect(result.data?.total).toBe(150);
+            expect(result.data?.questions).toHaveLength(1);
+            expect(result.data?.questions?.[0].options).toEqual(['A', 'B']);
         });
 
         it('应该支持关键词搜索', async () => {
             vi.mocked(requireRole).mockResolvedValue({ id: 1, role: 'admin', username: 'admin' } as any);
             vi.mocked(adminService.getQuestions).mockResolvedValue({ items: [], total: 5 });
 
-            const result = await getQuestionsAction(20, 0, { search: '认知' });
+            const result = await getQuestionsAction({ limit: 20, offset: 0, filters: { search: '认知' } });
 
-            expect(result.total).toBe(5);
+            expect(result.data?.total).toBe(5);
             expect(adminService.getQuestions).toHaveBeenCalledWith(20, 0, { search: '认知' });
         });
 
@@ -144,9 +144,9 @@ describe('Admin Actions', () => {
             vi.mocked(requireRole).mockResolvedValue({ id: 1, role: 'admin', username: 'admin' } as any);
             vi.mocked(adminService.getQuestions).mockResolvedValue({ items: [], total: 20 });
 
-            const result = await getQuestionsAction(20, 0, { tag: '心理学' });
+            const result = await getQuestionsAction({ limit: 20, offset: 0, filters: { tag: '心理学' } });
 
-            expect(result.total).toBe(20);
+            expect(result.data?.total).toBe(20);
             expect(adminService.getQuestions).toHaveBeenCalledWith(20, 0, { tag: '心理学' });
         });
 
@@ -154,9 +154,9 @@ describe('Admin Actions', () => {
             vi.mocked(requireRole).mockResolvedValue({ id: 1, role: 'admin', username: 'admin' } as any);
             vi.mocked(adminService.getQuestions).mockResolvedValue({ items: [], total: 30 });
 
-            const result = await getQuestionsAction(20, 0, { dimension: 'application' });
+            const result = await getQuestionsAction({ limit: 20, offset: 0, filters: { dimension: 'application' } });
 
-            expect(result.total).toBe(30);
+            expect(result.data?.total).toBe(30);
             expect(adminService.getQuestions).toHaveBeenCalledWith(20, 0, { dimension: 'application' });
         });
     });
@@ -172,12 +172,15 @@ describe('Admin Actions', () => {
             } as any);
             vi.mocked(adminService.updateQuestion).mockResolvedValue(true);
 
-            const result = await updateQuestionAction(1, {
-                content: '更新后的题干内容长度足够',
-                answer: 'B'
+            const result = await updateQuestionAction({
+                id: 1,
+                data: {
+                    content: '更新后的题干内容长度足够',
+                    answer: 'B'
+                }
             });
 
-            expect(result.success).toBe(true);
+            expect(result.data?.success).toBe(true);
             expect(adminService.updateQuestion).toHaveBeenCalled();
         });
 
@@ -200,9 +203,9 @@ describe('Admin Actions', () => {
                 dimension: 'understanding' as const
             };
 
-            const res = await updateQuestionAction(1, updateData);
+            const res = await updateQuestionAction({ id: 1, data: updateData });
 
-            expect(res.success).toBe(true);
+            expect(res.data?.success).toBe(true);
             expect(adminService.updateQuestion).toHaveBeenCalledWith(1, updateData);
         });
 
@@ -221,20 +224,20 @@ describe('Admin Actions', () => {
                 tags: ['test']
             };
 
-            const res = await updateQuestionAction(1, updateData);
+            const res = await updateQuestionAction({ id: 1, data: updateData });
 
-            expect(res.success).toBe(false);
-            expect(res.error).toContain('正确答案必须是选项之一或有效的选项标号');
+            expect(res.data?.success).toBeFalsy();
+            expect(res.serverError).toContain('正确答案必须是选项之一或有效的选项标号');
         });
 
         it('题目不存在时应该返回错误', async () => {
             vi.mocked(requireRole).mockResolvedValue({ id: 1, username: 'admin', role: 'admin' } as any);
             vi.mocked(adminService.getQuestionById).mockResolvedValue(null);
 
-            const result = await updateQuestionAction(999, { content: '不存在的题目' });
+            const result = await updateQuestionAction({ id: 999, data: { content: '不存在的题目' } });
 
-            expect(result.success).toBe(false);
-            expect(result.error).toBe('题目不存在');
+            expect(result.data?.success).toBeFalsy();
+            expect(result.serverError).toBe('题目不存在');
         });
     });
 
@@ -245,8 +248,7 @@ describe('Admin Actions', () => {
 
             const result = await batchDeleteQuestionsAction([1, 2, 3]);
 
-            expect(result.success).toBe(true);
-            expect(result.deletedCount).toBe(3);
+            expect(result.data?.deletedCount).toBe(3);
         });
 
         it('空数组应该返回成功但删除 0 条', async () => {
@@ -254,8 +256,7 @@ describe('Admin Actions', () => {
 
             const result = await batchDeleteQuestionsAction([]);
 
-            expect(result.success).toBe(true);
-            expect(result.deletedCount).toBe(0);
+            expect(result.data?.deletedCount).toBe(0);
         });
     });
 });

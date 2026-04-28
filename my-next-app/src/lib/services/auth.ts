@@ -1,6 +1,6 @@
-import { getUserByUsername, createUser as createDbUser, User } from '@/lib/auth/user-service';
+import { getUserByUsername, createUser as createDbUser } from '@/lib/auth/user-service';
 import { comparePassword } from '@/lib/auth/password';
-import { UserRole } from '@/types';
+import { User, UserRole } from '@/types';
 
 export class AuthError extends Error {
     constructor(message: string) {
@@ -30,7 +30,8 @@ export const authService = {
             id: userRecord.id,
             username: userRecord.username,
             role: userRecord.role,
-            token_version: userRecord.token_version
+            token_version: userRecord.token_version,
+            created_at: userRecord.created_at
         };
     },
 

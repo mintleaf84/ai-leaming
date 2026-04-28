@@ -60,16 +60,16 @@ describe('Prompts Actions', () => {
 
             const result = await getPromptTemplatesAction();
 
-            expect(result.length).toBeGreaterThanOrEqual(4);
-            const correctionQuiz = result.find(r => r.key === 'correction_quiz');
+            expect(result.data?.length).toBeGreaterThanOrEqual(4);
+            const correctionQuiz = result.data?.find(r => r.key === 'correction_quiz');
             expect(correctionQuiz?.template).toBe('custom');
         });
     });
 
     describe('savePromptTemplateAction', () => {
         it('应该执行 upsert 操作并记录日志', async () => {
-            const result = await savePromptTemplateAction('test_key', 'template', 'desc', ['var1']);
-            expect(result.success).toBe(true);
+            const result = await savePromptTemplateAction({ key: 'test_key', template: 'template', description: 'desc', variables: ['var1'] });
+            expect(result.data?.success).toBe(true);
             expect(mockDb.insert).toHaveBeenCalled();
         });
     });
@@ -77,7 +77,7 @@ describe('Prompts Actions', () => {
     describe('resetPromptTemplateAction', () => {
         it('应该从数据库删除模板记录', async () => {
             const result = await resetPromptTemplateAction('test_key');
-            expect(result.success).toBe(true);
+            expect(result.data?.success).toBe(true);
             expect(mockDb.delete).toHaveBeenCalled();
         });
     });

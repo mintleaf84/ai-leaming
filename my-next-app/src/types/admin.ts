@@ -70,3 +70,18 @@ export const ADMIN_ACTION_LABELS: Record<AdminAction, string> = {
 export function formatActionName(action: AdminAction): string {
     return ADMIN_ACTION_LABELS[action] || action;
 }
+/**
+ * 用户管理视图模型
+ */
+export interface UserAdminView {
+    id: number;
+    username: string;
+    role: string;
+    created_at: string;
+    token_version: number;
+    plan_id?: string;
+    plan_name?: string;
+    subscription_status?: string;
+    expires_at?: string | null;
+    is_admin: boolean;
+}

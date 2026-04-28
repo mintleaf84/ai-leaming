@@ -32,12 +32,13 @@ function StatsSkeleton() {
 
 /** 需要数据的 3 张核心卡片（独立 async 组件，支持流式渲染） */
 async function DashboardStatsCards() {
-  let stats;
-  try {
-    stats = await getUserStatsAction();
-  } catch {
+  const result = await getUserStatsAction();
+  
+  if (result.serverError || !result.data) {
     redirect('/login');
   }
+
+  const stats = result.data;
 
   return (
     <div className="grid grid-cols-1 md:grid-cols-3 gap-8">

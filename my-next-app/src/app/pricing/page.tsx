@@ -38,11 +38,11 @@ export default function PricingPage() {
                     getMySubscriptionAction()
                 ]);
 
-                if (plansRes.success && plansRes.plans) {
-                    setPlans(plansRes.plans);
+                if (plansRes.data?.success && plansRes.data.plans) {
+                    setPlans(plansRes.data.plans);
                 }
-                if (subRes.success && subRes.subscription) {
-                    setCurrentSub(subRes.subscription);
+                if (subRes.data?.success && subRes.data.subscription) {
+                    setCurrentSub(subRes.data.subscription);
                 }
             } catch (error) {
                 console.error('加载数据失败', error);

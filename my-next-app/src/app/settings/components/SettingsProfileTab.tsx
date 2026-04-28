@@ -3,7 +3,7 @@ import { Camera, Save, Loader2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import type { UserProfile } from '../../profile/page';
+import type { UserProfile } from '@/types/profile';
 
 interface SettingsProfileTabProps {
     profile: UserProfile;

@@ -2,7 +2,8 @@
 
 import React, { useEffect, useState } from 'react';
 import dynamic from 'next/dynamic';
-import { getKnowledgeGraphData, KnowledgeGraphData } from '@/server/actions/viz';
+import { getKnowledgeGraphData } from '@/server/actions/viz';
+import type { KnowledgeGraphData } from '@/types/viz';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Orbit } from 'lucide-react';
 
@@ -39,8 +40,11 @@ const DataManagementSection = dynamic(
 export default function DashboardPage() {
   const [data, setData] = useState<KnowledgeGraphData | null>(null);
 
-  const loadData = () => {
-    getKnowledgeGraphData().then(setData);
+  const loadData = async () => {
+    const result = await getKnowledgeGraphData();
+    if (result.data) {
+        setData(result.data);
+    }
   };
 
   useEffect(() => {

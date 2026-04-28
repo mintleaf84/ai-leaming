@@ -33,9 +33,9 @@ describe('Settings AI connection test', () => {
     it('should use the provided model name when testing connection', async () => {
         const { testAiConnectionAction } = await import('../config');
 
-        const result = await testAiConnectionAction('test-key', 'https://api.example.com/v1', 'deepseek-chat');
+        const result = await testAiConnectionAction({ apiKey: 'test-key', apiUrl: 'https://api.example.com/v1', modelName: 'deepseek-chat' });
 
-        expect(result.success).toBe(true);
+        expect(result.data?.success).toBe(true);
         expect(mockAiClient.getAiConfig).toHaveBeenCalledWith('economy', 'test-key', 'https://api.example.com/v1');
         expect(mockAiClient.getModel).toHaveBeenCalledWith('default-key', 'https://api.example.com/v1', 'deepseek-chat');
         expect(mockAiLib.generateText).toHaveBeenCalledTimes(1);

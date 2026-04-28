@@ -10,8 +10,8 @@ import {
     deleteAiConfigAction,
     setActiveAiConfigAction,
     testAiConnectionAction,
-    AiConfig
 } from '@/server/actions/config';
+import type { AiConfig } from '@/lib/services/ai-config';
 import { ConfigList } from './ConfigList';
 import { ConfigForm } from './ConfigForm';
 import { QuickAddModals } from './QuickAddModals';
@@ -31,8 +31,8 @@ export function ConfigManager() {
 
     const loadSettings = async () => {
         try {
-            const data = await getAiConfigsAction();
-            setConfigs(data);
+            const result = await getAiConfigsAction();
+            if (result.data) setConfigs(result.data);
         } catch (_e) {
             toast.error("配置加载失败");
         }
@@ -93,14 +93,14 @@ export function ConfigManager() {
         setIsSaving(true);
         try {
             const res = await saveAiConfigAction(configToSave);
-            if (res.success) {
+            if (res.data?.success) {
                 toast.success("配置已保存");
                 setIsEditing(false);
                 setIsZjuAdding(false);
                 setIsSiliconAdding(false);
                 loadSettings();
             } else {
-                toast.error("保存失败: " + res.error);
+                toast.error("保存失败: " + (res.serverError || ''));
             }
         } catch (_e) {
             toast.error("请求失败");
@@ -113,11 +113,11 @@ export function ConfigManager() {
         if (!confirm("确定要删除此配置吗？")) return;
         try {
             const res = await deleteAiConfigAction(id);
-            if (res.success) {
+            if (res.data?.success) {
                 toast.success("删除成功");
                 loadSettings();
             } else {
-                toast.error(res.error || "删除失败");
+                toast.error(res.serverError || "删除失败");
             }
         } catch (_e) {
             toast.error("操作失败");
@@ -141,15 +141,15 @@ export function ConfigManager() {
         }
         setIsTesting(true);
         try {
-            const res = await testAiConnectionAction(
-                config.api_key,
-                config.api_url,
-                config.model_economy || 'gpt-4o-mini'
-            );
-            if (res.success) {
-                toast.success(`连接成功！AI 响应: ${res.message}`);
+            const res = await testAiConnectionAction({
+                apiKey: config.api_key,
+                apiUrl: config.api_url,
+                modelName: config.model_economy || 'gpt-4o-mini'
+            });
+            if (res.data?.success) {
+                toast.success(`连接成功！AI 响应: ${res.data.message}`);
             } else {
-                toast.error(`连接失败: ${res.error}`);
+                toast.error(`连接失败: ${res.data?.error || res.serverError}`);
             }
         } catch (_e) {
             toast.error("测试请求发送失败");

@@ -3,7 +3,7 @@
 import React from 'react';
 import { Button } from '@/components/ui/button';
 import { Save, X } from 'lucide-react';
-import { AiConfig } from '@/server/actions/config';
+import type { AiConfig } from '@/lib/services/ai-config';
 
 interface ConfigFormProps {
     config: Partial<AiConfig>;

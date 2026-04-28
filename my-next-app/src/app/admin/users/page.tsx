@@ -1,7 +1,8 @@
 'use client';
 
 import React, { useEffect, useState, useCallback } from 'react';
-import { getUsersAction, deleteUserAction, resetUserPasswordAction, updateUserRoleAction, revokeUserSessionAction, UserAdminView } from '@/server/actions/admin';
+import { getUsersAction, deleteUserAction, resetUserPasswordAction, updateUserRoleAction, revokeUserSessionAction } from '@/server/actions/admin';
+import type { UserAdminView } from '@/types/admin';
 import { getPlansAction, setUserSubscriptionAction } from '@/server/actions/subscription';
 import { UserRole } from '@/types';
 import { SubscriptionPlan } from '@/types';
@@ -61,18 +62,17 @@ export default function UsersPage() {
 
     const loadUsers = useCallback(async () => {
         setLoading(true);
-        try {
-            const offset = (page - 1) * limit;
-            const res = await getUsersAction(limit, offset, search);
+        const offset = (page - 1) * limit;
+        const result = await getUsersAction({ limit, offset, query: search });
 
+        if (result.serverError) {
+            toast.error(result.serverError || "加载用户失败");
+        } else if (result.data) {
             // 后端现在直接返回订阅信息，无需前端再处理
-            setUsers(res.users);
-            setTotal(res.total);
-        } catch (_e) {
-            toast.error("加载用户失败");
-        } finally {
-            setLoading(false);
+            setUsers(result.data.users as UserWithSubscription[]);
+            setTotal(result.data.total);
         }
+        setLoading(false);
     }, [page, search]);
 
     // Debounce search resets page
@@ -89,13 +89,11 @@ export default function UsersPage() {
     }, [page, loadUsers]);
 
     const loadPlans = async () => {
-        try {
-            const res = await getPlansAction(true);
-            if (res.success && res.plans) {
-                setPlans(res.plans);
-            }
-        } catch (e) {
-            console.error('加载套餐失败', e);
+        const result = await getPlansAction(true);
+        if (result.serverError) {
+            console.error('加载套餐失败', result.serverError);
+        } else if (result.data?.success && result.data.plans) {
+            setPlans(result.data.plans);
         }
     };
 
@@ -105,44 +103,44 @@ export default function UsersPage() {
 
     const handleDelete = async (id: number) => {
         if (!confirm(`确定要删除用户 ID:${id} 吗？此操作将清除该用户所有数据且不可恢复！`)) return;
-        const res = await deleteUserAction(id);
-        if (res.success) {
+        const result = await deleteUserAction(id);
+        if (result.serverError) {
+            toast.error(result.serverError || "删除失败");
+        } else if (result.data?.success) {
             toast.success("用户已删除");
             loadUsers();
-        } else {
-            toast.error(res.error || "删除失败");
         }
     };
 
     const handleResetPassword = async () => {
         if (!resetId || !newPass) return;
-        const res = await resetUserPasswordAction(resetId, newPass);
-        if (res.success) {
+        const result = await resetUserPasswordAction({ id: resetId, newPassword: newPass });
+        if (result.serverError) {
+            toast.error(result.serverError || "重置失败");
+        } else if (result.data?.success) {
             toast.success("密码已重置");
             setResetId(null);
             setNewPass('');
-        } else {
-            toast.error("重置失败");
         }
     };
 
     const handleRoleChange = async (id: number, role: UserRole) => {
-        const res = await updateUserRoleAction(id, role);
-        if (res.success) {
+        const result = await updateUserRoleAction({ id, role });
+        if (result.serverError) {
+            toast.error(result.serverError || "更新失败");
+        } else if (result.data?.success) {
             toast.success("角色已更新");
             loadUsers();
-        } else {
-            toast.error(res.error || "更新失败");
         }
     };
 
     const handleRevokeSession = async (id: number) => {
         if (!confirm(`确定要强制下线用户 ID:${id} 的所有活动会话吗？用户需要重新登录。`)) return;
-        const res = await revokeUserSessionAction(id);
-        if (res.success) {
+        const result = await revokeUserSessionAction(id);
+        if (result.serverError) {
+            toast.error(result.serverError || "操作失败");
+        } else if (result.data?.success) {
             toast.success("用户已强制下线");
-        } else {
-            toast.error(res.error || "操作失败");
         }
     };
 
@@ -161,8 +159,8 @@ export default function UsersPage() {
         setSavingSub(true);
         try {
             const duration = parseInt(subDuration);
-            const res = await setUserSubscriptionAction(subUserId, selectedPlanId, duration || undefined);
-            if (res.success) {
+            const result = await setUserSubscriptionAction({ userId: subUserId, planId: selectedPlanId, durationMonths: duration || undefined });
+            if (result.data?.success) {
                 toast.success('订阅已更新');
                 setSubDialogOpen(false);
                 // 更新本地状态
@@ -173,7 +171,7 @@ export default function UsersPage() {
                         : u
                 ));
             } else {
-                toast.error(res.error || '操作失败');
+                toast.error(result.serverError || '操作失败');
             }
         } catch (_e) {
             toast.error('操作失败');

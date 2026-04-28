@@ -13,7 +13,7 @@ const SimpleMindMapViewer = dynamic(
     () => import('@/components/ocr/SimpleMindMapViewer').then(mod => mod.SimpleMindMapViewer),
     { ssr: false, loading: () => <div className="h-full w-full flex items-center justify-center text-muted-foreground animate-pulse">引擎装载中...</div> }
 );
-import type { OcrModel, OcrModelInfo } from '@/server/actions/ocr';
+import type { OcrModel, OcrModelInfo } from '@/types/ocr';
 import { toast } from 'sonner';
 import { cn } from '@/lib/utils';
 
@@ -43,7 +43,9 @@ export default function OcrPage() {
 
     // 加载模型列表
     useEffect(() => {
-        getOcrModelsAction().then(setModels);
+        getOcrModelsAction().then((result) => {
+            if (result.data) setModels(result.data);
+        });
     }, []);
 
     // 点击外部关闭模型菜单
@@ -139,13 +141,18 @@ export default function OcrPage() {
                 new Uint8Array(buffer).reduce((data, byte) => data + String.fromCharCode(byte), '')
             );
 
-            const response = await performOcrAction(base64, file.name, file.type, selectedModel);
+            const result = await performOcrAction({ 
+                fileBase64: base64, 
+                fileName: file.name, 
+                mimeType: file.type, 
+                model: selectedModel 
+            });
 
-            if (response.success && response.text) {
-                setResult(response.text);
+            if (result.data?.success && result.data.text) {
+                setResult(result.data.text);
                 toast.success('识别完成');
             } else {
-                toast.error(response.error || '识别失败');
+                toast.error(result.serverError || '识别失败');
             }
         } catch (error: unknown) {
             toast.error(error instanceof Error ? error.message : '识别过程中发生错误');

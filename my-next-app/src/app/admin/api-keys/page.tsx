@@ -11,8 +11,8 @@ import {
     createApiKeyAction,
     toggleApiKeyAction,
     deleteApiKeyAction,
-    type ApiKeyView,
 } from '@/server/actions/api-keys';
+import type { ApiKeyView } from '@/types/api-key';
 
 export default function ApiKeysPage() {
     const [keys, setKeys] = useState<ApiKeyView[]>([]);
@@ -30,8 +30,10 @@ export default function ApiKeysPage() {
 
     const fetchKeys = useCallback(async () => {
         setLoading(true);
-        const data = await getApiKeysAction();
-        setKeys(data);
+        const result = await getApiKeysAction();
+        if (result.data) {
+            setKeys(result.data);
+        }
         setLoading(false);
     }, []);
 
@@ -44,9 +46,9 @@ export default function ApiKeysPage() {
     const handleCreate = async () => {
         if (!newDescription.trim()) return;
         setCreating(true);
-        const result = await createApiKeyAction(newDescription.trim());
-        if (result.success && result.key) {
-            setNewlyCreatedKey(result.key);
+        const result = await createApiKeyAction({ description: newDescription.trim() });
+        if (result.data?.success && result.data.key) {
+            setNewlyCreatedKey(result.data.key);
             setNewDescription('');
             setShowCreateForm(false);
             await fetchKeys();
@@ -56,7 +58,7 @@ export default function ApiKeysPage() {
 
     // 切换开关
     const handleToggle = async (id: number, currentState: number) => {
-        await toggleApiKeyAction(id, !currentState);
+        await toggleApiKeyAction({ id, isActive: !currentState });
         await fetchKeys();
     };
 

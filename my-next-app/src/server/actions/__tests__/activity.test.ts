@@ -82,12 +82,12 @@ describe('Activity Actions (Real DB)', () => {
                 timestamp: new Date().toISOString()
             });
 
-            const result = await getUserActivityAction(10, 0);
+            const result = await getUserActivityAction({ limit: 10, offset: 0 });
 
-            expect(result.total).toBe(1);
-            expect(result.logs).toHaveLength(1);
-            expect(result.logs[0].is_correct).toBe(true);
-            expect(result.logs[0].username).toBe('student1');
+            expect(result.data?.total).toBe(1);
+            expect(result.data?.logs).toHaveLength(1);
+            expect(result.data?.logs?.[0].is_correct).toBe(true);
+            expect(result.data?.logs?.[0].username).toBe('student1');
         });
     });
 
@@ -96,8 +96,8 @@ describe('Activity Actions (Real DB)', () => {
             const db = dbHelper.db;
             
             await db.insert(schema.users).values({ id: 1, username: 'admin', password_hash: 'hash' });
-            await db.insert(schema.questions).values({ id: 101, content: 'Q1', answer: 'A', is_correct: 1 } as any);
-            await db.insert(schema.questions).values({ id: 102, content: 'Q2', answer: 'A', is_correct: 1 } as any);
+            await db.insert(schema.questions).values({ id: 101, content: 'Q1', answer: 'A', dimension: 'knowledge' } as any);
+            await db.insert(schema.questions).values({ id: 102, content: 'Q2', answer: 'A', dimension: 'knowledge' } as any);
             await db.insert(schema.practice_sessions).values({ id: 's-stats', user_id: 1 });
             
             await db.insert(schema.practice_logs).values([
@@ -105,11 +105,11 @@ describe('Activity Actions (Real DB)', () => {
                 { user_id: 1, session_id: 's-stats', question_id: 102, is_correct: 0, duration_ms: 9000, timestamp: new Date().toISOString() }
             ]);
 
-            const stats = await getActivityStatsAction();
+            const statsResult = await getActivityStatsAction();
 
-            expect(stats.todayCount).toBe(2);
-            expect(stats.accuracyRate).toBe(50);
-            expect(stats.avgDurationMs).toBe(8500);
+            expect(statsResult.data?.todayCount).toBe(2);
+            expect(statsResult.data?.accuracyRate).toBe(50);
+            expect(statsResult.data?.avgDurationMs).toBe(8500);
         });
     });
 });

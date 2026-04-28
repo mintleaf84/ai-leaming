@@ -10,7 +10,7 @@ const JWT_SECRET = process.env.JWT_SECRET;
 const SAFE_SECRET = JWT_SECRET || 'fallback-secret-for-development-only';
 
 import { Context } from 'hono'
-import { User } from '@/lib/auth/user-service'
+import { User } from '@/types'
 
 // --- 鉴权内存缓存机制 ---
 interface CachedUser {

@@ -84,12 +84,12 @@ describe('Stats Actions (Enhanced Mock)', () => {
             const result = await getUserStatsAction();
 
             // 验证聚合结果
-            expect(result.totalPracticed).toBe(500);
-            expect(result.averageMastery).toBe(86); // Math.round(85.6)
-            expect(result.streakDays).toBe(3);
-            expect(result.todayPracticed).toBe(10);
-            expect(result.dailyProgress).toBe(40); // (10 / 25) * 100
-            expect(result.lastSessionId).toBe('session-789');
+            expect(result.data?.totalPracticed).toBe(500);
+            expect(result.data?.averageMastery).toBe(86); // Math.round(85.6)
+            expect(result.data?.streakDays).toBe(3);
+            expect(result.data?.todayPracticed).toBe(10);
+            expect(result.data?.dailyProgress).toBe(40); // (10 / 25) * 100
+            expect(result.data?.lastSessionId).toBe('session-789');
 
             // 严谨验证：检查是否对正确的表进行了查询
             expect(mockDb.select).toHaveBeenCalled();
@@ -104,12 +104,12 @@ describe('Stats Actions (Enhanced Mock)', () => {
 
             const result = await getPracticeTrendAction(2);
 
-            expect(result).toHaveLength(2);
-            expect(result[1].date).toBe('2024-01-15');
-            expect(result[1].practiced).toBe(20);
-            expect(result[1].accuracy).toBe(90); // 18/20
+            expect(result.data).toHaveLength(2);
+            expect(result.data?.[1].date).toBe('2024-01-15');
+            expect(result.data?.[1].practiced).toBe(20);
+            expect(result.data?.[1].accuracy).toBe(90); // 18/20
             
-            expect(result[0].practiced).toBe(0); // 填充日期应为 0
+            expect(result.data?.[0].practiced).toBe(0); // 填充日期应为 0
         });
     });
 });

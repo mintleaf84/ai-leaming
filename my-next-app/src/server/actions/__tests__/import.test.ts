@@ -48,21 +48,21 @@ describe('Import Actions', () => {
             newQuestionsCount: 1
         });
 
-        const result = await importFenbiDataAction('{}', '{}');
+        const result = await importFenbiDataAction({ exerciseJson: '{}', solutionsJson: '{}' });
 
-        expect(result.success).toBe(true);
-        expect(result.sessionId).toBe('test-session-id');
-        expect(result.importedCount).toBe(1);
+        expect(result.data?.success).toBe(true);
+        expect(result.data?.sessionId).toBe('test-session-id');
+        expect(result.data?.importedCount).toBe(1);
         expect(mockImportService.importFenbiData).toHaveBeenCalledWith(1, expect.anything());
     });
 
     it('should return error if validation fails', async () => {
         vi.mocked(validateFenbiJson).mockReturnValue({ valid: false, error: 'Invalid JSON' });
         
-        const result = await importFenbiDataAction('invalid', 'invalid');
+        const result = await importFenbiDataAction({ exerciseJson: 'invalid', solutionsJson: 'invalid' });
         
-        expect(result.success).toBe(false);
-        expect(result.message).toBe('Invalid JSON');
+        expect(result.data?.success).toBeFalsy();
+        expect(result.data?.message).toBe('Invalid JSON');
         expect(mockImportService.importFenbiData).not.toHaveBeenCalled();
     });
 
@@ -74,10 +74,10 @@ describe('Import Actions', () => {
         
         mockImportService.importFenbiData.mockRejectedValue(new Error('Database connection failed'));
 
-        const result = await importFenbiDataAction('{}', '{}');
+        const result = await importFenbiDataAction({ exerciseJson: '{}', solutionsJson: '{}' });
 
-        expect(result.success).toBe(false);
-        expect(result.message).toContain('Database connection failed');
+        expect(result.data?.success).toBeFalsy();
+        expect(result.serverError).toContain('Database connection failed');
     });
 
     it('should return error if parsed data is empty', async () => {
@@ -86,9 +86,9 @@ describe('Import Actions', () => {
             questions: []
         } as any);
 
-        const result = await importFenbiDataAction('{}', '{}');
+        const result = await importFenbiDataAction({ exerciseJson: '{}', solutionsJson: '{}' });
 
-        expect(result.success).toBe(false);
-        expect(result.message).toContain('解析结果为空');
+        expect(result.data?.success).toBeFalsy();
+        expect(result.data?.message).toContain('解析结果为空');
     });
 });

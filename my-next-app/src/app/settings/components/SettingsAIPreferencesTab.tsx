@@ -1,7 +1,7 @@
 import React from 'react';
 import { BrainCircuit } from 'lucide-react';
 import { cn } from '@/lib/utils';
-import { Settings } from '@/server/actions/settings';
+import type { SystemSettings as Settings } from '@/lib/services/settings';
 
 interface SettingsAIPreferencesTabProps {
     settings: Settings;

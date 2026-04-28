@@ -44,8 +44,8 @@ export function ImportFenbiModal({ isOpen, onClose, onSuccess }: ImportFenbiModa
     // 获取导入 Token
     useEffect(() => {
         if (isOpen) {
-            getImportTokenAction().then(token => {
-                if (token) setImportToken(token);
+            getImportTokenAction().then((result) => {
+                if (result.data) setImportToken(result.data);
             });
         }
     }, [isOpen]);
@@ -69,42 +69,46 @@ export function ImportFenbiModal({ isOpen, onClose, onSuccess }: ImportFenbiModa
         setError(null);
         setPreview(null);
 
-        try {
-            const result = await previewFenbiDataAction(exerciseJson, solutionsJson, statsJson || undefined);
-            if (result.valid && result.preview) {
-                setPreview(result.preview);
-            } else {
-                setError(result.error || '验证失败');
-            }
-        } catch (e) {
-            setError(`验证失败: ${(e as Error).message}`);
-        } finally {
-            setIsValidating(false);
+        const result = await previewFenbiDataAction({
+            exerciseJson,
+            solutionsJson,
+            statsJson: statsJson || undefined
+        });
+
+        if (result.serverError) {
+            setError(result.serverError || '验证失败');
+        } else if (result.data?.valid && result.data.preview) {
+            setPreview(result.data.preview as any);
+        } else {
+            setError(result.data?.error || '验证失败');
         }
+        setIsValidating(false);
     }, [exerciseJson, solutionsJson, statsJson]);
 
     // 执行导入
     const handleImport = useCallback(async () => {
         setIsImporting(true);
-        try {
-            const result = await importFenbiDataAction(exerciseJson, solutionsJson, statsJson || undefined);
-            if (result.success) {
-                toast.success(result.message, { duration: 5000 });
-                onSuccess();
-                onClose();
-                // 重置状态
-                setExerciseJson('');
-                setSolutionsJson('');
-                setStatsJson('');
-                setPreview(null);
-            } else {
-                toast.error(result.message);
-            }
-        } catch (e) {
-            toast.error(`导入失败: ${(e as Error).message}`);
-        } finally {
-            setIsImporting(false);
+        const result = await importFenbiDataAction({
+            exerciseJson,
+            solutionsJson,
+            statsJson: statsJson || undefined
+        });
+
+        if (result.serverError) {
+            toast.error(result.serverError || "导入失败");
+        } else if (result.data?.success) {
+            toast.success(result.data.message, { duration: 5000 });
+            onSuccess();
+            onClose();
+            // 重置状态
+            setExerciseJson('');
+            setSolutionsJson('');
+            setStatsJson('');
+            setPreview(null);
+        } else {
+            toast.error(result.data?.message || "导入失败");
         }
+        setIsImporting(false);
     }, [exerciseJson, solutionsJson, statsJson, onSuccess, onClose]);
 
     // 关闭时重置

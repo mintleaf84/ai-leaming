@@ -3,7 +3,7 @@
 import React from 'react';
 import { Button } from '@/components/ui/button';
 import { Play } from 'lucide-react';
-import { PromptTemplate } from '@/server/actions/prompts';
+import type { PromptTemplate } from '@/lib/services/prompt';
 
 interface DebugPlaygroundProps {
     editingPrompt: PromptTemplate | null;

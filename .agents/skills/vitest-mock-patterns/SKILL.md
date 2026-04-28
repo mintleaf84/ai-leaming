@@ -36,57 +36,87 @@ beforeEach(() => {
 });
 ```
 
-## Drizzle ORM 链式 Mock 模式
+## Drizzle ORM 高级链式 Mock (Table-Aware Proxy)
 
-Drizzle 的链式调用（如 `.select().from().where().all()`）需要特殊的 Mock 结构。
+Drizzle 的链式调用（如 `.select().from().where().all()`）容易受到测试间异步竞争（Race Condition）的影响。如果简单地使用顺序的 `mockReturnValueOnce`，一旦内部有异步（Fire-and-Forget）任务并发执行，就会导致 Mock 数据错乱（如著名的 `(intermediate value) is not iterable` 错误）。
 
-### 1. 定义通用链式 Mock (在 `vi.hoisted` 中)
+### 最佳实践：基于表名的智能路由 (Table-Aware Mock)
+
+不要假设 SQL 的执行顺序，而是让 Mock 引擎根据 `from(table)` 自动决定返回什么数据：
 
 ```typescript
-const { mockDrizzleDb, mockDrizzleSchema } = vi.hoisted(() => {
-    const makeChain = () => {
-        const chain: any = {
-            // 使其成为 thenable 以支持直接 await 链
-            then: vi.fn((resolve) => resolve([])),
-        };
-        const methods = ['insert', 'values', 'update', 'set', 'delete', 'select', 'from', 'where', 'limit', 'offset', 'orderBy', 'all', 'innerJoin', 'leftJoin', 'onConflictDoUpdate'];
-        methods.forEach((m) => {
-            chain[m] = vi.fn(() => chain); // 默认返回自身
-        });
-        return chain;
+vi.mock('@/lib/db', () => {
+    const drizzleMock: any = {
+        select: vi.fn(() => {
+            const chain: any = {
+                from: vi.fn((table) => {
+                    // 核心：智能捕获表名
+                    const tableName = (table as any).name || (table as any)[Symbol.for('drizzle:Name')] || (table as any)._?.name;
+                    
+                    const tableChain: any = {
+                        where: vi.fn(() => {
+                            const whereChain: any = {
+                                limit: vi.fn(() => ({
+                                    // limit(1) 通常被解构：const [row] = await ...
+                                    then: (resolve: any) => {
+                                        if (tableName === 'users') return resolve([{ id: 1 }]);
+                                        if (tableName === 'settings') return resolve([]);
+                                        return resolve([]);
+                                    }
+                                })),
+                                all: vi.fn().mockImplementation(() => {
+                                    if (tableName === 'settings') return [{ key: 'theme', value: 'dark' }];
+                                    return [];
+                                }),
+                            };
+                            return whereChain;
+                        }),
+                        then: (resolve: any) => resolve([]) // 兜底直接 await select().from()
+                    };
+                    return tableChain;
+                })
+            };
+            return chain;
+        }),
+        insert: vi.fn(() => { /* 类似逻辑，可通过 Proxy 拦截 values 和 onConflictDoUpdate */ }),
     };
-
-    const chain = makeChain();
-    const mockDrizzleDb = {
-        ...chain,
-        query: {
-            users: { findFirst: vi.fn(), findMany: vi.fn() }, // Mock 关系查询
-        },
-        transaction: vi.fn(async (cb) => cb(chain)), // 事务传入链对象
-    };
-
-    return { mockDrizzleDb, mockDrizzleSchema: { /* 映射表字段 */ } };
+    return { drizzleDb: drizzleMock };
 });
-
-vi.mock('@/lib/db', () => ({
-    drizzleDb: mockDrizzleDb,
-    drizzleSchema: mockDrizzleSchema,
-}));
 ```
 
-### 2. 在 `beforeEach` 中重置链行为
+## 处理“Fire-and-Forget”异步副作用
+
+在业务代码中，非关键路径的后台任务（如记录日志、更新统计、计算 EMA 阅读速度）通常会去掉 `await` 以防阻塞主流程：
+`learnReadingSpeed(...).catch(console.error);`
+
+**致命陷阱**：在测试中，这个后台任务可能会在下一个 `it` 块中才被事件循环挑起执行。此时前一个测试的 Mock 已被重置，导致后台任务拿到错误数据或污染后续测试。
+
+### 最佳实践：显式等待副作用 (`vi.waitFor`)
+
+绝不要在测试结束时就以为流程结束了。必须主动等待预期的副作用实际写入（或等待微任务队列清空）：
 
 ```typescript
-beforeEach(() => {
-    vi.clearAllMocks();
+it('should perform background update', async () => {
+    // 触发带有后台更新的服务
+    await myService.updateData();
+
+    // ❌ 错误做法：直接断言，此时后台的 insert 可能还没执行
+    // expect(capturedValues).toHaveLength(1); 
+
+    // ✅ 正确做法：不断轮询直到副作用落地，带有自动超时
+    await vi.waitFor(() => {
+        const update = capturedValues.find(v => v.key === 'expected_key');
+        if (!update) throw new Error('Not updated yet'); // 抛出错误以触发重试
+        expect(update.value).toBe('success');
+    }, { timeout: 1000 });
+});
+
+it('should NOT update if failed', async () => {
+    await myService.updateData(true); // 传入失败条件
     
-    // 确保每个链式方法仍然返回链对象（防止被 mockReturnValueOnce 破坏）
-    const chain = mockDrizzleDb as any;
-    ['select', 'from', 'where', 'limit'].forEach(m => chain[m].mockReturnValue(chain));
-    
-    // 设置默认返回结果
-    chain.all.mockResolvedValue([]);
-    chain.then.mockImplementation((resolve: any) => resolve([]));
+    // 如果期望【不发生】某事，必须使用 setTimeout 延迟一下，否则假阳性
+    await new Promise(r => setTimeout(r, 50)); 
+    expect(capturedValues).toHaveLength(0);
 });
 ```
 

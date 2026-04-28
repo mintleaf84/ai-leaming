@@ -1,176 +1,188 @@
-
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { srsService } from '../srs';
-import { Rating } from 'ts-fsrs';
-import { drizzleDb, drizzleSchema } from '@/lib/db';
+import { Rating, createEmptyCard } from 'ts-fsrs';
 
-// 注意：由于 srs.ts 内部使用了异步 learnReadingSpeed().catch()，我们需要等待微任务
-const wait = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
-
-// 用于捕获 values 调用的参数
+// 用于捕获数据
 let capturedValues: any[] = [];
+let mockQuestion: any = null;
+let mockSrs: any = null;
+let mockSettings: Record<string, string> = {};
 
 vi.mock('@/lib/db', () => {
-    const mockRun = vi.fn();
-    const mockOnConflict = vi.fn(() => ({ run: mockRun }));
-    const mockValues = vi.fn((data: any) => {
-        capturedValues.push(data);
-        return { onConflictDoUpdate: mockOnConflict };
-    });
-    const mockInsert = vi.fn(() => ({ values: mockValues }));
-
-    return {
-        drizzleDb: {
-            query: {
-                questions: {
-                    findFirst: vi.fn(),
+    const drizzleMock: any = {
+        select: vi.fn((fields) => {
+            const chain: any = {
+                from: vi.fn((table) => {
+                    const tableName = (table as any).name || (table as any)[Symbol.for('drizzle:Name')] || (table as any)._?.name || 'unknown_table';
+                    const tableChain: any = {
+                        where: vi.fn(() => {
+                            const whereChain: any = {
+                                limit: vi.fn(() => ({
+                                    then: (resolve: any) => {
+                                        if (tableName === 'questions') return resolve(mockQuestion ? [mockQuestion] : []);
+                                        if (tableName === 'question_srs') return resolve(mockSrs ? [mockSrs] : []);
+                                        if (tableName === 'system_settings') {
+                                            return resolve(Object.entries(mockSettings).map(([key, value]) => ({ key, value })));
+                                        }
+                                        return resolve([]);
+                                    }
+                                })),
+                                all: vi.fn().mockImplementation(() => {
+                                    if (tableName === 'system_settings') {
+                                        return Object.entries(mockSettings).map(([key, value]) => ({ key, value }));
+                                    }
+                                    return [];
+                                }),
+                                then: (resolve: any) => {
+                                     if (tableName === 'system_settings') {
+                                         return resolve(Object.entries(mockSettings).map(([key, value]) => ({ key, value })));
+                                     }
+                                     if (tableName === 'questions') return resolve(mockQuestion ? [mockQuestion] : []);
+                                     if (tableName === 'question_srs') return resolve(mockSrs ? [mockSrs] : []);
+                                     return resolve([]);
+                                }
+                            };
+                            return whereChain;
+                        }),
+                        then: (resolve: any) => resolve([]) // 兜底处理 select().from() 直接 await
+                    };
+                    return tableChain;
+                })
+            };
+            return chain;
+        }),
+        insert: vi.fn((table) => {
+            const chain: any = new Proxy(() => {}, {
+                get: (_, prop) => {
+                    if (prop === 'values') {
+                        return (data: any) => {
+                            capturedValues.push(data);
+                            return chain;
+                        };
+                    }
+                    if (prop === 'onConflictDoUpdate') return () => Promise.resolve({ changes: 1 });
+                    return chain;
                 },
-                question_srs: {
-                    findFirst: vi.fn(),
-                },
-                system_settings: {
-                    findFirst: vi.fn(),
-                }
+                apply: () => chain
+            });
+            return chain;
+        }),
+        query: {
+            questions: { 
+                findFirst: vi.fn().mockImplementation(() => Promise.resolve(mockQuestion)) 
             },
-            insert: mockInsert,
-            // 补全 updateQuestionSrs 需要的其他 mock
-            select: vi.fn(() => ({ from: vi.fn(() => ({ where: vi.fn(() => ({ get: vi.fn() })) })) })),
-        },
+            question_srs: { 
+                findFirst: vi.fn().mockImplementation(() => Promise.resolve(mockSrs)) 
+            },
+            system_settings: {
+                findFirst: vi.fn().mockImplementation(() => Promise.resolve(null))
+            }
+        }
+    };
+    return {
+        default: drizzleMock,
+        db: drizzleMock,
+        drizzleDb: drizzleMock,
         drizzleSchema: {
-            questions: { id: 1 },
-            question_srs: { user_id: 1, question_id: 1, due_date: 'due_date' },
-            system_settings: { user_id: 1, key: 'key', value: 'value' },
-            practice_logs: { user_id: 1, question_id: 1 }
-        },
-        db: {}
+            questions: { name: 'questions' },
+            question_srs: { name: 'question_srs' },
+            system_settings: { name: 'system_settings' },
+            practice_logs: { name: 'practice_logs' }
+        }
     };
 });
 
-describe('srsService - Speed Learning Logic', () => {
-    
+describe('srsService - Speed Learning Logic (Best Practices)', () => {
     beforeEach(() => {
         vi.clearAllMocks();
         capturedValues = [];
+        mockQuestion = null;
+        mockSrs = null;
+        mockSettings = {};
     });
 
     it('should learn and update reading speed when answering correctly', async () => {
-        const userId = 1;
-        const questionId = 101;
-        
-        // 1. Mock 题目：字数
-        (drizzleDb.query.questions.findFirst as any).mockResolvedValue({
-            id: questionId,
+        mockQuestion = {
+            id: 101,
             content: '这是一段测试文本内容，长度超过十个字。', // 20 chars
             options: '[]',
             type: 'single'
-        });
-
-        // 2. Mock 当前 SRS 状态
-        (drizzleDb.query.question_srs.findFirst as any).mockResolvedValue({
+        };
+        mockSrs = {
             stability: 1, difficulty: 5, state: 0, reps: 0, lapses: 0, due_date: new Date().toISOString()
-        });
+        };
 
-        // 3. Mock 初始速度：返回 null 使用默认值 7
-        (drizzleDb.query.system_settings.findFirst as any).mockResolvedValue(null);
+        await srsService.updateQuestionSrs(1, 101, true, 1000);
 
-        // 4. 执行更新：耗时 1000ms (1s)
-        // 本次速度 = 20 / 1 = 20 字/s
-        // EMA 更新：7 * 0.9 + 20 * 0.1 = 6.3 + 2.0 = 8.3
-        await srsService.updateQuestionSrs(userId, questionId, true, 1000);
-
-        // 等待异步 catch 块执行
-        await wait(50);
-
-        // 验证结果
-        const speedUpdate = capturedValues.find(v => v.key === 'reading_speed_base');
-        expect(speedUpdate).toBeDefined();
-        expect(parseFloat(speedUpdate.value)).toBeCloseTo(8.2, 1);
+        // 使用 waitFor 等待异步副作用执行完成
+        await vi.waitFor(() => {
+            const update = capturedValues.find(v => v.key === 'reading_speed_base');
+            if (!update) throw new Error('Not updated yet');
+            // 文本长度 19, 耗时 1s, 速度 19 字/秒。EMA: 7 * 0.9 + 19 * 0.1 = 8.2
+            expect(parseFloat(update.value)).toBeCloseTo(8.2, 1);
+        }, { timeout: 1000 });
     });
 
     it('should learn speed for MULTI questions independently', async () => {
-        const userId = 1;
-        const questionId = 201;
-        
-        (drizzleDb.query.questions.findFirst as any).mockResolvedValue({
-            id: questionId,
+        mockQuestion = {
+            id: 201,
             content: '多选题题干内容', // 7 chars
             options: '["选项A", "选项B"]', // 6 chars, total 13
             type: 'multi'
-        });
-        (drizzleDb.query.question_srs.findFirst as any).mockResolvedValue({
+        };
+        mockSrs = {
             stability: 1, difficulty: 5, state: 0, reps: 0, lapses: 0, due_date: new Date().toISOString()
+        };
+
+        await srsService.updateQuestionSrs(1, 201, true, 1300);
+
+        await vi.waitFor(() => {
+            const update = capturedValues.find(v => v.key === 'reading_speed_multi');
+            if (!update) throw new Error('Not updated yet');
+            expect(parseFloat(update.value)).toBeCloseTo(7.3, 1);
         });
-        (drizzleDb.query.system_settings.findFirst as any).mockResolvedValue(null);
-
-        // 耗时 1300ms -> 10 chars/s
-        // EMA: 7 * 0.9 + 10 * 0.1 = 6.3 + 1 = 7.3
-        await srsService.updateQuestionSrs(userId, questionId, true, 1300);
-        await wait(50);
-
-        const speedUpdate = capturedValues.find(v => v.key === 'reading_speed_multi');
-        expect(speedUpdate).toBeDefined();
-        expect(parseFloat(speedUpdate.value)).toBeCloseTo(7.3, 1);
     });
 
     it('should learn speed for TRUEFALSE questions independently', async () => {
-        const userId = 1;
-        const questionId = 301;
-        
-        (drizzleDb.query.questions.findFirst as any).mockResolvedValue({
-            id: questionId,
+        mockQuestion = {
+            id: 301,
             content: '判断题题干内容', // 7 chars
             options: '["正确", "错误"]', // 4 chars, total 11
             type: 'truefalse'
-        });
-        (drizzleDb.query.question_srs.findFirst as any).mockResolvedValue({
+        };
+        mockSrs = {
             stability: 1, difficulty: 5, state: 0, reps: 0, lapses: 0, due_date: new Date().toISOString()
+        };
+
+        await srsService.updateQuestionSrs(1, 301, true, 1100);
+
+        await vi.waitFor(() => {
+            const update = capturedValues.find(v => v.key === 'reading_speed_truefalse');
+            if (!update) throw new Error('Not updated yet');
+            expect(parseFloat(update.value)).toBeCloseTo(7.3, 1);
         });
-        (drizzleDb.query.system_settings.findFirst as any).mockResolvedValue(null);
-
-        // 耗时 1100ms -> 10 chars/s
-        // EMA: 7 * 0.9 + 10 * 0.1 = 6.3 + 1 = 7.3
-        await srsService.updateQuestionSrs(userId, questionId, true, 1100);
-        await wait(50);
-
-        const speedUpdate = capturedValues.find(v => v.key === 'reading_speed_truefalse');
-        expect(speedUpdate).toBeDefined();
-        expect(parseFloat(speedUpdate.value)).toBeCloseTo(7.3, 1);
     });
 
     it('should NOT learn speed when answer is incorrect', async () => {
-        const userId = 1;
-        const questionId = 102;
-        
-        (drizzleDb.query.questions.findFirst as any).mockResolvedValue({
-            id: questionId, content: '测试内容测试内容', options: '[]'
-        });
-        (drizzleDb.query.question_srs.findFirst as any).mockResolvedValue({
-            stability: 1, difficulty: 5, state: 0, reps: 0, lapses: 0, due_date: new Date().toISOString()
-        });
+        mockQuestion = { id: 102, content: '内容', options: '[]' };
+        mockSrs = { stability: 1, difficulty: 5, state: 0, reps: 0, lapses: 0, due_date: new Date().toISOString() };
 
-        await srsService.updateQuestionSrs(userId, questionId, false, 2000);
-        await wait(50);
+        await srsService.updateQuestionSrs(1, 102, false, 2000);
 
-        const speedUpdate = capturedValues.find(v => v.key === 'reading_speed_base');
-        expect(speedUpdate).toBeUndefined();
+        // 延迟确认没有调用
+        await new Promise(r => setTimeout(r, 50));
+        const update = capturedValues.find(v => v.key === 'reading_speed_base');
+        expect(update).toBeUndefined();
     });
 
-    it('should NOT learn speed when duration is an outlier (too long)', async () => {
-        const userId = 1;
-        const questionId = 103;
-        
-        (drizzleDb.query.questions.findFirst as any).mockResolvedValue({
-            id: questionId, content: '测试内容测试内容', options: '[]'
-        });
-        (drizzleDb.query.question_srs.findFirst as any).mockResolvedValue({
-            stability: 1, difficulty: 5, state: 0, reps: 0, lapses: 0, due_date: new Date().toISOString()
-        });
+    it('should NOT learn speed when duration is an outlier', async () => {
+        mockQuestion = { id: 103, content: '内容内容内容内容内容', options: '[]' };
+        mockSrs = { stability: 1, difficulty: 5, state: 0, reps: 0, lapses: 0, due_date: new Date().toISOString() };
 
-        // 耗时 120s 超过 60s 限制
-        await srsService.updateQuestionSrs(userId, questionId, true, 120000);
-        await wait(50);
+        await srsService.updateQuestionSrs(1, 103, true, 120000);
 
-        const speedUpdate = capturedValues.find(v => v.key === 'reading_speed_base');
-        expect(speedUpdate).toBeUndefined();
+        await new Promise(r => setTimeout(r, 50));
+        const update = capturedValues.find(v => v.key === 'reading_speed_base');
+        expect(update).toBeUndefined();
     });
 });

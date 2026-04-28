@@ -276,7 +276,7 @@ export default function WrongBookPage() {
                                                         ))}
                                                         <span className="text-xs text-green-600 flex items-center gap-1">
                                                             <CheckCircle2 className="w-3 h-3" />
-                                                            掌握于 {new Date(q.masteredAt).toLocaleDateString()}
+                                                            掌握于 {q.lastWrongAt ? new Date(q.lastWrongAt).toLocaleDateString() : '未知'}
                                                         </span>
                                                     </div>
                                                 </div>

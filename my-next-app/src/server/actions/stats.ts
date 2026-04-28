@@ -5,10 +5,6 @@ import { requireUser } from '@/lib/auth/auth';
 import { cache } from 'react';
 import { statsService, type UserStats, type TrendDataItem } from '@/lib/services/stats';
 
-/**
- * 导出类型供前端使用
- */
-export type { UserStats, TrendDataItem };
 
 /**
  * 获取用户首页仪表盘统计数据 (Cached per request)

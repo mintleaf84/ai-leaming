@@ -2,24 +2,13 @@
 
 import logger from '@/lib/logger';
 import { requireUser } from '@/lib/auth/auth';
-import { wrongQuestionService, type WrongQuestionItem } from '@/lib/services/wrong-question';
+import { 
+    wrongQuestionService, 
+    type WrongQuestionItem, 
+    type WrongQuestionsByTag,
+    type WrongQuestionDetail 
+} from '@/lib/services/wrong-question';
 import { practiceService } from '@/lib/services/practice';
-
-export type { WrongQuestionItem };
-
-/**
- * 获取按知识点分组的错题
- */
-export type WrongQuestionsByTag = {
-    tag: string;
-    count: number;
-    questions: WrongQuestionItem[];
-};
-
-/**
- * 错题详情类型
- */
-export type WrongQuestionDetail = NonNullable<Awaited<ReturnType<typeof wrongQuestionService.getDetail>>>;
 
 /**
  * 获取错题列表
@@ -141,6 +130,19 @@ export async function getRandomWrongQuestionsAction(options: any = {}) {
         return await wrongQuestionService.getRandomRecommended(user.id, options);
     } catch (error) {
         logger.error({ err: error }, "[WrongQuestionAction] 获取推荐失败");
+        return [];
+    }
+}
+
+/**
+ * 获取已掌握题目列表
+ */
+export async function getMasteredQuestionsAction(): Promise<WrongQuestionItem[]> {
+    try {
+        const user = await requireUser();
+        return await wrongQuestionService.getMasteredQuestions(user.id);
+    } catch (error) {
+        logger.error({ err: error }, "[WrongQuestionAction] 获取已掌握列表失败");
         return [];
     }
 }

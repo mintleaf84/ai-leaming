@@ -9,7 +9,7 @@ import 'dayjs/locale/zh-cn';
 dayjs.extend(utc);
 dayjs.extend(relativeTime);
 dayjs.locale('zh-cn');
-import { getUserActivityAction, UserActivityEntry, ActivityFilters } from '@/server/actions/activity';
+import { getUserActivityAction, type ActivityFilters, type UserActivityEntry } from '@/server/actions/activity';
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -156,22 +156,22 @@ export function ActivityList() {
                                             {log.dimension === 'knowledge' ? '识记' : log.dimension === 'application' ? '应用' : '理解'}
                                         </Badge>
                                     </div>
-                                    <div className="text-sm font-medium text-foreground line-clamp-1 mb-2" title={log.question_content}>
-                                        {log.question_content}
+                                    <div className="text-sm font-medium text-foreground line-clamp-1 mb-2" title={log.question_content || ''}>
+                                        {log.question_content || '未知题目'}
                                     </div>
                                     <div className="flex items-center gap-4 text-xs text-muted-foreground">
                                         <span className="flex items-center gap-1">
                                             <Clock className="w-3 h-3" />
-                                            耗时 {formatDuration(log.duration_ms)}
+                                            耗时 {formatDuration(log.duration_ms || 0)}
                                         </span>
                                         <span className="flex items-center gap-1">
-                                            用户答案: <span className="font-mono bg-muted px-1.5 py-0.5 rounded text-foreground">{log.user_answer}</span>
+                                            用户答案: <span className="font-mono bg-muted px-1.5 py-0.5 rounded text-foreground">{log.user_answer || '无'}</span>
                                         </span>
                                     </div>
                                 </div>
                                 <div className="text-right flex flex-col justify-between h-full min-w-[70px]">
                                     <span className="text-[10px] text-muted-foreground font-medium">
-                                        {getTimeAgo(log.timestamp)}
+                                        {getTimeAgo(log.timestamp || new Date().toISOString())}
                                     </span>
                                     <Button variant="ghost" size="icon" className="h-8 w-8 self-end opacity-0 group-hover:opacity-100 transition-opacity">
                                         <Search className="w-4 h-4" />

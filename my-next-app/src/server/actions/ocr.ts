@@ -6,15 +6,7 @@ import { performPaddleOCR } from '@/lib/ai/paddle-ocr';
 import { performOCR as performSiliconFlowOCR } from '@/lib/ai/siliconflow-ocr';
 import { requireUser } from '@/lib/auth/auth';
 
-/** 支持的 OCR 模型列表 */
-export type OcrModel = 'paddle-ocr' | 'deepseek-ocr';
-
-export interface OcrModelInfo {
-    id: OcrModel;
-    name: string;
-    description: string;
-    supportedTypes: string[];
-}
+import { type OcrModel, type OcrModelInfo } from '@/types/ocr';
 
 /** 获取可用的 OCR 模型列表（供前端展示） */
 export async function getOcrModelsAction(): Promise<OcrModelInfo[]> {

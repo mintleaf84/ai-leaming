@@ -38,6 +38,9 @@ export type HistoryFilter = {
     pageSize?: number;
 };
 
+/** 会话详情完整类型 */
+export type SessionDetail = NonNullable<Awaited<ReturnType<typeof historyService.getSessionDetail>>>;
+
 /**
  * 练习历史服务 - 管理练习会话的查询、统计与维护
  */

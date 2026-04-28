@@ -1,5 +1,5 @@
 import { notFound } from 'next/navigation';
-import { getMindmapDetailAction } from '@/server/actions/mindmap-db';
+import { getMindmapDetailAction } from '@/server/actions/mindmap';
 import MindmapEditorClient from './MindmapEditorClient';
 
 export default async function MindmapDetailPage({ params }: { params: Promise<{ id: string }> }) {

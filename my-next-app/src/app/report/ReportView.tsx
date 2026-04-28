@@ -2,8 +2,10 @@
 
 import React, { useEffect, useState } from 'react';
 import dynamic from 'next/dynamic';
-import { generateDiagnosticReportAction, SessionReportData } from '@/server/actions/report';
-import { getPracticeTrendAction, TrendDataItem } from '@/server/actions/stats';
+import { generateDiagnosticReportAction } from '@/server/actions/report';
+import { type SessionReportData } from '@/lib/services/report';
+import { getPracticeTrendAction } from '@/server/actions/stats';
+import { type TrendDataItem } from '@/lib/services/stats';
 import { Button } from '@/components/ui/button';
 import { TrendingUp, Clock, Target, CheckCircle2 } from 'lucide-react';
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';

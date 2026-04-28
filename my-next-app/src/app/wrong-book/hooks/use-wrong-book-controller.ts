@@ -13,20 +13,22 @@ import {
     markAsMasteredAction,
     unmarkMasteredAction,
     getRandomWrongQuestionsAction,
-    WrongQuestionItem,
-    WrongQuestionsByTag,
-    WrongQuestionDetail
 } from '@/server/actions/wrong-questions';
+import { 
+    type WrongQuestionItem, 
+    type WrongQuestionsByTag, 
+    type WrongQuestionDetail 
+} from '@/lib/services/wrong-question';
 
 // 视图模式类型
 export type ViewMode = 'list' | 'byTag' | 'mastered';
 
 // 已掌握题目类型
 export interface MasteredQuestion {
-    questionId: string;
+    questionId: number;
     questionContent: string;
     tags: string[];
-    masteredAt: string;
+    masteredAt: string | null;
     note: string | null;
 }
 
@@ -47,19 +49,19 @@ export function useWrongBookController() {
     // 数据状态
     const [questions, setQuestions] = useState<WrongQuestionItem[]>([]);
     const [groupedQuestions, setGroupedQuestions] = useState<WrongQuestionsByTag[]>([]);
-    const [masteredQuestions, setMasteredQuestions] = useState<MasteredQuestion[]>([]);
+    const [masteredQuestions, setMasteredQuestions] = useState<WrongQuestionItem[]>([]);
     const [stats, setStats] = useState<WrongBookStats>({ total: 0, recent: 0, frequent: 0 });
 
     // UI 状态
     const [isLoading, setIsLoading] = useState(true);
     const [viewMode, setViewMode] = useState<ViewMode>('list');
     const [expandedTags, setExpandedTags] = useState<Set<string>>(new Set());
-    const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
+    const [selectedIds, setSelectedIds] = useState<Set<number>>(new Set());
     const [isCreating, setIsCreating] = useState(false);
     const [isRandomLoading, setIsRandomLoading] = useState(false);
 
     // 详情展开状态
-    const [expandedQuestionId, setExpandedQuestionId] = useState<string | null>(null);
+    const [expandedQuestionId, setExpandedQuestionId] = useState<number | null>(null);
     const [questionDetail, setQuestionDetail] = useState<WrongQuestionDetail | null>(null);
     const [isLoadingDetail, setIsLoadingDetail] = useState(false);
 
@@ -98,7 +100,7 @@ export function useWrongBookController() {
     }, []);
 
     // 切换题目选中状态
-    const toggleSelect = useCallback((id: string) => {
+    const toggleSelect = useCallback((id: number) => {
         setSelectedIds(prev => {
             const next = new Set(prev);
             if (next.has(id)) {
@@ -120,7 +122,7 @@ export function useWrongBookController() {
     }, [selectedIds.size, questions]);
 
     // 开始练习（支持 limit 控制题量）
-    const startPractice = useCallback(async (ids?: string[], limit?: number) => {
+    const startPractice = useCallback(async (ids?: number[], limit?: number) => {
         let practiceIds = ids || Array.from(selectedIds);
         if (practiceIds.length === 0) {
             toast.error('请先选择要练习的错题');
@@ -177,7 +179,7 @@ export function useWrongBookController() {
     }, [router]);
 
     // 展开/收起题目详情
-    const toggleQuestionDetail = useCallback(async (questionId: string) => {
+    const toggleQuestionDetail = useCallback(async (questionId: number) => {
         if (expandedQuestionId === questionId) {
             setExpandedQuestionId(null);
             setQuestionDetail(null);
@@ -192,7 +194,7 @@ export function useWrongBookController() {
     }, [expandedQuestionId]);
 
     // 标记为已掌握
-    const handleMarkAsMastered = useCallback(async (questionId: string) => {
+    const handleMarkAsMastered = useCallback(async (questionId: number) => {
         const result = await markAsMasteredAction(questionId);
         if (result.success) {
             toast.success('已标记为掌握！该题目已移至归档。');
@@ -205,7 +207,7 @@ export function useWrongBookController() {
     }, [loadData]);
 
     // 取消已掌握标记
-    const handleUnmarkMastered = useCallback(async (questionId: string) => {
+    const handleUnmarkMastered = useCallback(async (questionId: number) => {
         const result = await unmarkMasteredAction(questionId);
         if (result.success) {
             toast.success('已恢复到错题本');

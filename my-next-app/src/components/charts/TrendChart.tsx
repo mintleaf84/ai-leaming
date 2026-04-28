@@ -2,7 +2,7 @@
 
 import React from 'react';
 import dynamic from 'next/dynamic';
-import { TrendDataItem } from '@/server/actions/stats';
+import { type TrendDataItem } from '@/lib/services/stats';
 
 // 动态提取所需的 recharts 组件以实现包体积懒加载
 const AreaChart = dynamic(() => import('recharts').then(mod => mod.AreaChart), { ssr: false });

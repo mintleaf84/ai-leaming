@@ -14,6 +14,22 @@ export interface ActivityFilters {
 }
 
 /**
+ * 用户活动流水条目
+ */
+export interface UserActivityEntry {
+    id: number;
+    user_id: number;
+    username: string | null;
+    question_id: number;
+    question_content: string | null;
+    dimension: string | null;
+    user_answer: string | null;
+    is_correct: boolean;
+    duration_ms: number | null;
+    timestamp: string | null;
+}
+
+/**
  * 获取用户练习活动流水线 (管理员权限)
  */
 export async function getUserActivityAction(

@@ -5,7 +5,7 @@ import { CheckSquare, Square, Play, AlertTriangle, Clock, Brain, Zap } from 'luc
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { QuestionDetailPanel } from './QuestionDetailPanel';
-import { WrongQuestionItem, WrongQuestionDetail } from '@/server/actions/wrong-questions';
+import { type WrongQuestionItem, type WrongQuestionDetail } from '@/lib/services/wrong-question';
 
 interface WrongQuestionCardProps {
     question: WrongQuestionItem;

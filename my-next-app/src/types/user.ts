@@ -1,21 +1,17 @@
-/**
- * 用户相关类型定义
- * User Related Type Definitions
- */
-
-// 用户角色
-export type UserRole = 'admin' | 'student' | 'teacher';
-
-// 用户实体
-export interface User {
+/** 用户个人资料类型 */
+export interface UserProfile {
     id: number;
-    username: string;
-    role: UserRole;
-    token_version?: number;
+    email: string | null;
+    name: string | null;
+    image: string | null;
+    role: string | null;
+    createdAt: string;
+    updatedAt: string;
 }
 
-// 用户会话信息
-export interface UserSession {
-    user: User;
-    exp?: number;
+/** 用户设置项 */
+export interface UserSettings {
+    theme?: 'light' | 'dark' | 'system';
+    readingSpeed?: number;
+    [key: string]: any;
 }

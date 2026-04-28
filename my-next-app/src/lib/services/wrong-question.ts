@@ -19,6 +19,41 @@ export interface WrongQuestionItem {
 }
 
 /**
+ * 获取按知识点分组的错题
+ */
+export interface WrongQuestionsByTag {
+    tag: string;
+    count: number;
+    questions: WrongQuestionItem[];
+}
+
+/**
+ * 错题详情类型
+ */
+export interface WrongQuestionDetail {
+    questionId: number;
+    questionContent: string;
+    options: string[];
+    correctAnswer: string | null;
+    explanation: string;
+    tags: string[];
+    questionType: string;
+    wrongCount: number;
+    lastWrongAt: string;
+    userLastAnswer: string;
+    historyLogs: {
+        timestamp: string | null;
+        userAnswer: string | null;
+        isCorrect: boolean;
+    }[];
+    srs?: {
+        stability: number;
+        difficulty: number;
+        due_date: string;
+    };
+}
+
+/**
  * 错题服务 - 管理错题本、掌握状态及智能推荐
  */
 export const wrongQuestionService = {
@@ -248,6 +283,7 @@ export const wrongQuestionService = {
             questionType: question.questions.type || 'single',
             wrongCount: stats?.wrongCount || 0,
             lastWrongAt: stats?.lastWrongAt || '',
+            userLastAnswer: history.find(h => !h.isCorrect)?.userAnswer || '',
             historyLogs: history.map(h => ({
                 timestamp: h.timestamp,
                 userAnswer: h.userAnswer,
@@ -259,5 +295,32 @@ export const wrongQuestionService = {
                 due_date: question.question_srs.due_date || ''
             } : undefined
         };
+    },
+
+    /**
+     * 获取已掌握题目列表
+     */
+    async getMasteredQuestions(userId: number): Promise<WrongQuestionItem[]> {
+        const rows = await drizzleDb.select({
+            questionId: mastered_questions.question_id,
+            questionContent: questions.content,
+            tags: questions.tags,
+            correctAnswer: questions.answer,
+            masteredAt: mastered_questions.mastered_at,
+        })
+        .from(mastered_questions)
+        .innerJoin(questions, eq(mastered_questions.question_id, questions.id))
+        .where(eq(mastered_questions.user_id, userId))
+        .orderBy(desc(mastered_questions.mastered_at));
+
+        return rows.map(r => ({
+            questionId: r.questionId!,
+            questionContent: r.questionContent!,
+            tags: typeof r.tags === 'string' ? JSON.parse(r.tags) : (r.tags || []),
+            wrongCount: 0, // 已掌握题目不需要错题计数
+            lastWrongAt: r.masteredAt || '',
+            correctAnswer: r.correctAnswer!,
+            userLastAnswer: ''
+        }));
     }
 };

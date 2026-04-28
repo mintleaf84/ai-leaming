@@ -12,10 +12,6 @@ import {
     type UpdateNoteInput 
 } from '@/lib/services/knowledge';
 
-/**
- * 导出类型供外部使用
- */
-export type { Note, NotePreview, CreateNoteInput, UpdateNoteInput };
 
 /**
  * 创建欢迎笔记

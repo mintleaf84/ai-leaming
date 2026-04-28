@@ -1,7 +1,8 @@
 "use client";
 
 import React, { useEffect, useState, use, useRef, useCallback } from 'react';
-import { getSessionDetailAction, SessionDetail, deleteSessionAction, exportSessionMarkdownAction } from '@/server/actions/history';
+import { getSessionDetailAction, deleteSessionAction, exportSessionMarkdownAction } from '@/server/actions/history';
+import { type SessionDetail } from '@/lib/services/history';
 import { generateDeepAnalysisAction, getAnalysisReportAction } from '@/server/actions/report';
 import { Button } from '@/components/ui/button';
 import Link from 'next/link';

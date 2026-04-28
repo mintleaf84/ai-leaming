@@ -42,7 +42,8 @@ const ModeIcons: Record<PracticeMode, React.ReactNode> = {
     mistakes: <AlertCircle className="w-6 h-6" />,
     focus: <Target className="w-6 h-6" />,
     exam: <FileCheck className="w-6 h-6" />,
-    random: <Shuffle className="w-6 h-6" />
+    random: <Shuffle className="w-6 h-6" />,
+    "first-principles": <Target className="w-6 h-6" />
 };
 
 // 模式颜色
@@ -52,7 +53,8 @@ const ModeColors: Record<PracticeMode, string> = {
     mistakes: 'from-rose-500 to-red-600',
     focus: 'from-green-500 to-emerald-600',
     exam: 'from-purple-500 to-violet-600',
-    random: 'from-pink-500 to-rose-600'
+    random: 'from-pink-500 to-rose-600',
+    "first-principles": 'from-cyan-500 to-blue-600'
 };
 
 export default function PracticeSetupPage() {

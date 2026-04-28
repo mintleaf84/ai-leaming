@@ -1,5 +1,5 @@
 import React from 'react';
-import { getMindmapsAction } from '@/server/actions/mindmap-db';
+import { getMindmapsAction } from '@/server/actions/mindmap';
 import { MindmapSidebar } from './MindmapSidebar';
 import { redirect } from 'next/navigation';
 
@@ -13,7 +13,7 @@ export default async function MindmapLayout({ children }: { children: React.Reac
 
     return (
         <div className="flex w-full overflow-hidden bg-background">
-            <MindmapSidebar records={records || []} />
+            <MindmapSidebar records={(records || []).map(r => ({ ...r, updated_at: r.updated_at ?? '' }))} />
             <div className="flex-1 overflow-hidden relative">
                 {children}
             </div>

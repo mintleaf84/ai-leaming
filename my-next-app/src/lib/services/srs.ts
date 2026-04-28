@@ -106,6 +106,20 @@ export interface SrsGlobalStats {
   learnedCount: number;
 }
 
+export type SrsHistoryEntry = {
+  date: string;
+  rating: string;
+  duration: number;
+  isCorrect: boolean;
+};
+
+export type SrsPrediction = {
+  rating: Rating;
+  label: string;
+  nextDueDate: string;
+  interval: number;
+};
+
 export const srsService = {
     /**
      * 根据答题耗时和题目长度计算 FSRS 评分 (Rating)
@@ -276,7 +290,7 @@ export const srsService = {
         })
         .from(question_srs)
         .where(eq(question_srs.user_id, userId))
-        .groupBy(sql`range`);
+        .groupBy(sql`1`);
 
         // 3. 难度分布
         const difficultyRows = await drizzleDb.select({
@@ -285,8 +299,8 @@ export const srsService = {
         })
         .from(question_srs)
         .where(eq(question_srs.user_id, userId))
-        .groupBy(sql`range`)
-        .orderBy(sql`range ASC`);
+        .groupBy(sql`1`)
+        .orderBy(sql`1 ASC`);
 
         // 4. 未来 7 天计划
         const futureDays = Array.from({ length: 7 }, (_, i) => {
@@ -308,7 +322,7 @@ export const srsService = {
             eq(question_srs.user_id, userId),
             sql`date(${question_srs.due_date}) <= date('now', '+7 days')`
         ))
-        .groupBy(sql`date`);
+        .groupBy(sql`1`);
 
         // 5. 真实保留率 (最近 30 天)
         const [retentionRow] = await drizzleDb.select({

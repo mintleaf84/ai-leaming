@@ -4,7 +4,7 @@ import React from 'react';
 import { motion } from 'framer-motion';
 import { X, Target } from 'lucide-react';
 import { cn } from '@/lib/utils';
-import { SessionDetail } from '@/server/actions/history';
+import { type SessionDetail } from '@/lib/services/history';
 import { MODE_CONFIG } from './HistoryCardItem';
 import { SessionSummary } from '@/components/history';
 

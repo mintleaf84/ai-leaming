@@ -19,7 +19,7 @@ import dayjs from 'dayjs';
 import utc from 'dayjs/plugin/utc';
 
 dayjs.extend(utc);
-import { SessionHistoryItem } from '@/server/actions/history';
+import { type SessionHistoryItem } from '@/lib/services/history';
 
 // 模式配置
 export const MODE_CONFIG: Record<string, { label: string; icon: React.ReactNode; className: string }> = {

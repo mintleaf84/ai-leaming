@@ -7,18 +7,7 @@ import {
     historyService, 
     type HistoryFilter, 
     type PaginatedHistory, 
-    type SessionHistoryItem 
 } from '@/lib/services/history';
-
-/**
- * 导出类型供外部使用
- */
-export type { HistoryFilter, SessionHistoryItem, PaginatedHistory };
-
-/**
- * 会话详情类型
- */
-export type SessionDetail = NonNullable<Awaited<ReturnType<typeof historyService.getSessionDetail>>>;
 
 /**
  * 获取练习历史记录

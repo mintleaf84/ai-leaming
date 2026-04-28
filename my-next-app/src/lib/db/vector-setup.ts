@@ -1,18 +1,20 @@
-import Database from 'better-sqlite3';
+import { drizzleDb } from './index';
+import { sql } from 'drizzle-orm';
 
 const EMBEDDING_DIM = 1536; // OpenAI text-embedding-3-small dimension
 
 /**
- * 初始化 sqlite-vec 向量扩展和向量表
+ * 初始化 sqlite-vec 向量扩展和向量表 (Drizzle 版本)
  */
-export function setupVectorExtension(db: Database.Database) {
-    const vecTableExists = db.prepare(
-        "SELECT count(*) as count FROM sqlite_master WHERE type='table' AND name='questions_vec'"
-    ).get() as { count: number };
+export async function setupVectorExtension() {
+    const vecTableResult = await drizzleDb.all<any>(sql`
+        SELECT count(*) as count FROM sqlite_master WHERE type='table' AND name='questions_vec'
+    `);
+    const vecTableExists = vecTableResult[0]?.count as number;
 
-    if (!vecTableExists.count) {
+    if (!vecTableExists) {
         console.log('[DB] Creating questions_vec vector table...');
-        db.exec(`
+        await drizzleDb.run(sql`
       CREATE VIRTUAL TABLE questions_vec USING vec0(
         question_id INTEGER PRIMARY KEY,
         embedding float[${EMBEDDING_DIM}]
@@ -20,13 +22,14 @@ export function setupVectorExtension(db: Database.Database) {
     `);
     }
 
-    const ragVecTableExists = db.prepare(
-        "SELECT count(*) as count FROM sqlite_master WHERE type='table' AND name='rag_chunks_vec'"
-    ).get() as { count: number };
+    const ragVecTableResult = await drizzleDb.all<any>(sql`
+        SELECT count(*) as count FROM sqlite_master WHERE type='table' AND name='rag_chunks_vec'
+    `);
+    const ragVecTableExists = ragVecTableResult[0]?.count as number;
 
-    if (!ragVecTableExists.count) {
+    if (!ragVecTableExists) {
         console.log('[DB] Creating rag_chunks_vec vector table...');
-        db.exec(`
+        await drizzleDb.run(sql`
       CREATE VIRTUAL TABLE rag_chunks_vec USING vec0(
         chunk_id INTEGER PRIMARY KEY,
         embedding float[${EMBEDDING_DIM}]

@@ -36,7 +36,7 @@ export type MockedDrizzle = {
  */
 function createDrizzleMock(): MockedDrizzle {
     const mock: any = new Proxy(() => {}, {
-        get: (target, prop: string) => {
+        get: (target: any, prop: string) => {
             // 处理 Promise 的 then 方法
             if (prop === 'then') {
                 if (!target._then) target._then = vi.fn((resolve) => resolve([]));

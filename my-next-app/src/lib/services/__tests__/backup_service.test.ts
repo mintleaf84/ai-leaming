@@ -85,7 +85,8 @@ describe('BackupService', () => {
         
         expect(fileName).toContain('.gz');
         
-        const { default: db } = await import('@/lib/db');
-        expect(db.backup).toHaveBeenCalled();
+        const dbModule = await import('@/lib/db');
+        const db = dbModule.default;
+        expect(db?.backup).toHaveBeenCalled();
     });
 });

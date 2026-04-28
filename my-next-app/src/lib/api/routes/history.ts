@@ -124,7 +124,7 @@ app.openapi(getDetailRoute, async (c) => {
     const user = getCurrentUser(c)
     const { id } = c.req.valid('param')
 
-    const result = await historyService.getSessionDetail(id, Number(user.id))
+    const result = await historyService.getSessionDetail(Number(user.id), id)
 
     if (!result) {
         return c.json({ error: 'Session not found' }, 404)

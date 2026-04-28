@@ -35,7 +35,7 @@ describe('Scheduling Service (Integration)', () => {
     let client: any;
 
     beforeEach(async () => {
-        helper = setupTestDb();
+        helper = await setupTestDb();
         
         // 创建 LibSQL/Drizzle 内存实例
         client = createClient({ url: 'file::memory:', syncUrl: '' });
@@ -70,8 +70,8 @@ describe('Scheduling Service (Integration)', () => {
         }
     });
 
-    afterEach(() => {
-        helper.close();
+    afterEach(async () => {
+        await helper.close();
         testState.activeDrizzle = null;
     });
 

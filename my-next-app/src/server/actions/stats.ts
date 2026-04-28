@@ -22,9 +22,12 @@ export const getUserStatsAction = cache(async (): Promise<UserStats> => {
         // 返回兜底数据
         return {
             totalPracticed: 0,
+            totalCorrect: 0,
+            totalSessions: 0,
             averageMastery: 0,
             weakPoints: [],
             todayPracticed: 0,
+            todayCorrect: 0,
             pendingReviewCount: 0,
             observationZoneCount: 0,
             streakDays: 0,

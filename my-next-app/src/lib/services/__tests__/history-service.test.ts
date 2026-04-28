@@ -88,7 +88,7 @@ describe('History Service', () => {
                 .mockReturnValueOnce({ get: () => mockSession })
                 .mockReturnValueOnce({ all: () => mockLogs });
 
-            const result = await historyService.getSessionDetail('s1', 1);
+            const result = await historyService.getSessionDetail(1, 's1');
 
             expect(result).not.toBeNull();
             expect(result?.session.id).toBe('s1');
@@ -100,7 +100,7 @@ describe('History Service', () => {
         it('should return null if not found', async () => {
             mockDb.prepare.mockReturnValueOnce({ get: () => null });
 
-            const result = await historyService.getSessionDetail('s1', 1);
+            const result = await historyService.getSessionDetail(1, 's1');
 
             expect(result).toBeNull();
         });

@@ -1,6 +1,6 @@
 import { OpenAPIHono, createRoute, z } from '@hono/zod-openapi'
 import { getErrorMessage } from '@/lib/utils/error';
-import { db, drizzleDb, drizzleSchema, closeDb, reinitDb } from '@/lib/db'
+import { drizzleDb, drizzleSchema, closeDb, reinitDb } from '@/lib/db'
 import { requireRole } from '@/lib/auth/auth'
 import { eq, and, sql, desc, like, exists } from 'drizzle-orm'
 import os from 'os'

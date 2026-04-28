@@ -1,29 +1,29 @@
 'use server';
 import logger from '@/lib/logger';
-
-import { db } from '@/lib/db';
+import { drizzleDb, drizzleSchema } from '@/lib/db';
 import { calculateCultivation } from '@/lib/cultivation/engine';
 import { LeaderboardEntry } from '@/lib/cultivation/types';
+import { eq, sql, desc, countDistinct } from 'drizzle-orm';
 
 /**
  * 获取封神榜数据 (前 20 名)
  */
 export async function getLeaderboardAction(): Promise<LeaderboardEntry[]> {
   try {
-    // 聚合统计全员数据
-    // 注意：SQLite 的聚合查询
-    const rows = db.prepare(`
-      SELECT 
-        u.id, 
-        u.username, 
-        COUNT(DISTINCT p.id) as total_practiced,
-        (SELECT AVG(score) FROM user_mastery WHERE user_id = u.id) as avg_mastery
-      FROM users u
-      LEFT JOIN practice_logs p ON u.id = p.user_id
-      GROUP BY u.id
-      ORDER BY total_practiced DESC
-      LIMIT 20
-    `).all() as { id: number; username: string; total_practiced: number; avg_mastery: number | null }[];
+    const { users, practice_logs, user_mastery } = drizzleSchema;
+
+    const rows = await drizzleDb.select({
+        id: users.id,
+        username: users.username,
+        total_practiced: countDistinct(practice_logs.id),
+        avg_mastery: sql<number>`(SELECT AVG(score) FROM ${user_mastery} WHERE user_id = ${users.id})`
+    })
+    .from(users)
+    .leftJoin(practice_logs, eq(users.id, practice_logs.user_id))
+    .groupBy(users.id)
+    .orderBy(desc(sql`total_practiced`))
+    .limit(20)
+    .all();
 
     // 映射境界数据
     const leaderboard = rows.map(row => {

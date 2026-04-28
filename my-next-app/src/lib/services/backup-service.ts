@@ -1,6 +1,7 @@
 import { createClient, WebDAVClient } from 'webdav';
 import dayjs from 'dayjs';
-import { getLegacyDb, getSetting, setSetting } from '@/lib/db';
+import { drizzleDb, getSetting, setSetting } from '@/lib/db';
+import { sql } from 'drizzle-orm';
 import { encrypt, decrypt } from '@/lib/utils/encryption';
 import fs from 'fs/promises';
 import { createReadStream, createWriteStream } from 'fs';
@@ -116,8 +117,8 @@ export class BackupService {
 
             // 2. SQLite 备份 (VACUUM INTO)
             console.log(`[Backup] Creating database snapshot: ${backupPath}`);
-            // 使用 better-sqlite3 的 backup 方法
-            await getLegacyDb().backup(backupPath);
+            // 使用 Drizzle/LibSQL 的 VACUUM INTO 进行在线备份
+            await drizzleDb.run(sql.raw(`VACUUM INTO '${backupPath.replace(/'/g, "''")}'`));
 
             // 3. 压缩
             console.log(`[Backup] Compressing backup: ${zipPath}`);

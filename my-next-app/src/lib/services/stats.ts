@@ -6,9 +6,12 @@ import { calculateStreakFromDates } from '@/lib/utils/stats-utils';
 
 export interface UserStats {
     totalPracticed: number;
+    totalCorrect: number;          // 总答对数
+    totalSessions: number;         // 总会话数
     averageMastery: number;
     weakPoints: { tag: string; score: number }[];
     todayPracticed: number;
+    todayCorrect: number;          // 今日答对数
     lastSessionId?: string;
     pendingReviewCount: number;    // 待复习错题数
     observationZoneCount: number;  // 观察区知识点数
@@ -43,14 +46,21 @@ export const statsService = {
             lastSession, 
             pendingReviewRes, 
             observationRes,
-            weakPoints
+            weakPoints,
+            sessionCountRes
         ] = await Promise.all([
-            // 总练习数
-            drizzleDb.select({ value: count() }).from(practice_logs).where(eq(practice_logs.user_id, userId)).get(),
+            // 总练习数 & 总正确数
+            drizzleDb.select({ 
+                count: count(),
+                correct: sql<number>`SUM(CASE WHEN ${practice_logs.is_correct} = 1 THEN 1 ELSE 0 END)`
+            }).from(practice_logs).where(eq(practice_logs.user_id, userId)).get(),
             // 平均掌握度
             drizzleDb.select({ value: avg(user_mastery.score) }).from(user_mastery).where(eq(user_mastery.user_id, userId)).get(),
-            // 今日练习数
-            drizzleDb.select({ value: count() }).from(practice_logs).where(and(
+            // 今日练习数 & 今日正确数
+            drizzleDb.select({ 
+                count: count(),
+                correct: sql<number>`SUM(CASE WHEN ${practice_logs.is_correct} = 1 THEN 1 ELSE 0 END)`
+            }).from(practice_logs).where(and(
                 eq(practice_logs.user_id, userId),
                 sql`date(${practice_logs.timestamp}) = date(${today})`
             )).get(),
@@ -76,20 +86,25 @@ export const statsService = {
                 .from(user_mastery)
                 .where(and(eq(user_mastery.user_id, userId), sql`${user_mastery.score} < 60`))
                 .orderBy(user_mastery.score)
-                .limit(3).all()
+                .limit(3).all(),
+            // 总会话数
+            drizzleDb.select({ value: count() }).from(practice_sessions).where(eq(practice_sessions.user_id, userId)).get()
         ]);
 
         // 2. 计算连续学习天数
         const streakDays = await this.getStreakDays(userId);
 
         const dailyGoal = 25;
-        const todayCount = todayRes?.value || 0;
+        const todayCount = todayRes?.count || 0;
 
         return {
-            totalPracticed: totalRes?.value || 0,
+            totalPracticed: totalRes?.count || 0,
+            totalCorrect: totalRes?.correct || 0,
+            totalSessions: sessionCountRes?.value || 0,
             averageMastery: Math.round(Number(masteryRes?.value) || 0),
             weakPoints: weakPoints.map(wp => ({ tag: wp.tag, score: wp.score || 0 })),
             todayPracticed: todayCount,
+            todayCorrect: todayRes?.correct || 0,
             lastSessionId: lastSession?.id,
             pendingReviewCount: pendingReviewRes?.value || 0,
             observationZoneCount: observationRes?.value || 0,

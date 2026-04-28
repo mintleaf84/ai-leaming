@@ -1,7 +1,6 @@
 import { OpenAPIHono, createRoute, z } from '@hono/zod-openapi'
-import { getLegacyDb } from '@/lib/db'
 import { authMiddleware, getCurrentUser } from '@/lib/api/middlewares/auth'
-import { getBeijingDateString, getBeijingYesterdayString, getBeijingDiffDays } from '@/lib/utils/datetime'
+import { statsService } from '@/lib/services/stats'
 
 const app = new OpenAPIHono()
 
@@ -35,78 +34,21 @@ const getStatsRoute = createRoute({
 app.openapi(getStatsRoute, async (c) => {
     const user = getCurrentUser(c)
     const userId = Number(user.id)
-    const today = getBeijingDateString()
 
-    // 今日统计
-    const db = getLegacyDb();
-    const todayRow = db.prepare(`
-        SELECT 
-            COUNT(*) as count,
-            SUM(CASE WHEN is_correct = 1 THEN 1 ELSE 0 END) as correct
-        FROM practice_logs
-        WHERE user_id = ? AND date(timestamp) = date(?)
-    `).get(userId, today) as { count: number; correct: number | null }
+    const stats = await statsService.getUserStats(userId)
 
-    const todayCount = todayRow.count
-    const todayCorrect = todayRow.correct ?? 0
-    const todayAccuracy = todayCount > 0 ? todayCorrect / todayCount : 0
-
-    // 历史总统计
-    const totalRow = db.prepare(`
-        SELECT 
-            COUNT(*) as count,
-            SUM(CASE WHEN is_correct = 1 THEN 1 ELSE 0 END) as correct
-        FROM practice_logs
-        WHERE user_id = ?
-    `).get(userId) as { count: number; correct: number | null }
-
-    const totalCount = totalRow.count
-    const totalCorrect = totalRow.correct ?? 0
-    const overallAccuracy = totalCount > 0 ? totalCorrect / totalCount : 0
-
-    // 总会话数
-    const sessionRow = db.prepare(`
-        SELECT COUNT(*) as count FROM practice_sessions WHERE user_id = ?
-    `).get(userId) as { count: number }
-
-    // 连续学习天数（从今天往前推，找连续有记录的天数）
-    const activeDays = db.prepare(`
-        SELECT DISTINCT date(timestamp) as day
-        FROM practice_logs
-        WHERE user_id = ?
-        ORDER BY day DESC
-        LIMIT 365
-    `).all(userId) as { day: string }[]
-
-    let streakDays = 0
-    if (activeDays.length > 0) {
-        // 检查今天或昨天是否有记录（支持当天还没做题但昨天有的情况）
-        const yesterday = getBeijingYesterdayString()
-        const firstDay = activeDays[0].day
-        if (firstDay !== today && firstDay !== yesterday) {
-            streakDays = 0
-        } else {
-            streakDays = 1
-            for (let i = 1; i < activeDays.length; i++) {
-                const diffDays = getBeijingDiffDays(activeDays[i - 1].day, activeDays[i].day)
-                if (diffDays === 1) {
-                    streakDays++
-                } else {
-                    break
-                }
-            }
-        }
-    }
+    const todayAccuracy = stats.todayPracticed > 0 ? stats.todayCorrect / stats.todayPracticed : 0
+    const overallAccuracy = stats.totalPracticed > 0 ? stats.totalCorrect / stats.totalPracticed : 0
 
     return c.json({
-        todayCount,
-        todayCorrect,
+        todayCount: stats.todayPracticed,
+        todayCorrect: stats.todayCorrect,
         todayAccuracy: parseFloat(todayAccuracy.toFixed(4)),
-        totalCount,
-        totalCorrect,
+        totalCount: stats.totalPracticed,
+        totalCorrect: stats.totalCorrect,
         overallAccuracy: parseFloat(overallAccuracy.toFixed(4)),
-        streakDays,
-        totalSessions: sessionRow.count,
+        streakDays: stats.streakDays,
+        totalSessions: stats.totalSessions,
     })
 })
 

@@ -18,11 +18,15 @@ vi.mock('@/lib/db', () => ({
 }));
 
 // Mock Datetime Utils
-vi.mock('@/lib/utils/datetime', () => ({
-    getBeijingDateString: vi.fn((d) => d ? d.toISOString().split('T')[0] : '2024-01-15'),
-    getBeijingYesterdayString: vi.fn().mockReturnValue('2024-01-14'),
-    formatBeijingDisplayDate: vi.fn((_d) => '01/15')
-}));
+vi.mock('@/lib/utils/datetime', () => {
+    const dayjs = require('dayjs');
+    return {
+        getBeijingDateString: vi.fn((d) => d ? d.toISOString().split('T')[0] : '2024-01-15'),
+        getBeijingYesterdayString: vi.fn().mockReturnValue('2024-01-14'),
+        formatBeijingDisplayDate: vi.fn((_d) => '01/15'),
+        getBeijingNow: vi.fn(() => dayjs('2024-01-15T10:00:00Z'))
+    };
+});
 
 describe('StatsService', () => {
     beforeEach(() => {
@@ -33,16 +37,17 @@ describe('StatsService', () => {
 
     describe('getUserStats', () => {
         it('应该聚合所有核心指标', async () => {
-            // 模拟 7 个并发查询的返回值
+            // 模拟 8 个并发查询的返回值
             // 按照 getUserStats 内部 Promise.all 的顺序
             const mockResponses = [
-                { value: 500 }, // totalRes
+                { count: 500, correct: 400 }, // totalRes
                 { value: 85.6 }, // masteryRes
-                { value: 10 },  // todayRes
+                { count: 10, correct: 8 },  // todayRes
                 { id: 'session-789' }, // lastSession
                 { value: 3 },  // pendingReviewRes
                 { value: 5 },  // observationRes
-                [{ tag: 'React', score: 30 }] // weakPoints
+                [{ tag: 'React', score: 30 }], // weakPoints
+                { value: 12 } // sessionCountRes
             ];
 
             let callIdx = 0;
@@ -64,8 +69,11 @@ describe('StatsService', () => {
             const stats = await statsService.getUserStats(1);
 
             expect(stats.totalPracticed).toBe(500);
+            expect(stats.totalCorrect).toBe(400);
+            expect(stats.totalSessions).toBe(12);
             expect(stats.averageMastery).toBe(86);
             expect(stats.todayPracticed).toBe(10);
+            expect(stats.todayCorrect).toBe(8);
             expect(stats.streakDays).toBe(3);
             expect(stats.dailyProgress).toBe(40); // (10 / 25) * 100
             expect(stats.weakPoints[0].tag).toBe('React');

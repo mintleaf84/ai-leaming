@@ -1,15 +1,11 @@
 // @vitest-environment node
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 
-// Mock 数据库模块（必须在 import app 之前）
-const mockDb = vi.hoisted(() => ({
-    prepare: vi.fn()
-}));
-vi.mock('@/lib/db', () => ({ default: mockDb, db: mockDb, drizzleDb: {}, drizzleSchema: {} }));
-
-// Mock datetime 工具（无参数返回今天，有 Date 参数返回昨天）
-vi.mock('@/lib/utils/datetime', () => ({
-    getBeijingDateString: vi.fn((date?: Date) => date ? '2024-01-14' : '2024-01-15')
+// Mock statsService
+vi.mock('@/lib/services/stats', () => ({
+    statsService: {
+        getUserStats: vi.fn()
+    }
 }));
 
 // Mock Auth 中间件
@@ -21,6 +17,7 @@ vi.mock('@/lib/api/middlewares/auth', () => ({
     getCurrentUser: () => ({ id: 1 })
 }));
 
+import { statsService } from '@/lib/services/stats';
 import app from '../stats';
 
 describe('Stats Hono 路由', () => {
@@ -28,27 +25,21 @@ describe('Stats Hono 路由', () => {
         vi.clearAllMocks();
     });
 
-    /**
-     * 辅助函数：构造 mockDb.prepare 的链式调用桩
-     * prepare(sql).get(...) => returnValue
-     */
-    function mockPrepareGet(returnValue: unknown) {
-        return {
-            get: vi.fn().mockReturnValue(returnValue)
-        };
-    }
-
     it('GET / - 返回正确的统计数据', async () => {
-        // 按顺序 mock 4 次 prepare().get() 调用
-        mockDb.prepare
-            .mockReturnValueOnce(mockPrepareGet({ count: 5, correct: 4 }))       // 今日统计
-            .mockReturnValueOnce(mockPrepareGet({ count: 100, correct: 80 }))    // 历史总统计
-            .mockReturnValueOnce(mockPrepareGet({ count: 12 }))                   // 总会话数
-            .mockReturnValueOnce({ all: vi.fn().mockReturnValue([              // 连续天数
-                { day: '2024-01-15' },
-                { day: '2024-01-14' },
-                { day: '2024-01-13' },
-            ]) });
+        vi.mocked(statsService.getUserStats).mockResolvedValue({
+            todayPracticed: 5,
+            todayCorrect: 4,
+            totalPracticed: 100,
+            totalCorrect: 80,
+            totalSessions: 12,
+            streakDays: 3,
+            averageMastery: 80,
+            weakPoints: [],
+            pendingReviewCount: 0,
+            observationZoneCount: 0,
+            dailyGoal: 25,
+            dailyProgress: 20
+        });
 
         const res = await app.request('/');
         expect(res.status).toBe(200);
@@ -65,11 +56,20 @@ describe('Stats Hono 路由', () => {
     });
 
     it('GET / - 今日无练习记录时 accuracy 为 0', async () => {
-        mockDb.prepare
-            .mockReturnValueOnce(mockPrepareGet({ count: 0, correct: null }))
-            .mockReturnValueOnce(mockPrepareGet({ count: 50, correct: 30 }))
-            .mockReturnValueOnce(mockPrepareGet({ count: 5 }))
-            .mockReturnValueOnce({ all: vi.fn().mockReturnValue([]) });
+        vi.mocked(statsService.getUserStats).mockResolvedValue({
+            todayPracticed: 0,
+            todayCorrect: 0,
+            totalPracticed: 50,
+            totalCorrect: 30,
+            totalSessions: 5,
+            streakDays: 0,
+            averageMastery: 60,
+            weakPoints: [],
+            pendingReviewCount: 0,
+            observationZoneCount: 0,
+            dailyGoal: 25,
+            dailyProgress: 0
+        });
 
         const res = await app.request('/');
         expect(res.status).toBe(200);
@@ -81,11 +81,20 @@ describe('Stats Hono 路由', () => {
     });
 
     it('GET / - 历史无练习记录时 overallAccuracy 为 0', async () => {
-        mockDb.prepare
-            .mockReturnValueOnce(mockPrepareGet({ count: 0, correct: null }))
-            .mockReturnValueOnce(mockPrepareGet({ count: 0, correct: null }))
-            .mockReturnValueOnce(mockPrepareGet({ count: 0 }))
-            .mockReturnValueOnce({ all: vi.fn().mockReturnValue([]) });
+        vi.mocked(statsService.getUserStats).mockResolvedValue({
+            todayPracticed: 0,
+            todayCorrect: 0,
+            totalPracticed: 0,
+            totalCorrect: 0,
+            totalSessions: 0,
+            streakDays: 0,
+            averageMastery: 0,
+            weakPoints: [],
+            pendingReviewCount: 0,
+            observationZoneCount: 0,
+            dailyGoal: 25,
+            dailyProgress: 0
+        });
 
         const res = await app.request('/');
         expect(res.status).toBe(200);
@@ -96,15 +105,20 @@ describe('Stats Hono 路由', () => {
     });
 
     it('GET / - 昨天有记录（streak 应计入）', async () => {
-        // 模拟今天无记录但昨天有，streak 应从昨天开始计
-        mockDb.prepare
-            .mockReturnValueOnce(mockPrepareGet({ count: 0, correct: null }))
-            .mockReturnValueOnce(mockPrepareGet({ count: 20, correct: 15 }))
-            .mockReturnValueOnce(mockPrepareGet({ count: 3 }))
-            .mockReturnValueOnce({ all: vi.fn().mockReturnValue([
-                { day: '2024-01-14' }, // 昨天
-                { day: '2024-01-13' },
-            ]) });
+        vi.mocked(statsService.getUserStats).mockResolvedValue({
+            todayPracticed: 0,
+            todayCorrect: 0,
+            totalPracticed: 20,
+            totalCorrect: 15,
+            totalSessions: 3,
+            streakDays: 2,
+            averageMastery: 75,
+            weakPoints: [],
+            pendingReviewCount: 0,
+            observationZoneCount: 0,
+            dailyGoal: 25,
+            dailyProgress: 0
+        });
 
         const res = await app.request('/');
         expect(res.status).toBe(200);

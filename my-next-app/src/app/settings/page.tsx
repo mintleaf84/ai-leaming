@@ -1,8 +1,10 @@
 "use client";
 
 import React, { useEffect, useState } from 'react';
-import { getSettingsAction, updateSettingsAction, resetUserDataAction, Settings } from '@/server/actions/settings';
+import { getSettingsAction, updateSettingsAction, resetUserDataAction } from '@/server/actions/settings';
 import { getUserProfileAction, updateProfileAction } from '@/server/actions/profile';
+import type { SystemSettings as Settings } from '@/lib/services/settings';
+import type { UserProfile } from '@/types/profile';
 import { Button } from '@/components/ui/button';
 import { toast } from 'sonner';
 import {
@@ -39,57 +41,50 @@ const TABS: { id: SettingsTab; label: string; icon: React.ElementType }[] = [
 export default function SettingsPage() {
   const [activeTab, setActiveTab] = useState<SettingsTab>('ai');
   const [settings, setSettings] = useState<Settings | null>(null);
-  const [profile, setProfile] = useState<import('../profile/page').UserProfile | null>(null);
+  const [profile, setProfile] = useState<UserProfile | null>(null);
   const [isSaving, setIsSaving] = useState(false);
   const { theme, setTheme } = useTheme();
   const terminology = useTerminology();
   const { isInstallable, isInstalled, promptInstall } = usePWAInstall();
 
   useEffect(() => {
-    getSettingsAction().then(setSettings);
-    getUserProfileAction().then((res) => {
-      if (res.success && res.profile) setProfile(res.profile as import('../profile/page').UserProfile);
+    getSettingsAction().then((result) => {
+        if (result.data) setSettings(result.data);
+    });
+    getUserProfileAction().then((result) => {
+      if (result.data) setProfile(result.data);
     });
   }, []);
 
   const handleSave = async () => {
     if (!settings) return;
     setIsSaving(true);
-    try {
-      // Parallel Save
-      const promises = [updateSettingsAction(settings)];
-      if (profile) {
-        promises.push(updateProfileAction({ username: profile.username }));
-      }
-
-      const results = await Promise.all(promises);
-      const profileResult = results[1] as { success: boolean, error?: string } | undefined;
-
-      if (profileResult && !profileResult.success) {
-        toast.error(profileResult.error || "资料更新失败");
-      } else {
-        toast.success("配置已保存");
-        // Refresh to sync sidebar
-        if (profileResult) window.location.reload();
-      }
-    } catch (_e) {
-      toast.error("保存失败");
-    } finally {
-      setIsSaving(false);
+    
+    // Parallel Save
+    const settingsResult = await updateSettingsAction(settings);
+    let profileResult = null;
+    if (profile) {
+      profileResult = await updateProfileAction({ username: profile.username });
     }
+
+    if (settingsResult.serverError || profileResult?.serverError) {
+      toast.error(settingsResult.serverError || profileResult?.serverError || "保存失败");
+    } else {
+      toast.success("配置已保存");
+      if (profileResult?.data) window.location.reload();
+    }
+    setIsSaving(false);
   };
 
   const handleReset = async () => {
     if (!confirm("⚠️极度危险操作⚠️\n\n确定要【删号重练】吗？\n此操作将永久清空所有练习记录、错题本和掌握度数据！")) return;
 
-    try {
-      const res = await resetUserDataAction();
-      if (res.success) {
-        toast.success(res.message);
-        window.location.reload();
-      }
-    } catch (_e) {
-      toast.error("重置失败");
+    const result = await resetUserDataAction();
+    if (result.serverError) {
+      toast.error(result.serverError || "重置失败");
+    } else if (result.data?.success) {
+      toast.success(result.data.message);
+      window.location.reload();
     }
   };
 

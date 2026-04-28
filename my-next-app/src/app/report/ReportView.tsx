@@ -57,10 +57,12 @@ export function ReportView({ initialData: reportData }: ReportViewProps) {
     // 并行加载 AI 报告和历史趋势数据
     async function loadTrend() {
       try {
-        const data = await getPracticeTrendAction(14);
-        // 只展示有练习数据的天
-        const filtered = data.filter(d => d.practiced > 0);
-        setTrendData(filtered);
+        const result = await getPracticeTrendAction(14);
+        if (result.data) {
+          // 只展示有练习数据的天
+          const filtered = result.data.filter((d: { practiced: number }) => d.practiced > 0);
+          setTrendData(filtered);
+        }
       } catch { /* 趋势数据加载失败不影响主体报告 */ }
     }
 

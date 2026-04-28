@@ -49,13 +49,25 @@ export function QuestionManager() {
         setLoading(true);
         try {
             const offset = (page - 1) * pageSize;
-            const res = await getQuestionsAction(pageSize, offset, currentFilters);
-            setQuestions(res.questions);
-            setTotal(res.total);
+            const result = await getQuestionsAction({ 
+                limit: pageSize, 
+                offset, 
+                filters: currentFilters 
+            });
+            
+            if (result.serverError) {
+                toast.error(result.serverError || "题目列表加载失败");
+                return;
+            }
+
+            if (result.data) {
+                setQuestions(result.data.questions);
+                setTotal(result.data.total);
+            }
             // 清空选中状态
             setSelectedIds([]);
         } catch (_e) {
-            toast.error("题目列表加载失败");
+            toast.error("题目列表加载过程发生错误");
         } finally {
             setLoading(false);
         }
@@ -79,12 +91,12 @@ export function QuestionManager() {
     // 删除单条
     const handleDelete = async (id: number) => {
         if (!confirm("确定要删除这道题目吗？此操作不可恢复。")) return;
-        const res = await deleteQuestionAction(id);
-        if (res.success) {
+        const result = await deleteQuestionAction(id);
+        if (result.serverError) {
+            toast.error(result.serverError || "删除失败");
+        } else if (result.data?.success) {
             toast.success("题目已删除");
             loadQuestions();
-        } else {
-            toast.error("删除失败");
         }
     };
 
@@ -93,12 +105,12 @@ export function QuestionManager() {
         if (selectedIds.length === 0) return;
         if (!confirm(`确定要删除选中的 ${selectedIds.length} 道题目吗？此操作不可恢复。`)) return;
 
-        const res = await batchDeleteQuestionsAction(selectedIds);
-        if (res.success) {
-            toast.success(`成功删除 ${res.deletedCount} 道题目`);
+        const result = await batchDeleteQuestionsAction(selectedIds);
+        if (result.serverError) {
+            toast.error(result.serverError || "批量删除失败");
+        } else if (result.data) {
+            toast.success(`成功删除 ${result.data.deletedCount} 道题目`);
             loadQuestions();
-        } else {
-            toast.error("批量删除失败");
         }
     };
 
@@ -126,12 +138,12 @@ export function QuestionManager() {
             try {
                 const json = JSON.parse(event.target?.result as string);
                 toast.info("正在导入...", { duration: 1000 });
-                const res = await importQuestionsAction(json);
-                if (res.success) {
-                    toast.success(`成功导入 ${res.count} 道题目`);
+                const result = await importQuestionsAction(json);
+                if (result.serverError) {
+                    toast.error(result.serverError || "导入失败");
+                } else if (result.data) {
+                    toast.success(`成功导入 ${result.data.count} 道题目`);
                     loadQuestions();
-                } else {
-                    toast.error(`导入失败: ${res.error}`);
                 }
             } catch (_e) {
                 toast.error("无效的 JSON 文件格式");

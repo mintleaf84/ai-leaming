@@ -1,51 +1,46 @@
 'use server';
-import logger from '@/lib/logger';
+
+import { authenticatedAction } from '@/lib/safe-action';
 import { drizzleDb, drizzleSchema } from '@/lib/db';
-import { eq, sql } from 'drizzle-orm';
-import { requireUser } from '@/lib/auth/auth';
+import { eq } from 'drizzle-orm';
+import { z } from 'zod';
+import type { BackupData } from '@/types/data';
 
-// --- Types ---
+/**
+ * 备份数据的 Zod Schema
+ */
+const BackupDataSchema = z.object({
+  version: z.number(),
+  timestamp: z.string(),
+  user_mastery: z.array(z.object({
+    tag_name: z.string(),
+    score: z.number(),
+    history: z.string(),
+    last_updated: z.string(),
+  })),
+  practice_logs: z.array(z.object({
+    session_id: z.string(),
+    question_id: z.number(),
+    user_answer: z.string(),
+    is_correct: z.number(),
+    is_monitored_correct: z.number(),
+    duration_ms: z.number(),
+    timestamp: z.string(),
+  })),
+  observation_zone: z.array(z.object({
+    tag_name: z.string(),
+    reason: z.string(),
+    entered_at: z.string(),
+    status: z.enum(['active', 'recovering', 'graduated']),
+  })),
+});
 
-/** user_mastery 表行 */
-interface UserMasteryRow {
-    tag_name: string;
-    score: number;
-    history: string;
-    last_updated: string;
-}
-
-/** practice_logs 表行（备份相关字段） */
-interface PracticeLogBackupRow {
-    session_id: string;
-    question_id: number;
-    user_answer: string;
-    is_correct: number;
-    is_monitored_correct: number;
-    duration_ms: number;
-    timestamp: string;
-}
-
-/** observation_zone 表行 */
-interface ObservationZoneRow {
-    tag_name: string;
-    reason: string;
-    entered_at: string;
-    status: 'active' | 'recovering' | 'graduated';
-}
-
-export interface BackupData {
-    version: number;
-    timestamp: string;
-    user_mastery: UserMasteryRow[];
-    practice_logs: PracticeLogBackupRow[];
-    observation_zone: ObservationZoneRow[];
-}
-
-// --- Actions ---
-
-export async function exportUserDataAction(): Promise<BackupData> {
-  try {
-    const user = await requireUser();
+/**
+ * 导出用户数据
+ */
+export const exportUserDataAction = authenticatedAction
+  .action(async ({ ctx }) => {
+    const { user } = ctx;
     const userId = Number(user.id);
 
     const masteryRows = await drizzleDb.select().from(drizzleSchema.user_mastery).where(eq(drizzleSchema.user_mastery.user_id, userId));
@@ -76,32 +71,32 @@ export async function exportUserDataAction(): Promise<BackupData> {
           entered_at: r.entered_at || '',
           status: r.status as 'active' | 'recovering' | 'graduated'
       }))
-    };
-  } catch (error) {
-    logger.error({ err: error }, "Export failed");
-    throw new Error("Failed to export data");
-  }
-}
+    } as BackupData;
+  });
 
-export async function importUserDataAction(data: BackupData): Promise<{ success: boolean; message: string }> {
-  if (!data || data.version !== 1) {
-    return { success: false, message: "Invalid backup format or version mismatch." };
-  }
+/**
+ * 导入用户数据
+ */
+export const importUserDataAction = authenticatedAction
+  .inputSchema(BackupDataSchema)
+  .action(async ({ parsedInput: data, ctx }) => {
+    if (data.version !== 1) {
+      throw new Error("备份版本不匹配，目前仅支持版本 1");
+    }
 
-  try {
-    const user = await requireUser();
+    const { user } = ctx;
     const userId = Number(user.id);
 
     await drizzleDb.transaction(async (tx) => {
-      // 1. Clear existing user data
+      // 1. 清理现有数据
       await tx.delete(drizzleSchema.user_mastery).where(eq(drizzleSchema.user_mastery.user_id, userId));
       await tx.delete(drizzleSchema.practice_logs).where(eq(drizzleSchema.practice_logs.user_id, userId));
       await tx.delete(drizzleSchema.observation_zone).where(eq(drizzleSchema.observation_zone.user_id, userId));
 
-      // 2. Insert User Mastery
+      // 2. 插入 User Mastery
       if (data.user_mastery.length > 0) {
         await tx.insert(drizzleSchema.user_mastery).values(
-          data.user_mastery.map(row => ({
+          data.user_mastery.map((row: { tag_name: string; score: number; history: string; last_updated: string }) => ({
             user_id: userId,
             tag_name: row.tag_name,
             score: row.score,
@@ -111,10 +106,10 @@ export async function importUserDataAction(data: BackupData): Promise<{ success:
         );
       }
 
-      // 3. Insert Practice Logs
+      // 3. 插入 Practice Logs
       if (data.practice_logs.length > 0) {
         await tx.insert(drizzleSchema.practice_logs).values(
-          data.practice_logs.map(row => ({
+          data.practice_logs.map((row: { session_id: string; question_id: number; user_answer: string; is_correct: number; is_monitored_correct: number; duration_ms: number; timestamp: string }) => ({
             user_id: userId,
             session_id: row.session_id,
             question_id: row.question_id,
@@ -127,23 +122,19 @@ export async function importUserDataAction(data: BackupData): Promise<{ success:
         );
       }
 
-      // 4. Insert Observation Zone
+      // 4. 插入 Observation Zone
       if (data.observation_zone.length > 0) {
         await tx.insert(drizzleSchema.observation_zone).values(
-          data.observation_zone.map(row => ({
+          data.observation_zone.map((row: { tag_name: string; reason: string; entered_at: string; status: string }) => ({
             user_id: userId,
             tag_name: row.tag_name,
             reason: row.reason,
             entered_at: row.entered_at,
-            status: row.status
+            status: row.status as 'active' | 'recovering' | 'graduated'
           }))
         );
       }
     });
 
-    return { success: true, message: "Data imported successfully." };
-  } catch (error) {
-    logger.error({ err: error }, "Import failed");
-    return { success: false, message: `Import failed: ${error instanceof Error ? error.message : String(error)}` };
-  }
-}
+    return { success: true, message: "数据导入成功" };
+  });

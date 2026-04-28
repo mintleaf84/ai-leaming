@@ -112,16 +112,15 @@ export function EditQuestionDialog({
                 type: formData.type // 传递 type
             };
 
-            const res = await updateQuestionAction(question.id, updateData);
-            if (res.success) {
+            const result = await updateQuestionAction({ id: question.id, data: updateData });
+            
+            if (result.serverError) {
+                toast.error(result.serverError || "更新失败");
+            } else if (result.data?.success) {
                 toast.success("题目更新成功");
                 onSuccess();
                 onOpenChange(false);
-            } else {
-                toast.error(res.error || "更新失败");
             }
-        } catch (error: unknown) {
-            toast.error(getErrorMessage(error));
         } finally {
             setLoading(false);
         }

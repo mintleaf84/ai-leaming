@@ -7,8 +7,8 @@ import {
     savePromptTemplateAction,
     resetPromptTemplateAction,
     debugPromptTemplateAction,
-    PromptTemplate
 } from '@/server/actions/prompts';
+import type { PromptTemplate } from '@/lib/services/prompt';
 import { PromptList } from './PromptList';
 import { PromptEditor } from './PromptEditor';
 import { DebugPlayground } from './DebugPlayground';
@@ -27,8 +27,8 @@ export function PromptManager() {
 
     const loadPrompts = async () => {
         try {
-            const data = await getPromptTemplatesAction();
-            setPrompts(data);
+            const result = await getPromptTemplatesAction();
+            if (result.data) setPrompts(result.data);
         } catch (_e) {
             toast.error("提示词加载失败");
         }
@@ -49,17 +49,17 @@ export function PromptManager() {
         if (!editingPrompt) return;
         setIsSaving(true);
         try {
-            const res = await savePromptTemplateAction(
-                editingPrompt.key,
-                editingPrompt.template,
-                editingPrompt.description,
-                editingPrompt.variables
-            );
-            if (res.success) {
+            const res = await savePromptTemplateAction({
+                key: editingPrompt.key,
+                template: editingPrompt.template,
+                description: editingPrompt.description,
+                variables: editingPrompt.variables
+            });
+            if (res.data?.success) {
                 toast.success("提示词已保存");
                 loadPrompts();
             } else {
-                toast.error("保存失败: " + res.error);
+                toast.error("保存失败: " + (res.serverError || ''));
             }
         } catch (e) {
             toast.error("请求失败: " + (e as Error).message);
@@ -75,8 +75,8 @@ export function PromptManager() {
             toast.success("已重置");
             loadPrompts();
             // Refetch to get the system default
-            const all = await getPromptTemplatesAction();
-            const fresh = all.find(x => x.key === editingPrompt.key);
+            const allResult = await getPromptTemplatesAction();
+            const fresh = allResult.data?.find((x: PromptTemplate) => x.key === editingPrompt.key);
             if (fresh) setEditingPrompt(fresh);
         } catch (_e) {
             toast.error("重置失败");
@@ -88,14 +88,18 @@ export function PromptManager() {
         setIsDebugLoading(true);
         setDebugResult(null);
         try {
-            const res = await debugPromptTemplateAction(editingPrompt.key, editingPrompt.template, debugVariables);
-            if (res.success) {
-                setDebugResult(typeof res.result === 'string' ? res.result : JSON.stringify(res.result, null, 2));
+            const res = await debugPromptTemplateAction({
+                key: editingPrompt.key,
+                template: editingPrompt.template,
+                inputVariables: debugVariables
+            });
+            if (res.data?.success) {
+                setDebugResult(typeof res.data.result === 'string' ? res.data.result : JSON.stringify(res.data.result, null, 2));
             } else {
-                toast.error("生成失败: " + res.error);
-                let errorMsg = "Error: " + res.error;
-                if (res.result) {
-                    errorMsg += "\n\n" + res.result;
+                toast.error("生成失败: " + (res.data?.error || res.serverError));
+                let errorMsg = "Error: " + (res.data?.error || res.serverError);
+                if (res.data?.result) {
+                    errorMsg += "\n\n" + res.data.result;
                 }
                 setDebugResult(errorMsg);
             }

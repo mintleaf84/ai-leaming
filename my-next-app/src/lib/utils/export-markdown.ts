@@ -1,4 +1,4 @@
-import { SessionDetail } from '@/server/actions/history';
+import type { SessionDetail } from '@/lib/services/history';
 import { getBeijingLocaleString, formatBeijingDate } from './datetime';
 
 /**

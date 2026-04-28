@@ -8,9 +8,8 @@ import {
     getAiConfigsAction,
     getAiModelRoutesAction,
     saveAiModelRouteAction,
-    AiConfig,
-    AiModelRoute
 } from '@/server/actions/config';
+import type { AiConfig, AiModelRoute } from '@/lib/services/ai-config';
 
 export function RouteManager() {
     const [configs, setConfigs] = useState<AiConfig[]>([]);
@@ -33,12 +32,12 @@ export function RouteManager() {
     const loadData = async () => {
         setIsLoading(true);
         try {
-            const [configsData, routesData] = await Promise.all([
+            const [configsResult, routesResult] = await Promise.all([
                 getAiConfigsAction(),
                 getAiModelRoutesAction()
             ]);
-            setConfigs(configsData);
-            setRoutes(routesData);
+            if (configsResult.data) setConfigs(configsResult.data);
+            if (routesResult.data) setRoutes(routesResult.data);
         } catch (_e) {
             toast.error("加载路由配置失败");
         } finally {
@@ -72,7 +71,7 @@ export function RouteManager() {
         setIsSaving(true);
         try {
             const res = await saveAiModelRouteAction(route);
-            if (res.success) {
+            if (res.data?.success) {
                 toast.success(`${feature} 路由已更新`);
                 loadData();
             } else {

@@ -21,6 +21,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Badge } from '@/components/ui/badge';
 import { Progress } from '@/components/ui/progress';
 import { getUserProfileAction } from '@/server/actions/profile';
+import type { UserProfile } from '@/types/profile';
 
 // 用量类型标签
 const USAGE_LABELS: Record<string, string> = {
@@ -30,30 +31,6 @@ const USAGE_LABELS: Record<string, string> = {
     rag: 'RAG 检索'
 };
 
-export interface UserProfile {
-    id: string | number;
-    username: string;
-    role: string;
-    created_at: string;
-    subscription: {
-        plan_name: string;
-        plan_id: string;
-        status: string;
-        expires_at: string | null;
-        usage_today: Record<string, number>;
-        limits: Record<string, number>;
-    } | null;
-    stats: {
-        total_questions: number;
-        correct_count: number;
-        accuracy: number;
-        practice_days: number;
-        total_sessions: number;
-        total_tags: number;
-        mastered_tags: number;
-        total_chats: number;
-    };
-}
 
 export default function ProfilePage() {
     const [profile, setProfile] = useState<UserProfile | null>(null);
@@ -63,8 +40,8 @@ export default function ProfilePage() {
         const loadProfile = async () => {
             try {
                 const res = await getUserProfileAction();
-                if (res.success && res.profile) {
-                    setProfile(res.profile);
+                if (res.data) {
+                    setProfile(res.data as unknown as UserProfile);
                 }
             } catch (error) {
                 console.error('加载个人信息失败', error);

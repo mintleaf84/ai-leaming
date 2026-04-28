@@ -1,5 +1,5 @@
 import { KnowledgeTree } from '@/components/viz/KnowledgeTree';
-import { KnowledgeGraphData } from '@/server/actions/viz';
+import type { KnowledgeGraphData } from '@/types/viz';
 import { LayoutDashboard } from 'lucide-react';
 
 interface KnowledgeTreeSectionProps {

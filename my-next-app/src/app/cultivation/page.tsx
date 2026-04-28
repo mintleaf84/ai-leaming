@@ -16,8 +16,9 @@ export default async function CultivationPage() {
     redirect('/dashboard');
   }
 
-  const stats = await getUserStatsAction();
-  const state = calculateCultivation(stats.totalPracticed, stats.averageMastery);
+  const result = await getUserStatsAction();
+  if (!result.data) redirect('/login');
+  const state = calculateCultivation(result.data.totalPracticed, result.data.averageMastery);
 
   return (
     <div className="min-h-screen relative overflow-hidden bg-zinc-950 text-zinc-100 font-sans">

@@ -1,25 +1,12 @@
 import { drizzleDb, drizzleSchema } from '@/lib/db';
 import { eq, sql } from 'drizzle-orm';
 import { hashPassword } from './password';
-import { UserRole } from '@/types';
+import { User, UserRole } from '@/types';
 import { cache } from 'react';
 
-// 数据库中的完整用户记录
-export interface UserRecord {
-    id: number;
-    username: string;
+/** 数据库中的完整用户记录 (内部使用) */
+export interface UserRecord extends User {
     password_hash: string;
-    role: UserRole;
-    created_at: string;
-    token_version: number;
-}
-
-// 简化的用户类型（不含密码）
-export interface User {
-    id: number;
-    username: string;
-    role: UserRole;
-    token_version?: number;
 }
 
 /**
@@ -31,7 +18,7 @@ export async function createUser(username: string, passwordPlain: string, role: 
     const result = await drizzleDb.insert(drizzleSchema.users).values({
         username,
         password_hash: passwordHash,
-        role,
+        role: role as any,
         token_version: 0
     });
 
@@ -42,7 +29,8 @@ export async function createUser(username: string, passwordPlain: string, role: 
         id: Number(lastId),
         username,
         role,
-        token_version: 0
+        token_version: 0,
+        created_at: new Date().toISOString()
     };
 }
 
@@ -66,7 +54,8 @@ export const getUserById = cache(async (id: number): Promise<User | null> => {
             id: drizzleSchema.users.id,
             username: drizzleSchema.users.username,
             role: drizzleSchema.users.role,
-            token_version: drizzleSchema.users.token_version
+            token_version: drizzleSchema.users.token_version,
+            created_at: drizzleSchema.users.created_at
         })
         .from(drizzleSchema.users)
         .where(eq(drizzleSchema.users.id, id))

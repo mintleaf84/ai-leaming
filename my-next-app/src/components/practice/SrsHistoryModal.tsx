@@ -8,7 +8,8 @@ import { Badge } from "@/components/ui/badge";
 import { 
     History, Clock, CheckCircle2, XCircle, Calendar, ArrowRight, Loader2
 } from 'lucide-react';
-import { getQuestionSrsHistoryAction, SrsHistoryEntry, getQuestionSrsPredictionsAction, SrsPrediction } from '@/server/actions/srs';
+import { getQuestionSrsHistoryAction, getQuestionSrsPredictionsAction } from '@/server/actions/srs';
+import type { SrsHistoryEntry, SrsPrediction } from '@/lib/services/srs';
 import dayjs from 'dayjs';
 
 // If the project uses a standard UI library, I should check the Dialog component
@@ -32,12 +33,12 @@ export function SrsHistoryModal({ questionId, isOpen, onClose }: SrsHistoryModal
         const loadData = async () => {
             if (isOpen) {
                 setLoading(true);
-                const [h, p] = await Promise.all([
+                const [hResult, pResult] = await Promise.all([
                     getQuestionSrsHistoryAction(questionId),
                     getQuestionSrsPredictionsAction(questionId)
                 ]);
-                setHistory(h);
-                setPredictions(p);
+                if (hResult.data) setHistory(hResult.data);
+                if (pResult.data) setPredictions(pResult.data);
                 setLoading(false);
             }
         };

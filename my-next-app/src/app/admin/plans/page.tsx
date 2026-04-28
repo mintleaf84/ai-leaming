@@ -60,11 +60,11 @@ export default function PlansPage() {
                 getPlansAction(false),
                 getSubscriptionStatsAction()
             ]);
-            if (plansRes.success && plansRes.plans) {
-                setPlans(plansRes.plans);
+            if (plansRes.data?.success && plansRes.data.plans) {
+                setPlans(plansRes.data.plans);
             }
-            if (statsRes.success && statsRes.stats) {
-                setStats(statsRes.stats);
+            if (statsRes.data?.success && statsRes.data.stats) {
+                setStats(statsRes.data.stats);
             }
         } catch (_error) {
             toast.error('加载数据失败');
@@ -109,15 +109,16 @@ export default function PlansPage() {
         try {
             const planToSave = {
                 ...editingPlan,
-                features: featuresText.split('\n').filter(f => f.trim())
+                features: featuresText.split('\n').filter(f => f.trim()),
+                is_active: editingPlan.is_active ? 1 : 0
             };
             const res = await savePlanAction(planToSave);
-            if (res.success) {
+            if (res.data?.success) {
                 toast.success('套餐保存成功');
                 setDialogOpen(false);
                 loadData();
             } else {
-                toast.error(res.error || '保存失败');
+                toast.error(res.serverError || '保存失败');
             }
         } catch (_error) {
             toast.error('保存失败');
@@ -132,11 +133,11 @@ export default function PlansPage() {
 
         try {
             const res = await deletePlanAction(planId);
-            if (res.success) {
+            if (res.data?.success) {
                 toast.success('删除成功');
                 loadData();
             } else {
-                toast.error(res.error || '删除失败');
+                toast.error(res.serverError || '删除失败');
             }
         } catch (_error) {
             toast.error('删除失败');
@@ -146,8 +147,8 @@ export default function PlansPage() {
     // 切换启用状态
     const handleToggleActive = async (plan: SubscriptionPlan) => {
         try {
-            const res = await savePlanAction({ ...plan, is_active: !plan.is_active });
-            if (res.success) {
+            const res = await savePlanAction({ ...plan, is_active: plan.is_active ? 0 : 1 });
+            if (res.data?.success) {
                 toast.success(plan.is_active ? '已禁用' : '已启用');
                 loadData();
             }

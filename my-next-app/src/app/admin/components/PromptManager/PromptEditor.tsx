@@ -3,7 +3,7 @@
 import React from 'react';
 import { Button } from '@/components/ui/button';
 import { Save, RotateCcw } from 'lucide-react';
-import { PromptTemplate } from '@/server/actions/prompts';
+import type { PromptTemplate } from '@/lib/services/prompt';
 
 interface PromptEditorProps {
     editingPrompt: PromptTemplate | null;

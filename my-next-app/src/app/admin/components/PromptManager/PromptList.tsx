@@ -1,7 +1,7 @@
 "use client";
 
 import React from 'react';
-import { PromptTemplate } from '@/server/actions/prompts';
+import type { PromptTemplate } from '@/lib/services/prompt';
 
 interface PromptListProps {
     prompts: PromptTemplate[];

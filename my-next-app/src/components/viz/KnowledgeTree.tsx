@@ -3,7 +3,7 @@
 import React, { useCallback, useMemo, useRef } from 'react';
 import dynamic from 'next/dynamic';
 import { Target, BookOpen } from 'lucide-react';
-import { KnowledgeGraphData, KnowledgeNode, KnowledgeLink } from '@/server/actions/viz';
+import type { KnowledgeGraphData, KnowledgeNode, KnowledgeLink } from '@/types/viz';
 import type { ForceGraphMethods, NodeObject } from 'react-force-graph-2d';
 import {
   Drawer,

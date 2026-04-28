@@ -9,7 +9,8 @@ import 'dayjs/locale/zh-cn';
 dayjs.extend(utc);
 dayjs.extend(relativeTime);
 dayjs.locale('zh-cn');
-import { getUserActivityAction, type ActivityFilters, type UserActivityEntry } from '@/server/actions/activity';
+import { getUserActivityAction } from '@/server/actions/activity';
+import type { ActivityFilters, UserActivityEntry } from '@/types/activity';
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -41,16 +42,20 @@ export function ActivityList() {
 
     const loadActivities = useCallback(async (currentPage = page, currentFilters = filters) => {
         setLoading(true);
-        try {
-            const offset = (currentPage - 1) * pageSize;
-            const res = await getUserActivityAction(pageSize, offset, currentFilters);
-            setActivities(res.logs);
-            setTotal(res.total);
-        } catch (_error) {
-            toast.error("加载记录失败");
-        } finally {
-            setLoading(false);
+        const offset = (currentPage - 1) * pageSize;
+        const result = await getUserActivityAction({ 
+            limit: pageSize, 
+            offset, 
+            filters: currentFilters 
+        });
+        
+        if (result.serverError) {
+            toast.error(result.serverError || "加载记录失败");
+        } else if (result.data) {
+            setActivities(result.data.logs as UserActivityEntry[]);
+            setTotal(result.data.total);
         }
+        setLoading(false);
     }, [page, filters]);
 
     useEffect(() => {

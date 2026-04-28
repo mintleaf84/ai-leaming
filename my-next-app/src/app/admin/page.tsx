@@ -5,7 +5,8 @@ import { getAdminStatsAction } from "@/server/actions/admin";
 export const revalidate = 60;
 
 export default async function AdminDashboardPage() {
-    const stats = await getAdminStatsAction();
+    const result = await getAdminStatsAction();
+    const stats = result.data;
 
     return (
         <div className="p-4 md:p-8 space-y-8">
@@ -25,7 +26,7 @@ export default async function AdminDashboardPage() {
                         <Users className="h-4 w-4 text-muted-foreground" />
                     </CardHeader>
                     <CardContent>
-                        <div className="text-2xl font-bold">{stats.users}</div>
+                        <div className="text-2xl font-bold">{stats?.users ?? '-'}</div>
                         <p className="text-xs text-muted-foreground mt-1">
                             注册用户总数
                         </p>
@@ -39,7 +40,7 @@ export default async function AdminDashboardPage() {
                         <BookOpen className="h-4 w-4 text-muted-foreground" />
                     </CardHeader>
                     <CardContent>
-                        <div className="text-2xl font-bold">{stats.questions}</div>
+                        <div className="text-2xl font-bold">{stats?.questions ?? '-'}</div>
                         <p className="text-xs text-muted-foreground mt-1">
                             当前可用试题
                         </p>
@@ -53,7 +54,7 @@ export default async function AdminDashboardPage() {
                         <Activity className="h-4 w-4 text-muted-foreground" />
                     </CardHeader>
                     <CardContent>
-                        <div className="text-2xl font-bold">{stats.practices}</div>
+                        <div className="text-2xl font-bold">{stats?.practices ?? '-'}</div>
                         <p className="text-xs text-muted-foreground mt-1">
                             全站累计练习记录
                         </p>
@@ -67,7 +68,7 @@ export default async function AdminDashboardPage() {
                         <Cpu className="h-4 w-4 text-muted-foreground" />
                     </CardHeader>
                     <CardContent>
-                        <div className="text-2xl font-bold">{stats.activeAi > 0 ? '运行中' : '未配置'}</div>
+                        <div className="text-2xl font-bold">{(stats?.activeAi ?? 0) > 0 ? '运行中' : '未配置'}</div>
                         <p className="text-xs text-muted-foreground mt-1">
                             LLM 服务状态
                         </p>

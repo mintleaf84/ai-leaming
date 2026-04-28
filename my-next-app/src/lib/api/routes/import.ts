@@ -52,13 +52,13 @@ app.openapi(importRoute, async (c) => {
     const body = c.req.valid('json')
     
     try {
-        const result = await importFenbiDataAction(
-            body.exerciseJson,
-            body.solutionsJson,
-            body.statsJson
-        )
+        const result = await importFenbiDataAction({
+            exerciseJson: body.exerciseJson,
+            solutionsJson: body.solutionsJson,
+            statsJson: body.statsJson
+        })
         
-        return c.json(result, 200)
+        return c.json(result.data || { success: false, message: '导入失败' }, 200)
     } catch (e) {
         return c.json({
             success: false,

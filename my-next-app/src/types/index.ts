@@ -7,7 +7,7 @@
  */
 
 // 用户类型
-export type { User, UserRole, UserSession } from './user';
+export type { UserProfile, UserSettings, User, UserRole } from './user';
 
 // 题目类型
 export type {

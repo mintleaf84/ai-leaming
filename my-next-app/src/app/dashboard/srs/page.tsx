@@ -9,9 +9,10 @@ export const metadata = {
 };
 
 async function SrsAnalysisContent() {
-  const stats = await getSrsGlobalStatsAction();
+  const result = await getSrsGlobalStatsAction();
+  if (!result.data) return <div className="text-center text-muted-foreground p-8">加载失败</div>;
   
-  return <SrsAnalysisClient stats={stats} />;
+  return <SrsAnalysisClient stats={result.data} />;
 }
 
 export default function SrsAnalysisPage() {

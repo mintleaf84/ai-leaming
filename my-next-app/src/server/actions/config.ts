@@ -1,35 +1,35 @@
 'use server';
 
-import logger from '@/lib/logger';
-import { revalidatePath } from 'next/cache';
-import { requireRole } from '@/lib/auth/auth';
+import { adminAction } from '@/lib/safe-action';
+import { aiConfigService, type AiConfig, type AiModelRoute } from '@/lib/services/ai-config';
 import { logAdminAction } from '@/lib/admin/audit';
 import { clearAiConfigCache, getAiConfig, getModel } from '@/lib/ai/client';
 import { generateText } from 'ai';
+import { revalidatePath } from 'next/cache';
+import { z } from 'zod';
 import { getErrorMessage } from '@/lib/utils/error';
-import { aiConfigService, type AiConfig, type AiModelRoute } from '@/lib/services/ai-config';
-
-export type { AiConfig, AiModelRoute };
+import logger from '@/lib/logger';
+import { 
+  SaveAiConfigSchema, 
+  SaveAiModelRouteSchema, 
+  TestAiConnectionSchema 
+} from '@/lib/validations/config';
 
 /**
  * 获取所有 AI 配置
  */
-export async function getAiConfigsAction(): Promise<AiConfig[]> {
-    try {
-        await requireRole(['admin']);
+export const getAiConfigsAction = adminAction
+    .action(async () => {
         return await aiConfigService.getConfigs();
-    } catch (error) {
-        logger.error({ err: error }, '[AiConfigAction] 获取列表失败');
-        return [];
-    }
-}
+    });
 
 /**
  * 保存配置（新增或更新）
  */
-export async function saveAiConfigAction(config: Partial<AiConfig>) {
-    const user = await requireRole(['admin']);
-    try {
+export const saveAiConfigAction = adminAction
+    .inputSchema(SaveAiConfigSchema.partial())
+    .action(async ({ parsedInput: config, ctx }) => {
+        const { user } = ctx;
         const id = await aiConfigService.saveConfig(config);
 
         revalidatePath('/admin');
@@ -39,18 +39,15 @@ export async function saveAiConfigAction(config: Partial<AiConfig>) {
         await logAdminAction(user.id, user.username, 'UPDATE_AI_CONFIG', 'ai_config', id?.toString() || 'new', { name: config.name });
 
         return { success: true };
-    } catch (error: unknown) {
-        logger.error({ err: error }, '[AiConfigAction] 保存失败');
-        return { success: false, error: getErrorMessage(error) };
-    }
-}
+    });
 
 /**
  * 删除配置
  */
-export async function deleteAiConfigAction(id: number) {
-    const user = await requireRole(['admin']);
-    try {
+export const deleteAiConfigAction = adminAction
+    .inputSchema(z.number())
+    .action(async ({ parsedInput: id, ctx }) => {
+        const { user } = ctx;
         await aiConfigService.deleteConfig(id);
 
         // 记录操作日志
@@ -59,17 +56,15 @@ export async function deleteAiConfigAction(id: number) {
         revalidatePath('/admin');
         clearAiConfigCache();
         return { success: true };
-    } catch (error: any) {
-        return { success: false, error: error.message || '删除失败' };
-    }
-}
+    });
 
 /**
  * 设置激活配置
  */
-export async function setActiveAiConfigAction(id: number) {
-    const user = await requireRole(['admin']);
-    try {
+export const setActiveAiConfigAction = adminAction
+    .inputSchema(z.number())
+    .action(async ({ parsedInput: id, ctx }) => {
+        const { user } = ctx;
         await aiConfigService.setActiveConfig(id);
 
         // 记录日志
@@ -78,30 +73,24 @@ export async function setActiveAiConfigAction(id: number) {
         revalidatePath('/admin');
         clearAiConfigCache();
         return { success: true };
-    } catch (error) {
-        return { success: false, error: '切换失败' };
-    }
-}
+    });
 
 /**
  * 获取模型路由配置
  */
-export async function getAiModelRoutesAction(): Promise<AiModelRoute[]> {
-    try {
-        await requireRole(['admin']);
+export const getAiModelRoutesAction = adminAction
+    .action(async () => {
         return await aiConfigService.getRoutes();
-    } catch (error) {
-        return [];
-    }
-}
+    });
 
 /**
  * 保存模型路由配置
  */
-export async function saveAiModelRouteAction(route: AiModelRoute) {
-    const user = await requireRole(['admin']);
-    try {
-        await aiConfigService.saveRoute(route);
+export const saveAiModelRouteAction = adminAction
+    .inputSchema(SaveAiModelRouteSchema)
+    .action(async ({ parsedInput: route, ctx }) => {
+        const { user } = ctx;
+        await aiConfigService.saveRoute(route as any);
 
         // 记录日志
         await logAdminAction(
@@ -116,52 +105,52 @@ export async function saveAiModelRouteAction(route: AiModelRoute) {
         revalidatePath('/admin/ai');
         clearAiConfigCache();
         return { success: true };
-    } catch (error) {
-        return { success: false, error: '保存路由失败' };
-    }
-}
+    });
 
 /**
  * 测试 AI 连接
  */
-export async function testAiConnectionAction(apiKey: string, apiUrl: string, modelName: string) {
-    const user = await requireRole(['admin']);
-    
-    try {
-        const prompt = "Please respond with 'Pong' to verify the connection.";
-        const config = await getAiConfig('economy', apiKey, apiUrl);
-        const model = getModel(config.apiKey, config.baseURL, modelName || config.modelName);
-
-        const { text } = await generateText({
-            model,
-            messages: [{ role: 'user', content: prompt }],
-            abortSignal: AbortSignal.timeout(20000), 
-        });
-
-        // 记录审计日志
-        await logAdminAction(user.id, user.username, 'TEST_AI_CONNECTION', 'ai_config', 'test', { 
-            url: apiUrl, 
-            model: modelName,
-            success: true 
-        });
-
-        return { 
-            success: true, 
-            message: text.length > 100 ? text.slice(0, 97) + '...' : text 
-        };
-    } catch (error: unknown) {
-        logger.error({ err: error, user: user.username }, "[AiConfigAction] 测试连接失败");
+export const testAiConnectionAction = adminAction
+    .inputSchema(TestAiConnectionSchema)
+    .action(async ({ parsedInput: input, ctx }) => {
+        const { apiKey, apiUrl, modelName } = input;
+        const { user } = ctx;
         
-        // 记录失败日志
-        await logAdminAction(user.id, user.username, 'TEST_AI_CONNECTION', 'ai_config', 'test', { 
-            url: apiUrl, 
-            success: false,
-            error: getErrorMessage(error)
-        });
+        try {
+            const prompt = "Please respond with 'Pong' to verify the connection.";
+            const config = await getAiConfig('economy', apiKey, apiUrl);
+            const model = getModel(config.apiKey, config.baseURL, modelName || config.modelName);
 
-        return { 
-            success: false, 
-            error: getErrorMessage(error, '连接失败，请检查 API Key 和 URL 是否正确。') 
-        };
-    }
-}
+            const { text } = await generateText({
+                model,
+                messages: [{ role: 'user', content: prompt }],
+                abortSignal: AbortSignal.timeout(20000), 
+            });
+
+            // 记录审计日志
+            await logAdminAction(user.id, user.username, 'TEST_AI_CONNECTION', 'ai_config', 'test', { 
+                url: apiUrl, 
+                model: modelName,
+                success: true 
+            });
+
+            return { 
+                success: true, 
+                message: text.length > 100 ? text.slice(0, 97) + '...' : text 
+            };
+        } catch (error: unknown) {
+            logger.error({ err: error, user: user.username }, "[AiConfigAction] 测试连接失败");
+            
+            // 记录失败日志
+            await logAdminAction(user.id, user.username, 'TEST_AI_CONNECTION', 'ai_config', 'test', { 
+                url: apiUrl, 
+                success: false,
+                error: getErrorMessage(error)
+            });
+
+            return { 
+                success: false, 
+                error: getErrorMessage(error, '连接失败，请检查 API Key 和 URL 是否正确。') 
+            };
+        }
+    });

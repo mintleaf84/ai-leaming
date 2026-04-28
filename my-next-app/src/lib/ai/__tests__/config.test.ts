@@ -1,38 +1,36 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 
 // Mock DB
-const { mockPrepare, mockGet } = vi.hoisted(() => ({
+const { mockGet, mockAll } = vi.hoisted(() => ({
     mockGet: vi.fn(),
-    mockPrepare: vi.fn().mockReturnValue({
-        get: vi.fn((...args) => mockGet(...args))
-    })
+    mockAll: vi.fn(),
 }));
 
 vi.mock('@/lib/db', () => {
-    const mock = {
-        prepare: mockPrepare,
-        select: vi.fn(() => ({
-            from: vi.fn(() => ({
-                innerJoin: vi.fn(() => ({
-                    where: vi.fn(() => ({
-                        limit: vi.fn(() => ({
-                            all: vi.fn(() => mockGet() ? [mockGet()] : [])
-                        }))
-                    }))
-                }))
-            }))
-        })),
+    const drizzleMock: any = {
+        select: vi.fn(() => {
+            const chain: any = new Proxy(() => {}, {
+                get: (_, prop) => {
+                    if (prop === 'all') return vi.fn().mockImplementation(() => Promise.resolve(mockAll()));
+                    if (prop === 'get') return vi.fn().mockImplementation(() => Promise.resolve(mockGet()));
+                    if (prop === 'then') return (resolve: any) => resolve(mockAll() || []);
+                    return chain;
+                },
+                apply: () => chain
+            });
+            return chain;
+        }),
         query: {
             ai_configs: {
-                findFirst: vi.fn().mockResolvedValue(null)
+                findFirst: vi.fn().mockImplementation(() => Promise.resolve(mockGet()))
             }
         },
         exec: vi.fn()
     };
     return {
-        default: mock,
-        db: mock,
-        drizzleDb: mock,
+        default: drizzleMock,
+        db: drizzleMock,
+        drizzleDb: drizzleMock,
         drizzleSchema: {
             ai_model_routes: {
                 model_name: 'model_name',
@@ -73,12 +71,12 @@ describe('AI Config Management', () => {
     });
 
     it('优先使用功能路由配置', async () => {
-        // 第一次调用查数据库
-        mockGet.mockReturnValueOnce({
+        // 第一次调用查数据库 (select().all())
+        mockAll.mockReturnValue([{
             api_key: 'route-key',
             api_url: 'route-url',
             model_name: 'route-model'
-        });
+        }]);
 
         const config = await getAiConfig('test-feature');
         expect(config.apiKey).toBe('route-key');

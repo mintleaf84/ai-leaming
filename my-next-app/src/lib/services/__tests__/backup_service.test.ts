@@ -1,7 +1,36 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { BackupService } from '../backup-service';
+import { Readable, Writable } from 'stream';
 import { createClient } from 'webdav';
-import fs from 'fs/promises';
+
+// Mock fs & fs/promises
+vi.mock('fs', () => {
+    const mockedReads = vi.fn(() => new Readable({ read() { this.push(null); } }));
+    const mockedWrites = vi.fn(() => new Writable({ write(chunk, enc, cb) { cb(); } }));
+    return {
+        createReadStream: mockedReads,
+        createWriteStream: mockedWrites,
+        default: {
+            createReadStream: mockedReads,
+            createWriteStream: mockedWrites,
+        }
+    };
+});
+
+vi.mock('fs/promises', () => ({
+    default: {
+        mkdir: vi.fn().mockResolvedValue(undefined),
+        readFile: vi.fn().mockResolvedValue(Buffer.from('dummy')),
+        unlink: vi.fn().mockResolvedValue(undefined),
+        stat: vi.fn().mockResolvedValue({ size: 100 }),
+        writeFile: vi.fn().mockResolvedValue(undefined),
+    },
+    mkdir: vi.fn().mockResolvedValue(undefined),
+    readFile: vi.fn().mockResolvedValue(Buffer.from('dummy')),
+    unlink: vi.fn().mockResolvedValue(undefined),
+    stat: vi.fn().mockResolvedValue({ size: 100 }),
+    writeFile: vi.fn().mockResolvedValue(undefined),
+}));
 
 // Mock WebDAV (避免真实的网路请求)
 vi.mock('webdav', () => ({
@@ -20,21 +49,57 @@ vi.mock('@/lib/utils/encryption', () => ({
     decrypt: vi.fn((data) => data.replace('encrypted-', '')),
 }));
 
+// Mock pipeline
+vi.mock('util', async (importOriginal) => {
+    const original: any = await importOriginal();
+    const mockedPromisify = (fn: any) => {
+        if (fn && (fn.name === 'pipeline' || fn.toString().includes('pipeline'))) {
+            return vi.fn().mockResolvedValue(true);
+        }
+        return original.promisify(fn);
+    };
+    return {
+        ...original,
+        promisify: mockedPromisify,
+        default: {
+            ...original.default,
+            promisify: mockedPromisify
+        }
+    };
+});
+
 // Mock DB
-vi.mock('@/lib/db', () => ({
-    __esModule: true,
-    default: {
-        // 关键点：我们不 Mock fs，而是在 mock 的 backup 方法中真实写入一个假文件。
-        // 这样后续真实的 createReadStream 和 pipeline 就能找到文件并正常执行压缩，
-        // 最后 BackupService 会在 finally 块中自动清理这些临时文件。
-        backup: vi.fn(async (targetPath: string) => {
-            await fs.writeFile(targetPath, 'dummy database content for testing');
-            return true;
-        }),
-    },
-    getSetting: vi.fn(),
-    setSetting: vi.fn(),
+const { mockGet, mockAll } = vi.hoisted(() => ({
+    mockGet: vi.fn(),
+    mockAll: vi.fn(),
 }));
+
+vi.mock('@/lib/db', () => {
+    const drizzleMock: any = {
+        select: vi.fn(() => {
+            const chain: any = new Proxy(() => {}, {
+                get: (_, prop) => {
+                    if (prop === 'all') return vi.fn().mockImplementation(() => Promise.resolve(mockAll()));
+                    if (prop === 'get') return vi.fn().mockImplementation(() => Promise.resolve(mockGet()));
+                    if (prop === 'then') return (resolve: any) => resolve(mockAll() || []);
+                    return chain;
+                },
+                apply: () => chain
+            });
+            return chain;
+        }),
+        run: vi.fn().mockResolvedValue({ changes: 1 }),
+        backup: vi.fn().mockResolvedValue(true),
+    };
+
+    return {
+        default: drizzleMock,
+        db: drizzleMock,
+        drizzleDb: drizzleMock,
+        getSetting: vi.fn(),
+        setSetting: vi.fn(),
+    };
+});
 
 describe('BackupService', () => {
     beforeEach(() => {
@@ -43,7 +108,7 @@ describe('BackupService', () => {
 
     it('should get config correctly with decryption', async () => {
         const { getSetting } = await import('@/lib/db');
-        (getSetting as any).mockImplementation((db: any, key: string) => {
+        (getSetting as any).mockImplementation((key: string) => {
             if (key === 'backup_webdav_url') return 'http://dav.com';
             if (key === 'backup_webdav_user') return 'user1';
             return null;
@@ -72,7 +137,7 @@ describe('BackupService', () => {
     it('should perform backup correctly', async () => {
         // Setup config mock
         const { getSetting } = await import('@/lib/db');
-        (getSetting as any).mockImplementation((db: any, key: string) => {
+        (getSetting as any).mockImplementation((key: string) => {
             if (key === 'backup_webdav_url') return 'http://dav.com';
             if (key === 'backup_webdav_user') return 'user';
             if (key === 'backup_webdav_pass') return 'encrypted-pass';
@@ -80,13 +145,12 @@ describe('BackupService', () => {
             return null;
         });
 
-        // 执行备份 (这会触发真实的流压缩和本地临时文件的创建与销毁)
+        // 执行备份
         const fileName = await BackupService.performBackup();
         
         expect(fileName).toContain('.gz');
         
         const dbModule = await import('@/lib/db');
-        const db = dbModule.default;
-        expect(db?.backup).toHaveBeenCalled();
+        expect(dbModule.drizzleDb.run).toHaveBeenCalled();
     });
 });

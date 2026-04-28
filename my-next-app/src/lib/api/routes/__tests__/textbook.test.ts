@@ -2,11 +2,16 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import app from '../textbook';
 
-// Mock db（用于 chapterCount 查询）
-const mockDb = vi.hoisted(() => ({
-    prepare: vi.fn()
+// Mock Drizzle & Schema
+const { mockDrizzle } = vi.hoisted(() => ({
+    mockDrizzle: {
+        select: vi.fn(),
+    }
 }));
-vi.mock('@/lib/db', () => ({ default: mockDb, db: mockDb, drizzleDb: {}, drizzleSchema: {} }));
+vi.mock('@/lib/db', () => ({ drizzleDb: mockDrizzle }));
+vi.mock('@/lib/db/drizzle-schema', () => ({ 
+    textbook_chapters: { id: 'textbook_chapters.id', textbook_id: 'textbook_chapters.textbook_id' } 
+}));
 
 // Mock textbookService
 const { mockTextbookService } = vi.hoisted(() => {
@@ -60,8 +65,14 @@ describe('Textbook Hono 路由', () => {
 
     describe('GET /', () => {
         it('应返回教材列表（含章节数）', async () => {
-            mockTextbookService.getAllTextbooks.mockReturnValue([sampleTextbook]);
-            mockDb.prepare.mockReturnValue({ get: vi.fn().mockReturnValue({ count: 3 }) });
+            mockTextbookService.getAllTextbooks.mockResolvedValue([sampleTextbook]);
+            
+            const countMockChain = {
+                from: vi.fn().mockReturnThis(),
+                where: vi.fn().mockReturnThis(),
+                get: vi.fn().mockResolvedValue({ value: 3 })
+            };
+            mockDrizzle.select.mockReturnValue(countMockChain);
 
             const res = await app.request('/');
             expect(res.status).toBe(200);
@@ -72,7 +83,7 @@ describe('Textbook Hono 路由', () => {
         });
 
         it('无教材时应返回空数组', async () => {
-            mockTextbookService.getAllTextbooks.mockReturnValue([]);
+            mockTextbookService.getAllTextbooks.mockResolvedValue([]);
             const res = await app.request('/');
             expect(res.status).toBe(200);
             expect(await res.json()).toEqual([]);
@@ -83,8 +94,8 @@ describe('Textbook Hono 路由', () => {
 
     describe('GET /:id', () => {
         it('应返回教材详情与章节列表', async () => {
-            mockTextbookService.getTextbook.mockReturnValue(sampleTextbook);
-            mockTextbookService.getChapters.mockReturnValue([sampleChapter]);
+            mockTextbookService.getTextbook.mockResolvedValue(sampleTextbook);
+            mockTextbookService.getChapters.mockResolvedValue([sampleChapter]);
 
             const res = await app.request('/1');
             expect(res.status).toBe(200);
@@ -95,7 +106,7 @@ describe('Textbook Hono 路由', () => {
         });
 
         it('教材不存在时应返回 404', async () => {
-            mockTextbookService.getTextbook.mockReturnValue(undefined);
+            mockTextbookService.getTextbook.mockResolvedValue(undefined);
             const res = await app.request('/999');
             expect(res.status).toBe(404);
         });

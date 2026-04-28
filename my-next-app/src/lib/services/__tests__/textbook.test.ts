@@ -2,11 +2,14 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { textbookService } from '../textbook';
 
-// Mock DB
-const { mockDb, mockRag, mockFs } = vi.hoisted(() => {
+// Mock DB & Schema & Utils
+const { mockDrizzle, mockRag, mockFs } = vi.hoisted(() => {
     return {
-        mockDb: {
-            prepare: vi.fn(),
+        mockDrizzle: {
+            insert: vi.fn(),
+            select: vi.fn(),
+            delete: vi.fn(),
+            update: vi.fn(),
         },
         mockRag: {
             addChunk: vi.fn().mockResolvedValue(true),
@@ -19,7 +22,12 @@ const { mockDb, mockRag, mockFs } = vi.hoisted(() => {
     };
 });
 
-vi.mock('@/lib/db', () => ({ default: mockDb, db: mockDb, drizzleDb: {}, drizzleSchema: {} }));
+vi.mock('@/lib/db', () => ({ 
+    drizzleDb: mockDrizzle,
+    textbooks: { id: 'textbooks.id' },
+    textbook_chapters: { id: 'textbook_chapters.id', textbook_id: 'textbook_chapters.textbook_id' }
+}));
+
 vi.mock('@/lib/ai/rag', () => ({ ragService: mockRag }));
 vi.mock('fs', () => ({ 
     default: {
@@ -30,6 +38,8 @@ vi.mock('fs', () => ({
     }
 }));
 vi.mock('@/lib/utils/text-splitter', () => ({ splitText: async (t: string) => [t] }));
+
+import { textbooks, textbook_chapters } from '@/lib/db/drizzle-schema';
 
 describe('Textbook Service', () => {
     beforeEach(() => {
@@ -44,31 +54,40 @@ describe('Textbook Service', () => {
                 { id: 102, title: 'C2' }
             ];
 
-            mockDb.prepare.mockImplementation((sql: string) => {
-                if (sql.includes('SELECT id FROM textbook_chapters')) {
-                    return { all: vi.fn().mockReturnValue(mockChapters) };
-                }
-                return { run: vi.fn() };
-            });
+            const selectMockChain = {
+                from: vi.fn().mockReturnThis(),
+                where: vi.fn().mockReturnThis(),
+                all: vi.fn().mockResolvedValue(mockChapters)
+            };
+            mockDrizzle.select.mockReturnValue(selectMockChain);
+            mockDrizzle.delete.mockReturnValue({ where: vi.fn().mockReturnThis() });
             mockFs.existsSync.mockReturnValue(true);
 
             await textbookService.deleteTextbook(1);
 
-            // 核心演进：验证是否针对每一个章节都调用了 RAG 删除
+            // 验证是否针对每一个章节都调用了 RAG 删除
             expect(mockRag.deleteChunksBySource).toHaveBeenCalledTimes(2);
             expect(mockRag.deleteChunksBySource).toHaveBeenCalledWith('textbook_chapter', 101);
             expect(mockRag.deleteChunksBySource).toHaveBeenCalledWith('textbook_chapter', 102);
             
             // 验证数据库记录也被删除
-            expect(mockDb.prepare).toHaveBeenCalledWith(expect.stringContaining('DELETE FROM textbooks WHERE id = ?'));
+            expect(mockDrizzle.delete).toHaveBeenCalledWith(textbooks);
         });
     });
 
     describe('addChapter', () => {
         it('should index chunk with correct metadata', async () => {
-            mockDb.prepare.mockReturnValue({
-                run: vi.fn().mockReturnValue({ lastInsertRowid: 201 })
-            });
+            const insertMockChain = {
+                values: vi.fn().mockReturnThis(),
+                returning: vi.fn().mockReturnValue({
+                    get: vi.fn().mockResolvedValue({ id: 201 }), // fallback if used
+                    // Drizzle insert().returning() returns an array in LibSQL
+                })
+            };
+            // 针对 LibSQL returning() 返回数组的处理
+            (insertMockChain.returning() as any).then = (resolve: any) => resolve([{ id: 201 }]);
+
+            mockDrizzle.insert.mockReturnValue(insertMockChain);
 
             await textbookService.addChapter({
                 textbook_id: 1,
@@ -78,7 +97,7 @@ describe('Textbook Service', () => {
                 level: 1
             });
 
-            // 核心演进：精准匹配 RAG 索引的元数据
+            // 验证精准匹配 RAG 索引的元数据
             expect(mockRag.addChunk).toHaveBeenCalledWith(
                 'Welcome to this book',
                 expect.objectContaining({

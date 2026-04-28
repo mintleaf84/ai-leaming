@@ -2,7 +2,9 @@ import { OpenAPIHono, createRoute, z } from '@hono/zod-openapi'
 import { getErrorMessage } from '@/lib/utils/error';
 import { textbookService } from '@/lib/services/textbook'
 import { authMiddleware } from '@/lib/api/middlewares/auth'
-import { db } from '@/lib/db'
+import { drizzleDb } from '@/lib/db'
+import { textbook_chapters } from '@/lib/db/drizzle-schema'
+import { eq, count } from 'drizzle-orm'
 
 const app = new OpenAPIHono()
 
@@ -10,21 +12,21 @@ const app = new OpenAPIHono()
 const TextbookSchema = z.object({
     id: z.number(),
     title: z.string(),
-    author: z.string().optional(),
-    description: z.string().optional(),
-    cover_url: z.string().optional(),
+    author: z.string().optional().nullable(),
+    description: z.string().optional().nullable(),
+    cover_url: z.string().optional().nullable(),
     chapterCount: z.number().describe('章节数量'),
-    created_at: z.string(),
+    created_at: z.string().optional().nullable(),
 })
 
 const TextbookChapterSchema = z.object({
     id: z.number(),
     textbook_id: z.number(),
     title: z.string(),
-    order_index: z.number(),
+    order_index: z.number().nullable(),
     parent_id: z.number().nullable().optional(),
-    level: z.number(),
-    created_at: z.string(),
+    level: z.number().nullable(),
+    created_at: z.string().nullable().optional(),
 })
 
 const TextbookDetailSchema = TextbookSchema.extend({
@@ -51,23 +53,25 @@ const listTextbookDef = createRoute({
 })
 
 app.openapi(listTextbookDef, async (c) => {
-    const textbooks = textbookService.getAllTextbooks()
+    const textbooks = await textbookService.getAllTextbooks()
 
     // 为每本教材附带章节数量
-    const result = textbooks.map(tb => {
-        const chapterRow = db.prepare(
-            'SELECT COUNT(*) as count FROM textbook_chapters WHERE textbook_id = ?'
-        ).get(tb.id) as { count: number }
+    const result = await Promise.all(textbooks.map(async tb => {
+        const chapterRow = await drizzleDb.select({ value: count() })
+            .from(textbook_chapters)
+            .where(eq(textbook_chapters.textbook_id, tb.id))
+            .get();
+            
         return {
             id: tb.id,
             title: tb.title,
             author: tb.author,
             description: tb.description,
             cover_url: tb.cover_url,
-            chapterCount: chapterRow.count,
+            chapterCount: chapterRow?.value || 0,
             created_at: tb.created_at,
         }
-    })
+    }))
 
     return c.json(result)
 })
@@ -103,10 +107,10 @@ app.openapi(getTextbookDef, async (c) => {
     const textbookId = parseInt(id)
     if (isNaN(textbookId)) return c.json({ error: 'Invalid ID' }, 400)
 
-    const textbook = textbookService.getTextbook(textbookId)
+    const textbook = await textbookService.getTextbook(textbookId)
     if (!textbook) return c.json({ error: '教材不存在' }, 404)
 
-    const chapters = textbookService.getChapters(textbookId)
+    const chapters = await textbookService.getChapters(textbookId)
 
     return c.json({
         id: textbook.id,

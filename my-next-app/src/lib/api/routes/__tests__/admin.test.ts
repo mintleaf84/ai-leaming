@@ -92,6 +92,89 @@ describe('Admin Hono Routes (Integration)', () => {
         });
     });
 
+    describe('GET /backup-history', () => {
+        it('should return empty history when no records exist', async () => {
+            const res = await app.request('/backup-history');
+            const data = await res.json();
+
+            expect(res.status).toBe(200);
+            expect(data.history).toEqual([]);
+            expect(data.total).toBe(0);
+        });
+
+        it('should return backup and restore history', async () => {
+            // 插入两条记录
+            await testDbHelper.db.insert(schema.admin_logs).values([
+                {
+                    user_id: 1,
+                    username: 'admin_user',
+                    action: 'BACKUP_DATABASE',
+                    target_type: 'system',
+                    target_id: 'database',
+                    details: JSON.stringify({ filename: 'ai-learning-backup-2026-04-29.db' }),
+                },
+                {
+                    user_id: 1,
+                    username: 'admin_user',
+                    action: 'RESTORE_DATABASE',
+                    target_type: 'system',
+                    target_id: 'database',
+                    details: JSON.stringify({ filename: 'restore.db', backupCreated: 'ai-learning.db.bak-123' }),
+                },
+            ]);
+
+            const res = await app.request('/backup-history');
+            const data = await res.json();
+
+            expect(res.status).toBe(200);
+            expect(data.total).toBe(2);
+            const backup = data.history.find((h: any) => h.action === 'BACKUP_DATABASE');
+            const restore = data.history.find((h: any) => h.action === 'RESTORE_DATABASE');
+            expect(backup).toBeTruthy();
+            expect(backup.filename).toBe('ai-learning-backup-2026-04-29.db');
+            expect(backup.username).toBe('admin_user');
+            expect(restore).toBeTruthy();
+            expect(restore.filename).toBe('restore.db');
+            expect(restore.backupCreated).toBe('ai-learning.db.bak-123');
+            expect(restore.username).toBe('admin_user');
+        });
+
+        it('should exclude non-backup admin logs', async () => {
+            await testDbHelper.db.insert(schema.admin_logs).values([
+                {
+                    user_id: 1,
+                    username: 'admin_user',
+                    action: 'TOGGLE_DEMO_MODE',
+                    target_type: 'system',
+                    target_id: null,
+                    details: null,
+                },
+                {
+                    user_id: 1,
+                    username: 'admin_user',
+                    action: 'BACKUP_DATABASE',
+                    target_type: 'system',
+                    target_id: 'database',
+                    details: JSON.stringify({ filename: 'test.db' }),
+                },
+            ]);
+
+            const res = await app.request('/backup-history');
+            const data = await res.json();
+
+            expect(res.status).toBe(200);
+            expect(data.total).toBe(1);
+            expect(data.history[0].action).toBe('BACKUP_DATABASE');
+        });
+
+        it('should return 401 when unauthorized', async () => {
+            mockRequireRole.mockRejectedValueOnce(new Error('Unauthorized'));
+
+            const res = await app.request('/backup-history');
+            expect(res.status).toBe(401);
+        });
+    });
+
     describe('GET /export/questions', () => {
         it('should return CSV on success', async () => {
             await testDbHelper.db.insert(schema.questions).values({

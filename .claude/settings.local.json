@@ -7,7 +7,11 @@
       "Bash(git commit -m ' *)",
       "Bash(npm --prefix \"C:/Users/cjb/Documents/code/ai-leaming/my-next-app\" test -- --run)",
       "PowerShell(npm test *)",
-      "Bash(git commit *)"
+      "Bash(git commit *)",
+      "Bash(npx vitest *)",
+      "Bash(git tag *)",
+      "Bash(npm view *)",
+      "Bash(npm ls *)"
     ]
   }
 }

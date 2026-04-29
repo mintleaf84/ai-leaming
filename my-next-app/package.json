@@ -14,7 +14,7 @@
     "@ai-sdk/openai": "^3.0.49",
     "@ai-sdk/react": "^3.0.170",
     "@hono/swagger-ui": "^0.5.3",
-    "@hono/zod-openapi": "^1.2.0",
+    "@hono/zod-openapi": "^0.19.10",
     "@langchain/core": "^1.1.42",
     "@langchain/textsplitters": "^1.0.1",
     "@radix-ui/react-alert-dialog": "^1.1.15",

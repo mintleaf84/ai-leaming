@@ -234,6 +234,50 @@ adminRoute.openapi(restoreDef, async (c) => {
     }
 })
 
+/** GET /api/admin/backup-history - 备份历史记录 */
+const backupHistoryDef = createRoute({
+    method: 'get',
+    path: '/backup-history',
+    summary: '获取备份与恢复操作的历史记录',
+    responses: {
+        200: { description: '成功返回历史记录' },
+        401: { description: '未授权' }
+    }
+})
+
+adminRoute.openapi(backupHistoryDef, async (c) => {
+    try { await requireRole(['admin']); } catch { return c.json({ error: 'Unauthorized' }, 401); }
+
+    const logs = await drizzleDb.select({
+        id: drizzleSchema.admin_logs.id,
+        action: drizzleSchema.admin_logs.action,
+        username: drizzleSchema.admin_logs.username,
+        details: drizzleSchema.admin_logs.details,
+        created_at: drizzleSchema.admin_logs.created_at,
+    })
+        .from(drizzleSchema.admin_logs)
+        .where(
+            sql`${drizzleSchema.admin_logs.action} IN ('BACKUP_DATABASE', 'RESTORE_DATABASE')`
+        )
+        .orderBy(desc(drizzleSchema.admin_logs.created_at))
+        .limit(50);
+
+    const history = logs.map(log => {
+        let details: Record<string, unknown> = {};
+        try { details = JSON.parse(log.details || '{}'); } catch { }
+        return {
+            id: log.id,
+            action: log.action,
+            username: log.username,
+            filename: (details.filename as string) || null,
+            backupCreated: (details.backupCreated as string) || null,
+            created_at: log.created_at,
+        };
+    });
+
+    return c.json({ history, total: history.length });
+})
+
 // --- Questions Export (Existing) ---
 
 const ExportQuestionsQuerySchema = z.object({

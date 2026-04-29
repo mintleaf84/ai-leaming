@@ -42,6 +42,43 @@ function mapQuestion(q: unknown): Question {
     }
 }
 
+/**
+ * 增强型答案比对函数，支持标号(A/B/C)与文本的双向匹配
+ * 与前端 use-practice-controller.ts 保持逻辑一致
+ */
+function checkAnswerCorrectness(
+    userAnswer: string,
+    correctAnswer: string,
+    options: string[]
+): boolean {
+    // 1. 精确匹配
+    if (userAnswer === correctAnswer) return true;
+
+    // 2. 用户提交标号(A/B/C...) → 对比选项文本
+    if (userAnswer.length === 1 && userAnswer >= 'A' && userAnswer <= 'Z') {
+        const idx = userAnswer.charCodeAt(0) - 65;
+        if (options[idx] === correctAnswer) return true;
+    }
+
+    // 3. 正确答案标号 → 对比用户提交文本
+    if (correctAnswer.length === 1 && correctAnswer >= 'A' && correctAnswer <= 'Z') {
+        const idx = correctAnswer.charCodeAt(0) - 65;
+        if (options[idx] === userAnswer) return true;
+    }
+
+    // 4. 判断题特殊处理：A=正确, B=错误
+    if (options.length === 2) {
+        if ((userAnswer === 'A' && correctAnswer === '正确') ||
+            (userAnswer === 'B' && correctAnswer === '错误') ||
+            (userAnswer === '正确' && correctAnswer === 'A') ||
+            (userAnswer === '错误' && correctAnswer === 'B')) {
+            return true;
+        }
+    }
+
+    return false;
+}
+
 export const practiceService = {
     /**
      * 获取或创建练习会话 (核心入口)
@@ -146,7 +183,7 @@ export const practiceService = {
         questions: Question[];
         sessionId: string;
     }> {
-        const sessionId = Math.random().toString(36).substring(2, 15);
+        const sessionId = crypto.randomUUID().replace(/-/g, '').substring(0, 15);
         
         const rawQuestions = await drizzleDb.select()
             .from(questions)
@@ -260,7 +297,10 @@ export const practiceService = {
         userAnswer: string,
         duration: number
     ) {
-        const [question] = await drizzleDb.select({ answer: questions.answer })
+        const [question] = await drizzleDb.select({
+            answer: questions.answer,
+            options: questions.options
+        })
             .from(questions)
             .where(eq(questions.id, questionId))
             .limit(1);
@@ -269,10 +309,22 @@ export const practiceService = {
             throw new Error(`Question ${questionId} not found`);
         }
 
-        const isCorrect = userAnswer === question.answer;
+        // 解析 options（可能是 JSON 字符串）
+        let options: string[] = [];
+        try {
+            options = typeof question.options === 'string'
+                ? JSON.parse(question.options)
+                : (question.options || []);
+        } catch {
+            options = [];
+        }
+
+        // 使用增强比对逻辑
+        const correctAnswer = question.answer || '';
+        const isCorrect = checkAnswerCorrectness(userAnswer, correctAnswer, options);
         await this.submitAnswer(userId, sessionId, questionId, userAnswer, isCorrect, duration);
 
-        return { isCorrect, correctAnswer: question.answer };
+        return { isCorrect, correctAnswer };
     },
 
     /**
@@ -372,7 +424,7 @@ export const practiceService = {
         }
 
         // 2. 生成会话 ID
-        const sessionId = Math.random().toString(36).substring(2, 15);
+        const sessionId = crypto.randomUUID().replace(/-/g, '').substring(0, 15);
         
         // 3. 映射并校验题目数据
         const questionData = rawQuestions.map(q => mapQuestion(q));
@@ -397,7 +449,7 @@ export const practiceService = {
      * 创建专项复习会话 (基于给定的题目 ID 列表)
      */
     async createReviewSession(userId: number, questionIds: number[]) {
-        const sessionId = `review-${Math.random().toString(36).substring(2, 10)}`;
+        const sessionId = `review-${crypto.randomUUID().replace(/-/g, '').substring(0, 10)}`;
         
         await drizzleDb.insert(practice_sessions).values({
             id: sessionId,

@@ -144,14 +144,14 @@ describe('QuestionManager 集成测试', () => {
     // ----------------------------------------------------------
     it('当 getQuestionsAction 返回 success:false 时，应显示 Toast 错误', async () => {
         const { toast } = await import('sonner')
-        // 模拟 action 返回 { success: false, message: '...' }
-        mockGetQuestions.mockResolvedValue({ data: { success: false, message: '数据库连接失败', questions: [], total: 0 } })
+        // 模拟 action 返回 { success: false }
+        mockGetQuestions.mockResolvedValue({ data: { success: false } })
 
         render(<QuestionManager />)
 
         // 等待错误 toast 被调用
         await waitFor(() => {
-            expect(toast.error).toHaveBeenCalledWith('数据库连接失败')
+            expect(toast.error).toHaveBeenCalledWith('题目列表加载失败')
         })
     })
 

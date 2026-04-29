@@ -213,9 +213,10 @@ export default function WrongBookPage() {
                         {viewMode === 'list' && (
                             <div className="space-y-3">
                                 {questions.map((q, index) => (
-                                    <div 
-                                        key={q.questionId} 
-                                        className={`animate-fade-in-up ${index < 5 ? `stagger-${index + 1}` : ''}`}
+                                    <div
+                                        key={q.questionId}
+                                        className="animate-fade-in-up"
+                                        style={{ animationDelay: `${index * 50}ms` }}
                                     >
                                         <WrongQuestionCard
                                             question={q}

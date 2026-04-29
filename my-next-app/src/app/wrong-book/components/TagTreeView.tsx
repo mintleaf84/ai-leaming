@@ -48,16 +48,32 @@ function buildTagTree(groups: WrongQuestionsByTag[]): TagTreeNode[] {
                 currentLevel.push(existingNode);
             }
 
-            // 累加题目数量到所有祖先节点
-            existingNode.count += group.count;
-
-            // 只有叶子节点才持有题目列表
+            // 只有叶子节点才累加题目数量，避免重复计数
             if (isLeaf) {
+                existingNode.count += group.count;
                 existingNode.questions = group.questions;
             }
 
             currentLevel = existingNode.children;
         }
+    }
+
+    // 向下传播叶子节点的计数到父节点
+    function propagateCounts(node: TagTreeNode): number {
+        if (node.children.length === 0) {
+            return node.count;
+        }
+        let childrenCount = 0;
+        for (const child of node.children) {
+            childrenCount += propagateCounts(child);
+        }
+        // 父节点的计数等于所有子节点计数之和
+        node.count = childrenCount;
+        return childrenCount;
+    }
+
+    for (const node of root) {
+        propagateCounts(node);
     }
 
     return root;

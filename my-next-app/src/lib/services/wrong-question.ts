@@ -91,7 +91,7 @@ export const wrongQuestionService = {
             excludeIds.length > 0 ? notInArray(practice_logs.question_id, excludeIds) : undefined
         ))
         .groupBy(practice_logs.question_id)
-        .orderBy(desc(sql`wrongCount`), desc(sql`lastWrongAt`));
+        .orderBy(desc(sql`COUNT(*)`), desc(sql`MAX(${practice_logs.timestamp})`));
 
         const rows = await query;
 

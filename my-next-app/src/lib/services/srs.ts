@@ -302,22 +302,38 @@ export const srsService = {
         .groupBy(sql`1`)
         .orderBy(sql`1 ASC`);
 
-        // 4. 未来 7 天计划
+        // 4. 未来 7 天错题复习计划（只统计曾经答错的题目）
         const futureDays = Array.from({ length: 7 }, (_, i) => {
             const d = new Date();
             d.setDate(d.getDate() + i);
             return d.toISOString().split('T')[0];
         });
 
+        // 子查询：获取用户曾经答错的题目ID
+        const wrongQuestionIds = drizzleDb.select({
+            questionId: practice_logs.question_id
+        })
+        .from(practice_logs)
+        .where(and(
+            eq(practice_logs.user_id, userId),
+            eq(practice_logs.is_correct, false)
+        ))
+        .groupBy(practice_logs.question_id);
+
         const rawFutureRows = await drizzleDb.select({
             date: sql<string>`
-                CASE 
+                CASE
                     WHEN date(${question_srs.due_date}) <= date('now') THEN date('now')
                     ELSE date(${question_srs.due_date})
                 END`,
             count: count()
         })
         .from(question_srs)
+        .innerJoin(practice_logs, and(
+            eq(practice_logs.question_id, question_srs.question_id),
+            eq(practice_logs.user_id, userId),
+            eq(practice_logs.is_correct, false)
+        ))
         .where(and(
             eq(question_srs.user_id, userId),
             sql`date(${question_srs.due_date}) <= date('now', '+7 days')`

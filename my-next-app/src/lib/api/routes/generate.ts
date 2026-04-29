@@ -3,7 +3,7 @@ import { getErrorMessage } from '@/lib/utils/error';
 import { authMiddleware, getCurrentUser } from '@/lib/api/middlewares/auth'
 import { streamText } from 'ai'
 import { getAiConfig, getModel } from '@/lib/ai/client'
-import { checkAndConsumeQuota } from '@/lib/billing/subscription-service'
+import { checkAndConsumeQuota, decrementUsage } from '@/lib/billing/subscription-service'
 
 const app = new OpenAPIHono()
 
@@ -63,6 +63,8 @@ app.openapi(generateRoute, async (c) => {
         return response.toTextStreamResponse()
     } catch (error: unknown) {
         console.error('[Hono Generate API] error:', error)
+        // 回滚配额（流式开始前的错误）
+        await decrementUsage(userId, 'ai_chat');
         return c.json({ error: getErrorMessage(error) }, 500)
     }
 })

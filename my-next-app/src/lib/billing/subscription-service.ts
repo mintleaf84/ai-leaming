@@ -245,6 +245,35 @@ export async function incrementUsage(userId: number, usageType: UsageType, amoun
 }
 
 /**
+ * 减少用量计数（用于回滚）
+ */
+export async function decrementUsage(userId: number, usageType: UsageType, amount = 1): Promise<void> {
+    const today = getBeijingDateString();
+
+    // 尝试更新现有记录
+    const [existing] = await drizzleDb.select({ count: daily_usage.count })
+        .from(daily_usage)
+        .where(and(
+            eq(daily_usage.user_id, userId),
+            eq(daily_usage.usage_date, today),
+            eq(daily_usage.usage_type, usageType)
+        ))
+        .limit(1);
+
+    if (existing && existing.count != null && existing.count > 0) {
+        // 确保不会扣成负数
+        const newCount = Math.max(0, existing.count - amount);
+        await drizzleDb.update(daily_usage)
+            .set({ count: newCount })
+            .where(and(
+                eq(daily_usage.user_id, userId),
+                eq(daily_usage.usage_date, today),
+                eq(daily_usage.usage_type, usageType)
+            ));
+    }
+}
+
+/**
  * 检查用量配额
  */
 export async function checkUsageQuota(userId: number, usageType: UsageType): Promise<UsageCheckResult> {

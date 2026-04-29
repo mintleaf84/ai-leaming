@@ -42,7 +42,7 @@ describe('Wrong Questions Actions', () => {
             vi.mocked(wrongQuestionService.getList).mockResolvedValue(mockList as any);
 
             const result = await getWrongQuestionsAction();
-            expect(result).toEqual(mockList);
+            expect(result.data?.questions).toEqual(mockList);
             expect(wrongQuestionService.getList).toHaveBeenCalledWith(1);
         });
     });
@@ -56,9 +56,9 @@ describe('Wrong Questions Actions', () => {
             vi.mocked(wrongQuestionService.getList).mockResolvedValue(mockList as any);
 
             const result = await getWrongQuestionsByTagAction();
-            expect(result).toHaveLength(2);
-            expect(result.find(r => r.tag === 'A')?.count).toBe(2);
-            expect(result.find(r => r.tag === 'B')?.count).toBe(1);
+            expect(result.data?.find).toHaveLength(2);
+            expect(result.data?.find?.find((r: any) => r.tag === 'A')?.count).toBe(2);
+            expect(result.data?.find?.find((r: any) => r.tag === 'B')?.count).toBe(1);
         });
     });
 
@@ -68,16 +68,19 @@ describe('Wrong Questions Actions', () => {
             vi.mocked(wrongQuestionService.getStats).mockResolvedValue(mockStats);
 
             const result = await getWrongQuestionsStatsAction();
-            expect(result).toEqual(mockStats);
+            expect(result.data?.success).toBe(true);
+            expect(result.data?.total).toBe(10);
+            expect(result.data?.recent).toBe(2);
+            expect(result.data?.frequent).toBe(1);
         });
     });
 
     describe('markAsMasteredAction', () => {
         it('应该调用 service 标记已掌握', async () => {
             vi.mocked(wrongQuestionService.markAsMastered).mockResolvedValue(true);
-            const result = await markAsMasteredAction(123, 'note');
-            expect(result.success).toBe(true);
-            expect(wrongQuestionService.markAsMastered).toHaveBeenCalledWith(1, 123, 'note');
+            const result = await markAsMasteredAction(123);
+            expect(result.data?.success).toBe(true);
+            expect(wrongQuestionService.markAsMastered).toHaveBeenCalledWith(1, 123);
         });
     });
 
@@ -85,7 +88,7 @@ describe('Wrong Questions Actions', () => {
         it('应该调用 service 取消标记', async () => {
             vi.mocked(wrongQuestionService.unmarkMastered).mockResolvedValue(true);
             const result = await unmarkMasteredAction(123);
-            expect(result.success).toBe(true);
+            expect(result.data?.success).toBe(true);
             expect(wrongQuestionService.unmarkMastered).toHaveBeenCalledWith(1, 123);
         });
     });
@@ -96,7 +99,7 @@ describe('Wrong Questions Actions', () => {
             vi.mocked(wrongQuestionService.getDetail).mockResolvedValue(mockDetail as any);
 
             const result = await getWrongQuestionDetailAction(1);
-            expect(result).toEqual(mockDetail);
+            expect(result.data?.question).toEqual(mockDetail);
         });
     });
 
@@ -104,13 +107,13 @@ describe('Wrong Questions Actions', () => {
         it('应该创建练习会话', async () => {
             vi.mocked(practiceService.createReviewSession).mockResolvedValue('session_123');
             const result = await createWrongQuestionsPracticeAction([1, 2]);
-            expect(result.success).toBe(true);
-            expect(result.sessionId).toBe('session_123');
+            expect(result.data?.success).toBe(true);
+            expect(result.data?.sessionId).toBe('session_123');
         });
 
         it('空题目列表应返回失败', async () => {
             const result = await createWrongQuestionsPracticeAction([]);
-            expect(result.success).toBe(false);
+            expect(result.data?.success).toBe(false);
         });
     });
 
@@ -118,8 +121,8 @@ describe('Wrong Questions Actions', () => {
         it('应该返回推荐错题', async () => {
             const mockRecommended = [{ questionId: 1 }];
             vi.mocked(wrongQuestionService.getRandomRecommended).mockResolvedValue(mockRecommended as any);
-            const result = await getRandomWrongQuestionsAction();
-            expect(result).toEqual(mockRecommended);
+            const result = await getRandomWrongQuestionsAction({ count: 15, mode: 'priority' });
+            expect(result.data?.questions).toEqual(mockRecommended);
         });
     });
 });

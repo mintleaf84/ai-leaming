@@ -13,7 +13,8 @@ export const getPracticeSessionAction = authenticatedAction
   .inputSchema(z.boolean().default(false))
   .action(async ({ parsedInput: forceNew, ctx }) => {
     const { user } = ctx;
-    return await practiceService.getOrCreateSession(user.id, forceNew);
+    const data = await practiceService.getOrCreateSession(user.id, forceNew);
+    return { success: true, ...data };
   });
 
 /**
@@ -23,15 +24,16 @@ export const submitAnswerAction = authenticatedAction
   .inputSchema(SubmitAnswerSchema)
   .action(async ({ parsedInput: input, ctx }) => {
     const { user } = ctx;
-    return await practiceService.submitAnswer(
-        user.id, 
-        input.sessionId || null, 
-        input.questionId, 
-        input.userAnswer, 
-        input.isCorrect, 
+    const result = await practiceService.submitAnswer(
+        user.id,
+        input.sessionId || null,
+        input.questionId,
+        input.userAnswer,
+        input.isCorrect,
         input.duration,
         input.totalDurationMs
     );
+    return result;
   });
 
 /**
@@ -40,7 +42,8 @@ export const submitAnswerAction = authenticatedAction
 export const getKnowledgeTreeAction = authenticatedAction
   .action(async () => {
     const rawTags = await KnowledgeTreeService.getAggregatedTags();
-    return KnowledgeTreeService.buildKnowledgeTree(rawTags);
+    const tree = KnowledgeTreeService.buildKnowledgeTree(rawTags);
+    return { success: true, tree };
   });
 
 /**

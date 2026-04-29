@@ -50,19 +50,19 @@ describe('Report Actions', () => {
 
             const result = await getSessionReportAction('session-1');
 
-            expect(result).not.toBeNull();
-            if (!result) return;
+            expect(result.data?.success).toBe(true);
+            if (!result.data || !result.data.success) return;
 
-            expect(result.totalQuestions).toBe(10);
-            expect(result.correctCount).toBe(6);
-            expect(result.accuracy).toBe(60); // 6/10 * 100
-            expect(result.avgDuration).toBe(5000);
-            expect(result.errorTags).toEqual(['Tag1', 'Tag2']);
+            expect(result.data.totalQuestions).toBe(10);
+            expect(result.data.correctCount).toBe(6);
+            expect(result.data.accuracy).toBe(60); // 6/10 * 100
+            expect(result.data.avgDuration).toBe(5000);
+            expect(result.data.errorTags).toEqual(['Tag1', 'Tag2']);
 
             // Verify Dimensions
-            const knowledge = result.dimensionStats.find(d => d.axis === '识记');
-            const understanding = result.dimensionStats.find(d => d.axis === '理解');
-            const application = result.dimensionStats.find(d => d.axis === '应用');
+            const knowledge = result.data.dimensionStats?.find((d: any) => d.axis === '识记');
+            const understanding = result.data.dimensionStats?.find((d: any) => d.axis === '理解');
+            const application = result.data.dimensionStats?.find((d: any) => d.axis === '应用');
 
             expect(knowledge?.value).toBe(80); // 4/5 * 100
             expect(understanding?.value).toBe(40); // 2/5 * 100
@@ -73,7 +73,7 @@ describe('Report Actions', () => {
             mockDb.get.mockResolvedValueOnce(null);
 
             const result = await getSessionReportAction('session-1');
-            expect(result).toBeNull();
+            expect(result.data?.success).toBe(false);
         });
     });
 
@@ -92,10 +92,10 @@ describe('Report Actions', () => {
                     { dimension: 'knowledge', total: 5, correct: 4 }
                 ]); // dimensionRows
 
-            const result = await generateDeepAnalysisAction('session-1', true);
+            const result = await generateDeepAnalysisAction({ sessionId: 'session-1', forceRegenerate: true });
 
-            expect(result.success).toBe(true);
-            expect(result.report).toBe('AI Analysis Report');
+            expect(result.data?.success).toBe(true);
+            expect(result.data?.report).toBe('AI Analysis Report');
             expect(mockDb.update).toHaveBeenCalled();
         });
     });

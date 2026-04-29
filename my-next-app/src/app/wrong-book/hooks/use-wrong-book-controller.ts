@@ -74,10 +74,10 @@ export function useWrongBookController() {
             getWrongQuestionsStatsAction(),
             getMasteredQuestionsAction()
         ]);
-        setQuestions(qRes?.data || []);
-        setGroupedQuestions(gRes?.data || []);
-        setStats(sRes?.data || { total: 0, recent: 0, frequent: 0 });
-        setMasteredQuestions(mRes?.data || []);
+        setQuestions(qRes.data?.questions || []);
+        setGroupedQuestions(gRes.data?.find || []);
+        setStats(sRes.data || { total: 0, recent: 0, frequent: 0 });
+        setMasteredQuestions(mRes.data?.questions || []);
         setIsLoading(false);
     }, []);
 
@@ -155,7 +155,7 @@ export function useWrongBookController() {
         try {
             // 1. 获取随机题目
             const res = await getRandomWrongQuestionsAction({ count, tag, mode });
-            const randomQuestions = res?.data || [];
+            const randomQuestions = res.data?.questions || [];
             
             if (randomQuestions.length === 0) {
                 toast.error('未找到符合条件的错题，快去练习吧！');
@@ -190,7 +190,7 @@ export function useWrongBookController() {
         setExpandedQuestionId(questionId);
         setIsLoadingDetail(true);
         const result = await getWrongQuestionDetailAction(questionId);
-        setQuestionDetail(result?.data || null);
+        setQuestionDetail(result.data?.question || null);
         setIsLoadingDetail(false);
     }, [expandedQuestionId]);
 

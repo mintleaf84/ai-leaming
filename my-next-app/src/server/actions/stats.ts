@@ -10,7 +10,8 @@ import { z } from 'zod';
 export const getUserStatsAction = authenticatedAction
     .action(async ({ ctx }) => {
         const { user } = ctx;
-        return await statsService.getUserStats(user.id);
+        const data = await statsService.getUserStats(user.id);
+        return { success: true, ...data };
     });
 
 /**

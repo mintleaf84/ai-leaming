@@ -128,7 +128,7 @@ export function KnowledgePointSelector({ children }: { children: React.ReactNode
             // eslint-disable-next-line react-hooks/set-state-in-effect
             setLoading(true);
             getKnowledgeTreeAction()
-                .then(setTreeData)
+                .then(result => setTreeData(result.data?.tree || []))
                 .catch(() => toast.error("获取知识点失败"))
                 .finally(() => setLoading(false));
         }

@@ -84,6 +84,7 @@ describe('Stats Actions (Enhanced Mock)', () => {
             const result = await getUserStatsAction();
 
             // 验证聚合结果
+            expect(result.data?.success).toBe(true);
             expect(result.data?.totalPracticed).toBe(500);
             expect(result.data?.averageMastery).toBe(86); // Math.round(85.6)
             expect(result.data?.streakDays).toBe(3);

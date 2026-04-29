@@ -102,8 +102,8 @@ describe('Practice Actions', () => {
       
       const result = await getPracticeSessionAction(true);
       
-      expect(result.sessionId).toBeDefined();
-      expect(result.questions).toHaveLength(1);
+      expect(result.data?.sessionId).toBeDefined();
+      expect(result.data?.questions).toHaveLength(1);
     });
 
     it('当演示模式开启时，应该返回演示会话', async () => {
@@ -113,10 +113,10 @@ describe('Practice Actions', () => {
         questions: [mockQuestion]
       });
 
-      const result = await getPracticeSessionAction();
+      const result = await getPracticeSessionAction(false);
       
-      expect(result.sessionId).toBe('demo-123');
-      expect(result.questions[0].id).toBe(1);
+      expect(result.data?.sessionId).toBe('demo-123');
+      expect(result.data?.questions[0].id).toBe(1);
     });
 
     it('应该能正确恢复未完成的会话', async () => {
@@ -131,8 +131,8 @@ describe('Practice Actions', () => {
 
       const result = await getPracticeSessionAction(false);
       
-      expect(result.resumed).toBe(true);
-      expect(result.completedCount).toBe(5);
+      expect(result.data?.resumed).toBe(true);
+      expect(result.data?.completedCount).toBe(5);
     });
   });
 
@@ -146,8 +146,8 @@ describe('Practice Actions', () => {
           [{ answer: 'A' }] // 答案验证查询
       ];
 
-      const result = await submitAnswerAction(1, 'A', true, 1000, 'sess-1');
-      expect(result.success).toBe(true);
+      const result = await submitAnswerAction({ questionId: 1, userAnswer: 'A', isCorrect: true, duration: 1000, sessionId: 'sess-1' });
+      expect(result.data?.success).toBe(true);
       expect(mockUpdateMastery).toHaveBeenCalled();
     });
   });

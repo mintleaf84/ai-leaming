@@ -34,8 +34,8 @@ export function QuestionCountPicker({
 }: QuestionCountPickerProps) {
     const [open, setOpen] = useState(false);
 
-    // 过滤掉超过总数的预设选项
-    const availablePresets = PRESET_COUNTS.filter(c => c < totalCount);
+    // 过滤掉超过总数的预设选项，允许选择等于 totalCount 的值
+    const availablePresets = PRESET_COUNTS.filter(c => c <= totalCount);
 
     const handleSelect = (count: number) => {
         setOpen(false);

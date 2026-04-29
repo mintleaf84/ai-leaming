@@ -147,7 +147,7 @@ export const wrongQuestionService = {
                 .get() as Promise<{ count: number }>,
 
             // 高频 (2次及以上)
-            drizzleDb.all<any>(sql`
+            drizzleDb.all<{ count: number }>(sql`
                 SELECT COUNT(*) as count FROM (
                     SELECT question_id FROM ${practice_logs}
                     WHERE user_id = ${userId} AND is_correct = 0

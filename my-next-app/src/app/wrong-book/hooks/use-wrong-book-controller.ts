@@ -181,18 +181,22 @@ export function useWrongBookController() {
 
     // 展开/收起题目详情
     const toggleQuestionDetail = useCallback(async (questionId: number) => {
-        if (expandedQuestionId === questionId) {
-            setExpandedQuestionId(null);
-            setQuestionDetail(null);
-            return;
-        }
-
-        setExpandedQuestionId(questionId);
-        setIsLoadingDetail(true);
-        const result = await getWrongQuestionDetailAction(questionId);
-        setQuestionDetail(result.data?.question || null);
-        setIsLoadingDetail(false);
-    }, [expandedQuestionId]);
+        // 使用函数式更新获取当前状态，避免依赖 expandedQuestionId
+        setExpandedQuestionId(currentId => {
+            if (currentId === questionId) {
+                // 收起详情
+                setQuestionDetail(null);
+                return null;
+            }
+            // 展开新题目详情
+            getWrongQuestionDetailAction(questionId).then(result => {
+                setQuestionDetail(result.data?.question || null);
+                setIsLoadingDetail(false);
+            });
+            setIsLoadingDetail(true);
+            return questionId;
+        });
+    }, []);
 
     // 标记为已掌握
     const handleMarkAsMastered = useCallback(async (questionId: number) => {

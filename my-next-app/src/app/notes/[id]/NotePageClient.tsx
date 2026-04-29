@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useCallback, useRef, useState } from 'react';
+import React, { useCallback, useRef, useState, useEffect } from 'react';
 import dynamic from 'next/dynamic';
 
 const NoteEditor = dynamic(() => import('@/components/editor/NoteEditor'), {
@@ -9,6 +9,7 @@ const NoteEditor = dynamic(() => import('@/components/editor/NoteEditor'), {
 });
 import { TagSelector } from '@/components/notes/TagSelector';
 import { updateNoteAction } from '@/server/actions/note';
+import { getGlobalFeatureFlag } from '@/server/actions/feature-flags';
 import { toast } from 'sonner';
 import { Network, FileText } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -31,8 +32,11 @@ export default function NotePageClient({ note }: NotePageClientProps) {
     const [title, setTitle] = useState(note.title);
     const [viewMode, setViewMode] = useState<'editor' | 'mindmap'>('editor');
     const [currentContent, setCurrentContent] = useState(note.content || '');
-    
-    // Use 'any' for timeout to avoid NodeJS vs Window type issues in frontend
+    const [mindmapEnabled, setMindmapEnabled] = useState(true);
+
+    useEffect(() => {
+        getGlobalFeatureFlag('ENABLE_OCR_MINDMAP', true).then(setMindmapEnabled);
+    }, []);
     const saveTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
     const handleSave = useCallback((newContent?: string, newTitle?: string) => {
@@ -80,6 +84,7 @@ export default function NotePageClient({ note }: NotePageClientProps) {
                             <FileText className="w-3.5 h-3.5" />
                             文档
                         </Button>
+                        {mindmapEnabled && (
                         <Button
                             variant={viewMode === 'mindmap' ? 'secondary' : 'ghost'}
                             size="sm"
@@ -89,6 +94,7 @@ export default function NotePageClient({ note }: NotePageClientProps) {
                             <Network className="w-3.5 h-3.5 text-primary" />
                             思维导图
                         </Button>
+                        )}
                     </div>
                 </div>
             </div>

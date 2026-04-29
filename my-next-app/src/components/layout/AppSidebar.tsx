@@ -29,6 +29,7 @@ interface SidebarProps {
     featureFlags?: {
         ENABLE_TEXTBOOK: boolean;
         ENABLE_NOTES: boolean;
+        ENABLE_OCR_MINDMAP: boolean;
     };
 }
 
@@ -39,7 +40,7 @@ const NavGroup = ({
     pathname
 }: {
     title?: string,
-    items: { name: string, href: string, icon: React.ComponentType<{ className?: string }> }[],
+    items: { name: string, href: string, icon: React.ComponentType<{ className?: string }>, enabled?: boolean }[],
     pathname: string
 }) => (
     <div className="mb-6">
@@ -114,8 +115,8 @@ export function AppSidebar({ userSection, featureFlags }: SidebarProps) {
 
     const moreItems = [
         { name: t('nav.ocr'), href: '/ocr', icon: ScanLine },
-        { name: t('nav.mindmap'), href: '/mindmap', icon: Network },
-    ];
+        { name: t('nav.mindmap'), href: '/mindmap', icon: Network, enabled: featureFlags?.ENABLE_OCR_MINDMAP ?? true },
+    ].filter(item => item.enabled !== false);
 
     const systemItems = [
         { name: t('nav.docs'), href: '/docs', icon: FileText },

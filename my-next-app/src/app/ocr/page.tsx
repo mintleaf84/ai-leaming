@@ -6,6 +6,7 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { performOcrAction, getOcrModelsAction } from '@/server/actions/ocr';
 import { generateMindmapAction } from '@/server/actions/mindmap';
+import { getGlobalFeatureFlag } from '@/server/actions/feature-flags';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import dynamic from 'next/dynamic';
 
@@ -40,12 +41,14 @@ export default function OcrPage() {
     const [mindmapMarkdown, setMindmapMarkdown] = useState<string | null>(null);
     const [isGeneratingMindmap, setIsGeneratingMindmap] = useState(false);
     const [showMindmapDialog, setShowMindmapDialog] = useState(false);
+    const [mindmapEnabled, setMindmapEnabled] = useState(true);
 
-    // 加载模型列表
+    // 加载模型列表和功能开关
     useEffect(() => {
         getOcrModelsAction().then((result) => {
             if (result.data) setModels(result.data);
         });
+        getGlobalFeatureFlag('ENABLE_OCR_MINDMAP', true).then(setMindmapEnabled);
     }, []);
 
     // 点击外部关闭模型菜单
@@ -422,6 +425,7 @@ export default function OcrPage() {
                                     识别结果
                                 </h2>
                                 <div className="flex gap-2">
+                                    {mindmapEnabled && (
                                     <Button
                                         variant="outline"
                                         size="sm"
@@ -434,6 +438,7 @@ export default function OcrPage() {
                                             转为导图
                                         </span>
                                     </Button>
+                                    )}
                                     <Button
                                         variant="outline"
                                         size="sm"

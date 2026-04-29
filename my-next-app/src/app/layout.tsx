@@ -67,7 +67,12 @@ export default async function RootLayout({
 
   const isTextbookEnabled = await getGlobalFeatureFlag('ENABLE_TEXTBOOK', true);
   const isNotesEnabled = await getGlobalFeatureFlag('ENABLE_NOTES', true);
-  const featureFlags = { ENABLE_TEXTBOOK: isTextbookEnabled, ENABLE_NOTES: isNotesEnabled };
+  const isOcrMindmapEnabled = await getGlobalFeatureFlag('ENABLE_OCR_MINDMAP', true);
+  const featureFlags = {
+    ENABLE_TEXTBOOK: isTextbookEnabled,
+    ENABLE_NOTES: isNotesEnabled,
+    ENABLE_OCR_MINDMAP: isOcrMindmapEnabled,
+  };
 
   return (
     <html lang="zh-CN" suppressHydrationWarning>

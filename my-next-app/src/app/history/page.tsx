@@ -53,12 +53,32 @@ export default function HistoryPage() {
     pageSize: 10
   });
 
+  // 用于取消过时的请求
+  const abortControllerRef = React.useRef<AbortController | null>(null);
+
   // Load Data
   const loadHistory = useCallback(async () => {
+    // 取消之前的请求
+    if (abortControllerRef.current) {
+      abortControllerRef.current.abort();
+    }
+    abortControllerRef.current = new AbortController();
+
     setIsLoading(true);
-    const res = await getSessionHistoryAction(filter);
-    setHistory(res?.data || { items: [], total: 0, page: 1, pageSize: 10, totalPages: 0 });
-    setIsLoading(false);
+    try {
+      const res = await getSessionHistoryAction(filter);
+      // 检查是否已被取消
+      if (abortControllerRef.current?.signal.aborted) return;
+      setHistory(res?.data || { items: [], total: 0, page: 1, pageSize: 10, totalPages: 0 });
+    } catch (e) {
+      if (e instanceof Error && e.name !== 'AbortError') {
+        console.error('Failed to load history:', e);
+      }
+    } finally {
+      if (!abortControllerRef.current?.signal.aborted) {
+        setIsLoading(false);
+      }
+    }
   }, [filter]);
 
   useEffect(() => {

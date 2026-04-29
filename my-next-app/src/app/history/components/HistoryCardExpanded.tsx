@@ -46,15 +46,25 @@ export const HistoryCardExpanded: React.FC<HistoryCardExpandedProps> = ({ sessio
     }, []);
 
     // 1. Data Fetching via React Query
-    const { data: detail, isLoading } = useQuery({
+    const { data: detail, isLoading, error } = useQuery({
         queryKey: ['sessionDetail', sessionId],
         queryFn: async () => {
             const res = await getSessionDetailAction(sessionId);
             if (res?.serverError) throw new Error(res.serverError);
-            return res?.data || null;
+            if (!res?.data) throw new Error('无法加载练习详情');
+            return res.data;
         },
-        enabled: !!sessionId
+        enabled: !!sessionId,
+        retry: 1,
+        throwOnError: false
     });
+
+    // 显示错误状态
+    useEffect(() => {
+        if (error) {
+            toast.error(error.message || '加载失败，请稍后重试');
+        }
+    }, [error]);
 
     // 2. Load cached report on mount
     useEffect(() => {

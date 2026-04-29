@@ -24,11 +24,12 @@ import {
 import { Checkbox } from "@/components/ui/checkbox";
 import { toast } from "sonner";
 import { updateQuestionAction } from "@/server/actions/admin";
+import { Question } from "@/types";
 
 interface EditQuestionDialogProps {
     open: boolean;
     onOpenChange: (open: boolean) => void;
-    question: any;
+    question: Question | null;
     onSuccess: () => void;
 }
 
@@ -74,6 +75,7 @@ export function EditQuestionDialog({
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
+        if (!question) return;
         setLoading(true);
         try {
             const isTrueFalse = formData.type === 'truefalse';

@@ -98,98 +98,90 @@ function calculateCost(model: string, inputTokens: number, outputTokens: number)
 }
 
 /**
- * 获取 API 调用统计
+ * 获取 API 调用统计（SQL 聚合，避免全量加载到内存）
  */
 export async function getApiCallStats(): Promise<ApiCallStats> {
-  interface LogRow {
-    model: string;
-    input_tokens: number | null;
-    output_tokens: number | null;
-    success: number | null;
-    created_at: string | null;
-  }
-
-  // 基础查询：获取所有调用记录 (优化建议：如果数据量大，应该使用聚合查询)
-  const logs = await drizzleDb.select({
-    model: api_call_logs.model,
-    input_tokens: api_call_logs.input_tokens,
-    output_tokens: api_call_logs.output_tokens,
-    success: api_call_logs.success,
-    created_at: api_call_logs.created_at
-  }).from(api_call_logs) as LogRow[];
-
-  // 今日起始时间 (使用北京时间)
   const todayStr = getBeijingDateString();
 
-  const stats: ApiCallStats = {
-    today: { totalCalls: 0, successCalls: 0, errorCalls: 0, totalTokens: 0, totalCost: 0 },
-    total: { totalCalls: 0, successCalls: 0, errorCalls: 0, totalTokens: 0, totalCost: 0 },
-    byModel: [],
-    recentErrors: []
-  };
+  // 1. 按模型聚合（全量 + 今日条件聚合在一次查询中完成）
+  const modelRows = await drizzleDb.select({
+    model: api_call_logs.model,
+    totalCalls: sql<number>`count(*)`,
+    totalSuccessCalls: sql<number>`sum(case when ${api_call_logs.success} = 1 then 1 else 0 end)`,
+    totalInputTokens: sql<number>`coalesce(sum(case when ${api_call_logs.success} = 1 then ${api_call_logs.input_tokens} else 0 end), 0)`,
+    totalOutputTokens: sql<number>`coalesce(sum(case when ${api_call_logs.success} = 1 then ${api_call_logs.output_tokens} else 0 end), 0)`,
+    todayCalls: sql<number>`sum(case when cast(${api_call_logs.created_at} as text) like ${todayStr + '%'} then 1 else 0 end)`,
+    todaySuccessCalls: sql<number>`sum(case when cast(${api_call_logs.created_at} as text) like ${todayStr + '%'} and ${api_call_logs.success} = 1 then 1 else 0 end)`,
+    todayInputTokens: sql<number>`coalesce(sum(case when cast(${api_call_logs.created_at} as text) like ${todayStr + '%'} and ${api_call_logs.success} = 1 then ${api_call_logs.input_tokens} else 0 end), 0)`,
+    todayOutputTokens: sql<number>`coalesce(sum(case when cast(${api_call_logs.created_at} as text) like ${todayStr + '%'} and ${api_call_logs.success} = 1 then ${api_call_logs.output_tokens} else 0 end), 0)`,
+  })
+    .from(api_call_logs)
+    .groupBy(api_call_logs.model);
 
-  const modelMap = new Map<string, { calls: number; tokens: number; cost: number }>();
+  // 2. 全局汇总（今日 + 总量，一次查询）
+  const summaryRow = await drizzleDb.select({
+    totalCalls: sql<number>`count(*)`,
+    totalSuccessCalls: sql<number>`sum(case when ${api_call_logs.success} = 1 then 1 else 0 end)`,
+    totalErrorCalls: sql<number>`sum(case when ${api_call_logs.success} = 0 then 1 else 0 end)`,
+    todayCalls: sql<number>`sum(case when cast(${api_call_logs.created_at} as text) like ${todayStr + '%'} then 1 else 0 end)`,
+    todaySuccessCalls: sql<number>`sum(case when cast(${api_call_logs.created_at} as text) like ${todayStr + '%'} and ${api_call_logs.success} = 1 then 1 else 0 end)`,
+    todayErrorCalls: sql<number>`sum(case when cast(${api_call_logs.created_at} as text) like ${todayStr + '%'} and ${api_call_logs.success} = 0 then 1 else 0 end)`,
+    todayInputTokens: sql<number>`coalesce(sum(case when cast(${api_call_logs.created_at} as text) like ${todayStr + '%'} and ${api_call_logs.success} = 1 then ${api_call_logs.input_tokens} else 0 end), 0)`,
+    todayOutputTokens: sql<number>`coalesce(sum(case when cast(${api_call_logs.created_at} as text) like ${todayStr + '%'} and ${api_call_logs.success} = 1 then ${api_call_logs.output_tokens} else 0 end), 0)`,
+    totalInputTokens: sql<number>`coalesce(sum(case when ${api_call_logs.success} = 1 then ${api_call_logs.input_tokens} else 0 end), 0)`,
+    totalOutputTokens: sql<number>`coalesce(sum(case when ${api_call_logs.success} = 1 then ${api_call_logs.output_tokens} else 0 end), 0)`,
+  })
+    .from(api_call_logs);
 
-  logs.forEach(log => {
-    const isToday = log.created_at?.startsWith(todayStr);
-    const tokens = (log.input_tokens || 0) + (log.output_tokens || 0);
-    const cost = calculateCost(log.model, log.input_tokens || 0, log.output_tokens || 0);
-
-    // 更新总计
-    stats.total.totalCalls++;
-    if (log.success) {
-      stats.total.successCalls++;
-      stats.total.totalTokens += tokens;
-      stats.total.totalCost += cost;
-    } else {
-      stats.total.errorCalls++;
-    }
-
-    // 更新今日
-    if (isToday) {
-      stats.today.totalCalls++;
-      if (log.success) {
-        stats.today.successCalls++;
-        stats.today.totalTokens += tokens;
-        stats.today.totalCost += cost;
-      } else {
-        stats.today.errorCalls++;
-      }
-    }
-
-    // 更新按模型统计
-    if (log.success) {
-      const m = modelMap.get(log.model) || { calls: 0, tokens: 0, cost: 0 };
-      m.calls++;
-      m.tokens += tokens;
-      m.cost += cost;
-      modelMap.set(log.model, m);
-    }
-  });
-
-  stats.byModel = Array.from(modelMap.entries()).map(([model, data]) => ({
-    model,
-    ...data
-  })).sort((a, b) => b.calls - a.calls);
-
-  // 获取最近错误 (维护数据库查询，减少全量处理错误信息的负担)
+  // 3. 最近错误
   const errorRows = await drizzleDb.select({
     model: api_call_logs.model,
     error: api_call_logs.error_message,
     time: api_call_logs.created_at
   })
-  .from(api_call_logs)
-  .where(and(eq(api_call_logs.success, 0), sql`${api_call_logs.error_message} IS NOT NULL`))
-  .orderBy(desc(api_call_logs.created_at))
-  .limit(5);
+    .from(api_call_logs)
+    .where(and(eq(api_call_logs.success, 0), sql`${api_call_logs.error_message} IS NOT NULL`))
+    .orderBy(desc(api_call_logs.created_at))
+    .limit(5);
 
-  stats.recentErrors = errorRows.map(row => ({
-    model: row.model,
-    error: row.error || '',
-    time: row.time || ''
-  }));
+  // JS 侧：对聚合后的模型行（通常 <10 行）计算成本
+  const byModel = modelRows
+    .map(m => ({
+      model: m.model,
+      calls: m.totalSuccessCalls,
+      tokens: m.totalInputTokens + m.totalOutputTokens,
+      cost: calculateCost(m.model, m.totalInputTokens, m.totalOutputTokens),
+    }))
+    .sort((a, b) => b.calls - a.calls);
 
-  return stats;
+  const todayCost = modelRows.reduce((sum, m) =>
+    sum + calculateCost(m.model, m.todayInputTokens, m.todayOutputTokens), 0);
+
+  const totalCost = byModel.reduce((sum, m) => sum + m.cost, 0);
+  const summary = summaryRow[0];
+
+  return {
+    today: {
+      totalCalls: summary.todayCalls,
+      successCalls: summary.todaySuccessCalls,
+      errorCalls: summary.todayErrorCalls,
+      totalTokens: summary.todayInputTokens + summary.todayOutputTokens,
+      totalCost: todayCost,
+    },
+    total: {
+      totalCalls: summary.totalCalls,
+      successCalls: summary.totalSuccessCalls,
+      errorCalls: summary.totalErrorCalls,
+      totalTokens: summary.totalInputTokens + summary.totalOutputTokens,
+      totalCost,
+    },
+    byModel,
+    recentErrors: errorRows.map(row => ({
+      model: row.model,
+      error: row.error || '',
+      time: row.time || ''
+    })),
+  };
 }
 
 /**

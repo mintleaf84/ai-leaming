@@ -32,7 +32,7 @@ export function QuestionManager() {
     const [questions, setQuestions] = useState<Question[]>([]);
     const [total, setTotal] = useState(0);
     const [loading, setLoading] = useState(false);
-    const [editingQuestion, setEditingQuestion] = useState<unknown>(null);
+    const [editingQuestion, setEditingQuestion] = useState<Question | null>(null);
 
     // 分页与筛选
     const [page, setPage] = useState(1);

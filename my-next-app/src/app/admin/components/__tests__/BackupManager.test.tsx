@@ -50,7 +50,7 @@ describe('BackupManager', () => {
     beforeEach(() => {
         vi.clearAllMocks()
         fetchSpy = vi.fn()
-        global.fetch = fetchSpy
+        global.fetch = fetchSpy as unknown as typeof fetch
 
         // 默认：backup-history 返回数据
         fetchSpy.mockImplementation((url: string) => {

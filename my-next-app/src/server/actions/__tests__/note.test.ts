@@ -44,8 +44,8 @@ describe('Note Server Actions', () => {
 
         const result = await createNoteAction({ title: 'New Note', content: 'Content' });
 
-        expect(result.success).toBe(true);
-        expect(result.noteId).toBe(100);
+        expect(result.data?.success).toBe(true);
+        expect(result.data?.noteId).toBe(100);
         expect(mockDb.insert).toHaveBeenCalled();
     });
 
@@ -57,7 +57,7 @@ describe('Note Server Actions', () => {
 
         const result = await updateNoteAction({ id: 100, title: 'Updated' });
 
-        expect(result.success).toBe(true);
+        expect(result.data?.success).toBe(true);
         expect(mockDb.update).toHaveBeenCalled();
     });
 
@@ -66,13 +66,13 @@ describe('Note Server Actions', () => {
 
         const result = await updateNoteAction({ id: 999, title: 'Hacked' });
 
-        expect(result.success).toBe(false);
-        expect(result.message).toContain('无权限');
+        expect(result.data?.success).toBe(false);
+        expect(result.data?.message).toContain('无权限');
     });
 
     it('deleteNoteAction 应成功删除自己的笔记', async () => {
         const result = await deleteNoteAction(100);
-        expect(result.success).toBe(true);
+        expect(result.data?.success).toBe(true);
         expect(mockDb.delete).toHaveBeenCalled();
     });
 
@@ -82,8 +82,8 @@ describe('Note Server Actions', () => {
 
         const result = await getNotesAction();
 
-        expect(result.success).toBe(true);
-        expect(result.notes).toEqual(mockNotes);
+        expect(result.data?.success).toBe(true);
+        expect(result.data?.notes).toEqual(mockNotes);
         expect(mockDb.select).toHaveBeenCalled();
     });
 });

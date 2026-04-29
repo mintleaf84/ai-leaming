@@ -17,7 +17,8 @@ import { RandomWrongQuestionsSchema, MarkMasteredSchema } from '@/lib/validation
 export const getWrongQuestionsAction = authenticatedAction
     .action(async ({ ctx }) => {
         const { user } = ctx;
-        return await wrongQuestionService.getList(user.id);
+        const data = await wrongQuestionService.getList(user.id);
+        return { success: true, questions: data };
     });
 
 /**
@@ -36,13 +37,14 @@ export const getWrongQuestionsByTagAction = authenticatedAction
             });
         });
 
-        return Array.from(tagMap.entries())
+        const data = Array.from(tagMap.entries())
             .map(([tag, questions]) => ({
                 tag,
                 count: questions.length,
                 questions
             }))
             .sort((a, b) => b.count - a.count);
+        return { success: true, find: data };
     });
 
 /**
@@ -51,7 +53,8 @@ export const getWrongQuestionsByTagAction = authenticatedAction
 export const getWrongQuestionsStatsAction = authenticatedAction
     .action(async ({ ctx }) => {
         const { user } = ctx;
-        return await wrongQuestionService.getStats(user.id);
+        const data = await wrongQuestionService.getStats(user.id);
+        return { success: true, ...data };
     });
 
 /**
@@ -74,7 +77,8 @@ export const getWrongQuestionDetailAction = authenticatedAction
     .inputSchema(z.number())
     .action(async ({ parsedInput: questionId, ctx }) => {
         const { user } = ctx;
-        return await wrongQuestionService.getDetail(user.id, questionId);
+        const data = await wrongQuestionService.getDetail(user.id, questionId);
+        return { success: true, question: data };
     });
 
 /**
@@ -106,7 +110,8 @@ export const getRandomWrongQuestionsAction = authenticatedAction
     .inputSchema(RandomWrongQuestionsSchema)
     .action(async ({ parsedInput: options, ctx }) => {
         const { user } = ctx;
-        return await wrongQuestionService.getRandomRecommended(user.id, options);
+        const data = await wrongQuestionService.getRandomRecommended(user.id, options);
+        return { success: true, questions: data };
     });
 
 /**
@@ -115,5 +120,6 @@ export const getRandomWrongQuestionsAction = authenticatedAction
 export const getMasteredQuestionsAction = authenticatedAction
     .action(async ({ ctx }) => {
         const { user } = ctx;
-        return await wrongQuestionService.getMasteredQuestions(user.id);
+        const data = await wrongQuestionService.getMasteredQuestions(user.id);
+        return { success: true, questions: data };
     });

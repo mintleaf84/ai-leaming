@@ -49,14 +49,21 @@ export function QuestionManager() {
         setLoading(true);
         try {
             const offset = (page - 1) * pageSize;
-            const result = await getQuestionsAction({ 
-                limit: pageSize, 
-                offset, 
-                filters: currentFilters 
+            const result = await getQuestionsAction({
+                limit: pageSize,
+                offset,
+                filters: currentFilters
             });
-            
+
             if (result.serverError) {
                 toast.error(result.serverError || "题目列表加载失败");
+                setLoading(false);
+                return;
+            }
+
+            if (result.data?.success === false) {
+                toast.error(result.data.message || "题目列表加载失败");
+                setLoading(false);
                 return;
             }
 

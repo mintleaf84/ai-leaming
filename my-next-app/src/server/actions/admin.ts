@@ -23,7 +23,7 @@ export const getQuestionsAction = adminAction
   }))
   .action(async ({ parsedInput: input }) => {
     const { items, total } = await adminService.getQuestions(input.limit, input.offset, input.filters);
-    return { questions: items, total };
+    return { success: true, questions: items, total };
   });
 
 /**
@@ -105,14 +105,14 @@ export const batchDeleteQuestionsAction = adminAction
   .inputSchema(z.array(z.number()))
   .action(async ({ parsedInput: ids, ctx }) => {
     const { user } = ctx;
-    if (ids.length === 0) return { deletedCount: 0 };
+    if (ids.length === 0) return { success: true, deletedCount: 0 };
 
     const deletedCount = await adminService.batchDeleteQuestions(ids);
 
     // 记录操作日志
     await logAdminAction(user.id, user.username, 'BATCH_DELETE_QUESTION', 'question', null, { ids, count: deletedCount });
 
-    return { deletedCount };
+    return { success: true, deletedCount };
   });
 
 /**

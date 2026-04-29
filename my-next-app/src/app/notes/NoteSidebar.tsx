@@ -40,8 +40,8 @@ export function NoteSidebar({ notes: initialNotes }: NoteSidebarProps) {
 
         setIsSearching(true);
         const result = await searchNotesAction(query);
-        if (result.data) {
-            setFilteredNotes(result.data);
+        if (result.data?.notes) {
+            setFilteredNotes(result.data.notes);
         }
         setIsSearching(false);
     }, 300);

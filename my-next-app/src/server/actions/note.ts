@@ -52,14 +52,17 @@ export const updateNoteAction = authenticatedAction
     }))
     .action(async ({ parsedInput: input, ctx }) => {
         const { user } = ctx;
-        await knowledgeService.updateNote(user.id, input.id, { 
-            title: input.title, 
-            content: input.content 
-        });
-
-        revalidatePath('/notes');
-        revalidatePath(`/notes/${input.id}`);
-        return { success: true, message: '笔记已更新' };
+        try {
+            await knowledgeService.updateNote(user.id, input.id, {
+                title: input.title,
+                content: input.content
+            });
+            revalidatePath('/notes');
+            revalidatePath(`/notes/${input.id}`);
+            return { success: true, message: '笔记已更新' };
+        } catch (error) {
+            return { success: false, message: error instanceof Error ? error.message : '更新失败' };
+        }
     });
 
 /**
@@ -81,7 +84,8 @@ export const deleteNoteAction = authenticatedAction
 export const getNotesAction = authenticatedAction
     .action(async ({ ctx }) => {
         const { user } = ctx;
-        return await knowledgeService.getNoteList(user.id);
+        const notes = await knowledgeService.getNoteList(user.id);
+        return { success: true, notes };
     });
 
 /**
@@ -91,7 +95,8 @@ export const getNoteDetailAction = authenticatedAction
     .inputSchema(z.number().int())
     .action(async ({ parsedInput: id, ctx }) => {
         const { user } = ctx;
-        return await knowledgeService.getNoteDetail(user.id, id);
+        const note = await knowledgeService.getNoteDetail(user.id, id);
+        return { success: true, note };
     });
 
 /**
@@ -102,7 +107,9 @@ export const searchNotesAction = authenticatedAction
     .action(async ({ parsedInput: query, ctx }) => {
         const { user } = ctx;
         if (!query.trim()) {
-            return await knowledgeService.getNoteList(user.id);
+            const notes = await knowledgeService.getNoteList(user.id);
+            return { success: true, notes };
         }
-        return await knowledgeService.searchNotes(user.id, query);
+        const notes = await knowledgeService.searchNotes(user.id, query);
+        return { success: true, notes };
     });

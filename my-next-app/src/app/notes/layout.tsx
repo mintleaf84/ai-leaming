@@ -15,7 +15,9 @@ export default async function NotesLayout({
     }
 
     // Get notes
-    const { notes } = await getNotesAction();
+    const result = await getNotesAction();
+    const data = result.data;
+    const notes = data?.notes || [];
 
     return (
         <div className="flex h-full">

@@ -12,7 +12,7 @@ interface PageProps {
 async function ReportContainer({ searchParams }: { searchParams: Promise<{ sessionId?: string }> }) {
   const { sessionId } = await searchParams;
   const res = await getSessionReportAction(sessionId);
-  const reportData = res?.data;
+  const reportData = res.data?.success ? res.data : null;
 
   if (!reportData) {
     // 如果没有数据，且没有传 sessionId，可能用户没做过练习，引导去练习

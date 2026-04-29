@@ -12,7 +12,9 @@ export const getSessionReportAction = authenticatedAction
     .inputSchema(z.string().optional())
     .action(async ({ parsedInput: sessionId, ctx }) => {
         const { user } = ctx;
-        return await reportService.getSessionReportData(user.id, sessionId);
+        const data = await reportService.getSessionReportData(user.id, sessionId);
+        if (!data) return { success: false } as const;
+        return { success: true, ...data };
     });
 
 /**

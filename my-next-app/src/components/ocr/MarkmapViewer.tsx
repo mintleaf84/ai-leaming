@@ -161,16 +161,16 @@ body { font-family: sans-serif; }
         const loadingToast = toast.loading('正在保存中...');
         try {
             const result = await createNoteAction({ title, content: markdown });
-            if (result.success && result.noteId) {
-                toast.success('已保存到我的笔记', { 
+            if (result.data?.success && result.data?.noteId) {
+                toast.success('已保存到我的笔记', {
                     id: loadingToast,
                     action: {
                         label: '前往查看',
-                        onClick: () => router.push(`/notes/${result.noteId}`)
+                        onClick: () => router.push(`/notes/${result.data?.noteId}`)
                     }
                 });
             } else {
-                toast.error(result.message || '保存失败', { id: loadingToast });
+                toast.error(result.data?.message || '保存失败', { id: loadingToast });
             }
         } catch (_error) {
             toast.error('保存过程中出错', { id: loadingToast });

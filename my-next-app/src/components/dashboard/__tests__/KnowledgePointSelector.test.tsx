@@ -50,7 +50,7 @@ describe('KnowledgePointSelector Component', () => {
     beforeEach(() => {
         vi.clearAllMocks();
         (useRouter as any).mockReturnValue({ push: mockPush });
-        (getKnowledgeTreeAction as any).mockResolvedValue(mockTreeData);
+        (getKnowledgeTreeAction as any).mockResolvedValue({ data: { success: true, tree: mockTreeData } });
     });
 
     it('opens dialog when trigger is clicked', async () => {

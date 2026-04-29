@@ -78,7 +78,7 @@ function createMockQuestion(overrides = {}) {
 
 /** 创建模拟的 getQuestionsAction 返回值 */
 function mockQuestionsResponse(questions: ReturnType<typeof createMockQuestion>[], total = questions.length) {
-    return { questions, total }
+    return { data: { success: true, questions, total } }
 }
 
 // ============================================================
@@ -142,16 +142,16 @@ describe('QuestionManager 集成测试', () => {
     // ----------------------------------------------------------
     // 场景 3：加载失败 - API 报错时显示 Toast 错误提示
     // ----------------------------------------------------------
-    it('当 getQuestionsAction 抛出错误时，应捕获异常并显示 Toast 错误', async () => {
-        // 测试意图：验证 Error 状态的处理，确保用户收到反馈而不是白屏
+    it('当 getQuestionsAction 返回 success:false 时，应显示 Toast 错误', async () => {
         const { toast } = await import('sonner')
-        mockGetQuestions.mockRejectedValue(new Error('数据库连接失败'))
+        // 模拟 action 返回 { success: false, message: '...' }
+        mockGetQuestions.mockResolvedValue({ data: { success: false, message: '数据库连接失败', questions: [], total: 0 } })
 
         render(<QuestionManager />)
 
         // 等待错误 toast 被调用
         await waitFor(() => {
-            expect(toast.error).toHaveBeenCalledWith('题目列表加载失败')
+            expect(toast.error).toHaveBeenCalledWith('数据库连接失败')
         })
     })
 
@@ -200,7 +200,7 @@ describe('QuestionManager 集成测试', () => {
     it('点击删除按钮并确认后，应调用 deleteQuestionAction 并刷新列表', async () => {
         // 测试意图：验证删除操作 → 列表刷新的子组件交互
         const user = userEvent.setup()
-        mockDeleteQuestion.mockResolvedValue({ success: true })
+        mockDeleteQuestion.mockResolvedValue({ data: { success: true } })
 
         // 删除后的列表只剩第二道题
         mockGetQuestions
@@ -243,7 +243,7 @@ describe('QuestionManager 集成测试', () => {
     it('勾选多道题目后，应显示批量删除按钮，点击后批量删除并刷新列表', async () => {
         // 测试意图：验证 Checkbox 选中 → 批量删除按钮出现 → 执行删除 → 列表清空的完整交互
         const user = userEvent.setup()
-        mockBatchDeleteQuestions.mockResolvedValue({ success: true, deletedCount: 2 })
+        mockBatchDeleteQuestions.mockResolvedValue({ data: { success: true, deletedCount: 2 } })
         mockGetQuestions
             .mockResolvedValueOnce(
                 mockQuestionsResponse([
@@ -286,7 +286,7 @@ describe('QuestionManager 集成测试', () => {
     it('点击题干文字后，EditQuestionDialog 应打开；保存成功后弹窗关闭并刷新列表', async () => {
         // 测试意图：验证 QuestionManager（父）与 EditQuestionDialog（子）之间的跨组件交互
         const user = userEvent.setup()
-        mockUpdateQuestion.mockResolvedValue({ success: true })
+        mockUpdateQuestion.mockResolvedValue({ data: { success: true } })
         mockGetQuestions
             .mockResolvedValueOnce(
                 mockQuestionsResponse([

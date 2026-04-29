@@ -92,7 +92,7 @@ export const createDrizzleMock = () => {
 
   const methods = [
     'insert', 'values', 'returning', 'update', 'set', 'delete',
-    'select', 'from', 'where', 'limit', 'offset', 'orderBy', 'groupBy',
+    'select', 'selectDistinct', 'from', 'where', 'limit', 'offset', 'orderBy', 'groupBy',
     'onConflictDoUpdate', 'innerJoin', 'leftJoin', 'rightJoin', 'fullJoin',
     'all', 'get', 'run', 'execute'
   ];

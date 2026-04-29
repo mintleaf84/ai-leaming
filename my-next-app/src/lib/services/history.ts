@@ -6,6 +6,17 @@ import utc from 'dayjs/plugin/utc';
 
 dayjs.extend(utc);
 
+// 安全解析 JSON，失败时返回默认值
+function safeParseJson<T>(value: string | null | undefined, defaultValue: T): T {
+    if (!value) return defaultValue;
+    try {
+        return JSON.parse(value) as T;
+    } catch (e) {
+        console.warn('JSON parse failed:', e);
+        return defaultValue;
+    }
+}
+
 /** 历史记录列表项类型 */
 export type SessionHistoryItem = {
     id: string;
@@ -56,22 +67,25 @@ export const historyService = {
         // 1. 构建动态条件
         const conditions = [eq(practice_sessions.user_id, userId)];
 
+        // 使用 dayjs 将用户输入的日期转换为 UTC 日期字符串进行对比
         if (filter.dateFrom) {
-            conditions.push(sql`date(${practice_sessions.created_at}) >= date(${filter.dateFrom})`);
+            const fromDate = dayjs(filter.dateFrom).utc().format('YYYY-MM-DD');
+            conditions.push(sql`date(${practice_sessions.created_at}) >= date(${fromDate})`);
         }
         if (filter.dateTo) {
-            conditions.push(sql`date(${practice_sessions.created_at}) <= date(${filter.dateTo})`);
+            const toDate = dayjs(filter.dateTo).utc().format('YYYY-MM-DD');
+            conditions.push(sql`date(${practice_sessions.created_at}) <= date(${toDate})`);
         }
-        if (filter.mode) {
-            conditions.push(eq(practice_sessions.practice_mode, filter.mode));
+        if (filter.mode && filter.mode.trim()) {
+            conditions.push(eq(practice_sessions.practice_mode, filter.mode.trim()));
         }
 
-        // 性能优化：将正确率筛选下沉到 SQL 层
-        if (filter.accuracyMin !== undefined) {
-            conditions.push(sql`(CASE WHEN ${practice_sessions.total_questions} > 0 THEN ROUND((CAST(${practice_sessions.correct_count} AS FLOAT) / ${practice_sessions.total_questions}) * 100) ELSE 0 END) >= ${filter.accuracyMin}`);
+        // 性能优化：将正确率筛选下沉到 SQL 层，使用参数化查询防止注入
+        if (filter.accuracyMin !== undefined && filter.accuracyMin >= 0 && filter.accuracyMin <= 100) {
+            conditions.push(sql`(CASE WHEN ${practice_sessions.total_questions} > 0 THEN ROUND((CAST(${practice_sessions.correct_count} AS FLOAT) / ${practice_sessions.total_questions}) * 100) ELSE 0 END) >= ${filter.accuracyMin})`);
         }
-        if (filter.accuracyMax !== undefined) {
-            conditions.push(sql`(CASE WHEN ${practice_sessions.total_questions} > 0 THEN ROUND((CAST(${practice_sessions.correct_count} AS FLOAT) / ${practice_sessions.total_questions}) * 100) ELSE 0 END) <= ${filter.accuracyMax}`);
+        if (filter.accuracyMax !== undefined && filter.accuracyMax >= 0 && filter.accuracyMax <= 100) {
+            conditions.push(sql`(CASE WHEN ${practice_sessions.total_questions} > 0 THEN ROUND((CAST(${practice_sessions.correct_count} AS FLOAT) / ${practice_sessions.total_questions}) * 100) ELSE 0 END) <= ${filter.accuracyMax})`);
         }
 
         const where = and(...conditions);
@@ -174,17 +188,17 @@ export const historyService = {
             logs: logs.map(l => ({
                 questionId: l.questionId,
                 questionContent: l.questionContent,
-                options: typeof l.options === 'string' ? JSON.parse(l.options) : (l.options || []),
+                options: safeParseJson(l.options, [] as string[]),
                 correctAnswer: l.correctAnswer || '',
                 userAnswer: l.userAnswer || '',
                 isCorrect: Boolean(l.isCorrect),
                 duration: l.duration || 0,
-                tags: typeof l.tags === 'string' ? JSON.parse(l.tags) : (l.tags || []),
+                tags: safeParseJson(l.tags, [] as string[]),
                 source: l.source || '',
                 explanation: l.explanation || '',
                 correctRatio: l.correct_ratio,
                 mostWrongAnswer: l.most_wrong_answer,
-                reviewData: l.reviewData ? JSON.parse(l.reviewData) : undefined,
+                reviewData: safeParseJson(l.reviewData, null),
                 aiMnemonic: l.ai_mnemonic || null,
                 material: l.material || null,
                 materialHtml: l.material_html || null

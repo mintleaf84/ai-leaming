@@ -42,7 +42,7 @@ export function DemoModePanel({ demoMode, onToggleDemoMode, onRefresh }: DemoMod
                     <div>
                         <h4 className="font-semibold mb-1">启用演示保护网关</h4>
                         <p className="text-sm text-muted-foreground max-w-3xl">
-                            开启后，无论前台学员点击何种类型练习，系统均会锁定并派发其专有的首个"固定出题剧本"。多次退出重进会自动清理进度并原样复现，彻底掐断现场网络波动风险。
+                            开启后，无论前台学员点击何种类型练习，系统均会锁定并派发其专有的首个&ldquo;固定出题剧本&rdquo;。多次退出重进会自动清理进度并原样复现，彻底掐断现场网络波动风险。
                         </p>
                     </div>
                     <Button

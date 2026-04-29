@@ -1,6 +1,7 @@
 import { drizzleDb, drizzleSchema } from '@/lib/db';
 import { eq, and } from 'drizzle-orm';
 import { AiModelRouteRow, AiConfigRow, AiConfigResult } from './types';
+import { env } from '@/env';
 
 // 简单的进程内缓存
 interface CacheEntry<T> {
@@ -41,8 +42,8 @@ export async function getAiConfig(feature?: string, overrideKey?: string, overri
  * 从数据库实际读取配置
  */
 async function fetchConfigFromDb(feature?: string, overrideKey?: string, overrideUrl?: string): Promise<AiConfigResult> {
-    const envKey = process.env.AI_API_KEY || '';
-    const envUrl = process.env.AI_API_URL || 'https://api.openai.com/v1';
+    const envKey = env.AI_API_KEY;
+    const envUrl = env.AI_API_URL;
 
     const defaultResult: AiConfigResult = {
         apiKey: overrideKey || envKey,

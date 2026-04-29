@@ -1,10 +1,20 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
+
+// Mock @/env — vi.hoisted 确保在 vi.mock 提升时变量已可用
+const { mockEnv } = vi.hoisted(() => ({
+    mockEnv: {
+        PADDLE_OCR_TOKEN: 'test-token',
+    } as Record<string, unknown>,
+}));
+
+vi.mock('@/env', () => ({ env: mockEnv }));
+
 import { performPaddleOCR } from '../paddle-ocr';
 
 describe('performPaddleOCR', () => {
     beforeEach(() => {
         vi.resetAllMocks();
-        process.env.PADDLE_OCR_TOKEN = 'test-token';
+        mockEnv.PADDLE_OCR_TOKEN = 'test-token';
     });
 
     it('应该正确调用 API 并解析返回的 Markdown', async () => {
@@ -54,7 +64,7 @@ describe('performPaddleOCR', () => {
     });
 
     it('如果缺少 TOKEN 应该抛出异常', async () => {
-        delete process.env.PADDLE_OCR_TOKEN;
+        mockEnv.PADDLE_OCR_TOKEN = undefined;
         await expect(performPaddleOCR(Buffer.from('test'), 'test.png', 'image/png'))
             .rejects.toThrow('缺少 PADDLE_OCR_TOKEN');
     });

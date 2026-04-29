@@ -4,6 +4,7 @@ import { getErrorMessage } from '@/lib/utils/error';
 import { getAiConfig } from './client';
 import { drizzleDb, drizzleSchema } from '@/lib/db';
 import { eq, sql, desc, and, like, or } from 'drizzle-orm';
+import { env } from '@/env';
 
 export interface RagResult {
   content: string;
@@ -16,7 +17,7 @@ export const ragService = {
    * 获取文本向量 (使用标准 SDK)
    */
   getEmbedding: async (text: string): Promise<number[]> => {
-    if (process.env.E2E_TEST === 'true') {
+    if (env.E2E_TEST === 'true') {
       const { embeddingDimensions } = await getAiConfig();
       return new Array(embeddingDimensions || 1024).fill(0).map((_, i) => Math.sin(i));
     }

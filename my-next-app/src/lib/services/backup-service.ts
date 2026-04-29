@@ -9,6 +9,7 @@ import path from 'path';
 import { createGzip } from 'zlib';
 import { pipeline } from 'stream';
 import { promisify } from 'util';
+import { env } from '@/env';
 
 const pipelineAsync = promisify(pipeline);
 
@@ -21,7 +22,7 @@ const SETTING_KEYS = {
     RETENTION: 'backup_retention_days',
 };
 
-const BACKUP_SECRET = process.env.BACKUP_ENCRYPTION_KEY;
+const BACKUP_SECRET = env.BACKUP_ENCRYPTION_KEY;
 
 if (!BACKUP_SECRET) {
     console.warn('⚠️ [备份系统] 未检测到 BACKUP_ENCRYPTION_KEY 环境变量！');

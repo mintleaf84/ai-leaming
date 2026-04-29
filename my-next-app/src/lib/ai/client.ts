@@ -6,6 +6,7 @@ import { generateText, streamText, generateObject, stepCountIs } from 'ai';
 import type { ModelMessage, ToolSet } from 'ai';
 import { z } from 'zod';
 import { logApiCall } from '@/lib/admin/api-stats-service';
+import { env } from '@/env';
 
 // 内部模块导入
 import { AiRawResponseError } from './types';
@@ -38,7 +39,7 @@ export async function generateStructuredData<T>(
     const retries = options?.retries !== undefined ? options.retries : 3;
 
     // E2E 测试模式
-    if (process.env.E2E_TEST === 'true') {
+    if (env.E2E_TEST === 'true') {
         console.log('[AiClient] E2E 模式：返回模拟结构化数据');
         return {
             analysis: "E2E 模拟分析报告",
@@ -143,7 +144,7 @@ export async function generateTextWrapper(
 
     const startTime = Date.now();
 
-    if (process.env.E2E_TEST === 'true') {
+    if (env.E2E_TEST === 'true') {
         return { text: "E2E 模拟回复文本" };
     }
 
@@ -190,7 +191,7 @@ export async function streamChatWrapper(
     const config = await getAiConfig('premium');
     const model = getModel(config.apiKey, config.baseURL, config.modelName);
 
-    if (process.env.E2E_TEST === 'true') {
+    if (env.E2E_TEST === 'true') {
         if (onFinish) setTimeout(() => onFinish("E2E 模拟流式回复"), 100);
         return {
             textStream: (async function* () { yield "E2E 模拟回复。"; })(),

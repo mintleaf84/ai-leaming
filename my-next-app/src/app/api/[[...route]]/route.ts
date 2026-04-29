@@ -2,6 +2,7 @@ import { OpenAPIHono } from '@hono/zod-openapi'
 import { handle } from 'hono/vercel'
 import { swaggerUI } from '@hono/swagger-ui'
 import { cors } from 'hono/cors'
+import { env } from '@/env'
 
 export const runtime = 'nodejs'
 
@@ -12,7 +13,7 @@ const app = new OpenAPIHono().basePath('/api')
 app.use('*', cors({
   origin: (origin) => {
     const allowedOrigins = [
-      process.env.NEXT_PUBLIC_APP_URL,
+      env.NEXT_PUBLIC_APP_URL,
       'http://localhost:3000',
       'http://localhost:5000',
       'http://127.0.0.1:3000',

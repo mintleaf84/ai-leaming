@@ -3,11 +3,9 @@ import { getCookie } from 'hono/cookie'
 import { verify } from 'hono/jwt'
 import { COOKIE_NAME } from '@/lib/auth/auth-edge'
 import { getUserById } from '@/lib/auth/user-service'
+import { env } from '@/env'
 
-// 安全加固：生产环境建议配置 JWT_SECRET
-// 移除文件顶层 throw，避免阻塞 Next.js 构建过程
-const JWT_SECRET = process.env.JWT_SECRET;
-const SAFE_SECRET = JWT_SECRET || 'fallback-secret-for-development-only';
+const SAFE_SECRET = env.JWT_SECRET;
 
 import { Context } from 'hono'
 import { User } from '@/types'
@@ -25,7 +23,7 @@ const CACHE_TTL_MS = 60 * 1000; // 60秒过期
 
 export const authMiddleware = createMiddleware(async (c, next) => {
     // 强制运行时安全扫描：生产环境禁止缺乏密钥
-    if (!JWT_SECRET && process.env.NODE_ENV === 'production') {
+    if (!SAFE_SECRET && process.env.NODE_ENV === 'production') {
         console.error('[SECURITY FATAL] 生产环境缺少 JWT_SECRET，拒绝所有鉴权请求');
         return c.json({ error: '系统配置错误：生产环境未配置 JWT 密钥，拒绝验证凭证' }, 500);
     }

@@ -9,6 +9,8 @@ const API_URL = "https://8fybmegb491cz67c.aistudio-app.com/layout-parsing";
 // 请求超时时间：3 分钟（大文件识别可能较慢）
 const REQUEST_TIMEOUT_MS = 3 * 60 * 1000;
 
+import { env } from '@/env';
+
 /**
  * 使用 PaddleOCR-VL 识别文件内容
  * 支持图片和 PDF，返回 Markdown 格式文本
@@ -18,7 +20,7 @@ export async function performPaddleOCR(
     fileName: string,
     mimeType: string
 ): Promise<string> {
-    const token = process.env.PADDLE_OCR_TOKEN;
+    const token = env.PADDLE_OCR_TOKEN;
     if (!token) {
         throw new Error('缺少 PADDLE_OCR_TOKEN 环境变量，请在 .env.local 中配置');
     }

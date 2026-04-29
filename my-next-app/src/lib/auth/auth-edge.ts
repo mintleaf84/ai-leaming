@@ -4,11 +4,9 @@
  * 供 middleware.ts 使用
  */
 import { SignJWT, jwtVerify, type JWTPayload } from 'jose';
+import { env } from '@/env';
 
-const JWT_SECRET_ENV = process.env.JWT_SECRET;
-const SECRET = new TextEncoder().encode(
-    JWT_SECRET_ENV || 'fallback-secret-for-development-only'
-);
+const SECRET = new TextEncoder().encode(env.JWT_SECRET);
 
 export const COOKIE_NAME = 'auth_token';
 
@@ -16,9 +14,6 @@ export const COOKIE_NAME = 'auth_token';
  * 加密 JWT payload
  */
 export async function encrypt(payload: JWTPayload | undefined) {
-    if (!JWT_SECRET_ENV && process.env.NODE_ENV === 'production') {
-        throw new Error('系统安全配置严重错误：生产环境缺少 JWT_SECRET，为防止伪造凭证已拒绝签发 Token！');
-    }
     return await new SignJWT(payload)
         .setProtectedHeader({ alg: 'HS256' })
         .setIssuedAt()
@@ -30,9 +25,6 @@ export async function encrypt(payload: JWTPayload | undefined) {
  * 解密 JWT token
  */
 export async function decrypt(input: string): Promise<unknown> {
-    if (!JWT_SECRET_ENV && process.env.NODE_ENV === 'production') {
-        throw new Error('系统安全配置严重错误：生产环境缺少 JWT_SECRET，无法安全地验证 Token！');
-    }
     const { payload } = await jwtVerify(input, SECRET, {
         algorithms: ['HS256'],
     });

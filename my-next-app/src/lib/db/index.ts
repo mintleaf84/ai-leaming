@@ -8,6 +8,7 @@ import { createClient } from '@libsql/client';
 import * as schema from './drizzle-schema';
 import { setupVectorExtension } from './vector-setup';
 import { seedData } from './seed-data';
+import { env } from '@/env';
 
 // --- Legacy Better-SQLite3 Initialization (from old db.ts) ---
 
@@ -16,7 +17,7 @@ const globalForDb = global as unknown as { db: Database.Database | null };
 function initDb() {
   if (globalForDb.db) return globalForDb.db;
 
-  const dbName = process.env.DB_FILENAME || 'ai-learning.db';
+  const dbName = env.DB_FILENAME;
   const dbPath = path.resolve(process.cwd(), 'data', dbName);
   console.log(`[DB] 正在连接数据库: ${dbPath}`);
 

@@ -6,6 +6,23 @@ const { mockGet, mockAll } = vi.hoisted(() => ({
     mockAll: vi.fn(),
 }));
 
+// Mock @/env — vi.hoisted 确保在 vi.mock 提升时变量已可用
+const { mockEnv } = vi.hoisted(() => ({
+    mockEnv: {
+        JWT_SECRET: 'test-jwt-secret',
+        DB_FILENAME: 'ai-learning.db',
+        AI_API_KEY: 'env-key',
+        AI_API_URL: 'env-url',
+        BACKUP_ENCRYPTION_KEY: undefined,
+        PADDLE_OCR_TOKEN: undefined,
+        LOG_LEVEL: 'info',
+        E2E_TEST: 'false',
+        NEXT_PUBLIC_APP_URL: undefined,
+    },
+}));
+
+vi.mock('@/env', () => ({ env: mockEnv }));
+
 vi.mock('@/lib/db', () => {
     const drizzleMock: any = {
         select: vi.fn(() => {
@@ -59,8 +76,8 @@ describe('AI Config Management', () => {
     beforeEach(() => {
         vi.clearAllMocks();
         clearAiConfigCache();
-        process.env.AI_API_KEY = 'env-key';
-        process.env.AI_API_URL = 'env-url';
+        mockEnv.AI_API_KEY = 'env-key';
+        mockEnv.AI_API_URL = 'env-url';
     });
 
     it('应该能正确处理环境变量兜底', async () => {

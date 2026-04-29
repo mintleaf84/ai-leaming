@@ -141,6 +141,7 @@ export interface PracticeState {
     reviewQueue: ReviewItem[];
     currentReviewIndex: number;
     reviewTriggeredAt: number; // e.g., 25
+    reviewStartTime?: number; // Timestamp when review started (for time correction)
 }
 
 // 练习状态机 Action

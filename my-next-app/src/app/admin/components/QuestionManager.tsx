@@ -61,8 +61,8 @@ export function QuestionManager() {
                 return;
             }
 
-            if (result.data?.success === false) {
-                toast.error(result.data.message || "题目列表加载失败");
+            if (!result.data?.success) {
+                toast.error("题目列表加载失败");
                 setLoading(false);
                 return;
             }

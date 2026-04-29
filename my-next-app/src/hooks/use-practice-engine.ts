@@ -106,6 +106,7 @@ export const createPracticeReducer = (enableIntelligentReview: boolean) => (stat
         ...state,
         status: 'reviewing',
         currentReviewIndex: 0,
+        reviewStartTime: Date.now(),
       };
 
     case 'LOAD_REVIEW_DATA': {
@@ -160,17 +161,22 @@ export const createPracticeReducer = (enableIntelligentReview: boolean) => (stat
       return createPracticeReducer(enableIntelligentReview)(state, { type: 'RESUME_PRACTICE' });
     }
 
-    case 'RESUME_PRACTICE':
+    case 'RESUME_PRACTICE': {
       if (state.currentIndex >= state.sessionQueue.length - 1) {
         return { ...state, status: 'finished' };
       }
+      // 扣除复盘耗时，避免计入练习时间
+      const reviewDuration = state.reviewStartTime ? Date.now() - state.reviewStartTime : 0;
       return {
         ...state,
         status: 'practicing',
         reviewQueue: [],
         reviewTriggeredAt: 35, // Bump trigger to end
         startTime: Date.now(), // CRITICAL: Reset timer when resuming from review
+        accumulatedTime: state.accumulatedTime - reviewDuration, // 扣除复盘时间
+        reviewStartTime: undefined, // 重置复盘开始时间
       };
+    }
 
     case 'FINISH_SESSION':
       return { ...state, status: 'finished' };

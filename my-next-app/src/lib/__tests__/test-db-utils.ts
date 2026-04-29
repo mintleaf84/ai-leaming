@@ -20,10 +20,14 @@ export interface TestDbHelper {
 export async function setupTestDb(): Promise<TestDbHelper> {
     // 为每个测试创建一个独一无二的物理数据库文件，避免 LibSQL 的 file::memory: 连接池导致的跨事务丢表问题
     const dbFileName = `test-${Date.now()}-${Math.random().toString(36).substring(7)}.db`;
-    const dbPath = path.join(process.cwd(), dbFileName);
+    const testTempDir = path.join(process.cwd(), 'test-temp');
+    if (!fs.existsSync(testTempDir)) {
+        fs.mkdirSync(testTempDir, { recursive: true });
+    }
+    const dbPath = path.join(testTempDir, dbFileName);
     
     // 使用 LibSQL，与生产环境驱动一致，支持异步事务
-    const client = createClient({ url: `file:${dbFileName}` });
+    const client = createClient({ url: `file:${dbPath}` });
     const db = drizzle(client, { schema });
     
     // 动态加载并执行所有迁移文件

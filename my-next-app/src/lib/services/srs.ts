@@ -411,7 +411,7 @@ export const srsService = {
     syncFromPracticeLogs: async (userId: number) => {
         const logs = await drizzleDb.select({
             questionId: practice_logs.question_id,
-            isCorrect: practice_logs.is_correct,
+            isCorrect: sql<number>`CAST(${practice_logs.is_correct} AS INTEGER)`,
             durationMs: practice_logs.duration_ms,
             timestamp: practice_logs.timestamp
         })
@@ -452,7 +452,9 @@ export const srsService = {
                 .where(eq(questions.id, qId))
                 .limit(1);
             
-            const speed = speedCache[qInfo?.type || 'base'] || speedCache['base'];
+            const typeKey = qInfo?.type === 'multi' ? 'multi' :
+                        qInfo?.type === 'truefalse' ? 'truefalse' : 'base';
+            const speed = speedCache[typeKey] || speedCache['base'];
 
             for (const log of qLogs) {
                 const reviewDate = log.timestamp ? dayjs.utc(log.timestamp).toDate() : undefined;

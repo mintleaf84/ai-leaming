@@ -40,7 +40,7 @@
 
 ## 核心地图
 
-- **前端页面注册表**: [page_registry.md](../../../docs/page_registry.md)
+- **前端页面注册表**: [page_registry.md](../../../../docs/page_registry.md)
 - **参考项目**: `cherry-studio-main/` (仅供逻辑参考，非当前项目代码库)。
 
 ## 设计语言

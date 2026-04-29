@@ -141,15 +141,23 @@ export default function SessionDetailPage({ params }: { params: Promise<{ id: st
       const a = document.createElement('a');
       a.href = url;
       a.download = result.data.filename;
-      
-      if (document.body) {
-        document.body.appendChild(a);
-        a.click();
-        document.body.removeChild(a);
+
+      // 兼容 SSR 环境，使用 requestAnimationFrame 确保在客户端执行
+      if (typeof window !== 'undefined' && document.body) {
+        requestAnimationFrame(() => {
+          try {
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+          } catch {
+            // Fallback: 直接点击
+            a.click();
+          }
+        });
       } else {
         a.click();
       }
-      
+
       URL.revokeObjectURL(url);
       toast.success('导出成功');
     } else {

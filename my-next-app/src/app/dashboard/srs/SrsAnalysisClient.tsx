@@ -173,7 +173,7 @@ export default function SrsAnalysisClient({ stats }: { stats: SrsGlobalStats }) 
                         <Calendar className="w-4 h-4 text-primary" />
                         未来错题复习预估
                     </CardTitle>
-                    <CardDescription>根据 FSRS 算法预测未来一周历史错题的复习量与耗时</CardDescription>
+                    <CardDescription>根据 FSRS 算法预测未来一周错题的复习量与耗时</CardDescription>
                 </CardHeader>
                 <CardContent className="pt-6 h-[260px]">
                     <ResponsiveContainer width="100%" height="100%">

@@ -138,8 +138,12 @@ export async function initDatabase() {
         await migrate(drizzleDb, { migrationsFolder: path.resolve(process.cwd(), 'drizzle') });
         console.log('[DB] Drizzle migrations completed');
 
-        // 2. 补全向量扩展和种子数据
-        await setupVectorExtension();
+        // 2. 补全向量扩展和种子数据（向量扩展失败不阻止启动）
+        try {
+            await setupVectorExtension();
+        } catch (e) {
+            console.warn('[DB] Vector extension setup failed, continuing without vector features:', e);
+        }
         await seedData();
         console.log('[DB] Database initialization completed');
     } catch (error: any) {

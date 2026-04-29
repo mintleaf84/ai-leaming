@@ -83,21 +83,17 @@ export function OnboardingGuide() {
         nextBtnText: '下一步',
         closeBtnText: '跳过',
         doneBtnText: '完成',
-        onClose: () => {
-          localStorage.setItem(STORAGE_KEY, 'true');
-          setIsCompleted(true);
-        },
-        onEnd: () => {
+        onDestroyStarted: () => {
           localStorage.setItem(STORAGE_KEY, 'true');
           setIsCompleted(true);
         },
       });
 
-      driver.defineSteps(steps);
+      driver.setSteps(steps);
 
       // 延迟启动，确保 DOM 渲染完成
       const timer = setTimeout(() => {
-        driver.start();
+        driver.drive(0);
       }, 1500);
 
       return () => {

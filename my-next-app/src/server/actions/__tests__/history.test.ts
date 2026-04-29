@@ -70,11 +70,11 @@ describe('History Actions (In-Memory DB)', () => {
                 { id: 'session-2', user_id: 1, session_name: 'S2', total_questions: 5, correct_count: 3, review_count: 1, created_at: '2026-01-16T00:00:00Z', practice_mode: 'normal' }
             ]);
 
-            const result = await getSessionHistoryAction();
+            const result = await getSessionHistoryAction(undefined);
 
-            expect(result.total).toBe(2);
-            expect(result.items).toHaveLength(2);
-            expect(result.items[0].accuracy).toBe(80);
+            expect(result?.data?.total).toBe(2);
+            expect(result?.data?.items).toHaveLength(2);
+            expect(result?.data?.items?.[0].accuracy).toBe(80);
         });
     });
 
@@ -107,11 +107,11 @@ describe('History Actions (In-Memory DB)', () => {
 
             const result = await getSessionDetailAction('session-1');
 
-            expect(result).not.toBeNull();
-            expect(result!.session.accuracy).toBe(80);
-            expect(result!.logs).toHaveLength(1);
-            expect(result!.logs[0].options).toEqual(['A', 'B', 'C']);
-            expect(result!.logs[0].questionContent).toBe('测试题目');
+            expect(result?.data).not.toBeNull();
+            expect(result?.data?.session.accuracy).toBe(80);
+            expect(result?.data?.logs).toHaveLength(1);
+            expect(result?.data?.logs[0].options).toEqual(['A', 'B', 'C']);
+            expect(result?.data?.logs[0].questionContent).toBe('测试题目');
         });
     });
 
@@ -129,7 +129,7 @@ describe('History Actions (In-Memory DB)', () => {
 
             const result = await deleteSessionAction('session-1');
 
-            expect(result.success).toBe(true);
+            expect(result?.data?.success).toBe(true);
             
             // 验证数据库中确实删除了
             const sessions = await db.select().from(schema.practice_sessions)
@@ -152,8 +152,8 @@ describe('History Actions (In-Memory DB)', () => {
             const result = await getAvailableModesAction();
 
             // 在真实数据库中，字段映射和 select 逻辑会自动生效
-            expect(result).toContain('normal');
-            expect(result).toContain('review');
+            expect(result?.data).toContain('normal');
+            expect(result?.data).toContain('review');
         });
     });
 });

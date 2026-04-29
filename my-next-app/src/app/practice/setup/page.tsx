@@ -16,7 +16,9 @@ import {
     Tag,
     BookOpen,
     CheckCircle2,
-    AlertCircle
+    AlertCircle,
+    Layers,
+    Calendar,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
@@ -43,7 +45,11 @@ const ModeIcons: Record<PracticeMode, React.ReactNode> = {
     focus: <Target className="w-6 h-6" />,
     exam: <FileCheck className="w-6 h-6" />,
     random: <Shuffle className="w-6 h-6" />,
-    "first-principles": <Target className="w-6 h-6" />
+    "first-principles": <Target className="w-6 h-6" />,
+    tag_focus: <Tag className="w-6 h-6" />,
+    dimension_focus: <Layers className="w-6 h-6" />,
+    daily_challenge: <Calendar className="w-6 h-6" />,
+    intelligent_review: <RotateCcw className="w-6 h-6" />,
 };
 
 // 模式颜色
@@ -54,7 +60,11 @@ const ModeColors: Record<PracticeMode, string> = {
     focus: 'from-green-500 to-emerald-600',
     exam: 'from-purple-500 to-violet-600',
     random: 'from-pink-500 to-rose-600',
-    "first-principles": 'from-cyan-500 to-blue-600'
+    "first-principles": 'from-cyan-500 to-blue-600',
+    tag_focus: 'from-emerald-500 to-teal-600',
+    dimension_focus: 'from-violet-500 to-purple-600',
+    daily_challenge: 'from-orange-500 to-amber-600',
+    intelligent_review: 'from-blue-600 to-indigo-700',
 };
 
 export default function PracticeSetupPage() {
@@ -83,8 +93,8 @@ export default function PracticeSetupPage() {
                     }));
                 }
 
-                const tags = await getAvailableTagsAction();
-                setAvailableTags(tags);
+                const result = await getAvailableTagsAction();
+                setAvailableTags(result?.data || []);
             } catch (error) {
                 console.error('加载初始化数据失败', error);
             } finally {

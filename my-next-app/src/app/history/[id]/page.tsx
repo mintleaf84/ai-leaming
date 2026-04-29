@@ -45,15 +45,15 @@ export default function SessionDetailPage({ params }: { params: Promise<{ id: st
 
   // 数据加载
   useEffect(() => {
-    getSessionDetailAction(id).then(data => {
-      setDetail(data);
+    getSessionDetailAction(id).then(result => {
+      setDetail(result?.data || null);
       setIsLoading(false);
     });
 
     // 加载已保存的分析报告
     getAnalysisReportAction(id).then(result => {
-      if (result.success && result.report) {
-        setAnalysisReport(result.report);
+      if (result?.data?.success && result.data.report) {
+        setAnalysisReport(result.data.report);
       }
     });
   }, [id]);
@@ -65,11 +65,11 @@ export default function SessionDetailPage({ params }: { params: Promise<{ id: st
     }
     setIsDeleting(true);
     const result = await deleteSessionAction(id);
-    if (result.success) {
+    if (result?.data?.success) {
       toast.success('记录已成功删除');
       router.push('/history');
     } else {
-      toast.error(result.message || '删除失败');
+      toast.error(result?.data?.message || '删除失败');
       setIsDeleting(false);
     }
   }, [id, router]);
@@ -117,13 +117,13 @@ export default function SessionDetailPage({ params }: { params: Promise<{ id: st
 
     setIsAnalyzing(true);
     setShowAnalysis(true);
-    const result = await generateDeepAnalysisAction(id);
+    const result = await generateDeepAnalysisAction({ sessionId: id });
     setIsAnalyzing(false);
 
-    if (result.success && result.report) {
-      setAnalysisReport(result.report);
+    if (result?.data?.success && result.data.report) {
+      setAnalysisReport(result.data.report);
     } else {
-      toast.error(result.error || 'AI 分析失败');
+      toast.error(result?.data?.error || 'AI 分析失败');
       setShowAnalysis(false);
     }
   }, [id, analysisReport, showAnalysis]);
@@ -134,13 +134,13 @@ export default function SessionDetailPage({ params }: { params: Promise<{ id: st
     const result = await exportSessionMarkdownAction(id);
     setIsExporting(false);
 
-    if (result.success && result.markdown && result.filename) {
+    if (result?.data?.success && result.data.markdown && result.data.filename) {
       // 创建 Blob 并下载
-      const blob = new Blob([result.markdown], { type: 'text/markdown;charset=utf-8' });
+      const blob = new Blob([result.data.markdown], { type: 'text/markdown;charset=utf-8' });
       const url = URL.createObjectURL(blob);
       const a = document.createElement('a');
       a.href = url;
-      a.download = result.filename;
+      a.download = result.data.filename;
       
       if (document.body) {
         document.body.appendChild(a);
@@ -153,7 +153,7 @@ export default function SessionDetailPage({ params }: { params: Promise<{ id: st
       URL.revokeObjectURL(url);
       toast.success('导出成功');
     } else {
-      toast.error(result.error || '导出失败');
+      toast.error(result?.data?.error || '导出失败');
     }
   }, [id]);
 

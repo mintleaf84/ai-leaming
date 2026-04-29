@@ -29,11 +29,17 @@ export function BackupManager() {
                 if (match) filename = match[1];
             }
             a.download = filename;
-            
+
             if (document.body) {
-                document.body.appendChild(a);
-                a.click();
-                document.body.removeChild(a);
+                requestAnimationFrame(() => {
+                    try {
+                        document.body.appendChild(a);
+                        a.click();
+                        document.body.removeChild(a);
+                    } catch {
+                        a.click();
+                    }
+                });
             } else {
                 a.click();
             }

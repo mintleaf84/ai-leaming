@@ -25,16 +25,21 @@ export function DataManagementSection({ onDataChange }: DataManagementSectionPro
             const a = document.createElement('a');
             a.href = url;
             a.download = `ai-learning-backup-${new Date().toISOString().split('T')[0]}.json`;
-            
-            if (document.body) {
-                document.body.appendChild(a);
-                a.click();
-                document.body.removeChild(a);
+
+            if (typeof window !== 'undefined' && document.body) {
+                requestAnimationFrame(() => {
+                    try {
+                        document.body.appendChild(a);
+                        a.click();
+                        document.body.removeChild(a);
+                    } catch {
+                        a.click();
+                    }
+                });
             } else {
-                // 回退方案：如果 body 还没准备好，尝试直接点击
                 a.click();
             }
-            
+
             URL.revokeObjectURL(url);
             toast.success("进度备份导出成功");
         }

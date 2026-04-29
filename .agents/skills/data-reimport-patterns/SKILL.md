@@ -14,10 +14,11 @@ description: 数据重导入的最佳实践与常见陷阱。在开发数据导�
 利用 `onConflictDoUpdate` (Upsert) 模式确保每次导入都能强制覆盖核心业务字段。
 
 ```typescript
-import { drizzleDb, drizzleSchema } from '@/lib/db';
+import { drizzleDb } from '@/lib/db';
+import { questions } from '@/lib/db/drizzle-schema';
 
 async function importItem(item: any) {
-  await drizzleDb.insert(drizzleSchema.items)
+  await drizzleDb.insert(questions)
     .values({
       id: item.id,
       type: item.type,
@@ -27,7 +28,7 @@ async function importItem(item: any) {
       metadata: item.metadata,
     })
     .onConflictDoUpdate({
-      target: drizzleSchema.items.id,
+      target: questions.id,
       set: {
         // 核心：在冲突时更新所有可能错误的业务字段
         type: item.type,

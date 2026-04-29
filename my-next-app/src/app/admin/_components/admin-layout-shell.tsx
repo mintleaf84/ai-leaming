@@ -14,7 +14,8 @@ import {
     Menu,
     X,
     CreditCard,
-    Key
+    Key,
+    HardDrive
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useRouter } from 'next/navigation';
@@ -35,7 +36,8 @@ export function AdminLayoutShell({
         { href: '/admin/plans', label: '套餐管理', icon: CreditCard },
         { href: '/admin/questions', label: '题库管理', icon: BookOpen },
         { href: '/admin/ai', label: 'AI 与提示词', icon: Cpu },
-        { href: '/admin/system', label: '系统运维', icon: Settings }, // 修改图标避免重复
+        { href: '/admin/system', label: '系统运维', icon: Settings },
+        { href: '/admin/system/backup', label: '数据备份', icon: HardDrive },
         { href: '/admin/api-keys', label: 'API Key 管理', icon: Key },
         { href: '/admin/logs', label: '操作日志', icon: LayoutDashboard }, // 修改图标
     ];

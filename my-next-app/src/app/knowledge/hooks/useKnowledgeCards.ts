@@ -127,15 +127,21 @@ export function useKnowledgeCards() {
             const a = document.createElement('a');
             a.href = url;
             a.download = `knowledge_cards_${Date.now()}.txt`;
-            
+
             if (document.body) {
-                document.body.appendChild(a);
-                a.click();
-                document.body.removeChild(a);
+                requestAnimationFrame(() => {
+                    try {
+                        document.body.appendChild(a);
+                        a.click();
+                        document.body.removeChild(a);
+                    } catch {
+                        a.click();
+                    }
+                });
             } else {
                 a.click();
             }
-            
+
             window.URL.revokeObjectURL(url);
 
             showToast('导出成功！已保存为 Anki 格式');

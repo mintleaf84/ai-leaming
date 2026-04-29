@@ -11,7 +11,8 @@
       "Bash(npx vitest *)",
       "Bash(git tag *)",
       "Bash(npm view *)",
-      "Bash(npm ls *)"
+      "Bash(npm ls *)",
+      "Bash(npm run *)"
     ]
   }
 }

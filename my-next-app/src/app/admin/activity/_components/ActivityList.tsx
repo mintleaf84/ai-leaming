@@ -33,6 +33,7 @@ export function ActivityList() {
     const [total, setTotal] = useState(0);
     const [loading, setLoading] = useState(true);
     const [page, setPage] = useState(1);
+    const [initialLoadComplete, setInitialLoadComplete] = useState(false);
     const pageSize = 20;
 
     const [filters, setFilters] = useState<ActivityFilters>({
@@ -43,12 +44,12 @@ export function ActivityList() {
     const loadActivities = useCallback(async (currentPage = page, currentFilters = filters) => {
         setLoading(true);
         const offset = (currentPage - 1) * pageSize;
-        const result = await getUserActivityAction({ 
-            limit: pageSize, 
-            offset, 
-            filters: currentFilters 
+        const result = await getUserActivityAction({
+            limit: pageSize,
+            offset,
+            filters: currentFilters
         });
-        
+
         if (result.serverError) {
             toast.error(result.serverError || "加载记录失败");
         } else if (result.data) {
@@ -59,13 +60,21 @@ export function ActivityList() {
     }, [page, filters]);
 
     useEffect(() => {
-        loadActivities();
-        // 自动刷新逻辑
+        if (!initialLoadComplete) {
+            const init = async () => {
+                await loadActivities();
+                setInitialLoadComplete(true);
+            };
+            init();
+        }
+    }, [loadActivities, initialLoadComplete]);
+
+    useEffect(() => {
         const timer = setInterval(() => {
             if (page === 1 && !filters.search) {
                 loadActivities(1, filters);
             }
-        }, 30000); // 30s 自动刷新首页
+        }, 30000);
         return () => clearInterval(timer);
     }, [loadActivities, page, filters]);
 

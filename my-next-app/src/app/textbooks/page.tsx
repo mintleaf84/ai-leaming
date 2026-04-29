@@ -85,7 +85,7 @@ export default async function TextbooksPage() {
                                             </div>
                                             <div className="flex items-center">
                                                 <Calendar className="h-3 w-3 mr-1" />
-                                                <span>{new Date(book.created_at || Date.now()).toLocaleDateString()}</span>
+                                                <span>{book.created_at ? new Date(book.created_at).toLocaleDateString() : '-'}</span>
                                             </div>
                                         </div>
                                         {book.description && (

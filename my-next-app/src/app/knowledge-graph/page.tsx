@@ -48,7 +48,10 @@ export default function DashboardPage() {
   };
 
   useEffect(() => {
-    loadData();
+    const init = async () => {
+      await loadData();
+    };
+    init();
   }, []);
 
   return (

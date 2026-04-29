@@ -1,10 +1,10 @@
 import { drizzleDb } from '@/lib/db';
-import { 
-    practice_sessions, 
-    practice_logs, 
-    questions, 
-    question_srs, 
-    session_reviews 
+import {
+    practice_sessions,
+    practice_logs,
+    questions,
+    question_srs,
+    session_reviews
 } from '@/lib/db/drizzle-schema';
 import { eq, and, desc, gt, sql, inArray } from 'drizzle-orm';
 import { Question, Dimension } from '@/types';
@@ -12,6 +12,7 @@ import { PracticeMode, PracticeConfig } from '@/types/practice';
 import { QuestionRowSchema } from '@/lib/schemas';
 import logger from '@/lib/logger';
 import { DemoService } from '@/lib/practice/demo';
+import { safeParseJson } from '@/lib/utils/json';
 
 export interface PracticeSessionConfig {
     mode: PracticeMode;
@@ -34,8 +35,8 @@ function mapQuestion(q: unknown): Question {
         logger.error({ err, questionId: data.id }, 'Question mapping failed in practiceService');
         return {
             ...data,
-            options: typeof data.options === 'string' ? JSON.parse(data.options) : (data.options || []),
-            tags: typeof data.tags === 'string' ? JSON.parse(data.tags) : (data.tags || []),
+            options: safeParseJson(data.options, [] as string[]),
+            tags: safeParseJson(data.tags, [] as string[]),
             type: data.type || 'single',
             dimension: data.dimension || 'knowledge'
         } as Question;
@@ -253,12 +254,7 @@ export const practiceService = {
             .limit(1);
 
         if (q && q.tags) {
-            let tags: string[] = [];
-            try {
-                tags = typeof q.tags === 'string' ? JSON.parse(q.tags) : q.tags;
-            } catch (_e) {
-                tags = [];
-            }
+            const tags = safeParseJson<string[]>(q.tags, []);
 
             const { masteryService } = await import('@/lib/services/mastery');
             await Promise.all(tags.map(async (tag: string) => {
@@ -349,27 +345,36 @@ export const practiceService = {
 
         if (!session || !session.questions_json) return null;
 
-        let questionData = session.questions_json ? JSON.parse(session.questions_json) : [];
-        
-        // 如果存储的是 ID 列表，则查询完整题目 (向下兼容旧逻辑)
-        if (questionData.length > 0 && (typeof questionData[0] === 'string' || typeof questionData[0] === 'number')) {
-            const rawQuestions = await drizzleDb.select()
-                .from(questions)
-                .where(inArray(questions.id, questionData));
-            questionData = rawQuestions.map(q => mapQuestion(q));
-        } else {
-            // 如果存储的是完整对象，确保进行 mapQuestion 校验/修复
-            questionData = questionData.map((q: unknown) => mapQuestion(q));
-        }
-
+        // 先查询已完成数量（两个分支都需要）
         const [logResult] = await drizzleDb.select({ count: sql<number>`count(*)` })
             .from(practice_logs)
             .where(eq(practice_logs.session_id, sessionId));
+        const completedCount = Number(logResult?.count) || 0;
+
+        let questionData: unknown[] = safeParseJson<unknown[]>(session.questions_json, []);
+
+        // 如果存储的是 ID 列表，则查询完整题目 (向下兼容旧逻辑)
+        if (questionData.length > 0 && (typeof questionData[0] === 'string' || typeof questionData[0] === 'number')) {
+            const idList = questionData.map((id: unknown) => Number(id)).filter(id => !isNaN(id));
+            const rawQuestions = await drizzleDb.select()
+                .from(questions)
+                .where(inArray(questions.id, idList));
+            const mappedQuestions: Question[] = rawQuestions.map(q => mapQuestion(q));
+            return {
+                questions: await this.attachSrsData(userId, mappedQuestions),
+                sessionId: session.id,
+                completedCount,
+                practiceMode: session.practice_mode || undefined
+            };
+        }
+
+        // 如果存储的是完整对象，确保进行 mapQuestion 校验/修复
+        const mappedQuestions: Question[] = questionData.map((q: unknown) => mapQuestion(q));
 
         return {
-            questions: await this.attachSrsData(userId, questionData),
+            questions: await this.attachSrsData(userId, mappedQuestions),
             sessionId: session.id,
-            completedCount: Number(logResult?.count) || 0,
+            completedCount,
             practiceMode: session.practice_mode || undefined
         };
     },

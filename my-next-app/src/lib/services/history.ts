@@ -3,19 +3,9 @@ import { eq, and, desc, sql, count } from 'drizzle-orm';
 import { practice_sessions, practice_logs, questions, session_reviews } from '@/lib/db/drizzle-schema';
 import dayjs from 'dayjs';
 import utc from 'dayjs/plugin/utc';
+import { safeParseJson } from '@/lib/utils/json';
 
 dayjs.extend(utc);
-
-// 安全解析 JSON，失败时返回默认值
-function safeParseJson<T>(value: string | null | undefined, defaultValue: T): T {
-    if (!value) return defaultValue;
-    try {
-        return JSON.parse(value) as T;
-    } catch (e) {
-        console.warn('JSON parse failed:', e);
-        return defaultValue;
-    }
-}
 
 /** 历史记录列表项类型 */
 export type SessionHistoryItem = {

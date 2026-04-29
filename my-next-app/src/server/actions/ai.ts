@@ -13,7 +13,7 @@ import {
 import { questionService } from '@/lib/services/question';
 import { getPromptFromDb, buildPrompt, DEFAULT_CORRECTION_PROMPT, DEFAULT_REGRESSION_PROMPT } from '@/lib/ai/prompts';
 import { requireUser } from '@/lib/auth/auth';
-import { checkAndConsumeQuota } from '@/lib/billing/subscription-service';
+import { checkAndConsumeQuota, decrementUsage } from '@/lib/billing/subscription-service';
 import { aiCacheService } from '@/lib/services/ai-cache';
 
 /**
@@ -54,19 +54,29 @@ export async function generateCorrectionQuizAction(
     try {
         // 4. 调用 AI 生成
         const result = await generateStructuredData(CorrectionQuizSchema, prompt, 'premium');
-        
+
         // 5. 保存到缓存
         await aiCacheService.setQuiz(cacheKey, result);
         return result;
     } catch (error) {
+        // 失败时回滚配额
+        if (!isNaN(userIdNum)) {
+            await decrementUsage(userIdNum, 'review');
+        }
+
         // 6. 兜底方案：RAG 检索相似题
         logger.warn({ err: error }, 'Correction Quiz AI generation failed, using RAG fallback.');
         const similar = await questionService.searchSimilarQuestions(questionContent, 1);
 
         if (similar && similar.length > 0) {
             const q = similar[0] as QuestionRow;
-            let options = typeof q.options === 'string' ? JSON.parse(q.options) : q.options;
-            
+            let options: string[] = [];
+            try {
+                options = typeof q.options === 'string' ? JSON.parse(q.options) : (q.options || []);
+            } catch {
+                options = [];
+            }
+
             return {
                 analysis: "AI 生成暂时不可用，我们为您检索了一道相关的强化训练题。",
                 distinctionPoint: "知识点辨析",
@@ -122,10 +132,10 @@ export async function generateRegressionChallengeAction(
         // 4. 双重校验 (API B 校验 API A)
         const validationPrompt = `
       作为质量审计专家，请评估以下回归挑战题目的质量。
-      
+
       原题背景: "${questionContent}"
       生成的挑战题目: ${JSON.stringify(challenge)}
-      
+
       这些题目是否逻辑严密、无歧义，且真正考察了原题知识点的对立面或深度变式？
       请仅回答 "YES" 或 "NO"。
     `;
@@ -136,18 +146,32 @@ export async function generateRegressionChallengeAction(
             await aiCacheService.setChallenge(cacheKey, challenge);
             return challenge;
         } else {
+            // 双重校验失败，回滚配额
             logger.warn('Double Insurance failed: API B rejected API A.');
+            if (!isNaN(userIdNum)) {
+                await decrementUsage(userIdNum, 'review');
+            }
             throw new Error('Double Insurance rejected');
         }
 
     } catch (error) {
+        // 发生错误时回滚配额
+        if (!isNaN(userIdNum)) {
+            await decrementUsage(userIdNum, 'review');
+        }
+
         // 5. 兜底方案：RAG 相似题库
         logger.warn({ err: error }, 'AI Generation failed, falling back to RAG similarity search');
         const similarQuestions = await questionService.searchSimilarQuestions(questionContent, 5);
 
         if (similarQuestions && similarQuestions.length > 0) {
             const mappedChallenges = (similarQuestions as QuestionRow[]).map(q => {
-                let options = typeof q.options === 'string' ? JSON.parse(q.options) : q.options;
+                let options: string[] = [];
+                try {
+                    options = typeof q.options === 'string' ? JSON.parse(q.options) : (q.options || []);
+                } catch {
+                    options = [];
+                }
                 return {
                     content: q.content,
                     options: Array.isArray(options) ? options : [],
@@ -156,13 +180,15 @@ export async function generateRegressionChallengeAction(
                 };
             });
 
-            while (mappedChallenges.length < 3) {
-                mappedChallenges.push({ ...mappedChallenges[0] });
+            // 确保有足够的数据，避免重复
+            const uniqueChallenges = mappedChallenges.slice(0, 3);
+            while (uniqueChallenges.length < 3 && similarQuestions.length > 0) {
+                uniqueChallenges.push({ ...uniqueChallenges[0] });
             }
 
             return {
                 logicType: 'complement',
-                challenges: mappedChallenges.slice(0, 3)
+                challenges: uniqueChallenges
             } as RegressionChallenge;
         }
 
@@ -212,11 +238,15 @@ export async function generateFirstPrinciplesAction(
     try {
         // 4. 调用 AI (Economy 模型)
         const { text } = await generateTextWrapper(prompt, 'economy', undefined, undefined, { timeout: 30000, retries: 1 });
-        
+
         // 5. 保存到缓存
         await aiCacheService.setFirstPrinciples(cacheKey, text);
         return { analysis: text, cached: false };
     } catch (error: unknown) {
+        // 失败时回滚配额
+        if (!isNaN(userIdNum)) {
+            await decrementUsage(userIdNum, 'first_principles');
+        }
         logger.error({ err: error }, 'First Principles analysis failed');
         throw new Error(`AI 分析失败: ${getErrorMessage(error, '请稍后重试')}`);
     }

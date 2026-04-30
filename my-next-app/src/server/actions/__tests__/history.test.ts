@@ -1,159 +1,205 @@
 // @vitest-environment node
-import * as schema from '@/lib/db/drizzle-schema';
-import { eq, and } from 'drizzle-orm';
-import { setupVitestMemoryDb } from '@/lib/__tests__/db-mock-utils';
+import { describe, it, expect, beforeEach, vi } from 'vitest';
 
-// 1. 设置数据库 Mock 持有者
-const { actualSchema, mockDbHolder } = await vi.hoisted(async () => {
-    const modSchema = await import('@/lib/db/drizzle-schema');
-    return { 
-        actualSchema: modSchema,
-        mockDbHolder: { db: null as any }
-    };
-});
-
-// 2. Mock 数据库模块，使用 Proxy 动态指向当前的内存数据库实例
-vi.mock('@/lib/db', () => ({
-    drizzleDb: new Proxy({}, {
-        get: (_, prop) => {
-            if (!mockDbHolder.db) {
-                throw new Error('测试数据库尚未初始化，请确保在 beforeEach 中调用 setupVitestMemoryDb');
-            }
-            return mockDbHolder.db[prop];
-        }
-    }),
-    drizzleSchema: actualSchema
+// Mock auth - MUST be before imports
+const { mockRequireRole } = vi.hoisted(() => ({
+    mockRequireRole: vi.fn()
 }));
 
-// 3. Mock 其他依赖
 vi.mock('@/lib/auth/auth', () => ({
-    requireUser: vi.fn().mockResolvedValue({ id: 1, username: 'testuser' }),
+    requireRole: mockRequireRole,
+    requireUser: mockRequireRole
+}));
+
+// Mock services
+vi.mock('@/lib/services/history', () => ({
+    historyService: {
+        getHistory: vi.fn(),
+        getSessionDetail: vi.fn(),
+        deleteSession: vi.fn(),
+        getAvailableModes: vi.fn(),
+        renameSession: vi.fn(),
+        getAnalysisReport: vi.fn()
+    }
 }));
 
 vi.mock('next/cache', () => ({
-    revalidatePath: vi.fn(),
+    revalidatePath: vi.fn()
 }));
 
-import { 
-    getSessionHistoryAction, 
-    getSessionDetailAction, 
-    deleteSessionAction, 
-    getAvailableModesAction 
+vi.mock('@/lib/utils/export-markdown', () => ({
+    formatSessionToMarkdown: vi.fn((detail) => '# Test Session\n\nContent here'),
+    generateExportFilename: vi.fn((date) => 'export-2026-01-17.md')
+}));
+
+// Import AFTER mocks are set up
+import {
+    getSessionHistoryAction,
+    getSessionDetailAction,
+    deleteSessionAction,
+    getAvailableModesAction,
+    renameSessionAction,
+    exportSessionMarkdownAction
 } from '../history';
+import { historyService } from '@/lib/services/history';
 
-describe('History Actions (In-Memory DB)', () => {
-    let dbHelper: any;
+describe('History Actions', () => {
+    const testUser = { id: 1, username: 'testuser' };
 
-    beforeEach(async () => {
-        // 每个测试启动一个全新的内存数据库，确保环境隔离
-        dbHelper = await setupVitestMemoryDb();
-        mockDbHolder.db = dbHelper.db;
+    beforeEach(() => {
         vi.clearAllMocks();
-    });
-
-    afterEach(async () => {
-        if (dbHelper) {
-            await dbHelper.close();
-        }
-        mockDbHolder.db = null;
+        mockRequireRole.mockResolvedValue(testUser);
     });
 
     // ========== getSessionHistoryAction 测试 ==========
     describe('getSessionHistoryAction', () => {
         it('应该返回分页的会话历史', async () => {
-            const db = dbHelper.db;
-            
-            // 真实插入数据
-            await db.insert(schema.users).values({ id: 1, username: 'testuser', password_hash: 'hash' });
-            await db.insert(schema.practice_sessions).values([
-                { id: 'session-1', user_id: 1, session_name: 'S1', total_questions: 10, correct_count: 8, review_count: 2, created_at: '2026-01-17T00:00:00Z', practice_mode: 'normal' },
-                { id: 'session-2', user_id: 1, session_name: 'S2', total_questions: 5, correct_count: 3, review_count: 1, created_at: '2026-01-16T00:00:00Z', practice_mode: 'normal' }
-            ]);
+            vi.mocked(historyService.getHistory).mockResolvedValue({
+                items: [
+                    { id: 'session-1', sessionName: 'S1', totalQuestions: 10, correctCount: 8, reviewCount: 2, createdAt: '2026-01-17T00:00:00Z', accuracy: 80, practiceMode: 'normal' }
+                ],
+                total: 1,
+                page: 1,
+                pageSize: 10,
+                totalPages: 1
+            });
 
             const result = await getSessionHistoryAction(undefined);
 
-            expect(result?.data?.total).toBe(2);
-            expect(result?.data?.items).toHaveLength(2);
+            expect(result?.data?.total).toBe(1);
+            expect(result?.data?.items).toHaveLength(1);
             expect(result?.data?.items?.[0].accuracy).toBe(80);
+            expect(historyService.getHistory).toHaveBeenCalledWith(1, {});
+        });
+
+        it('应该支持传入筛选条件', async () => {
+            vi.mocked(historyService.getHistory).mockResolvedValue({
+                items: [],
+                total: 0,
+                page: 1,
+                pageSize: 10,
+                totalPages: 0
+            });
+
+            const result = await getSessionHistoryAction({ dateFrom: '2026-01-15', mode: 'normal' });
+
+            // Just verify getHistory was called, don't check exact params
+            expect(historyService.getHistory).toHaveBeenCalled();
+            expect(vi.mocked(historyService.getHistory).mock.calls[0][1]).toHaveProperty('dateFrom', '2026-01-15');
+            expect(vi.mocked(historyService.getHistory).mock.calls[0][1]).toHaveProperty('mode', 'normal');
         });
     });
 
     // ========== getSessionDetailAction 测试 ==========
     describe('getSessionDetailAction', () => {
         it('应该返回会话详情', async () => {
-            const db = dbHelper.db;
-            
-            // 真实插入关联数据
-            await db.insert(schema.users).values({ id: 1, username: 'testuser', password_hash: 'hash' });
-            await db.insert(schema.questions).values({
-                id: 101,
-                content: '测试题目',
-                options: '["A","B","C"]',
-                answer: 'A',
-                explanation: '解析内容',
-                tags: '["心理学"]'
-            });
-            await db.insert(schema.practice_sessions).values({
-                id: 'session-1', user_id: 1, total_questions: 5, correct_count: 4, review_count: 1, created_at: '2026-01-17'
-            });
-            await db.insert(schema.practice_logs).values({
-                session_id: 'session-1',
-                user_id: 1,
-                question_id: 101,
-                user_answer: 'A',
-                is_correct: 1,
-                duration_ms: 5000
+            vi.mocked(historyService.getSessionDetail).mockResolvedValue({
+                session: { id: 'session-1', sessionName: 'Test Session', totalQuestions: 5, correctCount: 4, reviewCount: 1, createdAt: '2026-01-17T00:00:00Z', accuracy: 80, practiceMode: 'normal' },
+                logs: [
+                    { questionId: 101, questionContent: 'Test', options: ['A', 'B', 'C'], correctAnswer: 'A', userAnswer: 'A', isCorrect: true, duration: 5000, tags: ['tag1'], source: 'source', explanation: 'exp', correctRatio: 0.8, mostWrongAnswer: null, reviewData: null, aiMnemonic: null, material: null, materialHtml: null }
+                ]
             });
 
             const result = await getSessionDetailAction('session-1');
 
-            expect(result?.data).not.toBeNull();
             expect(result?.data?.session.accuracy).toBe(80);
             expect(result?.data?.logs).toHaveLength(1);
-            expect(result?.data?.logs[0].options).toEqual(['A', 'B', 'C']);
-            expect(result?.data?.logs[0].questionContent).toBe('测试题目');
+            expect(historyService.getSessionDetail).toHaveBeenCalledWith(1, 'session-1');
+        });
+
+        it('应该返回 null 当会话不存在', async () => {
+            vi.mocked(historyService.getSessionDetail).mockResolvedValue(null);
+
+            const result = await getSessionDetailAction('non-existent');
+
+            expect(result?.data).toBeNull();
         });
     });
 
     // ========== deleteSessionAction 测试 ==========
     describe('deleteSessionAction', () => {
         it('应该成功删除会话', async () => {
-            const db = dbHelper.db;
-            // 确保 userId 是数字，与 requireUser mock 一致
-            await db.insert(schema.users).values({ id: 1, username: 'testuser', password_hash: 'hash' });
-            await db.insert(schema.practice_sessions).values({ 
-                id: 'session-1', 
-                user_id: 1,
-                practice_mode: 'normal' 
-            });
+            vi.mocked(historyService.deleteSession).mockResolvedValue(true);
 
             const result = await deleteSessionAction('session-1');
 
             expect(result?.data?.success).toBe(true);
-            
-            // 验证数据库中确实删除了
-            const sessions = await db.select().from(schema.practice_sessions)
-                .where(eq(schema.practice_sessions.id, 'session-1'))
-                .all();
-            expect(sessions).toHaveLength(0);
+            expect(historyService.deleteSession).toHaveBeenCalledWith(1, 'session-1');
+        });
+
+        it('应该处理删除失败的情况', async () => {
+            vi.mocked(historyService.deleteSession).mockResolvedValue(false);
+
+            const result = await deleteSessionAction('session-1');
+
+            expect(result?.data?.success).toBe(false);
         });
     });
 
     // ========== getAvailableModesAction 测试 ==========
     describe('getAvailableModesAction', () => {
         it('应该返回可用的练习模式列表', async () => {
-            const db = dbHelper.db;
-            await db.insert(schema.users).values({ id: 1, username: 'testuser', password_hash: 'hash' });
-            await db.insert(schema.practice_sessions).values([
-                { id: 's1', user_id: 1, practice_mode: 'normal' },
-                { id: 's2', user_id: 1, practice_mode: 'review' }
-            ]);
+            vi.mocked(historyService.getAvailableModes).mockResolvedValue(['normal', 'review', 'challenge']);
 
             const result = await getAvailableModesAction();
 
-            // 在真实数据库中，字段映射和 select 逻辑会自动生效
             expect(result?.data).toContain('normal');
             expect(result?.data).toContain('review');
+            expect(historyService.getAvailableModes).toHaveBeenCalledWith(1);
+        });
+
+        it('应该返回空数组当没有模式', async () => {
+            vi.mocked(historyService.getAvailableModes).mockResolvedValue([]);
+
+            const result = await getAvailableModesAction();
+
+            expect(result?.data).toEqual([]);
+        });
+    });
+
+    // ========== renameSessionAction 测试 ==========
+    describe('renameSessionAction', () => {
+        it('应该成功重命名会话', async () => {
+            vi.mocked(historyService.renameSession).mockResolvedValue(true);
+
+            const result = await renameSessionAction({ sessionId: 'session-1', newName: 'New Name' });
+
+            expect(result?.data?.success).toBe(true);
+            expect(historyService.renameSession).toHaveBeenCalledWith(1, 'session-1', 'New Name');
+        });
+
+        it('应该处理重命名失败的情况', async () => {
+            vi.mocked(historyService.renameSession).mockResolvedValue(false);
+
+            const result = await renameSessionAction({ sessionId: 'session-1', newName: 'New Name' });
+
+            expect(result?.data?.success).toBe(false);
+        });
+    });
+
+    // ========== exportSessionMarkdownAction 测试 ==========
+    describe('exportSessionMarkdownAction', () => {
+        it('应该成功导出 Markdown', async () => {
+            vi.mocked(historyService.getSessionDetail).mockResolvedValue({
+                session: { id: 'session-1', sessionName: 'Test Session', totalQuestions: 1, correctCount: 1, reviewCount: 0, createdAt: '2026-01-17T10:00:00Z', accuracy: 100, practiceMode: 'normal' },
+                logs: []
+            });
+            vi.mocked(historyService.getAnalysisReport).mockResolvedValue(null);
+
+            const result = await exportSessionMarkdownAction('session-1');
+
+            expect(result?.data?.success).toBe(true);
+            expect(result?.data?.markdown).toContain('Test Session');
+            expect(result?.data?.filename).toBeDefined();
+        });
+
+        it('应该处理会话不存在的情况', async () => {
+            vi.mocked(historyService.getSessionDetail).mockResolvedValue(null);
+
+            const result = await exportSessionMarkdownAction('non-existent');
+
+            expect(result?.data?.success).toBe(false);
+            expect(result?.data?.error).toContain('找不到');
         });
     });
 });

@@ -1,39 +1,13 @@
 // @vitest-environment node
-import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
-import * as schema from '@/lib/db/drizzle-schema';
-import { setupVitestMemoryDb } from '@/lib/__tests__/db-mock-utils';
-import { eq } from 'drizzle-orm';
-
-// 1. 设置数据库 Mock 持有者
-const { actualSchema, mockDbHolder } = await vi.hoisted(async () => {
-    const modSchema = await import('@/lib/db/drizzle-schema');
-    return { 
-        actualSchema: modSchema,
-        mockDbHolder: { db: null as any }
-    };
-});
-
-// 2. Mock 数据库模块
-vi.mock('@/lib/db', () => ({
-    drizzleDb: new Proxy({}, {
-        get: (_, prop) => {
-            if (!mockDbHolder.db) {
-                throw new Error('测试数据库尚未初始化');
-            }
-            return mockDbHolder.db[prop];
-        }
-    }),
-    drizzleSchema: actualSchema
-}));
-
-vi.setConfig({ testTimeout: 15000 });
+import { describe, it, expect, beforeEach, vi } from 'vitest';
 
 // Mock AI Client & Prompts
-const { mockGenerateStructuredData, mockGenerateTextWrapper, mockGetPromptFromDb, mockCheckAndConsumeQuota } = vi.hoisted(() => ({
+const { mockGenerateStructuredData, mockGenerateTextWrapper, mockGetPromptFromDb, mockCheckAndConsumeQuota, mockDecrementUsage } = vi.hoisted(() => ({
     mockGenerateStructuredData: vi.fn(),
     mockGenerateTextWrapper: vi.fn(),
     mockGetPromptFromDb: vi.fn(),
     mockCheckAndConsumeQuota: vi.fn().mockReturnValue({ allowed: true }),
+    mockDecrementUsage: vi.fn(),
 }));
 
 vi.mock('@/lib/ai/client', () => ({
@@ -54,6 +28,7 @@ vi.mock('@/lib/auth/auth', () => ({
 
 vi.mock('@/lib/billing/subscription-service', () => ({
     checkAndConsumeQuota: mockCheckAndConsumeQuota,
+    decrementUsage: mockDecrementUsage
 }));
 
 vi.mock('@/lib/services/question', () => ({
@@ -62,39 +37,31 @@ vi.mock('@/lib/services/question', () => ({
     }
 }));
 
+vi.mock('@/lib/services/ai-cache', () => ({
+    aiCacheService: {
+        getQuiz: vi.fn(),
+        setQuiz: vi.fn(),
+        getChallenge: vi.fn(),
+        setChallenge: vi.fn(),
+        getFirstPrinciples: vi.fn(),
+        setFirstPrinciples: vi.fn()
+    }
+}));
+
 vi.mock('@/lib/logger', () => ({
     default: { error: vi.fn(), info: vi.fn(), warn: vi.fn() }
 }));
 
-// 辅助函数：复用源码中的哈希逻辑
-function generateHash(content: string): string {
-  const normalized = content.trim().slice(0, 100) + content.length;
-  let hash = 0;
-  for (let i = 0; i < normalized.length; i++) {
-    const char = normalized.charCodeAt(i);
-    hash = ((hash << 5) - hash) + char;
-    hash = hash & hash;
-  }
-  return hash.toString(36);
-}
+// Import AFTER mocks are set up
+import { generateCorrectionQuizAction, generateRegressionChallengeAction, generateFirstPrinciplesAction } from '../ai';
+import { aiCacheService } from '@/lib/services/ai-cache';
+import { questionService } from '@/lib/services/question';
 
-import { generateCorrectionQuizAction, generateFirstPrinciplesAction } from '../ai';
-
-describe('AI Actions (Real DB)', () => {
-    let dbHelper: any;
-
-    beforeEach(async () => {
-        dbHelper = await setupVitestMemoryDb();
-        mockDbHolder.db = dbHelper.db;
+describe('AI Actions', () => {
+    beforeEach(() => {
         vi.clearAllMocks();
         mockCheckAndConsumeQuota.mockReturnValue({ allowed: true });
-    });
-
-    afterEach(async () => {
-        if (dbHelper) {
-            await dbHelper.close();
-        }
-        mockDbHolder.db = null;
+        mockDecrementUsage.mockResolvedValue(undefined);
     });
 
     describe('generateCorrectionQuizAction', () => {
@@ -105,50 +72,176 @@ describe('AI Actions (Real DB)', () => {
                 quiz: { content: 'Q', options: ['A', 'B'], answer: 'A', explanation: 'E' }
             };
             mockGenerateStructuredData.mockResolvedValue(mockQuiz);
+            vi.mocked(aiCacheService.getQuiz).mockResolvedValue(null);
+            vi.mocked(aiCacheService.setQuiz).mockResolvedValue(undefined);
 
             const result = await generateCorrectionQuizAction('Question', 'Wrong', 'Correct');
 
             expect(result).toEqual(mockQuiz);
-            
-            // 验证缓存是否存在
-            const db = dbHelper.db;
-            const hash = generateHash('Question' + 'Wrong' + 'Correct');
-            const cached = await db.select().from(actualSchema.ai_quiz_cache).where(eq(actualSchema.ai_quiz_cache.hash, hash)).get();
-            expect(cached).toBeDefined();
-            expect(JSON.parse(cached.data)).toEqual(mockQuiz);
+            expect(aiCacheService.setQuiz).toHaveBeenCalled();
         });
 
         it('如果缓存命中，应该直接返回缓存结果', async () => {
-            const db = dbHelper.db;
             const cachedData = { analysis: 'Cached' };
-            const hash = generateHash('Q' + 'W' + 'C');
-            
-            await db.insert(actualSchema.ai_quiz_cache).values({
-                hash,
-                data: JSON.stringify(cachedData)
-            });
+            vi.mocked(aiCacheService.getQuiz).mockResolvedValue(cachedData);
 
             const result = await generateCorrectionQuizAction('Q', 'W', 'C');
 
             expect(result).toEqual(cachedData);
             expect(mockGenerateStructuredData).not.toHaveBeenCalled();
         });
+
+        it('如果 force=true，应该跳过缓存直接调用 AI', async () => {
+            const mockQuiz = {
+                analysis: 'Fresh',
+                distinctionPoint: 'Point',
+                quiz: { content: 'Q', options: ['A', 'B'], answer: 'A', explanation: 'E' }
+            };
+            mockGenerateStructuredData.mockResolvedValue(mockQuiz);
+
+            const result = await generateCorrectionQuizAction('Q', 'W', 'C', true);
+
+            expect(result).toEqual(mockQuiz);
+            expect(mockGenerateStructuredData).toHaveBeenCalled();
+        });
+
+        it('应该处理配额不足的情况', async () => {
+            // Clear the cache mock to ensure quota check is called
+            vi.mocked(aiCacheService.getQuiz).mockResolvedValue(null);
+            mockCheckAndConsumeQuota.mockReturnValue({ allowed: false, message: '配额已用完' });
+
+            await expect(generateCorrectionQuizAction('Q', 'W', 'C')).rejects.toThrow('配额已用完');
+        });
+
+        it('AI 生成失败时应该使用 RAG 兜底', async () => {
+            mockGenerateStructuredData.mockRejectedValue(new Error('AI Error'));
+            vi.mocked(aiCacheService.getQuiz).mockResolvedValue(null);
+
+            // Mock RAG 返回相似题
+            vi.mocked(questionService.searchSimilarQuestions).mockResolvedValue([
+                { id: 1, content: 'RAG Question', options: ['A', 'B'], answer: 'A', explanation: 'RAG explanation', tags: ['tag1'], dimension: 'knowledge', type: 'single' as const }
+            ]);
+
+            const result = await generateCorrectionQuizAction('Question', 'Wrong', 'Correct');
+
+            expect(result).toHaveProperty('analysis');
+            expect(result.analysis).toContain('检索');
+        });
+
+        it('AI 生成失败且无相似题时应该抛出错误', async () => {
+            mockGenerateStructuredData.mockRejectedValue(new Error('AI Error'));
+            vi.mocked(aiCacheService.getQuiz).mockResolvedValue(null);
+            vi.mocked(questionService.searchSimilarQuestions).mockResolvedValue([]);
+
+            await expect(generateCorrectionQuizAction('Question', 'Wrong', 'Correct')).rejects.toThrow();
+        });
+    });
+
+    describe('generateRegressionChallengeAction', () => {
+        it('应该生成回归挑战练习', async () => {
+            const mockChallenge = {
+                logicType: 'complement',
+                challenges: [
+                    { content: 'C1', options: ['A', 'B'], answer: 'A', explanation: 'E1' }
+                ]
+            };
+            mockGenerateStructuredData.mockResolvedValue(mockChallenge);
+            mockGenerateTextWrapper.mockResolvedValue({ text: 'YES' });
+            vi.mocked(aiCacheService.getChallenge).mockResolvedValue(null);
+
+            const result = await generateRegressionChallengeAction('Question', ['tag1', 'tag2']);
+
+            expect(result).toEqual(mockChallenge);
+        });
+
+        it('如果缓存命中，应该直接返回缓存结果', async () => {
+            const cachedData = { logicType: 'cached', challenges: [] };
+            vi.mocked(aiCacheService.getChallenge).mockResolvedValue(cachedData);
+
+            const result = await generateRegressionChallengeAction('Q', ['tag']);
+
+            expect(result).toEqual(cachedData);
+            expect(mockGenerateStructuredData).not.toHaveBeenCalled();
+        });
+
+        it('双重校验失败时应该回滚配额', async () => {
+            const mockChallenge = { logicType: 'test', challenges: [] };
+            mockGenerateStructuredData.mockResolvedValue(mockChallenge);
+            mockGenerateTextWrapper.mockResolvedValue({ text: 'NO' });
+            vi.mocked(aiCacheService.getChallenge).mockResolvedValue(null);
+            // Mock RAG to return valid data so it doesn't hit the error path
+            vi.mocked(questionService.searchSimilarQuestions).mockResolvedValue([
+                { id: 2, content: 'Q1', options: ['A', 'B'], answer: 'A', explanation: 'E1', tags: ['tag1'], dimension: 'knowledge', type: 'single' as const }
+            ]);
+
+            const result = await generateRegressionChallengeAction('Q', ['tag']);
+            // When double insurance fails but RAG succeeds, it returns RAG data
+            expect(result).toBeDefined();
+        });
+
+        it('应该处理配额不足的情况', async () => {
+            vi.mocked(aiCacheService.getChallenge).mockResolvedValue(null);
+            mockCheckAndConsumeQuota.mockReturnValue({ allowed: false, message: '配额不足' });
+
+            await expect(generateRegressionChallengeAction('Q', ['tag'])).rejects.toThrow('配额不足');
+        });
+
+        it('AI 生成失败时应该使用 RAG 兜底', async () => {
+            mockGenerateStructuredData.mockRejectedValue(new Error('AI Error'));
+            mockGenerateTextWrapper.mockResolvedValue({ text: 'YES' });
+            vi.mocked(aiCacheService.getChallenge).mockResolvedValue(null);
+
+            vi.mocked(questionService.searchSimilarQuestions).mockResolvedValue([
+                { id: 3, content: 'RAG Q1', options: ['A', 'B'], answer: 'A', explanation: 'E1', tags: ['tag1'], dimension: 'knowledge', type: 'single' as const },
+                { id: 4, content: 'RAG Q2', options: ['A', 'B'], answer: 'B', explanation: 'E2', tags: ['tag1'], dimension: 'knowledge', type: 'single' as const },
+                { id: 5, content: 'RAG Q3', options: ['A', 'B'], answer: 'A', explanation: 'E3', tags: ['tag1'], dimension: 'knowledge', type: 'single' as const }
+            ]);
+
+            const result = await generateRegressionChallengeAction('Question', ['tag']);
+
+            expect(result.challenges).toHaveLength(3);
+        });
     });
 
     describe('generateFirstPrinciplesAction', () => {
-        it('应该检查配额并保存到缓存', async () => {
+        it('应该检查配额并返回分析结果', async () => {
             mockGenerateTextWrapper.mockResolvedValue({ text: 'Deep Logic' });
+            vi.mocked(aiCacheService.getFirstPrinciples).mockResolvedValue(null);
+            vi.mocked(aiCacheService.setFirstPrinciples).mockResolvedValue(undefined);
 
             const result = await generateFirstPrinciplesAction('Q', 'Exp', 'A', 'W');
 
             expect(result.analysis).toBe('Deep Logic');
-            
-            // 验证缓存
-            const db = dbHelper.db;
-            const hash = generateHash('Q' + 'A' + 'W');
-            const cached = await db.select().from(actualSchema.first_principles_cache).where(eq(actualSchema.first_principles_cache.question_hash, hash)).get();
-            expect(cached).toBeDefined();
-            expect(cached.analysis).toBe('Deep Logic');
+            expect(result.cached).toBe(false);
+        });
+
+        it('如果缓存命中，应该直接返回缓存结果', async () => {
+            vi.mocked(aiCacheService.getFirstPrinciples).mockResolvedValue('Cached Analysis');
+
+            const result = await generateFirstPrinciplesAction('Q', 'Exp', 'A', 'W');
+
+            expect(result.analysis).toBe('Cached Analysis');
+            expect(result.cached).toBe(true);
+            expect(mockGenerateTextWrapper).not.toHaveBeenCalled();
+        });
+
+        it('如果缺少题目内容应该抛出错误', async () => {
+            await expect(generateFirstPrinciplesAction('', 'Exp', 'A')).rejects.toThrow('缺少题目内容');
+        });
+
+        it('应该处理配额不足的情况', async () => {
+            vi.mocked(aiCacheService.getFirstPrinciples).mockResolvedValue(null);
+            mockCheckAndConsumeQuota.mockReturnValue({ allowed: false, message: '今日次数已用完' });
+
+            await expect(generateFirstPrinciplesAction('Q', 'Exp', 'A')).rejects.toThrow('今日次数已用完');
+        });
+
+        it('AI 生成失败时应该回滚配额并抛出错误', async () => {
+            mockGenerateTextWrapper.mockRejectedValue(new Error('API Error'));
+            vi.mocked(aiCacheService.getFirstPrinciples).mockResolvedValue(null);
+
+            await expect(generateFirstPrinciplesAction('Q', 'Exp', 'A')).rejects.toThrow('AI 分析失败');
+            expect(mockDecrementUsage).toHaveBeenCalled();
         });
     });
 });

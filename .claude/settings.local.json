@@ -12,7 +12,8 @@
       "Bash(git tag *)",
       "Bash(npm view *)",
       "Bash(npm ls *)",
-      "Bash(npm run *)"
+      "Bash(npm run *)",
+      "Bash(grep -A 50 \"src\\\\\\\\lib\\\\\\\\db\")"
     ]
   }
 }

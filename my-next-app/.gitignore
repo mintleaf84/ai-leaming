@@ -33,6 +33,7 @@
 # Testing
 # ===============================
 /coverage
+/test-temp/
 
 # Playwright
 /playwright-report/

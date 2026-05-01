@@ -37,7 +37,6 @@ export default function WrongBookPage() {
         isLoading,
         viewMode,
         setViewMode,
-        expandedTags,
         selectedIds,
         isCreating,
         isRandomLoading,
@@ -46,7 +45,6 @@ export default function WrongBookPage() {
         questionDetail,
         isLoadingDetail,
         // 方法
-        toggleTag,
         toggleSelect,
         selectAll,
         startPractice,

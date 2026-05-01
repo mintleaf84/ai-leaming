@@ -6,27 +6,27 @@ import * as actualSchema from '../drizzle-schema';
  * 强类型的 MockedDrizzle 定义
  */
 export type MockedDrizzle = {
-    [K in keyof LibSQLDatabase<any>]: any;
+    [K in keyof LibSQLDatabase<Record<string, unknown>>]: (...args: unknown[]) => MockedDrizzle;
 } & {
-    select: any;
-    from: any;
-    where: any;
-    limit: any;
-    offset: any;
-    orderBy: any;
-    then: any;
-    all: any;
-    get: any;
-    run: any;
-    insert: any;
-    values: any;
-    update: any;
-    set: any;
-    delete: any;
+    select: (...args: unknown[]) => MockedDrizzle;
+    from: (...args: unknown[]) => MockedDrizzle;
+    where: (...args: unknown[]) => MockedDrizzle;
+    limit: (...args: unknown[]) => MockedDrizzle;
+    offset: (...args: unknown[]) => MockedDrizzle;
+    orderBy: (...args: unknown[]) => MockedDrizzle;
+    then: (resolve: (value: unknown[]) => unknown) => unknown;
+    all: <T = unknown>() => Promise<T[]>;
+    get: <T = unknown>() => Promise<T | null>;
+    run: () => Promise<unknown>;
+    insert: (...args: unknown[]) => MockedDrizzle;
+    values: (...args: unknown[]) => MockedDrizzle;
+    update: (...args: unknown[]) => MockedDrizzle;
+    set: (...args: unknown[]) => MockedDrizzle;
+    delete: (...args: unknown[]) => MockedDrizzle;
     query: {
         [table in keyof typeof actualSchema]: {
-            findFirst: any;
-            findMany: any;
+            findFirst: (...args: unknown[]) => Promise<unknown>;
+            findMany: (...args: unknown[]) => Promise<unknown[]>;
         }
     }
 };
@@ -35,7 +35,9 @@ export type MockedDrizzle = {
  * 创建一个清爽的、无状态污染的 Mock 实例
  */
 function createDrizzleMock(): MockedDrizzle {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any -- Proxy handler internals require flexible typing
     const mock: any = new Proxy(() => {}, {
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any -- Proxy handler target has dynamic properties
         get: (target: any, prop: string) => {
             // 处理 Promise 的 then 方法
             if (prop === 'then') {
@@ -91,14 +93,15 @@ export const drizzleSchema = actualSchema;
 /**
  * 优雅的重置助手
  */
-export const resetDrizzleMock = (defaultReturn: any = []) => {
+export const resetDrizzleMock = (defaultReturn: unknown = []) => {
     vi.clearAllMocks();
-    
+
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any -- Proxy mock internals require dynamic property access
     const target = drizzleDb as any;
-    
+
     // 重置 then
     if (target._then) {
-        target._then.mockImplementation((resolve: any) => resolve(defaultReturn));
+        target._then.mockImplementation((resolve: (value: unknown) => unknown) => resolve(defaultReturn));
     }
 
     // 重置所有已缓存的方法

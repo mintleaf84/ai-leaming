@@ -78,7 +78,7 @@ export function ImportFenbiModal({ isOpen, onClose, onSuccess }: ImportFenbiModa
         if (result.serverError) {
             setError(result.serverError || '验证失败');
         } else if (result.data?.valid && result.data.preview) {
-            setPreview(result.data.preview as any);
+            setPreview(result.data.preview as NonNullable<typeof preview>);
         } else {
             setError(result.data?.error || '验证失败');
         }

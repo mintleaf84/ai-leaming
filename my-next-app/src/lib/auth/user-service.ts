@@ -18,12 +18,12 @@ export async function createUser(username: string, passwordPlain: string, role: 
     const result = await drizzleDb.insert(drizzleSchema.users).values({
         username,
         password_hash: passwordHash,
-        role: role as any,
+        role: role as 'admin' | 'student' | 'teacher',
         token_version: 0
     });
 
     // 处理 LibSQL 的 lastInsertRowid (兼容性处理)
-    const lastId = (result as any).lastInsertRowid || (result as any).rowsAffected;
+    const lastId = (result as unknown as { lastInsertRowid: number }).lastInsertRowid || (result as unknown as { rowsAffected: number }).rowsAffected;
 
     return {
         id: Number(lastId),

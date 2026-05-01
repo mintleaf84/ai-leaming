@@ -244,8 +244,8 @@ ${explanation ? `参考解析：${explanation}` : ''}
                 retries: 1,
             });
             text = result.text;
-        } catch (aiError: any) {
-            return c.json({ error: `AI 分析失败: ${aiError.message}` }, 500);
+        } catch (aiError: unknown) {
+            return c.json({ error: `AI 分析失败: ${aiError instanceof Error ? aiError.message : 'Unknown error'}` }, 500);
         }
 
         // 保存到缓存

@@ -30,8 +30,10 @@ export const promptService = {
             .from(drizzleSchema.prompt_templates)
             .orderBy(asc(drizzleSchema.prompt_templates.key));
 
-        const dbRows = rows.map(row => ({
+        const dbRows: PromptTemplate[] = rows.map(row => ({
             ...row,
+            description: row.description ?? '',
+            updated_at: row.updated_at ?? undefined,
             variables: JSON.parse(row.variables || '[]') as string[]
         }));
 
@@ -63,7 +65,7 @@ export const promptService = {
             }
         ];
 
-        const combined: any[] = [...dbRows];
+        const combined: PromptTemplate[] = [...dbRows];
 
         for (const def of defaults) {
             if (!existingKeys.has(def.key)) {

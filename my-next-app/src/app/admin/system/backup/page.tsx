@@ -31,8 +31,8 @@ export default function BackupSettingsPage() {
                 const data = await res.json();
                 if (data.error) throw new Error(data.error);
                 setConfig(prev => ({ ...prev, ...data, pass: '' })); // 密码始终不回显
-            } catch (error: any) {
-                toast.error(`加载配置失败: ${error.message}`);
+            } catch (error: unknown) {
+                toast.error(`加载配置失败: ${error instanceof Error ? error.message : String(error)}`);
             } finally {
                 setLoading(false);
             }
@@ -51,8 +51,8 @@ export default function BackupSettingsPage() {
             const data = await res.json();
             if (data.error) throw new Error(data.error);
             toast.success('配置已保存');
-        } catch (error: any) {
-            toast.error(`保存失败: ${error.message}`);
+        } catch (error: unknown) {
+            toast.error(`保存失败: ${error instanceof Error ? error.message : String(error)}`);
         } finally {
             setLoading(false);
         }
@@ -72,8 +72,8 @@ export default function BackupSettingsPage() {
             } else {
                 toast.error(`连接测试失败: ${data.error || '无法连接到服务器'}`);
             }
-        } catch (error: any) {
-            toast.error(`测试过程中出错: ${error.message}`);
+        } catch (error: unknown) {
+            toast.error(`测试过程中出错: ${error instanceof Error ? error.message : String(error)}`);
         } finally {
             setTesting(false);
         }
@@ -88,8 +88,8 @@ export default function BackupSettingsPage() {
             const data = await res.json();
             if (data.error) throw new Error(data.error);
             toast.success(`备份成功: ${data.fileName}`);
-        } catch (error: any) {
-            toast.error(`手动备份失败: ${error.message}`);
+        } catch (error: unknown) {
+            toast.error(`手动备份失败: ${error instanceof Error ? error.message : String(error)}`);
         } finally {
             setBackingUp(false);
         }

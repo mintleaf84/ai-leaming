@@ -3,7 +3,7 @@
 import logger from '@/lib/logger';
 import { requireUser } from '@/lib/auth/auth';
 import { revalidatePath } from 'next/cache';
-import { knowledgeService, type NoteTag } from '@/lib/services/knowledge';
+import { knowledgeService } from '@/lib/services/knowledge';
 import { isSqliteConstraintError } from '@/lib/utils/error';
 
 /**

@@ -5,8 +5,8 @@ import {
     Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription 
 } from "@/components/ui/dialog";
 import { Badge } from "@/components/ui/badge";
-import { 
-    History, Clock, CheckCircle2, XCircle, Calendar, ArrowRight, Loader2
+import {
+    History, CheckCircle2, XCircle, Calendar, Loader2
 } from 'lucide-react';
 import { getQuestionSrsHistoryAction, getQuestionSrsPredictionsAction } from '@/server/actions/srs';
 import type { SrsHistoryEntry, SrsPrediction } from '@/lib/services/srs';
@@ -14,9 +14,6 @@ import dayjs from 'dayjs';
 
 // If the project uses a standard UI library, I should check the Dialog component
 // Based on package.json, it has @radix-ui/react-dialog
-
-import * as DialogPrimitive from "@radix-ui/react-dialog";
-import { X } from "lucide-react";
 
 interface SrsHistoryModalProps {
     questionId: number;

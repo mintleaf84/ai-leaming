@@ -19,7 +19,7 @@ export const aiCacheService = {
     /**
      * 保存纠偏找茬缓存
      */
-    async setQuiz(hash: string, data: any) {
+    async setQuiz(hash: string, data: unknown) {
         await drizzleDb.insert(drizzleSchema.ai_quiz_cache)
             .values({ hash, data: JSON.stringify(data) })
             .onConflictDoUpdate({ target: drizzleSchema.ai_quiz_cache.hash, set: { data: JSON.stringify(data) } });
@@ -39,7 +39,7 @@ export const aiCacheService = {
     /**
      * 保存回归挑战缓存
      */
-    async setChallenge(hash: string, data: any) {
+    async setChallenge(hash: string, data: unknown) {
         await drizzleDb.insert(drizzleSchema.ai_challenge_cache)
             .values({ hash, data: JSON.stringify(data) })
             .onConflictDoUpdate({ target: drizzleSchema.ai_challenge_cache.hash, set: { data: JSON.stringify(data) } });

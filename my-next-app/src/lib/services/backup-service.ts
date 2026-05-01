@@ -57,7 +57,7 @@ export class BackupService {
         if (encryptedPass) {
             try {
                 pass = decrypt(encryptedPass, SECRET);
-            } catch (e) {
+            } catch (_e) {
                 console.error('[Backup] Failed to decrypt password');
             }
         }
@@ -173,7 +173,7 @@ export class BackupService {
     private static async rotateBackups(client: WebDAVClient, config: BackupConfig) {
         try {
             console.log(`[Backup] Checking for old backups (retention: ${config.retentionDays} days)`);
-            const items = await client.getDirectoryContents(config.remotePath) as any[];
+            const items = await client.getDirectoryContents(config.remotePath) as Array<{ type: string; lastmod: string; filename: string }>;
             const now = dayjs();
 
             for (const item of items) {

@@ -84,16 +84,16 @@ export const updateQuestionAction = adminAction
             throw new Error(`正确答案必须是选项之一或有效的选项标号: ${invalid}`);
           }
         }
-      } catch (e: any) {
-        if (e.message.includes('正确答案')) throw e;
+      } catch (e: unknown) {
+        if (e instanceof Error && e.message.includes('正确答案')) throw e;
         // 忽略 JSON 解析错误，可能是单选格式
       }
     }
 
-    await adminService.updateQuestion(id, data as any);
+    await adminService.updateQuestion(id, data);
 
     // 记录操作日志
-    await logAdminAction(user.id, user.username, 'UPDATE_QUESTION', 'question', id.toString(), data as any);
+    await logAdminAction(user.id, user.username, 'UPDATE_QUESTION', 'question', id.toString(), data as Record<string, unknown>);
 
     return { success: true };
   });
@@ -167,7 +167,7 @@ export const updateUserRoleAction = adminAction
   .action(async ({ parsedInput: input, ctx }) => {
     const { id, role } = input;
     const { user } = ctx;
-    await adminService.updateUserRole(id, role as any);
+    await adminService.updateUserRole(id, role);
 
     // 记录操作日志
     await logAdminAction(user.id, user.username, 'CHANGE_ROLE', 'user', id.toString(), { role });

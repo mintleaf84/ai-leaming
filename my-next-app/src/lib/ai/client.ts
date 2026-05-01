@@ -187,7 +187,7 @@ export async function streamChatWrapper(
     onFinish?: (text: string) => void,
     tools?: ToolSet,
     system?: string
-) {
+): Promise<Awaited<ReturnType<typeof streamText>>> {
     const config = await getAiConfig('premium');
     const model = getModel(config.apiKey, config.baseURL, config.modelName);
 
@@ -197,7 +197,7 @@ export async function streamChatWrapper(
             textStream: (async function* () { yield "E2E 模拟回复。"; })(),
             fullStream: (async function* () { yield { type: 'text-delta', textDelta: "E2E 模拟回复。" }; })(),
             onFinish: Promise.resolve()
-        } as any;
+        } as unknown as ReturnType<typeof streamChatWrapper>;
     }
 
     const inputLength = messages.reduce((acc, m) => acc + (m.content?.length || 0), 0);

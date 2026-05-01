@@ -21,7 +21,6 @@ export default function ChatPage() {
     const {
         sessions,
         currentSessionId,
-        loadSessions,
         handleNewSession: resetSessionId,
         handleSessionSelect: selectSession,
         handleDeleteSession,

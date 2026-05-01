@@ -15,18 +15,19 @@ export function getModel(apiKey: string, baseURL: string, modelName: string): La
         apiKey,
         baseURL,
         compatibility: 'compatible', // 强制开启兼容模式，解决非官方接口的路径识别问题
-    } as any);
+    } as Parameters<typeof createOpenAI>[0]);
 
     try {
         // 显式指定使用 Chat 协议 (解决 /v1/responses 404 问题的关键)
         // 在新版 SDK 中，针对自定义 BaseURL，使用 .chat() 能确保走 /chat/completions 路径
-        if (typeof (openai as any).chat === 'function') {
-            return (openai as any).chat(modelName);
+        const openaiWithChat = openai as unknown as { chat: (model: string) => LanguageModel };
+        if (typeof openaiWithChat.chat === 'function') {
+            return openaiWithChat.chat(modelName);
         }
 
         // 兜底：如果 chat 属性不存在，尝试作为函数直接调用
         if (typeof openai === 'function') {
-            return (openai as any)(modelName);
+            return (openai as unknown as (model: string) => LanguageModel)(modelName);
         }
     } catch (err) {
         console.warn('[AiProvider] 初始化模型失败，尝试路径不匹配:', err);

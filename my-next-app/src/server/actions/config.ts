@@ -1,7 +1,7 @@
 'use server';
 
 import { adminAction } from '@/lib/safe-action';
-import { aiConfigService, type AiConfig, type AiModelRoute } from '@/lib/services/ai-config';
+import { aiConfigService } from '@/lib/services/ai-config';
 import { logAdminAction } from '@/lib/admin/audit';
 import { clearAiConfigCache, getAiConfig, getModel } from '@/lib/ai/client';
 import { generateText } from 'ai';

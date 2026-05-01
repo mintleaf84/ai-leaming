@@ -5,7 +5,7 @@ import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { useTerminology } from '@/lib/hooks/use-terminology';
 import { cn } from '@/lib/utils';
-import { Home, BookOpen, Book, User, Bot, FileText } from 'lucide-react';
+import { Home, BookOpen, Book, Bot, FileText } from 'lucide-react';
 
 interface UserProps {
     user?: {

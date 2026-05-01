@@ -18,7 +18,7 @@ export async function setupVectorExtension(): Promise<boolean> {
     }
 
     try {
-        const vecTableResult = await drizzleDb.all<any>(sql`
+        const vecTableResult = await drizzleDb.all<Record<string, unknown>>(sql`
             SELECT count(*) as count FROM sqlite_master WHERE type='table' AND name='questions_vec'
         `);
         const vecTableExists = vecTableResult[0]?.count as number;
@@ -33,7 +33,7 @@ export async function setupVectorExtension(): Promise<boolean> {
         `);
         }
 
-        const ragVecTableResult = await drizzleDb.all<any>(sql`
+        const ragVecTableResult = await drizzleDb.all<Record<string, unknown>>(sql`
             SELECT count(*) as count FROM sqlite_master WHERE type='table' AND name='rag_chunks_vec'
         `);
         const ragVecTableExists = ragVecTableResult[0]?.count as number;

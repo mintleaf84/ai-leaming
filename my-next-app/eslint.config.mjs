@@ -18,6 +18,9 @@ const eslintConfig = defineConfig([
     "scripts/**",
     "eslint_cleanup.js",
     "eslint_cleanup.py",
+    "scratch/**",
+    "scratch-db.test.ts",
+    "coverage/**",
   ]),
   {
     plugins: {

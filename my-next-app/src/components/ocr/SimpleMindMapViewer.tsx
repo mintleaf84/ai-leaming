@@ -15,6 +15,13 @@ MindMap.usePlugin(Drag)
     .usePlugin(RichText)
     .usePlugin(MiniMap);
 
+interface SimpleMindMapInstance {
+    on(event: string, callback: () => void): void;
+    getData(): Record<string, unknown>;
+    setData(data: unknown): void;
+    destroy(): void;
+}
+
 interface SimpleMindMapViewerProps {
     markdown: string;
     onChange?: (newMarkdown: string) => void;
@@ -25,7 +32,7 @@ interface SimpleMindMapViewerProps {
 export function SimpleMindMapViewer({ markdown, onChange, className = '', readOnly = false }: SimpleMindMapViewerProps) {
     const containerRef = useRef<HTMLDivElement>(null);
     const minimapRef = useRef<HTMLDivElement>(null);
-    const mindMapRef = useRef<any>(null);
+    const mindMapRef = useRef<SimpleMindMapInstance | null>(null);
     
     // 我们用一个 ref 记录内部状态是否刚发生变更，避免死循环
     const isInternalUpdate = useRef(false);
@@ -34,7 +41,8 @@ export function SimpleMindMapViewer({ markdown, onChange, className = '', readOn
         if (!containerRef.current) return;
 
         // 初始化
-        const mindMap = new (MindMap as any)({
+        // eslint-disable-next-line @typescript-eslint/no-unsafe-call
+        const mindMap = new (MindMap as unknown as new (opts: Record<string, unknown>) => SimpleMindMapInstance)({
             el: containerRef.current,
             fit: true,
             theme: 'classic2', // 内置高颜值主题

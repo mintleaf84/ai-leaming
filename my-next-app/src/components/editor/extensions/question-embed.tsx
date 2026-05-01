@@ -12,8 +12,8 @@ import Link from 'next/link';
 /**
  * 题目引用卡片渲染组件
  */
-function QuestionEmbedView({ node }: { node: any }) {
-    const questionId = node.attrs.questionId;
+function QuestionEmbedView({ node }: { node: { attrs: Record<string, unknown> } }) {
+    const questionId = Number(node.attrs.questionId) || null;
     const [summary, setSummary] = useState<QuestionSummary | null>(null);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);

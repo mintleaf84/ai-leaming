@@ -357,14 +357,14 @@ export async function getSubscriptionStats(): Promise<{
     .from(user_subscriptions)
     .leftJoin(subscription_plans, eq(user_subscriptions.plan_id, subscription_plans.id))
     .groupBy(user_subscriptions.plan_id)
-    .orderBy(sql`count(*) DESC`) as any[];
+    .orderBy(sql`count(*) DESC`) as { plan_id: string; plan_name: string; count: number }[];
 
     return { totalUsers, byPlan };
 }
 
 // ==================== 辅助函数 ====================
 
-function parsePlanRow(row: any): SubscriptionPlan {
+function parsePlanRow(row: Record<string, unknown>): SubscriptionPlan {
     return {
         id: row.id as string,
         name: row.name as string,

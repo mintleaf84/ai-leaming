@@ -3,7 +3,7 @@
 import { authenticatedAction } from '@/lib/safe-action';
 import { z } from 'zod';
 import { generateTextWrapper } from '@/lib/ai/client';
-import { reportService, type SessionReportData } from '@/lib/services/report';
+import { reportService } from '@/lib/services/report';
 
 /**
  * 获取指定会话的报告数据
@@ -48,7 +48,7 @@ export const generateDiagnosticReportAction = authenticatedAction
         try {
             const { text } = await generateTextWrapper(prompt, 'economy');
             return text;
-        } catch (error: unknown) {
+        } catch (_error: unknown) {
             throw new Error("AI 诊断服务暂时不可用，请稍后再试。");
         }
     });

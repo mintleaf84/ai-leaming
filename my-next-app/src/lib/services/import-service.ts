@@ -1,6 +1,6 @@
 import { drizzleDb, drizzleSchema } from '../db';
-import { eq, sql, and } from 'drizzle-orm';
-import { FenbiImportResult, ParsedQuestion, ParsedRecord } from '../import/fenbi-parser';
+import { sql } from 'drizzle-orm';
+import { FenbiImportResult } from '../import/fenbi-parser';
 import { sanitizeHtml } from '../utils/security';
 
 const { 
@@ -24,7 +24,6 @@ export const importService = {
     importFenbiData: async (userId: number, data: FenbiImportResult) => {
         const sessionId = `fenbi_${Date.now()}_${Math.random().toString(36).substring(2, 8)}`;
         let newQuestionsCount = 0;
-        let skippedQuestionsCount = 0;
 
         // 注意：为避免 LibSQL 的连接池产生 SQLITE_BUSY 死锁，且由于 SQLite 不建议在长事务中穿插大量 JS 异步逻辑，此处移除事务包装。
         // 所有插入都使用了 UPSERT，具有幂等性，中途失败亦可安全重试。

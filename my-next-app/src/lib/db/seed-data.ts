@@ -26,7 +26,7 @@ async function ensureAdminUser() {
 
 async function migrateAIConfig() {
     try {
-        const result = await drizzleDb.all<any>(sql`SELECT COUNT(*) as count FROM ai_configs`);
+        const result = await drizzleDb.all<Record<string, unknown>>(sql`SELECT COUNT(*) as count FROM ai_configs`);
         const configCount = result[0]?.count as number;
         
         if (configCount === 0) {
@@ -45,11 +45,11 @@ async function migrateAIConfig() {
 
 async function initializeRoutes() {
     try {
-        const result = await drizzleDb.all<any>(sql`SELECT COUNT(*) as count FROM ai_model_routes`);
+        const result = await drizzleDb.all<Record<string, unknown>>(sql`SELECT COUNT(*) as count FROM ai_model_routes`);
         const routeCount = result[0]?.count as number;
-        
+
         if (routeCount === 0) {
-            const activeConfig = await drizzleDb.all<any>(sql`SELECT * FROM ai_configs WHERE is_active = 1 LIMIT 1`);
+            const activeConfig = await drizzleDb.all<Record<string, unknown>>(sql`SELECT * FROM ai_configs WHERE is_active = 1 LIMIT 1`);
             const config = activeConfig[0];
             if (config) {
                 console.log('[DB Seed] Initializing ai_model_routes...');
@@ -72,7 +72,7 @@ async function initializeRoutes() {
 
 async function initializeSubscriptionPlans() {
     try {
-        const result = await drizzleDb.all<any>(sql`SELECT COUNT(*) as count FROM subscription_plans`);
+        const result = await drizzleDb.all<Record<string, unknown>>(sql`SELECT COUNT(*) as count FROM subscription_plans`);
         const planCount = result[0]?.count as number;
         
         if (planCount === 0) {

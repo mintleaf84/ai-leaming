@@ -130,16 +130,16 @@ export const adminService = {
     /**
      * 批量导入题目
      */
-    async importQuestions(questions: any[]) {
+    async importQuestions(questions: Record<string, unknown>[]) {
         return await drizzleDb.transaction(async (tx) => {
             const values = questions.map(q => ({
-                content: q.content,
+                content: q.content as string,
                 options: JSON.stringify(q.options),
-                answer: q.answer,
-                explanation: q.explanation,
+                answer: q.answer as string,
+                explanation: q.explanation as string,
                 tags: JSON.stringify(q.tags),
-                dimension: q.dimension,
-                type: q.type || 'single',
+                dimension: q.dimension as 'knowledge' | 'understanding' | 'application',
+                type: (q.type || 'single') as 'single' | 'multi' | 'truefalse',
                 created_at: sql`CURRENT_TIMESTAMP`
             }));
 
@@ -166,14 +166,14 @@ export const adminService = {
         const result = await drizzleDb.delete(drizzleSchema.questions)
             .where(inArray(drizzleSchema.questions.id, ids));
         // Drizzle-orm-better-sqlite3 的 delete 返回的是 RunResult 对象 (由 better-sqlite3 返回)
-        return (result as any).rowsAffected || ids.length;
+        return (result as unknown as { rowsAffected: number }).rowsAffected || ids.length;
     },
 
     /**
      * 更新题目
      */
-    async updateQuestion(id: number, data: any) {
-        const updateData: any = { ...data };
+    async updateQuestion(id: number, data: Record<string, unknown>) {
+        const updateData: Record<string, unknown> = { ...data };
         if (data.options) updateData.options = JSON.stringify(data.options);
         if (data.tags) updateData.tags = JSON.stringify(data.tags);
 
@@ -219,7 +219,7 @@ export const adminService = {
         if (userId === 1) throw new Error('Cannot change super admin role');
 
         await drizzleDb.update(drizzleSchema.users)
-            .set({ role: role as any })
+            .set({ role: role as 'admin' | 'student' | 'teacher' })
             .where(eq(drizzleSchema.users.id, userId));
         return true;
     },

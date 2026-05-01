@@ -14,7 +14,7 @@ import {
     getDailyUsage,
     checkUsageQuota
 } from '@/lib/billing/subscription-service';
-import { UsageType } from '@/types';
+import type { UsageType } from '@/types';
 import { z } from 'zod';
 import { 
     SubscriptionPlanSchema, 

@@ -8,6 +8,7 @@ import fs from 'fs'
 import path from 'path'
 import { logAdminAction } from '@/lib/admin/audit'
 import { getApiCallStats } from '@/lib/admin/api-stats-service'
+import type { Dimension } from '@/types'
 
 export const adminRoute = new OpenAPIHono()
 
@@ -222,11 +223,11 @@ adminRoute.openapi(restoreDef, async (c) => {
                 backupCreated: path.basename(backupPath)
             });
             return c.json({ success: true, backupCreated: path.basename(backupPath) });
-        } catch (e: any) {
+        } catch (e: unknown) {
             try { if (fs.existsSync(backupPath) && !fs.existsSync(dbPath)) fs.copyFileSync(backupPath, dbPath); } catch { }
             try { reinitDb(); } catch { }
             if (fs.existsSync(tempPath)) fs.unlinkSync(tempPath);
-            return c.json({ error: 'Restore failed: ' + (e.message || 'Unknown error') }, 500);
+            return c.json({ error: 'Restore failed: ' + ((e instanceof Error ? e.message : null) || 'Unknown error') }, 500);
         }
     } catch (error: unknown) {
         try { reinitDb(); } catch { }
@@ -310,10 +311,10 @@ adminRoute.openapi(exportQuestionsDef, async (c) => {
 
     if (search) conditions.push(like(drizzleSchema.questions.content, `%${search}%`));
     if (tag) conditions.push(sql`EXISTS (SELECT 1 FROM json_each(${drizzleSchema.questions.tags}) WHERE value = ${tag})`);
-    if (dimension) conditions.push(eq(drizzleSchema.questions.dimension, dimension as any));
+    if (dimension) conditions.push(eq(drizzleSchema.questions.dimension, dimension as Dimension));
 
     if (conditions.length > 0) {
-        query = query.where(and(...conditions)) as any;
+        query = query.where(and(...conditions)) as unknown as typeof query;
     }
 
     const questions = await query.orderBy(desc(drizzleSchema.questions.id)).all();

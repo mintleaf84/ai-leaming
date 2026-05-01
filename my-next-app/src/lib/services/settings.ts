@@ -1,5 +1,5 @@
 import { drizzleDb, drizzleSchema } from '@/lib/db';
-import { eq, and, sql } from 'drizzle-orm';
+import { eq, sql } from 'drizzle-orm';
 
 export interface SystemSettings {
     reviewThreshold: number;
@@ -64,8 +64,6 @@ export const settingsService = {
      */
     async resetUserData(userId: number) {
         return await drizzleDb.transaction(async (tx) => {
-            const where = eq(drizzleSchema.practice_logs.user_id, userId);
-            
             await tx.delete(drizzleSchema.practice_logs).where(eq(drizzleSchema.practice_logs.user_id, userId));
             await tx.delete(drizzleSchema.practice_sessions).where(eq(drizzleSchema.practice_sessions.user_id, userId));
             await tx.delete(drizzleSchema.user_mastery).where(eq(drizzleSchema.user_mastery.user_id, userId));

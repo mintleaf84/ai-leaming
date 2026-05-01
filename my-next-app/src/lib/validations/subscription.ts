@@ -11,7 +11,7 @@ export const SubscriptionPlanSchema = z.object({
   features: z.array(z.string()).optional(),
   is_active: z.coerce.number().default(1),
   sort_order: z.number().optional(),
-  limits: z.record(z.any()), // ai_chat, practice, etc.
+  limits: z.record(z.unknown()), // ai_chat, practice, etc.
 });
 
 /**

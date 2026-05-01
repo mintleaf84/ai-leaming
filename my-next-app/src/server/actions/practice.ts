@@ -3,7 +3,7 @@
 import { authenticatedAction } from '@/lib/safe-action';
 import { z } from 'zod';
 import { practiceService } from '@/lib/services/practice';
-import { KnowledgeTreeService, type KnowledgeNode } from '@/lib/services/knowledge-tree';
+import { KnowledgeTreeService } from '@/lib/services/knowledge-tree';
 import { PracticeSessionConfigSchema, SubmitAnswerSchema } from '@/lib/validations/practice';
 
 /**

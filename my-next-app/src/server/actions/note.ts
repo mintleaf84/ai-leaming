@@ -4,10 +4,8 @@ import { authenticatedAction } from '@/lib/safe-action';
 import { z } from 'zod';
 import { revalidatePath } from 'next/cache';
 import { WELCOME_NOTE_CONTENT } from '@/lib/content/welcome';
-import { 
-    knowledgeService, 
-    type Note, 
-    type NotePreview, 
+import {
+    knowledgeService,
 } from '@/lib/services/knowledge';
 
 /**

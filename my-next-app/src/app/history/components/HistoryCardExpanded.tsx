@@ -8,7 +8,7 @@ import { useQuery } from '@tanstack/react-query';
 import { getSessionDetailAction } from '@/server/actions/history';
 import { type SessionDetail } from '@/lib/services/history';
 import { generateDeepAnalysisAction, getAnalysisReportAction } from '@/server/actions/report';
-import { QuestionCard, QuestionLogData, AnswerSheet } from '@/components/history';
+import { QuestionCard, AnswerSheet } from '@/components/history';
 import { toast } from 'sonner';
 import { ExpandedHeader } from './ExpandedHeader';
 import { QuestionsListHeader } from './QuestionsListHeader';

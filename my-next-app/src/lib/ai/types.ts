@@ -2,8 +2,6 @@
  * AI 客户端通用类型定义
  */
 
-import { z } from 'zod';
-
 /** AI 模型路由记录（来自 ai_model_routes + ai_configs JOIN 查询） */
 export interface AiModelRouteRow {
     model_name: string | null;

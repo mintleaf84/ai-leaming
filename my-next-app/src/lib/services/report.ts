@@ -68,7 +68,7 @@ export const reportService = {
         if (!stats || stats.total === 0) return null;
 
         // 2. 错题知识点 (使用 json_each)
-        const errorTagsRows = await drizzleDb.all<any>(sql`
+        const errorTagsRows = await drizzleDb.all<Record<string, unknown>>(sql`
             SELECT DISTINCT je.value as tag
             FROM ${practice_logs} pl
             JOIN ${questions} q ON q.id = pl.question_id
@@ -96,7 +96,7 @@ export const reportService = {
         return {
             totalQuestions: stats.total,
             correctCount: stats.correct || 0,
-            errorTags: errorTagsRows.map(r => r.tag),
+            errorTags: errorTagsRows.map(r => r.tag as string),
             avgDuration: Math.round(Number(stats.avgDuration) || 0),
             dimensionStats: [
                 { axis: '识记', value: dimensionMap.get('knowledge') ?? 0 },
@@ -124,7 +124,7 @@ export const reportService = {
         if (!stats || stats.total === 0) return null;
 
         // 2. 知识点统计
-        const tagStatsRows = await drizzleDb.all<any>(sql`
+        const tagStatsRows = await drizzleDb.all<Record<string, unknown>>(sql`
             SELECT 
                 je.value as tag,
                 COUNT(*) as total,
@@ -138,10 +138,10 @@ export const reportService = {
         `);
 
         const tagStats = tagStatsRows.map(t => ({
-            tag: t.tag,
-            total: t.total,
-            correct: t.correct,
-            accuracy: Math.round((t.correct / t.total) * 100)
+            tag: t.tag as string,
+            total: t.total as number,
+            correct: t.correct as number,
+            accuracy: Math.round(((t.correct as number) / (t.total as number)) * 100)
         }));
 
         // 3. 重复错误模式

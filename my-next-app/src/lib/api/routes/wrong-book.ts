@@ -1,7 +1,7 @@
 import { OpenAPIHono, createRoute, z } from '@hono/zod-openapi'
 import { drizzleDb, drizzleSchema } from '@/lib/db'
 import { authMiddleware, getCurrentUser } from '@/lib/api/middlewares/auth'
-import { eq, and, sql, desc, count, notInArray, inArray } from 'drizzle-orm'
+import { eq, and, sql, desc, count, notInArray } from 'drizzle-orm'
 
 const app = new OpenAPIHono()
 

@@ -58,13 +58,16 @@ export function AnnotatableText({ text, questionId, className }: AnnotatableText
                 color?: string;
             }
             // eslint-disable-next-line react-hooks/set-state-in-effect
-            setAnnotations(annotationData.annotations.map((a: any) => ({
-                id: (a as AnnotationRow).id,
-                start: (a as AnnotationRow).start_offset,
-                end: (a as AnnotationRow).end_offset,
-                tag: (a as AnnotationRow).tag,
-                color: (a as AnnotationRow).color,
-            })));
+            setAnnotations(annotationData.annotations.map((a: unknown) => {
+                const row = a as AnnotationRow;
+                return {
+                    id: row.id,
+                    start: row.start_offset,
+                    end: row.end_offset,
+                    tag: row.tag,
+                    color: row.color,
+                };
+            }));
         }
     }, [annotationData]);
 

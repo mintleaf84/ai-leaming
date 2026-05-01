@@ -36,7 +36,6 @@ export default function KnowledgePage() {
         setIsCreateModal,
         exporting,
         toast,
-        handleDelete,
         handleSave,
         handleExport,
         loadCards

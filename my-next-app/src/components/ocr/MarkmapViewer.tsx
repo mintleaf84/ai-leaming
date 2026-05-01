@@ -35,7 +35,7 @@ export function MarkmapViewer({ markdown, className = '', fileName = '' }: Markm
         if (!svgRef.current) return;
 
         // 1. 解析 Markdown 获取 node 结构
-        const { root } = transformer.transform(markdown) as any;
+        const { root } = transformer.transform(markdown);
 
         // 2. 初始化或更新 Markmap 实例
         if (mmRef.current) {

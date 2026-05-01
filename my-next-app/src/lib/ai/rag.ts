@@ -81,7 +81,7 @@ export const ragService = {
     
     // 向量表 insert
     const infoVec = await drizzleDb.run(sql`INSERT INTO content_vec(embedding) VALUES (${JSON.stringify(embedding)})`);
-    const vecRowid = (infoVec as any).lastInsertRowid;
+    const vecRowid = (infoVec as unknown as { lastInsertRowid: number }).lastInsertRowid;
     
     // 基础表 insert
     await drizzleDb.run(sql`INSERT INTO content_chunks (id, content, metadata) VALUES (${Number(vecRowid)}, ${content}, ${JSON.stringify(metadata)})`);
@@ -93,18 +93,18 @@ export const ragService = {
   deleteChunksBySource: async (sourceType: string, sourceId: number) => {
     try {
       // 找到匹配的 ID
-      const chunks = await drizzleDb.all<any>(sql`
+      const chunks = await drizzleDb.all<Record<string, unknown>>(sql`
         SELECT id FROM content_chunks 
         WHERE json_extract(metadata, '$.source_type') = ${sourceType} 
         AND json_extract(metadata, '$.source_id') = ${sourceId}
       `);
 
       if (chunks.length > 0) {
-        const ids = chunks.map(c => c.id);
-        
+        const ids = chunks.map(c => c.id as number);
+
         // 删除基础表和向量表 (向量表 rowid 与基础表 id 对应)
-        await drizzleDb.run(sql`DELETE FROM content_chunks WHERE id IN (${sql.join(ids, sql`, `)})`);
-        await drizzleDb.run(sql`DELETE FROM content_vec WHERE rowid IN (${sql.join(ids, sql`, `)})`);
+        await drizzleDb.run(sql`DELETE FROM content_chunks WHERE id IN (${sql.join(ids.map(id => sql`${id}`), sql`, `)})`);
+        await drizzleDb.run(sql`DELETE FROM content_vec WHERE rowid IN (${sql.join(ids.map(id => sql`${id}`), sql`, `)})`);
 
         console.log(`[RAG] Deleted ${chunks.length} chunks for ${sourceType}:${sourceId}`);
       }
@@ -130,7 +130,7 @@ export const ragService = {
 
       const fetchLimit = sourceType ? limit * 3 : limit;
 
-      const results = await drizzleDb.all<any>(sql`
+      const results = await drizzleDb.all<Record<string, unknown>>(sql`
         SELECT 
           c.content,
           v.distance,
@@ -145,16 +145,16 @@ export const ragService = {
       if (sourceType) {
         filtered = results.filter(r => {
           try {
-            const meta = JSON.parse(r.metadata || '{}');
+            const meta = JSON.parse((r.metadata as string) || '{}');
             return meta.source_type === sourceType;
           } catch { return false; }
         });
       }
 
       return filtered.slice(0, limit).map(r => ({
-        content: r.content,
-        score: 1 - r.distance,
-        metadata: JSON.parse(r.metadata || '{}')
+        content: r.content as string,
+        score: 1 - (r.distance as number),
+        metadata: JSON.parse((r.metadata as string) || '{}')
       }));
     } catch (e) {
       console.error('[RAG] Vector Search Error:', e);
@@ -190,11 +190,11 @@ export const ragService = {
       const data = await response.json();
 
       if (data.results && Array.isArray(data.results)) {
-        const reranked = data.results.map((item: any) => ({
+        const reranked = data.results.map((item: { index: number; relevance_score: number }) => ({
           ...results[item.index],
           score: item.relevance_score
         }));
-        return reranked.sort((a: any, b: any) => b.score - a.score);
+        return reranked.sort((a: RagResult, b: RagResult) => b.score - a.score);
       }
       return results;
     } catch (error: unknown) {

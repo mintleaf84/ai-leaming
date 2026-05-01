@@ -1,4 +1,4 @@
-import { drizzleDb, drizzleSchema } from '@/lib/db';
+import { drizzleDb } from '@/lib/db';
 import { eq, and, desc, sql, count } from 'drizzle-orm';
 import { practice_sessions, practice_logs, questions, session_reviews } from '@/lib/db/drizzle-schema';
 import dayjs from 'dayjs';
@@ -251,10 +251,10 @@ export const historyService = {
     async getAnalysisReport(sessionId: string): Promise<string | null> {
         try {
             // 这里为了兼容性保持原有的 table 动态检查
-            const [reportRow] = await drizzleDb.all<any>(sql`
+            const [reportRow] = await drizzleDb.all<Record<string, unknown>>(sql`
                 SELECT report FROM analysis_reports WHERE session_id = ${sessionId} LIMIT 1
             `);
-            return reportRow?.report || null;
+            return (reportRow?.report as string) || null;
         } catch {
             return null;
         }

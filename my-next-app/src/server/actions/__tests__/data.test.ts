@@ -80,7 +80,7 @@ describe('Data Actions', () => {
         });
 
         it('should return arrays with correct data structure', async () => {
-            const result = await exportUserDataAction();
+            const result = await exportUserDataAction() as Record<string, unknown>;
 
             expect(Array.isArray(result.user_mastery)).toBe(true);
             expect(Array.isArray(result.practice_logs)).toBe(true);
@@ -100,7 +100,7 @@ describe('Data Actions', () => {
                     { session_id: 's1', question_id: 1, user_answer: 'A', is_correct: 1, is_monitored_correct: 1, duration_ms: 5000, timestamp: '2024-01-01' }
                 ],
                 observation_zone: [
-                    { tag_name: '难点', reason: '需要加强', entered_at: '2024-01-01', status: 'active' }
+                    { tag_name: '难点', reason: '需要加强', entered_at: '2024-01-01', status: 'active' as const }
                 ]
             };
 

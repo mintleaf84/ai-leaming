@@ -1,8 +1,7 @@
 import { drizzleDb, drizzleSchema } from '@/lib/db';
 import { eq, and, sql, or, like } from 'drizzle-orm';
 
-const DIMENSION_ORDER = ['knowledge', 'understanding', 'application'] as const;
-type Dimension = typeof DIMENSION_ORDER[number];
+type Dimension = 'knowledge' | 'understanding' | 'application';
 
 export interface MasteryUpdateResult {
   tagName: string;

@@ -28,15 +28,15 @@ export interface PracticeSessionConfig {
  * 将数据库原始行映射为业务 Question 类型
  */
 function mapQuestion(q: unknown): Question {
-    const data = q as Record<string, any>;
+    const data = q as Record<string, unknown>;
     try {
         return QuestionRowSchema.parse(data);
     } catch (err) {
         logger.error({ err, questionId: data.id }, 'Question mapping failed in practiceService');
         return {
             ...data,
-            options: safeParseJson(data.options, [] as string[]),
-            tags: safeParseJson(data.tags, [] as string[]),
+            options: safeParseJson(data.options as string, [] as string[]),
+            tags: safeParseJson(data.tags as string, [] as string[]),
             type: data.type || 'single',
             dimension: data.dimension || 'knowledge'
         } as Question;
@@ -417,8 +417,8 @@ export const practiceService = {
         const practiceConfig: PracticeConfig = {
             ...config,
             mode,
-            types: config.types as any, // 内部转换
-            dimensions: config.dimensions as any
+            types: config.types as PracticeConfig['types'],
+            dimensions: config.dimensions as PracticeConfig['dimensions']
         };
 
         const { practiceSchedulingService } = await import('@/lib/practice/practice-scheduling');

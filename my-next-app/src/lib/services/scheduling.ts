@@ -5,7 +5,7 @@ import { Question } from '@/types';
 /**
  * 将数据库原始行映射为业务 Question 类型
  */
-function mapRawToQuestion(q: any): Question {
+function mapRawToQuestion(q: Record<string, unknown>): Question {
   return {
     ...q,
     options: typeof q.options === 'string' ? JSON.parse(q.options) : (q.options || []),

@@ -1,6 +1,6 @@
 import { drizzleDb } from '@/lib/db';
 import { mindmaps } from '@/lib/db/drizzle-schema';
-import { eq, and, desc, sql, type InferSelectModel } from 'drizzle-orm';
+import { eq, and, desc, type InferSelectModel } from 'drizzle-orm';
 
 export type Mindmap = InferSelectModel<typeof mindmaps>;
 

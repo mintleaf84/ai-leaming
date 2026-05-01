@@ -147,9 +147,9 @@ export async function initDatabase() {
         }
         await seedData();
         console.log('[DB] Database initialization completed');
-    } catch (error: any) {
-        console.error('[DB] Database initialization failed:', error.message);
-        if (error.cause) {
+    } catch (error: unknown) {
+        console.error('[DB] Database initialization failed:', error instanceof Error ? error.message : String(error));
+        if (error instanceof Error && error.cause) {
             console.error('[DB] Detailed Cause:', error.cause);
         }
         // 在所有环境下都抛出错误，确保迁移失败时能及时发现
@@ -170,4 +170,4 @@ if (require.main === module) {
 }
 
 // 导出占位符供测试环境类型检查使用
-export const resetDrizzleMock = (_defaultReturn?: any) => { };
+export const resetDrizzleMock = (_defaultReturn?: unknown) => { };

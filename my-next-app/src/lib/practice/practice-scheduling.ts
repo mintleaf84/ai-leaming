@@ -14,7 +14,7 @@ const { questions, practice_logs, observation_zone, question_srs } = drizzleSche
 /**
  * 将数据库原始行映射为业务 Question 类型
  */
-function mapRawToQuestion(q: any): Question {
+function mapRawToQuestion(q: Record<string, unknown>): Question {
     try {
         return QuestionRowSchema.parse(q);
     } catch (err) {
@@ -32,7 +32,7 @@ function mapRawToQuestion(q: any): Question {
  * 构建基础筛选条件 (Drizzle SQL 对象数组)
  */
 function buildConditions(config: PracticeConfig) {
-    const conditions: any[] = [];
+    const conditions: ReturnType<typeof eq>[] = [];
 
     // 题目类型筛选
     if (config.types && config.types.length > 0) {
@@ -49,7 +49,7 @@ function buildConditions(config: PracticeConfig) {
         const tagConditions = config.tags.map(tag => 
             sql`EXISTS (SELECT 1 FROM json_each(${questions.tags}) WHERE value = ${tag})`
         );
-        conditions.push(or(...tagConditions));
+        conditions.push(or(...tagConditions)!);
     }
 
     return conditions;

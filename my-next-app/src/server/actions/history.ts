@@ -3,9 +3,8 @@
 import { authenticatedAction } from '@/lib/safe-action';
 import { z } from 'zod';
 import { revalidatePath } from 'next/cache';
-import { 
-    historyService, 
-    type PaginatedHistory, 
+import {
+    historyService,
 } from '@/lib/services/history';
 import { HistoryFilterSchema } from '@/lib/validations/history';
 

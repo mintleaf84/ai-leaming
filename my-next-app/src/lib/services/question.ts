@@ -18,7 +18,7 @@ export interface QuestionSummary {
 /**
  * 将数据库原始行映射为业务 Question 类型
  */
-function mapQuestion(q: any): Question {
+function mapQuestion(q: Record<string, unknown>): Question {
     try {
         return QuestionRowSchema.parse(q);
     } catch (err) {
@@ -64,7 +64,7 @@ export const questionService = {
             
             // 检查向量插件是否存在 (由于 Drizzle 不直接暴露 raw db handle 检查，通常在 init 时检查)
             // 这里使用 sql raw 尝试
-            const results = await drizzleDb.all<any>(sql`
+            const results = await drizzleDb.all<Record<string, unknown>>(sql`
                 SELECT q.*, v.distance
                 FROM questions_vec v
                 JOIN questions q ON q.id = v.rowid
@@ -73,7 +73,7 @@ export const questionService = {
                 ORDER BY v.distance
             `);
 
-            return results.map((q: any) => mapQuestion(q));
+            return results.map((q: Record<string, unknown>) => mapQuestion(q));
         } catch (error) {
             logger.error({ err: error }, '[QuestionService] 相似题目检索失败');
             return [];
@@ -113,7 +113,7 @@ export const questionService = {
         }
 
         if (filter.type && filter.type.length > 0) {
-            conditions.push(inArray(drizzleSchema.questions.type, filter.type as any));
+            conditions.push(inArray(drizzleSchema.questions.type, filter.type as [string, ...string[]]));
         }
 
         if (filter.tags && filter.tags.length > 0) {
@@ -140,7 +140,7 @@ export const questionService = {
         ]);
 
         return {
-            items: items.map((q: any) => mapQuestion(q)),
+            items: items.map((q: Record<string, unknown>) => mapQuestion(q)),
             total: totalResult?.count || 0
         };
     },
@@ -163,7 +163,7 @@ export const questionService = {
             ...data,
             options: JSON.stringify(data.options),
             tags: JSON.stringify(data.tags),
-        } as any).returning();
+        } as never).returning();
         return result[0];
     },
 
@@ -171,7 +171,7 @@ export const questionService = {
      * 更新题目 (管理后台)
      */
     async update(id: number, data: Partial<Question>) {
-        const updateData: any = { ...data };
+        const updateData: Record<string, unknown> = { ...data };
         if (data.options) updateData.options = JSON.stringify(data.options);
         if (data.tags) updateData.tags = JSON.stringify(data.tags);
 
@@ -193,7 +193,7 @@ export const questionService = {
     /**
      * 批量导入 (管理后台)
      */
-    async bulkCreate(questions: any[]) {
+    async bulkCreate(questions: Record<string, unknown>[]) {
         return await drizzleDb.transaction(async (tx) => {
             const values = questions.map(q => ({
                 ...q,
@@ -201,9 +201,9 @@ export const questionService = {
                 tags: JSON.stringify(q.tags),
                 created_at: sql`CURRENT_TIMESTAMP`
             }));
-            
+
             // SQLite 批量插入限制 (通常为 999 变量，Drizzle 会自动分批)
-            return await tx.insert(drizzleSchema.questions).values(values);
+            return await tx.insert(drizzleSchema.questions).values(values as never);
         });
     }
 };

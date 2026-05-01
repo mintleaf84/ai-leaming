@@ -1,7 +1,7 @@
 'use server';
 
 import { adminAction } from '@/lib/safe-action';
-import { promptService, type PromptTemplate } from '@/lib/services/prompt';
+import { promptService } from '@/lib/services/prompt';
 import { logAdminAction } from '@/lib/admin/audit';
 import { buildPrompt } from '@/lib/ai/prompts';
 import { generateStructuredData, generateTextWrapper, AiRawResponseError } from '@/lib/ai/client';

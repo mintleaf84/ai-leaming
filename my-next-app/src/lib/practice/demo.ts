@@ -11,7 +11,7 @@ import { QuestionRowSchema } from '@/lib/schemas';
 /**
  * 将数据库原始行映射为业务 Question 类型
  */
-function mapQuestion(q: any): Question {
+function mapQuestion(q: Record<string, unknown>): Question {
     try {
         return QuestionRowSchema.parse(q);
     } catch (err) {
@@ -69,7 +69,7 @@ export const DemoService = {
           ? JSON.parse(existing.questions_json)
           : existing.questions_json;
         return { 
-          questions: questions.map((q: any) => mapQuestion(q)), 
+          questions: questions.map((q: Record<string, unknown>) => mapQuestion(q)),
           sessionId: existing.id 
         };
       } catch (e) {

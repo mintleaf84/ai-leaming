@@ -2,14 +2,12 @@
 
 import { authenticatedAction } from '@/lib/safe-action';
 import { z } from 'zod';
-import { 
-    wrongQuestionService, 
-    type WrongQuestionItem, 
-    type WrongQuestionsByTag,
-    type WrongQuestionDetail 
+import {
+    wrongQuestionService,
+    type WrongQuestionItem,
 } from '@/lib/services/wrong-question';
 import { practiceService } from '@/lib/services/practice';
-import { RandomWrongQuestionsSchema, MarkMasteredSchema } from '@/lib/validations/wrong-questions';
+import { RandomWrongQuestionsSchema } from '@/lib/validations/wrong-questions';
 
 /**
  * 获取错题列表

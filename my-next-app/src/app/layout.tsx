@@ -55,7 +55,7 @@ export const viewport: Viewport = {
 import { Suspense } from 'react';
 import { SidebarUser } from "@/components/layout/SidebarUser";
 import { SidebarUserSkeleton } from "@/components/layout/SidebarUserSkeleton";
-import { initDatabase } from "@/lib/db";
+import { initDatabase as _initDatabase } from "@/lib/db";
 
 export default async function RootLayout({
   children,

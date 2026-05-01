@@ -1,6 +1,6 @@
 import { drizzleDb, drizzleSchema } from '@/lib/db';
-import { eq, and } from 'drizzle-orm';
-import { AiModelRouteRow, AiConfigRow, AiConfigResult } from './types';
+import { eq } from 'drizzle-orm';
+import { AiConfigResult } from './types';
 import { env } from '@/env';
 
 // 简单的进程内缓存

@@ -1,7 +1,7 @@
 import { drizzleDb } from '@/lib/db';
-import { eq, and, desc, sql, gte, count, avg } from 'drizzle-orm';
+import { eq, and, desc, sql, count, avg } from 'drizzle-orm';
 import { practice_logs, user_mastery, practice_sessions, observation_zone } from '@/lib/db/drizzle-schema';
-import { getBeijingDateString, getBeijingYesterdayString, formatBeijingDisplayDate, getBeijingNow } from '@/lib/utils/datetime';
+import { getBeijingDateString, getBeijingYesterdayString, getBeijingNow } from '@/lib/utils/datetime';
 import { calculateStreakFromDates } from '@/lib/utils/stats-utils';
 
 export interface UserStats {

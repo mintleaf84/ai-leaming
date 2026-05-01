@@ -4,7 +4,7 @@ import React, { useCallback, useMemo, useRef } from 'react';
 import dynamic from 'next/dynamic';
 import { Target, BookOpen } from 'lucide-react';
 import type { KnowledgeGraphData, KnowledgeNode, KnowledgeLink } from '@/types/viz';
-import type { ForceGraphMethods, NodeObject } from 'react-force-graph-2d';
+import type { ForceGraphMethods, NodeObject, LinkObject } from 'react-force-graph-2d';
 import {
   Drawer,
   DrawerClose,
@@ -17,7 +17,6 @@ import { Button } from "@/components/ui/button";
 import { useRouter } from 'next/navigation';
 
 // 动态导入 ForceGraph2D，禁用 SSR（因为它依赖 canvas）
- 
 const ForceGraph2D = dynamic(() => import('react-force-graph-2d'), {
   ssr: false,
   loading: () => (
@@ -25,8 +24,7 @@ const ForceGraph2D = dynamic(() => import('react-force-graph-2d'), {
       <div className="text-muted-foreground">加载知识图谱...</div>
     </div>
   ),
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-}) as any;
+}) as React.ComponentType<Record<string, unknown>>;
 
 // react-force-graph 运行时会注入 x、y、val 等属性
 type ForceKnowledgeNode = KnowledgeNode & {
@@ -114,22 +112,19 @@ export function KnowledgeTree({ data }: KnowledgeTreeProps) {
   React.useEffect(() => {
     if (graphRef.current) {
       const fg = graphRef.current;
-      
+
       // 增强电荷斥力 (Repulsion)
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      (fg.d3Force('charge') as any)?.strength(-400);
+      fg.d3Force('charge')?.strength(-400);
 
       // 增加链路距离 (Link Distance)
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      (fg.d3Force('link') as any)?.distance(80);
+      fg.d3Force('link')?.distance(80);
 
       // 引入节点碰撞检测 (Collision)，防止重叠
-       
       fg.d3Force('collide', ((_node: NodeObject<KnowledgeNode>) => {
          // 碰撞半径：节点半径 + 较大的保护边距（为文字留白）
          const n = _node as ForceKnowledgeNode;
          return n.val + 25;
-      }) as any);
+      }) as unknown as Parameters<typeof fg.d3Force>[1]);
 
       // 重新预热引擎以应用新参数
       fg.d3ReheatSimulation();
@@ -139,8 +134,7 @@ export function KnowledgeTree({ data }: KnowledgeTreeProps) {
   return (
     <div className="w-full h-full relative">
       <ForceGraph2D
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        ref={graphRef as any}
+        ref={graphRef as unknown as React.RefObject<unknown>}
         graphData={graphData}
         nodeRelSize={1}
         nodeVal="val"

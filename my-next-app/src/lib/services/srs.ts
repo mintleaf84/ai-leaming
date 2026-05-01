@@ -1,11 +1,11 @@
-import { Rating, createEmptyCard, Card, State, fsrs, generatorParameters } from 'ts-fsrs';
+import { Rating, createEmptyCard, Card, State, fsrs, generatorParameters, type RecordLogItem } from 'ts-fsrs';
 import dayjs from 'dayjs';
 import utc from 'dayjs/plugin/utc';
 
 dayjs.extend(utc);
 import { drizzleDb } from '@/lib/db';
 import { questions, question_srs, practice_logs, system_settings } from '@/lib/db/drizzle-schema';
-import { eq, and, sql, lte, isNull, desc, count, gte } from 'drizzle-orm';
+import { eq, and, sql, lte, isNull, count, gte } from 'drizzle-orm';
 
 // FSRS 基础配置
 const f = fsrs(generatorParameters());
@@ -57,7 +57,7 @@ export async function learnReadingSpeed(userId: number, questionContent: string,
     try {
         const options = JSON.parse(optionsJson);
         if (Array.isArray(options)) optionsText = options.join('');
-    } catch (e) {
+    } catch (_e) {
         optionsText = optionsJson || '';
     }
     const totalChars = questionContent.length + optionsText.length;
@@ -129,10 +129,10 @@ export const srsService = {
         try {
             const options = JSON.parse(optionsJson);
             if (Array.isArray(options)) optionsText = options.join('');
-        } catch (e) {
+        } catch (_e) {
             optionsText = optionsJson || '';
         }
-        
+
         const totalChars = questionContent.length + optionsText.length;
         const readingTimeSec = totalChars / readingSpeed;
         const totalDurationSec = durationMs / 1000;
@@ -212,7 +212,7 @@ export const srsService = {
 
         const now = reviewDate || new Date();
         const schedulingCards = f.repeat(card, now);
-        const item = (schedulingCards as any)[rating].card;
+        const item = (schedulingCards as unknown as Record<Rating, RecordLogItem>)[rating].card;
 
         await drizzleDb.insert(question_srs).values({
             user_id: userId,
@@ -308,17 +308,6 @@ export const srsService = {
             d.setDate(d.getDate() + i);
             return d.toISOString().split('T')[0];
         });
-
-        // 子查询：获取用户曾经答错的题目ID
-        const wrongQuestionIds = drizzleDb.select({
-            questionId: practice_logs.question_id
-        })
-        .from(practice_logs)
-        .where(and(
-            eq(practice_logs.user_id, userId),
-            eq(practice_logs.is_correct, false)
-        ))
-        .groupBy(practice_logs.question_id);
 
         const rawFutureRows = await drizzleDb.select({
             date: sql<string>`
@@ -447,7 +436,7 @@ export const srsService = {
 
         if (logs.length === 0) return 0;
 
-        const questionGroups = new Map<number, any[]>();
+        const questionGroups = new Map<number, Array<{ questionId: number; isCorrect: number; durationMs: number | null; timestamp: string | null }>>();
         for (const log of logs) {
             if (!questionGroups.has(log.questionId)) {
                 questionGroups.set(log.questionId, []);
@@ -474,7 +463,7 @@ export const srsService = {
 
             for (const log of qLogs) {
                 const reviewDate = log.timestamp ? dayjs.utc(log.timestamp).toDate() : undefined;
-                await srsService.updateQuestionSrs(userId, qId, log.isCorrect, log.durationMs || 0, reviewDate, speed);
+                await srsService.updateQuestionSrs(userId, qId, log.isCorrect === 1, log.durationMs || 0, reviewDate, speed);
             }
             syncCount++;
         }

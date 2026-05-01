@@ -93,8 +93,8 @@ export async function performPaddleOCR(
 /**
  * 从 PaddleOCR 响应中提取所有页面的 Markdown 文本
  */
-function extractMarkdown(result: any): string {
-    const pages = result?.layoutParsingResults || [];
+function extractMarkdown(result: Record<string, unknown>): string {
+    const pages = (result?.layoutParsingResults || []) as Array<Record<string, Record<string, string>>>;
     let fullText = '';
 
     for (const page of pages) {

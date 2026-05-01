@@ -128,7 +128,7 @@ export async function getKnowledgeCard(id: number): Promise<KnowledgeCard | null
  * 更新知识卡片
  */
 export async function updateKnowledgeCard(id: number, updates: Partial<KnowledgeCard>): Promise<boolean> {
-    const updatesObj: Record<string, any> = {
+    const updatesObj: Record<string, unknown> = {
         updated_at: sql`CURRENT_TIMESTAMP`
     };
 
@@ -294,7 +294,7 @@ export const knowledgeService = {
 
         if (!existing) throw new Error('笔记不存在或无权限');
 
-        const updateData: any = {
+        const updateData: Record<string, unknown> = {
             updated_at: sql`CURRENT_TIMESTAMP`
         };
         if (data.title !== undefined) updateData.title = data.title;
@@ -467,8 +467,8 @@ export const knowledgeService = {
         .where(eq(drizzleSchema.user_mastery.user_id, userId))
         .all();
 
-        const nodes: any[] = [{ id: "核心知识体系", group: 0, score: 100 }];
-        const links: any[] = [];
+        const nodes: Array<{ id: string; group: number; score: number }> = [{ id: "核心知识体系", group: 0, score: 100 }];
+        const links: Array<{ source: string; target: string; value: number }> = [];
         const nodeMap = new Map<string, { score: number; count: number }>();
 
         nodeMap.set("核心知识体系", { score: 100, count: 1 });

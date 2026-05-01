@@ -1,6 +1,6 @@
 import { drizzleDb } from '@/lib/db';
 import { textbooks, textbook_chapters } from '@/lib/db/drizzle-schema';
-import { eq, desc, asc, and } from 'drizzle-orm';
+import { eq, desc, asc } from 'drizzle-orm';
 import { ragService } from '@/lib/ai/rag';
 import { splitText } from '@/lib/utils/text-splitter';
 import fs from 'fs';

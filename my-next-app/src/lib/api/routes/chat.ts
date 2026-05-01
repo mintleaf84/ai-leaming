@@ -17,7 +17,7 @@ import { checkQuotaForApi } from '@/lib/billing/usage-middleware'
 const app = new OpenAPIHono()
 
 const ChatSchema = z.object({
-    messages: z.array(z.any()),
+    messages: z.array(z.record(z.unknown())),
     sessionId: z.number().optional(),
     enableRag: z.boolean().optional(),
     context: z.string().optional(),

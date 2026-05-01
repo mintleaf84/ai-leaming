@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { CheckCircle2, X, Lightbulb, History, Brain, Zap, Calendar } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { type WrongQuestionDetail } from '@/lib/services/wrong-question';

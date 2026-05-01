@@ -26,8 +26,8 @@ export async function logAdminAction(
         await drizzleDb.insert(drizzleSchema.admin_logs).values({
             user_id: userId,
             username,
-            action: action as any,
-            target_type: targetType as any,
+            action: action as unknown as string,
+            target_type: targetType as unknown as string,
             target_id: targetId,
             details: details ? JSON.stringify(details) : null,
             ip_address: ipAddress
@@ -65,7 +65,7 @@ export async function getLogsByUser(userId: number, limit: number = 50): Promise
 export async function getLogsByAction(action: AdminAction, limit: number = 50): Promise<AdminLogEntry[]> {
     return await drizzleDb.select()
         .from(drizzleSchema.admin_logs)
-        .where(eq(drizzleSchema.admin_logs.action, action as any))
+        .where(eq(drizzleSchema.admin_logs.action, action as unknown as string))
         .orderBy(desc(drizzleSchema.admin_logs.created_at))
         .limit(limit) as AdminLogEntry[];
 }

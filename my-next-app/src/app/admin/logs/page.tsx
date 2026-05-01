@@ -131,7 +131,7 @@ export default function LogsPage() {
                                         <span className="font-semibold text-foreground">{log.username}</span>
                                         <span className="text-muted-foreground">执行了</span>
                                         <Badge variant={getActionVariant(log.action)}>
-                                            {formatActionName(log.action as any)}
+                                            {formatActionName(log.action)}
                                         </Badge>
                                         {log.target_id && (
                                             <>

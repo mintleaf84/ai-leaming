@@ -114,8 +114,8 @@ export function usePracticeController(enableIntelligentReview: boolean = false) 
                 }
 
                 const { questions, sessionId } = result;
-                const resumed = 'resumed' in result ? (result as any).resumed : false;
-                const completedCount = 'completedCount' in result ? (result as any).completedCount : 0;
+                const resumed = 'resumed' in result ? (result as unknown as { resumed?: boolean }).resumed ?? false : false;
+                const completedCount = 'completedCount' in result ? (result as unknown as { completedCount?: number }).completedCount ?? 0 : 0;
 
                 if (questions.length > 0) {
                     dispatch({

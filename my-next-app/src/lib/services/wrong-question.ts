@@ -1,6 +1,6 @@
-import { drizzleDb, drizzleSchema } from '@/lib/db';
-import { eq, and, desc, sql, gte, inArray, notInArray } from 'drizzle-orm';
-import { practice_logs, questions, question_srs, mastered_questions, practice_sessions } from '@/lib/db/drizzle-schema';
+import { drizzleDb } from '@/lib/db';
+import { eq, and, desc, sql, gte, notInArray } from 'drizzle-orm';
+import { practice_logs, questions, question_srs, mastered_questions } from '@/lib/db/drizzle-schema';
 import dayjs from 'dayjs';
 
 export interface WrongQuestionItem {

@@ -1,6 +1,6 @@
 import { OpenAPIHono, createRoute, z } from '@hono/zod-openapi'
 import { drizzleDb, drizzleSchema } from '@/lib/db'
-import { eq, sql, count, desc } from 'drizzle-orm'
+import { eq, sql, count } from 'drizzle-orm'
 
 const app = new OpenAPIHono()
 

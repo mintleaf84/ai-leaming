@@ -47,7 +47,7 @@ export const aiConfigService = {
     async saveConfig(config: Partial<AiConfig>) {
         if (config.id) {
             // 更新
-            const updateData: any = { ...config };
+            const updateData: Record<string, unknown> = { ...config };
             delete updateData.id;
             await drizzleDb.update(drizzleSchema.ai_configs)
                 .set(updateData)

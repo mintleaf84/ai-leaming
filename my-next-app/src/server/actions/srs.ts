@@ -3,6 +3,7 @@
 import { authenticatedAction } from '@/lib/safe-action';
 import { z } from 'zod';
 import { Rating, fsrs, generatorParameters } from 'ts-fsrs';
+import type { RecordLog, Grade } from 'ts-fsrs';
 import { srsService, type SrsGlobalStats, type SrsHistoryEntry, type SrsPrediction } from '@/lib/services/srs';
 
 /**
@@ -66,7 +67,7 @@ export const getQuestionSrsPredictionsAction = authenticatedAction
     };
 
     return [Rating.Again, Rating.Hard, Rating.Good, Rating.Easy].map(r => {
-        const item = (schedulingCards as any)[r].card;
+        const item = (schedulingCards as unknown as Record<Rating, { card: { due: Date; scheduled_days: number } }>)[r].card;
         return {
             rating: r,
             label: labels[r],

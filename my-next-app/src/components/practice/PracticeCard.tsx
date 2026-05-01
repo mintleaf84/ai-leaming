@@ -4,7 +4,6 @@ import { Check, Circle, EyeOff, Eye, CheckCircle2, XCircle, Brain, Calendar, Zap
 import { Button } from '@/components/ui/button';
 import { SrsHistoryModal } from './SrsHistoryModal';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
-import { Info } from 'lucide-react';
 import { getBeijingDiffDays, formatBeijingDate } from '@/lib/utils/datetime';
 
 interface PracticeCardProps {

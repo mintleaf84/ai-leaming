@@ -7,10 +7,10 @@ export async function GET() {
     try {
         const config = await BackupService.getConfig();
         // 不要返回密码给前端，即使是加密后的
-        const { pass, ...safeConfig } = config;
+        const { pass: _pass, ...safeConfig } = config;
         return NextResponse.json(safeConfig);
-    } catch (error: any) {
-        return NextResponse.json({ error: error.message }, { status: 500 });
+    } catch (error: unknown) {
+        return NextResponse.json({ error: error instanceof Error ? error.message : String(error) }, { status: 500 });
     }
 }
 
@@ -22,8 +22,8 @@ export async function POST(req: Request) {
         }
         await BackupService.saveConfig(body);
         return NextResponse.json({ success: true });
-    } catch (error: any) {
-        return NextResponse.json({ error: error.message }, { status: 500 });
+    } catch (error: unknown) {
+        return NextResponse.json({ error: error instanceof Error ? error.message : String(error) }, { status: 500 });
     }
 }
 
@@ -32,9 +32,9 @@ export async function PUT() {
     try {
         const fileName = await BackupService.performBackup();
         return NextResponse.json({ success: true, fileName });
-    } catch (error: any) {
+    } catch (error: unknown) {
         console.error('[API] Backup failed:', error);
-        return NextResponse.json({ error: error.message }, { status: 500 });
+        return NextResponse.json({ error: error instanceof Error ? error.message : String(error) }, { status: 500 });
     }
 }
 
@@ -50,7 +50,7 @@ export async function PATCH(req: Request) {
         const testConfig = { ...config, ...body };
         const success = await BackupService.testConnection(testConfig);
         return NextResponse.json({ success });
-    } catch (error: any) {
-        return NextResponse.json({ success: false, error: error.message });
+    } catch (error: unknown) {
+        return NextResponse.json({ success: false, error: error instanceof Error ? error.message : String(error) });
     }
 }

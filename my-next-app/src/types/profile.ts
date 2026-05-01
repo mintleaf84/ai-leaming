@@ -9,7 +9,7 @@ export interface UserProfile {
     status: string;
     expires_at: string | null;
     usage_today: Record<string, number>;
-    limits: any;
+    limits: Record<string, number>;
   } | null;
   stats: {
     total_questions: number;

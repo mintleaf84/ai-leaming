@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import 'driver.js/dist/driver.css';
 
 const STORAGE_KEY = 'onboarding_completed';
@@ -59,6 +59,7 @@ const steps = [
 export function OnboardingGuide() {
   const [isCompleted, setIsCompleted] = useState(true);
   const [inited, setInited] = useState(false);
+  const cleanupRef = useRef<(() => void) | null>(null);
 
   useEffect(() => {
     const completed = localStorage.getItem(STORAGE_KEY);
@@ -71,8 +72,12 @@ export function OnboardingGuide() {
     if (isCompleted || inited) return;
     setInited(true);
 
+    let cancelled = false;
+
     // 动态加载，只在客户端执行
     import('driver.js').then((mod) => {
+      if (cancelled) return;
+
       // @ts-expect-error driver.js 导出类型不标准
       const driver = mod.driver({
         animate: true,
@@ -93,14 +98,19 @@ export function OnboardingGuide() {
 
       // 延迟启动，确保 DOM 渲染完成
       const timer = setTimeout(() => {
-        driver.drive(0);
+        if (!cancelled) driver.drive(0);
       }, 1500);
 
-      return () => {
+      cleanupRef.current = () => {
         clearTimeout(timer);
         driver.destroy();
       };
     }).catch(console.error);
+
+    return () => {
+      cancelled = true;
+      cleanupRef.current?.();
+    };
   }, [isCompleted, inited]);
 
   if (isCompleted) return null;

@@ -14,6 +14,9 @@ export const COOKIE_NAME = 'auth_token';
  * 加密 JWT payload
  */
 export async function encrypt(payload: JWTPayload | undefined) {
+    if (process.env.NODE_ENV === 'production' && !env.JWT_SECRET) {
+        throw new Error('系统安全配置严重错误：生产环境缺少 JWT_SECRET');
+    }
     return await new SignJWT(payload)
         .setProtectedHeader({ alg: 'HS256' })
         .setIssuedAt()
@@ -25,6 +28,9 @@ export async function encrypt(payload: JWTPayload | undefined) {
  * 解密 JWT token
  */
 export async function decrypt(input: string): Promise<unknown> {
+    if (process.env.NODE_ENV === 'production' && !env.JWT_SECRET) {
+        throw new Error('系统安全配置严重错误：生产环境缺少 JWT_SECRET');
+    }
     const { payload } = await jwtVerify(input, SECRET, {
         algorithms: ['HS256'],
     });

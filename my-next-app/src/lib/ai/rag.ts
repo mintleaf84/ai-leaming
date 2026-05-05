@@ -1,10 +1,62 @@
-import { embed } from 'ai';
+import { embed, embedMany } from 'ai';
 import { createOpenAI } from '@ai-sdk/openai';
 import { getErrorMessage } from '@/lib/utils/error';
 import { getAiConfig } from './client';
 import { drizzleDb, drizzleSchema } from '@/lib/db';
 import { eq, sql, desc, and, like, or } from 'drizzle-orm';
 import { env } from '@/env';
+
+// 内存 LRU 缓存（进程级，避免同进程重复查询 DB）
+const EMBED_CACHE_MAX = 2000;
+const embeddingMemCache = new Map<string, number[]>();
+
+function cacheKey(text: string): string {
+  // 简单 hash，避免存整段文本作 key
+  let h = 0;
+  for (let i = 0; i < text.length; i++) {
+    h = ((h << 5) - h + text.charCodeAt(i)) | 0;
+  }
+  return `e_${h}_${text.length}`;
+}
+
+function memCacheGet(text: string): number[] | undefined {
+  return embeddingMemCache.get(cacheKey(text));
+}
+
+function memCacheSet(text: string, vec: number[]) {
+  if (embeddingMemCache.size >= EMBED_CACHE_MAX) {
+    const first = embeddingMemCache.keys().next().value;
+    if (first) embeddingMemCache.delete(first);
+  }
+  embeddingMemCache.set(cacheKey(text), vec);
+}
+
+/**
+ * 从 SQLite embedding_cache 表读取缓存
+ */
+async function dbCacheGet(textHash: string): Promise<number[] | null> {
+  try {
+    const row = await drizzleDb.get<{ embedding: string }>(
+      sql`SELECT embedding FROM embedding_cache WHERE text_hash = ${textHash}`
+    );
+    if (row?.embedding) {
+      return JSON.parse(row.embedding) as number[];
+    }
+  } catch { /* table may not exist yet */ }
+  return null;
+}
+
+/**
+ * 写入 SQLite embedding_cache 表
+ */
+async function dbCacheSet(textHash: string, text: string, vec: number[]): Promise<void> {
+  try {
+    await drizzleDb.run(
+      sql`INSERT OR REPLACE INTO embedding_cache (text_hash, text_preview, embedding, created_at)
+          VALUES (${textHash}, ${text.slice(0, 200)}, ${JSON.stringify(vec)}, CURRENT_TIMESTAMP)`
+    );
+  } catch { /* table may not exist yet */ }
+}
 
 export interface RagResult {
   content: string;
@@ -14,7 +66,7 @@ export interface RagResult {
 
 export const ragService = {
   /**
-   * 获取文本向量 (使用标准 SDK)
+   * 获取文本向量 (使用标准 SDK，带多级缓存)
    */
   getEmbedding: async (text: string): Promise<number[]> => {
     if (env.E2E_TEST === 'true') {
@@ -22,6 +74,19 @@ export const ragService = {
       return new Array(embeddingDimensions || 1024).fill(0).map((_, i) => Math.sin(i));
     }
 
+    // 1. 内存缓存
+    const memHit = memCacheGet(text);
+    if (memHit) return memHit;
+
+    // 2. SQLite 缓存
+    const hash = cacheKey(text);
+    const dbHit = await dbCacheGet(hash);
+    if (dbHit) {
+      memCacheSet(text, dbHit);
+      return dbHit;
+    }
+
+    // 3. 调 API
     const { apiKey, baseURL, modelName } = await getAiConfig('embedding');
 
     try {
@@ -30,6 +95,9 @@ export const ragService = {
         model: openai.embedding(modelName || 'text-embedding-3-small'),
         value: text,
       });
+      // 写入双级缓存
+      memCacheSet(text, embedding);
+      await dbCacheSet(hash, text, embedding);
       return embedding;
     } catch (error: unknown) {
       console.warn('[RAG] Embedding 失败，原因:', getErrorMessage(error));
@@ -46,7 +114,69 @@ export const ragService = {
   },
 
   /**
-   * 初始化 RAG 表
+   * 批量获取向量（带缓存，使用 embedMany 减少 API 调用）
+   */
+  getEmbeddings: async (texts: string[]): Promise<number[][]> => {
+    if (env.E2E_TEST === 'true') {
+      const { embeddingDimensions } = await getAiConfig();
+      return texts.map(() => new Array(embeddingDimensions || 1024).fill(0).map((_, i) => Math.sin(i)));
+    }
+
+    const results: number[][] = new Array(texts.length);
+    const uncachedIndices: number[] = [];
+
+    // 1. 检查缓存
+    for (let i = 0; i < texts.length; i++) {
+      const memHit = memCacheGet(texts[i]);
+      if (memHit) {
+        results[i] = memHit;
+        continue;
+      }
+      const hash = cacheKey(texts[i]);
+      const dbHit = await dbCacheGet(hash);
+      if (dbHit) {
+        memCacheSet(texts[i], dbHit);
+        results[i] = dbHit;
+        continue;
+      }
+      uncachedIndices.push(i);
+    }
+
+    // 2. 全部命中缓存
+    if (uncachedIndices.length === 0) return results;
+
+    // 3. 批量调 API
+    const uncachedTexts = uncachedIndices.map(i => texts[i]);
+    const { apiKey, baseURL, modelName } = await getAiConfig('embedding');
+
+    try {
+      const openai = createOpenAI({ apiKey, baseURL });
+      const { embeddings } = await embedMany({
+        model: openai.embedding(modelName || 'text-embedding-3-small'),
+        values: uncachedTexts,
+      });
+
+      // 写入缓存
+      for (let j = 0; j < uncachedIndices.length; j++) {
+        const idx = uncachedIndices[j];
+        const vec = embeddings[j];
+        results[idx] = vec;
+        memCacheSet(texts[idx], vec);
+        await dbCacheSet(cacheKey(texts[idx]), texts[idx], vec);
+      }
+    } catch (error: unknown) {
+      console.warn('[RAG] embedMany 失败，逐条回退:', getErrorMessage(error));
+      // 回退到逐条调用
+      for (const idx of uncachedIndices) {
+        results[idx] = await ragService.getEmbedding(texts[idx]);
+      }
+    }
+
+    return results;
+  },
+
+  /**
+   * 初始化 RAG 表（包括 embedding 缓存表）
    */
   initRagTable: async () => {
     const { embeddingDimensions } = await getAiConfig();
@@ -71,6 +201,16 @@ export const ragService = {
       `);
       console.log(`[RAG] Initialized tables with dimensions: ${dim}`);
     }
+
+    // 确保 embedding_cache 表存在
+    await drizzleDb.run(sql`
+      CREATE TABLE IF NOT EXISTS embedding_cache (
+        text_hash TEXT PRIMARY KEY,
+        text_preview TEXT,
+        embedding TEXT NOT NULL,
+        created_at TEXT DEFAULT CURRENT_TIMESTAMP
+      );
+    `);
   },
 
   /**
@@ -78,13 +218,48 @@ export const ragService = {
    */
   addChunk: async (content: string, metadata: Record<string, unknown> = {}) => {
     const embedding = await ragService.getEmbedding(content);
-    
+
     // 向量表 insert
     const infoVec = await drizzleDb.run(sql`INSERT INTO content_vec(embedding) VALUES (${JSON.stringify(embedding)})`);
     const vecRowid = (infoVec as unknown as { lastInsertRowid: number }).lastInsertRowid;
-    
+
     // 基础表 insert
     await drizzleDb.run(sql`INSERT INTO content_chunks (id, content, metadata) VALUES (${Number(vecRowid)}, ${content}, ${JSON.stringify(metadata)})`);
+  },
+
+  /**
+   * 批量添加知识块（使用 embedMany，大幅减少 API 调用）
+   */
+  addChunksBatch: async (items: Array<{ content: string; metadata: Record<string, unknown> }>, batchSize: number = 50) => {
+    let successCount = 0;
+    for (let i = 0; i < items.length; i += batchSize) {
+      const batch = items.slice(i, i + batchSize);
+      const texts = batch.map(item => item.content || '');
+
+      try {
+        const embeddings = await ragService.getEmbeddings(texts);
+
+        for (let j = 0; j < batch.length; j++) {
+          const vec = embeddings[j];
+          if (!vec) continue;
+          try {
+            const infoVec = await drizzleDb.run(sql`INSERT INTO content_vec(embedding) VALUES (${JSON.stringify(vec)})`);
+            const vecRowid = (infoVec as unknown as { lastInsertRowid: number }).lastInsertRowid;
+            await drizzleDb.run(sql`INSERT INTO content_chunks (id, content, metadata) VALUES (${Number(vecRowid)}, ${batch[j].content || ''}, ${JSON.stringify(batch[j].metadata)})`);
+            successCount++;
+          } catch { /* skip individual failures */ }
+        }
+      } catch (err) {
+        console.warn(`[RAG] Batch ${i / batchSize + 1} failed, falling back to single:`, err);
+        for (const item of batch) {
+          try {
+            await ragService.addChunk(item.content || '', item.metadata);
+            successCount++;
+          } catch { /* skip */ }
+        }
+      }
+    }
+    return successCount;
   },
 
   /**

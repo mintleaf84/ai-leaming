@@ -2,14 +2,16 @@
 import { describe, it, expect, beforeEach, vi } from 'vitest';
 
 // Use vi.hoisted to define mocks before vi.mock
-const { mockRagSearch } = vi.hoisted(() => ({
-    mockRagSearch: vi.fn()
+const { mockRagSearch, mockAddChunksBatch } = vi.hoisted(() => ({
+    mockRagSearch: vi.fn(),
+    mockAddChunksBatch: vi.fn().mockResolvedValue(0)
 }));
 
 vi.mock('@/lib/ai/rag', () => ({
     ragService: {
         search: mockRagSearch,
-        addChunk: vi.fn().mockResolvedValue(undefined)
+        addChunk: vi.fn().mockResolvedValue(undefined),
+        addChunksBatch: mockAddChunksBatch
     }
 }));
 
@@ -27,13 +29,13 @@ vi.mock('@/lib/ai/langchain-store', () => ({
 }));
 
 // Mock drizzle - use vi.hoisted for all shared mock functions
-const { mockSelect, mockAll, mockGet, mockSql } = vi.hoisted(() => ({
+const { mockSelect, mockAll, mockGet, mockRun, mockSql } = vi.hoisted(() => ({
     mockSelect: vi.fn(),
     mockAll: vi.fn().mockResolvedValue([]),
     mockGet: vi.fn().mockResolvedValue(null),
+    mockRun: vi.fn().mockResolvedValue(undefined),
     mockSql: vi.fn((s: string) => {
         const result: any = { type: 'sql', sql: s };
-        // Add join method
         result.join = vi.fn((items: any[]) => items);
         return result;
     })
@@ -60,7 +62,9 @@ mockSelect.mockReturnValue(chain);
 vi.mock('@/lib/db', () => ({
     drizzleDb: {
         select: mockSelect,
-        all: mockAll
+        all: mockAll,
+        get: mockGet,
+        run: mockRun
     },
     drizzleSchema: {
         practice_logs: {
@@ -111,6 +115,8 @@ describe('QuestionRecommend Service', () => {
         (chain as any).then.mockImplementation((resolve: any) => resolve([]));
         mockAll.mockResolvedValue([]);
         mockGet.mockResolvedValue(null);
+        mockRun.mockResolvedValue(undefined);
+        mockAddChunksBatch.mockResolvedValue(0);
     });
 
     describe('getWeakestTags', () => {
@@ -154,14 +160,54 @@ describe('QuestionRecommend Service', () => {
     });
 
     describe('recommendByTags (vector-based)', () => {
-        it('should call vector search with question content', async () => {
-            mockGet.mockResolvedValue({ content: 'Test question content' });
-            mockAll.mockResolvedValue([{ count: 100 }]);
+        it('should call vector search with question content when flag is set', async () => {
+            // mockGet is shared: 1st call = drizzleDb.get (flag check), 2nd call = chain.get (question content)
+            let getCall = 0;
+            mockGet.mockImplementation(() => {
+                getCall++;
+                if (getCall === 1) return Promise.resolve({ value: 'true' });
+                return Promise.resolve({ content: 'Test question content' });
+            });
             mockRagSearch.mockResolvedValue([]);
 
             await wrongQuestionRecommend.recommendByTags(1, [], 3);
 
             expect(mockRagSearch).toHaveBeenCalledWith('Test question content', 9, 'question');
+        });
+
+        it('should skip initialization when persistent flag exists', async () => {
+            mockGet.mockResolvedValue({ value: 'true' });
+            mockRagSearch.mockResolvedValue([]);
+
+            await wrongQuestionRecommend.recommendByTags(1, [], 3);
+
+            // Should NOT call addChunksBatch since flag causes early return from ensureVectorData
+            expect(mockAddChunksBatch).not.toHaveBeenCalled();
+        });
+
+        it('should initialize questions via batch when no flag and count < 50', async () => {
+            let getCall = 0;
+            let allCall = 0;
+            mockGet.mockImplementation(() => {
+                getCall++;
+                if (getCall === 1) return Promise.resolve(null); // no flag
+                return Promise.resolve({ content: 'Q content' });
+            });
+            mockAll.mockImplementation(() => {
+                allCall++;
+                if (allCall === 1) return Promise.resolve([{ count: 10 }]); // count check
+                return Promise.resolve([ // all questions
+                    { id: 1, content: 'Q1', explanation: 'E1', tags: '[]', dimension: 'knowledge' },
+                    { id: 2, content: 'Q2', explanation: 'E2', tags: '[]', dimension: 'knowledge' }
+                ]);
+            });
+            mockAddChunksBatch.mockResolvedValue(2);
+            mockRagSearch.mockResolvedValue([]);
+
+            await wrongQuestionRecommend.recommendByTags(1, [], 3);
+
+            expect(mockAddChunksBatch).toHaveBeenCalled();
+            expect(mockRun).toHaveBeenCalled(); // flag written
         });
     });
 

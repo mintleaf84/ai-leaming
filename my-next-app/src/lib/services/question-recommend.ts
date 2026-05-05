@@ -159,11 +159,21 @@ export const wrongQuestionRecommend = {
 
   /**
    * 确保向量库有足够的题目数据
-   * 如果没有，初始化所有题目到向量库
+   * 使用持久化标志跳过已完成的初始化，批量写入减少 API 调用
    */
   async ensureVectorData(questionId: number): Promise<boolean> {
     try {
-      // 检查向量库中 question 类型的数量
+      // 1. 检查持久化标志（已初始化过则直接跳过）
+      try {
+        const flag = await drizzleDb.get<{ value: string }>(
+          sql`SELECT value FROM system_settings WHERE key = 'vector_questions_initialized'`
+        );
+        if (flag?.value === 'true') {
+          return true;
+        }
+      } catch { /* system_settings may not have this row */ }
+
+      // 2. 检查向量库中 question 类型的数量
       const countResult = await drizzleDb.all<{ count: number }>(sql`
         SELECT COUNT(*) as count FROM content_chunks
         WHERE json_extract(metadata, '$.source_type') = 'question'
@@ -171,14 +181,17 @@ export const wrongQuestionRecommend = {
 
       const existingCount = countResult[0]?.count || 0;
 
-      // 如果已有 50+ 题，足够了
+      // 如果已有 50+ 题，写入标志并返回
       if (existingCount >= 50) {
+        await drizzleDb.run(
+          sql`INSERT OR REPLACE INTO system_settings (key, value, updated_at) VALUES ('vector_questions_initialized', 'true', CURRENT_TIMESTAMP)`
+        );
         return true;
       }
 
-      console.log(`[Recommend] 向量库题量不足 (${existingCount})，开始初始化所有题目...`);
+      console.log(`[Recommend] 向量库题量不足 (${existingCount})，开始批量初始化所有题目...`);
 
-      // 获取所有题目
+      // 3. 获取所有题目
       const allQuestions = await drizzleDb.select({
         id: drizzleSchema.questions.id,
         content: drizzleSchema.questions.content,
@@ -192,22 +205,29 @@ export const wrongQuestionRecommend = {
 
       console.log(`[Recommend] 共 ${allQuestions.length} 道题目待向量化`);
 
-      // 批量写入所有题目
-      let successCount = 0;
-      for (const q of allQuestions) {
-        try {
-          await ragService.addChunk(q.content || '', {
-            source_type: 'question',
-            question_id: q.id,
-            tags: q.tags ? JSON.parse(q.tags) : [],
-            dimension: q.dimension,
-            explanation: q.explanation,
-          });
-          successCount++;
-        } catch { /* 忽略写入失败 */ }
-      }
+      // 4. 批量写入（每批 20 条，减少 API 调用次数）
+      const items = allQuestions.map(q => ({
+        content: q.content || '',
+        metadata: {
+          source_type: 'question',
+          question_id: q.id,
+          tags: q.tags ? JSON.parse(q.tags) : [],
+          dimension: q.dimension,
+          explanation: q.explanation,
+        },
+      }));
+
+      const successCount = await ragService.addChunksBatch(items, 20);
 
       console.log(`[Recommend] 向量库初始化完成，共 ${successCount} 道题目`);
+
+      // 5. 写入持久化标志
+      if (successCount > 0) {
+        await drizzleDb.run(
+          sql`INSERT OR REPLACE INTO system_settings (key, value, updated_at) VALUES ('vector_questions_initialized', 'true', CURRENT_TIMESTAMP)`
+        );
+      }
+
       return successCount > 0;
     } catch (error) {
       console.error('[Recommend] ensureVectorData failed:', error);

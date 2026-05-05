@@ -11,7 +11,8 @@ vi.mock('@/lib/ai/rag', () => ({
     ragService: {
         search: mockRagSearch,
         addChunk: vi.fn().mockResolvedValue(undefined),
-        addChunksBatch: mockAddChunksBatch
+        addChunksBatch: mockAddChunksBatch,
+        initRagTable: vi.fn().mockResolvedValue(undefined)
     }
 }));
 

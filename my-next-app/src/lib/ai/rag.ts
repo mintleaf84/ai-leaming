@@ -2,7 +2,7 @@ import { embed, embedMany } from 'ai';
 import { createOpenAI } from '@ai-sdk/openai';
 import { getErrorMessage } from '@/lib/utils/error';
 import { getAiConfig } from './client';
-import { drizzleDb, drizzleSchema } from '@/lib/db';
+import { drizzleDb, drizzleSchema, getLegacyDb } from '@/lib/db';
 import { eq, sql, desc, and, like, or } from 'drizzle-orm';
 import { env } from '@/env';
 
@@ -181,12 +181,13 @@ export const ragService = {
 
   /**
    * 初始化 RAG 表（包括 embedding 缓存表）
+   * 注意：向量表使用 better-sqlite3 实例（vec0 扩展仅在该连接上加载）
    */
   initRagTable: async () => {
     const { embeddingDimensions } = await getAiConfig();
     const dim = embeddingDimensions || 1024;
 
-    // 确保 content_chunks 表存在
+    // content_chunks 和 embedding_cache 使用 drizzleDb（普通表）
     await drizzleDb.run(sql`
       CREATE TABLE IF NOT EXISTS content_chunks (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -195,22 +196,6 @@ export const ragService = {
       );
     `);
 
-    // 检查 content_vec 虚拟表是否存在
-    const vecTableExists = await drizzleDb.select({ count: sql<number>`count(*)` })
-      .from(sql`sqlite_master`)
-      .where(sql`type='table' AND name='content_vec'`)
-      .get();
-
-    if (!vecTableExists || Number(vecTableExists.count) === 0) {
-      await drizzleDb.run(sql`
-        CREATE VIRTUAL TABLE content_vec USING vec0(
-          embedding float[${dim}]
-        );
-      `);
-      console.log(`[RAG] Created content_vec table with dimensions: ${dim}`);
-    }
-
-    // 确保 embedding_cache 表存在
     await drizzleDb.run(sql`
       CREATE TABLE IF NOT EXISTS embedding_cache (
         text_hash TEXT PRIMARY KEY,
@@ -219,19 +204,39 @@ export const ragService = {
         created_at TEXT DEFAULT CURRENT_TIMESTAMP
       );
     `);
+
+    // content_vec 使用 better-sqlite3（vec0 扩展仅在该连接可用）
+    const legacyDb = getLegacyDb();
+    try {
+      legacyDb.prepare('SELECT vec_version()').get();
+    } catch {
+      console.error('[RAG] sqlite-vec 扩展未加载，无法创建向量表');
+      return;
+    }
+
+    const vecTable = legacyDb.prepare(
+      "SELECT count(*) as count FROM sqlite_master WHERE type='table' AND name='content_vec'"
+    ).get() as { count: number };
+
+    if (!vecTable.count) {
+      legacyDb.exec(`CREATE VIRTUAL TABLE content_vec USING vec0(embedding float[${dim}])`);
+      console.log(`[RAG] Created content_vec table with dimensions: ${dim}`);
+    }
   },
 
   /**
    * 添加知识块
+   * 向量表操作使用 better-sqlite3（vec0 扩展仅在该连接上加载）
    */
   addChunk: async (content: string, metadata: Record<string, unknown> = {}) => {
     const embedding = await ragService.getEmbedding(content);
+    const legacyDb = getLegacyDb();
 
-    // 向量表 insert
-    const infoVec = await drizzleDb.run(sql`INSERT INTO content_vec(embedding) VALUES (${JSON.stringify(embedding)})`);
-    const vecRowid = (infoVec as unknown as { lastInsertRowid: number }).lastInsertRowid;
+    // 向量表 insert (使用 better-sqlite3)
+    const infoVec = legacyDb.prepare('INSERT INTO content_vec(embedding) VALUES (?)').run(JSON.stringify(embedding));
+    const vecRowid = infoVec.lastInsertRowid;
 
-    // 基础表 insert
+    // 基础表 insert (使用 drizzleDb)
     await drizzleDb.run(sql`INSERT INTO content_chunks (id, content, metadata) VALUES (${Number(vecRowid)}, ${content}, ${JSON.stringify(metadata)})`);
   },
 
@@ -239,7 +244,10 @@ export const ragService = {
    * 批量添加知识块（使用 embedMany，大幅减少 API 调用）
    */
   addChunksBatch: async (items: Array<{ content: string; metadata: Record<string, unknown> }>, batchSize: number = 50) => {
+    const legacyDb = getLegacyDb();
+    const vecInsert = legacyDb.prepare('INSERT INTO content_vec(embedding) VALUES (?)');
     let successCount = 0;
+
     for (let i = 0; i < items.length; i += batchSize) {
       const batch = items.slice(i, i + batchSize);
       const texts = batch.map(item => item.content || '');
@@ -254,8 +262,8 @@ export const ragService = {
             continue;
           }
           try {
-            const infoVec = await drizzleDb.run(sql`INSERT INTO content_vec(embedding) VALUES (${JSON.stringify(vec)})`);
-            const vecRowid = (infoVec as unknown as { lastInsertRowid: number }).lastInsertRowid;
+            const infoVec = vecInsert.run(JSON.stringify(vec));
+            const vecRowid = infoVec.lastInsertRowid;
             await drizzleDb.run(sql`INSERT INTO content_chunks (id, content, metadata) VALUES (${Number(vecRowid)}, ${batch[j].content || ''}, ${JSON.stringify(batch[j].metadata)})`);
             successCount++;
           } catch (itemErr) {
@@ -284,17 +292,20 @@ export const ragService = {
     try {
       // 找到匹配的 ID
       const chunks = await drizzleDb.all<Record<string, unknown>>(sql`
-        SELECT id FROM content_chunks 
-        WHERE json_extract(metadata, '$.source_type') = ${sourceType} 
+        SELECT id FROM content_chunks
+        WHERE json_extract(metadata, '$.source_type') = ${sourceType}
         AND json_extract(metadata, '$.source_id') = ${sourceId}
       `);
 
       if (chunks.length > 0) {
         const ids = chunks.map(c => c.id as number);
 
-        // 删除基础表和向量表 (向量表 rowid 与基础表 id 对应)
+        // 删除基础表 (drizzleDb)
         await drizzleDb.run(sql`DELETE FROM content_chunks WHERE id IN (${sql.join(ids.map(id => sql`${id}`), sql`, `)})`);
-        await drizzleDb.run(sql`DELETE FROM content_vec WHERE rowid IN (${sql.join(ids.map(id => sql`${id}`), sql`, `)})`);
+        // 删除向量表 (better-sqlite3，vec0 扩展)
+        const legacyDb = getLegacyDb();
+        const placeholders = ids.map(() => '?').join(',');
+        legacyDb.prepare(`DELETE FROM content_vec WHERE rowid IN (${placeholders})`).run(...ids);
 
         console.log(`[RAG] Deleted ${chunks.length} chunks for ${sourceType}:${sourceId}`);
       }
@@ -305,14 +316,16 @@ export const ragService = {
 
   /**
    * 向量检索
+   * 使用 better-sqlite3 实例（vec0 扩展仅在该连接上加载）
    */
   search: async (query: string, limit: number = 3, sourceType?: string): Promise<RagResult[]> => {
     try {
       const queryEmbedding = await ragService.getEmbedding(query);
+      const legacyDb = getLegacyDb();
 
       // 检查 vec0 模块
       try {
-        await drizzleDb.run(sql`SELECT vec_version()`);
+        legacyDb.prepare('SELECT vec_version()').get();
       } catch (_e) {
         console.error('[RAGService] sqlite-vec 扩展未加载，无法进行向量检索');
         return [];
@@ -320,16 +333,16 @@ export const ragService = {
 
       const fetchLimit = sourceType ? limit * 3 : limit;
 
-      const results = await drizzleDb.all<Record<string, unknown>>(sql`
-        SELECT 
+      const results = legacyDb.prepare(`
+        SELECT
           c.content,
           v.distance,
           c.metadata
         FROM content_vec v
         JOIN content_chunks c ON c.id = v.rowid
-        WHERE v.embedding MATCH ${JSON.stringify(queryEmbedding)}
-          AND k = ${fetchLimit}
-      `);
+        WHERE v.embedding MATCH ?
+          AND k = ?
+      `).all(JSON.stringify(queryEmbedding), fetchLimit) as Record<string, unknown>[];
 
       let filtered = results;
       if (sourceType) {

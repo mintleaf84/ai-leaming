@@ -205,6 +205,9 @@ export const wrongQuestionRecommend = {
 
       console.log(`[Recommend] 共 ${allQuestions.length} 道题目待向量化`);
 
+      // 3.5 确保向量表已初始化
+      await ragService.initRagTable();
+
       // 4. 批量写入（每批 20 条，减少 API 调用次数）
       const items = allQuestions.map(q => ({
         content: q.content || '',

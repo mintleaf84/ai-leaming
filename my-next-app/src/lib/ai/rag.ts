@@ -165,10 +165,14 @@ export const ragService = {
         await dbCacheSet(cacheKey(texts[idx]), texts[idx], vec);
       }
     } catch (error: unknown) {
-      console.warn('[RAG] embedMany 失败，逐条回退:', getErrorMessage(error));
+      console.error('[RAG] embedMany 失败，逐条回退:', getErrorMessage(error));
       // 回退到逐条调用
-      for (const idx of uncachedIndices) {
-        results[idx] = await ragService.getEmbedding(texts[idx]);
+      try {
+        for (const idx of uncachedIndices) {
+          results[idx] = await ragService.getEmbedding(texts[idx]);
+        }
+      } catch (fallbackErr) {
+        console.error('[RAG] 逐条回退也失败:', fallbackErr);
       }
     }
 
@@ -182,24 +186,28 @@ export const ragService = {
     const { embeddingDimensions } = await getAiConfig();
     const dim = embeddingDimensions || 1024;
 
-    // 使用 drizzleDb.run 执行 DDL
-    const tableExists = await drizzleDb.select({ count: sql<number>`count(*)` })
+    // 确保 content_chunks 表存在
+    await drizzleDb.run(sql`
+      CREATE TABLE IF NOT EXISTS content_chunks (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        content TEXT NOT NULL,
+        metadata TEXT
+      );
+    `);
+
+    // 检查 content_vec 虚拟表是否存在
+    const vecTableExists = await drizzleDb.select({ count: sql<number>`count(*)` })
       .from(sql`sqlite_master`)
-      .where(sql`type='table' AND name='content_chunks'`)
+      .where(sql`type='table' AND name='content_vec'`)
       .get();
 
-    if (!tableExists || Number(tableExists.count) === 0) {
+    if (!vecTableExists || Number(vecTableExists.count) === 0) {
       await drizzleDb.run(sql`
-        CREATE TABLE IF NOT EXISTS content_chunks (
-          id INTEGER PRIMARY KEY AUTOINCREMENT,
-          content TEXT NOT NULL,
-          metadata TEXT
-        );
         CREATE VIRTUAL TABLE content_vec USING vec0(
           embedding float[${dim}]
         );
       `);
-      console.log(`[RAG] Initialized tables with dimensions: ${dim}`);
+      console.log(`[RAG] Created content_vec table with dimensions: ${dim}`);
     }
 
     // 确保 embedding_cache 表存在
@@ -241,21 +249,28 @@ export const ragService = {
 
         for (let j = 0; j < batch.length; j++) {
           const vec = embeddings[j];
-          if (!vec) continue;
+          if (!vec) {
+            if (j === 0) console.warn(`[RAG] Batch ${i / batchSize + 1}: embeddings[${j}] is falsy, type=${typeof vec}`);
+            continue;
+          }
           try {
             const infoVec = await drizzleDb.run(sql`INSERT INTO content_vec(embedding) VALUES (${JSON.stringify(vec)})`);
             const vecRowid = (infoVec as unknown as { lastInsertRowid: number }).lastInsertRowid;
             await drizzleDb.run(sql`INSERT INTO content_chunks (id, content, metadata) VALUES (${Number(vecRowid)}, ${batch[j].content || ''}, ${JSON.stringify(batch[j].metadata)})`);
             successCount++;
-          } catch { /* skip individual failures */ }
+          } catch (itemErr) {
+            if (successCount === 0 && j === 0) console.error('[RAG] addChunksBatch item error:', itemErr);
+          }
         }
       } catch (err) {
-        console.warn(`[RAG] Batch ${i / batchSize + 1} failed, falling back to single:`, err);
+        console.warn(`[RAG] Batch ${i / batchSize + 1} failed (getEmbeddings or INSERT), falling back to single:`, err);
         for (const item of batch) {
           try {
             await ragService.addChunk(item.content || '', item.metadata);
             successCount++;
-          } catch { /* skip */ }
+          } catch (singleErr) {
+            if (successCount === 0) console.error('[RAG] Single addChunk also failed:', singleErr);
+          }
         }
       }
     }

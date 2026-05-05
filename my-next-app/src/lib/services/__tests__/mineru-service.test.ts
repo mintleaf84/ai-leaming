@@ -186,4 +186,102 @@ describe('mineruService.processMineruZip', () => {
 
         expect(mockWriteFile).toHaveBeenCalled();
     });
+
+    it('应该跳过目录条目', async () => {
+        mockZipEntries.push(makeEntry('book/full.md', '# 标题', true)); // 目录
+        mockZipEntries.push(makeImageEntry('book/images/fig1.png'));
+
+        const result = await mineruService.processMineruZip(Buffer.from(''), 'book.zip');
+
+        expect(mockWriteFile).toHaveBeenCalledTimes(1);
+        expect(result.imageCount).toBe(1);
+    });
+
+    it('应该返回正确的 imageCount', async () => {
+        mockZipEntries.push(makeEntry('book/full.md', '# 标题'));
+        mockZipEntries.push(makeImageEntry('book/images/1.png'));
+        mockZipEntries.push(makeImageEntry('book/images/2.png'));
+        mockZipEntries.push(makeImageEntry('book/images/3.png'));
+
+        const result = await mineruService.processMineruZip(Buffer.from(''), 'book.zip');
+
+        expect(result.imageCount).toBe(3);
+    });
+
+    it('多张图片时只取第一张作为封面', async () => {
+        mockZipEntries.push(makeEntry('book/full.md', '# 封面测试'));
+        mockZipEntries.push(makeImageEntry('book/images/second.png'));
+        mockZipEntries.push(makeImageEntry('book/images/first.jpg'));
+
+        await mineruService.processMineruZip(Buffer.from(''), 'book.zip');
+
+        // 取第一张 jpg/png 图片作为封面
+        expect(mockTextbookService.updateTextbookCover).toHaveBeenCalledWith(
+            42,
+            '/books/42/images/second.png'
+        );
+    });
+
+    it('应该正确替换各种格式的图片路径', async () => {
+        mockZipEntries.push(
+            makeEntry('docs/full.md', '# 测试\n\n' +
+                '![img1](images/photo.png)\n' +
+                '![img2](subdir/images/chart.jpg)\n' +
+                '![img3](docs/images/diagram.gif)')
+        );
+
+        await mineruService.processMineruZip(Buffer.from(''), 'docs.zip');
+
+        const processedMarkdown = mockParseMarkdownToChapters.mock.calls[0][0];
+        expect(processedMarkdown).toContain('/books/42/images/photo.png');
+        expect(processedMarkdown).toContain('/books/42/images/chart.jpg');
+        expect(processedMarkdown).toContain('/books/42/images/diagram.gif');
+    });
+
+    it('章节 order_index 应从 1 开始', async () => {
+        mockParseMarkdownToChapters.mockReturnValueOnce([
+            { title: '第一章', content: '内容1', level: 1 },
+            { title: '第二章', content: '内容2', level: 1 },
+            { title: '第三章', content: '内容3', level: 2 },
+        ]);
+
+        mockZipEntries.push(makeEntry('root/full.md', '# 书名'));
+
+        await mineruService.processMineruZip(Buffer.from(''), 'book.zip');
+
+        // 验证第一个章节的 order_index 为 1
+        expect(mockTextbookService.addChapter).toHaveBeenNthCalledWith(1,
+            expect.objectContaining({ order_index: 1 })
+        );
+        // 验证第二个章节的 order_index 为 2
+        expect(mockTextbookService.addChapter).toHaveBeenNthCalledWith(2,
+            expect.objectContaining({ order_index: 2 })
+        );
+        // 验证第三个章节的 order_index 为 3
+        expect(mockTextbookService.addChapter).toHaveBeenNthCalledWith(3,
+            expect.objectContaining({ order_index: 3 })
+        );
+    });
+
+    it('章节应保留正确的 level 属性', async () => {
+        mockParseMarkdownToChapters.mockReturnValueOnce([
+            { title: '第一章', content: '内容1', level: 1 },
+            { title: '1.1 节', content: '内容1.1', level: 2 },
+            { title: '1.1.1 小节', content: '内容1.1.1', level: 3 },
+        ]);
+
+        mockZipEntries.push(makeEntry('root/full.md', '# 书名'));
+
+        await mineruService.processMineruZip(Buffer.from(''), 'book.zip');
+
+        expect(mockTextbookService.addChapter).toHaveBeenNthCalledWith(1,
+            expect.objectContaining({ level: 1 })
+        );
+        expect(mockTextbookService.addChapter).toHaveBeenNthCalledWith(2,
+            expect.objectContaining({ level: 2 })
+        );
+        expect(mockTextbookService.addChapter).toHaveBeenNthCalledWith(3,
+            expect.objectContaining({ level: 3 })
+        );
+    });
 });

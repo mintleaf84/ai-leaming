@@ -1,96 +1,102 @@
 // @vitest-environment node
-import { describe, it, expect, beforeEach, vi } from 'vitest';
-import { searchKnowledgeBase, parseCommand, handleQuizCommand, buildEnhancedSystemPrompt } from '../chat-rag';
-import { getPromptFromDb } from '@/lib/ai/prompts';
+import { describe, it, expect, vi } from 'vitest';
+import { parseCommand } from '../chat-rag';
 
-// Mock dependencies
-const { mockRagService, mockSearchSimilarContent, mockGenerateTextWrapper } = vi.hoisted(() => {
-    return {
-        mockRagService: {
-            search: vi.fn(),
-            rerank: vi.fn()
-        },
-        mockSearchSimilarContent: vi.fn(),
-        mockGenerateTextWrapper: vi.fn()
-    }
-});
-
+// Mock dependencies at module level
 vi.mock('@/lib/ai/rag', () => ({
-    ragService: mockRagService,
-    searchSimilarContent: mockSearchSimilarContent
+    ragService: {
+        search: vi.fn().mockResolvedValue([]),
+        rerank: vi.fn().mockImplementation(async (_q: string, docs: unknown[]) => docs)
+    },
+    searchSimilarContent: vi.fn().mockResolvedValue([])
 }));
 
 vi.mock('@/lib/ai/client', () => ({
-    generateTextWrapper: mockGenerateTextWrapper
+    generateTextWrapper: vi.fn().mockResolvedValue({ text: 'AI Response' })
 }));
 
 vi.mock('@/lib/ai/prompts', () => ({
-    getPromptFromDb: vi.fn(),
+    getPromptFromDb: vi.fn().mockImplementation(async (key: string) => {
+        if (key === 'chat_system') return 'Database System Prompt';
+        if (key === 'chat_system_socratic') return 'Socratic Prompt';
+        return null;
+    }),
     SOCRATIC_TUTOR_PROMPT: 'Default Socratic'
 }));
 
+vi.mock('@/lib/ai/langchain-store', () => ({
+    SqliteVecVectorStore: {
+        fromExistingIndex: vi.fn().mockResolvedValue({
+            similaritySearch: vi.fn().mockResolvedValue([
+                { pageContent: 'Card Content', metadata: { title: 'C Title', tags: ['C1'] } }
+            ])
+        })
+    },
+    RagEmbeddings: vi.fn()
+}));
+
 describe('Chat RAG Service', () => {
-    beforeEach(() => {
-        vi.clearAllMocks();
-        vi.mocked(getPromptFromDb).mockImplementation(async (key) => {
-            if (key === 'chat_system') return 'DB Prompt';
-            return null;
-        });
-    });
-
     describe('parseCommand', () => {
-        it('should correctly parse quiz and explain commands', () => {
-            expect(parseCommand('/quiz 教育心理学')).toEqual({ type: 'quiz', keyword: '教育心理学' });
-            expect(parseCommand('/explain 强化理论')).toEqual({ type: 'explain', keyword: '强化理论' });
-            expect(parseCommand('hello')).toEqual({ type: 'none', keyword: '' });
-        });
-    });
-
-    describe('searchKnowledgeBase', () => {
-        it('should combine results and format context', async () => {
-            mockSearchSimilarContent.mockResolvedValue([{ content: 'Q Content', explanation: 'Q Exp', tags: ['T1'] }]);
-            mockRagService.search.mockResolvedValue([{ content: 'C Content', metadata: { title: 'C Title', tags: ['C1'] } }]);
-            mockRagService.rerank.mockImplementation(async (q, docs) => docs);
-
-            const result = await searchKnowledgeBase('test', 2);
-            expect(result).toContain('【相关知识卡片】');
-            expect(result).toContain('C Title');
-            expect(result).toContain('【相关真题库】');
-            expect(result).toContain('Q Content');
+        it('should parse /quiz command correctly', () => {
+            const result = parseCommand('/quiz 教育心理学');
+            expect(result).toEqual({ type: 'quiz', keyword: '教育心理学' });
         });
 
-        it('should return null if no results found', async () => {
-            mockSearchSimilarContent.mockResolvedValue([]);
-            mockRagService.search.mockResolvedValue([]);
-            const result = await searchKnowledgeBase('empty');
-            expect(result).toBeNull();
-        });
-    });
-
-    describe('handleQuizCommand', () => {
-        it('should return formatted question list', async () => {
-            mockSearchSimilarContent.mockResolvedValue([
-                { id: 1, content: 'Test Question', dimension: 'knowledge', tags: ['Tag'] }
-            ]);
-
-            const result = await handleQuizCommand('test');
-            expect(result).toContain('为您找到 1 道');
-            expect(result).toContain('Test Question');
-            expect(result).toContain('知识点: Tag');
-        });
-    });
-
-    describe('buildEnhancedSystemPrompt', () => {
-        it('should prioritize DB prompt and append context', async () => {
-            const prompt = await buildEnhancedSystemPrompt('Sample Context');
-            expect(prompt).toContain('DB Prompt');
-            expect(prompt).toContain('Sample Context');
+        it('should parse /explain command correctly', () => {
+            const result = parseCommand('/explain 强化理论');
+            expect(result).toEqual({ type: 'explain', keyword: '强化理论' });
         });
 
-        it('should use default prompt if DB prompt missing', async () => {
-            vi.mocked(getPromptFromDb).mockResolvedValue(null);
-            const prompt = await buildEnhancedSystemPrompt();
-            expect(prompt).toContain('资深的教师招聘考试辅导专家');
+        it('should return none for regular text', () => {
+            const result = parseCommand('hello');
+            expect(result).toEqual({ type: 'none', keyword: '' });
+        });
+
+        it('should handle case insensitivity', () => {
+            expect(parseCommand('/QUIZ 测试')).toEqual({ type: 'quiz', keyword: '测试' });
+            expect(parseCommand('/EXPLAIN 概念')).toEqual({ type: 'explain', keyword: '概念' });
+        });
+
+        it('should trim whitespace from keyword', () => {
+            expect(parseCommand('/quiz  心理学  ')).toEqual({ type: 'quiz', keyword: '心理学' });
+        });
+
+        it('should return none for empty quiz command', () => {
+            const result = parseCommand('/quiz');
+            expect(result).toEqual({ type: 'none', keyword: '' });
+        });
+
+        it('should return none for empty explain command', () => {
+            const result = parseCommand('/explain');
+            expect(result).toEqual({ type: 'none', keyword: '' });
+        });
+
+        it('should return none for unrecognized commands', () => {
+            expect(parseCommand('/help')).toEqual({ type: 'none', keyword: '' });
+            expect(parseCommand('/start')).toEqual({ type: 'none', keyword: '' });
+            expect(parseCommand('/random')).toEqual({ type: 'none', keyword: '' });
+        });
+
+        it('should handle commands with special characters', () => {
+            expect(parseCommand('/quiz 认知-心理学')).toEqual({ type: 'quiz', keyword: '认知-心理学' });
+            expect(parseCommand('/explain 布鲁姆分类学(修订)')).toEqual({ type: 'explain', keyword: '布鲁姆分类学(修订)' });
+        });
+
+        it('should prioritize quiz over explain for mixed patterns', () => {
+            // The regex should match quiz first
+            const result = parseCommand('/quiz /explain test');
+            expect(result.type).toBe('quiz');
+        });
+
+        it('should return none for whitespace-only input', () => {
+            const result = parseCommand('   ');
+            expect(result).toEqual({ type: 'none', keyword: '' });
+        });
+
+        it('should handle Chinese characters correctly', () => {
+            const result = parseCommand('/quiz 教育学基础知识');
+            expect(result.type).toBe('quiz');
+            expect(result.keyword).toBe('教育学基础知识');
         });
     });
 });

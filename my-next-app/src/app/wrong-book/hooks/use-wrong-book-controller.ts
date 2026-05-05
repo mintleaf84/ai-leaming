@@ -13,12 +13,14 @@ import {
     markAsMasteredAction,
     unmarkMasteredAction,
     getRandomWrongQuestionsAction,
+    getSimilarQuestionsAction,
 } from '@/server/actions/wrong-questions';
-import { 
-    type WrongQuestionItem, 
-    type WrongQuestionsByTag, 
-    type WrongQuestionDetail 
+import {
+    type WrongQuestionItem,
+    type WrongQuestionsByTag,
+    type WrongQuestionDetail
 } from '@/lib/services/wrong-question';
+import { type RagResult } from '@/lib/ai/rag';
 
 // 视图模式类型
 export type ViewMode = 'list' | 'byTag' | 'mastered';
@@ -64,6 +66,13 @@ export function useWrongBookController() {
     const [expandedQuestionId, setExpandedQuestionId] = useState<number | null>(null);
     const [questionDetail, setQuestionDetail] = useState<WrongQuestionDetail | null>(null);
     const [isLoadingDetail, setIsLoadingDetail] = useState(false);
+
+    // 推荐相似题状态
+    const [recommendedQuestions, setRecommendedQuestions] = useState<RagResult[]>([]);
+    const [isRecommendLoading, setIsRecommendLoading] = useState(false);
+    const [showRecommendDialog, setShowRecommendDialog] = useState(false);
+    const [isInitializing, setIsInitializing] = useState(false);
+    const [initializeProgress, setInitializeProgress] = useState('');
 
     // 加载数据
     const loadData = useCallback(async () => {
@@ -181,22 +190,24 @@ export function useWrongBookController() {
 
     // 展开/收起题目详情
     const toggleQuestionDetail = useCallback(async (questionId: number) => {
-        // 使用函数式更新获取当前状态，避免依赖 expandedQuestionId
-        setExpandedQuestionId(currentId => {
-            if (currentId === questionId) {
-                // 收起详情
-                setQuestionDetail(null);
-                return null;
-            }
-            // 展开新题目详情
-            getWrongQuestionDetailAction(questionId).then(result => {
-                setQuestionDetail(result.data?.question || null);
-                setIsLoadingDetail(false);
-            });
-            setIsLoadingDetail(true);
-            return questionId;
+        const currentId = expandedQuestionId;
+
+        if (currentId === questionId) {
+            // 收起详情
+            setExpandedQuestionId(null);
+            setQuestionDetail(null);
+            return;
+        }
+
+        // 展开新题目详情
+        setExpandedQuestionId(questionId);
+        setIsLoadingDetail(true);
+
+        getWrongQuestionDetailAction(questionId).then(result => {
+            setQuestionDetail(result.data?.question || null);
+            setIsLoadingDetail(false);
         });
-    }, []);
+    }, [expandedQuestionId]);
 
     // 标记为已掌握
     const handleMarkAsMastered = useCallback(async (questionId: number) => {
@@ -222,6 +233,33 @@ export function useWrongBookController() {
         }
     }, [loadData]);
 
+    // 推荐相似题
+    const handleRecommendSimilar = useCallback(async (questionId: number) => {
+        setIsRecommendLoading(true);
+        setShowRecommendDialog(true);
+
+        const result = await getSimilarQuestionsAction({ questionId, limit: 5 });
+        setIsRecommendLoading(false);
+
+        if (result.data?.success && result.data.questions && result.data.questions.length > 0) {
+            setRecommendedQuestions(result.data.questions);
+        } else {
+            setRecommendedQuestions([]);
+        }
+    }, []);
+
+    // 关闭推荐弹窗
+    const closeRecommendDialog = useCallback(() => {
+        setShowRecommendDialog(false);
+        setRecommendedQuestions([]);
+    }, []);
+
+    // 从弹窗开始练习推荐题目
+    const handleStartRecommended = useCallback(async (questionIds: number[]) => {
+        setShowRecommendDialog(false);
+        await startPractice(questionIds);
+    }, [startPractice]);
+
     return {
         // 数据
         questions,
@@ -243,6 +281,13 @@ export function useWrongBookController() {
         questionDetail,
         isLoadingDetail,
 
+        // 推荐相似题
+        recommendedQuestions,
+        isRecommendLoading,
+        showRecommendDialog,
+        isInitializing,
+        initializeProgress,
+
         // 方法
         loadData,
         toggleTag,
@@ -252,6 +297,9 @@ export function useWrongBookController() {
         startRandomPractice,
         toggleQuestionDetail,
         handleMarkAsMastered,
-        handleUnmarkMastered
+        handleUnmarkMastered,
+        handleRecommendSimilar,
+        closeRecommendDialog,
+        handleStartRecommended
     };
 }

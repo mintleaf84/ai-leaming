@@ -8,6 +8,7 @@ import {
 } from '@/lib/services/wrong-question';
 import { practiceService } from '@/lib/services/practice';
 import { RandomWrongQuestionsSchema } from '@/lib/validations/wrong-questions';
+import { wrongQuestionRecommend } from '@/lib/services/question-recommend';
 
 /**
  * 获取错题列表
@@ -120,4 +121,31 @@ export const getMasteredQuestionsAction = authenticatedAction
         const { user } = ctx;
         const data = await wrongQuestionService.getMasteredQuestions(user.id);
         return { success: true, questions: data };
+    });
+
+/**
+ * 获取相似推荐题目
+ * 基于当前错题的知识点，从题库中推荐相似题目
+ */
+export const getSimilarQuestionsAction = authenticatedAction
+    .inputSchema(z.object({
+        questionId: z.number(),
+        limit: z.number().default(5)
+    }))
+    .action(async ({ parsedInput: { questionId, limit }, ctx }) => {
+        const { user } = ctx;
+        // 获取该错题的知识点
+        const detail = await wrongQuestionService.getDetail(user.id, questionId);
+        if (!detail) {
+            return { success: false, message: '题目不存在' };
+        }
+
+        // 基于知识点搜索相似题目（排除当前题目）
+        const recommended = await wrongQuestionRecommend.recommendByTags(
+            questionId,
+            detail.tags,
+            limit
+        );
+
+        return { success: true, questions: recommended };
     });

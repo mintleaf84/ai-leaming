@@ -1,22 +1,17 @@
-import { generateTextWrapper } from '@/lib/ai/client';
+import { Document } from '@langchain/core/documents';
+import { generateTextWrapper, getAiConfig } from '@/lib/ai/client';
 import { searchSimilarContent, ragService, type RagResult } from '@/lib/ai/rag';
+import { SqliteVecVectorStore, RagEmbeddings } from '@/lib/ai/langchain-store';
 import { getPromptFromDb, SOCRATIC_TUTOR_PROMPT } from '@/lib/ai/prompts';
-// import { tool } from 'ai'; // Removed unused tool import
-import { z } from 'zod';
 
 /**
- * 知识库检索工具
- * 让 AI 根据上下文自主决定是否需要检索 
- */
-/**
- * 知识库检索工具
- * 让 AI 根据上下文自主决定是否需要检索 
+ * 知识库检索工具 (LangChain 风格)
  */
 export const knowledgeSearchTool = {
     description: 'Search for educational psychology, pedagogy, and teacher recruitment exam questions. Use this whenever the user asks about specific concepts, theories, or requests similar questions. DO NOT use this for general greetings or simple conversation.',
-    parameters: z.object({
-        query: z.string().describe('The search keyword or question related to the exam knowledge'),
-    }),
+    parameters: {
+        query: 'The search keyword or question related to the exam knowledge',
+    },
     execute: async ({ query }: { query: string }) => {
         console.log(`[RAG-Tool] Searching for: ${query}`);
         const context = await searchKnowledgeBase(query, 3);
@@ -34,7 +29,6 @@ export type CommandType = 'quiz' | 'explain' | 'none';
 
 /**
  * 解析快捷指令
- * 支持：/quiz [关键词] 或 /explain [知识点]
  */
 export function parseCommand(input: string): { type: CommandType; keyword: string } {
     const quizMatch = input.match(/^\/quiz\s+(.+)$/i);
@@ -51,57 +45,78 @@ export function parseCommand(input: string): { type: CommandType; keyword: strin
 }
 
 /**
- * 基于用户消息检索相关题库内容 (混合检索 + 重排序)
+ * 使用 LangChain 从向量存储检索文档 (高级用法)
+ * 当前主要使用 ragService.search，这个作为扩展保留
+ */
+export async function langchainSearch(
+    query: string,
+    k: number = 3,
+    sourceType?: string
+): Promise<Document[]> {
+    try {
+        const embeddings = new RagEmbeddings({});
+        const filter = sourceType ? { sourceType } : undefined;
+        const vectorStore = await SqliteVecVectorStore.fromExistingIndex(embeddings, filter);
+
+        const results = await vectorStore.similaritySearch(query, k);
+        return results;
+    } catch (error) {
+        console.error('[LangChain RAG] Search failed:', error);
+        return [];
+    }
+}
+
+/**
+ * 基于用户消息检索相关题库内容 (混合检索 + 重排序 - LangChain 风格)
  */
 export async function searchKnowledgeBase(query: string, limit: number = 3) {
     try {
-        // 1. 初始检索 (取稍多结果用于重排序)
         const fetchLimit = limit * 2;
 
-        // 题库检索 (Keyword based)
+        // 1. 题库检索 (Keyword based)
         const questionResults = await searchSimilarContent(query, fetchLimit);
 
-        // 知识卡片检索 (Vector based)
+        // 2. 知识卡片检索 (Vector based)
         const cardResults = await ragService.search(query, fetchLimit, 'card');
 
-        // 教材内容检索 (Vector based)
+        // 3. 教材内容检索 (Vector based)
         const textbookResults = await ragService.search(query, fetchLimit, 'textbook_chapter');
 
         if (questionResults.length === 0 && cardResults.length === 0 && textbookResults.length === 0) {
             return null;
         }
 
-        // 2. 统一格式并准备重排序
+        // 4. 统一格式并准备重排序
         const allResults: RagResult[] = [
             ...questionResults.map(q => ({
                 content: typeof q.content === 'string' ? q.content : JSON.stringify(q.content),
-                score: 1, // 初始分数
+                score: 1,
                 metadata: { ...q, source_type: 'question' }
             })),
-            ...cardResults.map(c => ({
-                ...c,
-                metadata: { ...c.metadata, source_type: 'card' }
+            ...cardResults.map(r => ({
+                ...r,
+                metadata: { ...r.metadata, source_type: 'card' }
             })),
-            ...textbookResults.map(t => ({
-                ...t,
-                metadata: { ...t.metadata, source_type: 'textbook' }
+            ...textbookResults.map(r => ({
+                ...r,
+                metadata: { ...r.metadata, source_type: 'textbook' }
             }))
         ];
 
-        // 3. 执行重排序 (如果配置了)
+        // 5. 执行重排序 (如果配置了)
         const rerankedResults = await ragService.rerank(query, allResults);
 
-        // 4. 取 Top N 并分门别类格式化
+        // 6. 取 Top N 并分门别类格式化
         const topResults = rerankedResults.slice(0, limit);
 
         const contextParts: string[] = [];
-        const cardDocs = topResults.filter(r => r.metadata?.source_type === 'card');
+        const cardDocsFiltered = topResults.filter(r => r.metadata?.source_type === 'card');
         const questionDocs = topResults.filter(r => r.metadata?.source_type === 'question');
-        const textbookDocs = topResults.filter(r => r.metadata?.source_type === 'textbook');
+        const textbookDocsFiltered = topResults.filter(r => r.metadata?.source_type === 'textbook');
 
         // 格式化知识卡片
-        if (cardDocs.length > 0) {
-            const cardContext = cardDocs.map((item, index) => {
+        if (cardDocsFiltered.length > 0) {
+            const cardContext = cardDocsFiltered.map((item, index) => {
                 const meta = item.metadata || {};
                 return `
 [知识卡片 ${index + 1}]
@@ -114,8 +129,8 @@ export async function searchKnowledgeBase(query: string, limit: number = 3) {
         }
 
         // 格式化教材内容
-        if (textbookDocs.length > 0) {
-            const tbContext = textbookDocs.map((item, index) => {
+        if (textbookDocsFiltered.length > 0) {
+            const tbContext = textbookDocsFiltered.map((item, index) => {
                 const meta = item.metadata || {};
                 return `
 [教材章节 ${index + 1}]
@@ -128,7 +143,7 @@ export async function searchKnowledgeBase(query: string, limit: number = 3) {
 
         // 格式化题库
         if (questionDocs.length > 0) {
-            const questionContext = questionDocs.map((item: RagResult, index: number) => {
+            const questionContext = questionDocs.map((item, index) => {
                 const q = item.metadata || {};
                 return `
 [题目 ${index + 1}]
@@ -178,7 +193,7 @@ ${context}
 }
 
 /**
- * 处理 /quiz 指令 - 生成相关练习题推荐
+ * 处理 /quiz 指令
  */
 export async function handleQuizCommand(keyword: string): Promise<string> {
     const results = await searchSimilarContent(keyword, 5);
@@ -197,12 +212,16 @@ export async function handleQuizCommand(keyword: string): Promise<string> {
         metadata: { ...q }
     }));
 
-    ragResults.forEach((item: RagResult, index: number) => {
+    ragResults.forEach((item, index) => {
         const content = item.content;
         const meta = item.metadata || {};
+        const metaTags = meta['tags'];
+        const tagsArray = Array.isArray(metaTags)
+            ? metaTags
+            : (typeof metaTags === 'string' ? JSON.parse(metaTags || '[]') : []);
         response += `**${index + 1}. ${content.substring(0, 50)}...**\n`;
         response += `   - 难度层级: ${meta['dimension'] || '未标注'}\n`;
-        response += `   - 知识点: ${Array.isArray(meta['tags']) ? (meta['tags'] as string[]).join(', ') : String(meta['tags'] || '未分类')}\n\n`;
+        response += `   - 知识点: ${Array.isArray(tagsArray) ? tagsArray.join(', ') : String(metaTags || '未分类')}\n\n`;
     });
 
     response += `\n💡 建议：前往 [练习页面](/practice) 进行系统化训练，AI 会根据您的掌握度智能推荐题目。`;
@@ -211,7 +230,7 @@ export async function handleQuizCommand(keyword: string): Promise<string> {
 }
 
 /**
- * 处理 /explain 指令 - 解释特定知识点
+ * 处理 /explain 指令
  */
 export async function handleExplainCommand(keyword: string): Promise<string> {
     const context = await searchKnowledgeBase(keyword, 3);
@@ -238,5 +257,36 @@ ${context}
         return text;
     } catch (_error) {
         return `抱歉，生成解释时遇到错误。请稍后重试或直接提问。`;
+    }
+}
+
+/**
+ * 使用 LangChain LCEL 链进行问答
+ * 这是未来扩展的方向，当前主要使用 searchKnowledgeBase
+ */
+export async function langchainQA(
+    query: string,
+    mode: 'standard' | 'socratic' = 'standard'
+): Promise<string> {
+    try {
+        // 1. 检索相关文档
+        const context = await searchKnowledgeBase(query, 3);
+        if (!context) {
+            return "抱歉，我在知识库中没有找到相关信息。";
+        }
+
+        // 2. 构建 Prompt
+        const systemPrompt = await buildEnhancedSystemPrompt(context, mode);
+
+        // 3. 生成回答
+        const { text } = await generateTextWrapper(
+            `${systemPrompt}\n\n用户问题: ${query}`,
+            mode === 'socratic' ? 'economy' : 'premium'
+        );
+
+        return text;
+    } catch (error) {
+        console.error('[LangChain QA] Failed:', error);
+        return "处理您的请求时发生错误，请稍后重试。";
     }
 }

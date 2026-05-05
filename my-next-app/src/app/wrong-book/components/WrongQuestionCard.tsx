@@ -17,6 +17,8 @@ interface WrongQuestionCardProps {
     onToggleDetail: () => void;
     onPractice: () => void;
     onMarkAsMastered: () => void;
+    onRecommendSimilar?: () => void;
+    isRecommendLoading?: boolean;
 }
 
 /**
@@ -32,7 +34,9 @@ export function WrongQuestionCard({
     onToggleSelect,
     onToggleDetail,
     onPractice,
-    onMarkAsMastered
+    onMarkAsMastered,
+    onRecommendSimilar,
+    isRecommendLoading
 }: WrongQuestionCardProps) {
     return (
         <div
@@ -113,6 +117,8 @@ export function WrongQuestionCard({
                             isLoading={isLoadingDetail}
                             onPractice={onPractice}
                             onMarkAsMastered={onMarkAsMastered}
+                            onRecommendSimilar={onRecommendSimilar}
+                            isRecommendLoading={isRecommendLoading}
                         />
                     ) : isLoadingDetail ? (
                         <div className="bg-muted/30 p-4">

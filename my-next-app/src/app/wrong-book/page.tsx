@@ -13,7 +13,8 @@ import {
     Archive,
     RotateCcw,
     Shuffle,
-    SortDesc
+    SortDesc,
+    Sparkles
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -22,6 +23,7 @@ import { WrongQuestionCard } from './components/WrongQuestionCard';
 import { TagTreeView } from './components/TagTreeView';
 import { WrongBookSkeleton } from './components/WrongBookSkeleton';
 import { QuestionCountPicker } from './components/QuestionCountPicker';
+import { RecommendedQuestionsDialog } from './components/RecommendedQuestionsDialog';
 
 export default function WrongBookPage() {
     // 复练排序模式：priority = 按错误频次+遗忘权重，random = 纯随机
@@ -44,6 +46,12 @@ export default function WrongBookPage() {
         expandedQuestionId,
         questionDetail,
         isLoadingDetail,
+        // 推荐相似题
+        recommendedQuestions,
+        isRecommendLoading,
+        showRecommendDialog,
+        isInitializing,
+        initializeProgress,
         // 方法
         toggleSelect,
         selectAll,
@@ -51,7 +59,10 @@ export default function WrongBookPage() {
         startRandomPractice,
         toggleQuestionDetail,
         handleMarkAsMastered,
-        handleUnmarkMastered
+        handleUnmarkMastered,
+        handleRecommendSimilar,
+        closeRecommendDialog,
+        handleStartRecommended
     } = useWrongBookController();
 
     // 加载状态
@@ -226,6 +237,8 @@ export default function WrongBookPage() {
                                             onToggleDetail={() => toggleQuestionDetail(q.questionId)}
                                             onPractice={() => startPractice([q.questionId])}
                                             onMarkAsMastered={() => handleMarkAsMastered(q.questionId)}
+                                            onRecommendSimilar={() => handleRecommendSimilar(q.questionId)}
+                                            isRecommendLoading={isRecommendLoading}
                                         />
                                     </div>
                                 ))}
@@ -318,6 +331,17 @@ export default function WrongBookPage() {
                     </div>
                 </div>
             )}
+
+            {/* 推荐相似题弹窗 */}
+            <RecommendedQuestionsDialog
+                isOpen={showRecommendDialog}
+                onClose={closeRecommendDialog}
+                questions={recommendedQuestions}
+                isLoading={isRecommendLoading}
+                isInitializing={isInitializing}
+                initializeProgress={initializeProgress}
+                onStartPractice={handleStartRecommended}
+            />
         </div>
     );
 }

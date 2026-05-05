@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState } from 'react';
-import { CheckCircle2, X, Lightbulb, History, Brain, Zap, Calendar } from 'lucide-react';
+import { CheckCircle2, X, Lightbulb, History, Brain, Zap, Calendar, Sparkles } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { type WrongQuestionDetail } from '@/lib/services/wrong-question';
 import { getBeijingDiffDays, formatBeijingDate } from '@/lib/utils/datetime';
@@ -11,6 +11,8 @@ interface QuestionDetailPanelProps {
     isLoading: boolean;
     onPractice: () => void;
     onMarkAsMastered: () => void;
+    onRecommendSimilar?: () => void;
+    isRecommendLoading?: boolean;
 }
 
 /**
@@ -56,7 +58,9 @@ export function QuestionDetailPanel({
     detail,
     isLoading,
     onPractice,
-    onMarkAsMastered
+    onMarkAsMastered,
+    onRecommendSimilar,
+    isRecommendLoading
 }: QuestionDetailPanelProps) {
     const [now] = useState(() => new Date());
 
@@ -192,24 +196,38 @@ export function QuestionDetailPanel({
                 </div>
 
                 {/* 操作按钮 */}
-                <div className="flex gap-2 pt-2 border-t">
-                    <Button
-                        size="sm"
-                        variant="outline"
-                        className="flex-1"
-                        onClick={onPractice}
-                    >
-                        再次练习
-                    </Button>
-                    <Button
-                        size="sm"
-                        variant="default"
-                        className="flex-1 bg-green-600 hover:bg-green-700"
-                        onClick={onMarkAsMastered}
-                    >
-                        <CheckCircle2 className="w-4 h-4 mr-1" />
-                        标记为已掌握
-                    </Button>
+                <div className="flex flex-col gap-2 pt-2 border-t">
+                    <div className="flex gap-2">
+                        <Button
+                            size="sm"
+                            variant="outline"
+                            className="flex-1"
+                            onClick={onPractice}
+                        >
+                            再次练习
+                        </Button>
+                        <Button
+                            size="sm"
+                            variant="default"
+                            className="flex-1 bg-green-600 hover:bg-green-700"
+                            onClick={onMarkAsMastered}
+                        >
+                            <CheckCircle2 className="w-4 h-4 mr-1" />
+                            标记为已掌握
+                        </Button>
+                    </div>
+                    {onRecommendSimilar && (
+                        <Button
+                            size="sm"
+                            variant="secondary"
+                            className="w-full"
+                            onClick={onRecommendSimilar}
+                            disabled={isRecommendLoading}
+                        >
+                            <Sparkles className="w-4 h-4 mr-1" />
+                            {isRecommendLoading ? '推荐中...' : '推荐相似题'}
+                        </Button>
+                    )}
                 </div>
             </div>
         </div>

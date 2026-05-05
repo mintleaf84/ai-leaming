@@ -63,3 +63,34 @@ export const system_settings = {
     key: 'system_settings.key',
     value: 'system_settings.value',
 };
+
+// --- 订阅相关 Mock ---
+export const subscription_plans = {
+    id: 'subscription_plans.id',
+    name: 'subscription_plans.name',
+    tier: 'subscription_plans.tier',
+    price_monthly: 'subscription_plans.price_monthly',
+    limits: 'subscription_plans.limits',
+    features: 'subscription_plans.features',
+    is_active: 'subscription_plans.is_active',
+    sort_order: 'subscription_plans.sort_order',
+    created_at: 'subscription_plans.created_at',
+};
+
+export const user_subscriptions = {
+    id: 'user_subscriptions.id',
+    user_id: 'user_subscriptions.user_id',
+    plan_id: 'user_subscriptions.plan_id',
+    status: 'user_subscriptions.status',
+    started_at: 'user_subscriptions.started_at',
+    expires_at: 'user_subscriptions.expires_at',
+    created_at: 'user_subscriptions.created_at',
+};
+
+export const daily_usage = {
+    id: 'daily_usage.id',
+    user_id: 'daily_usage.user_id',
+    usage_date: 'daily_usage.usage_date',
+    usage_type: 'daily_usage.usage_type',
+    count: 'daily_usage.count',
+};

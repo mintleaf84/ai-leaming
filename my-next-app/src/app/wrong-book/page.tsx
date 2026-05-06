@@ -14,7 +14,9 @@ import {
     RotateCcw,
     Shuffle,
     SortDesc,
-    Sparkles
+    Sparkles,
+    FolderOpen,
+    FolderPlus
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -24,6 +26,9 @@ import { TagTreeView } from './components/TagTreeView';
 import { WrongBookSkeleton } from './components/WrongBookSkeleton';
 import { QuestionCountPicker } from './components/QuestionCountPicker';
 import { RecommendedQuestionsDialog } from './components/RecommendedQuestionsDialog';
+import { FolderTreeView } from './components/FolderTreeView';
+import { FolderQuestionList } from './components/FolderQuestionList';
+import { AddToFolderDialog } from './components/AddToFolderDialog';
 
 export default function WrongBookPage() {
     // 复练排序模式：priority = 按错误频次+遗忘权重，random = 纯随机
@@ -52,6 +57,12 @@ export default function WrongBookPage() {
         showRecommendDialog,
         isInitializing,
         initializeProgress,
+        // 文件夹
+        folders,
+        selectedFolderId,
+        folderQuestions,
+        showAddToFolderDialog,
+        isFolderSubmitting,
         // 方法
         toggleSelect,
         selectAll,
@@ -62,7 +73,15 @@ export default function WrongBookPage() {
         handleUnmarkMastered,
         handleRecommendSimilar,
         closeRecommendDialog,
-        handleStartRecommended
+        handleStartRecommended,
+        // 文件夹方法
+        handleSelectFolder,
+        handleCreateFolder,
+        handleRenameFolder,
+        handleDeleteFolder,
+        openAddToFolderDialog,
+        closeAddToFolderDialog,
+        handleAddToFolder
     } = useWrongBookController();
 
     // 加载状态
@@ -197,6 +216,14 @@ export default function WrongBookPage() {
                                     按知识点
                                 </button>
                                 <button
+                                    onClick={() => setViewMode('folder')}
+                                    className={`px-3 py-1.5 rounded-lg text-sm transition-all flex items-center gap-1 ${viewMode === 'folder' ? 'bg-primary text-primary-foreground' : 'bg-muted hover:bg-muted/80'
+                                        }`}
+                                >
+                                    <FolderOpen className="w-3 h-3" />
+                                    文件夹
+                                </button>
+                                <button
                                     onClick={() => setViewMode('mastered')}
                                     className={`px-3 py-1.5 rounded-lg text-sm transition-all flex items-center gap-1 ${viewMode === 'mastered' ? 'bg-primary text-primary-foreground' : 'bg-muted hover:bg-muted/80'
                                         }`}
@@ -206,7 +233,7 @@ export default function WrongBookPage() {
                                 </button>
                             </div>
 
-                            {viewMode === 'list' && (
+                            {(viewMode === 'list' || viewMode === 'folder') && (
                                 <div className="flex items-center gap-2">
                                     <Button variant="outline" size="sm" onClick={selectAll}>
                                         {selectedIds.size === questions.length ? '取消全选' : '全选'}
@@ -251,6 +278,57 @@ export default function WrongBookPage() {
                                 groupedQuestions={groupedQuestions}
                                 onStartPractice={startPractice}
                             />
+                        )}
+
+                        {/* 文件夹视图 */}
+                        {viewMode === 'folder' && (
+                            <div className="grid grid-cols-[280px_1fr] gap-4">
+                                <FolderTreeView
+                                    tagGroups={groupedQuestions}
+                                    folders={folders}
+                                    selectedFolderId={selectedFolderId}
+                                    onSelectFolder={handleSelectFolder}
+                                    onCreateFolder={() => {
+                                        handleCreateFolder('新建文件夹', '#6b7280');
+                                    }}
+                                    onRenameFolder={handleRenameFolder}
+                                    onDeleteFolder={handleDeleteFolder}
+                                    onStartPractice={startPractice}
+                                />
+                                <div>
+                                    {selectedFolderId ? (
+                                        <FolderQuestionList
+                                            folderName={
+                                                selectedFolderId.startsWith('tag:')
+                                                    ? selectedFolderId.slice(4).split('/').pop() || ''
+                                                    : folders.find(f => `folder:${f.id}` === selectedFolderId)?.name || ''
+                                            }
+                                            isCustomFolder={selectedFolderId.startsWith('folder:')}
+                                            questions={folderQuestions}
+                                            selectedIds={selectedIds}
+                                            expandedQuestionId={expandedQuestionId}
+                                            questionDetail={questionDetail}
+                                            isLoadingDetail={isLoadingDetail}
+                                            isRecommendLoading={isRecommendLoading}
+                                            onToggleSelect={toggleSelect}
+                                            onToggleDetail={toggleQuestionDetail}
+                                            onPractice={startPractice}
+                                            onMarkAsMastered={handleMarkAsMastered}
+                                            onRecommendSimilar={handleRecommendSimilar}
+                                        />
+                                    ) : (
+                                        <div className="bg-card rounded-2xl p-12 text-center border border-dashed border-border">
+                                            <div className="mx-auto w-16 h-16 bg-muted rounded-full flex items-center justify-center mb-4">
+                                                <FolderOpen className="text-muted-foreground h-8 w-8" />
+                                            </div>
+                                            <h3 className="text-lg font-medium text-foreground">选择一个文件夹</h3>
+                                            <p className="text-muted-foreground mt-2">
+                                                从左侧选择知识点或自定义文件夹查看题目
+                                            </p>
+                                        </div>
+                                    )}
+                                </div>
+                            </div>
                         )}
 
                         {/* 已掌握视图 */}
@@ -311,23 +389,34 @@ export default function WrongBookPage() {
             </main>
 
             {/* 底部操作栏 */}
-            {questions.length > 0 && viewMode === 'list' && selectedIds.size > 0 && (
+            {questions.length > 0 && (viewMode === 'list' || viewMode === 'folder') && selectedIds.size > 0 && (
                 <div className="fixed bottom-0 left-0 right-0 p-4 bg-background/80 backdrop-blur-sm border-t">
-                    <div className="container mx-auto max-w-4xl">
-                        <QuestionCountPicker
-                            totalCount={selectedIds.size}
-                            onConfirm={(count) => startPractice(undefined, count)}
-                            disabled={isCreating}
-                        >
-                            <Button
-                                size="lg"
-                                className="w-full h-14 text-lg"
+                    <div className="container mx-auto max-w-4xl flex gap-3">
+                        <div className="flex-1">
+                            <QuestionCountPicker
+                                totalCount={selectedIds.size}
+                                onConfirm={(count) => startPractice(undefined, count)}
                                 disabled={isCreating}
                             >
-                                {isCreating ? '正在创建...' : `开始练习选中的 ${selectedIds.size} 道错题`}
-                                <Play className="w-5 h-5 ml-2" />
-                            </Button>
-                        </QuestionCountPicker>
+                                <Button
+                                    size="lg"
+                                    className="w-full h-14 text-lg"
+                                    disabled={isCreating}
+                                >
+                                    {isCreating ? '正在创建...' : `开始练习选中的 ${selectedIds.size} 道错题`}
+                                    <Play className="w-5 h-5 ml-2" />
+                                </Button>
+                            </QuestionCountPicker>
+                        </div>
+                        <Button
+                            size="lg"
+                            variant="outline"
+                            className="h-14 px-6 text-base"
+                            onClick={openAddToFolderDialog}
+                        >
+                            <FolderPlus className="w-5 h-5 mr-2" />
+                            添加到文件夹
+                        </Button>
                     </div>
                 </div>
             )}
@@ -341,6 +430,17 @@ export default function WrongBookPage() {
                 isInitializing={isInitializing}
                 initializeProgress={initializeProgress}
                 onStartPractice={handleStartRecommended}
+            />
+
+            {/* 添加到文件夹弹窗 */}
+            <AddToFolderDialog
+                isOpen={showAddToFolderDialog}
+                onClose={closeAddToFolderDialog}
+                folders={folders}
+                selectedCount={selectedIds.size}
+                isSubmitting={isFolderSubmitting}
+                onAddToFolder={handleAddToFolder}
+                onCreateFolder={handleCreateFolder}
             />
         </div>
     );

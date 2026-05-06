@@ -14,7 +14,7 @@ const { mockDrizzleDb, mockDrizzleSchema, mockGet, mockRun } = vi.hoisted(() => 
     chain['get'] = mockGet;
     chain['run'] = mockRun;
 
-    const mockDrizzleDb = {
+    const mockDrizzleDb: Record<string, ReturnType<typeof vi.fn>> = {
         ...chain,
         select: vi.fn(() => chain),
         insert: vi.fn(() => chain),

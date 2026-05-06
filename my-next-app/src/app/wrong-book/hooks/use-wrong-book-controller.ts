@@ -16,14 +16,23 @@ import {
     getSimilarQuestionsAction,
 } from '@/server/actions/wrong-questions';
 import {
+    getFoldersAction,
+    createFolderAction,
+    renameFolderAction,
+    deleteFolderAction,
+    addToFolderAction,
+    getFolderQuestionsAction,
+} from '@/server/actions/question-folders';
+import {
     type WrongQuestionItem,
     type WrongQuestionsByTag,
     type WrongQuestionDetail
 } from '@/lib/services/wrong-question';
 import { type RagResult } from '@/lib/ai/rag';
+import type { QuestionFolder } from '@/lib/services/question-folder';
 
 // 视图模式类型
-export type ViewMode = 'list' | 'byTag' | 'mastered';
+export type ViewMode = 'list' | 'byTag' | 'folder' | 'mastered';
 
 // 已掌握题目类型
 export interface MasteredQuestion {
@@ -74,19 +83,28 @@ export function useWrongBookController() {
     const [isInitializing, setIsInitializing] = useState(false);
     const [initializeProgress, setInitializeProgress] = useState('');
 
+    // 文件夹状态
+    const [folders, setFolders] = useState<QuestionFolder[]>([]);
+    const [selectedFolderId, setSelectedFolderId] = useState<string | null>(null);
+    const [folderQuestions, setFolderQuestions] = useState<WrongQuestionItem[]>([]);
+    const [showAddToFolderDialog, setShowAddToFolderDialog] = useState(false);
+    const [isFolderSubmitting, setIsFolderSubmitting] = useState(false);
+
     // 加载数据
     const loadData = useCallback(async () => {
         setIsLoading(true);
-        const [qRes, gRes, sRes, mRes] = await Promise.all([
+        const [qRes, gRes, sRes, mRes, fRes] = await Promise.all([
             getWrongQuestionsAction(),
             getWrongQuestionsByTagAction(),
             getWrongQuestionsStatsAction(),
-            getMasteredQuestionsAction()
+            getMasteredQuestionsAction(),
+            getFoldersAction()
         ]);
         setQuestions(qRes.data?.questions || []);
         setGroupedQuestions(gRes.data?.find || []);
         setStats(sRes.data || { total: 0, recent: 0, frequent: 0 });
         setMasteredQuestions(mRes.data?.questions || []);
+        setFolders(fRes.data?.folders || []);
         setIsLoading(false);
     }, []);
 
@@ -260,6 +278,116 @@ export function useWrongBookController() {
         await startPractice(questionIds);
     }, [startPractice]);
 
+    // ========== 文件夹操作 ==========
+
+    // 选择文件夹（tag 或自定义）
+    const handleSelectFolder = useCallback(async (id: string | null) => {
+        setSelectedFolderId(id);
+
+        if (!id) {
+            setFolderQuestions([]);
+            return;
+        }
+
+        // tag 文件夹
+        if (id.startsWith('tag:')) {
+            const tagPath = id.slice(4);
+            const group = groupedQuestions.find(g => g.tag === tagPath);
+            setFolderQuestions(group?.questions || []);
+            return;
+        }
+
+        // 自定义文件夹
+        if (id.startsWith('folder:')) {
+            const folderId = parseInt(id.slice(7), 10);
+            const result = await getFolderQuestionsAction({ folderId });
+            setFolderQuestions(result.data?.questions || []);
+        }
+    }, [groupedQuestions]);
+
+    // 选中文件夹后，若加载了 groupedQuestions 变化，刷新当前 tag 文件夹内容
+    useEffect(() => {
+        if (selectedFolderId?.startsWith('tag:')) {
+            const tagPath = selectedFolderId.slice(4);
+            const group = groupedQuestions.find(g => g.tag === tagPath);
+            setFolderQuestions(group?.questions || []);
+        }
+    }, [selectedFolderId, groupedQuestions]);
+
+    // 创建自定义文件夹
+    const handleCreateFolder = useCallback(async (name: string, color: string) => {
+        const result = await createFolderAction({ name, color });
+        if (result.data?.success) {
+            toast.success('文件夹创建成功');
+            await loadData();
+        } else {
+            toast.error('创建失败');
+        }
+    }, [loadData]);
+
+    // 重命名文件夹
+    const handleRenameFolder = useCallback(async (folderId: number, name: string) => {
+        const result = await renameFolderAction({ folderId, name });
+        if (result.data?.success) {
+            await loadData();
+        } else {
+            toast.error('重命名失败');
+        }
+    }, [loadData]);
+
+    // 删除文件夹
+    const handleDeleteFolder = useCallback(async (folderId: number) => {
+        const result = await deleteFolderAction({ folderId });
+        if (result.data?.success) {
+            toast.success('文件夹已删除');
+            if (selectedFolderId === `folder:${folderId}`) {
+                setSelectedFolderId(null);
+                setFolderQuestions([]);
+            }
+            await loadData();
+        } else {
+            toast.error('删除失败');
+        }
+    }, [loadData, selectedFolderId]);
+
+    // 打开"添加到文件夹"弹窗
+    const openAddToFolderDialog = useCallback(() => {
+        if (selectedIds.size === 0) {
+            toast.error('请先选择要添加的题目');
+            return;
+        }
+        setShowAddToFolderDialog(true);
+    }, [selectedIds.size]);
+
+    // 关闭弹窗
+    const closeAddToFolderDialog = useCallback(() => {
+        setShowAddToFolderDialog(false);
+    }, []);
+
+    // 批量添加到文件夹
+    const handleAddToFolder = useCallback(async (folderId: number) => {
+        setIsFolderSubmitting(true);
+        const questionIds = Array.from(selectedIds);
+        const result = await addToFolderAction({ folderId, questionIds });
+        setIsFolderSubmitting(false);
+
+        if (result.data?.success) {
+            toast.success(`已将 ${result.data.added} 道题添加到文件夹`);
+            setShowAddToFolderDialog(false);
+            setSelectedIds(new Set());
+            // 刷新文件夹列表（更新计数）
+            const fRes = await getFoldersAction();
+            setFolders(fRes.data?.folders || []);
+            // 如果正在查看该文件夹，刷新内容
+            if (selectedFolderId === `folder:${folderId}`) {
+                const qRes = await getFolderQuestionsAction({ folderId });
+                setFolderQuestions(qRes.data?.questions || []);
+            }
+        } else {
+            toast.error('添加失败');
+        }
+    }, [selectedIds, selectedFolderId]);
+
     return {
         // 数据
         questions,
@@ -288,6 +416,13 @@ export function useWrongBookController() {
         isInitializing,
         initializeProgress,
 
+        // 文件夹
+        folders,
+        selectedFolderId,
+        folderQuestions,
+        showAddToFolderDialog,
+        isFolderSubmitting,
+
         // 方法
         loadData,
         toggleTag,
@@ -300,6 +435,15 @@ export function useWrongBookController() {
         handleUnmarkMastered,
         handleRecommendSimilar,
         closeRecommendDialog,
-        handleStartRecommended
+        handleStartRecommended,
+
+        // 文件夹方法
+        handleSelectFolder,
+        handleCreateFolder,
+        handleRenameFolder,
+        handleDeleteFolder,
+        openAddToFolderDialog,
+        closeAddToFolderDialog,
+        handleAddToFolder
     };
 }

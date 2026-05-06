@@ -424,3 +424,27 @@ export const question_srs = sqliteTable('question_srs', {
   unq_user_q: unique().on(table.user_id, table.question_id),
   idx_due: index('idx_question_srs_due').on(table.due_date),
 }));
+
+// --- 错题文件夹表 ---
+export const question_folders = sqliteTable('question_folders', {
+  id: integer('id').primaryKey({ autoIncrement: true }),
+  user_id: integer('user_id').notNull().references(() => users.id, { onDelete: 'cascade' }),
+  name: text('name').notNull(),
+  parent_id: integer('parent_id'),
+  color: text('color').default('#6b7280'),
+  sort_order: integer('sort_order').default(0),
+  created_at: text('created_at').default(sql`CURRENT_TIMESTAMP`),
+}, (table) => ({
+  idx_user: index('idx_question_folders_user').on(table.user_id),
+}));
+
+// --- 文件夹-题目关联表（多对多） ---
+export const question_folder_items = sqliteTable('question_folder_items', {
+  folder_id: integer('folder_id').notNull().references(() => question_folders.id, { onDelete: 'cascade' }),
+  question_id: integer('question_id').notNull().references(() => questions.id, { onDelete: 'cascade' }),
+  added_at: text('added_at').default(sql`CURRENT_TIMESTAMP`),
+}, (table) => ({
+  pk: primaryKey({ columns: [table.folder_id, table.question_id] }),
+  idx_folder: index('idx_folder_items_folder').on(table.folder_id),
+  idx_question: index('idx_folder_items_question').on(table.question_id),
+}));

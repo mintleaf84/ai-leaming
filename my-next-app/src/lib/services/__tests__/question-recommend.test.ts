@@ -240,7 +240,8 @@ describe('QuestionRecommend Service', () => {
             const result = await wrongQuestionRecommend.filterAlreadyDone(1, mockResults, 5);
 
             expect(result).toHaveLength(1);
-            expect(result[0].metadata.question_id).toBe(30);
+            const first = result[0]!;
+            expect(first.metadata?.question_id).toBe(30);
         });
 
         it('should respect limit parameter', async () => {

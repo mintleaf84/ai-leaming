@@ -155,21 +155,24 @@ describe('WrongQuestionService', () => {
                 { timestamp: '2024-01-14 10:00:00', userAnswer: 'A', isCorrect: true }
             ];
 
-            // Mock for question query
-            (chain.from as any).mockImplementation(() => {
-                return {
-                    leftJoin: vi.fn().mockReturnValue({
-                        where: vi.fn().mockReturnValue({
-                            limit: vi.fn().mockResolvedValue([mockQuestion])
+            // Mock for question query - distinguish tables
+            (chain.from as any).mockImplementation((table: any) => {
+                if (table?.content) { // questions table has 'content' property
+                    return {
+                        leftJoin: vi.fn().mockReturnValue({
+                            where: vi.fn().mockReturnValue({
+                                limit: vi.fn().mockResolvedValue([mockQuestion])
+                            })
                         })
-                    })
-                };
+                    };
+                }
+                return chain; // practice_logs table — keep chaining
             });
 
-            chain.get
-                .mockResolvedValueOnce(mockStats)  // stats query
-                .mockResolvedValueOnce(mockHistory[0])  // first history
-                .mockResolvedValueOnce(mockHistory);  // all history
+            // Stats query and history query both await chain (via .then), not .get()
+            (chain.then as any)
+                .mockImplementationOnce((resolve: any) => resolve([mockStats]))
+                .mockImplementationOnce((resolve: any) => resolve(mockHistory));
 
             const result = await wrongQuestionService.getDetail(1, 1);
 
@@ -218,6 +221,10 @@ describe('WrongQuestionService', () => {
 
     describe('getStats', () => {
         it('should return stats with counts from database queries', async () => {
+            // total and recent use .select().from().where().get() → chain.get
+            chain.get.mockReturnValue({ count: 10 });
+            // frequent uses drizzleDb.all() → mockAll already returns [{ count: 3 }]
+
             const stats = await wrongQuestionService.getStats(1);
 
             expect(stats.total).toBe(10);

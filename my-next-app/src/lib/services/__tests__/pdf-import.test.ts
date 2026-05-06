@@ -2,11 +2,12 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 
 // Mock dependencies
-const { mockPerformPaddleOCR, mockParseOcrTextToQuestions, mockAddQuestions, mockInsertReturning } = vi.hoisted(() => ({
+const { mockPerformPaddleOCR, mockParseOcrTextToQuestions, mockAddQuestions, mockInsertReturning, mockUpdateQuestionSrs } = vi.hoisted(() => ({
     mockPerformPaddleOCR: vi.fn(),
     mockParseOcrTextToQuestions: vi.fn(),
     mockAddQuestions: vi.fn().mockResolvedValue(3),
     mockInsertReturning: vi.fn().mockResolvedValue([{ id: 1 }]),
+    mockUpdateQuestionSrs: vi.fn().mockResolvedValue(undefined),
 }));
 
 vi.mock('@/lib/ai/paddle-ocr', () => ({
@@ -47,6 +48,13 @@ vi.mock('@/lib/db', () => ({
 
 vi.mock('@/lib/db/drizzle-schema', () => ({
     questions: { id: 'questions.id', content: 'questions.content', options: 'questions.options' },
+    practice_logs: { id: 'practice_logs.id', question_id: 'practice_logs.question_id', user_id: 'practice_logs.user_id' },
+}));
+
+vi.mock('@/lib/services/srs', () => ({
+    srsService: {
+        updateQuestionSrs: mockUpdateQuestionSrs,
+    },
 }));
 
 import { pdfImportService } from '../pdf-import';

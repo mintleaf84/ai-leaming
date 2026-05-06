@@ -5,6 +5,7 @@ import { Check, AlertTriangle, ChevronDown, ChevronUp, FolderOpen, Loader2 } fro
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
+import { Checkbox } from '@/components/ui/checkbox';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Textarea } from '@/components/ui/textarea';
 import { Input } from '@/components/ui/input';
@@ -16,7 +17,7 @@ interface PreviewStepProps {
   questions: ParsedPdfQuestion[];
   warnings: string[];
   folders: QuestionFolder[];
-  onConfirm: (questions: ParsedPdfQuestion[], folderId?: number) => void;
+  onConfirm: (questions: ParsedPdfQuestion[], folderId?: number, addToWrongBook?: boolean) => void;
   onBack: () => void;
   isImporting: boolean;
 }
@@ -176,6 +177,7 @@ function QuestionCard({
 export function PreviewStep({ questions: initialQuestions, warnings, folders, onConfirm, onBack, isImporting }: PreviewStepProps) {
   const [questions, setQuestions] = useState<ParsedPdfQuestion[]>(initialQuestions);
   const [selectedFolderId, setSelectedFolderId] = useState<string>('');
+  const [addToWrongBook, setAddToWrongBook] = useState(true);
 
   const updateQuestion = (index: number, q: ParsedPdfQuestion) => {
     setQuestions(prev => {
@@ -187,7 +189,7 @@ export function PreviewStep({ questions: initialQuestions, warnings, folders, on
 
   const handleConfirm = () => {
     const folderId = selectedFolderId ? Number(selectedFolderId) : undefined;
-    onConfirm(questions, folderId);
+    onConfirm(questions, folderId, addToWrongBook);
   };
 
   return (
@@ -218,6 +220,14 @@ export function PreviewStep({ questions: initialQuestions, warnings, folders, on
         </div>
 
         <div className="flex items-center gap-3">
+          <label className="flex items-center gap-2 text-sm cursor-pointer select-none">
+            <Checkbox
+              checked={addToWrongBook}
+              onCheckedChange={(checked) => setAddToWrongBook(checked === true)}
+            />
+            <span>加入错题本和复习队列</span>
+          </label>
+
           <div className="w-48">
             <Select value={selectedFolderId} onValueChange={setSelectedFolderId}>
               <SelectTrigger>

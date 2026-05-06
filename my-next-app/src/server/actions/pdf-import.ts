@@ -37,10 +37,11 @@ export const confirmPdfImportAction = authenticatedAction
       tags: z.array(z.string()),
     })),
     folderId: z.number().optional(),
+    addToWrongBook: z.boolean().default(true),
   }))
   .action(async ({ parsedInput: input, ctx }): Promise<PdfImportResult> => {
-    const { questions, folderId } = input;
-    return pdfImportService.confirmImport(ctx.user.id, questions, folderId);
+    const { questions, folderId, addToWrongBook } = input;
+    return pdfImportService.confirmImport(ctx.user.id, questions, folderId, addToWrongBook);
   });
 
 /**

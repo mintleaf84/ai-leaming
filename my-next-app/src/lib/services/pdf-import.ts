@@ -7,7 +7,8 @@ import { performPaddleOCR } from '@/lib/ai/paddle-ocr';
 import { parseOcrTextToQuestions } from '@/lib/import/pdf-question-parser';
 import { questionFolderService } from './question-folder';
 import { drizzleDb } from '@/lib/db';
-import { questions } from '@/lib/db/drizzle-schema';
+import { practice_logs, questions } from '@/lib/db/drizzle-schema';
+import { srsService } from '@/lib/services/srs';
 import type { PdfImportPreview, PdfImportResult, ParsedPdfQuestion } from '@/types/pdf-import';
 
 export const pdfImportService = {
@@ -46,6 +47,7 @@ export const pdfImportService = {
     userId: number,
     questionsToImport: ParsedPdfQuestion[],
     folderId?: number,
+    addToWrongBook: boolean = true,
   ): Promise<PdfImportResult> {
     if (questionsToImport.length === 0) {
       return { success: false, importedCount: 0, message: '没有要导入的题目' };
@@ -78,10 +80,29 @@ export const pdfImportService = {
         await questionFolderService.addQuestions(userId, folderId, insertedIds);
       }
 
+      // 加入错题本 + FSRS 复习队列
+      if (addToWrongBook && insertedIds.length > 0) {
+        // 批量写入错题记录
+        const logValues = insertedIds.map(qId => ({
+          user_id: userId,
+          question_id: qId,
+          user_answer: '',
+          is_correct: false,
+          duration_ms: 0,
+        }));
+        await drizzleDb.insert(practice_logs).values(logValues);
+
+        // 初始化 FSRS 卡片（Rating.Again → 最短间隔，立即可复习）
+        await Promise.all(insertedIds.map(qId =>
+          srsService.updateQuestionSrs(userId, qId, false, 0)
+        ));
+      }
+
+      const wrongBookNote = addToWrongBook ? '，已加入错题本和复习队列' : '';
       return {
         success: true,
         importedCount: insertedIds.length,
-        message: `成功导入 ${insertedIds.length} 道题目${folderId ? '到文件夹' : ''}`,
+        message: `成功导入 ${insertedIds.length} 道题目${folderId ? '到文件夹' : ''}${wrongBookNote}`,
       };
     } catch (error) {
       console.error('[PdfImport] confirmImport failed:', error);

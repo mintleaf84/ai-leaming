@@ -118,14 +118,15 @@ export const practiceSchedulingService = {
         const baseConditions = buildConditions(config);
         const now = new Date().toISOString();
 
-        // 1. FSRS 到期题目
+        // 1. FSRS 到期题目（仅限曾经答错的题目）
         const dueRows = await drizzleDb.select({ q: questions })
             .from(questions)
             .innerJoin(question_srs, eq(question_srs.question_id, questions.id))
             .where(and(
                 ...baseConditions,
                 eq(question_srs.user_id, userId),
-                lte(question_srs.due_date, now)
+                lte(question_srs.due_date, now),
+                sql`EXISTS (SELECT 1 FROM ${practice_logs} WHERE ${practice_logs.question_id} = ${questions.id} AND ${practice_logs.user_id} = ${userId} AND ${practice_logs.is_correct} = 0)`
             ))
             .orderBy(question_srs.due_date)
             .limit(config.limit);

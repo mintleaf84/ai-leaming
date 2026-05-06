@@ -73,12 +73,13 @@ export default function PdfImportPage() {
     }
   }, []);
 
-  const handleConfirm = useCallback(async (finalQuestions: ParsedPdfQuestion[], folderId?: number) => {
+  const handleConfirm = useCallback(async (finalQuestions: ParsedPdfQuestion[], folderId?: number, addToWrongBook?: boolean) => {
     setIsImporting(true);
     try {
       const result = await confirmPdfImportAction({
         questions: finalQuestions,
         folderId,
+        addToWrongBook: addToWrongBook ?? true,
       });
 
       if (result.data?.success) {

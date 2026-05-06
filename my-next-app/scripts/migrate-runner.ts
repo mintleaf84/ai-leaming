@@ -1,8 +1,11 @@
 import fs from 'fs';
 import path from 'path';
 import { pathToFileURL } from 'url';
-import { getLegacyDb } from '../src/lib/db';
-import { initDatabase } from '../src/lib/db';
+
+// Ensure required env vars have fallbacks before importing app modules
+// (env.ts validates these at import time via @t3-oss/env-nextjs)
+process.env.AI_API_KEY = process.env.AI_API_KEY || 'migration-placeholder';
+process.env.JWT_SECRET = process.env.JWT_SECRET || 'migration-placeholder';
 
 // Migration Interface
 interface _Migration {
@@ -12,6 +15,9 @@ interface _Migration {
 
 async function run() {
     console.log('🚀 Starting database migration...');
+
+    // Dynamic import after env vars are set
+    const { getLegacyDb, initDatabase } = await import('../src/lib/db');
 
     // 0. Ensure base tables exist
     console.log('📦 Initializing base tables...');

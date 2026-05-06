@@ -16,7 +16,8 @@ import {
     SortDesc,
     Sparkles,
     FolderOpen,
-    FolderPlus
+    FolderPlus,
+    FileUp
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -94,10 +95,18 @@ export default function WrongBookPage() {
             <main className="container mx-auto max-w-4xl px-4 py-8 pb-32">
                 {/* 头部 */}
                 <div className="mb-8">
-                    <h1 className="text-3xl font-bold text-foreground flex items-center gap-3">
-                        <BookOpen className="text-red-500 h-8 w-8" />
-                        错题本
-                    </h1>
+                    <div className="flex items-center justify-between">
+                        <h1 className="text-3xl font-bold text-foreground flex items-center gap-3">
+                            <BookOpen className="text-red-500 h-8 w-8" />
+                            错题本
+                        </h1>
+                        <Link href="/questions/import">
+                            <Button variant="outline" size="sm">
+                                <FileUp className="h-4 w-4 mr-1" />
+                                PDF 导入
+                            </Button>
+                        </Link>
+                    </div>
                     <p className="text-muted-foreground mt-1">
                         智能汇集易错知识点，攻克薄弱环节
                     </p>

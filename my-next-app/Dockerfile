@@ -32,6 +32,9 @@ ENV NODE_ENV=production
 ENV DB_FILENAME=build-placeholder.db
 # 构建阶段缺少运行时密钥，跳过 env.ts 的变量验证
 ENV SKIP_ENV_VALIDATION=1
+# Next.js 预渲染页面时需要通过 env.ts 校验，提供占位值
+ENV AI_API_KEY=build-placeholder
+ENV JWT_SECRET=build-placeholder-secret
 
 # 创建临时 data 目录，防止 Next.js 预渲染页面时 initDatabase() 找不到路径
 RUN mkdir -p /app/data

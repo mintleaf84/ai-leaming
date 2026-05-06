@@ -2,6 +2,7 @@ import { createEnv } from "@t3-oss/env-nextjs"
 import { z } from "zod"
 
 export const env = createEnv({
+  skipValidation: !!process.env.SKIP_ENV_VALIDATION,
   isServer: typeof window === "undefined" || !!process.env.VITEST,
   server: {
     JWT_SECRET: z.string().min(1, "JWT_SECRET 不能为空"),

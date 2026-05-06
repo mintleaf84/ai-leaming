@@ -30,6 +30,8 @@ ENV NEXT_TELEMETRY_DISABLED=1
 # 构建时需要跳过数据库连接等运行时逻辑，提供占位环境变量
 ENV NODE_ENV=production
 ENV DB_FILENAME=build-placeholder.db
+# 构建阶段缺少运行时密钥，跳过 env.ts 的变量验证
+ENV SKIP_ENV_VALIDATION=1
 
 # 创建临时 data 目录，防止 Next.js 预渲染页面时 initDatabase() 找不到路径
 RUN mkdir -p /app/data

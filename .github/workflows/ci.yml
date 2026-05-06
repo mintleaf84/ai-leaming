@@ -66,6 +66,7 @@ jobs:
       # 构建时提供占位符，避免因缺少环境变量导致构建失败
       NEXT_PUBLIC_APP_URL: http://localhost:3000
       JWT_SECRET: ci-placeholder-secret
+      AI_API_KEY: ci-placeholder-key
       DB_FILENAME: ci-test.db
     steps:
       - uses: actions/checkout@v4

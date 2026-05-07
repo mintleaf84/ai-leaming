@@ -17,6 +17,9 @@ export default (phase: string) => {
     turbopack: {},
     experimental: {
       viewTransition: true,
+      serverActions: {
+        bodySizeLimit: '70mb',
+      },
     },
     env: {
       IS_BUILDING: isBuilding ? 'true' : 'false',

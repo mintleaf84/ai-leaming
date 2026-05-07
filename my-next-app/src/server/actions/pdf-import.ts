@@ -4,23 +4,7 @@ import { authenticatedAction } from '@/lib/safe-action';
 import { pdfImportService } from '@/lib/services/pdf-import';
 import { questionFolderService } from '@/lib/services/question-folder';
 import { z } from 'zod';
-import type { PdfImportPreview, PdfImportResult } from '@/types/pdf-import';
-
-/**
- * 预览 PDF 导入（OCR + AI 解析，不写 DB）
- */
-export const previewPdfImportAction = authenticatedAction
-  .inputSchema(z.object({
-    fileBase64: z.string().min(1, '文件不能为空'),
-    fileName: z.string().min(1, '文件名不能为空'),
-    mimeType: z.literal('application/pdf'),
-  }))
-  .action(async ({ parsedInput: input }): Promise<PdfImportPreview> => {
-    const { fileBase64, fileName, mimeType } = input;
-
-    const buffer = Buffer.from(fileBase64, 'base64');
-    return pdfImportService.parseAndPreview(buffer, fileName, mimeType);
-  });
+import type { PdfImportResult } from '@/types/pdf-import';
 
 /**
  * 确认导入到数据库
@@ -30,7 +14,7 @@ export const confirmPdfImportAction = authenticatedAction
     questions: z.array(z.object({
       content: z.string(),
       options: z.array(z.string()),
-      type: z.enum(['single', 'multi']),
+      type: z.enum(['single', 'multi', 'truefalse']),
       answer: z.string(),
       explanation: z.string(),
       confidence: z.number(),

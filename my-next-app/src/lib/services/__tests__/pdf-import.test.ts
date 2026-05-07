@@ -2,9 +2,12 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 
 // Mock dependencies
-const { mockPerformPaddleOCR, mockParseOcrTextToQuestions, mockAddQuestions, mockInsertReturning, mockUpdateQuestionSrs } = vi.hoisted(() => ({
+const { mockPerformPaddleOCR, mockParseSingleChunk, mockCleanOcrText, mockSplitIntoQuestionChunks, mockValidateQuestions, mockAddQuestions, mockInsertReturning, mockUpdateQuestionSrs } = vi.hoisted(() => ({
     mockPerformPaddleOCR: vi.fn(),
-    mockParseOcrTextToQuestions: vi.fn(),
+    mockParseSingleChunk: vi.fn(),
+    mockCleanOcrText: vi.fn((text: string) => text),
+    mockSplitIntoQuestionChunks: vi.fn(),
+    mockValidateQuestions: vi.fn((qs: any[]) => qs),
     mockAddQuestions: vi.fn().mockResolvedValue(3),
     mockInsertReturning: vi.fn().mockResolvedValue([{ id: 1 }]),
     mockUpdateQuestionSrs: vi.fn().mockResolvedValue(undefined),
@@ -15,7 +18,10 @@ vi.mock('@/lib/ai/paddle-ocr', () => ({
 }));
 
 vi.mock('@/lib/import/pdf-question-parser', () => ({
-    parseOcrTextToQuestions: mockParseOcrTextToQuestions,
+    cleanOcrText: mockCleanOcrText,
+    splitIntoQuestionChunks: mockSplitIntoQuestionChunks,
+    parseSingleChunk: mockParseSingleChunk,
+    validateQuestions: mockValidateQuestions,
 }));
 
 vi.mock('../question-folder', () => ({
@@ -72,22 +78,19 @@ const sampleQuestion = {
 describe('pdfImportService', () => {
     beforeEach(() => {
         vi.clearAllMocks();
+        vi.useFakeTimers();
         chain.returning.mockResolvedValue([{ id: 1 }]);
-        // Reset chain methods (excluding returning — it returns a promise, not chain)
         const methods = ['insert', 'values', 'from', 'where'];
         methods.forEach((m) => { (chain as any)[m].mockReturnValue(chain); });
         (chain as any).then.mockImplementation((resolve: any) => resolve([]));
     });
 
-    describe('parseAndPreview', () => {
-        it('should call OCR then AI parser and return preview', async () => {
-            mockPerformPaddleOCR.mockResolvedValue('1. 教育学研究的基本方法是\nA.观察法\nB.实验法');
-            mockParseOcrTextToQuestions.mockResolvedValue({
-                questions: [sampleQuestion],
-                parseWarnings: [],
-            });
+    describe('ocrAndSplit', () => {
+        it('should call OCR, clean, split and return taskId + totalChunks', async () => {
+            mockPerformPaddleOCR.mockResolvedValue('1. 题目一\nA.选项A\n2. 题目二\nB.选项B');
+            mockSplitIntoQuestionChunks.mockReturnValue(['chunk1', 'chunk2']);
 
-            const result = await pdfImportService.parseAndPreview(
+            const result = await pdfImportService.ocrAndSplit(
                 Buffer.from('fake-pdf'),
                 'test.pdf',
                 'application/pdf',
@@ -96,65 +99,50 @@ describe('pdfImportService', () => {
             expect(mockPerformPaddleOCR).toHaveBeenCalledWith(
                 expect.any(Buffer), 'test.pdf', 'application/pdf',
             );
-            expect(mockParseOcrTextToQuestions).toHaveBeenCalled();
-            expect(result.totalCount).toBe(1);
-            expect(result.questions).toHaveLength(1);
-            expect(result.questions[0].content).toBe('教育学研究的基本方法是');
+            expect(mockCleanOcrText).toHaveBeenCalled();
+            expect(mockSplitIntoQuestionChunks).toHaveBeenCalled();
+            expect(result.taskId).toBeDefined();
+            expect(typeof result.taskId).toBe('string');
+            expect(result.totalChunks).toBe(2);
         });
 
-        it('should return warning when OCR result is empty', async () => {
+        it('should throw when OCR result is empty', async () => {
             mockPerformPaddleOCR.mockResolvedValue('');
 
-            const result = await pdfImportService.parseAndPreview(
+            await expect(pdfImportService.ocrAndSplit(
                 Buffer.from('fake-pdf'),
                 'test.pdf',
                 'application/pdf',
-            );
-
-            expect(result.totalCount).toBe(0);
-            expect(result.questions).toHaveLength(0);
-            expect(result.parseWarnings).toContain('OCR 识别结果为空，请检查 PDF 文件');
-            expect(mockParseOcrTextToQuestions).not.toHaveBeenCalled();
+            )).rejects.toThrow('OCR 识别结果为空');
         });
 
-        it('should return warning when OCR result is whitespace only', async () => {
+        it('should throw when OCR result is whitespace only', async () => {
             mockPerformPaddleOCR.mockResolvedValue('   ');
 
-            const result = await pdfImportService.parseAndPreview(
+            await expect(pdfImportService.ocrAndSplit(
                 Buffer.from('fake-pdf'),
                 'test.pdf',
                 'application/pdf',
-            );
-
-            expect(result.totalCount).toBe(0);
-            expect(result.parseWarnings).toContain('OCR 识别结果为空，请检查 PDF 文件');
+            )).rejects.toThrow('OCR 识别结果为空');
         });
 
-        it('should forward parser warnings', async () => {
-            mockPerformPaddleOCR.mockResolvedValue('some ocr text with enough content');
-            mockParseOcrTextToQuestions.mockResolvedValue({
-                questions: [],
-                parseWarnings: ['AI 解析超时'],
-            });
+        it('should throw when no chunks could be extracted', async () => {
+            mockPerformPaddleOCR.mockResolvedValue('some text with enough content');
+            mockSplitIntoQuestionChunks.mockReturnValue([]);
 
-            const result = await pdfImportService.parseAndPreview(
+            await expect(pdfImportService.ocrAndSplit(
                 Buffer.from('fake-pdf'),
                 'test.pdf',
                 'application/pdf',
-            );
-
-            expect(result.parseWarnings).toContain('AI 解析超时');
+            )).rejects.toThrow('未能从 PDF 中分割出题目');
         });
 
         it('should call onProgress callback', async () => {
             mockPerformPaddleOCR.mockResolvedValue('ocr text content for progress test');
-            mockParseOcrTextToQuestions.mockResolvedValue({
-                questions: [sampleQuestion],
-                parseWarnings: [],
-            });
+            mockSplitIntoQuestionChunks.mockReturnValue(['chunk1']);
 
             const onProgress = vi.fn();
-            await pdfImportService.parseAndPreview(
+            await pdfImportService.ocrAndSplit(
                 Buffer.from('fake-pdf'),
                 'test.pdf',
                 'application/pdf',
@@ -162,7 +150,76 @@ describe('pdfImportService', () => {
             );
 
             expect(onProgress).toHaveBeenCalledWith('ocr', '正在 OCR 识别...');
-            expect(onProgress).toHaveBeenCalledWith('ai_parse', '正在 AI 解析...');
+        });
+    });
+
+    describe('parseSingleChunk', () => {
+        it('should return questions for a valid taskId and chunkIndex', async () => {
+            mockPerformPaddleOCR.mockResolvedValue('1. 教育学研究的基本方法是\nA.观察法\nB.实验法\nC.调查法\nD.文献法');
+            mockSplitIntoQuestionChunks.mockReturnValue(['chunk1', 'chunk2']);
+            mockParseSingleChunk.mockResolvedValue([sampleQuestion]);
+
+            const { taskId } = await pdfImportService.ocrAndSplit(
+                Buffer.from('fake-pdf'), 'test.pdf', 'application/pdf',
+            );
+
+            const result = await pdfImportService.parseSingleChunk(taskId, 0);
+
+            expect(result.questions).toHaveLength(1);
+            expect(result.questions[0].content).toBe('教育学研究的基本方法是');
+            expect(result.chunkIndex).toBe(0);
+            expect(result.warnings).toHaveLength(0);
+        });
+
+        it('should throw for expired/invalid taskId', async () => {
+            await expect(pdfImportService.parseSingleChunk('nonexistent', 0))
+                .rejects.toThrow('任务不存在或已过期');
+        });
+
+        it('should throw for out-of-range chunkIndex', async () => {
+            mockPerformPaddleOCR.mockResolvedValue('1. 教育学研究的基本方法是\nA.观察法');
+            mockSplitIntoQuestionChunks.mockReturnValue(['chunk1']);
+            mockParseSingleChunk.mockResolvedValue([sampleQuestion]);
+
+            const { taskId } = await pdfImportService.ocrAndSplit(
+                Buffer.from('fake-pdf'), 'test.pdf', 'application/pdf',
+            );
+
+            await expect(pdfImportService.parseSingleChunk(taskId, 5))
+                .rejects.toThrow('超出范围');
+        });
+
+        it('should return warning when chunk parsing fails', async () => {
+            mockPerformPaddleOCR.mockResolvedValue('1. 教育学研究的基本方法是\nA.观察法');
+            mockSplitIntoQuestionChunks.mockReturnValue(['chunk1']);
+            mockParseSingleChunk.mockRejectedValue(new Error('AI service unavailable'));
+
+            const { taskId } = await pdfImportService.ocrAndSplit(
+                Buffer.from('fake-pdf'), 'test.pdf', 'application/pdf',
+            );
+
+            const result = await pdfImportService.parseSingleChunk(taskId, 0);
+
+            expect(result.questions).toHaveLength(0);
+            expect(result.warnings.length).toBeGreaterThan(0);
+            expect(result.warnings[0]).toContain('解析失败');
+        });
+    });
+
+    describe('cleanup', () => {
+        it('should remove cached taskId', async () => {
+            mockPerformPaddleOCR.mockResolvedValue('1. 教育学研究的基本方法是\nA.观察法');
+            mockSplitIntoQuestionChunks.mockReturnValue(['chunk1']);
+
+            const { taskId } = await pdfImportService.ocrAndSplit(
+                Buffer.from('fake-pdf'), 'test.pdf', 'application/pdf',
+            );
+
+            pdfImportService.cleanup(taskId);
+
+            // After cleanup, parseSingleChunk should throw
+            await expect(pdfImportService.parseSingleChunk(taskId, 0))
+                .rejects.toThrow('任务不存在或已过期');
         });
     });
 
@@ -213,7 +270,6 @@ describe('pdfImportService', () => {
         it('should serialize options and tags as JSON', async () => {
             await pdfImportService.confirmImport(1, [sampleQuestion]);
 
-            // chain.values receives the insert payload; options/tags should be JSON strings
             const valuesArg = chain.values.mock.calls[0]?.[0];
             expect(valuesArg).toBeDefined();
             expect(typeof valuesArg.options).toBe('string');
@@ -236,7 +292,6 @@ describe('pdfImportService', () => {
         it('should set source as pdf_import', async () => {
             await pdfImportService.confirmImport(1, [sampleQuestion]);
 
-            // The insert values should include source: 'pdf_import'
             const valuesCall = chain.values.mock.calls[0];
             expect(valuesCall).toBeDefined();
         });
@@ -246,9 +301,24 @@ describe('pdfImportService', () => {
 
             const result = await pdfImportService.confirmImport(1, [sampleQuestion], 10);
 
-            // importedCount should be 0 since no IDs returned
             expect(result.importedCount).toBe(0);
             expect(mockAddQuestions).not.toHaveBeenCalled();
+        });
+
+        it('should add to wrong book and SRS when addToWrongBook is true', async () => {
+            chain.returning.mockResolvedValue([{ id: 1 }]);
+
+            await pdfImportService.confirmImport(1, [sampleQuestion], undefined, true);
+
+            expect(mockUpdateQuestionSrs).toHaveBeenCalledWith(1, 1, false, 0);
+        });
+
+        it('should skip wrong book when addToWrongBook is false', async () => {
+            chain.returning.mockResolvedValue([{ id: 1 }]);
+
+            await pdfImportService.confirmImport(1, [sampleQuestion], undefined, false);
+
+            expect(mockUpdateQuestionSrs).not.toHaveBeenCalled();
         });
     });
 });

@@ -46,12 +46,120 @@ app.openapi(previewDef, async (c) => {
         }
 
         const buffer = Buffer.from(await file.arrayBuffer())
-        const result = await pdfImportService.parseAndPreview(buffer, file.name, file.type)
+        const { taskId, totalChunks } = await pdfImportService.ocrAndSplit(buffer, file.name, file.type)
 
-        return c.json(result, 200)
+        return c.json({ taskId, totalChunks }, 200)
     } catch (e) {
         console.error('[PdfImportRoute] preview failed:', e)
         return c.json({ error: `解析失败: ${(e as Error).message}` }, 500)
+    }
+})
+
+// POST /parse-chunk — 解析单个块
+const parseChunkDef = createRoute({
+    method: 'post',
+    path: '/parse-chunk',
+    middleware: [authMiddleware] as const,
+    request: {
+        body: {
+            content: {
+                'application/json': {
+                    schema: z.object({
+                        taskId: z.string(),
+                        chunkIndex: z.number().int().min(0),
+                    }),
+                },
+            },
+        },
+    },
+    responses: {
+        200: {
+            content: { 'application/json': { schema: z.any() } },
+            description: '块解析结果',
+        },
+        400: { description: '无效参数' },
+        500: { description: '解析失败' },
+    },
+})
+
+app.openapi(parseChunkDef, async (c) => {
+    const user = getCurrentUser(c)
+
+    try {
+        const body = await c.req.valid('json')
+        const result = await pdfImportService.parseSingleChunk(body.taskId, body.chunkIndex)
+        return c.json(result, 200)
+    } catch (e) {
+        console.error('[PdfImportRoute] parse-chunk failed:', e)
+        return c.json({ error: `解析失败: ${(e as Error).message}` }, 500)
+    }
+})
+
+// POST /cleanup — 清理缓存（可选，解析全部完成后调用）
+const cleanupDef = createRoute({
+    method: 'post',
+    path: '/cleanup',
+    middleware: [authMiddleware] as const,
+    request: {
+        body: {
+            content: {
+                'application/json': {
+                    schema: z.object({ taskId: z.string() }),
+                },
+            },
+        },
+    },
+    responses: {
+        200: {
+            content: { 'application/json': { schema: z.object({ ok: z.boolean() }) } },
+            description: '清理结果',
+        },
+    },
+})
+
+app.openapi(cleanupDef, async (c) => {
+    const user = getCurrentUser(c)
+    const body = await c.req.valid('json')
+    pdfImportService.cleanup(body.taskId)
+    return c.json({ ok: true }, 200)
+})
+
+// POST /text-import — 手动粘贴文本，跳过 OCR，直接分块
+const textImportDef = createRoute({
+    method: 'post',
+    path: '/text-import',
+    middleware: [authMiddleware] as const,
+    request: {
+        body: {
+            content: {
+                'application/json': {
+                    schema: z.object({
+                        text: z.string().min(20, '文本内容过短'),
+                    }),
+                },
+            },
+        },
+    },
+    responses: {
+        200: {
+            content: { 'application/json': { schema: z.object({ taskId: z.string(), totalChunks: z.number() }) } },
+            description: '分块结果',
+        },
+        400: { description: '无效参数' },
+        500: { description: '处理失败' },
+    },
+})
+
+app.openapi(textImportDef, async (c) => {
+    const user = getCurrentUser(c)
+
+    try {
+        const body = await c.req.valid('json')
+        const { taskId, totalChunks } = await pdfImportService.splitText(body.text)
+        return c.json({ taskId, totalChunks }, 200)
+    } catch (e) {
+        console.error('[PdfImportRoute] text-import failed:', e)
+        return c.json({ error: `处理失败: ${(e as Error).message}` }, 500)
     }
 })
 
@@ -68,7 +176,7 @@ const confirmDef = createRoute({
                         questions: z.array(z.object({
                             content: z.string(),
                             options: z.array(z.string()),
-                            type: z.enum(['single', 'multi']),
+                            type: z.enum(['single', 'multi', 'truefalse']),
                             answer: z.string(),
                             explanation: z.string(),
                             confidence: z.number(),

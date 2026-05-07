@@ -12,7 +12,7 @@ const parsedQuestionSchema = z.object({
   questions: z.array(z.object({
     content: z.string().describe('题干文本'),
     options: z.array(z.string()).describe('选项数组，不含 A/B/C/D 前缀'),
-    type: z.enum(['single', 'multi']).describe('single=单选, multi=多选'),
+    type: z.enum(['single', 'multi', 'truefalse']).describe('single=单选, multi=多选, truefalse=判断题'),
     answer: z.string().describe('正确答案，如 "A" 或 "A,C"'),
     explanation: z.string().describe('解析说明'),
     confidence: z.number().min(0).max(100).describe('AI 推断答案的置信度 0-100'),
@@ -29,29 +29,24 @@ export function cleanOcrText(text: string): string {
     .trim();
 }
 
-/** 按题号分割文本为独立题目块 */
-export function splitIntoQuestionChunks(text: string, maxChunkSize = 6000): string[] {
-  // 匹配题号模式：1. / 1、 / 1） / 第1题 / (1)
-  const questionPattern = /(?:^|\n)(?=\d+[.、）)]\s|(?:第\s*)?\d+\s*题)/;
+/** 按题号分割文本为独立题目块，每块合并 questionsPerChunk 道题 */
+export function splitIntoQuestionChunks(text: string, questionsPerChunk = 5): string[] {
+  // 匹配题号模式：第1题 / 第 1 题 / 1. / 1、 / 1） / (1)
+  const questionPattern = /(?:^|\n)(?=(?:第\s*\d+\s*题)|\d+[.、）)]\s)/;
   const segments = text.split(questionPattern).filter(s => s.trim());
 
   if (segments.length <= 1) {
     // 无法按题号分割，按字符数分块
-    return splitBySize(text, maxChunkSize);
+    return splitBySize(text, 1500);
   }
 
-  // 合并小段到 chunk 上限
+  // 按 questionsPerChunk 题合并为一块
   const chunks: string[] = [];
-  let current = '';
-  for (const seg of segments) {
-    if (current.length + seg.length > maxChunkSize && current.length > 0) {
-      chunks.push(current.trim());
-      current = seg;
-    } else {
-      current += seg;
-    }
+  for (let i = 0; i < segments.length; i += questionsPerChunk) {
+    const batch = segments.slice(i, i + questionsPerChunk);
+    const chunk = batch.join('').trim();
+    if (chunk) chunks.push(chunk);
   }
-  if (current.trim()) chunks.push(current.trim());
 
   return chunks;
 }
@@ -74,31 +69,34 @@ function splitBySize(text: string, size: number): string[] {
   return chunks;
 }
 
-const SYSTEM_PROMPT = `你是一位教育考试题目解析专家。请从 OCR 识别的文本中提取所有选择题，并为每道题推断正确答案。
+const SYSTEM_PROMPT = `你是一位教育考试题目解析专家。请从 OCR 识别的文本中提取所有客观题，并为每道题推断正确答案。
 
 ## 任务
-1. 识别文本中的每一道题目（选择题或多选题）
+1. 识别文本中的所有客观题，包含单选题、多选题和判断题
 2. 提取题干、选项（去除 A/B/C/D 等字母前缀）
 3. 根据题目内容和选项逻辑，推断最可能的正确答案
-4. 为每道题生成简要解析
+4. 为每道题生成简要解析：内容需包含正确选项的考点依据、错误选项的错因分析，字数控制在50-150字，表述简洁准确
 5. 标注知识点标签
-6. 对无法确定答案的题目，降低置信度
+6. 对无法确定答案的题目，按照以下标准设置置信度：置信度取值范围为0-100，完全确定答案正确（考点清晰无歧义）设为90-100；存在较小干扰项但答案可明确判定设为70-89；考点模糊或存在多个疑似正确选项但可锁定最优解设为40-69；完全无法判断设为20以下
 
-## 多选题判断
+## 题型判断（规则优先级从高到低）
+- 判断题：没有选项的题目，或题干要求判断"正确/错误"、"对/错"，type 设为 truefalse，options 设为空数组 []，answer 为 "A"（正确/对）或 "B"（错误/错）
 - 明确标注"多选"的为 multi 类型
-- 选项中有多个合理答案的也标记为 multi
+- 题干未明确标注题型，但选项中有2个及以上符合知识点定义的正确答案的，标记为multi类型
 - 通常 A 型题为单选，X 型题为多选
+- 其余为 single 类型
 
-## 答案推断原则
-- 选择最长最详细的选项（通常是正确答案的特征）
-- 排除明显错误的选项
+## 答案推断原则（优先级从高到低）
+- 第一优先级：结合学科知识点和题目逻辑，推断最匹配的正确答案，排除明显违背知识点的错误选项
+- 第二优先级：当多个选项知识点逻辑相近无法明确排除时，可参考"最长最详细的选项通常为正确答案"的特征辅助判断
 - 如果完全无法判断，设为第一个选项并降低 confidence 到 20 以下
 
 ## 注意事项
 - 如果某个段落不是题目，跳过它
-- 返回空数组比返回错误数据好`;
+- 返回空数组比返回错误数据好
+- parseWarnings字段仅填写解析过程中的异常信息，包括OCR识别乱码、题干内容残缺、题型无法判定、答案存在争议四类场景，无异常则为空数组`;
 
-const CHUNK_PROMPT = `请从以下 OCR 识别的文本中提取所有选择题。
+const CHUNK_PROMPT = `请从以下 OCR 识别的文本中提取所有客观题（含单选、多选、判断题）。
 
 \`\`\`
 {ocrText}
@@ -106,25 +104,47 @@ const CHUNK_PROMPT = `请从以下 OCR 识别的文本中提取所有选择题�
 
 请按要求提取题目，返回 JSON 格式。`;
 
-/** 将单个文本块解析为题目数组 */
+/** 将单个文本块解析为题目数组（内部） */
 async function parseChunk(ocrText: string): Promise<ParsedPdfQuestion[]> {
   const prompt = `${SYSTEM_PROMPT}\n\n${CHUNK_PROMPT.replace('{ocrText}', ocrText)}`;
 
   const result = await generateStructuredData(parsedQuestionSchema, prompt, 'economy', {
-    timeout: 120000, // 2 分钟超时，PDF 解析可能较慢
+    timeout: 300_000, // 5 分钟超时，5 道题约 1.5 分钟
     retries: 2,
   });
 
   return result.questions;
 }
 
+/** 解析单个文本块并校验，供并发调用 */
+export async function parseSingleChunk(ocrText: string): Promise<ParsedPdfQuestion[]> {
+  try {
+    const result = await parseChunk(ocrText);
+    return validateQuestions(result);
+  } catch (err) {
+    // 重试一次
+    console.warn('[PdfParser] 单块首次失败，重试中...');
+    try {
+      const result = await parseChunk(ocrText);
+      return validateQuestions(result);
+    } catch (retryErr) {
+      console.error('[PdfParser] 单块重试失败:', retryErr);
+      throw retryErr;
+    }
+  }
+}
+
 /** 校验并过滤 AI 解析结果中的无效题目 */
-function validateQuestions(questions: ParsedPdfQuestion[]): ParsedPdfQuestion[] {
+export function validateQuestions(questions: ParsedPdfQuestion[]): ParsedPdfQuestion[] {
   const answerPattern = /^[A-Z](,[A-Z])*$/;
 
   return questions.filter((q) => {
     if (q.content.trim().length < 5) return false;
-    if (!q.options || q.options.length === 0) return false;
+    if (!q.options || (q.options.length === 0 && q.type !== 'truefalse')) return false;
+    // 判断题自动补全选项
+    if (q.type === 'truefalse' && (!q.options || q.options.length === 0)) {
+      q.options = ['正确', '错误'];
+    }
     if (!answerPattern.test(q.answer)) {
       const match = q.answer.match(/[A-Z]/g);
       if (match) {

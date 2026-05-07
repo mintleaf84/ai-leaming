@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useCallback, useEffect } from 'react';
+import React, { useState, useCallback, useEffect, useRef } from 'react';
 import { ArrowLeft } from 'lucide-react';
 import Link from 'next/link';
 import { toast } from 'sonner';
@@ -17,11 +17,13 @@ export default function PdfImportPage() {
   const [step, setStep] = useState<Step>('upload');
   const [isProcessing, setIsProcessing] = useState(false);
   const [isImporting, setIsImporting] = useState(false);
-  const [progressStage, setProgressStage] = useState('');
-  const [progressDetail, setProgressDetail] = useState('');
+  const [isParsing, setIsParsing] = useState(false);
+  const [parseProgress, setParseProgress] = useState(0);
+  const [totalChunks, setTotalChunks] = useState(0);
   const [questions, setQuestions] = useState<ParsedPdfQuestion[]>([]);
   const [warnings, setWarnings] = useState<string[]>([]);
   const [folders, setFolders] = useState<QuestionFolder[]>([]);
+  const taskIdRef = useRef<string | null>(null);
 
   useEffect(() => {
     getImportFoldersAction().then((result) => {
@@ -31,15 +33,8 @@ export default function PdfImportPage() {
 
   const handleFileSelected = useCallback(async (file: File) => {
     setIsProcessing(true);
-    setProgressStage('ocr');
-    setProgressDetail('正在 OCR 识别...');
 
     try {
-      setTimeout(() => {
-        setProgressStage('ai_parse');
-        setProgressDetail('AI 智能解析中...');
-      }, 3000);
-
       const formData = new FormData();
       formData.append('file', file);
 
@@ -47,7 +42,7 @@ export default function PdfImportPage() {
         method: 'POST',
         body: formData,
         credentials: 'include',
-        signal: AbortSignal.timeout(180_000),
+        signal: AbortSignal.timeout(300_000), // OCR 阶段 5 分钟
       });
 
       if (!res.ok) {
@@ -56,25 +51,124 @@ export default function PdfImportPage() {
       }
 
       const data = await res.json();
-      setQuestions(data.questions);
-      setWarnings(data.parseWarnings);
+      taskIdRef.current = data.taskId;
+      setTotalChunks(data.totalChunks);
+      setQuestions([]);
+      setWarnings([]);
+      setParseProgress(0);
+      setStep('preview');
+      setIsProcessing(false);
 
-      if (data.questions.length === 0) {
-        toast.error('未能识别到任何题目，请检查 PDF 文件');
-      } else {
-        toast.success(`识别到 ${data.questions.length} 道题目`);
-        setStep('preview');
-      }
+      // 启动并发解析
+      startConcurrentParsing(data.taskId, data.totalChunks);
     } catch (err) {
       const msg = err instanceof DOMException && err.name === 'TimeoutError'
-        ? '请求超时，请重试'
+        ? 'OCR 请求超时，请重试'
         : `处理失败: ${err instanceof Error ? err.message : '请重试'}`;
       toast.error(msg);
-      console.error(err);
-    } finally {
       setIsProcessing(false);
-      setProgressStage('');
-      setProgressDetail('');
+    }
+  }, []);
+
+  const handleTextSubmit = useCallback(async (text: string) => {
+    setIsProcessing(true);
+
+    try {
+      const res = await fetch('/api/pdf-import/text-import', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
+        body: JSON.stringify({ text }),
+        signal: AbortSignal.timeout(30_000),
+      });
+
+      if (!res.ok) {
+        const err = await res.json().catch(() => ({ error: '请求失败' }));
+        throw new Error(err.error || `HTTP ${res.status}`);
+      }
+
+      const data = await res.json();
+      taskIdRef.current = data.taskId;
+      setTotalChunks(data.totalChunks);
+      setQuestions([]);
+      setWarnings([]);
+      setParseProgress(0);
+      setStep('preview');
+      setIsProcessing(false);
+
+      startConcurrentParsing(data.taskId, data.totalChunks);
+    } catch (err) {
+      toast.error(`处理失败: ${err instanceof Error ? err.message : '请重试'}`);
+      setIsProcessing(false);
+    }
+  }, []);
+
+  const startConcurrentParsing = useCallback(async (taskId: string, chunks: number) => {
+    setIsParsing(true);
+    setParseProgress(0);
+
+    const queue = Array.from({ length: chunks }, (_, i) => i);
+    const CONCURRENCY = 5;
+    const active = new Set<Promise<void>>();
+    const chunkWarnings: string[] = [];
+
+    const fetchChunk = async (chunkIndex: number) => {
+      try {
+        const res = await fetch('/api/pdf-import/parse-chunk', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          credentials: 'include',
+          body: JSON.stringify({ taskId, chunkIndex }),
+          signal: AbortSignal.timeout(300_000), // 每块 5 分钟
+        });
+
+        if (!res.ok) {
+          const err = await res.json().catch(() => ({ error: '请求失败' }));
+          throw new Error(err.error || `HTTP ${res.status}`);
+        }
+
+        const data = await res.json();
+
+        if (data.questions?.length > 0) {
+          setQuestions(prev => [...prev, ...data.questions]);
+        }
+        if (data.warnings?.length > 0) {
+          chunkWarnings.push(...data.warnings);
+        }
+      } catch (err) {
+        const msg = `第 ${chunkIndex + 1} 块解析失败: ${err instanceof Error ? err.message : '请重试'}`;
+        chunkWarnings.push(msg);
+        console.error(msg);
+      }
+    };
+
+    while (queue.length > 0 || active.size > 0) {
+      while (queue.length > 0 && active.size < CONCURRENCY) {
+        const idx = queue.shift()!;
+        const p = fetchChunk(idx).then(() => {
+          setParseProgress(prev => prev + 1);
+        }).finally(() => active.delete(p));
+        active.add(p);
+      }
+      if (active.size > 0) await Promise.race(active);
+    }
+
+    if (chunkWarnings.length > 0) {
+      setWarnings(chunkWarnings);
+    }
+
+    setIsParsing(false);
+
+    // 清理服务端缓存
+    try {
+      await fetch('/api/pdf-import/cleanup', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
+        body: JSON.stringify({ taskId }),
+      });
+    } catch {
+      // 非关键操作，忽略错误
     }
   }, []);
 
@@ -127,15 +221,16 @@ export default function PdfImportPage() {
             返回错题本
           </Button>
         </Link>
-        <h1 className="text-2xl font-bold">PDF 错题导入</h1>
+        <h1 className="text-2xl font-bold">错题导入</h1>
       </div>
 
       {step === 'upload' ? (
         <UploadStep
           onFileSelected={handleFileSelected}
+          onTextSubmit={handleTextSubmit}
           isProcessing={isProcessing}
-          progressStage={progressStage}
-          progressDetail={progressDetail}
+          progressStage="ocr"
+          progressDetail="正在 OCR 识别..."
         />
       ) : (
         <PreviewStep
@@ -143,8 +238,11 @@ export default function PdfImportPage() {
           warnings={warnings}
           folders={folders}
           onConfirm={handleConfirm}
-          onBack={() => setStep('upload')}
+          onBack={() => { setStep('upload'); setQuestions([]); setWarnings([]); }}
           isImporting={isImporting}
+          isParsing={isParsing}
+          parseProgress={parseProgress}
+          totalChunks={totalChunks}
         />
       )}
     </div>

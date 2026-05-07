@@ -20,6 +20,9 @@ interface PreviewStepProps {
   onConfirm: (questions: ParsedPdfQuestion[], folderId?: number, addToWrongBook?: boolean) => void;
   onBack: () => void;
   isImporting: boolean;
+  isParsing: boolean;
+  parseProgress: number;
+  totalChunks: number;
 }
 
 function QuestionCard({
@@ -58,7 +61,7 @@ function QuestionCard({
           <div className="flex-1 min-w-0">
             <div className="flex items-center gap-2 mb-1">
               <Badge variant="outline" className="text-xs shrink-0">
-                {index + 1}. {question.type === 'multi' ? '多选' : '单选'}
+                {index + 1}. {question.type === 'multi' ? '多选' : question.type === 'truefalse' ? '判断' : '单选'}
               </Badge>
               <Badge className={cn('text-xs shrink-0', confidenceColor)}>
                 置信度 {question.confidence}%
@@ -113,12 +116,13 @@ function QuestionCard({
                   <label className="text-xs text-muted-foreground">题型</label>
                   <Select
                     value={draft.type}
-                    onValueChange={(v) => setDraft({ ...draft, type: v as 'single' | 'multi' })}
+                    onValueChange={(v) => setDraft({ ...draft, type: v as 'single' | 'multi' | 'truefalse' })}
                   >
                     <SelectTrigger><SelectValue /></SelectTrigger>
                     <SelectContent>
                       <SelectItem value="single">单选</SelectItem>
                       <SelectItem value="multi">多选</SelectItem>
+                      <SelectItem value="truefalse">判断</SelectItem>
                     </SelectContent>
                   </Select>
                 </div>
@@ -174,13 +178,28 @@ function QuestionCard({
   );
 }
 
-export function PreviewStep({ questions: initialQuestions, warnings, folders, onConfirm, onBack, isImporting }: PreviewStepProps) {
-  const [questions, setQuestions] = useState<ParsedPdfQuestion[]>(initialQuestions);
+export function PreviewStep({
+  questions,
+  warnings,
+  folders,
+  onConfirm,
+  onBack,
+  isImporting,
+  isParsing,
+  parseProgress,
+  totalChunks,
+}: PreviewStepProps) {
+  const [editedQuestions, setEditedQuestions] = useState<ParsedPdfQuestion[]>(questions);
   const [selectedFolderId, setSelectedFolderId] = useState<string>('');
   const [addToWrongBook, setAddToWrongBook] = useState(true);
 
+  // 同步外部 questions 变化（增量追加）
+  React.useEffect(() => {
+    setEditedQuestions(questions);
+  }, [questions]);
+
   const updateQuestion = (index: number, q: ParsedPdfQuestion) => {
-    setQuestions(prev => {
+    setEditedQuestions(prev => {
       const copy = [...prev];
       copy[index] = q;
       return copy;
@@ -189,11 +208,43 @@ export function PreviewStep({ questions: initialQuestions, warnings, folders, on
 
   const handleConfirm = () => {
     const folderId = selectedFolderId ? Number(selectedFolderId) : undefined;
-    onConfirm(questions, folderId, addToWrongBook);
+    onConfirm(editedQuestions, folderId, addToWrongBook);
   };
 
   return (
     <div className="space-y-4">
+      {/* 解析进度 */}
+      {isParsing && (
+        <Card className="border-blue-200 bg-blue-50">
+          <CardContent className="py-3 px-4">
+            <div className="flex items-center gap-3">
+              <Loader2 className="h-4 w-4 text-blue-600 animate-spin shrink-0" />
+              <div className="flex-1">
+                <div className="flex items-center justify-between text-sm mb-1">
+                  <span className="text-blue-800 font-medium">
+                    正在解析... 已完成 {parseProgress}/{totalChunks} 块
+                  </span>
+                  <span className="text-blue-600">
+                    {totalChunks > 0 ? Math.round((parseProgress / totalChunks) * 100) : 0}%
+                  </span>
+                </div>
+                <div className="w-full bg-blue-100 rounded-full h-2">
+                  <div
+                    className="bg-blue-600 h-2 rounded-full transition-all duration-300"
+                    style={{ width: `${totalChunks > 0 ? (parseProgress / totalChunks) * 100 : 0}%` }}
+                  />
+                </div>
+                {questions.length > 0 && (
+                  <p className="text-xs text-blue-700 mt-1">
+                    已识别 {questions.length} 道题目，可立即编辑下方已解析的题目
+                  </p>
+                )}
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+      )}
+
       {/* 警告信息 */}
       {warnings.length > 0 && (
         <Card className="border-yellow-300 bg-yellow-50">
@@ -211,11 +262,20 @@ export function PreviewStep({ questions: initialQuestions, warnings, folders, on
       {/* 顶部操作栏 */}
       <div className="flex items-center justify-between gap-4 flex-wrap">
         <div className="text-sm text-muted-foreground">
-          识别到 <span className="font-medium text-foreground">{questions.length}</span> 道题目
-          {questions.filter(q => q.confidence < 50).length > 0 && (
-            <span className="text-yellow-600 ml-2">
-              （{questions.filter(q => q.confidence < 50).length} 道低置信度）
-            </span>
+          {isParsing ? (
+            <>
+              已识别 <span className="font-medium text-foreground">{questions.length}</span> 道题目
+              （解析中...）
+            </>
+          ) : (
+            <>
+              共 <span className="font-medium text-foreground">{questions.length}</span> 道题目
+              {questions.filter(q => q.confidence < 50).length > 0 && (
+                <span className="text-yellow-600 ml-2">
+                  （{questions.filter(q => q.confidence < 50).length} 道低置信度）
+                </span>
+              )}
+            </>
           )}
         </div>
 
@@ -244,10 +304,10 @@ export function PreviewStep({ questions: initialQuestions, warnings, folders, on
             </Select>
           </div>
 
-          <Button variant="outline" onClick={onBack} disabled={isImporting}>
+          <Button variant="outline" onClick={onBack} disabled={isImporting || isParsing}>
             返回
           </Button>
-          <Button onClick={handleConfirm} disabled={isImporting || questions.length === 0}>
+          <Button onClick={handleConfirm} disabled={isImporting || isParsing || questions.length === 0}>
             {isImporting ? (
               <>
                 <Loader2 className="h-4 w-4 mr-2 animate-spin" />
@@ -270,6 +330,12 @@ export function PreviewStep({ questions: initialQuestions, warnings, folders, on
             onUpdate={(updated) => updateQuestion(i, updated)}
           />
         ))}
+        {isParsing && questions.length === 0 && (
+          <div className="text-center py-8 text-muted-foreground text-sm">
+            <Loader2 className="h-6 w-6 animate-spin mx-auto mb-2" />
+            AI 正在解析第一块题目...
+          </div>
+        )}
       </div>
     </div>
   );

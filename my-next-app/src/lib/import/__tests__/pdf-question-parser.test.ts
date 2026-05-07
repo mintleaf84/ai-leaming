@@ -85,11 +85,10 @@ describe('pdf-question-parser', () => {
             expect(chunks[0]).toContain('short text');
         });
 
-        it('should respect maxChunkSize when splitting', () => {
-            // Build text with multiple questions that together exceed chunk size
-            const q = 'A'.repeat(400);
-            const text = `1. ${q}\n2. ${q}\n3. ${q}`;
-            const chunks = splitIntoQuestionChunks(text, 500);
+        it('should respect questionsPerChunk when splitting', () => {
+            // Build text with 10 questions
+            const lines = Array.from({ length: 10 }, (_, i) => `第${i + 1}题 题目${i + 1}\nA.选项A\nB.选项B`).join('\n');
+            const chunks = splitIntoQuestionChunks(lines, 5);
             expect(chunks.length).toBeGreaterThanOrEqual(2);
         });
 
@@ -223,7 +222,7 @@ describe('pdf-question-parser', () => {
                 expect.anything(),
                 expect.any(String),
                 'economy',
-                { timeout: 120000, retries: 2 },
+                { timeout: 300_000, retries: 2 },
             );
         });
 

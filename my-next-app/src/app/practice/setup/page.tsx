@@ -17,8 +17,6 @@ import {
     BookOpen,
     CheckCircle2,
     AlertCircle,
-    Layers,
-    Calendar,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
@@ -34,7 +32,6 @@ import {
     DIMENSION_LABELS,
     Dimension
 } from '@/types';
-import { getAvailableTagsAction } from '@/server/actions/practice';
 import { KeypointTree } from '@/components/practice/KeypointTree';
 
 // 模式图标组件
@@ -45,11 +42,6 @@ const ModeIcons: Record<PracticeMode, React.ReactNode> = {
     focus: <Target className="w-6 h-6" />,
     exam: <FileCheck className="w-6 h-6" />,
     random: <Shuffle className="w-6 h-6" />,
-    "first-principles": <Target className="w-6 h-6" />,
-    tag_focus: <Tag className="w-6 h-6" />,
-    dimension_focus: <Layers className="w-6 h-6" />,
-    daily_challenge: <Calendar className="w-6 h-6" />,
-    intelligent_review: <RotateCcw className="w-6 h-6" />,
 };
 
 // 模式颜色
@@ -60,17 +52,11 @@ const ModeColors: Record<PracticeMode, string> = {
     focus: 'from-green-500 to-emerald-600',
     exam: 'from-purple-500 to-violet-600',
     random: 'from-pink-500 to-rose-600',
-    "first-principles": 'from-cyan-500 to-blue-600',
-    tag_focus: 'from-emerald-500 to-teal-600',
-    dimension_focus: 'from-violet-500 to-purple-600',
-    daily_challenge: 'from-orange-500 to-amber-600',
-    intelligent_review: 'from-blue-600 to-indigo-700',
 };
 
 export default function PracticeSetupPage() {
     const router = useRouter();
     const [config, setConfig] = useState<PracticeConfig>(DEFAULT_PRACTICE_CONFIG);
-    const [_availableTags, setAvailableTags] = useState<string[]>([]);
     const [loading, setLoading] = useState(true);
     const [showAdvanced, setShowAdvanced] = useState(false);
 
@@ -92,9 +78,6 @@ export default function PracticeSetupPage() {
                         enableTimer: preset.enableTimer ?? prev.enableTimer
                     }));
                 }
-
-                const result = await getAvailableTagsAction();
-                setAvailableTags(result?.data || []);
             } catch (error) {
                 console.error('加载初始化数据失败', error);
             } finally {
@@ -114,16 +97,6 @@ export default function PracticeSetupPage() {
             enableReview: preset.enableReview ?? config.enableReview,
             enableTimer: preset.enableTimer ?? config.enableTimer
         });
-    };
-
-    // 切换知识点选择
-    const _toggleTag = (tag: string) => {
-        setConfig(prev => ({
-            ...prev,
-            tags: prev.tags?.includes(tag)
-                ? prev.tags.filter(t => t !== tag)
-                : [...(prev.tags || []), tag]
-        }));
     };
 
     // 切换题目类型
@@ -201,7 +174,7 @@ export default function PracticeSetupPage() {
                         <Settings2 className="w-5 h-5 text-primary" />
                         选择练习模式
                     </h2>
-                    <div className="grid grid-cols-2 md:grid-cols-5 gap-3">
+                    <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
                         {(Object.keys(PRACTICE_MODE_LABELS) as PracticeMode[]).map((mode) => {
                             const isActive = config.mode === mode;
                             return (

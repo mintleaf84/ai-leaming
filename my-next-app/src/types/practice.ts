@@ -9,14 +9,9 @@ export type PracticeMode =
     | 'smart'              // 智能刷题 (40/40/20)
     | 'review'             // 记忆复习 (FSRS 驱动)
     | 'mistakes'           // 纯错题专项
-    | 'focus'              // 专项突破 (通用)
-    | 'tag_focus'          // 知识点专项
-    | 'dimension_focus'    // 维度专项
+    | 'focus'              // 专项突破 (按条件筛选)
     | 'exam'               // 模拟考试
-    | 'random'             // 随机挑战
-    | 'daily_challenge'    // 每日挑战
-    | 'intelligent_review' // 智能复习
-    | 'first-principles';   // 第一性原理分析
+    | 'random';            // 随机挑战
 
 // 练习模式中文映射
 export const PRACTICE_MODE_LABELS: Record<PracticeMode, string> = {
@@ -24,13 +19,8 @@ export const PRACTICE_MODE_LABELS: Record<PracticeMode, string> = {
     review: '记忆复习',
     mistakes: '错题专项',
     focus: '专项突破',
-    tag_focus: '知识点专项',
-    dimension_focus: '维度专项',
     exam: '模拟考试',
     random: '随机挑战',
-    daily_challenge: '每日挑战',
-    intelligent_review: '智能复习',
-    'first-principles': '第一性原理'
 };
 
 // 练习模式描述
@@ -39,13 +29,8 @@ export const PRACTICE_MODE_DESCRIPTIONS: Record<PracticeMode, string> = {
     review: '基于 FSRS 算法，优先复习即将遗忘的知识点',
     mistakes: '专门针对历史练习中做错的题目进行强化',
     focus: '聚焦指定知识点或维度，精准突破',
-    tag_focus: '深入攻克特定的知识薄弱环节',
-    dimension_focus: '针对识记、理解或应用维度进行训练',
     exam: '模拟真实考试，计时顺序作答，无提示',
     random: '完全随机抽题，快速查漏补缺',
-    daily_challenge: '每日精选题目，保持手感，赚取积分',
-    intelligent_review: 'AI 自动规划的复习路径',
-    'first-principles': '从底层逻辑出发，深度拆解核心概念'
 };
 
 // 练习模式图标 (Lucide 图标名)
@@ -54,13 +39,8 @@ export const PRACTICE_MODE_ICONS: Record<PracticeMode, string> = {
     review: 'RotateCcw',
     mistakes: 'AlertCircle',
     focus: 'Target',
-    tag_focus: 'Target',
-    dimension_focus: 'Gauge',
     exam: 'FileCheck',
     random: 'Shuffle',
-    daily_challenge: 'Zap',
-    intelligent_review: 'Cpu',
-    'first-principles': 'Atom'
 };
 
 // 练习配置
@@ -91,13 +71,8 @@ export const PRESET_CONFIGS: Record<PracticeMode, Partial<PracticeConfig>> = {
     review: { limit: 20, enableReview: true },
     mistakes: { limit: 20, enableReview: true },
     focus: { limit: 15, enableReview: true },
-    tag_focus: { limit: 15, enableReview: true },
-    dimension_focus: { limit: 15, enableReview: true },
     exam: { limit: 50, enableReview: false, enableTimer: true },
     random: { limit: 10, enableReview: false },
-    daily_challenge: { limit: 15, enableReview: true },
-    intelligent_review: { limit: 20, enableReview: true },
-    'first-principles': { limit: 10, enableReview: true }
 };
 
 // 题目数量选项

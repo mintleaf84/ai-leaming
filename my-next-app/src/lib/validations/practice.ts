@@ -1,7 +1,7 @@
 import { z } from "zod";
 
 export const PracticeSessionConfigSchema = z.object({
-  mode: z.enum(['smart', 'mistakes', 'review', 'random', 'daily_challenge', 'exam', 'tag_focus', 'dimension_focus', 'intelligent_review', 'focus', 'first-principles']),
+  mode: z.enum(['smart', 'mistakes', 'review', 'focus', 'exam', 'random']),
   limit: z.number().int().min(1).max(100).default(25),
   types: z.array(z.enum(['single', 'multi', 'truefalse'])).optional(),
   tags: z.array(z.string()).optional(),

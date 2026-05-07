@@ -4,7 +4,8 @@
  */
 
 import { z } from 'zod';
-import { generateStructuredData } from '@/lib/ai/client';
+import { generateStructuredData, generateTextWrapper } from '@/lib/ai/client';
+import { extractJson } from '@/lib/ai/parser';
 import type { ParsedPdfQuestion, ParsedPdfResult } from '@/types/pdf-import';
 
 // Zod schema for AI structured output
@@ -69,32 +70,23 @@ function splitBySize(text: string, size: number): string[] {
   return chunks;
 }
 
-const SYSTEM_PROMPT = `你是一位教育考试题目解析专家。请从 OCR 识别的文本中提取所有客观题，并为每道题推断正确答案。
+const SYSTEM_PROMPT = `你是教育考试题目解析专家。从文本中提取所有客观题（单选/多选/判断），输出 JSON。
 
-## 任务
-1. 识别文本中的所有客观题，包含单选题、多选题和判断题
-2. 提取题干、选项（去除 A/B/C/D 等字母前缀）
-3. 根据题目内容和选项逻辑，推断最可能的正确答案
-4. 为每道题生成简要解析：内容需包含正确选项的考点依据、错误选项的错因分析，字数控制在50-150字，表述简洁准确
-5. 标注知识点标签
-6. 对无法确定答案的题目，按照以下标准设置置信度：置信度取值范围为0-100，完全确定答案正确（考点清晰无歧义）设为90-100；存在较小干扰项但答案可明确判定设为70-89；考点模糊或存在多个疑似正确选项但可锁定最优解设为40-69；完全无法判断设为20以下
+字段名（严格遵守，不可替换）：content, options, type, answer, explanation, confidence, tags
 
-## 题型判断（规则优先级从高到低）
-- 判断题：没有选项的题目，或题干要求判断"正确/错误"、"对/错"，type 设为 truefalse，options 设为空数组 []，answer 为 "A"（正确/对）或 "B"（错误/错）
-- 明确标注"多选"的为 multi 类型
-- 题干未明确标注题型，但选项中有2个及以上符合知识点定义的正确答案的，标记为multi类型
-- 通常 A 型题为单选，X 型题为多选
-- 其余为 single 类型
+规则：
+- options 数组不含 A/B/C/D 前缀
+- type: single/multi/truefalse
+- answer: 如 "A" 或 "A,C"
+- explanation: 50-150字，含正确选项依据和错误选项错因
+- confidence: 0-100
+- tags: 知识点标签数组
+- 判断题 options 为空数组，answer 为 "A"(正确) 或 "B"(错误)
+- 题干未明确多选但有2个以上正确答案时标记为 multi
+- 无法判断答案时选第一个选项，confidence < 20
+- 非题目内容直接跳过，返回空数组比错误数据好
 
-## 答案推断原则（优先级从高到低）
-- 第一优先级：结合学科知识点和题目逻辑，推断最匹配的正确答案，排除明显违背知识点的错误选项
-- 第二优先级：当多个选项知识点逻辑相近无法明确排除时，可参考"最长最详细的选项通常为正确答案"的特征辅助判断
-- 如果完全无法判断，设为第一个选项并降低 confidence 到 20 以下
-
-## 注意事项
-- 如果某个段落不是题目，跳过它
-- 返回空数组比返回错误数据好
-- parseWarnings字段仅填写解析过程中的异常信息，包括OCR识别乱码、题干内容残缺、题型无法判定、答案存在争议四类场景，无异常则为空数组`;
+输出格式：仅返回 {"questions":[...],"parseWarnings":[]} JSON，不要任何解释或分析过程。`;
 
 const CHUNK_PROMPT = `请从以下 OCR 识别的文本中提取所有客观题（含单选、多选、判断题）。
 
@@ -102,36 +94,69 @@ const CHUNK_PROMPT = `请从以下 OCR 识别的文本中提取所有客观题�
 {ocrText}
 \`\`\`
 
-请按要求提取题目，返回 JSON 格式。`;
+严格按 JSON schema 返回，字段名必须为：content, options, type, answer, explanation, confidence, tags。不要使用 question/analysis/knowledgeLabels 等替代字段名。
+
+重要：不要输出任何分析过程、推理步骤或解释文字。直接返回 JSON 对象，不要包含 <think> 标签或任何非 JSON 内容。`;
 
 /** 将单个文本块解析为题目数组（内部） */
 async function parseChunk(ocrText: string): Promise<ParsedPdfQuestion[]> {
   const prompt = `${SYSTEM_PROMPT}\n\n${CHUNK_PROMPT.replace('{ocrText}', ocrText)}`;
 
-  const result = await generateStructuredData(parsedQuestionSchema, prompt, 'economy', {
-    timeout: 300_000, // 5 分钟超时，5 道题约 1.5 分钟
-    retries: 2,
+  // generateTextWrapper 内部已有 withRetry，这里不再额外重试
+  const { text } = await generateTextWrapper(prompt, 'economy', undefined, undefined, {
+    timeout: 120_000,
+    retries: 0,
   });
 
-  return result.questions;
+  const parsed = extractJson(text) as Record<string, unknown>;
+  const rawQuestions = Array.isArray(parsed?.questions)
+    ? parsed.questions as Record<string, unknown>[]
+    : [];
+
+  const normalized = rawQuestions.map(normalizeQuestionFields);
+  const result = parsedQuestionSchema.shape.questions.parse(normalized);
+
+  return result;
+}
+
+/**
+ * 规范化 AI 返回的字段名（兼容模式下 AI 经常使用非标准字段名）
+ */
+function normalizeQuestionFields(raw: Record<string, unknown>): Record<string, unknown> {
+  const fieldMap: Record<string, string> = {
+    question: 'content',
+    title: 'content',
+    stem: 'content',
+    analysis: 'explanation',
+    explanation_text: 'explanation',
+    knowledgeTags: 'tags',
+    knowledge_tags: 'tags',
+    knowledgeLabels: 'tags',
+    labels: 'tags',
+    topicTags: 'tags',
+  };
+
+  for (const [from, to] of Object.entries(fieldMap)) {
+    if (from in raw && !(to in raw)) {
+      raw[to] = raw[from];
+      delete raw[from];
+    }
+  }
+
+  // 移除不在 schema 中的额外字段
+  const allowedKeys = new Set(['content', 'options', 'type', 'answer', 'explanation', 'confidence', 'tags']);
+  for (const key of Object.keys(raw)) {
+    if (!allowedKeys.has(key)) delete raw[key];
+  }
+
+  return raw;
 }
 
 /** 解析单个文本块并校验，供并发调用 */
 export async function parseSingleChunk(ocrText: string): Promise<ParsedPdfQuestion[]> {
-  try {
-    const result = await parseChunk(ocrText);
-    return validateQuestions(result);
-  } catch (err) {
-    // 重试一次
-    console.warn('[PdfParser] 单块首次失败，重试中...');
-    try {
-      const result = await parseChunk(ocrText);
-      return validateQuestions(result);
-    } catch (retryErr) {
-      console.error('[PdfParser] 单块重试失败:', retryErr);
-      throw retryErr;
-    }
-  }
+  // parseChunk 内部 generateTextWrapper 已有重试机制，这里不再额外重试
+  const result = await parseChunk(ocrText);
+  return validateQuestions(result);
 }
 
 /** 校验并过滤 AI 解析结果中的无效题目 */

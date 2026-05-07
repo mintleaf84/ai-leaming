@@ -1,13 +1,19 @@
 // @vitest-environment node
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 
-// Mock generateStructuredData before importing parser
-const { mockGenerateStructuredData } = vi.hoisted(() => ({
-    mockGenerateStructuredData: vi.fn(),
+// Mock generateTextWrapper and extractJson before importing parser
+const { mockGenerateTextWrapper, mockGenerateStructuredData } = vi.hoisted(() => ({
+    mockGenerateTextWrapper: vi.fn(),
+    mockGenerateStructuredData: vi.fn().mockRejectedValue(new Error('structured output not supported')),
 }));
 
 vi.mock('@/lib/ai/client', () => ({
+    generateTextWrapper: mockGenerateTextWrapper,
     generateStructuredData: mockGenerateStructuredData,
+}));
+
+vi.mock('@/lib/ai/parser', () => ({
+    extractJson: (text: string) => JSON.parse(text),
 }));
 
 import { cleanOcrText, splitIntoQuestionChunks, parseOcrTextToQuestions } from '../pdf-question-parser';
@@ -118,9 +124,8 @@ describe('pdf-question-parser', () => {
         };
 
         it('should return parsed questions on success', async () => {
-            mockGenerateStructuredData.mockResolvedValue({
-                questions: [sampleQuestion],
-                parseWarnings: [],
+            mockGenerateTextWrapper.mockResolvedValue({
+                text: JSON.stringify({ questions: [sampleQuestion], parseWarnings: [] }),
             });
 
             const result = await parseOcrTextToQuestions(
@@ -140,9 +145,8 @@ describe('pdf-question-parser', () => {
         });
 
         it('should call onProgress callback', async () => {
-            mockGenerateStructuredData.mockResolvedValue({
-                questions: [sampleQuestion],
-                parseWarnings: [],
+            mockGenerateTextWrapper.mockResolvedValue({
+                text: JSON.stringify({ questions: [sampleQuestion], parseWarnings: [] }),
             });
 
             const onProgress = vi.fn();
@@ -161,7 +165,7 @@ describe('pdf-question-parser', () => {
         });
 
         it('should handle AI parse failure gracefully', async () => {
-            mockGenerateStructuredData.mockRejectedValue(new Error('AI service unavailable'));
+            mockGenerateTextWrapper.mockRejectedValue(new Error('AI service unavailable'));
 
             const result = await parseOcrTextToQuestions(
                 '1. 教育学研究的基本方法是\nA.观察法\nB.实验法\nC.调查法\nD.文献法'
@@ -173,9 +177,8 @@ describe('pdf-question-parser', () => {
         });
 
         it('should warn when no questions found', async () => {
-            mockGenerateStructuredData.mockResolvedValue({
-                questions: [],
-                parseWarnings: [],
+            mockGenerateTextWrapper.mockResolvedValue({
+                text: JSON.stringify({ questions: [], parseWarnings: [] }),
             });
 
             const result = await parseOcrTextToQuestions(
@@ -191,9 +194,9 @@ describe('pdf-question-parser', () => {
             const q2 = { ...sampleQuestion, content: '同样的题干内容用于测试去重功能'.repeat(3), answer: 'C' };
 
             // Two chunks each returning the same question
-            mockGenerateStructuredData
-                .mockResolvedValueOnce({ questions: [q1], parseWarnings: [] })
-                .mockResolvedValueOnce({ questions: [q2], parseWarnings: [] });
+            mockGenerateTextWrapper
+                .mockResolvedValueOnce({ text: JSON.stringify({ questions: [q1], parseWarnings: [] }) })
+                .mockResolvedValueOnce({ text: JSON.stringify({ questions: [q2], parseWarnings: [] }) });
 
             // Use text that will be split into 2 chunks
             const longText = '1. ' + '同样的题干内容用于测试去重功能'.repeat(3) + '\n' +
@@ -208,33 +211,31 @@ describe('pdf-question-parser', () => {
             expect(contents.length).toBe(uniqueContents.size);
         });
 
-        it('should pass timeout and retries options to generateStructuredData', async () => {
-            mockGenerateStructuredData.mockResolvedValue({
-                questions: [sampleQuestion],
-                parseWarnings: [],
+        it('should pass timeout and retries options to generateTextWrapper', async () => {
+            mockGenerateTextWrapper.mockResolvedValue({
+                text: JSON.stringify({ questions: [sampleQuestion], parseWarnings: [] }),
             });
 
             await parseOcrTextToQuestions(
                 '1. 教育学研究的基本方法是\nA.观察法\nB.实验法\nC.调查法\nD.文献法'
             );
 
-            expect(mockGenerateStructuredData).toHaveBeenCalledWith(
-                expect.anything(),
+            expect(mockGenerateTextWrapper).toHaveBeenCalledWith(
                 expect.any(String),
                 'economy',
-                { timeout: 300_000, retries: 2 },
+                undefined,
+                undefined,
+                { timeout: 120_000, retries: 0 },
             );
         });
 
         it('should merge warnings from multiple chunks', async () => {
-            mockGenerateStructuredData
+            mockGenerateTextWrapper
                 .mockResolvedValueOnce({
-                    questions: [sampleQuestion],
-                    parseWarnings: ['chunk1 warning'],
+                    text: JSON.stringify({ questions: [sampleQuestion], parseWarnings: ['chunk1 warning'] }),
                 })
                 .mockResolvedValueOnce({
-                    questions: [],
-                    parseWarnings: ['chunk2 warning'],
+                    text: JSON.stringify({ questions: [], parseWarnings: ['chunk2 warning'] }),
                 });
 
             // Text long enough to be split into multiple chunks

@@ -80,9 +80,40 @@ export async function generateStructuredData<T>(
 
             return result as T;
         }
+
+        // 2. 第三方 API：尝试 generateObject with mode: 'json' (json_object 模式)
+        if (isGenericProxy && !isReasoningModel) {
+            try {
+                const result = await withRetry(async () => {
+                    const { object } = await generateObject({
+                        model,
+                        schema,
+                        mode: 'json',
+                        messages: [{ role: 'user', content: prompt }],
+                        abortSignal: AbortSignal.timeout(timeout),
+                    });
+                    return object;
+                });
+
+                logApiCall({
+                    model: config.modelName,
+                    endpoint: 'generateStructuredData',
+                    inputTokens: Math.ceil(prompt.length / 4),
+                    outputTokens: Math.ceil(JSON.stringify(result).length / 4),
+                    durationMs: Date.now() - startTime,
+                    success: true,
+                });
+
+                return result as T;
+            } catch (jsonModeError) {
+                console.warn('[AiClient] mode:json 失败，回退到文本生成模式:', jsonModeError instanceof Error ? jsonModeError.message : String(jsonModeError));
+                // 继续到 fallback
+            }
+        }
+
         throw new Error('Using fallback mode');
     } catch (error: unknown) {
-        // 2. 兼容模式：文本生成 + 手动提取
+        // 3. 兼容模式：文本生成 + 手动提取
         let rawText = '';
         const startTimeFallback = Date.now();
         try {

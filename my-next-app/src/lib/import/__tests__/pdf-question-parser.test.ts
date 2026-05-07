@@ -18,10 +18,10 @@ describe('pdf-question-parser', () => {
     });
 
     describe('cleanOcrText', () => {
-        it('should normalize curly quotes to straight quotes', () => {
+        it('should preserve content as-is, only normalize whitespace', () => {
             const input = '“Hello” and ‘world’';
             const result = cleanOcrText(input);
-            expect(result).toBe('"Hello" and \'world\'');
+            expect(result).toBe(input);
         });
 
         it('should collapse excessive newlines', () => {

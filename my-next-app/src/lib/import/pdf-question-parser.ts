@@ -21,15 +21,9 @@ const parsedQuestionSchema = z.object({
   parseWarnings: z.array(z.string()).describe('解析过程中的警告信息'),
 });
 
-/** 清理 OCR 文本中的噪声字符 */
+/** 规范化空白，保留全部内容 */
 export function cleanOcrText(text: string): string {
   return text
-    // 先规范化引号（在噪声剥离之前，否则 Unicode 引号会被移除）
-    .replace(/[“”]/g, '"')
-    .replace(/[‘’]/g, "'")
-    // 移除常见 OCR 噪声
-    .replace(/[^一-龥a-zA-Z0-9\s，。、；：？！""''（）【】《》\-_.,:;?!()\[\]<>\/\\'"@#$%^&*+=|~`]/g, '')
-    // 规范化空白
     .replace(/\n{3,}/g, '\n\n')
     .replace(/[ \t]{2,}/g, ' ')
     .trim();
@@ -101,11 +95,10 @@ const SYSTEM_PROMPT = `你是一位教育考试题目解析专家。请从 OCR �
 - 如果完全无法判断，设为第一个选项并降低 confidence 到 20 以下
 
 ## 注意事项
-- OCR 文本可能有识别错误，尝试修正明显错误
 - 如果某个段落不是题目，跳过它
 - 返回空数组比返回错误数据好`;
 
-const CHUNK_PROMPT = `请从以下 OCR 识别的文本中提取所有选择题。文本可能来自扫描件，存在一些识别错误，请尽量修正。
+const CHUNK_PROMPT = `请从以下 OCR 识别的文本中提取所有选择题。
 
 \`\`\`
 {ocrText}
@@ -125,6 +118,26 @@ async function parseChunk(ocrText: string): Promise<ParsedPdfQuestion[]> {
   return result.questions;
 }
 
+/** 校验并过滤 AI 解析结果中的无效题目 */
+function validateQuestions(questions: ParsedPdfQuestion[]): ParsedPdfQuestion[] {
+  const answerPattern = /^[A-Z](,[A-Z])*$/;
+
+  return questions.filter((q) => {
+    if (q.content.trim().length < 5) return false;
+    if (!q.options || q.options.length === 0) return false;
+    if (!answerPattern.test(q.answer)) {
+      const match = q.answer.match(/[A-Z]/g);
+      if (match) {
+        q.answer = match.join(',');
+      } else {
+        return false;
+      }
+    }
+    q.confidence = Math.max(0, Math.min(100, q.confidence));
+    return true;
+  });
+}
+
 /** 合并多块解析结果，去重 */
 function mergeResults(chunkResults: ParsedPdfQuestion[][]): ParsedPdfQuestion[] {
   const merged: ParsedPdfQuestion[] = [];
@@ -132,7 +145,6 @@ function mergeResults(chunkResults: ParsedPdfQuestion[][]): ParsedPdfQuestion[] 
 
   for (const chunk of chunkResults) {
     for (const q of chunk) {
-      // 用题干前 50 字符作为去重 key
       const key = q.content.slice(0, 50).replace(/\s/g, '');
       if (!seen.has(key)) {
         seen.add(key);
@@ -171,11 +183,24 @@ export async function parseOcrTextToQuestions(
     onProgress?.('ai_parse', i + 1, chunks.length);
     try {
       const result = await parseChunk(chunks[i]);
-      chunkResults.push(result);
+      const validated = validateQuestions(result);
+      if (validated.length > 0) {
+        chunkResults.push(validated);
+      }
     } catch (err) {
-      const msg = `第 ${i + 1} 块解析失败: ${err instanceof Error ? err.message : String(err)}`;
-      warnings.push(msg);
-      console.error('[PdfParser]', msg);
+      // 失败时重试一次
+      try {
+        console.warn(`[PdfParser] 第 ${i + 1} 块首次失败，重试中...`);
+        const result = await parseChunk(chunks[i]);
+        const validated = validateQuestions(result);
+        if (validated.length > 0) {
+          chunkResults.push(validated);
+        }
+      } catch (retryErr) {
+        const msg = `第 ${i + 1} 块解析失败: ${retryErr instanceof Error ? retryErr.message : String(retryErr)}`;
+        warnings.push(msg);
+        console.error('[PdfParser]', msg);
+      }
     }
   }
 

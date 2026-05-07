@@ -55,12 +55,12 @@ describe('performPaddleOCR', () => {
     it('如果 API 返回错误应该抛出异常', async () => {
         global.fetch = vi.fn().mockResolvedValue({
             ok: false,
-            status: 500,
-            text: async () => 'Internal Server Error',
+            status: 403,
+            text: async () => 'Forbidden',
         } as Response);
 
         await expect(performPaddleOCR(Buffer.from('test'), 'test.png', 'image/png'))
-            .rejects.toThrow('PaddleOCR 识别失败: 500');
+            .rejects.toThrow('PaddleOCR 识别失败: 403');
     });
 
     it('如果缺少 TOKEN 应该抛出异常', async () => {

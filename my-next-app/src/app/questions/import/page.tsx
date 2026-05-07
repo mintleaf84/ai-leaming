@@ -47,6 +47,7 @@ export default function PdfImportPage() {
         method: 'POST',
         body: formData,
         credentials: 'include',
+        signal: AbortSignal.timeout(180_000),
       });
 
       if (!res.ok) {
@@ -65,7 +66,10 @@ export default function PdfImportPage() {
         setStep('preview');
       }
     } catch (err) {
-      toast.error(`处理失败: ${err instanceof Error ? err.message : '请重试'}`);
+      const msg = err instanceof DOMException && err.name === 'TimeoutError'
+        ? '请求超时，请重试'
+        : `处理失败: ${err instanceof Error ? err.message : '请重试'}`;
+      toast.error(msg);
       console.error(err);
     } finally {
       setIsProcessing(false);
@@ -81,6 +85,7 @@ export default function PdfImportPage() {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         credentials: 'include',
+        signal: AbortSignal.timeout(30_000),
         body: JSON.stringify({
           questions: finalQuestions,
           folderId,
@@ -104,8 +109,10 @@ export default function PdfImportPage() {
         toast.error(data.message || '导入失败');
       }
     } catch (err) {
-      toast.error(`导入失败: ${err instanceof Error ? err.message : '请重试'}`);
-      console.error(err);
+      const msg = err instanceof DOMException && err.name === 'TimeoutError'
+        ? '导入超时，请重试'
+        : `导入失败: ${err instanceof Error ? err.message : '请重试'}`;
+      toast.error(msg);
     } finally {
       setIsImporting(false);
     }

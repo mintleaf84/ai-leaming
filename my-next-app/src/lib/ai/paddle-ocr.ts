@@ -10,6 +10,7 @@ const API_URL = "https://8fybmegb491cz67c.aistudio-app.com/layout-parsing";
 const REQUEST_TIMEOUT_MS = 3 * 60 * 1000;
 
 import { env } from '@/env';
+import { withRetry } from './retry';
 
 /**
  * 使用 PaddleOCR-VL 识别文件内容
@@ -62,21 +63,27 @@ export async function performPaddleOCR(
     const timeout = setTimeout(() => controller.abort(), REQUEST_TIMEOUT_MS);
 
     try {
-        const response = await fetch(API_URL, {
-            method: 'POST',
-            headers: {
-                'Authorization': `token ${token}`,
-                'Content-Type': 'application/json',
-            },
-            body: JSON.stringify(payload),
-            signal: controller.signal,
-        });
+        const response = await withRetry(async () => {
+            const res = await fetch(API_URL, {
+                method: 'POST',
+                headers: {
+                    'Authorization': `token ${token}`,
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify(payload),
+                signal: controller.signal,
+            });
 
-        if (!response.ok) {
-            const errText = await response.text();
-            console.error('[PaddleOCR] 请求失败:', errText);
-            throw new Error(`PaddleOCR 识别失败: ${response.status}`);
-        }
+            if (!res.ok) {
+                const errText = await res.text();
+                console.error('[PaddleOCR] 请求失败:', errText);
+                const err = new Error(`PaddleOCR 识别失败: ${res.status}`);
+                (err as Error & { status?: number }).status = res.status;
+                throw err;
+            }
+
+            return res;
+        }, 3, 2000);
 
         const result = (await response.json()).result;
         return extractMarkdown(result);

@@ -7,7 +7,7 @@ import { Card, CardContent } from '@/components/ui/card';
 import { toast } from 'sonner';
 import { cn } from '@/lib/utils/utils';
 
-const MAX_FILE_SIZE = 10 * 1024 * 1024; // 10MB
+const MAX_FILE_SIZE = 50 * 1024 * 1024; // 50MB
 
 interface UploadStepProps {
   onFileSelected: (fileBase64: string, fileName: string) => void;
@@ -27,7 +27,7 @@ export function UploadStep({ onFileSelected, isProcessing, progressStage, progre
       return;
     }
     if (file.size > MAX_FILE_SIZE) {
-      toast.error('文件大小不能超过 10MB');
+      toast.error('文件大小不能超过 50MB');
       return;
     }
 
@@ -98,7 +98,7 @@ export function UploadStep({ onFileSelected, isProcessing, progressStage, progre
             <Upload className="h-12 w-12 text-muted-foreground" />
             <div className="text-center space-y-1">
               <p className="text-lg font-medium">拖拽或点击上传 PDF</p>
-              <p className="text-sm text-muted-foreground">支持扫描件 PDF，最大 10MB</p>
+              <p className="text-sm text-muted-foreground">支持扫描件 PDF，最大 50MB</p>
             </div>
             <Button variant="outline" size="sm">选择文件</Button>
           </>

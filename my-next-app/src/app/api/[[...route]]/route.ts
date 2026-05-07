@@ -81,6 +81,9 @@ app.route('/stats', statsRoute)
 import profileRoute from '@/lib/api/routes/profile'
 app.route('/profile', profileRoute)
 
+import pdfImportRoute from '@/lib/api/routes/pdf-import'
+app.route('/pdf-import', pdfImportRoute)
+
 import annotationsRoute from '@/lib/api/routes/annotations'
 app.route('/annotations', annotationsRoute)
 

@@ -7,7 +7,7 @@ import { toast } from 'sonner';
 import { Button } from '@/components/ui/button';
 import { UploadStep } from './components/UploadStep';
 import { PreviewStep } from './components/PreviewStep';
-import { previewPdfImportAction, confirmPdfImportAction, getImportFoldersAction } from '@/server/actions/pdf-import';
+import { getImportFoldersAction } from '@/server/actions/pdf-import';
 import type { ParsedPdfQuestion } from '@/types/pdf-import';
 import type { QuestionFolder } from '@/lib/services/question-folder';
 
@@ -22,8 +22,6 @@ export default function PdfImportPage() {
   const [questions, setQuestions] = useState<ParsedPdfQuestion[]>([]);
   const [warnings, setWarnings] = useState<string[]>([]);
   const [folders, setFolders] = useState<QuestionFolder[]>([]);
-  const [fileBase64, setFileBase64] = useState('');
-  const [fileName, setFileName] = useState('');
 
   useEffect(() => {
     getImportFoldersAction().then((result) => {
@@ -31,40 +29,43 @@ export default function PdfImportPage() {
     });
   }, []);
 
-  const handleFileSelected = useCallback(async (base64: string, name: string) => {
-    setFileBase64(base64);
-    setFileName(name);
+  const handleFileSelected = useCallback(async (file: File) => {
     setIsProcessing(true);
     setProgressStage('ocr');
     setProgressDetail('正在 OCR 识别...');
 
     try {
-      // 模拟进度更新（服务端无法实时推送进度）
       setTimeout(() => {
         setProgressStage('ai_parse');
         setProgressDetail('AI 智能解析中...');
       }, 3000);
 
-      const result = await previewPdfImportAction({
-        fileBase64: base64,
-        fileName: name,
-        mimeType: 'application/pdf',
+      const formData = new FormData();
+      formData.append('file', file);
+
+      const res = await fetch('/api/pdf-import/preview', {
+        method: 'POST',
+        body: formData,
+        credentials: 'include',
       });
 
-      if (result.data) {
-        setQuestions(result.data.questions);
-        setWarnings(result.data.parseWarnings);
-        if (result.data.questions.length === 0) {
-          toast.error('未能识别到任何题目，请检查 PDF 文件');
-        } else {
-          toast.success(`识别到 ${result.data.questions.length} 道题目`);
-          setStep('preview');
-        }
-      } else if (result.serverError) {
-        toast.error(`解析失败: ${result.serverError}`);
+      if (!res.ok) {
+        const err = await res.json().catch(() => ({ error: '请求失败' }));
+        throw new Error(err.error || `HTTP ${res.status}`);
+      }
+
+      const data = await res.json();
+      setQuestions(data.questions);
+      setWarnings(data.parseWarnings);
+
+      if (data.questions.length === 0) {
+        toast.error('未能识别到任何题目，请检查 PDF 文件');
+      } else {
+        toast.success(`识别到 ${data.questions.length} 道题目`);
+        setStep('preview');
       }
     } catch (err) {
-      toast.error('处理失败，请重试');
+      toast.error(`处理失败: ${err instanceof Error ? err.message : '请重试'}`);
       console.error(err);
     } finally {
       setIsProcessing(false);
@@ -76,22 +77,34 @@ export default function PdfImportPage() {
   const handleConfirm = useCallback(async (finalQuestions: ParsedPdfQuestion[], folderId?: number, addToWrongBook?: boolean) => {
     setIsImporting(true);
     try {
-      const result = await confirmPdfImportAction({
-        questions: finalQuestions,
-        folderId,
-        addToWrongBook: addToWrongBook ?? true,
+      const res = await fetch('/api/pdf-import/confirm', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
+        body: JSON.stringify({
+          questions: finalQuestions,
+          folderId,
+          addToWrongBook: addToWrongBook ?? true,
+        }),
       });
 
-      if (result.data?.success) {
-        toast.success(result.data.message);
+      if (!res.ok) {
+        const err = await res.json().catch(() => ({ error: '请求失败' }));
+        throw new Error(err.error || `HTTP ${res.status}`);
+      }
+
+      const data = await res.json();
+
+      if (data.success) {
+        toast.success(data.message);
         setStep('upload');
         setQuestions([]);
         setWarnings([]);
       } else {
-        toast.error(result.data?.message || '导入失败');
+        toast.error(data.message || '导入失败');
       }
     } catch (err) {
-      toast.error('导入失败，请重试');
+      toast.error(`导入失败: ${err instanceof Error ? err.message : '请重试'}`);
       console.error(err);
     } finally {
       setIsImporting(false);

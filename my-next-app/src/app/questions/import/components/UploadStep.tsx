@@ -10,7 +10,7 @@ import { cn } from '@/lib/utils/utils';
 const MAX_FILE_SIZE = 50 * 1024 * 1024; // 50MB
 
 interface UploadStepProps {
-  onFileSelected: (fileBase64: string, fileName: string) => void;
+  onFileSelected: (file: File) => void;
   isProcessing: boolean;
   progressStage: string;
   progressDetail: string;
@@ -21,7 +21,7 @@ export function UploadStep({ onFileSelected, isProcessing, progressStage, progre
   const [fileName, setFileName] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
-  const processFile = useCallback(async (file: File) => {
+  const processFile = useCallback((file: File) => {
     if (file.type !== 'application/pdf') {
       toast.error('请上传 PDF 文件');
       return;
@@ -32,9 +32,7 @@ export function UploadStep({ onFileSelected, isProcessing, progressStage, progre
     }
 
     setFileName(file.name);
-    const buffer = await file.arrayBuffer();
-    const base64 = Buffer.from(buffer).toString('base64');
-    onFileSelected(base64, file.name);
+    onFileSelected(file);
   }, [onFileSelected]);
 
   const handleDrop = useCallback((e: React.DragEvent) => {

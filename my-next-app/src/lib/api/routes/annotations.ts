@@ -16,7 +16,7 @@ const _AnnotationSchema = z.object({
 /** GET /api/annotations */
 const listAnnotationsDef = createRoute({
     method: 'get',
-    path: '/',
+    path: '',
     middleware: [authMiddleware] as const,
     request: {
         query: z.object({
@@ -55,7 +55,7 @@ app.openapi(listAnnotationsDef, async (c) => {
 /** POST /api/annotations */
 const createAnnotationDef = createRoute({
     method: 'post',
-    path: '/',
+    path: '',
     middleware: [authMiddleware] as const,
     request: {
         body: {
@@ -82,35 +82,40 @@ app.openapi(createAnnotationDef, async (c) => {
     const user = getCurrentUser(c)
     if (!user) return c.json({ error: 'Unauthorized' }, 401)
 
-    const { questionId, startOffset, endOffset, tag, color } = c.req.valid('json')
-    
-    const result = await drizzleDb.insert(drizzleSchema.text_annotations).values({
-        user_id: user.id,
-        question_id: questionId,
-        start_offset: startOffset,
-        end_offset: endOffset,
-        tag: tag,
-        color: color || null
-    }).onConflictDoUpdate({
-        target: [
-            drizzleSchema.text_annotations.user_id,
-            drizzleSchema.text_annotations.question_id,
-            drizzleSchema.text_annotations.start_offset,
-            drizzleSchema.text_annotations.end_offset
-        ],
-        set: {
+    try {
+        const { questionId, startOffset, endOffset, tag, color } = c.req.valid('json')
+
+        const result = await drizzleDb.insert(drizzleSchema.text_annotations).values({
+            user_id: user.id,
+            question_id: questionId,
+            start_offset: startOffset,
+            end_offset: endOffset,
             tag: tag,
             color: color || null
-        }
-    });
+        }).onConflictDoUpdate({
+            target: [
+                drizzleSchema.text_annotations.user_id,
+                drizzleSchema.text_annotations.question_id,
+                drizzleSchema.text_annotations.start_offset,
+                drizzleSchema.text_annotations.end_offset
+            ],
+            set: {
+                tag: tag,
+                color: color || null
+            }
+        });
 
-    return c.json({ id: Number(result.lastInsertRowid), message: '标注已保存' })
+        return c.json({ id: Number(result.lastInsertRowid), message: '标注已保存' })
+    } catch (err) {
+        console.error('[annotations] 创建标注失败:', err);
+        return c.json({ error: '创建标注失败', detail: String(err) }, 500)
+    }
 })
 
 /** DELETE /api/annotations */
 const deleteAnnotationDef = createRoute({
     method: 'delete',
-    path: '/',
+    path: '',
     middleware: [authMiddleware] as const,
     request: {
         query: z.object({

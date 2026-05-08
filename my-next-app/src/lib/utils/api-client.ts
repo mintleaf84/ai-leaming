@@ -61,7 +61,21 @@ export async function fetchJson<T = unknown>(url: string, options?: RequestOptio
   const response = await fetchWithRetry(url, options);
 
   if (!response.ok) {
-    throw new ApiError(response.status, response.statusText);
+    // 尝试解析 JSON 错误体，解析失败则用 statusText
+    let message: string | undefined;
+    const contentType = response.headers.get('content-type') || '';
+    if (contentType.includes('application/json')) {
+      try {
+        const body = await response.json() as Record<string, unknown>;
+        message = (body.error || body.message) as string | undefined;
+      } catch { /* ignore parse error */ }
+    }
+    throw new ApiError(response.status, response.statusText, message);
+  }
+
+  const contentType = response.headers.get('content-type') || '';
+  if (!contentType.includes('application/json')) {
+    throw new ApiError(response.status, 'InvalidResponse', `期望 JSON 但收到 ${contentType || '未知类型'}`);
   }
 
   return response.json() as Promise<T>;

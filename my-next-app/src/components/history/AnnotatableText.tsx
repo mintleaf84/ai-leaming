@@ -50,24 +50,14 @@ export function AnnotatableText({ text, questionId, className }: AnnotatableText
     // 将查询结果同步到本地 state（因为增删操作需要乐观更新）
     useEffect(() => {
         if (annotationData?.annotations) {
-            interface AnnotationRow {
-                id: number;
-                start_offset: number;
-                end_offset: number;
-                tag: 'highlight' | 'underline' | 'wavy';
-                color?: string;
-            }
             // eslint-disable-next-line react-hooks/set-state-in-effect
-            setAnnotations(annotationData.annotations.map((a: unknown) => {
-                const row = a as AnnotationRow;
-                return {
-                    id: row.id,
-                    start: row.start_offset,
-                    end: row.end_offset,
-                    tag: row.tag,
-                    color: row.color,
-                };
-            }));
+            setAnnotations(annotationData.annotations.map((a: { id: number; startOffset: number; endOffset: number; tag: 'highlight' | 'underline' | 'wavy'; color?: string }) => ({
+                id: a.id,
+                start: a.startOffset,
+                end: a.endOffset,
+                tag: a.tag,
+                color: a.color,
+            })));
         }
     }, [annotationData]);
 
@@ -87,14 +77,26 @@ export function AnnotatableText({ text, questionId, className }: AnnotatableText
             return;
         }
 
-        // 计算选区在文本中的偏移量
-        const preSelectionRange = range.cloneRange();
-        preSelectionRange.selectNodeContents(container);
-        preSelectionRange.setEnd(range.startContainer, range.startOffset);
-        const start = preSelectionRange.toString().length;
-        const end = start + range.toString().length;
+        // 遍历容器内所有文本节点，累加字符数，精确计算选区在原始 text 中的偏移
+        // 这样无论 DOM 是否被已有的标注 <span> 拆分，都能得到正确偏移
+        const walker = document.createTreeWalker(container, NodeFilter.SHOW_TEXT);
+        let start = -1;
+        let end = -1;
+        let offset = 0;
+        let node: Node | null;
 
-        if (start === end) {
+        while ((node = walker.nextNode())) {
+            if (node === range.startContainer) {
+                start = offset + range.startOffset;
+            }
+            if (node === range.endContainer) {
+                end = offset + range.endOffset;
+                break;
+            }
+            offset += (node.textContent?.length || 0);
+        }
+
+        if (start === -1 || end === -1 || start >= end) {
             setSelection(null);
             setSelectedText('');
             setToolbarPosition(null);
@@ -132,12 +134,17 @@ export function AnnotatableText({ text, questionId, className }: AnnotatableText
                 tag,
                 color: TAG_STYLES[tag].color,
             });
+
+            const contentType = res.headers.get('content-type') || '';
+            if (!contentType.includes('application/json')) {
+                throw new Error(`服务器返回了非 JSON 响应 (${res.status})`);
+            }
+
             const data = await res.json() as { id: number };
-            
+
             newAnnotation.id = data.id;
             setAnnotations(prev => [...prev, newAnnotation]);
-            
-            // 乐观更新后刷新缓存
+
             queryClient.invalidateQueries({ queryKey: ['annotations', questionId] });
         } catch (error) {
             console.error('保存标注失败:', error);

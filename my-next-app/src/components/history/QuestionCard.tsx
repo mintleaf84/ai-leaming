@@ -146,7 +146,7 @@ const AIAnalysisSection = ({
                 {questionId ? (
                     <AnnotatableText
                         text={fpAnalysis}
-                        questionId={-questionId}
+                        questionId={questionId}
                         className="text-sm text-foreground"
                     />
                 ) : (

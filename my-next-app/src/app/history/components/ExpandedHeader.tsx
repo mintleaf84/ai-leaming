@@ -45,16 +45,16 @@ export const ExpandedHeader: React.FC<ExpandedHeaderProps> = ({
 
             {/* Mode Tag for Continuity */}
             {/* 子元素使用 CSS 动画，避免逐个弹入导致 layout 抖动 */}
-            {practiceMode && (
+            {practiceMode && MODE_CONFIG[practiceMode] && (
                 <div
                     className={cn(
                         "inline-flex px-3 py-1 rounded-lg text-[10px] font-black uppercase border items-center gap-1.5 mb-4 animate-fade-in",
-                        MODE_CONFIG[practiceMode!].className
+                        MODE_CONFIG[practiceMode].className
                     )}
                     style={{ animationDelay: '100ms', animationFillMode: 'backwards' }}
                 >
-                    {MODE_CONFIG[practiceMode!].icon}
-                    {MODE_CONFIG[practiceMode!].label}
+                    {MODE_CONFIG[practiceMode].icon}
+                    {MODE_CONFIG[practiceMode].label}
                 </div>
             )}
 

@@ -45,17 +45,25 @@ export default function SessionDetailPage({ params }: { params: Promise<{ id: st
 
   // 数据加载
   useEffect(() => {
+    const abortController = new AbortController();
+
     getSessionDetailAction(id).then(result => {
-      setDetail(result?.data || null);
-      setIsLoading(false);
+      if (!abortController.signal.aborted) {
+        setDetail(result?.data || null);
+        setIsLoading(false);
+      }
     });
 
     // 加载已保存的分析报告
     getAnalysisReportAction(id).then(result => {
-      if (result?.data?.success && result.data.report) {
+      if (!abortController.signal.aborted && result?.data?.success && result.data.report) {
         setAnalysisReport(result.data.report);
       }
     });
+
+    return () => {
+      abortController.abort();
+    };
   }, [id]);
 
   // 删除处理
@@ -91,7 +99,7 @@ export default function SessionDetailPage({ params }: { params: Promise<{ id: st
   const scrollToQuestion = useCallback((idx: number) => {
     setShowAnswerCard(false);
     // 如果开启了只看错题，且该题是正确的，则先关闭只看错题模式
-    if (showWrongOnly && detail?.logs[idx].isCorrect) {
+    if (showWrongOnly && detail?.logs?.[idx]?.isCorrect) {
       setShowWrongOnly(false);
       toast.info('已自动切换显示所有题目');
     }
@@ -105,7 +113,7 @@ export default function SessionDetailPage({ params }: { params: Promise<{ id: st
         setExpandedItems(prev => new Set(prev).add(idx));
       }
     }, 150);
-  }, [showWrongOnly, detail]);
+  }, [showWrongOnly]);
 
   // AI 深度分析
   const handleAnalyze = useCallback(async () => {
@@ -175,7 +183,7 @@ export default function SessionDetailPage({ params }: { params: Promise<{ id: st
   }
 
   // 计算过滤后的题目列表（保留原始索引）
-  const displayedQuestions = detail.logs.map((log, index) => ({ log, index }))
+  const displayedQuestions = (detail.logs || []).map((log, index) => ({ log, index }))
     .filter(item => !showWrongOnly || !item.log.isCorrect);
 
   return (

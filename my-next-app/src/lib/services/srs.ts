@@ -7,6 +7,19 @@ import { drizzleDb } from '@/lib/db';
 import { questions, question_srs, practice_logs, system_settings } from '@/lib/db/drizzle-schema';
 import { eq, and, sql, lte, isNull, count, gte } from 'drizzle-orm';
 
+// 批量同步配置
+const SYNC_BATCH_SIZE = 100;
+
+/**
+ * 内部辅助：确保 DB 存储的 state 值映射到正确的 State 枚举
+ */
+function mapDbStateToEnum(dbState: unknown): State {
+    if (typeof dbState === 'number' && dbState >= 0 && dbState <= 3) {
+        return dbState as State;
+    }
+    return State.New;
+}
+
 // FSRS 基础配置
 const f = fsrs(generatorParameters());
 
@@ -174,7 +187,7 @@ export const srsService = {
             card.scheduled_days = row.scheduled_days;
             card.reps = row.reps;
             card.lapses = row.lapses;
-            card.state = row.state as State;
+            card.state = mapDbStateToEnum(row.state);
             card.last_review = row.last_review ? new Date(row.last_review) : undefined;
             return card;
         }
@@ -184,13 +197,16 @@ export const srsService = {
 
     /**
      * 更新题目 SRS 状态
+     * @throws {Error} 如果题目不存在
      */
     updateQuestionSrs: async (userId: number, questionId: number, isCorrect: boolean, durationMs: number, reviewDate?: Date, cachedReadingSpeed?: number) => {
         const [question] = await drizzleDb.select()
             .from(questions)
             .where(eq(questions.id, questionId))
             .limit(1);
-        if (!question) return;
+        if (!question) {
+            throw new Error(`题目 ID ${questionId} 不存在，无法更新 SRS 状态`);
+        }
 
         const card = await srsService.getOrCreateSrsCard(userId, questionId);
 
@@ -411,63 +427,94 @@ export const srsService = {
     },
 
     /**
-     * 从练习日志中同步数据到 SRS
+     * 从练习日志中同步数据到 SRS（批量 + 事务）
+     * @param userId 用户 ID
+     * @returns 同步的题目数量
      */
     syncFromPracticeLogs: async (userId: number) => {
-        const logs = await drizzleDb.select({
-            questionId: practice_logs.question_id,
-            isCorrect: sql<number>`CAST(${practice_logs.is_correct} AS INTEGER)`,
-            durationMs: practice_logs.duration_ms,
-            timestamp: practice_logs.timestamp
-        })
-        .from(practice_logs)
-        .leftJoin(
-            question_srs, 
-            and(
-                eq(question_srs.question_id, practice_logs.question_id),
-                eq(question_srs.user_id, userId)
-            )
-        )
-        .where(and(
-            eq(practice_logs.user_id, userId),
-            isNull(question_srs.question_id)
-        ))
-        .orderBy(practice_logs.timestamp);
-
-        if (logs.length === 0) return 0;
-
-        const questionGroups = new Map<number, Array<{ questionId: number; isCorrect: number; durationMs: number | null; timestamp: string | null }>>();
-        for (const log of logs) {
-            if (!questionGroups.has(log.questionId)) {
-                questionGroups.set(log.questionId, []);
-            }
-            questionGroups.get(log.questionId)!.push(log);
-        }
-
         const speedCache: Record<string, number> = {
             'base': await getReadingSpeed(userId),
             'multi': await getReadingSpeed(userId, 'multi'),
             'truefalse': await getReadingSpeed(userId, 'truefalse')
         };
 
-        let syncCount = 0;
-        for (const [qId, qLogs] of questionGroups.entries()) {
-            const [qInfo] = await drizzleDb.select({ type: questions.type })
-                .from(questions)
-                .where(eq(questions.id, qId))
-                .limit(1);
-            
-            const typeKey = qInfo?.type === 'multi' ? 'multi' :
-                        qInfo?.type === 'truefalse' ? 'truefalse' : 'base';
-            const speed = speedCache[typeKey] || speedCache['base'];
+        let totalSyncCount = 0;
+        let hasMore = true;
 
-            for (const log of qLogs) {
-                const reviewDate = log.timestamp ? dayjs.utc(log.timestamp).toDate() : undefined;
-                await srsService.updateQuestionSrs(userId, qId, log.isCorrect === 1, log.durationMs || 0, reviewDate, speed);
+        while (hasMore) {
+            // 每次只查询 SYNC_BATCH_SIZE 个题目
+            const logs = await drizzleDb.select({
+                questionId: practice_logs.question_id,
+                isCorrect: sql<number>`CAST(${practice_logs.is_correct} AS INTEGER)`,
+                durationMs: practice_logs.duration_ms,
+                timestamp: practice_logs.timestamp
+            })
+            .from(practice_logs)
+            .leftJoin(
+                question_srs,
+                and(
+                    eq(question_srs.question_id, practice_logs.question_id),
+                    eq(question_srs.user_id, userId)
+                )
+            )
+            .where(and(
+                eq(practice_logs.user_id, userId),
+                isNull(question_srs.question_id)
+            ))
+            .orderBy(practice_logs.timestamp)
+            .limit(SYNC_BATCH_SIZE);
+
+            if (logs.length === 0) {
+                hasMore = false;
+                break;
             }
-            syncCount++;
+
+            // 如果不足一批，说明没有更多了
+            if (logs.length < SYNC_BATCH_SIZE) {
+                hasMore = false;
+            }
+
+            // 按题目分组
+            const questionGroups = new Map<number, Array<{ questionId: number; isCorrect: number; durationMs: number | null; timestamp: string | null }>>();
+            for (const log of logs) {
+                if (!questionGroups.has(log.questionId)) {
+                    questionGroups.set(log.questionId, []);
+                }
+                questionGroups.get(log.questionId)!.push(log);
+            }
+
+            // 使用事务批量处理
+            try {
+                await drizzleDb.transaction(async (tx) => {
+                    for (const [qId, qLogs] of questionGroups.entries()) {
+                        const [qInfo] = await tx.select({ type: questions.type })
+                            .from(questions)
+                            .where(eq(questions.id, qId))
+                            .limit(1);
+
+                        const typeKey = qInfo?.type === 'multi' ? 'multi' :
+                                    qInfo?.type === 'truefalse' ? 'truefalse' : 'base';
+                        const speed = speedCache[typeKey] || speedCache['base'];
+
+                        for (const log of qLogs) {
+                            const reviewDate = log.timestamp ? dayjs.utc(log.timestamp).toDate() : undefined;
+                            // updateQuestionSrs 现在会在题目不存在时抛出错误
+                            try {
+                                await srsService.updateQuestionSrs(userId, qId, log.isCorrect === 1, log.durationMs || 0, reviewDate, speed);
+                            } catch (err) {
+                                // 题目不存在时跳过，不阻塞整个同步
+                                console.warn(`[syncFromPracticeLogs] 跳过题目 ${qId}: ${(err as Error).message}`);
+                            }
+                        }
+                    }
+                });
+                totalSyncCount += questionGroups.size;
+            } catch (err) {
+                console.error('[syncFromPracticeLogs] 批量同步失败，已回滚:', err);
+                throw err;
+            }
         }
-        
-        return syncCount;
+
+        return totalSyncCount;
     }
 };

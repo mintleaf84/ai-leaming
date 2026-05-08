@@ -20,8 +20,8 @@ export const QuestionUpdateSchema = z.object({
     answer: z.string().optional(),
     explanation: z.string().optional(),
     tags: z.array(z.string()).optional(),
-    dimension: z.string().optional(),
-    type: z.string().optional(),
+    dimension: z.enum(['knowledge', 'understanding', 'application']).optional(),
+    type: z.enum(['single', 'multi', 'truefalse']).optional(),
   })
 });
 
@@ -39,5 +39,5 @@ export const UserQuerySchema = z.object({
  */
 export const RoleUpdateSchema = z.object({
   id: z.number(),
-  role: z.enum(['admin', 'student', 'teacher', 'user', 'vip', 'editor']), // 与 UserRole 定义一致
+  role: z.enum(['admin', 'student', 'teacher']),
 });

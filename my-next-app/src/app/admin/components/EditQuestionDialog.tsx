@@ -109,8 +109,8 @@ export function EditQuestionDialog({
                 answer: formData.answer,
                 explanation: formData.explanation,
                 tags,
-                dimension: formData.dimension,
-                type: formData.type // 传递 type
+                dimension: formData.dimension as 'knowledge' | 'understanding' | 'application',
+                type: formData.type as 'single' | 'multi' | 'truefalse',
             };
 
             const result = await updateQuestionAction({ id: question.id, data: updateData });

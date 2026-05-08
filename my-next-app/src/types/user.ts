@@ -1,5 +1,5 @@
 /** 用户角色 */
-export type UserRole = 'admin' | 'student' | 'teacher' | 'user' | 'vip' | 'editor';
+export type UserRole = 'admin' | 'student' | 'teacher';
 
 /** 基础用户接口 */
 export interface User {

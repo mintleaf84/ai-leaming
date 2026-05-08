@@ -113,15 +113,10 @@ adminRoute.openapi(systemActionDef, async (c) => {
     }
 
     if (action === 'reset_demo_session') {
-        // 批量删除逻辑
-        const demoSessions = await drizzleDb.query.practice_sessions.findMany({
-            where: eq(sql`is_demo`, 1),
-            columns: { id: true }
-        });
-        
-        for (const s of demoSessions) {
-            await drizzleDb.delete(drizzleSchema.practice_logs).where(eq(drizzleSchema.practice_logs.session_id, s.id));
-        }
+        // 批量删除：先删 practice_logs，再删 practice_sessions（使用子查询避免 N+1）
+        await drizzleDb.run(sql`
+            DELETE FROM practice_logs WHERE session_id IN (SELECT id FROM practice_sessions WHERE is_demo = 1)
+        `);
         await drizzleDb.delete(drizzleSchema.practice_sessions).where(eq(sql`is_demo`, 1));
         return c.json({ success: true, message: '演示数据集已重置' });
     }
@@ -156,7 +151,7 @@ adminRoute.openapi(backupDef, async (c) => {
     try {
         if (!fs.existsSync(tempDir)) fs.mkdirSync(tempDir, { recursive: true });
         await drizzleDb.run(sql`VACUUM INTO ${tempPath}`);
-        logAdminAction(user.id, user.username, 'BACKUP_DATABASE', 'system', 'database', { filename });
+        await logAdminAction(user.id, user.username, 'BACKUP_DATABASE', 'system', 'database', { filename });
         const fileBuffer = fs.readFileSync(tempPath);
         fs.unlinkSync(tempPath);
 
@@ -218,7 +213,7 @@ adminRoute.openapi(restoreDef, async (c) => {
             if (fs.existsSync(dbPath)) fs.unlinkSync(dbPath);
             fs.renameSync(tempPath, dbPath);
             reinitDb();
-            logAdminAction(user.id, user.username, 'RESTORE_DATABASE', 'system', 'database', {
+            await logAdminAction(user.id, user.username, 'RESTORE_DATABASE', 'system', 'database', {
                 filename: file.name,
                 backupCreated: path.basename(backupPath)
             });

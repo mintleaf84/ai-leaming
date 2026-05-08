@@ -30,7 +30,7 @@ export const getQuestionsAction = adminAction
  * 批量导入题目
  */
 export const importQuestionsAction = adminAction
-  .inputSchema(z.array(QuestionSchema))
+  .inputSchema(z.array(QuestionSchema).max(1000, '单次导入不能超过 1000 题'))
   .action(async ({ parsedInput: input, ctx }) => {
     const { user } = ctx;
     const count = await adminService.importQuestions(input);

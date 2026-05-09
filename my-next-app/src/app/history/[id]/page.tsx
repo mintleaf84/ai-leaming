@@ -113,7 +113,7 @@ export default function SessionDetailPage({ params }: { params: Promise<{ id: st
         setExpandedItems(prev => new Set(prev).add(idx));
       }
     }, 150);
-  }, [showWrongOnly]);
+  }, [showWrongOnly, detail]);
 
   // AI 深度分析
   const handleAnalyze = useCallback(async () => {

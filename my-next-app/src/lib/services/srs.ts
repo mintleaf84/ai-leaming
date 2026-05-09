@@ -119,6 +119,16 @@ export interface SrsGlobalStats {
   learnedCount: number;
 }
 
+export function summarizeFutureReviews(futureReviews: SrsGlobalStats['futureReviews']) {
+        return futureReviews.reduce(
+                (summary, day) => ({
+                        totalCount: summary.totalCount + day.count,
+                        totalMinutes: summary.totalMinutes + day.estimatedMinutes,
+                }),
+                { totalCount: 0, totalMinutes: 0 }
+        );
+}
+
 export type SrsHistoryEntry = {
   date: string;
   rating: string;
@@ -331,7 +341,7 @@ export const srsService = {
                     WHEN date(${question_srs.due_date}) <= date('now') THEN date('now')
                     ELSE date(${question_srs.due_date})
                 END`,
-            count: count()
+            count: sql<number>`COUNT(DISTINCT ${question_srs.question_id})`
         })
         .from(question_srs)
         .innerJoin(practice_logs, and(

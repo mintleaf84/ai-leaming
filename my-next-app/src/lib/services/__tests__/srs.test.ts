@@ -41,7 +41,7 @@ vi.mock('@/lib/db', () => {
     };
 });
 
-import { srsService, learnReadingSpeed } from '../srs';
+import { srsService, learnReadingSpeed, summarizeFutureReviews } from '../srs';
 import { Rating, createEmptyCard } from 'ts-fsrs';
 
 describe('SRS Service', () => {
@@ -122,6 +122,18 @@ describe('SRS Service', () => {
             mockAll.mockReturnValue([]);
             const syncCount = await srsService.syncFromPracticeLogs(1);
             expect(syncCount).toBe(0);
+        });
+    });
+
+    describe('summarizeFutureReviews', () => {
+        it('应该汇总未来 7 天的错题数量和预计耗时', () => {
+            const summary = summarizeFutureReviews([
+                { date: '2026-05-10', count: 2, estimatedMinutes: 5 },
+                { date: '2026-05-11', count: 3, estimatedMinutes: 8 },
+            ]);
+
+            expect(summary.totalCount).toBe(5);
+            expect(summary.totalMinutes).toBe(13);
         });
     });
 });

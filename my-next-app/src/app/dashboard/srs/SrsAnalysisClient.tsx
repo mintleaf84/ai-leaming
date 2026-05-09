@@ -11,7 +11,7 @@ import {
 } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { type SrsGlobalStats } from '@/lib/services/srs';
+import { summarizeFutureReviews, type SrsGlobalStats } from '@/lib/services/srs';
 import { syncSrsDataAction } from '@/server/actions/srs';
 import { toast } from 'sonner';
 import { useRouter } from 'next/navigation';
@@ -26,6 +26,7 @@ const STATE_COLORS = {
 export default function SrsAnalysisClient({ stats }: { stats: SrsGlobalStats }) {
     const router = useRouter();
     const [isSyncing, setIsSyncing] = React.useState(false);
+    const { totalCount: futureReviewTotal, totalMinutes: futureReviewMinutes } = summarizeFutureReviews(stats.futureReviews);
 
     const handleSync = async () => {
         try {
@@ -78,7 +79,7 @@ export default function SrsAnalysisClient({ stats }: { stats: SrsGlobalStats }) 
                     { label: '总掌握题目', value: stats.totalCards, icon: Target, color: 'text-blue-500', bg: 'bg-blue-500/10' },
                     { label: '真实保留率', value: `${stats.retentionStats.trueRetention.toFixed(1)}%`, icon: TrendingUp, color: 'text-emerald-500', bg: 'bg-emerald-500/10', sub: `近 30 天 ${stats.retentionStats.totalReviews} 次复习` },
                     { label: '当前稳定性', value: stats.stabilityDistribution[stats.stabilityDistribution.length - 1].count > 0 ? '极佳' : '稳步提升', icon: Zap, color: 'text-amber-500', bg: 'bg-amber-500/10' },
-                    { label: '待复习错题', value: stats.futureReviews[0]?.count || 0, icon: Clock, color: 'text-purple-500', bg: 'bg-purple-500/10', sub: stats.futureReviews[0] ? `预计耗时 ${stats.futureReviews[0].estimatedMinutes} min` : '暂无待办' },
+                    { label: '待复习错题', value: futureReviewTotal, icon: Clock, color: 'text-purple-500', bg: 'bg-purple-500/10', sub: futureReviewTotal > 0 ? `预计耗时 ${futureReviewMinutes} min` : '暂无待办' },
                 ].map((m, i) => (
                     <Card key={i} className="border-border/50 bg-card/50 backdrop-blur-sm">
                         <CardContent className="pt-6">

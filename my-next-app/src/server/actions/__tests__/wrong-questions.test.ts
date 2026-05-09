@@ -38,22 +38,29 @@ describe('Wrong Questions Actions', () => {
 
     describe('getWrongQuestionsAction', () => {
         it('应该从 service 获取错题列表', async () => {
-            const mockList = [{ questionId: 1, questionContent: 'Q1', tags: [] }];
-            vi.mocked(wrongQuestionService.getList).mockResolvedValue(mockList as any);
+            const mockResult = {
+                questions: [{ questionId: 1, questionContent: 'Q1', tags: [] }],
+                total: 1
+            };
+            vi.mocked(wrongQuestionService.getList).mockResolvedValue(mockResult as any);
 
-            const result = await getWrongQuestionsAction();
-            expect(result.data?.questions).toEqual(mockList);
-            expect(wrongQuestionService.getList).toHaveBeenCalledWith(1);
+            const result = await getWrongQuestionsAction({ limit: 50, offset: 0 });
+            expect(result.data?.questions).toEqual(mockResult.questions);
+            expect(result.data?.total).toBe(1);
+            expect(wrongQuestionService.getList).toHaveBeenCalledWith(1, { limit: 50, offset: 0 });
         });
     });
 
     describe('getWrongQuestionsByTagAction', () => {
         it('应该按标签分组返回错题', async () => {
-            const mockList = [
-                { questionId: 1, tags: ['A'] },
-                { questionId: 2, tags: ['A', 'B'] }
-            ];
-            vi.mocked(wrongQuestionService.getList).mockResolvedValue(mockList as any);
+            const mockResult = {
+                questions: [
+                    { questionId: 1, tags: ['A'] },
+                    { questionId: 2, tags: ['A', 'B'] }
+                ],
+                total: 2
+            };
+            vi.mocked(wrongQuestionService.getList).mockResolvedValue(mockResult as any);
 
             const result = await getWrongQuestionsByTagAction();
             expect(result.data?.find).toHaveLength(2);

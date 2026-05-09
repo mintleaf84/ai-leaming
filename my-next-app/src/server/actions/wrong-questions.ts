@@ -11,13 +11,17 @@ import { RandomWrongQuestionsSchema } from '@/lib/validations/wrong-questions';
 import { wrongQuestionRecommend } from '@/lib/services/question-recommend';
 
 /**
- * 获取错题列表
+ * 获取错题列表 (分页)
  */
 export const getWrongQuestionsAction = authenticatedAction
-    .action(async ({ ctx }) => {
+    .inputSchema(z.object({
+        limit: z.number().min(1).max(100).default(50),
+        offset: z.number().min(0).default(0),
+    }))
+    .action(async ({ parsedInput: input, ctx }) => {
         const { user } = ctx;
-        const data = await wrongQuestionService.getList(user.id);
-        return { success: true, questions: data };
+        const result = await wrongQuestionService.getList(user.id, input);
+        return { success: true, ...result };
     });
 
 /**
@@ -26,7 +30,7 @@ export const getWrongQuestionsAction = authenticatedAction
 export const getWrongQuestionsByTagAction = authenticatedAction
     .action(async ({ ctx }) => {
         const { user } = ctx;
-        const questions = await wrongQuestionService.getList(user.id);
+        const { questions } = await wrongQuestionService.getList(user.id, { limit: 10000 });
         const tagMap = new Map<string, WrongQuestionItem[]>();
 
         questions.forEach(q => {

@@ -78,10 +78,9 @@ describe('WrongQuestionService', () => {
     describe('getList', () => {
         it('should return wrong questions list', async () => {
             const mockRows = [
-                { questionId: 1, questionContent: 'Test Q', tags: '["tag1"]', correctAnswer: 'A', wrongCount: 2, lastWrongAt: '2024-01-01', stability: 1.0, difficulty: 0.3, due_date: '2024-01-15' }
+                { questionId: 1, questionContent: 'Test Q', tags: '["tag1"]', correctAnswer: 'A', wrongCount: 2, lastWrongAt: '2024-01-01', stability: 1.0, difficulty: 0.3, due_date: '2024-01-15', userLastAnswer: 'B' }
             ];
             const mockMastered = [{ id: 100 }];
-            const mockLastLog = { user_answer: 'B' };
 
             (chain.from as any).mockImplementation((table: any) => {
                 if (table === 'mastered_questions') {
@@ -90,22 +89,36 @@ describe('WrongQuestionService', () => {
                 return chain;
             });
 
+            // Mock count query
+            chain.get.mockResolvedValueOnce({ count: 1 });
+            // Mock main query
             (chain.then as any).mockImplementation((resolve: any) => resolve(mockRows));
-            chain.get.mockResolvedValue(mockLastLog);
 
             const result = await wrongQuestionService.getList(1);
 
-            expect(result).toHaveLength(1);
-            expect(result[0].questionId).toBe(1);
-            expect(result[0].tags).toEqual(['tag1']);
+            expect(result.questions).toHaveLength(1);
+            expect(result.questions[0].questionId).toBe(1);
+            expect(result.questions[0].tags).toEqual(['tag1']);
+            expect(result.total).toBe(1);
         });
 
         it('should return empty list when no wrong questions', async () => {
+            (chain.from as any).mockImplementation((table: any) => {
+                if (table === 'mastered_questions') {
+                    return { where: vi.fn().mockResolvedValue([]) };
+                }
+                return chain;
+            });
+
+            // Mock count query returns 0
+            chain.get.mockResolvedValueOnce({ count: 0 });
+            // Mock main query returns empty
             (chain.then as any).mockImplementation((resolve: any) => resolve([]));
 
             const result = await wrongQuestionService.getList(1);
 
-            expect(result).toEqual([]);
+            expect(result.questions).toEqual([]);
+            expect(result.total).toBe(0);
         });
     });
 

@@ -30,6 +30,7 @@ import { RecommendedQuestionsDialog } from './components/RecommendedQuestionsDia
 import { FolderTreeView } from './components/FolderTreeView';
 import { FolderQuestionList } from './components/FolderQuestionList';
 import { AddToFolderDialog } from './components/AddToFolderDialog';
+import { Pagination } from '@/components/ui/pagination';
 
 export default function WrongBookPage() {
     // 复练排序模式：priority = 按错误频次+遗忘权重，random = 纯随机
@@ -41,6 +42,13 @@ export default function WrongBookPage() {
         groupedQuestions,
         masteredQuestions,
         stats,
+        // 分页
+        page,
+        pageSize,
+        total,
+        hasMore,
+        isLoadingMore,
+        loadMore,
         // UI 状态
         isLoading,
         viewMode,
@@ -261,7 +269,7 @@ export default function WrongBookPage() {
                                     <div
                                         key={q.questionId}
                                         className="animate-fade-in-up"
-                                        style={{ animationDelay: `${index * 50}ms` }}
+                                        style={{ animationDelay: `${(index % pageSize) * 30}ms` }}
                                     >
                                         <WrongQuestionCard
                                             question={q}
@@ -278,6 +286,34 @@ export default function WrongBookPage() {
                                         />
                                     </div>
                                 ))}
+
+                                {/* 分页 */}
+                                {total > pageSize && (
+                                    <div className="flex items-center justify-between pt-4 pb-8">
+                                        <span className="text-sm text-muted-foreground">
+                                            第 {page + 1} / {Math.ceil(total / pageSize)} 页 (共 {total} 题)
+                                        </span>
+                                        <div className="flex gap-2">
+                                            <Button
+                                                variant="outline"
+                                                size="sm"
+                                                onClick={loadMore}
+                                                disabled={!hasMore || isLoadingMore}
+                                            >
+                                                {isLoadingMore ? '加载中...' : hasMore ? '加载更多' : '没有更多了'}
+                                            </Button>
+                                            {page > 0 && (
+                                                <Button
+                                                    variant="outline"
+                                                    size="sm"
+                                                    onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}
+                                                >
+                                                    返回顶部
+                                                </Button>
+                                            )}
+                                        </div>
+                                    </div>
+                                )}
                             </div>
                         )}
 

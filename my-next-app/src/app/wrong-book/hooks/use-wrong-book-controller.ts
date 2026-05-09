@@ -63,6 +63,12 @@ export function useWrongBookController() {
     const [masteredQuestions, setMasteredQuestions] = useState<WrongQuestionItem[]>([]);
     const [stats, setStats] = useState<WrongBookStats>({ total: 0, recent: 0, frequent: 0 });
 
+    // 分页状态
+    const [page, setPage] = useState(0);
+    const [pageSize] = useState(20);
+    const [total, setTotal] = useState(0);
+    const [isLoadingMore, setIsLoadingMore] = useState(false);
+
     // UI 状态
     const [isLoading, setIsLoading] = useState(true);
     const [viewMode, setViewMode] = useState<ViewMode>('list');
@@ -90,23 +96,36 @@ export function useWrongBookController() {
     const [showAddToFolderDialog, setShowAddToFolderDialog] = useState(false);
     const [isFolderSubmitting, setIsFolderSubmitting] = useState(false);
 
-    // 加载数据
+    // 加载数据 (第一页)
     const loadData = useCallback(async () => {
         setIsLoading(true);
+        setPage(0);
         const [qRes, gRes, sRes, mRes, fRes] = await Promise.all([
-            getWrongQuestionsAction(),
+            getWrongQuestionsAction({ limit: pageSize, offset: 0 }),
             getWrongQuestionsByTagAction(),
             getWrongQuestionsStatsAction(),
             getMasteredQuestionsAction(),
             getFoldersAction()
         ]);
         setQuestions(qRes.data?.questions || []);
+        setTotal(qRes.data?.total || 0);
         setGroupedQuestions(gRes.data?.find || []);
         setStats(sRes.data || { total: 0, recent: 0, frequent: 0 });
         setMasteredQuestions(mRes.data?.questions || []);
         setFolders(fRes.data?.folders || []);
         setIsLoading(false);
-    }, []);
+    }, [pageSize]);
+
+    // 加载更多
+    const loadMore = useCallback(async () => {
+        if (questions.length >= total || isLoadingMore) return;
+        setIsLoadingMore(true);
+        const nextPage = page + 1;
+        const qRes = await getWrongQuestionsAction({ limit: pageSize, offset: nextPage * pageSize });
+        setQuestions(prev => [...prev, ...(qRes.data?.questions || [])]);
+        setPage(nextPage);
+        setIsLoadingMore(false);
+    }, [page, pageSize, questions.length, total, isLoadingMore]);
 
     // 初始化加载
     useEffect(() => {
@@ -394,6 +413,14 @@ export function useWrongBookController() {
         groupedQuestions,
         masteredQuestions,
         stats,
+
+        // 分页
+        page,
+        pageSize,
+        total,
+        hasMore: questions.length < total,
+        isLoadingMore,
+        loadMore,
 
         // UI 状态
         isLoading,

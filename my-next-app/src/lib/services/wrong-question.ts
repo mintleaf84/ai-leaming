@@ -58,17 +58,34 @@ export interface WrongQuestionDetail {
  */
 export const wrongQuestionService = {
     /**
-     * 获取错题列表 (排除已掌握)
+     * 获取错题列表 (分页)
      */
-    async getList(userId: number): Promise<WrongQuestionItem[]> {
+    async getList(userId: number, options?: { limit?: number; offset?: number }): Promise<{ questions: WrongQuestionItem[]; total: number }> {
+        const limit = options?.limit ?? 50;
+        const offset = options?.offset ?? 0;
+
         // 1. 获取已掌握题目 ID 列表
         const masteredIds = await drizzleDb.select({ id: mastered_questions.question_id })
             .from(mastered_questions)
             .where(eq(mastered_questions.user_id, userId));
         const excludeIds = masteredIds.map(m => m.id);
 
-        // 2. 聚合查询错题
-        const query = drizzleDb.select({
+        // 2. 聚合查询错题 (带分页)
+        const baseWhere = and(
+            eq(practice_logs.user_id, userId),
+            eq(practice_logs.is_correct, false),
+            excludeIds.length > 0 ? notInArray(practice_logs.question_id, excludeIds) : undefined
+        );
+
+        // 先获取总数
+        const countResult = await drizzleDb.select({ count: sql`COUNT(DISTINCT ${practice_logs.question_id})` })
+            .from(practice_logs)
+            .where(baseWhere)
+            .get() as { count: number };
+        const total = countResult?.count || 0;
+
+        // 分页查询主数据
+        const rows = await drizzleDb.select({
             questionId: practice_logs.question_id,
             questionContent: questions.content,
             tags: questions.tags,
@@ -78,6 +95,7 @@ export const wrongQuestionService = {
             stability: question_srs.stability,
             difficulty: question_srs.difficulty,
             due_date: question_srs.due_date,
+            userLastAnswer: sql<string>`MAX(${practice_logs.user_answer})`,
         })
         .from(practice_logs)
         .innerJoin(questions, eq(practice_logs.question_id, questions.id))
@@ -85,44 +103,28 @@ export const wrongQuestionService = {
             eq(practice_logs.question_id, question_srs.question_id),
             eq(practice_logs.user_id, question_srs.user_id)
         ))
-        .where(and(
-            eq(practice_logs.user_id, userId),
-            eq(practice_logs.is_correct, false),
-            excludeIds.length > 0 ? notInArray(practice_logs.question_id, excludeIds) : undefined
-        ))
+        .where(baseWhere)
         .groupBy(practice_logs.question_id)
-        .orderBy(desc(sql`COUNT(*)`), desc(sql`MAX(${practice_logs.timestamp})`));
+        .orderBy(desc(sql`COUNT(*)`), desc(sql`MAX(${practice_logs.timestamp})`))
+        .limit(limit)
+        .offset(offset);
 
-        const rows = await query;
-
-        // 3. 为每一项异步获取最近一次错误答案 (SQLite 不好在聚合中直接取非聚合列)
-        // 优化建议：如果是大规模列表，可以考虑分两次查询或使用 JSON 聚合
-        return await Promise.all(rows.map(async r => {
-            const [lastLog] = await drizzleDb.select({ user_answer: practice_logs.user_answer })
-                .from(practice_logs)
-                .where(and(
-                    eq(practice_logs.question_id, r.questionId!),
-                    eq(practice_logs.user_id, userId),
-                    eq(practice_logs.is_correct, false)
-                ))
-                .orderBy(desc(practice_logs.timestamp))
-                .limit(1);
-
-            return {
-                questionId: r.questionId!,
-                questionContent: r.questionContent!,
-                tags: typeof r.tags === 'string' ? JSON.parse(r.tags) : (r.tags || []),
-                wrongCount: r.wrongCount,
-                lastWrongAt: r.lastWrongAt,
-                correctAnswer: r.correctAnswer!,
-                userLastAnswer: lastLog?.user_answer || '',
-                srs: r.stability ? {
-                    stability: r.stability,
-                    difficulty: r.difficulty || 0,
-                    due_date: r.due_date || ''
-                } : undefined
-            };
+        const questionsList: WrongQuestionItem[] = rows.map(r => ({
+            questionId: r.questionId!,
+            questionContent: r.questionContent!,
+            tags: typeof r.tags === 'string' ? JSON.parse(r.tags) : (r.tags || []),
+            wrongCount: r.wrongCount,
+            lastWrongAt: r.lastWrongAt,
+            correctAnswer: r.correctAnswer!,
+            userLastAnswer: r.userLastAnswer || '',
+            srs: r.stability ? {
+                stability: r.stability,
+                difficulty: r.difficulty || 0,
+                due_date: r.due_date || ''
+            } : undefined
         }));
+
+        return { questions: questionsList, total };
     },
 
     /**

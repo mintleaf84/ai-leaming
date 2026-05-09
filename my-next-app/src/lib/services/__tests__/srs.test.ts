@@ -41,7 +41,8 @@ vi.mock('@/lib/db', () => {
     };
 });
 
-import { srsService, learnReadingSpeed, summarizeFutureReviews } from '../srs';
+import { srsService, learnReadingSpeed } from '../srs';
+import { summarizeFutureReviews } from '../srs-summary';
 import { Rating, createEmptyCard } from 'ts-fsrs';
 
 describe('SRS Service', () => {

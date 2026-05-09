@@ -11,7 +11,8 @@ import {
 } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { summarizeFutureReviews, type SrsGlobalStats } from '@/lib/services/srs';
+import { summarizeFutureReviews } from '@/lib/services/srs-summary';
+import { type SrsGlobalStats } from '@/lib/services/srs';
 import { syncSrsDataAction } from '@/server/actions/srs';
 import { toast } from 'sonner';
 import { useRouter } from 'next/navigation';

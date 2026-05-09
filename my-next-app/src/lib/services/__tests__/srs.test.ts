@@ -27,6 +27,7 @@ vi.mock('@/lib/db', () => {
             });
             return chain;
         }),
+        transaction: vi.fn((callback) => callback(drizzleMock)), // 新增 transaction mock
         query: {
             questions: { findFirst: vi.fn().mockImplementation(() => Promise.resolve(mockGet())) },
             question_srs: { findFirst: vi.fn().mockImplementation(() => Promise.resolve(mockGet())) }

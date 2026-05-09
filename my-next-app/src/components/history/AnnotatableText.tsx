@@ -50,8 +50,9 @@ export function AnnotatableText({ text, questionId, className }: AnnotatableText
     // 将查询结果同步到本地 state（因为增删操作需要乐观更新）
     useEffect(() => {
         if (annotationData?.annotations) {
+            const typedAnnotations = annotationData.annotations as Array<{ id: number; startOffset: number; endOffset: number; tag: 'highlight' | 'underline' | 'wavy'; color?: string }>;
             // eslint-disable-next-line react-hooks/set-state-in-effect
-            setAnnotations(annotationData.annotations.map((a: { id: number; startOffset: number; endOffset: number; tag: 'highlight' | 'underline' | 'wavy'; color?: string }) => ({
+            setAnnotations(typedAnnotations.map((a) => ({
                 id: a.id,
                 start: a.startOffset,
                 end: a.endOffset,

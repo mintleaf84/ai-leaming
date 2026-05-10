@@ -4,17 +4,22 @@ import { z } from 'zod';
 
 const BaseQuestionSchema = z.object({
   content: z.string().min(5, "题干长度至少为5个字符"),
-  options: z.array(z.string().min(1, "选项内容不能为空")).min(2, "至少需要2个选项").max(10),
+  options: z.array(z.string().min(1, "选项内容不能为空")).max(10).default([]),
   answer: z.string().min(1, "必须指定正确答案"),
   explanation: z.string().min(5, "解析长度至少为5个字符"),
   tags: z.array(z.string().min(1, "标签内容不能为空")).min(1, "至少需要1个标签"),
   dimension: z.enum(['knowledge', 'understanding', 'application'], {
     message: "维度必须是 'knowledge'、'understanding' 或 'application'"
   }).or(z.string()), // Relax dimension as well just in case
-  type: z.enum(['single', 'multi', 'truefalse']).default('single'),
+  type: z.enum(['single', 'multi', 'truefalse', 'fill_blank']).default('single'),
 });
 
 export const QuestionSchema = BaseQuestionSchema.refine((data) => {
+  // 填空题：答案为自由文本，无需选项校验
+  if (data.type === 'fill_blank') {
+    return data.answer.length > 0;
+  }
+
   // 判断题：选项固定为 ["正确", "错误"]，答案只能是 "A" 或 "B"
   if (data.type === 'truefalse') {
     return (data.answer === 'A' || data.answer === 'B') && data.options.length === 2;

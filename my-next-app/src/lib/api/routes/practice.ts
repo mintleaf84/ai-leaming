@@ -39,7 +39,9 @@ const createSessionRoute = createRoute({
                             id: z.number(),
                             content: z.string(),
                             options: z.array(z.string()),
-                            type: z.string().optional()
+                            type: z.string().optional(),
+                            material: z.string().nullable().optional(),
+                            material_html: z.string().nullable().optional()
                         }))
                     })
                 }
@@ -73,7 +75,9 @@ app.openapi(createSessionRoute, async (c) => {
             id: q.id,
             content: q.content,
             options: q.options,
-            type: q.type
+            type: q.type,
+            material: q.material ?? null,
+            material_html: q.material_html ?? null
         }))
     }, 200)
 })

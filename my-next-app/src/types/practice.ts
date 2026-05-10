@@ -47,7 +47,7 @@ export const PRACTICE_MODE_ICONS: Record<PracticeMode, string> = {
 export interface PracticeConfig {
     mode: PracticeMode;
     limit: number;                                       // 题目数量
-    types?: ('single' | 'multi' | 'truefalse')[];        // 题目类型筛选
+    types?: ('single' | 'multi' | 'truefalse' | 'fill_blank')[];        // 题目类型筛选
     tags?: string[];                                     // 知识点筛选
     dimensions?: Dimension[];                            // 维度筛选
     enableReview?: boolean;                              // 是否启用 AI 复盘 (默认 true)
@@ -59,7 +59,7 @@ export interface PracticeConfig {
 export const DEFAULT_PRACTICE_CONFIG: PracticeConfig = {
     mode: 'smart',
     limit: 25,
-    types: ['single', 'multi', 'truefalse'],
+    types: ['single', 'multi', 'truefalse', 'fill_blank'],
     enableReview: true,
     enableTimer: false,
     shuffleOptions: false

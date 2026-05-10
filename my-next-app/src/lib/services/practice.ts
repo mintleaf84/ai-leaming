@@ -50,8 +50,17 @@ function mapQuestion(q: unknown): Question {
 function checkAnswerCorrectness(
     userAnswer: string,
     correctAnswer: string,
-    options: string[]
+    options: string[],
+    questionType?: string
 ): boolean {
+    // 填空题：按中文分号分割，逐空精确匹配
+    if (questionType === 'fill_blank') {
+        const userBlanks = userAnswer.split('；').map(s => s.trim());
+        const correctBlanks = correctAnswer.split('；').map(s => s.trim());
+        if (userBlanks.length !== correctBlanks.length) return false;
+        return userBlanks.every((ub, i) => ub === correctBlanks[i]);
+    }
+
     // 1. 精确匹配
     if (userAnswer === correctAnswer) return true;
 
@@ -295,7 +304,8 @@ export const practiceService = {
     ) {
         const [question] = await drizzleDb.select({
             answer: questions.answer,
-            options: questions.options
+            options: questions.options,
+            type: questions.type
         })
             .from(questions)
             .where(eq(questions.id, questionId))
@@ -317,7 +327,7 @@ export const practiceService = {
 
         // 使用增强比对逻辑
         const correctAnswer = question.answer || '';
-        const isCorrect = checkAnswerCorrectness(userAnswer, correctAnswer, options);
+        const isCorrect = checkAnswerCorrectness(userAnswer, correctAnswer, options, question.type ?? undefined);
         await this.submitAnswer(userId, sessionId, questionId, userAnswer, isCorrect, duration);
 
         return { isCorrect, correctAnswer };

@@ -100,7 +100,7 @@ export default function PracticeSetupPage() {
     };
 
     // 切换题目类型
-    const toggleType = (type: 'single' | 'multi' | 'truefalse') => {
+    const toggleType = (type: 'single' | 'multi' | 'truefalse' | 'fill_blank') => {
         setConfig(prev => ({
             ...prev,
             types: prev.types?.includes(type)
@@ -262,6 +262,13 @@ export default function PracticeSetupPage() {
                                                 onCheckedChange={() => toggleType('truefalse')}
                                             />
                                             <span>判断题</span>
+                                        </label>
+                                        <label className="flex items-center gap-2 cursor-pointer">
+                                            <Checkbox
+                                                checked={config.types?.includes('fill_blank') ?? true}
+                                                onCheckedChange={() => toggleType('fill_blank')}
+                                            />
+                                            <span>填空题</span>
                                         </label>
                                     </div>
                                 </div>

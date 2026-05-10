@@ -78,7 +78,7 @@ export function usePracticeController(enableIntelligentReview: boolean = false) 
                     const config = {
                         mode,
                         limit: parseInt(limit) || 25,
-                        types: searchParams.get('types')?.split(',') as ('single' | 'multi' | 'truefalse')[] | undefined,
+                        types: searchParams.get('types')?.split(',') as ('single' | 'multi' | 'truefalse' | 'fill_blank')[] | undefined,
                         tags: searchParams.get('tags')?.split(',').filter(Boolean),
                         dimensions: searchParams.get('dimensions')?.split(',') as import('@/types').Dimension[] | undefined,
                         enableReview: !noReview,
@@ -201,7 +201,13 @@ export function usePracticeController(enableIntelligentReview: boolean = false) 
             };
 
             let isCorrect = false;
-            if (currentQuestion.type === 'multi') {
+            if (currentQuestion.type === 'fill_blank') {
+                // 填空题：按中文分号分割，逐空精确匹配
+                const userBlanks = answer.split('；').map(s => s.trim());
+                const correctBlanks = currentQuestion.answer.split('；').map(s => s.trim());
+                isCorrect = userBlanks.length === correctBlanks.length
+                    && userBlanks.every((ub, i) => ub === correctBlanks[i]);
+            } else if (currentQuestion.type === 'multi') {
                 const parseAnswer = (val: string): string[] => {
                     try { return JSON.parse(val); } catch { return val.split(',').map(s => s.trim()); }
                 };
@@ -323,6 +329,7 @@ export function usePracticeController(enableIntelligentReview: boolean = false) 
             cancelExit,
             handleOptionClick,
             submitMultiChoice,
+            submitAnswer,
             handleReviewStep,
             dispatch
         }

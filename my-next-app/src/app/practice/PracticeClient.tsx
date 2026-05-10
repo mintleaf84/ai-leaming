@@ -65,6 +65,8 @@ function PracticeContent({ enableIntelligentReview }: { enableIntelligentReview:
                                 selectedOptions={selectedOptions}
                                 onOptionClick={actions.handleOptionClick}
                                 onSubmitMulti={actions.submitMultiChoice}
+                                isFillBlank={currentQuestion.type === 'fill_blank'}
+                                onFillBlankSubmit={actions.submitAnswer}
                             />
                         )}
 

@@ -5,6 +5,7 @@ import { PracticeCard } from '../PracticeCard'
 const mockQuestionSingle = {
     id: 1,
     content: 'Which is a primary color?',
+    answer: 'A',
     options: ['Red', 'Green', 'Purple'],
     type: 'single',
     dimension: 'knowledge'
@@ -14,6 +15,7 @@ const mockQuestionMulti = {
     ...mockQuestionSingle,
     id: 2,
     type: 'multi',
+    answer: '["A","C"]',
     options: ['Option A', 'Option B', 'Option C', 'Option D']
 }
 
@@ -21,6 +23,7 @@ const mockQuestionMulti = {
 const mockQuestionTrueFalse = {
     id: 3,
     content: '教学的根本目的是促进学生全面发展。',
+    answer: 'A',
     options: ['正确', '错误'],
     type: 'truefalse',
     dimension: 'knowledge'

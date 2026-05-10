@@ -53,7 +53,7 @@ export const importService = {
             
             for (const q of batch) {
                 const typeMap: Record<string, string> = {
-                    'single': 'single', 'multi': 'multi', 'truefalse': 'truefalse', 'fill_blank': 'single'
+                    'single': 'single', 'multi': 'multi', 'truefalse': 'truefalse', 'fill_blank': 'fill_blank'
                 };
                 const safeDimension = ['knowledge', 'understanding', 'application'].includes(q.dimension) 
                     ? q.dimension as 'knowledge' | 'understanding' | 'application'

@@ -10,7 +10,7 @@ export function useKeyboardShortcuts(
         const handleKeyDown = (e: KeyboardEvent) => {
             if (state.status !== 'practicing') return;
             const currentQ = state.sessionQueue[state.currentIndex];
-            if (currentQ?.type === 'multi') return;
+            if (currentQ?.type === 'multi' || currentQ?.type === 'fill_blank') return;
 
             const key = e.key;
             const index = parseInt(key) - 1;

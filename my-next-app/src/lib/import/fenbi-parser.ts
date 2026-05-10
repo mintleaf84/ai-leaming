@@ -187,7 +187,7 @@ function inferQuestionType(fenbiType: number, accessories: FenbiSolution['access
 
     // 根据选项数量推断
     const options = accessories?.[0]?.options;
-    if (!options || options.length === 0) return 'fill_blank';
+    if (!options || options.length === 0) return 'single';
     if (options.length === 2) return 'truefalse';
     return 'single';
 }

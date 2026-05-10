@@ -126,9 +126,18 @@ export function ReviewCard({ currentItem, sessionQueue, isLoadingAI, onReviewSte
                                                 const userAnsRaw = currentItem.wrongAnswer;
                                                 const correctAnsRaw = q.answer;
                                                 const isMulti = q.type === 'multi';
+                                                const isFillBlank = q.type === 'fill_blank';
 
                                                 // 解析答案显示逻辑 (通用版本)
                                                 const getAnswerDisplay = (raw: string) => {
+                                                    // 填空题：直接显示文本
+                                                    if (isFillBlank) {
+                                                        const blanks = raw.split('；').map(s => s.trim());
+                                                        return {
+                                                            label: blanks.map((_, i) => `空${i + 1}`).join(' + '),
+                                                            content: blanks.join('；')
+                                                        };
+                                                    }
                                                     try {
                                                         const arr = isMulti ? JSON.parse(raw) : [raw];
                                                         const labels: string[] = [];

@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useState, useEffect, useCallback, useRef } from 'react';
+import { createPortal } from 'react-dom';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { Highlighter, Underline, Waves, Copy } from 'lucide-react';
 import { fetchJson, apiClient } from '@/lib/utils/api-client';
@@ -250,8 +251,8 @@ export function AnnotatableText({ text, questionId, className }: AnnotatableText
                 {renderAnnotatedText()}
             </div>
 
-            {/* 浮动工具栏 */}
-            {toolbarPosition && (
+            {/* 浮动工具栏 — 使用 Portal 渲染到 body，避免祖先元素的 CSS transform 破坏 fixed 定位 */}
+            {toolbarPosition && createPortal(
                 <div
                     ref={toolbarRef}
                     className="fixed z-50 bg-card border border-border rounded-lg shadow-lg p-1 flex gap-1 animate-in fade-in zoom-in-95 duration-150"
@@ -296,7 +297,8 @@ export function AnnotatableText({ text, questionId, className }: AnnotatableText
                     >
                         <Copy className="h-4 w-4 text-muted-foreground" />
                     </button>
-                </div>
+                </div>,
+                document.body
             )}
         </div>
     );

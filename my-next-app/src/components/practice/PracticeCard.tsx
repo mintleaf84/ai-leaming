@@ -6,6 +6,7 @@ import { SrsHistoryModal } from './SrsHistoryModal';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { getBeijingDiffDays, formatBeijingDate } from '@/lib/utils/datetime';
 import { sanitizeHtml } from '@/lib/utils/security';
+import { FeedbackDialog } from './FeedbackDialog';
 
 interface PracticeCardProps {
     question: {
@@ -119,6 +120,7 @@ export function PracticeCard({
                         认知维度: {question.dimension === 'knowledge' ? '识记' : question.dimension === 'application' ? '应用' : '理解'}
                     </span>
                 </div>
+                <div className="flex items-center gap-2">
                 {question.srs && (
                     <TooltipProvider>
                         <div className="flex items-center gap-3 bg-muted/30 px-3 py-1.5 rounded-lg border border-border/50">
@@ -161,7 +163,7 @@ export function PracticeCard({
                             </Tooltip>
 
                             <div className="w-[1px] h-3 bg-border mx-1" />
-                            <button 
+                            <button
                                 onClick={() => setIsHistoryOpen(true)}
                                 className="p-1 hover:bg-primary/10 rounded-md text-muted-foreground hover:text-primary transition-colors"
                             >
@@ -175,6 +177,8 @@ export function PracticeCard({
                         提示: 点击选项右侧眼睛图标或右键可&quot;排除&quot;
                     </div>
                 )}
+                <FeedbackDialog questionId={question.id} />
+                </div>
             </div>
 
             <h2 className="text-xl mb-6 font-bold leading-relaxed text-foreground">

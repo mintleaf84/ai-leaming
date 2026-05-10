@@ -23,10 +23,12 @@ export type AdminAction =
     | 'TOGGLE_API_KEY'
     | 'DELETE_API_KEY'
     | 'TEST_AI_CONNECTION'
+    | 'RESOLVE_FEEDBACK'
+    | 'DISMISS_FEEDBACK'
     | 'OTHER';
 
 // 目标类型枚举
-export type TargetType = 'user' | 'question' | 'ai_config' | 'ai_model_route' | 'prompt' | 'system' | 'api_key' | null;
+export type TargetType = 'user' | 'question' | 'ai_config' | 'ai_model_route' | 'prompt' | 'system' | 'api_key' | 'feedback' | null;
 
 // 审计日志条目
 export interface AdminLogEntry {
@@ -61,6 +63,8 @@ export const ADMIN_ACTION_LABELS: Record<AdminAction, string> = {
     'TOGGLE_API_KEY': '切换API密钥状态',
     'DELETE_API_KEY': '删除API密钥',
     'TEST_AI_CONNECTION': '测试AI连接',
+    'RESOLVE_FEEDBACK': '解决反馈',
+    'DISMISS_FEEDBACK': '忽略反馈',
     'OTHER': '其他操作',
 };
 

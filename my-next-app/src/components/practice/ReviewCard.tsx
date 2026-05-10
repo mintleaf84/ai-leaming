@@ -2,6 +2,7 @@ import React from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Database, BookOpen, Target, ShieldCheck, Check } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { FeedbackDialog } from './FeedbackDialog';
 
 import { Question, ReviewItem } from '@/types';
 
@@ -226,7 +227,10 @@ export function ReviewCard({ currentItem, sessionQueue, isLoadingAI, onReviewSte
                                                     </span>
                                                 ))}
                                             </div>
-                                            <span className="text-[10px] text-muted-foreground/50">ID: {currentItem.originalQuestionId}</span>
+                                            <div className="flex items-center gap-1">
+                                                <FeedbackDialog questionId={currentItem.originalQuestionId} />
+                                                <span className="text-[10px] text-muted-foreground/50">ID: {currentItem.originalQuestionId}</span>
+                                            </div>
                                         </div>
                                     </div>
                                 )}

@@ -15,7 +15,8 @@ import {
     X,
     CreditCard,
     Key,
-    HardDrive
+    HardDrive,
+    MessageSquareWarning
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useRouter } from 'next/navigation';
@@ -35,6 +36,7 @@ export function AdminLayoutShell({
         { href: '/admin/activity', label: '用户行为', icon: Activity }, // 使用 Activity 更有动感
         { href: '/admin/plans', label: '套餐管理', icon: CreditCard },
         { href: '/admin/questions', label: '题库管理', icon: BookOpen },
+        { href: '/admin/feedback', label: '纠错反馈', icon: MessageSquareWarning },
         { href: '/admin/ai', label: 'AI 与提示词', icon: Cpu },
         { href: '/admin/system', label: '系统运维', icon: Settings },
         { href: '/admin/system/backup', label: '数据备份', icon: HardDrive },

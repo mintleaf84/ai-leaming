@@ -57,6 +57,13 @@
       "when": 1778064000000,
       "tag": "0007_add_question_folders",
       "breakpoints": true
+    },
+    {
+      "idx": 8,
+      "version": "6",
+      "when": 1778420066098,
+      "tag": "0008_mighty_mentor",
+      "breakpoints": true
     }
   ]
 }

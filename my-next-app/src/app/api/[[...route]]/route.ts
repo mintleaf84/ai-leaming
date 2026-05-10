@@ -93,6 +93,9 @@ app.route('/chat', chatRoute)
 import generateRoute from '@/lib/api/routes/generate'
 app.route('/generate', generateRoute)
 
+import feedbackRoute from '@/lib/api/routes/feedback'
+app.route('/feedback', feedbackRoute)
+
 
 
 

@@ -8,6 +8,7 @@ import fs from 'fs'
 import path from 'path'
 import { logAdminAction } from '@/lib/admin/audit'
 import { getApiCallStats } from '@/lib/admin/api-stats-service'
+import { questionFeedbackService } from '@/lib/services/question-feedback-service'
 import type { Dimension } from '@/types'
 
 export const adminRoute = new OpenAPIHono()
@@ -327,4 +328,120 @@ adminRoute.openapi(exportQuestionsDef, async (c) => {
         'Content-Type': 'text/csv; charset=utf-8',
         'Content-Disposition': `attachment; filename="${fileName}"`,
     });
+})
+
+// --- 题目纠错反馈管理 ---
+
+const listFeedbackDef = createRoute({
+    method: 'get',
+    path: '/feedback',
+    summary: '获取反馈列表',
+    request: {
+        query: z.object({
+            status: z.enum(['pending', 'resolved', 'dismissed']).optional(),
+            feedback_type: z.enum(['wrong_answer', 'wrong_content', 'wrong_explanation', 'other']).optional(),
+            limit: z.coerce.number().int().min(1).max(100).default(20),
+            offset: z.coerce.number().int().min(0).default(0),
+        }),
+    },
+    responses: {
+        200: {
+            description: '反馈列表',
+            content: {
+                'application/json': {
+                    schema: z.object({
+                        items: z.array(z.object({
+                            id: z.number(),
+                            question_id: z.number(),
+                            question_content: z.string().nullable(),
+                            user_id: z.number(),
+                            username: z.string().nullable(),
+                            feedback_type: z.string(),
+                            description: z.string().nullable(),
+                            status: z.string(),
+                            created_at: z.string().nullable(),
+                            resolved_at: z.string().nullable(),
+                        })),
+                        total: z.number(),
+                    }),
+                },
+            },
+        },
+        401: { description: '未授权' },
+    },
+})
+
+adminRoute.openapi(listFeedbackDef, async (c) => {
+    try { await requireRole(['admin']); } catch { return c.json({ error: 'Unauthorized' }, 401); }
+    const query = c.req.valid('query')
+    const result = await questionFeedbackService.list({
+        limit: query.limit,
+        offset: query.offset,
+        status: query.status,
+        feedback_type: query.feedback_type,
+    })
+    return c.json(result, 200)
+})
+
+const resolveFeedbackDef = createRoute({
+    method: 'post',
+    path: '/feedback/{id}/resolve',
+    summary: '标记反馈为已解决',
+    request: {
+        params: z.object({ id: z.coerce.number().int() }),
+    },
+    responses: {
+        200: { description: '操作成功', content: { 'application/json': { schema: z.object({ success: z.boolean() }) } } },
+        401: { description: '未授权' },
+    },
+})
+
+adminRoute.openapi(resolveFeedbackDef, async (c) => {
+    let adminUser;
+    try { adminUser = await requireRole(['admin']); } catch { return c.json({ error: 'Unauthorized' }, 401); }
+    const { id } = c.req.valid('param')
+    await questionFeedbackService.resolve(id, adminUser.id)
+    await logAdminAction(adminUser.id, adminUser.username, 'RESOLVE_FEEDBACK', 'feedback', String(id), { feedbackId: id })
+    return c.json({ success: true }, 200)
+})
+
+const dismissFeedbackDef = createRoute({
+    method: 'post',
+    path: '/feedback/{id}/dismiss',
+    summary: '忽略反馈',
+    request: {
+        params: z.object({ id: z.coerce.number().int() }),
+    },
+    responses: {
+        200: { description: '操作成功', content: { 'application/json': { schema: z.object({ success: z.boolean() }) } } },
+        401: { description: '未授权' },
+    },
+})
+
+adminRoute.openapi(dismissFeedbackDef, async (c) => {
+    let adminUser;
+    try { adminUser = await requireRole(['admin']); } catch { return c.json({ error: 'Unauthorized' }, 401); }
+    const { id } = c.req.valid('param')
+    await questionFeedbackService.dismiss(id, adminUser.id)
+    await logAdminAction(adminUser.id, adminUser.username, 'DISMISS_FEEDBACK', 'feedback', String(id), { feedbackId: id })
+    return c.json({ success: true }, 200)
+})
+
+const feedbackCountsDef = createRoute({
+    method: 'get',
+    path: '/feedback/counts',
+    summary: '获取反馈状态计数',
+    responses: {
+        200: {
+            description: '状态计数',
+            content: { 'application/json': { schema: z.object({ pending: z.number(), resolved: z.number(), dismissed: z.number() }) } },
+        },
+        401: { description: '未授权' },
+    },
+})
+
+adminRoute.openapi(feedbackCountsDef, async (c) => {
+    try { await requireRole(['admin']); } catch { return c.json({ error: 'Unauthorized' }, 401); }
+    const counts = await questionFeedbackService.getStatusCounts()
+    return c.json(counts, 200)
 })

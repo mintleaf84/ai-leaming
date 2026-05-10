@@ -448,3 +448,21 @@ export const question_folder_items = sqliteTable('question_folder_items', {
   idx_folder: index('idx_folder_items_folder').on(table.folder_id),
   idx_question: index('idx_folder_items_question').on(table.question_id),
 }));
+
+// --- 题目纠错反馈表 ---
+export const question_feedback = sqliteTable('question_feedback', {
+  id: integer('id').primaryKey({ autoIncrement: true }),
+  question_id: integer('question_id').notNull().references(() => questions.id, { onDelete: 'cascade' }),
+  user_id: integer('user_id').notNull().default(1).references(() => users.id, { onDelete: 'cascade' }),
+  feedback_type: text('feedback_type', { enum: ['wrong_answer', 'wrong_content', 'wrong_explanation', 'other'] }).notNull(),
+  description: text('description'),
+  status: text('status', { enum: ['pending', 'resolved', 'dismissed'] }).default('pending').notNull(),
+  resolved_by: integer('resolved_by').references(() => users.id, { onDelete: 'set null' }),
+  resolved_at: text('resolved_at'),
+  created_at: text('created_at').default(sql`CURRENT_TIMESTAMP`),
+}, (table) => ({
+  idx_question: index('idx_question_feedback_question').on(table.question_id),
+  idx_user: index('idx_question_feedback_user').on(table.user_id),
+  idx_status: index('idx_question_feedback_status').on(table.status),
+  idx_created: index('idx_question_feedback_created').on(sql`${table.created_at} DESC`),
+}));

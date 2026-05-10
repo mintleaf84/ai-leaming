@@ -5,12 +5,13 @@ import { adminAction } from '@/lib/safe-action';
 import { adminService } from '@/lib/services/admin-service';
 import { logAdminAction } from '@/lib/admin/audit';
 import { QuestionSchema } from '@/lib/schemas';
-import { 
-  QuestionFiltersSchema, 
-  QuestionUpdateSchema, 
-  UserQuerySchema, 
-  RoleUpdateSchema 
+import {
+  QuestionFiltersSchema,
+  QuestionUpdateSchema,
+  UserQuerySchema,
+  RoleUpdateSchema
 } from '@/lib/validations/admin';
+import { questionFeedbackService } from '@/lib/services/question-feedback-service';
 
 /**
  * 获取题目列表（支持分页与过滤）
@@ -195,4 +196,51 @@ export const revokeUserSessionAction = adminAction
 export const getAdminStatsAction = adminAction
   .action(async () => {
     return await adminService.getStats();
+  });
+
+/**
+ * 获取反馈列表
+ */
+export const getFeedbackListAction = adminAction
+  .inputSchema(z.object({
+    limit: z.number().default(20),
+    offset: z.number().default(0),
+    status: z.enum(['pending', 'resolved', 'dismissed']).optional(),
+    feedback_type: z.enum(['wrong_answer', 'wrong_content', 'wrong_explanation', 'other']).optional(),
+  }))
+  .action(async ({ parsedInput: input }) => {
+    const result = await questionFeedbackService.list(input);
+    return result;
+  });
+
+/**
+ * 标记反馈为已解决
+ */
+export const resolveFeedbackAction = adminAction
+  .inputSchema(z.number())
+  .action(async ({ parsedInput: id, ctx }) => {
+    const { user } = ctx;
+    await questionFeedbackService.resolve(id, user.id);
+    await logAdminAction(user.id, user.username, 'RESOLVE_FEEDBACK', 'feedback', id.toString());
+    return { success: true };
+  });
+
+/**
+ * 忽略反馈
+ */
+export const dismissFeedbackAction = adminAction
+  .inputSchema(z.number())
+  .action(async ({ parsedInput: id, ctx }) => {
+    const { user } = ctx;
+    await questionFeedbackService.dismiss(id, user.id);
+    await logAdminAction(user.id, user.username, 'DISMISS_FEEDBACK', 'feedback', id.toString());
+    return { success: true };
+  });
+
+/**
+ * 获取反馈状态计数
+ */
+export const getFeedbackCountsAction = adminAction
+  .action(async () => {
+    return await questionFeedbackService.getStatusCounts();
   });

@@ -3,6 +3,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { toast } from 'sonner';
+import { RotateCcw, FileText, Target } from 'lucide-react';
 import { usePracticeEngine } from '../../../hooks/use-practice-engine';
 import { useReviewGeneration } from './use-review-generation';
 import { useKeyboardShortcuts } from './use-keyboard-shortcuts';
@@ -49,12 +50,12 @@ export function usePracticeController(enableIntelligentReview: boolean = false) 
                         if (session.completedCount > 0) {
                             toast.info(`已恢复练习进度 (${session.completedCount}/${session.questions.length})`, {
                                 duration: 3000,
-                                icon: '🔄'
+                                icon: <RotateCcw className="w-4 h-4" />
                             });
                         } else {
                             toast.success(`错题强化模式已启动，共 ${session.questions.length} 题`, {
                                 duration: 3000,
-                                icon: '📝'
+                                icon: <FileText className="w-4 h-4" />
                             });
                         }
                         return; // 提前退出，不走常规创建流程
@@ -100,7 +101,7 @@ export function usePracticeController(enableIntelligentReview: boolean = false) 
                     const modeLabel = PRACTICE_MODE_LABELS[mode] || mode;
                     toast.success(`${modeLabel}模式已启动，共 ${result?.questions.length || 0} 题`, {
                         duration: 3000,
-                        icon: '🎯'
+                        icon: <Target className="w-4 h-4" />
                     });
                 } else {
                     // 传统选题（兼容旧入口）
@@ -130,7 +131,7 @@ export function usePracticeController(enableIntelligentReview: boolean = false) 
                     if (resumed) {
                         toast.info(`欢迎回来！已为您恢复之前的练习进度 (${completedCount}/${questions.length})`, {
                             duration: 4000,
-                            icon: '🔄'
+                            icon: <RotateCcw className="w-4 h-4" />
                         });
                     }
                 } else {
@@ -180,6 +181,11 @@ export function usePracticeController(enableIntelligentReview: boolean = false) 
 
         try {
             const currentQuestion = state.sessionQueue[state.currentIndex];
+            if (!currentQuestion) {
+                console.error("Current question not found:", state.currentIndex);
+                toast.error("题目加载失败，请刷新重试");
+                return;
+            }
             // Basic check
             // 增强的比对逻辑：支持标号(A/B/C)与文本的双向匹配
             const checkCorrect = (userAns: string, targetAns: string, options: string[]) => {

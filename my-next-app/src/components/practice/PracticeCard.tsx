@@ -48,8 +48,8 @@ export function PracticeCard({
     const [isHistoryOpen, setIsHistoryOpen] = useState(false);
     const [fillBlankAnswers, setFillBlankAnswers] = useState<string[]>([]);
 
-    // 填空题：根据答案中的分号推断空数
-    const blankCount = isFillBlank ? question.answer.split('；').length : 0;
+    // 填空题：根据答案中的分号推断空数，支持中英文分号
+    const blankCount = isFillBlank ? Math.max(1, question.answer.split(/[；;]/).filter(Boolean).length) : 0;
 
     // 当题目更换时，重置排除状态和填空答案
     useEffect(() => {
@@ -82,7 +82,11 @@ export function PracticeCard({
                 ? 'bg-purple-500/10 text-purple-600 dark:text-purple-400'
                 : 'bg-blue-500/10 text-blue-600 dark:text-blue-400';
 
-    const [now] = useState(() => new Date());
+    const [now, setNow] = useState<Date | null>(null);
+
+    useEffect(() => {
+        setNow(new Date());
+    }, []);
 
     return (
         <motion.div
@@ -104,7 +108,7 @@ export function PracticeCard({
                         </div>
                         <div
                             className="prose prose-sm dark:prose-invert max-w-none text-foreground leading-relaxed"
-                            dangerouslySetInnerHTML={{ __html: sanitizeHtml(question.material_html!) }}
+                            dangerouslySetInnerHTML={{ __html: sanitizeHtml(question.material_html || '') }}
                         />
                     </div>
                 )}
@@ -153,7 +157,7 @@ export function PracticeCard({
                                     <div className="flex items-center gap-1.5 cursor-help">
                                         <Calendar className="w-3.5 h-3.5 text-emerald-500" />
                                         <span className="text-[10px] font-medium">
-                                            {getBeijingDiffDays(question.srs.due_date, now)}d
+                                            {now ? getBeijingDiffDays(question.srs.due_date, now) : '—'}d
                                         </span>
                                     </div>
                                 </TooltipTrigger>

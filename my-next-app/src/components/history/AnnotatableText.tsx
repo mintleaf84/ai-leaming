@@ -66,7 +66,7 @@ export function AnnotatableText({ text, questionId, className }: AnnotatableText
     // 处理文本选择
     const handleMouseUp = useCallback(() => {
         const windowSelection = window.getSelection();
-        if (!windowSelection || windowSelection.isCollapsed) {
+        if (!windowSelection || windowSelection.isCollapsed || windowSelection.rangeCount === 0) {
             setSelection(null);
             setSelectedText('');
             setToolbarPosition(null);
@@ -79,8 +79,17 @@ export function AnnotatableText({ text, questionId, className }: AnnotatableText
             return;
         }
 
+        // 直接获取选中的文本内容
+        const selectedTextContent = windowSelection.toString();
+        if (!selectedTextContent || selectedTextContent.trim().length === 0) {
+            setSelection(null);
+            setSelectedText('');
+            setToolbarPosition(null);
+            return;
+        }
+
         // 遍历容器内所有文本节点，累加字符数，精确计算选区在原始 text 中的偏移
-        // 这样无论 DOM 是否被已有的标注 <span> 拆分，都能得到正确偏移
+        // 这种方法能够正确处理重复文本和 DOM 被标注 span 拆分的情况
         const walker = document.createTreeWalker(container, NodeFilter.SHOW_TEXT);
         let start = -1;
         let end = -1;
@@ -88,32 +97,60 @@ export function AnnotatableText({ text, questionId, className }: AnnotatableText
         let node: Node | null;
 
         while ((node = walker.nextNode())) {
+            const nodeText = node.textContent || '';
+            const nodeLength = nodeText.length;
+            
+            // 检查起始节点
             if (node === range.startContainer) {
                 start = offset + range.startOffset;
             }
+            
+            // 检查结束节点
             if (node === range.endContainer) {
                 end = offset + range.endOffset;
-                break;
+                if (start !== -1) break; // start 已找到，可以提前退出
             }
-            offset += (node.textContent?.length || 0);
+            
+            offset += nodeLength;
         }
 
-        if (start === -1 || end === -1 || start >= end) {
+        // 如果 start 和 end 都找到了，验证有效性
+        if (start !== -1 && end !== -1 && start < end && start >= 0 && end <= text.length) {
+            setSelection({ start, end });
+            setSelectedText(text.slice(start, end));
+
+            // 设置工具栏位置
+            const rect = range.getBoundingClientRect();
+            setToolbarPosition({
+                x: rect.left + rect.width / 2,
+                y: rect.top - 10,
+            });
+        } else {
+            // fallback: 使用 indexOf 方法
+            const fullText = container.textContent || '';
+            const selectedStart = fullText.indexOf(selectedTextContent);
+            
+            if (selectedStart !== -1) {
+                const start = selectedStart;
+                const end = selectedStart + selectedTextContent.length;
+                
+                if (start >= 0 && end <= text.length && start < end) {
+                    setSelection({ start, end });
+                    setSelectedText(text.slice(start, end));
+
+                    const rect = range.getBoundingClientRect();
+                    setToolbarPosition({
+                        x: rect.left + rect.width / 2,
+                        y: rect.top - 10,
+                    });
+                    return;
+                }
+            }
+            
             setSelection(null);
             setSelectedText('');
             setToolbarPosition(null);
-            return;
         }
-
-        setSelection({ start, end });
-        setSelectedText(text.slice(start, end));
-
-        // 设置工具栏位置
-        const rect = range.getBoundingClientRect();
-        setToolbarPosition({
-            x: rect.left + rect.width / 2,
-            y: rect.top - 10,
-        });
     }, [text]);
 
     // 添加标注
@@ -172,14 +209,22 @@ export function AnnotatableText({ text, questionId, className }: AnnotatableText
     // 点击外部关闭工具栏
     useEffect(() => {
         const handleClickOutside = (e: MouseEvent) => {
-            if (toolbarRef.current && !toolbarRef.current.contains(e.target as Node)) {
-                setSelection(null);
-                setSelectedText('');
-                setToolbarPosition(null);
-            }
+            // 如果工具栏不存在，直接返回
+            if (!toolbarRef.current) return;
+            
+            // 检查点击是否在工具栏外部
+            const isClickInsideToolbar = toolbarRef.current.contains(e.target as Node);
+            if (isClickInsideToolbar) return;
+            
+            // 点击外部，关闭工具栏
+            setSelection(null);
+            setSelectedText('');
+            setToolbarPosition(null);
         };
-        document.addEventListener('mousedown', handleClickOutside);
-        return () => document.removeEventListener('mousedown', handleClickOutside);
+        
+        // 使用 capture 阶段监听，确保能正确处理
+        document.addEventListener('mousedown', handleClickOutside, true);
+        return () => document.removeEventListener('mousedown', handleClickOutside, true);
     }, []);
 
     // 渲染带标注的文本
@@ -194,24 +239,24 @@ export function AnnotatableText({ text, questionId, className }: AnnotatableText
         let lastEnd = 0;
 
         sorted.forEach((ann, idx) => {
-            // 处理重叠情况：如果当前标注的开始位置早于上一个标注的结束位置，说明重叠
-            // 我们目前简单处理：跳过重叠部分的绘制，优先保证文本在 UI 上不重复
-            if (ann.start < lastEnd) {
-                // 如果这个标注完全被上一个覆盖了，直接跳过
-                if (ann.end <= lastEnd) return;
-                
-                // 如果只是部分重叠，目前暂时跳过整个标注，优先保证文本正确
-                return; 
+            // 处理重叠情况：如果当前标注的结束位置早于或等于上一个标注的结束位置，说明完全被覆盖
+            if (ann.end <= lastEnd) {
+                return; // 完全覆盖，跳过
             }
 
-            // 添加未标注部分
+            // 如果当前标注的起始位置小于 lastEnd，说明部分重叠
+            // 采用"后来居上"原则：重叠部分显示当前标注的样式，跳过已经绘制的部分
+            const effectiveStart = Math.max(ann.start, lastEnd);
+            
+            // 添加标注前的普通文本（如果有）
+            // 注意：这里只在 ann.start > lastEnd 时才添加，因为 lastEnd 之前的文本已经被绘制
             if (ann.start > lastEnd) {
                 parts.push(
                     <span key={`plain-${idx}`}>{text.slice(lastEnd, ann.start)}</span>
                 );
             }
 
-            // 添加标注部分
+            // 添加标注部分（从 effectiveStart 到 ann.end）
             const style = TAG_STYLES[ann.tag];
             parts.push(
                 <span
@@ -224,7 +269,7 @@ export function AnnotatableText({ text, questionId, className }: AnnotatableText
                     }}
                     title="点击删除标注"
                 >
-                    {text.slice(ann.start, ann.end)}
+                    {text.slice(effectiveStart, ann.end)}
                 </span>
             );
 
@@ -252,13 +297,13 @@ export function AnnotatableText({ text, questionId, className }: AnnotatableText
             </div>
 
             {/* 浮动工具栏 — 使用 Portal 渲染到 body，避免祖先元素的 CSS transform 破坏 fixed 定位 */}
-            {toolbarPosition && createPortal(
+            {toolbarPosition && typeof document !== 'undefined' && createPortal(
                 <div
                     ref={toolbarRef}
                     className="fixed z-50 bg-card border border-border rounded-lg shadow-lg p-1 flex gap-1 animate-in fade-in zoom-in-95 duration-150"
                     style={{
-                        left: toolbarPosition.x,
-                        top: toolbarPosition.y,
+                        left: `${toolbarPosition.x}px`,
+                        top: `${toolbarPosition.y}px`,
                         transform: 'translate(-50%, -100%)',
                     }}
                 >

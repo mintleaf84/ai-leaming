@@ -72,6 +72,25 @@ export function PracticeCard({
     const isTrueFalse = question.type === 'truefalse';
     const hasMaterial = !!question.material_html;
 
+    // 渲染填空题内容（将 _____ 占位符替换为带下划线的空白区域）
+    const renderFillBlankContent = (content: string) => {
+        const parts = content.split(/(_____+)/g);
+        let blankIndex = 0;
+        return parts.map((part, i) => {
+            if (part.startsWith('_____')) {
+                blankIndex++;
+                return (
+                    <span key={i} className="inline-block min-w-[80px] border-b-2 border-teal-500 px-1 text-center">
+                        <span className="text-xs text-teal-600 dark:text-teal-400 opacity-0 group-hover:opacity-100 transition-opacity">
+                            空{blankIndex}
+                        </span>
+                    </span>
+                );
+            }
+            return <span key={i}>{part}</span>;
+        });
+    };
+
     // 题型标签样式
     const typeLabel = isFillBlank ? "填空题" : isTrueFalse ? "判断题" : isMulti ? "多项选择" : "单项选择";
     const typeLabelClass = isFillBlank
@@ -181,8 +200,8 @@ export function PracticeCard({
                 </div>
             </div>
 
-            <h2 className="text-xl mb-6 font-bold leading-relaxed text-foreground">
-                {question.content}
+            <h2 className="text-xl mb-6 font-bold leading-relaxed text-foreground group">
+                {isFillBlank ? renderFillBlankContent(question.content) : question.content}
             </h2>
 
             {/* 判断题：渲染两个大按钮 */}

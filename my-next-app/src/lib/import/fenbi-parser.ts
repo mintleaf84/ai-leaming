@@ -147,6 +147,23 @@ function stripHtml(html: string): string {
 }
 
 /**
+ * 处理填空题内容：将 input 标签替换为下划线占位符
+ */
+function processFillBlankContent(html: string): string {
+    if (!html) return '';
+    return html
+        // 将填空题的 input 标签替换为下划线占位符（4 个下划线）
+        .replace(/<input[^>]*\/?>/gi, '_____')
+        .replace(/<[^>]*>/g, '')
+        .replace(/&nbsp;/g, ' ')
+        .replace(/&lt;/g, '<')
+        .replace(/&gt;/g, '>')
+        .replace(/&amp;/g, '&')
+        .replace(/&quot;/g, '"')
+        .trim();
+}
+
+/**
  * 将选项索引转换为字母
  * "0" -> "A", "1" -> "B", etc.
  */
@@ -384,7 +401,8 @@ export function parseFenbiData(
         // 构建题目对象
         const question: ParsedQuestion = {
             externalId,
-            content: stripHtml(solution.content),
+            // 填空题：保留填空位置标记（用下划线替换 input 标签）
+            content: questionType === 'fill_blank' ? processFillBlankContent(solution.content) : stripHtml(solution.content),
             contentHtml: solution.content,
             options,
             answer: correctAnswer,

@@ -151,5 +151,42 @@ describe('fenbi-parser', () => {
             expect(q1.material).toBe("材料内容");
             expect(q1.materialHtml).toBe("<p>材料内容</p>");
         });
+
+        it('应该正确解析填空题（保留占位符）', () => {
+            const solutionsWithFillBlank = {
+                name: "填空题测试",
+                solutions: [
+                    {
+                        id: 201,
+                        globalId: "guid_201",
+                        content: "<p>教育目的是衡量教育实施效果的根本依据和标准，这体现了教育目的的<input type=\"text\" size=\"4\" placeholder=\"\" readonly />功能。</p>",
+                        type: 61,
+                        solution: "本题考查教育目的的功能...",
+                        accessories: [],
+                        correctAnswer: {
+                            blanks: ["评价"],
+                            type: 202
+                        },
+                        keypoints: [{ id: 1, name: "教育目的概述" }]
+                    }
+                ]
+            };
+
+            const exerciseWithFillBlank = {
+                userAnswers: {
+                    "guid_201": { id: 201, status: 1, time: 20, answer: { blanks: ["评价"], type: 202 } }
+                }
+            };
+
+            const result = parseFenbiData(JSON.stringify(exerciseWithFillBlank), JSON.stringify(solutionsWithFillBlank));
+
+            expect(result.questions).toHaveLength(1);
+            const q = result.questions[0];
+            expect(q.type).toBe("fill_blank");
+            expect(q.answer).toBe("评价");
+            // 验证填空题内容保留了下划线占位符
+            expect(q.content).toContain("_____");
+            expect(q.content).not.toContain("<input");
+        });
     });
 });

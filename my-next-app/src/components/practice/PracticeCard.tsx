@@ -82,11 +82,7 @@ export function PracticeCard({
                 ? 'bg-purple-500/10 text-purple-600 dark:text-purple-400'
                 : 'bg-blue-500/10 text-blue-600 dark:text-blue-400';
 
-    const [now, setNow] = useState<Date | null>(null);
-
-    useEffect(() => {
-        setNow(new Date());
-    }, []);
+    const now = new Date();
 
     return (
         <motion.div
@@ -157,7 +153,7 @@ export function PracticeCard({
                                     <div className="flex items-center gap-1.5 cursor-help">
                                         <Calendar className="w-3.5 h-3.5 text-emerald-500" />
                                         <span className="text-[10px] font-medium">
-                                            {now ? getBeijingDiffDays(question.srs.due_date, now) : '—'}d
+                                            {getBeijingDiffDays(question.srs.due_date, now)}d
                                         </span>
                                     </div>
                                 </TooltipTrigger>

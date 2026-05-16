@@ -25,6 +25,7 @@ export type AdminAction =
     | 'TEST_AI_CONNECTION'
     | 'RESOLVE_FEEDBACK'
     | 'DISMISS_FEEDBACK'
+    | 'EXECUTE_SQL_SCRIPT'
     | 'OTHER';
 
 // 目标类型枚举
@@ -65,6 +66,7 @@ export const ADMIN_ACTION_LABELS: Record<AdminAction, string> = {
     'TEST_AI_CONNECTION': '测试AI连接',
     'RESOLVE_FEEDBACK': '解决反馈',
     'DISMISS_FEEDBACK': '忽略反馈',
+    'EXECUTE_SQL_SCRIPT': '执行SQL脚本',
     'OTHER': '其他操作',
 };
 

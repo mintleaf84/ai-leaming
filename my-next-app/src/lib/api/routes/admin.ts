@@ -445,3 +445,169 @@ adminRoute.openapi(feedbackCountsDef, async (c) => {
     const counts = await questionFeedbackService.getStatusCounts()
     return c.json(counts, 200)
 })
+
+// ==================== SQL Scripts ====================
+
+const validateSqlDef = createRoute({
+    method: 'post',
+    path: '/sql-scripts/validate',
+    summary: '验证 SQL 脚本安全性',
+    request: {
+        body: {
+            content: {
+                'application/json': {
+                    schema: z.object({
+                        sql: z.string().min(1, 'SQL 不能为空'),
+                        description: z.string().optional()
+                    })
+                }
+            }
+        }
+    },
+    responses: {
+        200: {
+            description: '验证结果',
+            content: {
+                'application/json': {
+                    schema: z.object({
+                        valid: z.boolean(),
+                        error: z.string().optional(),
+                        warnings: z.array(z.string()).optional(),
+                        estimatedRows: z.number().nullable().optional()
+                    })
+                }
+            }
+        },
+        401: { description: '未授权' }
+    }
+})
+
+adminRoute.openapi(validateSqlDef, async (c) => {
+    try { await requireRole(['admin']); } catch { return c.json({ error: 'Unauthorized' }, 401); }
+    
+    const { sql: sqlContent, description } = await c.req.json();
+    const { SqlScriptService } = await import('@/lib/services/sql-script-service');
+    
+    const validation = SqlScriptService.validateScript(sqlContent);
+    
+    if (validation.valid && (sqlContent.toUpperCase().includes('DELETE') || sqlContent.toUpperCase().includes('UPDATE'))) {
+        const rows = await SqlScriptService.estimateRowsAffected(sqlContent);
+        validation.estimatedRows = rows ?? undefined;
+    }
+    
+    return c.json(validation, 200);
+})
+
+const executeSqlDef = createRoute({
+    method: 'post',
+    path: '/sql-scripts/execute',
+    summary: '执行 SQL 脚本（自动备份）',
+    request: {
+        body: {
+            content: {
+                'application/json': {
+                    schema: z.object({
+                        sql: z.string().min(1, 'SQL 不能为空'),
+                        description: z.string().min(1, '脚本描述不能为空')
+                    })
+                }
+            }
+        }
+    },
+    responses: {
+        200: {
+            description: '执行结果',
+            content: {
+                'application/json': {
+                    schema: z.object({
+                        success: z.boolean(),
+                        rowsAffected: z.number().optional(),
+                        error: z.string().optional(),
+                        backupPath: z.string().optional(),
+                        executionTime: z.number().optional()
+                    })
+                }
+            }
+        },
+        401: { description: '未授权' }
+    }
+})
+
+adminRoute.openapi(executeSqlDef, async (c) => {
+    let adminUser;
+    try { adminUser = await requireRole(['admin']); } catch { return c.json({ error: 'Unauthorized' }, 401); }
+    
+    const { sql: sqlContent, description } = await c.req.json();
+    const { SqlScriptService } = await import('@/lib/services/sql-script-service');
+    
+    const result = await SqlScriptService.executeWithBackup(sqlContent, description, adminUser.id);
+    
+    return c.json(result, 200);
+})
+
+const getSqlHistoryDef = createRoute({
+    method: 'get',
+    path: '/sql-scripts/history',
+    summary: '获取 SQL 脚本执行历史',
+    responses: {
+        200: {
+            description: '执行历史',
+            content: {
+                'application/json': {
+                    schema: z.object({
+                        history: z.array(z.object({
+                            id: z.number(),
+                            timestamp: z.string().or(z.date()),
+                            userId: z.number(),
+                            description: z.string(),
+                            success: z.boolean(),
+                            rowsAffected: z.number().nullable(),
+                            executionTime: z.number().nullable(),
+                            backupFile: z.string().nullable(),
+                            error: z.string().nullable()
+                        }))
+                    })
+                }
+            }
+        },
+        401: { description: '未授权' }
+    }
+})
+
+adminRoute.openapi(getSqlHistoryDef, async (c) => {
+    try { await requireRole(['admin']); } catch { return c.json({ error: 'Unauthorized' }, 401); }
+    
+    const { SqlScriptService } = await import('@/lib/services/sql-script-service');
+    const history = await SqlScriptService.getExecutionHistory();
+    
+    return c.json({ history }, 200);
+})
+
+const cleanupSqlBackupsDef = createRoute({
+    method: 'post',
+    path: '/sql-scripts/cleanup',
+    summary: '清理过期的 SQL 脚本备份',
+    responses: {
+        200: {
+            description: '清理结果',
+            content: {
+                'application/json': {
+                    schema: z.object({
+                        deleted: z.number(),
+                        error: z.string().optional()
+                    })
+                }
+            }
+        },
+        401: { description: '未授权' }
+    }
+})
+
+adminRoute.openapi(cleanupSqlBackupsDef, async (c) => {
+    try { await requireRole(['admin']); } catch { return c.json({ error: 'Unauthorized' }, 401); }
+    
+    const { SqlScriptService } = await import('@/lib/services/sql-script-service');
+    const result = await SqlScriptService.cleanupOldBackups();
+    
+    return c.json(result, 200);
+})

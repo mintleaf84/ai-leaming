@@ -31,6 +31,7 @@ import { FolderTreeView } from './components/FolderTreeView';
 import { FolderQuestionList } from './components/FolderQuestionList';
 import { AddToFolderDialog } from './components/AddToFolderDialog';
 import { Pagination } from '@/components/ui/pagination';
+import { PageJumpInput } from '@/components/ui/page-jump-input';
 
 export default function WrongBookPage() {
     // 复练排序模式：priority = 按错误频次+遗忘权重，random = 纯随机
@@ -49,6 +50,7 @@ export default function WrongBookPage() {
         hasMore,
         isLoadingMore,
         loadMore,
+        goToPage,
         // UI 状态
         isLoading,
         viewMode,
@@ -289,11 +291,17 @@ export default function WrongBookPage() {
 
                                 {/* 分页 */}
                                 {total > pageSize && (
-                                    <div className="flex items-center justify-between pt-4 pb-8">
-                                        <span className="text-sm text-muted-foreground">
+                                    <div className="flex flex-col sm:flex-row items-center justify-between gap-4 pt-4 pb-8">
+                                        <span className="text-sm text-muted-foreground order-2 sm:order-1">
                                             第 {page + 1} / {Math.ceil(total / pageSize)} 页 (共 {total} 题)
                                         </span>
-                                        <div className="flex gap-2">
+                                        <div className="flex items-center gap-2 order-1 sm:order-2">
+                                            <PageJumpInput
+                                                totalPages={Math.ceil(total / pageSize)}
+                                                currentPage={page}
+                                                onJump={goToPage}
+                                                disabled={isLoadingMore}
+                                            />
                                             <Button
                                                 variant="outline"
                                                 size="sm"

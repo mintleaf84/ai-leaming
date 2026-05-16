@@ -127,6 +127,19 @@ export function useWrongBookController() {
         setIsLoadingMore(false);
     }, [page, pageSize, questions.length, total, isLoadingMore]);
 
+    // 跳转到指定页码
+    const goToPage = useCallback(async (targetPage: number) => {
+        const totalPages = Math.ceil(total / pageSize);
+        if (targetPage < 0 || targetPage >= totalPages || targetPage === page) return;
+
+        setIsLoadingMore(true);
+        const qRes = await getWrongQuestionsAction({ limit: pageSize, offset: targetPage * pageSize });
+        setQuestions(qRes.data?.questions || []);
+        setPage(targetPage);
+        setIsLoadingMore(false);
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+    }, [page, pageSize, total]);
+
     // 初始化加载
     useEffect(() => {
         loadData();
@@ -452,6 +465,7 @@ export function useWrongBookController() {
 
         // 方法
         loadData,
+        goToPage,
         toggleTag,
         toggleSelect,
         selectAll,

@@ -50,7 +50,8 @@ test.describe('Docs Page', () => {
     test('should load docs page', async ({ page }) => {
         await expect(page).toHaveURL(/\/docs/);
         await page.waitForLoadState('networkidle');
-        expect(await page.content().length).toBeGreaterThan(0);
+        const content = await page.content();
+        expect(content.length).toBeGreaterThan(0);
     });
 });
 
@@ -62,7 +63,8 @@ test.describe('OCR Page', () => {
     test('should load ocr page', async ({ page }) => {
         await expect(page).toHaveURL(/\/ocr/);
         await page.waitForLoadState('networkidle');
-        expect(await page.content().length).toBeGreaterThan(0);
+        const content = await page.content();
+        expect(content.length).toBeGreaterThan(0);
     });
 
     test('should require login', async ({ page, context }) => {
@@ -80,6 +82,7 @@ test.describe('Offline Page', () => {
     test('should load offline page', async ({ page }) => {
         await expect(page).toHaveURL(/\/offline/);
         await page.waitForLoadState('networkidle');
-        expect(await page.content().length).toBeGreaterThan(0);
+        const content = await page.content();
+        expect(content.length).toBeGreaterThan(0);
     });
 });

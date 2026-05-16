@@ -12,6 +12,7 @@ import {
   RoleUpdateSchema
 } from '@/lib/validations/admin';
 import { questionFeedbackService } from '@/lib/services/question-feedback-service';
+import { after } from 'next/server';
 
 /**
  * 获取题目列表（支持分页与过滤）
@@ -36,8 +37,8 @@ export const importQuestionsAction = adminAction
     const { user } = ctx;
     const count = await adminService.importQuestions(input);
 
-    // 记录操作日志
-    await logAdminAction(user.id, user.username, 'CREATE_QUESTION', 'question', null, { count });
+    // 记录操作日志 (非阻塞)
+    after(() => logAdminAction(user.id, user.username, 'CREATE_QUESTION', 'question', null, { count }));
 
     return { count };
   });
@@ -51,8 +52,8 @@ export const deleteQuestionAction = adminAction
     const { user } = ctx;
     await adminService.deleteQuestion(id);
 
-    // 记录操作日志
-    await logAdminAction(user.id, user.username, 'DELETE_QUESTION', 'question', id.toString());
+    // 记录操作日志 (非阻塞)
+    after(() => logAdminAction(user.id, user.username, 'DELETE_QUESTION', 'question', id.toString()));
 
     return { success: true };
   });
@@ -93,8 +94,8 @@ export const updateQuestionAction = adminAction
 
     await adminService.updateQuestion(id, data);
 
-    // 记录操作日志
-    await logAdminAction(user.id, user.username, 'UPDATE_QUESTION', 'question', id.toString(), data as Record<string, unknown>);
+    // 记录操作日志 (非阻塞)
+    after(() => logAdminAction(user.id, user.username, 'UPDATE_QUESTION', 'question', id.toString(), data as Record<string, unknown>));
 
     return { success: true };
   });
@@ -110,8 +111,8 @@ export const batchDeleteQuestionsAction = adminAction
 
     const deletedCount = await adminService.batchDeleteQuestions(ids);
 
-    // 记录操作日志
-    await logAdminAction(user.id, user.username, 'BATCH_DELETE_QUESTION', 'question', null, { ids, count: deletedCount });
+    // 记录操作日志 (非阻塞)
+    after(() => logAdminAction(user.id, user.username, 'BATCH_DELETE_QUESTION', 'question', null, { ids, count: deletedCount }));
 
     return { success: true, deletedCount };
   });
@@ -135,8 +136,8 @@ export const deleteUserAction = adminAction
     const { user } = ctx;
     await adminService.deleteUser(id);
 
-    // 记录操作日志
-    await logAdminAction(user.id, user.username, 'DELETE_USER', 'user', id.toString());
+    // 记录操作日志 (非阻塞)
+    after(() => logAdminAction(user.id, user.username, 'DELETE_USER', 'user', id.toString()));
 
     return { success: true };
   });
@@ -154,8 +155,8 @@ export const resetUserPasswordAction = adminAction
     const { user } = ctx;
     await adminService.resetPassword(id, newPassword);
 
-    // 记录操作日志
-    await logAdminAction(user.id, user.username, 'RESET_PASSWORD', 'user', id.toString());
+    // 记录操作日志 (非阻塞)
+    after(() => logAdminAction(user.id, user.username, 'RESET_PASSWORD', 'user', id.toString()));
 
     return { success: true };
   });
@@ -170,8 +171,8 @@ export const updateUserRoleAction = adminAction
     const { user } = ctx;
     await adminService.updateUserRole(id, role);
 
-    // 记录操作日志
-    await logAdminAction(user.id, user.username, 'CHANGE_ROLE', 'user', id.toString(), { role });
+    // 记录操作日志 (非阻塞)
+    after(() => logAdminAction(user.id, user.username, 'CHANGE_ROLE', 'user', id.toString(), { role }));
 
     return { success: true };
   });
@@ -185,7 +186,7 @@ export const revokeUserSessionAction = adminAction
     const { user } = ctx;
     await adminService.revokeUserSessions(id);
 
-    await logAdminAction(user.id, user.username, 'REVOKE_SESSION', 'user', id.toString());
+    after(() => logAdminAction(user.id, user.username, 'REVOKE_SESSION', 'user', id.toString()));
 
     return { success: true };
   });
@@ -221,7 +222,7 @@ export const resolveFeedbackAction = adminAction
   .action(async ({ parsedInput: id, ctx }) => {
     const { user } = ctx;
     await questionFeedbackService.resolve(id, user.id);
-    await logAdminAction(user.id, user.username, 'RESOLVE_FEEDBACK', 'feedback', id.toString());
+    after(() => logAdminAction(user.id, user.username, 'RESOLVE_FEEDBACK', 'feedback', id.toString()));
     return { success: true };
   });
 
@@ -233,7 +234,7 @@ export const dismissFeedbackAction = adminAction
   .action(async ({ parsedInput: id, ctx }) => {
     const { user } = ctx;
     await questionFeedbackService.dismiss(id, user.id);
-    await logAdminAction(user.id, user.username, 'DISMISS_FEEDBACK', 'feedback', id.toString());
+    after(() => logAdminAction(user.id, user.username, 'DISMISS_FEEDBACK', 'feedback', id.toString()));
     return { success: true };
   });
 

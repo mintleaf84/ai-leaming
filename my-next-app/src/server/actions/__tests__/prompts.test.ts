@@ -48,7 +48,7 @@ vi.mock('@/lib/ai/client', () => ({
     generateTextWrapper: vi.fn()
 }));
 
-import { getPromptTemplatesAction, savePromptTemplateAction, resetPromptTemplateAction } from '../prompts';
+import { getPromptTemplatesAction, savePromptTemplateAction, resetPromptTemplateAction, debugPromptTemplateAction } from '../prompts';
 import { resetDrizzleMock } from '@/lib/__tests__/db-mock-utils';
 
 describe('Prompts Actions', () => {
@@ -85,6 +85,78 @@ describe('Prompts Actions', () => {
             const result = await resetPromptTemplateAction('test_key');
             expect(result.data?.success).toBe(true);
             expect(mockDb.delete).toHaveBeenCalled();
+        });
+    });
+
+    describe('debugPromptTemplateAction', () => {
+        it('应该成功调试 correction_quiz 类型模板', async () => {
+            const { generateStructuredData } = await import('@/lib/ai/client');
+            vi.mocked(generateStructuredData).mockResolvedValue({
+                questions: [{ content: '测试题', options: ['A', 'B'], answer: 'A' }]
+            });
+            
+            const buildPromptMock = (await import('@/lib/ai/prompts')).buildPrompt;
+            vi.mocked(buildPromptMock).mockReturnValue('interpolated prompt');
+
+            const result = await debugPromptTemplateAction({
+                key: 'correction_quiz',
+                template: '请生成一道关于{{topic}}的题目',
+                inputVariables: { topic: '数学' }
+            });
+
+            expect(result.data?.success).toBe(true);
+            expect(generateStructuredData).toHaveBeenCalled();
+        });
+
+        it('应该成功调试 regression_challenge 类型模板', async () => {
+            const { generateStructuredData } = await import('@/lib/ai/client');
+            vi.mocked(generateStructuredData).mockResolvedValue({
+                questions: [{ content: '测试题', options: ['A', 'B'], answer: 'B' }]
+            });
+            
+            const buildPromptMock = (await import('@/lib/ai/prompts')).buildPrompt;
+            vi.mocked(buildPromptMock).mockReturnValue('interpolated prompt');
+
+            const result = await debugPromptTemplateAction({
+                key: 'regression_challenge',
+                template: '请生成关于{{topic}}的挑战',
+                inputVariables: { topic: '历史' }
+            });
+
+            expect(result.data?.success).toBe(true);
+        });
+
+        it('未知 key 应该使用文本模式调试', async () => {
+            const { generateTextWrapper } = await import('@/lib/ai/client');
+            vi.mocked(generateTextWrapper).mockResolvedValue({ text: 'AI response text' });
+            
+            const buildPromptMock = (await import('@/lib/ai/prompts')).buildPrompt;
+            vi.mocked(buildPromptMock).mockReturnValue('interpolated prompt');
+
+            const result = await debugPromptTemplateAction({
+                key: 'unknown_key',
+                template: '请处理 {{input}}',
+                inputVariables: { input: 'test' }
+            });
+
+            expect(result.data?.success).toBe(true);
+            expect(generateTextWrapper).toHaveBeenCalled();
+        });
+
+        it('AI 调用失败应该返回错误信息', async () => {
+            const { generateTextWrapper } = await import('@/lib/ai/client');
+            vi.mocked(generateTextWrapper).mockRejectedValue(new Error('API Error'));
+            
+            const buildPromptMock = (await import('@/lib/ai/prompts')).buildPrompt;
+            vi.mocked(buildPromptMock).mockReturnValue('interpolated prompt');
+
+            const result = await debugPromptTemplateAction({
+                key: 'test_key',
+                template: 'test',
+                inputVariables: {}
+            });
+
+            expect(result.serverError).toBeDefined();
         });
     });
 });

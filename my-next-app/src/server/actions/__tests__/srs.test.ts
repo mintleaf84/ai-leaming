@@ -45,6 +45,7 @@ import { srsService } from '@/lib/services/srs';
 import {
     getSrsGlobalStatsAction,
     getQuestionSrsPredictionsAction,
+    getQuestionSrsHistoryAction,
     syncSrsDataAction
 } from '../srs';
 
@@ -137,6 +138,52 @@ describe('SRS Actions', () => {
             expect(data[3].label).toBe('简单');
             expect(data[0].interval).toBe(1);
             expect(data[3].interval).toBe(14);
+        });
+    });
+
+    // ========== getQuestionSrsHistoryAction 测试 ==========
+    describe('getQuestionSrsHistoryAction', () => {
+        it('应该返回题目的 SRS 历史记录', async () => {
+            const mockLogs = [
+                { date: '2024-01-01', isCorrect: true, duration: 5000, rating: 'Good' },
+                { date: '2024-01-02', isCorrect: false, duration: 3000, rating: 'Again' },
+                { date: '2024-01-03', isCorrect: true, duration: 4000, rating: 'Good' }
+            ];
+
+            const { drizzleDb } = await import('@/lib/db');
+            const mockSelect = vi.fn().mockReturnValue({
+                from: vi.fn().mockReturnValue({
+                    where: vi.fn().mockReturnValue({
+                        orderBy: vi.fn().mockResolvedValue(mockLogs)
+                    })
+                })
+            });
+            drizzleDb.select = mockSelect;
+
+            const result = await getQuestionSrsHistoryAction(101);
+            const data = unwrap(result);
+
+            expect(data).toHaveLength(3);
+            expect(data[0].isCorrect).toBe(true);
+            expect(data[1].isCorrect).toBe(false);
+            expect(data[0].rating).toBe('Good');
+        });
+
+        it('应该处理空历史记录', async () => {
+            const { drizzleDb } = await import('@/lib/db');
+            const mockSelect = vi.fn().mockReturnValue({
+                from: vi.fn().mockReturnValue({
+                    where: vi.fn().mockReturnValue({
+                        orderBy: vi.fn().mockResolvedValue([])
+                    })
+                })
+            });
+            drizzleDb.select = mockSelect;
+
+            const result = await getQuestionSrsHistoryAction(999);
+            const data = unwrap(result);
+
+            expect(data).toHaveLength(0);
         });
     });
 

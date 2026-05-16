@@ -231,9 +231,10 @@ describe('Subscription Actions', () => {
             const result = await savePlanAction({
                 id: 'pro',
                 name: 'Pro',
-                price: 99,
+                price_monthly: 99,
+                limits: { ai_chat: 100 },
                 features: [],
-                isActive: true
+                is_active: 1
             });
 
             expect(result.serverError).toBeDefined();

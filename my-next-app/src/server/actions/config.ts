@@ -6,6 +6,7 @@ import { logAdminAction } from '@/lib/admin/audit';
 import { clearAiConfigCache, getAiConfig, getModel } from '@/lib/ai/client';
 import { generateText } from 'ai';
 import { revalidatePath } from 'next/cache';
+import { after } from 'next/server';
 import { z } from 'zod';
 import { getErrorMessage } from '@/lib/utils/error';
 import logger from '@/lib/logger';
@@ -35,8 +36,7 @@ export const saveAiConfigAction = adminAction
         revalidatePath('/admin');
         clearAiConfigCache();
 
-        // 记录操作日志
-        await logAdminAction(user.id, user.username, 'UPDATE_AI_CONFIG', 'ai_config', id?.toString() || 'new', { name: config.name });
+        after(() => logAdminAction(user.id, user.username, 'UPDATE_AI_CONFIG', 'ai_config', id?.toString() || 'new', { name: config.name }));
 
         return { success: true };
     });
@@ -50,8 +50,7 @@ export const deleteAiConfigAction = adminAction
         const { user } = ctx;
         await aiConfigService.deleteConfig(id);
 
-        // 记录操作日志
-        await logAdminAction(user.id, user.username, 'DELETE_AI_CONFIG', 'ai_config', id.toString());
+        after(() => logAdminAction(user.id, user.username, 'DELETE_AI_CONFIG', 'ai_config', id.toString()));
 
         revalidatePath('/admin');
         clearAiConfigCache();
@@ -67,8 +66,7 @@ export const setActiveAiConfigAction = adminAction
         const { user } = ctx;
         await aiConfigService.setActiveConfig(id);
 
-        // 记录日志
-        await logAdminAction(user.id, user.username, 'UPDATE_AI_CONFIG', 'ai_config', id.toString(), { action: 'set_active' });
+        after(() => logAdminAction(user.id, user.username, 'UPDATE_AI_CONFIG', 'ai_config', id.toString(), { action: 'set_active' }));
 
         revalidatePath('/admin');
         clearAiConfigCache();
@@ -92,15 +90,14 @@ export const saveAiModelRouteAction = adminAction
         const { user } = ctx;
         await aiConfigService.saveRoute(route as any);
 
-        // 记录日志
-        await logAdminAction(
+        after(() => logAdminAction(
             user.id,
             user.username,
             'UPDATE_AI_ROUTE',
             'ai_model_route',
             route.feature,
             { config_id: route.config_id, model_name: route.model_name }
-        );
+        ));
 
         revalidatePath('/admin/ai');
         clearAiConfigCache();

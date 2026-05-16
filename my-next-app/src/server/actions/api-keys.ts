@@ -5,6 +5,7 @@ import { drizzleDb } from '@/lib/db';
 import { api_keys } from '@/lib/db/drizzle-schema';
 import { eq, desc, sql } from 'drizzle-orm';
 import { logAdminAction } from '@/lib/admin/audit';
+import { after } from 'next/server';
 import crypto from 'crypto';
 import { z } from 'zod';
 import type { ApiKeyView } from '@/types/api-key';
@@ -39,7 +40,7 @@ export const createApiKeyAction = adminAction
             description: description
         });
 
-        await logAdminAction(user.id, user.username, 'CREATE_API_KEY', 'api_key', null, { description });
+        after(() => logAdminAction(user.id, user.username, 'CREATE_API_KEY', 'api_key', null, { description }));
 
         return { success: true, key: keyString };
     });
@@ -63,9 +64,9 @@ export const toggleApiKeyAction = adminAction
             })
             .where(eq(api_keys.id, id));
 
-        await logAdminAction(user.id, user.username, 'TOGGLE_API_KEY', 'api_key', id.toString(), {
+        after(() => logAdminAction(user.id, user.username, 'TOGGLE_API_KEY', 'api_key', id.toString(), {
             is_active: isActive,
-        });
+        }));
 
         return { success: true };
     });
@@ -80,7 +81,7 @@ export const deleteApiKeyAction = adminAction
         await drizzleDb.delete(api_keys)
             .where(eq(api_keys.id, id));
 
-        await logAdminAction(user.id, user.username, 'DELETE_API_KEY', 'api_key', id.toString());
+        after(() => logAdminAction(user.id, user.username, 'DELETE_API_KEY', 'api_key', id.toString()));
 
         return { success: true };
     });

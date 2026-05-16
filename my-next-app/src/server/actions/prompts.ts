@@ -7,6 +7,7 @@ import { buildPrompt } from '@/lib/ai/prompts';
 import { generateStructuredData, generateTextWrapper, AiRawResponseError } from '@/lib/ai/client';
 import { CorrectionQuizSchema, RegressionChallengeSchema } from '@/lib/schemas';
 import { SavePromptSchema, DebugPromptSchema } from '@/lib/validations/prompt';
+import { after } from 'next/server';
 import { z } from 'zod';
 import { getErrorMessage } from '@/lib/utils/error';
 
@@ -28,8 +29,7 @@ export const savePromptTemplateAction = adminAction
         const { user } = ctx;
         await promptService.upsertTemplate(key, template, description, variables);
         
-        // 记录管理员操作日志
-        await logAdminAction(user.id, user.username, 'UPDATE_PROMPT', 'prompt', key, { description });
+        after(() => logAdminAction(user.id, user.username, 'UPDATE_PROMPT', 'prompt', key, { description }));
 
         return { success: true };
     });
@@ -43,8 +43,7 @@ export const resetPromptTemplateAction = adminAction
         const { user } = ctx;
         await promptService.deleteTemplate(key);
         
-        // 记录管理员操作日志
-        await logAdminAction(user.id, user.username, 'UPDATE_PROMPT', 'prompt', key, { action: 'reset_to_default' });
+        after(() => logAdminAction(user.id, user.username, 'UPDATE_PROMPT', 'prompt', key, { action: 'reset_to_default' }));
 
         return { success: true };
     });

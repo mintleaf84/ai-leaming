@@ -27,6 +27,12 @@ vi.mock('@/lib/admin/audit', () => ({
     logAdminAction: vi.fn(),
 }));
 
+vi.mock('next/server', () => ({
+    after: vi.fn((fn: () => void | Promise<void>) => {
+        fn();
+    })
+}));
+
 import {
     getUsersAction,
     deleteUserAction,

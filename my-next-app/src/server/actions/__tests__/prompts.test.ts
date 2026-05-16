@@ -37,6 +37,12 @@ vi.mock('@/lib/ai/prompts', () => ({
     }
 }));
 
+vi.mock('next/server', () => ({
+    after: vi.fn((fn: () => void | Promise<void>) => {
+        fn();
+    })
+}));
+
 vi.mock('@/lib/ai/client', () => ({
     generateStructuredData: vi.fn(),
     generateTextWrapper: vi.fn()

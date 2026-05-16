@@ -37,6 +37,12 @@ vi.mock('next/cache', () => ({
     revalidatePath: vi.fn()
 }));
 
+vi.mock('next/server', () => ({
+    after: vi.fn((fn: () => void | Promise<void>) => {
+        fn();
+    })
+}));
+
 vi.mock('ai', () => ({
     generateText: vi.fn()
 }));

@@ -49,6 +49,9 @@ export default defineConfig({
     env: {
       DB_FILENAME: 'test-e2e.db',
       E2E_TEST: 'true',
+      SKIP_ENV_VALIDATION: 'true',
+      JWT_SECRET: 'test-jwt-secret-for-e2e',
+      AI_API_KEY: 'test-api-key-for-e2e',
     },
   },
 

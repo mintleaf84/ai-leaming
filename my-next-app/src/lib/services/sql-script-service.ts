@@ -288,17 +288,26 @@ export class SqlScriptService {
             limit
         });
 
-        return history.map(log => ({
-            id: log.id,
-            timestamp: log.created_at,
-            userId: log.user_id,
-            description: (log.details as { description?: string })?.description || '未知脚本',
-            success: !(log.details as { error?: string })?.error,
-            rowsAffected: (log.details as { rowsAffected?: number })?.rowsAffected,
-            executionTime: (log.details as { executionTime?: number })?.executionTime,
-            backupFile: (log.details as { backupCreated?: string })?.backupCreated,
-            error: (log.details as { error?: string })?.error
-        }));
+        return history.map(log => {
+            let details: Record<string, unknown> = {};
+            try {
+                if (log.details) {
+                    details = typeof log.details === 'string' ? JSON.parse(log.details) : log.details;
+                }
+            } catch { /* ignore parse errors */ }
+
+            return {
+                id: log.id,
+                timestamp: log.created_at,
+                userId: log.user_id,
+                description: (details.description as string) || '未知脚本',
+                success: !(details.error as string),
+                rowsAffected: details.rowsAffected as number | null,
+                executionTime: details.executionTime as number | null,
+                backupFile: details.backupCreated as string | null,
+                error: details.error as string | null
+            };
+        });
     }
 
     /**

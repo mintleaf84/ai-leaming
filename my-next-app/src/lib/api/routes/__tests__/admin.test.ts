@@ -190,4 +190,84 @@ describe('Admin Hono Routes (Integration)', () => {
             expect(await res.text()).toContain('Q1');
         });
     });
+
+    describe('POST /sql-scripts/validate', () => {
+        it('should validate safe SQL', async () => {
+            const res = await app.request('/sql-scripts/validate', {
+                method: 'POST',
+                body: JSON.stringify({ sql: 'SELECT * FROM questions WHERE id = 1', description: 'test' }),
+                headers: { 'Content-Type': 'application/json' }
+            });
+
+            expect(res.status).toBe(200);
+            const data = await res.json();
+            expect(data.valid).toBe(true);
+        });
+
+        it('should reject DROP SQL', async () => {
+            const res = await app.request('/sql-scripts/validate', {
+                method: 'POST',
+                body: JSON.stringify({ sql: 'DROP TABLE questions', description: 'test' }),
+                headers: { 'Content-Type': 'application/json' }
+            });
+
+            expect(res.status).toBe(200);
+            const data = await res.json();
+            expect(data.valid).toBe(false);
+            expect(data.error).toContain('DROP');
+        });
+
+        it('should reject DELETE without WHERE', async () => {
+            const res = await app.request('/sql-scripts/validate', {
+                method: 'POST',
+                body: JSON.stringify({ sql: 'DELETE FROM questions', description: 'test' }),
+                headers: { 'Content-Type': 'application/json' }
+            });
+
+            expect(res.status).toBe(200);
+            const data = await res.json();
+            expect(data.valid).toBe(false);
+            expect(data.error).toContain('WHERE');
+        });
+
+        it('should return 401 when unauthorized', async () => {
+            mockRequireRole.mockRejectedValueOnce(new Error('Unauthorized'));
+
+            const res = await app.request('/sql-scripts/validate', {
+                method: 'POST',
+                body: JSON.stringify({ sql: 'SELECT 1', description: 'test' }),
+                headers: { 'Content-Type': 'application/json' }
+            });
+
+            expect(res.status).toBe(401);
+        });
+    });
+
+    describe('GET /sql-scripts/history', () => {
+        it('should return execution history', async () => {
+            await testDbHelper.db.insert(schema.admin_logs).values({
+                user_id: 1,
+                username: 'admin_user',
+                action: 'EXECUTE_SQL_SCRIPT',
+                target_type: 'system',
+                target_id: null,
+                details: JSON.stringify({ description: 'test script', rowsAffected: 5 }),
+                ip_address: null
+            });
+
+            const res = await app.request('/sql-scripts/history');
+            expect(res.status).toBe(200);
+            const data = await res.json();
+            expect(data.history).toHaveLength(1);
+            expect(data.history[0].description).toBe('test script');
+            expect(data.history[0].rowsAffected).toBe(5);
+        });
+
+        it('should return empty array when no history', async () => {
+            const res = await app.request('/sql-scripts/history');
+            expect(res.status).toBe(200);
+            const data = await res.json();
+            expect(data.history).toHaveLength(0);
+        });
+    });
 });

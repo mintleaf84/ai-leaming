@@ -48,7 +48,7 @@ export interface HealthStats {
 /**
  * 格式化字节大小
  */
-function formatBytes(bytes: number): string {
+export function formatBytes(bytes: number): string {
     if (bytes === 0) return '0 Bytes';
     const k = 1024;
     const sizes = ['Bytes', 'KB', 'MB', 'GB'];
@@ -59,7 +59,7 @@ function formatBytes(bytes: number): string {
 /**
  * 格式化运行时间
  */
-function formatUptime(seconds: number): string {
+export function formatUptime(seconds: number): string {
     const days = Math.floor(seconds / 86400);
     const hours = Math.floor((seconds % 86400) / 3600);
     const minutes = Math.floor((seconds % 3600) / 60);
@@ -69,7 +69,7 @@ function formatUptime(seconds: number): string {
     if (hours > 0) parts.push(`${hours}小时`);
     if (minutes > 0) parts.push(`${minutes}分钟`);
 
-    return parts.length > 0 ? parts.join(' ') : '刚刚启动';
+    return parts.length > 0 ? parts.join('') : '刚刚启动';
 }
 
 /**

@@ -81,6 +81,7 @@ export const updateQuestionAction = adminAction
       const CHAR_CODE_A = 'A'.charCodeAt(0);
       const isValidMultiAnswer = (answer: unknown) => {
         if (typeof answer !== 'string') return false;
+        if (answer === '') return false;
         if (finalOptions.includes(answer)) return true;
         if (/^[A-Z]$/.test(answer)) {
           const idx = answer.charCodeAt(0) - CHAR_CODE_A;

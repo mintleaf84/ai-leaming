@@ -132,7 +132,7 @@ export const QuestionCard = React.memo(forwardRef<HTMLDivElement, QuestionCardPr
             });
 
             if (result.serverError) {
-                toast.error(result.serverError || '提交失败');
+                toast.error(result.serverError);
             } else if (result.data?.success) {
                 toast.success('感谢反馈！题目纠错已提交');
                 setShowFeedbackDialog(false);

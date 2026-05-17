@@ -210,6 +210,7 @@ export const QuestionCard = React.memo(forwardRef<HTMLDivElement, QuestionCardPr
                                 userAnswer={log.userAnswer}
                                 isCorrect={log.isCorrect}
                                 duration={log.duration}
+                                options={log.options}
                                 correctRatio={log.correctRatio}
                                 mostWrongAnswer={log.mostWrongAnswer}
                             />

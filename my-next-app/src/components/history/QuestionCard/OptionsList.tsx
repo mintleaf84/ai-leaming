@@ -47,7 +47,7 @@ export function OptionsList({ options, correctAnswer, userAnswer, isCorrect }: O
         <div className="mt-3 space-y-2">
             {options.map((opt, oi) => {
                 const letter = indexToLetter(oi);
-                const isCorrectOption = correctAnswers.includes(letter);
+                const isCorrectOption = correctAnswers.includes(letter) || correctAnswers.includes(opt);
                 const isUserChoice = userAnswers.includes(letter) || userAnswers.includes(opt);
 
                 return (

@@ -300,7 +300,7 @@ export function AnnotatableText({ text, questionId, className }: AnnotatableText
             {toolbarPosition && typeof document !== 'undefined' && createPortal(
                 <div
                     ref={toolbarRef}
-                    className="fixed z-50 bg-card border border-border rounded-lg shadow-lg p-1 flex gap-1 animate-in fade-in zoom-in-95 duration-150"
+                    className="fixed z-[200] bg-card border border-border rounded-lg shadow-lg p-1 flex gap-1 animate-in fade-in zoom-in-95 duration-150"
                     style={{
                         left: `${toolbarPosition.x}px`,
                         top: `${toolbarPosition.y}px`,

@@ -79,13 +79,24 @@ export const updateQuestionAction = adminAction
 
     if (finalType === 'multi' && finalAnswer) {
       const CHAR_CODE_A = 'A'.charCodeAt(0);
-      const isValidMultiAnswer = (answer: string) => {
+      const isValidMultiAnswer = (answer: unknown) => {
+        if (typeof answer !== 'string') return false;
         if (finalOptions.includes(answer)) return true;
         if (/^[A-Z]$/.test(answer)) {
           const idx = answer.charCodeAt(0) - CHAR_CODE_A;
           return idx >= 0 && idx < finalOptions.length;
         }
         return false;
+      };
+      const formatInvalidAnswer = (answer: unknown) => {
+        if (typeof answer === 'string') {
+          return answer === '' ? '""' : answer;
+        }
+        try {
+          return JSON.stringify(answer) ?? String(answer);
+        } catch {
+          return String(answer);
+        }
       };
 
       const parsed = (() => {
@@ -104,8 +115,8 @@ export const updateQuestionAction = adminAction
       const answers = parsed;
 
       const invalid = answers.find(a => !isValidMultiAnswer(a));
-      if (invalid) {
-        throw new Error(`正确答案必须是选项之一或有效的选项标号: ${invalid}`);
+      if (invalid !== undefined) {
+        throw new Error(`正确答案必须是选项之一或有效的选项标号: ${formatInvalidAnswer(invalid)}`);
       }
     }
 

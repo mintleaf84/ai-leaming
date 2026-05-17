@@ -258,6 +258,48 @@ describe('Admin Actions', () => {
             expect(res.serverError).toContain('正确答案必须是选项之一或有效的选项标号');
         });
 
+        it('不定项选择题答案包含对象时应展示可读非法值', async () => {
+            vi.mocked(requireRole).mockResolvedValue({ id: 1, role: 'admin', username: 'admin' } as any);
+
+            vi.mocked(adminService.getQuestionById).mockResolvedValue({
+                id: 1, content: 'Old Content', options: ['A', 'B', 'C', 'D'], tags: ['test'], type: 'multi',
+                explanation: 'Old explanation > 5 chars', dimension: 'knowledge'
+            } as any);
+
+            const updateData = {
+                options: ['A', 'B', 'C', 'D'],
+                type: 'multi' as const,
+                answer: JSON.stringify(['A', { value: 'X' }]),
+                tags: ['test']
+            };
+
+            const res = await updateQuestionAction({ id: 1, data: updateData });
+
+            expect(res.data?.success).toBeFalsy();
+            expect(res.serverError).toContain('{"value":"X"}');
+        });
+
+        it('不定项选择题答案包含空字符串时应显示引号', async () => {
+            vi.mocked(requireRole).mockResolvedValue({ id: 1, role: 'admin', username: 'admin' } as any);
+
+            vi.mocked(adminService.getQuestionById).mockResolvedValue({
+                id: 1, content: 'Old Content', options: ['A', 'B', 'C', 'D'], tags: ['test'], type: 'multi',
+                explanation: 'Old explanation > 5 chars', dimension: 'knowledge'
+            } as any);
+
+            const updateData = {
+                options: ['A', 'B', 'C', 'D'],
+                type: 'multi' as const,
+                answer: JSON.stringify(['A', '']),
+                tags: ['test']
+            };
+
+            const res = await updateQuestionAction({ id: 1, data: updateData });
+
+            expect(res.data?.success).toBeFalsy();
+            expect(res.serverError).toContain('""');
+        });
+
         it('不定项选择题答案为非数组 JSON 时应报格式错误', async () => {
             vi.mocked(requireRole).mockResolvedValue({ id: 1, role: 'admin', username: 'admin' } as any);
 

@@ -16,7 +16,7 @@ interface OptionsListProps {
  * 多选 JSON: '["A","B"]' -> ["A", "B"]
  * 多选逗号分隔: "A,B,C" -> ["A", "B", "C"]
  */
-function parseAnswer(answer: string): string[] {
+export function parseAnswer(answer: string): string[] {
     if (!answer) return [];
     const trimmed = answer.trim();
 

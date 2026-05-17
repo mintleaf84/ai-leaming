@@ -21,6 +21,7 @@ import { AIAnalysisSection } from './QuestionCard/AIAnalysisSection';
 import { AIMnemonicSection } from './QuestionCard/AIMnemonicSection';
 import { AIReviewSection } from './QuestionCard/AIReviewSection';
 import { FeedbackDialog } from './QuestionCard/FeedbackDialog';
+export { parseAnswer } from './QuestionCard/OptionsList';
 
 export interface QuestionLogData {
     questionId?: number;

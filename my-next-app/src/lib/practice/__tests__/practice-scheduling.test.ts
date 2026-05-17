@@ -1,6 +1,7 @@
 // @vitest-environment node
 import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { practiceSchedulingService, getAllTags, getUserWrongTags } from '../practice-scheduling';
+import type { PracticeConfig } from '@/types/practice';
 
 const createMockQuery = (returnValue: any = []) => {
     const mockAll = vi.fn().mockResolvedValue(returnValue);
@@ -52,7 +53,7 @@ describe('practiceSchedulingService', () => {
 
     describe('generateSmartSession', () => {
         it('应该生成智能刷题会话', async () => {
-            const config = { mode: 'smart', limit: 10, types: [], dimensions: [], tags: [] };
+            const config: PracticeConfig = { mode: 'smart', limit: 10, types: [], dimensions: [], tags: [] };
             const userId = 1;
 
             mockDrizzleDb.selectDistinct.mockReturnValue(createMockQuery([]));
@@ -63,7 +64,7 @@ describe('practiceSchedulingService', () => {
         });
 
         it('应该按 40/40/20 比例分配题目', async () => {
-            const config = { mode: 'smart', limit: 10, types: [], dimensions: [], tags: [] };
+            const config: PracticeConfig = { mode: 'smart', limit: 10, types: [], dimensions: [], tags: [] };
             const userId = 1;
 
             mockDrizzleDb.selectDistinct.mockReturnValue(createMockQuery([
@@ -95,7 +96,7 @@ describe('practiceSchedulingService', () => {
 
     describe('generateReviewSession', () => {
         it('应该生成复习会话', async () => {
-            const config = { mode: 'review', limit: 5, types: [], dimensions: [], tags: [] };
+            const config: PracticeConfig = { mode: 'review', limit: 5, types: [], dimensions: [], tags: [] };
             const userId = 1;
 
             mockDrizzleDb.select.mockReturnValue(createMockQuery([]));
@@ -107,7 +108,7 @@ describe('practiceSchedulingService', () => {
 
     describe('generateMistakesSession', () => {
         it('应该生成错题专项会话', async () => {
-            const config = { mode: 'mistakes', limit: 5, types: [], dimensions: [], tags: [] };
+            const config: PracticeConfig = { mode: 'mistakes', limit: 5, types: [], dimensions: [], tags: [] };
             const userId = 1;
 
             mockDrizzleDb.select.mockReturnValue(createMockQuery([]));
@@ -119,7 +120,7 @@ describe('practiceSchedulingService', () => {
 
     describe('generateFocusSession', () => {
         it('应该在有筛选条件时按条件查询', async () => {
-            const config = { mode: 'focus', limit: 5, types: ['single'], dimensions: [], tags: [] };
+            const config: PracticeConfig = { mode: 'focus', limit: 5, types: ['single'], dimensions: [], tags: [] };
             const userId = 1;
 
             mockDrizzleDb.select.mockReturnValue(createMockQuery([]));
@@ -129,7 +130,7 @@ describe('practiceSchedulingService', () => {
         });
 
         it('应该在没有筛选条件时调用随机会话', async () => {
-            const config = { mode: 'focus', limit: 5, types: [], dimensions: [], tags: [] };
+            const config: PracticeConfig = { mode: 'focus', limit: 5, types: [], dimensions: [], tags: [] };
             const userId = 1;
 
             const result = await practiceSchedulingService.generateFocusSession(config, userId);
@@ -139,7 +140,7 @@ describe('practiceSchedulingService', () => {
 
     describe('generateExamSession', () => {
         it('应该生成按 ID 排序的考试会话', async () => {
-            const config = { mode: 'exam', limit: 5, types: [], dimensions: [], tags: [] };
+            const config: PracticeConfig = { mode: 'exam', limit: 5, types: [], dimensions: [], tags: [] };
             const userId = 1;
 
             mockDrizzleDb.select.mockReturnValue(createMockQuery([
@@ -156,7 +157,7 @@ describe('practiceSchedulingService', () => {
 
     describe('generateRandomSession', () => {
         it('应该生成随机顺序的会话', async () => {
-            const config = { mode: 'random', limit: 5, types: [], dimensions: [], tags: [] };
+            const config: PracticeConfig = { mode: 'random', limit: 5, types: [], dimensions: [], tags: [] };
             const userId = 1;
 
             mockDrizzleDb.select.mockReturnValue(createMockQuery([]));
@@ -168,7 +169,7 @@ describe('practiceSchedulingService', () => {
 
     describe('generateSessionByConfig', () => {
         it('应该根据模式分发到对应方法', async () => {
-            const config = { mode: 'random', limit: 5, types: [], dimensions: [], tags: [] };
+            const config: PracticeConfig = { mode: 'random', limit: 5, types: [], dimensions: [], tags: [] };
             const userId = 1;
 
             mockDrizzleDb.select.mockReturnValue(createMockQuery([]));
@@ -178,7 +179,7 @@ describe('practiceSchedulingService', () => {
         });
 
         it('应该默认使用智能刷题模式', async () => {
-            const config = { mode: 'unknown', limit: 5, types: [], dimensions: [], tags: [] };
+            const config = { mode: 'unknown', limit: 5, types: [], dimensions: [], tags: [] } as unknown as PracticeConfig;
             const userId = 1;
 
             mockDrizzleDb.selectDistinct.mockReturnValue(createMockQuery([]));

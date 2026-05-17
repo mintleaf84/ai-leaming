@@ -78,10 +78,11 @@ export const updateQuestionAction = adminAction
     const finalAnswer = data.answer || currentQ.answer;
 
     if (finalType === 'multi' && finalAnswer) {
+      const CHAR_CODE_A = 'A'.charCodeAt(0);
       const isValidMultiAnswer = (answer: string) => {
         if (finalOptions.includes(answer)) return true;
-        if (answer.length === 1 && answer >= 'A' && answer <= 'Z') {
-          const idx = answer.charCodeAt(0) - 65;
+        if (/^[A-Z]$/.test(answer)) {
+          const idx = answer.charCodeAt(0) - CHAR_CODE_A;
           return Boolean(finalOptions[idx]);
         }
         return false;

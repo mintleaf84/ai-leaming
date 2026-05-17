@@ -220,7 +220,7 @@ describe('Admin Actions', () => {
 
             vi.mocked(adminService.getQuestionById).mockResolvedValue({
                 id: 1, content: 'Old Content', options: ['选项甲', '选项乙', '选项丙'], tags: ['test'], type: 'single',
-                answer: 'A', explanation: 'Old explanation > 5 chars', dimension: 'knowledge'
+                answer: 'A', explanation: 'Old explanation text', dimension: 'knowledge'
             } as any);
             vi.mocked(adminService.updateQuestion).mockResolvedValue(true);
 

@@ -258,6 +258,27 @@ describe('Admin Actions', () => {
             expect(res.serverError).toContain('正确答案必须是选项之一或有效的选项标号');
         });
 
+        it('不定项选择题答案为非数组 JSON 时应报格式错误', async () => {
+            vi.mocked(requireRole).mockResolvedValue({ id: 1, role: 'admin', username: 'admin' } as any);
+
+            vi.mocked(adminService.getQuestionById).mockResolvedValue({
+                id: 1, content: 'Old Content', options: ['A', 'B', 'C', 'D'], tags: ['test'], type: 'multi',
+                explanation: 'Old explanation > 5 chars', dimension: 'knowledge'
+            } as any);
+
+            const updateData = {
+                options: ['A', 'B', 'C', 'D'],
+                type: 'multi' as const,
+                answer: JSON.stringify({ A: true }),
+                tags: ['test']
+            };
+
+            const res = await updateQuestionAction({ id: 1, data: updateData });
+
+            expect(res.data?.success).toBeFalsy();
+            expect(res.serverError).toContain('多选题答案格式错误，必须是 JSON 数组');
+        });
+
         it('题目不存在时应该返回错误', async () => {
             vi.mocked(requireRole).mockResolvedValue({ id: 1, username: 'admin', role: 'admin' } as any);
             vi.mocked(adminService.getQuestionById).mockResolvedValue(null);

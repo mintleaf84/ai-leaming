@@ -95,7 +95,10 @@ export const updateQuestionAction = adminAction
           throw new Error('多选题答案格式错误，必须是 JSON 数组');
         }
       })();
-      if (!Array.isArray(parsed) || parsed.length === 0) {
+      if (!Array.isArray(parsed)) {
+        throw new Error('多选题答案格式错误，必须是 JSON 数组');
+      }
+      if (parsed.length === 0) {
         throw new Error('多选题答案必须是非空数组');
       }
       const answers = parsed;

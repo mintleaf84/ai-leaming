@@ -215,6 +215,28 @@ describe('Admin Actions', () => {
             expect(adminService.updateQuestion).toHaveBeenCalledWith(1, updateData);
         });
 
+        it('原单选题改为多选题时应允许使用选项标号答案', async () => {
+            vi.mocked(requireRole).mockResolvedValue({ id: 1, role: 'admin', username: 'admin' } as any);
+
+            vi.mocked(adminService.getQuestionById).mockResolvedValue({
+                id: 1, content: 'Old Content', options: ['选项甲', '选项乙', '选项丙'], tags: ['test'], type: 'single',
+                answer: 'A', explanation: 'Old explanation text', dimension: 'knowledge'
+            } as any);
+            vi.mocked(adminService.updateQuestion).mockResolvedValue(true);
+
+            const updateData = {
+                options: ['选项甲', '选项乙', '选项丙'],
+                type: 'multi' as const,
+                answer: JSON.stringify(['A', 'C']),
+                tags: ['test']
+            };
+
+            const res = await updateQuestionAction({ id: 1, data: updateData });
+
+            expect(res.data?.success).toBe(true);
+            expect(adminService.updateQuestion).toHaveBeenCalledWith(1, updateData);
+        });
+
         it('不定项选择题答案不合法时应报错', async () => {
             vi.mocked(requireRole).mockResolvedValue({ id: 1, role: 'admin', username: 'admin' } as any);
 
@@ -234,6 +256,69 @@ describe('Admin Actions', () => {
 
             expect(res.data?.success).toBeFalsy();
             expect(res.serverError).toContain('正确答案必须是选项之一或有效的选项标号');
+        });
+
+        it('不定项选择题答案包含对象时应展示可读非法值', async () => {
+            vi.mocked(requireRole).mockResolvedValue({ id: 1, role: 'admin', username: 'admin' } as any);
+
+            vi.mocked(adminService.getQuestionById).mockResolvedValue({
+                id: 1, content: 'Old Content', options: ['A', 'B', 'C', 'D'], tags: ['test'], type: 'multi',
+                explanation: 'Old explanation > 5 chars', dimension: 'knowledge'
+            } as any);
+
+            const updateData = {
+                options: ['A', 'B', 'C', 'D'],
+                type: 'multi' as const,
+                answer: JSON.stringify(['A', { value: 'X' }]),
+                tags: ['test']
+            };
+
+            const res = await updateQuestionAction({ id: 1, data: updateData });
+
+            expect(res.data?.success).toBeFalsy();
+            expect(res.serverError).toContain('{"value":"X"}');
+        });
+
+        it('不定项选择题答案包含空字符串时应显示引号', async () => {
+            vi.mocked(requireRole).mockResolvedValue({ id: 1, role: 'admin', username: 'admin' } as any);
+
+            vi.mocked(adminService.getQuestionById).mockResolvedValue({
+                id: 1, content: 'Old Content', options: ['A', 'B', 'C', 'D'], tags: ['test'], type: 'multi',
+                explanation: 'Old explanation > 5 chars', dimension: 'knowledge'
+            } as any);
+
+            const updateData = {
+                options: ['A', 'B', 'C', 'D'],
+                type: 'multi' as const,
+                answer: JSON.stringify(['A', '']),
+                tags: ['test']
+            };
+
+            const res = await updateQuestionAction({ id: 1, data: updateData });
+
+            expect(res.data?.success).toBeFalsy();
+            expect(res.serverError).toContain('""');
+        });
+
+        it('不定项选择题答案为非数组 JSON 时应报格式错误', async () => {
+            vi.mocked(requireRole).mockResolvedValue({ id: 1, role: 'admin', username: 'admin' } as any);
+
+            vi.mocked(adminService.getQuestionById).mockResolvedValue({
+                id: 1, content: 'Old Content', options: ['A', 'B', 'C', 'D'], tags: ['test'], type: 'multi',
+                explanation: 'Old explanation > 5 chars', dimension: 'knowledge'
+            } as any);
+
+            const updateData = {
+                options: ['A', 'B', 'C', 'D'],
+                type: 'multi' as const,
+                answer: JSON.stringify({ A: true }),
+                tags: ['test']
+            };
+
+            const res = await updateQuestionAction({ id: 1, data: updateData });
+
+            expect(res.data?.success).toBeFalsy();
+            expect(res.serverError).toContain('多选题答案格式错误，必须是 JSON 数组');
         });
 
         it('题目不存在时应该返回错误', async () => {

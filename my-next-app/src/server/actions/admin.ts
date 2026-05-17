@@ -78,17 +78,46 @@ export const updateQuestionAction = adminAction
     const finalAnswer = data.answer || currentQ.answer;
 
     if (finalType === 'multi' && finalAnswer) {
-      try {
-        const answers = JSON.parse(finalAnswer);
-        if (Array.isArray(answers)) {
-          const invalid = answers.find(a => !finalOptions.includes(a));
-          if (invalid) {
-            throw new Error(`正确答案必须是选项之一或有效的选项标号: ${invalid}`);
-          }
+      const CHAR_CODE_A = 'A'.charCodeAt(0);
+      const isValidMultiAnswer = (answer: unknown) => {
+        if (typeof answer !== 'string') return false;
+        if (answer === '') return false;
+        if (finalOptions.includes(answer)) return true;
+        if (/^[A-Z]$/.test(answer)) {
+          const idx = answer.charCodeAt(0) - CHAR_CODE_A;
+          return idx >= 0 && idx < finalOptions.length;
         }
-      } catch (e: unknown) {
-        if (e instanceof Error && e.message.includes('正确答案')) throw e;
-        // 忽略 JSON 解析错误，可能是单选格式
+        return false;
+      };
+      const formatInvalidAnswer = (answer: unknown) => {
+        if (typeof answer === 'string') {
+          return answer === '' ? '""' : answer;
+        }
+        try {
+          return JSON.stringify(answer) ?? String(answer);
+        } catch {
+          return String(answer);
+        }
+      };
+
+      const parsed = (() => {
+        try {
+          return JSON.parse(finalAnswer);
+        } catch {
+          throw new Error('多选题答案格式错误，必须是 JSON 数组');
+        }
+      })();
+      if (!Array.isArray(parsed)) {
+        throw new Error('多选题答案格式错误，必须是 JSON 数组');
+      }
+      if (parsed.length === 0) {
+        throw new Error('多选题答案必须是非空数组');
+      }
+      const answers = parsed;
+
+      const invalid = answers.find(a => !isValidMultiAnswer(a));
+      if (invalid !== undefined) {
+        throw new Error(`正确答案必须是选项之一或有效的选项标号: ${formatInvalidAnswer(invalid)}`);
       }
     }
 

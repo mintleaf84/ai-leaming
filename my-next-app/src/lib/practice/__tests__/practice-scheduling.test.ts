@@ -59,34 +59,34 @@ describe('practiceSchedulingService', () => {
         it('应该按 40/40/20 比例分配题目', async () => {
             const config = { mode: 'smart', limit: 10, types: [], dimensions: [], tags: [] };
             const userId = 1;
-            const stubbornRange = { min: 100, max: 200 };
-            const blindRange = { min: 200, max: 300 };
-            const regularRange = { min: 300, max: 400 };
+            const stubbornQuestionRange = { min: 100, max: 200 };
+            const blindSpotQuestionRange = { min: 200, max: 300 };
+            const regularQuestionRange = { min: 300, max: 400 };
 
             mockDrizzleDb.selectDistinct.mockReturnValue(createMockQuery([
-                { q: { id: 101, content: 'S1', options: '[]', tags: '[]', type: 'single', dimension: 'knowledge' } },
-                { q: { id: 102, content: 'S2', options: '[]', tags: '[]', type: 'single', dimension: 'knowledge' } },
-                { q: { id: 103, content: 'S3', options: '[]', tags: '[]', type: 'single', dimension: 'knowledge' } },
-                { q: { id: 104, content: 'S4', options: '[]', tags: '[]', type: 'single', dimension: 'knowledge' } }
+                { q: { id: 101, content: 'Stubborn1', options: '[]', tags: '[]', type: 'single', dimension: 'knowledge' } },
+                { q: { id: 102, content: 'Stubborn2', options: '[]', tags: '[]', type: 'single', dimension: 'knowledge' } },
+                { q: { id: 103, content: 'Stubborn3', options: '[]', tags: '[]', type: 'single', dimension: 'knowledge' } },
+                { q: { id: 104, content: 'Stubborn4', options: '[]', tags: '[]', type: 'single', dimension: 'knowledge' } }
             ]));
 
             mockDrizzleDb.select
                 .mockReturnValueOnce(createMockQuery([
-                    { id: 201, content: 'B1', options: '[]', tags: '[]', type: 'single', dimension: 'knowledge' },
-                    { id: 202, content: 'B2', options: '[]', tags: '[]', type: 'single', dimension: 'knowledge' },
-                    { id: 203, content: 'B3', options: '[]', tags: '[]', type: 'single', dimension: 'knowledge' },
-                    { id: 204, content: 'B4', options: '[]', tags: '[]', type: 'single', dimension: 'knowledge' }
+                    { id: 201, content: 'BlindSpot1', options: '[]', tags: '[]', type: 'single', dimension: 'knowledge' },
+                    { id: 202, content: 'BlindSpot2', options: '[]', tags: '[]', type: 'single', dimension: 'knowledge' },
+                    { id: 203, content: 'BlindSpot3', options: '[]', tags: '[]', type: 'single', dimension: 'knowledge' },
+                    { id: 204, content: 'BlindSpot4', options: '[]', tags: '[]', type: 'single', dimension: 'knowledge' }
                 ]))
                 .mockReturnValueOnce(createMockQuery([
-                    { id: 301, content: 'R1', options: '[]', tags: '[]', type: 'single', dimension: 'knowledge' },
-                    { id: 302, content: 'R2', options: '[]', tags: '[]', type: 'single', dimension: 'knowledge' }
+                    { id: 301, content: 'Regular1', options: '[]', tags: '[]', type: 'single', dimension: 'knowledge' },
+                    { id: 302, content: 'Regular2', options: '[]', tags: '[]', type: 'single', dimension: 'knowledge' }
                 ]));
 
             const result = await practiceSchedulingService.generateSmartSession(config, userId);
             expect(result).toHaveLength(10);
-            expect(result.filter(q => q.id >= stubbornRange.min && q.id < stubbornRange.max)).toHaveLength(4);
-            expect(result.filter(q => q.id >= blindRange.min && q.id < blindRange.max)).toHaveLength(4);
-            expect(result.filter(q => q.id >= regularRange.min && q.id < regularRange.max)).toHaveLength(2);
+            expect(result.filter(q => q.id >= stubbornQuestionRange.min && q.id < stubbornQuestionRange.max)).toHaveLength(4);
+            expect(result.filter(q => q.id >= blindSpotQuestionRange.min && q.id < blindSpotQuestionRange.max)).toHaveLength(4);
+            expect(result.filter(q => q.id >= regularQuestionRange.min && q.id < regularQuestionRange.max)).toHaveLength(2);
         });
     });
 

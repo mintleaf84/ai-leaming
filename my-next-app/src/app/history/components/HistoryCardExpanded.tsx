@@ -123,9 +123,9 @@ export const HistoryCardExpanded: React.FC<HistoryCardExpandedProps> = ({ sessio
             >
                 <div className="max-w-4xl mx-auto pointer-events-none">
                     <motion.div
-                        initial={{ opacity: 0, scale: 0.96, y: 20 }}
-                        animate={{ opacity: 1, scale: 1, y: 0 }}
-                        exit={{ opacity: 0, scale: 0.98, y: 10 }}
+                        initial={{ opacity: 0, y: 20 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        exit={{ opacity: 0, y: 10 }}
                         transition={{ duration: 0.3, ease: [0.32, 0.72, 0, 1] }}
                         style={{ borderRadius: '1.5rem' }}
                         className="bg-card border border-border/50 shadow-[0_32px_64px_-16px_rgba(0,0,0,0.2)] overflow-hidden pointer-events-auto flex flex-col min-h-[60vh]"

@@ -298,7 +298,7 @@ export default function SessionDetailPage({ params }: { params: Promise<{ id: st
               index={index}
               isExpanded={expandedItems.has(index)}
               onToggle={() => toggleExpand(index)}
-              refCallback={(el) => { questionRefs.current[index] = el; }}
+              ref={(el) => { questionRefs.current[index] = el; }}
             />
           ))
         ) : (

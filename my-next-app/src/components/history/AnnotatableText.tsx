@@ -306,6 +306,10 @@ export function AnnotatableText({ text, questionId, className }: AnnotatableText
                         top: `${toolbarPosition.y}px`,
                         transform: 'translate(-50%, -100%)',
                     }}
+                    onMouseDown={(e) => {
+                        // 阻止 mousedown 默认行为，防止选区被清除
+                        e.preventDefault();
+                    }}
                 >
                     <button
                         onClick={() => addAnnotation('highlight')}

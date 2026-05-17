@@ -32,6 +32,54 @@ interface EditQuestionDialogProps {
     onSuccess: () => void;
 }
 
+/**
+ * 将答案转换为目标类型对应的格式
+ */
+function convertAnswerFormat(
+    currentAnswer: string,
+    targetType: 'single' | 'multi' | 'truefalse',
+    options: string[]
+): string {
+    if (!currentAnswer) return '';
+
+    const trimmed = currentAnswer.trim();
+    let currentArr: string[];
+
+    if (trimmed.startsWith('[')) {
+        try {
+            currentArr = JSON.parse(trimmed);
+        } catch {
+            currentArr = [trimmed];
+        }
+    } else if (trimmed.includes(',')) {
+        currentArr = trimmed.split(',').map(s => s.trim());
+    } else {
+        currentArr = [trimmed];
+    }
+
+    switch (targetType) {
+        case 'multi':
+            return JSON.stringify(currentArr);
+        case 'single':
+        case 'truefalse':
+            if (currentArr.length === 0) return '';
+            const firstAnswer = currentArr[0];
+            if (options.length > 0 && !options.includes(firstAnswer)) {
+                return options[0];
+            }
+            return firstAnswer;
+        default:
+            return currentAnswer;
+    }
+}
+
+/**
+ * 获取选项对应的索引标识 (A, B, C, ...)
+ */
+function getOptionIndex(index: number): string {
+    return String.fromCharCode(65 + index);
+}
+
 export function EditQuestionDialog({
     open,
     onOpenChange,
@@ -49,21 +97,61 @@ export function EditQuestionDialog({
     });
     const [loading, setLoading] = useState(false);
 
-    useEffect(() => {
+    /**
+ * 将答案从索引格式 (A) 转换回选项文字供前端显示
+ * @param answer 数据库中存储的答案（可能是索引如 "A" 或 JSON 如 ["A","B"]）
+ * @param options 选项文字列表
+ * @param type 题目类型
+ */
+function convertAnswerToDisplay(answer: string | null | undefined, options: string[], type: string): string {
+    if (!answer) return '';
+
+    const trimmed = answer.trim();
+    let indices: string[];
+
+    if (trimmed.startsWith('[')) {
+        try {
+            indices = JSON.parse(trimmed);
+        } catch {
+            indices = [trimmed];
+        }
+    } else if (trimmed.includes(',')) {
+        indices = trimmed.split(',').map(s => s.trim());
+    } else {
+        indices = [trimmed];
+    }
+
+    if (type === 'multi') {
+        const textArr = indices.map(idx => {
+            const optIdx = idx.charCodeAt(0) - 65;
+            return options[optIdx] || idx;
+        });
+        return JSON.stringify(textArr);
+    } else {
+        const optIdx = indices[0]?.charCodeAt(0) - 65;
+        return options[optIdx] || indices[0] || '';
+    }
+}
+
+useEffect(() => {
         if (question && open) {
-            // 尝试自动识别类型（如果后端还没存type字段）
             const isJsonAns = question.answer?.trim().startsWith('[') && question.answer?.includes('"');
             const type = question.type || (isJsonAns ? 'multi' : 'single');
 
-            // 判断题：选项固定为 ["正确", "错误"]
             const optionsStr = type === 'truefalse'
                 ? '正确\n错误'
                 : (Array.isArray(question.options) ? question.options.join("\n") : "");
 
+            const options = type === 'truefalse'
+                ? ['正确', '错误']
+                : (Array.isArray(question.options) ? question.options : []);
+
+            const displayAnswer = convertAnswerToDisplay(question.answer, options, type);
+
             setFormData({
                 content: question.content || "",
                 optionsStr,
-                answer: question.answer || "",
+                answer: displayAnswer,
                 explanation: question.explanation || "",
                 tagsStr: Array.isArray(question.tags) ? question.tags.join(", ") : "",
                 dimension: question.dimension || "knowledge",
@@ -88,16 +176,24 @@ export function EditQuestionDialog({
             if (!isTrueFalse && options.length < 2) throw new Error("至少需要2个选项");
             if (!formData.answer) throw new Error("答案不能为空");
 
-            // 校验答案
+            // 校验答案并转换为索引格式 (A, B, C, ...)
+            let answerForSave: string;
             if (formData.type === 'truefalse') {
                 if (formData.answer !== 'A' && formData.answer !== 'B') throw new Error("判断题答案必须为 A（正确）或 B（错误）");
+                answerForSave = formData.answer;
             } else if (formData.type === 'single') {
-                if (!options.includes(formData.answer)) throw new Error("单选题答案必须是选项之一");
+                const optIndex = options.indexOf(formData.answer);
+                if (optIndex === -1) throw new Error("单选题答案必须是选项之一");
+                answerForSave = getOptionIndex(optIndex);
             } else {
                 try {
                     const ansArr = JSON.parse(formData.answer);
                     if (!Array.isArray(ansArr) || ansArr.length === 0) throw new Error("多选题至少选择一个答案");
-                    if (!ansArr.every(a => options.includes(a))) throw new Error("多选题答案项必须存在于选项中");
+                    const invalid = ansArr.filter((a: string) => !options.includes(a));
+                    if (invalid.length > 0) throw new Error("多选题答案项必须存在于选项中");
+                    // 转换为索引格式
+                    const indices = ansArr.map((a: string) => getOptionIndex(options.indexOf(a)));
+                    answerForSave = JSON.stringify(indices);
                 } catch (_e) {
                     throw new Error("多选题答案格式错误");
                 }
@@ -106,7 +202,7 @@ export function EditQuestionDialog({
             const updateData = {
                 content: formData.content,
                 options,
-                answer: formData.answer,
+                answer: answerForSave,
                 explanation: formData.explanation,
                 tags,
                 dimension: formData.dimension as 'knowledge' | 'understanding' | 'application',
@@ -174,13 +270,30 @@ export function EditQuestionDialog({
                             <Select
                                 value={formData.type}
                                 onValueChange={(val) => {
-                                    // 切换到判断题时自动填充固定选项，并清空答案
-                                    const newOptionsStr = val === 'truefalse' ? '正确\n错误' : (val !== formData.type ? '' : formData.optionsStr);
+                                    const newType = val as 'single' | 'multi' | 'truefalse';
+                                    const oldType = formData.type;
+
+                                    let newOptionsStr = formData.optionsStr;
+                                    if (newType === 'truefalse') {
+                                        newOptionsStr = '正确\n错误';
+                                    } else if (newType !== oldType && oldType === 'truefalse') {
+                                        newOptionsStr = '';
+                                    }
+
+                                    let newAnswer = formData.answer;
+                                    if (newType !== oldType && formData.answer) {
+                                        const checkOptions = newType === 'truefalse'
+                                            ? ['正确', '错误']
+                                            : newOptionsStr.split("\n").map(s => s.trim()).filter(Boolean);
+                                        newAnswer = convertAnswerFormat(formData.answer, newType, checkOptions);
+                                        toast.info(`答案已自动转换为${newType === 'multi' ? '多选' : newType === 'single' ? '单选' : '判断'}格式`);
+                                    }
+
                                     setFormData(prev => ({
                                         ...prev,
-                                        type: val,
+                                        type: newType,
                                         optionsStr: newOptionsStr,
-                                        answer: "" // 切换类型时清空答案
+                                        answer: newAnswer
                                     }));
                                 }}
                             >

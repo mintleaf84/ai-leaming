@@ -215,6 +215,28 @@ describe('Admin Actions', () => {
             expect(adminService.updateQuestion).toHaveBeenCalledWith(1, updateData);
         });
 
+        it('原单选题改为多选题时应允许使用选项标号答案', async () => {
+            vi.mocked(requireRole).mockResolvedValue({ id: 1, role: 'admin', username: 'admin' } as any);
+
+            vi.mocked(adminService.getQuestionById).mockResolvedValue({
+                id: 1, content: 'Old Content', options: ['选项甲', '选项乙', '选项丙'], tags: ['test'], type: 'single',
+                answer: 'A', explanation: 'Old explanation > 5 chars', dimension: 'knowledge'
+            } as any);
+            vi.mocked(adminService.updateQuestion).mockResolvedValue(true);
+
+            const updateData = {
+                options: ['选项甲', '选项乙', '选项丙'],
+                type: 'multi' as const,
+                answer: JSON.stringify(['A', 'C']),
+                tags: ['test']
+            };
+
+            const res = await updateQuestionAction({ id: 1, data: updateData });
+
+            expect(res.data?.success).toBe(true);
+            expect(adminService.updateQuestion).toHaveBeenCalledWith(1, updateData);
+        });
+
         it('不定项选择题答案不合法时应报错', async () => {
             vi.mocked(requireRole).mockResolvedValue({ id: 1, role: 'admin', username: 'admin' } as any);
 

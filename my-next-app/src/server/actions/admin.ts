@@ -78,17 +78,30 @@ export const updateQuestionAction = adminAction
     const finalAnswer = data.answer || currentQ.answer;
 
     if (finalType === 'multi' && finalAnswer) {
-      try {
-        const answers = JSON.parse(finalAnswer);
-        if (Array.isArray(answers)) {
-          const invalid = answers.find(a => !finalOptions.includes(a));
-          if (invalid) {
-            throw new Error(`正确答案必须是选项之一或有效的选项标号: ${invalid}`);
-          }
+      const isValidMultiAnswer = (answer: string) => {
+        if (finalOptions.includes(answer)) return true;
+        if (answer.length === 1 && answer >= 'A' && answer <= 'Z') {
+          const idx = answer.charCodeAt(0) - 65;
+          return Boolean(finalOptions[idx]);
         }
+        return false;
+      };
+
+      let answers: string[];
+      try {
+        const parsed = JSON.parse(finalAnswer);
+        if (!Array.isArray(parsed) || parsed.length === 0) {
+          throw new Error('多选题答案必须是非空数组');
+        }
+        answers = parsed;
       } catch (e: unknown) {
-        if (e instanceof Error && e.message.includes('正确答案')) throw e;
-        // 忽略 JSON 解析错误，可能是单选格式
+        if (e instanceof Error && e.message.includes('多选题答案必须是非空数组')) throw e;
+        throw new Error('多选题答案格式错误，必须是 JSON 数组');
+      }
+
+      const invalid = answers.find(a => !isValidMultiAnswer(a));
+      if (invalid) {
+        throw new Error(`正确答案必须是选项之一或有效的选项标号: ${invalid}`);
       }
     }
 

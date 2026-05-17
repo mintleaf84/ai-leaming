@@ -59,6 +59,9 @@ describe('practiceSchedulingService', () => {
         it('应该按 40/40/20 比例分配题目', async () => {
             const config = { mode: 'smart', limit: 10, types: [], dimensions: [], tags: [] };
             const userId = 1;
+            const stubbornRange = { min: 100, max: 200 };
+            const blindRange = { min: 200, max: 300 };
+            const regularRange = { min: 300, max: 400 };
 
             mockDrizzleDb.selectDistinct.mockReturnValue(createMockQuery([
                 { q: { id: 101, content: 'S1', options: '[]', tags: '[]', type: 'single', dimension: 'knowledge' } },
@@ -81,9 +84,9 @@ describe('practiceSchedulingService', () => {
 
             const result = await practiceSchedulingService.generateSmartSession(config, userId);
             expect(result).toHaveLength(10);
-            expect(result.filter(q => q.id >= 100 && q.id < 200)).toHaveLength(4);
-            expect(result.filter(q => q.id >= 200 && q.id < 300)).toHaveLength(4);
-            expect(result.filter(q => q.id >= 300 && q.id < 400)).toHaveLength(2);
+            expect(result.filter(q => q.id >= stubbornRange.min && q.id < stubbornRange.max)).toHaveLength(4);
+            expect(result.filter(q => q.id >= blindRange.min && q.id < blindRange.max)).toHaveLength(4);
+            expect(result.filter(q => q.id >= regularRange.min && q.id < regularRange.max)).toHaveLength(2);
         });
     });
 

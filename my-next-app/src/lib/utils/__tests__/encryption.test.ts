@@ -17,6 +17,7 @@ describe('Encryption Utils', () => {
             const result = encrypt('Test', secret);
             expect(result).toMatch(/^[A-Za-z0-9+/]+={0,2}$/);
             expect(result.length % 4).toBe(0);
+            expect(decrypt(result, secret)).toBe('Test');
         });
 
         it('应该抛出错误当没有密钥', () => {

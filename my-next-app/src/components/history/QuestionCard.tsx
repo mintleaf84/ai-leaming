@@ -1,25 +1,29 @@
 "use client";
 
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useCallback, forwardRef } from 'react';
 import { getErrorMessage } from '@/lib/utils/error';
-import { CheckCircle2, XCircle, BookOpen, ChevronDown, ChevronUp, BrainCircuit, Lightbulb, Loader2, Sparkles, RefreshCw } from 'lucide-react';
-import { formatDuration, indexToLetter, cn } from '@/lib/utils/utils';
-import { AnnotatableText } from './AnnotatableText';
-import dynamic from 'next/dynamic';
-const MarkdownViewer = dynamic<{ content: string; isUser?: boolean }>(() => import('@/components/chat/MarkdownViewer'), { ssr: false });
-import { generateMnemonicAction } from '@/server/actions/ai-mnemonic';
-import { generateFirstPrinciplesAction } from '@/server/actions/ai';
+import { CheckCircle2, XCircle, BookOpen, ChevronDown, ChevronUp, Flag } from 'lucide-react';
 import { toast } from 'sonner';
 import { sanitizeHtml } from '@/lib/utils/security';
+import { AnnotatableText } from './AnnotatableText';
 import {
     Tooltip,
     TooltipContent,
     TooltipProvider,
     TooltipTrigger,
 } from "@/components/ui/tooltip";
+import { generateMnemonicAction } from '@/server/actions/ai-mnemonic';
+import { generateFirstPrinciplesAction } from '@/server/actions/ai';
+import { submitQuestionFeedbackAction } from '@/server/actions/feedback';
+import { OptionsList } from './QuestionCard/OptionsList';
+import { StatsBar } from './QuestionCard/StatsBar';
+import { AIAnalysisSection } from './QuestionCard/AIAnalysisSection';
+import { AIMnemonicSection } from './QuestionCard/AIMnemonicSection';
+import { AIReviewSection } from './QuestionCard/AIReviewSection';
+import { FeedbackDialog } from './QuestionCard/FeedbackDialog';
 
 export interface QuestionLogData {
-    questionId?: number;           // 题目 ID (用于标注持久化)
+    questionId?: number;
     questionContent: string;
     options: string[];
     correctAnswer: string;
@@ -29,304 +33,73 @@ export interface QuestionLogData {
     tags: string[];
     source: string;
     explanation: string;
-    correctRatio?: number | null;      // 全站正确率
-    mostWrongAnswer?: string | null;   // 易错项
+    correctRatio?: number | null;
+    mostWrongAnswer?: string | null;
     reviewData?: unknown;
-    aiMnemonic?: string | null;        // AI 助记
-    material?: string | null;          // 材料内容（纯文本）
-    materialHtml?: string | null;      // 材料内容（HTML）
+    aiMnemonic?: string | null;
+    material?: string | null;
+    materialHtml?: string | null;
 }
 
-interface ReviewData {
-    quiz?: {
-        quiz: {
-            content: string;
-        };
-    };
-    regression?: {
-        challenges: {
-            content: string;
-        }[];
-    };
-}
-
-/**
- * 统计栏子组件
- */
-const StatsBar = ({ log }: { log: QuestionLogData }) => (
-    <div className="mt-6 pt-4 border-t border-border">
-        <div className="grid grid-cols-3 md:grid-cols-5 gap-2 md:gap-4 text-center">
-            <div>
-                <div className="text-base md:text-lg font-bold text-green-600">
-                    {parseAnswer(log.correctAnswer).join(', ') || '-'}
-                </div>
-                <div className="text-[10px] text-muted-foreground">正确答案</div>
-            </div>
-            <div>
-                <div className={cn("text-base md:text-lg font-bold", log.isCorrect ? "text-green-600" : "text-rose-500")}>
-                    {parseAnswer(log.userAnswer).join(', ') || '未作答'}
-                </div>
-                <div className="text-[10px] text-muted-foreground">你的答案</div>
-            </div>
-            {log.correctRatio != null && (
-                <div>
-                    <div className="text-base md:text-lg font-bold text-purple-600">
-                        {log.correctRatio}%
-                    </div>
-                    <div className="text-[10px] text-muted-foreground">正确率</div>
-                </div>
-            )}
-            <div>
-                <div className="text-base md:text-lg font-bold text-blue-600">
-                    {formatDuration(log.duration)}
-                </div>
-                <div className="text-[10px] text-muted-foreground">用时</div>
-            </div>
-            {log.mostWrongAnswer && (
-                <div>
-                    <div className="text-base md:text-lg font-bold text-amber-600">
-                        {log.mostWrongAnswer}
-                    </div>
-                    <div className="text-[10px] text-muted-foreground">易错项</div>
-                </div>
-            )}
-        </div>
-    </div>
-);
-
-/**
- * 第一性原理分析区域
- */
-const AIAnalysisSection = ({ 
-    fpAnalysis, 
-    isLoading, 
-    onGenerate, 
-    questionId 
-}: { 
-    fpAnalysis: string | null; 
-    isLoading: boolean; 
-    onGenerate: (force?: boolean) => void; 
-    questionId?: number;
-}) => (
-    <div className="p-5 bg-gradient-to-r from-amber-500/5 to-orange-500/5 border-b border-amber-500/10">
-        <div className="flex items-center justify-between mb-3">
-            <div className="flex items-center gap-2 text-amber-700 dark:text-amber-400 font-bold text-sm">
-                <Lightbulb className="h-4 w-4" />
-                第一性原理
-            </div>
-            {!fpAnalysis ? (
-                <button
-                    onClick={() => onGenerate(false)}
-                    disabled={isLoading}
-                    className="px-3 py-1.5 text-xs font-medium bg-amber-500/10 hover:bg-amber-500/20 text-amber-700 dark:text-amber-400 rounded-full border border-amber-500/20 transition-colors disabled:opacity-50 flex items-center gap-1.5"
-                >
-                    {isLoading ? (
-                        <>
-                            <Loader2 className="h-3 w-3 animate-spin" />
-                            分析中...
-                        </>
-                    ) : (
-                        '一键解析'
-                    )}
-                </button>
-            ) : (
-                <button
-                    onClick={() => onGenerate(true)}
-                    disabled={isLoading}
-                    className="p-1.5 text-amber-400 hover:text-amber-600 dark:hover:text-amber-300 transition-colors disabled:opacity-50"
-                    title="重新解析"
-                >
-                    <RefreshCw className={`h-4 w-4 ${isLoading ? 'animate-spin' : ''}`} />
-                </button>
-            )}
-        </div>
-
-        {fpAnalysis ? (
-            <div className="bg-card p-4 rounded-xl border border-amber-500/20 shadow-sm">
-                {questionId ? (
-                    <AnnotatableText
-                        text={fpAnalysis}
-                        questionId={questionId}
-                        className="text-sm text-foreground"
-                    />
-                ) : (
-                    <div className="text-sm text-foreground leading-relaxed whitespace-pre-wrap">
-                        {fpAnalysis}
-                    </div>
-                )}
-            </div>
-        ) : (
-            <div className="text-xs text-muted-foreground">
-                点击上方按钮，AI 将用底层逻辑为你解析这道题（≤200字）
-            </div>
-        )}
-    </div>
-);
-
-/**
- * AI 助记口诀区域
- */
-const AIMnemonicSection = ({
-    mnemonic,
-    isGenerating,
-    onGenerate,
-    questionId
-}: {
-    mnemonic: string | null;
-    isGenerating: boolean;
-    onGenerate: (force?: boolean) => void;
-    questionId?: number;
-}) => (
-    <div className="p-5 bg-purple-500/5 border-t border-purple-500/10">
-        <div className="flex items-center justify-between mb-3">
-            <div className="flex items-center gap-2 text-purple-700 dark:text-purple-400 font-bold text-sm">
-                <Sparkles className="h-4 w-4" />
-                AI 记忆大师
-            </div>
-            {!mnemonic && questionId && (
-                <button
-                    onClick={() => onGenerate(false)}
-                    disabled={isGenerating}
-                    className="px-3 py-1.5 text-xs font-medium bg-purple-500/10 hover:bg-purple-500/20 text-purple-700 dark:text-purple-400 rounded-full border border-purple-500/20 transition-colors disabled:opacity-50 flex items-center gap-1.5"
-                >
-                    {isGenerating ? (
-                        <>
-                            <Loader2 className="h-3 w-3 animate-spin" />
-                            生成中...
-                        </>
-                    ) : (
-                        '生成记忆口诀'
-                    )}
-                </button>
-            )}
-
-            {mnemonic && questionId && (
-                <button
-                    onClick={() => onGenerate(true)}
-                    disabled={isGenerating}
-                    className="p-1.5 text-purple-400 hover:text-purple-600 dark:hover:text-purple-300 transition-colors disabled:opacity-50"
-                    title="重新生成"
-                >
-                    <RefreshCw className={`h-4 w-4 ${isGenerating ? 'animate-spin' : ''}`} />
-                </button>
-            )}
-        </div>
-
-        {mnemonic ? (
-            <MarkdownViewer content={mnemonic} />
-        ) : (
-            <div className="text-xs text-muted-foreground">
-                遇到难记的知识点？点击按钮，AI 为你生成趣味口诀和脑洞联想。
-            </div>
-        )}
-    </div>
-);
-
-/**
- * AI 复盘子组件
- */
-const AIReviewSection = ({ reviewDataRaw }: { reviewDataRaw: unknown }) => {
-    if (!reviewDataRaw) return null;
-    const reviewData = reviewDataRaw as ReviewData;
-    
-    return (
-        <div className="p-5 bg-amber-500/5 border-t border-amber-500/20">
-            <div className="flex items-center gap-2 mb-3 text-amber-700 dark:text-amber-300 font-bold text-sm">
-                <BrainCircuit className="h-4 w-4" />
-                AI 复盘档案
-            </div>
-
-            {reviewData.quiz && (
-                <div className="mb-4">
-                    <div className="text-xs font-bold text-amber-700 dark:text-amber-400 mb-1">纠偏找茬变式</div>
-                    <div className="text-sm text-foreground bg-card p-3 rounded-xl border border-amber-500/20 shadow-sm">
-                        {reviewData.quiz.quiz.content}
-                    </div>
-                </div>
-            )}
-
-            {reviewData.regression && (
-                <div>
-                    <div className="text-xs font-bold text-purple-700 dark:text-purple-400 mb-1">回归挑战变式</div>
-                    <div className="space-y-2">
-                        {reviewData.regression.challenges.map((c, ci: number) => (
-                            <div key={ci} className="text-sm text-foreground bg-card p-3 rounded-xl border border-purple-500/20 shadow-sm">
-                                {c.content}
-                            </div>
-                        ))}
-                    </div>
-                </div>
-            )}
-        </div>
-    );
-};
-
+type FeedbackType = 'wrong_answer' | 'wrong_content' | 'wrong_explanation' | 'other';
 
 interface QuestionCardProps {
     log: QuestionLogData;
     index: number;
     isExpanded: boolean;
     onToggle: () => void;
-    refCallback?: (el: HTMLDivElement | null) => void;
 }
 
-/**
- * 解析答案字符串（兼容单选和多选）
- * 单选: "B" -> ["B"]
- * 多选 JSON: '["A","B"]' -> ["A", "B"]
- * 多选逗号分隔: "A,B,C" -> ["A", "B", "C"]
- */
-export function parseAnswer(answer: string): string[] {
-    if (!answer) return [];
-    const trimmed = answer.trim();
-
-    // 1. JSON 数组格式 '["A","B"]'
-    if (trimmed.startsWith('[')) {
-        try {
-            const parsed = JSON.parse(trimmed);
-            return Array.isArray(parsed) ? parsed : [answer];
-        } catch {
-            return [answer];
-        }
-    }
-
-    // 2. 逗号分隔格式 'A,B,C' (多选题/不定项选择题)
-    if (trimmed.includes(',')) {
-        return trimmed.split(',').map(s => s.trim());
-    }
-
-    // 3. 单选题 / 判断题：单个值
-    return [answer];
-}
-
-/**
- * 单个题目卡片组件
- * 包含：题目内容、选项、统计栏、解析区域、AI复盘
- */
-export const QuestionCard = React.memo(({ log, index, isExpanded, onToggle, refCallback }: QuestionCardProps) => {
-    // 第一性原理分析状态
+export const QuestionCard = React.memo(forwardRef<HTMLDivElement, QuestionCardProps>(({ log, index, isExpanded, onToggle }, ref) => {
     const [fpAnalysis, setFpAnalysis] = useState<string | null>(null);
     const [isLoadingFP, setIsLoadingFP] = useState(false);
-
-    // AI 助记状态 (初始值来自服务端，如果为空则允许手动生成)
     const [mnemonic, setMnemonic] = useState<string | null>(log.aiMnemonic || null);
     const [isGeneratingMnemonic, setIsGeneratingMnemonic] = useState(false);
-
     const isMounted = useRef(true);
+
+    const [showFeedbackDialog, setShowFeedbackDialog] = useState(false);
+    const [feedbackType, setFeedbackType] = useState<FeedbackType>('wrong_answer');
+    const [feedbackDescription, setFeedbackDescription] = useState('');
+    const [isSubmittingFeedback, setIsSubmittingFeedback] = useState(false);
+
     useEffect(() => {
         isMounted.current = true;
         return () => { isMounted.current = false; };
     }, []);
 
-    // 生成 AI 助记
-    const handleGenerateMnemonic = async (force: boolean = false) => {
+    const handleFirstPrinciples = useCallback(async (force = false) => {
+        if (fpAnalysis && !force) return;
+        setIsLoadingFP(true);
+        try {
+            const result = await generateFirstPrinciplesAction(
+                log.questionContent,
+                log.explanation,
+                log.correctAnswer,
+                log.isCorrect ? undefined : log.userAnswer,
+                force
+            );
+            if (isMounted.current) {
+                setFpAnalysis(result.analysis || null);
+                if (force && !result.cached) {
+                    toast.success('重新解析成功！');
+                }
+            }
+        } catch (error: unknown) {
+            console.error('第一性原理分析失败:', error);
+            if (isMounted.current) toast.error(getErrorMessage(error, '分析失败，请稍后重试'));
+        } finally {
+            if (isMounted.current) setIsLoadingFP(false);
+        }
+    }, [fpAnalysis, log.questionContent, log.explanation, log.correctAnswer, log.isCorrect, log.userAnswer]);
+
+    const handleGenerateMnemonic = useCallback(async (force = false) => {
         if ((!force && mnemonic) || isGeneratingMnemonic || !log.questionId) return;
 
         setIsGeneratingMnemonic(true);
         try {
             const result = await generateMnemonicAction(String(log.questionId), force);
             if (!isMounted.current) return;
-            
+
             if (result.success && result.content) {
                 setMnemonic(result.content);
                 if (!result.cached) {
@@ -341,224 +114,220 @@ export const QuestionCard = React.memo(({ log, index, isExpanded, onToggle, refC
         } finally {
             if (isMounted.current) setIsGeneratingMnemonic(false);
         }
-    };
+    }, [mnemonic, isGeneratingMnemonic, log.questionId]);
 
-    // 获取第一性原理分析
-    const handleFirstPrinciples = async (force: boolean = false) => {
-        if ((!force && fpAnalysis) || isLoadingFP) return; // 已有结果且不强制重新生成，或正在加载
-
-        setIsLoadingFP(true);
-
-        try {
-            const result = await generateFirstPrinciplesAction(
-                log.questionContent,
-                log.explanation,
-                log.correctAnswer,
-                log.isCorrect ? undefined : log.userAnswer,
-                force // 传递 force 参数
-            );
-            if (!isMounted.current) return;
-            
-            setFpAnalysis(result.analysis);
-            if (force && !result.cached) {
-                toast.success('重新解析成功！');
-            }
-        } catch (error: unknown) {
-            console.error('第一性原理分析失败:', error);
-            if (isMounted.current) toast.error(getErrorMessage(error, '分析失败，请稍后重试'));
-        } finally {
-            if (isMounted.current) setIsLoadingFP(false);
+    const handleSubmitFeedback = useCallback(async () => {
+        if (!log.questionId) {
+            toast.error('无法提交反馈，题目 ID 不存在');
+            return;
         }
-    };
+
+        setIsSubmittingFeedback(true);
+        try {
+            const result = await submitQuestionFeedbackAction({
+                questionId: log.questionId,
+                feedbackType,
+                description: feedbackDescription || undefined,
+            });
+
+            if (result.success) {
+                toast.success('感谢反馈！题目纠错已提交');
+                setShowFeedbackDialog(false);
+                setFeedbackDescription('');
+            } else {
+                toast.error(result.message || '提交失败');
+            }
+        } catch (error) {
+            console.error('提交反馈失败:', error);
+            toast.error('提交失败，请稍后重试');
+        } finally {
+            setIsSubmittingFeedback(false);
+        }
+    }, [log.questionId, feedbackType, feedbackDescription]);
+
+    const refCallback = useCallback((node: HTMLDivElement | null) => {
+        if (typeof ref === 'function') ref(node);
+        else if (ref) ref.current = node;
+    }, [ref]);
 
     const hasMaterial = !!log.materialHtml;
 
     return (
-        <div
-            ref={refCallback}
-            className="bg-card rounded-2xl shadow-sm border border-border overflow-hidden scroll-mt-24 md:scroll-mt-20"
-            style={{ contentVisibility: 'auto', containIntrinsicSize: '0 300px' }}
-        >
-            <div className={`flex flex-col md:flex-row ${hasMaterial ? 'md:h-[600px]' : ''}`}>
-
-                {/* 左侧：材料区域 (仅当有材料时显示) */}
-                {hasMaterial && (
-                    <div className="md:w-1/2 p-5 border-b md:border-b-0 md:border-r border-border bg-muted/10 overflow-auto scrollbar-thin">
-                        <div className="sticky top-0 z-10 mb-4">
-                            <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-300">
-                                材料
-                            </span>
-                        </div>
-                        <div
-                            className="prose prose-sm dark:prose-invert max-w-none text-foreground leading-relaxed"
-                            dangerouslySetInnerHTML={{ __html: sanitizeHtml(log.materialHtml || '') }}
-                        />
-                    </div>
-                )}
-
-                {/* 右侧：题目与交互区域 (如果有材料，宽度为 1/2，否则占满) */}
-                <div className={`flex flex-col ${hasMaterial ? 'md:w-1/2 md:h-full md:overflow-auto scrollbar-thin' : 'w-full'}`}>
-                    {/* 题目头部 */}
-                    <div className={`p-5 flex-1 ${log.isCorrect ? 'border-l-4 border-l-green-500' : 'border-l-4 border-l-red-500'}`}>
-                        <div className="flex items-start gap-3">
-                            <div className="flex items-center gap-2 flex-shrink-0">
-                                <span className="text-sm font-bold text-muted-foreground">{index + 1}.</span>
-                                {log.isCorrect ? (
-                                    <CheckCircle2 className="h-5 w-5 text-green-500" />
-                                ) : (
-                                    <XCircle className="h-5 w-5 text-red-500" />
-                                )}
+        <>
+            <div
+                ref={refCallback}
+                className="bg-card rounded-2xl shadow-sm border border-border overflow-hidden scroll-mt-24 md:scroll-mt-20"
+                style={{ contentVisibility: 'auto', containIntrinsicSize: '0 300px' }}
+            >
+                <div className={`flex flex-col md:flex-row ${hasMaterial ? 'md:h-[600px]' : ''}`}>
+                    {hasMaterial && (
+                        <div className="md:w-1/2 p-5 border-b md:border-b-0 md:border-r border-border bg-muted/10 overflow-auto scrollbar-thin">
+                            <div className="sticky top-0 z-10 mb-4">
+                                <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-300">
+                                    材料
+                                </span>
                             </div>
-                            <div className="flex-1 min-w-0">
-                                {/* 题干内容 */}
-                                <div
-                                    className="font-medium text-foreground leading-relaxed"
-                                    dangerouslySetInnerHTML={{ __html: sanitizeHtml(log.questionContent) }}
-                                />
-
-                                {/* 选项列表 */}
-                                {log.options.length > 0 && (
-                                    <div className="mt-3 space-y-2">
-                                        {log.options.map((opt, oi) => {
-                                            const letter = indexToLetter(oi);
-                                            const correctAnswers = parseAnswer(log.correctAnswer);
-                                            const userAnswers = parseAnswer(log.userAnswer);
-                                            const isCorrectOption = correctAnswers.includes(letter);
-                                            const isUserChoice = userAnswers.includes(letter) || userAnswers.includes(opt);
-
-                                            return (
-                                                <div
-                                                    key={oi}
-                                                    className={`flex items-start gap-2 p-2 rounded-lg text-sm ${isCorrectOption
-                                                        ? 'bg-green-500/10 text-green-700 dark:text-green-400'
-                                                        : isUserChoice && !log.isCorrect
-                                                            ? 'bg-red-500/10 text-red-700 dark:text-red-400'
-                                                            : 'text-muted-foreground'
-                                                        }`}
-                                                >
-                                                    <span className={`w-5 h-5 rounded-full flex items-center justify-center text-xs font-bold flex-shrink-0 ${isCorrectOption
-                                                        ? 'bg-green-500 text-white'
-                                                        : isUserChoice && !log.isCorrect
-                                                            ? 'bg-red-500 text-white'
-                                                            : 'bg-muted text-muted-foreground'
-                                                        }`}>
-                                                        {letter}
-                                                    </span>
-                                                    <span>{opt}</span>
-                                                </div>
-                                            );
-                                        })}
-                                    </div>
-                                )}
-                            </div>
+                            <div
+                                className="prose prose-sm dark:prose-invert max-w-none text-foreground leading-relaxed"
+                                dangerouslySetInnerHTML={{ __html: sanitizeHtml(log.materialHtml || '') }}
+                            />
                         </div>
+                    )}
 
-                        {/* 统计栏 */}
-                        <StatsBar log={log} />
+                    <div className={`flex flex-col ${hasMaterial ? 'md:w-1/2 md:h-full md:overflow-auto scrollbar-thin' : 'w-full'}`}>
+                        <div className={`p-5 flex-1 ${log.isCorrect ? 'border-l-4 border-l-green-500' : 'border-l-4 border-l-red-500'}`}>
+                            <div className="flex items-start gap-3">
+                                <div className="flex items-center gap-2 flex-shrink-0">
+                                    <span className="text-sm font-bold text-muted-foreground">{index + 1}.</span>
+                                    {log.isCorrect ? (
+                                        <CheckCircle2 className="h-5 w-5 text-green-500" />
+                                    ) : (
+                                        <XCircle className="h-5 w-5 text-red-500" />
+                                    )}
+                                </div>
+                                <div className="flex-1 min-w-0">
+                                    <div
+                                        className="font-medium text-foreground leading-relaxed"
+                                        dangerouslySetInnerHTML={{ __html: sanitizeHtml(log.questionContent) }}
+                                    />
 
-                        {/* 展开按钮 */}
-                        <button
-                            onClick={onToggle}
-                            className="mt-4 w-full flex items-center justify-center gap-1 text-sm text-muted-foreground hover:text-primary transition-colors py-2 border border-border/50 rounded-lg hover:bg-muted/50"
-                        >
-                            {isExpanded ? (
-                                <>收起详情 <ChevronUp className="h-4 w-4" /></>
-                            ) : (
-                                <>查看解析 <ChevronDown className="h-4 w-4" /></>
-                            )}
-                        </button>
-                    </div>
+                                    {log.options.length > 0 && (
+                                        <OptionsList
+                                            options={log.options}
+                                            correctAnswer={log.correctAnswer}
+                                            userAnswer={log.userAnswer}
+                                            isCorrect={log.isCorrect}
+                                        />
+                                    )}
+                                </div>
+                            </div>
 
-                    {/* 展开的详情区域 */}
-                    {isExpanded && (
-                        <div className="border-t border-border">
-                            {/* 第一性原理分析 */}
-                            <AIAnalysisSection
-                                fpAnalysis={fpAnalysis}
-                                isLoading={isLoadingFP}
-                                onGenerate={handleFirstPrinciples}
-                                questionId={log.questionId}
+                            <StatsBar
+                                correctAnswer={log.correctAnswer}
+                                userAnswer={log.userAnswer}
+                                isCorrect={log.isCorrect}
+                                duration={log.duration}
+                                correctRatio={log.correctRatio}
+                                mostWrongAnswer={log.mostWrongAnswer}
                             />
 
-                            {/* 解析 */}
-
-                            {/* 解析 */}
-                            {log.explanation && (
-                                <div className="p-5 bg-blue-500/5">
-                                    <div className="flex items-center gap-2 mb-3 text-blue-700 dark:text-blue-400 font-bold text-sm">
-                                        <BookOpen className="h-4 w-4" />
-                                        详细解析
-                                    </div>
-                                    {log.questionId ? (
-                                        <AnnotatableText
-                                            text={log.explanation}
-                                            questionId={log.questionId}
-                                            className="text-sm text-foreground"
-                                        />
+                            <div className="mt-4 flex gap-2">
+                                <button
+                                    onClick={onToggle}
+                                    className="flex-1 flex items-center justify-center gap-1 text-sm text-muted-foreground hover:text-primary transition-colors py-2 border border-border/50 rounded-lg hover:bg-muted/50"
+                                >
+                                    {isExpanded ? (
+                                        <>收起详情 <ChevronUp className="h-4 w-4" /></>
                                     ) : (
-                                        <div className="text-sm text-foreground leading-relaxed whitespace-pre-wrap">
-                                            {log.explanation}
+                                        <>查看解析 <ChevronDown className="h-4 w-4" /></>
+                                    )}
+                                </button>
+                                {log.questionId && (
+                                    <button
+                                        onClick={() => setShowFeedbackDialog(true)}
+                                        className="px-3 flex items-center justify-center gap-1 text-sm text-muted-foreground hover:text-amber-600 transition-colors py-2 border border-border/50 rounded-lg hover:bg-amber-500/10"
+                                        title="题目有误？反馈给我们"
+                                    >
+                                        <Flag className="h-4 w-4" />
+                                        <span className="hidden sm:inline">题目有误</span>
+                                    </button>
+                                )}
+                            </div>
+                        </div>
+
+                        {isExpanded && (
+                            <div className="border-t border-border">
+                                <AIAnalysisSection
+                                    fpAnalysis={fpAnalysis}
+                                    isLoading={isLoadingFP}
+                                    onGenerate={handleFirstPrinciples}
+                                    questionId={log.questionId}
+                                />
+
+                                {log.explanation && (
+                                    <div className="p-5 bg-blue-500/5">
+                                        <div className="flex items-center gap-2 mb-3 text-blue-700 dark:text-blue-400 font-bold text-sm">
+                                            <BookOpen className="h-4 w-4" />
+                                            详细解析
+                                        </div>
+                                        {log.questionId ? (
+                                            <AnnotatableText
+                                                text={log.explanation}
+                                                questionId={log.questionId}
+                                                className="text-sm text-foreground"
+                                            />
+                                        ) : (
+                                            <div className="text-sm text-foreground leading-relaxed whitespace-pre-wrap">
+                                                {log.explanation}
+                                            </div>
+                                        )}
+                                    </div>
+                                )}
+
+                                <AIMnemonicSection
+                                    mnemonic={mnemonic}
+                                    isGenerating={isGeneratingMnemonic}
+                                    onGenerate={handleGenerateMnemonic}
+                                    questionId={log.questionId}
+                                />
+
+                                <div className="p-5 bg-muted/30 space-y-3">
+                                    {log.tags.length > 0 && (
+                                        <div>
+                                            <div className="text-xs font-bold text-muted-foreground mb-2">考点</div>
+                                            <div className="flex flex-wrap gap-2">
+                                                {log.tags.map((tag, i) => {
+                                                    const parts = tag.split('/');
+                                                    const leaf = parts[parts.length - 1];
+                                                    const fullPath = parts.join(' > ');
+
+                                                    return (
+                                                        <TooltipProvider key={i}>
+                                                            <Tooltip delayDuration={300}>
+                                                                <TooltipTrigger asChild>
+                                                                    <span className="px-3 py-1 bg-primary/10 text-primary text-sm font-medium rounded-full cursor-help hover:bg-primary/20 transition-colors">
+                                                                        {leaf}
+                                                                    </span>
+                                                                </TooltipTrigger>
+                                                                <TooltipContent>
+                                                                    <p className="text-xs">{fullPath}</p>
+                                                                </TooltipContent>
+                                                            </Tooltip>
+                                                        </TooltipProvider>
+                                                    );
+                                                })}
+                                            </div>
+                                        </div>
+                                    )}
+                                    {log.source && (
+                                        <div>
+                                            <div className="text-xs font-bold text-muted-foreground mb-1">来源</div>
+                                            <div className="text-sm text-blue-600 dark:text-blue-400">
+                                                {log.source}
+                                            </div>
                                         </div>
                                     )}
                                 </div>
-                            )}
 
-
-                            {/* AI 助记 */}
-                            <AIMnemonicSection
-                                mnemonic={mnemonic}
-                                isGenerating={isGeneratingMnemonic}
-                                onGenerate={handleGenerateMnemonic}
-                                questionId={log.questionId}
-                            />
-
-                            {/* 考点和来源 */}
-                            <div className="p-5 bg-muted/30 space-y-3">
-                                {log.tags.length > 0 && (
-                                    <div>
-                                        <div className="text-xs font-bold text-muted-foreground mb-2">考点</div>
-                                        <div className="flex flex-wrap gap-2">
-                                            {log.tags.map((tag, i) => {
-                                                const parts = tag.split('/');
-                                                const leaf = parts[parts.length - 1];
-                                                const fullPath = parts.join(' > ');
-
-                                                return (
-                                                    <TooltipProvider key={i}>
-                                                        <Tooltip delayDuration={300}>
-                                                            <TooltipTrigger asChild>
-                                                                <span className="px-3 py-1 bg-primary/10 text-primary text-sm font-medium rounded-full cursor-help hover:bg-primary/20 transition-colors">
-                                                                    {leaf}
-                                                                </span>
-                                                            </TooltipTrigger>
-                                                            <TooltipContent>
-                                                                <p className="text-xs">{fullPath}</p>
-                                                            </TooltipContent>
-                                                        </Tooltip>
-                                                    </TooltipProvider>
-                                                );
-                                            })}
-                                        </div>
-                                    </div>
-                                )}
-                                {log.source && (
-                                    <div>
-                                        <div className="text-xs font-bold text-muted-foreground mb-1">来源</div>
-                                        <div className="text-sm text-blue-600 dark:text-blue-400">
-                                            {log.source}
-                                        </div>
-                                    </div>
-                                )}
+                                <AIReviewSection reviewDataRaw={log.reviewData} />
                             </div>
-
-                            {/* AI 复盘 */}
-                            <AIReviewSection reviewDataRaw={log.reviewData} />
-                        </div>
-                    )}
+                        )}
+                    </div>
                 </div>
             </div>
-        </div>
+
+            <FeedbackDialog
+                open={showFeedbackDialog}
+                onOpenChange={setShowFeedbackDialog}
+                feedbackType={feedbackType}
+                setFeedbackType={setFeedbackType}
+                feedbackDescription={feedbackDescription}
+                setFeedbackDescription={setFeedbackDescription}
+                isSubmitting={isSubmittingFeedback}
+                onSubmit={handleSubmitFeedback}
+            />
+        </>
     );
-});
+}));
 
 QuestionCard.displayName = 'QuestionCard';

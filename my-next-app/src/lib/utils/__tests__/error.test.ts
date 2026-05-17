@@ -1,62 +1,77 @@
+// @vitest-environment node
 import { describe, it, expect } from 'vitest';
 import { getErrorMessage, isSqliteConstraintError } from '../error';
 
-describe('getErrorMessage', () => {
-    it('Error 实例应返回其 message', () => {
-        const err = new Error('测试错误');
-        expect(getErrorMessage(err)).toBe('测试错误');
-    });
-
-    it('字符串类型错误应原样返回', () => {
-        expect(getErrorMessage('字符串错误')).toBe('字符串错误');
-    });
-
-    it('非 Error/字符串类型应返回默认 fallback', () => {
-        expect(getErrorMessage(42)).toBe('未知错误');
-        expect(getErrorMessage(null)).toBe('未知错误');
-        expect(getErrorMessage(undefined)).toBe('未知错误');
-        expect(getErrorMessage({ code: 'ERR' })).toBe('未知错误');
-    });
-
-    it('自定义 fallback 应在无法提取消息时返回', () => {
-        expect(getErrorMessage(null, '自定义默认')).toBe('自定义默认');
-        expect(getErrorMessage(undefined, '自定义默认')).toBe('自定义默认');
-    });
-
-    it('Error.message 为空字符串时应返回 fallback', () => {
-        const err = new Error('');
-        expect(getErrorMessage(err)).toBe('未知错误');
-    });
-
-    it('空字符串类型错误应返回 fallback', () => {
-        expect(getErrorMessage('')).toBe('未知错误');
-    });
-});
-
-describe('isSqliteConstraintError', () => {
-    it('带有匹配 code 的 Error 应返回 true', () => {
-        const err = Object.assign(new Error('UNIQUE constraint failed'), {
-            code: 'SQLITE_CONSTRAINT_UNIQUE',
+describe('Error Utils', () => {
+    describe('getErrorMessage', () => {
+        it('应该从 Error 对象提取消息', () => {
+            const error = new Error('Something went wrong');
+            expect(getErrorMessage(error)).toBe('Something went wrong');
         });
-        expect(isSqliteConstraintError(err, 'SQLITE_CONSTRAINT_UNIQUE')).toBe(true);
-    });
 
-    it('code 不匹配时应返回 false', () => {
-        const err = Object.assign(new Error('Other error'), {
-            code: 'SQLITE_CONSTRAINT_NOTNULL',
+        it('应该处理空消息的 Error', () => {
+            const error = new Error('');
+            expect(getErrorMessage(error)).toBe('未知错误');
         });
-        expect(isSqliteConstraintError(err, 'SQLITE_CONSTRAINT_UNIQUE')).toBe(false);
+
+        it('应该处理字符串错误', () => {
+            expect(getErrorMessage('String error')).toBe('String error');
+        });
+
+        it('应该处理空字符串', () => {
+            expect(getErrorMessage('')).toBe('未知错误');
+        });
+
+        it('应该处理 null', () => {
+            expect(getErrorMessage(null)).toBe('未知错误');
+        });
+
+        it('应该处理 undefined', () => {
+            expect(getErrorMessage(undefined)).toBe('未知错误');
+        });
+
+        it('应该处理对象', () => {
+            expect(getErrorMessage({ code: 500 })).toBe('未知错误');
+        });
+
+        it('应该使用自定义 fallback', () => {
+            const error = new Error('');
+            expect(getErrorMessage(error, 'Custom error')).toBe('Custom error');
+        });
+
+        it('应该处理数字错误', () => {
+            expect(getErrorMessage(404)).toBe('未知错误');
+        });
     });
 
-    it('非 Error 类型应返回 false', () => {
-        expect(isSqliteConstraintError('字符串', 'SQLITE_CONSTRAINT_UNIQUE')).toBe(false);
-        expect(isSqliteConstraintError(42, 'SQLITE_CONSTRAINT_UNIQUE')).toBe(false);
-        expect(isSqliteConstraintError(null, 'SQLITE_CONSTRAINT_UNIQUE')).toBe(false);
-        expect(isSqliteConstraintError(undefined, 'SQLITE_CONSTRAINT_UNIQUE')).toBe(false);
-    });
+    describe('isSqliteConstraintError', () => {
+        it('应该识别匹配的 SQLite 错误码', () => {
+            const error = new Error('UNIQUE constraint failed') as Error & { code?: string };
+            error.code = 'SQLITE_CONSTRAINT_UNIQUE';
+            expect(isSqliteConstraintError(error, 'SQLITE_CONSTRAINT_UNIQUE')).toBe(true);
+        });
 
-    it('没有 code 属性的 Error 应返回 false', () => {
-        const err = new Error('普通错误');
-        expect(isSqliteConstraintError(err, 'SQLITE_CONSTRAINT_UNIQUE')).toBe(false);
+        it('应该拒绝不匹配的错误码', () => {
+            const error = new Error('Some error') as Error & { code?: string };
+            error.code = 'SQLITE_CONSTRAINT_UNIQUE';
+            expect(isSqliteConstraintError(error, 'SQLITE_CONSTRAINT_CHECK')).toBe(false);
+        });
+
+        it('应该处理没有 code 属性的 Error', () => {
+            const error = new Error('Some error');
+            expect(isSqliteConstraintError(error, 'SQLITE_CONSTRAINT_UNIQUE')).toBe(false);
+        });
+
+        it('应该处理 null', () => {
+            expect(isSqliteConstraintError(null, 'SQLITE_CONSTRAINT_UNIQUE')).toBe(false);
+        });
+
+        it('应该处理 undefined', () => {
+            expect(isSqliteConstraintError(undefined, 'SQLITE_CONSTRAINT_UNIQUE')).toBe(false);
+        });
+
+        it('应该处理字符串错误', () => {
+            expect(isSqliteConstraintError('Some error', 'SQLITE_CONSTRAINT_UNIQUE')).toBe(false);
+        });
     });
 });

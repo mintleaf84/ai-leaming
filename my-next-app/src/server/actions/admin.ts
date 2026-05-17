@@ -88,17 +88,17 @@ export const updateQuestionAction = adminAction
         return false;
       };
 
-      let answers: string[];
-      try {
-        const parsed = JSON.parse(finalAnswer);
-        if (!Array.isArray(parsed) || parsed.length === 0) {
-          throw new Error('多选题答案必须是非空数组');
+      const parsed = (() => {
+        try {
+          return JSON.parse(finalAnswer);
+        } catch {
+          throw new Error('多选题答案格式错误，必须是 JSON 数组');
         }
-        answers = parsed;
-      } catch (e: unknown) {
-        if (e instanceof Error && e.message.includes('多选题答案必须是非空数组')) throw e;
-        throw new Error('多选题答案格式错误，必须是 JSON 数组');
+      })();
+      if (!Array.isArray(parsed) || parsed.length === 0) {
+        throw new Error('多选题答案必须是非空数组');
       }
+      const answers = parsed;
 
       const invalid = answers.find(a => !isValidMultiAnswer(a));
       if (invalid) {

@@ -40,6 +40,12 @@ vi.mock('@/lib/db', () => ({
 }));
 
 describe('practiceSchedulingService', () => {
+    const TEST_ID_RANGES = {
+        stubborn: { min: 100, max: 200 },
+        blindSpot: { min: 200, max: 300 },
+        regular: { min: 300, max: 400 }
+    };
+
     beforeEach(() => {
         vi.clearAllMocks();
     });
@@ -59,9 +65,6 @@ describe('practiceSchedulingService', () => {
         it('应该按 40/40/20 比例分配题目', async () => {
             const config = { mode: 'smart', limit: 10, types: [], dimensions: [], tags: [] };
             const userId = 1;
-            const stubbornQuestionRange = { min: 100, max: 200 };
-            const blindSpotQuestionRange = { min: 200, max: 300 };
-            const regularQuestionRange = { min: 300, max: 400 };
 
             mockDrizzleDb.selectDistinct.mockReturnValue(createMockQuery([
                 { q: { id: 101, content: 'Stubborn1', options: '[]', tags: '[]', type: 'single', dimension: 'knowledge' } },
@@ -84,9 +87,9 @@ describe('practiceSchedulingService', () => {
 
             const result = await practiceSchedulingService.generateSmartSession(config, userId);
             expect(result).toHaveLength(10);
-            expect(result.filter(q => q.id >= stubbornQuestionRange.min && q.id < stubbornQuestionRange.max)).toHaveLength(4);
-            expect(result.filter(q => q.id >= blindSpotQuestionRange.min && q.id < blindSpotQuestionRange.max)).toHaveLength(4);
-            expect(result.filter(q => q.id >= regularQuestionRange.min && q.id < regularQuestionRange.max)).toHaveLength(2);
+            expect(result.filter(q => q.id >= TEST_ID_RANGES.stubborn.min && q.id < TEST_ID_RANGES.stubborn.max)).toHaveLength(4);
+            expect(result.filter(q => q.id >= TEST_ID_RANGES.blindSpot.min && q.id < TEST_ID_RANGES.blindSpot.max)).toHaveLength(4);
+            expect(result.filter(q => q.id >= TEST_ID_RANGES.regular.min && q.id < TEST_ID_RANGES.regular.max)).toHaveLength(2);
         });
     });
 

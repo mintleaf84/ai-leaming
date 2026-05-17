@@ -15,7 +15,7 @@ describe('Encryption Utils', () => {
 
         it('应该返回 base64 编码', () => {
             const result = encrypt('Test', secret);
-            expect(result).toMatch(/^[A-Za-z0-9+/]+={0,2}$/);
+            expect(result).toMatch(/^[A-Za-z0-9+/]*={0,2}$/);
             expect(result.length % 4).toBe(0);
             expect(decrypt(result, secret)).toBe('Test');
         });

@@ -61,19 +61,29 @@ describe('practiceSchedulingService', () => {
             const userId = 1;
 
             mockDrizzleDb.selectDistinct.mockReturnValue(createMockQuery([
-                { q: { id: 1, content: 'Q1', options: '[]', tags: '[]', type: 'single', dimension: 'knowledge' } },
-                { q: { id: 2, content: 'Q2', options: '[]', tags: '[]', type: 'single', dimension: 'knowledge' } },
-                { q: { id: 3, content: 'Q3', options: '[]', tags: '[]', type: 'single', dimension: 'knowledge' } },
-                { q: { id: 4, content: 'Q4', options: '[]', tags: '[]', type: 'single', dimension: 'knowledge' } }
+                { q: { id: 101, content: 'S1', options: '[]', tags: '[]', type: 'single', dimension: 'knowledge' } },
+                { q: { id: 102, content: 'S2', options: '[]', tags: '[]', type: 'single', dimension: 'knowledge' } },
+                { q: { id: 103, content: 'S3', options: '[]', tags: '[]', type: 'single', dimension: 'knowledge' } },
+                { q: { id: 104, content: 'S4', options: '[]', tags: '[]', type: 'single', dimension: 'knowledge' } }
             ]));
 
-            mockDrizzleDb.select.mockReturnValue(createMockQuery([
-                { id: 5, content: 'Q5', options: '[]', tags: '[]', type: 'single', dimension: 'knowledge' },
-                { id: 6, content: 'Q6', options: '[]', tags: '[]', type: 'single', dimension: 'knowledge' }
-            ]));
+            mockDrizzleDb.select
+                .mockReturnValueOnce(createMockQuery([
+                    { id: 201, content: 'B1', options: '[]', tags: '[]', type: 'single', dimension: 'knowledge' },
+                    { id: 202, content: 'B2', options: '[]', tags: '[]', type: 'single', dimension: 'knowledge' },
+                    { id: 203, content: 'B3', options: '[]', tags: '[]', type: 'single', dimension: 'knowledge' },
+                    { id: 204, content: 'B4', options: '[]', tags: '[]', type: 'single', dimension: 'knowledge' }
+                ]))
+                .mockReturnValueOnce(createMockQuery([
+                    { id: 301, content: 'R1', options: '[]', tags: '[]', type: 'single', dimension: 'knowledge' },
+                    { id: 302, content: 'R2', options: '[]', tags: '[]', type: 'single', dimension: 'knowledge' }
+                ]));
 
             const result = await practiceSchedulingService.generateSmartSession(config, userId);
-            expect(result.length).toBeGreaterThanOrEqual(4);
+            expect(result).toHaveLength(10);
+            expect(result.filter(q => q.id >= 100 && q.id < 200)).toHaveLength(4);
+            expect(result.filter(q => q.id >= 200 && q.id < 300)).toHaveLength(4);
+            expect(result.filter(q => q.id >= 300 && q.id < 400)).toHaveLength(2);
         });
     });
 

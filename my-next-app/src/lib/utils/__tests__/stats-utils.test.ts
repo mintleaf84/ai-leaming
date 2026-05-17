@@ -16,7 +16,7 @@ describe('Stats Utils', () => {
             expect(result).toBe(3);
         });
 
-        it('应该返回 0 当昨天没有练习', () => {
+        it('应该返回 1 当只有今天有练习', () => {
             const dates = ['2025-06-15'];
             const result = calculateStreakFromDates(dates, '2025-06-15', '2025-06-14');
             expect(result).toBe(1);
@@ -36,12 +36,6 @@ describe('Stats Utils', () => {
 
         it('应该处理有间断的练习', () => {
             const dates = ['2025-06-15', '2025-06-13', '2025-06-12'];
-            const result = calculateStreakFromDates(dates, '2025-06-15', '2025-06-14');
-            expect(result).toBe(1);
-        });
-
-        it('应该处理单天练习', () => {
-            const dates = ['2025-06-15'];
             const result = calculateStreakFromDates(dates, '2025-06-15', '2025-06-14');
             expect(result).toBe(1);
         });

@@ -15,7 +15,8 @@ describe('Security Utils', () => {
         });
 
         it('应该移除 onclick 事件属性', () => {
-            const result = sanitizeHtml('<button onclick="alert(1)">Click</button>');
+            const result = sanitizeHtml('<a href="https://example.com" onclick="alert(1)">Click</a>');
+            expect(result).toContain('<a');
             expect(result).not.toContain('onclick');
         });
 

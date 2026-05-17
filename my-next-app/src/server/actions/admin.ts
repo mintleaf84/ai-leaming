@@ -83,7 +83,7 @@ export const updateQuestionAction = adminAction
         if (finalOptions.includes(answer)) return true;
         if (/^[A-Z]$/.test(answer)) {
           const idx = answer.charCodeAt(0) - CHAR_CODE_A;
-          return Boolean(finalOptions[idx]);
+          return idx >= 0 && idx < finalOptions.length;
         }
         return false;
       };

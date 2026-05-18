@@ -27,6 +27,8 @@ import {
 import { Checkbox } from "@/components/ui/checkbox";
 import { EditQuestionDialog } from './EditQuestionDialog';
 
+type QuestionType = 'single' | 'multi' | 'truefalse' | 'fill_blank';
+
 export function QuestionManager() {
     // 状态管理
     const [questions, setQuestions] = useState<Question[]>([]);
@@ -38,6 +40,7 @@ export function QuestionManager() {
     const [page, setPage] = useState(1);
     const [pageSize, setPageSize] = useState(20);
     const [filters, setFilters] = useState<QuestionFilters>({});
+    const [questionType, setQuestionType] = useState<QuestionType | 'all'>('all');
 
     // 批量操作
     const [selectedIds, setSelectedIds] = useState<number[]>([]);
@@ -52,7 +55,10 @@ export function QuestionManager() {
             const result = await getQuestionsAction({
                 limit: pageSize,
                 offset,
-                filters: currentFilters
+                filters: {
+                    ...currentFilters,
+                    type: questionType === 'all' ? undefined : [questionType]
+                }
             });
 
             if (result.serverError) {
@@ -78,7 +84,7 @@ export function QuestionManager() {
         } finally {
             setLoading(false);
         }
-    }, [page, pageSize, filters]);
+    }, [page, pageSize, filters, questionType]);
 
     useEffect(() => {
         loadQuestions();
@@ -203,6 +209,25 @@ export function QuestionManager() {
                         </SelectContent>
                     </Select>
 
+                    <Select
+                        value={questionType}
+                        onValueChange={(val) => {
+                            setQuestionType(val as QuestionType | 'all');
+                            setPage(1);
+                        }}
+                    >
+                        <SelectTrigger className="w-[120px]">
+                            <SelectValue placeholder="题型" />
+                        </SelectTrigger>
+                        <SelectContent>
+                            <SelectItem value="all">所有题型</SelectItem>
+                            <SelectItem value="single">单选题</SelectItem>
+                            <SelectItem value="multi">多选题</SelectItem>
+                            <SelectItem value="truefalse">判断题</SelectItem>
+                            <SelectItem value="fill_blank">填空题</SelectItem>
+                        </SelectContent>
+                    </Select>
+
                     <Button variant="secondary" onClick={handleSearch}>
                         筛选
                     </Button>
@@ -251,6 +276,7 @@ export function QuestionManager() {
                                 </th>
                                 <th className="p-4 w-16">ID</th>
                                 <th className="p-4">题干内容</th>
+                                <th className="p-4 w-24">题型</th>
                                 <th className="p-4 w-32">标签</th>
                                 <th className="p-4 w-24">维度</th>
                                 <th className="p-4 w-24 text-right">操作</th>
@@ -259,13 +285,13 @@ export function QuestionManager() {
                         <tbody className="divide-y divide-border">
                             {loading ? (
                                 <tr>
-                                    <td colSpan={6} className="h-32 text-center">
+                                    <td colSpan={7} className="h-32 text-center">
                                         <Loader2 className="w-6 h-6 animate-spin mx-auto text-muted-foreground" />
                                     </td>
                                 </tr>
                             ) : questions.length === 0 ? (
                                 <tr>
-                                    <td colSpan={6} className="p-8 text-center text-muted-foreground">
+                                    <td colSpan={7} className="p-8 text-center text-muted-foreground">
                                         没有找到符合条件的题目。
                                     </td>
                                 </tr>
@@ -281,6 +307,20 @@ export function QuestionManager() {
                                         <td className="p-4 text-muted-foreground">#{q.id}</td>
                                         <td className="p-4 font-medium text-foreground max-w-lg truncate cursor-pointer hover:text-blue-600" title="点击编辑" onClick={() => setEditingQuestion(q)}>
                                             <div className="line-clamp-2">{q.content}</div>
+                                        </td>
+                                        <td className="p-4">
+                                            <span className={`px-2 py-1 text-xs rounded-full font-medium ${
+                                                q.type === 'single' ? 'bg-blue-500/10 text-blue-600 dark:text-blue-400' :
+                                                q.type === 'multi' ? 'bg-purple-500/10 text-purple-600 dark:text-purple-400' :
+                                                q.type === 'truefalse' ? 'bg-orange-500/10 text-orange-600 dark:text-orange-400' :
+                                                q.type === 'fill_blank' ? 'bg-teal-500/10 text-teal-600 dark:text-teal-400' :
+                                                'bg-gray-500/10 text-gray-600'
+                                            }`}>
+                                                {q.type === 'single' ? '单选' :
+                                                 q.type === 'multi' ? '多选' :
+                                                 q.type === 'truefalse' ? '判断' :
+                                                 q.type === 'fill_blank' ? '填空' : q.type}
+                                            </span>
                                         </td>
                                         <td className="p-4">
                                             <div className="flex flex-wrap gap-1">

@@ -7,6 +7,7 @@ export const QuestionFiltersSchema = z.object({
   search: z.string().optional(),
   tag: z.string().optional(),
   dimension: z.enum(['knowledge', 'understanding', 'application']).optional(),
+  type: z.array(z.enum(['single', 'multi', 'truefalse', 'fill_blank'])).optional(),
 }).optional();
 
 /**
@@ -21,7 +22,7 @@ export const QuestionUpdateSchema = z.object({
     explanation: z.string().optional(),
     tags: z.array(z.string()).optional(),
     dimension: z.enum(['knowledge', 'understanding', 'application']).optional(),
-    type: z.enum(['single', 'multi', 'truefalse']).optional(),
+    type: z.enum(['single', 'multi', 'truefalse', 'fill_blank']).optional(),
   })
 });
 

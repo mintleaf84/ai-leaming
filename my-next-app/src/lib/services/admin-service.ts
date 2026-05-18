@@ -15,6 +15,7 @@ export interface QuestionFilters {
     search?: string;
     tag?: string;
     dimension?: Dimension;
+    type?: Array<'single' | 'multi' | 'truefalse' | 'fill_blank'>;
 }
 
 export const adminService = {
@@ -99,6 +100,9 @@ export const adminService = {
         }
         if (filters?.dimension) {
             whereClauses.push(eq(drizzleSchema.questions.dimension, filters.dimension));
+        }
+        if (filters?.type) {
+            whereClauses.push(inArray(drizzleSchema.questions.type, filters.type));
         }
 
         const finalWhere = whereClauses.length > 0 ? and(...whereClauses) : undefined;

@@ -37,7 +37,7 @@ interface EditQuestionDialogProps {
  */
 function convertAnswerFormat(
     currentAnswer: string,
-    targetType: 'single' | 'multi' | 'truefalse',
+    targetType: 'single' | 'multi' | 'truefalse' | 'fill_blank',
     options: string[]
 ): string {
     if (!currentAnswer) return '';
@@ -68,6 +68,8 @@ function convertAnswerFormat(
                 return options[0];
             }
             return firstAnswer;
+        case 'fill_blank':
+            return currentArr.join(';');
         default:
             return currentAnswer;
     }
@@ -93,7 +95,7 @@ export function EditQuestionDialog({
         explanation: "",
         tagsStr: "",
         dimension: "knowledge",
-        type: "single"
+        type: "single" as 'single' | 'multi' | 'truefalse' | 'fill_blank'
     });
     const [loading, setLoading] = useState(false);
 
@@ -135,8 +137,9 @@ function convertAnswerToDisplay(answer: string | null | undefined, options: stri
 
 useEffect(() => {
         if (question && open) {
+            const type = question.type || 'single';
             const isJsonAns = question.answer?.trim().startsWith('[') && question.answer?.includes('"');
-            const type = question.type || (isJsonAns ? 'multi' : 'single');
+            const resolvedType = type === 'fill_blank' ? 'fill_blank' : (isJsonAns ? 'multi' : type);
 
             const optionsStr = type === 'truefalse'
                 ? '正确\n错误'
@@ -146,7 +149,9 @@ useEffect(() => {
                 ? ['正确', '错误']
                 : (Array.isArray(question.options) ? question.options : []);
 
-            const displayAnswer = convertAnswerToDisplay(question.answer, options, type);
+            const displayAnswer = type === 'fill_blank' 
+                ? question.answer || ''
+                : convertAnswerToDisplay(question.answer, options, type);
 
             setFormData({
                 content: question.content || "",
@@ -155,7 +160,7 @@ useEffect(() => {
                 explanation: question.explanation || "",
                 tagsStr: Array.isArray(question.tags) ? question.tags.join(", ") : "",
                 dimension: question.dimension || "knowledge",
-                type: type
+                type: resolvedType
             });
         }
     }, [question, open]);
@@ -166,17 +171,20 @@ useEffect(() => {
         setLoading(true);
         try {
             const isTrueFalse = formData.type === 'truefalse';
-            // 判断题选项固定为 ["正确", "错误"]
+            const isFillBlank = formData.type === 'fill_blank';
+            // 判断题选项固定为 ["正确", "错误"]，填空题无需选项
             const options = isTrueFalse
                 ? ['正确', '错误']
+                : isFillBlank
+                ? []
                 : formData.optionsStr.split("\n").map(s => s.trim()).filter(Boolean);
             const tags = formData.tagsStr.split(/[,，]/).map(s => s.trim()).filter(Boolean);
 
             if (!formData.content) throw new Error("题干不能为空");
-            if (!isTrueFalse && options.length < 2) throw new Error("至少需要2个选项");
+            if (!isFillBlank && !isTrueFalse && options.length < 2) throw new Error("至少需要 2 个选项");
             if (!formData.answer) throw new Error("答案不能为空");
 
-            // 校验答案并转换为索引格式 (A, B, C, ...)
+            // 校验答案并转换为对应格式
             let answerForSave: string;
             if (formData.type === 'truefalse') {
                 if (formData.answer !== 'A' && formData.answer !== 'B') throw new Error("判断题答案必须为 A（正确）或 B（错误）");
@@ -185,7 +193,7 @@ useEffect(() => {
                 const optIndex = options.indexOf(formData.answer);
                 if (optIndex === -1) throw new Error("单选题答案必须是选项之一");
                 answerForSave = getOptionIndex(optIndex);
-            } else {
+            } else if (formData.type === 'multi') {
                 try {
                     const ansArr = JSON.parse(formData.answer);
                     if (!Array.isArray(ansArr) || ansArr.length === 0) throw new Error("多选题至少选择一个答案");
@@ -197,16 +205,21 @@ useEffect(() => {
                 } catch (_e) {
                     throw new Error("多选题答案格式错误");
                 }
+            } else if (formData.type === 'fill_blank') {
+                // 填空题：答案保持原样，分号分隔多空
+                answerForSave = formData.answer.trim();
+            } else {
+                answerForSave = formData.answer;
             }
 
             const updateData = {
                 content: formData.content,
-                options,
+                options: options.length > 0 ? options : undefined,
                 answer: answerForSave,
                 explanation: formData.explanation,
                 tags,
                 dimension: formData.dimension as 'knowledge' | 'understanding' | 'application',
-                type: formData.type as 'single' | 'multi' | 'truefalse',
+                type: formData.type as 'single' | 'multi' | 'truefalse' | 'fill_blank',
             };
 
             const result = await updateQuestionAction({ id: question.id, data: updateData });
@@ -218,6 +231,8 @@ useEffect(() => {
                 onSuccess();
                 onOpenChange(false);
             }
+        } catch (_e) {
+            throw _e;
         } finally {
             setLoading(false);
         }
@@ -270,12 +285,14 @@ useEffect(() => {
                             <Select
                                 value={formData.type}
                                 onValueChange={(val) => {
-                                    const newType = val as 'single' | 'multi' | 'truefalse';
+                                    const newType = val as 'single' | 'multi' | 'truefalse' | 'fill_blank';
                                     const oldType = formData.type;
 
                                     let newOptionsStr = formData.optionsStr;
                                     if (newType === 'truefalse') {
                                         newOptionsStr = '正确\n错误';
+                                    } else if (newType === 'fill_blank') {
+                                        newOptionsStr = '';
                                     } else if (newType !== oldType && oldType === 'truefalse') {
                                         newOptionsStr = '';
                                     }
@@ -286,7 +303,8 @@ useEffect(() => {
                                             ? ['正确', '错误']
                                             : newOptionsStr.split("\n").map(s => s.trim()).filter(Boolean);
                                         newAnswer = convertAnswerFormat(formData.answer, newType, checkOptions);
-                                        toast.info(`答案已自动转换为${newType === 'multi' ? '多选' : newType === 'single' ? '单选' : '判断'}格式`);
+                                        const typeLabel = newType === 'multi' ? '多选' : newType === 'single' ? '单选' : newType === 'truefalse' ? '判断' : '填空';
+                                        toast.info(`答案已自动转换为${typeLabel}格式`);
                                     }
 
                                     setFormData(prev => ({
@@ -304,6 +322,7 @@ useEffect(() => {
                                     <SelectItem value="single">单项选择</SelectItem>
                                     <SelectItem value="multi">不定项选择 (多选)</SelectItem>
                                     <SelectItem value="truefalse">判断题</SelectItem>
+                                    <SelectItem value="fill_blank">填空题</SelectItem>
                                 </SelectContent>
                             </Select>
                         </div>
@@ -326,12 +345,21 @@ useEffect(() => {
                         </div>
                     </div>
 
-                    {/* 判断题时隐藏选项编辑区，显示固定提示 */}
+                    {/* 判断题和填空题时隐藏选项编辑区 */}
                     {formData.type === 'truefalse' ? (
                         <div className="space-y-2">
                             <Label>选项 (判断题固定)</Label>
                             <div className="p-3 rounded-md border bg-muted/30 text-sm text-muted-foreground">
                                 A. 正确 &nbsp;/&nbsp; B. 错误（系统自动填充，无需手动修改）
+                            </div>
+                        </div>
+                    ) : formData.type === 'fill_blank' ? (
+                        <div className="space-y-2">
+                            <Label>题干格式说明</Label>
+                            <div className="p-3 rounded-md border bg-muted/30 text-sm text-muted-foreground space-y-2">
+                                <p>请在题干中使用 <code className="px-2 py-1 bg-muted rounded">_____</code>（5 个下划线）标记填空位置。</p>
+                                <p className="text-xs">示例：中国古代教育思想的起源是在____时期。</p>
+                                <p className="text-xs text-blue-600">注：系统会自动将已有的 input 标签或下划线转换为标准格式。</p>
                             </div>
                         </div>
                     ) : (
@@ -342,7 +370,7 @@ useEffect(() => {
                                 value={formData.optionsStr}
                                 onChange={(e) => setFormData(prev => ({ ...prev, optionsStr: e.target.value }))}
                                 rows={4}
-                                placeholder="选项A&#10;选项B&#10;选项C&#10;选项D"
+                                placeholder="选项 A&#10;选项 B&#10;选项 C&#10;选项 D"
                                 required
                                 className="font-mono text-sm"
                             />
@@ -351,7 +379,7 @@ useEffect(() => {
 
                     <div className="space-y-2">
                         <Label className="text-primary font-bold">
-                            正确答案 ({formData.type === 'single' ? '单选' : formData.type === 'truefalse' ? '判断' : '多选'})
+                            正确答案 ({formData.type === 'single' ? '单选' : formData.type === 'truefalse' ? '判断' : formData.type === 'fill_blank' ? '填空' : '多选'})
                         </Label>
 
                         {formData.type === 'truefalse' ? (
@@ -386,6 +414,24 @@ useEffect(() => {
                                     )}
                                 </SelectContent>
                             </Select>
+                        ) : formData.type === 'fill_blank' ? (
+                            <div className="space-y-2">
+                                <div className="text-xs text-muted-foreground mb-2">
+                                    多个答案请用中文分号 <code className="px-1.5 py-0.5 bg-muted rounded">；</code> 分隔
+                                </div>
+                                <Textarea
+                                    value={formData.answer}
+                                    onChange={(e) => setFormData(prev => ({ ...prev, answer: e.target.value }))}
+                                    rows={3}
+                                    placeholder="例如：春秋；春秋时期"
+                                    className="font-mono text-sm"
+                                />
+                                {formData.answer.includes('；') && (
+                                    <div className="text-xs text-blue-600">
+                                        检测到 {formData.answer.split(';').filter(Boolean).length} 个空
+                                    </div>
+                                )}
+                            </div>
                         ) : (
                             <div className="grid grid-cols-1 md:grid-cols-2 gap-2 border border-primary/20 p-3 rounded-md bg-muted/10">
                                 {parsedOptions.length > 0 ? (

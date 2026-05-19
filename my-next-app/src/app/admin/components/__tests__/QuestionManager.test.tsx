@@ -399,4 +399,36 @@ describe('QuestionManager 集成测试', () => {
         // 页码显示更新
         expect(screen.getByText(/当前第 2\/2 页/)).toBeInTheDocument()
     })
+
+    // ----------------------------------------------------------
+    // 场景 10：题型筛选 - 选择后不立即请求，点击筛选后再生效
+    // ----------------------------------------------------------
+    it('切换题型下拉后不应立即请求，点击"筛选"后才携带题型参数请求', async () => {
+        const user = userEvent.setup()
+
+        render(<QuestionManager />)
+        await screen.findByText('第一道测试题')
+
+        expect(mockGetQuestions).toHaveBeenCalledTimes(1)
+
+        // 打开题型下拉并选择“填空题”
+        const typeTrigger = screen.getAllByRole('combobox')[1]
+        await user.click(typeTrigger)
+        await user.click(screen.getByRole('option', { name: '填空题' }))
+
+        // 仅切换下拉，不应触发请求
+        expect(mockGetQuestions).toHaveBeenCalledTimes(1)
+
+        // 点击筛选后，才触发带题型条件的请求
+        await user.click(screen.getByRole('button', { name: '筛选' }))
+
+        await waitFor(() => {
+            expect(mockGetQuestions).toHaveBeenCalledTimes(2)
+        })
+        expect(mockGetQuestions).toHaveBeenLastCalledWith(expect.objectContaining({
+            filters: expect.objectContaining({
+                type: 'fill_blank',
+            }),
+        }))
+    })
 })

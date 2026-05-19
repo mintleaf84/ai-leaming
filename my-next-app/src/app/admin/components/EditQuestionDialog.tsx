@@ -32,6 +32,14 @@ interface EditQuestionDialogProps {
     onSuccess: () => void;
 }
 
+function normalizeFillBlankAnswer(answer: string): string {
+    return answer
+        .split(/[;；]/)
+        .map(s => s.trim())
+        .filter(Boolean)
+        .join('；');
+}
+
 /**
  * 将答案转换为目标类型对应的格式
  */
@@ -69,7 +77,7 @@ function convertAnswerFormat(
             }
             return firstAnswer;
         case 'fill_blank':
-            return currentArr.join(';');
+            return normalizeFillBlankAnswer(currentArr.join('；'));
         default:
             return currentAnswer;
     }
@@ -137,21 +145,21 @@ function convertAnswerToDisplay(answer: string | null | undefined, options: stri
 
 useEffect(() => {
         if (question && open) {
-            const type = question.type || 'single';
+            const type = question.type;
             const isJsonAns = question.answer?.trim().startsWith('[') && question.answer?.includes('"');
-            const resolvedType = type === 'fill_blank' ? 'fill_blank' : (isJsonAns ? 'multi' : type);
+            const resolvedType = type || (isJsonAns ? 'multi' : 'single');
 
-            const optionsStr = type === 'truefalse'
+            const optionsStr = resolvedType === 'truefalse'
                 ? '正确\n错误'
                 : (Array.isArray(question.options) ? question.options.join("\n") : "");
 
-            const options = type === 'truefalse'
+            const options = resolvedType === 'truefalse'
                 ? ['正确', '错误']
                 : (Array.isArray(question.options) ? question.options : []);
 
-            const displayAnswer = type === 'fill_blank' 
-                ? question.answer || ''
-                : convertAnswerToDisplay(question.answer, options, type);
+            const displayAnswer = resolvedType === 'fill_blank'
+                ? normalizeFillBlankAnswer(question.answer || '')
+                : convertAnswerToDisplay(question.answer, options, resolvedType);
 
             setFormData({
                 content: question.content || "",
@@ -207,14 +215,14 @@ useEffect(() => {
                 }
             } else if (formData.type === 'fill_blank') {
                 // 填空题：答案保持原样，分号分隔多空
-                answerForSave = formData.answer.trim();
+                answerForSave = normalizeFillBlankAnswer(formData.answer);
             } else {
                 answerForSave = formData.answer;
             }
 
             const updateData = {
                 content: formData.content,
-                options: options.length > 0 ? options : undefined,
+                options: isFillBlank ? [] : (options.length > 0 ? options : undefined),
                 answer: answerForSave,
                 explanation: formData.explanation,
                 tags,
@@ -231,8 +239,9 @@ useEffect(() => {
                 onSuccess();
                 onOpenChange(false);
             }
-        } catch (_e) {
-            throw _e;
+        } catch (e) {
+            const message = e instanceof Error ? e.message : "更新失败";
+            toast.error(message);
         } finally {
             setLoading(false);
         }
@@ -240,6 +249,7 @@ useEffect(() => {
 
     // 实时解析选项以供选择
     const parsedOptions = formData.optionsStr.split("\n").map(s => s.trim()).filter(Boolean);
+    const fillBlankAnswerCount = normalizeFillBlankAnswer(formData.answer).split('；').filter(Boolean).length;
 
     // 处理多选变动
     const handleMultiAnswerChange = (option: string, checked: boolean) => {
@@ -426,9 +436,9 @@ useEffect(() => {
                                     placeholder="例如：春秋；春秋时期"
                                     className="font-mono text-sm"
                                 />
-                                {formData.answer.includes('；') && (
+                                {fillBlankAnswerCount > 1 && (
                                     <div className="text-xs text-blue-600">
-                                        检测到 {formData.answer.split(';').filter(Boolean).length} 个空
+                                        检测到 {fillBlankAnswerCount} 个空
                                     </div>
                                 )}
                             </div>

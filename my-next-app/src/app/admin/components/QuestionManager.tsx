@@ -55,10 +55,7 @@ export function QuestionManager() {
             const result = await getQuestionsAction({
                 limit: pageSize,
                 offset,
-                filters: {
-                    ...currentFilters,
-                    type: questionType === 'all' ? undefined : [questionType]
-                }
+                filters: currentFilters
             });
 
             if (result.serverError) {
@@ -84,7 +81,7 @@ export function QuestionManager() {
         } finally {
             setLoading(false);
         }
-    }, [page, pageSize, filters, questionType]);
+    }, [page, pageSize, filters]);
 
     useEffect(() => {
         loadQuestions();
@@ -93,8 +90,15 @@ export function QuestionManager() {
 
     // 搜索处理
     const handleSearch = () => {
+        const nextFilters: QuestionFilters = {
+            ...filters,
+            type: questionType === 'all' ? undefined : questionType,
+        };
+        setFilters(nextFilters);
         setPage(1); // 重置到第一页
-        loadQuestions(filters);
+        if (page === 1) {
+            loadQuestions(nextFilters);
+        }
     };
 
     const handleKeyDown = (e: React.KeyboardEvent) => {
@@ -172,6 +176,7 @@ export function QuestionManager() {
         if (filters.search) params.append('search', filters.search);
         if (filters.dimension) params.append('dimension', filters.dimension);
         if (filters.tag) params.append('tag', filters.tag);
+        if (filters.type) params.append('type', filters.type);
         
         window.location.href = `/api/admin/export/questions?${params.toString()}`;
     };
@@ -213,7 +218,6 @@ export function QuestionManager() {
                         value={questionType}
                         onValueChange={(val) => {
                             setQuestionType(val as QuestionType | 'all');
-                            setPage(1);
                         }}
                     >
                         <SelectTrigger className="w-[120px]">

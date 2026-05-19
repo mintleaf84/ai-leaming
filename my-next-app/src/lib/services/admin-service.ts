@@ -15,7 +15,7 @@ export interface QuestionFilters {
     search?: string;
     tag?: string;
     dimension?: Dimension;
-    type?: Array<'single' | 'multi' | 'truefalse' | 'fill_blank'>;
+    type?: 'single' | 'multi' | 'truefalse' | 'fill_blank';
 }
 
 export const adminService = {
@@ -102,7 +102,7 @@ export const adminService = {
             whereClauses.push(eq(drizzleSchema.questions.dimension, filters.dimension));
         }
         if (filters?.type) {
-            whereClauses.push(inArray(drizzleSchema.questions.type, filters.type));
+            whereClauses.push(eq(drizzleSchema.questions.type, filters.type));
         }
 
         const finalWhere = whereClauses.length > 0 ? and(...whereClauses) : undefined;
@@ -178,8 +178,12 @@ export const adminService = {
      */
     async updateQuestion(id: number, data: Record<string, unknown>) {
         const updateData: Record<string, unknown> = { ...data };
-        if (data.options) updateData.options = JSON.stringify(data.options);
-        if (data.tags) updateData.tags = JSON.stringify(data.tags);
+        if (Object.prototype.hasOwnProperty.call(data, 'options')) {
+            updateData.options = JSON.stringify(data.options);
+        }
+        if (Object.prototype.hasOwnProperty.call(data, 'tags')) {
+            updateData.tags = JSON.stringify(data.tags);
+        }
 
         await drizzleDb.update(drizzleSchema.questions)
             .set(updateData)

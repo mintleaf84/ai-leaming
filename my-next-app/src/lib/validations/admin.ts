@@ -7,7 +7,7 @@ export const QuestionFiltersSchema = z.object({
   search: z.string().optional(),
   tag: z.string().optional(),
   dimension: z.enum(['knowledge', 'understanding', 'application']).optional(),
-  type: z.array(z.enum(['single', 'multi', 'truefalse', 'fill_blank'])).optional(),
+  type: z.enum(['single', 'multi', 'truefalse', 'fill_blank']).optional(),
 }).optional();
 
 /**

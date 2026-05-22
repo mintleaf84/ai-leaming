@@ -70,6 +70,7 @@ export const createManualWrongQuestionAction = authenticatedAction
     .inputSchema(QuestionSchema)
     .action(async ({ parsedInput: input, ctx }) => {
         const { user } = ctx;
+        const dimension = z.enum(['knowledge', 'understanding', 'application']).parse(input.dimension);
         const [createdQuestion] = await drizzleDb.insert(questions)
             .values({
                 content: input.content,
@@ -77,7 +78,7 @@ export const createManualWrongQuestionAction = authenticatedAction
                 answer: input.answer,
                 explanation: input.explanation,
                 tags: JSON.stringify(input.tags),
-                dimension: input.dimension,
+                dimension,
                 type: input.type,
                 source: 'manual_wrong_book',
             })

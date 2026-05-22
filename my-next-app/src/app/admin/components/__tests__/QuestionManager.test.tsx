@@ -399,4 +399,60 @@ describe('QuestionManager 集成测试', () => {
         // 页码显示更新
         expect(screen.getByText(/当前第 2\/2 页/)).toBeInTheDocument()
     })
+
+    // ----------------------------------------------------------
+    // 场景 10：填空题编辑弹窗 - 无需选项，答案按 ；/| 规则保存
+    // ----------------------------------------------------------
+    it('填空题编辑弹窗：选项区域应隐藏，答案应被保存为文本格式', async () => {
+        // 测试意图：验证 fill_blank 类型下选项不必填、答案按填空规则处理
+        const user = userEvent.setup()
+        mockUpdateQuestion.mockResolvedValue({ data: { success: true } })
+        mockGetQuestions
+            .mockResolvedValueOnce(
+                mockQuestionsResponse([
+                    createMockQuestion({
+                        id: 3,
+                        content: '中国的首都是_____。',
+                        options: [],
+                        answer: '北京|Beijing',
+                        type: 'fill_blank',
+                    }),
+                ], 1)
+            )
+            .mockResolvedValueOnce(
+                mockQuestionsResponse([
+                    createMockQuestion({
+                        id: 3,
+                        content: '中国的首都是_____。',
+                        options: [],
+                        answer: '北京|Beijing',
+                        type: 'fill_blank',
+                    }),
+                ], 1)
+            )
+
+        render(<QuestionManager />)
+        await screen.findByText('中国的首都是_____。')
+
+        // 点击题干打开编辑弹窗
+        await user.click(screen.getByText('中国的首都是_____。'))
+
+        const dialog = await screen.findByRole('dialog')
+
+        // 填空题应显示"选项 (填空题无需选项)"提示，而非选项输入框
+        expect(within(dialog).getByText(/填空题无需设置选项/)).toBeInTheDocument()
+        expect(within(dialog).queryByPlaceholderText(/选项A/)).not.toBeInTheDocument()
+
+        // 点击"保存更改"
+        const saveButton = within(dialog).getByRole('button', { name: '保存更改' })
+        await user.click(saveButton)
+
+        // updateQuestionAction 应被调用，且答案字段不含 JSON 格式
+        await waitFor(() => {
+            expect(mockUpdateQuestion).toHaveBeenCalled()
+            const callArg = mockUpdateQuestion.mock.calls[0][0] as { id: number; data: { answer: string } }
+            // 保存的答案应为纯文本，不应是 JSON 数组格式
+            expect(callArg.data.answer).not.toMatch(/^\[/)
+        })
+    })
 })

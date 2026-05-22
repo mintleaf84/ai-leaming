@@ -17,7 +17,8 @@ import {
     Sparkles,
     FolderOpen,
     FolderPlus,
-    FileUp
+    FileUp,
+    PlusCircle
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -30,12 +31,15 @@ import { RecommendedQuestionsDialog } from './components/RecommendedQuestionsDia
 import { FolderTreeView } from './components/FolderTreeView';
 import { FolderQuestionList } from './components/FolderQuestionList';
 import { AddToFolderDialog } from './components/AddToFolderDialog';
+import { AddQuestionDialog } from './components/AddQuestionDialog';
 import { Pagination } from '@/components/ui/pagination';
 import { PageJumpInput } from '@/components/ui/page-jump-input';
 
 export default function WrongBookPage() {
     // 复练排序模式：priority = 按错误频次+遗忘权重，random = 纯随机
     const [practiceMode, setPracticeMode] = useState<'priority' | 'random'>('priority');
+    // 手动录入弹窗状态
+    const [showAddQuestionDialog, setShowAddQuestionDialog] = useState(false);
 
     const {
         // 数据
@@ -92,7 +96,9 @@ export default function WrongBookPage() {
         handleDeleteFolder,
         openAddToFolderDialog,
         closeAddToFolderDialog,
-        handleAddToFolder
+        handleAddToFolder,
+        // 数据刷新
+        loadData
     } = useWrongBookController();
 
     // 加载状态
@@ -110,12 +116,18 @@ export default function WrongBookPage() {
                             <BookOpen className="text-red-500 h-8 w-8" />
                             错题本
                         </h1>
-                        <Link href="/questions/import">
-                            <Button variant="outline" size="sm">
-                                <FileUp className="h-4 w-4 mr-1" />
-                                PDF 导入
+                        <div className="flex items-center gap-2">
+                            <Button variant="outline" size="sm" onClick={() => setShowAddQuestionDialog(true)}>
+                                <PlusCircle className="h-4 w-4 mr-1" />
+                                手动录入
                             </Button>
-                        </Link>
+                            <Link href="/questions/import">
+                                <Button variant="outline" size="sm">
+                                    <FileUp className="h-4 w-4 mr-1" />
+                                    PDF 导入
+                                </Button>
+                            </Link>
+                        </div>
                     </div>
                     <p className="text-muted-foreground mt-1">
                         智能汇集易错知识点，攻克薄弱环节
@@ -494,6 +506,16 @@ export default function WrongBookPage() {
                 isSubmitting={isFolderSubmitting}
                 onAddToFolder={handleAddToFolder}
                 onCreateFolder={handleCreateFolder}
+            />
+
+            {/* 手动录入题目弹窗 */}
+            <AddQuestionDialog
+                open={showAddQuestionDialog}
+                onOpenChange={setShowAddQuestionDialog}
+                onSuccess={() => {
+                    // 刷新数据
+                    loadData();
+                }}
             />
         </div>
     );

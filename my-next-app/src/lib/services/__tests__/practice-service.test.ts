@@ -257,6 +257,23 @@ describe('Practice Service', () => {
             expect(result.isCorrect).toBe(true);
         });
 
+        it('should support fill_blank answers with | candidates', async () => {
+            const mockQuestion = {
+                answer: '教育学|教育学原理；赫尔巴特|赫尔巴特',
+                options: '[]',
+                type: 'fill_blank'
+            };
+
+            (mockDrizzleDb.select as any).mockReturnValue(mockDrizzleDb);
+            (mockDrizzleDb.from as any).mockReturnValue(mockDrizzleDb);
+            (mockDrizzleDb.where as any).mockReturnValue(mockDrizzleDb);
+            (mockDrizzleDb.limit as any).mockResolvedValue([mockQuestion]);
+
+            const result = await practiceService.submitAnswerWithValidation(1, 's1', 101, '教育学原理；赫尔巴特', 1000);
+
+            expect(result.isCorrect).toBe(true);
+        });
+
         it('should throw error when question not found', async () => {
             (mockDrizzleDb.select as any).mockReturnValue(mockDrizzleDb);
             (mockDrizzleDb.from as any).mockReturnValue(mockDrizzleDb);

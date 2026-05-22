@@ -22,7 +22,7 @@ import {
 } from "@/components/ui/select";
 import { Checkbox } from "@/components/ui/checkbox";
 import { toast } from "sonner";
-import { importQuestionsAction } from "@/server/actions/admin";
+import { createManualWrongQuestionAction } from "@/server/actions/wrong-questions";
 
 interface AddQuestionDialogProps {
     open: boolean;
@@ -114,13 +114,13 @@ export function AddQuestionDialog({
                 content: formData.content,
                 options,
                 answer: answerForSave,
-                explanation: formData.explanation || "暂无解析",
+                explanation: formData.explanation || "暂无解析内容",
                 tags,
                 dimension: formData.dimension as 'knowledge' | 'understanding' | 'application',
                 type: formData.type as 'single' | 'multi' | 'truefalse' | 'fill_blank',
             };
 
-            const result = await importQuestionsAction([questionData]);
+            const result = await createManualWrongQuestionAction(questionData);
             
             if (result.serverError) {
                 toast.error(result.serverError || "添加失败");

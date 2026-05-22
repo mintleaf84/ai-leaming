@@ -53,12 +53,15 @@ function checkAnswerCorrectness(
     options: string[],
     questionType?: string
 ): boolean {
-    // 填空题：按中文分号分割，逐空精确匹配
+    // 填空题：按中文分号分割，逐空匹配（支持单空多答案用 | 分隔）
     if (questionType === 'fill_blank') {
         const userBlanks = userAnswer.split('；').map(s => s.trim());
         const correctBlanks = correctAnswer.split('；').map(s => s.trim());
         if (userBlanks.length !== correctBlanks.length) return false;
-        return userBlanks.every((ub, i) => ub === correctBlanks[i]);
+        return userBlanks.every((ub, i) => {
+            const acceptedAnswers = correctBlanks[i].split('|').map(s => s.trim());
+            return acceptedAnswers.some(ans => ans === ub);
+        });
     }
 
     // 1. 精确匹配

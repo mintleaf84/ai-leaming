@@ -208,11 +208,14 @@ export function usePracticeController(enableIntelligentReview: boolean = false) 
 
             let isCorrect = false;
             if (currentQuestion.type === 'fill_blank') {
-                // 填空题：按中文分号分割，逐空精确匹配
+                // 填空题：按中文分号分割，逐空匹配（支持单空多答案用 | 分隔）
                 const userBlanks = answer.split('；').map(s => s.trim());
                 const correctBlanks = currentQuestion.answer.split('；').map(s => s.trim());
                 isCorrect = userBlanks.length === correctBlanks.length
-                    && userBlanks.every((ub, i) => ub === correctBlanks[i]);
+                    && userBlanks.every((ub, i) => {
+                        const acceptedAnswers = correctBlanks[i].split('|').map(s => s.trim());
+                        return acceptedAnswers.some(ans => ans === ub);
+                    });
             } else if (currentQuestion.type === 'multi') {
                 const parseAnswer = (val: string): string[] => {
                     try { return JSON.parse(val); } catch { return val.split(',').map(s => s.trim()); }

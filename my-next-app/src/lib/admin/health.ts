@@ -103,7 +103,7 @@ export async function getDatabaseStats(): Promise<DatabaseStats> {
     const tableStats: TableStats[] = await Promise.all(tables.map(async t => {
         try {
             const result = await drizzleDb.get<{ count: number }>(
-                sql`SELECT COUNT(*) as count FROM ${sql.raw(t.name)}`
+                sql`SELECT COUNT(*) as count FROM ${sql.identifier(t.name)}`
             );
             return { name: t.name, rowCount: result?.count || 0 };
         } catch (_e) {

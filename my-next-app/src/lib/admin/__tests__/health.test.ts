@@ -11,7 +11,7 @@ import { createMockQuery } from '@/lib/__tests__/db-mock-utils';
 
 const { mockDrizzleDb, mockDrizzleSchema } = vi.hoisted(() => {
     const mockDrizzleDb = {
-        select: vi.fn(() => createMockQuery([])),
+        select: vi.fn(),
         insert: vi.fn().mockReturnValue({ values: vi.fn().mockResolvedValue({}) }),
         update: vi.fn().mockReturnValue({ set: vi.fn().mockReturnValue({ where: vi.fn().mockResolvedValue({}) }) }),
         delete: vi.fn().mockReturnValue({ where: vi.fn().mockResolvedValue({}) }),
@@ -46,6 +46,7 @@ vi.mock('fs', () => ({
 describe('Admin Health Service', () => {
     beforeEach(() => {
         vi.clearAllMocks();
+        mockDrizzleDb.select.mockReturnValue(createMockQuery([]));
     });
 
     describe('formatBytes', () => {

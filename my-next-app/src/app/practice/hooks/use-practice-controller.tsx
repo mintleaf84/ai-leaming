@@ -208,13 +208,14 @@ export function usePracticeController(enableIntelligentReview: boolean = false) 
 
             let isCorrect = false;
             if (currentQuestion.type === 'fill_blank') {
-                // 填空题：按中文分号分割；每空支持用 | 配置多个可接受答案
+                // 填空题：按中文分号分割，逐空匹配（支持单空多答案用 | 分隔）
                 const userBlanks = answer.split('；').map(s => s.trim());
                 const correctBlanks = currentQuestion.answer.split('；').map(s => s.trim());
                 isCorrect = userBlanks.length === correctBlanks.length
                     && userBlanks.every((ub, i) => {
-                        const candidates = correctBlanks[i].split('|').map(s => s.trim()).filter(Boolean);
-                        return candidates.includes(ub);
+                        if (!ub) return false; // 拒绝空白用户输入
+                        const acceptedAnswers = correctBlanks[i].split('|').map(s => s.trim()).filter(Boolean);
+                        return acceptedAnswers.some(ans => ans === ub);
                     });
             } else if (currentQuestion.type === 'multi') {
                 const parseAnswer = (val: string): string[] => {

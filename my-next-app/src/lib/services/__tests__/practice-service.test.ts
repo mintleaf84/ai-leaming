@@ -267,6 +267,69 @@ describe('Practice Service', () => {
                 practiceService.submitAnswerWithValidation(1, 's1', 999, 'A', 1000)
             ).rejects.toThrow('Question 999 not found');
         });
+
+        it('fill_blank: 单空精确匹配应判定正确', async () => {
+            const mockQuestion = { answer: '北京', options: '[]', type: 'fill_blank' };
+            (mockDrizzleDb.select as any).mockReturnValue(mockDrizzleDb);
+            (mockDrizzleDb.from as any).mockReturnValue(mockDrizzleDb);
+            (mockDrizzleDb.where as any).mockReturnValue(mockDrizzleDb);
+            (mockDrizzleDb.limit as any).mockResolvedValue([mockQuestion]);
+
+            const result = await practiceService.submitAnswerWithValidation(1, 's1', 101, '北京', 1000);
+            expect(result.isCorrect).toBe(true);
+        });
+
+        it('fill_blank: | 分隔的多答案应匹配任意一个', async () => {
+            const mockQuestion = { answer: '北京|Beijing', options: '[]', type: 'fill_blank' };
+            (mockDrizzleDb.select as any).mockReturnValue(mockDrizzleDb);
+            (mockDrizzleDb.from as any).mockReturnValue(mockDrizzleDb);
+            (mockDrizzleDb.where as any).mockReturnValue(mockDrizzleDb);
+            (mockDrizzleDb.limit as any).mockResolvedValue([mockQuestion]);
+
+            const r1 = await practiceService.submitAnswerWithValidation(1, 's1', 101, '北京', 1000);
+            expect(r1.isCorrect).toBe(true);
+
+            (mockDrizzleDb.limit as any).mockResolvedValue([mockQuestion]);
+            const r2 = await practiceService.submitAnswerWithValidation(1, 's1', 101, 'Beijing', 1000);
+            expect(r2.isCorrect).toBe(true);
+        });
+
+        it('fill_blank: 答案配置末尾含 | 空 token 时不应接受空用户输入', async () => {
+            const mockQuestion = { answer: '北京|', options: '[]', type: 'fill_blank' };
+            (mockDrizzleDb.select as any).mockReturnValue(mockDrizzleDb);
+            (mockDrizzleDb.from as any).mockReturnValue(mockDrizzleDb);
+            (mockDrizzleDb.where as any).mockReturnValue(mockDrizzleDb);
+            (mockDrizzleDb.limit as any).mockResolvedValue([mockQuestion]);
+
+            const result = await practiceService.submitAnswerWithValidation(1, 's1', 101, '', 1000);
+            expect(result.isCorrect).toBe(false);
+        });
+
+        it('fill_blank: 连续 || 产生的空 token 不应被视为合法答案', async () => {
+            const mockQuestion = { answer: '答案1||答案2', options: '[]', type: 'fill_blank' };
+            (mockDrizzleDb.select as any).mockReturnValue(mockDrizzleDb);
+            (mockDrizzleDb.from as any).mockReturnValue(mockDrizzleDb);
+            (mockDrizzleDb.where as any).mockReturnValue(mockDrizzleDb);
+            (mockDrizzleDb.limit as any).mockResolvedValue([mockQuestion]);
+
+            const result = await practiceService.submitAnswerWithValidation(1, 's1', 101, '', 1000);
+            expect(result.isCorrect).toBe(false);
+        });
+
+        it('fill_blank: 多空题应逐空匹配', async () => {
+            const mockQuestion = { answer: '春天；夏天', options: '[]', type: 'fill_blank' };
+            (mockDrizzleDb.select as any).mockReturnValue(mockDrizzleDb);
+            (mockDrizzleDb.from as any).mockReturnValue(mockDrizzleDb);
+            (mockDrizzleDb.where as any).mockReturnValue(mockDrizzleDb);
+            (mockDrizzleDb.limit as any).mockResolvedValue([mockQuestion]);
+
+            const correct = await practiceService.submitAnswerWithValidation(1, 's1', 101, '春天；夏天', 1000);
+            expect(correct.isCorrect).toBe(true);
+
+            (mockDrizzleDb.limit as any).mockResolvedValue([mockQuestion]);
+            const wrong = await practiceService.submitAnswerWithValidation(1, 's1', 101, '春天', 1000);
+            expect(wrong.isCorrect).toBe(false);
+        });
     });
 
     describe('getSessionById', () => {

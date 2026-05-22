@@ -40,8 +40,42 @@ function convertAnswerFormat(
     targetType: 'single' | 'multi' | 'truefalse' | 'fill_blank',
     options: string[]
 ): string {
-    // 填空题直接返回原答案
-    if (targetType === 'fill_blank') return currentAnswer;
+    // 切换到填空题：归一化旧格式答案为文本
+    if (targetType === 'fill_blank') {
+        if (!currentAnswer) return '';
+        const trimmed = currentAnswer.trim();
+        // 多选 JSON 数组（如 ["选项1","选项2"] 或 ["A","B"]）→ 用；分隔
+        if (trimmed.startsWith('[')) {
+            try {
+                const arr: string[] = JSON.parse(trimmed);
+                return arr
+                    .map(s => {
+                        const t = s.trim();
+                        // 判断题索引 A/B → 正确/错误
+                        if (t === 'A') return '正确';
+                        if (t === 'B') return '错误';
+                        // 选项索引 C/D... → 尝试映射到选项文本
+                        if (t.length === 1 && t >= 'A' && t <= 'Z') {
+                            const idx = t.charCodeAt(0) - 65;
+                            return options[idx] || t;
+                        }
+                        return t;
+                    })
+                    .filter(Boolean)
+                    .join('；');
+            } catch {
+                // JSON 解析失败，继续向下处理
+            }
+        }
+        // 逗号分隔 → ；分隔
+        if (trimmed.includes(',')) {
+            return trimmed.split(',').map(s => s.trim()).filter(Boolean).join('；');
+        }
+        // 判断题 A/B → 正确/错误
+        if (trimmed === 'A') return '正确';
+        if (trimmed === 'B') return '错误';
+        return trimmed;
+    }
     if (!currentAnswer) return '';
 
     const trimmed = currentAnswer.trim();
@@ -189,9 +223,16 @@ useEffect(() => {
                 if (formData.answer !== 'A' && formData.answer !== 'B') throw new Error("判断题答案必须为 A（正确）或 B（错误）");
                 answerForSave = formData.answer;
             } else if (formData.type === 'fill_blank') {
-                // 填空题：直接保存文本答案，支持 | 分隔的多答案
+                // 填空题：校验并归一化，去掉空白答案项（如 "答案1|" 或 "答案1||答案2"）
                 if (!formData.answer.trim()) throw new Error("填空题答案不能为空");
-                answerForSave = formData.answer.trim();
+                const normalizedBlanks = formData.answer
+                    .split('；')
+                    .map(blank => {
+                        const tokens = blank.split('|').map(s => s.trim()).filter(Boolean);
+                        if (tokens.length === 0) throw new Error("填空题每个空位至少需要一个有效答案");
+                        return tokens.join('|');
+                    });
+                answerForSave = normalizedBlanks.join('；');
             } else if (formData.type === 'single') {
                 const optIndex = options.indexOf(formData.answer);
                 if (optIndex === -1) throw new Error("单选题答案必须是选项之一");

@@ -59,7 +59,8 @@ function checkAnswerCorrectness(
         const correctBlanks = correctAnswer.split('；').map(s => s.trim());
         if (userBlanks.length !== correctBlanks.length) return false;
         return userBlanks.every((ub, i) => {
-            const acceptedAnswers = correctBlanks[i].split('|').map(s => s.trim());
+            if (!ub) return false; // 拒绝空白用户输入
+            const acceptedAnswers = correctBlanks[i].split('|').map(s => s.trim()).filter(Boolean);
             return acceptedAnswers.some(ans => ans === ub);
         });
     }

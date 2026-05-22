@@ -451,7 +451,7 @@ useEffect(() => {
                                 />
                                 <div className="text-xs text-muted-foreground">
                                     当前答案预览：{formData.answer.split('；').map((blank, i) => {
-                                        const options = blank.split('|').map(s => s.trim());
+                                        const options = blank.split('|').map(s => s.trim()).filter(Boolean);
                                         return (
                                             <span key={i} className="inline-flex items-center gap-1 mr-2">
                                                 <span className="font-medium text-teal-600">空{i + 1}:</span>

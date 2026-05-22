@@ -1,20 +1,7 @@
 // @vitest-environment node
 import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { DemoService } from '../demo';
-
-const createMockQuery = (returnValue: any = []) => {
-    const mockAll = vi.fn().mockResolvedValue(returnValue);
-    const chain: any = {
-        then: vi.fn((resolve: any) => resolve(returnValue)),
-        get: vi.fn(() => ({})),
-        all: mockAll,
-    };
-    const methods = ['insert', 'values', 'update', 'set', 'delete', 'select', 'from', 'where', 'limit', 'offset', 'orderBy', 'innerJoin', 'leftJoin', 'onConflictDoUpdate'];
-    methods.forEach((m) => {
-        chain[m] = vi.fn(() => chain);
-    });
-    return chain;
-};
+import { createMockQuery } from '@/lib/__tests__/db-mock-utils';
 
 const { mockDrizzleDb, mockDrizzleSchema } = vi.hoisted(() => {
     const mockDrizzleDb = {
@@ -175,6 +162,24 @@ describe('DemoService', () => {
 
             const result = await DemoService.getDemoSession(userId);
             expect(result).toBeNull();
+        });
+
+        it('应该处理空题目 JSON 数组', async () => {
+            const mockSession = {
+                id: 'demo-session-empty',
+                user_id: userId,
+                is_demo: 1,
+                questions_json: '[]',
+                correct_count: 0
+            };
+
+            mockDrizzleDb.query.practice_sessions.findFirst.mockResolvedValue(mockSession);
+            mockDrizzleDb.delete.mockReturnValue({
+                where: vi.fn().mockResolvedValue({})
+            });
+
+            const result = await DemoService.getDemoSession(userId);
+            expect(result?.questions).toEqual([]);
         });
     });
 });

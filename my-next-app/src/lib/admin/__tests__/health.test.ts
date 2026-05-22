@@ -7,20 +7,7 @@ import {
     formatBytes,
     formatUptime
 } from '../health';
-
-const createMockQuery = (returnValue: any = []) => {
-    const mockAll = vi.fn().mockResolvedValue(returnValue);
-    const chain: any = {
-        then: vi.fn((resolve: any) => resolve(returnValue)),
-        get: vi.fn(() => ({})),
-        all: mockAll,
-    };
-    const methods = ['insert', 'values', 'update', 'set', 'delete', 'select', 'from', 'where', 'limit', 'offset', 'orderBy', 'innerJoin', 'leftJoin', 'onConflictDoUpdate', 'groupBy', 'as'];
-    methods.forEach((m) => {
-        chain[m] = vi.fn(() => chain);
-    });
-    return chain;
-};
+import { createMockQuery } from '@/lib/__tests__/db-mock-utils';
 
 const { mockDrizzleDb, mockDrizzleSchema } = vi.hoisted(() => {
     const mockDrizzleDb = {
@@ -28,7 +15,7 @@ const { mockDrizzleDb, mockDrizzleSchema } = vi.hoisted(() => {
         insert: vi.fn().mockReturnValue({ values: vi.fn().mockResolvedValue({}) }),
         update: vi.fn().mockReturnValue({ set: vi.fn().mockReturnValue({ where: vi.fn().mockResolvedValue({}) }) }),
         delete: vi.fn().mockReturnValue({ where: vi.fn().mockResolvedValue({}) }),
-        run: vi.fn().mockResolvedValue({ rows: [{ name: 'users' }, { name: 'questions' }] }),
+        all: vi.fn().mockResolvedValue([{ name: 'users' }, { name: 'questions' }, { name: 'practice_logs' }]),
         get: vi.fn().mockResolvedValue({ count: 100 })
     };
 
@@ -81,11 +68,28 @@ describe('Admin Health Service', () => {
         it('应该格式化 GB', () => {
             expect(formatBytes(1024 * 1024 * 1024)).toBe('1 GB');
         });
+
+        it('应该格式化小数 KB', () => {
+            expect(formatBytes(1536)).toBe('1.5 KB');
+        });
+
+        it('应该格式化非常大的数值', () => {
+            expect(formatBytes(1024 * 1024 * 1024 * 5)).toBe('5 GB');
+        });
     });
 
     describe('formatUptime', () => {
         it('应该格式化刚刚启动', () => {
             expect(formatUptime(30)).toBe('刚刚启动');
+        });
+
+        it('应该格式化0秒', () => {
+            expect(formatUptime(0)).toBe('刚刚启动');
+        });
+
+        it('应该格式化1分钟', () => {
+            expect(formatUptime(59)).toBe('刚刚启动');
+            expect(formatUptime(60)).toBe('1分钟');
         });
 
         it('应该格式化分钟', () => {
@@ -102,6 +106,10 @@ describe('Admin Health Service', () => {
 
         it('应该格式化完整时间', () => {
             expect(formatUptime(90060)).toBe('1天1小时1分钟');
+        });
+
+        it('应该格式化多天', () => {
+            expect(formatUptime(172800)).toBe('2天');
         });
     });
 

@@ -91,20 +91,20 @@ export async function getDatabaseStats(): Promise<DatabaseStats> {
     }
 
     // 获取所有表名
-    const tablesResult = await drizzleDb.run(sql`
+    const tables = await drizzleDb.all<{ name: string }>(sql`
         SELECT name FROM sqlite_master 
         WHERE type='table' 
         AND name NOT LIKE 'sqlite_%'
         AND name NOT LIKE '%_vec%'
         ORDER BY name
     `);
-    
-    const tables = tablesResult.rows as unknown as { name: string }[];
 
     // 获取每个表的行数
     const tableStats: TableStats[] = await Promise.all(tables.map(async t => {
         try {
-            const result = await drizzleDb.get<{ count: number }>(sql.raw(`SELECT COUNT(*) as count FROM ${t.name}`));
+            const result = await drizzleDb.get<{ count: number }>(
+                sql`SELECT COUNT(*) as count FROM ${sql.raw(t.name)}`
+            );
             return { name: t.name, rowCount: result?.count || 0 };
         } catch (_e) {
             return { name: t.name, rowCount: 0 };

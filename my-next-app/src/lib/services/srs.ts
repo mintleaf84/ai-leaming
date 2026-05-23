@@ -38,6 +38,7 @@ const THINKING_TIME_THRESHOLDS = {
 async function getReadingSpeed(userId: number, questionType?: string): Promise<number> {
     const key = questionType === 'multi' ? 'reading_speed_multi' : 
                 questionType === 'truefalse' ? 'reading_speed_truefalse' : 
+                questionType === 'fill_blank' ? 'reading_speed_fill_blank' :
                 'reading_speed_base';
 
     const [setting] = await drizzleDb.select()
@@ -65,7 +66,7 @@ async function getReadingSpeed(userId: number, questionType?: string): Promise<n
 /**
  * 内部辅助：根据本次表现更新基准速度 (EMA 算法)
  */
-export async function learnReadingSpeed(userId: number, questionContent: string, optionsJson: string, durationMs: number, questionType?: string) {
+export async function learnReadingSpeed(userId: number, questionContent: string, optionsJson: string, durationMs: number, questionType?: string, userAnswerLength?: number) {
     let optionsText = '';
     try {
         const options = JSON.parse(optionsJson);
@@ -73,7 +74,10 @@ export async function learnReadingSpeed(userId: number, questionContent: string,
     } catch (_e) {
         optionsText = optionsJson || '';
     }
-    const totalChars = questionContent.length + optionsText.length;
+
+    // 填空题需要加上用户答案长度
+    const answerLength = (questionType === 'fill_blank' && userAnswerLength) ? userAnswerLength : 0;
+    const totalChars = questionContent.length + optionsText.length + answerLength;
 
     if (totalChars < 10 || durationMs < 1000 || durationMs > 60000) return;
 
@@ -85,6 +89,7 @@ export async function learnReadingSpeed(userId: number, questionContent: string,
 
     const key = questionType === 'multi' ? 'reading_speed_multi' : 
                 questionType === 'truefalse' ? 'reading_speed_truefalse' : 
+                questionType === 'fill_blank' ? 'reading_speed_fill_blank' :
                 'reading_speed_base';
 
     await drizzleDb.insert(system_settings).values({
@@ -146,8 +151,14 @@ export type SrsPrediction = {
 export const srsService = {
     /**
      * 根据答题耗时和题目长度计算 FSRS 评分 (Rating)
+     * @param questionContent 题目内容
+     * @param optionsJson 选项 JSON 字符串
+     * @param durationMs 答题耗时（毫秒）
+     * @param readingSpeed 阅读速度（字/秒）
+     * @param questionType 题目类型
+     * @param userAnswerLength 用户答案长度（填空题专用）
      */
-    calculateRating: (questionContent: string, optionsJson: string, durationMs: number, readingSpeed: number, questionType?: string): Rating => {
+    calculateRating: (questionContent: string, optionsJson: string, durationMs: number, readingSpeed: number, questionType?: string, userAnswerLength?: number): Rating => {
         let optionsText = '';
         try {
             const options = JSON.parse(optionsJson);
@@ -161,10 +172,20 @@ export const srsService = {
         const totalDurationSec = durationMs / 1000;
         let thinkingTimeSec = Math.max(0, totalDurationSec - readingTimeSec);
 
-        if (questionType === 'multi') {
-            thinkingTimeSec *= 0.6;
+        // 题型调整系数
+        if (questionType === 'fill_blank' && userAnswerLength !== undefined && userAnswerLength > 0) {
+            // 填空题：需要打字，扣除打字时间后评估
+            const TYPING_SPEED = 10; // 默认打字速度：10 字符/秒
+            const typingTimeSec = userAnswerLength / TYPING_SPEED;
+            thinkingTimeSec = Math.max(0, thinkingTimeSec - typingTimeSec);
+            // 填空题思考时间打折（因为需要打字，实际思考时间更短）
+            thinkingTimeSec *= 0.8;
+        } else if (questionType === 'multi') {
+            // 多选需要对比多个选项，思考时间增加
+            thinkingTimeSec *= 1.2;
         } else if (questionType === 'truefalse') {
-            thinkingTimeSec *= 2.0;
+            // 判断题二选一很快，思考时间减少
+            thinkingTimeSec *= 0.5;
         }
         
         if (thinkingTimeSec < THINKING_TIME_THRESHOLDS.EASY) {
@@ -209,7 +230,7 @@ export const srsService = {
      * 更新题目 SRS 状态
      * @throws {Error} 如果题目不存在
      */
-    updateQuestionSrs: async (userId: number, questionId: number, isCorrect: boolean, durationMs: number, reviewDate?: Date, cachedReadingSpeed?: number) => {
+    updateQuestionSrs: async (userId: number, questionId: number, isCorrect: boolean, durationMs: number, reviewDate?: Date, cachedReadingSpeed?: number, userAnswerLength?: number) => {
         const [question] = await drizzleDb.select()
             .from(questions)
             .where(eq(questions.id, questionId))
@@ -230,10 +251,11 @@ export const srsService = {
                 question.options || '[]', 
                 durationMs, 
                 readingSpeed,
-                question.type || undefined
+                question.type || undefined,
+                userAnswerLength
             );
 
-            await learnReadingSpeed(userId, question.content, question.options || '[]', durationMs, question.type || undefined);
+            await learnReadingSpeed(userId, question.content, question.options || '[]', durationMs, question.type || undefined, userAnswerLength);
         }
 
         const now = reviewDate || new Date();

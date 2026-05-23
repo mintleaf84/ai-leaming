@@ -260,7 +260,8 @@ export const practiceService = {
         // 3. 异步更新掌握度
         const [q] = await drizzleDb.select({
                 tags: questions.tags,
-                dimension: questions.dimension
+                dimension: questions.dimension,
+                type: questions.type
             })
             .from(questions)
             .where(eq(questions.id, questionId))
@@ -279,7 +280,9 @@ export const practiceService = {
         let updatedSrs = undefined;
         try {
             const { srsService } = await import('@/lib/services/srs');
-            updatedSrs = await srsService.updateQuestionSrs(userId, questionId, isCorrect, duration);
+            // 填空题传入用户答案长度，用于计算打字时间
+            const userAnswerLength = q?.type === 'fill_blank' ? userAnswer.length : undefined;
+            updatedSrs = await srsService.updateQuestionSrs(userId, questionId, isCorrect, duration, undefined, undefined, userAnswerLength);
         } catch (e) {
             logger.error({ err: e }, 'Failed to update SRS state in submitAnswer');
         }

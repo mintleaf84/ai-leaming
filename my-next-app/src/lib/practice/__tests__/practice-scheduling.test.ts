@@ -122,7 +122,7 @@ describe('practiceSchedulingService', () => {
         });
 
         it('应该按类型筛选错题', async () => {
-            const config: PracticeConfig = { mode: 'mistakes', limit: 5, types: ['multiple'], dimensions: [], tags: [] };
+            const config: PracticeConfig = { mode: 'mistakes', limit: 5, types: ['multi'], dimensions: [], tags: [] };
             const userId = 1;
 
             mockDrizzleDb.select.mockReturnValue(createMockQuery([]));

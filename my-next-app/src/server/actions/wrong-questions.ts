@@ -7,6 +7,9 @@ import {
     type WrongQuestionItem,
 } from '@/lib/services/wrong-question';
 import { practiceService } from '@/lib/services/practice';
+import { drizzleDb } from '@/lib/db';
+import { questions, practice_logs } from '@/lib/db/drizzle-schema';
+import { QuestionSchema } from '@/lib/schemas';
 import { RandomWrongQuestionsSchema } from '@/lib/validations/wrong-questions';
 import { wrongQuestionRecommend } from '@/lib/services/question-recommend';
 
@@ -58,6 +61,41 @@ export const getWrongQuestionsStatsAction = authenticatedAction
         const { user } = ctx;
         const data = await wrongQuestionService.getStats(user.id);
         return { success: true, ...data };
+    });
+
+/**
+ * 手动录入错题（普通用户）
+ */
+export const createManualWrongQuestionAction = authenticatedAction
+    .inputSchema(QuestionSchema)
+    .action(async ({ parsedInput: input, ctx }) => {
+        const { user } = ctx;
+        const dimension = z.enum(['knowledge', 'understanding', 'application']).parse(input.dimension);
+        const [createdQuestion] = await drizzleDb.insert(questions)
+            .values({
+                content: input.content,
+                options: JSON.stringify(input.options),
+                answer: input.answer,
+                explanation: input.explanation,
+                tags: JSON.stringify(input.tags),
+                dimension,
+                type: input.type,
+                source: 'manual_wrong_book',
+            })
+            .returning({ id: questions.id });
+
+        if (!createdQuestion?.id) {
+            throw new Error('手动录题失败');
+        }
+
+        await drizzleDb.insert(practice_logs).values({
+            user_id: user.id,
+            question_id: createdQuestion.id,
+            user_answer: null,
+            is_correct: false,
+        });
+
+        return { success: true, questionId: createdQuestion.id };
     });
 
 /**

@@ -6,6 +6,7 @@ import {
     getWrongQuestionsAction, 
     getWrongQuestionsByTagAction, 
     getWrongQuestionsStatsAction,
+    createManualWrongQuestionAction,
     createWrongQuestionsPracticeAction,
     getWrongQuestionDetailAction,
     markAsMasteredAction,
@@ -116,6 +117,31 @@ describe('Wrong Questions Actions', () => {
             const result = await createWrongQuestionsPracticeAction([1, 2]);
             expect(result.data?.success).toBe(true);
             expect(result.data?.sessionId).toBe('session_123');
+        });
+
+        describe('createManualWrongQuestionAction', () => {
+            it('应该为当前用户创建题目并写入错题日志', async () => {
+                const returningMock = vi.fn().mockResolvedValue([{ id: 123 }]);
+                vi.mocked(drizzleDb.insert).mockReturnValue({
+                    values: vi.fn().mockReturnValue({
+                        returning: returningMock
+                    })
+                } as any);
+
+                const result = await createManualWrongQuestionAction({
+                    content: '测试题目内容12345',
+                    options: ['选项A', '选项B'],
+                    answer: 'A',
+                    explanation: '这是一个测试解析',
+                    tags: ['测试标签'],
+                    dimension: 'knowledge',
+                    type: 'single'
+                });
+
+                expect(result.data?.success).toBe(true);
+                expect(result.data?.questionId).toBe(123);
+                expect(drizzleDb.insert).toHaveBeenCalledTimes(2);
+            });
         });
 
         it('空题目列表应返回失败', async () => {

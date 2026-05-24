@@ -310,7 +310,7 @@ describe('pdfImportService', () => {
 
             await pdfImportService.confirmImport(1, [sampleQuestion], undefined, true);
 
-            expect(mockUpdateQuestionSrs).toHaveBeenCalledWith(1, 1, false, 0);
+            expect(mockUpdateQuestionSrs).toHaveBeenCalledWith(1, 1, false, 0, undefined, undefined, 0);
         });
 
         it('should skip wrong book when addToWrongBook is false', async () => {

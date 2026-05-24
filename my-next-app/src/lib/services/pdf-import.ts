@@ -175,7 +175,7 @@ export const pdfImportService = {
         await drizzleDb.insert(practice_logs).values(logValues);
 
         await Promise.all(insertedIds.map(qId =>
-          srsService.updateQuestionSrs(userId, qId, false, 0)
+          srsService.updateQuestionSrs(userId, qId, false, 0, undefined, undefined, 0)
         ));
       }
 

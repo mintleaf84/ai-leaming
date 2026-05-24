@@ -31,6 +31,8 @@ const THINKING_TIME_THRESHOLDS = {
     EASY: 2,   // 纯思考时间 < 2s 为简单
     GOOD: 8,   // 2s <= 纯思考时间 <= 8s 为正常
 };
+const FILL_BLANK_TYPING_SPEED = 10; // 填空题默认打字速度（字符/秒），统一在此调参
+const FILL_BLANK_THINKING_TIME_DISCOUNT = 0.8; // 填空题思考时间折扣，统一在此调参
 
 /**
  * 内部辅助：获取用户当前的基准阅读速度
@@ -175,11 +177,10 @@ export const srsService = {
         // 题型调整系数
         if (questionType === 'fill_blank' && userAnswerLength !== undefined && userAnswerLength > 0) {
             // 填空题：需要打字，扣除打字时间后评估
-            const TYPING_SPEED = 10; // 默认打字速度：10 字符/秒
-            const typingTimeSec = userAnswerLength / TYPING_SPEED;
+            const typingTimeSec = userAnswerLength / FILL_BLANK_TYPING_SPEED;
             thinkingTimeSec = Math.max(0, thinkingTimeSec - typingTimeSec);
             // 填空题思考时间打折（因为需要打字，实际思考时间更短）
-            thinkingTimeSec *= 0.8;
+            thinkingTimeSec *= FILL_BLANK_THINKING_TIME_DISCOUNT;
         } else if (questionType === 'multi') {
             // 多选需要对比多个选项，思考时间增加
             thinkingTimeSec *= 1.2;
@@ -467,7 +468,8 @@ export const srsService = {
         const speedCache: Record<string, number> = {
             'base': await getReadingSpeed(userId),
             'multi': await getReadingSpeed(userId, 'multi'),
-            'truefalse': await getReadingSpeed(userId, 'truefalse')
+            'truefalse': await getReadingSpeed(userId, 'truefalse'),
+            'fill_blank': await getReadingSpeed(userId, 'fill_blank')
         };
 
         let totalSyncCount = 0;
@@ -479,7 +481,8 @@ export const srsService = {
                 questionId: practice_logs.question_id,
                 isCorrect: sql<number>`CAST(${practice_logs.is_correct} AS INTEGER)`,
                 durationMs: practice_logs.duration_ms,
-                timestamp: practice_logs.timestamp
+                timestamp: practice_logs.timestamp,
+                userAnswer: practice_logs.user_answer
             })
             .from(practice_logs)
             .leftJoin(
@@ -507,7 +510,7 @@ export const srsService = {
             }
 
             // 按题目分组
-            const questionGroups = new Map<number, Array<{ questionId: number; isCorrect: number; durationMs: number | null; timestamp: string | null }>>();
+            const questionGroups = new Map<number, Array<{ questionId: number; isCorrect: number; durationMs: number | null; timestamp: string | null; userAnswer: string | null }>>();
             for (const log of logs) {
                 if (!questionGroups.has(log.questionId)) {
                     questionGroups.set(log.questionId, []);
@@ -525,14 +528,17 @@ export const srsService = {
                             .limit(1);
 
                         const typeKey = qInfo?.type === 'multi' ? 'multi' :
-                                    qInfo?.type === 'truefalse' ? 'truefalse' : 'base';
+                                    qInfo?.type === 'truefalse' ? 'truefalse' :
+                                    qInfo?.type === 'fill_blank' ? 'fill_blank' :
+                                    'base';
                         const speed = speedCache[typeKey] || speedCache['base'];
 
                         for (const log of qLogs) {
                             const reviewDate = log.timestamp ? dayjs.utc(log.timestamp).toDate() : undefined;
+                            const userAnswerLength = qInfo?.type === 'fill_blank' ? log.userAnswer?.length : undefined;
                             // updateQuestionSrs 现在会在题目不存在时抛出错误
                             try {
-                                await srsService.updateQuestionSrs(userId, qId, log.isCorrect === 1, log.durationMs || 0, reviewDate, speed);
+                                await srsService.updateQuestionSrs(userId, qId, log.isCorrect === 1, log.durationMs || 0, reviewDate, speed, userAnswerLength);
                             } catch (err) {
                                 // 题目不存在时跳过，不阻塞整个同步
                                 console.warn(`[syncFromPracticeLogs] 跳过题目 ${qId}: ${(err as Error).message}`);

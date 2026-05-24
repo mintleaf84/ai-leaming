@@ -163,6 +163,26 @@ describe('srsService - Speed Learning Logic (Best Practices)', () => {
         });
     });
 
+    it('should learn speed for FILL_BLANK questions with user answer length', async () => {
+        mockQuestion = {
+            id: 401,
+            content: '填空题题干内容', // 7 chars
+            options: '[]',
+            type: 'fill_blank'
+        };
+        mockSrs = {
+            stability: 1, difficulty: 5, state: 0, reps: 0, lapses: 0, due_date: new Date().toISOString()
+        };
+
+        await srsService.updateQuestionSrs(1, 401, true, 2000, undefined, undefined, 6);
+
+        await vi.waitFor(() => {
+            const update = capturedValues.find(v => v.key === 'reading_speed_fill_blank');
+            if (!update) throw new Error('Not updated yet');
+            expect(parseFloat(update.value)).toBeCloseTo(7.0, 1);
+        });
+    });
+
     it('should NOT learn speed when answer is incorrect', async () => {
         mockQuestion = { id: 102, content: '内容', options: '[]' };
         mockSrs = { stability: 1, difficulty: 5, state: 0, reps: 0, lapses: 0, due_date: new Date().toISOString() };

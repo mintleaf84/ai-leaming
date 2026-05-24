@@ -70,6 +70,16 @@ describe('SRS Service', () => {
             const rating = srsService.calculateRating(mockContent, mockOptions, 15000, 7);
             expect(rating).toBe(Rating.Hard);
         });
+
+        it('fill_blank 传入答案长度后应扣除打字时间并降低评级', () => {
+            const rating = srsService.calculateRating(mockContent, mockOptions, 6000, 7, 'fill_blank', 20);
+            expect(rating).toBe(Rating.Easy);
+        });
+
+        it('fill_blank 缺少答案长度时应回退到默认评级逻辑', () => {
+            const rating = srsService.calculateRating(mockContent, mockOptions, 6000, 7, 'fill_blank');
+            expect(rating).toBe(Rating.Good);
+        });
     });
 
     describe('learnReadingSpeed', () => {
@@ -91,27 +101,21 @@ describe('SRS Service', () => {
         it('应该只同步不存在于 SRS 中的练习记录', async () => {
             const { drizzleDb } = await import('@/lib/db');
             const mockLogs = [
-                { questionId: 101, isCorrect: 1, durationMs: 5000, timestamp: '2024-01-01' },
+                { questionId: 101, isCorrect: 1, durationMs: 5000, timestamp: '2024-01-01', userAnswer: null },
             ];
 
-            // 1. 同步日志查询 (select().all())
-            mockAll.mockReturnValueOnce(mockLogs) // Logs
-                   .mockReturnValueOnce([{ type: 'single' }]); // Question type in sync loop
-
-            // 2. SRS 内部查询 (select().get())
-            // 返回一个符合 ts-fsrs 预期的 Card 结构 (来自 getOrCreateSrsCard)
-            mockAll.mockReturnValueOnce([{ id: 101, content: 'Q1', options: '[]', type: 'single' }]); // getHistory inner select
-            
-            // 为了解决 TypeConvert 错误，我们需要让 getOrCreateSrsCard 返回 undefined (触发 createEmptyCard)
-            mockGet.mockReturnValue(undefined); 
-
-            // Mock syncFromPracticeLogs 内部的 group 查询
-            // 第一次是查询日志
-            mockAll.mockReturnValueOnce(mockLogs);
-            // 循环中查询题目类型
-            mockAll.mockReturnValueOnce([{ type: 'single' }]);
-            // 内部 updateQuestionSrs 也会查一次题目信息
-            mockAll.mockReturnValueOnce([{ id: 101, content: 'Q1', options: '[]', type: 'single' }]);
+            mockAll.mockReturnValue([]);
+            mockAll
+                .mockReturnValueOnce([]) // reading_speed_base
+                .mockReturnValueOnce([]) // reading_speed_multi
+                .mockReturnValueOnce([]) // reading_speed_multi fallback base
+                .mockReturnValueOnce([]) // reading_speed_truefalse
+                .mockReturnValueOnce([]) // reading_speed_truefalse fallback base
+                .mockReturnValueOnce([]) // reading_speed_fill_blank
+                .mockReturnValueOnce([]) // reading_speed_fill_blank fallback base
+                .mockReturnValueOnce(mockLogs) // syncFromPracticeLogs 查询日志
+                .mockReturnValueOnce([{ type: 'single' }]) // syncFromPracticeLogs 查询题型
+                .mockReturnValueOnce([{ id: 101, content: 'Q1', options: '[]', type: 'single' }]); // updateQuestionSrs 查询题目
 
             const syncCount = await srsService.syncFromPracticeLogs(1);
 

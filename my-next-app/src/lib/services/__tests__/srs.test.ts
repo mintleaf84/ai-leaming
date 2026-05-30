@@ -76,6 +76,21 @@ describe('SRS Service', () => {
             expect(rating).toBe(Rating.Easy);
         });
 
+        it('fill_blank 应使用 5 字符/秒打字扣除与 0.6 思考折扣', () => {
+            const rating = srsService.calculateRating(mockContent, mockOptions, 12000, 7, 'fill_blank', 20);
+            expect(rating).toBe(Rating.Easy);
+        });
+
+        it('fill_blank 思考时间恰好 4 秒时应为 Good', () => {
+            const rating = srsService.calculateRating(mockContent, mockOptions, 10667, 7, 'fill_blank', 10);
+            expect(rating).toBe(Rating.Good);
+        });
+
+        it('fill_blank 思考时间超过 12 秒时应为 Hard', () => {
+            const rating = srsService.calculateRating(mockContent, mockOptions, 24001, 7, 'fill_blank', 10);
+            expect(rating).toBe(Rating.Hard);
+        });
+
         it('fill_blank 缺少答案长度时应回退到默认评级逻辑', () => {
             const rating = srsService.calculateRating(mockContent, mockOptions, 6000, 7, 'fill_blank');
             expect(rating).toBe(Rating.Good);

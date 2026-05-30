@@ -31,8 +31,12 @@ const THINKING_TIME_THRESHOLDS = {
     EASY: 2,   // 纯思考时间 < 2s 为简单
     GOOD: 8,   // 2s <= 纯思考时间 <= 8s 为正常
 };
-const FILL_BLANK_TYPING_SPEED = 10; // 填空题默认打字速度（字符/秒），统一在此调参
-const FILL_BLANK_THINKING_TIME_DISCOUNT = 0.8; // 填空题思考时间折扣，统一在此调参
+const FILL_BLANK_THRESHOLDS = {
+    EASY: 4,   // 填空题纯思考时间 < 4s 为简单
+    GOOD: 12,  // 4s <= 填空题纯思考时间 <= 12s 为正常
+};
+const FILL_BLANK_TYPING_SPEED = 5; // 填空题默认打字速度（字符/秒），统一在此调参
+const FILL_BLANK_THINKING_TIME_DISCOUNT = 0.6; // 填空题思考时间折扣，统一在此调参
 
 /**
  * 内部辅助：获取用户当前的基准阅读速度
@@ -189,9 +193,12 @@ export const srsService = {
             thinkingTimeSec *= 0.5;
         }
         
-        if (thinkingTimeSec < THINKING_TIME_THRESHOLDS.EASY) {
+        // 填空题使用专用阈值
+        const thresholds = questionType === 'fill_blank' ? FILL_BLANK_THRESHOLDS : THINKING_TIME_THRESHOLDS;
+        
+        if (thinkingTimeSec < thresholds.EASY) {
             return Rating.Easy;
-        } else if (thinkingTimeSec <= THINKING_TIME_THRESHOLDS.GOOD) {
+        } else if (thinkingTimeSec <= thresholds.GOOD) {
             return Rating.Good;
         } else {
             return Rating.Hard;

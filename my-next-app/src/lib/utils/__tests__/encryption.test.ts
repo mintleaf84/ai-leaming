@@ -3,7 +3,7 @@ import { describe, it, expect } from 'vitest';
 import { encrypt, decrypt } from '../encryption';
 
 describe('Encryption Utils', () => {
-    const secret = 'test-secret-key-12345';
+    const secret = 'test-secret-key-at-least-32-chars-long';
 
     describe('encrypt', () => {
         it('应该加密字符串', () => {

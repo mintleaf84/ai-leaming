@@ -270,3 +270,27 @@ export const resetDrizzleMock = (mockObject: any, defaultReturn: any = []) => {
     mockObject.transaction.mockImplementation((cb: any) => cb(mockObject));
   }
 };
+
+/**
+ * 创建一个可链式调用的 Mock 查询结果。
+ * 返回一个 thenable 对象，await 时返回指定数据。
+ * 适用于在 vi.hoisted 外部创建的 mock，或作为链式调用的基础 mock。
+ */
+export function createMockQuery<T = any>(returnValue: T = [] as any) {
+  const mockAll = vi.fn().mockResolvedValue(returnValue);
+  const chain: any = {
+    then: vi.fn((resolve: any) => resolve(returnValue)),
+    get: vi.fn(() => ({})),
+    all: mockAll,
+  };
+  const methods = [
+    'insert', 'values', 'update', 'set', 'delete',
+    'select', 'from', 'where', 'limit', 'offset',
+    'orderBy', 'innerJoin', 'leftJoin', 'onConflictDoUpdate',
+    'groupBy', 'as', 'selectDistinct'
+  ];
+  methods.forEach((m) => {
+    chain[m] = vi.fn(() => chain);
+  });
+  return chain;
+}

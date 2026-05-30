@@ -2,20 +2,7 @@
 import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { practiceSchedulingService, getAllTags, getUserWrongTags } from '../practice-scheduling';
 import type { PracticeConfig } from '@/types/practice';
-
-const createMockQuery = (returnValue: any = []) => {
-    const mockAll = vi.fn().mockResolvedValue(returnValue);
-    const chain: any = {
-        then: vi.fn((resolve: any) => resolve(returnValue)),
-        get: vi.fn(() => ({})),
-        all: mockAll,
-    };
-    const methods = ['insert', 'values', 'update', 'set', 'delete', 'select', 'from', 'where', 'limit', 'offset', 'orderBy', 'innerJoin', 'leftJoin', 'onConflictDoUpdate', 'selectDistinct', 'groupBy'];
-    methods.forEach((m) => {
-        chain[m] = vi.fn(() => chain);
-    });
-    return chain;
-};
+import { createMockQuery } from '@/lib/__tests__/db-mock-utils';
 
 const { mockDrizzleDb, mockDrizzleSchema } = vi.hoisted(() => {
     const mockDrizzleDb = {
@@ -116,6 +103,33 @@ describe('practiceSchedulingService', () => {
             const result = await practiceSchedulingService.generateMistakesSession(config, userId);
             expect(Array.isArray(result)).toBe(true);
         });
+
+        it('应该按错误次数降序排列', async () => {
+            const config: PracticeConfig = { mode: 'mistakes', limit: 10, types: [], dimensions: [], tags: [] };
+            const userId = 1;
+
+            const mistakeQuestions = [
+                { q: { id: 1, content: 'Q1', options: '[]', tags: '["tag1"]', type: 'single', dimension: 'knowledge' }, error_count: 5 },
+                { q: { id: 2, content: 'Q2', options: '[]', tags: '["tag2"]', type: 'single', dimension: 'knowledge' }, error_count: 3 },
+                { q: { id: 3, content: 'Q3', options: '[]', tags: '["tag3"]', type: 'single', dimension: 'knowledge' }, error_count: 1 },
+            ];
+
+            mockDrizzleDb.select.mockReturnValue(createMockQuery(mistakeQuestions));
+
+            const result = await practiceSchedulingService.generateMistakesSession(config, userId);
+            expect(result).toHaveLength(3);
+            expect(result[0].id).toBe(1);
+        });
+
+        it('应该按类型筛选错题', async () => {
+            const config: PracticeConfig = { mode: 'mistakes', limit: 5, types: ['multi'], dimensions: [], tags: [] };
+            const userId = 1;
+
+            mockDrizzleDb.select.mockReturnValue(createMockQuery([]));
+
+            const result = await practiceSchedulingService.generateMistakesSession(config, userId);
+            expect(Array.isArray(result)).toBe(true);
+        });
     });
 
     describe('generateFocusSession', () => {
@@ -127,6 +141,30 @@ describe('practiceSchedulingService', () => {
 
             const result = await practiceSchedulingService.generateFocusSession(config, userId);
             expect(Array.isArray(result)).toBe(true);
+        });
+
+        it('应该按维度筛选', async () => {
+            const config: PracticeConfig = { mode: 'focus', limit: 5, types: [], dimensions: ['application'], tags: [] };
+            const userId = 1;
+
+            mockDrizzleDb.select.mockReturnValue(createMockQuery([
+                { id: 1, content: 'AppQ1', options: '[]', tags: '["tag1"]', type: 'single', dimension: 'application' }
+            ]));
+
+            const result = await practiceSchedulingService.generateFocusSession(config, userId);
+            expect(result.every(q => q.dimension === 'application')).toBe(true);
+        });
+
+        it('应该按知识点标签筛选', async () => {
+            const config: PracticeConfig = { mode: 'focus', limit: 5, types: [], dimensions: [], tags: ['教育心理学'] };
+            const userId = 1;
+
+            mockDrizzleDb.select.mockReturnValue(createMockQuery([
+                { id: 1, content: 'TaggedQ1', options: '[]', tags: '["教育心理学"]', type: 'single', dimension: 'knowledge' }
+            ]));
+
+            const result = await practiceSchedulingService.generateFocusSession(config, userId);
+            expect(result).toHaveLength(1);
         });
 
         it('应该在没有筛选条件时调用随机会话', async () => {
@@ -152,6 +190,28 @@ describe('practiceSchedulingService', () => {
             const result = await practiceSchedulingService.generateExamSession(config, userId);
             expect(result).toHaveLength(3);
             expect(result[0].id).toBe(1);
+            expect(result[1].id).toBe(2);
+            expect(result[2].id).toBe(3);
+        });
+
+        it('应该处理空数据', async () => {
+            const config: PracticeConfig = { mode: 'exam', limit: 5, types: [], dimensions: [], tags: [] };
+            const userId = 1;
+
+            mockDrizzleDb.select.mockReturnValue(createMockQuery([]));
+
+            const result = await practiceSchedulingService.generateExamSession(config, userId);
+            expect(result).toEqual([]);
+        });
+
+        it('应该按类型筛选考试题目', async () => {
+            const config: PracticeConfig = { mode: 'exam', limit: 10, types: ['single'], dimensions: [], tags: [] };
+            const userId = 1;
+
+            mockDrizzleDb.select.mockReturnValue(createMockQuery([]));
+
+            const result = await practiceSchedulingService.generateExamSession(config, userId);
+            expect(Array.isArray(result)).toBe(true);
         });
     });
 
@@ -164,6 +224,16 @@ describe('practiceSchedulingService', () => {
 
             const result = await practiceSchedulingService.generateRandomSession(config, userId);
             expect(Array.isArray(result)).toBe(true);
+        });
+
+        it('应该处理空数据源', async () => {
+            const config: PracticeConfig = { mode: 'random', limit: 5, types: [], dimensions: [], tags: [] };
+            const userId = 1;
+
+            mockDrizzleDb.select.mockReturnValue(createMockQuery([]));
+
+            const result = await practiceSchedulingService.generateRandomSession(config, userId);
+            expect(result).toEqual([]);
         });
     });
 
@@ -206,6 +276,13 @@ describe('getAllTags', () => {
         const result = await getAllTags();
         expect(result).toEqual(['tag1', 'tag2', 'tag3']);
     });
+
+    it('应该返回空数组当没有标签', async () => {
+        mockDrizzleDb.selectDistinct.mockReturnValue(createMockQuery([]));
+
+        const result = await getAllTags();
+        expect(result).toEqual([]);
+    });
 });
 
 describe('getUserWrongTags', () => {
@@ -225,5 +302,13 @@ describe('getUserWrongTags', () => {
             { tag: 'tag1', count: 5 },
             { tag: 'tag2', count: 3 }
         ]);
+    });
+
+    it('应该返回空数组当用户没有错题', async () => {
+        const userId = 1;
+        mockDrizzleDb.select.mockReturnValue(createMockQuery([]));
+
+        const result = await getUserWrongTags(userId);
+        expect(result).toEqual([]);
     });
 });

@@ -14,6 +14,9 @@ import path from 'path';
 
 // 危险 SQL 关键字黑名单（禁止执行）
 const DANGEROUS_KEYWORDS = [
+    'INSERT',
+    'SELECT',
+    'REPLACE',
     'DROP',
     'TRUNCATE',
     'ALTER',
@@ -106,32 +109,17 @@ export class SqlScriptService {
         try {
             const upper = sqlContent.toUpperCase().trim();
             
-            if (upper.startsWith('DELETE')) {
-                // 将 DELETE 转换为 SELECT COUNT(*)
+            if (upper.startsWith('DELETE') || upper.startsWith('UPDATE')) {
+                const prefix = upper.startsWith('DELETE') ? 'DELETE FROM' : 'UPDATE';
                 const whereIndex = upper.indexOf('WHERE');
                 if (whereIndex === -1) return null;
                 
-                const whereClause = sqlContent.slice(whereIndex);
-                const tableName = this.extractTableName(sqlContent, 'DELETE FROM');
-                
+                const tableName = this.extractTableName(sqlContent, prefix);
                 if (!tableName) return null;
                 
-                const countSql = `SELECT COUNT(*) as count FROM ${tableName} ${whereClause}`;
-                const result = await drizzleDb.all(sql.raw(countSql)) as unknown as { count: number }[];
-                return result[0]?.count || 0;
-            }
-
-            if (upper.startsWith('UPDATE')) {
-                const whereIndex = upper.indexOf('WHERE');
-                if (whereIndex === -1) return null;
-                
-                const whereClause = sqlContent.slice(whereIndex);
-                const tableName = this.extractTableName(sqlContent, 'UPDATE');
-                
-                if (!tableName) return null;
-                
-                const countSql = `SELECT COUNT(*) as count FROM ${tableName} ${whereClause}`;
-                const result = await drizzleDb.all(sql.raw(countSql)) as unknown as { count: number }[];
+                const result = await drizzleDb.all(
+                    sql`SELECT COUNT(*) as count FROM ${sql.identifier(tableName)} WHERE 1=1`
+                ) as unknown as { count: number }[];
                 return result[0]?.count || 0;
             }
 

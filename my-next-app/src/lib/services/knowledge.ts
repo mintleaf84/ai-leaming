@@ -51,8 +51,9 @@ export interface UpdateNoteInput {
 /**
  * 创建知识卡片
  */
-export async function createKnowledgeCard(card: KnowledgeCard): Promise<number> {
+export async function createKnowledgeCard(card: KnowledgeCard, userId?: number): Promise<number> {
     const result = await drizzleDb.insert(drizzleSchema.knowledge_cards).values({
+        user_id: userId || 1,
         session_id: card.session_id || null,
         title: card.title,
         category: card.category || '',
@@ -85,13 +86,16 @@ export async function createKnowledgeCard(card: KnowledgeCard): Promise<number> 
 /**
  * 获取知识卡片列表
  */
-export async function getAllKnowledgeCards(category?: string, limit: number = 100, ids?: number[]): Promise<KnowledgeCard[]> {
+export async function getAllKnowledgeCards(category?: string, limit: number = 100, ids?: number[], userId?: number): Promise<KnowledgeCard[]> {
     const conditions = [];
     if (category) {
         conditions.push(eq(drizzleSchema.knowledge_cards.category, category));
     }
     if (ids && ids.length > 0) {
         conditions.push(inArray(drizzleSchema.knowledge_cards.id, ids));
+    }
+    if (userId) {
+        conditions.push(eq(drizzleSchema.knowledge_cards.user_id, userId));
     }
 
     const rows = await drizzleDb.select()
@@ -243,20 +247,29 @@ export function exportToAnkiTSV(cards: KnowledgeCard[]): string {
 /**
  * 获取知识卡片统计
  */
-export async function getKnowledgeStats(): Promise<{ total: number; byCategory: { category: string; count: number }[] }> {
+export async function getKnowledgeStats(userId?: number): Promise<{ total: number; byCategory: { category: string; count: number }[] }> {
+    const conditions: unknown[] = [];
+    if (userId) {
+        conditions.push(eq(drizzleSchema.knowledge_cards.user_id, userId));
+    }
     const totalResult = await drizzleDb.select({ count: sql<number>`count(*)` })
         .from(drizzleSchema.knowledge_cards)
+        .where(conditions.length > 0 ? and(...conditions as Parameters<typeof and>) : undefined)
         .get();
     
+    const catConditions: unknown[] = [
+        sql`${drizzleSchema.knowledge_cards.category} IS NOT NULL`,
+        sql`${drizzleSchema.knowledge_cards.category} != ''`
+    ];
+    if (userId) {
+        catConditions.push(eq(drizzleSchema.knowledge_cards.user_id, userId));
+    }
     const byCategory = await drizzleDb.select({
         category: drizzleSchema.knowledge_cards.category,
         count: sql<number>`count(*)`
     })
     .from(drizzleSchema.knowledge_cards)
-    .where(and(
-        sql`${drizzleSchema.knowledge_cards.category} IS NOT NULL`,
-        sql`${drizzleSchema.knowledge_cards.category} != ''`
-    ))
+    .where(and(...catConditions as Parameters<typeof and>))
     .groupBy(drizzleSchema.knowledge_cards.category)
     .orderBy(desc(sql`count(*)`))
     .all();
@@ -265,6 +278,23 @@ export async function getKnowledgeStats(): Promise<{ total: number; byCategory: 
         total: totalResult?.count || 0, 
         byCategory: byCategory as { category: string; count: number }[] 
     };
+}
+
+export async function getCategories(userId?: number): Promise<string[]> {
+    const conditions: unknown[] = [
+        sql`${drizzleSchema.knowledge_cards.category} IS NOT NULL`,
+        sql`${drizzleSchema.knowledge_cards.category} != ''`
+    ];
+    if (userId) {
+        conditions.push(eq(drizzleSchema.knowledge_cards.user_id, userId));
+    }
+    const rows = await drizzleDb.select({ category: drizzleSchema.knowledge_cards.category })
+        .from(drizzleSchema.knowledge_cards)
+        .where(and(...conditions as Parameters<typeof and>))
+        .groupBy(drizzleSchema.knowledge_cards.category)
+        .orderBy(drizzleSchema.knowledge_cards.category)
+        .all();
+    return rows.map(row => row.category as string);
 }
 
 /**

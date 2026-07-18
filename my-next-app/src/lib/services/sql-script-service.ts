@@ -114,8 +114,9 @@ export class SqlScriptService {
                 const tableName = this.extractTableName(sqlContent, prefix);
                 if (!tableName) return null;
                 
+                const whereClause = sqlContent.slice(whereIndex);
                 const result = await drizzleDb.all(
-                    sql`SELECT COUNT(*) as count FROM ${sql.identifier(tableName)} WHERE 1=1`
+                    sql`SELECT COUNT(*) as count FROM ${sql.identifier(tableName)} ${sql.raw(whereClause)}`
                 ) as unknown as { count: number }[];
                 return result[0]?.count || 0;
             }

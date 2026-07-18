@@ -43,6 +43,8 @@ jobs:
 
       - name: 运行单元测试（含覆盖率）
         run: npx vitest run --coverage
+        env:
+          BACKUP_ENCRYPTION_KEY: ci-backup-encryption-key-for-testing-only
 
       - name: 上传覆盖率报告
         uses: actions/upload-artifact@v4
@@ -62,6 +64,7 @@ jobs:
       JWT_SECRET: ci-placeholder-secret
       AI_API_KEY: ci-placeholder-key
       DB_FILENAME: ci-test.db
+      BACKUP_ENCRYPTION_KEY: ci-backup-encryption-key-for-testing-only
     steps:
       - uses: actions/checkout@v4
         with:

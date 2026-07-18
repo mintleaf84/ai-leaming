@@ -14,7 +14,7 @@ jobs:
   lint:
     name: Lint & Type Check
     runs-on: self-hosted
-    timeout-minutes: 10
+    timeout-minutes: 20
     steps:
       - uses: actions/checkout@v4
         with:

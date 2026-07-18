@@ -194,22 +194,6 @@ export async function deleteKnowledgeCard(id: number): Promise<boolean> {
 }
 
 /**
- * 获取所有分类
- */
-export async function getCategories(): Promise<string[]> {
-    const rows = await drizzleDb.select({ category: drizzleSchema.knowledge_cards.category })
-        .from(drizzleSchema.knowledge_cards)
-        .where(and(
-            sql`${drizzleSchema.knowledge_cards.category} IS NOT NULL`,
-            sql`${drizzleSchema.knowledge_cards.category} != ''`
-        ))
-        .groupBy(drizzleSchema.knowledge_cards.category)
-        .orderBy(drizzleSchema.knowledge_cards.category)
-        .all();
-    return rows.map(row => row.category as string);
-}
-
-/**
  * 导出为 Anki TSV 格式
  * 格式: front<TAB>back<TAB>tags
  */

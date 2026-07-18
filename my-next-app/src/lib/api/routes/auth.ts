@@ -12,9 +12,7 @@ app.use('*', honoLogger())
 
 // Rate Limiting 中间件
 app.use('*', async (c, next) => {
-    // 构建标准的 fetch API Request 对象以符合 getClientIP 签名
-    const reqInfo = { headers: c.req.raw.headers } as unknown;
-    const clientIP = getClientIP(reqInfo as unknown as Parameters<typeof getClientIP>[0]);
+    const clientIP = getClientIP(c.req.raw);
 
     // 我们在 /api 挂载点下，原始路径 c.req.path 可能是 /api/auth/login。
     // 但是这里中间件获取的可能是 /login。这里兼容一下：

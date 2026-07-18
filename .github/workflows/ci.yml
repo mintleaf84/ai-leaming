@@ -6,13 +6,9 @@ on:
   pull_request:
     branches: [ "master", "main" ]
 
-defaults:
-  run:
-    working-directory: my-next-app
-
 env:
-  GIT_HTTP_PROXY: http://127.0.0.1:10809
-  GIT_HTTPS_PROXY: http://127.0.0.1:10809
+  http_proxy: http://127.0.0.1:10809
+  https_proxy: http://127.0.0.1:10809
   HTTP_PROXY: http://127.0.0.1:10809
   HTTPS_PROXY: http://127.0.0.1:10809
 
@@ -22,24 +18,20 @@ jobs:
     runs-on: self-hosted
     timeout-minutes: 10
     steps:
-      - name: 配置代理并检出代码
-        run: |
-          git config --global http.proxy http://127.0.0.1:10809
-          git config --global https.proxy http://127.0.0.1:10809
-          rm -rf . || true
-          git clone --depth=1 https://x-access-token:${{ secrets.GITHUB_TOKEN }}@github.com/mintleaf84/ai-leaming.git .
-          git fetch --depth=1 origin ${{ github.event.pull_request.head.sha || github.sha }}
-          git checkout ${{ github.event.pull_request.head.sha || github.sha }}
-          git config --global --unset http.proxy
-          git config --global --unset https.proxy
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
 
       - name: 安装依赖
+        working-directory: my-next-app
         run: npm ci
 
       - name: ESLint
+        working-directory: my-next-app
         run: npm run lint
 
       - name: TypeScript 类型检查
+        working-directory: my-next-app
         run: npx tsc --noEmit
 
   unit-test:
@@ -47,21 +39,16 @@ jobs:
     runs-on: self-hosted
     timeout-minutes: 30
     steps:
-      - name: 配置代理并检出代码
-        run: |
-          git config --global http.proxy http://127.0.0.1:10809
-          git config --global https.proxy http://127.0.0.1:10809
-          rm -rf . || true
-          git clone --depth=1 https://x-access-token:${{ secrets.GITHUB_TOKEN }}@github.com/mintleaf84/ai-leaming.git .
-          git fetch --depth=1 origin ${{ github.event.pull_request.head.sha || github.sha }}
-          git checkout ${{ github.event.pull_request.head.sha || github.sha }}
-          git config --global --unset http.proxy
-          git config --global --unset https.proxy
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
 
       - name: 安装依赖
+        working-directory: my-next-app
         run: npm ci
 
       - name: 运行单元测试（含覆盖率）
+        working-directory: my-next-app
         run: npx vitest run --coverage
 
       - name: 上传覆盖率报告
@@ -83,22 +70,18 @@ jobs:
       AI_API_KEY: ci-placeholder-key
       DB_FILENAME: ci-test.db
     steps:
-      - name: 配置代理并检出代码
-        run: |
-          git config --global http.proxy http://127.0.0.1:10809
-          git config --global https.proxy http://127.0.0.1:10809
-          rm -rf . || true
-          git clone --depth=1 https://x-access-token:${{ secrets.GITHUB_TOKEN }}@github.com/mintleaf84/ai-leaming.git .
-          git fetch --depth=1 origin ${{ github.event.pull_request.head.sha || github.sha }}
-          git checkout ${{ github.event.pull_request.head.sha || github.sha }}
-          git config --global --unset http.proxy
-          git config --global --unset https.proxy
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
 
       - name: 安装依赖
+        working-directory: my-next-app
         run: npm ci
 
       - name: 运行数据库迁移
+        working-directory: my-next-app
         run: npm run db:migrate
 
       - name: 构建 Next.js
+        working-directory: my-next-app
         run: npm run build

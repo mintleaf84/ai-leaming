@@ -6,9 +6,9 @@ on:
   pull_request:
     branches: [ "master", "main" ]
 
-env:
-  HTTP_PROXY: http://127.0.0.1:10809
-  HTTPS_PROXY: http://127.0.0.1:10809
+defaults:
+  run:
+    working-directory: my-next-app
 
 jobs:
   lint:
@@ -16,35 +16,17 @@ jobs:
     runs-on: self-hosted
     timeout-minutes: 10
     steps:
-      - name: 清理工作区
-        run: |
-          cd ${{ github.workspace }}
-          rm -rf .git
-            
-      - name: 配置 Git 代理并检出
-        run: |
-          git config --global http.proxy http://127.0.0.1:10809
-          git config --global https.proxy http://127.0.0.1:10809
-          cd ${{ github.workspace }}
-          rm -rf .git
-          git init
-          git remote add origin https://x-access-token:${{ secrets.GITHUB_TOKEN }}@github.com/mintleaf84/ai-leaming.git
-          git fetch --depth=1 origin ${{ github.event.pull_request.head.sha || github.sha }}
-          git clean -fd
-          git checkout --force ${{ github.event.pull_request.head.sha || github.sha }}
-          git config --global --unset http.proxy
-          git config --global --unset https.proxy
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
 
       - name: 安装依赖
-        working-directory: my-next-app
         run: npm ci
 
       - name: ESLint
-        working-directory: my-next-app
         run: npm run lint
 
       - name: TypeScript 类型检查
-        working-directory: my-next-app
         run: npx tsc --noEmit
 
   unit-test:
@@ -52,31 +34,14 @@ jobs:
     runs-on: self-hosted
     timeout-minutes: 30
     steps:
-      - name: 清理工作区
-        run: |
-          cd ${{ github.workspace }}
-          rm -rf .git
-            
-      - name: 配置 Git 代理并检出
-        run: |
-          git config --global http.proxy http://127.0.0.1:10809
-          git config --global https.proxy http://127.0.0.1:10809
-          cd ${{ github.workspace }}
-          rm -rf .git
-          git init
-          git remote add origin https://x-access-token:${{ secrets.GITHUB_TOKEN }}@github.com/mintleaf84/ai-leaming.git
-          git fetch --depth=1 origin ${{ github.event.pull_request.head.sha || github.sha }}
-          git clean -fd
-          git checkout --force ${{ github.event.pull_request.head.sha || github.sha }}
-          git config --global --unset http.proxy
-          git config --global --unset https.proxy
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
 
       - name: 安装依赖
-        working-directory: my-next-app
         run: npm ci
 
       - name: 运行单元测试（含覆盖率）
-        working-directory: my-next-app
         run: npx vitest run --coverage
 
       - name: 上传覆盖率报告
@@ -84,7 +49,7 @@ jobs:
         if: always()
         with:
           name: coverage-report
-          path: my-next-app/coverage/
+          path: coverage/
           retention-days: 7
 
   build:
@@ -98,33 +63,15 @@ jobs:
       AI_API_KEY: ci-placeholder-key
       DB_FILENAME: ci-test.db
     steps:
-      - name: 清理工作区
-        run: |
-          cd ${{ github.workspace }}
-          rm -rf .git
-            
-      - name: 配置 Git 代理并检出
-        run: |
-          git config --global http.proxy http://127.0.0.1:10809
-          git config --global https.proxy http://127.0.0.1:10809
-          cd ${{ github.workspace }}
-          rm -rf .git
-          git init
-          git remote add origin https://x-access-token:${{ secrets.GITHUB_TOKEN }}@github.com/mintleaf84/ai-leaming.git
-          git fetch --depth=1 origin ${{ github.event.pull_request.head.sha || github.sha }}
-          git clean -fd
-          git checkout --force ${{ github.event.pull_request.head.sha || github.sha }}
-          git config --global --unset http.proxy
-          git config --global --unset https.proxy
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
 
       - name: 安装依赖
-        working-directory: my-next-app
         run: npm ci
 
       - name: 运行数据库迁移
-        working-directory: my-next-app
         run: npm run db:migrate
 
       - name: 构建 Next.js
-        working-directory: my-next-app
         run: npm run build

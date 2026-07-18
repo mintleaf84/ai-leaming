@@ -4,7 +4,7 @@ const ALGORITHM = 'aes-256-gcm';
 const IV_LENGTH = 12; // GCM 推荐 IV 长度为 12 字节
 const SALT_LENGTH = 16;
 const TAG_LENGTH = 16;
-const ITERATIONS = 600000;
+const ITERATIONS = 100000;
 const KEY_LENGTH = 32;
 
 /**

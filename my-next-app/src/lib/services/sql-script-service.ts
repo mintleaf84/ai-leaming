@@ -14,9 +14,6 @@ import path from 'path';
 
 // 危险 SQL 关键字黑名单（禁止执行）
 const DANGEROUS_KEYWORDS = [
-    'INSERT',
-    'SELECT',
-    'REPLACE',
     'DROP',
     'TRUNCATE',
     'ALTER',

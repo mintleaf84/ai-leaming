@@ -22,9 +22,13 @@ jobs:
     runs-on: self-hosted
     timeout-minutes: 10
     steps:
-      - uses: actions/checkout@v4
-        with:
-          ref: ${{ github.event.pull_request.head.sha || github.sha }}
+      - name: 配置代理并检出代码
+        run: |
+          git config --global http.proxy http://127.0.0.1:10809
+          git config --global https.proxy http://127.0.0.1:10809
+          git clone --depth=1 https://mintleaf84:${{ secrets.GITHUB_TOKEN }}@github.com/mintleaf84/ai-leaming.git .
+          git fetch --depth=1 origin ${{ github.event.pull_request.head.sha || github.sha }}
+          git checkout ${{ github.event.pull_request.head.sha || github.sha }}
 
       - name: 安装依赖
         run: npm ci
@@ -40,9 +44,13 @@ jobs:
     runs-on: self-hosted
     timeout-minutes: 30
     steps:
-      - uses: actions/checkout@v4
-        with:
-          ref: ${{ github.event.pull_request.head.sha || github.sha }}
+      - name: 配置代理并检出代码
+        run: |
+          git config --global http.proxy http://127.0.0.1:10809
+          git config --global https.proxy http://127.0.0.1:10809
+          git clone --depth=1 https://mintleaf84:${{ secrets.GITHUB_TOKEN }}@github.com/mintleaf84/ai-leaming.git .
+          git fetch --depth=1 origin ${{ github.event.pull_request.head.sha || github.sha }}
+          git checkout ${{ github.event.pull_request.head.sha || github.sha }}
 
       - name: 安装依赖
         run: npm ci
@@ -69,9 +77,13 @@ jobs:
       AI_API_KEY: ci-placeholder-key
       DB_FILENAME: ci-test.db
     steps:
-      - uses: actions/checkout@v4
-        with:
-          ref: ${{ github.event.pull_request.head.sha || github.sha }}
+      - name: 配置代理并检出代码
+        run: |
+          git config --global http.proxy http://127.0.0.1:10809
+          git config --global https.proxy http://127.0.0.1:10809
+          git clone --depth=1 https://mintleaf84:${{ secrets.GITHUB_TOKEN }}@github.com/mintleaf84/ai-leaming.git .
+          git fetch --depth=1 origin ${{ github.event.pull_request.head.sha || github.sha }}
+          git checkout ${{ github.event.pull_request.head.sha || github.sha }}
 
       - name: 安装依赖
         run: npm ci

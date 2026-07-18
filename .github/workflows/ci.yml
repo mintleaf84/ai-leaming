@@ -26,9 +26,12 @@ jobs:
         run: |
           git config --global http.proxy http://127.0.0.1:10809
           git config --global https.proxy http://127.0.0.1:10809
-          git clone --depth=1 https://mintleaf84:${{ secrets.GITHUB_TOKEN }}@github.com/mintleaf84/ai-leaming.git .
+          rm -rf . || true
+          git clone --depth=1 https://x-access-token:${{ secrets.GITHUB_TOKEN }}@github.com/mintleaf84/ai-leaming.git .
           git fetch --depth=1 origin ${{ github.event.pull_request.head.sha || github.sha }}
           git checkout ${{ github.event.pull_request.head.sha || github.sha }}
+          git config --global --unset http.proxy
+          git config --global --unset https.proxy
 
       - name: 安装依赖
         run: npm ci
@@ -48,9 +51,12 @@ jobs:
         run: |
           git config --global http.proxy http://127.0.0.1:10809
           git config --global https.proxy http://127.0.0.1:10809
-          git clone --depth=1 https://mintleaf84:${{ secrets.GITHUB_TOKEN }}@github.com/mintleaf84/ai-leaming.git .
+          rm -rf . || true
+          git clone --depth=1 https://x-access-token:${{ secrets.GITHUB_TOKEN }}@github.com/mintleaf84/ai-leaming.git .
           git fetch --depth=1 origin ${{ github.event.pull_request.head.sha || github.sha }}
           git checkout ${{ github.event.pull_request.head.sha || github.sha }}
+          git config --global --unset http.proxy
+          git config --global --unset https.proxy
 
       - name: 安装依赖
         run: npm ci
@@ -81,9 +87,12 @@ jobs:
         run: |
           git config --global http.proxy http://127.0.0.1:10809
           git config --global https.proxy http://127.0.0.1:10809
-          git clone --depth=1 https://mintleaf84:${{ secrets.GITHUB_TOKEN }}@github.com/mintleaf84/ai-leaming.git .
+          rm -rf . || true
+          git clone --depth=1 https://x-access-token:${{ secrets.GITHUB_TOKEN }}@github.com/mintleaf84/ai-leaming.git .
           git fetch --depth=1 origin ${{ github.event.pull_request.head.sha || github.sha }}
           git checkout ${{ github.event.pull_request.head.sha || github.sha }}
+          git config --global --unset http.proxy
+          git config --global --unset https.proxy
 
       - name: 安装依赖
         run: npm ci

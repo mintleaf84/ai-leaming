@@ -26,10 +26,12 @@ jobs:
           git config --global http.proxy http://127.0.0.1:10809
           git config --global https.proxy http://127.0.0.1:10809
           cd ${{ github.workspace }}
+          rm -rf .git
           git init
           git remote add origin https://x-access-token:${{ secrets.GITHUB_TOKEN }}@github.com/mintleaf84/ai-leaming.git
           git fetch --depth=1 origin ${{ github.event.pull_request.head.sha || github.sha }}
-          git checkout ${{ github.event.pull_request.head.sha || github.sha }}
+          git clean -fd
+          git checkout --force ${{ github.event.pull_request.head.sha || github.sha }}
           git config --global --unset http.proxy
           git config --global --unset https.proxy
 
@@ -60,10 +62,12 @@ jobs:
           git config --global http.proxy http://127.0.0.1:10809
           git config --global https.proxy http://127.0.0.1:10809
           cd ${{ github.workspace }}
+          rm -rf .git
           git init
           git remote add origin https://x-access-token:${{ secrets.GITHUB_TOKEN }}@github.com/mintleaf84/ai-leaming.git
           git fetch --depth=1 origin ${{ github.event.pull_request.head.sha || github.sha }}
-          git checkout ${{ github.event.pull_request.head.sha || github.sha }}
+          git clean -fd
+          git checkout --force ${{ github.event.pull_request.head.sha || github.sha }}
           git config --global --unset http.proxy
           git config --global --unset https.proxy
 
@@ -104,10 +108,12 @@ jobs:
           git config --global http.proxy http://127.0.0.1:10809
           git config --global https.proxy http://127.0.0.1:10809
           cd ${{ github.workspace }}
+          rm -rf .git
           git init
           git remote add origin https://x-access-token:${{ secrets.GITHUB_TOKEN }}@github.com/mintleaf84/ai-leaming.git
           git fetch --depth=1 origin ${{ github.event.pull_request.head.sha || github.sha }}
-          git checkout ${{ github.event.pull_request.head.sha || github.sha }}
+          git clean -fd
+          git checkout --force ${{ github.event.pull_request.head.sha || github.sha }}
           git config --global --unset http.proxy
           git config --global --unset https.proxy
 

@@ -16,9 +16,22 @@ jobs:
     runs-on: self-hosted
     timeout-minutes: 10
     steps:
-      - uses: actions/checkout@v4
-        with:
-          ref: ${{ github.event.pull_request.head.sha || github.sha }}
+      - name: 清理工作区
+        run: |
+          cd ${{ github.workspace }}
+          rm -rf .git
+            
+      - name: 配置 Git 代理并检出
+        run: |
+          git config --global http.proxy http://127.0.0.1:10809
+          git config --global https.proxy http://127.0.0.1:10809
+          cd ${{ github.workspace }}
+          git init
+          git remote add origin https://x-access-token:${{ secrets.GITHUB_TOKEN }}@github.com/mintleaf84/ai-leaming.git
+          git fetch --depth=1 origin ${{ github.event.pull_request.head.sha || github.sha }}
+          git checkout ${{ github.event.pull_request.head.sha || github.sha }}
+          git config --global --unset http.proxy
+          git config --global --unset https.proxy
 
       - name: 安装依赖
         working-directory: my-next-app
@@ -37,9 +50,22 @@ jobs:
     runs-on: self-hosted
     timeout-minutes: 30
     steps:
-      - uses: actions/checkout@v4
-        with:
-          ref: ${{ github.event.pull_request.head.sha || github.sha }}
+      - name: 清理工作区
+        run: |
+          cd ${{ github.workspace }}
+          rm -rf .git
+            
+      - name: 配置 Git 代理并检出
+        run: |
+          git config --global http.proxy http://127.0.0.1:10809
+          git config --global https.proxy http://127.0.0.1:10809
+          cd ${{ github.workspace }}
+          git init
+          git remote add origin https://x-access-token:${{ secrets.GITHUB_TOKEN }}@github.com/mintleaf84/ai-leaming.git
+          git fetch --depth=1 origin ${{ github.event.pull_request.head.sha || github.sha }}
+          git checkout ${{ github.event.pull_request.head.sha || github.sha }}
+          git config --global --unset http.proxy
+          git config --global --unset https.proxy
 
       - name: 安装依赖
         working-directory: my-next-app
@@ -68,9 +94,22 @@ jobs:
       AI_API_KEY: ci-placeholder-key
       DB_FILENAME: ci-test.db
     steps:
-      - uses: actions/checkout@v4
-        with:
-          ref: ${{ github.event.pull_request.head.sha || github.sha }}
+      - name: 清理工作区
+        run: |
+          cd ${{ github.workspace }}
+          rm -rf .git
+            
+      - name: 配置 Git 代理并检出
+        run: |
+          git config --global http.proxy http://127.0.0.1:10809
+          git config --global https.proxy http://127.0.0.1:10809
+          cd ${{ github.workspace }}
+          git init
+          git remote add origin https://x-access-token:${{ secrets.GITHUB_TOKEN }}@github.com/mintleaf84/ai-leaming.git
+          git fetch --depth=1 origin ${{ github.event.pull_request.head.sha || github.sha }}
+          git checkout ${{ github.event.pull_request.head.sha || github.sha }}
+          git config --global --unset http.proxy
+          git config --global --unset https.proxy
 
       - name: 安装依赖
         working-directory: my-next-app

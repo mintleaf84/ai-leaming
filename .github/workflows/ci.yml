@@ -10,6 +10,12 @@ defaults:
   run:
     working-directory: my-next-app
 
+env:
+  GIT_HTTP_PROXY: http://127.0.0.1:10809
+  GIT_HTTPS_PROXY: http://127.0.0.1:10809
+  HTTP_PROXY: http://127.0.0.1:10809
+  HTTPS_PROXY: http://127.0.0.1:10809
+
 jobs:
   lint:
     name: Lint & Type Check
@@ -17,6 +23,8 @@ jobs:
     timeout-minutes: 10
     steps:
       - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
 
       - name: 安装依赖
         run: npm ci
@@ -33,6 +41,8 @@ jobs:
     timeout-minutes: 30
     steps:
       - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
 
       - name: 安装依赖
         run: npm ci
@@ -60,6 +70,8 @@ jobs:
       DB_FILENAME: ci-test.db
     steps:
       - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
 
       - name: 安装依赖
         run: npm ci

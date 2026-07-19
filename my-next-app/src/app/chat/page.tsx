@@ -218,7 +218,7 @@ export default function ChatPage() {
 
 
     return (
-        <div className="flex h-screen bg-background text-foreground">
+        <div className="flex h-full bg-background text-foreground">
             {/* Sidebar */}
             <div
                 className={`${sidebarOpen ? 'translate-x-0' : '-translate-x-full'

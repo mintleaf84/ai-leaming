@@ -36,7 +36,7 @@ export function MobileNav({ user: _user, featureFlags }: UserProps) {
     ].filter(item => item.enabled !== false);
 
     return (
-        <nav className="md:hidden fixed bottom-6 left-6 right-6 z-50 bg-card/95 backdrop-blur-md rounded-2xl shadow-xl shadow-black/10 dark:shadow-black/30 border border-border ring-1 ring-border/50">
+        <nav className="md:hidden fixed bottom-[calc(1.5rem+env(safe-area-inset-bottom))] left-6 right-6 z-50 bg-card/95 backdrop-blur-md rounded-2xl shadow-xl shadow-black/10 dark:shadow-black/30 border border-border ring-1 ring-border/50">
             <div className="flex justify-around items-center h-16">
                 {navItems.map((item) => {
                     const isActive = pathname === item.href || pathname.startsWith(`${item.href}/`);

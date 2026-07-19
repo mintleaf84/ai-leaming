@@ -103,22 +103,18 @@ describe("Activity Actions (Real DB)", () => {
       await db
         .insert(schema.users)
         .values({ id: 1, username: "admin", password_hash: "hash" });
-      await db
-        .insert(schema.questions)
-        .values({
-          id: 101,
-          content: "Q1",
-          answer: "A",
-          dimension: "knowledge",
-        } as any);
-      await db
-        .insert(schema.questions)
-        .values({
-          id: 102,
-          content: "Q2",
-          answer: "A",
-          dimension: "knowledge",
-        } as any);
+      await db.insert(schema.questions).values({
+        id: 101,
+        content: "Q1",
+        answer: "A",
+        dimension: "knowledge",
+      } as any);
+      await db.insert(schema.questions).values({
+        id: 102,
+        content: "Q2",
+        answer: "A",
+        dimension: "knowledge",
+      } as any);
       await db
         .insert(schema.practice_sessions)
         .values({ id: "s-stats", user_id: 1 });

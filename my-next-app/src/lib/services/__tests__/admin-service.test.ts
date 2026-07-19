@@ -430,11 +430,9 @@ describe("AdminService", () => {
       mockDrizzleDb.transaction.mockImplementation(
         async (cb: (tx: unknown) => unknown) => {
           const mockTx = {
-            insert: vi
-              .fn()
-              .mockReturnValue({
-                values: vi.fn().mockResolvedValue(undefined),
-              }),
+            insert: vi.fn().mockReturnValue({
+              values: vi.fn().mockResolvedValue(undefined),
+            }),
           };
           return await cb(mockTx);
         },

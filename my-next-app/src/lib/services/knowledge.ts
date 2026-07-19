@@ -268,9 +268,7 @@ export function exportToAnkiTSV(cards: KnowledgeCard[]): string {
 /**
  * 获取知识卡片统计
  */
-export async function getKnowledgeStats(
-  userId?: number,
-): Promise<{
+export async function getKnowledgeStats(userId?: number): Promise<{
   total: number;
   byCategory: { category: string; count: number }[];
 }> {

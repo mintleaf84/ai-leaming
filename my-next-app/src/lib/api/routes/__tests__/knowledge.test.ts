@@ -28,11 +28,9 @@ vi.mock("@/lib/api/middlewares/auth", () => ({
 
 // Mock AI Client & Prompts at top level
 const { mockGenerateTextWrapper, mockGetPromptFromDb } = vi.hoisted(() => ({
-  mockGenerateTextWrapper: vi
-    .fn()
-    .mockResolvedValue({
-      text: '{"title":"Extracted","category":"Test","tags":[],"front":"F","back":"B","key_points":[]}',
-    }),
+  mockGenerateTextWrapper: vi.fn().mockResolvedValue({
+    text: '{"title":"Extracted","category":"Test","tags":[],"front":"F","back":"B","key_points":[]}',
+  }),
   mockGetPromptFromDb: vi.fn().mockResolvedValue("template"),
 }));
 

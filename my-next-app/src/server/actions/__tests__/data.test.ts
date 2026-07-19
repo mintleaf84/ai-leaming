@@ -24,17 +24,15 @@ const { mockSelect, mockDelete, mockInsert, mockTransaction } = vi.hoisted(
   () => ({
     mockSelect: vi.fn().mockReturnValue({
       from: vi.fn().mockReturnValue({
-        where: vi
-          .fn()
-          .mockResolvedValue([
-            {
-              user_id: 1,
-              tag_name: "tag1",
-              score: 80,
-              history: "{}",
-              last_updated: "2024-01-01",
-            },
-          ]),
+        where: vi.fn().mockResolvedValue([
+          {
+            user_id: 1,
+            tag_name: "tag1",
+            score: 80,
+            history: "{}",
+            last_updated: "2024-01-01",
+          },
+        ]),
       }),
     }),
     mockDelete: vi.fn().mockReturnValue({

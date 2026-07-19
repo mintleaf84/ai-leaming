@@ -7,11 +7,9 @@ const { mockDrizzleDb, mockDrizzleSchema } = vi.hoisted(() => {
   const mockDrizzleDb = {
     select: vi.fn(() => createMockQuery([])),
     delete: vi.fn().mockReturnValue({ where: vi.fn().mockResolvedValue({}) }),
-    update: vi
-      .fn()
-      .mockReturnValue({
-        set: vi.fn().mockReturnValue({ where: vi.fn().mockResolvedValue({}) }),
-      }),
+    update: vi.fn().mockReturnValue({
+      set: vi.fn().mockReturnValue({ where: vi.fn().mockResolvedValue({}) }),
+    }),
     insert: vi.fn().mockReturnValue({ values: vi.fn().mockResolvedValue({}) }),
     query: {
       system_settings: { findFirst: vi.fn() },

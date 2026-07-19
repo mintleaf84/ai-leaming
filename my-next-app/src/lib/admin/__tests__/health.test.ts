@@ -13,11 +13,9 @@ const { mockDrizzleDb, mockDrizzleSchema } = vi.hoisted(() => {
   const mockDrizzleDb = {
     select: vi.fn(),
     insert: vi.fn().mockReturnValue({ values: vi.fn().mockResolvedValue({}) }),
-    update: vi
-      .fn()
-      .mockReturnValue({
-        set: vi.fn().mockReturnValue({ where: vi.fn().mockResolvedValue({}) }),
-      }),
+    update: vi.fn().mockReturnValue({
+      set: vi.fn().mockReturnValue({ where: vi.fn().mockResolvedValue({}) }),
+    }),
     delete: vi.fn().mockReturnValue({ where: vi.fn().mockResolvedValue({}) }),
     all: vi
       .fn()

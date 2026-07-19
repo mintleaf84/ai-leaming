@@ -6,13 +6,11 @@ vi.setConfig({ testTimeout: 15000 });
 const { mockAiClient, mockAiLib } = vi.hoisted(() => {
   return {
     mockAiClient: {
-      getAiConfig: vi
-        .fn()
-        .mockReturnValue({
-          apiKey: "default-key",
-          baseURL: "https://api.example.com/v1",
-          modelName: "gpt-4o-mini",
-        }),
+      getAiConfig: vi.fn().mockReturnValue({
+        apiKey: "default-key",
+        baseURL: "https://api.example.com/v1",
+        modelName: "gpt-4o-mini",
+      }),
       getModel: vi.fn().mockReturnValue({ modelId: "mock-model" }),
     },
     mockAiLib: {

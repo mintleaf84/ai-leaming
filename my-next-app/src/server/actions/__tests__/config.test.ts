@@ -29,13 +29,11 @@ vi.mock("@/lib/admin/audit", () => ({
 
 vi.mock("@/lib/ai/client", () => ({
   clearAiConfigCache: vi.fn(),
-  getAiConfig: vi
-    .fn()
-    .mockReturnValue({
-      apiKey: "test",
-      baseURL: "https://test.com",
-      modelName: "test-model",
-    }),
+  getAiConfig: vi.fn().mockReturnValue({
+    apiKey: "test",
+    baseURL: "https://test.com",
+    modelName: "test-model",
+  }),
   getModel: vi.fn().mockReturnValue({}),
 }));
 

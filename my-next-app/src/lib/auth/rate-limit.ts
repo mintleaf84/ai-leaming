@@ -95,19 +95,23 @@ export function checkRateLimit(identifier: string, path: string): RateLimitResul
 
 /**
  * 获取客户端 IP 地址
+ * 安全说明：仅在生产环境配置了可信代理时才信任 X-Forwarded-For。
+ * 建议在反向代理层（Nginx / Cloudflare）剥离 X-Forwarded-For 或使用 X-Real-IP。
  */
-export function getClientIP(request: Request): string {
-    // Cloudflare
+export function getClientIP(request: Request, trustProxy: boolean = false): string {
+    // Cloudflare (始终可信，由 CF 边缘设置)
     const cfIP = request.headers.get('cf-connecting-ip');
     if (cfIP) return cfIP;
 
-    // X-Forwarded-For (代理/负载均衡)
-    const forwardedFor = request.headers.get('x-forwarded-for');
-    if (forwardedFor) {
-        return forwardedFor.split(',')[0].trim();
+    // 仅在配置了可信代理时才信任 X-Forwarded-For
+    if (trustProxy) {
+        const forwardedFor = request.headers.get('x-forwarded-for');
+        if (forwardedFor) {
+            return forwardedFor.split(',')[0].trim();
+        }
     }
 
-    // X-Real-IP (Nginx)
+    // X-Real-IP (Nginx 反向代理设置，相对更可靠)
     const realIP = request.headers.get('x-real-ip');
     if (realIP) return realIP;
 

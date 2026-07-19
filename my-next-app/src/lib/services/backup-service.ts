@@ -25,9 +25,13 @@ const SETTING_KEYS = {
 const BACKUP_SECRET = env.BACKUP_ENCRYPTION_KEY;
 
 if (!BACKUP_SECRET) {
-    console.warn('⚠️ [备份系统] 未检测到 BACKUP_ENCRYPTION_KEY 环境变量！');
-    console.warn('   当前正使用不安全的默认密钥加密 WebDAV 凭据。');
-    console.warn('   请务必在 .env 文件中设置该变量，以确保您的存储账号安全。');
+    const errorMsg = 'BACKUP_ENCRYPTION_KEY 环境变量未设置。'
+        + '生产环境必须设置该变量以确保备份凭据安全。'
+        + '开发环境可使用默认密钥，但切勿用于生产。';
+    if (process.env.NODE_ENV === 'production') {
+        throw new Error(errorMsg);
+    }
+    console.warn('WARNING: ' + errorMsg);
 }
 
 const SECRET = BACKUP_SECRET || 'ai-learning-backup-secret-key-32-chars';

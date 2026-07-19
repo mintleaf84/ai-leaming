@@ -2,6 +2,7 @@ import { OpenAPIHono, createRoute, z } from '@hono/zod-openapi'
 import { getErrorMessage } from '@/lib/utils/error';
 import { textbookService } from '@/lib/services/textbook'
 import { authMiddleware } from '@/lib/api/middlewares/auth'
+import { requireRole } from '@/lib/auth/auth'
 import { drizzleDb } from '@/lib/db'
 import { textbook_chapters } from '@/lib/db/drizzle-schema'
 import { eq, count } from 'drizzle-orm'
@@ -154,6 +155,7 @@ const deleteTextbookDef = createRoute({
 
 app.openapi(deleteTextbookDef, async (c) => {
     try {
+        await requireRole(['admin']);
         const { id } = c.req.valid('param')
         const textbookId = parseInt(id)
         if (isNaN(textbookId)) return c.json({ error: 'Invalid ID' }, 400)

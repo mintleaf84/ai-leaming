@@ -27,11 +27,14 @@ const { mockTextbookService } = vi.hoisted(() => {
 
 vi.mock('@/lib/services/textbook', () => ({ textbookService: mockTextbookService }));
 
-// Mock Auth 中间件
+// Mock Auth
 vi.mock('@/lib/api/middlewares/auth', () => ({
     authMiddleware: async (c: any, next: any) => {
         await next();
     }
+}));
+vi.mock('@/lib/auth/auth', () => ({
+    requireRole: vi.fn().mockResolvedValue({ id: 1, role: 'admin', username: 'admin_user' })
 }));
 
 const sampleTextbook = {

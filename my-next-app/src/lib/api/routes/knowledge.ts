@@ -7,7 +7,7 @@ import {
     getKnowledgeStats,
     exportToAnkiTSV
 } from '@/lib/services/knowledge'
-import { authMiddleware } from '@/lib/api/middlewares/auth'
+import { authMiddleware, getCurrentUser } from '@/lib/api/middlewares/auth'
 
 const app = new OpenAPIHono()
 
@@ -91,8 +91,9 @@ app.openapi(listRoute, async (c) => {
     const { category, limit, format, ids } = c.req.valid('query')
     const limitNum = parseInt(limit)
     const idList = ids ? ids.split(',').map(id => parseInt(id)).filter(id => !isNaN(id)) : undefined
+    const currentUser = getCurrentUser(c)
 
-    const cards = await getAllKnowledgeCards(category, limitNum, idList)
+    const cards = await getAllKnowledgeCards(category, limitNum, idList, currentUser.id)
 
     // Export to Anki
     if (format === 'anki') {
@@ -103,8 +104,8 @@ app.openapi(listRoute, async (c) => {
         })
     }
 
-    const stats = await getKnowledgeStats()
-    const categories = await getCategories()
+    const stats = await getKnowledgeStats(currentUser.id)
+    const categories = await getCategories(currentUser.id)
 
     return c.json({
         cards,
@@ -147,6 +148,7 @@ const createCardRoute = createRoute({
 
 app.openapi(createCardRoute, async (c) => {
     const body = c.req.valid('json')
+    const currentUser = getCurrentUser(c)
 
     try {
         const card = {
@@ -160,7 +162,7 @@ app.openapi(createCardRoute, async (c) => {
             source_content: body.source_content || '',
         }
 
-        const id = await createKnowledgeCard(card)
+        const id = await createKnowledgeCard(card, currentUser.id)
         return c.json({ id, message: '知识卡片创建成功' })
     } catch (error: unknown) {
         console.error('[Knowledge API] POST error:', error)
@@ -214,6 +216,7 @@ import { getPromptFromDb, buildPrompt, DEFAULT_KNOWLEDGE_EXTRACT_PROMPT } from '
 
 app.openapi(extractRoute, async (c) => {
     const { content, sessionId, instruction, save } = c.req.valid('json')
+    const currentUser = getCurrentUser(c)
 
     try {
         const templateFromDb = await getPromptFromDb('knowledge_extract')
@@ -278,7 +281,7 @@ app.openapi(extractRoute, async (c) => {
         const id = await createKnowledgeCard({
             ...cardData,
             session_id: sessionId
-        })
+        }, currentUser.id)
 
         return c.json({
             id,

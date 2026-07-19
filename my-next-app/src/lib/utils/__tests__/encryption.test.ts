@@ -71,17 +71,17 @@ describe('Encryption Utils', () => {
     });
 
     describe('roundtrip', () => {
-        it('应该正确处理各种文本', () => {
-            const testCases = [
-                'simple text',
-                '中文内容',
-                '1234567890',
-                '!@#$%^&*()',
-                '',
-                'a'.repeat(10000)
-            ];
+        const testCases = [
+            'simple text',
+            '中文内容',
+            '1234567890',
+            '!@#$%^&*()',
+            '',
+            'a'.repeat(10000)
+        ];
 
-            testCases.forEach(text => {
+        testCases.forEach(text => {
+            it(`应该正确处理: ${text.slice(0, 20)}`, () => {
                 const encrypted = encrypt(text, secret);
                 const decrypted = decrypt(encrypted, secret);
                 expect(decrypted).toBe(text);

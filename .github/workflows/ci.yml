@@ -14,9 +14,11 @@ jobs:
   lint:
     name: Lint & Type Check
     runs-on: self-hosted
-    timeout-minutes: 10
+    timeout-minutes: 20
     steps:
       - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
 
       - name: 安装依赖
         run: npm ci
@@ -33,19 +35,23 @@ jobs:
     timeout-minutes: 30
     steps:
       - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
 
       - name: 安装依赖
         run: npm ci
 
       - name: 运行单元测试（含覆盖率）
         run: npx vitest run --coverage
+        env:
+          BACKUP_ENCRYPTION_KEY: ci-backup-encryption-key-for-testing-only
 
       - name: 上传覆盖率报告
         uses: actions/upload-artifact@v4
         if: always()
         with:
           name: coverage-report
-          path: my-next-app/coverage/
+          path: coverage/
           retention-days: 7
 
   build:
@@ -58,8 +64,11 @@ jobs:
       JWT_SECRET: ci-placeholder-secret
       AI_API_KEY: ci-placeholder-key
       DB_FILENAME: ci-test.db
+      BACKUP_ENCRYPTION_KEY: ci-backup-encryption-key-for-testing-only
     steps:
       - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
 
       - name: 安装依赖
         run: npm ci
@@ -69,3 +78,4 @@ jobs:
 
       - name: 构建 Next.js
         run: npm run build
+

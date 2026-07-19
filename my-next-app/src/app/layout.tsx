@@ -88,7 +88,7 @@ export default async function RootLayout({
             disableTransitionOnChange
             themes={['light', 'dark', 'eye-care', 'zhuoyu']}
           >
-            <div className="flex h-screen">
+            <div className="flex h-dvh">
               <div className="hidden md:flex">
                 <AppSidebar 
                   userSection={
@@ -100,8 +100,7 @@ export default async function RootLayout({
                 />
               </div>
               <div className="flex-1 flex flex-col min-w-0">
-                {/* Mobile Header Placeholder if needed, or rely on MobileNav bottom */}
-                <main className="flex-1 pb-16 md:pb-0 relative overflow-y-auto">
+                <main className="flex-1 pb-20 md:pb-0 relative overflow-y-auto">
                   <ErrorBoundary>
                     {children}
                   </ErrorBoundary>

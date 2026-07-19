@@ -16,7 +16,7 @@ jobs:
   build:
     # 只有 CI 成功时才执行（workflow_dispatch 直接运行）
     if: ${{ github.event_name == 'workflow_dispatch' || github.event.workflow_run.conclusion == 'success' }}
-    runs-on: self-hosted
+    runs-on: ubuntu-latest
     steps:
       - name: Check out code
         uses: actions/checkout@v4

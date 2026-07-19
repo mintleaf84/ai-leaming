@@ -1,12 +1,11 @@
-
-import { defineConfig, devices } from '@playwright/test';
-import _path from 'path';
+import { defineConfig, devices } from "@playwright/test";
+import _path from "path";
 
 /**
  * See https://playwright.dev/docs/test-configuration.
  */
 export default defineConfig({
-  testDir: './tests/e2e',
+  testDir: "./tests/e2e",
   /* Timeout for each test */
   timeout: 60 * 1000,
   /* Run tests in files in parallel */
@@ -18,42 +17,42 @@ export default defineConfig({
   /* Opt out of parallel tests on CI. */
   workers: 1,
   /* Reporter to use. See https://playwright.dev/docs/test-reporters */
-  reporter: 'html',
+  reporter: "html",
   /* Shared settings for all the projects below. See https://playwright.dev/docs/api/class-testoptions. */
   use: {
     /* Base URL to use in actions like `await page.goto('/')`. */
-    baseURL: 'http://localhost:3001',
+    baseURL: "http://localhost:3001",
 
     /* Collect trace when retrying the failed test. See https://playwright.dev/docs/trace-viewer */
-    trace: 'on-first-retry',
+    trace: "on-first-retry",
 
     /* Capture screenshot on failure */
-    screenshot: 'only-on-failure',
+    screenshot: "only-on-failure",
   },
 
   /* Configure projects for major browsers */
   projects: [
     {
-      name: 'chromium',
-      use: { ...devices['Desktop Chrome'] },
+      name: "chromium",
+      use: { ...devices["Desktop Chrome"] },
     },
   ],
 
   /* Run your local dev server before starting the tests */
   webServer: {
-    command: 'npm run dev -- -p 3001',
-    url: 'http://localhost:3001',
+    command: "npm run dev -- -p 3001",
+    url: "http://localhost:3001",
     reuseExistingServer: false,
     timeout: 180 * 1000,
-    stdout: 'pipe',
+    stdout: "pipe",
     env: {
-      DB_FILENAME: 'test-e2e.db',
-      E2E_TEST: 'true',
-      SKIP_ENV_VALIDATION: 'true',
-      JWT_SECRET: 'test-jwt-secret-for-e2e',
-      AI_API_KEY: 'test-api-key-for-e2e',
+      DB_FILENAME: "test-e2e.db",
+      E2E_TEST: "true",
+      SKIP_ENV_VALIDATION: "true",
+      JWT_SECRET: "test-jwt-secret-for-e2e",
+      AI_API_KEY: "test-api-key-for-e2e",
     },
   },
 
-  globalSetup: require.resolve('./tests/e2e/global-setup'),
+  globalSetup: require.resolve("./tests/e2e/global-setup"),
 });

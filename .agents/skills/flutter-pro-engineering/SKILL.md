@@ -10,6 +10,7 @@ description: Flutter 工程化完整指南。从单端代码质量、项目目�
 ## 三大工程维度
 
 ### Part 1: 单端代码质量
+
 修复 `flutter analyze` 警告、优化性能、规范 Dart 代码写法。涵盖 lint 规则、const 优化、Riverpod Provider 模式、Freezed 3.x 最佳实践。
 
 **触发场景**：编写新 Widget、修复编译警告、代码审查。
@@ -18,6 +19,7 @@ description: Flutter 工程化完整指南。从单端代码质量、项目目�
 ---
 
 ### Part 2: 项目迁移与维护
+
 大规模重构项目目录结构（功能优先 vs 层级优先）、批量修正 import 路径、处理 build_runner 已知 bug。涵盖 git 操作、PowerShell 编码陷阱、生成文件迁移。
 
 **触发场景**：项目架构调整、目录重组、import 路径统一。
@@ -26,6 +28,7 @@ description: Flutter 工程化完整指南。从单端代码质量、项目目�
 ---
 
 ### Part 3: 全栈联调（Flutter ↔ Next.js）
+
 Flutter 移动端对接 Next.js 后端时的常见陷阱与最佳实践。涵盖 Next.js 15 params 异步化、Freezed 弱类型映射、Dio 流式响应、双实例模式。
 
 **触发场景**：Flutter 新增 API 接口、数据序列化错误、流式传输配置。

@@ -78,12 +78,8 @@
           "name": "admin_logs_user_id_users_id_fk",
           "tableFrom": "admin_logs",
           "tableTo": "users",
-          "columnsFrom": [
-            "user_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["user_id"],
+          "columnsTo": ["id"],
           "onDelete": "cascade",
           "onUpdate": "no action"
         }
@@ -227,12 +223,8 @@
           "name": "ai_model_routes_config_id_ai_configs_id_fk",
           "tableFrom": "ai_model_routes",
           "tableTo": "ai_configs",
-          "columnsFrom": [
-            "config_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["config_id"],
+          "columnsTo": ["id"],
           "onDelete": "set null",
           "onUpdate": "no action"
         }
@@ -385,9 +377,7 @@
       "indexes": {
         "api_keys_key_string_unique": {
           "name": "api_keys_key_string_unique",
-          "columns": [
-            "key_string"
-          ],
+          "columns": ["key_string"],
           "isUnique": true
         }
       },
@@ -450,12 +440,8 @@
           "name": "chat_messages_session_id_chat_sessions_id_fk",
           "tableFrom": "chat_messages",
           "tableTo": "chat_sessions",
-          "columnsFrom": [
-            "session_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["session_id"],
+          "columnsTo": ["id"],
           "onDelete": "cascade",
           "onUpdate": "no action"
         }
@@ -521,12 +507,8 @@
           "name": "chat_sessions_user_id_users_id_fk",
           "tableFrom": "chat_sessions",
           "tableTo": "users",
-          "columnsFrom": [
-            "user_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["user_id"],
+          "columnsTo": ["id"],
           "onDelete": "cascade",
           "onUpdate": "no action"
         }
@@ -578,11 +560,7 @@
       "indexes": {
         "daily_usage_user_id_usage_date_usage_type_unique": {
           "name": "daily_usage_user_id_usage_date_usage_type_unique",
-          "columns": [
-            "user_id",
-            "usage_date",
-            "usage_type"
-          ],
+          "columns": ["user_id", "usage_date", "usage_type"],
           "isUnique": true
         }
       },
@@ -591,12 +569,8 @@
           "name": "daily_usage_user_id_users_id_fk",
           "tableFrom": "daily_usage",
           "tableTo": "users",
-          "columnsFrom": [
-            "user_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["user_id"],
+          "columnsTo": ["id"],
           "onDelete": "cascade",
           "onUpdate": "no action"
         }
@@ -702,12 +676,8 @@
           "name": "knowledge_cards_user_id_users_id_fk",
           "tableFrom": "knowledge_cards",
           "tableTo": "users",
-          "columnsFrom": [
-            "user_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["user_id"],
+          "columnsTo": ["id"],
           "onDelete": "cascade",
           "onUpdate": "no action"
         },
@@ -715,12 +685,8 @@
           "name": "knowledge_cards_session_id_chat_sessions_id_fk",
           "tableFrom": "knowledge_cards",
           "tableTo": "chat_sessions",
-          "columnsFrom": [
-            "session_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["session_id"],
+          "columnsTo": ["id"],
           "onDelete": "set null",
           "onUpdate": "no action"
         }
@@ -772,10 +738,7 @@
       "indexes": {
         "mastered_questions_user_id_question_id_unique": {
           "name": "mastered_questions_user_id_question_id_unique",
-          "columns": [
-            "user_id",
-            "question_id"
-          ],
+          "columns": ["user_id", "question_id"],
           "isUnique": true
         }
       },
@@ -784,12 +747,8 @@
           "name": "mastered_questions_user_id_users_id_fk",
           "tableFrom": "mastered_questions",
           "tableTo": "users",
-          "columnsFrom": [
-            "user_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["user_id"],
+          "columnsTo": ["id"],
           "onDelete": "cascade",
           "onUpdate": "no action"
         },
@@ -797,12 +756,8 @@
           "name": "mastered_questions_question_id_questions_id_fk",
           "tableFrom": "mastered_questions",
           "tableTo": "questions",
-          "columnsFrom": [
-            "question_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["question_id"],
+          "columnsTo": ["id"],
           "onDelete": "cascade",
           "onUpdate": "no action"
         }
@@ -865,12 +820,8 @@
           "name": "notes_user_id_users_id_fk",
           "tableFrom": "notes",
           "tableTo": "users",
-          "columnsFrom": [
-            "user_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["user_id"],
+          "columnsTo": ["id"],
           "onDelete": "cascade",
           "onUpdate": "no action"
         }
@@ -925,10 +876,7 @@
       "foreignKeys": {},
       "compositePrimaryKeys": {
         "observation_zone_user_id_tag_name_pk": {
-          "columns": [
-            "user_id",
-            "tag_name"
-          ],
+          "columns": ["user_id", "tag_name"],
           "name": "observation_zone_user_id_tag_name_pk"
         }
       },
@@ -1014,9 +962,7 @@
       "indexes": {
         "payment_records_order_no_unique": {
           "name": "payment_records_order_no_unique",
-          "columns": [
-            "order_no"
-          ],
+          "columns": ["order_no"],
           "isUnique": true
         }
       },
@@ -1025,12 +971,8 @@
           "name": "payment_records_user_id_users_id_fk",
           "tableFrom": "payment_records",
           "tableTo": "users",
-          "columnsFrom": [
-            "user_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["user_id"],
+          "columnsTo": ["id"],
           "onDelete": "cascade",
           "onUpdate": "no action"
         }
@@ -1115,12 +1057,8 @@
           "name": "practice_logs_session_id_practice_sessions_id_fk",
           "tableFrom": "practice_logs",
           "tableTo": "practice_sessions",
-          "columnsFrom": [
-            "session_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["session_id"],
+          "columnsTo": ["id"],
           "onDelete": "no action",
           "onUpdate": "no action"
         },
@@ -1128,12 +1066,8 @@
           "name": "practice_logs_user_id_users_id_fk",
           "tableFrom": "practice_logs",
           "tableTo": "users",
-          "columnsFrom": [
-            "user_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["user_id"],
+          "columnsTo": ["id"],
           "onDelete": "cascade",
           "onUpdate": "no action"
         },
@@ -1141,12 +1075,8 @@
           "name": "practice_logs_question_id_questions_id_fk",
           "tableFrom": "practice_logs",
           "tableTo": "questions",
-          "columnsFrom": [
-            "question_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["question_id"],
+          "columnsTo": ["id"],
           "onDelete": "no action",
           "onUpdate": "no action"
         }
@@ -1241,12 +1171,8 @@
           "name": "practice_sessions_user_id_users_id_fk",
           "tableFrom": "practice_sessions",
           "tableTo": "users",
-          "columnsFrom": [
-            "user_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["user_id"],
+          "columnsTo": ["id"],
           "onDelete": "cascade",
           "onUpdate": "no action"
         }
@@ -1428,12 +1354,8 @@
           "name": "session_reviews_session_id_practice_sessions_id_fk",
           "tableFrom": "session_reviews",
           "tableTo": "practice_sessions",
-          "columnsFrom": [
-            "session_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["session_id"],
+          "columnsTo": ["id"],
           "onDelete": "no action",
           "onUpdate": "no action"
         }
@@ -1559,22 +1481,15 @@
           "name": "system_settings_user_id_users_id_fk",
           "tableFrom": "system_settings",
           "tableTo": "users",
-          "columnsFrom": [
-            "user_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["user_id"],
+          "columnsTo": ["id"],
           "onDelete": "cascade",
           "onUpdate": "no action"
         }
       },
       "compositePrimaryKeys": {
         "system_settings_user_id_key_pk": {
-          "columns": [
-            "user_id",
-            "key"
-          ],
+          "columns": ["user_id", "key"],
           "name": "system_settings_user_id_key_pk"
         }
       },
@@ -1645,20 +1560,12 @@
       "indexes": {
         "idx_text_annotations_user_question": {
           "name": "idx_text_annotations_user_question",
-          "columns": [
-            "user_id",
-            "question_id"
-          ],
+          "columns": ["user_id", "question_id"],
           "isUnique": false
         },
         "text_annotations_user_id_question_id_start_offset_end_offset_unique": {
           "name": "text_annotations_user_id_question_id_start_offset_end_offset_unique",
-          "columns": [
-            "user_id",
-            "question_id",
-            "start_offset",
-            "end_offset"
-          ],
+          "columns": ["user_id", "question_id", "start_offset", "end_offset"],
           "isUnique": true
         }
       },
@@ -1667,12 +1574,8 @@
           "name": "text_annotations_user_id_users_id_fk",
           "tableFrom": "text_annotations",
           "tableTo": "users",
-          "columnsFrom": [
-            "user_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["user_id"],
+          "columnsTo": ["id"],
           "onDelete": "cascade",
           "onUpdate": "no action"
         },
@@ -1680,12 +1583,8 @@
           "name": "text_annotations_question_id_questions_id_fk",
           "tableFrom": "text_annotations",
           "tableTo": "questions",
-          "columnsFrom": [
-            "question_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["question_id"],
+          "columnsTo": ["id"],
           "onDelete": "cascade",
           "onUpdate": "no action"
         }
@@ -1771,12 +1670,8 @@
           "name": "textbook_chapters_textbook_id_textbooks_id_fk",
           "tableFrom": "textbook_chapters",
           "tableTo": "textbooks",
-          "columnsFrom": [
-            "textbook_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["textbook_id"],
+          "columnsTo": ["id"],
           "onDelete": "cascade",
           "onUpdate": "no action"
         }
@@ -1910,22 +1805,15 @@
           "name": "user_mastery_user_id_users_id_fk",
           "tableFrom": "user_mastery",
           "tableTo": "users",
-          "columnsFrom": [
-            "user_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["user_id"],
+          "columnsTo": ["id"],
           "onDelete": "cascade",
           "onUpdate": "no action"
         }
       },
       "compositePrimaryKeys": {
         "user_mastery_user_id_tag_name_pk": {
-          "columns": [
-            "user_id",
-            "tag_name"
-          ],
+          "columns": ["user_id", "tag_name"],
           "name": "user_mastery_user_id_tag_name_pk"
         }
       },
@@ -1992,9 +1880,7 @@
       "indexes": {
         "user_subscriptions_user_id_unique": {
           "name": "user_subscriptions_user_id_unique",
-          "columns": [
-            "user_id"
-          ],
+          "columns": ["user_id"],
           "isUnique": true
         }
       },
@@ -2003,12 +1889,8 @@
           "name": "user_subscriptions_user_id_users_id_fk",
           "tableFrom": "user_subscriptions",
           "tableTo": "users",
-          "columnsFrom": [
-            "user_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["user_id"],
+          "columnsTo": ["id"],
           "onDelete": "cascade",
           "onUpdate": "no action"
         },
@@ -2016,12 +1898,8 @@
           "name": "user_subscriptions_plan_id_subscription_plans_id_fk",
           "tableFrom": "user_subscriptions",
           "tableTo": "subscription_plans",
-          "columnsFrom": [
-            "plan_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["plan_id"],
+          "columnsTo": ["id"],
           "onDelete": "no action",
           "onUpdate": "no action"
         }
@@ -2082,9 +1960,7 @@
       "indexes": {
         "users_username_unique": {
           "name": "users_username_unique",
-          "columns": [
-            "username"
-          ],
+          "columns": ["username"],
           "isUnique": true
         }
       },

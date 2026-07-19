@@ -1,5 +1,5 @@
-import { createEnv } from "@t3-oss/env-nextjs"
-import { z } from "zod"
+import { createEnv } from "@t3-oss/env-nextjs";
+import { z } from "zod";
 
 export const env = createEnv({
   skipValidation: !!process.env.SKIP_ENV_VALIDATION,
@@ -20,4 +20,4 @@ export const env = createEnv({
   experimental__runtimeEnv: {
     NEXT_PUBLIC_APP_URL: process.env.NEXT_PUBLIC_APP_URL,
   },
-})
+});

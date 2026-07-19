@@ -1,47 +1,53 @@
-'use server';
+"use server";
 
-import logger from '@/lib/logger';
-import { requireUser } from '@/lib/auth/auth';
-import { generateTextWrapper } from '@/lib/ai/client';
-import { checkAndConsumeQuota } from '@/lib/billing/subscription-service';
-import { questionService } from '@/lib/services/question';
+import logger from "@/lib/logger";
+import { requireUser } from "@/lib/auth/auth";
+import { generateTextWrapper } from "@/lib/ai/client";
+import { checkAndConsumeQuota } from "@/lib/billing/subscription-service";
+import { questionService } from "@/lib/services/question";
 
 /**
  * 为题目生成 AI 助记词
  */
-export async function generateMnemonicAction(questionId: string, forceRegenerate = false) {
-    try {
-        const user = await requireUser();
-        const idNum = parseInt(questionId, 10);
+export async function generateMnemonicAction(
+  questionId: string,
+  forceRegenerate = false,
+) {
+  try {
+    const user = await requireUser();
+    const idNum = parseInt(questionId, 10);
 
-        // 1. 获取题目核心信息
-        const question = await questionService.getById(idNum);
+    // 1. 获取题目核心信息
+    const question = await questionService.getById(idNum);
 
-        if (!question) {
-            return { success: false, message: '题目不存在' };
-        }
+    if (!question) {
+      return { success: false, message: "题目不存在" };
+    }
 
-        // 2. 检查缓存 (除非强制重新生成)
-        if (question.ai_mnemonic && !forceRegenerate) {
-            return { success: true, content: question.ai_mnemonic, cached: true };
-        }
+    // 2. 检查缓存 (除非强制重新生成)
+    if (question.ai_mnemonic && !forceRegenerate) {
+      return { success: true, content: question.ai_mnemonic, cached: true };
+    }
 
-        // 3. 配额检查
-        const userIdNum = typeof user.id === 'string' ? parseInt(user.id, 10) : user.id;
-        if (isNaN(userIdNum)) {
-            return { success: false, message: '无效的用户 ID' };
-        }
+    // 3. 配额检查
+    const userIdNum =
+      typeof user.id === "string" ? parseInt(user.id, 10) : user.id;
+    if (isNaN(userIdNum)) {
+      return { success: false, message: "无效的用户 ID" };
+    }
 
-        const quotaResult = await checkAndConsumeQuota(userIdNum, 'mnemonic');
-        if (!quotaResult.allowed) {
-            return {
-                success: false,
-                message: quotaResult.message || '今日记忆大师使用次数已用完，请升级套餐解锁更多。'
-            };
-        }
+    const quotaResult = await checkAndConsumeQuota(userIdNum, "mnemonic");
+    if (!quotaResult.allowed) {
+      return {
+        success: false,
+        message:
+          quotaResult.message ||
+          "今日记忆大师使用次数已用完，请升级套餐解锁更多。",
+      };
+    }
 
-        // 4. 构建助记词 Prompt
-        const prompt = `
+    // 4. 构建助记词 Prompt
+    const prompt = `
 # Role
 你是一位顶级记忆大师，将枯燥的教育学、心理学理论转化为**过目不忘、甚至有点“洗脑”**的记忆钩子。
 
@@ -61,10 +67,10 @@ export async function generateMnemonicAction(questionId: string, forceRegenerate
 
 # Input (在此输入知识点)
 - 题目内容: ${question.content}
-- 选项: ${JSON.stringify(question.options) || '无'}
+- 选项: ${JSON.stringify(question.options) || "无"}
 - 正确答案: ${question.answer}
-- 解析: ${question.explanation || '无'}
-- 标签: ${JSON.stringify(question.tags) || '无'}
+- 解析: ${question.explanation || "无"}
+- 标签: ${JSON.stringify(question.tags) || "无"}
 
 # Output Format
 请直接输出 Markdown 内容，不要包含任何其他废话。格式如下：
@@ -79,16 +85,15 @@ export async function generateMnemonicAction(questionId: string, forceRegenerate
 [描述那个让你忘不掉的场景]
 `;
 
-        // 5. 调用 AI 生成
-        const { text } = await generateTextWrapper(prompt, 'premium');
+    // 5. 调用 AI 生成
+    const { text } = await generateTextWrapper(prompt, "premium");
 
-        // 6. 通过 Service 保存
-        await questionService.updateMnemonic(idNum, text);
+    // 6. 通过 Service 保存
+    await questionService.updateMnemonic(idNum, text);
 
-        return { success: true, content: text, cached: false };
-
-    } catch (error) {
-        logger.error({ err: error }, '[generateMnemonicAction] Error');
-        return { success: false, message: '生成失败，请稍后重试' };
-    }
+    return { success: true, content: text, cached: false };
+  } catch (error) {
+    logger.error({ err: error }, "[generateMnemonicAction] Error");
+    return { success: false, message: "生成失败，请稍后重试" };
+  }
 }

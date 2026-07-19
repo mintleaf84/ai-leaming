@@ -3,7 +3,7 @@
 @import "tw-animate-css";
 
 /* Tippy.js 弹出菜单定位样式 */
-.tippy-box[data-animation=fade][data-state=hidden] {
+.tippy-box[data-animation="fade"][data-state="hidden"] {
   opacity: 0;
 }
 [data-tippy-root] {
@@ -74,12 +74,18 @@
   --radius-2xl: calc(var(--radius) + 8px);
   --radius-3xl: calc(var(--radius) + 12px);
   --radius-4xl: calc(var(--radius) + 16px);
-  
+
   --animate-loading-bar: loading-bar 2s ease-in-out infinite;
   @keyframes loading-bar {
-    0% { transform: translateX(-100%); }
-    50% { transform: translateX(0); }
-    100% { transform: translateX(100%); }
+    0% {
+      transform: translateX(-100%);
+    }
+    50% {
+      transform: translateX(0);
+    }
+    100% {
+      transform: translateX(100%);
+    }
   }
 }
 
@@ -189,7 +195,7 @@
   --novel-stone-800: #d6d3d1;
 }
 
-[data-theme='zhuoyu'] {
+[data-theme="zhuoyu"] {
   /* ZhuoYu Notion Theme - Light mode (Rice Paper & Ink) */
   --background: oklch(0.985 0.002 85);
   /* #faf9f6 宣纸白 */
@@ -229,7 +235,7 @@
   --chart-5: oklch(0.7 0.1 150);
 }
 
-[data-theme='zhuoyu'].dark {
+[data-theme="zhuoyu"].dark {
   /* ZhuoYu Notion Theme - Dark mode (纯中性灰 + 翠玉点缀) */
   --background: oklch(0.14 0 0);
   /* Pure Neutral Black */
@@ -279,7 +285,7 @@
   --chart-5: oklch(0.75 0.1 150);
 }
 
-[data-theme='eye-care'] {
+[data-theme="eye-care"] {
   /* Eye Care Mode - Warm Beige / Paper */
   --background: #fdfbf7;
   /* Warm Paper */
@@ -328,7 +334,8 @@ body {
   @apply antialiased;
 
   /* 配合 viewport-fit=cover */
-  padding: env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left);
+  padding: env(safe-area-inset-top) env(safe-area-inset-right)
+    env(safe-area-inset-bottom) env(safe-area-inset-left);
   height: 100%;
   overflow: hidden;
   /* 由内部 main 容器负责滚动 */
@@ -392,11 +399,21 @@ main {
   }
 
   /* 错落感动效 (Staggered Children) */
-  .stagger-1 { animation-delay: 50ms; }
-  .stagger-2 { animation-delay: 100ms; }
-  .stagger-3 { animation-delay: 150ms; }
-  .stagger-4 { animation-delay: 200ms; }
-  .stagger-5 { animation-delay: 250ms; }
+  .stagger-1 {
+    animation-delay: 50ms;
+  }
+  .stagger-2 {
+    animation-delay: 100ms;
+  }
+  .stagger-3 {
+    animation-delay: 150ms;
+  }
+  .stagger-4 {
+    animation-delay: 200ms;
+  }
+  .stagger-5 {
+    animation-delay: 250ms;
+  }
 
   /* 高级扫光加载动效 (Shimmer) */
   .shimmer {
@@ -432,19 +449,25 @@ main {
   }
 
   @keyframes shimmer {
-    from { background-position: 200% 0; }
-    to { background-position: -200% 0; }
+    from {
+      background-position: 200% 0;
+    }
+    to {
+      background-position: -200% 0;
+    }
   }
 }
 
 @layer base {
   /* 全局交互反馈 */
-  button:active, .clickable:active {
+  button:active,
+  .clickable:active {
     transform: scale(0.97);
     transition: transform 0.1s ease-in-out;
   }
-  
-  button, .clickable {
+
+  button,
+  .clickable {
     transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
   }
   * {
@@ -519,18 +542,18 @@ main {
 }
 
 /* Custom TODO list checkboxes */
-ul[data-type="taskList"] li>label {
+ul[data-type="taskList"] li > label {
   margin-right: 0.2rem;
   user-select: none;
 }
 
 @media screen and (max-width: 768px) {
-  ul[data-type="taskList"] li>label {
+  ul[data-type="taskList"] li > label {
     margin-right: 0.5rem;
   }
 }
 
-ul[data-type="taskList"] li>label input[type="checkbox"] {
+ul[data-type="taskList"] li > label input[type="checkbox"] {
   -webkit-appearance: none;
   appearance: none;
   background-color: hsl(var(--background));
@@ -547,11 +570,11 @@ ul[data-type="taskList"] li>label input[type="checkbox"] {
   place-content: center;
 }
 
-ul[data-type="taskList"] li>label input[type="checkbox"]:hover {
+ul[data-type="taskList"] li > label input[type="checkbox"]:hover {
   background-color: hsl(var(--accent));
 }
 
-ul[data-type="taskList"] li>label input[type="checkbox"]::before {
+ul[data-type="taskList"] li > label input[type="checkbox"]::before {
   content: "";
   width: 0.65em;
   height: 0.65em;
@@ -562,11 +585,11 @@ ul[data-type="taskList"] li>label input[type="checkbox"]::before {
   clip-path: polygon(14% 44%, 0 65%, 50% 100%, 100% 16%, 80% 0%, 43% 62%);
 }
 
-ul[data-type="taskList"] li>label input[type="checkbox"]:checked::before {
+ul[data-type="taskList"] li > label input[type="checkbox"]:checked::before {
   transform: scale(1);
 }
 
-ul[data-type="taskList"] li[data-checked="true"]>div>p {
+ul[data-type="taskList"] li[data-checked="true"] > div > p {
   color: var(--muted-foreground);
   text-decoration: line-through;
   text-decoration-thickness: 2px;

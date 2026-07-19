@@ -12,13 +12,13 @@ This skill outlines the **mandatory** standards for modifying the `mobile_app` p
 ## 1. High-Level Principles (The Law)
 
 1. **State Management**: **MUST** use **Riverpod** (v2/v3+).
-    * *Prohibited*: `Provider`, `GetX`, `setState` (for business logic).
+   - _Prohibited_: `Provider`, `GetX`, `setState` (for business logic).
 2. **Immutability**: **MUST** use **Freezed** for all data models and state.
-    * *Prohibited*: Mutable Dart classes, manual `copyWith`, manual `==` overrides.
+   - _Prohibited_: Mutable Dart classes, manual `copyWith`, manual `==` overrides.
 3. **Networking**: **MUST** use **Retrofit** + **Dio**.
-    * *Prohibited*: `http` package, manual `Dio` requests without Retrofit interfaces.
+   - _Prohibited_: `http` package, manual `Dio` requests without Retrofit interfaces.
 4. **UI Responsiveness**: **MUST** use **flutter_screenutil**.
-    * *Prohibited*: Hardcoded logical pixels (e.g., `width: 100`) without adaptation.
+   - _Prohibited_: Hardcoded logical pixels (e.g., `width: 100`) without adaptation.
 5. **Language**: **English** for code/comments (Technical consistency), **Chinese** for documentation/thought process (User requirement).
 
 ---
@@ -43,24 +43,24 @@ lib/
 
 **Rule**: Use `NotifierProvider` or `AsyncNotifierProvider` for all business logic. Avoid `StateProvider` for complex logic.
 
-* **View Layers**: extending `ConsumerWidget` or `ConsumerStatefulWidget`.
-* **Reading State**: Use `ref.watch` in `build()`, `ref.read` in callbacks.
+- **View Layers**: extending `ConsumerWidget` or `ConsumerStatefulWidget`.
+- **Reading State**: Use `ref.watch` in `build()`, `ref.read` in callbacks.
 
 ### 3.2 Data Models (Freezed)
 
 **Rule**: All domain models must be defined as Freezed classes.
 
-* Use `@freezed` and `_$ClassName` mixin.
-* Use `factory .fromJson` for API deserialization.
+- Use `@freezed` and `_$ClassName` mixin.
+- Use `factory .fromJson` for API deserialization.
 
 ### 3.3 UI Sizing (Screenutil)
 
 **Rule**: Never use raw doubles for layout sizes.
 
-* **Width**: `100.w`
-* **Height**: `100.h`
-* **Font**: `16.sp`
-* **Radius**: `8.r`
+- **Width**: `100.w`
+- **Height**: `100.h`
+- **Font**: `16.sp`
+- **Radius**: `8.r`
 
 ### 3.4 Networking (Retrofit)
 
@@ -82,30 +82,30 @@ abstract class RestClient {
 
 ### 4.1 Syntax & Style (Effective Dart)
 
-* **Null Safety**: Avoid `!` operator. Use `?` and `??` for safe unwrapping.
-* **Async/Await**:
-  * ALWAYS use `await` instead of `.then()`.
-  * Use `Future.wait([])` for parallel execution.
-  * Return `Future<void>` not `void` for async functions.
-* **Collections**:
-  * Use `[]` and `{}` literals.
-  * Use collection if/for: `[if (active) item, for (var i in items) i]`.
-  * Use `.map().toList()` and `.where()` for transformations.
-* **Functions**:
-  * Use arrow syntax `=>` for one-liners.
-  * Key arguments by name using `{required Param param}`.
+- **Null Safety**: Avoid `!` operator. Use `?` and `??` for safe unwrapping.
+- **Async/Await**:
+  - ALWAYS use `await` instead of `.then()`.
+  - Use `Future.wait([])` for parallel execution.
+  - Return `Future<void>` not `void` for async functions.
+- **Collections**:
+  - Use `[]` and `{}` literals.
+  - Use collection if/for: `[if (active) item, for (var i in items) i]`.
+  - Use `.map().toList()` and `.where()` for transformations.
+- **Functions**:
+  - Use arrow syntax `=>` for one-liners.
+  - Key arguments by name using `{required Param param}`.
 
 ### 4.2 Error Handling
 
-* **Try/Catch**: Wrap distinct logical blocks, not entire big functions.
-* **Custom Exceptions**: Throw domain-specific exceptions (e.g., `AuthException`), not generic strings.
-* **Logging**: Use `logger.e(e, stackTrace)` (or project equivalent) instead of `print()`.
+- **Try/Catch**: Wrap distinct logical blocks, not entire big functions.
+- **Custom Exceptions**: Throw domain-specific exceptions (e.g., `AuthException`), not generic strings.
+- **Logging**: Use `logger.e(e, stackTrace)` (or project equivalent) instead of `print()`.
 
 ### 4.3 Documentation Standards
 
-* **Public API**: DO comment public classes/methods using `///`.
-* **Why, not What**: Explain *why* this logic exists, not *what* the syntax does.
-* **Language**: Comments in English (for code consistency) or Chinese (if complex business logic).
+- **Public API**: DO comment public classes/methods using `///`.
+- **Why, not What**: Explain _why_ this logic exists, not _what_ the syntax does.
+- **Language**: Comments in English (for code consistency) or Chinese (if complex business logic).
 
 ---
 
@@ -113,12 +113,12 @@ abstract class RestClient {
 
 We follow standard Flutter linting with stricter rules for maintainability:
 
-* `always_declare_return_types`: true
-* `avoid_print`: true (Use Logger)
-* `annotate_overrides`: true
-* `unawaited_futures`: true (Don't lose async tasks)
-* `prefer_const_constructors`: true (Performance)
-* `prefer_final_locals`: true (Immutability)
+- `always_declare_return_types`: true
+- `avoid_print`: true (Use Logger)
+- `annotate_overrides`: true
+- `unawaited_futures`: true (Don't lose async tasks)
+- `prefer_const_constructors`: true (Performance)
+- `prefer_final_locals`: true (Immutability)
 
 ---
 
@@ -126,17 +126,17 @@ We follow standard Flutter linting with stricter rules for maintainability:
 
 ### 6.1 Layout Best Practices
 
-* **Overflow Safety**:
-  * Use `Expanded` or `Flexible` inside Row/Column.
-  * Wrap text-heavy widgets in `SingleChildScrollView` if dynamic.
-  * Use `Wrap` instead of Row if items might exceed width.
-* **Performance**:
-  * Use `const` Widgets whenever possible.
-  * Use `ListView.builder` for long lists (never `Coloum` with children).
-  * Extract large build methods into separate Widget classes (not helper methods).
+- **Overflow Safety**:
+  - Use `Expanded` or `Flexible` inside Row/Column.
+  - Wrap text-heavy widgets in `SingleChildScrollView` if dynamic.
+  - Use `Wrap` instead of Row if items might exceed width.
+- **Performance**:
+  - Use `const` Widgets whenever possible.
+  - Use `ListView.builder` for long lists (never `Coloum` with children).
+  - Extract large build methods into separate Widget classes (not helper methods).
 
 ### 6.2 Visual Hierarchy
 
-* **Typography**: Stick to the App Theme (`Theme.of(context).textTheme`). Don't hardcode styles.
-* **Spacing**: Use consistent spacing constants (e.g., `Gap(16.w)` or `SizedBox(height: 16.h)`).
-* **Colors**: Use `Theme.of(context).colorScheme.primary` etc., avoiding hardcoded `Colors.blue`.
+- **Typography**: Stick to the App Theme (`Theme.of(context).textTheme`). Don't hardcode styles.
+- **Spacing**: Use consistent spacing constants (e.g., `Gap(16.w)` or `SizedBox(height: 16.h)`).
+- **Colors**: Use `Theme.of(context).colorScheme.primary` etc., avoiding hardcoded `Colors.blue`.

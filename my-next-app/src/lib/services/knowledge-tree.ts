@@ -9,23 +9,24 @@ export interface KnowledgeNode {
   count: number; // 该节点及其子节点下的题目总数
 }
 
-import { drizzleDb } from '@/lib/db';
-import { questions } from '@/lib/db/drizzle-schema';
-import { sql } from 'drizzle-orm';
+import { drizzleDb } from "@/lib/db";
+import { questions } from "@/lib/db/drizzle-schema";
+import { sql } from "drizzle-orm";
 
 export const KnowledgeTreeService = {
   /**
    * 从数据库获取所有标签的聚合统计
    */
   async getAggregatedTags(): Promise<{ tag: string; count: number }[]> {
-    const rawTags = await drizzleDb.select({
-      tag: sql<string>`json_each.value`,
-      count: sql<number>`count(*)`
-    })
-    .from(sql`${questions} AS q, json_each(q.tags)`)
-    .groupBy(sql`json_each.value`)
-    .orderBy(sql`json_each.value`)
-    .all();
+    const rawTags = await drizzleDb
+      .select({
+        tag: sql<string>`json_each.value`,
+        count: sql<number>`count(*)`,
+      })
+      .from(sql`${questions} AS q, json_each(q.tags)`)
+      .groupBy(sql`json_each.value`)
+      .orderBy(sql`json_each.value`)
+      .all();
 
     return rawTags as { tag: string; count: number }[];
   },
@@ -35,25 +36,27 @@ export const KnowledgeTreeService = {
    * 标签格式示例: "数学/几何/三角形"
    * @param rawTags 包含标签名和题目计数的原始数据
    */
-  buildKnowledgeTree(rawTags: { tag: string; count: number }[]): KnowledgeNode[] {
+  buildKnowledgeTree(
+    rawTags: { tag: string; count: number }[],
+  ): KnowledgeNode[] {
     const root: KnowledgeNode[] = [];
 
     // 1. 构建基础树形结构
     rawTags.forEach(({ tag, count }) => {
-      const parts = tag.split('/');
+      const parts = tag.split("/");
       let currentLevel = root;
       let currentPath = "";
 
       parts.forEach((part, index) => {
         currentPath = currentPath ? `${currentPath}/${part}` : part;
-        let existingNode = currentLevel.find(n => n.name === part);
+        let existingNode = currentLevel.find((n) => n.name === part);
 
         if (!existingNode) {
           existingNode = {
             name: part,
             path: currentPath,
             children: [],
-            count: 0 
+            count: 0,
           };
           currentLevel.push(existingNode);
         }
@@ -87,5 +90,5 @@ export const KnowledgeTreeService = {
       total += node.count;
     }
     return total;
-  }
+  },
 };

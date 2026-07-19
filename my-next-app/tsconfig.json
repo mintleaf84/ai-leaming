@@ -1,14 +1,8 @@
 {
   "compilerOptions": {
     "target": "ES2017",
-    "lib": [
-      "dom",
-      "dom.iterable",
-      "esnext"
-    ],
-    "types": [
-      "vitest/globals"
-    ],
+    "lib": ["dom", "dom.iterable", "esnext"],
+    "types": ["vitest/globals"],
     "allowJs": true,
     "skipLibCheck": true,
     "strict": true,
@@ -26,9 +20,7 @@
       }
     ],
     "paths": {
-      "@/*": [
-        "./src/*"
-      ]
+      "@/*": ["./src/*"]
     }
   },
   "include": [
@@ -41,8 +33,5 @@
     ".next-e2e/types/**/*.ts",
     ".next-e2e/dev/types/**/*.ts"
   ],
-  "exclude": [
-    "node_modules",
-    "scripts"
-  ]
+  "exclude": ["node_modules", "scripts"]
 }

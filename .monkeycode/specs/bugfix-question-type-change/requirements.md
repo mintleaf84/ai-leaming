@@ -14,9 +14,9 @@
 
 ### 3.1 答案格式不一致
 
-| 类型 | 答案格式 | 示例 |
-|------|---------|------|
-| 单选题 | 字符串 | `"A"` |
+| 类型   | 答案格式  | 示例        |
+| ------ | --------- | ----------- |
+| 单选题 | 字符串    | `"A"`       |
 | 多选题 | JSON 数组 | `["A","B"]` |
 
 ### 3.2 类型切换逻辑缺陷
@@ -25,7 +25,12 @@
 
 ```typescript
 // 当前代码只处理了 truefalse 情况
-const newOptionsStr = val === 'truefalse' ? '正确\n错误' : (val !== formData.type ? '' : formData.optionsStr);
+const newOptionsStr =
+  val === "truefalse"
+    ? "正确\n错误"
+    : val !== formData.type
+      ? ""
+      : formData.optionsStr;
 ```
 
 ### 3.3 数据流分析

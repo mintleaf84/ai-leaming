@@ -1,123 +1,121 @@
-import { OpenAPIHono } from '@hono/zod-openapi'
-import { handle } from 'hono/vercel'
-import { swaggerUI } from '@hono/swagger-ui'
-import { cors } from 'hono/cors'
-import { env } from '@/env'
+import { OpenAPIHono } from "@hono/zod-openapi";
+import { handle } from "hono/vercel";
+import { swaggerUI } from "@hono/swagger-ui";
+import { cors } from "hono/cors";
+import { env } from "@/env";
 
-export const runtime = 'nodejs'
+export const runtime = "nodejs";
 
-const app = new OpenAPIHono().basePath('/api')
+const app = new OpenAPIHono().basePath("/api");
 
 // 开启跨域 (CORS) 支持
 // 修复安全隐患：禁止 origin => origin 的全透传模式，实施白名单制防止 CSRF
-app.use('*', cors({
-  origin: (origin) => {
-    const allowedOrigins = [
-      env.NEXT_PUBLIC_APP_URL,
-      'http://localhost:3000',
-      'http://localhost:5000',
-      'http://127.0.0.1:3000',
-    ].filter(Boolean) as string[];
+app.use(
+  "*",
+  cors({
+    origin: (origin) => {
+      const allowedOrigins = [
+        env.NEXT_PUBLIC_APP_URL,
+        "http://localhost:3000",
+        "http://localhost:5000",
+        "http://127.0.0.1:3000",
+      ].filter(Boolean) as string[];
 
-    if (process.env.NODE_ENV === 'development') return origin; // 开发模式放行以便调试
-    if (allowedOrigins.includes(origin)) return origin;
+      if (process.env.NODE_ENV === "development") return origin; // 开发模式放行以便调试
+      if (allowedOrigins.includes(origin)) return origin;
 
-    return allowedOrigins[0]; // 默认返回第一个受信地址
-  },
-  credentials: true,
-}))
+      return allowedOrigins[0]; // 默认返回第一个受信地址
+    },
+    credentials: true,
+  }),
+);
 
 // 注册 Swagger UI
-app.get('/doc', swaggerUI({ url: '/api/openapi.json' }))
+app.get("/doc", swaggerUI({ url: "/api/openapi.json" }));
 
 // 注册 OpenAPI 文档端点
-app.doc('/openapi.json', {
-  openapi: '3.0.0',
+app.doc("/openapi.json", {
+  openapi: "3.0.0",
   info: {
-    version: '1.0.0',
-    title: 'AI Learning Mobile API',
-    description: 'API for AI Learning Mobile App',
+    version: "1.0.0",
+    title: "AI Learning Mobile API",
+    description: "API for AI Learning Mobile App",
   },
-})
+});
 
 // 统一的 auth 路由 (具备 rate limiting & token generator)
-import authRoute from '@/lib/api/routes/auth'
-app.route('/auth', authRoute)
+import authRoute from "@/lib/api/routes/auth";
+app.route("/auth", authRoute);
 
-import questionsRoute from '@/lib/api/routes/questions'
-app.route('/questions', questionsRoute)
+import questionsRoute from "@/lib/api/routes/questions";
+app.route("/questions", questionsRoute);
 
-import practiceRoute from '@/lib/api/routes/practice'
-app.route('/practice', practiceRoute)
+import practiceRoute from "@/lib/api/routes/practice";
+app.route("/practice", practiceRoute);
 
-import historyRoute from '@/lib/api/routes/history'
-app.route('/history', historyRoute)
+import historyRoute from "@/lib/api/routes/history";
+app.route("/history", historyRoute);
 
-import knowledgeRoute from '@/lib/api/routes/knowledge'
-app.route('/knowledge', knowledgeRoute)
+import knowledgeRoute from "@/lib/api/routes/knowledge";
+app.route("/knowledge", knowledgeRoute);
 
-import masteryRoute from '@/lib/api/routes/mastery'
-app.route('/mastery', masteryRoute)
+import masteryRoute from "@/lib/api/routes/mastery";
+app.route("/mastery", masteryRoute);
 
-import wrongBookRoute from '@/lib/api/routes/wrong-book'
-app.route('/wrong-book', wrongBookRoute)
+import wrongBookRoute from "@/lib/api/routes/wrong-book";
+app.route("/wrong-book", wrongBookRoute);
 
-import importRoute from '@/lib/api/routes/import'
-app.route('/import', importRoute)
+import importRoute from "@/lib/api/routes/import";
+app.route("/import", importRoute);
 
 // 外部开放接口（题库暴露，独立鉴权，不走用户登录体系）
-import externalRoute from '@/lib/api/routes/external'
-app.route('/external', externalRoute)
+import externalRoute from "@/lib/api/routes/external";
+app.route("/external", externalRoute);
 // 管理员专属接口
-import { adminRoute } from '@/lib/api/routes/admin'
-app.route('/admin', adminRoute)
+import { adminRoute } from "@/lib/api/routes/admin";
+app.route("/admin", adminRoute);
 
-import textbookRoute from '@/lib/api/routes/textbook'
-app.route('/textbook', textbookRoute)
+import textbookRoute from "@/lib/api/routes/textbook";
+app.route("/textbook", textbookRoute);
 
-import statsRoute from '@/lib/api/routes/stats'
-app.route('/stats', statsRoute)
+import statsRoute from "@/lib/api/routes/stats";
+app.route("/stats", statsRoute);
 
-import profileRoute from '@/lib/api/routes/profile'
-app.route('/profile', profileRoute)
+import profileRoute from "@/lib/api/routes/profile";
+app.route("/profile", profileRoute);
 
-import pdfImportRoute from '@/lib/api/routes/pdf-import'
-app.route('/pdf-import', pdfImportRoute)
+import pdfImportRoute from "@/lib/api/routes/pdf-import";
+app.route("/pdf-import", pdfImportRoute);
 
-import annotationsRoute from '@/lib/api/routes/annotations'
-app.route('/annotations', annotationsRoute)
+import annotationsRoute from "@/lib/api/routes/annotations";
+app.route("/annotations", annotationsRoute);
 
-import chatRoute from '@/lib/api/routes/chat'
-app.route('/chat', chatRoute)
+import chatRoute from "@/lib/api/routes/chat";
+app.route("/chat", chatRoute);
 
-import generateRoute from '@/lib/api/routes/generate'
-app.route('/generate', generateRoute)
+import generateRoute from "@/lib/api/routes/generate";
+app.route("/generate", generateRoute);
 
-import feedbackRoute from '@/lib/api/routes/feedback'
-app.route('/feedback', feedbackRoute)
-
-
-
-
+import feedbackRoute from "@/lib/api/routes/feedback";
+app.route("/feedback", feedbackRoute);
 
 // Hello World 路由 (用于验证)
-app.get('/hello', (c) => {
+app.get("/hello", (c) => {
   return c.json({
-    message: 'Hello from Hono!',
-  })
-})
+    message: "Hello from Hono!",
+  });
+});
 
-import { authMiddleware, getCurrentUser } from '@/lib/api/middlewares/auth'
+import { authMiddleware, getCurrentUser } from "@/lib/api/middlewares/auth";
 
-app.get('/me', authMiddleware, (c) => {
-  const user = getCurrentUser(c)
-  return c.json({ user })
-})
+app.get("/me", authMiddleware, (c) => {
+  const user = getCurrentUser(c);
+  return c.json({ user });
+});
 
-
-export const GET = handle(app)
-export const POST = handle(app)
-export const PUT = handle(app)
-export const DELETE = handle(app)
-export const PATCH = handle(app)
-export const OPTIONS = handle(app)
+export const GET = handle(app);
+export const POST = handle(app);
+export const PUT = handle(app);
+export const DELETE = handle(app);
+export const PATCH = handle(app);
+export const OPTIONS = handle(app);

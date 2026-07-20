@@ -1,23 +1,40 @@
-'use client';
+"use client";
 
-import React, { useState } from 'react';
-import { Check, AlertTriangle, ChevronDown, ChevronUp, FolderOpen, Loader2 } from 'lucide-react';
-import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Badge } from '@/components/ui/badge';
-import { Checkbox } from '@/components/ui/checkbox';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Textarea } from '@/components/ui/textarea';
-import { Input } from '@/components/ui/input';
-import { cn } from '@/lib/utils/utils';
-import type { ParsedPdfQuestion } from '@/types/pdf-import';
-import type { QuestionFolder } from '@/lib/services/question-folder';
+import React, { useState } from "react";
+import {
+  Check,
+  AlertTriangle,
+  ChevronDown,
+  ChevronUp,
+  FolderOpen,
+  Loader2,
+} from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
+import { Checkbox } from "@/components/ui/checkbox";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { Textarea } from "@/components/ui/textarea";
+import { Input } from "@/components/ui/input";
+import { cn } from "@/lib/utils/utils";
+import type { ParsedPdfQuestion } from "@/types/pdf-import";
+import type { QuestionFolder } from "@/lib/services/question-folder";
 
 interface PreviewStepProps {
   questions: ParsedPdfQuestion[];
   warnings: string[];
   folders: QuestionFolder[];
-  onConfirm: (questions: ParsedPdfQuestion[], folderId?: number, addToWrongBook?: boolean) => void;
+  onConfirm: (
+    questions: ParsedPdfQuestion[],
+    folderId?: number,
+    addToWrongBook?: boolean,
+  ) => void;
   onBack: () => void;
   isImporting: boolean;
   isParsing: boolean;
@@ -39,9 +56,11 @@ function QuestionCard({
   const [draft, setDraft] = useState(question);
 
   const confidenceColor =
-    question.confidence >= 70 ? 'text-green-600 bg-green-50' :
-    question.confidence >= 40 ? 'text-yellow-600 bg-yellow-50' :
-    'text-red-600 bg-red-50';
+    question.confidence >= 70
+      ? "text-green-600 bg-green-50"
+      : question.confidence >= 40
+        ? "text-yellow-600 bg-yellow-50"
+        : "text-red-600 bg-red-50";
 
   const saveEdit = () => {
     setEditing(false);
@@ -49,10 +68,12 @@ function QuestionCard({
   };
 
   return (
-    <Card className={cn(
-      'transition-all',
-      question.confidence < 40 && 'border-yellow-300',
-    )}>
+    <Card
+      className={cn(
+        "transition-all",
+        question.confidence < 40 && "border-yellow-300",
+      )}
+    >
       <CardHeader
         className="cursor-pointer py-3 px-4"
         onClick={() => setExpanded(!expanded)}
@@ -61,14 +82,19 @@ function QuestionCard({
           <div className="flex-1 min-w-0">
             <div className="flex items-center gap-2 mb-1">
               <Badge variant="outline" className="text-xs shrink-0">
-                {index + 1}. {question.type === 'multi' ? '多选' : question.type === 'truefalse' ? '判断' : '单选'}
+                {index + 1}.{" "}
+                {question.type === "multi"
+                  ? "多选"
+                  : question.type === "truefalse"
+                    ? "判断"
+                    : "单选"}
               </Badge>
-              <Badge className={cn('text-xs shrink-0', confidenceColor)}>
+              <Badge className={cn("text-xs shrink-0", confidenceColor)}>
                 置信度 {question.confidence}%
               </Badge>
               {question.tags.length > 0 && (
                 <span className="text-xs text-muted-foreground truncate">
-                  {question.tags.join(', ')}
+                  {question.tags.join(", ")}
                 </span>
               )}
             </div>
@@ -78,7 +104,11 @@ function QuestionCard({
             {question.confidence < 50 && (
               <AlertTriangle className="h-4 w-4 text-yellow-500" />
             )}
-            {expanded ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
+            {expanded ? (
+              <ChevronUp className="h-4 w-4" />
+            ) : (
+              <ChevronDown className="h-4 w-4" />
+            )}
           </div>
         </div>
       </CardHeader>
@@ -91,15 +121,24 @@ function QuestionCard({
                 <label className="text-xs text-muted-foreground">题干</label>
                 <Textarea
                   value={draft.content}
-                  onChange={(e) => setDraft({ ...draft, content: e.target.value })}
+                  onChange={(e) =>
+                    setDraft({ ...draft, content: e.target.value })
+                  }
                   rows={3}
                 />
               </div>
               <div>
-                <label className="text-xs text-muted-foreground">选项（每行一个）</label>
+                <label className="text-xs text-muted-foreground">
+                  选项（每行一个）
+                </label>
                 <Textarea
-                  value={draft.options.join('\n')}
-                  onChange={(e) => setDraft({ ...draft, options: e.target.value.split('\n').filter(Boolean) })}
+                  value={draft.options.join("\n")}
+                  onChange={(e) =>
+                    setDraft({
+                      ...draft,
+                      options: e.target.value.split("\n").filter(Boolean),
+                    })
+                  }
                   rows={4}
                 />
               </div>
@@ -108,7 +147,9 @@ function QuestionCard({
                   <label className="text-xs text-muted-foreground">答案</label>
                   <Input
                     value={draft.answer}
-                    onChange={(e) => setDraft({ ...draft, answer: e.target.value })}
+                    onChange={(e) =>
+                      setDraft({ ...draft, answer: e.target.value })
+                    }
                     placeholder="A 或 A,C"
                   />
                 </div>
@@ -116,9 +157,16 @@ function QuestionCard({
                   <label className="text-xs text-muted-foreground">题型</label>
                   <Select
                     value={draft.type}
-                    onValueChange={(v) => setDraft({ ...draft, type: v as 'single' | 'multi' | 'truefalse' })}
+                    onValueChange={(v) =>
+                      setDraft({
+                        ...draft,
+                        type: v as "single" | "multi" | "truefalse",
+                      })
+                    }
                   >
-                    <SelectTrigger><SelectValue /></SelectTrigger>
+                    <SelectTrigger>
+                      <SelectValue />
+                    </SelectTrigger>
                     <SelectContent>
                       <SelectItem value="single">单选</SelectItem>
                       <SelectItem value="multi">多选</SelectItem>
@@ -131,15 +179,26 @@ function QuestionCard({
                 <label className="text-xs text-muted-foreground">解析</label>
                 <Textarea
                   value={draft.explanation}
-                  onChange={(e) => setDraft({ ...draft, explanation: e.target.value })}
+                  onChange={(e) =>
+                    setDraft({ ...draft, explanation: e.target.value })
+                  }
                   rows={2}
                 />
               </div>
               <div className="flex gap-2 justify-end">
-                <Button variant="ghost" size="sm" onClick={() => { setEditing(false); setDraft(question); }}>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => {
+                    setEditing(false);
+                    setDraft(question);
+                  }}
+                >
                   取消
                 </Button>
-                <Button size="sm" onClick={saveEdit}>保存</Button>
+                <Button size="sm" onClick={saveEdit}>
+                  保存
+                </Button>
               </div>
             </div>
           ) : (
@@ -152,8 +211,10 @@ function QuestionCard({
                     <div
                       key={i}
                       className={cn(
-                        'text-sm px-2 py-1 rounded',
-                        isAnswer ? 'bg-green-50 text-green-700 font-medium' : 'text-foreground',
+                        "text-sm px-2 py-1 rounded",
+                        isAnswer
+                          ? "bg-green-50 text-green-700 font-medium"
+                          : "text-foreground",
                       )}
                     >
                       {letter}. {opt}
@@ -164,10 +225,15 @@ function QuestionCard({
               </div>
               {question.explanation && (
                 <div className="text-xs text-muted-foreground bg-muted p-2 rounded">
-                  <span className="font-medium">解析：</span>{question.explanation}
+                  <span className="font-medium">解析：</span>
+                  {question.explanation}
                 </div>
               )}
-              <Button variant="outline" size="sm" onClick={() => setEditing(true)}>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => setEditing(true)}
+              >
                 编辑
               </Button>
             </>
@@ -189,8 +255,9 @@ export function PreviewStep({
   parseProgress,
   totalChunks,
 }: PreviewStepProps) {
-  const [editedQuestions, setEditedQuestions] = useState<ParsedPdfQuestion[]>(questions);
-  const [selectedFolderId, setSelectedFolderId] = useState<string>('');
+  const [editedQuestions, setEditedQuestions] =
+    useState<ParsedPdfQuestion[]>(questions);
+  const [selectedFolderId, setSelectedFolderId] = useState<string>("");
   const [addToWrongBook, setAddToWrongBook] = useState(true);
 
   // 同步外部 questions 变化（增量追加）
@@ -199,7 +266,7 @@ export function PreviewStep({
   }, [questions]);
 
   const updateQuestion = (index: number, q: ParsedPdfQuestion) => {
-    setEditedQuestions(prev => {
+    setEditedQuestions((prev) => {
       const copy = [...prev];
       copy[index] = q;
       return copy;
@@ -225,13 +292,18 @@ export function PreviewStep({
                     正在解析... 已完成 {parseProgress}/{totalChunks} 块
                   </span>
                   <span className="text-blue-600">
-                    {totalChunks > 0 ? Math.round((parseProgress / totalChunks) * 100) : 0}%
+                    {totalChunks > 0
+                      ? Math.round((parseProgress / totalChunks) * 100)
+                      : 0}
+                    %
                   </span>
                 </div>
                 <div className="w-full bg-blue-100 rounded-full h-2">
                   <div
                     className="bg-blue-600 h-2 rounded-full transition-all duration-300"
-                    style={{ width: `${totalChunks > 0 ? (parseProgress / totalChunks) * 100 : 0}%` }}
+                    style={{
+                      width: `${totalChunks > 0 ? (parseProgress / totalChunks) * 100 : 0}%`,
+                    }}
                   />
                 </div>
                 {questions.length > 0 && (
@@ -252,7 +324,9 @@ export function PreviewStep({
             <div className="flex items-start gap-2">
               <AlertTriangle className="h-4 w-4 text-yellow-600 mt-0.5 shrink-0" />
               <ul className="text-sm text-yellow-800 space-y-1">
-                {warnings.map((w, i) => <li key={i}>{w}</li>)}
+                {warnings.map((w, i) => (
+                  <li key={i}>{w}</li>
+                ))}
               </ul>
             </div>
           </CardContent>
@@ -264,15 +338,23 @@ export function PreviewStep({
         <div className="text-sm text-muted-foreground">
           {isParsing ? (
             <>
-              已识别 <span className="font-medium text-foreground">{questions.length}</span> 道题目
-              （解析中...）
+              已识别{" "}
+              <span className="font-medium text-foreground">
+                {questions.length}
+              </span>{" "}
+              道题目 （解析中...）
             </>
           ) : (
             <>
-              共 <span className="font-medium text-foreground">{questions.length}</span> 道题目
-              {questions.filter(q => q.confidence < 50).length > 0 && (
+              共{" "}
+              <span className="font-medium text-foreground">
+                {questions.length}
+              </span>{" "}
+              道题目
+              {questions.filter((q) => q.confidence < 50).length > 0 && (
                 <span className="text-yellow-600 ml-2">
-                  （{questions.filter(q => q.confidence < 50).length} 道低置信度）
+                  （{questions.filter((q) => q.confidence < 50).length}{" "}
+                  道低置信度）
                 </span>
               )}
             </>
@@ -289,7 +371,10 @@ export function PreviewStep({
           </label>
 
           <div className="w-48">
-            <Select value={selectedFolderId} onValueChange={setSelectedFolderId}>
+            <Select
+              value={selectedFolderId}
+              onValueChange={setSelectedFolderId}
+            >
               <SelectTrigger>
                 <FolderOpen className="h-4 w-4 mr-2 shrink-0" />
                 <SelectValue placeholder="选择文件夹（可选）" />
@@ -304,10 +389,17 @@ export function PreviewStep({
             </Select>
           </div>
 
-          <Button variant="outline" onClick={onBack} disabled={isImporting || isParsing}>
+          <Button
+            variant="outline"
+            onClick={onBack}
+            disabled={isImporting || isParsing}
+          >
             返回
           </Button>
-          <Button onClick={handleConfirm} disabled={isImporting || isParsing || questions.length === 0}>
+          <Button
+            onClick={handleConfirm}
+            disabled={isImporting || isParsing || questions.length === 0}
+          >
             {isImporting ? (
               <>
                 <Loader2 className="h-4 w-4 mr-2 animate-spin" />

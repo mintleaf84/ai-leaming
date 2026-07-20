@@ -1,12 +1,12 @@
-import { type ClassValue, clsx } from "clsx"
-import { twMerge } from "tailwind-merge"
-import dayjs from 'dayjs';
-import utc from 'dayjs/plugin/utc';
+import { type ClassValue, clsx } from "clsx";
+import { twMerge } from "tailwind-merge";
+import dayjs from "dayjs";
+import utc from "dayjs/plugin/utc";
 
 dayjs.extend(utc);
 
 export function cn(...inputs: ClassValue[]) {
-    return twMerge(clsx(inputs))
+  return twMerge(clsx(inputs));
 }
 
 /**
@@ -15,11 +15,11 @@ export function cn(...inputs: ClassValue[]) {
  * @returns 格式化字符串，如 "9秒" 或 "1分30秒"
  */
 export function formatDuration(ms: number): string {
-    const seconds = Math.round(ms / 1000);
-    if (seconds < 60) return `${seconds}秒`;
-    const minutes = Math.floor(seconds / 60);
-    const remainSeconds = seconds % 60;
-    return remainSeconds > 0 ? `${minutes}分${remainSeconds}秒` : `${minutes}分`;
+  const seconds = Math.round(ms / 1000);
+  if (seconds < 60) return `${seconds}秒`;
+  const minutes = Math.floor(seconds / 60);
+  const remainSeconds = seconds % 60;
+  return remainSeconds > 0 ? `${minutes}分${remainSeconds}秒` : `${minutes}分`;
 }
 
 /**
@@ -28,8 +28,8 @@ export function formatDuration(ms: number): string {
  * @returns 对应字母（A-Z）
  */
 export function indexToLetter(index: number): string {
-    if (index < 0 || index > 25) return String(index);
-    return String.fromCharCode(65 + index);  // A=65
+  if (index < 0 || index > 25) return String(index);
+  return String.fromCharCode(65 + index); // A=65
 }
 
 /**
@@ -37,6 +37,6 @@ export function indexToLetter(index: number): string {
  * 使用 dayjs 确保跨浏览器兼容性和准确的 UTC 解析
  */
 export function parseUTCDate(dateStr: string): Date {
-    if (!dateStr) return new Date();
-    return dayjs.utc(dateStr).local().toDate();
+  if (!dateStr) return new Date();
+  return dayjs.utc(dateStr).local().toDate();
 }

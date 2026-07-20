@@ -40,6 +40,7 @@ npm run db:migrate       # 执行数据库迁移
 - 全局限流在主路由文件中应用
 
 新增 API 端点步骤：
+
 1. 在 `src/lib/api/routes/<功能>.ts` 创建路由，使用 `@hono/zod-openapi`
 2. 在主路由中挂载：`app.route('/<功能>', 功能Route)`
 
@@ -65,13 +66,13 @@ npm run db:migrate       # 执行数据库迁移
 
 ## 关键目录
 
-| 目录 | 用途 |
-|------|------|
-| `src/app/` | Next.js 页面和布局 |
-| `src/server/actions/` | Server Actions 数据变更 |
-| `src/lib/api/routes/` | Hono API 路由定义 |
-| `src/lib/db/` | 数据库 Schema 和工具函数 |
-| `src/components/` | 可复用 UI 组件 |
+| 目录                  | 用途                     |
+| --------------------- | ------------------------ |
+| `src/app/`            | Next.js 页面和布局       |
+| `src/server/actions/` | Server Actions 数据变更  |
+| `src/lib/api/routes/` | Hono API 路由定义        |
+| `src/lib/db/`         | 数据库 Schema 和工具函数 |
+| `src/components/`     | 可复用 UI 组件           |
 
 ## 测试
 

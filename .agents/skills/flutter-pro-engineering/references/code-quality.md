@@ -122,12 +122,12 @@ linter:
     prefer_const_constructors: true
     prefer_const_declarations: true
     prefer_const_literals_to_create_immutables: true
-    
+
     # 代码质量
     avoid_print: true
     unnecessary_import: true
     no_leading_underscores_for_local_identifiers: true
-    
+
     # 可读性
     prefer_single_quotes: true
     require_trailing_commas: true

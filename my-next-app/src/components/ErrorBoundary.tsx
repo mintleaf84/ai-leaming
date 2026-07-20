@@ -40,21 +40,21 @@ export class ErrorBoundary extends Component<Props, State> {
               系统在处理您的请求时遇到了意外错误。这可能是由于网络波动或数据异常导致的。
             </p>
             <div className="flex gap-4">
-              <Button 
+              <Button
                 className="bg-red-600 hover:bg-red-700"
                 onClick={() => window.location.reload()}
               >
                 <RefreshCcw className="w-4 h-4 mr-2" />
                 重试加载
               </Button>
-              <Button 
-                variant="outline" 
-                onClick={() => window.location.href = '/dashboard'}
+              <Button
+                variant="outline"
+                onClick={() => (window.location.href = "/dashboard")}
               >
                 返回仪表盘
               </Button>
             </div>
-            {process.env.NODE_ENV === 'development' && (
+            {process.env.NODE_ENV === "development" && (
               <pre className="mt-8 p-4 bg-gray-900 text-red-400 text-xs rounded overflow-auto max-w-full text-left">
                 {this.state.error?.stack}
               </pre>

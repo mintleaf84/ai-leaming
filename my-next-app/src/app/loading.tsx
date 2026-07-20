@@ -12,7 +12,9 @@ export default function RootLoading() {
           <div className="absolute inset-0 border-2 border-primary/20 rounded-full" />
           <div className="absolute inset-0 border-2 border-primary border-t-transparent rounded-full animate-spin" />
         </div>
-        <p className="text-sm font-medium text-muted-foreground animate-pulse">正在加载...</p>
+        <p className="text-sm font-medium text-muted-foreground animate-pulse">
+          正在加载...
+        </p>
       </div>
     </div>
   );

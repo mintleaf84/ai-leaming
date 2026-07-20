@@ -75,23 +75,17 @@
       "indexes": {
         "idx_admin_logs_created": {
           "name": "idx_admin_logs_created",
-          "columns": [
-            "\"created_at\" DESC"
-          ],
+          "columns": ["\"created_at\" DESC"],
           "isUnique": false
         },
         "idx_admin_logs_user": {
           "name": "idx_admin_logs_user",
-          "columns": [
-            "user_id"
-          ],
+          "columns": ["user_id"],
           "isUnique": false
         },
         "idx_admin_logs_action": {
           "name": "idx_admin_logs_action",
-          "columns": [
-            "action"
-          ],
+          "columns": ["action"],
           "isUnique": false
         }
       },
@@ -100,12 +94,8 @@
           "name": "admin_logs_user_id_users_id_fk",
           "tableFrom": "admin_logs",
           "tableTo": "users",
-          "columnsFrom": [
-            "user_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["user_id"],
+          "columnsTo": ["id"],
           "onDelete": "cascade",
           "onUpdate": "no action"
         }
@@ -281,12 +271,8 @@
           "name": "ai_model_routes_config_id_ai_configs_id_fk",
           "tableFrom": "ai_model_routes",
           "tableTo": "ai_configs",
-          "columnsFrom": [
-            "config_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["config_id"],
+          "columnsTo": ["id"],
           "onDelete": "set null",
           "onUpdate": "no action"
         }
@@ -415,31 +401,22 @@
       "indexes": {
         "idx_api_logs_created": {
           "name": "idx_api_logs_created",
-          "columns": [
-            "\"created_at\" DESC"
-          ],
+          "columns": ["\"created_at\" DESC"],
           "isUnique": false
         },
         "idx_api_logs_user_created": {
           "name": "idx_api_logs_user_created",
-          "columns": [
-            "user_id",
-            "\"created_at\" DESC"
-          ],
+          "columns": ["user_id", "\"created_at\" DESC"],
           "isUnique": false
         },
         "idx_api_logs_model": {
           "name": "idx_api_logs_model",
-          "columns": [
-            "model"
-          ],
+          "columns": ["model"],
           "isUnique": false
         },
         "idx_api_logs_date": {
           "name": "idx_api_logs_date",
-          "columns": [
-            "date(\"created_at\")"
-          ],
+          "columns": ["date(\"created_at\")"],
           "isUnique": false
         }
       },
@@ -501,9 +478,7 @@
       "indexes": {
         "api_keys_key_string_unique": {
           "name": "api_keys_key_string_unique",
-          "columns": [
-            "key_string"
-          ],
+          "columns": ["key_string"],
           "isUnique": true
         }
       },
@@ -563,10 +538,7 @@
       "indexes": {
         "idx_chat_messages_session": {
           "name": "idx_chat_messages_session",
-          "columns": [
-            "session_id",
-            "created_at"
-          ],
+          "columns": ["session_id", "created_at"],
           "isUnique": false
         }
       },
@@ -575,12 +547,8 @@
           "name": "chat_messages_session_id_chat_sessions_id_fk",
           "tableFrom": "chat_messages",
           "tableTo": "chat_sessions",
-          "columnsFrom": [
-            "session_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["session_id"],
+          "columnsTo": ["id"],
           "onDelete": "cascade",
           "onUpdate": "no action"
         }
@@ -643,16 +611,12 @@
       "indexes": {
         "idx_chat_sessions_updated": {
           "name": "idx_chat_sessions_updated",
-          "columns": [
-            "\"updated_at\" DESC"
-          ],
+          "columns": ["\"updated_at\" DESC"],
           "isUnique": false
         },
         "idx_chat_sessions_user": {
           "name": "idx_chat_sessions_user",
-          "columns": [
-            "user_id"
-          ],
+          "columns": ["user_id"],
           "isUnique": false
         }
       },
@@ -661,12 +625,8 @@
           "name": "chat_sessions_user_id_users_id_fk",
           "tableFrom": "chat_sessions",
           "tableTo": "users",
-          "columnsFrom": [
-            "user_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["user_id"],
+          "columnsTo": ["id"],
           "onDelete": "cascade",
           "onUpdate": "no action"
         }
@@ -718,19 +678,12 @@
       "indexes": {
         "idx_daily_usage_user_date": {
           "name": "idx_daily_usage_user_date",
-          "columns": [
-            "user_id",
-            "usage_date"
-          ],
+          "columns": ["user_id", "usage_date"],
           "isUnique": false
         },
         "daily_usage_user_id_usage_date_usage_type_unique": {
           "name": "daily_usage_user_id_usage_date_usage_type_unique",
-          "columns": [
-            "user_id",
-            "usage_date",
-            "usage_type"
-          ],
+          "columns": ["user_id", "usage_date", "usage_type"],
           "isUnique": true
         }
       },
@@ -739,12 +692,8 @@
           "name": "daily_usage_user_id_users_id_fk",
           "tableFrom": "daily_usage",
           "tableTo": "users",
-          "columnsFrom": [
-            "user_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["user_id"],
+          "columnsTo": ["id"],
           "onDelete": "cascade",
           "onUpdate": "no action"
         }
@@ -789,16 +738,12 @@
       "indexes": {
         "first_principles_cache_question_hash_unique": {
           "name": "first_principles_cache_question_hash_unique",
-          "columns": [
-            "question_hash"
-          ],
+          "columns": ["question_hash"],
           "isUnique": true
         },
         "idx_fp_cache_hash": {
           "name": "idx_fp_cache_hash",
-          "columns": [
-            "question_hash"
-          ],
+          "columns": ["question_hash"],
           "isUnique": false
         }
       },
@@ -901,23 +846,17 @@
       "indexes": {
         "idx_knowledge_cards_category": {
           "name": "idx_knowledge_cards_category",
-          "columns": [
-            "category"
-          ],
+          "columns": ["category"],
           "isUnique": false
         },
         "idx_knowledge_cards_created": {
           "name": "idx_knowledge_cards_created",
-          "columns": [
-            "\"created_at\" DESC"
-          ],
+          "columns": ["\"created_at\" DESC"],
           "isUnique": false
         },
         "idx_knowledge_cards_user": {
           "name": "idx_knowledge_cards_user",
-          "columns": [
-            "user_id"
-          ],
+          "columns": ["user_id"],
           "isUnique": false
         }
       },
@@ -926,12 +865,8 @@
           "name": "knowledge_cards_user_id_users_id_fk",
           "tableFrom": "knowledge_cards",
           "tableTo": "users",
-          "columnsFrom": [
-            "user_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["user_id"],
+          "columnsTo": ["id"],
           "onDelete": "cascade",
           "onUpdate": "no action"
         },
@@ -939,12 +874,8 @@
           "name": "knowledge_cards_session_id_chat_sessions_id_fk",
           "tableFrom": "knowledge_cards",
           "tableTo": "chat_sessions",
-          "columnsFrom": [
-            "session_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["session_id"],
+          "columnsTo": ["id"],
           "onDelete": "set null",
           "onUpdate": "no action"
         }
@@ -996,25 +927,17 @@
       "indexes": {
         "idx_mastered_questions_user": {
           "name": "idx_mastered_questions_user",
-          "columns": [
-            "user_id"
-          ],
+          "columns": ["user_id"],
           "isUnique": false
         },
         "idx_mastered_questions_user_q": {
           "name": "idx_mastered_questions_user_q",
-          "columns": [
-            "user_id",
-            "question_id"
-          ],
+          "columns": ["user_id", "question_id"],
           "isUnique": false
         },
         "mastered_questions_user_id_question_id_unique": {
           "name": "mastered_questions_user_id_question_id_unique",
-          "columns": [
-            "user_id",
-            "question_id"
-          ],
+          "columns": ["user_id", "question_id"],
           "isUnique": true
         }
       },
@@ -1023,12 +946,8 @@
           "name": "mastered_questions_user_id_users_id_fk",
           "tableFrom": "mastered_questions",
           "tableTo": "users",
-          "columnsFrom": [
-            "user_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["user_id"],
+          "columnsTo": ["id"],
           "onDelete": "cascade",
           "onUpdate": "no action"
         },
@@ -1036,12 +955,8 @@
           "name": "mastered_questions_question_id_questions_id_fk",
           "tableFrom": "mastered_questions",
           "tableTo": "questions",
-          "columnsFrom": [
-            "question_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["question_id"],
+          "columnsTo": ["id"],
           "onDelete": "cascade",
           "onUpdate": "no action"
         }
@@ -1104,12 +1019,8 @@
           "name": "mindmaps_user_id_users_id_fk",
           "tableFrom": "mindmaps",
           "tableTo": "users",
-          "columnsFrom": [
-            "user_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["user_id"],
+          "columnsTo": ["id"],
           "onDelete": "cascade",
           "onUpdate": "no action"
         }
@@ -1139,16 +1050,12 @@
       "indexes": {
         "idx_note_tag_relations_note": {
           "name": "idx_note_tag_relations_note",
-          "columns": [
-            "note_id"
-          ],
+          "columns": ["note_id"],
           "isUnique": false
         },
         "idx_note_tag_relations_tag": {
           "name": "idx_note_tag_relations_tag",
-          "columns": [
-            "tag_id"
-          ],
+          "columns": ["tag_id"],
           "isUnique": false
         }
       },
@@ -1157,12 +1064,8 @@
           "name": "note_tag_relations_note_id_notes_id_fk",
           "tableFrom": "note_tag_relations",
           "tableTo": "notes",
-          "columnsFrom": [
-            "note_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["note_id"],
+          "columnsTo": ["id"],
           "onDelete": "cascade",
           "onUpdate": "no action"
         },
@@ -1170,22 +1073,15 @@
           "name": "note_tag_relations_tag_id_note_tags_id_fk",
           "tableFrom": "note_tag_relations",
           "tableTo": "note_tags",
-          "columnsFrom": [
-            "tag_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["tag_id"],
+          "columnsTo": ["id"],
           "onDelete": "cascade",
           "onUpdate": "no action"
         }
       },
       "compositePrimaryKeys": {
         "note_tag_relations_note_id_tag_id_pk": {
-          "columns": [
-            "note_id",
-            "tag_id"
-          ],
+          "columns": ["note_id", "tag_id"],
           "name": "note_tag_relations_note_id_tag_id_pk"
         }
       },
@@ -1236,17 +1132,12 @@
       "indexes": {
         "idx_note_tags_user": {
           "name": "idx_note_tags_user",
-          "columns": [
-            "user_id"
-          ],
+          "columns": ["user_id"],
           "isUnique": false
         },
         "note_tags_user_id_name_unique": {
           "name": "note_tags_user_id_name_unique",
-          "columns": [
-            "user_id",
-            "name"
-          ],
+          "columns": ["user_id", "name"],
           "isUnique": true
         }
       },
@@ -1255,12 +1146,8 @@
           "name": "note_tags_user_id_users_id_fk",
           "tableFrom": "note_tags",
           "tableTo": "users",
-          "columnsFrom": [
-            "user_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["user_id"],
+          "columnsTo": ["id"],
           "onDelete": "cascade",
           "onUpdate": "no action"
         }
@@ -1323,12 +1210,8 @@
           "name": "notes_user_id_users_id_fk",
           "tableFrom": "notes",
           "tableTo": "users",
-          "columnsFrom": [
-            "user_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["user_id"],
+          "columnsTo": ["id"],
           "onDelete": "cascade",
           "onUpdate": "no action"
         }
@@ -1383,10 +1266,7 @@
       "foreignKeys": {},
       "compositePrimaryKeys": {
         "observation_zone_user_id_tag_name_pk": {
-          "columns": [
-            "user_id",
-            "tag_name"
-          ],
+          "columns": ["user_id", "tag_name"],
           "name": "observation_zone_user_id_tag_name_pk"
         }
       },
@@ -1472,23 +1352,17 @@
       "indexes": {
         "payment_records_order_no_unique": {
           "name": "payment_records_order_no_unique",
-          "columns": [
-            "order_no"
-          ],
+          "columns": ["order_no"],
           "isUnique": true
         },
         "idx_payment_records_user": {
           "name": "idx_payment_records_user",
-          "columns": [
-            "user_id"
-          ],
+          "columns": ["user_id"],
           "isUnique": false
         },
         "idx_payment_records_order": {
           "name": "idx_payment_records_order",
-          "columns": [
-            "order_no"
-          ],
+          "columns": ["order_no"],
           "isUnique": false
         }
       },
@@ -1497,12 +1371,8 @@
           "name": "payment_records_user_id_users_id_fk",
           "tableFrom": "payment_records",
           "tableTo": "users",
-          "columnsFrom": [
-            "user_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["user_id"],
+          "columnsTo": ["id"],
           "onDelete": "cascade",
           "onUpdate": "no action"
         }
@@ -1584,32 +1454,22 @@
       "indexes": {
         "idx_practice_logs_user_ts": {
           "name": "idx_practice_logs_user_ts",
-          "columns": [
-            "user_id",
-            "\"timestamp\" DESC"
-          ],
+          "columns": ["user_id", "\"timestamp\" DESC"],
           "isUnique": false
         },
         "idx_practice_logs_correct": {
           "name": "idx_practice_logs_correct",
-          "columns": [
-            "is_correct"
-          ],
+          "columns": ["is_correct"],
           "isUnique": false
         },
         "idx_practice_logs_question": {
           "name": "idx_practice_logs_question",
-          "columns": [
-            "question_id"
-          ],
+          "columns": ["question_id"],
           "isUnique": false
         },
         "idx_practice_logs_user_correct": {
           "name": "idx_practice_logs_user_correct",
-          "columns": [
-            "user_id",
-            "is_correct"
-          ],
+          "columns": ["user_id", "is_correct"],
           "isUnique": false
         }
       },
@@ -1618,12 +1478,8 @@
           "name": "practice_logs_session_id_practice_sessions_id_fk",
           "tableFrom": "practice_logs",
           "tableTo": "practice_sessions",
-          "columnsFrom": [
-            "session_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["session_id"],
+          "columnsTo": ["id"],
           "onDelete": "no action",
           "onUpdate": "no action"
         },
@@ -1631,12 +1487,8 @@
           "name": "practice_logs_user_id_users_id_fk",
           "tableFrom": "practice_logs",
           "tableTo": "users",
-          "columnsFrom": [
-            "user_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["user_id"],
+          "columnsTo": ["id"],
           "onDelete": "cascade",
           "onUpdate": "no action"
         },
@@ -1644,12 +1496,8 @@
           "name": "practice_logs_question_id_questions_id_fk",
           "tableFrom": "practice_logs",
           "tableTo": "questions",
-          "columnsFrom": [
-            "question_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["question_id"],
+          "columnsTo": ["id"],
           "onDelete": "no action",
           "onUpdate": "no action"
         }
@@ -1756,10 +1604,7 @@
       "indexes": {
         "idx_practice_sessions_user_ts": {
           "name": "idx_practice_sessions_user_ts",
-          "columns": [
-            "user_id",
-            "\"created_at\" DESC"
-          ],
+          "columns": ["user_id", "\"created_at\" DESC"],
           "isUnique": false
         }
       },
@@ -1768,12 +1613,8 @@
           "name": "practice_sessions_user_id_users_id_fk",
           "tableFrom": "practice_sessions",
           "tableTo": "users",
-          "columnsFrom": [
-            "user_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["user_id"],
+          "columnsTo": ["id"],
           "onDelete": "cascade",
           "onUpdate": "no action"
         }
@@ -1901,30 +1742,22 @@
       "indexes": {
         "idx_question_feedback_question": {
           "name": "idx_question_feedback_question",
-          "columns": [
-            "question_id"
-          ],
+          "columns": ["question_id"],
           "isUnique": false
         },
         "idx_question_feedback_user": {
           "name": "idx_question_feedback_user",
-          "columns": [
-            "user_id"
-          ],
+          "columns": ["user_id"],
           "isUnique": false
         },
         "idx_question_feedback_status": {
           "name": "idx_question_feedback_status",
-          "columns": [
-            "status"
-          ],
+          "columns": ["status"],
           "isUnique": false
         },
         "idx_question_feedback_created": {
           "name": "idx_question_feedback_created",
-          "columns": [
-            "\"created_at\" DESC"
-          ],
+          "columns": ["\"created_at\" DESC"],
           "isUnique": false
         }
       },
@@ -1933,12 +1766,8 @@
           "name": "question_feedback_question_id_questions_id_fk",
           "tableFrom": "question_feedback",
           "tableTo": "questions",
-          "columnsFrom": [
-            "question_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["question_id"],
+          "columnsTo": ["id"],
           "onDelete": "cascade",
           "onUpdate": "no action"
         },
@@ -1946,12 +1775,8 @@
           "name": "question_feedback_user_id_users_id_fk",
           "tableFrom": "question_feedback",
           "tableTo": "users",
-          "columnsFrom": [
-            "user_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["user_id"],
+          "columnsTo": ["id"],
           "onDelete": "cascade",
           "onUpdate": "no action"
         },
@@ -1959,12 +1784,8 @@
           "name": "question_feedback_resolved_by_users_id_fk",
           "tableFrom": "question_feedback",
           "tableTo": "users",
-          "columnsFrom": [
-            "resolved_by"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["resolved_by"],
+          "columnsTo": ["id"],
           "onDelete": "set null",
           "onUpdate": "no action"
         }
@@ -2002,16 +1823,12 @@
       "indexes": {
         "idx_folder_items_folder": {
           "name": "idx_folder_items_folder",
-          "columns": [
-            "folder_id"
-          ],
+          "columns": ["folder_id"],
           "isUnique": false
         },
         "idx_folder_items_question": {
           "name": "idx_folder_items_question",
-          "columns": [
-            "question_id"
-          ],
+          "columns": ["question_id"],
           "isUnique": false
         }
       },
@@ -2020,12 +1837,8 @@
           "name": "question_folder_items_folder_id_question_folders_id_fk",
           "tableFrom": "question_folder_items",
           "tableTo": "question_folders",
-          "columnsFrom": [
-            "folder_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["folder_id"],
+          "columnsTo": ["id"],
           "onDelete": "cascade",
           "onUpdate": "no action"
         },
@@ -2033,22 +1846,15 @@
           "name": "question_folder_items_question_id_questions_id_fk",
           "tableFrom": "question_folder_items",
           "tableTo": "questions",
-          "columnsFrom": [
-            "question_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["question_id"],
+          "columnsTo": ["id"],
           "onDelete": "cascade",
           "onUpdate": "no action"
         }
       },
       "compositePrimaryKeys": {
         "question_folder_items_folder_id_question_id_pk": {
-          "columns": [
-            "folder_id",
-            "question_id"
-          ],
+          "columns": ["folder_id", "question_id"],
           "name": "question_folder_items_folder_id_question_id_pk"
         }
       },
@@ -2114,9 +1920,7 @@
       "indexes": {
         "idx_question_folders_user": {
           "name": "idx_question_folders_user",
-          "columns": [
-            "user_id"
-          ],
+          "columns": ["user_id"],
           "isUnique": false
         }
       },
@@ -2125,12 +1929,8 @@
           "name": "question_folders_user_id_users_id_fk",
           "tableFrom": "question_folders",
           "tableTo": "users",
-          "columnsFrom": [
-            "user_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["user_id"],
+          "columnsTo": ["id"],
           "onDelete": "cascade",
           "onUpdate": "no action"
         }
@@ -2238,17 +2038,12 @@
       "indexes": {
         "idx_question_srs_due": {
           "name": "idx_question_srs_due",
-          "columns": [
-            "due_date"
-          ],
+          "columns": ["due_date"],
           "isUnique": false
         },
         "question_srs_user_id_question_id_unique": {
           "name": "question_srs_user_id_question_id_unique",
-          "columns": [
-            "user_id",
-            "question_id"
-          ],
+          "columns": ["user_id", "question_id"],
           "isUnique": true
         }
       },
@@ -2257,12 +2052,8 @@
           "name": "question_srs_user_id_users_id_fk",
           "tableFrom": "question_srs",
           "tableTo": "users",
-          "columnsFrom": [
-            "user_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["user_id"],
+          "columnsTo": ["id"],
           "onDelete": "cascade",
           "onUpdate": "no action"
         },
@@ -2270,12 +2061,8 @@
           "name": "question_srs_question_id_questions_id_fk",
           "tableFrom": "question_srs",
           "tableTo": "questions",
-          "columnsFrom": [
-            "question_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["question_id"],
+          "columnsTo": ["id"],
           "onDelete": "cascade",
           "onUpdate": "no action"
         }
@@ -2404,9 +2191,7 @@
       "indexes": {
         "questions_external_id_unique": {
           "name": "questions_external_id_unique",
-          "columns": [
-            "external_id"
-          ],
+          "columns": ["external_id"],
           "isUnique": true
         }
       },
@@ -2461,12 +2246,8 @@
           "name": "session_reviews_session_id_practice_sessions_id_fk",
           "tableFrom": "session_reviews",
           "tableTo": "practice_sessions",
-          "columnsFrom": [
-            "session_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["session_id"],
+          "columnsTo": ["id"],
           "onDelete": "no action",
           "onUpdate": "no action"
         }
@@ -2592,22 +2373,15 @@
           "name": "system_settings_user_id_users_id_fk",
           "tableFrom": "system_settings",
           "tableTo": "users",
-          "columnsFrom": [
-            "user_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["user_id"],
+          "columnsTo": ["id"],
           "onDelete": "cascade",
           "onUpdate": "no action"
         }
       },
       "compositePrimaryKeys": {
         "system_settings_user_id_key_pk": {
-          "columns": [
-            "user_id",
-            "key"
-          ],
+          "columns": ["user_id", "key"],
           "name": "system_settings_user_id_key_pk"
         }
       },
@@ -2678,20 +2452,12 @@
       "indexes": {
         "idx_text_annotations_user_question": {
           "name": "idx_text_annotations_user_question",
-          "columns": [
-            "user_id",
-            "question_id"
-          ],
+          "columns": ["user_id", "question_id"],
           "isUnique": false
         },
         "text_annotations_user_id_question_id_start_offset_end_offset_unique": {
           "name": "text_annotations_user_id_question_id_start_offset_end_offset_unique",
-          "columns": [
-            "user_id",
-            "question_id",
-            "start_offset",
-            "end_offset"
-          ],
+          "columns": ["user_id", "question_id", "start_offset", "end_offset"],
           "isUnique": true
         }
       },
@@ -2700,12 +2466,8 @@
           "name": "text_annotations_user_id_users_id_fk",
           "tableFrom": "text_annotations",
           "tableTo": "users",
-          "columnsFrom": [
-            "user_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["user_id"],
+          "columnsTo": ["id"],
           "onDelete": "cascade",
           "onUpdate": "no action"
         },
@@ -2713,12 +2475,8 @@
           "name": "text_annotations_question_id_questions_id_fk",
           "tableFrom": "text_annotations",
           "tableTo": "questions",
-          "columnsFrom": [
-            "question_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["question_id"],
+          "columnsTo": ["id"],
           "onDelete": "cascade",
           "onUpdate": "no action"
         }
@@ -2804,12 +2562,8 @@
           "name": "textbook_chapters_textbook_id_textbooks_id_fk",
           "tableFrom": "textbook_chapters",
           "tableTo": "textbooks",
-          "columnsFrom": [
-            "textbook_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["textbook_id"],
+          "columnsTo": ["id"],
           "onDelete": "cascade",
           "onUpdate": "no action"
         }
@@ -2943,22 +2697,15 @@
           "name": "user_mastery_user_id_users_id_fk",
           "tableFrom": "user_mastery",
           "tableTo": "users",
-          "columnsFrom": [
-            "user_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["user_id"],
+          "columnsTo": ["id"],
           "onDelete": "cascade",
           "onUpdate": "no action"
         }
       },
       "compositePrimaryKeys": {
         "user_mastery_user_id_tag_name_pk": {
-          "columns": [
-            "user_id",
-            "tag_name"
-          ],
+          "columns": ["user_id", "tag_name"],
           "name": "user_mastery_user_id_tag_name_pk"
         }
       },
@@ -3025,9 +2772,7 @@
       "indexes": {
         "user_subscriptions_user_id_unique": {
           "name": "user_subscriptions_user_id_unique",
-          "columns": [
-            "user_id"
-          ],
+          "columns": ["user_id"],
           "isUnique": true
         }
       },
@@ -3036,12 +2781,8 @@
           "name": "user_subscriptions_user_id_users_id_fk",
           "tableFrom": "user_subscriptions",
           "tableTo": "users",
-          "columnsFrom": [
-            "user_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["user_id"],
+          "columnsTo": ["id"],
           "onDelete": "cascade",
           "onUpdate": "no action"
         },
@@ -3049,12 +2790,8 @@
           "name": "user_subscriptions_plan_id_subscription_plans_id_fk",
           "tableFrom": "user_subscriptions",
           "tableTo": "subscription_plans",
-          "columnsFrom": [
-            "plan_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["plan_id"],
+          "columnsTo": ["id"],
           "onDelete": "no action",
           "onUpdate": "no action"
         }
@@ -3115,9 +2852,7 @@
       "indexes": {
         "users_username_unique": {
           "name": "users_username_unique",
-          "columns": [
-            "username"
-          ],
+          "columns": ["username"],
           "isUnique": true
         }
       },

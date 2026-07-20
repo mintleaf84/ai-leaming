@@ -1,10 +1,10 @@
-declare module 'driver.js' {
+declare module "driver.js" {
   interface DriverConfig {
     animate?: boolean;
     opacity?: number;
     padding?: number;
     allowClose?: boolean;
-    showButtons?: ('close' | 'next' | 'previous')[];
+    showButtons?: ("close" | "next" | "previous")[];
     nextBtnText?: string;
     prevBtnText?: string;
     doneBtnText?: string;
@@ -16,7 +16,7 @@ declare module 'driver.js' {
   interface PopoverConfig {
     title?: string;
     description?: string;
-    position?: 'top' | 'bottom' | 'left' | 'right';
+    position?: "top" | "bottom" | "left" | "right";
   }
 
   interface Step {

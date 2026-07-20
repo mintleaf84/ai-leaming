@@ -3,8 +3,12 @@
  * 在 AI 调用前检查配额，超限时返回友好提示
  */
 
-import { checkAndConsumeQuota, checkUsageQuota } from './subscription-service';
-import { UsageType, UsageCheckResult, USAGE_TYPE_LABELS } from '@/types/subscription';
+import { checkAndConsumeQuota, checkUsageQuota } from "./subscription-service";
+import {
+  UsageType,
+  UsageCheckResult,
+  USAGE_TYPE_LABELS,
+} from "@/types/subscription";
 
 /**
  * 检查用量配额 (不消费)
@@ -12,8 +16,11 @@ import { UsageType, UsageCheckResult, USAGE_TYPE_LABELS } from '@/types/subscrip
  * @param usageType 用量类型
  * @returns 检查结果
  */
-export async function checkQuota(userId: number, usageType: UsageType): Promise<UsageCheckResult> {
-    return await checkUsageQuota(userId, usageType);
+export async function checkQuota(
+  userId: number,
+  usageType: UsageType,
+): Promise<UsageCheckResult> {
+  return await checkUsageQuota(userId, usageType);
 }
 
 /**
@@ -22,8 +29,11 @@ export async function checkQuota(userId: number, usageType: UsageType): Promise<
  * @param usageType 用量类型
  * @returns 检查结果，如果允许则已自动消费 1 次配额
  */
-export async function consumeQuota(userId: number, usageType: UsageType): Promise<UsageCheckResult> {
-    return await checkAndConsumeQuota(userId, usageType);
+export async function consumeQuota(
+  userId: number,
+  usageType: UsageType,
+): Promise<UsageCheckResult> {
+  return await checkAndConsumeQuota(userId, usageType);
 }
 
 /**
@@ -31,16 +41,19 @@ export async function consumeQuota(userId: number, usageType: UsageType): Promis
  * @param usageType 用量类型
  * @param result 检查结果
  */
-export function createQuotaExceededResponse(usageType: UsageType, result: UsageCheckResult) {
-    const label = USAGE_TYPE_LABELS[usageType];
-    return {
-        error: 'QUOTA_EXCEEDED',
-        message: result.message || `今日${label}次数已用完，请升级套餐解锁更多`,
-        current: result.current,
-        limit: result.limit,
-        usageType,
-        upgradeUrl: '/pricing'
-    };
+export function createQuotaExceededResponse(
+  usageType: UsageType,
+  result: UsageCheckResult,
+) {
+  const label = USAGE_TYPE_LABELS[usageType];
+  return {
+    error: "QUOTA_EXCEEDED",
+    message: result.message || `今日${label}次数已用完，请升级套餐解锁更多`,
+    current: result.current,
+    limit: result.limit,
+    usageType,
+    upgradeUrl: "/pricing",
+  };
 }
 
 /**
@@ -51,17 +64,17 @@ export function createQuotaExceededResponse(usageType: UsageType, result: UsageC
  * @returns 操作结果或用量超限错误
  */
 export async function withQuotaCheck<T>(
-    userId: number,
-    usageType: UsageType,
-    operation: () => Promise<T>
+  userId: number,
+  usageType: UsageType,
+  operation: () => Promise<T>,
 ): Promise<T | ReturnType<typeof createQuotaExceededResponse>> {
-    const result = await consumeQuota(userId, usageType);
+  const result = await consumeQuota(userId, usageType);
 
-    if (!result.allowed) {
-        return createQuotaExceededResponse(usageType, result);
-    }
+  if (!result.allowed) {
+    return createQuotaExceededResponse(usageType, result);
+  }
 
-    return await operation();
+  return await operation();
 }
 
 /**
@@ -69,14 +82,14 @@ export async function withQuotaCheck<T>(
  * 返回 null 表示可以继续，否则返回错误响应
  */
 export async function checkQuotaForApi(
-    userId: number,
-    usageType: UsageType
+  userId: number,
+  usageType: UsageType,
 ): Promise<{ error: ReturnType<typeof createQuotaExceededResponse> } | null> {
-    const result = await consumeQuota(userId, usageType);
+  const result = await consumeQuota(userId, usageType);
 
-    if (!result.allowed) {
-        return { error: createQuotaExceededResponse(usageType, result) };
-    }
+  if (!result.allowed) {
+    return { error: createQuotaExceededResponse(usageType, result) };
+  }
 
-    return null;
+  return null;
 }

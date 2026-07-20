@@ -26,10 +26,9 @@
 - **批量替换**: PowerShell 批量替换不可靠（容易破坏文件编码或导致部分漏改）。推荐使用 `npx replace` 或 `ast-grep`。
 - **路径引用**: 跨模块使用绝对路径 (`@/...`)，模块内使用相对路径。
 - **测试**: Mock 数据库模块而非使用真实数据库，确保测试隔离且高速。
-- **Drizzle Mock 陷阱**: 
-    - **导出完整性**: Mock `@/lib/db` 时必须同时包含 `default` (Legacy)、`drizzleDb` 和 `drizzleSchema`，否则会导致运行时导出未定义错误。
-    - **Thenable 链式调用**: Drizzle 链式调用（如 `.select().from()`）若直接被 `await`，其 Mock 对象必须实现 `.then` 方法，否则会陷入死循环或报错。
-
+- **Drizzle Mock 陷阱**:
+  - **导出完整性**: Mock `@/lib/db` 时必须同时包含 `default` (Legacy)、`drizzleDb` 和 `drizzleSchema`，否则会导致运行时导出未定义错误。
+  - **Thenable 链式调用**: Drizzle 链式调用（如 `.select().from()`）若直接被 `await`，其 Mock 对象必须实现 `.then` 方法，否则会陷入死循环或报错。
 
 ## 工具链规范
 

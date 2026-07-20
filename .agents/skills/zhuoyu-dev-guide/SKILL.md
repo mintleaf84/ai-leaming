@@ -27,10 +27,10 @@ description: 琢玉项目开发指南。包含核心开发理念（KISS）、强
 
 1. **渐进式开发**：通过多轮对话迭代需求。严禁在理清疑点前动手编码。
 2. **结构化流程**：严格遵守以下顺序：
-    - **构思方案** (Conceptual Plan)
-    - **提请审核** (User Review)
-    - **分解任务** (Task Breakdown)
-    - **验证关闭** (Verification)
+   - **构思方案** (Conceptual Plan)
+   - **提请审核** (User Review)
+   - **分解任务** (Task Breakdown)
+   - **验证关闭** (Verification)
 
 ## 输出规范 (Mandatory)
 

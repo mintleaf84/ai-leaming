@@ -1,14 +1,14 @@
-import { generateStructuredData } from './client';
-import { z } from 'zod';
+import { generateStructuredData } from "./client";
+import { z } from "zod";
 
 const TaggingResultSchema = z.object({
   tags: z.array(z.string()),
-  dimension: z.enum(['knowledge', 'understanding', 'application'])
+  dimension: z.enum(["knowledge", "understanding", "application"]),
 });
 
 export interface TaggingResult {
   tags: string[];
-  dimension: 'knowledge' | 'understanding' | 'application';
+  dimension: "knowledge" | "understanding" | "application";
 }
 
 export const aiTaggingService = {
@@ -33,10 +33,14 @@ export const aiTaggingService = {
     `;
 
     try {
-      return await generateStructuredData(TaggingResultSchema, prompt, 'economy');
+      return await generateStructuredData(
+        TaggingResultSchema,
+        prompt,
+        "economy",
+      );
     } catch (error) {
-      console.error('AI Tagging failed:', error);
-      return { tags: ['未知考点'], dimension: 'knowledge' };
+      console.error("AI Tagging failed:", error);
+      return { tags: ["未知考点"], dimension: "knowledge" };
     }
-  }
+  },
 };

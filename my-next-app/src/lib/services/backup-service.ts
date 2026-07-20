@@ -1,196 +1,217 @@
-import { createClient, WebDAVClient } from 'webdav';
-import dayjs from 'dayjs';
-import { drizzleDb, getSetting, setSetting } from '@/lib/db';
-import { sql } from 'drizzle-orm';
-import { encrypt, decrypt } from '@/lib/utils/encryption';
-import fs from 'fs/promises';
-import { createReadStream, createWriteStream } from 'fs';
-import path from 'path';
-import { createGzip } from 'zlib';
-import { pipeline } from 'stream';
-import { promisify } from 'util';
-import { env } from '@/env';
+import { createClient, WebDAVClient } from "webdav";
+import dayjs from "dayjs";
+import { drizzleDb, getSetting, setSetting } from "@/lib/db";
+import { sql } from "drizzle-orm";
+import { encrypt, decrypt } from "@/lib/utils/encryption";
+import fs from "fs/promises";
+import { createReadStream, createWriteStream } from "fs";
+import path from "path";
+import { createGzip } from "zlib";
+import { pipeline } from "stream";
+import { promisify } from "util";
+import { env } from "@/env";
 
 const pipelineAsync = promisify(pipeline);
 
 const SETTING_KEYS = {
-    ENABLED: 'backup_enabled',
-    URL: 'backup_webdav_url',
-    USER: 'backup_webdav_user',
-    PASS: 'backup_webdav_pass', // 加密存储
-    PATH: 'backup_webdav_path',
-    RETENTION: 'backup_retention_days',
+  ENABLED: "backup_enabled",
+  URL: "backup_webdav_url",
+  USER: "backup_webdav_user",
+  PASS: "backup_webdav_pass", // 加密存储
+  PATH: "backup_webdav_path",
+  RETENTION: "backup_retention_days",
 };
 
 const BACKUP_SECRET = env.BACKUP_ENCRYPTION_KEY;
 
 if (!BACKUP_SECRET) {
-    const errorMsg = 'BACKUP_ENCRYPTION_KEY 环境变量未设置。'
-        + '生产环境必须设置该变量以确保备份凭据安全。'
-        + '开发环境可使用默认密钥，但切勿用于生产。';
-    if (process.env.NODE_ENV === 'production') {
-        throw new Error(errorMsg);
-    }
-    console.warn('WARNING: ' + errorMsg);
+  const errorMsg =
+    "BACKUP_ENCRYPTION_KEY 环境变量未设置。" +
+    "生产环境必须设置该变量以确保备份凭据安全。" +
+    "开发环境可使用默认密钥，但切勿用于生产。";
+  if (process.env.NODE_ENV === "production") {
+    throw new Error(errorMsg);
+  }
+  console.warn("WARNING: " + errorMsg);
 }
 
-const SECRET = BACKUP_SECRET || 'ai-learning-backup-secret-key-32-chars';
+const SECRET = BACKUP_SECRET || "ai-learning-backup-secret-key-32-chars";
 
 export interface BackupConfig {
-    enabled: boolean;
-    url: string;
-    user: string;
-    pass: string;
-    remotePath: string;
-    retentionDays: number;
+  enabled: boolean;
+  url: string;
+  user: string;
+  pass: string;
+  remotePath: string;
+  retentionDays: number;
 }
 
 export class BackupService {
-    /**
-     * 获取备份配置
-     */
-    static async getConfig(): Promise<BackupConfig> {
-        const url = await getSetting(SETTING_KEYS.URL) || '';
-        const user = await getSetting(SETTING_KEYS.USER) || '';
-        const encryptedPass = await getSetting(SETTING_KEYS.PASS) || '';
-        const remotePath = await getSetting(SETTING_KEYS.PATH) || '/backups';
-        const enabled = await getSetting(SETTING_KEYS.ENABLED) === 'true';
-        const retentionDays = parseInt(await getSetting(SETTING_KEYS.RETENTION) || '365', 10);
+  /**
+   * 获取备份配置
+   */
+  static async getConfig(): Promise<BackupConfig> {
+    const url = (await getSetting(SETTING_KEYS.URL)) || "";
+    const user = (await getSetting(SETTING_KEYS.USER)) || "";
+    const encryptedPass = (await getSetting(SETTING_KEYS.PASS)) || "";
+    const remotePath = (await getSetting(SETTING_KEYS.PATH)) || "/backups";
+    const enabled = (await getSetting(SETTING_KEYS.ENABLED)) === "true";
+    const retentionDays = parseInt(
+      (await getSetting(SETTING_KEYS.RETENTION)) || "365",
+      10,
+    );
 
-        let pass = '';
-        if (encryptedPass) {
-            try {
-                pass = decrypt(encryptedPass, SECRET);
-            } catch (_e) {
-                console.error('[Backup] Failed to decrypt password');
-            }
-        }
-
-        return { enabled, url, user, pass, remotePath, retentionDays };
+    let pass = "";
+    if (encryptedPass) {
+      try {
+        pass = decrypt(encryptedPass, SECRET);
+      } catch (_e) {
+        console.error("[Backup] Failed to decrypt password");
+      }
     }
 
-    /**
-     * 保存备份配置
-     */
-    static async saveConfig(config: Partial<BackupConfig>) {
-        if (config.url !== undefined) await setSetting(SETTING_KEYS.URL, config.url);
-        if (config.user !== undefined) await setSetting(SETTING_KEYS.USER, config.user);
-        if (config.pass !== undefined) {
-            const encrypted = encrypt(config.pass, SECRET);
-            await setSetting(SETTING_KEYS.PASS, encrypted);
-        }
-        if (config.remotePath !== undefined) await setSetting(SETTING_KEYS.PATH, config.remotePath);
-        if (config.enabled !== undefined) await setSetting(SETTING_KEYS.ENABLED, config.enabled ? 'true' : 'false');
-        if (config.retentionDays !== undefined) await setSetting(SETTING_KEYS.RETENTION, config.retentionDays.toString());
+    return { enabled, url, user, pass, remotePath, retentionDays };
+  }
+
+  /**
+   * 保存备份配置
+   */
+  static async saveConfig(config: Partial<BackupConfig>) {
+    if (config.url !== undefined)
+      await setSetting(SETTING_KEYS.URL, config.url);
+    if (config.user !== undefined)
+      await setSetting(SETTING_KEYS.USER, config.user);
+    if (config.pass !== undefined) {
+      const encrypted = encrypt(config.pass, SECRET);
+      await setSetting(SETTING_KEYS.PASS, encrypted);
+    }
+    if (config.remotePath !== undefined)
+      await setSetting(SETTING_KEYS.PATH, config.remotePath);
+    if (config.enabled !== undefined)
+      await setSetting(SETTING_KEYS.ENABLED, config.enabled ? "true" : "false");
+    if (config.retentionDays !== undefined)
+      await setSetting(SETTING_KEYS.RETENTION, config.retentionDays.toString());
+  }
+
+  /**
+   * 测试 WebDAV 连接
+   */
+  static async testConnection(config: BackupConfig): Promise<boolean> {
+    try {
+      const client = createClient(config.url, {
+        username: config.user,
+        password: config.pass,
+      });
+      await client.getDirectoryContents("/");
+      return true;
+    } catch (error) {
+      console.error("[Backup] Connection test failed:", error);
+      return false;
+    }
+  }
+
+  /**
+   * 执行备份流程
+   */
+  static async performBackup(): Promise<string> {
+    const config = await this.getConfig();
+    if (!config.url || !config.user || !config.pass) {
+      throw new Error("Backup configuration is incomplete");
     }
 
-    /**
-     * 测试 WebDAV 连接
-     */
-    static async testConnection(config: BackupConfig): Promise<boolean> {
-        try {
-            const client = createClient(config.url, {
-                username: config.user,
-                password: config.pass,
-            });
-            await client.getDirectoryContents('/');
-            return true;
-        } catch (error) {
-            console.error('[Backup] Connection test failed:', error);
-            return false;
+    const timestamp = dayjs().format("YYYY-MM-DD-HH-mm-ss");
+    const dbName = process.env.DB_FILENAME || "ai-learning.db";
+    const tempDir = path.resolve(process.cwd(), "data", "temp_backups");
+    const backupPath = path.join(tempDir, `${dbName}.${timestamp}.bak`);
+    const zipPath = `${backupPath}.gz`;
+
+    try {
+      // 1. 创建临时目录
+      await fs.mkdir(tempDir, { recursive: true });
+
+      // 2. SQLite 备份 (VACUUM INTO)
+      console.log(`[Backup] Creating database snapshot: ${backupPath}`);
+      // 使用 Drizzle/LibSQL 的 VACUUM INTO 进行在线备份
+      await drizzleDb.run(
+        sql.raw(`VACUUM INTO '${backupPath.replace(/'/g, "''")}'`),
+      );
+
+      // 3. 压缩
+      console.log(`[Backup] Compressing backup: ${zipPath}`);
+      await pipelineAsync(
+        createReadStream(backupPath),
+        createGzip(),
+        createWriteStream(zipPath),
+      );
+
+      // 4. 上传到 WebDAV
+      const client = createClient(config.url, {
+        username: config.user,
+        password: config.pass,
+      });
+
+      // 确保目录存在
+      const paths = config.remotePath.split("/").filter((p) => p);
+      let currentPath = "";
+      for (const p of paths) {
+        currentPath += `/${p}`;
+        if (!(await client.exists(currentPath))) {
+          await client.createDirectory(currentPath);
         }
+      }
+
+      const remoteFileName = `${dbName}.${timestamp}.gz`;
+      const remoteFullTarget = path
+        .join(config.remotePath, remoteFileName)
+        .replace(/\\/g, "/");
+
+      console.log(`[Backup] Uploading to WebDAV: ${remoteFullTarget}`);
+      const backupBuffer = await fs.readFile(zipPath);
+      await client.putFileContents(remoteFullTarget, backupBuffer);
+
+      // 5. 清理历史备份
+      await this.rotateBackups(client, config);
+
+      return remoteFileName;
+    } finally {
+      // 清理本地临时文件
+      try {
+        if (await fs.stat(backupPath).catch(() => null))
+          await fs.unlink(backupPath);
+        if (await fs.stat(zipPath).catch(() => null)) await fs.unlink(zipPath);
+      } catch (e) {
+        console.warn("[Backup] Failed to cleanup temp files", e);
+      }
     }
+  }
 
-    /**
-     * 执行备份流程
-     */
-    static async performBackup(): Promise<string> {
-        const config = await this.getConfig();
-        if (!config.url || !config.user || !config.pass) {
-            throw new Error('Backup configuration is incomplete');
+  /**
+   * 清理过期备份 (Retention Policy)
+   */
+  private static async rotateBackups(
+    client: WebDAVClient,
+    config: BackupConfig,
+  ) {
+    try {
+      console.log(
+        `[Backup] Checking for old backups (retention: ${config.retentionDays} days)`,
+      );
+      const items = (await client.getDirectoryContents(
+        config.remotePath,
+      )) as Array<{ type: string; lastmod: string; filename: string }>;
+      const now = dayjs();
+
+      for (const item of items) {
+        if (item.type !== "file" || !item.lastmod) continue;
+
+        const lastModDate = dayjs(item.lastmod);
+        if (now.diff(lastModDate, "day") > config.retentionDays) {
+          console.log(`[Backup] Deleting old backup: ${item.filename}`);
+          await client.deleteFile(item.filename);
         }
-
-        const timestamp = dayjs().format('YYYY-MM-DD-HH-mm-ss');
-        const dbName = process.env.DB_FILENAME || 'ai-learning.db';
-        const tempDir = path.resolve(process.cwd(), 'data', 'temp_backups');
-        const backupPath = path.join(tempDir, `${dbName}.${timestamp}.bak`);
-        const zipPath = `${backupPath}.gz`;
-
-        try {
-            // 1. 创建临时目录
-            await fs.mkdir(tempDir, { recursive: true });
-
-            // 2. SQLite 备份 (VACUUM INTO)
-            console.log(`[Backup] Creating database snapshot: ${backupPath}`);
-            // 使用 Drizzle/LibSQL 的 VACUUM INTO 进行在线备份
-            await drizzleDb.run(sql.raw(`VACUUM INTO '${backupPath.replace(/'/g, "''")}'`));
-
-            // 3. 压缩
-            console.log(`[Backup] Compressing backup: ${zipPath}`);
-            await pipelineAsync(
-                createReadStream(backupPath),
-                createGzip(),
-                createWriteStream(zipPath)
-            );
-
-            // 4. 上传到 WebDAV
-            const client = createClient(config.url, {
-                username: config.user,
-                password: config.pass,
-            });
-
-            // 确保目录存在
-            const paths = config.remotePath.split('/').filter(p => p);
-            let currentPath = '';
-            for (const p of paths) {
-                currentPath += `/${p}`;
-                if (!(await client.exists(currentPath))) {
-                    await client.createDirectory(currentPath);
-                }
-            }
-
-            const remoteFileName = `${dbName}.${timestamp}.gz`;
-            const remoteFullTarget = path.join(config.remotePath, remoteFileName).replace(/\\/g, '/');
-            
-            console.log(`[Backup] Uploading to WebDAV: ${remoteFullTarget}`);
-            const backupBuffer = await fs.readFile(zipPath);
-            await client.putFileContents(remoteFullTarget, backupBuffer);
-
-            // 5. 清理历史备份
-            await this.rotateBackups(client, config);
-
-            return remoteFileName;
-        } finally {
-            // 清理本地临时文件
-            try {
-                if (await fs.stat(backupPath).catch(() => null)) await fs.unlink(backupPath);
-                if (await fs.stat(zipPath).catch(() => null)) await fs.unlink(zipPath);
-            } catch (e) {
-                console.warn('[Backup] Failed to cleanup temp files', e);
-            }
-        }
+      }
+    } catch (error) {
+      console.error("[Backup] Rotation failed:", error);
     }
-
-    /**
-     * 清理过期备份 (Retention Policy)
-     */
-    private static async rotateBackups(client: WebDAVClient, config: BackupConfig) {
-        try {
-            console.log(`[Backup] Checking for old backups (retention: ${config.retentionDays} days)`);
-            const items = await client.getDirectoryContents(config.remotePath) as Array<{ type: string; lastmod: string; filename: string }>;
-            const now = dayjs();
-
-            for (const item of items) {
-                if (item.type !== 'file' || !item.lastmod) continue;
-                
-                const lastModDate = dayjs(item.lastmod);
-                if (now.diff(lastModDate, 'day') > config.retentionDays) {
-                    console.log(`[Backup] Deleting old backup: ${item.filename}`);
-                    await client.deleteFile(item.filename);
-                }
-            }
-        } catch (error) {
-            console.error('[Backup] Rotation failed:', error);
-        }
-    }
+  }
 }

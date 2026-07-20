@@ -17,12 +17,13 @@ defaults:
 jobs:
   lint:
     name: Lint & Type Check
-    runs-on: ${{ vars.SELF_HOSTED != '' && 'self-hosted' || 'ubuntu-latest' }}
+    runs-on: ${{ (github.event_name == 'push' && vars.SELF_HOSTED == 'true') && 'self-hosted' || 'ubuntu-latest' }}
     timeout-minutes: 20
     steps:
       - uses: actions/checkout@v4
         with:
           ref: ${{ github.event.pull_request.head.sha || github.sha }}
+          persist-credentials: false
 
       - uses: actions/setup-node@v4
         with:
@@ -41,12 +42,13 @@ jobs:
 
   unit-test:
     name: 单元测试 (Vitest)
-    runs-on: ${{ vars.SELF_HOSTED != '' && 'self-hosted' || 'ubuntu-latest' }}
+    runs-on: ${{ (github.event_name == 'push' && vars.SELF_HOSTED == 'true') && 'self-hosted' || 'ubuntu-latest' }}
     timeout-minutes: 30
     steps:
       - uses: actions/checkout@v4
         with:
           ref: ${{ github.event.pull_request.head.sha || github.sha }}
+          persist-credentials: false
 
       - uses: actions/setup-node@v4
         with:
@@ -72,7 +74,7 @@ jobs:
 
   build:
     name: Next.js 构建校验
-    runs-on: ${{ vars.SELF_HOSTED != '' && 'self-hosted' || 'ubuntu-latest' }}
+    runs-on: ${{ (github.event_name == 'push' && vars.SELF_HOSTED == 'true') && 'self-hosted' || 'ubuntu-latest' }}
     timeout-minutes: 30
     needs: [ lint, unit-test ]
     env:
@@ -85,6 +87,7 @@ jobs:
       - uses: actions/checkout@v4
         with:
           ref: ${{ github.event.pull_request.head.sha || github.sha }}
+          persist-credentials: false
 
       - uses: actions/setup-node@v4
         with:

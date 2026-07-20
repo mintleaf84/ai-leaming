@@ -1,7 +1,6 @@
 name: Build and Push Docker Image to GHCR
 
 on:
-  # 仅在 CI 工作流成功完成后触发（push 到 master/main）
   workflow_run:
     workflows: [ "CI" ]
     types: [ completed ]
@@ -14,14 +13,12 @@ permissions:
 
 jobs:
   build:
-    # 只有 CI 成功时才执行（workflow_dispatch 直接运行）
     if: ${{ github.event_name == 'workflow_dispatch' || github.event.workflow_run.conclusion == 'success' }}
-    runs-on: self-hosted
+    runs-on: ${{ vars.SELF_HOSTED != '' && 'self-hosted' || 'ubuntu-latest' }}
     steps:
       - name: Check out code
         uses: actions/checkout@v4
 
-      # 使用官方 action 登录 GHCR（内置重试机制，更稳定）
       - name: Login to GitHub Container Registry
         uses: docker/login-action@v3
         with:
@@ -29,7 +26,6 @@ jobs:
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
 
-      # 获取仓库名全小写
       - name: Lowercase repository name
         run: |
           echo "REPO=${GITHUB_REPOSITORY,,}" >> $GITHUB_ENV
@@ -42,6 +38,7 @@ jobs:
         with:
           context: ./my-next-app
           push: true
+          platforms: linux/amd64,linux/arm64
           tags: ghcr.io/${{ env.REPO }}:latest
           cache-from: type=gha
           cache-to: type=gha,mode=max

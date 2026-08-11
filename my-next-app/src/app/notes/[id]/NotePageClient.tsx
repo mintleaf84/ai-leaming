@@ -70,6 +70,13 @@ export default function NotePageClient({ note }: NotePageClientProps) {
     1000,
   );
 
+  // 组件卸载前冲刷待执行的保存，避免防抖窗口内离开页面导致内容丢失
+  useEffect(() => {
+    return () => {
+      void handleSave.flush();
+    };
+  }, [handleSave]);
+
   return (
     <div className="flex flex-col h-full max-w-4xl mx-auto w-full">
       <div className="pt-8 px-12 pb-2">

@@ -29,7 +29,7 @@ export function generateId(prefix = "", length?: number): string {
   return prefix ? `${prefix}-${body}` : body;
 }
 
-/** 生成练习会话 ID */
+/** 生成练习会话 ID，保持与旧格式兼容：15 位纯 hex（无前缀） */
 export function generateSessionId(): string {
-  return generateId("session", 15);
+  return generateId("", 15);
 }

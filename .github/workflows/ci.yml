@@ -35,14 +35,6 @@ jobs:
           cache: npm
           cache-dependency-path: my-next-app/package-lock.json
 
-      - name: 缓存 node_modules
-        uses: actions/cache@v4
-        with:
-          path: my-next-app/node_modules
-          key: node-modules-${{ runner.os }}-${{ hashFiles('my-next-app/package-lock.json') }}
-          restore-keys: |
-            node-modules-${{ runner.os }}-
-
       - name: 安装依赖
         run: npm ci
 
@@ -73,14 +65,6 @@ jobs:
           node-version: 20
           cache: npm
           cache-dependency-path: my-next-app/package-lock.json
-
-      - name: 缓存 node_modules
-        uses: actions/cache@v4
-        with:
-          path: my-next-app/node_modules
-          key: node-modules-${{ runner.os }}-${{ hashFiles('my-next-app/package-lock.json') }}
-          restore-keys: |
-            node-modules-${{ runner.os }}-
 
       - name: 检测变更文件
         id: changed
@@ -132,14 +116,6 @@ jobs:
           node-version: 20
           cache: npm
           cache-dependency-path: my-next-app/package-lock.json
-
-      - name: 缓存 node_modules
-        uses: actions/cache@v4
-        with:
-          path: my-next-app/node_modules
-          key: node-modules-${{ runner.os }}-${{ hashFiles('my-next-app/package-lock.json') }}
-          restore-keys: |
-            node-modules-${{ runner.os }}-
 
       - name: 安装依赖
         run: npm ci

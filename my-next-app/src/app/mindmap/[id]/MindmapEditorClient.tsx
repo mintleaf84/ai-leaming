@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useCallback } from "react";
+import React, { useState, useCallback, useEffect } from "react";
 import { useDebouncedCallback } from "use-debounce";
 import { getErrorMessage } from "@/lib/utils/error";
 import { Wand2, Trash2, AlignLeft } from "lucide-react";
@@ -58,6 +58,13 @@ export default function MindmapEditorClient({
     },
     [saveMindmap],
   );
+
+  // 组件卸载前冲刷待执行的保存，避免防抖窗口内离开页面导致内容丢失
+  useEffect(() => {
+    return () => {
+      void saveMindmap.flush();
+    };
+  }, [saveMindmap]);
 
   const handleTitleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const val = e.target.value;

@@ -240,7 +240,7 @@ export function BackupManager() {
           <Button
             variant="ghost"
             size="sm"
-            onClick={fetchHistory}
+            onClick={() => void fetchHistory()}
             disabled={loadingHistory}
           >
             <RefreshCw

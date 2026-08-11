@@ -1,6 +1,7 @@
 "use client";
 
-import React, { useCallback, useRef, useState, useEffect } from "react";
+import React, { useState, useEffect } from "react";
+import { useDebouncedCallback } from "use-debounce";
 import dynamic from "next/dynamic";
 
 const NoteEditor = dynamic(() => import("@/components/editor/NoteEditor"), {
@@ -51,27 +52,22 @@ export default function NotePageClient({ note }: NotePageClientProps) {
   useEffect(() => {
     getGlobalFeatureFlag("ENABLE_OCR_MINDMAP", true).then(setMindmapEnabled);
   }, []);
-  const saveTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
-  const handleSave = useCallback(
-    (newContent?: string, newTitle?: string) => {
-      if (saveTimeoutRef.current) clearTimeout(saveTimeoutRef.current);
-
-      saveTimeoutRef.current = setTimeout(async () => {
-        const result = await updateNoteAction({
-          id: note.id,
-          title: newTitle,
-          content: newContent,
-        });
-        if (newContent !== undefined) {
-          setCurrentContent(newContent);
-        }
-        if (!result.data?.success) {
-          toast.error("保存失败");
-        }
-      }, 1000);
+  const handleSave = useDebouncedCallback(
+    async (newContent?: string, newTitle?: string) => {
+      const result = await updateNoteAction({
+        id: note.id,
+        title: newTitle,
+        content: newContent,
+      });
+      if (newContent !== undefined) {
+        setCurrentContent(newContent);
+      }
+      if (!result.data?.success) {
+        toast.error("保存失败");
+      }
     },
-    [note.id],
+    1000,
   );
 
   return (

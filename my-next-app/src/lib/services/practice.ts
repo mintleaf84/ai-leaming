@@ -13,6 +13,7 @@ import { QuestionRowSchema } from "@/lib/schemas";
 import logger from "@/lib/logger";
 import { DemoService } from "@/lib/practice/demo";
 import { safeParseJson } from "@/lib/utils/json";
+import { generateId, generateSessionId } from "@/lib/utils/id";
 
 export interface PracticeSessionConfig {
   mode: PracticeMode;
@@ -231,7 +232,7 @@ export const practiceService = {
     questions: Question[];
     sessionId: string;
   }> {
-    const sessionId = crypto.randomUUID().replace(/-/g, "").substring(0, 15);
+    const sessionId = generateSessionId();
 
     const rawQuestions = await drizzleDb
       .select()
@@ -551,7 +552,7 @@ export const practiceService = {
     }
 
     // 2. 生成会话 ID
-    const sessionId = crypto.randomUUID().replace(/-/g, "").substring(0, 15);
+    const sessionId = generateSessionId();
 
     // 3. 映射并校验题目数据
     const questionData = rawQuestions.map((q) => mapQuestion(q));
@@ -576,7 +577,7 @@ export const practiceService = {
    * 创建专项复习会话 (基于给定的题目 ID 列表)
    */
   async createReviewSession(userId: number, questionIds: number[]) {
-    const sessionId = `review-${crypto.randomUUID().replace(/-/g, "").substring(0, 10)}`;
+    const sessionId = `review-${generateId("", 10)}`;
 
     await drizzleDb.insert(practice_sessions).values({
       id: sessionId,

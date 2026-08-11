@@ -1,6 +1,7 @@
 "use client";
 
-import React, { useEffect, useState } from "react";
+import React from "react";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
 import { SystemStatus } from "./_components/types";
@@ -10,47 +11,37 @@ import { ModelRanking } from "./_components/ModelRanking";
 import { DemoModePanel } from "./_components/DemoModePanel";
 import { FeatureFlagsPanel } from "./_components/FeatureFlagsPanel";
 
+const STATUS_KEY = "admin-system-status";
+
 export default function SystemPage() {
-  const [status, setStatus] = useState<SystemStatus | null>(null);
-  const [loading, setLoading] = useState(true);
+  const queryClient = useQueryClient();
 
-  const loadStatus = async () => {
-    setLoading(true);
-    try {
+  // 5 秒轮询系统状态，React Query 自动管理缓存与重试
+  const { data: status, isLoading: loading } = useQuery({
+    queryKey: [STATUS_KEY],
+    queryFn: async () => {
       const res = await fetch("/api/admin/system");
-      if (!res.ok) throw new Error("Failed to fetch");
-      const data = await res.json();
-      setStatus(data);
-    } catch {
-      toast.error("获取系统状态失败");
-    } finally {
-      setLoading(false);
-    }
-  };
+      if (!res.ok) throw new Error("获取系统状态失败");
+      return (await res.json()) as SystemStatus;
+    },
+    refetchInterval: 5000,
+  });
 
-  useEffect(() => {
-    loadStatus();
-    const interval = setInterval(loadStatus, 5000);
-    return () => clearInterval(interval);
-  }, []);
-
-  const toggleDemoMode = async () => {
-    try {
+  const toggleDemoMode = useMutation({
+    mutationFn: async () => {
       const res = await fetch("/api/admin/system", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ action: "toggle_demo_mode" }),
       });
-      if (res.ok) {
-        const data = await res.json();
-        setStatus((prev) =>
-          prev ? { ...prev, demoMode: data.demoMode } : null,
-        );
-      }
-    } catch {
-      toast.error("切换演示模式失败");
-    }
-  };
+      if (!res.ok) throw new Error("切换演示模式失败");
+      return (await res.json()) as { demoMode: boolean };
+    },
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: [STATUS_KEY] }),
+    onError: () => toast.error("切换演示模式失败"),
+  });
+
+  const refresh = () => queryClient.invalidateQueries({ queryKey: [STATUS_KEY] });
 
   if (loading && !status) return <div className="p-8">加载中...</div>;
   if (!status) return <div className="p-8">无法获取系统状态</div>;
@@ -64,7 +55,7 @@ export default function SystemPage() {
             实时服务器资源、AI 成本与健康状态
           </p>
         </div>
-        <Button variant="outline" onClick={loadStatus}>
+        <Button variant="outline" onClick={refresh}>
           刷新
         </Button>
       </div>
@@ -76,8 +67,8 @@ export default function SystemPage() {
         <ModelRanking byModel={status.ai?.byModel} />
         <DemoModePanel
           demoMode={status.demoMode ?? false}
-          onToggleDemoMode={toggleDemoMode}
-          onRefresh={loadStatus}
+          onToggleDemoMode={() => toggleDemoMode.mutate()}
+          onRefresh={refresh}
         />
         <FeatureFlagsPanel />
       </div>

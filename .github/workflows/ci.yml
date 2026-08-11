@@ -31,14 +31,28 @@ jobs:
           cache: npm
           cache-dependency-path: my-next-app/package-lock.json
 
+      - name: 缓存 node_modules
+        uses: actions/cache@v4
+        with:
+          path: my-next-app/node_modules
+          key: node-modules-${{ runner.os }}-${{ hashFiles('my-next-app/package-lock.json') }}
+          restore-keys: |
+            node-modules-${{ runner.os }}-
+
       - name: 安装依赖
         run: npm ci
 
-      - name: ESLint
-        run: npm run lint
-
-      - name: TypeScript 类型检查
-        run: npx tsc --noEmit
+      - name: ESLint 与类型检查（并行）
+        run: |
+          npm run lint &
+          lint_pid=$!
+          npx tsc --noEmit &
+          tsc_pid=$!
+          wait "$lint_pid"
+          lint_status=$?
+          wait "$tsc_pid"
+          tsc_status=$?
+          exit $((lint_status || tsc_status))
 
   unit-test:
     name: 单元测试 (Vitest)
@@ -56,17 +70,37 @@ jobs:
           cache: npm
           cache-dependency-path: my-next-app/package-lock.json
 
+      - name: 缓存 node_modules
+        uses: actions/cache@v4
+        with:
+          path: my-next-app/node_modules
+          key: node-modules-${{ runner.os }}-${{ hashFiles('my-next-app/package-lock.json') }}
+          restore-keys: |
+            node-modules-${{ runner.os }}-
+
+      - name: 检测变更文件
+        id: changed
+        uses: dorny/paths-filter@v3
+        with:
+          filters: |
+            code:
+              - 'my-next-app/src/**'
+              - 'my-next-app/tests/**'
+              - 'my-next-app/vitest.config.ts'
+              - 'my-next-app/package-lock.json'
+
       - name: 安装依赖
         run: npm ci
 
       - name: 运行单元测试（含覆盖率）
+        if: steps.changed.outputs.code == 'true'
         run: npx vitest run --coverage
         env:
           BACKUP_ENCRYPTION_KEY: ci-backup-encryption-key-for-testing-only
 
       - name: 上传覆盖率报告
+        if: steps.changed.outputs.code == 'true'
         uses: actions/upload-artifact@v4
-        if: always()
         with:
           name: coverage-report
           path: coverage/
@@ -94,6 +128,14 @@ jobs:
           node-version: 20
           cache: npm
           cache-dependency-path: my-next-app/package-lock.json
+
+      - name: 缓存 node_modules
+        uses: actions/cache@v4
+        with:
+          path: my-next-app/node_modules
+          key: node-modules-${{ runner.os }}-${{ hashFiles('my-next-app/package-lock.json') }}
+          restore-keys: |
+            node-modules-${{ runner.os }}-
 
       - name: 安装依赖
         run: npm ci

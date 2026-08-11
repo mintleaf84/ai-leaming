@@ -34,11 +34,7 @@ function createWrapper() {
     },
   });
   const Wrapper = ({ children }: { children: React.ReactNode }) =>
-    React.createElement(
-      QueryClientProvider,
-      { client: queryClient },
-      children,
-    );
+    React.createElement(QueryClientProvider, { client: queryClient }, children);
   Wrapper.displayName = "QueryClientWrapper";
   return Wrapper;
 }

@@ -16,8 +16,7 @@ function fallbackRandomId(): string {
  */
 export function generateId(prefix = "", length?: number): string {
   const globalCrypto = globalThis.crypto as
-    | { randomUUID?: () => string }
-    | undefined;
+    { randomUUID?: () => string } | undefined;
   let raw: string;
   if (globalCrypto?.randomUUID) {
     raw = globalCrypto.randomUUID();

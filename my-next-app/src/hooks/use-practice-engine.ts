@@ -1,7 +1,13 @@
 import { useEffect, useMemo, useReducer } from "react";
-import { createPracticeReducer, INITIAL_STATE } from "./practice-engine/reducer";
+import {
+  createPracticeReducer,
+  INITIAL_STATE,
+} from "./practice-engine/reducer";
 
-export { createPracticeReducer, INITIAL_STATE } from "./practice-engine/reducer";
+export {
+  createPracticeReducer,
+  INITIAL_STATE,
+} from "./practice-engine/reducer";
 
 export function usePracticeEngine(enableIntelligentReview: boolean = false) {
   const reducer = useMemo(

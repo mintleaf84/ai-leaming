@@ -1,10 +1,6 @@
 import type { PracticeAction, PracticeState, ReviewItem } from "@/types";
 import type { Question } from "@/types";
-import {
-  appendToReviewQueue,
-  recordAnswer,
-  shouldEnterReview,
-} from "./queue";
+import { appendToReviewQueue, recordAnswer, shouldEnterReview } from "./queue";
 import { completeReviewItemStep } from "./review-flow";
 
 export const INITIAL_STATE: PracticeState = {

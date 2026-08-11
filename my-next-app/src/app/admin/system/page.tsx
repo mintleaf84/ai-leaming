@@ -41,7 +41,8 @@ export default function SystemPage() {
     onError: () => toast.error("切换演示模式失败"),
   });
 
-  const refresh = () => queryClient.invalidateQueries({ queryKey: [STATUS_KEY] });
+  const refresh = () =>
+    queryClient.invalidateQueries({ queryKey: [STATUS_KEY] });
 
   if (loading && !status) return <div className="p-8">加载中...</div>;
   if (!status) return <div className="p-8">无法获取系统状态</div>;

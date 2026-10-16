@@ -11,6 +11,12 @@ lab/python/
 │   └── bkt_analysis.py         # 深度分析：BKT 知识追踪建模
 ├── notebooks/           # Jupyter Notebooks 实验记录
 ├── ai_prototype/        # AI 新功能原型测试
+├── fsrs/                # FSRS 记忆参数拟合与评分方案离线实验（纯标准库，只读访问仓库外 sqlite）
+│   ├── fsrs_fit.py               # FSRS-6 参数拟合（chen 复习序列）
+│   ├── fsrs_rating_compare.py    # 三种评分来源方案的 BCE/校准对比
+│   ├── fsrs_scheduling_compare.py# 默认参数 vs 拟合参数的排期轨迹对比
+│   ├── backtest.py               # 选题算法离线回测
+│   └── results/                  # 聚合指标 + DATA_LABEL.txt（数据区间标签，不含原始记录）
 ├── requirements.txt     # 基础工具链依赖
 └── README.md            # 本说明文档
 ```

@@ -1,0 +1,7 @@
+# 原始数据与快照永不提交（脚本以只读方式访问仓库外的 sqlite）
+*.db
+*.db.gz
+*.sqlite*
+*_seq.json
+snapshots/
+__pycache__/

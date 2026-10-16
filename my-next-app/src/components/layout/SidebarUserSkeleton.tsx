@@ -1,7 +1,7 @@
-'use client';
+"use client";
 
-import React from 'react';
-import { ChevronsUpDown } from 'lucide-react';
+import React from "react";
+import { ChevronsUpDown } from "lucide-react";
 
 export function SidebarUserSkeleton() {
   return (

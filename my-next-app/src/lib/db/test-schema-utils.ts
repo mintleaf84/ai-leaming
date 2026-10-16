@@ -1,4 +1,4 @@
-import Database from 'better-sqlite3';
+import Database from "better-sqlite3";
 
 /**
  * 仅供集成测试使用的基础表结构定义。
@@ -124,5 +124,5 @@ export const TEST_SCHEMA_SQL = `
 `;
 
 export function createTestTables(db: Database.Database) {
-    db.exec(TEST_SCHEMA_SQL);
+  db.exec(TEST_SCHEMA_SQL);
 }

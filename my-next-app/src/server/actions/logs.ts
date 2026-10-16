@@ -1,21 +1,26 @@
-'use server';
+"use server";
 
-import { getRecentLogs, getLogsByUser } from '@/lib/admin/audit';
-import { AdminLogEntry } from '@/types';
-import { requireRole } from '@/lib/auth/auth';
+import { getRecentLogs, getLogsByUser } from "@/lib/admin/audit";
+import { AdminLogEntry } from "@/types";
+import { requireRole } from "@/lib/auth/auth";
 
 /**
  * 获取最近的管理员操作日志（仅限管理员）
  */
-export async function getAdminLogsAction(limit: number = 50): Promise<AdminLogEntry[]> {
-    await requireRole(['admin']);
-    return getRecentLogs(limit);
+export async function getAdminLogsAction(
+  limit: number = 50,
+): Promise<AdminLogEntry[]> {
+  await requireRole(["admin"]);
+  return getRecentLogs(limit);
 }
 
 /**
  * 获取指定用户的操作日志（仅限管理员）
  */
-export async function getLogsByUserAction(userId: number, limit: number = 50): Promise<AdminLogEntry[]> {
-    await requireRole(['admin']);
-    return getLogsByUser(userId, limit);
+export async function getLogsByUserAction(
+  userId: number,
+  limit: number = 50,
+): Promise<AdminLogEntry[]> {
+  await requireRole(["admin"]);
+  return getLogsByUser(userId, limit);
 }

@@ -1,5 +1,5 @@
-import { vi } from 'vitest';
-import { setupTestDb } from './test-db-utils';
+import { vi } from "vitest";
+import { setupTestDb } from "./test-db-utils";
 
 /**
  * [最佳实践] 设置并返回一个初始化好的内存数据库 (Drizzle 版)
@@ -8,7 +8,6 @@ import { setupTestDb } from './test-db-utils';
 export async function setupVitestMemoryDb() {
   return await setupTestDb();
 }
-
 
 /**
  * 一个增强型数据库 Mock 工具，用于追踪事务状态和 SQL 调用。
@@ -91,10 +90,29 @@ export const createDrizzleMock = () => {
   };
 
   const methods = [
-    'insert', 'values', 'returning', 'update', 'set', 'delete',
-    'select', 'selectDistinct', 'from', 'where', 'limit', 'offset', 'orderBy', 'groupBy',
-    'onConflictDoUpdate', 'innerJoin', 'leftJoin', 'rightJoin', 'fullJoin',
-    'all', 'get', 'run', 'execute'
+    "insert",
+    "values",
+    "returning",
+    "update",
+    "set",
+    "delete",
+    "select",
+    "selectDistinct",
+    "from",
+    "where",
+    "limit",
+    "offset",
+    "orderBy",
+    "groupBy",
+    "onConflictDoUpdate",
+    "innerJoin",
+    "leftJoin",
+    "rightJoin",
+    "fullJoin",
+    "all",
+    "get",
+    "run",
+    "execute",
   ];
 
   methods.forEach((m) => {
@@ -102,7 +120,7 @@ export const createDrizzleMock = () => {
   });
 
   // 使执行方法默认返回 chain (proxy)，从而统一通过 then 陷阱处理结果
-  ['get', 'all', 'run', 'execute'].forEach(m => {
+  ["get", "all", "run", "execute"].forEach((m) => {
     chain[m] = vi.fn(() => chain);
   });
 
@@ -110,12 +128,15 @@ export const createDrizzleMock = () => {
   chain.transaction = vi.fn((cb) => cb(chain));
 
   // 支持关系查询 query
-  chain.query = new Proxy({}, {
-    get: (_target, table: string) => ({
-      findFirst: vi.fn().mockResolvedValue(null),
-      findMany: vi.fn().mockResolvedValue([])
-    })
-  });
+  chain.query = new Proxy(
+    {},
+    {
+      get: (_target, table: string) => ({
+        findFirst: vi.fn().mockResolvedValue(null),
+        findMany: vi.fn().mockResolvedValue([]),
+      }),
+    },
+  );
 
   return chain;
 };
@@ -124,29 +145,31 @@ export const createDrizzleMock = () => {
  * [已过时] 创建一个“感知表名”的 Drizzle Mock 代理。
  * @deprecated 请优先使用 setupVitestMemoryDb() 以获得更真实的测试环境。
  */
-export const createTableAwareDrizzleMock = (initialTableData: Record<string, any[]> = {}) => {
+export const createTableAwareDrizzleMock = (
+  initialTableData: Record<string, any[]> = {},
+) => {
   const baseMock = createDrizzleMock();
   const tableData = { ...initialTableData };
-  
+
   let queryProxy: any = null;
   let currentTable: string | null = null;
 
   const proxy = new Proxy(baseMock, {
     get: (target, prop: string) => {
-      if (prop === 'injectTableData') {
+      if (prop === "injectTableData") {
         return (data: Record<string, any[]>) => {
           Object.assign(tableData, data);
         };
       }
 
-      if (prop === 'resetTableData') {
-          return () => {
-              for (const key in tableData) delete tableData[key];
-          };
+      if (prop === "resetTableData") {
+        return () => {
+          for (const key in tableData) delete tableData[key];
+        };
       }
 
       // 拦截执行方法，返回一个带有 apply 陷阱的代理
-      if (['get', 'all', 'run', 'execute'].includes(prop)) {
+      if (["get", "all", "run", "execute"].includes(prop)) {
         return new Proxy(target[prop], {
           apply: (fnTarget, thisArg, args) => {
             const table = currentTable;
@@ -154,83 +177,90 @@ export const createTableAwareDrizzleMock = (initialTableData: Record<string, any
 
             if (table && tableData[table]) {
               const data = tableData[table];
-              return Promise.resolve(prop === 'get' ? (data[0] || null) : data);
+              return Promise.resolve(prop === "get" ? data[0] || null : data);
             }
-            
+
             // 否则调用原始 mock 函数 (支持 mockResolvedValueOnce 等)
             return Reflect.apply(fnTarget, thisArg, args);
-          }
+          },
         });
       }
 
-      if (['from', 'update', 'insert', 'delete', 'select'].includes(prop)) {
+      if (["from", "update", "insert", "delete", "select"].includes(prop)) {
         return new Proxy(target[prop], {
           apply: (fnTarget, thisArg, args) => {
             const table = args[0];
             // 尝试多种 Drizzle 表名获取方式
-            const tableName = typeof table === 'string' ? table : 
-                             (table?.name || 
-                              table?._?.name || 
-                              table?._?.name?.name || 
-                              table?.table || 
-                              table?.[Symbol.for('drizzle:Name')]);
-            
+            const tableName =
+              typeof table === "string"
+                ? table
+                : table?.name ||
+                  table?._?.name ||
+                  table?._?.name?.name ||
+                  table?.table ||
+                  table?.[Symbol.for("drizzle:Name")];
+
             if (tableName) {
               console.log(`[MockDB] Detected table: ${tableName} from ${prop}`);
               currentTable = tableName;
-            } else if (table && typeof table === 'object') {
+            } else if (table && typeof table === "object") {
               // 如果是对象但没提取到名字，记录一下键值以便分析
               // console.log(`[MockDB] Failed to extract name from object keys: ${Object.keys(table).join(',')}`);
             }
             return Reflect.apply(fnTarget, thisArg, args);
-          }
+          },
         });
       }
 
       // then 特别重要，使用 apply 陷阱以支持稳定 Mock 与动态数据的结合
-      if (prop === 'then') {
+      if (prop === "then") {
         return new Proxy(target.then, {
           apply: (fnTarget, thisArg, args) => {
             const table = currentTable;
             currentTable = null; // 消费后重置
-            
+
             if (table && tableData[table]) {
-              console.log(`[MockDB] Resolving data for table: ${table}, count: ${tableData[table].length}`);
+              console.log(
+                `[MockDB] Resolving data for table: ${table}, count: ${tableData[table].length}`,
+              );
               const [resolve, reject] = args;
               return Promise.resolve(tableData[table]).then(resolve, reject);
             }
-            
+
             return Reflect.apply(fnTarget, thisArg, args);
-          }
+          },
         });
       }
 
       // query 保持原有逻辑，但需要稳定
-      if (prop === 'query') {
+      if (prop === "query") {
         if (!queryProxy) {
           const tableCache: Record<string, any> = {};
-          queryProxy = new Proxy({}, {
-            get: (_, table: string) => {
-              if (!tableCache[table]) {
-                tableCache[table] = {
-                  findFirst: vi.fn().mockImplementation(() => {
-                    const data = tableData[table] || [];
-                    return Promise.resolve(data[0] || null);
-                  }),
-                  findMany: vi.fn().mockImplementation(() => {
-                    return Promise.resolve(tableData[table] || []);
-                  })
-                };
-              }
-              return tableCache[table];
-            }
-          });
+          queryProxy = new Proxy(
+            {},
+            {
+              get: (_, table: string) => {
+                if (!tableCache[table]) {
+                  tableCache[table] = {
+                    findFirst: vi.fn().mockImplementation(() => {
+                      const data = tableData[table] || [];
+                      return Promise.resolve(data[0] || null);
+                    }),
+                    findMany: vi.fn().mockImplementation(() => {
+                      return Promise.resolve(tableData[table] || []);
+                    }),
+                  };
+                }
+                return tableCache[table];
+              },
+            },
+          );
         }
         return queryProxy;
       }
 
       return target[prop];
-    }
+    },
   });
 
   return proxy;
@@ -241,9 +271,24 @@ export const createTableAwareDrizzleMock = (initialTableData: Record<string, any
  */
 export const resetDrizzleMock = (mockObject: any, defaultReturn: any = []) => {
   const methods = [
-    'insert', 'values', 'returning', 'update', 'set', 'delete',
-    'select', 'from', 'where', 'limit', 'offset', 'orderBy', 'groupBy',
-    'onConflictDoUpdate', 'innerJoin', 'leftJoin', 'rightJoin', 'fullJoin'
+    "insert",
+    "values",
+    "returning",
+    "update",
+    "set",
+    "delete",
+    "select",
+    "from",
+    "where",
+    "limit",
+    "offset",
+    "orderBy",
+    "groupBy",
+    "onConflictDoUpdate",
+    "innerJoin",
+    "leftJoin",
+    "rightJoin",
+    "fullJoin",
   ];
 
   methods.forEach((m) => {
@@ -253,16 +298,18 @@ export const resetDrizzleMock = (mockObject: any, defaultReturn: any = []) => {
     }
   });
 
-  ['get', 'all', 'run', 'execute'].forEach(m => {
+  ["get", "all", "run", "execute"].forEach((m) => {
     if (mockObject[m] && mockObject[m].mockReset) {
-        mockObject[m].mockReset();
-        mockObject[m].mockResolvedValue(defaultReturn);
+      mockObject[m].mockReset();
+      mockObject[m].mockResolvedValue(defaultReturn);
     }
   });
 
   if (mockObject.then && mockObject.then.mockReset) {
     mockObject.then.mockReset();
-    mockObject.then.mockImplementation((resolve: any) => resolve(defaultReturn));
+    mockObject.then.mockImplementation((resolve: any) =>
+      resolve(defaultReturn),
+    );
   }
 
   if (mockObject.transaction && mockObject.transaction.mockReset) {
@@ -284,10 +331,23 @@ export function createMockQuery<T = any>(returnValue: T = [] as any) {
     all: mockAll,
   };
   const methods = [
-    'insert', 'values', 'update', 'set', 'delete',
-    'select', 'from', 'where', 'limit', 'offset',
-    'orderBy', 'innerJoin', 'leftJoin', 'onConflictDoUpdate',
-    'groupBy', 'as', 'selectDistinct'
+    "insert",
+    "values",
+    "update",
+    "set",
+    "delete",
+    "select",
+    "from",
+    "where",
+    "limit",
+    "offset",
+    "orderBy",
+    "innerJoin",
+    "leftJoin",
+    "onConflictDoUpdate",
+    "groupBy",
+    "as",
+    "selectDistinct",
   ];
   methods.forEach((m) => {
     chain[m] = vi.fn(() => chain);

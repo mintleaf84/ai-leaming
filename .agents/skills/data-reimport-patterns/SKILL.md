@@ -14,11 +14,12 @@ description: 数据重导入的最佳实践与常见陷阱。在开发数据导�
 利用 `onConflictDoUpdate` (Upsert) 模式确保每次导入都能强制覆盖核心业务字段。
 
 ```typescript
-import { drizzleDb } from '@/lib/db';
-import { questions } from '@/lib/db/drizzle-schema';
+import { drizzleDb } from "@/lib/db";
+import { questions } from "@/lib/db/drizzle-schema";
 
 async function importItem(item: any) {
-  await drizzleDb.insert(questions)
+  await drizzleDb
+    .insert(questions)
     .values({
       id: item.id,
       type: item.type,
@@ -50,12 +51,12 @@ async function importItem(item: any) {
 
 ## 字段分类决策
 
-| 字段类型 | 重导入时是否更新 | 示例 |
-| :--- | :--- | :--- |
-| **业务核心字段** | ✅ 必须更新 | `type`, `answer`, `options`, `content` |
-| **补充信息字段** | ✅ 建议更新 | `explanation`, `material`, `source` |
-| **统计字段** | ⚠️ 按需更新 | `correct_ratio`, `view_count` |
-| **系统字段** | ❌ 不更新 | `created_at`, `id` |
+| 字段类型         | 重导入时是否更新 | 示例                                   |
+| :--------------- | :--------------- | :------------------------------------- |
+| **业务核心字段** | ✅ 必须更新      | `type`, `answer`, `options`, `content` |
+| **补充信息字段** | ✅ 建议更新      | `explanation`, `material`, `source`    |
+| **统计字段**     | ⚠️ 按需更新      | `correct_ratio`, `view_count`          |
+| **系统字段**     | ❌ 不更新        | `created_at`, `id`                     |
 
 ## 检查清单
 
@@ -70,11 +71,13 @@ async function importItem(item: any) {
 大批量数据（如题库、记录）导入时，极易触发以下灾难：
 
 ### 1. Upsert (ON CONFLICT) 的强制“唯一约束”陷阱
+
 - **现象**：执行 `.onConflictDoUpdate({ target: column })` 时，终端抛出 `SQLITE_ERROR: ON CONFLICT clause does not match any PRIMARY KEY or UNIQUE constraint`，并且所有明细数据均插入失败。
 - **真相**：SQLite 和绝大部分关系型数据库一样，只有在 `target` 列明确具备 **唯一约束 (UNIQUE INDEX / UNIQUE CONSTRAINT)** 时，才允许执行 Upsert。如果旧版 SQL 脚本错误地只建了一个普通索引，ORM 层面看不出毛病，但运行时会被底层拦截。
 - **对策**：必须通过 `npx drizzle-kit generate` 或原生 SQL 检查物理数据库表，确认 `target` 列绝对是唯一的。
 
 ### 2. 长事务包揽大批量 JS 计算造成的 SQLITE_BUSY 死锁
+
 - **现象**：如果将整个由数百道题组成的循环（里面含有大量的业务拼接、循环嵌套等计算）包在 `await drizzleDb.transaction(async (tx) => { ... })` 内部，会导致 Next.js 的其他普通并发查询全面爆出 `SQLITE_BUSY: database is locked`。
 - **真相**：单文件的 SQLite（甚至 LibSQL）极度畏惧长命名的排他写锁。在事务内部跑费时的 JS 异步和计算逻辑，实际上是霸占了数据库写入权不放手。
 - **对策 (K.I.S.S.)**：

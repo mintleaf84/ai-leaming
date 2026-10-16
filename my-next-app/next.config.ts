@@ -13,17 +13,17 @@ export default (phase: string) => {
 
   const nextConfig: NextConfig = {
     output: "standalone",
-    distDir: process.env.E2E_TEST === 'true' ? '.next-e2e' : undefined,
+    distDir: process.env.E2E_TEST === "true" ? ".next-e2e" : undefined,
     turbopack: {},
     experimental: {
       viewTransition: true,
       serverActions: {
-        bodySizeLimit: '70mb',
+        bodySizeLimit: "70mb",
       },
     },
     env: {
-      IS_BUILDING: isBuilding ? 'true' : 'false',
-    }
+      IS_BUILDING: isBuilding ? "true" : "false",
+    },
   };
 
   return withSerwist(nextConfig);

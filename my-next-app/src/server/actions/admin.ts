@@ -1,30 +1,36 @@
-'use server';
+"use server";
 
-import { z } from 'zod';
-import { adminAction } from '@/lib/safe-action';
-import { adminService } from '@/lib/services/admin-service';
-import { logAdminAction } from '@/lib/admin/audit';
-import { QuestionSchema } from '@/lib/schemas';
+import { z } from "zod";
+import { adminAction } from "@/lib/safe-action";
+import { adminService } from "@/lib/services/admin-service";
+import { logAdminAction } from "@/lib/admin/audit";
+import { QuestionSchema } from "@/lib/schemas";
 import {
   QuestionFiltersSchema,
   QuestionUpdateSchema,
   UserQuerySchema,
-  RoleUpdateSchema
-} from '@/lib/validations/admin';
-import { questionFeedbackService } from '@/lib/services/question-feedback-service';
-import { after } from 'next/server';
+  RoleUpdateSchema,
+} from "@/lib/validations/admin";
+import { questionFeedbackService } from "@/lib/services/question-feedback-service";
+import { after } from "next/server";
 
 /**
  * 获取题目列表（支持分页与过滤）
  */
 export const getQuestionsAction = adminAction
-  .inputSchema(z.object({
-    limit: z.number().default(50),
-    offset: z.number().default(0),
-    filters: QuestionFiltersSchema,
-  }))
+  .inputSchema(
+    z.object({
+      limit: z.number().default(50),
+      offset: z.number().default(0),
+      filters: QuestionFiltersSchema,
+    }),
+  )
   .action(async ({ parsedInput: input }) => {
-    const { items, total } = await adminService.getQuestions(input.limit, input.offset, input.filters);
+    const { items, total } = await adminService.getQuestions(
+      input.limit,
+      input.offset,
+      input.filters,
+    );
     return { success: true, questions: items, total };
   });
 
@@ -32,13 +38,22 @@ export const getQuestionsAction = adminAction
  * 批量导入题目
  */
 export const importQuestionsAction = adminAction
-  .inputSchema(z.array(QuestionSchema).max(1000, '单次导入不能超过 1000 题'))
+  .inputSchema(z.array(QuestionSchema).max(1000, "单次导入不能超过 1000 题"))
   .action(async ({ parsedInput: input, ctx }) => {
     const { user } = ctx;
     const count = await adminService.importQuestions(input);
 
     // 记录操作日志 (非阻塞)
-    after(() => logAdminAction(user.id, user.username, 'CREATE_QUESTION', 'question', null, { count }));
+    after(() =>
+      logAdminAction(
+        user.id,
+        user.username,
+        "CREATE_QUESTION",
+        "question",
+        null,
+        { count },
+      ),
+    );
 
     return { count };
   });
@@ -53,7 +68,15 @@ export const deleteQuestionAction = adminAction
     await adminService.deleteQuestion(id);
 
     // 记录操作日志 (非阻塞)
-    after(() => logAdminAction(user.id, user.username, 'DELETE_QUESTION', 'question', id.toString()));
+    after(() =>
+      logAdminAction(
+        user.id,
+        user.username,
+        "DELETE_QUESTION",
+        "question",
+        id.toString(),
+      ),
+    );
 
     return { success: true };
   });
@@ -66,10 +89,10 @@ export const updateQuestionAction = adminAction
   .action(async ({ parsedInput: input, ctx }) => {
     const { id, data } = input;
     const { user } = ctx;
-    
+
     const currentQ = await adminService.getQuestionById(id);
     if (!currentQ) {
-      throw new Error('题目不存在');
+      throw new Error("题目不存在");
     }
 
     // 校验答案合法性 (针对多选题)
@@ -77,11 +100,11 @@ export const updateQuestionAction = adminAction
     const finalOptions = data.options || currentQ.options;
     const finalAnswer = data.answer || currentQ.answer;
 
-    if (finalType === 'multi' && finalAnswer) {
-      const CHAR_CODE_A = 'A'.charCodeAt(0);
+    if (finalType === "multi" && finalAnswer) {
+      const CHAR_CODE_A = "A".charCodeAt(0);
       const isValidMultiAnswer = (answer: unknown) => {
-        if (typeof answer !== 'string') return false;
-        if (answer === '') return false;
+        if (typeof answer !== "string") return false;
+        if (answer === "") return false;
         if (finalOptions.includes(answer)) return true;
         if (/^[A-Z]$/.test(answer)) {
           const idx = answer.charCodeAt(0) - CHAR_CODE_A;
@@ -90,8 +113,8 @@ export const updateQuestionAction = adminAction
         return false;
       };
       const formatInvalidAnswer = (answer: unknown) => {
-        if (typeof answer === 'string') {
-          return answer === '' ? '""' : answer;
+        if (typeof answer === "string") {
+          return answer === "" ? '""' : answer;
         }
         try {
           return JSON.stringify(answer) ?? String(answer);
@@ -104,27 +127,38 @@ export const updateQuestionAction = adminAction
         try {
           return JSON.parse(finalAnswer);
         } catch {
-          throw new Error('多选题答案格式错误，必须是 JSON 数组');
+          throw new Error("多选题答案格式错误，必须是 JSON 数组");
         }
       })();
       if (!Array.isArray(parsed)) {
-        throw new Error('多选题答案格式错误，必须是 JSON 数组');
+        throw new Error("多选题答案格式错误，必须是 JSON 数组");
       }
       if (parsed.length === 0) {
-        throw new Error('多选题答案必须是非空数组');
+        throw new Error("多选题答案必须是非空数组");
       }
       const answers = parsed;
 
-      const invalid = answers.find(a => !isValidMultiAnswer(a));
+      const invalid = answers.find((a) => !isValidMultiAnswer(a));
       if (invalid !== undefined) {
-        throw new Error(`正确答案必须是选项之一或有效的选项标号: ${formatInvalidAnswer(invalid)}`);
+        throw new Error(
+          `正确答案必须是选项之一或有效的选项标号: ${formatInvalidAnswer(invalid)}`,
+        );
       }
     }
 
     await adminService.updateQuestion(id, data);
 
     // 记录操作日志 (非阻塞)
-    after(() => logAdminAction(user.id, user.username, 'UPDATE_QUESTION', 'question', id.toString(), data as Record<string, unknown>));
+    after(() =>
+      logAdminAction(
+        user.id,
+        user.username,
+        "UPDATE_QUESTION",
+        "question",
+        id.toString(),
+        data as Record<string, unknown>,
+      ),
+    );
 
     return { success: true };
   });
@@ -141,7 +175,16 @@ export const batchDeleteQuestionsAction = adminAction
     const deletedCount = await adminService.batchDeleteQuestions(ids);
 
     // 记录操作日志 (非阻塞)
-    after(() => logAdminAction(user.id, user.username, 'BATCH_DELETE_QUESTION', 'question', null, { ids, count: deletedCount }));
+    after(() =>
+      logAdminAction(
+        user.id,
+        user.username,
+        "BATCH_DELETE_QUESTION",
+        "question",
+        null,
+        { ids, count: deletedCount },
+      ),
+    );
 
     return { success: true, deletedCount };
   });
@@ -152,7 +195,11 @@ export const batchDeleteQuestionsAction = adminAction
 export const getUsersAction = adminAction
   .inputSchema(UserQuerySchema)
   .action(async ({ parsedInput: input }) => {
-    const { items, total } = await adminService.getUsers(input.limit, input.offset, input.query);
+    const { items, total } = await adminService.getUsers(
+      input.limit,
+      input.offset,
+      input.query,
+    );
     return { users: items, total };
   });
 
@@ -166,7 +213,15 @@ export const deleteUserAction = adminAction
     await adminService.deleteUser(id);
 
     // 记录操作日志 (非阻塞)
-    after(() => logAdminAction(user.id, user.username, 'DELETE_USER', 'user', id.toString()));
+    after(() =>
+      logAdminAction(
+        user.id,
+        user.username,
+        "DELETE_USER",
+        "user",
+        id.toString(),
+      ),
+    );
 
     return { success: true };
   });
@@ -175,17 +230,27 @@ export const deleteUserAction = adminAction
  * 重置用户密码
  */
 export const resetUserPasswordAction = adminAction
-  .inputSchema(z.object({
-    id: z.number(),
-    newPassword: z.string().min(6),
-  }))
+  .inputSchema(
+    z.object({
+      id: z.number(),
+      newPassword: z.string().min(6),
+    }),
+  )
   .action(async ({ parsedInput: input, ctx }) => {
     const { id, newPassword } = input;
     const { user } = ctx;
     await adminService.resetPassword(id, newPassword);
 
     // 记录操作日志 (非阻塞)
-    after(() => logAdminAction(user.id, user.username, 'RESET_PASSWORD', 'user', id.toString()));
+    after(() =>
+      logAdminAction(
+        user.id,
+        user.username,
+        "RESET_PASSWORD",
+        "user",
+        id.toString(),
+      ),
+    );
 
     return { success: true };
   });
@@ -201,7 +266,16 @@ export const updateUserRoleAction = adminAction
     await adminService.updateUserRole(id, role);
 
     // 记录操作日志 (非阻塞)
-    after(() => logAdminAction(user.id, user.username, 'CHANGE_ROLE', 'user', id.toString(), { role }));
+    after(() =>
+      logAdminAction(
+        user.id,
+        user.username,
+        "CHANGE_ROLE",
+        "user",
+        id.toString(),
+        { role },
+      ),
+    );
 
     return { success: true };
   });
@@ -215,7 +289,15 @@ export const revokeUserSessionAction = adminAction
     const { user } = ctx;
     await adminService.revokeUserSessions(id);
 
-    after(() => logAdminAction(user.id, user.username, 'REVOKE_SESSION', 'user', id.toString()));
+    after(() =>
+      logAdminAction(
+        user.id,
+        user.username,
+        "REVOKE_SESSION",
+        "user",
+        id.toString(),
+      ),
+    );
 
     return { success: true };
   });
@@ -223,21 +305,24 @@ export const revokeUserSessionAction = adminAction
 /**
  * 获取管理后台概览统计数据
  */
-export const getAdminStatsAction = adminAction
-  .action(async () => {
-    return await adminService.getStats();
-  });
+export const getAdminStatsAction = adminAction.action(async () => {
+  return await adminService.getStats();
+});
 
 /**
  * 获取反馈列表
  */
 export const getFeedbackListAction = adminAction
-  .inputSchema(z.object({
-    limit: z.number().default(20),
-    offset: z.number().default(0),
-    status: z.enum(['pending', 'resolved', 'dismissed']).optional(),
-    feedback_type: z.enum(['wrong_answer', 'wrong_content', 'wrong_explanation', 'other']).optional(),
-  }))
+  .inputSchema(
+    z.object({
+      limit: z.number().default(20),
+      offset: z.number().default(0),
+      status: z.enum(["pending", "resolved", "dismissed"]).optional(),
+      feedback_type: z
+        .enum(["wrong_answer", "wrong_content", "wrong_explanation", "other"])
+        .optional(),
+    }),
+  )
   .action(async ({ parsedInput: input }) => {
     const result = await questionFeedbackService.list(input);
     return result;
@@ -251,7 +336,15 @@ export const resolveFeedbackAction = adminAction
   .action(async ({ parsedInput: id, ctx }) => {
     const { user } = ctx;
     await questionFeedbackService.resolve(id, user.id);
-    after(() => logAdminAction(user.id, user.username, 'RESOLVE_FEEDBACK', 'feedback', id.toString()));
+    after(() =>
+      logAdminAction(
+        user.id,
+        user.username,
+        "RESOLVE_FEEDBACK",
+        "feedback",
+        id.toString(),
+      ),
+    );
     return { success: true };
   });
 
@@ -263,14 +356,21 @@ export const dismissFeedbackAction = adminAction
   .action(async ({ parsedInput: id, ctx }) => {
     const { user } = ctx;
     await questionFeedbackService.dismiss(id, user.id);
-    after(() => logAdminAction(user.id, user.username, 'DISMISS_FEEDBACK', 'feedback', id.toString()));
+    after(() =>
+      logAdminAction(
+        user.id,
+        user.username,
+        "DISMISS_FEEDBACK",
+        "feedback",
+        id.toString(),
+      ),
+    );
     return { success: true };
   });
 
 /**
  * 获取反馈状态计数
  */
-export const getFeedbackCountsAction = adminAction
-  .action(async () => {
-    return await questionFeedbackService.getStatusCounts();
-  });
+export const getFeedbackCountsAction = adminAction.action(async () => {
+  return await questionFeedbackService.getStatusCounts();
+});

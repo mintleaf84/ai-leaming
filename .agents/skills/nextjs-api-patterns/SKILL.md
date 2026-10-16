@@ -17,9 +17,9 @@ description: Next.js API Route 常见陷阱与最佳实践。在开发 Next.js A
 export async function POST(req: Request) {
   // 第一次解析
   const { messages, sessionId } = await req.json();
-  
+
   // ... 中间有其他逻辑 ...
-  
+
   // 第二次解析 - 永远失败！Body stream 已被消费
   const { enableRag, context } = await req.json().catch(() => ({}));
   // enableRag 和 context 永远是 undefined
@@ -32,7 +32,7 @@ export async function POST(req: Request) {
 export async function POST(req: Request) {
   // 一次解析所有需要的字段
   const { messages, sessionId, enableRag, context } = await req.json();
-  
+
   // 现在所有字段都可用
 }
 ```
@@ -66,7 +66,7 @@ setTimeout(async () => {
     const title = await generateChatTitle(sessionId);
     updateUI(title);
   } catch (e) {
-    console.error('标题生成失败:', e);
+    console.error("标题生成失败:", e);
   }
 }, 100); // 延迟确保 UI 先响应
 
@@ -115,7 +115,7 @@ export async function POST(req: Request) {
 ```typescript
 // 有时返回 JSON，有时返回 plain text
 if (error) {
-  return new Response('Something went wrong', { status: 500 });
+  return new Response("Something went wrong", { status: 500 });
 }
 ```
 
@@ -125,11 +125,11 @@ if (error) {
 // 始终返回结构化的 JSON 错误
 if (error) {
   return new Response(
-    JSON.stringify({ error: error.message, code: 'INTERNAL_ERROR' }),
-    { 
+    JSON.stringify({ error: error.message, code: "INTERNAL_ERROR" }),
+    {
       status: 500,
-      headers: { 'Content-Type': 'application/json' }
-    }
+      headers: { "Content-Type": "application/json" },
+    },
   );
 }
 ```

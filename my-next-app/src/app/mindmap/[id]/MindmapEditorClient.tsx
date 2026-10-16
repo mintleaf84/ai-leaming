@@ -1,6 +1,7 @@
 "use client";
 
-import React, { useState, useCallback, useRef } from "react";
+import React, { useState, useCallback, useEffect } from "react";
+import { useDebouncedCallback } from "use-debounce";
 import { getErrorMessage } from "@/lib/utils/error";
 import { Wand2, Trash2, AlignLeft } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -36,29 +37,34 @@ export default function MindmapEditorClient({
   const [title, setTitle] = useState(mindmap.title || "未命名导图");
   const [markdown, setMarkdown] = useState(mindmap.content || "");
   const [isGenerating, setIsGenerating] = useState(false);
-  const saveTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const [saveStatus, setSaveStatus] = useState("已保存");
+
+  const saveMindmap = useDebouncedCallback(
+    async (newTitle: string, newContent: string) => {
+      const res = await updateMindmapAction({
+        id: mindmap.id,
+        title: newTitle,
+        content: newContent,
+      });
+      setSaveStatus(res.success ? "已保存" : "保存失败");
+    },
+    800,
+  );
 
   const triggerSave = useCallback(
     (newTitle: string, newContent: string) => {
       setSaveStatus("保存中...");
-      if (saveTimeoutRef.current) clearTimeout(saveTimeoutRef.current);
-
-      saveTimeoutRef.current = setTimeout(async () => {
-        const res = await updateMindmapAction({
-          id: mindmap.id,
-          title: newTitle,
-          content: newContent,
-        });
-        if (res.success) {
-          setSaveStatus("已保存");
-        } else {
-          setSaveStatus("保存失败");
-        }
-      }, 800);
+      saveMindmap(newTitle, newContent);
     },
-    [mindmap.id],
+    [saveMindmap],
   );
+
+  // 组件卸载前冲刷待执行的保存，避免防抖窗口内离开页面导致内容丢失
+  useEffect(() => {
+    return () => {
+      void saveMindmap.flush();
+    };
+  }, [saveMindmap]);
 
   const handleTitleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const val = e.target.value;

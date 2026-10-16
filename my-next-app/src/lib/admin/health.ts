@@ -8,6 +8,9 @@ import * as fs from "fs";
 import * as path from "path";
 import { getApiCallStats, ApiCallStats } from "@/lib/admin/api-stats-service";
 import { sql } from "drizzle-orm";
+import { formatBytes, formatUptime } from "@/lib/utils/utils";
+
+export { formatBytes, formatUptime } from "@/lib/utils/utils";
 
 export interface TableStats {
   name: string;
@@ -43,33 +46,6 @@ export interface HealthStats {
   system: SystemInfo;
   apiStats: ApiCallStats;
   timestamp: string;
-}
-
-/**
- * 格式化字节大小
- */
-export function formatBytes(bytes: number): string {
-  if (bytes === 0) return "0 Bytes";
-  const k = 1024;
-  const sizes = ["Bytes", "KB", "MB", "GB"];
-  const i = Math.floor(Math.log(bytes) / Math.log(k));
-  return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + " " + sizes[i];
-}
-
-/**
- * 格式化运行时间
- */
-export function formatUptime(seconds: number): string {
-  const days = Math.floor(seconds / 86400);
-  const hours = Math.floor((seconds % 86400) / 3600);
-  const minutes = Math.floor((seconds % 3600) / 60);
-
-  const parts = [];
-  if (days > 0) parts.push(`${days}天`);
-  if (hours > 0) parts.push(`${hours}小时`);
-  if (minutes > 0) parts.push(`${minutes}分钟`);
-
-  return parts.length > 0 ? parts.join("") : "刚刚启动";
 }
 
 /**

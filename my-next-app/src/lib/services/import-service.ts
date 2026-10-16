@@ -2,6 +2,7 @@ import { drizzleDb, drizzleSchema } from "../db";
 import { sql } from "drizzle-orm";
 import { FenbiImportResult } from "../import/fenbi-parser";
 import { sanitizeHtml } from "../utils/security";
+import { generateId } from "../utils/id";
 
 const { practice_sessions, questions, practice_logs, user_mastery } =
   drizzleSchema;
@@ -18,7 +19,7 @@ export const importService = {
    * @returns 导入结果统计
    */
   importFenbiData: async (userId: number, data: FenbiImportResult) => {
-    const sessionId = `fenbi_${Date.now()}_${Math.random().toString(36).substring(2, 8)}`;
+    const sessionId = `fenbi_${generateId("", 15)}`;
     let newQuestionsCount = 0;
 
     // 注意：为避免 LibSQL 的连接池产生 SQLITE_BUSY 死锁，且由于 SQLite 不建议在长事务中穿插大量 JS 异步逻辑，此处移除事务包装。

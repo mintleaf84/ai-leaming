@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { MessageCircle, Send, Loader2, Bot, User } from "lucide-react";
+import { generateId } from "@/lib/utils/id";
 import {
   Sheet,
   SheetContent,
@@ -52,7 +53,7 @@ export function TextbookChat({ context, title }: TextbookChatProps) {
     if (!input.trim() || isLoading) return;
 
     const userMessage: Message = {
-      id: Date.now().toString(),
+      id: generateId(),
       role: "user",
       content: input,
     };
@@ -142,7 +143,7 @@ export function TextbookChat({ context, title }: TextbookChatProps) {
       setMessages((prev) => [
         ...prev,
         {
-          id: Date.now().toString(),
+          id: generateId(),
           role: "assistant",
           content: "抱歉，我现在有点累，请稍后再试。",
         },

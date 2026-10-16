@@ -7,6 +7,7 @@ import { eq, and, desc, sql } from "drizzle-orm";
 import logger from "@/lib/logger";
 import { Question } from "@/types";
 import { QuestionRowSchema } from "@/lib/schemas";
+import { generateId } from "@/lib/utils/id";
 
 /**
  * 将数据库原始行映射为业务 Question 类型
@@ -88,7 +89,7 @@ export const DemoService = {
     }
 
     // 2. 创建新演示会话 (从题库随机选 10 题)
-    const sessionId = `demo-${Math.random().toString(36).substring(2, 12)}`;
+    const sessionId = `demo-${generateId("", 12)}`;
 
     const rawQuestions = await drizzleDb
       .select()

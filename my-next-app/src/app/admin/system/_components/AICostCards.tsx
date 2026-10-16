@@ -3,7 +3,7 @@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Activity, Cpu, Coins, MessageSquare } from "lucide-react";
 import { SystemStatus } from "./types";
-import { formatBytes } from "./utils";
+import { formatBytes } from "@/lib/utils/utils";
 
 interface AICostCardsProps {
   status: SystemStatus;

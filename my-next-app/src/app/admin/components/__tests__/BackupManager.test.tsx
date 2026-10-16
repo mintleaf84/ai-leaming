@@ -11,6 +11,7 @@
 import React from "react";
 import { render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
+import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { describe, it, expect, vi, beforeEach } from "vitest";
 
 // Mock sonner
@@ -24,6 +25,19 @@ vi.mock("sonner", () => ({
 
 import { BackupManager } from "../BackupManager";
 import { toast } from "sonner";
+
+/** 每个测试用例创建独立的 QueryClient wrapper */
+function createWrapper() {
+  const queryClient = new QueryClient({
+    defaultOptions: {
+      queries: { retry: false, staleTime: 0 },
+    },
+  });
+  const Wrapper = ({ children }: { children: React.ReactNode }) =>
+    React.createElement(QueryClientProvider, { client: queryClient }, children);
+  Wrapper.displayName = "QueryClientWrapper";
+  return Wrapper;
+}
 
 const mockHistory = [
   {
@@ -65,12 +79,12 @@ describe("BackupManager", () => {
   });
 
   it("应加载并展示备份历史记录", async () => {
-    render(<BackupManager />);
+    render(<BackupManager />, { wrapper: createWrapper() });
 
     // 等待历史数据加载
     expect(await screen.findByText("备份历史")).toBeInTheDocument();
     expect(
-      screen.getByText("ai-learning-backup-2026-04-29.db"),
+      await screen.findByText("ai-learning-backup-2026-04-29.db"),
     ).toBeInTheDocument();
     expect(screen.getByText("restore.db")).toBeInTheDocument();
 
@@ -95,7 +109,7 @@ describe("BackupManager", () => {
       return Promise.reject(new Error("Unknown URL"));
     });
 
-    render(<BackupManager />);
+    render(<BackupManager />, { wrapper: createWrapper() });
 
     expect(await screen.findByText("暂无备份记录")).toBeInTheDocument();
   });
@@ -129,7 +143,7 @@ describe("BackupManager", () => {
       return Promise.reject(new Error("Unknown URL"));
     });
 
-    render(<BackupManager />);
+    render(<BackupManager />, { wrapper: createWrapper() });
     await screen.findByText("备份历史");
 
     const backupBtn = screen.getByText("立即下载备份");
@@ -164,7 +178,7 @@ describe("BackupManager", () => {
       return Promise.reject(new Error("Unknown URL"));
     });
 
-    render(<BackupManager />);
+    render(<BackupManager />, { wrapper: createWrapper() });
     await screen.findByText("备份历史");
 
     await user.click(screen.getByText("立即下载备份"));
@@ -175,7 +189,7 @@ describe("BackupManager", () => {
   });
 
   it("应渲染全量备份和数据恢复卡片", async () => {
-    render(<BackupManager />);
+    render(<BackupManager />, { wrapper: createWrapper() });
 
     expect(screen.getByText("全量备份")).toBeInTheDocument();
     expect(screen.getByText("数据恢复")).toBeInTheDocument();
@@ -186,7 +200,7 @@ describe("BackupManager", () => {
   it("点击刷新按钮应重新请求历史数据", async () => {
     const user = userEvent.setup();
 
-    render(<BackupManager />);
+    render(<BackupManager />, { wrapper: createWrapper() });
     await screen.findByText("备份历史");
 
     // 刷新按钮在"备份历史"标题的同一行右侧

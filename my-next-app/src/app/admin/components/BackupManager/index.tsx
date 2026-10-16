@@ -1,6 +1,7 @@
 "use client";
 
-import React, { useState, useRef, useEffect, useCallback } from "react";
+import React, { useState, useRef } from "react";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
 import {
   Download,
@@ -25,30 +26,26 @@ interface BackupHistoryItem {
   created_at: string | null;
 }
 
+const HISTORY_KEY = "admin-backup-history";
+
 export function BackupManager() {
   const [isRestoring, setIsRestoring] = useState(false);
-  const [history, setHistory] = useState<BackupHistoryItem[]>([]);
-  const [loadingHistory, setLoadingHistory] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const queryClient = useQueryClient();
 
-  const fetchHistory = useCallback(async () => {
-    setLoadingHistory(true);
-    try {
+  const {
+    data: history = [],
+    isLoading: loadingHistory,
+    refetch: fetchHistory,
+  } = useQuery({
+    queryKey: [HISTORY_KEY],
+    queryFn: async () => {
       const res = await fetch("/api/admin/backup-history");
-      if (res.ok) {
-        const data = await res.json();
-        setHistory(data.history || []);
-      }
-    } catch (e) {
-      console.error("Failed to fetch backup history", e);
-    } finally {
-      setLoadingHistory(false);
-    }
-  }, []);
-
-  useEffect(() => {
-    fetchHistory();
-  }, [fetchHistory]);
+      if (!res.ok) throw new Error("获取备份历史失败");
+      const data = await res.json();
+      return (data.history ?? []) as BackupHistoryItem[];
+    },
+  });
 
   const handleBackup = async () => {
     try {
@@ -86,7 +83,7 @@ export function BackupManager() {
       window.URL.revokeObjectURL(url);
 
       toast.success("备份已下载", { id: toastId });
-      fetchHistory();
+      queryClient.invalidateQueries({ queryKey: [HISTORY_KEY] });
     } catch (error) {
       console.error(error);
       toast.error("备份失败，请查看控制台日志");
@@ -243,7 +240,7 @@ export function BackupManager() {
           <Button
             variant="ghost"
             size="sm"
-            onClick={fetchHistory}
+            onClick={() => void fetchHistory()}
             disabled={loadingHistory}
           >
             <RefreshCw

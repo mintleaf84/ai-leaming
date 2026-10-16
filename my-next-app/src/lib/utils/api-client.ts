@@ -3,6 +3,8 @@
  * 封装 fetch 的自动重试和错误处理，可作为 React Query 的 fetcher 直接使用。
  */
 
+import { withRetry } from "./retry";
+
 interface RequestOptions extends RequestInit {
   retries?: number;
   backoffFactor?: number; // 单位 ms
@@ -25,7 +27,7 @@ export class ApiError extends Error {
 
 /**
  * 带自动重试的 fetch 封装。
- * 对 5xx 和 429 错误自动重试，使用指数退避 + 抖动策略。
+ * 对 5xx 和 429 错误自动重试，使用指数退避策略。
  */
 export async function fetchWithRetry(
   url: string,
@@ -37,10 +39,8 @@ export async function fetchWithRetry(
     ...fetchOptions
   } = options;
 
-  let lastError: unknown;
-
-  for (let i = 0; i <= retries; i++) {
-    try {
+  return withRetry(
+    async () => {
       const response = await fetch(url, fetchOptions);
 
       // 5xx 或 429 触发重试
@@ -53,19 +53,10 @@ export async function fetchWithRetry(
       }
 
       return response;
-    } catch (error) {
-      lastError = error;
-
-      // 重试次数用尽则退出
-      if (i === retries) break;
-
-      const waitTime = backoffFactor * Math.pow(2, i);
-      const jitter = Math.random() * 100;
-      await new Promise((resolve) => setTimeout(resolve, waitTime + jitter));
-    }
-  }
-
-  throw lastError;
+    },
+    retries,
+    backoffFactor,
+  );
 }
 
 /**

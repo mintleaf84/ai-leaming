@@ -3,7 +3,7 @@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Clock, Database } from "lucide-react";
 import { SystemStatus } from "./types";
-import { formatBytes, formatDuration } from "./utils";
+import { formatBytes, formatUptime } from "@/lib/utils/utils";
 
 interface ServerResourcesProps {
   status: SystemStatus;
@@ -21,7 +21,7 @@ export function ServerResources({ status }: ServerResourcesProps) {
             <Clock className="w-3.5 h-3.5" /> 运行时间
           </span>
           <span className="font-mono text-sm">
-            {formatDuration(status.os.uptime)}
+            {formatUptime(status.os.uptime)}
           </span>
         </div>
         <div className="flex justify-between items-center border-b pb-2">

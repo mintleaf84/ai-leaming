@@ -1,9 +1,5 @@
 import { type ClassValue, clsx } from "clsx";
 import { twMerge } from "tailwind-merge";
-import dayjs from "dayjs";
-import utc from "dayjs/plugin/utc";
-
-dayjs.extend(utc);
 
 export function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs));
@@ -33,10 +29,32 @@ export function indexToLetter(index: number): string {
 }
 
 /**
- * 将 SQLite 的 UTC 时间字符串转换为本地 Date 对象
- * 使用 dayjs 确保跨浏览器兼容性和准确的 UTC 解析
+ * 格式化字节大小为可读字符串
+ * @param bytes 字节数
+ * @returns 格式化字符串，如 "1.5 KB"
  */
-export function parseUTCDate(dateStr: string): Date {
-  if (!dateStr) return new Date();
-  return dayjs.utc(dateStr).local().toDate();
+export function formatBytes(bytes: number): string {
+  if (bytes === 0) return "0 Bytes";
+  const k = 1024;
+  const sizes = ["Bytes", "KB", "MB", "GB", "TB"];
+  const i = Math.floor(Math.log(bytes) / Math.log(k));
+  return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + " " + sizes[i];
+}
+
+/**
+ * 格式化运行时长（秒）
+ * @param seconds 运行秒数
+ * @returns 格式化字符串，如 "1天2小时3分钟"
+ */
+export function formatUptime(seconds: number): string {
+  const days = Math.floor(seconds / 86400);
+  const hours = Math.floor((seconds % 86400) / 3600);
+  const minutes = Math.floor((seconds % 3600) / 60);
+
+  const parts = [];
+  if (days > 0) parts.push(`${days}天`);
+  if (hours > 0) parts.push(`${hours}小时`);
+  if (minutes > 0) parts.push(`${minutes}分钟`);
+
+  return parts.length > 0 ? parts.join("") : "刚刚启动";
 }

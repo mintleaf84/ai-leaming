@@ -110,4 +110,7 @@ next-env.d.ts
 /tmp/
 
 # Debug files
-debug-*.js
+debug-*.js# 本地数据与缓存，永不提交
+experiments/**/*.db*
+experiments/**/*_seq.json
+experiments/snapshots/

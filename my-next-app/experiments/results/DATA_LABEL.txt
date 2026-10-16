@@ -1,0 +1,6 @@
+source: ai-learning.db (read-only export)
+user_id: 1
+exported: 2026-10-05
+reviews: 4368 (2004 cards)
+fit samples (review #2+): 2364
+ts-fsrs reference: 5.3.2 (default_w embedded in results/fsrs_fit.json)

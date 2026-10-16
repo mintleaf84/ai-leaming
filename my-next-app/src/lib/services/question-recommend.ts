@@ -1,8 +1,8 @@
-import { drizzleDb, drizzleSchema } from '@/lib/db';
-import { eq, sql, desc, and, or, lt } from 'drizzle-orm';
-import { Document } from '@langchain/core/documents';
-import { RagEmbeddings, SqliteVecVectorStore } from '@/lib/ai/langchain-store';
-import { ragService, type RagResult } from '@/lib/ai/rag';
+import { drizzleDb, drizzleSchema } from "@/lib/db";
+import { eq, sql, desc, and, or, lt } from "drizzle-orm";
+import { Document } from "@langchain/core/documents";
+import { RagEmbeddings, SqliteVecVectorStore } from "@/lib/ai/langchain-store";
+import { ragService, type RagResult } from "@/lib/ai/rag";
 
 /**
  * 用户错题记录
@@ -26,22 +26,26 @@ export const wrongQuestionRecommend = {
   /**
    * 获取用户的错题列表
    */
-  async getWrongQuestions(userId: number, limit: number = 20): Promise<WrongQuestion[]> {
+  async getWrongQuestions(
+    userId: number,
+    limit: number = 20,
+  ): Promise<WrongQuestion[]> {
     try {
       // 查询用户的错误练习记录
-      const wrongLogs = await drizzleDb.select({
-        id: drizzleSchema.practice_logs.id,
-        questionId: drizzleSchema.practice_logs.question_id,
-        userAnswer: drizzleSchema.practice_logs.user_answer,
-        isCorrect: drizzleSchema.practice_logs.is_correct,
-        timestamp: drizzleSchema.practice_logs.timestamp,
-      })
+      const wrongLogs = await drizzleDb
+        .select({
+          id: drizzleSchema.practice_logs.id,
+          questionId: drizzleSchema.practice_logs.question_id,
+          userAnswer: drizzleSchema.practice_logs.user_answer,
+          isCorrect: drizzleSchema.practice_logs.is_correct,
+          timestamp: drizzleSchema.practice_logs.timestamp,
+        })
         .from(drizzleSchema.practice_logs)
         .where(
           and(
             eq(drizzleSchema.practice_logs.user_id, userId),
-            eq(drizzleSchema.practice_logs.is_correct, false)
-          )
+            eq(drizzleSchema.practice_logs.is_correct, false),
+          ),
         )
         .orderBy(desc(drizzleSchema.practice_logs.timestamp))
         .limit(limit)
@@ -51,20 +55,21 @@ export const wrongQuestionRecommend = {
 
       // 获取题目详情
       const questionIds = wrongLogs.map((log) => log.questionId);
-      const questions = await drizzleDb.select({
-        id: drizzleSchema.questions.id,
-        content: drizzleSchema.questions.content,
-        answer: drizzleSchema.questions.answer,
-        explanation: drizzleSchema.questions.explanation,
-        tags: drizzleSchema.questions.tags,
-        dimension: drizzleSchema.questions.dimension,
-      })
+      const questions = await drizzleDb
+        .select({
+          id: drizzleSchema.questions.id,
+          content: drizzleSchema.questions.content,
+          answer: drizzleSchema.questions.answer,
+          explanation: drizzleSchema.questions.explanation,
+          tags: drizzleSchema.questions.tags,
+          dimension: drizzleSchema.questions.dimension,
+        })
         .from(drizzleSchema.questions)
         .where(
           sql`${drizzleSchema.questions.id} IN (${sql.join(
             questionIds.map((id) => sql`${id}`),
-            sql`, `
-          )})`
+            sql`, `,
+          )})`,
         )
         .all();
 
@@ -77,16 +82,16 @@ export const wrongQuestionRecommend = {
           return {
             questionId: log.questionId,
             content: q.content,
-            wrongAnswer: log.userAnswer || '',
-            correctAnswer: q.answer || '',
-            explanation: q.explanation || '',
-            tags: q.tags ? JSON.parse(q.tags) as string[] : [],
-            dimension: q.dimension || '',
-            timestamp: log.timestamp || '',
+            wrongAnswer: log.userAnswer || "",
+            correctAnswer: q.answer || "",
+            explanation: q.explanation || "",
+            tags: q.tags ? (JSON.parse(q.tags) as string[]) : [],
+            dimension: q.dimension || "",
+            timestamp: log.timestamp || "",
           };
         });
     } catch (error) {
-      console.error('[WrongQuestion] getWrongQuestions failed:', error);
+      console.error("[WrongQuestion] getWrongQuestions failed:", error);
       return [];
     }
   },
@@ -94,13 +99,17 @@ export const wrongQuestionRecommend = {
   /**
    * 获取用户最薄弱的知识点
    */
-  async getWeakestTags(userId: number, limit: number = 5): Promise<{ tag: string; score: number }[]> {
+  async getWeakestTags(
+    userId: number,
+    limit: number = 5,
+  ): Promise<{ tag: string; score: number }[]> {
     try {
-      const mastery = await drizzleDb.select({
-        tagName: drizzleSchema.user_mastery.tag_name,
-        score: drizzleSchema.user_mastery.score,
-        totalCount: drizzleSchema.user_mastery.total_count,
-      })
+      const mastery = await drizzleDb
+        .select({
+          tagName: drizzleSchema.user_mastery.tag_name,
+          score: drizzleSchema.user_mastery.score,
+          totalCount: drizzleSchema.user_mastery.total_count,
+        })
         .from(drizzleSchema.user_mastery)
         .where(eq(drizzleSchema.user_mastery.user_id, userId))
         .orderBy(drizzleSchema.user_mastery.score)
@@ -111,7 +120,7 @@ export const wrongQuestionRecommend = {
         .filter((m) => (m.totalCount || 0) >= 3) // 至少做过的题目
         .map((m) => ({ tag: m.tagName, score: m.score || 0 }));
     } catch (error) {
-      console.error('[WrongQuestion] getWeakestTags failed:', error);
+      console.error("[WrongQuestion] getWeakestTags failed:", error);
       return [];
     }
   },
@@ -124,20 +133,21 @@ export const wrongQuestionRecommend = {
   async recommendByTags(
     currentQuestionId: number,
     tags: string[],
-    limit: number = 5
+    limit: number = 5,
   ): Promise<RagResult[]> {
     try {
       // 检查向量库是否有数据
       const hasVectorData = await this.ensureVectorData(currentQuestionId);
       if (!hasVectorData) {
-        console.log('[Recommend] 向量库为空，暂无推荐');
+        console.log("[Recommend] 向量库为空，暂无推荐");
         return [];
       }
 
       // 获取当前题目的内容
-      const question = await drizzleDb.select({
-        content: drizzleSchema.questions.content,
-      })
+      const question = await drizzleDb
+        .select({
+          content: drizzleSchema.questions.content,
+        })
         .from(drizzleSchema.questions)
         .where(eq(drizzleSchema.questions.id, currentQuestionId))
         .get();
@@ -145,14 +155,20 @@ export const wrongQuestionRecommend = {
       if (!question) return [];
 
       // 使用向量检索，基于题目内容找相似题
-      const results = await ragService.search(question.content, limit * 3, 'question');
+      const results = await ragService.search(
+        question.content,
+        limit * 3,
+        "question",
+      );
 
       // 过滤掉当前题目，并返回结果
       return results
-        .filter(r => (r.metadata?.question_id as number) !== currentQuestionId)
+        .filter(
+          (r) => (r.metadata?.question_id as number) !== currentQuestionId,
+        )
         .slice(0, limit);
     } catch (error) {
-      console.error('[WrongQuestion] recommendByTags (vector) failed:', error);
+      console.error("[WrongQuestion] recommendByTags (vector) failed:", error);
       return [];
     }
   },
@@ -166,12 +182,14 @@ export const wrongQuestionRecommend = {
       // 1. 检查持久化标志（已初始化过则直接跳过）
       try {
         const flag = await drizzleDb.get<{ value: string }>(
-          sql`SELECT value FROM system_settings WHERE key = 'vector_questions_initialized'`
+          sql`SELECT value FROM system_settings WHERE key = 'vector_questions_initialized'`,
         );
-        if (flag?.value === 'true') {
+        if (flag?.value === "true") {
           return true;
         }
-      } catch { /* system_settings may not have this row */ }
+      } catch {
+        /* system_settings may not have this row */
+      }
 
       // 2. 检查向量库中 question 类型的数量
       const countResult = await drizzleDb.all<{ count: number }>(sql`
@@ -184,21 +202,24 @@ export const wrongQuestionRecommend = {
       // 如果已有 50+ 题，写入标志并返回
       if (existingCount >= 50) {
         await drizzleDb.run(
-          sql`INSERT OR REPLACE INTO system_settings (key, value, updated_at) VALUES ('vector_questions_initialized', 'true', CURRENT_TIMESTAMP)`
+          sql`INSERT OR REPLACE INTO system_settings (key, value, updated_at) VALUES ('vector_questions_initialized', 'true', CURRENT_TIMESTAMP)`,
         );
         return true;
       }
 
-      console.log(`[Recommend] 向量库题量不足 (${existingCount})，开始批量初始化所有题目...`);
+      console.log(
+        `[Recommend] 向量库题量不足 (${existingCount})，开始批量初始化所有题目...`,
+      );
 
       // 3. 获取所有题目
-      const allQuestions = await drizzleDb.select({
-        id: drizzleSchema.questions.id,
-        content: drizzleSchema.questions.content,
-        explanation: drizzleSchema.questions.explanation,
-        tags: drizzleSchema.questions.tags,
-        dimension: drizzleSchema.questions.dimension,
-      })
+      const allQuestions = await drizzleDb
+        .select({
+          id: drizzleSchema.questions.id,
+          content: drizzleSchema.questions.content,
+          explanation: drizzleSchema.questions.explanation,
+          tags: drizzleSchema.questions.tags,
+          dimension: drizzleSchema.questions.dimension,
+        })
         .from(drizzleSchema.questions)
         .where(sql`${drizzleSchema.questions.content} IS NOT NULL`)
         .all();
@@ -209,10 +230,10 @@ export const wrongQuestionRecommend = {
       await ragService.initRagTable();
 
       // 4. 批量写入（每批 20 条，减少 API 调用次数）
-      const items = allQuestions.map(q => ({
-        content: q.content || '',
+      const items = allQuestions.map((q) => ({
+        content: q.content || "",
         metadata: {
-          source_type: 'question',
+          source_type: "question",
           question_id: q.id,
           tags: q.tags ? JSON.parse(q.tags) : [],
           dimension: q.dimension,
@@ -227,13 +248,13 @@ export const wrongQuestionRecommend = {
       // 5. 写入持久化标志
       if (successCount > 0) {
         await drizzleDb.run(
-          sql`INSERT OR REPLACE INTO system_settings (key, value, updated_at) VALUES ('vector_questions_initialized', 'true', CURRENT_TIMESTAMP)`
+          sql`INSERT OR REPLACE INTO system_settings (key, value, updated_at) VALUES ('vector_questions_initialized', 'true', CURRENT_TIMESTAMP)`,
         );
       }
 
       return successCount > 0;
     } catch (error) {
-      console.error('[Recommend] ensureVectorData failed:', error);
+      console.error("[Recommend] ensureVectorData failed:", error);
       return false;
     }
   },
@@ -243,7 +264,7 @@ export const wrongQuestionRecommend = {
    */
   async recommendSimilar(
     userId: number,
-    limit: number = 5
+    limit: number = 5,
   ): Promise<RagResult[]> {
     try {
       const wrongQuestions = await this.getWrongQuestions(userId, 10);
@@ -261,7 +282,7 @@ export const wrongQuestionRecommend = {
         const vectorResults = await ragService.search(
           sampleWrong.content,
           limit * 2,
-          'question'
+          "question",
         );
         return this.filterAlreadyDone(userId, vectorResults, limit);
       }
@@ -269,23 +290,24 @@ export const wrongQuestionRecommend = {
       const recommended: RagResult[] = [];
       const excludeIds = wrongQuestions.map((q) => q.questionId);
 
-      const similarQuestions = await drizzleDb.select({
-        id: drizzleSchema.questions.id,
-        content: drizzleSchema.questions.content,
-        explanation: drizzleSchema.questions.explanation,
-        tags: drizzleSchema.questions.tags,
-        dimension: drizzleSchema.questions.dimension,
-        answer: drizzleSchema.questions.answer,
-      })
+      const similarQuestions = await drizzleDb
+        .select({
+          id: drizzleSchema.questions.id,
+          content: drizzleSchema.questions.content,
+          explanation: drizzleSchema.questions.explanation,
+          tags: drizzleSchema.questions.tags,
+          dimension: drizzleSchema.questions.dimension,
+          answer: drizzleSchema.questions.answer,
+        })
         .from(drizzleSchema.questions)
         .where(
           and(
             sql`${drizzleSchema.questions.id} NOT IN (${sql.join(
               excludeIds.map((id) => sql`${id}`),
-              sql`, `
+              sql`, `,
             )})`,
-            sql`${drizzleSchema.questions.tags} IS NOT NULL`
-          )
+            sql`${drizzleSchema.questions.tags} IS NOT NULL`,
+          ),
         )
         .limit(limit * 3)
         .all();
@@ -296,7 +318,7 @@ export const wrongQuestionRecommend = {
 
         const qTags = q.tags ? JSON.parse(q.tags) : [];
         const hasMatchingTag = qTags.some((tag: string) =>
-          tagArray.some((t) => tag.includes(t) || t.includes(tag))
+          tagArray.some((t) => tag.includes(t) || t.includes(tag)),
         );
 
         if (hasMatchingTag) {
@@ -309,7 +331,7 @@ export const wrongQuestionRecommend = {
               tags: qTags,
               dimension: q.dimension,
               answer: q.answer,
-              reason: 'similar_tag',
+              reason: "similar_tag",
             },
           });
         }
@@ -317,7 +339,7 @@ export const wrongQuestionRecommend = {
 
       return recommended;
     } catch (error) {
-      console.error('[WrongQuestion] recommendSimilar failed:', error);
+      console.error("[WrongQuestion] recommendSimilar failed:", error);
       return [];
     }
   },
@@ -327,7 +349,7 @@ export const wrongQuestionRecommend = {
    */
   async recommendByVector(
     userId: number,
-    limit: number = 5
+    limit: number = 5,
   ): Promise<Document[]> {
     try {
       // 1. 获取用户最近的错题内容
@@ -340,22 +362,24 @@ export const wrongQuestionRecommend = {
       const combinedText = wrongQuestions
         .slice(0, 3)
         .map((q) => q.content)
-        .join(' ');
+        .join(" ");
 
       // 3. 使用向量检索相似题目
       const embeddings = new RagEmbeddings({});
       const vectorStore = await SqliteVecVectorStore.fromExistingIndex(
         embeddings,
-        { sourceType: 'question' }
+        { sourceType: "question" },
       );
 
       const results = await vectorStore.similaritySearch(combinedText, limit);
 
       // 4. 过滤掉用户做过的题目
       const doneIds = wrongQuestions.map((q) => q.questionId);
-      return results.filter((doc) => !doneIds.includes(doc.metadata.question_id as number));
+      return results.filter(
+        (doc) => !doneIds.includes(doc.metadata.question_id as number),
+      );
     } catch (error) {
-      console.error('[WrongQuestion] recommendByVector failed:', error);
+      console.error("[WrongQuestion] recommendByVector failed:", error);
       return [];
     }
   },
@@ -366,13 +390,14 @@ export const wrongQuestionRecommend = {
   async filterAlreadyDone(
     userId: number,
     results: RagResult[],
-    limit: number
+    limit: number,
   ): Promise<RagResult[]> {
     try {
       // 获取用户做过的题目 ID
-      const doneQuestions = await drizzleDb.select({
-        questionId: drizzleSchema.practice_logs.question_id,
-      })
+      const doneQuestions = await drizzleDb
+        .select({
+          questionId: drizzleSchema.practice_logs.question_id,
+        })
         .from(drizzleSchema.practice_logs)
         .where(eq(drizzleSchema.practice_logs.user_id, userId))
         .all();
@@ -381,12 +406,12 @@ export const wrongQuestionRecommend = {
 
       // 过滤
       const filtered = results.filter(
-        (r) => !doneIds.has(r.metadata?.question_id as number)
+        (r) => !doneIds.has(r.metadata?.question_id as number),
       );
 
       return filtered.slice(0, limit);
     } catch (error) {
-      console.error('[WrongQuestion] filterAlreadyDone failed:', error);
+      console.error("[WrongQuestion] filterAlreadyDone failed:", error);
       return results.slice(0, limit);
     }
   },
@@ -396,7 +421,7 @@ export const wrongQuestionRecommend = {
    */
   async comprehensiveRecommend(
     userId: number,
-    limit: number = 5
+    limit: number = 5,
   ): Promise<RagResult[]> {
     try {
       // 1. 基于知识点标签推荐
@@ -410,15 +435,20 @@ export const wrongQuestionRecommend = {
           const vectorResults = await ragService.search(
             sampleWrong.content,
             limit * 2,
-            'question'
+            "question",
           );
 
           // 合并去重
-          const existingIds = new Set(tagBased.map((r) => r.metadata?.question_id));
+          const existingIds = new Set(
+            tagBased.map((r) => r.metadata?.question_id),
+          );
           for (const r of vectorResults) {
             if (tagBased.length >= limit) break;
             if (!existingIds.has(r.metadata?.question_id)) {
-              tagBased.push({ ...r, metadata: { ...r.metadata, reason: 'vector' } });
+              tagBased.push({
+                ...r,
+                metadata: { ...r.metadata, reason: "vector" },
+              });
             }
           }
         }
@@ -426,7 +456,7 @@ export const wrongQuestionRecommend = {
 
       return tagBased.slice(0, limit);
     } catch (error) {
-      console.error('[WrongQuestion] comprehensiveRecommend failed:', error);
+      console.error("[WrongQuestion] comprehensiveRecommend failed:", error);
       return [];
     }
   },
@@ -438,23 +468,28 @@ export const wrongQuestionRecommend = {
 export async function getUserLearningReport(userId: number) {
   try {
     // 统计正确率
-    const stats = await drizzleDb.select({
-      total: sql<number>`count(*)`,
-      correct: sql<number>`sum(case when ${drizzleSchema.practice_logs.is_correct} = 1 then 1 else 0 end)`,
-    })
+    const stats = await drizzleDb
+      .select({
+        total: sql<number>`count(*)`,
+        correct: sql<number>`sum(case when ${drizzleSchema.practice_logs.is_correct} = 1 then 1 else 0 end)`,
+      })
       .from(drizzleSchema.practice_logs)
       .where(eq(drizzleSchema.practice_logs.user_id, userId))
       .get();
 
     const totalQuestions = stats?.total || 0;
     const correctCount = stats?.correct || 0;
-    const accuracy = totalQuestions > 0 ? (correctCount / totalQuestions) * 100 : 0;
+    const accuracy =
+      totalQuestions > 0 ? (correctCount / totalQuestions) * 100 : 0;
 
     // 获取薄弱知识点
     const weakTags = await wrongQuestionRecommend.getWeakestTags(userId, 3);
 
     // 最近的错题
-    const recentWrong = await wrongQuestionRecommend.getWrongQuestions(userId, 5);
+    const recentWrong = await wrongQuestionRecommend.getWrongQuestions(
+      userId,
+      5,
+    );
 
     return {
       totalQuestions,
@@ -464,7 +499,7 @@ export async function getUserLearningReport(userId: number) {
       recentWrong,
     };
   } catch (error) {
-    console.error('[LearningReport] getUserLearningReport failed:', error);
+    console.error("[LearningReport] getUserLearningReport failed:", error);
     return null;
   }
 }

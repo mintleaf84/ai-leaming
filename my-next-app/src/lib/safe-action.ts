@@ -23,6 +23,6 @@ export const authenticatedAction = actionClient.use(async ({ next }) => {
  * 管理员 Action
  */
 export const adminAction = actionClient.use(async ({ next }) => {
-  const user = await requireRole(['admin']);
+  const user = await requireRole(["admin"]);
   return next({ ctx: { user } });
 });

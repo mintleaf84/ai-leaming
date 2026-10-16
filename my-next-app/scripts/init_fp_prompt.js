@@ -1,14 +1,13 @@
+const Database = require("better-sqlite3");
+const path = require("path");
 
-const Database = require('better-sqlite3');
-const path = require('path');
-
-const dbPath = path.resolve(process.cwd(), 'data', 'ai-learning.db');
-console.log('Connecting to DB at:', dbPath);
+const dbPath = path.resolve(process.cwd(), "data", "ai-learning.db");
+console.log("Connecting to DB at:", dbPath);
 const db = new Database(dbPath);
 
 try {
-    // 1. Ensure table exists
-    db.exec(`
+  // 1. Ensure table exists
+  db.exec(`
     CREATE TABLE IF NOT EXISTS prompt_templates (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
         key TEXT UNIQUE NOT NULL,
@@ -17,10 +16,10 @@ try {
         updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
     );
   `);
-    console.log('Table prompt_templates ensured.');
+  console.log("Table prompt_templates ensured.");
 
-    // 2. Define the prompt content directly (copied from source to avoid import issues)
-    const DEFAULT_FIRST_PRINCIPLES_PROMPT = `
+  // 2. Define the prompt content directly (copied from source to avoid import issues)
+  const DEFAULT_FIRST_PRINCIPLES_PROMPT = `
     你是一位精通教育学 / 心理学常考点“底层逻辑”的命题专家。请用“第一性原理”的思维方式，剖析这道题目背后的本质。
     
     题目内容: "\${questionContent}"
@@ -34,8 +33,8 @@ try {
     请直接输出分析内容，不需要任何格式包装。
 `;
 
-    // 3. Upsert the prompt
-    const stmt = db.prepare(`
+  // 3. Upsert the prompt
+  const stmt = db.prepare(`
     INSERT INTO prompt_templates (key, template) 
     VALUES ('first_principles', ?)
     ON CONFLICT(key) DO UPDATE SET 
@@ -44,12 +43,11 @@ try {
     WHERE template != excluded.template
   `);
 
-    const info = stmt.run(DEFAULT_FIRST_PRINCIPLES_PROMPT);
-    console.log('Operation result:', info);
-    console.log('Prompt "first_principles" initialized successfully.');
-
+  const info = stmt.run(DEFAULT_FIRST_PRINCIPLES_PROMPT);
+  console.log("Operation result:", info);
+  console.log('Prompt "first_principles" initialized successfully.');
 } catch (error) {
-    console.error('Error initializing prompt:', error);
+  console.error("Error initializing prompt:", error);
 } finally {
-    db.close();
+  db.close();
 }

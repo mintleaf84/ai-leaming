@@ -1,26 +1,54 @@
 "use client";
 
-import React, { useEffect, useState, use, useRef, useCallback } from 'react';
-import { getSessionDetailAction, deleteSessionAction, exportSessionMarkdownAction } from '@/server/actions/history';
-import { type SessionDetail } from '@/lib/services/history';
-import { generateDeepAnalysisAction, getAnalysisReportAction } from '@/server/actions/report';
-import { Button } from '@/components/ui/button';
-import Link from 'next/link';
+import React, { useEffect, useState, use, useRef, useCallback } from "react";
+import {
+  getSessionDetailAction,
+  deleteSessionAction,
+  exportSessionMarkdownAction,
+} from "@/server/actions/history";
+import { type SessionDetail } from "@/lib/services/history";
+import {
+  generateDeepAnalysisAction,
+  getAnalysisReportAction,
+} from "@/server/actions/report";
+import { Button } from "@/components/ui/button";
+import Link from "next/link";
 
-import { useRouter } from 'next/navigation';
-import { toast } from 'sonner';
-import { ArrowLeft, Trash2, Target, Sparkles, Loader2, ChevronDown, ChevronUp, Download } from 'lucide-react';
-import { SessionSummary, AnswerSheet, QuestionCard, QuestionLogData } from '@/components/history';
-import dynamic from 'next/dynamic';
+import { useRouter } from "next/navigation";
+import { toast } from "sonner";
+import {
+  ArrowLeft,
+  Trash2,
+  Target,
+  Sparkles,
+  Loader2,
+  ChevronDown,
+  ChevronUp,
+  Download,
+} from "lucide-react";
+import {
+  SessionSummary,
+  AnswerSheet,
+  QuestionCard,
+  QuestionLogData,
+} from "@/components/history";
+import dynamic from "next/dynamic";
 
-const MarkdownViewer = dynamic(() => import('@/components/chat/MarkdownViewer'), {
+const MarkdownViewer = dynamic(
+  () => import("@/components/chat/MarkdownViewer"),
+  {
     ssr: false,
-    loading: () => <div className="h-40 animate-pulse bg-muted rounded-xl" />
-});
+    loading: () => <div className="h-40 animate-pulse bg-muted rounded-xl" />,
+  },
+);
 import { Checkbox } from "@/components/ui/checkbox";
 import { Label } from "@/components/ui/label";
 
-export default function SessionDetailPage({ params }: { params: Promise<{ id: string }> }) {
+export default function SessionDetailPage({
+  params,
+}: {
+  params: Promise<{ id: string }>;
+}) {
   const { id } = use(params);
   const router = useRouter();
 
@@ -47,7 +75,7 @@ export default function SessionDetailPage({ params }: { params: Promise<{ id: st
   useEffect(() => {
     const abortController = new AbortController();
 
-    getSessionDetailAction(id).then(result => {
+    getSessionDetailAction(id).then((result) => {
       if (!abortController.signal.aborted) {
         setDetail(result?.data || null);
         setIsLoading(false);
@@ -55,8 +83,12 @@ export default function SessionDetailPage({ params }: { params: Promise<{ id: st
     });
 
     // 加载已保存的分析报告
-    getAnalysisReportAction(id).then(result => {
-      if (!abortController.signal.aborted && result?.data?.success && result.data.report) {
+    getAnalysisReportAction(id).then((result) => {
+      if (
+        !abortController.signal.aborted &&
+        result?.data?.success &&
+        result.data.report
+      ) {
         setAnalysisReport(result.data.report);
       }
     });
@@ -68,23 +100,25 @@ export default function SessionDetailPage({ params }: { params: Promise<{ id: st
 
   // 删除处理
   const handleDelete = useCallback(async () => {
-    if (!confirm('确定要删除这条练习记录吗？此操作不可撤销（掌握度不受影响）。')) {
+    if (
+      !confirm("确定要删除这条练习记录吗？此操作不可撤销（掌握度不受影响）。")
+    ) {
       return;
     }
     setIsDeleting(true);
     const result = await deleteSessionAction(id);
     if (result?.data?.success) {
-      toast.success('记录已成功删除');
-      router.push('/history');
+      toast.success("记录已成功删除");
+      router.push("/history");
     } else {
-      toast.error(result?.data?.message || '删除失败');
+      toast.error(result?.data?.message || "删除失败");
       setIsDeleting(false);
     }
   }, [id, router]);
 
   // 展开/收起切换
   const toggleExpand = useCallback((idx: number) => {
-    setExpandedItems(prev => {
+    setExpandedItems((prev) => {
       const next = new Set(prev);
       if (next.has(idx)) {
         next.delete(idx);
@@ -96,24 +130,27 @@ export default function SessionDetailPage({ params }: { params: Promise<{ id: st
   }, []);
 
   // 滚动到指定题目（使用 scrollIntoView 以兼容 main 容器滚动）
-  const scrollToQuestion = useCallback((idx: number) => {
-    setShowAnswerCard(false);
-    // 如果开启了只看错题，且该题是正确的，则先关闭只看错题模式
-    if (showWrongOnly && detail?.logs?.[idx]?.isCorrect) {
-      setShowWrongOnly(false);
-      toast.info('已自动切换显示所有题目');
-    }
-
-    // 稍微延迟以等待答题卡关闭动画及可能的列表渲染
-    setTimeout(() => {
-      const element = questionRefs.current[idx];
-      if (element) {
-        // scrollIntoView 能够自动找到滚动的父容器，block: 'center' 避免被顶部/底部遮挡
-        element.scrollIntoView({ behavior: 'smooth', block: 'center' });
-        setExpandedItems(prev => new Set(prev).add(idx));
+  const scrollToQuestion = useCallback(
+    (idx: number) => {
+      setShowAnswerCard(false);
+      // 如果开启了只看错题，且该题是正确的，则先关闭只看错题模式
+      if (showWrongOnly && detail?.logs?.[idx]?.isCorrect) {
+        setShowWrongOnly(false);
+        toast.info("已自动切换显示所有题目");
       }
-    }, 150);
-  }, [showWrongOnly, detail]);
+
+      // 稍微延迟以等待答题卡关闭动画及可能的列表渲染
+      setTimeout(() => {
+        const element = questionRefs.current[idx];
+        if (element) {
+          // scrollIntoView 能够自动找到滚动的父容器，block: 'center' 避免被顶部/底部遮挡
+          element.scrollIntoView({ behavior: "smooth", block: "center" });
+          setExpandedItems((prev) => new Set(prev).add(idx));
+        }
+      }, 150);
+    },
+    [showWrongOnly, detail],
+  );
 
   // AI 深度分析
   const handleAnalyze = useCallback(async () => {
@@ -131,7 +168,7 @@ export default function SessionDetailPage({ params }: { params: Promise<{ id: st
     if (result?.data?.success && result.data.report) {
       setAnalysisReport(result.data.report);
     } else {
-      toast.error(result?.data?.error || 'AI 分析失败');
+      toast.error(result?.data?.error || "AI 分析失败");
       setShowAnalysis(false);
     }
   }, [id, analysisReport, showAnalysis]);
@@ -144,14 +181,16 @@ export default function SessionDetailPage({ params }: { params: Promise<{ id: st
 
     if (result?.data?.success && result.data.markdown && result.data.filename) {
       // 创建 Blob 并下载
-      const blob = new Blob([result.data.markdown], { type: 'text/markdown;charset=utf-8' });
+      const blob = new Blob([result.data.markdown], {
+        type: "text/markdown;charset=utf-8",
+      });
       const url = URL.createObjectURL(blob);
-      const a = document.createElement('a');
+      const a = document.createElement("a");
       a.href = url;
       a.download = result.data.filename;
 
       // 兼容 SSR 环境，使用 requestAnimationFrame 确保在客户端执行
-      if (typeof window !== 'undefined' && document.body) {
+      if (typeof window !== "undefined" && document.body) {
         requestAnimationFrame(() => {
           try {
             document.body.appendChild(a);
@@ -167,30 +206,40 @@ export default function SessionDetailPage({ params }: { params: Promise<{ id: st
       }
 
       URL.revokeObjectURL(url);
-      toast.success('导出成功');
+      toast.success("导出成功");
     } else {
-      toast.error(result?.data?.error || '导出失败');
+      toast.error(result?.data?.error || "导出失败");
     }
   }, [id]);
 
   // 加载状态
   if (isLoading) {
-    return <div className="p-8 text-center text-muted-foreground">正在加载会话详情...</div>;
+    return (
+      <div className="p-8 text-center text-muted-foreground">
+        正在加载会话详情...
+      </div>
+    );
   }
 
   if (!detail) {
-    return <div className="p-8 text-center text-destructive">找不到该练习记录</div>;
+    return (
+      <div className="p-8 text-center text-destructive">找不到该练习记录</div>
+    );
   }
 
   // 计算过滤后的题目列表（保留原始索引）
-  const displayedQuestions = (detail.logs || []).map((log, index) => ({ log, index }))
-    .filter(item => !showWrongOnly || !item.log.isCorrect);
+  const displayedQuestions = (detail.logs || [])
+    .map((log, index) => ({ log, index }))
+    .filter((item) => !showWrongOnly || !item.log.isCorrect);
 
   return (
     <div className="p-4 md:p-8 max-w-4xl mx-auto pb-20 min-h-[calc(100vh-64px)] bg-background">
       {/* 头部导航 */}
       <div className="flex items-center justify-between mb-6">
-        <Link href="/history" className="flex items-center gap-2 text-muted-foreground hover:text-blue-600 dark:hover:text-blue-400 transition-colors group">
+        <Link
+          href="/history"
+          className="flex items-center gap-2 text-muted-foreground hover:text-blue-600 dark:hover:text-blue-400 transition-colors group"
+        >
           <ArrowLeft className="h-4 w-4 group-hover:-translate-x-1 transition-transform" />
           返回历史列表
         </Link>
@@ -202,7 +251,7 @@ export default function SessionDetailPage({ params }: { params: Promise<{ id: st
             disabled={isExporting}
           >
             <Download className="h-4 w-4 mr-2" />
-            {isExporting ? '导出中...' : '导出 Markdown'}
+            {isExporting ? "导出中..." : "导出 Markdown"}
           </Button>
           <Button
             variant="ghost"
@@ -211,7 +260,7 @@ export default function SessionDetailPage({ params }: { params: Promise<{ id: st
             disabled={isDeleting}
           >
             <Trash2 className="h-4 w-4 mr-2" />
-            {isDeleting ? '正在删除...' : '删除此记录'}
+            {isDeleting ? "正在删除..." : "删除此记录"}
           </Button>
         </div>
       </div>
@@ -239,8 +288,12 @@ export default function SessionDetailPage({ params }: { params: Promise<{ id: st
           ) : analysisReport ? (
             <>
               <Sparkles className="h-4 w-4" />
-              {showAnalysis ? '收起分析报告' : '查看分析报告'}
-              {showAnalysis ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
+              {showAnalysis ? "收起分析报告" : "查看分析报告"}
+              {showAnalysis ? (
+                <ChevronUp className="h-4 w-4" />
+              ) : (
+                <ChevronDown className="h-4 w-4" />
+              )}
             </>
           ) : (
             <>
@@ -298,12 +351,14 @@ export default function SessionDetailPage({ params }: { params: Promise<{ id: st
               index={index}
               isExpanded={expandedItems.has(index)}
               onToggle={() => toggleExpand(index)}
-              ref={(el) => { questionRefs.current[index] = el; }}
+              ref={(el) => {
+                questionRefs.current[index] = el;
+              }}
             />
           ))
         ) : (
           <div className="text-center py-12 text-muted-foreground bg-muted/20 rounded-xl border border-dashed border-border">
-            {showWrongOnly ? '太棒了！本次练习没有错题 🎉' : '暂无答题记录'}
+            {showWrongOnly ? "太棒了！本次练习没有错题 🎉" : "暂无答题记录"}
           </div>
         )}
       </div>

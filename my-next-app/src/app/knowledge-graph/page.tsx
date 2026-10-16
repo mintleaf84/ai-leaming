@@ -1,15 +1,18 @@
 "use client";
 
-import React, { useEffect, useState } from 'react';
-import dynamic from 'next/dynamic';
-import { getKnowledgeGraphData } from '@/server/actions/viz';
-import type { KnowledgeGraphData } from '@/types/viz';
-import { Skeleton } from '@/components/ui/skeleton';
-import { Orbit } from 'lucide-react';
+import React, { useEffect, useState } from "react";
+import dynamic from "next/dynamic";
+import { getKnowledgeGraphData } from "@/server/actions/viz";
+import type { KnowledgeGraphData } from "@/types/viz";
+import { Skeleton } from "@/components/ui/skeleton";
+import { Orbit } from "lucide-react";
 
 // 动态导入非首屏组件，减少首屏加载时间
 const KnowledgeTreeSection = dynamic(
-  () => import('@/components/dashboard/KnowledgeTreeSection').then(mod => ({ default: mod.KnowledgeTreeSection })),
+  () =>
+    import("@/components/dashboard/KnowledgeTreeSection").then((mod) => ({
+      default: mod.KnowledgeTreeSection,
+    })),
   {
     loading: () => (
       <div className="bg-card rounded-2xl p-6 border border-border">
@@ -17,12 +20,15 @@ const KnowledgeTreeSection = dynamic(
         <Skeleton className="h-[400px] w-full" />
       </div>
     ),
-    ssr: false
-  }
+    ssr: false,
+  },
 );
 
 const DataManagementSection = dynamic(
-  () => import('@/components/dashboard/DataManagementSection').then(mod => ({ default: mod.DataManagementSection })),
+  () =>
+    import("@/components/dashboard/DataManagementSection").then((mod) => ({
+      default: mod.DataManagementSection,
+    })),
   {
     loading: () => (
       <div className="mt-6 bg-card rounded-2xl p-6 border border-border">
@@ -33,8 +39,8 @@ const DataManagementSection = dynamic(
         </div>
       </div>
     ),
-    ssr: false
-  }
+    ssr: false,
+  },
 );
 
 export default function DashboardPage() {
@@ -43,7 +49,7 @@ export default function DashboardPage() {
   const loadData = async () => {
     const result = await getKnowledgeGraphData();
     if (result.data) {
-        setData(result.data);
+      setData(result.data);
     }
   };
 
@@ -63,8 +69,12 @@ export default function DashboardPage() {
             <Orbit className="w-7 h-7" />
           </div>
           <div>
-            <h1 className="text-3xl md:text-4xl font-serif font-bold text-foreground tracking-tight">知识图谱</h1>
-            <p className="text-muted-foreground mt-1.5 font-sans">可视化您的知识疆域，构建完整的认知体系</p>
+            <h1 className="text-3xl md:text-4xl font-serif font-bold text-foreground tracking-tight">
+              知识图谱
+            </h1>
+            <p className="text-muted-foreground mt-1.5 font-sans">
+              可视化您的知识疆域，构建完整的认知体系
+            </p>
           </div>
         </header>
 

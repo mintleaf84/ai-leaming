@@ -13,8 +13,8 @@ description: 复杂代码库中安全重构的最佳实践，重点预防文件�
 
 - **目录扫描**：使用 `list_dir` 或 `ls` 完整列出目标目录（如 `src/lib/services` 或 `src/server/actions`）下的所有文件。
 - **命名空间核查**：确认新文件名不会侵占已有功能的领地。
-  - *反例*：为了“知识树”功能创建 `knowledge.ts`，却覆盖了原有的“知识卡片”服务。
-  - *正例*：使用更具象的命名，如 `knowledge-tree.ts` 或 `practice-service.ts`。
+  - _反例_：为了“知识树”功能创建 `knowledge.ts`，却覆盖了原有的“知识卡片”服务。
+  - _正例_：使用更具象的命名，如 `knowledge-tree.ts` 或 `practice-service.ts`。
 
 ## 2. 功能完整性校验 (Functional Integrity)
 
@@ -44,6 +44,7 @@ description: 复杂代码库中安全重构的最佳实践，重点预防文件�
 ## 6. 故障恢复流程 (Recovery Workflow)
 
 如果发现误删或覆盖：
+
 1. **立即停止**所有写操作。
 2. 使用 `git checkout -- <path>` 或 `git restore` 恢复。
 3. 如果已提交，使用 `git show HEAD^:<path>` 提取丢失代码。

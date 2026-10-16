@@ -1,5 +1,5 @@
-import { drizzleDb, drizzleSchema } from '@/lib/db';
-import { eq } from 'drizzle-orm';
+import { drizzleDb, drizzleSchema } from "@/lib/db";
+import { eq } from "drizzle-orm";
 
 export const DEFAULT_CORRECTION_PROMPT = `
     你是一个教育专家。用户在做题时出现逻辑混淆。
@@ -121,26 +121,32 @@ export const DEFAULT_CHAT_SYSTEM_PROMPT = `你是一位资深的教师招聘考�
 - 必要时提供例子帮助理解
 - 如果涉及考点，指出考试中的常见陷阱`;
 
-export const PROMPT_VARIABLE_EXAMPLES: Record<string, Record<string, string>> = {
-  'correction_quiz': {
-    'questionContent': '文老师班里的小亮同学最近出现一些不良行为。文老师通过适当的表扬，惩戒和操行评定对小亮进行教育，使他的品德健康发展。文老师采用的德育方法属于（ ）。 A.说服教育法 B.情感陶冶法 C.榜样示范法 D.品德评价法',
-    'wrongAnswer': 'A. 说服教育法',
-    'correctAnswer': 'D. 品德评价法'
+export const PROMPT_VARIABLE_EXAMPLES: Record<
+  string,
+  Record<string, string>
+> = {
+  correction_quiz: {
+    questionContent:
+      "文老师班里的小亮同学最近出现一些不良行为。文老师通过适当的表扬，惩戒和操行评定对小亮进行教育，使他的品德健康发展。文老师采用的德育方法属于（ ）。 A.说服教育法 B.情感陶冶法 C.榜样示范法 D.品德评价法",
+    wrongAnswer: "A. 说服教育法",
+    correctAnswer: "D. 品德评价法",
   },
-  'first_principles': {
-    'questionContent': '...',
-    'explanation': '...',
-    'correctAnswer': '...',
-    'wrongAnswer': '...'
+  first_principles: {
+    questionContent: "...",
+    explanation: "...",
+    correctAnswer: "...",
+    wrongAnswer: "...",
   },
-  'regression_challenge': {
-    'questionContent': '文老师通过表扬、惩戒和操行评定教育学生，这属于品德评价法。',
-    'tags': '德育方法, 品德评价法, 教育学'
+  regression_challenge: {
+    questionContent:
+      "文老师通过表扬、惩戒和操行评定教育学生，这属于品德评价法。",
+    tags: "德育方法, 品德评价法, 教育学",
   },
-  'knowledge_extract': {
-    'content': '广域课程是一种将多个相关科目合并为一门综合课程的课程类型。例如，将语文、历史、地理合并为"社会学科"，将物理、化学、生物合并为"自然科学"。这种课程打破了传统学科界限，有助于学生从整体上把握知识。'
+  knowledge_extract: {
+    content:
+      '广域课程是一种将多个相关科目合并为一门综合课程的课程类型。例如，将语文、历史、地理合并为"社会学科"，将物理、化学、生物合并为"自然科学"。这种课程打破了传统学科界限，有助于学生从整体上把握知识。',
   },
-  'chat_system': {}
+  chat_system: {},
 };
 
 export const SOCRATIC_TUTOR_PROMPT = `
@@ -168,7 +174,7 @@ export async function getPromptFromDb(key: string): Promise<string | null> {
   try {
     const row = await drizzleDb.query.prompt_templates.findFirst({
       where: eq(drizzleSchema.prompt_templates.key, key),
-      columns: { template: true }
+      columns: { template: true },
     });
     return row ? row.template : null;
   } catch (_e) {
@@ -176,7 +182,10 @@ export async function getPromptFromDb(key: string): Promise<string | null> {
   }
 }
 
-export function buildPrompt(template: string, variables: Record<string, string>): string {
+export function buildPrompt(
+  template: string,
+  variables: Record<string, string>,
+): string {
   let prompt = template;
   for (const [key, value] of Object.entries(variables)) {
     // Handle ${var} format
@@ -191,31 +200,38 @@ export function buildPrompt(template: string, variables: Record<string, string>)
 // Generate Route Prompts
 // ==========================================
 
-export type GenerateOption = 'continue' | 'improve' | 'fix' | 'shorter' | 'longer' | 'zap';
+export type GenerateOption =
+  "continue" | "improve" | "fix" | "shorter" | "longer" | "zap";
 
-export const BASE_SYSTEM_PROMPT = "你是一个专业的 AI 写作助手，致力于帮助用户优化、续写和完善 Markdown 格式的笔记。直接输出结果，不要包含任何解释性语言。";
+export const BASE_SYSTEM_PROMPT =
+  "你是一个专业的 AI 写作助手，致力于帮助用户优化、续写和完善 Markdown 格式的笔记。直接输出结果，不要包含任何解释性语言。";
 
 export const OPTION_PROMPTS: Record<GenerateOption, string> = {
-    continue: "请根据提供的上下文继续写作。只输出续写的内容，不要重复上文。",
-    improve: "请润色以下文本，提高可读性和专业度，保持原意不变。只输出修改后的文本。",
-    fix: "请检查并修复以下文本的语法、拼写和标点错误。只输出修改后的文本。",
-    shorter: "请精简以下文本，保留核心信息，使其更简洁。只输出修改后的文本。",
-    longer: "请扩充以下文本，在保持原意的基础上增加相关细节和描述。只输出修改后的文本。",
-    zap: "请严格按照用户指令处理以下文本。"
+  continue: "请根据提供的上下文继续写作。只输出续写的内容，不要重复上文。",
+  improve:
+    "请润色以下文本，提高可读性和专业度，保持原意不变。只输出修改后的文本。",
+  fix: "请检查并修复以下文本的语法、拼写和标点错误。只输出修改后的文本。",
+  shorter: "请精简以下文本，保留核心信息，使其更简洁。只输出修改后的文本。",
+  longer:
+    "请扩充以下文本，在保持原意的基础上增加相关细节和描述。只输出修改后的文本。",
+  zap: "请严格按照用户指令处理以下文本。",
 };
 
 /**
  * 根据选项和额外指令构建完整的 System Prompt
  */
-export function buildSystemPrompt(option: GenerateOption, command?: string): string {
-    let prompt = BASE_SYSTEM_PROMPT;
-    const optionPrompt = OPTION_PROMPTS[option];
-    
-    if (option === 'zap' && command) {
-        prompt += ` 用户指令：${command}。${optionPrompt}`;
-    } else {
-        prompt += ` ${optionPrompt}`;
-    }
-    
-    return prompt;
+export function buildSystemPrompt(
+  option: GenerateOption,
+  command?: string,
+): string {
+  let prompt = BASE_SYSTEM_PROMPT;
+  const optionPrompt = OPTION_PROMPTS[option];
+
+  if (option === "zap" && command) {
+    prompt += ` 用户指令：${command}。${optionPrompt}`;
+  } else {
+    prompt += ` ${optionPrompt}`;
+  }
+
+  return prompt;
 }

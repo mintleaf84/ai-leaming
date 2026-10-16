@@ -1,13 +1,15 @@
-import { z } from 'zod';
+import { z } from "zod";
 
 /**
  * 题目列表过滤 Schema
  */
-export const QuestionFiltersSchema = z.object({
-  search: z.string().optional(),
-  tag: z.string().optional(),
-  dimension: z.enum(['knowledge', 'understanding', 'application']).optional(),
-}).optional();
+export const QuestionFiltersSchema = z
+  .object({
+    search: z.string().optional(),
+    tag: z.string().optional(),
+    dimension: z.enum(["knowledge", "understanding", "application"]).optional(),
+  })
+  .optional();
 
 /**
  * 题目更新 Schema
@@ -20,9 +22,9 @@ export const QuestionUpdateSchema = z.object({
     answer: z.string().optional(),
     explanation: z.string().optional(),
     tags: z.array(z.string()).optional(),
-    dimension: z.enum(['knowledge', 'understanding', 'application']).optional(),
-    type: z.enum(['single', 'multi', 'truefalse', 'fill_blank']).optional(),
-  })
+    dimension: z.enum(["knowledge", "understanding", "application"]).optional(),
+    type: z.enum(["single", "multi", "truefalse", "fill_blank"]).optional(),
+  }),
 });
 
 /**
@@ -31,7 +33,7 @@ export const QuestionUpdateSchema = z.object({
 export const UserQuerySchema = z.object({
   limit: z.number().default(20),
   offset: z.number().default(0),
-  query: z.string().default(''),
+  query: z.string().default(""),
 });
 
 /**
@@ -39,5 +41,5 @@ export const UserQuerySchema = z.object({
  */
 export const RoleUpdateSchema = z.object({
   id: z.number(),
-  role: z.enum(['admin', 'student', 'teacher']),
+  role: z.enum(["admin", "student", "teacher"]),
 });

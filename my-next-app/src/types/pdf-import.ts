@@ -4,7 +4,7 @@
 export interface ParsedPdfQuestion {
   content: string;
   options: string[];
-  type: 'single' | 'multi' | 'truefalse';
+  type: "single" | "multi" | "truefalse";
   answer: string;
   explanation: string;
   confidence: number;

@@ -11,8 +11,8 @@
  *   afterAll(() => server.close())
  */
 
-import { setupServer } from 'msw/node'
-import { handlers } from './handlers'
+import { setupServer } from "msw/node";
+import { handlers } from "./handlers";
 
 // 创建 MSW 服务器实例，注入默认处理器列表
-export const server = setupServer(...handlers)
+export const server = setupServer(...handlers);

@@ -1,9 +1,9 @@
-import { describe, it, expect } from 'vitest';
-import * as schema from '../drizzle-schema';
+import { describe, it, expect } from "vitest";
+import * as schema from "../drizzle-schema";
 
-describe('Drizzle Schema Tests', () => {
-  describe('users table', () => {
-    it('should have correct columns', () => {
+describe("Drizzle Schema Tests", () => {
+  describe("users table", () => {
+    it("should have correct columns", () => {
       expect(schema.users).toBeDefined();
       expect(schema.users.id).toBeDefined();
       expect(schema.users.username).toBeDefined();
@@ -13,13 +13,13 @@ describe('Drizzle Schema Tests', () => {
       expect(schema.users.created_at).toBeDefined();
     });
 
-    it('should have unique username', () => {
+    it("should have unique username", () => {
       expect(schema.users.username).toMatchObject({});
     });
   });
 
-  describe('questions table', () => {
-    it('should have correct columns', () => {
+  describe("questions table", () => {
+    it("should have correct columns", () => {
       expect(schema.questions).toBeDefined();
       expect(schema.questions.id).toBeDefined();
       expect(schema.questions.content).toBeDefined();
@@ -34,15 +34,15 @@ describe('Drizzle Schema Tests', () => {
       expect(schema.questions.external_id).toBeDefined();
     });
 
-    it('should have unique constraint defined', () => {
+    it("should have unique constraint defined", () => {
       // The questions table has a unique constraint on external_id
       // We verify this by checking the schema exports
       expect(schema.questions).toBeDefined();
     });
   });
 
-  describe('practice_sessions table', () => {
-    it('should have correct columns', () => {
+  describe("practice_sessions table", () => {
+    it("should have correct columns", () => {
       expect(schema.practice_sessions).toBeDefined();
       expect(schema.practice_sessions.id).toBeDefined();
       expect(schema.practice_sessions.user_id).toBeDefined();
@@ -56,8 +56,8 @@ describe('Drizzle Schema Tests', () => {
     });
   });
 
-  describe('practice_logs table', () => {
-    it('should have correct columns', () => {
+  describe("practice_logs table", () => {
+    it("should have correct columns", () => {
       expect(schema.practice_logs).toBeDefined();
       expect(schema.practice_logs.id).toBeDefined();
       expect(schema.practice_logs.session_id).toBeDefined();
@@ -71,8 +71,8 @@ describe('Drizzle Schema Tests', () => {
     });
   });
 
-  describe('user_mastery table', () => {
-    it('should have correct columns', () => {
+  describe("user_mastery table", () => {
+    it("should have correct columns", () => {
       expect(schema.user_mastery).toBeDefined();
       expect(schema.user_mastery.user_id).toBeDefined();
       expect(schema.user_mastery.tag_name).toBeDefined();
@@ -84,8 +84,8 @@ describe('Drizzle Schema Tests', () => {
     });
   });
 
-  describe('observation_zone table', () => {
-    it('should have correct columns', () => {
+  describe("observation_zone table", () => {
+    it("should have correct columns", () => {
       expect(schema.observation_zone).toBeDefined();
       expect(schema.observation_zone.user_id).toBeDefined();
       expect(schema.observation_zone.tag_name).toBeDefined();
@@ -95,8 +95,8 @@ describe('Drizzle Schema Tests', () => {
     });
   });
 
-  describe('system_settings table', () => {
-    it('should have correct columns', () => {
+  describe("system_settings table", () => {
+    it("should have correct columns", () => {
       expect(schema.system_settings).toBeDefined();
       expect(schema.system_settings.user_id).toBeDefined();
       expect(schema.system_settings.key).toBeDefined();
@@ -105,8 +105,8 @@ describe('Drizzle Schema Tests', () => {
     });
   });
 
-  describe('ai_configs table', () => {
-    it('should have correct columns', () => {
+  describe("ai_configs table", () => {
+    it("should have correct columns", () => {
       expect(schema.ai_configs).toBeDefined();
       expect(schema.ai_configs.id).toBeDefined();
       expect(schema.ai_configs.name).toBeDefined();
@@ -119,8 +119,8 @@ describe('Drizzle Schema Tests', () => {
     });
   });
 
-  describe('prompt_templates table', () => {
-    it('should have correct columns', () => {
+  describe("prompt_templates table", () => {
+    it("should have correct columns", () => {
       expect(schema.prompt_templates).toBeDefined();
       expect(schema.prompt_templates.key).toBeDefined();
       expect(schema.prompt_templates.template).toBeDefined();
@@ -129,8 +129,8 @@ describe('Drizzle Schema Tests', () => {
     });
   });
 
-  describe('chat_sessions table', () => {
-    it('should have correct columns', () => {
+  describe("chat_sessions table", () => {
+    it("should have correct columns", () => {
       expect(schema.chat_sessions).toBeDefined();
       expect(schema.chat_sessions.id).toBeDefined();
       expect(schema.chat_sessions.user_id).toBeDefined();
@@ -139,8 +139,8 @@ describe('Drizzle Schema Tests', () => {
     });
   });
 
-  describe('chat_messages table', () => {
-    it('should have correct columns', () => {
+  describe("chat_messages table", () => {
+    it("should have correct columns", () => {
       expect(schema.chat_messages).toBeDefined();
       expect(schema.chat_messages.id).toBeDefined();
       expect(schema.chat_messages.session_id).toBeDefined();
@@ -150,8 +150,8 @@ describe('Drizzle Schema Tests', () => {
     });
   });
 
-  describe('knowledge_cards table', () => {
-    it('should have correct columns', () => {
+  describe("knowledge_cards table", () => {
+    it("should have correct columns", () => {
       expect(schema.knowledge_cards).toBeDefined();
       expect(schema.knowledge_cards.id).toBeDefined();
       expect(schema.knowledge_cards.user_id).toBeDefined();
@@ -164,8 +164,8 @@ describe('Drizzle Schema Tests', () => {
     });
   });
 
-  describe('subscription_plans table', () => {
-    it('should have correct columns', () => {
+  describe("subscription_plans table", () => {
+    it("should have correct columns", () => {
       expect(schema.subscription_plans).toBeDefined();
       expect(schema.subscription_plans.id).toBeDefined();
       expect(schema.subscription_plans.name).toBeDefined();
@@ -177,8 +177,8 @@ describe('Drizzle Schema Tests', () => {
     });
   });
 
-  describe('user_subscriptions table', () => {
-    it('should have correct columns', () => {
+  describe("user_subscriptions table", () => {
+    it("should have correct columns", () => {
       expect(schema.user_subscriptions).toBeDefined();
       expect(schema.user_subscriptions.id).toBeDefined();
       expect(schema.user_subscriptions.user_id).toBeDefined();
@@ -189,8 +189,8 @@ describe('Drizzle Schema Tests', () => {
     });
   });
 
-  describe('daily_usage table', () => {
-    it('should have correct columns', () => {
+  describe("daily_usage table", () => {
+    it("should have correct columns", () => {
       expect(schema.daily_usage).toBeDefined();
       expect(schema.daily_usage.id).toBeDefined();
       expect(schema.daily_usage.user_id).toBeDefined();
@@ -200,8 +200,8 @@ describe('Drizzle Schema Tests', () => {
     });
   });
 
-  describe('question_srs table', () => {
-    it('should have correct columns', () => {
+  describe("question_srs table", () => {
+    it("should have correct columns", () => {
       expect(schema.question_srs).toBeDefined();
       expect(schema.question_srs.id).toBeDefined();
       expect(schema.question_srs.user_id).toBeDefined();
@@ -217,8 +217,8 @@ describe('Drizzle Schema Tests', () => {
     });
   });
 
-  describe('mindmaps table', () => {
-    it('should have correct columns', () => {
+  describe("mindmaps table", () => {
+    it("should have correct columns", () => {
       expect(schema.mindmaps).toBeDefined();
       expect(schema.mindmaps.id).toBeDefined();
       expect(schema.mindmaps.user_id).toBeDefined();
@@ -227,8 +227,8 @@ describe('Drizzle Schema Tests', () => {
     });
   });
 
-  describe('textbooks table', () => {
-    it('should have correct columns', () => {
+  describe("textbooks table", () => {
+    it("should have correct columns", () => {
       expect(schema.textbooks).toBeDefined();
       expect(schema.textbooks.id).toBeDefined();
       expect(schema.textbooks.title).toBeDefined();
@@ -238,8 +238,8 @@ describe('Drizzle Schema Tests', () => {
     });
   });
 
-  describe('notes table', () => {
-    it('should have correct columns', () => {
+  describe("notes table", () => {
+    it("should have correct columns", () => {
       expect(schema.notes).toBeDefined();
       expect(schema.notes.id).toBeDefined();
       expect(schema.notes.user_id).toBeDefined();
@@ -250,8 +250,8 @@ describe('Drizzle Schema Tests', () => {
     });
   });
 
-  describe('note_tags table', () => {
-    it('should have correct columns', () => {
+  describe("note_tags table", () => {
+    it("should have correct columns", () => {
       expect(schema.note_tags).toBeDefined();
       expect(schema.note_tags.id).toBeDefined();
       expect(schema.note_tags.user_id).toBeDefined();
@@ -260,8 +260,8 @@ describe('Drizzle Schema Tests', () => {
     });
   });
 
-  describe('api_keys table', () => {
-    it('should have correct columns', () => {
+  describe("api_keys table", () => {
+    it("should have correct columns", () => {
       expect(schema.api_keys).toBeDefined();
       expect(schema.api_keys.id).toBeDefined();
       expect(schema.api_keys.key_string).toBeDefined();
@@ -270,8 +270,8 @@ describe('Drizzle Schema Tests', () => {
     });
   });
 
-  describe('ai_quiz_cache table', () => {
-    it('should have correct columns', () => {
+  describe("ai_quiz_cache table", () => {
+    it("should have correct columns", () => {
       expect(schema.ai_quiz_cache).toBeDefined();
       expect(schema.ai_quiz_cache.hash).toBeDefined();
       expect(schema.ai_quiz_cache.data).toBeDefined();
@@ -279,8 +279,8 @@ describe('Drizzle Schema Tests', () => {
     });
   });
 
-  describe('first_principles_cache table', () => {
-    it('should have correct columns', () => {
+  describe("first_principles_cache table", () => {
+    it("should have correct columns", () => {
       expect(schema.first_principles_cache).toBeDefined();
       expect(schema.first_principles_cache.id).toBeDefined();
       expect(schema.first_principles_cache.question_hash).toBeDefined();
@@ -288,8 +288,8 @@ describe('Drizzle Schema Tests', () => {
     });
   });
 
-  describe('admin_logs table', () => {
-    it('should have correct columns', () => {
+  describe("admin_logs table", () => {
+    it("should have correct columns", () => {
       expect(schema.admin_logs).toBeDefined();
       expect(schema.admin_logs.id).toBeDefined();
       expect(schema.admin_logs.user_id).toBeDefined();
@@ -302,8 +302,8 @@ describe('Drizzle Schema Tests', () => {
     });
   });
 
-  describe('api_call_logs table', () => {
-    it('should have correct columns', () => {
+  describe("api_call_logs table", () => {
+    it("should have correct columns", () => {
       expect(schema.api_call_logs).toBeDefined();
       expect(schema.api_call_logs.id).toBeDefined();
       expect(schema.api_call_logs.user_id).toBeDefined();
@@ -317,8 +317,8 @@ describe('Drizzle Schema Tests', () => {
     });
   });
 
-  describe('session_reviews table', () => {
-    it('should have correct columns', () => {
+  describe("session_reviews table", () => {
+    it("should have correct columns", () => {
       expect(schema.session_reviews).toBeDefined();
       expect(schema.session_reviews.id).toBeDefined();
       expect(schema.session_reviews.session_id).toBeDefined();
@@ -327,8 +327,8 @@ describe('Drizzle Schema Tests', () => {
     });
   });
 
-  describe('text_annotations table', () => {
-    it('should have correct columns', () => {
+  describe("text_annotations table", () => {
+    it("should have correct columns", () => {
       expect(schema.text_annotations).toBeDefined();
       expect(schema.text_annotations.id).toBeDefined();
       expect(schema.text_annotations.user_id).toBeDefined();
@@ -340,8 +340,8 @@ describe('Drizzle Schema Tests', () => {
     });
   });
 
-  describe('mastered_questions table', () => {
-    it('should have correct columns', () => {
+  describe("mastered_questions table", () => {
+    it("should have correct columns", () => {
       expect(schema.mastered_questions).toBeDefined();
       expect(schema.mastered_questions.id).toBeDefined();
       expect(schema.mastered_questions.user_id).toBeDefined();
@@ -351,8 +351,8 @@ describe('Drizzle Schema Tests', () => {
     });
   });
 
-  describe('textbook_chapters table', () => {
-    it('should have correct columns', () => {
+  describe("textbook_chapters table", () => {
+    it("should have correct columns", () => {
       expect(schema.textbook_chapters).toBeDefined();
       expect(schema.textbook_chapters.id).toBeDefined();
       expect(schema.textbook_chapters.textbook_id).toBeDefined();
@@ -364,8 +364,8 @@ describe('Drizzle Schema Tests', () => {
     });
   });
 
-  describe('payment_records table', () => {
-    it('should have correct columns', () => {
+  describe("payment_records table", () => {
+    it("should have correct columns", () => {
       expect(schema.payment_records).toBeDefined();
       expect(schema.payment_records.id).toBeDefined();
       expect(schema.payment_records.user_id).toBeDefined();
@@ -378,8 +378,8 @@ describe('Drizzle Schema Tests', () => {
     });
   });
 
-  describe('ai_model_routes table', () => {
-    it('should have correct columns', () => {
+  describe("ai_model_routes table", () => {
+    it("should have correct columns", () => {
       expect(schema.ai_model_routes).toBeDefined();
       expect(schema.ai_model_routes.feature).toBeDefined();
       expect(schema.ai_model_routes.config_id).toBeDefined();

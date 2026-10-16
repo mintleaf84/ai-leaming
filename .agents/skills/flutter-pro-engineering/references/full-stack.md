@@ -12,12 +12,18 @@ Next.js 15 中，Route Handler 的 `params` 和 `searchParams` 变为 **异步 P
 
 ```typescript
 // ❌ 旧写法 (Next.js 14)
-export async function GET(req: Request, { params }: { params: { id: string } }) {
+export async function GET(
+  req: Request,
+  { params }: { params: { id: string } },
+) {
   const id = parseInt(params.id, 10); // NaN!
 }
 
 // ✅ 新写法 (Next.js 15)
-export async function GET(req: Request, { params }: { params: Promise<{ id: string }> }) {
+export async function GET(
+  req: Request,
+  { params }: { params: Promise<{ id: string }> },
+) {
   const { id } = await params;
   const sessionId = parseInt(id, 10);
 }
@@ -46,10 +52,10 @@ export async function GET(req: Request, { params }: { params: Promise<{ id: stri
 // 1. 创建类型清洗转换器
 class StringIdConverter implements JsonConverter<String, dynamic> {
   const StringIdConverter();
-  
+
   @override
   String fromJson(dynamic json) => json.toString(); // 强行拉平弱类型
-  
+
   @override
   dynamic toJson(String object) => object;
 }
@@ -100,11 +106,11 @@ abstract class ChatMessage with _$ChatMessage {
 
 ## 3.3 后端弱类型字段的常见映射陷阱
 
-| 后端字段 | 后端实际类型 | Flutter 期望类型 | 解决方案 |
-|---------|------------|----------------|---------|
-| `id` | `int` | `String` | `@StringIdConverter()` |
-| `is_favorite` | `int` (0/1) | `bool` | `@JsonKey(name: 'is_favorite', fromJson: _boolFromInt)` |
-| `created_at` | `String` | `DateTime` | `@JsonKey(fromJson: DateTime.parse)` |
+| 后端字段      | 后端实际类型 | Flutter 期望类型 | 解决方案                                                |
+| ------------- | ------------ | ---------------- | ------------------------------------------------------- |
+| `id`          | `int`        | `String`         | `@StringIdConverter()`                                  |
+| `is_favorite` | `int` (0/1)  | `bool`           | `@JsonKey(name: 'is_favorite', fromJson: _boolFromInt)` |
+| `created_at`  | `String`     | `DateTime`       | `@JsonKey(fromJson: DateTime.parse)`                    |
 
 ---
 
@@ -138,10 +144,10 @@ final response = await dio.post('/chat',
 
 同一个 `ChatRepository` 实现中，需要两个 Dio 实例：
 
-| 实例 | 用途 | `responseType` |
-|------|-----|--------------|
-| `_streamDio` | 流式聊天 | `ResponseType.stream` |
-| `_baseDio` | 普通 CRUD（会话列表、创建、删除） | `ResponseType.json`（默认） |
+| 实例         | 用途                              | `responseType`              |
+| ------------ | --------------------------------- | --------------------------- |
+| `_streamDio` | 流式聊天                          | `ResponseType.stream`       |
+| `_baseDio`   | 普通 CRUD（会话列表、创建、删除） | `ResponseType.json`（默认） |
 
 两者共享同一套认证拦截器，但 `_streamDio` 需排除 `LogInterceptor`。
 

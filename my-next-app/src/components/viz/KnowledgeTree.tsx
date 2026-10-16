@@ -1,10 +1,18 @@
 "use client";
 
-import React, { useCallback, useMemo, useRef } from 'react';
-import dynamic from 'next/dynamic';
-import { Target, BookOpen } from 'lucide-react';
-import type { KnowledgeGraphData, KnowledgeNode, KnowledgeLink } from '@/types/viz';
-import type { ForceGraphMethods, NodeObject, LinkObject } from 'react-force-graph-2d';
+import React, { useCallback, useMemo, useRef } from "react";
+import dynamic from "next/dynamic";
+import { Target, BookOpen } from "lucide-react";
+import type {
+  KnowledgeGraphData,
+  KnowledgeNode,
+  KnowledgeLink,
+} from "@/types/viz";
+import type {
+  ForceGraphMethods,
+  NodeObject,
+  LinkObject,
+} from "react-force-graph-2d";
 import {
   Drawer,
   DrawerClose,
@@ -14,10 +22,10 @@ import {
   DrawerTitle,
 } from "@/components/ui/drawer";
 import { Button } from "@/components/ui/button";
-import { useRouter } from 'next/navigation';
+import { useRouter } from "next/navigation";
 
 // 动态导入 ForceGraph2D，禁用 SSR（因为它依赖 canvas）
-const ForceGraph2D = dynamic(() => import('react-force-graph-2d'), {
+const ForceGraph2D = dynamic(() => import("react-force-graph-2d"), {
   ssr: false,
   loading: () => (
     <div className="w-full h-full flex items-center justify-center">
@@ -38,33 +46,41 @@ interface KnowledgeTreeProps {
 }
 
 export function KnowledgeTree({ data }: KnowledgeTreeProps) {
-  const graphRef = useRef<ForceGraphMethods<NodeObject<KnowledgeNode>> | undefined>(undefined);
+  const graphRef = useRef<
+    ForceGraphMethods<NodeObject<KnowledgeNode>> | undefined
+  >(undefined);
   const router = useRouter();
-  const [selectedNode, setSelectedNode] = React.useState<KnowledgeNode | null>(null);
+  const [selectedNode, setSelectedNode] = React.useState<KnowledgeNode | null>(
+    null,
+  );
   const [drawerOpen, setDrawerOpen] = React.useState(false);
 
   // 转换数据格式以适配 react-force-graph
-  const graphData = useMemo(() => ({
-    nodes: data.nodes.map(node => ({
-      ...node,
-      // react-force-graph 需要 id 字段
-      val: node.group === 0 ? 20 : node.group === 1 ? 12 : 6 + (node.score / 20),
-    })),
-    links: data.links.map(link => ({
-      source: link.source,
-      target: link.target,
-      value: link.value,
-    })),
-  }), [data]);
+  const graphData = useMemo(
+    () => ({
+      nodes: data.nodes.map((node) => ({
+        ...node,
+        // react-force-graph 需要 id 字段
+        val:
+          node.group === 0 ? 20 : node.group === 1 ? 12 : 6 + node.score / 20,
+      })),
+      links: data.links.map((link) => ({
+        source: link.source,
+        target: link.target,
+        value: link.value,
+      })),
+    }),
+    [data],
+  );
 
   // 节点颜色逻辑
   const getNodeColor = useCallback((node: KnowledgeNode) => {
-    if (node.group === 0) return '#0f172a'; // 根节点
-    if (node.group === 1) return '#2563eb'; // 分类节点
+    if (node.group === 0) return "#0f172a"; // 根节点
+    if (node.group === 1) return "#2563eb"; // 分类节点
     // 叶子节点基于分数着色
-    if (node.score < 60) return '#ef4444'; // 红色
-    if (node.score < 85) return '#eab308'; // 黄色
-    return '#22c55e'; // 绿色
+    if (node.score < 60) return "#ef4444"; // 红色
+    if (node.score < 85) return "#eab308"; // 黄色
+    return "#22c55e"; // 绿色
   }, []);
 
   // 节点点击处理
@@ -76,37 +92,44 @@ export function KnowledgeTree({ data }: KnowledgeTreeProps) {
   }, []);
 
   // 节点绘制（自定义 Canvas 渲染）
-  const paintNode = useCallback((node: ForceKnowledgeNode, ctx: CanvasRenderingContext2D, globalScale: number) => {
-    const label = node.id.split('/').pop() || node.id;
-    const fontSize = node.group === 0 ? 14 / globalScale : 10 / globalScale;
-    const nodeRadius = node.val;
+  const paintNode = useCallback(
+    (
+      node: ForceKnowledgeNode,
+      ctx: CanvasRenderingContext2D,
+      globalScale: number,
+    ) => {
+      const label = node.id.split("/").pop() || node.id;
+      const fontSize = node.group === 0 ? 14 / globalScale : 10 / globalScale;
+      const nodeRadius = node.val;
 
-    // 绘制节点圆
-    ctx.beginPath();
-    ctx.arc(node.x, node.y, nodeRadius, 0, 2 * Math.PI, false);
-    ctx.fillStyle = getNodeColor(node);
-    ctx.fill();
-    ctx.strokeStyle = '#fff';
-    ctx.lineWidth = 2 / globalScale;
-    ctx.stroke();
+      // 绘制节点圆
+      ctx.beginPath();
+      ctx.arc(node.x, node.y, nodeRadius, 0, 2 * Math.PI, false);
+      ctx.fillStyle = getNodeColor(node);
+      ctx.fill();
+      ctx.strokeStyle = "#fff";
+      ctx.lineWidth = 2 / globalScale;
+      ctx.stroke();
 
-    // 绘制标签
-    const shouldShowLabel = globalScale > 1.2 || node.group < 2;
-    if (shouldShowLabel) {
-      ctx.font = `${node.group < 2 ? 'bold' : 'normal'} ${fontSize}px sans-serif`;
-      ctx.textAlign = 'center';
-      ctx.textBaseline = 'bottom';
+      // 绘制标签
+      const shouldShowLabel = globalScale > 1.2 || node.group < 2;
+      if (shouldShowLabel) {
+        ctx.font = `${node.group < 2 ? "bold" : "normal"} ${fontSize}px sans-serif`;
+        ctx.textAlign = "center";
+        ctx.textBaseline = "bottom";
 
-      // 绘制文字阴影/背景以提升对比度
-      ctx.shadowColor = 'rgba(255, 255, 255, 0.8)';
-      ctx.shadowBlur = 4;
-      ctx.fillStyle = node.group === 0 ? '#1e293b' : '#475569';
-      ctx.fillText(label, node.x, node.y - nodeRadius - 2);
+        // 绘制文字阴影/背景以提升对比度
+        ctx.shadowColor = "rgba(255, 255, 255, 0.8)";
+        ctx.shadowBlur = 4;
+        ctx.fillStyle = node.group === 0 ? "#1e293b" : "#475569";
+        ctx.fillText(label, node.x, node.y - nodeRadius - 2);
 
-      // 重置阴影
-      ctx.shadowBlur = 0;
-    }
-  }, [getNodeColor]);
+        // 重置阴影
+        ctx.shadowBlur = 0;
+      }
+    },
+    [getNodeColor],
+  );
 
   // 配置 D3 物理引擎
   React.useEffect(() => {
@@ -114,16 +137,16 @@ export function KnowledgeTree({ data }: KnowledgeTreeProps) {
       const fg = graphRef.current;
 
       // 增强电荷斥力 (Repulsion)
-      fg.d3Force('charge')?.strength(-400);
+      fg.d3Force("charge")?.strength(-400);
 
       // 增加链路距离 (Link Distance)
-      fg.d3Force('link')?.distance(80);
+      fg.d3Force("link")?.distance(80);
 
       // 引入节点碰撞检测 (Collision)，防止重叠
-      fg.d3Force('collide', ((_node: NodeObject<KnowledgeNode>) => {
-         // 碰撞半径：节点半径 + 较大的保护边距（为文字留白）
-         const n = _node as ForceKnowledgeNode;
-         return n.val + 25;
+      fg.d3Force("collide", ((_node: NodeObject<KnowledgeNode>) => {
+        // 碰撞半径：节点半径 + 较大的保护边距（为文字留白）
+        const n = _node as ForceKnowledgeNode;
+        return n.val + 25;
       }) as unknown as Parameters<typeof fg.d3Force>[1]);
 
       // 重新预热引擎以应用新参数
@@ -138,17 +161,29 @@ export function KnowledgeTree({ data }: KnowledgeTreeProps) {
         graphData={graphData}
         nodeRelSize={1}
         nodeVal="val"
-        nodeCanvasObject={paintNode as (node: NodeObject<KnowledgeNode>, ctx: CanvasRenderingContext2D, globalScale: number) => void}
-        nodePointerAreaPaint={(node: NodeObject<KnowledgeNode>, color: string, ctx: CanvasRenderingContext2D) => {
+        nodeCanvasObject={
+          paintNode as (
+            node: NodeObject<KnowledgeNode>,
+            ctx: CanvasRenderingContext2D,
+            globalScale: number,
+          ) => void
+        }
+        nodePointerAreaPaint={(
+          node: NodeObject<KnowledgeNode>,
+          color: string,
+          ctx: CanvasRenderingContext2D,
+        ) => {
           const n = node as ForceKnowledgeNode;
           ctx.beginPath();
           ctx.arc(n.x, n.y, n.val, 0, 2 * Math.PI, false);
           ctx.fillStyle = color;
           ctx.fill();
         }}
-        linkColor={() => '#e2e8f0'}
+        linkColor={() => "#e2e8f0"}
         linkWidth={(link: KnowledgeLink) => Math.sqrt(link.value) * 1.5}
-        onNodeClick={(node: KnowledgeNode) => handleNodeClick(node as unknown as KnowledgeNode)}
+        onNodeClick={(node: KnowledgeNode) =>
+          handleNodeClick(node as unknown as KnowledgeNode)
+        }
         cooldownTicks={100}
         onEngineStop={() => graphRef.current?.zoomToFit(400, 50)}
         enableZoomInteraction={true}
@@ -163,14 +198,19 @@ export function KnowledgeTree({ data }: KnowledgeTreeProps) {
           <div className="mx-auto w-full max-w-sm">
             <DrawerHeader>
               <div className="flex items-center gap-2 mb-2">
-                <div className={`p-2 rounded-lg ${(selectedNode?.score || 0) < 60 ? "bg-red-500/10 text-red-500" :
-                  (selectedNode?.score || 0) < 85 ? "bg-yellow-500/10 text-yellow-500" :
-                    "bg-green-500/10 text-green-500"
-                  }`}>
+                <div
+                  className={`p-2 rounded-lg ${
+                    (selectedNode?.score || 0) < 60
+                      ? "bg-red-500/10 text-red-500"
+                      : (selectedNode?.score || 0) < 85
+                        ? "bg-yellow-500/10 text-yellow-500"
+                        : "bg-green-500/10 text-green-500"
+                  }`}
+                >
                   <Target className="h-5 w-5" />
                 </div>
                 <DrawerTitle className="text-xl">
-                  {selectedNode?.id.split('/').pop()}
+                  {selectedNode?.id.split("/").pop()}
                 </DrawerTitle>
               </div>
               <DrawerDescription>
@@ -186,10 +226,13 @@ export function KnowledgeTree({ data }: KnowledgeTreeProps) {
                 </div>
                 <div className="h-3 w-full bg-muted rounded-full overflow-hidden">
                   <div
-                    className={`h-full transition-all duration-1000 ${(selectedNode?.score || 0) < 60 ? "bg-red-500" :
-                      (selectedNode?.score || 0) < 85 ? "bg-yellow-500" :
-                        "bg-green-500"
-                      }`}
+                    className={`h-full transition-all duration-1000 ${
+                      (selectedNode?.score || 0) < 60
+                        ? "bg-red-500"
+                        : (selectedNode?.score || 0) < 85
+                          ? "bg-yellow-500"
+                          : "bg-green-500"
+                    }`}
                     style={{ width: `${selectedNode?.score || 0}%` }}
                   />
                 </div>
@@ -200,7 +243,9 @@ export function KnowledgeTree({ data }: KnowledgeTreeProps) {
                   className="w-full gap-2"
                   onClick={() => {
                     if (selectedNode) {
-                      router.push(`/practice?tag=${encodeURIComponent(selectedNode.id)}`);
+                      router.push(
+                        `/practice?tag=${encodeURIComponent(selectedNode.id)}`,
+                      );
                     }
                   }}
                 >

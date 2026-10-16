@@ -1,6 +1,6 @@
 import type { Metadata, Viewport } from "next";
 import localFont from "next/font/local";
-import _dynamic from 'next/dynamic';
+import _dynamic from "next/dynamic";
 import { ErrorBoundary } from "@/components/ErrorBoundary";
 // import { Navbar } from "@/components/Navbar";
 import { AppSidebar } from "@/components/layout/AppSidebar";
@@ -52,7 +52,7 @@ export const viewport: Viewport = {
   viewportFit: "cover",
 };
 
-import { Suspense } from 'react';
+import { Suspense } from "react";
 import { SidebarUser } from "@/components/layout/SidebarUser";
 import { SidebarUserSkeleton } from "@/components/layout/SidebarUserSkeleton";
 import { initDatabase as _initDatabase } from "@/lib/db";
@@ -65,9 +65,12 @@ export default async function RootLayout({
   // Initialize database is now handled by src/instrumentation.ts
   // initDatabase();
 
-  const isTextbookEnabled = await getGlobalFeatureFlag('ENABLE_TEXTBOOK', true);
-  const isNotesEnabled = await getGlobalFeatureFlag('ENABLE_NOTES', true);
-  const isOcrMindmapEnabled = await getGlobalFeatureFlag('ENABLE_OCR_MINDMAP', true);
+  const isTextbookEnabled = await getGlobalFeatureFlag("ENABLE_TEXTBOOK", true);
+  const isNotesEnabled = await getGlobalFeatureFlag("ENABLE_NOTES", true);
+  const isOcrMindmapEnabled = await getGlobalFeatureFlag(
+    "ENABLE_OCR_MINDMAP",
+    true,
+  );
   const featureFlags = {
     ENABLE_TEXTBOOK: isTextbookEnabled,
     ENABLE_NOTES: isNotesEnabled,
@@ -80,37 +83,35 @@ export default async function RootLayout({
         className={`${geistSans.variable} ${geistMono.variable} antialiased min-h-screen bg-background text-foreground`}
       >
         <QueryProvider>
-        <TerminologyProvider>
-          <ThemeProvider
-            attribute="class"
-            defaultTheme="system"
-            enableSystem
-            disableTransitionOnChange
-            themes={['light', 'dark', 'eye-care', 'zhuoyu']}
-          >
-            <div className="flex h-dvh">
-              <div className="hidden md:flex">
-                <AppSidebar 
-                  userSection={
-                    <Suspense fallback={<SidebarUserSkeleton />}>
-                      <SidebarUser />
-                    </Suspense>
-                  } 
-                  featureFlags={featureFlags}
-                />
+          <TerminologyProvider>
+            <ThemeProvider
+              attribute="class"
+              defaultTheme="system"
+              enableSystem
+              disableTransitionOnChange
+              themes={["light", "dark", "eye-care", "zhuoyu"]}
+            >
+              <div className="flex h-dvh">
+                <div className="hidden md:flex">
+                  <AppSidebar
+                    userSection={
+                      <Suspense fallback={<SidebarUserSkeleton />}>
+                        <SidebarUser />
+                      </Suspense>
+                    }
+                    featureFlags={featureFlags}
+                  />
+                </div>
+                <div className="flex-1 flex flex-col min-w-0">
+                  <main className="flex-1 pb-20 md:pb-0 relative overflow-y-auto">
+                    <ErrorBoundary>{children}</ErrorBoundary>
+                  </main>
+                </div>
               </div>
-              <div className="flex-1 flex flex-col min-w-0">
-                <main className="flex-1 pb-20 md:pb-0 relative overflow-y-auto">
-                  <ErrorBoundary>
-                    {children}
-                  </ErrorBoundary>
-                </main>
-              </div>
-            </div>
-            <MobileNav featureFlags={featureFlags} />
-            <Toaster position="top-center" richColors />
-          </ThemeProvider>
-        </TerminologyProvider>
+              <MobileNav featureFlags={featureFlags} />
+              <Toaster position="top-center" richColors />
+            </ThemeProvider>
+          </TerminologyProvider>
         </QueryProvider>
       </body>
     </html>

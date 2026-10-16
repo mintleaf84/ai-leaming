@@ -1,4 +1,4 @@
-import { z } from 'zod';
+import { z } from "zod";
 
 // --- Base Schemas ---
 
@@ -7,48 +7,60 @@ const BaseQuestionSchema = z.object({
   options: z.array(z.string().min(1, "选项内容不能为空")).max(10).default([]),
   answer: z.string().min(1, "必须指定正确答案"),
   explanation: z.string().min(5, "解析长度至少为5个字符"),
-  tags: z.array(z.string().min(1, "标签内容不能为空")).min(1, "至少需要1个标签"),
-  dimension: z.enum(['knowledge', 'understanding', 'application'], {
-    message: "维度必须是 'knowledge'、'understanding' 或 'application'"
-  }).or(z.string()), // Relax dimension as well just in case
-  type: z.enum(['single', 'multi', 'truefalse', 'fill_blank']).default('single'),
+  tags: z
+    .array(z.string().min(1, "标签内容不能为空"))
+    .min(1, "至少需要1个标签"),
+  dimension: z
+    .enum(["knowledge", "understanding", "application"], {
+      message: "维度必须是 'knowledge'、'understanding' 或 'application'",
+    })
+    .or(z.string()), // Relax dimension as well just in case
+  type: z
+    .enum(["single", "multi", "truefalse", "fill_blank"])
+    .default("single"),
 });
 
-export const QuestionSchema = BaseQuestionSchema.refine((data) => {
-  // 填空题：答案为自由文本，无需选项校验
-  if (data.type === 'fill_blank') {
-    return data.answer.length > 0;
-  }
-
-  // 判断题：选项固定为 ["正确", "错误"]，答案只能是 "A" 或 "B"
-  if (data.type === 'truefalse') {
-    return (data.answer === 'A' || data.answer === 'B') && data.options.length === 2;
-  }
-
-  // 通用匹配逻辑：支持内容匹配标号 或 标号匹配内容
-  const isMatch = (ans: string) => {
-    if (data.options.includes(ans)) return true;
-    if (ans.length === 1 && ans >= 'A' && ans <= 'Z') {
-      const idx = ans.charCodeAt(0) - 65;
-      return !!data.options[idx];
+export const QuestionSchema = BaseQuestionSchema.refine(
+  (data) => {
+    // 填空题：答案为自由文本，无需选项校验
+    if (data.type === "fill_blank") {
+      return data.answer.length > 0;
     }
-    return false;
-  };
 
-  if (data.type === 'multi') {
-    try {
-      const answers = JSON.parse(data.answer);
-      if (!Array.isArray(answers) || answers.length < 1) return false;
-      return answers.every(a => isMatch(a));
-    } catch {
+    // 判断题：选项固定为 ["正确", "错误"]，答案只能是 "A" 或 "B"
+    if (data.type === "truefalse") {
+      return (
+        (data.answer === "A" || data.answer === "B") &&
+        data.options.length === 2
+      );
+    }
+
+    // 通用匹配逻辑：支持内容匹配标号 或 标号匹配内容
+    const isMatch = (ans: string) => {
+      if (data.options.includes(ans)) return true;
+      if (ans.length === 1 && ans >= "A" && ans <= "Z") {
+        const idx = ans.charCodeAt(0) - 65;
+        return !!data.options[idx];
+      }
       return false;
+    };
+
+    if (data.type === "multi") {
+      try {
+        const answers = JSON.parse(data.answer);
+        if (!Array.isArray(answers) || answers.length < 1) return false;
+        return answers.every((a) => isMatch(a));
+      } catch {
+        return false;
+      }
     }
-  }
-  return isMatch(data.answer);
-}, {
-  message: "正确答案必须是选项之一或有效的选项标号(A/B/C/D)",
-  path: ["answer"]
-});
+    return isMatch(data.answer);
+  },
+  {
+    message: "正确答案必须是选项之一或有效的选项标号(A/B/C/D)",
+    path: ["answer"],
+  },
+);
 
 // --- Phase 4 Specific Schemas ---
 
@@ -63,21 +75,27 @@ export const CorrectionQuizSchema = z.object({
     content: z.string().describe("针对该核心逻辑点生成的一个辨析题"),
     options: z.array(z.string()),
     answer: z.string(),
-    explanation: z.string()
-  })
+    explanation: z.string(),
+  }),
 });
 
 /**
  * Task 4.2: Regression Challenge (逻辑逆向/补集测试)
  */
 export const RegressionChallengeSchema = z.object({
-  logicType: z.enum(['reverse', 'complement', 'boundary']).describe("逆向/补集/边界测试"),
-  challenges: z.array(z.object({
-    content: z.string(),
-    options: z.array(z.string()),
-    answer: z.string(),
-    explanation: z.string()
-  })).length(3) // PRD: 3 questions for recovery
+  logicType: z
+    .enum(["reverse", "complement", "boundary"])
+    .describe("逆向/补集/边界测试"),
+  challenges: z
+    .array(
+      z.object({
+        content: z.string(),
+        options: z.array(z.string()),
+        answer: z.string(),
+        explanation: z.string(),
+      }),
+    )
+    .length(3), // PRD: 3 questions for recovery
 });
 
 export type CorrectionQuiz = z.infer<typeof CorrectionQuizSchema>;
@@ -98,7 +116,10 @@ export const PracticeSessionRowSchema = z.object({
       if (!str) return [];
       return JSON.parse(str);
     } catch (_e) {
-      ctx.addIssue({ code: z.ZodIssueCode.custom, message: "Invalid JSON in questions_json" });
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        message: "Invalid JSON in questions_json",
+      });
       return [];
     }
   }),
@@ -112,9 +133,9 @@ export const PracticeLogRowSchema = z.object({
   user_id: z.number(),
   question_id: z.number(),
   user_answer: z.string(),
-  is_correct: z.number().transform(val => Boolean(val)), // SQLite stores boolean as 0/1
+  is_correct: z.number().transform((val) => Boolean(val)), // SQLite stores boolean as 0/1
   duration_ms: z.number(),
-  timestamp: z.string().optional()
+  timestamp: z.string().optional(),
 });
 
 // 数据库行 Schema，包含自动 JSON 解析和所有扩展字段
@@ -127,24 +148,29 @@ export const QuestionRowSchema = BaseQuestionSchema.extend({
   material_html: z.string().nullable().optional(),
   ai_mnemonic: z.string().nullable().optional(),
   created_at: z.string().optional(),
-  options: z.string().transform((str, _ctx): string[] => {
-    try {
-      const parsed = JSON.parse(str);
-      return Array.isArray(parsed) ? parsed : [];
-    } catch {
-      return [];
-    }
-  }).or(z.array(z.string())),
-  tags: z.string().transform((str, _ctx): string[] => {
-    try {
-      const parsed = JSON.parse(str);
-      return Array.isArray(parsed) ? parsed : [];
-    } catch {
-      return [];
-    }
-  }).or(z.array(z.string())),
+  options: z
+    .string()
+    .transform((str, _ctx): string[] => {
+      try {
+        const parsed = JSON.parse(str);
+        return Array.isArray(parsed) ? parsed : [];
+      } catch {
+        return [];
+      }
+    })
+    .or(z.array(z.string())),
+  tags: z
+    .string()
+    .transform((str, _ctx): string[] => {
+      try {
+        const parsed = JSON.parse(str);
+        return Array.isArray(parsed) ? parsed : [];
+      } catch {
+        return [];
+      }
+    })
+    .or(z.array(z.string())),
 });
-
 
 export type PracticeSessionRow = z.infer<typeof PracticeSessionRowSchema>;
 export type PracticeLogRow = z.infer<typeof PracticeLogRowSchema>;

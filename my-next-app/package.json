@@ -11,8 +11,8 @@
     "db:migrate": "npx tsx scripts/migrate-runner.ts"
   },
   "dependencies": {
-    "@ai-sdk/openai": "^3.0.49",
-    "@ai-sdk/react": "^3.0.170",
+    "@ai-sdk/openai": "^3.0.109",
+    "@ai-sdk/react": "^3.0.280",
     "@hono/swagger-ui": "^0.5.3",
     "@hono/zod-openapi": "^0.19.10",
     "@langchain/community": "^1.1.27",
@@ -40,7 +40,7 @@
     "@tanstack/react-query": "^5.91.3",
     "@types/react-syntax-highlighter": "^15.5.13",
     "adm-zip": "^0.6.0",
-    "ai": "^6.0.116",
+    "ai": "^6.0.277",
     "bcryptjs": "^3.0.3",
     "better-sqlite3": "^12.5.0",
     "class-variance-authority": "^0.7.1",

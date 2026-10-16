@@ -1,14 +1,14 @@
-import Database from 'better-sqlite3';
-import * as sqliteVec from 'sqlite-vec';
-import path from 'path';
-import { fileURLToPath } from 'url';
-import { drizzle, LibSQLDatabase } from 'drizzle-orm/libsql';
-import { migrate } from 'drizzle-orm/libsql/migrator';
-import { createClient } from '@libsql/client';
-import * as schema from './drizzle-schema';
-import { setupVectorExtension } from './vector-setup';
-import { seedData } from './seed-data';
-import { env } from '@/env';
+import Database from "better-sqlite3";
+import * as sqliteVec from "sqlite-vec";
+import path from "path";
+import { fileURLToPath } from "url";
+import { drizzle, LibSQLDatabase } from "drizzle-orm/libsql";
+import { migrate } from "drizzle-orm/libsql/migrator";
+import { createClient } from "@libsql/client";
+import * as schema from "./drizzle-schema";
+import { setupVectorExtension } from "./vector-setup";
+import { seedData } from "./seed-data";
+import { env } from "@/env";
 
 // --- Legacy Better-SQLite3 Initialization (from old db.ts) ---
 
@@ -18,54 +18,66 @@ function initDb() {
   if (globalForDb.db) return globalForDb.db;
 
   const dbName = env.DB_FILENAME;
-  const dbPath = path.resolve(process.cwd(), 'data', dbName);
+  const dbPath = path.resolve(process.cwd(), "data", dbName);
   console.log(`[DB] 正在连接数据库: ${dbPath}`);
 
   const db = new Database(dbPath);
-  db.pragma('journal_mode = WAL');
-  db.pragma('cache_size = -20000');
-  db.pragma('temp_store = MEMORY');
-  db.pragma('synchronous = NORMAL');
+  db.pragma("journal_mode = WAL");
+  db.pragma("cache_size = -20000");
+  db.pragma("temp_store = MEMORY");
+  db.pragma("synchronous = NORMAL");
 
   try {
     let loadablePath;
     try {
       loadablePath = sqliteVec.getLoadablePath();
     } catch (_e) {
-      console.warn('[DB] sqliteVec.getLoadablePath() failed, attempting fallback...');
+      console.warn(
+        "[DB] sqliteVec.getLoadablePath() failed, attempting fallback...",
+      );
     }
 
     if (!loadablePath) {
       const platform = process.platform;
       const arch = process.arch;
-      let binaryName = 'vec0.so';
-      let packageName = 'sqlite-vec-linux-x64';
+      let binaryName = "vec0.so";
+      let packageName = "sqlite-vec-linux-x64";
 
-      if (platform === 'win32') {
-        binaryName = 'vec0.dll';
-        packageName = arch === 'x64' ? 'sqlite-vec-windows-x64' : `sqlite-vec-win32-${arch}`;
-      } else if (platform === 'darwin') {
-        binaryName = 'vec0.dylib';
+      if (platform === "win32") {
+        binaryName = "vec0.dll";
+        packageName =
+          arch === "x64"
+            ? "sqlite-vec-windows-x64"
+            : `sqlite-vec-win32-${arch}`;
+      } else if (platform === "darwin") {
+        binaryName = "vec0.dylib";
         packageName = `sqlite-vec-darwin-${arch}`;
       }
-      loadablePath = path.resolve(process.cwd(), 'node_modules', packageName, binaryName);
+      loadablePath = path.resolve(
+        process.cwd(),
+        "node_modules",
+        packageName,
+        binaryName,
+      );
     }
 
-    if (loadablePath && typeof loadablePath !== 'string') {
+    if (loadablePath && typeof loadablePath !== "string") {
       try {
         loadablePath = fileURLToPath(loadablePath as unknown as URL);
       } catch (_e) {
-        loadablePath = String(loadablePath).replace(/^file:\/\/\/?/, '');
+        loadablePath = String(loadablePath).replace(/^file:\/\/\/?/, "");
       }
     }
 
     console.log(`[DB] 正在加载向量扩展: ${loadablePath}`);
     db.loadExtension(loadablePath);
 
-    const version = db.prepare('SELECT vec_version() as version').get() as { version: string };
+    const version = db.prepare("SELECT vec_version() as version").get() as {
+      version: string;
+    };
     console.log(`✅ sqlite-vec 扩展加载成功, 版本: ${version.version}`);
   } catch (err) {
-    console.error('⚠️ 向量扩展加载失败，将无法使用 AI 检索功能:', err);
+    console.error("⚠️ 向量扩展加载失败，将无法使用 AI 检索功能:", err);
   }
 
   return db;
@@ -78,39 +90,40 @@ export function getLegacyDb(): Database.Database {
 }
 
 /** @deprecated 请优先使用 drizzleDb 或默认导出的 drizzleDb 实例 */
-export const db = globalForDb.db || (typeof window === 'undefined' ? null : undefined);
+export const db =
+  globalForDb.db || (typeof window === "undefined" ? null : undefined);
 // 注意：这里不再自动初始化，由调用方通过 getLegacyDb() 获取或在 initDatabase 后使用
 
 export function closeDb() {
   if (globalForDb.db) {
-    console.log('[DB] Closing database connection...');
+    console.log("[DB] Closing database connection...");
     globalForDb.db.close();
     globalForDb.db = null;
   }
 }
 
 export function reinitDb() {
-    closeDb();
-    globalForDb.db = initDb();
-    return globalForDb.db;
+  closeDb();
+  globalForDb.db = initDb();
+  return globalForDb.db;
 }
 
 // --- Drizzle ORM Initialization ---
 
-const libsqlDbName = process.env.DB_FILENAME || 'ai-learning.db';
-const libsqlDbPath = path.resolve(process.cwd(), 'data', libsqlDbName);
+const libsqlDbName = process.env.DB_FILENAME || "ai-learning.db";
+const libsqlDbPath = path.resolve(process.cwd(), "data", libsqlDbName);
 const libsqUrl = `file:${libsqlDbPath}`;
 
-const globalForLibsql = global as unknown as { 
-    libsqlClient: ReturnType<typeof createClient> | null;
-    drizzleDb: LibSQLDatabase<typeof schema> | null;
+const globalForLibsql = global as unknown as {
+  libsqlClient: ReturnType<typeof createClient> | null;
+  drizzleDb: LibSQLDatabase<typeof schema> | null;
 };
 
 if (!globalForLibsql.libsqlClient) {
-    globalForLibsql.libsqlClient = createClient({ url: libsqUrl });
+  globalForLibsql.libsqlClient = createClient({ url: libsqUrl });
 }
 if (!globalForLibsql.drizzleDb) {
-    globalForLibsql.drizzleDb = drizzle(globalForLibsql.libsqlClient, { schema });
+  globalForLibsql.drizzleDb = drizzle(globalForLibsql.libsqlClient, { schema });
 }
 
 export const drizzleDb = globalForLibsql.drizzleDb!;
@@ -122,52 +135,60 @@ let isInitialized = false;
  * 初始化数据库
  */
 export async function initDatabase() {
-    // 检查是否已经初始化
-    if (isInitialized) {
-        return;
-    }
+  // 检查是否已经初始化
+  if (isInitialized) {
+    return;
+  }
 
-    isInitialized = true;
-    console.log('[DB] Starting database initialization...');
+  isInitialized = true;
+  console.log("[DB] Starting database initialization...");
 
+  try {
+    // 1. 运行 Drizzle 自动化迁移 (包含 IF NOT EXISTS 补强)
+    console.log("[DB] Running Drizzle migrations...");
+    // 设置忙碌超时时间，防止并发写入导致 SQLITE_BUSY
+    await globalForLibsql.libsqlClient?.execute("PRAGMA busy_timeout = 5000;");
+
+    await migrate(drizzleDb, {
+      migrationsFolder: path.resolve(process.cwd(), "drizzle"),
+    });
+    console.log("[DB] Drizzle migrations completed");
+
+    // 2. 补全向量扩展和种子数据（向量扩展失败不阻止启动）
     try {
-        // 1. 运行 Drizzle 自动化迁移 (包含 IF NOT EXISTS 补强)
-        console.log('[DB] Running Drizzle migrations...');
-        // 设置忙碌超时时间，防止并发写入导致 SQLITE_BUSY
-        await globalForLibsql.libsqlClient?.execute('PRAGMA busy_timeout = 5000;');
-        
-        await migrate(drizzleDb, { migrationsFolder: path.resolve(process.cwd(), 'drizzle') });
-        console.log('[DB] Drizzle migrations completed');
-
-        // 2. 补全向量扩展和种子数据（向量扩展失败不阻止启动）
-        try {
-            await setupVectorExtension();
-        } catch (e) {
-            console.warn('[DB] Vector extension setup failed, continuing without vector features:', e);
-        }
-        await seedData();
-        console.log('[DB] Database initialization completed');
-    } catch (error: unknown) {
-        console.error('[DB] Database initialization failed:', error instanceof Error ? error.message : String(error));
-        if (error instanceof Error && error.cause) {
-            console.error('[DB] Detailed Cause:', error.cause);
-        }
-        // 在所有环境下都抛出错误，确保迁移失败时能及时发现
-        throw error;
+      await setupVectorExtension();
+    } catch (e) {
+      console.warn(
+        "[DB] Vector extension setup failed, continuing without vector features:",
+        e,
+      );
     }
+    await seedData();
+    console.log("[DB] Database initialization completed");
+  } catch (error: unknown) {
+    console.error(
+      "[DB] Database initialization failed:",
+      error instanceof Error ? error.message : String(error),
+    );
+    if (error instanceof Error && error.cause) {
+      console.error("[DB] Detailed Cause:", error.cause);
+    }
+    // 在所有环境下都抛出错误，确保迁移失败时能及时发现
+    throw error;
+  }
 }
 
 // --- Exports ---
 
 export default db; // 默认导出 legacyDb 以兼容旧代码
-export { setupVectorExtension } from './vector-setup';
-export { seedData } from './seed-data';
-export { getSetting, setSetting } from './utils-drizzle';
-export * as drizzleSchema from './drizzle-schema';
+export { setupVectorExtension } from "./vector-setup";
+export { seedData } from "./seed-data";
+export { getSetting, setSetting } from "./utils-drizzle";
+export * as drizzleSchema from "./drizzle-schema";
 
 if (require.main === module) {
-    initDatabase();
+  initDatabase();
 }
 
 // 导出占位符供测试环境类型检查使用
-export const resetDrizzleMock = (_defaultReturn?: unknown) => { };
+export const resetDrizzleMock = (_defaultReturn?: unknown) => {};

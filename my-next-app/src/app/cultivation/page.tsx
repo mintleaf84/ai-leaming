@@ -1,24 +1,27 @@
-import { getUserStatsAction } from '@/server/actions/stats';
-import { calculateCultivation } from '@/lib/cultivation/engine';
-import { CultivationBackground } from '@/components/cultivation/CultivationBackground';
-import { RealmDisplay } from '@/components/cultivation/RealmDisplay';
-import { ActionCards } from '@/components/cultivation/ActionCards';
-import { Button } from '@/components/ui/button';
-import Link from 'next/link';
-import { ChevronLeft, ScrollText } from 'lucide-react';
-import { LeaderboardModal } from '@/components/cultivation/LeaderboardModal';
-import { getGlobalFeatureFlag } from '@/server/actions/feature-flags';
-import { redirect } from 'next/navigation';
+import { getUserStatsAction } from "@/server/actions/stats";
+import { calculateCultivation } from "@/lib/cultivation/engine";
+import { CultivationBackground } from "@/components/cultivation/CultivationBackground";
+import { RealmDisplay } from "@/components/cultivation/RealmDisplay";
+import { ActionCards } from "@/components/cultivation/ActionCards";
+import { Button } from "@/components/ui/button";
+import Link from "next/link";
+import { ChevronLeft, ScrollText } from "lucide-react";
+import { LeaderboardModal } from "@/components/cultivation/LeaderboardModal";
+import { getGlobalFeatureFlag } from "@/server/actions/feature-flags";
+import { redirect } from "next/navigation";
 
 export default async function CultivationPage() {
-  const isEnabled = await getGlobalFeatureFlag('ENABLE_CULTIVATION', false);
+  const isEnabled = await getGlobalFeatureFlag("ENABLE_CULTIVATION", false);
   if (!isEnabled) {
-    redirect('/dashboard');
+    redirect("/dashboard");
   }
 
   const result = await getUserStatsAction();
-  if (!result.data) redirect('/login');
-  const state = calculateCultivation(result.data.totalPracticed, result.data.averageMastery);
+  if (!result.data) redirect("/login");
+  const state = calculateCultivation(
+    result.data.totalPracticed,
+    result.data.averageMastery,
+  );
 
   return (
     <div className="min-h-screen relative overflow-hidden bg-zinc-950 text-zinc-100 font-sans">
@@ -29,14 +32,20 @@ export default async function CultivationPage() {
         {/* 顶部按钮栏 */}
         <div className="w-full flex justify-between items-center mb-8">
           <Link href="/dashboard">
-            <Button variant="ghost" className="text-zinc-400 hover:text-white hover:bg-white/10 gap-2">
+            <Button
+              variant="ghost"
+              className="text-zinc-400 hover:text-white hover:bg-white/10 gap-2"
+            >
               <ChevronLeft className="w-4 h-4" />
               返回凡世
             </Button>
           </Link>
 
           <LeaderboardModal>
-            <Button variant="outline" className="border-emerald-500/30 text-emerald-400 hover:bg-emerald-500/10 gap-2 rounded-full px-6">
+            <Button
+              variant="outline"
+              className="border-emerald-500/30 text-emerald-400 hover:bg-emerald-500/10 gap-2 rounded-full px-6"
+            >
               <ScrollText className="w-4 h-4" />
               诸天封神榜
             </Button>

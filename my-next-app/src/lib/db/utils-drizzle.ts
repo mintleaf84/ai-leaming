@@ -1,6 +1,6 @@
-import { drizzleDb } from './index';
-import { system_settings, users } from './drizzle-schema';
-import { eq, and, sql } from 'drizzle-orm';
+import { drizzleDb } from "./index";
+import { system_settings, users } from "./drizzle-schema";
+import { eq, and, sql } from "drizzle-orm";
 
 export async function getSetting(key: string): Promise<string | null> {
   try {
@@ -23,13 +23,13 @@ export async function setSetting(key: string, value: string) {
     .values({ user_id: 1, key, value })
     .onConflictDoUpdate({
       target: [system_settings.user_id, system_settings.key],
-      set: { value, updated_at: sql`CURRENT_TIMESTAMP` }
+      set: { value, updated_at: sql`CURRENT_TIMESTAMP` },
     });
 }
 
 export async function setUserAsAdmin(userId: number) {
   await drizzleDb
     .update(users)
-    .set({ role: 'admin' })
+    .set({ role: "admin" })
     .where(eq(users.id, userId));
 }

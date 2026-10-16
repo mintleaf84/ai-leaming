@@ -1,4 +1,4 @@
-import { z } from 'zod';
+import { z } from "zod";
 
 /**
  * 订阅套餐 Schema
@@ -26,4 +26,11 @@ export const SetUserSubscriptionSchema = z.object({
 /**
  * 用量类型 Schema
  */
-export const UsageTypeSchema = z.enum(['ai_chat', 'practice', 'review', 'rag', 'ocr', 'cultivation']);
+export const UsageTypeSchema = z.enum([
+  "ai_chat",
+  "practice",
+  "review",
+  "rag",
+  "ocr",
+  "cultivation",
+]);

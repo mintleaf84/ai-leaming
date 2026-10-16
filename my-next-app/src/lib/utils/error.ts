@@ -8,10 +8,10 @@
 /**
  * 从 unknown 类型的错误中安全提取错误消息字符串
  */
-export function getErrorMessage(error: unknown, fallback = '未知错误'): string {
-    if (error instanceof Error) return error.message || fallback;
-    if (typeof error === 'string') return error || fallback;
-    return fallback;
+export function getErrorMessage(error: unknown, fallback = "未知错误"): string {
+  if (error instanceof Error) return error.message || fallback;
+  if (typeof error === "string") return error || fallback;
+  return fallback;
 }
 
 /**
@@ -19,7 +19,7 @@ export function getErrorMessage(error: unknown, fallback = '未知错误'): stri
  * better-sqlite3 抛出的约束错误会带有 code 字段
  */
 export interface SqliteError extends Error {
-    code?: string;
+  code?: string;
 }
 
 /**
@@ -28,5 +28,5 @@ export interface SqliteError extends Error {
  * @param code  - 期望的错误码，如 'SQLITE_CONSTRAINT_UNIQUE'
  */
 export function isSqliteConstraintError(error: unknown, code: string): boolean {
-    return error instanceof Error && (error as SqliteError).code === code;
+  return error instanceof Error && (error as SqliteError).code === code;
 }

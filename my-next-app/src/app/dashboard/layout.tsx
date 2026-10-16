@@ -1,4 +1,4 @@
-import { OnboardingGuide } from '@/components/onboarding/OnboardingGuide';
+import { OnboardingGuide } from "@/components/onboarding/OnboardingGuide";
 
 export default function DashboardLayout({
   children,

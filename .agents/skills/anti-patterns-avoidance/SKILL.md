@@ -17,6 +17,7 @@ license: Complete terms in LICENSE.txt
 篡改原生 `Date` 对象的时间戳来“视觉伪造”本地时间，会导致任何依赖该对象进行标准操作（如数据库 ORM 序列化、转换为 ISO 字符串等）的库产生严重错乱（错上加错）。
 
 **正确做法**：
+
 - 任何情况下，**原生 `Date` 对象的内部时间戳必须保持为真实的 UTC 时间**。
 - 如果需要展示北京时间，必须在**最后一公里（展示/格式化阶段）**使用 `dayjs(date).tz('Asia/Shanghai').format(...)`。
 - 本项目已统一使用 `dayjs` 及其 `timezone` 插件，请直接使用 `src/lib/utils/datetime.ts` 提供的 `getBeijingDateString` 等安全方法，绝对不要自己做毫秒级加减法！
@@ -30,6 +31,7 @@ AI 相关的模块中需要进行文本分割（Chunking），过去的 `src/lib
 对于 RAG（检索增强生成）而言，缺少语义重叠（Overlap）和精确 token 计数的切片，会极大降低检索质量和 AI 生成的准确性。
 
 **正确做法**：
+
 - 严禁手写基于 `split` 或正则的文本切片工具。
 - 直接引入并使用业界标准的成熟库，例如 `@langchain/textsplitters` 或 `gpt-tokenizer`，它们自带完美的滑动窗口和 token 计数。
 
@@ -42,6 +44,7 @@ AI 相关的模块中需要进行文本分割（Chunking），过去的 `src/lib
 Markdown 的语法极其复杂。简单的正则会直接被代码块内的注释 `# 标题`、引用块内的标题等边界情况击穿，导致解析逻辑崩溃。
 
 **正确做法**：
+
 - 必须基于 **AST (抽象语法树)** 进行解析。
 - 本项目 `package.json` 中已安装了 `remark`、`rehype` 等生态工具（如 `remark-gfm`, `react-markdown` 等）。
 - 需要提取结构时，请使用 `unified` 工具链将 Markdown 转为 AST，然后遍历节点树来提取标题或内容。
@@ -55,6 +58,7 @@ Markdown 的语法极其复杂。简单的正则会直接被代码块内的注�
 随着状态转移条件增加，这种纯手工打造的 Reducer 会变得难以测试，状态切换容易出现竞态或死循环，维护成本极高。
 
 **正确做法**：
+
 - 面对涉及多阶段跳转、回退的复杂 UI 状态，优先考虑解耦。
 - **职责分离**：将“数据队列（Queue）管理”与“流程步骤（Flow/Step）流转”拆分为不同的 Hook 或状态对象。
 - 如果状态极其复杂，请建议引入 `XState` 等真正的状态机库，而不是继续在庞大的 `switch/case` 中打补丁。

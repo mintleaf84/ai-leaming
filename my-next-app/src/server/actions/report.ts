@@ -1,40 +1,42 @@
-'use server';
+"use server";
 
-import { authenticatedAction } from '@/lib/safe-action';
-import { z } from 'zod';
-import { generateTextWrapper } from '@/lib/ai/client';
-import { reportService } from '@/lib/services/report';
+import { authenticatedAction } from "@/lib/safe-action";
+import { z } from "zod";
+import { generateTextWrapper } from "@/lib/ai/client";
+import { reportService } from "@/lib/services/report";
 
 /**
  * 获取指定会话的报告数据
  */
 export const getSessionReportAction = authenticatedAction
-    .inputSchema(z.string().optional())
-    .action(async ({ parsedInput: sessionId, ctx }) => {
-        const { user } = ctx;
-        const data = await reportService.getSessionReportData(user.id, sessionId);
-        if (!data) return { success: false } as const;
-        return { success: true, ...data };
-    });
+  .inputSchema(z.string().optional())
+  .action(async ({ parsedInput: sessionId, ctx }) => {
+    const { user } = ctx;
+    const data = await reportService.getSessionReportData(user.id, sessionId);
+    if (!data) return { success: false } as const;
+    return { success: true, ...data };
+  });
 
 /**
  * 生成简易诊断报告 (AI)
  */
 export const generateDiagnosticReportAction = authenticatedAction
-    .inputSchema(z.object({
-        totalQuestions: z.number(),
-        correctCount: z.number(),
-        errorTags: z.array(z.string()),
-        avgDuration: z.number(),
-    }))
-    .action(async ({ parsedInput: sessionSummary }) => {
-        const prompt = `
+  .inputSchema(
+    z.object({
+      totalQuestions: z.number(),
+      correctCount: z.number(),
+      errorTags: z.array(z.string()),
+      avgDuration: z.number(),
+    }),
+  )
+  .action(async ({ parsedInput: sessionSummary }) => {
+    const prompt = `
         请为用户生成一份本次练习的“AI 诊断性叙述报告”。
         
         练习数据:
         - 总题数: ${sessionSummary.totalQuestions}
         - 正确数: ${sessionSummary.correctCount}
-        - 错误考点: ${sessionSummary.errorTags.join(', ')}
+        - 错误考点: ${sessionSummary.errorTags.join(", ")}
         - 平均耗时: ${sessionSummary.avgDuration}ms
         
         请包含以下内容：
@@ -45,58 +47,67 @@ export const generateDiagnosticReportAction = authenticatedAction
         请用Markdown格式输出，字数控制在200字以内。
       `;
 
-        try {
-            const { text } = await generateTextWrapper(prompt, 'economy');
-            return text;
-        } catch (_error: unknown) {
-            throw new Error("AI 诊断服务暂时不可用，请稍后再试。");
-        }
-    });
+    try {
+      const { text } = await generateTextWrapper(prompt, "economy");
+      return text;
+    } catch (_error: unknown) {
+      throw new Error("AI 诊断服务暂时不可用，请稍后再试。");
+    }
+  });
 
 /**
  * 获取已保存的深度分析报告
  */
 export const getAnalysisReportAction = authenticatedAction
-    .inputSchema(z.string())
-    .action(async ({ parsedInput: sessionId, ctx }) => {
-        const { user } = ctx;
-        const report = await reportService.getSavedReport(user.id, sessionId);
-        return { success: !!report, report: report || undefined };
-    });
+  .inputSchema(z.string())
+  .action(async ({ parsedInput: sessionId, ctx }) => {
+    const { user } = ctx;
+    const report = await reportService.getSavedReport(user.id, sessionId);
+    return { success: !!report, report: report || undefined };
+  });
 
 /**
  * 生成 AI 深度分析报告
  */
 export const generateDeepAnalysisAction = authenticatedAction
-    .inputSchema(z.object({
-        sessionId: z.string(),
-        forceRegenerate: z.boolean().default(false)
-    }))
-    .action(async ({ parsedInput: { sessionId, forceRegenerate }, ctx }) => {
-        const { user } = ctx;
+  .inputSchema(
+    z.object({
+      sessionId: z.string(),
+      forceRegenerate: z.boolean().default(false),
+    }),
+  )
+  .action(async ({ parsedInput: { sessionId, forceRegenerate }, ctx }) => {
+    const { user } = ctx;
 
-        // 1. 检查缓存
-        if (!forceRegenerate) {
-            const existing = await reportService.getSavedReport(user.id, sessionId);
-            if (existing) return { success: true, report: existing };
-        }
+    // 1. 检查缓存
+    if (!forceRegenerate) {
+      const existing = await reportService.getSavedReport(user.id, sessionId);
+      if (existing) return { success: true, report: existing };
+    }
 
-        // 2. 获取深度分析所需的结构化数据
-        const analysisData = await reportService.getDeepAnalysisData(user.id, sessionId);
-        if (!analysisData) {
-            return { success: false, error: '未找到该练习记录' };
-        }
+    // 2. 获取深度分析所需的结构化数据
+    const analysisData = await reportService.getDeepAnalysisData(
+      user.id,
+      sessionId,
+    );
+    if (!analysisData) {
+      return { success: false, error: "未找到该练习记录" };
+    }
 
-        // 3. 构建 Prompt
-        const tagTableRows = analysisData.tagStats.slice(0, 10).map(t =>
-            `| ${t.tag} | ${t.total} | ${t.correct} | ${t.accuracy}% |`
-        ).join('\n');
+    // 3. 构建 Prompt
+    const tagTableRows = analysisData.tagStats
+      .slice(0, 10)
+      .map((t) => `| ${t.tag} | ${t.total} | ${t.correct} | ${t.accuracy}% |`)
+      .join("\n");
 
-        const repeatedErrorsList = analysisData.repeatedErrors.length > 0
-            ? analysisData.repeatedErrors.map(e => `- **${e.tag}**：出错 ${e.errorCount} 次`).join('\n')
-            : '无明显重复错误模式';
+    const repeatedErrorsList =
+      analysisData.repeatedErrors.length > 0
+        ? analysisData.repeatedErrors
+            .map((e) => `- **${e.tag}**：出错 ${e.errorCount} 次`)
+            .join("\n")
+        : "无明显重复错误模式";
 
-        const prompt = `你是一位资深的教育诊断专家。请根据以下学生的练习数据，生成一份深度分析报告。
+    const prompt = `你是一位资深的教育诊断专家。请根据以下学生的练习数据，生成一份深度分析报告。
 
 ## 练习数据
 - 总题数：${analysisData.totalQuestions}
@@ -127,11 +138,11 @@ ${repeatedErrorsList}
 
 格式要求：使用 Markdown，简洁专业，约 300 字。`;
 
-        // 4. 调用 AI
-        const { text } = await generateTextWrapper(prompt, 'economy');
+    // 4. 调用 AI
+    const { text } = await generateTextWrapper(prompt, "economy");
 
-        // 5. 持久化报告
-        await reportService.saveReport(user.id, sessionId, text);
+    // 5. 持久化报告
+    await reportService.saveReport(user.id, sessionId, text);
 
-        return { success: true, report: text };
-    });
+    return { success: true, report: text };
+  });

@@ -1,6 +1,6 @@
-import { Document } from '@langchain/core/documents';
-import { Embeddings } from '@langchain/core/embeddings';
-import { ragService } from './rag';
+import { Document } from "@langchain/core/documents";
+import { Embeddings } from "@langchain/core/embeddings";
+import { ragService } from "./rag";
 
 /**
  * 适配现有 sqlite-vec 的 LangChain 向量存储
@@ -17,10 +17,13 @@ export class SqliteVecVectorStore {
 
   async addDocuments(documents: Document[]): Promise<void> {
     const vectors = await this.embeddings.embedDocuments(
-      documents.map((doc) => doc.pageContent)
+      documents.map((doc) => doc.pageContent),
     );
     for (let i = 0; i < vectors.length; i++) {
-      await ragService.addChunk(documents[i].pageContent, documents[i].metadata);
+      await ragService.addChunk(
+        documents[i].pageContent,
+        documents[i].metadata,
+      );
     }
   }
 
@@ -31,13 +34,13 @@ export class SqliteVecVectorStore {
         new Document({
           pageContent: r.content,
           metadata: r.metadata || {},
-        })
+        }),
     );
   }
 
   async similaritySearchWithScore(
     query: string,
-    k: number
+    k: number,
   ): Promise<[Document, number][]> {
     const results = await ragService.search(query, k, this.filter?.sourceType);
     return results.map((r) => [
@@ -51,7 +54,7 @@ export class SqliteVecVectorStore {
 
   static async fromExistingIndex(
     embeddings: RagEmbeddings,
-    filter?: { sourceType?: string }
+    filter?: { sourceType?: string },
   ): Promise<SqliteVecVectorStore> {
     return new SqliteVecVectorStore(embeddings, filter);
   }
@@ -59,10 +62,11 @@ export class SqliteVecVectorStore {
   static async fromTexts(
     texts: string[],
     metadatas: Record<string, unknown>[],
-    embeddings: RagEmbeddings
+    embeddings: RagEmbeddings,
   ): Promise<SqliteVecVectorStore> {
     const docs = texts.map(
-      (text, i) => new Document({ pageContent: text, metadata: metadatas[i] || {} })
+      (text, i) =>
+        new Document({ pageContent: text, metadata: metadatas[i] || {} }),
     );
     const store = new SqliteVecVectorStore(embeddings);
     await store.addDocuments(docs);
@@ -87,7 +91,7 @@ export class RagEmbeddings extends Embeddings {
  * 创建 LangChain 向量存储
  */
 export async function createVectorStore(
-  sourceType?: string
+  sourceType?: string,
 ): Promise<SqliteVecVectorStore> {
   const embeddings = new RagEmbeddings({});
   const filter = sourceType ? { sourceType } : undefined;
@@ -98,19 +102,19 @@ export async function createVectorStore(
  * 为题目创建向量存储
  */
 export async function createQuestionVectorStore(): Promise<SqliteVecVectorStore> {
-  return createVectorStore('question');
+  return createVectorStore("question");
 }
 
 /**
  * 为知识卡片创建向量存储
  */
 export async function createCardVectorStore(): Promise<SqliteVecVectorStore> {
-  return createVectorStore('card');
+  return createVectorStore("card");
 }
 
 /**
  * 为教材章节创建向量存储
  */
 export async function createTextbookVectorStore(): Promise<SqliteVecVectorStore> {
-  return createVectorStore('textbook_chapter');
+  return createVectorStore("textbook_chapter");
 }

@@ -1,4 +1,4 @@
-import dayjs from 'dayjs';
+import dayjs from "dayjs";
 
 /**
  * 统计相关的辅助函数 (纯函数)
@@ -14,7 +14,7 @@ import dayjs from 'dayjs';
 export function calculateStreakFromDates(
   practiceDates: string[],
   today: string,
-  yesterday: string
+  yesterday: string,
 ): number {
   if (practiceDates.length === 0) return 0;
 
@@ -31,15 +31,15 @@ export function calculateStreakFromDates(
 
   for (const dateStr of practiceDates) {
     const currentDate = dayjs(dateStr);
-    
+
     // 计算天数差
-    const diffDays = expectedDate.diff(currentDate, 'day');
+    const diffDays = expectedDate.diff(currentDate, "day");
 
     if (diffDays === 0) {
       // 找到了期望的日期
       streak++;
       // 期望日期推向更早的一天
-      expectedDate = expectedDate.subtract(1, 'day');
+      expectedDate = expectedDate.subtract(1, "day");
     } else if (diffDays > 0) {
       // 当前日期比期望日期还早，说明中间断开了
       break;

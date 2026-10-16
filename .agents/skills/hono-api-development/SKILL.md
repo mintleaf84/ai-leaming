@@ -21,49 +21,49 @@ description: 在 Next.js 项目中开发 Hono API (REST) 的官方规范与代�
 
 ```typescript
 // src/lib/api/routes/book.ts
-import { OpenAPIHono, createRoute, z } from '@hono/zod-openapi'
+import { OpenAPIHono, createRoute, z } from "@hono/zod-openapi";
 
-const app = new OpenAPIHono()
+const app = new OpenAPIHono();
 
 // 定义响应 Schema (必须)
 const BookResponseSchema = z.object({
-    id: z.string(),
-    title: z.string(),
-    author: z.string(),
-})
+  id: z.string(),
+  title: z.string(),
+  author: z.string(),
+});
 
 // 创建 Route 定义
 const getBookRoute = createRoute({
-    method: 'get',
-    path: '/:id',
-    request: {
-        params: z.object({
-            id: z.string().describe('Book ID')
-        })
+  method: "get",
+  path: "/:id",
+  request: {
+    params: z.object({
+      id: z.string().describe("Book ID"),
+    }),
+  },
+  responses: {
+    200: {
+      content: { "application/json": { schema: BookResponseSchema } },
+      description: "Get book details",
     },
-    responses: {
-        200: {
-            content: { 'application/json': { schema: BookResponseSchema } },
-            description: 'Get book details'
-        },
-        404: {
-            description: 'Book not found'
-        }
-    }
-})
+    404: {
+      description: "Book not found",
+    },
+  },
+});
 
 // 实现处理逻辑
 app.openapi(getBookRoute, async (c) => {
-    const { id } = c.req.valid('param')
-    
-    // 调用 service 层的逻辑获取数据...
-    const book = { id, title: 'Example', author: 'AI' }
-    
-    if (!book) return c.json({ error: 'Not found' }, 404)
-    return c.json(book, 200)
-})
+  const { id } = c.req.valid("param");
 
-export default app
+  // 调用 service 层的逻辑获取数据...
+  const book = { id, title: "Example", author: "AI" };
+
+  if (!book) return c.json({ error: "Not found" }, 404);
+  return c.json(book, 200);
+});
+
+export default app;
 ```
 
 ### 2. 将路由挂载到主入口
@@ -72,10 +72,10 @@ export default app
 
 ```typescript
 // 1. 寻找其他 route 注册的地方
-import bookRoute from '@/lib/api/routes/book'
+import bookRoute from "@/lib/api/routes/book";
 
 // 2. 挂载 (最终路径将变为 /api/book/...)
-app.route('/book', bookRoute)
+app.route("/book", bookRoute);
 ```
 
 ### 3. (仅移动端需要) 在 Dart 端更新 ApiClient
@@ -87,7 +87,7 @@ app.route('/book', bookRoute)
 Future<BookResponse> getBook(@Path('id') String id);
 ```
 
-*(记住别忘了跑 `flutter pub run build_runner build --delete-conflicting-outputs` 如果改了 Retrofit 类)*
+_(记住别忘了跑 `flutter pub run build_runner build --delete-conflicting-outputs` 如果改了 Retrofit 类)_
 
 ## 🛡️ 限流与 Middleware
 

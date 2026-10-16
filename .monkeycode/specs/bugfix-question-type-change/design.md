@@ -25,36 +25,36 @@
  */
 function convertAnswerFormat(
   currentAnswer: string,
-  targetType: 'single' | 'multi' | 'truefalse',
-  options: string[]
+  targetType: "single" | "multi" | "truefalse",
+  options: string[],
 ): string {
-  if (!currentAnswer) return '';
+  if (!currentAnswer) return "";
 
   const trimmed = currentAnswer.trim();
   let currentArr: string[];
 
   // 解析当前答案为数组
-  if (trimmed.startsWith('[')) {
+  if (trimmed.startsWith("[")) {
     try {
       currentArr = JSON.parse(trimmed);
     } catch {
       currentArr = [trimmed];
     }
-  } else if (trimmed.includes(',')) {
-    currentArr = trimmed.split(',').map(s => s.trim());
+  } else if (trimmed.includes(",")) {
+    currentArr = trimmed.split(",").map((s) => s.trim());
   } else {
     currentArr = [trimmed];
   }
 
   // 根据目标类型转换
   switch (targetType) {
-    case 'multi':
+    case "multi":
       return JSON.stringify(currentArr);
 
-    case 'single':
-    case 'truefalse':
+    case "single":
+    case "truefalse":
       // 取第一个有效答案
-      if (currentArr.length === 0) return '';
+      if (currentArr.length === 0) return "";
       const firstAnswer = currentArr[0];
       // 单选题需要验证答案是否在选项中
       if (options.length > 0 && !options.includes(firstAnswer)) {
@@ -110,7 +110,7 @@ onValueChange={(val) => {
 ```typescript
 // 在 onValueChange 回调中添加提示
 if (newType !== oldType && formData.answer) {
-  toast.info(`答案已自动转换为${newType === 'multi' ? '多选' : '单选'}格式`);
+  toast.info(`答案已自动转换为${newType === "multi" ? "多选" : "单选"}格式`);
 }
 ```
 
@@ -143,13 +143,13 @@ WHERE type = 'single'
 
 ## 4. 测试用例
 
-| 输入答案 | 原类型 | 目标类型 | 预期输出 |
-|---------|--------|----------|----------|
-| `"A"` | single | multi | `["A"]` |
-| `"A,B"` | single | multi | `["A","B"]` |
-| `["A","B"]` | multi | single | `"A"` |
-| `"A"` | single | truefalse | `"A"` |
-| `""` | single | multi | `""` |
+| 输入答案    | 原类型 | 目标类型  | 预期输出    |
+| ----------- | ------ | --------- | ----------- |
+| `"A"`       | single | multi     | `["A"]`     |
+| `"A,B"`     | single | multi     | `["A","B"]` |
+| `["A","B"]` | multi  | single    | `"A"`       |
+| `"A"`       | single | truefalse | `"A"`       |
+| `""`        | single | multi     | `""`        |
 
 ## 5. 风险评估
 

@@ -1,31 +1,31 @@
-import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { setupVectorExtension } from '../vector-setup';
+import { describe, it, expect, vi, beforeEach } from "vitest";
+import { setupVectorExtension } from "../vector-setup";
 
-vi.mock('../index', () => ({
+vi.mock("../index", () => ({
   drizzleDb: {
     run: vi.fn().mockResolvedValue({}),
-    all: vi.fn()
-  }
+    all: vi.fn(),
+  },
 }));
 
-import { drizzleDb } from '../index';
+import { drizzleDb } from "../index";
 
-describe('vector-setup', () => {
+describe("vector-setup", () => {
   beforeEach(() => {
     vi.clearAllMocks();
   });
 
-  describe('setupVectorExtension', () => {
-    it('should return false when vec_version fails', async () => {
+  describe("setupVectorExtension", () => {
+    it("should return false when vec_version fails", async () => {
       const mockRun = drizzleDb.run as ReturnType<typeof vi.fn>;
-      mockRun.mockRejectedValueOnce(new Error('vec extension not available'));
+      mockRun.mockRejectedValueOnce(new Error("vec extension not available"));
 
       const result = await setupVectorExtension();
 
       expect(result).toBe(false);
     });
 
-    it('should return true when vector extension is available and tables created', async () => {
+    it("should return true when vector extension is available and tables created", async () => {
       const mockRun = drizzleDb.run as ReturnType<typeof vi.fn>;
       const mockAll = drizzleDb.all as ReturnType<typeof vi.fn>;
 
@@ -45,7 +45,7 @@ describe('vector-setup', () => {
       expect(result).toBe(true);
     });
 
-    it('should not create tables if they already exist', async () => {
+    it("should not create tables if they already exist", async () => {
       const mockRun = drizzleDb.run as ReturnType<typeof vi.fn>;
       const mockAll = drizzleDb.all as ReturnType<typeof vi.fn>;
 
@@ -62,7 +62,7 @@ describe('vector-setup', () => {
       expect(mockRun).toHaveBeenCalledTimes(1); // Only vec_version
     });
 
-    it('should handle errors during table creation gracefully', async () => {
+    it("should handle errors during table creation gracefully", async () => {
       const mockRun = drizzleDb.run as ReturnType<typeof vi.fn>;
       const mockAll = drizzleDb.all as ReturnType<typeof vi.fn>;
 
@@ -71,7 +71,7 @@ describe('vector-setup', () => {
       // questions_vec doesn't exist
       mockAll.mockResolvedValueOnce([{ count: 0 }]);
       // But create fails
-      mockRun.mockRejectedValueOnce(new Error('Create failed'));
+      mockRun.mockRejectedValueOnce(new Error("Create failed"));
 
       const result = await setupVectorExtension();
 

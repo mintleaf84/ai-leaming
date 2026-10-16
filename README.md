@@ -36,4 +36,5 @@ npm run dev
 - **页面清单**: [docs/page_registry.md](docs/page_registry.md)
 
 ---
-*Last Updated: 2026-04-16*
+
+_Last Updated: 2026-04-16_

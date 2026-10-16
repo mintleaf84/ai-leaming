@@ -30,17 +30,21 @@ my-next-app/
 ## 工作流
 
 ### 1. 修改 Schema
+
 在 `src/lib/db/drizzle-schema.ts` 中修改表定义。
 
 ### 2. 生成迁移文件
+
 运行 Drizzle Kit 检查差异并生成 SQL。
 
 ```bash
 npx drizzle-kit generate
 ```
+
 生成的 SQL 文件将存放在 `drizzle/` 目录下。**务必检查生成的 SQL 是否符合预期。**
 
 ### 3. 本地测试与同步
+
 在开发环境下同步数据库：
 
 ```bash
@@ -52,28 +56,29 @@ npx drizzle-kit push
 ```
 
 ### 4. 自动执行逻辑 (initDatabase)
+
 在 `src/lib/db/index.ts` 中确保包含以下逻辑：
 
 ```typescript
-import { migrate } from 'drizzle-orm/better-sqlite3/migrator';
-import path from 'path';
+import { migrate } from "drizzle-orm/better-sqlite3/migrator";
+import path from "path";
 
 export function initDatabase() {
-    // 1. 执行旧版 SQL 地基 (可选)
-    runOldMigrations(db);
+  // 1. 执行旧版 SQL 地基 (可选)
+  runOldMigrations(db);
 
-    // 2. 执行 Drizzle 迁移 (核心)
-    migrate(drizzleDb, { 
-        migrationsFolder: path.resolve(process.cwd(), 'drizzle') 
-    });
+  // 2. 执行 Drizzle 迁移 (核心)
+  migrate(drizzleDb, {
+    migrationsFolder: path.resolve(process.cwd(), "drizzle"),
+  });
 }
 ```
 
 ## 注意事项
 
--   **幂等性**: Drizzle `migrate()` 函数会自动记录已执行的迁移，确保不会重复运行。
--   **破坏性变更**: `drizzle-kit push` 在开发环境下非常快，但如果涉及数据删除，它会警告。
--   **手动干预**: 严禁直接使用 DB 工具修改表结构。所有修改必须通过 Schema 代码 -> 迁移文件。
+- **幂等性**: Drizzle `migrate()` 函数会自动记录已执行的迁移，确保不会重复运行。
+- **破坏性变更**: `drizzle-kit push` 在开发环境下非常快，但如果涉及数据删除，它会警告。
+- **手动干预**: 严禁直接使用 DB 工具修改表结构。所有修改必须通过 Schema 代码 -> 迁移文件。
 
 ## 深度排坑经验 (Lessons Learned)
 

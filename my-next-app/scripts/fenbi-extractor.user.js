@@ -211,6 +211,14 @@
         } else {
           btn.innerText = `❌ 请求错误 (${response.status})`;
           btn.style.background = "#ff4d4f";
+          let errMsg = "";
+          try {
+            const errRes = JSON.parse(response.responseText);
+            if (errRes.message) errMsg = errRes.message;
+          } catch (_e) {
+            errMsg = response.responseText;
+          }
+          alert(`❌ 请求错误 (${response.status})\n${errMsg}`);
           console.error("服务端响应:", response.responseText);
         }
         setTimeout(() => {

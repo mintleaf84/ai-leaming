@@ -58,6 +58,17 @@ app.openapi(importRoute, async (c) => {
       statsJson: body.statsJson,
     });
 
+    if (result.serverError) {
+      return c.json(
+        {
+          success: false,
+          message: `导入失败: ${result.serverError}`,
+          error: result.serverError,
+        },
+        500,
+      );
+    }
+
     return c.json(result.data || { success: false, message: "导入失败" }, 200);
   } catch (e) {
     return c.json(

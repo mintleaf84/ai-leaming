@@ -1,0 +1,14 @@
+# Git 提交信息模板 — 请用中文撰写
+# ==========================================
+# 第一行: 简短标题 (≤50字符)，格式: <type>: <描述>
+# 类型: feat / fix / refactor / docs / test / chore / style / perf
+# 示例:
+#   feat: 新增错题本按掌握度排序
+#   fix: 修复复习队列随机排序导致欠账积压
+#   refactor: 拆分 practice-scheduling 的选题逻辑
+#   docs: 更新 AGENTS.md 提交规范
+#
+# 空一行后写详细说明 (可选)，每行 ≤72字符
+# ==========================================
+# 启用方法（每个 clone 执行一次）:
+#   git config commit.template .gitmessage

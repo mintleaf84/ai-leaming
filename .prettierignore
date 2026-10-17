@@ -1,0 +1,10 @@
+# autofix-ci 平台限制：机器人禁止向 .github 目录提交改动，
+# 因此这些治理文件不参与 prettier 自动格式化
+.github/**
+node_modules/
+my-next-app/node_modules/
+my-next-app/.next/
+my-next-app/mobile_app/
+题库/
+lab/python/**/outputs/
+lab/python/fsrs/results/

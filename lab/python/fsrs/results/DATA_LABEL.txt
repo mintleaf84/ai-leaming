@@ -4,3 +4,4 @@ exported: 2026-10-05
 reviews: 4368 (2004 cards)
 fit samples (review #2+): 2364
 ts-fsrs reference: 5.3.2 (default_w embedded in results/fsrs_fit.json)
+protocol: elapsed=UTC 整日差; 拟合仅用时刻早于 70% 分位的样本, 留出段报告指标

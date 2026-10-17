@@ -2,6 +2,7 @@
 """FSRS-6 参数拟合（复刻 ts-fsrs 5.3.2 公式，纯标准库）。
 仅分析 chen(user_id=1) 的复习序列，最小化 BCE，不修改任何项目代码。"""
 import json, math, time
+from datetime import datetime, timezone
 
 DECAY_IDX = 20
 S_MIN, S_MAX = 1e-3, 36500
@@ -75,21 +76,24 @@ def next_state(d, s, t, g, w):
     return next_difficulty(d, g, w), ns
 
 def build_samples(seqs):
-    """展平为 [(qid, t_days, rating)] 时间序，供逐卡回放。"""
+    """展平为逐卡序列 (qid, 整日间隔, 评分, 评分时刻)。间隔使用 UTC 整日差，
+    与 ts-fsrs 5.3.2 调度器一致（abstract_scheduler 以两个 UTC 日期之差计算
+    elapsed_days，同日重答为 0 走短期稳定度分支）。"""
     cards = []
     for item in seqs:
-        rev = item["reviews"]
-        ts = [r[0] for r in rev]
-        days = [(ts[i] - ts[i - 1]) / 86400.0 for i in range(1, len(ts))]
-        cards.append((item["qid"], days, [r[1] for r in rev]))
+        revs = item["reviews"]
+        ts = [r[0] for r in revs]
+        days = [(ts[i] // 86400) - (ts[i - 1] // 86400) for i in range(1, len(ts))]
+        cards.append((item["qid"], days, [r[1] for r in revs], ts))
     return cards
 
-def loss_and_preds(w, cards):
-    """BCE + 每个可预测样本的 (预测r, label)。"""
+def loss_and_preds(w, cards, cutoff=None):
+    """BCE + 每个可预测样本的 (预测r, label, 时刻)。
+    cutoff 非空时损失只累计时刻早于 cutoff 的训练样本，预测列表包含全部样本。"""
     total = 0.0
     n = 0
     preds = []
-    for _, days, ratings in cards:
+    for _, days, ratings, ts in cards:
         d = s = 0.0
         for i in range(len(ratings)):
             g = ratings[i]
@@ -98,19 +102,20 @@ def loss_and_preds(w, cards):
                 r = retrievability(t, s, w)
                 r = clamp(r, 1e-6, 1 - 1e-6)
                 y = 0.0 if g == 1 else 1.0
-                total += -(y * math.log(r) + (1 - y) * math.log(1 - r))
-                n += 1
-                preds.append((r, y))
+                if cutoff is None or ts[i] < cutoff:
+                    total += -(y * math.log(r) + (1 - y) * math.log(1 - r))
+                    n += 1
+                preds.append((r, y, ts[i]))
             d, s = next_state(d, s, t, g, w)
     return total / max(n, 1), preds, n
 
 def project(w):
     return [clamp(w[i], BOUNDS[i][0], BOUNDS[i][1]) for i in range(21)]
 
-def optimize(w0, cards, iters=300, lr=0.02):
-    """有限差分梯度 + Adam。"""
+def optimize(w0, cards, iters=300, lr=0.02, cutoff=None):
+    """有限差分梯度 + Adam。cutoff 非空时只用时刻早于 cutoff 的样本拟合（留出防泄漏）。"""
     w = list(w0)
-    loss, _, _ = loss_and_preds(w, cards)
+    loss, _, _ = loss_and_preds(w, cards, cutoff)
     m = [0.0] * 21
     v = [0.0] * 21
     b1, b2, eps_adam = 0.9, 0.999, 1e-8
@@ -118,18 +123,27 @@ def optimize(w0, cards, iters=300, lr=0.02):
     for it in range(1, iters + 1):
         grads = []
         for i in range(21):
+            lo, hi = BOUNDS[i]
             h = max(1e-5, abs(w[i]) * 1e-4)
-            wp = list(w); wp[i] += h
-            lp, _, _ = loss_and_preds(project(wp), cards)
-            grads.append((lp - loss) / h)
-        gnorm = max(1e-12, math.sqrt(sum(g * g for g in grads)))
+            if w[i] + h > hi:
+                # 上界处改用后向差分，避免投影抹平试探值导致梯度恒为零
+                wm = list(w)
+                wm[i] = max(lo, w[i] - h)
+                lm, _, _ = loss_and_preds(wm, cards, cutoff)
+                denom = w[i] - wm[i]
+                grads.append((loss - lm) / denom if denom > 1e-12 else 0.0)
+            else:
+                wp = list(w)
+                wp[i] += h
+                lp, _, _ = loss_and_preds(wp, cards, cutoff)
+                grads.append((lp - loss) / h)
         for i in range(21):
             m[i] = b1 * m[i] + (1 - b1) * grads[i]
             v[i] = b2 * v[i] + (1 - b2) * grads[i] ** 2
             step = lr * (m[i] / (1 - b1 ** it)) / (math.sqrt(v[i] / (1 - b2 ** it)) + eps_adam)
             w[i] -= step
         w = project(w)
-        loss, _, _ = loss_and_preds(w, cards)
+        loss, _, _ = loss_and_preds(w, cards, cutoff)
         if it % 25 == 0 or it == 1:
             hist.append((it, loss))
             print(f"iter {it:4d}  BCE={loss:.6f}", flush=True)
@@ -137,7 +151,7 @@ def optimize(w0, cards, iters=300, lr=0.02):
 
 def calibration2(preds, w, nbin=10):
     bins = [[] for _ in range(nbin)]
-    for r, y in preds:
+    for r, y, *_ in preds:
         bins[min(int(r * nbin), nbin - 1)].append(y)
     out = []
     for b in range(nbin):
@@ -148,27 +162,57 @@ def calibration2(preds, w, nbin=10):
     return out
 
 def brier(preds):
-    return sum((r - y) ** 2 for r, y in preds) / max(len(preds), 1)
+    return sum((r - y) ** 2 for r, y, *_ in preds) / max(len(preds), 1)
+
+def split_metrics(preds, cutoff):
+    """按预测时刻划分训练/留出段，各自计算 BCE 与 Brier。"""
+    tr = [(r, y) for r, y, t in preds if t < cutoff]
+    ho = [(r, y) for r, y, t in preds if t >= cutoff]
+
+    def bce(pl):
+        if not pl:
+            return None
+        return sum(-(y * math.log(r) + (1 - y) * math.log(1 - r)) for r, y in pl) / len(pl)
+
+    def holdout_calibration(pl, nbin=10):
+        if not pl:
+            return []
+        bins = [[] for _ in range(nbin)]
+        for r, y in pl:
+            bins[min(int(r * nbin), nbin - 1)].append(y)
+        return [{"bucket": f"{b/nbin:.1f}-{(b+1)/nbin:.1f}",
+                 "n": len(bins[b]),
+                 "actual": round(sum(bins[b]) / len(bins[b]), 3)} for b in range(nbin) if bins[b]]
+
+    return {
+        "n_train": len(tr),
+        "n_holdout": len(ho),
+        "bce_train": round(bce(tr), 6) if bce(tr) is not None else None,
+        "bce_holdout": round(bce(ho), 6) if bce(ho) is not None else None,
+        "brier_holdout": round(sum((r - y) ** 2 for r, y in ho) / len(ho), 6) if ho else None,
+        "calib_holdout": holdout_calibration(ho),
+    }
 
 def main():
     seqs = json.load(open("/home/chen/data/chen_seq.json"))
     cards = build_samples(seqs)
+    all_ts = sorted(t for _, _, _, ts in cards for t in ts[1:])
+    cutoff = all_ts[int(len(all_ts) * 0.7)] if all_ts else 0.0
     t0 = time.time()
     base_loss, base_preds, n = loss_and_preds(DEFAULT_W, cards)
-    print(f"样本数={n}  默认参数 BCE={base_loss:.6f}  Brier={brier(base_preds):.6f}  [{time.time()-t0:.1f}s]", flush=True)
-    w_fit, fit_loss, hist = optimize(DEFAULT_W, cards, iters=300)
-    fit_loss, fit_preds, _ = loss_and_preds(w_fit, cards)
-    print(f"拟合后 BCE={fit_loss:.6f}  Brier={brier(fit_preds):.6f}  [{time.time()-t0:.1f}s]", flush=True)
+    print(f"可预测样本={n}  留出切分 cutoff={datetime.fromtimestamp(cutoff, timezone.utc).isoformat() if cutoff else '-'}", flush=True)
+    w_fit, _, hist = optimize(DEFAULT_W, cards, iters=300, cutoff=cutoff)
+    _, fit_preds, _ = loss_and_preds(w_fit, cards)
+    print(f"[{time.time()-t0:.1f}s] 拟合完成", flush=True)
     report = {
-        "n_samples": n,
+        "n_samples": sum(len(c[2]) for c in cards),
+        "n_predictable": n,
+        "cutoff_utc": datetime.fromtimestamp(cutoff, timezone.utc).isoformat() if cutoff else None,
+        "method": "elapsed=UTC 整日差; 拟合仅使用时刻早于 70% 分位的样本, 训练/留出段指标分开报告",
         "default_w": DEFAULT_W,
         "fitted_w": [round(x, 5) for x in w_fit],
-        "bce_default": round(base_loss, 6),
-        "bce_fitted": round(fit_loss, 6),
-        "brier_default": round(brier(base_preds), 6),
-        "brier_fitted": round(brier(fit_preds), 6),
-        "calib_default": calibration2(base_preds, DEFAULT_W),
-        "calib_fitted": calibration2(fit_preds, w_fit),
+        "default_split": split_metrics(base_preds, cutoff),
+        "fitted_split": split_metrics(fit_preds, cutoff),
         "train_history": hist,
     }
     json.dump(report, open("/home/chen/data/fsrs_fit.json", "w"), indent=1, ensure_ascii=False)

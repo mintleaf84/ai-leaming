@@ -8,18 +8,28 @@ con = sqlite3.connect('file:ai-learning.db?mode=ro', uri=True)
 con.row_factory = sqlite3.Row
 c = con.cursor()
 
-def pts(s): return datetime.strptime(s.replace('T', ' ')[:19], '%Y-%m-%d %H:%M:%S')
-def d(a, b): return (b - a).total_seconds() / 86400.0
+def pts(s):
+    s = (s or "").replace('T', ' ')[:26]
+    try:
+        return datetime.strptime(s, '%Y-%m-%d %H:%M:%S.%f')
+    except ValueError:
+        return datetime.strptime(s[:19], '%Y-%m-%d %H:%M:%S')
+
+def d(a, b):
+    return (b - a).total_seconds() / 86400.0
 
 logs = [dict(r) for r in c.execute(
     "SELECT question_id,is_correct,duration_ms,timestamp,session_id,user_id FROM practice_logs ORDER BY timestamp,id")]
-for l in logs: l['ts'] = pts(l['timestamp'])
+for l in logs:
+    l['ts'] = pts(l['timestamp'])
 
 sessions = {}
 for r in c.execute("SELECT id,practice_mode,created_at,user_id,total_questions,questions_json FROM practice_sessions"):
     s = dict(r)
     try:
-        s['qids'] = [q.get('id') for q in json.loads(r['questions_json'])] if r['questions_json'] else []
+        # review 会话直接把 questionIds 序列化为数组，兼容题目对象与裸 ID 两种格式
+        s['qids'] = [q.get('id') if isinstance(q, dict) else q
+                      for q in json.loads(r['questions_json'])] if r['questions_json'] else []
     except Exception:
         s['qids'] = []
     s['ts'] = pts(r['created_at'])
@@ -30,10 +40,10 @@ for r in c.execute("SELECT id,tags FROM questions"):
     try: qtags[r['id']] = json.loads(r['tags']) if r['tags'] else []
     except Exception: qtags[r['id']] = []
 
-# 每题作答序列（按用户）
-hist = defaultdict(list)  # (user,q) -> [(ts, correct)]
+# 每题作答序列（按用户），带 session_id 供错题池排除本会话自身作答
+hist = defaultdict(list)  # (user,q) -> [(ts, correct, session_id)]
 for l in logs:
-    hist[(l['user_id'], l['question_id'])].append((l['ts'], l['is_correct']))
+    hist[(l['user_id'], l['question_id'])].append((l['ts'], l['is_correct'], l['session_id']))
 
 print(f"logs={len(logs)}  sessions={len(sessions)}  questions={len(qtags)}")
 
@@ -48,14 +58,19 @@ for m, n in sorted(mode_q.items(), key=lambda x: -x[1]):
 
 # ========== 2. review 陈旧偏置 ==========
 print("\n" + "="*62 + "\n【2】错题本推送是否偏向陈旧错题（衰减方向检验）\n" + "="*62)
-def wrong_pool(user, t):
-    """t 时刻该用户『最近一次作答为错』的题 -> {q: 距那次错误的天数}"""
+def wrong_pool(user, t, exclude_sid=None):
+    """t 时刻该用户『最近一次作答为错』的题 -> {q: 距那次错误的天数}。
+    排除 exclude_sid 会话自身的作答，避免用选题时还不存在的状态算指标。"""
     pool = {}
     for (u, q), seq in hist.items():
-        if u != user: continue
+        if u != user:
+            continue
         last_ts, last_c = None, None
-        for ts, cor in seq:
-            if ts > t: break
+        for ts, cor, sid in seq:
+            if ts > t:
+                break
+            if exclude_sid is not None and sid == exclude_sid:
+                continue
             last_ts, last_c = ts, cor
         if last_ts is not None and last_c == 0:
             pool[q] = d(last_ts, t)
@@ -63,8 +78,9 @@ def wrong_pool(user, t):
 
 drift, push_med_l, pool_med_l = [], [], []
 for s in sessions.values():
-    if s['practice_mode'] != 'review': continue
-    pool = wrong_pool(s['user_id'], s['ts'])
+    if s['practice_mode'] != 'review':
+        continue
+    pool = wrong_pool(s['user_id'], s['ts'], exclude_sid=s['id'])
     pushed = [pool[q] for q in s['qids'] if q in pool]
     if len(pool) >= 10 and len(pushed) >= 5:
         pm, qm = st.median(pool.values()), st.median(pushed)
@@ -81,10 +97,13 @@ print("\n" + "="*62 + "\n【3】错题再现：间隔 vs 再答正确率（理�
 gap_ok = defaultdict(lambda: [0, 0])
 for seq in hist.values():
     for i in range(1, len(seq)):
-        ts_prev, c_prev = seq[i-1]; ts, cor = seq[i]
+        ts_prev, c_prev, _ = seq[i - 1]
+        ts, cor, _ = seq[i]
         if c_prev == 0:  # 上次答错 → 本次是错题再现
             band = int(min(d(ts_prev, ts), 60) // 7) * 7
-            g = gap_ok[band]; g[1] += 1; g[0] += cor
+            g = gap_ok[band]
+            g[1] += 1
+            g[0] += cor
 for band in sorted(gap_ok):
     ok, n = gap_ok[band]
     if n >= 10:
@@ -99,36 +118,52 @@ for l in logs:
     for t in qtags.get(l['question_id'], []):
         k = (l['user_id'], t)
         ct, tt = state[k]
-        if tt >= 5: pairs.append((ct/tt*100, l['is_correct']))
+        if tt >= 5:
+            pairs.append((ct/tt*100, l['is_correct']))
         state[k][1] += 1
         state[k][0] += l['is_correct']
 n = len(pairs)
-pos = sum(o for _, o in pairs); base = pos/n if n else 0
-# AUC
-sp = sorted(pairs, key=lambda x: x[0])
-rs, i = 0.0, 0
-while i < len(sp):
-    j = i
-    while j < len(sp) and sp[j][0] == sp[i][0]: j += 1
-    ar = (i + j - 1)/2 + 1
-    for k2 in range(i, j):
-        if sp[k2][1]: rs += ar
-    i = j
-np_, nn = pos, n-pos
-auc = (rs - np_*(np_+1)/2)/(np_*nn) if np_ and nn else float('nan')
-brier = sum((p/100 - o)**2 for p, o in pairs)/n
-bbase = base*(1-base)
-print(f"  样本={n}（同 tag 历史≥5 次后发生的作答）  基础正确率={base:.1%}")
-print(f"  AUC  = {auc:.3f}（0.5 为无信息）")
-print(f"  Brier= {brier:.4f}  vs 基线 {bbase:.4f}  技巧分={1-brier/bbase:+.3f}")
-bk = defaultdict(lambda: [0, 0])
-for p, o in pairs:
-    b = min(int(p//20)*20, 80); bk[b][1] += 1; bk[b][0] += o
-print("  分段校准：")
-for b in sorted(bk):
-    ok, t = bk[b]
-    if t >= 15:
-        print(f"    预测 {b}%-{b+20}%  → 实际 {ok/t:5.1%}  (n={t})")
+if n == 0:
+    print("  样本不足（无任何 tag 历史≥5 次后的作答），AUC/Brier 不可计算")
+else:
+    pos = sum(o for _, o in pairs)
+    nn = n - pos
+    base = pos/n if n else 0
+    # AUC
+    sp = sorted(pairs, key=lambda x: x[0])
+    rs, i = 0.0, 0
+    while i < len(sp):
+        j = i
+        while j < len(sp) and sp[j][0] == sp[i][0]:
+            j += 1
+        ar = (i + j - 1)/2 + 1
+        for k2 in range(i, j):
+            if sp[k2][1]:
+                rs += ar
+        i = j
+    if pos and nn:
+        auc = (rs - pos*(pos+1)/2)/(pos*nn)
+        print(f"  AUC  = {auc:.3f}（0.5 为无信息）")
+    else:
+        print("  AUC  = 不可计算（样本全为单一类别）")
+    brier = sum((p/100 - o)**2 for p, o in pairs)/n
+    bbase = base*(1-base)
+    print(f"  样本={n}（同 tag 历史≥5 次后发生的作答）  基础正确率={base:.1%}")
+    print(f"  Brier= {brier:.4f}  vs 基线 {bbase:.4f}", end="")
+    if bbase > 0:
+        print(f"  技巧分={1-brier/bbase:+.3f}")
+    else:
+        print("  技巧分=不可计算（基线方差为 0，单一类别样本）")
+    bk = defaultdict(lambda: [0, 0])
+    for p, o in pairs:
+        b = min(int(p//20)*20, 80)
+        bk[b][1] += 1
+        bk[b][0] += o
+    print("  分段校准：")
+    for b in sorted(bk):
+        ok, t = bk[b]
+        if t >= 15:
+            print(f"    预测 {b}%-{b+20}%  → 实际 {ok/t:5.1%}  (n={t})")
 
 # 对照基线：同题上次作答对错 → 本次正确率
 pw_t = pw_c = pl_t = pl_c = 0

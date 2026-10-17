@@ -1,7 +1,14 @@
 # 原始数据与快照永不提交（脚本以只读方式访问仓库外的 sqlite）
+# SQLite 的 WAL/回滚日志可能含原始数据库页面，一并排除
 *.db
 *.db.gz
-*.sqlite*
+*.db-wal
+*.db-shm
+*.db-journal
+*.sqlite
+*.sqlite-wal
+*.sqlite-shm
+*.sqlite-journal
 *_seq.json
 snapshots/
 __pycache__/

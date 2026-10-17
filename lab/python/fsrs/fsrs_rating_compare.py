@@ -55,7 +55,7 @@ def build_ratings(rows):
             rA = 4 if th < 4 else (3 if th <= 12 else 2)
         else:
             rA = 4 if th < 2 else (3 if th <= 8 else 2)
-        # 方案B: 同题型本人历史分位 (因果)
+        # 方案B: 同题型本人历史分位 (因果, 并列取中间名次避免零耗时堆积偏向 Easy)
         if not ok:
             rB = 1
         else:
@@ -63,7 +63,7 @@ def build_ratings(rows):
             if len(h) < MINN:
                 rB = 3
             else:
-                pos = bisect.bisect_left(h, th) / len(h)
+                pos = (bisect.bisect_left(h, th) + bisect.bisect_right(h, th)) / 2 / len(h)
                 rB = 4 if pos <= 0.34 else (3 if pos <= 0.67 else 2)
             bisect.insort(h, th)
         # 方案C: 不信耗时, 对=Good 错=Again
@@ -79,22 +79,21 @@ NAME = {1: "Again", 2: "Hard", 3: "Good", 4: "Easy"}
 
 def run(tag, rev, iters):
     cards = F.build_samples(seq(rev))
-    base, bpreds, n = F.loss_and_preds(F.DEFAULT_W, cards)  # 线上=默认参数不拟合
-    w, _, _ = F.optimize(F.DEFAULT_W, cards, iters=iters)
-    fit, fpreds, _ = F.loss_and_preds(w, cards)
-    print(f"\n===== {tag} =====  可预测样本={n}")
-    print(f"  线上默认参数直接预测: BCE={base:.5f} Brier={F.brier(bpreds):.5f}")
-    print(f"  拟合后:               BCE={fit:.5f} Brier={F.brier(fpreds):.5f}")
-    # 校准(拟合后)
-    bins = defaultdict(list)
-    for r, y in fpreds:
-        bins[min(int(r*10), 9)].append((r, y))
-    print("  拟合后校准(预测→实际):", end=" ")
-    for b in sorted(bins):
-        pm = sum(r for r,_ in bins[b])/len(bins[b]); am = sum(y for _,y in bins[b])/len(bins[b])
-        print(f"[{pm:.2f}→{am:.2f} n={len(bins[b])}]", end=" ")
+    all_ts = sorted(t for _, _, _, ts in cards for t in ts[1:])
+    cutoff = all_ts[int(len(all_ts) * 0.7)] if all_ts else 0.0
+    _, base_preds, n = F.loss_and_preds(F.DEFAULT_W, cards)
+    w, _, _ = F.optimize(F.DEFAULT_W, cards, iters=iters, cutoff=cutoff)
+    _, fit_preds, _ = F.loss_and_preds(w, cards)
+    base_seg = F.split_metrics(base_preds, cutoff)
+    fit_seg = F.split_metrics(fit_preds, cutoff)
+    print(f"\n===== {tag} =====  可预测样本={n}  留出样本={fit_seg['n_holdout']}")
+    print(f"  线上默认参数:   留出BCE={base_seg['bce_holdout']}  (训练段={base_seg['bce_train']})")
+    print(f"  拟合(仅早70%时间): 留出BCE={fit_seg['bce_holdout']}  (训练段={fit_seg['bce_train']})")
+    print("  拟合后留出段校准(预测→实际):", end=" ")
+    for c in fit_seg["calib_holdout"]:
+        print(f"[{c['bucket']}→{c['actual']} n={c['n']}]", end=" ")
     print()
-    return w, base, fit
+    return w, base_seg, fit_seg
 
 def main():
     rows = load()
@@ -108,14 +107,16 @@ def main():
     wA, baseA, fitA = run("方案A 绝对阈值(线上)", revA, iters)
     wB, baseB, fitB = run("方案B 相对分位(新)", revB, iters)
     wC, baseC, fitC = run("方案C 只用对错(弃耗时)", revC, iters)
-    json.dump({"A": {"w": wA, "bce_default": baseA, "bce_fit": fitA},
-               "B": {"w": wB, "bce_default": baseB, "bce_fit": fitB},
-               "C": {"w": wC, "bce_default": baseC, "bce_fit": fitC}},
+    json.dump({"A": {"w": wA, "default": baseA, "fitted": fitA},
+               "B": {"w": wB, "default": baseB, "fitted": fitB},
+               "C": {"w": wC, "default": baseC, "fitted": fitC}},
               open("/home/chen/data/rating_compare.json", "w"), indent=1)
-    print("\n>>> 线上默认参数直接预测(最贴近现状效果):")
-    print("    A 绝对阈值 BCE=%.5f | B 相对分位 BCE=%.5f | C 只用对错 BCE=%.5f" % (baseA, baseB, baseC))
-    print(">>> 各自拟合最优参数后:")
-    print("    A BCE=%.5f | B BCE=%.5f | C BCE=%.5f" % (fitA, fitB, fitC))
+    print("\n>>> 留出段(未来30%作答)默认参数直接预测(最贴近现状效果):")
+    print("    A 绝对阈值 BCE=%.5f | B 相对分位 BCE=%.5f | C 只用对错 BCE=%.5f" %
+          (baseA["bce_holdout"], baseB["bce_holdout"], baseC["bce_holdout"]))
+    print(">>> 留出段各自拟合最优参数后:")
+    print("    A BCE=%.5f | B BCE=%.5f | C BCE=%.5f" %
+          (fitA["bce_holdout"], fitB["bce_holdout"], fitC["bce_holdout"]))
 
 if __name__ == "__main__":
     main()

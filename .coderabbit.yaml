@@ -1,0 +1,21 @@
+# CodeRabbit 评审配置（借鉴 CGA 项目治理实践）
+language: "zh-CN"
+
+reviews:
+  # chill：只在确有问题时发言，减少风格性噪音
+  profile: "chill"
+  high_level_summary: true
+  review_status: true
+  # 数据与生成物不参与逐行评审；本仓维护的代码（含 lab/ 实验脚本）仍参与评审
+  path_filters:
+    - "!题库/**"
+    - "!**/*.g.dart"
+    - "!**/*.freezed.dart"
+    - "!**/build/**"
+    - "!**/.next/**"
+    - "!lab/python/data_analysis/outputs/**"
+    - "!lab/python/fsrs/results/**"
+
+auto_review:
+  enabled: true
+  drafts: false

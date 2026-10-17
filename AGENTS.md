@@ -49,16 +49,16 @@ Feature-First 目录结构：模块代码放 `lib/features/<feature>/`（domain/
 
 ## 关键目录
 
-| 目录 | 用途 |
-| --- | --- |
-| `my-next-app/src/app/` | Next.js 页面与布局 |
-| `my-next-app/src/server/actions/` | Server Actions |
-| `my-next-app/src/lib/api/routes/` | Hono API 路由 |
-| `my-next-app/src/lib/db/` | Schema 与数据库工具 |
-| `mobile_app/` | Flutter 客户端 |
-| `lab/python/` | 离线实验与数据分析（非生产代码，可独立评审） |
-| `题库/` | 题库数据文件（不参与代码评审，不改动需先说明） |
-| `docs/` | 设计文档与领域说明 |
+| 目录                              | 用途                                           |
+| --------------------------------- | ---------------------------------------------- |
+| `my-next-app/src/app/`            | Next.js 页面与布局                             |
+| `my-next-app/src/server/actions/` | Server Actions                                 |
+| `my-next-app/src/lib/api/routes/` | Hono API 路由                                  |
+| `my-next-app/src/lib/db/`         | Schema 与数据库工具                            |
+| `mobile_app/`                     | Flutter 客户端                                 |
+| `lab/python/`                     | 离线实验与数据分析（非生产代码，可独立评审）   |
+| `题库/`                           | 题库数据文件（不参与代码评审，不改动需先说明） |
+| `docs/`                           | 设计文档与领域说明                             |
 
 ## 测试
 

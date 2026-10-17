@@ -15,7 +15,7 @@ reviews:
     - "!**/.next/**"
     - "!lab/python/data_analysis/outputs/**"
     - "!lab/python/fsrs/results/**"
-
-auto_review:
-  enabled: true
-  drafts: false
+  # CodeRabbit schema 中 auto_review 属于 reviews 层级
+  auto_review:
+    enabled: true
+    drafts: false

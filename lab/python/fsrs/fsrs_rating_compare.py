@@ -11,8 +11,10 @@ RS = 7.0
 MINN = 20  # 分位所需最少历史样本，不足则中性 Good
 
 def pt(s):
+    # practice_logs.timestamp 存的是 SQLite UTC 文本，显式标记 UTC 避免本地时区偏移
     return datetime.datetime.strptime((s or "").replace('T',' ').replace('Z','')[:19],
-                                       '%Y-%m-%d %H:%M:%S').timestamp()
+                                       '%Y-%m-%d %H:%M:%S').replace(
+                                          tzinfo=datetime.timezone.utc).timestamp()
 
 def net_think(typ, content, options, dur_ms, ua):
     opts = ""

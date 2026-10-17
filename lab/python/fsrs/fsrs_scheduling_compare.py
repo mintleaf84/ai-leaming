@@ -4,7 +4,7 @@
 - 实际复习时点的预测 R（模型以为你剩多少记忆）
 - 分题型 BCE（定位差异来自哪里）
 拟合权重读取 results/fsrs_fit.json（留出段协议拟合）。只读库。"""
-import json, os, math
+import json, os, math, statistics as st
 from collections import defaultdict
 import fsrs_fit as F
 import fsrs_rating_compare as R
@@ -45,14 +45,13 @@ def bce_by_type(w, cards, qtype):
 
 def quantiles(vals):
     q = sorted(vals)
-    return q[int(len(q)*0.5)], q[int(len(q)*0.75)], q[min(int(len(q)*0.95), len(q)-1)]
+    return st.median(vals), q[int(len(q)*0.75)], q[min(int(len(q)*0.95), len(q)-1)]
 
 def main():
     rows = R.load()
     con_type = {qid: typ for qid, typ, *_ in rows}
     revA, revB, revC, dA, dB, dC = R.build_ratings(rows)
     fitted_w = json.load(open(RESULTS))["fitted_w"]
-    import statistics as st
     for wtag, w in [("默认参数", F.DEFAULT_W), ("拟合参数(留出协议)", fitted_w)]:
         print(f"\n########## 参数组: {wtag} ##########")
         for tag, rev in [("A 绝对阈值(线上)", revA), ("B 相对分位", revB), ("C 只用对错", revC)]:
@@ -64,6 +63,6 @@ def main():
             print(f"  建议间隔(90%保留率下与S同值): 中位={med:.0f}d  P75={p75:.0f}d  P95={p95:.0f}d")
             print(f"  实际复习时点的预测R: 均值={st.mean(rs):.3f}  中位={st.median(rs):.3f}  R<0.5占比={sum(1 for x in rs if x<0.5)/len(rs):.1%}")
             bt = bce_by_type(w, cards, con_type)
-            print("  分题型BCE: " + "  ".join(f"{k}:{v[0]:.4f}(n={v[1]})" for k, v in sorted(bt.items(), key=lambda x:-x[1][1])))
+            print("  分题型BCE（全历史，诊断指标）: " + "  ".join(f"{k}:{v[0]:.4f}(n={v[1]})" for k, v in sorted(bt.items(), key=lambda x:-x[1][1])))
 if __name__ == "__main__":
     main()

@@ -2,7 +2,7 @@
 // ==UserScript==
 // @name         粉笔 JSON 全能嗅探提取器 (直推 ai-leaming 版)
 // @namespace    http://tampermonkey.net/
-// @version      6.0
+// @version      6.1
 // @description  劫持 XHR/Fetch 捕获答题数据；凑齐即自动推送；新增练习记录批量静默导入
 // @author       Antigravity
 // @match        *://*.fenbi.com/*
@@ -12,21 +12,24 @@
 // @connect      localhost
 // @connect      127.0.0.1
 // @connect      zhuoyu.887780.xyz
-// @connect      api.fenbi.com
-// @connect      tiku.fenbi.com
+// @connect      *.fenbi.com
 // @run-at       document-start
 // ==/UserScript==
 
 (function () {
   "use strict";
 
-  console.log("🚀 [ai-leaming 抓取器] 核心嗅探引擎 6.0 已启动...");
+  console.log("🚀 [ai-leaming 抓取器] 核心嗅探引擎 6.1 已启动...");
 
   // 存储最新的原始 JSON 字符串
   const store = {
     exerciseJson: "",
     solutionsJson: "",
     statsJson: "",
+    // 嗅探到的真实接口 URL，批量模式以其为模板（保留鉴权/路由查询参数）。
+    // 批量在“练习记录页”运行、模板在“解析页”嗅得，跨页面须落 GM 存储。
+    _lastExerciseUrl: GM_getValue("fb_tpl_exe", ""),
+    _solUrlTemplate: GM_getValue("fb_tpl_sol", ""),
   };
 
   // --- 推送去重：从 GM 存储加载已推送记录 ---
@@ -69,20 +72,41 @@
   }
 
   // --- 统一的数据分类与存储逻辑 ---
-  function processInterceptedData(url, responseText) {
+  function processInterceptedData(rawUrl, responseText) {
     let isUpdated = false;
+
+    // 统一转绝对 URL：模板要持久化复用，且批量模式需用 new URL() 改参
+    let url;
+    try {
+      url = new URL(rawUrl, location.href).toString();
+    } catch (_e) {
+      return;
+    }
 
     rememberSniffedUrl(url);
 
     if (url.includes("/combine/exercise/getSolution")) {
+      const newKey = (url.match(/key=([^&]+)/) || [])[1];
+      const prevKey = (
+        (store._lastExerciseUrl || "").match(/key=([^&]+)/) || []
+      )[1];
+      // key 变化：清空旧的题目/统计数据，防止新答题数据配旧题目数据错套推送
+      if (newKey && prevKey && newKey !== prevKey) {
+        store.solutionsJson = "";
+        store.statsJson = "";
+        clearTimeout(autoPushTimer);
+      }
       store.exerciseJson = responseText;
-      store._lastExerciseUrl = url; // 记住原始 URL 用于提取 key
+      store._lastExerciseUrl = url; // 记住原始 URL 用于提取 key 与批量模板
+      GM_setValue("fb_tpl_exe", url);
       console.log("✅ [嗅探成功] 抓取到【答题数据】", url);
       isUpdated = true;
     }
 
     if (url.includes("/combine/static/solution")) {
       store.solutionsJson = responseText;
+      store._solUrlTemplate = url; // 记住模板 URL 供批量模式复用
+      GM_setValue("fb_tpl_sol", url);
       console.log("✅ [嗅探成功] 抓取到【题目数据】", url);
       isUpdated = true;
     }
@@ -114,6 +138,17 @@
     autoPushTimer = setTimeout(() => pushCurrent(true), 1500);
   }
 
+  // 仅拦截粉笔自家域名（严格 host 校验，避免 fenbi.com.attacker.net 之类绕过）
+  function isFenbiUrl(raw) {
+    if (typeof raw !== "string") return false;
+    try {
+      const host = new URL(raw, location.href).hostname;
+      return host === "fenbi.com" || host.endsWith(".fenbi.com");
+    } catch (_e) {
+      return false;
+    }
+  }
+
   // --- 核心武器 1：劫持 XMLHttpRequest（原型链劫持，最稳健模式） ---
   const _origOpen = XMLHttpRequest.prototype.open;
   const _origSend = XMLHttpRequest.prototype.send;
@@ -127,7 +162,7 @@
     const xhr = this;
     const url = xhr._interceptedUrl || "";
 
-    if (typeof url === "string" && url.includes("tiku.fenbi.com")) {
+    if (isFenbiUrl(url)) {
       xhr.addEventListener("load", function () {
         try {
           let responseText = "";
@@ -154,7 +189,7 @@
     const response = await originFetch(...args);
     const url = args[0] instanceof Request ? args[0].url : args[0];
 
-    if (url && typeof url === "string" && url.includes("tiku.fenbi.com")) {
+    if (isFenbiUrl(url)) {
       const cloneRes = response.clone();
       cloneRes
         .text()
@@ -168,37 +203,41 @@
 
   // --- 已嗅探 URL 记录（帮用户发现"练习记录列表"接口） ---
   const sniffedUrls = [];
+
+  function renderSniffedUrls() {
+    const el = document.getElementById("fb-url-list");
+    if (!el) return;
+    // 用安全 DOM 构建，避免把 URL 拼进 innerHTML
+    el.textContent = "";
+    for (const u of sniffedUrls) {
+      const item = document.createElement("div");
+      item.textContent =
+        u.split("?")[0].replace(/^https:\/\//, "") +
+        (u.includes("?") ? "?…" : "");
+      item.title = u;
+      Object.assign(item.style, {
+        padding: "2px 4px",
+        fontSize: "10px",
+        color: "#1890ff",
+        cursor: "pointer",
+        textOverflow: "ellipsis",
+        whiteSpace: "nowrap",
+        overflow: "hidden",
+      });
+      item.onclick = () => {
+        const input = document.getElementById("fb-list-url");
+        if (input) input.value = u;
+      };
+      el.appendChild(item);
+    }
+  }
+
   function rememberSniffedUrl(url) {
     if (!url.includes("/combine/")) return;
     if (sniffedUrls.some((u) => u.split("?")[0] === url.split("?")[0])) return;
     sniffedUrls.push(url);
     if (sniffedUrls.length > 12) sniffedUrls.shift();
-    const el = document.getElementById("fb-url-list");
-    if (el) {
-      // 用安全 DOM 构建，避免把 URL 拼进 innerHTML
-      el.textContent = "";
-      for (const u of sniffedUrls) {
-        const item = document.createElement("div");
-        item.textContent =
-          u.split("?")[0].replace(/^https:\/\//, "") +
-          (u.includes("?") ? "?…" : "");
-        item.title = u;
-        Object.assign(item.style, {
-          padding: "2px 4px",
-          fontSize: "10px",
-          color: "#1890ff",
-          cursor: "pointer",
-          textOverflow: "ellipsis",
-          whiteSpace: "nowrap",
-          overflow: "hidden",
-        });
-        item.onclick = () => {
-          const input = document.getElementById("fb-list-url");
-          if (input) input.value = u;
-        };
-        el.appendChild(item);
-      }
-    }
+    renderSniffedUrls();
   }
 
   function getServerUrl() {
@@ -213,6 +252,12 @@
 
   // --- 推送到服务器（auto=true 时静默，不弹窗不打断）；返回 Promise 便于批量串行 ---
   function pushToServer(btnId, auto, payload) {
+    // 已有推送在途时拒绝并发，防止同一套练习写入两个 session 与两组日志
+    if (inflightPush) {
+      if (!auto) alert("⏳ 上一个推送还没结束，请稍候。");
+      return Promise.resolve(false);
+    }
+
     const data = payload || {
       exerciseJson: store.exerciseJson,
       solutionsJson: store.solutionsJson,
@@ -229,6 +274,8 @@
     }
 
     if (!payload && isAlreadyPushed()) {
+      // 自动模式静默跳过，绝不弹窗打断
+      if (auto) return Promise.resolve(false);
       if (!confirm("⚠️ 这套练习似乎已经推送过了。\n确定要重复推送吗？"))
         return Promise.resolve(false);
     }
@@ -266,6 +313,7 @@
           solutionsJson: data.solutionsJson,
           statsJson: data.statsJson,
         }),
+        timeout: 60000,
         onload: function (response) {
           inflightPush = false;
           const ok =
@@ -274,7 +322,9 @@
               try {
                 return JSON.parse(response.responseText).success === true;
               } catch (_e) {
-                return true;
+                // 非 JSON 响应（HTML 回退页/挑战页/登录页）一律判失败，
+                // 否则会误记去重 key 导致该套练习永久静默丢失
+                return false;
               }
             })();
           if (ok) {
@@ -330,7 +380,17 @@
         },
         ontimeout: function () {
           inflightPush = false;
+          if (btn) {
+            btn.innerText = "❌ 推送超时";
+            btn.style.background = "#ff4d4f";
+          }
           console.error("推送超时");
+          setTimeout(() => {
+            if (btn) {
+              btn.innerText = "⚡ 一键推送到 ai-leaming";
+              btn.style.background = "#1890ff";
+            }
+          }, 3000);
           resolve(false);
         },
       });
@@ -338,6 +398,8 @@
   }
 
   function pushCurrent(auto) {
+    // 手动点击与自动定时器互斥：清除待触发的定时器，避免同套二次提交
+    clearTimeout(autoPushTimer);
     pushToServer("btn-push-server", auto);
   }
 
@@ -402,12 +464,27 @@
     if (el) el.innerText = text;
   }
 
+  // 基于嗅探到的真实接口 URL 克隆，只替换指定查询参数（保留 routecs/kav/av/hav/app 等）
+  function cloneUrlWithParam(template, param, value) {
+    const u = new URL(template);
+    if (u.searchParams.has(param)) u.searchParams.set(param, value);
+    else u.searchParams.append(param, value);
+    return u.toString();
+  }
+
   async function runBatchImport() {
     if (batch.running) return;
     const listUrl = (document.getElementById("fb-list-url").value || "").trim();
     if (!listUrl) {
       alert(
         "❌ 请先粘贴【练习记录列表】接口 URL。\n方法：打开粉笔的练习记录/答题记录页面，展开面板底部“已嗅探接口”，点击含 record/list 字样的条目自动填入。",
+      );
+      return;
+    }
+    // 必须已嗅探到两个接口模板，否则无从得知真实 host/path（不臆造 URL）
+    if (!store._lastExerciseUrl || !store._solUrlTemplate) {
+      alert(
+        "❌ 还未嗅探到答题/题目接口。\n请先打开任意一套试卷的【查看解析】页面（让面板第1、2项变绿），再运行批量导入。",
       );
       return;
     }
@@ -437,9 +514,6 @@
       return;
     }
 
-    const apiBase =
-      (store._lastExerciseUrl || "https://tiku.fenbi.com").split("/api/")[0] +
-      "/api";
     const todo = items.filter((it) => !pushedSet.has(it.key));
     let okCount = 0,
       failCount = 0,
@@ -450,7 +524,11 @@
       const it = todo[i];
       setBatchStatus(`[${i + 1}/${todo.length}] ${it.name}…`);
       try {
-        const exeUrl = `${apiBase}/combine/exercise/getSolution?key=${encodeURIComponent(it.key)}`;
+        const exeUrl = cloneUrlWithParam(
+          store._lastExerciseUrl,
+          "key",
+          it.key,
+        );
         const exeJson = await gmGet(exeUrl);
         // static/solution 需要 exerciseId：优先取 getSolution 响应中的 id
         let exerciseId = null;
@@ -458,16 +536,15 @@
           const parsed = JSON.parse(exeJson);
           exerciseId = parsed && parsed.id;
         } catch (_e) {}
-        let solJson = "";
-        if (exerciseId !== null && exerciseId !== undefined) {
-          solJson = await gmGet(
-            `${apiBase}/combine/static/solution?exerciseId=${encodeURIComponent(exerciseId)}`,
-          );
-        } else {
-          solJson = await gmGet(
-            `${apiBase}/combine/static/solution?key=${encodeURIComponent(it.key)}`,
-          );
-        }
+        const solUrl =
+          exerciseId !== null && exerciseId !== undefined
+            ? cloneUrlWithParam(
+                store._solUrlTemplate,
+                "exerciseId",
+                String(exerciseId),
+              )
+            : cloneUrlWithParam(store._solUrlTemplate, "key", it.key);
+        const solJson = await gmGet(solUrl);
         const pushedOk = await pushToServer(null, true, {
           exerciseJson: exeJson,
           solutionsJson: solJson,
@@ -488,7 +565,7 @@
 
     batch.running = false;
     setBatchStatus(
-      `✅ 完成：导入 ${okCount}，失败 ${failCount}，已存在跳过 ${skipCount}`,
+      `${batch.aborted ? "⏹ 已中止，" : "✅ 完成："}导入 ${okCount}，失败 ${failCount}，已存在跳过 ${skipCount}`,
     );
   }
 
@@ -533,7 +610,7 @@
     panel.id = "zhuoyu-fb-extractor";
     panel.innerHTML = `
             <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;border-bottom:1px solid #eee;padding-bottom:5px;">
-                <span style="font-weight:bold;color:#333;font-size:14px;">🚀 推流系统 6.0</span>
+                <span style="font-weight:bold;color:#333;font-size:14px;">🚀 推流系统 6.1</span>
                 <span id="fb-collapse-btn" style="cursor:pointer;font-size:16px;color:#999;line-height:1" title="收起面板">✕</span>
             </div>
             
@@ -575,7 +652,7 @@
             <div style="margin-top:10px;border-top:1px dashed #ddd;padding-top:8px;">
                 <div style="font-weight:bold;font-size:12px;color:#333;margin-bottom:4px">📦 批量导入练习记录</div>
                 <input id="fb-list-url" placeholder="粘贴练习记录列表接口 URL" style="width:100%;box-sizing:border-box;padding:4px;border:1px solid #ddd;border-radius:4px;font-size:11px;margin-bottom:4px">
-                <div style="font-size:10px;color:#999;margin-bottom:4px">已嗅探接口（点击填入上方，找含 record/list 的）：</div>
+                <div style="font-size:10px;color:#999;margin-bottom:4px">前置：先在任意一套试卷的【查看解析】页嗅到接口（面板 1、2 项变绿）。已嗅探接口（点击填入上方，找含 record/list 的）：</div>
                 <div id="fb-url-list" style="max-height:72px;overflow-y:auto;border:1px solid #eee;border-radius:4px;margin-bottom:6px;background:#fafafa"></div>
                 <div style="display:flex;gap:6px">
                     <button id="btn-batch-run" style="flex:1;padding:6px;background:#722ed1;color:#fff;border:none;border-radius:4px;cursor:pointer;font-size:12px;font-weight:bold">▶ 开始批量导入</button>
@@ -644,6 +721,9 @@
     document.getElementById("btn-batch-stop").onclick = () => {
       batch.aborted = true;
     };
+
+    // 面板创建前已嗅探到的 URL 在此补渲染（document-start 时机差）
+    renderSniffedUrls();
 
     // 输入框失焦时自动保存配置
     document

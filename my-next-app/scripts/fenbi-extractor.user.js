@@ -379,12 +379,18 @@
     if (
       typeof obj.key === "string" &&
       obj.key.length > 0 &&
-      (obj.id !== undefined || obj.questionTotalCount !== undefined || obj.name !== undefined)
+      (obj.id !== undefined ||
+        obj.questionTotalCount !== undefined ||
+        obj.name !== undefined)
     ) {
       if (!out.some((e) => e.key === obj.key)) {
         out.push({
           key: obj.key,
-          name: obj.name || obj.exerciseName || obj.title || obj.key.substring(0, 12),
+          name:
+            obj.name ||
+            obj.exerciseName ||
+            obj.title ||
+            obj.key.substring(0, 12),
         });
       }
     }

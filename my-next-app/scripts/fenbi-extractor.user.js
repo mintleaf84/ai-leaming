@@ -87,9 +87,8 @@
 
     if (url.includes("/combine/exercise/getSolution")) {
       const newKey = (url.match(/key=([^&]+)/) || [])[1];
-      const prevKey = (
-        (store._lastExerciseUrl || "").match(/key=([^&]+)/) || []
-      )[1];
+      const prevKey = ((store._lastExerciseUrl || "").match(/key=([^&]+)/) ||
+        [])[1];
       // key 变化：清空旧的题目/统计数据，防止新答题数据配旧题目数据错套推送
       if (newKey && prevKey && newKey !== prevKey) {
         store.solutionsJson = "";
@@ -524,11 +523,7 @@
       const it = todo[i];
       setBatchStatus(`[${i + 1}/${todo.length}] ${it.name}…`);
       try {
-        const exeUrl = cloneUrlWithParam(
-          store._lastExerciseUrl,
-          "key",
-          it.key,
-        );
+        const exeUrl = cloneUrlWithParam(store._lastExerciseUrl, "key", it.key);
         const exeJson = await gmGet(exeUrl);
         // static/solution 需要 exerciseId：优先取 getSolution 响应中的 id
         let exerciseId = null;

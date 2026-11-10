@@ -69,7 +69,13 @@ export const schedulingService = {
       .orderBy(sql`RANDOM()`)
       .limit(stubbornTarget);
 
-    const stubbornQuestions = stubbornRows.map(mapRawToQuestion);
+    // 一道题可能同时命中多个观察区标签（innerJoin 会返回重复行），按 id 去重，
+    // 否则会占用配额并让最终会话出现重复题目。
+    const stubbornQuestions = Array.from(
+      new Map(
+        stubbornRows.map((row) => [row.id, mapRawToQuestion(row)]),
+      ).values(),
+    );
     const usedIds = stubbornQuestions.map((q) => q.id);
 
     // 2. 盲区题：该用户从未练习过的题目

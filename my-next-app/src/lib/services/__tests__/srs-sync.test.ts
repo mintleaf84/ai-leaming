@@ -3,11 +3,14 @@
 /**
  * SRS 同步回归测试（真实 SQLite + 真实迁移）
  *
- * 背景：drizzle 对自增主键会显式写入 NULL（`values (null, ...)`），依赖 SQLite
- * 「INTEGER PRIMARY KEY 为 NULL 时自动分配 rowid」的语义。但 0004 建表时把
- * question_srs.id 写成了 `NOT NULL`，导致每次 upsert 都报 NOT NULL constraint
- * failed；该错误被 syncFromPracticeLogs 的逐题 try/catch 吞掉，最后整个事务以
- * SQLITE_BUSY 回滚 —— SRS 同步长期静默失效。迁移 0010 重建表修掉。
+ * 背景：syncFromPracticeLogs 开了 `drizzleDb.transaction(...)`，但内部的
+ * updateQuestionSrs / getOrCreateSrsCard / learnReadingSpeed 都直接用**全局**
+ * drizzleDb —— 语句跑在事务连接之外，逐题报 "Failed query"，被 try/catch 吞掉，
+ * 最后事务提交再报 SQLITE_BUSY 并整批回滚。SRS 同步因此长期静默失效。
+ * 修复 = 给写入链路加 exec 执行器并在事务内传 tx（见 srs.ts）。
+ *
+ * 注：迁移 0010 的 id NOT NULL 重建对本问题**没有影响**（SQLite 的 INTEGER
+ * PRIMARY KEY 是 rowid 别名，显式 NULL 会被自动分配），保留仅为资产一致。
  */
 import { describe, it, expect, beforeAll, afterAll } from "vitest";
 import fs from "node:fs";

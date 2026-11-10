@@ -1,9 +1,10 @@
--- 修复 question_srs.id 的 NOT NULL 与 drizzle 自增插入的冲突。
--- drizzle 0.45 对自增主键会显式写入 NULL（`values (null, ...)`），SQLite 依赖
--- 「INTEGER PRIMARY KEY 为 NULL 时自动分配 rowid」的语义；但 0004 建表时带了
--- NOT NULL，导致每次 upsert 都报 NOT NULL constraint failed，且错误被
--- syncFromPracticeLogs 的逐题 try/catch 吞掉，SRS 同步长期静默失效。
--- SQLite 不支持 ALTER COLUMN，故按官方建议重建表。
+-- 说明（2026-11-11 更正）：
+--   本次重建对**行为没有影响**。SQLite 的 INTEGER PRIMARY KEY 是 rowid 别名，
+--   即使声明了 NOT NULL，显式写入 NULL 也会自动分配 rowid（已实测）。
+--   早先「SRS 同步失败是因为 id NOT NULL」的结论是错的：真正原因是事务内
+--   通过全局 drizzleDb 执行语句（见 srs.ts 的 exec 执行器修复），
+--   逐题失败被 catch 吞掉后，事务提交再报 SQLITE_BUSY 并整批回滚。
+--   保留此迁移只为资产一致（排查过程中已合入 main），不改变任何数据语义。
 CREATE TABLE `question_srs_new` (
 	`id` integer PRIMARY KEY AUTOINCREMENT,
 	`user_id` integer NOT NULL,

@@ -70,9 +70,31 @@ describe("SRS 同步（真实 SQLite）", () => {
     )) as any[];
     expect(rows.length).toBe(1);
     expect(Number(rows[0].reps)).toBeGreaterThanOrEqual(1);
-    expect(rows[0].due_date).toBeTruthy();
+    // 必须是 updateQuestionSrs 写入的 ISO 时间（形如 2026-11-10T10:00:00.000Z），
+    // 而不是建表默认值 CURRENT_TIMESTAMP（形如 2026-11-10 10:00:00）
+    expect(String(rows[0].due_date)).toMatch(/^\d{4}-\d{2}-\d{2}T/);
     // 自增主键由 SQLite 分配，而不是 0/NULL
     expect(Number(rows[0].id)).toBeGreaterThan(0);
+  });
+
+  it("卡片生成之后的新作答仍会被回放（不会被永久跳过）", async () => {
+    const before = (await dbm.drizzleDb.all(
+      "SELECT reps FROM question_srs WHERE user_id = 1 AND question_id = 901" as any,
+    )) as any[];
+    const beforeReps = Number(before[0].reps);
+
+    await dbm.drizzleDb.run(
+      `INSERT INTO practice_logs (session_id, user_id, question_id, user_answer, is_correct, duration_ms, timestamp)
+       VALUES ('sess-srs-1', 1, 901, 'A', 0, 7000, '2026-11-11 09:00:00')` as any,
+    );
+    await srsService.syncFromPracticeLogs(1);
+
+    const after = (await dbm.drizzleDb.all(
+      "SELECT reps, lapses FROM question_srs WHERE user_id = 1 AND question_id = 901" as any,
+    )) as any[];
+    // 新日志被回放到已有卡片上（FSRS 的 lapses 只在 Relearning 阶段累加，
+    // 故这里以 reps 增长作为"确实又复习了一次"的判据）
+    expect(Number(after[0].reps)).toBeGreaterThan(beforeReps);
   });
 
   it("再次同步同一批日志不产生重复卡片（唯一约束 + upsert）", async () => {

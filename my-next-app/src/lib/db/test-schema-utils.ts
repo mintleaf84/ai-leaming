@@ -23,7 +23,7 @@ export const TEST_SCHEMA_SQL = `
         explanation TEXT,
         tags TEXT,
         dimension TEXT,
-        type TEXT DEFAULT 'single',
+        type TEXT,
         source TEXT,
         correct_ratio REAL,
         most_wrong_answer TEXT,
@@ -35,8 +35,8 @@ export const TEST_SCHEMA_SQL = `
     );
 
     CREATE TABLE IF NOT EXISTS practice_sessions (
-        id TEXT PRIMARY KEY,
-        user_id INTEGER NOT NULL REFERENCES users(id),
+        id TEXT PRIMARY KEY NOT NULL,
+        user_id INTEGER DEFAULT 1 NOT NULL REFERENCES users(id) ON DELETE CASCADE,
         session_name TEXT,
         source_key TEXT,
         total_questions INTEGER DEFAULT 0,
@@ -56,17 +56,17 @@ export const TEST_SCHEMA_SQL = `
     CREATE TABLE IF NOT EXISTS practice_logs (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
         session_id TEXT REFERENCES practice_sessions(id),
-        user_id INTEGER NOT NULL REFERENCES users(id),
+        user_id INTEGER DEFAULT 1 NOT NULL REFERENCES users(id) ON DELETE CASCADE,
         question_id INTEGER NOT NULL REFERENCES questions(id),
         user_answer TEXT,
         is_correct INTEGER NOT NULL,
-        is_monitored_correct INTEGER DEFAULT 0,
+        is_monitored_correct INTEGER DEFAULT false,
         duration_ms INTEGER,
         timestamp TEXT DEFAULT CURRENT_TIMESTAMP
     );
 
     CREATE TABLE IF NOT EXISTS user_mastery (
-        user_id INTEGER NOT NULL REFERENCES users(id),
+        user_id INTEGER DEFAULT 1 NOT NULL REFERENCES users(id) ON DELETE CASCADE,
         tag_name TEXT NOT NULL,
         score REAL DEFAULT 0,
         correct_count INTEGER DEFAULT 0,
@@ -77,7 +77,7 @@ export const TEST_SCHEMA_SQL = `
     );
 
     CREATE TABLE IF NOT EXISTS observation_zone (
-        user_id INTEGER NOT NULL REFERENCES users(id),
+        user_id INTEGER DEFAULT 1 NOT NULL,
         tag_name TEXT NOT NULL,
         reason TEXT,
         status TEXT DEFAULT 'active',
@@ -87,8 +87,8 @@ export const TEST_SCHEMA_SQL = `
 
     CREATE TABLE IF NOT EXISTS question_srs (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
-        user_id INTEGER NOT NULL REFERENCES users(id),
-        question_id INTEGER NOT NULL REFERENCES questions(id),
+        user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+        question_id INTEGER NOT NULL REFERENCES questions(id) ON DELETE CASCADE,
         stability REAL NOT NULL DEFAULT 0,
         difficulty REAL NOT NULL DEFAULT 0,
         elapsed_days INTEGER NOT NULL DEFAULT 0,
@@ -102,7 +102,7 @@ export const TEST_SCHEMA_SQL = `
     );
 
     CREATE TABLE IF NOT EXISTS system_settings (
-        user_id INTEGER NOT NULL REFERENCES users(id),
+        user_id INTEGER DEFAULT 1 NOT NULL REFERENCES users(id) ON DELETE CASCADE,
         key TEXT NOT NULL,
         value TEXT,
         updated_at TEXT DEFAULT CURRENT_TIMESTAMP,

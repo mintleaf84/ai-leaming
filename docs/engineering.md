@@ -41,7 +41,9 @@
 
 "关键路径" = 数据库写入、鉴权、导入、结算、支付、迁移。
 
-- 用真实 SQLite + 真实迁移（参考 `src/lib/services/__tests__/import-idempotency.test.ts`、`srs-sync.test.ts`）；
+- 用真实 SQLite + 真实迁移（参考 `import-idempotency.test.ts`、`srs-sync.test.ts`、`src/lib/db/__tests__/schema-parity.test.ts`）；
+- **事务内必须传 `tx`**：在 `drizzleDb.transaction()` 里调用其它 service 时，若对方仍用全局 `drizzleDb`，语句会跑在事务连接之外（表现为 `Failed query` + 提交时 `SQLITE_BUSY`）；给这类函数加可选 `exec` 参数并在事务内传 `tx`；
+- **测试用的内存 schema 必须与迁移一致**：`test-schema-utils.ts` 是手写 DDL，`schema-parity.test.ts` 会逐表逐列比对真实迁移，漂移即失败；
 - `afterAll` 先 `closeDrizzle()` 再删临时库；
 - **禁止**在这些路径上用 mock 数据库充当验证；
 - 纯计算/纯展示逻辑仍然优先单测（快）。

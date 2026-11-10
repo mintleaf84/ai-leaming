@@ -26,17 +26,23 @@
 
 ## P1 真实契约测试（7h）
 
-- [ ] 集成测试 2 → 10（模板：`import-idempotency`、`srs-sync`）
-  - [ ] 练习会话结算（practice_sessions + practice_logs）
-  - [ ] 错题本加权抽题（时间衰减 + 标签过滤）
-  - [ ] 掌握度累加（含重复导入不累加）
+- [x] **迁移/测试 schema 一致性门禁**：`src/lib/db/__tests__/schema-parity.test.ts`（逐表逐列比对真实迁移与手写 DDL；已抓出 `practice_sessions.id` 缺 NOT NULL）
+- [x] 更正 SRS 根因结论（不是 id NOT NULL，而是事务内用全局连接）
+- [x] 真实依赖集成测试：**2 文件 → 5 文件 / 18 例**
+  - [x] 练习答题提交（`practice-answer.test.ts`，3 例：日志 + 会话统计 + 掌握度）
+  - [x] 40/40/20 调度（`scheduling-composition.test.ts`，5 例：配比、去重、顽固题配额、题目有效性、题库不足）
+  - [x] 导入幂等 **并发**（同 sourceKey `Promise.all` 两次）
+  - [x] SRS 同步（`srs-sync.test.ts`，4 例）
+  - [x] 迁移/测试 schema 一致性（`schema-parity.test.ts`，2 例）
   - [ ] admin 题库 CRUD（含批量导入）
   - [ ] 鉴权边界（未登录 / 跨用户）
-  - [ ] 导入并发（同 sourceKey 并发两次）
   - [ ] RAG 向量写入（sqlite-vec）
   - [ ] 备份与恢复
 - [ ] 把 5 个最没价值的 mock-db 测试改成真实库
 - 验收：集成测试 ≥10；至少 1 个新 bug 被发现并修复
+- **实际收获（写测试过程直接抓到 2 个真 bug）**：
+  1. `practice_sessions.id` 在测试内存 schema 里缺 `NOT NULL`，与迁移漂移（`schema-parity` 抓出）；
+  2. `isUniqueViolation` 只看外层错误，drizzle 把 `SqliteError` 包在 `cause` 里 —— 并发窗口下的唯一索引冲突会被当成真实错误抛出，幂等兜底形同虚设（并发用例抓出）。
 
 ## P2 错误语义与日志（5h）
 

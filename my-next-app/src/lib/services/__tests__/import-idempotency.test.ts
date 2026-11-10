@@ -129,6 +129,51 @@ describe("粉笔导入幂等性（真实 SQLite）", () => {
     ).toBe(masteryAfterFirst);
   });
 
+  it("唯一约束冲突的判定能穿透 drizzle 的包装错误", async () => {
+    // drizzle 把 SqliteError 包一层：外层 message 是 "Failed query: ..."，
+    // code 在 cause 上。这里直接构造两种形态，确保判定不依赖调用顺序。
+    const { isUniqueViolation } = await import("../import-service").then((m) => {
+      const hook = (m as any).__test__?.isUniqueViolation;
+      // 钩子缺失时直接失败，避免用例空转通过
+      expect(typeof hook).toBe("function");
+      return { isUniqueViolation: hook };
+    });
+    expect(
+      isUniqueViolation({
+        message: "Failed query: insert into practice_sessions ...",
+        cause: { code: "SQLITE_CONSTRAINT_UNIQUE" },
+      }),
+    ).toBe(true);
+    expect(
+      isUniqueViolation({
+        message: "Failed query: x",
+        cause: { message: "UNIQUE constraint failed: practice_sessions.source_key" },
+      }),
+    ).toBe(true);
+    expect(isUniqueViolation({ message: "Failed query: x" })).toBe(false);
+  });
+
+  it("并发导入同一 sourceKey：只落一条会话，另一个走唯一索引兜底", async () => {
+    const [a, b] = await Promise.all([
+      importService.importFenbiData(1, payload("fenbi:race-key")),
+      importService.importFenbiData(1, payload("fenbi:race-key")),
+    ]);
+
+    // 一个真正写入，另一个命中预检或唯一索引后按重复处理
+    expect([a.duplicated, b.duplicated].filter(Boolean).length).toBe(1);
+    expect(a.sessionId).toBe(b.sessionId);
+    expect(
+      await scalar(
+        "SELECT COUNT(*) AS c FROM practice_sessions WHERE source_key = 'fenbi:race-key'",
+      ),
+    ).toBe(1);
+    expect(
+      await scalar(
+        "SELECT COUNT(*) AS c FROM practice_logs WHERE session_id = (SELECT id FROM practice_sessions WHERE source_key = 'fenbi:race-key')",
+      ),
+    ).toBe(1);
+  });
+
   it("不同 sourceKey 视为两次独立练习", async () => {
     const other = await importService.importFenbiData(
       1,

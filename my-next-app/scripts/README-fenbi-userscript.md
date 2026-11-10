@@ -10,11 +10,11 @@
 
 ## 2. 配置
 
-| 字段 | 说明 |
-| --- | --- |
-| 服务器地址 | 本系统地址，如 `https://zhuoyu.887780.xyz`（本地开发填 `http://localhost:3000`） |
-| 系统通信凭证 | 系统内「导入页面」获取的 Token，脚本仅存于 Tampermonkey 存储 |
-| 凑齐数据后自动推送 | 勾选后，抓到「答题 + 题目」两份数据 1.5 秒后自动静默推送 |
+| 字段               | 说明                                                                             |
+| ------------------ | -------------------------------------------------------------------------------- |
+| 服务器地址         | 本系统地址，如 `https://zhuoyu.887780.xyz`（本地开发填 `http://localhost:3000`） |
+| 系统通信凭证       | 系统内「导入页面」获取的 Token，脚本仅存于 Tampermonkey 存储                     |
+| 凑齐数据后自动推送 | 勾选后，抓到「答题 + 题目」两份数据 1.5 秒后自动静默推送                         |
 
 ## 3. 使用
 
@@ -28,9 +28,9 @@
 
 ```jsonc
 {
-  "exerciseJson": "…",  // getSolution 原始响应：{ userAnswers: { <questionGlobalId>: {...} } }
+  "exerciseJson": "…", // getSolution 原始响应：{ userAnswers: { <questionGlobalId>: {...} } }
   "solutionsJson": "…", // static/solution 原始响应：{ solutions: [...], materials: [...] }
-  "statsJson": ""       // 可选，全站正确率统计
+  "statsJson": "", // 可选，全站正确率统计
 }
 ```
 
@@ -40,11 +40,11 @@
 {
   "success": true,
   "sessionId": "fenbi_xxx",
-  "importedCount": 20,          // 本次写入的作答记录数
-  "newQuestionsCount": 18,      // 新增/更新的题目数
+  "importedCount": 20, // 本次写入的作答记录数
+  "newQuestionsCount": 18, // 新增/更新的题目数
   "skippedQuestionsCount": 2,
-  "duplicated": false,          // true = 该练习此前已导入，本次未写入任何数据
-  "message": "成功导入 20 条作答记录，新增/更新 18 道题目"
+  "duplicated": false, // true = 该练习此前已导入，本次未写入任何数据
+  "message": "成功导入 20 条作答记录，新增/更新 18 道题目",
 }
 ```
 

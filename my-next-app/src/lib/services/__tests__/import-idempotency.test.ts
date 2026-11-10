@@ -76,10 +76,9 @@ describe("粉笔导入幂等性（真实 SQLite）", () => {
 
   afterAll(() => {
     for (const suffix of ["", "-wal", "-shm"]) {
-      fs.rmSync(
-        path.resolve(process.cwd(), "data", dbFile + suffix),
-        { force: true },
-      );
+      fs.rmSync(path.resolve(process.cwd(), "data", dbFile + suffix), {
+        force: true,
+      });
     }
   });
 
@@ -91,7 +90,10 @@ describe("粉笔导入幂等性（真实 SQLite）", () => {
   });
 
   it("同一 sourceKey 导入两次只落一条会话、一份日志、一次掌握度累加", async () => {
-    const first = await importService.importFenbiData(1, payload("fenbi:key-1"));
+    const first = await importService.importFenbiData(
+      1,
+      payload("fenbi:key-1"),
+    );
     expect(first.duplicated).toBe(false);
     expect(first.importedCount).toBe(1);
 
@@ -99,7 +101,10 @@ describe("粉笔导入幂等性（真实 SQLite）", () => {
       "SELECT total_count AS c FROM user_mastery WHERE tag_name = '历史'",
     );
 
-    const second = await importService.importFenbiData(1, payload("fenbi:key-1"));
+    const second = await importService.importFenbiData(
+      1,
+      payload("fenbi:key-1"),
+    );
     expect(second.duplicated).toBe(true);
     expect(second.importedCount).toBe(0);
     expect(second.sessionId).toBe(first.sessionId);
@@ -123,7 +128,10 @@ describe("粉笔导入幂等性（真实 SQLite）", () => {
   });
 
   it("不同 sourceKey 视为两次独立练习", async () => {
-    const other = await importService.importFenbiData(1, payload("fenbi:key-2"));
+    const other = await importService.importFenbiData(
+      1,
+      payload("fenbi:key-2"),
+    );
     expect(other.duplicated).toBe(false);
     expect(
       await scalar(

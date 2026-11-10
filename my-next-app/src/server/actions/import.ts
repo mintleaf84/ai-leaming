@@ -67,8 +67,7 @@ export const importFenbiDataAction = authenticatedAction
         newQuestionsCount: 0,
         skippedQuestionsCount: parsed.questions.length,
         duplicated: true,
-        message:
-          "该练习已导入过，本次跳过（重复导入不会重复累加掌握度）",
+        message: "该练习已导入过，本次跳过（重复导入不会重复累加掌握度）",
       };
     }
 

@@ -115,7 +115,9 @@ describe("Import Hono Routes", () => {
     });
 
     it("action 调用本身抛出异常时返回 500", async () => {
-      mockImportFenbiDataAction.mockRejectedValue(new Error("Unexpected crash"));
+      mockImportFenbiDataAction.mockRejectedValue(
+        new Error("Unexpected crash"),
+      );
 
       const res = await postImport();
 

@@ -552,7 +552,11 @@ export function parseFenbiData(
 
   return {
     sessionName,
-    sourceKey: deriveSourceKey(exerciseData, Object.keys(userAnswers), sessionName),
+    sourceKey: deriveSourceKey(
+      exerciseData,
+      Object.keys(userAnswers),
+      sessionName,
+    ),
     questions,
     records,
     totalCount: questions.length,

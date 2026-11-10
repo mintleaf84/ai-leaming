@@ -183,7 +183,8 @@ describe("Import Service", () => {
     expect(call.target).toEqual(mockDrizzleSchema.questions.external_id);
   });
 
-  it("should update mastery counts correctly", async () => {    const userId = 1;
+  it("should update mastery counts correctly", async () => {
+    const userId = 1;
     const data = {
       sessionName: "Test Mastery",
       totalCount: 1,
@@ -243,7 +244,12 @@ describe("Import Service", () => {
         },
       ],
       records: [
-        { externalId: "ext-1", userAnswer: "A", isCorrect: true, durationMs: 10 },
+        {
+          externalId: "ext-1",
+          userAnswer: "A",
+          isCorrect: true,
+          durationMs: 10,
+        },
       ],
     } as any;
 

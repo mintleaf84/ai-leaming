@@ -6,6 +6,7 @@ import {
   primaryKey,
   index,
   unique,
+  uniqueIndex,
 } from "drizzle-orm/sqlite-core";
 import { sql } from "drizzle-orm";
 
@@ -91,6 +92,8 @@ export const practice_sessions = sqliteTable(
       .default(1)
       .references(() => users.id, { onDelete: "cascade" }),
     session_name: text("session_name"),
+    // 外部来源标识（如粉笔练习 key），用于导入幂等：同一用户同一来源只允许一条会话
+    source_key: text("source_key"),
     total_questions: integer("total_questions").default(0),
     correct_count: integer("correct_count").default(0),
     review_count: integer("review_count").default(0),
@@ -105,6 +108,11 @@ export const practice_sessions = sqliteTable(
     idx_user_ts: index("idx_practice_sessions_user_ts").on(
       table.user_id,
       sql`${table.created_at} DESC`,
+    ),
+    // SQLite 中 NULL 互不相等，故历史数据（source_key 为空）不受影响
+    uq_user_source: uniqueIndex("uq_practice_sessions_user_source").on(
+      table.user_id,
+      table.source_key,
     ),
   }),
 );

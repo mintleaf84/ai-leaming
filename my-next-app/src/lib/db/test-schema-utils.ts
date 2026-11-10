@@ -38,6 +38,7 @@ export const TEST_SCHEMA_SQL = `
         id TEXT PRIMARY KEY,
         user_id INTEGER NOT NULL REFERENCES users(id),
         session_name TEXT,
+        source_key TEXT,
         total_questions INTEGER DEFAULT 0,
         correct_count INTEGER DEFAULT 0,
         review_count INTEGER DEFAULT 0,
@@ -48,6 +49,9 @@ export const TEST_SCHEMA_SQL = `
         total_duration_ms INTEGER DEFAULT 0,
         created_at TEXT DEFAULT CURRENT_TIMESTAMP
     );
+
+    CREATE UNIQUE INDEX IF NOT EXISTS uq_practice_sessions_user_source
+        ON practice_sessions (user_id, source_key);
 
     CREATE TABLE IF NOT EXISTS practice_logs (
         id INTEGER PRIMARY KEY AUTOINCREMENT,

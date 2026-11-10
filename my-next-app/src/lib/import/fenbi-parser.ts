@@ -45,6 +45,7 @@ export interface ParsedRecord {
 /** 导入结果 */
 export interface FenbiImportResult {
   sessionName: string; // 会话名称
+  sourceKey?: string; // 来源标识（练习 key / 指纹），用于导入幂等
   questions: ParsedQuestion[]; // 题目列表
   records: ParsedRecord[]; // 作答记录
   totalCount: number; // 总题数
@@ -106,7 +107,39 @@ interface FenbiCardNode {
 
 interface FenbiExerciseData {
   name?: string;
+  // 练习标识：不同版本导出字段名不一致，按优先级兜底
+  id?: number | string;
+  key?: string;
+  exerciseId?: number | string;
   userAnswers: Record<string, FenbiUserAnswer>;
+}
+
+/** FNV-1a 32 位哈希（双种子拼成 16 位十六进制），用于无 ID 数据生成稳定指纹 */
+function fnv1aHex(input: string, seed: number): string {
+  let h = seed >>> 0;
+  for (let i = 0; i < input.length; i++) {
+    h ^= input.charCodeAt(i);
+    h = Math.imul(h, 0x01000193) >>> 0;
+  }
+  return h.toString(16).padStart(8, "0");
+}
+
+/**
+ * 生成导入幂等键。
+ * 优先用粉笔练习自身标识（key / exerciseId / id）；缺失时退化为
+ * 「练习名 + 题目集合」指纹，保证同一套练习重复推送得到同一个键。
+ */
+export function deriveSourceKey(
+  exerciseData: Pick<FenbiExerciseData, "id" | "key" | "exerciseId" | "name">,
+  questionKeys: string[],
+  sessionName: string,
+): string {
+  const rawId = exerciseData.key ?? exerciseData.exerciseId ?? exerciseData.id;
+  if (rawId !== undefined && rawId !== null && String(rawId).length > 0) {
+    return `fenbi:${String(rawId)}`;
+  }
+  const material = [sessionName, ...questionKeys.slice().sort()].join("|");
+  return `fenbi:fp:${fnv1aHex(material, 0x811c9dc5)}${fnv1aHex(material, 0x9e3779b1)}`;
 }
 
 interface FenbiSolutionsData {
@@ -519,6 +552,7 @@ export function parseFenbiData(
 
   return {
     sessionName,
+    sourceKey: deriveSourceKey(exerciseData, Object.keys(userAnswers), sessionName),
     questions,
     records,
     totalCount: questions.length,

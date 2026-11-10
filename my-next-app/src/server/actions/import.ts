@@ -59,12 +59,26 @@ export const importFenbiDataAction = authenticatedAction
     // 3. 调用 Service 执行导入 (事务化)
     const result = await importService.importFenbiData(user.id, parsed);
 
+    if (result.duplicated) {
+      return {
+        success: true,
+        sessionId: result.sessionId,
+        importedCount: 0,
+        newQuestionsCount: 0,
+        skippedQuestionsCount: parsed.questions.length,
+        duplicated: true,
+        message:
+          "该练习已导入过，本次跳过（重复导入不会重复累加掌握度）",
+      };
+    }
+
     return {
       success: true,
       sessionId: result.sessionId,
       importedCount: result.importedCount,
       newQuestionsCount: result.newQuestionsCount,
       skippedQuestionsCount: parsed.questions.length - result.newQuestionsCount,
+      duplicated: false,
       message: `成功导入 ${result.importedCount} 条作答记录，新增/更新 ${result.newQuestionsCount} 道题目`,
     };
   });

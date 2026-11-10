@@ -74,7 +74,8 @@ describe("粉笔导入幂等性（真实 SQLite）", () => {
     importService = (await import("../import-service")).importService;
   });
 
-  afterAll(() => {
+  afterAll(async () => {
+    await dbm.closeDrizzle();
     for (const suffix of ["", "-wal", "-shm"]) {
       fs.rmSync(path.resolve(process.cwd(), "data", dbFile + suffix), {
         force: true,

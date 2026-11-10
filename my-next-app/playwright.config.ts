@@ -42,6 +42,9 @@ export default defineConfig({
   webServer: {
     command: "npm run dev -- -p 3001",
     url: "http://localhost:3001",
+    // 必须让 Playwright 自己起服务：复用已在 3001 的普通 dev server 时
+    // webServer.env（DB_FILENAME=test-e2e.db / E2E_TEST=true）不会生效，
+    // 测试会打到真实库上。本地跑 e2e 前请先停掉占用 3001 的进程。
     reuseExistingServer: false,
     timeout: 180 * 1000,
     stdout: "pipe",

@@ -76,7 +76,7 @@ export const saveSessionReviewAction = authenticatedAction
     z.object({
       sessionId: z.string(),
       questionId: z.number(),
-      reviewData: z.record(z.unknown()),
+      reviewData: z.record(z.string(), z.unknown()),
     }),
   )
   .action(

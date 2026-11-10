@@ -26,7 +26,7 @@ const MasteryTreeResponseSchema = z.array(
     path: z.string(),
     score: z.number(),
     level: z.number(),
-    children: z.array(z.record(z.unknown())), // Use z.record(z.unknown()) for children to avoid recursive schema issues in simple setup
+    children: z.array(z.record(z.string(), z.unknown())), // Use z.record(z.unknown()) for children to avoid recursive schema issues in simple setup
   }),
 );
 

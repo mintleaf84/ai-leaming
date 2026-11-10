@@ -8,23 +8,23 @@
 
 另有 3 个是 **squash 合并**后的残留（squash 不记录祖先关系，故看起来"未合并"，实际内容已进 main）：
 
-| 分支 | 对应 PR |
-| --- | --- |
-| `repo-governance` | #98 |
-| `lab-fsrs-archive` | #97 |
+| 分支                  | 对应 PR                 |
+| --------------------- | ----------------------- |
+| `repo-governance`     | #98                     |
+| `lab-fsrs-archive`    | #97                     |
 | `fenbi-userscript-v6` | #99（合并时已自动删除） |
 
 ## 二、打标签后删除（有独有提交）
 
 这 5 个分支含未合并提交，且长期无 PR（2026-04 ~ 2026-07）。为保留历史又不占用分支列表，先打 `archive/2026-11-10/*` 标签，再删除分支：
 
-| 原分支 | 归档标签 | 末次提交 |
-| --- | --- | --- |
-| `260518-feat-admin-fill-blank-support` | `archive/2026-11-10/260518-feat-admin-fill-blank-support` | 2026-05-19 `e1ce5aa` |
-| `feat/concurrency` | `archive/2026-11-10/feat-concurrency` | 2026-07-20 `084a595` |
-| `feat/db-refactor` | `archive/2026-11-10/feat-db-refactor` | 2026-04-29 `ef9227f` |
-| `fix/mobile-nav-overlap` | `archive/2026-11-10/fix-mobile-nav-overlap` | 2026-07-20 `825689b` |
-| `revert-5-copilot/optimize-web-application-performance` | 同名标签 | 2026-04-19 `c1ad007` |
+| 原分支                                                  | 归档标签                                                  | 末次提交             |
+| ------------------------------------------------------- | --------------------------------------------------------- | -------------------- |
+| `260518-feat-admin-fill-blank-support`                  | `archive/2026-11-10/260518-feat-admin-fill-blank-support` | 2026-05-19 `e1ce5aa` |
+| `feat/concurrency`                                      | `archive/2026-11-10/feat-concurrency`                     | 2026-07-20 `084a595` |
+| `feat/db-refactor`                                      | `archive/2026-11-10/feat-db-refactor`                     | 2026-04-29 `ef9227f` |
+| `fix/mobile-nav-overlap`                                | `archive/2026-11-10/fix-mobile-nav-overlap`               | 2026-07-20 `825689b` |
+| `revert-5-copilot/optimize-web-application-performance` | 同名标签                                                  | 2026-04-19 `c1ad007` |
 
 需要时 `git checkout archive/2026-11-10/<name>` 即可取回。
 
@@ -38,15 +38,15 @@
 
 ## 四、保留的分支
 
-| 分支 | 原因 |
-| --- | --- |
-| `main` | — |
-| `feat/fenbi-import-idempotency` | 开放 PR #106 |
-| `feat/zod-4` | 开放 PR #108 |
-| `dependabot/.../next-16.4.6` | 开放 PR #105（含 6 个 security advisory 修复，需单独评估） |
-| `dependabot/.../zod-4.6.6` | 开放 PR #104（待 #108 合并后关闭） |
-| `dependabot/.../follow-redirects-1.16.3` | 开放 PR #107（新开，待合并） |
-| `dependabot/.../fast-copy-4.1.2` | 开放 PR #91 |
+| 分支                                     | 原因                                                       |
+| ---------------------------------------- | ---------------------------------------------------------- |
+| `main`                                   | —                                                          |
+| `feat/fenbi-import-idempotency`          | 开放 PR #106                                               |
+| `feat/zod-4`                             | 开放 PR #108                                               |
+| `dependabot/.../next-16.4.6`             | 开放 PR #105（含 6 个 security advisory 修复，需单独评估） |
+| `dependabot/.../zod-4.6.6`               | 开放 PR #104（待 #108 合并后关闭）                         |
+| `dependabot/.../follow-redirects-1.16.3` | 开放 PR #107（新开，待合并）                               |
+| `dependabot/.../fast-copy-4.1.2`         | 开放 PR #91                                                |
 
 ## 五、遗留问题（后续单独处理）
 

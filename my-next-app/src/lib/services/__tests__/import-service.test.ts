@@ -218,4 +218,48 @@ describe("Import Service", () => {
       .mock.calls.filter((c: any) => c[0] === mockDrizzleSchema.user_mastery);
     expect(masteryInserts.length).toBe(2);
   });
+
+  it("同一 sourceKey 重复导入应直接复用既有会话且不写任何数据", async () => {
+    // 预检查询命中已导入会话
+    (mockDrizzleDb as any).limit.mockResolvedValue([
+      { id: "fenbi_existing_123" },
+    ]);
+
+    const data = {
+      sessionName: "重复导入",
+      sourceKey: "fenbi:dup-key",
+      totalCount: 1,
+      correctCount: 1,
+      errorCount: 0,
+      questions: [
+        {
+          externalId: "ext-1",
+          tags: ["History"],
+          dimension: "knowledge",
+          content: "Q",
+          options: [],
+          answer: "A",
+          explanation: "",
+          type: "single",
+        },
+      ],
+      records: [
+        {
+          externalId: "ext-1",
+          userAnswer: "A",
+          isCorrect: true,
+          durationMs: 10,
+        },
+      ],
+    } as any;
+
+    const result = await importService.importFenbiData(1, data);
+
+    expect(result.duplicated).toBe(true);
+    expect(result.sessionId).toBe("fenbi_existing_123");
+    expect(result.importedCount).toBe(0);
+    expect(result.newQuestionsCount).toBe(0);
+    // 关键：不写日志、不累加掌握度
+    expect(mockDrizzleDb.insert).not.toHaveBeenCalled();
+  });
 });

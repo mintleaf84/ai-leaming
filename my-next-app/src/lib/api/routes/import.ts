@@ -16,6 +16,7 @@ const ImportResponseSchema = z.object({
   importedCount: z.number().optional(),
   newQuestionsCount: z.number().optional(),
   skippedQuestionsCount: z.number().optional(),
+  duplicated: z.boolean().optional(),
   message: z.string(),
   error: z.string().optional(),
 });
@@ -57,6 +58,19 @@ app.openapi(importRoute, async (c) => {
       solutionsJson: body.solutionsJson,
       statsJson: body.statsJson,
     });
+
+    // safe-action 抛错时只返回 serverError，若不透出就会变成"导入失败"三字，
+    // 脚本侧与用户都看不到真实原因（历史问题：错误被吞）。
+    if (result.serverError) {
+      return c.json(
+        {
+          success: false,
+          message: `导入失败: ${result.serverError}`,
+          error: result.serverError,
+        },
+        500,
+      );
+    }
 
     return c.json(result.data || { success: false, message: "导入失败" }, 200);
   } catch (e) {

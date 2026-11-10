@@ -43,7 +43,9 @@ describe("SRS 同步（真实 SQLite）", () => {
     srsService = (await import("../srs")).srsService;
   });
 
-  afterAll(() => {
+  afterAll(async () => {
+    // 先释放 libsql 连接再删文件：Windows 上未关闭的句柄会让删除失败
+    await dbm.closeDrizzle();
     for (const suffix of ["", "-wal", "-shm"]) {
       fs.rmSync(path.resolve(process.cwd(), "data", dbFile + suffix), {
         force: true,

@@ -12,13 +12,16 @@ import utc from "dayjs/plugin/utc";
 
 dayjs.extend(utc);
 import { drizzleDb } from "@/lib/db";
+
+/** SRS 相关写入允许复用事务执行器；默认使用全局 drizzle 实例 */
+type SrsExecutor = typeof drizzleDb;
 import {
   questions,
   question_srs,
   practice_logs,
   system_settings,
 } from "@/lib/db/drizzle-schema";
-import { eq, and, sql, lte, isNull, count, gte } from "drizzle-orm";
+import { eq, and, or, sql, lte, isNull, count, gte } from "drizzle-orm";
 
 // 批量同步配置
 const SYNC_BATCH_SIZE = 100;
@@ -57,6 +60,7 @@ const FILL_BLANK_THINKING_TIME_DISCOUNT = 0.6; // 填空题思考时间折扣，
 async function getReadingSpeed(
   userId: number,
   questionType?: string,
+  exec: SrsExecutor = drizzleDb,
 ): Promise<number> {
   const key =
     questionType === "multi"
@@ -67,7 +71,7 @@ async function getReadingSpeed(
           ? "reading_speed_fill_blank"
           : "reading_speed_base";
 
-  const [setting] = await drizzleDb
+  const [setting] = await exec
     .select()
     .from(system_settings)
     .where(
@@ -76,7 +80,7 @@ async function getReadingSpeed(
     .limit(1);
 
   if (!setting && key !== "reading_speed_base") {
-    const [baseSetting] = await drizzleDb
+    const [baseSetting] = await exec
       .select()
       .from(system_settings)
       .where(
@@ -104,6 +108,7 @@ export async function learnReadingSpeed(
   durationMs: number,
   questionType?: string,
   userAnswerLength?: number,
+  exec: SrsExecutor = drizzleDb,
 ) {
   let optionsText = "";
   try {
@@ -121,7 +126,7 @@ export async function learnReadingSpeed(
   if (totalChars < 10 || durationMs < 1000 || durationMs > 60000) return;
 
   const currentSpeed = totalChars / (durationMs / 1000);
-  const oldSpeed = await getReadingSpeed(userId, questionType);
+  const oldSpeed = await getReadingSpeed(userId, questionType, exec);
 
   let newSpeed =
     oldSpeed * (1 - READING_SPEED_ALPHA) + currentSpeed * READING_SPEED_ALPHA;
@@ -136,7 +141,7 @@ export async function learnReadingSpeed(
           ? "reading_speed_fill_blank"
           : "reading_speed_base";
 
-  await drizzleDb
+  await exec
     .insert(system_settings)
     .values({
       user_id: userId,
@@ -268,8 +273,9 @@ export const srsService = {
   getOrCreateSrsCard: async (
     userId: number,
     questionId: number,
+    exec: SrsExecutor = drizzleDb,
   ): Promise<Card> => {
-    const [row] = await drizzleDb
+    const [row] = await exec
       .select()
       .from(question_srs)
       .where(
@@ -311,8 +317,9 @@ export const srsService = {
     reviewDate?: Date,
     cachedReadingSpeed?: number,
     userAnswerLength?: number,
+    exec: SrsExecutor = drizzleDb,
   ) => {
-    const [question] = await drizzleDb
+    const [question] = await exec
       .select()
       .from(questions)
       .where(eq(questions.id, questionId))
@@ -321,7 +328,7 @@ export const srsService = {
       throw new Error(`题目 ID ${questionId} 不存在，无法更新 SRS 状态`);
     }
 
-    const card = await srsService.getOrCreateSrsCard(userId, questionId);
+    const card = await srsService.getOrCreateSrsCard(userId, questionId, exec);
 
     let rating: Rating;
     if (!isCorrect) {
@@ -329,7 +336,7 @@ export const srsService = {
     } else {
       const readingSpeed =
         cachedReadingSpeed ??
-        (await getReadingSpeed(userId, question.type || undefined));
+        (await getReadingSpeed(userId, question.type || undefined, exec));
       rating = srsService.calculateRating(
         question.content,
         question.options || "[]",
@@ -346,6 +353,7 @@ export const srsService = {
         durationMs,
         question.type || undefined,
         userAnswerLength,
+        exec,
       );
     }
 
@@ -355,7 +363,7 @@ export const srsService = {
       rating
     ].card;
 
-    await drizzleDb
+    await exec
       .insert(question_srs)
       .values({
         user_id: userId,
@@ -655,10 +663,18 @@ export const srsService = {
         .where(
           and(
             eq(practice_logs.user_id, userId),
-            isNull(question_srs.question_id),
+            or(
+              // 尚无 SRS 卡片：首次同步
+              isNull(question_srs.question_id),
+              // 已有卡片但存在更新的作答：继续把新日志回放到卡片上，
+              // 否则「首张卡片生成后」的作答永远不会进入 SRS。
+              // 用 julianday 比较，兼容 "YYYY-MM-DD HH:MM:SS" 与 ISO 两种时间格式。
+              sql`(${question_srs.last_review} IS NULL OR julianday(${practice_logs.timestamp}) > julianday(${question_srs.last_review}))`,
+            ),
           ),
         )
-        .orderBy(practice_logs.timestamp)
+        // 同一时刻的多条日志按 id 兜底排序，保证回放顺序稳定
+        .orderBy(sql`julianday(${practice_logs.timestamp})`, practice_logs.id)
         .limit(SYNC_BATCH_SIZE);
 
       if (logs.length === 0) {
@@ -727,12 +743,19 @@ export const srsService = {
                   reviewDate,
                   speed,
                   userAnswerLength,
+                  tx as unknown as SrsExecutor,
                 );
               } catch (err) {
-                // 题目不存在时跳过，不阻塞整个同步
-                console.warn(
-                  `[syncFromPracticeLogs] 跳过题目 ${qId}: ${(err as Error).message}`,
-                );
+                const message = (err as Error).message || "";
+                // 仅跳过"题目已被删除"这种确定性失败；其余错误必须冒泡，
+                // 否则会被当成"同步成功"，卡片悄悄不更新（历史事故形态）。
+                if (message.includes("不存在")) {
+                  console.warn(
+                    `[syncFromPracticeLogs] 跳过题目 ${qId}: ${message}`,
+                  );
+                  continue;
+                }
+                throw err;
               }
             }
           }

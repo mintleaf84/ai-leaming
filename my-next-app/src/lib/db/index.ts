@@ -128,6 +128,25 @@ if (!globalForLibsql.drizzleDb) {
 
 export const drizzleDb = globalForLibsql.drizzleDb!;
 
+/**
+ * 关闭 Drizzle/libsql 连接并清空全局缓存。
+ * 测试清理临时数据库文件前必须调用（Windows 下未关闭的句柄会让删除失败）；
+ * 生产代码里通常不需要，进程退出时连接随之释放。
+ */
+export async function closeDrizzle() {
+  try {
+    await globalForLibsql.libsqlClient?.close?.();
+  } catch (e) {
+    console.warn(
+      "[DB] 关闭 libsql 连接失败:",
+      e instanceof Error ? e.message : String(e),
+    );
+  }
+  globalForLibsql.libsqlClient = null;
+  globalForLibsql.drizzleDb = null;
+  isInitialized = false;
+}
+
 // 防止在单个进程内重复初始化
 let isInitialized = false;
 

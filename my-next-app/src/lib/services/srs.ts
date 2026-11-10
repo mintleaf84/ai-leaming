@@ -21,7 +21,7 @@ import {
   practice_logs,
   system_settings,
 } from "@/lib/db/drizzle-schema";
-import { eq, and, sql, lte, isNull, count, gte } from "drizzle-orm";
+import { eq, and, or, sql, lte, isNull, count, gte } from "drizzle-orm";
 
 // 批量同步配置
 const SYNC_BATCH_SIZE = 100;
@@ -663,10 +663,18 @@ export const srsService = {
         .where(
           and(
             eq(practice_logs.user_id, userId),
-            isNull(question_srs.question_id),
+            or(
+              // 尚无 SRS 卡片：首次同步
+              isNull(question_srs.question_id),
+              // 已有卡片但存在更新的作答：继续把新日志回放到卡片上，
+              // 否则「首张卡片生成后」的作答永远不会进入 SRS。
+              // 用 julianday 比较，兼容 "YYYY-MM-DD HH:MM:SS" 与 ISO 两种时间格式。
+              sql`(${question_srs.last_review} IS NULL OR julianday(${practice_logs.timestamp}) > julianday(${question_srs.last_review}))`,
+            ),
           ),
         )
-        .orderBy(practice_logs.timestamp)
+        // 同一时刻的多条日志按 id 兜底排序，保证回放顺序稳定
+        .orderBy(sql`julianday(${practice_logs.timestamp})`, practice_logs.id)
         .limit(SYNC_BATCH_SIZE);
 
       if (logs.length === 0) {
@@ -738,10 +746,16 @@ export const srsService = {
                   tx as unknown as SrsExecutor,
                 );
               } catch (err) {
-                // 题目不存在时跳过，不阻塞整个同步
-                console.warn(
-                  `[syncFromPracticeLogs] 跳过题目 ${qId}: ${(err as Error).message}`,
-                );
+                const message = (err as Error).message || "";
+                // 仅跳过"题目已被删除"这种确定性失败；其余错误必须冒泡，
+                // 否则会被当成"同步成功"，卡片悄悄不更新（历史事故形态）。
+                if (message.includes("不存在")) {
+                  console.warn(
+                    `[syncFromPracticeLogs] 跳过题目 ${qId}: ${message}`,
+                  );
+                  continue;
+                }
+                throw err;
               }
             }
           }

@@ -2,8 +2,8 @@
 // ==UserScript==
 // @name         粉笔 JSON 全能嗅探提取器 (直推 ai-leaming 版)
 // @namespace    http://tampermonkey.net/
-// @version      6.2
-// @description  劫持 XHR/Fetch 捕获答题数据；凑齐即自动推送；新增练习记录批量静默导入
+// @version      6.3
+// @description  劫持 XHR/Fetch 捕获答题数据；凑齐即自动推送；批量导入练习记录；失败自动指数退避重试
 // @author       Antigravity
 // @match        *://*.fenbi.com/*
 // @grant        GM_xmlhttpRequest
@@ -19,7 +19,7 @@
 (function () {
   "use strict";
 
-  console.log("🚀 [ai-leaming 抓取器] 核心嗅探引擎 6.2 已启动...");
+  console.log("🚀 [ai-leaming 抓取器] 核心嗅探引擎 6.3 已启动...");
 
   // 存储最新的原始 JSON 字符串
   const store = {
@@ -249,8 +249,166 @@
     return el ? el.value.trim() : GM_getValue("fb_api_token", "");
   }
 
+  // ================= 导入重试与结构化日志 =================
+  // 目的：网络抖动、服务端 5xx、跨域超时自动指数退避重试；4xx / 业务失败不重试。
+  // 服务端已按 sourceKey 幂等，重试是安全的（重复推送会返回 duplicated=true）。
+  const RETRY = {
+    maxAttempts: 3,
+    baseDelayMs: 1000,
+    maxDelayMs: 8000,
+    jitter: 0.2,
+    timeoutMs: 60000,
+  };
+
+  function logImport(event, detail) {
+    const record = Object.assign(
+      { ts: new Date().toISOString(), event: event },
+      detail || {},
+    );
+    try {
+      console.info("[fenbi-import] " + JSON.stringify(record));
+    } catch (_e) {
+      console.info("[fenbi-import]", event, detail);
+    }
+  }
+
+  function backoffDelay(attempt) {
+    const raw = Math.min(
+      RETRY.baseDelayMs * Math.pow(2, attempt - 1),
+      RETRY.maxDelayMs,
+    );
+    const jitter = raw * RETRY.jitter * (Math.random() * 2 - 1);
+    return Math.round(raw + jitter);
+  }
+
+  // 5xx / 408 / 429 / 网络层错误与超时可重试；其余 4xx 视为永久失败
+  function isRetryableStatus(status) {
+    return status === 0 || status === 408 || status === 429 || status >= 500;
+  }
+
+  function postOnce(url, token, body) {
+    return new Promise(function (resolve) {
+      const startedAt = Date.now();
+      GM_xmlhttpRequest({
+        method: "POST",
+        url: url,
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: "Bearer " + token,
+        },
+        data: body,
+        timeout: RETRY.timeoutMs,
+        onload: function (response) {
+          let parsed = null;
+          try {
+            parsed = JSON.parse(response.responseText);
+          } catch (_e) {
+            // 非 JSON（HTML 回退页 / 挑战页 / 登录页）：既不是成功也不可判定为可重试
+            parsed = null;
+          }
+          resolve({
+            kind: "http",
+            status: response.status,
+            body: parsed,
+            raw: response.responseText,
+            elapsedMs: Date.now() - startedAt,
+          });
+        },
+        onerror: function (err) {
+          resolve({
+            kind: "network",
+            status: 0,
+            raw: String((err && err.error) || "network error"),
+            elapsedMs: Date.now() - startedAt,
+          });
+        },
+        ontimeout: function () {
+          resolve({
+            kind: "timeout",
+            status: 0,
+            raw: "timeout",
+            elapsedMs: Date.now() - startedAt,
+          });
+        },
+      });
+    });
+  }
+
+  function summarize(result) {
+    const body = result.body || null;
+    return {
+      kind: result.kind,
+      status: result.status,
+      elapsedMs: result.elapsedMs,
+      message: body
+        ? body.message || body.error || ""
+        : String(result.raw || "").slice(0, 200),
+    };
+  }
+
+  /**
+   * 带指数退避的 webhook 推送。
+   * @returns {{ok:boolean, duplicated?:boolean, attempts:number, result:object}}
+   */
+  async function postWebhookWithRetry(opts) {
+    let last = null;
+    for (let attempt = 1; attempt <= RETRY.maxAttempts; attempt++) {
+      last = await postOnce(opts.url, opts.token, opts.body);
+      const ok =
+        last.kind === "http" &&
+        last.status === 200 &&
+        last.body &&
+        last.body.success === true;
+      const duplicated = ok && last.body.duplicated === true;
+      const detail = Object.assign(
+        {
+          key: opts.key || "",
+          attempt: attempt,
+          maxAttempts: RETRY.maxAttempts,
+        },
+        summarize(last),
+      );
+      logImport("push-attempt", detail);
+
+      if (ok) {
+        logImport(
+          duplicated ? "push-skipped-duplicate" : "push-succeeded",
+          detail,
+        );
+        return {
+          ok: true,
+          duplicated: duplicated,
+          attempts: attempt,
+          result: last,
+        };
+      }
+
+      const retryable = last.kind !== "http" || isRetryableStatus(last.status);
+      if (!retryable || attempt === RETRY.maxAttempts) {
+        logImport(
+          "push-failed",
+          Object.assign({ retryable: retryable }, detail),
+        );
+        return { ok: false, attempts: attempt, result: last };
+      }
+
+      const delay = backoffDelay(attempt);
+      logImport(
+        "push-retry-scheduled",
+        Object.assign({ retryInMs: delay }, detail),
+      );
+      if (typeof opts.onRetry === "function") {
+        try {
+          opts.onRetry(attempt + 1, RETRY.maxAttempts);
+        } catch (_e) {}
+      }
+      await sleep(delay);
+    }
+    return { ok: false, attempts: RETRY.maxAttempts, result: last };
+  }
+
   // --- 推送到服务器（auto=true 时静默，不弹窗不打断）；返回 Promise 便于批量串行 ---
-  function pushToServer(btnId, auto, payload) {
+  async function pushToServer(btnId, auto, payload) {
     // 已有推送在途时拒绝并发，防止同一套练习写入两个 session 与两组日志
     if (inflightPush) {
       if (!auto) alert("⏳ 上一个推送还没结束，请稍候。");
@@ -299,108 +457,70 @@
     }
     inflightPush = true;
 
-    return new Promise((resolve) => {
-      GM_xmlhttpRequest({
-        method: "POST",
-        url: `${serverUrl.replace(/\/$/, "")}/api/import/fenbi-webhook`,
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${apiToken}`,
-        },
-        data: JSON.stringify({
-          exerciseJson: data.exerciseJson,
-          solutionsJson: data.solutionsJson,
-          statsJson: data.statsJson,
-        }),
-        timeout: 60000,
-        onload: function (response) {
-          inflightPush = false;
-          const ok =
-            response.status === 200 &&
-            (() => {
-              try {
-                return JSON.parse(response.responseText).success === true;
-              } catch (_e) {
-                // 非 JSON 响应（HTML 回退页/挑战页/登录页）一律判失败，
-                // 否则会误记去重 key 导致该套练习永久静默丢失
-                return false;
-              }
-            })();
-          if (ok) {
-            markAsPushed(pushKey);
-            if (btn) {
-              btn.innerText = "✅ 导入成功！";
-              btn.style.background = "#52c41a";
-            }
-            if (auto)
-              console.log(
-                "📤 [自动推送] 成功 key=" + (pushKey || "").substring(0, 12),
-              );
-          } else {
-            if (btn) {
-              btn.innerText = "❌ 导入失败";
-              btn.style.background = "#ff4d4f";
-            }
-            if (!auto) {
-              // 把服务端真实原因透出来（历史上只显示"导入失败"，无法定位）
-              let msg = "";
-              try {
-                const res = JSON.parse(response.responseText);
-                msg = res.message || res.error || "";
-              } catch (_e) {
-                msg = String(response.responseText || "").slice(0, 300);
-              }
-              alert(
-                "❌ 导入失败 (HTTP " +
-                  response.status +
-                  ")" +
-                  (msg ? "\n" + msg : ""),
-              );
-            } else {
-              console.error("📤 [自动推送] 失败:", response.responseText);
-            }
-          }
-          updateUI();
-          setTimeout(() => {
-            if (btn) {
-              btn.innerText = "⚡ 一键推送到 ai-leaming";
-              btn.style.background = "#1890ff";
-            }
-          }, 4000);
-          resolve(ok);
-        },
-        onerror: function (err) {
-          inflightPush = false;
-          if (btn) {
-            btn.innerText = "❌ 网络连接失败";
-            btn.style.background = "#ff4d4f";
-          }
-          console.error("跨域推送失败:", err);
-          setTimeout(() => {
-            if (btn) {
-              btn.innerText = "⚡ 一键推送到 ai-leaming";
-              btn.style.background = "#1890ff";
-            }
-          }, 3000);
-          resolve(false);
-        },
-        ontimeout: function () {
-          inflightPush = false;
-          if (btn) {
-            btn.innerText = "❌ 推送超时";
-            btn.style.background = "#ff4d4f";
-          }
-          console.error("推送超时");
-          setTimeout(() => {
-            if (btn) {
-              btn.innerText = "⚡ 一键推送到 ai-leaming";
-              btn.style.background = "#1890ff";
-            }
-          }, 3000);
-          resolve(false);
-        },
-      });
+    const result = await postWebhookWithRetry({
+      url: serverUrl.replace(/\/$/, "") + "/api/import/fenbi-webhook",
+      token: apiToken,
+      body: JSON.stringify({
+        exerciseJson: data.exerciseJson,
+        solutionsJson: data.solutionsJson,
+        statsJson: data.statsJson,
+      }),
+      key: pushKey,
+      onRetry: function (nextAttempt, maxAttempts) {
+        if (btn) btn.innerText = "🔁 重试中 " + nextAttempt + "/" + maxAttempts;
+      },
     });
+
+    inflightPush = false;
+    const summary = summarize(result.result || {});
+    const ok = result.ok;
+
+    if (ok) {
+      markAsPushed(pushKey);
+      if (btn) {
+        btn.innerText = result.duplicated
+          ? "✅ 已导入过（跳过）"
+          : "✅ 导入成功！";
+        btn.style.background = "#52c41a";
+      }
+      if (auto) {
+        console.log(
+          "📤 [自动推送] 成功 key=" +
+            (pushKey || "").substring(0, 12) +
+            " attempts=" +
+            result.attempts,
+        );
+      }
+    } else {
+      if (btn) {
+        btn.innerText = "❌ 导入失败";
+        btn.style.background = "#ff4d4f";
+      }
+      if (!auto) {
+        // 把服务端真实原因透出来（历史上只显示"导入失败"，无法定位）
+        alert(
+          "❌ 导入失败 (HTTP " +
+            summary.status +
+            (result.attempts > 1
+              ? "，已重试 " + (result.attempts - 1) + " 次"
+              : "") +
+            ")" +
+            (summary.message ? "\n" + summary.message : ""),
+        );
+      } else {
+        console.error("📤 [自动推送] 失败:", summary);
+      }
+    }
+
+    updateUI();
+    setTimeout(function () {
+      if (btn) {
+        btn.innerText = "⚡ 一键推送到 ai-leaming";
+        btn.style.background = "#1890ff";
+        btn.disabled = false;
+      }
+    }, 4000);
+    return ok;
   }
 
   function pushCurrent(auto) {
@@ -612,7 +732,7 @@
     panel.id = "zhuoyu-fb-extractor";
     panel.innerHTML = `
             <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;border-bottom:1px solid #eee;padding-bottom:5px;">
-                <span style="font-weight:bold;color:#333;font-size:14px;">🚀 推流系统 6.2</span>
+                <span style="font-weight:bold;color:#333;font-size:14px;">🚀 推流系统 6.3</span>
                 <span id="fb-collapse-btn" style="cursor:pointer;font-size:16px;color:#999;line-height:1" title="收起面板">✕</span>
             </div>
             
@@ -769,6 +889,16 @@
     if (toggle && store.exerciseJson && store.solutionsJson) {
       toggle.style.background = isAlreadyPushed() ? "#52c41a" : "#faad14";
     }
+  }
+
+  // 测试钩子：仅在显式开启 window.__FENBI_TEST__ 时暴露内部实现，正常运行不挂载
+  if (typeof window !== "undefined" && window.__FENBI_TEST__) {
+    window.__fenbiInternals = {
+      postWebhookWithRetry: postWebhookWithRetry,
+      backoffDelay: backoffDelay,
+      isRetryableStatus: isRetryableStatus,
+      RETRY: RETRY,
+    };
   }
 
   window.addEventListener("load", initUI);

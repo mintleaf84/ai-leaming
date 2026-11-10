@@ -7,15 +7,34 @@
 
 AI 教招客观题智能提升系统——基于 Next.js 15、Hono、SQLite 和 AI 集成的教师招聘考试智能刷题平台。
 
+## 工程规范（先读）
+
+改动代码前必读 [`docs/engineering.md`](docs/engineering.md)：幂等键、`catch` 三形态、关键路径真实依赖集成测试、四闸+审计、版本唯一事实来源。
+计划进度见 [`docs/engineering-plan.md`](docs/engineering-plan.md)，取舍记录见 [`docs/decisions.md`](docs/decisions.md)。
+
+### 五条硬规则（合并前必须满足）
+
+1. **写操作先定幂等键**：优先用上游操作 ID（跨重试稳定）；内容指纹只能兜底，且需提供人工重推入口；同一份数据执行两次不得产生重复会话/重复累加；
+2. **`catch` 只允许三种**：转换重抛 / 命中明确业务错误跳过（判定可测）/ 可忽略且打结构化日志；禁止只 `console.warn` 后继续；
+3. **关键路径必须有真实依赖的集成测试**（DB 写入、鉴权、导入、结算），禁止用 mock 数据库冒充验证；
+4. **闸门绿了才合**：`lint:ci`（按规则棘轮）/ `typecheck` / `test:run` / `next build` / `npm audit --audit-level=high`；
+5. **版本唯一事实来源**：`.nvmrc` + `engines` + `preinstall` 守卫固定 Node 20，核心依赖写死版本。
+
+细则、示例与验收命令见 [`docs/engineering.md`](docs/engineering.md)。
+
 ## 常用命令（在 `my-next-app/` 下执行）
 
 ```bash
 npm run dev          # 开发服务器 (0.0.0.0:3000)
 npm run build        # 生产构建
 npm run start        # 启动生产服务
-npm run lint         # ESLint
-npm test             # Vitest（默认监听模式）
-npm test -- --run    # 单次运行
+npm run typecheck    # tsc --noEmit
+npm run lint         # ESLint（全量看 warning）
+npm run lint:ci      # ESLint 按规则棘轮（.eslint-baseline.json）
+npm run lint:baseline # 收紧 warning 基线（总数下降后才执行）
+npm run test:run     # Vitest 单次运行
+npm run test:e2e     # Playwright（自己起 3001 测试服务；勿手起 dev server，否则 webServer.env 不生效）
+npm test             # Vitest（监听模式）
 npm run db:migrate   # 执行数据库迁移
 ```
 

@@ -8,6 +8,9 @@ WORKDIR /app
 RUN apt-get update && apt-get install -y openssl python3 make g++ && rm -rf /var/lib/apt/lists/*
 
 COPY package.json package-lock.json ./
+# npm ci 会执行 package.json 的 preinstall（Node 版本守卫），需要这两个文件
+COPY .nvmrc ./
+COPY scripts/check-node-version.cjs ./scripts/
 RUN npm ci --legacy-peer-deps
 
 # ========================================

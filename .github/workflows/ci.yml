@@ -38,11 +38,14 @@ jobs:
       - name: 安装依赖
         run: npm ci
 
-      - name: ESLint 与类型检查（并行）
+      - name: 依赖安全审计（high 及以上直接失败）
+        run: npm audit --audit-level=high
+
+      - name: ESLint（warning 棘轮）与类型检查（并行）
         run: |
-          npm run lint &
+          npm run lint:ci &
           lint_pid=$!
-          npx tsc --noEmit &
+          npm run typecheck &
           tsc_pid=$!
           wait "$lint_pid"
           lint_status=$?
@@ -66,28 +69,18 @@ jobs:
           cache: npm
           cache-dependency-path: my-next-app/package-lock.json
 
-      - name: 检测变更文件
-        id: changed
-        uses: dorny/paths-filter@v3
-        with:
-          filters: |
-            code:
-              - 'my-next-app/src/**'
-              - 'my-next-app/tests/**'
-              - 'my-next-app/vitest.config.ts'
-              - 'my-next-app/package-lock.json'
-
       - name: 安装依赖
         run: npm ci
 
+      # 注意：这里不做路径过滤。历史上用 paths-filter 跳过纯文档/配置改动，
+      # 会让「单元测试 (Vitest)」这个必需检查在不跑测试的情况下报绿，
+      # 等于闸门形同虚设（见 docs/engineering.md 第 4 条）。
       - name: 运行单元测试（含覆盖率）
-        if: steps.changed.outputs.code == 'true'
         run: npx vitest run --coverage
         env:
           BACKUP_ENCRYPTION_KEY: ci-backup-encryption-key-for-testing-only
 
       - name: 上传覆盖率报告
-        if: steps.changed.outputs.code == 'true'
         uses: actions/upload-artifact@v4
         with:
           name: coverage-report

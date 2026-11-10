@@ -16,7 +16,7 @@ export default (phase: string) => {
     distDir: process.env.E2E_TEST === "true" ? ".next-e2e" : undefined,
     turbopack: {},
     experimental: {
-      viewTransition: true,
+      // viewTransition 在 Next 16.4 的类型里已移除（且 src 未使用 ViewTransition），故去掉
       serverActions: {
         bodySizeLimit: "70mb",
       },

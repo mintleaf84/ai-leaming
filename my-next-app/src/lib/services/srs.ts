@@ -12,6 +12,9 @@ import utc from "dayjs/plugin/utc";
 
 dayjs.extend(utc);
 import { drizzleDb } from "@/lib/db";
+
+/** SRS 相关写入允许复用事务执行器；默认使用全局 drizzle 实例 */
+type SrsExecutor = typeof drizzleDb;
 import {
   questions,
   question_srs,
@@ -57,6 +60,7 @@ const FILL_BLANK_THINKING_TIME_DISCOUNT = 0.6; // 填空题思考时间折扣，
 async function getReadingSpeed(
   userId: number,
   questionType?: string,
+  exec: SrsExecutor = drizzleDb,
 ): Promise<number> {
   const key =
     questionType === "multi"
@@ -67,7 +71,7 @@ async function getReadingSpeed(
           ? "reading_speed_fill_blank"
           : "reading_speed_base";
 
-  const [setting] = await drizzleDb
+  const [setting] = await exec
     .select()
     .from(system_settings)
     .where(
@@ -76,7 +80,7 @@ async function getReadingSpeed(
     .limit(1);
 
   if (!setting && key !== "reading_speed_base") {
-    const [baseSetting] = await drizzleDb
+    const [baseSetting] = await exec
       .select()
       .from(system_settings)
       .where(
@@ -104,6 +108,7 @@ export async function learnReadingSpeed(
   durationMs: number,
   questionType?: string,
   userAnswerLength?: number,
+  exec: SrsExecutor = drizzleDb,
 ) {
   let optionsText = "";
   try {
@@ -121,7 +126,7 @@ export async function learnReadingSpeed(
   if (totalChars < 10 || durationMs < 1000 || durationMs > 60000) return;
 
   const currentSpeed = totalChars / (durationMs / 1000);
-  const oldSpeed = await getReadingSpeed(userId, questionType);
+  const oldSpeed = await getReadingSpeed(userId, questionType, exec);
 
   let newSpeed =
     oldSpeed * (1 - READING_SPEED_ALPHA) + currentSpeed * READING_SPEED_ALPHA;
@@ -136,7 +141,7 @@ export async function learnReadingSpeed(
           ? "reading_speed_fill_blank"
           : "reading_speed_base";
 
-  await drizzleDb
+  await exec
     .insert(system_settings)
     .values({
       user_id: userId,
@@ -268,8 +273,9 @@ export const srsService = {
   getOrCreateSrsCard: async (
     userId: number,
     questionId: number,
+    exec: SrsExecutor = drizzleDb,
   ): Promise<Card> => {
-    const [row] = await drizzleDb
+    const [row] = await exec
       .select()
       .from(question_srs)
       .where(
@@ -311,8 +317,9 @@ export const srsService = {
     reviewDate?: Date,
     cachedReadingSpeed?: number,
     userAnswerLength?: number,
+    exec: SrsExecutor = drizzleDb,
   ) => {
-    const [question] = await drizzleDb
+    const [question] = await exec
       .select()
       .from(questions)
       .where(eq(questions.id, questionId))
@@ -321,7 +328,7 @@ export const srsService = {
       throw new Error(`题目 ID ${questionId} 不存在，无法更新 SRS 状态`);
     }
 
-    const card = await srsService.getOrCreateSrsCard(userId, questionId);
+    const card = await srsService.getOrCreateSrsCard(userId, questionId, exec);
 
     let rating: Rating;
     if (!isCorrect) {
@@ -329,7 +336,7 @@ export const srsService = {
     } else {
       const readingSpeed =
         cachedReadingSpeed ??
-        (await getReadingSpeed(userId, question.type || undefined));
+        (await getReadingSpeed(userId, question.type || undefined, exec));
       rating = srsService.calculateRating(
         question.content,
         question.options || "[]",
@@ -346,6 +353,7 @@ export const srsService = {
         durationMs,
         question.type || undefined,
         userAnswerLength,
+        exec,
       );
     }
 
@@ -355,7 +363,7 @@ export const srsService = {
       rating
     ].card;
 
-    await drizzleDb
+    await exec
       .insert(question_srs)
       .values({
         user_id: userId,
@@ -727,6 +735,7 @@ export const srsService = {
                   reviewDate,
                   speed,
                   userAnswerLength,
+                  tx as unknown as SrsExecutor,
                 );
               } catch (err) {
                 // 题目不存在时跳过，不阻塞整个同步

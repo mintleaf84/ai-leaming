@@ -16,5 +16,5 @@ export const SavePromptSchema = z.object({
 export const DebugPromptSchema = z.object({
   key: z.string(),
   template: z.string(),
-  inputVariables: z.record(z.string()),
+  inputVariables: z.record(z.string(), z.string()),
 });

@@ -249,7 +249,6 @@
     return el ? el.value.trim() : GM_getValue("fb_api_token", "");
   }
 
-
   // ================= 导入重试与结构化日志 =================
   // 目的：网络抖动、服务端 5xx、跨域超时自动指数退避重试；4xx / 业务失败不重试。
   // 服务端已按 sourceKey 幂等，重试是安全的（重复推送会返回 duplicated=true）。
@@ -361,23 +360,43 @@
         last.body &&
         last.body.success === true;
       const duplicated = ok && last.body.duplicated === true;
-      const detail = Object.assign({ key: opts.key || "", attempt: attempt, maxAttempts: RETRY.maxAttempts }, summarize(last));
+      const detail = Object.assign(
+        {
+          key: opts.key || "",
+          attempt: attempt,
+          maxAttempts: RETRY.maxAttempts,
+        },
+        summarize(last),
+      );
       logImport("push-attempt", detail);
 
       if (ok) {
-        logImport(duplicated ? "push-skipped-duplicate" : "push-succeeded", detail);
-        return { ok: true, duplicated: duplicated, attempts: attempt, result: last };
+        logImport(
+          duplicated ? "push-skipped-duplicate" : "push-succeeded",
+          detail,
+        );
+        return {
+          ok: true,
+          duplicated: duplicated,
+          attempts: attempt,
+          result: last,
+        };
       }
 
-      const retryable =
-        last.kind !== "http" || isRetryableStatus(last.status);
+      const retryable = last.kind !== "http" || isRetryableStatus(last.status);
       if (!retryable || attempt === RETRY.maxAttempts) {
-        logImport("push-failed", Object.assign({ retryable: retryable }, detail));
+        logImport(
+          "push-failed",
+          Object.assign({ retryable: retryable }, detail),
+        );
         return { ok: false, attempts: attempt, result: last };
       }
 
       const delay = backoffDelay(attempt);
-      logImport("push-retry-scheduled", Object.assign({ retryInMs: delay }, detail));
+      logImport(
+        "push-retry-scheduled",
+        Object.assign({ retryInMs: delay }, detail),
+      );
       if (typeof opts.onRetry === "function") {
         try {
           opts.onRetry(attempt + 1, RETRY.maxAttempts);
@@ -459,7 +478,9 @@
     if (ok) {
       markAsPushed(pushKey);
       if (btn) {
-        btn.innerText = result.duplicated ? "✅ 已导入过（跳过）" : "✅ 导入成功！";
+        btn.innerText = result.duplicated
+          ? "✅ 已导入过（跳过）"
+          : "✅ 导入成功！";
         btn.style.background = "#52c41a";
       }
       if (auto) {
@@ -480,7 +501,9 @@
         alert(
           "❌ 导入失败 (HTTP " +
             summary.status +
-            (result.attempts > 1 ? "，已重试 " + (result.attempts - 1) + " 次" : "") +
+            (result.attempts > 1
+              ? "，已重试 " + (result.attempts - 1) + " 次"
+              : "") +
             ")" +
             (summary.message ? "\n" + summary.message : ""),
         );

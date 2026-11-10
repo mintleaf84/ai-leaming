@@ -157,14 +157,19 @@ describe("粉笔脚本推送重试", () => {
 
     expect(res.ok).toBe(true);
     expect(res.attempts).toBe(2);
-    const events = logs.map((l) => JSON.parse(String(l[0]).replace("[fenbi-import] ", "")).event);
+    const events = logs.map(
+      (l) => JSON.parse(String(l[0]).replace("[fenbi-import] ", "")).event,
+    );
     expect(events).toContain("push-retry-scheduled");
     expect(events).toContain("push-succeeded");
   });
 
   it("4xx 不重试：直接失败，只请求 1 次", async () => {
     const { internals, logs } = loadScript([
-      { status: 401, responseText: JSON.stringify({ success: false, message: "bad token" }) },
+      {
+        status: 401,
+        responseText: JSON.stringify({ success: false, message: "bad token" }),
+      },
     ]);
 
     const res = await internals.postWebhookWithRetry({
@@ -203,7 +208,13 @@ describe("粉笔脚本推送重试", () => {
 
   it("200 但 success=false（业务失败）不重试", async () => {
     const { internals } = loadScript([
-      { status: 200, responseText: JSON.stringify({ success: false, message: "解析结果为空" }) },
+      {
+        status: 200,
+        responseText: JSON.stringify({
+          success: false,
+          message: "解析结果为空",
+        }),
+      },
     ]);
 
     const res = await internals.postWebhookWithRetry({
@@ -219,7 +230,10 @@ describe("粉笔脚本推送重试", () => {
 
   it("success=true 且 duplicated=true 视为成功并标记跳过", async () => {
     const { internals, logs } = loadScript([
-      { status: 200, responseText: JSON.stringify({ success: true, duplicated: true }) },
+      {
+        status: 200,
+        responseText: JSON.stringify({ success: true, duplicated: true }),
+      },
     ]);
 
     const res = await internals.postWebhookWithRetry({
@@ -231,7 +245,9 @@ describe("粉笔脚本推送重试", () => {
 
     expect(res.ok).toBe(true);
     expect(res.duplicated).toBe(true);
-    const events = logs.map((l) => JSON.parse(String(l[0]).replace("[fenbi-import] ", "")).event);
+    const events = logs.map(
+      (l) => JSON.parse(String(l[0]).replace("[fenbi-import] ", "")).event,
+    );
     expect(events).toContain("push-skipped-duplicate");
   });
 

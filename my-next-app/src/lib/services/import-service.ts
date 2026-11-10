@@ -1,11 +1,40 @@
 import { drizzleDb, drizzleSchema } from "../db";
-import { sql } from "drizzle-orm";
+import { and, eq, sql } from "drizzle-orm";
 import { FenbiImportResult } from "../import/fenbi-parser";
 import { sanitizeHtml } from "../utils/security";
 import { generateId } from "../utils/id";
 
 const { practice_sessions, questions, practice_logs, user_mastery } =
   drizzleSchema;
+
+/** 判断是否命中唯一索引冲突（并发下同一 sourceKey 的两次导入） */
+function isUniqueViolation(e: unknown): boolean {
+  const err = e as { code?: string; message?: string };
+  const code = err?.code || "";
+  const message = err?.message || "";
+  return (
+    code.startsWith("SQLITE_CONSTRAINT") ||
+    message.includes("UNIQUE constraint failed")
+  );
+}
+
+/** 查询该用户已导入的同源会话 ID */
+async function findExistingSession(
+  userId: number,
+  sourceKey: string,
+): Promise<string | null> {
+  const rows = await drizzleDb
+    .select({ id: practice_sessions.id })
+    .from(practice_sessions)
+    .where(
+      and(
+        eq(practice_sessions.user_id, userId),
+        eq(practice_sessions.source_key, sourceKey),
+      ),
+    )
+    .limit(1);
+  return rows.length > 0 ? rows[0].id : null;
+}
 
 /**
  * 导入 Service
@@ -22,25 +51,56 @@ export const importService = {
     const sessionId = `fenbi_${generateId("", 15)}`;
     let newQuestionsCount = 0;
 
+    // 0. 幂等预检：同一用户同一来源只导入一次，重复推送直接复用既有会话，
+    //    不再写日志、不再累加掌握度（否则重复导入会虚高 mastery 分数）。
+    if (data.sourceKey) {
+      const existingId = await findExistingSession(userId, data.sourceKey);
+      if (existingId) {
+        return {
+          sessionId: existingId,
+          newQuestionsCount: 0,
+          importedCount: 0,
+          duplicated: true,
+        };
+      }
+    }
+
     // 注意：为避免 LibSQL 的连接池产生 SQLITE_BUSY 死锁，且由于 SQLite 不建议在长事务中穿插大量 JS 异步逻辑，此处移除事务包装。
     // 所有插入都使用了 UPSERT，具有幂等性，中途失败亦可安全重试。
 
     // 1. 创建练习会话
-    await drizzleDb.insert(practice_sessions).values({
-      id: sessionId,
-      user_id: userId,
-      session_name: data.sessionName,
-      total_questions: data.totalCount,
-      correct_count: data.correctCount,
-      practice_mode: "import",
-      questions_json: JSON.stringify(
-        data.questions.map((q) => ({
-          externalId: q.externalId,
-          content: q.content,
-          type: q.type,
-        })),
-      ),
-    });
+    try {
+      await drizzleDb.insert(practice_sessions).values({
+        id: sessionId,
+        user_id: userId,
+        session_name: data.sessionName,
+        source_key: data.sourceKey ?? null,
+        total_questions: data.totalCount,
+        correct_count: data.correctCount,
+        practice_mode: "import",
+        questions_json: JSON.stringify(
+          data.questions.map((q) => ({
+            externalId: q.externalId,
+            content: q.content,
+            type: q.type,
+          })),
+        ),
+      });
+    } catch (e) {
+      // 并发窗口：预检通过但另一请求先写入，唯一索引兜底后按重复处理
+      if (data.sourceKey && isUniqueViolation(e)) {
+        const existingId = await findExistingSession(userId, data.sourceKey);
+        if (existingId) {
+          return {
+            sessionId: existingId,
+            newQuestionsCount: 0,
+            importedCount: 0,
+            duplicated: true,
+          };
+        }
+      }
+      throw e;
+    }
 
     // 2. 批量处理题目 (Upsert)
     // 分批处理以防止 SQLite 参数过多限制
@@ -182,6 +242,7 @@ export const importService = {
       sessionId,
       newQuestionsCount,
       importedCount: data.records.length,
+      duplicated: false,
     };
   },
 };

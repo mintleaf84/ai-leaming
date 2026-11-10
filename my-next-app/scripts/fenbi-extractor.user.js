@@ -2,7 +2,7 @@
 // ==UserScript==
 // @name         粉笔 JSON 全能嗅探提取器 (直推 ai-leaming 版)
 // @namespace    http://tampermonkey.net/
-// @version      6.1
+// @version      6.2
 // @description  劫持 XHR/Fetch 捕获答题数据；凑齐即自动推送；新增练习记录批量静默导入
 // @author       Antigravity
 // @match        *://*.fenbi.com/*
@@ -19,7 +19,7 @@
 (function () {
   "use strict";
 
-  console.log("🚀 [ai-leaming 抓取器] 核心嗅探引擎 6.1 已启动...");
+  console.log("🚀 [ai-leaming 抓取器] 核心嗅探引擎 6.2 已启动...");
 
   // 存储最新的原始 JSON 字符串
   const store = {
@@ -342,13 +342,20 @@
               btn.style.background = "#ff4d4f";
             }
             if (!auto) {
+              // 把服务端真实原因透出来（历史上只显示"导入失败"，无法定位）
+              let msg = "";
               try {
-                alert(
-                  JSON.parse(response.responseText).message || "返回了失败标识",
-                );
+                const res = JSON.parse(response.responseText);
+                msg = res.message || res.error || "";
               } catch (_e) {
-                alert("导入失败，HTTP " + response.status);
+                msg = String(response.responseText || "").slice(0, 300);
               }
+              alert(
+                "❌ 导入失败 (HTTP " +
+                  response.status +
+                  ")" +
+                  (msg ? "\n" + msg : ""),
+              );
             } else {
               console.error("📤 [自动推送] 失败:", response.responseText);
             }
@@ -605,7 +612,7 @@
     panel.id = "zhuoyu-fb-extractor";
     panel.innerHTML = `
             <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;border-bottom:1px solid #eee;padding-bottom:5px;">
-                <span style="font-weight:bold;color:#333;font-size:14px;">🚀 推流系统 6.1</span>
+                <span style="font-weight:bold;color:#333;font-size:14px;">🚀 推流系统 6.2</span>
                 <span id="fb-collapse-btn" style="cursor:pointer;font-size:16px;color:#999;line-height:1" title="收起面板">✕</span>
             </div>
             

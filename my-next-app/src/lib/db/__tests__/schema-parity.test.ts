@@ -75,21 +75,23 @@ const MIGRATION_ONLY_TABLES = new Set([
 ]);
 
 async function columnsOf(db: any, table: string): Promise<ColumnInfo[]> {
-  const rows = (await db.all(
-    `PRAGMA table_info(\`${table}\`)`,
-  )) as any[];
+  const rows = (await db.all(`PRAGMA table_info(\`${table}\`)`)) as any[];
   return rows.map((r) => ({
     name: String(r.name),
     type: String(r.type || "").toUpperCase(),
     notnull: Number(r.notnull),
     pk: Number(r.pk),
-    dflt: r.dflt_value === null || r.dflt_value === undefined
-      ? null
-      : String(r.dflt_value),
+    dflt:
+      r.dflt_value === null || r.dflt_value === undefined
+        ? null
+        : String(r.dflt_value),
   }));
 }
 
-async function foreignKeysOf(db: any, table: string): Promise<ForeignKeyInfo[]> {
+async function foreignKeysOf(
+  db: any,
+  table: string,
+): Promise<ForeignKeyInfo[]> {
   const rows = (await db.all(`PRAGMA foreign_key_list(\`${table}\`)`)) as any[];
   return rows
     .map((r) => ({
@@ -99,7 +101,9 @@ async function foreignKeysOf(db: any, table: string): Promise<ForeignKeyInfo[]> 
       onDelete: String(r.on_delete || "NO ACTION").toUpperCase(),
       onUpdate: String(r.on_update || "NO ACTION").toUpperCase(),
     }))
-    .sort((a, b) => `${a.from}>${a.table}`.localeCompare(`${b.from}>${b.table}`));
+    .sort((a, b) =>
+      `${a.from}>${a.table}`.localeCompare(`${b.from}>${b.table}`),
+    );
 }
 
 async function tableNames(db: any): Promise<string[]> {
@@ -139,7 +143,10 @@ describe("迁移与测试 schema 一致性", () => {
     const migrated = new Set(await tableNames(dbm.drizzleDb));
     const testTables = await tableNames(memoryDb);
     const testOnly = testTables.filter((t) => !migrated.has(t));
-    expect(testOnly, `这些表只存在于测试 schema：${testOnly.join(", ")}`).toEqual([]);
+    expect(
+      testOnly,
+      `这些表只存在于测试 schema：${testOnly.join(", ")}`,
+    ).toEqual([]);
   });
 
   it("迁移新增的表必须先登记（MIGRATION_ONLY_TABLES 或补进夹具）", async () => {
@@ -209,18 +216,24 @@ describe("迁移与测试 schema 一致性", () => {
       const realFks = await foreignKeysOf(dbm.drizzleDb, table);
       const testFks = await foreignKeysOf(memoryDb, table);
       const realFkKeys = new Set(
-        realFks.map((f) => `${f.from}>${f.table}.${f.to}:${f.onDelete}/${f.onUpdate}`),
+        realFks.map(
+          (f) => `${f.from}>${f.table}.${f.to}:${f.onDelete}/${f.onUpdate}`,
+        ),
       );
       for (const fk of testFks) {
         const key = `${fk.from}>${fk.table}.${fk.to}:${fk.onDelete}/${fk.onUpdate}`;
-        if (!realFkKeys.has(key)) drift.push(`${table}: 外键不一致（测试专有 ${key}）`);
+        if (!realFkKeys.has(key))
+          drift.push(`${table}: 外键不一致（测试专有 ${key}）`);
       }
       const testFkKeys = new Set(
-        testFks.map((f) => `${f.from}>${f.table}.${f.to}:${f.onDelete}/${f.onUpdate}`),
+        testFks.map(
+          (f) => `${f.from}>${f.table}.${f.to}:${f.onDelete}/${f.onUpdate}`,
+        ),
       );
       for (const fk of realFks) {
         const key = `${fk.from}>${fk.table}.${fk.to}:${fk.onDelete}/${fk.onUpdate}`;
-        if (!testFkKeys.has(key)) drift.push(`${table}: 外键不一致（真实专有 ${key}）`);
+        if (!testFkKeys.has(key))
+          drift.push(`${table}: 外键不一致（真实专有 ${key}）`);
       }
     }
 

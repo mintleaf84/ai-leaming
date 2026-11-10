@@ -18,7 +18,10 @@ function isUniqueViolation(e: unknown): boolean {
     const err = current as { code?: string; message?: string; cause?: unknown };
     const code = String(err.code || "");
     const message = String(err.message || "");
-    if (code.includes("CONSTRAINT_UNIQUE") || code === "SQLITE_CONSTRAINT_UNIQUE") {
+    if (
+      code.includes("CONSTRAINT_UNIQUE") ||
+      code === "SQLITE_CONSTRAINT_UNIQUE"
+    ) {
       return true;
     }
     if (message.includes("UNIQUE constraint failed")) return true;

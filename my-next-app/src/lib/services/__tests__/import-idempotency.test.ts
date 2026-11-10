@@ -132,12 +132,14 @@ describe("粉笔导入幂等性（真实 SQLite）", () => {
   it("唯一约束冲突的判定能穿透 drizzle 的包装错误", async () => {
     // drizzle 把 SqliteError 包一层：外层 message 是 "Failed query: ..."，
     // code 在 cause 上。这里直接构造两种形态，确保判定不依赖调用顺序。
-    const { isUniqueViolation } = await import("../import-service").then((m) => {
-      const hook = (m as any).__test__?.isUniqueViolation;
-      // 钩子缺失时直接失败，避免用例空转通过
-      expect(typeof hook).toBe("function");
-      return { isUniqueViolation: hook };
-    });
+    const { isUniqueViolation } = await import("../import-service").then(
+      (m) => {
+        const hook = (m as any).__test__?.isUniqueViolation;
+        // 钩子缺失时直接失败，避免用例空转通过
+        expect(typeof hook).toBe("function");
+        return { isUniqueViolation: hook };
+      },
+    );
     expect(
       isUniqueViolation({
         message: "Failed query: insert into practice_sessions ...",
@@ -147,7 +149,9 @@ describe("粉笔导入幂等性（真实 SQLite）", () => {
     expect(
       isUniqueViolation({
         message: "Failed query: x",
-        cause: { message: "UNIQUE constraint failed: practice_sessions.source_key" },
+        cause: {
+          message: "UNIQUE constraint failed: practice_sessions.source_key",
+        },
       }),
     ).toBe(true);
     expect(isUniqueViolation({ message: "Failed query: x" })).toBe(false);

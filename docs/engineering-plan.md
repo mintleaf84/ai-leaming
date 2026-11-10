@@ -4,17 +4,17 @@
 
 ## 基线（2026-11-11 实测）
 
-| 指标 | 数值 |
-| --- | --- |
-| CI 闸门 | 4 项（Lint&Type / Vitest / Build / autofix），可用 |
-| Node 版本固定 | 无 `engines` / `.nvmrc`（本机 22.6 vs CI 20） |
-| ESLint warning | 536（棘轮基线，原 542；补测试后回落） |
-| `npm audit` | 0 high / 58 moderate / 7 low |
-| 测试文件 | 132，其中 49 个 mock 掉数据库 |
-| `catch` 只打日志 | 127 / 336 |
-| `console.*` | 239 处（pino 仅 15 个文件使用） |
-| `as any` | 269 处 |
-| E2E spec | 26 个，不在 CI 运行 |
+| 指标             | 数值                                               |
+| ---------------- | -------------------------------------------------- |
+| CI 闸门          | 4 项（Lint&Type / Vitest / Build / autofix），可用 |
+| Node 版本固定    | 无 `engines` / `.nvmrc`（本机 22.6 vs CI 20）      |
+| ESLint warning   | 536（棘轮基线，原 542；补测试后回落）              |
+| `npm audit`      | 0 high / 58 moderate / 7 low                       |
+| 测试文件         | 132，其中 49 个 mock 掉数据库                      |
+| `catch` 只打日志 | 127 / 336                                          |
+| `console.*`      | 239 处（pino 仅 15 个文件使用）                    |
+| `as any`         | 269 处                                             |
+| E2E spec         | 26 个，不在 CI 运行                                |
 
 ## P0 闸门硬化（3h）
 

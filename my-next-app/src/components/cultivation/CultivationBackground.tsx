@@ -59,6 +59,7 @@ export function CultivationBackground() {
       {auraParticles.map((p) => (
         <motion.div
           key={p.id}
+          aria-hidden="true"
           className="absolute rounded-full bg-emerald-500/10 blur-[100px]"
           style={{
             width: p.size,

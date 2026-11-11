@@ -38,6 +38,20 @@ export default defineConfig({
       name: "chromium",
       use: { ...devices["Desktop Chrome"] },
     },
+    {
+      // 布局护栏：只断言几何量（无横向溢出 / 主容器可见），不依赖截图基线。
+      // 视口在用例内用 test.use({ viewport }) 覆盖成 375/768/1440 三档，
+      // 所以这里沿用 Desktop Chrome 的设备参数（UA / DPR），只换尺寸。
+      // 与 chromium 项目共用同一份 webServer 与 globalSetup（种子库）。
+      name: "layout-guard",
+      testDir: "./tests/visual",
+      use: {
+        ...devices["Desktop Chrome"],
+        // 单个 action 的上限：布局护栏只做几何采样，15s 足够；
+        // 卡住的 locator 会在这里先失败，而不是把 60s 用例超时吃满
+        actionTimeout: 15 * 1000,
+      },
+    },
   ],
 
   /* Run your local dev server before starting the tests */

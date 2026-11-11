@@ -158,6 +158,10 @@ jobs:
           path: my-next-app/playwright-report/
           retention-days: 7
 
+  # 布局护栏：只断言几何量（无横向溢出 / 主容器可见），不依赖截图基线，
+  # 因此不需要维护"正确截图"，也不会被字体渲染差异搞 flaky。
+  # 复用与 e2e 相同的生产服务流程（playwright.config.ts 的 webServer：
+  # db:migrate + build + start），视口 375/768/1440 三档由用例内 test.use 指定。
   build:
     name: Next.js 构建校验
     runs-on: ${{ (github.event_name == 'push' && vars.SELF_HOSTED == 'true') && 'self-hosted' || 'ubuntu-latest' }}

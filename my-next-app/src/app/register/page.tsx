@@ -61,7 +61,10 @@ export default function RegisterPage() {
   return (
     <div className="min-h-screen flex items-center justify-center bg-[#faf9f6] px-4 font-sans selection:bg-emerald-100 relative overflow-hidden">
       {/* Background Decoration */}
-      <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[800px] h-[800px] bg-emerald-100/20 rounded-full blur-[100px] -z-10 pointer-events-none" />
+      <div
+        aria-hidden="true"
+        className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[800px] h-[800px] bg-emerald-100/20 rounded-full blur-[100px] -z-10 pointer-events-none"
+      />
 
       <Card className="w-full max-w-[400px] shadow-2xl border border-white/60 bg-white/80 backdrop-blur-xl rounded-3xl p-2">
         <CardHeader className="space-y-4 text-center pt-8 pb-4">

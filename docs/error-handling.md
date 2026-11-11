@@ -77,25 +77,25 @@ node scripts/audit-catches.cjs    # 与基线比对（CI 已接入）
 
 已清（`rethrow` / `degraded` / `allowed` 三态之一，不再出现在 `--list`）：
 
-| 模块                                              | 处理方式                                                                                                                  |
-| ------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------- |
-| `src/lib/api/routes/admin.ts` | 鉴权失败转 401（`isAuthError`）、回滚失败保留备份、可选元信息 `audit-allow`                                               |
-| `src/lib/db/**`（`index` / `seed-data`）          | 向量扩展缺失降级为"无 RAG"、种子逐行幂等补齐                                                                              |
-| `src/server/actions/ai.ts`、`chat.ts`             | 补 `log.warn` / `audit-allow`（同目录 `admin.ts` / `note.ts` / `prompts.ts` 各剩的 1 处已在后续批次清完）                 |
-| `src/lib/ai/**`                                   | 缓存失败显式 `return`、批量插入失败 `continue`、sentinel 改显式 throw                                                     |
-| `src/lib/schemas.ts`                              | JSON 脏数据 `audit-allow`（不加 logger，避免进客户端 bundle）                                                             |
-| `src/lib/services/**`、`src/lib/import/**`        | 补日志 + 显式 `return`/`continue`；2 处改复用 `safeParseJson` 让 catch 直接消失；`finally` 内与远距离回落用 `audit-allow` |
-| `src/lib/api/routes/**`、`src/lib/admin/**`、`src/server/actions/**` | 失败补日志并保留原 4xx/5xx；请求体解析失败与启动路径用 `audit-allow`；`external.ts` 的本地 `safeJsonParse` 改复用统一实现 |
-| 零散（`db` / `auth` / `practice` / `utils` / `middleware.ts` / `instrumentation.ts`） | 补日志 + 显式降级；`middleware.ts` 与 `utils/api-client.ts` 保持 `console`（Edge/客户端 bundle） |
+| 模块                                                                                  | 处理方式                                                                                                                  |
+| ------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------- |
+| `src/lib/api/routes/admin.ts`                                                         | 鉴权失败转 401（`isAuthError`）、回滚失败保留备份、可选元信息 `audit-allow`                                               |
+| `src/lib/db/**`（`index` / `seed-data`）                                              | 向量扩展缺失降级为"无 RAG"、种子逐行幂等补齐                                                                              |
+| `src/server/actions/ai.ts`、`chat.ts`                                                 | 补 `log.warn` / `audit-allow`（同目录 `admin.ts` / `note.ts` / `prompts.ts` 各剩的 1 处已在后续批次清完）                 |
+| `src/lib/ai/**`                                                                       | 缓存失败显式 `return`、批量插入失败 `continue`、sentinel 改显式 throw                                                     |
+| `src/lib/schemas.ts`                                                                  | JSON 脏数据 `audit-allow`（不加 logger，避免进客户端 bundle）                                                             |
+| `src/lib/services/**`、`src/lib/import/**`                                            | 补日志 + 显式 `return`/`continue`；2 处改复用 `safeParseJson` 让 catch 直接消失；`finally` 内与远距离回落用 `audit-allow` |
+| `src/lib/api/routes/**`、`src/lib/admin/**`、`src/server/actions/**`                  | 失败补日志并保留原 4xx/5xx；请求体解析失败与启动路径用 `audit-allow`；`external.ts` 的本地 `safeJsonParse` 改复用统一实现 |
+| 零散（`db` / `auth` / `practice` / `utils` / `middleware.ts` / `instrumentation.ts`） | 补日志 + 显式降级；`middleware.ts` 与 `utils/api-client.ts` 保持 `console`（Edge/客户端 bundle）                          |
 
 剩余（共 110 = 客户端组件 107 + 服务端 route handler 3，数字取自审计输出）：
 
-| 模块 | 数量 | 状态 |
-| --- | --- | --- |
-| `src/app/admin/**` | 40 | 待处理（后台失败必须可见，优先） |
-| 业务页面与组件 | 67 | 待处理（`app/questions` 8、`components/history` 7、`app/wrong-book` 6、`app/knowledge` 5、`app/practice` 4、`components/textbooks` 4、`hooks/chat` 3、`components/editor` 3、`app/notes` 3、`app/mindmap` 3、其余 21） |
-| 服务端 `src/app/api/admin/system/backup/route.ts` | 3 | 待处理（Next route handler，不是客户端组件） |
-| 合计 | **110** | |
+| 模块                                              | 数量    | 状态                                                                                                                                                                                                                   |
+| ------------------------------------------------- | ------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `src/app/admin/**`                                | 40      | 待处理（后台失败必须可见，优先）                                                                                                                                                                                       |
+| 业务页面与组件                                    | 67      | 待处理（`app/questions` 8、`components/history` 7、`app/wrong-book` 6、`app/knowledge` 5、`app/practice` 4、`components/textbooks` 4、`hooks/chat` 3、`components/editor` 3、`app/notes` 3、`app/mindmap` 3、其余 21） |
+| 服务端 `src/app/api/admin/system/backup/route.ts` | 3       | 待处理（Next route handler，不是客户端组件）                                                                                                                                                                           |
+| 合计                                              | **110** |                                                                                                                                                                                                                        |
 
 ## 已知语义债（catch 形态已标注，但业务语义未改）
 

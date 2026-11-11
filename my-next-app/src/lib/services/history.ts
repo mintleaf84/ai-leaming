@@ -317,6 +317,7 @@ export const historyService = {
             `);
       return (reportRow?.report as string) || null;
     } catch {
+      // audit-allow: analysis_reports 表在旧库中可能不存在，查不到即"无报告"，导出照常进行
       return null;
     }
   },

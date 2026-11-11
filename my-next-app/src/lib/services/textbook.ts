@@ -100,6 +100,8 @@ export const textbookService = {
         `[TextbookService] Failed to delete directory ${bookDir}:`,
         error,
       );
+      // 显式降级：DB 记录已删除，残留图片目录只影响磁盘占用
+      return;
     }
   },
 

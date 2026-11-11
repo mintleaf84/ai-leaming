@@ -131,6 +131,8 @@ export const pdfImportService = {
       return { questions, chunkIndex, warnings: [] };
     } catch (err) {
       const msg = `第 ${chunkIndex + 1} 块解析失败: ${err instanceof Error ? err.message : String(err)}`;
+      log.error("[PdfImport]", msg);
+      // 显式降级：单块失败以空结果 + warning 返回，由上层汇总后提示用户
       return { questions: [], chunkIndex, warnings: [msg] };
     }
   },

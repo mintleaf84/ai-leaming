@@ -292,6 +292,7 @@ ${context}
     const { text } = await generateTextWrapper(prompt, "premium");
     return text;
   } catch (_error) {
+    log.error("[ChatRAG] 概念解释生成失败，返回兜底文案:", _error);
     return `抱歉，生成解释时遇到错误。请稍后重试或直接提问。`;
   }
 }

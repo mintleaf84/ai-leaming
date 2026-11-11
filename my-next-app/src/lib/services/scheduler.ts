@@ -30,6 +30,8 @@ export async function initScheduler() {
       log.info(`✅ [Scheduler] 自动备份成功: ${fileName}`);
     } catch (error) {
       log.error("❌ [Scheduler] 自动备份执行失败:", error);
+      // 显式降级：本次任务终止，等下一个 cron 周期
+      return;
     }
   });
 

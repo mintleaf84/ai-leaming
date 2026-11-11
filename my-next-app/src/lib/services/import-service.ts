@@ -270,19 +270,23 @@ export const importService = {
     }
 
     // 5. 自动同步到 SRS 系统（独立事务，失败不影响导入结果）
-    try {
-      const { srsService } = await import("./srs");
-      await srsService.syncFromPracticeLogs(userId);
-    } catch (e) {
-      log.error("[Import] SRS 同步失败:", e);
-    }
-
-    return {
+    const result = {
       sessionId,
       newQuestionsCount,
       importedCount: data.records.length,
       duplicated: false,
     };
+
+    try {
+      const { srsService } = await import("./srs");
+      await srsService.syncFromPracticeLogs(userId);
+    } catch (e) {
+      log.error("[Import] SRS 同步失败:", e);
+      // 显式降级：SRS 同步独立于导入事务，失败仍按导入成功返回
+      return result;
+    }
+
+    return result;
   },
 };
 

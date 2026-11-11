@@ -84,6 +84,8 @@ export async function createKnowledgeCard(
       `[KnowledgeService] Failed to sync RAG for card ${cardId}`,
       e,
     );
+    // 显式降级：卡片已落库，RAG 索引失败只影响检索，不影响返回
+    return cardId;
   }
 
   return cardId;
@@ -197,6 +199,8 @@ export async function updateKnowledgeCard(
         `[KnowledgeService] Failed to update RAG for card ${id}`,
         e,
       );
+      // 显式降级：DB 已更新，RAG 重建失败不影响更新结果
+      return success;
     }
   }
 
@@ -220,6 +224,8 @@ export async function deleteKnowledgeCard(id: number): Promise<boolean> {
         `[KnowledgeService] Failed to delete RAG for card ${id}`,
         e,
       );
+      // 显式降级：卡片已删除，残留索引只影响检索，不影响删除结果
+      return success;
     }
   }
 

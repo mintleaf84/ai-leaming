@@ -68,6 +68,8 @@ export class BackupService {
         pass = decrypt(encryptedPass, SECRET);
       } catch (_e) {
         log.error("[Backup] Failed to decrypt password");
+        // 显式降级：按未配置密码返回，避免整份配置读取失败
+        return { enabled, url, user, pass: "", remotePath, retentionDays };
       }
     }
 
@@ -181,6 +183,7 @@ export class BackupService {
           await fs.unlink(backupPath);
         if (await fs.stat(zipPath).catch(() => null)) await fs.unlink(zipPath);
       } catch (e) {
+        // audit-allow: finally 中不得用 return 打断（会覆盖 try 的返回值），清理失败仅记录后继续
         log.warn("[Backup] Failed to cleanup temp files", e);
       }
     }
@@ -213,6 +216,8 @@ export class BackupService {
       }
     } catch (error) {
       log.error("[Backup] Rotation failed:", error);
+      // 显式降级：轮转失败不影响本次备份结果
+      return;
     }
   }
 }

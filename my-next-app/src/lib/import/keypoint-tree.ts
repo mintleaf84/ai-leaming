@@ -53,6 +53,8 @@ function loadKeypointPaths(): Map<number, string> {
     log.info(`[keypoint-tree] 已加载 ${keypointPathMap.size} 个知识点路径`);
   } catch (error) {
     log.warn("[keypoint-tree] 无法加载知识点树:", error);
+    // 显式降级：读取/解析失败时返回空映射，路径查询回退到名称模糊匹配
+    return keypointPathMap;
   }
 
   return keypointPathMap;

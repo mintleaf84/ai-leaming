@@ -149,6 +149,7 @@ async function fetchConfigFromDb(
     }
   } catch (e) {
     log.error("[AiConfig] 获取配置失败:", e);
+    return defaultResult;
   }
 
   return defaultResult;

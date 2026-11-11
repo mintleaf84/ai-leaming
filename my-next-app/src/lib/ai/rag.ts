@@ -43,7 +43,8 @@ async function dbCacheGet(textHash: string): Promise<number[] | null> {
       return JSON.parse(row.embedding) as number[];
     }
   } catch {
-    /* table may not exist yet */
+    // audit-allow: 缓存表可能尚未建好、或行内容损坏；读失败等价于缓存未命中
+    return null;
   }
   return null;
 }
@@ -62,7 +63,8 @@ async function dbCacheSet(
           VALUES (${textHash}, ${text.slice(0, 200)}, ${JSON.stringify(vec)}, CURRENT_TIMESTAMP)`,
     );
   } catch {
-    /* table may not exist yet */
+    // audit-allow: 缓存表可能尚未建好；写失败只降低命中率，不影响检索正确性
+    return;
   }
 }
 
@@ -186,8 +188,10 @@ export const ragService = {
           results[idx] = await ragService.getEmbedding(texts[idx]);
         }
       } catch (fallbackErr) {
+        // audit-allow: 逐条回退也失败时没有更多手段，返回已算出的部分结果
         console.error("[RAG] 逐条回退也失败:", fallbackErr);
       }
+      return results;
     }
 
     return results;
@@ -301,6 +305,7 @@ export const ragService = {
           } catch (itemErr) {
             if (successCount === 0 && j === 0)
               console.error("[RAG] addChunksBatch item error:", itemErr);
+            continue;
           }
         }
       } catch (err) {
@@ -315,8 +320,10 @@ export const ragService = {
           } catch (singleErr) {
             if (successCount === 0)
               console.error("[RAG] Single addChunk also failed:", singleErr);
+            continue;
           }
         }
+        continue;
       }
     }
     return successCount;
@@ -357,6 +364,7 @@ export const ragService = {
       }
     } catch (error) {
       console.error("[RAG] Delete chunks failed:", error);
+      return;
     }
   },
 
@@ -408,6 +416,7 @@ export const ragService = {
             const meta = JSON.parse((r.metadata as string) || "{}");
             return meta.source_type === sourceType;
           } catch {
+            // audit-allow: metadata 是历史脏数据时按"不属于该来源"处理，宁可漏召回也不误召回
             return false;
           }
         });

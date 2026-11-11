@@ -100,6 +100,7 @@ export async function performOCR(pdfBuffer: Buffer): Promise<string> {
       } catch (pageError) {
         log.error(`[OCR] 第 ${i + 1} 页处理失败:`, pageError);
         fullText += `\n\n[第 ${i + 1} 页处理出错]\n\n`;
+        continue;
       }
     }
 

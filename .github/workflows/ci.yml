@@ -114,8 +114,27 @@ jobs:
       - name: 安装依赖
         run: npm ci
 
+      - name: 缓存 Playwright 浏览器
+        id: pw-cache
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/ms-playwright
+          key: pw-${{ runner.os }}-${{ hashFiles('my-next-app/package-lock.json') }}
+          restore-keys: |
+            pw-${{ runner.os }}-
+
+      # apt 源在部分 runner 上会持续 DNS 失败（2026-11 三次重试全部
+      # "Temporary failure resolving 'security.ubuntu.com'"），--with-deps 会直接 exit 100。
+      # GitHub 的 ubuntu-latest 镜像自带 Chrome 与完整 GUI 依赖，因此这里把系统依赖
+      # 当作「尽力而为」：失败只告警不阻断；真缺库时 E2E 启动浏览器会明确报错。
+      - name: 安装 Playwright 系统依赖（apt 不可用时跳过）
+        run: |
+          if ! npx playwright install-deps chromium; then
+            echo "::warning::apt 源不可用，跳过系统依赖安装（依赖 runner 镜像自带的 Chrome 库）"
+          fi
+
       - name: 安装 Playwright 浏览器（chromium）
-        run: npx playwright install --with-deps chromium
+        run: npx playwright install chromium
 
       # 只跑 8 条关键路径，控制时长；其余 spec 仍可本地全量执行。
       - name: 运行关键路径 E2E

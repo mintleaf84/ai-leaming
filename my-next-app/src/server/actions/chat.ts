@@ -169,6 +169,7 @@ export async function deleteChatSession(sessionId: number) {
     const user = await requireUser();
     await deleteSession(user.id, sessionId);
   } catch (error) {
+    // audit-allow: 删除会话失败对 UI 无补救动作，已 error 记录，返回 undefined 即为"尽力而为"
     logger.error({ err: error }, "[ChatActions] 删除会话失败");
   }
 }

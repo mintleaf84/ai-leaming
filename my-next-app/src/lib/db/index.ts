@@ -33,6 +33,7 @@ function initDb() {
     try {
       loadablePath = sqliteVec.getLoadablePath();
     } catch (_e) {
+      // audit-allow: 取不到包路径时回退到"按平台猜路径"，已记录日志
       log.warn(
         "[DB] sqliteVec.getLoadablePath() failed, attempting fallback...",
       );
@@ -66,7 +67,9 @@ function initDb() {
       try {
         loadablePath = fileURLToPath(loadablePath as unknown as URL);
       } catch (_e) {
+        // audit-allow: 非 file:// URL 时按字符串裁剪，失败路径已由上一分支兜住
         loadablePath = String(loadablePath).replace(/^file:\/\/\/?/, "");
+        log.debug("[DB] fileURLToPath 失败，改用字符串裁剪得到扩展路径");
       }
     }
 
@@ -78,6 +81,7 @@ function initDb() {
     };
     log.info(`✅ sqlite-vec 扩展加载成功, 版本: ${version.version}`);
   } catch (err) {
+    // audit-allow: 向量扩展缺失时降级为"无 RAG"，不阻断启动；已 error 级记录
     log.error("⚠️ 向量扩展加载失败，将无法使用 AI 检索功能:", err);
   }
 

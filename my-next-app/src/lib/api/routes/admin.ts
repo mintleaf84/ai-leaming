@@ -10,6 +10,7 @@ import { logAdminAction } from "@/lib/admin/audit";
 import { getApiCallStats } from "@/lib/admin/api-stats-service";
 import { questionFeedbackService } from "@/lib/services/question-feedback-service";
 import type { Dimension } from "@/types";
+import { logger } from "@/lib/logger";
 
 export const adminRoute = new OpenAPIHono();
 
@@ -24,9 +25,18 @@ async function getDemoModeStatus(): Promise<boolean> {
       ),
     });
     return row?.value === "true";
-  } catch {
+  } catch (err) {
+    logger.warn({ err }, "读取演示模式开关失败，按关闭处理");
     return false;
   }
+}
+
+/** 鉴权类错误：只有这类才应转换成 401，数据库/网络故障必须冒泡 */
+function isAuthError(err: unknown): boolean {
+  const message = err instanceof Error ? err.message : String(err ?? "");
+  return /unauthor|forbidden|未授权|无权限|未登录|请先登录|权限不足/i.test(
+    message,
+  );
 }
 
 function escapeCsv(field: unknown): string {
@@ -59,22 +69,30 @@ const systemStatusDef = createRoute({
 adminRoute.openapi(systemStatusDef, async (c) => {
   try {
     await requireRole(["admin"]);
-  } catch {
-    return c.json({ error: "Unauthorized" }, 401);
+  } catch (err) {
+    // audit-allow: 仅把鉴权类错误转换为 401；数据库故障等继续冒泡为 500
+    if (isAuthError(err)) return c.json({ error: "Unauthorized" }, 401);
+    throw err;
   }
 
   const dbPath = path.resolve(process.cwd(), "data", "ai-learning.db");
   let dbSize = 0;
   try {
     dbSize = fs.statSync(dbPath).size;
-  } catch {}
+  } catch (err) {
+    // audit-allow: 可选元信息，失败按 0 返回；debug 级留痕便于排查
+    logger.debug({ err, dbPath }, "读取数据库文件大小失败，使用 0");
+  }
 
   const pkgPath = path.resolve(process.cwd(), "package.json");
   let appVersion = "v1.0.0";
   try {
     const pkg = JSON.parse(fs.readFileSync(pkgPath, "utf8"));
     if (pkg.version) appVersion = `v${pkg.version}`;
-  } catch {}
+  } catch (err) {
+    // audit-allow: 可选元信息，读取失败用默认版本号
+    logger.debug({ err, pkgPath }, "读取 package.json 版本失败");
+  }
 
   return c.json({
     os: {
@@ -113,8 +131,10 @@ const systemActionDef = createRoute({
 adminRoute.openapi(systemActionDef, async (c) => {
   try {
     await requireRole(["admin"]);
-  } catch {
-    return c.json({ error: "Unauthorized" }, 401);
+  } catch (err) {
+    // audit-allow: 仅把鉴权类错误转换为 401；数据库故障等继续冒泡为 500
+    if (isAuthError(err)) return c.json({ error: "Unauthorized" }, 401);
+    throw err;
   }
   const { action } = await c.req.json();
 
@@ -168,8 +188,10 @@ adminRoute.openapi(backupDef, async (c) => {
   let user;
   try {
     user = await requireRole(["admin"]);
-  } catch {
-    return c.json({ error: "Unauthorized" }, 401);
+  } catch (err) {
+    // audit-allow: 仅把鉴权类错误转换为 401；数据库故障等继续冒泡为 500
+    if (isAuthError(err)) return c.json({ error: "Unauthorized" }, 401);
+    throw err;
   }
   const timestamp = new Date().toISOString().replace(/[:.]/g, "-");
   const filename = `ai-learning-backup-${timestamp}.db`;
@@ -198,7 +220,10 @@ adminRoute.openapi(backupDef, async (c) => {
     if (fs.existsSync(tempPath))
       try {
         fs.unlinkSync(tempPath);
-      } catch {}
+      } catch (cleanupErr) {
+        // audit-allow: 回滚路径的清理是尽力而为，失败不影响返回的错误语义
+        logger.debug({ err: cleanupErr, tempPath }, "回滚时删除临时文件失败");
+      }
     return c.json({ error: "Backup failed" }, 500);
   }
 });
@@ -220,8 +245,10 @@ adminRoute.openapi(restoreDef, async (c) => {
   let user;
   try {
     user = await requireRole(["admin"]);
-  } catch {
-    return c.json({ error: "Unauthorized" }, 401);
+  } catch (err) {
+    // audit-allow: 仅把鉴权类错误转换为 401；数据库故障等继续冒泡为 500
+    if (isAuthError(err)) return c.json({ error: "Unauthorized" }, 401);
+    throw err;
   }
   try {
     const body = await c.req.parseBody();
@@ -277,12 +304,31 @@ adminRoute.openapi(restoreDef, async (c) => {
       });
     } catch (e: unknown) {
       try {
-        if (fs.existsSync(backupPath) && !fs.existsSync(dbPath))
+        if (fs.existsSync(backupPath) && !fs.existsSync(dbPath)) {
           fs.copyFileSync(backupPath, dbPath);
-      } catch {}
+        }
+      } catch (rollbackErr) {
+        // 恢复备份本身失败：保留备份文件、明确报错，绝不重连到新建的空库
+        logger.error(
+          { err: rollbackErr, backupPath, dbPath },
+          "回滚恢复备份失败，已保留备份文件",
+        );
+        return c.json(
+          {
+            error:
+              "Restore failed and rollback failed. Database backup preserved at " +
+              path.basename(backupPath),
+            backup: path.basename(backupPath),
+          },
+          500,
+        );
+      }
       try {
         reinitDb();
-      } catch {}
+      } catch (reinitErr) {
+        // audit-allow: 数据已恢复，重连失败时进程重启即可，错误已记录
+        logger.error({ err: reinitErr }, "回滚后重连数据库失败");
+      }
       if (fs.existsSync(tempPath)) fs.unlinkSync(tempPath);
       return c.json(
         {
@@ -296,7 +342,10 @@ adminRoute.openapi(restoreDef, async (c) => {
   } catch (error: unknown) {
     try {
       reinitDb();
-    } catch {}
+    } catch (reinitErr) {
+      // audit-allow: 失败后的重连是尽力而为，错误语义已由返回值表达
+      logger.error({ err: reinitErr }, "重连数据库失败");
+    }
     return c.json({ error: "Restore failed: " + getErrorMessage(error) }, 500);
   }
 });
@@ -315,8 +364,10 @@ const backupHistoryDef = createRoute({
 adminRoute.openapi(backupHistoryDef, async (c) => {
   try {
     await requireRole(["admin"]);
-  } catch {
-    return c.json({ error: "Unauthorized" }, 401);
+  } catch (err) {
+    // audit-allow: 仅把鉴权类错误转换为 401；数据库故障等继续冒泡为 500
+    if (isAuthError(err)) return c.json({ error: "Unauthorized" }, 401);
+    throw err;
   }
 
   const logs = await drizzleDb
@@ -377,8 +428,10 @@ const exportQuestionsDef = createRoute({
 adminRoute.openapi(exportQuestionsDef, async (c) => {
   try {
     await requireRole(["admin"]);
-  } catch {
-    return c.json({ error: "Unauthorized" }, 401);
+  } catch (err) {
+    // audit-allow: 仅把鉴权类错误转换为 401；数据库故障等继续冒泡为 500
+    if (isAuthError(err)) return c.json({ error: "Unauthorized" }, 401);
+    throw err;
   }
   const { search, tag, dimension } = c.req.valid("query");
 
@@ -487,8 +540,10 @@ const listFeedbackDef = createRoute({
 adminRoute.openapi(listFeedbackDef, async (c) => {
   try {
     await requireRole(["admin"]);
-  } catch {
-    return c.json({ error: "Unauthorized" }, 401);
+  } catch (err) {
+    // audit-allow: 仅把鉴权类错误转换为 401；数据库故障等继续冒泡为 500
+    if (isAuthError(err)) return c.json({ error: "Unauthorized" }, 401);
+    throw err;
   }
   const query = c.req.valid("query");
   const result = await questionFeedbackService.list({
@@ -522,8 +577,10 @@ adminRoute.openapi(resolveFeedbackDef, async (c) => {
   let adminUser;
   try {
     adminUser = await requireRole(["admin"]);
-  } catch {
-    return c.json({ error: "Unauthorized" }, 401);
+  } catch (err) {
+    // audit-allow: 仅把鉴权类错误转换为 401；数据库故障等继续冒泡为 500
+    if (isAuthError(err)) return c.json({ error: "Unauthorized" }, 401);
+    throw err;
   }
   const { id } = c.req.valid("param");
   await questionFeedbackService.resolve(id, adminUser.id);
@@ -560,8 +617,10 @@ adminRoute.openapi(dismissFeedbackDef, async (c) => {
   let adminUser;
   try {
     adminUser = await requireRole(["admin"]);
-  } catch {
-    return c.json({ error: "Unauthorized" }, 401);
+  } catch (err) {
+    // audit-allow: 仅把鉴权类错误转换为 401；数据库故障等继续冒泡为 500
+    if (isAuthError(err)) return c.json({ error: "Unauthorized" }, 401);
+    throw err;
   }
   const { id } = c.req.valid("param");
   await questionFeedbackService.dismiss(id, adminUser.id);
@@ -600,8 +659,10 @@ const feedbackCountsDef = createRoute({
 adminRoute.openapi(feedbackCountsDef, async (c) => {
   try {
     await requireRole(["admin"]);
-  } catch {
-    return c.json({ error: "Unauthorized" }, 401);
+  } catch (err) {
+    // audit-allow: 仅把鉴权类错误转换为 401；数据库故障等继续冒泡为 500
+    if (isAuthError(err)) return c.json({ error: "Unauthorized" }, 401);
+    throw err;
   }
   const counts = await questionFeedbackService.getStatusCounts();
   return c.json(counts, 200);
@@ -646,8 +707,10 @@ const validateSqlDef = createRoute({
 adminRoute.openapi(validateSqlDef, async (c) => {
   try {
     await requireRole(["admin"]);
-  } catch {
-    return c.json({ error: "Unauthorized" }, 401);
+  } catch (err) {
+    // audit-allow: 仅把鉴权类错误转换为 401；数据库故障等继续冒泡为 500
+    if (isAuthError(err)) return c.json({ error: "Unauthorized" }, 401);
+    throw err;
   }
 
   const { sql: sqlContent, description } = await c.req.json();
@@ -707,8 +770,10 @@ adminRoute.openapi(executeSqlDef, async (c) => {
   let adminUser;
   try {
     adminUser = await requireRole(["admin"]);
-  } catch {
-    return c.json({ error: "Unauthorized" }, 401);
+  } catch (err) {
+    // audit-allow: 仅把鉴权类错误转换为 401；数据库故障等继续冒泡为 500
+    if (isAuthError(err)) return c.json({ error: "Unauthorized" }, 401);
+    throw err;
   }
 
   const { sql: sqlContent, description } = await c.req.json();
@@ -758,8 +823,10 @@ const getSqlHistoryDef = createRoute({
 adminRoute.openapi(getSqlHistoryDef, async (c) => {
   try {
     await requireRole(["admin"]);
-  } catch {
-    return c.json({ error: "Unauthorized" }, 401);
+  } catch (err) {
+    // audit-allow: 仅把鉴权类错误转换为 401；数据库故障等继续冒泡为 500
+    if (isAuthError(err)) return c.json({ error: "Unauthorized" }, 401);
+    throw err;
   }
 
   const { SqlScriptService } =
@@ -792,8 +859,10 @@ const cleanupSqlBackupsDef = createRoute({
 adminRoute.openapi(cleanupSqlBackupsDef, async (c) => {
   try {
     await requireRole(["admin"]);
-  } catch {
-    return c.json({ error: "Unauthorized" }, 401);
+  } catch (err) {
+    // audit-allow: 仅把鉴权类错误转换为 401；数据库故障等继续冒泡为 500
+    if (isAuthError(err)) return c.json({ error: "Unauthorized" }, 401);
+    throw err;
   }
 
   const { SqlScriptService } =

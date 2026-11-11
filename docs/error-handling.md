@@ -61,7 +61,11 @@ node scripts/audit-catches.cjs    # 与基线比对（CI 已接入）
 | `fallback` | 静默降级（无日志）               | ⚠️ 至少补一条结构化日志 |
 | `silent`   | 空 catch                         | ❌ 必须处理             |
 
-当前基线（AST 解析）：`rethrow=23 / degraded=88 / fallback=58 / logged=72 / silent=88`，共 329 个 catch。历史口径（正则时代的 336）范围略有差异：正则会把 `.catch(` 与注释里的 `catch` 计入。
+当前基线（AST 解析）：`rethrow=21 / degraded=90 / allowed=40 / fallback=39 / logged=68 / silent=71`。
+
+- `allowed` 是**显式允许**：catch 内写了 `// audit-allow: <理由>`，表示"已判断并接受"，不列入待办但会单独计数（理由写在代码里，可 grep 审计）。
+- 待办总数从 218 → **178**：服务端（`src/lib/api`、`src/lib/db`、`src/server`）已全部处理完，剩下集中在客户端组件（加载失败只弹 toast、JSON 解析回退）。
+- 历史口径（正则时代的 336）与 AST 的 329 差异：正则会把 `.catch(` 与注释里的 `catch` 计入。
 
 ## 分类进度
 

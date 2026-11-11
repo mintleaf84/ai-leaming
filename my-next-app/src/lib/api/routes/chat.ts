@@ -17,7 +17,7 @@ import {
   handleExplainCommand,
 } from "@/lib/services/chat-rag";
 import { checkQuotaForApi } from "@/lib/billing/usage-middleware";
-import { log } from "@/lib/logger";
+import { logger } from "@/lib/logger";
 
 const app = new OpenAPIHono();
 
@@ -116,7 +116,10 @@ app.openapi(chatRoute, async (c) => {
   if (sessionId && lastUserText) {
     try {
       await saveMessage(userId, sessionId, "user", lastUserText);
-    } catch {}
+    } catch (err) {
+      // audit-allow: 聊天记录落库失败不应中断流式回答，已 warn 记录
+      logger.warn({ err, sessionId }, "保存用户消息失败，继续生成回答");
+    }
   }
 
   // 3. 检查指令
@@ -131,7 +134,10 @@ app.openapi(chatRoute, async (c) => {
     if (sessionId) {
       try {
         await saveMessage(userId, sessionId, "assistant", commandResponse);
-      } catch {}
+      } catch (err) {
+        // audit-allow: 同上，落库失败不阻断响应
+        logger.warn({ err, sessionId }, "保存助手消息失败");
+      }
     }
 
     const commandStream = createUIMessageStream({
@@ -184,7 +190,10 @@ app.openapi(chatRoute, async (c) => {
             if (sessionId) {
               try {
                 await saveMessage(userId, sessionId, "assistant", fullResponse);
-              } catch {}
+              } catch (err) {
+                // audit-allow: 流式结束后的落库失败不影响已经返回给用户的内容
+                logger.warn({ err, sessionId }, "保存完整助手回复失败");
+              }
             }
           },
           tools,
@@ -198,7 +207,7 @@ app.openapi(chatRoute, async (c) => {
 
     return createUIMessageStreamResponse({ stream });
   } catch (error: unknown) {
-    log.error("[Hono Chat API] error:", error);
+    logger.error({ err: error }, "[Hono Chat API] error");
     return c.json({ error: getErrorMessage(error) }, 500);
   }
 });

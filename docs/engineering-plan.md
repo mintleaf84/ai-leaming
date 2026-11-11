@@ -51,8 +51,9 @@
 - [x] `docs/error-handling.md` 落盘（三形态判定流程 + 台账 + 分类进度）
 - [x] 修正被机械替换误伤的示例字符串（`welcome.ts` 里的代码高亮样例）
 - [x] **catch 形态机械化审计**（TypeScript AST 解析）：`scripts/audit-catches.cjs` 把每个 catch 归类为
-      `rethrow` 23 / `degraded` 89 / `fallback` 58 / `logged` 71 / `silent` 88（共 329），
-      基线写入 `docs/catch-audit.baseline.json`（218 个标记项签名），
+      `rethrow` 21 / `degraded` 90 / `allowed` 40 / `fallback` 39 / `logged` 68 / `silent` 71；
+      支持 `// audit-allow: <理由>` 显式接受（单独计数、可 grep 审计），
+      基线写入 `docs/catch-audit.baseline.json`（178 个标记项签名），
       CI 中 `logged/fallback/silent` 出现**新增签名**即失败（修好一个、新增一个不会互相抵消）
 - [ ] 长尾治理：分批把 `logged`(71) / `silent`(88) 降级为 `degraded` 或 `rethrow`（与基线同源；`npm run audit:catches -- --list` 可直接定位，门禁保证只降不升、；确需放宽时用 `npm run audit:catches -- --update --allow-increase "<理由>"` 更新基线，并把理由写进 PR）
 - [ ] 前端 `ErrorBoundary` + 统一 `sonner` 错误提示；loading/empty/error 三态复用 `ui/empty-state.tsx`

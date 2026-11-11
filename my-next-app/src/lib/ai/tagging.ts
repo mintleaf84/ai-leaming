@@ -1,5 +1,6 @@
 import { generateStructuredData } from "./client";
 import { z } from "zod";
+import { log } from "@/lib/logger";
 
 const TaggingResultSchema = z.object({
   tags: z.array(z.string()),
@@ -39,7 +40,7 @@ export const aiTaggingService = {
         "economy",
       );
     } catch (error) {
-      console.error("AI Tagging failed:", error);
+      log.error("AI Tagging failed:", error);
       return { tags: ["未知考点"], dimension: "knowledge" };
     }
   },

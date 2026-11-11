@@ -1,5 +1,6 @@
 import { drizzleDb } from "./index";
 import { sql } from "drizzle-orm";
+import { log } from "@/lib/logger";
 
 const EMBEDDING_DIM = 1536; // OpenAI text-embedding-3-small dimension
 
@@ -13,7 +14,7 @@ export async function setupVectorExtension(): Promise<boolean> {
     await drizzleDb.run(sql`SELECT vec_version()`);
   } catch {
     // 向量扩展不可用，跳过向量表创建
-    console.warn(
+    log.warn(
       "[DB] sqlite-vec extension not available, skipping vector table creation",
     );
     return false;
@@ -26,7 +27,7 @@ export async function setupVectorExtension(): Promise<boolean> {
     const vecTableExists = vecTableResult[0]?.count as number;
 
     if (!vecTableExists) {
-      console.log("[DB] Creating questions_vec vector table...");
+      log.info("[DB] Creating questions_vec vector table...");
       await drizzleDb.run(sql`
           CREATE VIRTUAL TABLE questions_vec USING vec0(
             question_id INTEGER PRIMARY KEY,
@@ -41,7 +42,7 @@ export async function setupVectorExtension(): Promise<boolean> {
     const ragVecTableExists = ragVecTableResult[0]?.count as number;
 
     if (!ragVecTableExists) {
-      console.log("[DB] Creating rag_chunks_vec vector table...");
+      log.info("[DB] Creating rag_chunks_vec vector table...");
       await drizzleDb.run(sql`
           CREATE VIRTUAL TABLE rag_chunks_vec USING vec0(
             chunk_id INTEGER PRIMARY KEY,
@@ -51,7 +52,7 @@ export async function setupVectorExtension(): Promise<boolean> {
     }
     return true;
   } catch (e) {
-    console.warn("[DB] Failed to create vector tables:", e);
+    log.warn("[DB] Failed to create vector tables:", e);
     return false;
   }
 }

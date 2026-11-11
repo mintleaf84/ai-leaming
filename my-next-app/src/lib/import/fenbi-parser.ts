@@ -7,6 +7,7 @@ import {
   keypointIdsToHierarchy,
   keypointNamesToHierarchy,
 } from "./keypoint-tree";
+import { log } from "@/lib/logger";
 
 // ==================== 类型定义 ====================
 
@@ -326,17 +327,17 @@ export function parseFenbiData(
       const obj = statsJson as Record<string, unknown>;
       statsData = (obj.data || obj) as Record<string, FenbiStatsItem>;
     }
-    console.log(
+    log.info(
       "[fenbi-parser] statsData 解析成功，共",
       Object.keys(statsData).length,
       "条统计数据",
     );
-    console.log(
+    log.info(
       "[fenbi-parser] statsData 示例 keys:",
       Object.keys(statsData).slice(0, 3),
     );
   } else {
-    console.log("[fenbi-parser] 未提供 statsJson 参数");
+    log.info("[fenbi-parser] 未提供 statsJson 参数");
   }
 
   const userAnswers = exerciseData.userAnswers || {};
@@ -349,7 +350,7 @@ export function parseFenbiData(
     materialMap.set(mat.globalId, mat);
   }
   if (materials.length > 0) {
-    console.log("[fenbi-parser] 解析到", materials.length, "个材料");
+    log.info("[fenbi-parser] 解析到", materials.length, "个材料");
   }
 
   // 从 card 结构中提取题目与材料的关联 (questionGlobalId -> materialGlobalIds)
@@ -368,7 +369,7 @@ export function parseFenbiData(
     for (const child of solutionsData.card.children) {
       extractMaterialKeys(child);
     }
-    console.log(
+    log.info(
       "[fenbi-parser] 解析到",
       questionMaterialMap.size,
       "个题目有材料关联",
@@ -448,14 +449,14 @@ export function parseFenbiData(
 
     // 调试日志（打印前 3 题的匹配情况）
     if (solutions.indexOf(solution) < 3) {
-      console.log(`[fenbi-parser] 题目 #${solutions.indexOf(solution) + 1}:`);
-      console.log(`  - externalId: ${externalId}`);
-      console.log(`  - solution.id: ${solution.id}`);
-      console.log(
+      log.info(`[fenbi-parser] 题目 #${solutions.indexOf(solution) + 1}:`);
+      log.info(`  - externalId: ${externalId}`);
+      log.info(`  - solution.id: ${solution.id}`);
+      log.info(
         `  - statsData keys 示例:`,
         Object.keys(statsData).slice(0, 5),
       );
-      console.log(
+      log.info(
         `  - 匹配结果 questionStats:`,
         questionStats ? "有数据" : "无数据",
       );

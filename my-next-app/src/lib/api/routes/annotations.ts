@@ -2,6 +2,7 @@ import { OpenAPIHono, createRoute, z } from "@hono/zod-openapi";
 import { authMiddleware, getCurrentUser } from "@/lib/api/middlewares/auth";
 import { drizzleDb, drizzleSchema } from "@/lib/db";
 import { eq, and, asc } from "drizzle-orm";
+import { log } from "@/lib/logger";
 
 const app = new OpenAPIHono();
 
@@ -117,7 +118,7 @@ app.openapi(createAnnotationDef, async (c) => {
       message: "标注已保存",
     });
   } catch (err) {
-    console.error("[annotations] 创建标注失败:", err);
+    log.error("[annotations] 创建标注失败:", err);
     return c.json({ error: "创建标注失败", detail: String(err) }, 500);
   }
 });

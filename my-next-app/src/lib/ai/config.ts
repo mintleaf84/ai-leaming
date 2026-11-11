@@ -2,6 +2,7 @@ import { drizzleDb, drizzleSchema } from "@/lib/db";
 import { eq } from "drizzle-orm";
 import { AiConfigResult } from "./types";
 import { env } from "@/env";
+import { log } from "@/lib/logger";
 
 // 简单的进程内缓存
 interface CacheEntry<T> {
@@ -147,7 +148,7 @@ async function fetchConfigFromDb(
       return result;
     }
   } catch (e) {
-    console.error("[AiConfig] 获取配置失败:", e);
+    log.error("[AiConfig] 获取配置失败:", e);
   }
 
   return defaultResult;

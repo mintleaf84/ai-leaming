@@ -6,6 +6,7 @@
 import { drizzleDb, drizzleSchema } from "../db";
 import { eq, and, sql, desc } from "drizzle-orm";
 import { getBeijingDateString } from "../utils/datetime";
+import { log } from "@/lib/logger";
 
 const { api_call_logs } = drizzleSchema;
 
@@ -81,7 +82,7 @@ export async function logApiCall(params: {
       error_message: params.errorMessage ?? null,
     });
   } catch (error) {
-    console.error("Failed to log API call:", error);
+    log.error("Failed to log API call:", error);
   }
 }
 

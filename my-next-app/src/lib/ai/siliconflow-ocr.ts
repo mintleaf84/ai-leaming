@@ -1,6 +1,7 @@
 import "server-only";
 
 import { getAiConfig } from "@/lib/ai/client";
+import { log } from "@/lib/logger";
 // Dynamic import used inside function
 // import * as mupdf from 'mupdf';
 
@@ -17,15 +18,15 @@ export async function performOCR(pdfBuffer: Buffer): Promise<string> {
 
     // 1. 使用 MuPDF 打开 PDF
     const mupdf = await import("mupdf");
-    console.log("[Debug] mupdf keys:", Object.keys(mupdf));
-    console.log("[Debug] mupdf.Document is type:", typeof mupdf.Document);
+    log.info("[Debug] mupdf keys:", Object.keys(mupdf));
+    log.info("[Debug] mupdf.Document is type:", typeof mupdf.Document);
 
     // Ensure Uint8Array
     const data = new Uint8Array(pdfBuffer);
     const doc = mupdf.Document.openDocument(data, "application/pdf");
     const pageCount = doc.countPages();
 
-    console.log(`[OCR] PDF 共 ${pageCount} 页，开始逐页识别...`);
+    log.info(`[OCR] PDF 共 ${pageCount} 页，开始逐页识别...`);
 
     let fullText = "";
     const DPI = 150; // 分辨率，150 DPI 足够 OCR
@@ -33,7 +34,7 @@ export async function performOCR(pdfBuffer: Buffer): Promise<string> {
 
     for (let i = 0; i < pageCount; i++) {
       try {
-        console.log(`[OCR] 处理第 ${i + 1}/${pageCount} 页...`);
+        log.info(`[OCR] 处理第 ${i + 1}/${pageCount} 页...`);
 
         const page = doc.loadPage(i);
         const _bounds = page.getBounds();
@@ -54,7 +55,7 @@ export async function performOCR(pdfBuffer: Buffer): Promise<string> {
         // 使用硬编码的 SiliconFlow 端点，因为 DeepSeek-OCR 模型仅在 SiliconFlow 可用
         const apiEndpoint = "https://api.siliconflow.cn/v1/chat/completions";
 
-        console.log(`[OCR] Calling API: ${apiEndpoint}`);
+        log.info(`[OCR] Calling API: ${apiEndpoint}`);
 
         const response = await fetch(apiEndpoint, {
           method: "POST",
@@ -88,7 +89,7 @@ export async function performOCR(pdfBuffer: Buffer): Promise<string> {
 
         if (!response.ok) {
           const errText = await response.text();
-          console.error(`[OCR] 第 ${i + 1} 页 API 错误:`, errText);
+          log.error(`[OCR] 第 ${i + 1} 页 API 错误:`, errText);
           fullText += `\n\n[第 ${i + 1} 页识别失败]\n\n`;
           continue;
         }
@@ -97,14 +98,14 @@ export async function performOCR(pdfBuffer: Buffer): Promise<string> {
         const pageContent = data.choices?.[0]?.message?.content || "";
         fullText += `\n\n${pageContent}\n\n`;
       } catch (pageError) {
-        console.error(`[OCR] 第 ${i + 1} 页处理失败:`, pageError);
+        log.error(`[OCR] 第 ${i + 1} 页处理失败:`, pageError);
         fullText += `\n\n[第 ${i + 1} 页处理出错]\n\n`;
       }
     }
 
     return fullText.trim();
   } catch (error) {
-    console.error("[OCR] Fatal Error:", error);
+    log.error("[OCR] Fatal Error:", error);
     throw error;
   }
 }

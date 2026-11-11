@@ -1,6 +1,7 @@
 import { drizzleDb } from "./index";
 import { system_settings, users } from "./drizzle-schema";
 import { eq, and, sql } from "drizzle-orm";
+import { log } from "@/lib/logger";
 
 export async function getSetting(key: string): Promise<string | null> {
   try {
@@ -12,7 +13,7 @@ export async function getSetting(key: string): Promise<string | null> {
       .all();
     return row[0]?.value ?? null;
   } catch (error) {
-    console.error(`[DB] getSetting failed for key: ${key}`, error);
+    log.error(`[DB] getSetting failed for key: ${key}`, error);
     return null;
   }
 }

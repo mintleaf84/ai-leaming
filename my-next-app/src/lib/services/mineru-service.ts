@@ -3,6 +3,7 @@ import path from "path";
 import fs from "fs/promises";
 import { textbookService } from "./textbook";
 import { parseMarkdownToChapters } from "@/lib/utils/markdown-parser";
+import { log } from "@/lib/logger";
 
 export const mineruService = {
   /**
@@ -44,7 +45,7 @@ export const mineruService = {
       cover_url: "", // Will update later if map found
     });
 
-    console.log(`[Mineru] Created Book: ${title} (ID: ${bookId})`);
+    log.info(`[Mineru] Created Book: ${title} (ID: ${bookId})`);
 
     // 3. Extract Images (Whitelist: only entries in images/ folder relative to root)
     const imagesDirEntryPrefix =
@@ -84,7 +85,7 @@ export const mineruService = {
       }
     }
 
-    console.log(`[Mineru] Extracted ${imageCount} images.`);
+    log.info(`[Mineru] Extracted ${imageCount} images.`);
 
     // Update cover if found
     if (coverImage) {
@@ -107,7 +108,7 @@ export const mineruService = {
 
     // 5. Parse Chapters & Insert
     const chapters = parseMarkdownToChapters(processedMarkdown);
-    console.log(`[Mineru] Parsed ${chapters.length} chapters.`);
+    log.info(`[Mineru] Parsed ${chapters.length} chapters.`);
 
     for (let i = 0; i < chapters.length; i++) {
       const ch = chapters[i];

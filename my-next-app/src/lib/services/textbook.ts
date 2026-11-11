@@ -6,6 +6,7 @@ import { splitText } from "@/lib/utils/text-splitter";
 import fs from "fs";
 import path from "path";
 import { cache } from "react";
+import { log } from "@/lib/logger";
 
 export interface Textbook {
   id: number;
@@ -92,10 +93,10 @@ export const textbookService = {
     try {
       if (fs.existsSync(bookDir)) {
         fs.rmSync(bookDir, { recursive: true, force: true });
-        console.log(`[TextbookService] Deleted directory: ${bookDir}`);
+        log.info(`[TextbookService] Deleted directory: ${bookDir}`);
       }
     } catch (error) {
-      console.error(
+      log.error(
         `[TextbookService] Failed to delete directory ${bookDir}:`,
         error,
       );
@@ -126,7 +127,7 @@ export const textbookService = {
     // Index to RAG with semantic chunking
     if (data.content && data.content.trim().length > 0) {
       const chunks = await splitText(data.content);
-      console.log(
+      log.info(
         `[RAG] Split chapter "${data.title}" into ${chunks.length} chunks.`,
       );
 
@@ -186,7 +187,7 @@ export const textbookService = {
 
       if (content && content.trim().length > 0) {
         const chunks = await splitText(content);
-        console.log(
+        log.info(
           `[RAG] Re-split chapter "${chapter.title}" into ${chunks.length} chunks.`,
         );
 

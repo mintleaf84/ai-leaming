@@ -10,6 +10,7 @@ import { createGzip } from "zlib";
 import { pipeline } from "stream";
 import { promisify } from "util";
 import { env } from "@/env";
+import { log } from "@/lib/logger";
 
 const pipelineAsync = promisify(pipeline);
 
@@ -32,7 +33,7 @@ if (!BACKUP_SECRET) {
   if (process.env.NODE_ENV === "production") {
     throw new Error(errorMsg);
   }
-  console.warn("WARNING: " + errorMsg);
+  log.warn("WARNING: " + errorMsg);
 }
 
 const SECRET = BACKUP_SECRET || "ai-learning-backup-secret-key-32-chars";
@@ -66,7 +67,7 @@ export class BackupService {
       try {
         pass = decrypt(encryptedPass, SECRET);
       } catch (_e) {
-        console.error("[Backup] Failed to decrypt password");
+        log.error("[Backup] Failed to decrypt password");
       }
     }
 
@@ -105,7 +106,7 @@ export class BackupService {
       await client.getDirectoryContents("/");
       return true;
     } catch (error) {
-      console.error("[Backup] Connection test failed:", error);
+      log.error("[Backup] Connection test failed:", error);
       return false;
     }
   }
@@ -130,14 +131,14 @@ export class BackupService {
       await fs.mkdir(tempDir, { recursive: true });
 
       // 2. SQLite 备份 (VACUUM INTO)
-      console.log(`[Backup] Creating database snapshot: ${backupPath}`);
+      log.info(`[Backup] Creating database snapshot: ${backupPath}`);
       // 使用 Drizzle/LibSQL 的 VACUUM INTO 进行在线备份
       await drizzleDb.run(
         sql.raw(`VACUUM INTO '${backupPath.replace(/'/g, "''")}'`),
       );
 
       // 3. 压缩
-      console.log(`[Backup] Compressing backup: ${zipPath}`);
+      log.info(`[Backup] Compressing backup: ${zipPath}`);
       await pipelineAsync(
         createReadStream(backupPath),
         createGzip(),
@@ -165,7 +166,7 @@ export class BackupService {
         .join(config.remotePath, remoteFileName)
         .replace(/\\/g, "/");
 
-      console.log(`[Backup] Uploading to WebDAV: ${remoteFullTarget}`);
+      log.info(`[Backup] Uploading to WebDAV: ${remoteFullTarget}`);
       const backupBuffer = await fs.readFile(zipPath);
       await client.putFileContents(remoteFullTarget, backupBuffer);
 
@@ -180,7 +181,7 @@ export class BackupService {
           await fs.unlink(backupPath);
         if (await fs.stat(zipPath).catch(() => null)) await fs.unlink(zipPath);
       } catch (e) {
-        console.warn("[Backup] Failed to cleanup temp files", e);
+        log.warn("[Backup] Failed to cleanup temp files", e);
       }
     }
   }
@@ -193,7 +194,7 @@ export class BackupService {
     config: BackupConfig,
   ) {
     try {
-      console.log(
+      log.info(
         `[Backup] Checking for old backups (retention: ${config.retentionDays} days)`,
       );
       const items = (await client.getDirectoryContents(
@@ -206,12 +207,12 @@ export class BackupService {
 
         const lastModDate = dayjs(item.lastmod);
         if (now.diff(lastModDate, "day") > config.retentionDays) {
-          console.log(`[Backup] Deleting old backup: ${item.filename}`);
+          log.info(`[Backup] Deleting old backup: ${item.filename}`);
           await client.deleteFile(item.filename);
         }
       }
     } catch (error) {
-      console.error("[Backup] Rotation failed:", error);
+      log.error("[Backup] Rotation failed:", error);
     }
   }
 }

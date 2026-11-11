@@ -3,6 +3,7 @@ import { eq, sql, desc, and, or, lt } from "drizzle-orm";
 import { Document } from "@langchain/core/documents";
 import { RagEmbeddings, SqliteVecVectorStore } from "@/lib/ai/langchain-store";
 import { ragService, type RagResult } from "@/lib/ai/rag";
+import { log } from "@/lib/logger";
 
 /**
  * 用户错题记录
@@ -91,7 +92,7 @@ export const wrongQuestionRecommend = {
           };
         });
     } catch (error) {
-      console.error("[WrongQuestion] getWrongQuestions failed:", error);
+      log.error("[WrongQuestion] getWrongQuestions failed:", error);
       return [];
     }
   },
@@ -120,7 +121,7 @@ export const wrongQuestionRecommend = {
         .filter((m) => (m.totalCount || 0) >= 3) // 至少做过的题目
         .map((m) => ({ tag: m.tagName, score: m.score || 0 }));
     } catch (error) {
-      console.error("[WrongQuestion] getWeakestTags failed:", error);
+      log.error("[WrongQuestion] getWeakestTags failed:", error);
       return [];
     }
   },
@@ -139,7 +140,7 @@ export const wrongQuestionRecommend = {
       // 检查向量库是否有数据
       const hasVectorData = await this.ensureVectorData(currentQuestionId);
       if (!hasVectorData) {
-        console.log("[Recommend] 向量库为空，暂无推荐");
+        log.info("[Recommend] 向量库为空，暂无推荐");
         return [];
       }
 
@@ -168,7 +169,7 @@ export const wrongQuestionRecommend = {
         )
         .slice(0, limit);
     } catch (error) {
-      console.error("[WrongQuestion] recommendByTags (vector) failed:", error);
+      log.error("[WrongQuestion] recommendByTags (vector) failed:", error);
       return [];
     }
   },
@@ -207,7 +208,7 @@ export const wrongQuestionRecommend = {
         return true;
       }
 
-      console.log(
+      log.info(
         `[Recommend] 向量库题量不足 (${existingCount})，开始批量初始化所有题目...`,
       );
 
@@ -224,7 +225,7 @@ export const wrongQuestionRecommend = {
         .where(sql`${drizzleSchema.questions.content} IS NOT NULL`)
         .all();
 
-      console.log(`[Recommend] 共 ${allQuestions.length} 道题目待向量化`);
+      log.info(`[Recommend] 共 ${allQuestions.length} 道题目待向量化`);
 
       // 3.5 确保向量表已初始化
       await ragService.initRagTable();
@@ -243,7 +244,7 @@ export const wrongQuestionRecommend = {
 
       const successCount = await ragService.addChunksBatch(items, 20);
 
-      console.log(`[Recommend] 向量库初始化完成，共 ${successCount} 道题目`);
+      log.info(`[Recommend] 向量库初始化完成，共 ${successCount} 道题目`);
 
       // 5. 写入持久化标志
       if (successCount > 0) {
@@ -254,7 +255,7 @@ export const wrongQuestionRecommend = {
 
       return successCount > 0;
     } catch (error) {
-      console.error("[Recommend] ensureVectorData failed:", error);
+      log.error("[Recommend] ensureVectorData failed:", error);
       return false;
     }
   },
@@ -339,7 +340,7 @@ export const wrongQuestionRecommend = {
 
       return recommended;
     } catch (error) {
-      console.error("[WrongQuestion] recommendSimilar failed:", error);
+      log.error("[WrongQuestion] recommendSimilar failed:", error);
       return [];
     }
   },
@@ -379,7 +380,7 @@ export const wrongQuestionRecommend = {
         (doc) => !doneIds.includes(doc.metadata.question_id as number),
       );
     } catch (error) {
-      console.error("[WrongQuestion] recommendByVector failed:", error);
+      log.error("[WrongQuestion] recommendByVector failed:", error);
       return [];
     }
   },
@@ -411,7 +412,7 @@ export const wrongQuestionRecommend = {
 
       return filtered.slice(0, limit);
     } catch (error) {
-      console.error("[WrongQuestion] filterAlreadyDone failed:", error);
+      log.error("[WrongQuestion] filterAlreadyDone failed:", error);
       return results.slice(0, limit);
     }
   },
@@ -456,7 +457,7 @@ export const wrongQuestionRecommend = {
 
       return tagBased.slice(0, limit);
     } catch (error) {
-      console.error("[WrongQuestion] comprehensiveRecommend failed:", error);
+      log.error("[WrongQuestion] comprehensiveRecommend failed:", error);
       return [];
     }
   },
@@ -499,7 +500,7 @@ export async function getUserLearningReport(userId: number) {
       recentWrong,
     };
   } catch (error) {
-    console.error("[LearningReport] getUserLearningReport failed:", error);
+    log.error("[LearningReport] getUserLearningReport failed:", error);
     return null;
   }
 }

@@ -11,6 +11,7 @@ import { drizzleDb, getLegacyDb, drizzleSchema } from "@/lib/db";
 import { sql } from "drizzle-orm";
 import fs from "fs";
 import path from "path";
+import { log } from "@/lib/logger";
 
 // 危险 SQL 关键字黑名单（禁止执行）
 const DANGEROUS_KEYWORDS = [
@@ -125,7 +126,7 @@ export class SqlScriptService {
 
       return null;
     } catch (error) {
-      console.error("[SqlScript] 估算影响行数失败:", error);
+      log.error("[SqlScript] 估算影响行数失败:", error);
       return null;
     }
   }
@@ -336,7 +337,7 @@ export class SqlScriptService {
 
       return { deleted };
     } catch (error) {
-      console.error("[SqlScript] 清理备份失败:", error);
+      log.error("[SqlScript] 清理备份失败:", error);
       return { deleted: 0, error };
     }
   }

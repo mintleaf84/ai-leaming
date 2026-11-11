@@ -1,4 +1,5 @@
 import crypto from "crypto";
+import { log } from "@/lib/logger";
 
 const ALGORITHM = "aes-256-gcm";
 const IV_LENGTH = 12; // GCM 推荐 IV 长度为 12 字节
@@ -70,7 +71,7 @@ export function decrypt(data: string, secret: string): string {
     ]);
     return decrypted.toString("utf8");
   } catch (error) {
-    console.error("[Encryption] Decryption failed:", error);
+    log.error("[Encryption] Decryption failed:", error);
     throw new Error("Failed to decrypt data");
   }
 }

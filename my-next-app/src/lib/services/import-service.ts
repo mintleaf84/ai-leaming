@@ -3,6 +3,7 @@ import { and, eq, sql } from "drizzle-orm";
 import { FenbiImportResult } from "../import/fenbi-parser";
 import { sanitizeHtml } from "../utils/security";
 import { generateId } from "../utils/id";
+import { log } from "@/lib/logger";
 
 const { practice_sessions, questions, practice_logs, user_mastery } =
   drizzleSchema;
@@ -273,7 +274,7 @@ export const importService = {
       const { srsService } = await import("./srs");
       await srsService.syncFromPracticeLogs(userId);
     } catch (e) {
-      console.error("[Import] SRS 同步失败:", e);
+      log.error("[Import] SRS 同步失败:", e);
     }
 
     return {

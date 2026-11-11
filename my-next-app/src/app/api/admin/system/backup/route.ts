@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { BackupService } from "@/lib/services/backup-service";
 import { requireRole } from "@/lib/auth/auth";
+import { log } from "@/lib/logger";
 
 export const dynamic = "force-dynamic";
 
@@ -59,7 +60,7 @@ export async function PUT() {
         error.message.includes("Forbidden"))
         ? 401
         : 500;
-    console.error("[API] Backup failed:", error);
+    log.error("[API] Backup failed:", error);
     return NextResponse.json(
       { error: error instanceof Error ? error.message : String(error) },
       { status },

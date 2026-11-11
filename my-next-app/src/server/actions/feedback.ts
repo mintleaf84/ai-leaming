@@ -4,6 +4,7 @@ import { authenticatedAction } from "@/lib/safe-action";
 import { questionFeedbackService } from "@/lib/services/question-feedback-service";
 import { z } from "zod";
 import { revalidatePath } from "next/cache";
+import { log } from "@/lib/logger";
 
 const FeedbackSchema = z.object({
   questionId: z.number(),
@@ -36,7 +37,7 @@ export const submitQuestionFeedbackAction = authenticatedAction
       revalidatePath("/history");
       return { success: true, id: result.id };
     } catch (error) {
-      console.error("提交反馈失败:", error);
+      log.error("提交反馈失败:", error);
       return { success: false, message: "提交反馈失败，请稍后重试" };
     }
   });

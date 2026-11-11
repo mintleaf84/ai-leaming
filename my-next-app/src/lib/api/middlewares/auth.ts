@@ -9,6 +9,7 @@ const SAFE_SECRET = env.JWT_SECRET;
 
 import { Context } from "hono";
 import { User } from "@/types";
+import { log } from "@/lib/logger";
 
 // --- 鉴权内存缓存机制 ---
 interface CachedUser {
@@ -24,7 +25,7 @@ const CACHE_TTL_MS = 60 * 1000; // 60秒过期
 export const authMiddleware = createMiddleware(async (c, next) => {
   // 强制运行时安全扫描：生产环境禁止缺乏密钥
   if (!SAFE_SECRET && process.env.NODE_ENV === "production") {
-    console.error("[SECURITY FATAL] 生产环境缺少 JWT_SECRET，拒绝所有鉴权请求");
+    log.error("[SECURITY FATAL] 生产环境缺少 JWT_SECRET，拒绝所有鉴权请求");
     return c.json(
       { error: "系统配置错误：生产环境未配置 JWT 密钥，拒绝验证凭证" },
       500,
@@ -82,7 +83,7 @@ export const authMiddleware = createMiddleware(async (c, next) => {
 
     // 检查版本号是否一致
     if (cached.token_version !== (user.token_version || 0)) {
-      console.warn(
+      log.warn(
         `[Auth] Session revoked for user ${user.id} due to version mismatch`,
       );
       return c.json({ error: "Unauthorized: Session revoked" }, 401);
@@ -90,7 +91,7 @@ export const authMiddleware = createMiddleware(async (c, next) => {
 
     await next();
   } catch (err) {
-    console.error("[Auth] Token verification failed:", err);
+    log.error("[Auth] Token verification failed:", err);
     return c.json({ error: "Unauthorized: Invalid or expired token" }, 401);
   }
 });

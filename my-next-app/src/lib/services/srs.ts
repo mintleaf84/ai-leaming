@@ -725,21 +725,21 @@ export const srsService = {
                     : "base";
             const speed = speedCache[typeKey] || speedCache["base"];
 
-            for (const log of qLogs) {
-              const reviewDate = log.timestamp
-                ? dayjs.utc(log.timestamp).toDate()
+            for (const entry of qLogs) {
+              const reviewDate = entry.timestamp
+                ? dayjs.utc(entry.timestamp).toDate()
                 : undefined;
               const userAnswerLength =
                 qInfo?.type === "fill_blank"
-                  ? log.userAnswer?.length
+                  ? entry.userAnswer?.length
                   : undefined;
               // updateQuestionSrs 现在会在题目不存在时抛出错误
               try {
                 await srsService.updateQuestionSrs(
                   userId,
                   qId,
-                  log.isCorrect === 1,
-                  log.durationMs || 0,
+                  entry.isCorrect === 1,
+                  entry.durationMs || 0,
                   reviewDate,
                   speed,
                   userAnswerLength,

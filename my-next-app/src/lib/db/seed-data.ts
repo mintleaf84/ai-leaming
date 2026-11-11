@@ -1,12 +1,13 @@
 import { drizzleDb } from "./index";
 import { getSetting } from "./utils-drizzle";
 import { sql } from "drizzle-orm";
+import { log } from "@/lib/logger";
 
 /**
  * 插入示例数据 (Drizzle 版本)
  */
 export async function seedData() {
-  console.log("[DB] Seeding data via Drizzle...");
+  log.info("[DB] Seeding data via Drizzle...");
 
   await migrateAIConfig();
   await initializeRoutes();
@@ -14,13 +15,13 @@ export async function seedData() {
   await initializeUserSubscriptions();
   await ensureAdminUser();
 
-  console.log("[DB] Seeding completed");
+  log.info("[DB] Seeding completed");
 }
 
 async function ensureAdminUser() {
   try {
     await drizzleDb.run(sql`UPDATE users SET role = 'admin' WHERE id = 1`);
-    console.log("[DB Seed] Ensured user 1 is admin");
+    log.info("[DB Seed] Ensured user 1 is admin");
   } catch {
     /* ignore */
   }
@@ -41,7 +42,7 @@ async function migrateAIConfig() {
           INSERT INTO ai_configs (name, api_url, api_key, model_economy, model_premium, model_embedding, embedding_dimensions, model_rerank, is_active)
           VALUES ('Default Config', ${apiUrl || "https://api.openai.com/v1"}, ${apiKey || ""}, ${(await getSetting("ai_model_economy")) || "gpt-4o-mini"}, ${(await getSetting("ai_model_premium")) || "gpt-4o"}, 'text-embedding-3-small', 768, '', 1)
         `);
-        console.log('[DB Seed] Created "Default Config" from system_settings');
+        log.info('[DB Seed] Created "Default Config" from system_settings');
       }
     }
   } catch {
@@ -62,7 +63,7 @@ async function initializeRoutes() {
       );
       const config = activeConfig[0];
       if (config) {
-        console.log("[DB Seed] Initializing ai_model_routes...");
+        log.info("[DB Seed] Initializing ai_model_routes...");
         const features = [
           { key: "economy", model: config.model_economy },
           { key: "premium", model: config.model_premium },
@@ -92,7 +93,7 @@ async function initializeSubscriptionPlans() {
     const planCount = result[0]?.count as number;
 
     if (planCount === 0) {
-      console.log("[DB Seed] Initializing subscription plans...");
+      log.info("[DB Seed] Initializing subscription plans...");
       const plans = [
         {
           id: "free",

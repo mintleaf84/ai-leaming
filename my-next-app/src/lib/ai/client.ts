@@ -14,6 +14,7 @@ import { getAiConfig } from "./config";
 import { getModel } from "./provider";
 import { extractJson, autoUnpackNestedJson } from "./parser";
 import { withRetry } from "./retry";
+import { log } from "@/lib/logger";
 
 // 导出类型供外部使用
 export { AiRawResponseError };
@@ -42,7 +43,7 @@ export async function generateStructuredData<T>(
 
   // E2E 测试模式
   if (env.E2E_TEST === "true") {
-    console.log("[AiClient] E2E 模式：返回模拟结构化数据");
+    log.info("[AiClient] E2E 模式：返回模拟结构化数据");
     return {
       analysis: "E2E 模拟分析报告",
       challenges: [],
@@ -110,7 +111,7 @@ export async function generateStructuredData<T>(
 
         return result as T;
       } catch (jsonModeError) {
-        console.warn(
+        log.warn(
           "[AiClient] mode:json 失败，回退到文本生成模式:",
           jsonModeError instanceof Error
             ? jsonModeError.message
@@ -160,7 +161,7 @@ export async function generateStructuredData<T>(
       try {
         return schema.parse(parsed) as T;
       } catch (zodError: unknown) {
-        console.error(
+        log.error(
           "[AiClient] Zod 校验失败:",
           JSON.stringify(parsed, null, 2),
         );

@@ -11,6 +11,7 @@ import {
 const app = new OpenAPIHono();
 
 import { buildSystemPrompt, type GenerateOption } from "@/lib/ai/prompts";
+import { log } from "@/lib/logger";
 
 const GenerateSchema = z.object({
   prompt: z.string(),
@@ -72,7 +73,7 @@ app.openapi(generateRoute, async (c) => {
     });
     return response.toTextStreamResponse();
   } catch (error: unknown) {
-    console.error("[Hono Generate API] error:", error);
+    log.error("[Hono Generate API] error:", error);
     // 回滚配额（流式开始前的错误）
     await decrementUsage(userId, "ai_chat");
     return c.json({ error: getErrorMessage(error) }, 500);

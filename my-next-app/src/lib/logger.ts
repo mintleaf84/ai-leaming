@@ -25,3 +25,33 @@ export const logger = pino({
 });
 
 export default logger;
+
+/**
+ * 服务端日志迁移垫片。
+ *
+ * 历史代码大量使用 `console.error("xxx", err)`；pino 的签名是
+ * `logger.error(obj, msg)`，直接替换会丢掉随附对象。这里保留 console 的调用
+ * 形态，把附加参数归一化为结构化字段（Error 归到 `err`，其余归到 `args`），
+ * 从而可以机械替换、不改变控制流。
+ *
+ * 新代码请直接使用 `logger.error({ err, ...ctx }, "message")`。
+ */
+function normalizeRest(rest: unknown[]) {
+  const err = rest.find((r) => r instanceof Error);
+  if (err) {
+    const others = rest.filter((r) => r !== err);
+    return others.length > 0 ? { err, args: others } : { err };
+  }
+  return rest.length > 0 ? { args: rest } : {};
+}
+
+export const log = {
+  error: (message: unknown, ...rest: unknown[]) =>
+    logger.error(normalizeRest(rest), String(message)),
+  warn: (message: unknown, ...rest: unknown[]) =>
+    logger.warn(normalizeRest(rest), String(message)),
+  info: (message: unknown, ...rest: unknown[]) =>
+    logger.info(normalizeRest(rest), String(message)),
+  debug: (message: unknown, ...rest: unknown[]) =>
+    logger.debug(normalizeRest(rest), String(message)),
+};

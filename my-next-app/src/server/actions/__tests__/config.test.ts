@@ -51,9 +51,16 @@ vi.mock("ai", () => ({
   generateText: vi.fn(),
 }));
 
-vi.mock("@/lib/logger", () => ({
-  default: { error: vi.fn(), info: vi.fn(), warn: vi.fn() },
-}));
+vi.mock("@/lib/logger", () => {
+  const stub = {
+    error: vi.fn(),
+    info: vi.fn(),
+    warn: vi.fn(),
+    debug: vi.fn(),
+  };
+  // 同时提供 logger / log / default：服务端代码已迁移到 log 垫片
+  return { default: stub, logger: stub, log: stub };
+});
 
 vi.mock("@/lib/utils/error", () => ({
   getErrorMessage: vi.fn((err) => err?.message || "Unknown error"),

@@ -71,7 +71,7 @@ export function PracticeCard({
 
   // 当题目更换时，重置排除状态和填空答案
   useEffect(() => {
-    // eslint-disable-next-line react-hooks/set-state-in-effect
+     
     setExcludedOptions([]);
     setFillBlankAnswers(isFillBlank ? Array(blankCount).fill("") : []);
   }, [question.id, isFillBlank, blankCount]);

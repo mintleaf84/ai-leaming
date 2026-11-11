@@ -37,9 +37,9 @@ export type MockedDrizzle = {
  * 创建一个清爽的、无状态污染的 Mock 实例
  */
 function createDrizzleMock(): MockedDrizzle {
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any -- Proxy handler internals require flexible typing
+   
   const mock: any = new Proxy(() => {}, {
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any -- Proxy handler target has dynamic properties
+     
     get: (target: any, prop: string) => {
       // 处理 Promise 的 then 方法
       if (prop === "then") {
@@ -101,7 +101,7 @@ export const drizzleSchema = actualSchema;
 export const resetDrizzleMock = (defaultReturn: unknown = []) => {
   vi.clearAllMocks();
 
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any -- Proxy mock internals require dynamic property access
+   
   const target = drizzleDb as any;
 
   // 重置 then

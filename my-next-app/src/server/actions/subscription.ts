@@ -44,7 +44,7 @@ export const getPlansAction = adminAction
 export const savePlanAction = adminAction
   .inputSchema(SubscriptionPlanSchema)
   .action(async ({ parsedInput: plan }) => {
-    await upsertPlan(plan as any);
+    await upsertPlan(plan as unknown as Parameters<typeof upsertPlan>[0]);
     revalidatePath("/admin/plans");
     revalidatePath("/pricing");
     return { success: true };

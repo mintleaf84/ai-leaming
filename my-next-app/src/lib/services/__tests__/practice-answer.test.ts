@@ -5,7 +5,7 @@
  * 一次 submitAnswer 会写三处：practice_logs、practice_sessions 统计、user_mastery。
  * 这条链路是"练习 → 掌握度 → 抽题"的数据源头，之前没有真实库测试覆盖。
  */
-/* eslint-disable @typescript-eslint/no-explicit-any -- 直接执行原始 SQL 并断言未类型化行 */
+ 
 import { describe, it, expect, beforeAll, afterAll } from "vitest";
 import fs from "node:fs";
 import path from "node:path";

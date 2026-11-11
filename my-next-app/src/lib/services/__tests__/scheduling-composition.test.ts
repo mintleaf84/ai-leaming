@@ -5,7 +5,7 @@
  * generateSession 是"刷什么题"的唯一入口：顽固题按观察区标签、盲区题按
  * 「从未作答」、常规题补齐。这里验证配比、去重与三类来源的实际约束。
  */
-/* eslint-disable @typescript-eslint/no-explicit-any -- 直接执行原始 SQL 并断言未类型化行 */
+ 
 import { describe, it, expect, beforeAll, afterAll } from "vitest";
 import fs from "node:fs";
 import path from "node:path";

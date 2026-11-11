@@ -1,4 +1,4 @@
-/* eslint-disable @typescript-eslint/no-explicit-any -- 集成测试需要直接执行原始 SQL 并断言未类型化的行 */
+ 
 // @vitest-environment node
 /**
  * SRS 同步回归测试（真实 SQLite + 真实迁移）

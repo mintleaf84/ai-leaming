@@ -46,7 +46,7 @@ export function SimpleMindMapViewer({
     if (!containerRef.current) return;
 
     // 初始化
-    // eslint-disable-next-line @typescript-eslint/no-unsafe-call
+     
     const mindMap = new (
       MindMap as unknown as new (
         opts: Record<string, unknown>,

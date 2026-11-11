@@ -97,7 +97,10 @@ export const exportSessionMarkdownAction = authenticatedAction
     const analysisReport = await historyService.getAnalysisReport(sessionId);
 
     // 4. 格式化并返回
-    const markdown = formatSessionToMarkdown(detail as any, analysisReport);
+    const markdown = formatSessionToMarkdown(
+      detail as unknown as Parameters<typeof formatSessionToMarkdown>[0],
+      analysisReport,
+    );
     const filename = generateExportFilename(detail.session.createdAt);
 
     return { success: true, markdown, filename };

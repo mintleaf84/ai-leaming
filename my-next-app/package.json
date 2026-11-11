@@ -14,7 +14,8 @@
     "lint:ci": "node scripts/check-lint-ratchet.cjs",
     "test:e2e": "playwright test",
     "preinstall": "node scripts/check-node-version.cjs",
-    "lint:baseline": "node scripts/check-lint-ratchet.cjs --update"
+    "lint:baseline": "node scripts/check-lint-ratchet.cjs --update",
+    "audit:catches": "node scripts/audit-catches.cjs"
   },
   "dependencies": {
     "@ai-sdk/openai": "^3.0.49",

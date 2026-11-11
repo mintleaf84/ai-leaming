@@ -1,12 +1,12 @@
 {
-  "updatedAt": "2026-11-10",
-  "total": 536,
+  "updatedAt": "2026-11-11",
+  "total": 82,
+  "filesScanned": 583,
   "rules": {
-    "@typescript-eslint/no-explicit-any": 449,
     "@typescript-eslint/no-unused-vars": 75,
-    "(no-rule)": 6,
     "react-hooks/exhaustive-deps": 3,
     "@typescript-eslint/no-require-imports": 2,
-    "import/no-anonymous-default-export": 1
+    "import/no-anonymous-default-export": 1,
+    "@typescript-eslint/no-explicit-any": 1
   }
 }

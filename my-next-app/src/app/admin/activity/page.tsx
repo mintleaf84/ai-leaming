@@ -94,7 +94,9 @@ export default function ActivityMonitoringPage() {
         <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
           <Card className="bg-card/50 backdrop-blur-sm">
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">今日练习总数</CardTitle>
+              <CardTitle className="text-sm font-medium">
+                今日练习总数
+              </CardTitle>
               <Activity className="h-4 w-4 text-primary" />
             </CardHeader>
             <CardContent>
@@ -121,7 +123,9 @@ export default function ActivityMonitoringPage() {
           </Card>
           <Card className="bg-card/50 backdrop-blur-sm">
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">平均答题耗时</CardTitle>
+              <CardTitle className="text-sm font-medium">
+                平均答题耗时
+              </CardTitle>
               <Clock className="h-4 w-4 text-orange-500" />
             </CardHeader>
             <CardContent>

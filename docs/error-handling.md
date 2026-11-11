@@ -90,11 +90,11 @@ node scripts/audit-catches.cjs    # 与基线比对（CI 已接入）
 
 剩余（共 70 = 客户端组件 67 + 服务端 route handler 3，数字取自审计输出）：
 
-| 模块                                              | 数量    | 状态                                                                                                                                                                                                                   |
-| ------------------------------------------------- | ------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| 业务页面与组件                                    | 67      | 待处理（`app/questions` 8、`components/history` 7、`app/wrong-book` 6、`app/knowledge` 5、`app/practice` 4、`components/textbooks` 4、`hooks/chat` 3、`components/editor` 3、`app/notes` 3、`app/mindmap` 3、其余 21） |
-| 服务端 `src/app/api/admin/system/backup/route.ts` | 3       | 待处理（Next route handler，不是客户端组件）                                                                                                                                                                           |
-| 合计                                              | **70**  |                                                                                                                                                                                                                        |
+| 模块                                              | 数量   | 状态                                                                                                                                                                                                                   |
+| ------------------------------------------------- | ------ | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| 业务页面与组件                                    | 67     | 待处理（`app/questions` 8、`components/history` 7、`app/wrong-book` 6、`app/knowledge` 5、`app/practice` 4、`components/textbooks` 4、`hooks/chat` 3、`components/editor` 3、`app/notes` 3、`app/mindmap` 3、其余 21） |
+| 服务端 `src/app/api/admin/system/backup/route.ts` | 3      | 待处理（Next route handler，不是客户端组件）                                                                                                                                                                           |
+| 合计                                              | **70** |                                                                                                                                                                                                                        |
 
 ## 已知语义债（catch 形态已标注，但业务语义未改）
 
@@ -116,12 +116,12 @@ node scripts/audit-catches.cjs    # 与基线比对（CI 已接入）
 
 客户端没有"返回 500"这层兜底，失败必须由 UI 显式承担。按触发来源分四类：
 
-| 场景 | 判定 | 做法 |
-| --- | --- | --- |
-| 用户主动触发的写操作（保存 / 删除 / 导入 / 执行 / 重置） | `degraded` | `toast.error("<动作>失败：" + 摘要)`，**且不改变界面状态**（不关对话框、不清空输入、不做乐观更新），catch 内 `return` |
-| 页面首屏 / 列表数据加载失败 | `degraded` | catch 内三件套：`console.error` + `setLoadError(...)` + 显式 `return`，再渲染 `ErrorState`（`onRetry` 必填）。**只调 `setLoadError` 会被审计判为 `silent`** |
-| 轮询 / 后台静默刷新失败 | `allowed` | 保留旧数据 + `console.warn` + **`// audit-allow: <理由>`**（只写日志不写标记会被判为 `logged`）；连续失败可在 UI 上降级为"数据可能过期" |
-| 解析 / 兼容性回退（JSON、localStorage、URL 参数、可选字段） | `allowed` | 回退默认值 + 至少一条日志（或显式 `return`）+ `audit-allow: <为什么这条失败可接受>`。**空 catch 只加标记仍算 `silent`**：审计器只把基础形态为 `degraded`/`logged`/`fallback` 的标记项升级为 `allowed` |
+| 场景                                                        | 判定       | 做法                                                                                                                                                                                                  |
+| ----------------------------------------------------------- | ---------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| 用户主动触发的写操作（保存 / 删除 / 导入 / 执行 / 重置）    | `degraded` | `toast.error("<动作>失败：" + 摘要)`，**且不改变界面状态**（不关对话框、不清空输入、不做乐观更新），catch 内 `return`                                                                                 |
+| 页面首屏 / 列表数据加载失败                                 | `degraded` | catch 内三件套：`console.error` + `setLoadError(...)` + 显式 `return`，再渲染 `ErrorState`（`onRetry` 必填）。**只调 `setLoadError` 会被审计判为 `silent`**                                           |
+| 轮询 / 后台静默刷新失败                                     | `allowed`  | 保留旧数据 + `console.warn` + **`// audit-allow: <理由>`**（只写日志不写标记会被判为 `logged`）；连续失败可在 UI 上降级为"数据可能过期"                                                               |
+| 解析 / 兼容性回退（JSON、localStorage、URL 参数、可选字段） | `allowed`  | 回退默认值 + 至少一条日志（或显式 `return`）+ `audit-allow: <为什么这条失败可接受>`。**空 catch 只加标记仍算 `silent`**：审计器只把基础形态为 `degraded`/`logged`/`fallback` 的标记项升级为 `allowed` |
 
 硬规则：
 

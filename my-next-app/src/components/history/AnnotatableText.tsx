@@ -80,7 +80,7 @@ export function AnnotatableText({
         tag: "highlight" | "underline" | "wavy";
         color?: string;
       }>;
-       
+
       setAnnotations(
         typedAnnotations.map((a) => ({
           id: a.id,

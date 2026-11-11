@@ -37,9 +37,7 @@ export type MockedDrizzle = {
  * 创建一个清爽的、无状态污染的 Mock 实例
  */
 function createDrizzleMock(): MockedDrizzle {
-   
   const mock: any = new Proxy(() => {}, {
-     
     get: (target: any, prop: string) => {
       // 处理 Promise 的 then 方法
       if (prop === "then") {
@@ -101,7 +99,6 @@ export const drizzleSchema = actualSchema;
 export const resetDrizzleMock = (defaultReturn: unknown = []) => {
   vi.clearAllMocks();
 
-   
   const target = drizzleDb as any;
 
   // 重置 then

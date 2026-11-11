@@ -54,7 +54,7 @@ export function SrsHistoryModal({
         setLoading(false);
       }
     };
-    loadData();  
+    loadData();
   }, [isOpen, questionId]);
 
   return (

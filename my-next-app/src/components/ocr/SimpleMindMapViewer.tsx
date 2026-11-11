@@ -46,7 +46,7 @@ export function SimpleMindMapViewer({
     if (!containerRef.current) return;
 
     // 初始化
-     
+
     const mindMap = new (
       MindMap as unknown as new (
         opts: Record<string, unknown>,

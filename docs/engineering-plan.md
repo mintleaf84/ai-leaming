@@ -51,8 +51,8 @@
 - [x] `docs/error-handling.md` 落盘（三形态判定流程 + 台账 + 分类进度）
 - [x] 修正被机械替换误伤的示例字符串（`welcome.ts` 里的代码高亮样例）
 - [x] **catch 形态机械化审计**：`scripts/audit-catches.cjs` 把每个 catch 归类为
-  `rethrow`(20) / `degraded`(88) / `fallback`(60) / `logged`(71) / `silent`(89)，
-  基线写入 `docs/catch-audit.baseline.json`，CI 中 `logged/fallback/silent` 任一增加即失败
+      `rethrow`(20) / `degraded`(88) / `fallback`(60) / `logged`(71) / `silent`(89)，
+      基线写入 `docs/catch-audit.baseline.json`，CI 中 `logged/fallback/silent` 任一增加即失败
 - [ ] 分批把 `logged`(71) / `silent`(89) 降级为 `degraded` 或 `rethrow`（台账已就位）
 - [ ] 前端 `ErrorBoundary` + 统一 `sonner` 错误提示；loading/empty/error 三态复用 `ui/empty-state.tsx`
 - 验收：`npm run lint:ci` 通过且 `no-console` 计数为 0（以 lint 结果为准，不用 grep —— `welcome.ts` 的代码示例字符串里应保留 `console.log`）；`docs/error-handling.md` 落盘

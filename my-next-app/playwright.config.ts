@@ -45,8 +45,7 @@ export default defineConfig({
     // 生产服务：dev 模式下每个路由现编译，是 e2e 慢的主因
     // 先建库再构建：production build 的 "Collecting page data" 阶段会查询
     // feature flag 等表，空库会直接构建失败（首轮 CI 即此原因）。
-    command:
-      "npm run db:migrate && npm run build && npm run start -- -p 3001",
+    command: "npm run db:migrate && npm run build && npm run start -- -p 3001",
     url: "http://localhost:3001",
     // 必须让 Playwright 自己起服务：复用已在 3001 的普通 dev server 时
     // webServer.env（DB_FILENAME=test-e2e.db / E2E_TEST=true）不会生效，

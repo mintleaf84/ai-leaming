@@ -13,7 +13,9 @@ test.describe("Dashboard Page", () => {
     await expect(page.getByText("页面出错了")).toHaveCount(0);
   });
 
-  test("should show stats cards after login", async ({ loggedInPage: page }) => {
+  test("should show stats cards after login", async ({
+    loggedInPage: page,
+  }) => {
     // 等待卡片加载
     await page
       .waitForSelector("text=今日专注", { timeout: 10000 })

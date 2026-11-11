@@ -9,7 +9,7 @@
  * 注：SRS 同步失效**不是**这类漂移导致的 —— 根因是事务内用了全局 `drizzleDb`
  * （见 srs.ts 的 exec 执行器修复）。此处只负责"夹具与迁移一致"。
  */
- 
+
 import { describe, it, expect, beforeAll, afterAll } from "vitest";
 import fs from "node:fs";
 import path from "node:path";

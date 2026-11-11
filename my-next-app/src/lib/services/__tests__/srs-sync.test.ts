@@ -1,4 +1,3 @@
- 
 // @vitest-environment node
 /**
  * SRS 同步回归测试（真实 SQLite + 真实迁移）

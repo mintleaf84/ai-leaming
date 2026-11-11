@@ -53,13 +53,13 @@ node scripts/audit-catches.cjs    # 与基线比对（CI 已接入）
 
 脚本把每个 `catch` 归类：
 
-| 分类 | 含义 | 处置 |
-| --- | --- | --- |
-| `rethrow` | 块内 `throw` | ✅ 正确 |
-| `degraded` | 有日志 + 有 return/continue 降级 | ✅ 推荐形态 |
-| `logged` | 有日志但直接继续执行 | ⚠️ 需写明判定条件 |
-| `fallback` | 静默降级（无日志） | ⚠️ 至少补一条结构化日志 |
-| `silent` | 空 catch | ❌ 必须处理 |
+| 分类       | 含义                             | 处置                    |
+| ---------- | -------------------------------- | ----------------------- |
+| `rethrow`  | 块内 `throw`                     | ✅ 正确                 |
+| `degraded` | 有日志 + 有 return/continue 降级 | ✅ 推荐形态             |
+| `logged`   | 有日志但直接继续执行             | ⚠️ 需写明判定条件       |
+| `fallback` | 静默降级（无日志）               | ⚠️ 至少补一条结构化日志 |
+| `silent`   | 空 catch                         | ❌ 必须处理             |
 
 当前基线（AST 解析）：`rethrow=23 / degraded=88 / fallback=58 / logged=72 / silent=88`，共 329 个 catch。历史口径（正则时代的 336）范围略有差异：正则会把 `.catch(` 与注释里的 `catch` 计入。
 

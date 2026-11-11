@@ -71,7 +71,6 @@ export function PracticeCard({
 
   // 当题目更换时，重置排除状态和填空答案
   useEffect(() => {
-     
     setExcludedOptions([]);
     setFillBlankAnswers(isFillBlank ? Array(blankCount).fill("") : []);
   }, [question.id, isFillBlank, blankCount]);

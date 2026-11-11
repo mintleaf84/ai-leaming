@@ -1,4 +1,3 @@
- 
 // @vitest-environment node
 /**
  * 导入幂等性集成测试（真实 SQLite + 真实迁移，不 mock SQL）

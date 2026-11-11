@@ -75,9 +75,7 @@ async function globalSetup(_config: FullConfig) {
       // 虚拟表/视图等删除失败时忽略，后续迁移会处理
     }
   }
-  console.log(
-    `[E2E Setup] 已删除 ${existingTables.length} 张旧表`,
-  );
+  console.log(`[E2E Setup] 已删除 ${existingTables.length} 张旧表`);
 
   // 用**真实迁移**建表：避免 e2e 再维护一份手写 DDL（此前 port 缺失
   // source_key / questions_json / practice_mode 等列，导致 practice 写入直接失败）。
@@ -103,7 +101,9 @@ async function globalSetup(_config: FullConfig) {
 
   // 向量表不在 drizzle 迁移里，单独建
   try {
-    db.exec(`CREATE VIRTUAL TABLE IF NOT EXISTS content_vec USING vec0(embedding float[1024])`);
+    db.exec(
+      `CREATE VIRTUAL TABLE IF NOT EXISTS content_vec USING vec0(embedding float[1024])`,
+    );
   } catch (err) {
     console.warn("[E2E Setup] content_vec 创建失败（RAG 用例可能受限）:", err);
   }

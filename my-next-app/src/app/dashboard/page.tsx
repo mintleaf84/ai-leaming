@@ -127,7 +127,10 @@ async function DashboardStatsCards() {
           </div>
         </CardContent>
         {/* Decoration */}
-        <div className="absolute top-0 right-0 w-32 h-32 bg-primary/10 rounded-full blur-[40px] -translate-y-1/2 translate-x-1/2 -z-0 opacity-60"></div>
+        <div
+          aria-hidden="true"
+          className="absolute top-0 right-0 w-32 h-32 bg-primary/10 rounded-full blur-[40px] -translate-y-1/2 translate-x-1/2 -z-0 opacity-60"
+        ></div>
       </Card>
 
       {/* Card 2: Quick Actions */}

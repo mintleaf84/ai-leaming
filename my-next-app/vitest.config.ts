@@ -10,7 +10,13 @@ export default defineConfig({
     testTimeout: 15000,
     setupFiles: ["./tests/setup.ts"],
     // 排除 e2e 测试
-    exclude: ["**/node_modules/**", "**/e2e/**", "**/playwright/**"],
+    exclude: [
+      "**/node_modules/**",
+      "**/e2e/**",
+      "**/playwright/**",
+      // 布局护栏依赖真实浏览器（Playwright 运行），jsdom 下无意义
+      "**/visual/**",
+    ],
   },
   resolve: {
     alias: {

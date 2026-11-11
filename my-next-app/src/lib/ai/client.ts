@@ -161,10 +161,7 @@ export async function generateStructuredData<T>(
       try {
         return schema.parse(parsed) as T;
       } catch (zodError: unknown) {
-        log.error(
-          "[AiClient] Zod 校验失败:",
-          JSON.stringify(parsed, null, 2),
-        );
+        log.error("[AiClient] Zod 校验失败:", JSON.stringify(parsed, null, 2));
         throw zodError;
       }
     } catch (fallbackError: unknown) {

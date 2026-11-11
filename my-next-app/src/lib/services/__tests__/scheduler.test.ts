@@ -96,8 +96,6 @@ describe("Scheduler Service", () => {
       expect(mockLog.info).toHaveBeenCalledWith(
         expect.stringContaining("自动备份已禁用"),
       );
-
-
     });
 
     it("应在备份执行成功时记录日志", async () => {
@@ -131,8 +129,6 @@ describe("Scheduler Service", () => {
       expect(mockLog.info).toHaveBeenCalledWith(
         expect.stringContaining("自动备份成功"),
       );
-
-
     });
 
     it("应在备份执行失败时捕获异常", async () => {
@@ -162,8 +158,6 @@ describe("Scheduler Service", () => {
         expect.stringContaining("自动备份执行失败"),
         expect.any(Error),
       );
-
-
     });
 
     it("应在已有任务时先停止旧任务再创建新任务", async () => {
@@ -202,8 +196,6 @@ describe("Scheduler Service", () => {
       expect(mockLog.info).toHaveBeenCalledWith(
         expect.stringContaining("任务调度器已就绪"),
       );
-
-
     });
   });
 

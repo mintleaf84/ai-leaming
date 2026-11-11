@@ -452,10 +452,7 @@ export function parseFenbiData(
       log.info(`[fenbi-parser] 题目 #${solutions.indexOf(solution) + 1}:`);
       log.info(`  - externalId: ${externalId}`);
       log.info(`  - solution.id: ${solution.id}`);
-      log.info(
-        `  - statsData keys 示例:`,
-        Object.keys(statsData).slice(0, 5),
-      );
+      log.info(`  - statsData keys 示例:`, Object.keys(statsData).slice(0, 5));
       log.info(
         `  - 匹配结果 questionStats:`,
         questionStats ? "有数据" : "无数据",

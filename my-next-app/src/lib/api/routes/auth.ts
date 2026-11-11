@@ -4,7 +4,7 @@ import { setCookie, deleteCookie } from "hono/cookie";
 import { logger as honoLogger } from "hono/logger";
 import { checkRateLimit, getClientIP } from "@/lib/auth/rate-limit";
 import { COOKIE_NAME, encrypt } from "@/lib/auth/auth-edge";
-import { log } from "@/lib/logger";
+import { log, logger } from "@/lib/logger";
 
 const app = new OpenAPIHono();
 
@@ -181,6 +181,7 @@ app.openapi(registerRoute, async (c) => {
       user,
     });
   } catch (e: unknown) {
+    logger.warn({ err: e }, "[Auth] 注册失败");
     return c.json(
       { error: (e instanceof Error ? e.message : null) || "注册失败" },
       400,

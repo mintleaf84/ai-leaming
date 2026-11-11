@@ -1,6 +1,7 @@
 import { OpenAPIHono, createRoute, z } from "@hono/zod-openapi";
 import { authMiddleware } from "@/lib/api/middlewares/auth";
 import { importFenbiDataAction } from "@/server/actions/import";
+import { logger } from "@/lib/logger";
 
 const app = new OpenAPIHono();
 
@@ -74,6 +75,7 @@ app.openapi(importRoute, async (c) => {
 
     return c.json(result.data || { success: false, message: "导入失败" }, 200);
   } catch (e) {
+    logger.error({ err: e }, "[Import] 导入失败");
     return c.json(
       {
         success: false,

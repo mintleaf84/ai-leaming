@@ -9,7 +9,7 @@ import * as path from "path";
 import { getApiCallStats, ApiCallStats } from "@/lib/admin/api-stats-service";
 import { sql } from "drizzle-orm";
 import { formatBytes, formatUptime } from "@/lib/utils/utils";
-import { log } from "@/lib/logger";
+import { log, logger } from "@/lib/logger";
 
 export { formatBytes, formatUptime } from "@/lib/utils/utils";
 
@@ -64,6 +64,8 @@ export async function getDatabaseStats(): Promise<DatabaseStats> {
       sizeBytes = stats.size;
     }
   } catch (e) {
+    // audit-allow: 数据库文件大小统计失败只影响 sizeBytes 展示（按 0 处理），
+    // 后续 sqlite_master 表统计与行数统计仍需执行，不能在此 return
     log.warn("无法获取数据库文件大小:", e);
   }
 
@@ -84,7 +86,8 @@ export async function getDatabaseStats(): Promise<DatabaseStats> {
           sql`SELECT COUNT(*) as count FROM ${sql.identifier(t.name)}`,
         );
         return { name: t.name, rowCount: result?.count || 0 };
-      } catch (_e) {
+      } catch (err) {
+        logger.warn({ err, table: t.name }, "无法统计表行数，按 0 处理");
         return { name: t.name, rowCount: 0 };
       }
     }),

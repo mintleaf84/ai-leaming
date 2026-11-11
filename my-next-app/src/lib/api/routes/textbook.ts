@@ -6,6 +6,7 @@ import { requireRole } from "@/lib/auth/auth";
 import { drizzleDb } from "@/lib/db";
 import { textbook_chapters } from "@/lib/db/drizzle-schema";
 import { eq, count } from "drizzle-orm";
+import { logger } from "@/lib/logger";
 
 const app = new OpenAPIHono();
 
@@ -166,6 +167,7 @@ app.openapi(deleteTextbookDef, async (c) => {
     await textbookService.deleteTextbook(textbookId);
     return c.json({ success: true });
   } catch (error: unknown) {
+    logger.error({ err: error }, "[Textbook] 删除教材失败");
     return c.json({ error: getErrorMessage(error) }, 500);
   }
 });

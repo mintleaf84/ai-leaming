@@ -82,7 +82,9 @@ export async function logApiCall(params: {
       error_message: params.errorMessage ?? null,
     });
   } catch (error) {
+    // 统计写入失败不能影响业务请求（本函数返回 void，失败即降级为"少一条日志"）
     log.error("Failed to log API call:", error);
+    return;
   }
 }
 

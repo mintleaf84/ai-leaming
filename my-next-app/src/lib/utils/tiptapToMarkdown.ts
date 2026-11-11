@@ -7,6 +7,8 @@ export function tiptapToMarkdown(content: string | null): string {
     }
     return content;
   } catch (_e) {
+    // audit-allow: 入参 content 可能本身就是 Markdown 纯文本（非 TipTap JSON），
+    // 解析失败按原文返回是本函数的契约，不属于异常
     return content;
   }
 }

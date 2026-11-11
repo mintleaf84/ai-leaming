@@ -5,6 +5,7 @@ import { z } from "zod";
 import { revalidatePath } from "next/cache";
 import { WELCOME_NOTE_CONTENT } from "@/lib/content/welcome";
 import { knowledgeService } from "@/lib/services/knowledge";
+import { logger } from "@/lib/logger";
 
 /**
  * 创建欢迎笔记
@@ -68,6 +69,7 @@ export const updateNoteAction = authenticatedAction
       revalidatePath(`/notes/${input.id}`);
       return { success: true, message: "笔记已更新" };
     } catch (error) {
+      logger.error({ err: error }, "[Note] 更新笔记失败");
       return {
         success: false,
         message: error instanceof Error ? error.message : "更新失败",

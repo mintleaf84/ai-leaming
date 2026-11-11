@@ -61,42 +61,41 @@ node scripts/audit-catches.cjs    # 与基线比对（CI 已接入）
 | `fallback` | 静默降级（无日志）               | ⚠️ 至少补一条结构化日志 |
 | `silent`   | 空 catch                         | ❌ 必须处理             |
 
-当前基线（AST 解析）：`rethrow=39 / degraded=119 / allowed=34 / fallback=28 / logged=44 / silent=63`。
+当前基线（AST 解析）：`rethrow=39 / degraded=136 / allowed=39 / fallback=14 / logged=35 / silent=61`。
 
 - `allowed` 是**显式允许**：catch 内写了 `// audit-allow: <理由>`，表示"已判断并接受"，不列入待办但会单独计数（理由写在代码里，可 grep 审计）。
-- 待办总数 218 → 178 → **160**（每批都要 `--update` 收紧基线，只允许持平或下降）。
-- 已清：`routes/admin.ts` + `db` + `server/actions`（第一批）、`lib/ai/**` + `lib/schemas.ts`（第二批）。
-- 未清：`lib/services` / `lib/import` / `lib/api/routes` 其余文件（约 48 处）、客户端 112 处。
+- 待办总数 218 → 178 → 160 → 135 → **110**（每批都要 `--update` 收紧基线，只允许持平或下降）。
+- 已清：`routes/admin.ts` + `db` + `server/actions`（第一批）、`lib/ai/**` + `lib/schemas.ts`（第二批）、`lib/services` / `lib/import` / `lib/api/routes` / `lib/admin` / `server/actions` / 零散（第三、四批）。
+- 未清：`src/app/api/**` 3 处 + 客户端 107 处。
 - 历史口径（正则时代的 336）与 AST 的 329 差异：正则会把 `.catch(` 与注释里的 `catch` 计入。
 
 ## 分类进度
 
 唯一可信来源是 `cd my-next-app && npm run audit:catches -- --list`（**在 `my-next-app/` 下执行**，
 仓库根目录没有这个 script），本节数字每次收口后同步更新。
-初始 218 个标记项 → 当前 **135 个**。
+初始 218 个标记项 → 当前 **110 个 = 客户端组件 107 处 + `src/app/api/**` 服务端路由 3 处**。
 
 已清（`rethrow` / `degraded` / `allowed` 三态之一，不再出现在 `--list`）：
 
 | 模块                                              | 处理方式                                                                                                                  |
 | ------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------- |
-| `src/lib/api/routes/admin.ts`（除第 392 行 1 处） | 鉴权失败转 401（`isAuthError`）、回滚失败保留备份、可选元信息 `audit-allow`                                               |
+| `src/lib/api/routes/admin.ts` | 鉴权失败转 401（`isAuthError`）、回滚失败保留备份、可选元信息 `audit-allow`                                               |
 | `src/lib/db/**`（`index` / `seed-data`）          | 向量扩展缺失降级为"无 RAG"、种子逐行幂等补齐                                                                              |
-| `src/server/actions/ai.ts`、`chat.ts`             | 补 `log.warn` / `audit-allow`（`admin.ts` / `note.ts` / `prompts.ts` 仍各剩 1 处）                                        |
+| `src/server/actions/ai.ts`、`chat.ts`             | 补 `log.warn` / `audit-allow`（同目录 `admin.ts` / `note.ts` / `prompts.ts` 各剩的 1 处已在后续批次清完）                 |
 | `src/lib/ai/**`                                   | 缓存失败显式 `return`、批量插入失败 `continue`、sentinel 改显式 throw                                                     |
 | `src/lib/schemas.ts`                              | JSON 脏数据 `audit-allow`（不加 logger，避免进客户端 bundle）                                                             |
 | `src/lib/services/**`、`src/lib/import/**`        | 补日志 + 显式 `return`/`continue`；2 处改复用 `safeParseJson` 让 catch 直接消失；`finally` 内与远距离回落用 `audit-allow` |
+| `src/lib/api/routes/**`、`src/lib/admin/**`、`src/server/actions/**` | 失败补日志并保留原 4xx/5xx；请求体解析失败与启动路径用 `audit-allow`；`external.ts` 的本地 `safeJsonParse` 改复用统一实现 |
+| 零散（`db` / `auth` / `practice` / `utils` / `middleware.ts` / `instrumentation.ts`） | 补日志 + 显式降级；`middleware.ts` 与 `utils/api-client.ts` 保持 `console`（Edge/客户端 bundle） |
 
-剩余（按目录，共 135，数字取自审计输出）：
+剩余（共 110 = 客户端组件 107 + 服务端 route handler 3，数字取自审计输出）：
 
-| 模块                           | 数量    | 状态                                                                                                                                                                                                                                |
-| ------------------------------ | ------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| 客户端 `src/app/admin/**`      | 40      | 待处理（后台失败必须可见）                                                                                                                                                                                                          |
-| 客户端业务页面与组件           | 70      | 待处理（`app/questions` 8、`components/history` 7、`app/wrong-book` 6、`app/knowledge` 5、`app/practice` 4、`components/textbooks` 4、`hooks/chat` 3、`components/editor` 3、`app/notes` 3、`app/mindmap` 3、`app/api` 3、其余 21） |
-| 服务端 `src/lib/api/routes/**` | 9       | 待处理（含 `admin.ts` 1 处）                                                                                                                                                                                                        |
-| 服务端 `src/lib/admin/**`      | 4       | 待处理                                                                                                                                                                                                                              |
-| 服务端 `src/server/actions/**` | 3       | 待处理（`admin.ts` / `note.ts` / `prompts.ts`）                                                                                                                                                                                     |
-| 服务端零散                     | 9       | 待处理（`utils` 2 / `practice` 2 / `db` 2 / `auth` 1 / `middleware.ts` 1 / `instrumentation.ts` 1）                                                                                                                                 |
-| 合计                           | **135** |                                                                                                                                                                                                                                     |
+| 模块 | 数量 | 状态 |
+| --- | --- | --- |
+| `src/app/admin/**` | 40 | 待处理（后台失败必须可见，优先） |
+| 业务页面与组件 | 67 | 待处理（`app/questions` 8、`components/history` 7、`app/wrong-book` 6、`app/knowledge` 5、`app/practice` 4、`components/textbooks` 4、`hooks/chat` 3、`components/editor` 3、`app/notes` 3、`app/mindmap` 3、其余 21） |
+| 服务端 `src/app/api/admin/system/backup/route.ts` | 3 | 待处理（Next route handler，不是客户端组件） |
+| 合计 | **110** | |
 
 ## 已知语义债（catch 形态已标注，但业务语义未改）
 
@@ -106,6 +105,10 @@ node scripts/audit-catches.cjs    # 与基线比对（CI 已接入）
 2. `knowledge.ts` 三处 RAG 同步是 fire-and-forget：失败只留日志，无重试/补偿队列，卡片会永久检索不到。
 3. `backup-service.getConfig` 解密失败返回空密码，调用方表现为 WebDAV 401，错误归因会误导排查。
 4. `pdf-question-parser.ts` 的「首次失败，重试中」`log.warn` 写在重试 `try` 内部，重试发起前抛错时不会产生该日志。
+5. `routes/import.ts` 失败走 200，而 `serverError` 分支走 500，失败语义不一致。
+6. `routes/textbook.ts` 删除教材时把鉴权失败也算成 500（应为 401/403）。
+7. `routes/auth.ts` 注册时任何异常都返回 400 且把内部 `e.message` 透给客户端（DB 故障应为 500）。
+8. `middleware.ts` 每个请求都 `console.log`，日志量与开销偏大。
 
 每批的判定流程见上；每批收口后 `npm run audit:catches -- --update` 收紧基线（只允许持平或下降），
 并在 PR 描述里写明「保留为可忽略」的条数与理由。

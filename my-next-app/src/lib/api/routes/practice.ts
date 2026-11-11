@@ -2,7 +2,7 @@ import { OpenAPIHono, createRoute, z } from "@hono/zod-openapi";
 import { getErrorMessage } from "@/lib/utils/error";
 import { practiceService } from "@/lib/services/practice";
 import { authMiddleware, getCurrentUser } from "@/lib/api/middlewares/auth";
-import { log } from "@/lib/logger";
+import { log, logger } from "@/lib/logger";
 
 const app = new OpenAPIHono();
 
@@ -160,7 +160,9 @@ async function ensureCacheTable() {
       sql`CREATE INDEX IF NOT EXISTS idx_fp_cache_hash ON first_principles_cache(question_hash);`,
     );
   } catch (e) {
+    // 缓存表创建失败不阻塞本次分析（下方按"无缓存"路径继续）
     log.error("[FirstPrinciples] 创建缓存表失败:", e);
+    return;
   }
 }
 
@@ -276,6 +278,7 @@ ${explanation ? `参考解析：${explanation}` : ""}
       );
       text = result.text;
     } catch (aiError: unknown) {
+      logger.error({ err: aiError }, "[FirstPrinciples] AI 分析失败");
       return c.json(
         {
           error: `AI 分析失败: ${aiError instanceof Error ? aiError.message : "Unknown error"}`,
@@ -297,7 +300,9 @@ ${explanation ? `参考解析：${explanation}` : ""}
           set: { analysis: text },
         });
     } catch (cacheError) {
+      // 缓存写失败不影响本次分析结果：显式返回本次生成内容（与落到 catch 之后的路径等价）
       log.error("[FirstPrinciples] 缓存保存失败:", cacheError);
+      return c.json({ analysis: text, cached: false });
     }
 
     return c.json({ analysis: text, cached: false });

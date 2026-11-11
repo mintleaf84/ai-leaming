@@ -11,6 +11,7 @@ import { getApiCallStats } from "@/lib/admin/api-stats-service";
 import { questionFeedbackService } from "@/lib/services/question-feedback-service";
 import type { Dimension } from "@/types";
 import { logger } from "@/lib/logger";
+import { safeParseJson } from "@/lib/utils/json";
 
 export const adminRoute = new OpenAPIHono();
 
@@ -386,10 +387,9 @@ adminRoute.openapi(backupHistoryDef, async (c) => {
     .limit(50);
 
   const history = logs.map((log) => {
-    let details: Record<string, unknown> = {};
-    try {
-      details = JSON.parse(log.details || "{}");
-    } catch {}
+    // details 是历史 JSON 快照；脏数据回退为空对象（复用统一的安全解析）
+    const details =
+      safeParseJson<Record<string, unknown> | null>(log.details, null) ?? {};
     return {
       id: log.id,
       action: log.action,

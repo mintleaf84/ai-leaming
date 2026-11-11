@@ -39,8 +39,9 @@ export async function logAdminAction(
       ip_address: ipAddress,
     });
   } catch (error) {
+    // 不抛出错误，避免影响主业务流；审计日志写失败即降级为"少一条记录"
     log.error("Failed to log admin action:", error);
-    // 不抛出错误，避免影响主业务流
+    return;
   }
 }
 

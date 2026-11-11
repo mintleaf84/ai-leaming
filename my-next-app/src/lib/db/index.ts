@@ -142,6 +142,8 @@ export async function closeDrizzle() {
   try {
     await globalForLibsql.libsqlClient?.close?.();
   } catch (e) {
+    // audit-allow: 关闭连接失败仍需继续清空全局引用（否则热重载/测试会拿到死连接），
+    // 不能在此 return
     log.warn(
       "[DB] 关闭 libsql 连接失败:",
       e instanceof Error ? e.message : String(e),
@@ -182,6 +184,8 @@ export async function initDatabase() {
     try {
       await setupVectorExtension();
     } catch (e) {
+      // audit-allow: 向量扩展失败不阻止启动（下方 seedData 与管理端仍可用），
+      // return 会跳过 seedData，改变启动语义
       log.warn(
         "[DB] Vector extension setup failed, continuing without vector features:",
         e,

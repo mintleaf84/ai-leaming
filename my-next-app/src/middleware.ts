@@ -42,6 +42,8 @@ export async function middleware(req: NextRequest) {
       userId = session?.user?.id ? String(session.user.id) : "anonymous";
       console.log(`[Middleware] Token valid for user: ${userId}`);
     } catch (e: unknown) {
+      // audit-allow: 解密失败即"未登录"，必须继续走下方 isProtectedRoute 的重定向判断，
+      // 在此 return 会跳过鉴权分支（等于放行）
       console.warn(
         `[Middleware] Token decryption failed: ${(e as Error).message}`,
       );

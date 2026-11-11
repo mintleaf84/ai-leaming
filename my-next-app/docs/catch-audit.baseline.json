@@ -2,11 +2,11 @@
   "updatedAt": "2026-11-11",
   "counts": {
     "rethrow": 39,
-    "degraded": 119,
-    "allowed": 34,
-    "fallback": 28,
-    "logged": 44,
-    "silent": 63
+    "degraded": 136,
+    "allowed": 39,
+    "fallback": 14,
+    "logged": 35,
+    "silent": 61
   },
   "ids": [
     "src/app/admin/_components/admin-layout-shell.tsx#8810426b30#1",
@@ -118,31 +118,6 @@
     "src/components/textbooks/TextbookUploadModal.tsx#b8dbac270f#1",
     "src/hooks/chat/use-chat-sessions.ts#a37d4c6765#1",
     "src/hooks/chat/use-chat-stream.ts#931d654b2a#1",
-    "src/hooks/chat/use-chat-stream.ts#93a3c85474#1",
-    "src/instrumentation.ts#a50517597c#1",
-    "src/lib/admin/api-stats-service.ts#362311b997#1",
-    "src/lib/admin/audit.ts#ba41c4c8f6#1",
-    "src/lib/admin/health.ts#40287ee8d4#1",
-    "src/lib/admin/health.ts#44fea0219b#1",
-    "src/lib/api/routes/admin.ts#bf21a9e8fb#1",
-    "src/lib/api/routes/auth.ts#33d958c54b#1",
-    "src/lib/api/routes/external.ts#317f3ffcd3#1",
-    "src/lib/api/routes/import.ts#ec089e4d15#1",
-    "src/lib/api/routes/knowledge.ts#9e450e503c#1",
-    "src/lib/api/routes/practice.ts#a1cb6ea9c2#1",
-    "src/lib/api/routes/practice.ts#b8dab1fcdd#1",
-    "src/lib/api/routes/practice.ts#f9f548aa5f#1",
-    "src/lib/api/routes/textbook.ts#32e0e83bb7#1",
-    "src/lib/auth/auth.ts#0a9843cd88#1",
-    "src/lib/db/index.ts#ad3aacad5d#1",
-    "src/lib/db/index.ts#d48dd224eb#1",
-    "src/lib/practice/demo.ts#90f8ab65d8#1",
-    "src/lib/practice/practice-scheduling.ts#14a0a565bf#1",
-    "src/lib/utils/api-client.ts#77861f0572#1",
-    "src/lib/utils/tiptapToMarkdown.ts#49f248cec6#1",
-    "src/middleware.ts#09eb0cdff4#1",
-    "src/server/actions/admin.ts#0ad6674c58#1",
-    "src/server/actions/note.ts#329db9c521#1",
-    "src/server/actions/prompts.ts#cff7975543#1"
+    "src/hooks/chat/use-chat-stream.ts#93a3c85474#1"
   ]
 }

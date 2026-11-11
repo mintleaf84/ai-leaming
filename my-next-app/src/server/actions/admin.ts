@@ -13,6 +13,7 @@ import {
 } from "@/lib/validations/admin";
 import { questionFeedbackService } from "@/lib/services/question-feedback-service";
 import { after } from "next/server";
+import { logger } from "@/lib/logger";
 
 /**
  * 获取题目列表（支持分页与过滤）
@@ -118,7 +119,9 @@ export const updateQuestionAction = adminAction
         }
         try {
           return JSON.stringify(answer) ?? String(answer);
-        } catch {
+        } catch (err) {
+          // 只出现在循环引用 / BigInt 这类不可序列化答案上，回退 String() 继续校验
+          logger.warn({ err }, "[Admin] 多选题答案序列化失败，回退 String()");
           return String(answer);
         }
       };

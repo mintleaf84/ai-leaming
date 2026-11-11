@@ -165,6 +165,7 @@ export const practiceService = {
               completedCount,
             };
           } catch (e) {
+            // audit-allow: 会话快照 JSON 损坏时放弃恢复，回落下方"新建随机会话"路径；失败已记录
             logger.error(
               { err: e, sessionId: lastSession.id },
               "Failed to parse session questions_json",
@@ -341,6 +342,8 @@ export const practiceService = {
       );
     } catch (e) {
       logger.error({ err: e }, "Failed to update SRS state in submitAnswer");
+      // 显式降级：SRS 更新失败不影响答题结果落库，返回无 SRS 数据的成功结果
+      return { success: true, srs: undefined };
     }
 
     return {
@@ -382,15 +385,10 @@ export const practiceService = {
     }
 
     // 解析 options（可能是 JSON 字符串）
-    let options: string[] = [];
-    try {
-      options =
-        typeof question.options === "string"
-          ? JSON.parse(question.options)
-          : question.options || [];
-    } catch {
-      options = [];
-    }
+    const options: string[] =
+      typeof question.options === "string"
+        ? safeParseJson<string[]>(question.options, [])
+        : question.options || [];
 
     // 使用增强比对逻辑
     const correctAnswer = question.answer || "";

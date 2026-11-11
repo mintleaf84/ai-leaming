@@ -6,6 +6,22 @@ import { ragService, type RagResult } from "@/lib/ai/rag";
 import { log } from "@/lib/logger";
 
 /**
+ * 读取「向量库已完成初始化」的持久化标志。
+ * 读取失败（表/行缺失、DB 异常）按未初始化处理，走完整题量检查。
+ */
+async function isVectorInitialized(): Promise<boolean> {
+  try {
+    const flag = await drizzleDb.get<{ value: string }>(
+      sql`SELECT value FROM system_settings WHERE key = 'vector_questions_initialized'`,
+    );
+    return flag?.value === "true";
+  } catch (e) {
+    log.warn("[Recommend] 读取向量库初始化标志失败，按未初始化处理:", e);
+    return false;
+  }
+}
+
+/**
  * 用户错题记录
  */
 export interface WrongQuestion {
@@ -181,15 +197,8 @@ export const wrongQuestionRecommend = {
   async ensureVectorData(questionId: number): Promise<boolean> {
     try {
       // 1. 检查持久化标志（已初始化过则直接跳过）
-      try {
-        const flag = await drizzleDb.get<{ value: string }>(
-          sql`SELECT value FROM system_settings WHERE key = 'vector_questions_initialized'`,
-        );
-        if (flag?.value === "true") {
-          return true;
-        }
-      } catch {
-        /* system_settings may not have this row */
+      if (await isVectorInitialized()) {
+        return true;
       }
 
       // 2. 检查向量库中 question 类型的数量

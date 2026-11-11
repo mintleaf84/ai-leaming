@@ -12,6 +12,7 @@ import { sql } from "drizzle-orm";
 import fs from "fs";
 import path from "path";
 import { log } from "@/lib/logger";
+import { safeParseJson } from "@/lib/utils/json";
 
 // 危险 SQL 关键字黑名单（禁止执行）
 const DANGEROUS_KEYWORDS = [
@@ -249,6 +250,8 @@ export class SqlScriptService {
       const errorMessage =
         error instanceof Error ? error.message : String(error);
 
+      log.error("[SqlScript] 脚本执行失败:", errorMessage);
+
       // 记录失败日志
       await drizzleDb.insert(drizzleSchema.admin_logs).values({
         user_id: userId,
@@ -285,17 +288,10 @@ export class SqlScriptService {
     });
 
     return history.map((log) => {
-      let details: Record<string, unknown> = {};
-      try {
-        if (log.details) {
-          details =
-            typeof log.details === "string"
-              ? JSON.parse(log.details)
-              : log.details;
-        }
-      } catch {
-        /* ignore parse errors */
-      }
+      // 复用 safeParseJson：details 列是旧数据，解析失败按空对象降级
+      const details = log.details
+        ? safeParseJson<Record<string, unknown>>(log.details, {})
+        : {};
 
       return {
         id: log.id,

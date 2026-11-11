@@ -280,7 +280,11 @@ export async function parseOcrTextToQuestions(
         const msg = `第 ${i + 1} 块解析失败: ${retryErr instanceof Error ? retryErr.message : String(retryErr)}`;
         warnings.push(msg);
         log.error("[PdfParser]", msg);
+        // 显式降级：该块重试仍失败，跳过它继续解析后续块
+        continue;
       }
+      // 显式降级：首次失败已由上面的重试路径处理，跳过本块
+      continue;
     }
   }
 

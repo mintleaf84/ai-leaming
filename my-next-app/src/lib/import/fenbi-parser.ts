@@ -595,6 +595,7 @@ export function validateFenbiJson(
 
     return { valid: true };
   } catch (e) {
+    // audit-allow: 解析失败已通过返回值上报给调用方（导入表单提示），此处不重复记录
     return { valid: false, error: `JSON 解析失败: ${(e as Error).message}` };
   }
 }

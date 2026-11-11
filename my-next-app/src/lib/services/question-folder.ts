@@ -131,12 +131,20 @@ export const questionFolderService = {
       let added = 0;
       for (const qId of questionIds) {
         try {
-          await drizzleDb.run(
+          // INSERT OR IGNORE 遇到已存在的行不会抛错，只能用受影响行数判断是否真的新增，
+          // 否则「重复加入」会被算成新增（调用方提示的数量虚高）
+          const res = await drizzleDb.run(
             sql`INSERT OR IGNORE INTO question_folder_items (folder_id, question_id) VALUES (${folderId}, ${qId})`,
           );
-          added++;
-        } catch {
-          /* duplicate, skip */
+          if ((res as unknown as { rowsAffected?: number }).rowsAffected)
+            added++;
+        } catch (error) {
+          // 单题写入失败（重复/约束冲突）不影响其余题目，记录后跳过
+          console.warn(
+            `[Folder] addQuestions 跳过题目 ${qId} (folder ${folderId}):`,
+            error,
+          );
+          continue;
         }
       }
       return added;

@@ -99,6 +99,20 @@ async function getReadingSpeed(
 }
 
 /**
+ * 把选项 JSON 转成纯文本用于字数估算。
+ * 解析失败（脏数据/非 JSON 字符串）时按原文处理，属于数据兼容降级。
+ */
+function parseOptionsText(optionsJson: string): string {
+  try {
+    const options = JSON.parse(optionsJson);
+    return Array.isArray(options) ? options.join("") : "";
+  } catch (e) {
+    console.warn("[SRS] 选项 JSON 解析失败，按纯文本估算字数:", e);
+    return optionsJson || "";
+  }
+}
+
+/**
  * 内部辅助：根据本次表现更新基准速度 (EMA 算法)
  */
 export async function learnReadingSpeed(
@@ -110,13 +124,7 @@ export async function learnReadingSpeed(
   userAnswerLength?: number,
   exec: SrsExecutor = drizzleDb,
 ) {
-  let optionsText = "";
-  try {
-    const options = JSON.parse(optionsJson);
-    if (Array.isArray(options)) optionsText = options.join("");
-  } catch (_e) {
-    optionsText = optionsJson || "";
-  }
+  const optionsText = parseOptionsText(optionsJson);
 
   // 填空题需要加上用户答案长度
   const answerLength =
@@ -220,13 +228,7 @@ export const srsService = {
     questionType?: string,
     userAnswerLength?: number,
   ): Rating => {
-    let optionsText = "";
-    try {
-      const options = JSON.parse(optionsJson);
-      if (Array.isArray(options)) optionsText = options.join("");
-    } catch (_e) {
-      optionsText = optionsJson || "";
-    }
+    const optionsText = parseOptionsText(optionsJson);
 
     const totalChars = questionContent.length + optionsText.length;
     const readingTimeSec = totalChars / readingSpeed;

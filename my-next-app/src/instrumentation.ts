@@ -14,7 +14,9 @@ export async function register() {
       await initScheduler();
       log.info("✅ [Instrumentation] 全局初始化完成");
     } catch (error) {
+      // 启动初始化失败不阻塞进程启动（与历史行为一致），但必须留痕
       log.error("❌ [Instrumentation] 初始化失败:", error);
+      return;
     }
   }
 }

@@ -24,9 +24,20 @@ vi.mock("next/cache", () => ({
   revalidatePath: vi.fn(),
 }));
 
-vi.mock("@/lib/logger", () => ({
-  default: { error: vi.fn(), info: vi.fn() },
-}));
+vi.mock("@/lib/logger", () => {
+  const logger = {
+    error: vi.fn(),
+    warn: vi.fn(),
+    info: vi.fn(),
+    debug: vi.fn(),
+  };
+  return {
+    default: logger,
+    logger,
+    // `log` 是 console 形态的垫片，safe-action 与被测 action 都会用到
+    log: { error: vi.fn(), warn: vi.fn(), info: vi.fn(), debug: vi.fn() },
+  };
+});
 
 import {
   createNoteAction,

@@ -8,6 +8,7 @@ import { eq, and, sql, inArray, or, desc, lte } from "drizzle-orm";
 import { PracticeConfig } from "@/types/practice";
 import { Question } from "@/types";
 import { QuestionRowSchema } from "@/lib/schemas";
+import { logger } from "@/lib/logger";
 
 const { questions, practice_logs, observation_zone, question_srs } =
   drizzleSchema;
@@ -19,6 +20,8 @@ function mapRawToQuestion(q: Record<string, unknown>): Question {
   try {
     return QuestionRowSchema.parse(q);
   } catch (err) {
+    // 行数据不合 schema 时回退到宽松映射（业务流程继续），但必须留痕
+    logger.warn({ err }, "[PracticeScheduling] 题目行解析失败，使用宽松映射");
     return {
       ...q,
       options:

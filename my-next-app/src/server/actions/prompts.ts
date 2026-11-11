@@ -14,6 +14,7 @@ import { SavePromptSchema, DebugPromptSchema } from "@/lib/validations/prompt";
 import { after } from "next/server";
 import { z } from "zod";
 import { getErrorMessage } from "@/lib/utils/error";
+import { logger } from "@/lib/logger";
 
 /**
  * 获取所有 Prompt 模板 (管理员权限)
@@ -100,6 +101,15 @@ export const debugPromptTemplateAction = adminAction
 
       return { success: true, result };
     } catch (error: unknown) {
+      // 只记脱敏摘要：AiRawResponseError 携带原始响应（含插值后的 prompt 与变量），不可整体入日志
+      logger.error(
+        {
+          errorName: error instanceof Error ? error.name : typeof error,
+          errorMessage:
+            error instanceof Error ? error.message.slice(0, 200) : "",
+        },
+        "[Prompts] 调试 Prompt 失败",
+      );
       const rawResponse =
         error instanceof AiRawResponseError ? error.rawResponse : undefined;
       return {

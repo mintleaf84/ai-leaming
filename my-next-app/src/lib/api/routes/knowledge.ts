@@ -8,7 +8,7 @@ import {
   exportToAnkiTSV,
 } from "@/lib/services/knowledge";
 import { authMiddleware, getCurrentUser } from "@/lib/api/middlewares/auth";
-import { log } from "@/lib/logger";
+import { log, logger } from "@/lib/logger";
 
 const app = new OpenAPIHono();
 
@@ -272,7 +272,8 @@ app.openapi(extractRoute, async (c) => {
     if (jsonMatch) {
       try {
         rawCardData = JSON.parse(jsonMatch[0]);
-      } catch (_e) {
+      } catch (e) {
+        logger.warn({ err: e }, "[Knowledge] AI 返回的卡片 JSON 解析失败");
         return c.json({ error: "解析知识卡片失败", raw: text }, 422);
       }
     } else {

@@ -74,12 +74,12 @@ export async function fetchJson<T = unknown>(
     let message: string | undefined;
     const contentType = response.headers.get("content-type") || "";
     if (contentType.includes("application/json")) {
-      try {
-        const body = (await response.json()) as Record<string, unknown>;
-        message = (body.error || body.message) as string | undefined;
-      } catch {
-        /* ignore parse error */
-      }
+      // 解析失败视为"没有错误体"（404/502 常返回空体或 HTML），随后用 statusText 兜底
+      const body = (await response.json().catch(() => null)) as Record<
+        string,
+        unknown
+      > | null;
+      message = (body?.error || body?.message) as string | undefined;
     }
     throw new ApiError(response.status, response.statusText, message);
   }

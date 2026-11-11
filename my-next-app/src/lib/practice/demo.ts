@@ -39,7 +39,9 @@ export const DemoService = {
         where: eq(drizzleSchema.system_settings.key, "demo_mode_enabled"),
       });
       return row?.value === "true";
-    } catch {
+    } catch (err) {
+      // 读不到开关就按"关闭演示模式"处理，避免误把生产入口打开
+      logger.warn({ err }, "[DemoService] 读取演示模式开关失败，按关闭处理");
       return false;
     }
   },

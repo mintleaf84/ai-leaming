@@ -4,6 +4,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { User, UserRole } from "@/types";
 import { getUserById, revokeUserSessions } from "./user-service";
 import { cache } from "react";
+import { logger } from "@/lib/logger";
 
 // 从 Edge 兼容模块重新导出 JWT 相关功能
 export { encrypt, decrypt, COOKIE_NAME } from "./auth-edge";
@@ -49,7 +50,12 @@ export const getSession = cache(async () => {
   try {
     const decrypted = await decrypt(session);
     return decrypted as { user: User; expires: string };
-  } catch (_e) {
+  } catch (e) {
+    // 吊销/过期/被篡改的 Cookie 都解密失败，按"未登录"处理；属常态分支，用 debug 降噪
+    logger.debug(
+      { reason: e instanceof Error ? e.message : String(e) },
+      "[Auth] 会话解密失败，按未登录处理",
+    );
     return null;
   }
 });

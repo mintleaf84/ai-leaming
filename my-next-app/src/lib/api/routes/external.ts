@@ -2,6 +2,7 @@ import { OpenAPIHono, createRoute, z } from "@hono/zod-openapi";
 import { drizzleDb, drizzleSchema } from "@/lib/db";
 import { eq, sql, count } from "drizzle-orm";
 import { log } from "@/lib/logger";
+import { safeParseJson } from "@/lib/utils/json";
 
 const app = new OpenAPIHono();
 
@@ -121,10 +122,10 @@ app.openapi(listRoute, async (c) => {
     type: row.type || null,
     dimension: (row.dimension as string) || null,
     content: row.content,
-    options: safeJsonParse(row.options as string | null | undefined, []),
+    options: safeParseJson(row.options as string | null | undefined, []),
     answer: row.answer || "",
     explanation: row.explanation || null,
-    tags: safeJsonParse(row.tags as string | null | undefined, []),
+    tags: safeParseJson(row.tags as string | null | undefined, []),
   }));
 
   return c.json({
@@ -173,22 +174,14 @@ app.openapi(getRoute, async (c) => {
     type: row.type || null,
     dimension: (row.dimension as string) || null,
     content: row.content,
-    options: safeJsonParse(row.options as string | null | undefined, []),
+    options: safeParseJson(row.options as string | null | undefined, []),
     answer: row.answer || "",
     explanation: row.explanation || null,
-    tags: safeJsonParse(row.tags as string | null | undefined, []),
+    tags: safeParseJson(row.tags as string | null | undefined, []),
   });
 });
 
 // ==================== 工具函数 ====================
-
-function safeJsonParse<T>(str: string | null | undefined, fallback: T): T {
-  if (!str) return fallback;
-  try {
-    return JSON.parse(str);
-  } catch {
-    return fallback;
-  }
-}
+// JSON 解析统一走 @/lib/utils/json 的 safeParseJson（本文件原有的 safeJsonParse 是重复实现）
 
 export default app;

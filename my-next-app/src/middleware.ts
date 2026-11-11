@@ -11,6 +11,9 @@ const protectedRoutes = [
   "/knowledge",
   "/settings",
   "/admin",
+  // 题库导入与错题本都承载个人数据 / 需要登录态的动作，未登录必须拦截
+  "/questions",
+  "/wrong-book",
 ];
 const publicRoutes = ["/login", "/register"];
 

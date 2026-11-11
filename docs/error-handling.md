@@ -40,6 +40,29 @@
 | 其中"只打日志后继续" | 127    | 待逐条分类（见下）                   |
 | `no-console` 规则    | 无     | 已启用（服务端目录，warning + 棘轮） |
 
+## 机械化审计（推荐先用它定位）
+
+```bash
+npm run audit:catches -- --list   # 列出全部 logged / fallback / silent 位置（含行号与签名）
+node scripts/audit-catches.cjs    # 与基线比对（CI 已接入）
+```
+
+脚本用 **TypeScript AST** 解析（不是正则）：只统计「会从 catch 主体逃逸」的 `throw`，
+忽略嵌套函数内部的 throw 与字符串里的 `throw` 字样；`.catch(` 不会被误当成 catch 子句。
+基线按「文件 + 代码块哈希 + 序号」记录签名，因此"修好一个、新增一个"不会互相抵消。
+
+脚本把每个 `catch` 归类：
+
+| 分类       | 含义                             | 处置                    |
+| ---------- | -------------------------------- | ----------------------- |
+| `rethrow`  | 块内 `throw`                     | ✅ 正确                 |
+| `degraded` | 有日志 + 有 return/continue 降级 | ✅ 推荐形态             |
+| `logged`   | 有日志但直接继续执行             | ⚠️ 需写明判定条件       |
+| `fallback` | 静默降级（无日志）               | ⚠️ 至少补一条结构化日志 |
+| `silent`   | 空 catch                         | ❌ 必须处理             |
+
+当前基线（AST 解析）：`rethrow=23 / degraded=88 / fallback=58 / logged=72 / silent=88`，共 329 个 catch。历史口径（正则时代的 336）范围略有差异：正则会把 `.catch(` 与注释里的 `catch` 计入。
+
 ## 分类进度
 
 本轮已完成机械迁移（`console.*` → `log.*`，不改控制流）。剩下的"只打日志"catch 按模块分批分类，优先级按「失败后果 × 触发频率」：

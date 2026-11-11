@@ -1,4 +1,3 @@
-/* eslint-disable react-hooks/set-state-in-effect */
 "use client";
 
 import React, { useEffect, useState, useCallback } from "react";
@@ -29,6 +28,7 @@ import {
 import Link from "next/link";
 import { toast } from "sonner";
 import { ImportFenbiModal } from "@/components/import/ImportFenbiModal";
+import { ErrorState } from "@/components/ui/error-state";
 import { cn } from "@/lib/utils";
 import {
   History as HistoryIcon,
@@ -51,6 +51,8 @@ export default function HistoryPage() {
     totalPages: 0,
   });
   const [isLoading, setIsLoading] = useState(true);
+  // 加载失败要显式呈现，否则用户会看到"暂无练习记录"（把失败当空数据）
+  const [loadError, setLoadError] = useState<string | null>(null);
   const [availableModes, setAvailableModes] = useState<string[]>([]);
   const [showImportModal, setShowImportModal] = useState(false);
   const [isFilterOpen, setIsFilterOpen] = useState(false);
@@ -90,9 +92,12 @@ export default function HistoryPage() {
           totalPages: 0,
         },
       );
+      setLoadError(null);
     } catch (e) {
       if (e instanceof Error && e.name !== "AbortError") {
         console.error("Failed to load history:", e);
+        setLoadError(e.message || "加载失败");
+        return; // 明确降级：不再继续走"空数据"分支
       }
     } finally {
       if (!abortControllerRef.current?.signal.aborted) {
@@ -367,6 +372,12 @@ export default function HistoryPage() {
               />
             ))}
           </div>
+        ) : loadError ? (
+          <ErrorState
+            title="练习记录加载失败"
+            description={loadError}
+            onRetry={() => void loadHistory()}
+          />
         ) : history.items.length === 0 ? (
           <div className="flex flex-col items-center justify-center py-24 bg-card rounded-[2.5rem] border border-dashed border-border/60">
             <div className="w-24 h-24 bg-muted/50 rounded-full flex items-center justify-center mb-8">

@@ -80,7 +80,7 @@ export function AnnotatableText({
         tag: "highlight" | "underline" | "wavy";
         color?: string;
       }>;
-      // eslint-disable-next-line react-hooks/set-state-in-effect
+
       setAnnotations(
         typedAnnotations.map((a) => ({
           id: a.id,

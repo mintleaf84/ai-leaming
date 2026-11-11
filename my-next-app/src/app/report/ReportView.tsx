@@ -233,7 +233,6 @@ export function ReportView({ initialData: reportData }: ReportViewProps) {
                   tickFormatter={(v) => `${v}%`}
                 />
                 <Tooltip
-                  // eslint-disable-next-line @typescript-eslint/no-explicit-any
                   formatter={
                     ((value: number) => [`${value}%`, "正确率"]) as any
                   }

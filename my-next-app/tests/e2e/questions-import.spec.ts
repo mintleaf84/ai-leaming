@@ -1,22 +1,22 @@
-import { test, expect } from "@playwright/test";
+import { test, expect } from "./fixtures";
 
 test.describe("Questions Import Page", () => {
-  test.beforeEach(async ({ page }) => {
+  test.beforeEach(async ({ loggedInPage: page }) => {
     await page.goto("/questions/import");
   });
 
-  test("should load questions import page", async ({ page }) => {
+  test("should load questions import page", async ({ loggedInPage: page }) => {
     await expect(page).toHaveURL(/\/questions\/import/);
   });
 
-  test("should show import instructions", async ({ page }) => {
+  test("should show import instructions", async ({ loggedInPage: page }) => {
     await page.waitForLoadState("networkidle");
     // 应该有导入说明或上传区域
     const content = await page.content();
     expect(content.length).toBeGreaterThan(0);
   });
 
-  test("should require admin role", async ({ page }) => {
+  test("should require admin role", async ({ loggedInPage: page }) => {
     await page.waitForLoadState("networkidle");
     // 如果没有 admin 权限，可能会被重定向或显示 403
     const url = page.url();

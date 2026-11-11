@@ -54,7 +54,7 @@ export function SrsHistoryModal({
         setLoading(false);
       }
     };
-    loadData(); // eslint-disable-line -- loadData 是 async 函数，符合项目对 effect 中异步操作的统一处理规范
+    loadData();
   }, [isOpen, questionId]);
 
   return (

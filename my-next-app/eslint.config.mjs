@@ -68,6 +68,20 @@ const eslintConfig = defineConfig([
     },
   },
   {
+    // 测试与 mock 里 `as any` 是合理手段（构造非法输入、模拟未类型化的 SQL 行、
+    // 替换第三方类型），生产代码仍按 warn + 棘轮约束。
+    files: [
+      "**/*.test.ts",
+      "**/*.test.tsx",
+      "**/__tests__/**",
+      "**/__mocks__/**",
+      "tests/**",
+    ],
+    rules: {
+      "@typescript-eslint/no-explicit-any": "off",
+    },
+  },
+  {
     files: ["tests/**", "**/*.test.ts", "**/*.test.tsx"],
     rules: {
       "react-hooks/rules-of-hooks": "off"

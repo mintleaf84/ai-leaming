@@ -12,7 +12,8 @@ export default (phase: string) => {
   const isBuilding = phase === PHASE_PRODUCTION_BUILD;
 
   const nextConfig: NextConfig = {
-    output: "standalone",
+    // E2E 用 `next start` 起生产服务（standalone 产物不支持 next start）
+    output: process.env.E2E_TEST === "true" ? undefined : "standalone",
     distDir: process.env.E2E_TEST === "true" ? ".next-e2e" : undefined,
     turbopack: {},
     experimental: {

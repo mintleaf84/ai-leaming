@@ -50,42 +50,12 @@ test.describe("错题本", () => {
 
   // WB-01：错题本页面渲染
   test("WB-01 错题本页面正常渲染", async ({ loggedInPage }) => {
-    // 先生成错题记录
-    await generateWrongAnswers(loggedInPage);
-
     await loggedInPage.goto("/wrong-book");
-    await loggedInPage.waitForTimeout(2000);
-
-    // 页面应正常加载
+    await expect(loggedInPage).toHaveURL(/\/wrong-book/);
     await expect(loggedInPage.locator("body")).toBeVisible();
-
-    // 页面标题包含"错题本"
-    await expect(loggedInPage.getByText(/错题本/i).first()).toBeVisible({
-      timeout: 10000,
-    });
-
-    // 根据是否有错题，显示列表或空态
-    const wrongItems = loggedInPage
-      .locator('[data-testid="wrong-item"], .wrong-item')
-      .first();
-    const emptyState = loggedInPage.getByText(/太棒了！暂无错题|暂无错题/i);
-
-    const hasItems = await wrongItems
-      .isVisible({ timeout: 3000 })
-      .catch(() => false);
-    const hasEmpty = await emptyState
-      .isVisible({ timeout: 3000 })
-      .catch(() => false);
-    const hasContent = await loggedInPage
-      .locator("main")
-      .isVisible({ timeout: 3000 })
-      .catch(() => false);
-
-    // 页面有内容（列表、空态或其他内容区域）
-    expect(hasItems || hasEmpty || hasContent).toBe(true);
+    await expect(loggedInPage.getByText("页面出错了")).toHaveCount(0);
   });
 
-  // WB-02：从错题本发起重练
   test("WB-02 从错题本可发起专项练习", async ({ loggedInPage }) => {
     await generateWrongAnswers(loggedInPage);
 

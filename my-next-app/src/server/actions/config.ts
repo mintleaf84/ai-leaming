@@ -112,7 +112,9 @@ export const saveAiModelRouteAction = adminAction
   .inputSchema(SaveAiModelRouteSchema)
   .action(async ({ parsedInput: route, ctx }) => {
     const { user } = ctx;
-    await aiConfigService.saveRoute(route as any);
+    await aiConfigService.saveRoute(
+      route as Parameters<typeof aiConfigService.saveRoute>[0],
+    );
 
     after(() =>
       logAdminAction(

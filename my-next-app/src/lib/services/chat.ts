@@ -68,28 +68,31 @@ export async function saveMessage(
 
   if (!session) throw new Error("Unauthorized or session not found");
 
-  // 保存消息
-  const result = await drizzleDb.insert(drizzleSchema.chat_messages).values({
-    session_id: sessionId,
-    role,
-    content,
+  // 消息落库与会话计数必须原子：否则"消息已存、计数没加"会让后续统计永久偏差
+  return await drizzleDb.transaction(async (tx) => {
+    const exec = tx as unknown as typeof drizzleDb;
+
+    const result = await exec.insert(drizzleSchema.chat_messages).values({
+      session_id: sessionId,
+      role,
+      content,
+    });
+
+    await exec
+      .update(drizzleSchema.chat_sessions)
+      .set({
+        updated_at: sql`CURRENT_TIMESTAMP`,
+        message_count: sql`${drizzleSchema.chat_sessions.message_count} + 1`,
+      })
+      .where(
+        and(
+          eq(drizzleSchema.chat_sessions.id, sessionId),
+          eq(drizzleSchema.chat_sessions.user_id, userId),
+        ),
+      );
+
+    return Number(result.lastInsertRowid);
   });
-
-  // 更新会话的最后活跃时间和消息计数
-  await drizzleDb
-    .update(drizzleSchema.chat_sessions)
-    .set({
-      updated_at: sql`CURRENT_TIMESTAMP`,
-      message_count: sql`${drizzleSchema.chat_sessions.message_count} + 1`,
-    })
-    .where(
-      and(
-        eq(drizzleSchema.chat_sessions.id, sessionId),
-        eq(drizzleSchema.chat_sessions.user_id, userId),
-      ),
-    );
-
-  return Number(result.lastInsertRowid);
 }
 
 /**

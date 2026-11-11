@@ -102,7 +102,9 @@ export async function generateCorrectionQuizAction(
             ? JSON.parse(q.options)
             : q.options || [];
       } catch {
+        // audit-allow: 题库里的 options 可能是历史脏数据，解析失败按空数组继续
         options = [];
+        logger.debug("[AI] 题库 options 解析失败，降级为空选项");
       }
 
       return {
@@ -219,7 +221,9 @@ export async function generateRegressionChallengeAction(
               ? JSON.parse(q.options)
               : q.options || [];
         } catch {
+          // audit-allow: 同上，脏数据降级为空选项
           options = [];
+          logger.debug("[AI] 题库 options 解析失败，降级为空选项");
         }
         return {
           content: q.content,

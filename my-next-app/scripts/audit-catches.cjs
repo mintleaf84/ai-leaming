@@ -85,6 +85,24 @@ function normalize(text) {
   return text.replace(/\s+/g, " ").trim();
 }
 
+/**
+ * 只认 catch 块**开头的前导注释**里的 `audit-allow: <理由>`。
+ * 不用整块文本匹配：那样字符串字面量或嵌套 catch 里的同样文字也会误判。
+ */
+function hasAllowMarker(catchClause, sf, source) {
+  // 注释在 `{` 之后、第一条语句之前：从 block 起始位置 +1 开始找前导注释
+  const blockStart = catchClause.block.getStart(sf) + 1;
+  // `getLeadingCommentRanges` 会跳过"与 { 同行"的注释，这里先单独检查该行
+  const lineEnd = source.indexOf("\n", blockStart);
+  const sameLine = source.slice(blockStart, lineEnd === -1 ? undefined : lineEnd);
+  if (/audit-allow:\s*\S/.test(sameLine)) return true;
+  const comments = ts.getLeadingCommentRanges(source, blockStart);
+  if (!comments) return false;
+  return comments.some((r) =>
+    /audit-allow:\s*\S/.test(source.slice(r.pos, r.end)),
+  );
+}
+
 function classify(catchClause) {
   let hasThrow = false;
   let hasLog = false;
@@ -112,7 +130,14 @@ function classify(catchClause) {
 const files = [];
 walk(SRC, files);
 
-const counts = { rethrow: 0, degraded: 0, fallback: 0, logged: 0, silent: 0 };
+const counts = {
+  rethrow: 0,
+  degraded: 0,
+  allowed: 0,
+  fallback: 0,
+  logged: 0,
+  silent: 0,
+};
 const flagged = []; // { id, kind, file, line }
 
 for (const file of files) {
@@ -132,7 +157,14 @@ for (const file of files) {
   const occurrences = new Map();
   const visit = (node) => {
     if (ts.isCatchClause(node)) {
-      const kind = classify(node);
+      const baseKind = classify(node);
+      const marked = hasAllowMarker(node, sf, source);
+      // 标记只能把「已具备日志/降级」的 catch 归类为显式允许；
+      // 空 catch 打标记仍然算 silent，防止用注释绕过门禁。
+      const kind =
+        marked && (baseKind === "degraded" || baseKind === "logged" || baseKind === "fallback")
+          ? "allowed"
+          : baseKind;
       counts[kind] += 1;
       if (FLAGGED.has(kind)) {
         const rel = path.relative(root, file);
@@ -162,7 +194,8 @@ if (list) {
 
 console.log(
   `catch 审计：rethrow=${counts.rethrow} degraded=${counts.degraded} ` +
-    `fallback=${counts.fallback} logged=${counts.logged} silent=${counts.silent}`,
+    `allowed=${counts.allowed} fallback=${counts.fallback} ` +
+    `logged=${counts.logged} silent=${counts.silent}`,
 );
 
 const currentIds = flagged.map((f) => f.id).sort();

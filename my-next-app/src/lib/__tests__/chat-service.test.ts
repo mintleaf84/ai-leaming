@@ -38,12 +38,19 @@ const { mockDrizzleDb, mockDrizzleSchema } = vi.hoisted(() => {
   const mockDrizzleDb = {
     ...chain,
     query: mockQuery,
+
     // 重新绑定，保证链式调用返回同一对象
     insert: vi.fn(() => chain),
     update: vi.fn(() => chain),
     delete: vi.fn(() => chain),
     select: vi.fn(() => chain),
   };
+
+  // saveMessage 现在用事务保证"消息插入 + 会话计数"原子性；
+  // 事务回调拿到的 tx 就是同一个 mock 实例，便于沿用既有断言
+  (mockDrizzleDb as Record<string, unknown>).transaction = vi.fn(
+    async (cb: (tx: unknown) => unknown) => cb(mockDrizzleDb),
+  );
 
   const mockDrizzleSchema = {
     chat_sessions: {

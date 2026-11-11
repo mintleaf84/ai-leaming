@@ -9,6 +9,7 @@ import {
   debugPromptTemplateAction,
 } from "@/server/actions/prompts";
 import type { PromptTemplate } from "@/lib/services/prompt";
+import { ErrorState } from "@/components/ui/error-state";
 import { PromptList } from "./PromptList";
 import { PromptEditor } from "./PromptEditor";
 import { DebugPlayground } from "./DebugPlayground";
@@ -24,6 +25,8 @@ export function PromptManager() {
     {},
   );
   const [debugResult, setDebugResult] = useState<string | null>(null);
+  // 首屏加载失败要显式呈现，否则会一直停在"正在加载提示词模板..."
+  const [loadError, setLoadError] = useState<string | null>(null);
 
   useEffect(() => {
     loadPrompts();
@@ -32,9 +35,18 @@ export function PromptManager() {
   const loadPrompts = async () => {
     try {
       const result = await getPromptTemplatesAction();
-      if (result.data) setPrompts(result.data);
-    } catch (_e) {
-      toast.error("提示词加载失败");
+      // safe-action 的失败不抛异常：serverError / 没有 data 都是加载失败
+      if (result?.serverError || !result?.data) {
+        console.error("加载提示词模板失败", result?.serverError);
+        setLoadError(result?.serverError || "服务器未返回提示词数据");
+        return;
+      }
+      setPrompts(result.data);
+      setLoadError(null);
+    } catch (e) {
+      console.error("加载提示词模板失败", e);
+      setLoadError(e instanceof Error ? e.message : "请求失败");
+      return;
     }
   };
 
@@ -59,14 +71,20 @@ export function PromptManager() {
         description: editingPrompt.description,
         variables: editingPrompt.variables,
       });
-      if (res.data?.success) {
-        toast.success("提示词已保存");
-        loadPrompts();
-      } else {
-        toast.error("保存失败: " + (res.serverError || ""));
+      // safe-action 的失败不抛异常：serverError / success === false 都要停下来
+      if (res?.serverError || res?.data?.success === false || !res?.data) {
+        console.error("保存提示词模板失败", res?.serverError);
+        toast.error(
+          "保存失败：" + (res?.serverError || "服务器未确认保存成功"),
+        );
+        return;
       }
+      toast.success("提示词已保存");
+      loadPrompts();
     } catch (e) {
+      console.error("保存提示词模板失败", e);
       toast.error("请求失败: " + (e as Error).message);
+      return;
     } finally {
       setIsSaving(false);
     }
@@ -78,18 +96,44 @@ export function PromptManager() {
       !confirm("确定要重置为系统默认提示词吗？您的自定义修改将丢失。")
     )
       return;
+
     try {
-      await resetPromptTemplateAction(editingPrompt.key);
+      const res = await resetPromptTemplateAction(editingPrompt.key);
+      // safe-action 的失败不抛异常：serverError / success === false 都要停下来
+      if (res?.serverError || res?.data?.success === false || !res?.data) {
+        console.error("重置提示词模板失败", res?.serverError);
+        toast.error(
+          "重置失败：" + (res?.serverError || "服务器未确认重置成功"),
+        );
+        return;
+      }
       toast.success("已重置");
-      loadPrompts();
-      // Refetch to get the system default
+    } catch (e) {
+      console.error("重置提示词模板失败", e);
+      toast.error("重置失败");
+      return;
+    }
+
+    // 重置已经成功：下面只是刷新列表取回系统默认内容，
+    // 刷新失败只能提示"请手动刷新"，不能改写成"重置失败"、也不置 loadError。
+    try {
       const allResult = await getPromptTemplatesAction();
-      const fresh = allResult.data?.find(
+      if (allResult?.serverError || !allResult?.data) {
+        console.warn("重置后刷新提示词列表失败", allResult?.serverError);
+        toast.warning("列表刷新失败，请手动刷新");
+        return;
+      }
+      const templates = allResult.data;
+      setPrompts(templates);
+      setLoadError(null);
+      const fresh = templates.find(
         (x: PromptTemplate) => x.key === editingPrompt.key,
       );
       if (fresh) setEditingPrompt(fresh);
-    } catch (_e) {
-      toast.error("重置失败");
+    } catch (e) {
+      console.warn("重置后刷新提示词列表失败", e);
+      toast.warning("列表刷新失败，请手动刷新");
+      return;
     }
   };
 
@@ -103,30 +147,45 @@ export function PromptManager() {
         template: editingPrompt.template,
         inputVariables: debugVariables,
       });
-      if (res.data?.success) {
+      // safe-action 的失败不抛异常：serverError 时先按请求失败处理
+      if (res?.serverError) {
+        console.error("调试提示词模板失败", res.serverError);
+        toast.error("生成失败：" + res.serverError);
+        setDebugResult("Error: " + res.serverError);
+        return;
+      }
+      if (res?.data?.success) {
         setDebugResult(
           typeof res.data.result === "string"
             ? res.data.result
             : JSON.stringify(res.data.result, null, 2),
         );
       } else {
-        toast.error("生成失败: " + (res.data?.error || res.serverError));
-        let errorMsg = "Error: " + (res.data?.error || res.serverError);
+        toast.error("生成失败: " + (res.data?.error || "服务器未返回结果"));
+        let errorMsg = "Error: " + (res.data?.error || "服务器未返回结果");
         if (res.data?.result) {
           errorMsg += "\n\n" + res.data.result;
         }
         setDebugResult(errorMsg);
       }
     } catch (e) {
+      console.error("调试提示词模板失败", e);
       toast.error("调试请求失败");
       setDebugResult("Request Error: " + (e as Error).message);
+      return;
     } finally {
       setIsDebugLoading(false);
     }
   };
 
   if (prompts.length === 0)
-    return (
+    return loadError ? (
+      <ErrorState
+        title="提示词加载失败"
+        description={loadError}
+        onRetry={() => void loadPrompts()}
+      />
+    ) : (
       <div className="p-8 text-center text-muted-foreground">
         正在加载提示词模板...
       </div>

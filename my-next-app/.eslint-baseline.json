@@ -1,9 +1,9 @@
 {
   "updatedAt": "2026-11-11",
-  "total": 81,
+  "total": 78,
   "filesScanned": 586,
   "rules": {
-    "@typescript-eslint/no-unused-vars": 74,
+    "@typescript-eslint/no-unused-vars": 71,
     "react-hooks/exhaustive-deps": 3,
     "@typescript-eslint/no-require-imports": 2,
     "import/no-anonymous-default-export": 1,

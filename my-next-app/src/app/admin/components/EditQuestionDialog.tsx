@@ -23,6 +23,7 @@ import {
 import { Checkbox } from "@/components/ui/checkbox";
 import { toast } from "sonner";
 import { updateQuestionAction } from "@/server/actions/admin";
+import { safeParseJson } from "@/lib/utils/json";
 import { Question } from "@/types";
 
 interface EditQuestionDialogProps {
@@ -30,6 +31,17 @@ interface EditQuestionDialogProps {
   onOpenChange: (open: boolean) => void;
   question: Question | null;
   onSuccess: () => void;
+}
+
+/**
+ * 只接受"非空字符串数组"：元素是对象 / 数字 / 空白串时返回 null，
+ * 由调用方保留原始文本，避免被写成 [object Object] 或被静默改写成 1。
+ */
+function toStringArray(value: unknown): string[] | null {
+  if (!Array.isArray(value)) return null;
+  if (!value.every((v) => typeof v === "string" && v.trim() !== ""))
+    return null;
+  return value as string[];
 }
 
 /**
@@ -46,8 +58,9 @@ function convertAnswerFormat(
     const trimmed = currentAnswer.trim();
     // 多选 JSON 数组（如 ["选项1","选项2"] 或 ["A","B"]）→ 用；分隔
     if (trimmed.startsWith("[")) {
-      try {
-        const arr: string[] = JSON.parse(trimmed);
+      // 元素不是非空字符串时按解析失败处理，继续走下面的文本降级分支
+      const arr = toStringArray(safeParseJson<unknown>(trimmed, null));
+      if (arr) {
         return arr
           .map((s) => {
             const t = s.trim();
@@ -63,8 +76,6 @@ function convertAnswerFormat(
           })
           .filter(Boolean)
           .join("；");
-      } catch {
-        // JSON 解析失败，继续向下处理
       }
     }
     // 逗号分隔 → ；分隔
@@ -86,11 +97,10 @@ function convertAnswerFormat(
   let currentArr: string[];
 
   if (trimmed.startsWith("[")) {
-    try {
-      currentArr = JSON.parse(trimmed);
-    } catch {
-      currentArr = [trimmed];
-    }
+    // 解析失败或元素不是非空字符串时，保留原始答案文本
+    currentArr = toStringArray(safeParseJson<unknown>(trimmed, null)) ?? [
+      trimmed,
+    ];
   } else if (trimmed.includes(",")) {
     currentArr = trimmed.split(",").map((s) => s.trim());
   } else {
@@ -157,11 +167,10 @@ export function EditQuestionDialog({
     let indices: string[];
 
     if (trimmed.startsWith("[")) {
-      try {
-        indices = JSON.parse(trimmed);
-      } catch {
-        indices = [trimmed];
-      }
+      // 解析失败或元素不是非空字符串时，保留原始答案文本
+      indices = toStringArray(safeParseJson<unknown>(trimmed, null)) ?? [
+        trimmed,
+      ];
     } else if (trimmed.includes(",")) {
       indices = trimmed.split(",").map((s) => s.trim());
     } else {
@@ -319,21 +328,23 @@ export function EditQuestionDialog({
     .map((s) => s.trim())
     .filter(Boolean);
 
+  // 多选答案解析：空答案视为"未选"；元素不是非空字符串时视为格式异常
+  const parsedMultiAnswers =
+    formData.answer.trim() === ""
+      ? []
+      : toStringArray(safeParseJson<unknown>(formData.answer, null));
+  const invalidMultiAnswer =
+    formData.type === "multi" && parsedMultiAnswers === null;
+  const checkedAnswers: string[] = parsedMultiAnswers ?? [];
+
   // 处理多选变动
   const handleMultiAnswerChange = (option: string, checked: boolean) => {
-    try {
-      const current = formData.answer ? JSON.parse(formData.answer) : [];
-      let next;
-      if (checked) {
-        next = [...current, option];
-      } else {
-        next = current.filter((o: string) => o !== option);
-      }
-      setFormData((prev) => ({ ...prev, answer: JSON.stringify(next) }));
-    } catch {
-      // 如果解析失败，重置
-      setFormData((prev) => ({ ...prev, answer: JSON.stringify([option]) }));
-    }
+    // 原答案格式异常时以空数组为基准重建，不能把非法值 append 进新答案
+    const base = invalidMultiAnswer ? [] : checkedAnswers;
+    const next = checked
+      ? Array.from(new Set([...base, option]))
+      : base.filter((o) => o !== option);
+    setFormData((prev) => ({ ...prev, answer: JSON.stringify(next) }));
   };
 
   return (
@@ -592,40 +603,42 @@ export function EditQuestionDialog({
                 </SelectContent>
               </Select>
             ) : (
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-2 border border-primary/20 p-3 rounded-md bg-muted/10">
-                {parsedOptions.length > 0 ? (
-                  parsedOptions.map((opt, idx) => {
-                    let isChecked = false;
-                    try {
-                      isChecked = JSON.parse(formData.answer || "[]").includes(
-                        opt,
-                      );
-                    } catch {}
-
-                    return (
-                      <div key={idx} className="flex items-center space-x-2">
-                        <Checkbox
-                          id={`ans-${idx}`}
-                          checked={isChecked}
-                          onCheckedChange={(c) =>
-                            handleMultiAnswerChange(opt, c === true)
-                          }
-                        />
-                        <Label
-                          htmlFor={`ans-${idx}`}
-                          className="font-normal cursor-pointer flex-1 truncate"
-                          title={opt}
-                        >
-                          {opt}
-                        </Label>
-                      </div>
-                    );
-                  })
-                ) : (
-                  <div className="p-2 text-xs text-muted-foreground">
-                    请先填写选项
-                  </div>
+              <div className="space-y-2">
+                {invalidMultiAnswer && (
+                  <p className="rounded-md border border-amber-500/30 bg-amber-500/10 px-3 py-2 text-xs text-amber-700 dark:text-amber-400">
+                    当前答案格式异常，请重新勾选
+                  </p>
                 )}
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-2 border border-primary/20 p-3 rounded-md bg-muted/10">
+                  {parsedOptions.length > 0 ? (
+                    parsedOptions.map((opt, idx) => {
+                      const isChecked = checkedAnswers.includes(opt);
+
+                      return (
+                        <div key={idx} className="flex items-center space-x-2">
+                          <Checkbox
+                            id={`ans-${idx}`}
+                            checked={isChecked}
+                            onCheckedChange={(c) =>
+                              handleMultiAnswerChange(opt, c === true)
+                            }
+                          />
+                          <Label
+                            htmlFor={`ans-${idx}`}
+                            className="font-normal cursor-pointer flex-1 truncate"
+                            title={opt}
+                          >
+                            {opt}
+                          </Label>
+                        </div>
+                      );
+                    })
+                  ) : (
+                    <div className="p-2 text-xs text-muted-foreground">
+                      请先填写选项
+                    </div>
+                  )}
+                </div>
               </div>
             )}
           </div>

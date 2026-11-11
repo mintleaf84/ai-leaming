@@ -15,20 +15,31 @@ import {
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
+import { ErrorState } from "@/components/ui/error-state";
 
 export default function LogsPage() {
   const [logs, setLogs] = useState<AdminLogEntry[]>([]);
   const [loading, setLoading] = useState(true);
+  const [loadError, setLoadError] = useState<string | null>(null);
 
   const loadLogs = async () => {
     setLoading(true);
-    const data = await getAdminLogsAction(100);
-    setLogs(data);
-    setLoading(false);
+    setLoadError(null);
+    try {
+      const data = await getAdminLogsAction(100);
+      setLogs(data);
+    } catch (error) {
+      // 加载失败 → 错误态 + 重试（degraded）；不能退化成「暂无操作日志」
+      console.error("[AdminLogs] 加载操作日志失败", { err: error });
+      setLoadError(error instanceof Error ? error.message : String(error));
+      return;
+    } finally {
+      setLoading(false);
+    }
   };
 
   useEffect(() => {
-    loadLogs(); // eslint-disable-line -- loadLogs 是 async 函数，setState 在 await 后执行，React effect 规则误报
+    loadLogs();
   }, []);
 
   // 获取操作类型对应的图标
@@ -71,6 +82,10 @@ export default function LogsPage() {
         .map(([k, v]) => `${k}: ${v}`)
         .join(", ");
     } catch {
+      // audit-allow: details 字段是自由文本，非 JSON 时原样展示即可
+      console.warn("[AdminLogs] details 非 JSON，按原文展示", {
+        length: details.length,
+      });
       return details;
     }
   };
@@ -126,6 +141,13 @@ export default function LogsPage() {
             </div>
           ))}
         </div>
+      ) : loadError ? (
+        <ErrorState
+          title="操作日志加载失败"
+          description={loadError}
+          onRetry={loadLogs}
+          className="bg-card rounded-2xl border border-border"
+        />
       ) : logs.length === 0 ? (
         <div className="text-center py-20 bg-card rounded-2xl border border-dashed border-border">
           <div className="w-16 h-16 mx-auto mb-4 bg-muted rounded-full flex items-center justify-center">

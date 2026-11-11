@@ -48,9 +48,10 @@ export function BackupManager() {
   });
 
   const handleBackup = async () => {
+    // loading toast 必须在 try 外创建：失败时要用同一个 id 收掉，
+    // 否则"正在生成全量快照..."会一直挂着
+    const toastId = toast.loading("正在生成全量快照...");
     try {
-      const toastId = toast.loading("正在生成全量快照...");
-
       const response = await fetch("/api/admin/backup");
       if (!response.ok) throw new Error("备份请求失败");
 
@@ -72,8 +73,11 @@ export function BackupManager() {
             document.body.appendChild(a);
             a.click();
             document.body.removeChild(a);
-          } catch {
+          } catch (e) {
+            // 挂载失败（如 body 被替换）时直接触发下载：属兼容性降级
+            console.warn("挂载下载链接失败，改为直接触发下载", e);
             a.click();
+            return;
           }
         });
       } else {
@@ -86,7 +90,8 @@ export function BackupManager() {
       queryClient.invalidateQueries({ queryKey: [HISTORY_KEY] });
     } catch (error) {
       console.error(error);
-      toast.error("备份失败，请查看控制台日志");
+      toast.error("备份失败，请查看控制台日志", { id: toastId });
+      return;
     }
   };
 
@@ -149,6 +154,7 @@ export function BackupManager() {
       );
       setIsRestoring(false);
       if (fileInputRef.current) fileInputRef.current.value = "";
+      return;
     }
   };
 

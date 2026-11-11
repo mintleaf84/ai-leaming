@@ -7,6 +7,7 @@ import { z } from "zod";
 import { generateStructuredData, generateTextWrapper } from "@/lib/ai/client";
 import { extractJson } from "@/lib/ai/parser";
 import type { ParsedPdfQuestion, ParsedPdfResult } from "@/types/pdf-import";
+import { log } from "@/lib/logger";
 
 // Zod schema for AI structured output
 const parsedQuestionSchema = z.object({
@@ -269,7 +270,7 @@ export async function parseOcrTextToQuestions(
     } catch (err) {
       // 失败时重试一次
       try {
-        console.warn(`[PdfParser] 第 ${i + 1} 块首次失败，重试中...`);
+        log.warn(`[PdfParser] 第 ${i + 1} 块首次失败，重试中...`);
         const result = await parseChunk(chunks[i]);
         const validated = validateQuestions(result);
         if (validated.length > 0) {
@@ -278,7 +279,7 @@ export async function parseOcrTextToQuestions(
       } catch (retryErr) {
         const msg = `第 ${i + 1} 块解析失败: ${retryErr instanceof Error ? retryErr.message : String(retryErr)}`;
         warnings.push(msg);
-        console.error("[PdfParser]", msg);
+        log.error("[PdfParser]", msg);
       }
     }
   }

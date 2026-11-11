@@ -11,6 +11,7 @@ const REQUEST_TIMEOUT_MS = 3 * 60 * 1000;
 
 import { env } from "@/env";
 import { withRetry } from "./retry";
+import { log } from "@/lib/logger";
 
 /**
  * 使用 PaddleOCR-VL 识别文件内容
@@ -29,7 +30,7 @@ export async function performPaddleOCR(
   // 判断文件类型：0 = PDF, 1 = 图片
   const fileType = mimeType === "application/pdf" ? 0 : 1;
 
-  console.log(
+  log.info(
     `[PaddleOCR] 开始识别: ${fileName} (${mimeType}, ${Math.round(fileBuffer.length / 1024)}KB)`,
   );
 
@@ -79,7 +80,7 @@ export async function performPaddleOCR(
 
         if (!res.ok) {
           const errText = await res.text();
-          console.error("[PaddleOCR] 请求失败:", errText);
+          log.error("[PaddleOCR] 请求失败:", errText);
           const err = new Error(`PaddleOCR 识别失败: ${res.status}`);
           (err as Error & { status?: number }).status = res.status;
           throw err;
@@ -121,7 +122,7 @@ function extractMarkdown(result: Record<string, unknown>): string {
     }
   }
 
-  console.log(`[PaddleOCR] 原始提取: ${fullText.length} 字符`);
+  log.info(`[PaddleOCR] 原始提取: ${fullText.length} 字符`);
 
   // 清理无法访问的临时图片引用和残留 HTML 标签
   const cleaned = fullText
@@ -132,6 +133,6 @@ function extractMarkdown(result: Record<string, unknown>): string {
     .replace(/\n{3,}/g, "\n\n") // 合并多余空行
     .trim();
 
-  console.log(`[PaddleOCR] 清理后: ${cleaned.length} 字符`);
+  log.info(`[PaddleOCR] 清理后: ${cleaned.length} 字符`);
   return cleaned;
 }

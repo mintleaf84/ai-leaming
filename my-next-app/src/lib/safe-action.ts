@@ -1,12 +1,13 @@
 import { createSafeActionClient } from "next-safe-action";
 import { requireUser, requireRole } from "@/lib/auth/auth";
+import { log } from "@/lib/logger";
 
 /**
  * 基础 Action（无需鉴权）
  */
 export const actionClient = createSafeActionClient({
   handleServerError(e) {
-    console.error("Action error:", e.message);
+    log.error("Action error:", e.message);
     return e.message;
   },
 });

@@ -5,6 +5,7 @@
 
 import fs from "fs";
 import path from "path";
+import { log } from "@/lib/logger";
 
 interface KeypointNode {
   id: number;
@@ -49,9 +50,9 @@ function loadKeypointPaths(): Map<number, string> {
     }
 
     traverse(data);
-    console.log(`[keypoint-tree] 已加载 ${keypointPathMap.size} 个知识点路径`);
+    log.info(`[keypoint-tree] 已加载 ${keypointPathMap.size} 个知识点路径`);
   } catch (error) {
-    console.warn("[keypoint-tree] 无法加载知识点树:", error);
+    log.warn("[keypoint-tree] 无法加载知识点树:", error);
   }
 
   return keypointPathMap;

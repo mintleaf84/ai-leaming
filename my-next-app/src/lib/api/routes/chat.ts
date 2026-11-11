@@ -17,6 +17,7 @@ import {
   handleExplainCommand,
 } from "@/lib/services/chat-rag";
 import { checkQuotaForApi } from "@/lib/billing/usage-middleware";
+import { log } from "@/lib/logger";
 
 const app = new OpenAPIHono();
 
@@ -197,7 +198,7 @@ app.openapi(chatRoute, async (c) => {
 
     return createUIMessageStreamResponse({ stream });
   } catch (error: unknown) {
-    console.error("[Hono Chat API] error:", error);
+    log.error("[Hono Chat API] error:", error);
     return c.json({ error: getErrorMessage(error) }, 500);
   }
 });

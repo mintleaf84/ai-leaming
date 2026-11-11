@@ -9,6 +9,7 @@ import * as path from "path";
 import { getApiCallStats, ApiCallStats } from "@/lib/admin/api-stats-service";
 import { sql } from "drizzle-orm";
 import { formatBytes, formatUptime } from "@/lib/utils/utils";
+import { log } from "@/lib/logger";
 
 export { formatBytes, formatUptime } from "@/lib/utils/utils";
 
@@ -63,7 +64,7 @@ export async function getDatabaseStats(): Promise<DatabaseStats> {
       sizeBytes = stats.size;
     }
   } catch (e) {
-    console.warn("无法获取数据库文件大小:", e);
+    log.warn("无法获取数据库文件大小:", e);
   }
 
   // 获取所有表名

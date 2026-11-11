@@ -1,6 +1,7 @@
 import { OpenAPIHono, createRoute, z } from "@hono/zod-openapi";
 import { drizzleDb, drizzleSchema } from "@/lib/db";
 import { eq, sql, count } from "drizzle-orm";
+import { log } from "@/lib/logger";
 
 const app = new OpenAPIHono();
 
@@ -27,7 +28,7 @@ app.use("*", async (c, next) => {
       return c.json({ error: "此 API Key 已被后台停用" }, 403);
     }
   } catch (err) {
-    console.error("[ExternalAPI] 鉴权查询失败:", err);
+    log.error("[ExternalAPI] 鉴权查询失败:", err);
     return c.json({ error: "服务器内部错误" }, 500);
   }
 

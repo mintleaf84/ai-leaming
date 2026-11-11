@@ -1,4 +1,5 @@
 import { ragService } from "@/lib/ai/rag";
+import { log } from "@/lib/logger";
 
 const CONFIDENCE_THRESHOLD = 0.6; // Threshold for RAG results
 
@@ -25,7 +26,7 @@ export const contentEngine = {
         isBlank: false,
       };
     } catch (error) {
-      console.error("Content engine failed:", error);
+      log.error("Content engine failed:", error);
       return {
         content: "系统繁忙，无法获取解析。",
         isBlank: true,

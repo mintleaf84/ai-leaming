@@ -2,6 +2,7 @@ import { OpenAPIHono, createRoute, z } from "@hono/zod-openapi";
 import { getErrorMessage } from "@/lib/utils/error";
 import { practiceService } from "@/lib/services/practice";
 import { authMiddleware, getCurrentUser } from "@/lib/api/middlewares/auth";
+import { log } from "@/lib/logger";
 
 const app = new OpenAPIHono();
 
@@ -159,7 +160,7 @@ async function ensureCacheTable() {
       sql`CREATE INDEX IF NOT EXISTS idx_fp_cache_hash ON first_principles_cache(question_hash);`,
     );
   } catch (e) {
-    console.error("[FirstPrinciples] 创建缓存表失败:", e);
+    log.error("[FirstPrinciples] 创建缓存表失败:", e);
   }
 }
 
@@ -296,12 +297,12 @@ ${explanation ? `参考解析：${explanation}` : ""}
           set: { analysis: text },
         });
     } catch (cacheError) {
-      console.error("[FirstPrinciples] 缓存保存失败:", cacheError);
+      log.error("[FirstPrinciples] 缓存保存失败:", cacheError);
     }
 
     return c.json({ analysis: text, cached: false });
   } catch (error: unknown) {
-    console.error("[FirstPrinciples API] error:", error);
+    log.error("[FirstPrinciples API] error:", error);
     return c.json({ error: getErrorMessage(error) }, 500);
   }
 });

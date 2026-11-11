@@ -3,6 +3,7 @@ import { generateTextWrapper, getAiConfig } from "@/lib/ai/client";
 import { searchSimilarContent, ragService, type RagResult } from "@/lib/ai/rag";
 import { SqliteVecVectorStore, RagEmbeddings } from "@/lib/ai/langchain-store";
 import { getPromptFromDb, SOCRATIC_TUTOR_PROMPT } from "@/lib/ai/prompts";
+import { log } from "@/lib/logger";
 
 /**
  * 知识库检索工具 (LangChain 风格)
@@ -14,7 +15,7 @@ export const knowledgeSearchTool = {
     query: "The search keyword or question related to the exam knowledge",
   },
   execute: async ({ query }: { query: string }) => {
-    console.log(`[RAG-Tool] Searching for: ${query}`);
+    log.info(`[RAG-Tool] Searching for: ${query}`);
     const context = await searchKnowledgeBase(query, 3);
     if (!context) {
       return "No relevant information found in the knowledge base. Please try to answer with your own general knowledge but explicitly state that 'no direct reference found in the database'.";
@@ -68,7 +69,7 @@ export async function langchainSearch(
     const results = await vectorStore.similaritySearch(query, k);
     return results;
   } catch (error) {
-    console.error("[LangChain RAG] Search failed:", error);
+    log.error("[LangChain RAG] Search failed:", error);
     return [];
   }
 }
@@ -185,7 +186,7 @@ ${q["explanation"] ? `解析: ${q["explanation"]}` : ""}
 
     return contextParts.join("\n\n");
   } catch (error) {
-    console.error("[ChatRAG] 混合检索与重排序失败:", error);
+    log.error("[ChatRAG] 混合检索与重排序失败:", error);
     return null;
   }
 }
@@ -321,7 +322,7 @@ export async function langchainQA(
 
     return text;
   } catch (error) {
-    console.error("[LangChain QA] Failed:", error);
+    log.error("[LangChain QA] Failed:", error);
     return "处理您的请求时发生错误，请稍后重试。";
   }
 }

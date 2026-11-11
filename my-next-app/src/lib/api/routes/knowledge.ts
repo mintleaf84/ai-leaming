@@ -8,6 +8,7 @@ import {
   exportToAnkiTSV,
 } from "@/lib/services/knowledge";
 import { authMiddleware, getCurrentUser } from "@/lib/api/middlewares/auth";
+import { log } from "@/lib/logger";
 
 const app = new OpenAPIHono();
 
@@ -177,7 +178,7 @@ app.openapi(createCardRoute, async (c) => {
     const id = await createKnowledgeCard(card, currentUser.id);
     return c.json({ id, message: "知识卡片创建成功" });
   } catch (error: unknown) {
-    console.error("[Knowledge API] POST error:", error);
+    log.error("[Knowledge API] POST error:", error);
     return c.json({ error: getErrorMessage(error) }, 500);
   }
 });
@@ -316,7 +317,7 @@ app.openapi(extractRoute, async (c) => {
       message: "知识卡片提取成功",
     });
   } catch (error: unknown) {
-    console.error("[Knowledge Extract API] error:", error);
+    log.error("[Knowledge Extract API] error:", error);
     return c.json({ error: getErrorMessage(error) }, 500);
   }
 });

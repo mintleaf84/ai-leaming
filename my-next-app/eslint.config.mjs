@@ -37,6 +37,37 @@ const eslintConfig = defineConfig([
     }
   },
   {
+    // 服务端代码禁止裸 console：统一走 src/lib/logger.ts（pino 结构化日志）。
+    // 客户端组件（"use client"）与测试/脚本不受此限。
+    files: [
+      "src/lib/**/*.ts",
+      "src/server/**/*.ts",
+      "src/app/**/*.ts",
+      // 已确认是服务端执行的 .tsx（无 "use client"）
+      "src/app/page.tsx",
+      "src/app/layout.tsx",
+      "src/instrumentation.ts",
+    ],
+    ignores: [
+      "src/lib/logger.ts",
+      "**/__tests__/**",
+      "**/*.test.ts",
+      // 以下模块会被客户端组件 / Edge middleware 引用，不能引入 pino
+      "src/middleware.ts",
+      "src/lib/utils/retry.ts",
+      "src/lib/ai/rag.ts",
+      "src/lib/services/srs.ts",
+      "src/lib/services/knowledge.ts",
+      "src/lib/services/question-folder.ts",
+      // src/app 下的 hooks / components 是客户端代码，console 合法
+      "src/app/**/hooks/**",
+      "src/app/**/components/**",
+    ],
+    rules: {
+      "no-console": "warn",
+    },
+  },
+  {
     files: ["tests/**", "**/*.test.ts", "**/*.test.tsx"],
     rules: {
       "react-hooks/rules-of-hooks": "off"

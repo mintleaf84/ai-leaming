@@ -11,6 +11,7 @@ import {
   AdminLogEntry,
   formatActionName,
 } from "@/types/admin";
+import { log } from "@/lib/logger";
 
 export type { AdminAction, TargetType, AdminLogEntry };
 export { formatActionName };
@@ -38,7 +39,7 @@ export async function logAdminAction(
       ip_address: ipAddress,
     });
   } catch (error) {
-    console.error("Failed to log admin action:", error);
+    log.error("Failed to log admin action:", error);
     // 不抛出错误，避免影响主业务流
   }
 }

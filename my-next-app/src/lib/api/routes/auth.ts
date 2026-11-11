@@ -4,6 +4,7 @@ import { setCookie, deleteCookie } from "hono/cookie";
 import { logger as honoLogger } from "hono/logger";
 import { checkRateLimit, getClientIP } from "@/lib/auth/rate-limit";
 import { COOKIE_NAME, encrypt } from "@/lib/auth/auth-edge";
+import { log } from "@/lib/logger";
 
 const app = new OpenAPIHono();
 
@@ -99,7 +100,7 @@ app.openapi(loginRoute, async (c) => {
     exp: Math.floor(Date.now() / 1000) + 60 * 60 * 24 * 7, // 7 days (keep exp for standard tools)
   });
 
-  console.log(`[Auth API] Login success for ${username}, token generated`);
+  log.info(`[Auth API] Login success for ${username}, token generated`);
 
   // 设置 Cookie
   setCookie(c, COOKIE_NAME, token, {

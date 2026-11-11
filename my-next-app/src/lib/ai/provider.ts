@@ -4,6 +4,7 @@
 
 import { createOpenAI } from "@ai-sdk/openai";
 import type { LanguageModel } from "ai";
+import { log } from "@/lib/logger";
 
 /**
  * 获取 LanguageModel 实例
@@ -36,7 +37,7 @@ export function getModel(
       return (openai as unknown as (model: string) => LanguageModel)(modelName);
     }
   } catch (err) {
-    console.warn("[AiProvider] 初始化模型失败，尝试路径不匹配:", err);
+    log.warn("[AiProvider] 初始化模型失败，尝试路径不匹配:", err);
   }
 
   throw new Error(`无法初始化 AI 模型: ${modelName}。请检查 SDK 版本或配置。`);

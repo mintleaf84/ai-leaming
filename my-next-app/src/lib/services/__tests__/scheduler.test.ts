@@ -5,6 +5,21 @@ import { initScheduler } from "../scheduler";
 import { BackupService } from "../backup-service";
 
 // Mock node-cron
+const { mockLog } = vi.hoisted(() => ({
+  mockLog: {
+    debug: vi.fn(),
+    info: vi.fn(),
+    warn: vi.fn(),
+    error: vi.fn(),
+  },
+}));
+
+vi.mock("@/lib/logger", () => ({
+  log: mockLog,
+  logger: mockLog,
+  default: mockLog,
+}));
+
 vi.mock("node-cron", () => ({
   default: {
     schedule: vi.fn(() => ({
@@ -67,8 +82,8 @@ describe("Scheduler Service", () => {
         retentionDays: 30,
       });
 
-      const consoleSpy = vi.spyOn(console, "log").mockImplementation(() => {});
-      const errorSpy = vi.spyOn(console, "error").mockImplementation(() => {});
+      mockLog.info.mockClear();
+      mockLog.error.mockClear();
 
       await initScheduler();
 
@@ -78,12 +93,9 @@ describe("Scheduler Service", () => {
 
       // 验证 performBackup 没有被调用
       expect(BackupService.performBackup).not.toHaveBeenCalled();
-      expect(consoleSpy).toHaveBeenCalledWith(
+      expect(mockLog.info).toHaveBeenCalledWith(
         expect.stringContaining("自动备份已禁用"),
       );
-
-      consoleSpy.mockRestore();
-      errorSpy.mockRestore();
     });
 
     it("应在备份执行成功时记录日志", async () => {
@@ -99,8 +111,8 @@ describe("Scheduler Service", () => {
         BackupService.performBackup as ReturnType<typeof vi.fn>
       ).mockResolvedValue("ai-learning.db.2025-01-01-03-00-00.gz");
 
-      const consoleSpy = vi.spyOn(console, "log").mockImplementation(() => {});
-      const errorSpy = vi.spyOn(console, "error").mockImplementation(() => {});
+      mockLog.info.mockClear();
+      mockLog.error.mockClear();
 
       await initScheduler();
 
@@ -111,15 +123,12 @@ describe("Scheduler Service", () => {
       // 验证 performBackup 被调用
       expect(BackupService.performBackup).toHaveBeenCalled();
       // 验证成功日志
-      expect(consoleSpy).toHaveBeenCalledWith(
+      expect(mockLog.info).toHaveBeenCalledWith(
         expect.stringContaining("开始执行每日自动备份"),
       );
-      expect(consoleSpy).toHaveBeenCalledWith(
+      expect(mockLog.info).toHaveBeenCalledWith(
         expect.stringContaining("自动备份成功"),
       );
-
-      consoleSpy.mockRestore();
-      errorSpy.mockRestore();
     });
 
     it("应在备份执行失败时捕获异常", async () => {
@@ -135,8 +144,8 @@ describe("Scheduler Service", () => {
         BackupService.performBackup as ReturnType<typeof vi.fn>
       ).mockRejectedValue(new Error("Network error"));
 
-      const consoleSpy = vi.spyOn(console, "log").mockImplementation(() => {});
-      const errorSpy = vi.spyOn(console, "error").mockImplementation(() => {});
+      mockLog.info.mockClear();
+      mockLog.error.mockClear();
 
       await initScheduler();
 
@@ -145,13 +154,10 @@ describe("Scheduler Service", () => {
       await scheduledCallback();
 
       // 验证错误日志被记录
-      expect(errorSpy).toHaveBeenCalledWith(
+      expect(mockLog.error).toHaveBeenCalledWith(
         expect.stringContaining("自动备份执行失败"),
         expect.any(Error),
       );
-
-      consoleSpy.mockRestore();
-      errorSpy.mockRestore();
     });
 
     it("应在已有任务时先停止旧任务再创建新任务", async () => {
@@ -178,21 +184,18 @@ describe("Scheduler Service", () => {
         retentionDays: 30,
       });
 
-      const consoleSpy = vi.spyOn(console, "log").mockImplementation(() => {});
-      const errorSpy = vi.spyOn(console, "error").mockImplementation(() => {});
+      mockLog.info.mockClear();
+      mockLog.error.mockClear();
 
       await initScheduler();
 
       // 验证初始化日志
-      expect(consoleSpy).toHaveBeenCalledWith(
+      expect(mockLog.info).toHaveBeenCalledWith(
         expect.stringContaining("[Scheduler] 正在初始化后台任务"),
       );
-      expect(consoleSpy).toHaveBeenCalledWith(
+      expect(mockLog.info).toHaveBeenCalledWith(
         expect.stringContaining("任务调度器已就绪"),
       );
-
-      consoleSpy.mockRestore();
-      errorSpy.mockRestore();
     });
   });
 

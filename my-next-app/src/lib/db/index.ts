@@ -9,6 +9,7 @@ import * as schema from "./drizzle-schema";
 import { setupVectorExtension } from "./vector-setup";
 import { seedData } from "./seed-data";
 import { env } from "@/env";
+import { log } from "@/lib/logger";
 
 // --- Legacy Better-SQLite3 Initialization (from old db.ts) ---
 
@@ -19,7 +20,7 @@ function initDb() {
 
   const dbName = env.DB_FILENAME;
   const dbPath = path.resolve(process.cwd(), "data", dbName);
-  console.log(`[DB] 正在连接数据库: ${dbPath}`);
+  log.info(`[DB] 正在连接数据库: ${dbPath}`);
 
   const db = new Database(dbPath);
   db.pragma("journal_mode = WAL");
@@ -32,7 +33,7 @@ function initDb() {
     try {
       loadablePath = sqliteVec.getLoadablePath();
     } catch (_e) {
-      console.warn(
+      log.warn(
         "[DB] sqliteVec.getLoadablePath() failed, attempting fallback...",
       );
     }
@@ -69,15 +70,15 @@ function initDb() {
       }
     }
 
-    console.log(`[DB] 正在加载向量扩展: ${loadablePath}`);
+    log.info(`[DB] 正在加载向量扩展: ${loadablePath}`);
     db.loadExtension(loadablePath);
 
     const version = db.prepare("SELECT vec_version() as version").get() as {
       version: string;
     };
-    console.log(`✅ sqlite-vec 扩展加载成功, 版本: ${version.version}`);
+    log.info(`✅ sqlite-vec 扩展加载成功, 版本: ${version.version}`);
   } catch (err) {
-    console.error("⚠️ 向量扩展加载失败，将无法使用 AI 检索功能:", err);
+    log.error("⚠️ 向量扩展加载失败，将无法使用 AI 检索功能:", err);
   }
 
   return db;
@@ -96,7 +97,7 @@ export const db =
 
 export function closeDb() {
   if (globalForDb.db) {
-    console.log("[DB] Closing database connection...");
+    log.info("[DB] Closing database connection...");
     globalForDb.db.close();
     globalForDb.db = null;
   }
@@ -137,7 +138,7 @@ export async function closeDrizzle() {
   try {
     await globalForLibsql.libsqlClient?.close?.();
   } catch (e) {
-    console.warn(
+    log.warn(
       "[DB] 关闭 libsql 连接失败:",
       e instanceof Error ? e.message : String(e),
     );
@@ -160,37 +161,37 @@ export async function initDatabase() {
   }
 
   isInitialized = true;
-  console.log("[DB] Starting database initialization...");
+  log.info("[DB] Starting database initialization...");
 
   try {
     // 1. 运行 Drizzle 自动化迁移 (包含 IF NOT EXISTS 补强)
-    console.log("[DB] Running Drizzle migrations...");
+    log.info("[DB] Running Drizzle migrations...");
     // 设置忙碌超时时间，防止并发写入导致 SQLITE_BUSY
     await globalForLibsql.libsqlClient?.execute("PRAGMA busy_timeout = 5000;");
 
     await migrate(drizzleDb, {
       migrationsFolder: path.resolve(process.cwd(), "drizzle"),
     });
-    console.log("[DB] Drizzle migrations completed");
+    log.info("[DB] Drizzle migrations completed");
 
     // 2. 补全向量扩展和种子数据（向量扩展失败不阻止启动）
     try {
       await setupVectorExtension();
     } catch (e) {
-      console.warn(
+      log.warn(
         "[DB] Vector extension setup failed, continuing without vector features:",
         e,
       );
     }
     await seedData();
-    console.log("[DB] Database initialization completed");
+    log.info("[DB] Database initialization completed");
   } catch (error: unknown) {
-    console.error(
+    log.error(
       "[DB] Database initialization failed:",
       error instanceof Error ? error.message : String(error),
     );
     if (error instanceof Error && error.cause) {
-      console.error("[DB] Detailed Cause:", error.cause);
+      log.error("[DB] Detailed Cause:", error.cause);
     }
     // 在所有环境下都抛出错误，确保迁移失败时能及时发现
     throw error;

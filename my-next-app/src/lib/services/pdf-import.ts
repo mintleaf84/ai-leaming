@@ -17,6 +17,7 @@ import { practice_logs, questions } from "@/lib/db/drizzle-schema";
 import { srsService } from "@/lib/services/srs";
 import type { PdfImportResult, ParsedPdfQuestion } from "@/types/pdf-import";
 import { randomUUID } from "crypto";
+import { log } from "@/lib/logger";
 
 // 内存缓存：taskId → { chunks, ocrText, expiresAt }
 const chunkCache = new Map<
@@ -219,7 +220,7 @@ export const pdfImportService = {
         message: `成功导入 ${insertedIds.length} 道题目${folderId ? "到文件夹" : ""}${wrongBookNote}`,
       };
     } catch (error) {
-      console.error("[PdfImport] confirmImport failed:", error);
+      log.error("[PdfImport] confirmImport failed:", error);
       return {
         success: false,
         importedCount: 0,

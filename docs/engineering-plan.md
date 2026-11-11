@@ -46,11 +46,15 @@
 
 ## P2 错误语义与日志（5h）
 
-- [ ] 127 个「只打日志」的 catch 三分类（转换重抛 / 明确业务错误跳过 / 可忽略+结构化日志）
-- [ ] 239 处 `console.*` 收敛到 `src/lib/logger.ts`，关键路径带 `requestId/sessionId/sourceKey`
+- [x] 服务端 `console.*` 全部收敛：**154 → 0**（46 个文件），新增 `log` 兼容垫片保留原调用形态
+- [x] 新增 `no-console` lint 规则（服务端目录 warning + 棘轮；`logger.ts`/测试/脚本豁免）
+- [x] `docs/error-handling.md` 落盘（三形态判定流程 + 台账 + 分类进度）
+- [x] 修正被机械替换误伤的示例字符串（`welcome.ts` 里的代码高亮样例）
+- [ ] 127 个「只打日志」的 catch 三分类（已建台账，按模块分批）
 - [ ] 前端 `ErrorBoundary` + 统一 `sonner` 错误提示；loading/empty/error 三态复用 `ui/empty-state.tsx`
-- [ ] 加 `no-console` lint 规则（`logger.ts` 例外），防止回潮
-- 验收：`grep -c "console\."` < 20；`docs/error-handling.md` 落盘
+- 验收：`npm run lint:ci` 通过且 `no-console` 计数为 0（以 lint 结果为准，不用 grep —— `welcome.ts` 的代码示例字符串里应保留 `console.log`）；`docs/error-handling.md` 落盘
+- **零计数覆盖范围**：`src/lib/**/*.ts`、`src/server/**/*.ts`、`src/app/**/*.ts`、`src/app/{page,layout}.tsx`、`src/instrumentation.ts`
+- **显式豁免**（因 Edge/客户端共享，必须保留 `console`）：`src/middleware.ts`、`src/lib/utils/retry.ts`、`src/lib/ai/rag.ts`、`src/lib/services/{srs,knowledge,question-folder}.ts`、`src/app/**/hooks/**`、`src/app/**/components/**`、全部测试与 `scripts/**`
 
 ## P3 类型收紧（5h）
 

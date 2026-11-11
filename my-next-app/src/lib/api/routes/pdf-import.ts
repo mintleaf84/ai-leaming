@@ -1,6 +1,7 @@
 import { OpenAPIHono, createRoute, z } from "@hono/zod-openapi";
 import { authMiddleware, getCurrentUser } from "@/lib/api/middlewares/auth";
 import { pdfImportService } from "@/lib/services/pdf-import";
+import { log } from "@/lib/logger";
 
 const app = new OpenAPIHono();
 
@@ -60,7 +61,7 @@ app.openapi(previewDef, async (c) => {
 
     return c.json({ taskId, totalChunks }, 200);
   } catch (e) {
-    console.error("[PdfImportRoute] preview failed:", e);
+    log.error("[PdfImportRoute] preview failed:", e);
     return c.json({ error: `解析失败: ${(e as Error).message}` }, 500);
   }
 });
@@ -103,7 +104,7 @@ app.openapi(parseChunkDef, async (c) => {
     );
     return c.json(result, 200);
   } catch (e) {
-    console.error("[PdfImportRoute] parse-chunk failed:", e);
+    log.error("[PdfImportRoute] parse-chunk failed:", e);
     return c.json({ error: `解析失败: ${(e as Error).message}` }, 500);
   }
 });
@@ -177,7 +178,7 @@ app.openapi(textImportDef, async (c) => {
     const { taskId, totalChunks } = await pdfImportService.splitText(body.text);
     return c.json({ taskId, totalChunks }, 200);
   } catch (e) {
-    console.error("[PdfImportRoute] text-import failed:", e);
+    log.error("[PdfImportRoute] text-import failed:", e);
     return c.json({ error: `处理失败: ${(e as Error).message}` }, 500);
   }
 });
@@ -232,7 +233,7 @@ app.openapi(confirmDef, async (c) => {
     );
     return c.json(result, 200);
   } catch (e) {
-    console.error("[PdfImportRoute] confirm failed:", e);
+    log.error("[PdfImportRoute] confirm failed:", e);
     return c.json({ error: `导入失败: ${(e as Error).message}` }, 500);
   }
 });

@@ -184,7 +184,10 @@ describe("BackupManager", () => {
     await user.click(screen.getByText("立即下载备份"));
 
     await waitFor(() => {
-      expect(toast.error).toHaveBeenCalledWith("备份失败，请查看控制台日志");
+      // 失败必须复用 loading toast 的 id，否则"正在生成全量快照..."会一直挂着
+      expect(toast.error).toHaveBeenCalledWith("备份失败，请查看控制台日志", {
+        id: "toast-id",
+      });
     });
   });
 

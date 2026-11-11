@@ -10,12 +10,15 @@ import {
   saveAiModelRouteAction,
 } from "@/server/actions/config";
 import type { AiConfig, AiModelRoute } from "@/lib/services/ai-config";
+import { ErrorState } from "@/components/ui/error-state";
 
 export function RouteManager() {
   const [configs, setConfigs] = useState<AiConfig[]>([]);
   const [routes, setRoutes] = useState<AiModelRoute[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
+  // 加载失败要显式呈现，否则用户会把"加载失败"误读成"没有路由"
+  const [loadError, setLoadError] = useState<string | null>(null);
 
   const features = [
     {
@@ -58,8 +61,11 @@ export function RouteManager() {
       ]);
       if (configsResult.data) setConfigs(configsResult.data);
       if (routesResult.data) setRoutes(routesResult.data);
-    } catch (_e) {
-      toast.error("加载路由配置失败");
+      setLoadError(null);
+    } catch (e) {
+      console.error("加载模型路由配置失败", e);
+      setLoadError(e instanceof Error ? e.message : "请求失败");
+      return;
     } finally {
       setIsLoading(false);
     }
@@ -103,8 +109,10 @@ export function RouteManager() {
       } else {
         toast.error("保存失败");
       }
-    } catch (_e) {
-      toast.error("请求失败");
+    } catch (e) {
+      console.error("保存模型路由失败", e);
+      toast.error("保存失败：" + (e instanceof Error ? e.message : "请求异常"));
+      return;
     } finally {
       setIsSaving(false);
     }
@@ -113,6 +121,18 @@ export function RouteManager() {
   if (isLoading) {
     return (
       <div className="p-8 text-center text-muted-foreground">加载中...</div>
+    );
+  }
+
+  if (loadError) {
+    return (
+      <div className="max-w-4xl mx-auto">
+        <ErrorState
+          title="路由配置加载失败"
+          description={loadError}
+          onRetry={() => void loadData()}
+        />
+      </div>
     );
   }
 

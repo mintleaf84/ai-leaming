@@ -61,7 +61,7 @@ node scripts/audit-catches.cjs    # 与基线比对（CI 已接入）
 | `fallback` | 静默降级（无日志）               | ⚠️ 至少补一条结构化日志 |
 | `silent`   | 空 catch                         | ❌ 必须处理             |
 
-当前基线（AST 解析）：`rethrow=39 / degraded=136 / allowed=39 / fallback=14 / logged=35 / silent=61`。
+当前基线（AST 解析）：`rethrow=39 / degraded=170 / allowed=42 / fallback=13 / logged=30 / silent=27`。
 
 - `allowed` 是**显式允许**：catch 内写了 `// audit-allow: <理由>`，表示"已判断并接受"，不列入待办但会单独计数（理由写在代码里，可 grep 审计）。
 - 待办总数 218 → 178 → 160 → 135 → **110**（每批都要 `--update` 收紧基线，只允许持平或下降）。
@@ -73,7 +73,7 @@ node scripts/audit-catches.cjs    # 与基线比对（CI 已接入）
 
 唯一可信来源是 `cd my-next-app && npm run audit:catches -- --list`（**在 `my-next-app/` 下执行**，
 仓库根目录没有这个 script），本节数字每次收口后同步更新。
-初始 218 个标记项 → 当前 **110 个 = 客户端组件 107 处 + `src/app/api/**` 服务端路由 3 处**。
+初始 218 个标记项 → 当前 **70 个 = 客户端组件 67 处 + `src/app/api/**` 服务端路由 3 处**。
 
 已清（`rethrow` / `degraded` / `allowed` 三态之一，不再出现在 `--list`）：
 
@@ -88,14 +88,13 @@ node scripts/audit-catches.cjs    # 与基线比对（CI 已接入）
 | `src/lib/api/routes/**`、`src/lib/admin/**`、`src/server/actions/**`                  | 失败补日志并保留原 4xx/5xx；请求体解析失败与启动路径用 `audit-allow`；`external.ts` 的本地 `safeJsonParse` 改复用统一实现 |
 | 零散（`db` / `auth` / `practice` / `utils` / `middleware.ts` / `instrumentation.ts`） | 补日志 + 显式降级；`middleware.ts` 与 `utils/api-client.ts` 保持 `console`（Edge/客户端 bundle）                          |
 
-剩余（共 110 = 客户端组件 107 + 服务端 route handler 3，数字取自审计输出）：
+剩余（共 70 = 客户端组件 67 + 服务端 route handler 3，数字取自审计输出）：
 
-| 模块                                              | 数量    | 状态                                                                                                                                                                                                                   |
-| ------------------------------------------------- | ------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `src/app/admin/**`                                | 40      | 待处理（后台失败必须可见，优先）                                                                                                                                                                                       |
-| 业务页面与组件                                    | 67      | 待处理（`app/questions` 8、`components/history` 7、`app/wrong-book` 6、`app/knowledge` 5、`app/practice` 4、`components/textbooks` 4、`hooks/chat` 3、`components/editor` 3、`app/notes` 3、`app/mindmap` 3、其余 21） |
-| 服务端 `src/app/api/admin/system/backup/route.ts` | 3       | 待处理（Next route handler，不是客户端组件）                                                                                                                                                                           |
-| 合计                                              | **110** |                                                                                                                                                                                                                        |
+| 模块                                              | 数量   | 状态                                                                                                                                                                                                                   |
+| ------------------------------------------------- | ------ | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| 业务页面与组件                                    | 67     | 待处理（`app/questions` 8、`components/history` 7、`app/wrong-book` 6、`app/knowledge` 5、`app/practice` 4、`components/textbooks` 4、`hooks/chat` 3、`components/editor` 3、`app/notes` 3、`app/mindmap` 3、其余 21） |
+| 服务端 `src/app/api/admin/system/backup/route.ts` | 3      | 待处理（Next route handler，不是客户端组件）                                                                                                                                                                           |
+| 合计                                              | **70** |                                                                                                                                                                                                                        |
 
 ## 已知语义债（catch 形态已标注，但业务语义未改）
 
@@ -112,6 +111,34 @@ node scripts/audit-catches.cjs    # 与基线比对（CI 已接入）
 
 每批的判定流程见上；每批收口后 `npm run audit:catches -- --update` 收紧基线（只允许持平或下降），
 并在 PR 描述里写明「保留为可忽略」的条数与理由。
+
+## 客户端 catch 判定（React 组件 / hooks）
+
+客户端没有"返回 500"这层兜底，失败必须由 UI 显式承担。按触发来源分四类：
+
+| 场景                                                        | 判定       | 做法                                                                                                                                                                                                  |
+| ----------------------------------------------------------- | ---------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| 用户主动触发的写操作（保存 / 删除 / 导入 / 执行 / 重置）    | `degraded` | `toast.error("<动作>失败：" + 摘要)`，**且不改变界面状态**（不关对话框、不清空输入、不做乐观更新），catch 内 `return`                                                                                 |
+| 页面首屏 / 列表数据加载失败                                 | `degraded` | catch 内三件套：`console.error` + `setLoadError(...)` + 显式 `return`，再渲染 `ErrorState`（`onRetry` 必填）。**只调 `setLoadError` 会被审计判为 `silent`**                                           |
+| 轮询 / 后台静默刷新失败                                     | `allowed`  | 保留旧数据 + `console.warn` + **`// audit-allow: <理由>`**（只写日志不写标记会被判为 `logged`）；连续失败可在 UI 上降级为"数据可能过期"                                                               |
+| 解析 / 兼容性回退（JSON、localStorage、URL 参数、可选字段） | `allowed`  | 回退默认值 + 至少一条日志（或显式 `return`）+ `audit-allow: <为什么这条失败可接受>`。**空 catch 只加标记仍算 `silent`**：审计器只把基础形态为 `degraded`/`logged`/`fallback` 的标记项升级为 `allowed` |
+
+硬规则：
+
+1. **后台操作不允许"假装成功"**——失败必须对操作者可见（toast 或 ErrorState）。
+2. **写操作**失败时不要顺手改业务状态（不关对话框、不清空表单、不乐观更新）。
+3. **首屏加载失败**必须 `setLoadError(...)` 让 `ErrorState` 渲染出来（此时没有旧数据可留）。
+   **轮询/静默刷新失败**则**不要**设 `loadError`——那会把已经拿到的数据整页替换成错误态；
+   只保留旧数据 + `console.warn` + `audit-allow`，需要时用独立的 `stale` 状态提示"数据可能已过期"。
+4. 客户端日志用 `console.warn` / `console.error`（pino 不能进浏览器 bundle）；`log`/`logger` 垫片只在服务端用。
+5. `// audit-allow: <理由>` 必须是 **catch 块内第一条语句之前**的注释（含与 `{` 同行）。
+   写在 `if`/赋值之后不算——审计器只读块首注释，标记会被忽略、该 catch 仍按原形态（多为 `logged`）计数。
+6. **safe-action 的失败不一定抛异常**：`xxxAction()` 可能返回 `{ serverError }`、`{ data: { success: false } }`、
+   或参数校验失败时的 `{ validationErrors }`（此时 `serverError` 与 `data` **都可能为空**）。
+   调用后必须检查：`serverError` / `!data` / `validationErrors`，任一命中即失败；
+   若该 action 的返回类型**含有** `success` 字段，再检查 `data.success === false`。
+   不要对所有 action 一律访问 `data.success`——有些返回 `{ count }` / `{ id }`，
+   硬写会直接 TypeScript 报错。否则 `catch` 永远不进，界面会"假装成功"。
 
 ## 检查清单（提交前）
 

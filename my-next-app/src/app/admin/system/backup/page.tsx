@@ -23,11 +23,13 @@ import {
   History,
 } from "lucide-react";
 import { toast } from "sonner";
+import { ErrorState } from "@/components/ui/error-state";
 
 export default function BackupSettingsPage() {
   const [loading, setLoading] = useState(false);
   const [testing, setTesting] = useState(false);
   const [backingUp, setBackingUp] = useState(false);
+  const [loadError, setLoadError] = useState<string | null>(null);
   const [config, setConfig] = useState({
     enabled: false,
     url: "",
@@ -38,22 +40,25 @@ export default function BackupSettingsPage() {
   });
 
   // 加载配置
+  const fetchConfig = async () => {
+    setLoading(true);
+    setLoadError(null);
+    try {
+      const res = await fetch("/api/admin/system/backup");
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || `HTTP ${res.status}`);
+      if (data.error) throw new Error(data.error);
+      setConfig((prev) => ({ ...prev, ...data, pass: "" })); // 密码始终不回显
+    } catch (error: unknown) {
+      console.error("加载备份配置失败", error);
+      setLoadError(error instanceof Error ? error.message : String(error));
+      return;
+    } finally {
+      setLoading(false);
+    }
+  };
+
   useEffect(() => {
-    const fetchConfig = async () => {
-      setLoading(true);
-      try {
-        const res = await fetch("/api/admin/system/backup");
-        const data = await res.json();
-        if (data.error) throw new Error(data.error);
-        setConfig((prev) => ({ ...prev, ...data, pass: "" })); // 密码始终不回显
-      } catch (error: unknown) {
-        toast.error(
-          `加载配置失败: ${error instanceof Error ? error.message : String(error)}`,
-        );
-      } finally {
-        setLoading(false);
-      }
-    };
     fetchConfig();
   }, []);
 
@@ -66,12 +71,16 @@ export default function BackupSettingsPage() {
         body: JSON.stringify(config),
       });
       const data = await res.json();
+      // API 用 { error } / 非 2xx 表达失败，不能只看有没有抛异常
+      if (!res.ok) throw new Error(data.error || `HTTP ${res.status}`);
       if (data.error) throw new Error(data.error);
       toast.success("配置已保存");
     } catch (error: unknown) {
+      console.error("保存备份配置失败", error);
       toast.error(
-        `保存失败: ${error instanceof Error ? error.message : String(error)}`,
+        `保存失败：${error instanceof Error ? error.message : String(error)}`,
       );
+      return;
     } finally {
       setLoading(false);
     }
@@ -86,15 +95,18 @@ export default function BackupSettingsPage() {
         body: JSON.stringify(config),
       });
       const data = await res.json();
-      if (data.success) {
+      if (res.ok && data.success) {
         toast.success("连接测试成功！可以通过 WebDAV 正常读写。");
       } else {
-        toast.error(`连接测试失败: ${data.error || "无法连接到服务器"}`);
+        toast.error(`连接测试失败：${data.error || `HTTP ${res.status}`}`);
+        return;
       }
     } catch (error: unknown) {
+      console.error("测试备份连接失败", error);
       toast.error(
-        `测试过程中出错: ${error instanceof Error ? error.message : String(error)}`,
+        `测试过程中出错：${error instanceof Error ? error.message : String(error)}`,
       );
+      return;
     } finally {
       setTesting(false);
     }
@@ -107,12 +119,15 @@ export default function BackupSettingsPage() {
     try {
       const res = await fetch("/api/admin/system/backup", { method: "PUT" });
       const data = await res.json();
+      if (!res.ok) throw new Error(data.error || `HTTP ${res.status}`);
       if (data.error) throw new Error(data.error);
       toast.success(`备份成功: ${data.fileName}`);
     } catch (error: unknown) {
+      console.error("手动备份失败", error);
       toast.error(
-        `手动备份失败: ${error instanceof Error ? error.message : String(error)}`,
+        `手动备份失败：${error instanceof Error ? error.message : String(error)}`,
       );
+      return;
     } finally {
       setBackingUp(false);
     }
@@ -122,6 +137,18 @@ export default function BackupSettingsPage() {
     return (
       <div className="flex items-center justify-center min-h-[400px]">
         <Loader2 className="h-8 w-8 animate-spin text-primary" />
+      </div>
+    );
+  }
+
+  if (loadError && !config.url) {
+    return (
+      <div className="p-4 md:p-8 max-w-4xl mx-auto">
+        <ErrorState
+          title="备份配置加载失败"
+          description={loadError}
+          onRetry={fetchConfig}
+        />
       </div>
     );
   }

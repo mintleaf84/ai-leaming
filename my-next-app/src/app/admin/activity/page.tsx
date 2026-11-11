@@ -1,9 +1,10 @@
 "use client";
 
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Activity, CheckCircle2, Clock, Cpu, Zap } from "lucide-react";
 import { getActivityStatsAction } from "@/server/actions/activity";
+import { ErrorState } from "@/components/ui/error-state";
 import { ActivityList } from "./_components/ActivityList";
 
 export default function ActivityMonitoringPage() {
@@ -15,15 +16,32 @@ export default function ActivityMonitoringPage() {
     aiTokensToday: 0,
   });
   const [_loading, setLoading] = useState(true);
+  const [loadError, setLoadError] = useState<string | null>(null);
+  const [stale, setStale] = useState(false);
+  // 是否成功拿到过数据：用于区分「首屏失败」与「轮询失败」
+  const hasDataRef = useRef(false);
 
   const loadStats = async () => {
     try {
       const result = await getActivityStatsAction();
-      if (result.data) {
-        setStats(result.data);
-      }
+      // safe-action 不抛错：serverError / 空 data 都算失败
+      if (result.serverError) throw new Error(result.serverError);
+      if (!result.data) throw new Error("统计数据返回为空");
+      setStats(result.data);
+      hasDataRef.current = true;
+      setLoadError(null);
+      setStale(false);
     } catch (error) {
-      console.error("加载统计数据失败", error);
+      if (!hasDataRef.current) {
+        // 加载失败 → 错误态 + 重试（degraded）
+        console.error("[Activity] 首屏统计加载失败", { err: error });
+        setLoadError(error instanceof Error ? error.message : String(error));
+        return;
+      }
+      // audit-allow: 60s 轮询失败保留上次数值，仅把徽章降级为「可能已过期」
+      console.warn("[Activity] 轮询失败", { err: error });
+      setStale(true);
+      return;
     } finally {
       setLoading(false);
     }
@@ -47,73 +65,94 @@ export default function ActivityMonitoringPage() {
             实时查看全站练习流水，分析用户做题习惯与 AI 使用深度。
           </p>
         </div>
-        <div className="flex items-center gap-2 text-xs font-medium bg-green-500/10 text-green-600 px-3 py-1.5 rounded-full border border-green-200">
-          <span className="relative flex h-2 w-2">
-            <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-green-400 opacity-75"></span>
-            <span className="relative inline-flex rounded-full h-2 w-2 bg-green-500"></span>
-          </span>
-          实时监听中
-        </div>
+        {loadError ? null : stale ? (
+          <div className="flex items-center gap-2 text-xs font-medium bg-amber-500/10 text-amber-600 px-3 py-1.5 rounded-full border border-amber-200">
+            <Clock className="h-3 w-3" />
+            数据可能已过期
+          </div>
+        ) : (
+          <div className="flex items-center gap-2 text-xs font-medium bg-green-500/10 text-green-600 px-3 py-1.5 rounded-full border border-green-200">
+            <span className="relative flex h-2 w-2">
+              <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-green-400 opacity-75"></span>
+              <span className="relative inline-flex rounded-full h-2 w-2 bg-green-500"></span>
+            </span>
+            实时监听中
+          </div>
+        )}
       </div>
 
       {/* 统计看板 */}
-      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-        <Card className="bg-card/50 backdrop-blur-sm">
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">今日练习总数</CardTitle>
-            <Activity className="h-4 w-4 text-primary" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">{stats.todayCount}</div>
-            <p className="text-xs text-muted-foreground mt-1">
-              比昨日同期 {stats.todayCount > 0 ? "+12%" : "0%"}
-            </p>
-          </CardContent>
-        </Card>
-        <Card className="bg-card/50 backdrop-blur-sm">
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">今日正确率</CardTitle>
-            <CheckCircle2 className="h-4 w-4 text-green-500" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">{stats.accuracyRate}%</div>
-            <div className="w-full bg-muted h-1 mt-3 rounded-full overflow-hidden">
-              <div
-                className="bg-green-500 h-full transition-all duration-1000"
-                style={{ width: `${stats.accuracyRate}%` }}
-              ></div>
-            </div>
-          </CardContent>
-        </Card>
-        <Card className="bg-card/50 backdrop-blur-sm">
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">平均答题耗时</CardTitle>
-            <Clock className="h-4 w-4 text-orange-500" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">
-              {(stats.avgDurationMs / 1000).toFixed(1)}s
-            </div>
-            <p className="text-xs text-muted-foreground mt-1">
-              单题平均思考时间
-            </p>
-          </CardContent>
-        </Card>
-        <Card className="bg-card/50 backdrop-blur-sm">
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">AI 令牌消耗</CardTitle>
-            <Cpu className="h-4 w-4 text-blue-500" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">
-              {stats.aiTokensToday.toLocaleString()}
-            </div>
-            <p className="text-xs text-muted-foreground mt-1">
-              今日已调用 {stats.aiCallsToday} 次 AI
-            </p>
-          </CardContent>
-        </Card>
-      </div>
+      {loadError ? (
+        <div className="rounded-xl border border-border bg-card">
+          <ErrorState
+            title="统计数据加载失败"
+            description={loadError}
+            onRetry={loadStats}
+          />
+        </div>
+      ) : (
+        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+          <Card className="bg-card/50 backdrop-blur-sm">
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+              <CardTitle className="text-sm font-medium">
+                今日练习总数
+              </CardTitle>
+              <Activity className="h-4 w-4 text-primary" />
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold">{stats.todayCount}</div>
+              <p className="text-xs text-muted-foreground mt-1">
+                比昨日同期 {stats.todayCount > 0 ? "+12%" : "0%"}
+              </p>
+            </CardContent>
+          </Card>
+          <Card className="bg-card/50 backdrop-blur-sm">
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+              <CardTitle className="text-sm font-medium">今日正确率</CardTitle>
+              <CheckCircle2 className="h-4 w-4 text-green-500" />
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold">{stats.accuracyRate}%</div>
+              <div className="w-full bg-muted h-1 mt-3 rounded-full overflow-hidden">
+                <div
+                  className="bg-green-500 h-full transition-all duration-1000"
+                  style={{ width: `${stats.accuracyRate}%` }}
+                ></div>
+              </div>
+            </CardContent>
+          </Card>
+          <Card className="bg-card/50 backdrop-blur-sm">
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+              <CardTitle className="text-sm font-medium">
+                平均答题耗时
+              </CardTitle>
+              <Clock className="h-4 w-4 text-orange-500" />
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold">
+                {(stats.avgDurationMs / 1000).toFixed(1)}s
+              </div>
+              <p className="text-xs text-muted-foreground mt-1">
+                单题平均思考时间
+              </p>
+            </CardContent>
+          </Card>
+          <Card className="bg-card/50 backdrop-blur-sm">
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+              <CardTitle className="text-sm font-medium">AI 令牌消耗</CardTitle>
+              <Cpu className="h-4 w-4 text-blue-500" />
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold">
+                {stats.aiTokensToday.toLocaleString()}
+              </div>
+              <p className="text-xs text-muted-foreground mt-1">
+                今日已调用 {stats.aiCallsToday} 次 AI
+              </p>
+            </CardContent>
+          </Card>
+        </div>
+      )}
 
       {/* 活动流水列表 */}
       <div className="space-y-4">

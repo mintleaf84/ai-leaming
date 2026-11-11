@@ -32,6 +32,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Checkbox } from "@/components/ui/checkbox";
+import { ErrorState } from "@/components/ui/error-state";
 import { EditQuestionDialog } from "./EditQuestionDialog";
 
 export function QuestionManager() {
@@ -40,6 +41,8 @@ export function QuestionManager() {
   const [total, setTotal] = useState(0);
   const [loading, setLoading] = useState(false);
   const [editingQuestion, setEditingQuestion] = useState<Question | null>(null);
+  // 加载失败要显式呈现，否则空表格会被误读成"没有符合条件的题目"
+  const [loadError, setLoadError] = useState<string | null>(null);
 
   // 分页与筛选
   const [page, setPage] = useState(1);
@@ -50,10 +53,13 @@ export function QuestionManager() {
   const [selectedIds, setSelectedIds] = useState<number[]>([]);
 
   const fileInputRef = useRef<HTMLInputElement>(null);
+  // 请求序号：较早发出的请求晚返回/晚失败时，不能覆盖较新请求的结果
+  const reqIdRef = useRef(0);
 
   // 加载数据
   const loadQuestions = useCallback(
     async (currentFilters = filters) => {
+      const reqId = ++reqIdRef.current;
       setLoading(true);
       try {
         const offset = (page - 1) * pageSize;
@@ -63,28 +69,35 @@ export function QuestionManager() {
           filters: currentFilters,
         });
 
-        if (result.serverError) {
-          toast.error(result.serverError || "题目列表加载失败");
-          setLoading(false);
+        // 已有更新的请求在飞，本次结果（含错误）一律丢弃
+        if (reqId !== reqIdRef.current) return;
+
+        // safe-action 的失败不抛异常：serverError / success === false 都算加载失败
+        if (result?.serverError) {
+          console.error("加载题目列表失败", result.serverError);
+          setLoadError(result.serverError);
           return;
         }
 
-        if (!result.data?.success) {
-          toast.error("题目列表加载失败");
-          setLoading(false);
+        if (!result?.data || result.data.success === false) {
+          console.error("加载题目列表失败：未返回有效数据", result?.data);
+          setLoadError("服务器未返回有效数据");
           return;
         }
 
-        if (result.data) {
-          setQuestions(result.data.questions);
-          setTotal(result.data.total);
-        }
+        setQuestions(result.data.questions);
+        setTotal(result.data.total);
+        setLoadError(null);
         // 清空选中状态
         setSelectedIds([]);
-      } catch (_e) {
-        toast.error("题目列表加载过程发生错误");
+      } catch (e) {
+        if (reqId !== reqIdRef.current) return;
+        console.error("加载题目列表失败", e);
+        setLoadError(e instanceof Error ? e.message : "请求失败");
+        return;
       } finally {
-        setLoading(false);
+        // 只有仍是最新请求时才收掉 loading，避免旧请求提前关闭
+        if (reqId === reqIdRef.current) setLoading(false);
       }
     },
     [page, pageSize, filters],
@@ -157,20 +170,42 @@ export function QuestionManager() {
     if (!file) return;
     const reader = new FileReader();
     reader.onload = async (event) => {
+      // 解析失败与导入失败是两种原因，不能都报成"文件格式错误"
+      let payload: unknown;
       try {
-        const json = JSON.parse(event.target?.result as string);
-        toast.info("正在导入...", { duration: 1000 });
-        const result = await importQuestionsAction(json);
-        if (result.serverError) {
-          toast.error(result.serverError || "导入失败");
-        } else if (result.data) {
-          toast.success(`成功导入 ${result.data.count} 道题目`);
-          loadQuestions();
-        }
-      } catch (_e) {
-        toast.error("无效的 JSON 文件格式");
+        payload = JSON.parse(event.target?.result as string);
+      } catch (e) {
+        console.warn("题目导入失败：文件不是合法 JSON", e);
+        toast.error("文件不是合法 JSON");
+        if (fileInputRef.current) fileInputRef.current.value = "";
+        return;
       }
-      if (fileInputRef.current) fileInputRef.current.value = "";
+
+      try {
+        toast.info("正在导入...", { duration: 1000 });
+        const result = await importQuestionsAction(
+          payload as Parameters<typeof importQuestionsAction>[0],
+        );
+        // 表单校验不过时 safe-action 返回 validationErrors，不会抛异常
+        if (result?.serverError) {
+          toast.error("导入失败：" + result.serverError);
+          return;
+        }
+        if (!result?.data) {
+          toast.error("导入失败：文件内容不是合法的题目数据");
+          return;
+        }
+        toast.success(`成功导入 ${result.data.count} 道题目`);
+        loadQuestions();
+      } catch (e) {
+        console.error("题目导入失败", e);
+        toast.error(
+          "导入失败：" + (e instanceof Error ? e.message : "请求异常"),
+        );
+        return;
+      } finally {
+        if (fileInputRef.current) fileInputRef.current.value = "";
+      }
     };
     reader.readAsText(file);
   };
@@ -298,6 +333,16 @@ export function QuestionManager() {
                 <tr>
                   <td colSpan={6} className="h-32 text-center">
                     <Loader2 className="w-6 h-6 animate-spin mx-auto text-muted-foreground" />
+                  </td>
+                </tr>
+              ) : loadError ? (
+                <tr>
+                  <td colSpan={6}>
+                    <ErrorState
+                      title="题目列表加载失败"
+                      description={loadError}
+                      onRetry={() => void loadQuestions()}
+                    />
                   </td>
                 </tr>
               ) : questions.length === 0 ? (

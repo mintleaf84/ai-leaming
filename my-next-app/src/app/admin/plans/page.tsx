@@ -37,6 +37,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { toast } from "sonner";
+import { ErrorState } from "@/components/ui/error-state";
 import {
   getPlansAction,
   savePlanAction,
@@ -77,6 +78,7 @@ export default function PlansPage() {
     byPlan: { plan_id: string; plan_name: string; count: number }[];
   } | null>(null);
   const [loading, setLoading] = useState(true);
+  const [loadError, setLoadError] = useState<string | null>(null);
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editingPlan, setEditingPlan] = useState<Omit<
     SubscriptionPlan,
@@ -88,19 +90,29 @@ export default function PlansPage() {
   // 加载数据
   const loadData = async () => {
     setLoading(true);
+    setLoadError(null);
     try {
       const [plansRes, statsRes] = await Promise.all([
         getPlansAction(false),
         getSubscriptionStatsAction(),
       ]);
-      if (plansRes.data?.success && plansRes.data.plans) {
+      // safe-action 不抛错：serverError / success:false 都要当成加载失败
+      if (plansRes.serverError || plansRes.data?.success === false) {
+        throw new Error(plansRes.serverError || "套餐列表返回失败");
+      }
+      if (statsRes.serverError || statsRes.data?.success === false) {
+        throw new Error(statsRes.serverError || "订阅统计返回失败");
+      }
+      if (plansRes.data?.plans) {
         setPlans(plansRes.data.plans);
       }
-      if (statsRes.data?.success && statsRes.data.stats) {
+      if (statsRes.data?.stats) {
         setStats(statsRes.data.stats);
       }
-    } catch (_error) {
-      toast.error("加载数据失败");
+    } catch (error) {
+      console.error("加载套餐数据失败", error);
+      setLoadError(error instanceof Error ? error.message : String(error));
+      return;
     } finally {
       setLoading(false);
     }
@@ -150,11 +162,20 @@ export default function PlansPage() {
         toast.success("套餐保存成功");
         setDialogOpen(false);
         loadData();
+      } else if (res.serverError) {
+        toast.error(`保存失败：${res.serverError}`);
+        return;
       } else {
-        toast.error(res.serverError || "保存失败");
+        // 走到这里通常是入参没通过 schema 校验，data 为空
+        toast.error("保存失败：套餐信息未通过校验，请检查 ID、名称与限额");
+        return;
       }
-    } catch (_error) {
-      toast.error("保存失败");
+    } catch (error) {
+      console.error("保存套餐失败", error);
+      toast.error(
+        `保存失败：${error instanceof Error ? error.message : String(error)}`,
+      );
+      return;
     } finally {
       setSaving(false);
     }
@@ -170,10 +191,15 @@ export default function PlansPage() {
         toast.success("删除成功");
         loadData();
       } else {
-        toast.error(res.serverError || "删除失败");
+        toast.error(`删除失败：${res.serverError || "服务端未确认删除"}`);
+        return;
       }
-    } catch (_error) {
-      toast.error("删除失败");
+    } catch (error) {
+      console.error("删除套餐失败", error);
+      toast.error(
+        `删除失败：${error instanceof Error ? error.message : String(error)}`,
+      );
+      return;
     }
   };
 
@@ -187,9 +213,16 @@ export default function PlansPage() {
       if (res.data?.success) {
         toast.success(plan.is_active ? "已禁用" : "已启用");
         loadData();
+      } else {
+        toast.error(`切换状态失败：${res.serverError || "服务端未确认"}`);
+        return;
       }
-    } catch (_error) {
-      toast.error("操作失败");
+    } catch (error) {
+      console.error("切换套餐状态失败", error);
+      toast.error(
+        `切换状态失败：${error instanceof Error ? error.message : String(error)}`,
+      );
+      return;
     }
   };
 
@@ -213,6 +246,18 @@ export default function PlansPage() {
     return (
       <div className="flex items-center justify-center h-64">
         <Loader2 className="w-8 h-8 animate-spin text-primary" />
+      </div>
+    );
+  }
+
+  if (loadError) {
+    return (
+      <div className="p-6">
+        <ErrorState
+          title="套餐数据加载失败"
+          description={loadError}
+          onRetry={loadData}
+        />
       </div>
     );
   }

@@ -12,6 +12,7 @@ import {
   testAiConnectionAction,
 } from "@/server/actions/config";
 import type { AiConfig } from "@/lib/services/ai-config";
+import { ErrorState } from "@/components/ui/error-state";
 import { ConfigList } from "./ConfigList";
 import { ConfigForm } from "./ConfigForm";
 import { QuickAddModals } from "./QuickAddModals";
@@ -24,6 +25,8 @@ export function ConfigManager() {
   const [currentConfig, setCurrentConfig] = useState<Partial<AiConfig>>({});
   const [isSaving, setIsSaving] = useState(false);
   const [isTesting, setIsTesting] = useState(false);
+  // 列表加载失败要显式呈现，否则用户会把"加载失败"误读成"没有配置"
+  const [loadError, setLoadError] = useState<string | null>(null);
 
   useEffect(() => {
     loadSettings();
@@ -32,9 +35,18 @@ export function ConfigManager() {
   const loadSettings = async () => {
     try {
       const result = await getAiConfigsAction();
-      if (result.data) setConfigs(result.data);
-    } catch (_e) {
-      toast.error("配置加载失败");
+      // safe-action 的失败不抛异常：serverError / 没有 data 都是加载失败
+      if (result?.serverError || !result?.data) {
+        console.error("加载 AI 配置失败", result?.serverError);
+        setLoadError(result?.serverError || "服务器未返回配置数据");
+        return;
+      }
+      setConfigs(result.data);
+      setLoadError(null);
+    } catch (e) {
+      console.error("加载 AI 配置失败", e);
+      setLoadError(e instanceof Error ? e.message : "请求失败");
+      return;
     }
   };
 
@@ -93,17 +105,28 @@ export function ConfigManager() {
     setIsSaving(true);
     try {
       const res = await saveAiConfigAction(configToSave);
-      if (res.data?.success) {
-        toast.success("配置已保存");
-        setIsEditing(false);
-        setIsZjuAdding(false);
-        setIsSiliconAdding(false);
-        loadSettings();
-      } else {
-        toast.error("保存失败: " + (res.serverError || ""));
+      // safe-action 的失败不抛异常：serverError / success === false 都要停下来
+      if (res?.serverError || res?.data?.success === false) {
+        console.error("保存 AI 配置失败", res?.serverError);
+        toast.error(
+          "保存失败：" + (res?.serverError || "服务器未确认保存成功"),
+        );
+        return;
       }
-    } catch (_e) {
-      toast.error("请求失败");
+      if (!res?.data) {
+        console.error("保存 AI 配置失败：未返回结果");
+        toast.error("保存失败：服务器未返回结果");
+        return;
+      }
+      toast.success("配置已保存");
+      setIsEditing(false);
+      setIsZjuAdding(false);
+      setIsSiliconAdding(false);
+      loadSettings();
+    } catch (e) {
+      console.error("保存 AI 配置失败", e);
+      toast.error("保存失败：" + (e instanceof Error ? e.message : "请求异常"));
+      return;
     } finally {
       setIsSaving(false);
     }
@@ -113,24 +136,40 @@ export function ConfigManager() {
     if (!confirm("确定要删除此配置吗？")) return;
     try {
       const res = await deleteAiConfigAction(id);
-      if (res.data?.success) {
-        toast.success("删除成功");
-        loadSettings();
-      } else {
-        toast.error(res.serverError || "删除失败");
+      // safe-action 的失败不抛异常
+      if (res?.serverError || res?.data?.success === false || !res?.data) {
+        console.error("删除 AI 配置失败", res?.serverError);
+        toast.error(
+          "删除失败：" + (res?.serverError || "服务器未确认删除成功"),
+        );
+        return;
       }
-    } catch (_e) {
-      toast.error("操作失败");
+      toast.success("删除成功");
+      loadSettings();
+    } catch (e) {
+      console.error("删除 AI 配置失败", e);
+      toast.error("删除失败：" + (e instanceof Error ? e.message : "请求异常"));
+      return;
     }
   };
 
   const handleActivateConfig = async (id: number) => {
     try {
-      await setActiveAiConfigAction(id);
+      const res = await setActiveAiConfigAction(id);
+      // safe-action 的失败不抛异常
+      if (res?.serverError || res?.data?.success === false || !res?.data) {
+        console.error("切换激活配置失败", res?.serverError);
+        toast.error(
+          "切换失败：" + (res?.serverError || "服务器未确认切换成功"),
+        );
+        return;
+      }
       toast.success("已切换激活配置");
       loadSettings();
-    } catch (_e) {
-      toast.error("切换失败");
+    } catch (e) {
+      console.error("切换激活配置失败", e);
+      toast.error("切换失败：" + (e instanceof Error ? e.message : "请求异常"));
+      return;
     }
   };
 
@@ -146,13 +185,28 @@ export function ConfigManager() {
         apiUrl: config.api_url,
         modelName: config.model_economy || "gpt-4o-mini",
       });
-      if (res.data?.success) {
+      // safe-action 的失败不抛异常
+      if (res?.serverError) {
+        console.error("测试 AI 连接失败", res.serverError);
+        toast.error("测试请求失败：" + res.serverError);
+        return;
+      }
+      if (!res?.data) {
+        console.error("测试 AI 连接失败：未返回结果");
+        toast.error("测试请求失败：服务器未返回结果");
+        return;
+      }
+      if (res.data.success) {
         toast.success(`连接成功！AI 响应: ${res.data.message}`);
       } else {
-        toast.error(`连接失败: ${res.data?.error || res.serverError}`);
+        toast.error(`连接失败: ${res.data.error || "未知原因"}`);
       }
-    } catch (_e) {
-      toast.error("测试请求发送失败");
+    } catch (e) {
+      console.error("测试 AI 连接失败", e);
+      toast.error(
+        "测试请求失败：" + (e instanceof Error ? e.message : "请求异常"),
+      );
+      return;
     } finally {
       setIsTesting(false);
     }
@@ -198,12 +252,20 @@ export function ConfigManager() {
             </div>
           </div>
 
-          <ConfigList
-            configs={configs}
-            onEdit={handleStartEdit}
-            onDelete={handleDeleteConfig}
-            onActivate={handleActivateConfig}
-          />
+          {loadError ? (
+            <ErrorState
+              title="配置加载失败"
+              description={loadError}
+              onRetry={() => void loadSettings()}
+            />
+          ) : (
+            <ConfigList
+              configs={configs}
+              onEdit={handleStartEdit}
+              onDelete={handleDeleteConfig}
+              onActivate={handleActivateConfig}
+            />
+          )}
 
           {/* Connectivity Tests (Simplified for this view) */}
           <div className="mt-8 pt-6 border-t border-dashed border-border">
@@ -226,7 +288,9 @@ export function ConfigManager() {
                     );
                     toast.success("纠偏功能正常", { id });
                   } catch (e) {
+                    console.error("连通性检查请求失败", e);
                     toast.error("失败: " + (e as Error).message, { id });
+                    return;
                   }
                 }}
               >
@@ -243,7 +307,9 @@ export function ConfigManager() {
                     await generateRegressionChallengeAction("Test", ["tag1"]);
                     toast.success("回归功能正常", { id });
                   } catch (e) {
+                    console.error("连通性检查请求失败", e);
                     toast.error("失败: " + (e as Error).message, { id });
+                    return;
                   }
                 }}
               >

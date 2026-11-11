@@ -29,12 +29,21 @@ export function DemoModePanel({
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ action: "reset_demo_session" }),
       });
-      if (res.ok) {
-        toast.success("演示会话数据已成功重置");
-        onRefresh();
+      // 网关可能返回 HTML（如 502），解析失败时不能只报 "Unexpected token '<'"
+      const data = await res.json().catch(() => null);
+      // 非 2xx 与 { error } 都算失败，不能只看 res.ok
+      if (!res.ok || data?.error) {
+        toast.error(`重置失败：${data?.error || `HTTP ${res.status}`}`);
+        return;
       }
-    } catch {
-      toast.error("重置失败");
+      toast.success("演示会话数据已成功重置");
+      onRefresh();
+    } catch (error) {
+      console.error("重置演示会话失败", error);
+      toast.error(
+        `重置失败：${error instanceof Error ? error.message : String(error)}`,
+      );
+      return;
     }
   };
 

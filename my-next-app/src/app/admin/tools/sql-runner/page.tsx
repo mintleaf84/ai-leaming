@@ -27,6 +27,7 @@ import {
   History,
 } from "lucide-react";
 import { toast } from "sonner";
+import { ErrorState } from "@/components/ui/error-state";
 
 interface SqlHistory {
   id: number;
@@ -53,6 +54,7 @@ export default function SqlRunnerPage() {
   } | null>(null);
   const [history, setHistory] = useState<SqlHistory[]>([]);
   const [loadingHistory, setLoadingHistory] = useState(false);
+  const [historyError, setHistoryError] = useState<string | null>(null);
 
   useEffect(() => {
     loadHistory();
@@ -60,12 +62,18 @@ export default function SqlRunnerPage() {
 
   const loadHistory = async () => {
     setLoadingHistory(true);
+    setHistoryError(null);
     try {
       const res = await fetch("/api/admin/sql-scripts/history");
       const data = await res.json();
+      // 非 2xx 也可能带可解析 JSON（如 401 + { error }），不能当成「暂无记录」
+      if (!res.ok) throw new Error(data.error || `HTTP ${res.status}`);
+      if (data.error) throw new Error(data.error);
       setHistory(data.history || []);
     } catch (error) {
-      console.error("加载历史失败:", error);
+      console.error("加载执行历史失败", error);
+      setHistoryError(error instanceof Error ? error.message : String(error));
+      return;
     } finally {
       setLoadingHistory(false);
     }
@@ -93,7 +101,11 @@ export default function SqlRunnerPage() {
         toast.error(data.error || "验证失败");
       }
     } catch (error) {
-      toast.error("验证请求失败");
+      console.error("验证 SQL 请求失败", error);
+      toast.error(
+        `验证请求失败：${error instanceof Error ? error.message : String(error)}`,
+      );
+      return;
     } finally {
       setValidating(false);
     }
@@ -141,7 +153,11 @@ export default function SqlRunnerPage() {
         toast.error(data.error || "执行失败");
       }
     } catch (error) {
-      toast.error("执行请求失败");
+      console.error("执行 SQL 请求失败", error);
+      toast.error(
+        `执行请求失败：${error instanceof Error ? error.message : String(error)}`,
+      );
+      return;
     } finally {
       setExecuting(false);
     }
@@ -157,9 +173,17 @@ export default function SqlRunnerPage() {
         method: "POST",
       });
       const data = await res.json();
+      if (!res.ok || data.error) {
+        toast.error(`清理失败：${data.error || `HTTP ${res.status}`}`);
+        return;
+      }
       toast.success(`已清理 ${data.deleted} 个过期备份文件`);
     } catch (error) {
-      toast.error("清理失败");
+      console.error("清理过期备份失败", error);
+      toast.error(
+        `清理失败：${error instanceof Error ? error.message : String(error)}`,
+      );
+      return;
     }
   };
 
@@ -326,6 +350,13 @@ export default function SqlRunnerPage() {
                 <div className="flex justify-center py-8">
                   <Loader2 className="h-6 w-6 animate-spin" />
                 </div>
+              ) : historyError ? (
+                <ErrorState
+                  title="执行历史加载失败"
+                  description={historyError}
+                  onRetry={loadHistory}
+                  className="py-8"
+                />
               ) : history.length === 0 ? (
                 <p className="text-muted-foreground text-center py-8">
                   暂无执行记录

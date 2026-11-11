@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useEffect, useState, useCallback } from "react";
+import React, { useEffect, useRef, useState, useCallback } from "react";
 import {
   getUsersAction,
   deleteUserAction,
@@ -52,6 +52,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Label } from "@/components/ui/label";
+import { ErrorState } from "@/components/ui/error-state";
 
 // 扩展用户类型，包含订阅信息
 interface UserWithSubscription extends UserAdminView {
@@ -82,21 +83,82 @@ export default function UsersPage() {
   const [selectedPlanId, setSelectedPlanId] = useState("free");
   const [subDuration, setSubDuration] = useState("0"); // 0 表示永久
   const [savingSub, setSavingSub] = useState(false);
+  const [loadError, setLoadError] = useState<string | null>(null);
+  // 请求序号：搜索/翻页会并发触发加载，旧请求晚返回时不能覆盖新请求的结果
+  const reqIdRef = useRef(0);
+  // 后台刷新独立序号：连续两次写操作（删用户 + 改角色）会连发两次后台刷新，
+  // 只靠 reqId 无法区分「哪次后台刷新更新」，先发后到的那次会覆盖较新结果
+  const bgSeqRef = useRef(0);
+  // 当前查询条件的最新值：后台刷新的响应回来时用它判断「条件是否已经变了」
+  const searchRef = useRef(search);
+  const pageRef = useRef(page);
 
-  const loadUsers = useCallback(async () => {
-    setLoading(true);
-    const offset = (page - 1) * limit;
-    const result = await getUsersAction({ limit, offset, query: search });
+  useEffect(() => {
+    searchRef.current = search;
+  }, [search]);
 
-    if (result.serverError) {
-      toast.error(result.serverError || "加载用户失败");
-    } else if (result.data) {
-      // 后端现在直接返回订阅信息，无需前端再处理
-      setUsers(result.data.users as UserWithSubscription[]);
-      setTotal(result.data.total);
-    }
-    setLoading(false);
-  }, [page, search]);
+  useEffect(() => {
+    pageRef.current = page;
+  }, [page]);
+
+  const loadUsers = useCallback(
+    async (options?: { background?: boolean }) => {
+      const background = options?.background === true;
+      // 绑定发起时的查询条件：后台刷新绝不能拿"点击那一刻"的条件去覆盖新搜索的结果
+      const snapshot = { search, page };
+      // 前台请求才抢「最新请求」身份；后台刷新沿用当前序号，不使更新的前台请求失效
+      const reqId = background ? reqIdRef.current : ++reqIdRef.current;
+      // 后台刷新每次自增，只有「最后一次」能落地
+      const bgSeq = background ? ++bgSeqRef.current : bgSeqRef.current;
+      // 后台刷新（写操作成功后）不动 loading / 错误态：列表已经是可用状态
+      if (!background) {
+        setLoading(true);
+        setLoadError(null);
+      }
+      const isStale = () =>
+        reqId !== reqIdRef.current ||
+        (background &&
+          (bgSeq !== bgSeqRef.current ||
+            searchRef.current !== snapshot.search ||
+            pageRef.current !== snapshot.page));
+      const offset = (snapshot.page - 1) * limit;
+      try {
+        const result = await getUsersAction({
+          limit,
+          offset,
+          query: snapshot.search,
+        });
+        // 已有更新的请求在飞，或查询条件已变：本次结果（含错误）一律丢弃
+        if (isStale()) return;
+        // safe-action 不抛错：serverError 与空 data 都算加载失败
+        if (result.serverError) throw new Error(result.serverError);
+        if (!result.data) throw new Error("用户列表返回为空，请稍后重试");
+        // 后端现在直接返回订阅信息，无需前端再处理
+        setUsers(result.data.users as UserWithSubscription[]);
+        setTotal(result.data.total);
+        // 前台结果已落地：让所有在途的后台刷新失效，避免旧数据把它盖回去
+        if (!background) bgSeqRef.current++;
+      } catch (error) {
+        if (isStale()) return;
+        if (background) {
+          // audit-allow: 写操作已经成功，后台刷新失败只提示一次并保留旧列表，绝不把列表换成错误态
+          console.warn("[AdminUsers] 写操作后的后台刷新失败，保留旧列表", {
+            err: error,
+          });
+          toast.warning("列表刷新失败，请手动刷新");
+          return;
+        }
+        // 加载失败 → 错误态 + 重试（degraded）
+        console.error("[AdminUsers] 加载用户列表失败", { err: error });
+        setLoadError(error instanceof Error ? error.message : String(error));
+        return;
+      } finally {
+        // 最新请求结束时统一收 loading：否则前一请求被丢弃后 loading 会永久卡在 true
+        if (reqId === reqIdRef.current) setLoading(false);
+      }
+    },
+    [page, search],
+  );
 
   // Debounce search resets page
   useEffect(() => {
@@ -136,7 +198,8 @@ export default function UsersPage() {
       toast.error(result.serverError || "删除失败");
     } else if (result.data?.success) {
       toast.success("用户已删除");
-      loadUsers();
+      // 删除已成功：刷新失败不应把列表替换成错误态
+      loadUsers({ background: true });
     }
   };
 
@@ -161,7 +224,8 @@ export default function UsersPage() {
       toast.error(result.serverError || "更新失败");
     } else if (result.data?.success) {
       toast.success("角色已更新");
-      loadUsers();
+      // 角色已改成功：刷新失败不应把列表替换成错误态
+      loadUsers({ background: true });
     }
   };
 
@@ -214,10 +278,17 @@ export default function UsersPage() {
           ),
         );
       } else {
-        toast.error(result.serverError || "操作失败");
+        toast.error(
+          `操作失败：${result.serverError || "服务端未确认订阅变更"}`,
+        );
+        return;
       }
-    } catch (_e) {
-      toast.error("操作失败");
+    } catch (error) {
+      console.error("更新用户订阅失败", error);
+      toast.error(
+        `操作失败：${error instanceof Error ? error.message : String(error)}`,
+      );
+      return;
     } finally {
       setSavingSub(false);
     }
@@ -286,6 +357,17 @@ export default function UsersPage() {
                     >
                       <Loader2 className="animate-spin h-6 w-6 mx-auto mb-2" />
                       加载中...
+                    </td>
+                  </tr>
+                ) : loadError ? (
+                  <tr>
+                    <td colSpan={6} className="p-0">
+                      <ErrorState
+                        title="用户列表加载失败"
+                        description={loadError}
+                        onRetry={() => loadUsers()}
+                        className="py-8"
+                      />
                     </td>
                   </tr>
                 ) : filteredUsers.length === 0 ? (

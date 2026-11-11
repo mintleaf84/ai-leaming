@@ -19,6 +19,7 @@ import {
   MessageSquareWarning,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { toast } from "sonner";
 import { useRouter } from "next/navigation";
 
 export function AdminLayoutShell({ children }: { children: React.ReactNode }) {
@@ -46,7 +47,11 @@ export function AdminLayoutShell({ children }: { children: React.ReactNode }) {
       router.push("/login");
       router.refresh();
     } catch (error) {
-      console.error("Logout failed", error);
+      console.error("退出登录失败", error);
+      toast.error(
+        `退出登录失败：${error instanceof Error ? error.message : String(error)}`,
+      );
+      return;
     }
   };
 

@@ -152,19 +152,22 @@ describe("QuestionManager 集成测试", () => {
   });
 
   // ----------------------------------------------------------
-  // 场景 3：加载失败 - API 报错时显示 Toast 错误提示
+  // 场景 3：加载失败 - 应渲染错误状态（而不是空列表 / 静默失败）
   // ----------------------------------------------------------
-  it("当 getQuestionsAction 返回 success:false 时，应显示 Toast 错误", async () => {
-    const { toast } = await import("sonner");
+  it("当 getQuestionsAction 返回 success:false 时，应渲染可重试的错误状态", async () => {
     // 模拟 action 返回 { success: false }
     mockGetQuestions.mockResolvedValue({ data: { success: false } });
 
     render(<QuestionManager />);
 
-    // 等待错误 toast 被调用
-    await waitFor(() => {
-      expect(toast.error).toHaveBeenCalledWith("题目列表加载失败");
-    });
+    // 列表失败要显式呈现：错误标题 + 原因 + 重试按钮
+    expect(await screen.findByText("题目列表加载失败")).toBeInTheDocument();
+    expect(screen.getByText("服务器未返回有效数据")).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: /重试/ })).toBeInTheDocument();
+    // 不能把"加载失败"渲染成"没有符合条件的题目"
+    expect(
+      screen.queryByText("没有找到符合条件的题目。"),
+    ).not.toBeInTheDocument();
   });
 
   // ----------------------------------------------------------

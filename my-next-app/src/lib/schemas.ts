@@ -51,6 +51,7 @@ export const QuestionSchema = BaseQuestionSchema.refine(
         if (!Array.isArray(answers) || answers.length < 1) return false;
         return answers.every((a) => isMatch(a));
       } catch {
+        // audit-allow: 参考答案不是合法 JSON 数组时按"答案不匹配"处理，交由 refine 报错
         return false;
       }
     }
@@ -116,6 +117,7 @@ export const PracticeSessionRowSchema = z.object({
       if (!str) return [];
       return JSON.parse(str);
     } catch (_e) {
+      // audit-allow: 已通过 ctx.addIssue 上报为校验失败，返回空数组仅为满足 transform 的返回类型
       ctx.addIssue({
         code: z.ZodIssueCode.custom,
         message: "Invalid JSON in questions_json",
@@ -155,6 +157,7 @@ export const QuestionRowSchema = BaseQuestionSchema.extend({
         const parsed = JSON.parse(str);
         return Array.isArray(parsed) ? parsed : [];
       } catch {
+        // audit-allow: options/tags 列可能是历史脏数据，非法 JSON 按空列表处理，避免整行读取失败
         return [];
       }
     })
@@ -166,6 +169,7 @@ export const QuestionRowSchema = BaseQuestionSchema.extend({
         const parsed = JSON.parse(str);
         return Array.isArray(parsed) ? parsed : [];
       } catch {
+        // audit-allow: options/tags 列可能是历史脏数据，非法 JSON 按空列表处理，避免整行读取失败
         return [];
       }
     })

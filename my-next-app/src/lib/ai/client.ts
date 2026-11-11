@@ -117,7 +117,8 @@ export async function generateStructuredData<T>(
             ? jsonModeError.message
             : String(jsonModeError),
         );
-        // 继续到 fallback
+        // 显式进入外层 catch 的文本降级分支（与原先落到末尾 throw 的路径等价）
+        throw new Error("Using fallback mode");
       }
     }
 

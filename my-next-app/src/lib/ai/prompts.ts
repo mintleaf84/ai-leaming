@@ -178,6 +178,7 @@ export async function getPromptFromDb(key: string): Promise<string | null> {
     });
     return row ? row.template : null;
   } catch (_e) {
+    // audit-allow: prompt 模板表是可选数据源，查不到时调用方回退到内置默认模板
     return null;
   }
 }

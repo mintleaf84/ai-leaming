@@ -22,6 +22,8 @@ export function getModel(
     compatibility: "compatible", // 强制开启兼容模式，解决非官方接口的路径识别问题
   } as Parameters<typeof createOpenAI>[0]);
 
+  const notInitialized = `无法初始化 AI 模型: ${modelName}。请检查 SDK 版本或配置。`;
+
   try {
     // 显式指定使用 Chat 协议 (解决 /v1/responses 404 问题的关键)
     // 在新版 SDK 中，针对自定义 BaseURL，使用 .chat() 能确保走 /chat/completions 路径
@@ -38,7 +40,8 @@ export function getModel(
     }
   } catch (err) {
     log.warn("[AiProvider] 初始化模型失败，尝试路径不匹配:", err);
+    throw new Error(notInitialized);
   }
 
-  throw new Error(`无法初始化 AI 模型: ${modelName}。请检查 SDK 版本或配置。`);
+  throw new Error(notInitialized);
 }

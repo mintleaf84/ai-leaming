@@ -77,26 +77,26 @@ node scripts/audit-catches.cjs    # 与基线比对（CI 已接入）
 
 已清（`rethrow` / `degraded` / `allowed` 三态之一，不再出现在 `--list`）：
 
-| 模块                                              | 处理方式                                                                           |
-| ------------------------------------------------- | ---------------------------------------------------------------------------------- |
-| `src/lib/api/routes/admin.ts`（除第 392 行 1 处） | 鉴权失败转 401（`isAuthError`）、回滚失败保留备份、可选元信息 `audit-allow`        |
-| `src/lib/db/**`（`index` / `seed-data`）          | 向量扩展缺失降级为"无 RAG"、种子逐行幂等补齐                                       |
-| `src/server/actions/ai.ts`、`chat.ts`             | 补 `log.warn` / `audit-allow`（`admin.ts` / `note.ts` / `prompts.ts` 仍各剩 1 处） |
-| `src/lib/ai/**`                                   | 缓存失败显式 `return`、批量插入失败 `continue`、sentinel 改显式 throw              |
-| `src/lib/schemas.ts`                              | JSON 脏数据 `audit-allow`（不加 logger，避免进客户端 bundle）                      |
+| 模块                                              | 处理方式                                                                                                                  |
+| ------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------- |
+| `src/lib/api/routes/admin.ts`（除第 392 行 1 处） | 鉴权失败转 401（`isAuthError`）、回滚失败保留备份、可选元信息 `audit-allow`                                               |
+| `src/lib/db/**`（`index` / `seed-data`）          | 向量扩展缺失降级为"无 RAG"、种子逐行幂等补齐                                                                              |
+| `src/server/actions/ai.ts`、`chat.ts`             | 补 `log.warn` / `audit-allow`（`admin.ts` / `note.ts` / `prompts.ts` 仍各剩 1 处）                                        |
+| `src/lib/ai/**`                                   | 缓存失败显式 `return`、批量插入失败 `continue`、sentinel 改显式 throw                                                     |
+| `src/lib/schemas.ts`                              | JSON 脏数据 `audit-allow`（不加 logger，避免进客户端 bundle）                                                             |
 | `src/lib/services/**`、`src/lib/import/**`        | 补日志 + 显式 `return`/`continue`；2 处改复用 `safeParseJson` 让 catch 直接消失；`finally` 内与远距离回落用 `audit-allow` |
 
 剩余（按目录，共 135，数字取自审计输出）：
 
-| 模块 | 数量 | 状态 |
-| --- | --- | --- |
-| 客户端 `src/app/admin/**` | 40 | 待处理（后台失败必须可见） |
-| 客户端业务页面与组件 | 70 | 待处理（`app/questions` 8、`components/history` 7、`app/wrong-book` 6、`app/knowledge` 5、`app/practice` 4、`components/textbooks` 4、`hooks/chat` 3、`components/editor` 3、`app/notes` 3、`app/mindmap` 3、`app/api` 3、其余 21） |
-| 服务端 `src/lib/api/routes/**` | 9 | 待处理（含 `admin.ts` 1 处） |
-| 服务端 `src/lib/admin/**` | 4 | 待处理 |
-| 服务端 `src/server/actions/**` | 3 | 待处理（`admin.ts` / `note.ts` / `prompts.ts`） |
-| 服务端零散 | 9 | 待处理（`utils` 2 / `practice` 2 / `db` 2 / `auth` 1 / `middleware.ts` 1 / `instrumentation.ts` 1） |
-| 合计 | **135** | |
+| 模块                           | 数量    | 状态                                                                                                                                                                                                                                |
+| ------------------------------ | ------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| 客户端 `src/app/admin/**`      | 40      | 待处理（后台失败必须可见）                                                                                                                                                                                                          |
+| 客户端业务页面与组件           | 70      | 待处理（`app/questions` 8、`components/history` 7、`app/wrong-book` 6、`app/knowledge` 5、`app/practice` 4、`components/textbooks` 4、`hooks/chat` 3、`components/editor` 3、`app/notes` 3、`app/mindmap` 3、`app/api` 3、其余 21） |
+| 服务端 `src/lib/api/routes/**` | 9       | 待处理（含 `admin.ts` 1 处）                                                                                                                                                                                                        |
+| 服务端 `src/lib/admin/**`      | 4       | 待处理                                                                                                                                                                                                                              |
+| 服务端 `src/server/actions/**` | 3       | 待处理（`admin.ts` / `note.ts` / `prompts.ts`）                                                                                                                                                                                     |
+| 服务端零散                     | 9       | 待处理（`utils` 2 / `practice` 2 / `db` 2 / `auth` 1 / `middleware.ts` 1 / `instrumentation.ts` 1）                                                                                                                                 |
+| 合计                           | **135** |                                                                                                                                                                                                                                     |
 
 ## 已知语义债（catch 形态已标注，但业务语义未改）
 

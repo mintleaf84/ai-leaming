@@ -136,7 +136,8 @@ export const questionFolderService = {
           const res = await drizzleDb.run(
             sql`INSERT OR IGNORE INTO question_folder_items (folder_id, question_id) VALUES (${folderId}, ${qId})`,
           );
-          if ((res as unknown as { rowsAffected?: number }).rowsAffected) added++;
+          if ((res as unknown as { rowsAffected?: number }).rowsAffected)
+            added++;
         } catch (error) {
           // 单题写入失败（重复/约束冲突）不影响其余题目，记录后跳过
           console.warn(

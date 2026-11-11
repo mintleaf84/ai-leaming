@@ -50,10 +50,11 @@
 - [x] 新增 `no-console` lint 规则（服务端目录 warning + 棘轮；`logger.ts`/测试/脚本豁免）
 - [x] `docs/error-handling.md` 落盘（三形态判定流程 + 台账 + 分类进度）
 - [x] 修正被机械替换误伤的示例字符串（`welcome.ts` 里的代码高亮样例）
-- [x] **catch 形态机械化审计**：`scripts/audit-catches.cjs` 把每个 catch 归类为
-      `rethrow`(20) / `degraded`(88) / `fallback`(60) / `logged`(71) / `silent`(89)，
-      基线写入 `docs/catch-audit.baseline.json`，CI 中 `logged/fallback/silent` 任一增加即失败
-- [ ] 分批把 `logged`(71) / `silent`(89) 降级为 `degraded` 或 `rethrow`（台账已就位）
+- [x] **catch 形态机械化审计**（TypeScript AST 解析）：`scripts/audit-catches.cjs` 把每个 catch 归类为
+      `rethrow` 23 / `degraded` 89 / `fallback` 58 / `logged` 71 / `silent` 88（共 329），
+      基线写入 `docs/catch-audit.baseline.json`（218 个标记项签名），
+      CI 中 `logged/fallback/silent` 出现**新增签名**即失败（修好一个、新增一个不会互相抵消）
+- [ ] 长尾治理：分批把 `logged`(71) / `silent`(88) 降级为 `degraded` 或 `rethrow`（与基线同源；`npm run audit:catches -- --list` 可直接定位，门禁保证只降不升、；确需放宽时用 `npm run audit:catches -- --update --allow-increase "<理由>"` 更新基线，并把理由写进 PR）
 - [ ] 前端 `ErrorBoundary` + 统一 `sonner` 错误提示；loading/empty/error 三态复用 `ui/empty-state.tsx`
 - 验收：`npm run lint:ci` 通过且 `no-console` 计数为 0（以 lint 结果为准，不用 grep —— `welcome.ts` 的代码示例字符串里应保留 `console.log`）；`docs/error-handling.md` 落盘
 - **零计数覆盖范围**：`src/lib/**/*.ts`、`src/server/**/*.ts`、`src/app/**/*.ts`、`src/app/{page,layout}.tsx`、`src/instrumentation.ts`
@@ -64,7 +65,7 @@
 - [x] **生产代码 `as any`：6 → 3**（`subscription`/`config`/`history` 改为精确的 `Parameters<typeof fn>[0]`；剩余 3 处为 ReportView 的 recharts 类型不兼容 + 2 个测试工具）
 - [x] ESLint `no-explicit-any` 在测试/mock 目录关闭（那里的 `as any` 是构造非法输入的正当手段），生产代码仍受约束
 - 结论：warning 总数 **536 → 82**（`no-explicit-any` 449 → 1）
-- [ ] `noUncheckedIndexedAccess` 单独评估
+- [x] `noUncheckedIndexedAccess` 已评估：当前开启会产生数百处索引断言噪音，收益低于维护成本，暂不启用（记录于此）
 
 ## P4 前端专项（4h）
 

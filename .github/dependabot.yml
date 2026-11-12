@@ -17,11 +17,9 @@ updates:
       security:
         applies-to: "security-updates"
         patterns: ["*"]
-      # 其余依赖（含生产依赖的 major）合并成**一个** PR 逐条评估，
-      # 既不放大 PR 数量，也不给任何 ignore 规则留下"挡住安全修复"的口子
-      all-version-updates:
+      minor-and-patch:
         applies-to: "version-updates"
-        patterns: ["*"]
+        update-types: ["minor", "patch"]
     # 只忽略**开发工具链**的 major 版本更新（跨大版本必改 API，必须人工评估）。
     # 刻意不写 `dependency-name: "*"`：生产依赖的 major 安全修复不能被挡住。
     ignore:
@@ -40,6 +38,35 @@ updates:
       - dependency-name: "typescript"
         update-types: ["version-update:semver-major"]
       - dependency-name: "@tiptap/*"
+        update-types: ["version-update:semver-major"]
+      # 以下 major 需要单独适配，等专门的技术升级 PR；安全更新不受 ignore 影响
+      - dependency-name: "ai"
+        update-types: ["version-update:semver-major"]
+      - dependency-name: "@ai-sdk/*"
+        update-types: ["version-update:semver-major"]
+      - dependency-name: "framer-motion"
+        update-types: ["version-update:semver-major"]
+      - dependency-name: "lucide-react"
+        update-types: ["version-update:semver-major"]
+      - dependency-name: "better-sqlite3"
+        update-types: ["version-update:semver-major"]
+      - dependency-name: "@types/better-sqlite3"
+        update-types: ["version-update:semver-major"]
+      - dependency-name: "ts-fsrs"
+        update-types: ["version-update:semver-major"]
+      - dependency-name: "unpdf"
+        update-types: ["version-update:semver-major"]
+      - dependency-name: "msw"
+        update-types: ["version-update:semver-major"]
+      - dependency-name: "@types/node"
+        update-types: ["version-update:semver-major"]
+      - dependency-name: "@vitejs/plugin-react"
+        update-types: ["version-update:semver-major"]
+      - dependency-name: "react"
+        update-types: ["version-update:semver-major"]
+      - dependency-name: "react-dom"
+        update-types: ["version-update:semver-major"]
+      - dependency-name: "@testing-library/jest-dom"
         update-types: ["version-update:semver-major"]
 
   # CI 里用到的 action

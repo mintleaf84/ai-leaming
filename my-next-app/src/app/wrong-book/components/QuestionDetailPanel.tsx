@@ -111,9 +111,9 @@ export function QuestionDetailPanel({
                   key={idx}
                   className={`flex items-center gap-2 text-sm p-2 rounded ${
                     isCorrect
-                      ? "bg-green-500/10 text-green-700 dark:text-green-400"
+                      ? "bg-success-muted text-foreground"
                       : isUserWrong
-                        ? "bg-red-500/10 text-red-700 dark:text-red-400 line-through"
+                        ? "bg-destructive/10 text-foreground line-through"
                         : "text-foreground"
                   }`}
                 >
@@ -122,10 +122,10 @@ export function QuestionDetailPanel({
                   </span>
                   <span>{opt}</span>
                   {isCorrect && (
-                    <CheckCircle2 className="w-4 h-4 ml-auto text-green-600" />
+                    <CheckCircle2 className="w-4 h-4 ml-auto text-success" />
                   )}
                   {isUserWrong && (
-                    <X className="w-4 h-4 ml-auto text-red-600" />
+                    <X className="w-4 h-4 ml-auto text-destructive" />
                   )}
                 </div>
               );
@@ -140,7 +140,7 @@ export function QuestionDetailPanel({
               <Lightbulb className="w-3 h-3" />
               解析
             </h4>
-            <p className="text-sm text-foreground bg-amber-500/10 p-3 rounded-lg">
+            <p className="text-sm text-foreground bg-warning-muted p-3 rounded-lg">
               {detail.explanation}
             </p>
           </div>
@@ -157,7 +157,7 @@ export function QuestionDetailPanel({
               <div className="bg-card rounded-lg p-3 border border-border/50 space-y-2">
                 <div className="flex justify-between items-center text-xs">
                   <span className="text-muted-foreground flex items-center gap-1.5">
-                    <Zap className="w-3 h-3 text-amber-500" /> 题目难度
+                    <Zap className="w-3 h-3 text-warning" /> 题目难度
                   </span>
                   <span className="font-medium text-foreground">
                     {detail.srs.difficulty.toFixed(1)}
@@ -165,7 +165,7 @@ export function QuestionDetailPanel({
                 </div>
                 <div className="flex justify-between items-center text-xs">
                   <span className="text-muted-foreground flex items-center gap-1.5">
-                    <Brain className="w-3 h-3 text-blue-500" /> 记忆稳定性
+                    <Brain className="w-3 h-3 text-info" /> 记忆稳定性
                   </span>
                   <span className="font-medium text-foreground">
                     {detail.srs.stability.toFixed(1)} 天
@@ -173,7 +173,7 @@ export function QuestionDetailPanel({
                 </div>
                 <div className="flex justify-between items-center text-xs">
                   <span className="text-muted-foreground flex items-center gap-1.5">
-                    <Calendar className="w-3 h-3 text-emerald-500" /> 下次复习
+                    <Calendar className="w-3 h-3 text-success" /> 下次复习
                   </span>
                   <span className="font-medium text-foreground">
                     {formatBeijingDate(detail.srs.due_date, "YYYY/M/D")}
@@ -205,7 +205,7 @@ export function QuestionDetailPanel({
                         className="flex items-center gap-2 text-xs"
                       >
                         <span
-                          className={`w-2 h-2 rounded-full ${log.isCorrect ? "bg-green-500" : "bg-red-500"}`}
+                          className={`w-2 h-2 rounded-full ${log.isCorrect ? "bg-success" : "bg-destructive"}`}
                         />
                         <span className="text-muted-foreground">
                           {log.timestamp
@@ -214,7 +214,7 @@ export function QuestionDetailPanel({
                         </span>
                         <span
                           className={
-                            log.isCorrect ? "text-green-600" : "text-red-600"
+                            log.isCorrect ? "text-success" : "text-destructive"
                           }
                         >
                           {log.isCorrect ? "正确" : "错误"}
@@ -241,7 +241,7 @@ export function QuestionDetailPanel({
             <Button
               size="sm"
               variant="default"
-              className="flex-1 bg-green-600 hover:bg-green-700"
+              className="flex-1 bg-success text-success-foreground hover:bg-success hover:brightness-95"
               onClick={onMarkAsMastered}
             >
               <CheckCircle2 className="w-4 h-4 mr-1" />

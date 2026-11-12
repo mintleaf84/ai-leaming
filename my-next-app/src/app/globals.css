@@ -126,7 +126,7 @@
   /* 语义状态色：success ≈ emerald-600 / warning ≈ amber-600 / info ≈ blue-600
      muted = 浅底徽章与提示块的面色（对应现有 bg-emerald-50~100、bg-amber-500/10、bg-blue-50）
      取色依据：现存 1183 处硬编码里 text-emerald-600、text-amber-600、text-blue-600 为各色最高频文字色阶 */
-  --success: oklch(0.596 0.145 163.225);
+  --success: oklch(0.508 0.118 165.612); /* emerald-700：12-14px 文本压白底 4.6:1，过 AA */
   --success-foreground: oklch(1 0 0);
   --success-muted: oklch(0.95 0.052 163.051);
   --warning: oklch(0.666 0.179 58.318);
@@ -188,8 +188,8 @@
   --muted-foreground: oklch(0.65 0 0);
   --accent: oklch(0.22 0 0);
   --accent-foreground: oklch(0.93 0 0);
-  --destructive: oklch(0.5 0.18 25);
-  --destructive-foreground: oklch(0.98 0 0);
+  --destructive: oklch(0.704 0.191 22.216); /* dark 用 red-500 级，深色底上的小字才够亮 */
+  --destructive-foreground: oklch(0.17 0 0);
 
   /* 语义状态色（深色）：取 400 级做文字/描边——存量深色写法即 dark:text-emerald-400 / -amber-400 / -blue-400（共 37 处）
      实底时前景压深到 oklch(0.17)，muted 取 950 级对应现有 dark:bg-*-900/30 */
@@ -256,7 +256,7 @@
   --destructive: oklch(0.6 0.2 25);
   --destructive-foreground: oklch(0.98 0 0);
   /* 语义状态色：与 :root 同值（zhuoyu 亮色） */
-  --success: oklch(0.596 0.145 163.225);
+  --success: oklch(0.508 0.118 165.612); /* emerald-700：12-14px 文本压白底 4.6:1，过 AA */
   --success-foreground: oklch(1 0 0);
   --success-muted: oklch(0.95 0.052 163.051);
   --warning: oklch(0.666 0.179 58.318);
@@ -311,8 +311,8 @@
   --accent: oklch(0.22 0 0);
   --accent-foreground: oklch(0.93 0 0);
 
-  --destructive: oklch(0.5 0.18 25);
-  --destructive-foreground: oklch(0.98 0 0);
+  --destructive: oklch(0.704 0.191 22.216); /* dark 用 red-500 级，深色底上的小字才够亮 */
+  --destructive-foreground: oklch(0.17 0 0);
   /* 语义状态色：与 .dark 同值（zhuoyu 暗色） */
   --success: oklch(0.765 0.177 163.223);
   --success-foreground: oklch(0.17 0 0);

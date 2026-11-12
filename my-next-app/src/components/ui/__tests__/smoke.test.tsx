@@ -48,7 +48,12 @@ describe("Base UI Components Smoke Tests", () => {
       expect(screen.getByText("Error")).toHaveClass("bg-destructive");
 
       rerender(<Badge variant="success">Pass</Badge>);
-      expect(screen.getByText("Pass")).toHaveClass("bg-green-500/10");
+      expect(screen.getByText("Pass")).toHaveClass("bg-success-muted");
+      expect(screen.getByText("Pass")).toHaveClass("text-foreground");
+
+      rerender(<Badge variant="warning">Careful</Badge>);
+      expect(screen.getByText("Careful")).toHaveClass("bg-warning-muted");
+      expect(screen.getByText("Careful")).toHaveClass("text-foreground");
     });
   });
 });

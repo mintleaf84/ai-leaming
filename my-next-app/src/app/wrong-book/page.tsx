@@ -178,7 +178,7 @@ export default function WrongBookPage() {
                   <Calendar className="w-4 h-4" />
                   本周新增
                 </div>
-                <div className="text-2xl font-bold text-amber-600">
+                <div className="text-2xl font-bold text-warning">
                   {stats.recent}
                 </div>
               </div>
@@ -187,7 +187,7 @@ export default function WrongBookPage() {
                   <Flame className="w-4 h-4" />
                   高频错题
                 </div>
-                <div className="text-2xl font-bold text-red-600">
+                <div className="text-2xl font-bold text-destructive">
                   {stats.frequent}
                 </div>
               </div>
@@ -230,7 +230,7 @@ export default function WrongBookPage() {
                 disabled={isRandomLoading}
               >
                 <Button
-                  className="w-full h-14 text-lg bg-red-600 hover:bg-red-700 shadow-lg shadow-red-500/20"
+                  className="w-full h-14 text-lg bg-destructive text-destructive-foreground hover:bg-destructive hover:brightness-95 shadow-lg shadow-destructive/20"
                   disabled={isRandomLoading}
                 >
                   <Play
@@ -255,8 +255,8 @@ export default function WrongBookPage() {
         {/* 无错题状态 */}
         {stats.total === 0 ? (
           <div className="bg-card rounded-2xl p-12 text-center border border-dashed border-border">
-            <div className="mx-auto w-16 h-16 bg-green-500/10 rounded-full flex items-center justify-center mb-4">
-              <CheckCircle2 className="text-green-500 h-8 w-8" />
+            <div className="mx-auto w-16 h-16 bg-success-muted rounded-full flex items-center justify-center mb-4">
+              <CheckCircle2 className="text-success h-8 w-8" />
             </div>
             <h3 className="text-lg font-medium text-foreground">
               太棒了！暂无错题
@@ -491,8 +491,8 @@ export default function WrongBookPage() {
                       className="bg-card rounded-xl p-4 border shadow-sm"
                     >
                       <div className="flex items-start gap-3">
-                        <div className="w-8 h-8 rounded-full bg-green-500/10 flex items-center justify-center shrink-0">
-                          <CheckCircle2 className="w-4 h-4 text-green-600" />
+                        <div className="w-8 h-8 rounded-full bg-success-muted flex items-center justify-center shrink-0">
+                          <CheckCircle2 className="w-4 h-4 text-success" />
                         </div>
                         <div className="flex-1">
                           <div className="text-sm text-foreground leading-relaxed line-clamp-2 mb-2">
@@ -508,8 +508,9 @@ export default function WrongBookPage() {
                                 {tag}
                               </Badge>
                             ))}
-                            <span className="text-xs text-green-600 flex items-center gap-1">
-                              <CheckCircle2 className="w-3 h-3" />
+                            {/* 12px 彩色小字过不了 AA：文字用前景色，语义交给图标 */}
+                            <span className="text-xs text-foreground flex items-center gap-1">
+                              <CheckCircle2 className="w-3 h-3 text-success" />
                               掌握于{" "}
                               {q.lastWrongAt
                                 ? new Date(q.lastWrongAt).toLocaleDateString()

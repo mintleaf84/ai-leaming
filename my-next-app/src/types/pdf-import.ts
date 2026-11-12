@@ -28,5 +28,7 @@ export interface PdfImportPreview {
 export interface PdfImportResult {
   success: boolean;
   importedCount: number;
+  /** 因已存在（或批内重复）而跳过的题目数 —— 幂等重试时 importedCount 为 0、此项等于总数 */
+  skippedCount: number;
   message: string;
 }

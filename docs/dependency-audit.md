@@ -59,8 +59,11 @@
 
 - npm（`/my-next-app`）每周一次，安全更新单独分组，最多 3 个 PR；
 - GitHub Actions 每月一次；
-- `@tiptap/*` 的 **major** 版本更新忽略（安全更新不受影响）；`novel` 不 ignore ——
-  它一旦发布安全修复必须能被自动提上来。
+- **只忽略开发工具链的 major 版本更新**（`jsdom` / `vitest` / `@vitest/*` / `eslint*` /
+  `@typescript-eslint/*` / `typescript` / `@tiptap/*`）；其余依赖（含生产依赖的 major）
+  合并成**一个**分组 PR，逐条评估，不靠 ignore 压制。
+- `novel` 不 ignore —— 它一旦发布安全修复必须能被自动提上来。
+- Actions 的 major 升级（`checkout 4→7` 这类）统一人工评估。
 - `open-pull-requests-limit: 3` 只作用于版本更新，安全更新 PR 不计入该上限。
 
 升级 PR 的验收与普通 PR 一致：四闸 + `npm audit --audit-level=high` + 视觉/布局护栏。

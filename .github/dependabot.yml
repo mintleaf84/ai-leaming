@@ -17,12 +17,28 @@ updates:
       security:
         applies-to: "security-updates"
         patterns: ["*"]
-      minor-and-patch:
+      # 其余依赖（含生产依赖的 major）合并成**一个** PR 逐条评估，
+      # 既不放大 PR 数量，也不给任何 ignore 规则留下"挡住安全修复"的口子
+      all-version-updates:
         applies-to: "version-updates"
-        update-types: ["minor", "patch"]
-    # 不 ignore `novel`：它一旦发安全修复必须能被自动提上来
-    # （novel 绑 tiptap 2.x，功能升级仍靠人工评估）
+        patterns: ["*"]
+    # 只忽略**开发工具链**的 major 版本更新（跨大版本必改 API，必须人工评估）。
+    # 刻意不写 `dependency-name: "*"`：生产依赖的 major 安全修复不能被挡住。
     ignore:
+      - dependency-name: "jsdom"
+        update-types: ["version-update:semver-major"]
+      - dependency-name: "vitest"
+        update-types: ["version-update:semver-major"]
+      - dependency-name: "@vitest/*"
+        update-types: ["version-update:semver-major"]
+      - dependency-name: "eslint"
+        update-types: ["version-update:semver-major"]
+      - dependency-name: "eslint-config-next"
+        update-types: ["version-update:semver-major"]
+      - dependency-name: "@typescript-eslint/*"
+        update-types: ["version-update:semver-major"]
+      - dependency-name: "typescript"
+        update-types: ["version-update:semver-major"]
       - dependency-name: "@tiptap/*"
         update-types: ["version-update:semver-major"]
 
@@ -32,5 +48,15 @@ updates:
     schedule:
       interval: "monthly"
     labels: ["deps", "ci"]
+    open-pull-requests-limit: 1
     commit-message:
       prefix: "chore(ci)"
+    groups:
+      actions:
+        applies-to: "version-updates"
+        patterns: ["*"]
+    # action 的 major 升级（checkout 4→7 这类）没有安全语义，统一人工评估；
+    # 若某个 action 真的出安全公告，以安全更新形式进来，人工处理
+    ignore:
+      - dependency-name: "*"
+        update-types: ["version-update:semver-major"]

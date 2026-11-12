@@ -152,7 +152,8 @@ export default function SettingsPage() {
       </div>
 
       {/* Right Content Area */}
-      <div className="flex-1 p-6 md:p-12 pb-24 overflow-y-auto">
+      {/* 移动端 pb 要留到悬浮保存按钮之上（按钮抬到 6.5rem 后约 176px 高）；桌面端恢复 md:p-12 */}
+      <div className="flex-1 p-6 md:p-12 pb-48 md:pb-12 overflow-y-auto">
         <div className="max-w-2xl mx-auto space-y-8">
           {/* Header for Mobile */}
           <div className="md:hidden mb-6">
@@ -283,7 +284,9 @@ export default function SettingsPage() {
 
           {/* Save Button (Floating) - Only for AI Tab as specific setting */}
           {activeTab === "ai" && (
-            <div className="fixed bottom-6 right-6 md:absolute md:bottom-0 md:right-0">
+            // 移动端要抬到 MobileNav 之上：导航占底部 24–88px，原来的 bottom-6(24px)
+            // 正好被压在导航下面（点不到）。6.5rem = 24px 导航下边距 + 64px 导航高 + 16px 间隙。
+            <div className="fixed bottom-[calc(6.5rem+env(safe-area-inset-bottom))] right-6 md:absolute md:bottom-0 md:right-0">
               <Button
                 onClick={handleSave}
                 disabled={isSaving}

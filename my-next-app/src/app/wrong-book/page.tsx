@@ -4,6 +4,7 @@ import React, { useState } from "react";
 import Link from "next/link";
 import {
   BookOpen,
+  ChevronLeft,
   AlertTriangle,
   Play,
   Flame,
@@ -22,6 +23,7 @@ import {
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import { usePageBottomBar } from "@/components/layout/bottom-bar-slot";
 import { useWrongBookController } from "./hooks/use-wrong-book-controller";
 import { WrongQuestionCard } from "./components/WrongQuestionCard";
 import { TagTreeView } from "./components/TagTreeView";
@@ -103,6 +105,15 @@ export default function WrongBookPage() {
     loadData,
   } = useWrongBookController();
 
+  // 底部操作栏只在「有题 + 列表/文件夹视图 + 已选中题目」时渲染。
+  // 这里把同一个布尔登记给 MobileNav：未选中题目时页面其实没有底栏，
+  // 主导航必须留着（否则用户在这个页面既没有操作条也没有导航）。
+  const hasSelectionBar =
+    questions.length > 0 &&
+    (viewMode === "list" || viewMode === "folder") &&
+    selectedIds.size > 0;
+  usePageBottomBar(hasSelectionBar);
+
   // 加载状态
   if (isLoading) {
     return <WrongBookSkeleton />;
@@ -110,9 +121,18 @@ export default function WrongBookPage() {
 
   return (
     <div className="min-h-screen bg-background">
-      <main className="container mx-auto max-w-4xl px-4 py-8 pb-32">
+      <main className="container mx-auto max-w-4xl px-4 py-8 pb-48 sm:pb-32">
         {/* 头部 */}
         <div className="mb-8">
+          {/* 本页自带固定操作栏，移动端不渲染 MobileNav（docs/ui-system.md §6），
+              因此需要自己的返回入口 */}
+          <Link
+            href="/practice"
+            className="mb-3 inline-flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground transition-colors"
+          >
+            <ChevronLeft className="h-4 w-4" />
+            返回练习
+          </Link>
           <div className="flex items-center justify-between">
             <h1 className="text-3xl font-bold text-foreground flex items-center gap-3">
               <BookOpen className="text-red-500 h-8 w-8" />
@@ -515,42 +535,41 @@ export default function WrongBookPage() {
         )}
       </main>
 
-      {/* 底部操作栏 */}
-      {questions.length > 0 &&
-        (viewMode === "list" || viewMode === "folder") &&
-        selectedIds.size > 0 && (
-          <div className="fixed bottom-0 left-0 right-0 p-4 bg-background/80 backdrop-blur-sm border-t">
-            <div className="container mx-auto max-w-4xl flex gap-3">
-              <div className="flex-1">
-                <QuestionCountPicker
-                  totalCount={selectedIds.size}
-                  onConfirm={(count) => startPractice(undefined, count)}
+      {/* 底部操作栏（条件与 usePageBottomBar 的登记口径必须一致） */}
+      {hasSelectionBar && (
+        <div className="fixed bottom-0 left-0 right-0 p-3 pb-[calc(0.75rem+env(safe-area-inset-bottom))] bg-background/80 backdrop-blur-sm border-t sm:p-4">
+          {/* 375px 下两个按钮并排会溢出（主按钮文案长 + 次按钮 178px），窄屏改为纵向堆叠 */}
+          <div className="container mx-auto max-w-4xl flex flex-col-reverse gap-2 sm:flex-row sm:gap-3">
+            <div className="flex-1">
+              <QuestionCountPicker
+                totalCount={selectedIds.size}
+                onConfirm={(count) => startPractice(undefined, count)}
+                disabled={isCreating}
+              >
+                <Button
+                  size="lg"
+                  className="w-full h-14 text-lg"
                   disabled={isCreating}
                 >
-                  <Button
-                    size="lg"
-                    className="w-full h-14 text-lg"
-                    disabled={isCreating}
-                  >
-                    {isCreating
-                      ? "正在创建..."
-                      : `开始练习选中的 ${selectedIds.size} 道错题`}
-                    <Play className="w-5 h-5 ml-2" />
-                  </Button>
-                </QuestionCountPicker>
-              </div>
-              <Button
-                size="lg"
-                variant="outline"
-                className="h-14 px-6 text-base"
-                onClick={openAddToFolderDialog}
-              >
-                <FolderPlus className="w-5 h-5 mr-2" />
-                添加到文件夹
-              </Button>
+                  {isCreating
+                    ? "正在创建..."
+                    : `开始练习选中的 ${selectedIds.size} 道错题`}
+                  <Play className="w-5 h-5 ml-2" />
+                </Button>
+              </QuestionCountPicker>
             </div>
+            <Button
+              size="lg"
+              variant="outline"
+              className="h-14 px-6 text-base"
+              onClick={openAddToFolderDialog}
+            >
+              <FolderPlus className="w-5 h-5 mr-2" />
+              添加到文件夹
+            </Button>
           </div>
-        )}
+        </div>
+      )}
 
       {/* 推荐相似题弹窗 */}
       <RecommendedQuestionsDialog

@@ -244,6 +244,29 @@ async function globalSetup(_config: FullConfig) {
 
   console.log("[E2E Setup] 已创建 10 道测试题目");
 
+  // 3.2.1 给 testuser 造一条「答错记录」——
+  // 错题本（/wrong-book）只查 practice_logs.is_correct = 0，
+  // 没有这条记录时该页是空态，布局护栏里「选中题目后」的重叠断言会永远 skip。
+  const seededQuestion = db
+    .prepare("SELECT id FROM questions ORDER BY id LIMIT 1")
+    .get() as { id: number } | undefined;
+  const seededUser = db
+    .prepare("SELECT id FROM users WHERE username = ?")
+    .get("testuser") as { id: number } | undefined;
+  if (seededQuestion && seededUser) {
+    db.prepare(
+      `INSERT OR IGNORE INTO practice_sessions (id, user_id, session_name, total_questions, correct_count)
+       VALUES (?, ?, ?, 1, 0)`,
+    ).run("e2e-wrong-session", seededUser.id, "E2E 错题会话");
+    db.prepare(
+      `INSERT OR IGNORE INTO practice_logs (session_id, user_id, question_id, user_answer, is_correct)
+       VALUES (?, ?, ?, 'B', 0)`,
+    ).run("e2e-wrong-session", seededUser.id, seededQuestion.id);
+    console.log("[E2E Setup] 已为 testuser 造 1 条答错记录（错题本用例依赖）");
+  } else {
+    console.warn("[E2E Setup] 未能造答错记录：缺少测试用户或题目");
+  }
+
   // 3.3 创建 AI 配置（Mock 配置）
   db.prepare(
     `

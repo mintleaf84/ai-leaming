@@ -186,18 +186,21 @@
 
 - 用例：`my-next-app/tests/visual/layout-guard.spec.ts`；判定逻辑：`my-next-app/tests/visual/layout-helpers.ts`。
 - 运行：`cd my-next-app && npx playwright test --project=layout-guard`（CI 里是 `ui-guard` job）。
-- 覆盖：9 条路由（`/login` + 8 个登录后主路由）× 3 档视口（375×812 / 768×1024 / 1440×900）= 27 条用例。
+- 覆盖：10 条路由（`/login` + 9 个登录后主路由）× 3 档视口（375×812 / 768×1024 / 1440×900）= 30 条用例，外加 1 条 `/wrong-book`「选中题目后」专项（其操作栏是条件渲染，默认状态不渲染，只用 375 视口跑一次）。
 
-| 本文条目            | 生效视口         | 判定                                                                                                                                                                | 当前状态                                                                                               |
-| ------------------- | ---------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------ |
-| §6.1 无横向滚动     | 375 / 768 / 1440 | `documentElement.scrollWidth <= innerWidth`；**375 额外**：`<main>` 内部不得横向滚动、且无元素越出视口右边缘（`overflow-x:hidden` 裁剪 > 8px 或裁到表格同样算越界） | 阻断（前置还校验 HTTP 状态码、整页崩溃文案 / `role=alert`、非骨架态，见 §8）                           |
-| §6.2 可点 ≥ 44×44   | 仅 375           | `button, a[href], [role="button"]` 中可见元素任一边 < 44px 即计入                                                                                                   | **报告模式**：写 Playwright annotation（`mobile-tap-target`）+ `console.warn` 汇总，**不影响用例结果** |
-| §6.3 主操作在拇指区 | —                | 无法自动判定                                                                                                                                                        | 人工评审                                                                                               |
-| §6.4 表单不双列     | 仅 375           | `form` 及其后代中 `display:grid` 且列数 ≥ 2 的容器                                                                                                                  | **报告模式**：annotation（`mobile-form-columns`）+ `console.warn`                                      |
+| 本文条目            | 生效视口         | 判定                                                                                                                                                                                                                            | 当前状态                                                                                               |
+| ------------------- | ---------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------ |
+| §6.1 无横向滚动     | 375 / 768 / 1440 | `documentElement.scrollWidth <= innerWidth`；**375 额外**：`<main>` 内部不得横向滚动、且无元素越出视口右边缘（`overflow-x:hidden` 裁剪 > 8px 或裁到表格同样算越界）                                                             | 阻断（前置还校验 HTTP 状态码、整页崩溃文案 / `role=alert`、非骨架态，见 §8）                           |
+| §6.2 可点 ≥ 44×44   | 仅 375           | `button, a[href], [role="button"]` 中可见元素任一边 < 44px 即计入                                                                                                                                                               | **报告模式**：写 Playwright annotation（`mobile-tap-target`）+ `console.warn` 汇总，**不影响用例结果** |
+| §6.3 主操作在拇指区 | —                | 无法自动判定                                                                                                                                                                                                                    | 人工评审                                                                                               |
+| §6.4 表单不双列     | 仅 375           | `form` 及其后代中 `display:grid` 且列数 ≥ 2 的容器                                                                                                                                                                              | **报告模式**：annotation（`mobile-form-columns`）+ `console.warn`                                      |
+| §6 单条固定底栏     | 仅 375           | `position:fixed` 且整个元素落在视口底部 160px 窗口内（`rect.top >= innerHeight - 160 && rect.bottom <= innerHeight`）的可见元素两两求交，面积 > 0 即失败（排除装饰层、`pre/code/.prose` 内部、铺满整屏的遮罩、互为祖先/后代者） | 阻断                                                                                                   |
 
 报告模式的原因：存量页面几乎必然不达标，先积累清单；等 §8 的溢出存量清完，再把这两条转成阻断。
 
-存量冲突：`MobileNav` 在 `bottom-[calc(1.5rem+safe-area)]`、高 `h-16`，与 `wrong-book`、`practice/setup` 的 `fixed bottom-0` 操作条重叠。规则：一个移动端页面最多一条固定底栏；有页面级固定操作条的路由不渲染 `MobileNav`（现仅 `/login`、`/register` 生效，需按此扩展白名单）。
+存量冲突：`MobileNav` 在 `bottom-[calc(1.5rem+safe-area)]`、高 `h-16`，与 `wrong-book`、`practice/setup` 的 `fixed bottom-0` 操作条重叠。规则：一个移动端页面最多一条固定底栏；**页面自带固定操作条时 `MobileNav` 让位**。
+
+实现方式是「页面自己登记」而不是路由白名单：`src/components/layout/bottom-bar-slot.tsx` 提供 `BottomBarProvider` / `usePageBottomBar(active)` / `useHasPageBottomBar()`（计数式，支持同页多处声明与条件渲染），`MobileNav` 在计数 > 0 时返回 `null`；`/login`、`/register` 另有一条独立判定。新增带底栏的页面只要 `usePageBottomBar(<底栏是否渲染>)`，不要再往 `MobileNav` 里加路由判断 —— `/wrong-book` 的操作栏只在选中题目时出现，白名单会把它的空状态也一起砍掉导航。
 
 ## 7. 禁止清单
 
@@ -244,7 +247,7 @@ expect(await page.locator("main").first().innerText()).not.toBe("");
 expect(probe.oversize).toEqual([]);
 ```
 
-> 状态：spec 与 CI job（`ui-guard`）已接入，27 条用例。`ui-guard` 现阶段 `continue-on-error`（存量溢出未清完），
+> 状态：spec 与 CI job（`ui-guard`）已接入，31 条用例。`ui-guard` 现阶段 `continue-on-error`（存量溢出未清完），
 > 清完存量后改为阻断。§6.2 可点尺寸与 §6.4 表单双列目前是**报告模式**（annotation + `console.warn`），
 > 不计入用例结果。在那之前，改动布局的 PR 仍需在本地/CI 报告里确认无新增溢出。
 

@@ -90,14 +90,14 @@ node scripts/audit-catches.cjs    # 与基线比对（CI 已接入）
 
 剩余：**0**。全部 218 个初始标记项已归入 `rethrow`（39）、`degraded`（222）或 `allowed`（52）。
 
-| 批次 | 范围 | 处数 |
-| --- | --- | --- |
-| 1 | `routes/admin.ts` + `db` + `server/actions` | 30 |
-| 2 | `lib/ai/**` + `lib/schemas.ts` | 18 |
-| 3 | `lib/services/**` + `lib/import/**` | 25 |
-| 4 | `lib/api/routes` / `lib/admin` / 零散（`db`/`auth`/`utils`/`middleware`/`instrumentation`） | 25 |
-| 5 | `src/app/admin/**` | 40 |
-| 6 | 业务页面与组件（练习/题目/错题本/笔记/思维导图/OCR/组件库/hooks） | 70 |
+| 批次 | 范围                                                                                        | 处数 |
+| ---- | ------------------------------------------------------------------------------------------- | ---- |
+| 1    | `routes/admin.ts` + `db` + `server/actions`                                                 | 30   |
+| 2    | `lib/ai/**` + `lib/schemas.ts`                                                              | 18   |
+| 3    | `lib/services/**` + `lib/import/**`                                                         | 25   |
+| 4    | `lib/api/routes` / `lib/admin` / 零散（`db`/`auth`/`utils`/`middleware`/`instrumentation`） | 25   |
+| 5    | `src/app/admin/**`                                                                          | 40   |
+| 6    | 业务页面与组件（练习/题目/错题本/笔记/思维导图/OCR/组件库/hooks）                           | 70   |
 
 门禁从此是"零容忍"：`npm run audit:catches` 只要出现一个 `logged`/`fallback`/`silent` 就失败；
 确需例外时写 `// audit-allow: <理由>`（必须位于 catch 块首条语句之前，且该 catch 本身已有日志或显式降级）。

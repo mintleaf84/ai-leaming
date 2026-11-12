@@ -1,12 +1,16 @@
 import type { Page } from "@playwright/test";
 import { expect } from "@playwright/test";
 import { test } from "../e2e/fixtures";
-import { assertLayoutIntact, gotoAndSettle } from "./layout-helpers";
+import {
+  assertLayoutIntact,
+  gotoAndSettle,
+  SKELETON_SELECTOR,
+} from "./layout-helpers";
 
 /**
  * 布局护栏用例（不依赖截图基线）
  *
- * 覆盖：/login（公开）+ 9 个登录后主路由 + 3 个管理端路由 × 3 个视口 = 39 条用例，
+ * 覆盖：/login（公开）+ 9 个登录后主路由 + 5 个管理端路由 × 3 个视口 = 45 条用例，
  * 外加 1 条 /wrong-book「选中题目后」的专项（其底部操作栏是条件渲染的，
  * 默认状态不渲染，重叠断言会空跑）。
  *
@@ -46,9 +50,15 @@ const AUTH_ROUTES = [
 
 /**
  * 需要管理员登录态的路由（复用 tests/e2e/fixtures 的 adminPage）。
- * 三条都真实存在：src/app/admin/{page,users/page,plans/page}.tsx。
+ * 五条都真实存在：src/app/admin/{page,users/page,plans/page,questions/page,ai/page}.tsx。
  */
-const ADMIN_ROUTES = ["/admin", "/admin/users", "/admin/plans"] as const;
+const ADMIN_ROUTES = [
+  "/admin",
+  "/admin/users",
+  "/admin/plans",
+  "/admin/questions",
+  "/admin/ai",
+] as const;
 
 /**
  * 导航结果的降级信息：networkidle 超时与骨架未清空**不在这里失败**，
@@ -115,6 +125,123 @@ async function waitForAdminUsersList(
     .toBe("ready");
 }
 
+/**
+ * 通用就绪判据：可见骨架清零。
+ *
+ * /admin/questions 与 /admin/ai 在 CI 空库下可能直接是空态（没有行可数），
+ * 所以不能套用 /admin/users 那种「共 N 位注册用户」的内容信号 —— 那会把
+ * 空态页判成"永远没就绪"。骨架消失即代表 Skeleton → 真实内容/空态 已完成切换，
+ * 与具体页面内容解耦；采样时若仍有骨架，assertLayoutIntact 还会再兜一次。
+ */
+async function waitForNoSkeleton(
+  page: Page,
+  route: string,
+  viewport: string,
+): Promise<void> {
+  await expect
+    .poll(
+      async () =>
+        page.evaluate(
+          (selector) =>
+            Array.from(document.querySelectorAll(selector)).filter((el) => {
+              const rect = el.getBoundingClientRect();
+              if (rect.width <= 0 || rect.height <= 0) return false;
+              const cs = getComputedStyle(el);
+              return cs.display !== "none" && cs.visibility !== "hidden";
+            }).length,
+          SKELETON_SELECTOR,
+        ),
+      {
+        timeout: 15_000,
+        message: `路由 ${route} @ ${viewport}：15s 内仍有可见骨架，此刻采样的会是加载态`,
+      },
+    )
+    .toBe(0);
+}
+
+/**
+ * /admin/questions 的就绪判据（三选一，任一成立即就绪）：
+ *   1. `admin-questions-table` 里有可见行；
+ *   2. `admin-questions-cards` 下有可见卡片；
+ *   3. 页面出现「没有找到符合条件的题目」空态。
+ *
+ * 只等「骨架消失」不够：加载结束后停在错误态/空态也一样没有骨架，
+ * 那样断言测的是错误页。这里把三态写清楚，并对错误态直接失败、带出文案。
+ */
+async function waitForAdminQuestionsList(
+  page: Page,
+  viewport: string,
+): Promise<void> {
+  const where = `路由 /admin/questions @ ${viewport}`;
+  const items = page.locator(
+    '[data-testid="admin-questions-table"] tbody tr, [data-testid="admin-questions-cards"] > li',
+  );
+  const emptyState = page.getByText("没有找到符合条件的题目");
+  const errorState = page.getByText("题目列表加载失败");
+
+  await expect
+    .poll(
+      async () => {
+        if ((await errorState.count()) > 0) {
+          const text = await errorState
+            .first()
+            .innerText()
+            .catch(() => "题目列表加载失败");
+          return `error: ${text}`;
+        }
+        // 另一套投影是 display:none，rect 高度为 0，只数可见的
+        const visibleItems = await items
+          .evaluateAll(
+            (els) =>
+              els.filter((el) => {
+                const rect = el.getBoundingClientRect();
+                if (rect.width <= 0 || rect.height <= 0) return false;
+                const cs = getComputedStyle(el);
+                return cs.display !== "none" && cs.visibility !== "hidden";
+              }).length,
+          )
+          .catch(() => 0);
+        if (visibleItems > 0) return "ready";
+        if ((await emptyState.count()) > 0) return "ready";
+        return "pending";
+      },
+      {
+        timeout: 20_000,
+        message:
+          `${where}：没等到表格行/卡片，也没等到空态（仍是加载态），` +
+          `或页面渲染了「题目列表加载失败」错误态`,
+      },
+    )
+    .toBe("ready");
+}
+
+/**
+ * /admin/ai 的「模型路由」在第二个标签页里，默认标签是「服务商配置」。
+ * 切过去之后等 RouteManager 的两套投影之一真正挂载（加载完才渲染，loading 期是骨架）。
+ */
+async function waitForAiRoutesPanel(
+  page: Page,
+  viewport: string,
+): Promise<void> {
+  const region = page.locator(
+    '[data-testid="admin-ai-routes-table"], [data-testid="admin-ai-routes-cards"]',
+  );
+
+  await expect
+    .poll(
+      async () =>
+        region.evaluateAll(
+          (els) =>
+            els.filter((el) => el.getBoundingClientRect().height > 0).length,
+        ),
+      {
+        timeout: 15_000,
+        message: `路由 /admin/ai（模型路由标签）@ ${viewport}：没等到表格或卡片挂载 —— 仍是加载态，或标签切换没生效`,
+      },
+    )
+    .toBeGreaterThan(0);
+}
+
 for (const vp of VIEWPORTS) {
   test.describe(`视口 ${vp.id}`, () => {
     test.use({ viewport: { width: vp.width, height: vp.height } });
@@ -139,11 +266,28 @@ for (const vp of VIEWPORTS) {
       // 管理端用 adminPage fixture（testadmin 登录态），断言逻辑与前台完全一致
       test(`管理端路由 ${route}`, async ({ adminPage: page }) => {
         await visit(page, route, vp.id);
-        // 列表页先确认渲染出了真实行/卡片，避免把骨架或错误态当页面来测量
         if (route === "/admin/users") {
+          // 列表页先确认渲染出了真实行/卡片，避免把骨架或错误态当页面来测量
           await waitForAdminUsersList(page, vp.id);
+        } else {
+          // 题目/路由两页可能是空态，用与内容无关的「骨架消失」判据
+          await waitForNoSkeleton(page, route, vp.id);
+          if (route === "/admin/questions") {
+            // 骨架消失也可能是停在错误态：再确认三态里的「行/卡片/空态」之一
+            await waitForAdminQuestionsList(page, vp.id);
+          }
         }
         await assertLayoutIntact(page, route, vp.id);
+
+        // /admin/ai 默认停在「服务商配置」标签，模型路由表在第二个标签里：
+        // 不切过去就永远测不到那张表的双投影，等于护栏空跑
+        if (route === "/admin/ai") {
+          await page.getByRole("button", { name: /模型路由/ }).click();
+          await waitForAiRoutesPanel(page, vp.id);
+          await waitForNoSkeleton(page, `${route}（模型路由标签）`, vp.id);
+          // 路径没变，仍传 /admin/ai：assertLayoutIntact 会校验 pathname 与路由一致
+          await assertLayoutIntact(page, route, vp.id);
+        }
       });
     }
 

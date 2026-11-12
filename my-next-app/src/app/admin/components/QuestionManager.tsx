@@ -20,7 +20,6 @@ import {
   ChevronRight,
   ChevronsLeft,
   ChevronsRight,
-  Loader2,
   Edit,
 } from "lucide-react";
 import { toast } from "sonner";
@@ -33,6 +32,17 @@ import {
 } from "@/components/ui/select";
 import { Checkbox } from "@/components/ui/checkbox";
 import { ErrorState } from "@/components/ui/error-state";
+import { EmptyState } from "@/components/ui/empty-state";
+import { Skeleton } from "@/components/ui/skeleton";
+import { Badge } from "@/components/ui/badge";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
 import { EditQuestionDialog } from "./EditQuestionDialog";
 
 export function QuestionManager() {
@@ -222,6 +232,37 @@ export function QuestionManager() {
 
   const totalPages = Math.ceil(total / pageSize);
 
+  // 当前页是否全选：表格表头与卡片顶部「全选当前页」共用同一判据
+  const allSelected =
+    questions.length > 0 && selectedIds.length === questions.length;
+
+  // 维度中文名：表格与卡片共用（避免两套投影口径漂移）
+  const getDimensionLabel = (dimension?: string) =>
+    dimension === "knowledge"
+      ? "识记"
+      : dimension === "application"
+        ? "应用"
+        : "理解";
+
+  // 标签组：表格与卡片共用同一份渲染（最多 2 个 + 余量）
+  const renderTags = (q: Question) => (
+    <div className="flex flex-wrap gap-1">
+      {q.tags?.slice(0, 2).map((t: string) => (
+        <span
+          key={t}
+          className="px-2 py-0.5 bg-blue-500/10 text-blue-600 dark:text-blue-400 text-xs rounded-full whitespace-nowrap"
+        >
+          {t.split("/").pop()}
+        </span>
+      ))}
+      {q.tags?.length > 2 && (
+        <span className="text-xs text-muted-foreground px-1">
+          +{q.tags.length - 2}
+        </span>
+      )}
+    </div>
+  );
+
   return (
     <div className="space-y-4">
       {/* 顶部工具栏 */}
@@ -252,7 +293,7 @@ export function QuestionManager() {
               }))
             }
           >
-            <SelectTrigger className="w-[120px]">
+            <SelectTrigger className="h-11 w-[120px] sm:h-9">
               <SelectValue placeholder="维度" />
             </SelectTrigger>
             <SelectContent>
@@ -263,14 +304,23 @@ export function QuestionManager() {
             </SelectContent>
           </Select>
 
-          <Button variant="secondary" onClick={handleSearch}>
+          <Button
+            variant="secondary"
+            className="h-11 sm:h-9"
+            onClick={handleSearch}
+          >
             筛选
           </Button>
         </div>
 
-        <div className="flex gap-2 w-full md:w-auto">
+        <div className="flex flex-wrap gap-2 w-full md:w-auto">
           {selectedIds.length > 0 && (
-            <Button variant="destructive" size="sm" onClick={handleBatchDelete}>
+            <Button
+              variant="destructive"
+              size="sm"
+              className="h-11 sm:h-9"
+              onClick={handleBatchDelete}
+            >
               <Trash2 className="w-4 h-4 mr-2" />
               删除 ({selectedIds.length})
             </Button>
@@ -287,6 +337,7 @@ export function QuestionManager() {
             <Button
               variant="outline"
               size="sm"
+              className="h-11 sm:h-9"
               onClick={() => fileInputRef.current?.click()}
             >
               <Upload className="w-4 h-4 mr-2" />
@@ -297,6 +348,7 @@ export function QuestionManager() {
           <Button
             variant="outline"
             size="sm"
+            className="h-11 sm:h-9"
             onClick={handleExportCsv}
             title="根据当前筛选条件导出全量数据"
           >
@@ -306,138 +358,198 @@ export function QuestionManager() {
         </div>
       </div>
 
-      {/* 题目列表表格 */}
+      {/* 题目列表：lg 起表格 / < lg 卡片（ui-system.md §4 双投影） */}
       <div className="bg-card rounded-xl shadow-sm border border-border overflow-hidden">
-        <div className="overflow-x-auto">
-          <table className="w-full text-sm text-left">
-            <thead className="bg-muted/50 text-muted-foreground uppercase font-medium border-b border-border">
-              <tr>
-                <th className="p-4 w-12">
-                  <Checkbox
-                    checked={
-                      questions.length > 0 &&
-                      selectedIds.length === questions.length
-                    }
-                    onCheckedChange={toggleSelectAll}
-                  />
-                </th>
-                <th className="p-4 w-16">ID</th>
-                <th className="p-4">题干内容</th>
-                <th className="p-4 w-32">标签</th>
-                <th className="p-4 w-24">维度</th>
-                <th className="p-4 w-24 text-right">操作</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-border">
-              {loading ? (
-                <tr>
-                  <td colSpan={6} className="h-32 text-center">
-                    <Loader2 className="w-6 h-6 animate-spin mx-auto text-muted-foreground" />
-                  </td>
-                </tr>
-              ) : loadError ? (
-                <tr>
-                  <td colSpan={6}>
-                    <ErrorState
-                      title="题目列表加载失败"
-                      description={loadError}
-                      onRetry={() => void loadQuestions()}
-                    />
-                  </td>
-                </tr>
-              ) : questions.length === 0 ? (
-                <tr>
-                  <td
-                    colSpan={6}
-                    className="p-8 text-center text-muted-foreground"
-                  >
-                    没有找到符合条件的题目。
-                  </td>
-                </tr>
-              ) : (
-                questions.map((q) => (
-                  <tr
-                    key={q.id}
-                    className="hover:bg-muted/50 transition-colors group"
-                  >
-                    <td className="p-4">
+        {loading ? (
+          <div className="p-4">
+            {/* 表格骨架：lg 起 */}
+            <div className="hidden space-y-2 lg:block">
+              {Array.from({ length: 5 }).map((_, i) => (
+                <Skeleton
+                  key={`table-skeleton-${i}`}
+                  className="h-12 w-full rounded-lg"
+                />
+              ))}
+            </div>
+            {/* 列表骨架：< lg */}
+            <div className="space-y-2 lg:hidden">
+              {Array.from({ length: 3 }).map((_, i) => (
+                <Skeleton
+                  key={`card-skeleton-${i}`}
+                  className="h-20 w-full rounded-lg"
+                />
+              ))}
+            </div>
+          </div>
+        ) : loadError ? (
+          <ErrorState
+            title="题目列表加载失败"
+            description={loadError}
+            onRetry={() => void loadQuestions()}
+          />
+        ) : questions.length === 0 ? (
+          <EmptyState
+            title="没有找到符合条件的题目"
+            description="换个筛选条件，或先导入题库数据"
+          />
+        ) : (
+          <>
+            {/*
+              桌面（lg 起）：6 列宽表格在 768 档放不下（admin 侧边栏占 16rem），
+              所以与 /admin/users 一致，把表格下限收紧到 lg，md 档走卡片。
+            */}
+            <div
+              className="hidden lg:block"
+              data-testid="admin-questions-table"
+            >
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead className="w-12">
                       <Checkbox
+                        aria-label="全选当前页题目"
+                        checked={allSelected}
+                        onCheckedChange={toggleSelectAll}
+                      />
+                    </TableHead>
+                    <TableHead className="w-16">ID</TableHead>
+                    <TableHead>题干内容</TableHead>
+                    <TableHead className="w-32">标签</TableHead>
+                    <TableHead className="w-24">维度</TableHead>
+                    <TableHead className="w-24 text-right">操作</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {questions.map((q) => (
+                    <TableRow key={q.id} className="group">
+                      <TableCell>
+                        <Checkbox
+                          aria-label={`选择题目 #${q.id}`}
+                          checked={selectedIds.includes(q.id)}
+                          onCheckedChange={() => toggleSelect(q.id)}
+                        />
+                      </TableCell>
+                      <TableCell className="text-muted-foreground">
+                        #{q.id}
+                      </TableCell>
+                      <TableCell
+                        className="max-w-lg truncate font-medium text-foreground cursor-pointer hover:text-primary"
+                        title="点击编辑"
+                        onClick={() => setEditingQuestion(q)}
+                      >
+                        <div className="line-clamp-2">{q.content}</div>
+                      </TableCell>
+                      <TableCell>{renderTags(q)}</TableCell>
+                      <TableCell className="text-xs text-muted-foreground">
+                        {getDimensionLabel(q.dimension)}
+                      </TableCell>
+                      <TableCell className="text-right">
+                        <div className="flex items-center justify-end gap-1 transition-opacity lg:opacity-0 lg:group-hover:opacity-100">
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            onClick={() => setEditingQuestion(q)}
+                            className="h-8 w-8 text-muted-foreground hover:text-primary"
+                            title="编辑"
+                            aria-label={`编辑题目 #${q.id}`}
+                          >
+                            <Edit className="w-4 h-4" />
+                          </Button>
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            onClick={() => handleDelete(q.id)}
+                            className="h-8 w-8 text-muted-foreground hover:text-destructive"
+                            title="删除"
+                            aria-label={`删除题目 #${q.id}`}
+                          >
+                            <Trash2 className="w-4 h-4" />
+                          </Button>
+                        </div>
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            </div>
+
+            {/* 移动/平板（< lg）：卡片投影，字段 = 题干 2 行 + 标签/维度 + 操作。
+                表头的全选框在窄屏被隐藏，这里补一行「全选当前页」，
+                勾选态与表格表头共用 allSelected 同一判据。 */}
+            <div className="p-4 lg:hidden">
+              <label className="mb-2 flex min-h-11 items-center gap-2 text-sm text-muted-foreground">
+                <Checkbox
+                  aria-label="全选当前页题目"
+                  checked={allSelected}
+                  onCheckedChange={toggleSelectAll}
+                />
+                全选当前页
+              </label>
+              <ul className="space-y-2" data-testid="admin-questions-cards">
+                {questions.map((q) => (
+                  <li key={q.id} className="rounded-lg border bg-card p-4">
+                    <div className="flex items-start gap-2">
+                      <Checkbox
+                        aria-label={`选择题目 #${q.id}`}
+                        className="mt-1"
                         checked={selectedIds.includes(q.id)}
                         onCheckedChange={() => toggleSelect(q.id)}
                       />
-                    </td>
-                    <td className="p-4 text-muted-foreground">#{q.id}</td>
-                    <td
-                      className="p-4 font-medium text-foreground max-w-lg truncate cursor-pointer hover:text-blue-600"
-                      title="点击编辑"
-                      onClick={() => setEditingQuestion(q)}
-                    >
-                      <div className="line-clamp-2">{q.content}</div>
-                    </td>
-                    <td className="p-4">
-                      <div className="flex flex-wrap gap-1">
-                        {q.tags?.slice(0, 2).map((t: string) => (
-                          <span
-                            key={t}
-                            className="px-2 py-0.5 bg-blue-500/10 text-blue-600 dark:text-blue-400 text-xs rounded-full whitespace-nowrap"
-                          >
-                            {t.split("/").pop()}
+                      <div className="min-w-0 flex-1">
+                        <div className="flex flex-wrap items-center gap-2">
+                          <span className="text-xs text-muted-foreground">
+                            #{q.id}
                           </span>
-                        ))}
-                        {q.tags?.length > 2 && (
-                          <span className="text-xs text-muted-foreground px-1">
-                            +{q.tags.length - 2}
-                          </span>
-                        )}
+                          <Badge variant="secondary">
+                            {getDimensionLabel(q.dimension)}
+                          </Badge>
+                        </div>
+                        <p className="mt-1 line-clamp-2 text-sm leading-6">
+                          {q.content}
+                        </p>
+                        <div className="mt-2">{renderTags(q)}</div>
                       </div>
-                    </td>
-                    <td className="p-4 text-muted-foreground text-xs">
-                      {q.dimension === "knowledge"
-                        ? "识记"
-                        : q.dimension === "application"
-                          ? "应用"
-                          : "理解"}
-                    </td>
-                    <td className="p-4 text-right">
-                      <div className="flex items-center justify-end gap-1 sm:opacity-0 sm:group-hover:opacity-100 transition-opacity">
-                        <Button
-                          variant="ghost"
-                          size="icon"
-                          onClick={() => setEditingQuestion(q)}
-                          className="h-8 w-8 text-muted-foreground hover:text-primary"
-                          title="编辑"
-                        >
-                          <Edit className="w-4 h-4" />
-                        </Button>
-                        <Button
-                          variant="ghost"
-                          size="icon"
-                          onClick={() => handleDelete(q.id)}
-                          className="h-8 w-8 text-muted-foreground hover:text-destructive"
-                          title="删除"
-                        >
-                          <Trash2 className="w-4 h-4" />
-                        </Button>
-                      </div>
-                    </td>
-                  </tr>
-                ))
-              )}
-            </tbody>
-          </table>
-        </div>
+                    </div>
+
+                    <div className="mt-3 flex items-center gap-2">
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        className="h-11 flex-1"
+                        onClick={() => setEditingQuestion(q)}
+                      >
+                        <Edit className="mr-1 h-4 w-4" />
+                        编辑
+                      </Button>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        className="h-11 w-11 shrink-0 text-destructive hover:bg-destructive/10"
+                        aria-label={`删除题目 #${q.id}`}
+                        onClick={() => handleDelete(q.id)}
+                      >
+                        <Trash2 className="h-4 w-4" />
+                      </Button>
+                    </div>
+                  </li>
+                ))}
+              </ul>
+            </div>
+          </>
+        )}
 
         <div className="p-4 border-t border-border flex flex-col sm:flex-row justify-between items-center gap-4 bg-muted/20">
           <div className="text-sm text-muted-foreground">
             共 {total} 条记录，当前第 {page}/{totalPages || 1} 页
           </div>
 
-          <div className="flex items-center gap-2">
+          <div className="flex flex-wrap items-center justify-center gap-2">
             <Button
               variant="outline"
               size="icon"
-              className="h-8 w-8"
+              className="h-11 w-11 sm:h-8 sm:w-8"
               disabled={page === 1}
+              aria-label="第一页"
               onClick={() => setPage(1)}
             >
               <ChevronsLeft className="h-4 w-4" />
@@ -445,8 +557,9 @@ export function QuestionManager() {
             <Button
               variant="outline"
               size="icon"
-              className="h-8 w-8"
+              className="h-11 w-11 sm:h-8 sm:w-8"
               disabled={page === 1}
+              aria-label="上一页"
               onClick={() => setPage((p) => Math.max(1, p - 1))}
             >
               <ChevronLeft className="h-4 w-4" />
@@ -459,8 +572,9 @@ export function QuestionManager() {
             <Button
               variant="outline"
               size="icon"
-              className="h-8 w-8"
+              className="h-11 w-11 sm:h-8 sm:w-8"
               disabled={page >= totalPages}
+              aria-label="下一页"
               onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
             >
               <ChevronRight className="h-4 w-4" />
@@ -468,8 +582,9 @@ export function QuestionManager() {
             <Button
               variant="outline"
               size="icon"
-              className="h-8 w-8"
+              className="h-11 w-11 sm:h-8 sm:w-8"
               disabled={page >= totalPages}
+              aria-label="最后一页"
               onClick={() => setPage(totalPages)}
             >
               <ChevronsRight className="h-4 w-4" />
@@ -484,7 +599,10 @@ export function QuestionManager() {
                 setPage(1);
               }}
             >
-              <SelectTrigger className="h-8 w-[70px]">
+              <SelectTrigger
+                className="h-11 w-[70px] sm:h-8"
+                aria-label="每页条数"
+              >
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>

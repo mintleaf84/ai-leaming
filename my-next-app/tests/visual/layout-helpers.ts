@@ -47,7 +47,7 @@ const SANCTIONED_SCROLL_SELECTOR = "pre, code, .prose, [data-scroll-ok]";
  * 刻意**不**用 `.animate-pulse`：该 class 也被「思考中光标 / 计时器暂停 /
  * 侧边栏用户骨架」等合法用途使用，拿来判骨架会稳定误报。
  */
-const SKELETON_SELECTOR = '.shimmer, [data-slot="skeleton"]';
+export const SKELETON_SELECTOR = '.shimmer, [data-slot="skeleton"]';
 
 /** 移动端最小可点尺寸（ui-system.md §6.2） */
 const MIN_TAP_TARGET = 44;

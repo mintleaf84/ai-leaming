@@ -95,6 +95,22 @@ import { QuestionManager } from "../QuestionManager";
 // ============================================================
 
 describe("QuestionManager 集成测试", () => {
+  /**
+   * 桌面表格投影。
+   *
+   * 同一份题目现在渲染两套投影（`lg:` 表格 / `< lg` 卡片）：
+   * jsdom 不应用 Tailwind 的 `lg:hidden`，全局查询会同时命中两份文本
+   * （"Found multiple elements"）。所有列表内容断言都收敛到表格投影上。
+   */
+  function tableRegion() {
+    return within(screen.getByTestId("admin-questions-table"));
+  }
+
+  /** 等桌面表格投影挂载（表格只在有数据时渲染，出现即代表首屏数据已到） */
+  async function waitForQuestionsTable() {
+    await screen.findByTestId("admin-questions-table");
+  }
+
   beforeEach(() => {
     vi.clearAllMocks();
 
@@ -129,8 +145,9 @@ describe("QuestionManager 集成测试", () => {
     render(<QuestionManager />);
 
     // 数据加载后，题目内容应出现在列表中
-    expect(await screen.findByText("第一道测试题")).toBeInTheDocument();
-    expect(await screen.findByText("第二道测试题")).toBeInTheDocument();
+    await waitForQuestionsTable();
+    expect(tableRegion().getByText("第一道测试题")).toBeInTheDocument();
+    expect(tableRegion().getByText("第二道测试题")).toBeInTheDocument();
 
     // 确认分页统计信息正确显示
     expect(screen.getByText(/共 2 条记录/)).toBeInTheDocument();
@@ -147,7 +164,7 @@ describe("QuestionManager 集成测试", () => {
 
     // 等待加载完成后检查空状态
     expect(
-      await screen.findByText("没有找到符合条件的题目。"),
+      await screen.findByText("没有找到符合条件的题目"),
     ).toBeInTheDocument();
   });
 
@@ -166,7 +183,7 @@ describe("QuestionManager 集成测试", () => {
     expect(screen.getByRole("button", { name: /重试/ })).toBeInTheDocument();
     // 不能把"加载失败"渲染成"没有符合条件的题目"
     expect(
-      screen.queryByText("没有找到符合条件的题目。"),
+      screen.queryByText("没有找到符合条件的题目"),
     ).not.toBeInTheDocument();
   });
 
@@ -202,7 +219,7 @@ describe("QuestionManager 集成测试", () => {
     render(<QuestionManager />);
 
     // 等待初始数据加载完成
-    await screen.findByText("第一道测试题");
+    await waitForQuestionsTable();
 
     // 在搜索框输入关键字
     const searchInput = screen.getByPlaceholderText("搜索题干内容...");
@@ -213,9 +230,9 @@ describe("QuestionManager 集成测试", () => {
 
     // 等待列表以新数据重新渲染
     await waitFor(() => {
-      expect(screen.queryByText("第二道测试题")).not.toBeInTheDocument();
+      expect(tableRegion().queryByText("第二道测试题")).not.toBeInTheDocument();
     });
-    expect(screen.getByText("第一道测试题")).toBeInTheDocument();
+    expect(tableRegion().getByText("第一道测试题")).toBeInTheDocument();
     expect(screen.getByText(/共 1 条记录/)).toBeInTheDocument();
   });
 
@@ -251,7 +268,7 @@ describe("QuestionManager 集成测试", () => {
     render(<QuestionManager />);
 
     // 等待初始数据加载
-    await screen.findByText("第一道测试题");
+    await waitForQuestionsTable();
 
     // 找到第一行的删除按钮（title="删除"）并点击
     const deleteButtons = screen.getAllByTitle("删除");
@@ -290,7 +307,7 @@ describe("QuestionManager 集成测试", () => {
     vi.spyOn(window, "confirm").mockReturnValue(true);
 
     render(<QuestionManager />);
-    await screen.findByText("第一道测试题");
+    await waitForQuestionsTable();
 
     // 初始状态：批量删除按钮不可见
     expect(
@@ -315,7 +332,7 @@ describe("QuestionManager 集成测试", () => {
     });
 
     // 列表应清空（显示空状态）
-    await screen.findByText("没有找到符合条件的题目。");
+    await screen.findByText("没有找到符合条件的题目");
   });
 
   // ----------------------------------------------------------
@@ -341,10 +358,10 @@ describe("QuestionManager 集成测试", () => {
       );
 
     render(<QuestionManager />);
-    await screen.findByText("第一道测试题");
+    await waitForQuestionsTable();
 
     // 点击题干文字（触发编辑弹窗）
-    await user.click(screen.getByText("第一道测试题"));
+    await user.click(tableRegion().getByText("第一道测试题"));
 
     // 等待弹窗打开（标题格式："编辑题目 #1"）
     const dialog = await screen.findByRole("dialog");
@@ -375,7 +392,7 @@ describe("QuestionManager 集成测试", () => {
     );
 
     render(<QuestionManager />);
-    await screen.findByText("第一道测试题");
+    await waitForQuestionsTable();
 
     const searchInput = screen.getByPlaceholderText("搜索题干内容...");
     await user.type(searchInput, "测试{Enter}");
@@ -416,7 +433,8 @@ describe("QuestionManager 集成测试", () => {
     document.body.style.pointerEvents = "";
 
     render(<QuestionManager />);
-    await screen.findByText("题目 1");
+    await waitForQuestionsTable();
+    expect(tableRegion().getByText("题目 1")).toBeInTheDocument();
 
     // 分页信息应显示"共 25 条记录，当前第 1/2 页"
     const paginationInfo = screen.getByText(/当前第 1\/2 页/);
@@ -438,7 +456,9 @@ describe("QuestionManager 集成测试", () => {
     fire.click(nextPageBtn);
 
     // 等待第二页数据加载完成
-    await screen.findByText("题目 21（第2页）");
+    await waitFor(() => {
+      expect(tableRegion().getByText("题目 21（第2页）")).toBeInTheDocument();
+    });
 
     // getQuestionsAction 应被调用两次（初始 + 分页）
     expect(mockGetQuestions).toHaveBeenCalledTimes(2);
@@ -484,10 +504,10 @@ describe("QuestionManager 集成测试", () => {
       );
 
     render(<QuestionManager />);
-    await screen.findByText("中国的首都是_____。");
+    await waitForQuestionsTable();
 
     // 点击题干打开编辑弹窗
-    await user.click(screen.getByText("中国的首都是_____。"));
+    await user.click(tableRegion().getByText("中国的首都是_____。"));
 
     const dialog = await screen.findByRole("dialog");
 

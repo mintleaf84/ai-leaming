@@ -1,8 +1,8 @@
 {
-  "updatedAt": "2026-11-11",
+  "updatedAt": "2026-11-12",
   "counts": {
-    "rethrow": 39,
-    "degraded": 222,
+    "rethrow": 41,
+    "degraded": 221,
     "allowed": 52,
     "fallback": 0,
     "logged": 0,

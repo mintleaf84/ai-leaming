@@ -83,7 +83,7 @@ export function WrongQuestionCard({
                 {tag}
               </Badge>
             ))}
-            <span className="text-xs text-red-500 flex items-center gap-1">
+            <span className="text-xs text-destructive flex items-center gap-1">
               <AlertTriangle className="w-3 h-3" />
               答错 {question.wrongCount} 次
             </span>
@@ -94,22 +94,23 @@ export function WrongQuestionCard({
             {question.srs && (
               <div className="flex items-center gap-2 border-l pl-2 ml-1">
                 <span
-                  className="text-[10px] text-blue-500 flex items-center gap-1 font-medium"
+                  className="text-[10px] text-info flex items-center gap-1 font-medium"
                   title="记忆稳定性 (天)"
                 >
                   <Brain className="w-3 h-3" />
                   {question.srs.stability.toFixed(1)}d
                 </span>
+                {/* 10px 彩色小字：文字用前景色且提到 text-xs，颜色留给图标 */}
                 <span
-                  className="text-[10px] text-amber-500 flex items-center gap-1 font-medium"
+                  className="text-xs text-foreground flex items-center gap-1 font-medium"
                   title="题目难度"
                 >
-                  <Zap className="w-3 h-3" />
+                  <Zap className="w-3 h-3 text-warning" />
                   {question.srs.difficulty.toFixed(1)}
                 </span>
               </div>
             )}
-            <span className="text-xs text-blue-500 ml-auto font-medium">
+            <span className="text-xs text-info ml-auto font-medium">
               {isExpanded ? "收起详情" : "查看详情"}
             </span>
           </div>

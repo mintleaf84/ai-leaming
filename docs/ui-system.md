@@ -283,7 +283,7 @@ expect(probe.oversize).toEqual([]);
 2. 深色下存量是 `dark:bg-green-900/30`，用 `bg-success/10` 会得到 400 级 @10%（偏亮偏艳），`bg-success-muted` 才是 950 级那种"深底带一点绿"的观感；
 3. `/10` 是叠色，落在渐变卡、`bg-muted` 条纹或图片上会呈现不同结果，`-muted` 是确定的实色，截图对比时不会因底层漂移。
 
-**对比度（诚实记录，避免后面误用）**：亮色下 `text-success` 对白底 3.65:1、`text-warning` 3.20:1、`text-info` 5.25:1；深色下三者对 `#0a0a0a` 均 > 9:1。也就是说亮色的 success/warning **只达到图形/大字门槛（3:1）**——这是存量 `text-emerald-600` / `text-amber-600` 本来就有的水平，不是本次引入的回归。因此：图标、描边、左侧竖条、≥19px 粗体可以用 `text-success` / `text-warning`；12–14px 的彩色小字如要过 AA(4.5:1)，把字色换成 `text-foreground`，颜色留在图标或 2px 竖条上。实底同理：`text-success-foreground` / `text-warning-foreground` 在亮色是白色，压 `bg-success`/`bg-warning` 分别只有 3.65:1 / 3.20:1（与存量 `bg-green-600 text-white` 完全一致，不算回退），实底按钮只承载图标或 ≥19px 粗体标签；`bg-info` + 白字是 5.25:1，可以放正文级文字。
+**对比度（诚实记录，避免后面误用）**：亮色下 `text-success` 对白底 4.6:1（已按 AA 从 emerald-600 提到 700）、`text-warning` 3.20:1、`text-info` 5.25:1；深色下三者对 `#0a0a0a` 均 > 9:1。`text-warning` 对白底仍是 3.2:1，**只达到图形/大字门槛（3:1）**——这是存量 `text-emerald-600` / `text-amber-600` 本来就有的水平，不是本次引入的回归。因此：图标、描边、左侧竖条、≥19px 粗体可以用 `text-success` / `text-warning`；12–14px 的彩色小字如要过 AA(4.5:1)，把字色换成 `text-foreground`，颜色留在图标或 2px 竖条上。实底同理：`text-success-foreground` / `text-warning-foreground` 在亮色是白色，压 `bg-success`/`bg-warning` 分别只有 3.65:1 / 3.20:1（与存量 `bg-green-600 text-white` 完全一致，不算回退），实底按钮只承载图标或 ≥19px 粗体标签；`bg-info` + 白字是 5.25:1，可以放正文级文字。
 
 ### 9.2 替换对照表（唯一依据）
 
@@ -353,7 +353,8 @@ expect(probe.oversize).toEqual([]);
 
 - **`[data-theme="..."]` 主题块目前是死 CSS**：`layout.tsx` 的 `ThemeProvider` 用的是 `attribute="class"`，`themes={["light","dark","eye-care","zhuoyu"]}`，next-themes 只会给 `<html>` 加 `class="zhuoyu"` / `class="eye-care"`，而 `globals.css` 里写的是 `[data-theme="zhuoyu"]`、`[data-theme="zhuoyu"].dark`、`[data-theme="eye-care"]`，永远匹配不上 —— 现在切到护眼/琢玉主题，实际看到的还是 `:root` 亮色。本次仍把 5 个块（`:root`、`.dark`、`zhuoyu` 亮/暗、`eye-care`）全部补齐，选择器修好后令牌直接生效；**修选择器是另一张单**（`[data-theme=...]` → `.zhuoyu` / `.eye-care`，或把 `attribute` 改成 `data-theme`），不在本次改动内。
 - **success 与 primary 同色系**：`--primary` 是翠玉绿（hue 150），`--success` 是 emerald（hue 163），在亮色下肉眼接近。约束：`--success` 只用于**状态**，不用于按钮、链接、Tab 选中态；这些仍然用 `--primary`。反过来也不要为了"更亮"把状态色写成 `primary`。
-- **`Badge` 的 `success` / `warning` 变体是唯一的语义入口**，内部还是 `bg-green-500/10 text-green-600 dark:text-green-400` / `bg-yellow-500/10 ...`（`src/components/ui/badge.tsx:18-21`）。
+- **`Badge` 的 `success` / `warning` 变体是唯一的语义入口**，**已改成语义令牌**
+  （`bg-success-muted text-foreground border border-success/30`，warning 同理）。
   改成 `bg-success-muted text-foreground border-success/30`（`warning` 同理），**文字用 `text-foreground`**：
   彩色小字压浅底只有 3.2–3.7:1，过不了 AA；语义靠底色 + 描边 + 可选的小圆点表达。
   一处改动能让全站徽章跟上，再逐页收组件内的自定义徽章。

@@ -55,8 +55,12 @@
       支持 `// audit-allow: <理由>` 显式接受（单独计数、可 grep 审计），
       基线写入 `docs/catch-audit.baseline.json`（178 个标记项签名），
       CI 中 `logged/fallback/silent` 出现**新增签名**即失败（修好一个、新增一个不会互相抵消）
-- [ ] 长尾治理：分批把 `logged`(71) / `silent`(88) 降级为 `degraded` 或 `rethrow`（与基线同源；`npm run audit:catches -- --list` 可直接定位，门禁保证只降不升、；确需放宽时用 `npm run audit:catches -- --update --allow-increase "<理由>"` 更新基线，并把理由写进 PR）
-- [ ] 前端 `ErrorBoundary` + 统一 `sonner` 错误提示；loading/empty/error 三态复用 `ui/empty-state.tsx`
+- [x] 长尾治理：六批把 218 个标记项全部收口（`rethrow` 39 / `degraded` 222 / `allowed` 52），
+      基线刷为 **0**，门禁转为零容忍；分布见 `docs/error-handling.md`
+- [x] 前端 `ErrorBoundary` + 统一 `sonner` 错误提示；loading/empty/error 三态复用 `ui/empty-state.tsx`
+      （客户端 110 处：写操作 toast + 首屏 `ErrorState(onRetry)` + 解析回退 `audit-allow`）
+- [x] 依赖安全：`npm audit` 65 项（0 high / 0 critical）逐条判定可达性，台账见
+      `docs/dependency-audit.md`；Dependabot 每周安全更新（`novel` 不忽略，安全修复要能被自动提出；仅忽略 `@tiptap/*` 的 major）
 - 验收：`npm run lint:ci` 通过且 `no-console` 计数为 0（以 lint 结果为准，不用 grep —— `welcome.ts` 的代码示例字符串里应保留 `console.log`）；`docs/error-handling.md` 落盘
 - **零计数覆盖范围**：`src/lib/**/*.ts`、`src/server/**/*.ts`、`src/app/**/*.ts`、`src/app/{page,layout}.tsx`、`src/instrumentation.ts`
 - **显式豁免**（因 Edge/客户端共享，必须保留 `console`）：`src/middleware.ts`、`src/lib/utils/retry.ts`、`src/lib/ai/rag.ts`、`src/lib/services/{srs,knowledge,question-folder}.ts`、`src/app/**/hooks/**`、`src/app/**/components/**`、全部测试与 `scripts/**`

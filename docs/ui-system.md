@@ -204,17 +204,17 @@
 
 ## 7. 禁止清单
 
-| 禁止                                           | 替代                                                                       |
-| ---------------------------------------------- | -------------------------------------------------------------------------- |
-| `useMediaQuery` / `window.innerWidth` 决定布局 | `md:` 类 + `hidden`/`md:hidden` 双投影（例外见 §2）                        |
-| `xl:`、`2xl:`、自定义 `@media`                 | 只用 `sm/md/lg`                                                            |
-| `absolute` + 手写偏移做栅格对齐                | `flex` / `grid` + `gap-*`                                                  |
-| `overflow-x-auto` 包整页或手机上的表格         | 该屏改用卡片                                                               |
+| 禁止                                           | 替代                                                                                       |
+| ---------------------------------------------- | ------------------------------------------------------------------------------------------ |
+| `useMediaQuery` / `window.innerWidth` 决定布局 | `md:` 类 + `hidden`/`md:hidden` 双投影（例外见 §2）                                        |
+| `xl:`、`2xl:`、自定义 `@media`                 | 只用 `sm/md/lg`                                                                            |
+| `absolute` + 手写偏移做栅格对齐                | `flex` / `grid` + `gap-*`                                                                  |
+| `overflow-x-auto` 包整页或手机上的表格         | 该屏改用卡片                                                                               |
 | 页面里硬编码色板（存量 1183 处，映射见 §9）    | `bg-primary`、`text-success`、`text-destructive`、`text-muted-foreground`、`Badge variant` |
-| `text-[10px]`、`p-[13px]` 等任意值新增         | §5 刻度                                                                    |
-| 页面根 `min-h-screen` + 内层滚动               | 根 `min-h-full`，滚动交给 `main`                                           |
-| `fixed bottom-0` 不带 safe-area padding        | §6.3 写法                                                                  |
-| 复制 PageHeader 样式再改字号                   | 按 §3 类名照抄                                                             |
+| `text-[10px]`、`p-[13px]` 等任意值新增         | §5 刻度                                                                                    |
+| 页面根 `min-h-screen` + 内层滚动               | 根 `min-h-full`，滚动交给 `main`                                                           |
+| `fixed bottom-0` 不带 safe-area padding        | §6.3 写法                                                                                  |
+| 复制 PageHeader 样式再改字号                   | 按 §3 类名照抄                                                                             |
 
 横向滚动的唯一例外：`pre` / `code` / `.prose`（富文本）内部（代码块、长公式）。确有必要的新容器请加 `data-scroll-ok` 并在 PR 说明理由 ——
 `layout-guard` 会把带该标记的容器视为合法吸收，其余 `overflow-x-auto` 一律按「该屏改用卡片」报出。
@@ -261,17 +261,17 @@ expect(probe.oversize).toEqual([]);
 
 `@theme inline` 里已映射 `--color-success* / --color-warning* / --color-info*`，写法与既有 `--destructive` 一致，因此 `text-success`、`bg-warning-muted`、`border-info/30`、`ring-success`、`bg-success/10` 全部可直接用（已用 PostCSS + `@tailwindcss/postcss` 实测生成）。
 
-| 令牌                    | 用途                                     | 亮色（`:root` / `[data-theme="zhuoyu"]`）              | 深色（`.dark` / `[data-theme="zhuoyu"].dark`）         |
-| ----------------------- | ---------------------------------------- | ------------------------------------------------------ | ------------------------------------------------------ |
-| `--success`             | 正确、已掌握、成功文字/图标/描边         | `oklch(0.596 0.145 163.225)` = `#009966`（emerald-600） | `oklch(0.765 0.177 163.223)` = `#00d492`（emerald-400） |
-| `--success-foreground`  | 落在 `bg-success` 实底上的文字           | `oklch(1 0 0)` = `#ffffff`                             | `oklch(0.17 0 0)` = 近黑（`#00d492` 上必须压深）        |
-| `--success-muted`       | 成功态浅底（徽章、提示块、弱强调卡片）   | `oklch(0.95 0.052 163.051)` = `#d0fae5`（emerald-100）  | `oklch(0.262 0.051 172.552)` = `#002c22`（emerald-950） |
-| `--warning`             | 待复习、可能过期、注意                   | `oklch(0.666 0.179 58.318)` = `#e17100`（amber-600）    | `oklch(0.828 0.189 84.429)` = `#ffb900`（amber-400）    |
-| `--warning-foreground`  | 落在 `bg-warning` 实底上的文字           | `oklch(1 0 0)`                                         | `oklch(0.17 0 0)`                                      |
-| `--warning-muted`       | 警告态浅底                               | `oklch(0.962 0.059 95.617)` = `#fef3c6`（amber-100）    | `oklch(0.279 0.077 45.635)` = `#461901`（amber-950）    |
-| `--info`                | 中性信息、提示、记忆稳定性等中性指标     | `oklch(0.546 0.245 262.881)` = `#155dfc`（blue-600）    | `oklch(0.707 0.165 254.624)` = `#51a2ff`（blue-400）    |
-| `--info-foreground`     | 落在 `bg-info` 实底上的文字              | `oklch(1 0 0)`                                         | `oklch(0.17 0 0)`                                      |
-| `--info-muted`          | 信息态浅底                               | `oklch(0.932 0.032 255.585)` = `#dbeafe`（blue-100）    | `oklch(0.282 0.091 267.935)` = `#162456`（blue-950）    |
+| 令牌                   | 用途                                   | 亮色（`:root` / `[data-theme="zhuoyu"]`）               | 深色（`.dark` / `[data-theme="zhuoyu"].dark`）          |
+| ---------------------- | -------------------------------------- | ------------------------------------------------------- | ------------------------------------------------------- |
+| `--success`            | 正确、已掌握、成功文字/图标/描边       | `oklch(0.596 0.145 163.225)` = `#009966`（emerald-600） | `oklch(0.765 0.177 163.223)` = `#00d492`（emerald-400） |
+| `--success-foreground` | 落在 `bg-success` 实底上的文字         | `oklch(1 0 0)` = `#ffffff`                              | `oklch(0.17 0 0)` = 近黑（`#00d492` 上必须压深）        |
+| `--success-muted`      | 成功态浅底（徽章、提示块、弱强调卡片） | `oklch(0.95 0.052 163.051)` = `#d0fae5`（emerald-100）  | `oklch(0.262 0.051 172.552)` = `#002c22`（emerald-950） |
+| `--warning`            | 待复习、可能过期、注意                 | `oklch(0.666 0.179 58.318)` = `#e17100`（amber-600）    | `oklch(0.828 0.189 84.429)` = `#ffb900`（amber-400）    |
+| `--warning-foreground` | 落在 `bg-warning` 实底上的文字         | `oklch(1 0 0)`                                          | `oklch(0.17 0 0)`                                       |
+| `--warning-muted`      | 警告态浅底                             | `oklch(0.962 0.059 95.617)` = `#fef3c6`（amber-100）    | `oklch(0.279 0.077 45.635)` = `#461901`（amber-950）    |
+| `--info`               | 中性信息、提示、记忆稳定性等中性指标   | `oklch(0.546 0.245 262.881)` = `#155dfc`（blue-600）    | `oklch(0.707 0.165 254.624)` = `#51a2ff`（blue-400）    |
+| `--info-foreground`    | 落在 `bg-info` 实底上的文字            | `oklch(1 0 0)`                                          | `oklch(0.17 0 0)`                                       |
+| `--info-muted`         | 信息态浅底                             | `oklch(0.932 0.032 255.585)` = `#dbeafe`（blue-100）    | `oklch(0.282 0.091 267.935)` = `#162456`（blue-950）    |
 
 护眼主题 `[data-theme="eye-care"]` 走的是暖纸底（`#fdfbf7`），不能直接搬 Tailwind 的冷色阶，故单独取暖化值：`--success` `#386e4b` / `#e2ecdf`、`--warning` `#96591f` / `#f0e4d0`、`--info` `#2b6785` / `#dfe9ee`，三者前景均为 `#fdfbf7`。
 
@@ -287,29 +287,29 @@ expect(probe.oversize).toEqual([]);
 
 ### 9.2 替换对照表（唯一依据）
 
-| 现有写法                                                                                       | 替换为                                                     | 场景                                        |
-| ---------------------------------------------------------------------------------------------- | ---------------------------------------------------------- | ------------------------------------------- |
-| `text-emerald-500/600/700`、`text-green-400~700`                                               | `text-success`                                             | 正确、已掌握、成功提示、勾选图标            |
-| `bg-emerald-50/100`、`bg-green-50/100`、`bg-green-500/10`（不透明的浅底徽章/提示块）            | `bg-success-muted`                                         | 成功态浅底                                  |
-| `bg-emerald-500/10` 叠在渐变/图片/条纹上                                                       | `bg-success/10`                                            | 需要透出底色的浅底                          |
-| `border-emerald-*`、`border-green-*`、`border-green-500/20`、`ring-emerald-500`                 | `border-success/30`、`ring-success`                        | 成功态描边/选中环                           |
-| `bg-emerald-600/700`、`bg-green-600 hover:bg-green-700` + `text-white`                         | `bg-success text-success-foreground hover:bg-success/90`   | 成功态实底按钮                              |
-| `text-amber-*`、`text-yellow-*`、`dark:text-amber-400`                                         | `text-warning`                                             | 待复习、警告、可能过期、题目难度            |
-| `bg-amber-50/100`、`bg-yellow-50/100`、`bg-amber-500/10`（不透明浅底）                          | `bg-warning-muted`                                         | 警告态浅底                                  |
-| `bg-amber-500/10` 叠色、`border-amber-500/20`                                                  | `bg-warning/10`、`border-warning/20`                       | 警告态叠色边框/底                            |
-| `bg-amber-500/600` + `text-white`                                                              | `bg-warning text-warning-foreground`                       | 警告态实底（白字压琥珀仅 3.2:1，只放图标或 ≥19px 粗体；12px 文字改 `bg-warning-muted text-foreground`） |
-| `text-blue-*`、`text-indigo-*`、`dark:text-blue-400`                                           | `text-info`                                                | 中性信息、提示、记忆稳定性等中性指标        |
-| `bg-blue-50/100`、`bg-blue-500/10`                                                             | `bg-info-muted`                                            | 信息态浅底                                  |
-| `bg-blue-600` + `text-white`、`border-blue-500/30`                                             | `bg-info text-info-foreground`、`border-info/30`           | 信息态实底/描边                              |
-| `text-red-*`、`text-rose-*`、`dark:text-red-400`                                               | `text-destructive`                                         | 错误、答错、删除、危险操作                  |
-| `bg-red-50/100`、`bg-red-500/10`、`border-red-500/20`                                          | `bg-destructive/10`、`border-destructive/20`               | 错误态浅底/描边（`--destructive-muted` 不存在，用透明度） |
-| `bg-red-600 hover:bg-red-700`、`shadow-red-500/20`                                             | `bg-destructive hover:bg-destructive/90`、`shadow-destructive/20` | 危险实底按钮                          |
-| `bg-slate-*`、`bg-zinc-*`、`bg-neutral-*`、`bg-gray-*`（面板/占位/骨架）                        | `bg-muted`                                                 | 中性面                                      |
-| `text-slate-500`、`text-zinc-500`、`text-neutral-400/500`、`text-gray-500`                     | `text-muted-foreground`                                    | 次级说明文字                                |
-| `text-neutral-700/800/900`、`text-zinc-700/800/900`（正文主色）                                | `text-foreground`                                          | 正文（**不是** `muted-foreground`）         |
-| `border-slate-200`、`border-neutral-200/100`、`divide-neutral-*`                               | `border-border`、`divide-border`                           | 中性分隔线                                  |
-| `text-purple-*`、`text-pink-*`、`text-teal-*`、`text-cyan-*`、`text-orange-*`、`text-violet-*`、`text-sky-*`、`text-lime-*`、`text-stone-*` | **先留白，不硬映射**        | 装饰性/学科色/功能标识，逐页判定（见 §9.3 规则 2） |
-| `text-fuchsia-*`、`bg-purple-900` 等深底色块                                                   | **先留白**                                                 | 同上；判定为"功能标识色"后进常量文件，不进令牌 |
+| 现有写法                                                                                                                                    | 替换为                                                            | 场景                                                                                                    |
+| ------------------------------------------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------- |
+| `text-emerald-500/600/700`、`text-green-400~700`                                                                                            | `text-success`                                                    | 正确、已掌握、成功提示、勾选图标                                                                        |
+| `bg-emerald-50/100`、`bg-green-50/100`、`bg-green-500/10`（不透明的浅底徽章/提示块）                                                        | `bg-success-muted`                                                | 成功态浅底                                                                                              |
+| `bg-emerald-500/10` 叠在渐变/图片/条纹上                                                                                                    | `bg-success/10`                                                   | 需要透出底色的浅底                                                                                      |
+| `border-emerald-*`、`border-green-*`、`border-green-500/20`、`ring-emerald-500`                                                             | `border-success/30`、`ring-success`                               | 成功态描边/选中环                                                                                       |
+| `bg-emerald-600/700`、`bg-green-600 hover:bg-green-700` + `text-white`                                                                      | `bg-success text-success-foreground hover:bg-success/90`          | 成功态实底按钮                                                                                          |
+| `text-amber-*`、`text-yellow-*`、`dark:text-amber-400`                                                                                      | `text-warning`                                                    | 待复习、警告、可能过期、题目难度                                                                        |
+| `bg-amber-50/100`、`bg-yellow-50/100`、`bg-amber-500/10`（不透明浅底）                                                                      | `bg-warning-muted`                                                | 警告态浅底                                                                                              |
+| `bg-amber-500/10` 叠色、`border-amber-500/20`                                                                                               | `bg-warning/10`、`border-warning/20`                              | 警告态叠色边框/底                                                                                       |
+| `bg-amber-500/600` + `text-white`                                                                                                           | `bg-warning text-warning-foreground`                              | 警告态实底（白字压琥珀仅 3.2:1，只放图标或 ≥19px 粗体；12px 文字改 `bg-warning-muted text-foreground`） |
+| `text-blue-*`、`text-indigo-*`、`dark:text-blue-400`                                                                                        | `text-info`                                                       | 中性信息、提示、记忆稳定性等中性指标                                                                    |
+| `bg-blue-50/100`、`bg-blue-500/10`                                                                                                          | `bg-info-muted`                                                   | 信息态浅底                                                                                              |
+| `bg-blue-600` + `text-white`、`border-blue-500/30`                                                                                          | `bg-info text-info-foreground`、`border-info/30`                  | 信息态实底/描边                                                                                         |
+| `text-red-*`、`text-rose-*`、`dark:text-red-400`                                                                                            | `text-destructive`                                                | 错误、答错、删除、危险操作                                                                              |
+| `bg-red-50/100`、`bg-red-500/10`、`border-red-500/20`                                                                                       | `bg-destructive/10`、`border-destructive/20`                      | 错误态浅底/描边（`--destructive-muted` 不存在，用透明度）                                               |
+| `bg-red-600 hover:bg-red-700`、`shadow-red-500/20`                                                                                          | `bg-destructive hover:bg-destructive/90`、`shadow-destructive/20` | 危险实底按钮                                                                                            |
+| `bg-slate-*`、`bg-zinc-*`、`bg-neutral-*`、`bg-gray-*`（面板/占位/骨架）                                                                    | `bg-muted`                                                        | 中性面                                                                                                  |
+| `text-slate-500`、`text-zinc-500`、`text-neutral-400/500`、`text-gray-500`                                                                  | `text-muted-foreground`                                           | 次级说明文字                                                                                            |
+| `text-neutral-700/800/900`、`text-zinc-700/800/900`（正文主色）                                                                             | `text-foreground`                                                 | 正文（**不是** `muted-foreground`）                                                                     |
+| `border-slate-200`、`border-neutral-200/100`、`divide-neutral-*`                                                                            | `border-border`、`divide-border`                                  | 中性分隔线                                                                                              |
+| `text-purple-*`、`text-pink-*`、`text-teal-*`、`text-cyan-*`、`text-orange-*`、`text-violet-*`、`text-sky-*`、`text-lime-*`、`text-stone-*` | **先留白，不硬映射**                                              | 装饰性/学科色/功能标识，逐页判定（见 §9.3 规则 2）                                                      |
+| `text-fuchsia-*`、`bg-purple-900` 等深底色块                                                                                                | **先留白**                                                        | 同上；判定为"功能标识色"后进常量文件，不进令牌                                                          |
 
 两条工程口径：
 
@@ -326,18 +326,18 @@ expect(probe.oversize).toEqual([]);
 
 扫描口径：`my-next-app/src/app/wrong-book/**` 下 `(text|bg|border|from|to|via|ring|fill|stroke|divide|outline|decoration|shadow|accent|caret|placeholder)-(色板)-(色阶)` 的出现次数，`dark:` 前缀的同一次出现只计一次。
 
-| 文件                                    | 次数 | 语义归类（success/warning/info/destructive/装饰） | 可机械替换 | 需人工判断 |
-| --------------------------------------- | ---: | ------------------------------------------------- | ---------: | ---------: |
-| `components/QuestionDetailPanel.tsx`    |   18 | 9 / 2 / 1 / 6 / 0                                 |         18 |          0 |
-| `page.tsx`                              |   11 | 5 / 1 / 0 / 4 / 1                                 |         10 |          1 |
-| `components/RecommendedQuestionsDialog.tsx` |  9 | 0 / 0 / 0 / 0 / 9（purple，AI 推荐标识）          |          0 |          9 |
-| `components/AddQuestionDialog.tsx`      |    4 | 0 / 0 / 0 / 0 / 4（teal 提示块，待判定→倾向 `info`） |        0 |          4 |
-| `components/WrongQuestionCard.tsx`      |    4 | 0 / 1 / 2 / 1 / 0                                 |          4 |          0 |
-| `components/FolderTreeView.tsx`         |    2 | 1 / 0 / 0 / 1 / 0                                 |          2 |          0 |
-| `components/FolderQuestionList.tsx`     |    2 | 0 / 0 / 0 / 0 / 2（蓝/琥珀纯图标区分）            |          0 |          2 |
-| `components/AddToFolderDialog.tsx`      |    1 | 0 / 0 / 1 / 0 / 0                                 |          1 |          0 |
-| `components/{TagTreeView,WrongBookSkeleton,QuestionCountPicker}.tsx`、`hooks/use-wrong-book-controller.ts` | 0 | —                        |          0 |          0 |
-| **合计**                                | **51** | success 15 / warning 4 / info 4 / destructive 12 / 装饰 16 | **35** | **16** |
+| 文件                                                                                                       |   次数 | 语义归类（success/warning/info/destructive/装饰）          | 可机械替换 | 需人工判断 |
+| ---------------------------------------------------------------------------------------------------------- | -----: | ---------------------------------------------------------- | ---------: | ---------: |
+| `components/QuestionDetailPanel.tsx`                                                                       |     18 | 9 / 2 / 1 / 6 / 0                                          |         18 |          0 |
+| `page.tsx`                                                                                                 |     11 | 5 / 1 / 0 / 4 / 1                                          |         10 |          1 |
+| `components/RecommendedQuestionsDialog.tsx`                                                                |      9 | 0 / 0 / 0 / 0 / 9（purple，AI 推荐标识）                   |          0 |          9 |
+| `components/AddQuestionDialog.tsx`                                                                         |      4 | 0 / 0 / 0 / 0 / 4（teal 提示块，待判定→倾向 `info`）       |          0 |          4 |
+| `components/WrongQuestionCard.tsx`                                                                         |      4 | 0 / 1 / 2 / 1 / 0                                          |          4 |          0 |
+| `components/FolderTreeView.tsx`                                                                            |      2 | 1 / 0 / 0 / 1 / 0                                          |          2 |          0 |
+| `components/FolderQuestionList.tsx`                                                                        |      2 | 0 / 0 / 0 / 0 / 2（蓝/琥珀纯图标区分）                     |          0 |          2 |
+| `components/AddToFolderDialog.tsx`                                                                         |      1 | 0 / 0 / 1 / 0 / 0                                          |          1 |          0 |
+| `components/{TagTreeView,WrongBookSkeleton,QuestionCountPicker}.tsx`、`hooks/use-wrong-book-controller.ts` |      0 | —                                                          |          0 |          0 |
+| **合计**                                                                                                   | **51** | success 15 / warning 4 / info 4 / destructive 12 / 装饰 16 |     **35** |     **16** |
 
 人工判断那一栏的 16 处按结论分三类，替换 PR 里必须写明归属：
 

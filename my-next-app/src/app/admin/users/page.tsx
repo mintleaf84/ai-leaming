@@ -42,7 +42,6 @@ import {
   DialogFooter,
   DialogHeader,
   DialogTitle,
-  DialogTrigger,
 } from "@/components/ui/dialog";
 import {
   Select,
@@ -53,13 +52,24 @@ import {
 } from "@/components/ui/select";
 import { Label } from "@/components/ui/label";
 import { ErrorState } from "@/components/ui/error-state";
+import { EmptyState } from "@/components/ui/empty-state";
+import { Skeleton } from "@/components/ui/skeleton";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
+import { cn } from "@/lib/utils/utils";
 
 // 扩展用户类型，包含订阅信息
 interface UserWithSubscription extends UserAdminView {
   plan_id?: string;
   plan_name?: string;
   subscription_status?: string;
-  expires_at?: string;
+  expires_at?: string | null;
 }
 
 export default function UsersPage() {
@@ -74,6 +84,12 @@ export default function UsersPage() {
   const limit = 10;
 
   const [resetId, setResetId] = useState<number | null>(null);
+  // 目标用户快照：列表刷新/翻页后对话框仍要显示用户名，不能从当前页数据现查
+  const [resetTarget, setResetTarget] = useState<UserWithSubscription | null>(
+    null,
+  );
+  // 打开对话框的触发按钮：页面级 Dialog 没有 DialogTrigger，关闭时手动归还焦点
+  const resetTriggerRef = useRef<HTMLButtonElement | null>(null);
   const [newPass, setNewPass] = useState("");
 
   // 订阅对话框状态
@@ -203,6 +219,21 @@ export default function UsersPage() {
     }
   };
 
+  // 打开重置密码对话框：记住触发按钮，关闭后把焦点还回去
+  const openResetDialog = (
+    user: UserWithSubscription,
+    trigger: HTMLButtonElement | null,
+  ) => {
+    resetTriggerRef.current = trigger;
+    setResetTarget(user);
+    setResetId(user.id);
+  };
+
+  const closeResetDialog = () => {
+    setResetId(null);
+    setResetTarget(null);
+  };
+
   const handleResetPassword = async () => {
     if (!resetId || !newPass) return;
     const result = await resetUserPasswordAction({
@@ -213,7 +244,7 @@ export default function UsersPage() {
       toast.error(result.serverError || "重置失败");
     } else if (result.data?.success) {
       toast.success("密码已重置");
-      setResetId(null);
+      closeResetDialog();
       setNewPass("");
     }
   };
@@ -267,16 +298,32 @@ export default function UsersPage() {
       if (result.data?.success) {
         toast.success("订阅已更新");
         setSubDialogOpen(false);
-        // 更新本地状态
+        // action 只回 { success }，不含订阅详情：先按本次请求的入参做本地乐观更新
+        // （套餐 + 状态 + 到期），再用后台刷新对齐服务端的真实 status/expires_at，
+        // 否则卡片/表格会一直显示改之前的套餐与到期时间
         const planName =
           plans.find((p) => p.id === selectedPlanId)?.name || selectedPlanId;
-        setUsers(
-          users.map((u) =>
+        const expiresAt = (() => {
+          if (!duration || duration <= 0) return null;
+          const expireDate = new Date();
+          expireDate.setMonth(expireDate.getMonth() + duration);
+          return expireDate.toISOString();
+        })();
+        setUsers((prev) =>
+          prev.map((u) =>
             u.id === subUserId
-              ? { ...u, plan_id: selectedPlanId, plan_name: planName }
+              ? {
+                  ...u,
+                  plan_id: selectedPlanId,
+                  plan_name: planName,
+                  subscription_status: "active",
+                  expires_at: expiresAt,
+                }
               : u,
           ),
         );
+        // 后台刷新失败只提示一次并保留上面的乐观值（loadUsers 内部处理）
+        loadUsers({ background: true });
       } else {
         toast.error(
           `操作失败：${result.serverError || "服务端未确认订阅变更"}`,
@@ -310,16 +357,115 @@ export default function UsersPage() {
     }
   };
 
+  // 订阅状态 → 徽章文案/样式（表格与卡片共用同一份映射）
+  // 注意：库里 status 只是冗余字段，到期后可能仍是 "active"（没有定时任务改它），
+  // 所以判定以 expires_at 为准：已过期一律显示「已过期」，expires_at 为空视为永久。
+  const getSubscriptionBadge = (
+    status?: string | null,
+    expiresAt?: string | null,
+  ) => {
+    if (status !== "active" && status !== "expired" && status !== "cancelled") {
+      return null;
+    }
+    if (
+      status !== "cancelled" &&
+      expiresAt &&
+      new Date(expiresAt).getTime() < Date.now()
+    ) {
+      return { label: "已过期", variant: "warning" as const };
+    }
+    switch (status) {
+      case "active":
+        return { label: "有效", variant: "success" as const };
+      case "expired":
+        return { label: "已过期", variant: "warning" as const };
+      default:
+        return { label: "已取消", variant: "outline" as const };
+    }
+  };
+
+  // 到期时间文案（表格与卡片共用）
+  const formatExpiresAt = (expiresAt?: string | null) =>
+    expiresAt
+      ? `到期 ${new Date(expiresAt).toLocaleDateString("zh-CN")}`
+      : "永久";
+
+  // 角色控件：桌面表格与移动卡片共用（只切换尺寸，不复制业务回调）
+  const renderRoleControl = (
+    user: UserWithSubscription,
+    touchFriendly = false,
+  ) =>
+    user.is_admin ? (
+      <span className="inline-flex items-center gap-1 rounded-full bg-primary/10 px-2 py-1 text-xs font-bold text-primary">
+        <Shield className="h-3 w-3" />
+        管理员
+      </span>
+    ) : (
+      <select
+        aria-label={`修改 ${user.username} 的角色`}
+        value={user.role || "student"}
+        onChange={(e) => handleRoleChange(user.id, e.target.value as UserRole)}
+        className={cn(
+          "rounded-lg border border-border bg-background px-2 text-xs outline-none focus:ring-1 focus:ring-primary",
+          touchFriendly ? "h-11" : "py-1",
+        )}
+      >
+        <option value="student">学生</option>
+        <option value="admin">管理员</option>
+      </select>
+    );
+
+  // 套餐徽章：点击即打开订阅对话框（两套投影共用）。
+  // 可点击元素在移动档必须 ≥ 44px（ui-system.md §6.2），Badge 默认只有 ~22px。
+  const renderPlanBadge = (
+    user: UserWithSubscription,
+    touchFriendly = false,
+  ) => (
+    <Badge
+      variant={getPlanBadgeVariant(user.plan_id || "free")}
+      className={cn(
+        "cursor-pointer hover:opacity-80",
+        touchFriendly && "inline-flex min-h-11 items-center px-3",
+      )}
+      onClick={() => openSubDialog(user)}
+    >
+      <CreditCard className="h-3 w-3 mr-1" />
+      {user.plan_name || "免费版"}
+    </Badge>
+  );
+
+  // 订阅信息（套餐徽章 + 到期时间 + 状态徽章）：表格与卡片口径完全一致
+  const renderSubscriptionInfo = (
+    user: UserWithSubscription,
+    touchFriendly = false,
+  ) => {
+    const badge = getSubscriptionBadge(
+      user.subscription_status,
+      user.expires_at,
+    );
+    return (
+      <>
+        {renderPlanBadge(user, touchFriendly)}
+        <span className="text-xs text-muted-foreground">
+          {formatExpiresAt(user.expires_at)}
+        </span>
+        {badge && <Badge variant={badge.variant}>{badge.label}</Badge>}
+      </>
+    );
+  };
+
   return (
-    <div className="p-8 space-y-6">
-      <div className="flex justify-between items-center">
+    <div className="mx-auto w-full max-w-7xl space-y-6 px-4 py-6 md:px-6 lg:py-10">
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <div>
-          <h2 className="text-3xl font-bold tracking-tight">用户管理</h2>
-          <p className="text-muted-foreground mt-2">
+          <h2 className="text-2xl font-semibold tracking-tight md:text-3xl">
+            用户管理
+          </h2>
+          <p className="text-muted-foreground mt-1 text-sm">
             管理系统注册用户及订阅状态
           </p>
         </div>
-        <div className="relative w-64">
+        <div className="relative w-full sm:w-64">
           <Search className="absolute left-2 top-2.5 h-4 w-4 text-muted-foreground" />
           <Input
             placeholder="搜索用户名"
@@ -336,176 +482,198 @@ export default function UsersPage() {
           <CardDescription>共 {users.length} 位注册用户</CardDescription>
         </CardHeader>
         <CardContent>
-          <div className="rounded-md border">
-            <table className="w-full text-sm">
-              <thead className="bg-muted/50 border-b">
-                <tr className="text-left">
-                  <th className="p-4 font-medium">ID</th>
-                  <th className="p-4 font-medium">用户名</th>
-                  <th className="p-4 font-medium">注册时间</th>
-                  <th className="p-4 font-medium">角色</th>
-                  <th className="p-4 font-medium">订阅</th>
-                  <th className="p-4 font-medium text-right">操作</th>
-                </tr>
-              </thead>
-              <tbody>
-                {loading ? (
-                  <tr>
-                    <td
-                      colSpan={6}
-                      className="p-8 text-center text-muted-foreground"
-                    >
-                      <Loader2 className="animate-spin h-6 w-6 mx-auto mb-2" />
-                      加载中...
-                    </td>
-                  </tr>
-                ) : loadError ? (
-                  <tr>
-                    <td colSpan={6} className="p-0">
-                      <ErrorState
-                        title="用户列表加载失败"
-                        description={loadError}
-                        onRetry={() => loadUsers()}
-                        className="py-8"
-                      />
-                    </td>
-                  </tr>
-                ) : filteredUsers.length === 0 ? (
-                  <tr>
-                    <td
-                      colSpan={6}
-                      className="p-8 text-center text-muted-foreground"
-                    >
-                      没有找到用户
-                    </td>
-                  </tr>
-                ) : (
-                  filteredUsers.map((user) => (
-                    <tr
-                      key={user.id}
-                      className="border-b last:border-0 hover:bg-muted/10 transition-colors"
-                    >
-                      <td className="p-4 font-mono">{user.id}</td>
-                      <td className="p-4 font-medium">{user.username}</td>
-                      <td className="p-4 text-muted-foreground">
-                        {new Date(user.created_at).toLocaleString("zh-CN")}
-                      </td>
-                      <td className="p-4">
-                        {user.is_admin ? (
-                          <span className="inline-flex items-center gap-1 bg-primary/10 text-primary px-2 py-1 rounded text-xs font-bold">
-                            <Shield className="h-3 w-3" />
-                            管理员
-                          </span>
-                        ) : (
-                          <select
-                            value={user.role || "student"}
-                            onChange={(e) =>
-                              handleRoleChange(
-                                user.id,
-                                e.target.value as UserRole,
-                              )
-                            }
-                            className="text-xs border border-border rounded px-2 py-1 bg-background focus:ring-1 focus:ring-primary outline-none"
+          {loading ? (
+            <>
+              {/* 表格骨架：lg 起 */}
+              <div className="hidden space-y-2 lg:block">
+                {Array.from({ length: 5 }).map((_, i) => (
+                  <Skeleton
+                    key={`table-skeleton-${i}`}
+                    className="h-12 w-full rounded-lg"
+                  />
+                ))}
+              </div>
+              {/* 列表骨架：< lg */}
+              <div className="space-y-2 lg:hidden">
+                {Array.from({ length: 3 }).map((_, i) => (
+                  <Skeleton
+                    key={`card-skeleton-${i}`}
+                    className="h-20 w-full rounded-lg"
+                  />
+                ))}
+              </div>
+            </>
+          ) : loadError ? (
+            <ErrorState
+              title="用户列表加载失败"
+              description={loadError}
+              onRetry={() => loadUsers()}
+            />
+          ) : filteredUsers.length === 0 ? (
+            <EmptyState title="没有找到用户" description="换个关键词再试试" />
+          ) : (
+            <>
+              {/*
+                桌面（lg 起）：6 列宽表格放不下 md 档 —— 768 视口减去侧边栏 16rem
+                只剩约 512px，列会被压出横向溢出。ui-system.md §4 的「表格从 md 起
+                允许」在这里按实测放宽到 lg：md 档仍用卡片。
+              */}
+              <div
+                className="hidden rounded-lg border lg:block"
+                data-testid="admin-users-table"
+              >
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead className="w-16">ID</TableHead>
+                      <TableHead>用户名</TableHead>
+                      <TableHead>注册时间</TableHead>
+                      <TableHead className="w-28">角色</TableHead>
+                      <TableHead className="w-40">订阅</TableHead>
+                      <TableHead className="text-right">操作</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {filteredUsers.map((user) => (
+                      <TableRow key={user.id}>
+                        <TableCell className="font-mono">{user.id}</TableCell>
+                        <TableCell className="font-medium">
+                          {user.username}
+                        </TableCell>
+                        <TableCell className="text-muted-foreground">
+                          {new Date(user.created_at).toLocaleString("zh-CN")}
+                        </TableCell>
+                        <TableCell>{renderRoleControl(user)}</TableCell>
+                        <TableCell>
+                          <div className="flex flex-wrap items-center gap-2">
+                            {renderSubscriptionInfo(user)}
+                          </div>
+                        </TableCell>
+                        <TableCell className="space-x-2 text-right">
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => openSubDialog(user)}
                           >
-                            <option value="student">学生</option>
-                            <option value="admin">管理员</option>
-                          </select>
-                        )}
-                      </td>
-                      <td className="p-4">
-                        <Badge
-                          variant={getPlanBadgeVariant(user.plan_id || "free")}
-                          className="cursor-pointer hover:opacity-80"
-                          onClick={() => openSubDialog(user)}
-                        >
-                          <CreditCard className="h-3 w-3 mr-1" />
-                          {user.plan_name || "免费版"}
-                        </Badge>
-                      </td>
-                      <td className="p-4 text-right space-x-2">
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          onClick={() => openSubDialog(user)}
-                        >
-                          <CreditCard className="h-4 w-4 mr-1" />
-                          订阅
-                        </Button>
+                            <CreditCard className="h-4 w-4 mr-1" />
+                            订阅
+                          </Button>
 
-                        <Dialog
-                          open={resetId === user.id}
-                          onOpenChange={(open) => !open && setResetId(null)}
-                        >
-                          <DialogTrigger asChild>
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={(e) =>
+                              openResetDialog(user, e.currentTarget)
+                            }
+                          >
+                            <KeyRound className="h-4 w-4 mr-1" />
+                            重置密码
+                          </Button>
+
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            title="强制下线"
+                            aria-label={`强制下线 ${user.username}`}
+                            className="text-orange-500 hover:bg-orange-50 hover:text-orange-600"
+                            onClick={() => handleRevokeSession(user.id)}
+                          >
+                            <LogOut className="h-4 w-4" />
+                          </Button>
+
+                          {!user.is_admin && (
                             <Button
-                              variant="outline"
+                              variant="ghost"
                               size="sm"
-                              onClick={() => setResetId(user.id)}
+                              aria-label={`删除用户 ${user.username}`}
+                              className="text-destructive hover:bg-destructive/10"
+                              onClick={() => handleDelete(user.id)}
                             >
-                              <KeyRound className="h-4 w-4 mr-1" />
-                              重置密码
+                              <Trash2 className="h-4 w-4" />
                             </Button>
-                          </DialogTrigger>
-                          <DialogContent>
-                            <DialogHeader>
-                              <DialogTitle>
-                                重置密码 - {user.username}
-                              </DialogTitle>
-                              <DialogDescription>
-                                请输入新的登录密码。
-                              </DialogDescription>
-                            </DialogHeader>
-                            <div className="py-4">
-                              <Input
-                                type="text"
-                                placeholder="新密码"
-                                value={newPass}
-                                onChange={(e) => setNewPass(e.target.value)}
-                              />
-                            </div>
-                            <DialogFooter>
-                              <Button
-                                variant="outline"
-                                onClick={() => setResetId(null)}
-                              >
-                                取消
-                              </Button>
-                              <Button onClick={handleResetPassword}>
-                                确认重置
-                              </Button>
-                            </DialogFooter>
-                          </DialogContent>
-                        </Dialog>
+                          )}
+                        </TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+              </div>
 
+              {/* 移动/平板（< lg）：卡片投影，字段 = 用户名+角色 / 套餐+到期+状态，操作在卡底 */}
+              <ul
+                className="space-y-2 lg:hidden"
+                data-testid="admin-users-cards"
+              >
+                {filteredUsers.map((user) => (
+                  <li key={user.id} className="rounded-lg border bg-card p-4">
+                    <div className="flex items-start gap-2">
+                      <div className="min-w-0 flex-1">
+                        <p className="truncate text-sm font-medium">
+                          {user.username}
+                        </p>
+                        <p className="mt-1 text-xs text-muted-foreground">
+                          ID {user.id} · 注册于{" "}
+                          {new Date(user.created_at).toLocaleDateString(
+                            "zh-CN",
+                          )}
+                        </p>
+                      </div>
+                      <div className="flex shrink-0 items-center gap-1">
+                        {renderRoleControl(user, true)}
                         <Button
                           variant="ghost"
                           size="sm"
                           title="强制下线"
-                          className="text-orange-500 hover:bg-orange-50 hover:text-orange-600"
+                          aria-label={`强制下线 ${user.username}`}
+                          className="h-11 w-11 text-orange-500 hover:bg-orange-50 hover:text-orange-600"
                           onClick={() => handleRevokeSession(user.id)}
                         >
                           <LogOut className="h-4 w-4" />
                         </Button>
+                      </div>
+                    </div>
 
-                        {!user.is_admin && (
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            className="text-destructive hover:bg-destructive/10"
-                            onClick={() => handleDelete(user.id)}
-                          >
-                            <Trash2 className="h-4 w-4" />
-                          </Button>
-                        )}
-                      </td>
-                    </tr>
-                  ))
-                )}
-              </tbody>
-            </table>
-          </div>
+                    <div className="mt-2 flex flex-wrap items-center gap-2">
+                      {renderSubscriptionInfo(user, true)}
+                    </div>
+
+                    <div className="mt-3 flex items-center gap-2">
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        className="h-11 flex-1"
+                        onClick={() => openSubDialog(user)}
+                      >
+                        订阅
+                      </Button>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        className="h-11 flex-1"
+                        onClick={(e) => openResetDialog(user, e.currentTarget)}
+                      >
+                        重置密码
+                      </Button>
+                      {!user.is_admin && (
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          className="h-11 w-11 shrink-0 text-destructive hover:bg-destructive/10"
+                          title="删除用户"
+                          aria-label={`删除用户 ${user.username}`}
+                          onClick={() => handleDelete(user.id)}
+                        >
+                          <Trash2 className="h-4 w-4" />
+                        </Button>
+                      )}
+                    </div>
+                  </li>
+                ))}
+              </ul>
+            </>
+          )}
         </CardContent>
-        <div className="flex items-center justify-between px-4 py-4 border-t">
+        <div className="flex flex-col gap-3 border-t px-4 py-4 sm:flex-row sm:items-center sm:justify-between">
           <div className="text-sm text-muted-foreground">
             显示 {users.length > 0 ? (page - 1) * limit + 1 : 0} 到{" "}
             {Math.min(page * limit, total)} 条，共 {total} 条
@@ -514,6 +682,7 @@ export default function UsersPage() {
             <Button
               variant="outline"
               size="sm"
+              className="h-11 flex-1 sm:h-9 sm:flex-none"
               onClick={() => setPage((p) => Math.max(1, p - 1))}
               disabled={page === 1 || loading}
             >
@@ -522,6 +691,7 @@ export default function UsersPage() {
             <Button
               variant="outline"
               size="sm"
+              className="h-11 flex-1 sm:h-9 sm:flex-none"
               onClick={() => setPage((p) => p + 1)}
               disabled={page * limit >= total || loading}
             >
@@ -530,6 +700,42 @@ export default function UsersPage() {
           </div>
         </div>
       </Card>
+
+      {/* 重置密码对话框：只渲染一份，避免桌面/移动两套投影各弹一个 */}
+      <Dialog
+        open={resetId !== null}
+        onOpenChange={(open) => {
+          if (!open) closeResetDialog();
+        }}
+      >
+        <DialogContent
+          // 页面级 Dialog 没有 DialogTrigger：Radix 找不到触发器会把焦点丢到 body，
+          // 这里显式还回打开它的那个按钮（列表刷新 / 翻页后该按钮可能已卸载，故用可选链）
+          onCloseAutoFocus={(event) => {
+            event.preventDefault();
+            resetTriggerRef.current?.focus();
+          }}
+        >
+          <DialogHeader>
+            <DialogTitle>重置密码 - {resetTarget?.username ?? ""}</DialogTitle>
+            <DialogDescription>请输入新的登录密码。</DialogDescription>
+          </DialogHeader>
+          <div className="py-4">
+            <Input
+              type="text"
+              placeholder="新密码"
+              value={newPass}
+              onChange={(e) => setNewPass(e.target.value)}
+            />
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={closeResetDialog}>
+              取消
+            </Button>
+            <Button onClick={handleResetPassword}>确认重置</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
 
       {/* 订阅对话框 */}
       <Dialog open={subDialogOpen} onOpenChange={setSubDialogOpen}>

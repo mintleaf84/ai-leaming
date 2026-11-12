@@ -6,7 +6,7 @@ import { assertLayoutIntact, gotoAndSettle } from "./layout-helpers";
 /**
  * 布局护栏用例（不依赖截图基线）
  *
- * 覆盖：/login（公开）+ 9 个登录后主路由 × 3 个视口 = 30 条用例，
+ * 覆盖：/login（公开）+ 9 个登录后主路由 + 3 个管理端路由 × 3 个视口 = 39 条用例，
  * 外加 1 条 /wrong-book「选中题目后」的专项（其底部操作栏是条件渲染的，
  * 默认状态不渲染，重叠断言会空跑）。
  *
@@ -17,9 +17,9 @@ import { assertLayoutIntact, gotoAndSettle } from "./layout-helpers";
  *   - 375 视口额外：不存在两条互相重叠的贴底固定底栏（§6 一个页面最多一条）；
  *   - 375 视口额外（报告模式，不阻断）：可点区域 < 44×44、表单双列。
  *
- * /admin 暂未覆盖：管理员登录走 adminPage fixture，需要额外一轮全局 setup，
- * 且 admin 区是独立 layout（admin-layout-shell 自带 overflow-x-hidden），
- * 首轮先观察主链路，避免上线即被存量问题淹没。
+ * 管理端复用 tests/e2e/fixtures 的 adminPage（testadmin 登录态）；
+ * admin 区是独立 layout（admin-layout-shell），侧边栏 md 起常驻，
+ * 移动端表格必须已改为卡片，否则 375 视口会报横向溢出。
  */
 
 const VIEWPORTS = [
@@ -43,6 +43,12 @@ const AUTH_ROUTES = [
   "/chat",
   "/knowledge",
 ] as const;
+
+/**
+ * 需要管理员登录态的路由（复用 tests/e2e/fixtures 的 adminPage）。
+ * 三条都真实存在：src/app/admin/{page,users/page,plans/page}.tsx。
+ */
+const ADMIN_ROUTES = ["/admin", "/admin/users", "/admin/plans"] as const;
 
 /**
  * 导航结果的降级信息：networkidle 超时与骨架未清空**不在这里失败**，
@@ -73,6 +79,42 @@ async function visit(
   }
 }
 
+/**
+ * /admin/users 是「骨架 → 表格/卡片」两段式渲染，采样早了量到的是骨架（护栏会判失败，
+ * 但那是假信号）。这里等到行/卡片真正可见再交给 assertLayoutIntact。
+ *
+ * 「用户列表加载失败」是**硬失败**而不是待观察项：错误态的几何量没有意义，
+ * 让它跑到 assertLayoutIntact 只会得到一句"骨架/空壳"的误导信息，
+ * 所以在这里直接把 ErrorState 的文案带出来。
+ */
+async function waitForAdminUsersList(
+  page: Page,
+  viewport: string,
+): Promise<void> {
+  const where = `路由 /admin/users @ ${viewport}`;
+  // 用页面头部「共 N 位注册用户」作为就绪信号：只有数据加载完成后才渲染。
+  // 之前按「表格行/卡片」计数，实测在 CI 上会一直读不到（骨架/挂载时序），
+  // 而这个计数行是纯文本，稳定得多。
+  // 注意 `共 N 位注册用户` 在加载中就渲染成「共 0 位」，所以必须要求 N > 0；
+  // 真的没有用户时走空态分支
+  const readyHeader = page.getByText(/共 [1-9]\d* 位注册用户/);
+  const errorState = page.getByText("用户列表加载失败");
+
+  await expect
+    .poll(
+      async () => {
+        if ((await errorState.count()) > 0) return "error";
+        if ((await readyHeader.count()) > 0) return "ready";
+        if ((await page.getByText("没有找到用户").count()) > 0) return "ready";
+      },
+      {
+        timeout: 20_000,
+        message: `${where}：没等到「共 N 位注册用户」——仍是加载态，或页面渲染了错误态`,
+      },
+    )
+    .toBe("ready");
+}
+
 for (const vp of VIEWPORTS) {
   test.describe(`视口 ${vp.id}`, () => {
     test.use({ viewport: { width: vp.width, height: vp.height } });
@@ -89,6 +131,18 @@ for (const vp of VIEWPORTS) {
       // 代价是每个视口多 9 次登录，CI 上 workers=2 可接受。
       test(`受保护路由 ${route}`, async ({ loggedInPage: page }) => {
         await visit(page, route, vp.id);
+        await assertLayoutIntact(page, route, vp.id);
+      });
+    }
+
+    for (const route of ADMIN_ROUTES) {
+      // 管理端用 adminPage fixture（testadmin 登录态），断言逻辑与前台完全一致
+      test(`管理端路由 ${route}`, async ({ adminPage: page }) => {
+        await visit(page, route, vp.id);
+        // 列表页先确认渲染出了真实行/卡片，避免把骨架或错误态当页面来测量
+        if (route === "/admin/users") {
+          await waitForAdminUsersList(page, vp.id);
+        }
         await assertLayoutIntact(page, route, vp.id);
       });
     }

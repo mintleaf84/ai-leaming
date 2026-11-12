@@ -1,0 +1,36 @@
+version: 2
+updates:
+  # 应用依赖：每周一次，安全更新单独成组，避免一次开一堆 PR
+  - package-ecosystem: "npm"
+    directory: "/my-next-app"
+    schedule:
+      interval: "weekly"
+      day: "monday"
+      time: "02:00"
+      timezone: "Asia/Shanghai"
+    # 注意：这个上限只作用于**版本更新**；安全更新 PR 不受它限制
+    open-pull-requests-limit: 3
+    labels: ["deps"]
+    commit-message:
+      prefix: "chore(deps)"
+    groups:
+      security:
+        applies-to: "security-updates"
+        patterns: ["*"]
+      minor-and-patch:
+        applies-to: "version-updates"
+        update-types: ["minor", "patch"]
+    # 不 ignore `novel`：它一旦发安全修复必须能被自动提上来
+    # （novel 绑 tiptap 2.x，功能升级仍靠人工评估）
+    ignore:
+      - dependency-name: "@tiptap/*"
+        update-types: ["version-update:semver-major"]
+
+  # CI 里用到的 action
+  - package-ecosystem: "github-actions"
+    directory: "/"
+    schedule:
+      interval: "monthly"
+    labels: ["deps", "ci"]
+    commit-message:
+      prefix: "chore(ci)"

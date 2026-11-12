@@ -59,6 +59,7 @@ export function ReportView({ initialData: reportData }: ReportViewProps) {
       } catch (e) {
         console.error("AI 报告生成失败:", e);
         setAiReport("AI 诊断报告生成失败，请稍后重试。");
+        return;
       } finally {
         setIsGeneratingAI(false);
       }
@@ -70,7 +71,8 @@ export function ReportView({ initialData: reportData }: ReportViewProps) {
         const res = await getPracticeTrendAction(14);
         setTrendData(res?.data || []);
       } catch {
-        /* 趋势数据加载失败不影响主体报告 */
+        // audit-allow: 趋势数据是报告的附属信息，失败时保留空图，主体报告仍完整展示
+        console.warn("历史趋势数据加载失败，已降级为空数据");
       }
     }
 

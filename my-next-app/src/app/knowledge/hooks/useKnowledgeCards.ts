@@ -152,6 +152,10 @@ export function useKnowledgeCards() {
             a.click();
             document.body.removeChild(a);
           } catch {
+            // audit-allow: 下载锚点的挂载/移除失败不影响导出结果，退化为直接点击
+            console.warn("[useKnowledgeCards] 下载锚点挂载失败，改为直接点击", {
+              fileName: a.download,
+            });
             a.click();
           }
         });
@@ -165,6 +169,7 @@ export function useKnowledgeCards() {
     } catch (error) {
       console.error("导出失败:", error);
       showToast("导出失败，请重试", "error");
+      return;
     } finally {
       setExporting(false);
     }

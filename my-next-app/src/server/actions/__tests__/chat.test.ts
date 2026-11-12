@@ -106,14 +106,12 @@ describe("Chat Server Actions", () => {
       expect(result).toEqual(mockList);
     });
 
-    it("should return empty array on error", async () => {
+    it("查询失败应抛出（不能返回空数组冒充「没有会话」）", async () => {
       mocks.listSessions.mockImplementation(() => {
         throw new Error("DB Error");
       });
 
-      const result = await getChatSessions();
-
-      expect(result).toEqual([]);
+      await expect(getChatSessions()).rejects.toThrow("获取会话列表失败");
     });
   });
 

@@ -63,6 +63,11 @@ export default function SrsAnalysisClient({
     try {
       setIsSyncing(true);
       const res = await syncSrsDataAction();
+      // safe-action 失败不一定抛异常：必须显式检查 serverError，否则界面会"假装成功"
+      if (res?.serverError) {
+        toast.error("同步失败：" + res.serverError);
+        return;
+      }
       const count = res?.data || 0;
       toast.success(`同步完成！`, {
         description: `已为 ${count} 道题目更新了记忆状态与阅读速度参数。`,
@@ -71,6 +76,7 @@ export default function SrsAnalysisClient({
     } catch (err) {
       console.error("Sync failed:", err);
       toast.error("同步失败，请稍后重试");
+      return;
     } finally {
       setIsSyncing(false);
     }

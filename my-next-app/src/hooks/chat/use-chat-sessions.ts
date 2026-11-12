@@ -10,6 +10,7 @@ export function useChatSessions() {
   const [sessions, setSessions] = useState<ChatSession[]>([]);
   const [currentSessionId, setCurrentSessionId] = useState<number | null>(null);
   const [isSessionsLoading, setIsSessionsLoading] = useState(true);
+  const [sessionsError, setSessionsError] = useState<string | null>(null);
 
   // 加载会话列表
   useEffect(() => {
@@ -29,11 +30,16 @@ export function useChatSessions() {
 
   const loadSessions = async () => {
     setIsSessionsLoading(true);
+    setSessionsError(null);
     try {
       const loadedSessions = await getChatSessions();
       setSessions(loadedSessions);
     } catch (error) {
       console.error("加载会话列表失败:", error);
+      setSessionsError(
+        error instanceof Error ? error.message : "会话列表加载失败，请重试",
+      );
+      return;
     } finally {
       setIsSessionsLoading(false);
     }
@@ -102,6 +108,7 @@ export function useChatSessions() {
     currentSessionId,
     setCurrentSessionId, // 暴露给需要手动控制的场景
     isSessionsLoading,
+    sessionsError,
     loadSessions,
     handleNewSession,
     handleSessionSelect,

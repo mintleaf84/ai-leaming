@@ -62,12 +62,14 @@ export default function PdfImportPage() {
       // 启动并发解析
       startConcurrentParsing(data.taskId, data.totalChunks);
     } catch (err) {
+      console.error("PDF 预览处理失败:", err);
       const msg =
         err instanceof DOMException && err.name === "TimeoutError"
           ? "OCR 请求超时，请重试"
           : `处理失败: ${err instanceof Error ? err.message : "请重试"}`;
       toast.error(msg);
       setIsProcessing(false);
+      return;
     }
   }, []);
 
@@ -99,8 +101,10 @@ export default function PdfImportPage() {
 
       startConcurrentParsing(data.taskId, data.totalChunks);
     } catch (err) {
+      console.error("文本导入处理失败:", err);
       toast.error(`处理失败: ${err instanceof Error ? err.message : "请重试"}`);
       setIsProcessing(false);
+      return;
     }
   }, []);
 
@@ -141,6 +145,8 @@ export default function PdfImportPage() {
           const msg = `第 ${chunkIndex + 1} 块解析失败: ${err instanceof Error ? err.message : "请重试"}`;
           chunkWarnings.push(msg);
           console.error(msg);
+          // 单块失败不中断其余分块，失败会通过 warnings 展示给用户
+          return;
         }
       };
 
@@ -172,7 +178,8 @@ export default function PdfImportPage() {
           body: JSON.stringify({ taskId }),
         });
       } catch {
-        // 非关键操作，忽略错误
+        // audit-allow: 服务端缓存清理属旁路操作，失败不影响已解析出的题目
+        console.warn("PDF 导入缓存清理失败，已忽略");
       }
     },
     [],
@@ -214,11 +221,13 @@ export default function PdfImportPage() {
           toast.error(data.message || "导入失败");
         }
       } catch (err) {
+        console.error("导入题目失败:", err);
         const msg =
           err instanceof DOMException && err.name === "TimeoutError"
             ? "导入超时，请重试"
             : `导入失败: ${err instanceof Error ? err.message : "请重试"}`;
         toast.error(msg);
+        return;
       } finally {
         setIsImporting(false);
       }

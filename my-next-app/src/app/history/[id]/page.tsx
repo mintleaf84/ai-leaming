@@ -197,7 +197,8 @@ export default function SessionDetailPage({
             a.click();
             document.body.removeChild(a);
           } catch {
-            // Fallback: 直接点击
+            // audit-allow: 受限 DOM 环境无法挂载临时节点时直接触发下载，属兼容性回退
+            console.warn("无法挂载临时下载节点，改为直接点击触发下载");
             a.click();
           }
         });

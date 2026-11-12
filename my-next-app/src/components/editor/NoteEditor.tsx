@@ -44,7 +44,7 @@ export default function NoteEditor({
     try {
       return JSON.parse(initialContent);
     } catch (_e) {
-      // 兼容历史纯文本内容，转换为最小合法文档结构
+      // audit-allow: 兼容历史纯文本笔记内容，解析失败时包装为最小合法文档结构
       return {
         type: "doc",
         content: [

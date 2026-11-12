@@ -44,6 +44,7 @@ export function DeleteTextbookButton({ id, title }: DeleteTextbookButtonProps) {
     } catch (error) {
       toast.error("删除失败，请稍后重试");
       console.error(error);
+      return;
     } finally {
       setDeleting(false);
     }

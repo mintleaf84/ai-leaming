@@ -13,6 +13,7 @@ import { getLeaderboardAction } from "@/server/actions/cultivation";
 import { LeaderboardEntry } from "@/lib/cultivation/types";
 import { LeaderboardItem } from "./LeaderboardItem";
 import { Loader2, ScrollText, Sparkles } from "lucide-react";
+import { ErrorState } from "@/components/ui/error-state";
 
 interface LeaderboardModalProps {
   children: React.ReactNode;
@@ -21,15 +22,21 @@ interface LeaderboardModalProps {
 export function LeaderboardModal({ children }: LeaderboardModalProps) {
   const [data, setData] = useState<LeaderboardEntry[]>([]);
   const [loading, setLoading] = useState(false);
+  const [loadError, setLoadError] = useState<string | null>(null);
   const [open, setOpen] = useState(false);
 
   const loadData = async () => {
     setLoading(true);
+    setLoadError(null);
     try {
       const result = await getLeaderboardAction();
       setData(result);
     } catch (error) {
       console.error("加载封神榜失败:", error);
+      setLoadError(
+        error instanceof Error ? error.message : "榜单加载失败，请稍后重试",
+      );
+      return;
     } finally {
       setLoading(false);
     }
@@ -63,6 +70,15 @@ export function LeaderboardModal({ children }: LeaderboardModalProps) {
                 正从虚空中打捞榜单...
               </p>
             </div>
+          ) : loadError ? (
+            <ErrorState
+              title="榜单加载失败"
+              description={loadError}
+              onRetry={() => {
+                void loadData();
+              }}
+              className="h-[400px] justify-center text-zinc-300"
+            />
           ) : data.length > 0 ? (
             <ScrollArea className="h-[450px] pr-4 custom-scrollbar">
               <div className="space-y-2 py-2">

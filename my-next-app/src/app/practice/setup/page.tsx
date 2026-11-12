@@ -79,7 +79,8 @@ export default function PracticeSetupPage() {
           }));
         }
       } catch (error) {
-        console.error("加载初始化数据失败", error);
+        // audit-allow: 仅解析 URL 参数失败，回退到默认练习配置；下一步仍可正常开始练习
+        console.warn("加载初始化数据失败，使用默认配置", error);
       } finally {
         setLoading(false);
       }

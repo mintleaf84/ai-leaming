@@ -83,6 +83,7 @@ export function TextbookChat({ context, title }: TextbookChatProps) {
       const decoder = new TextDecoder();
       let aiMessageContent = "";
       let streamBuffer = "";
+      let nonJsonPayloadWarned = false;
 
       // Add placeholder AI message
       const aiMessageId = (Date.now() + 1).toString();
@@ -125,8 +126,12 @@ export function TextbookChat({ context, title }: TextbookChatProps) {
               ) {
                 aiMessageContent += parsed.delta;
               }
-            } catch {
-              // 兼容旧文本协议
+            } catch (err) {
+              // audit-allow: 兼容旧文本协议，payload 不是 JSON 时按纯文本拼接
+              if (!nonJsonPayloadWarned) {
+                nonJsonPayloadWarned = true;
+                console.warn("[TextbookChat] 流片段非 JSON，按纯文本处理", err);
+              }
               aiMessageContent += payload;
             }
           }
@@ -148,6 +153,7 @@ export function TextbookChat({ context, title }: TextbookChatProps) {
           content: "抱歉，我现在有点累，请稍后再试。",
         },
       ]);
+      return;
     } finally {
       setIsLoading(false);
     }

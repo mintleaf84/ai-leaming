@@ -4,6 +4,8 @@ import React, { useState } from "react";
 import { BookOpen, Loader2, CheckCircle2, AlertCircle } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { getCategoryColor } from "@/lib/utils/category-colors";
+// 页面内已有 hook 返回的 `toast` 状态对象，故别名导入 sonner 的 toast 避免命名冲突
+import { toast as sonnerToast } from "sonner";
 
 // Hooks
 import { useKnowledgeCards } from "./hooks/useKnowledgeCards";
@@ -56,8 +58,12 @@ export default function KnowledgePage() {
       });
       if (!resp.ok) throw new Error("保存失败");
       loadCards(); // 刷新卡片列表
+      return true;
     } catch (error) {
+      // 保存失败 → 返回 false，由弹窗保持打开（输入不丢）
       console.error("AI 生成保存失败:", error);
+      sonnerToast.error("保存卡片失败，请重试");
+      return false;
     }
   };
 

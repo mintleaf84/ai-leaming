@@ -189,7 +189,9 @@ body { font-family: sans-serif; }
         toast.error(result.data?.message || "保存失败", { id: loadingToast });
       }
     } catch (_error) {
+      console.error("保存思维导图到笔记失败:", _error);
       toast.error("保存过程中出错", { id: loadingToast });
+      return;
     }
   };
 

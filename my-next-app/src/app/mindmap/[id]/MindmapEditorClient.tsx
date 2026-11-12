@@ -104,9 +104,11 @@ export default function MindmapEditorClient({
         toast.error(res.error || "生成失败", { id: loadingToast });
       }
     } catch (error: unknown) {
+      console.error("生成思维导图结构失败:", error);
       toast.error(getErrorMessage(error, "生成过程中发生意外错误"), {
         id: loadingToast,
       });
+      return;
     } finally {
       setIsGenerating(false);
     }

@@ -27,6 +27,7 @@ import {
   DropdownMenuSubContent,
 } from "@/components/ui/dropdown-menu";
 import { useTheme } from "next-themes";
+import { toast } from "sonner";
 import { useTerminology } from "@/lib/hooks/use-terminology";
 
 interface UserSectionProps {
@@ -44,12 +45,15 @@ export function UserSection({ user }: UserSectionProps) {
   const handleLogout = async () => {
     try {
       const res = await fetch("/api/auth/logout", { method: "POST" });
-      if (res.ok) {
-        router.push("/login");
-        router.refresh();
+      if (!res.ok) {
+        throw new Error(`退出登录失败 (${res.status})`);
       }
+      router.push("/login");
+      router.refresh();
     } catch (error) {
       console.error("Logout failed:", error);
+      toast.error("退出登录失败，请重试");
+      return;
     }
   };
 

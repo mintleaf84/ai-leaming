@@ -1,7 +1,7 @@
 "use client";
 import { getErrorMessage } from "@/lib/utils/error";
 
-import React, { useState } from "react";
+import React, { useRef, useState } from "react";
 import { X, Sparkles, Loader2, Wand2, Save, RotateCcw } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import type { KnowledgeCard } from "@/lib/services/knowledge";
@@ -9,7 +9,8 @@ import type { KnowledgeCard } from "@/lib/services/knowledge";
 interface AIGenerateModalProps {
   isOpen: boolean;
   onClose: () => void;
-  onSave: (card: Partial<KnowledgeCard>) => void;
+  /** 返回 false 表示保存失败：此时保持弹窗打开，避免用户丢掉已生成的卡片 */
+  onSave: (card: Partial<KnowledgeCard>) => Promise<boolean> | boolean;
 }
 
 type Step = "input" | "preview";
@@ -25,9 +26,15 @@ export const AIGenerateModal: React.FC<AIGenerateModalProps> = ({
   const [generatedCard, setGeneratedCard] =
     useState<Partial<KnowledgeCard> | null>(null);
   const [error, setError] = useState<string | null>(null);
+  // 弹窗会话序号：保存请求在飞时用户可能关掉再打开、输入新内容，
+  // 旧请求成功回来不能去关闭/重置这个新会话
+  const sessionRef = useRef(0);
+  // 保存期间锁住编辑与"重新输入"，否则旧请求成功会把用户新改的内容一起关掉
+  const [isSaving, setIsSaving] = useState(false);
 
   // 重置状态
   const reset = () => {
+    sessionRef.current += 1;
     setStep("input");
     setInputText("");
     setGeneratedCard(null);
@@ -73,16 +80,25 @@ export const AIGenerateModal: React.FC<AIGenerateModalProps> = ({
     } catch (err: unknown) {
       console.error("[AIGenerateModal] 生成失败:", err);
       setError(getErrorMessage(err, "生成失败，请重试"));
+      return;
     } finally {
       setIsGenerating(false);
     }
   };
 
   // 保存卡片
-  const handleSave = () => {
-    if (generatedCard) {
-      onSave(generatedCard);
-      handleClose();
+  const handleSave = async () => {
+    if (!generatedCard || isSaving) return;
+    const sessionAtSave = sessionRef.current;
+    setIsSaving(true);
+    try {
+      const ok = await onSave(generatedCard);
+      // 弹窗已经被关掉/重新打开过：这次保存结果与当前会话无关，不能碰它
+      if (sessionRef.current !== sessionAtSave) return;
+      // 只有保存成功才关闭；失败时保留预览，用户可以直接重试
+      if (ok !== false) handleClose();
+    } finally {
+      setIsSaving(false);
     }
   };
 
@@ -278,6 +294,7 @@ export const AIGenerateModal: React.FC<AIGenerateModalProps> = ({
               <Button
                 variant="ghost"
                 onClick={handleBack}
+                disabled={isSaving}
                 className="rounded-xl text-muted-foreground hover:bg-muted gap-2"
               >
                 <RotateCcw className="w-4 h-4" />
@@ -285,6 +302,7 @@ export const AIGenerateModal: React.FC<AIGenerateModalProps> = ({
               </Button>
               <Button
                 onClick={handleSave}
+                disabled={isSaving}
                 className="rounded-xl px-8 bg-primary hover:bg-primary/90 text-primary-foreground shadow-xl gap-2"
               >
                 <Save className="w-4 h-4" />

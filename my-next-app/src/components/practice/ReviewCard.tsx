@@ -202,7 +202,8 @@ export function ReviewCard({
                               label: labels.join(isMulti ? " + " : ""),
                               content: contents.join(isMulti ? "; " : ""),
                             };
-                          } catch (_e) {
+                          } catch {
+                            // audit-allow: 答案字段兼容历史脏数据（非数组/非 JSON），回退为原文展示
                             return { label: raw, content: raw };
                           }
                         };

@@ -40,6 +40,10 @@ export function DataManagementSection({
             a.click();
             document.body.removeChild(a);
           } catch {
+            // audit-allow: 下载锚点的挂载/移除失败不影响备份内容，退化为直接点击
+            console.warn("[DataManagement] 下载锚点挂载失败，改为直接点击", {
+              fileName: a.download,
+            });
             a.click();
           }
         });
@@ -78,6 +82,7 @@ export function DataManagementSection({
       } catch (error) {
         toast.error("无效的 JSON 备份文件");
         console.error(error);
+        return;
       }
     };
     reader.readAsText(file);

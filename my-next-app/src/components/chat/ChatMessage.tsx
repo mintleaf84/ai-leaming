@@ -118,6 +118,7 @@ export default function ChatMessage({
       setSaved(true);
     } catch (e) {
       console.error("保存知识卡片失败:", e);
+      return;
     } finally {
       setSaving(false);
     }

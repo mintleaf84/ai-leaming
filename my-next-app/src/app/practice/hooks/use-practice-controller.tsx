@@ -28,6 +28,9 @@ export function usePracticeController(
   const { isLoadingAI } = useReviewGeneration(state, dispatch);
 
   const isHandlingRef = useRef(false);
+  // 服务端保存失败时，本地判分已经推进，用户会误以为已保存；
+  // 用 Set 保证同一题只提示一次（连点 / 重试不重复弹）。
+  const notifiedSaveFailureIdsRef = useRef<Set<number>>(new Set());
   const [showExitConfirm, setShowExitConfirm] = useState(false);
   const [selectedOptions, setSelectedOptions] = useState<string[]>([]);
   const [practiceMode, setPracticeMode] = useState<PracticeMode>("smart");
@@ -297,8 +300,31 @@ export function usePracticeController(
       });
 
       // Async save
+      //
+      // 本地已经 dispatch 了判分与进度，这里不能阻塞答题；但"没存上"必须让用户知道。
+      // 三种失败都要覆盖：① reject；② 正常返回但 `serverError` / `success:false`
+      // （safe-action 的失败不抛异常）；③ 请求一直挂起（不 resolve 也不 reject）。
+      const questionId = currentQuestion.id;
+      const notifySaveFailure = (reason: unknown) => {
+        console.error("[practice] 作答记录保存失败", {
+          err: reason,
+          questionId,
+        });
+        if (notifiedSaveFailureIdsRef.current.has(questionId)) return;
+        notifiedSaveFailureIdsRef.current.add(questionId);
+        toast.error("作答记录保存失败，请检查网络后重试");
+      };
+
+      let settled = false;
+      const SAVE_TIMEOUT_MS = 15_000;
+      const timeoutId = setTimeout(() => {
+        if (settled) return;
+        settled = true;
+        notifySaveFailure(new Error("保存请求超时（15s 未返回）"));
+      }, SAVE_TIMEOUT_MS);
+
       submitAnswerAction({
-        questionId: currentQuestion.id,
+        questionId,
         userAnswer: answer,
         isCorrect,
         duration,
@@ -306,9 +332,22 @@ export function usePracticeController(
         totalDurationMs: totalDuration,
       })
         .then((res) => {
-          if (res && res.data?.success && res.data?.srs) {
-            const srs = res.data.srs;
+          if (settled) return;
+          settled = true;
+          clearTimeout(timeoutId);
 
+          // safe-action 的失败不一定抛异常：serverError / success:false 都要当失败处理
+          if (res?.serverError) {
+            notifySaveFailure(res.serverError);
+            return;
+          }
+          if (!res?.data?.success) {
+            notifySaveFailure("服务端未确认保存");
+            return;
+          }
+
+          if (res.data.srs) {
+            const srs = res.data.srs;
             toast.success(isCorrect ? "回答正确！" : "回答错误", {
               description: `下次复习: ${srs.nextInterval} 天后 (稳定性: ${srs.stability.toFixed(1)}d)`,
               duration: 2000,
@@ -316,7 +355,12 @@ export function usePracticeController(
             });
           }
         })
-        .catch(console.error);
+        .catch((err: unknown) => {
+          if (settled) return;
+          settled = true;
+          clearTimeout(timeoutId);
+          notifySaveFailure(err);
+        });
     } catch (e) {
       console.error("Submit answer error:", e);
       toast.error("提交答案失败，请重试");

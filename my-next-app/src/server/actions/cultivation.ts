@@ -40,7 +40,8 @@ export async function getLeaderboardAction(): Promise<LeaderboardEntry[]> {
 
     return leaderboard;
   } catch (error) {
+    // 不能返回 []：弹窗会把失败显示成"暂无数据"，错误态与重试入口都出不来
     logger.error({ err: error }, "Failed to fetch leaderboard");
-    return [];
+    throw new Error("榜单加载失败，请稍后重试");
   }
 }

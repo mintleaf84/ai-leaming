@@ -13,6 +13,7 @@ import {
 } from "lucide-react";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
+import { safeParseJson } from "@/lib/utils/json";
 
 export default function QuestionDetailPage({
   params,
@@ -53,11 +54,8 @@ export default function QuestionDetailPage({
   const parseOptions = (options: unknown): string[] => {
     if (Array.isArray(options)) return options;
     if (typeof options === "string") {
-      try {
-        return JSON.parse(options);
-      } catch {
-        return [];
-      }
+      // 兼容历史数据：options 可能是 JSON 字符串，非法时回退为空列表
+      return safeParseJson<string[]>(options, []);
     }
     return [];
   };
@@ -66,11 +64,8 @@ export default function QuestionDetailPage({
   const parseTags = (tags: unknown): string[] => {
     if (Array.isArray(tags)) return tags;
     if (typeof tags === "string") {
-      try {
-        return JSON.parse(tags);
-      } catch {
-        return tags ? [tags] : [];
-      }
+      // 兼容历史数据：tags 可能是 JSON 字符串，非法时按单个标签处理
+      return safeParseJson<string[]>(tags, tags ? [tags] : []);
     }
     return [];
   };
@@ -79,12 +74,9 @@ export default function QuestionDetailPage({
   const parseAnswer = (answer: unknown): string[] => {
     if (Array.isArray(answer)) return answer;
     if (typeof answer === "string") {
-      try {
-        const parsed = JSON.parse(answer);
-        return Array.isArray(parsed) ? parsed : [answer];
-      } catch {
-        return [answer];
-      }
+      // 兼容历史数据：answer 可能是 JSON 数组，非法或非数组时按单答案处理
+      const parsed = safeParseJson<unknown>(answer, null);
+      return Array.isArray(parsed) ? (parsed as string[]) : [answer];
     }
     return [];
   };

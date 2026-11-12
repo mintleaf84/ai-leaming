@@ -4,6 +4,7 @@ import React, { useState, useEffect, useCallback, useRef } from "react";
 import { createPortal } from "react-dom";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { Highlighter, Underline, Waves, Copy } from "lucide-react";
+import { toast } from "sonner";
 import { fetchJson, apiClient } from "@/lib/utils/api-client";
 
 interface Annotation {
@@ -230,6 +231,9 @@ export function AnnotatableText({
         });
       } catch (error) {
         console.error("保存标注失败:", error);
+        toast.error("标注保存失败，请重试");
+        // 失败时保留选区，方便用户直接重试
+        return;
       }
 
       setSelection(null);
@@ -251,6 +255,8 @@ export function AnnotatableText({
         });
       } catch (error) {
         console.error("删除标注失败:", error);
+        toast.error("删除标注失败，请重试");
+        return;
       }
     },
     [queryClient, questionId],

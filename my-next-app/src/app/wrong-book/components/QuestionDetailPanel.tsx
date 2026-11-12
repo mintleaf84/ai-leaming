@@ -14,6 +14,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { type WrongQuestionDetail } from "@/lib/services/wrong-question";
 import { getBeijingDiffDays, formatBeijingDate } from "@/lib/utils/datetime";
+import { safeParseJson } from "@/lib/utils/json";
 
 interface QuestionDetailPanelProps {
   detail: WrongQuestionDetail;
@@ -32,12 +33,11 @@ function isCorrectOption(opt: string, correctAnswer: string | null): boolean {
   if (opt === correctAnswer) return true;
 
   if (correctAnswer.trim().startsWith("[")) {
-    try {
-      const parsed = JSON.parse(correctAnswer);
-      if (Array.isArray(parsed) && parsed.includes(opt)) {
-        return true;
-      }
-    } catch {}
+    // 兼容历史数据：答案是 JSON 数组串，非法时按"无匹配"处理
+    const parsed = safeParseJson<unknown>(correctAnswer, null);
+    if (Array.isArray(parsed) && parsed.includes(opt)) {
+      return true;
+    }
   }
   return false;
 }
@@ -49,12 +49,11 @@ function isUserWrongOption(opt: string, userAnswer: string): boolean {
   if (opt === userAnswer) return true;
 
   if (userAnswer.trim().startsWith("[")) {
-    try {
-      const parsed = JSON.parse(userAnswer);
-      if (Array.isArray(parsed) && parsed.includes(opt)) {
-        return true;
-      }
-    } catch {}
+    // 兼容历史数据：用户答案是 JSON 数组串，非法时按"无匹配"处理
+    const parsed = safeParseJson<unknown>(userAnswer, null);
+    if (Array.isArray(parsed) && parsed.includes(opt)) {
+      return true;
+    }
   }
   return false;
 }

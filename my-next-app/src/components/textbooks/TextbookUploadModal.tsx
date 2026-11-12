@@ -65,7 +65,9 @@ export function TextbookUploadModal({
       router.refresh();
       if (onSuccess) onSuccess();
     } catch (error: unknown) {
+      console.error("[TextbookUpload] 上传失败:", error);
       toast.error(getErrorMessage(error));
+      return;
     } finally {
       setLoading(false);
     }

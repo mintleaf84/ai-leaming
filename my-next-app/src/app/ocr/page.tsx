@@ -209,9 +209,11 @@ export default function OcrPage() {
         toast.error(result.serverError || "识别失败");
       }
     } catch (error: unknown) {
+      console.error("OCR 识别失败:", error);
       toast.error(
         error instanceof Error ? error.message : "识别过程中发生错误",
       );
+      return;
     } finally {
       setIsProcessing(false);
     }
@@ -240,9 +242,11 @@ export default function OcrPage() {
         toast.error(res.error || "生成思维导图失败");
       }
     } catch (error: unknown) {
+      console.error("生成思维导图失败:", error);
       toast.error(
         error instanceof Error ? error.message : "生成过程中发生错误",
       );
+      return;
     } finally {
       setIsGeneratingMindmap(false);
     }

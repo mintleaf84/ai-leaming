@@ -27,6 +27,8 @@ import {
 import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
 import { getUserProfileAction } from "@/server/actions/profile";
+import { ErrorState } from "@/components/ui/error-state";
+import { getErrorMessage } from "@/lib/utils/error";
 import type { UserProfile } from "@/types/profile";
 
 // 用量类型标签
@@ -40,27 +42,59 @@ const USAGE_LABELS: Record<string, string> = {
 export default function ProfilePage() {
   const [profile, setProfile] = useState<UserProfile | null>(null);
   const [loading, setLoading] = useState(true);
+  const [loadError, setLoadError] = useState<string | null>(null);
+
+  const loadProfile = React.useCallback(async () => {
+    setLoading(true);
+    setLoadError(null);
+    try {
+      const res = await getUserProfileAction();
+      if (res.serverError) {
+        throw new Error(res.serverError);
+      }
+      if (res.data) {
+        setProfile(res.data as unknown as UserProfile);
+      }
+    } catch (error) {
+      console.error("加载个人信息失败", error);
+      setLoadError(getErrorMessage(error, "个人信息加载失败，请重试"));
+      return;
+    } finally {
+      setLoading(false);
+    }
+  }, []);
 
   useEffect(() => {
-    const loadProfile = async () => {
-      try {
-        const res = await getUserProfileAction();
-        if (res.data) {
-          setProfile(res.data as unknown as UserProfile);
-        }
-      } catch (error) {
-        console.error("加载个人信息失败", error);
-      } finally {
-        setLoading(false);
-      }
-    };
-    loadProfile();
-  }, []);
+    void loadProfile();
+  }, [loadProfile]);
 
   if (loading) {
     return (
       <div className="min-h-screen flex items-center justify-center">
         <Loader2 className="w-8 h-8 animate-spin text-primary" />
+      </div>
+    );
+  }
+
+  if (loadError) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="flex flex-col items-center gap-2">
+          <ErrorState
+            title="个人信息加载失败"
+            description={loadError}
+            onRetry={() => {
+              void loadProfile();
+            }}
+          />
+          {/* /profile 不在中间件保护列表内：未登录用户会走到这里，保留登录入口 */}
+          <Link
+            href="/login"
+            className="text-sm text-primary underline-offset-4 hover:underline"
+          >
+            重新登录
+          </Link>
+        </div>
       </div>
     );
   }

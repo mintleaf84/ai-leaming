@@ -30,7 +30,9 @@ export function MindmapSidebar({ records }: MindmapSidebarProps) {
         toast.error(result.message || "创建失败", { id: loading });
       }
     } catch (_error) {
+      console.error("创建思维导图失败:", _error);
       toast.error("请求失败", { id: loading });
+      return;
     }
   };
 
@@ -50,7 +52,9 @@ export function MindmapSidebar({ records }: MindmapSidebarProps) {
         toast.error(result.message || "删除失败");
       }
     } catch (_error) {
+      console.error("删除思维导图失败:", _error);
       toast.error("请求失败");
+      return;
     }
   };
 

@@ -51,8 +51,10 @@ export default function RegisterPage() {
       } else {
         setError(data.error || "注册失败");
       }
-    } catch (_err) {
+    } catch (err) {
+      console.error("注册请求失败:", err);
       setError("无法连接到服务器");
+      return;
     } finally {
       setLoading(false);
     }

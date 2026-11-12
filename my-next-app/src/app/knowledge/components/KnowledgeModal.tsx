@@ -2,6 +2,7 @@
 
 import React from "react";
 import { X, Plus, Edit2, Sparkles, Loader2 } from "lucide-react";
+import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import type { KnowledgeCard } from "@/lib/services/knowledge";
 
@@ -68,7 +69,8 @@ export const KnowledgeModal: React.FC<KnowledgeModalProps> = ({
       }
     } catch (error) {
       console.error("Failed to regenerate:", error);
-      // 这里可以加一个 toast，但组件内可以通过 error state 处理
+      toast.error("重新生成失败，请稍后重试");
+      return;
     } finally {
       setIsRegenerating(false);
     }

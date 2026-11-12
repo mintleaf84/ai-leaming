@@ -262,6 +262,7 @@ export function useWrongBookController() {
       } catch (error) {
         console.error("Random practice error:", error);
         toast.error("操作失败，请重试");
+        return;
       } finally {
         setIsRandomLoading(false);
       }

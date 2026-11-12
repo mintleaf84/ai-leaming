@@ -88,7 +88,12 @@ export function useChatStream({
           const newTitle = await generateChatTitle(targetSessionId);
           onTitleGenerated(targetSessionId, newTitle);
         } catch (e) {
-          console.error("生成标题失败:", e);
+          // audit-allow: 标题生成是旁路增强，失败只影响会话标题，不影响对话内容
+          console.warn("[useChatStream] 生成标题失败，保留默认标题", {
+            sessionId: targetSessionId,
+            err: e,
+          });
+          return;
         } finally {
           setIsGeneratingTitle(false);
           pendingTitleSessionIdRef.current = null;
@@ -163,6 +168,7 @@ export function useChatStream({
           console.error("Chat error:", err);
           setLocalError(err instanceof Error ? err.message : "发送消息失败");
           setLastFailedMessage(content);
+          return;
         }
       }
     },

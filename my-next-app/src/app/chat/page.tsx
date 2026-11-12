@@ -11,6 +11,7 @@ import { useChatSessions } from "@/hooks/chat/use-chat-sessions";
 import { useChatStream } from "@/hooks/chat/use-chat-stream";
 import { useChatScroll } from "@/hooks/chat/use-chat-scroll";
 import { KnowledgeModal } from "@/app/knowledge/components/KnowledgeModal";
+import { ErrorState } from "@/components/ui/error-state";
 import type { KnowledgeCard } from "@/lib/services/knowledge";
 
 // New Components
@@ -24,6 +25,8 @@ export default function ChatPage() {
   const {
     sessions,
     currentSessionId,
+    sessionsError,
+    loadSessions,
     handleNewSession: resetSessionId,
     handleSessionSelect: selectSession,
     handleDeleteSession,
@@ -174,6 +177,7 @@ export default function ChatPage() {
         toast.error("提取失败", {
           description: "无法从消息中提取知识卡片，请重试",
         });
+        return;
       }
     },
     [currentSessionId],
@@ -203,6 +207,7 @@ export default function ChatPage() {
       toast.error("保存失败", {
         description: "无法保存知识卡片，请重试",
       });
+      return;
     }
   };
 
@@ -257,6 +262,16 @@ export default function ChatPage() {
           sidebarOpen ? "translate-x-0" : "-translate-x-full"
         } fixed left-0 top-0 h-full z-30 transition-transform md:relative md:translate-x-0 border-r border-border bg-card`}
       >
+        {sessionsError && (
+          <ErrorState
+            title="会话列表加载失败"
+            description={sessionsError}
+            onRetry={() => {
+              void loadSessions();
+            }}
+            className="px-3 py-6"
+          />
+        )}
         <ChatSidebar
           sessions={sessions}
           currentSessionId={currentSessionId}

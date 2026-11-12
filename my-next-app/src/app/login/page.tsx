@@ -44,8 +44,10 @@ export default function LoginPage() {
       } else {
         setError(data.error || "登录失败");
       }
-    } catch (_err) {
+    } catch (err) {
+      console.error("登录请求失败:", err);
       setError("无法连接到服务器");
+      return;
     } finally {
       setLoading(false);
     }

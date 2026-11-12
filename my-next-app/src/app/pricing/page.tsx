@@ -18,6 +18,7 @@ import {
   getMySubscriptionAction,
 } from "@/server/actions/subscription";
 import { SubscriptionPlan, UserSubscriptionDetail } from "@/types";
+import { ErrorState } from "@/components/ui/error-state";
 import _Link from "next/link";
 
 // 套餐图标映射
@@ -41,30 +42,58 @@ export default function PricingPage() {
     null,
   );
   const [loading, setLoading] = useState(true);
+  const [loadError, setLoadError] = useState<string | null>(null);
+
+  const loadData = React.useCallback(async () => {
+    setLoading(true);
+    setLoadError(null);
+    try {
+      // 用 allSettled：订阅查询被拒绝时不能让套餐列表跟着失败
+      const [plansSettled, subSettled] = await Promise.allSettled([
+        getActivePlansAction(),
+        getMySubscriptionAction(),
+      ]);
+      const plansRes =
+        plansSettled.status === "fulfilled" ? plansSettled.value : null;
+      const subRes =
+        subSettled.status === "fulfilled" ? subSettled.value : null;
+      if (plansSettled.status === "rejected") {
+        throw plansSettled.reason;
+      }
+      if (!plansRes) throw new Error("套餐数据加载失败");
+
+      // safe-action 的失败不一定抛异常，必须显式检查 serverError
+      // 套餐列表是页面主体，失败即整页降级；订阅状态只是"是否已订阅"的增强信息，
+      // 未登录/失败时按未订阅展示，不能连累套餐列表
+      if (plansRes.serverError) {
+        throw new Error(plansRes.serverError);
+      }
+
+      if (plansRes.data?.success && plansRes.data.plans) {
+        setPlans(plansRes.data.plans);
+      }
+
+      if (!subRes || subRes.serverError) {
+        // audit-allow: 订阅状态属增强信息，失败按未订阅展示并留痕，不连累公开套餐列表
+        console.warn("[pricing] 订阅状态加载失败，按未订阅展示", {
+          err: subRes?.serverError ?? "订阅查询被拒绝",
+        });
+      } else if (subRes.data?.success && subRes.data.subscription) {
+        setCurrentSub(subRes.data.subscription);
+      }
+    } catch (error) {
+      // 错误信息只进日志：serverError 可能带内部细节，公开页不能原样展示
+      console.error("[pricing] 套餐数据加载失败", { err: error });
+      setLoadError("套餐数据加载失败，请稍后重试");
+      return;
+    } finally {
+      setLoading(false);
+    }
+  }, []);
 
   useEffect(() => {
-    const loadData = async () => {
-      try {
-        const [plansRes, subRes] = await Promise.all([
-          getActivePlansAction(),
-          getMySubscriptionAction(),
-        ]);
-
-        if (plansRes.data?.success && plansRes.data.plans) {
-          setPlans(plansRes.data.plans);
-        }
-        if (subRes.data?.success && subRes.data.subscription) {
-          setCurrentSub(subRes.data.subscription);
-        }
-      } catch (error) {
-        console.error("加载数据失败", error);
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    loadData();
-  }, []);
+    void loadData();
+  }, [loadData]);
 
   // 格式化价格
   const formatPrice = (cents: number) => {
@@ -86,6 +115,20 @@ export default function PricingPage() {
     return (
       <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-background to-muted">
         <Loader2 className="w-8 h-8 animate-spin text-primary" />
+      </div>
+    );
+  }
+
+  if (loadError) {
+    return (
+      <div className="min-h-screen bg-[#faf9f6] flex items-center justify-center">
+        <ErrorState
+          title="套餐加载失败"
+          description={loadError}
+          onRetry={() => {
+            void loadData();
+          }}
+        />
       </div>
     );
   }

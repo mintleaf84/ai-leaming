@@ -23,6 +23,7 @@ import {
 import { Checkbox } from "@/components/ui/checkbox";
 import { toast } from "sonner";
 import { createManualWrongQuestionAction } from "@/server/actions/wrong-questions";
+import { safeParseJson } from "@/lib/utils/json";
 
 interface AddQuestionDialogProps {
   open: boolean;
@@ -144,7 +145,9 @@ export function AddQuestionDialog({
         onOpenChange(false);
       }
     } catch (err) {
+      console.error("手动添加题目失败:", err);
       toast.error(err instanceof Error ? err.message : "添加失败");
+      return;
     } finally {
       setLoading(false);
     }
@@ -158,19 +161,13 @@ export function AddQuestionDialog({
 
   // 处理多选变动
   const handleMultiAnswerChange = (option: string, checked: boolean) => {
-    try {
-      const current = formData.answer ? JSON.parse(formData.answer) : [];
-      let next;
-      if (checked) {
-        next = [...current, option];
-      } else {
-        next = current.filter((o: string) => o !== option);
-      }
-      setFormData((prev) => ({ ...prev, answer: JSON.stringify(next) }));
-    } catch {
-      // 如果解析失败，重置
-      setFormData((prev) => ({ ...prev, answer: JSON.stringify([option]) }));
-    }
+    // 答案存的是 JSON 数组；解析失败（空/脏数据）时按"只选中当前项"重建
+    const current = safeParseJson<unknown>(formData.answer, []);
+    const currentArr = Array.isArray(current) ? (current as string[]) : [];
+    const next = checked
+      ? [...currentArr, option]
+      : currentArr.filter((o) => o !== option);
+    setFormData((prev) => ({ ...prev, answer: JSON.stringify(next) }));
   };
 
   return (
@@ -389,12 +386,12 @@ export function AddQuestionDialog({
               <div className="grid grid-cols-1 md:grid-cols-2 gap-2 border border-primary/20 p-3 rounded-md bg-muted/10">
                 {parsedOptions.length > 0 ? (
                   parsedOptions.map((opt, idx) => {
-                    let isChecked = false;
-                    try {
-                      isChecked = JSON.parse(formData.answer || "[]").includes(
-                        opt,
-                      );
-                    } catch {}
+                    const parsedAnswer = safeParseJson<unknown>(
+                      formData.answer,
+                      [],
+                    );
+                    const isChecked =
+                      Array.isArray(parsedAnswer) && parsedAnswer.includes(opt);
 
                     return (
                       <div key={idx} className="flex items-center space-x-2">

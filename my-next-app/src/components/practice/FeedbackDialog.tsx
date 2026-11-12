@@ -58,7 +58,9 @@ export function FeedbackDialog({ questionId }: FeedbackDialogProps) {
       setFeedbackType("");
       setDescription("");
     } catch (err) {
+      console.error("提交反馈失败:", err);
       toast.error(err instanceof Error ? err.message : "提交失败，请稍后重试");
+      return;
     } finally {
       setSubmitting(false);
     }

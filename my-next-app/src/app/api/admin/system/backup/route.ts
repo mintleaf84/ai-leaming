@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { BackupService } from "@/lib/services/backup-service";
 import { requireRole } from "@/lib/auth/auth";
-import { log } from "@/lib/logger";
+import { log, logger } from "@/lib/logger";
 
 export const dynamic = "force-dynamic";
 
@@ -12,6 +12,7 @@ export async function GET() {
     const { pass: _pass, ...safeConfig } = config;
     return NextResponse.json(safeConfig);
   } catch (error: unknown) {
+    logger.error({ err: error }, "[API] 读取备份配置失败");
     const status =
       error instanceof Error &&
       (error.message.includes("Unauthorized") ||
@@ -35,6 +36,7 @@ export async function POST(req: Request) {
     await BackupService.saveConfig(body);
     return NextResponse.json({ success: true });
   } catch (error: unknown) {
+    logger.error({ err: error }, "[API] 保存备份配置失败");
     const status =
       error instanceof Error &&
       (error.message.includes("Unauthorized") ||
@@ -80,6 +82,7 @@ export async function PATCH(req: Request) {
     const success = await BackupService.testConnection(testConfig);
     return NextResponse.json({ success });
   } catch (error: unknown) {
+    logger.error({ err: error }, "[API] 备份连接测试失败");
     return NextResponse.json({
       success: false,
       error: error instanceof Error ? error.message : String(error),

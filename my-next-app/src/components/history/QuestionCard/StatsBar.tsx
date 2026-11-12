@@ -2,6 +2,7 @@
 
 import React from "react";
 import { formatDuration, cn, indexToLetter } from "@/lib/utils/utils";
+import { safeParseJson } from "@/lib/utils/json";
 
 interface StatsBarProps {
   correctAnswer: string;
@@ -25,12 +26,9 @@ function parseAnswer(answer: string): string[] {
 
   // 1. JSON 数组格式 '["A","B"]'
   if (trimmed.startsWith("[")) {
-    try {
-      const parsed = JSON.parse(trimmed);
-      return Array.isArray(parsed) ? parsed : [answer];
-    } catch {
-      return [answer];
-    }
+    // 复用 safeParseJson：历史答案字段有脏数据，解析失败按原始字符串单值处理
+    const parsed = safeParseJson<unknown>(trimmed, null);
+    return Array.isArray(parsed) ? (parsed as string[]) : [answer];
   }
 
   // 2. 逗号分隔格式 'A,B,C' (多选题/不定项选择题)

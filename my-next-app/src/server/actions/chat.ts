@@ -45,8 +45,9 @@ export async function getChatSessions() {
     const user = await requireUser();
     return await listSessions(user.id, 50);
   } catch (error) {
+    // 不能返回 []：调用方会把它当成"没有任何会话"，错误态与重试入口都出不来
     logger.error({ err: error }, "[ChatActions] 获取会话列表失败");
-    return [];
+    throw new Error("获取会话列表失败，请重试");
   }
 }
 

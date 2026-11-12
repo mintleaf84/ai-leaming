@@ -13,7 +13,8 @@ export function isValidUrl(url: string) {
   try {
     new URL(url);
     return true;
-  } catch (_e) {
+  } catch {
+    // audit-allow: 本函数契约就是"URL 是否合法"，非法输入是正常分支
     return false;
   }
 }
@@ -24,7 +25,8 @@ export function getUrlFromString(str: string) {
     if (str.includes(".") && !str.includes(" ")) {
       return new URL(`https://${str}`).toString();
     }
-  } catch (_e) {
+  } catch {
+    // audit-allow: 兜底补全 https:// 后仍非法，按"无链接"处理
     return null;
   }
 }

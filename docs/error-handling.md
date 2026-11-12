@@ -88,13 +88,19 @@ node scripts/audit-catches.cjs    # 与基线比对（CI 已接入）
 | `src/lib/api/routes/**`、`src/lib/admin/**`、`src/server/actions/**`                  | 失败补日志并保留原 4xx/5xx；请求体解析失败与启动路径用 `audit-allow`；`external.ts` 的本地 `safeJsonParse` 改复用统一实现 |
 | 零散（`db` / `auth` / `practice` / `utils` / `middleware.ts` / `instrumentation.ts`） | 补日志 + 显式降级；`middleware.ts` 与 `utils/api-client.ts` 保持 `console`（Edge/客户端 bundle）                          |
 
-剩余（共 70 = 客户端组件 67 + 服务端 route handler 3，数字取自审计输出）：
+剩余：**0**。全部 218 个初始标记项已归入 `rethrow`（39）、`degraded`（222）或 `allowed`（52）。
 
-| 模块                                              | 数量   | 状态                                                                                                                                                                                                                   |
-| ------------------------------------------------- | ------ | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| 业务页面与组件                                    | 67     | 待处理（`app/questions` 8、`components/history` 7、`app/wrong-book` 6、`app/knowledge` 5、`app/practice` 4、`components/textbooks` 4、`hooks/chat` 3、`components/editor` 3、`app/notes` 3、`app/mindmap` 3、其余 21） |
-| 服务端 `src/app/api/admin/system/backup/route.ts` | 3      | 待处理（Next route handler，不是客户端组件）                                                                                                                                                                           |
-| 合计                                              | **70** |                                                                                                                                                                                                                        |
+| 批次 | 范围                                                                                        | 处数 |
+| ---- | ------------------------------------------------------------------------------------------- | ---- |
+| 1    | `routes/admin.ts` + `db` + `server/actions`                                                 | 30   |
+| 2    | `lib/ai/**` + `lib/schemas.ts`                                                              | 18   |
+| 3    | `lib/services/**` + `lib/import/**`                                                         | 25   |
+| 4    | `lib/api/routes` / `lib/admin` / 零散（`db`/`auth`/`utils`/`middleware`/`instrumentation`） | 25   |
+| 5    | `src/app/admin/**`                                                                          | 40   |
+| 6    | 业务页面与组件（练习/题目/错题本/笔记/思维导图/OCR/组件库/hooks）                           | 70   |
+
+门禁从此是"零容忍"：`npm run audit:catches` 只要出现一个 `logged`/`fallback`/`silent` 就失败；
+确需例外时写 `// audit-allow: <理由>`（必须位于 catch 块首条语句之前，且该 catch 本身已有日志或显式降级）。
 
 ## 已知语义债（catch 形态已标注，但业务语义未改）
 

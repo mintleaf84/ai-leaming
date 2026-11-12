@@ -15,6 +15,7 @@ import {
 } from "@/server/actions/practice";
 import { moveToObservationZoneAction } from "@/server/actions/zone";
 import { PRACTICE_MODE_LABELS, PracticeMode } from "@/types";
+import { safeParseJson } from "@/lib/utils/json";
 
 export function usePracticeController(
   enableIntelligentReview: boolean = false,
@@ -171,6 +172,7 @@ export function usePracticeController(
       } catch (error) {
         console.error("Failed to init session:", error);
         toast.error("初始化练习失败，请刷新重试");
+        return;
       }
     };
     init();
@@ -259,11 +261,11 @@ export function usePracticeController(
           });
       } else if (currentQuestion.type === "multi") {
         const parseAnswer = (val: string): string[] => {
-          try {
-            return JSON.parse(val);
-          } catch {
-            return val.split(",").map((s) => s.trim());
-          }
+          // 答案既可能是 JSON 数组（新格式），也可能是逗号分隔串（历史数据）
+          const parsed = safeParseJson<unknown>(val, null);
+          return Array.isArray(parsed)
+            ? (parsed as string[])
+            : val.split(",").map((s) => s.trim());
         };
         const correctArr = parseAnswer(currentQuestion.answer).sort();
         const answerArr = parseAnswer(answer).sort();
@@ -317,6 +319,8 @@ export function usePracticeController(
         .catch(console.error);
     } catch (e) {
       console.error("Submit answer error:", e);
+      toast.error("提交答案失败，请重试");
+      return;
     } finally {
       setTimeout(() => {
         isHandlingRef.current = false;

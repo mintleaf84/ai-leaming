@@ -111,6 +111,7 @@ export const QuestionCard = React.memo(
             console.error("第一性原理分析失败:", error);
             if (isMounted.current)
               toast.error(getErrorMessage(error, "分析失败，请稍后重试"));
+            return;
           } finally {
             if (isMounted.current) setIsLoadingFP(false);
           }
@@ -149,6 +150,7 @@ export const QuestionCard = React.memo(
           } catch (error) {
             console.error("助记生成失败:", error);
             if (isMounted.current) toast.error("请求出错，请稍后重试");
+            return;
           } finally {
             if (isMounted.current) setIsGeneratingMnemonic(false);
           }
@@ -182,6 +184,7 @@ export const QuestionCard = React.memo(
         } catch (error) {
           console.error("提交反馈失败:", error);
           toast.error("提交失败，请稍后重试");
+          return;
         } finally {
           setIsSubmittingFeedback(false);
         }

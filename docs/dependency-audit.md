@@ -59,9 +59,10 @@
 
 - npm（`/my-next-app`）每周一次，安全更新单独分组，最多 3 个 PR；
 - GitHub Actions 每月一次；
-- **只忽略开发工具链的 major 版本更新**（`jsdom` / `vitest` / `@vitest/*` / `eslint*` /
-  `@typescript-eslint/*` / `typescript` / `@tiptap/*`）；其余依赖（含生产依赖的 major）
-  合并成**一个**分组 PR，逐条评估，不靠 ignore 压制。
+- **版本更新只走 minor/patch**；major 需要单独适配，按包逐个登记在 `ignore` 里
+  （`ai` / `@ai-sdk/*` / `framer-motion` / `lucide-react` / `better-sqlite3` / `ts-fsrs` /
+  `unpdf` / `msw` / `@types/node` / `@vitejs/plugin-react` / `react` / `react-dom` /
+  测试与 lint 工具链 / `@tiptap/*`），走专门的技术升级 PR；安全更新不受 `ignore` 影响。
 - `novel` 不 ignore —— 它一旦发布安全修复必须能被自动提上来。
 - Actions 的 major 升级（`checkout 4→7` 这类）统一人工评估。
 - `open-pull-requests-limit: 3` 只作用于版本更新，安全更新 PR 不计入该上限。

@@ -48,6 +48,19 @@
   --color-destructive: var(--destructive);
   --color-destructive-foreground: var(--destructive-foreground);
 
+  /* 语义状态色（用法与替换约定见 docs/ui-system.md §9） */
+  --color-success: var(--success);
+  --color-success-foreground: var(--success-foreground);
+  --color-success-muted: var(--success-muted);
+
+  --color-warning: var(--warning);
+  --color-warning-foreground: var(--warning-foreground);
+  --color-warning-muted: var(--warning-muted);
+
+  --color-info: var(--info);
+  --color-info-foreground: var(--info-foreground);
+  --color-info-muted: var(--info-muted);
+
   --color-border: var(--border);
   --color-input: var(--input);
   --color-ring: var(--ring);
@@ -109,6 +122,20 @@
   --accent-foreground: oklch(0.25 0.05 150);
   --destructive: oklch(0.6 0.2 25);
   --destructive-foreground: oklch(0.98 0 0);
+
+  /* 语义状态色：success ≈ emerald-600 / warning ≈ amber-600 / info ≈ blue-600
+     muted = 浅底徽章与提示块的面色（对应现有 bg-emerald-50~100、bg-amber-500/10、bg-blue-50）
+     取色依据：现存 1183 处硬编码里 text-emerald-600、text-amber-600、text-blue-600 为各色最高频文字色阶 */
+  --success: oklch(0.596 0.145 163.225);
+  --success-foreground: oklch(1 0 0);
+  --success-muted: oklch(0.95 0.052 163.051);
+  --warning: oklch(0.666 0.179 58.318);
+  --warning-foreground: oklch(1 0 0);
+  --warning-muted: oklch(0.962 0.059 95.617);
+  --info: oklch(0.546 0.245 262.881);
+  --info-foreground: oklch(1 0 0);
+  --info-muted: oklch(0.932 0.032 255.585);
+
   --border: oklch(0.9 0 0);
   --input: oklch(0.9 0 0);
   --ring: oklch(0.45 0.15 150);
@@ -163,6 +190,19 @@
   --accent-foreground: oklch(0.93 0 0);
   --destructive: oklch(0.5 0.18 25);
   --destructive-foreground: oklch(0.98 0 0);
+
+  /* 语义状态色（深色）：取 400 级做文字/描边——存量深色写法即 dark:text-emerald-400 / -amber-400 / -blue-400（共 37 处）
+     实底时前景压深到 oklch(0.17)，muted 取 950 级对应现有 dark:bg-*-900/30 */
+  --success: oklch(0.765 0.177 163.223);
+  --success-foreground: oklch(0.17 0 0);
+  --success-muted: oklch(0.262 0.051 172.552);
+  --warning: oklch(0.828 0.189 84.429);
+  --warning-foreground: oklch(0.17 0 0);
+  --warning-muted: oklch(0.279 0.077 45.635);
+  --info: oklch(0.707 0.165 254.624);
+  --info-foreground: oklch(0.17 0 0);
+  --info-muted: oklch(0.282 0.091 267.935);
+
   --border: oklch(0.28 0 0);
   --input: oklch(0.22 0 0);
   --ring: oklch(0.55 0.15 150);
@@ -195,7 +235,7 @@
   --novel-stone-800: #d6d3d1;
 }
 
-[data-theme="zhuoyu"] {
+.zhuoyu {
   /* ZhuoYu Notion Theme - Light mode (Rice Paper & Ink) */
   --background: oklch(0.985 0.002 85);
   /* #faf9f6 宣纸白 */
@@ -215,6 +255,16 @@
   --accent-foreground: oklch(0.25 0.05 150);
   --destructive: oklch(0.6 0.2 25);
   --destructive-foreground: oklch(0.98 0 0);
+  /* 语义状态色：与 :root 同值（zhuoyu 亮色） */
+  --success: oklch(0.596 0.145 163.225);
+  --success-foreground: oklch(1 0 0);
+  --success-muted: oklch(0.95 0.052 163.051);
+  --warning: oklch(0.666 0.179 58.318);
+  --warning-foreground: oklch(1 0 0);
+  --warning-muted: oklch(0.962 0.059 95.617);
+  --info: oklch(0.546 0.245 262.881);
+  --info-foreground: oklch(1 0 0);
+  --info-muted: oklch(0.932 0.032 255.585);
   --border: oklch(0.9 0 0);
   --input: oklch(0.9 0 0);
   --ring: oklch(0.45 0.15 150);
@@ -235,7 +285,7 @@
   --chart-5: oklch(0.7 0.1 150);
 }
 
-[data-theme="zhuoyu"].dark {
+.zhuoyu.dark {
   /* ZhuoYu Notion Theme - Dark mode (纯中性灰 + 翠玉点缀) */
   --background: oklch(0.14 0 0);
   /* Pure Neutral Black */
@@ -263,6 +313,16 @@
 
   --destructive: oklch(0.5 0.18 25);
   --destructive-foreground: oklch(0.98 0 0);
+  /* 语义状态色：与 .dark 同值（zhuoyu 暗色） */
+  --success: oklch(0.765 0.177 163.223);
+  --success-foreground: oklch(0.17 0 0);
+  --success-muted: oklch(0.262 0.051 172.552);
+  --warning: oklch(0.828 0.189 84.429);
+  --warning-foreground: oklch(0.17 0 0);
+  --warning-muted: oklch(0.279 0.077 45.635);
+  --info: oklch(0.707 0.165 254.624);
+  --info-foreground: oklch(0.17 0 0);
+  --info-muted: oklch(0.282 0.091 267.935);
 
   --border: oklch(0.28 0 0);
   --input: oklch(0.22 0 0);
@@ -285,7 +345,7 @@
   --chart-5: oklch(0.75 0.1 150);
 }
 
-[data-theme="eye-care"] {
+.eye-care {
   /* Eye Care Mode - Warm Beige / Paper */
   --background: #fdfbf7;
   /* Warm Paper */
@@ -316,6 +376,17 @@
   --destructive: #cc5544;
   /* Muted Red */
   --destructive-foreground: #fdfbf7;
+
+  /* 语义状态色：暖底上压暗一档，保证在 #fdfbf7 与浅底块上都过 AA（4.5:1） */
+  --success: #386e4b;
+  --success-foreground: #fdfbf7;
+  --success-muted: #e2ecdf;
+  --warning: #96591f;
+  --warning-foreground: #fdfbf7;
+  --warning-muted: #f0e4d0;
+  --info: #2b6785;
+  --info-foreground: #fdfbf7;
+  --info-muted: #dfe9ee;
 
   --border: #dcd3c1;
   --input: #dcd3c1;

@@ -7,7 +7,8 @@ import { expect, test, type Page } from "@playwright/test";
  *   1. 页面没有横向溢出（documentElement / 移动端 main 容器两级）；
  *   2. 主容器可见且渲染出了真实文本（不是骨架、不是错误边界）；
  *   3. 375px 视口下没有元素越出视口右侧；
- *   4. 375px 视口下报告可点区域 < 44×44 与表单双列（报告模式，不阻断）。
+ *   4. 375px 视口下报告可点区域 < 44×44 与表单双列（报告模式，不阻断）；
+ *   5. 375px 视口下不存在两条互相重叠的贴底固定底栏（§6：一个页面最多一条）。
  *
  * 之所以不用截图对比：截图会被字体渲染、动画首帧、机器 DPI 影响，
  * 在 CI 上极易 flaky，且失败时无法定位到底哪个元素出了问题。
@@ -60,6 +61,21 @@ const MIN_TAP_TARGET = 44;
  */
 const CLIP_TOLERANCE = 8;
 
+/**
+ * 底部窗口高度（px）：`rect.top >= innerHeight - 160` 且 `rect.bottom <= innerHeight`
+ * 的 `position: fixed` 元素才算「底栏候选」。
+ *
+ * 为什么用窗口而不是「贴底 Npx」：`MobileNav` 锚在
+ * `bottom-[calc(1.5rem+safe-area)]`，底边离视口底 24px；真机 safe-area 不为 0 时
+ * 底边会离得更远（`env(safe-area-inset-bottom)` 叠加），任何固定的小阈值都会漏掉它。
+ * 160px 覆盖「导航整高 64px + 24px 下边距 + safe-area 余量 + 页面级操作条整高 ~56px」，
+ * 同时不会把 body 中段随手 `fixed` 的浮层算进来。
+ */
+const BOTTOM_BAR_WINDOW = 160;
+
+/** 视口边缘判定容忍度（px）：吸收亚像素/阴影，用于识别「铺满整屏」的固定遮罩 */
+const VIEWPORT_EDGE_TOLERANCE = 8;
+
 /** 单个越界元素的最小描述：够定位即可，不 dump 整个 DOM */
 export interface OversizeElement {
   /** 尽量可读的选择器：tag#id.class1.class2[data-testid=...] */
@@ -104,6 +120,32 @@ export interface MobileReport {
   twoColumnForms: Array<{ selector: string; gridTemplateColumns: string }>;
 }
 
+/**
+ * 贴底的 `position: fixed` 元素（移动端「底栏」）。
+ *
+ * ui-system.md §6：一个移动端页面最多一条固定底栏 —— 两条贴底固定元素同时存在，
+ * 必然有一方被压住/抢走点击。这里只记录几何量，重叠判定在采集阶段两两算。
+ */
+export interface BottomBar {
+  selector: string;
+  rect: {
+    left: number;
+    top: number;
+    width: number;
+    height: number;
+    right: number;
+    bottom: number;
+  };
+}
+
+/** 一对互相重叠的底栏（同时给出双方 selector + rect，便于直接定位） */
+export interface BottomBarOverlap {
+  a: BottomBar;
+  b: BottomBar;
+  /** 相交区域面积（px²）；> 0 才算重叠 */
+  overlapArea: number;
+}
+
 /** 一次采样得到的全部几何数据 */
 /** 未被授权的局部横向滚动容器（典型：拿着 overflow-x:auto 装宽表格的工具栏） */
 export interface LocalScrollContainer {
@@ -134,6 +176,10 @@ export interface LayoutProbe {
   skeletonsVisible: string[];
   /** 仅 ≤375 视口采集；其他视口为 null */
   mobile: MobileReport | null;
+  /** 仅 ≤375 视口采集的贴底固定元素 */
+  bottomBars: BottomBar[];
+  /** 底栏两两重叠（应为空：一个页面最多一条固定底栏） */
+  bottomBarOverlaps: BottomBarOverlap[];
 }
 
 /** gotoAndSettle 的结果，供用例记录 annotation */
@@ -226,6 +272,8 @@ export async function collectLayoutProbe(page: Page): Promise<LayoutProbe> {
       skeletonSelector: string;
       minTapTarget: number;
       clipTolerance: number;
+      bottomBarWindow: number;
+      edgeTolerance: number;
     }
   >(
     ({
@@ -235,6 +283,8 @@ export async function collectLayoutProbe(page: Page): Promise<LayoutProbe> {
       skeletonSelector,
       minTapTarget,
       clipTolerance,
+      bottomBarWindow,
+      edgeTolerance,
     }) => {
       const vw = window.innerWidth;
       const vh = window.innerHeight;
@@ -497,6 +547,75 @@ export async function collectLayoutProbe(page: Page): Promise<LayoutProbe> {
         };
       }
 
+      /**
+       * 底栏（ui-system.md §6：一个移动端页面最多一条固定底栏）。
+       *
+       * 判定口径：`position: fixed`，且整个元素落在视口底部 160px 窗口内
+       * （`rect.top >= vh - 160` 且 `rect.bottom <= vh`）—— 不用「贴底 Npx」这种魔数，
+       * 因为 `MobileNav` 底边离视口底的距离随 safe-area 变化。
+       * 刻意排除三类：
+       *   - 装饰层（aria-hidden / data-decorative）与 pre/code/.prose 内部（富文本工具栏）；
+       *   - 铺满整屏的固定遮罩（dialog scrim / 全屏 loading）：rect.top ≤ 1 且高度≈视口高，
+       *     它盖住一切是设计意图，与「两条底栏抢位置」不是一回事；
+       *   - 互为祖先/后代的固定元素：子元素作为底栏内容被定位在底栏内，
+       *     属于同一条底栏的内部结构，不是两条。
+       */
+      const bottomBars: BottomBar[] = [];
+      const bottomBarOverlaps: BottomBarOverlap[] = [];
+      if (vw <= 375) {
+        const candidates: Array<{ el: Element; bar: BottomBar }> = [];
+        for (const el of nodes) {
+          if (nonLayoutTags.has(el.tagName.toLowerCase())) continue;
+          if (el.closest('[aria-hidden="true"], [data-decorative]')) continue;
+          if (el.closest(sanctionedSelector)) continue;
+          if (getComputedStyle(el).position !== "fixed") continue;
+          const rect = el.getBoundingClientRect();
+          if (!isRendered(el, rect)) continue;
+          // 底部窗口：底边不出视口，顶边进入底部 160px
+          if (rect.bottom > vh + edgeTolerance) continue;
+          if (rect.top < vh - bottomBarWindow) continue;
+          if (rect.top <= 1 && rect.height >= vh - edgeTolerance) continue;
+          candidates.push({
+            el,
+            bar: {
+              selector: describe(el),
+              rect: {
+                left: Math.round(rect.left),
+                top: Math.round(rect.top),
+                width: Math.round(rect.width),
+                height: Math.round(rect.height),
+                right: Math.round(rect.right),
+                bottom: Math.round(rect.bottom),
+              },
+            },
+          });
+        }
+
+        for (const candidate of candidates) bottomBars.push(candidate.bar);
+
+        for (let i = 0; i < candidates.length; i += 1) {
+          for (let j = i + 1; j < candidates.length; j += 1) {
+            const first = candidates[i];
+            const second = candidates[j];
+            if (first.el.contains(second.el) || second.el.contains(first.el)) {
+              continue;
+            }
+            const a = first.bar.rect;
+            const b = second.bar.rect;
+            const overlapWidth =
+              Math.min(a.right, b.right) - Math.max(a.left, b.left);
+            const overlapHeight =
+              Math.min(a.bottom, b.bottom) - Math.max(a.top, b.top);
+            if (overlapWidth <= 0 || overlapHeight <= 0) continue;
+            bottomBarOverlaps.push({
+              a: first.bar,
+              b: second.bar,
+              overlapArea: Math.round(overlapWidth * overlapHeight),
+            });
+          }
+        }
+      }
+
       const mainEl = document.querySelector("main");
 
       return {
@@ -517,6 +636,8 @@ export async function collectLayoutProbe(page: Page): Promise<LayoutProbe> {
         localScrollCount,
         skeletonsVisible,
         mobile,
+        bottomBars,
+        bottomBarOverlaps,
       };
     },
     {
@@ -526,6 +647,8 @@ export async function collectLayoutProbe(page: Page): Promise<LayoutProbe> {
       skeletonSelector: SKELETON_SELECTOR,
       minTapTarget: MIN_TAP_TARGET,
       clipTolerance: CLIP_TOLERANCE,
+      bottomBarWindow: BOTTOM_BAR_WINDOW,
+      edgeTolerance: VIEWPORT_EDGE_TOLERANCE,
     },
   );
 }
@@ -726,6 +849,18 @@ export async function assertLayoutIntact(
       `${where}：发现 ${probe.localScrollCount} 个未授权的局部横向滚动容器` +
         `（除 pre/code/.prose/[data-scroll-ok] 外，移动端应改成卡片）：\n` +
         JSON.stringify(probe.localScroll, null, 2),
+    ).toEqual([]);
+
+    // 底栏重叠（ui-system.md §6）：一个移动端页面最多一条固定底栏。
+    // 典型冲突：MobileNav 与 wrong-book / practice-setup 的页面级操作条同时贴底。
+    expect(
+      probe.bottomBarOverlaps,
+      `${where}：发现 ${probe.bottomBarOverlaps.length} 对互相重叠的贴底固定元素` +
+        `（一个移动端页面最多一条固定底栏；有页面级固定操作条的路由应让 MobileNav 不渲染，见 docs/ui-system.md §6）：\n` +
+        JSON.stringify(probe.bottomBarOverlaps, null, 2) +
+        (probe.bottomBars.length > 1
+          ? `\n本次采样到的贴底固定元素（${probe.bottomBars.length} 个）：\n${JSON.stringify(probe.bottomBars, null, 2)}`
+          : ""),
     ).toEqual([]);
   }
 }

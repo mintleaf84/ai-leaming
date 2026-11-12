@@ -4,6 +4,7 @@ import _dynamic from "next/dynamic";
 import { ErrorBoundary } from "@/components/ErrorBoundary";
 // import { Navbar } from "@/components/Navbar";
 import { AppSidebar } from "@/components/layout/AppSidebar";
+import { BottomBarProvider } from "@/components/layout/bottom-bar-slot";
 import { MobileNav } from "@/components/MobileNav";
 import { ThemeProvider } from "@/components/theme-provider";
 import { TerminologyProvider } from "@/lib/hooks/use-terminology";
@@ -91,24 +92,33 @@ export default async function RootLayout({
               disableTransitionOnChange
               themes={["light", "dark", "eye-care", "zhuoyu"]}
             >
-              <div className="flex h-dvh">
-                <div className="hidden md:flex">
-                  <AppSidebar
-                    userSection={
-                      <Suspense fallback={<SidebarUserSkeleton />}>
-                        <SidebarUser />
-                      </Suspense>
-                    }
-                    featureFlags={featureFlags}
-                  />
+              {/* 底栏登记：页面组件（children 内）声明，MobileNav 消费，必须包住两者 */}
+              <BottomBarProvider>
+                <div className="flex h-dvh">
+                  <div className="hidden md:flex">
+                    <AppSidebar
+                      userSection={
+                        <Suspense fallback={<SidebarUserSkeleton />}>
+                          <SidebarUser />
+                        </Suspense>
+                      }
+                      featureFlags={featureFlags}
+                    />
+                  </div>
+                  <div className="flex-1 flex flex-col min-w-0">
+                    {/*
+                      pb-20 是为移动端 MobileNav（h-16 + 1.5rem 底距）预留的呼吸位。
+                      MobileNav 在页面自己登记了底栏时会隐藏（见 components/layout/bottom-bar-slot.tsx），
+                      此时这 80px 只是多一段空白；各页自带操作条的地方另有自己的 pb，
+                      所以刻意不在全局布局里按路由分叉。
+                    */}
+                    <main className="flex-1 pb-20 md:pb-0 relative overflow-y-auto">
+                      <ErrorBoundary>{children}</ErrorBoundary>
+                    </main>
+                  </div>
                 </div>
-                <div className="flex-1 flex flex-col min-w-0">
-                  <main className="flex-1 pb-20 md:pb-0 relative overflow-y-auto">
-                    <ErrorBoundary>{children}</ErrorBoundary>
-                  </main>
-                </div>
-              </div>
-              <MobileNav featureFlags={featureFlags} />
+                <MobileNav featureFlags={featureFlags} />
+              </BottomBarProvider>
               <Toaster position="top-center" richColors />
             </ThemeProvider>
           </TerminologyProvider>

@@ -1,16 +1,20 @@
 import type { Page } from "@playwright/test";
+import { expect } from "@playwright/test";
 import { test } from "../e2e/fixtures";
 import { assertLayoutIntact, gotoAndSettle } from "./layout-helpers";
 
 /**
  * 布局护栏用例（不依赖截图基线）
  *
- * 覆盖：/login（公开）+ 8 个登录后主路由 × 3 个视口 = 27 条用例。
+ * 覆盖：/login（公开）+ 9 个登录后主路由 × 3 个视口 = 30 条用例，
+ * 外加 1 条 /wrong-book「选中题目后」的专项（其底部操作栏是条件渲染的，
+ * 默认状态不渲染，重叠断言会空跑）。
  *
  * 每条用例的判定（详见 layout-helpers.ts）：
  *   - 所有视口：HTTP 2xx/3xx、非错误边界、非骨架态、documentElement 无横向溢出、
  *     主容器可见且有真实文本；
  *   - 375 视口额外：main 内部不得横向滚动、无元素越出视口右侧；
+ *   - 375 视口额外：不存在两条互相重叠的贴底固定底栏（§6 一个页面最多一条）；
  *   - 375 视口额外（报告模式，不阻断）：可点区域 < 44×44、表单双列。
  *
  * /admin 暂未覆盖：管理员登录走 adminPage fixture，需要额外一轮全局 setup，
@@ -31,6 +35,7 @@ const PUBLIC_ROUTES = ["/login"] as const;
 const AUTH_ROUTES = [
   "/dashboard",
   "/practice",
+  "/practice/setup",
   "/wrong-book",
   "/history",
   "/questions/import",
@@ -81,10 +86,55 @@ for (const vp of VIEWPORTS) {
 
     for (const route of AUTH_ROUTES) {
       // 每条用例独立登录（fixtures.loginAs），保证用例之间互不污染；
-      // 代价是每个视口多 8 次登录，CI 上 workers=2 可接受。
+      // 代价是每个视口多 9 次登录，CI 上 workers=2 可接受。
       test(`受保护路由 ${route}`, async ({ loggedInPage: page }) => {
         await visit(page, route, vp.id);
         await assertLayoutIntact(page, route, vp.id);
+      });
+    }
+
+    // 专项：/wrong-book 的页面级固定操作栏是**条件渲染**的（选中题目才出现），
+    // 默认状态它不渲染、MobileNav 正常显示，底栏重叠断言等于空跑。
+    // 只有 375 视口有重叠风险（移动端才渲染 MobileNav），其他视口不必重复。
+    if (vp.width <= 375) {
+      test(`受保护路由 /wrong-book（选中题目后）`, async ({
+        loggedInPage: page,
+      }) => {
+        await visit(page, "/wrong-book", vp.id);
+
+        // 选择控件有三种可能：role=checkbox / 原生 checkbox / 顶部的「全选」。
+        // 当前 WrongQuestionCard 用的是无 role 的方形图标按钮，所以「全选」是兜底路径。
+        const candidates = [
+          page.getByRole("checkbox").first(),
+          page.locator('input[type="checkbox"]').first(),
+          page.getByRole("button", { name: /^全选$/ }).first(),
+        ];
+        let trigger: (typeof candidates)[number] | null = null;
+        for (const candidate of candidates) {
+          if ((await candidate.count()) > 0) {
+            trigger = candidate;
+            break;
+          }
+        }
+
+        // global-setup 会为 testuser 造一条答错记录，因此这里**必须**能找到选择控件。
+        // 找不到就是夹具坏了（而不是"环境不适配"），直接失败，避免这条用例长期静默空跑。
+        expect(
+          trigger,
+          "测试库里没有可选错题：global-setup 应已种入一条 is_correct=0 的 practice_log，" +
+            "否则 /wrong-book 是空态、页面级底栏不渲染，重叠断言等于没跑",
+        ).not.toBeNull();
+        if (trigger === null) return;
+
+        await trigger.click();
+
+        // 操作栏真的出现了再采样（等文本而不是等固定时长）
+        await expect(
+          page.getByRole("button", { name: /开始练习选中的/ }),
+          `路由 /wrong-book @ ${vp.id}：选中题目后底部操作栏没有出现，无法验证底栏重叠`,
+        ).toBeVisible();
+
+        await assertLayoutIntact(page, "/wrong-book", vp.id);
       });
     }
   });

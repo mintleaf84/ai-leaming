@@ -33,6 +33,7 @@ import {
   Dimension,
 } from "@/types";
 import { KeypointTree } from "@/components/practice/KeypointTree";
+import { usePageBottomBar } from "@/components/layout/bottom-bar-slot";
 
 // 模式图标组件
 const ModeIcons: Record<PracticeMode, React.ReactNode> = {
@@ -87,6 +88,10 @@ export default function PracticeSetupPage() {
     };
     init();
   }, [searchParams]);
+
+  // 本页底部操作栏（「开始练习」）始终渲染，直接登记为常驻底栏：
+  // MobileNav 会让位，两条 fixed 底栏不会叠在一起（docs/ui-system.md §6）
+  usePageBottomBar(true);
 
   // 切换模式时应用预设配置
   const handleModeChange = (mode: PracticeMode) => {

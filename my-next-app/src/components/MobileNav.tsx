@@ -5,6 +5,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useTerminology } from "@/lib/hooks/use-terminology";
 import { cn } from "@/lib/utils";
+import { useHasPageBottomBar } from "@/components/layout/bottom-bar-slot";
 import { Home, BookOpen, Book, Bot, FileText } from "lucide-react";
 
 interface UserProps {
@@ -18,12 +19,23 @@ interface UserProps {
   };
 }
 
+/**
+ * 页面级底栏由页面自己登记（见 `components/layout/bottom-bar-slot.tsx`），
+ * 这里不再维护路由白名单：`/wrong-book` 的操作栏是条件渲染的，按路由猜会误伤。
+ */
+
 export function MobileNav({ user: _user, featureFlags }: UserProps) {
   const pathname = usePathname();
   const { t } = useTerminology();
+  const hasPageBar = useHasPageBottomBar();
 
   // Hide on login/register pages
   if (pathname === "/login" || pathname === "/register") {
+    return null;
+  }
+
+  // 页面自带 fixed 底栏：再挂一条 MobileNav 会与之重叠（docs/ui-system.md §6）
+  if (hasPageBar) {
     return null;
   }
 

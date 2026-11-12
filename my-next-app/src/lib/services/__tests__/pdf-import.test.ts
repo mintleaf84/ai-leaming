@@ -10,7 +10,15 @@
  * 「关键路径必须有真实依赖的集成测试」这条硬规则）。只有 AI 侧依赖
  * （PaddleOCR / 题目解析）和旁路的 SRS 写入仍是 mock。
  */
-import { describe, it, expect, vi, beforeAll, afterAll, beforeEach } from "vitest";
+import {
+  describe,
+  it,
+  expect,
+  vi,
+  beforeAll,
+  afterAll,
+  beforeEach,
+} from "vitest";
 import fs from "node:fs";
 import path from "node:path";
 import { sql } from "drizzle-orm";
@@ -319,9 +327,9 @@ describe("pdfImportService", () => {
       expect(buildPdfExternalId({ ...q, answer: "C" })).not.toBe(
         buildPdfExternalId(q),
       );
-      expect(buildPdfExternalId({ ...q, content: `${q.content}-改写` })).not.toBe(
-        buildPdfExternalId(q),
-      );
+      expect(
+        buildPdfExternalId({ ...q, content: `${q.content}-改写` }),
+      ).not.toBe(buildPdfExternalId(q));
     });
   });
 
@@ -472,12 +480,20 @@ describe("pdfImportService", () => {
       const batch = [makeQuestion(), makeQuestion(), makeQuestion()];
       const externalIds = batch.map(buildPdfExternalId);
 
-      const first = await pdfImportService.confirmImport(USER_ID, batch, FOLDER_ID);
+      const first = await pdfImportService.confirmImport(
+        USER_ID,
+        batch,
+        FOLDER_ID,
+      );
       expect(first.success).toBe(true);
       expect(first.importedCount).toBe(3);
       expect(first.skippedCount).toBe(0);
 
-      const second = await pdfImportService.confirmImport(USER_ID, batch, FOLDER_ID);
+      const second = await pdfImportService.confirmImport(
+        USER_ID,
+        batch,
+        FOLDER_ID,
+      );
       expect(second.success).toBe(true);
       expect(second.importedCount).toBe(0);
       expect(second.skippedCount).toBe(3);

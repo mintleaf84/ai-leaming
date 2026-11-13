@@ -72,7 +72,10 @@ export const recallListCardSchema = z.object({
   items: z
     .array(recallListItemSchema)
     .min(1, "至少 1 个条目")
-    .max(RECALL_MAX_LIST_ITEMS, `条目最多 ${RECALL_MAX_LIST_ITEMS} 条，超出请拆卡`),
+    .max(
+      RECALL_MAX_LIST_ITEMS,
+      `条目最多 ${RECALL_MAX_LIST_ITEMS} 条，超出请拆卡`,
+    ),
   verbatim: z.boolean().default(false),
 });
 

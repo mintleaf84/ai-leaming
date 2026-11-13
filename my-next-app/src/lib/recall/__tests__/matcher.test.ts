@@ -6,11 +6,7 @@
  * 匹配器是纯函数，这里用真实卡片形状（与卡组文件同构）直接喂，不碰数据库。
  */
 import { describe, it, expect } from "vitest";
-import {
-  gradeCloze,
-  gradeList,
-  splitClozeSegments,
-} from "../matcher";
+import { gradeCloze, gradeList, splitClozeSegments } from "../matcher";
 import type { RecallClozeCard, RecallListCard } from "../types";
 
 function listCard(overrides: Partial<RecallListCard> = {}): RecallListCard {
@@ -69,11 +65,13 @@ describe("gradeList", () => {
     const card = listCard({
       items: [{ text: "建立安全制度", keywords: [] }],
     });
-    expect(gradeList(card, "我先写了建立安全制度这条").verdicts).toEqual(["ok"]);
+    expect(gradeList(card, "我先写了建立安全制度这条").verdicts).toEqual([
+      "ok",
+    ]);
     expect(gradeList(card, "完全无关").verdicts).toEqual(["miss"]);
   });
 
-  it("归一化后为空的关键词被跳过（不能让 includes(\"\") 蒙对）", () => {
+  it('归一化后为空的关键词被跳过（不能让 includes("") 蒙对）', () => {
     const card = listCard({ items: [{ text: "某条", keywords: ["、"] }] });
     expect(gradeList(card, "什么也没写").verdicts).toEqual(["miss"]);
   });
@@ -96,9 +94,9 @@ describe("gradeList", () => {
   });
 
   it("下标越界显式报错（静默跳过会让整卡被判 Good）", () => {
-    expect(() => gradeList(listCard(), "安全制度", { itemIndexes: [9] })).toThrow(
-      /不存在条目下标 9/,
-    );
+    expect(() =>
+      gradeList(listCard(), "安全制度", { itemIndexes: [9] }),
+    ).toThrow(/不存在条目下标 9/);
   });
 });
 
@@ -156,9 +154,9 @@ describe("gradeCloze", () => {
 
   it("双向包含：答案包含输入（输入 ≥2 字）算对", () => {
     // "危及人身安全" 是答案 "危及人身安全、健康" 的子串
-    expect(gradeCloze(clozeCard(), "危及人身安全|教育教学设施").verdicts).toEqual(
-      ["ok", "ok"],
-    );
+    expect(
+      gradeCloze(clozeCard(), "危及人身安全|教育教学设施").verdicts,
+    ).toEqual(["ok", "ok"]);
   });
 
   it("双向包含：输入包含答案也算对（用户多写了修饰语）", () => {

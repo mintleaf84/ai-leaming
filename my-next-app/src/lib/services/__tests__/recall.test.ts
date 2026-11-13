@@ -11,7 +11,11 @@ import { describe, it, expect, beforeAll, afterAll, beforeEach } from "vitest";
 import fs from "node:fs";
 import path from "node:path";
 import { and, eq } from "drizzle-orm";
-import type { RecallCard, RecallClozeCard, RecallListCard } from "../../recall/types";
+import type {
+  RecallCard,
+  RecallClozeCard,
+  RecallListCard,
+} from "../../recall/types";
 
 const dbFile = `test-recall-service-${process.pid}.db`;
 process.env.DB_FILENAME = dbFile;
@@ -35,7 +39,10 @@ const USER_B = 701;
 /** 固定"现在"：UTC 02:00 = 北京 10:00 */
 const NOW = new Date("2026-11-13T02:00:00.000Z");
 
-function listCard(cardId: string, overrides: Partial<RecallListCard> = {}): RecallListCard {
+function listCard(
+  cardId: string,
+  overrides: Partial<RecallListCard> = {},
+): RecallListCard {
   return {
     cardId,
     kind: "list",
@@ -119,12 +126,8 @@ async function logRows(userId: number, cardId: number) {
 }
 
 async function resetRecallTables(): Promise<void> {
-  const {
-    recall_review_logs,
-    recall_card_states,
-    recall_cards,
-    recall_decks,
-  } = dbm.drizzleSchema;
+  const { recall_review_logs, recall_card_states, recall_cards, recall_decks } =
+    dbm.drizzleSchema;
   await dbm.drizzleDb.delete(recall_review_logs);
   await dbm.drizzleDb.delete(recall_card_states);
   await dbm.drizzleDb.delete(recall_cards);
@@ -159,7 +162,9 @@ beforeEach(async () => {
   await resetRecallTables();
   await dbm.drizzleDb
     .delete(dbm.drizzleSchema.system_settings)
-    .where(eq(dbm.drizzleSchema.system_settings.key, "recall_new_cards_per_day"));
+    .where(
+      eq(dbm.drizzleSchema.system_settings.key, "recall_new_cards_per_day"),
+    );
 });
 
 afterAll(async () => {
@@ -526,7 +531,10 @@ describe("队列与设置", () => {
     const before = await getTodayQueue(USER_A, { now: NOW });
     expect(before.fresh).toHaveLength(2);
 
-    await submitReview(USER_A, cardId, { typed: "安全制度 安全演练 救助", now: NOW });
+    await submitReview(USER_A, cardId, {
+      typed: "安全制度 安全演练 救助",
+      now: NOW,
+    });
 
     const after = await getTodayQueue(USER_A, { now: NOW });
     // 复习过的卡离开新卡池；另一张没复习的仍是新卡
@@ -560,7 +568,10 @@ describe("归档", () => {
     const ids = await seedDeck("archive2", [listCard("c01")]);
     const cardId = ids.get("c01")!;
 
-    await submitReview(USER_A, cardId, { typed: "安全制度 安全演练 救助", now: NOW });
+    await submitReview(USER_A, cardId, {
+      typed: "安全制度 安全演练 救助",
+      now: NOW,
+    });
     const reviewed = await stateRow(USER_A, cardId);
 
     await archiveCard(USER_A, cardId);

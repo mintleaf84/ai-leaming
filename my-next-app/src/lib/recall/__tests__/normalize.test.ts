@@ -7,11 +7,7 @@
  * 这些断言会提醒他先看一下 types.ts 的边界说明。
  */
 import { describe, it, expect } from "vitest";
-import {
-  normalizeText,
-  stripPunctuation,
-  toHalfWidth,
-} from "../normalize";
+import { normalizeText, stripPunctuation, toHalfWidth } from "../normalize";
 
 describe("toHalfWidth", () => {
   it("全角 ASCII → 半角", () => {

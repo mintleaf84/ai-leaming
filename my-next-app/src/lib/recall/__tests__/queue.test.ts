@@ -54,7 +54,11 @@ async function seedDeck(
 
   await dbm.drizzleDb
     .insert(dbm.drizzleSchema.users)
-    .values({ id: userId, username: `queue-user-${userId}`, password_hash: "x" })
+    .values({
+      id: userId,
+      username: `queue-user-${userId}`,
+      password_hash: "x",
+    })
     .onConflictDoNothing();
 
   const cards: RecallCard[] = [];
@@ -132,12 +136,8 @@ describe("clampNewLimit", () => {
  * （用户表保留，避免 FK 反复重建）。
  */
 async function resetRecallTables(): Promise<void> {
-  const {
-    recall_review_logs,
-    recall_card_states,
-    recall_cards,
-    recall_decks,
-  } = dbm.drizzleSchema;
+  const { recall_review_logs, recall_card_states, recall_cards, recall_decks } =
+    dbm.drizzleSchema;
   await dbm.drizzleDb.delete(recall_review_logs);
   await dbm.drizzleDb.delete(recall_card_states);
   await dbm.drizzleDb.delete(recall_cards);
@@ -173,7 +173,6 @@ afterAll(async () => {
 });
 
 describe("buildDailyQueue", () => {
-
   it("新卡额度 6：只投 6 张，按 card id 升序", async () => {
     const { userId, cardIds } = await seedDeck(10, "fresh6");
 
@@ -267,7 +266,9 @@ describe("buildDailyQueue", () => {
     const logRows = cardIds.slice(2, 12).map((cardId, index) => ({
       user_id: userId,
       card_id: cardId,
-      ts: new Date(new Date(DAY_START).getTime() + (index + 1) * 60_000).toISOString(),
+      ts: new Date(
+        new Date(DAY_START).getTime() + (index + 1) * 60_000,
+      ).toISOString(),
       mode: "first" as const,
       derived_rating: "good",
     }));

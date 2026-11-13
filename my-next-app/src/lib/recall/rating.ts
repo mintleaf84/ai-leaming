@@ -8,10 +8,7 @@
  * `Easy` 在本模块**不可能**被产生：判分只输出三档，scheduler 的评分映射里也没有
  * Easy 分支。这条约束由单测钉死——一旦有人"顺手加一档"，测试会红。
  */
-import type {
-  RecallDerivedRating,
-  RecallItemVerdict,
-} from "./types";
+import type { RecallDerivedRating, RecallItemVerdict } from "./types";
 
 export function deriveRating(
   verdicts: RecallItemVerdict[],

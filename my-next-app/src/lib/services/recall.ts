@@ -269,7 +269,8 @@ export async function submitReview(
   const card = await getCard(userId, cardId);
   const priorPending = card.state?.pendingItems ?? null;
   const mode: RecallMode =
-    options.mode ?? (priorPending && priorPending.length > 0 ? "retest" : "first");
+    options.mode ??
+    (priorPending && priorPending.length > 0 ? "retest" : "first");
 
   const allIndexes =
     card.kind === "list"
@@ -309,10 +310,12 @@ export async function submitReview(
   const pendingVerdicts: RecallItemVerdict[] = options.allBlank
     ? presentedIndexes.map(() => "miss")
     : verdicts;
-  const graded: RecallGradedItem[] = presentedIndexes.map((index, position) => ({
-    index,
-    verdict: pendingVerdicts[position],
-  }));
+  const graded: RecallGradedItem[] = presentedIndexes.map(
+    (index, position) => ({
+      index,
+      verdict: pendingVerdicts[position],
+    }),
+  );
   const pendingItems = computePendingItems(mode, graded, priorPending);
 
   const base: Omit<RecallSubmitResult, "duplicate"> = {
@@ -442,7 +445,12 @@ function gradeCard(
 
   // 只判呈现出来的那几个空：用户在重测界面只看到它们，输入也按这个顺序分段
   const { verdicts } = gradeCloze(
-    { cardId: card.cardKey, kind: "cloze", prompt: card.prompt, blanks: subset },
+    {
+      cardId: card.cardKey,
+      kind: "cloze",
+      prompt: card.prompt,
+      blanks: subset,
+    },
     typed,
   );
 

@@ -57,7 +57,9 @@ const scheduler = createRecallScheduler();
 
 function toStateEnum(value: number, cardLabel: string): State {
   if (!Number.isInteger(value) || value < 0 || value > 3) {
-    throw new Error(`${cardLabel} 的 state=${String(value)} 非法（只接受 0–3）`);
+    throw new Error(
+      `${cardLabel} 的 state=${String(value)} 非法（只接受 0–3）`,
+    );
   }
   return value as State;
 }
@@ -106,7 +108,9 @@ export function toFsrsCard(
     stability: columns.stability,
     difficulty: columns.difficulty,
     elapsed_days: lastReview ? Math.max(0, dateDiffInDays(lastReview, now)) : 0,
-    scheduled_days: lastReview ? Math.max(0, date_diff(due, lastReview, "days")) : 0,
+    scheduled_days: lastReview
+      ? Math.max(0, date_diff(due, lastReview, "days"))
+      : 0,
     learning_steps: 0,
     reps: columns.reps,
     lapses: columns.lapses,

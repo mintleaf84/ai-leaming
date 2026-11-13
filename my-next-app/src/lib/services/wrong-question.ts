@@ -97,9 +97,13 @@ export const wrongQuestionService = {
       .select({ count: sql`COUNT(DISTINCT ${practice_logs.question_id})` })
       .from(practice_logs)
       .where(baseWhere);
-    const countResult = (await (tag
-      ? countQuery.innerJoin(questions, eq(practice_logs.question_id, questions.id))
-      : countQuery
+    const countResult = (await (
+      tag
+        ? countQuery.innerJoin(
+            questions,
+            eq(practice_logs.question_id, questions.id),
+          )
+        : countQuery
     ).get()) as { count: number };
     const total = countResult?.count || 0;
 

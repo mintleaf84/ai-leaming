@@ -169,7 +169,9 @@ async function seedFixtures() {
       tags: JSON.stringify(["记忆"]),
       front: "遗忘曲线是什么",
       back: "先快后慢",
-      key_points: JSON.stringify([{ term: "遗忘曲线", definition: "先快后慢" }]),
+      key_points: JSON.stringify([
+        { term: "遗忘曲线", definition: "先快后慢" },
+      ]),
       created_at: "2026-01-05 10:00:00",
     },
     {
@@ -349,7 +351,9 @@ describe("External read-only API (Agent API P2)", () => {
       const body = await res.json();
 
       expect(body.meta).toMatchObject({ limit: 20, offset: 0, total: 2 });
-      const ids = body.data.map((item: { questionId: number }) => item.questionId);
+      const ids = body.data.map(
+        (item: { questionId: number }) => item.questionId,
+      );
       expect(ids.sort()).toEqual([101, 102]);
       for (const item of body.data) {
         expect(item).toMatchObject({

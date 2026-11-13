@@ -196,7 +196,10 @@ const PaginationQuerySchema = z.object({
 });
 
 const PaginationMetaSchema = z.object({
-  limit: z.number().int().describe("本次请求的实际条数上限（已被截到 100 以内）"),
+  limit: z
+    .number()
+    .int()
+    .describe("本次请求的实际条数上限（已被截到 100 以内）"),
   offset: z.number().int().describe("本次请求的偏移量"),
   total: z.number().int().describe("符合条件的总条数"),
 });
@@ -491,9 +494,7 @@ const wrongBookStatsRoute = createRoute({
             ),
             byDimension: z.array(
               z.object({
-                dimension: z
-                  .string()
-                  .describe("题目维度，缺失时为 unknown"),
+                dimension: z.string().describe("题目维度，缺失时为 unknown"),
                 count: z.number().int().describe("该维度下的错题数"),
               }),
             ),
@@ -535,7 +536,10 @@ const masteryRoute = createRoute({
                 score: z.number().describe("掌握度分数（0-100）"),
                 correctCount: z.number().int().describe("累计答对数"),
                 totalCount: z.number().int().describe("累计作答次数"),
-                accuracy: z.number().int().describe("正确率（0-100 整数百分比）"),
+                accuracy: z
+                  .number()
+                  .int()
+                  .describe("正确率（0-100 整数百分比）"),
                 lastUpdated: z
                   .string()
                   .nullable()

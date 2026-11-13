@@ -6,7 +6,7 @@ import { usePathname } from "next/navigation";
 import { useTerminology } from "@/lib/hooks/use-terminology";
 import { cn } from "@/lib/utils";
 import { useHasPageBottomBar } from "@/components/layout/bottom-bar-slot";
-import { Home, BookOpen, Book, Bot, FileText } from "lucide-react";
+import { Home, BookOpen, Book, Bot, FileText, Brain } from "lucide-react";
 
 interface UserProps {
   user?: {
@@ -42,6 +42,7 @@ export function MobileNav({ user: _user, featureFlags }: UserProps) {
   const navItems = [
     { name: t("nav.home"), href: "/dashboard", icon: Home },
     { name: t("nav.practice"), href: "/practice", icon: BookOpen },
+    { name: t("nav.recall"), href: "/recall", icon: Brain },
     { name: "AI 助手", href: "/chat", icon: Bot },
     {
       name: t("nav.notes"),

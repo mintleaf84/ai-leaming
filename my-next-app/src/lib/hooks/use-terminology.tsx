@@ -30,6 +30,7 @@ const TERMS: Record<string, { standard: string; neo: string }> = {
   "nav.settings": { standard: "设置", neo: "设置" },
   "nav.ocr": { standard: "文字识别", neo: "观文" },
   "nav.mindmap": { standard: "思维导图工作台", neo: "道图" },
+  "nav.recall": { standard: "回忆自测", neo: "温故" },
 
   // Sections
   "section.start": { standard: "开始", neo: "启程" },

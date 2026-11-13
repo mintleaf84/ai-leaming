@@ -27,7 +27,7 @@ import {
   afterAll,
 } from "vitest";
 import { http, HttpResponse } from "msw";
-import { server } from "../../../../tests/msw/server";
+import { server } from "@/test-utils/msw/server";
 import LoginPage from "../page";
 
 // ============================================================
@@ -178,7 +178,7 @@ describe("LoginPage 集成测试", () => {
   it("输入正确凭证后，应成功登录并跳转到 /dashboard", async () => {
     // 测试意图：验证完整的登录成功流程（填写 → 提交 → 跳转）
     //
-    // 此处使用 tests/msw/handlers.ts 中的默认 handler（admin/password123 → 200）
+    // 此处使用 src/test-utils/msw/handlers.ts 中的默认 handler（admin/password123 → 200）
     const { user } = await renderAndFillForm("admin", "password123");
     await user.click(screen.getByRole("button", { name: "立即登录" }));
 

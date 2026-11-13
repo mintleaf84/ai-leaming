@@ -9,6 +9,8 @@ npm-debug.log
 README.md
 README.zh-CN.md
 tests
+# 注意：src/test-utils 必须保留在镜像里 —— 有的测试文件会 import 它，
+# 而 next build 的 TypeScript 检查会走到这些文件（Docker 构建曾因此失败）。
 playwright-report
 test-results
 data/*.db

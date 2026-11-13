@@ -742,3 +742,109 @@ export const question_feedback = sqliteTable(
     ),
   }),
 );
+
+// --- 回忆自测：卡组 / 卡片（内容全局共享，不含任何用户复习数据） ---
+export const recall_decks = sqliteTable("recall_decks", {
+  id: integer("id").primaryKey({ autoIncrement: true }),
+  deck_key: text("deck_key").notNull().unique(),
+  title: text("title").notNull(),
+  schema_version: integer("schema_version").notNull().default(1),
+  // 分组只是展示用的树（规格 §1.1 的 groups），P1 不单独建表：整棵存 JSON。
+  // 没有这一列，import→export 会丢掉 groups 的标题与顺序，导出就不再是同格式。
+  groups_json: text("groups_json"),
+  // NULL = 公共卡组（任何人都能导入更新）；非 NULL = 该用户维护的卡组
+  owner_user_id: integer("owner_user_id").references(() => users.id, {
+    onDelete: "cascade",
+  }),
+  created_at: text("created_at").default(sql`CURRENT_TIMESTAMP`),
+  updated_at: text("updated_at").default(sql`CURRENT_TIMESTAMP`),
+});
+
+// --- 回忆自测：卡片 ---
+export const recall_cards = sqliteTable(
+  "recall_cards",
+  {
+    id: integer("id").primaryKey({ autoIncrement: true }),
+    deck_id: integer("deck_id")
+      .notNull()
+      .references(() => recall_decks.id, { onDelete: "cascade" }),
+    card_key: text("card_key").notNull(),
+    kind: text("kind", { enum: ["list", "cloze"] }).notNull(),
+    group_key: text("group_key"),
+    prompt: text("prompt").notNull(),
+    items_json: text("items_json"),
+    blanks_json: text("blanks_json"),
+    verbatim: integer("verbatim").notNull().default(0),
+    // sha1(prompt + 条目/答案文本)：导入幂等与冲突判定的唯一依据
+    prompt_hash: text("prompt_hash").notNull(),
+    created_at: text("created_at").default(sql`CURRENT_TIMESTAMP`),
+    updated_at: text("updated_at").default(sql`CURRENT_TIMESTAMP`),
+  },
+  (table) => ({
+    unq_deck_card: unique().on(table.deck_id, table.card_key),
+    idx_deck: index("idx_recall_cards_deck").on(table.deck_id),
+  }),
+);
+
+// --- 回忆自测：卡片 FSRS 状态（按用户隔离） ---
+export const recall_card_states = sqliteTable(
+  "recall_card_states",
+  {
+    id: integer("id").primaryKey({ autoIncrement: true }),
+    user_id: integer("user_id")
+      .notNull()
+      .references(() => users.id, { onDelete: "cascade" }),
+    card_id: integer("card_id")
+      .notNull()
+      .references(() => recall_cards.id, { onDelete: "cascade" }),
+    due: text("due"),
+    stability: real("stability").notNull().default(0),
+    difficulty: real("difficulty").notNull().default(0),
+    state: integer("state").notNull().default(0), // 0 New / 1 Learning / 2 Review / 3 Relearning
+    reps: integer("reps").notNull().default(0),
+    lapses: integer("lapses").notNull().default(0),
+    last_review: text("last_review"),
+    // 上次判错的条目序号（JSON 数组），重测只呈现这些条目
+    pending_items: text("pending_items"),
+    archived: integer("archived").notNull().default(0),
+    created_at: text("created_at").default(sql`CURRENT_TIMESTAMP`),
+    updated_at: text("updated_at").default(sql`CURRENT_TIMESTAMP`),
+  },
+  (table) => ({
+    unq_user_card: unique().on(table.user_id, table.card_id),
+    idx_user_due: index("idx_recall_card_states_user_due").on(
+      table.user_id,
+      table.due,
+    ),
+  }),
+);
+
+// --- 回忆自测：作答日志（匹配器误杀率与后续算法升级的唯一数据源） ---
+export const recall_review_logs = sqliteTable(
+  "recall_review_logs",
+  {
+    id: integer("id").primaryKey({ autoIncrement: true }),
+    user_id: integer("user_id")
+      .notNull()
+      .references(() => users.id, { onDelete: "cascade" }),
+    card_id: integer("card_id")
+      .notNull()
+      .references(() => recall_cards.id, { onDelete: "cascade" }),
+    ts: text("ts").notNull(),
+    mode: text("mode", { enum: ["first", "retest"] }).notNull(),
+    algo_verdicts: text("algo_verdicts"), // ["ok","miss",...] 匹配器原判
+    user_overrides: text("user_overrides"), // [{"index":1,"to":"ok"}]
+    keyword_hits: integer("keyword_hits"), // P1 只预留字段：命中条目数
+    keyword_total: integer("keyword_total"), // P1 只预留字段：待判条目总数
+    derived_rating: text("derived_rating"), // again|hard|good
+    typed_answer: text("typed_answer"),
+    fsrs_before: text("fsrs_before"),
+    fsrs_after: text("fsrs_after"),
+  },
+  (table) => ({
+    idx_user_ts: index("idx_recall_review_logs_user_ts").on(
+      table.user_id,
+      sql`${table.ts} DESC`,
+    ),
+  }),
+);

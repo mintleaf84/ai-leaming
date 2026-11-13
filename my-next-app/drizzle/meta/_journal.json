@@ -85,6 +85,13 @@
       "when": 1783200000000,
       "tag": "0011_api_key_scopes_and_audit",
       "breakpoints": true
+    },
+    {
+      "idx": 12,
+      "version": "6",
+      "when": 1783300000000,
+      "tag": "0012_recall_self_test",
+      "breakpoints": true
     }
   ]
 }

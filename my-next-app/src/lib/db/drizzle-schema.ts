@@ -846,5 +846,12 @@ export const recall_review_logs = sqliteTable(
       table.user_id,
       sql`${table.ts} DESC`,
     ),
+    // 幂等键 (user_id, card_id, ts 截到秒)：见 drizzle/0013 的说明。
+    // 服务层靠它判断"同一秒的重复提交"，不能用"先查后写"代替。
+    unq_user_card_ts: uniqueIndex("recall_review_logs_user_card_ts_unique").on(
+      table.user_id,
+      table.card_id,
+      table.ts,
+    ),
   }),
 );

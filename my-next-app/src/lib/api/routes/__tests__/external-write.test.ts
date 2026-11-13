@@ -138,9 +138,24 @@ describe("POST /api/external/practice/answers（agent 导入答题记录）", ()
         sessionKey: "agent-run-normal",
         sessionName: "由 agent 导入",
         answers: [
-          { questionId: q1, userAnswer: "A", isCorrect: true, durationMs: 9000 },
-          { questionId: q2, userAnswer: "A", isCorrect: false, durationMs: 7000 },
-          { questionId: q3, userAnswer: "A", isCorrect: true, durationMs: 5000 },
+          {
+            questionId: q1,
+            userAnswer: "A",
+            isCorrect: true,
+            durationMs: 9000,
+          },
+          {
+            questionId: q2,
+            userAnswer: "A",
+            isCorrect: false,
+            durationMs: 7000,
+          },
+          {
+            questionId: q3,
+            userAnswer: "A",
+            isCorrect: true,
+            durationMs: 5000,
+          },
         ],
       });
 
@@ -150,7 +165,9 @@ describe("POST /api/external/practice/answers（agent 导入答题记录）", ()
       expect(typeof body.sessionId).toBe("string");
 
       // 会话行：practice_mode=import、source_key 带 agent: 前缀、计数正确
-      const sessions = await testDbHelper.db.select().from(schema.practice_sessions);
+      const sessions = await testDbHelper.db
+        .select()
+        .from(schema.practice_sessions);
       expect(sessions).toHaveLength(1);
       expect(sessions[0]).toMatchObject({
         id: body.sessionId,
@@ -268,10 +285,9 @@ describe("POST /api/external/practice/answers（agent 导入答题记录）", ()
 
   describe("权限", () => {
     it("write key 之外读接口仍可读（read 守卫是兜底，不是上限）", async () => {
-      const res = await createRootApp().request(
-        `${API_PREFIX}/questions`,
-        { headers: { Authorization: "Bearer write-key" } },
-      );
+      const res = await createRootApp().request(`${API_PREFIX}/questions`, {
+        headers: { Authorization: "Bearer write-key" },
+      });
       expect(res.status).toBe(200);
     });
 

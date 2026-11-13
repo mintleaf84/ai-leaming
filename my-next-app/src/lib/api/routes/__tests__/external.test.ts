@@ -46,7 +46,10 @@ function createAuditProbeApp() {
   probe.use("*", apiAuditForWrites());
   const guard =
     (required: "read" | "write" | "admin") =>
-    async (c: Parameters<typeof requireScope>[0], next: () => Promise<void>) => {
+    async (
+      c: Parameters<typeof requireScope>[0],
+      next: () => Promise<void>,
+    ) => {
       const identity = await requireScope(c, required);
       if (identity instanceof Response) return identity;
       await next();
@@ -184,7 +187,8 @@ describe("External API Routes (Integration)", () => {
     });
   });
 
-  describe("Write audit (api_audit_logs)", () => {    it("should record write requests with key identity and status", async () => {
+  describe("Write audit (api_audit_logs)", () => {
+    it("should record write requests with key identity and status", async () => {
       await testDbHelper.seedUser(7, "writer");
       await testDbHelper.db.insert(schema.api_keys).values({
         key_string: "write-key",

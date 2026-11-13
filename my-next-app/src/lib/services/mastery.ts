@@ -133,6 +133,65 @@ export const masteryService = {
   },
 
   /**
+   * 按标签分页读取掌握度（只读；供外部 Agent API 展示分数 / 正确率 / 总次数）
+   */
+  getMasteryEntries: async (
+    userId: number,
+    options: { limit: number; offset: number },
+  ): Promise<{
+    items: {
+      tag: string;
+      score: number;
+      correctCount: number;
+      totalCount: number;
+      accuracy: number;
+      lastUpdated: string | null;
+    }[];
+    total: number;
+  }> => {
+    const { limit, offset } = options;
+
+    const [countRow, rows] = await Promise.all([
+      drizzleDb
+        .select({ value: sql<number>`COUNT(*)` })
+        .from(drizzleSchema.user_mastery)
+        .where(eq(drizzleSchema.user_mastery.user_id, userId))
+        .get(),
+      drizzleDb
+        .select({
+          tag: drizzleSchema.user_mastery.tag_name,
+          score: drizzleSchema.user_mastery.score,
+          correctCount: drizzleSchema.user_mastery.correct_count,
+          totalCount: drizzleSchema.user_mastery.total_count,
+          lastUpdated: drizzleSchema.user_mastery.last_updated,
+        })
+        .from(drizzleSchema.user_mastery)
+        .where(eq(drizzleSchema.user_mastery.user_id, userId))
+        .orderBy(drizzleSchema.user_mastery.tag_name)
+        .limit(limit)
+        .offset(offset)
+        .all(),
+    ]);
+
+    return {
+      items: rows.map((row) => {
+        const totalCount = row.totalCount || 0;
+        const correctCount = row.correctCount || 0;
+        return {
+          tag: row.tag,
+          score: Number(row.score) || 0,
+          correctCount,
+          totalCount,
+          accuracy:
+            totalCount > 0 ? Math.round((correctCount / totalCount) * 100) : 0,
+          lastUpdated: row.lastUpdated || null,
+        };
+      }),
+      total: Number(countRow?.value) || 0,
+    };
+  },
+
+  /**
    * 获取知识点树形结构
    */
   getMasteryTree: async (userId: number): Promise<MasteryTreeNode[]> => {

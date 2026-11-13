@@ -50,6 +50,26 @@ export type SessionDetail = NonNullable<
 >;
 
 /**
+ * 会话列表查询参数（offset 分页版）。
+ * getHistory（page/pageSize）与本类型共用同一条查询，避免两处各写一份 SQL。
+ */
+export type SessionListQuery = {
+  limit: number;
+  offset: number;
+  mode?: string;
+  dateFrom?: string;
+  dateTo?: string;
+  accuracyMin?: number;
+  accuracyMax?: number;
+};
+
+/** offset 分页的会话列表结果 */
+export type SessionListResult = {
+  items: SessionHistoryItem[];
+  total: number;
+};
+
+/**
  * 练习历史服务 - 管理练习会话的查询、统计与维护
  */
 export const historyService = {
@@ -62,45 +82,72 @@ export const historyService = {
   ): Promise<PaginatedHistory> {
     const page = filter.page || 1;
     const pageSize = filter.pageSize || 10;
-    const offset = (page - 1) * pageSize;
+
+    const { items, total } = await this.listSessions(userId, {
+      limit: pageSize,
+      offset: (page - 1) * pageSize,
+      mode: filter.mode,
+      dateFrom: filter.dateFrom,
+      dateTo: filter.dateTo,
+      accuracyMin: filter.accuracyMin,
+      accuracyMax: filter.accuracyMax,
+    });
+
+    return {
+      items,
+      total,
+      page,
+      pageSize,
+      totalPages: Math.ceil(total / pageSize),
+    };
+  },
+
+  /**
+   * 按 offset 分页获取会话列表（外部只读接口与 getHistory 共用同一查询）
+   */
+  async listSessions(
+    userId: number,
+    query: SessionListQuery,
+  ): Promise<SessionListResult> {
+    const { limit, offset } = query;
 
     // 1. 构建动态条件
     const conditions = [eq(practice_sessions.user_id, userId)];
 
     // 使用 dayjs 将用户输入的日期转换为 UTC 日期字符串进行对比
-    if (filter.dateFrom) {
-      const fromDate = dayjs(filter.dateFrom).utc().format("YYYY-MM-DD");
+    if (query.dateFrom) {
+      const fromDate = dayjs(query.dateFrom).utc().format("YYYY-MM-DD");
       conditions.push(
         sql`date(${practice_sessions.created_at}) >= date(${fromDate})`,
       );
     }
-    if (filter.dateTo) {
-      const toDate = dayjs(filter.dateTo).utc().format("YYYY-MM-DD");
+    if (query.dateTo) {
+      const toDate = dayjs(query.dateTo).utc().format("YYYY-MM-DD");
       conditions.push(
         sql`date(${practice_sessions.created_at}) <= date(${toDate})`,
       );
     }
-    if (filter.mode && filter.mode.trim()) {
-      conditions.push(eq(practice_sessions.practice_mode, filter.mode.trim()));
+    if (query.mode && query.mode.trim()) {
+      conditions.push(eq(practice_sessions.practice_mode, query.mode.trim()));
     }
 
     // 性能优化：将正确率筛选下沉到 SQL 层，使用参数化查询防止注入
     if (
-      filter.accuracyMin !== undefined &&
-      filter.accuracyMin >= 0 &&
-      filter.accuracyMin <= 100
+      query.accuracyMin !== undefined &&
+      query.accuracyMin >= 0 &&
+      query.accuracyMin <= 100
     ) {
       conditions.push(
-        sql`(CASE WHEN ${practice_sessions.total_questions} > 0 THEN ROUND((CAST(${practice_sessions.correct_count} AS FLOAT) / ${practice_sessions.total_questions}) * 100) ELSE 0 END) >= ${filter.accuracyMin})`,
+        sql`(CASE WHEN ${practice_sessions.total_questions} > 0 THEN ROUND((CAST(${practice_sessions.correct_count} AS FLOAT) / ${practice_sessions.total_questions}) * 100) ELSE 0 END) >= ${query.accuracyMin})`,
       );
     }
     if (
-      filter.accuracyMax !== undefined &&
-      filter.accuracyMax >= 0 &&
-      filter.accuracyMax <= 100
+      query.accuracyMax !== undefined &&
+      query.accuracyMax >= 0 &&
+      query.accuracyMax <= 100
     ) {
       conditions.push(
-        sql`(CASE WHEN ${practice_sessions.total_questions} > 0 THEN ROUND((CAST(${practice_sessions.correct_count} AS FLOAT) / ${practice_sessions.total_questions}) * 100) ELSE 0 END) <= ${filter.accuracyMax})`,
+        sql`(CASE WHEN ${practice_sessions.total_questions} > 0 THEN ROUND((CAST(${practice_sessions.correct_count} AS FLOAT) / ${practice_sessions.total_questions}) * 100) ELSE 0 END) <= ${query.accuracyMax})`,
       );
     }
 
@@ -126,7 +173,7 @@ export const historyService = {
         .from(practice_sessions)
         .where(where)
         .orderBy(desc(practice_sessions.created_at))
-        .limit(pageSize)
+        .limit(limit)
         .offset(offset),
     ]);
 
@@ -147,13 +194,7 @@ export const historyService = {
       practiceMode: r.practiceMode || undefined,
     }));
 
-    return {
-      items,
-      total,
-      page,
-      pageSize,
-      totalPages: Math.ceil(total / pageSize),
-    };
+    return { items, total };
   },
 
   /**

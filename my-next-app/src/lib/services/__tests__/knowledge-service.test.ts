@@ -16,6 +16,7 @@ const { mockDrizzleDb, mockDrizzleSchema } = vi.hoisted(() => {
       "where",
       "orderBy",
       "limit",
+      "offset",
       "all",
       "get",
       "groupBy",
@@ -181,8 +182,8 @@ describe("KnowledgeService", () => {
         back: "A",
         key_points: '[{"term":"项","definition":"单项式的基本单元"}]',
       };
-      // getAllKnowledgeCards 的终端方法是 limit()，不是 all()
-      chain["limit"].mockResolvedValueOnce([rawRow]);
+      // getAllKnowledgeCards 的终端方法是 offset()（limit 之后链上还有 offset），不是 all()
+      chain["offset"].mockResolvedValueOnce([rawRow]);
 
       const result = await getAllKnowledgeCards();
 
@@ -194,7 +195,7 @@ describe("KnowledgeService", () => {
     });
 
     it("空结果时应返回空数组", async () => {
-      chain["limit"].mockResolvedValueOnce([]);
+      chain["offset"].mockResolvedValueOnce([]);
       const result = await getAllKnowledgeCards();
       expect(result).toEqual([]);
     });

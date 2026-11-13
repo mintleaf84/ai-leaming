@@ -67,10 +67,11 @@ export const wrongQuestionService = {
    */
   async getList(
     userId: number,
-    options?: { limit?: number; offset?: number },
+    options?: { limit?: number; offset?: number; tag?: string },
   ): Promise<{ questions: WrongQuestionItem[]; total: number }> {
     const limit = options?.limit ?? 50;
     const offset = options?.offset ?? 0;
+    const tag = options?.tag?.trim();
 
     // 1. 获取已掌握题目 ID 列表
     const masteredIds = await drizzleDb
@@ -86,14 +87,20 @@ export const wrongQuestionService = {
       excludeIds.length > 0
         ? notInArray(practice_logs.question_id, excludeIds)
         : undefined,
+      tag
+        ? sql`EXISTS (SELECT 1 FROM json_each(${questions.tags}) WHERE value = ${tag})`
+        : undefined,
     );
 
-    // 先获取总数
-    const countResult = (await drizzleDb
+    // 先获取总数（带 tag 筛选时同样需要 join questions）
+    const countQuery = drizzleDb
       .select({ count: sql`COUNT(DISTINCT ${practice_logs.question_id})` })
       .from(practice_logs)
-      .where(baseWhere)
-      .get()) as { count: number };
+      .where(baseWhere);
+    const countResult = (await (tag
+      ? countQuery.innerJoin(questions, eq(practice_logs.question_id, questions.id))
+      : countQuery
+    ).get()) as { count: number };
     const total = countResult?.count || 0;
 
     // 分页查询主数据
@@ -197,6 +204,63 @@ export const wrongQuestionService = {
       total: total?.count || 0,
       recent: recent?.count || 0,
       frequent: frequent?.count || 0,
+    };
+  },
+
+  /**
+   * 错题分布统计（只读）：总数 + 按标签 + 按维度
+   *
+   * 口径与 getList 一致：排除已掌握题目，统计"有过错误记录"的题目去重数。
+   */
+  async getDistribution(userId: number): Promise<{
+    total: number;
+    byTag: { tag: string; count: number }[];
+    byDimension: { dimension: string; count: number }[];
+  }> {
+    const masteredSubquery = sql`SELECT question_id FROM ${mastered_questions} WHERE user_id = ${userId}`;
+
+    const [totalRows, tagRows, dimensionRows] = await Promise.all([
+      drizzleDb.all<{ count: number }>(sql`
+        SELECT COUNT(DISTINCT ${practice_logs.question_id}) AS count
+        FROM ${practice_logs}
+        WHERE ${practice_logs.user_id} = ${userId}
+          AND ${practice_logs.is_correct} = 0
+          AND ${practice_logs.question_id} NOT IN (${masteredSubquery})
+      `),
+      drizzleDb.all<{ tag: string; count: number }>(sql`
+        SELECT je.value AS tag, COUNT(DISTINCT ${practice_logs.question_id}) AS count
+        FROM ${practice_logs}
+        INNER JOIN ${questions} ON ${questions.id} = ${practice_logs.question_id}
+        INNER JOIN json_each(${questions.tags}) AS je
+        WHERE ${practice_logs.user_id} = ${userId}
+          AND ${practice_logs.is_correct} = 0
+          AND ${practice_logs.question_id} NOT IN (${masteredSubquery})
+        GROUP BY je.value
+        ORDER BY count DESC, je.value ASC
+      `),
+      drizzleDb.all<{ dimension: string | null; count: number }>(sql`
+        SELECT ${questions.dimension} AS dimension,
+               COUNT(DISTINCT ${practice_logs.question_id}) AS count
+        FROM ${practice_logs}
+        INNER JOIN ${questions} ON ${questions.id} = ${practice_logs.question_id}
+        WHERE ${practice_logs.user_id} = ${userId}
+          AND ${practice_logs.is_correct} = 0
+          AND ${practice_logs.question_id} NOT IN (${masteredSubquery})
+        GROUP BY ${questions.dimension}
+        ORDER BY count DESC
+      `),
+    ]);
+
+    return {
+      total: Number(totalRows[0]?.count) || 0,
+      byTag: tagRows.map((row) => ({
+        tag: String(row.tag),
+        count: Number(row.count) || 0,
+      })),
+      byDimension: dimensionRows.map((row) => ({
+        dimension: row.dimension || "unknown",
+        count: Number(row.count) || 0,
+      })),
     };
   },
 

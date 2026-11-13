@@ -18,7 +18,9 @@ export class RecallDeckValidationError extends Error {
   readonly issues: string[];
 
   constructor(issues: string[]) {
-    super(`卡组文件校验失败（${issues.length} 处）：\n- ${issues.join("\n- ")}`);
+    super(
+      `卡组文件校验失败（${issues.length} 处）：\n- ${issues.join("\n- ")}`,
+    );
     this.name = "RecallDeckValidationError";
     this.issues = issues;
   }

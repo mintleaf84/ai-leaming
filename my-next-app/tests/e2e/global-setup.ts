@@ -355,6 +355,88 @@ async function globalSetup(_config: FullConfig) {
 
   console.log("[E2E Setup] 已初始化演示模式开关");
 
+  // 3.7 回忆自测（/recall）最小卡组：1 张列举卡 + 2 张填空卡
+  //
+  // 幂等靠唯一索引：deck_key 唯一 + (deck_id, card_key) 唯一，重复跑 setup 不会翻倍。
+  // **不插 recall_card_states**：用例要验证「新卡首次出现在今日队列」这条路径，
+  // 预置状态行会让三张卡直接变成"无 pending 的到期卡"，测的就不是冷启动了。
+  db.prepare(
+    `INSERT OR IGNORE INTO recall_decks (deck_key, title, schema_version, groups_json, owner_user_id)
+     VALUES (?, ?, 1, '[]', NULL)`,
+  ).run("e2e-recall", "E2E 回忆卡组");
+
+  const seededRecallDeck = db
+    .prepare("SELECT id FROM recall_decks WHERE deck_key = ?")
+    .get("e2e-recall") as { id: number } | undefined;
+
+  if (seededRecallDeck) {
+    // 卡片顺序即队列顺序（新卡按 card id 升序投放），所以第一条必须是列举卡
+    const recallCards: Array<{
+      cardKey: string;
+      kind: "list" | "cloze";
+      prompt: string;
+      itemsJson: string | null;
+      blanksJson: string | null;
+      promptHash: string;
+    }> = [
+      {
+        cardKey: "e2e-list-1",
+        kind: "list",
+        prompt: "E2E：写出水的两种状态",
+        itemsJson: JSON.stringify([
+          { text: "固态", keywords: ["固态", "冰"] },
+          { text: "液态", keywords: ["液态", "水"] },
+        ]),
+        blanksJson: null,
+        promptHash: "e2e-hash-list-1",
+      },
+      {
+        cardKey: "e2e-cloze-1",
+        kind: "cloze",
+        // 【　】是填空卡的占位符（全角空格），渲染成带序号的空位
+        prompt: "标准大气压下，水在 0 ℃ 时变成【　】。",
+        itemsJson: null,
+        blanksJson: JSON.stringify([{ answers: ["冰", "固态"] }]),
+        promptHash: "e2e-hash-cloze-1",
+      },
+      {
+        cardKey: "e2e-cloze-2",
+        kind: "cloze",
+        prompt: "水在 100 ℃ 时会【　】，变成【　】。",
+        itemsJson: null,
+        blanksJson: JSON.stringify([
+          { answers: ["沸腾", "汽化"] },
+          { answers: ["气态", "水蒸气"] },
+        ]),
+        promptHash: "e2e-hash-cloze-2",
+      },
+    ];
+
+    const insertRecallCard = db.prepare(
+      `INSERT OR IGNORE INTO recall_cards
+         (deck_id, card_key, kind, group_key, prompt, items_json, blanks_json, verbatim, prompt_hash)
+       VALUES (?, ?, ?, NULL, ?, ?, ?, 0, ?)`,
+    );
+
+    for (const card of recallCards) {
+      insertRecallCard.run(
+        seededRecallDeck.id,
+        card.cardKey,
+        card.kind,
+        card.prompt,
+        card.itemsJson,
+        card.blanksJson,
+        card.promptHash,
+      );
+    }
+
+    console.log(
+      `[E2E Setup] 已创建回忆卡组 e2e-recall（${recallCards.length} 张卡，无复习进度）`,
+    );
+  } else {
+    console.warn("[E2E Setup] 未能创建回忆卡组：recall_decks 插入失败");
+  }
+
   // 关闭数据库连接（PRAGMA 是连接级的，关闭后无需还原）
   db.close();
 

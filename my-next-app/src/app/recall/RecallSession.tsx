@@ -53,9 +53,6 @@ import {
  * 用户只看到「下次 11 月 20 日」或「明天只重测这 3 条」。
  */
 
-/** 全对时自动进下一张：这一屏没有需要用户操作的内容，停久了只会让人多点一下 */
-const AUTO_ADVANCE_MS = 300;
-
 type Phase =
   "loading" | "today" | "question" | "judge" | "done" | "empty" | "error";
 
@@ -103,6 +100,9 @@ export default function RecallSession({
   // 判分屏的提交中状态：与 busy 分开是为了让"提交中"只禁用作答相关的按钮，
   // 不影响归档/取卡这些小动作的语义
   const [submitting, setSubmitting] = useState(false);
+  // 提交结果未知（网络中断/超时）时锁住判定：重试必须发同一份载荷 + 同一个 clientKey，
+  // 否则服务端按 key 重放首次结果，界面却显示新改的判定，两者会不一致
+  const [retryLocked, setRetryLocked] = useState(false);
   const [reloadKey, setReloadKey] = useState(0);
   const resultRef = useRef<HTMLDivElement | null>(null);
   // 本次作答的幂等键：进入判分屏时生成，失败重试沿用，提交成功后清空
@@ -199,14 +199,8 @@ export default function RecallSession({
     }
   }, [updatePending]);
 
-  // 全对：短暂停留后自动进下一张（有错时停住，让人看清哪几条要重测）
-  useEffect(() => {
-    if (!result || result.rating !== "good") return;
-    const timer = window.setTimeout(() => {
-      void advance();
-    }, AUTO_ADVANCE_MS);
-    return () => window.clearTimeout(timer);
-  }, [result, advance]);
+  // 不再自动进下一张：`nextReviewText`（「下次 11 月 20 日」）是规格 §4.3 要求展示的信息，
+  // 300ms 就跳走等于没展示。用户点「下一张」继续，全对时也一样。
 
   // 提交后的结论落在卡片底部：判分屏可能比一屏高，滚一下确保它真的被看到
   useEffect(() => {
@@ -226,6 +220,7 @@ export default function RecallSession({
   };
 
   const toggleVerdict = (position: number) => {
+    if (retryLocked) return;
     // 提交已发出（或已完成）时不允许再改：请求里带的是点击那一刻的 finalVerdicts，
     // 再改只会让界面与已经写进库的结论对不上
     if (result || submitting) return;
@@ -255,10 +250,13 @@ export default function RecallSession({
       setLastNote(outcome.nextReviewText);
       // 这次作答已经落库，key 用完即弃（下一张卡会重新生成）
       clientKeyRef.current = null;
+      setRetryLocked(false);
     } catch (error) {
       // 写操作失败：不推进状态，人还停在这一屏，可以直接再按一次（沿用同一个 key）
       console.error("[recall] 提交作答失败", error);
       toast.error(`这次没有记下来：${actionErrorMessage(error)}`);
+      // 结果未知：锁住判定，重试沿用同一 clientKey 与同一份载荷
+      setRetryLocked(true);
       return;
     } finally {
       setSubmitting(false);
@@ -289,9 +287,11 @@ export default function RecallSession({
           : previous,
       );
       clientKeyRef.current = null;
+      setRetryLocked(false);
     } catch (error) {
       console.error("[recall] 全没想起提交失败", error);
       toast.error(`这次没有记下来：${actionErrorMessage(error)}`);
+      setRetryLocked(true);
       return;
     } finally {
       setSubmitting(false);
@@ -331,7 +331,7 @@ export default function RecallSession({
           onClick={commitVerdicts}
           disabled={submitting}
         >
-          确认结果
+          {retryLocked ? "重试提交" : "确认结果"}
         </Button>
         <Button
           size="lg"
@@ -533,7 +533,7 @@ export default function RecallSession({
                         type="button"
                         onClick={() => toggleVerdict(position)}
                         aria-pressed={verdict === "ok"}
-                        disabled={Boolean(result) || submitting}
+                        disabled={Boolean(result) || submitting || retryLocked}
                         className={cn(
                           "flex min-h-11 w-full items-start gap-3 rounded-lg border px-3 py-2.5 text-left transition-colors",
                           verdict === "ok"
@@ -579,45 +579,58 @@ export default function RecallSession({
                   const answers = card.blanks?.[blankIndex]?.answers ?? [];
                   const written = segments[position] ?? "";
                   return (
-                    <li
-                      key={blankIndex}
-                      className={cn(
-                        "rounded-lg border px-3 py-2.5",
-                        verdict === "ok"
-                          ? "border-success/30 bg-success-muted"
-                          : "border-warning/30 bg-warning-muted",
-                      )}
-                    >
-                      <div className="flex items-center justify-between gap-2">
-                        <span className="text-xs text-muted-foreground">
-                          第 {position + 1} 空
-                        </span>
-                        <span
-                          className={cn(
-                            "flex items-center gap-1 text-xs",
-                            verdict === "ok" ? "text-success" : "text-warning",
-                          )}
-                        >
-                          {verdict === "ok" ? (
-                            <Check className="h-3.5 w-3.5" aria-hidden />
-                          ) : (
-                            <Circle className="h-3.5 w-3.5" aria-hidden />
-                          )}
-                          {verdict === "ok" ? "对" : "没对"}
-                        </span>
-                      </div>
-                      <p className="mt-1 break-words text-sm leading-6 text-foreground">
-                        {written || (
-                          <span className="text-muted-foreground">
-                            （空着）
-                          </span>
+                    <li key={blankIndex}>
+                      <button
+                        type="button"
+                        onClick={() => toggleVerdict(position)}
+                        aria-pressed={verdict === "ok"}
+                        disabled={Boolean(result) || submitting || retryLocked}
+                        className={cn(
+                          "w-full rounded-lg border px-3 py-2.5 text-left transition-colors",
+                          verdict === "ok"
+                            ? "border-success/30 bg-success-muted"
+                            : "border-warning/30 bg-warning-muted",
+                          !result && !submitting && "hover:brightness-95",
                         )}
-                      </p>
-                      {verdict === "miss" && answers.length > 0 && (
-                        <p className="mt-1 text-xs text-muted-foreground">
-                          参考答案：{answers.join(" / ")}
+                      >
+                        <div className="flex items-center justify-between gap-2">
+                          <span className="text-xs text-muted-foreground">
+                            第 {position + 1} 空
+                          </span>
+                          <span
+                            className={cn(
+                              "flex items-center gap-1 text-xs",
+                              verdict === "ok"
+                                ? "text-success"
+                                : "text-warning",
+                            )}
+                          >
+                            {verdict === "ok" ? (
+                              <Check className="h-3.5 w-3.5" aria-hidden />
+                            ) : (
+                              <Circle className="h-3.5 w-3.5" aria-hidden />
+                            )}
+                            {verdict === "ok" ? "对" : "没对"}
+                          </span>
+                        </div>
+                        <p className="mt-1 break-words text-sm leading-6 text-foreground">
+                          {written || (
+                            <span className="text-muted-foreground">
+                              （空着）
+                            </span>
+                          )}
                         </p>
-                      )}
+                        {verdict === "miss" && answers.length > 0 && (
+                          <p className="mt-1 text-xs text-muted-foreground">
+                            参考答案：{answers.join(" / ")}
+                          </p>
+                        )}
+                        {preview.verdicts[position] !== verdict && (
+                          <p className="mt-1 text-xs text-muted-foreground">
+                            已改判
+                          </p>
+                        )}
+                      </button>
                     </li>
                   );
                 })}

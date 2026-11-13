@@ -136,7 +136,7 @@ jobs:
       - name: 安装 Playwright 浏览器（chromium）
         run: npx playwright install chromium
 
-      # 只跑 8 条关键路径，控制时长；其余 spec 仍可本地全量执行。
+      # 只跑 9 条关键路径，控制时长；其余 spec 仍可本地全量执行。
       - name: 运行关键路径 E2E
         run: |
           npx playwright test \
@@ -147,6 +147,7 @@ jobs:
             tests/e2e/wrong-book.spec.ts \
             tests/e2e/history.spec.ts \
             tests/e2e/questions-import.spec.ts \
+            tests/e2e/recall.spec.ts \
             tests/e2e/admin.spec.ts \
             --project=chromium
 

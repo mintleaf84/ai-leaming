@@ -190,7 +190,7 @@ export interface RecallDeckSummary {
   dueCount: number;
 }
 
-// --- 判分 / 日志形状（P1 只定义，P2 才写入） ---
+// --- 判分 / 日志形状（P1 定义，P2 起由 services/recall.ts 写入） ---
 
 /** 条目判分：ok = 判已写；miss = 判未写 */
 export type RecallItemVerdict = "ok" | "miss";
@@ -206,7 +206,7 @@ export interface RecallUserOverride {
 /**
  * 一次作答的判分结果。
  *
- * `keywordHits` / `keywordTotal` 是 P1 预留的**数据留痕**字段（本阶段只建列不写）：
+ * `keywordHits` / `keywordTotal` 是**数据留痕**字段（P2 起由服务层写入）：
  * 等真实作答累积后，用它判断「关键词任一命中」规则是否过松/过严，再决定要不要
  * 改规则；没有这两个数，事后只能靠用户改判反推。
  */

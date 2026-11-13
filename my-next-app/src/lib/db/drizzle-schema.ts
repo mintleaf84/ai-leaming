@@ -520,14 +520,50 @@ export const text_annotations = sqliteTable(
 );
 
 // --- API Keys ---
+// API Key：既有的"全局 key"（user_id = NULL，身份等价于站长）与后续的
+// "用户绑定 key"（user_id 指向 users）共用同一张表。
+// scopes 为递进式作用域：admin ⊃ write ⊃ read。
 export const api_keys = sqliteTable("api_keys", {
   id: integer("id").primaryKey({ autoIncrement: true }),
   key_string: text("key_string").unique().notNull(),
   description: text("description").default(""),
   is_active: integer("is_active").default(1),
+  user_id: integer("user_id").references(() => users.id, {
+    onDelete: "cascade",
+  }),
+  scopes: text("scopes", { enum: ["read", "write", "admin"] })
+    .notNull()
+    .default("read"),
+  last_used_at: text("last_used_at"),
   created_at: text("created_at").default(sql`CURRENT_TIMESTAMP`),
   updated_at: text("updated_at").default(sql`CURRENT_TIMESTAMP`),
 });
+
+// 写操作审计日志：只记录 POST/PATCH/PUT/DELETE，读请求不入库（量大且无审计价值）。
+// key_id 用 set null 而非 cascade —— 删 key 不应抹掉历史操作痕迹。
+export const api_audit_logs = sqliteTable(
+  "api_audit_logs",
+  {
+    id: integer("id").primaryKey({ autoIncrement: true }),
+    key_id: integer("key_id").references(() => api_keys.id, {
+      onDelete: "set null",
+    }),
+    user_id: integer("user_id").references(() => users.id, {
+      onDelete: "set null",
+    }),
+    method: text("method").notNull(),
+    path: text("path").notNull(),
+    status: integer("status").notNull(),
+    duration_ms: integer("duration_ms").notNull(),
+    created_at: text("created_at").default(sql`CURRENT_TIMESTAMP`),
+  },
+  (table) => ({
+    idx_created: index("idx_api_audit_logs_created").on(
+      sql`${table.created_at} DESC`,
+    ),
+    idx_key: index("idx_api_audit_logs_key").on(table.key_id),
+  }),
+);
 
 // --- AI 缓存表 ---
 export const ai_quiz_cache = sqliteTable("ai_quiz_cache", {

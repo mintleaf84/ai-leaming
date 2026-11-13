@@ -28,10 +28,14 @@ export const createApiKeyAction = adminAction
   .inputSchema(
     z.object({
       description: z.string().default("未命名密钥"),
+      // 递进式作用域：admin ⊃ write ⊃ read
+      scopes: z.enum(["read", "write", "admin"]).default("read"),
+      // 绑定用户；省略 / null 表示全局 key（等价于站长身份）
+      userId: z.number().int().positive().nullish(),
     }),
   )
   .action(async ({ parsedInput: input, ctx }) => {
-    const { description } = input;
+    const { description, scopes, userId } = input;
     const { user } = ctx;
 
     // 生成 32 字节的随机密钥（以 hex 编码，共 64 字符）
@@ -40,6 +44,8 @@ export const createApiKeyAction = adminAction
     await drizzleDb.insert(api_keys).values({
       key_string: keyString,
       description: description,
+      scopes,
+      user_id: userId ?? null,
     });
 
     after(() =>
@@ -49,7 +55,7 @@ export const createApiKeyAction = adminAction
         "CREATE_API_KEY",
         "api_key",
         null,
-        { description },
+        { description, scopes, user_id: userId ?? null },
       ),
     );
 

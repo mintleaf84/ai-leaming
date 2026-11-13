@@ -14,13 +14,6 @@ const protectedRoutes = [
   // 题库导入与错题本都承载个人数据 / 需要登录态的动作，未登录必须拦截
   "/questions",
   "/wrong-book",
-  // 以下路由同样读取登录用户的个人数据，未保护会导致先发起一串注定失败的 server action
-  "/profile",
-  "/notes",
-  "/mindmap",
-  "/ocr",
-  "/report",
-  "/textbooks",
 ];
 const publicRoutes = ["/login", "/register"];
 

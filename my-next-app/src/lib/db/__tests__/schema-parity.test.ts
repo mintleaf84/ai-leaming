@@ -51,6 +51,7 @@ const MIGRATION_ONLY_TABLES = new Set([
   "ai_configs",
   "ai_model_routes",
   "ai_quiz_cache",
+  "api_audit_logs",
   "api_call_logs",
   "chat_messages",
   "chat_sessions",

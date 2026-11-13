@@ -114,6 +114,9 @@ export const TEST_SCHEMA_SQL = `
         key_string TEXT UNIQUE NOT NULL,
         description TEXT DEFAULT '',
         is_active INTEGER DEFAULT 1,
+        user_id INTEGER REFERENCES users(id) ON DELETE CASCADE,
+        scopes TEXT DEFAULT 'read' NOT NULL,
+        last_used_at TEXT,
         created_at TEXT DEFAULT CURRENT_TIMESTAMP,
         updated_at TEXT DEFAULT CURRENT_TIMESTAMP
     );

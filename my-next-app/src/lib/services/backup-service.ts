@@ -30,7 +30,12 @@ if (!BACKUP_SECRET) {
     "BACKUP_ENCRYPTION_KEY 环境变量未设置。" +
     "生产环境必须设置该变量以确保备份凭据安全。" +
     "开发环境可使用默认密钥，但切勿用于生产。";
-  if (process.env.NODE_ENV === "production") {
+  // 构建期（`next build` 收集页面数据时会把本模块加载一遍）不该要求生产密钥：
+  // 镜像构建只带占位值，真正的密钥在运行时注入。否则 Docker 构建必然失败。
+  const isBuildPhase =
+    process.env.NEXT_PHASE === "phase-production-build" ||
+    process.env.SKIP_ENV_VALIDATION === "1";
+  if (process.env.NODE_ENV === "production" && !isBuildPhase) {
     throw new Error(errorMsg);
   }
   log.warn("WARNING: " + errorMsg);

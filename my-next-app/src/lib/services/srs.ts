@@ -3,10 +3,9 @@ import {
   createEmptyCard,
   Card,
   State,
-  fsrs,
-  generatorParameters,
   type RecordLogItem,
 } from "ts-fsrs";
+import { createQuestionScheduler } from "@/lib/srs/fsrs-config";
 import dayjs from "dayjs";
 import utc from "dayjs/plugin/utc";
 
@@ -36,8 +35,9 @@ function mapDbStateToEnum(dbState: unknown): State {
   return State.New;
 }
 
-// FSRS 基础配置
-const f = fsrs(generatorParameters());
+// FSRS 基础配置：实例仍由本模块独享（内部有可变状态），参数来自
+// `@/lib/srs/fsrs-config`，保证与回忆自测共用同一份 request_retention。
+const f = createQuestionScheduler();
 
 // 认知参数配置
 const DEFAULT_READING_SPEED = 7; // 默认阅读速度：7字/秒

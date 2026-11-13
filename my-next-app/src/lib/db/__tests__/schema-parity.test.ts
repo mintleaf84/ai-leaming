@@ -68,6 +68,11 @@ const MIGRATION_ONLY_TABLES = new Set([
   "question_feedback",
   "question_folder_items",
   "question_folders",
+  // 回忆自测（0012）的集成测试用真实迁移 + 文件库，不进内存夹具
+  "recall_card_states",
+  "recall_cards",
+  "recall_decks",
+  "recall_review_logs",
   "subscription_plans",
   "text_annotations",
   "textbook_chapters",

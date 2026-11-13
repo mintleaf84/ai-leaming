@@ -64,7 +64,14 @@ async function findExistingSession(
  */
 let importQueue: Promise<unknown> = Promise.resolve();
 
-function withImportLock<T>(fn: () => Promise<T>): Promise<T> {
+/**
+ * 全站唯一的写导入锁。
+ *
+ * 粉笔导入与回忆卡组导入用的是**同一条 SQLite 连接**，各自持有一把锁并不能互斥
+ * ——「粉笔导入事务进行中 + 回忆导入开始」依然会撞 `SQL statements in progress`。
+ * 因此两边共用这一个队列。
+ */
+export function withImportLock<T>(fn: () => Promise<T>): Promise<T> {
   const run = importQueue.then(fn, fn);
   importQueue = run.then(
     () => undefined,

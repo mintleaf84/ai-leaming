@@ -227,6 +227,8 @@ const SessionSummarySchema = z.object({
   totalQuestions: z.number().int().describe("本场题目数"),
   correctCount: z.number().int().describe("本场答对数"),
   accuracy: z.number().int().describe("本场正确率（0-100 整数百分比）"),
+  // 实现里一直返回这个字段，schema 漏了会让 agent 自生成代码看不到它
+  totalDurationMs: z.number().int().describe("本场累计耗时（毫秒）"),
 });
 
 const SessionListItemSchema = z.object({
@@ -236,7 +238,9 @@ const SessionListItemSchema = z.object({
   totalQuestions: z.number().int().describe("题目数"),
   correctCount: z.number().int().describe("答对数"),
   accuracy: z.number().int().describe("正确率（0-100 整数百分比）"),
-  startedAt: z.string().describe("开始时间（ISO 8601 UTC）"),
+  startedAt: z
+    .string()
+    .describe("开始时间（ISO 8601 UTC，由 service 层用 dayjs 统一格式化）"),
 });
 
 /** 解析 limit/offset 字符串参数：非法值退回默认，limit 截到 [1, 100] */

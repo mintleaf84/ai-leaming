@@ -840,6 +840,9 @@ export const recall_review_logs = sqliteTable(
     typed_answer: text("typed_answer"),
     fsrs_before: text("fsrs_before"),
     fsrs_after: text("fsrs_after"),
+    // 客户端提交幂等键（每次作答的 UUID）：见 drizzle/0014 的说明。
+    // 允许 NULL —— 迁移前的历史行与没有 key 的调用方都落在 NULL 上。
+    client_key: text("client_key"),
   },
   (table) => ({
     idx_user_ts: index("idx_recall_review_logs_user_ts").on(
@@ -853,5 +856,10 @@ export const recall_review_logs = sqliteTable(
       table.card_id,
       table.ts,
     ),
+    // 跨秒重试的幂等键：ts 只到秒，超过一秒的重试会重复写日志、重复推进调度。
+    // client_key 由客户端在进入判分屏时生成，同一份作答的所有重试共用一个 key。
+    unq_user_client_key: uniqueIndex(
+      "recall_review_logs_user_client_key_unique",
+    ).on(table.user_id, table.client_key),
   }),
 );

@@ -6,9 +6,11 @@ import { withImportLock } from "./import-service";
 import { parseRecallDeck, RecallDeckValidationError } from "../recall/schema";
 import {
   RECALL_SCHEMA_VERSION,
+  recallCardSchema,
   recallDeckSchema,
   type RecallBlank,
   type RecallCard,
+  type RecallCardKind,
   type RecallDeckFile,
   type RecallDeckSummary,
   type RecallGroup,
@@ -18,7 +20,8 @@ import {
   type RecallListItem,
 } from "../recall/types";
 
-const { recall_decks, recall_cards, recall_card_states } = drizzleSchema;
+const { recall_decks, recall_cards, recall_card_states, recall_review_logs } =
+  drizzleSchema;
 
 /**
  * 回忆自测卡组的导入 / 导出 / 列表。
@@ -475,6 +478,216 @@ export async function listDecks(userId: number): Promise<RecallDeckSummary[]> {
 }
 
 /** 供 P2 队列使用：某用户在某卡组里到期的未归档卡片（id 升序，保证稳定） */
+/**
+ * 卡组归属校验：owner 为 NULL（公共卡组）或本人才能写。
+ * 与 `writeDeck` 的口径保持一致，否则会出现「导入挡得住、单卡编辑挡不住」的口子。
+ */
+function assertDeckWritable(
+  deckKey: string,
+  ownerUserId: number | null,
+  userId: number,
+): void {
+  if (ownerUserId !== null && ownerUserId !== userId) {
+    throw new RecallImportError(
+      `卡组 ${deckKey} 属于其他用户（owner_user_id=${ownerUserId}），不能修改`,
+    );
+  }
+}
+
+export interface RecallCardUpsertInput {
+  deckKey: string;
+  cardId: string;
+  prompt: string;
+  kind: RecallCardKind;
+  items?: RecallListItem[];
+  blanks?: RecallBlank[];
+  /**
+   * 分组。**不传 = 沿用库里的旧值**（单卡表单没有分组字段，传 undefined 不能把
+   * 已有分组清空）；显式传 `null` 才是"移出分组"。
+   */
+  groupId?: string | null;
+  /**
+   * 逐字判分开关。不传 = 沿用库里的旧值（新建默认 false）。
+   * 编辑器不暴露这个开关，但保存时绝不能把它悄悄改回 false：那会让一张
+   * `verbatim` 卡的判分口径在用户"只改了个错别字"之后变掉。
+   */
+  verbatim?: boolean;
+}
+
+/**
+ * 单卡新增 / 修改（P3：建卡与编辑界面用）。
+ *
+ * 与整包导入共用同一套校验与写入路径，避免两处规则漂移：
+ * - 校验走 `recallCardSchema`（条目 1–6 条、每空 1–3 个答案、关键词 ≥1）；
+ * - 写库走 `toCardColumns`，`prompt_hash` 因此自动更新，后续导入能正确识别内容变化；
+ * - **不碰** `recall_card_states` / `recall_review_logs`：改题干不该重置用户进度。
+ *
+ * `group_key` 与 `verbatim` 都要**先读旧行再补进校验输入**：`prompt_hash` 把两者
+ * 都算进去了（见 `computeCardPromptHash`），只用表单值算会得到"内容变了"的假冲突，
+ * 导出再导入就会被要求"采用新文件"。
+ */
+export async function upsertCard(
+  userId: number,
+  input: RecallCardUpsertInput,
+): Promise<{ cardId: number }> {
+  return withRecallImportLock(() =>
+    drizzleDb.transaction(async (tx) => {
+      const exec = tx as unknown as typeof drizzleDb;
+
+      const [deck] = await exec
+        .select({
+          id: recall_decks.id,
+          owner_user_id: recall_decks.owner_user_id,
+        })
+        .from(recall_decks)
+        .where(eq(recall_decks.deck_key, input.deckKey))
+        .limit(1);
+      if (!deck) {
+        throw new RecallImportError(`卡组不存在：${input.deckKey}`);
+      }
+      assertDeckWritable(input.deckKey, deck.owner_user_id, userId);
+
+      const [existing] = await exec
+        .select({
+          id: recall_cards.id,
+          group_key: recall_cards.group_key,
+          verbatim: recall_cards.verbatim,
+        })
+        .from(recall_cards)
+        .where(
+          and(
+            eq(recall_cards.deck_id, deck.id),
+            eq(recall_cards.card_key, input.cardId),
+          ),
+        )
+        .limit(1);
+
+      // 校验必须在读到旧行之后：prompt_hash 的输入包含分组与 verbatim
+      const retainedGroupId =
+        input.groupId === undefined
+          ? (existing?.group_key ?? null)
+          : input.groupId;
+      const retainedVerbatim =
+        input.verbatim ?? (existing ? existing.verbatim === 1 : false);
+      const groupField = retainedGroupId
+        ? ({ groupId: retainedGroupId } as const)
+        : {};
+
+      const candidate =
+        input.kind === "list"
+          ? {
+              cardId: input.cardId,
+              kind: "list" as const,
+              ...groupField,
+              prompt: input.prompt,
+              items: input.items ?? [],
+              verbatim: retainedVerbatim,
+            }
+          : {
+              cardId: input.cardId,
+              kind: "cloze" as const,
+              ...groupField,
+              prompt: input.prompt,
+              blanks: input.blanks ?? [],
+            };
+
+      const checked = recallCardSchema.safeParse(candidate);
+      if (!checked.success) {
+        throw new RecallDeckValidationError(
+          checked.error.issues.map((issue) => {
+            const path = issue.path.map(String).join(".");
+            return `${path || "card"}: ${issue.message}`;
+          }),
+        );
+      }
+      const card = checked.data;
+      const content = toCardColumns(card);
+
+      if (existing) {
+        await exec
+          .update(recall_cards)
+          .set({ ...content, updated_at: sql`CURRENT_TIMESTAMP` })
+          .where(eq(recall_cards.id, existing.id));
+        return { cardId: existing.id };
+      }
+
+      const inserted = await exec
+        .insert(recall_cards)
+        .values({
+          deck_id: deck.id,
+          card_key: card.cardId,
+          ...content,
+        })
+        .returning({ id: recall_cards.id });
+      return { cardId: inserted[0].id };
+    }),
+  );
+}
+
+/**
+ * 删除单卡（P3：卡组编辑界面用）。
+ *
+ * 依赖行是**显式删除**的：库连接没有开 `PRAGMA foreign_keys`，`ON DELETE CASCADE`
+ * 实际不会触发，留着只会产出指向不存在卡片的孤儿行（队列的 inner join 虽然会把
+ * 它们滤掉，但审计与统计口径从此不可信）。日志一起删是有意的取舍——离开了卡片的
+ * 判分记录已无法复核题目内容，保留它只会让误杀率统计失真。
+ */
+export async function deleteCard(
+  userId: number,
+  deckKey: string,
+  cardId: string,
+): Promise<{ cardId: number }> {
+  return withRecallImportLock(() =>
+    drizzleDb.transaction(async (tx) => {
+      const exec = tx as unknown as typeof drizzleDb;
+
+      const [deck] = await exec
+        .select({
+          id: recall_decks.id,
+          owner_user_id: recall_decks.owner_user_id,
+        })
+        .from(recall_decks)
+        .where(eq(recall_decks.deck_key, deckKey))
+        .limit(1);
+      if (!deck) {
+        throw new RecallImportError(`卡组不存在：${deckKey}`);
+      }
+      assertDeckWritable(deckKey, deck.owner_user_id, userId);
+
+      const [card] = await exec
+        .select({ id: recall_cards.id })
+        .from(recall_cards)
+        .where(
+          and(
+            eq(recall_cards.deck_id, deck.id),
+            eq(recall_cards.card_key, cardId),
+          ),
+        )
+        .limit(1);
+      // 卡片属于别的卡组时也走这里：不能拿别的 deckKey 把全局卡片删掉
+      if (!card) {
+        throw new RecallImportError(`卡片 ${cardId} 不在卡组 ${deckKey} 里`);
+      }
+
+      await exec
+        .delete(recall_review_logs)
+        .where(eq(recall_review_logs.card_id, card.id));
+      await exec
+        .delete(recall_card_states)
+        .where(eq(recall_card_states.card_id, card.id));
+      await exec.delete(recall_cards).where(eq(recall_cards.id, card.id));
+
+      return { cardId: card.id };
+    }),
+  );
+}
+
+/**
+ * 卡组列表 + 该用户的进度统计（P1 只够卡组选择页用）。
+ *
+ * `dueCount` 的 `due` 与到期判断都按 ISO 8601 UTC 字符串比较：`text` 列做字典序
+ * 比较即可，前提是写入侧统一用 `toISOString()`（P2 的队列写入必须遵守）。
+ */
 export async function listDueCardIds(
   userId: number,
   deckId: number,

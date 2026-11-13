@@ -8,6 +8,8 @@ export default defineConfig({
     environment: "jsdom",
     globals: true,
     testTimeout: 15000,
+    // 真实 SQLite 的 beforeAll 要跑迁移 + 播种：并行跑全量时 10s 默认值会偶发超时
+    hookTimeout: 30000,
     setupFiles: ["./tests/setup.ts"],
     // 排除 e2e 测试
     exclude: [

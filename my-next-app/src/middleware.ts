@@ -14,6 +14,8 @@ const protectedRoutes = [
   // 题库导入与错题本都承载个人数据 / 需要登录态的动作，未登录必须拦截
   "/questions",
   "/wrong-book",
+  // 回忆自测：队列与判分都按登录用户隔离
+  "/recall",
 ];
 const publicRoutes = ["/login", "/register"];
 

@@ -99,6 +99,7 @@ export async function getAllKnowledgeCards(
   limit: number = 100,
   ids?: number[],
   userId?: number,
+  offset: number = 0,
 ): Promise<KnowledgeCard[]> {
   const conditions = [];
   if (category) {
@@ -116,7 +117,8 @@ export async function getAllKnowledgeCards(
     .from(drizzleSchema.knowledge_cards)
     .where(conditions.length > 0 ? and(...conditions) : undefined)
     .orderBy(desc(drizzleSchema.knowledge_cards.created_at))
-    .limit(limit);
+    .limit(limit)
+    .offset(offset);
 
   return rows.map((row) => ({
     ...row,
@@ -126,6 +128,27 @@ export async function getAllKnowledgeCards(
       definition: string;
     }[],
   })) as KnowledgeCard[];
+}
+
+/**
+ * 统计用户的知识卡片数量（与 getAllKnowledgeCards 同一筛选口径）
+ */
+export async function countKnowledgeCards(
+  userId: number,
+  category?: string,
+): Promise<number> {
+  const conditions = [eq(drizzleSchema.knowledge_cards.user_id, userId)];
+  if (category) {
+    conditions.push(eq(drizzleSchema.knowledge_cards.category, category));
+  }
+
+  const [row] = await drizzleDb
+    .select({ value: sql<number>`COUNT(*)` })
+    .from(drizzleSchema.knowledge_cards)
+    .where(and(...conditions))
+    .all();
+
+  return Number(row?.value) || 0;
 }
 
 /**

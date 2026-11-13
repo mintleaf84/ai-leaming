@@ -78,6 +78,13 @@
       "when": 1783100000000,
       "tag": "0010_question_srs_id_nullable",
       "breakpoints": true
+    },
+    {
+      "idx": 11,
+      "version": "6",
+      "when": 1783200000000,
+      "tag": "0011_api_key_scopes_and_audit",
+      "breakpoints": true
     }
   ]
 }

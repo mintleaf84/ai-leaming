@@ -239,6 +239,13 @@ export default function ApiKeysPage() {
                           已停用
                         </span>
                       )}
+                      {/* 作用域（admin ⊃ write ⊃ read）；勾选式编辑放到下一轮 */}
+                      <span
+                        className="text-xs px-2 py-0.5 rounded-full bg-muted text-muted-foreground"
+                        title={`作用域：${apiKey.scopes}${apiKey.user_id === null ? "（全局 key，等价站长身份）" : `（绑定用户 ${apiKey.user_id}）`}`}
+                      >
+                        {apiKey.scopes}
+                      </span>
                     </div>
 
                     {/* 密钥显示 */}

@@ -1,38 +1,21 @@
 import { OpenAPIHono, createRoute, z } from "@hono/zod-openapi";
 import { drizzleDb, drizzleSchema } from "@/lib/db";
 import { eq, sql, count } from "drizzle-orm";
-import { log } from "@/lib/logger";
 import { safeParseJson } from "@/lib/utils/json";
+import { requireScope } from "@/lib/api/middlewares/api-key";
+import { apiAuditForWrites } from "@/lib/api/audit";
 
 const app = new OpenAPIHono();
 
-// ==================== 鉴权中间件 ====================
-// 从数据库校验 API Key，支持后台动态开关
+// ==================== 鉴权 / 审计中间件 ====================
+// 审计先挂：这样未通过鉴权的写请求（401/403）也会留痕。
+// 身份（key/user/scope）由 requireScope 解析并挂到 Context 上，审计中间件随后读取。
+
+app.use("*", apiAuditForWrites());
 
 app.use("*", async (c, next) => {
-  const authHeader = c.req.header("Authorization");
-  if (!authHeader || !authHeader.startsWith("Bearer ")) {
-    return c.json({ error: "缺少 Authorization Header (Bearer <key>)" }, 401);
-  }
-
-  const token = authHeader.slice(7); // 去掉 "Bearer "
-  try {
-    const row = await drizzleDb.query.api_keys.findFirst({
-      where: eq(drizzleSchema.api_keys.key_string, token),
-      columns: { id: true, is_active: true },
-    });
-
-    if (!row) {
-      return c.json({ error: "API Key 无效" }, 401);
-    }
-    if (!row.is_active) {
-      return c.json({ error: "此 API Key 已被后台停用" }, 403);
-    }
-  } catch (err) {
-    log.error("[ExternalAPI] 鉴权查询失败:", err);
-    return c.json({ error: "服务器内部错误" }, 500);
-  }
-
+  const identity = await requireScope(c, "read");
+  if (identity instanceof Response) return identity;
   await next();
 });
 
@@ -78,8 +61,8 @@ const listRoute = createRoute({
       },
       description: "获取题库列表（分页）",
     },
-    401: { description: "未授权 - 缺少或无效的 API Key" },
-    403: { description: "已禁止 - API Key 被后台停用" },
+    401: { description: "未授权 - 缺少 / 无效 / 已停用的 API Key" },
+    403: { description: "已禁止 - 该 API Key 的作用域不足" },
   },
 });
 

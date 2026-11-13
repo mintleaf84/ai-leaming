@@ -6,6 +6,7 @@
 
 - **主应用**: [my-next-app/](my-next-app/) - 基于 Next.js 15 的全栈应用。
 - **文档**: [docs/](docs/) - 包含产品需求文档 (PRD) 和开发计划。
+- **Agent API**: [docs/api.md](docs/api.md) - 给 AI agent / 脚本调用的 REST 接口（API Key 鉴权）
 
 ## 快速开始
 

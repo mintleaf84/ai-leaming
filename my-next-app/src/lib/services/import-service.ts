@@ -1,7 +1,8 @@
 import { drizzleDb, drizzleSchema } from "../db";
-import { and, eq, sql } from "drizzle-orm";
+import { and, eq, inArray, sql } from "drizzle-orm";
 import { FenbiImportResult } from "../import/fenbi-parser";
 import { sanitizeHtml } from "../utils/security";
+import { safeParseJson } from "../utils/json";
 import { generateId } from "../utils/id";
 import { log } from "@/lib/logger";
 
@@ -80,6 +81,50 @@ function duplicatedResult(sessionId: string) {
     importedCount: 0,
     duplicated: true,
   };
+}
+
+/** agent 接口的幂等返回：字段名与 fenbi 导入不同，语义复用同一个判定 */
+function duplicatedAgentResult(sessionId: string) {
+  const base = duplicatedResult(sessionId);
+  return {
+    sessionId: base.sessionId,
+    inserted: base.importedCount,
+    duplicated: base.duplicated,
+  };
+}
+
+type MasteryDelta = { correct: number; total: number };
+
+/**
+ * 按 tag 把「本次答对/答题总数」增量写进 user_mastery。
+ * 必须整体在调用方的事务里执行（exec 传 tx）：掌握度与日志要同生共死，
+ * 否则一次回滚会留下虚高的掌握度分数。
+ */
+async function applyMasteryDeltas(
+  exec: typeof drizzleDb,
+  userId: number,
+  changes: Map<string, MasteryDelta>,
+): Promise<void> {
+  for (const [tag, stats] of changes.entries()) {
+    await exec
+      .insert(user_mastery)
+      .values({
+        user_id: userId,
+        tag_name: tag,
+        correct_count: stats.correct,
+        total_count: stats.total,
+        score: stats.total > 0 ? (stats.correct / stats.total) * 100 : 0,
+      })
+      .onConflictDoUpdate({
+        target: [user_mastery.user_id, user_mastery.tag_name],
+        set: {
+          correct_count: sql`${user_mastery.correct_count} + ${stats.correct}`,
+          total_count: sql`${user_mastery.total_count} + ${stats.total}`,
+          score: sql`ROUND(CAST(${user_mastery.correct_count} + ${stats.correct} AS FLOAT) / CAST(${user_mastery.total_count} + ${stats.total} AS FLOAT) * 100, 2)`,
+          last_updated: sql`CURRENT_TIMESTAMP`,
+        },
+      });
+  }
 }
 
 /**
@@ -191,7 +236,7 @@ async function writeImport(
   }
 
   // 4. 汇总并更新 Mastery
-  const masteryChanges = new Map<string, { correct: number; total: number }>();
+  const masteryChanges = new Map<string, MasteryDelta>();
   for (const record of data.records) {
     const question = data.questions.find(
       (q) => q.externalId === record.externalId,
@@ -206,28 +251,128 @@ async function writeImport(
     }
   }
 
-  for (const [tag, stats] of masteryChanges.entries()) {
-    await exec
-      .insert(user_mastery)
-      .values({
-        user_id: userId,
-        tag_name: tag,
-        correct_count: stats.correct,
-        total_count: stats.total,
-        score: stats.total > 0 ? (stats.correct / stats.total) * 100 : 0,
-      })
-      .onConflictDoUpdate({
-        target: [user_mastery.user_id, user_mastery.tag_name],
-        set: {
-          correct_count: sql`${user_mastery.correct_count} + ${stats.correct}`,
-          total_count: sql`${user_mastery.total_count} + ${stats.total}`,
-          score: sql`ROUND(CAST(${user_mastery.correct_count} + ${stats.correct} AS FLOAT) / CAST(${user_mastery.total_count} + ${stats.total} AS FLOAT) * 100, 2)`,
-          last_updated: sql`CURRENT_TIMESTAMP`,
-        },
-      });
-  }
+  await applyMasteryDeltas(exec, userId, masteryChanges);
 
   return questionIdMap.size;
+}
+
+// ==================== agent 答题记录导入（P3a） ====================
+
+/** 单条答题记录（对错由调用方 agent 判定，服务端不重算） */
+export interface AgentAnswerInput {
+  questionId: number;
+  userAnswer?: string | null;
+  isCorrect: boolean;
+  durationMs?: number | null;
+}
+
+/** POST /api/external/practice/answers 的入参（zod 校验后传入） */
+export interface AgentAnswersImportInput {
+  sessionKey: string;
+  sessionName?: string | null;
+  answers: AgentAnswerInput[];
+}
+
+export interface AgentAnswersImportResult {
+  sessionId: string;
+  inserted: number;
+  duplicated: boolean;
+}
+
+/**
+ * 题目不可见（不存在 / 已被删除）时抛出，由路由层映射成 400。
+ * 带上全部非法 ID，路由只回前 5 个，避免错误响应体被刷爆。
+ */
+export class InvalidQuestionIdsError extends Error {
+  readonly invalidQuestionIds: number[];
+
+  constructor(invalidQuestionIds: number[]) {
+    super(`以下题目不存在或不可见: ${invalidQuestionIds.join(", ")}`);
+    this.name = "InvalidQuestionIdsError";
+    this.invalidQuestionIds = invalidQuestionIds;
+  }
+}
+
+/** agent 来源的 source_key 统一前缀，避免与粉笔的 sourceKey 撞车 */
+const AGENT_SOURCE_KEY_PREFIX = "agent:";
+
+/**
+ * agent 答题记录的原子写入：会话 + 日志 + 掌握度。
+ *
+ * 题目预检也放在事务内（而不是事务外先查一遍）：这样"校验通过"与"写入"
+ * 之间不存在题目被删除的时间窗；预检失败时事务整体回滚，不会留下半截会话。
+ */
+async function writeAgentAnswers(
+  exec: typeof drizzleDb,
+  userId: number,
+  data: AgentAnswersImportInput,
+  sessionId: string,
+  sourceKey: string,
+): Promise<number> {
+  // 1. 题目预检：去重后一次查完，缺任何一道都整批拒绝（不静默跳过）
+  const uniqueIds = Array.from(new Set(data.answers.map((a) => a.questionId)));
+  const rows = await exec
+    .select({ id: questions.id, tags: questions.tags })
+    .from(questions)
+    .where(inArray(questions.id, uniqueIds));
+
+  const found = new Map(rows.map((r) => [r.id, r]));
+  const missing = uniqueIds.filter((id) => !found.has(id));
+  if (missing.length > 0) {
+    throw new InvalidQuestionIdsError(missing);
+  }
+
+  // 2. 创建练习会话（与粉笔导入共用 practice_mode = "import"）
+  const durationMs = data.answers.reduce(
+    (sum, a) => sum + (a.durationMs ?? 0),
+    0,
+  );
+  await exec.insert(practice_sessions).values({
+    id: sessionId,
+    user_id: userId,
+    session_name: data.sessionName ?? "由 agent 导入",
+    source_key: sourceKey,
+    total_questions: data.answers.length,
+    correct_count: data.answers.filter((a) => a.isCorrect).length,
+    practice_mode: "import",
+    // 存纯 id 数组：getSessionById 只对「数字/字符串数组」走 id 分支，
+    // 存对象数组会落到"完整对象"分支，详情页解析直接坏掉
+    questions_json: JSON.stringify(data.answers.map((a) => a.questionId)),
+    total_duration_ms: durationMs,
+  });
+
+  // 3. 逐题写日志（单条 INSERT ... VALUES (...), (...) 多行插入）
+  await exec.insert(practice_logs).values(
+    data.answers.map((a) => ({
+      session_id: sessionId,
+      user_id: userId,
+      question_id: a.questionId,
+      user_answer: a.userAnswer ?? null,
+      is_correct: a.isCorrect,
+      duration_ms: a.durationMs ?? null,
+    })),
+  );
+
+  // 4. 按题目 tags 增量累加掌握度（与粉笔导入同一段逻辑）
+  const masteryChanges = new Map<string, MasteryDelta>();
+  for (const answer of data.answers) {
+    const parsedTags = safeParseJson<unknown>(
+      found.get(answer.questionId)?.tags,
+      [],
+    );
+    // safeParseJson 只保证"能解析"，不保证是数组（历史脏数据可能是 "null"/"{}"）
+    const tags = Array.isArray(parsedTags) ? parsedTags : [];
+    for (const tag of tags) {
+      if (typeof tag !== "string" || tag.length === 0) continue;
+      const current = masteryChanges.get(tag) || { correct: 0, total: 0 };
+      current.total += 1;
+      if (answer.isCorrect) current.correct += 1;
+      masteryChanges.set(tag, current);
+    }
+  }
+  await applyMasteryDeltas(exec, userId, masteryChanges);
+
+  return data.answers.length;
 }
 
 export const importService = {
@@ -287,6 +432,54 @@ export const importService = {
     }
 
     return result;
+  },
+
+  /**
+   * 导入 agent 判定的答题记录。
+   *
+   * 幂等键是 `sessionKey`（由 agent 生成、跨重试稳定），落库时加 `agent:` 前缀
+   * 写进 `practice_sessions.source_key`，与粉笔导入共用同一套「先查后写 + 唯一索引兜并发」。
+   *
+   * @throws InvalidQuestionIdsError 请求里有不存在于题库的 questionId（整批拒绝）
+   */
+  importAgentAnswers: async (
+    userId: number,
+    data: AgentAnswersImportInput,
+  ): Promise<AgentAnswersImportResult> => {
+    const sessionId = `agent_${generateId("", 15)}`;
+    const sourceKey = `${AGENT_SOURCE_KEY_PREFIX}${data.sessionKey}`;
+
+    // 0. 幂等预检：同一用户同一 sessionKey 只算一次，重复提交不再写日志、
+    //    不再累加掌握度（否则 agent 重试会把 mastery 分数刷虚高）。
+    const existingId = await findExistingSession(userId, sourceKey);
+    if (existingId) return duplicatedAgentResult(existingId);
+
+    let inserted: number;
+    try {
+      inserted = await withImportLock(() =>
+        drizzleDb.transaction(async (tx) => {
+          // 事务内所有写操作都必须走 tx（理由见 importFenbiData 同位置注释）
+          const exec = tx as unknown as typeof drizzleDb;
+          return await writeAgentAnswers(
+            exec,
+            userId,
+            data,
+            sessionId,
+            sourceKey,
+          );
+        }),
+      );
+    } catch (e) {
+      // 并发窗口：预检通过但另一请求先提交，唯一索引兜底后按重复处理
+      if (isUniqueViolation(e)) {
+        const concurrentId = await findExistingSession(userId, sourceKey);
+        if (concurrentId) return duplicatedAgentResult(concurrentId);
+      }
+      // 校验失败（题目不存在等）原样抛给路由层映射 400
+      throw e;
+    }
+
+    return { sessionId, inserted, duplicated: false };
   },
 };
 

@@ -5,6 +5,7 @@ import { safeParseJson } from "@/lib/utils/json";
 import {
   requireScope,
   getApiKeyIdentity,
+  type ApiScope,
   type ResolvedApiKey,
 } from "@/lib/api/middlewares/api-key";
 import { apiAuditForWrites } from "@/lib/api/audit";
@@ -17,6 +18,12 @@ import {
   getAllKnowledgeCards,
   countKnowledgeCards,
 } from "@/lib/services/knowledge";
+import {
+  importService,
+  InvalidQuestionIdsError,
+  type AgentAnswersImportInput,
+} from "@/lib/services/import-service";
+import { logger } from "@/lib/logger";
 
 const app = new OpenAPIHono();
 
@@ -31,6 +38,18 @@ app.use("*", async (c, next) => {
   if (identity instanceof Response) return identity;
   await next();
 });
+
+/** 单个路由额外要求更高作用域（全局 read 守卫是兜底，不是上限） */
+function requireScopeMiddleware(required: ApiScope) {
+  return async (
+    c: Parameters<typeof requireScope>[0],
+    next: () => Promise<void>,
+  ) => {
+    const identity = await requireScope(c, required);
+    if (identity instanceof Response) return identity;
+    await next();
+  };
+}
 
 // ==================== Schema 定义 ====================
 
@@ -708,6 +727,125 @@ app.openapi(knowledgeCardsRoute, async (c) => {
     })),
     meta: { limit, offset, total },
   });
+});
+
+// ==================== 路由：agent 导入答题记录（写，需 write 作用域） ====================
+// 与上面的只读接口共用 /api/external 前缀，但这是本文件唯一的写接口：
+// 作用域要求提升到 write，幂等由调用方提供的 sessionKey 保证。
+
+const AgentAnswerSchema = z
+  .object({
+    questionId: z.number().int().positive().openapi({
+      description: "题目 ID，必须是题库中存在的题目；不存在则整批拒绝（400）",
+      example: 123,
+    }),
+    userAnswer: z.string().nullable().optional().openapi({
+      description: '用户作答内容（选择题如 "A"，填空题可为原文或空）',
+      example: "A",
+    }),
+    isCorrect: z.boolean().openapi({
+      description:
+        "本题是否正确，由调用方（agent）判定后传入；服务端不会用标准答案重算",
+      example: true,
+    }),
+    durationMs: z.number().int().min(0).nullable().optional().openapi({
+      description: "本题作答耗时（毫秒），可省略",
+      example: 12000,
+    }),
+  })
+  .openapi("ExternalAgentAnswer");
+
+const AgentAnswersRequestSchema = z
+  .object({
+    sessionKey: z.string().min(1).max(200).openapi({
+      description:
+        "幂等键，由调用方生成并跨重试保持不变；同一用户的同一 sessionKey 重复提交只会算一次",
+      example: "agent-run-2026-11-13-a",
+    }),
+    sessionName: z.string().max(200).optional().openapi({
+      description: "会话名称，省略时记为「由 agent 导入」",
+      example: "由 agent 导入",
+    }),
+    answers: z.array(AgentAnswerSchema).min(1).max(500).openapi({
+      description: "答题记录，1..500 条",
+    }),
+  })
+  .openapi("ExternalAgentAnswersRequest");
+
+const AgentAnswersResponseSchema = z
+  .object({
+    sessionId: z
+      .string()
+      .openapi({ description: "写入（或幂等命中）的会话 ID" }),
+    inserted: z
+      .number()
+      .int()
+      .openapi({ description: "本次写入的答题记录条数；幂等命中时为 0" }),
+    duplicated: z.boolean().openapi({
+      description: "true 表示该 sessionKey 已导入过，本次未产生任何新数据",
+    }),
+  })
+  .openapi("ExternalAgentAnswersResponse");
+
+const importAnswersRoute = createRoute({
+  method: "post",
+  path: "/practice/answers",
+  middleware: [requireScopeMiddleware("write")] as const,
+  request: {
+    body: {
+      // 必填：否则 @hono/zod-openapi 会把缺失的 body 校验成 `{}`，
+      // 请求一路走到 service 层才炸成 500
+      required: true,
+      content: {
+        "application/json": { schema: AgentAnswersRequestSchema },
+      },
+    },
+  },
+  responses: {
+    200: {
+      content: {
+        "application/json": { schema: AgentAnswersResponseSchema },
+      },
+      description: "导入成功（或幂等命中，见 duplicated 字段）",
+    },
+    400: { description: "请求体校验失败 / 存在题库中不存在的 questionId" },
+    401: { description: "未授权 - 缺少 / 无效 / 已停用的 API Key" },
+    403: { description: "已禁止 - 该 API Key 的作用域不足（需要 write）" },
+    500: { description: "服务器内部错误" },
+  },
+});
+
+app.openapi(importAnswersRoute, async (c) => {
+  // 与只读接口保持同一形态：身份缺失说明中间件没生效，属代码错误（500），
+  // 而不是"用户没登录"（那是 401，已由 requireScope 拦截）
+  const identity = requireIdentity(c);
+  const body = c.req.valid("json") as AgentAnswersImportInput;
+
+  try {
+    const result = await importService.importAgentAnswers(
+      identity.effectiveUserId,
+      body,
+    );
+    return c.json(result, 200);
+  } catch (err) {
+    // 命中明确业务错误：题目不存在 → 400，并把非法 ID 回给调用方（前 5 个）
+    if (err instanceof InvalidQuestionIdsError) {
+      return c.json(
+        {
+          // message 里也带全部非法 id，这里一并截断，避免 400 响应比实际需要大
+          error:
+            err.invalidQuestionIds.length > 5
+              ? `以下 questionId 不存在：${err.invalidQuestionIds.slice(0, 5).join(", ")} …（共 ${err.invalidQuestionIds.length} 个）`
+              : err.message,
+          invalidQuestionIds: err.invalidQuestionIds.slice(0, 5),
+        },
+        400,
+      );
+    }
+    // 其余是真实故障：记结构化日志后按 500 返回，不把内部细节透出去
+    logger.error({ err }, "[External] 导入 agent 答题记录失败");
+    return c.json({ error: "服务器内部错误" }, 500);
+  }
 });
 
 // ==================== 工具函数 ====================

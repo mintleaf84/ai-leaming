@@ -1,7 +1,7 @@
 /**
  * 判分匹配器（规格 §2.1）——**纯函数、无 IO、可单测**。
  *
- * 列举卡：条目判「已写」= `keywords` 任一命中（归一化后子串包含）。
+ * 列举卡：条目判「已写」= `keywords` 任一命中（归一化后、再去全部空白做子串包含）。
  * 填空卡：每空与 `answers` 任一项归一化后**精确或双向包含**匹配。
  *
  * 三条刻意的边界：
@@ -11,6 +11,9 @@
  *   恒真，一张卡会整体蒙对；
  * - 包含匹配要求输入长度 ≥2，避免「安」「全」这种单字蒙对（规格的误杀率目标
  *   靠"宁可漏判、可一键改判"来兜，不是放松到单字）。
+ * - 关键词比对时两侧额外**去掉全部空白**：关键词是内容侧手写的、可能带空格
+ *   （「倒 U 形」），用户不会照着空格打。`normalizeText` 的公共语义（保留单个空格）
+ *   不变，只在这一条路径上多压一次。
  */
 import { normalizeText } from "./normalize";
 import type {
@@ -46,22 +49,34 @@ export interface GradeListOptions {
   itemIndexes?: number[];
 }
 
+/**
+ * 关键词比对专用：去掉**全部**空白（不是折叠成一个）。
+ *
+ * 关键词是内容侧手写的，可能带空格（如「倒 U 形」）；用户不会照着空格打。
+ * `normalizeText` 刻意保留单个空格（填空卡、哈希、去重都依赖这个语义），
+ * 所以这里只在关键词匹配路径上再压一次，两侧都压，用户文本的空白语义不受影响。
+ */
+function compactForMatch(text: string): string {
+  return text.replace(/\s+/g, "");
+}
+
 /** 单个列举条目是否被判「已写」 */
 function isItemWritten(item: RecallListItem, normalizedTyped: string): boolean {
   if (!normalizedTyped) return false;
 
+  const compactTyped = compactForMatch(normalizedTyped);
   const keywords = item.keywords
-    .map((keyword) => normalizeText(keyword))
+    .map((keyword) => compactForMatch(normalizeText(keyword)))
     // 空串关键词必须剔除："" 是任何字符串的子串
     .filter((keyword) => keyword.length > 0);
 
   if (keywords.length === 0) {
     // 退化：没有可用关键词时，用条目文本本身当唯一关键词
-    const fallback = normalizeText(item.text);
-    return fallback.length > 0 && normalizedTyped.includes(fallback);
+    const fallback = compactForMatch(normalizeText(item.text));
+    return fallback.length > 0 && compactTyped.includes(fallback);
   }
 
-  return keywords.some((keyword) => normalizedTyped.includes(keyword));
+  return keywords.some((keyword) => compactTyped.includes(keyword));
 }
 
 /** 列举卡判分 */

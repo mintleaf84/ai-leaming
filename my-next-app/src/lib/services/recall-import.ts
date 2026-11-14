@@ -42,6 +42,20 @@ export class RecallImportError extends Error {
 }
 
 /**
+ * 卡组 / 卡片不存在（或不属于当前身份）。
+ *
+ * 继承 `RecallImportError` 以便既有调用方（Server Action）无需改动；单独一类
+ * 是给 HTTP 层用的：外部 API 必须能把"目标不存在"稳定映射成 404，而不是靠
+ * 匹配错误文案（文案一改状态码就漂了），也不能把它当参数错误报 400。
+ */
+export class RecallNotFoundError extends RecallImportError {
+  constructor(message: string) {
+    super(message);
+    this.name = "RecallNotFoundError";
+  }
+}
+
+/**
  * 导入串行锁。
  *
  * `@libsql/client` 的本地文件驱动只有一条连接，两个 `transaction()` 并发时会
@@ -543,7 +557,7 @@ export async function upsertCard(
         .where(eq(recall_decks.deck_key, input.deckKey))
         .limit(1);
       if (!deck) {
-        throw new RecallImportError(`卡组不存在：${input.deckKey}`);
+        throw new RecallNotFoundError(`卡组不存在：${input.deckKey}`);
       }
       assertDeckWritable(input.deckKey, deck.owner_user_id, userId);
 
@@ -650,7 +664,7 @@ export async function deleteCard(
         .where(eq(recall_decks.deck_key, deckKey))
         .limit(1);
       if (!deck) {
-        throw new RecallImportError(`卡组不存在：${deckKey}`);
+        throw new RecallNotFoundError(`卡组不存在：${deckKey}`);
       }
       assertDeckWritable(deckKey, deck.owner_user_id, userId);
 
@@ -666,7 +680,7 @@ export async function deleteCard(
         .limit(1);
       // 卡片属于别的卡组时也走这里：不能拿别的 deckKey 把全局卡片删掉
       if (!card) {
-        throw new RecallImportError(`卡片 ${cardId} 不在卡组 ${deckKey} 里`);
+        throw new RecallNotFoundError(`卡片 ${cardId} 不在卡组 ${deckKey} 里`);
       }
 
       await exec

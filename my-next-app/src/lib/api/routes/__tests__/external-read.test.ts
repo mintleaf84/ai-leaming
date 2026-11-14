@@ -543,7 +543,7 @@ describe("External read-only API (Agent API P2)", () => {
       expect(paths).toEqual(
         expect.arrayContaining([
           "/practice/sessions",
-          "/practice/sessions/:id",
+          "/practice/sessions/{id}",
           "/wrong-book",
           "/wrong-book/stats",
           "/mastery",

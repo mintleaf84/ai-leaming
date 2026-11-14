@@ -11,12 +11,12 @@
  * - 失败一律抛可读 Error（safe-action 经 `handleServerError` 转成 `serverError`），
  *   不返回 `{ ok: false }`：静默失败会让页面停在"什么都没发生"的样子。
  */
-import { and, eq, gte } from "drizzle-orm";
 import { z } from "zod";
 import { authenticatedAction } from "@/lib/safe-action";
-import { drizzleDb, drizzleSchema } from "@/lib/db";
 import {
   archiveCard,
+  buildNextReviewText,
+  computeStreakDays,
   getCard,
   getTodayQueue,
   submitReview,
@@ -29,85 +29,7 @@ import {
   listDecks,
   upsertCard,
 } from "@/lib/services/recall-import";
-import { getStudyDay, getStudyDayStart } from "@/lib/recall/study-day";
 import type { RecallImportConflictStrategy } from "@/lib/recall/types";
-
-const { recall_review_logs } = drizzleSchema;
-
-/** streakDays 的回溯上限（规格 §4.1：最多查 365 天，避免一次拉全部历史） */
-const RECALL_STREAK_MAX_DAYS = 365;
-const DAY_MS = 24 * 60 * 60 * 1000;
-
-/** 学习日 `YYYY-MM-DD` 加减天数（纯日期算术，不经过本地时区） */
-function shiftStudyDay(day: string, delta: number): string {
-  const [year, month, date] = day.split("-").map(Number);
-  return new Date(Date.UTC(year, month - 1, date) + delta * DAY_MS)
-    .toISOString()
-    .slice(0, 10);
-}
-
-/**
- * 连续学习天数（学习日 = Asia/Shanghai 04:00 切换）。
- *
- * 口径：今天有日志就从今天算；今天还没有就从**昨天**算（否则每天早上打开应用
- * 都会看到"连续 0 天"，把昨天刚攒的连续记录清空）。跨度以今天为终点最多 365 天。
- *
- * 学习日归属用共享的 `getStudyDay()` 在 JS 里算，而不是在 SQL 里写
- * `date(ts, '+4 hours')`：时区偏移只允许有一个事实来源，SQL 里的魔法偏移
- * 一旦与 `study-day.ts` 不同步，连续天数会在凌晨 4 点前后悄悄错一天。
- */
-async function computeStreakDays(userId: number, now: Date): Promise<number> {
-  const today = getStudyDay(now);
-  const oldest = shiftStudyDay(today, -(RECALL_STREAK_MAX_DAYS - 1));
-
-  const rows = await drizzleDb
-    .select({ ts: recall_review_logs.ts })
-    .from(recall_review_logs)
-    .where(
-      and(
-        eq(recall_review_logs.user_id, userId),
-        gte(recall_review_logs.ts, getStudyDayStart(oldest).toISOString()),
-      ),
-    );
-
-  const studied = new Set<string>();
-  for (const row of rows) {
-    const at = new Date(row.ts);
-    // 脏时间戳（手改库/旧格式）不参与统计，但不能让整个页面挂掉
-    if (Number.isNaN(at.getTime())) continue;
-    studied.add(getStudyDay(at));
-  }
-
-  let cursor = studied.has(today) ? today : shiftStudyDay(today, -1);
-  let streak = 0;
-  while (streak < RECALL_STREAK_MAX_DAYS && studied.has(cursor)) {
-    streak += 1;
-    cursor = shiftStudyDay(cursor, -1);
-  }
-  return streak;
-}
-
-/**
- * 下次复习提示（规格 §4.3）。
- *
- * - 全对：`下次 11 月 20 日`（按**学习日**取月日，不是 UTC 日期）；
- * - 有错：`明天只重测这 3 条`（条数取新的 pendingItems）。
- */
-function buildNextReviewText(
-  nextDue: string,
-  pendingItems: number[] | null,
-): string {
-  if (pendingItems && pendingItems.length > 0) {
-    return `明天只重测这 ${pendingItems.length} 条`;
-  }
-
-  const due = new Date(nextDue);
-  if (Number.isNaN(due.getTime())) {
-    throw new RecallServiceError(`调度返回的 nextDue 非法：${nextDue}`);
-  }
-  const [, month, date] = getStudyDay(due).split("-").map(Number);
-  return `下次 ${month} 月 ${date} 日`;
-}
 
 const CardIdSchema = z.object({
   cardId: z.number().int().positive("cardId 必须是正整数"),

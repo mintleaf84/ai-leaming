@@ -14,6 +14,7 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { Textarea } from "@/components/ui/textarea";
+import { safeParseJson } from "@/lib/utils/json";
 
 import {
   actionErrorMessage,
@@ -23,6 +24,26 @@ import {
 
 /** 冲突清单在界面上最多展示这么多条，其余只报数量 */
 const MAX_CONFLICT_ROWS = 10;
+
+/**
+ * 完成态的卡组名：从**刚导入的那份文件**里读 `title`。
+ *
+ * 为什么不在返回值里加 `deckTitle`：那要动 `importDeck` 的契约，而文件的 title
+ * 本来就由服务层写进 `recall_decks.title`（改名的导入也会同步更新），两者同源。
+ * 读不到（理论上不可能：JSON 已通过服务端校验）就退回 `deckKey`——虽然不好看，
+ * 至少能让用户确认"导的是哪个卡组"，不会是空标题。
+ *
+ * 解析走 `safeParseJson`：它的契约就是"解析失败返回默认值"，不需要在这里
+ * 再写一个 catch（catch 门禁零容忍，多一个就是一次审计失败）。
+ */
+function readDeckTitle(json: string, deckKey: string): string {
+  const parsed = safeParseJson<{ title?: unknown } | null>(json, null);
+  const title =
+    parsed && typeof parsed === "object"
+      ? (parsed as { title?: unknown }).title
+      : undefined;
+  return typeof title === "string" && title.trim() ? title.trim() : deckKey;
+}
 
 /**
  * 导入卡组文件（规格 §1.1：导入幂等，内容冲突由人来定）。
@@ -42,6 +63,8 @@ export function ImportDeckDialog({
 }) {
   const [json, setJson] = useState("");
   const [result, setResult] = useState<RecallImportView | null>(null);
+  /** 完成态标题用的卡组名（导入成功时从文件里取，见 readDeckTitle） */
+  const [deckTitle, setDeckTitle] = useState("");
   const [pendingConflicts, setPendingConflicts] = useState<
     RecallImportView["conflicts"]
   >([]);
@@ -65,6 +88,7 @@ export function ImportDeckDialog({
       // 旧请求的结果一律丢弃：它可能属于上一份 JSON，或用户已经关掉了对话框
       if (requestId !== requestIdRef.current) return;
       setResult(imported);
+      setDeckTitle(readDeckTitle(json, imported.deckKey));
       // accept 之后再回传的 conflicts 只是回执，不需要再问一次
       setPendingConflicts(onConflict === "accept" ? [] : imported.conflicts);
       onImported(imported.deckKey);
@@ -90,6 +114,7 @@ export function ImportDeckDialog({
       const text = await file.text();
       setJson(text);
       setResult(null);
+      setDeckTitle("");
       setPendingConflicts([]);
       // 换了内容：上一份内容的在途响应没有意义了
       requestIdRef.current += 1;
@@ -108,11 +133,29 @@ export function ImportDeckDialog({
     onOpenChange(false);
     setJson("");
     setResult(null);
+    setDeckTitle("");
     setPendingConflicts([]);
   };
 
   const step =
     pendingConflicts.length > 0 ? "conflict" : result ? "done" : "input";
+
+  /**
+   * 完成态的数字账：`keep` 的冲突卡**既不算新增、也不算更新、也不算跳过**
+   * （服务层只戳了 updated_at，没动内容）。不单独列出来时
+   * 「新增 + 更新 + 跳过」会永远小于文件卡数 —— 导入 104 张、1 张冲突并保留，
+   * 用户看到的就是 0 + 0 + 103，于是会问「第 104 张去哪了」。
+   */
+  const keptCards = result
+    ? result.conflicts.filter((conflict) => conflict.action === "keep").length
+    : 0;
+  /** 文件卡数 = 各项之和（created + updated + skipped + kept 恰好覆盖每一张） */
+  const fileCards = result
+    ? result.createdCards +
+      result.updatedCards +
+      result.skippedCards +
+      keptCards
+    : 0;
 
   return (
     <Dialog
@@ -213,10 +256,26 @@ export function ImportDeckDialog({
         {step === "done" && result && (
           <div className="space-y-3">
             <div className="rounded-lg border border-success/30 bg-success-muted px-4 py-3">
-              <p className="text-sm font-medium text-foreground">导入完成</p>
+              <p className="text-sm font-medium text-foreground">
+                导入完成{deckTitle ? ` · ${deckTitle}` : ""}
+              </p>
+              <p
+                className="mt-1 text-xs text-muted-foreground tabular-nums"
+                data-testid="import-summary-counts"
+              >
+                {[
+                  `新增 ${result.createdCards} 张`,
+                  `更新 ${result.updatedCards} 张`,
+                  `跳过 ${result.skippedCards} 张`,
+                  // 保留 0 张时不显示：多一个 0 只会干扰「对账」
+                  ...(keptCards > 0 ? [`保留 ${keptCards} 张`] : []),
+                ].join(" · ")}
+              </p>
               <p className="mt-1 text-xs text-muted-foreground tabular-nums">
-                新增 {result.createdCards} 张 · 更新 {result.updatedCards} 张 ·
-                跳过 {result.skippedCards} 张
+                共 {fileCards} 张
+                {keptCards > 0
+                  ? `：其中 ${keptCards} 张按你的选择保留了库里的内容，复习进度没动。`
+                  : "。"}
               </p>
             </div>
             {result.missingInFile.length > 0 && (

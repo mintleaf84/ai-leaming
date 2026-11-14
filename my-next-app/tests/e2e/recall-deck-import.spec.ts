@@ -216,6 +216,48 @@ async function submitImport(dialog: Locator) {
   await dialog.getByRole("button", { name: "导入", exact: true }).click();
 }
 
+/**
+ * 完成态「数字账」的断言。
+ *
+ * 四个数字渲染在同一行（`data-testid="import-summary-counts"`），这里按**标签**
+ * 从真实文案里各取一个数，再核对四数之和 = 文件卡数。
+ *
+ * 为什么不写成 `getByText("新增 0 张 · 更新 0 张 · 跳过 103 张 · 保留 1 张")`：
+ * 那样只能证明某一份 fixture 恰好拼出了这串字符，证明不了「每张卡都被交代了」；
+ * 而本用例要守的正是**漏账**（keep 的卡曾经既不计新增也不计跳过）。
+ */
+async function expectImportCounts(
+  dialog: Locator,
+  expected: { created: number; updated: number; skipped: number; kept: number },
+) {
+  const counts = dialog.getByTestId("import-summary-counts");
+  await expect(counts).toBeVisible({ timeout: 90_000 });
+
+  const text = (await counts.innerText()).replace(/\s+/g, " ").trim();
+  const read = (label: string): number => {
+    const matched = new RegExp(`${label}\\s*(\\d+)\\s*张`).exec(text);
+    if (!matched) throw new Error(`完成态没有「${label} N 张」这一项：${text}`);
+    return Number(matched[1]);
+  };
+
+  const actual = {
+    created: read("新增"),
+    updated: read("更新"),
+    skipped: read("跳过"),
+    // 「保留」只在 N>0 时渲染（下方单独断言），0 张时按 0 计入求和
+    kept: expected.kept > 0 ? read("保留") : 0,
+  };
+
+  expect(actual, `完成态统计与预期不符：${text}`).toEqual(expected);
+  if (expected.kept === 0) {
+    expect(text, "保留 0 张时不该多渲染这一项").not.toContain("保留");
+  }
+  expect(
+    actual.created + actual.updated + actual.skipped + actual.kept,
+    `新增 + 更新 + 跳过 + 保留 应等于文件卡数 ${DECK_CARD_COUNT}：${text}`,
+  ).toBe(DECK_CARD_COUNT);
+}
+
 test.describe("回忆卡组导入（真实文件）", () => {
   // 收尾：把导入的 104 卡删掉，别把共享 DB 永久改成 104 卡基线。
   // 注意这不能消除并行时的污染窗口（别的 spec 可能正好与本 spec 同时跑），
@@ -255,12 +297,16 @@ test.describe("回忆卡组导入（真实文件）", () => {
     const startedAt = Date.now();
     await submitImport(dialog);
 
-    // 导入结果：104 张全部新增
-    await expect(dialog.getByText(/新增 104 张/)).toBeVisible({
+    // 导入结果：104 张全部新增，且完成态标明是哪个卡组（导错文件要看得出来）
+    await expect(dialog.getByText(`导入完成 · ${DECK_TITLE}`)).toBeVisible({
       timeout: 90_000,
     });
-    await expect(dialog.getByText(/更新 0 张/)).toBeVisible();
-    await expect(dialog.getByText(/跳过 0 张/)).toBeVisible();
+    await expectImportCounts(dialog, {
+      created: DECK_CARD_COUNT,
+      updated: 0,
+      skipped: 0,
+      kept: 0,
+    });
     await dialog.getByRole("button", { name: "完成" }).click();
 
     // 卡组列表：标题 + 真实卡数
@@ -299,8 +345,11 @@ test.describe("回忆卡组导入（真实文件）", () => {
     await page.goto("/recall/decks");
     let dialog = await startImport(page, FIXTURE_PATH);
     await submitImport(dialog);
-    await expect(dialog.getByText(/新增 104 张/)).toBeVisible({
-      timeout: 90_000,
+    await expectImportCounts(dialog, {
+      created: DECK_CARD_COUNT,
+      updated: 0,
+      skipped: 0,
+      kept: 0,
     });
     await dialog.getByRole("button", { name: "完成" }).click();
 
@@ -321,11 +370,12 @@ test.describe("回忆卡组导入（真实文件）", () => {
     await page.goto("/recall/decks");
     dialog = await startImport(page, FIXTURE_PATH);
     await submitImport(dialog);
-    await expect(dialog.getByText(/新增 0 张/)).toBeVisible({
-      timeout: 90_000,
+    await expectImportCounts(dialog, {
+      created: 0,
+      updated: 0,
+      skipped: DECK_CARD_COUNT,
+      kept: 0,
     });
-    await expect(dialog.getByText(/更新 0 张/)).toBeVisible();
-    await expect(dialog.getByText(/跳过 104 张/)).toBeVisible();
     await dialog.getByRole("button", { name: "完成" }).click();
 
     // 今天的队列里不再有它：它是导入顺序里的第一张（id 最小），
@@ -353,8 +403,11 @@ test.describe("回忆卡组导入（真实文件）", () => {
     await page.goto("/recall/decks");
     let dialog = await startImport(page, FIXTURE_PATH);
     await submitImport(dialog);
-    await expect(dialog.getByText(/新增 104 张/)).toBeVisible({
-      timeout: 90_000,
+    await expectImportCounts(dialog, {
+      created: DECK_CARD_COUNT,
+      updated: 0,
+      skipped: 0,
+      kept: 0,
     });
     await dialog.getByRole("button", { name: "完成" }).click();
 
@@ -384,13 +437,16 @@ test.describe("回忆卡组导入（真实文件）", () => {
       dialog.getByRole("button", { name: "采用新文件" }),
     ).toBeVisible();
 
-    // 选「保留我的」→ 冲突不再挡路，进入完成态
-    // （103 张内容一致被跳过；冲突那张只戳 updated_at，不计入新增/更新/跳过）
+    // 选「保留我的」→ 冲突不再挡路，进入完成态：
+    // 103 张内容一致被跳过 + 冲突那张「保留 1 张」，四数之和必须回到 104。
+    // （keep 只戳 updated_at：不计新增、不计更新、也不计跳过 —— 曾经因此少一张。）
     await keepButton.click();
-    await expect(dialog.getByText(/跳过 103 张/)).toBeVisible({
-      timeout: 30_000,
+    await expectImportCounts(dialog, {
+      created: 0,
+      updated: 0,
+      skipped: DECK_CARD_COUNT - 1,
+      kept: 1,
     });
-    await expect(dialog.getByText(/新增 0 张/)).toBeVisible();
     await expect(keepButton).toHaveCount(0);
     await dialog.getByRole("button", { name: "完成" }).click();
 

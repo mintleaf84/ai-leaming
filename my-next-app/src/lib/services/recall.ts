@@ -429,7 +429,7 @@ function applyOverrides(
 }
 
 /** 只保留落在 `[0, total)` 里的条目下标（脏 pendingItems 的唯一清洗入口） */
-function normalizeItemIndexes(
+export function normalizeItemIndexes(
   indexes: number[] | null | undefined,
   total: number,
 ): number[] {

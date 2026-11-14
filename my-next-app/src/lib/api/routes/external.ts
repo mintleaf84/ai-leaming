@@ -29,6 +29,7 @@ import {
   findCard,
   getTodayQueue,
   listDeckCards,
+  normalizeItemIndexes,
   submitReview,
   RecallCardNotFoundError,
   RecallServiceError,
@@ -177,7 +178,7 @@ app.openapi(listRoute, async (c) => {
 
 const getRoute = createRoute({
   method: "get",
-  path: "/questions/:id",
+  path: "/questions/{id}",
   request: {
     params: z.object({ id: z.string() }),
   },
@@ -361,7 +362,7 @@ app.openapi(listSessionsRoute, async (c) => {
 
 const sessionDetailRoute = createRoute({
   method: "get",
-  path: "/practice/sessions/:id",
+  path: "/practice/sessions/{id}",
   summary: "获取单场练习详情与逐题作答记录",
   description:
     "只读接口，需 read 作用域。返回会话元信息、逐题作答记录（题目内容、选项、用户答案、是否正确、耗时）与汇总。会话不属于当前调用身份时返回 404（不区分不存在与无权访问）。",
@@ -1034,7 +1035,7 @@ app.openapi(recallDecksRoute, async (c) => {
 
 const recallDeckDetailRoute = createRoute({
   method: "get",
-  path: "/recall/decks/:deckKey",
+  path: "/recall/decks/{deckKey}",
   summary: "获取卡组详情与卡片列表（含当前身份的复习状态）",
   description:
     "只读接口，需 read 作用域。卡片内容全局共享，`state` 只反映当前 API Key 所属用户的进度（无记录为 null）。按卡片主键升序分页，默认 20、上限 100。卡组不存在返回 404。",
@@ -1105,7 +1106,7 @@ app.openapi(recallDeckDetailRoute, async (c) => {
 
 const recallCardDetailRoute = createRoute({
   method: "get",
-  path: "/recall/cards/:cardId",
+  path: "/recall/cards/{cardId}",
   summary: "获取单张回忆卡详情（含呈现模式与待重测条目）",
   description:
     "只读接口，需 read 作用域。`cardId` 是数字主键。`mode` 为 `retest` 时界面只呈现 `pendingItems` 里的条目；`state` 为 null 表示该身份从未复习过这张卡。卡片不存在返回 404。",
@@ -1159,7 +1160,17 @@ app.openapi(recallCardDetailRoute, async (c) => {
     return c.json({ error: `卡片不存在：${cardId}` }, 404);
   }
 
-  const pendingItems = card.state?.pendingItems ?? null;
+  // 条目可能因编辑而变少：先按**当前**条目数过滤库里的 pendingItems，
+  // 过滤后为空就退回首发。否则会把模式判成 retest 并返回不存在的条目下标，
+  // 客户端照着取条目会扑空（清洗逻辑复用服务层的 normalizeItemIndexes）。
+  const itemCount =
+    card.kind === "list"
+      ? (card.items ?? []).length
+      : (card.blanks ?? []).length;
+  const pendingItems = normalizeItemIndexes(
+    card.state?.pendingItems ?? null,
+    itemCount,
+  );
 
   return c.json({
     cardId: card.cardId,
@@ -1173,8 +1184,8 @@ app.openapi(recallCardDetailRoute, async (c) => {
     blanks: card.blanks,
     verbatim: card.verbatim,
     state: card.state,
-    mode: pendingItems && pendingItems.length > 0 ? "retest" : "first",
-    pendingItems,
+    mode: pendingItems.length > 0 ? "retest" : "first",
+    pendingItems: pendingItems.length > 0 ? pendingItems : null,
   });
 });
 
@@ -1297,8 +1308,9 @@ const recallReviewsRoute = createRoute({
   description:
     "写接口，需 write 作用域。服务端按卡片内容判分、推导评分并推进 FSRS 调度。带 `clientKey` 时按 `(user_id, clientKey)` 幂等：重试命中返回 `duplicate: true` 与首次结果，**不会二次推进调度**。卡片不存在返回 404。",
   request: {
-    required: true,
     body: {
+      // 必填：否则缺失的 body 会被校验成 `{}`，一路走到服务层才炸成 500
+      required: true,
       content: {
         "application/json": { schema: RecallReviewRequestSchema },
       },
@@ -1407,8 +1419,9 @@ const recallDeckImportRoute = createRoute({
   description:
     "写接口，需 write 作用域。幂等：同一份文件重复导入不新增、不重置任何人的复习进度。文件里没有的卡片不删除，只在 `missingInFile` 里报告。`schema` 版本不支持或内容校验失败返回 400 且库内零写入。",
   request: {
-    required: true,
     body: {
+      // 必填：否则缺失的 body 会被校验成 `{}`，一路走到服务层才炸成 500
+      required: true,
       content: {
         "application/json": { schema: RecallDeckImportRequestSchema },
       },
@@ -1508,8 +1521,9 @@ const recallCardUpsertRoute = createRoute({
   description:
     "写接口，需 write 作用域。卡片内容全局共享，写入**不会**重置任何人的复习进度。校验规则与整包导入一致（列举 1–6 条、每空 1–3 个可接受答案）。卡组不存在返回 404，内容非法返回 400（带 issues）。",
   request: {
-    required: true,
     body: {
+      // 必填：否则缺失的 body 会被校验成 `{}`，一路走到服务层才炸成 500
+      required: true,
       content: {
         "application/json": { schema: RecallCardUpsertRequestSchema },
       },
@@ -1560,7 +1574,7 @@ app.openapi(recallCardUpsertRoute, async (c) => {
 
 const recallCardDeleteRoute = createRoute({
   method: "delete",
-  path: "/recall/decks/:deckKey/cards/:cardKey",
+  path: "/recall/decks/{deckKey}/cards/{cardKey}",
   middleware: [requireScopeMiddleware("write")] as const,
   summary: "删除一张回忆卡（含其全部作答日志与进度）",
   description:

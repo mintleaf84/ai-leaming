@@ -185,9 +185,9 @@ describe("/api/external/recall", () => {
       expect.arrayContaining([
         ["GET", "/recall/decks"],
         ["POST", "/recall/decks"],
-        ["GET", "/recall/decks/:deckKey"],
-        ["DELETE", "/recall/decks/:deckKey/cards/:cardKey"],
-        ["GET", "/recall/cards/:cardId"],
+        ["GET", "/recall/decks/{deckKey}"],
+        ["DELETE", "/recall/decks/{deckKey}/cards/{cardKey}"],
+        ["GET", "/recall/cards/{cardId}"],
         ["POST", "/recall/cards"],
         ["GET", "/recall/queue"],
         ["POST", "/recall/reviews"],
@@ -195,6 +195,12 @@ describe("/api/external/recall", () => {
     );
     // 路由总数 = 原有 10 条 + recall 8 条
     expect(operations).toHaveLength(18);
+
+    // 路径参数必须是 OpenAPI 的 `{param}` 形式：`:param` 不是合法路径，
+    // SDK 生成器会把它当成字面路径（存量缺陷，见 PR #162 评审）
+    for (const path of Object.keys(doc.paths ?? {})) {
+      expect(path).not.toContain(":");
+    }
   });
 
   // ---------- 读：卡组列表 ----------
@@ -330,6 +336,56 @@ describe("/api/external/recall", () => {
       const missing = await request("/recall/cards/999999");
       expect(missing.status).toBe(404);
       expect((await missing.json()).error).toContain("卡片不存在");
+    });
+
+    /** 直接写状态行：模拟「卡片被编辑过、库里的 pendingItems 已经过期」 */
+    async function seedPendingState(cardId: number, pendingItems: string) {
+      await testDbHelper.db.insert(schema.recall_card_states).values({
+        user_id: WRITE_USER_ID,
+        card_id: cardId,
+        pending_items: pendingItems,
+      });
+    }
+
+    it("失效下标被过滤后仍非空 → mode=retest 且只返回有效条目", async () => {
+      const ids = await seedDeck();
+      const cardId = ids.get("c01") as number;
+      await seedPendingState(cardId, "[1,9]");
+
+      const res = await request(`/recall/cards/${cardId}`);
+      expect(res.status).toBe(200);
+
+      const body = await res.json();
+      expect(body.mode).toBe("retest");
+      expect(body.pendingItems).toEqual([1]);
+      expect(body.state.pendingItems).toEqual([1, 9]);
+    });
+
+    it("条目被缩到 1 条、pendingItems 全部越界 → mode=first 且清空", async () => {
+      const ids = await seedDeck();
+      const cardId = ids.get("c01") as number;
+
+      // 同一 cardKey 再提交 = 内容更新：条目 2 → 1，复习进度不受影响
+      const edit = await request("/recall/cards", {
+        method: "POST",
+        body: {
+          deckKey: "deck-recall",
+          cardId: "c01",
+          prompt: "c01 的题干",
+          kind: "list",
+          items: [{ text: "建立安全制度", keywords: ["安全制度"] }],
+        },
+      });
+      expect(edit.status).toBe(200);
+      await seedPendingState(cardId, "[7,9]");
+
+      const res = await request(`/recall/cards/${cardId}`);
+      expect(res.status).toBe(200);
+
+      const body = await res.json();
+      expect(body.items).toHaveLength(1);
+      expect(body.mode).toBe("first");
+      expect(body.pendingItems).toBeNull();
     });
   });
 
@@ -717,6 +773,30 @@ describe("/api/external/recall", () => {
       expect(res.status).toBe(404);
       expect((await res.json()).error).toContain("卡组不存在");
     });
+  });
+
+  // ---------- 请求体必填 ----------
+
+  describe("写接口的 body 必填", () => {
+    it.each([
+      ["/recall/reviews", "cardId"],
+      ["/recall/decks", "json"],
+      ["/recall/cards", "deckKey"],
+    ])(
+      "%s 不带 body / Content-Type → 400 且指明缺失字段（不是 500）",
+      async (path, missingField) => {
+        const res = await request(path, { method: "POST" });
+        expect(res.status).toBe(400);
+
+        // zod 校验失败的默认响应：success=false，error.message 里列出缺失字段
+        // （zod v4 的 ZodError 序列化只带 name + message）
+        const body = await res.json();
+        expect(body.success).toBe(false);
+        expect(body.error?.name).toBe("ZodError");
+        expect(typeof body.error?.message).toBe("string");
+        expect(body.error.message).toContain(missingField);
+      },
+    );
   });
 
   // ---------- 权限 ----------

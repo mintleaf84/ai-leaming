@@ -73,8 +73,11 @@ test.describe("回忆自测", () => {
       timeout: 15000,
     });
     await expect(page.getByRole("textbox")).toBeVisible();
-    // 顶部合计：3 张新卡（每卡约 0.4 分钟 → 向上取整 2 分钟）
-    await expect(page.getByText(/回忆 3 张/).first()).toBeVisible();
+    // 顶部合计：只断言「有队列」而不锁数量。卡片内容是**全局共享**的，
+    // recall-deck-import.spec.ts 会导入 104 卡的真实卡组；它若正巧在本次之前跑过，
+    // 这个用户的新卡池就不是 3 张而是 6 张（newLimit）。
+    // 数量口径（newLimit / 上限 15）由 queue.test.ts 与导入 spec 的「回忆 6 张」覆盖。
+    await expect(page.getByText(/回忆 \d+ 张/).first()).toBeVisible();
 
     await page.getByRole("textbox").fill("固态、液态");
     await page.getByRole("button", { name: "看答案" }).click();

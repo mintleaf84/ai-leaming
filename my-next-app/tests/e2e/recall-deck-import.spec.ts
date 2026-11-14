@@ -217,6 +217,18 @@ async function submitImport(dialog: Locator) {
 }
 
 test.describe("回忆卡组导入（真实文件）", () => {
+  // 收尾：把导入的 104 卡删掉，别把共享 DB 永久改成 104 卡基线。
+  // 注意这不能消除并行时的污染窗口（别的 spec 可能正好与本 spec 同时跑），
+  // 所以 recall.spec.ts 的数量断言本身也不锁死张数。
+  test.afterAll(() => {
+    const db = openDb();
+    try {
+      resetDeckImportState(db, requireUserId(db, DECK_USER.username));
+    } finally {
+      db.close();
+    }
+  });
+
   test.beforeEach(() => {
     resetForDeckUser();
   });

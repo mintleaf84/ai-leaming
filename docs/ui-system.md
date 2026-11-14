@@ -186,7 +186,9 @@
 
 - 用例：`my-next-app/tests/visual/layout-guard.spec.ts`；判定逻辑：`my-next-app/tests/visual/layout-helpers.ts`。
 - 运行：`cd my-next-app && npx playwright test --project=layout-guard`（CI 里是 `ui-guard` job）。
-- 覆盖：15 条路由（`/login` + 9 个登录后主路由 + 5 条管理端路由 `/admin`、`/admin/users`、`/admin/plans`、`/admin/questions`、`/admin/ai`）× 3 档视口（375×812 / 768×1024 / 1440×900）= 45 条用例，外加 1 条 `/wrong-book`「选中题目后」专项（其操作栏是条件渲染，默认状态不渲染，只用 375 视口跑一次）。
+- 覆盖：20 条路由（`/login` + 14 个登录后主路由 `/dashboard`、`/practice`、`/practice/setup`、`/recall`、`/recall/decks`、`/wrong-book`、`/history`、`/questions/import`、`/notes`、`/chat`、`/knowledge`、`/profile`、`/settings`、`/dashboard/srs` + 5 条管理端路由 `/admin`、`/admin/users`、`/admin/plans`、`/admin/questions`、`/admin/ai`）× 3 档视口（375×812 / 768×1024 / 1440×900）= 60 条用例，外加 1 条 `/wrong-book`「选中题目后」专项（其操作栏是条件渲染，默认状态不渲染，只用 375 视口跑一次），共 **61 条**。
+- 客户端取数的路由（`/profile`、`/settings`、`/dashboard/srs`）在采样前先等一个**内容信号**（「学习成就」卡片 / 「设置与偏好」标题 / 「记忆状态分布」卡片）：它们的首屏是 Loader2、空 div 或 `animate-pulse` 的 Suspense fallback，不等就采样等于量加载态。
+- **未覆盖**（按需再补，不是遗漏声明）：`/knowledge-graph`、`/mindmap`、`/report`、`/ocr`、`/pricing`、`/cultivation`、`/questions/[id]`、`/history/[id]`，以及 7 条低频管理端路由（`/admin/activity`、`/admin/api-keys`、`/admin/feedback`、`/admin/logs`、`/admin/system`、`/admin/system/backup`、`/admin/tools/sql-runner`）；详情页与弹层内的布局也不在护栏范围。
 
 | 本文条目            | 生效视口         | 判定                                                                                                                                                                                                                            | 当前状态                                                                                               |
 | ------------------- | ---------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------ |

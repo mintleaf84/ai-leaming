@@ -10,7 +10,7 @@ import {
 /**
  * 布局护栏用例（不依赖截图基线）
  *
- * 覆盖：/login（公开）+ 10 个登录后主路由 + 5 个管理端路由 × 3 个视口 = 48 条用例，
+ * 覆盖：/login（公开）+ 14 个登录后主路由 + 5 个管理端路由 × 3 个视口 = 60 条用例，
  * 外加 1 条 /wrong-book「选中题目后」的专项（其底部操作栏是条件渲染的，
  * 默认状态不渲染，重叠断言会空跑）。
  *
@@ -24,6 +24,10 @@ import {
  * 管理端复用 tests/e2e/fixtures 的 adminPage（testadmin 登录态）；
  * admin 区是独立 layout（admin-layout-shell），侧边栏 md 起常驻，
  * 移动端表格必须已改为卡片，否则 375 视口会报横向溢出。
+ *
+ * 客户端取数的路由（/profile、/settings、/dashboard/srs）在采样前必须等一个
+ * 内容信号（见 waitFor* 系列）：它们的首屏是转圈/空 div/Suspense fallback，
+ * 直接采样量到的不是布局。
  */
 
 const VIEWPORTS = [
@@ -49,6 +53,15 @@ const AUTH_ROUTES = [
   "/notes",
   "/chat",
   "/knowledge",
+  // 卡组管理：导入对话框、建卡/改卡都在这里，是上一轮新功能里唯一没进护栏的页面。
+  // 首屏是卡组列表（空库要落空态，不能停在骨架）—— 就绪判据见 waitForRecallDecks。
+  "/recall/decks",
+  // 下面三条是「客户端取数」页面：首屏要么是 Loader2（/profile 甚至**没有文本**），
+  // 要么是 Suspense fallback（/dashboard/srs 的 fallback 用 animate-pulse，
+  // 不在骨架词表里）。不等内容信号就采样，量到的是加载态，护栏会随机红/假绿。
+  "/profile",
+  "/settings",
+  "/dashboard/srs",
 ] as const;
 
 /**
@@ -245,6 +258,111 @@ async function waitForAiRoutesPanel(
     .toBeGreaterThan(0);
 }
 
+/**
+ * `/recall/decks` 的就绪判据：页头 `<h1>回忆卡组</h1>`。
+ *
+ * 它是服务端渲染的（列表数据在 page.tsx 里读），所以正常情况下首帧就有；
+ * 这条等待的意义在于**把「停在骨架/白屏」变成一条有明确文案的失败**，
+ * 而不是让 assertLayoutIntact 去猜。空库时页面必须落 EmptyState（「还没有卡组」），
+ * 两者都会让 h1 先出现，所以等待条件与「有没有卡组」解耦。
+ */
+async function waitForRecallDecks(page: Page, viewport: string): Promise<void> {
+  // exact 必须开：选中卡组的标题 `<h2>E2E 回忆卡组</h2>` 里含「回忆卡组」子串，
+  // 不用 exact 会同时命中两条 heading，strict mode 直接报"resolved to 2 elements"。
+  await expect(
+    page.getByRole("heading", { name: "回忆卡组", exact: true }),
+    `路由 /recall/decks @ ${viewport}：没等到页头「回忆卡组」—— 页面疑似停在骨架/白屏，` +
+      `或列表渲染抛错后只剩错误边界`,
+  ).toBeVisible();
+}
+
+/**
+ * `/profile` 的就绪判据：「学习成就」卡片（只有 profile 取数成功才渲染）。
+ *
+ * 这条是**必需**的，不是保险：loading 分支渲染的是
+ * `<Loader2 />` + 空 div，`<main>` 的 innerText 为**空字符串**，
+ * 采样早一步就会命中「主容器内没有可见文本」—— 那次失败量的是加载态，不是布局。
+ */
+async function waitForProfile(page: Page, viewport: string): Promise<void> {
+  const where = `路由 /profile @ ${viewport}`;
+  const ready = page.getByText("学习成就", { exact: true });
+  const errorState = page.getByText("个人信息加载失败");
+  const emptyState = page.getByText("无法加载个人信息");
+
+  await expect
+    .poll(
+      async () => {
+        if ((await errorState.count()) > 0) {
+          const text = await errorState
+            .first()
+            .innerText()
+            .catch(() => "个人信息加载失败");
+          return `error: ${text}`;
+        }
+        if ((await emptyState.count()) > 0) return "error: 无法加载个人信息";
+        if ((await ready.count()) > 0) return "ready";
+        return "loading";
+      },
+      {
+        timeout: 20_000,
+        message:
+          `${where}：没等到「学习成就」卡片 —— 仍是 Loader2 加载态，` +
+          `或 getUserProfileAction 失败（错误态/无数据态都不是可测的真实布局）`,
+      },
+    )
+    .toBe("ready");
+}
+
+/**
+ * `/settings` 的就绪判据：侧栏 `<h1>设置与偏好</h1>`。
+ *
+ * `settings` 为 null 时整页只有「正在加载配置...」的转圈占位（有文本，
+ * 所以 assertLayoutIntact 不会失败 —— 那正是问题：它会**假绿**地量一个空壳）。
+ */
+async function waitForSettings(page: Page, viewport: string): Promise<void> {
+  await expect
+    .poll(
+      async () =>
+        (await page.getByRole("heading", { name: "设置与偏好" }).count()) > 0,
+      {
+        timeout: 20_000,
+        message:
+          `路由 /settings @ ${viewport}：没等到「设置与偏好」—— 仍是` +
+          `「正在加载配置...」转圈态，或 getSettingsAction 没返回数据`,
+      },
+    )
+    .toBe(true);
+}
+
+/**
+ * `/dashboard/srs` 的就绪判据：「记忆状态分布」卡片。
+ *
+ * 它的 Suspense fallback 用 `animate-pulse`（刻意不在骨架词表里，因为该 class
+ * 也被合法用途使用），所以骨架断言抓不到它；服务端取数失败时页面会渲染
+ * 一句「加载失败」—— 那句话有文本、能过关，但测的其实是错误页。
+ */
+async function waitForSrsAnalysis(page: Page, viewport: string): Promise<void> {
+  const where = `路由 /dashboard/srs @ ${viewport}`;
+  const ready = page.getByText("记忆状态分布");
+  const errorState = page.getByText("加载失败", { exact: true });
+
+  await expect
+    .poll(
+      async () => {
+        if ((await errorState.count()) > 0) return "error: 加载失败";
+        if ((await ready.count()) > 0) return "ready";
+        return "loading";
+      },
+      {
+        timeout: 20_000,
+        message:
+          `${where}：没等到「记忆状态分布」图表卡片 —— 仍在 Suspense fallback` +
+          `（正在深度分析记忆数据...），或 getSrsGlobalStatsAction 返回了空数据`,
+      },
+    )
+    .toBe("ready");
+}
+
 for (const vp of VIEWPORTS) {
   test.describe(`视口 ${vp.id}`, () => {
     test.use({ viewport: { width: vp.width, height: vp.height } });
@@ -258,9 +376,19 @@ for (const vp of VIEWPORTS) {
 
     for (const route of AUTH_ROUTES) {
       // 每条用例独立登录（fixtures.loginAs），保证用例之间互不污染；
-      // 代价是每个视口多 9 次登录，CI 上 workers=2 可接受。
+      // 代价是每个视口 14 次登录，CI 上 workers=2 可接受。
       test(`受保护路由 ${route}`, async ({ loggedInPage: page }) => {
         await visit(page, route, vp.id);
+        // 客户端取数的页面必须先等到真实内容再采样（各函数头部写了为什么）
+        if (route === "/recall/decks") {
+          await waitForRecallDecks(page, vp.id);
+        } else if (route === "/profile") {
+          await waitForProfile(page, vp.id);
+        } else if (route === "/settings") {
+          await waitForSettings(page, vp.id);
+        } else if (route === "/dashboard/srs") {
+          await waitForSrsAnalysis(page, vp.id);
+        }
         await assertLayoutIntact(page, route, vp.id);
       });
     }

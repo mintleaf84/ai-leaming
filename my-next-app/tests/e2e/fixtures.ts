@@ -80,8 +80,12 @@ export const MOCK_REGRESSION_CHALLENGE = {
 
 /**
  * 登录辅助函数
+ *
+ * 导出给「自带独立用户」的 spec 用（如 `recall-deck-import.spec.ts` 需要
+ * 一个全新的用户来验证"新用户 → 导入 → 答题"）：这类 spec 不能用
+ * `loggedInPage`（那个 fixture 固定登录 testuser）。
  */
-async function loginAs(
+export async function loginAs(
   page: Page,
   user: { username: string; password: string },
 ) {

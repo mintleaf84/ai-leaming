@@ -16,28 +16,13 @@ import path from "node:path";
 import { createClient } from "@libsql/client";
 import { drizzle } from "drizzle-orm/libsql";
 import { TEST_SCHEMA_SQL } from "../../db/test-schema-utils";
+import { columnsOf, foreignKeysOf, tableNames } from "./sqlite-introspect";
 
 const dbFile = `test-schema-parity-${process.pid}.db`;
 process.env.DB_FILENAME = dbFile;
 
 type DbModule = typeof import("../../db");
 let dbm: DbModule;
-
-type ForeignKeyInfo = {
-  table: string;
-  from: string;
-  to: string | null;
-  onDelete: string;
-  onUpdate: string;
-};
-
-type ColumnInfo = {
-  name: string;
-  type: string;
-  notnull: number;
-  pk: number;
-  dflt: string | null;
-};
 
 /**
  * 测试夹具**有意只覆盖核心表**（10 张），其余 27 张仅存在于迁移中。
@@ -79,45 +64,6 @@ const MIGRATION_ONLY_TABLES = new Set([
   "textbooks",
   "user_subscriptions",
 ]);
-
-async function columnsOf(db: any, table: string): Promise<ColumnInfo[]> {
-  const rows = (await db.all(`PRAGMA table_info(\`${table}\`)`)) as any[];
-  return rows.map((r) => ({
-    name: String(r.name),
-    type: String(r.type || "").toUpperCase(),
-    notnull: Number(r.notnull),
-    pk: Number(r.pk),
-    dflt:
-      r.dflt_value === null || r.dflt_value === undefined
-        ? null
-        : String(r.dflt_value),
-  }));
-}
-
-async function foreignKeysOf(
-  db: any,
-  table: string,
-): Promise<ForeignKeyInfo[]> {
-  const rows = (await db.all(`PRAGMA foreign_key_list(\`${table}\`)`)) as any[];
-  return rows
-    .map((r) => ({
-      table: String(r.table),
-      from: String(r.from),
-      to: r.to === null ? null : String(r.to),
-      onDelete: String(r.on_delete || "NO ACTION").toUpperCase(),
-      onUpdate: String(r.on_update || "NO ACTION").toUpperCase(),
-    }))
-    .sort((a, b) =>
-      `${a.from}>${a.table}`.localeCompare(`${b.from}>${b.table}`),
-    );
-}
-
-async function tableNames(db: any): Promise<string[]> {
-  const rows = (await db.all(
-    "SELECT name FROM sqlite_master WHERE type='table' AND name NOT LIKE 'sqlite_%'",
-  )) as any[];
-  return rows.map((r) => String(r.name));
-}
 
 describe("迁移与测试 schema 一致性", () => {
   let memory: any;

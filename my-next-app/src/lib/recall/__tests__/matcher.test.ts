@@ -104,16 +104,14 @@ describe("gradeList", () => {
     // 但 normalizeText 保留单个空格，所以关键词侧要再压一次。
     function card(keywords: string[]): RecallListCard {
       return listCard({
-        items: [
-          { text: "动机水平与行为效率呈倒 U 形曲线", keywords },
-        ],
+        items: [{ text: "动机水平与行为效率呈倒 U 形曲线", keywords }],
       });
     }
 
     it("关键词「倒 U 形」+ 作答「倒U形」→ ok", () => {
-      expect(gradeList(card(["倒 U 形"]), "动机与效率呈倒U形").verdicts).toEqual([
-        "ok",
-      ]);
+      expect(
+        gradeList(card(["倒 U 形"]), "动机与效率呈倒U形").verdicts,
+      ).toEqual(["ok"]);
     });
 
     it("作答写成全角「倒Ｕ形」也 ok（全角先归一再压空白）", () => {
@@ -125,7 +123,9 @@ describe("gradeList", () => {
     it("不放松包含关系：关键词「图书资料」+ 作答「图书」→ miss", () => {
       expect(
         gradeList(
-          listCard({ items: [{ text: "使用图书资料", keywords: ["图书资料"] }] }),
+          listCard({
+            items: [{ text: "使用图书资料", keywords: ["图书资料"] }],
+          }),
           "图书",
         ).verdicts,
       ).toEqual(["miss"]);

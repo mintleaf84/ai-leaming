@@ -1,105 +1,34 @@
-import fs from "fs";
-import path from "path";
-import { pathToFileURL } from "url";
-
 // Ensure required env vars have fallbacks before importing app modules
 // (env.ts validates these at import time via @t3-oss/env-nextjs)
 process.env.AI_API_KEY = process.env.AI_API_KEY || "migration-placeholder";
 process.env.JWT_SECRET = process.env.JWT_SECRET || "migration-placeholder";
 
-// Migration Interface
-interface _Migration {
-  up: (db: unknown) => void | Promise<void>;
-  down?: (db: unknown) => void | Promise<void>;
-}
-
+/**
+ * 数据库迁移唯一入口。
+ *
+ * 真正的迁移执行者是 `initDatabase()` —— 它调用
+ * `migrate(drizzleDb, { migrationsFolder: "drizzle" })`，按
+ * `drizzle/*.sql` + `drizzle/meta/_journal.json` 的条目执行并记账到
+ * `__drizzle_migrations`。
+ *
+ * 历史遗留的「扫 `src/lib/migrations/*.ts` 注册表」已经删除：该目录长期为空，
+ * 且与 drizzle 迁移是两套互不感知的账本（旧注册表用自己的 schema_migrations
+ * 表），保留只会让启动路径多一条永远不会走到的分支。
+ */
 async function run() {
   console.log("🚀 Starting database migration...");
 
   // Dynamic import after env vars are set
-  const { getLegacyDb, initDatabase } = await import("../src/lib/db");
+  const { initDatabase } = await import("../src/lib/db");
 
-  // 0. Ensure base tables exist
   console.log("📦 Initializing base tables...");
   await initDatabase();
 
-  const db = getLegacyDb();
-  // 1. Ensure migrations table exists
-  db.exec(`
-    CREATE TABLE IF NOT EXISTS schema_migrations (
-      id INTEGER PRIMARY KEY AUTOINCREMENT,
-      name TEXT NOT NULL UNIQUE,
-      run_at DATETIME DEFAULT CURRENT_TIMESTAMP
-    );
-  `);
-
-  // 2. Get executed migrations
-  const executed = new Set(
-    (
-      db.prepare("SELECT name FROM schema_migrations").all() as {
-        name: string;
-      }[]
-    ).map((r) => r.name),
-  );
-
-  // 3. Discover migration files
-  const migrationsDir = path.join(process.cwd(), "src", "lib", "migrations");
-  if (!fs.existsSync(migrationsDir)) {
-    fs.mkdirSync(migrationsDir, { recursive: true });
-  }
-
-  const files = fs
-    .readdirSync(migrationsDir)
-    .filter((f) => f.endsWith(".ts") || f.endsWith(".js"))
-    // 去重：如果同时存在 foo.ts 和 foo.js，只保留一个
-    .reduce((acc: string[], f) => {
-      const base = f.replace(/\.(ts|js)$/, "");
-      if (!acc.some((x) => x.replace(/\.(ts|js)$/, "") === base)) acc.push(f);
-      return acc;
-    }, [])
-    .sort(); // 按时间戳前缀的字母序保证执行顺序
-
-  let count = 0;
-
-  for (const file of files) {
-    // 去掉扩展名后作为唯一标识（兼容 .ts/.js 共存场景）
-    const migrationName = file.replace(/\.(ts|js)$/, "") + ".ts"; // 统一记录为 .ts
-    if (executed.has(migrationName) || executed.has(file)) {
-      continue;
-    }
-
-    console.log(`⚡ Running migration: ${file}`);
-
-    try {
-      // Import the migration module
-      const migrationPath = path.join(migrationsDir, file);
-      // Use pathToFileURL for dynamic import on Windows
-      const migrationUrl = pathToFileURL(migrationPath).href;
-
-      const migrationModule = await import(migrationUrl);
-
-      if (typeof migrationModule.up !== "function") {
-        throw new Error(`Migration ${file} must export an 'up' function.`);
-      }
-
-      // Execute 'up'
-      await migrationModule.up(db);
-
-      // Record success（统一记录为 .ts 名称，保持与开发环境一致）
-      db.prepare("INSERT INTO schema_migrations (name) VALUES (?)").run(
-        migrationName,
-      );
-
-      console.log(`✅ Completed: ${file}`);
-      count++;
-    } catch (error) {
-      console.error(`❌ Failed: ${file}`);
-      console.error(error);
-      process.exit(1); // Exit with error to stop deployment
-    }
-  }
-
-  console.log(`🎉 Migration finished. ${count} new migrations executed.`);
+  console.log("🎉 Migration finished.");
 }
 
-run();
+run().catch((error) => {
+  console.error("❌ Migration failed");
+  console.error(error);
+  process.exit(1); // Exit with error to stop deployment
+});

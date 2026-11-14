@@ -39,12 +39,6 @@ RUN npx esbuild scripts/migrate-runner.ts --bundle --platform=node --target=node
     --external:better-sqlite3 --external:sqlite-vec \
     --outfile=.next/standalone/migrate-runner.js
 
-RUN mkdir -p .next/standalone/src/lib/migrations \
-    && for f in src/lib/migrations/*.ts; do \
-         npx esbuild "$f" --platform=node --target=node20 \
-           --outdir=.next/standalone/src/lib/migrations/; \
-       done
-
 # ========================================
 # Stage 3: Runner
 # ========================================

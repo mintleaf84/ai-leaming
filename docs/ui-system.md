@@ -186,7 +186,8 @@
 
 - 用例：`my-next-app/tests/visual/layout-guard.spec.ts`；判定逻辑：`my-next-app/tests/visual/layout-helpers.ts`。
 - 运行：`cd my-next-app && npx playwright test --project=layout-guard`（CI 里是 `ui-guard` job）。
-- 覆盖：15 条路由（`/login` + 9 个登录后主路由 + 5 条管理端路由 `/admin`、`/admin/users`、`/admin/plans`、`/admin/questions`、`/admin/ai`）× 3 档视口（375×812 / 768×1024 / 1440×900）= 45 条用例，外加 1 条 `/wrong-book`「选中题目后」专项（其操作栏是条件渲染，默认状态不渲染，只用 375 视口跑一次）。
+- 覆盖：16 条路由（`/login` + 10 个登录后主路由 `/dashboard`、`/practice`、`/practice/setup`、`/recall`、`/wrong-book`、`/history`、`/questions/import`、`/notes`、`/chat`、`/knowledge` + 5 条管理端路由 `/admin`、`/admin/users`、`/admin/plans`、`/admin/questions`、`/admin/ai`）× 3 档视口（375×812 / 768×1024 / 1440×900）= 48 条用例，外加 1 条 `/wrong-book`「选中题目后」专项（其操作栏是条件渲染，默认状态不渲染，只用 375 视口跑一次），共 **49 条**。
+  **未覆盖**（按需再补，不是遗漏声明）：`/recall/decks`、`/profile`、`/settings`、`/dashboard/srs`、`/knowledge-graph`、`/mindmap`、`/report`、`/ocr`、`/pricing`、`/cultivation`、`/questions/[id]`、`/history/[id]`，以及 7 条低频管理端路由（`/admin/activity`、`/api-keys`、`/feedback`、`/logs`、`/system`、`/system/backup`、`/tools/sql-runner`）；详情页与弹层内的布局也不在护栏范围。
 
 | 本文条目            | 生效视口         | 判定                                                                                                                                                                                                                            | 当前状态                                                                                               |
 | ------------------- | ---------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------ |

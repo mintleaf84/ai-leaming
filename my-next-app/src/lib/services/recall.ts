@@ -15,10 +15,11 @@
  * 写入侧仍然**先插日志**：插入被冲突吞掉（`returning` 为空）说明并发竞态里已经
  * 有另一条落库，直接跳过状态更新并返回库里的现状，不需要"先查后写"的竞态窗口。
  */
-import { and, eq, sql } from "drizzle-orm";
+import { and, asc, count, eq, gte, sql } from "drizzle-orm";
 import { drizzleDb, drizzleSchema } from "../db";
 import { safeParseJson } from "../utils/json";
 import { gradeCloze, gradeList } from "../recall/matcher";
+import { getStudyDay, getStudyDayStart } from "../recall/study-day";
 import {
   clampNewLimit,
   RECALL_DEFAULT_NEW_PER_DAY,
@@ -36,6 +37,7 @@ import type {
   RecallBlank,
   RecallCardKind,
   RecallDerivedRating,
+  RecallGroup,
   RecallItemVerdict,
   RecallListItem,
   RecallMode,
@@ -53,6 +55,20 @@ export class RecallServiceError extends Error {
   constructor(message: string) {
     super(message);
     this.name = "RecallServiceError";
+  }
+}
+
+/**
+ * 目标卡片不存在。
+ *
+ * 单独一类是为了让 HTTP 层能稳定区分 404 与 400：外部 API 不能靠匹配错误文案
+ * 判断状态码（文案会随界面调整），也不该把"卡不存在"当参数错误报 400。
+ * 继承 `RecallServiceError`，既有调用方（Server Action / 页面）无需改动。
+ */
+export class RecallCardNotFoundError extends RecallServiceError {
+  constructor(message: string) {
+    super(message);
+    this.name = "RecallCardNotFoundError";
   }
 }
 
@@ -145,11 +161,16 @@ export async function getTodayQueue(
   return buildDailyQueue(userId, { newLimit, now: options.now });
 }
 
-/** 取卡片内容 + 该用户的状态（重测只呈现 pendingItems，由 UI 决定） */
-export async function getCard(
+/**
+ * 取卡片内容 + 该用户的状态；卡片不存在返回 null（只读查询，为外部 API 服务）。
+ *
+ * 与 `getCard` 共用同一条查询：`getCard` 只是把 null 换成可读异常，
+ * 避免"查不到"在两处各写一遍 SQL。
+ */
+export async function findCard(
   userId: number,
   cardId: number,
-): Promise<RecallCardView> {
+): Promise<RecallCardView | null> {
   const [row] = await drizzleDb
     .select({
       cardId: recall_cards.id,
@@ -170,7 +191,7 @@ export async function getCard(
     .limit(1);
 
   if (!row) {
-    throw new RecallServiceError(`卡片不存在：${cardId}`);
+    return null;
   }
 
   const [stateRow] = await drizzleDb
@@ -209,6 +230,138 @@ export async function getCard(
           archived: stateRow.archived === 1,
         }
       : null,
+  };
+}
+
+/** 取卡片内容 + 该用户的状态（重测只呈现 pendingItems，由 UI 决定） */
+export async function getCard(
+  userId: number,
+  cardId: number,
+): Promise<RecallCardView> {
+  const card = await findCard(userId, cardId);
+  if (!card) {
+    throw new RecallCardNotFoundError(`卡片不存在：${cardId}`);
+  }
+  return card;
+}
+
+/** 卡组详情 + 该身份的卡片状态（只读查询，为外部 API 服务） */
+export interface RecallDeckCardsPage {
+  deck: { deckKey: string; title: string; groups: RecallGroup[] };
+  cards: RecallCardView[];
+  total: number;
+}
+
+/**
+ * 按 deckKey 列出卡片（分页），并带上**当前调用身份**的复习状态。
+ *
+ * 卡片内容全局共享，`state` 只反映该用户自己的进度：没有状态行时是 null（新卡）。
+ * 卡组不存在返回 null（由路由转成 404），不抛异常——只读接口需要区分
+ * "不存在"与"服务故障"，用 null 表达比 catch 字符串更可靠。
+ */
+export async function listDeckCards(
+  userId: number,
+  deckKey: string,
+  page: { limit: number; offset: number },
+): Promise<RecallDeckCardsPage | null> {
+  const [deck] = await drizzleDb
+    .select({
+      id: recall_decks.id,
+      deckKey: recall_decks.deck_key,
+      title: recall_decks.title,
+      groupsJson: recall_decks.groups_json,
+    })
+    .from(recall_decks)
+    .where(eq(recall_decks.deck_key, deckKey))
+    .limit(1);
+
+  if (!deck) return null;
+
+  const [totalRow] = await drizzleDb
+    .select({ value: count() })
+    .from(recall_cards)
+    .where(eq(recall_cards.deck_id, deck.id));
+
+  // 左连接该用户的状态行：同一张卡对不同用户可能"有状态/无状态"两种结果
+  const rows = await drizzleDb
+    .select({
+      cardId: recall_cards.id,
+      cardKey: recall_cards.card_key,
+      deckKey: recall_decks.deck_key,
+      deckTitle: recall_decks.title,
+      kind: recall_cards.kind,
+      groupKey: recall_cards.group_key,
+      prompt: recall_cards.prompt,
+      itemsJson: recall_cards.items_json,
+      blanksJson: recall_cards.blanks_json,
+      verbatim: recall_cards.verbatim,
+      stateId: recall_card_states.id,
+      due: recall_card_states.due,
+      stability: recall_card_states.stability,
+      difficulty: recall_card_states.difficulty,
+      state: recall_card_states.state,
+      reps: recall_card_states.reps,
+      lapses: recall_card_states.lapses,
+      last_review: recall_card_states.last_review,
+      pending_items: recall_card_states.pending_items,
+      archived: recall_card_states.archived,
+    })
+    .from(recall_cards)
+    .innerJoin(recall_decks, eq(recall_decks.id, recall_cards.deck_id))
+    .leftJoin(
+      recall_card_states,
+      and(
+        eq(recall_card_states.card_id, recall_cards.id),
+        eq(recall_card_states.user_id, userId),
+      ),
+    )
+    .where(eq(recall_cards.deck_id, deck.id))
+    .orderBy(asc(recall_cards.id))
+    .limit(page.limit)
+    .offset(page.offset);
+
+  const cards: RecallCardView[] = rows.map((row) => ({
+    cardId: row.cardId,
+    cardKey: row.cardKey,
+    deckId: deck.id,
+    deckKey: row.deckKey,
+    deckTitle: row.deckTitle,
+    kind: row.kind,
+    groupKey: row.groupKey,
+    prompt: row.prompt,
+    items:
+      row.kind === "list"
+        ? safeParseJson<RecallListItem[]>(row.itemsJson, [])
+        : null,
+    blanks:
+      row.kind === "cloze"
+        ? safeParseJson<RecallBlank[]>(row.blanksJson, [])
+        : null,
+    verbatim: row.verbatim === 1,
+    state:
+      row.stateId === null
+        ? null
+        : {
+            due: row.due ?? new Date(0).toISOString(),
+            stability: Number(row.stability) || 0,
+            difficulty: Number(row.difficulty) || 0,
+            state: Number(row.state) || 0,
+            reps: Number(row.reps) || 0,
+            lapses: Number(row.lapses) || 0,
+            last_review: row.last_review ?? null,
+            pendingItems: parsePendingItems(row.pending_items ?? null),
+            archived: row.archived === 1,
+          },
+  }));
+
+  return {
+    deck: {
+      deckKey: deck.deckKey,
+      title: deck.title,
+      groups: safeParseJson<RecallGroup[]>(deck.groupsJson, []),
+    },
+    cards,
+    total: Number(totalRow?.value ?? 0),
   };
 }
 
@@ -671,6 +824,85 @@ async function assertCardExists(cardId: number): Promise<void> {
     .where(eq(recall_cards.id, cardId))
     .limit(1);
   if (!row) {
-    throw new RecallServiceError(`卡片不存在：${cardId}`);
+    throw new RecallCardNotFoundError(`卡片不存在：${cardId}`);
   }
+}
+
+// ==================== 展示层聚合（Server Action 与外部 API 共用） ====================
+// 这两个函数原先只存在于 `server/actions/recall.ts`。外部 API 也需要同样的
+// `streakDays` / `nextReviewText`，复制一份必然漂移（一处改了文案另一处没改），
+// 因此下沉到服务层，由两个调用方共享同一份口径。
+
+/** streakDays 的回溯上限（规格 §4.1：最多查 365 天，避免一次拉全部历史） */
+const RECALL_STREAK_MAX_DAYS = 365;
+const DAY_MS = 24 * 60 * 60 * 1000;
+
+/** 学习日 `YYYY-MM-DD` 加减天数（纯日期算术，不经过本地时区） */
+function shiftStudyDay(day: string, delta: number): string {
+  const [year, month, date] = day.split("-").map(Number);
+  return new Date(Date.UTC(year, month - 1, date) + delta * DAY_MS)
+    .toISOString()
+    .slice(0, 10);
+}
+
+/**
+ * 连续学习天数（学习日 = Asia/Shanghai 04:00 切换）。
+ *
+ * 口径：今天有日志就从今天算；今天还没有就从**昨天**算（否则每天早上打开应用
+ * 都会看到"连续 0 天"，把昨天刚攒的连续记录清空）。跨度以今天为终点最多 365 天。
+ */
+export async function computeStreakDays(
+  userId: number,
+  now: Date = new Date(),
+): Promise<number> {
+  const today = getStudyDay(now);
+  const oldest = shiftStudyDay(today, -(RECALL_STREAK_MAX_DAYS - 1));
+
+  const rows = await drizzleDb
+    .select({ ts: recall_review_logs.ts })
+    .from(recall_review_logs)
+    .where(
+      and(
+        eq(recall_review_logs.user_id, userId),
+        gte(recall_review_logs.ts, getStudyDayStart(oldest).toISOString()),
+      ),
+    );
+
+  const studied = new Set<string>();
+  for (const row of rows) {
+    const at = new Date(row.ts);
+    // 脏时间戳（手改库/旧格式）不参与统计，但不能让整个页面挂掉
+    if (Number.isNaN(at.getTime())) continue;
+    studied.add(getStudyDay(at));
+  }
+
+  let cursor = studied.has(today) ? today : shiftStudyDay(today, -1);
+  let streak = 0;
+  while (streak < RECALL_STREAK_MAX_DAYS && studied.has(cursor)) {
+    streak += 1;
+    cursor = shiftStudyDay(cursor, -1);
+  }
+  return streak;
+}
+
+/**
+ * 下次复习提示（规格 §4.3）。
+ *
+ * - 全对：`下次 11 月 20 日`（按**学习日**取月日，不是 UTC 日期）；
+ * - 有错：`明天只重测这 3 条`（条数取新的 pendingItems）。
+ */
+export function buildNextReviewText(
+  nextDue: string,
+  pendingItems: number[] | null,
+): string {
+  if (pendingItems && pendingItems.length > 0) {
+    return `明天只重测这 ${pendingItems.length} 条`;
+  }
+
+  const due = new Date(nextDue);
+  if (Number.isNaN(due.getTime())) {
+    throw new RecallServiceError(`调度返回的 nextDue 非法：${nextDue}`);
+  }
+  const [, month, date] = getStudyDay(due).split("-").map(Number);
+  return `下次 ${month} 月 ${date} 日`;
 }

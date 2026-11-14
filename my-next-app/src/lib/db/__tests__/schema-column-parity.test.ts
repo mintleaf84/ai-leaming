@@ -9,7 +9,8 @@
  *     全绿，运行期查询才炸（"no such column"）。本测试把这种漂移挡在 CI。
  *
  * 对拍维度：表集合、列（名称 / 类型 / NOT NULL / 主键 / 默认值）、
- * 索引（名称 / 唯一性 / 键与顺序）、唯一约束、外键（列 / 目标 / 级联动作）。
+ * 索引（非唯一索引的名称 / 唯一性 / 键与顺序 / 部分索引谓词）、唯一约束（按列
+ * 元组）、外键（完整列对 / 目标 / 级联动作）。
  *
  * 失败信息一次性列出全部差异（表 → 列 → 期望 / 实际），不会在第一条就中断。
  */
@@ -25,9 +26,11 @@ import {
 import { is } from "drizzle-orm";
 import * as schemaModule from "../drizzle-schema";
 import {
+  canonicalSql,
   columnsOf,
-  foreignKeysOf,
+  foreignKeyConstraintsOf,
   indexesOf,
+  stripOuterParens,
   tableDefinitions,
 } from "./sqlite-introspect";
 
@@ -67,12 +70,13 @@ function isIgnoredTable(name: string, createSql: string | null): string | null {
 }
 
 /**
- * drizzle 列类 → SQLite 声明类型。
+ * drizzle 列类 → SQLite 声明类型（**兜底**）。
  *
- * 依据 drizzle-orm/sqlite-core 各列实现的 `getSQLType()`：
- * 「SQLiteInteger / SQLiteBoolean 都声明为 integer，SQLiteReal → real，
- * SQLiteText（含 json 模式）→ text，SQLiteBlob → blob，SQLiteNumeric → numeric」。
- * 比较的是**声明类型文本**，即 `PRAGMA table_info.type`，不是 SQLite 亲和性推断结果。
+ * 首选 `column.getSQLType()`（见 `expectedSqlType`）：`SQLiteTimestamp`
+ * （`integer(..., { mode: "timestamp" })` 的 columnType）与 `SQLiteBoolean`
+ * 的 columnType 都和真实 SQL 类型不同名，手工映射表漏一项就会误报
+ * `SQLITETIMESTAMP vs INTEGER`。这张表只在该列没实现 `getSQLType()` 时兜底，
+ * 值必须与列实现的返回一致。
  */
 const DECLARED_TYPE_BY_COLUMN_TYPE: Record<string, string> = {
   SQLiteInteger: "INTEGER",
@@ -82,6 +86,19 @@ const DECLARED_TYPE_BY_COLUMN_TYPE: Record<string, string> = {
   SQLiteBlob: "BLOB",
   SQLiteNumeric: "NUMERIC",
 };
+
+/** 声明列 → SQL 声明类型（大写）。优先列自身的 getSQLType()。 */
+function expectedSqlType(column: any): string {
+  if (typeof column.getSQLType === "function") {
+    const sqlType = column.getSQLType();
+    if (typeof sqlType === "string" && sqlType.length > 0) {
+      return sqlType.toUpperCase();
+    }
+  }
+  return (
+    DECLARED_TYPE_BY_COLUMN_TYPE[column.columnType] ?? column.columnType
+  ).toUpperCase();
+}
 
 const dialect = new SQLiteSyncDialect();
 
@@ -94,6 +111,19 @@ function drizzleTables(): ExpectedTable[] {
   }
   return tables;
 }
+
+/**
+ * 默认值的解析结果。**字符串字面量与 SQL 表达式必须分开**：
+ *   - `'CURRENT_TIMESTAMP'` 是固定字符串，`CURRENT_TIMESTAMP` 是每次插入取当前时间；
+ *   - `'Admin'` 与 `'admin'` 是两个不同的字符串。
+ * 所以字符串只做字面量解码后**精确比较**（区分大小写、保留字面量内容），
+ * 只有表达式侧才允许规范化大小写/空白/外层括号。
+ */
+type ParsedDefault =
+  | { kind: "null" }
+  | { kind: "number"; value: number }
+  | { kind: "string"; value: string }
+  | { kind: "expr"; value: string };
 
 /** 期望默认值 → SQL 文本；无默认值返回 null。 */
 function expectedDefault(column: any): string | null {
@@ -108,90 +138,130 @@ function expectedDefault(column: any): string | null {
   return String(value);
 }
 
-/** 默认值等价判断：吸收引号/大小写/外层括号/数字写法差异。 */
+/** 解码单引号字符串字面量（`''` → `'`）；不是单一字面量时返回 null。 */
+function decodeStringLiteral(text: string): string | null {
+  if (text.length < 2 || text[0] !== "'" || text[text.length - 1] !== "'") {
+    return null;
+  }
+  let out = "";
+  for (let i = 1; i < text.length - 1; i++) {
+    if (text[i] !== "'") {
+      out += text[i];
+      continue;
+    }
+    if (text[i + 1] === "'") {
+      out += "'";
+      i++;
+      continue;
+    }
+    return null; // 中间有未转义的单引号 → 不是单个字面量
+  }
+  return out;
+}
+
+function decodeNumericLiteral(text: string): number | null {
+  if (!/^[+-]?(?:\d+(?:\.\d*)?|\.\d+)(?:[eE][+-]?\d+)?$/.test(text))
+    return null;
+  const value = Number(text);
+  return Number.isFinite(value) ? value : null;
+}
+
+function parseSqlDefault(raw: string | null): ParsedDefault | null {
+  if (raw === null) return null;
+  const text = stripOuterParens(raw.trim());
+  if (/^null$/i.test(text)) return { kind: "null" };
+  // SQLite 的 TRUE/FALSE 就是整数字面量 1/0，统一按数字比较
+  if (/^true$/i.test(text)) return { kind: "number", value: 1 };
+  if (/^false$/i.test(text)) return { kind: "number", value: 0 };
+  const literal = decodeStringLiteral(text);
+  if (literal !== null) return { kind: "string", value: literal };
+  const numeric = decodeNumericLiteral(text);
+  if (numeric !== null) return { kind: "number", value: numeric };
+  return { kind: "expr", value: canonicalSql(text) };
+}
+
+/** 默认值等价判断：种类必须相同；字符串精确比较，表达式按规范化文本比较。 */
 function defaultsEquivalent(
   expected: string | null,
   actual: string | null,
 ): boolean {
-  if (expected === null && actual === null) return true;
-  if (expected === null || actual === null) return false;
-  const e = stripOuterParens(expected.trim());
-  const a = stripOuterParens(actual.trim());
-  if (/^current_timestamp$/i.test(e) && /^current_timestamp$/i.test(a)) {
-    return true;
+  const e = parseSqlDefault(expected);
+  const a = parseSqlDefault(actual);
+  if (e === null || a === null) return e === a;
+  if (e.kind !== a.kind) return false;
+  switch (e.kind) {
+    case "null":
+      return true;
+    case "number":
+      return a.kind === "number" && e.value === a.value;
+    case "string":
+      return a.kind === "string" && e.value === a.value;
+    case "expr":
+      return a.kind === "expr" && e.value === a.value;
   }
-  if (/^-?\d+(\.\d+)?$/.test(e) && /^-?\d+(\.\d+)?$/.test(a)) {
-    return Number(e) === Number(a);
-  }
-  const unquote = (v: string) =>
-    v.startsWith("'") && v.endsWith("'")
-      ? v.slice(1, -1).replace(/''/g, "'")
-      : v;
-  return unquote(e).toLowerCase() === unquote(a).toLowerCase();
 }
 
-function stripOuterParens(value: string): string {
-  let v = value;
-  while (v.startsWith("(") && v.endsWith(")")) v = v.slice(1, -1).trim();
-  return v;
-}
-
-/** 索引键表达式归一化：去引号、去表名限定、压空白、小写。 */
+/**
+ * 索引键表达式归一化：只规范化引号外的记号（大小写、空白、表名限定、外层括号），
+ * 字符串字面量原样保留 —— 否则 `x || 'A'` 与 `x || 'a'` 会被压成同一串。
+ */
 function normalizeExpr(expr: string): string {
-  return expr
-    .replace(/["`]/g, "")
-    .replace(/\b[A-Za-z_][A-Za-z0-9_]*\.(?=[A-Za-z_"])/g, "")
-    .replace(/\s+/g, " ")
-    .trim()
-    .toLowerCase();
+  return canonicalSql(expr);
 }
 
 function normalizeAction(action: string | undefined): string {
   return (action ?? "NO ACTION").toUpperCase();
 }
 
-type ExpectedIndex = { name: string; unique: boolean; columns: string[] };
+type ExpectedIndex = {
+  name: string;
+  unique: boolean;
+  columns: string[];
+  /** 部分索引谓词（已规范化）；非部分索引为 null。 */
+  where: string | null;
+};
+
+/** 声明里的单个索引键 → 表达式文本（列直接取列名，SQL 表达式走方言渲染）。 */
+function indexKeyText(column: any): string {
+  if (typeof column === "string") return column;
+  if (column && typeof column.name === "string") return column.name;
+  return dialect.sqlToQuery(column).sql;
+}
 
 /**
- * drizzle 声明里"应该有"的索引：
- *   1. `index(...)` / `uniqueIndex(...)`（显式命名）；
- *   2. `unique(...)` 表级唯一约束（drizzle 会按 `<table>_<cols>_unique` 命名）；
- *   3. 列上的 `.unique()`（按 `<table>_<col>_unique` 命名）。
- * 迁移 SQL 由 drizzle-kit 生成时用的是同一套命名，所以名称可以严格对拍。
+ * drizzle 声明里的**显式索引**（`index(...)` / `uniqueIndex(...)`）。
+ *
+ * 列上的 `.unique()` 与表级 `unique(...)` 只是唯一**约束**：迁移可以写成内联
+ * UNIQUE（内省只剩 `sqlite_autoindex_*`），也可以是显式唯一索引。名字在两种
+ * 写法下不同，所以它们不参与按名字的索引对拍，只进唯一键元组那一轮比较。
  */
-function expectedIndexes(table: ExpectedTable): ExpectedIndex[] {
-  const result: ExpectedIndex[] = [];
-  for (const idx of table.indexes) {
-    result.push({
-      name: idx.config.name,
-      unique: idx.config.unique ?? false,
-      columns: idx.config.columns.map((c: any) =>
-        typeof c === "string"
-          ? c
-          : c.name
-            ? c.name
-            : normalizeExpr(dialect.sqlToQuery(c).sql),
-      ),
-    });
-  }
-  for (const uniq of table.uniqueConstraints) {
-    result.push({
-      name:
-        uniq.name ??
-        `${table.name}_${uniq.columns.map((c: any) => c.name).join("_")}_unique`,
-      unique: true,
-      columns: uniq.columns.map((c: any) => c.name),
-    });
-  }
-  for (const column of table.columns) {
-    if (!column.isUnique) continue;
-    result.push({
-      name: column.uniqueName ?? `${table.name}_${column.name}_unique`,
-      unique: true,
-      columns: [column.name],
-    });
-  }
-  return result;
+function expectedExplicitIndexes(table: ExpectedTable): ExpectedIndex[] {
+  return table.indexes.map((idx) => ({
+    name: idx.config.name,
+    unique: idx.config.unique ?? false,
+    columns: idx.config.columns.map(indexKeyText),
+    where: idx.config.where
+      ? canonicalSql(dialect.sqlToQuery(idx.config.where).sql)
+      : null,
+  }));
+}
+
+/** 部分索引谓词等价：任一侧有谓词而另一侧没有 → 不等价（明确失败）。 */
+function whereEquivalent(
+  expected: string | null,
+  actual: string | null,
+): boolean {
+  if (expected === null || actual === null) return expected === actual;
+  return normalizeExpr(expected) === normalizeExpr(actual);
+}
+
+/**
+ * 唯一键的规范化标识：列元组（排序后）+ 部分索引谓词。
+ * 谓词参与比较，避免「同名同列但只覆盖部分行」的唯一索引被当成全量唯一。
+ */
+function uniqueKeyOf(columns: string[], where: string | null): string {
+  const tuple = columns.map(normalizeExpr).sort().join(",");
+  return where === null ? tuple : `${tuple} WHERE ${normalizeExpr(where)}`;
 }
 
 describe("迁移列级 schema 与 drizzle-schema.ts 一致", () => {
@@ -256,9 +326,8 @@ describe("迁移列级 schema 与 drizzle-schema.ts 一致", () => {
           drift.push(`${tableName}.${column.name}: 声明有，迁移缺列`);
           continue;
         }
-        const expectedType =
-          DECLARED_TYPE_BY_COLUMN_TYPE[column.columnType] ?? column.columnType;
-        if (expectedType.toUpperCase() !== actual.type) {
+        const expectedType = expectedSqlType(column);
+        if (expectedType !== actual.type) {
           drift.push(
             `${tableName}.${column.name}: 类型不一致（期望 ${expectedType}，实际 ${actual.type || "<空>"}）`,
           );
@@ -305,33 +374,34 @@ describe("迁移列级 schema 与 drizzle-schema.ts 一致", () => {
         );
       }
 
-      // 索引：名称 / 唯一性 / 键与顺序
+      // 索引：非唯一索引按名称严格对拍；唯一索引只在唯一键元组那一轮比较
+      // （内联 UNIQUE 的自动索引没有稳定名称，不能要求两端同名）。
       const actualIndexes = await indexesOf(dbm.drizzleDb, tableName);
       const namedActual = new Map(
         actualIndexes
           .filter((i) => !i.name.startsWith("sqlite_autoindex_"))
           .map((i) => [i.name, i]),
       );
-      const expectedIndexList = expectedIndexes(table);
-      const expectedNames = new Set(expectedIndexList.map((i) => i.name));
-      for (const name of expectedNames) {
-        if (!namedActual.has(name)) {
-          drift.push(`${tableName}: 索引缺失（声明 ${name}，迁移未建）`);
-        }
-      }
-      for (const name of namedActual.keys()) {
-        if (!expectedNames.has(name)) {
-          drift.push(`${tableName}: 索引多余（迁移建了 ${name}，声明没有）`);
-        }
-      }
-      for (const expected of expectedIndexList) {
-        const actual = namedActual.get(expected.name);
-        if (!actual) continue;
-        if (actual.unique !== expected.unique) {
+      const declaredIndexes = expectedExplicitIndexes(table);
+      const declaredPlain = declaredIndexes.filter((i) => !i.unique);
+      const actualPlain = [...namedActual.values()].filter((i) => !i.unique);
+      for (const expected of declaredPlain) {
+        if (!namedActual.has(expected.name)) {
           drift.push(
-            `${tableName}.${expected.name}: 唯一性不一致（期望 ${expected.unique}，实际 ${actual.unique}）`,
+            `${tableName}: 索引缺失（声明 ${expected.name}，迁移未建）`,
           );
         }
+      }
+      for (const actual of actualPlain) {
+        if (!declaredPlain.some((e) => e.name === actual.name)) {
+          drift.push(
+            `${tableName}: 索引多余（迁移建了 ${actual.name}，声明没有）`,
+          );
+        }
+      }
+      for (const expected of declaredPlain) {
+        const actual = namedActual.get(expected.name);
+        if (!actual) continue;
         const expectedKey = expected.columns.map(normalizeExpr).join(",");
         const actualKey = actual.columns.map(normalizeExpr).join(",");
         if (expectedKey !== actualKey) {
@@ -339,36 +409,38 @@ describe("迁移列级 schema 与 drizzle-schema.ts 一致", () => {
             `${tableName}.${expected.name}: 索引键不一致（期望 [${expected.columns.join(", ")}]，实际 [${actual.columns.join(", ")}]）`,
           );
         }
+        if (!whereEquivalent(expected.where, actual.where)) {
+          drift.push(
+            `${tableName}.${expected.name}: 部分索引谓词不一致（期望 ${expected.where ?? "<无>"}，实际 ${actual.where ?? "<无>"}）`,
+          );
+        }
       }
 
-      // 唯一约束：把内联 UNIQUE（自动索引）也算进来，避免只比命名索引漏掉。
-      // 含表达式的唯一索引不参与这轮元组比较（无法还原列名），它们的名称与键
-      // 已在上面按命名索引比过。
-      const uniqueIndexKeys = table.indexes
-        .filter((i) => i.config.unique ?? false)
-        .map((i) =>
-          i.config.columns.map((c: any) =>
-            typeof c === "string" ? c : c.name,
+      // 唯一约束：按「列元组 + 部分索引谓词」比较，内联 UNIQUE（自动索引）与
+      // 显式 CREATE UNIQUE INDEX 一视同仁；名字不参与比较（两种写法名字不同）。
+      const expectedUniqueKeys = new Set<string>();
+      for (const idx of declaredIndexes) {
+        if (idx.unique) {
+          expectedUniqueKeys.add(uniqueKeyOf(idx.columns, idx.where));
+        }
+      }
+      for (const uniq of table.uniqueConstraints) {
+        expectedUniqueKeys.add(
+          uniqueKeyOf(
+            uniq.columns.map((c: any) => c.name),
+            null,
           ),
-        )
-        .filter((cols: any[]) => cols.length > 0 && cols.every(Boolean))
-        .map((cols: string[]) => cols.map(normalizeExpr).sort().join(","));
-      const expectedUniqueKeys = new Set([
-        ...table.uniqueConstraints.map((u: any) =>
-          u.columns
-            .map((c: any) => c.name)
-            .sort()
-            .join(","),
-        ),
-        ...(table.columns as any[])
-          .filter((c) => c.isUnique)
-          .map((c) => c.name),
-        ...uniqueIndexKeys,
-      ]);
+        );
+      }
+      for (const column of table.columns as any[]) {
+        if (column.isUnique) {
+          expectedUniqueKeys.add(uniqueKeyOf([column.name], null));
+        }
+      }
       const actualUniqueKeys = new Set(
         actualIndexes
           .filter((i) => i.unique && i.origin !== "pk" && i.columns.length > 0)
-          .map((i) => i.columns.map(normalizeExpr).sort().join(",")),
+          .map((i) => uniqueKeyOf(i.columns, i.where)),
       );
       const missingUnique = [...expectedUniqueKeys].filter(
         (k) => !actualUniqueKeys.has(k),
@@ -382,26 +454,18 @@ describe("迁移列级 schema 与 drizzle-schema.ts 一致", () => {
         );
       }
 
-      // 外键：列 → 目标表.列 + 级联动作
+      // 外键：完整列对 → 目标表.列 + 级联动作（复合外键按约束 id 分组）
       const expectedFks = table.foreignKeys.map((fk) => {
         const ref = fk.reference();
         return {
-          from: ref.columns[0].name,
+          from: ref.columns.map((c: any) => c.name).join(","),
           table: getTableConfig(ref.foreignTable as SQLiteTable).name,
-          to: ref.foreignColumns[0].name,
+          to: ref.foreignColumns.map((c: any) => c.name).join(","),
           onDelete: normalizeAction(fk.onDelete),
           onUpdate: normalizeAction(fk.onUpdate),
         };
       });
-      const actualFks = (await foreignKeysOf(dbm.drizzleDb, tableName)).map(
-        (fk) => ({
-          from: fk.from,
-          table: fk.table,
-          to: fk.to ?? "",
-          onDelete: normalizeAction(fk.onDelete),
-          onUpdate: normalizeAction(fk.onUpdate),
-        }),
-      );
+      const actualFks = await foreignKeyConstraintsOf(dbm.drizzleDb, tableName);
       const keyOf = (fk: (typeof expectedFks)[number]) =>
         `${fk.from}->${fk.table}.${fk.to} ON DELETE ${fk.onDelete} ON UPDATE ${fk.onUpdate}`;
       const expectedFkKeys = new Set(expectedFks.map(keyOf));

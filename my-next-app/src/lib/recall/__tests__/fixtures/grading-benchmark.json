@@ -1,0 +1,189 @@
+{
+  "_source": "docs/recall/grading-benchmark.json",
+  "_source_md5": "3ef7ccb32f3b5bc7e0e5b2b74e449a6e",
+  "schema": 1,
+  "deckId": "fj-jiaozong-2027",
+  "note": "人工标注，20 样本；human 是人工判断，不是 matcher 输出。标注口径写在 docs/recall/benchmark-report.md 开头。标注时未运行 matcher（先写 human，后跑 gradeList/gradeCloze 对拍）。",
+  "samples": [
+    {
+      "id": "B01",
+      "cardId": "D1-c04",
+      "kind": "list",
+      "typed": "教育者：在教育活动中起主导作用。受教育者：是教育的对象，也是学习的主体。教育影响：包括教育内容与教育手段。",
+      "human": ["ok", "ok", "ok"],
+      "caseType": "exact",
+      "note": "三条都照条目原文写全，教科书式满分答案。"
+    },
+    {
+      "id": "B02",
+      "cardId": "X3-c04",
+      "kind": "list",
+      "typed": "力求成功者，目的是获取成就，倾向选择成功概率 50% 的任务；避免失败者，倾向选择非常容易或非常困难的任务。",
+      "human": ["ok", "ok"],
+      "caseType": "exact",
+      "note": "两类人各自的目的与任务难度都写到了。"
+    },
+    {
+      "id": "B03",
+      "cardId": "L1-c01",
+      "kind": "list",
+      "typed": "1. 能参加学校安排的各种教学活动，还能使用学校的场地设备和资料\n2. 按规定拿到奖学金、贷学金和助学金\n3. 在成绩和品行上得到公正评价，完成学业后拿到学业证书\n4. 对处分不服的，可以申诉；人身权、财产权被侵犯的，也可以申诉或起诉\n5. 没了，想不起来第五条",
+      "human": ["ok", "ok", "ok", "ok", "miss"],
+      "caseType": "synonym",
+      "note": "第 1 条用「参加学校安排的教学活动+使用场地设备和资料」完整复述了原意（只是换了措辞），第 5 条「其他权利」确实没写——前者该给分，后者不该给。"
+    },
+    {
+      "id": "B04",
+      "cardId": "D4-c03",
+      "kind": "list",
+      "typed": "学校教育很重要，要面向全体学生，促进全面发展，系统地安排课程。",
+      "human": ["miss", "miss", "miss", "miss"],
+      "caseType": "keyword-stuffing",
+      "note": "通篇是「面向全体、全面发展、系统」这类通用口号，四条理由（目的性组织性、专门训练教师、控制影响因素、影响全面系统深刻）一条都没答出来。"
+    },
+    {
+      "id": "B05",
+      "cardId": "T5-c04",
+      "kind": "list",
+      "typed": "德育过程要让学生知情意行都得到发展；要在活动交往中统一各方面的影响；要促进内部矛盾的转化；是一个长期反复逐步提高的过程。",
+      "human": ["ok", "ok", "ok", "ok"],
+      "caseType": "synonym",
+      "note": "四条规律都换成了自己的说法，但语义等于原文（「活动和交往」写成「活动交往」、「多方面教育影响」写成「各方面的影响」）。"
+    },
+    {
+      "id": "B06",
+      "cardId": "P1-c02",
+      "kind": "list",
+      "typed": "唯分数、唯升学、唯文凭、唯论问、唯帽子。",
+      "human": ["ok", "ok", "ok", "ok", "ok"],
+      "caseType": "typo",
+      "note": "「唯论问」是「唯论文」的输入法错字，五个要点都在，教综老师按意思给分。"
+    },
+    {
+      "id": "B07",
+      "cardId": "L1-c02",
+      "kind": "list",
+      "typed": "1. 按照章程自主管理\n2. 组织实施教育教学活动\n3. 招收学生\n4. 对受教育者进行学籍管理\n5. 对受教育者颁发学业证书",
+      "human": ["ok", "ok", "ok", "miss", "ok"],
+      "caseType": "partial",
+      "note": "第 4 条是「学籍管理 + 实施奖励或者处分」两层并列，只写了前一层，按法条逐字标准算没写全 → miss（该条下次仍要重测）。"
+    },
+    {
+      "id": "B08",
+      "cardId": "D4-c02",
+      "kind": "list",
+      "typed": "个体身心发展有哪五条规律？",
+      "human": ["miss", "miss", "miss", "miss", "miss"],
+      "caseType": "copy-prompt",
+      "note": "把题干原样抄了一遍，一条规律也没答。"
+    },
+    {
+      "id": "B09",
+      "cardId": "Y6-c02",
+      "kind": "list",
+      "typed": "自我实现的需要：充分发挥潜能，实现个人理想。\n尊重需要：自尊以及他人的尊重、信赖与高度评价。\n归属与爱的需要：与他人建立感情联系，渴望被集体接纳。\n安全需要：人身安全、生活稳定、免于威胁。\n生理需要：维持生命最基本的需要，如饮食、睡眠。",
+      "human": ["ok", "ok", "ok", "ok", "ok"],
+      "caseType": "reordered",
+      "note": "五个层次从高到低倒着写，内容全对，只是顺序与条目顺序相反。"
+    },
+    {
+      "id": "B10",
+      "cardId": "D1-c03",
+      "kind": "list",
+      "typed": "……",
+      "human": ["miss", "miss", "miss", "miss"],
+      "caseType": "blank",
+      "note": "只打了省略号，等于交白卷。"
+    },
+    {
+      "id": "B11",
+      "cardId": "L5-c03",
+      "kind": "list",
+      "typed": "1. 爱国守法：贯彻国家教育方针，自觉遵守教育法律法规。\n2. 爱岗敬业：忠诚于人民教育事业，勤恳敬业，甘为人梯。\n3. 关爱学生：关心爱护全体学生，尊重学生人格。\n4. 教书育人：遵循教育规律，实施素质教育，诲人不倦。\n5. 为人师表：坚守高尚情操，知荣明耻，严于律己，以身作则。\n6. 终身学习：崇尚科学精神，树立终身学习理念，更新知识结构。",
+      "human": ["ok", "ok", "ok", "ok", "ok", "ok"],
+      "caseType": "exact",
+      "note": "六条全按讲义原文写全。"
+    },
+    {
+      "id": "B12",
+      "cardId": "L4-c01",
+      "kind": "list",
+      "typed": "给予未成年人特殊、优先保护；尊重未成年人人格尊严；保护未成年人隐私权和个人信息；适应未成年人身心健康发展的规律和特点；保护与教育相结合。",
+      "human": ["ok", "ok", "ok", "ok", "miss", "ok"],
+      "caseType": "partial",
+      "note": "六项要求写了五项，漏掉「听取未成年人的意见」整条。"
+    },
+    {
+      "id": "B13",
+      "cardId": "X3-c01",
+      "kind": "list",
+      "typed": "最佳水平随任务性质不同而不同；中等强度动机最好；动机水平与效率呈倒U形曲线。",
+      "human": ["ok", "ok", "ok"],
+      "caseType": "synonym",
+      "note": "三条内容全对，只是把「行为效率」简写成「效率」、「倒 U 形」写成不带空格的「倒U形」。"
+    },
+    {
+      "id": "B14",
+      "cardId": "Y6-c04",
+      "kind": "list",
+      "typed": "人格包括气质和性格。气质是心理活动的动力特征，与生俱来；性格是对现实的稳固态度和习惯化的行为方式。",
+      "human": ["ok", "ok", "miss"],
+      "caseType": "partial",
+      "note": "只写了气质与性格两个部分，第三个部分「自我调控系统」整条没写。"
+    },
+    {
+      "id": "B15",
+      "cardId": "T5-c03",
+      "kind": "list",
+      "typed": "说服法、榜样示范法、实际锻炼法、情感陶冶法、道德修养法、品德评价法。",
+      "human": ["ok", "ok", "ok", "ok", "ok", "ok"],
+      "caseType": "synonym",
+      "note": "六种方法名称都写出来了，「说服法」是「说服教育法」的通行简称。"
+    },
+    {
+      "id": "B16",
+      "cardId": "L1-c05",
+      "kind": "cloze",
+      "typed": "宣布考试无效",
+      "human": ["ok"],
+      "caseType": "exact",
+      "note": "与法条原文一致。"
+    },
+    {
+      "id": "B17",
+      "cardId": "L2-c02",
+      "kind": "cloze",
+      "typed": "均衡发展|重点学校（和非重点学校）",
+      "human": ["ok", "ok"],
+      "caseType": "unit",
+      "note": "第二空把「和非重点学校」放进括号里补全，语文上就是在写「重点学校和非重点学校」。"
+    },
+    {
+      "id": "B18",
+      "cardId": "L4-c05",
+      "kind": "cloze",
+      "typed": "合理安排",
+      "human": ["ok", "miss"],
+      "caseType": "partial",
+      "note": "只填了第一个空，第二个空（休息、娱乐和体育锻炼）没作答。"
+    },
+    {
+      "id": "B19",
+      "cardId": "T5-c05",
+      "kind": "cloze",
+      "typed": "。",
+      "human": ["miss", "miss"],
+      "caseType": "blank",
+      "note": "只打了一个句号。"
+    },
+    {
+      "id": "B20",
+      "cardId": "L3-c05",
+      "kind": "cloze",
+      "typed": "30天",
+      "human": ["ok"],
+      "caseType": "synonym",
+      "note": "「三十日」写成「30天」，数值与期限都正确，只是「日」写成「天」。"
+    }
+  ]
+}

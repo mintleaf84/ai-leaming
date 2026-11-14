@@ -8,6 +8,7 @@
 - **文档**: [docs/](docs/) - 包含产品需求文档 (PRD) 和开发计划。
 - **Agent API**: [docs/api.md](docs/api.md) - 给 AI agent / 脚本调用的 REST 接口（API Key 鉴权）
 - **回忆自测验收**: [docs/recall-acceptance.md](docs/recall-acceptance.md) - 规格 §6 的逐条证据与已知缺口
+- **卡组导入**: [docs/recall-deck.md](docs/recall-deck.md) - 卡组文件从哪来、怎么导入、冲突怎么处理
 
 ## 快速开始
 

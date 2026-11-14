@@ -78,9 +78,17 @@ export interface RecallImportView {
   createdCards: number;
   updatedCards: number;
   skippedCards: number;
-  conflicts: { cardId: string }[];
+  /**
+   * 内容冲突的卡及其处理方式：`keep` = 保库内旧内容（既不算新增也不算更新，
+   * 也不算跳过），`accept` = 已用文件覆盖（已计入 `updatedCards`）。
+   * 完成态要靠它把「保留 N 张」补进数字账，否则各项之和小于文件卡数。
+   */
+  conflicts: { cardId: string; action: RecallImportConflictAction }[];
   missingInFile: string[];
 }
+
+/** 冲突处理方式（与服务层 `RecallImportConflict.action` 同口径） */
+export type RecallImportConflictAction = "keep" | "accept";
 
 export interface RecallDeckCardDraft {
   deckKey: string;
@@ -309,9 +317,11 @@ export async function importRecallDeck(
     updatedCards: asNumber(raw.updatedCards),
     skippedCards: asNumber(raw.skippedCards),
     conflicts: Array.isArray(raw.conflicts)
-      ? raw.conflicts
-          .filter(isRecord)
-          .map((conflict) => ({ cardId: asText(conflict.cardId) }))
+      ? raw.conflicts.filter(isRecord).map((conflict) => ({
+          cardId: asText(conflict.cardId),
+          // 服务层只产出 keep / accept；未知值按 keep 处理更保守（不会凭空报「已覆盖」）
+          action: conflict.action === "accept" ? "accept" : "keep",
+        }))
       : [],
     missingInFile: Array.isArray(raw.missingInFile)
       ? raw.missingInFile.filter((id): id is string => typeof id === "string")

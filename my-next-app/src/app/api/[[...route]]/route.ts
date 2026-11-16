@@ -99,6 +99,10 @@ app.route("/generate", generateRoute);
 import feedbackRoute from "@/lib/api/routes/feedback";
 app.route("/feedback", feedbackRoute);
 
+// 前端性能指标上报（匿名，见 docs/performance.md T-01）
+import vitalsRoute from "@/lib/api/routes/vitals";
+app.route("/vitals", vitalsRoute);
+
 // Hello World 路由 (用于验证)
 app.get("/hello", (c) => {
   return c.json({

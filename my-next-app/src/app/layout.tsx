@@ -12,6 +12,7 @@ import { QueryProvider } from "@/lib/providers/QueryProvider";
 import "./globals.css";
 
 import { Toaster } from "@/components/ui/sonner";
+import { WebVitalsReporter } from "./web-vitals";
 import { getGlobalFeatureFlag } from "@/server/actions/feature-flags";
 
 const geistSans = localFont({
@@ -66,12 +67,14 @@ export default async function RootLayout({
   // Initialize database is now handled by src/instrumentation.ts
   // initDatabase();
 
-  const isTextbookEnabled = await getGlobalFeatureFlag("ENABLE_TEXTBOOK", true);
-  const isNotesEnabled = await getGlobalFeatureFlag("ENABLE_NOTES", true);
-  const isOcrMindmapEnabled = await getGlobalFeatureFlag(
-    "ENABLE_OCR_MINDMAP",
-    true,
-  );
+  // 三个 feature flag 彼此独立，必须并行取：串行 await 会让每个页面请求
+  // 先吃 3 个 DB 往返才吐第一字节（docs/performance.md X-1）。
+  const [isTextbookEnabled, isNotesEnabled, isOcrMindmapEnabled] =
+    await Promise.all([
+      getGlobalFeatureFlag("ENABLE_TEXTBOOK", true),
+      getGlobalFeatureFlag("ENABLE_NOTES", true),
+      getGlobalFeatureFlag("ENABLE_OCR_MINDMAP", true),
+    ]);
   const featureFlags = {
     ENABLE_TEXTBOOK: isTextbookEnabled,
     ENABLE_NOTES: isNotesEnabled,
@@ -120,6 +123,8 @@ export default async function RootLayout({
                 <MobileNav featureFlags={featureFlags} />
               </BottomBarProvider>
               <Toaster position="top-center" richColors />
+              {/* 性能指标上报：返回 null，不参与布局（docs/performance.md T-01） */}
+              <WebVitalsReporter />
             </ThemeProvider>
           </TerminologyProvider>
         </QueryProvider>

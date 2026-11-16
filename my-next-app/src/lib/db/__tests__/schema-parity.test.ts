@@ -63,6 +63,9 @@ const MIGRATION_ONLY_TABLES = new Set([
   "textbook_chapters",
   "textbooks",
   "user_subscriptions",
+  // 前端性能指标（docs/performance.md T-01）：只由 /api/vitals 写入、
+  // 由 web-vitals.test.ts 用真实迁移验证，与内存夹具无关。
+  "web_vitals",
 ]);
 
 describe("迁移与测试 schema 一致性", () => {

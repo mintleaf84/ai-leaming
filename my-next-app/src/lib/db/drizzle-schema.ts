@@ -149,6 +149,9 @@ export const practice_logs = sqliteTable(
       table.user_id,
       table.is_correct,
     ),
+    // 按会话取日志（历史详情 / 学习报告 / 续做计数）的唯一过滤条件，
+    // 见 drizzle/0016 的说明：没它这三处都是全表扫。
+    idx_session: index("idx_practice_logs_session").on(table.session_id),
   }),
 );
 
@@ -357,6 +360,32 @@ export const api_call_logs = sqliteTable(
     ),
     idx_model: index("idx_api_logs_model").on(table.model),
     idx_date: index("idx_api_logs_date").on(sql`date(${table.created_at})`),
+  }),
+);
+
+/**
+ * 前端 Web Vitals 采样（docs/performance.md T-01）。
+ *
+ * 只存 p75 需要的原始点：route + name + value。INP 是"跟手"的唯一官方指标，
+ * 没有它就只能靠体感判断优化是否有效。单用户场景不采样、不聚合写入，
+ * 直接一行一个指标；量级为每天百行，查询用 (route, name, created_at) 索引。
+ */
+export const web_vitals = sqliteTable(
+  "web_vitals",
+  {
+    id: integer("id").primaryKey({ autoIncrement: true }),
+    route: text("route").notNull(),
+    name: text("name").notNull(), // INP | LCP | CLS | TTFB | FCP
+    value: integer("value").notNull(), // 毫秒；CLS 为无量纲，放大 1000 后取整
+    rating: text("rating"), // good | needs-improvement | poor
+    created_at: text("created_at").default(sql`CURRENT_TIMESTAMP`),
+  },
+  (table) => ({
+    idx_route_name_created: index("idx_web_vitals_route_name").on(
+      table.route,
+      table.name,
+      sql`${table.created_at} DESC`,
+    ),
   }),
 );
 

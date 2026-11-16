@@ -3,6 +3,7 @@ import { eq, sql, count, desc, and, like, inArray } from "drizzle-orm";
 import logger from "@/lib/logger";
 import { UserRole, Question, Dimension } from "@/types";
 import { hashPassword } from "@/lib/auth/password";
+import { affectedRows } from "@/lib/db/affected-rows";
 
 export interface AdminStats {
   users: number;
@@ -203,10 +204,10 @@ export const adminService = {
     const result = await drizzleDb
       .delete(drizzleSchema.questions)
       .where(inArray(drizzleSchema.questions.id, ids));
-    // Drizzle-orm-better-sqlite3 的 delete 返回的是 RunResult 对象 (由 better-sqlite3 返回)
-    return (
-      (result as unknown as { rowsAffected: number }).rowsAffected || ids.length
-    );
+    // Drizzle-orm-better-sqlite3 的 delete 返回的是 RunResult 对象 (由 better-sqlite3 返回)。
+    // 注意用 `??` 而不是 `||`：rowsAffected 为 0 是合法结果（一行都没删掉），
+    // 用 `||` 会把它当成"取不到"并回退成 ids.length，把"没删"报成"全删"。
+    return affectedRows(result) ?? ids.length;
   },
 
   /**

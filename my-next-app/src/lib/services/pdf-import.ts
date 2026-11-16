@@ -22,6 +22,8 @@ import { srsService } from "@/lib/services/srs";
 import type { PdfImportResult, ParsedPdfQuestion } from "@/types/pdf-import";
 import { createHash, randomUUID } from "crypto";
 import { log } from "@/lib/logger";
+import { withTransaction } from "@/lib/db/executor";
+import { NotFoundError } from "@/lib/errors/app-error";
 
 /**
  * 内存缓存：taskId → { userId, chunks, ocrText, expiresAt }
@@ -44,9 +46,11 @@ const chunkCache = new Map<
  * 如果「不属于你」返回 403、「不存在」返回 404，就等于给攻击者一个探测
  * taskId 是否存在的接口。
  */
-export class PdfImportTaskNotFoundError extends Error {
+export class PdfImportTaskNotFoundError extends NotFoundError {
   constructor() {
-    super("任务不存在或已过期，请重新上传");
+    super("任务不存在或已过期，请重新上传", {
+      code: "pdf-import.task.not-found",
+    });
     this.name = "PdfImportTaskNotFoundError";
   }
 }
@@ -370,17 +374,16 @@ export const pdfImportService = {
       // 旧实现逐条 insert 后再做关联/日志，后置步骤失败时题目已经落库，用户
       // 重试就会造出重复题目（本项目评审指出的数据正确性缺口）。
       const { insertedIds, skippedCount } = await withConfirmLock(() =>
-        drizzleDb.transaction(async (tx) => {
-          // 事务内所有写操作都必须走 tx，用全局 drizzleDb 会报 SQLITE_BUSY
-          const exec = tx as unknown as typeof drizzleDb;
-          return writeConfirm(
+        withTransaction(async (exec) =>
+          // 事务内所有写操作都必须走 exec，用全局 drizzleDb 会报 SQLITE_BUSY
+          writeConfirm(
             exec,
             userId,
             questionsToImport,
             folderId,
             addToWrongBook,
-          );
-        }),
+          ),
+        ),
       );
 
       // FSRS 复习卡放在事务提交之后：它可重入（重复调用按同一题覆盖更新），

@@ -1,5 +1,6 @@
 import { drizzleDb, drizzleSchema } from "@/lib/db";
 import { eq, and, desc, sql, like } from "drizzle-orm";
+import { withTransaction } from "@/lib/db/executor";
 
 /**
  * 聊天会话管理服务
@@ -69,9 +70,7 @@ export async function saveMessage(
   if (!session) throw new Error("Unauthorized or session not found");
 
   // 消息落库与会话计数必须原子：否则"消息已存、计数没加"会让后续统计永久偏差
-  return await drizzleDb.transaction(async (tx) => {
-    const exec = tx as unknown as typeof drizzleDb;
-
+  return await withTransaction(async (exec) => {
     const result = await exec.insert(drizzleSchema.chat_messages).values({
       session_id: sessionId,
       role,

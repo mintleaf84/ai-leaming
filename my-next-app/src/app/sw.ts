@@ -24,11 +24,39 @@ installSerwist({
   clientsClaim: true,
   navigationPreload: true,
   runtimeCaching: [
-    // API 路由：NetworkFirst（优先网络，离线降级到缓存）
+    /*
+     * 页面导航与 RSC 请求：NetworkFirst + 3 秒超时（docs/mobile-performance.md P0-4）
+     *
+     * 为什么必须显式写在最前面：`...defaultCache` 里对 HTML 文档与 `?_rsc=`
+     * 用的也是 NetworkFirst，但**没有 networkTimeoutSeconds** —— 弱网下一次
+     * 切页要等浏览器 fetch 自己失败（可达数十秒）才回落缓存，24 小时的缓存
+     * 形同虚设。用户体感就是"点了底栏，页面愣住"。
+     *
+     * 3 秒是权衡：太短会在正常弱网（3G ≈ 1–2s TTFB）下频繁回退到旧页面，
+     * 太长等于没加。回退后仍是上一次的页面骨架，比白屏好。
+     */
+    {
+      matcher: ({ request, url }) =>
+        request.mode === "navigate" ||
+        request.headers.get("RSC") === "1" ||
+        url.searchParams.has("_rsc"),
+      handler: new NetworkFirst({
+        cacheName: "document-cache",
+        networkTimeoutSeconds: 3,
+        plugins: [
+          new ExpirationPlugin({
+            maxEntries: 32,
+            maxAgeSeconds: 60 * 60 * 24, // 24 小时
+          }),
+        ],
+      }),
+    },
+    // API 路由：NetworkFirst（优先网络，3 秒超时后降级到缓存）
     {
       matcher: /^https?:\/\/.*\/api\//,
       handler: new NetworkFirst({
         cacheName: "api-cache",
+        networkTimeoutSeconds: 3,
         plugins: [
           new ExpirationPlugin({
             maxEntries: 32,

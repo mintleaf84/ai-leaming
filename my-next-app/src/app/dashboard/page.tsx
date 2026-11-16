@@ -59,7 +59,7 @@ async function DashboardStatsCards() {
   return (
     <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
       {/* Card 1: Daily Focus (Stats) */}
-      <Card className="border border-border bg-card/80 backdrop-blur-sm shadow-sm hover:shadow-md transition-all duration-300 rounded-3xl h-[280px] flex flex-col justify-between overflow-hidden relative">
+      <Card className="border border-border bg-card/80 backdrop-blur-sm shadow-sm hover:shadow-md transition-shadow duration-300 rounded-3xl h-[280px] flex flex-col justify-between overflow-hidden relative">
         <CardHeader className="pb-0 z-10">
           <CardTitle className="text-base font-bold text-muted-foreground flex items-center gap-2">
             <Target className="w-5 h-5 text-primary" />
@@ -134,7 +134,7 @@ async function DashboardStatsCards() {
       </Card>
 
       {/* Card 2: Quick Actions */}
-      <Card className="border border-border bg-card/80 backdrop-blur-sm shadow-sm hover:shadow-md transition-all duration-300 rounded-3xl h-[280px] flex flex-col relative overflow-hidden">
+      <Card className="border border-border bg-card/80 backdrop-blur-sm shadow-sm hover:shadow-md transition-shadow duration-300 rounded-3xl h-[280px] flex flex-col relative overflow-hidden">
         <CardHeader className="pb-4 z-10">
           <CardTitle className="text-base font-bold text-muted-foreground flex items-center justify-between w-full">
             <div className="flex items-center gap-2">
@@ -205,7 +205,7 @@ async function DashboardStatsCards() {
       </Card>
 
       {/* Card 3: Weak Points */}
-      <Card className="border border-border bg-card/80 backdrop-blur-sm shadow-sm hover:shadow-md transition-all duration-300 rounded-3xl h-[280px] flex flex-col relative overflow-hidden">
+      <Card className="border border-border bg-card/80 backdrop-blur-sm shadow-sm hover:shadow-md transition-shadow duration-300 rounded-3xl h-[280px] flex flex-col relative overflow-hidden">
         <CardHeader className="pb-4 z-10">
           <CardTitle className="text-base font-bold text-muted-foreground flex items-center gap-2">
             <BarChart3 className="w-5 h-5 text-primary" />

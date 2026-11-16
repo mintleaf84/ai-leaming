@@ -4,6 +4,7 @@ import logger from "@/lib/logger";
 import { UserRole, Question, Dimension } from "@/types";
 import { hashPassword } from "@/lib/auth/password";
 import { affectedRows } from "@/lib/db/affected-rows";
+import { buildAdminExternalId } from "@/lib/services/question-idempotency";
 
 export interface AdminStats {
   users: number;
@@ -166,10 +167,42 @@ export const adminService = {
 
   /**
    * 批量导入题目
+   *
+   * 幂等：管理端手工导入没有上游作业 ID，用「题干 + 选项 + 答案」的内容指纹当
+   * `external_id`（`admin:` 前缀，见 `question-idempotency.ts`，与 PDF 导入共用
+   * 同一份实现）。于是同一批内的重复题只落一条，整批重复导入 0 新增。
+   * 返回**真正新插入**的行数（已存在的按跳过处理，不计入）。
    */
   async importQuestions(questions: Record<string, unknown>[]) {
-    return await drizzleDb.transaction(async (tx) => {
-      const values = questions.map((q) => ({
+    // 1. 批内去重：完全相同的题（同一个键）只保留第一份
+    const pending = new Map<string, Record<string, unknown>>();
+    for (const q of questions) {
+      const externalId = buildAdminExternalId(q);
+      if (!pending.has(externalId)) pending.set(externalId, q);
+    }
+
+    const candidateIds = [...pending.keys()];
+
+    // 2. 先查已存在的键，只插入新增的（这样才能区分「新增」与「已存在」）
+    const existing =
+      candidateIds.length > 0
+        ? await drizzleDb
+            .select({ external_id: drizzleSchema.questions.external_id })
+            .from(drizzleSchema.questions)
+            .where(
+              inArray(drizzleSchema.questions.external_id, candidateIds),
+            )
+        : [];
+    const existingIds = new Set(
+      existing
+        .map((row) => row.external_id)
+        .filter((v): v is string => typeof v === "string"),
+    );
+
+    const values = [...pending.entries()]
+      .filter(([externalId]) => !existingIds.has(externalId))
+      .map(([externalId, q]) => ({
+        external_id: externalId,
         content: q.content as string,
         options: JSON.stringify(q.options),
         answer: q.answer as string,
@@ -180,20 +213,28 @@ export const adminService = {
         created_at: sql`CURRENT_TIMESTAMP`,
       }));
 
-      // SQLite 批量插入限制，如果数量巨大可能需要分片，但对于常规导入一般没问题
-      await tx.insert(drizzleSchema.questions).values(values);
-      return values.length;
-    });
+    if (values.length === 0) return 0;
+
+    // 3. onConflictDoNothing 兜住「预检后另一个请求先提交」的并发窗口：
+    //    此时该键不返回行，计数自然不虚增，也不会因唯一索引整批失败。
+    const inserted = await drizzleDb
+      .insert(drizzleSchema.questions)
+      .values(values)
+      .onConflictDoNothing({ target: drizzleSchema.questions.external_id })
+      .returning({ id: drizzleSchema.questions.id });
+
+    return inserted.length;
   },
 
   /**
-   * 删除题目
+   * 删除题目：返回真正删掉的行数（0 = 题目不存在）
    */
   async deleteQuestion(id: number) {
-    await drizzleDb
+    const result = await drizzleDb
       .delete(drizzleSchema.questions)
       .where(eq(drizzleSchema.questions.id, id));
-    return true;
+    // `??` 而不是 `||`：0 是合法结果（没有任何行被删掉）
+    return affectedRows(result) ?? 1;
   },
 
   /**

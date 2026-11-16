@@ -31,19 +31,15 @@ import {
   listDeckCards,
   normalizeItemIndexes,
   submitReview,
-  RecallCardNotFoundError,
-  RecallServiceError,
 } from "@/lib/services/recall";
 import {
   deleteCard,
   importDeck,
   listDecks,
   upsertCard,
-  RecallImportError,
-  RecallNotFoundError,
 } from "@/lib/services/recall-import";
-import { RecallDeckValidationError } from "@/lib/recall/schema";
 import { logger } from "@/lib/logger";
+import { toErrorResponse } from "@/lib/api/error-response";
 
 const app = new OpenAPIHono();
 
@@ -933,33 +929,6 @@ const RecallCardSchema = z.object({
   state: RecallCardStateSchema,
 });
 
-/** 服务层异常 → HTTP 语义（外部 API 不允许把业务错误裸抛成 500） */
-function recallErrorResponse(c: Context, err: unknown) {
-  if (err instanceof RecallDeckValidationError) {
-    return c.json(
-      {
-        error: "卡组内容校验失败",
-        // 一次报全，但截断到 20 条：卡组可能有上百张卡，全量 issue 会让响应体失控
-        issues: err.issues.slice(0, 20),
-        issueCount: err.issues.length,
-      },
-      400,
-    );
-  }
-  if (
-    err instanceof RecallNotFoundError ||
-    err instanceof RecallCardNotFoundError
-  ) {
-    return c.json({ error: err.message }, 404);
-  }
-  if (err instanceof RecallImportError || err instanceof RecallServiceError) {
-    // 明确的业务拒绝（改判下标非法、卡组归属不符等）：4xx + 可读原因
-    return c.json({ error: err.message }, 400);
-  }
-  logger.error({ err }, "[External] 回忆自测接口失败");
-  return c.json({ error: "服务器内部错误" }, 500);
-}
-
 /** 路径里的数字卡片主键；非法值返回 null（由路由回 400） */
 function parsePositiveInt(raw: string): number | null {
   const value = Number(raw);
@@ -1369,7 +1338,7 @@ app.openapi(recallReviewsRoute, async (c) => {
   } catch (err) {
     // audit-allow: 统一交给 recallErrorResponse 归类（业务错误 → 4xx 带可读原因，
     //   未知错误已在那里记结构化日志后回 500），此处不再重复记日志
-    return recallErrorResponse(c, err);
+    return toErrorResponse(c, err, { scope: "external.recall" });
   }
 });
 
@@ -1466,7 +1435,7 @@ app.openapi(recallDeckImportRoute, async (c) => {
   } catch (err) {
     // audit-allow: 统一交给 recallErrorResponse 归类（业务错误 → 4xx 带可读原因，
     //   未知错误已在那里记结构化日志后回 500），此处不再重复记日志
-    return recallErrorResponse(c, err);
+    return toErrorResponse(c, err, { scope: "external.recall" });
   }
 });
 
@@ -1566,7 +1535,7 @@ app.openapi(recallCardUpsertRoute, async (c) => {
   } catch (err) {
     // audit-allow: 统一交给 recallErrorResponse 归类（业务错误 → 4xx 带可读原因，
     //   未知错误已在那里记结构化日志后回 500），此处不再重复记日志
-    return recallErrorResponse(c, err);
+    return toErrorResponse(c, err, { scope: "external.recall" });
   }
 });
 
@@ -1619,7 +1588,7 @@ app.openapi(recallCardDeleteRoute, async (c) => {
   } catch (err) {
     // audit-allow: 统一交给 recallErrorResponse 归类（业务错误 → 4xx 带可读原因，
     //   未知错误已在那里记结构化日志后回 500），此处不再重复记日志
-    return recallErrorResponse(c, err);
+    return toErrorResponse(c, err, { scope: "external.recall" });
   }
 });
 

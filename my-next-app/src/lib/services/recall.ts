@@ -44,6 +44,14 @@ import type {
   RecallUserOverride,
 } from "../recall/types";
 import { withTransaction } from "@/lib/db/executor";
+import {
+  AppError,
+  type AppErrorKind,
+  type AppErrorOptions,
+} from "@/lib/errors/app-error";
+
+/** kind 由领域类决定（默认 validation），其余透传给基类 */
+type ServiceErrorOptions = AppErrorOptions & { kind?: AppErrorKind };
 
 const { recall_cards, recall_decks, recall_card_states, recall_review_logs } =
   drizzleSchema;
@@ -52,9 +60,10 @@ const { system_settings } = drizzleSchema;
 /** 新卡每日额度的设置键（值域 0–15，缺省 6） */
 export const RECALL_NEW_LIMIT_SETTING_KEY = "recall_new_cards_per_day";
 
-export class RecallServiceError extends Error {
-  constructor(message: string) {
-    super(message);
+export class RecallServiceError extends AppError {
+  constructor(message: string, options: ServiceErrorOptions = {}) {
+    // 默认按「参数/状态不合法」（400）处理；需要别的语义时显式传 kind
+    super(options.kind ?? "validation", message, options);
     this.name = "RecallServiceError";
   }
 }
@@ -68,7 +77,8 @@ export class RecallServiceError extends Error {
  */
 export class RecallCardNotFoundError extends RecallServiceError {
   constructor(message: string) {
-    super(message);
+    // 继承 RecallServiceError（既有调用方与测试按它断言），但语义是 404
+    super(message, { kind: "not-found", code: "recall.card.not-found" });
     this.name = "RecallCardNotFoundError";
   }
 }

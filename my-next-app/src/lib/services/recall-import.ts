@@ -20,6 +20,11 @@ import {
   type RecallListItem,
 } from "../recall/types";
 import { withTransaction } from "@/lib/db/executor";
+import {
+  AppError,
+  NotFoundError,
+  type AppErrorKind,
+} from "@/lib/errors/app-error";
 
 const { recall_decks, recall_cards, recall_card_states, recall_review_logs } =
   drizzleSchema;
@@ -35,9 +40,12 @@ const { recall_decks, recall_cards, recall_card_states, recall_review_logs } =
  * - 文件里没有的卡片**不删除**，只在返回值里报告，交给 UI 提示。
  */
 
-export class RecallImportError extends Error {
-  constructor(message: string) {
-    super(message);
+export class RecallImportError extends AppError {
+  constructor(
+    message: string,
+    options: { kind?: AppErrorKind; code?: string } = {},
+  ) {
+    super(options.kind ?? "business", message, { code: options.code });
     this.name = "RecallImportError";
   }
 }
@@ -45,11 +53,10 @@ export class RecallImportError extends Error {
 /**
  * 卡组 / 卡片不存在（或不属于当前身份）。
  *
- * 继承 `RecallImportError` 以便既有调用方（Server Action）无需改动；单独一类
- * 是给 HTTP 层用的：外部 API 必须能把"目标不存在"稳定映射成 404，而不是靠
- * 匹配错误文案（文案一改状态码就漂了），也不能把它当参数错误报 400。
+ * 以前它继承 `RecallImportError`（一律 400）；现在继承 `NotFoundError`，由
+ * `AppError.kind` 决定 404 —— 状态码来自类型而不是文案匹配（文案一改状态码就漂）。
  */
-export class RecallNotFoundError extends RecallImportError {
+export class RecallNotFoundError extends NotFoundError {
   constructor(message: string) {
     super(message);
     this.name = "RecallNotFoundError";
@@ -192,6 +199,7 @@ async function writeDeck(
     ) {
       throw new RecallImportError(
         `卡组 ${deck.deckId} 属于其他用户（owner_user_id=${existingDeck.owner_user_id}），不能覆盖`,
+        { kind: "forbidden", code: "recall.deck.forbidden" },
       );
     }
     deckId = existingDeck.id;
@@ -319,6 +327,7 @@ export async function importDeck(
   if (onConflict !== "keep" && onConflict !== "accept") {
     throw new RecallImportError(
       `未知的冲突策略：${String(onConflict)}（只接受 keep / accept）`,
+      { kind: "validation", code: "recall.import.bad-strategy" },
     );
   }
 
@@ -346,7 +355,7 @@ export async function exportDeck(deckKey: string): Promise<RecallDeckFile> {
     .where(eq(recall_decks.deck_key, deckKey))
     .limit(1);
   if (!deck) {
-    throw new RecallImportError(`卡组不存在：${deckKey}`);
+    throw new RecallNotFoundError(`卡组不存在：${deckKey}`);
   }
 
   const rows = await drizzleDb
@@ -504,6 +513,7 @@ function assertDeckWritable(
   if (ownerUserId !== null && ownerUserId !== userId) {
     throw new RecallImportError(
       `卡组 ${deckKey} 属于其他用户（owner_user_id=${ownerUserId}），不能修改`,
+      { kind: "forbidden", code: "recall.deck.forbidden" },
     );
   }
 }

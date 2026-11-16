@@ -4,6 +4,7 @@ import {
   recallDeckSchema,
   type RecallDeckFile,
 } from "./types";
+import { ValidationError } from "@/lib/errors/app-error";
 
 /**
  * 卡组文件的校验入口。
@@ -14,12 +15,18 @@ import {
  * 2. 每条错误必须能**定位到具体卡片**：带 `cards[i]` 与 `cardId`，再带字段路径；
  * 3. 未知 `schema` 版本**直接拒绝**，不做兼容猜测（猜测会静默写坏数据）。
  */
-export class RecallDeckValidationError extends Error {
+export class RecallDeckValidationError extends ValidationError {
   readonly issues: string[];
 
   constructor(issues: string[]) {
     super(
       `卡组文件校验失败（${issues.length} 处）：\n- ${issues.join("\n- ")}`,
+      {
+        code: "recall.deck.invalid",
+        issues,
+        // 对外只给短标签：完整 issue 列表走 `issues` 字段，避免把长文案塞进 `error`
+        publicMessage: "卡组内容校验失败",
+      },
     );
     this.name = "RecallDeckValidationError";
     this.issues = issues;

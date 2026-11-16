@@ -4,7 +4,7 @@
  */
 
 import { z } from "zod";
-import { generateStructuredData, generateTextWrapper } from "@/lib/ai/client";
+import { generateTextWrapper } from "@/lib/ai/client";
 import { extractJson } from "@/lib/ai/parser";
 import type { ParsedPdfQuestion, ParsedPdfResult } from "@/types/pdf-import";
 import { log } from "@/lib/logger";
@@ -267,7 +267,7 @@ export async function parseOcrTextToQuestions(
       if (validated.length > 0) {
         chunkResults.push(validated);
       }
-    } catch (err) {
+    } catch (_err) {
       // 失败时重试一次
       try {
         log.warn(`[PdfParser] 第 ${i + 1} 块首次失败，重试中...`);

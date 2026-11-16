@@ -131,7 +131,7 @@ export const createDrizzleMock = () => {
   chain.query = new Proxy(
     {},
     {
-      get: (_target, table: string) => ({
+      get: (_target, _table: string) => ({
         findFirst: vi.fn().mockResolvedValue(null),
         findMany: vi.fn().mockResolvedValue([]),
       }),

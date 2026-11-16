@@ -1,5 +1,4 @@
 import { test, expect } from "@playwright/test";
-import { TEST_USER } from "./fixtures";
 
 test.describe("Settings Page", () => {
   test.beforeEach(async ({ page }) => {

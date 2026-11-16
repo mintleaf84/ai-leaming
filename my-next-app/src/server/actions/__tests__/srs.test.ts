@@ -198,7 +198,7 @@ describe("SRS Actions", () => {
     it("应该同步历史练习记录到 SRS", async () => {
       vi.mocked(srsService.syncFromPracticeLogs).mockResolvedValue(5);
 
-      const result = await syncSrsDataAction();
+      await syncSrsDataAction();
 
       expect(srsService.syncFromPracticeLogs).toHaveBeenCalledWith(1);
     });
@@ -206,7 +206,7 @@ describe("SRS Actions", () => {
     it("应该处理无需同步的情况", async () => {
       vi.mocked(srsService.syncFromPracticeLogs).mockResolvedValue(0);
 
-      const result = await syncSrsDataAction();
+      await syncSrsDataAction();
 
       expect(srsService.syncFromPracticeLogs).toHaveBeenCalledWith(1);
     });

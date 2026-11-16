@@ -9,7 +9,7 @@ import {
 } from "../health";
 import { createMockQuery } from "@/lib/__tests__/db-mock-utils";
 
-const { mockDrizzleDb, mockDrizzleSchema } = vi.hoisted(() => {
+const { mockDrizzleDb } = vi.hoisted(() => {
   const mockDrizzleDb = {
     select: vi.fn(),
     insert: vi.fn().mockReturnValue({ values: vi.fn().mockResolvedValue({}) }),
@@ -29,7 +29,6 @@ const { mockDrizzleDb, mockDrizzleSchema } = vi.hoisted(() => {
 
   return {
     mockDrizzleDb,
-    mockDrizzleSchema: {},
   };
 });
 

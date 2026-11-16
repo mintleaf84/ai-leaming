@@ -9,7 +9,7 @@ import {
   DialogDescription,
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
-import { FolderPlus, Plus, Check, Loader2 } from "lucide-react";
+import { FolderPlus, Plus, Loader2 } from "lucide-react";
 import type { QuestionFolder } from "@/lib/services/question-folder";
 
 const FOLDER_COLORS = [

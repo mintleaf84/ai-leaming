@@ -84,7 +84,7 @@ describe("Feature Flags Actions (Integration)", () => {
       expect(result.value).toBe(true);
 
       // 验证数据库中确实存进去了
-      const row: any = await testDbHelper.db.run(sql`
+      await testDbHelper.db.run(sql`
                 SELECT value FROM system_settings WHERE key = 'TEST_FLAG'
             `);
       // 使用 Drizzle 验证

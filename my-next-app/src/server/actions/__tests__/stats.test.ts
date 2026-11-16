@@ -28,7 +28,7 @@ vi.mock("@/lib/utils/datetime", () => ({
   getBeijingYesterdayString: vi.fn().mockReturnValue("2024-01-14"),
   formatBeijingDisplayDate: vi.fn((_d) => "01/15"),
   getBeijingNow: vi.fn().mockReturnValue({
-    subtract: vi.fn().mockImplementation((n, unit) => {
+    subtract: vi.fn().mockImplementation((n, _unit) => {
       const d = new Date("2024-01-15T10:00:00Z");
       d.setDate(d.getDate() - n);
       return {

@@ -44,7 +44,7 @@ vi.mock("@/lib/utils/text-splitter", () => ({
   splitText: async (t: string) => [t],
 }));
 
-import { textbooks, textbook_chapters } from "@/lib/db/drizzle-schema";
+import { textbooks } from "@/lib/db/drizzle-schema";
 
 describe("Textbook Service", () => {
   beforeEach(() => {

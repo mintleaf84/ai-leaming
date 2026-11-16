@@ -32,8 +32,6 @@ const previewDef = createRoute({
 });
 
 app.openapi(previewDef, async (c) => {
-  const user = getCurrentUser(c);
-
   try {
     const body = await c.req.parseBody();
     const file = body["file"] as File;
@@ -94,8 +92,6 @@ const parseChunkDef = createRoute({
 });
 
 app.openapi(parseChunkDef, async (c) => {
-  const user = getCurrentUser(c);
-
   try {
     const body = await c.req.valid("json");
     const result = await pdfImportService.parseSingleChunk(
@@ -134,7 +130,6 @@ const cleanupDef = createRoute({
 });
 
 app.openapi(cleanupDef, async (c) => {
-  const user = getCurrentUser(c);
   const body = await c.req.valid("json");
   pdfImportService.cleanup(body.taskId);
   return c.json({ ok: true }, 200);
@@ -171,8 +166,6 @@ const textImportDef = createRoute({
 });
 
 app.openapi(textImportDef, async (c) => {
-  const user = getCurrentUser(c);
-
   try {
     const body = await c.req.valid("json");
     const { taskId, totalChunks } = await pdfImportService.splitText(body.text);

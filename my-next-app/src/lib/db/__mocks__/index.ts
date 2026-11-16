@@ -84,7 +84,7 @@ function createDrizzleMock(): MockedDrizzle {
       return target[prop];
     },
     // 支持直接作为函数调用 (虽然 Drizzle 实例不是函数，但 Proxy 兼容性更好)
-    apply: (target) => mock,
+    apply: (_target) => mock,
   });
 
   return mock as MockedDrizzle;

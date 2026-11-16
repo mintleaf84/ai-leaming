@@ -27,7 +27,6 @@ vi.mock("@/lib/db", async () => {
 });
 
 import { masteryService } from "../mastery";
-import { user_mastery } from "@/lib/db/drizzle-schema";
 
 describe("Mastery Service (Integration with Drizzle)", () => {
   let helper: TestDbHelper;

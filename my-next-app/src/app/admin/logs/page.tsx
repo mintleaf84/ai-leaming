@@ -4,7 +4,6 @@ import React, { useEffect, useState } from "react";
 import { getAdminLogsAction } from "@/server/actions/logs";
 import { AdminLogEntry, formatActionName } from "@/types";
 import {
-  Loader2,
   User,
   FileQuestion,
   Cpu,

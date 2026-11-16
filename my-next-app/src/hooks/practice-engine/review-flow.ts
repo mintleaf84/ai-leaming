@@ -1,4 +1,4 @@
-import type { PracticeState, ReviewItem } from "@/types";
+import type { ReviewItem } from "@/types";
 
 const MAX_FAILED_ATTEMPTS = 3;
 const REGRESSION_QUESTION_COUNT = 3;

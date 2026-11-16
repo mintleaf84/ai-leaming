@@ -3,7 +3,7 @@ import { createOpenAI } from "@ai-sdk/openai";
 import { getErrorMessage } from "@/lib/utils/error";
 import { getAiConfig } from "./client";
 import { drizzleDb, drizzleSchema, getLegacyDb } from "@/lib/db";
-import { eq, sql, desc, and, like, or } from "drizzle-orm";
+import { sql, like, or } from "drizzle-orm";
 import { env } from "@/env";
 
 // 内存 LRU 缓存（进程级，避免同进程重复查询 DB）

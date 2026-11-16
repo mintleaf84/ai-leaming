@@ -8,11 +8,7 @@ import type {
   KnowledgeNode,
   KnowledgeLink,
 } from "@/types/viz";
-import type {
-  ForceGraphMethods,
-  NodeObject,
-  LinkObject,
-} from "react-force-graph-2d";
+import type { ForceGraphMethods, NodeObject } from "react-force-graph-2d";
 import {
   Drawer,
   DrawerClose,

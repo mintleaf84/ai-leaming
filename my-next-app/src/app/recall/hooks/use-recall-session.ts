@@ -88,6 +88,16 @@ export function useRecallSession(initialQueue: RecallInitialQueue) {
     async function bootstrap() {
       setPhase("loading");
       setLoadError(null);
+      // 换了队列 = 换了一轮作答：上一轮的作答文本、预判、结论与幂等键都必须清掉。
+      // 否则新卡首屏会带着旧答案/旧结论，点「看答案」直接显示上一张的结果。
+      setTyped("");
+      setPreview(null);
+      setFinalVerdicts([]);
+      setResult(null);
+      setLastNote(null);
+      setRetryLocked(false);
+      lastSubmitRef.current = null;
+      clientKeyRef.current = null;
       try {
         const today = await fetchRecallQueue();
         // 旧快照（上一次拉取 / 跨学习日）回来晚了一步：直接丢弃，
@@ -134,6 +144,9 @@ export function useRecallSession(initialQueue: RecallInitialQueue) {
   }, [reloadKey, initialQueue, updatePending]);
 
   const advance = useCallback(async () => {
+    // 记下版本：等卡期间若 initialQueue 变化并触发了新的 bootstrap，
+    // 这张迟到的卡属于旧队列，不能覆盖新队列的首张卡（否则会把它挤掉）
+    const version = queueVersionRef.current;
     const remaining = pendingRef.current.slice(1);
     updatePending(remaining);
     setTyped("");
@@ -153,9 +166,12 @@ export function useRecallSession(initialQueue: RecallInitialQueue) {
     setCard(null);
     try {
       const next = await fetchRecallCard(remaining[0]);
+      // 迟到结果：期间队列已被重新拉取，这张卡属于旧队列，直接丢弃
+      if (version !== queueVersionRef.current) return;
       setCard(next);
       setPhase("question");
     } catch (error) {
+      if (version !== queueVersionRef.current) return;
       console.error("[recall] 取下一张卡失败", error);
       setLoadError(actionErrorMessage(error));
       setPhase("error");
@@ -195,72 +211,94 @@ export function useRecallSession(initialQueue: RecallInitialQueue) {
     );
   };
 
-  const commitVerdicts = async () => {
-    if (!card || !preview) return;
-    setSubmitting(true);
-    try {
-      const overrides = buildOverrides(
-        preview.presented,
-        preview.verdicts,
-        finalVerdicts,
-      );
-      const outcome = await submitRecall({
+  /**
+   * 提交作答（两种方式共用一条路径）。
+   *
+   * `retryLocked` 期间**只允许重放首次那份载荷**：服务端按 `clientKey` 重放首次结果，
+   * 如果重试时换成另一种提交方式（「确认结果」↔「全没想起」），服务端返回的是首次
+   * 的结果、界面显示的却是新选择，两边就不一致了。所以「同一 key = 同一载荷」不是
+   * 建议，是这条路径的结构保证：载荷在第一次提交时被闭包捕获，重试只是再调一次。
+   */
+  const lastSubmitRef = useRef<null | (() => Promise<void>)>(null);
+
+  const submitAnswer = async (mode: "verdicts" | "allBlank"): Promise<void> => {
+    if (retryLocked && lastSubmitRef.current) {
+      // 重试：原样重放，不重新构造载荷
+      return lastSubmitRef.current();
+    }
+    if (!card) return;
+    // 取一份局部快照：三元分支里 TS 不会因为上面的 guard 而收窄 preview
+    const judgedPreview = preview;
+    if (mode === "verdicts" && !judgedPreview) return;
+
+    const isAllBlank = mode === "allBlank";
+    let payload;
+    if (isAllBlank) {
+      payload = {
         cardId: card.cardId,
         typed,
-        overrides,
+        allBlank: true as const,
         clientKey: clientKeyRef.current ?? undefined,
-      });
-      setResult(outcome);
-      setLastNote(outcome.nextReviewText);
-      // 这次作答已经落库，key 用完即弃（下一张卡会重新生成）
-      clientKeyRef.current = null;
-      setRetryLocked(false);
-    } catch (error) {
-      // 写操作失败：不推进状态，人还停在这一屏，可以直接再按一次（沿用同一个 key）
-      console.error("[recall] 提交作答失败", error);
-      toast.error(`这次没有记下来：${actionErrorMessage(error)}`);
-      // 结果未知：锁住判定，重试沿用同一 clientKey 与同一份载荷
-      setRetryLocked(true);
-      return;
-    } finally {
-      setSubmitting(false);
+      };
+    } else {
+      // 显式分支而不是三元：mode 与 preview 的非空性在这里直接关联，不用靠推断
+      if (!judgedPreview) return;
+      payload = {
+        cardId: card.cardId,
+        typed,
+        overrides: buildOverrides(
+          judgedPreview.presented,
+          judgedPreview.verdicts,
+          finalVerdicts,
+        ),
+        clientKey: clientKeyRef.current ?? undefined,
+      };
     }
+
+    const run = async (): Promise<void> => {
+      setSubmitting(true);
+      try {
+        const outcome = await submitRecall(payload);
+        setResult(outcome);
+        setLastNote(outcome.nextReviewText);
+        if (isAllBlank) {
+          // 服务端按 rating=again 记的是"全部没写"：界面必须跟着变成全黄，
+          // 否则提交前看到的绿条与这次落库的结论不一致（用户会以为判错了）
+          setFinalVerdicts((previous) => previous.map(() => "miss" as const));
+          setPreview((previous) =>
+            previous
+              ? {
+                  ...previous,
+                  verdicts: previous.verdicts.map(() => "miss" as const),
+                }
+              : previous,
+          );
+        }
+        // 这次作答已经落库，key 用完即弃（下一张卡会重新生成）
+        clientKeyRef.current = null;
+        lastSubmitRef.current = null;
+        setRetryLocked(false);
+      } catch (error) {
+        // 写操作失败：不推进状态，人还停在这一屏，再按一次就是同一份载荷
+        console.error(
+          isAllBlank ? "[recall] 全没想起提交失败" : "[recall] 提交作答失败",
+          error,
+        );
+        toast.error(`这次没有记下来：${actionErrorMessage(error)}`);
+        // 结果未知：锁住判定，重试沿用同一 clientKey 与**同一份载荷**
+        lastSubmitRef.current = run;
+        setRetryLocked(true);
+        return;
+      } finally {
+        setSubmitting(false);
+      }
+    };
+
+    return run();
   };
 
-  const markAllBlank = async () => {
-    if (!card) return;
-    setSubmitting(true);
-    try {
-      const outcome = await submitRecall({
-        cardId: card.cardId,
-        typed,
-        allBlank: true,
-        clientKey: clientKeyRef.current ?? undefined,
-      });
-      setResult(outcome);
-      setLastNote(outcome.nextReviewText);
-      // 服务端按 rating=again 记的是"全部没写"：界面必须跟着变成全黄，
-      // 否则提交前看到的绿条与这次落库的结论不一致（用户会以为判错了）
-      setFinalVerdicts((previous) => previous.map(() => "miss" as const));
-      setPreview((previous) =>
-        previous
-          ? {
-              ...previous,
-              verdicts: previous.verdicts.map(() => "miss" as const),
-            }
-          : previous,
-      );
-      clientKeyRef.current = null;
-      setRetryLocked(false);
-    } catch (error) {
-      console.error("[recall] 全没想起提交失败", error);
-      toast.error(`这次没有记下来：${actionErrorMessage(error)}`);
-      setRetryLocked(true);
-      return;
-    } finally {
-      setSubmitting(false);
-    }
-  };
+  const commitVerdicts = () => submitAnswer("verdicts");
+  const markAllBlank = () => submitAnswer("allBlank");
 
   const archive = async () => {
     if (!card) return;

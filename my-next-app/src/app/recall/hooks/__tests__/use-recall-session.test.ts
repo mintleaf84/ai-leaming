@@ -147,7 +147,9 @@ async function revealWith(
 
 describe("useRecallSession", () => {
   beforeEach(() => {
-    vi.clearAllMocks();
+    // 用 reset 而不是 clear：`mockReturnValueOnce` 的队列不会被 clearAllMocks 清掉，
+    // 会泄漏到下一个用例（表现为"莫名拿到上一例的卡"）
+    vi.resetAllMocks();
   });
 
   it("冷启动取卡成功：loading → question，预判覆盖全部条目", async () => {
@@ -322,6 +324,72 @@ describe("useRecallSession", () => {
       await result.current.advance();
     });
     expect(result.current.phase).toBe("done");
+  });
+
+  it("重试必须重放首次载荷：「全没想起」失败后按「确认结果」也不能换成 overrides", async () => {
+    // 服务端按 clientKey 重放首次结果。如果重试换了提交方式，服务端返回首次结论、
+    // 界面显示新选择 —— 两边不一致。这里钉住「同一 key = 同一载荷」是结构保证。
+    const { result } = await renderAtQuestion();
+    await revealWith(result, "固态");
+
+    mockSubmit
+      .mockRejectedValueOnce(new Error("网络断了"))
+      .mockResolvedValueOnce(
+        submitView({ verdicts: ["miss", "miss", "miss"], rating: "again" }),
+      );
+
+    await act(async () => {
+      await result.current.markAllBlank();
+    });
+    expect(result.current.retryLocked).toBe(true);
+    const firstPayload = mockSubmit.mock.calls[0][0];
+    expect(firstPayload.allBlank).toBe(true);
+    expect(firstPayload.overrides).toBeUndefined();
+
+    // 用户在锁定期间点了另一个按钮：仍然只能重放首次那份 allBlank 载荷
+    await act(async () => {
+      await result.current.commitVerdicts();
+    });
+    expect(mockSubmit.mock.calls[1][0]).toEqual(firstPayload);
+    expect(mockSubmit.mock.calls[1][0].overrides).toBeUndefined();
+  });
+
+  it("队列被重新拉取（新 initialQueue）：上一轮的作答/预判/结论/锁全部清空", async () => {
+    mockFetchQueue.mockResolvedValue(queueView([11, 12]));
+    mockFetchCard.mockResolvedValueOnce(listCard());
+    const { result, rerender } = renderHook(
+      ({ q }: { q: RecallInitialQueue }) => useRecallSession(q),
+      { initialProps: { q: INITIAL_QUEUE } },
+    );
+    await waitFor(() => expect(result.current.phase).toBe("question"));
+
+    await revealWith(result, "固态");
+    // 制造 retryLocked：首次提交失败
+    mockSubmit.mockRejectedValueOnce(new Error("网络断了"));
+    await act(async () => {
+      await result.current.commitVerdicts();
+    });
+    expect(result.current.retryLocked).toBe(true);
+
+    // 服务端重渲染下发新队列（对象身份变化 → 同一个 hook 实例重跑 bootstrap）
+    const secondQueue: RecallInitialQueue = {
+      ids: [21],
+      due: [21],
+      fresh: [],
+      total: 1,
+      estimatedMinutes: 1,
+    };
+    mockFetchQueue.mockResolvedValue(queueView([21]));
+    mockFetchCard.mockResolvedValueOnce(listCard({ cardId: 21 }));
+    rerender({ q: secondQueue });
+
+    await waitFor(() => expect(result.current.card?.cardId).toBe(21));
+    // 关键：新卡首屏不能带上一轮的答案/预判/结论，也不能还锁着
+    expect(result.current.typed).toBe("");
+    expect(result.current.preview).toBeNull();
+    expect(result.current.result).toBeNull();
+    expect(result.current.retryLocked).toBe(false);
+    expect(result.current.phase).toBe("question");
   });
 
   it("空队列进 empty 态；有卡却拿不到编号时进 error 态", async () => {

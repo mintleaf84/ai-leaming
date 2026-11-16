@@ -1,0 +1,11 @@
+{
+  "publicAllow": [
+    "^fonts\\/",
+    "^uploads\\/",
+    "^books\\/",
+    "^logo\\.png$",
+    "^icons\\/",
+    "^data\\/"
+  ],
+  "updatedAt": "2026-11-16T19:26:55.823Z"
+}

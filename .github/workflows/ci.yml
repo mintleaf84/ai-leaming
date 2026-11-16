@@ -195,3 +195,10 @@ jobs:
 
       - name: 构建 Next.js
         run: npm run build
+
+      # 性能预算（docs/performance.md T-05/T-06）：复用上面已经产出的 .next，
+      # 不二次构建。检查两件事：单路由 first-load JS（gzip，≤180KB 且环比 +5% 内）
+      # 与 public/ 单文件（>100KB 需进白名单）。基线在 perf-baseline.json，
+      # 收紧基线用 npm run perf:baseline 并在 PR 里说明原因。
+      - name: 性能预算（路由 JS + public 大文件）
+        run: npm run perf:budget

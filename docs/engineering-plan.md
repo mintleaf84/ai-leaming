@@ -131,8 +131,13 @@
 
 ## M3 机制补齐（2–3d）
 
-- [ ] **归属矩阵测试**：遍历已注册路由，断言每个端点对「他人资源」返回 404/403；
-      新路由未登记即红 —— 让 IDOR 从「靠评审发现」变成「靠机制发现」
+- [x] **归属矩阵门禁**（`src/lib/api/__tests__/ownership-matrix.test.ts`）：18 个路由模块
+      必须登记归属语义（user / admin / global / public）；`user` 必须指向真实的跨用户测试，
+      `global` 必须写「为什么不是越权」；外部 API 每条写路由必须声明 `write` 作用域
+- [x] 欠账清单 `KNOWN_UNCOVERED`（11 个 user 模块，逐条写明「拿哪个 id 定位资源」），
+      **只许减**：补完测试必须从清单删除，新增 user 模块必须补测试或进清单
+- [ ] 逐步清掉 11 条欠账（优先 `history` / `practice` / `annotations` / `wrong-book`：
+      它们都按资源 id 取数，越权面与 pdf-import 同类）
 - [ ] admin 题库 CRUD 真实契约测试（P1 遗留）
 - [ ] RAG 向量写入、备份恢复契约测试（P1 遗留）
 - [ ] 剩下的 5 个 mock-db 测试改真实库（P1 遗留）

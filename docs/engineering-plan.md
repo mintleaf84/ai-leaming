@@ -109,11 +109,13 @@
 
 ## M1 减少咒语（2–3d）
 
-- [ ] `type Executor` + `withTransaction()`：消掉 9 处 `tx as unknown as typeof drizzleDb`
+- [x] `type Executor` + `withTransaction()`：9 处 `tx as unknown as typeof drizzleDb` **全部消除**
       （`import-service`×2、`recall-import`×3、`chat`/`pdf-import`/`recall`/`srs` 各 1）
-- [ ] 错误映射收敛：4 类语义（校验 / 不存在 / 冲突 / 无权限）+ domain code，
-      Hono 与 server action **各一个** mapper（现在 9 个类、只有 recall 有 mapper）
-- [ ] `affectedRows(result)` 封装（2 处 `rowsAffected` 断言）
+- [x] 错误映射收敛：`AppError` + 5 类语义（validation / business / not-found / conflict / forbidden）
+      + domain code；`toErrorResponse()` 是唯一 HTTP 映射点（9 个类只换父类、不改名）
+- [ ] server action 侧也走同一分类（现在只靠 `handleServerError` 回 message，前端拿不到 kind）
+- [x] `affectedRows(result)` 封装（2 处 `rowsAffected` 断言）；顺带修 `rowsAffected || ids.length`
+      把「一行没删」当「全删」的 bug
 - 验收：新增 `no-as-unknown-as-tx` 形式的检查（lint 规则或 grep 计数棘轮）；
   外部 API 状态码语义不变（`docs/api.md` 状态码表同步）
 

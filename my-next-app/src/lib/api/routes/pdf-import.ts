@@ -5,6 +5,7 @@ import {
   PdfImportTaskNotFoundError,
 } from "@/lib/services/pdf-import";
 import { log } from "@/lib/logger";
+import { toErrorResponse } from "@/lib/api/error-response";
 
 const app = new OpenAPIHono();
 
@@ -108,9 +109,9 @@ app.openapi(parseChunkDef, async (c) => {
     );
     return c.json(result, 200);
   } catch (e) {
-    // 不存在与「不属于你」返回同一个 404：不给攻击者探测 taskId 是否存在
+    // 不存在与「不属于你」返回同一个 404（状态码由 AppError.kind 决定，不靠文案匹配）
     if (e instanceof PdfImportTaskNotFoundError) {
-      return c.json({ error: e.message }, 404);
+      return toErrorResponse(c, e, { scope: "pdf-import.parse-chunk" });
     }
     log.error("[PdfImportRoute] parse-chunk failed:", e);
     return c.json({ error: `解析失败: ${(e as Error).message}` }, 500);

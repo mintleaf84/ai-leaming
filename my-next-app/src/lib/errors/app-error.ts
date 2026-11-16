@@ -39,6 +39,15 @@ export interface AppErrorOptions {
   publicMessage?: string;
 }
 
+/**
+ * 跨模块实例的标记。
+ *
+ * 用 `Symbol.for`（全局符号注册表）而不是 `instanceof` 判类：打包/测试里同一模块
+ * 可能被加载成两份（`vi.importActual` 就会这样），那时 `instanceof AppError` 为
+ * false，但语义上它就是一个 AppError —— 映射层会把它误判成 500。
+ */
+const APP_ERROR_BRAND = Symbol.for("ai-leaming.app-error");
+
 export class AppError extends Error {
   readonly kind: AppErrorKind;
   readonly code: string;
@@ -56,6 +65,7 @@ export class AppError extends Error {
     this.code = options.code ?? kind;
     this.issues = options.issues;
     this.publicMessage = options.publicMessage ?? message;
+    Object.defineProperty(this, APP_ERROR_BRAND, { value: true });
   }
 
   get status(): number {
@@ -94,5 +104,11 @@ export class ForbiddenError extends AppError {
 }
 
 export function isAppError(error: unknown): error is AppError {
-  return error instanceof AppError;
+  // 不用 `instanceof`：同一模块被加载两份时（打包边界、`vi.importActual`）
+  // 类对象不同但语义相同，用全局符号标记才能稳定识别。
+  return (
+    typeof error === "object" &&
+    error !== null &&
+    APP_ERROR_BRAND in (error as Record<symbol, unknown>)
+  );
 }

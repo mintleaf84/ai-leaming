@@ -66,8 +66,10 @@ describe("PDF 导入路由 · 归属校验", () => {
     const res = await post("/parse-chunk", { taskId: "t-1", chunkIndex: 0 });
 
     expect(res.status).toBe(404);
-    await expect(res.json()).resolves.toEqual({
+    // 统一映射点会附上机器可读的 code（状态码来自 AppError.kind，不靠文案匹配）
+    await expect(res.json()).resolves.toMatchObject({
       error: "任务不存在或已过期，请重新上传",
+      code: "pdf-import.task.not-found",
     });
   });
 

@@ -9,9 +9,9 @@
  * "已掌握" = mastered_questions 里 (user_id, question_id) 这一行。两者都带 user_id，
  * 所以按用户隔离要证明的是：A 的错题/已掌握标记，另一个用户 B 既看不到、也改不动。
  *
- * 注：`GET /api/wrong-book/`（列表）当前在真实库上直接 500（ORDER BY 引用了未定义的
- * 别名 `wrongCount`，见文件末尾的 it.fails）。所以"看不到别人的错题"用同源数据的
- * `/stats` 与 `/random` 两个端点验证，不依赖那个坏掉的列表接口。
+ * 注：`GET /api/wrong-book/`（列表）与 `/by-tag` 曾经因为 ORDER BY 引用 select 的 JS key
+ * （`wrongCount`，drizzle 没有生成 `AS` 别名）恒 500；现在排序列改用聚合表达式，
+ * 文件末尾用真实库断言列表内容，而不只是状态码。
  */
 import { describe, it, expect, beforeAll, afterAll } from "vitest";
 import fs from "node:fs";
@@ -180,11 +180,58 @@ describe("wrong-book 路由 · 跨用户归属", () => {
     await expect(detail.json()).resolves.toMatchObject({ wrongCount: 1 });
   });
 
-  it.fails(
-    "缺陷固定（非归属问题）：GET / 列表应可用，实际 500 —— ORDER BY 引用了未定义的别名",
-    async () => {
-      const res = await app.request("/", { headers: headers(await tokenFor(A)) });
-      expect(res.status).toBe(200);
-    },
-  );
+  it("GET / 列表可用，且只列出 A 自己的未掌握错题（ORDER BY 不再引用 JS 别名）", async () => {
+    const res = await app.request("/", { headers: headers(await tokenFor(A)) });
+    expect(res.status).toBe(200);
+
+    const list = (await res.json()) as {
+      questionId: string;
+      wrongCount: number;
+      lastWrongAt: string;
+      userLastAnswer: string;
+      correctAnswer: string;
+      tags: string[];
+    }[];
+    // Q2 已被 A 标记为已掌握，列表只应剩 Q1
+    expect(list.map((r) => r.questionId)).toEqual([String(Q1)]);
+    expect(list[0]).toMatchObject({
+      wrongCount: 1,
+      userLastAnswer: A_ANSWER,
+      correctAnswer: "B",
+      tags: ["教育心理"],
+    });
+    // lastWrongAt 由 MAX(timestamp) 聚合而来，必须真有值（排序键不再是空串）
+    expect(list[0].lastWrongAt).not.toBe("");
+
+    // 另一个用户看不到任何一条（列表按 user_id 过滤，不是共享视图）
+    const resB = await app.request("/", { headers: headers(await tokenFor(B)) });
+    expect(resB.status).toBe(200);
+    const listB = (await resB.json()) as { questionId: string }[];
+    expect(listB).toEqual([]);
+  });
+
+  it("GET /by-tag 分组可用，且分组内容同样只含 A 自己的错题", async () => {
+    const res = await app.request("/by-tag", {
+      headers: headers(await tokenFor(A)),
+    });
+    expect(res.status).toBe(200);
+
+    const groups = (await res.json()) as {
+      tag: string;
+      count: number;
+      questions: { questionId: string; wrongCount: number }[];
+    }[];
+    expect(groups.map((g) => g.tag)).toEqual(["教育心理"]);
+    expect(groups[0].count).toBe(1);
+    expect(groups[0].questions[0]).toMatchObject({
+      questionId: String(Q1),
+      wrongCount: 1,
+    });
+
+    const resB = await app.request("/by-tag", {
+      headers: headers(await tokenFor(B)),
+    });
+    expect(resB.status).toBe(200);
+    await expect(resB.json()).resolves.toEqual([]);
+  });
 });

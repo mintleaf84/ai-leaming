@@ -120,25 +120,34 @@ describe("practice 路由 · 跨用户归属", () => {
     expect((await sessionStats(SESSION_B))?.correct_count).toBe(1);
   });
 
-  it("跨用户的提交不会改动 A 的会话统计（UPDATE 带了 user_id 条件）", async () => {
-    await submit(await tokenFor(B), SESSION_A_STATS, "B");
+  it("跨用户的提交不会改动 A 的会话统计（整个请求被 404 挡在事务外）", async () => {
+    const res = await submit(await tokenFor(B), SESSION_A_STATS, "B");
+    expect(res.status).toBe(404);
 
     const stats = await sessionStats(SESSION_A_STATS);
-    // 这一半实现是对的：会话的 correct_count 只认会话所有者
     expect(stats?.user_id).toBe(A);
     expect(stats?.correct_count).toBe(0);
+    expect(await logCount(SESSION_A_STATS, B)).toBe(0);
   });
 
-  it.fails(
-    "B 拿 A 的 sessionId 提交：应被拒绝，且不在 A 的会话里留下日志（实际 200 且写入）",
-    async () => {
-      const res = await submit(await tokenFor(B), SESSION_A_WRITE, B_ANSWER_MARK);
+  it("B 拿 A 的 sessionId 提交：404，且不在 A 的会话里留下日志", async () => {
+    const res = await submit(await tokenFor(B), SESSION_A_WRITE, B_ANSWER_MARK);
 
-      // 端点只校验了登录（authMiddleware），没有校验 sessionId 属于当前用户，
-      // 于是 B 的答题日志被插进 A 的会话；A 打开会话详情（/api/history/:id，
-      // 其日志查询只按 session_id 过滤）就会看到别人的作答。
-      expect(await logCount(SESSION_A_WRITE, B)).toBe(0);
-      expect(res.status).toBe(404);
-    },
-  );
+    // 404 而不是 403：不泄露"这个会话存在"
+    expect(res.status).toBe(404);
+    // 关键断言：越权写没有落库（修复前是 200 并插入一行 user_id=B, session_id=A）
+    expect(await logCount(SESSION_A_WRITE, B)).toBe(0);
+    expect(await logCount(SESSION_A_WRITE, A)).toBe(0);
+    // A 的会话统计也没被污染
+    expect((await sessionStats(SESSION_A_WRITE))?.correct_count).toBe(0);
+  });
+
+  it("A 自己提交：仍然 200 且日志正常落库（证明不是把功能关了）", async () => {
+    // 正确答案是 B：答对时日志与 correct_count 都要 +1
+    const res = await submit(await tokenFor(A), SESSION_A_WRITE, "B");
+
+    expect(res.status).toBe(200);
+    expect(await logCount(SESSION_A_WRITE, A)).toBe(1);
+    expect((await sessionStats(SESSION_A_WRITE))?.correct_count).toBe(1);
+  });
 });

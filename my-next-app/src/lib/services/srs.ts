@@ -21,6 +21,7 @@ import {
   system_settings,
 } from "@/lib/db/drizzle-schema";
 import { eq, and, or, sql, lte, isNull, count, gte } from "drizzle-orm";
+import { withTransaction } from "@/lib/db/executor";
 
 // 批量同步配置
 const SYNC_BATCH_SIZE = 100;
@@ -709,9 +710,9 @@ export const srsService = {
 
       // 使用事务批量处理
       try {
-        await drizzleDb.transaction(async (tx) => {
+        await withTransaction(async (exec) => {
           for (const [qId, qLogs] of questionGroups.entries()) {
-            const [qInfo] = await tx
+            const [qInfo] = await exec
               .select({ type: questions.type })
               .from(questions)
               .where(eq(questions.id, qId))
@@ -745,7 +746,7 @@ export const srsService = {
                   reviewDate,
                   speed,
                   userAnswerLength,
-                  tx as unknown as SrsExecutor,
+                  exec,
                 );
               } catch (err) {
                 const message = (err as Error).message || "";

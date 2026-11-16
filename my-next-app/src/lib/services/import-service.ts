@@ -5,6 +5,7 @@ import { sanitizeHtml } from "../utils/security";
 import { safeParseJson } from "../utils/json";
 import { generateId } from "../utils/id";
 import { log } from "@/lib/logger";
+import { withTransaction } from "@/lib/db/executor";
 
 const { practice_sessions, questions, practice_logs, user_mastery } =
   drizzleSchema;
@@ -405,10 +406,9 @@ export const importService = {
     let newQuestionsCount: number;
     try {
       newQuestionsCount = await withImportLock(() =>
-        drizzleDb.transaction(async (tx) => {
+        withTransaction(async (exec) => {
           // 事务内所有写操作都必须走 tx：用全局 drizzleDb 会让语句跑在事务连接
           // 之外，表现为逐条 Failed query + 提交时 SQLITE_BUSY。
-          const exec = tx as unknown as typeof drizzleDb;
           return await writeImport(exec, userId, data, sessionId);
         }),
       );
@@ -464,9 +464,8 @@ export const importService = {
     let inserted: number;
     try {
       inserted = await withImportLock(() =>
-        drizzleDb.transaction(async (tx) => {
+        withTransaction(async (exec) => {
           // 事务内所有写操作都必须走 tx（理由见 importFenbiData 同位置注释）
-          const exec = tx as unknown as typeof drizzleDb;
           return await writeAgentAnswers(
             exec,
             userId,

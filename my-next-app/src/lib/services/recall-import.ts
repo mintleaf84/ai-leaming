@@ -19,6 +19,7 @@ import {
   type RecallImportResult,
   type RecallListItem,
 } from "../recall/types";
+import { withTransaction } from "@/lib/db/executor";
 
 const { recall_decks, recall_cards, recall_card_states, recall_review_logs } =
   drizzleSchema;
@@ -325,9 +326,8 @@ export async function importDeck(
   const deck = parseRecallDeck(deckInput);
 
   return withRecallImportLock(() =>
-    drizzleDb.transaction(async (tx) => {
+    withTransaction(async (exec) => {
       // 事务内所有写操作都必须走 tx：用全局 drizzleDb 会让语句跑在事务连接之外
-      const exec = tx as unknown as typeof drizzleDb;
       return writeDeck(exec, userId, deck, onConflict);
     }),
   );
@@ -545,9 +545,7 @@ export async function upsertCard(
   input: RecallCardUpsertInput,
 ): Promise<{ cardId: number }> {
   return withRecallImportLock(() =>
-    drizzleDb.transaction(async (tx) => {
-      const exec = tx as unknown as typeof drizzleDb;
-
+    withTransaction(async (exec) => {
       const [deck] = await exec
         .select({
           id: recall_decks.id,
@@ -652,9 +650,7 @@ export async function deleteCard(
   cardId: string,
 ): Promise<{ cardId: number }> {
   return withRecallImportLock(() =>
-    drizzleDb.transaction(async (tx) => {
-      const exec = tx as unknown as typeof drizzleDb;
-
+    withTransaction(async (exec) => {
       const [deck] = await exec
         .select({
           id: recall_decks.id,

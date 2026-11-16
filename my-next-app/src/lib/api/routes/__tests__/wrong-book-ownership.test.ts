@@ -204,7 +204,9 @@ describe("wrong-book 路由 · 跨用户归属", () => {
     expect(list[0].lastWrongAt).not.toBe("");
 
     // 另一个用户看不到任何一条（列表按 user_id 过滤，不是共享视图）
-    const resB = await app.request("/", { headers: headers(await tokenFor(B)) });
+    const resB = await app.request("/", {
+      headers: headers(await tokenFor(B)),
+    });
     expect(resB.status).toBe(200);
     const listB = (await resB.json()) as { questionId: string }[];
     expect(listB).toEqual([]);

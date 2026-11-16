@@ -59,8 +59,7 @@ const MODULES: Record<string, ModuleRule> = {
   annotations: {
     mount: "/api/annotations",
     scope: "user",
-    crossUserTest:
-      "src/lib/api/routes/__tests__/annotations-ownership.test.ts",
+    crossUserTest: "src/lib/api/routes/__tests__/annotations-ownership.test.ts",
   },
   chat: { mount: "/api/chat", scope: "user" },
   external: {

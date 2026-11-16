@@ -138,7 +138,10 @@ app.openapi(submitRoute, async (c) => {
     );
 
     return c.json(
-      { isCorrect: result.isCorrect, correctAnswer: result.correctAnswer || "" },
+      {
+        isCorrect: result.isCorrect,
+        correctAnswer: result.correctAnswer || "",
+      },
       200,
     );
   } catch (err) {

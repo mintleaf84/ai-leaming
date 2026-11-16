@@ -54,14 +54,20 @@ function submit(token: string, sessionId: string, userAnswer: string) {
       "content-type": "application/json",
       Authorization: `Bearer ${token}`,
     },
-    body: JSON.stringify({ questionId: QUESTION_ID, userAnswer, duration: 1200 }),
+    body: JSON.stringify({
+      questionId: QUESTION_ID,
+      userAnswer,
+      duration: 1200,
+    }),
   });
 }
 
 async function sessionStats(sessionId: string) {
-  return (await dbm.drizzleDb.get<{ correct_count: number; user_id: number }>(
-    sql`SELECT correct_count, user_id FROM practice_sessions WHERE id = ${sessionId}`,
-  )) ?? null;
+  return (
+    (await dbm.drizzleDb.get<{ correct_count: number; user_id: number }>(
+      sql`SELECT correct_count, user_id FROM practice_sessions WHERE id = ${sessionId}`,
+    )) ?? null
+  );
 }
 
 async function logCount(sessionId: string, userId: number): Promise<number> {

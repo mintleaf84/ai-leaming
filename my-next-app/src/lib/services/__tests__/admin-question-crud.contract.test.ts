@@ -357,7 +357,10 @@ describe("管理端题库 CRUD（真实库）", () => {
       }
     });
 
-    it("导入后 external_id 仍为空 —— 说明导入路径没有写幂等键（缺陷，见下方 it.fails）", async () => {
+    // 这条**只**断言导入通路与行数；**不要**在这里要求 `external_id` 为 null ——
+    // 那等于把缺陷写进普通用例：修好之后它会红，正确实现反而过不了测试。
+    // 幂等键是否真的写了，由下方 `it.fails` 钉住（现在缺 → 修复后转正）。
+    it("导入通路正常：一行不少地落库（幂等键契约见下方 it.fails）", async () => {
       const batch = [sampleQuestion(), sampleQuestion()];
       await actions.importQuestionsAction(batch as never);
 
@@ -372,7 +375,6 @@ describe("管理端题库 CRUD（真实库）", () => {
         )
         .all();
       expect(rows).toHaveLength(2);
-      for (const row of rows) expect(row.external_id).toBeNull();
     });
 
     // `it.fails` 会把体内**任何**失败都反转成绿，包括"action 直接返回 serverError"

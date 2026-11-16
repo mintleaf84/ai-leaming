@@ -1,5 +1,4 @@
 import { test, expect } from "@playwright/test";
-import { TEST_ADMIN } from "./fixtures";
 
 test.describe("Admin Questions Page", () => {
   test.beforeEach(async ({ page }) => {

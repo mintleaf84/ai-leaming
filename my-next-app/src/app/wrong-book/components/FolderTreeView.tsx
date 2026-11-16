@@ -4,12 +4,10 @@ import React, { useState, useMemo } from "react";
 import {
   ChevronDown,
   ChevronRight,
-  Folder,
   FolderPlus,
   MoreHorizontal,
   Pencil,
   Trash2,
-  Play,
   Check,
   X,
 } from "lucide-react";

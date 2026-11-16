@@ -2,7 +2,7 @@ import { OpenAPIHono, createRoute, z } from "@hono/zod-openapi";
 import { getErrorMessage } from "@/lib/utils/error";
 import { drizzleDb, drizzleSchema, closeDb, reinitDb } from "@/lib/db";
 import { requireRole } from "@/lib/auth/auth";
-import { eq, and, sql, desc, like, exists } from "drizzle-orm";
+import { eq, and, sql, desc, like } from "drizzle-orm";
 import os from "os";
 import fs from "fs";
 import path from "path";
@@ -713,7 +713,7 @@ adminRoute.openapi(validateSqlDef, async (c) => {
     throw err;
   }
 
-  const { sql: sqlContent, description } = await c.req.json();
+  const { sql: sqlContent } = await c.req.json();
   const { SqlScriptService } =
     await import("@/lib/services/sql-script-service");
 

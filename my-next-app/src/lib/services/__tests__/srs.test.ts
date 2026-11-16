@@ -53,7 +53,7 @@ vi.mock("@/lib/db", () => {
 
 import { srsService, learnReadingSpeed } from "../srs";
 import { summarizeFutureReviews } from "../srs-summary";
-import { Rating, createEmptyCard } from "ts-fsrs";
+import { Rating } from "ts-fsrs";
 
 describe("SRS Service", () => {
   beforeEach(() => {

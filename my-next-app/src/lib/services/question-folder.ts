@@ -1,5 +1,5 @@
-import { drizzleDb, drizzleSchema } from "@/lib/db";
-import { eq, and, sql, desc } from "drizzle-orm";
+import { drizzleDb } from "@/lib/db";
+import { sql } from "drizzle-orm";
 import type { WrongQuestionItem } from "./wrong-question";
 
 export interface QuestionFolder {

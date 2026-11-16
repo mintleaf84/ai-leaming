@@ -28,8 +28,8 @@ vi.mock("next/cache", () => ({
 }));
 
 vi.mock("@/lib/utils/export-markdown", () => ({
-  formatSessionToMarkdown: vi.fn((detail) => "# Test Session\n\nContent here"),
-  generateExportFilename: vi.fn((date) => "export-2026-01-17.md"),
+  formatSessionToMarkdown: vi.fn((_detail) => "# Test Session\n\nContent here"),
+  generateExportFilename: vi.fn((_date) => "export-2026-01-17.md"),
 }));
 
 // Import AFTER mocks are set up
@@ -90,7 +90,7 @@ describe("History Actions", () => {
         totalPages: 0,
       });
 
-      const result = await getSessionHistoryAction({
+      await getSessionHistoryAction({
         dateFrom: "2026-01-15",
         mode: "normal",
       });

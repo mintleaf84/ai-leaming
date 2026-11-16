@@ -17,7 +17,6 @@ import {
   Save,
   Play,
   CheckCircle2,
-  XCircle,
   Loader2,
   ShieldCheck,
   History,

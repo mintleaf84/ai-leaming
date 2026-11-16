@@ -15,7 +15,6 @@ import {
   RotateCcw,
   Shuffle,
   SortDesc,
-  Sparkles,
   FolderOpen,
   FolderPlus,
   FileUp,
@@ -34,7 +33,6 @@ import { FolderTreeView } from "./components/FolderTreeView";
 import { FolderQuestionList } from "./components/FolderQuestionList";
 import { AddToFolderDialog } from "./components/AddToFolderDialog";
 import { AddQuestionDialog } from "./components/AddQuestionDialog";
-import { Pagination } from "@/components/ui/pagination";
 import { PageJumpInput } from "@/components/ui/page-jump-input";
 
 export default function WrongBookPage() {

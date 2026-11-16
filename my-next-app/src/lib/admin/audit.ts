@@ -4,7 +4,7 @@
  */
 
 import { drizzleDb, drizzleSchema } from "@/lib/db";
-import { eq, desc, sql } from "drizzle-orm";
+import { eq, desc } from "drizzle-orm";
 import {
   AdminAction,
   TargetType,

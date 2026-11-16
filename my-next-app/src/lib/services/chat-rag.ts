@@ -1,5 +1,5 @@
 import { Document } from "@langchain/core/documents";
-import { generateTextWrapper, getAiConfig } from "@/lib/ai/client";
+import { generateTextWrapper } from "@/lib/ai/client";
 import { searchSimilarContent, ragService, type RagResult } from "@/lib/ai/rag";
 import { SqliteVecVectorStore, RagEmbeddings } from "@/lib/ai/langchain-store";
 import { getPromptFromDb, SOCRATIC_TUTOR_PROMPT } from "@/lib/ai/prompts";

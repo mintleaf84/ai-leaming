@@ -1,5 +1,4 @@
-import type { PracticeAction, PracticeState, ReviewItem } from "@/types";
-import type { Question } from "@/types";
+import type { PracticeAction, PracticeState } from "@/types";
 import { appendToReviewQueue, recordAnswer, shouldEnterReview } from "./queue";
 import { completeReviewItemStep } from "./review-flow";
 

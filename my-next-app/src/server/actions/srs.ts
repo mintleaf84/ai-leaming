@@ -3,7 +3,6 @@
 import { authenticatedAction } from "@/lib/safe-action";
 import { z } from "zod";
 import { Rating, fsrs, generatorParameters } from "ts-fsrs";
-import type { RecordLog, Grade } from "ts-fsrs";
 import {
   srsService,
   type SrsGlobalStats,

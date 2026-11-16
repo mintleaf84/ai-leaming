@@ -8,14 +8,10 @@ const {
   mockOrderBy,
   mockWhere,
   mockGet,
-  mockAll,
   mockInsert,
-  mockValues,
   mockOnConflictDoUpdate,
   mockDelete,
   mockUpdate,
-  mockSet,
-  mockReturning,
   mockTransaction,
 } = vi.hoisted(() => {
   // 先创建所有 mock
@@ -112,7 +108,7 @@ vi.mock("@/lib/db", () => ({
   },
 }));
 
-import { aiConfigService, AiConfig, AiModelRoute } from "../ai-config";
+import { aiConfigService } from "../ai-config";
 
 describe("AiConfigService", () => {
   beforeEach(() => {

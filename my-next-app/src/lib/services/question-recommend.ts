@@ -1,5 +1,5 @@
 import { drizzleDb, drizzleSchema } from "@/lib/db";
-import { eq, sql, desc, and, or, lt } from "drizzle-orm";
+import { eq, sql, desc, and } from "drizzle-orm";
 import { Document } from "@langchain/core/documents";
 import { RagEmbeddings, SqliteVecVectorStore } from "@/lib/ai/langchain-store";
 import { ragService, type RagResult } from "@/lib/ai/rag";
@@ -154,7 +154,7 @@ export const wrongQuestionRecommend = {
   ): Promise<RagResult[]> {
     try {
       // 检查向量库是否有数据
-      const hasVectorData = await this.ensureVectorData(currentQuestionId);
+      const hasVectorData = await this.ensureVectorData();
       if (!hasVectorData) {
         log.info("[Recommend] 向量库为空，暂无推荐");
         return [];
@@ -194,7 +194,7 @@ export const wrongQuestionRecommend = {
    * 确保向量库有足够的题目数据
    * 使用持久化标志跳过已完成的初始化，批量写入减少 API 调用
    */
-  async ensureVectorData(questionId: number): Promise<boolean> {
+  async ensureVectorData(): Promise<boolean> {
     try {
       // 1. 检查持久化标志（已初始化过则直接跳过）
       if (await isVectorInitialized()) {

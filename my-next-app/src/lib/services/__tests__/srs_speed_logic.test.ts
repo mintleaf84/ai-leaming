@@ -1,6 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import { srsService } from "../srs";
-import { Rating, createEmptyCard } from "ts-fsrs";
 
 // 用于捕获数据
 let capturedValues: any[] = [];
@@ -10,7 +9,7 @@ let mockSettings: Record<string, string> = {};
 
 vi.mock("@/lib/db", () => {
   const drizzleMock: any = {
-    select: vi.fn((fields) => {
+    select: vi.fn((_fields) => {
       const chain: any = {
         from: vi.fn((table) => {
           const tableName =
@@ -72,7 +71,7 @@ vi.mock("@/lib/db", () => {
       };
       return chain;
     }),
-    insert: vi.fn((table) => {
+    insert: vi.fn((_table) => {
       const chain: any = new Proxy(() => {}, {
         get: (_, prop) => {
           if (prop === "values") {

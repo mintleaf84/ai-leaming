@@ -99,8 +99,8 @@ export function useWrongBookController() {
   );
   const [isRecommendLoading, setIsRecommendLoading] = useState(false);
   const [showRecommendDialog, setShowRecommendDialog] = useState(false);
-  const [isInitializing, setIsInitializing] = useState(false);
-  const [initializeProgress, setInitializeProgress] = useState("");
+  const [isInitializing] = useState(false);
+  const [initializeProgress] = useState("");
 
   // 文件夹状态
   const [folders, setFolders] = useState<QuestionFolder[]>([]);

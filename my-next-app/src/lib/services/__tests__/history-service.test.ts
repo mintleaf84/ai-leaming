@@ -105,7 +105,7 @@ describe("History Service", () => {
       mockGet.mockReturnValue(mockCount);
       mockAll.mockReturnValue(mockItems);
 
-      const result = await historyService.getHistory(1, {
+      await historyService.getHistory(1, {
         dateFrom: "2023-01-01",
         accuracyMin: 90,
       });

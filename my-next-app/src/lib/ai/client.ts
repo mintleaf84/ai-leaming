@@ -123,7 +123,7 @@ export async function generateStructuredData<T>(
     }
 
     throw new Error("Using fallback mode");
-  } catch (error: unknown) {
+  } catch (_error: unknown) {
     // 3. 兼容模式：文本生成 + 手动提取
     let rawText = "";
     const startTimeFallback = Date.now();

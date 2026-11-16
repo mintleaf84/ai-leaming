@@ -2,7 +2,24 @@
 
 目标：把「靠人记得」改成「靠机制拦住」。规范见 [`engineering.md`](./engineering.md)。
 
-## 基线（2026-11-11 实测）
+## 基线（2026-11-17 实测）
+
+| 指标                                                                                   | 现状                                                                      | 上一版（2026-11-11） |
+| -------------------------------------------------------------------------------------- | ------------------------------------------------------------------------- | -------------------- |
+| ESLint warning（棘轮）                                                                 | **7**                                                                     | 536                  |
+| ├ `no-unused-vars`                                                                     | **0**                                                                     | —                    |
+| └ 其余（exhaustive-deps 3 / require-imports 2 / anonymous-default 1 / explicit-any 1） | 7                                                                         | —                    |
+| `: any`（源码 / 测试）                                                                 | 20 / 171                                                                  | 269                  |
+| `as unknown as`                                                                        | 44（服务层 13 处里 **9 处是同一句** `tx as unknown as typeof drizzleDb`） | —                    |
+| 自定义 Error 类                                                                        | 9 个（recall 一个功能占 5 个），映射各写各的                              | —                    |
+| 混职责页面（>400 行且同时有取数/状态机/渲染）                                          | 8（最大 882）                                                             | —                    |
+| 源码 / 测试规模                                                                        | 70,468 / 33,144 行                                                        | —                    |
+| 页面/组件直连 `drizzleDb`                                                              | **0 处**（分层干净）                                                      | —                    |
+| 闸门                                                                                   | lint 棘轮 / catch 零容忍 / 布局 61 条 / schema 列级 / 判分基准棘轮        | 4 项                 |
+| Node 版本固定                                                                          | `engines` + `.nvmrc` + `preinstall` 守卫                                  | 无                   |
+| E2E                                                                                    | 10 条关键路径在 CI 真跑（生产构建）                                       | 26 spec，不在 CI     |
+
+## 基线（2026-11-11，历史对照）
 
 | 指标             | 数值                                               |
 | ---------------- | -------------------------------------------------- |
@@ -78,6 +95,63 @@
 - [x] 三态组件规范化：新增 `ui/error-state.tsx` + `app/error.tsx`（路由级错误边界）+ `app/global-error.tsx`（根布局兜底）
 - [x] e2e 建库改为**回放真实迁移**（不再手写 DDL）；并打开 `ENABLE_INTELLIGENT_REVIEW` 开关，让复盘用例真正生效
 - 验收：CI 出现 `e2e` job 且绿；覆盖清单写入 `docs/test_cases.md`
+
+## M0 收口与安全（0.5d）
+
+- [x] ESLint 基线 **76 → 7**：清掉 69 条 `no-unused-vars`（42 删导入 / 16 删局部绑定 /
+      8 改 `_name` / 2 `_error` / 1 解构项），未动规则强度、未加 `eslint-disable`
+- [x] **`pdf-import` 归属校验（IDOR）**：`chunkCache` 条目带 `userId`，
+      `parseSingleChunk` / `cleanup` 校验归属；「不存在」与「不是你的」返回同一个 404
+      （`PdfImportTaskNotFoundError`），清理失败返回 `ok:false` 但保持 200 幂等
+- [x] 补 2 处日志缺口：`ai/client.ts` 文本降级带原因；`pdf-question-parser` 首次失败带原因
+- 验收：`src/lib/api/routes/__tests__/pdf-import-ownership.test.ts`（5 例）+
+  `pdf-import.test.ts` 的「任务归属」组（3 例）全绿
+
+## M1 减少咒语（2–3d）
+
+- [ ] `type Executor` + `withTransaction()`：消掉 9 处 `tx as unknown as typeof drizzleDb`
+      （`import-service`×2、`recall-import`×3、`chat`/`pdf-import`/`recall`/`srs` 各 1）
+- [ ] 错误映射收敛：4 类语义（校验 / 不存在 / 冲突 / 无权限）+ domain code，
+      Hono 与 server action **各一个** mapper（现在 9 个类、只有 recall 有 mapper）
+- [ ] `affectedRows(result)` 封装（2 处 `rowsAffected` 断言）
+- 验收：新增 `no-as-unknown-as-tx` 形式的检查（lint 规则或 grep 计数棘轮）；
+  外部 API 状态码语义不变（`docs/api.md` 状态码表同步）
+
+## M2 页面职责拆分（3–5d）
+
+判据不用行数：**同一文件里同时出现 ① 取数 `await *Action`/`fetch` ② 状态机（>5 个 state 或串行 effect）
+③ 渲染**，且 >400 行。范式见 `app/practice/hooks/use-practice-controller.tsx`。
+
+- [ ] `admin/users/page.tsx`（795）→ `useUsersData` + 表格 + 表单弹窗（**先做**，与 M3 的 admin CRUD 测试互为支撑）
+- [ ] `admin/api-keys/page.tsx`（882）
+- [ ] `RecallSession.tsx`（682）→ `useRecallSession` + 三屏组件
+- 验收：新增 hook 有独立单测；纯重构不改行为，由 10 条 E2E + 61 条布局护栏兜底
+
+## M3 机制补齐（2–3d）
+
+- [ ] **归属矩阵测试**：遍历已注册路由，断言每个端点对「他人资源」返回 404/403；
+      新路由未登记即红 —— 让 IDOR 从「靠评审发现」变成「靠机制发现」
+- [ ] admin 题库 CRUD 真实契约测试（P1 遗留）
+- [ ] RAG 向量写入、备份恢复契约测试（P1 遗留）
+- [ ] 剩下的 5 个 mock-db 测试改真实库（P1 遗留）
+- 验收：矩阵覆盖全部 `src/lib/api/routes/*.ts` 的路由；新增 4 类真实契约测试
+
+## M4 入口与本地闭环（0.5d）
+
+- [ ] README 指向 `engineering.md` / `engineering-plan.md`（现在只有 AGENTS.md 指）
+- [ ] `npm run verify` = `typecheck` + `lint:ci` + `test:run` + `audit:catches`
+- [ ] 审计 `.agents/skills/` 的 16 个技能，删掉与现行工具链不符的
+- 验收：新 clone 按 README 能一条命令跑完四闸
+
+## 明确不做
+
+| 不做                                        | 理由                                             |
+| ------------------------------------------- | ------------------------------------------------ |
+| 全量颜色令牌化（334 `bg-*` + 530 `text-*`） | 镀金且不可验收，棘轮足够                         |
+| 拆 `external.ts`（1629 行）                 | 单域、schema 与 handler 同处可读；等第二个域再拆 |
+| 继续追 `: any`                              | 171/192 在测试里，规则已在测试目录关闭           |
+| 开 `noUncheckedIndexedAccess`               | 已评估：数百处索引断言噪音大于收益               |
+| 给函数补注释                                | 注释密度已偏高，问题不在注释                     |
 
 ## 执行约定
 

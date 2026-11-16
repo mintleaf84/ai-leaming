@@ -23,15 +23,41 @@ import type { PdfImportResult, ParsedPdfQuestion } from "@/types/pdf-import";
 import { createHash, randomUUID } from "crypto";
 import { log } from "@/lib/logger";
 
-// 内存缓存：taskId → { chunks, ocrText, expiresAt }
+/**
+ * 内存缓存：taskId → { userId, chunks, ocrText, expiresAt }
+ *
+ * **必须带 `userId`**：taskId 虽然是不易猜的 UUID，但没有归属校验就是 IDOR ——
+ * 拿到 taskId 的任何登录用户都能读走别人 PDF 的 OCR 文本、或删掉别人的任务。
+ */
 const chunkCache = new Map<
   string,
   {
+    userId: number;
     chunks: string[];
     ocrText: string;
     expiresAt: number;
   }
 >();
+
+/**
+ * 任务不存在、或存在但不属于当前用户 —— **两种情况合并成同一个错误**。
+ * 如果「不属于你」返回 403、「不存在」返回 404，就等于给攻击者一个探测
+ * taskId 是否存在的接口。
+ */
+export class PdfImportTaskNotFoundError extends Error {
+  constructor() {
+    super("任务不存在或已过期，请重新上传");
+    this.name = "PdfImportTaskNotFoundError";
+  }
+}
+
+function requireOwnedTask(userId: number, taskId: string) {
+  const cached = chunkCache.get(taskId);
+  if (!cached || cached.userId !== userId) {
+    throw new PdfImportTaskNotFoundError();
+  }
+  return cached;
+}
 
 const CACHE_TTL_MS = 30 * 60 * 1000; // 30 分钟
 
@@ -215,6 +241,7 @@ export const pdfImportService = {
    * 步骤 1a：OCR + 分块，缓存结果，返回 taskId 和块数
    */
   async ocrAndSplit(
+    userId: number,
     fileBuffer: Buffer,
     fileName: string,
     mimeType: string,
@@ -236,6 +263,7 @@ export const pdfImportService = {
 
     const taskId = randomUUID();
     chunkCache.set(taskId, {
+      userId,
       chunks,
       ocrText: cleaned,
       expiresAt: Date.now() + CACHE_TTL_MS,
@@ -248,6 +276,7 @@ export const pdfImportService = {
    * 步骤 1a-alt：手动文本 → 分块，缓存结果，返回 taskId 和块数（跳过 OCR）
    */
   async splitText(
+    userId: number,
     text: string,
   ): Promise<{ taskId: string; totalChunks: number }> {
     if (!text || text.trim().length < 20) {
@@ -263,6 +292,7 @@ export const pdfImportService = {
 
     const taskId = randomUUID();
     chunkCache.set(taskId, {
+      userId,
       chunks,
       ocrText: cleaned,
       expiresAt: Date.now() + CACHE_TTL_MS,
@@ -275,6 +305,7 @@ export const pdfImportService = {
    * 步骤 1b：解析单个块（由前端并发调用）
    */
   async parseSingleChunk(
+    userId: number,
     taskId: string,
     chunkIndex: number,
   ): Promise<{
@@ -282,10 +313,7 @@ export const pdfImportService = {
     chunkIndex: number;
     warnings: string[];
   }> {
-    const cached = chunkCache.get(taskId);
-    if (!cached) {
-      throw new Error("任务不存在或已过期，请重新上传");
-    }
+    const cached = requireOwnedTask(userId, taskId);
     if (chunkIndex < 0 || chunkIndex >= cached.chunks.length) {
       throw new Error(
         `块索引 ${chunkIndex} 超出范围 (0-${cached.chunks.length - 1})`,
@@ -308,8 +336,15 @@ export const pdfImportService = {
   /**
    * 步骤 1c：清理缓存（解析全部完成后调用）
    */
-  cleanup(taskId: string) {
+  /**
+   * 清理缓存。**只删自己的**：不属于当前用户时返回 `false` 且不删任何东西。
+   * 返回值不用来区分「不存在」与「不是你的」（同一个 false，避免探测）。
+   */
+  cleanup(userId: number, taskId: string): boolean {
+    const cached = chunkCache.get(taskId);
+    if (!cached || cached.userId !== userId) return false;
     chunkCache.delete(taskId);
+    return true;
   },
 
   /**

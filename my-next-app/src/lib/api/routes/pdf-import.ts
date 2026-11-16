@@ -1,6 +1,9 @@
 import { OpenAPIHono, createRoute, z } from "@hono/zod-openapi";
 import { authMiddleware, getCurrentUser } from "@/lib/api/middlewares/auth";
-import { pdfImportService } from "@/lib/services/pdf-import";
+import {
+  pdfImportService,
+  PdfImportTaskNotFoundError,
+} from "@/lib/services/pdf-import";
 import { log } from "@/lib/logger";
 
 const app = new OpenAPIHono();
@@ -50,8 +53,10 @@ app.openapi(previewDef, async (c) => {
       );
     }
 
+    const user = getCurrentUser(c);
     const buffer = Buffer.from(await file.arrayBuffer());
     const { taskId, totalChunks } = await pdfImportService.ocrAndSplit(
+      user.id,
       buffer,
       file.name,
       file.type,
@@ -87,19 +92,26 @@ const parseChunkDef = createRoute({
       description: "块解析结果",
     },
     400: { description: "无效参数" },
+    404: { description: "任务不存在，或不属于当前用户" },
     500: { description: "解析失败" },
   },
 });
 
 app.openapi(parseChunkDef, async (c) => {
+  const user = getCurrentUser(c);
   try {
     const body = await c.req.valid("json");
     const result = await pdfImportService.parseSingleChunk(
+      user.id,
       body.taskId,
       body.chunkIndex,
     );
     return c.json(result, 200);
   } catch (e) {
+    // 不存在与「不属于你」返回同一个 404：不给攻击者探测 taskId 是否存在
+    if (e instanceof PdfImportTaskNotFoundError) {
+      return c.json({ error: e.message }, 404);
+    }
     log.error("[PdfImportRoute] parse-chunk failed:", e);
     return c.json({ error: `解析失败: ${(e as Error).message}` }, 500);
   }
@@ -130,9 +142,12 @@ const cleanupDef = createRoute({
 });
 
 app.openapi(cleanupDef, async (c) => {
+  const user = getCurrentUser(c);
   const body = await c.req.valid("json");
-  pdfImportService.cleanup(body.taskId);
-  return c.json({ ok: true }, 200);
+  // 幂等：没删到东西（不存在 / 不是你的）也返回 200，但 `ok` 为 false。
+  // 两种失败返回同一个形状，避免探测他人 taskId 是否存在。
+  const ok = pdfImportService.cleanup(user.id, body.taskId);
+  return c.json({ ok }, 200);
 });
 
 // POST /text-import — 手动粘贴文本，跳过 OCR，直接分块
@@ -166,9 +181,13 @@ const textImportDef = createRoute({
 });
 
 app.openapi(textImportDef, async (c) => {
+  const user = getCurrentUser(c);
   try {
     const body = await c.req.valid("json");
-    const { taskId, totalChunks } = await pdfImportService.splitText(body.text);
+    const { taskId, totalChunks } = await pdfImportService.splitText(
+      user.id,
+      body.text,
+    );
     return c.json({ taskId, totalChunks }, 200);
   } catch (e) {
     log.error("[PdfImportRoute] text-import failed:", e);

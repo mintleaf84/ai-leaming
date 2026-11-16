@@ -267,10 +267,15 @@ export async function parseOcrTextToQuestions(
       if (validated.length > 0) {
         chunkResults.push(validated);
       }
-    } catch (_err) {
-      // 失败时重试一次
+    } catch (firstErr) {
+      // 失败时重试一次。首次失败的原因必须带上：只写「重试中」的话，
+      // 重试成功时这个原因就永久丢了，排查「为什么偶发失败」没有任何线索。
+      const firstMsg =
+        firstErr instanceof Error ? firstErr.message : String(firstErr);
       try {
-        log.warn(`[PdfParser] 第 ${i + 1} 块首次失败，重试中...`);
+        log.warn(
+          `[PdfParser] 第 ${i + 1} 块首次失败，重试中...（${firstMsg}）`,
+        );
         const result = await parseChunk(chunks[i]);
         const validated = validateQuestions(result);
         if (validated.length > 0) {

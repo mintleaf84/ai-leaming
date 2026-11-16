@@ -123,8 +123,14 @@ export async function generateStructuredData<T>(
     }
 
     throw new Error("Using fallback mode");
-  } catch (_error: unknown) {
+  } catch (error: unknown) {
     // 3. 兼容模式：文本生成 + 手动提取
+    // 显式降级必须留痕：否则「为什么这次走了文本模式」在生产里无从查起
+    // （json 模式自己的失败原因在上面的 catch 里已记，这里记的是它为什么不适用）
+    log.warn(
+      "[AiClient] 结构化输出失败，降级到文本生成模式:",
+      error instanceof Error ? error.message : String(error),
+    );
     let rawText = "";
     const startTimeFallback = Date.now();
     try {

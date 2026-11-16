@@ -24,6 +24,9 @@ import path from "node:path";
 import { sql } from "drizzle-orm";
 
 const dbFile = `test-pdf-import-${process.pid}.db`;
+/** 缓存的 owner：既有多数用例以它创建任务 */
+const USER_A = 1;
+const USER_B = 2;
 process.env.DB_FILENAME = dbFile;
 
 // --- 仅 mock AI 侧依赖与旁路 SRS ---
@@ -147,6 +150,7 @@ describe("pdfImportService", () => {
       ]);
 
       const result = await pdfImportService.ocrAndSplit(
+        USER_A,
         Buffer.from("fake-pdf"),
         "test.pdf",
         "application/pdf",
@@ -167,6 +171,7 @@ describe("pdfImportService", () => {
 
       await expect(
         pdfImportService.ocrAndSplit(
+          USER_A,
           Buffer.from("fake-pdf"),
           "test.pdf",
           "application/pdf",
@@ -179,6 +184,7 @@ describe("pdfImportService", () => {
 
       await expect(
         pdfImportService.ocrAndSplit(
+          USER_A,
           Buffer.from("fake-pdf"),
           "test.pdf",
           "application/pdf",
@@ -193,6 +199,7 @@ describe("pdfImportService", () => {
 
       await expect(
         pdfImportService.ocrAndSplit(
+          USER_A,
           Buffer.from("fake-pdf"),
           "test.pdf",
           "application/pdf",
@@ -209,6 +216,7 @@ describe("pdfImportService", () => {
 
       const onProgress = vi.fn();
       await pdfImportService.ocrAndSplit(
+        USER_A,
         Buffer.from("fake-pdf"),
         "test.pdf",
         "application/pdf",
@@ -232,11 +240,12 @@ describe("pdfImportService", () => {
       mockParseSingleChunk.mockResolvedValue([makeQuestion()]);
 
       const { taskId } = await pdfImportService.ocrAndSplit(
+        USER_A,
         Buffer.from("fake-pdf"),
         "test.pdf",
         "application/pdf",
       );
-      const result = await pdfImportService.parseSingleChunk(taskId, 0);
+      const result = await pdfImportService.parseSingleChunk(USER_A, taskId, 0);
 
       expect(result.questions).toHaveLength(1);
       expect(result.chunkIndex).toBe(0);
@@ -245,7 +254,7 @@ describe("pdfImportService", () => {
 
     it("should throw for expired/invalid taskId", async () => {
       await expect(
-        pdfImportService.parseSingleChunk("nonexistent", 0),
+        pdfImportService.parseSingleChunk(USER_A, "nonexistent", 0),
       ).rejects.toThrow("任务不存在或已过期");
     });
 
@@ -257,13 +266,14 @@ describe("pdfImportService", () => {
       (parser.splitIntoQuestionChunks as any).mockReturnValue(["chunk1"]);
 
       const { taskId } = await pdfImportService.ocrAndSplit(
+        USER_A,
         Buffer.from("fake-pdf"),
         "test.pdf",
         "application/pdf",
       );
 
       await expect(
-        pdfImportService.parseSingleChunk(taskId, 5),
+        pdfImportService.parseSingleChunk(USER_A, taskId, 5),
       ).rejects.toThrow("超出范围");
     });
 
@@ -278,11 +288,12 @@ describe("pdfImportService", () => {
       );
 
       const { taskId } = await pdfImportService.ocrAndSplit(
+        USER_A,
         Buffer.from("fake-pdf"),
         "test.pdf",
         "application/pdf",
       );
-      const result = await pdfImportService.parseSingleChunk(taskId, 0);
+      const result = await pdfImportService.parseSingleChunk(USER_A, taskId, 0);
 
       expect(result.questions).toHaveLength(0);
       expect(result.warnings.length).toBeGreaterThan(0);
@@ -299,14 +310,62 @@ describe("pdfImportService", () => {
       (parser.splitIntoQuestionChunks as any).mockReturnValue(["chunk1"]);
 
       const { taskId } = await pdfImportService.ocrAndSplit(
+        USER_A,
         Buffer.from("fake-pdf"),
         "test.pdf",
         "application/pdf",
       );
-      pdfImportService.cleanup(taskId);
+      pdfImportService.cleanup(USER_A, taskId);
 
       await expect(
-        pdfImportService.parseSingleChunk(taskId, 0),
+        pdfImportService.parseSingleChunk(USER_A, taskId, 0),
+      ).rejects.toThrow("任务不存在或已过期");
+    });
+  });
+
+  describe("任务归属（IDOR 防护）", () => {
+    /** 造一个属于 USER_A 的任务，分块内容固定 */
+    async function seedTaskFor(userId: number): Promise<string> {
+      const parser = await import("@/lib/import/pdf-question-parser");
+      mockPerformPaddleOCR.mockResolvedValue(
+        "1. 教育学研究的基本方法是\nA.观察法",
+      );
+      (parser.splitIntoQuestionChunks as any).mockReturnValue([
+        "chunk1",
+        "chunk2",
+      ]);
+      const { taskId } = await pdfImportService.ocrAndSplit(
+        userId,
+        Buffer.from("fake-pdf"),
+        "test.pdf",
+        "application/pdf",
+      );
+      return taskId;
+    }
+
+    it("他人 taskId 不能解析：报的是「不存在或已过期」，不泄露存在性", async () => {
+      const taskId = await seedTaskFor(USER_A);
+      await expect(
+        pdfImportService.parseSingleChunk(USER_B, taskId, 0),
+      ).rejects.toThrow("任务不存在或已过期");
+    });
+
+    it("他人 taskId 不能清理，且原任务仍然可用", async () => {
+      const taskId = await seedTaskFor(USER_A);
+      mockParseSingleChunk.mockResolvedValue([makeQuestion()]);
+
+      expect(pdfImportService.cleanup(USER_B, taskId)).toBe(false);
+
+      // 关键：清理失败不能把别人的缓存一起删掉
+      const result = await pdfImportService.parseSingleChunk(USER_A, taskId, 0);
+      expect(result.chunkIndex).toBe(0);
+    });
+
+    it("owner 清理后自己也无法再解析（cleanup 真的生效）", async () => {
+      const taskId = await seedTaskFor(USER_A);
+      expect(pdfImportService.cleanup(USER_A, taskId)).toBe(true);
+      await expect(
+        pdfImportService.parseSingleChunk(USER_A, taskId, 0),
       ).rejects.toThrow("任务不存在或已过期");
     });
   });

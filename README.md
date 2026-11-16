@@ -33,6 +33,20 @@ npm run dev
 
 ## 文档指引
 
+### 工程规范（改代码前先读）
+
+- **工程规范（五条硬规则）**: [docs/engineering.md](docs/engineering.md) — 幂等键 / `catch` 三形态 / 真实依赖集成测试 / 闸门不许增长 / 版本唯一来源
+- **工程质量计划**: [docs/engineering-plan.md](docs/engineering-plan.md) — 基线数字、P0–P4 与 M0–M4 的进度与验收
+- **迁移唯一路径**: [my-next-app/drizzle/README.md](my-next-app/drizzle/README.md) — 手写 SQL + `_journal.json`；**禁止**据 `meta/` 旧快照跑 `drizzle-kit generate`
+
+本地一条命令跑完四闸（typecheck / lint 棘轮 / 单测 / catch 审计）：
+
+```bash
+cd my-next-app && npm run verify
+```
+
+### 产品与设计
+
 - **产品规格说明 (PRD)**: [docs/specs.md](docs/specs.md)
 - **开发路线图**: [docs/todo.md](docs/todo.md)
 - **用户交互流程**: [docs/user_flows.md](docs/user_flows.md)

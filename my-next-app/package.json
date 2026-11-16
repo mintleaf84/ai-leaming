@@ -12,6 +12,7 @@
     "typecheck": "tsc --noEmit",
     "test:run": "vitest run",
     "lint:ci": "node scripts/check-lint-ratchet.cjs",
+    "verify": "npm run typecheck && npm run lint:ci && npm run test:run && npm run audit:catches",
     "test:e2e": "playwright test",
     "preinstall": "node scripts/check-node-version.cjs",
     "lint:baseline": "node scripts/check-lint-ratchet.cjs --update",

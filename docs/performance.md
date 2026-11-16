@@ -281,5 +281,5 @@ X-1/X-2 零风险，搭在批次 0 的 PR 里一起提。
 | X-1 | 完成 | `layout.tsx` 三个 flag 改 `Promise.all` |
 | X-2 | 完成 | 迁移 `0016` + schema `idx_session`；`EXPLAIN QUERY PLAN` 由 `SCAN` 变 `SEARCH practice_logs USING INDEX idx_practice_logs_session (session_id=?)` |
 
-四闸结果（本机）：`tsc --noEmit` rc=0；`lint:ci` total=89 通过；`audit:catches` 0 新增标记；`vitest run` **155 文件 / 1356 用例全绿**。
+四闸结果（本机，已合并 origin/main #176/#177 后复测）：`tsc --noEmit` rc=0；`lint:ci` total=89 通过；`audit:catches` 0 新增标记；`vitest run` **1367 用例全绿**（合并前 1356）。
 `next build` 本机无法执行（glibc 2.17 + swc），由 CI 承担 —— 这也是 T-07 标"待环境"的原因。

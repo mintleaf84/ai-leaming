@@ -71,7 +71,8 @@ let legacy: ReturnType<DbModule["getLegacyDb"]>;
  */
 function renderSql(node: unknown): string {
   if (typeof node === "string") return node;
-  if (typeof node === "number" || typeof node === "boolean") return String(node);
+  if (typeof node === "number" || typeof node === "boolean")
+    return String(node);
   if (Array.isArray(node)) return node.map(renderSql).join("");
   if (node && typeof node === "object") {
     const chunks = (node as { queryChunks?: unknown[] }).queryChunks;
@@ -117,7 +118,9 @@ async function createQuestionsVecFromProduction(): Promise<void> {
     db.all = realAll;
   }
 
-  const ddl = captured.map(renderSql).find((text) => /questions_vec/.test(text));
+  const ddl = captured
+    .map(renderSql)
+    .find((text) => /questions_vec/.test(text));
   if (!ddl) throw new Error("生产建表路径没有产出 questions_vec 的 DDL");
   legacy.exec(ddl);
 

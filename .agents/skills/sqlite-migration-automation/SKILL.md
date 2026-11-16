@@ -5,6 +5,13 @@ description: Drizzle ORM 驱动的 SQLite 数据库迁移标准流程。涵盖 D
 
 # SQLite 迁移自动化指南 (Drizzle 版)
 
+> [!WARNING]
+> **本仓库禁止 `drizzle-kit generate`**（2026-11 起）。`drizzle/meta/*_snapshot.json` 与
+> `drizzle/*.sql` 已经漂移，generate 会从旧快照 diff 出重复列。唯一路径：
+> **手写 SQL + 补 `meta/_journal.json`**，见 [`my-next-app/drizzle/README.md`](../../../my-next-app/drizzle/README.md)；
+> 一致性门禁是 `src/lib/db/__tests__/schema-column-parity.test.ts`（迁移建出的真实库 vs `drizzle-schema.ts` 逐列对拍）。
+> 下面的通用流程在别的项目适用，在本仓库按上面这条执行。
+
 本指南定义了在 Drizzle ORM 架构下管理 SQLite 数据库变更的标准流程。
 
 ## 核心原则
@@ -35,13 +42,13 @@ my-next-app/
 
 ### 2. 生成迁移文件
 
-运行 Drizzle Kit 检查差异并生成 SQL。
+**本仓库**：手写 SQL 文件放到 `drizzle/`，并在 `meta/_journal.json` 追加条目（见上方 WARNING）。
+其它项目若确实要生成，先确认 `meta/` 快照与现有 `*.sql` 数量一致，否则生成结果不可信。
 
 ```bash
+# 仅当快照与迁移数量一致时才可用
 npx drizzle-kit generate
 ```
-
-生成的 SQL 文件将存放在 `drizzle/` 目录下。**务必检查生成的 SQL 是否符合预期。**
 
 ### 3. 本地测试与同步
 

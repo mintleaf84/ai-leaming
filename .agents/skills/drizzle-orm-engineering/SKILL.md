@@ -3,6 +3,13 @@
 > [!NOTE]
 > 本指南总结了从原生 SQL 迁移至 Drizzle ORM 的核心模式与陷阱，适用于 Next.js + SQLite 技术栈。
 
+> [!WARNING]
+> **本项目的迁移不走 `drizzle-kit generate`**（2026-11 起）。`drizzle/meta/*_snapshot.json` 只到 `0008`，
+> 而 `drizzle/*.sql` 已到 `0015`+，据旧快照 generate 会 diff 出「已经存在的列」，产出会失败的迁移。
+> 唯一路径见 [`my-next-app/drizzle/README.md`](../../../my-next-app/drizzle/README.md)：
+> **手写 SQL + 补 `meta/_journal.json`**，一致性由 `schema-column-parity.test.ts` 守住。
+> 本文件下面 §5 的「迁移与同步流程」是通用 Drizzle 做法，在本仓库请按上面这条执行。
+
 ## 1. 架构与命名规范
 
 ### 1.1 模块路径唯一性
@@ -74,6 +81,8 @@ const { mockDrizzleDb } = vi.hoisted(() => {
 ## 5. 迁移与同步流程
 
 1.  **修改 Schema**：在 `drizzle-schema.ts` 中添加列。
-2.  **生成脚本**：运行 `npx drizzle-kit generate`。
-3.  **运行检查**：运行 `npx tsc --noEmit` 验证代码兼容性。
+2.  **写迁移**：**手写** `drizzle/00NN_<描述>.sql`（`CREATE TABLE IF NOT EXISTS` / `ALTER TABLE ... ADD COLUMN`，
+    语句之间留 `--> statement-breakpoint`），并在 `drizzle/meta/_journal.json` 追加 idx 条目。
+    —— 本仓库**不要**跑 `npx drizzle-kit generate`（原因见文件头 WARNING）。
+3.  **运行检查**：`npx tsc --noEmit` + `npx vitest run src/lib/db/__tests__`（列级一致性门禁）。
 4.  **自动迁移**：确保 `initDatabase()` 在应用启动时自动运行 `migrate()`。

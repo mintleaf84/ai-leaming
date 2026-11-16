@@ -44,23 +44,24 @@ interface ModuleRule {
  * 需要伪造的入参。想加新模块到这里？先把上一条数压下来，或者补测试。
  */
 const KNOWN_UNCOVERED: Record<string, string> = {
-  annotations: "按 annotation id / questionId 读写批注",
   chat: "按 sessionId / messageId 读写会话",
   feedback: "按反馈 id 查询处理结果",
   generate: "按 questionId 生成题目变体（写入全局题库，但读取用户练习上下文）",
-  history: "按 sessionId 查练习历史详情",
   knowledge: "按 cardId / folderId 读写知识卡（含用户自定义卡）",
   mastery: "按标签维度统计，无资源 id（越权面低，但口径按用户）",
-  practice: "按 sessionId / questionId 提交与查询",
   profile: "按当前用户读写画像，无外部 id",
   stats: "只读聚合，无资源 id",
-  "wrong-book": "按 questionId 查询/标记错题",
 };
 
 /** 每个路由模块的归属语义。新增模块时必须在这里登记，否则测试失败。 */
 const MODULES: Record<string, ModuleRule> = {
   // ---- 用户私有数据 ----
-  annotations: { mount: "/api/annotations", scope: "user" },
+  annotations: {
+    mount: "/api/annotations",
+    scope: "user",
+    crossUserTest:
+      "src/lib/api/routes/__tests__/annotations-ownership.test.ts",
+  },
   chat: { mount: "/api/chat", scope: "user" },
   external: {
     mount: "/api/external",
@@ -69,7 +70,11 @@ const MODULES: Record<string, ModuleRule> = {
   },
   feedback: { mount: "/api/feedback", scope: "user" },
   generate: { mount: "/api/generate", scope: "user" },
-  history: { mount: "/api/history", scope: "user" },
+  history: {
+    mount: "/api/history",
+    scope: "user",
+    crossUserTest: "src/lib/api/routes/__tests__/history-ownership.test.ts",
+  },
   knowledge: { mount: "/api/knowledge", scope: "user" },
   mastery: { mount: "/api/mastery", scope: "user" },
   "pdf-import": {
@@ -77,10 +82,18 @@ const MODULES: Record<string, ModuleRule> = {
     scope: "user",
     crossUserTest: "src/lib/api/routes/__tests__/pdf-import-ownership.test.ts",
   },
-  practice: { mount: "/api/practice", scope: "user" },
+  practice: {
+    mount: "/api/practice",
+    scope: "user",
+    crossUserTest: "src/lib/api/routes/__tests__/practice-ownership.test.ts",
+  },
   profile: { mount: "/api/profile", scope: "user" },
   stats: { mount: "/api/stats", scope: "user" },
-  "wrong-book": { mount: "/api/wrong-book", scope: "user" },
+  "wrong-book": {
+    mount: "/api/wrong-book",
+    scope: "user",
+    crossUserTest: "src/lib/api/routes/__tests__/wrong-book-ownership.test.ts",
+  },
 
   // ---- 管理端 ----
   admin: { mount: "/api/admin", scope: "admin" },

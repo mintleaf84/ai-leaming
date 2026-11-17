@@ -262,3 +262,30 @@ npm run typecheck && npm run lint:ci && npx vitest run --maxWorkers=8 && npm run
 原计划用 **drift** 做本地库。现实约束：drift 依赖 `build_runner` 生成代码，而这台机器没有 Flutter SDK，**改了表结构无法本地重新生成**，只能靠 CI 往返——每次改表都要等一轮 Actions，迭代成本过高。
 
 改为 **sqflite（手写 SQL，无 codegen）**：牺牲类型安全，换取「不依赖代码生成即可迭代」。等价收益下这是更稳的选择；若将来本机或 CI 能常驻跑 `build_runner`，再评估迁回 drift。
+
+### P2 完成情况（2026-11-18 二次更新）
+
+| 组件 | 文件 | 状态 |
+| --- | --- | --- |
+| 本地库（4 表 + 索引） | `lib/core/local/local_db.dart` | 完成 |
+| 题目缓存 / 随机抽题 / 本地会话 / 待同步聚合 | `lib/features/practice/data/local_practice_store.dart` | 完成 |
+| 同步服务（幂等 flush、401 中止、单会话失败不拖垮整批） | `lib/core/sync/sync_service.dart` | 完成 |
+| 接线（远端失败降级本地出题、本地判分、启动补交） | `practice_repository_impl.dart` + `main.dart` | 完成 |
+| 离线可见性（练习页提示条、设置页真同步与待同步条数） | `practice_screen.dart` / `settings_screen.dart` | 完成 |
+
+离线判分口径：选项字母按集合比较（多选题忽略顺序），填空/判断退化为去噪后字符串相等；与后端 `checkAnswerCorrectness` 的多选取向一致。
+
+**仍未做**：`cached_questions` 没存 `dimension`（离线重建的题目该字段为 null，目前无 UI 依赖它）；离线只覆盖练习，recall/聊天仍是在线专属。
+
+### P5 完成情况
+
+- 两个打真网的集成测试加 `@Tags(['integration'])` + `dart_test.yaml` 默认 skip，需要时 `flutter test --run-skipped -t integration`
+- 删除入库的陈旧产物：`analyze.txt` / `analyze_output*.txt` / `test_output.txt` / `flutter_0*.png`
+
+### CI 现状（PR #210）
+
+`flutter analyze`、`lint:ci`、`typecheck`、`vitest`（210 文件 / 1716 用例）、`next build`、`OpenAPI 契约快照`、UI 护栏全部通过。APK 打包 job 仍未真正跑过一次——它需要仓库变量 `API_BASE_URL`，见下。
+
+### 唯一阻塞项
+
+`android.yml` 的 `apk` job 会先检查 `vars.API_BASE_URL`，为空则直接失败（避免产出连不上后端的废包）。仓库里没有部署域名记录，需要提供实际地址后设置变量并触发一次打包。

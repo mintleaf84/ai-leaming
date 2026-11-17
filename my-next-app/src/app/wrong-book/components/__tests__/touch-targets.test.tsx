@@ -33,9 +33,7 @@ const SCALE: Record<string, number> = {
 };
 
 function tokenPx(className: string, prefix: string): number | null {
-  const token = className
-    .split(/\s+/)
-    .find((t) => t.startsWith(`${prefix}-`));
+  const token = className.split(/\s+/).find((t) => t.startsWith(`${prefix}-`));
   if (!token) return null;
   return SCALE[token.slice(prefix.length + 1)] ?? null;
 }
@@ -45,7 +43,9 @@ function contentPx(el: HTMLElement, prefix: "w" | "h"): number {
   const own = tokenPx(el.className, prefix);
   if (own !== null) return own;
   const icon = el.querySelector("svg");
-  const fromIcon = icon ? tokenPx(icon.getAttribute("class") ?? "", prefix) : null;
+  const fromIcon = icon
+    ? tokenPx(icon.getAttribute("class") ?? "", prefix)
+    : null;
   return fromIcon ?? 0;
 }
 
@@ -147,10 +147,13 @@ describe("A2 触屏热区 ≥24px", () => {
     );
 
     // 打开文件夹的「更多」菜单 → 重命名，进入内联编辑态
-    fireEvent.pointerDown(screen.getByRole("button", { name: "文件夹更多操作" }), {
-      button: 0,
-      ctrlKey: false,
-    });
+    fireEvent.pointerDown(
+      screen.getByRole("button", { name: "文件夹更多操作" }),
+      {
+        button: 0,
+        ctrlKey: false,
+      },
+    );
     fireEvent.click(await screen.findByText("重命名"));
 
     const confirm = await screen.findByRole("button", { name: "确认重命名" });

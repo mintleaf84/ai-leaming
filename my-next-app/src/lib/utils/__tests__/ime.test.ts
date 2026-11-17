@@ -20,9 +20,9 @@ describe("isImeComposing", () => {
   });
 
   it("普通 Enter（isComposing false、keyCode 13）不是组合态", () => {
-    expect(isImeComposing({ nativeEvent: { isComposing: false }, keyCode: 13 })).toBe(
-      false,
-    );
+    expect(
+      isImeComposing({ nativeEvent: { isComposing: false }, keyCode: 13 }),
+    ).toBe(false);
   });
 
   it("原生 DOM KeyboardEvent（没有 nativeEvent）：用事件自身的 isComposing", () => {
@@ -32,7 +32,10 @@ describe("isImeComposing", () => {
 
   it("有 nativeEvent 时不信合成事件上的 isComposing（React 不转发该字段）", () => {
     expect(
-      isImeComposing({ isComposing: true, nativeEvent: { isComposing: false } }),
+      isImeComposing({
+        isComposing: true,
+        nativeEvent: { isComposing: false },
+      }),
     ).toBe(false);
   });
 

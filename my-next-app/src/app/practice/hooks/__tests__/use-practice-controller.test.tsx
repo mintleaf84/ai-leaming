@@ -87,9 +87,9 @@ type SubmitAnswerOptions = {
 const SAVE_ERROR_TITLE = "答题记录未保存";
 
 const saveErrorCalls = () =>
-  vi.mocked(toast.error).mock.calls.filter(
-    (call) => call[0] === SAVE_ERROR_TITLE,
-  );
+  vi
+    .mocked(toast.error)
+    .mock.calls.filter((call) => call[0] === SAVE_ERROR_TITLE);
 
 const lastSaveErrorOptions = (): SubmitAnswerOptions | undefined => {
   const call = saveErrorCalls().at(-1);
@@ -190,9 +190,9 @@ describe("usePracticeController", () => {
       submit.mockResolvedValue({ data: { success: true, srs: undefined } });
     });
 
-    const answerOnce = async (
-      result: { current: ReturnType<typeof usePracticeController> },
-    ) => {
+    const answerOnce = async (result: {
+      current: ReturnType<typeof usePracticeController>;
+    }) => {
       act(() => {
         result.current.actions.handleOptionClick("A", "single");
       });
@@ -214,7 +214,9 @@ describe("usePracticeController", () => {
     });
 
     it("should surface a retryable error when the action resolves {success:false}", async () => {
-      submit.mockResolvedValueOnce({ data: { success: false, srs: undefined } });
+      submit.mockResolvedValueOnce({
+        data: { success: false, srs: undefined },
+      });
       const { result } = renderHook(() => usePracticeController());
 
       await answerOnce(result);
@@ -276,7 +278,9 @@ describe("usePracticeController", () => {
       expect(saveErrorCalls()).toHaveLength(0);
       expect(toast.success).toHaveBeenCalledWith(
         "回答正确！",
-        expect.objectContaining({ description: expect.stringContaining("3 天后") }),
+        expect.objectContaining({
+          description: expect.stringContaining("3 天后"),
+        }),
       );
     });
   });

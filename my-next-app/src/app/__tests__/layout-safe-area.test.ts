@@ -28,7 +28,8 @@ const LAYOUT_TSX = path.join(APP_DIR, "layout.tsx");
  * 允许空白与替代写法 `6rem+env(...)`；基数必须是 6rem（96px = 88px + 8px），
  * 改成 5rem/7rem 都意味着与 MobileNav 的实际高度脱钩，应当失败。
  */
-const RESERVE_CALC = /calc\(\s*6rem\s*\+\s*env\(\s*safe-area-inset-bottom\s*\)\s*\)/;
+const RESERVE_CALC =
+  /calc\(\s*6rem\s*\+\s*env\(\s*safe-area-inset-bottom\s*\)\s*\)/;
 
 function readLayout(): string {
   return fs.readFileSync(LAYOUT_TSX, "utf8");

@@ -9,6 +9,7 @@ import {
 import dayjs from "dayjs";
 import utc from "dayjs/plugin/utc";
 import { safeParseJson } from "@/lib/utils/json";
+import { getBeijingStartOfDay } from "@/lib/utils/datetime";
 
 dayjs.extend(utc);
 
@@ -114,18 +115,24 @@ export const historyService = {
     // 1. 构建动态条件
     const conditions = [eq(practice_sessions.user_id, userId)];
 
-    // 使用 dayjs 将用户输入的日期转换为 UTC 日期字符串进行对比
+    // 日期筛选按**北京时间**的自然日切分：`created_at` 存的是 UTC 文本
+    // （`YYYY-MM-DD HH:mm:ss`），所以把"北京某天的 0 点"换算成 UTC 再比较。
+    // 旧实现用 `dayjs(dateOnly).utc()` —— 把纯日期当本地零点再转 UTC，
+    // 在 CST 下 `"2026-03-22"` 会变成 `"2026-03-21"`，dateFrom 多含前一天、
+    // dateTo 少含当天（只在非 UTC 部署暴露）。
     if (query.dateFrom) {
-      const fromDate = dayjs(query.dateFrom).utc().format("YYYY-MM-DD");
-      conditions.push(
-        sql`date(${practice_sessions.created_at}) >= date(${fromDate})`,
-      );
+      const fromUtc = getBeijingStartOfDay(query.dateFrom)
+        .utc()
+        .format("YYYY-MM-DD HH:mm:ss");
+      conditions.push(sql`${practice_sessions.created_at} >= ${fromUtc}`);
     }
     if (query.dateTo) {
-      const toDate = dayjs(query.dateTo).utc().format("YYYY-MM-DD");
-      conditions.push(
-        sql`date(${practice_sessions.created_at}) <= date(${toDate})`,
-      );
+      // 用左闭右开：`< 次日 0 点`，避免 23:59:59.999 这类边界
+      const toExclusiveUtc = getBeijingStartOfDay(query.dateTo)
+        .add(1, "day")
+        .utc()
+        .format("YYYY-MM-DD HH:mm:ss");
+      conditions.push(sql`${practice_sessions.created_at} < ${toExclusiveUtc}`);
     }
     if (query.mode && query.mode.trim()) {
       conditions.push(eq(practice_sessions.practice_mode, query.mode.trim()));
@@ -138,7 +145,7 @@ export const historyService = {
       query.accuracyMin <= 100
     ) {
       conditions.push(
-        sql`(CASE WHEN ${practice_sessions.total_questions} > 0 THEN ROUND((CAST(${practice_sessions.correct_count} AS FLOAT) / ${practice_sessions.total_questions}) * 100) ELSE 0 END) >= ${query.accuracyMin})`,
+        sql`(CASE WHEN ${practice_sessions.total_questions} > 0 THEN ROUND((CAST(${practice_sessions.correct_count} AS FLOAT) / ${practice_sessions.total_questions}) * 100) ELSE 0 END) >= ${query.accuracyMin}`,
       );
     }
     if (
@@ -147,7 +154,7 @@ export const historyService = {
       query.accuracyMax <= 100
     ) {
       conditions.push(
-        sql`(CASE WHEN ${practice_sessions.total_questions} > 0 THEN ROUND((CAST(${practice_sessions.correct_count} AS FLOAT) / ${practice_sessions.total_questions}) * 100) ELSE 0 END) <= ${query.accuracyMax})`,
+        sql`(CASE WHEN ${practice_sessions.total_questions} > 0 THEN ROUND((CAST(${practice_sessions.correct_count} AS FLOAT) / ${practice_sessions.total_questions}) * 100) ELSE 0 END) <= ${query.accuracyMax}`,
       );
     }
 

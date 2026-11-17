@@ -232,56 +232,47 @@ describe("getHistory", () => {
   //   where (... and (CASE ... END) >= ?))
   // → SQLITE_ERROR: near ")"，即任何带 accuracyMin/accuracyMax 的历史查询都 500。
   // 生成语句见下面的错误信息；修复后这两个用例会因「意外通过」而失败，届时去掉 it.fails。
-  it.fails(
-    "accuracyMin 在 SQL 层过滤：只留下 100% 的 10 条（已知缺陷：SQL 多一个右括号）",
-    async () => {
-      const result = await historyService.getHistory(USER_A, {
-        accuracyMin: 90,
-      });
+  it("accuracyMin 在 SQL 层过滤：只留下 100% 的 10 条", async () => {
+    const result = await historyService.getHistory(USER_A, {
+      accuracyMin: 90,
+    });
 
-      expect(result.total).toBe(10);
-      expect(result.items).toHaveLength(10);
-      expect(result.items.every((item) => item.accuracy === 100)).toBe(true);
-    },
-  );
+    expect(result.total).toBe(10);
+    expect(result.items).toHaveLength(10);
+    expect(result.items.every((item) => item.accuracy === 100)).toBe(true);
+  });
 
-  it.fails(
-    "dateFrom + accuracyMax 组合过滤（已知缺陷：SQL 多一个右括号）",
-    async () => {
-      const result = await historyService.getHistory(USER_A, {
-        dateFrom: "2026-03-21",
-        accuracyMax: 80,
-      });
+  it("dateFrom + accuracyMax 组合过滤", async () => {
+    const result = await historyService.getHistory(USER_A, {
+      dateFrom: "2026-03-21",
+      accuracyMax: 80,
+    });
 
-      expect(result.total).toBe(5);
-    },
-  );
+    expect(result.total).toBe(5);
+  });
 
   // 已知缺陷（固定、不修）：listSessions 用 `dayjs(dateFrom).utc()` 把「纯日期」
   // 当成本地零点再转 UTC。北京时区下 "2026-03-21" → UTC "2026-03-20"，
   // 于是 dateFrom 多包含前一天、dateTo 少包含当天（各差一天）。
-  it.fails(
-    "北京时区下 dateFrom 边界差一天（已知缺陷：dayjs(dateOnly).utc() 把本地零点当基准）",
-    async () => {
-      const originalTz = process.env.TZ;
-      process.env.TZ = "Asia/Shanghai";
-      try {
-        const result = await historyService.getHistory(USER_A, {
-          dateFrom: "2026-03-22",
-        });
-        // 期望只含 3-22..3-25 共 4 条；实际把 3-21 也算进来了（5 条）
-        expect(result.items.map((item) => item.id)).toEqual([
-          "hs-25",
-          "hs-24",
-          "hs-23",
-          "hs-22",
-        ]);
-      } finally {
-        if (originalTz === undefined) delete process.env.TZ;
-        else process.env.TZ = originalTz;
-      }
-    },
-  );
+  it("北京时区下 dateFrom 边界差一天", async () => {
+    const originalTz = process.env.TZ;
+    process.env.TZ = "Asia/Shanghai";
+    try {
+      const result = await historyService.getHistory(USER_A, {
+        dateFrom: "2026-03-22",
+      });
+      // 期望只含 3-22..3-25 共 4 条；实际把 3-21 也算进来了（5 条）
+      expect(result.items.map((item) => item.id)).toEqual([
+        "hs-25",
+        "hs-24",
+        "hs-23",
+        "hs-22",
+      ]);
+    } finally {
+      if (originalTz === undefined) delete process.env.TZ;
+      else process.env.TZ = originalTz;
+    }
+  });
 
   it("practiceMode 过滤只命中该模式的会话", async () => {
     const result = await historyService.getHistory(USER_A, { mode: "wrong" });

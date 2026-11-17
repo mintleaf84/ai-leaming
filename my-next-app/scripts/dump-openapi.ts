@@ -99,8 +99,20 @@ async function main() {
     process.exit(1);
   }
 
-  if (current !== serialized) {
-    reportDiff(current, serialized);
+  // 语义比较而非逐字节比较：仓库的 autofix.ci 会用 prettier 重排 docs/*.json，
+  // 逐字节比较会因为「只是格式化变了」误报。
+  let normalized: string;
+  try {
+    normalized = JSON.stringify(normalize(JSON.parse(current)), null, 2) + "\n";
+  } catch {
+    console.error(
+      `契约快照 ${snapshotPath} 不是合法 JSON，请重新生成。`,
+    );
+    process.exit(1);
+  }
+
+  if (normalized !== serialized) {
+    reportDiff(normalized, serialized);
     process.exit(1);
   }
 

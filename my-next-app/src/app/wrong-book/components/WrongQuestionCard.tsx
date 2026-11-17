@@ -74,8 +74,15 @@ export function WrongQuestionCard({
           )}
         </button>
 
-        {/* 题目内容区域 */}
-        <div className="flex-1 cursor-pointer" onClick={onToggleDetail}>
+        {/* 题目内容区域：整块点击 = 展开/收起详情，所以它本身就是按钮。
+            用真 <button> 而不是给 div 补 role+tabIndex：Enter/Space 由浏览器原生
+            提供，不会和上面的勾选按钮互抢按键。 */}
+        <button
+          type="button"
+          className="flex-1 min-w-0 cursor-pointer text-left"
+          onClick={onToggleDetail}
+          aria-expanded={isExpanded}
+        >
           <div className="text-sm text-foreground leading-relaxed line-clamp-2 mb-2">
             {question.questionContent}
           </div>
@@ -116,7 +123,7 @@ export function WrongQuestionCard({
               {isExpanded ? "收起详情" : "查看详情"}
             </span>
           </div>
-        </div>
+        </button>
 
         {/* 练习按钮 */}
         <Button

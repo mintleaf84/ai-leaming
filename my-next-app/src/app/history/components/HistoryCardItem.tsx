@@ -83,8 +83,7 @@ const HistoryCardItemComponent: React.FC<HistoryCardItemProps> = ({
   return (
     <div
       style={{ borderRadius: "1.5rem" }}
-      onClick={() => onExpand(item)}
-      className="group block bg-card hover:bg-primary/5 p-6 border border-border hover:border-primary/30 hover:shadow-lg cursor-pointer transition-all duration-200"
+      className="group block bg-card hover:bg-primary/5 p-6 border border-border hover:border-primary/30 hover:shadow-lg transition-all duration-200"
     >
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div className="space-y-3">
@@ -108,13 +107,11 @@ const HistoryCardItemComponent: React.FC<HistoryCardItemProps> = ({
 
           <div className="flex items-center gap-3">
             {isEditing ? (
-              <div
-                className="flex items-center gap-2"
-                onClick={(e) => e.stopPropagation()}
-              >
+              <div className="flex items-center gap-2">
                 <input
                   value={editingName}
                   onChange={(e) => setEditingName(e.target.value)}
+                  aria-label="会话名称"
                   className="h-8 text-lg font-bold w-full max-w-[200px] bg-transparent border-b-2 border-primary rounded-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background"
                   autoFocus
                   onKeyDown={(e) => {
@@ -127,10 +124,18 @@ const HistoryCardItemComponent: React.FC<HistoryCardItemProps> = ({
             ) : (
               <div className="flex items-center gap-2 group/title">
                 <h3 className="text-xl font-black text-foreground font-serif tracking-tight">
-                  {item.sessionName || "未命名练习"}
+                  <button
+                    type="button"
+                    onClick={() => onExpand(item)}
+                    aria-haspopup="dialog"
+                    className="cursor-pointer text-left"
+                  >
+                    {item.sessionName || "未命名练习"}
+                  </button>
                 </h3>
                 <button
                   onClick={(e) => onStartEdit(e, item)}
+                  aria-label="重命名会话"
                   className="opacity-100 md:opacity-0 md:group-hover/title:opacity-100 text-muted-foreground hover:text-primary transition-opacity p-1"
                 >
                   <Pencil className="w-3.5 h-3.5" />

@@ -123,6 +123,38 @@ export async function generateCorrectionQuizAction(
 }
 
 /**
+ * 把题库行转成 Challenge，并补齐到 3 条。
+ *
+ * 补齐逻辑（不足 3 条时复制第一条）是历史行为，两个兜底分支共用同一套，
+ * 避免"向量兜底补 3 条、题库兜底只给 1 条"这种不一致。
+ */
+function toChallenges(rows: QuestionRow[]) {
+  const mapped = rows.map((q) => {
+    let options: string[] = [];
+    try {
+      options =
+        typeof q.options === "string" ? JSON.parse(q.options) : q.options || [];
+    } catch {
+      // audit-allow: 同上，脏数据降级为空选项
+      options = [];
+      logger.debug("[AI] 题库 options 解析失败，降级为空选项");
+    }
+    return {
+      content: q.content,
+      options: Array.isArray(options) ? options : [],
+      answer: q.answer,
+      explanation: q.explanation || "库内相似真题解析",
+    };
+  });
+
+  const unique = mapped.slice(0, 3);
+  while (unique.length > 0 && unique.length < 3) {
+    unique.push({ ...unique[0] });
+  }
+  return unique;
+}
+
+/**
  * 生成回归挑战练习
  */
 export async function generateRegressionChallengeAction(
@@ -202,7 +234,7 @@ export async function generateRegressionChallengeAction(
       await decrementUsage(userIdNum, "review");
     }
 
-    // 5. 兜底方案：RAG 相似题库
+    // 5. 兜底方案 A：RAG 相似题库（仅在向量可用且 embedding 未降级时才有结果）
     logger.warn(
       { err: error },
       "AI Generation failed, falling back to RAG similarity search",
@@ -212,36 +244,32 @@ export async function generateRegressionChallengeAction(
       5,
     );
 
-    if (similarQuestions && similarQuestions.length > 0) {
-      const mappedChallenges = (similarQuestions as QuestionRow[]).map((q) => {
-        let options: string[] = [];
-        try {
-          options =
-            typeof q.options === "string"
-              ? JSON.parse(q.options)
-              : q.options || [];
-        } catch {
-          // audit-allow: 同上，脏数据降级为空选项
-          options = [];
-          logger.debug("[AI] 题库 options 解析失败，降级为空选项");
-        }
-        return {
-          content: q.content,
-          options: Array.isArray(options) ? options : [],
-          answer: q.answer,
-          explanation: q.explanation || "库内相似真题解析",
-        };
-      });
-
-      // 确保有足够的数据，避免重复
-      const uniqueChallenges = mappedChallenges.slice(0, 3);
-      while (uniqueChallenges.length < 3 && similarQuestions.length > 0) {
-        uniqueChallenges.push({ ...uniqueChallenges[0] });
-      }
-
+    const fromVectors = toChallenges(similarQuestions as QuestionRow[]);
+    if (fromVectors.length > 0) {
       return {
         logicType: "complement",
-        challenges: uniqueChallenges,
+        challenges: fromVectors,
+      } as RegressionChallenge;
+    }
+
+    /*
+     * 6. 兜底方案 B：纯题库随机（**不依赖 embedding**）
+     *
+     * 方案 A 在两种情况下必然为空：vec0 不可用、或 embedding 降级（伪向量不再参与检索）。
+     * 但"AI 挂了"不该等于"没题可练" —— 向量只决定"像不像"，不决定"有没有题"。
+     * 这条兜底以前是隐式靠伪向量撑着的（噪声的最近邻 ≈ 随机题），
+     * 伪向量被堵掉后才暴露出来，所以显式补一层。
+     */
+    const poolQuestions = await questionService.pickFallbackQuestions(3);
+    const fromPool = toChallenges(poolQuestions as QuestionRow[]);
+    if (fromPool.length > 0) {
+      logger.warn(
+        { count: fromPool.length },
+        "[AI] 向量检索不可用，已改走纯题库随机兜底",
+      );
+      return {
+        logicType: "complement",
+        challenges: fromPool,
       } as RegressionChallenge;
     }
 

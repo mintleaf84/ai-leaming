@@ -1,7 +1,14 @@
 /* eslint-disable react-hooks/set-state-in-effect */
 "use client";
 
-import React, { useState, useEffect, useRef, useMemo, memo } from "react";
+import React, {
+  useState,
+  useEffect,
+  useRef,
+  useMemo,
+  useId,
+  memo,
+} from "react";
 import {
   ChevronDown,
   ChevronRight,
@@ -27,6 +34,8 @@ const ThinkingBlock: React.FC<ThinkingBlockProps> = ({
 }) => {
   const [isExpanded, setIsExpanded] = useState(true);
   const [copied, setCopied] = useState(false);
+  // 展开按钮与内容区配对：aria-controls 指向的 id 必须稳定且唯一（多个思维链同时出现时）
+  const contentId = useId();
 
   // 模拟 Cherry Studio 的计时器逻辑
   const [displayTime, setDisplayTime] = useState(thinkingTimeMs);
@@ -67,12 +76,15 @@ const ThinkingBlock: React.FC<ThinkingBlockProps> = ({
 
   return (
     <div className="mb-4 rounded-xl border border-border bg-muted/30 overflow-hidden transition-all">
-      {/* Header / Toggle */}
-      <div
-        onClick={() => setIsExpanded(!isExpanded)}
-        className="flex items-center justify-between px-4 py-2 cursor-pointer hover:bg-muted transition-colors group"
-      >
-        <div className="flex items-center gap-2 text-muted-foreground text-xs font-medium">
+      {/* Header / Toggle —— 标题行是「展开/收起」按钮，不再是整行 div onClick */}
+      <div className="flex items-center justify-between hover:bg-muted transition-colors group">
+        <button
+          type="button"
+          onClick={() => setIsExpanded((prev) => !prev)}
+          aria-expanded={isExpanded}
+          aria-controls={contentId}
+          className="flex-1 flex items-center gap-2 px-4 py-2 text-left cursor-pointer text-muted-foreground text-xs font-medium"
+        >
           <BrainCircuit
             className={`w-3.5 h-3.5 ${isThinking ? "animate-pulse text-primary" : ""}`}
           />
@@ -86,12 +98,13 @@ const ThinkingBlock: React.FC<ThinkingBlockProps> = ({
           ) : (
             <ChevronRight className="w-3 h-3 ml-1" />
           )}
-        </div>
+        </button>
 
         {!isThinking && isExpanded && (
           <button
             onClick={handleCopy}
-            className="p-1 hover:bg-background/80 rounded text-muted-foreground hover:text-foreground transition-colors"
+            aria-label="复制思考过程"
+            className="p-1 mr-3 hover:bg-background/80 rounded text-muted-foreground hover:text-foreground transition-colors"
           >
             {copied ? (
               <Check className="w-3 h-3 text-green-500" />
@@ -104,7 +117,10 @@ const ThinkingBlock: React.FC<ThinkingBlockProps> = ({
 
       {/* Content Area */}
       {isExpanded && (
-        <div className="px-4 pb-3 pt-1 text-sm text-muted-foreground/80 italic font-serif leading-relaxed border-t border-border/50 whitespace-pre-wrap">
+        <div
+          id={contentId}
+          className="px-4 pb-3 pt-1 text-sm text-muted-foreground/80 italic font-serif leading-relaxed border-t border-border/50 whitespace-pre-wrap"
+        >
           {content}
           {isThinking && (
             <span className="inline-block w-1 h-3 ml-1 bg-primary/50 animate-pulse" />

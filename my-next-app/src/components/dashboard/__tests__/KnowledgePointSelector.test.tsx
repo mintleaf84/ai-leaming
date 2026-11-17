@@ -1,3 +1,4 @@
+import userEvent from "@testing-library/user-event";
 /** @vitest-environment jsdom */
 import { render, screen, fireEvent, waitFor } from "@testing-library/react";
 import "@testing-library/jest-dom";
@@ -155,5 +156,87 @@ describe("KnowledgePointSelector Component", () => {
 
     expect(screen.getByText("代数")).toBeInTheDocument();
     expect(screen.getByText("几何")).toBeInTheDocument();
+  });
+});
+
+/**
+ * a11y 批次 B5：树节点从「整行 div onClick + 内层 span/div」换成三个真控件
+ * （展开箭头按钮 / role=checkbox 按钮 / 名称按钮），行本身不再挂 onClick。
+ * 锁住「键盘等价」：Tab 依次经过三个控件、Enter/Space 与点击等价。
+ */
+describe("KnowledgePointSelector 键盘操作（a11y B5）", () => {
+  const openSelector = async () => {
+    const user = userEvent.setup();
+    render(
+      <KnowledgePointSelector>
+        <button>Open Selector</button>
+      </KnowledgePointSelector>,
+    );
+    await user.click(screen.getByText("Open Selector"));
+    await screen.findByText("数学");
+    return user;
+  };
+
+  beforeEach(() => {
+    vi.clearAllMocks();
+    (useRouter as any).mockReturnValue({ push: vi.fn() });
+    (getKnowledgeTreeAction as any).mockResolvedValue({
+      data: { success: true, tree: mockTreeData },
+    });
+  });
+
+  it("Tab 依次经过展开箭头 → 复选框 → 名称按钮，Enter 展开父节点", async () => {
+    const user = await openSelector();
+
+    const expandBtn = screen.getByRole("button", { name: "展开数学" });
+    expandBtn.focus();
+    expect(expandBtn).toHaveFocus();
+
+    await user.tab();
+    expect(screen.getByRole("checkbox", { name: "数学" })).toHaveFocus();
+
+    const nameBtn = screen.getByText("数学").closest("button");
+    expect(nameBtn).not.toBeNull();
+    await user.tab();
+    expect(nameBtn).toHaveFocus();
+
+    // 回到箭头，Enter 展开：与点击等价
+    expandBtn.focus();
+    await user.keyboard("{Enter}");
+    expect(screen.getByText("代数")).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "收起数学" })).toHaveAttribute(
+      "aria-expanded",
+      "true",
+    );
+  });
+
+  it("复选框是 role=checkbox 的按钮：Space 切换选中并播报 aria-checked", async () => {
+    const user = await openSelector();
+
+    const checkbox = screen.getByRole("checkbox", { name: "英语" });
+    checkbox.focus();
+    expect(checkbox).toHaveFocus();
+
+    await user.keyboard(" ");
+    expect(checkbox).toHaveAttribute("aria-checked", "true");
+    expect(screen.getByText(/已选/)).toHaveTextContent("已选 1 个考点");
+
+    await user.keyboard(" ");
+    expect(checkbox).toHaveAttribute("aria-checked", "false");
+    expect(screen.getByText(/已选/)).toHaveTextContent("已选 0 个考点");
+  });
+
+  it("名称按钮：叶子上 Enter 与点击等价选中，父节点上 Enter 展开", async () => {
+    const user = await openSelector();
+
+    const leafBtn = screen.getByText("英语").closest("button")!;
+    leafBtn.focus();
+    await user.keyboard("{Enter}");
+    expect(screen.getByText(/已选/)).toHaveTextContent("已选 1 个考点");
+
+    const parentBtn = screen.getByText("数学").closest("button")!;
+    parentBtn.focus();
+    await user.keyboard("{Enter}");
+    expect(screen.getByText("代数")).toBeInTheDocument();
   });
 });

@@ -148,6 +148,32 @@ export const questionService = {
   },
 
   /**
+   * 纯题库随机取题（**不依赖 embedding**）。
+   *
+   * 为什么需要单独一个入口：`searchSimilarQuestions` 在向量不可用、或 embedding 降级
+   * （`Math.sin` 伪向量）时一律返回 `[]` —— 这是对的，伪向量检索出来的只是噪声的最近邻。
+   * 但 `ai.ts` 的「AI 失败兜底」如果只靠它，"AI 挂了"就变成"没题可练"。
+   *
+   * 向量只决定"像不像"，不决定"有没有题"。所以兜底要分两层：
+   * 有向量时按相似度取（`searchSimilarQuestions`），没有时直接从题库随机取。
+   */
+  pickFallbackQuestions: async (limit = 3): Promise<Question[]> => {
+    /*
+     * 用 `select` 而不是关系查询的 `findMany`：`findMany` 的 `where` 回调要靠
+     * operators 解构出 `sql`，这里直接用顶层导入的 `sql` 标签，少一层抽象也更稳。
+     */
+    const rows = await drizzleDb
+      .select()
+      .from(drizzleSchema.questions)
+      .where(sql`length(${drizzleSchema.questions.content}) > 0`)
+      .orderBy(sql`RANDOM()`)
+      .limit(limit);
+    return rows.map((row) =>
+      mapQuestion(row as unknown as Record<string, unknown>),
+    );
+  },
+
+  /**
    * 获取单个题目
    */
   async getById(id: number): Promise<Question | null> {

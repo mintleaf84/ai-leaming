@@ -352,25 +352,37 @@ export function PracticeCard({
                 return (
                   <div
                     key={idx}
-                    onClick={() =>
-                      !isExcluded &&
-                      onOptionClick(letter, isMulti ? "multi" : "single")
-                    }
-                    onContextMenu={(e) => toggleExclude(e, option)}
-                    className={`w-full text-left p-3 md:p-4 rounded border transition-all flex items-center group relative cursor-pointer min-h-[48px]
+                    className={`w-full rounded border transition-all flex items-center group relative min-h-[48px]
                                     ${
                                       isExcluded
-                                        ? "opacity-40 grayscale bg-muted border-border cursor-not-allowed"
+                                        ? "opacity-40 grayscale bg-muted border-border"
                                         : isMulti && isSelected
                                           ? "bg-blue-500/10 border-blue-500"
                                           : "hover:bg-accent hover:border-blue-500/30 border-border"
                                     }
                                 `}
-                    role="button"
-                    tabIndex={0}
                   >
-                    <span
-                      className={`w-8 h-8 rounded-full flex items-center justify-center mr-4 font-bold text-sm shrink-0
+                    {/*
+                      选项主体用真 <button>：Tab 可达、Enter/Space 即选中，
+                      不必再手写 onKeyDown（也就绕开了 IME 组合态下 Enter 被当成提交的问题）。
+                      右键排除仍留在主体上，与点右侧眼睛按钮等价。
+                    */}
+                    <button
+                      type="button"
+                      onClick={() =>
+                        !isExcluded &&
+                        onOptionClick(letter, isMulti ? "multi" : "single")
+                      }
+                      onContextMenu={(e) => toggleExclude(e, option)}
+                      data-testid="practice-option"
+                      aria-pressed={isSelected}
+                      aria-disabled={isExcluded || undefined}
+                      className={`flex-1 self-stretch flex items-center text-left p-3 md:p-4 ${
+                        isExcluded ? "cursor-not-allowed" : "cursor-pointer"
+                      }`}
+                    >
+                      <span
+                        className={`w-8 h-8 rounded-full flex items-center justify-center mr-4 font-bold text-sm shrink-0
                                     ${
                                       isExcluded
                                         ? "bg-muted text-muted-foreground"
@@ -379,36 +391,39 @@ export function PracticeCard({
                                           : "bg-muted/50 text-muted-foreground group-hover:bg-blue-500/10 group-hover:text-blue-600 dark:group-hover:text-blue-400"
                                     }
                                 `}
-                    >
-                      {isMulti ? (
-                        isSelected ? (
-                          <Check className="w-4 h-4" />
+                      >
+                        {isMulti ? (
+                          isSelected ? (
+                            <Check className="w-4 h-4" />
+                          ) : (
+                            <Circle className="w-4 h-4" />
+                          )
                         ) : (
-                          <Circle className="w-4 h-4" />
-                        )
-                      ) : (
-                        letter
-                      )}
-                    </span>
+                          letter
+                        )}
+                      </span>
 
-                    <span
-                      className={`text-foreground flex-1 ${isExcluded ? "line-through decoration-2" : ""}`}
-                    >
-                      {option}
-                    </span>
+                      <span
+                        className={`text-foreground flex-1 ${isExcluded ? "line-through decoration-2" : ""}`}
+                      >
+                        {option}
+                      </span>
+                    </button>
 
                     {/* 排除法辅助按钮 (移动端友好) */}
-                    <div
+                    <button
+                      type="button"
                       onClick={(e) => toggleExclude(e, option)}
-                      className={`ml-2 p-1.5 rounded-md transition-colors z-10 ${isExcluded ? "text-blue-500 hover:bg-blue-500/10" : "text-muted-foreground opacity-100 md:opacity-0 md:group-hover:opacity-100 hover:bg-accent"}`}
+                      className={`mr-3 md:mr-4 ml-2 p-1.5 rounded-md transition-colors z-10 ${isExcluded ? "text-blue-500 hover:bg-blue-500/10" : "text-muted-foreground opacity-100 md:opacity-0 md:group-hover:opacity-100 hover:bg-accent"}`}
                       title={isExcluded ? "恢复选项" : "排除此项"}
+                      aria-label={`${isExcluded ? "恢复" : "排除"}选项 ${letter}`}
                     >
                       {isExcluded ? (
                         <Eye className="w-4 h-4" />
                       ) : (
                         <EyeOff className="w-4 h-4" />
                       )}
-                    </div>
+                    </button>
                   </div>
                 );
               })}

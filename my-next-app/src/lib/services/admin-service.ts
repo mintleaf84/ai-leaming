@@ -5,6 +5,20 @@ import { UserRole, Question, Dimension } from "@/types";
 import { hashPassword } from "@/lib/auth/password";
 import { affectedRows } from "@/lib/db/affected-rows";
 import { buildAdminExternalId } from "@/lib/services/question-idempotency";
+import { indexQuestion } from "@/lib/services/question-vector-index";
+
+/**
+ * 哪些字段参与 embedding 文本（见 `question-vector-index.ts` 的
+ * `buildQuestionEmbeddingText`）：题干 + 选项 + 答案。
+ *
+ * 只有它们变了才需要重算向量；解析/标签/维度/题型是展示属性，改它们不该花一次
+ * embedding 网络调用。
+ */
+const EMBEDDING_TEXT_FIELDS = ["content", "options", "answer"] as const;
+
+function touchesEmbeddingText(data: Record<string, unknown>): boolean {
+  return EMBEDDING_TEXT_FIELDS.some((field) => data[field] !== undefined);
+}
 
 export interface AdminStats {
   users: number;
@@ -251,6 +265,11 @@ export const adminService = {
 
   /**
    * 更新题目
+   *
+   * 题干/选项/答案变了就必须重算向量（它们正是 embedding 文本的三个组成字段，
+   * 见 `question-vector-index.ts`）；只改解析/标签/维度时不必花一次网络调用。
+   * 索引是 best-effort：失败只记日志，绝不让保存失败 —— 向量是派生数据，
+   * 漏掉的题由 `scripts/reindex-question-vectors.ts` 补齐。
    */
   async updateQuestion(id: number, data: Record<string, unknown>) {
     const updateData: Record<string, unknown> = { ...data };
@@ -261,6 +280,17 @@ export const adminService = {
       .update(drizzleSchema.questions)
       .set(updateData)
       .where(eq(drizzleSchema.questions.id, id));
+
+    if (touchesEmbeddingText(data)) {
+      // 不 await：embedding 是一次网络调用，管理端保存不该被它拖住
+      void indexQuestion(id).catch((error: unknown) => {
+        logger.warn(
+          { err: error, questionId: id },
+          "[AdminService] 题目向量重建失败，保存已生效；可用重索引脚本补齐",
+        );
+      });
+    }
+
     return true;
   },
 

@@ -167,7 +167,10 @@
 - [x] 恢复只校验 magic header → 恢复前校验核心业务表，缺表 400 且不动线上库
 - [x] `practice` 提交越权（IDOR）→ 事务内校验会话归属，404 回滚
 - [x] `GET /wrong-book/` 恒 500（`ORDER BY` 引用 JS key）→ 改用聚合表达式
-- [ ] **向量表从未创建 / 检索恒空 / 维度 1536 vs 1024**（三条同源，**待架构决策**）：
+- [x] **维度 1536 vs 1024**：`vector-setup` 不再写死维度，改为初始化时问 `getAiConfig("embedding")`
+      （动态 import 避免 `db → vector-setup → ai/config → db` 静态环），表维度与应用实际
+      使用的 embedding 维度对齐；对应 `it.fails` 已转正
+- [ ] **向量表从未创建 / 检索恒空**（同源，**待架构决策**）：
       `setupVectorExtension()` 跑在 libsql 连接上，而 `loadExtension` 只加在 legacy better-sqlite3 连接。
       **方向 ① 已实测排除**：`@libsql/client` 执行 `load_extension` 返回
       `SQLITE_ERROR: not authorized`，无法加载 vec0。剩 ② 向量操作改走 legacy 连接

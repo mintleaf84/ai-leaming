@@ -14,8 +14,16 @@ vi.mock("novel", () => {
     EditorRoot: ({ children }: any) => (
       <div data-testid="editor-root">{children}</div>
     ),
-    EditorContent: ({ onUpdate, slotAfter, initialContent }: any) => (
+    EditorContent: ({
+      onUpdate,
+      slotAfter,
+      initialContent,
+      editorProps,
+    }: any) => (
       <div data-testid="editor-content">
+        <div data-testid="editor-props-class">
+          {editorProps?.attributes?.class ?? ""}
+        </div>
         <button
           data-testid="simulate-update"
           onClick={() =>
@@ -160,5 +168,18 @@ describe("NoteEditor Component", () => {
     // Close it
     fireEvent.click(screen.getByText("Close"));
     expect(screen.queryByTestId("question-picker")).not.toBeInTheDocument();
+  });
+
+  it("TipTap 编辑区带可见焦点指示（批次 B3）：去掉 outline 后有 inset ring 替代", () => {
+    render(<NoteEditor {...defaultProps} />);
+
+    // TipTap 的可编辑区是库内部建的 DOM，jsdom 下这里拿不到真实节点；
+    // 断言的是传给它的 editorProps.attributes.class —— 也就是真实浏览器里落到可编辑 div 上的类串。
+    const cls = screen.getByTestId("editor-props-class").textContent ?? "";
+
+    expect(cls).toContain("focus:outline-none");
+    expect(cls).toMatch(/(^|\s)focus-visible:ring-2(\s|$)/);
+    expect(cls).toMatch(/(^|\s)focus-visible:ring-ring(\s|$)/);
+    expect(cls).toContain("focus-visible:ring-inset");
   });
 });

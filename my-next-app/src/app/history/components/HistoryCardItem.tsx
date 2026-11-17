@@ -115,7 +115,7 @@ const HistoryCardItemComponent: React.FC<HistoryCardItemProps> = ({
                 <input
                   value={editingName}
                   onChange={(e) => setEditingName(e.target.value)}
-                  className="h-8 text-lg font-bold w-full max-w-[200px] bg-transparent border-b-2 border-primary focus:outline-none"
+                  className="h-8 text-lg font-bold w-full max-w-[200px] bg-transparent border-b-2 border-primary rounded-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background"
                   autoFocus
                   onKeyDown={(e) => {
                     // 组合态 Enter 是确认候选词，不能当"保存名称"提交

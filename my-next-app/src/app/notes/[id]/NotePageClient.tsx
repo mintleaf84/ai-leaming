@@ -87,7 +87,7 @@ export default function NotePageClient({ note }: NotePageClientProps) {
             setTitle(val);
             handleSave(undefined, val);
           }}
-          className="text-4xl font-bold bg-transparent border-none outline-none w-full placeholder:text-muted-foreground/40"
+          className="text-4xl font-bold bg-transparent border-none rounded-sm outline-none w-full placeholder:text-muted-foreground/40 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background"
           placeholder="无标题"
         />
         {/* 标签选择器与视图切换 */}

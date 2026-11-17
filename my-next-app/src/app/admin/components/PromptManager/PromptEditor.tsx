@@ -53,7 +53,7 @@ export function PromptEditor({
       </div>
       <div className="flex-1 p-0 relative bg-background rounded-b-xl overflow-hidden">
         <textarea
-          className="w-full h-full resize-none p-4 outline-none font-mono text-sm leading-relaxed bg-transparent text-foreground placeholder:text-muted-foreground/50"
+          className="w-full h-full resize-none p-4 outline-none font-mono text-sm leading-relaxed bg-transparent text-foreground placeholder:text-muted-foreground/50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-ring"
           placeholder={
             editingPrompt.systemDefault
               ? "当前使用系统默认提示词，可在此输入自定义内容覆盖..."

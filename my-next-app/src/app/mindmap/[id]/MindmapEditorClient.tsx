@@ -120,7 +120,7 @@ export default function MindmapEditorClient({
       <div className="flex items-center justify-between px-6 py-4 border-b border-border bg-card/50">
         <div className="flex items-center gap-3 w-1/2">
           <input
-            className="text-2xl font-bold bg-transparent border-none outline-none w-full placeholder:text-muted-foreground/40 font-serif"
+            className="text-2xl font-bold bg-transparent border-none rounded-sm outline-none w-full placeholder:text-muted-foreground/40 font-serif focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background"
             value={title}
             onChange={handleTitleChange}
             placeholder="在此输入思维导图标题"
@@ -167,7 +167,7 @@ export default function MindmapEditorClient({
           <textarea
             value={markdown}
             onChange={handleMarkdownChange}
-            className="flex-1 w-full p-6 bg-transparent outline-none resize-none font-mono text-[13px] leading-7 text-foreground placeholder:text-muted-foreground/30 scrollbar-thin"
+            className="flex-1 w-full p-6 bg-transparent outline-none resize-none font-mono text-[13px] leading-7 text-foreground placeholder:text-muted-foreground/30 scrollbar-thin focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-ring"
             placeholder="在此处直接使用 Markdown 符号（#、- 等）排版来生成图谱。&#10;&#10;或者直接粘贴一篇乱糟糟的长文章，点击上面的『提取大纲』召唤 AI 帮你整理！"
             spellCheck={false}
           />

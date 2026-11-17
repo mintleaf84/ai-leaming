@@ -110,12 +110,21 @@ export default async function RootLayout({
                   </div>
                   <div className="flex-1 flex flex-col min-w-0">
                     {/*
-                      pb-20 是为移动端 MobileNav（h-16 + 1.5rem 底距）预留的呼吸位。
+                      移动端底部预留 = MobileNav 的 88px（h-16 的 64px + 1.5rem 底距的 24px）
+                      + env(safe-area-inset-bottom) + 8px 呼吸，即 6rem(96px) + 安全区。
+                      不能写成固定 80px：普通窄屏差 8px（最后一行被导航压住），
+                      iPhone 这类 inset=34px 的机器差 42px（docs/ux-a11y-audit.md §3.2）。
+
+                      scroll-padding 一并给上：main 自己是内部滚动容器，Tab 聚焦到
+                      被导航盖住的控件时，浏览器按 scroll-padding 让位，否则
+                      scrollIntoView 会把焦点滚到固定导航底下（focus-not-obscured）。
+
                       MobileNav 在页面自己登记了底栏时会隐藏（见 components/layout/bottom-bar-slot.tsx），
-                      此时这 80px 只是多一段空白；各页自带操作条的地方另有自己的 pb，
-                      所以刻意不在全局布局里按路由分叉。
+                      此时这 96px 只是多一段空白；各页自带操作条的地方另有自己的 pb，
+                      所以刻意不在全局布局里按路由分叉。桌面端 MobileNav 是 md:hidden，
+                      不需要这段预留（md:pb-0 / md:scroll-pb-0）。
                     */}
-                    <main className="flex-1 pb-20 md:pb-0 relative overflow-y-auto">
+                    <main className="flex-1 pb-[calc(6rem+env(safe-area-inset-bottom))] scroll-pb-[calc(6rem+env(safe-area-inset-bottom))] md:pb-0 md:scroll-pb-0 relative overflow-y-auto">
                       <ErrorBoundary>{children}</ErrorBoundary>
                     </main>
                   </div>

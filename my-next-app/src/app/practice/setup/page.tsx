@@ -162,7 +162,10 @@ export default function PracticeSetupPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-background via-background to-muted/30 pb-20">
+    // 底部预留只由全局布局的 <main> 提供（96px + 安全区，见 src/app/layout.tsx），
+    // 已覆盖本页固定底栏的 88px（p-4 的上下各 16px + h-14 的 56px = 88px）。
+    // 这里原先还挂着 pb-20，与全局的 pb 叠加成 176px 死白（docs/ux-a11y-audit.md §3.2）。
+    <div className="min-h-screen bg-gradient-to-br from-background via-background to-muted/30">
       {/* 顶部导航 */}
       <header className="border-b bg-background/80 backdrop-blur-sm sticky top-0 z-50">
         <div className="container mx-auto px-4 h-16 flex items-center justify-between">

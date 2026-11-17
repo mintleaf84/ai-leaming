@@ -8,7 +8,9 @@ import { expect, test, type Page } from "@playwright/test";
  *   2. 主容器可见且渲染出了真实文本（不是骨架、不是错误边界）；
  *   3. 375px 视口下没有元素越出视口右侧；
  *   4. 375px 视口下报告可点区域 < 44×44 与表单双列（报告模式，不阻断）；
- *   5. 375px 视口下不存在两条互相重叠的贴底固定底栏（§6：一个页面最多一条）。
+ *   5. 375px 视口下不存在两条互相重叠的贴底固定底栏（§6：一个页面最多一条）；
+ *   6. 375px 视口下 <main> 的 padding-bottom / scroll-padding-bottom ≥ 96px
+ *      （底部预留要盖住 MobileNav 的 88px + 8px 呼吸；安全区部分只能靠 CSS 写法保证）。
  *
  * 之所以不用截图对比：截图会被字体渲染、动画首帧、机器 DPI 影响，
  * 在 CI 上极易 flaky，且失败时无法定位到底哪个元素出了问题。
@@ -75,6 +77,18 @@ const BOTTOM_BAR_WINDOW = 160;
 
 /** 视口边缘判定容忍度（px）：吸收亚像素/阴影，用于识别「铺满整屏」的固定遮罩 */
 const VIEWPORT_EDGE_TOLERANCE = 8;
+
+/**
+ * 移动端主内容区底部预留下限（px）。
+ *
+ * 组成：MobileNav 的 88px（h-16 的 64px + `bottom-[calc(1.5rem+…)]` 的 24px）
+ * + 8px 呼吸 = 96px，再加 `env(safe-area-inset-bottom)`。
+ *
+ * ⚠️ 浏览器里 `env(safe-area-inset-bottom)` 恒为 0（含移动端模拟），
+ * 所以这里能验的只有 88+8 那部分；安全区由 `calc(6rem + env(...))` 的写法保证，
+ * 另有静态断言 `src/app/__tests__/layout-safe-area.test.ts` 防止退回固定值。
+ */
+const MOBILE_BOTTOM_RESERVE = 96;
 
 /** 单个越界元素的最小描述：够定位即可，不 dump 整个 DOM */
 export interface OversizeElement {
@@ -161,7 +175,14 @@ export interface LayoutProbe {
   /** documentElement.scrollWidth */
   documentScrollWidth: number;
   /** <main> 自身的滚动宽度 */
-  main: { scrollWidth: number; clientWidth: number } | null;
+  main: {
+    scrollWidth: number;
+    clientWidth: number;
+    /** 计算后的 padding-bottom（px）：移动端底部预留 */
+    paddingBottom: number;
+    /** 计算后的 scroll-padding-bottom（px）：Tab 聚焦时给固定导航让位 */
+    scrollPaddingBottom: number;
+  } | null;
   /** 实际扫描的元素数（全量，不截断） */
   totalNodes: number;
   /** 越界元素总数（oversize 只保留前 MAX_REPORTED 个） */
@@ -617,6 +638,11 @@ export async function collectLayoutProbe(page: Page): Promise<LayoutProbe> {
       }
 
       const mainEl = document.querySelector("main");
+      const mainStyle = mainEl ? getComputedStyle(mainEl) : null;
+      const px = (value: string | undefined): number => {
+        const parsed = Number.parseFloat(value ?? "");
+        return Number.isFinite(parsed) ? parsed : 0;
+      };
 
       return {
         viewportWidth: vw,
@@ -626,6 +652,8 @@ export async function collectLayoutProbe(page: Page): Promise<LayoutProbe> {
           ? {
               scrollWidth: mainEl.scrollWidth,
               clientWidth: mainEl.clientWidth,
+              paddingBottom: px(mainStyle?.paddingBottom),
+              scrollPaddingBottom: px(mainStyle?.scrollPaddingBottom),
             }
           : null,
         totalNodes: nodes.length,
@@ -796,6 +824,24 @@ export async function assertLayoutIntact(
       probe.main.scrollWidth,
       `${where}：<main> scrollWidth=${probe.main.scrollWidth} 超过 clientWidth=${probe.main.clientWidth}（移动端主内容区内部可横向滚动）。越界元素：${detail}`,
     ).toBeLessThanOrEqual(probe.main.clientWidth + 1);
+
+    // 断言 4b：底部预留够高 —— 移动端 last row 不能被固定导航压住（docs/ux-a11y-audit.md §3.2）。
+    // 只能验 88+8；安全区在浏览器里恒为 0，见 MOBILE_BOTTOM_RESERVE 注释。
+    expect(
+      probe.main.paddingBottom,
+      `${where}：<main> 的 padding-bottom=${probe.main.paddingBottom}px < ${MOBILE_BOTTOM_RESERVE}px` +
+        `（MobileNav 占 88px + 8px 呼吸），页面最后一行会被固定导航压住。` +
+        `写法应为 pb-[calc(6rem+env(safe-area-inset-bottom))]（src/app/layout.tsx）。`,
+    ).toBeGreaterThanOrEqual(MOBILE_BOTTOM_RESERVE - 0.5);
+
+    // 断言 4c：scroll-padding 同步 —— 否则 Tab 聚焦到被导航盖住的控件时，
+    // scrollIntoView 不会把固定导航的高度算进去（focus-not-obscured）。
+    expect(
+      probe.main.scrollPaddingBottom,
+      `${where}：<main> 的 scroll-padding-bottom=${probe.main.scrollPaddingBottom}px < ${MOBILE_BOTTOM_RESERVE}px，` +
+        `Tab 聚焦到被固定导航盖住的控件时不会让位。` +
+        `写法应为 scroll-pb-[calc(6rem+env(safe-area-inset-bottom))]（src/app/layout.tsx）。`,
+    ).toBeGreaterThanOrEqual(MOBILE_BOTTOM_RESERVE - 0.5);
   }
 
   // 断言 5：主容器可见，且渲染出了真实文本（骨架/空壳/白屏都不算）

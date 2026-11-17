@@ -26,6 +26,9 @@
 import fs from "node:fs";
 import path from "node:path";
 import zlib from "node:zlib";
+import { createRequire } from "node:module";
+
+const require = createRequire(import.meta.url);
 
 const args = process.argv.slice(2);
 const update = args.includes("--update");
@@ -86,32 +89,122 @@ function walk(dir, base = dir, out = []) {
 }
 
 // ---------- 1. 路由 JS 体积 ----------
-function routeSizes() {
-  if (!fs.existsSync(manifestPath)) {
-    warnings.push(
-      `未找到 ${path.relative(root, manifestPath)}（未构建？）—— 路由 JS 预算**未校验**`,
-    );
-    return null;
+/**
+ * 采信来源的取法（按优先级）：
+ *
+ *   1. `.next/server/app/**\/page_client-reference-manifest.js` 的 `entryJSFiles`
+ *      —— webpack 构建下这是 Next 自己算 First Load JS 的同一份数据，
+ *      能给出**按路由**的 chunk 清单；
+ *   2. 找不到上面的清单时退化为**全站 JS 总量**（`.next/static/chunks/**\/*.js`
+ *      + `.next/static/css/**\/*.css`）—— Turbopack 构建（Next 16 默认）不产出
+ *      `app-build-manifest.json`，也不在终端打印尺寸列，此时按路由无法取数，
+ *      但"总量环比"仍能抓住死 import / 依赖膨胀这类回归；
+ *   3. 两者都取不到（未构建）→ 明确报"未校验"，不静默通过。
+ *
+ * 预算永远按 gzip 后的字节算：构建产物里的数字是解析后大小，
+ * 与用户实际下载量差 3~4 倍。
+ */
+function gzipSize(file) {
+  return zlib.gzipSync(fs.readFileSync(file), { level: 9 }).length;
+}
+
+function walkNext(dir, out = []) {
+  if (!fs.existsSync(dir)) return out;
+  for (const entry of fs.readdirSync(dir, { withFileTypes: true })) {
+    const p = path.join(dir, entry.name);
+    if (entry.isDirectory()) walkNext(p, out);
+    else out.push(p);
   }
-  const manifest = JSON.parse(fs.readFileSync(manifestPath, "utf8"));
-  const pages = manifest.pages ?? {};
-  const nextDir = path.dirname(manifestPath);
+  return out;
+}
+
+function routeFromManifestPath(file, nextDir) {
+  const rel = path.relative(nextDir, file).split(path.sep).join("/");
+  // server/app/<segments>/page_client-reference-manifest.js  →  /<segments>
+  const m = rel.match(/^(?:server\/)?app\/(.*)\/page_client-reference-manifest\.js$/);
+  if (!m) return null;
+  const segs = m[1]
+    .split("/")
+    .filter((seg) => !/^\(.+\)$/.test(seg)); // 去掉 route group 括号段
+  return "/" + segs.join("/");
+}
+
+function routeSizesFromClientManifests(nextDir) {
+  const manifests = walkNext(path.join(nextDir, "server", "app")).filter((f) =>
+    f.endsWith("page_client-reference-manifest.js"),
+  );
+  if (manifests.length === 0) return null;
+
   const sizes = {};
-  for (const [route, files] of Object.entries(pages)) {
-    const unique = [...new Set(files)];
+  for (const file of manifests) {
+    const route = routeFromManifestPath(file, nextDir) ?? file;
+    let mod;
+    try {
+      // 构建产物是 CJS；用 createRequire 读它，比正则解析可靠
+      mod = require(file);
+    } catch {
+      continue;
+    }
+    const entryMap = mod?.entryJSFiles ?? {};
+    const files = new Set();
+    for (const list of Object.values(entryMap)) {
+      for (const rel of list ?? []) files.add(rel);
+    }
+    if (files.size === 0) continue;
     let total = 0;
-    for (const rel of unique) {
-      // manifest 里的路径形如 "static/chunks/app/page-xxx.js"（相对 .next/）
-      const file = path.join(nextDir, rel);
-      if (!fs.existsSync(file)) continue;
-      total += zlib.gzipSync(fs.readFileSync(file), { level: 9 }).length;
+    for (const rel of files) {
+      const abs = path.join(nextDir, rel);
+      if (fs.existsSync(abs)) total += gzipSize(abs);
     }
     if (total > 0) sizes[route] = total;
   }
-  return sizes;
+  return Object.keys(sizes).length > 0 ? sizes : null;
 }
 
-const sizes = routeSizes();
+function totalAssetsSize(nextDir) {
+  const files = [
+    ...walkNext(path.join(nextDir, "static", "chunks")),
+    ...walkNext(path.join(nextDir, "static", "css")),
+  ].filter((f) => f.endsWith(".js") || f.endsWith(".css"));
+  if (files.length === 0) return null;
+  let total = 0;
+  for (const f of files) total += gzipSize(f);
+  return { total, files: files.length };
+}
+
+function collectSizes() {
+  const nextDir = path.dirname(manifestPath);
+  if (!fs.existsSync(nextDir)) {
+    warnings.push(
+      `未找到 ${path.relative(root, nextDir)}（未构建？）—— JS 预算**未校验**`,
+    );
+    return null;
+  }
+
+  const perRoute = routeSizesFromClientManifests(nextDir);
+  if (perRoute) {
+    return { mode: "route", sizes: perRoute };
+  }
+
+  const total = totalAssetsSize(nextDir);
+  if (total) {
+    warnings.push(
+      `未找到 per-route 的 client-reference-manifest（Turbopack 构建不产出
+         app-build-manifest.json），已退化为**全站 JS 总量**预算：` +
+        `${total.files} 个文件、gzip ${kb(total.total)}`,
+    );
+    return { mode: "total", sizes: { __total__: total.total } };
+  }
+
+  warnings.push(
+    `未找到任何可度量的 JS 产物（${path.relative(root, nextDir)} 下既无 client-reference-manifest 也无 static/chunks）—— JS 预算**未校验**`,
+  );
+  return null;
+}
+
+const collected = collectSizes();
+const sizes = collected?.sizes ?? null;
+const mode = collected?.mode ?? null;
 let baseline = {};
 if (fs.existsSync(baselinePath)) {
   baseline = JSON.parse(fs.readFileSync(baselinePath, "utf8"));
@@ -125,7 +218,7 @@ if (sizes) {
   )) {
     const prev = baselineRoutes[route];
     const growth = prev ? bytes / prev : 0;
-    const overLimit = bytes > ROUTE_LIMIT_BYTES;
+    const overLimit = mode === "route" && bytes > ROUTE_LIMIT_BYTES;
     const overGrowth = prev ? growth > ROUTE_GROWTH_RATIO : false;
     rows.push({ route, bytes, prev, growth, overLimit, overGrowth });
     if (overLimit) {
@@ -135,7 +228,7 @@ if (sizes) {
     }
     if (overGrowth) {
       failures.push(
-        `路由 JS 环比上涨：${route} ${kb(prev)} → ${kb(bytes)}（+${(
+        `JS 环比上涨：${route} ${kb(prev)} → ${kb(bytes)}（+${(
           (growth - 1) *
           100
         ).toFixed(1)}%，上限 +5%）`,
@@ -143,11 +236,15 @@ if (sizes) {
     }
   }
 
-  console.log("路由 first-load JS（gzip）：");
+  console.log(
+    `\nJS 体积（gzip，${mode === "route" ? "按路由 first-load" : "全站总量"}）：`,
+  );
   for (const r of rows) {
-    const delta = r.prev ? ` (${r.growth >= 1 ? "+" : ""}${((r.growth - 1) * 100).toFixed(1)}%)` : " (新)";
+    const delta = r.prev
+      ? ` (${r.growth >= 1 ? "+" : ""}${((r.growth - 1) * 100).toFixed(1)}%)`
+      : " (新)";
     console.log(
-      `  ${r.overLimit || r.overGrowth ? "✗" : "✓"} ${r.route.padEnd(28)} ${kb(r.bytes).padStart(9)}${delta}`,
+      `  ${r.overLimit || r.overGrowth ? "✗" : "✓"} ${String(r.route).padEnd(28)} ${kb(r.bytes).padStart(9)}${delta}`,
     );
   }
 
@@ -155,6 +252,7 @@ if (sizes) {
     baseline.routes = Object.fromEntries(
       Object.entries(sizes).sort((a, b) => a[0].localeCompare(b[0])),
     );
+    baseline.mode = mode;
   }
 }
 

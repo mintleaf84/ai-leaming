@@ -409,4 +409,246 @@ describe("useRecallSession", () => {
     expect(error.result.current.loadError).toContain("缺少卡片编号");
     consoleError.mockRestore();
   });
+
+  it("最新队列明确为空：快照还有 [11,12] 也进 empty，且不去取旧编号的卡", async () => {
+    // 首屏快照过时了，最新请求说「今天 0 张」——权威是最新队列，不回退到快照
+    mockFetchQueue.mockResolvedValue(queueView([]));
+    const { result } = renderHook(() => useRecallSession(INITIAL_QUEUE));
+    await waitFor(() => expect(result.current.phase).toBe("empty"));
+
+    expect(result.current.card).toBeNull();
+    expect(result.current.displayTotal).toBe(0);
+    expect(mockFetchCard).not.toHaveBeenCalled();
+  });
+
+  it("提交挂起期间换了队列（成功分支）：旧结果不落到新卡上，幂等键与提交态不受影响", async () => {
+    mockFetchQueue.mockResolvedValue(queueView([11, 12]));
+    mockFetchCard.mockResolvedValueOnce(listCard());
+    const { result, rerender } = renderHook(
+      ({ q }: { q: RecallInitialQueue }) => useRecallSession(q),
+      { initialProps: { q: INITIAL_QUEUE } },
+    );
+    await waitFor(() => expect(result.current.phase).toBe("question"));
+    await revealWith(result, "固态");
+
+    let releaseOld!: (view: RecallSubmitView) => void;
+    mockSubmit.mockImplementationOnce(
+      () =>
+        new Promise<RecallSubmitView>((resolve) => {
+          releaseOld = resolve;
+        }),
+    );
+    let oldSubmit!: Promise<void>;
+    act(() => {
+      oldSubmit = result.current.commitVerdicts();
+    });
+    expect(result.current.submitting).toBe(true);
+
+    // 期间服务端下发新队列（21），用户已经在新卡上进入判分屏
+    const secondQueue: RecallInitialQueue = {
+      ids: [21],
+      due: [21],
+      fresh: [],
+      total: 1,
+      estimatedMinutes: 1,
+    };
+    mockFetchQueue.mockResolvedValue(queueView([21]));
+    mockFetchCard.mockResolvedValueOnce(listCard({ cardId: 21 }));
+    rerender({ q: secondQueue });
+    await waitFor(() => expect(result.current.card?.cardId).toBe(21));
+    await revealWith(result, "液态");
+
+    await act(async () => {
+      releaseOld(submitView({ nextReviewText: "下次 11 月 20 日" }));
+      await oldSubmit;
+    });
+
+    // 旧轮的结论不能写到新卡的判分屏上
+    expect(result.current.result).toBeNull();
+    expect(result.current.card?.cardId).toBe(21);
+
+    // 新卡的幂等键没有被旧轮次清掉，提交载荷也必须是新卡的
+    mockSubmit.mockResolvedValueOnce(
+      submitView({ verdicts: ["ok", "miss", "miss"] }),
+    );
+    await act(async () => {
+      await result.current.commitVerdicts();
+    });
+    const payload = mockSubmit.mock.calls.at(-1)?.[0];
+    expect(payload.cardId).toBe(21);
+    expect(payload.clientKey).toEqual(expect.any(String));
+    expect(result.current.result).not.toBeNull();
+  });
+
+  it("提交挂起期间换了队列（失败分支）：不锁新轮，新卡提交发的是新卡载荷", async () => {
+    mockFetchQueue.mockResolvedValue(queueView([11, 12]));
+    mockFetchCard.mockResolvedValueOnce(listCard());
+    const { result, rerender } = renderHook(
+      ({ q }: { q: RecallInitialQueue }) => useRecallSession(q),
+      { initialProps: { q: INITIAL_QUEUE } },
+    );
+    await waitFor(() => expect(result.current.phase).toBe("question"));
+    await revealWith(result, "固态");
+
+    let rejectOld!: (error: Error) => void;
+    mockSubmit.mockImplementationOnce(
+      () =>
+        new Promise<RecallSubmitView>((_resolve, reject) => {
+          rejectOld = reject;
+        }),
+    );
+    let oldSubmit!: Promise<void>;
+    act(() => {
+      oldSubmit = result.current.commitVerdicts();
+    });
+
+    const secondQueue: RecallInitialQueue = {
+      ids: [21],
+      due: [21],
+      fresh: [],
+      total: 1,
+      estimatedMinutes: 1,
+    };
+    mockFetchQueue.mockResolvedValue(queueView([21]));
+    mockFetchCard.mockResolvedValueOnce(listCard({ cardId: 21 }));
+    rerender({ q: secondQueue });
+    await waitFor(() => expect(result.current.card?.cardId).toBe(21));
+    await revealWith(result, "液态");
+
+    await act(async () => {
+      rejectOld(new Error("网络断了"));
+      await oldSubmit;
+    });
+
+    // 旧轮次的失败不能把新轮锁住，也不能把旧载荷的重试引用留给新卡
+    expect(result.current.retryLocked).toBe(false);
+    expect(result.current.result).toBeNull();
+    expect(mockToastError).not.toHaveBeenCalled();
+
+    mockSubmit.mockResolvedValueOnce(
+      submitView({ verdicts: ["ok", "miss", "miss"] }),
+    );
+    await act(async () => {
+      await result.current.commitVerdicts();
+    });
+    expect(mockSubmit.mock.calls.at(-1)?.[0].cardId).toBe(21);
+    expect(result.current.result).not.toBeNull();
+  });
+
+  it("旧轮次提交的 finally 不关新轮次的提交态", async () => {
+    mockFetchQueue.mockResolvedValue(queueView([11, 12]));
+    mockFetchCard.mockResolvedValueOnce(listCard());
+    const { result, rerender } = renderHook(
+      ({ q }: { q: RecallInitialQueue }) => useRecallSession(q),
+      { initialProps: { q: INITIAL_QUEUE } },
+    );
+    await waitFor(() => expect(result.current.phase).toBe("question"));
+    await revealWith(result, "固态");
+
+    let releaseOld!: (view: RecallSubmitView) => void;
+    let releaseNew!: (view: RecallSubmitView) => void;
+    mockSubmit
+      .mockImplementationOnce(
+        () =>
+          new Promise<RecallSubmitView>((resolve) => {
+            releaseOld = resolve;
+          }),
+      )
+      .mockImplementationOnce(
+        () =>
+          new Promise<RecallSubmitView>((resolve) => {
+            releaseNew = resolve;
+          }),
+      );
+    let oldSubmit!: Promise<void>;
+    act(() => {
+      oldSubmit = result.current.commitVerdicts();
+    });
+
+    const secondQueue: RecallInitialQueue = {
+      ids: [21],
+      due: [21],
+      fresh: [],
+      total: 1,
+      estimatedMinutes: 1,
+    };
+    mockFetchQueue.mockResolvedValue(queueView([21]));
+    mockFetchCard.mockResolvedValueOnce(listCard({ cardId: 21 }));
+    rerender({ q: secondQueue });
+    await waitFor(() => expect(result.current.card?.cardId).toBe(21));
+    await revealWith(result, "液态");
+
+    let newSubmit!: Promise<void>;
+    act(() => {
+      newSubmit = result.current.commitVerdicts();
+    });
+    expect(result.current.submitting).toBe(true);
+
+    await act(async () => {
+      releaseOld(submitView());
+      await oldSubmit;
+    });
+    // 新轮的提交还挂着：旧轮的收尾不能把它关掉（否则用户会以为提交完了）
+    expect(result.current.submitting).toBe(true);
+
+    await act(async () => {
+      releaseNew(submitView({ verdicts: ["ok", "miss", "miss"] }));
+      await newSubmit;
+    });
+    expect(result.current.submitting).toBe(false);
+    expect(result.current.result).not.toBeNull();
+    expect(result.current.card?.cardId).toBe(21);
+  });
+
+  it("归档挂起期间换了队列：不推进新队列（不删掉新队列首张卡）", async () => {
+    const confirm = vi.spyOn(window, "confirm").mockReturnValue(true);
+    mockFetchQueue.mockResolvedValue(queueView([11, 12]));
+    mockFetchCard.mockResolvedValueOnce(listCard());
+    const { result, rerender } = renderHook(
+      ({ q }: { q: RecallInitialQueue }) => useRecallSession(q),
+      { initialProps: { q: INITIAL_QUEUE } },
+    );
+    await waitFor(() => expect(result.current.phase).toBe("question"));
+
+    let releaseArchive!: () => void;
+    mockArchive.mockImplementationOnce(
+      () =>
+        new Promise<void>((resolve) => {
+          releaseArchive = () => {
+            resolve();
+          };
+        }),
+    );
+    let archiving!: Promise<void>;
+    act(() => {
+      archiving = result.current.archive();
+    });
+
+    const secondQueue: RecallInitialQueue = {
+      ids: [21, 22],
+      due: [21, 22],
+      fresh: [],
+      total: 2,
+      estimatedMinutes: 2,
+    };
+    mockFetchQueue.mockResolvedValue(queueView([21, 22]));
+    mockFetchCard.mockResolvedValueOnce(listCard({ cardId: 21 }));
+    rerender({ q: secondQueue });
+    await waitFor(() => expect(result.current.card?.cardId).toBe(21));
+
+    await act(async () => {
+      releaseArchive();
+      await archiving;
+    });
+
+    // 归档期间队列已换：旧轮次的 advance() 不能拿新队列的 pending 去推进
+    expect(result.current.card?.cardId).toBe(21);
+    // 一张都没推进（若被推进：pending 变 [22]，doneCount 会变 1）
+    expect(result.current.doneCount).toBe(0);
+    expect(result.current.displayTotal).toBe(2);
+    expect(mockFetchCard).not.toHaveBeenCalledWith(22);
+    expect(result.current.phase).toBe("question");
+
+    confirm.mockRestore();
+  });
 });

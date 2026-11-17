@@ -73,6 +73,10 @@ export function useRecallSession(initialQueue: RecallInitialQueue) {
   const clientKeyRef = useRef<string | null>(null);
   // 队列快照版本：每次重新拉取 +1，旧快照回来时不得覆盖新状态
   const queueVersionRef = useRef(0);
+  // 作答轮次令牌：换队列（bootstrap）或换卡（advance）即 +1。
+  // 提交/归档在 await 前捕获它，回来先比对——不一致说明结果属于上一轮，
+  // 写了就会污染新卡的结论、幂等键与重试引用。
+  const roundRef = useRef(0);
 
   const updatePending = useCallback((ids: RecallCardId[]) => {
     pendingRef.current = ids;
@@ -84,6 +88,7 @@ export function useRecallSession(initialQueue: RecallInitialQueue) {
     let cancelled = false;
     const version = queueVersionRef.current + 1;
     queueVersionRef.current = version;
+    roundRef.current += 1;
 
     async function bootstrap() {
       setPhase("loading");
@@ -96,6 +101,8 @@ export function useRecallSession(initialQueue: RecallInitialQueue) {
       setResult(null);
       setLastNote(null);
       setRetryLocked(false);
+      // 上一轮提交若还挂着，它的 finally 会因为令牌不符而不再收尾，这里负责把提交态归零
+      setSubmitting(false);
       lastSubmitRef.current = null;
       clientKeyRef.current = null;
       try {
@@ -105,7 +112,15 @@ export function useRecallSession(initialQueue: RecallInitialQueue) {
         if (cancelled || version !== queueVersionRef.current) return;
 
         setQueue(today);
-        // action 的 `ids` 是权威顺序；旧服务端只回计数时用服务端渲染的快照兜底
+        // 最新队列是权威：它明确说「今天 0 张」就是空态，绝不回退到首屏快照，
+        // 否则用户会去取已不属于今日队列的卡，或者撞进取卡错误态
+        if (today.total === 0) {
+          updatePending([]);
+          setPhase("empty");
+          return;
+        }
+
+        // 最新队列仍有卡：action 的 `ids` 是权威顺序；旧服务端只回计数时用服务端渲染的快照兜底
         const serverIds =
           initialQueue.ids.length > 0
             ? initialQueue.ids
@@ -113,13 +128,8 @@ export function useRecallSession(initialQueue: RecallInitialQueue) {
         const ids = today.ids.length > 0 ? today.ids : serverIds;
 
         if (ids.length === 0) {
-          if (today.total > 0) {
-            // 有卡却拿不到编号：宁可报错，也不能显示成「今天没有卡」
-            throw new Error("今日队列缺少卡片编号，请稍后重试");
-          }
-          updatePending([]);
-          setPhase("empty");
-          return;
+          // 有卡却拿不到编号：宁可报错，也不能显示成「今天没有卡」
+          throw new Error("今日队列缺少卡片编号，请稍后重试");
         }
 
         updatePending(ids);
@@ -144,6 +154,8 @@ export function useRecallSession(initialQueue: RecallInitialQueue) {
   }, [reloadKey, initialQueue, updatePending]);
 
   const advance = useCallback(async () => {
+    // 换卡 = 换轮：上一轮还挂着的提交/归档回来时要能认出自己已经过期
+    roundRef.current += 1;
     // 记下版本：等卡期间若 initialQueue 变化并触发了新的 bootstrap，
     // 这张迟到的卡属于旧队列，不能覆盖新队列的首张卡（否则会把它挤掉）
     const version = queueVersionRef.current;
@@ -155,6 +167,11 @@ export function useRecallSession(initialQueue: RecallInitialQueue) {
     setResult(null);
     // 换卡就是换一次作答：上一个幂等键不能带过来
     clientKeyRef.current = null;
+    // 上一轮挂着的提交已经过期（它的 finally 会因为令牌不符而不再收尾），
+    // 提交态与重试锁在这里归零，否则新卡会被上一轮的锁/提交态卡住
+    setSubmitting(false);
+    setRetryLocked(false);
+    lastSubmitRef.current = null;
 
     if (remaining.length === 0) {
       setCard(null);
@@ -230,6 +247,8 @@ export function useRecallSession(initialQueue: RecallInitialQueue) {
     // 取一份局部快照：三元分支里 TS 不会因为上面的 guard 而收窄 preview
     const judgedPreview = preview;
     if (mode === "verdicts" && !judgedPreview) return;
+    // 载荷与轮次一起快照：这份结果只对「这一轮」有效
+    const round = roundRef.current;
 
     const isAllBlank = mode === "allBlank";
     let payload;
@@ -259,6 +278,9 @@ export function useRecallSession(initialQueue: RecallInitialQueue) {
       setSubmitting(true);
       try {
         const outcome = await submitRecall(payload);
+        // 期间换了队列/换了卡：这份结果属于上一轮，整体丢弃
+        // （不写 result、不清幂等键/重试引用、不解锁——新轮的东西一概不碰）
+        if (round !== roundRef.current) return;
         setResult(outcome);
         setLastNote(outcome.nextReviewText);
         if (isAllBlank) {
@@ -284,13 +306,17 @@ export function useRecallSession(initialQueue: RecallInitialQueue) {
           isAllBlank ? "[recall] 全没想起提交失败" : "[recall] 提交作答失败",
           error,
         );
+        // 期间换了队列/换了卡：这次失败属于上一轮，不能锁住新轮的判定，
+        // 更不能把旧载荷的重试引用留给新卡（新卡重试会发出旧卡的 cardId）
+        if (round !== roundRef.current) return;
         toast.error(`这次没有记下来：${actionErrorMessage(error)}`);
         // 结果未知：锁住判定，重试沿用同一 clientKey 与**同一份载荷**
         lastSubmitRef.current = run;
         setRetryLocked(true);
         return;
       } finally {
-        setSubmitting(false);
+        // 旧轮次的收尾不能关掉新轮次的提交态
+        if (round === roundRef.current) setSubmitting(false);
       }
     };
 
@@ -305,10 +331,14 @@ export function useRecallSession(initialQueue: RecallInitialQueue) {
     if (!window.confirm("归档后这张卡不再出现在队列里，已复习的记录会保留。")) {
       return;
     }
+    // 归档开始时记下轮次：等到返回时若队列/卡已换，advance() 会拿新队列的
+    // pending 去推进，等于删掉新队列里还没作答的第一张卡
+    const round = roundRef.current;
     setBusy(true);
     try {
       await archiveRecallCard(card.cardId, true);
       toast.success("已归档");
+      if (round !== roundRef.current) return;
       await advance();
     } catch (error) {
       console.error("[recall] 归档失败", error);

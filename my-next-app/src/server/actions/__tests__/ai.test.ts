@@ -40,6 +40,7 @@ vi.mock("@/lib/billing/subscription-service", () => ({
 vi.mock("@/lib/services/question", () => ({
   questionService: {
     searchSimilarQuestions: vi.fn(),
+    pickFallbackQuestions: vi.fn(),
   },
 }));
 
@@ -250,6 +251,72 @@ describe("AI Actions", () => {
       await expect(
         generateRegressionChallengeAction("Q", ["tag"]),
       ).rejects.toThrow("配额不足");
+    });
+
+    it("向量兜底为空时改走纯题库随机（AI 挂了不该等于没题可练）", async () => {
+      mockGenerateStructuredData.mockRejectedValue(new Error("AI Error"));
+      mockGenerateTextWrapper.mockResolvedValue({ text: "YES" });
+      vi.mocked(aiCacheService.getChallenge).mockResolvedValue(null);
+
+      // 向量不可用 / embedding 降级时 searchSimilarQuestions 返回空
+      vi.mocked(questionService.searchSimilarQuestions).mockResolvedValue([]);
+      vi.mocked(questionService.pickFallbackQuestions).mockResolvedValue([
+        {
+          id: 9,
+          content: "题库兜底题",
+          options: ["A", "B"],
+          answer: "A",
+          explanation: "E",
+          tags: ["tag1"],
+          dimension: "knowledge",
+          type: "single",
+        },
+      ] as never);
+
+      const result = await generateRegressionChallengeAction("Q", ["tag"]);
+
+      expect(questionService.searchSimilarQuestions).toHaveBeenCalled();
+      // 关键：向量那条走不通时才走题库，而且真的走了
+      expect(questionService.pickFallbackQuestions).toHaveBeenCalled();
+      expect(result.challenges.length).toBe(3);
+      expect(result.challenges[0].content).toBe("题库兜底题");
+    });
+
+    it("题库也是空的时候才抛错（不许悄悄返回空挑战）", async () => {
+      mockGenerateStructuredData.mockRejectedValue(new Error("AI Error"));
+      mockGenerateTextWrapper.mockResolvedValue({ text: "YES" });
+      vi.mocked(aiCacheService.getChallenge).mockResolvedValue(null);
+
+      vi.mocked(questionService.searchSimilarQuestions).mockResolvedValue([]);
+      vi.mocked(questionService.pickFallbackQuestions).mockResolvedValue([]);
+
+      await expect(
+        generateRegressionChallengeAction("Q", ["tag"]),
+      ).rejects.toThrow("无法生成挑战且本地题库检索失败");
+    });
+
+    it("向量检索有结果时不去碰题库兜底（避免多打一次 DB）", async () => {
+      mockGenerateStructuredData.mockRejectedValue(new Error("AI Error"));
+      mockGenerateTextWrapper.mockResolvedValue({ text: "YES" });
+      vi.mocked(aiCacheService.getChallenge).mockResolvedValue(null);
+
+      vi.mocked(questionService.searchSimilarQuestions).mockResolvedValue([
+        {
+          id: 3,
+          content: "向量题",
+          options: ["A", "B"],
+          answer: "A",
+          explanation: "E1",
+          tags: ["tag1"],
+          dimension: "knowledge",
+          type: "single",
+        },
+      ] as never);
+
+      const result = await generateRegressionChallengeAction("Q", ["tag"]);
+
+      expect(questionService.pickFallbackQuestions).not.toHaveBeenCalled();
+      expect(result.challenges[0].content).toBe("向量题");
     });
 
     it("AI 生成失败时应该使用 RAG 兜底", async () => {

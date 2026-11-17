@@ -404,11 +404,14 @@
 html {
   height: 100%;
   /*
-   * 这里原有一行 `overscroll-behavior-y: none`（注释写"防止移动端橡皮筋回弹"），
-   * 但 html 根本不滚（body 是 overflow:hidden，真正滚动的是下面的 main），
-   * 所以那行是**空操作** —— 已挪到 main 上。
-   * T-12b（改回 body 滚动）落地时再挪到 body，别在这里重复写。
+   * 视口层级的边界行为：`html` 是文档级滚动容器 —— 即便 `body` 是 overflow:hidden，
+   * 从 main 之外（如移动端底部导航 MobileNav）起的下拉手势仍会到达视口，
+   * 这条挡的是浏览器的下拉刷新。
+   *
+   * **它并非空操作**（本文件上一版注释写错过这一点，已由评审纠正）：
+   * 容器内的橡皮筋是另一件事，见下面 `main` 上那条。
    */
+  overscroll-behavior-y: none;
 }
 
 body {
@@ -437,8 +440,12 @@ main {
   height: 100%;
   overflow-y: auto;
   -webkit-overflow-scrolling: touch;
-  /* 移动端橡皮筋回弹：必须写在**真正滚动**的元素上（现在就是 main） */
-  overscroll-behavior-y: contain;
+  /*
+   * 容器内的橡皮筋回弹：必须写在**真正滚动**的元素上（现在是 main）。
+   * 用 `none` 而非 `contain`：`contain` 只阻断跨元素的滚动链，本地回弹仍会发生；
+   * 要"禁止回弹"只能 `none`（css-overscroll-1）。
+   */
+  overscroll-behavior-y: none;
 }
 
 /*

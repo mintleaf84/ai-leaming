@@ -10,15 +10,15 @@
 
 **一句话**：不能复用一行 UI 代码，但**后端已经把该复用的都分离好了**——Flutter 端要做的不是重写 Next.js，而是把已存在的第二个客户端接到同一份契约上，并补它接错的口。
 
-| 层 | 复用度 | 说明 |
-| --- | --- | --- |
-| Next.js 页面 / React 组件 | **0** | JSX 与 Dart Widget 无任何机械转换路径，只能按 `ui参考/` 设计稿重画（已完成） |
-| Server Actions（35 文件 / ~150 导出） | **0** | 非 HTTP 契约，是 Next 私有 RPC，任何外部客户端都调不到 |
-| Hono REST（72 条路由，`/api/*`） | **100%** | 单一 catch-all 挂载；认证同时接受 `auth_token` cookie 与 `Authorization: Bearer`，登录响应体直接回 `token` |
-| `src/lib/services/*`（44 个领域服务） | **100%（间接）** | 只吃 `userId` + POJO，不 import `next/headers`、不碰 cookies，天然与传输协议无关 |
-| OpenAPI（`/api/openapi.json` + `/api/doc`） | **100%** | 运行时生成，可直接作为两端契约的单一事实来源 |
-| 幂等 / FSRS / 判分算法（`lib/recall/*`、`question-idempotency`） | 逻辑可搬 | `recall/{normalize,matcher,rating,scheduler}` 是零依赖纯函数，可逐行移植 Dart |
-| PWA / Service Worker 缓存 | 0 | 策略思路可借鉴，代码不可用（Web 有 SW + IndexedDB 语义，原生没有） |
+| 层                                                               | 复用度           | 说明                                                                                                       |
+| ---------------------------------------------------------------- | ---------------- | ---------------------------------------------------------------------------------------------------------- |
+| Next.js 页面 / React 组件                                        | **0**            | JSX 与 Dart Widget 无任何机械转换路径，只能按 `ui参考/` 设计稿重画（已完成）                               |
+| Server Actions（35 文件 / ~150 导出）                            | **0**            | 非 HTTP 契约，是 Next 私有 RPC，任何外部客户端都调不到                                                     |
+| Hono REST（72 条路由，`/api/*`）                                 | **100%**         | 单一 catch-all 挂载；认证同时接受 `auth_token` cookie 与 `Authorization: Bearer`，登录响应体直接回 `token` |
+| `src/lib/services/*`（44 个领域服务）                            | **100%（间接）** | 只吃 `userId` + POJO，不 import `next/headers`、不碰 cookies，天然与传输协议无关                           |
+| OpenAPI（`/api/openapi.json` + `/api/doc`）                      | **100%**         | 运行时生成，可直接作为两端契约的单一事实来源                                                               |
+| 幂等 / FSRS / 判分算法（`lib/recall/*`、`question-idempotency`） | 逻辑可搬         | `recall/{normalize,matcher,rating,scheduler}` 是零依赖纯函数，可逐行移植 Dart                              |
+| PWA / Service Worker 缓存                                        | 0                | 策略思路可借鉴，代码不可用（Web 有 SW + IndexedDB 语义，原生没有）                                         |
 
 **因此本计划的定位是**：`mobile_app/` 已有 17 屏、约 12.1k 手写行、Riverpod 3 + go_router + dio + retrofit + freezed 全套；不重起炉灶，只做「接线 + 补断层 + 加离线 + 出包」。
 
@@ -28,15 +28,15 @@
 
 ## 2. 现状基线
 
-| 面 | 事实 |
-| --- | --- |
-| Flutter 规模 | 85 个 dart 文件 / 15,984 行（去生成物 12,100 行），17 条 GoRoute，Riverpod 3 + go_router 17 + dio 5.9 + retrofit 4.9 + freezed 3 |
-| 已跑通 | auth（JWT 存 secure storage、401 自动登出）、题库列表分页、练习答题、练习配置、结果页、历史列表/详情、知识卡列表、掌握度树、stats、profile、教材库、错题本（列表/按标签/标记掌握/生成练习） |
-| 断在半路 | AI 聊天（4 个会话端点 404 + 流协议不匹配）、第一性原理、「套餐」页、练习模式（后端只支持 random）、设置页（大量硬编码 mock） |
-| 本地存储 | **只有一枚 JWT**；无 sqflite/drift/isar/hive，无缓存、无离线队列、无同步 |
-| 契约来源 | 两端各自手写：Flutter 4 个 retrofit 方法 + 5 个手写 repository；无 OpenAPI→Dart 生成链路 |
-| 质量基线 | `analyze.txt` / `test_output.txt` 都是**陈旧快照**（前者 3 个 error 现已被源码修掉，后者记录 0 通过 / 2 编译失败）。必须先复跑一次才有真基线 |
-| 构建能力 | **本机无 Flutter/Dart/JDK17/Android SDK**（只有 JDK 8、glibc 2.17）→ 本地出包不可行，验证与打包全部走 GitHub Actions；真机调试用你的 Windows 机 |
+| 面           | 事实                                                                                                                                                                                        |
+| ------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Flutter 规模 | 85 个 dart 文件 / 15,984 行（去生成物 12,100 行），17 条 GoRoute，Riverpod 3 + go_router 17 + dio 5.9 + retrofit 4.9 + freezed 3                                                            |
+| 已跑通       | auth（JWT 存 secure storage、401 自动登出）、题库列表分页、练习答题、练习配置、结果页、历史列表/详情、知识卡列表、掌握度树、stats、profile、教材库、错题本（列表/按标签/标记掌握/生成练习） |
+| 断在半路     | AI 聊天（4 个会话端点 404 + 流协议不匹配）、第一性原理、「套餐」页、练习模式（后端只支持 random）、设置页（大量硬编码 mock）                                                                |
+| 本地存储     | **只有一枚 JWT**；无 sqflite/drift/isar/hive，无缓存、无离线队列、无同步                                                                                                                    |
+| 契约来源     | 两端各自手写：Flutter 4 个 retrofit 方法 + 5 个手写 repository；无 OpenAPI→Dart 生成链路                                                                                                    |
+| 质量基线     | `analyze.txt` / `test_output.txt` 都是**陈旧快照**（前者 3 个 error 现已被源码修掉，后者记录 0 通过 / 2 编译失败）。必须先复跑一次才有真基线                                                |
+| 构建能力     | **本机无 Flutter/Dart/JDK17/Android SDK**（只有 JDK 8、glibc 2.17）→ 本地出包不可行，验证与打包全部走 GitHub Actions；真机调试用你的 Windows 机                                             |
 
 ---
 
@@ -44,15 +44,15 @@
 
 逐条已在本机核实（不是推测）。改法标注归属端。
 
-| # | 现象 | 证据 | 修法 | 端 |
-| --- | --- | --- | --- | --- |
-| 1 | 聊天首条消息即失败 | Flutter 调 `/chat/sessions*` 四个端点（list/create/get/delete，`chat_repository_impl.dart:96-139`），后端 `chat.ts` 只有一个 `POST /` | 后端补 REST：`GET/POST /chat/sessions`、`GET/DELETE /chat/sessions/:id`，直接调用现成的 `services/chat.ts`（`createSession/listSessions/getSession/deleteSession` 已就绪） | 后端 |
-| 2 | 聊天屏会显示 SSE 原始 JSON | 后端 `POST /chat` 返回 AI SDK **UIMessageStream**（`data: {"type":"text-delta",...}`），Flutter 把 chunk 原样拼进气泡（`chat_provider.dart:155`） | 二选一：① 后端加 `/chat/stream`（标准 SSE，`event: delta`）；② Flutter 侧按 UIMessageStream 协议解析。**选 ①**：协议归后端，Web 端不受影响 | 后端 |
-| 3 | 第一性原理必 400 | 后端 zod 要求 `{questionContent, correctAnswer, explanation?, wrongAnswer?}`（`practice.ts:195`），Flutter repository 发 `{questionId, content}`（`practice_repository_impl.dart:66`）；domain 里 `FirstPrinciplesParams` 字段其实是对的，只是没人用 | 改 repository 接口签名带上 `correctAnswer`，用 `FirstPrinciplesParams.toJson()` 发送 | Flutter |
-| 4 | 练习模式选了就 400 | 后端 `if (mode !== "random") return 400`（`practice.ts:70`），但 setup 页提供多种模式 | 短期：setup 页只暴露 random + 从错题本进入的入口；中期：后端按 `mode` 分派到 `wrongQuestionService.getList` / tag 过滤 | 两端 |
-| 5 | 错题本「开始练习」丢了会话 | `context.go('/practice?sessionId=$sessionId')`（`wrong_book_screen.dart:505`），但 `/practice` 只读 `state.extra`（`app_router.dart:48`）→ 静默新建随机练习 | 改为 `context.go('/practice', extra: {'sessionId': sid})`，PracticeScreen 增加按 sessionId 续练分支 | Flutter |
-| 6 | 套餐页永远降级 | 请求 `/billing/plans`，后端无此路由 | 后端从 `subscription_plans` 表补 `GET /billing/plans`；或本期直接删降级逻辑，标为「未上线」 | 后端 |
-| 7 | 注册页邮箱被吞 | 表单有 email 输入（`register_screen.dart:14`），提交只发 username/password | 要么后端 `POST /auth/register` 加 email 字段并落库，要么删掉该输入框。**先删**——users 表没有 email 列 | Flutter |
+| #   | 现象                       | 证据                                                                                                                                                                                                                                                 | 修法                                                                                                                                                                       | 端      |
+| --- | -------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------- |
+| 1   | 聊天首条消息即失败         | Flutter 调 `/chat/sessions*` 四个端点（list/create/get/delete，`chat_repository_impl.dart:96-139`），后端 `chat.ts` 只有一个 `POST /`                                                                                                                | 后端补 REST：`GET/POST /chat/sessions`、`GET/DELETE /chat/sessions/:id`，直接调用现成的 `services/chat.ts`（`createSession/listSessions/getSession/deleteSession` 已就绪） | 后端    |
+| 2   | 聊天屏会显示 SSE 原始 JSON | 后端 `POST /chat` 返回 AI SDK **UIMessageStream**（`data: {"type":"text-delta",...}`），Flutter 把 chunk 原样拼进气泡（`chat_provider.dart:155`）                                                                                                    | 二选一：① 后端加 `/chat/stream`（标准 SSE，`event: delta`）；② Flutter 侧按 UIMessageStream 协议解析。**选 ①**：协议归后端，Web 端不受影响                                 | 后端    |
+| 3   | 第一性原理必 400           | 后端 zod 要求 `{questionContent, correctAnswer, explanation?, wrongAnswer?}`（`practice.ts:195`），Flutter repository 发 `{questionId, content}`（`practice_repository_impl.dart:66`）；domain 里 `FirstPrinciplesParams` 字段其实是对的，只是没人用 | 改 repository 接口签名带上 `correctAnswer`，用 `FirstPrinciplesParams.toJson()` 发送                                                                                       | Flutter |
+| 4   | 练习模式选了就 400         | 后端 `if (mode !== "random") return 400`（`practice.ts:70`），但 setup 页提供多种模式                                                                                                                                                                | 短期：setup 页只暴露 random + 从错题本进入的入口；中期：后端按 `mode` 分派到 `wrongQuestionService.getList` / tag 过滤                                                     | 两端    |
+| 5   | 错题本「开始练习」丢了会话 | `context.go('/practice?sessionId=$sessionId')`（`wrong_book_screen.dart:505`），但 `/practice` 只读 `state.extra`（`app_router.dart:48`）→ 静默新建随机练习                                                                                          | 改为 `context.go('/practice', extra: {'sessionId': sid})`，PracticeScreen 增加按 sessionId 续练分支                                                                        | Flutter |
+| 6   | 套餐页永远降级             | 请求 `/billing/plans`，后端无此路由                                                                                                                                                                                                                  | 后端从 `subscription_plans` 表补 `GET /billing/plans`；或本期直接删降级逻辑，标为「未上线」                                                                                | 后端    |
+| 7   | 注册页邮箱被吞             | 表单有 email 输入（`register_screen.dart:14`），提交只发 username/password                                                                                                                                                                           | 要么后端 `POST /auth/register` 加 email 字段并落库，要么删掉该输入框。**先删**——users 表没有 email 列                                                                      | Flutter |
 
 **验收**：7 条逐条真机回归（或 CI 集成测试）通过；`analyze` 无 error。
 
@@ -88,6 +88,7 @@ Widget ──> Notifier ──> Repository（唯一读出口）
 ```
 
 规则三条：
+
 1. **UI 层不直连 Dio**。现在 7 个 feature 的 provider 自己 `_dio.get(...)`，是离线化的第一个障碍——必须先把这 7 处收进 repository（这是一次机械重构，但必须先做）。
 2. **写路径只经 SyncService**，读路径只经 Repository，两边不互相调用。
 3. 在线时命中远端失败 → 自动降级读本地 + 顶部提示「离线模式」，不弹错误对话框。
@@ -98,12 +99,12 @@ Widget ──> Notifier ──> Repository（唯一读出口）
 
 表设计（只存必需，不镜像服务端全量）：
 
-| 表 | 关键列 | 说明 |
-| --- | --- | --- |
-| `cached_questions` | `id`(int PK)、`content`、`options`(json)、`type`、`tags`(json)、`answer`、`explanation`、`material`、`fetched_at` | 题面只读缓存；答案一并缓存，离线判分靠它 |
-| `local_sessions` | `local_id`(uuid PK)、`mode`、`question_ids`(json)、`started_at`、`synced_session_id` | 离线生成的练习 |
-| `pending_answers` | `client_key`(uuid PK)、`local_id`、`question_id`、`user_answer`、`is_correct`、`duration_ms`、`answered_at`、`synced_at` | 待上报队列 |
-| `sync_meta` | `key`(PK)、`value` | 题库游标、上次同步时间、设备 id |
+| 表                 | 关键列                                                                                                                   | 说明                                     |
+| ------------------ | ------------------------------------------------------------------------------------------------------------------------ | ---------------------------------------- |
+| `cached_questions` | `id`(int PK)、`content`、`options`(json)、`type`、`tags`(json)、`answer`、`explanation`、`material`、`fetched_at`        | 题面只读缓存；答案一并缓存，离线判分靠它 |
+| `local_sessions`   | `local_id`(uuid PK)、`mode`、`question_ids`(json)、`started_at`、`synced_session_id`                                     | 离线生成的练习                           |
+| `pending_answers`  | `client_key`(uuid PK)、`local_id`、`question_id`、`user_answer`、`is_correct`、`duration_ms`、`answered_at`、`synced_at` | 待上报队列                               |
+| `sync_meta`        | `key`(PK)、`value`                                                                                                       | 题库游标、上次同步时间、设备 id          |
 
 体积估算：题面纯文本，千题约 0.6–1 MB；全量题库（万题级）也在 10 MB 内，不做增量淘汰，直接全量持有。
 
@@ -131,13 +132,13 @@ Widget ──> Notifier ──> Repository（唯一读出口）
 
 ## 6. P3：功能补齐（按真实使用频率排序）
 
-| 优先 | 项 | 现状 | 工作量 |
-| --- | --- | --- | --- |
-| 高 | 设置页真数据 | 用户名/邮箱/目标/缓存全是硬编码 mock（`settings_screen.dart:21-25`） | 接 `/api/profile` + 本地真实缓存大小 |
-| 高 | 掌握度页无入口 | `mastery_screen.dart` 数据能拉，全库无 `context.go('/mastery')` | 在 profile 或 dashboard 加入口 |
-| 中 | 知识卡新建 | FAB 只弹「开发中」（`knowledge_screen.dart:164`） | 调已存在的 `POST /knowledge/cards` |
-| 中 | dashboard 待办 | 固定占位文案 | 接真实数据或删掉 |
-| 低 | 题库搜索 | 搜索框 `TODO`（`question_list_screen.dart:110`） | 后端 `GET /questions?search=` 已支持 |
+| 优先 | 项             | 现状                                                                 | 工作量                               |
+| ---- | -------------- | -------------------------------------------------------------------- | ------------------------------------ |
+| 高   | 设置页真数据   | 用户名/邮箱/目标/缓存全是硬编码 mock（`settings_screen.dart:21-25`） | 接 `/api/profile` + 本地真实缓存大小 |
+| 高   | 掌握度页无入口 | `mastery_screen.dart` 数据能拉，全库无 `context.go('/mastery')`      | 在 profile 或 dashboard 加入口       |
+| 中   | 知识卡新建     | FAB 只弹「开发中」（`knowledge_screen.dart:164`）                    | 调已存在的 `POST /knowledge/cards`   |
+| 中   | dashboard 待办 | 固定占位文案                                                         | 接真实数据或删掉                     |
+| 低   | 题库搜索       | 搜索框 `TODO`（`question_list_screen.dart:110`）                     | 后端 `GET /questions?search=` 已支持 |
 
 **明确不做**（本期排除，避免范围膨胀）：笔记、思维导图、SRS 面板、订阅管理、题目/用户管理后台、PDF 导入、观察区、排行榜。这些只有 Server Action 没有 REST，且与「手机上刷题」无关。
 
@@ -154,7 +155,7 @@ name: Android APK
 on:
   workflow_dispatch:
   push:
-    tags: ['v*']
+    tags: ["v*"]
 jobs:
   apk:
     runs-on: ubuntu-latest
@@ -162,16 +163,20 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-java@v4
-        with: { distribution: temurin, java-version: '17' }
+        with: { distribution: temurin, java-version: "17" }
       - uses: subosito/flutter-action@v2
-        with: { flutter-version: '3.38.4', channel: stable, cache: true }
+        with: { flutter-version: "3.38.4", channel: stable, cache: true }
       - run: flutter pub get
       - run: dart run build_runner build --delete-conflicting-outputs
       - run: flutter analyze --no-fatal-infos
       - run: flutter test
       - run: flutter build apk --release --dart-define=API_BASE_URL=${{ vars.API_BASE_URL }}
       - uses: actions/upload-artifact@v4
-        with: { name: app-release, path: mobile_app/build/app/outputs/flutter-apk/app-release.apk }
+        with:
+          {
+            name: app-release,
+            path: mobile_app/build/app/outputs/flutter-apk/app-release.apk,
+          }
 ```
 
 配套前置改动（都在 `mobile_app/`）：
@@ -188,12 +193,12 @@ jobs:
 
 ## 8. P5：质量门禁
 
-| 项 | 现状 | 动作 |
-| --- | --- | --- |
-| `flutter analyze` | 日志陈旧，真实状态未知 | 首次进 CI 前本地（Windows）或 CI 跑一次 `build_runner build` + `analyze`，拿到真基线；规则按仓库「棘轮」思路，禁止新增 error |
-| 测试 | 7 文件 / 28 个 `test()`，其中 2 个是**打真网**的集成脚本（硬编码 `127.0.0.1:3000`） | 真网脚本改为注入式 baseURL 并标 `@Tags(['integration'])`，默认 `flutter test` 不跑；纯逻辑测试（provider / fromJson / copyWith）进 CI |
-| `avoid_print` | 17 处，其中 3 处在生产代码（`chat_repository_impl.dart:70,75,78`） | 换 `debugPrint` 或删 |
-| 陈旧产物 | `analyze.txt` / `analyze_output*.txt` / `test_output.txt` / `flutter_0*.png` 都入了库 | 删除，改由 CI 产出 |
+| 项                | 现状                                                                                  | 动作                                                                                                                                  |
+| ----------------- | ------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------- |
+| `flutter analyze` | 日志陈旧，真实状态未知                                                                | 首次进 CI 前本地（Windows）或 CI 跑一次 `build_runner build` + `analyze`，拿到真基线；规则按仓库「棘轮」思路，禁止新增 error          |
+| 测试              | 7 文件 / 28 个 `test()`，其中 2 个是**打真网**的集成脚本（硬编码 `127.0.0.1:3000`）   | 真网脚本改为注入式 baseURL 并标 `@Tags(['integration'])`，默认 `flutter test` 不跑；纯逻辑测试（provider / fromJson / copyWith）进 CI |
+| `avoid_print`     | 17 处，其中 3 处在生产代码（`chat_repository_impl.dart:70,75,78`）                    | 换 `debugPrint` 或删                                                                                                                  |
+| 陈旧产物          | `analyze.txt` / `analyze_output*.txt` / `test_output.txt` / `flutter_0*.png` 都入了库 | 删除，改由 CI 产出                                                                                                                    |
 
 ---
 
@@ -201,14 +206,14 @@ jobs:
 
 按「AI 可代劳的部分」与「只能由你把关的部分」分开，不混算。
 
-| 阶段 | AI 密集（可连续跑） | 人工/外部闸口 | 说明 |
-| --- | --- | --- | --- |
-| P0 契约对齐 | 1 个工作会话（4 后端端点 + 2 Flutter 修改） | 真机回归 30 min | 后端 4 处都是调现成 service，风险低 |
-| P1 契约快照 + CI 闸 | 半个会话 | — | 脚本 + 一个 job step |
-| P2 离线 + 同步 | 8–12 个会话 | 真机断网/回连实测 1–2 h（必须真人做） | 最大块：drift 建表 → 7 个 provider 收口 → SyncService → 幂等测试 |
-| P3 功能补齐 | 每项 0.5–1 个会话 | — | 5 项合计 3–4 个会话 |
-| P4 APK 链路 | 1–2 个会话 | 首次 CI 跑通（下载 Flutter 约 2–3 min/次）+ 签名决策 | 卡点通常在签名与 minSdk |
-| P5 质量门禁 | 1 个会话 | — | 需要先有一次真实 analyze 结果 |
+| 阶段                | AI 密集（可连续跑）                         | 人工/外部闸口                                        | 说明                                                             |
+| ------------------- | ------------------------------------------- | ---------------------------------------------------- | ---------------------------------------------------------------- |
+| P0 契约对齐         | 1 个工作会话（4 后端端点 + 2 Flutter 修改） | 真机回归 30 min                                      | 后端 4 处都是调现成 service，风险低                              |
+| P1 契约快照 + CI 闸 | 半个会话                                    | —                                                    | 脚本 + 一个 job step                                             |
+| P2 离线 + 同步      | 8–12 个会话                                 | 真机断网/回连实测 1–2 h（必须真人做）                | 最大块：drift 建表 → 7 个 provider 收口 → SyncService → 幂等测试 |
+| P3 功能补齐         | 每项 0.5–1 个会话                           | —                                                    | 5 项合计 3–4 个会话                                              |
+| P4 APK 链路         | 1–2 个会话                                  | 首次 CI 跑通（下载 Flutter 约 2–3 min/次）+ 签名决策 | 卡点通常在签名与 minSdk                                          |
+| P5 质量门禁         | 1 个会话                                    | —                                                    | 需要先有一次真实 analyze 结果                                    |
 
 **合计约 3–5 个 AI 密集工作日**，但**日历时间由你的会话数决定**（备考期每天 45 分钟的话，按 2–3 周排）。每阶段都可独立交付，P0 完成即可先出一个能用的 APK。
 
@@ -227,17 +232,17 @@ jobs:
 
 ### 已完成
 
-| 阶段 | 内容 | 证据 |
-| --- | --- | --- |
-| P0 #3 | 第一性原理请求体改为 `{questionContent, correctAnswer, explanation?, wrongAnswer?}` | `practice_repository.dart` / `_impl.dart` / `practice_provider.dart` 三处签名一致 |
-| P0 #4 | 练习模式收敛：仅 `random` 可选，其余置灰「暂未开放」 | `practice_setup_screen.dart` 四个 `_PracticeMode` 均带 `enabled` |
-| P0 #5 | 错题本「开始练习」真正续练 | 新增后端 `GET /api/practice/session/:sessionId`；Flutter `repo.getSession()` + `provider.loadSession()`；错题本改走 router `extra` 传参 |
-| P0 #1 | 聊天会话 REST 四端点 | `chat.ts` 新增 `GET/POST /sessions`、`GET/DELETE /sessions/:id`，复用 `services/chat.ts` |
-| P0 #2 | 聊天流不再显示裸 JSON | `chat_repository_impl.dart` 改为跨 chunk 行缓冲 + 按 `type=="text-delta"` 取 `delta`；`Utf8Decoder.bind` 避免多字节字符被 chunk 边界截断 |
-| P0 #6 | 套餐页不再永远降级 | 新增 `GET /api/billing/plans`（需登录），字段 `plans[].priceCents/features/name/slug` 对齐 `pricing_screen.dart` |
-| P1 | 契约快照 + CI 闸 | `scripts/dump-openapi.ts` + `contract:dump/check` + ci.yml 的 `contract` job；实测「一致→0 / 漂移→1」 |
-| P4 | APK 流水线 | `.github/workflows/android.yml`（ubuntu-latest，10 步），`baseUrl` 改 `--dart-define`，`applicationId` → `com.mintleaf84.aileaming`，签名脚手架（无 keystore 时回落 debug） |
-| P2 后端 | 离线答题回传端点 | `POST /api/practice/offline-answers`，复用 `importService.importAgentAnswers`（`sessionKey` 幂等），走 JWT 而非 API Key |
+| 阶段    | 内容                                                                                | 证据                                                                                                                                                                        |
+| ------- | ----------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| P0 #3   | 第一性原理请求体改为 `{questionContent, correctAnswer, explanation?, wrongAnswer?}` | `practice_repository.dart` / `_impl.dart` / `practice_provider.dart` 三处签名一致                                                                                           |
+| P0 #4   | 练习模式收敛：仅 `random` 可选，其余置灰「暂未开放」                                | `practice_setup_screen.dart` 四个 `_PracticeMode` 均带 `enabled`                                                                                                            |
+| P0 #5   | 错题本「开始练习」真正续练                                                          | 新增后端 `GET /api/practice/session/:sessionId`；Flutter `repo.getSession()` + `provider.loadSession()`；错题本改走 router `extra` 传参                                     |
+| P0 #1   | 聊天会话 REST 四端点                                                                | `chat.ts` 新增 `GET/POST /sessions`、`GET/DELETE /sessions/:id`，复用 `services/chat.ts`                                                                                    |
+| P0 #2   | 聊天流不再显示裸 JSON                                                               | `chat_repository_impl.dart` 改为跨 chunk 行缓冲 + 按 `type=="text-delta"` 取 `delta`；`Utf8Decoder.bind` 避免多字节字符被 chunk 边界截断                                    |
+| P0 #6   | 套餐页不再永远降级                                                                  | 新增 `GET /api/billing/plans`（需登录），字段 `plans[].priceCents/features/name/slug` 对齐 `pricing_screen.dart`                                                            |
+| P1      | 契约快照 + CI 闸                                                                    | `scripts/dump-openapi.ts` + `contract:dump/check` + ci.yml 的 `contract` job；实测「一致→0 / 漂移→1」                                                                       |
+| P4      | APK 流水线                                                                          | `.github/workflows/android.yml`（ubuntu-latest，10 步），`baseUrl` 改 `--dart-define`，`applicationId` → `com.mintleaf84.aileaming`，签名脚手架（无 keystore 时回落 debug） |
+| P2 后端 | 离线答题回传端点                                                                    | `POST /api/practice/offline-answers`，复用 `importService.importAgentAnswers`（`sessionKey` 幂等），走 JWT 而非 API Key                                                     |
 
 另：`app/doc` 的 Hono app 从 `route.ts` 抽到 `src/lib/api/app.ts`，让快照脚本能在不起服务的前提下取到同一份文档（本机跑不了 `next build`）。
 

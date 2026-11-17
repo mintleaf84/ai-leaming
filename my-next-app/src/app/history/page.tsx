@@ -228,13 +228,14 @@ export default function HistoryPage() {
                   </SheetDescription>
                 </SheetHeader>
                 <div className="grid gap-6 py-8">
-                  <div className="space-y-3">
-                    <label className="text-sm font-black uppercase tracking-widest opacity-60">
+                  <fieldset className="space-y-3">
+                    <legend className="text-sm font-black uppercase tracking-widest opacity-60">
                       日期范围
-                    </label>
+                    </legend>
                     <div className="grid grid-cols-2 gap-3">
                       <Input
                         type="date"
+                        aria-label="开始日期"
                         value={filter.dateFrom || ""}
                         className="rounded-xl border-border focus:border-primary"
                         onChange={(e) =>
@@ -246,6 +247,7 @@ export default function HistoryPage() {
                       />
                       <Input
                         type="date"
+                        aria-label="结束日期"
                         value={filter.dateTo || ""}
                         className="rounded-xl border-border focus:border-primary"
                         onChange={(e) =>
@@ -256,15 +258,16 @@ export default function HistoryPage() {
                         }
                       />
                     </div>
-                  </div>
+                  </fieldset>
 
-                  <div className="space-y-3">
-                    <label className="text-sm font-black uppercase tracking-widest opacity-60">
+                  <fieldset className="space-y-3">
+                    <legend className="text-sm font-black uppercase tracking-widest opacity-60">
                       正确率范围 (%)
-                    </label>
+                    </legend>
                     <div className="flex items-center gap-3">
                       <Input
                         type="number"
+                        aria-label="最低正确率"
                         placeholder="Min"
                         min={0}
                         max={100}
@@ -282,6 +285,7 @@ export default function HistoryPage() {
                       <span className="text-border">-</span>
                       <Input
                         type="number"
+                        aria-label="最高正确率"
                         placeholder="Max"
                         min={0}
                         max={100}
@@ -297,16 +301,21 @@ export default function HistoryPage() {
                         }
                       />
                     </div>
-                  </div>
+                  </fieldset>
 
-                  <div className="space-y-3">
-                    <label className="text-sm font-black uppercase tracking-widest opacity-60">
+                  <fieldset className="space-y-3">
+                    <legend className="text-sm font-black uppercase tracking-widest opacity-60">
                       练习模式
-                    </label>
+                    </legend>
                     <div className="flex flex-wrap gap-2">
                       {["全部", ...availableModes].map((mode) => (
                         <button
                           key={mode}
+                          aria-pressed={
+                            mode === "全部"
+                              ? !filter.mode
+                              : filter.mode === mode
+                          }
                           onClick={() =>
                             setFilter((prev) => ({
                               ...prev,
@@ -330,7 +339,7 @@ export default function HistoryPage() {
                         </button>
                       ))}
                     </div>
-                  </div>
+                  </fieldset>
                 </div>
                 <SheetFooter className="gap-2 sm:gap-0">
                   <Button

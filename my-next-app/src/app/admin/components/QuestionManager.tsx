@@ -480,8 +480,12 @@ export function QuestionManager() {
                 表头的全选框在窄屏被隐藏，这里补一行「全选当前页」，
                 勾选态与表格表头共用 allSelected 同一判据。 */}
             <div className="p-4 lg:hidden">
-              <label className="mb-2 flex min-h-11 items-center gap-2 text-sm text-muted-foreground">
+              <label
+                htmlFor="admin-select-all-page"
+                className="mb-2 flex min-h-11 items-center gap-2 text-sm text-muted-foreground"
+              >
                 <Checkbox
+                  id="admin-select-all-page"
                   aria-label="全选当前页题目"
                   checked={allSelected}
                   onCheckedChange={toggleSelectAll}

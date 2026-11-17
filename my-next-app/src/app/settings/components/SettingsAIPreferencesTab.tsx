@@ -22,7 +22,10 @@ export function SettingsAIPreferencesTab({
         <div className="space-y-6">
           <div className="space-y-3">
             <div className="flex justify-between items-end">
-              <label className="text-sm font-medium text-muted-foreground">
+              <label
+                htmlFor="settings-review-threshold"
+                className="text-sm font-medium text-muted-foreground"
+              >
                 自动复盘触发阈值
               </label>
               <span className="text-2xl font-serif font-bold text-primary">
@@ -34,6 +37,7 @@ export function SettingsAIPreferencesTab({
             </div>
             <input
               type="range"
+              id="settings-review-threshold"
               min="30"
               max="90"
               step="5"
@@ -52,10 +56,10 @@ export function SettingsAIPreferencesTab({
             </p>
           </div>
 
-          <div className="pt-4 border-t border-border space-y-3">
-            <label className="text-sm font-medium text-muted-foreground">
+          <fieldset className="pt-4 border-t border-border space-y-3">
+            <legend className="text-sm font-medium text-muted-foreground">
               AI 严厉程度
-            </label>
+            </legend>
             <div className="grid grid-cols-3 gap-3">
               {[
                 { id: "low", label: "温柔鼓励", desc: "以鼓励为主" },
@@ -64,6 +68,7 @@ export function SettingsAIPreferencesTab({
               ].map((level) => (
                 <button
                   key={level.id}
+                  aria-pressed={settings.aiSeverity === level.id}
                   onClick={() =>
                     setSettings({
                       ...settings,
@@ -84,7 +89,7 @@ export function SettingsAIPreferencesTab({
                 </button>
               ))}
             </div>
-          </div>
+          </fieldset>
         </div>
       </div>
     </div>

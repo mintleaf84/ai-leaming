@@ -266,29 +266,45 @@ export default function PracticeSetupPage() {
                 <div>
                   <h3 className="font-medium mb-3">题目类型</h3>
                   <div className="flex gap-4">
-                    <label className="flex items-center gap-2 cursor-pointer">
+                    <label
+                      htmlFor="practice-type-single"
+                      className="flex items-center gap-2 cursor-pointer"
+                    >
                       <Checkbox
+                        id="practice-type-single"
                         checked={config.types?.includes("single") ?? true}
                         onCheckedChange={() => toggleType("single")}
                       />
                       <span>单选题</span>
                     </label>
-                    <label className="flex items-center gap-2 cursor-pointer">
+                    <label
+                      htmlFor="practice-type-multi"
+                      className="flex items-center gap-2 cursor-pointer"
+                    >
                       <Checkbox
+                        id="practice-type-multi"
                         checked={config.types?.includes("multi") ?? true}
                         onCheckedChange={() => toggleType("multi")}
                       />
                       <span>多选题</span>
                     </label>
-                    <label className="flex items-center gap-2 cursor-pointer">
+                    <label
+                      htmlFor="practice-type-truefalse"
+                      className="flex items-center gap-2 cursor-pointer"
+                    >
                       <Checkbox
+                        id="practice-type-truefalse"
                         checked={config.types?.includes("truefalse") ?? true}
                         onCheckedChange={() => toggleType("truefalse")}
                       />
                       <span>判断题</span>
                     </label>
-                    <label className="flex items-center gap-2 cursor-pointer">
+                    <label
+                      htmlFor="practice-type-fill_blank"
+                      className="flex items-center gap-2 cursor-pointer"
+                    >
                       <Checkbox
+                        id="practice-type-fill_blank"
                         checked={config.types?.includes("fill_blank") ?? true}
                         onCheckedChange={() => toggleType("fill_blank")}
                       />

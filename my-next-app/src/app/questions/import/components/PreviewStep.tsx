@@ -118,8 +118,14 @@ function QuestionCard({
           {editing ? (
             <div className="space-y-2">
               <div>
-                <label className="text-xs text-muted-foreground">题干</label>
+                <label
+                  htmlFor={`draft-content-${index}`}
+                  className="text-xs text-muted-foreground"
+                >
+                  题干
+                </label>
                 <Textarea
+                  id={`draft-content-${index}`}
                   value={draft.content}
                   onChange={(e) =>
                     setDraft({ ...draft, content: e.target.value })
@@ -128,10 +134,14 @@ function QuestionCard({
                 />
               </div>
               <div>
-                <label className="text-xs text-muted-foreground">
+                <label
+                  htmlFor={`draft-options-${index}`}
+                  className="text-xs text-muted-foreground"
+                >
                   选项（每行一个）
                 </label>
                 <Textarea
+                  id={`draft-options-${index}`}
                   value={draft.options.join("\n")}
                   onChange={(e) =>
                     setDraft({
@@ -144,8 +154,14 @@ function QuestionCard({
               </div>
               <div className="grid grid-cols-2 gap-2">
                 <div>
-                  <label className="text-xs text-muted-foreground">答案</label>
+                  <label
+                    htmlFor={`draft-answer-${index}`}
+                    className="text-xs text-muted-foreground"
+                  >
+                    答案
+                  </label>
                   <Input
+                    id={`draft-answer-${index}`}
                     value={draft.answer}
                     onChange={(e) =>
                       setDraft({ ...draft, answer: e.target.value })
@@ -154,7 +170,12 @@ function QuestionCard({
                   />
                 </div>
                 <div>
-                  <label className="text-xs text-muted-foreground">题型</label>
+                  <label
+                    htmlFor={`draft-type-${index}`}
+                    className="text-xs text-muted-foreground"
+                  >
+                    题型
+                  </label>
                   <Select
                     value={draft.type}
                     onValueChange={(v) =>
@@ -164,7 +185,7 @@ function QuestionCard({
                       })
                     }
                   >
-                    <SelectTrigger>
+                    <SelectTrigger id={`draft-type-${index}`}>
                       <SelectValue />
                     </SelectTrigger>
                     <SelectContent>
@@ -176,8 +197,14 @@ function QuestionCard({
                 </div>
               </div>
               <div>
-                <label className="text-xs text-muted-foreground">解析</label>
+                <label
+                  htmlFor={`draft-explanation-${index}`}
+                  className="text-xs text-muted-foreground"
+                >
+                  解析
+                </label>
                 <Textarea
+                  id={`draft-explanation-${index}`}
                   value={draft.explanation}
                   onChange={(e) =>
                     setDraft({ ...draft, explanation: e.target.value })
@@ -362,8 +389,12 @@ export function PreviewStep({
         </div>
 
         <div className="flex items-center gap-3">
-          <label className="flex items-center gap-2 text-sm cursor-pointer select-none">
+          <label
+            htmlFor="preview-add-to-wrong-book"
+            className="flex items-center gap-2 text-sm cursor-pointer select-none"
+          >
             <Checkbox
+              id="preview-add-to-wrong-book"
               checked={addToWrongBook}
               onCheckedChange={(checked) => setAddToWrongBook(checked === true)}
             />

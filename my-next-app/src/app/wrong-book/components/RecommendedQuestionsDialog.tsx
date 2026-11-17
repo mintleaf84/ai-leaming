@@ -79,13 +79,16 @@ export function RecommendedQuestionsDialog({
             </div>
           ) : (
             questions.map((q, index) => (
-              <div
+              // 整张推荐卡点击 = 用这批题开始练习，语义上就是一个按钮：
+              // 换成真 <button> 后 Tab 可达、Enter/Space 原生触发。
+              <button
+                type="button"
                 key={
                   q.metadata?.question_id
                     ? String(q.metadata.question_id)
                     : `idx-${index}`
                 }
-                className="p-3 rounded-lg border bg-card hover:bg-accent/50 transition-colors cursor-pointer"
+                className="block w-full text-left p-3 rounded-lg border bg-card hover:bg-accent/50 transition-colors cursor-pointer"
                 onClick={() => handleStartPractice()}
               >
                 <div className="flex items-start gap-3">
@@ -101,7 +104,7 @@ export function RecommendedQuestionsDialog({
                     ) : null}
                   </div>
                 </div>
-              </div>
+              </button>
             ))
           )}
         </div>

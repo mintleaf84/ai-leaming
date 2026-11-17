@@ -353,8 +353,10 @@ async function openFolderDeleteDialog() {
   fireEvent.click(screen.getByRole("button", { name: "文件夹" }));
 
   const nameNode = await screen.findByText("易错集合");
-  const row = nameNode.parentElement as HTMLElement;
-  const trigger = within(row).getByRole("button");
+  // 批次 B5 起：文件夹名放在「选中文件夹」按钮里（真 button），更多操作菜单是它的兄弟，
+  // 所以要从名字往上找到**行**再找菜单触发器，不能再直接取 nameNode.parentElement。
+  const row = nameNode.closest("button")?.parentElement as HTMLElement;
+  const trigger = within(row).getByRole("button", { name: "文件夹更多操作" });
   // Radix DropdownMenu 需要 pointerdown 才能展开
   fireEvent.pointerDown(trigger, { button: 0, ctrlKey: false });
 

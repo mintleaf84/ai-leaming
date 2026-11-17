@@ -1,76 +1,30 @@
 // @vitest-environment node
-import { describe, it, expect, beforeEach, vi } from "vitest";
+/**
+ * 知识卡片服务（真实 SQLite + 真实迁移）。
+ *
+ * 原先整条 drizzle 链都是 mock（`insert().values()` 返回 `{lastInsertRowid: 7}`），
+ * 所以「卡片真的落库了」「更新真的改了行」「删除真的删掉了」都没被验证过。
+ * 现在只 mock `@/lib/ai/rag`（向量检索是外部依赖，不是本次被测语义），
+ * 所有断言都回到 knowledge_cards 表的真实行。
+ */
+import {
+  describe,
+  it,
+  expect,
+  beforeAll,
+  afterAll,
+  beforeEach,
+  vi,
+} from "vitest";
+import fs from "node:fs";
+import path from "node:path";
+import { eq } from "drizzle-orm";
+import type { KnowledgeCard } from "../knowledge";
 
-// ---- Drizzle Mock（必须在 import service 之前） ----
-const { mockDrizzleDb, mockDrizzleSchema } = vi.hoisted(() => {
-  const makeChain = () => {
-    const chain: Record<string, unknown> = {};
-    const methods = [
-      "insert",
-      "values",
-      "update",
-      "set",
-      "delete",
-      "select",
-      "from",
-      "where",
-      "orderBy",
-      "limit",
-      "offset",
-      "all",
-      "get",
-      "groupBy",
-    ];
-    methods.forEach((m) => {
-      chain[m] = vi.fn(() => chain);
-    });
-    return chain;
-  };
+const dbFile = `test-knowledge-service-${process.pid}.db`;
+process.env.DB_FILENAME = dbFile;
 
-  const chain = makeChain();
-
-  const mockQuery = {
-    knowledge_cards: {
-      findFirst: vi.fn(),
-    },
-  };
-
-  const mockDrizzleDb = {
-    ...chain,
-    query: mockQuery,
-    insert: vi.fn(() => chain),
-    update: vi.fn(() => chain),
-    delete: vi.fn(() => chain),
-    select: vi.fn(() => chain),
-  };
-
-  const mockDrizzleSchema = {
-    knowledge_cards: {
-      id: "id",
-      session_id: "session_id",
-      title: "title",
-      category: "category",
-      tags: "tags",
-      front: "front",
-      back: "back",
-      key_points: "key_points",
-      source_content: "source_content",
-      created_at: "created_at",
-      updated_at: "updated_at",
-    },
-  };
-
-  return { mockDrizzleDb, mockDrizzleSchema };
-});
-
-vi.mock("@/lib/db", () => ({
-  default: mockDrizzleDb,
-  db: mockDrizzleDb,
-  drizzleDb: mockDrizzleDb,
-  drizzleSchema: mockDrizzleSchema,
-}));
-
-// Mock RAG service
+// RAG 是外部依赖（向量库 + 嵌入服务），保持 mock；DB 一律是真的。
 vi.mock("@/lib/ai/rag", () => ({
   ragService: {
     addChunk: vi.fn().mockResolvedValue(undefined),
@@ -78,243 +32,342 @@ vi.mock("@/lib/ai/rag", () => ({
   },
 }));
 
-import {
-  createKnowledgeCard,
-  getAllKnowledgeCards,
-  getKnowledgeCard,
-  updateKnowledgeCard,
-  deleteKnowledgeCard,
-  getCategories,
-  exportToAnkiTSV,
-  type KnowledgeCard,
-} from "@/lib/services/knowledge";
+type DbModule = typeof import("../../db");
+type KnowledgeModule = typeof import("../knowledge");
 
-// ---- 辅助：获取链式调用的末端方法 ----
-const chain = mockDrizzleDb as unknown as Record<
-  string,
-  ReturnType<typeof vi.fn>
->;
+let dbm: DbModule;
+let createKnowledgeCard: KnowledgeModule["createKnowledgeCard"];
+let getAllKnowledgeCards: KnowledgeModule["getAllKnowledgeCards"];
+let getKnowledgeCard: KnowledgeModule["getKnowledgeCard"];
+let updateKnowledgeCard: KnowledgeModule["updateKnowledgeCard"];
+let deleteKnowledgeCard: KnowledgeModule["deleteKnowledgeCard"];
+let getCategories: KnowledgeModule["getCategories"];
+let countKnowledgeCards: KnowledgeModule["countKnowledgeCards"];
+let exportToAnkiTSV: KnowledgeModule["exportToAnkiTSV"];
+let ragService: (typeof import("../../ai/rag"))["ragService"];
 
-describe("KnowledgeService", () => {
-  beforeEach(() => {
-    vi.clearAllMocks();
+const USER_A = 830;
+const USER_B = 831;
 
-    // 重置链式调用
-    // chainMethods：需要在 beforeEach 中覆盖为返回 mockDrizzleDb 的中间链式方法
-    // （不含终端方法 all/get，终端方法在各测试中按需单独设置）
-    const chainMethods = [
-      "values",
-      "set",
-      "from",
-      "where",
-      "orderBy",
-      "limit",
-      "groupBy",
-    ];
-    chainMethods.forEach((m) => {
-      chain[m].mockReturnValue(mockDrizzleDb);
+async function cardRow(id: number) {
+  const [row] = await dbm.drizzleDb
+    .select()
+    .from(dbm.drizzleSchema.knowledge_cards)
+    .where(eq(dbm.drizzleSchema.knowledge_cards.id, id));
+  return row;
+}
+
+/** 直接落一行卡片（绕过服务，用于准备列表/分页场景） */
+type NewCard = {
+  title: string;
+  user_id?: number;
+  category?: string;
+  tags?: string;
+  front?: string;
+  back?: string;
+  key_points?: string;
+  created_at?: string;
+};
+
+async function seedCard(values: NewCard): Promise<number> {
+  const [row] = await dbm.drizzleDb
+    .insert(dbm.drizzleSchema.knowledge_cards)
+    .values({
+      user_id: USER_A,
+      category: "数学",
+      tags: "[]",
+      front: "Q",
+      back: "A",
+      key_points: "[]",
+      ...values,
+    })
+    .returning({ id: dbm.drizzleSchema.knowledge_cards.id });
+  return row.id;
+}
+
+beforeAll(async () => {
+  dbm = await import("../../db");
+  await dbm.initDatabase();
+
+  // createKnowledgeCard 不带 userId 时默认写 user_id = 1，故 1 必须存在（FK 真实生效）
+  await dbm.drizzleDb
+    .insert(dbm.drizzleSchema.users)
+    .values([
+      { id: 1, username: "knowledge-default-owner", password_hash: "x" },
+      { id: USER_A, username: "knowledge-a", password_hash: "x" },
+      { id: USER_B, username: "knowledge-b", password_hash: "x" },
+    ])
+    .onConflictDoNothing();
+
+  const svc = await import("../knowledge");
+  createKnowledgeCard = svc.createKnowledgeCard;
+  getAllKnowledgeCards = svc.getAllKnowledgeCards;
+  getKnowledgeCard = svc.getKnowledgeCard;
+  updateKnowledgeCard = svc.updateKnowledgeCard;
+  deleteKnowledgeCard = svc.deleteKnowledgeCard;
+  getCategories = svc.getCategories;
+  countKnowledgeCards = svc.countKnowledgeCards;
+  exportToAnkiTSV = svc.exportToAnkiTSV;
+
+  ragService = (await import("../../ai/rag")).ragService;
+});
+
+beforeEach(async () => {
+  vi.clearAllMocks();
+  await dbm.drizzleDb.delete(dbm.drizzleSchema.knowledge_cards);
+});
+
+afterAll(async () => {
+  await dbm.closeDrizzle();
+  for (const suffix of ["", "-wal", "-shm"]) {
+    fs.rmSync(path.resolve(process.cwd(), "data", dbFile + suffix), {
+      force: true,
     });
-    mockDrizzleDb.insert.mockReturnValue(mockDrizzleDb);
-    mockDrizzleDb.update.mockReturnValue(mockDrizzleDb);
-    mockDrizzleDb.delete.mockReturnValue(mockDrizzleDb);
-    mockDrizzleDb.select.mockReturnValue(mockDrizzleDb);
+  }
+});
 
-    // 默认终止方法返回空
-    chain["all"].mockResolvedValue([]);
-    chain["get"].mockResolvedValue(undefined);
+describe("createKnowledgeCard", () => {
+  it("插入后返回真实自增 ID，且库里的 JSON 字段按字符串落盘", async () => {
+    const card: KnowledgeCard = {
+      title: "测试卡片",
+      category: "数学",
+      tags: ["代数", "几何"],
+      front: "问题",
+      back: "答案",
+      key_points: [{ term: "项", definition: "单项式的基本单元" }],
+    };
+
+    const id = await createKnowledgeCard(card);
+    expect(id).toBeGreaterThan(0);
+
+    const row = await cardRow(id);
+    expect(row).toBeTruthy();
+    expect(row!.title).toBe("测试卡片");
+    expect(row!.category).toBe("数学");
+    expect(row!.front).toBe("问题");
+    expect(row!.back).toBe("答案");
+    expect(row!.user_id).toBe(1);
+    // 库里是 JSON 文本，不是数组对象
+    expect(row!.tags).toBe('["代数","几何"]');
+    expect(row!.key_points).toBe(
+      '[{"term":"项","definition":"单项式的基本单元"}]',
+    );
+
+    // RAG 索引按卡片 ID 同步
+    expect(ragService.addChunk).toHaveBeenCalledWith(
+      "问题\n\n答案",
+      expect.objectContaining({ source_type: "card", source_id: id }),
+    );
   });
 
-  // ────────────────────────────
-  // createKnowledgeCard
-  // ────────────────────────────
-  describe("createKnowledgeCard", () => {
-    it("应该插入卡片并返回新 ID", async () => {
-      chain["values"].mockResolvedValueOnce({ lastInsertRowid: BigInt(7) });
+  it("RAG 同步失败不影响落库，也不影响返回 ID", async () => {
+    vi.mocked(ragService.addChunk).mockRejectedValueOnce(new Error("RAG 故障"));
 
-      const card: KnowledgeCard = {
-        title: "测试卡片",
-        category: "数学",
-        tags: ["代数"],
-        front: "问题",
-        back: "答案",
-        key_points: [],
-      };
-
-      const id = await createKnowledgeCard(card);
-
-      expect(id).toBe(7);
-      expect(mockDrizzleDb.insert).toHaveBeenCalled();
+    const id = await createKnowledgeCard({
+      title: "RAG 失败测试",
+      category: "语文",
+      tags: [],
+      front: "Q",
+      back: "A",
+      key_points: [],
     });
 
-    it("RAG 同步失败不应影响返回值", async () => {
-      chain["values"].mockResolvedValueOnce({ lastInsertRowid: BigInt(8) });
-
-      const { ragService } = await import("@/lib/ai/rag");
-      vi.mocked(ragService.addChunk).mockRejectedValueOnce(
-        new Error("RAG 故障"),
-      );
-
-      const card: KnowledgeCard = {
-        title: "RAG 失败测试",
-        category: "语文",
-        tags: [],
-        front: "Q",
-        back: "A",
-        key_points: [],
-      };
-
-      const id = await createKnowledgeCard(card);
-      expect(id).toBe(8);
-    });
+    expect(id).toBeGreaterThan(0);
+    const row = await cardRow(id);
+    expect(row!.title).toBe("RAG 失败测试");
   });
 
-  // ────────────────────────────
-  // getAllKnowledgeCards
-  // ────────────────────────────
-  describe("getAllKnowledgeCards", () => {
-    it("应该正确解析 JSON 字段", async () => {
-      const rawRow = {
-        id: 1,
-        title: "卡片1",
-        category: "数学",
-        tags: '["代数","几何"]',
-        front: "Q",
-        back: "A",
-        key_points: '[{"term":"项","definition":"单项式的基本单元"}]',
-      };
-      // getAllKnowledgeCards 的终端方法是 offset()（limit 之后链上还有 offset），不是 all()
-      chain["offset"].mockResolvedValueOnce([rawRow]);
-
-      const result = await getAllKnowledgeCards();
-
-      expect(result).toHaveLength(1);
-      expect(result[0].tags).toEqual(["代数", "几何"]);
-      expect(result[0].key_points).toEqual([
-        { term: "项", definition: "单项式的基本单元" },
-      ]);
+  it("两张卡片各自拿到不同的自增 ID（不再依赖被 mock 的固定值）", async () => {
+    const id1 = await createKnowledgeCard({
+      title: "C1",
+      category: "数学",
+      tags: [],
+      front: "Q1",
+      back: "A1",
+      key_points: [],
+    });
+    const id2 = await createKnowledgeCard({
+      title: "C2",
+      category: "数学",
+      tags: [],
+      front: "Q2",
+      back: "A2",
+      key_points: [],
     });
 
-    it("空结果时应返回空数组", async () => {
-      chain["offset"].mockResolvedValueOnce([]);
-      const result = await getAllKnowledgeCards();
-      expect(result).toEqual([]);
+    expect(id2).toBeGreaterThan(id1);
+  });
+});
+
+describe("getAllKnowledgeCards", () => {
+  it("按 created_at 倒序返回，并解析 tags / key_points", async () => {
+    await seedCard({
+      title: "旧卡片",
+      created_at: "2026-01-01 10:00:00",
+      tags: '["旧"]',
     });
+    await seedCard({
+      title: "新卡片",
+      created_at: "2026-02-01 10:00:00",
+      tags: '["代数","几何"]',
+      key_points: '[{"term":"项","definition":"单项式的基本单元"}]',
+    });
+
+    const result = await getAllKnowledgeCards(undefined, 10, undefined, USER_A);
+
+    expect(result.map((card) => card.title)).toEqual(["新卡片", "旧卡片"]);
+    expect(result[0].tags).toEqual(["代数", "几何"]);
+    expect(result[0].key_points).toEqual([
+      { term: "项", definition: "单项式的基本单元" },
+    ]);
   });
 
-  // ────────────────────────────
-  // getKnowledgeCard
-  // ────────────────────────────
-  describe("getKnowledgeCard", () => {
-    it("找到时应解析 JSON 并返回卡片", async () => {
-      const rawRow = {
-        id: 2,
-        title: "卡片2",
-        category: "物理",
-        tags: '["力学"]',
-        front: "Q2",
-        back: "A2",
-        key_points: "[]",
-      };
-      mockDrizzleDb.query.knowledge_cards.findFirst.mockResolvedValueOnce(
-        rawRow,
-      );
-
-      const result = await getKnowledgeCard(2);
-
-      expect(result).not.toBeNull();
-      expect(result!.id).toBe(2);
-      expect(result!.tags).toEqual(["力学"]);
+  it("category / userId 过滤生效", async () => {
+    await seedCard({ title: "数学卡", category: "数学" });
+    await seedCard({ title: "语文卡", category: "语文" });
+    await seedCard({
+      title: "别人的数学卡",
+      category: "数学",
+      user_id: USER_B,
     });
 
-    it("未找到时应返回 null", async () => {
-      mockDrizzleDb.query.knowledge_cards.findFirst.mockResolvedValueOnce(
-        undefined,
-      );
-      const result = await getKnowledgeCard(999);
-      expect(result).toBeNull();
-    });
+    const math = await getAllKnowledgeCards("数学", 10, undefined, USER_A);
+    expect(math.map((card) => card.title)).toEqual(["数学卡"]);
+
+    const all = await getAllKnowledgeCards(undefined, 10, undefined, USER_A);
+    expect(all).toHaveLength(2);
   });
 
-  // ────────────────────────────
-  // updateKnowledgeCard
-  // ────────────────────────────
-  describe("updateKnowledgeCard", () => {
-    it("更新成功时应返回 true", async () => {
-      // update 链的末端（where 调用后隐式 resolve）需要返回 rowsAffected
-      chain["where"].mockResolvedValueOnce({ rowsAffected: 1 });
-      // 为 RAG 同步：getKnowledgeCard 需要查询
-      mockDrizzleDb.query.knowledge_cards.findFirst.mockResolvedValue({
-        id: 1,
-        title: "旧标题",
-        category: "数学",
-        tags: "[]",
-        front: "Q",
-        back: "A",
-        key_points: "[]",
+  it("空库时返回空数组", async () => {
+    expect(await getAllKnowledgeCards()).toEqual([]);
+  });
+
+  it("limit / offset 真的分页", async () => {
+    for (let i = 1; i <= 3; i++) {
+      await seedCard({
+        title: `卡片${i}`,
+        created_at: `2026-03-0${i} 10:00:00`,
       });
+    }
 
-      const result = await updateKnowledgeCard(1, { title: "新标题" });
+    const page2 = await getAllKnowledgeCards(
+      undefined,
+      2,
+      undefined,
+      USER_A,
+      2,
+    );
+    expect(page2.map((card) => card.title)).toEqual(["卡片1"]);
+  });
+});
 
-      expect(result).toBe(true);
+describe("countKnowledgeCards", () => {
+  it("与列表同口径计数（含 category 过滤）", async () => {
+    await seedCard({ title: "数学卡", category: "数学" });
+    await seedCard({ title: "数学卡2", category: "数学" });
+    await seedCard({ title: "语文卡", category: "语文" });
+    await seedCard({ title: "别人的卡", category: "数学", user_id: USER_B });
+
+    expect(await countKnowledgeCards(USER_A)).toBe(3);
+    expect(await countKnowledgeCards(USER_A, "数学")).toBe(2);
+  });
+});
+
+describe("getKnowledgeCard", () => {
+  it("找到时解析 JSON 返回卡片", async () => {
+    const id = await seedCard({
+      title: "卡片2",
+      category: "物理",
+      tags: '["力学"]',
+      front: "Q2",
+      back: "A2",
     });
 
-    it("无匹配行时应返回 false", async () => {
-      chain["where"].mockResolvedValueOnce({ rowsAffected: 0 });
-
-      const result = await updateKnowledgeCard(999, { title: "不存在" });
-
-      expect(result).toBe(false);
-    });
+    const card = await getKnowledgeCard(id);
+    expect(card).not.toBeNull();
+    expect(card!.id).toBe(id);
+    expect(card!.title).toBe("卡片2");
+    expect(card!.tags).toEqual(["力学"]);
   });
 
-  // ────────────────────────────
-  // deleteKnowledgeCard
-  // ────────────────────────────
-  describe("deleteKnowledgeCard", () => {
-    it("删除成功时应返回 true", async () => {
-      chain["where"].mockResolvedValueOnce({ rowsAffected: 1 });
+  it("未找到返回 null", async () => {
+    expect(await getKnowledgeCard(999_999)).toBeNull();
+  });
+});
 
-      const result = await deleteKnowledgeCard(1);
-
-      expect(result).toBe(true);
+describe("updateKnowledgeCard", () => {
+  it("更新成功返回 true，且库里字段真的被改（只改传入字段）", async () => {
+    const id = await seedCard({
+      title: "旧标题",
+      tags: '["旧标签"]',
+      front: "旧正面",
     });
 
-    it("无匹配行时应返回 false", async () => {
-      chain["where"].mockResolvedValueOnce({ rowsAffected: 0 });
-
-      const result = await deleteKnowledgeCard(999);
-
-      expect(result).toBe(false);
+    const ok = await updateKnowledgeCard(id, {
+      title: "新标题",
+      key_points: [{ term: "新", definition: "新的关键点" }],
     });
+
+    expect(ok).toBe(true);
+    const row = await cardRow(id);
+    expect(row!.title).toBe("新标题");
+    expect(row!.key_points).toBe('[{"term":"新","definition":"新的关键点"}]');
+    // 未传的字段保持原值
+    expect(row!.front).toBe("旧正面");
+    expect(row!.tags).toBe('["旧标签"]');
+
+    // 更新后 RAG 重建：先删旧索引再按新内容建
+    expect(ragService.deleteChunksBySource).toHaveBeenCalledWith("card", id);
+    expect(ragService.addChunk).toHaveBeenCalledWith(
+      "旧正面\n\nA",
+      expect.objectContaining({ source_id: id, title: "新标题" }),
+    );
   });
 
-  // ────────────────────────────
-  // getCategories
-  // ────────────────────────────
-  describe("getCategories", () => {
-    it("应该返回分类列表", async () => {
-      // getCategories 的终端方法是 all()
-      // 注意：这里不能使用 mockResolvedValueOnce，因为前面的 getAllKnowledgeCards
-      // 测试已修复为使用 limit() 作为终端，确保 all() 队列干净，两种写法均可
-      chain["all"].mockResolvedValueOnce([
-        { category: "数学" },
-        { category: "语文" },
-      ]);
+  it("ID 不存在返回 false 且不写库", async () => {
+    expect(await updateKnowledgeCard(999_999, { title: "不存在" })).toBe(false);
+    const [row] = await dbm.drizzleDb
+      .select()
+      .from(dbm.drizzleSchema.knowledge_cards);
+    expect(row).toBeUndefined();
+  });
+});
 
-      const result = await getCategories();
+describe("deleteKnowledgeCard", () => {
+  it("删除成功返回 true，库里那行真的没了", async () => {
+    const keep = await seedCard({ title: "保留" });
+    const gone = await seedCard({ title: "删除" });
 
-      expect(result).toEqual(["数学", "语文"]);
-    });
+    expect(await deleteKnowledgeCard(gone)).toBe(true);
 
-    it("空结果时应返回空数组", async () => {
-      chain["all"].mockImplementationOnce(() => Promise.resolve([]));
-      expect(await getCategories()).toEqual([]);
-    });
+    expect(await cardRow(gone)).toBeUndefined();
+    expect((await cardRow(keep))!.title).toBe("保留");
+    expect(ragService.deleteChunksBySource).toHaveBeenCalledWith("card", gone);
+  });
+
+  it("ID 不存在返回 false", async () => {
+    expect(await deleteKnowledgeCard(999_999)).toBe(false);
+  });
+});
+
+describe("getCategories", () => {
+  it("返回库内去重、非空的分类（升序）", async () => {
+    await seedCard({ title: "a", category: "数学" });
+    await seedCard({ title: "b", category: "数学" });
+    await seedCard({ title: "c", category: "语文" });
+    await seedCard({ title: "d", category: "" });
+    await seedCard({ title: "e", category: "别人的", user_id: USER_B });
+
+    expect(await getCategories(USER_A)).toEqual(["数学", "语文"]);
+  });
+
+  it("空库返回空数组", async () => {
+    expect(await getCategories(USER_A)).toEqual([]);
   });
 });
 
 // ────────────────────────────
-// exportToAnkiTSV（纯函数，无需 Mock）
+// exportToAnkiTSV（纯函数，不需要库）
 // ────────────────────────────
 describe("exportToAnkiTSV", () => {
   it("应该生成正确的 TSV 格式", () => {
@@ -372,7 +425,6 @@ describe("exportToAnkiTSV", () => {
     ];
 
     const result = exportToAnkiTSV(cards);
-    // 确保内容中的制表符被空格替换
     const parts = result.split("\t");
     expect(parts[0]).toBe("有 制表符");
   });

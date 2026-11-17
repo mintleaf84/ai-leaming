@@ -28,7 +28,10 @@ function normalize(value: unknown): unknown {
     return Object.fromEntries(
       Object.keys(value as Record<string, unknown>)
         .sort()
-        .map((key) => [key, normalize((value as Record<string, unknown>)[key])]),
+        .map((key) => [
+          key,
+          normalize((value as Record<string, unknown>)[key]),
+        ]),
     );
   }
   return value;

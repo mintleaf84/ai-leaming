@@ -116,16 +116,17 @@ const TreeNode = React.memo(function TreeNode({
           className="ml-1"
         />
 
-        {/* 名称 */}
-        <span
+        {/* 名称：真按钮，键盘 Enter/Space 即可选中（复选状态另由左侧 Checkbox 播报） */}
+        <button
+          type="button"
           className={cn(
-            "flex-1 text-sm truncate",
+            "flex-1 text-sm truncate text-left",
             isSelected && "font-medium text-primary",
           )}
           onClick={() => onToggleSelect(node.name, node)}
         >
           {node.name}
-        </span>
+        </button>
 
         {/* 题目数量 */}
         <span className="text-xs text-muted-foreground">{node.count}题</span>

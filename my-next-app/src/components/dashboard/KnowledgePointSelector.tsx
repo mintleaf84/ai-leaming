@@ -43,6 +43,19 @@ function TreeNode({
 
   // 如果是叶子节点，默认总是展开（没子节点也不用展开）
   // 如果是父节点，点击可以折叠/展开
+  //
+  // 行本身不再挂 onClick：整行的点击此前只是「点展开箭头」或「点复选框」的便捷路径，
+  // 现在把三件事分别落到三个真控件上（展开箭头 / 复选框 / 名称按钮），
+  // 键盘 Tab 可达、Enter/Space 即原生激活，避免给容器加 role="button" 后
+  // 与内层控件形成嵌套按钮。
+
+  const handleRowActivate = () => {
+    if (hasChildren) {
+      setExpanded(!expanded);
+    } else {
+      toggleTag(node.path);
+    }
+  };
 
   return (
     <div className="select-none">
@@ -54,62 +67,60 @@ function TreeNode({
             : "hover:bg-accent text-foreground",
         )}
         style={{ paddingLeft: `${level * 16 + 8}px` }}
-        onClick={(e) => {
-          e.stopPropagation();
-          if (hasChildren) {
-            setExpanded(!expanded);
-          } else {
-            toggleTag(node.path);
-          }
-        }}
       >
-        {/* 展开/折叠图标 (仅对有子节点的节点显示) */}
-        <span
-          className={cn(
-            "w-4 h-4 flex items-center justify-center rounded-sm hover:bg-black/5 transition-colors",
-            hasChildren ? "opacity-100" : "opacity-0",
-          )}
-          onClick={(e) => {
-            e.stopPropagation();
-            setExpanded(!expanded);
-          }}
-        >
-          {expanded ? (
-            <ChevronDown className="w-3 h-3" />
-          ) : (
-            <ChevronRight className="w-3 h-3" />
-          )}
-        </span>
+        {/* 展开/折叠按钮 (仅对有子节点的节点显示) */}
+        {hasChildren ? (
+          <button
+            type="button"
+            aria-expanded={expanded}
+            aria-label={`${expanded ? "收起" : "展开"}${node.name}`}
+            className="w-4 h-4 shrink-0 flex items-center justify-center rounded-sm hover:bg-black/5 transition-colors"
+            onClick={() => setExpanded(!expanded)}
+          >
+            {expanded ? (
+              <ChevronDown className="w-3 h-3" />
+            ) : (
+              <ChevronRight className="w-3 h-3" />
+            )}
+          </button>
+        ) : (
+          <span className="w-4 h-4 shrink-0" aria-hidden="true" />
+        )}
 
         {/* 复选框/选择逻辑 */}
-        <div
+        <button
+          type="button"
+          role="checkbox"
+          aria-checked={isSelected}
+          aria-label={node.name}
           className={cn(
-            "w-4 h-4 rounded border flex items-center justify-center transition-all",
+            "w-4 h-4 shrink-0 rounded border flex items-center justify-center transition-all",
             isSelected
               ? "bg-primary border-primary text-primary-foreground"
               : "border-border bg-card hover:border-primary/50",
           )}
-          onClick={(e) => {
-            e.stopPropagation();
-            toggleTag(node.path);
-          }}
+          onClick={() => toggleTag(node.path)}
         >
           {isSelected && <Check className="w-3 h-3" />}
-        </div>
+        </button>
 
-        {/* 图标与文本 */}
-        <span className="flex items-center gap-2 flex-1">
+        {/* 图标与文本：父节点点击收起/展开，叶子节点点击选中 */}
+        <button
+          type="button"
+          className="flex items-center gap-2 flex-1 text-left"
+          onClick={handleRowActivate}
+        >
           {hasChildren ? (
             <Folder
               className={cn(
-                "w-4 h-4",
+                "w-4 h-4 shrink-0",
                 isSelected ? "text-primary" : "text-amber-400",
               )}
             />
           ) : (
             <FileText
               className={cn(
-                "w-4 h-4",
+                "w-4 h-4 shrink-0",
                 isSelected ? "text-primary" : "text-muted-foreground",
               )}
             />
@@ -120,7 +131,7 @@ function TreeNode({
           <span className="text-xs text-muted-foreground ml-auto">
             {node.count}题
           </span>
-        </span>
+        </button>
       </div>
 
       {hasChildren && expanded && (

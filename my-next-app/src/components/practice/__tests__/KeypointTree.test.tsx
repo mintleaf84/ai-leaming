@@ -1,3 +1,4 @@
+import userEvent from "@testing-library/user-event";
 /** @vitest-environment jsdom */
 import { render, screen, fireEvent } from "@testing-library/react";
 import "@testing-library/jest-dom";
@@ -176,5 +177,51 @@ describe("KeypointTree Component", () => {
     // Both '数学' and '代数' will have '1选中' badge
     const badges = screen.getAllByText("1选中");
     expect(badges.length).toBeGreaterThanOrEqual(2);
+  });
+});
+
+/**
+ * a11y 批次 B5：节点名称从 <span onClick> 换成真 <button>。
+ * 锁住「键盘等价」：Tab 能到、Enter 与点击等价选中。
+ */
+describe("KeypointTree 键盘操作（a11y B5）", () => {
+  const keyboardProps = {
+    selectedTags: [] as string[],
+    onSelectionChange: vi.fn(),
+    maxHeight: "400px",
+  };
+
+  beforeEach(() => {
+    vi.clearAllMocks();
+    mockUseQuery.mockReturnValue({ data: mockData, isLoading: false });
+  });
+
+  it("名称是真按钮：可聚焦，Enter 与点击等价选中", async () => {
+    const user = userEvent.setup();
+    render(<KeypointTree {...keyboardProps} />);
+
+    const nameBtn = screen.getByText("英语").closest("button");
+    expect(nameBtn).not.toBeNull();
+    nameBtn!.focus();
+    expect(nameBtn).toHaveFocus();
+
+    await user.keyboard("{Enter}");
+    expect(keyboardProps.onSelectionChange).toHaveBeenCalledWith(["英语"]);
+  });
+
+  it("Tab 从复选框移到同一行的名称按钮", async () => {
+    const user = userEvent.setup();
+    render(<KeypointTree {...keyboardProps} />);
+
+    const row = screen.getByText("英语").closest("div");
+    const checkbox = row?.querySelector(
+      'button[role="checkbox"]',
+    ) as HTMLElement | null;
+    expect(checkbox).not.toBeNull();
+    checkbox!.focus();
+    expect(checkbox).toHaveFocus();
+
+    await user.tab();
+    expect(screen.getByText("英语").closest("button")).toHaveFocus();
   });
 });

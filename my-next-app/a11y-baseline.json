@@ -1,10 +1,10 @@
 {
-  "generatedAt": "2026-11-17T13:11:57.608Z",
-  "total": 55,
+  "generatedAt": "2026-11-17T16:27:02.929Z",
+  "total": 48,
   "rules": {
-    "jsx-a11y/no-static-element-interactions": 23,
-    "jsx-a11y/click-events-have-key-events": 22,
-    "jsx-a11y/no-autofocus": 9,
+    "jsx-a11y/no-static-element-interactions": 20,
+    "jsx-a11y/click-events-have-key-events": 19,
+    "jsx-a11y/no-autofocus": 8,
     "jsx-a11y/label-has-associated-control": 1
   }
 }

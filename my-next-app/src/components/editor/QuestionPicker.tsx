@@ -1,11 +1,12 @@
 "use client";
 
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
 import { searchQuestionsAction } from "@/server/actions/question";
 import { type QuestionSummary } from "@/lib/services/question";
 import { Search, Loader2, BookOpen, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog";
 import { isImeComposing } from "@/lib/utils/ime";
 
 interface QuestionPickerProps {
@@ -17,6 +18,9 @@ interface QuestionPickerProps {
 /**
  * 题目选择器弹窗
  * 用于在笔记中插入题目引用
+ *
+ * 形态确认：它是**居中模态**（fixed inset-0 flex items-center justify-center +
+ * max-w-lg），不是锚在输入框下方的 popover —— 所以套 Dialog 而不是 Popover。
  */
 export default function QuestionPicker({
   isOpen,
@@ -27,6 +31,10 @@ export default function QuestionPicker({
   const [questions, setQuestions] = useState<QuestionSummary[]>([]);
   const [loading, setLoading] = useState(false);
   const [searched, setSearched] = useState(false);
+  const searchInputRef = useRef<HTMLInputElement>(null);
+  // Radix 关闭时默认把焦点还给 DialogTrigger；本组件由外部状态驱动、没有
+  // Trigger，不兜底焦点会落到 body（读屏回到页首）。
+  const restoreFocusRef = useRef<HTMLElement | null>(null);
 
   // 题型中文映射
   const typeLabel: Record<string, string> = {
@@ -73,35 +81,68 @@ export default function QuestionPicker({
     onClose();
   };
 
-  // 键盘事件
+  // 键盘事件：Enter 触发搜索（组合态 Enter 是确认候选词，不能当"搜索"）。
+  // Esc 交给 Radix 的 DismissableLayer 统一处理，组合态下由 onEscapeKeyDown 拦掉。
   const handleKeyDown = (e: React.KeyboardEvent) => {
-    // 组合态 Enter 是确认候选词，不能当"搜索"
     if (isImeComposing(e)) return;
     if (e.key === "Enter") {
       e.preventDefault();
       handleSearch();
     }
-    if (e.key === "Escape") {
-      onClose();
-    }
   };
 
-  if (!isOpen) return null;
-
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center">
-      {/* 遮罩 */}
-      <div className="absolute inset-0 bg-black/50" onClick={onClose} />
-
-      {/* 弹窗 */}
-      <div className="relative bg-background border border-border rounded-xl shadow-2xl w-full max-w-lg max-h-[70vh] flex flex-col overflow-hidden">
+    <Dialog
+      open={isOpen}
+      onOpenChange={(open) => {
+        if (!open) onClose();
+      }}
+    >
+      <DialogContent
+        hideClose
+        aria-modal="true"
+        aria-describedby={undefined}
+        // Esc 取消输入法候选词时不能顺手把浮层关掉（Radix 的 Esc 监听不判组合态）
+        onEscapeKeyDown={(event) => {
+          if (isImeComposing(event)) event.preventDefault();
+        }}
+        // 原来 Input 上的 autoFocus 明确指向搜索框；Radix 默认聚焦第一个可聚焦
+        // 元素（这里是头部关闭按钮），显式接管回原目标
+        onOpenAutoFocus={(event) => {
+          // 必须在 Radix 移焦点之前记录触发元素（此时 activeElement 还是它）
+          restoreFocusRef.current =
+            document.activeElement as HTMLElement | null;
+          event.preventDefault();
+          searchInputRef.current?.focus();
+        }}
+        onCloseAutoFocus={(event) => {
+          event.preventDefault();
+          const target = restoreFocusRef.current;
+          if (target?.isConnected) {
+            target.focus();
+            return;
+          }
+          const main = document.querySelector<HTMLElement>("main");
+          if (main) {
+            main.setAttribute("tabindex", "-1");
+            main.focus();
+          }
+        }}
+        className="flex max-h-[70vh] max-w-lg flex-col gap-0 overflow-hidden rounded-xl p-0 data-[state=closed]:animate-none data-[state=open]:animate-none sm:rounded-xl"
+        overlayClassName="bg-black/50"
+      >
         {/* 头部 */}
         <div className="flex items-center justify-between p-4 border-b border-border">
-          <h3 className="text-lg font-semibold flex items-center gap-2">
+          <DialogTitle className="text-lg font-semibold leading-7 tracking-normal flex items-center gap-2">
             <BookOpen className="h-5 w-5 text-primary" />
             引用题目
-          </h3>
-          <Button variant="ghost" size="icon" onClick={onClose}>
+          </DialogTitle>
+          <Button
+            variant="ghost"
+            size="icon"
+            onClick={onClose}
+            aria-label="关闭"
+          >
             <X className="h-4 w-4" />
           </Button>
         </div>
@@ -112,12 +153,12 @@ export default function QuestionPicker({
             <div className="relative flex-1">
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
               <Input
+                ref={searchInputRef}
                 placeholder="搜索题目内容或知识点..."
                 value={query}
                 onChange={(e) => setQuery(e.target.value)}
                 onKeyDown={handleKeyDown}
                 className="pl-9"
-                autoFocus
               />
             </div>
             <Button onClick={handleSearch} disabled={loading}>
@@ -170,7 +211,7 @@ export default function QuestionPicker({
             </ul>
           )}
         </div>
-      </div>
-    </div>
+      </DialogContent>
+    </Dialog>
   );
 }

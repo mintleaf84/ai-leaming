@@ -4,6 +4,7 @@ import { getErrorMessage } from "@/lib/utils/error";
 import React, { useRef, useState } from "react";
 import { X, Sparkles, Loader2, Wand2, Save, RotateCcw } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { Dialog, DialogContentBare } from "@/components/ui/dialog";
 import type { KnowledgeCard } from "@/lib/services/knowledge";
 
 interface AIGenerateModalProps {
@@ -31,6 +32,23 @@ export const AIGenerateModal: React.FC<AIGenerateModalProps> = ({
   const sessionRef = useRef(0);
   // 保存期间锁住编辑与"重新输入"，否则旧请求成功会把用户新改的内容一起关掉
   const [isSaving, setIsSaving] = useState(false);
+
+  // 打开前焦点在哪：Radix 没有 Dialog.Trigger 时不归还焦点，自己记一份还回去
+  const contentRef = useRef<HTMLDivElement>(null);
+  const previousFocusRef = useRef<HTMLElement | null>(null);
+  React.useEffect(() => {
+    if (!isOpen) return;
+    const active = document.activeElement as HTMLElement | null;
+    if (!active || active === document.body) return;
+    if (contentRef.current?.contains(active)) return;
+    previousFocusRef.current = active;
+  }, [isOpen]);
+
+  const handleCloseAutoFocus = (event: Event) => {
+    event.preventDefault();
+    const target = previousFocusRef.current;
+    if (target && target.isConnected) target.focus();
+  };
 
   // 重置状态
   const reset = () => {
@@ -111,8 +129,28 @@ export const AIGenerateModal: React.FC<AIGenerateModalProps> = ({
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 bg-black/60 backdrop-blur-md z-50 flex items-center justify-center p-4">
-      <div className="bg-card rounded-3xl shadow-2xl max-w-2xl w-full max-h-[90vh] flex flex-col overflow-hidden animate-in zoom-in-95 duration-200 border border-border">
+    <Dialog
+      open
+      onOpenChange={(open) => {
+        // Esc / 关闭按钮都走这里；保持原有的「关闭即重置」语义
+        if (!open) handleClose();
+      }}
+    >
+      <DialogContentBare
+        ref={contentRef}
+        aria-labelledby="aigen-modal-title"
+        aria-describedby={undefined}
+        onCloseAutoFocus={handleCloseAutoFocus}
+        // 原本点遮罩不关闭：这一层背后可能正在进行付费 AI 生成，别让误点把进度丢掉
+        onInteractOutside={(event) => event.preventDefault()}
+        overlay={
+          <div
+            data-testid="dialog-overlay"
+            className="fixed inset-0 z-50 bg-black/60 backdrop-blur-md"
+          />
+        }
+        className="fixed left-1/2 top-1/2 z-50 -translate-x-1/2 -translate-y-1/2 w-[calc(100%_-_2rem)] max-w-2xl max-h-[90vh] bg-card rounded-3xl shadow-2xl border border-border flex flex-col overflow-hidden animate-in zoom-in-95 duration-200"
+      >
         {/* Header */}
         <div className="flex items-center justify-between p-6 border-b border-border bg-gradient-to-r from-primary/5 to-transparent">
           <div className="flex items-center gap-3">
@@ -120,7 +158,12 @@ export const AIGenerateModal: React.FC<AIGenerateModalProps> = ({
               <Wand2 className="w-5 h-5 text-primary-foreground" />
             </div>
             <div>
-              <h2 className="font-bold text-xl text-foreground">AI 智能生成</h2>
+              <h2
+                id="aigen-modal-title"
+                className="font-bold text-xl text-foreground"
+              >
+                AI 智能生成
+              </h2>
               <p className="text-xs text-muted-foreground">
                 {step === "input"
                   ? "输入知识点，AI 自动结构化为知识卡片"
@@ -335,7 +378,7 @@ export const AIGenerateModal: React.FC<AIGenerateModalProps> = ({
             </>
           )}
         </div>
-      </div>
-    </div>
+      </DialogContentBare>
+    </Dialog>
   );
 };

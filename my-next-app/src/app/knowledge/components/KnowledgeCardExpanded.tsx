@@ -1,10 +1,11 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import { motion } from "framer-motion";
 import { X, CheckCircle2, RotateCw } from "lucide-react";
 import { APPLE_SPRING } from "@/lib/configs/motion-config";
 import { getCategoryColor } from "@/lib/utils/category-colors";
+import { Dialog, DialogContentBare } from "@/components/ui/dialog";
 import MarkdownViewer from "@/components/chat/MarkdownViewer";
 import type { KnowledgeCard } from "@/lib/services/knowledge";
 
@@ -19,6 +20,30 @@ export const KnowledgeCardExpanded: React.FC<KnowledgeCardExpandedProps> = ({
 }) => {
   const [isFlipped, setIsFlipped] = useState(false);
 
+  // 触发元素是网格里的卡片（`KnowledgeCardItem` 的 motion.div，本身不可聚焦），
+  // 所以这里只把焦点还给它当时真实聚焦的元素；body 不算，避免关掉后焦点跳回文档根
+  const contentRef = useRef<HTMLDivElement>(null);
+  const previousFocusRef = useRef<HTMLElement | null>(null);
+  useEffect(() => {
+    const active = document.activeElement as HTMLElement | null;
+    if (!active || active === document.body) return;
+    if (contentRef.current?.contains(active)) return;
+    previousFocusRef.current = active;
+  }, []);
+
+  const handleCloseAutoFocus = (event: Event) => {
+    event.preventDefault();
+    const target = previousFocusRef.current;
+    if (target && target.isConnected) target.focus();
+  };
+
+  // 焦点落在弹窗容器上（容器带 aria-labelledby，读屏会先念标题），
+  // 而不是直接落在右上角关闭按钮上
+  const handleOpenAutoFocus = (event: Event) => {
+    event.preventDefault();
+    contentRef.current?.focus();
+  };
+
   // 强制同步关闭前的翻转状态以确保平滑退场
   const handleClose = (e?: React.MouseEvent) => {
     if (e) e.stopPropagation();
@@ -28,18 +53,38 @@ export const KnowledgeCardExpanded: React.FC<KnowledgeCardExpandedProps> = ({
   if (!card) return null;
 
   return (
-    <>
-      {/* Backdrop */}
-      <motion.div
-        initial={{ opacity: 0 }}
-        animate={{ opacity: 1 }}
-        exit={{ opacity: 0 }}
-        onClick={handleClose}
-        className="fixed inset-0 bg-background/80 backdrop-blur-xl z-[150]"
-      />
-
-      {/* Expanded Card Container */}
-      <div className="fixed inset-0 z-[160] flex items-center justify-center p-4 md:p-12 h-[100dvh] pointer-events-none">
+    <Dialog
+      open
+      onOpenChange={(open) => {
+        if (!open) handleClose();
+      }}
+    >
+      {/*
+        卡片本体是 layoutId 共享布局：Grid 卡片 ↔ 全屏卡片由 framer 的 projection
+        负责补间，所以这里保留原有的 motion 结构，只把「遮罩 + 焦点」交给 Radix。
+        遮罩仍是 motion.div（淡入淡出与原实现一致），点它 = 点内容之外 → Radix 关闭。
+      */}
+      <DialogContentBare
+        ref={contentRef}
+        aria-labelledby={`card-expanded-title-${card.id}`}
+        aria-describedby={undefined}
+        onOpenAutoFocus={handleOpenAutoFocus}
+        onCloseAutoFocus={handleCloseAutoFocus}
+        overlay={
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            data-testid="dialog-overlay"
+            className="fixed inset-0 bg-background/80 backdrop-blur-xl z-[150]"
+          />
+        }
+        // Radix 给 modal 内容加内联 pointer-events:auto；这个容器原本故意
+        // pointer-events-none（只有卡片本体可点），显式写回才能保住
+        // 「点卡片外的空白 = 点遮罩 = 关闭」
+        style={{ pointerEvents: "none" }}
+        className="fixed inset-0 z-[160] flex items-center justify-center p-4 md:p-12 h-[100dvh] pointer-events-none focus:outline-none"
+      >
         <motion.div
           layoutId={`card-container-${card.id}`}
           initial={{ opacity: 0 }}
@@ -69,6 +114,7 @@ export const KnowledgeCardExpanded: React.FC<KnowledgeCardExpandedProps> = ({
               <div className="px-10 py-8 bg-muted/30 border-b border-border relative flex items-start justify-between">
                 <div className="flex-1 min-w-0 pr-12">
                   <motion.h3
+                    id={`card-expanded-title-${card.id}`}
                     layoutId={`card-title-${card.id}`}
                     className="font-black text-foreground text-4xl leading-tight mb-4"
                   >
@@ -173,7 +219,7 @@ export const KnowledgeCardExpanded: React.FC<KnowledgeCardExpandedProps> = ({
             </div>
           </motion.div>
         </motion.div>
-      </div>
-    </>
+      </DialogContentBare>
+    </Dialog>
   );
 };

@@ -17,7 +17,7 @@ test.describe("历史记录管理", () => {
       .isVisible({ timeout: 10000 })
       .catch(() => false);
     if (hasQuestion) {
-      const options = page.locator('div[role="button"]');
+      const options = page.locator('[data-testid="practice-option"]');
       if (
         await options
           .first()

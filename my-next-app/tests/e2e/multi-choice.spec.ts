@@ -57,7 +57,7 @@ test.describe("多选题支持", () => {
       });
 
       // 尝试选择多个选项
-      const options = loggedInPage.locator('div[role="button"]');
+      const options = loggedInPage.locator('[data-testid="practice-option"]');
       const optionCount = await options.count();
 
       if (optionCount >= 2) {

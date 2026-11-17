@@ -29,7 +29,7 @@ test.describe("练习核心引擎", () => {
       .textContent();
 
     // 点击第一个选项（种子数据中 A 为正确答案）
-    const options = loggedInPage.locator('div[role="button"]');
+    const options = loggedInPage.locator('[data-testid="practice-option"]');
     await expect(options.first()).toBeVisible({ timeout: 10000 });
     await options.first().click();
 
@@ -56,7 +56,7 @@ test.describe("练习核心引擎", () => {
     });
 
     // 点击最后一个选项（种子数据中 D 通常是错误答案）
-    const options = loggedInPage.locator('div[role="button"]');
+    const options = loggedInPage.locator('[data-testid="practice-option"]');
     const count = await options.count();
     if (count > 0) {
       await options.last().click();
@@ -90,7 +90,7 @@ test.describe("练习核心引擎", () => {
       .catch(() => false);
 
     if (hasMultiChoice) {
-      const options = loggedInPage.locator('div[role="button"]');
+      const options = loggedInPage.locator('[data-testid="practice-option"]');
       const optionCount = await options.count();
 
       // 选择前两个选项
@@ -133,7 +133,7 @@ test.describe("练习核心引擎", () => {
 
     if (hasTrueFalse) {
       // 判断题只有两个选项
-      const options = loggedInPage.locator('div[role="button"]');
+      const options = loggedInPage.locator('[data-testid="practice-option"]');
       const count = await options.count();
       expect(count).toBe(2);
     }
@@ -148,7 +148,7 @@ test.describe("练习核心引擎", () => {
       timeout: 15000,
     });
 
-    const options = loggedInPage.locator('div[role="button"]');
+    const options = loggedInPage.locator('[data-testid="practice-option"]');
     await expect(options.first()).toBeVisible({ timeout: 10000 });
 
     // 按下键盘 1（选择第一个选项）
@@ -166,7 +166,9 @@ test.describe("练习核心引擎", () => {
       timeout: 15000,
     });
 
-    const firstOption = loggedInPage.locator('div[role="button"]').first();
+    const firstOption = loggedInPage
+      .locator('[data-testid="practice-option"]')
+      .first();
     if (await firstOption.isVisible()) {
       // 右键点击第一个选项
       await firstOption.click({ button: "right" });
@@ -188,7 +190,7 @@ test.describe("练习核心引擎", () => {
     });
 
     // 答一道题
-    const options = loggedInPage.locator('div[role="button"]');
+    const options = loggedInPage.locator('[data-testid="practice-option"]');
     if (await options.first().isVisible()) {
       await options.first().click();
       const confirmBtn = loggedInPage.getByRole("button", {
@@ -246,7 +248,7 @@ test.describe("练习核心引擎", () => {
     });
 
     // 答 1 题
-    const options = loggedInPage.locator('div[role="button"]');
+    const options = loggedInPage.locator('[data-testid="practice-option"]');
     if ((await options.count()) > 0) {
       await options.first().click();
       const confirmBtn = loggedInPage.getByRole("button", {
@@ -311,7 +313,7 @@ test.describe("练习核心引擎", () => {
 
     // 快速答完所有题目（种子数据共 10 题，最多尝试 MAX_QUESTIONS_TO_COMPLETE 次）
     for (let i = 0; i < MAX_QUESTIONS_TO_COMPLETE; i++) {
-      const options = loggedInPage.locator('div[role="button"]');
+      const options = loggedInPage.locator('[data-testid="practice-option"]');
       const hasOptions = await options
         .first()
         .isVisible({ timeout: 5000 })

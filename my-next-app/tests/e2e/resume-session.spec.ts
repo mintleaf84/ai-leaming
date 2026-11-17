@@ -12,7 +12,7 @@ test.describe("断点续练机制", () => {
     });
 
     // 答第 1 题
-    const options = loggedInPage.locator('div[role="button"]');
+    const options = loggedInPage.locator('[data-testid="practice-option"]');
     if ((await options.count()) > 0) {
       await options.first().click();
 

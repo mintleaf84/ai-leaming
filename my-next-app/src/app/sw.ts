@@ -23,6 +23,27 @@ installSerwist({
   skipWaiting: true,
   clientsClaim: true,
   navigationPreload: true,
+  /*
+   * 离线兜底页（PWA 加载体验）
+   *
+   * 之前没有配 fallbacks：断网或弱网下 navigation 请求若没命中缓存，用户看到的是
+   * 浏览器自带的错误页，而 `app/offline/page.tsx` 写了却从来没被用过。
+   *
+   * `fallbacks` 会在 SW 安装时把 `/offline` 自己预缓存（serwist 的 fallbacks()
+   * 内部调用 precache(entries)），所以这里可以直接指向动态路由——不需要额外的
+   * 静态 offline.html。`/offline` 不在 middleware 的 protectedRoutes 里，可匿名抓取。
+   */
+  fallbacks: {
+    entries: [
+      {
+        url: "/offline",
+        // 动态路由没有构建期 hash，revision 只能手写常量。
+        // 改了 offline 页面的文案/结构时把这个值加一，SW 才会重新抓取它。
+        revision: "offline-v1",
+        matcher: ({ request }) => request.mode === "navigate",
+      },
+    ],
+  },
   runtimeCaching: [
     /*
      * 页面导航与 RSC 请求：NetworkFirst + 3 秒超时（docs/mobile-performance.md P0-4）

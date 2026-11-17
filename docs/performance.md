@@ -55,7 +55,7 @@ X-1/X-2 零风险，搭在批次 0 的 PR 里一起提。
 | INP p75                    | < 200ms                       | T-01 |
 | LCP p75                    | < 2.5s                        | T-01 |
 | CLS p75                    | < 0.1                         | T-01 |
-| 单路由 First Load JS（gz） | 高频页 ≤ 180KB；环比 +5% 即红 | T-05 |
+| JS 体积（gz）              | 按路由 ≤180KB；**当前 Turbopack 构建只能取全站总量，按总量环比 +5% 即红** | T-05 |
 | `public/` 单文件           | > 100KB 需进白名单            | T-06 |
 | 事件循环延迟 p99           | < 50ms                        | T-02 |
 | 交互后长动画帧             | 无 > 200ms                    | T-09 |
@@ -275,9 +275,9 @@ X-1/X-2 零风险，搭在批次 0 的 PR 里一起提。
 | T-02      | 待环境               | `src/instrumentation.ts` 已加 `monitorEventLoopDelay`（30s 一次，p99>50ms 打 warn，`unref()`）；"人为触发重活看告警"需生产进程，本机无 next 服务                                                                                                                                                                              |
 | T-03      | 完成（本机静态验证） | `src/middleware.ts` 重写：4 处日志收口为 `finish()` 一条，`durationMs` + `authError` 字段，matcher 排除静态后缀（保留 `?_rsc=`）；`tsc` 与 `audit:catches` 通过                                                                                                                                                               |
 | T-04      | 待环境               | `docs/performance-baseline.md` 已建（含采集口径 + 取值 SQL + 事件循环/API 两栏）；INP/LCP/CLS 需真机 10 分钟采集后回填                                                                                                                                                                                                        |
-| T-05      | 完成                 | `scripts/check-perf-budget.mjs` + `perf-baseline.json`；fixture 用例：故意 200KB chunk → `✗ /knowledge 234.5KB > 180.0KB`（rc=1），缩到 120KB 后 `--update` 转绿；再涨到 132KB → `✗ /knowledge 246.2KB (+57.5%)`（rc=1）                                                                                                      |
+| T-05      | 完成（口径已修正）   | `scripts/check-perf-budget.mjs` + `perf-baseline.json`。**首次上线发现 Next 16 + Turbopack 既不产出 `app-build-manifest.json`、终端也不再打印 First Load JS**，原实现因此在 CI 里空转（只打「未校验」就通过）。改为三级取数后实测生效：CI run 44007754824 输出 `JS 体积（gzip，全站总量）：__total__ 2418.2KB（123 个文件）`，并明确写出已退化为总量口径；基线按该值写入（`mode: total`）。fixture 验证：route 模式 200KB chunk → `✗ 234.5KB > 180KB`（rc=1）；总量模式环比 +57.5% → rc=1 |
 | T-06      | 完成                 | 真实 `public/` 检查：`data/keypoints.json 156.3KB` 首轮报红（后按"JSON 会被 gzip"进白名单）；删除 3 个零引用死图（`login-bg.png` 631KB、`og-image.png` 565KB、`empty-state.png` 167KB）；`logo.png`/`icons/*` 进白名单并写明待优化原因                                                                                        |
-| T-07      | 待环境               | `ci.yml` 的 `build` job 追加 `npm run perf:budget`（复用同一份 `.next`，不二次构建）；YAML 解析校验通过（steps 含该步）；首次真跑需 push                                                                                                                                                                                      |
+| T-07      | 完成                 | `ci.yml` 的 `build` job 追加 `npm run perf:budget`（复用同一份 `.next`，不二次构建）。CI run 44007754824 该步骤 `success`，日志内含体积表与白名单明细 —— 门禁已在主干生效 |
 | T-08      | 完成                 | `ui-guard.yml` 改 `continue-on-error: false`，依据是 main 上 run **43935305511** 的「运行布局护栏」步骤 `success`；步骤名与 `docs/ui-system.md` 的数字统一为 61 条                                                                                                                                                            |
 | T-09      | 完成（本机可列举）   | 新增 `tests/visual/perf-guard.spec.ts` 4 条；`playwright.config.ts` 用 `testMatch` 拆分两个 project，`--list` 结果：layout-guard **61**、perf-guard **4**                                                                                                                                                                     |
 | T-10      | 完成                 | `eslint.config.mjs` 增 6 条：`transition-all`、`backdrop-blur`+fixed/sticky、`xl:/2xl:`、`useMediaQuery(`、`window.innerWidth`、`components/ui/*` 禁 framer 导入；存量在案 80+2 条 warn，基线 93 → **89**（修 3 处 + 删死 import 后收紧）                                                                                     |

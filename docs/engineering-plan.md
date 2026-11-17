@@ -51,11 +51,11 @@
   - [x] 导入幂等 **并发**（同 sourceKey `Promise.all` 两次）
   - [x] SRS 同步（`srs-sync.test.ts`，4 例）
   - [x] 迁移/测试 schema 一致性（`schema-parity.test.ts`，2 例）
-  - [ ] admin 题库 CRUD（含批量导入）
-  - [ ] 鉴权边界（未登录 / 跨用户）
-  - [ ] RAG 向量写入（sqlite-vec）
-  - [ ] 备份与恢复
-- [ ] 把 5 个最没价值的 mock-db 测试改成真实库
+  - [x] admin 题库 CRUD（含批量导入）—— 见 M3
+  - [x] 鉴权边界（未登录 / 跨用户）—— 见 M3 归属矩阵（欠账 11 → 0）
+  - [x] RAG 向量写入（sqlite-vec）—— 契约已写（12 例），但**功能本身仍不可用**，见 M5
+  - [x] 备份与恢复 —— 见 M3（10 例，含凭据加密断死）
+- [x] 把 5 个最没价值的 mock-db 测试改成真实库（在 M3 完成：history / mastery / knowledge / settings / textbook）
 - 验收：集成测试 ≥10；至少 1 个新 bug 被发现并修复
 - **实际收获（写测试过程直接抓到 2 个真 bug）**：
   1. `practice_sessions.id` 在测试内存 schema 里缺 `NOT NULL`，与迁移漂移（`schema-parity` 抓出）；
@@ -141,7 +141,9 @@
 - [x] 清掉前 4 条欠账（`history` / `practice` / `annotations` / `wrong-book`）：**11 → 7**，
       并顺带抓到两个真缺陷 —— `practice` 提交越权（IDOR，已修）与 `GET /wrong-book/` 恒 500
       （`ORDER BY` 引用 JS key，已修）
-- [ ] 清掉剩余 7 条（`chat` / `feedback` / `generate` / `knowledge` / `mastery` / `profile` / `stats`）
+- [x] 清掉剩余 7 条（`chat` / `feedback` / `generate` / `knowledge` / `mastery` / `profile` / `stats`）：
+      24 例；其中 mastery / profile / stats 没有资源 id，改测「聚合口径漏 `user_id`」
+      （如 mastery 共享标签 B 应 80 而非 50）；`KNOWN_UNCOVERED` 现为空对象
 - [x] admin 题库 CRUD 真实契约测试（19 例，含幂等键/删除行数/鉴权）
 - [x] RAG 向量写入、备份恢复契约测试（12 + 10 例）—— 顺带钉住 9 个真缺陷，见下方 M5
 - [x] 剩下的 5 个 mock-db 测试改真实库（history / mastery / knowledge / settings / textbook）：

@@ -123,7 +123,26 @@ main 只有 `pb-20`                                                          →
 窄屏差 8px；iPhone 这类 `safe-area-inset-bottom: 34px` 的机器差 **42px**：
 最后一行（练习页"确认提交"、笔记列表末项）被导航压住，Tab 聚焦时 `scrollIntoView` 也不计算固定层高度。
 `app/practice/setup/page.tsx:165` 的固定底栏同样只 `pb-20`（88px 的栏）。
-建议 `pb-24 md:pb-0` + `main { scroll-padding-bottom: 96px }`（全局 CSS 目前无 `scroll-padding`）。
+
+修法必须把安全区**一起算进去**，否则换成固定值仍然差：
+
+```css
+/* 预留 = 导航 88px + 安全区 + 8px 呼吸 */
+main {
+  padding-bottom: calc(6rem + env(safe-area-inset-bottom));
+} /* 96px + inset */
+main {
+  scroll-padding-bottom: calc(6rem + env(safe-area-inset-bottom));
+}
+@media (min-width: 768px) {
+  main {
+    padding-bottom: 0;
+    scroll-padding-bottom: 0;
+  }
+}
+```
+
+（全局 CSS 目前无 `scroll-padding`。只写 `pb-24` + `96px` 在 `inset=34px` 时仍差 26px —— 这是评审指出的复核点。）
 
 `app/practice/HeaderProgressBar.tsx:48` 是另一个形态：`sticky top-16`，但 `app/layout.tsx:5` 已把 `Navbar` 注释掉，
 顶部空出 64px 无对应元素 —— 改动前先确认是否还有路由在用 Navbar。
@@ -141,7 +160,10 @@ main 只有 `pb-20`                                                          →
 `link-selector.tsx:85`、`SimpleMindMapViewer.tsx:109`、`PromptEditor.tsx:56`。
 上游 1 处：`components/ui/command.tsx:49`（cmdk 输入框，外层无 `focus-within` 环）。
 
-附注（不计入违规）：`focus:ring-1` 与 `ring-primary/20` 一类对比度不足 3:1，属 `focus-appearance`（AAA）打磨项。
+附注（**待实测，暂不计入违规**）：`focus:ring-1` 与 `ring-primary/20` 的实际对比度很可能低于 3:1。
+注意 3:1 **不是只属于 AAA** —— WCAG 2.2 **1.4.11「非文本对比度」是 AA**，凡是承载「焦点在哪」这一信息的
+焦点指示都适用；`focus-appearance`（AAA）只是在此之上再加面积与相邻状态的对比要求。
+本轮没做像素级测量，所以记为待验证，**不能**当成「AA 已满足」。
 
 ### 3.4 `empty-states` —— 4 处，其中 1 处 P1
 
@@ -218,6 +240,17 @@ WCAG 2.2 AA 硬线是 **24×24 CSS px**（触屏惯例 44pt / 48dp）。低于 2
 `HeaderProgressBar.tsx:94` 28px、`FeedbackDialog.tsx:75` 28px、`dashboard/page.tsx:145` 24px 压线）。
 
 修法：`p-2.5 -m-2.5` 扩大热区**不改视觉**，或用 `min-h-11 min-w-11`。
+
+**但色板那处不能照搬**：五个 `w-5 h-5`（20px）色块以 `gap-2`（8px）连排，
+若各自 `p-2.5 -m-2.5` 把热区扩到 40px，相邻热区会**重叠 12px** —— 点交错处会选到另一个颜色，
+比小热区更糟。相邻热区不重叠的条件是「热区宽度 ≤ 视觉宽度 + 间距」：
+
+- 保持 20px 视觉：热区最多 28px（各边 4px），仍低于 44 → 只能靠**加大间距**：`gap-6`（24px）后
+  热区可到 44px 且刚好相接；
+- 或改 **44px 格 + 20px 圆点**（`h-11 w-11` + `gap-1`，pitch 48px），一次到位；
+- 或换成 `<input type="radio">` + `<label>` 包 44px 容器，语义也一并修好。
+
+`WrongQuestionCard` 与 `FolderTreeView` 是孤立按钮（无相邻），`p-2.5 -m-2.5` 可用。
 正面例子：`QuestionManager.tsx:549` 的 `h-11 w-11 sm:h-8 sm:w-8`（移动端放大、桌面收紧）、
 `practice/PracticeCard.tsx:350` 选项 `min-h-[48px]`。
 
@@ -259,9 +292,9 @@ PDF 导入步骤可回退、OCR 可随时清空重来。
 
 ## 6. 明确不做
 
-| 不做                           | 理由                                                                                                                                       |
-| ------------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------ |
-| 把 96 条静态命中修到 0         | `no-static-element-interactions`(23) + `click-events-have-key-events`(22) 多为遮罩/卡片外层浮起事件，机械改成 `role="button"` 会引入伪语义 |
-| 给所有 Dialog 补手写焦点陷阱   | `components/ui/*` 已有 Radix；自建浮层应**换用** `dialog.tsx`/`alert-dialog.tsx`，而不是再写一套                                           |
-| 全局 `focus:ring-1` 提升到 3:1 | `focus-appearance` 是 WCAG 2.2 **AAA**，当前 AA 已满足                                                                                     |
-| 给每条 toast 加 `aria-live`    | sonner 上游已有 polite 区域，重复包裹会导致重复播报                                                                                        |
+| 不做                           | 理由                                                                                                                                         |
+| ------------------------------ | -------------------------------------------------------------------------------------------------------------------------------------------- |
+| 把 96 条静态命中修到 0         | `no-static-element-interactions`(23) + `click-events-have-key-events`(22) 多为遮罩/卡片外层浮起事件，机械改成 `role="button"` 会引入伪语义   |
+| 给所有 Dialog 补手写焦点陷阱   | `components/ui/*` 已有 Radix；自建浮层应**换用** `dialog.tsx`/`alert-dialog.tsx`，而不是再写一套                                             |
+| 全局 `focus:ring-1` 提升到 3:1 | **不能按这个理由不做**：1.4.11 非文本对比度是 **AA**，焦点指示同样适用。当前状态是「未实测」，不是「已满足」；要真正关闭得先量一次实际对比度 | 假设 AAA-only 而跳过：会把 AA 违规留在账上 |
+| 给每条 toast 加 `aria-live`    | sonner 上游已有 polite 区域，重复包裹会导致重复播报                                                                                          |

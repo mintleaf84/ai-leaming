@@ -73,6 +73,24 @@ function warnVectorUnavailableOnce(): void {
   );
 }
 
+/**
+ * embedding 降级同样只警告一次 —— 与向量扩展不可用并列的另一种"检索能力缺失"。
+ *
+ * 为什么必须在这里拦住：`rag.ts` 降级时返回的是 `Math.sin(hash + i)` 生成的**伪向量**，
+ * 拿它当查询向量跑 KNN 不会报错，只会返回一批与题干无关的题目 —— "看起来正常的
+ * 错误结果"比空结果危险得多。写入路径已按同样理由拒收伪向量（`question-vector-index.ts`），
+ * 查询路径必须是同一道门。
+ */
+let embeddingDegradedWarned = false;
+
+function warnEmbeddingDegradedOnce(): void {
+  if (embeddingDegradedWarned) return;
+  embeddingDegradedWarned = true;
+  logger.warn(
+    "[QuestionService] embedding 走了降级路径（伪向量），跳过相似题检索并返回空结果（后续不再重复告警）",
+  );
+}
+
 export const questionService = {
   /**
    * 搜索相似题目 (向量检索回退)
@@ -82,7 +100,7 @@ export const questionService = {
    * 先按向量拿 `{ questionId, distance }`，再按 id 批量取题并按 distance 排序。
    *
    * 这条路径被 `ai.ts` 当兜底调用：任何失败都必须降级成 `[]`，否则会把
-   * "AI 不可用"升级成硬错误。
+   * "AI 不可用"升级成硬错误。embedding 降级（伪向量）也归入这条降级：宁可不查。
    */
   searchSimilarQuestions: async (content: string, limit: number = 3) => {
     if (!isVectorAvailable()) {
@@ -91,7 +109,16 @@ export const questionService = {
     }
 
     try {
-      const embedding = await ragService.getEmbedding(content);
+      // 用 getEmbeddingResult：查询向量同样不能是降级伪向量（它只是 Math.sin 噪声，
+      // KNN 会照常返回"最像的"一批无关题目）。降级时直接不查 —— 不是"查了再过滤"。
+      const { vector: embedding, degraded } =
+        await ragService.getEmbeddingResult(content);
+
+      if (degraded) {
+        warnEmbeddingDegradedOnce();
+        return [];
+      }
+
       const hits = searchQuestionVectors(embedding, limit);
       if (hits.length === 0) return [];
 

@@ -308,4 +308,69 @@ describe("题目向量索引（真实库 + 真实 sqlite-vec）", () => {
     expect(await indexModule.indexQuestion(999_999_999)).toBe("skipped");
     expect(storedQuestionIds()).not.toContain(999_999_999);
   });
+
+  // ---- pruneOnSkip：单题编辑 vs 批量回填，两种场景要求相反 ----
+
+  it("单题编辑（pruneOnSkip: true）降级时删除旧向量：宁可检索不到，也不按旧题干召回", async () => {
+    const qid = await createQuestion(`编辑降级-${process.pid}`);
+
+    // 先留下一条"修改前"的旧向量
+    expect(await indexModule.indexQuestion(qid, { pruneOnSkip: true })).toBe(
+      "indexed",
+    );
+    expect(storedQuestionIds()).toContain(qid);
+
+    // 模拟管理端改了题干：embedding 文本变了（因此不会命中旧文本的向量缓存），
+    // 旧向量描述的是**旧题面**
+    await questionService.update(qid, {
+      content: `编辑后-${process.pid}`,
+    } as never);
+
+    stub.state.fails = true;
+    expect(await indexModule.indexQuestion(qid, { pruneOnSkip: true })).toBe(
+      "skipped",
+    );
+    // 旧向量描述的是旧题面，必须消失
+    expect(storedQuestionIds()).not.toContain(qid);
+  });
+
+  it("批量回填（默认 pruneOnSkip: false）降级时保留旧向量：API 抖动不该把索引删空", async () => {
+    const offset = questionCount();
+    const qid = await createQuestion(`回填保留-${process.pid}`);
+    expect(await indexModule.indexQuestion(qid)).toBe("indexed");
+    expect(storedQuestionIds()).toContain(qid);
+
+    // 题干已改（回填要处理的新文本不在缓存里），此时 API 又不通
+    await questionService.update(qid, {
+      content: `回填后-${process.pid}`,
+    } as never);
+
+    stub.state.fails = true;
+    const result = await indexModule.reindexQuestions({ limit: 1, offset });
+
+    expect(result).toMatchObject({
+      scanned: 1,
+      indexed: 0,
+      skipped: 1,
+      failed: 0,
+    });
+    // 关键断言：跳过归跳过，向量不能删（否则批量跑到一半抖动就把索引清空了）
+    expect(storedQuestionIds()).toContain(qid);
+  });
+
+  it("降级判定只认 degraded：长度正确但全零的向量照常入库（不做方差启发式）", async () => {
+    const rag = (await import("@/lib/ai/rag")).ragService;
+    const spy = vi.spyOn(rag, "getEmbeddingResult").mockResolvedValue({
+      vector: new Array(vecDim).fill(0),
+      degraded: false,
+    });
+
+    try {
+      const qid = await createQuestion(`全零向量-${process.pid}`);
+      expect(await indexModule.indexQuestion(qid)).toBe("indexed");
+      expect(storedQuestionIds()).toContain(qid);
+    } finally {
+      spy.mockRestore();
+    }
+  });
 });

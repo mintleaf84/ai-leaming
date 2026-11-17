@@ -282,8 +282,10 @@ export const adminService = {
       .where(eq(drizzleSchema.questions.id, id));
 
     if (touchesEmbeddingText(data)) {
-      // 不 await：embedding 是一次网络调用，管理端保存不该被它拖住
-      void indexQuestion(id).catch((error: unknown) => {
+      // 不 await：embedding 是一次网络调用，管理端保存不该被它拖住。
+      // pruneOnSkip: 内容已变却拿不到新向量时删掉旧向量 —— 旧向量描述的是旧题干，
+      // 留着会让相似题检索按已不存在的内容召回（取舍详见 IndexQuestionOptions）。
+      void indexQuestion(id, { pruneOnSkip: true }).catch((error: unknown) => {
         logger.warn(
           { err: error, questionId: id },
           "[AdminService] 题目向量重建失败，保存已生效；可用重索引脚本补齐",

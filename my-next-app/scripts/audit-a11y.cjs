@@ -12,11 +12,16 @@
  *   node scripts/audit-a11y.cjs --update     # 收紧基线（只允许持平或下降）
  *   node scripts/audit-a11y.cjs --update --allow-increase "<理由>"   # 显式放宽
  *
+ * `--json` 与 `--update` 互斥（退出码 2）：一个命令既写基线又要保证 stdout 是
+ * 纯 JSON，行为面过大；机器消费者请先 `--json` 看明细，再单独 `--update` 落基线。
+ *
  * 退出码：
  *   0 = 未超基线（或首次运行无基线，仅报告）
  *   1 = 某规则数量超过基线 / 出现基线里没有的规则 / 总数超过基线
- *   2 = 工具本身异常（eslint 崩溃、JSON 解析失败、解析报错、空报告）——
- *       不能把「跑不起来」当成「通过」
+ *   2 = 工具本身异常（参数组合互斥、基线文件损坏/形状不合法、eslint 崩溃、
+ *       eslint JSON 解析失败、源码解析报错、空报告）——
+ *       不能把「跑不起来」或「基线读不出来」当成「通过」；与 1 分开，
+ *       是因为 1 是「代码回退」，2 是「检查本身不可信」，处置方式不同
  *
  * 为什么按规则做棘轮而不是只看总数：总数从 200 降到 190 的同时，可以新增
  * 10 条 aria-props、再删 20 条 no-static-element-interactions —— 总数看着
@@ -39,6 +44,16 @@ const allowIncreaseReason =
   allowIncrease && argv[allowIncreaseIndex + 1] && !argv[allowIncreaseIndex + 1].startsWith("--")
     ? argv[allowIncreaseIndex + 1]
     : "";
+
+// 参数校验先于一切副作用（跑 eslint、写文件）。--json 的契约是「stdout 只有
+// JSON」，--update 要写基线并打文本摘要，两者同时出现无法同时满足；这里显式
+// 拒绝，而不是二选一地静默违约。退出码 2 = 用法/工具错误，不是「超基线」。
+if (asJson && update) {
+  console.error(
+    "✖ --json 与 --update 互斥：机器消费者请先 `--json` 看明细，再单独 `--update` 落基线",
+  );
+  process.exit(2);
+}
 
 /**
  * 严重度 + WCAG 条款映射。
@@ -289,11 +304,74 @@ if (ratchet.messages.length > 0) {
 }
 process.exit(ratchet.code);
 
+// ------------------------------------------------------------ 基线读取与校验
+/**
+ * 返回三种结果：
+ *   { ok: true, baseline: null }    文件不存在（首次运行，只报告、不失败）
+ *   { ok: true, baseline: {...} }   正常基线
+ *   { ok: false, message }          读不出来 / JSON 坏 / 形状不合法 → 调用方退 2
+ *
+ * 形状校验不能省：缺 total、rules 缺失或非对象时若按「空基线」放行，棘轮会
+ * 永久失效（任何数量都不构成回退），所以一律按「损坏」处理而不是「无基线」。
+ */
+function loadBaseline() {
+  if (!fs.existsSync(baselinePath)) return { ok: true, baseline: null };
+  const target = rel(baselinePath);
+
+  let raw;
+  try {
+    raw = fs.readFileSync(baselinePath, "utf8");
+  } catch (err) {
+    return {
+      ok: false,
+      message:
+        `✖ 无法读取基线文件（${target}）：${err.message}\n` +
+        "  请修复该文件；或删除后重新执行 node scripts/audit-a11y.cjs --update。",
+    };
+  }
+
+  let parsed;
+  try {
+    parsed = JSON.parse(raw);
+  } catch (err) {
+    return {
+      ok: false,
+      message:
+        `✖ 基线文件损坏（${target}）：JSON 解析失败（${err.message}）\n` +
+        "  请修复该文件；或删除后重新执行 node scripts/audit-a11y.cjs --update。",
+    };
+  }
+
+  const broken = (detail) => ({
+    ok: false,
+    message:
+      `✖ 基线文件损坏（${target}）：${detail}\n` +
+      "  损坏时无法判断是否增高，故不自动覆盖；请修复，或删除后重新 --update。",
+  });
+  if (!parsed || typeof parsed !== "object" || Array.isArray(parsed)) {
+    return broken(
+      `顶层应为 JSON 对象，实际为 ${Array.isArray(parsed) ? "数组" : JSON.stringify(parsed)}`,
+    );
+  }
+  if (!parsed.rules || typeof parsed.rules !== "object" || Array.isArray(parsed.rules)) {
+    return broken("缺少 rules 对象（必须存在且为对象，可为 {}）");
+  }
+  if (typeof parsed.total !== "number" || !Number.isFinite(parsed.total)) {
+    return broken("缺少数值型 total");
+  }
+  return { ok: true, baseline: parsed };
+}
+
 function checkRatchet(counts, total, opts = {}) {
   const messages = [];
-  const previous = fs.existsSync(baselinePath)
-    ? JSON.parse(fs.readFileSync(baselinePath, "utf8"))
-    : null;
+  const loaded = loadBaseline();
+  // 基线读不出来 / 形状不合法时不能退化成「无基线放行」：空基线会让棘轮永久
+  // 失效，而 --update 覆盖又会把「是否增高」的判定一并跳过。统一报 2。
+  if (!loaded.ok) {
+    messages.push(loaded.message);
+    return { code: 2, messages };
+  }
+  const previous = loaded.baseline;
 
   if (update) {
     if (previous && !allowIncrease) {
@@ -323,7 +401,24 @@ function checkRatchet(counts, total, opts = {}) {
       ),
     };
     if (allowIncrease && allowIncreaseReason) payload.exceptionReason = allowIncreaseReason;
-    fs.writeFileSync(baselinePath, JSON.stringify(payload, null, 2) + "\n");
+    // 先写同目录临时文件再 rename：同盘 rename 是原子的，中途失败不会把原基线
+    // 留成半截内容（writeFileSync 直接写会先截断目标文件）。
+    const tmpPath = `${baselinePath}.tmp-${process.pid}`;
+    try {
+      fs.writeFileSync(tmpPath, JSON.stringify(payload, null, 2) + "\n");
+      fs.renameSync(tmpPath, baselinePath);
+    } catch (err) {
+      messages.push(`✖ 写基线失败（${rel(baselinePath)}）：${err.message}`);
+      if (fs.existsSync(tmpPath)) {
+        try {
+          fs.rmSync(tmpPath, { force: true });
+        } catch (cleanupErr) {
+          messages.push(`  提示：临时文件 ${rel(tmpPath)} 清理失败：${cleanupErr.message}`);
+        }
+      }
+      messages.push("  原基线文件未被改动。");
+      return { code: 2, messages };
+    }
     console.log(
       `\n✔ a11y 基线已写入 ${rel(baselinePath)}：total=${total}，规则数=${groups.length}` +
         (allowIncrease ? `（显式放宽：${allowIncreaseReason || "未填写理由"}）` : ""),

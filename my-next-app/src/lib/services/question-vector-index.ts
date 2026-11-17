@@ -12,9 +12,10 @@ import logger from "@/lib/logger";
  * 第一步（#193）把向量读写收口到 `vec-store.ts`，表能建、检索能召回 —— 但**没有
  * 任何生产代码写向量**，所以空表上的检索永远返回 `[]`。本模块补上写入：
  *
- *   1. `indexQuestion(id)`：单题 upsert，管理端保存后 best-effort 触发；
+ *   1. `indexQuestion(id, { pruneOnSkip })`：单题 upsert，管理端保存后 best-effort
+ *      触发（内容变了却拿不到新向量时删旧向量，见 `IndexQuestionOptions`）；
  *   2. `reindexQuestions({ limit, offset })`：限量分批回填，由
- *      `scripts/reindex-question-vectors.ts` 驱动。
+ *      `scripts/reindex-question-vectors.ts` 驱动；**降级时保留已有向量**。
  *
  * 两条硬约束：
  *   - **降级伪向量绝不入库**：`rag.ts` 在 embedding API 失败时返回一条 `Math.sin`
@@ -31,6 +32,23 @@ export const DEFAULT_REINDEX_LIMIT = 50;
 export const MAX_REINDEX_LIMIT = 500;
 
 export type QuestionIndexOutcome = "indexed" | "skipped" | "unavailable";
+
+/**
+ * 单题索引选项。
+ *
+ * `pruneOnSkip` 的两面性**不是随手写的默认值**：
+ *   - 单题编辑（`admin-service.updateQuestion`）传 `true`：题干/选项/答案已经改了，
+ *     却拿不到新向量（API 降级、题面被清空、题目已删）。此时旧向量描述的是**旧内容**，
+ *     继续参与相似题检索等于按旧题干返回结果 —— 宁可这道题暂时检索不到。
+ *   - 批量回填（`reindexQuestions`）保持 `false`：跑到一半 API 抖动就把索引删光，
+ *     是把"部分过期"升级成"全空"，不可接受；照常计 `skipped`，旧向量留着。
+ *
+ * 所以默认值取批量那侧（安全侧），危险的删除必须由调用方显式打开。
+ */
+export interface IndexQuestionOptions {
+  /** true = skipped 时删除该题已有向量（单题编辑路径）；默认 false = 保留（批量回填） */
+  pruneOnSkip?: boolean;
+}
 
 export interface ReindexOptions {
   /** 本次最多处理多少题（默认 50，上限 500） */
@@ -100,12 +118,39 @@ function stringifyOptions(options: unknown): string {
   }
 }
 
+/**
+ * `pruneOnSkip` 场景下删除一条过期/孤儿向量；失败只记日志，不阻断主流程
+ * （调用方是保存后的 best-effort 路径，删不掉最多多一条脏向量，不能反过来让保存失败）。
+ */
+function pruneVector(questionId: number, reason: string): void {
+  try {
+    vecStore.deleteQuestionVector(questionId);
+    logger.info(
+      { questionId, reason },
+      "[QuestionVectorIndex] 内容已变但拿不到新向量，删除旧向量（宁可暂时检索不到，也不按旧内容召回）",
+    );
+  } catch (error) {
+    // audit-allow: 删旧向量失败只是残留一条脏索引，不能反向阻断保存/回填
+    logger.error(
+      { err: error, questionId, reason },
+      "[QuestionVectorIndex] 删除旧向量失败，该题可能按旧内容参与检索",
+    );
+  }
+}
+
 /** 实际写一条向量；失败（如维度不符）直接抛出，由调用方决定算 failed 还是上报 */
 async function indexRow(
   row: IndexableQuestion,
+  options: IndexQuestionOptions = {},
 ): Promise<"indexed" | "skipped"> {
+  const prune = options.pruneOnSkip === true;
+
   // 题面为空就没有可索引的语义：拼出来的文本只有选项/答案，检索上去只会误召回
-  if ((row.content ?? "").trim().length === 0) return "skipped";
+  if ((row.content ?? "").trim().length === 0) {
+    // 内容已改空：旧向量描述的是旧题面，必须删（否则按旧题干召回）
+    if (prune) pruneVector(row.id, "题面为空");
+    return "skipped";
+  }
 
   const text = buildQuestionEmbeddingText(row);
   const { vector, degraded } = await ragService.getEmbeddingResult(text);
@@ -114,6 +159,8 @@ async function indexRow(
       { questionId: row.id },
       "[QuestionVectorIndex] embedding 走了降级路径（伪向量），跳过写入：向量索引只收真实向量",
     );
+    // 单题编辑：旧向量已过期，删除；批量回填：保留（API 抖动不该清空索引）
+    if (prune) pruneVector(row.id, "embedding 降级");
     return "skipped";
   }
 
@@ -126,6 +173,7 @@ async function attemptIndex(
   row: IndexableQuestion,
 ): Promise<"indexed" | "skipped" | "failed"> {
   try {
+    // 批量路径**永远不 prune**：这是 pruneOnSkip 默认 false 的来源
     return await indexRow(row);
   } catch (error) {
     logger.error(
@@ -158,11 +206,17 @@ function findQuestion(questionId: number) {
  *
  * 写入失败（维度不符等）会**抛出** —— 单题路径由调用方 best-effort 兜住，
  * 批量路径由 `attemptIndex` 计成 `failed`。故意图是"本周转不报错，只报告结果"。
+ *
+ * `options.pruneOnSkip` 的取舍见 `IndexQuestionOptions`：单题编辑传 `true`
+ * （旧向量已过期，删掉），批量回填不传（保留，防 API 抖动清空索引）。
  */
 export async function indexQuestion(
   questionId: number,
+  options: IndexQuestionOptions = {},
 ): Promise<QuestionIndexOutcome> {
   if (!vecStore.isVectorAvailable()) return "unavailable";
+
+  const prune = options.pruneOnSkip === true;
 
   const row = await findQuestion(questionId);
   if (!row) {
@@ -170,10 +224,12 @@ export async function indexQuestion(
       { questionId },
       "[QuestionVectorIndex] 题目不存在（可能已被删除），跳过索引",
     );
+    // 题目已删但向量还在 = 孤儿行；pruneOnSkip 场景一并清掉
+    if (prune) pruneVector(questionId, "题目不存在");
     return "skipped";
   }
 
-  return indexRow(row);
+  return indexRow(row, options);
 }
 
 /**

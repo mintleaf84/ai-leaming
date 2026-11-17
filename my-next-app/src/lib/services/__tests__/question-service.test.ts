@@ -64,6 +64,7 @@ const {
     },
     mockRagService: {
       getEmbedding: vi.fn(),
+      getEmbeddingResult: vi.fn(),
     },
     // 向量读写走 legacy 连接（vec-store）。服务层单测只关心"取到 id 后怎么拼题"，
     // 真库路径由 question-vector.contract.test.ts 覆盖。
@@ -357,7 +358,10 @@ describe("Question Service", () => {
 
   describe("searchSimilarQuestions", () => {
     it("should return questions ordered by vector distance", async () => {
-      mockRagService.getEmbedding.mockResolvedValue([0.1, 0.2]);
+      mockRagService.getEmbeddingResult.mockResolvedValue({
+        vector: [0.1, 0.2],
+        degraded: false,
+      });
       mockVecStore.searchQuestionVectors.mockReturnValue([
         { questionId: 2, distance: 0.1 },
         { questionId: 1, distance: 0.5 },
@@ -396,7 +400,7 @@ describe("Question Service", () => {
 
       const result = await questionService.searchSimilarQuestions("content");
 
-      expect(mockRagService.getEmbedding).toHaveBeenCalledWith("content");
+      expect(mockRagService.getEmbeddingResult).toHaveBeenCalledWith("content");
       expect(mockVecStore.searchQuestionVectors).toHaveBeenCalledWith(
         [0.1, 0.2],
         3,
@@ -411,11 +415,34 @@ describe("Question Service", () => {
 
       expect(result).toEqual([]);
       // 扩展不可用时不该白花一次 embedding 调用
-      expect(mockRagService.getEmbedding).not.toHaveBeenCalled();
+      expect(mockRagService.getEmbeddingResult).not.toHaveBeenCalled();
+    });
+
+    // 缺陷：查询向量若是 `rag.ts` 的降级伪向量，KNN 会照常返回"最像的"一批无关题。
+    // 所以这里断言的是**没有发起检索**，而不只是返回值为 [] —— 只看返回值分不清
+    // "查了没命中"和"根本没查"，而后者才是修法的要求。
+    it("should not query the vector table when embedding is degraded", async () => {
+      mockRagService.getEmbeddingResult.mockResolvedValue({
+        vector: [0.123, -0.456],
+        degraded: true,
+      });
+      // 真查的话这条会被命中：证明 [] 来自"没查"，不是"查了空"
+      mockVecStore.searchQuestionVectors.mockReturnValue([
+        { questionId: 1, distance: 0 },
+      ]);
+
+      const result = await questionService.searchSimilarQuestions("content");
+
+      expect(mockRagService.getEmbeddingResult).toHaveBeenCalledWith("content");
+      expect(mockVecStore.searchQuestionVectors).not.toHaveBeenCalled();
+      expect(result).toEqual([]);
     });
 
     it("should degrade to empty list when the vector table is missing", async () => {
-      mockRagService.getEmbedding.mockResolvedValue([0.1, 0.2]);
+      mockRagService.getEmbeddingResult.mockResolvedValue({
+        vector: [0.1, 0.2],
+        degraded: false,
+      });
       mockVecStore.searchQuestionVectors.mockImplementation(() => {
         throw new Error("no such table: questions_vec");
       });

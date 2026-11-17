@@ -180,8 +180,19 @@
       降级即 `skipped` 不入库。不用长度/方差启发式去猜
 - [x] embedding 写入路径（#196）：`indexQuestion` / `reindexQuestions` + `scripts/reindex-question-vectors.ts`；
       仅接管理员**单题**编辑（且只在 `content/options/answer` 变更时），批量导入故意不接（会打出几百次 API 调用）
-- [ ] **存量回填**（运维动作）：需有题目的库 + 可用的 embedding 配置。先 `--limit 100 --dry-run` → `--limit 100`
-      → 抽样 10 题验召回（判据：≥7 题首条与人工判断同考点）→ 再分批全量
+- [x] **检索路径也堵住降级伪向量**（PR #199 评审抓出）：`#196` 只堵了写入路径，两处**查询**入口仍用
+      `getEmbedding` 并忽略 `degraded` —— 伪向量当查询向量跑 KNN，返回"看起来正常但与问题无关"的结果。
+      `searchSimilarQuestions` 与 `ragService.search` 改为 `getEmbeddingResult`，降级直接返回 `[]`、**不执行 MATCH**
+- [x] **编辑后降级会留旧向量**（评审抓出）：`indexQuestion(id, { pruneOnSkip: true })` 删掉描述旧题干的向量；
+      **批量回填永不 prune**（API 抖动删光索引是从"部分过期"升级成"全空"）
+- [ ] **`content_vec` 写入路径同样会存降级伪向量**（本轮范围外发现，未修）：
+      `ragService.addChunk` / `addChunksBatch` 仍用 `getEmbedding`。该链路独立的 `content_vec`
+      表并非 `vec-store` 创建，需与"RAG 分块索引是否继续维护"一起决策
+- [ ] **存量回填**（运维动作）：需有题目的库 + 可用的 embedding 配置。脚本**不保存进度**，
+      `--offset` 默认 0 —— 重复跑 `--limit 100` 会**再次处理前 100 题**（重复计费，后面的题永远轮不到）。
+      正确顺序：`--limit 100 --dry-run` → `--limit 100 --offset 0` → 抽样 10 题验召回
+      （判据：≥7 题首条与人工判断同考点）→ 之后每批把 `--offset` 递增 100
+      （`--offset 100`、`--offset 200`…，直到 `剩余 0`）。脚本每批结束会打印下一批该用的 `--offset`
 
 ## M6 前端可用性与无障碍（审计已完成，修复待排期）
 

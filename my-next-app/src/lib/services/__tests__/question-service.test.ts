@@ -2,75 +2,79 @@
 import { describe, it, expect, beforeEach, vi } from "vitest";
 import { questionService } from "../question";
 
-const { mockDb, mockDrizzleDb, mockDrizzleSchema, mockRagService, mockVecStore } =
-  vi.hoisted(() => {
-    const makeChain = () => {
-      const chain: any = {
-        then: vi.fn((resolve) => resolve([])),
-        get: vi.fn(() => ({})),
-      };
-      const methods = [
-        "insert",
-        "values",
-        "update",
-        "set",
-        "delete",
-        "select",
-        "from",
-        "where",
-        "limit",
-        "offset",
-        "orderBy",
-        "all",
-        "innerJoin",
-        "leftJoin",
-        "onConflictDoUpdate",
-      ];
-      methods.forEach((m) => {
-        chain[m] = vi.fn(() => chain);
-      });
-      return chain;
+const {
+  mockDb,
+  mockDrizzleDb,
+  mockDrizzleSchema,
+  mockRagService,
+  mockVecStore,
+} = vi.hoisted(() => {
+  const makeChain = () => {
+    const chain: any = {
+      then: vi.fn((resolve) => resolve([])),
+      get: vi.fn(() => ({})),
     };
+    const methods = [
+      "insert",
+      "values",
+      "update",
+      "set",
+      "delete",
+      "select",
+      "from",
+      "where",
+      "limit",
+      "offset",
+      "orderBy",
+      "all",
+      "innerJoin",
+      "leftJoin",
+      "onConflictDoUpdate",
+    ];
+    methods.forEach((m) => {
+      chain[m] = vi.fn(() => chain);
+    });
+    return chain;
+  };
 
-    const chain = makeChain();
-    const mockDrizzleDb = {
-      ...chain,
-      query: {
-        questions: { findMany: vi.fn(), findFirst: vi.fn() },
-      },
-      transaction: vi.fn(async (cb) => cb(chain)),
-      execute: vi.fn(async () => []),
-    };
+  const chain = makeChain();
+  const mockDrizzleDb = {
+    ...chain,
+    query: {
+      questions: { findMany: vi.fn(), findFirst: vi.fn() },
+    },
+    transaction: vi.fn(async (cb) => cb(chain)),
+    execute: vi.fn(async () => []),
+  };
 
-    return {
-      mockDb: {
-        prepare: vi.fn(),
+  return {
+    mockDb: {
+      prepare: vi.fn(),
+    },
+    mockDrizzleDb,
+    mockDrizzleSchema: {
+      questions: {
+        id: "questions.id",
+        type: "questions.type",
+        dimension: "questions.dimension",
+        tags: "questions.tags",
+        content: "questions.content",
+        ai_mnemonic: "questions.ai_mnemonic",
       },
-      mockDrizzleDb,
-      mockDrizzleSchema: {
-        questions: {
-          id: "questions.id",
-          type: "questions.type",
-          dimension: "questions.dimension",
-          tags: "questions.tags",
-          content: "questions.content",
-          ai_mnemonic: "questions.ai_mnemonic",
-        },
-      },
-      mockRagService: {
-        getEmbedding: vi.fn(),
-      },
-      // 向量读写走 legacy 连接（vec-store）。服务层单测只关心"取到 id 后怎么拼题"，
-      // 真库路径由 question-vector.contract.test.ts 覆盖。
-      mockVecStore: {
-        isVectorAvailable: vi.fn(),
-        searchQuestionVectors: vi.fn(),
-        upsertQuestionVector: vi.fn(),
-        deleteQuestionVector: vi.fn(),
-      },
-    };
-  },
-);
+    },
+    mockRagService: {
+      getEmbedding: vi.fn(),
+    },
+    // 向量读写走 legacy 连接（vec-store）。服务层单测只关心"取到 id 后怎么拼题"，
+    // 真库路径由 question-vector.contract.test.ts 覆盖。
+    mockVecStore: {
+      isVectorAvailable: vi.fn(),
+      searchQuestionVectors: vi.fn(),
+      upsertQuestionVector: vi.fn(),
+      deleteQuestionVector: vi.fn(),
+    },
+  };
+});
 
 vi.mock("@/lib/db", () => ({
   default: mockDb,
@@ -382,16 +386,21 @@ describe("Question Service", () => {
         },
       ];
       // 题面按 id 批量取回（跨连接不能 JOIN），顺序以 distance 为准
-      (mockDrizzleDb.then as unknown as {
-        mockImplementation: (
-          fn: (resolve: (value: unknown) => void) => void,
-        ) => void;
-      }).mockImplementation((resolve) => resolve(rows));
+      (
+        mockDrizzleDb.then as unknown as {
+          mockImplementation: (
+            fn: (resolve: (value: unknown) => void) => void,
+          ) => void;
+        }
+      ).mockImplementation((resolve) => resolve(rows));
 
       const result = await questionService.searchSimilarQuestions("content");
 
       expect(mockRagService.getEmbedding).toHaveBeenCalledWith("content");
-      expect(mockVecStore.searchQuestionVectors).toHaveBeenCalledWith([0.1, 0.2], 3);
+      expect(mockVecStore.searchQuestionVectors).toHaveBeenCalledWith(
+        [0.1, 0.2],
+        3,
+      );
       expect(result.map((q) => q.id)).toEqual([2, 1]);
     });
 

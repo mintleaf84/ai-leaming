@@ -1,9 +1,7 @@
 {
-  "generatedAt": "2026-11-17T16:27:02.929Z",
-  "total": 48,
+  "generatedAt": "2026-11-17T17:03:11.387Z",
+  "total": 9,
   "rules": {
-    "jsx-a11y/no-static-element-interactions": 20,
-    "jsx-a11y/click-events-have-key-events": 19,
     "jsx-a11y/no-autofocus": 8,
     "jsx-a11y/label-has-associated-control": 1
   }

@@ -26,9 +26,30 @@ export function MessageList({
   onRetry,
   messagesEndRef,
 }: MessageListProps) {
+  // 流式回答的"声音"（docs/ux-a11y-audit.md §3.7）。
+  // 正文逐字增长**不能**放进 live 区域：那会让屏幕阅读器把每个字念一遍、几十次打断，
+  // 比不播报更糟。所以这里只在"开始生成 / 失败 / 完成"三档各播一次整句，
+  // 正文容器只挂 aria-busy 告诉辅助技术"内容还在变，先别念"。
+  //
+  // 文本直接从 props 推导（不存 state、不进 effect）：isLoading 一变父组件就重渲染，
+  // 文本随之变化即触发播报；文本没变（无关重渲染）就不会重复念。
+  const announcement =
+    messages.length === 0
+      ? ""
+      : isLoading
+        ? "AI 正在生成回答…"
+        : error
+          ? "回答生成失败，可以使用重试按钮重新发送。"
+          : "回答已完成。";
+
   return (
     <main className="flex-1 overflow-y-auto px-4 py-8 md:px-0 scrollbar-thin">
-      <div className="max-w-3xl mx-auto space-y-8">
+      {/* role="status" 自带 aria-live="polite" + aria-atomic="true"：
+          文本整句替换时读出整句，而不是只读差量 */}
+      <p role="status" className="sr-only">
+        {announcement}
+      </p>
+      <div className="max-w-3xl mx-auto space-y-8" aria-busy={isLoading}>
         {messages.length === 0 && (
           <div className="flex flex-col items-center justify-center py-20 text-muted-foreground/30">
             <Bot className="w-12 h-12 mb-4 opacity-50" />

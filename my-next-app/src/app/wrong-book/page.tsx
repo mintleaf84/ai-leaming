@@ -380,6 +380,14 @@ export default function WrongBookPage() {
               )}
             </div>
 
+            {/* 计数播报（docs/ux-a11y-audit.md §3.7）：勾选/取消时视觉上只有
+                "已选 N 题"这几个数字在变，屏读用户听到单独一个数字无法判断含义，
+                所以这里播报整句。role="status" 隐含 aria-atomic="true"，
+                文本整体替换时读整句而不是只读差量。 */}
+            <p role="status" aria-atomic="true" className="sr-only">
+              {`错题共 ${stats.total} 道，其中已掌握 ${masteredQuestions.length} 道，已选 ${selectedIds.size} 道。`}
+            </p>
+
             {/* 列表视图 */}
             {viewMode === "list" && (
               <div className="space-y-3">

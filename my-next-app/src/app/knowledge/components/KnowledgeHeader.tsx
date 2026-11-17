@@ -42,8 +42,20 @@ export const KnowledgeHeader: React.FC<KnowledgeHeaderProps> = ({
 }) => {
   const { t } = useTerminology();
 
+  // 计数播报（docs/ux-a11y-audit.md §3.7）：卡片总数、分类切换、增删卡片都只是
+  // 视觉上的数字/列表变化。这里用一条 role="status" 播报整句。
+  // 搜索中**不**播报命中数：搜索框是逐字输入的，每敲一个字母都播一次"共 3 张"
+  // 就是刷屏；此时播报只保留总数与分类，避免打断用户打字。
+  const categoryLabel = selectedCategory || t("knowledge.all_cats");
+  const countAnnouncement = searchQuery
+    ? `知识卡片共 ${stats.total} 张。当前分类：${categoryLabel}。`
+    : `知识卡片共 ${stats.total} 张。当前分类：${categoryLabel}，共 ${filteredCount} 张。`;
+
   return (
     <header className="bg-background/80 backdrop-blur-md border-b border-border sticky top-0 z-30 shadow-sm">
+      <p role="status" aria-atomic="true" className="sr-only">
+        {countAnnouncement}
+      </p>
       <div className="max-w-7xl mx-auto px-4 py-4">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-4">

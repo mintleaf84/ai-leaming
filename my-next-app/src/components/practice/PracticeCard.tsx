@@ -49,6 +49,8 @@ interface PracticeCardProps {
   onSubmitMulti: () => void;
   isFillBlank?: boolean;
   onFillBlankSubmit?: (answer: string) => void;
+  /** 题干节点的 ref：切题时父组件把焦点移到这里（tabIndex=-1，可编程聚焦） */
+  stemRef?: React.RefObject<HTMLHeadingElement | null>;
 }
 
 export function PracticeCard({
@@ -59,6 +61,7 @@ export function PracticeCard({
   onSubmitMulti,
   isFillBlank,
   onFillBlankSubmit,
+  stemRef,
 }: PracticeCardProps) {
   // 排除法状态：存储被划掉的选项（判断题和填空题不需要此功能）
   const [excludedOptions, setExcludedOptions] = useState<string[]>([]);
@@ -251,7 +254,11 @@ export function PracticeCard({
             </div>
           </div>
 
-          <h2 className="text-xl mb-6 font-bold leading-relaxed text-foreground group">
+          <h2
+            ref={stemRef}
+            tabIndex={-1}
+            className="text-xl mb-6 font-bold leading-relaxed text-foreground group rounded focus:outline-none focus-visible:ring-2 focus-visible:ring-primary/50 focus-visible:ring-offset-2"
+          >
             {isFillBlank
               ? renderFillBlankContent(question.content)
               : question.content}

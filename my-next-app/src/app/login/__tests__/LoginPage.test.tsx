@@ -230,4 +230,29 @@ describe("LoginPage 集成测试", () => {
     expect(screen.queryByText("用户名或密码错误")).not.toBeInTheDocument();
     expect(screen.queryByText("无法连接到服务器")).not.toBeInTheDocument();
   });
+
+  // ----------------------------------------------------------
+  // 场景 7（§3.7，批次 B4）：失败提示条必须被播报且接住焦点
+  // ----------------------------------------------------------
+  it("登录失败：错误条有 role=alert，且焦点移到错误条", async () => {
+    // 测试意图：提交按钮在表单底部、错误条在顶部。只把红色条画出来，
+    // 屏读用户听不到、键盘用户还得自己往回 Tab 找。两件事都要可断言。
+    server.use(
+      http.post("/api/auth/login", () => {
+        return HttpResponse.json({ error: "用户名或密码错误" }, { status: 401 });
+      }),
+    );
+
+    const { user } = await renderAndFillForm("admin", "wrong-password");
+    await user.click(screen.getByRole("button", { name: "立即登录" }));
+
+    const alert = await screen.findByRole("alert");
+    expect(alert).toHaveTextContent("用户名或密码错误");
+
+    await waitFor(() => {
+      expect(document.activeElement).toBe(alert);
+    });
+    // 可编程聚焦的前提是 tabIndex=-1（不是 tabindex=0 插进 Tab 序列）
+    expect(alert).toHaveAttribute("tabindex", "-1");
+  });
 });

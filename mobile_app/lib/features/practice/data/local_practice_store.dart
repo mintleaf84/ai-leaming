@@ -108,6 +108,25 @@ class LocalPracticeStore {
     return questions;
   }
 
+  /// 按 ID 取单题（离线判分用）。找不到返回 null。
+  Future<Question?> questionById(String id) async {
+    final numericId = int.tryParse(id);
+    if (numericId == null) {
+      return null;
+    }
+    final db = await _resolveDb();
+    final rows = await db.query(
+      'cached_questions',
+      where: 'id = ?',
+      whereArgs: <Object?>[numericId],
+      limit: 1,
+    );
+    if (rows.isEmpty) {
+      return null;
+    }
+    return _rowToQuestion(rows.first);
+  }
+
   Future<int> cachedQuestionCount() async {
     final db = await _resolveDb();
     final rows = await db.rawQuery('SELECT COUNT(*) AS c FROM cached_questions');

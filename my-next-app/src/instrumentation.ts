@@ -24,10 +24,14 @@ export async function register() {
       loopDelay.enable();
       setInterval(() => {
         const p99 = loopDelay.percentile(99) / 1e6;
-        if (p99 > 50) {
+        const max = loopDelay.max / 1e6;
+        // 两条判据缺一不可：30s 窗口里一次 300ms 的阻塞会被 p99 平均掉，
+        // 只看 p99 会漏掉"偶发整页卡死"这种最伤体验的情况。
+        if (p99 > 50 || max > 200) {
           log.warn("[perf] event loop lag", {
             p99_ms: Math.round(p99),
-            max_ms: Math.round(loopDelay.max / 1e6),
+            max_ms: Math.round(max),
+            samples: loopDelay.count,
           });
         }
         loopDelay.reset();

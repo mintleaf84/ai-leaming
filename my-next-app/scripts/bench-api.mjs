@@ -124,6 +124,17 @@ for (const endpoint of ENDPOINTS) {
     console.log(`  ${endpoint.name.padEnd(20)} 全部 401/403（缺 --cookie），跳过`);
     continue;
   }
+  // 全部失败（5xx / 连接被拒）时不能记成 p95=0：那会让回归门禁"通过"，
+  // 并且会把 0 写进基线，让该端点此后永久失去比较意义。
+  if (r.ok === 0) {
+    failures.push(
+      `${endpoint.name} 全部请求失败（failed=${r.failed}）—— 无法度量，按失败处理`,
+    );
+    console.log(
+      `  ${endpoint.name.padEnd(20)} 全部失败（failed=${r.failed}），不记入基线`,
+    );
+    continue;
+  }
   results[endpoint.name] = Math.round(r.p95);
 
   const prev = baselineApi[endpoint.name];

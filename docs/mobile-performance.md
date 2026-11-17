@@ -124,7 +124,7 @@
 | X-7  | 列表项 memo 化：`/wrong-book`（27 state 提到页面顶层 + 内联箭头 props）、`/recall`（`typed` 在 682 行组件顶层）                                | `use-wrong-book-controller.ts:61`、`RecallSession.tsx:93` | 3–4h  |
 | X-8  | 聊天流式加 `experimental_throttle`，`MessageList`/`ChatMessage` memo 化、`onDelete` 稳定化                                                     | `use-chat-stream.ts:77`、`MessageList.tsx:60`             | 1–2h  |
 | X-9  | 根段 `loading.tsx` 全屏 `fixed z-50` 遮罩：只在根段挂起时闪，视觉上像"卡一下"，建议降级为顶部细进度条（模糊只在中央小卡上，代价不大）          | `app/loading.tsx`                                         | 30min |
-| X-10 | 低频变更页加 `unstable_cache`（feature flag、词表、教材）；顺带修 `middleware.ts:114` matcher 未排除 `sw.js/woff2/svg/webmanifest` 与 `?_rsc=` | `middleware.ts:114`、`feature-flags.ts`                   | 2h    |
+| X-10 | 低频变更页加 `unstable_cache`（feature flag、词表、教材）；顺带修 `middleware.ts:114` matcher 未排除静态后缀（`sw.js/woff2/svg/webmanifest`）。**不要排除 `?_rsc=`** —— 客户端导航正是要计时的对象（与 `docs/performance.md` T-03 一致） | `middleware.ts:114`、`feature-flags.ts`                   | 2h    |
 
 ## 8. 服务端与数据层（审计结论，供 S0 后排序）
 

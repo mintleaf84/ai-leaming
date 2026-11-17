@@ -112,7 +112,9 @@ X-1/X-2 零风险，搭在批次 0 的 PR 里一起提。
   h.enable();
   setInterval(() => {
     const p99 = h.percentile(99) / 1e6;
-    if (p99 > 50) log.warn("event loop lag", { p99, max: h.max / 1e6 });
+    const max = h.max / 1e6;
+    // p99 会平均掉单次卡顿，必须同时看 max
+    if (p99 > 50 || max > 200) log.warn("event loop lag", { p99, max });
     h.reset();
   }, 30_000).unref();
   ```
@@ -139,7 +141,7 @@ X-1/X-2 零风险，搭在批次 0 的 PR 里一起提。
 
 ### 顺手项（搭在批次 0 的 PR 里）
 
-- **X-1**：`src/app/layout.tsx:69-74` 三次 `getGlobalFeatureFlag` 串行 await → `Promise.all`。验收：`/dashboard` TTFB 减 2 个 DB 往返（对比 T-03 日志的 `duration`）。
+- **X-1**：`src/app/layout.tsx:69-74` 三次 `getGlobalFeatureFlag` 串行 await → `Promise.all`。验收：用**客户端** TTFB 对比（`curl -w '%{time_starttransfer}'` 或浏览器 Network 面板）—— 不能用中间件日志的 `duration`，那两次 DB 读取发生在中间件返回之后的 RSC 渲染阶段。
 - **X-2**：新增迁移 `CREATE INDEX idx_practice_logs_session ON practice_logs(session_id);`，并在 `drizzle-schema.ts` 的 `practice_logs` 定义中补 `idx_session`。验收：`EXPLAIN QUERY PLAN SELECT * FROM practice_logs WHERE session_id='x'` 由 `SCAN` 变 `SEARCH ... USING INDEX`。
 
 ---

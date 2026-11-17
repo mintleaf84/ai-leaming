@@ -211,6 +211,15 @@ if (fs.existsSync(baselinePath)) {
 }
 const baselineRoutes = baseline.routes ?? {};
 
+// 口径漂移检查：基线是 route 模式，这次只量到总量（或反过来），
+// 说明"按路由 180KB"这条判据已经失效 —— 必须报出来，不能安静降级。
+if (mode && baseline.mode && baseline.mode !== mode) {
+  failures.push(
+    `体积预算的测量口径变了：基线是 ${baseline.mode}，本次是 ${mode}。` +
+      `两种口径不可比，请先用 npm run perf:baseline 在新口径下重建基线，并在 PR 里说明原因。`,
+  );
+}
+
 if (sizes) {
   const rows = [];
   for (const [route, bytes] of Object.entries(sizes).sort(

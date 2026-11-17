@@ -413,7 +413,19 @@ export const ragService = {
     sourceType?: string,
   ): Promise<RagResult[]> => {
     try {
-      const queryEmbedding = await ragService.getEmbedding(query);
+      // 降级伪向量不能当查询向量：它和任何真实向量都没有语义距离，KNN 仍会返回
+      // "距离最近"的一批分块 —— 那是看起来正常、实际与问题无关的答案。宁可空结果。
+      // 判定只认 `degraded`（由产生向量的代码给出），不做长度/方差启发式。
+      const { vector: queryEmbedding, degraded } =
+        await ragService.getEmbeddingResult(query);
+
+      if (degraded) {
+        console.warn(
+          "[RAG] embedding 降级（伪向量），跳过向量检索并返回空结果",
+        );
+        return [];
+      }
+
       const legacyDb = getLegacyDb();
 
       // 检查 vec0 模块

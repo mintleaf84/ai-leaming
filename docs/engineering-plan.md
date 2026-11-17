@@ -4,20 +4,21 @@
 
 ## 基线（2026-11-17 实测）
 
-| 指标                                                                                   | 现状                                                                      | 上一版（2026-11-11） |
-| -------------------------------------------------------------------------------------- | ------------------------------------------------------------------------- | -------------------- |
-| ESLint warning（棘轮）                                                                 | **7**                                                                     | 536                  |
-| ├ `no-unused-vars`                                                                     | **0**                                                                     | —                    |
-| └ 其余（exhaustive-deps 3 / require-imports 2 / anonymous-default 1 / explicit-any 1） | 7                                                                         | —                    |
-| `: any`（源码 / 测试）                                                                 | 20 / 171                                                                  | 269                  |
-| `as unknown as`                                                                        | 44（服务层 13 处里 **9 处是同一句** `tx as unknown as typeof drizzleDb`） | —                    |
-| 自定义 Error 类                                                                        | 9 个（recall 一个功能占 5 个），映射各写各的                              | —                    |
-| 混职责页面（>400 行且同时有取数/状态机/渲染）                                          | 8（最大 882）                                                             | —                    |
-| 源码 / 测试规模                                                                        | 70,468 / 33,144 行                                                        | —                    |
-| 页面/组件直连 `drizzleDb`                                                              | **0 处**（分层干净）                                                      | —                    |
-| 闸门                                                                                   | lint 棘轮 / catch 零容忍 / 布局 61 条 / schema 列级 / 判分基准棘轮        | 4 项                 |
-| Node 版本固定                                                                          | `engines` + `.nvmrc` + `preinstall` 守卫                                  | 无                   |
-| E2E                                                                                    | 10 条关键路径在 CI 真跑（生产构建）                                       | 26 spec，不在 CI     |
+| 指标                                                                                   | 现状                                                                                       | 上一版（2026-11-11） |
+| -------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------ | -------------------- |
+| ESLint warning（棘轮）                                                                 | **7**                                                                                      | 536                  |
+| ├ `no-unused-vars`                                                                     | **0**                                                                                      | —                    |
+| └ 其余（exhaustive-deps 3 / require-imports 2 / anonymous-default 1 / explicit-any 1） | 7                                                                                          | —                    |
+| `: any`（源码 / 测试）                                                                 | 20 / 171                                                                                   | 269                  |
+| `as unknown as`                                                                        | 44（服务层 13 处里 **9 处是同一句** `tx as unknown as typeof drizzleDb`）                  | —                    |
+| 自定义 Error 类                                                                        | 9 个（recall 一个功能占 5 个），映射各写各的                                               | —                    |
+| 混职责页面（>400 行且同时有取数/状态机/渲染）                                          | 8（最大 882）                                                                              | —                    |
+| 源码 / 测试规模                                                                        | 70,468 / 33,144 行                                                                         | —                    |
+| 页面/组件直连 `drizzleDb`                                                              | **0 处**（分层干净）                                                                       | —                    |
+| a11y 静态（`jsx-a11y` 棘轮）                                                           | **96**（4 条规则 / P1 64 / P2 32），见 [`ux-a11y-audit.md`](./ux-a11y-audit.md)            | 新增                 |
+| 闸门                                                                                   | lint 棘轮 / catch 零容忍 / 布局 61 条 / schema 列级 / 判分基准棘轮 / a11y 棘轮（工具就绪） | 4 项                 |
+| Node 版本固定                                                                          | `engines` + `.nvmrc` + `preinstall` 守卫                                                   | 无                   |
+| E2E                                                                                    | 10 条关键路径在 CI 真跑（生产构建）                                                        | 26 spec，不在 CI     |
 
 ## 基线（2026-11-11，历史对照）
 
@@ -170,13 +171,52 @@
 - [x] **维度 1536 vs 1024**：`vector-setup` 不再写死维度，改为初始化时问 `getAiConfig("embedding")`
       （动态 import 避免 `db → vector-setup → ai/config → db` 静态环），表维度与应用实际
       使用的 embedding 维度对齐；对应 `it.fails` 已转正
-- [ ] **向量表从未创建 / 检索恒空**（同源，**待架构决策**）：
-      `setupVectorExtension()` 跑在 libsql 连接上，而 `loadExtension` 只加在 legacy better-sqlite3 连接。
-      **方向 ① 已实测排除**：`@libsql/client` 执行 `load_extension` 返回
-      `SQLITE_ERROR: not authorized`，无法加载 vec0。剩 ② 向量操作改走 legacy 连接
-      （但 `question.ts` 本来就没有 embedding 写入路径，要连回填一起做）
-      ③ 先关掉相似题入口别骗用户（半小时）。建议 ③ 先行、② 排期
-- [ ] `rag.ts` 的 `Math.sin` 兜底向量不得进入检索路径（依赖上一条的处置）
+- [x] **向量表从未创建 / 检索恒空**（#193）→ 方向 ② 落地：新增 `src/lib/db/vec-store.ts` 作为向量唯一入口，
+      全部走已加载 `sqlite-vec` 的 legacy better-sqlite3 连接；`vector-setup.ts` 改薄委托；
+      `searchSimilarQuestions` 拆成「向量取 id → drizzle 按 id 批量取题 → 按 distance 排序」（跨连接不能 join）。
+      顺带修「`IF NOT EXISTS` 但维度不一致仍报就绪」：回读 `sqlite_master.sql` 的 `float[N]` 比对，不一致明确失败
+- [x] `rag.ts` 的 `Math.sin` 兜底向量不得进入检索路径（#196）→ 由**产生方显式标记**：
+      `getEmbeddingResult(): { vector, degraded }`，`getEmbedding` 退化为薄包装（既有调用方零改动），
+      降级即 `skipped` 不入库。不用长度/方差启发式去猜
+- [x] embedding 写入路径（#196）：`indexQuestion` / `reindexQuestions` + `scripts/reindex-question-vectors.ts`；
+      仅接管理员**单题**编辑（且只在 `content/options/answer` 变更时），批量导入故意不接（会打出几百次 API 调用）
+- [x] **检索路径也堵住降级伪向量**（PR #199 评审抓出）：`#196` 只堵了写入路径，两处**查询**入口仍用
+      `getEmbedding` 并忽略 `degraded` —— 伪向量当查询向量跑 KNN，返回"看起来正常但与问题无关"的结果。
+      `searchSimilarQuestions` 与 `ragService.search` 改为 `getEmbeddingResult`，降级直接返回 `[]`、**不执行 MATCH**
+- [x] **编辑后降级会留旧向量**（评审抓出）：`indexQuestion(id, { pruneOnSkip: true })` 删掉描述旧题干的向量；
+      **批量回填永不 prune**（API 抖动删光索引是从"部分过期"升级成"全空"）
+- [ ] **`content_vec` 写入路径同样会存降级伪向量**（本轮范围外发现，未修）：
+      `ragService.addChunk` / `addChunksBatch` 仍用 `getEmbedding`。该链路独立的 `content_vec`
+      表并非 `vec-store` 创建，需与"RAG 分块索引是否继续维护"一起决策
+- [ ] **存量回填**（运维动作）：需有题目的库 + 可用的 embedding 配置。脚本**不保存进度**，
+      `--offset` 默认 0 —— 重复跑 `--limit 100` 会**再次处理前 100 题**（重复计费，后面的题永远轮不到）。
+      正确顺序：`--limit 100 --dry-run` → `--limit 100 --offset 0` → 抽样 10 题验召回
+      （判据：≥7 题首条与人工判断同考点）→ 之后每批把 `--offset` 递增 100
+      （`--offset 100`、`--offset 200`…，直到 `剩余 0`）。脚本每批结束会打印下一批该用的 `--offset`
+
+## M6 前端可用性与无障碍（审计已完成，修复待排期）
+
+审计报告：[`ux-a11y-audit.md`](./ux-a11y-audit.md)（两条通道：`jsx-a11y` 静态 96 条 + 人工核对 9 条规则 65 处）。
+本轮**只审计不修**，P1 共 7 项，前 3 项加起来不到 20 行。
+
+- [x] 可复现的静态通道：`eslint.a11y.config.mjs`（独立于 `eslint.config.mjs`，不污染 89 基线）+
+      `scripts/audit-a11y.cjs`（棘轮 / `--json` / `--update` / 异常退出码 2）+ `a11y-baseline.json`（96）
+- [x] 补 `settings['jsx-a11y'].components = { Image: 'img' }`：此前 `next/image` 的 `<Image>` 对 `alt-text`
+      **完全不可见**，`0 命中` 是假清白；A/B 探针证明映射生效且不误伤，补后存量仍 96（6 处 `<Image>` 都有 `alt`）
+- [x] 人工通道 9 条规则逐条给 `file:line`，并对「查了没违规」的位置列出清单（沉默不算清白）
+- [ ] **P1-1** 中文 IME 按 Enter 提交半截输入：`ChatInput.tsx:99`、`PracticeCard.tsx:311`、`TagSelector.tsx:153`
+      （另 10 处 P2/P3）。全仓 `isComposing` 现为 **0 处**
+- [ ] **P1-2** 触屏主交互 <24×24：`WrongQuestionCard.tsx:61`(20×20)、`FolderTreeView.tsx:270`(14×14)、
+      `AddToFolderDialog.tsx:114`(20×20)。改 `p-2.5 -m-2.5` 不动视觉
+- [ ] **P1-3** 把失败渲染成"太棒了！暂无错题"：`use-wrong-book-controller.ts:115` 无 `try/catch`，
+      throw 时永远转圈、`{success:false}` 时显示庆祝式空态
+- [ ] **P1-4** 错题本删文件夹零确认（`use-wrong-book-controller.ts:428` + `FolderTreeView.tsx:281`）
+- [ ] **P1-5** 答题写库失败静默（`use-practice-controller.tsx:317` 的 `.catch(console.error)`）
+- [ ] 全局底部预留差 8px 且未算安全区（`layout.tsx:118` `pb-20` vs MobileNav `88px + safe-area`，
+      iPhone 上差 42px）
+- [ ] `label-has-associated-control` 42 条（补 `htmlFor`/`id`，按条降基线）
+- [ ] 自建 `fixed inset-0` 浮层 8 处缺 dialog 语义/Esc（应**换用** `components/ui/dialog.tsx`，不再手写焦点陷阱）
+- [ ] 决定 a11y 棘轮是否进 `npm run verify`（取舍见 `decisions.md`）
 
 ## 明确不做
 

@@ -135,6 +135,26 @@ const eslintConfig = defineConfig([
     },
   },
   {
+    /*
+     * react-hooks v7 新增规则的处理（eslint-config-next 16.4.6 / eslint-plugin-react-hooks 7.1.1）
+     *
+     * 升级后这两条规则默认是 error，存量 33 处：
+     *   react-hooks/set-state-in-effect (26) —— 都在"挂载后加载数据"的 effect 里
+     *     （setLoading(true) → fetch → setState），是既有数据取的统一形态；
+     *   react-hooks/immutability (7) —— 组件内 useCallback 声明顺序导致的
+     *     "cannot access variable before it is declared"。
+     *
+     * 按本仓库既有做法（no-unused-vars 76 → 7、性能禁止项先 warn 后收口）：
+     * 先降为 warn 进棘轮，**不静默关闭**；修法属于数据获取范式的重构，单独 PR 做，
+     * 不允许用 eslint-disable 逐条打洞。
+     */
+    files: ["src/**/*.ts", "src/**/*.tsx"],
+    rules: {
+      "react-hooks/set-state-in-effect": "warn",
+      "react-hooks/immutability": "warn",
+    },
+  },
+  {
     // 测试与 mock 里 `as any` 是合理手段（构造非法输入、模拟未类型化的 SQL 行、
     // 替换第三方类型），生产代码仍按 warn + 棘轮约束。
     files: [

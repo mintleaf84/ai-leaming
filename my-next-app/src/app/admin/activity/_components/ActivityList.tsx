@@ -26,6 +26,7 @@ import {
   Loader2,
 } from "lucide-react";
 import { toast } from "sonner";
+import { isImeComposing } from "@/lib/utils/ime";
 import {
   Select,
   SelectContent,
@@ -115,7 +116,11 @@ export function ActivityList() {
               onChange={(e) =>
                 setFilters((prev) => ({ ...prev, search: e.target.value }))
               }
-              onKeyDown={(e) => e.key === "Enter" && handleSearch()}
+              onKeyDown={(e) => {
+                // 组合态 Enter 是确认候选词，不能当"搜索"
+                if (isImeComposing(e)) return;
+                if (e.key === "Enter") handleSearch();
+              }}
             />
           </div>
           <Select

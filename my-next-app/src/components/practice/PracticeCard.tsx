@@ -22,6 +22,7 @@ import {
 } from "@/components/ui/tooltip";
 import { getBeijingDiffDays, formatBeijingDate } from "@/lib/utils/datetime";
 import { sanitizeHtml } from "@/lib/utils/security";
+import { isImeComposing } from "@/lib/utils/ime";
 import { FeedbackDialog } from "./FeedbackDialog";
 
 interface PracticeCardProps {
@@ -308,6 +309,8 @@ export function PracticeCard({
                       setFillBlankAnswers(newAnswers);
                     }}
                     onKeyDown={(e) => {
+                      // 组合态 Enter 是确认候选词：用拼音答"待定"会把 "dai" 提交并判错
+                      if (isImeComposing(e)) return;
                       if (e.key === "Enter" && onFillBlankSubmit) {
                         const joined = fillBlankAnswers.join("；");
                         if (fillBlankAnswers.every((a) => a.trim() !== "")) {

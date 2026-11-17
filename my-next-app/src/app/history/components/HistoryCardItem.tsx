@@ -20,6 +20,7 @@ import utc from "dayjs/plugin/utc";
 
 dayjs.extend(utc);
 import { type SessionHistoryItem } from "@/lib/services/history";
+import { isImeComposing } from "@/lib/utils/ime";
 
 // 模式配置
 export const MODE_CONFIG: Record<
@@ -117,6 +118,8 @@ const HistoryCardItemComponent: React.FC<HistoryCardItemProps> = ({
                   className="h-8 text-lg font-bold w-full max-w-[200px] bg-transparent border-b-2 border-primary focus:outline-none"
                   autoFocus
                   onKeyDown={(e) => {
+                    // 组合态 Enter 是确认候选词，不能当"保存名称"提交
+                    if (isImeComposing(e)) return;
                     if (e.key === "Enter") onSaveName(e, item.id);
                   }}
                 />

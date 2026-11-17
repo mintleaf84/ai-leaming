@@ -5,6 +5,7 @@ import { useState } from "react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { CornerDownRight } from "lucide-react";
+import { isImeComposing } from "@/lib/utils/ime";
 
 interface PageJumpInputProps {
   totalPages: number;
@@ -37,6 +38,8 @@ export function PageJumpInput({
   };
 
   const handleKeyDown = (e: React.KeyboardEvent) => {
+    // 组合态 Enter 属于 IME 选词，不能触发跳页
+    if (isImeComposing(e)) return;
     if (e.key === "Enter") {
       handleJump();
     } else if (e.key === "Escape") {

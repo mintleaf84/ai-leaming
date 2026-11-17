@@ -1,0 +1,9 @@
+{
+  "updatedAt": "2026-11-17",
+  "counts": {
+    "handlers": 0,
+    "missingGuard": 0,
+    "guardAfterPreventDefault": 0
+  },
+  "ids": []
+}

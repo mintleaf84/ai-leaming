@@ -9,6 +9,7 @@ import React, {
 } from "react";
 import { Send, Loader2, StopCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { isImeComposing } from "@/lib/utils/ime";
 
 export interface ChatInputHandle {
   focus: () => void;
@@ -95,6 +96,9 @@ export const ChatInput = memo(
       };
 
       const handleKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
+        // 组合态下 Enter 是「确认候选词」，必须在 preventDefault 之前放行，
+        // 否则连候选词都选不了（见 docs/ux-a11y-audit.md §3.1）
+        if (isImeComposing(e)) return;
         if (e.key === "Enter" && !e.shiftKey) {
           e.preventDefault();
           if (inputValue.trim() && !isLoading) {

@@ -17,6 +17,7 @@ import {
   setNoteTagsAction,
 } from "@/server/actions/note-tag";
 import { type NoteTag } from "@/types";
+import { isImeComposing } from "@/lib/utils/ime";
 import { toast } from "sonner";
 
 interface TagSelectorProps {
@@ -138,6 +139,7 @@ export function TagSelector({ noteId, onTagsChange }: TagSelectorProps) {
             variant="ghost"
             size="sm"
             className="h-6 px-2 gap-1 text-muted-foreground"
+            aria-label="添加标签"
           >
             <Tag className="w-3 h-3" />
             <Plus className="w-3 h-3" />
@@ -150,7 +152,11 @@ export function TagSelector({ noteId, onTagsChange }: TagSelectorProps) {
               placeholder="新建标签..."
               value={newTagName}
               onChange={(e) => setNewTagName(e.target.value)}
-              onKeyDown={(e) => e.key === "Enter" && handleCreateTag()}
+              onKeyDown={(e) => {
+                // 组合态 Enter 是确认候选词，否则会建出名为 "jiao" 的标签
+                if (isImeComposing(e)) return;
+                if (e.key === "Enter") handleCreateTag();
+              }}
               className="h-8 text-sm"
             />
             <Button

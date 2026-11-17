@@ -57,13 +57,15 @@ export function WrongQuestionCard({
     >
       {/* 题目摘要行 */}
       <div className="p-4 flex items-start gap-3">
-        {/* 选择按钮 */}
+        {/* 选择按钮：p-2.5 -m-2.5 把 20px 图标的热区扩到 40px 而不改视觉/布局 */}
         <button
           onClick={(e) => {
             e.stopPropagation();
             onToggleSelect();
           }}
-          className="mt-1 text-muted-foreground hover:text-primary active:scale-95 transition-transform"
+          aria-label={isSelected ? "取消选择该题" : "选择该题"}
+          aria-pressed={isSelected}
+          className="p-2.5 -m-2.5 text-muted-foreground hover:text-primary active:scale-95 transition-transform"
         >
           {isSelected ? (
             <CheckSquare className="w-5 h-5 text-primary" />

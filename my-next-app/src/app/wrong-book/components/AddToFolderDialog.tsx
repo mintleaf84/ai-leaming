@@ -11,6 +11,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { FolderPlus, Plus, Loader2 } from "lucide-react";
 import type { QuestionFolder } from "@/lib/services/question-folder";
+import { isImeComposing } from "@/lib/utils/ime";
 
 const FOLDER_COLORS = [
   "#6b7280",
@@ -106,17 +107,28 @@ export function AddToFolderDialog({
                 className="w-full px-3 py-2 rounded-md border bg-background text-sm"
                 autoFocus
                 onKeyDown={(e) => {
+                  // 组合态 Enter 是确认候选词，不能建出名为 "jiao" 的文件夹
+                  if (isImeComposing(e)) return;
                   if (e.key === "Enter") handleCreate();
                 }}
               />
-              <div className="flex items-center gap-2">
+              <div className="flex flex-wrap items-center gap-2">
+                {/* 44px 热区格 + 20px 圆点（pitch 52px）：色板不能用 -m-2.5 外扩，
+                    否则相邻热区会重叠，点交错处会选到另一个颜色（ux-a11y-audit §3.8） */}
                 {FOLDER_COLORS.map((c) => (
                   <button
                     key={c}
-                    className={`w-5 h-5 rounded-full border-2 transition-all ${newColor === c ? "border-foreground scale-110" : "border-transparent"}`}
-                    style={{ backgroundColor: c }}
+                    type="button"
+                    className="h-11 w-11 shrink-0 rounded-full flex items-center justify-center"
                     onClick={() => setNewColor(c)}
-                  />
+                    aria-label={`选择颜色 ${c}`}
+                    aria-pressed={newColor === c}
+                  >
+                    <span
+                      className={`block w-5 h-5 rounded-full border-2 transition-all ${newColor === c ? "border-foreground scale-110" : "border-transparent"}`}
+                      style={{ backgroundColor: c }}
+                    />
+                  </button>
                 ))}
               </div>
               <div className="flex gap-2">

@@ -44,6 +44,7 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { EditQuestionDialog } from "./EditQuestionDialog";
+import { isImeComposing } from "@/lib/utils/ime";
 
 export function QuestionManager() {
   // 状态管理
@@ -125,6 +126,8 @@ export function QuestionManager() {
   };
 
   const handleKeyDown = (e: React.KeyboardEvent) => {
+    // 组合态 Enter 是确认候选词，不能当"搜索"
+    if (isImeComposing(e)) return;
     if (e.key === "Enter") handleSearch();
   };
 

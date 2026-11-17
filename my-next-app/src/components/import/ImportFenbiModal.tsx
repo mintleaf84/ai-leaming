@@ -1,7 +1,13 @@
 "use client";
 
-import React, { useState, useCallback, useEffect } from "react";
+import React, { useState, useCallback, useEffect, useRef } from "react";
 import { Button } from "@/components/ui/button";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogTitle,
+} from "@/components/ui/dialog";
 import {
   Upload,
   X,
@@ -16,6 +22,7 @@ import {
   BarChart3,
 } from "lucide-react";
 import { toast } from "sonner";
+import { isImeComposing } from "@/lib/utils/ime";
 import {
   importFenbiDataAction,
   previewFenbiDataAction,
@@ -48,6 +55,9 @@ export function ImportFenbiModal({
   } | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [importToken, setImportToken] = useState<string>("");
+  // Radix 关闭时默认把焦点还给 DialogTrigger；本组件由外部 isOpen 驱动、没有
+  // Trigger，不兜底焦点会落到 body（读屏回到页首）。
+  const restoreFocusRef = useRef<HTMLElement | null>(null);
 
   // 获取导入 Token
   useEffect(() => {
@@ -129,18 +139,41 @@ export function ImportFenbiModal({
     onClose();
   }, [onClose]);
 
-  if (!isOpen) return null;
-
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center">
-      {/* 遮罩 */}
-      <div
-        className="absolute inset-0 bg-black/50 backdrop-blur-sm"
-        onClick={handleClose}
-      />
-
-      {/* 对话框 */}
-      <div className="relative bg-card border border-border rounded-2xl shadow-2xl w-full max-w-3xl max-h-[90vh] overflow-hidden flex flex-col m-4">
+    <Dialog
+      open={isOpen}
+      onOpenChange={(open) => {
+        if (!open) handleClose();
+      }}
+    >
+      <DialogContent
+        hideClose
+        aria-modal="true"
+        // Esc 取消输入法候选词时不能顺手把浮层关掉（Radix 的 Esc 监听不判组合态）
+        onEscapeKeyDown={(event) => {
+          if (isImeComposing(event)) event.preventDefault();
+        }}
+        onOpenAutoFocus={() => {
+          // 必须在 Radix 把焦点移进浮层之前记下触发元素（此时 activeElement 还是它）
+          restoreFocusRef.current =
+            document.activeElement as HTMLElement | null;
+        }}
+        onCloseAutoFocus={(event) => {
+          event.preventDefault();
+          const target = restoreFocusRef.current;
+          if (target?.isConnected) {
+            target.focus();
+            return;
+          }
+          const main = document.querySelector<HTMLElement>("main");
+          if (main) {
+            main.setAttribute("tabindex", "-1");
+            main.focus();
+          }
+        }}
+        className="flex max-h-[90vh] w-[calc(100%-2rem)] max-w-3xl flex-col gap-0 overflow-hidden rounded-2xl border-border bg-card p-0 shadow-2xl data-[state=closed]:animate-none data-[state=open]:animate-none sm:rounded-2xl"
+        overlayClassName="bg-black/50 backdrop-blur-sm"
+      >
         {/* 头部 */}
         <div className="flex items-center justify-between px-6 py-4 border-b border-border">
           <div className="flex items-center gap-3">
@@ -148,16 +181,17 @@ export function ImportFenbiModal({
               <Upload className="w-5 h-5 text-blue-600" />
             </div>
             <div>
-              <h2 className="text-lg font-bold text-foreground">
+              <DialogTitle className="text-lg font-bold leading-7 tracking-normal text-foreground">
                 导入粉笔错题
-              </h2>
-              <p className="text-sm text-muted-foreground">
+              </DialogTitle>
+              <DialogDescription>
                 从粉笔 APP 导入练习记录和题目
-              </p>
+              </DialogDescription>
             </div>
           </div>
           <button
             onClick={handleClose}
+            aria-label="关闭"
             className="p-2 hover:bg-accent rounded-lg transition-colors"
           >
             <X className="w-5 h-5" />
@@ -412,7 +446,7 @@ export function ImportFenbiModal({
             </Button>
           )}
         </div>
-      </div>
-    </div>
+      </DialogContent>
+    </Dialog>
   );
 }

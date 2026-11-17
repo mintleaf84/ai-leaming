@@ -312,21 +312,15 @@ describe("管理端题库 CRUD（真实库）", () => {
     });
 
     // ---- 已知缺陷：删除不存在的 id 仍报成功 ----
-    it.fails(
-      "缺陷固定：删除不存在的单题应报告「未删除」，现在却返回 success=true",
-      async () => {
-        const res = await actions.deleteQuestionAction(97_777_771);
-        expect(res?.serverError).toBeTruthy();
-      },
-    );
+    it("缺陷固定：删除不存在的单题应报告「未删除」，现在却返回 success=true", async () => {
+      const res = await actions.deleteQuestionAction(97_777_771);
+      expect(res?.serverError).toBeTruthy();
+    });
 
-    it.fails(
-      "缺陷固定：adminService.deleteQuestion 应返回受影响行数（0/1），现在恒为 true",
-      async () => {
-        const deleted = await adminService.deleteQuestion(97_777_772);
-        expect(deleted).toBe(0);
-      },
-    );
+    it("缺陷固定：adminService.deleteQuestion 应返回受影响行数（0/1），现在恒为 true", async () => {
+      const deleted = await adminService.deleteQuestion(97_777_772);
+      expect(deleted).toBe(0);
+    });
   });
 
   // ---------------- 批量导入（幂等） ----------------
@@ -357,10 +351,7 @@ describe("管理端题库 CRUD（真实库）", () => {
       }
     });
 
-    // 这条**只**断言导入通路与行数；**不要**在这里要求 `external_id` 为 null ——
-    // 那等于把缺陷写进普通用例：修好之后它会红，正确实现反而过不了测试。
-    // 幂等键是否真的写了，由下方 `it.fails` 钉住（现在缺 → 修复后转正）。
-    it("导入通路正常：一行不少地落库（幂等键契约见下方 it.fails）", async () => {
+    it("导入通路正常：落库 + 写入可复现的幂等键", async () => {
       const batch = [sampleQuestion(), sampleQuestion()];
       await actions.importQuestionsAction(batch as never);
 
@@ -375,6 +366,13 @@ describe("管理端题库 CRUD（真实库）", () => {
         )
         .all();
       expect(rows).toHaveLength(2);
+      // 幂等键必须真的写了，且是 `admin:` 命名空间（与 pdf 导入、粉笔上游 ID 互不串味）
+      for (const row of rows) {
+        expect(row.external_id).toMatch(/^admin:[0-9a-f]{36}$/);
+      }
+      // 同一批导入两次：第二次不应新增（由下面的用例钉住具体条数，这里只断言键稳定）
+      const again = await actions.importQuestionsAction(batch as never);
+      expect(again?.serverError).toBeUndefined();
     });
 
     // `it.fails` 会把体内**任何**失败都反转成绿，包括"action 直接返回 serverError"
@@ -394,21 +392,18 @@ describe("管理端题库 CRUD（真实库）", () => {
     });
 
     // ---- 已知缺陷：导入无幂等键 ----
-    it.fails(
-      "缺陷固定：同一批重复导入不应产生新行（现在第二批原样再落一遍）",
-      async () => {
-        const batch = [
-          sampleQuestion({ content: `重复导入-${process.pid}-1` }),
-          sampleQuestion({ content: `重复导入-${process.pid}-2` }),
-        ];
-        await actions.importQuestionsAction(batch as never);
-        const afterFirst = await rowCount();
-        await actions.importQuestionsAction(batch as never);
-        expect(await rowCount()).toBe(afterFirst);
-      },
-    );
+    it("缺陷固定：同一批重复导入不应产生新行（现在第二批原样再落一遍）", async () => {
+      const batch = [
+        sampleQuestion({ content: `重复导入-${process.pid}-1` }),
+        sampleQuestion({ content: `重复导入-${process.pid}-2` }),
+      ];
+      await actions.importQuestionsAction(batch as never);
+      const afterFirst = await rowCount();
+      await actions.importQuestionsAction(batch as never);
+      expect(await rowCount()).toBe(afterFirst);
+    });
 
-    it.fails("缺陷固定：同一批内部的重复题只应落一条", async () => {
+    it("缺陷固定：同一批内部的重复题只应落一条", async () => {
       const dup = sampleQuestion({ content: `批内重复-${process.pid}` });
       const before = await rowCount();
       await actions.importQuestionsAction([dup, { ...dup }] as never);

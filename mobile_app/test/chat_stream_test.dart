@@ -4,6 +4,7 @@ import 'package:mobile_app/shared/datasources/api_client.dart';
 import 'dart:convert';
 import 'dart:math';
 
+@Tags(['integration'])
 void main() {
   test('Chat Streaming API test', () async {
     final dio = Dio();

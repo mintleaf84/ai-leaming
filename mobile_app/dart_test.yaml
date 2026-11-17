@@ -1,0 +1,12 @@
+# 测试标签配置。
+#
+# `integration` 标签的用例会打真实的 Next.js 服务（硬编码 127.0.0.1:3000），
+# 在 CI 和普通本地开发里都跑不通。默认跳过，需要时显式执行：
+#
+#   flutter test --run-skipped -t integration
+#
+# 这样 `flutter test` 的结果才有意义：不再是"必然失败的 2 个用例"，
+# 纯逻辑单测的红绿可以直接当信号用。
+tags:
+  integration:
+    skip: "需要本地后端在 127.0.0.1:3000，用 --run-skipped -t integration 单独跑"

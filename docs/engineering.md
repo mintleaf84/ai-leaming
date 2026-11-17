@@ -72,7 +72,6 @@ CI 四项必须全绿：`lint`（errors=0 且 warning 不超基线）/ `typechec
 > 这不是测试挂了，是环境撞顶。用 `VITEST_MAX_WORKERS=8 npm run verify`
 > （或 `npx vitest run --maxWorkers=4`）即可；CI 的 runner 核数少，不受影响。
 
-
 CI 用 Node 20 + ubuntu；本机需三件事才能对齐（详见 `/public/home/cjb/local/src/README-glibc217.md`）：
 
 ```bash

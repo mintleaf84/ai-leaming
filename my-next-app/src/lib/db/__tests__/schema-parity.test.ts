@@ -68,6 +68,20 @@ const MIGRATION_ONLY_TABLES = new Set([
   "web_vitals",
 ]);
 
+/**
+ * sqlite-vec 的虚拟表与影子表：由 `vec-store.ts` 在**运行期**按扩展可用性创建
+ * （`CREATE VIRTUAL TABLE ... USING vec0`），不是迁移产物，也没有 drizzle 声明。
+ * 它们出现在这里的真实库里，只是因为 `initDatabase()` 现在真的会建表 ——
+ * 与 `schema-column-parity.test.ts` 的 `VECTOR_TABLE_PREFIXES` 同一套判定。
+ */
+const VECTOR_TABLE_PREFIXES = ["questions_vec", "rag_chunks_vec"];
+
+function isRuntimeVectorTable(name: string): boolean {
+  return VECTOR_TABLE_PREFIXES.some(
+    (prefix) => name === prefix || name.startsWith(`${prefix}_`),
+  );
+}
+
 describe("迁移与测试 schema 一致性", () => {
   let memory: any;
   let memoryDb: any;
@@ -108,7 +122,10 @@ describe("迁移与测试 schema 一致性", () => {
     const migrated = await tableNames(dbm.drizzleDb);
     const testTables = new Set(await tableNames(memoryDb));
     const unregistered = migrated.filter(
-      (t) => !testTables.has(t) && !MIGRATION_ONLY_TABLES.has(t),
+      (t) =>
+        !testTables.has(t) &&
+        !MIGRATION_ONLY_TABLES.has(t) &&
+        !isRuntimeVectorTable(t),
     );
     expect(
       unregistered,

@@ -40,18 +40,11 @@ interface ModuleRule {
 /**
  * 尚未补跨用户测试的用户私有模块（**只许减，不许增**）。
  *
- * 每个条目要写清「它拿哪个标识符定位资源」—— 那就是将来写跨用户用例时
- * 需要伪造的入参。想加新模块到这里？先把上一条数压下来，或者补测试。
+ * 2026-11 复核：chat / feedback / generate / knowledge / mastery / profile / stats
+ * 七条全部补齐（见各条目的 `crossUserTest`），本清单已清空。
+ * 将来新增用户私有模块时：要么直接补跨用户测试，要么写进这里并说明拿什么 id 定位资源。
  */
-const KNOWN_UNCOVERED: Record<string, string> = {
-  chat: "按 sessionId / messageId 读写会话",
-  feedback: "按反馈 id 查询处理结果",
-  generate: "按 questionId 生成题目变体（写入全局题库，但读取用户练习上下文）",
-  knowledge: "按 cardId / folderId 读写知识卡（含用户自定义卡）",
-  mastery: "按标签维度统计，无资源 id（越权面低，但口径按用户）",
-  profile: "按当前用户读写画像，无外部 id",
-  stats: "只读聚合，无资源 id",
-};
+const KNOWN_UNCOVERED: Record<string, string> = {};
 
 /** 每个路由模块的归属语义。新增模块时必须在这里登记，否则测试失败。 */
 const MODULES: Record<string, ModuleRule> = {
@@ -61,21 +54,41 @@ const MODULES: Record<string, ModuleRule> = {
     scope: "user",
     crossUserTest: "src/lib/api/routes/__tests__/annotations-ownership.test.ts",
   },
-  chat: { mount: "/api/chat", scope: "user" },
+  chat: {
+    mount: "/api/chat",
+    scope: "user",
+    crossUserTest: "src/lib/api/routes/__tests__/chat-ownership.test.ts",
+  },
   external: {
     mount: "/api/external",
     scope: "user",
     crossUserTest: "src/lib/api/routes/__tests__/external-recall.test.ts",
   },
-  feedback: { mount: "/api/feedback", scope: "user" },
-  generate: { mount: "/api/generate", scope: "user" },
+  feedback: {
+    mount: "/api/feedback",
+    scope: "user",
+    crossUserTest: "src/lib/api/routes/__tests__/feedback-ownership.test.ts",
+  },
+  generate: {
+    mount: "/api/generate",
+    scope: "user",
+    crossUserTest: "src/lib/api/routes/__tests__/generate-ownership.test.ts",
+  },
   history: {
     mount: "/api/history",
     scope: "user",
     crossUserTest: "src/lib/api/routes/__tests__/history-ownership.test.ts",
   },
-  knowledge: { mount: "/api/knowledge", scope: "user" },
-  mastery: { mount: "/api/mastery", scope: "user" },
+  knowledge: {
+    mount: "/api/knowledge",
+    scope: "user",
+    crossUserTest: "src/lib/api/routes/__tests__/knowledge-ownership.test.ts",
+  },
+  mastery: {
+    mount: "/api/mastery",
+    scope: "user",
+    crossUserTest: "src/lib/api/routes/__tests__/mastery-ownership.test.ts",
+  },
   "pdf-import": {
     mount: "/api/pdf-import",
     scope: "user",
@@ -86,8 +99,16 @@ const MODULES: Record<string, ModuleRule> = {
     scope: "user",
     crossUserTest: "src/lib/api/routes/__tests__/practice-ownership.test.ts",
   },
-  profile: { mount: "/api/profile", scope: "user" },
-  stats: { mount: "/api/stats", scope: "user" },
+  profile: {
+    mount: "/api/profile",
+    scope: "user",
+    crossUserTest: "src/lib/api/routes/__tests__/profile-ownership.test.ts",
+  },
+  stats: {
+    mount: "/api/stats",
+    scope: "user",
+    crossUserTest: "src/lib/api/routes/__tests__/stats-ownership.test.ts",
+  },
   "wrong-book": {
     mount: "/api/wrong-book",
     scope: "user",

@@ -66,6 +66,13 @@ CI 四项必须全绿：`lint`（errors=0 且 warning 不超基线）/ `typechec
 
 ## 本机环境（CentOS 7 / glibc 2.17）
 
+> **跑全量测试时先限并行度**：这台机器是 72 核共享节点，`vitest` 默认按核数 fork，
+> 别人负载高时会撞到进程/线程上限，表现为
+> `Unhandled 'error' event: write EPIPE` 或 `EAGAIN @ thread-stream createWorker`（pino 起线程失败）。
+> 这不是测试挂了，是环境撞顶。用 `VITEST_MAX_WORKERS=8 npm run verify`
+> （或 `npx vitest run --maxWorkers=4`）即可；CI 的 runner 核数少，不受影响。
+
+
 CI 用 Node 20 + ubuntu；本机需三件事才能对齐（详见 `/public/home/cjb/local/src/README-glibc217.md`）：
 
 ```bash

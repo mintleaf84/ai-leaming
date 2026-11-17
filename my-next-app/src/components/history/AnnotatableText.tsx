@@ -59,6 +59,9 @@ export function AnnotatableText({
   } | null>(null);
   const containerRef = useRef<HTMLDivElement>(null);
   const toolbarRef = useRef<HTMLDivElement>(null);
+  // 选区由键盘建立时，工具条弹出后要把焦点接过去：否则键盘用户从文档头开始数
+  // Tab，工具条实际上不可达。
+  const openedByKeyboardRef = useRef(false);
 
   // 使用 useQuery 加载标注数据，5 分钟缓存
   const { data: annotationData } = useQuery({
@@ -94,8 +97,8 @@ export function AnnotatableText({
     }
   }, [annotationData]);
 
-  // 处理文本选择
-  const handleMouseUp = useCallback(() => {
+  // 处理文本选择（鼠标松开 / 键盘选完都走这里）
+  const handleSelectionChange = useCallback(() => {
     const windowSelection = window.getSelection();
     if (
       !windowSelection ||
@@ -193,6 +196,38 @@ export function AnnotatableText({
       setToolbarPosition(null);
     }
   }, [text]);
+
+  // 选区的「完成时机」不止在文本上松开鼠标：拖到容器外再松手、键盘 Shift+方向键
+  // 都算。挂在 document 上才能覆盖这两种路径（处理函数自己校验选区是否落在容器内），
+  // 也让键盘选择成为一等路径而不是鼠标专属彩蛋。
+  useEffect(() => {
+    const handleMouseSelectionDone = () => {
+      openedByKeyboardRef.current = false;
+      handleSelectionChange();
+    };
+    const handleKeyboardSelectionDone = (event: KeyboardEvent) => {
+      // 只关心选择类按键：没有选区时不要碰工具条（避免任意按键把工具条清掉）
+      if (event.key !== "Shift" && !event.key.startsWith("Arrow")) return;
+      const windowSelection = window.getSelection();
+      if (!windowSelection || windowSelection.isCollapsed) return;
+      openedByKeyboardRef.current = true;
+      handleSelectionChange();
+    };
+
+    document.addEventListener("mouseup", handleMouseSelectionDone);
+    document.addEventListener("keyup", handleKeyboardSelectionDone);
+    return () => {
+      document.removeEventListener("mouseup", handleMouseSelectionDone);
+      document.removeEventListener("keyup", handleKeyboardSelectionDone);
+    };
+  }, [handleSelectionChange]);
+
+  // 键盘建立选区后工具条才弹出：把焦点送进工具条，Tab 才有意义
+  useEffect(() => {
+    if (!toolbarPosition || !openedByKeyboardRef.current) return;
+    openedByKeyboardRef.current = false;
+    toolbarRef.current?.querySelector("button")?.focus();
+  }, [toolbarPosition]);
 
   // 添加标注
   const addAnnotation = useCallback(
@@ -318,9 +353,10 @@ export function AnnotatableText({
       // 添加标注部分（从 effectiveStart 到 ann.end）
       const style = TAG_STYLES[ann.tag];
       parts.push(
-        <span
+        <button
           key={`ann-${ann.id || idx}`}
-          className={`${style.className} cursor-pointer group relative`}
+          type="button"
+          className={`${style.className} inline cursor-pointer group relative`}
           onClick={(e) => {
             e.stopPropagation(); // 防止触发父容器的事件
             e.preventDefault();
@@ -329,7 +365,7 @@ export function AnnotatableText({
           title="点击删除标注"
         >
           {text.slice(effectiveStart, ann.end)}
-        </span>,
+        </button>,
       );
 
       lastEnd = ann.end;
@@ -345,10 +381,10 @@ export function AnnotatableText({
 
   return (
     <div className="relative">
-      {/* 文本内容 */}
+      {/* 文本内容 —— 选区的完成由 document 上的 mouseup/keyup 捕获（见上方 effect），
+          容器本身不承担点击语义 */}
       <div
         ref={containerRef}
-        onMouseUp={handleMouseUp}
         onContextMenu={(e) => e.preventDefault()}
         className={`select-text leading-relaxed whitespace-pre-wrap ${className || ""}`}
       >
@@ -361,6 +397,9 @@ export function AnnotatableText({
         createPortal(
           <div
             ref={toolbarRef}
+            role="toolbar"
+            aria-label="标注工具"
+            aria-orientation="horizontal"
             className="fixed z-[200] bg-card border border-border rounded-lg shadow-lg p-1 flex gap-1 animate-in fade-in zoom-in-95 duration-150"
             style={{
               left: `${toolbarPosition.x}px`,
@@ -370,6 +409,15 @@ export function AnnotatableText({
             onMouseDown={(e) => {
               // 阻止 mousedown 默认行为，防止选区被清除
               e.preventDefault();
+            }}
+            onKeyDown={(e) => {
+              if (e.key !== "Escape") return;
+              // Esc 只负责收起工具条：不能继续冒泡到 Dialog（会顺手关掉整个详情浮层）
+              e.preventDefault();
+              e.stopPropagation();
+              setSelection(null);
+              setSelectedText("");
+              setToolbarPosition(null);
             }}
           >
             <button

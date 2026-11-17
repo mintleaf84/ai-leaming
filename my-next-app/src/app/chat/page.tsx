@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useRef, useState, useCallback } from "react";
+import React, { useRef, useState, useCallback, useEffect } from "react";
 import ChatSidebar from "@/components/chat/ChatSidebar";
 import { toast } from "sonner";
 import {
@@ -62,6 +62,23 @@ export default function ChatPage() {
   // 2. 本地 UI 状态
   const [sidebarOpen, setSidebarOpen] = useState(true);
   const [showFavorites, setShowFavorites] = useState(false);
+
+  // 移动端会话列表浮层：键盘用户要能关掉。Esc 挂在 document 上，
+  // 但输入框内的 Esc 已由输入框自己消费（如重命名取消），不可重复触发。
+  useEffect(() => {
+    if (!sidebarOpen) return;
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (event.key !== "Escape") return;
+      const target = event.target as HTMLElement | null;
+      const tag = target?.tagName ?? "";
+      if (target?.isContentEditable || /^(INPUT|TEXTAREA|SELECT)$/.test(tag)) {
+        return;
+      }
+      setSidebarOpen(false);
+    };
+    document.addEventListener("keydown", handleKeyDown);
+    return () => document.removeEventListener("keydown", handleKeyDown);
+  }, [sidebarOpen]);
 
   // 知识卡片 Modal 状态
   const [knowledgeModalOpen, setKnowledgeModalOpen] = useState(false);
@@ -284,11 +301,15 @@ export default function ChatPage() {
         />
       </div>
 
-      {/* Overlay for mobile */}
+      {/* Overlay for mobile —— 纯鼠标便捷入口（Tab 序里不占位）；
+          键盘用户用 Esc（见上方 effect）或 ChatHeader 的会话列表按钮关闭 */}
       {sidebarOpen && (
-        <div
-          className="fixed inset-0 bg-black/20 z-20 md:hidden"
+        <button
+          type="button"
+          tabIndex={-1}
+          aria-hidden="true"
           onClick={() => setSidebarOpen(false)}
+          className="fixed inset-0 bg-black/20 z-20 md:hidden border-0 p-0 cursor-default"
         />
       )}
 

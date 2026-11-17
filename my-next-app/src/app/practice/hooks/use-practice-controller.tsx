@@ -296,27 +296,90 @@ export function usePracticeController(
         },
       });
 
-      // Async save
-      submitAnswerAction({
+      // Async save —— 乐观更新已生效，写库失败不能阻塞答题，
+      // 但必须可见且可重试（docs/ux-a11y-audit.md §3.5 P1）。
+      const payload = {
         questionId: currentQuestion.id,
         userAnswer: answer,
         isCorrect,
         duration,
         sessionId: state.sessionId || undefined,
         totalDurationMs: totalDuration,
-      })
-        .then((res) => {
-          if (res && res.data?.success && res.data?.srs) {
-            const srs = res.data.srs;
+      };
+      type SubmitResult = Awaited<ReturnType<typeof submitAnswerAction>>;
 
-            toast.success(isCorrect ? "回答正确！" : "回答错误", {
-              description: `下次复习: ${srs.nextInterval} 天后 (稳定性: ${srs.stability.toFixed(1)}d)`,
-              duration: 2000,
-              position: "top-center",
-            });
-          }
-        })
-        .catch(console.error);
+      // next-safe-action 的失败有两种：resolve 出 serverError/validationErrors 或
+      // data.success === false（后者不会 reject），两者都必须当作失败处理。
+      const failureReason = (res: SubmitResult | undefined): string | null => {
+        if (!res) return "服务无响应";
+        if (res.serverError) return res.serverError;
+        if (res.validationErrors) {
+          const fields = Object.keys(res.validationErrors);
+          return fields.length > 0
+            ? `参数校验失败: ${fields.join(", ")}`
+            : "参数校验失败";
+        }
+        if (!res.data) return "服务无响应";
+        if (res.data.success !== true) return "服务端未确认写入";
+        return null;
+      };
+
+      const showSaveRetryToast = (reason: string, retry: () => void) => {
+        toast.error("答题记录未保存", {
+          description: `${reason}。答案未保存，可能影响复习计划`,
+          duration: 8000,
+          position: "top-center",
+          action: { label: "重试", onClick: retry },
+        });
+      };
+
+      const saveAnswer = async (attempt: number): Promise<void> => {
+        let res: SubmitResult | undefined;
+        try {
+          res = await submitAnswerAction(payload);
+        } catch (err) {
+          console.error("[practice] 答题记录保存失败（调用异常）", {
+            err,
+            questionId: payload.questionId,
+            sessionId: payload.sessionId,
+            attempt,
+          });
+          showSaveRetryToast(
+            err instanceof Error ? err.message : String(err),
+            () => {
+              void saveAnswer(attempt + 1);
+            },
+          );
+          return; // 显式降级：本地状态已更新，不阻塞答题流程，由「重试」补救
+        }
+
+        const data = res?.data;
+        const reason = failureReason(res);
+        if (!data || reason) {
+          console.error("[practice] 答题记录保存失败（服务端未确认）", {
+            res,
+            questionId: payload.questionId,
+            sessionId: payload.sessionId,
+            attempt,
+            reason: reason ?? "服务无响应",
+          });
+          showSaveRetryToast(reason ?? "服务无响应", () => {
+            void saveAnswer(attempt + 1);
+          });
+          return;
+        }
+
+        const srs = data.srs;
+        if (srs) {
+          toast.success(isCorrect ? "回答正确！" : "回答错误", {
+            description: `下次复习: ${srs.nextInterval} 天后 (稳定性: ${srs.stability.toFixed(1)}d)`,
+            duration: 2000,
+            position: "top-center",
+          });
+        }
+      };
+
+      void saveAnswer(1);
     } catch (e) {
       console.error("Submit answer error:", e);
       toast.error("提交答案失败，请重试");

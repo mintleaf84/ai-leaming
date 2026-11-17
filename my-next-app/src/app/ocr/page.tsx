@@ -370,21 +370,9 @@ export default function OcrPage() {
           </div>
         </div>
 
-        {/* 上传区域 */}
+        {/* 上传区域 —— 真按钮：点击/回车/空格都能选文件；拖拽是附加路径 */}
         {!file ? (
-          <div
-            onClick={handleClick}
-            onDragOver={handleDragOver}
-            onDragLeave={handleDragLeave}
-            onDrop={handleDrop}
-            className={cn(
-              "relative border-2 border-dashed rounded-2xl p-16 text-center cursor-pointer transition-all duration-300",
-              "hover:border-primary/50 hover:bg-primary/5",
-              isDragging
-                ? "border-primary bg-primary/10 scale-[1.02]"
-                : "border-border bg-muted/20",
-            )}
-          >
+          <>
             <input
               ref={fileInputRef}
               type="file"
@@ -392,35 +380,50 @@ export default function OcrPage() {
               onChange={handleInputChange}
               className="hidden"
             />
-            <div className="flex flex-col items-center gap-4">
-              <div
-                className={cn(
-                  "w-16 h-16 rounded-2xl flex items-center justify-center transition-colors",
-                  isDragging
-                    ? "bg-primary/20 text-primary"
-                    : "bg-muted text-muted-foreground",
-                )}
-              >
-                <Upload className="w-8 h-8" />
-              </div>
-              <div>
-                <p className="text-lg font-medium text-foreground">
-                  拖拽文件到这里，或点击上传
-                </p>
-                <p className="text-sm text-muted-foreground mt-1">
-                  支持 PDF、PNG、JPG、WebP、BMP，最大 10MB
-                </p>
-              </div>
-              <div className="flex gap-3 mt-2">
-                <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-muted text-xs text-muted-foreground">
-                  <FileText className="w-3.5 h-3.5" /> PDF
+            <button
+              type="button"
+              onClick={handleClick}
+              onDragOver={handleDragOver}
+              onDragLeave={handleDragLeave}
+              onDrop={handleDrop}
+              className={cn(
+                "block w-full relative border-2 border-dashed rounded-2xl p-16 text-center cursor-pointer transition-all duration-300",
+                "hover:border-primary/50 hover:bg-primary/5",
+                isDragging
+                  ? "border-primary bg-primary/10 scale-[1.02]"
+                  : "border-border bg-muted/20",
+              )}
+            >
+              <div className="flex flex-col items-center gap-4">
+                <div
+                  className={cn(
+                    "w-16 h-16 rounded-2xl flex items-center justify-center transition-colors",
+                    isDragging
+                      ? "bg-primary/20 text-primary"
+                      : "bg-muted text-muted-foreground",
+                  )}
+                >
+                  <Upload className="w-8 h-8" />
                 </div>
-                <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-muted text-xs text-muted-foreground">
-                  <ImageIcon className="w-3.5 h-3.5" /> 图片
+                <div>
+                  <p className="text-lg font-medium text-foreground">
+                    拖拽文件到这里，或点击上传
+                  </p>
+                  <p className="text-sm text-muted-foreground mt-1">
+                    支持 PDF、PNG、JPG、WebP、BMP，最大 10MB
+                  </p>
+                </div>
+                <div className="flex gap-3 mt-2">
+                  <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-muted text-xs text-muted-foreground">
+                    <FileText className="w-3.5 h-3.5" /> PDF
+                  </div>
+                  <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-muted text-xs text-muted-foreground">
+                    <ImageIcon className="w-3.5 h-3.5" /> 图片
+                  </div>
                 </div>
               </div>
-            </div>
-          </div>
+            </button>
+          </>
         ) : (
           /* 文件已选择：预览 + 操作 */
           <Card className="border border-border rounded-2xl overflow-hidden">

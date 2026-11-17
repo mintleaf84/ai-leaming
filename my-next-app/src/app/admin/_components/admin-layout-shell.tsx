@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import {
@@ -26,6 +26,18 @@ export function AdminLayoutShell({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
   const router = useRouter();
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+
+  // 移动端菜单是浮层：键盘用户必须能关掉它。Esc 挂在 shell 上（document 级），
+  // 不挂在遮罩上 —— 遮罩对键盘用户不可达（不可聚焦），挂上去等于没挂。
+  useEffect(() => {
+    if (!isMobileMenuOpen) return;
+    const handleKeyDown = (event: KeyboardEvent) => {
+      // Escape 是功能键，不受输入法组合态影响，无需 isImeComposing 守卫
+      if (event.key === "Escape") setIsMobileMenuOpen(false);
+    };
+    document.addEventListener("keydown", handleKeyDown);
+    return () => document.removeEventListener("keydown", handleKeyDown);
+  }, [isMobileMenuOpen]);
 
   const menuItems = [
     { href: "/admin", label: "概览", icon: LayoutDashboard },
@@ -112,16 +124,22 @@ export function AdminLayoutShell({ children }: { children: React.ReactNode }) {
         {navContent}
       </aside>
 
-      {/* Mobile Sidebar Overlay */}
+      {/* Mobile Sidebar Overlay —— 纯鼠标便捷入口：点击空白处关闭。
+          键盘用户走 Esc（见上方 effect）或侧栏内的关闭按钮，所以这里
+          tabIndex={-1} + aria-hidden，不额外制造一个不可见的 Tab 停靠点。 */}
       {isMobileMenuOpen && (
-        <div
-          className="fixed inset-0 bg-black/50 z-40 md:hidden"
+        <button
+          type="button"
+          tabIndex={-1}
+          aria-hidden="true"
           onClick={() => setIsMobileMenuOpen(false)}
+          className="fixed inset-0 bg-black/50 z-40 md:hidden border-0 p-0 cursor-default"
         />
       )}
 
       {/* Mobile Sidebar */}
       <aside
+        id="admin-mobile-menu"
         className={`fixed inset-y-0 left-0 w-64 bg-card border-r border-border z-50 transition-transform duration-300 transform md:hidden flex flex-col ${isMobileMenuOpen ? "translate-x-0" : "-translate-x-full"}`}
       >
         <div className="p-6 border-b border-border flex justify-between items-center">
@@ -136,6 +154,7 @@ export function AdminLayoutShell({ children }: { children: React.ReactNode }) {
             variant="ghost"
             size="icon"
             onClick={() => setIsMobileMenuOpen(false)}
+            aria-label="关闭菜单"
           >
             <X className="w-5 h-5" />
           </Button>
@@ -151,6 +170,9 @@ export function AdminLayoutShell({ children }: { children: React.ReactNode }) {
             variant="ghost"
             size="icon"
             onClick={() => setIsMobileMenuOpen(true)}
+            aria-label="打开菜单"
+            aria-expanded={isMobileMenuOpen}
+            aria-controls="admin-mobile-menu"
           >
             <Menu className="w-6 h-6" />
           </Button>

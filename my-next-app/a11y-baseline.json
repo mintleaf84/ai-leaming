@@ -1,0 +1,10 @@
+{
+  "generatedAt": "2026-11-17T07:21:41.745Z",
+  "total": 96,
+  "rules": {
+    "jsx-a11y/label-has-associated-control": 42,
+    "jsx-a11y/no-static-element-interactions": 23,
+    "jsx-a11y/click-events-have-key-events": 22,
+    "jsx-a11y/no-autofocus": 9
+  }
+}

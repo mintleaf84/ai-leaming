@@ -26,7 +26,9 @@ const item: SessionHistoryItem = {
   practiceMode: "smart",
 };
 
-function renderCard(overrides: Partial<React.ComponentProps<typeof HistoryCardItem>> = {}) {
+function renderCard(
+  overrides: Partial<React.ComponentProps<typeof HistoryCardItem>> = {},
+) {
   const props = {
     item,
     onExpand: vi.fn(),

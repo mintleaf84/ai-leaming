@@ -46,9 +46,8 @@ describe("OCR 上传区键盘可达（批次 B5）", () => {
     expect(dropzone.tagName).toBe("BUTTON");
     expect(dropzone).toHaveAttribute("type", "button");
 
-    const input = container.querySelector<HTMLInputElement>(
-      'input[type="file"]',
-    );
+    const input =
+      container.querySelector<HTMLInputElement>('input[type="file"]');
     expect(input).not.toBeNull();
     // 结构：input 不能嵌在 button 里（交互元素不可互相嵌套）
     expect(dropzone.contains(input)).toBe(false);
@@ -77,9 +76,8 @@ describe("OCR 上传区键盘可达（批次 B5）", () => {
     const dropzone = await screen.findByRole("button", {
       name: /拖拽文件到这里/,
     });
-    const input = container.querySelector<HTMLInputElement>(
-      'input[type="file"]',
-    )!;
+    const input =
+      container.querySelector<HTMLInputElement>('input[type="file"]')!;
     const clickSpy = vi.spyOn(input, "click");
     clickSpy.mockClear();
 

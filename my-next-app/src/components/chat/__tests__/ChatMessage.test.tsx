@@ -122,4 +122,39 @@ describe("ChatMessage Component", () => {
       "Normal message",
     );
   });
+
+  /**
+   * §3.7（批次 B4）：生成中只给这条消息挂 aria-busy，
+   * 让辅助技术推迟呈现还在增长的内容；**不**挂 aria-live，
+   * 否则逐字追加会被念几十遍。
+   */
+  it("marks the streaming message aria-busy and never aria-live", async () => {
+    const streamingMsg = { id: "5", role: "assistant", content: "解释一下" };
+    const { container, rerender } = render(
+      <ChatMessage message={streamingMsg} isLast={true} isLoading={true} />,
+    );
+
+    const root = container.querySelector("#message-5") as HTMLElement;
+    expect(root).toHaveAttribute("aria-busy", "true");
+    expect(container.querySelector("[aria-live]")).toBeNull();
+
+    rerender(
+      <ChatMessage message={streamingMsg} isLast={true} isLoading={false} />,
+    );
+    expect(container.querySelector("#message-5")).toHaveAttribute(
+      "aria-busy",
+      "false",
+    );
+  });
+
+  it("does not mark a finished or user message as busy", () => {
+    const userMsg = { id: "6", role: "user", content: "问题" };
+    const { container } = render(
+      <ChatMessage message={userMsg} isLast={true} isLoading={true} />,
+    );
+    expect(container.querySelector("#message-6")).toHaveAttribute(
+      "aria-busy",
+      "false",
+    );
+  });
 });

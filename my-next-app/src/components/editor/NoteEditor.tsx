@@ -127,7 +127,7 @@ export default function NoteEditor({
               handleImageDrop(view, event, moved, uploadFn),
             attributes: {
               class:
-                "prose prose-lg dark:prose-invert prose-headings:font-bold font-default focus:outline-none max-w-full p-8",
+                "prose prose-lg dark:prose-invert prose-headings:font-bold font-default focus:outline-none max-w-full p-8 focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-ring",
             },
           }}
           onUpdate={({ editor }) => handleUpdate(editor)}

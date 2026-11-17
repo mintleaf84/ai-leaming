@@ -128,7 +128,12 @@ export default function KnowledgePage() {
             </p>
           </div>
         ) : filteredCards.length === 0 ? (
-          <div className="text-center py-24 bg-card/40 backdrop-blur-sm rounded-3xl border-2 border-dashed border-border">
+          // 分类/搜索筛到 0 张时，页面上只剩这块空态——挂 role="status" 让
+          // "没有匹配的卡片 + 下一步怎么办"被读到，而不是静默变成一片空白
+          <div
+            role="status"
+            className="text-center py-24 bg-card/40 backdrop-blur-sm rounded-3xl border-2 border-dashed border-border"
+          >
             <div className="w-24 h-24 mx-auto mb-6 bg-muted rounded-full flex items-center justify-center shadow-inner">
               <BookOpen className="w-12 h-12 text-muted-foreground" />
             </div>

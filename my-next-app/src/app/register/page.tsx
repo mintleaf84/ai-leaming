@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import Image from "next/image";
@@ -23,6 +23,12 @@ export default function RegisterPage() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const router = useRouter();
+  // 与登录页一致：错误条既要被播报（role="alert"），也要接住焦点
+  const errorRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (error) errorRef.current?.focus();
+  }, [error]);
 
   const handleRegister = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -86,7 +92,12 @@ export default function RegisterPage() {
         <form onSubmit={handleRegister}>
           <CardContent className="space-y-5">
             {error && (
-              <div className="bg-red-50 border border-red-100 text-red-600 px-4 py-3 rounded-xl flex items-center gap-2 text-sm animate-in fade-in slide-in-from-top-2">
+              <div
+                ref={errorRef}
+                role="alert"
+                tabIndex={-1}
+                className="bg-red-50 border border-red-100 text-red-600 px-4 py-3 rounded-xl flex items-center gap-2 text-sm animate-in fade-in slide-in-from-top-2"
+              >
                 <AlertCircle className="h-4 w-4" />
                 {error}
               </div>

@@ -143,6 +143,9 @@ export default function ChatMessage({
   return (
     <div
       id={`message-${message.id}`}
+      // 生成中的那条消息标 busy：辅助技术会推迟呈现内部还在变的内容，
+      // 配合 MessageList 的 sr-only 状态，既能听到"生成中/已完成"，又不会被逐字打断
+      aria-busy={isAssistant && isLast && isLoading}
       className={`flex w-full ${!isAssistant ? "justify-end" : "justify-start"} scroll-mt-24`}
     >
       <div

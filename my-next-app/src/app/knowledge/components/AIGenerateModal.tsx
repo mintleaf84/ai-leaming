@@ -141,10 +141,14 @@ export const AIGenerateModal: React.FC<AIGenerateModalProps> = ({
           {step === "input" ? (
             <div className="space-y-4">
               <div className="space-y-2">
-                <label className="text-xs font-black text-muted-foreground uppercase tracking-widest pl-1">
+                <label
+                  htmlFor="aigen-input"
+                  className="text-xs font-black text-muted-foreground uppercase tracking-widest pl-1"
+                >
                   输入知识点内容
                 </label>
                 <textarea
+                  id="aigen-input"
                   value={inputText}
                   onChange={(e) => setInputText(e.target.value)}
                   rows={10}
@@ -176,11 +180,15 @@ export const AIGenerateModal: React.FC<AIGenerateModalProps> = ({
               {/* 预览编辑表单 */}
               <div className="grid grid-cols-2 gap-4">
                 <div className="space-y-2">
-                  <label className="text-xs font-black text-muted-foreground uppercase tracking-widest pl-1">
+                  <label
+                    htmlFor="aigen-title"
+                    className="text-xs font-black text-muted-foreground uppercase tracking-widest pl-1"
+                  >
                     标题
                   </label>
                   <input
                     type="text"
+                    id="aigen-title"
                     value={generatedCard?.title || ""}
                     onChange={(e) =>
                       setGeneratedCard({
@@ -192,11 +200,15 @@ export const AIGenerateModal: React.FC<AIGenerateModalProps> = ({
                   />
                 </div>
                 <div className="space-y-2">
-                  <label className="text-xs font-black text-muted-foreground uppercase tracking-widest pl-1">
+                  <label
+                    htmlFor="aigen-category"
+                    className="text-xs font-black text-muted-foreground uppercase tracking-widest pl-1"
+                  >
                     分类
                   </label>
                   <input
                     type="text"
+                    id="aigen-category"
                     value={generatedCard?.category || ""}
                     onChange={(e) =>
                       setGeneratedCard({
@@ -210,10 +222,14 @@ export const AIGenerateModal: React.FC<AIGenerateModalProps> = ({
               </div>
 
               <div className="space-y-2">
-                <label className="text-xs font-black text-muted-foreground uppercase tracking-widest pl-1">
+                <label
+                  htmlFor="aigen-front"
+                  className="text-xs font-black text-muted-foreground uppercase tracking-widest pl-1"
+                >
                   正面 (问题)
                 </label>
                 <textarea
+                  id="aigen-front"
                   value={generatedCard?.front || ""}
                   onChange={(e) =>
                     setGeneratedCard({
@@ -227,10 +243,14 @@ export const AIGenerateModal: React.FC<AIGenerateModalProps> = ({
               </div>
 
               <div className="space-y-2">
-                <label className="text-xs font-black text-muted-foreground uppercase tracking-widest pl-1">
+                <label
+                  htmlFor="aigen-back"
+                  className="text-xs font-black text-muted-foreground uppercase tracking-widest pl-1"
+                >
                   背面 (答案)
                 </label>
                 <textarea
+                  id="aigen-back"
                   value={generatedCard?.back || ""}
                   onChange={(e) =>
                     setGeneratedCard({ ...generatedCard, back: e.target.value })
@@ -241,11 +261,15 @@ export const AIGenerateModal: React.FC<AIGenerateModalProps> = ({
               </div>
 
               <div className="space-y-2">
-                <label className="text-xs font-black text-muted-foreground uppercase tracking-widest pl-1">
+                <label
+                  htmlFor="aigen-tags"
+                  className="text-xs font-black text-muted-foreground uppercase tracking-widest pl-1"
+                >
                   标签
                 </label>
                 <input
                   type="text"
+                  id="aigen-tags"
                   value={generatedCard?.tags?.join(", ") || ""}
                   onChange={(e) =>
                     setGeneratedCard({

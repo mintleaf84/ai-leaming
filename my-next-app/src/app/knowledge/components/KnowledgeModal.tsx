@@ -169,24 +169,32 @@ export const KnowledgeModal: React.FC<KnowledgeModalProps> = ({
         <div className="flex-1 p-6 overflow-y-auto space-y-6 scrollbar-thin">
           <div className="grid grid-cols-2 gap-4">
             <div className="space-y-2">
-              <label className="text-xs font-black text-muted-foreground uppercase tracking-widest pl-1">
+              <label
+                htmlFor="km-title"
+                className="text-xs font-black text-muted-foreground uppercase tracking-widest pl-1"
+              >
                 卡片主轴标题
               </label>
               <input
                 type="text"
                 placeholder="例如：广域课程的定义"
+                id="km-title"
                 value={card?.title || ""}
                 onChange={(e) => onChange({ ...card, title: e.target.value })}
                 className="w-full px-4 py-3 bg-muted/50 border border-border rounded-xl text-sm focus:ring-2 focus:ring-primary/20 focus:border-primary focus:bg-background transition-all outline-none font-bold text-foreground"
               />
             </div>
             <div className="space-y-2">
-              <label className="text-xs font-black text-muted-foreground uppercase tracking-widest pl-1">
+              <label
+                htmlFor="km-category"
+                className="text-xs font-black text-muted-foreground uppercase tracking-widest pl-1"
+              >
                 所属分类
               </label>
               <input
                 type="text"
                 placeholder="教育学基础"
+                id="km-category"
                 value={card?.category || ""}
                 onChange={(e) =>
                   onChange({ ...card, category: e.target.value })
@@ -197,10 +205,14 @@ export const KnowledgeModal: React.FC<KnowledgeModalProps> = ({
           </div>
 
           <div className="space-y-2">
-            <label className="text-xs font-black text-muted-foreground uppercase tracking-widest pl-1">
+            <label
+              htmlFor="km-front"
+              className="text-xs font-black text-muted-foreground uppercase tracking-widest pl-1"
+            >
               正面内容 (QUESTION - MARKDOWN)
             </label>
             <textarea
+              id="km-front"
               value={card?.front || ""}
               onChange={(e) => onChange({ ...card, front: e.target.value })}
               rows={4}
@@ -210,10 +222,14 @@ export const KnowledgeModal: React.FC<KnowledgeModalProps> = ({
           </div>
 
           <div className="space-y-2">
-            <label className="text-xs font-black text-muted-foreground uppercase tracking-widest pl-1">
+            <label
+              htmlFor="km-back"
+              className="text-xs font-black text-muted-foreground uppercase tracking-widest pl-1"
+            >
               背面详细解答 (ANSWER - MARKDOWN)
             </label>
             <textarea
+              id="km-back"
               value={card?.back || ""}
               onChange={(e) => onChange({ ...card, back: e.target.value })}
               rows={6}
@@ -223,11 +239,15 @@ export const KnowledgeModal: React.FC<KnowledgeModalProps> = ({
           </div>
 
           <div className="space-y-2">
-            <label className="text-xs font-black text-muted-foreground uppercase tracking-widest pl-1">
+            <label
+              htmlFor="km-tags"
+              className="text-xs font-black text-muted-foreground uppercase tracking-widest pl-1"
+            >
               标签集合 (用空格或逗号分隔)
             </label>
             <input
               type="text"
+              id="km-tags"
               value={card?.tags?.join(", ") || ""}
               onChange={(e) =>
                 onChange({

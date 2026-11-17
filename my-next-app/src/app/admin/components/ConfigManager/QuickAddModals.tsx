@@ -66,11 +66,15 @@ export function QuickAddModals({
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-foreground mb-1">
+            <label
+              htmlFor="zju-api-key"
+              className="block text-sm font-medium text-foreground mb-1"
+            >
               API Key (必填)
             </label>
             <input
               type="password"
+              id="zju-api-key"
               value={currentConfig.api_key || ""}
               onChange={(e) =>
                 onChange({ ...currentConfig, api_key: e.target.value })
@@ -145,11 +149,15 @@ export function QuickAddModals({
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-foreground mb-1">
+            <label
+              htmlFor="silicon-api-key"
+              className="block text-sm font-medium text-foreground mb-1"
+            >
               API Key (必填)
             </label>
             <input
               type="password"
+              id="silicon-api-key"
               value={currentConfig.api_key || ""}
               onChange={(e) =>
                 onChange({ ...currentConfig, api_key: e.target.value })

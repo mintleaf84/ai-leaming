@@ -40,11 +40,15 @@ export function ConfigForm({
 
       <div className="space-y-6">
         <div>
-          <label className="block text-sm font-medium text-foreground mb-1">
+          <label
+            htmlFor="cfg-name"
+            className="block text-sm font-medium text-foreground mb-1"
+          >
             配置名称 (Name)
           </label>
           <input
             type="text"
+            id="cfg-name"
             value={config.name || ""}
             onChange={(e) => onChange({ ...config, name: e.target.value })}
             className="w-full p-2 border border-border bg-background rounded focus:ring-2 focus:ring-primary outline-none"
@@ -53,11 +57,15 @@ export function ConfigForm({
         </div>
 
         <div>
-          <label className="block text-sm font-medium text-foreground mb-1">
+          <label
+            htmlFor="cfg-api-url"
+            className="block text-sm font-medium text-foreground mb-1"
+          >
             API Base URL
           </label>
           <input
             type="text"
+            id="cfg-api-url"
             value={config.api_url || ""}
             onChange={(e) => onChange({ ...config, api_url: e.target.value })}
             className="w-full p-2 border border-border bg-background rounded focus:ring-2 focus:ring-primary outline-none"
@@ -66,11 +74,15 @@ export function ConfigForm({
         </div>
 
         <div>
-          <label className="block text-sm font-medium text-foreground mb-1">
+          <label
+            htmlFor="cfg-api-key"
+            className="block text-sm font-medium text-foreground mb-1"
+          >
             API Key
           </label>
           <input
             type="password"
+            id="cfg-api-key"
             value={config.api_key || ""}
             onChange={(e) => onChange({ ...config, api_key: e.target.value })}
             className="w-full p-2 border border-border bg-background rounded focus:ring-2 focus:ring-primary outline-none"
@@ -80,11 +92,15 @@ export function ConfigForm({
 
         <div className="grid grid-cols-2 gap-4">
           <div>
-            <label className="block text-sm font-medium text-foreground mb-1">
+            <label
+              htmlFor="cfg-model-economy"
+              className="block text-sm font-medium text-foreground mb-1"
+            >
               经济模型 (Economy)
             </label>
             <input
               type="text"
+              id="cfg-model-economy"
               value={config.model_economy || ""}
               onChange={(e) =>
                 onChange({ ...config, model_economy: e.target.value })
@@ -94,11 +110,15 @@ export function ConfigForm({
             />
           </div>
           <div>
-            <label className="block text-sm font-medium text-foreground mb-1">
+            <label
+              htmlFor="cfg-model-premium"
+              className="block text-sm font-medium text-foreground mb-1"
+            >
               高级模型 (Premium)
             </label>
             <input
               type="text"
+              id="cfg-model-premium"
               value={config.model_premium || ""}
               onChange={(e) =>
                 onChange({ ...config, model_premium: e.target.value })
@@ -111,11 +131,15 @@ export function ConfigForm({
 
         <div className="grid grid-cols-2 gap-4 pt-2">
           <div>
-            <label className="block text-sm font-medium text-foreground mb-1">
+            <label
+              htmlFor="cfg-model-embedding"
+              className="block text-sm font-medium text-foreground mb-1"
+            >
               向量模型 (Embedding)
             </label>
             <input
               type="text"
+              id="cfg-model-embedding"
               value={config.model_embedding || ""}
               onChange={(e) =>
                 onChange({ ...config, model_embedding: e.target.value })
@@ -125,11 +149,15 @@ export function ConfigForm({
             />
           </div>
           <div>
-            <label className="block text-sm font-medium text-foreground mb-1">
+            <label
+              htmlFor="cfg-embedding-dimensions"
+              className="block text-sm font-medium text-foreground mb-1"
+            >
               向量维度 (Dimensions)
             </label>
             <input
               type="number"
+              id="cfg-embedding-dimensions"
               value={config.embedding_dimensions || ""}
               onChange={(e) =>
                 onChange({
@@ -144,11 +172,15 @@ export function ConfigForm({
         </div>
 
         <div className="pt-2">
-          <label className="block text-sm font-medium text-foreground mb-1">
+          <label
+            htmlFor="cfg-model-rerank"
+            className="block text-sm font-medium text-foreground mb-1"
+          >
             重排序模型 (Rerank)
           </label>
           <input
             type="text"
+            id="cfg-model-rerank"
             value={config.model_rerank || ""}
             onChange={(e) =>
               onChange({ ...config, model_rerank: e.target.value })
@@ -162,11 +194,15 @@ export function ConfigForm({
         </div>
 
         <div className="pt-2">
-          <label className="block text-sm font-medium text-foreground mb-1">
+          <label
+            htmlFor="cfg-model-knowledge"
+            className="block text-sm font-medium text-foreground mb-1"
+          >
             知识提取模型 (Knowledge)
           </label>
           <input
             type="text"
+            id="cfg-model-knowledge"
             value={config.model_knowledge || ""}
             onChange={(e) =>
               onChange({ ...config, model_knowledge: e.target.value })

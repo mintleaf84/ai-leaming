@@ -82,7 +82,7 @@ export const LinkSelector = ({ open, onOpenChange }: LinkSelectorProps) => {
             ref={inputRef}
             type="text"
             placeholder="粘贴链接地址..."
-            className="flex-1 bg-background p-1 text-sm outline-none"
+            className="flex-1 bg-background p-1 text-sm rounded-sm outline-none focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background"
             defaultValue={editor.getAttributes("link").href || ""}
           />
           {editor.getAttributes("link").href ? (

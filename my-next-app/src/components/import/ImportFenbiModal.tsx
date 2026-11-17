@@ -220,11 +220,15 @@ export function ImportFenbiModal({
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             {/* 答题数据 */}
             <div>
-              <label className="flex items-center gap-2 text-sm font-medium mb-2">
+              <label
+                htmlFor="fenbi-exercise-json"
+                className="flex items-center gap-2 text-sm font-medium mb-2"
+              >
                 <FileJson className="w-4 h-4 text-primary" />
                 getSolution 响应 <span className="text-red-500">*</span>
               </label>
               <textarea
+                id="fenbi-exercise-json"
                 value={exerciseJson}
                 onChange={(e) => {
                   setExerciseJson(e.target.value);
@@ -238,11 +242,15 @@ export function ImportFenbiModal({
 
             {/* 题目数据 */}
             <div>
-              <label className="flex items-center gap-2 text-sm font-medium mb-2">
+              <label
+                htmlFor="fenbi-solutions-json"
+                className="flex items-center gap-2 text-sm font-medium mb-2"
+              >
                 <FileText className="w-4 h-4 text-primary" />
                 solution 响应 <span className="text-red-500">*</span>
               </label>
               <textarea
+                id="fenbi-solutions-json"
                 value={solutionsJson}
                 onChange={(e) => {
                   setSolutionsJson(e.target.value);
@@ -257,11 +265,15 @@ export function ImportFenbiModal({
 
           {/* 统计数据（可选） */}
           <div>
-            <label className="flex items-center gap-2 text-sm font-medium mb-2">
+            <label
+              htmlFor="fenbi-stats-json"
+              className="flex items-center gap-2 text-sm font-medium mb-2"
+            >
               <BarChart3 className="w-4 h-4 text-muted-foreground" />
               getMeta 响应（可选，含全站正确率）
             </label>
             <textarea
+              id="fenbi-stats-json"
               value={statsJson}
               onChange={(e) => {
                 setStatsJson(e.target.value);

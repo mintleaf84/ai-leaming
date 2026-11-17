@@ -1,13 +1,17 @@
 {
-  "updatedAt": "2026-11-16",
-  "total": 89,
-  "filesScanned": 653,
+  "updatedAt": "2026-11-17",
+  "total": 128,
+  "filesScanned": 700,
   "rules": {
     "no-restricted-syntax": 80,
+    "react-hooks/set-state-in-effect": 26,
+    "react-hooks/immutability": 7,
+    "@next/next/no-location-assign-relative-destination": 6,
     "react-hooks/exhaustive-deps": 3,
     "no-restricted-imports": 2,
     "@typescript-eslint/no-require-imports": 2,
     "import/no-anonymous-default-export": 1,
     "@typescript-eslint/no-explicit-any": 1
-  }
+  },
+  "exceptionReason": "eslint-config-next 16.1.1→16.4.6 + react-hooks 7.1.1：新增 set-state-in-effect(26)/immutability(7)/no-location-assign-relative-destination(6) 共 39 条 warn（33 条原本是 error，已按仓库惯例降 warn 进棘轮）"
 }

@@ -16,11 +16,11 @@ docker compose（image: ghcr.io/mintleaf84/ai-leaming:<sha>）
 `docker-compose.yml` 有两种写法，**生产用后者**：
 
 ```yaml
-    # ❌ 本地构建：每次结果取决于当时的依赖解析，无法复现
-    build: { context: ., dockerfile: Dockerfile }
+# ❌ 本地构建：每次结果取决于当时的依赖解析，无法复现
+build: { context: ., dockerfile: Dockerfile }
 
-    # ✅ 用 CI 构建好的镜像，按 commit sha 钉版本
-    image: ghcr.io/mintleaf84/ai-leaming:${IMAGE_TAG:-latest}
+# ✅ 用 CI 构建好的镜像，按 commit sha 钉版本
+image: ghcr.io/mintleaf84/ai-leaming:${IMAGE_TAG:-latest}
 ```
 
 `IMAGE_TAG` 放在同目录的 `.env` 里，改一行就是换版本：
@@ -33,10 +33,10 @@ IMAGE_TAG=<commit-sha>      # 例如 83a8d54c...（完整 40 位）
 
 `.github/workflows/docker-image.yml` 每次 CI 绿后在 main 上推两个标签：
 
-| 标签 | 用途 |
-| --- | --- |
-| `:latest` | 只给"想试最新"的场景，**不要用于生产** |
-| `:<full-sha>` | 生产部署用这个，不可变、可回滚 |
+| 标签          | 用途                                   |
+| ------------- | -------------------------------------- |
+| `:latest`     | 只给"想试最新"的场景，**不要用于生产** |
+| `:<full-sha>` | 生产部署用这个，不可变、可回滚         |
 
 镜像带 OCI 标签，所以随时能回答"线上跑的是哪个 commit"：
 
@@ -175,11 +175,11 @@ Service Worker 只在 **HTTPS 或 localhost** 下注册。用 `http://IP:3000` �
 
 ## 8. 排错清单
 
-| 现象 | 检查 |
-| --- | --- |
-| 容器反复重启 | `docker compose logs --tail=100 ai-learning`，多半是迁移失败或环境变量缺失 |
-| `pull` 报 denied | `docker login ghcr.io`；package 若为 private 需要 `read:packages` |
-| `pull` 报 manifest unknown | 该 sha 的镜像还没构建（CI 未绿，或刚合并几分钟内） |
-| 拉起即退出、日志有 `GLIBC` | 部署机是 arm64，而镜像是 amd64 |
-| 页面能开但 PWA 不装/不缓存 | 是否 HTTPS；`chrome://inspect` 看 Application → Service Workers |
-| 更新后登录态全丢 | 是否误删了 `data/.env.production` |
+| 现象                       | 检查                                                                       |
+| -------------------------- | -------------------------------------------------------------------------- |
+| 容器反复重启               | `docker compose logs --tail=100 ai-learning`，多半是迁移失败或环境变量缺失 |
+| `pull` 报 denied           | `docker login ghcr.io`；package 若为 private 需要 `read:packages`          |
+| `pull` 报 manifest unknown | 该 sha 的镜像还没构建（CI 未绿，或刚合并几分钟内）                         |
+| 拉起即退出、日志有 `GLIBC` | 部署机是 arm64，而镜像是 amd64                                             |
+| 页面能开但 PWA 不装/不缓存 | 是否 HTTPS；`chrome://inspect` 看 Application → Service Workers            |
+| 更新后登录态全丢           | 是否误删了 `data/.env.production`                                          |

@@ -189,9 +189,7 @@ export const adminService = {
         ? await drizzleDb
             .select({ external_id: drizzleSchema.questions.external_id })
             .from(drizzleSchema.questions)
-            .where(
-              inArray(drizzleSchema.questions.external_id, candidateIds),
-            )
+            .where(inArray(drizzleSchema.questions.external_id, candidateIds))
         : [];
     const existingIds = new Set(
       existing

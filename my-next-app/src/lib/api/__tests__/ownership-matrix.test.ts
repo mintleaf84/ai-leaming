@@ -116,6 +116,10 @@ const MODULES: Record<string, ModuleRule> = {
 
   // ---- 公开（无需登录） ----
   auth: { mount: "/api/auth", scope: "public" },
+  // 前端性能指标上报（docs/performance.md T-01）：匿名、只写不读，
+  // 入参固定为 name/value/route/rating，不含任何可以定位到"谁的数据"的标识符，
+  // 因此没有越权面，也不需要跨用户测试。
+  vitals: { mount: "/api/vitals", scope: "public" },
 };
 
 function moduleFiles(): string[] {

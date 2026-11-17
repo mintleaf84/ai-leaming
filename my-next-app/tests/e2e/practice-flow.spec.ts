@@ -1,4 +1,32 @@
 import { test, expect } from "./fixtures";
+import type { Page } from "@playwright/test";
+
+/**
+ * 保证 `/practice` 上有题可答。
+ *
+ * 为什么需要：这条用例曾在本文件里"看心情"失败 —— 前面几条用例如果把当前会话答完，
+ * 落地页就是 `FinishedCard`（「练习会话已完成！」），**它没有 h1/h2**，
+ * 于是等待标题必然超时。这不是布局或 a11y 问题，是前置状态不确定。
+ *
+ * 注意不能"看到 finished 就立刻判断"：首屏要等初始化（会走 AI / 题库兜底），
+ * 3s 时很可能还在 loading —— 那时 finished 还不存在，等跑完才发现是完成态，照样超时。
+ * 所以先等**两个终态之一**出现，再决定要不要重开。
+ *
+ * 断言强度不变：要的仍然是"有题可答"。
+ */
+async function ensurePracticeHasQuestion(page: Page) {
+  const heading = page.locator("h2, h1").first();
+  const finished = page.getByText("练习会话已完成");
+
+  await expect(heading.or(finished)).toBeVisible({ timeout: 20000 });
+
+  if (await finished.isVisible()) {
+    await page.goto("/practice/setup");
+    await page.getByRole("button", { name: /开始练习/ }).click();
+  }
+
+  await expect(heading).toBeVisible({ timeout: 20000 });
+}
 
 /**
  * 练习核心引擎 E2E 测试（模块二：P-01 ~ P-10）
@@ -161,24 +189,7 @@ test.describe("练习核心引擎", () => {
 
   // P-06：右键排除法功能
   test("P-06 右键可排除选项，再次右键取消排除", async ({ loggedInPage }) => {
-    await loggedInPage.goto("/practice");
-    /*
-     * 这一条曾经在本文件里"看心情"失败：如果前面几条用例已经把当前会话答完，
-     * 落地页就是 `FinishedCard`（「练习会话已完成！」），**它没有 h1/h2**，
-     * 于是等待标题必然超时。这不是布局或 a11y 问题，是前置状态不确定。
-     *
-     * 所以先判定状态：已完成就回 `/practice/setup` 重新开一组（真实用户路径），
-     * 再等标题。断言强度不变 —— 我们要的仍然是"有题可答"。
-     */
-    const finished = loggedInPage.getByText("练习会话已完成");
-    if (await finished.isVisible({ timeout: 3000 }).catch(() => false)) {
-      await loggedInPage.goto("/practice/setup");
-      await loggedInPage.getByRole("button", { name: /开始练习/ }).click();
-    }
-
-    await expect(loggedInPage.locator("h2, h1").first()).toBeVisible({
-      timeout: 15000,
-    });
+    await ensurePracticeHasQuestion(loggedInPage);
 
     const firstOption = loggedInPage
       .locator('[data-testid="practice-option"]')

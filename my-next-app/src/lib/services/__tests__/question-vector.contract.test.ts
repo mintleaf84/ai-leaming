@@ -13,7 +13,9 @@
  * 重复也拖慢闸门，而它提供的只是"一串浮点数"。`getAiConfig` 一律走真实现，
  * 因为"配置说几维"正是本文件要钉的东西之一 —— 把它 mock 掉就等于自己出题自己答。
  *
- * 发现的真实缺陷用 `it.fails` 固定，不修。
+ * 历史：本文件原先有两条 `it.fails` 固定"向量表从未被建出"和"相似题检索恒为空"。
+ * 根因是向量语句跑在 libsql 主连接上（`load_extension` 被拒 → `no such module: vec0`），
+ * 修为走 legacy better-sqlite3 连接（`src/lib/db/vec-store.ts`）后两条都转成正常用例。
  */
 import {
   describe,
@@ -31,7 +33,7 @@ import { sql } from "drizzle-orm";
 const dbFile = `test-question-vector-${process.pid}.db`;
 process.env.DB_FILENAME = dbFile;
 
-/** 生产向量表的实际维度：建表后在真库里读出来（见 createQuestionsVecFromProduction） */
+/** 生产向量表的实际维度：建表后在真库里读出来（见 readVecDimFromProductionTable） */
 let vecDim = 0;
 
 const aiState = vi.hoisted(() => ({
@@ -54,82 +56,40 @@ vi.mock("ai", () => ({
 }));
 
 type DbModule = typeof import("@/lib/db");
+type VecStoreModule = typeof import("@/lib/db/vec-store");
 type RagModule = typeof import("@/lib/ai/rag");
 type QuestionModule = typeof import("@/lib/services/question");
 type ClientModule = typeof import("@/lib/ai/client");
 
 let dbm: DbModule;
+let vecStore: VecStoreModule;
 let ragService: RagModule["ragService"];
 let questionService: QuestionModule["questionService"];
 let getAiConfig: ClientModule["getAiConfig"];
 let legacy: ReturnType<DbModule["getLegacyDb"]>;
 
 /**
- * 把 drizzle 的 SQL 对象渲染成文本（只用于 `vector-setup.ts` 里那几条常量 DDL：
- * 字符串片段 + 内联参数，没有子查询）。参数按值内联 —— vec0 的 `float[N]`
- * 是类型声明，不能是绑定参数。
+ * 维度只能从**生产建表路径建出的真表**上读：`initDatabase()` →
+ * `setupVectorExtension()` → `vec-store.ensureVectorTables()`。表结构、维度都来自
+ * `src/lib/db/vec-store.ts`，测试不再自带 1536/1024 这种魔法数。
  */
-function renderSql(node: unknown): string {
-  if (typeof node === "string") return node;
-  if (typeof node === "number" || typeof node === "boolean")
-    return String(node);
-  if (Array.isArray(node)) return node.map(renderSql).join("");
-  if (node && typeof node === "object") {
-    const chunks = (node as { queryChunks?: unknown[] }).queryChunks;
-    if (Array.isArray(chunks)) return chunks.map(renderSql).join("");
-    const value = (node as { value?: unknown }).value;
-    if (value !== undefined && value !== null) return renderSql(value);
-  }
-  return "";
-}
-
-/**
- * 走**生产建表路径**建出 `questions_vec`，只把执行连接换成 legacy。
- *
- * 应用主连接（libsql）加载不到 vec0，生产路径到此必然失败并静默跳过（已由上方
- * it.fails 钉住）；而"维度对不对"只能在真表上问。所以这里把 `setupVectorExtension()`
- * 真的跑一遍，截下它要执行的 DDL，原样打到能加载扩展的 legacy 连接上 ——
- * 表结构、维度都来自 `src/lib/db/vector-setup.ts`，测试不再自带 1536 这种魔法数。
- */
-async function createQuestionsVecFromProduction(): Promise<void> {
-  const captured: unknown[] = [];
-  // 只替换执行连接：把生产 SQL 截下来，别让它在 libsql 上真跑（跑了也只会 "no such module"）
-  const db = dbm.drizzleDb as unknown as {
-    run: (query: unknown) => Promise<unknown>;
-    all: (query: unknown) => Promise<unknown>;
-  };
-  const realRun = db.run;
-  const realAll = db.all;
-
-  db.run = async (query) => {
-    const text = renderSql(query);
-    if (!text.trimStart().toUpperCase().startsWith("SELECT")) {
-      captured.push(query);
-    }
-    return {};
-  };
-  db.all = async () => [{ count: 0 }];
-
-  try {
-    const ok = await dbm.setupVectorExtension();
-    expect(ok).toBe(true);
-  } finally {
-    db.run = realRun;
-    db.all = realAll;
-  }
-
-  const ddl = captured
-    .map(renderSql)
-    .find((text) => /questions_vec/.test(text));
-  if (!ddl) throw new Error("生产建表路径没有产出 questions_vec 的 DDL");
-  legacy.exec(ddl);
-
+function readVecDimFromProductionTable(): void {
   const row = legacy
     .prepare("SELECT sql FROM sqlite_master WHERE name = 'questions_vec'")
     .get() as { sql?: string } | undefined;
   const dim = /float\[(\d+)\]/.exec(row?.sql ?? "")?.[1];
-  if (!dim) throw new Error("建出来的向量表里读不到维度声明");
+  if (!dim) throw new Error("生产路径建出的向量表里读不到维度声明");
   vecDim = Number(dim);
+}
+
+/**
+ * 向量表的读写只能走 legacy better-sqlite3 连接（vec0 只在那条连接上加载），
+ * 所以降级用例要么真 DROP 表，要么真删文件；这里用 DROP + 幂等重建，模拟
+ * "初始化没建出向量表"的那种库状态。
+ */
+function dropVectorTables(): void {
+  legacy.exec("DROP TABLE IF EXISTS questions_vec");
+  legacy.exec("DROP TABLE IF EXISTS rag_chunks_vec");
 }
 
 function unitVector(seed: number): number[] {
@@ -144,7 +104,7 @@ async function createQuestion(content: string): Promise<number> {
     content,
     options: ["甲", "乙"],
     answer: "A",
-    explanation: "解析",
+    explanation: "解析内容足够长",
     tags: ["向量"],
     dimension: "knowledge",
     type: "single",
@@ -156,6 +116,7 @@ describe("题库向量契约（真实库 + 真实 sqlite-vec）", () => {
   beforeAll(async () => {
     dbm = await import("@/lib/db");
     await dbm.initDatabase();
+    vecStore = await import("@/lib/db/vec-store");
     ragService = (await import("@/lib/ai/rag")).ragService;
     questionService = (await import("@/lib/services/question")).questionService;
     getAiConfig = (await import("@/lib/ai/client")).getAiConfig;
@@ -178,10 +139,10 @@ describe("题库向量契约（真实库 + 真实 sqlite-vec）", () => {
     aiState.dims = 1024;
   });
 
-  // ---------------- 初始化 / 降级（必须在建表之前） ----------------
+  // ---------------- 初始化 / 降级 ----------------
 
   describe("初始化与扩展可用性", () => {
-    it("libsql（应用主连接）侧加载不到 vec0 —— 这是向量表建不出来的根因", async () => {
+    it("libsql（应用主连接）侧加载不到 vec0 —— 这是向量操作必须走 legacy 连接的根因", async () => {
       let error: unknown = null;
       try {
         await dbm.drizzleDb.all(sql`SELECT vec_version() AS v`);
@@ -198,32 +159,45 @@ describe("题库向量契约（真实库 + 真实 sqlite-vec）", () => {
       expect(version.v).toMatch(/^v\d/);
     });
 
-    it("扩展不可用时的降级：setupVectorExtension 返回 false 且不抛异常", async () => {
-      const ok = await dbm.setupVectorExtension();
-      expect(ok).toBe(false);
+    it("扩展可用时 setupVectorExtension 建出两张向量表并返回 true（重复调用幂等）", async () => {
+      await expect(dbm.setupVectorExtension()).resolves.toBe(true);
+      await expect(dbm.setupVectorExtension()).resolves.toBe(true);
+
+      const rows = await dbm.drizzleDb.all<{ name: string }>(sql`
+        SELECT name FROM sqlite_master
+        WHERE type='table' AND name IN ('questions_vec','rag_chunks_vec')
+      `);
+      expect(rows.map((r) => r.name).sort()).toEqual([
+        "questions_vec",
+        "rag_chunks_vec",
+      ]);
     });
 
-    it.fails(
-      "缺陷固定：initDatabase 之后 questions_vec 应存在（现在被静默跳过）",
-      async () => {
-        const rows = await dbm.drizzleDb.all<{ name: string }>(sql`
+    // 原 it.fails：向量表曾因"探错连接"从未被创建，已改为委托 vec-store
+    it("initDatabase 之后 questions_vec 存在（原先被静默跳过）", async () => {
+      const rows = await dbm.drizzleDb.all<{ name: string }>(sql`
           SELECT name FROM sqlite_master WHERE type='table' AND name='questions_vec'
         `);
-        expect(rows.length).toBe(1);
-      },
-    );
+      expect(rows.length).toBe(1);
+    });
 
-    it("降级时不留半成品：向量表不存在，普通表（questions）照常可用", async () => {
+    it("向量表缺失时业务表照常可用：题目写入/读取不受影响", async () => {
+      dropVectorTables();
+
       const vecRows = await dbm.drizzleDb.all<{ name: string }>(sql`
         SELECT name FROM sqlite_master WHERE type IN ('table','view') AND name LIKE '%_vec'
       `);
       expect(vecRows).toHaveLength(0);
 
-      const q = await createQuestion("向量表缺失时题目仍可写入-降级");
-      expect(q).toBeGreaterThan(0);
+      const qid = await createQuestion("向量表缺失时题目仍可写入-降级");
+      expect(qid).toBeGreaterThan(0);
+      const loaded = await questionService.getById(qid);
+      expect(loaded?.id).toBe(qid);
     });
 
     it("向量表不存在时的检索降级：空数组、不抛异常、不编造题目", async () => {
+      dropVectorTables();
+
       const hits = await questionService.searchSimilarQuestions(
         "随便一段文本",
         5,
@@ -236,11 +210,13 @@ describe("题库向量契约（真实库 + 真实 sqlite-vec）", () => {
 
   describe("存储契约（真实 sqlite-vec 连接）", () => {
     beforeAll(async () => {
-      await createQuestionsVecFromProduction();
+      // 表由 initDatabase 建好；上方降级用例可能 DROP 过，这里幂等重建
+      await expect(dbm.setupVectorExtension()).resolves.toBe(true);
+      readVecDimFromProductionTable();
     });
 
     afterAll(() => {
-      legacy.exec("DROP TABLE IF EXISTS questions_vec");
+      dropVectorTables();
     });
 
     it("写入题目后 questions_vec 有对应 rowid，且 KNN 检索返回自身（距离 0）", async () => {
@@ -322,23 +298,63 @@ describe("题库向量契约（真实库 + 真实 sqlite-vec）", () => {
       expect(insertError).toBeNull();
     });
 
-    it.fails(
-      "缺陷固定：有向量且同文时 questionService.searchSimilarQuestions 应召回该题（现在恒为空）",
-      async () => {
-        const content = `检索自身-${process.pid}`;
-        const qid = await createQuestion(content);
+    // 原 it.fails：检索走 libsql（`no such module: vec0`）被吞成空数组，已改走 vec-store
+    it("有向量且同文时 questionService.searchSimilarQuestions 召回该题", async () => {
+      const content = `检索自身-${process.pid}`;
+      const qid = await createQuestion(content);
+      legacy
+        .prepare(
+          "INSERT INTO questions_vec (question_id, embedding) VALUES (?, ?)",
+        )
+        .run(BigInt(qid), JSON.stringify(unitVector(qid)));
+
+      aiState.embedFails = false;
+      aiState.dims = vecDim;
+      const hits = await questionService.searchSimilarQuestions(content, 3);
+      expect(hits.map((h) => h.id)).toContain(qid);
+    });
+
+    // 第二步（embedding 生成/回填）要用的接口契约，先钉住
+    it("vec-store 契约：upsert 后按距离取回自身，delete 后取不到", async () => {
+      const qid = await createQuestion(`vec-store 契约-${process.pid}`);
+      const vector = unitVector(qid);
+
+      vecStore.upsertQuestionVector(qid, vector);
+
+      const self = vecStore
+        .searchQuestionVectors(vector, 3)
+        .find((hit) => hit.questionId === qid);
+      expect(self).toBeDefined();
+      expect(self?.distance).toBeCloseTo(0, 6);
+
+      // 同 id 重复 upsert 是覆盖而不是报主键冲突
+      const rotated = unitVector(qid + 1);
+      vecStore.upsertQuestionVector(qid, rotated);
+      const rows = legacy
+        .prepare(
+          "SELECT count(*) AS count FROM questions_vec WHERE question_id = ?",
+        )
+        .get(BigInt(qid)) as { count: number };
+      expect(rows.count).toBe(1);
+      const rotatedSelf = vecStore
+        .searchQuestionVectors(rotated, 3)
+        .find((hit) => hit.questionId === qid);
+      expect(rotatedSelf?.distance).toBeCloseTo(0, 6);
+
+      vecStore.deleteQuestionVector(qid);
+      expect(
+        vecStore
+          .searchQuestionVectors(rotated, 3)
+          .some((hit) => hit.questionId === qid),
+      ).toBe(false);
+      expect(
         legacy
           .prepare(
-            "INSERT INTO questions_vec (question_id, embedding) VALUES (?, ?)",
+            "SELECT count(*) AS count FROM questions_vec WHERE question_id = ?",
           )
-          .run(BigInt(qid), JSON.stringify(unitVector(qid)));
-
-        aiState.embedFails = false;
-        aiState.dims = vecDim;
-        const hits = await questionService.searchSimilarQuestions(content, 3);
-        expect(hits.map((h) => h.id)).toContain(qid);
-      },
-    );
+          .get(BigInt(qid)) as { count: number },
+      ).toEqual({ count: 0 });
+    });
   });
 
   // ---------------- embedding 降级 ----------------

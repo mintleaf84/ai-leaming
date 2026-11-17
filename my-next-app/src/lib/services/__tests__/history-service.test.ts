@@ -357,7 +357,9 @@ describe("deleteSession / getAvailableModes", () => {
     const { practice_logs, session_reviews } = dbm.drizzleSchema;
 
     // 表内只剩 24 条会话，且 hs-25 的日志/回顾都没了
-    const remaining = await historyService.getHistory(USER_A, { pageSize: 100 });
+    const remaining = await historyService.getHistory(USER_A, {
+      pageSize: 100,
+    });
     expect(remaining.total).toBe(24);
     expect(remaining.items.some((item) => item.id === "hs-25")).toBe(false);
 

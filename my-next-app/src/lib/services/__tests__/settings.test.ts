@@ -314,8 +314,7 @@ describe("resetUserData", () => {
 // 保持 SystemSettings 类型导出被使用，避免 no-unused-vars
 describe("SystemSettings 类型", () => {
   it("服务返回结构满足该类型", async () => {
-    const settings: SystemSettings =
-      await settingsService.getSettings(USER_A);
+    const settings: SystemSettings = await settingsService.getSettings(USER_A);
     expect(typeof settings.reviewThreshold).toBe("number");
     expect(["low", "medium", "high"]).toContain(settings.aiSeverity);
     expect(typeof settings.darkMode).toBe("boolean");

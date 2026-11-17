@@ -7,7 +7,15 @@
  * 现在只 mock `@/lib/ai/rag`（向量检索是外部依赖，不是本次被测语义），
  * 所有断言都回到 knowledge_cards 表的真实行。
  */
-import { describe, it, expect, beforeAll, afterAll, beforeEach, vi } from "vitest";
+import {
+  describe,
+  it,
+  expect,
+  beforeAll,
+  afterAll,
+  beforeEach,
+  vi,
+} from "vitest";
 import fs from "node:fs";
 import path from "node:path";
 import { eq } from "drizzle-orm";
@@ -26,7 +34,6 @@ vi.mock("@/lib/ai/rag", () => ({
 
 type DbModule = typeof import("../../db");
 type KnowledgeModule = typeof import("../knowledge");
-
 
 let dbm: DbModule;
 let createKnowledgeCard: KnowledgeModule["createKnowledgeCard"];
@@ -218,7 +225,11 @@ describe("getAllKnowledgeCards", () => {
   it("category / userId 过滤生效", async () => {
     await seedCard({ title: "数学卡", category: "数学" });
     await seedCard({ title: "语文卡", category: "语文" });
-    await seedCard({ title: "别人的数学卡", category: "数学", user_id: USER_B });
+    await seedCard({
+      title: "别人的数学卡",
+      category: "数学",
+      user_id: USER_B,
+    });
 
     const math = await getAllKnowledgeCards("数学", 10, undefined, USER_A);
     expect(math.map((card) => card.title)).toEqual(["数学卡"]);
@@ -239,7 +250,13 @@ describe("getAllKnowledgeCards", () => {
       });
     }
 
-    const page2 = await getAllKnowledgeCards(undefined, 2, undefined, USER_A, 2);
+    const page2 = await getAllKnowledgeCards(
+      undefined,
+      2,
+      undefined,
+      USER_A,
+      2,
+    );
     expect(page2.map((card) => card.title)).toEqual(["卡片1"]);
   });
 });

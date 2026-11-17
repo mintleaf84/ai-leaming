@@ -10,7 +10,15 @@
  *   - public/books/<id> 目录真的被删掉；
  *   - addChapter / updateChapter 的分块参数与库内内容一致。
  */
-import { describe, it, expect, beforeAll, afterAll, beforeEach, vi } from "vitest";
+import {
+  describe,
+  it,
+  expect,
+  beforeAll,
+  afterAll,
+  beforeEach,
+  vi,
+} from "vitest";
 import fs from "node:fs";
 import path from "node:path";
 import { asc, eq } from "drizzle-orm";

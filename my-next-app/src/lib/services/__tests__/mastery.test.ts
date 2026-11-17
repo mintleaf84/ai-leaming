@@ -96,8 +96,18 @@ describe("updateMastery", () => {
 
   it("1 对 2 错后分数为 33.33（准确率按累计计数算）", async () => {
     await masteryService.updateMastery(USER_A, "教育心理学", "knowledge", true);
-    await masteryService.updateMastery(USER_A, "教育心理学", "knowledge", false);
-    await masteryService.updateMastery(USER_A, "教育心理学", "knowledge", false);
+    await masteryService.updateMastery(
+      USER_A,
+      "教育心理学",
+      "knowledge",
+      false,
+    );
+    await masteryService.updateMastery(
+      USER_A,
+      "教育心理学",
+      "knowledge",
+      false,
+    );
 
     const row = await masteryRow(USER_A, "教育心理学");
     expect(row!.score).toBeCloseTo(33.33, 1);

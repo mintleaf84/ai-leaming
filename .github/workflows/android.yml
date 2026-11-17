@@ -1,9 +1,16 @@
-name: Android APK
+name: Android
 
+# 两个 job 分开的原因：
+# - analyze 要在 PR 阶段就跑（Flutter 代码本机没有 SDK，只能靠 CI 看类型/lint 错误）；
+# - apk 只在手动触发或打 tag 时出包，避免每次 PR 都花 5~10 分钟打包。
 on:
   workflow_dispatch:
   push:
     tags: ["v*"]
+  pull_request:
+    paths:
+      - "mobile_app/**"
+      - ".github/workflows/android.yml"
 
 permissions:
   contents: read
@@ -13,12 +20,12 @@ defaults:
     working-directory: mobile_app
 
 jobs:
-  apk:
-    name: 构建 Release APK
+  analyze:
+    name: Flutter 静态分析与测试
     # 必须固定 ubuntu-latest：本仓库自建 runner（HPC）没有 Android SDK / JDK17，
     # 不能沿用 ci.yml 的 SELF_HOSTED 切换逻辑。
     runs-on: ubuntu-latest
-    timeout-minutes: 45
+    timeout-minutes: 30
     steps:
       - uses: actions/checkout@v4
         with:
@@ -42,19 +49,50 @@ jobs:
       - name: 生成代码（build_runner）
         run: dart run build_runner build --delete-conflicting-outputs
 
+      # 硬闸：类型错误与 lint error 必须归零才允许合并。
       - name: 静态分析
         run: flutter analyze --no-fatal-infos
 
-      # 现有测试里混有打真网的集成脚本（无后端时必然失败），先放行不阻断出包。
+      # 现有测试里混有打真网的集成脚本（无后端时必然失败），先放行不阻断。
       - name: 运行测试（允许失败）
         continue-on-error: true
         run: flutter test
 
-      # vars.API_BASE_URL 未配置时，dart-define 会显式传入空串，产物装到手机上连不上任何后端。
-      # 与其静默出一个废包，不如提前失败并提示怎么配。
+  apk:
+    name: 构建 Release APK
+    if: github.event_name != 'pull_request'
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    needs: [analyze]
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "17"
+
+      - uses: subosito/flutter-action@v2
+        with:
+          flutter-version: "3.38.4"
+          channel: stable
+          cache: true
+
+      - name: 安装依赖
+        run: flutter pub get
+
+      - name: 生成代码（build_runner）
+        run: dart run build_runner build --delete-conflicting-outputs
+
+      # 注意：vars.API_BASE_URL 未配置时 dart-define 会传空串，产物装到手机上连不上
+      # 任何后端。与其静默出个废包，不如提前失败并说明怎么配。
       - name: 检查 API_BASE_URL 变量
+        env:
+          API_BASE_URL_VALUE: ${{ vars.API_BASE_URL }}
         run: |
-          if [ -z "${{ vars.API_BASE_URL }}" ]; then
+          if [ -z "$API_BASE_URL_VALUE" ]; then
             echo "::error::仓库变量 API_BASE_URL 未配置。请在 Settings → Secrets and variables → Actions → Variables 添加，例如 https://your-domain/api"
             exit 1
           fi

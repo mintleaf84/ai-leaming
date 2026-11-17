@@ -1,4 +1,5 @@
 import { drizzleDb, drizzleSchema } from "@/lib/db";
+import { isVectorAvailable, searchQuestionVectors } from "@/lib/db/vec-store";
 import { eq, like, and, sql, desc, inArray } from "drizzle-orm";
 import { ragService } from "@/lib/ai/rag";
 import { Question, Dimension } from "@/types";
@@ -58,27 +59,62 @@ export interface QuestionFilter {
   dimension?: Dimension;
 }
 
+/**
+ * 向量能力不可用只警告一次：`searchSimilarQuestions` 会被 AI 兜底路径反复调用，
+ * 每次都打一条 warn 会淹没真正的错误。
+ */
+let vectorUnavailableWarned = false;
+
+function warnVectorUnavailableOnce(): void {
+  if (vectorUnavailableWarned) return;
+  vectorUnavailableWarned = true;
+  logger.warn(
+    "[QuestionService] sqlite-vec 不可用，相似题检索降级为空结果（后续不再重复告警）",
+  );
+}
+
 export const questionService = {
   /**
    * 搜索相似题目 (向量检索回退)
+   *
+   * 向量读写只能走 legacy better-sqlite3 连接（vec0 只在那条连接上加载），
+   * 而题面数据在 drizzle/libsql 上，跨连接不能 JOIN，所以分两步：
+   * 先按向量拿 `{ questionId, distance }`，再按 id 批量取题并按 distance 排序。
+   *
+   * 这条路径被 `ai.ts` 当兜底调用：任何失败都必须降级成 `[]`，否则会把
+   * "AI 不可用"升级成硬错误。
    */
   searchSimilarQuestions: async (content: string, limit: number = 3) => {
+    if (!isVectorAvailable()) {
+      warnVectorUnavailableOnce();
+      return [];
+    }
+
     try {
       const embedding = await ragService.getEmbedding(content);
+      const hits = searchQuestionVectors(embedding, limit);
+      if (hits.length === 0) return [];
 
-      // 检查向量插件是否存在 (由于 Drizzle 不直接暴露 raw db handle 检查，通常在 init 时检查)
-      // 这里使用 sql raw 尝试
-      const results = await drizzleDb.all<Record<string, unknown>>(sql`
-                SELECT q.*, v.distance
-                FROM questions_vec v
-                JOIN questions q ON q.id = v.rowid
-                WHERE v.embedding MATCH ${JSON.stringify(embedding)}
-                  AND k = ${limit}
-                ORDER BY v.distance
-            `);
+      const rows = await drizzleDb
+        .select()
+        .from(drizzleSchema.questions)
+        .where(
+          inArray(
+            drizzleSchema.questions.id,
+            hits.map((hit) => hit.questionId),
+          ),
+        );
 
-      return results.map((q: Record<string, unknown>) => mapQuestion(q));
+      // 索引有、题面没有（题目被删但向量残留）时跳过该条，不返回半截数据
+      const byId = new Map(rows.map((row) => [row.id, row]));
+      return hits.flatMap((hit) => {
+        const row = byId.get(hit.questionId);
+        return row
+          ? [mapQuestion(row as unknown as Record<string, unknown>)]
+          : [];
+      });
     } catch (error) {
+      // audit-allow: 检索失败降级为空结果（调用方有 AI 兜底），不阻断答题流程
       logger.error({ err: error }, "[QuestionService] 相似题目检索失败");
       return [];
     }

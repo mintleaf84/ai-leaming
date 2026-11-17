@@ -2,73 +2,92 @@
 import { describe, it, expect, beforeEach, vi } from "vitest";
 import { questionService } from "../question";
 
-const { mockDb, mockDrizzleDb, mockDrizzleSchema, mockRagService } = vi.hoisted(
-  () => {
-    const makeChain = () => {
-      const chain: any = {
-        then: vi.fn((resolve) => resolve([])),
-        get: vi.fn(() => ({})),
-      };
-      const methods = [
-        "insert",
-        "values",
-        "update",
-        "set",
-        "delete",
-        "select",
-        "from",
-        "where",
-        "limit",
-        "offset",
-        "orderBy",
-        "all",
-        "innerJoin",
-        "leftJoin",
-        "onConflictDoUpdate",
-      ];
-      methods.forEach((m) => {
-        chain[m] = vi.fn(() => chain);
-      });
-      return chain;
+const {
+  mockDb,
+  mockDrizzleDb,
+  mockDrizzleSchema,
+  mockRagService,
+  mockVecStore,
+} = vi.hoisted(() => {
+  const makeChain = () => {
+    const chain: any = {
+      then: vi.fn((resolve) => resolve([])),
+      get: vi.fn(() => ({})),
     };
+    const methods = [
+      "insert",
+      "values",
+      "update",
+      "set",
+      "delete",
+      "select",
+      "from",
+      "where",
+      "limit",
+      "offset",
+      "orderBy",
+      "all",
+      "innerJoin",
+      "leftJoin",
+      "onConflictDoUpdate",
+    ];
+    methods.forEach((m) => {
+      chain[m] = vi.fn(() => chain);
+    });
+    return chain;
+  };
 
-    const chain = makeChain();
-    const mockDrizzleDb = {
-      ...chain,
-      query: {
-        questions: { findMany: vi.fn(), findFirst: vi.fn() },
-      },
-      transaction: vi.fn(async (cb) => cb(chain)),
-      execute: vi.fn(async () => []),
-    };
+  const chain = makeChain();
+  const mockDrizzleDb = {
+    ...chain,
+    query: {
+      questions: { findMany: vi.fn(), findFirst: vi.fn() },
+    },
+    transaction: vi.fn(async (cb) => cb(chain)),
+    execute: vi.fn(async () => []),
+  };
 
-    return {
-      mockDb: {
-        prepare: vi.fn(),
+  return {
+    mockDb: {
+      prepare: vi.fn(),
+    },
+    mockDrizzleDb,
+    mockDrizzleSchema: {
+      questions: {
+        id: "questions.id",
+        type: "questions.type",
+        dimension: "questions.dimension",
+        tags: "questions.tags",
+        content: "questions.content",
+        ai_mnemonic: "questions.ai_mnemonic",
       },
-      mockDrizzleDb,
-      mockDrizzleSchema: {
-        questions: {
-          id: "questions.id",
-          type: "questions.type",
-          dimension: "questions.dimension",
-          tags: "questions.tags",
-          content: "questions.content",
-          ai_mnemonic: "questions.ai_mnemonic",
-        },
-      },
-      mockRagService: {
-        getEmbedding: vi.fn(),
-      },
-    };
-  },
-);
+    },
+    mockRagService: {
+      getEmbedding: vi.fn(),
+    },
+    // 向量读写走 legacy 连接（vec-store）。服务层单测只关心"取到 id 后怎么拼题"，
+    // 真库路径由 question-vector.contract.test.ts 覆盖。
+    mockVecStore: {
+      isVectorAvailable: vi.fn(),
+      searchQuestionVectors: vi.fn(),
+      upsertQuestionVector: vi.fn(),
+      deleteQuestionVector: vi.fn(),
+    },
+  };
+});
 
 vi.mock("@/lib/db", () => ({
   default: mockDb,
   db: mockDb,
   drizzleDb: mockDrizzleDb,
   drizzleSchema: mockDrizzleSchema,
+}));
+
+vi.mock("@/lib/db/vec-store", () => ({
+  isVectorAvailable: mockVecStore.isVectorAvailable,
+  searchQuestionVectors: mockVecStore.searchQuestionVectors,
+  upsertQuestionVector: mockVecStore.upsertQuestionVector,
+  deleteQuestionVector: mockVecStore.deleteQuestionVector,
 }));
 
 vi.mock("@/lib/ai/rag", () => ({
@@ -89,6 +108,9 @@ describe("Question Service", () => {
     });
     chain.get.mockReturnValue({});
     chain.then.mockImplementation((resolve: any) => resolve([]));
+    // 默认：扩展可用但库里没有向量命中
+    mockVecStore.isVectorAvailable.mockReturnValue(true);
+    mockVecStore.searchQuestionVectors.mockReturnValue([]);
   });
 
   describe("getById", () => {
@@ -334,43 +356,69 @@ describe("Question Service", () => {
   });
 
   describe("searchSimilarQuestions", () => {
-    it("should return similar questions when vector search works", async () => {
+    it("should return questions ordered by vector distance", async () => {
       mockRagService.getEmbedding.mockResolvedValue([0.1, 0.2]);
+      mockVecStore.searchQuestionVectors.mockReturnValue([
+        { questionId: 2, distance: 0.1 },
+        { questionId: 1, distance: 0.5 },
+      ]);
 
-      const mockResults = [
+      const rows = [
         {
           id: 1,
-          content: "Test1 内容足够长",
+          content: "题一内容足够长",
           options: '["A", "B"]',
           answer: "A",
           explanation: "解析内容足够长",
           tags: '["test"]',
           type: "single",
           dimension: "knowledge",
-          distance: 0.5,
+        },
+        {
+          id: 2,
+          content: "题二内容足够长",
+          options: '["A", "B"]',
+          answer: "A",
+          explanation: "解析内容足够长",
+          tags: '["test"]',
+          type: "single",
+          dimension: "knowledge",
         },
       ];
-      (mockDrizzleDb.all as any).mockResolvedValue(mockResults);
+      // 题面按 id 批量取回（跨连接不能 JOIN），顺序以 distance 为准
+      (
+        mockDrizzleDb.then as unknown as {
+          mockImplementation: (
+            fn: (resolve: (value: unknown) => void) => void,
+          ) => void;
+        }
+      ).mockImplementation((resolve) => resolve(rows));
 
       const result = await questionService.searchSimilarQuestions("content");
 
-      expect(result).toHaveLength(1);
-      expect(result[0].id).toBe(1);
       expect(mockRagService.getEmbedding).toHaveBeenCalledWith("content");
+      expect(mockVecStore.searchQuestionVectors).toHaveBeenCalledWith(
+        [0.1, 0.2],
+        3,
+      );
+      expect(result.map((q) => q.id)).toEqual([2, 1]);
     });
 
     it("should return empty list if vector extension missing", async () => {
-      mockRagService.getEmbedding.mockResolvedValue([0.1]);
-      (mockDrizzleDb.all as any).mockRejectedValueOnce(new Error("no vec"));
+      mockVecStore.isVectorAvailable.mockReturnValue(false);
 
       const result = await questionService.searchSimilarQuestions("content");
 
       expect(result).toEqual([]);
+      // 扩展不可用时不该白花一次 embedding 调用
+      expect(mockRagService.getEmbedding).not.toHaveBeenCalled();
     });
 
-    it("should handle empty results", async () => {
+    it("should degrade to empty list when the vector table is missing", async () => {
       mockRagService.getEmbedding.mockResolvedValue([0.1, 0.2]);
-      (mockDrizzleDb.all as any).mockResolvedValue([]);
+      mockVecStore.searchQuestionVectors.mockImplementation(() => {
+        throw new Error("no such table: questions_vec");
+      });
 
       const result = await questionService.searchSimilarQuestions("content");
 

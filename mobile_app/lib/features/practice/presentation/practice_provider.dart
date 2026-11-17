@@ -121,6 +121,37 @@ class PracticeController extends Notifier<PracticeSessionState> {
     }
   }
 
+  /// 从服务端已有会话加载题目（错题本「开始练习」用）
+  /// 与 createSession 的差别：不新建会话，直接复用 wrong-book/practice 建好的那一场。
+  Future<void> loadSession(String sessionId) async {
+    state = state.copyWith(isLoading: true, error: null);
+
+    try {
+      final token = await _storage.read(key: 'jwt_token');
+      if (token == null) {
+        state = state.copyWith(isLoading: false, error: '请先登录');
+        return;
+      }
+
+      final sessionResponse = await _repository.getSession(sessionId);
+
+      state = state.copyWith(
+        isLoading: false,
+        sessionId: sessionResponse.sessionId,
+        questions: sessionResponse.questions,
+        currentIndex: 0,
+        userAnswers: {},
+        results: {},
+        correctAnswers: {},
+        explanations: {},
+      );
+
+      _questionStartTime = DateTime.now();
+    } catch (e) {
+      state = state.copyWith(isLoading: false, error: e.toString());
+    }
+  }
+
   /// 切换选项（单选覆盖，多选 toggle）
   void toggleAnswer(String answer) {
     final question = state.currentQuestion;
@@ -242,12 +273,18 @@ class PracticeController extends Notifier<PracticeSessionState> {
     // 如果已经有缓存，则不再请求
     if (state.firstPrinciples.containsKey(questionId)) return;
 
+    final selectedList = state.userAnswers[questionId];
+
     state = state.copyWith(isAnalyzingFirstPrinciples: true);
 
     try {
       final response = await _repository.analyzeFirstPrinciples(
-        questionId: questionId,
-        content: question.content,
+        questionContent: question.content,
+        correctAnswer: state.correctAnswers[questionId] ?? question.answer ?? '',
+        explanation: question.explanation,
+        wrongAnswer: (selectedList?.isNotEmpty ?? false)
+            ? selectedList!.join(',')
+            : null,
       );
 
       final newFirstPrinciples = Map<String, FirstPrinciplesResponse>.from(

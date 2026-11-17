@@ -24,14 +24,18 @@ class _PracticeScreenState extends ConsumerState<PracticeScreen> {
   @override
   void initState() {
     super.initState();
-    // 页面加载时创建会话，优先使用配置参数
+    // 页面加载时创建会话，优先使用配置参数。
+    // 带 sessionId 时表示「从错题本进来」，复用已建好的会话，不再新建。
+    final sessionId = widget.config?['sessionId'] as String?;
     final limit = (widget.config?['limit'] as int?) ?? 10;
     final mode = (widget.config?['mode'] as String?) ?? 'random';
     Future.microtask(() {
-      ref.read(practiceControllerProvider.notifier).createSession(
-        limit: limit,
-        mode: mode,
-      );
+      final controller = ref.read(practiceControllerProvider.notifier);
+      if (sessionId != null && sessionId.isNotEmpty) {
+        controller.loadSession(sessionId);
+      } else {
+        controller.createSession(limit: limit, mode: mode);
+      }
     });
   }
 

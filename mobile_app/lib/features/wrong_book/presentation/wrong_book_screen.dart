@@ -502,7 +502,12 @@ class _WrongBookScreenState extends ConsumerState<WrongBookScreen> {
                           .read(wrongBookControllerProvider.notifier)
                           .startPractice();
                       if (sessionId != null && mounted) {
-                        context.go('/practice?sessionId=$sessionId');
+                        // 走 extra 传参：/practice 只读 state.extra，用 query 传
+                        // sessionId 会被静默忽略、变成随机新练习。
+                        context.go(
+                          '/practice',
+                          extra: {'sessionId': sessionId, 'mode': 'review'},
+                        );
                       } else if (mounted) {
                         ScaffoldMessenger.of(context).showSnackBar(
                           const SnackBar(content: Text('创建练习失败，请重试')),

@@ -1,0 +1,69 @@
+name: Android APK
+
+on:
+  workflow_dispatch:
+  push:
+    tags: ["v*"]
+
+permissions:
+  contents: read
+
+defaults:
+  run:
+    working-directory: mobile_app
+
+jobs:
+  apk:
+    name: 构建 Release APK
+    # 必须固定 ubuntu-latest：本仓库自建 runner（HPC）没有 Android SDK / JDK17，
+    # 不能沿用 ci.yml 的 SELF_HOSTED 切换逻辑。
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "17"
+
+      # Flutter 版本与 mobile_app/pubspec.lock 的 sdks 约束（>=3.38.4）保持一致。
+      - uses: subosito/flutter-action@v2
+        with:
+          flutter-version: "3.38.4"
+          channel: stable
+          cache: true
+
+      - name: 安装依赖
+        run: flutter pub get
+
+      - name: 生成代码（build_runner）
+        run: dart run build_runner build --delete-conflicting-outputs
+
+      - name: 静态分析
+        run: flutter analyze --no-fatal-infos
+
+      # 现有测试里混有打真网的集成脚本（无后端时必然失败），先放行不阻断出包。
+      - name: 运行测试（允许失败）
+        continue-on-error: true
+        run: flutter test
+
+      # vars.API_BASE_URL 未配置时，dart-define 会显式传入空串，产物装到手机上连不上任何后端。
+      # 与其静默出一个废包，不如提前失败并提示怎么配。
+      - name: 检查 API_BASE_URL 变量
+        run: |
+          if [ -z "${{ vars.API_BASE_URL }}" ]; then
+            echo "::error::仓库变量 API_BASE_URL 未配置。请在 Settings → Secrets and variables → Actions → Variables 添加，例如 https://your-domain/api"
+            exit 1
+          fi
+
+      - name: 构建 Release APK
+        run: flutter build apk --release --dart-define=API_BASE_URL=${{ vars.API_BASE_URL }}
+
+      - name: 上传 APK 构件
+        uses: actions/upload-artifact@v4
+        with:
+          name: app-release
+          path: mobile_app/build/app/outputs/flutter-apk/app-release.apk

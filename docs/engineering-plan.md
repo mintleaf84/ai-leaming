@@ -113,7 +113,9 @@
       （`import-service`×2、`recall-import`×3、`chat`/`pdf-import`/`recall`/`srs` 各 1）
 - [x] 错误映射收敛：`AppError` + 5 类语义（validation / business / not-found / conflict / forbidden）
       + domain code；`toErrorResponse()` 是唯一 HTTP 映射点（9 个类只换父类、不改名）
-- [ ] server action 侧也走同一分类（现在只靠 `handleServerError` 回 message，前端拿不到 kind）
+- [x] server action 侧**不按字面统一**（见 `decisions.md` 2026-11-17）：`next-safe-action`
+      的 `handleServerError` 只回字符串，透传 `kind` 要改 40+ 客户端调用点的契约；
+      取舍是「HTTP 边界用 5 类语义，action 边界只保证 message 可读」，不为了打勾去改调用点
 - [x] `affectedRows(result)` 封装（2 处 `rowsAffected` 断言）；顺带修 `rowsAffected || ids.length`
       把「一行没删」当「全删」的 bug
 - 验收：新增 `no-as-unknown-as-tx` 形式的检查（lint 规则或 grep 计数棘轮）；
@@ -142,7 +144,9 @@
 - [ ] 清掉剩余 7 条（`chat` / `feedback` / `generate` / `knowledge` / `mastery` / `profile` / `stats`）
 - [x] admin 题库 CRUD 真实契约测试（19 例，含幂等键/删除行数/鉴权）
 - [x] RAG 向量写入、备份恢复契约测试（12 + 10 例）—— 顺带钉住 9 个真缺陷，见下方 M5
-- [ ] 剩下的 5 个 mock-db 测试改真实库（P1 遗留）
+- [x] 剩下的 5 个 mock-db 测试改真实库（history / mastery / knowledge / settings / textbook）：
+      断言从「方法被调用」升级为「库里真是那行」；`vi.mock("@/lib/db")` 21 → 16；
+      顺带钉住 2 个真 bug（正确率筛选 SQL 多一个右括号、北京时区日期差一天），已修
 - 验收：矩阵覆盖全部 `src/lib/api/routes/*.ts` 的路由；新增 4 类真实契约测试
 
 ## M4 入口与本地闭环（0.5d）
@@ -162,8 +166,11 @@
 - [x] `practice` 提交越权（IDOR）→ 事务内校验会话归属，404 回滚
 - [x] `GET /wrong-book/` 恒 500（`ORDER BY` 引用 JS key）→ 改用聚合表达式
 - [ ] **向量表从未创建 / 检索恒空 / 维度 1536 vs 1024**（三条同源，**待架构决策**）：
-      `setupVectorExtension()` 跑在 libsql 连接上，而 `loadExtension` 只加在 legacy better-sqlite3 连接；
-      三个方向：① libsql 能否 load vec0 ② 向量操作整体改走 legacy 连接 ③ 先关掉相似题入口别骗用户
+      `setupVectorExtension()` 跑在 libsql 连接上，而 `loadExtension` 只加在 legacy better-sqlite3 连接。
+      **方向 ① 已实测排除**：`@libsql/client` 执行 `load_extension` 返回
+      `SQLITE_ERROR: not authorized`，无法加载 vec0。剩 ② 向量操作改走 legacy 连接
+      （但 `question.ts` 本来就没有 embedding 写入路径，要连回填一起做）
+      ③ 先关掉相似题入口别骗用户（半小时）。建议 ③ 先行、② 排期
 - [ ] `rag.ts` 的 `Math.sin` 兜底向量不得进入检索路径（依赖上一条的处置）
 
 ## 明确不做

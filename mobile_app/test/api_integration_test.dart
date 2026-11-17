@@ -1,9 +1,11 @@
+@Tags(['integration'])
+library;
+
 import 'package:flutter_test/flutter_test.dart';
 import 'package:dio/dio.dart';
 import 'package:mobile_app/shared/datasources/api_client.dart';
 import 'dart:math';
 
-@Tags(['integration'])
 void main() {
   test('End to end core API flow with local Next.js server', () async {
     final dio = Dio();

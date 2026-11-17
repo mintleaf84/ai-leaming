@@ -5,7 +5,6 @@ import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:go_router/go_router.dart';
 import 'package:mobile_app/features/practice/presentation/practice_provider.dart';
 import 'package:mobile_app/features/practice/domain/question.dart';
-import 'package:mobile_app/core/theme/app_theme.dart';
 import 'package:mobile_app/shared/widgets/animated_option_card.dart';
 import 'package:mobile_app/shared/widgets/skeleton_widgets.dart';
 import 'package:mobile_app/features/practice/presentation/widgets/first_principles_panel.dart';

@@ -5,7 +5,6 @@ import 'package:mocktail/mocktail.dart';
 import 'package:mobile_app/features/stats/domain/learning_stats.dart';
 import 'package:mobile_app/features/stats/presentation/stats_provider.dart';
 import 'package:mobile_app/shared/datasources/api_client.dart';
-import 'package:mobile_app/core/network/dio_client.dart';
 
 /// Mock Dio，绕过真实 HTTP 请求
 class MockDio extends Mock implements Dio {}

@@ -23,6 +23,8 @@ class PracticeSessionState {
   final bool isAnalyzingFirstPrinciples;
   final bool isLoading;
   final String? error;
+  /// 本次练习是否在离线状态（本地会话，作答先落队列、回连再补交）。
+  final bool isOffline;
 
   const PracticeSessionState({
     this.sessionId,
@@ -36,6 +38,7 @@ class PracticeSessionState {
     this.isAnalyzingFirstPrinciples = false,
     this.isLoading = false,
     this.error,
+    this.isOffline = false,
   });
 
   PracticeSessionState copyWith({
@@ -50,6 +53,7 @@ class PracticeSessionState {
     bool? isAnalyzingFirstPrinciples,
     bool? isLoading,
     String? error,
+    bool? isOffline,
   }) {
     return PracticeSessionState(
       sessionId: sessionId ?? this.sessionId,
@@ -63,6 +67,7 @@ class PracticeSessionState {
       isAnalyzingFirstPrinciples: isAnalyzingFirstPrinciples ?? this.isAnalyzingFirstPrinciples,
       isLoading: isLoading ?? this.isLoading,
       error: error,
+      isOffline: isOffline ?? this.isOffline,
     );
   }
 
@@ -113,6 +118,7 @@ class PracticeController extends Notifier<PracticeSessionState> {
         results: {},
         correctAnswers: {},
         explanations: {},
+        isOffline: sessionResponse.sessionId.startsWith('local_'),
       );
 
       _questionStartTime = DateTime.now();
@@ -144,6 +150,7 @@ class PracticeController extends Notifier<PracticeSessionState> {
         results: {},
         correctAnswers: {},
         explanations: {},
+        isOffline: sessionResponse.sessionId.startsWith('local_'),
       );
 
       _questionStartTime = DateTime.now();

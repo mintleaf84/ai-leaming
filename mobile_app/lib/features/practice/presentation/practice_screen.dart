@@ -82,7 +82,12 @@ class _PracticeScreenState extends ConsumerState<PracticeScreen> {
               ? _buildErrorView(state.error!)
               : state.questions.isEmpty
               ? _buildEmptyView()
-              : _buildQuestionView(state),
+              : Column(
+                  children: [
+                    if (state.isOffline) _buildOfflineBanner(),
+                    Expanded(child: _buildQuestionView(state)),
+                  ],
+                ),
         ),
       ),
     );
@@ -124,6 +129,27 @@ class _PracticeScreenState extends ConsumerState<PracticeScreen> {
             child: Text(
               '返回首页',
               style: TextStyle(fontSize: 14.sp, color: Colors.grey),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  /// 离线提示条：说明本次作答会在恢复网络后自动补交。
+  Widget _buildOfflineBanner() {
+    return Container(
+      width: double.infinity,
+      color: const Color(0xFFFFF4E5),
+      padding: EdgeInsets.symmetric(horizontal: 16.w, vertical: 8.h),
+      child: Row(
+        children: [
+          Icon(Icons.cloud_off_outlined, size: 16.sp, color: const Color(0xFFB26A00)),
+          SizedBox(width: 8.w),
+          Expanded(
+            child: Text(
+              '离线模式：作答会先存在本地，恢复网络后自动同步',
+              style: TextStyle(fontSize: 12.sp, color: const Color(0xFFB26A00)),
             ),
           ),
         ],

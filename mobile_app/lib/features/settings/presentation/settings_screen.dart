@@ -5,6 +5,7 @@ import 'package:go_router/go_router.dart';
 import 'settings_provider.dart';
 import '../../../core/theme/theme_provider.dart';
 import '../../auth/presentation/auth_provider.dart';
+import '../../../core/sync/sync_providers.dart';
 
 /// 设置页面
 ///
@@ -230,14 +231,10 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                         _buildDivider(borderColor),
                         _buildSettingsTile(
                           icon: Icons.cloud_upload_outlined,
-                          title: '备份与同步',
-                          trailing: Icon(
-                            Icons.arrow_forward_ios,
-                            size: 16.sp,
-                            color: secondaryColor.withValues(alpha: 0.7),
-                          ),
+                          title: '同步离线记录',
+                          trailing: _buildPendingTrailing(secondaryColor),
                           textColor: textColor,
-                          onTap: () => _showSnackBar('同步服务连接中...'),
+                          onTap: _syncOfflineAnswers,
                         ),
                       ],
                     ),
@@ -301,6 +298,48 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
         ),
       ),
     );
+  }
+
+  /// 待同步条数：读本地库，没有待同步记录时不打扰用户。
+  Widget _buildPendingTrailing(Color secondaryColor) {
+    return FutureBuilder<int>(
+      future: ref.read(localPracticeStoreProvider).pendingCount(),
+      builder: (context, snapshot) {
+        final pending = snapshot.data ?? 0;
+        if (snapshot.connectionState != ConnectionState.done) {
+          return SizedBox(
+            width: 14.w,
+            height: 14.w,
+            child: const CircularProgressIndicator(strokeWidth: 2),
+          );
+        }
+        return Text(
+          pending == 0 ? '已同步' : '待同步 $pending 条',
+          style: TextStyle(fontSize: 14.sp, color: secondaryColor),
+        );
+      },
+    );
+  }
+
+  /// 手动触发一次离线记录补交，并把真实结果告诉用户（不再假装"连接中"）。
+  Future<void> _syncOfflineAnswers() async {
+    final store = ref.read(localPracticeStoreProvider);
+    final pendingBefore = await store.pendingCount();
+    if (pendingBefore == 0) {
+      _showSnackBar('没有待同步的离线记录');
+      return;
+    }
+
+    final result = await ref.read(syncServiceProvider).flush();
+    if (!mounted) {
+      return;
+    }
+    if (result.error != null) {
+      _showSnackBar('同步未完成：${result.error}');
+    } else {
+      _showSnackBar('已同步 ${result.answers} 条作答（${result.sessions} 个会话）');
+    }
+    setState(() {});
   }
 
   Widget _buildSectionTitle(String title, Color color) {

@@ -1,7 +1,8 @@
 # 依赖安全审计台账
 
-> 生成时间：2026-11-12（`cd my-next-app && npm audit --json`）
-> 门禁：CI 的 `npm audit --audit-level=high` 只要出现 **high / critical** 就直接失败。
+> 生成时间：2026-11-12；**2026-11-18 更新门禁与 dev 侧存量**（`cd my-next-app && npm audit --json`）
+> 门禁：CI 的 `npm audit --omit=dev --audit-level=high` —— **运行时依赖**出现 high / critical 直接失败。
+> devDependencies 的高危不阻断（见下面「2026-11-18：门禁为什么要 omit=dev」），但必须记在本台账。
 
 ## 现状
 
@@ -53,6 +54,51 @@
 | Quill 2.0.4+         | Quill 发布修复版本（`^2.0.3` 已允许 2.0.4，不必等上游放宽） | 发布后 `npm update quill` 并验证思维导图导出    |
 | KaTeX 0.18+          | 上游把 `^0.16` 放宽                                         | 跟随升级，或用 `overrides` + 跑思维导图渲染用例 |
 
+## 2026-11-18：门禁为什么要 `--omit=dev`
+
+`npm audit --audit-level=high` 在 advisory 库更新后变成全量红灯：
+
+```
+75 vulnerabilities (7 low, 56 moderate, 12 high)
+```
+
+12 条 high **全部**可回溯到同一个 advisory ——
+`picomatch` ReDoS（`GHSA-fc5q-39xc-vjpf`，影响 `<=4.0.7`），
+而 **npm 上的最新版就是 4.0.7**，即**当前没有修复版本**。它经
+`fast-glob` → `micromatch`、`tinyglobby` → `fdir`、`vite`、`vitest`、`eslint-config-next`
+扩散成 12 条，全部落在 devDependencies。
+
+| 命令                                      | 结果                                                |
+| ----------------------------------------- | --------------------------------------------------- |
+| `npm audit --audit-level=high`            | **12 high**（全部来自 picomatch 及其下游 dev 工具） |
+| `npm audit --omit=dev --audit-level=high` | **0 high**，47 moderate                             |
+
+取舍：dev 工具不进产物体，且「无修复版本」的 advisory 无法靠升级收敛 ——
+全量硬拦只会让所有 PR 长期红灯，闸门退化成噪声（P0 阶段已经因为这个理由把等级从"全级别"降到 high）。
+所以门禁只管运行时依赖，dev 侧存量登记在案，**等 picomatch 发布 > 4.0.7 立即收口**。
+
+复核触发条件（任一满足就重跑全量审计并更新本节）：
+
+1. `npm view picomatch version` 返回 > 4.0.7
+2. 任一 dev 工具链（eslint-config-next / vitest / vite）大版本升级
+3. `npm audit --omit=dev` 出现 high —— 那是**运行时**问题，门禁会直接拦
+
+## dev 侧高危的发现来源与责任
+
+门禁只看运行时依赖，所以 **dev 侧不会自动拦**。这 12 条（以及以后新出现的）靠下面三条发现：
+
+| 来源                                                     | 频率                                 | 谁看                                           |
+| -------------------------------------------------------- | ------------------------------------ | ---------------------------------------------- |
+| GitHub Dependabot security alerts（仓库 Security 页）    | 推送即告警                           | 仓库维护者（mintleaf84），每周扫一眼未关闭告警 |
+| 全量 `npm audit --audit-level=high`（不带 `--omit=dev`） | **每月一次**，或任一次依赖升级 PR 时 | 提升级 PR 的人                                 |
+| 本台账                                                   | 每次发现新 advisory 时追加           | 同上                                           |
+
+**登记触发条件**（满足任一就必须更新本节，不许只留在 CI 日志里）：
+
+1. devDependencies 出现**新的** high/critical advisory
+2. 已有条目的影响范围或修复版本发生变化
+3. 某条 dev 高危被上游修复（此时应升级并从这里删除）
+
 ## 自动化
 
 `.github/dependabot.yml`：
@@ -67,4 +113,4 @@
 - Actions 的 major 升级（`checkout 4→7` 这类）统一人工评估。
 - `open-pull-requests-limit: 3` 只作用于版本更新，安全更新 PR 不计入该上限。
 
-升级 PR 的验收与普通 PR 一致：四闸 + `npm audit --audit-level=high` + 视觉/布局护栏。
+升级 PR 的验收与普通 PR 一致：四闸 + `npm audit --omit=dev --audit-level=high` + 视觉/布局护栏。

@@ -159,9 +159,9 @@ describe("RAG 检索降级（真实库 + 真实 sqlite-vec）", () => {
       const hits = await ragService.search(content, 3);
       expect(hits.length).toBeGreaterThan(0);
       expect(hits[0].content).toBe(content);
-      expect(
-        prepared.slice(beforeRecovery).some((s) => /MATCH/i.test(s)),
-      ).toBe(true);
+      expect(prepared.slice(beforeRecovery).some((s) => /MATCH/i.test(s))).toBe(
+        true,
+      );
     } finally {
       spy.mockRestore();
     }

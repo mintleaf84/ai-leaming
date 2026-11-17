@@ -91,7 +91,13 @@ app.openapi(getListRoute, async (c) => {
       ),
     )
     .groupBy(drizzleSchema.practice_logs.question_id)
-    .orderBy(desc(sql`wrongCount`), desc(sql`lastWrongAt`))
+    // 这里不能用 select 里的 JS key（`desc(sql\`wrongCount\`)`）：drizzle 不会为
+    // 聚合生成 `AS wrongCount`，SQLite 会报 `no such column: wrongCount`（列表恒 500）。
+    // 排序列一律重写表达式，保证 ORDER BY 里是真实存在的东西。
+    .orderBy(
+      desc(count()),
+      desc(sql`MAX(${drizzleSchema.practice_logs.timestamp})`),
+    )
     .all();
 
   const result = rows.map((r) => ({
@@ -158,7 +164,11 @@ app.openapi(getByTagRoute, async (c) => {
       ),
     )
     .groupBy(drizzleSchema.practice_logs.question_id)
-    .orderBy(desc(sql`wrongCount`), desc(sql`lastWrongAt`))
+    // 同 GET /：ORDER BY 里不能引用 select 的 JS key（无 `AS` 别名），只能用表达式
+    .orderBy(
+      desc(count()),
+      desc(sql`MAX(${drizzleSchema.practice_logs.timestamp})`),
+    )
     .all();
 
   const questions = rows.map((r) => ({

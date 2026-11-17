@@ -298,32 +298,29 @@ describe("题库向量契约（真实库 + 真实 sqlite-vec）", () => {
       expect(String(error)).toMatch(/Dimension mismatch/i);
     });
 
-    it.fails(
-      "缺陷固定：应用自己算出的向量应能写进应用自己建的向量表（表维度被写死，与 embeddingDimensions 不一致）",
-      async () => {
-        // 维度取自真实配置，不是测试里写的常数：配置改成几维，这里就按几维算
-        const { embeddingDimensions } = await getAiConfig();
-        aiState.embedFails = false;
-        aiState.dims = embeddingDimensions;
+    it("应用自己算出的向量能写进应用自己建的向量表（表维度取自 embeddingDimensions）", async () => {
+      // 维度取自真实配置，不是测试里写的常数：配置改成几维，这里就按几维算
+      const { embeddingDimensions } = await getAiConfig();
+      aiState.embedFails = false;
+      aiState.dims = embeddingDimensions;
 
-        const qid = await createQuestion(`应用维度-${process.pid}`);
-        const vector = await ragService.getEmbedding("任意文本");
-        expect(vector).toHaveLength(embeddingDimensions);
+      const qid = await createQuestion(`应用维度-${process.pid}`);
+      const vector = await ragService.getEmbedding("任意文本");
+      expect(vector).toHaveLength(embeddingDimensions);
 
-        let insertError: unknown = null;
-        try {
-          legacy
-            .prepare(
-              "INSERT INTO questions_vec (question_id, embedding) VALUES (?, ?)",
-            )
-            .run(BigInt(qid), JSON.stringify(vector));
-        } catch (e) {
-          insertError = e;
-        }
-        // 期望：应用算出的向量能写进应用自己的向量表 —— 配置修成同维后这条自然转绿
-        expect(insertError).toBeNull();
-      },
-    );
+      let insertError: unknown = null;
+      try {
+        legacy
+          .prepare(
+            "INSERT INTO questions_vec (question_id, embedding) VALUES (?, ?)",
+          )
+          .run(BigInt(qid), JSON.stringify(vector));
+      } catch (e) {
+        insertError = e;
+      }
+      // 期望：应用算出的向量能写进应用自己的向量表 —— 配置修成同维后这条自然转绿
+      expect(insertError).toBeNull();
+    });
 
     it.fails(
       "缺陷固定：有向量且同文时 questionService.searchSimilarQuestions 应召回该题（现在恒为空）",

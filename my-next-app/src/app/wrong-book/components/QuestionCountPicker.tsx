@@ -44,9 +44,20 @@ export function QuestionCountPicker({
 
   // 题目数 <= 5 时直接开始全部，无需选择
   if (totalCount <= 5) {
-    return (
-      <span onClick={() => !disabled && onConfirm(totalCount)}>{children}</span>
-    );
+    // 点击必须落在**调用方传来的那个按钮**上。原来这里套了一层
+    // `<span onClick>`：既过不了 jsx-a11y（非交互元素挂交互），又把触发器包成了
+    // 伪热区；改成给 span 补 role+tabIndex 更糟 —— 按钮里套按钮，读屏器会念两个控件。
+    // 所以把 handler 合并进子元素的 onClick（先跑子元素自己的，再开始练习）。
+    if (React.isValidElement<{ onClick?: React.MouseEventHandler }>(children)) {
+      const childOnClick = children.props.onClick;
+      return React.cloneElement(children, {
+        onClick: (e: React.MouseEvent) => {
+          childOnClick?.(e);
+          if (!disabled) onConfirm(totalCount);
+        },
+      });
+    }
+    return <>{children}</>;
   }
 
   return (

@@ -108,13 +108,17 @@ function TreeNode({ node, level, onStartPractice }: TreeNodeProps) {
 
   return (
     <div>
-      {/* 节点行 */}
-      <div
-        className="flex items-center justify-between p-3 hover:bg-muted/50 rounded-lg transition-colors cursor-pointer"
-        style={{ paddingLeft: `${12 + level * 20}px` }}
-        onClick={() => setIsExpanded(!isExpanded)}
-      >
-        <div className="flex items-center gap-2">
+      {/* 节点行：左侧（缩进 + 箭头 + 名称 + 题数）是展开/收起按钮，右侧的练习按钮
+          是它的**兄弟**。原来整行 div 挂 onClick，把播放按钮包在里面，只能补
+          role="button" —— 那会让读屏器读出一个"按钮里套按钮"的复合控件。 */}
+      <div className="flex items-center justify-between pr-3 hover:bg-muted/50 rounded-lg transition-colors">
+        <button
+          type="button"
+          onClick={() => setIsExpanded(!isExpanded)}
+          aria-expanded={hasChildren ? isExpanded : undefined}
+          className="flex flex-1 min-w-0 items-center gap-2 py-3 text-left"
+          style={{ paddingLeft: `${12 + level * 20}px` }}
+        >
           {/* 展开/收起图标 */}
           {hasChildren ? (
             isExpanded ? (
@@ -133,18 +137,14 @@ function TreeNode({ node, level, onStartPractice }: TreeNodeProps) {
           <Badge variant="secondary" className="text-xs">
             {node.count} 题
           </Badge>
-        </div>
+        </button>
 
         {/* 练习按钮 - 带题量选择 */}
         <QuestionCountPicker
           totalCount={allQuestionIds.length}
           onConfirm={(count) => onStartPractice(allQuestionIds, count)}
         >
-          <Button
-            size="sm"
-            variant="ghost"
-            onClick={(e) => e.stopPropagation()}
-          >
+          <Button size="sm" variant="ghost" aria-label="开始练习">
             <Play className="w-4 h-4" />
           </Button>
         </QuestionCountPicker>

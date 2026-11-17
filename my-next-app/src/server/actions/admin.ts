@@ -66,7 +66,12 @@ export const deleteQuestionAction = adminAction
   .inputSchema(z.number())
   .action(async ({ parsedInput: id, ctx }) => {
     const { user } = ctx;
-    await adminService.deleteQuestion(id);
+    const deleted = await adminService.deleteQuestion(id);
+    // 0 行 = 题目不存在。与 updateQuestionAction 同一口径：抛业务错误而不是
+    // 假装成功（否则「删一个早被删掉的 id」会报成功，客户端静默刷新无变化）。
+    if (deleted === 0) {
+      throw new Error("题目不存在");
+    }
 
     // 记录操作日志 (非阻塞)
     after(() =>

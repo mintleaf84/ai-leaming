@@ -8,8 +8,8 @@ import { createClient } from "@libsql/client";
 import * as schema from "./drizzle-schema";
 import { setupVectorExtension } from "./vector-setup";
 import { seedData } from "./seed-data";
-import { env } from "@/env";
 import { log } from "@/lib/logger";
+import { resolveDbFilePath } from "./db-file";
 
 // --- Legacy Better-SQLite3 Initialization (from old db.ts) ---
 
@@ -18,8 +18,8 @@ const globalForDb = global as unknown as { db: Database.Database | null };
 function initDb() {
   if (globalForDb.db) return globalForDb.db;
 
-  const dbName = env.DB_FILENAME;
-  const dbPath = path.resolve(process.cwd(), "data", dbName);
+  // 唯一入口：恢复 / 备份 / 连接三处共用同一解析函数（见 db-file.ts）
+  const dbPath = resolveDbFilePath();
   log.info(`[DB] 正在连接数据库: ${dbPath}`);
 
   const db = new Database(dbPath);
@@ -115,9 +115,8 @@ export function reinitDb() {
 
 // --- Drizzle ORM Initialization ---
 
-const libsqlDbName = process.env.DB_FILENAME || "ai-learning.db";
-const libsqlDbPath = path.resolve(process.cwd(), "data", libsqlDbName);
-const libsqUrl = `file:${libsqlDbPath}`;
+// 与 initDb() 同一解析函数：模块加载时求值（等价于原来的 cwd 拼接）
+const libsqUrl = `file:${resolveDbFilePath()}`;
 
 const globalForLibsql = global as unknown as {
   libsqlClient: ReturnType<typeof createClient> | null;

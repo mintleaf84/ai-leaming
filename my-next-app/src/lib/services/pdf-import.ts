@@ -20,7 +20,8 @@ import {
 import { and, eq, inArray } from "drizzle-orm";
 import { srsService } from "@/lib/services/srs";
 import type { PdfImportResult, ParsedPdfQuestion } from "@/types/pdf-import";
-import { createHash, randomUUID } from "crypto";
+import { randomUUID } from "crypto";
+import { buildPdfExternalId } from "@/lib/services/question-idempotency";
 import { log } from "@/lib/logger";
 import { withTransaction } from "@/lib/db/executor";
 import { NotFoundError } from "@/lib/errors/app-error";
@@ -95,23 +96,13 @@ function withConfirmLock<T>(fn: () => Promise<T>): Promise<T> {
 }
 
 /**
- * PDF 导入的确定性幂等键。
+ * PDF 导入的确定性幂等键（`pdf:` + 内容指纹）。
  *
- * 内容指纹（题目正文 + 选项 JSON + 答案）在"同一份 PDF/文本被重复确认"时稳定，
- * 因此对同一批题目重复导入只会落一份。`pdf:` 前缀占 4 字符，sha1 十六进制取
- * 前 36 位，总长固定 40 字符，便于与粉笔导入的 `external_id` 区分。
- *
- * 注：题面被 OCR 轻微改写会得到不同的键（内容指纹的固有局限），此时靠
- * 「先查后插 + 唯一索引」保证不会有同一键的重复行，但会被当成新题落库。
+ * 实现在 `question-idempotency.ts`：管理端手工导入用的是同一份指纹函数、不同的
+ * 前缀（`admin:`），见该文件顶部关于字段组合的取舍说明。这里保留同名导出，
+ * 供既有调用方与测试继续使用。
  */
-export function buildPdfExternalId(q: ParsedPdfQuestion): string {
-  const options = JSON.stringify(q.options ?? []);
-  const digest = createHash("sha1")
-    .update(`${q.content}\u0001${options}\u0001${q.answer}`)
-    .digest("hex")
-    .slice(0, 36);
-  return `pdf:${digest}`;
-}
+export { buildPdfExternalId };
 
 /** 事务执行器：事务内一切读写都必须走它，不能用全局 drizzleDb */
 type ConfirmExecutor = typeof drizzleDb;

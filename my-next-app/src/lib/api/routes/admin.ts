@@ -1,6 +1,7 @@
 import { OpenAPIHono, createRoute, z } from "@hono/zod-openapi";
 import { getErrorMessage } from "@/lib/utils/error";
 import { drizzleDb, drizzleSchema, closeDb, reinitDb } from "@/lib/db";
+import { resolveDbFilePath, findMissingCoreTables } from "@/lib/db/db-file";
 import { requireRole } from "@/lib/auth/auth";
 import { eq, and, sql, desc, like } from "drizzle-orm";
 import os from "os";
@@ -76,7 +77,7 @@ adminRoute.openapi(systemStatusDef, async (c) => {
     throw err;
   }
 
-  const dbPath = path.resolve(process.cwd(), "data", "ai-learning.db");
+  const dbPath = resolveDbFilePath();
   let dbSize = 0;
   try {
     dbSize = fs.statSync(dbPath).size;
@@ -267,12 +268,12 @@ adminRoute.openapi(restoreDef, async (c) => {
       );
     }
 
-    const dbPath = path.resolve(process.cwd(), "data", "ai-learning.db");
-    const backupPath = path.resolve(
-      process.cwd(),
-      "data",
-      `ai-learning.db.bak-${Date.now()}`,
-    );
+    // 恢复目标必须与 initDatabase()/reinitDb() 连的是同一个文件（唯一来源：
+    // resolveDbFilePath）。否则改了 DB_FILENAME 的部署会把备份恢复到
+    // data/ai-learning.db，随后 reinitDb() 又在 DB_FILENAME 处新建一个空库 ——
+    // 接口报成功，应用在空库上空转。
+    const dbPath = resolveDbFilePath();
+    const backupPath = `${dbPath}.bak-${Date.now()}`;
     const tempPath = path.resolve(process.cwd(), "data", "temp_restore.db");
 
     const buffer = Buffer.from(await file.arrayBuffer());
@@ -281,6 +282,36 @@ adminRoute.openapi(restoreDef, async (c) => {
     }
 
     fs.writeFileSync(tempPath, buffer);
+
+    // 结构校验：magic header 只能证明"是 SQLite"，不能证明"是本应用的库"。
+    // 缺核心表的库一旦被接受，线上库会被替换成应用跑不起来的东西 —— 必须在
+    // closeDb()/覆盖之前拒绝，且不碰线上库一个字节。
+    let missingTables: string[];
+    try {
+      missingTables = findMissingCoreTables(tempPath);
+    } catch (probeErr) {
+      // 命中明确业务错误：文件读不出 SQLite 结构 = 上传的不是可用备份，转 400
+      fs.rmSync(tempPath, { force: true });
+      logger.warn(
+        { err: probeErr, fileName: file.name },
+        "备份文件结构无法读取，拒绝恢复",
+      );
+      return c.json({ error: "无效的备份文件：无法读取 SQLite 结构" }, 400);
+    }
+    if (missingTables.length > 0) {
+      fs.rmSync(tempPath, { force: true });
+      logger.warn(
+        { fileName: file.name, missingTables },
+        "备份文件缺少核心表，拒绝恢复",
+      );
+      return c.json(
+        {
+          error: `无效的备份文件：缺少关键数据表（${missingTables.join("、")}）`,
+        },
+        400,
+      );
+    }
+
     closeDb();
 
     try {

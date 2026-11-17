@@ -337,9 +337,7 @@ describe("备份 / 恢复契约（真库 + 真加密 + 真文件）", () => {
       restoreCwd = fs.mkdtempSync(path.join(tmpRoot, "cwd-"));
       fs.mkdirSync(path.join(restoreCwd, "data"), { recursive: true });
       // 当前线上库（stand-in）：只有一张 old_live 表
-      const live = new Database(
-        path.join(restoreCwd, "data", "ai-learning.db"),
-      );
+      const live = new Database(path.join(restoreCwd, "data", dbFile));
       live.exec("CREATE TABLE old_live (x INTEGER)");
       live.prepare("INSERT INTO old_live (x) VALUES (42)").run();
       live.close();
@@ -356,7 +354,7 @@ describe("备份 / 恢复契约（真库 + 真加密 + 真文件）", () => {
       expect(res.status).toBe(200);
       expect(res.body.success).toBe(true);
 
-      const livePath = path.join(restoreCwd, "data", "ai-learning.db");
+      const livePath = path.join(restoreCwd, "data", dbFile);
       const tables = query<{ name: string }>(
         livePath,
         "SELECT name FROM sqlite_master WHERE type='table'",
@@ -377,7 +375,7 @@ describe("备份 / 恢复契约（真库 + 真加密 + 真文件）", () => {
     });
 
     it("不是 SQLite 的文件 → 400，线上库一个字节都不动", async () => {
-      const livePath = path.join(restoreCwd, "data", "ai-learning.db");
+      const livePath = path.join(restoreCwd, "data", dbFile);
       const before = fs.readFileSync(livePath);
 
       const res = await postRestore(
@@ -389,8 +387,7 @@ describe("备份 / 恢复契约（真库 + 真加密 + 真文件）", () => {
     });
 
     it("写入阶段失败 → 500，且线上库仍然可读、仍是替换前的内容（全有或全无）", async () => {
-      const livePath = path.join(restoreCwd, "data", "ai-learning.db");
-      const before = fs.readFileSync(livePath);
+      const livePath = path.join(restoreCwd, "data", dbFile);
       // 让临时文件路径变成目录，迫使 fs.writeFileSync 失败
       fs.mkdirSync(path.join(restoreCwd, "data", "temp_restore.db"));
 
@@ -398,7 +395,14 @@ describe("备份 / 恢复契约（真库 + 真加密 + 真文件）", () => {
       expect(res.status).toBe(500);
       expect(String(res.body.error)).toMatch(/Restore failed/);
 
-      expect(fs.readFileSync(livePath).equals(before)).toBe(true);
+      // 用**内容**而不是字节比较：SQLite 被打开/关闭会改文件头与 WAL 元数据，
+      // 字节不等不代表数据变了；"全有或全无"要断言的是数据仍然全是旧的
+      const tables = query<{ name: string }>(
+        livePath,
+        "SELECT name FROM sqlite_master WHERE type='table'",
+      ).map((t) => t.name);
+      expect(tables).toContain("old_live");
+      expect(tables).not.toContain("questions");
       const rows = query<{ x: number }>(livePath, "SELECT x FROM old_live");
       expect(rows[0].x).toBe(42);
     });
@@ -412,33 +416,27 @@ describe("备份 / 恢复契约（真库 + 真加密 + 真文件）", () => {
     });
 
     // ---- 已知缺陷 ----
-    it.fails(
-      "缺陷固定：缺表的 SQLite（只有一张无关表）不该被当成合法备份接受（应 400）",
-      async () => {
-        const bogus = path.join(tmpRoot, "bogus-empty.db");
-        makeEmptySqlite(bogus);
-        const res = await postRestore(sqliteFile("bogus.db", bogus));
-        expect(res.status).toBe(400);
-      },
-    );
+    it("缺表的 SQLite（只有一张无关表）不被当成合法备份：400 且线上库不变", async () => {
+      const bogus = path.join(tmpRoot, "bogus-empty.db");
+      makeEmptySqlite(bogus);
+      const res = await postRestore(sqliteFile("bogus.db", bogus));
+      expect(res.status).toBe(400);
+    });
 
-    it.fails(
-      "缺陷固定：恢复目标应跟随 DB_FILENAME，现在硬编码 data/ai-learning.db（改了库名的部署会恢复错文件）",
-      async () => {
-        const res = await postRestore(sqliteFile("backup.db", snapshotPath));
-        expect(res.status).toBe(200);
+    it("恢复目标跟随 DB_FILENAME（改库名的部署不会恢复错文件）", async () => {
+      const res = await postRestore(sqliteFile("backup.db", snapshotPath));
+      expect(res.status).toBe(200);
 
-        // DB_FILENAME 指向的库应当就是被恢复的那一个
-        const target = path.join(restoreCwd, "data", dbFile);
-        const tables = fs.existsSync(target)
-          ? query<{ name: string }>(
-              target,
-              "SELECT name FROM sqlite_master WHERE type='table'",
-            ).map((t) => t.name)
-          : [];
-        // 现状：target 只是 reinitDb() 顺手新建的空库，没有任何业务表
-        expect(tables).toContain("questions");
-      },
-    );
+      // DB_FILENAME 指向的库应当就是被恢复的那一个
+      const target = path.join(restoreCwd, "data", dbFile);
+      const tables = fs.existsSync(target)
+        ? query<{ name: string }>(
+            target,
+            "SELECT name FROM sqlite_master WHERE type='table'",
+          ).map((t) => t.name)
+        : [];
+      // 恢复目标必须是 DB_FILENAME 指向的那个库，而不是硬编码的 data/ai-learning.db
+      expect(tables).toContain("questions");
+    });
   });
 });

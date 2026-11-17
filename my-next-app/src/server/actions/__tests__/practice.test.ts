@@ -47,6 +47,9 @@ const {
       }
       return resolve({ changes: 1 });
     }),
+    // submitAnswer 会把「归属校验 + 日志 + 统计」放进一个事务（见 practice.ts service），
+    // 这里让 tx 与 db 同形，事务直接透传到同一个 mock 链
+    transaction: vi.fn((cb: any) => cb(mockDrizzleDb)),
   };
 
   return {
@@ -171,6 +174,7 @@ describe("Practice Actions", () => {
   describe("submitAnswerAction", () => {
     it("应该记录答案并更新掌握度", async () => {
       state.selectResults = [
+        [{ id: "sess-1" }], // 归属校验：sessionId 属于当前用户
         [
           {
             // 题目 tags 查询

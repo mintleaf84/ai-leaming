@@ -2,6 +2,7 @@ import { OpenAPIHono, createRoute, z } from "@hono/zod-openapi";
 import { getErrorMessage } from "@/lib/utils/error";
 import { practiceService } from "@/lib/services/practice";
 import { authMiddleware, getCurrentUser } from "@/lib/api/middlewares/auth";
+import { toErrorResponse } from "@/lib/api/error-response";
 import { log, logger } from "@/lib/logger";
 
 const app = new OpenAPIHono();
@@ -116,6 +117,9 @@ const submitRoute = createRoute({
         },
       },
     },
+    404: {
+      description: "练习会话不存在（或不属于当前用户）",
+    },
   },
 });
 
@@ -124,18 +128,27 @@ app.openapi(submitRoute, async (c) => {
   const { sessionId } = c.req.valid("param");
   const { questionId, userAnswer, duration } = c.req.valid("json");
 
-  const result = await practiceService.submitAnswerWithValidation(
-    user.id,
-    sessionId,
-    questionId,
-    userAnswer,
-    duration,
-  );
+  try {
+    const result = await practiceService.submitAnswerWithValidation(
+      user.id,
+      sessionId,
+      questionId,
+      userAnswer,
+      duration,
+    );
 
-  return c.json(
-    { isCorrect: result.isCorrect, correctAnswer: result.correctAnswer || "" },
-    200,
-  );
+    return c.json(
+      {
+        isCorrect: result.isCorrect,
+        correctAnswer: result.correctAnswer || "",
+      },
+      200,
+    );
+  } catch (err) {
+    // audit-allow: 统一交给 toErrorResponse 归类（业务错误 → 4xx；未知错误已在那里
+    //   记结构化日志后回 500），此处再记一次会重复
+    return toErrorResponse(c, err, { scope: "practice.submit" });
+  }
 });
 
 // --- First Principles Logic ---

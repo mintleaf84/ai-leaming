@@ -14,12 +14,14 @@ const { mockDrizzleDb, mockDrizzleSchema } = vi.hoisted(() => {
       "select",
       "from",
       "where",
+      "onConflictDoNothing",
       "leftJoin",
       "orderBy",
       "limit",
       "offset",
       "all",
       "get",
+      "returning",
     ];
     methods.forEach((m) => {
       chain[m] = vi.fn(() => chain);
@@ -56,6 +58,7 @@ const { mockDrizzleDb, mockDrizzleSchema } = vi.hoisted(() => {
       tags: "tags",
       dimension: "dimension",
       type: "type",
+      external_id: "external_id",
     },
     practice_logs: { id: "id" },
     ai_configs: { id: "id", is_active: "is_active" },
@@ -84,6 +87,7 @@ vi.mock("@/lib/auth/password", () => ({
 }));
 
 import { adminService } from "@/lib/services/admin-service";
+import { buildAdminExternalId } from "@/lib/services/question-idempotency";
 
 // 获取链式调用末端 mock
 const chain = mockDrizzleDb as unknown as Record<
@@ -103,6 +107,7 @@ describe("AdminService", () => {
       "set",
       "from",
       "where",
+      "onConflictDoNothing",
       "leftJoin",
       "orderBy",
       "limit",
@@ -275,10 +280,22 @@ describe("AdminService", () => {
   // deleteQuestion
   // ────────────────────────────
   describe("deleteQuestion", () => {
-    it("应该删除题目并返回 true", async () => {
+    it("应该删除题目并返回受影响行数", async () => {
+      chain["where"].mockResolvedValueOnce({ rowsAffected: 1 });
+
       const result = await adminService.deleteQuestion(1);
-      expect(result).toBe(true);
+
+      expect(result).toBe(1);
       expect(mockDrizzleDb.delete).toHaveBeenCalled();
+    });
+
+    it("题目不存在（0 行受影响）时返回 0，供 action 判定「题目不存在」", async () => {
+      chain["where"].mockResolvedValueOnce({ rowsAffected: 0 });
+
+      const result = await adminService.deleteQuestion(999);
+
+      // `||` 会把 0 当成缺失，必须用 `??` 语义
+      expect(result).toBe(0);
     });
   });
 
@@ -406,41 +423,50 @@ describe("AdminService", () => {
   // importQuestions
   // ────────────────────────────
   describe("importQuestions", () => {
-    it("应该通过事务批量插入题目", async () => {
-      const questions = [
-        {
-          content: "Q1",
-          options: ["A", "B"],
-          answer: "A",
-          explanation: "E1",
-          tags: ["t1"],
-          dimension: "knowledge",
-          type: "single",
-        },
-        {
-          content: "Q2",
-          options: ["C", "D"],
-          answer: "C",
-          explanation: "E2",
-          tags: ["t2"],
-          dimension: "knowledge",
-        },
-      ];
+    const questions = [
+      {
+        content: "Q1",
+        options: ["A", "B"],
+        answer: "A",
+        explanation: "E1",
+        tags: ["t1"],
+        dimension: "knowledge",
+        type: "single",
+      },
+      {
+        content: "Q2",
+        options: ["C", "D"],
+        answer: "C",
+        explanation: "E2",
+        tags: ["t2"],
+        dimension: "knowledge",
+      },
+    ];
 
-      mockDrizzleDb.transaction.mockImplementation(
-        async (cb: (tx: unknown) => unknown) => {
-          const mockTx = {
-            insert: vi.fn().mockReturnValue({
-              values: vi.fn().mockResolvedValue(undefined),
-            }),
-          };
-          return await cb(mockTx);
-        },
-      );
+    it("应该先按幂等键查重，再批量插入题目", async () => {
+      // 第一次 select（查已存在的键）返回空数组 = 两道都是新题
+      chain["where"].mockResolvedValueOnce([]);
+      // insert ... returning 返回真正落库的行
+      chain["returning"].mockResolvedValueOnce([{ id: 1 }, { id: 2 }]);
 
       const count = await adminService.importQuestions(questions);
+
       expect(count).toBe(2);
-      expect(mockDrizzleDb.transaction).toHaveBeenCalled();
+      expect(mockDrizzleDb.select).toHaveBeenCalled();
+      expect(mockDrizzleDb.insert).toHaveBeenCalled();
+    });
+
+    it("所有题都已存在（键命中）时不写库，返回 0", async () => {
+      // 把两道题的键都报成"已存在"
+      const keys = questions.map((q) => ({
+        external_id: buildAdminExternalId(q),
+      }));
+      chain["where"].mockResolvedValueOnce(keys);
+
+      const count = await adminService.importQuestions(questions);
+
+      expect(count).toBe(0);
+      expect(mockDrizzleDb.insert).not.toHaveBeenCalled();
     });
   });
 });

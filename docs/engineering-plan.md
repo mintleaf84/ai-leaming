@@ -124,26 +124,47 @@
 判据不用行数：**同一文件里同时出现 ① 取数 `await *Action`/`fetch` ② 状态机（>5 个 state 或串行 effect）
 ③ 渲染**，且 >400 行。范式见 `app/practice/hooks/use-practice-controller.tsx`。
 
-- [ ] `admin/users/page.tsx`（795）→ `useUsersData` + 表格 + 表单弹窗（**先做**，与 M3 的 admin CRUD 测试互为支撑）
-- [ ] `admin/api-keys/page.tsx`（882）
-- [ ] `RecallSession.tsx`（682）→ `useRecallSession` + 三屏组件
+- [x] `admin/users/page.tsx`（795）→ **135 行**（`useUsersData` + 动作 hook + 7 个展示组件）
+- [x] `admin/api-keys/page.tsx`（882）→ **165 行**
+- [x] `RecallSession.tsx`（682）→ **119 行**（状态机抽到 `useRecallSession`，五条语义各有用例）
 - 验收：新增 hook 有独立单测；纯重构不改行为，由 10 条 E2E + 61 条布局护栏兜底
 
 ## M3 机制补齐（2–3d）
 
-- [ ] **归属矩阵测试**：遍历已注册路由，断言每个端点对「他人资源」返回 404/403；
-      新路由未登记即红 —— 让 IDOR 从「靠评审发现」变成「靠机制发现」
-- [ ] admin 题库 CRUD 真实契约测试（P1 遗留）
-- [ ] RAG 向量写入、备份恢复契约测试（P1 遗留）
+- [x] **归属矩阵门禁**（`src/lib/api/__tests__/ownership-matrix.test.ts`）：18 个路由模块
+      必须登记归属语义（user / admin / global / public）；`user` 必须指向真实的跨用户测试，
+      `global` 必须写「为什么不是越权」；外部 API 每条写路由必须声明 `write` 作用域
+- [x] 欠账清单 `KNOWN_UNCOVERED`（11 个 user 模块，逐条写明「拿哪个 id 定位资源」），
+      **只许减**：补完测试必须从清单删除，新增 user 模块必须补测试或进清单
+- [x] 清掉前 4 条欠账（`history` / `practice` / `annotations` / `wrong-book`）：**11 → 7**，
+      并顺带抓到两个真缺陷 —— `practice` 提交越权（IDOR，已修）与 `GET /wrong-book/` 恒 500
+      （`ORDER BY` 引用 JS key，已修）
+- [ ] 清掉剩余 7 条（`chat` / `feedback` / `generate` / `knowledge` / `mastery` / `profile` / `stats`）
+- [x] admin 题库 CRUD 真实契约测试（19 例，含幂等键/删除行数/鉴权）
+- [x] RAG 向量写入、备份恢复契约测试（12 + 10 例）—— 顺带钉住 9 个真缺陷，见下方 M5
 - [ ] 剩下的 5 个 mock-db 测试改真实库（P1 遗留）
 - 验收：矩阵覆盖全部 `src/lib/api/routes/*.ts` 的路由；新增 4 类真实契约测试
 
 ## M4 入口与本地闭环（0.5d）
 
-- [ ] README 指向 `engineering.md` / `engineering-plan.md`（现在只有 AGENTS.md 指）
-- [ ] `npm run verify` = `typecheck` + `lint:ci` + `test:run` + `audit:catches`
-- [ ] 审计 `.agents/skills/` 的 16 个技能，删掉与现行工具链不符的
+- [x] README 指向 `engineering.md` / `engineering-plan.md` + `drizzle/README.md`
+- [x] `npm run verify` = `typecheck` + `lint:ci` + `test:run` + `audit:catches`（实测一次跑完）
+- [x] 审计 `.agents/skills/` 的 16 个技能：`drizzle-orm-engineering` 与 `sqlite-migration-automation`
+      在教 `drizzle-kit generate`（本仓库禁止），已加 WARNING 并改流程；其余抽查无冲突
 - 验收：新 clone 按 README 能一条命令跑完四闸
+
+## M5 缺陷处置（契约测试与跨用户测试钉住的 9 个真缺陷）
+
+- [x] 题库批量导入无幂等键（硬规则 1）→ 内容指纹 `admin:` 命名空间，批内去重 + 先查后写 + `onConflictDoNothing`
+- [x] 删不存在的题仍报成功 → `affectedRows()`（`??` 而非 `||`）
+- [x] `POST /restore` 忽略 `DB_FILENAME` → 新增 `db-file.ts` 唯一路径解析
+- [x] 恢复只校验 magic header → 恢复前校验核心业务表，缺表 400 且不动线上库
+- [x] `practice` 提交越权（IDOR）→ 事务内校验会话归属，404 回滚
+- [x] `GET /wrong-book/` 恒 500（`ORDER BY` 引用 JS key）→ 改用聚合表达式
+- [ ] **向量表从未创建 / 检索恒空 / 维度 1536 vs 1024**（三条同源，**待架构决策**）：
+      `setupVectorExtension()` 跑在 libsql 连接上，而 `loadExtension` 只加在 legacy better-sqlite3 连接；
+      三个方向：① libsql 能否 load vec0 ② 向量操作整体改走 legacy 连接 ③ 先关掉相似题入口别骗用户
+- [ ] `rag.ts` 的 `Math.sin` 兜底向量不得进入检索路径（依赖上一条的处置）
 
 ## 明确不做
 

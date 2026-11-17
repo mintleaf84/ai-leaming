@@ -14,6 +14,23 @@ import logger from "@/lib/logger";
 import { DemoService } from "@/lib/practice/demo";
 import { safeParseJson } from "@/lib/utils/json";
 import { generateId, generateSessionId } from "@/lib/utils/id";
+import { NotFoundError } from "@/lib/errors/app-error";
+import { withTransaction } from "@/lib/db/executor";
+
+/**
+ * 练习会话不存在**或不属于当前用户**。
+ *
+ * 刻意不区分这两种情况：对外一律 404，避免通过状态码差异探测"这个 sessionId 存在"。
+ */
+export class PracticeSessionNotFoundError extends NotFoundError {
+  constructor(sessionId: string) {
+    super(`练习会话不存在：${sessionId}`, {
+      code: "practice.session.not-found",
+      publicMessage: "练习会话不存在",
+    });
+    this.name = "PracticeSessionNotFoundError";
+  }
+}
 
 export interface PracticeSessionConfig {
   mode: PracticeMode;
@@ -271,31 +288,53 @@ export const practiceService = {
     duration: number,
     totalDurationMs?: number,
   ) {
-    // 1. 记录答题日志
-    await drizzleDb.insert(practice_logs).values({
-      session_id: sessionId,
-      user_id: userId,
-      question_id: questionId,
-      user_answer: userAnswer,
-      is_correct: isCorrect,
-      duration_ms: duration,
-    });
+    // 1+2. 归属校验、答题日志写入、会话统计更新必须在**同一个事务**里。
+    //
+    // 只在写库前单独 SELECT 一次归属，会留下 TOCTOU 窗口：校验通过后会话被删除
+    // 或转给别的用户，日志照样会写进一个不再属于当前用户的 session。放进事务后，
+    // 校验与写入看到的是同一个快照（SQLite 写事务串行化），窗口消失。
+    // 顺带把"日志"与"统计"绑成原子：任何一步失败都不会留下有日志无统计的脏数据。
+    await withTransaction(async (exec) => {
+      if (sessionId) {
+        const [owned] = await exec
+          .select({ id: practice_sessions.id })
+          .from(practice_sessions)
+          .where(
+            and(
+              eq(practice_sessions.id, sessionId),
+              eq(practice_sessions.user_id, userId),
+            ),
+          )
+          .limit(1);
 
-    // 2. 更新会话统计
-    if (sessionId) {
-      await drizzleDb
-        .update(practice_sessions)
-        .set({
-          correct_count: sql`${practice_sessions.correct_count} + ${isCorrect ? 1 : 0}`,
-          total_duration_ms: totalDurationMs ?? undefined,
-        })
-        .where(
-          and(
-            eq(practice_sessions.id, sessionId),
-            eq(practice_sessions.user_id, userId),
-          ),
-        );
-    }
+        // 不存在与不属于当前用户返回同一个 404，不泄露"这个会话存在"
+        if (!owned) throw new PracticeSessionNotFoundError(sessionId);
+      }
+
+      await exec.insert(practice_logs).values({
+        session_id: sessionId,
+        user_id: userId,
+        question_id: questionId,
+        user_answer: userAnswer,
+        is_correct: isCorrect,
+        duration_ms: duration,
+      });
+
+      if (sessionId) {
+        await exec
+          .update(practice_sessions)
+          .set({
+            correct_count: sql`${practice_sessions.correct_count} + ${isCorrect ? 1 : 0}`,
+            total_duration_ms: totalDurationMs ?? undefined,
+          })
+          .where(
+            and(
+              eq(practice_sessions.id, sessionId),
+              eq(practice_sessions.user_id, userId),
+            ),
+          );
+      }
+    });
 
     // 3. 异步更新掌握度
     const [q] = await drizzleDb

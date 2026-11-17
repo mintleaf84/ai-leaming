@@ -194,29 +194,61 @@
       （判据：≥7 题首条与人工判断同考点）→ 之后每批把 `--offset` 递增 100
       （`--offset 100`、`--offset 200`…，直到 `剩余 0`）。脚本每批结束会打印下一批该用的 `--offset`
 
-## M6 前端可用性与无障碍（审计已完成，修复待排期）
+## M6 前端可用性与无障碍（审计完成 → 分三批清理）
 
-审计报告：[`ux-a11y-audit.md`](./ux-a11y-audit.md)（两条通道：`jsx-a11y` 静态 96 条 + 人工核对 9 条规则 65 处）。
-本轮**只审计不修**，P1 共 7 项，前 3 项加起来不到 20 行。
+审计报告：[`ux-a11y-audit.md`](./ux-a11y-audit.md)。基线：静态 **96**（`a11y-baseline.json`）/ 人工 **65**。
 
-- [x] 可复现的静态通道：`eslint.a11y.config.mjs`（独立于 `eslint.config.mjs`，不污染 89 基线）+
+**每批一个 PR，门禁绿才合；基线只许降、测试只许增、不加 `eslint-disable`、不新增 `it.fails`。**
+顺序按「用户会不会被咬到」排，不按规则编号排。
+
+### 已完成（审计基建）
+
+- [x] 静态通道：`eslint.a11y.config.mjs`（独立于 `eslint.config.mjs`，不污染 89 基线）+
       `scripts/audit-a11y.cjs`（棘轮 / `--json` / `--update` / 异常退出码 2）+ `a11y-baseline.json`（96）
-- [x] 补 `settings['jsx-a11y'].components = { Image: 'img' }`：此前 `next/image` 的 `<Image>` 对 `alt-text`
-      **完全不可见**，`0 命中` 是假清白；A/B 探针证明映射生效且不误伤，补后存量仍 96（6 处 `<Image>` 都有 `alt`）
-- [x] 人工通道 9 条规则逐条给 `file:line`，并对「查了没违规」的位置列出清单（沉默不算清白）
-- [ ] **P1-1** 中文 IME 按 Enter 提交半截输入：`ChatInput.tsx:99`、`PracticeCard.tsx:311`、`TagSelector.tsx:153`
-      （另 10 处 P2/P3）。全仓 `isComposing` 现为 **0 处**
-- [ ] **P1-2** 触屏主交互 <24×24：`WrongQuestionCard.tsx:61`(20×20)、`FolderTreeView.tsx:270`(14×14)、
-      `AddToFolderDialog.tsx:114`(20×20)。改 `p-2.5 -m-2.5` 不动视觉
-- [ ] **P1-3** 把失败渲染成"太棒了！暂无错题"：`use-wrong-book-controller.ts:115` 无 `try/catch`，
-      throw 时永远转圈、`{success:false}` 时显示庆祝式空态
-- [ ] **P1-4** 错题本删文件夹零确认（`use-wrong-book-controller.ts:428` + `FolderTreeView.tsx:281`）
-- [ ] **P1-5** 答题写库失败静默（`use-practice-controller.tsx:317` 的 `.catch(console.error)`）
-- [ ] 全局底部预留差 8px 且未算安全区（`layout.tsx:118` `pb-20` vs MobileNav `88px + safe-area`，
-      iPhone 上差 42px）
-- [ ] `label-has-associated-control` 42 条（补 `htmlFor`/`id`，按条降基线）
-- [ ] 自建 `fixed inset-0` 浮层 8 处缺 dialog 语义/Esc（应**换用** `components/ui/dialog.tsx`，不再手写焦点陷阱）
-- [ ] 决定 a11y 棘轮是否进 `npm run verify`（取舍见 `decisions.md`）
+- [x] 补 `settings['jsx-a11y'].components = { Image: 'img' }`：此前 `next/image` 的 `<Image>` 对
+      `alt-text` **完全不可见**，`0 命中` 是假清白（A/B 探针已证伪，补后仍 96 —— 6 处 `<Image>` 都有 `alt`）
+- [x] 人工通道 9 条规则逐条 `file:line` + 「查了没违规」位置清单（沉默不算清白）
+
+### 批次 A：会咬到用户的（0.5–1d，先做）
+
+| #   | 事项                                                                                                    | 门禁（可复现）                                                                                                                                                                                                                                                                                           | 验收                                                                         |
+| --- | ------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------- |
+| A1  | **IME 组合态**：13 处 Enter handler 加 `isComposing` 守卫                                               | 共享判定 `isImeComposing(e)`（`nativeEvent.isComposing \|\| keyCode===229`）+ 新增 `scripts/audit-ime-enter.cjs`（**TS AST**，照 `audit-catches.cjs`）：凡 `onKeyDown`/`addEventListener("keydown")` 里判 Enter 且未经过该判定的，一律报出；白名单 `docs/ime-enter.baseline.json` 逐条写理由。**13 → 0** | 3 条主路径各一条单测（合成事件 `isComposing:true` 断言未提交）；脚本计数归零 |
+| A2  | **触屏热区**：`WrongQuestionCard.tsx:61`、`FolderTreeView.tsx:242/250/270`、`AddToFolderDialog.tsx:114` | 渲染后断言热区 ≥24（`getBoundingClientRect`）；色板**不得**用 `-m-*` 外扩（会重叠 12px），按 pitch ≥ 视觉+间距改                                                                                                                                                                                         | 6 个控件各一条；layout-guard 的 `<44×44` 报告里这几处消失                    |
+| A3  | **错题本失败态**：`use-wrong-book-controller.ts:115` 加 `try/catch/finally` + `loadError`               | 契约测试两条：action **throw** → 渲染 `ErrorState`（不再永久转圈）；action 返回 **`{success:false}`** → 渲染 `ErrorState`（**不再**显示"太棒了！暂无错题"）                                                                                                                                              | 两条用例 + 手动断网走查一次                                                  |
+| A4  | **删文件夹加确认**：`use-wrong-book-controller.ts:428` + `FolderTreeView.tsx:281`                       | 用例：点"删除"后 `deleteFolderAction` **未被调用**、出现含文件夹名的确认框；取消则不调用                                                                                                                                                                                                                 | 1 条用例                                                                     |
+| A5  | **答题写库失败不再静默**：`use-practice-controller.tsx:317`                                             | 用例：action reject → 出现带重试的 toast，且重试会再次调用                                                                                                                                                                                                                                               | 1 条用例                                                                     |
+| A6  | **底部预留算安全区**：`layout.tsx:118`                                                                  | 375 视口断言 `main` 的 `padding-bottom ≥ 96px`；再加一条**静态断言**：CSS 必须含 `env(safe-area-inset-bottom)`，防止退回固定值                                                                                                                                                                           | 1 条 e2e + 1 条静态                                                          |
+
+> A6 的诚实边界：浏览器里 `env(safe-area-inset-bottom)` 恒为 0，**自动化只能验 88+8 那部分**，
+> 安全区只能靠 `calc()` 写法保证（人工/真机）。别把它写成"门禁覆盖了 iPhone"。
+
+### 批次 B：结构与无障碍债（2–3d）
+
+| #   | 事项                                                                                            | 门禁                                                                                                     | 依赖                                                                                          |
+| --- | ----------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------- |
+| B1  | `label` 无关联控件 **42 → 0**（补 `htmlFor`/`id`）                                              | a11y 静态 96 → 54 后 `--update`；棘轮自动拦新增                                                          | 无                                                                                            |
+| B2  | 自建 `fixed inset-0` 浮层 **8 处换 Radix**（`dialog.tsx`/`alert-dialog.tsx`），不再手写焦点陷阱 | 每个浮层一条：打开后 `document.activeElement` 在浮层内、`Esc` 可关、关闭后焦点回到触发按钮               | **必须排 T-12（滚动模型归一）之后**：`fixed` 浮层在 body 滚动与内滚容器下行为不同，先改会白做 |
+| B3  | `focus-states` **8 处**补可见焦点环 + 焦点环对比度实测                                          | 8 条：`focus()` 后 `outline`/`box-shadow` 非 none；对比度给出实测数字（**1.4.11 是 AA，3:1**，不是 AAA） | 无                                                                                            |
+| B4  | `live region`：聊天流式、答题切题、计数变化                                                     | 断言 `role="status"` 存在且切题后文本随之更新                                                            | 无                                                                                            |
+
+### 批次 C：RAG 残留与门禁收口（1d）
+
+| #   | 事项                                                                                                                                      | 门禁                                                                      | 备注                                                                           |
+| --- | ----------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------- | ------------------------------------------------------------------------------ |
+| C1  | `addChunk`/`addChunksBatch` 改用 `getEmbeddingResult`，降级**不写** `content_vec`；`initRagTable` 做维度回读校验（照 `vec-store` 的做法） | 两条：降级时 `content_vec` 行数不变；表维度与配置不一致时明确失败而非静默 | 现在 `textbook.ts:137/197` 与 `question-recommend.ts:254` 都会把伪向量写进索引 |
+| C2  | **存量回填**（运维）：`--dry-run` → `--limit 100 --offset 0` → 抽样 10 题 → 递增 `--offset`                                               | 判据：≥7 题首条与人工判断同考点                                           | 需有题目的库 + 可用 embedding 配置                                             |
+| C3  | a11y 棘轮进 `npm run verify`                                                                                                              | 前置：交互类（`click-events` + `no-static`）分诊到 **<10**，总数 ≤54      | 否则「新写一个 div onClick」就挡合入                                           |
+
+### 明确不做
+
+| 不做                             | 理由                                                                                                                                 |
+| -------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------ |
+| 把 96 条静态命中修到 0           | `no-static-element-interactions`(23) + `click-events-have-key-events`(22) 多为遮罩/卡片外层浮起事件，机械加 `role="button"` 是伪语义 |
+| 修 `no-autofocus` 9 条           | 全在 Dialog 输入框，是焦点管理惯例                                                                                                   |
+| 给 Dialog 手写焦点陷阱           | 已有 Radix，自建浮层应**换用**而不是再写一套                                                                                         |
+| 全局 `focus:ring-1` → 3:1 一刀切 | 先量再改；`ring-1` 的实际对比度未实测前不承诺"AA 已满足"                                                                             |
+| 给每条 toast 加 `aria-live`      | sonner 上游已有 polite 区域，重复包裹会播报两次                                                                                      |
 
 ## 明确不做
 

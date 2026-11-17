@@ -559,8 +559,8 @@ main {
   [role="button"],
   .clickable {
     touch-action: manipulation;
-    transition-property: transform, color, background-color, border-color,
-      box-shadow;
+    transition-property:
+      transform, color, background-color, border-color, box-shadow;
     transition-duration: 0.2s;
     transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
   }

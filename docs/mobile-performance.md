@@ -9,11 +9,11 @@
 
 三类症状对应三组独立成本，不是同一个根因：
 
-| 症状 | 主因组 | 最便宜的一刀 |
-| --- | --- | --- |
-| 点击延迟（点了像没反应、像要点两次） | 感知反馈缺失 + 每次导航整页 spring + SW 网络优先无超时 | 恢复 tap 反馈、去掉 template 的 scale、给 SW 加 3s 超时 |
-| 滚动掉帧 | 固定底栏 `backdrop-blur` 叠在唯一 scroller 上 + `transition-all` 动模糊层 + `/knowledge` 百卡布局组 | 底栏去 blur、模糊层不用 `transition-all` |
-| 弹层/动画涩 | framer 全量常驻（含基础 Button）+ 换题串行 `mode="wait"` | Button 去 `motion`、换题改并行 |
+| 症状                                 | 主因组                                                                                              | 最便宜的一刀                                            |
+| ------------------------------------ | --------------------------------------------------------------------------------------------------- | ------------------------------------------------------- |
+| 点击延迟（点了像没反应、像要点两次） | 感知反馈缺失 + 每次导航整页 spring + SW 网络优先无超时                                              | 恢复 tap 反馈、去掉 template 的 scale、给 SW 加 3s 超时 |
+| 滚动掉帧                             | 固定底栏 `backdrop-blur` 叠在唯一 scroller 上 + `transition-all` 动模糊层 + `/knowledge` 百卡布局组 | 底栏去 blur、模糊层不用 `transition-all`                |
+| 弹层/动画涩                          | framer 全量常驻（含基础 Button）+ 换题串行 `mode="wait"`                                            | Button 去 `motion`、换题改并行                          |
 
 ## 1. 证据（代码层，行号对应 90def0a = origin/main #175）
 
@@ -54,21 +54,21 @@
 
 ### P0 — 感知层（预期直接改善"跟手"体感，改动小、可独立回滚）
 
-| # | 改动 | 落点 | 风险 | 验收 |
-| --- | --- | --- | --- | --- |
-| P0-1 | 恢复按压反馈：去掉全局 `transparent` 取消，改为 `rgba(0,0,0,.06)` 级轻高亮；`button:active` 补 `touch-action: manipulation` | `globals.css:421,542-551` | 低（视觉微调） | 真机按住不动即有变化；layout-guard 61 条不变红 |
-| P0-2 | `MobileNav` 去掉 `backdrop-blur-md`（或降为纯色 `bg-card`） | `MobileNav.tsx:57` | 低（视觉需确认） | 滚动 Performance 帧率对比；375 档护栏通过 |
-| P0-3 | `template.tsx` 去掉 `scale`，或整段降级为 CSS `animation: fade-in .15s` | `app/template.tsx:7-19` | 中低（转场观感） | 切页无整页重绘；真机录一次切页 |
-| P0-4 | SW 加超时：文档/RSC 与 `/api/` 均加 `networkTimeoutSeconds: 3`；`skipWaiting` 保留但评估 `clientsClaim` 对进行中会话的影响 | `app/sw.ts:26-67` | 中（离线行为变化） | 弱网 3s 后回退缓存；Offline 模式仍可打开已访问页 |
+| #    | 改动                                                                                                                        | 落点                      | 风险               | 验收                                             |
+| ---- | --------------------------------------------------------------------------------------------------------------------------- | ------------------------- | ------------------ | ------------------------------------------------ |
+| P0-1 | 恢复按压反馈：去掉全局 `transparent` 取消，改为 `rgba(0,0,0,.06)` 级轻高亮；`button:active` 补 `touch-action: manipulation` | `globals.css:421,542-551` | 低（视觉微调）     | 真机按住不动即有变化；layout-guard 61 条不变红   |
+| P0-2 | `MobileNav` 去掉 `backdrop-blur-md`（或降为纯色 `bg-card`）                                                                 | `MobileNav.tsx:57`        | 低（视觉需确认）   | 滚动 Performance 帧率对比；375 档护栏通过        |
+| P0-3 | `template.tsx` 去掉 `scale`，或整段降级为 CSS `animation: fade-in .15s`                                                     | `app/template.tsx:7-19`   | 中低（转场观感）   | 切页无整页重绘；真机录一次切页                   |
+| P0-4 | SW 加超时：文档/RSC 与 `/api/` 均加 `networkTimeoutSeconds: 3`；`skipWaiting` 保留但评估 `clientsClaim` 对进行中会话的影响  | `app/sw.ts:26-67`         | 中（离线行为变化） | 弱网 3s 后回退缓存；Offline 模式仍可打开已访问页 |
 
 ### P1 — 渲染成本
 
-| # | 改动 | 落点 | 风险 | 验收 |
-| --- | --- | --- | --- | --- |
-| P1-1 | `/knowledge` 删死 import；入场延迟改 `Math.min(index, 8) * 0.05`；评估去掉 3 个 `layoutId`（或只对首屏卡保留）；列表分批 30 | `knowledge/page.tsx:21,144-159`、`KnowledgeCardItem.tsx:33-50` | 中（展开动画回归） | 100 卡首屏可交互时间；展开/收起动画仍连贯 |
-| P1-2 | 换题改并行：`mode="popLayout"` 或去掉 `AnimatePresence`，`duration` 降到 0.18 | `PracticeClient.tsx:70`、`PracticeCard.tsx:133-138` | 中（答题节奏观感） | 连续答题手感；E2E `practice-flow.spec.ts` |
-| P1-3 | 模糊层不用 `transition-all`：`dashboard/page.tsx:62,137,208` 改 `transition-shadow`；模糊层移除 `hover:shadow-md` 或改静态边框 | 同上 | 低 | 点击卡片无 300ms 重绘 |
-| P1-4 | Button 去 `motion.button`，按压态交给 CSS（与 P0-1 合并） | `ui/button.tsx:6,62` | 中（全站按钮手感） | 302 处调用点视觉不变；`whileTap` 语义由 CSS 承接 |
+| #    | 改动                                                                                                                           | 落点                                                           | 风险               | 验收                                             |
+| ---- | ------------------------------------------------------------------------------------------------------------------------------ | -------------------------------------------------------------- | ------------------ | ------------------------------------------------ |
+| P1-1 | `/knowledge` 删死 import；入场延迟改 `Math.min(index, 8) * 0.05`；评估去掉 3 个 `layoutId`（或只对首屏卡保留）；列表分批 30    | `knowledge/page.tsx:21,144-159`、`KnowledgeCardItem.tsx:33-50` | 中（展开动画回归） | 100 卡首屏可交互时间；展开/收起动画仍连贯        |
+| P1-2 | 换题改并行：`mode="popLayout"` 或去掉 `AnimatePresence`，`duration` 降到 0.18                                                  | `PracticeClient.tsx:70`、`PracticeCard.tsx:133-138`            | 中（答题节奏观感） | 连续答题手感；E2E `practice-flow.spec.ts`        |
+| P1-3 | 模糊层不用 `transition-all`：`dashboard/page.tsx:62,137,208` 改 `transition-shadow`；模糊层移除 `hover:shadow-md` 或改静态边框 | 同上                                                           | 低                 | 点击卡片无 300ms 重绘                            |
+| P1-4 | Button 去 `motion.button`，按压态交给 CSS（与 P0-1 合并）                                                                      | `ui/button.tsx:6,62`                                           | 中（全站按钮手感） | 302 处调用点视觉不变；`whileTap` 语义由 CSS 承接 |
 
 ### P2 — 结构（需单独评审，本期只出方案不实施）
 
@@ -97,15 +97,15 @@
 
 粗估口径：改动 + 自测 + 一次 review 往返，**不含 CI 排队和 `next build` 等待**（本机跑不了 build，必须走 CI/容器）。
 
-| 批次 | 改动量 | 粗估 |
-| --- | --- | --- |
-| P0（4 项，≤5 文件） | 每个 5–20 行 | 2–3h |
-| P1-1 `/knowledge` | 1 页 + 1 卡组件 | 2–3h（含展开动画回归） |
-| P1-2 换题动画 | 2 文件 | 0.5–1h |
-| P1-3 `transition-all` 收敛 | 3 处起，全仓同类可分批 | 1–2h |
-| P1-4 Button 去 motion | 1 文件 + 全站视觉走查 | 1–2h |
-| §4 护栏补强 | 配置 + 白名单 | 2–3h |
-| §5 真机基线 | 手动 4 组测量 | 0.5h/轮 |
+| 批次                       | 改动量                 | 粗估                   |
+| -------------------------- | ---------------------- | ---------------------- |
+| P0（4 项，≤5 文件）        | 每个 5–20 行           | 2–3h                   |
+| P1-1 `/knowledge`          | 1 页 + 1 卡组件        | 2–3h（含展开动画回归） |
+| P1-2 换题动画              | 2 文件                 | 0.5–1h                 |
+| P1-3 `transition-all` 收敛 | 3 处起，全仓同类可分批 | 1–2h                   |
+| P1-4 Button 去 motion      | 1 文件 + 全站视觉走查  | 1–2h                   |
+| §4 护栏补强                | 配置 + 白名单          | 2–3h                   |
+| §5 真机基线                | 手动 4 组测量          | 0.5h/轮                |
 
 先做 P0 + §5 基线一轮 ≈ 半天，能拿到明确的"改前/改后"对比数字。
 
@@ -113,18 +113,18 @@
 
 > 来源：`docs/performance.md` 之前的服务端 / 渲染层代码审计。**刻意不插进 §3 的 P0/P1**，等 INP 数据决定先改哪条。
 
-| # | 改动 | 落点 | 粗估 |
-| --- | --- | --- | --- |
-| X-1 | 根布局三次 feature flag 串行 await 改 `Promise.all`（每页固定省 2 个 DB 往返） | `layout.tsx:69-74` | 10min |
-| X-2 | `practice_logs(session_id)` 补索引（历史详情/报告/续做全靠它，是最大表） | 新迁移 | 30min |
-| X-3 | 抽题去掉 `ORDER BY RANDOM()` 全表随机排序（改 id 预采样或按热度分桶） | `practice.ts:241`、`scheduling.ts:69/98` | 2–3h |
-| X-4 | `QuestionCard` 的 `sanitizeHtml` 移进 `useMemo`；列表数组别在渲染期重建（击穿 memo） | `QuestionCard.tsx:225,252`、`history/[id]/page.tsx:233` | 1–2h |
-| X-5 | `NoteEditor` 每键序列化整篇 + `setTimeout` 无 `clearTimeout`（每键一个定时器） | `NoteEditor.tsx:94-104` | 30min |
-| X-6 | `/ocr` 的 O(n²) base64（`reduce` 拼字符串 + `btoa`，上限 10MB）改 `FormData` 直传 | `ocr/page.tsx:190-197` | 1h |
-| X-7 | 列表项 memo 化：`/wrong-book`（27 state 提到页面顶层 + 内联箭头 props）、`/recall`（`typed` 在 682 行组件顶层） | `use-wrong-book-controller.ts:61`、`RecallSession.tsx:93` | 3–4h |
-| X-8 | 聊天流式加 `experimental_throttle`，`MessageList`/`ChatMessage` memo 化、`onDelete` 稳定化 | `use-chat-stream.ts:77`、`MessageList.tsx:60` | 1–2h |
-| X-9 | 根段 `loading.tsx` 全屏 `fixed z-50` 遮罩：只在根段挂起时闪，视觉上像"卡一下"，建议降级为顶部细进度条（模糊只在中央小卡上，代价不大） | `app/loading.tsx` | 30min |
-| X-10 | 低频变更页加 `unstable_cache`（feature flag、词表、教材）；顺带修 `middleware.ts:114` matcher 未排除 `sw.js/woff2/svg/webmanifest` 与 `?_rsc=` | `middleware.ts:114`、`feature-flags.ts` | 2h |
+| #    | 改动                                                                                                                                           | 落点                                                      | 粗估  |
+| ---- | ---------------------------------------------------------------------------------------------------------------------------------------------- | --------------------------------------------------------- | ----- |
+| X-1  | 根布局三次 feature flag 串行 await 改 `Promise.all`（每页固定省 2 个 DB 往返）                                                                 | `layout.tsx:69-74`                                        | 10min |
+| X-2  | `practice_logs(session_id)` 补索引（历史详情/报告/续做全靠它，是最大表）                                                                       | 新迁移                                                    | 30min |
+| X-3  | 抽题去掉 `ORDER BY RANDOM()` 全表随机排序（改 id 预采样或按热度分桶）                                                                          | `practice.ts:241`、`scheduling.ts:69/98`                  | 2–3h  |
+| X-4  | `QuestionCard` 的 `sanitizeHtml` 移进 `useMemo`；列表数组别在渲染期重建（击穿 memo）                                                           | `QuestionCard.tsx:225,252`、`history/[id]/page.tsx:233`   | 1–2h  |
+| X-5  | `NoteEditor` 每键序列化整篇 + `setTimeout` 无 `clearTimeout`（每键一个定时器）                                                                 | `NoteEditor.tsx:94-104`                                   | 30min |
+| X-6  | `/ocr` 的 O(n²) base64（`reduce` 拼字符串 + `btoa`，上限 10MB）改 `FormData` 直传                                                              | `ocr/page.tsx:190-197`                                    | 1h    |
+| X-7  | 列表项 memo 化：`/wrong-book`（27 state 提到页面顶层 + 内联箭头 props）、`/recall`（`typed` 在 682 行组件顶层）                                | `use-wrong-book-controller.ts:61`、`RecallSession.tsx:93` | 3–4h  |
+| X-8  | 聊天流式加 `experimental_throttle`，`MessageList`/`ChatMessage` memo 化、`onDelete` 稳定化                                                     | `use-chat-stream.ts:77`、`MessageList.tsx:60`             | 1–2h  |
+| X-9  | 根段 `loading.tsx` 全屏 `fixed z-50` 遮罩：只在根段挂起时闪，视觉上像"卡一下"，建议降级为顶部细进度条（模糊只在中央小卡上，代价不大）          | `app/loading.tsx`                                         | 30min |
+| X-10 | 低频变更页加 `unstable_cache`（feature flag、词表、教材）；顺带修 `middleware.ts:114` matcher 未排除 `sw.js/woff2/svg/webmanifest` 与 `?_rsc=` | `middleware.ts:114`、`feature-flags.ts`                   | 2h    |
 
 ## 8. 服务端与数据层（审计结论，供 S0 后排序）
 
@@ -210,19 +210,19 @@
 
 ## 12. 执行状态（2026-11-17）
 
-| 项 | 状态 | 落点 / 说明 |
-| --- | --- | --- |
-| P0-1 恢复 tap 反馈 | 完成 | `globals.css`：`-webkit-tap-highlight-color` 由 `transparent` 改为 `rgba(127,127,127,.18)`；`button/a/[role=button]/.clickable` 加 `touch-action: manipulation`；`:active` 过渡只作用于 transform 等具体属性（原 `transition: all`） |
-| P0-2 底栏去 blur | 完成 | `MobileNav.tsx:57` `bg-card/95 backdrop-blur-md` → `bg-card`（95% 不透明时模糊本就不可见） |
-| P0-3 路由转场去 scale | 完成 | `app/template.tsx` 由 `scale:.99 + y:12` spring（400–600ms）改为纯 `opacity` 150ms，不再整页重栅格化 |
-| P0-4 SW 超时 | 完成 | `app/sw.ts` 新增文档/RSC 的 `NetworkFirst{networkTimeoutSeconds:3}` 并置于 `defaultCache` 之前；`/api/` 那条同样补 3s |
-| P1-1 `/knowledge` | 部分完成 | 已删死 import `_MarkdownViewer`（它把 remark/rehype/katex 拉进 eager bundle）；入场延迟改 `Math.min(index,8)*0.05` + duration 0.25（原第 100 卡等 4.95s）。**未做**：去 `layoutId`、分页 30 —— 属观感/信息密度决策，见 `docs/decisions.md` T-14 |
-| P1-2 换题动画 | 未做 | 改 `mode="wait"` 会改变答题节奏，需先有 INP 数字，见 `docs/performance.md` §9 |
-| P1-3 模糊层 transition | 完成 | `dashboard/page.tsx` 三处 `transition-all` → `transition-shadow` |
-| P1-4 Button 去 motion | 未做 | 影响 302 个调用点手感，归入 ADR T-13（`LazyMotion` + 基础组件去 motion 一起做） |
-| X-1 flag 并行 | 完成 | `layout.tsx:69` → `Promise.all` |
-| X-2 补索引 | 完成 | 迁移 `0016`；`EXPLAIN` 已变 `SEARCH ... USING INDEX idx_practice_logs_session` |
-| §4 护栏补强 | 部分完成 | `ui-guard` 已转阻断（依据 run 43935305511）；新增 perf-guard；44×44 与表单双列仍是报告模式（转断言会引入一批存量失败，留待单独批次） |
-| §7 X-3..X-10 | 未做 | 按计划等 S0 的 INP 排名决定顺序；`docs/performance.md` §10 已记录 |
+| 项                     | 状态     | 落点 / 说明                                                                                                                                                                                                                                     |
+| ---------------------- | -------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| P0-1 恢复 tap 反馈     | 完成     | `globals.css`：`-webkit-tap-highlight-color` 由 `transparent` 改为 `rgba(127,127,127,.18)`；`button/a/[role=button]/.clickable` 加 `touch-action: manipulation`；`:active` 过渡只作用于 transform 等具体属性（原 `transition: all`）            |
+| P0-2 底栏去 blur       | 完成     | `MobileNav.tsx:57` `bg-card/95 backdrop-blur-md` → `bg-card`（95% 不透明时模糊本就不可见）                                                                                                                                                      |
+| P0-3 路由转场去 scale  | 完成     | `app/template.tsx` 由 `scale:.99 + y:12` spring（400–600ms）改为纯 `opacity` 150ms，不再整页重栅格化                                                                                                                                            |
+| P0-4 SW 超时           | 完成     | `app/sw.ts` 新增文档/RSC 的 `NetworkFirst{networkTimeoutSeconds:3}` 并置于 `defaultCache` 之前；`/api/` 那条同样补 3s                                                                                                                           |
+| P1-1 `/knowledge`      | 部分完成 | 已删死 import `_MarkdownViewer`（它把 remark/rehype/katex 拉进 eager bundle）；入场延迟改 `Math.min(index,8)*0.05` + duration 0.25（原第 100 卡等 4.95s）。**未做**：去 `layoutId`、分页 30 —— 属观感/信息密度决策，见 `docs/decisions.md` T-14 |
+| P1-2 换题动画          | 未做     | 改 `mode="wait"` 会改变答题节奏，需先有 INP 数字，见 `docs/performance.md` §9                                                                                                                                                                   |
+| P1-3 模糊层 transition | 完成     | `dashboard/page.tsx` 三处 `transition-all` → `transition-shadow`                                                                                                                                                                                |
+| P1-4 Button 去 motion  | 未做     | 影响 302 个调用点手感，归入 ADR T-13（`LazyMotion` + 基础组件去 motion 一起做）                                                                                                                                                                 |
+| X-1 flag 并行          | 完成     | `layout.tsx:69` → `Promise.all`                                                                                                                                                                                                                 |
+| X-2 补索引             | 完成     | 迁移 `0016`；`EXPLAIN` 已变 `SEARCH ... USING INDEX idx_practice_logs_session`                                                                                                                                                                  |
+| §4 护栏补强            | 部分完成 | `ui-guard` 已转阻断（依据 run 43935305511）；新增 perf-guard；44×44 与表单双列仍是报告模式（转断言会引入一批存量失败，留待单独批次）                                                                                                            |
+| §7 X-3..X-10           | 未做     | 按计划等 S0 的 INP 排名决定顺序；`docs/performance.md` §10 已记录                                                                                                                                                                               |
 
 > 遗留：本机无法跑 `next build`/Chromium，P0-1（tap 高亮）、P0-2（视觉）、P0-4（离线行为）三项的最终验收仍需真机确认一次。

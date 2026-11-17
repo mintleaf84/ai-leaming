@@ -105,9 +105,7 @@ async function main() {
   try {
     normalized = JSON.stringify(normalize(JSON.parse(current)), null, 2) + "\n";
   } catch {
-    console.error(
-      `契约快照 ${snapshotPath} 不是合法 JSON，请重新生成。`,
-    );
+    console.error(`契约快照 ${snapshotPath} 不是合法 JSON，请重新生成。`);
     process.exit(1);
   }
 

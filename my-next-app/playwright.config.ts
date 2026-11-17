@@ -45,12 +45,24 @@ export default defineConfig({
       // 与 chromium 项目共用同一份 webServer 与 globalSetup（种子库）。
       name: "layout-guard",
       testDir: "./tests/visual",
+      // tests/visual 下还有 perf-guard.spec.ts（交互性能，见 docs/performance.md T-09）。
+      // 两个套件共用目录但判定目标不同，必须各自限定 testMatch，
+      // 否则 `--project=layout-guard` 会把性能用例也算进"61 条护栏"里。
+      testMatch: /layout-guard\.spec\.ts$/,
       use: {
         ...devices["Desktop Chrome"],
         // 单个 action 的上限：布局护栏只做几何采样，15s 足够；
         // 卡住的 locator 会在这里先失败，而不是把 60s 用例超时吃满
         actionTimeout: 15 * 1000,
       },
+    },
+    {
+      // 交互性能护栏（docs/performance.md T-09）：LoAF 长动画帧 + 事件处理时长。
+      // 独立 project 是为了让失败能单独归因，也便于两周后单独收紧阈值。
+      name: "perf-guard",
+      testDir: "./tests/visual",
+      testMatch: /perf-guard\.spec\.ts$/,
+      use: { ...devices["Desktop Chrome"] },
     },
   ],
 

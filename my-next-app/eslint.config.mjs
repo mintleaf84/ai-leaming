@@ -68,6 +68,73 @@ const eslintConfig = defineConfig([
     },
   },
   {
+    // 性能禁止清单（docs/performance.md T-10）：把 docs/ui-system.md §7 的
+    // 禁止项从"靠 review 记得"变成可见告警。先 warn + 棘轮吸收存量，
+    // 清到 0 再升 error —— 与 no-unused-vars 当初的收敛方式一致。
+    //
+    // 为什么用 no-restricted-syntax 而不是自定义插件：规则要能在 CI 里跑、
+    // 不需要维护插件包，且选择器可读。
+    //
+    // 已知覆盖不到的写法（故意不强行匹配，避免误伤）：
+    //   * className 来自变量 / cn() 拼接 —— 选择器只看字符串字面量；
+    //   * `overflow-x-auto` 包整页 —— 全仓仅代码块（MarkdownViewer/CodeBlock）
+    //     两处合法用法，一刀切会立刻假红，留给 review。
+    files: ["src/**/*.tsx"],
+    rules: {
+      "no-restricted-syntax": [
+        "warn",
+        {
+          selector:
+            'JSXAttribute[name.name="className"][value.value=/\\btransition-all\\b/]',
+          message:
+            "禁止 transition-all：它会为所有可动画属性建过渡，配合 backdrop-blur/shadow 会逐帧重绘。改用 transition-colors / transition-shadow / transition-transform。",
+        },
+        {
+          selector:
+            'JSXAttribute[name.name="className"][value.value=/backdrop-blur/][value.value=/\\b(fixed|sticky)\\b/]',
+          message:
+            "固定/吸顶容器禁止 backdrop-blur：它压在滚动容器上时每帧都要重新采样背景（MobileNav 就是这么亏的）。用接近不透明的纯色底代替。",
+        },
+        {
+          selector:
+            'JSXAttribute[name.name="className"][value.value=/\\b(xl|2xl):/]',
+          message:
+            "只用 sm/md/lg 三档断点（docs/ui-system.md §2）。xl/2xl 会让布局在 1024–1440 之间失去断言覆盖。",
+        },
+        {
+          selector: 'CallExpression[callee.name="useMediaQuery"]',
+          message:
+            "禁止用 JS 判宽决定布局：两段 DOM 都渲染，显隐交给 CSS（md: 前缀）。例外只有滚动条补偿与 PWA display-mode，写在注释里并加 eslint-disable-next-line + 理由。",
+        },
+        {
+          selector: 'MemberExpression[object.name="window"][property.name="innerWidth"]',
+          message:
+            "禁止读 window.innerWidth 做布局判断（同 useMediaQuery）。确实需要像素值的地方（图表 canvas、虚拟列表高度）请走 useSyncExternalStore 并在注释里说明。",
+        },
+      ],
+    },
+  },
+  {
+    // 基础 UI 组件不做动效（docs/performance.md T-10）：
+    // ui/button.tsx 曾把 Button 做成 motion.button，302 个调用点各挂一套
+    // framer 实例与 pointer 监听。基础组件只用 CSS 过渡。
+    files: ["src/components/ui/**/*.tsx"],
+    rules: {
+      "no-restricted-imports": [
+        "warn",
+        {
+          paths: [
+            {
+              name: "framer-motion",
+              message:
+                "components/ui/* 是原子组件，不引入 framer-motion（运行时体积 + 每个实例的监听）。动效放业务组件，基础组件的按压态用 CSS :active。",
+            },
+          ],
+        },
+      ],
+    },
+  },
+  {
     // 测试与 mock 里 `as any` 是合理手段（构造非法输入、模拟未类型化的 SQL 行、
     // 替换第三方类型），生产代码仍按 warn + 棘轮约束。
     files: [

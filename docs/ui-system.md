@@ -249,9 +249,10 @@ expect(await page.locator("main").first().innerText()).not.toBe("");
 expect(probe.oversize).toEqual([]);
 ```
 
-> 状态：spec 与 CI job（`ui-guard`）已接入，46 条用例（含 5 条管理端路由）。`ui-guard` 现阶段 `continue-on-error`（存量溢出未清完），
-> 清完存量后改为阻断。§6.2 可点尺寸与 §6.4 表单双列目前是**报告模式**（annotation + `console.warn`），
-> 不计入用例结果。在那之前，改动布局的 PR 仍需在本地/CI 报告里确认无新增溢出。
+> 状态：spec 与 CI job（`ui-guard`）已接入，**61 条用例**（20 路由 × 3 视口 + 1 条专项，含 5 条管理端路由）。
+> 自 2026-11-17 起 `ui-guard` **不再 `continue-on-error`，失败即阻断合并**（依据：main 上 run 43935305511 的护栏步骤 success）。
+> 新增的 `perf-guard`（LoAF 长动画帧 / 点击事件处理时长）仍在观察期，`continue-on-error: true`，见 `docs/performance.md` T-09。
+> §6.2 可点尺寸与 §6.4 表单双列目前仍是**报告模式**（annotation + `console.warn`），不计入用例结果。
 
 不为「以后好复用」提前抽 `PageShell` 或引入 Storybook —— 先把类名统一，同一模式在 ≥3 页重复后再抽。
 

@@ -1,9 +1,11 @@
 {
   "updatedAt": "2026-11-16",
-  "total": 7,
-  "filesScanned": 629,
+  "total": 89,
+  "filesScanned": 653,
   "rules": {
+    "no-restricted-syntax": 80,
     "react-hooks/exhaustive-deps": 3,
+    "no-restricted-imports": 2,
     "@typescript-eslint/no-require-imports": 2,
     "import/no-anonymous-default-export": 1,
     "@typescript-eslint/no-explicit-any": 1

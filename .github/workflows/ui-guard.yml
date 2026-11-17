@@ -1,8 +1,13 @@
 name: UI Guard
 
-# 布局护栏单独成流：它现在会暴露存量移动端溢出问题，
-# 放在 CI 里会阻断所有 PR 合并。独立后失败仍然可见（PR 上红叉 + artifact），
-# 但不进入 required checks；存量清完后再把它并回 CI 并去掉 continue-on-error。
+# 布局护栏单独成流，与交互性能护栏 perf-guard 放在同一工作流里。
+#
+# layout-guard 自 2026-11-17 起**阻断合并**（T-08）：翻转依据是 main 上最近一次
+# UI Guard run 43935305511 的"运行布局护栏"步骤为 success，即存量溢出已清到
+# 61 条全绿，不再需要 continue-on-error 观察期。
+#
+# perf-guard（LoAF 长动画帧 / 事件处理时长）仍在观察期，continue-on-error: true，
+# 阈值先按 300ms，两周无假红后收紧到 200ms 并转为阻断（见 docs/performance.md T-09）。
 on:
   pull_request:
     branches: [ "master", "main" ]
@@ -26,9 +31,9 @@ jobs:
     name: UI 布局护栏 (Playwright · layout-guard)
     runs-on: ${{ (github.event_name == 'push' && vars.SELF_HOSTED == 'true') && 'self-hosted' || 'ubuntu-latest' }}
     timeout-minutes: 40
-    # 首次上线先观察：修完存量溢出问题后改为阻断
-    # 存量溢出未清完：失败只报告，不阻断
-    continue-on-error: true
+    # 已翻转（T-08）：main 上 run 43935305511 的护栏步骤为 success，
+    # 存量溢出清完，失败必须挡住合并。
+    continue-on-error: false
     env:
       JWT_SECRET: ci-placeholder-secret
       AI_API_KEY: ci-placeholder-key
@@ -66,7 +71,7 @@ jobs:
       - name: 安装 Playwright 浏览器（chromium）
         run: npx playwright install chromium
 
-      - name: 运行布局护栏（27 条：9 路由 × 3 视口）
+      - name: 运行布局护栏（61 条：20 路由 × 3 视口 + 1 条专项）
         run: npx playwright test --project=layout-guard
 
       - name: 上传 Playwright 报告
@@ -74,5 +79,63 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: playwright-report-ui-guard
+          path: my-next-app/playwright-report/
+          retention-days: 7
+
+  # 交互性能护栏（docs/performance.md T-09）：LoAF 长动画帧 + 点击事件处理时长。
+  # 与 layout-guard 共用同一份 webServer（生产构建 + 种子库），但判定目标不同：
+  # 那边量"几何对不对"，这边量"点击之后主线程有没有被堵住"。
+  # 观察期两周：阈值 300ms，且失败只报告不阻断 —— 清完已知的重绘大户
+  # （template.tsx 整页 spring、MobileNav backdrop-blur、列表 layoutId）后，
+  # 收到 200ms 并改为 continue-on-error: false。
+  perf-guard:
+    name: UI 交互性能护栏 (Playwright · perf-guard)
+    runs-on: ${{ (github.event_name == 'push' && vars.SELF_HOSTED == 'true') && 'self-hosted' || 'ubuntu-latest' }}
+    timeout-minutes: 40
+    continue-on-error: true
+    env:
+      JWT_SECRET: ci-placeholder-secret
+      AI_API_KEY: ci-placeholder-key
+      BACKUP_ENCRYPTION_KEY: ci-backup-encryption-key-for-testing-only
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
+          persist-credentials: false
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+          cache-dependency-path: my-next-app/package-lock.json
+
+      - name: 安装依赖
+        run: npm ci
+
+      - name: 缓存 Playwright 浏览器
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/ms-playwright
+          key: pw-${{ runner.os }}-${{ hashFiles('my-next-app/package-lock.json') }}
+          restore-keys: |
+            pw-${{ runner.os }}-
+
+      - name: 安装 Playwright 系统依赖（apt 不可用时跳过）
+        run: |
+          if ! npx playwright install-deps chromium; then
+            echo "::warning::apt 源不可用，跳过系统依赖安装（依赖 runner 镜像自带的 Chrome 库）"
+          fi
+
+      - name: 安装 Playwright 浏览器（chromium）
+        run: npx playwright install chromium
+
+      - name: 运行交互性能护栏（4 条：3 路由首屏 LoAF + 1 条点击延迟）
+        run: npx playwright test --project=perf-guard
+
+      - name: 上传 Playwright 报告与性能采样
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: playwright-report-perf-guard
           path: my-next-app/playwright-report/
           retention-days: 7

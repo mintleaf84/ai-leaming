@@ -18,6 +18,9 @@ const RATE_LIMIT_CONFIG = {
   "/api/auth/login": { limit: 5, windowMs: 60 * 1000 },
   // 注册接口：每分钟最多 3 次（防批量注册）
   "/api/auth/register": { limit: 3, windowMs: 60 * 1000 },
+  // 前端性能指标上报：匿名接口，单用户正常量级是"每次交互一条"（<1/s），
+  // 给到每分钟 120 次足够覆盖刷新与多标签，同时挡住被当成写入放大入口。
+  "/api/vitals": { limit: 120, windowMs: 60 * 1000 },
   // 默认：每分钟 30 次
   default: { limit: 30, windowMs: 60 * 1000 },
 };

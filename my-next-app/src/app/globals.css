@@ -418,8 +418,15 @@ body {
   height: 100%;
   overflow: hidden;
   /* 由内部 main 容器负责滚动 */
-  -webkit-tap-highlight-color: transparent;
-  /* 移除移动端点击高亮 */
+
+  /*
+   * 点击高亮（docs/mobile-performance.md P0-1）
+   *
+   * 曾经是 `transparent`：手指按下去的瞬间完全没有视觉反馈，要等 JS/水合回来
+   * 才有反应 —— 在手机上就是"点了像没反应、像要点两次"的主要来源之一。
+   * 这里恢复为低透明度中性色：深色主题下也可见，且不抢主色。
+   */
+  -webkit-tap-highlight-color: rgba(127, 127, 127, 0.18);
 }
 
 main {
@@ -538,16 +545,30 @@ main {
 }
 
 @layer base {
-  /* 全局交互反馈 */
+  /*
+   * 全局交互反馈（docs/mobile-performance.md P0-1）
+   *
+   * 1. `touch-action: manipulation`：去掉旧浏览器里"等 300ms 看是不是双击缩放"
+   *    的等待，点击立即生效。
+   * 2. `:active` 的 scale 保留，但过渡只作用于 transform —— 原先的
+   *    `transition: all .2s` 会连带为 color/background/box-shadow 建过渡，
+   *    在带 backdrop-blur 的元素上每次点击都触发一次重绘。
+   */
+  button,
+  a,
+  [role="button"],
+  .clickable {
+    touch-action: manipulation;
+    transition-property:
+      transform, color, background-color, border-color, box-shadow;
+    transition-duration: 0.2s;
+    transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
+  }
+
   button:active,
   .clickable:active {
     transform: scale(0.97);
-    transition: transform 0.1s ease-in-out;
-  }
-
-  button,
-  .clickable {
-    transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+    transition-duration: 0.1s;
   }
   * {
     @apply border-border outline-ring/50;

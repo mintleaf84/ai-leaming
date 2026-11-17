@@ -18,7 +18,6 @@ import { StudyModeOverlay } from "./components/StudyModeOverlay";
 import { KnowledgeModal } from "./components/KnowledgeModal";
 import { AIGenerateModal } from "./components/AIGenerateModal";
 import { KnowledgeCardExpanded } from "./components/KnowledgeCardExpanded";
-import _MarkdownViewer from "@/components/chat/MarkdownViewer";
 import type { KnowledgeCard } from "@/lib/services/knowledge";
 
 export default function KnowledgePage() {
@@ -145,9 +144,14 @@ export default function KnowledgePage() {
             {filteredCards.map((card, index: number) => (
               <motion.div
                 key={card.id}
-                initial={{ opacity: 0, y: 20 }}
+                initial={{ opacity: 0, y: 12 }}
                 animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: index * 0.05, duration: 0.5 }}
+                // 延迟封顶 8 档（最多 0.4s）：原先 index*0.05 在 100 卡时会
+                // 让最后一张等 4.95 秒 —— 那是确定性缺陷，不是抖动。
+                transition={{
+                  delay: Math.min(index, 8) * 0.05,
+                  duration: 0.25,
+                }}
               >
                 <KnowledgeCardItem
                   card={card}

@@ -1,0 +1,16 @@
+{
+  "publicAllow": [
+    "^fonts\\/",
+    "^uploads\\/",
+    "^books\\/",
+    "^logo\\.png$",
+    "^icons\\/",
+    "^data\\/"
+  ],
+  "updatedAt": "2026-11-16T19:26:55.823Z",
+  "routes": {
+    "__total__": 2476237
+  },
+  "mode": "total",
+  "note": "Turbopack 构建不产出 per-route manifest，故按全站 JS 总量（static/chunks + static/css 的 gzip 和）设基线；环比 +5% 即红。数值取自 CI run 44007754824 的首个 perf:budget 输出（2418.2KB / 123 文件）。"
+}

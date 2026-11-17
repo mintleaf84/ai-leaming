@@ -19,6 +19,50 @@ const protectedRoutes = [
 ];
 const publicRoutes = ["/login", "/register"];
 
+// 慢请求阈值：超过就升到 warn 级（docs/performance.md T-03）。
+const SLOW_REQUEST_MS = 300;
+
+/**
+ * 每个请求只产出一条结构化日志。
+ *
+ * 历史实现在鉴权分支里散落 3 条 console.log + 末尾一条 JSON，同一请求打 4 行，
+ * 既难聚合也让日志量翻倍。这里统一收口：所有 return 点都走 `finish()`，
+ * 保证「一请求一日志」，并把原本单独的鉴权失败信息并入 `authError` 字段。
+ *
+ * 注意：middleware 运行在 Edge runtime，不能引入 pino（src/lib/logger.ts）。
+ */
+function writeLog(entry: {
+  level: "info" | "warn";
+  requestId: string;
+  method: string;
+  path: string;
+  status: number;
+  startTime: number;
+  userId: string;
+  authError?: string;
+  req: NextRequest;
+}) {
+  const duration = Date.now() - entry.startTime;
+  console.log(
+    JSON.stringify({
+      level: entry.level,
+      timestamp: new Date().toISOString(),
+      requestId: entry.requestId,
+      method: entry.method,
+      path: entry.path,
+      status: entry.status,
+      duration: `${duration}ms`,
+      durationMs: duration,
+      userId: entry.userId,
+      ...(entry.authError ? { authError: entry.authError } : {}),
+      ip:
+        entry.req.headers.get("x-real-ip") ||
+        entry.req.headers.get("x-forwarded-for") ||
+        "unknown",
+    }),
+  );
+}
+
 export async function middleware(req: NextRequest) {
   // 0. Generate Request ID for tracing
   const requestId = crypto.randomUUID(); // Use native crypto, faster than nanoid for simple UUIDs
@@ -35,6 +79,7 @@ export async function middleware(req: NextRequest) {
   const cookie = req.cookies.get(COOKIE_NAME)?.value;
   let session = null;
   let userId = "anonymous";
+  let authError: string | undefined;
 
   if (cookie) {
     try {
@@ -42,28 +87,42 @@ export async function middleware(req: NextRequest) {
         user?: { id?: number; role?: string };
       } | null;
       userId = session?.user?.id ? String(session.user.id) : "anonymous";
-      console.log(`[Middleware] Token valid for user: ${userId}`);
     } catch (e: unknown) {
       // audit-allow: 解密失败即"未登录"，必须继续走下方 isProtectedRoute 的重定向判断，
-      // 在此 return 会跳过鉴权分支（等于放行）
-      console.warn(
-        `[Middleware] Token decryption failed: ${(e as Error).message}`,
-      );
+      // 在此 return 会跳过鉴权分支（等于放行）。失败是低频路径，因此这里单独留一条
+      // 告警（正常请求只有末尾那一条结构化日志），同时把原因挂到 authError 上。
+      authError = (e as Error).message;
+      console.warn(`[Middleware] token decrypt failed: ${authError}`);
     }
-  } else {
-    console.log(`[Middleware] No auth cookie found for path: ${path}`);
   }
+
+  // 所有出口共用的收尾：写一条日志再返回。
+  const finish = (response: NextResponse) => {
+    const duration = Date.now() - startTime;
+    writeLog({
+      level: duration > SLOW_REQUEST_MS ? "warn" : "info",
+      requestId,
+      method: req.method,
+      path,
+      status: response.status,
+      startTime,
+      userId,
+      authError,
+      req,
+    });
+    return response;
+  };
 
   // 4. Redirect to /login if the user is not authenticated
   if (isProtectedRoute && !session) {
-    return NextResponse.redirect(new URL("/login", req.nextUrl));
+    return finish(NextResponse.redirect(new URL("/login", req.nextUrl)));
   }
 
   // 4.1 Admin Route Protection (基于角色的权限控制)
   if (path.startsWith("/admin")) {
     // 使用角色字段判断权限，而非硬编码 ID
     if (!session?.user?.role || session.user.role !== "admin") {
-      return NextResponse.redirect(new URL("/dashboard", req.nextUrl));
+      return finish(NextResponse.redirect(new URL("/dashboard", req.nextUrl)));
     }
   }
 
@@ -75,7 +134,7 @@ export async function middleware(req: NextRequest) {
     !req.nextUrl.pathname.startsWith("/dashboard") &&
     path !== "/"
   ) {
-    return NextResponse.redirect(new URL("/dashboard", req.nextUrl));
+    return finish(NextResponse.redirect(new URL("/dashboard", req.nextUrl)));
   }
 
   const response = NextResponse.next();
@@ -83,33 +142,15 @@ export async function middleware(req: NextRequest) {
   // 6. Injection Tracing Headers
   response.headers.set("X-Request-Id", requestId);
 
-  // 7. Structural Logging (Async not to block)
-  // Note: In Vercel/Edge, console.log is the way to pipe logs.
-  // We use a simplified JSON via console.log directly to reduce dependency overhead in middleware if possible,
-  // but here we used `logger` if it's edge compatible or just simple console.log for middleware specifically.
-  // Given middleware runs on Edge, `pino` might be heavy. Let's use robust console.log JSON for middleware.
-  const duration = Date.now() - startTime;
-  console.log(
-    JSON.stringify({
-      level: "info",
-      timestamp: new Date().toISOString(),
-      requestId,
-      method: req.method,
-      path,
-      status: response.status,
-      duration: `${duration}ms`,
-      userId,
-      ip:
-        req.headers.get("x-real-ip") ||
-        req.headers.get("x-forwarded-for") ||
-        "unknown",
-    }),
-  );
-
-  return response;
+  return finish(response);
 }
 
 // Routes Middleware should not run on
+//
+// 静态资源后缀在这里排除，避免每个字体/图标/SW 请求都做一次 jose 验签 + 一条日志。
+// 只按「文件后缀」排除，不排除查询串 —— `?_rsc=` 的客户端导航请求正是要计时的对象。
 export const config = {
-  matcher: ["/((?!api|_next/static|_next/image|.*\\.png$).*)"],
+  matcher: [
+    "/((?!api|_next/static|_next/image|favicon.ico|sw.js|manifest.webmanifest|.*\\.(?:png|jpg|jpeg|gif|svg|webp|ico|woff2?|ttf|otf|map|txt|xml)$).*)",
+  ],
 };

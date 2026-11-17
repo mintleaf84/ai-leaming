@@ -18,38 +18,38 @@
 
 ## 1. 判据（全部可测，全部要改前/改后两行）
 
-| 指标 | 目标 | 采集方式 | 现状 |
-| --- | --- | --- | --- |
-| INP p75 | ≤ 200ms | `web_vitals` 表，按路由 | 无数据 |
-| LCP p75 | ≤ 2.5s | 同上 | 无数据 |
-| **二次启动到可交互** | < 1s | 真机 DevTools → Performance（冷启一次、热启一次） | 无数据 |
-| **导航点击 → 首帧** | < 100ms | Event Timing（perf-guard 已能抓） | 无数据 |
-| 长动画帧 | 无 > 200ms | `perf-guard`（观察期 300ms，两周后收 200ms） | 已跑，阈值宽 |
-| 全站 JS（gzip） | 每轮只降不升 | `npm run perf:budget` | 2418.2KB |
-| 移动端水合组件数 | 不含桌面专属组件 | 手工核对 + bundle 分析 | 未测 |
+| 指标                 | 目标             | 采集方式                                          | 现状         |
+| -------------------- | ---------------- | ------------------------------------------------- | ------------ |
+| INP p75              | ≤ 200ms          | `web_vitals` 表，按路由                           | 无数据       |
+| LCP p75              | ≤ 2.5s           | 同上                                              | 无数据       |
+| **二次启动到可交互** | < 1s             | 真机 DevTools → Performance（冷启一次、热启一次） | 无数据       |
+| **导航点击 → 首帧**  | < 100ms          | Event Timing（perf-guard 已能抓）                 | 无数据       |
+| 长动画帧             | 无 > 200ms       | `perf-guard`（观察期 300ms，两周后收 200ms）      | 已跑，阈值宽 |
+| 全站 JS（gzip）      | 每轮只降不升     | `npm run perf:budget`                             | 2418.2KB     |
+| 移动端水合组件数     | 不含桌面专属组件 | 手工核对 + bundle 分析                            | 未测         |
 
 ## 2. 任务卡索引
 
-| ID | 任务 | 组 | 依赖 | 粗估 | 验收 |
-| --- | --- | --- | --- | --- | --- |
-| P2-01 | 真机基线采集（INP/LCP/二次启动/导航） | A 数字 | — | 1h（人工） | 台账三行有数 |
-| P2-02 | 启动与导航耗时埋点（首屏可交互 + 点击→首帧） | A 数字 | — | 2h | 表里能按路由查 launch/nav |
-| P2-03 | 文档/RSC 改 `StaleWhileRevalidate` + `cacheOnNavigation` | B 缓存 | P2-01 | 2h | 热启动 `responseStart ≈ 0` |
-| P2-04 | 资源缓存矩阵复核（按类型对表） | B 缓存 | — | 1h | 与 §3B 表格逐行一致 |
-| P2-05 | 移动端不水合桌面侧栏 | C 水合 | P2-01 | 3–4h | 手机端 `AppSidebar` 不在 JS 里 |
-| P2-06 | framer 分层：`LazyMotion` + `m` | C 水合 | P2-05 | 4–6h | UI 动效不变，底包减 ~29KB |
-| P2-07 | 基础组件去 `motion`（Button 等） | C 水合 | P2-06 | 2h | 302 调用点视觉不变 |
-| P2-08 | 长列表：虚拟化 + 去 `layoutId` | D 渲染 | P2-01 | 4–6h | `/knowledge` 100 卡首屏可交互 |
-| P2-09 | 存量 `transition-all`/`backdrop-blur` 清零（80 → 0） | D 渲染 | — | 3–4h | lint 基线降到 0 |
-| P2-10 | `/ocr` 的 O(n²) base64 → `FormData` 直传 | E 主线程 | — | 1h | 3MB 图不再冻主线程 |
-| P2-11 | 聊天流式节流 + `MessageList` memo | E 主线程 | — | 1.5h | 50 条消息流式不掉帧 |
-| P2-12 | 题库导入 JSON 解析进 Worker | E 主线程 | — | 2h | 解析期间主线程无长任务 |
-| P2-13 | 单连接长事务收口（SRS 同步/PDF 导入批量写） | F 服务端 | — | 4–6h | 并发下 p95 不跳秒级 |
-| P2-14 | 抽题去 `ORDER BY RANDOM()` | F 服务端 | P2-01 | 2–3h | 2 万题时 `/practice/session` < 100ms |
-| P2-15 | 剩余缺索引（`session_reviews`、`practice_logs` 复合、教材章节） | F 服务端 | — | 1h | `EXPLAIN` 全部 SEARCH |
-| P2-16 | cron/PDF/OCR 出进程 | F 服务端 | P2-02 | 1d | lag 告警不再出现 |
-| P2-17 | per-route 体积预算（切 webpack 或换数据源） | G 治理 | — | 3–4h | 能报出"某页 +30KB" |
-| P2-18 | RUM 告警 + 台账自动化 | G 治理 | P2-01 | 2h | p75 超阈值有告警 |
+| ID    | 任务                                                            | 组       | 依赖  | 粗估       | 验收                                 |
+| ----- | --------------------------------------------------------------- | -------- | ----- | ---------- | ------------------------------------ |
+| P2-01 | 真机基线采集（INP/LCP/二次启动/导航）                           | A 数字   | —     | 1h（人工） | 台账三行有数                         |
+| P2-02 | 启动与导航耗时埋点（首屏可交互 + 点击→首帧）                    | A 数字   | —     | 2h         | 表里能按路由查 launch/nav            |
+| P2-03 | 文档/RSC 改 `StaleWhileRevalidate` + `cacheOnNavigation`        | B 缓存   | P2-01 | 2h         | 热启动 `responseStart ≈ 0`           |
+| P2-04 | 资源缓存矩阵复核（按类型对表）                                  | B 缓存   | —     | 1h         | 与 §3B 表格逐行一致                  |
+| P2-05 | 移动端不水合桌面侧栏                                            | C 水合   | P2-01 | 3–4h       | 手机端 `AppSidebar` 不在 JS 里       |
+| P2-06 | framer 分层：`LazyMotion` + `m`                                 | C 水合   | P2-05 | 4–6h       | UI 动效不变，底包减 ~29KB            |
+| P2-07 | 基础组件去 `motion`（Button 等）                                | C 水合   | P2-06 | 2h         | 302 调用点视觉不变                   |
+| P2-08 | 长列表：虚拟化 + 去 `layoutId`                                  | D 渲染   | P2-01 | 4–6h       | `/knowledge` 100 卡首屏可交互        |
+| P2-09 | 存量 `transition-all`/`backdrop-blur` 清零（80 → 0）            | D 渲染   | —     | 3–4h       | lint 基线降到 0                      |
+| P2-10 | `/ocr` 的 O(n²) base64 → `FormData` 直传                        | E 主线程 | —     | 1h         | 3MB 图不再冻主线程                   |
+| P2-11 | 聊天流式节流 + `MessageList` memo                               | E 主线程 | —     | 1.5h       | 50 条消息流式不掉帧                  |
+| P2-12 | 题库导入 JSON 解析进 Worker                                     | E 主线程 | —     | 2h         | 解析期间主线程无长任务               |
+| P2-13 | 单连接长事务收口（SRS 同步/PDF 导入批量写）                     | F 服务端 | —     | 4–6h       | 并发下 p95 不跳秒级                  |
+| P2-14 | 抽题去 `ORDER BY RANDOM()`                                      | F 服务端 | P2-01 | 2–3h       | 2 万题时 `/practice/session` < 100ms |
+| P2-15 | 剩余缺索引（`session_reviews`、`practice_logs` 复合、教材章节） | F 服务端 | —     | 1h         | `EXPLAIN` 全部 SEARCH                |
+| P2-16 | cron/PDF/OCR 出进程                                             | F 服务端 | P2-02 | 1d         | lag 告警不再出现                     |
+| P2-17 | per-route 体积预算（切 webpack 或换数据源）                     | G 治理   | —     | 3–4h       | 能报出"某页 +30KB"                   |
+| P2-18 | RUM 告警 + 台账自动化                                           | G 治理   | P2-01 | 2h         | p75 超阈值有告警                     |
 
 粗估口径：改动 + 自测 + 一次 review 往返，**不含 CI 排队与 `next build` 等待**（本机跑不了）。
 
@@ -65,7 +65,7 @@
 - **P2-02**：在 `web_vitals` 之外补两个事件型指标：
   - `launch`：`performance.getEntriesByType("navigation")[0]` 的 `domInteractive - startTime`；
   - `nav`：`PerformanceObserver({ type: "event" })` 里 `pointerup → next paint`（与 perf-guard 同源，但落库）。
-  表结构加 `kind`（`vital|launch|nav`）而不是新建表，避免查询分散。
+    表结构加 `kind`（`vital|launch|nav`）而不是新建表，避免查询分散。
 
 **不做**：不引入第三方 RUM（单用户自部署，加依赖不划算）。
 
@@ -95,7 +95,7 @@
   且无 `LazyMotion`/`MotionConfig`。改造顺序：先 `LazyMotion` 包根 → 逐个换 `m.*` →
   最后把 `domAnimation` 收窄到需要的 feature 集。
 - **P2-07**：`components/ui/button.tsx:62` 的 `motion.button + whileTap` 换回普通 `button`
-  + CSS `:active`（P0-1 已把按压态做成 CSS，语义已承接）。302 个调用点不动。
+  - CSS `:active`（P0-1 已把按压态做成 CSS，语义已承接）。302 个调用点不动。
 
 ### D. 减渲染（P2-08 / P2-09）
 
@@ -147,14 +147,14 @@
 
 ## 5. 排期（按依赖，不按人天堆）
 
-| 周 | 内容 | 产出 |
-| --- | --- | --- |
-| W1 | P2-01 + P2-02 → 有数字；P2-03 + P2-04 → 缓存层到位 | 基线台账 4 行；热启动不等网络 |
-| W2 | P2-05 + P2-06 + P2-07（减水合） | 手机端不再水合桌面侧栏；底包 −29KB |
-| W3 | P2-08 + P2-09（减渲染） | `/knowledge` 首屏；lint 基线归零 |
-| W4 | P2-10 + P2-11 + P2-12（主线程） | 三处冻界面代码清零 |
-| W5–W6 | P2-13 ~ P2-16（服务端） | 并发 p95 稳定；抽题变快；lag 消失 |
-| 收尾 | P2-17 + P2-18 | per-route 预算 + 告警 |
+| 周    | 内容                                               | 产出                               |
+| ----- | -------------------------------------------------- | ---------------------------------- |
+| W1    | P2-01 + P2-02 → 有数字；P2-03 + P2-04 → 缓存层到位 | 基线台账 4 行；热启动不等网络      |
+| W2    | P2-05 + P2-06 + P2-07（减水合）                    | 手机端不再水合桌面侧栏；底包 −29KB |
+| W3    | P2-08 + P2-09（减渲染）                            | `/knowledge` 首屏；lint 基线归零   |
+| W4    | P2-10 + P2-11 + P2-12（主线程）                    | 三处冻界面代码清零                 |
+| W5–W6 | P2-13 ~ P2-16（服务端）                            | 并发 p95 稳定；抽题变快；lag 消失  |
+| 收尾  | P2-17 + P2-18                                      | per-route 预算 + 告警              |
 
 每张卡单独 PR，合并前必须附**改前/改后**两行数字；没有数字的优化不合。
 

@@ -1,3 +1,4 @@
+import userEvent from "@testing-library/user-event";
 import { render, screen, fireEvent } from "@testing-library/react";
 import { describe, expect, it, vi, beforeEach } from "vitest";
 import { PracticeCard } from "../PracticeCard";
@@ -190,5 +191,130 @@ describe("PracticeCard Component", () => {
     // 选中状态时 "正确" 按钮应有 emerald 样式
     const correctBtn = screen.getByText("正确").closest("button");
     expect(correctBtn).toHaveClass("border-emerald-500");
+  });
+});
+
+/**
+ * a11y 批次 B5：选项主体 / 排除按钮换成真 <button>。
+ * 这里锁住「键盘等价」：Tab 能到、Enter/Space 与点击等价、
+ * 且被排除的选项仍可聚焦但不响应选中。
+ */
+describe("PracticeCard 键盘操作（a11y B5）", () => {
+  const mockOnOptionClick = vi.fn();
+  const mockOnSubmitMulti = vi.fn();
+
+  beforeEach(() => {
+    mockOnOptionClick.mockClear();
+    mockOnSubmitMulti.mockClear();
+  });
+
+  it("Tab 在选项主体与排除按钮之间按 DOM 顺序移动", async () => {
+    const user = userEvent.setup();
+    render(
+      <PracticeCard
+        question={mockQuestionSingle}
+        isMulti={false}
+        selectedOptions={[]}
+        onOptionClick={mockOnOptionClick}
+        onSubmitMulti={mockOnSubmitMulti}
+      />,
+    );
+
+    const redBtn = screen.getByText("Red").closest("button");
+    expect(redBtn).not.toBeNull();
+    redBtn!.focus();
+    expect(redBtn).toHaveFocus();
+
+    await user.tab();
+    expect(screen.getByRole("button", { name: "排除选项 A" })).toHaveFocus();
+
+    await user.tab();
+    expect(screen.getByText("Green").closest("button")).toHaveFocus();
+  });
+
+  it("Enter 与点击等价地选中选项", async () => {
+    const user = userEvent.setup();
+    render(
+      <PracticeCard
+        question={mockQuestionSingle}
+        isMulti={false}
+        selectedOptions={[]}
+        onOptionClick={mockOnOptionClick}
+        onSubmitMulti={mockOnSubmitMulti}
+      />,
+    );
+
+    const redBtn = screen.getByText("Red").closest("button")!;
+    redBtn.focus();
+    await user.keyboard("{Enter}");
+
+    expect(mockOnOptionClick).toHaveBeenCalledWith("A", "single");
+  });
+
+  it("空格键与点击等价地选中选项", async () => {
+    const user = userEvent.setup();
+    render(
+      <PracticeCard
+        question={mockQuestionSingle}
+        isMulti={true}
+        selectedOptions={[]}
+        onOptionClick={mockOnOptionClick}
+        onSubmitMulti={mockOnSubmitMulti}
+      />,
+    );
+
+    const greenBtn = screen.getByText("Green").closest("button")!;
+    greenBtn.focus();
+    await user.keyboard(" ");
+
+    expect(mockOnOptionClick).toHaveBeenCalledWith("B", "multi");
+  });
+
+  it("排除 / 恢复按钮可用键盘触发，且不误触发选项选中", async () => {
+    const user = userEvent.setup();
+    render(
+      <PracticeCard
+        question={mockQuestionSingle}
+        isMulti={false}
+        selectedOptions={[]}
+        onOptionClick={mockOnOptionClick}
+        onSubmitMulti={mockOnSubmitMulti}
+      />,
+    );
+
+    const excludeBtn = screen.getByRole("button", { name: "排除选项 A" });
+    excludeBtn.focus();
+    await user.keyboard("{Enter}");
+    expect(screen.getByText("Red")).toHaveClass("line-through");
+    expect(mockOnOptionClick).not.toHaveBeenCalled();
+
+    const restoreBtn = screen.getByRole("button", { name: "恢复选项 A" });
+    restoreBtn.focus();
+    await user.keyboard("{Enter}");
+    expect(screen.getByText("Red")).not.toHaveClass("line-through");
+    expect(mockOnOptionClick).not.toHaveBeenCalled();
+  });
+
+  it("被排除的选项仍可聚焦，但 Enter 不选中（aria-disabled）", async () => {
+    const user = userEvent.setup();
+    render(
+      <PracticeCard
+        question={mockQuestionSingle}
+        isMulti={false}
+        selectedOptions={[]}
+        onOptionClick={mockOnOptionClick}
+        onSubmitMulti={mockOnSubmitMulti}
+      />,
+    );
+
+    await user.click(screen.getByRole("button", { name: "排除选项 A" }));
+
+    const redBtn = screen.getByText("Red").closest("button")!;
+    expect(redBtn).toHaveAttribute("aria-disabled", "true");
+    redBtn.focus();
+    expect(redBtn).toHaveFocus();
+
+    await user.keyboard("{Enter}");
+    expect(mockOnOptionClick).not.toHaveBeenCalled();
   });
 });

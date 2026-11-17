@@ -58,6 +58,7 @@
 | 建议 | ① 文档/RSC 的 `NetworkFirst` 加 `networkTimeoutSeconds: 3`，或改 `StaleWhileRevalidate`（3s 后回退缓存）；② `getGlobalFeatureFlag` 等低频读加 `react cache()`（已在 X-1 做完并行，缓存是下一步）；③ `revalidate=60` 的三处先确认是否真被 `cookies()` 动态化（需 build 的 `○/ƒ` 标记） |
 | 理由 | serwist 的 `defaultCache` 对 HTML/RSC 是网络优先且无超时，24h 缓存形同虚设 —— 弱网下每次切页都在等网络，而缓存里其实有内容                                                                                                                                                            |
 | 代价 | 离线/半离线行为会变化（可能看到"旧页面 3 秒"），需要明确"可接受陈旧多久"；`skipWaiting + clientsClaim` 会在发版瞬间打断进行中的会话，改缓存策略时要一起评估                                                                                                                           |
+
 ## 2026-11-17 · 错误分类在 action 边界止步
 
 `AppError` 的 5 类语义只在 **HTTP 边界**（`toErrorResponse`）使用；Server Action 侧

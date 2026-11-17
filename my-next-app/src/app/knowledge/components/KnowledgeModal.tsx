@@ -4,6 +4,7 @@ import React from "react";
 import { X, Plus, Edit2, Sparkles, Loader2 } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
+import { Dialog, DialogContentBare } from "@/components/ui/dialog";
 import type { KnowledgeCard } from "@/lib/services/knowledge";
 import { isImeComposing } from "@/lib/utils/ime";
 
@@ -26,6 +27,25 @@ export const KnowledgeModal: React.FC<KnowledgeModalProps> = ({
 }) => {
   const [instruction, setInstruction] = React.useState("");
   const [isRegenerating, setIsRegenerating] = React.useState(false);
+
+  // 打开前焦点在哪：Radix 在没有 Dialog.Trigger 时不会归还焦点（它只认 triggerRef），
+  // 所以自己记一份，关闭时还回去，避免"关掉弹窗后从页面顶部重新 Tab"。
+  const contentRef = React.useRef<HTMLDivElement>(null);
+  const previousFocusRef = React.useRef<HTMLElement | null>(null);
+  React.useEffect(() => {
+    if (!isOpen) return;
+    const active = document.activeElement as HTMLElement | null;
+    // body 不是有意义的触发元素；焦点已经进了弹窗说明 Radix 抢先接管，也不能当触发元素
+    if (!active || active === document.body) return;
+    if (contentRef.current?.contains(active)) return;
+    previousFocusRef.current = active;
+  }, [isOpen]);
+
+  const handleCloseAutoFocus = (event: Event) => {
+    event.preventDefault();
+    const target = previousFocusRef.current;
+    if (target && target.isConnected) target.focus();
+  };
 
   // 当收到新的 card 时重置指令
   React.useEffect(() => {
@@ -80,8 +100,27 @@ export const KnowledgeModal: React.FC<KnowledgeModalProps> = ({
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 bg-black/60 backdrop-blur-md z-50 flex items-center justify-center p-4">
-      <div className="bg-card rounded-3xl shadow-2xl max-w-2xl w-full max-h-[90vh] flex flex-col overflow-hidden animate-in zoom-in-95 duration-200 border border-border">
+    <Dialog
+      open
+      onOpenChange={(open) => {
+        if (!open) onClose();
+      }}
+    >
+      <DialogContentBare
+        ref={contentRef}
+        aria-labelledby="km-modal-title"
+        aria-describedby={undefined}
+        onCloseAutoFocus={handleCloseAutoFocus}
+        // 原本点遮罩不关闭（表单里可能有未保存内容），换成 Radix 后保持这个行为
+        onInteractOutside={(event) => event.preventDefault()}
+        overlay={
+          <div
+            data-testid="dialog-overlay"
+            className="fixed inset-0 z-50 bg-black/60 backdrop-blur-md"
+          />
+        }
+        className="fixed left-1/2 top-1/2 z-50 -translate-x-1/2 -translate-y-1/2 w-[calc(100%_-_2rem)] max-w-2xl max-h-[90vh] bg-card rounded-3xl shadow-2xl border border-border flex flex-col overflow-hidden animate-in zoom-in-95 duration-200"
+      >
         <div className="flex items-center justify-between p-6 border-b border-border bg-muted/30">
           <div className="flex items-center gap-3">
             <div
@@ -94,7 +133,7 @@ export const KnowledgeModal: React.FC<KnowledgeModalProps> = ({
               )}
             </div>
             <div>
-              <h2 className="font-bold text-xl text-foreground">
+              <h2 id="km-modal-title" className="font-bold text-xl text-foreground">
                 {isCreate ? "手动创作知识卡片" : "精修知识卡片"}
               </h2>
               <p className="text-xs text-muted-foreground flex items-center gap-1">
@@ -275,7 +314,7 @@ export const KnowledgeModal: React.FC<KnowledgeModalProps> = ({
             完成并同步
           </Button>
         </div>
-      </div>
-    </div>
+      </DialogContentBare>
+    </Dialog>
   );
 };

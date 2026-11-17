@@ -145,16 +145,17 @@ describe("label ↔ 控件的关联（跨表单语义断言）", () => {
   });
 
   it("AIGenerateModal：输入步骤与预览步骤的 label 全部能解析到对应控件", async () => {
-    const { container } = render(
-      <AIGenerateModal isOpen onClose={vi.fn()} onSave={vi.fn()} />,
-    );
+    // 弹窗换 Radix 后内容在 portal 里（挂到 body），不在 render 的 container 内，
+    // 所以这里按弹窗根节点取 scope —— 断言本身没变：label 必须解析到真控件
+    render(<AIGenerateModal isOpen onClose={vi.fn()} onSave={vi.fn()} />);
+    const dialog = await screen.findByRole("dialog");
 
     // 步骤一：只有一个 textarea
     expect(
-      assertEveryLabelHasControl(container, "AIGenerateModal/input"),
+      assertEveryLabelHasControl(dialog, "AIGenerateModal/input"),
     ).toEqual(["输入知识点内容"]);
 
-    fireEvent.change(container.querySelector("textarea")!, {
+    fireEvent.change(dialog.querySelector("textarea")!, {
       target: { value: "皮亚杰认知发展理论" },
     });
     fireEvent.click(screen.getByRole("button", { name: /AI 生成/ }));
@@ -162,7 +163,7 @@ describe("label ↔ 控件的关联（跨表单语义断言）", () => {
 
     // 步骤二：5 个字段（标题/分类/正反面/标签）
     expect(
-      assertEveryLabelHasControl(container, "AIGenerateModal/preview"),
+      assertEveryLabelHasControl(dialog, "AIGenerateModal/preview"),
     ).toEqual(["标题", "分类", "正面 (问题)", "背面 (答案)", "标签"]);
   });
 
@@ -228,11 +229,10 @@ describe("点 label → 控件接管（关联不是「写了个属性」）", ()
 
   it("AIGenerateModal：点「标签」label 让标签输入框拿到焦点", async () => {
     const user = userEvent.setup();
-    const { container } = render(
-      <AIGenerateModal isOpen onClose={vi.fn()} onSave={vi.fn()} />,
-    );
+    render(<AIGenerateModal isOpen onClose={vi.fn()} onSave={vi.fn()} />);
+    const dialog = await screen.findByRole("dialog");
 
-    fireEvent.change(container.querySelector("textarea")!, {
+    fireEvent.change(dialog.querySelector("textarea")!, {
       target: { value: "皮亚杰认知发展理论" },
     });
     fireEvent.click(screen.getByRole("button", { name: /AI 生成/ }));

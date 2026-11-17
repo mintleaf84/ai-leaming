@@ -65,7 +65,10 @@ vi.mock("ai", () => ({
     const badDim =
       stub.state.badDimFor !== null && value.includes(stub.state.badDimFor);
     return {
-      embedding: stub.unit(value, badDim ? stub.state.dims + 1 : stub.state.dims),
+      embedding: stub.unit(
+        value,
+        badDim ? stub.state.dims + 1 : stub.state.dims,
+      ),
     };
   }),
   embedMany: vi.fn(async ({ values }: { values: string[] }) => {
@@ -206,7 +209,12 @@ describe("题目向量索引（真实库 + 真实 sqlite-vec）", () => {
     // 批量路径同样算 skipped（不是 failed）：API 不可达不是"这一题坏了"
     const offset = questionCount() - 1;
     const batch = await indexModule.reindexQuestions({ limit: 1, offset });
-    expect(batch).toMatchObject({ scanned: 1, indexed: 0, skipped: 1, failed: 0 });
+    expect(batch).toMatchObject({
+      scanned: 1,
+      indexed: 0,
+      skipped: 1,
+      failed: 0,
+    });
     expect(storedQuestionIds()).not.toContain(qid);
   });
 
@@ -287,9 +295,7 @@ describe("题目向量索引（真实库 + 真实 sqlite-vec）", () => {
 
     expect(second).toMatchObject({ scanned: 2, indexed: 2, failed: 0 });
     expect(storedQuestionIds()).toEqual(rowsAfterFirst);
-    expect(storedQuestionIds()).toEqual(
-      expect.arrayContaining([q1, q2]),
-    );
+    expect(storedQuestionIds()).toEqual(expect.arrayContaining([q1, q2]));
     const duplicates = legacy
       .prepare(
         "SELECT question_id, count(*) AS c FROM questions_vec GROUP BY question_id HAVING c > 1",

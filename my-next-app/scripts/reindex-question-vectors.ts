@@ -53,7 +53,10 @@ function parseArgs(argv: string[]): Args {
   const requestedLimit = readNumberArg(argv, "limit");
   const offset = readNumberArg(argv, "offset") ?? 0;
 
-  let limit = requestedLimit === undefined ? DEFAULT_REINDEX_LIMIT : Math.trunc(requestedLimit);
+  let limit =
+    requestedLimit === undefined
+      ? DEFAULT_REINDEX_LIMIT
+      : Math.trunc(requestedLimit);
   if (limit < 1) limit = DEFAULT_REINDEX_LIMIT;
   if (limit > MAX_REINDEX_LIMIT) {
     console.warn(
@@ -79,7 +82,9 @@ async function main(): Promise<number> {
   console.log("=".repeat(56));
   console.log("题库向量索引回填");
   console.log("=".repeat(56));
-  console.log(`模式     : ${args.dryRun ? "dry-run（不调 API、不写库）" : "实际写入"}`);
+  console.log(
+    `模式     : ${args.dryRun ? "dry-run（不调 API、不写库）" : "实际写入"}`,
+  );
   console.log(`limit    : ${args.limit}`);
   console.log(`offset   : ${args.offset}`);
   console.log("=".repeat(56));
@@ -106,7 +111,9 @@ async function main(): Promise<number> {
     return 0;
   }
   if (args.offset >= total) {
-    console.log(`offset=${args.offset} 已超出题库总数 ${total}，没有剩余题目。`);
+    console.log(
+      `offset=${args.offset} 已超出题库总数 ${total}，没有剩余题目。`,
+    );
     return 0;
   }
 
@@ -133,7 +140,9 @@ async function main(): Promise<number> {
   console.log(`indexed  : ${result.indexed}`);
   console.log(`skipped  : ${result.skipped}`);
   console.log(`failed   : ${result.failed}`);
-  console.log(`剩余     : ${remaining} 题（offset=${args.offset + result.scanned} 起）`);
+  console.log(
+    `剩余     : ${remaining} 题（offset=${args.offset + result.scanned} 起）`,
+  );
   console.log(`耗时     : ${formatDuration(elapsed)}`);
   console.log("-".repeat(56));
 

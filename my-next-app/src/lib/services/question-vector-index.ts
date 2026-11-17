@@ -101,7 +101,9 @@ function stringifyOptions(options: unknown): string {
 }
 
 /** 实际写一条向量；失败（如维度不符）直接抛出，由调用方决定算 failed 还是上报 */
-async function indexRow(row: IndexableQuestion): Promise<"indexed" | "skipped"> {
+async function indexRow(
+  row: IndexableQuestion,
+): Promise<"indexed" | "skipped"> {
   // 题面为空就没有可索引的语义：拼出来的文本只有选项/答案，检索上去只会误召回
   if ((row.content ?? "").trim().length === 0) return "skipped";
 

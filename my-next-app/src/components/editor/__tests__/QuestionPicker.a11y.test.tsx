@@ -145,9 +145,7 @@ describe("QuestionPicker（批次 B2：换成 Dialog，不是 Popover）", () =>
     openPicker();
 
     const input = screen.getByPlaceholderText(/搜索题目内容/);
-    (
-      searchQuestionsAction as unknown as ReturnType<typeof vi.fn>
-    ).mockClear();
+    (searchQuestionsAction as unknown as ReturnType<typeof vi.fn>).mockClear();
 
     fireEvent.keyDown(input, { key: "Enter", isComposing: true });
     await new Promise((resolve) => setTimeout(resolve, 0));

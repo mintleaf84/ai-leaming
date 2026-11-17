@@ -151,9 +151,9 @@ describe("label ↔ 控件的关联（跨表单语义断言）", () => {
     const dialog = await screen.findByRole("dialog");
 
     // 步骤一：只有一个 textarea
-    expect(
-      assertEveryLabelHasControl(dialog, "AIGenerateModal/input"),
-    ).toEqual(["输入知识点内容"]);
+    expect(assertEveryLabelHasControl(dialog, "AIGenerateModal/input")).toEqual(
+      ["输入知识点内容"],
+    );
 
     fireEvent.change(dialog.querySelector("textarea")!, {
       target: { value: "皮亚杰认知发展理论" },

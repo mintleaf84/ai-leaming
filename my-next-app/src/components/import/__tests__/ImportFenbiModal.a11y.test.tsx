@@ -48,9 +48,9 @@ function openModal() {
 describe("ImportFenbiModal（批次 B2：换成 Dialog）", () => {
   beforeEach(() => {
     vi.clearAllMocks();
-    (getImportTokenAction as unknown as ReturnType<typeof vi.fn>).mockResolvedValue(
-      { data: "" },
-    );
+    (
+      getImportTokenAction as unknown as ReturnType<typeof vi.fn>
+    ).mockResolvedValue({ data: "" });
   });
 
   it("有 dialog 语义：role=dialog + aria-modal + 可访问名称", async () => {

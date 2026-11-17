@@ -92,7 +92,9 @@ describe("KnowledgeModal：换成 Radix 后仍保住既有行为", () => {
     await user.click(trigger);
 
     const dialog = await expectDialogOpen();
-    await waitFor(() => expect(dialog.contains(document.activeElement)).toBe(true));
+    await waitFor(() =>
+      expect(dialog.contains(document.activeElement)).toBe(true),
+    );
     await expectFocusTrapped(dialog);
 
     await user.keyboard("{Escape}");
@@ -143,7 +145,9 @@ describe("AIGenerateModal：换成 Radix 后仍保住既有行为", () => {
     await user.click(trigger);
 
     const dialog = await expectDialogOpen();
-    await waitFor(() => expect(dialog.contains(document.activeElement)).toBe(true));
+    await waitFor(() =>
+      expect(dialog.contains(document.activeElement)).toBe(true),
+    );
     await expectFocusTrapped(dialog);
 
     await user.keyboard("{Escape}");
@@ -191,7 +195,9 @@ describe("KnowledgeCardExpanded：换 Radix 但不能丢共享布局动画", () 
     await user.click(screen.getByRole("button", { name: "展开卡片" }));
 
     const dialog = await expectDialogOpen();
-    await waitFor(() => expect(dialog.contains(document.activeElement)).toBe(true));
+    await waitFor(() =>
+      expect(dialog.contains(document.activeElement)).toBe(true),
+    );
     await expectFocusTrapped(dialog);
   });
 
@@ -204,7 +210,10 @@ describe("KnowledgeCardExpanded：换 Radix 但不能丢共享布局动画", () 
     await user.click(screen.getByRole("button", { name: "展开卡片" }));
     const dialog = await expectDialogOpen();
 
-    expect(dialog).toHaveAttribute("aria-labelledby", `card-expanded-title-${CARD.id}`);
+    expect(dialog).toHaveAttribute(
+      "aria-labelledby",
+      `card-expanded-title-${CARD.id}`,
+    );
     expect(
       document.getElementById(`card-expanded-title-${CARD.id}`),
     ).toHaveTextContent(CARD.title);
@@ -263,7 +272,9 @@ describe("StudyModeOverlay：Radix 只管语义与焦点，键盘仍归 useStudy
     await user.click(screen.getByRole("button", { name: "开始复习" }));
 
     const dialog = await expectDialogOpen();
-    await waitFor(() => expect(dialog.contains(document.activeElement)).toBe(true));
+    await waitFor(() =>
+      expect(dialog.contains(document.activeElement)).toBe(true),
+    );
     await expectFocusTrapped(dialog);
   });
 
@@ -316,6 +327,8 @@ describe("StudyModeOverlay：Radix 只管语义与焦点，键盘仍归 useStudy
     card.focus();
     await user.keyboard("{Enter}");
     expect(screen.getByTestId("flipped")).toHaveTextContent("true");
-    expect(screen.getByRole("button", { name: "翻转回问题" })).toBeInTheDocument();
+    expect(
+      screen.getByRole("button", { name: "翻转回问题" }),
+    ).toBeInTheDocument();
   });
 });

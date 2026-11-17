@@ -137,7 +137,12 @@ export default function QuestionPicker({
             <BookOpen className="h-5 w-5 text-primary" />
             引用题目
           </DialogTitle>
-          <Button variant="ghost" size="icon" onClick={onClose} aria-label="关闭">
+          <Button
+            variant="ghost"
+            size="icon"
+            onClick={onClose}
+            aria-label="关闭"
+          >
             <X className="h-4 w-4" />
           </Button>
         </div>

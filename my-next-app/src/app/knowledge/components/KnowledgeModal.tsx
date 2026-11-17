@@ -133,7 +133,10 @@ export const KnowledgeModal: React.FC<KnowledgeModalProps> = ({
               )}
             </div>
             <div>
-              <h2 id="km-modal-title" className="font-bold text-xl text-foreground">
+              <h2
+                id="km-modal-title"
+                className="font-bold text-xl text-foreground"
+              >
                 {isCreate ? "手动创作知识卡片" : "精修知识卡片"}
               </h2>
               <p className="text-xs text-muted-foreground flex items-center gap-1">

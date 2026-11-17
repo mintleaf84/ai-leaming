@@ -67,10 +67,7 @@ const detail = {
     sessionName: "智能刷题 #1",
     accuracy: 75,
   },
-  logs: [
-    { isCorrect: true },
-    { isCorrect: false },
-  ],
+  logs: [{ isCorrect: true }, { isCorrect: false }],
 };
 
 function Harness({ onClose }: { onClose: () => void }) {

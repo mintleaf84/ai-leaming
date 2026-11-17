@@ -1,7 +1,11 @@
 import { OpenAPIHono, createRoute, z } from "@hono/zod-openapi";
 import { log } from "@/lib/logger";
 import { checkRateLimit, getClientIP } from "@/lib/auth/rate-limit";
-import { webVitalsService, VITAL_NAMES, type VitalKind } from "@/lib/services/web-vitals";
+import {
+  webVitalsService,
+  VITAL_NAMES,
+  type VitalKind,
+} from "@/lib/services/web-vitals";
 
 /**
  * 前端性能指标采集（docs/performance.md T-01 / P2-02）。

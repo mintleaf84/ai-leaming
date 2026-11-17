@@ -66,7 +66,8 @@ export const webVitalsService = {
     const p = options.p ?? 0.75;
     const filters = [eq(schema.web_vitals.name, options.name)];
     if (options.kind) filters.push(eq(schema.web_vitals.kind, options.kind));
-    if (options.since) filters.push(gte(schema.web_vitals.created_at, options.since));
+    if (options.since)
+      filters.push(gte(schema.web_vitals.created_at, options.since));
     const where = and(...filters);
 
     const rows = await db
@@ -78,7 +79,8 @@ export const webVitalsService = {
       .where(where)
       .groupBy(schema.web_vitals.route);
 
-    const results: Array<{ route: string; samples: number; value: number }> = [];
+    const results: Array<{ route: string; samples: number; value: number }> =
+      [];
     for (const row of rows) {
       const n = Number(row.samples);
       const offset = Math.max(0, Math.ceil(p * n) - 1);

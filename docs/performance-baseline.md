@@ -28,11 +28,11 @@
 库表：`web_vitals(kind, route, name, value, rating, from_route, created_at)`，
 `value` 为毫秒（CLS 放大 1000）。`kind` 三类：
 
-| kind | name | 含义 |
-| --- | --- | --- |
-| `vital` | `INP` / `LCP` / `CLS` / `TTFB` / `FCP` | Core Web Vitals（按页面加载归属首屏路由） |
-| `launch` | `launch` | 首屏可交互：`domInteractive - startTime` |
-| `nav` | `nav` | 单次交互耗时（按下 → 下一帧）；`from_route` 记是在哪一页点的 |
+| kind     | name                                   | 含义                                                         |
+| -------- | -------------------------------------- | ------------------------------------------------------------ |
+| `vital`  | `INP` / `LCP` / `CLS` / `TTFB` / `FCP` | Core Web Vitals（按页面加载归属首屏路由）                    |
+| `launch` | `launch`                               | 首屏可交互：`domInteractive - startTime`                     |
+| `nav`    | `nav`                                  | 单次交互耗时（按下 → 下一帧）；`from_route` 记是在哪一页点的 |
 
 **首选方式：一条命令出表**
 

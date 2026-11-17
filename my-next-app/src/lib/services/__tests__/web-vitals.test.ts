@@ -161,7 +161,11 @@ describe("kind 维度（P2-02：launch / nav）", () => {
       value: 1800,
     });
 
-    const vital = await vitals.percentile({ name: "INP", kind: "vital", p: 0.75 });
+    const vital = await vitals.percentile({
+      name: "INP",
+      kind: "vital",
+      p: 0.75,
+    });
     expect(vital[0].samples).toBe(2);
     expect(vital[0].value).toBe(300);
 

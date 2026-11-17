@@ -173,6 +173,27 @@ describe("题库向量契约（真实库 + 真实 sqlite-vec）", () => {
       ]);
     });
 
+    it("已存在但维度不一致时，setupVectorExtension 明确失败而不是假装就绪", async () => {
+      // `CREATE VIRTUAL TABLE IF NOT EXISTS` 只保证表存在、不保证结构一致：
+      // 表已是别的维度时它会静默什么都不做。若不回读比对，初始化会报「就绪」，
+      // 之后每次写入才报 Dimension mismatch —— 那是更难查的形态。
+      legacy.exec("DROP TABLE IF EXISTS questions_vec");
+      legacy.exec("DROP TABLE IF EXISTS rag_chunks_vec");
+      legacy.exec(
+        "CREATE VIRTUAL TABLE questions_vec USING vec0(question_id INTEGER PRIMARY KEY, embedding float[999])",
+      );
+      legacy.exec(
+        "CREATE VIRTUAL TABLE rag_chunks_vec USING vec0(chunk_id INTEGER PRIMARY KEY, embedding float[999])",
+      );
+
+      await expect(dbm.setupVectorExtension()).resolves.toBe(false);
+
+      // 还原：按配置维度重建，避免影响后续用例
+      legacy.exec("DROP TABLE IF EXISTS questions_vec");
+      legacy.exec("DROP TABLE IF EXISTS rag_chunks_vec");
+      await expect(dbm.setupVectorExtension()).resolves.toBe(true);
+    });
+
     // 原 it.fails：向量表曾因"探错连接"从未被创建，已改为委托 vec-store
     it("initDatabase 之后 questions_vec 存在（原先被静默跳过）", async () => {
       const rows = await dbm.drizzleDb.all<{ name: string }>(sql`

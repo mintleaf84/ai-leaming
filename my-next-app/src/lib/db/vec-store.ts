@@ -85,6 +85,23 @@ export function isVectorAvailable(): boolean {
  * 只在 legacy 连接上执行；返回 false 表示"向量能力不可用"，调用方据此降级。
  * 已存在的表不会被重建：维度变化需要显式迁移（`vec0` 不支持原地改维度）。
  */
+/**
+ * 读已存在向量表声明的维度（`float[N]` 里的 N）；表不存在或解析不出返回 null。
+ *
+ * vec0 把建表语句原样存在 `sqlite_master.sql` 里，所以从这里读最可靠 ——
+ * `PRAGMA table_info` 对虚拟表不返回类型细节。
+ */
+function readDeclaredDimension(
+  db: ReturnType<typeof getLegacyDb>,
+  table: string,
+): number | null {
+  const row = db
+    .prepare("SELECT sql FROM sqlite_master WHERE type='table' AND name = ?")
+    .get(table) as { sql?: string } | undefined;
+  const match = /float\[(\d+)\]/i.exec(row?.sql ?? "");
+  return match ? Number(match[1]) : null;
+}
+
 export async function ensureVectorTables(): Promise<boolean> {
   if (!isVectorAvailable()) return false;
 
@@ -109,6 +126,25 @@ export async function ensureVectorTables(): Promise<boolean> {
         embedding float[${embeddingDim}]
       )`,
     );
+    // `IF NOT EXISTS` 只保证表存在，**不保证维度一致**：表已是 float[1536] 而配置
+    // 改回 1024 时，这里会静默什么都不做、并返回 true —— 之后每次写入都报
+    // `Dimension mismatch`，而初始化却报「就绪」。所以必须回读实际维度再比对。
+    const mismatched = [QUESTION_VEC_TABLE, CHUNK_VEC_TABLE].filter((table) => {
+      const actual = readDeclaredDimension(db, table);
+      return actual !== null && actual !== embeddingDim;
+    });
+    if (mismatched.length > 0) {
+      log.error(
+        `[DB] 向量表维度与配置不一致（配置 float[${embeddingDim}]，实际 ${
+          mismatched
+            .map((t) => `${t}=float[${readDeclaredDimension(db, t)}]`)
+            .join(", ") +
+          "）。vec0 不支持原地改维度：请先 DROP 这两张表再重启（向量是派生数据，可用重建索引脚本重新生成）"
+        }`,
+      );
+      return false;
+    }
+
     log.info(
       `[DB] 向量表就绪（float[${embeddingDim}]）：${QUESTION_VEC_TABLE}, ${CHUNK_VEC_TABLE}`,
     );

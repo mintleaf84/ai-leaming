@@ -288,7 +288,7 @@ export default function OcrPage() {
   );
 
   return (
-    <div className="min-h-[calc(100vh-64px)] bg-background p-6 md:p-12 font-sans">
+    <div className="min-h-[calc(100dvh-64px)] bg-background p-6 md:p-12 font-sans">
       <div className="max-w-4xl mx-auto space-y-8">
         {/* 页面标题 */}
         <div className="flex items-start justify-between">

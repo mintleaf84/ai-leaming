@@ -2,7 +2,7 @@ import React from "react";
 
 export default function TextbookLoading() {
   return (
-    <div className="flex h-[calc(100vh-4rem)] bg-background">
+    <div className="flex h-[calc(100dvh-4rem)] bg-background">
       {/* 侧边栏骨架区域 - PC端 */}
       <div className="hidden md:flex w-64 flex-col border-r bg-muted/20 p-4">
         <div className="h-4 w-24 bg-muted animate-pulse mb-6 rounded"></div>

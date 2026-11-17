@@ -19,6 +19,8 @@ interface SimpleMindMapInstance {
   on(event: string, callback: () => void): void;
   getData(): Record<string, unknown>;
   setData(data: unknown): void;
+  /** 容器尺寸变化后必须调用，否则画布与容器不一致、交互区域偏移 */
+  resize(): void;
   destroy(): void;
 }
 
@@ -81,7 +83,20 @@ export function SimpleMindMapViewer({
     isInternalUpdate.current = true;
     mindMap.setData(initData);
 
+    /*
+     * 容器高度会变：`MindmapEditorClient` 用 `h-[calc(100dvh-64px)]`，
+     * 而 `dvh` 在移动浏览器工具栏收起/展开时会变（这正是换 dvh 的目的 ——
+     * 软键盘弹出时不把内容顶出）。但画布是挂载时按当时尺寸建的，
+     * simple-mind-map 不会自己跟着容器变，必须由我们调 `resize()`，
+     * 否则画布与容器尺寸不一致、点击热区偏移。
+     */
+    const observer = new ResizeObserver(() => {
+      mindMap.resize();
+    });
+    observer.observe(containerRef.current);
+
     return () => {
+      observer.disconnect();
       mindMap.destroy();
     };
   }, []); // eslint-disable-line react-hooks/exhaustive-deps

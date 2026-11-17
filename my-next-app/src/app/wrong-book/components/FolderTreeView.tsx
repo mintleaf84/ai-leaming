@@ -166,7 +166,7 @@ export function FolderTreeView({
         <h3 className="text-sm font-semibold text-foreground">文件夹</h3>
       </div>
 
-      <div className="overflow-y-auto max-h-[calc(100vh-300px)]">
+      <div className="overflow-y-auto max-h-[calc(100dvh-300px)]">
         {/* Tag folders */}
         {tagTree.length > 0 && (
           <div className="py-2">

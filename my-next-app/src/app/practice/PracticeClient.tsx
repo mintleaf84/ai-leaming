@@ -82,7 +82,7 @@ function PracticeContent({
 
   return (
     <ErrorBoundary>
-      <div className="min-h-[calc(100vh-64px)] bg-background pb-20">
+      <div className="min-h-[calc(100dvh-64px)] bg-background pb-20">
         <HeaderProgressBar
           status={state.status}
           currentIndex={state.currentIndex}

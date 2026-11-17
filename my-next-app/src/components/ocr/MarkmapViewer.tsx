@@ -106,7 +106,7 @@ export function MarkmapViewer({
 <style>
 * { margin: 0; padding: 0; }
 body { font-family: sans-serif; }
-#mindmap { display: block; width: 100vw; height: 100vh; }
+#mindmap { display: block; width: 100vw; height: 100dvh; }
 </style>
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/markmap-toolbar@0.17.0/dist/style.css">
 </head>

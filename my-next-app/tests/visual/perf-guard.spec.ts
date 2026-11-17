@@ -95,7 +95,8 @@ test.describe("交互性能护栏（LoAF / Event Timing）", () => {
 
     // 清空首屏产生的事件，只量这一次点击之后
     await loggedInPage.evaluate(() => {
-      (window as unknown as { __perfGuard: PerfSample }).__perfGuard.events = [];
+      (window as unknown as { __perfGuard: PerfSample }).__perfGuard.events =
+        [];
     });
 
     await loggedInPage.click('a[href="/wrong-book"]');
@@ -110,7 +111,10 @@ test.describe("交互性能护栏（LoAF / Event Timing）", () => {
       test.skip(true, "当前 Chromium 不支持 event timing 观察");
     }
     if (sample.events.length === 0) {
-      test.skip(true, "本次点击未产生 ≥16ms 的 event timing 条目（无交互延迟可量）");
+      test.skip(
+        true,
+        "本次点击未产生 ≥16ms 的 event timing 条目（无交互延迟可量）",
+      );
     }
 
     const worst = sample.events.reduce(

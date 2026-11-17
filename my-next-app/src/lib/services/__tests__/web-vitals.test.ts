@@ -19,11 +19,11 @@ const dbFile = `test-web-vitals-${process.pid}.db`;
 process.env.DB_FILENAME = dbFile;
 
 type DbModule = typeof import("../../db");
-type VitalsService = typeof import("../web-vitals")["webVitalsService"];
+type VitalsService = (typeof import("../web-vitals"))["webVitalsService"];
 
 let dbm: DbModule;
 let vitals: VitalsService;
-let vitalsRoute: typeof import("../../api/routes/vitals")["default"];
+let vitalsRoute: (typeof import("../../api/routes/vitals"))["default"];
 
 beforeAll(async () => {
   dbm = await import("../../db");

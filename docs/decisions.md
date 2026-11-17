@@ -2,6 +2,33 @@
 
 > 记录「本可以两选一、我按默认值自定」的地方，供事后审。新决策追加到顶部。
 
+## 2026-11-17 · 错误分类在 action 边界止步
+
+`AppError` 的 5 类语义只在 **HTTP 边界**（`toErrorResponse`）使用；Server Action 侧
+仍由 `next-safe-action` 的 `handleServerError` 回 `{ serverError: message }`。
+
+| 决策 | 选择 | 理由 | 备选/代价 |
+| --- | --- | --- | --- |
+| action 是否透传 `kind` | 不透传 | `handleServerError` 只接受字符串；要让前端拿到 `kind` 得改 40+ 调用点的契约与类型 | 透传：客户端要重写错误处理，收益是「能按类型分支」，但当前 UI 全部只展示文案 |
+
+**记录原因**：计划原文写的是「action 侧也走同一分类」，实际做下来发现代价与收益不成比例。
+不改调用点，改为在文档里写清边界 —— 这也符合「不为了打勾去改 40 个地方」的原则。
+
+## 2026-11-17 · RAG 向量方向（未决，已排除一条）
+
+现象：`questions_vec` 从未被创建、`searchSimilarQuestions` 恒返回 `[]`、
+建表写死 1536 维而 `getAiConfig()` 默认 1024。
+
+根因：`setupVectorExtension()` 跑在 **libsql** 连接上，而 `loadExtension` 只加在
+legacy better-sqlite3 连接（`src/lib/db/index.ts:77`）。日志里的「✅ sqlite-vec 扩展加载成功」
+来自后者，与查询走的连接不是同一个 —— 日志与事实脱节。
+
+实测：`@libsql/client` 执行 `SELECT load_extension(...)` 返回 `SQLITE_ERROR: not authorized`，
+**方向「让 libsql 也 load vec0」不可行**。
+
+剩余选项：② 向量操作整体改走 legacy 连接（另需补 embedding 写入/回填路径）；
+③ 先关掉相似题入口。倾向 ③ 先行、② 排期 —— 「看起来有、点了没反应」比「暂时没有」更伤。
+
 ## 2026-11-13 · 回忆自测 P1（数据层 + 卡组导入导出）
 
 规格：`fj-teacher-exam-physics/docs/ai-learning-recall-spec.md`。以下是规格未定点按默认值自定的部分。

@@ -120,6 +120,13 @@
       "when": 1783700000000,
       "tag": "0016_practice_logs_session_index",
       "breakpoints": true
+    },
+    {
+      "idx": 17,
+      "version": "6",
+      "when": 1783800000000,
+      "tag": "0017_web_vitals_kind",
+      "breakpoints": true
     }
   ]
 }

@@ -25,7 +25,29 @@
 
 ## 3. 取值脚本
 
-库表：`web_vitals(route, name, value, rating, created_at)`，`value` 为毫秒（CLS 放大 1000）。
+库表：`web_vitals(kind, route, name, value, rating, from_route, created_at)`，
+`value` 为毫秒（CLS 放大 1000）。`kind` 三类：
+
+| kind | name | 含义 |
+| --- | --- | --- |
+| `vital` | `INP` / `LCP` / `CLS` / `TTFB` / `FCP` | Core Web Vitals（按页面加载归属首屏路由） |
+| `launch` | `launch` | 首屏可交互：`domInteractive - startTime` |
+| `nav` | `nav` | 单次交互耗时（按下 → 下一帧）；`from_route` 记是在哪一页点的 |
+
+**首选方式：一条命令出表**
+
+```bash
+npm run vitals:report                    # 默认 data/ai-learning.db
+npm run vitals:report -- --since 2026-11-17
+npm run vitals:report -- --json          # 机器可读
+# 容器内：
+docker compose exec ai-learning node scripts/vitals-report.mjs
+```
+
+输出按 kind 分组、p75 倒序排列，自动标注「样本不足（<20）」和「超阈值」，
+末尾还给出可直接粘进 §2 台账的一行。
+
+需要手写 SQL 时：
 
 ```bash
 # 按路由看 INP 最差的前 10 条原始点

@@ -158,11 +158,16 @@ export const questionService = {
    * 有向量时按相似度取（`searchSimilarQuestions`），没有时直接从题库随机取。
    */
   pickFallbackQuestions: async (limit = 3): Promise<Question[]> => {
-    const rows = await drizzleDb.query.questions.findMany({
-      where: (q, { sql }) => sql`length(${q.content}) > 0`,
-      orderBy: sql`RANDOM()`,
-      limit,
-    });
+    /*
+     * 用 `select` 而不是关系查询的 `findMany`：`findMany` 的 `where` 回调要靠
+     * operators 解构出 `sql`，这里直接用顶层导入的 `sql` 标签，少一层抽象也更稳。
+     */
+    const rows = await drizzleDb
+      .select()
+      .from(drizzleSchema.questions)
+      .where(sql`length(${drizzleSchema.questions.content}) > 0`)
+      .orderBy(sql`RANDOM()`)
+      .limit(limit);
     return rows.map((row) =>
       mapQuestion(row as unknown as Record<string, unknown>),
     );

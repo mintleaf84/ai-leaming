@@ -18,7 +18,7 @@ test.describe("智能复盘引擎", () => {
     });
 
     for (let i = 0; i < wrongCount; i++) {
-      const options = page.locator('div[role="button"]');
+      const options = page.locator('[data-testid="practice-option"]');
       const hasOptions = await options
         .first()
         .isVisible({ timeout: 5000 })
@@ -52,7 +52,7 @@ test.describe("智能复盘引擎", () => {
     });
 
     // 答一道错题（选最后一个选项，种子数据中通常是错误答案）
-    const options = loggedInPage.locator('div[role="button"]');
+    const options = loggedInPage.locator('[data-testid="practice-option"]');
     if (
       await options
         .last()
@@ -92,7 +92,7 @@ test.describe("智能复盘引擎", () => {
     });
 
     for (let i = 0; i < 10; i++) {
-      const options = loggedInPage.locator('div[role="button"]');
+      const options = loggedInPage.locator('[data-testid="practice-option"]');
       const hasOptions = await options
         .first()
         .isVisible({ timeout: 3000 })
@@ -148,7 +148,7 @@ test.describe("智能复盘引擎", () => {
     });
 
     for (let i = 0; i < 10; i++) {
-      const options = loggedInPage.locator('div[role="button"]');
+      const options = loggedInPage.locator('[data-testid="practice-option"]');
       const hasOptions = await options
         .first()
         .isVisible({ timeout: 3000 })
@@ -211,7 +211,7 @@ test.describe("智能复盘引擎", () => {
 
     // 快速刷 3 道题（混合对错）
     for (let i = 0; i < 3; i++) {
-      const options = loggedInPage.locator('div[role="button"]');
+      const options = loggedInPage.locator('[data-testid="practice-option"]');
       if ((await options.count()) > 0) {
         await options.first().click();
 
@@ -239,7 +239,7 @@ test.describe("智能复盘引擎", () => {
 
     // 触发复盘模式（全部答错）
     for (let i = 0; i < 10; i++) {
-      const options = loggedInPage.locator('div[role="button"]');
+      const options = loggedInPage.locator('[data-testid="practice-option"]');
       if (
         await options
           .last()
@@ -290,7 +290,7 @@ test.describe("智能复盘引擎", () => {
 
     // 答几道题（系统应降级处理，不崩溃）
     for (let i = 0; i < 3; i++) {
-      const options = loggedInPage.locator('div[role="button"]');
+      const options = loggedInPage.locator('[data-testid="practice-option"]');
       if (
         await options
           .last()
@@ -324,7 +324,7 @@ test.describe("智能复盘引擎", () => {
     let previousCount = 0;
 
     for (let i = 0; i < 3; i++) {
-      const options = loggedInPage.locator('div[role="button"]');
+      const options = loggedInPage.locator('[data-testid="practice-option"]');
       if (
         await options
           .last()

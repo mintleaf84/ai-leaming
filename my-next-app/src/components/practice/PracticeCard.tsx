@@ -374,6 +374,7 @@ export function PracticeCard({
                         onOptionClick(letter, isMulti ? "multi" : "single")
                       }
                       onContextMenu={(e) => toggleExclude(e, option)}
+                      data-testid="practice-option"
                       aria-pressed={isSelected}
                       aria-disabled={isExcluded || undefined}
                       className={`flex-1 self-stretch flex items-center text-left p-3 md:p-4 ${

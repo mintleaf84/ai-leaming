@@ -97,7 +97,7 @@ test.describe("全局与系统级", () => {
       .catch(() => false);
 
     // 选项按钮应可点击（触摸区域足够大）
-    const options = loggedInPage.locator('div[role="button"]');
+    const options = loggedInPage.locator('[data-testid="practice-option"]');
     const hasOptions = await options
       .first()
       .isVisible({ timeout: 5000 })

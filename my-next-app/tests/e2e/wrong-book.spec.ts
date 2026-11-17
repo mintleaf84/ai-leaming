@@ -19,7 +19,7 @@ test.describe("错题本", () => {
     if (!hasQuestion) return;
 
     for (let i = 0; i < 3; i++) {
-      const options = page.locator('div[role="button"]');
+      const options = page.locator('[data-testid="practice-option"]');
       const hasOptions = await options
         .last()
         .isVisible({ timeout: 3000 })

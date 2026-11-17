@@ -19,6 +19,9 @@ import {
  *     主容器可见且有真实文本；
  *   - 375 视口额外：main 内部不得横向滚动、无元素越出视口右侧；
  *   - 375 视口额外：不存在两条互相重叠的贴底固定底栏（§6 一个页面最多一条）；
+ *   - 375 视口额外：main 的 bottom reserve ≥ 96px（padding + scroll-padding），
+ *     即 MobileNav 的 88px + 8px 呼吸；safe-area 在浏览器里恒为 0，
+ *     那部分由 src/app/__tests__/layout-safe-area.test.ts 的静态断言守住；
  *   - 375 视口额外（报告模式，不阻断）：可点区域 < 44×44、表单双列。
  *
  * 管理端复用 tests/e2e/fixtures 的 adminPage（testadmin 登录态）；

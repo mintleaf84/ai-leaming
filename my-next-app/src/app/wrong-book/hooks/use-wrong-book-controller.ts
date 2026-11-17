@@ -50,6 +50,39 @@ export interface WrongBookStats {
   frequent: number;
 }
 
+// 待确认删除的文件夹（两步删除的第一步产物）
+export interface PendingDeleteFolder {
+  id: number;
+  name: string;
+  /** 该文件夹当前收纳的题目数（取自 `getFoldersAction` 的 COUNT，不是估的） */
+  questionCount: number;
+}
+
+/** safe-action 返回值的"失败相关"字段（docs/error-handling.md 第 6 条） */
+interface ActionOutcome {
+  data?: { success?: boolean } | undefined;
+  serverError?: string | undefined;
+  validationErrors?: unknown;
+}
+
+/**
+ * 判定一次 server action 的返回是否算失败。
+ *
+ * next-safe-action 的失败**不一定抛异常**：`serverError`（服务端抛错被吞成字符串）、
+ * `validationErrors`（入参校验失败，此时 `data` 与 `serverError` 都可能为空）、
+ * `data` 缺失、以及 `data.success === false`（业务失败）都不走 `catch`。
+ * 不在这里判定，调用方就会用 `|| []` 把失败渲染成"太棒了！暂无错题"。
+ *
+ * @returns 失败描述（可直接给用户看）；`null` 表示成功
+ */
+function describeFailure(label: string, res: ActionOutcome): string | null {
+  if (res.serverError) return `${label}加载失败：${res.serverError}`;
+  if (res.validationErrors) return `${label}加载失败：请求参数校验未通过`;
+  if (!res.data) return `${label}加载失败：服务端没有返回数据`;
+  if (res.data.success === false) return `${label}加载失败：服务端返回失败`;
+  return null;
+}
+
 /**
  * 错题本控制器 Hook
  * 管理所有状态和业务逻辑
@@ -79,6 +112,8 @@ export function useWrongBookController() {
 
   // UI 状态
   const [isLoading, setIsLoading] = useState(true);
+  // 首屏加载失败原因（null = 正常）。失败时页面渲染 ErrorState，绝不再渲染空态
+  const [loadError, setLoadError] = useState<string | null>(null);
   const [viewMode, setViewMode] = useState<ViewMode>("list");
   const [expandedTags, setExpandedTags] = useState<Set<string>>(new Set());
   const [selectedIds, setSelectedIds] = useState<Set<number>>(new Set());
@@ -110,25 +145,58 @@ export function useWrongBookController() {
   );
   const [showAddToFolderDialog, setShowAddToFolderDialog] = useState(false);
   const [isFolderSubmitting, setIsFolderSubmitting] = useState(false);
+  const [pendingDeleteFolder, setPendingDeleteFolder] =
+    useState<PendingDeleteFolder | null>(null);
+  const [isDeletingFolder, setIsDeletingFolder] = useState(false);
 
   // 加载数据 (第一页)
   const loadData = useCallback(async () => {
     setIsLoading(true);
     setPage(0);
-    const [qRes, gRes, sRes, mRes, fRes] = await Promise.all([
-      getWrongQuestionsAction({ limit: pageSize, offset: 0 }),
-      getWrongQuestionsByTagAction(),
-      getWrongQuestionsStatsAction(),
-      getMasteredQuestionsAction(),
-      getFoldersAction(),
-    ]);
-    setQuestions(qRes.data?.questions || []);
-    setTotal(qRes.data?.total || 0);
-    setGroupedQuestions(gRes.data?.find || []);
-    setStats(sRes.data || { total: 0, recent: 0, frequent: 0 });
-    setMasteredQuestions(mRes.data?.questions || []);
-    setFolders(fRes.data?.folders || []);
-    setIsLoading(false);
+    try {
+      const [qRes, gRes, sRes, mRes, fRes] = await Promise.all([
+        getWrongQuestionsAction({ limit: pageSize, offset: 0 }),
+        getWrongQuestionsByTagAction(),
+        getWrongQuestionsStatsAction(),
+        getMasteredQuestionsAction(),
+        getFoldersAction(),
+      ]);
+
+      // 任一分支失败都不能用 `|| []` 顶替：那会把"接口挂了"渲染成"太棒了！暂无错题"
+      const failures = [
+        describeFailure("错题列表", qRes),
+        describeFailure("知识点分组", gRes),
+        describeFailure("错题统计", sRes),
+        describeFailure("已掌握题目", mRes),
+        describeFailure("文件夹", fRes),
+      ].filter((failure): failure is string => failure !== null);
+
+      if (failures.length > 0) {
+        console.error("[WrongBook] 首屏数据加载失败", { failures });
+        setLoadError(failures.join("；"));
+        return; // 降级：保留旧数据不动，由 ErrorState 承担恢复路径
+      }
+
+      setQuestions(qRes.data?.questions || []);
+      setTotal(qRes.data?.total || 0);
+      setGroupedQuestions(gRes.data?.find || []);
+      setStats(sRes.data || { total: 0, recent: 0, frequent: 0 });
+      setMasteredQuestions(mRes.data?.questions || []);
+      setFolders(fRes.data?.folders || []);
+      setLoadError(null);
+    } catch (error) {
+      // action 抛错（鉴权失败 / 网络中断 / 服务端异常）：以前会跳过 setIsLoading(false) 永久转圈
+      console.error("[WrongBook] 首屏数据加载异常", { err: error });
+      setLoadError(
+        error instanceof Error && error.message
+          ? error.message
+          : "错题本数据加载失败，请稍后重试",
+      );
+      return;
+    } finally {
+      // 必须在 finally：try / catch 里任何一条 return 都不能把 loading 卡死
+      setIsLoading(false);
+    }
   }, [pageSize]);
 
   // 加载更多
@@ -424,23 +492,65 @@ export function useWrongBookController() {
     [loadData],
   );
 
-  // 删除文件夹
-  const handleDeleteFolder = useCallback(
-    async (folderId: number) => {
-      const result = await deleteFolderAction({ folderId });
-      if (result.data?.success) {
-        toast.success("文件夹已删除");
-        if (selectedFolderId === `folder:${folderId}`) {
-          setSelectedFolderId(null);
-          setFolderQuestions([]);
-        }
-        await loadData();
-      } else {
-        toast.error("删除失败");
-      }
+  // 删除文件夹（第一步：请求，只弹确认框，不碰数据）
+  const requestDeleteFolder = useCallback(
+    (folderId: number) => {
+      const folder = folders.find((f) => f.id === folderId);
+      setPendingDeleteFolder({
+        id: folderId,
+        // 名字与题量都取自已加载的 folders，取不到时退回中性文案，不编造
+        name: folder?.name ?? "这个文件夹",
+        questionCount: folder?.questionCount ?? 0,
+      });
     },
-    [loadData, selectedFolderId],
+    [folders],
   );
+
+  // 删除文件夹（第二步：用户在确认框里点了删除）
+  const confirmDeleteFolder = useCallback(async () => {
+    const target = pendingDeleteFolder;
+    if (!target || isDeletingFolder) return;
+
+    setIsDeletingFolder(true);
+    try {
+      const result = await deleteFolderAction({ folderId: target.id });
+      if (!result.data?.success) {
+        // 写操作失败不改业务状态：保留文件夹、保留列表，只提示
+        console.error("[WrongBook] 删除文件夹失败", {
+          folderId: target.id,
+          serverError: result.serverError,
+        });
+        toast.error(
+          result.serverError
+            ? `删除失败：${result.serverError}`
+            : "删除失败，请重试",
+        );
+        return;
+      }
+
+      toast.success("文件夹已删除");
+      if (selectedFolderId === `folder:${target.id}`) {
+        setSelectedFolderId(null);
+        setFolderQuestions([]);
+      }
+      await loadData();
+    } catch (error) {
+      console.error("[WrongBook] 删除文件夹异常", {
+        folderId: target.id,
+        err: error,
+      });
+      toast.error("删除失败，请重试");
+      return;
+    } finally {
+      setIsDeletingFolder(false);
+      setPendingDeleteFolder(null);
+    }
+  }, [pendingDeleteFolder, isDeletingFolder, selectedFolderId, loadData]);
+
+  // 取消删除
+  const cancelDeleteFolder = useCallback(() => {
+    setPendingDeleteFolder(null);
+  }, []);
 
   // 打开"添加到文件夹"弹窗
   const openAddToFolderDialog = useCallback(() => {
@@ -500,6 +610,7 @@ export function useWrongBookController() {
 
     // UI 状态
     isLoading,
+    loadError,
     viewMode,
     setViewMode,
     expandedTags,
@@ -525,6 +636,8 @@ export function useWrongBookController() {
     folderQuestions,
     showAddToFolderDialog,
     isFolderSubmitting,
+    pendingDeleteFolder,
+    isDeletingFolder,
 
     // 方法
     loadData,
@@ -545,7 +658,9 @@ export function useWrongBookController() {
     handleSelectFolder,
     handleCreateFolder,
     handleRenameFolder,
-    handleDeleteFolder,
+    requestDeleteFolder,
+    confirmDeleteFolder,
+    cancelDeleteFolder,
     openAddToFolderDialog,
     closeAddToFolderDialog,
     handleAddToFolder,

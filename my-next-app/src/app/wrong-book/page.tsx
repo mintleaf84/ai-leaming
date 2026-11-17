@@ -22,6 +22,17 @@ import {
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import { ErrorState } from "@/components/ui/error-state";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import { usePageBottomBar } from "@/components/layout/bottom-bar-slot";
 import { useWrongBookController } from "./hooks/use-wrong-book-controller";
 import { WrongQuestionCard } from "./components/WrongQuestionCard";
@@ -59,6 +70,7 @@ export default function WrongBookPage() {
     goToPage,
     // UI 状态
     isLoading,
+    loadError,
     viewMode,
     setViewMode,
     selectedIds,
@@ -80,6 +92,8 @@ export default function WrongBookPage() {
     folderQuestions,
     showAddToFolderDialog,
     isFolderSubmitting,
+    pendingDeleteFolder,
+    isDeletingFolder,
     // 方法
     toggleSelect,
     selectAll,
@@ -95,7 +109,9 @@ export default function WrongBookPage() {
     handleSelectFolder,
     handleCreateFolder,
     handleRenameFolder,
-    handleDeleteFolder,
+    requestDeleteFolder,
+    confirmDeleteFolder,
+    cancelDeleteFolder,
     openAddToFolderDialog,
     closeAddToFolderDialog,
     handleAddToFolder,
@@ -115,6 +131,40 @@ export default function WrongBookPage() {
   // 加载状态
   if (isLoading) {
     return <WrongBookSkeleton />;
+  }
+
+  // 加载失败：整页只渲染 ErrorState（含恢复路径"重试"），
+  // 绝不能同时渲染"太棒了！暂无错题"——那会把接口故障说成"你没有错题"。
+  // 这里单独 return，从结构上保证与下面的空态互斥。
+  if (loadError) {
+    return (
+      <div className="min-h-screen bg-background">
+        <main className="container mx-auto max-w-4xl px-4 py-8 pb-32">
+          <div className="mb-8">
+            <Link
+              href="/practice"
+              className="mb-3 inline-flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground transition-colors"
+            >
+              <ChevronLeft className="h-4 w-4" />
+              返回练习
+            </Link>
+            <h1 className="text-3xl font-bold text-foreground flex items-center gap-3">
+              <BookOpen className="text-red-500 h-8 w-8" />
+              错题本
+            </h1>
+          </div>
+          <div className="bg-card rounded-2xl border border-dashed border-border">
+            <ErrorState
+              title="错题本加载失败"
+              description={loadError}
+              onRetry={() => {
+                loadData();
+              }}
+            />
+          </div>
+        </main>
+      </div>
+    );
   }
 
   return (
@@ -426,7 +476,7 @@ export default function WrongBookPage() {
                     handleCreateFolder("新建文件夹", "#6b7280");
                   }}
                   onRenameFolder={handleRenameFolder}
-                  onDeleteFolder={handleDeleteFolder}
+                  onDeleteFolder={requestDeleteFolder}
                   onStartPractice={startPractice}
                 />
                 <div>
@@ -569,6 +619,45 @@ export default function WrongBookPage() {
           </div>
         </div>
       )}
+
+      {/* 删文件夹确认框（删除动作分两步：菜单只负责请求，这里才真正落库） */}
+      <AlertDialog
+        open={pendingDeleteFolder !== null}
+        onOpenChange={(open) => {
+          if (!open) cancelDeleteFolder();
+        }}
+      >
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>
+              删除文件夹「{pendingDeleteFolder?.name}」？
+            </AlertDialogTitle>
+            <AlertDialogDescription>
+              {(pendingDeleteFolder?.questionCount ?? 0) > 0
+                ? `其中的 ${pendingDeleteFolder?.questionCount} 道错题不会被删除，只是从这个文件夹移出（题目仍留在错题本与练习记录里）。`
+                : "这个文件夹里还没有题目。"}
+              删除文件夹本身无法撤销。
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel
+              onClick={cancelDeleteFolder}
+              disabled={isDeletingFolder}
+            >
+              取消
+            </AlertDialogCancel>
+            <AlertDialogAction
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+              disabled={isDeletingFolder}
+              onClick={() => {
+                void confirmDeleteFolder();
+              }}
+            >
+              {isDeletingFolder ? "删除中..." : "确认删除"}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
 
       {/* 推荐相似题弹窗 */}
       <RecommendedQuestionsDialog

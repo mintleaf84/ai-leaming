@@ -6,6 +6,7 @@ import { type QuestionSummary } from "@/lib/services/question";
 import { Search, Loader2, BookOpen, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { isImeComposing } from "@/lib/utils/ime";
 
 interface QuestionPickerProps {
   isOpen: boolean;
@@ -74,6 +75,8 @@ export default function QuestionPicker({
 
   // 键盘事件
   const handleKeyDown = (e: React.KeyboardEvent) => {
+    // 组合态 Enter 是确认候选词，不能当"搜索"
+    if (isImeComposing(e)) return;
     if (e.key === "Enter") {
       e.preventDefault();
       handleSearch();

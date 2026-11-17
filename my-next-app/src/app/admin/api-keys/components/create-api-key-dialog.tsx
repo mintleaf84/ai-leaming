@@ -16,6 +16,7 @@ import { Loader2, ShieldAlert } from "lucide-react";
 import type { ApiKeyScope } from "@/types/api-key";
 import { ScopeOption } from "./scope-option";
 import { SCOPE_META, SCOPE_ORDER } from "./scope-meta";
+import { isImeComposing } from "@/lib/utils/ime";
 
 interface CreateApiKeyDialogProps {
   open: boolean;
@@ -79,6 +80,8 @@ export function CreateApiKeyDialog({
               maxLength={60}
               onChange={(e) => onDescriptionChange(e.target.value)}
               onKeyDown={(e) => {
+                // 组合态 Enter 是确认候选词，不能当"确认创建 API Key"
+                if (isImeComposing(e)) return;
                 if (e.key === "Enter") onConfirm();
               }}
             />

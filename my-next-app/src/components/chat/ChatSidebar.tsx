@@ -11,6 +11,7 @@ import {
   X,
 } from "lucide-react";
 import { useTerminology } from "@/lib/hooks/use-terminology";
+import { isImeComposing } from "@/lib/utils/ime";
 import { renameChatSessionAction } from "@/server/actions/chat";
 import type { ChatSession } from "@/lib/services/chat";
 
@@ -112,6 +113,8 @@ function SessionItem({
             value={editValue}
             onChange={(e) => setEditValue(e.target.value)}
             onKeyDown={(e) => {
+              // 组合态 Enter 是确认候选词，不能当"重命名提交"
+              if (isImeComposing(e)) return;
               if (e.key === "Enter") commitRename();
               if (e.key === "Escape") cancelRename();
             }}

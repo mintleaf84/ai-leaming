@@ -21,6 +21,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 import type { WrongQuestionsByTag } from "@/lib/services/wrong-question";
 import type { QuestionFolder } from "@/lib/services/question-folder";
+import { isImeComposing } from "@/lib/utils/ime";
 
 interface FolderTreeViewProps {
   tagGroups: WrongQuestionsByTag[];
@@ -226,7 +227,9 @@ export function FolderTreeView({
                 />
 
                 {editingId === f.id ? (
-                  <div className="flex-1 flex items-center gap-1">
+                  // gap-3（12px）是必需的：p-1.5 -m-1.5 让每个 14px 图标的热区左右各外扩
+                  // 6px，间距小于 12px 时相邻热区会重叠 → 点交错处会触发另一个按钮
+                  <div className="flex-1 flex items-center gap-3">
                     <input
                       type="text"
                       value={editName}
@@ -234,6 +237,8 @@ export function FolderTreeView({
                       className="flex-1 px-1.5 py-0.5 text-sm border rounded bg-background"
                       autoFocus
                       onKeyDown={(e) => {
+                        // 组合态 Enter 是确认候选词，不能当"确认重命名"
+                        if (isImeComposing(e)) return;
                         if (e.key === "Enter") handleConfirmRename();
                         if (e.key === "Escape") setEditingId(null);
                       }}
@@ -244,6 +249,8 @@ export function FolderTreeView({
                         e.stopPropagation();
                         handleConfirmRename();
                       }}
+                      aria-label="确认重命名"
+                      className="p-1.5 -m-1.5 rounded hover:bg-accent/60"
                     >
                       <Check className="w-3.5 h-3.5 text-green-600" />
                     </button>
@@ -252,6 +259,8 @@ export function FolderTreeView({
                         e.stopPropagation();
                         setEditingId(null);
                       }}
+                      aria-label="取消重命名"
+                      className="p-1.5 -m-1.5 rounded hover:bg-accent/60"
                     >
                       <X className="w-3.5 h-3.5 text-muted-foreground" />
                     </button>
@@ -268,8 +277,9 @@ export function FolderTreeView({
                     <DropdownMenu>
                       <DropdownMenuTrigger asChild>
                         <button
-                          className="shrink-0 text-muted-foreground hover:text-foreground"
+                          className="shrink-0 p-1.5 -m-1.5 rounded hover:bg-accent/60 text-muted-foreground hover:text-foreground"
                           onClick={(e) => e.stopPropagation()}
+                          aria-label="文件夹更多操作"
                         >
                           <MoreHorizontal className="w-3.5 h-3.5" />
                         </button>

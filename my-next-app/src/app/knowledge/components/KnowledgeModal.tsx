@@ -5,6 +5,7 @@ import { X, Plus, Edit2, Sparkles, Loader2 } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import type { KnowledgeCard } from "@/lib/services/knowledge";
+import { isImeComposing } from "@/lib/utils/ime";
 
 interface KnowledgeModalProps {
   isOpen: boolean;
@@ -122,7 +123,11 @@ export const KnowledgeModal: React.FC<KnowledgeModalProps> = ({
               type="text"
               value={instruction}
               onChange={(e) => setInstruction(e.target.value)}
-              onKeyDown={(e) => e.key === "Enter" && handleRegenerate()}
+              onKeyDown={(e) => {
+                // 组合态 Enter 是确认候选词：这里会触发付费 AI 调用，更不能误触
+                if (isImeComposing(e)) return;
+                if (e.key === "Enter") handleRegenerate();
+              }}
               placeholder="输入指令让 AI 重新生成，例如：'用更通俗的例子解释'..."
               className="flex-1 bg-background/50 border border-border rounded-lg px-3 py-2 text-xs focus:ring-1 focus:ring-primary outline-none transition-all placeholder:text-muted-foreground/60"
               disabled={isRegenerating}

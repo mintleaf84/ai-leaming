@@ -107,9 +107,8 @@ import { ConfigForm } from "@/app/admin/components/ConfigManager/ConfigForm";
 import { AIGenerateModal } from "@/app/knowledge/components/AIGenerateModal";
 
 async function renderPracticeSetup() {
-  const { default: PracticeSetupPage } = await import(
-    "@/app/practice/setup/page"
-  );
+  const { default: PracticeSetupPage } =
+    await import("@/app/practice/setup/page");
   const utils = render(<PracticeSetupPage />);
   // 高级选项默认收起，四种题型 label 在展开后才挂载
   fireEvent.click(await screen.findByText(/展开高级选项/));
@@ -151,9 +150,9 @@ describe("label ↔ 控件的关联（跨表单语义断言）", () => {
     );
 
     // 步骤一：只有一个 textarea
-    expect(assertEveryLabelHasControl(container, "AIGenerateModal/input")).toEqual(
-      ["输入知识点内容"],
-    );
+    expect(
+      assertEveryLabelHasControl(container, "AIGenerateModal/input"),
+    ).toEqual(["输入知识点内容"]);
 
     fireEvent.change(container.querySelector("textarea")!, {
       target: { value: "皮亚杰认知发展理论" },
@@ -213,20 +212,17 @@ describe("点 label → 控件接管（关联不是「写了个属性」）", ()
   it("PracticeSetup：点「多选题」label 切换的是多选题那一个勾选框", async () => {
     const user = userEvent.setup();
     const { container } = await renderPracticeSetup();
-    const multi = container.querySelector<HTMLElement>(
-      "#practice-type-multi",
-    )!;
+    const multi = container.querySelector<HTMLElement>("#practice-type-multi")!;
 
     expect(multi).toHaveAttribute("aria-checked", "true");
     await user.click(screen.getByText("多选题"));
 
-    await waitFor(() =>
-      expect(multi).toHaveAttribute("aria-checked", "false"),
-    );
+    await waitFor(() => expect(multi).toHaveAttribute("aria-checked", "false"));
     // 其余三个不受影响
-    expect(
-      container.querySelector("#practice-type-single"),
-    ).toHaveAttribute("aria-checked", "true");
+    expect(container.querySelector("#practice-type-single")).toHaveAttribute(
+      "aria-checked",
+      "true",
+    );
     expect(document.activeElement).toBe(multi);
   });
 

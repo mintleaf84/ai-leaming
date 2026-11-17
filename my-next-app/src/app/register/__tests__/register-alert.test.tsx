@@ -29,7 +29,10 @@ describe("注册失败提示（§3.7）", () => {
     render(<RegisterPage />);
 
     await user.type(screen.getByPlaceholderText("用户名"), "newuser");
-    await user.type(screen.getByPlaceholderText("设置密码 (至少6位)"), "abc123");
+    await user.type(
+      screen.getByPlaceholderText("设置密码 (至少6位)"),
+      "abc123",
+    );
     await user.type(screen.getByPlaceholderText("确认密码"), "abc124");
     await user.click(screen.getByRole("button", { name: "立即注册" }));
 

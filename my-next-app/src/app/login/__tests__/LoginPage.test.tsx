@@ -239,7 +239,10 @@ describe("LoginPage 集成测试", () => {
     // 屏读用户听不到、键盘用户还得自己往回 Tab 找。两件事都要可断言。
     server.use(
       http.post("/api/auth/login", () => {
-        return HttpResponse.json({ error: "用户名或密码错误" }, { status: 401 });
+        return HttpResponse.json(
+          { error: "用户名或密码错误" },
+          { status: 401 },
+        );
       }),
     );
 

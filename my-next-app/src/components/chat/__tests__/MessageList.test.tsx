@@ -145,9 +145,10 @@ describe("MessageList 流式回答播报", () => {
     expect(transcript).toHaveAttribute("aria-busy", "true");
 
     rerender(<MessageList {...props} isLoading={false} />);
-    expect(
-      container.querySelector(".max-w-3xl"),
-    ).toHaveAttribute("aria-busy", "false");
+    expect(container.querySelector(".max-w-3xl")).toHaveAttribute(
+      "aria-busy",
+      "false",
+    );
   });
 
   it("空对话不播报（没有可播的状态）", () => {
@@ -173,4 +174,3 @@ describe("MessageList 流式回答播报", () => {
     expect(screen.getByRole("status")).not.toHaveTextContent("回答已完成");
   });
 });
-

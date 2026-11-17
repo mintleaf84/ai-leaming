@@ -27,9 +27,7 @@ vi.mock("sonner", () => ({ toast: { error: vi.fn(), success: vi.fn() } }));
 describe("NotePageClient 笔记大标题焦点指示（批次 B3）", () => {
   it("标题输入框可聚焦且有可见焦点指示", () => {
     render(
-      <NotePageClient
-        note={{ id: 1, title: "我的笔记", content: "{}" }}
-      />,
+      <NotePageClient note={{ id: 1, title: "我的笔记", content: "{}" }} />,
     );
 
     const title = screen.getByPlaceholderText("无标题");

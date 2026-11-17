@@ -39,8 +39,20 @@ function makeController(overrides: Record<string, unknown> = {}) {
     questions,
     groupedQuestions: [],
     masteredQuestions: [
-      { questionId: 9, questionContent: "已掌握题", tags: [], masteredAt: null, note: null },
-      { questionId: 10, questionContent: "已掌握题2", tags: [], masteredAt: null, note: null },
+      {
+        questionId: 9,
+        questionContent: "已掌握题",
+        tags: [],
+        masteredAt: null,
+        note: null,
+      },
+      {
+        questionId: 10,
+        questionContent: "已掌握题2",
+        tags: [],
+        masteredAt: null,
+        note: null,
+      },
     ],
     stats: { total: 37, recent: 5, frequent: 3 },
     page: 1,
@@ -106,7 +118,9 @@ describe("错题本计数播报（§3.7）", () => {
     render(<WrongBookPage />);
 
     const status = screen.getByRole("status");
-    expect(status).toHaveTextContent("错题共 37 道，其中已掌握 2 道，已选 0 道。");
+    expect(status).toHaveTextContent(
+      "错题共 37 道，其中已掌握 2 道，已选 0 道。",
+    );
     // 反证：不能只播数字
     expect(status.textContent?.trim()).not.toBe("0");
   });
@@ -123,7 +137,9 @@ describe("错题本计数播报（§3.7）", () => {
 
     const status = screen.getByRole("status");
     expect(status).toHaveTextContent("已选 3 道。");
-    expect(status).toHaveTextContent("错题共 37 道，其中已掌握 2 道，已选 3 道。");
+    expect(status).toHaveTextContent(
+      "错题共 37 道，其中已掌握 2 道，已选 3 道。",
+    );
   });
 
   it("同屏只有一个 role=status，且它是 sr-only（不改视觉）", () => {

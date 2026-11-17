@@ -164,9 +164,7 @@ describe("练习页切题的播报与焦点（§3.7）", () => {
     rerender(<PracticeClient initialEnableIntelligentReview={false} />);
 
     await waitFor(() => {
-      expect(screen.getByRole("status")).toHaveTextContent(
-        "本组练习已结束",
-      );
+      expect(screen.getByRole("status")).toHaveTextContent("本组练习已结束");
     });
   });
 

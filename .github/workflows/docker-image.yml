@@ -37,6 +37,15 @@ jobs:
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
 
+      - name: Resolve image metadata
+        id: meta
+        run: |
+          # 部署用「commit sha」做不可变标签：:latest 会被覆盖，出事无法回滚到具体版本。
+          # workflow_run 触发时 github.sha 是默认分支的头，真正要部署的是被触发那次的 head_sha。
+          SHA="${{ github.event.workflow_run.head_sha || github.sha }}"
+          echo "sha=$SHA" >> "$GITHUB_OUTPUT"
+          echo "short=${SHA:0:7}" >> "$GITHUB_OUTPUT"
+
       - name: Build and push Docker image
         uses: docker/build-push-action@v5
         with:
@@ -45,6 +54,15 @@ jobs:
           # 只出 amd64：部署环境是 x86；arm64 要走 QEMU 模拟，
           # `npm ci` + `next build` 那一步会把整条构建拖到 40 分钟以上。
           platforms: linux/amd64
-          tags: ghcr.io/${{ env.REPO }}:latest
+          tags: |
+            ghcr.io/${{ env.REPO }}:latest
+            ghcr.io/${{ env.REPO }}:${{ steps.meta.outputs.sha }}
+          # OCI 标签：`docker inspect` 能直接看出跑的是哪个 commit、什么时候构建的。
+          # 没有它，线上出问题时连"现在跑的是哪一版"都答不出来。
+          labels: |
+            org.opencontainers.image.source=https://github.com/${{ github.repository }}
+            org.opencontainers.image.revision=${{ steps.meta.outputs.sha }}
+            org.opencontainers.image.version=${{ steps.meta.outputs.short }}
+            org.opencontainers.image.created=${{ github.event.workflow_run.created_at || github.event.repository.updated_at }}
           cache-from: type=gha
           cache-to: type=gha,mode=max

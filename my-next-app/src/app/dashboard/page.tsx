@@ -265,7 +265,7 @@ export default async function Home() {
   else if (hour >= 19) greeting = "晚上好";
 
   return (
-    <div className="min-h-[calc(100vh-64px)] bg-background p-6 md:p-12 font-sans selection:bg-primary/20">
+    <div className="min-h-[calc(100dvh-64px)] bg-background p-6 md:p-12 font-sans selection:bg-primary/20">
       <div className="max-w-6xl mx-auto space-y-10">
         {/* Header：即时渲染，无需等待数据 */}
         <div className="flex items-end justify-between">

@@ -104,7 +104,7 @@ export default function SettingsPage() {
 
   if (!settings)
     return (
-      <div className="flex h-[calc(100vh-64px)] w-full items-center justify-center">
+      <div className="flex h-[calc(100dvh-64px)] w-full items-center justify-center">
         <Loader2 className="h-6 w-6 animate-spin text-primary" />
         <span className="ml-2 text-muted-foreground text-sm">
           正在加载配置...

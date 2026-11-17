@@ -49,7 +49,7 @@ export default async function TextbookReaderPage({
     : null;
 
   return (
-    <div className="flex h-[calc(100vh-4rem)]">
+    <div className="flex h-[calc(100dvh-4rem)]">
       {/* Sidebar - Desktop */}
       <div className="hidden md:flex w-64 flex-col border-r bg-muted/20">
         <div className="p-4 border-b">

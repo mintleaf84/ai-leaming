@@ -115,7 +115,7 @@ export default function MindmapEditorClient({
   }, [markdown, title, triggerSave]);
 
   return (
-    <div className="flex flex-col h-[calc(100vh-64px)] overflow-hidden font-sans relative">
+    <div className="flex flex-col h-[calc(100dvh-64px)] overflow-hidden font-sans relative">
       {/* 顶栏 */}
       <div className="flex items-center justify-between px-6 py-4 border-b border-border bg-card/50">
         <div className="flex items-center gap-3 w-1/2">

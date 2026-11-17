@@ -59,7 +59,7 @@ export function MindmapSidebar({ records }: MindmapSidebarProps) {
   };
 
   return (
-    <div className="w-64 border-r border-border h-[calc(100vh-64px)] bg-muted/20 flex flex-col font-sans">
+    <div className="w-64 border-r border-border h-[calc(100dvh-64px)] bg-muted/20 flex flex-col font-sans">
       <div className="p-4 border-b border-border">
         <Button
           onClick={handleCreate}

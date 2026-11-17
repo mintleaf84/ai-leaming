@@ -402,9 +402,13 @@
 }
 
 html {
-  /* 防止移动端橡皮筋回弹效果 */
-  overscroll-behavior-y: none;
   height: 100%;
+  /*
+   * 这里原有一行 `overscroll-behavior-y: none`（注释写"防止移动端橡皮筋回弹"），
+   * 但 html 根本不滚（body 是 overflow:hidden，真正滚动的是下面的 main），
+   * 所以那行是**空操作** —— 已挪到 main 上。
+   * T-12b（改回 body 滚动）落地时再挪到 body，别在这里重复写。
+   */
 }
 
 body {
@@ -433,6 +437,17 @@ main {
   height: 100%;
   overflow-y: auto;
   -webkit-overflow-scrolling: touch;
+  /* 移动端橡皮筋回弹：必须写在**真正滚动**的元素上（现在就是 main） */
+  overscroll-behavior-y: contain;
+}
+
+/*
+ * Radix 弹窗的滚动锁默认打给 `body`（react-remove-scroll 会加 `data-scroll-locked`），
+ * 但当前滚动容器是 `main` —— 只锁 body 等于没锁，打开弹窗后背景照样能滚。
+ * 这里补锁 main。**T-12b（改回 body 滚动）落地后删掉这一条**，届时 Radix 的默认行为就对了。
+ */
+body[data-scroll-locked] main {
+  overflow: hidden;
 }
 
 @layer utilities {

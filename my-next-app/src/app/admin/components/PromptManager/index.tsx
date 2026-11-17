@@ -192,7 +192,7 @@ export function PromptManager() {
     );
 
   return (
-    <div className="flex h-[calc(100vh-200px)] gap-6 overflow-hidden">
+    <div className="flex h-[calc(100dvh-200px)] gap-6 overflow-hidden">
       <PromptList
         prompts={prompts}
         selectedKey={editingPrompt?.key || null}

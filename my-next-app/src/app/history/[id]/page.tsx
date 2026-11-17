@@ -234,7 +234,7 @@ export default function SessionDetailPage({
     .filter((item) => !showWrongOnly || !item.log.isCorrect);
 
   return (
-    <div className="p-4 md:p-8 max-w-4xl mx-auto pb-20 min-h-[calc(100vh-64px)] bg-background">
+    <div className="p-4 md:p-8 max-w-4xl mx-auto pb-20 min-h-[calc(100dvh-64px)] bg-background">
       {/* 头部导航 */}
       <div className="flex items-center justify-between mb-6">
         <Link

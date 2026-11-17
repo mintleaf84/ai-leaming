@@ -68,7 +68,7 @@ describe("webVitalsService", () => {
 
     expect(rows).toHaveLength(2);
     expect(rows.map((r) => r.value).sort((a, b) => a - b)).toEqual([120, 180]);
-    expect(await vitals.count("INP")).toBe(2);
+    expect(await vitals.count({ name: "INP" })).toBe(2);
     expect(await vitals.count()).toBe(3);
   });
 
@@ -110,6 +110,75 @@ describe("webVitalsService", () => {
   });
 });
 
+describe("kind 维度（P2-02：launch / nav）", () => {
+  it("不传 kind 时默认 vital，且能按 kind 过滤统计", async () => {
+    await vitals.clear();
+    await vitals.record({ route: "/dashboard", name: "INP", value: 150 });
+    await vitals.record({
+      kind: "launch",
+      route: "/dashboard",
+      name: "launch",
+      value: 900,
+    });
+    await vitals.record({
+      kind: "nav",
+      route: "/wrong-book",
+      name: "nav",
+      value: 220,
+      fromRoute: "/dashboard",
+    });
+
+    expect(await vitals.count()).toBe(3);
+    expect(await vitals.count({ kind: "launch" })).toBe(1);
+    expect(await vitals.count({ kind: "nav" })).toBe(1);
+    expect(await vitals.count({ kind: "vital" })).toBe(1);
+  });
+
+  it("nav 记录 fromRoute，用于还原 A→B 链路", async () => {
+    await vitals.clear();
+    await vitals.record({
+      kind: "nav",
+      route: "/knowledge",
+      name: "nav",
+      value: 180,
+      fromRoute: "/dashboard",
+    });
+    const [row] = await dbm.drizzleDb
+      .select()
+      .from(dbm.drizzleSchema.web_vitals);
+    expect(row.kind).toBe("nav");
+    expect(row.from_route).toBe("/dashboard");
+  });
+
+  it("percentile 按 kind 过滤，launch 与 vital 不会互相污染", async () => {
+    await vitals.clear();
+    await vitals.record({ route: "/recall", name: "INP", value: 120 });
+    await vitals.record({ route: "/recall", name: "INP", value: 300 });
+    await vitals.record({
+      kind: "launch",
+      route: "/recall",
+      name: "launch",
+      value: 1800,
+    });
+
+    const vital = await vitals.percentile({
+      name: "INP",
+      kind: "vital",
+      p: 0.75,
+    });
+    expect(vital[0].samples).toBe(2);
+    expect(vital[0].value).toBe(300);
+
+    const launch = await vitals.percentile({
+      name: "launch",
+      kind: "launch",
+      p: 0.75,
+    });
+    expect(launch[0].samples).toBe(1);
+    expect(launch[0].value).toBe(1800);
+  });
+});
+
 describe("POST /api/vitals 路由契约", () => {
   it("合法 body 返回 204 并入库", async () => {
     await vitals.clear();
@@ -124,7 +193,7 @@ describe("POST /api/vitals 路由契约", () => {
       }),
     });
     expect(res.status).toBe(204);
-    expect(await vitals.count("INP")).toBe(1);
+    expect(await vitals.count({ name: "INP" })).toBe(1);
   });
 
   it("未知指标名返回 400，且不写库", async () => {
@@ -136,6 +205,35 @@ describe("POST /api/vitals 路由契约", () => {
     });
     expect(res.status).toBe(400);
     expect(await vitals.count()).toBe(0);
+  });
+
+  it("kind 与 name 不匹配返回 400（launch 只能是 launch）", async () => {
+    await vitals.clear();
+    const bad = await vitalsRoute.request("/", {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({
+        kind: "launch",
+        name: "INP",
+        value: 100,
+        route: "/dashboard",
+      }),
+    });
+    expect(bad.status).toBe(400);
+    expect(await vitals.count()).toBe(0);
+
+    const good = await vitalsRoute.request("/", {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({
+        kind: "launch",
+        name: "launch",
+        value: 800,
+        route: "/dashboard",
+      }),
+    });
+    expect(good.status).toBe(204);
+    expect(await vitals.count({ kind: "launch" })).toBe(1);
   });
 
   it("缺 route 返回 400", async () => {

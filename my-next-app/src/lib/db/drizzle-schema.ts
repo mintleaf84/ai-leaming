@@ -375,15 +375,27 @@ export const web_vitals = sqliteTable(
   {
     id: integer("id").primaryKey({ autoIncrement: true }),
     route: text("route").notNull(),
-    name: text("name").notNull(), // INP | LCP | CLS | TTFB | FCP
+    /**
+     * vital（INP/LCP/CLS/TTFB/FCP）| launch（首屏可交互）| nav（单次交互耗时）。
+     * 见 drizzle/0017：三类数据同表，方便按路由一起归因。
+     */
+    kind: text("kind").default("vital"),
+    name: text("name").notNull(), // 见 docs/performance-baseline.md §3
     value: integer("value").notNull(), // 毫秒；CLS 为无量纲，放大 1000 后取整
     rating: text("rating"), // good | needs-improvement | poor
+    /** 仅 kind=nav 使用：这次交互是从哪个路由发起的 */
+    from_route: text("from_route"),
     created_at: text("created_at").default(sql`CURRENT_TIMESTAMP`),
   },
   (table) => ({
     idx_route_name_created: index("idx_web_vitals_route_name").on(
       table.route,
       table.name,
+      sql`${table.created_at} DESC`,
+    ),
+    idx_route_kind_created: index("idx_web_vitals_kind").on(
+      table.route,
+      table.kind,
       sql`${table.created_at} DESC`,
     ),
   }),

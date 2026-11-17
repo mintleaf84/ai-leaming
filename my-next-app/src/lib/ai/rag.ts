@@ -74,28 +74,51 @@ export interface RagResult {
   metadata?: Record<string, unknown>;
 }
 
+/**
+ * embedding 结果，外加**是否降级**的显式标记。
+ *
+ * 为什么需要标记：`getEmbedding` 在 API 失败时返回一条由 `Math.sin(hash + i)`
+ * 生成、长度与配置一致的**伪向量**（保证答题流程不因 AI 不可用而中断）。伪向量
+ * 用于"此刻的检索"是可接受的降级，但一旦写进向量索引就是**永久脏数据**：它与任何
+ * 真实查询的距离都没有语义，而且降级期间重算还是同一条，事后无法从数值上分辨。
+ *
+ * 所以"这是不是伪向量"只能由**产生它的代码**回答 —— 禁止用长度/方差这类启发式去猜。
+ */
+export interface EmbeddingResult {
+  vector: number[];
+  /** true = 伪向量（API 失败回退 / E2E 合成），**不得**写入任何向量索引 */
+  degraded: boolean;
+}
+
 export const ragService = {
   /**
-   * 获取文本向量 (使用标准 SDK，带多级缓存)
+   * 获取文本向量，并告知是否走了降级路径（见 `EmbeddingResult`）。
+   *
+   * 需要"能不能入库"的判断时用这个；其余既有调用方继续用 `getEmbedding`，
+   * 语义（失败时给伪向量）保持不变。
    */
-  getEmbedding: async (text: string): Promise<number[]> => {
+  getEmbeddingResult: async (text: string): Promise<EmbeddingResult> => {
     if (env.E2E_TEST === "true") {
       const { embeddingDimensions } = await getAiConfig();
-      return new Array(embeddingDimensions || 1024)
-        .fill(0)
-        .map((_, i) => Math.sin(i));
+      return {
+        vector: new Array(embeddingDimensions || 1024)
+          .fill(0)
+          .map((_, i) => Math.sin(i)),
+        // E2E 合成向量与文本无关（所有文本拿同一条），入库等于污染索引
+        degraded: true,
+      };
     }
 
     // 1. 内存缓存
     const memHit = memCacheGet(text);
-    if (memHit) return memHit;
+    if (memHit) return { vector: memHit, degraded: false };
 
     // 2. SQLite 缓存
     const hash = cacheKey(text);
     const dbHit = await dbCacheGet(hash);
     if (dbHit) {
       memCacheSet(text, dbHit);
-      return dbHit;
+      return { vector: dbHit, degraded: false };
     }
 
     // 3. 调 API
@@ -110,20 +133,32 @@ export const ragService = {
       // 写入双级缓存
       memCacheSet(text, embedding);
       await dbCacheSet(hash, text, embedding);
-      return embedding;
+      return { vector: embedding, degraded: false };
     } catch (error: unknown) {
       console.warn("[RAG] Embedding 失败，原因:", getErrorMessage(error));
       const { embeddingDimensions } = await getAiConfig();
-      return new Array(embeddingDimensions || 1024).fill(0).map((_, i) => {
-        let hash = 0;
-        for (let charIndex = 0; charIndex < text.length; charIndex++) {
-          hash = (hash << 5) - hash + text.charCodeAt(charIndex);
-          hash |= 0;
-        }
-        return Math.sin(hash + i);
-      });
+      const vector = new Array(embeddingDimensions || 1024)
+        .fill(0)
+        .map((_, i) => {
+          let hash = 0;
+          for (let charIndex = 0; charIndex < text.length; charIndex++) {
+            hash = (hash << 5) - hash + text.charCodeAt(charIndex);
+            hash |= 0;
+          }
+          return Math.sin(hash + i);
+        });
+      return { vector, degraded: true };
     }
   },
+
+  /**
+   * 获取文本向量 (使用标准 SDK，带多级缓存)
+   *
+   * 降级时返回伪向量、不报错 —— 这是既有契约，调用方（`ai.ts` 兜底、RAG 检索）
+   * 依赖它保持"AI 不可用也不炸"。需要区分降级请用 `getEmbeddingResult`。
+   */
+  getEmbedding: async (text: string): Promise<number[]> =>
+    (await ragService.getEmbeddingResult(text)).vector,
 
   /**
    * 批量获取向量（带缓存，使用 embedMany 减少 API 调用）

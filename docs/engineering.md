@@ -51,7 +51,8 @@
 ### 4. 闸门绿了才合，warning 不许增长
 
 CI 四项必须全绿：`lint`（errors=0 且 warning 不超基线）/ `typecheck` / `vitest` / `next build`；
-外加 `npm audit --audit-level=high`。
+外加 `npm audit --omit=dev --audit-level=high`（只拦运行时依赖；devDependencies 的高危记在
+[`dependency-audit.md`](./dependency-audit.md) 台账，理由见该文件「门禁为什么要 omit=dev」）。
 
 - ESLint warning 用**按规则的棘轮**：`.eslint-baseline.json` 记录每条规则的计数，任何一条规则增加即失败（`--max-warnings N` 只看总数，可用「新增 A 规则、删掉 B 规则」绕过）；总数下降时应同 PR 执行 `npm run lint:baseline` 收紧基线；
 - `as any` 新增需在 PR 里说明理由；

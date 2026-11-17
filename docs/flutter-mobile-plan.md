@@ -265,13 +265,13 @@ npm run typecheck && npm run lint:ci && npx vitest run --maxWorkers=8 && npm run
 
 ### P2 完成情况（2026-11-18 二次更新）
 
-| 组件 | 文件 | 状态 |
-| --- | --- | --- |
-| 本地库（4 表 + 索引） | `lib/core/local/local_db.dart` | 完成 |
-| 题目缓存 / 随机抽题 / 本地会话 / 待同步聚合 | `lib/features/practice/data/local_practice_store.dart` | 完成 |
-| 同步服务（幂等 flush、401 中止、单会话失败不拖垮整批） | `lib/core/sync/sync_service.dart` | 完成 |
-| 接线（远端失败降级本地出题、本地判分、启动补交） | `practice_repository_impl.dart` + `main.dart` | 完成 |
-| 离线可见性（练习页提示条、设置页真同步与待同步条数） | `practice_screen.dart` / `settings_screen.dart` | 完成 |
+| 组件                                                   | 文件                                                   | 状态 |
+| ------------------------------------------------------ | ------------------------------------------------------ | ---- |
+| 本地库（4 表 + 索引）                                  | `lib/core/local/local_db.dart`                         | 完成 |
+| 题目缓存 / 随机抽题 / 本地会话 / 待同步聚合            | `lib/features/practice/data/local_practice_store.dart` | 完成 |
+| 同步服务（幂等 flush、401 中止、单会话失败不拖垮整批） | `lib/core/sync/sync_service.dart`                      | 完成 |
+| 接线（远端失败降级本地出题、本地判分、启动补交）       | `practice_repository_impl.dart` + `main.dart`          | 完成 |
+| 离线可见性（练习页提示条、设置页真同步与待同步条数）   | `practice_screen.dart` / `settings_screen.dart`        | 完成 |
 
 离线判分口径：选项字母按集合比较（多选题忽略顺序），填空/判断退化为去噪后字符串相等；与后端 `checkAnswerCorrectness` 的多选取向一致。
 

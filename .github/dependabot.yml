@@ -69,6 +69,24 @@ updates:
       - dependency-name: "@testing-library/jest-dom"
         update-types: ["version-update:semver-major"]
 
+  # MCP server：独立小包，只在有安全修复时才值得动
+  - package-ecosystem: "npm"
+    directory: "/mcp-server"
+    schedule:
+      interval: "monthly"
+    labels: ["deps", "mcp"]
+    # 0 = 关闭常规版本更新（含 @types/node 的 major 噪音），只保留安全更新；
+    # open-pull-requests-limit 对安全更新不生效，所以安全修复不会被这道闸挡住
+    open-pull-requests-limit: 0
+    commit-message:
+      prefix: "chore(deps)"
+    groups:
+      mcp:
+        # 默认只作用于 version-updates；显式改成 security-updates，
+        # 否则多个依赖同时有安全修复时会各开一个 PR
+        applies-to: "security-updates"
+        patterns: ["*"]
+
   # CI 里用到的 action
   - package-ecosystem: "github-actions"
     directory: "/"

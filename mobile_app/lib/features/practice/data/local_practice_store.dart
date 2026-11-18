@@ -322,16 +322,6 @@ class LocalPracticeStore {
       whereArgs: <Object?>[localId],
     );
   }
-    if (serverSessionId != null) {
-      await db.update(
-        'local_sessions',
-        <String, Object?>{'synced_session_id': serverSessionId},
-        where: 'local_id = ?',
-        whereArgs: <Object?>[localId],
-      );
-    }
-  }
-
   /// 未同步的作答条数（按 pending_answers 行计，非会话数）。
   Future<int> pendingCount() async {
     final db = await _resolveDb();

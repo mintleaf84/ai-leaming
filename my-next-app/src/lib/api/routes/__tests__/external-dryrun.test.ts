@@ -216,6 +216,28 @@ describe("写接口 dry-run", () => {
       expect(after.mastery).toBeGreaterThan(before.mastery);
     });
 
+    it("幂等命中时预演也带 dryRun（与真重放可区分）", async () => {
+      const [q1] = await seedBase();
+      const payload = {
+        sessionKey: "dry-session-idem",
+        answers: [{ questionId: q1, isCorrect: true }],
+      };
+
+      const real = await request("/practice/answers", {
+        method: "POST",
+        body: payload,
+      });
+      expect(real.status).toBe(200);
+
+      const replayDry = await request("/practice/answers?dryRun=true", {
+        method: "POST",
+        body: payload,
+      });
+      const body = await replayDry.json();
+      expect(body.duplicated).toBe(true);
+      expect(body.dryRun).toBe(true);
+    });
+
     it("预演仍会以 400 暴露不存在的 questionId，且不写任何行", async () => {
       const [q1] = await seedBase();
       const before = await tableCounts();
@@ -487,9 +509,10 @@ describe("写接口 dry-run", () => {
         },
       });
       const body = await replay.json();
-      // 命中重放时不写库，因此本来也没有需要回滚的东西
+      // 命中重放时不写库，但仍要带 dryRun：否则调用方分不清"预演的重放"
+      // 与"普通的重放"，判定逻辑会随调用顺序漂移
       expect(body.duplicate).toBe(true);
-      expect(body.dryRun).toBeUndefined();
+      expect(body.dryRun).toBe(true);
     });
   });
 });

@@ -277,13 +277,17 @@ curl -s -X POST "$BASE/api/external/practice/answers" \
 
 5 个写接口都支持 `?dryRun=true`（query 参数，DELETE 同样适用）：
 
-| 接口                                           | 预演返回什么                                                             | 库内变更 |
+| 接口                                           | 预演返回什么                                                             | 业务数据变更 |
 | ---------------------------------------------- | ------------------------------------------------------------------------ | -------- |
 | `POST /practice/answers`                       | `inserted`（会写几条日志）、题目校验结果                                 | 零       |
 | `POST /recall/reviews`                         | `verdicts` / `rating` / `nextDue` / `pendingItems`（真实判分与调度计算） | 零       |
 | `POST /recall/decks`                           | `createdCards` / `updatedCards` / `skippedCards` / `conflicts`           | 零       |
 | `POST /recall/cards`                           | `cardId` / `created`（新建还是覆盖）                                     | 零       |
 | `DELETE /recall/decks/:deckKey/cards/:cardKey` | `reviewLogs` / `cardStates`（会连带删掉多少行），`deleted` 为 `false`    | 零       |
+
+"业务数据"指会话、答题日志、掌握度、卡组/卡片、复习进度 —— 一个字节都不变。
+**不变的不包括** `api_keys.last_used_at`（每次调用刷新）与 `api_audit_logs`（写请求照常留痕），
+所以"预演零写入"要读成"业务数据零写入"，不是"数据库零写入"。
 
 三条语义保证：
 
@@ -294,7 +298,14 @@ curl -s -X POST "$BASE/api/external/practice/answers" \
 3. **响应多一个 `dryRun: true`**：用于区分"这是预演"与"已生效"；
    `DELETE` 的 `deleted` 在预演时是 `false`，别把它当成功。
 
-幂等键在预演里同样生效：`clientKey` 命中既有记录时返回 `duplicate: true`（此时本来也没有要写的东西）。
+幂等键在预演里同样生效。四种组合各自有明确标记，按 `duplicate` → `dryRun` 的顺序读：
+
+| `duplicate` | `dryRun` | 含义                                       |
+| ----------- | -------- | ------------------------------------------ |
+| 无          | 无       | 真的写进去了                               |
+| `true`      | 无       | 真提交命中幂等键，本次没有写入             |
+| 无          | `true`   | 预演通过，什么都没写                       |
+| `true`      | `true`   | 预演 + 命中幂等键（预演本来也不会写）      |
 
 ### 预演不是承诺，只是「此刻的快照」
 
@@ -304,6 +315,5 @@ curl -s -X POST "$BASE/api/external/practice/answers" \
   正式删除会删掉 4 条。**以正式请求执行时的数据为准**，预演数字只用于判断影响面量级。
 - **参数会被重新校验**：预演通过不代表正式请求一定通过。例如卡片在两次请求之间被编辑成只剩 1 个条目，
   带 `overrides: [{index: 1}]` 的正式提交会返回 `400`（下标越界）。
-- **幂等重放不带 `dryRun`**：`clientKey` / `sessionKey` 命中既有记录时返回 `duplicate: true`，
-  **不会**带 `dryRun: true`（这次确实没有写入，也没有可预演的东西）。
-  判定方法：先看 `duplicate`，再看 `dryRun`；两者都没有 = 真的写进去了。
+- **幂等重放与预演可叠加**：命中 `clientKey` / `sessionKey` 时，真提交只回 `duplicate: true`；
+  带 `?dryRun=true` 的重放回 `duplicate: true` **且** `dryRun: true`。按上表的四象限读即可。

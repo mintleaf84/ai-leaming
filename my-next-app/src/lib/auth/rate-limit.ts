@@ -12,6 +12,16 @@ type RateLimitEntry = {
 // 内存存储（Edge Runtime 兼容）
 const rateLimitStore = new Map<string, RateLimitEntry>();
 
+/**
+ * 存储条目上限。
+ *
+ * 外部接口按 API Key 计数，而 key 在鉴权之前无法验证 —— 攻击者可以用不同的
+ * 伪造 Bearer 值各占一个桶，把 Map 撑大（每个条目都会留着直到窗口过期）。
+ * 超过上限后新标识统一落到一个共享的溢出桶，内存因此有硬上限，
+ * 代价是"洪水期间大家一起被限"——这正是想要的行为。
+ */
+const MAX_ENTRIES = 10_000;
+
 // 配置
 const RATE_LIMIT_CONFIG = {
   // 登录接口：每分钟最多 5 次（防暴力破解）
@@ -29,9 +39,9 @@ const RATE_LIMIT_CONFIG = {
 let lastCleanup = Date.now();
 const CLEANUP_INTERVAL = 60 * 1000; // 1 分钟清理一次
 
-function cleanup() {
+function cleanup(force = false) {
   const now = Date.now();
-  if (now - lastCleanup < CLEANUP_INTERVAL) return;
+  if (!force && now - lastCleanup < CLEANUP_INTERVAL) return;
 
   lastCleanup = now;
   for (const [key, entry] of rateLimitStore.entries()) {
@@ -78,7 +88,15 @@ export function checkRateLimitWith(
   cleanup();
 
   const now = Date.now();
-  const key = `${identifier}:${bucket}`;
+  let key = `${identifier}:${bucket}`;
+
+  if (!rateLimitStore.has(key) && rateLimitStore.size >= MAX_ENTRIES) {
+    // 先尝试回收过期条目；仍然满就落到共享溢出桶，保证内存有上限
+    cleanup(true);
+    if (rateLimitStore.size >= MAX_ENTRIES) {
+      key = "__overflow__:" + bucket;
+    }
+  }
 
   const entry = rateLimitStore.get(key);
 
@@ -143,4 +161,15 @@ export function getClientIP(
 
   // 兜底
   return "unknown";
+}
+
+/**
+ * 仅供测试：清空计数。
+ *
+ * 限流计数是模块级的，同一文件里前一个用例把桶打满后，后一个用例的第一次请求
+ * 就会 429 —— 这种"测试互相污染"极难排查，所以在 beforeEach 里显式重置。
+ */
+export function __resetRateLimitStore(): void {
+  rateLimitStore.clear();
+  lastCleanup = 0;
 }

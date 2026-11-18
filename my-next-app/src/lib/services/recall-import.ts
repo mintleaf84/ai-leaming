@@ -720,39 +720,35 @@ export async function deleteCard(
         throw new RecallNotFoundError(`卡片 ${cardId} 不在卡组 ${deckKey} 里`);
       }
 
-      // 预演只统计、不删除：删卡是全局且不可撤回的（docs/api.md §8），
-      // 调用方需要先知道"会连带删掉多少条作答日志与进度"
-      if (options.dryRun) {
-        const [logs] = await exec
-          .select({ n: count() })
-          .from(recall_review_logs)
-          .where(eq(recall_review_logs.card_id, card.id));
-        const [states] = await exec
-          .select({ n: count() })
-          .from(recall_card_states)
-          .where(eq(recall_card_states.card_id, card.id));
-        throw new DryRunRollback({
-          cardId: card.id,
-          reviewLogs: Number(logs?.n ?? 0),
-          cardStates: Number(states?.n ?? 0),
-        });
-      }
+      // 先数、再删、预演在删完之后回滚：预演与真执行走的是同三条 DELETE，
+      // 因此"删除语句能不能执行"也是被验证过的，不是只数了两个 COUNT。
+      //
+      // 不用 RETURNING 取行数：共享卡片的作答日志可能上万条，RETURNING 会把
+      // 每条删掉的 id 都物化一遍，只为了读 .length（评审指出过内存开销）。
+      const [logs] = await exec
+        .select({ n: count() })
+        .from(recall_review_logs)
+        .where(eq(recall_review_logs.card_id, card.id));
+      const [states] = await exec
+        .select({ n: count() })
+        .from(recall_card_states)
+        .where(eq(recall_card_states.card_id, card.id));
 
-      const deletedLogs = await exec
+      await exec
         .delete(recall_review_logs)
-        .where(eq(recall_review_logs.card_id, card.id))
-        .returning({ id: recall_review_logs.id });
-      const deletedStates = await exec
+        .where(eq(recall_review_logs.card_id, card.id));
+      await exec
         .delete(recall_card_states)
-        .where(eq(recall_card_states.card_id, card.id))
-        .returning({ id: recall_card_states.card_id });
+        .where(eq(recall_card_states.card_id, card.id));
       await exec.delete(recall_cards).where(eq(recall_cards.id, card.id));
 
-      return {
+      const result = {
         cardId: card.id,
-        reviewLogs: deletedLogs.length,
-        cardStates: deletedStates.length,
+        reviewLogs: Number(logs?.n ?? 0),
+        cardStates: Number(states?.n ?? 0),
       };
+      if (options.dryRun) throw new DryRunRollback(result);
+      return result;
     }),
   ).catch((err: unknown) => {
     if (

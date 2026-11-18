@@ -68,7 +68,10 @@ app.use("*", async (c, next) => {
     ? `key:${createHash("sha256").update(token).digest("hex").slice(0, 24)}`
     : `ip:${c.req.header("cf-connecting-ip") ?? c.req.header("x-real-ip") ?? "unknown"}`;
 
-  const bucket = c.req.method === "GET" ? "read" : "write";
+  // HEAD 走的是 GET 处理器（Next.js 把 HEAD 交给 GET export），按写配额计会
+  // 让一个探活请求吃掉写额度，所以两者都归读桶
+  const bucket =
+    c.req.method === "GET" || c.req.method === "HEAD" ? "read" : "write";
   const result = checkRateLimitWith(
     identifier,
     `external:${bucket}`,
@@ -144,6 +147,35 @@ function wantsDryRun(query: { dryRun?: "true" | "false" }): boolean {
   return query.dryRun === "true";
 }
 
+/**
+ * 429 的统一声明。
+ *
+ * 中间件实际返回的是 `{ error, retryAfter }` + `Retry-After` /
+ * `X-RateLimit-*` 头。只在各路由写一句 description，生成的客户端拿不到字段类型，
+ * 也没法按头退避（评审指出过这一点），所以收敛成一份可复用的响应定义。
+ */
+const RateLimitedResponse = {
+  description:
+    "请求过于频繁 - 超过该 API Key 的限额；按 Retry-After 头或 body.retryAfter 退避后重试",
+  headers: z.object({
+    "Retry-After": z.string().describe("建议等待的秒数"),
+    "X-RateLimit-Limit": z.string().describe("该桶的额度"),
+    "X-RateLimit-Remaining": z.string().describe("剩余额度（超限时为 0）"),
+    "X-RateLimit-Reset": z.string().describe("窗口重置时间（Unix 秒）"),
+  }),
+  content: {
+    "application/json": {
+      schema: z.object({
+        error: z.string().describe("可读错误信息"),
+        retryAfter: z
+          .number()
+          .int()
+          .describe("建议等待的秒数，与 Retry-After 头一致"),
+      }),
+    },
+  },
+};
+
 const ExternalQuestionSchema = z.object({
   id: z.number(),
   type: z.string().nullable().optional(),
@@ -186,10 +218,7 @@ const listRoute = createRoute({
     },
     401: { description: "未授权 - 缺少 / 无效 / 已停用的 API Key" },
     403: { description: "已禁止 - 该 API Key 的作用域不足" },
-    429: {
-      description:
-        "请求过于频繁 - 超过该 API Key 的限额，按 Retry-After 退避后重试",
-    },
+    429: RateLimitedResponse,
   },
 });
 
@@ -267,10 +296,7 @@ const getRoute = createRoute({
     401: { description: "未授权 - 缺少 / 无效 / 已停用的 API Key" },
     403: { description: "已禁止 - 该 API Key 的作用域不足" },
     404: { description: "题目不存在" },
-    429: {
-      description:
-        "请求过于频繁 - 超过该 API Key 的限额，按 Retry-After 退避后重试",
-    },
+    429: RateLimitedResponse,
   },
 });
 
@@ -420,10 +446,7 @@ const listSessionsRoute = createRoute({
     },
     401: { description: "未授权 - 缺少 / 无效 / 已停用的 API Key" },
     403: { description: "已禁止 - 该 API Key 的作用域不足" },
-    429: {
-      description:
-        "请求过于频繁 - 超过该 API Key 的限额，按 Retry-After 退避后重试",
-    },
+    429: RateLimitedResponse,
   },
 });
 
@@ -480,10 +503,7 @@ const sessionDetailRoute = createRoute({
     },
     401: { description: "未授权 - 缺少 / 无效 / 已停用的 API Key" },
     403: { description: "已禁止 - 该 API Key 的作用域不足" },
-    429: {
-      description:
-        "请求过于频繁 - 超过该 API Key 的限额，按 Retry-After 退避后重试",
-    },
+    429: RateLimitedResponse,
     404: { description: "会话不存在或不属于当前调用身份" },
   },
 });
@@ -572,10 +592,7 @@ const wrongBookRoute = createRoute({
     },
     401: { description: "未授权 - 缺少 / 无效 / 已停用的 API Key" },
     403: { description: "已禁止 - 该 API Key 的作用域不足" },
-    429: {
-      description:
-        "请求过于频繁 - 超过该 API Key 的限额，按 Retry-After 退避后重试",
-    },
+    429: RateLimitedResponse,
   },
 });
 
@@ -641,10 +658,7 @@ const wrongBookStatsRoute = createRoute({
     },
     401: { description: "未授权 - 缺少 / 无效 / 已停用的 API Key" },
     403: { description: "已禁止 - 该 API Key 的作用域不足" },
-    429: {
-      description:
-        "请求过于频繁 - 超过该 API Key 的限额，按 Retry-After 退避后重试",
-    },
+    429: RateLimitedResponse,
   },
 });
 
@@ -694,10 +708,7 @@ const masteryRoute = createRoute({
     },
     401: { description: "未授权 - 缺少 / 无效 / 已停用的 API Key" },
     403: { description: "已禁止 - 该 API Key 的作用域不足" },
-    429: {
-      description:
-        "请求过于频繁 - 超过该 API Key 的限额，按 Retry-After 退避后重试",
-    },
+    429: RateLimitedResponse,
   },
 });
 
@@ -755,10 +766,7 @@ const overviewRoute = createRoute({
     },
     401: { description: "未授权 - 缺少 / 无效 / 已停用的 API Key" },
     403: { description: "已禁止 - 该 API Key 的作用域不足" },
-    429: {
-      description:
-        "请求过于频繁 - 超过该 API Key 的限额，按 Retry-After 退避后重试",
-    },
+    429: RateLimitedResponse,
   },
 });
 
@@ -829,10 +837,7 @@ const knowledgeCardsRoute = createRoute({
     },
     401: { description: "未授权 - 缺少 / 无效 / 已停用的 API Key" },
     403: { description: "已禁止 - 该 API Key 的作用域不足" },
-    429: {
-      description:
-        "请求过于频繁 - 超过该 API Key 的限额，按 Retry-After 退避后重试",
-    },
+    429: RateLimitedResponse,
   },
 });
 
@@ -949,10 +954,7 @@ const importAnswersRoute = createRoute({
     400: { description: "请求体校验失败 / 存在题库中不存在的 questionId" },
     401: { description: "未授权 - 缺少 / 无效 / 已停用的 API Key" },
     403: { description: "已禁止 - 该 API Key 的作用域不足（需要 write）" },
-    429: {
-      description:
-        "请求过于频繁 - 超过该 API Key 的限额，按 Retry-After 退避后重试",
-    },
+    429: RateLimitedResponse,
     500: { description: "服务器内部错误" },
   },
 });
@@ -1102,10 +1104,7 @@ const recallDecksRoute = createRoute({
     },
     401: { description: "未授权 - 缺少 / 无效 / 已停用的 API Key" },
     403: { description: "已禁止 - 该 API Key 的作用域不足" },
-    429: {
-      description:
-        "请求过于频繁 - 超过该 API Key 的限额，按 Retry-After 退避后重试",
-    },
+    429: RateLimitedResponse,
   },
 });
 
@@ -1165,10 +1164,7 @@ const recallDeckDetailRoute = createRoute({
     },
     401: { description: "未授权 - 缺少 / 无效 / 已停用的 API Key" },
     403: { description: "已禁止 - 该 API Key 的作用域不足" },
-    429: {
-      description:
-        "请求过于频繁 - 超过该 API Key 的限额，按 Retry-After 退避后重试",
-    },
+    429: RateLimitedResponse,
     404: { description: "卡组不存在" },
   },
 });
@@ -1245,10 +1241,7 @@ const recallCardDetailRoute = createRoute({
     400: { description: "cardId 不是正整数" },
     401: { description: "未授权 - 缺少 / 无效 / 已停用的 API Key" },
     403: { description: "已禁止 - 该 API Key 的作用域不足" },
-    429: {
-      description:
-        "请求过于频繁 - 超过该 API Key 的限额，按 Retry-After 退避后重试",
-    },
+    429: RateLimitedResponse,
     404: { description: "卡片不存在" },
   },
 });
@@ -1325,10 +1318,7 @@ const recallQueueRoute = createRoute({
     },
     401: { description: "未授权 - 缺少 / 无效 / 已停用的 API Key" },
     403: { description: "已禁止 - 该 API Key 的作用域不足" },
-    429: {
-      description:
-        "请求过于频繁 - 超过该 API Key 的限额，按 Retry-After 退避后重试",
-    },
+    429: RateLimitedResponse,
   },
 });
 
@@ -1440,10 +1430,7 @@ const recallReviewsRoute = createRoute({
     400: { description: "请求体校验失败 / 改判下标非法" },
     401: { description: "未授权 - 缺少 / 无效 / 已停用的 API Key" },
     403: { description: "已禁止 - 该 API Key 的作用域不足（需要 write）" },
-    429: {
-      description:
-        "请求过于频繁 - 超过该 API Key 的限额，按 Retry-After 退避后重试",
-    },
+    429: RateLimitedResponse,
     404: { description: "卡片不存在" },
     500: { description: "服务器内部错误" },
   },
@@ -1563,10 +1550,7 @@ const recallDeckImportRoute = createRoute({
     400: { description: "卡组内容校验失败（带 issues）" },
     401: { description: "未授权 - 缺少 / 无效 / 已停用的 API Key" },
     403: { description: "已禁止 - 该 API Key 的作用域不足（需要 write）" },
-    429: {
-      description:
-        "请求过于频繁 - 超过该 API Key 的限额，按 Retry-After 退避后重试",
-    },
+    429: RateLimitedResponse,
     500: { description: "服务器内部错误" },
   },
 });
@@ -1647,7 +1631,7 @@ const RecallCardUpsertResponseSchema = z
       .boolean()
       .describe("true = 本次新建；false = 覆盖了同 cardId 的既有卡片"),
     dryRun: z.boolean().optional().openapi({
-      description: "仅预演时出现且恒为 true：本次没有写库",
+      description: "仅预演时出现且恒为 true：业务数据没有变更",
     }),
   })
   .openapi("ExternalRecallCardUpsertResponse");
@@ -1681,10 +1665,7 @@ const recallCardUpsertRoute = createRoute({
     },
     401: { description: "未授权 - 缺少 / 无效 / 已停用的 API Key" },
     403: { description: "已禁止 - 该 API Key 的作用域不足（需要 write）" },
-    429: {
-      description:
-        "请求过于频繁 - 超过该 API Key 的限额，按 Retry-After 退避后重试",
-    },
+    429: RateLimitedResponse,
     404: { description: "卡组不存在" },
     500: { description: "服务器内部错误" },
   },
@@ -1778,10 +1759,7 @@ const recallCardDeleteRoute = createRoute({
     },
     401: { description: "未授权 - 缺少 / 无效 / 已停用的 API Key" },
     403: { description: "已禁止 - 该 API Key 的作用域不足（需要 write）" },
-    429: {
-      description:
-        "请求过于频繁 - 超过该 API Key 的限额，按 Retry-After 退避后重试",
-    },
+    429: RateLimitedResponse,
     404: { description: "卡组不存在 / 卡片不在该卡组里" },
     500: { description: "服务器内部错误" },
   },

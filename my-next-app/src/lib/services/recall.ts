@@ -561,7 +561,9 @@ export async function submitReview(
     const replay = await replayByClientKey(userId, cardId, options.clientKey, {
       state: card.state,
     });
-    if (replay) return replay;
+    // 早返回同样要带 dryRun：这条路径不经过事务，不补的话"预演的重放"
+    // 与"普通的重放"在响应里无法区分（评审指出过）
+    if (replay) return options.dryRun ? { ...replay, dryRun: true } : replay;
   }
 
   const allIndexes =
@@ -684,7 +686,7 @@ export async function submitReview(
           )
           .limit(1);
 
-        return {
+        const duplicateResult = {
           ...base,
           nextDue: existing?.due ?? base.nextDue,
           pendingItems: existing
@@ -692,6 +694,10 @@ export async function submitReview(
             : base.pendingItems,
           duplicate: true,
         };
+        // 预演命中重放时同样带 dryRun：否则调用方分不清"预演的重放"与
+        // "普通的重放"，语义会随调用顺序漂移（评审指出过）
+        if (options.dryRun) throw new DryRunRollback(duplicateResult);
+        return duplicateResult;
       }
 
       await exec

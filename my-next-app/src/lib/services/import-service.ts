@@ -466,7 +466,12 @@ export const importService = {
     // 0. 幂等预检：同一用户同一 sessionKey 只算一次，重复提交不再写日志、
     //    不再累加掌握度（否则 agent 重试会把 mastery 分数刷虚高）。
     const existingId = await findExistingSession(userId, sourceKey);
-    if (existingId) return duplicatedAgentResult(existingId);
+    if (existingId) {
+      const duplicated = duplicatedAgentResult(existingId);
+      // 与真实的预演分支保持同一语义：命中幂等时也要带 dryRun，调用方才能
+      // 用同一个判断（duplicate 先看，再看 dryRun）区分四种结果
+      return options.dryRun ? { ...duplicated, dryRun: true } : duplicated;
+    }
 
     let inserted: number;
     try {

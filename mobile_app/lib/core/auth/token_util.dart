@@ -19,8 +19,23 @@ class TokenUtil {
     return DateTime.now().isAfter(expiry.subtract(leeway));
   }
 
-  /// 读取 token 的过期时间；无法解析时返回 null。
-  static DateTime? _readExpiry(String token) {
+  /// 读取 token 里的用户 id（用于给本地待同步数据打归属）。
+  ///
+  /// 后端 payload 形如 `{user: {id, username, role, token_version}, exp}`。
+  static String? userIdOf(String token) {
+    final payload = _readPayload(token);
+    if (payload == null) {
+      return null;
+    }
+    final user = payload['user'];
+    if (user is! Map<String, dynamic>) {
+      return null;
+    }
+    final id = user['id'];
+    return id == null ? null : id.toString();
+  }
+
+  static Map<String, dynamic>? _readPayload(String token) {
     try {
       final parts = token.split('.');
       if (parts.length != 3) {
@@ -28,17 +43,23 @@ class TokenUtil {
       }
       final payloadJson = utf8.decode(base64Url.decode(base64Url.normalize(parts[1])));
       final payload = jsonDecode(payloadJson);
-      if (payload is! Map<String, dynamic>) {
-        return null;
+      if (payload is Map<String, dynamic>) {
+        return payload;
       }
-      final exp = payload['exp'];
-      if (exp is! int) {
-        return null;
-      }
-      return DateTime.fromMillisecondsSinceEpoch(exp * 1000);
+      return null;
     } catch (_) {
-      // 解析失败属可忽略：调用方按"未过期"处理，最终由 401 纠正。
       return null;
     }
+  }
+
+  /// 读取 token 的过期时间；无法解析时返回 null。
+  static DateTime? _readExpiry(String token) {
+    // 解析失败属可忽略：调用方按"未过期"处理，最终由 401 纠正。
+    final payload = _readPayload(token);
+    final exp = payload?['exp'];
+    if (exp is! int) {
+      return null;
+    }
+    return DateTime.fromMillisecondsSinceEpoch(exp * 1000);
   }
 }

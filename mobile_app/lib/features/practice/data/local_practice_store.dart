@@ -109,9 +109,10 @@ class LocalPracticeStore {
         Duration(days: maxAgeDays).inMilliseconds;
     final rows = await db.query(
       'cached_questions',
+      // answer 为空/空串的题不能离线出：判分只能回退成空答案，会把作答全判错。
       where: tag == null
-          ? 'fetched_at >= ?'
-          : 'fetched_at >= ? AND tags LIKE ?',
+          ? "fetched_at >= ? AND answer IS NOT NULL AND answer != ''"
+          : "fetched_at >= ? AND tags LIKE ? AND answer IS NOT NULL AND answer != ''",
       whereArgs: tag == null
           ? <Object?>[cutoff]
           : <Object?>[cutoff, '%"$tag"%'],
@@ -159,6 +160,7 @@ class LocalPracticeStore {
   /// 重试不会在服务端重复建会话。
   Future<void> ensureLocalSession({
     required String localId,
+    required String userId,
     required String mode,
     required List<String> questionIds,
   }) async {
@@ -167,6 +169,7 @@ class LocalPracticeStore {
       'local_sessions',
       <String, Object?>{
         'local_id': localId,
+        'user_id': userId,
         'mode': mode,
         'question_ids': jsonEncode(questionIds),
         'started_at': DateTime.now().millisecondsSinceEpoch,
@@ -177,6 +180,7 @@ class LocalPracticeStore {
 
   /// 创建本地会话，返回 localId（同时作为同步幂等键 sessionKey）。
   Future<String> createLocalSession({
+    required String userId,
     required String mode,
     required List<String> questionIds,
   }) async {
@@ -186,6 +190,7 @@ class LocalPracticeStore {
       'local_sessions',
       <String, Object?>{
         'local_id': localId,
+        'user_id': userId,
         'mode': mode,
         'question_ids': jsonEncode(questionIds),
         'started_at': DateTime.now().millisecondsSinceEpoch,
@@ -197,6 +202,7 @@ class LocalPracticeStore {
   /// 记录一次作答；同一 (localId, questionId) 重复作答覆盖旧记录。
   Future<void> recordAnswer({
     required String localId,
+    required String userId,
     required String questionId,
     String? userAnswer,
     required bool isCorrect,
@@ -216,6 +222,7 @@ class LocalPracticeStore {
       <String, Object?>{
         'client_key': '$localId:$questionIdInt',
         'local_id': localId,
+        'user_id': userId,
         'question_id': questionIdInt,
         'user_answer': userAnswer,
         'is_correct': isCorrect ? 1 : 0,
@@ -229,16 +236,20 @@ class LocalPracticeStore {
 
   /// 待同步会话：按 local_id 分组，只取 synced_at IS NULL
   /// 且 answered_at 早于 now-5s 的记录（见 [_syncGraceMs]）。
-  Future<List<PendingSession>> pendingSessions() async {
+  Future<List<PendingSession>> pendingSessions({required String userId}) async {
     final db = await _resolveDb();
     final cutoff = DateTime.now().millisecondsSinceEpoch - _syncGraceMs;
     final rows = await db.query(
       'pending_answers',
-      where: 'synced_at IS NULL AND answered_at < ?',
-      whereArgs: <Object?>[cutoff],
+      where: 'synced_at IS NULL AND answered_at < ? AND user_id = ?',
+      whereArgs: <Object?>[cutoff, userId],
       orderBy: 'answered_at',
     );
-    final sessionRows = await db.query('local_sessions');
+    final sessionRows = await db.query(
+      'local_sessions',
+      where: 'user_id = ?',
+      whereArgs: <Object?>[userId],
+    );
     final modeByLocalId = <String, String>{};
     for (final row in sessionRows) {
       final localId = row['local_id'];
@@ -277,16 +288,40 @@ class LocalPracticeStore {
     ];
   }
 
-  /// 标记整个本地会话已同步；[serverSessionId] 为空时不覆盖已有值。
-  Future<void> markSessionSynced(String localId, String? serverSessionId) async {
+  /// 只把「本次请求实际带上的作答」标记为已同步。
+  ///
+  /// 不能按 local_id 整片标记：请求期间新增/被宽限期跳过的作答并未上传，
+  /// 一起标记会让它们永远不再重试（静默丢数据）。
+  Future<void> markAnswersSynced(List<String> clientKeys) async {
+    if (clientKeys.isEmpty) {
+      return;
+    }
     final db = await _resolveDb();
     final syncedAt = DateTime.now().millisecondsSinceEpoch;
+    final placeholders = List<String>.filled(clientKeys.length, '?').join(',');
+    await db.rawUpdate(
+      'UPDATE pending_answers SET synced_at = ? '
+      'WHERE synced_at IS NULL AND client_key IN ($placeholders)',
+      <Object?>[syncedAt, ...clientKeys],
+    );
+  }
+
+  /// 记录服务端返回的会话 id（用于排查；客户端不依赖它）。
+  Future<void> markLocalSessionServerId(
+    String localId,
+    String? serverSessionId,
+  ) async {
+    if (serverSessionId == null) {
+      return;
+    }
+    final db = await _resolveDb();
     await db.update(
-      'pending_answers',
-      <String, Object?>{'synced_at': syncedAt},
-      where: 'local_id = ? AND synced_at IS NULL',
+      'local_sessions',
+      <String, Object?>{'synced_session_id': serverSessionId},
+      where: 'local_id = ?',
       whereArgs: <Object?>[localId],
     );
+  }
     if (serverSessionId != null) {
       await db.update(
         'local_sessions',

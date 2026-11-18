@@ -1,6 +1,8 @@
 import 'package:dio/dio.dart';
+import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import '../../../core/auth/token_util.dart';
 import '../../../core/network/dio_client.dart';
 import '../../../core/sync/sync_providers.dart';
 import '../../../shared/datasources/api_client.dart';
@@ -39,6 +41,17 @@ class PracticeRepositoryImpl implements PracticeRepository {
 
   /// 离线存储：远端失败时兜底出题、本地判分、作答入队。
   final LocalPracticeStore _localStore;
+
+  /// 待同步数据必须带账号归属，避免 A 的作答被 B 的凭据上传。
+  final FlutterSecureStorage _storage = const FlutterSecureStorage();
+
+  Future<String?> _currentUserId() async {
+    final token = await _storage.read(key: 'jwt_token');
+    if (token == null || token.isEmpty) {
+      return null;
+    }
+    return TokenUtil.userIdOf(token);
+  }
 
   PracticeRepositoryImpl(this._apiClient, this._dio, this._localStore);
 
@@ -97,7 +110,12 @@ class PracticeRepositoryImpl implements PracticeRepository {
           '本地题库为空或已超过 7 天未刷新，请联网同步题库后再离线练习',
         );
       }
+      final userId = await _currentUserId();
+      if (userId == null) {
+        throw const OfflineCacheUnavailable('登录已失效，无法开始离线练习，请重新登录');
+      }
       final localId = await _localStore.createLocalSession(
+        userId: userId,
         mode: mode,
         questionIds: questions.map((question) => question.id).toList(),
       );
@@ -171,9 +189,14 @@ class PracticeRepositoryImpl implements PracticeRepository {
     required int duration,
   }) async {
     final localId = 'local_$serverSessionId';
+    final userId = await _currentUserId();
+    if (userId == null) {
+      throw const OfflineCacheUnavailable('登录已失效，无法离线记录本次作答');
+    }
     try {
       await _localStore.ensureLocalSession(
         localId: localId,
+        userId: userId,
         mode: 'offline-resume',
         questionIds: <String>[questionId],
       );
@@ -207,9 +230,15 @@ class PracticeRepositoryImpl implements PracticeRepository {
       correctAnswer: correctAnswer,
     );
 
+    final userId = await _currentUserId();
+    if (userId == null) {
+      throw const OfflineCacheUnavailable('登录已失效，无法离线记录本次作答');
+    }
+
     try {
       await _localStore.recordAnswer(
         localId: sessionId,
+        userId: userId,
         questionId: questionId,
         userAnswer: userAnswer,
         isCorrect: isCorrect,

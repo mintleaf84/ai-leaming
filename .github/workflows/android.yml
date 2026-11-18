@@ -98,6 +98,33 @@ jobs:
             exit 1
           fi
 
+      # 固定签名：GitHub 的 hosted runner 每次都是新虚拟机，debug keystore 每次不同，
+      # 用它签名会导致「新包装不上旧包」（证书不一致）。因此 release 必须用仓库 secrets
+      # 里的固定 keystore；缺配置就直接失败，而不是悄悄产出不可升级的包。
+      - name: 恢复签名配置
+        env:
+          KEYSTORE_BASE64: ${{ secrets.ANDROID_KEYSTORE_BASE64 }}
+          KEYSTORE_PASSWORD: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
+          KEY_ALIAS: ${{ secrets.ANDROID_KEY_ALIAS }}
+          KEY_PASSWORD: ${{ secrets.ANDROID_KEY_PASSWORD }}
+        run: |
+          missing=""
+          [ -z "$KEYSTORE_BASE64" ] && missing="$missing ANDROID_KEYSTORE_BASE64"
+          [ -z "$KEYSTORE_PASSWORD" ] && missing="$missing ANDROID_KEYSTORE_PASSWORD"
+          [ -z "$KEY_ALIAS" ] && missing="$missing ANDROID_KEY_ALIAS"
+          [ -z "$KEY_PASSWORD" ] && missing="$missing ANDROID_KEY_PASSWORD"
+          if [ -n "$missing" ]; then
+            echo "::error::缺少签名 secrets:$missing（Settings → Secrets and variables → Actions）。release 包必须用固定证书，否则无法覆盖升级。"
+            exit 1
+          fi
+          echo "$KEYSTORE_BASE64" | base64 -d > android/app/release-key.jks
+          {
+            echo "storeFile=release-key.jks"
+            echo "storePassword=$KEYSTORE_PASSWORD"
+            echo "keyAlias=$KEY_ALIAS"
+            echo "keyPassword=$KEY_PASSWORD"
+          } > android/key.properties
+
       - name: 构建 Release APK
         run: flutter build apk --release --dart-define=API_BASE_URL=${{ vars.API_BASE_URL }}
 

@@ -127,10 +127,32 @@ class PracticeController extends Notifier<PracticeSessionState> {
     }
   }
 
+  /// 把题干与选项拼成一段文本。
+  ///
+  /// 后端 `/practice/first-principles` 只用传入的字段构造 prompt，不会去查题库，
+  /// 所以「下列说法正确的是？」这类题必须把 A/B/C/D 的正文一起带上，
+  /// 否则模型无从解释为什么正确答案是 B。
+  String _composeQuestionContent(Question question) {
+    if (question.options.isEmpty) {
+      return question.content;
+    }
+    const labels = ['A', 'B', 'C', 'D', 'E', 'F', 'G'];
+    final buffer = StringBuffer(question.content)
+      ..writeln()
+      ..writeln();
+    for (var i = 0; i < question.options.length; i++) {
+      final label = i < labels.length ? labels[i] : '${i + 1}';
+      buffer.writeln('$label. ${question.options[i]}');
+    }
+    return buffer.toString().trimRight();
+  }
+
   /// 从服务端已有会话加载题目（错题本「开始练习」用）
   /// 与 createSession 的差别：不新建会话，直接复用 wrong-book/practice 建好的那一场。
   Future<void> loadSession(String sessionId) async {
-    state = state.copyWith(isLoading: true, error: null);
+    // 上一场可能还留在状态里（provider 不是 autoDispose）：先清空，
+    // 避免加载失败时页面继续渲染旧题目/旧会话。
+    state = const PracticeSessionState(isLoading: true);
 
     try {
       final token = await _storage.read(key: 'jwt_token');
@@ -288,7 +310,7 @@ class PracticeController extends Notifier<PracticeSessionState> {
 
     try {
       final response = await _repository.analyzeFirstPrinciples(
-        questionContent: question.content,
+        questionContent: _composeQuestionContent(question),
         correctAnswer: state.correctAnswers[questionId] ?? question.answer ?? '',
         explanation: question.explanation,
         wrongAnswer: (selectedList?.isNotEmpty ?? false)

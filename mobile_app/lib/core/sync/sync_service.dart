@@ -3,6 +3,9 @@ import 'dart:async';
 import 'package:connectivity_plus/connectivity_plus.dart';
 import 'package:dio/dio.dart';
 import 'package:flutter/foundation.dart';
+import 'package:flutter_secure_storage/flutter_secure_storage.dart';
+
+import '../auth/token_util.dart';
 
 import '../../features/practice/data/local_practice_store.dart';
 
@@ -36,6 +39,7 @@ class SyncService {
 
   final LocalPracticeStore _store;
   final Dio _dio;
+  final FlutterSecureStorage _storage = const FlutterSecureStorage();
 
   StreamSubscription<List<ConnectivityResult>>? _connectivitySubscription;
 
@@ -47,7 +51,19 @@ class SyncService {
   /// 单个会话失败不影响其余会话；401 时立即中止整个 flush
   /// （token 失效，继续发只会继续 401）。
   Future<SyncResult> flush() async {
-    final sessions = await _store.pendingSessions();
+    // 待同步数据按账号归属过滤：换账号后绝不能拿新账号的凭据上传旧账号的作答。
+    final token = await _storage.read(key: 'jwt_token');
+    final userId = token == null ? null : TokenUtil.userIdOf(token);
+    if (userId == null) {
+      return const SyncResult(
+        sessions: 0,
+        answers: 0,
+        duplicated: 0,
+        error: '未登录或登录已失效，已跳过同步',
+      );
+    }
+
+    final sessions = await _store.pendingSessions(userId: userId);
     if (sessions.isEmpty) {
       return const SyncResult.empty();
     }
@@ -58,11 +74,19 @@ class SyncService {
     final errors = <String>[];
 
     for (final session in sessions) {
+      // 同一 localId 可能分多批补交（宽限期跳过的、断网期间新增的）。
+      // 若固定用 localId 当幂等键，第二批会被服务端判为重复而整批丢弃；
+      // 这里用「localId + 本批首条 clientKey」保证：同批重试幂等，新批次独立成场。
+      final batchKey =
+          '${session.localId}:${session.answers.first.clientKey}';
+      final sentKeys = session.answers
+          .map((answer) => answer.clientKey)
+          .toList();
       try {
         final response = await _dio.post<dynamic>(
           _offlineAnswersPath,
           data: <String, dynamic>{
-            'sessionKey': session.localId,
+            'sessionKey': batchKey,
             'sessionName': _sessionName,
             'answers': <Map<String, dynamic>>[
               for (final answer in session.answers)
@@ -82,7 +106,9 @@ class SyncService {
         }
         final String? serverSessionId = data['sessionId']?.toString();
         final bool duplicated = data['duplicated'] == true;
-        await _store.markSessionSynced(session.localId, serverSessionId);
+        // 只确认本次真正上传的作答，否则请求期间新增的记录会被误标为已同步
+        await _store.markAnswersSynced(sentKeys);
+        await _store.markLocalSessionServerId(session.localId, serverSessionId);
         syncedSessions++;
         syncedAnswers += session.answers.length;
         if (duplicated) {

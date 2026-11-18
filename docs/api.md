@@ -167,14 +167,14 @@ curl -s -X POST "$BASE/api/external/recall/reviews" \
 
 ### 个人内容（按调用身份隔离）
 
-| 方法 | 路径              | 作用域 | 用途                                                   |
-| ---- | ----------------- | ------ | ------------------------------------------------------ |
-| GET  | `/notes`          | `read` | 笔记列表（`limit`、`offset`、`q` 关键词）；只给 200 字预览 |
-| GET  | `/notes/:id`      | `read` | 笔记全文；不存在或不属于本身份一律 404                  |
-| GET  | `/mindmaps`       | `read` | 思维导图列表（`limit`、`offset`）                       |
-| GET  | `/mindmaps/:id`   | `read` | 导图内容（`content` 为 Markdown 大纲源文）              |
-| GET  | `/srs/summary`    | `read` | SRS 复习负载：卡片总量、状态分布、未来 7 天逐日预估     |
-| POST | `/srs/reviews`    | `write` | 推进错题 SRS（`answeredAt` 幂等）：外部数据能推动复习队列 |
+| 方法 | 路径            | 作用域  | 用途                                                       |
+| ---- | --------------- | ------- | ---------------------------------------------------------- |
+| GET  | `/notes`        | `read`  | 笔记列表（`limit`、`offset`、`q` 关键词）；只给 200 字预览 |
+| GET  | `/notes/:id`    | `read`  | 笔记全文；不存在或不属于本身份一律 404                     |
+| GET  | `/mindmaps`     | `read`  | 思维导图列表（`limit`、`offset`）                          |
+| GET  | `/mindmaps/:id` | `read`  | 导图内容（`content` 为 Markdown 大纲源文）                 |
+| GET  | `/srs/summary`  | `read`  | SRS 复习负载：卡片总量、状态分布、未来 7 天逐日预估        |
+| POST | `/srs/reviews`  | `write` | 推进错题 SRS（`answeredAt` 幂等）：外部数据能推动复习队列  |
 
 字段要点：
 

@@ -47,7 +47,7 @@ Authorization: Bearer sk_xxxxxxxx
 
 **404 是刻意的**：访问他人会话一律 404 而不是 403——403 等于告诉对方「这个 id 存在」。
 
-## 2. 接口清单（共 18 条）
+## 2. 接口清单（共 23 条）
 
 两套分页口径，注意区分：
 
@@ -162,6 +162,39 @@ curl -s -X POST "$BASE/api/external/recall/reviews" \
     "clientKey": "6f1c1d5e-2a4b-4f0e-9c2f-8f0a2d1b7c33"
   }'
 ```
+
+### 个人内容（按调用身份隔离）
+
+| 方法 | 路径            | 作用域 | 用途                                                       |
+| ---- | --------------- | ------ | ---------------------------------------------------------- |
+| GET  | `/notes`        | `read` | 笔记列表（`limit`、`offset`、`q` 关键词）；只给 200 字预览 |
+| GET  | `/notes/:id`    | `read` | 笔记全文；不存在或不属于本身份一律 404                     |
+| GET  | `/mindmaps`     | `read` | 思维导图列表（`limit`、`offset`）                          |
+| GET  | `/mindmaps/:id` | `read` | 导图内容（`content` 为 Markdown 大纲源文）                 |
+| GET  | `/srs/summary`  | `read` | SRS 复习负载：卡片总量、状态分布、未来 7 天逐日预估        |
+
+字段要点：
+
+- `/notes` 每项只有 `{id,title,preview,updatedAt}`——**列表故意不给全文**，避免一次列表请求吃满 agent 上下文；
+  要正文用 `/notes/:id`。`q` 在标题与正文里做 LIKE，命中别人的笔记不会返回（归属在 SQL 的 `where` 里判定）。
+- `/srs/summary` 给的是"负载"不是"题目"：`totalCards`、`stateDistribution{new,learning,review,relearning}`、
+  `learnedCount`、`retention{trueRetention,totalReviews}`、`next7Days{count,minutes}`、`daily[{date,count,minutes}]`。
+  具体该做哪几道题用 `/wrong-book` 取。
+
+**时间格式**：`createdAt` / `updatedAt` 一律是 SQLite UTC 文本 `YYYY-MM-DD HH:MM:SS`（不带 `T`/`Z`），
+按 UTC 解析即可。导图更新曾写 ISO 8601，导致同一列混两种格式、按字符串排序会失真，已统一。
+
+**`/srs/summary` 与 `/wrong-book` 的口径差异**（有意保留，不要按一个去改另一个）：
+
+- `/srs/summary` 是 **SRS 引擎视角的负载**：统计所有进入 `question_srs` 的题，包含被标记
+  "已掌握"的题——它们在调度器里仍然占着到期日；
+- `/wrong-book` 是 **实际待练清单**：排除 `mastered_questions` 里已掌握的题。
+
+所以 `next7Days.count` 可能大于你在 `/wrong-book` 里实际取到的题数。要"今天该练什么"用
+`/wrong-book`；要"复习压力有多大"用 `/srs/summary`。
+
+**为什么补这三个**：此前笔记、导图、SRS 负载只有 Server Action（浏览器界面用），agent 拿不到。
+补完之后「关掉浏览器只靠本文档」可完成的任务从 4 类扩到 7 类（题库、练习、错题、复习、笔记、导图、学情）。
 
 ## 3. 幂等：`sessionKey`
 

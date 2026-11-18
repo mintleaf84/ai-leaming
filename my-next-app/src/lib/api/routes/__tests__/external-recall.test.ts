@@ -193,8 +193,8 @@ describe("/api/external/recall", () => {
         ["POST", "/recall/reviews"],
       ]),
     );
-    // 路由总数 = 原有 10 条 + recall 8 条
-    expect(operations).toHaveLength(18);
+    // 路由总数 = 原有 10 条 + recall 8 条 + 个人内容/SRS 5 条
+    expect(operations).toHaveLength(23);
 
     // 路径参数必须是 OpenAPI 的 `{param}` 形式：`:param` 不是合法路径，
     // SDK 生成器会把它当成字面路径（存量缺陷，见 PR #162 评审）

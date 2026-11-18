@@ -118,11 +118,13 @@ jobs:
             exit 1
           fi
           echo "$KEYSTORE_BASE64" | base64 -d > android/app/release-key.jks
+          # Java Properties 把反斜杠当转义符：密码里若含 \ 必须写成 \\
+          esc() { printf '%s' "$1" | sed -e 's/\\/\\\\/g'; }
           {
             echo "storeFile=release-key.jks"
-            echo "storePassword=$KEYSTORE_PASSWORD"
-            echo "keyAlias=$KEY_ALIAS"
-            echo "keyPassword=$KEY_PASSWORD"
+            echo "storePassword=$(esc "$KEYSTORE_PASSWORD")"
+            echo "keyAlias=$(esc "$KEY_ALIAS")"
+            echo "keyPassword=$(esc "$KEY_PASSWORD")"
           } > android/key.properties
 
       - name: 构建 Release APK

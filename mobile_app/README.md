@@ -1,6 +1,6 @@
 # mobile_app
 
-AI 教招刷题系统的 Flutter 客户端（Android 为主）。与 Next.js 后端共用一套 HTTP 契约，**不共享任何 UI 代码**——复用边界、阶段计划、取舍记录见仓库根目录 [`docs/flutter-mobile-plan.md`](../../docs/flutter-mobile-plan.md)。
+AI 教招刷题系统的 Flutter 客户端（Android 为主）。与 Next.js 后端共用一套 HTTP 契约，**不共享任何 UI 代码**——复用边界、阶段计划、取舍记录见仓库根目录 [`docs/flutter-mobile-plan.md`](../docs/flutter-mobile-plan.md)。
 
 ## 技术栈
 

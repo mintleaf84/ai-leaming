@@ -47,6 +47,10 @@ class QuestionsState {
 class QuestionsController extends Notifier<QuestionsState> {
   static const int _limit = 20;
 
+  /// 请求代次：切换关键词/刷新时自增，迟到的旧响应据此丢弃，
+  /// 否则旧关键词的结果会覆盖新一次的列表。
+  int _requestGeneration = 0;
+
   @override
   QuestionsState build() {
     // Initial fetch
@@ -57,7 +61,9 @@ class QuestionsController extends Notifier<QuestionsState> {
   PracticeRepository get _repository => ref.read(practiceRepositoryProvider);
 
   Future<void> fetchQuestions({bool isRefresh = false}) async {
-    if (state.isLoading) return;
+    // 分页时挡重复请求；刷新/换关键词必须放行（此时 isLoading 可能是上一轮留下的）
+    if (state.isLoading && !isRefresh) return;
+    final generation = ++_requestGeneration;
 
     if (isRefresh) {
       state = state.copyWith(
@@ -77,6 +83,10 @@ class QuestionsController extends Notifier<QuestionsState> {
         limit: _limit,
         search: state.search.isEmpty ? null : state.search,
       );
+
+      if (generation != _requestGeneration) {
+        return; // 已有更新的一次请求，丢弃本次响应
+      }
 
       final newItems = isRefresh
           ? response.items

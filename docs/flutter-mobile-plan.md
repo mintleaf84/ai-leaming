@@ -273,7 +273,11 @@ npm run typecheck && npm run lint:ci && npx vitest run --maxWorkers=8 && npm run
 | 接线（远端失败降级本地出题、本地判分、启动补交）       | `practice_repository_impl.dart` + `main.dart`          | 完成 |
 | 离线可见性（练习页提示条、设置页真同步与待同步条数）   | `practice_screen.dart` / `settings_screen.dart`        | 完成 |
 
-离线判分口径：选项字母按集合比较（多选题忽略顺序），填空/判断退化为去噪后字符串相等；与后端 `checkAnswerCorrectness` 的多选取向一致。
+离线判分口径（2026-11-18 修订）：
+
+- 多选题提交值是 `jsonEncode(["A","B"])`，判分前先解出选项再比较，否则所有多选都会判错；
+- 只有选项类题型（single/multi/truefalse）按字母集合比较（忽略顺序），填空/简答按整串比较（避免 `CAT`/`ACT` 被判相同）；
+- 出题与判分都会检查缓存新鲜度（`cacheMaxAgeDays = 7`）：`pickRandom` 只取有 `answer` 且未过期的题，`questionById` 同样过期即视为不可用——宁可报「请联网」，也不用旧答案污染掌握度。
 
 **仍未做**：`cached_questions` 没存 `dimension`（离线重建的题目该字段为 null，目前无 UI 依赖它）；离线只覆盖练习，recall/聊天仍是在线专属。
 

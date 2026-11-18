@@ -248,8 +248,14 @@ class PracticeController extends Notifier<PracticeSessionState> {
       final correctAnswer = response['correctAnswer'] as String;
       // 中途断网降级：后续题目继续走本地判分，界面显示离线提示条
       final degradedToOffline = response['offline'] == true;
+      // 已经是离线会话时不能被 false 覆盖回在线（本地会话首答就会触发）
+      final nowOffline = degradedToOffline || state.isOffline;
+      final persisted = response['persisted'] != false;
 
-      state = state.copyWith(isLoading: true, isOffline: degradedToOffline);
+      state = state.copyWith(isLoading: true, isOffline: nowOffline);
+      if (!persisted) {
+        state = state.copyWith(error: '本次作答未能保存到本地，网络恢复后请重练此题');
+      }
       String explanation = '';
       try {
         final detail = await _repository.getQuestionDetail(question.id);

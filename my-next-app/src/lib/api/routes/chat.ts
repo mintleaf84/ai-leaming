@@ -333,7 +333,7 @@ app.openapi(createSessionRoute, async (c) => {
 // GET /sessions/:id — 会话详情含消息（Flutter 读 data['messages']）
 const getSessionRoute = createRoute({
   method: "get",
-  path: "/sessions/:id",
+  path: "/sessions/{id}",
   middleware: [authMiddleware] as const,
   request: {
     params: SessionIdParamSchema,
@@ -384,7 +384,7 @@ app.openapi(getSessionRoute, async (c) => {
 // DELETE /sessions/:id — 删除会话（级联消息）
 const deleteSessionRoute = createRoute({
   method: "delete",
-  path: "/sessions/:id",
+  path: "/sessions/{id}",
   middleware: [authMiddleware] as const,
   request: {
     params: SessionIdParamSchema,

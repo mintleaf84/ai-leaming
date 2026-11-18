@@ -80,14 +80,21 @@ class SyncService {
       // 同一 localId 可能分多批补交（宽限期跳过的、断网期间新增的）。
       // 若固定用 localId 当幂等键，第二批会被服务端判为重复而整批丢弃；
       // 这里用「localId + 本批首条 clientKey」保证：同批重试幂等，新批次独立成场。
-      final batchKey =
-          '${session.localId}:${session.answers.first.clientKey}';
+      // 幂等键 = localId + 本批最早的作答时间：同批重试稳定，新批次必然不同
+      // （首条 clientKey 会随批次组成变化而漂移，不适合当键）。
+      final batchStart = session.answers
+          .map((answer) => answer.answeredAt)
+          .reduce((a, b) => a < b ? a : b);
+      final batchKey = '${session.localId}:$batchStart';
       final sentKeys = session.answers
           .map((answer) => answer.clientKey)
           .toList();
       try {
         final response = await _dio.post<dynamic>(
           _offlineAnswersPath,
+          // 显式带上本次解析出的 token：拦截器每次会重新读当前 token，
+          // 若期间换了账号，A 的数据就会被 B 的凭据上传。
+          options: Options(headers: <String, dynamic>{'Authorization': 'Bearer $token'}),
           data: <String, dynamic>{
             'sessionKey': batchKey,
             'sessionName': _sessionName,

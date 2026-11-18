@@ -341,6 +341,9 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
   Future<void> _syncOfflineAnswers() async {
     final store = ref.read(localPracticeStoreProvider);
     final pendingBefore = await store.pendingCount();
+    if (!mounted) {
+      return;
+    }
     if (pendingBefore == 0) {
       _showSnackBar('没有待同步的离线记录');
       return;

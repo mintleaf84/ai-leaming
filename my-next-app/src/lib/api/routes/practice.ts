@@ -102,7 +102,7 @@ app.openapi(createSessionRoute, async (c) => {
 // 不在这里重写 questions_json 解析（两处解析必然漂移）。
 const getSessionRoute = createRoute({
   method: "get",
-  path: "/session/:sessionId",
+  path: "/session/{sessionId}",
   middleware: [authMiddleware] as const,
   request: {
     params: z.object({ sessionId: z.string() }),
@@ -240,7 +240,7 @@ app.openapi(offlineAnswersRoute, async (c) => {
 // Submit Answer
 const submitRoute = createRoute({
   method: "post",
-  path: "/session/:sessionId/submit",
+  path: "/session/{sessionId}/submit",
   middleware: [authMiddleware] as const,
   request: {
     params: z.object({ sessionId: z.string() }),

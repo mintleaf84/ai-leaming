@@ -1,3 +1,5 @@
+import 'dart:convert';
+
 import 'package:dio/dio.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:flutter/foundation.dart';
@@ -224,10 +226,17 @@ class PracticeRepositoryImpl implements PracticeRepository {
     required int duration,
   }) async {
     final question = await _localStore.questionById(questionId);
-    final correctAnswer = question?.answer ?? '';
+    if (question == null) {
+      // 没有缓存（或缓存已过期）就没有可信答案，宁可不判分也不写错数据
+      throw const OfflineCacheUnavailable(
+        '本地没有这道题的最新题面，无法离线判分，请联网后重试',
+      );
+    }
+    final correctAnswer = question.answer ?? '';
     final isCorrect = _judgeLocally(
       userAnswer: userAnswer,
       correctAnswer: correctAnswer,
+      questionType: question.type,
     );
 
     final userId = await _currentUserId();
@@ -244,35 +253,68 @@ class PracticeRepositoryImpl implements PracticeRepository {
         isCorrect: isCorrect,
         durationMs: duration > 0 ? duration * 1000 : null,
       );
+      return <String, dynamic>{
+        'isCorrect': isCorrect,
+        'correctAnswer': correctAnswer,
+        'offline': true,
+        'persisted': true,
+      };
     } catch (error) {
-      // 入队失败不影响本次作答体验，但要留下痕迹：这条答案会丢。
-      debugPrint('[Practice] 离线作答入队失败（该答案不会同步）: $error');
+      // 入队失败 = 这次作答永久丢失，不能假装成功：把结果连同失败标记返回，
+      // 由上层提示用户重练；判分本身仍然给用户看。
+      debugPrint('[Practice] 离线作答入队失败: $error');
+      return <String, dynamic>{
+        'isCorrect': isCorrect,
+        'correctAnswer': correctAnswer,
+        'offline': true,
+        'persisted': false,
+      };
     }
-
-    return <String, dynamic>{
-      'isCorrect': isCorrect,
-      'correctAnswer': correctAnswer,
-    };
   }
 
-  /// 本地判分：都是「选项字母集合」时按集合比（多选不看顺序），否则按字符串比。
-  bool _judgeLocally({required String userAnswer, required String correctAnswer}) {
-    String normalize(String value) =>
-        value.replaceAll(RegExp(r'[\s,，、;；]'), '').toUpperCase();
-
-    final user = normalize(userAnswer);
-    final correct = normalize(correctAnswer);
+  /// 本地判分。
+  ///
+  /// 多选题的提交值是 `jsonEncode(["A","B"])`，必须先解出选项再比；
+  /// 选项类题型（单选/多选/判断）按字母集合比较（忽略顺序），
+  /// 填空/简答按规范化后的整串比较——否则 `CAT` 与 `ACT` 会被误判为相同。
+  bool _judgeLocally({
+    required String userAnswer,
+    required String correctAnswer,
+    required String questionType,
+  }) {
+    final user = _normalizeAnswer(userAnswer);
+    final correct = _normalizeAnswer(correctAnswer);
     if (user.isEmpty || correct.isEmpty) {
       return false;
     }
 
+    final isChoiceType =
+        questionType == 'single' ||
+        questionType == 'multi' ||
+        questionType == 'truefalse';
     final optionPattern = RegExp(r'^[A-Z]+$');
-    if (optionPattern.hasMatch(user) && optionPattern.hasMatch(correct)) {
-      final userSet = user.split('').toSet();
-      final correctSet = correct.split('').toSet();
-      return setEquals(userSet, correctSet);
+    if (isChoiceType &&
+        optionPattern.hasMatch(user) &&
+        optionPattern.hasMatch(correct)) {
+      return setEquals(user.split('').toSet(), correct.split('').toSet());
     }
     return user == correct;
+  }
+
+  /// 把作答规范成可比较的形式：JSON 数组 → 字母串；去空白/分隔符；统一大写。
+  String _normalizeAnswer(String value) {
+    final trimmed = value.trim();
+    if (trimmed.startsWith('[')) {
+      try {
+        final decoded = jsonDecode(trimmed);
+        if (decoded is List) {
+          return decoded.map((item) => item.toString()).join().toUpperCase();
+        }
+      } catch (_) {
+        // 不是合法 JSON：按原串处理，交给下面的规范化逻辑
+      }
+    }
+    return trimmed.replaceAll(RegExp(r'[\s,，、;；]'), '').toUpperCase();
   }
 
   @override

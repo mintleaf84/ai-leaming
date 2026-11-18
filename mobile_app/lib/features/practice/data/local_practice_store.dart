@@ -13,11 +13,15 @@ class PendingAnswer {
   final bool isCorrect;
   final int? durationMs;
 
+  /// 作答时间（毫秒）。用于给「同一 localId 的不同批次」构造稳定且互不相同的幂等键。
+  final int answeredAt;
+
   const PendingAnswer({
     required this.clientKey,
     required this.questionId,
     required this.userAnswer,
     required this.isCorrect,
+    required this.answeredAt,
     this.durationMs,
   });
 }
@@ -126,17 +130,21 @@ class LocalPracticeStore {
     return questions;
   }
 
-  /// 按 ID 取单题（离线判分用）。找不到返回 null。
-  Future<Question?> questionById(String id) async {
+  /// 按 ID 取单题（离线判分用）。找不到、或缓存超过 [cacheMaxAgeDays] 返回 null。
+  ///
+  /// 新鲜度检查与 [pickRandom] 保持一致：断网续练同样不能拿旧题面判分。
+  Future<Question?> questionById(String id, {int maxAgeDays = cacheMaxAgeDays}) async {
     final numericId = int.tryParse(id);
     if (numericId == null) {
       return null;
     }
     final db = await _resolveDb();
+    final cutoff = DateTime.now().millisecondsSinceEpoch -
+        Duration(days: maxAgeDays).inMilliseconds;
     final rows = await db.query(
       'cached_questions',
-      where: 'id = ?',
-      whereArgs: <Object?>[numericId],
+      where: 'id = ? AND fetched_at >= ?',
+      whereArgs: <Object?>[numericId, cutoff],
       limit: 1,
     );
     if (rows.isEmpty) {
@@ -273,6 +281,7 @@ class LocalPracticeStore {
           questionId: row['question_id'] as int,
           userAnswer: row['user_answer'] as String?,
           isCorrect: (row['is_correct'] as int? ?? 0) != 0,
+          answeredAt: row['answered_at'] as int? ?? 0,
           durationMs: row['duration_ms'] as int?,
         ),
       );

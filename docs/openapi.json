@@ -2112,6 +2112,9 @@
             },
             "description": "思维导图内容"
           },
+          "400": {
+            "description": "导图 ID 不是正整数"
+          },
           "401": {
             "description": "未授权 - 缺少 / 无效 / 已停用的 API Key"
           },
@@ -2402,6 +2405,9 @@
               }
             },
             "description": "笔记全文"
+          },
+          "400": {
+            "description": "笔记 ID 不是正整数"
           },
           "401": {
             "description": "未授权 - 缺少 / 无效 / 已停用的 API Key"
@@ -4665,7 +4671,7 @@
                       "type": "object"
                     },
                     "retention": {
-                      "description": "保留率统计",
+                      "description": "保留率统计；`totalReviews` 是**最近 30 天**的复习次数，不是历史总数",
                       "properties": {
                         "totalReviews": {
                           "description": "累计复习次数",

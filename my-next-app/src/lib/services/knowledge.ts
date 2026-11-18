@@ -456,6 +456,45 @@ export const knowledgeService = {
   },
 
   /**
+   * 分页搜索笔记（REST 用）。
+   *
+   * 与 `searchNotes` 的区别：这里 `total` 是**命中总数**、`limit/offset` 作用在 SQL 上。
+   * `searchNotes` 先 `limit(50)` 再返回，界面搜索够用，但 REST 侧会让
+   * `offset=50` 永远返回空页、`meta.total` 也谎报 50（评审指出过）。
+   */
+  async searchNotesPage(
+    userId: number,
+    query: string,
+    options: { limit: number; offset: number },
+  ): Promise<{ items: NotePreview[]; total: number }> {
+    const searchPattern = `%${query}%`;
+    const where = and(
+      eq(notes.user_id, userId),
+      sql`(${notes.title} LIKE ${searchPattern} OR ${notes.content} LIKE ${searchPattern})`,
+    );
+
+    const [countRow] = await drizzleDb
+      .select({ n: sql<number>`COUNT(*)` })
+      .from(notes)
+      .where(where);
+
+    const items = (await drizzleDb
+      .select({
+        id: notes.id,
+        title: notes.title,
+        updated_at: notes.updated_at,
+        preview: sql<string>`substr(${notes.content}, 1, 200)`,
+      })
+      .from(notes)
+      .where(where)
+      .orderBy(desc(notes.updated_at))
+      .limit(options.limit)
+      .offset(options.offset)) as NotePreview[];
+
+    return { items, total: Number(countRow?.n ?? 0) };
+  },
+
+  /**
    * 获取笔记详情
    */
   async getNoteDetail(userId: number, noteId: number): Promise<Note> {

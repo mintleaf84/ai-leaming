@@ -1,6 +1,6 @@
 import { drizzleDb } from "@/lib/db";
 import { mindmaps } from "@/lib/db/drizzle-schema";
-import { eq, and, desc, type InferSelectModel } from "drizzle-orm";
+import { eq, and, desc, sql, type InferSelectModel } from "drizzle-orm";
 
 export type Mindmap = InferSelectModel<typeof mindmaps>;
 
@@ -58,11 +58,15 @@ export const mindmapService = {
     }
 
     // 2. 准备更新数据
-    const updateData: Partial<typeof mindmaps.$inferInsert> = {
-      updated_at: new Date().toISOString(),
+    // updated_at 必须用 CURRENT_TIMESTAMP：与建表默认值/notes 保持同一格式
+    // （`YYYY-MM-DD HH:MM:SS`）。历史上这里写 toISOString()，同一列混进两种格式，
+    // 按字符串 desc 排序时同一天内 ISO 永远排在空格之后（"T" > " "），
+    // 列表顺序会与真实更新时间不符
+    const updateData = {
+      updated_at: sql`CURRENT_TIMESTAMP`,
+      ...(title !== undefined ? { title } : {}),
+      ...(content !== undefined ? { content } : {}),
     };
-    if (title !== undefined) updateData.title = title;
-    if (content !== undefined) updateData.content = content;
 
     // 3. 执行更新
     await drizzleDb

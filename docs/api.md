@@ -181,6 +181,18 @@ curl -s -X POST "$BASE/api/external/recall/reviews" \
   `learnedCount`、`retention{trueRetention,totalReviews}`、`next7Days{count,minutes}`、`daily[{date,count,minutes}]`。
   具体该做哪几道题用 `/wrong-book` 取。
 
+**时间格式**：`createdAt` / `updatedAt` 一律是 SQLite UTC 文本 `YYYY-MM-DD HH:MM:SS`（不带 `T`/`Z`），
+按 UTC 解析即可。导图更新曾写 ISO 8601，导致同一列混两种格式、按字符串排序会失真，已统一。
+
+**`/srs/summary` 与 `/wrong-book` 的口径差异**（有意保留，不要按一个去改另一个）：
+
+- `/srs/summary` 是 **SRS 引擎视角的负载**：统计所有进入 `question_srs` 的题，包含被标记
+  "已掌握"的题——它们在调度器里仍然占着到期日；
+- `/wrong-book` 是 **实际待练清单**：排除 `mastered_questions` 里已掌握的题。
+
+所以 `next7Days.count` 可能大于你在 `/wrong-book` 里实际取到的题数。要"今天该练什么"用
+`/wrong-book`；要"复习压力有多大"用 `/srs/summary`。
+
 **为什么补这三个**：此前笔记、导图、SRS 负载只有 Server Action（浏览器界面用），agent 拿不到。
 补完之后「关掉浏览器只靠本文档」可完成的任务从 4 类扩到 7 类（题库、练习、错题、复习、笔记、导图、学情）。
 

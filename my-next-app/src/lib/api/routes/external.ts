@@ -1857,12 +1857,30 @@ app.openapi(notesRoute, async (c) => {
   const userId = identity.effectiveUserId;
 
   try {
-    // 复用 knowledgeService 的排序与截断口径：列表/搜索两条语句的排序必须一致，
-    // 在这里重写一遍 ORDER BY 迟早会与界面侧分叉
-    const all = query.q
-      ? await knowledgeService.searchNotes(userId, query.q)
-      : await knowledgeService.getNoteList(userId);
+    // 搜索走 SQL 分页入口：界面用的 searchNotes 先截 50 条再返回，
+    // 拿来当 REST 会让 offset>=50 永远空页、total 也谎报 50（评审指出过）
+    if (query.q) {
+      const { items, total } = await knowledgeService.searchNotesPage(
+        userId,
+        query.q,
+        { limit, offset },
+      );
+      return c.json(
+        {
+          data: items.map((note) => ({
+            id: note.id,
+            title: note.title,
+            preview: note.preview ?? "",
+            updatedAt: note.updated_at ?? null,
+          })),
+          meta: { limit, offset, total },
+        },
+        200,
+      );
+    }
 
+    // 无关键词：复用服务层的排序口径，切片在内存里做（笔记总量是个人量级）
+    const all = await knowledgeService.getNoteList(userId);
     const page = all.slice(offset, offset + limit).map((note) => ({
       id: note.id,
       title: note.title,
@@ -1905,6 +1923,7 @@ const notesDetailRoute = createRoute({
       },
       description: "笔记全文",
     },
+    400: { description: "笔记 ID 不是正整数" },
     401: { description: "未授权 - 缺少 / 无效 / 已停用的 API Key" },
     403: { description: "已禁止 - 该 API Key 的作用域不足" },
     404: { description: "笔记不存在（或不属于当前身份）" },
@@ -2031,6 +2050,7 @@ const mindmapDetailRoute = createRoute({
       },
       description: "思维导图内容",
     },
+    400: { description: "导图 ID 不是正整数" },
     401: { description: "未授权 - 缺少 / 无效 / 已停用的 API Key" },
     403: { description: "已禁止 - 该 API Key 的作用域不足" },
     404: { description: "导图不存在（或不属于当前身份）" },
@@ -2100,7 +2120,9 @@ const srsSummaryRoute = createRoute({
                 trueRetention: z.number().describe("真实保留率（0-1）"),
                 totalReviews: z.number().int().describe("累计复习次数"),
               })
-              .describe("保留率统计"),
+              .describe(
+                "保留率统计；`totalReviews` 是**最近 30 天**的复习次数，不是历史总数",
+              ),
             next7Days: z
               .object({
                 count: z.number().int().describe("未来 7 天待复习总张数"),

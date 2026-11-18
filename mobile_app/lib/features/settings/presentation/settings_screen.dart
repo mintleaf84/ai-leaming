@@ -5,6 +5,7 @@ import 'package:go_router/go_router.dart';
 import 'settings_provider.dart';
 import '../../../core/theme/theme_provider.dart';
 import '../../auth/presentation/auth_provider.dart';
+import '../../profile/presentation/profile_provider.dart';
 import '../../../core/sync/sync_providers.dart';
 
 /// 设置页面
@@ -18,17 +19,31 @@ class SettingsScreen extends ConsumerStatefulWidget {
 }
 
 class _SettingsScreenState extends ConsumerState<SettingsScreen> {
-  // 模拟数据 (后续可从 Provider 获取)
-  String userName = 'NotionUser';
-  String userEmail = 'user@example.com';
+  // 每日学习目标：后端 users 表暂无该字段，仅保存在页面状态里（不落盘，切页即回到默认值）。
   int dailyGoal = 50;
   bool notificationEnabled = true;
+
+  /// 本地已缓存题目数。只在初始化时查一次库，避免每次 rebuild 重新发起查询。
+  late final Future<int> _cachedCountFuture;
+
+  @override
+  void initState() {
+    super.initState();
+    _cachedCountFuture = ref
+        .read(localPracticeStoreProvider)
+        .cachedQuestionCount();
+    // 首帧前拉取一次真实资料；用 microtask 避开构建期改写 Provider 状态。
+    Future.microtask(
+      () => ref.read(profileControllerProvider.notifier).load(),
+    );
+  }
 
   @override
   Widget build(BuildContext context) {
     final themeMode = ref.watch(themeModeProvider);
     final settingsState = ref.watch(settingsProvider);
     final reviewMode = settingsState.reviewMode;
+    final profile = ref.watch(profileControllerProvider).profile;
     final isDarkMode =
         themeMode == ThemeMode.dark ||
         (themeMode == ThemeMode.system &&
@@ -91,20 +106,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                           icon: Icons.person_outline,
                           title: '用户名',
                           trailing: Text(
-                            userName,
-                            style: TextStyle(
-                              fontSize: 14.sp,
-                              color: secondaryColor,
-                            ),
-                          ),
-                          textColor: textColor,
-                        ),
-                        _buildDivider(borderColor),
-                        _buildSettingsTile(
-                          icon: Icons.mail_outline,
-                          title: '邮箱',
-                          trailing: Text(
-                            userEmail,
+                            profile?.username ?? '未登录',
                             style: TextStyle(
                               fontSize: 14.sp,
                               color: secondaryColor,
@@ -206,13 +208,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                         _buildSettingsTile(
                           icon: Icons.cleaning_services_outlined,
                           title: '清理缓存',
-                          trailing: Text(
-                            '12.4 MB',
-                            style: TextStyle(
-                              fontSize: 14.sp,
-                              color: secondaryColor,
-                            ),
-                          ),
+                          trailing: _buildCachedCountTrailing(secondaryColor),
                           textColor: textColor,
                           onTap: () => _showClearCacheDialog(),
                         ),
@@ -315,6 +311,26 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
         }
         return Text(
           pending == 0 ? '已同步' : '待同步 $pending 条',
+          style: TextStyle(fontSize: 14.sp, color: secondaryColor),
+        );
+      },
+    );
+  }
+
+  /// 已缓存题目数：真实读本地库，不再写死存储容量。
+  Widget _buildCachedCountTrailing(Color secondaryColor) {
+    return FutureBuilder<int>(
+      future: _cachedCountFuture,
+      builder: (context, snapshot) {
+        if (snapshot.connectionState != ConnectionState.done) {
+          return SizedBox(
+            width: 14.w,
+            height: 14.w,
+            child: const CircularProgressIndicator(strokeWidth: 2),
+          );
+        }
+        return Text(
+          '已缓存 ${snapshot.data ?? 0} 题',
           style: TextStyle(fontSize: 14.sp, color: secondaryColor),
         );
       },

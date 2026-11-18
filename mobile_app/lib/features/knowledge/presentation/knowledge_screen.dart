@@ -162,16 +162,35 @@ class _KnowledgeScreenState extends ConsumerState<KnowledgeScreen> {
         ],
       ),
       floatingActionButton: FloatingActionButton(
-        onPressed: () {
-          // TODO: Navigate to create card page or show dialog
-          ScaffoldMessenger.of(
-            context,
-          ).showSnackBar(const SnackBar(content: Text('创建卡片功能开发中...')));
-        },
+        onPressed: _openCreateCardDialog,
         backgroundColor: const Color(0xFF37352F),
         child: const Icon(Icons.add),
       ),
     );
+  }
+
+  /// 打开新建卡片对话框。提交成功后 controller 内部已刷新全部卡片列表，
+  /// 这里清空分类筛选，保证刚创建的卡片一定出现在列表里（否则筛选其它
+  /// 分类时用户会看不到自己刚建的卡片）。
+  Future<void> _openCreateCardDialog() async {
+    final controller = ref.read(knowledgeControllerProvider.notifier);
+    final created = await showDialog<bool>(
+      context: context,
+      builder: (_) => _CreateCardDialog(
+        onSubmit: (payload) => controller.createCard(payload),
+      ),
+    );
+
+    if (!mounted) return;
+    if (created != true) return;
+
+    setState(() {
+      selectedCategory = null;
+    });
+
+    ScaffoldMessenger.of(
+      context,
+    ).showSnackBar(const SnackBar(content: Text('知识卡片创建成功')));
   }
 
   Widget _buildCardItem(KnowledgeCard card) {
@@ -280,6 +299,158 @@ class _KnowledgeScreenState extends ConsumerState<KnowledgeScreen> {
           ),
         ],
       ),
+    );
+  }
+}
+
+/// 新建知识卡片对话框。
+///
+/// 请求体字段与后端 `my-next-app/src/lib/api/routes/knowledge.ts` 的
+/// `POST /knowledge/cards`（`CreateCardSchema`）对齐：title / category /
+/// tags / front / back / key_points。
+class _CreateCardDialog extends StatefulWidget {
+  const _CreateCardDialog({required this.onSubmit});
+
+  final Future<void> Function(Map<String, dynamic> payload) onSubmit;
+
+  @override
+  State<_CreateCardDialog> createState() => _CreateCardDialogState();
+}
+
+class _CreateCardDialogState extends State<_CreateCardDialog> {
+  final TextEditingController _frontController = TextEditingController();
+  final TextEditingController _backController = TextEditingController();
+  final TextEditingController _categoryController = TextEditingController();
+
+  bool _isSubmitting = false;
+  String? _errorText;
+
+  @override
+  void dispose() {
+    _frontController.dispose();
+    _backController.dispose();
+    _categoryController.dispose();
+    super.dispose();
+  }
+
+  Future<void> _submit() async {
+    final front = _frontController.text.trim();
+    final back = _backController.text.trim();
+
+    if (front.isEmpty || back.isEmpty) {
+      setState(() {
+        _errorText = '正面和背面不能为空';
+      });
+      return;
+    }
+
+    final category = _categoryController.text.trim();
+    // 后端 title 可选（缺省为「未命名卡片」），这里用正面文本兜底，
+    // 保证列表与 RAG 索引里显示的是有意义的标题。
+    final title = front.length > 50 ? front.substring(0, 50) : front;
+
+    setState(() {
+      _isSubmitting = true;
+      _errorText = null;
+    });
+
+    try {
+      await widget.onSubmit(<String, dynamic>{
+        'title': title,
+        'front': front,
+        'back': back,
+        'category': category.isEmpty ? '未分类' : category,
+        'tags': const <String>[],
+      });
+
+      if (!mounted) return;
+      Navigator.of(context).pop(true);
+    } catch (_) {
+      if (!mounted) return;
+      setState(() {
+        _isSubmitting = false;
+        _errorText = '创建失败，请检查网络后重试';
+      });
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return AlertDialog(
+      title: const Text('新建知识卡片'),
+      content: SingleChildScrollView(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            TextField(
+              controller: _frontController,
+              enabled: !_isSubmitting,
+              minLines: 1,
+              maxLines: 2,
+              textInputAction: TextInputAction.next,
+              decoration: const InputDecoration(
+                labelText: '正面（问题）',
+                hintText: '例如：什么是最近发展区？',
+              ),
+            ),
+            SizedBox(height: 12.h),
+            TextField(
+              controller: _backController,
+              enabled: !_isSubmitting,
+              minLines: 3,
+              maxLines: 6,
+              decoration: const InputDecoration(
+                labelText: '背面（答案）',
+                hintText: '写下定义与关键要点',
+              ),
+            ),
+            SizedBox(height: 12.h),
+            TextField(
+              controller: _categoryController,
+              enabled: !_isSubmitting,
+              textInputAction: TextInputAction.done,
+              onSubmitted: (_) => _submit(),
+              decoration: const InputDecoration(
+                labelText: '分类（可选）',
+                hintText: '例如：教育心理学',
+              ),
+            ),
+            if (_errorText != null) ...[
+              SizedBox(height: 12.h),
+              Text(
+                _errorText!,
+                style: TextStyle(fontSize: 12.sp, color: Colors.red[600]),
+              ),
+            ],
+          ],
+        ),
+      ),
+      actions: [
+        TextButton(
+          onPressed: _isSubmitting
+              ? null
+              : () => Navigator.of(context).pop(false),
+          child: const Text('取消'),
+        ),
+        ElevatedButton(
+          onPressed: _isSubmitting ? null : _submit,
+          style: ElevatedButton.styleFrom(
+            backgroundColor: const Color(0xFF37352F),
+            foregroundColor: Colors.white,
+          ),
+          child: _isSubmitting
+              ? SizedBox(
+                  width: 16.w,
+                  height: 16.w,
+                  child: const CircularProgressIndicator(
+                    strokeWidth: 2,
+                    color: Colors.white,
+                  ),
+                )
+              : const Text('保存'),
+        ),
+      ],
     );
   }
 }

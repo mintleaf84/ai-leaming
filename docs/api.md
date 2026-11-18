@@ -275,13 +275,13 @@ curl -s -X POST "$BASE/api/external/practice/answers" \
 
 5 个写接口都支持 `?dryRun=true`（query 参数，DELETE 同样适用）：
 
-| 接口 | 预演返回什么 | 库内变更 |
-| ---- | ------------ | -------- |
-| `POST /practice/answers` | `inserted`（会写几条日志）、题目校验结果 | 零 |
-| `POST /recall/reviews` | `verdicts` / `rating` / `nextDue` / `pendingItems`（真实判分与调度计算） | 零 |
-| `POST /recall/decks` | `createdCards` / `updatedCards` / `skippedCards` / `conflicts` | 零 |
-| `POST /recall/cards` | `cardId` / `created`（新建还是覆盖） | 零 |
-| `DELETE /recall/decks/:deckKey/cards/:cardKey` | `reviewLogs` / `cardStates`（会连带删掉多少行），`deleted` 为 `false` | 零 |
+| 接口                                           | 预演返回什么                                                             | 库内变更 |
+| ---------------------------------------------- | ------------------------------------------------------------------------ | -------- |
+| `POST /practice/answers`                       | `inserted`（会写几条日志）、题目校验结果                                 | 零       |
+| `POST /recall/reviews`                         | `verdicts` / `rating` / `nextDue` / `pendingItems`（真实判分与调度计算） | 零       |
+| `POST /recall/decks`                           | `createdCards` / `updatedCards` / `skippedCards` / `conflicts`           | 零       |
+| `POST /recall/cards`                           | `cardId` / `created`（新建还是覆盖）                                     | 零       |
+| `DELETE /recall/decks/:deckKey/cards/:cardKey` | `reviewLogs` / `cardStates`（会连带删掉多少行），`deleted` 为 `false`    | 零       |
 
 三条语义保证：
 

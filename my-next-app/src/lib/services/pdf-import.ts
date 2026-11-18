@@ -12,35 +12,32 @@ import {
 } from "@/lib/import/pdf-question-parser";
 import { drizzleDb } from "@/lib/db";
 import {
+  pdf_import_tasks,
   practice_logs,
   question_folder_items,
   question_folders,
   questions,
 } from "@/lib/db/drizzle-schema";
-import { and, eq, inArray } from "drizzle-orm";
+import { and, eq, gt, inArray, lt, sql } from "drizzle-orm";
 import { srsService } from "@/lib/services/srs";
 import type { PdfImportResult, ParsedPdfQuestion } from "@/types/pdf-import";
 import { randomUUID } from "crypto";
 import { buildPdfExternalId } from "@/lib/services/question-idempotency";
 import { log } from "@/lib/logger";
+import { safeParseJson } from "@/lib/utils/json";
 import { withTransaction } from "@/lib/db/executor";
-import { NotFoundError } from "@/lib/errors/app-error";
+import { AppError, NotFoundError } from "@/lib/errors/app-error";
 
 /**
- * 内存缓存：taskId → { userId, chunks, ocrText, expiresAt }
+ * 任务态存 `pdf_import_tasks` 表（不再放进程内存）。
  *
- * **必须带 `userId`**：taskId 虽然是不易猜的 UUID，但没有归属校验就是 IDOR ——
- * 拿到 taskId 的任何登录用户都能读走别人 PDF 的 OCR 文本、或删掉别人的任务。
+ * 为什么落库：任务态只在内存里时，"提交"与"逐块解析/轮询"落到不同实例就查不到，
+ * 重启还会丢正在进行的导入 —— 这是多实例部署的硬障碍之一。落库后任务跨请求、
+ * 跨实例、跨重启可见。
+ *
+ * **归属校验必须在 SQL 的 where 里**：taskId 虽然是不易猜的 UUID，但没有归属条件就是
+ * IDOR —— 拿到 taskId 的任何登录用户都能读走别人 PDF 的 OCR 文本、或删掉别人的任务。
  */
-const chunkCache = new Map<
-  string,
-  {
-    userId: number;
-    chunks: string[];
-    ocrText: string;
-    expiresAt: number;
-  }
->();
 
 /**
  * 任务不存在、或存在但不属于当前用户 —— **两种情况合并成同一个错误**。
@@ -56,26 +53,124 @@ export class PdfImportTaskNotFoundError extends NotFoundError {
   }
 }
 
-function requireOwnedTask(userId: number, taskId: string) {
-  const cached = chunkCache.get(taskId);
-  if (!cached || cached.userId !== userId) {
-    throw new PdfImportTaskNotFoundError();
-  }
-  return cached;
-}
-
 const CACHE_TTL_MS = 30 * 60 * 1000; // 30 分钟
 
-// 定期清理过期缓存
-setInterval(
-  () => {
-    const now = Date.now();
-    for (const [key, val] of chunkCache) {
-      if (now > val.expiresAt) chunkCache.delete(key);
-    }
-  },
-  5 * 60 * 1000,
-);
+interface OwnedTask {
+  userId: number;
+  chunks: string[];
+}
+
+/**
+ * 任务落库失败：对外只暴露"请重试"，不携带 SQL 与绑定参数（见 saveTask 的说明）。
+ */
+export class PdfImportStorageError extends AppError {
+  constructor() {
+    super("business", "任务保存失败，请重试", {
+      code: "pdf-import.task.storage-failed",
+    });
+    this.name = "PdfImportStorageError";
+  }
+}
+
+/** 按 taskId + 归属 + 未过期取任务；任一不满足都当成"不存在或已过期" */
+async function requireOwnedTask(
+  userId: number,
+  taskId: string,
+): Promise<OwnedTask> {
+  // 只取需要的列：逐块解析会被调用 N 次，把整段 OCR 原文（可能几百 KB）读出来
+  // 只为抛弃它是纯浪费；ocrText 由需要它的调用方另取
+  const [row] = await drizzleDb
+    .select({
+      user_id: pdf_import_tasks.user_id,
+      chunks_json: pdf_import_tasks.chunks_json,
+    })
+    .from(pdf_import_tasks)
+    .where(
+      and(
+        eq(pdf_import_tasks.id, taskId),
+        eq(pdf_import_tasks.user_id, userId),
+        gt(pdf_import_tasks.expires_at, Date.now()),
+      ),
+    )
+    .limit(1);
+
+  if (!row) {
+    // 顺手回收本用户的过期行：只靠"下次写入时清理"的话，长期不再导入的用户
+    // 那些过期 OCR 文本会无限期留在库里（评审指出过）。失败不影响本次读取
+    void drizzleDb
+      .delete(pdf_import_tasks)
+      .where(
+        and(
+          eq(pdf_import_tasks.user_id, userId),
+          lt(pdf_import_tasks.expires_at, Date.now()),
+        ),
+      )
+      .catch((err: unknown) => {
+        log.warn("[PdfImport] 过期任务回收失败（不影响本次读取）", err);
+      });
+    throw new PdfImportTaskNotFoundError();
+  }
+
+  const parsed = safeParseJson<unknown>(row.chunks_json, []);
+  // safeParseJson 只保证"能解析"，不保证形状：null / 数字 / 混合数组都会在后面
+  // 的 chunks.length 上炸。坏行与过期行同样处理——当作不存在，让用户重传
+  // 不能 filter：`["第1块", 42, "第3块"]` 过滤后会变成两块，客户端按索引 1 取到的
+  // 其实是第 3 块（静默错位）。整批不合格就整批作废，让用户重传
+  const chunks =
+    Array.isArray(parsed) && parsed.every((item) => typeof item === "string")
+      ? (parsed as string[])
+      : [];
+  if (chunks.length === 0) {
+    throw new PdfImportTaskNotFoundError();
+  }
+
+  return { userId: row.user_id, chunks };
+}
+
+/**
+ * 落任务 + 机会式清理过期行。
+ *
+ * 不用 setInterval：多实例下每个实例都会跑一遍清理，反而更贵；而"写入时顺手删
+ * 过期行"是 O(索引扫描) 且只在真正的写路径上发生。
+ */
+async function saveTask(
+  userId: number,
+  chunks: string[],
+  ocrText: string,
+): Promise<string> {
+  const taskId = randomUUID();
+  const now = Date.now();
+
+  // 插入与过期清理放同一事务：否则清理失败会把"已经写成功"的任务报成失败，
+  // 调用方拿不到 taskId，而那行数据又确实在库里（评审指出过）
+  try {
+    await withTransaction(async (exec) => {
+      await exec.insert(pdf_import_tasks).values({
+        id: taskId,
+        user_id: userId,
+        ocr_text: ocrText,
+        chunks_json: JSON.stringify(chunks),
+        expires_at: now + CACHE_TTL_MS,
+        created_at: sql`CURRENT_TIMESTAMP`,
+      });
+
+      await exec
+        .delete(pdf_import_tasks)
+        .where(lt(pdf_import_tasks.expires_at, now));
+    });
+  } catch (err) {
+    // Drizzle 0.45 的异常 message 里带 SQL 与**绑定参数**——这张表的参数就是 OCR 原文。
+    // 直接抛出会把它写进日志、并经路由的 `(e as Error).message` 返回给客户端。
+    // 这里只记结构化字段（不含 message），对外抛不带细节的领域错误
+    log.error("[PdfImport] 任务落库失败（已隐去 SQL 与绑定参数）", {
+      userId,
+      errorName: err instanceof Error ? err.name : typeof err,
+    });
+    throw new PdfImportStorageError();
+  }
+
+  return taskId;
+}
 
 /**
  * 确认导入的串行锁（与 import-service 的 withImportLock 同一原因）。
@@ -256,14 +351,7 @@ export const pdfImportService = {
       throw new Error("未能从 PDF 中分割出题目");
     }
 
-    const taskId = randomUUID();
-    chunkCache.set(taskId, {
-      userId,
-      chunks,
-      ocrText: cleaned,
-      expiresAt: Date.now() + CACHE_TTL_MS,
-    });
-
+    const taskId = await saveTask(userId, chunks, cleaned);
     return { taskId, totalChunks: chunks.length };
   },
 
@@ -285,14 +373,7 @@ export const pdfImportService = {
       throw new Error("未能从文本中分割出题目");
     }
 
-    const taskId = randomUUID();
-    chunkCache.set(taskId, {
-      userId,
-      chunks,
-      ocrText: cleaned,
-      expiresAt: Date.now() + CACHE_TTL_MS,
-    });
-
+    const taskId = await saveTask(userId, chunks, cleaned);
     return { taskId, totalChunks: chunks.length };
   },
 
@@ -308,7 +389,7 @@ export const pdfImportService = {
     chunkIndex: number;
     warnings: string[];
   }> {
-    const cached = requireOwnedTask(userId, taskId);
+    const cached = await requireOwnedTask(userId, taskId);
     if (chunkIndex < 0 || chunkIndex >= cached.chunks.length) {
       throw new Error(
         `块索引 ${chunkIndex} 超出范围 (0-${cached.chunks.length - 1})`,
@@ -335,11 +416,17 @@ export const pdfImportService = {
    * 清理缓存。**只删自己的**：不属于当前用户时返回 `false` 且不删任何东西。
    * 返回值不用来区分「不存在」与「不是你的」（同一个 false，避免探测）。
    */
-  cleanup(userId: number, taskId: string): boolean {
-    const cached = chunkCache.get(taskId);
-    if (!cached || cached.userId !== userId) return false;
-    chunkCache.delete(taskId);
-    return true;
+  async cleanup(userId: number, taskId: string): Promise<boolean> {
+    const deleted = await drizzleDb
+      .delete(pdf_import_tasks)
+      .where(
+        and(
+          eq(pdf_import_tasks.id, taskId),
+          eq(pdf_import_tasks.user_id, userId),
+        ),
+      )
+      .returning({ id: pdf_import_tasks.id });
+    return deleted.length > 0;
   },
 
   /**

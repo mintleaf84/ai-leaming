@@ -315,11 +315,168 @@ describe("pdfImportService", () => {
         "test.pdf",
         "application/pdf",
       );
-      pdfImportService.cleanup(USER_A, taskId);
+      await pdfImportService.cleanup(USER_A, taskId);
 
       await expect(
         pdfImportService.parseSingleChunk(USER_A, taskId, 0),
       ).rejects.toThrow("任务不存在或已过期");
+    });
+  });
+
+  describe("任务态落库（跨实例可见）", () => {
+    async function seedTask(): Promise<string> {
+      const parser = await import("@/lib/import/pdf-question-parser");
+      mockPerformPaddleOCR.mockResolvedValue(
+        "1. 教育学研究的基本方法是\nA.观察法",
+      );
+      (parser.splitIntoQuestionChunks as any).mockReturnValue(["chunk1"]);
+      const { taskId } = await pdfImportService.ocrAndSplit(
+        USER_A,
+        Buffer.from("fake-pdf"),
+        "test.pdf",
+        "application/pdf",
+      );
+      return taskId;
+    }
+
+    it("任务写进 pdf_import_tasks，而不是进程内存", async () => {
+      const taskId = await seedTask();
+
+      // as any：drizzleDb.all 的类型签名要求 Drizzle 查询对象，这里刻意用原生 SQL
+      // 直接读表，避免"用 ORM 读自己刚写的数据"掩盖真实落盘形状
+      const rows = (await dbm.drizzleDb.all(
+        `SELECT id, user_id, chunks_json, expires_at FROM pdf_import_tasks WHERE id = '${taskId}'` as any,
+      )) as Array<{
+        id: string;
+        user_id: number;
+        chunks_json: string;
+        expires_at: number;
+      }>;
+      expect(rows).toHaveLength(1);
+      expect(rows[0].user_id).toBe(USER_A);
+      expect(JSON.parse(rows[0].chunks_json)).toEqual(["chunk1"]);
+      // 过期时间是未来时刻（30 分钟 TTL）
+      expect(Number(rows[0].expires_at)).toBeGreaterThan(Date.now());
+    });
+
+    it("过期的行即使存在也视为不存在（按 expires_at 判定，不靠定时器）", async () => {
+      const taskId = await seedTask();
+
+      await dbm.drizzleDb.run(
+        `UPDATE pdf_import_tasks SET expires_at = ${Date.now() - 1000} WHERE id = '${taskId}'` as any,
+      );
+
+      await expect(
+        pdfImportService.parseSingleChunk(USER_A, taskId, 0),
+      ).rejects.toThrow("任务不存在或已过期");
+    });
+
+    it("重新加载模块（等价于另一个实例）后仍能读到任务，且拿到的是落库的分块", async () => {
+      const taskId = await seedTask();
+
+      // 让解析器真的成功返回：否则"解析失败 → questions: []"也能让断言通过，
+      // 测不出"重载后是否拿到了持久化的分块文本"
+      mockParseSingleChunk.mockReset();
+      mockParseSingleChunk.mockResolvedValue({
+        questions: [makeQuestion()],
+        warnings: [],
+      });
+
+      // 清掉模块级状态后重新 import：若任务态还在内存里，这一步就读不到了
+      vi.resetModules();
+      const reloaded = (await import("../pdf-import")).pdfImportService;
+      const result = await reloaded.parseSingleChunk(USER_A, taskId, 0);
+
+      expect(result.chunkIndex).toBe(0);
+      // 解析必须真的成功：解析器抛错时服务层也会返回 chunkIndex: 0，但会带 warning
+      expect(result.warnings).toEqual([]);
+      // 关键断言：传进解析器的正是当初落库的那个分块
+      expect(mockParseSingleChunk).toHaveBeenCalledWith("chunk1");
+    });
+
+    it("写入新任务时顺手清理过期行，但不误删仍有效的任务", async () => {
+      // 先放一条**有效**任务：如果清理逻辑写成"删掉所有旧行再插入"，
+      // 只检查过期行消失 + 新任务存在是发现不了的
+      const survivor = await seedTask();
+      const stale = await seedTask();
+      // as any：drizzleDb.run 接受 SQL 字面量，这里用原生语句直接改 expires_at
+      await dbm.drizzleDb.run(
+        `UPDATE pdf_import_tasks SET expires_at = ${Date.now() - 1000} WHERE id = '${stale}'` as any,
+      );
+
+      const fresh = await seedTask();
+
+      // 过期行被清掉
+      const staleRows = (await dbm.drizzleDb.all(
+        `SELECT id FROM pdf_import_tasks WHERE id = '${stale}'` as any,
+      )) as unknown[];
+      expect(staleRows).toHaveLength(0);
+
+      // 先于本轮写入的那条有效任务也必须还在
+      const survivorRows = (await dbm.drizzleDb.all(
+        `SELECT id FROM pdf_import_tasks WHERE id = '${survivor}'` as any,
+      )) as unknown[];
+      expect(survivorRows).toHaveLength(1);
+
+      // 新任务必须还在，且真的可解析（否则"清理"可能把有效行一起删了也照样通过）
+      const freshRows = (await dbm.drizzleDb.all(
+        `SELECT id FROM pdf_import_tasks WHERE id = '${fresh}'` as any,
+      )) as unknown[];
+      expect(freshRows).toHaveLength(1);
+      mockParseSingleChunk.mockResolvedValue({
+        questions: [makeQuestion()],
+        warnings: [],
+      });
+      await expect(
+        pdfImportService.parseSingleChunk(USER_A, fresh, 0),
+      ).resolves.toMatchObject({ chunkIndex: 0 });
+    });
+
+    it("chunks_json 结构损坏（不是字符串数组）时按「不存在」处理，不抛 500", async () => {
+      const taskId = await seedTask();
+      // as any：故意写入非法形状，验证服务层的兜底
+      await dbm.drizzleDb.run(
+        `UPDATE pdf_import_tasks SET chunks_json = 'null' WHERE id = '${taskId}'` as any,
+      );
+
+      await expect(
+        pdfImportService.parseSingleChunk(USER_A, taskId, 0),
+      ).rejects.toThrow("任务不存在或已过期");
+    });
+  });
+
+  describe("删用户时的任务态清理（真实库）", () => {
+    it("deleteUser 会连带删掉该用户的导入任务行（FK 未启用，cascade 不生效）", async () => {
+      // 造一个专属用户，避免影响其它用例的固定用户
+      const victim = 900_001;
+      await dbm.drizzleDb.run(
+        `INSERT OR IGNORE INTO users (id, username, password_hash) VALUES (${victim}, 'pdf-victim', 'x')` as any,
+      );
+      const parser = await import("@/lib/import/pdf-question-parser");
+      mockPerformPaddleOCR.mockResolvedValue(
+        "1. 教育学研究的基本方法是\nA.观察法",
+      );
+      (parser.splitIntoQuestionChunks as any).mockReturnValue(["chunk1"]);
+      await pdfImportService.ocrAndSplit(
+        victim,
+        Buffer.from("fake-pdf"),
+        "test.pdf",
+        "application/pdf",
+      );
+
+      const adminService = (await import("../admin-service")).adminService;
+      await adminService.deleteUser(victim);
+
+      // as any：原生 SQL 直查，验证真实落盘结果
+      const tasks = (await dbm.drizzleDb.all(
+        `SELECT id FROM pdf_import_tasks WHERE user_id = ${victim}` as any,
+      )) as unknown[];
+      expect(tasks).toHaveLength(0);
+
+      const users = (await dbm.drizzleDb.all(
+        `SELECT id FROM users WHERE id = ${victim}` as any,
+      )) as unknown[];
+      expect(users).toHaveLength(0);
     });
   });
 
@@ -354,7 +511,7 @@ describe("pdfImportService", () => {
       const taskId = await seedTaskFor(USER_A);
       mockParseSingleChunk.mockResolvedValue([makeQuestion()]);
 
-      expect(pdfImportService.cleanup(USER_B, taskId)).toBe(false);
+      expect(await pdfImportService.cleanup(USER_B, taskId)).toBe(false);
 
       // 关键：清理失败不能把别人的缓存一起删掉
       const result = await pdfImportService.parseSingleChunk(USER_A, taskId, 0);
@@ -363,7 +520,7 @@ describe("pdfImportService", () => {
 
     it("owner 清理后自己也无法再解析（cleanup 真的生效）", async () => {
       const taskId = await seedTaskFor(USER_A);
-      expect(pdfImportService.cleanup(USER_A, taskId)).toBe(true);
+      expect(await pdfImportService.cleanup(USER_A, taskId)).toBe(true);
       await expect(
         pdfImportService.parseSingleChunk(USER_A, taskId, 0),
       ).rejects.toThrow("任务不存在或已过期");

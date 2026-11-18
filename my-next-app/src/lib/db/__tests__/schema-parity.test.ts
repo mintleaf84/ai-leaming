@@ -54,6 +54,8 @@ const MIGRATION_ONLY_TABLES = new Set([
   "question_folder_items",
   "question_folders",
   // 回忆自测（0012）的集成测试用真实迁移 + 文件库，不进内存夹具
+  // PDF/AI 导入任务态（0018）同上：用真实迁移 + 文件库的集成测试覆盖
+  "pdf_import_tasks",
   "recall_card_states",
   "recall_cards",
   "recall_decks",

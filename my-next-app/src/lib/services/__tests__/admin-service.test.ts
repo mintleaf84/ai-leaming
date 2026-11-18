@@ -37,7 +37,9 @@ const { mockDrizzleDb, mockDrizzleSchema } = vi.hoisted(() => {
     update: vi.fn(() => chain),
     delete: vi.fn(() => chain),
     select: vi.fn(() => chain),
-    transaction: vi.fn(),
+    // deleteUser 现在走 withTransaction：mock 必须把回调接到同一条链上，
+    // 否则事务体内的删除语句不会被记录，用例会误判成"没删"
+    transaction: vi.fn((fn: (exec: unknown) => Promise<unknown>) => fn(chain)),
   };
 
   const mockDrizzleSchema = {
@@ -61,6 +63,8 @@ const { mockDrizzleDb, mockDrizzleSchema } = vi.hoisted(() => {
       external_id: "external_id",
     },
     practice_logs: { id: "id" },
+    // deleteUser 会显式清理导入任务态（连接没开 foreign_keys，cascade 不生效）
+    pdf_import_tasks: { id: "id", user_id: "user_id" },
     ai_configs: { id: "id", is_active: "is_active" },
     user_subscriptions: {
       user_id: "user_id",
@@ -116,6 +120,10 @@ describe("AdminService", () => {
     chainMethods.forEach((m) => {
       chain[m].mockReturnValue(mockDrizzleDb);
     });
+    // 若 vitest 配了 resetMocks，构造时给的实现会被清掉，这里重新挂上
+    mockDrizzleDb.transaction.mockImplementation(
+      (fn: (exec: unknown) => Promise<unknown>) => fn(mockDrizzleDb),
+    );
     mockDrizzleDb.insert.mockReturnValue(mockDrizzleDb);
     mockDrizzleDb.update.mockReturnValue(mockDrizzleDb);
     mockDrizzleDb.delete.mockReturnValue(mockDrizzleDb);

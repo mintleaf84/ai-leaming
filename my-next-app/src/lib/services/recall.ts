@@ -18,6 +18,7 @@
 import { and, asc, count, eq, gte, sql } from "drizzle-orm";
 import { drizzleDb, drizzleSchema } from "../db";
 import { safeParseJson } from "../utils/json";
+import { DryRunRollback, isDryRunRollback } from "./dry-run";
 import { gradeCloze, gradeList } from "../recall/matcher";
 import { getStudyDay, getStudyDayStart } from "../recall/study-day";
 import {
@@ -394,6 +395,11 @@ export interface RecallSubmitOptions {
   clientKey?: string;
   /** 供测试/补录用；生产不传（默认 now） */
   now?: Date;
+  /**
+   * 预演：跑完真实判分与调度计算后强制回滚，只返回"如果真提交会得到什么"。
+   * 用于 agent 提交前确认评分与下次到期时间（见 docs/api.md §9）。
+   */
+  dryRun?: boolean;
 }
 
 export interface RecallSubmitResult {
@@ -409,6 +415,8 @@ export interface RecallSubmitResult {
   pendingItems: number[] | null;
   /** 同一 (user, card, 秒) 的重复提交：本次未写任何行 */
   duplicate: boolean;
+  /** 仅 dry-run 时出现：true 表示这次没有真正落库 */
+  dryRun?: true;
 }
 
 function applyOverrides(
@@ -634,78 +642,91 @@ export async function submitReview(
     pendingItems,
   };
 
-  return withTransaction(async (exec) => {
-    // 事务内一律走 tx：用全局 drizzleDb 会让语句跑在事务连接之外
+  try {
+    return await withTransaction(async (exec) => {
+      // 事务内一律走 tx：用全局 drizzleDb 会让语句跑在事务连接之外
 
-    const inserted = await exec
-      .insert(recall_review_logs)
-      .values({
-        user_id: userId,
-        card_id: cardId,
-        ts,
-        mode,
-        algo_verdicts: JSON.stringify(algoVerdicts),
-        user_overrides:
-          options.overrides && options.overrides.length > 0
-            ? JSON.stringify(options.overrides)
-            : null,
-        keyword_hits: keywordHits,
-        keyword_total: keywordTotal,
-        derived_rating: rating,
-        typed_answer: options.typed,
-        fsrs_before: JSON.stringify(applied.log.before),
-        fsrs_after: JSON.stringify(applied.log.after),
-        client_key: options.clientKey ?? null,
-      })
-      // 唯一索引 (user_id, card_id, ts) 冲突 = 同一秒重复提交；
-      // (user_id, client_key) 冲突 = 同一个客户端 key 的并发重试（预检查漏掉的竞态）
-      .onConflictDoNothing()
-      .returning({ id: recall_review_logs.id });
+      const inserted = await exec
+        .insert(recall_review_logs)
+        .values({
+          user_id: userId,
+          card_id: cardId,
+          ts,
+          mode,
+          algo_verdicts: JSON.stringify(algoVerdicts),
+          user_overrides:
+            options.overrides && options.overrides.length > 0
+              ? JSON.stringify(options.overrides)
+              : null,
+          keyword_hits: keywordHits,
+          keyword_total: keywordTotal,
+          derived_rating: rating,
+          typed_answer: options.typed,
+          fsrs_before: JSON.stringify(applied.log.before),
+          fsrs_after: JSON.stringify(applied.log.after),
+          client_key: options.clientKey ?? null,
+        })
+        // 唯一索引 (user_id, card_id, ts) 冲突 = 同一秒重复提交；
+        // (user_id, client_key) 冲突 = 同一个客户端 key 的并发重试（预检查漏掉的竞态）
+        .onConflictDoNothing()
+        .returning({ id: recall_review_logs.id });
 
-    if (inserted.length === 0) {
-      // 重放：不碰状态，返回库里已经落下的结果（pendingItems / due 以库为准）
-      const [existing] = await exec
-        .select()
-        .from(recall_card_states)
-        .where(
-          and(
-            eq(recall_card_states.user_id, userId),
-            eq(recall_card_states.card_id, cardId),
-          ),
-        )
-        .limit(1);
+      if (inserted.length === 0) {
+        // 重放：不碰状态，返回库里已经落下的结果（pendingItems / due 以库为准）
+        const [existing] = await exec
+          .select()
+          .from(recall_card_states)
+          .where(
+            and(
+              eq(recall_card_states.user_id, userId),
+              eq(recall_card_states.card_id, cardId),
+            ),
+          )
+          .limit(1);
 
-      return {
-        ...base,
-        nextDue: existing?.due ?? base.nextDue,
-        pendingItems: existing
-          ? parsePendingItems(existing.pending_items)
-          : base.pendingItems,
-        duplicate: true,
-      };
-    }
+        return {
+          ...base,
+          nextDue: existing?.due ?? base.nextDue,
+          pendingItems: existing
+            ? parsePendingItems(existing.pending_items)
+            : base.pendingItems,
+          duplicate: true,
+        };
+      }
 
-    await exec
-      .insert(recall_card_states)
-      .values({
-        user_id: userId,
-        card_id: cardId,
-        ...applied.next,
-        pending_items: serializePendingItems(pendingItems),
-        archived: 0,
-      })
-      .onConflictDoUpdate({
-        target: [recall_card_states.user_id, recall_card_states.card_id],
-        // 有意不动 archived：复习一张已归档的卡不应把它悄悄放回队列
-        set: {
+      await exec
+        .insert(recall_card_states)
+        .values({
+          user_id: userId,
+          card_id: cardId,
           ...applied.next,
           pending_items: serializePendingItems(pendingItems),
-          updated_at: sql`CURRENT_TIMESTAMP`,
-        },
-      });
+          archived: 0,
+        })
+        .onConflictDoUpdate({
+          target: [recall_card_states.user_id, recall_card_states.card_id],
+          // 有意不动 archived：复习一张已归档的卡不应把它悄悄放回队列
+          set: {
+            ...applied.next,
+            pending_items: serializePendingItems(pendingItems),
+            updated_at: sql`CURRENT_TIMESTAMP`,
+          },
+        });
 
-    return { ...base, duplicate: false };
-  });
+      // 预演：日志与状态都已经按真实路径写过（也做过冲突判定），到此回滚即可。
+      // 计数/评分因此与真提交同源，不会出现"预演说 A、真跑说 B"。
+      if (options.dryRun) {
+        throw new DryRunRollback({ ...base, duplicate: false });
+      }
+
+      return { ...base, duplicate: false };
+    });
+  } catch (err) {
+    if (isDryRunRollback<Omit<RecallSubmitResult, "dryRun">>(err)) {
+      return { ...err.value, dryRun: true };
+    }
+    throw err;
+  }
 }
 
 /** 按卡片类型判分（重测只判呈现出来的条目） */

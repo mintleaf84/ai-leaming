@@ -1,8 +1,9 @@
 import { createHash } from "crypto";
-import { and, asc, eq, sql } from "drizzle-orm";
+import { and, asc, count, eq, sql } from "drizzle-orm";
 import { drizzleDb, drizzleSchema } from "../db";
 import { safeParseJson } from "../utils/json";
 import { withImportLock } from "./import-service";
+import { DryRunRollback, isDryRunRollback } from "./dry-run";
 import { parseRecallDeck, RecallDeckValidationError } from "../recall/schema";
 import {
   RECALL_SCHEMA_VERSION,
@@ -321,7 +322,7 @@ async function writeDeck(
 export async function importDeck(
   userId: number,
   deckInput: unknown,
-  options: { onConflict?: RecallImportConflictStrategy } = {},
+  options: { onConflict?: RecallImportConflictStrategy; dryRun?: boolean } = {},
 ): Promise<RecallImportResult> {
   const onConflict = options.onConflict ?? "keep";
   if (onConflict !== "keep" && onConflict !== "accept") {
@@ -334,12 +335,22 @@ export async function importDeck(
   // 校验在事务外：任何解析/校验失败都保证库里零写入（规格 §6 验收 1、5 的前提）
   const deck = parseRecallDeck(deckInput);
 
-  return withRecallImportLock(() =>
-    withTransaction(async (exec) => {
-      // 事务内所有写操作都必须走 tx：用全局 drizzleDb 会让语句跑在事务连接之外
-      return writeDeck(exec, userId, deck, onConflict);
-    }),
-  );
+  try {
+    return await withRecallImportLock(() =>
+      withTransaction(async (exec) => {
+        // 事务内所有写操作都必须走 tx：用全局 drizzleDb 会让语句跑在事务连接之外
+        const result = await writeDeck(exec, userId, deck, onConflict);
+        // 预演：created/updated/skipped 是 writeDeck 真实判定出来的，抛哨兵回滚即可
+        if (options.dryRun) throw new DryRunRollback(result);
+        return result;
+      }),
+    );
+  } catch (err) {
+    if (isDryRunRollback<RecallImportResult>(err)) {
+      return { ...err.value, dryRun: true };
+    }
+    throw err;
+  }
 }
 
 /**
@@ -553,97 +564,111 @@ export interface RecallCardUpsertInput {
 export async function upsertCard(
   userId: number,
   input: RecallCardUpsertInput,
-): Promise<{ cardId: number }> {
-  return withRecallImportLock(() =>
-    withTransaction(async (exec) => {
-      const [deck] = await exec
-        .select({
-          id: recall_decks.id,
-          owner_user_id: recall_decks.owner_user_id,
-        })
-        .from(recall_decks)
-        .where(eq(recall_decks.deck_key, input.deckKey))
-        .limit(1);
-      if (!deck) {
-        throw new RecallNotFoundError(`卡组不存在：${input.deckKey}`);
-      }
-      assertDeckWritable(input.deckKey, deck.owner_user_id, userId);
+  options: { dryRun?: boolean } = {},
+): Promise<{ cardId: number; created: boolean; dryRun?: true }> {
+  try {
+    return await withRecallImportLock(() =>
+      withTransaction(async (exec) => {
+        const [deck] = await exec
+          .select({
+            id: recall_decks.id,
+            owner_user_id: recall_decks.owner_user_id,
+          })
+          .from(recall_decks)
+          .where(eq(recall_decks.deck_key, input.deckKey))
+          .limit(1);
+        if (!deck) {
+          throw new RecallNotFoundError(`卡组不存在：${input.deckKey}`);
+        }
+        assertDeckWritable(input.deckKey, deck.owner_user_id, userId);
 
-      const [existing] = await exec
-        .select({
-          id: recall_cards.id,
-          group_key: recall_cards.group_key,
-          verbatim: recall_cards.verbatim,
-        })
-        .from(recall_cards)
-        .where(
-          and(
-            eq(recall_cards.deck_id, deck.id),
-            eq(recall_cards.card_key, input.cardId),
-          ),
-        )
-        .limit(1);
+        const [existing] = await exec
+          .select({
+            id: recall_cards.id,
+            group_key: recall_cards.group_key,
+            verbatim: recall_cards.verbatim,
+          })
+          .from(recall_cards)
+          .where(
+            and(
+              eq(recall_cards.deck_id, deck.id),
+              eq(recall_cards.card_key, input.cardId),
+            ),
+          )
+          .limit(1);
 
-      // 校验必须在读到旧行之后：prompt_hash 的输入包含分组与 verbatim
-      const retainedGroupId =
-        input.groupId === undefined
-          ? (existing?.group_key ?? null)
-          : input.groupId;
-      const retainedVerbatim =
-        input.verbatim ?? (existing ? existing.verbatim === 1 : false);
-      const groupField = retainedGroupId
-        ? ({ groupId: retainedGroupId } as const)
-        : {};
+        // 校验必须在读到旧行之后：prompt_hash 的输入包含分组与 verbatim
+        const retainedGroupId =
+          input.groupId === undefined
+            ? (existing?.group_key ?? null)
+            : input.groupId;
+        const retainedVerbatim =
+          input.verbatim ?? (existing ? existing.verbatim === 1 : false);
+        const groupField = retainedGroupId
+          ? ({ groupId: retainedGroupId } as const)
+          : {};
 
-      const candidate =
-        input.kind === "list"
-          ? {
-              cardId: input.cardId,
-              kind: "list" as const,
-              ...groupField,
-              prompt: input.prompt,
-              items: input.items ?? [],
-              verbatim: retainedVerbatim,
-            }
-          : {
-              cardId: input.cardId,
-              kind: "cloze" as const,
-              ...groupField,
-              prompt: input.prompt,
-              blanks: input.blanks ?? [],
-            };
+        const candidate =
+          input.kind === "list"
+            ? {
+                cardId: input.cardId,
+                kind: "list" as const,
+                ...groupField,
+                prompt: input.prompt,
+                items: input.items ?? [],
+                verbatim: retainedVerbatim,
+              }
+            : {
+                cardId: input.cardId,
+                kind: "cloze" as const,
+                ...groupField,
+                prompt: input.prompt,
+                blanks: input.blanks ?? [],
+              };
 
-      const checked = recallCardSchema.safeParse(candidate);
-      if (!checked.success) {
-        throw new RecallDeckValidationError(
-          checked.error.issues.map((issue) => {
-            const path = issue.path.map(String).join(".");
-            return `${path || "card"}: ${issue.message}`;
-          }),
-        );
-      }
-      const card = checked.data;
-      const content = toCardColumns(card);
+        const checked = recallCardSchema.safeParse(candidate);
+        if (!checked.success) {
+          throw new RecallDeckValidationError(
+            checked.error.issues.map((issue) => {
+              const path = issue.path.map(String).join(".");
+              return `${path || "card"}: ${issue.message}`;
+            }),
+          );
+        }
+        const card = checked.data;
+        const content = toCardColumns(card);
 
-      if (existing) {
-        await exec
-          .update(recall_cards)
-          .set({ ...content, updated_at: sql`CURRENT_TIMESTAMP` })
-          .where(eq(recall_cards.id, existing.id));
-        return { cardId: existing.id };
-      }
+        if (existing) {
+          await exec
+            .update(recall_cards)
+            .set({ ...content, updated_at: sql`CURRENT_TIMESTAMP` })
+            .where(eq(recall_cards.id, existing.id));
+          if (options.dryRun) {
+            throw new DryRunRollback({ cardId: existing.id, created: false });
+          }
+          return { cardId: existing.id, created: false };
+        }
 
-      const inserted = await exec
-        .insert(recall_cards)
-        .values({
-          deck_id: deck.id,
-          card_key: card.cardId,
-          ...content,
-        })
-        .returning({ id: recall_cards.id });
-      return { cardId: inserted[0].id };
-    }),
-  );
+        const inserted = await exec
+          .insert(recall_cards)
+          .values({
+            deck_id: deck.id,
+            card_key: card.cardId,
+            ...content,
+          })
+          .returning({ id: recall_cards.id });
+        if (options.dryRun) {
+          throw new DryRunRollback({ cardId: inserted[0].id, created: true });
+        }
+        return { cardId: inserted[0].id, created: true };
+      }),
+    );
+  } catch (err) {
+    if (isDryRunRollback<{ cardId: number; created: boolean }>(err)) {
+      return { ...err.value, dryRun: true };
+    }
+    throw err;
+  }
 }
 
 /**
@@ -658,7 +683,13 @@ export async function deleteCard(
   userId: number,
   deckKey: string,
   cardId: string,
-): Promise<{ cardId: number }> {
+  options: { dryRun?: boolean } = {},
+): Promise<{
+  cardId: number;
+  reviewLogs: number;
+  cardStates: number;
+  dryRun?: true;
+}> {
   return withRecallImportLock(() =>
     withTransaction(async (exec) => {
       const [deck] = await exec
@@ -689,17 +720,52 @@ export async function deleteCard(
         throw new RecallNotFoundError(`卡片 ${cardId} 不在卡组 ${deckKey} 里`);
       }
 
-      await exec
+      // 预演只统计、不删除：删卡是全局且不可撤回的（docs/api.md §8），
+      // 调用方需要先知道"会连带删掉多少条作答日志与进度"
+      if (options.dryRun) {
+        const [logs] = await exec
+          .select({ n: count() })
+          .from(recall_review_logs)
+          .where(eq(recall_review_logs.card_id, card.id));
+        const [states] = await exec
+          .select({ n: count() })
+          .from(recall_card_states)
+          .where(eq(recall_card_states.card_id, card.id));
+        throw new DryRunRollback({
+          cardId: card.id,
+          reviewLogs: Number(logs?.n ?? 0),
+          cardStates: Number(states?.n ?? 0),
+        });
+      }
+
+      const deletedLogs = await exec
         .delete(recall_review_logs)
-        .where(eq(recall_review_logs.card_id, card.id));
-      await exec
+        .where(eq(recall_review_logs.card_id, card.id))
+        .returning({ id: recall_review_logs.id });
+      const deletedStates = await exec
         .delete(recall_card_states)
-        .where(eq(recall_card_states.card_id, card.id));
+        .where(eq(recall_card_states.card_id, card.id))
+        .returning({ id: recall_card_states.card_id });
       await exec.delete(recall_cards).where(eq(recall_cards.id, card.id));
 
-      return { cardId: card.id };
+      return {
+        cardId: card.id,
+        reviewLogs: deletedLogs.length,
+        cardStates: deletedStates.length,
+      };
     }),
-  );
+  ).catch((err: unknown) => {
+    if (
+      isDryRunRollback<{
+        cardId: number;
+        reviewLogs: number;
+        cardStates: number;
+      }>(err)
+    ) {
+      return { ...err.value, dryRun: true as const };
+    }
+    throw err;
+  });
 }
 
 /**

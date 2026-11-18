@@ -57,13 +57,28 @@ export function checkRateLimit(
   identifier: string,
   path: string,
 ): RateLimitResult {
-  cleanup();
-
-  const now = Date.now();
   const config =
     RATE_LIMIT_CONFIG[path as keyof typeof RATE_LIMIT_CONFIG] ||
     RATE_LIMIT_CONFIG.default;
-  const key = `${identifier}:${path}`;
+  return checkRateLimitWith(identifier, path, config);
+}
+
+/**
+ * 同一份滑动窗口实现，但限额由调用方给出（按业务身份而不是路径计）。
+ *
+ * 外部接口（`/api/external/*`）按 **API Key** 限流而不是按 IP：agent 常常共用
+ * 同一个出口 IP，按 IP 计会把"一个用户跑飞"变成"所有人被限"。
+ * 注意 `bucket` 会参与 key 的拼接，不同用途必须传不同字符串。
+ */
+export function checkRateLimitWith(
+  identifier: string,
+  bucket: string,
+  config: { limit: number; windowMs: number },
+): RateLimitResult {
+  cleanup();
+
+  const now = Date.now();
+  const key = `${identifier}:${bucket}`;
 
   const entry = rateLimitStore.get(key);
 

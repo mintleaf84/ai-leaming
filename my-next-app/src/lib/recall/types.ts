@@ -172,6 +172,8 @@ export interface RecallImportResult {
   conflicts: RecallImportConflict[];
   /** 库里有、文件里没有的 cardId（P1 不删除，交给 UI 提示） */
   missingInFile: string[];
+  /** 仅 dry-run 时出现：true 表示这次没有真正写库（计数是"如果真执行会怎样"） */
+  dryRun?: true;
 }
 
 /** 卡组列表条目（P1 只用于卡组选择页） */

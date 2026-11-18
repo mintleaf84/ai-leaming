@@ -267,4 +267,29 @@ curl -s -X POST "$BASE/api/external/practice/answers" \
   外部数据推动不了错题的复习队列。
 - **回忆自测没有归档 / 取消归档接口**：只有读、作答、导入、建改删卡；归档目前只在浏览器界面里操作。
 - **回忆卡的删除是全局的**：卡片内容共享，DELETE 会连所有人的进度与作答日志一起删掉，且无法撤回。
-- **无限流**：`/api/external/*` 没有 rate limit 中间件（只有 `/api/auth` 有），高频轮询会直接压到数据库。
+  删除回执带 `reviewLogs` / `cardStates`（本次连带删掉的行数）；**动手前先用 §9 的 dry-run 看一眼**。
+- **限流按 API Key 计**（不按 IP——agent 常共用出口 IP）：读 600 次/分钟、写 120 次/分钟，
+  超限返回 `429` + `Retry-After`（body 里同时给 `retryAfter` 秒数）。被限流不影响其他 key。
+
+## 9. dry-run：写接口的预演
+
+5 个写接口都支持 `?dryRun=true`（query 参数，DELETE 同样适用）：
+
+| 接口 | 预演返回什么 | 库内变更 |
+| ---- | ------------ | -------- |
+| `POST /practice/answers` | `inserted`（会写几条日志）、题目校验结果 | 零 |
+| `POST /recall/reviews` | `verdicts` / `rating` / `nextDue` / `pendingItems`（真实判分与调度计算） | 零 |
+| `POST /recall/decks` | `createdCards` / `updatedCards` / `skippedCards` / `conflicts` | 零 |
+| `POST /recall/cards` | `cardId` / `created`（新建还是覆盖） | 零 |
+| `DELETE /recall/decks/:deckKey/cards/:cardKey` | `reviewLogs` / `cardStates`（会连带删掉多少行），`deleted` 为 `false` | 零 |
+
+三条语义保证：
+
+1. **计数与真执行同源**：服务端在真实事务里跑完真实写入路径后强制回滚，
+   不是另写一套预演逻辑，所以不会出现「预演说 3 条、真写 5 条」。
+2. **错误照常暴露**：预演同样会报 `400`（题目不存在，带 `invalidQuestionIds`）、
+   `404`（卡组/卡片不存在）、`403`（作用域不足）。预演通过 = 真请求不会因为参数被拒。
+3. **响应多一个 `dryRun: true`**：用于区分"这是预演"与"已生效"；
+   `DELETE` 的 `deleted` 在预演时是 `false`，别把它当成功。
+
+幂等键在预演里同样生效：`clientKey` 命中既有记录时返回 `duplicate: true`（此时本来也没有要写的东西）。

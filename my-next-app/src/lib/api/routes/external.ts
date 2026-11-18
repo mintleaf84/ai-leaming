@@ -40,8 +40,60 @@ import {
 } from "@/lib/services/recall-import";
 import { logger } from "@/lib/logger";
 import { toErrorResponse } from "@/lib/api/error-response";
+import { createHash } from "node:crypto";
+import { checkRateLimitWith } from "@/lib/auth/rate-limit";
 
 const app = new OpenAPIHono();
+
+// ==================== 限流 ====================
+/**
+ * 外部接口按 **API Key** 计流，不按 IP：agent 通常共用同一个出口 IP，
+ * 按 IP 计会把"一个调用方跑飞"放大成"所有人一起 429"。
+ *
+ * 单测会临时下调这两个值来验证 429（见 external-ratelimit.test.ts），
+ * 因此必须保持可写对象；生产不改。
+ */
+export const externalRateLimits = {
+  /** 只读：agent 轮询题库/队列的正常量级远低于此 */
+  read: { limit: 600, windowMs: 60_000 },
+  /** 写入：留出重试重发余量，同时挡住"重试风暴" */
+  write: { limit: 120, windowMs: 60_000 },
+};
+
+app.use("*", async (c, next) => {
+  const header = c.req.header("Authorization");
+  const token = /^Bearer\s+(.+)$/i.exec(header?.trim() ?? "")?.[1]?.trim();
+  // 用 token 的哈希做 key：内存里不留明文密钥，同一把 key 必然落同一个桶
+  const identifier = token
+    ? `key:${createHash("sha256").update(token).digest("hex").slice(0, 24)}`
+    : `ip:${c.req.header("cf-connecting-ip") ?? c.req.header("x-real-ip") ?? "unknown"}`;
+
+  const bucket = c.req.method === "GET" ? "read" : "write";
+  const result = checkRateLimitWith(
+    identifier,
+    `external:${bucket}`,
+    externalRateLimits[bucket],
+  );
+
+  c.header("X-RateLimit-Limit", String(result.limit));
+  c.header("X-RateLimit-Remaining", String(result.remaining));
+  c.header("X-RateLimit-Reset", String(Math.ceil(result.resetTime / 1000)));
+
+  if (!result.success) {
+    const retryAfter = Math.max(
+      1,
+      Math.ceil((result.resetTime - Date.now()) / 1000),
+    );
+    c.header("Retry-After", String(retryAfter));
+    // retryAfter 同时给在 body 里：agent 不解析响应头也能退避
+    return c.json(
+      { error: `请求过于频繁：请 ${retryAfter} 秒后重试`, retryAfter },
+      429,
+    );
+  }
+
+  await next();
+});
 
 // ==================== 鉴权 / 审计中间件 ====================
 // 审计先挂：这样未通过鉴权的写请求（401/403）也会留痕。
@@ -68,6 +120,29 @@ function requireScopeMiddleware(required: ApiScope) {
 }
 
 // ==================== Schema 定义 ====================
+
+/**
+ * 写接口统一的预演开关。
+ *
+ * 用 query 而不是 body 字段：`DELETE /recall/decks/{deckKey}/cards/{cardKey}` 没有
+ * body，用 query 五个写接口才能保持同一种用法（agent 不必记两套）。
+ */
+const DryRunQuerySchema = z.object({
+  dryRun: z.enum(["true", "false"]).optional().openapi({
+    description:
+      'true = 预演：走完真实校验与计算后回滚，返回"如果真执行会怎样"，库内零变更',
+    example: "true",
+  }),
+});
+
+/**
+ * body 与 query 都算了一遍的兼容开销？
+ * 这里只认 query（`?dryRun=true`），不做 body 字段的隐式识别 ——
+ * 两个入口意味着两套文档与两种测试，收益却为零。
+ */
+function wantsDryRun(query: { dryRun?: "true" | "false" }): boolean {
+  return query.dryRun === "true";
+}
 
 const ExternalQuestionSchema = z.object({
   id: z.number(),
@@ -111,6 +186,10 @@ const listRoute = createRoute({
     },
     401: { description: "未授权 - 缺少 / 无效 / 已停用的 API Key" },
     403: { description: "已禁止 - 该 API Key 的作用域不足" },
+    429: {
+      description:
+        "请求过于频繁 - 超过该 API Key 的限额，按 Retry-After 退避后重试",
+    },
   },
 });
 
@@ -185,7 +264,13 @@ const getRoute = createRoute({
       },
       description: "获取单道题目详情",
     },
+    401: { description: "未授权 - 缺少 / 无效 / 已停用的 API Key" },
+    403: { description: "已禁止 - 该 API Key 的作用域不足" },
     404: { description: "题目不存在" },
+    429: {
+      description:
+        "请求过于频繁 - 超过该 API Key 的限额，按 Retry-After 退避后重试",
+    },
   },
 });
 
@@ -335,6 +420,10 @@ const listSessionsRoute = createRoute({
     },
     401: { description: "未授权 - 缺少 / 无效 / 已停用的 API Key" },
     403: { description: "已禁止 - 该 API Key 的作用域不足" },
+    429: {
+      description:
+        "请求过于频繁 - 超过该 API Key 的限额，按 Retry-After 退避后重试",
+    },
   },
 });
 
@@ -391,6 +480,10 @@ const sessionDetailRoute = createRoute({
     },
     401: { description: "未授权 - 缺少 / 无效 / 已停用的 API Key" },
     403: { description: "已禁止 - 该 API Key 的作用域不足" },
+    429: {
+      description:
+        "请求过于频繁 - 超过该 API Key 的限额，按 Retry-After 退避后重试",
+    },
     404: { description: "会话不存在或不属于当前调用身份" },
   },
 });
@@ -479,6 +572,10 @@ const wrongBookRoute = createRoute({
     },
     401: { description: "未授权 - 缺少 / 无效 / 已停用的 API Key" },
     403: { description: "已禁止 - 该 API Key 的作用域不足" },
+    429: {
+      description:
+        "请求过于频繁 - 超过该 API Key 的限额，按 Retry-After 退避后重试",
+    },
   },
 });
 
@@ -544,6 +641,10 @@ const wrongBookStatsRoute = createRoute({
     },
     401: { description: "未授权 - 缺少 / 无效 / 已停用的 API Key" },
     403: { description: "已禁止 - 该 API Key 的作用域不足" },
+    429: {
+      description:
+        "请求过于频繁 - 超过该 API Key 的限额，按 Retry-After 退避后重试",
+    },
   },
 });
 
@@ -593,6 +694,10 @@ const masteryRoute = createRoute({
     },
     401: { description: "未授权 - 缺少 / 无效 / 已停用的 API Key" },
     403: { description: "已禁止 - 该 API Key 的作用域不足" },
+    429: {
+      description:
+        "请求过于频繁 - 超过该 API Key 的限额，按 Retry-After 退避后重试",
+    },
   },
 });
 
@@ -650,6 +755,10 @@ const overviewRoute = createRoute({
     },
     401: { description: "未授权 - 缺少 / 无效 / 已停用的 API Key" },
     403: { description: "已禁止 - 该 API Key 的作用域不足" },
+    429: {
+      description:
+        "请求过于频繁 - 超过该 API Key 的限额，按 Retry-After 退避后重试",
+    },
   },
 });
 
@@ -720,6 +829,10 @@ const knowledgeCardsRoute = createRoute({
     },
     401: { description: "未授权 - 缺少 / 无效 / 已停用的 API Key" },
     403: { description: "已禁止 - 该 API Key 的作用域不足" },
+    429: {
+      description:
+        "请求过于频繁 - 超过该 API Key 的限额，按 Retry-After 退避后重试",
+    },
   },
 });
 
@@ -804,6 +917,10 @@ const AgentAnswersResponseSchema = z
     duplicated: z.boolean().openapi({
       description: "true 表示该 sessionKey 已导入过，本次未产生任何新数据",
     }),
+    dryRun: z.boolean().optional().openapi({
+      description:
+        '仅预演时出现且恒为 true：本次没有写库，计数是"真执行会写入多少"',
+    }),
   })
   .openapi("ExternalAgentAnswersResponse");
 
@@ -812,6 +929,7 @@ const importAnswersRoute = createRoute({
   path: "/practice/answers",
   middleware: [requireScopeMiddleware("write")] as const,
   request: {
+    query: DryRunQuerySchema,
     body: {
       // 必填：否则 @hono/zod-openapi 会把缺失的 body 校验成 `{}`，
       // 请求一路走到 service 层才炸成 500
@@ -831,6 +949,10 @@ const importAnswersRoute = createRoute({
     400: { description: "请求体校验失败 / 存在题库中不存在的 questionId" },
     401: { description: "未授权 - 缺少 / 无效 / 已停用的 API Key" },
     403: { description: "已禁止 - 该 API Key 的作用域不足（需要 write）" },
+    429: {
+      description:
+        "请求过于频繁 - 超过该 API Key 的限额，按 Retry-After 退避后重试",
+    },
     500: { description: "服务器内部错误" },
   },
 });
@@ -840,11 +962,13 @@ app.openapi(importAnswersRoute, async (c) => {
   // 而不是"用户没登录"（那是 401，已由 requireScope 拦截）
   const identity = requireIdentity(c);
   const body = c.req.valid("json") as AgentAnswersImportInput;
+  const dryRun = wantsDryRun(c.req.valid("query"));
 
   try {
     const result = await importService.importAgentAnswers(
       identity.effectiveUserId,
       body,
+      { dryRun },
     );
     return c.json(result, 200);
   } catch (err) {
@@ -978,6 +1102,10 @@ const recallDecksRoute = createRoute({
     },
     401: { description: "未授权 - 缺少 / 无效 / 已停用的 API Key" },
     403: { description: "已禁止 - 该 API Key 的作用域不足" },
+    429: {
+      description:
+        "请求过于频繁 - 超过该 API Key 的限额，按 Retry-After 退避后重试",
+    },
   },
 });
 
@@ -1037,6 +1165,10 @@ const recallDeckDetailRoute = createRoute({
     },
     401: { description: "未授权 - 缺少 / 无效 / 已停用的 API Key" },
     403: { description: "已禁止 - 该 API Key 的作用域不足" },
+    429: {
+      description:
+        "请求过于频繁 - 超过该 API Key 的限额，按 Retry-After 退避后重试",
+    },
     404: { description: "卡组不存在" },
   },
 });
@@ -1113,6 +1245,10 @@ const recallCardDetailRoute = createRoute({
     400: { description: "cardId 不是正整数" },
     401: { description: "未授权 - 缺少 / 无效 / 已停用的 API Key" },
     403: { description: "已禁止 - 该 API Key 的作用域不足" },
+    429: {
+      description:
+        "请求过于频繁 - 超过该 API Key 的限额，按 Retry-After 退避后重试",
+    },
     404: { description: "卡片不存在" },
   },
 });
@@ -1189,6 +1325,10 @@ const recallQueueRoute = createRoute({
     },
     401: { description: "未授权 - 缺少 / 无效 / 已停用的 API Key" },
     403: { description: "已禁止 - 该 API Key 的作用域不足" },
+    429: {
+      description:
+        "请求过于频繁 - 超过该 API Key 的限额，按 Retry-After 退避后重试",
+    },
   },
 });
 
@@ -1266,6 +1406,10 @@ const RecallReviewResponseSchema = z
     duplicate: z
       .boolean()
       .describe("true = 该 clientKey 已提交过，本次为幂等重放，未推进调度"),
+    dryRun: z.boolean().optional().openapi({
+      description:
+        "仅预演时出现且恒为 true：本次没有写库，评分与到期时间是真实计算结果",
+    }),
   })
   .openapi("ExternalRecallReviewResponse");
 
@@ -1277,6 +1421,7 @@ const recallReviewsRoute = createRoute({
   description:
     "写接口，需 write 作用域。服务端按卡片内容判分、推导评分并推进 FSRS 调度。带 `clientKey` 时按 `(user_id, clientKey)` 幂等：重试命中返回 `duplicate: true` 与首次结果，**不会二次推进调度**。卡片不存在返回 404。",
   request: {
+    query: DryRunQuerySchema,
     body: {
       // 必填：否则缺失的 body 会被校验成 `{}`，一路走到服务层才炸成 500
       required: true,
@@ -1295,6 +1440,10 @@ const recallReviewsRoute = createRoute({
     400: { description: "请求体校验失败 / 改判下标非法" },
     401: { description: "未授权 - 缺少 / 无效 / 已停用的 API Key" },
     403: { description: "已禁止 - 该 API Key 的作用域不足（需要 write）" },
+    429: {
+      description:
+        "请求过于频繁 - 超过该 API Key 的限额，按 Retry-After 退避后重试",
+    },
     404: { description: "卡片不存在" },
     500: { description: "服务器内部错误" },
   },
@@ -1303,6 +1452,7 @@ const recallReviewsRoute = createRoute({
 app.openapi(recallReviewsRoute, async (c) => {
   const identity = requireIdentity(c);
   const body = c.req.valid("json");
+  const dryRun = wantsDryRun(c.req.valid("query"));
   const userId = identity.effectiveUserId;
 
   // 先判存在性再提交：submitReview 会把"卡不存在"和"改判下标非法"都抛成
@@ -1319,6 +1469,7 @@ app.openapi(recallReviewsRoute, async (c) => {
       overrides: body.overrides,
       // 幂等键必须原样透传：服务层按 (user_id, client_key) 判断是否重放
       clientKey: body.clientKey,
+      dryRun,
     });
 
     return c.json(
@@ -1332,6 +1483,7 @@ app.openapi(recallReviewsRoute, async (c) => {
           result.pendingItems,
         ),
         duplicate: result.duplicate,
+        ...(result.dryRun ? { dryRun: true } : {}),
       },
       200,
     );
@@ -1377,6 +1529,10 @@ const RecallDeckImportResponseSchema = z
     missingInFile: z
       .array(z.string())
       .describe("库里有、文件里没有的 cardId（不会删除）"),
+    dryRun: z.boolean().optional().openapi({
+      description:
+        '仅预演时出现且恒为 true：本次没有写库，三组计数是"真执行会怎样"',
+    }),
   })
   .openapi("ExternalRecallDeckImportResponse");
 
@@ -1388,6 +1544,7 @@ const recallDeckImportRoute = createRoute({
   description:
     "写接口，需 write 作用域。幂等：同一份文件重复导入不新增、不重置任何人的复习进度。文件里没有的卡片不删除，只在 `missingInFile` 里报告。`schema` 版本不支持或内容校验失败返回 400 且库内零写入。",
   request: {
+    query: DryRunQuerySchema,
     body: {
       // 必填：否则缺失的 body 会被校验成 `{}`，一路走到服务层才炸成 500
       required: true,
@@ -1406,6 +1563,10 @@ const recallDeckImportRoute = createRoute({
     400: { description: "卡组内容校验失败（带 issues）" },
     401: { description: "未授权 - 缺少 / 无效 / 已停用的 API Key" },
     403: { description: "已禁止 - 该 API Key 的作用域不足（需要 write）" },
+    429: {
+      description:
+        "请求过于频繁 - 超过该 API Key 的限额，按 Retry-After 退避后重试",
+    },
     500: { description: "服务器内部错误" },
   },
 });
@@ -1413,12 +1574,14 @@ const recallDeckImportRoute = createRoute({
 app.openapi(recallDeckImportRoute, async (c) => {
   const identity = requireIdentity(c);
   const body = c.req.valid("json");
+  const dryRun = wantsDryRun(c.req.valid("query"));
 
   try {
     // 直接传 JSON 字符串：parseRecallDeck 统一处理解析与校验，
     // 避免路由层再写一遍 JSON.parse → 错误文案分叉
     const result = await importDeck(identity.effectiveUserId, body.json, {
       onConflict: body.onConflict,
+      dryRun,
     });
 
     return c.json(
@@ -1429,6 +1592,7 @@ app.openapi(recallDeckImportRoute, async (c) => {
         skippedCards: result.skippedCards,
         conflicts: result.conflicts,
         missingInFile: result.missingInFile,
+        ...(result.dryRun ? { dryRun: true } : {}),
       },
       200,
     );
@@ -1479,6 +1643,12 @@ const RecallCardUpsertResponseSchema = z
   .object({
     cardId: z.number().int().describe("卡片的数字主键"),
     cardKey: z.string().describe("卡片文件内标识（与请求里的 cardId 相同）"),
+    created: z
+      .boolean()
+      .describe("true = 本次新建；false = 覆盖了同 cardId 的既有卡片"),
+    dryRun: z.boolean().optional().openapi({
+      description: "仅预演时出现且恒为 true：本次没有写库",
+    }),
   })
   .openapi("ExternalRecallCardUpsertResponse");
 
@@ -1490,6 +1660,7 @@ const recallCardUpsertRoute = createRoute({
   description:
     "写接口，需 write 作用域。卡片内容全局共享，写入**不会**重置任何人的复习进度。校验规则与整包导入一致（列举 1–6 条、每空 1–3 个可接受答案）。卡组不存在返回 404，内容非法返回 400（带 issues）。",
   request: {
+    query: DryRunQuerySchema,
     body: {
       // 必填：否则缺失的 body 会被校验成 `{}`，一路走到服务层才炸成 500
       required: true,
@@ -1510,6 +1681,10 @@ const recallCardUpsertRoute = createRoute({
     },
     401: { description: "未授权 - 缺少 / 无效 / 已停用的 API Key" },
     403: { description: "已禁止 - 该 API Key 的作用域不足（需要 write）" },
+    429: {
+      description:
+        "请求过于频繁 - 超过该 API Key 的限额，按 Retry-After 退避后重试",
+    },
     404: { description: "卡组不存在" },
     500: { description: "服务器内部错误" },
   },
@@ -1518,20 +1693,33 @@ const recallCardUpsertRoute = createRoute({
 app.openapi(recallCardUpsertRoute, async (c) => {
   const identity = requireIdentity(c);
   const body = c.req.valid("json");
+  const dryRun = wantsDryRun(c.req.valid("query"));
 
   try {
-    const { cardId } = await upsertCard(identity.effectiveUserId, {
-      deckKey: body.deckKey,
-      cardId: body.cardId,
-      prompt: body.prompt,
-      kind: body.kind,
-      items: body.items,
-      blanks: body.blanks,
-      verbatim: body.verbatim,
-      groupId: body.groupId,
-    });
+    const { cardId, created } = await upsertCard(
+      identity.effectiveUserId,
+      {
+        deckKey: body.deckKey,
+        cardId: body.cardId,
+        prompt: body.prompt,
+        kind: body.kind,
+        items: body.items,
+        blanks: body.blanks,
+        verbatim: body.verbatim,
+        groupId: body.groupId,
+      },
+      { dryRun },
+    );
 
-    return c.json({ cardId, cardKey: body.cardId }, 200);
+    return c.json(
+      {
+        cardId,
+        cardKey: body.cardId,
+        created,
+        ...(dryRun ? { dryRun: true as const } : {}),
+      },
+      200,
+    );
   } catch (err) {
     // audit-allow: 统一交给 recallErrorResponse 归类（业务错误 → 4xx 带可读原因，
     //   未知错误已在那里记结构化日志后回 500），此处不再重复记日志
@@ -1549,6 +1737,7 @@ const recallCardDeleteRoute = createRoute({
   description:
     "写接口，需 write 作用域。删除是全局的：卡片内容共存，删除后所有用户都看不到它，其作答日志与进度一并删除（与界面上的删除行为一致）。卡组或卡片不存在返回 404。",
   request: {
+    query: DryRunQuerySchema,
     params: z.object({
       deckKey: z.string().describe("卡组标识"),
       cardKey: z.string().describe("卡片在卡组内的标识（文件里的 cardId）"),
@@ -1561,14 +1750,34 @@ const recallCardDeleteRoute = createRoute({
           schema: z.object({
             cardId: z.number().int().describe("被删除卡片的数字主键"),
             cardKey: z.string().describe("被删除卡片的文件内标识"),
-            deleted: z.literal(true).describe("恒为 true"),
+            deleted: z
+              .boolean()
+              .describe(
+                "true = 真的删掉了；false = 预演（dryRun），库内没有任何变更",
+              ),
+            reviewLogs: z
+              .number()
+              .int()
+              .describe("本次删除的作答日志条数（全局，含其他用户）"),
+            cardStates: z
+              .number()
+              .int()
+              .describe("本次删除的复习进度行数（全局，含其他用户）"),
+            dryRun: z.boolean().optional().openapi({
+              description:
+                '仅预演时出现且恒为 true：本次没有删除，计数是"真执行会删掉多少"',
+            }),
           }),
         },
       },
-      description: "已删除",
+      description: "已删除（预演时只返回将删除的计数）",
     },
     401: { description: "未授权 - 缺少 / 无效 / 已停用的 API Key" },
     403: { description: "已禁止 - 该 API Key 的作用域不足（需要 write）" },
+    429: {
+      description:
+        "请求过于频繁 - 超过该 API Key 的限额，按 Retry-After 退避后重试",
+    },
     404: { description: "卡组不存在 / 卡片不在该卡组里" },
     500: { description: "服务器内部错误" },
   },
@@ -1577,14 +1786,27 @@ const recallCardDeleteRoute = createRoute({
 app.openapi(recallCardDeleteRoute, async (c) => {
   const identity = requireIdentity(c);
   const { deckKey, cardKey } = c.req.valid("param");
+  const dryRun = wantsDryRun(c.req.valid("query"));
 
   try {
-    const { cardId } = await deleteCard(
+    const { cardId, reviewLogs, cardStates } = await deleteCard(
       identity.effectiveUserId,
       deckKey,
       cardKey,
+      { dryRun },
     );
-    return c.json({ cardId, cardKey, deleted: true as const }, 200);
+    return c.json(
+      {
+        cardId,
+        cardKey,
+        // 预演时什么都没删，deleted 不能回 true —— 否则调用方会以为已经生效
+        deleted: !dryRun,
+        reviewLogs,
+        cardStates,
+        ...(dryRun ? { dryRun: true as const } : {}),
+      },
+      200,
+    );
   } catch (err) {
     // audit-allow: 统一交给 recallErrorResponse 归类（业务错误 → 4xx 带可读原因，
     //   未知错误已在那里记结构化日志后回 500），此处不再重复记日志

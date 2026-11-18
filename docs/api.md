@@ -363,3 +363,18 @@ curl -s -X POST "$BASE/api/external/practice/answers" \
   带 `overrides: [{index: 1}]` 的正式提交会返回 `400`（下标越界）。
 - **幂等重放与预演可叠加**：命中 `clientKey` / `sessionKey` 时，真提交只回 `duplicate: true`；
   带 `?dryRun=true` 的重放回 `duplicate: true` **且** `dryRun: true`。按上表的四象限读即可。
+
+## 10. MCP 接入（给 agent 客户端）
+
+`mcp-server/` 把上面这些端点包成 MCP 工具，供 dsh 等客户端挂载（stdio 传输，不改后端）：
+
+```bash
+cd mcp-server && npm install && npm run build
+AI_LEAMING_BASE_URL=https://your-host AI_LEAMING_API_KEY=sk_xxx node dist/index.js
+```
+
+- 工具清单的唯一事实源是 `mcp-server/tools.json`；`npm run mcp:check` 会拿它对照本文生成的
+  `docs/openapi.json`，路径/方法/参数任一处漂移，CI 直接红。
+- 写工具都透传 `dryRun`；`delete_recall_card` 的描述里要求「先预演、报数字、再确认」。
+- 领域使用规约（选哪个工具、错误怎么读、什么时候必须先预演）写在
+  [`skills/ai-leaming/SKILL.md`](../skills/ai-leaming/SKILL.md)。

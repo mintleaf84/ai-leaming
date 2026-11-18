@@ -124,6 +124,8 @@ Authorization: Bearer sk_xxxxxxxx
 | POST   | `/recall/decks`                         | `write` | 导入卡组（`json` 字符串，`onConflict=keep\|accept`）   |
 | POST   | `/recall/cards`                         | `write` | 新建 / 修改单卡                                        |
 | DELETE | `/recall/decks/:deckKey/cards/:cardKey` | `write` | 删除单卡（连同其作答日志与所有人的进度）               |
+| POST   | `/recall/cards/:cardId/archive`         | `write` | 归档：把卡片移出**当前身份**的复习队列（幂等）         |
+| DELETE | `/recall/cards/:cardId/archive`         | `write` | 取消归档：放回复习队列（没归档过时 `restored: false`） |
 
 字段要点：
 
@@ -172,6 +174,7 @@ curl -s -X POST "$BASE/api/external/recall/reviews" \
 | GET  | `/mindmaps`       | `read` | 思维导图列表（`limit`、`offset`）                       |
 | GET  | `/mindmaps/:id`   | `read` | 导图内容（`content` 为 Markdown 大纲源文）              |
 | GET  | `/srs/summary`    | `read` | SRS 复习负载：卡片总量、状态分布、未来 7 天逐日预估     |
+| POST | `/srs/reviews`    | `write` | 推进错题 SRS（`answeredAt` 幂等）：外部数据能推动复习队列 |
 
 字段要点：
 
@@ -181,7 +184,13 @@ curl -s -X POST "$BASE/api/external/recall/reviews" \
   `learnedCount`、`retention{trueRetention,totalReviews}`、`next7Days{count,minutes}`、`daily[{date,count,minutes}]`。
   具体该做哪几道题用 `/wrong-book` 取。
 
-**为什么补这三个**：此前笔记、导图、SRS 负载只有 Server Action（浏览器界面用），agent 拿不到。
+`/srs/reviews` 请求体：`{ questionId, isCorrect, durationMs?, userAnswerLength?, answeredAt? }`。
+服务端按 `isCorrect` 与耗时推导 FSRS 评分并推进**调用身份**的 `question_srs`，返回
+`{ dueDate, stability, difficulty, reps, lapses, state, duplicate }`。
+幂等键是 `answeredAt`（复习本来就是"一个时间点一条"）：同一时间的重试直接返回当前状态且
+`duplicate: true`，不会二次推进。
+
+**为什么补这些**：此前笔记、导图、SRS 负载只有 Server Action（浏览器界面用），agent 拿不到。
 补完之后「关掉浏览器只靠本文档」可完成的任务从 4 类扩到 7 类（题库、练习、错题、复习、笔记、导图、学情）。
 
 ## 3. 幂等：`sessionKey`
@@ -286,7 +295,8 @@ curl -s -X POST "$BASE/api/external/practice/answers" \
 - **写接口现状**：`POST /practice/answers`、`POST /recall/reviews`、`POST /recall/decks`、`POST /recall/cards`、
   `DELETE /recall/decks/:deckKey/cards/:cardKey`。**题库写接口**（增/改/删题）与**`question_srs` 写入**仍未开放：
   外部数据推动不了错题的复习队列。
-- **回忆自测没有归档 / 取消归档接口**：只有读、作答、导入、建改删卡；归档目前只在浏览器界面里操作。
+- **回忆卡的归档是「按身份」的**：`POST/DELETE /recall/cards/:cardId/archive` 只改调用身份的队列，
+  不动卡片内容与别人的进度。
 - **回忆卡的删除是全局的**：卡片内容共享，DELETE 会连所有人的进度与作答日志一起删掉，且无法撤回。
   删除回执带 `reviewLogs` / `cardStates`（本次连带删掉的行数）；**动手前先用 §9 的 dry-run 看一眼**。
 - **限流按 API Key 计**（不按 IP——agent 常共用出口 IP）：读 600 次/分钟、写 120 次/分钟，

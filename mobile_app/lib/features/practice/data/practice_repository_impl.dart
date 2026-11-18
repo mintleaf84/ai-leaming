@@ -19,6 +19,16 @@ final practiceRepositoryProvider = Provider<PracticeRepository>((ref) {
   );
 });
 
+/// 离线缓存不可用（为空或已过期）时抛出，带可直接展示的中文原因。
+class OfflineCacheUnavailable implements Exception {
+  const OfflineCacheUnavailable(this.message);
+
+  final String message;
+
+  @override
+  String toString() => message;
+}
+
 class PracticeRepositoryImpl implements PracticeRepository {
   final ApiClient _apiClient;
   // 手写 Dio：`GET /practice/session/{id}` 是 2026-11 新增端点，
@@ -71,32 +81,32 @@ class PracticeRepositoryImpl implements PracticeRepository {
       if (!isOffline) {
         rethrow;
       }
-      final local = await _createOfflineSession(limit: limit, mode: mode);
-      if (local == null) {
-        rethrow;
-      }
-      return local;
+      return await _createOfflineSession(limit: limit, mode: mode);
     }
   }
 
-  /// 用本地缓存出题；缓存为空时返回 null（调用方继续抛原始网络异常）。
-  Future<PracticeSession?> _createOfflineSession({
+  /// 用本地缓存出题；缓存为空或过期时抛 [OfflineCacheUnavailable]。
+  Future<PracticeSession> _createOfflineSession({
     required int limit,
     required String mode,
   }) async {
     try {
       final questions = await _localStore.pickRandom(limit: limit);
       if (questions.isEmpty) {
-        return null;
+        throw const OfflineCacheUnavailable(
+          '本地题库为空或已超过 7 天未刷新，请联网同步题库后再离线练习',
+        );
       }
       final localId = await _localStore.createLocalSession(
         mode: mode,
         questionIds: questions.map((question) => question.id).toList(),
       );
       return PracticeSession(sessionId: localId, questions: questions);
+    } on OfflineCacheUnavailable {
+      rethrow;
     } catch (error) {
-      debugPrint('[Practice] 离线出题失败: $error');
-      return null;
+      // 本地库故障（磁盘/权限）不该伪装成"没网"，转成可读原因
+      throw OfflineCacheUnavailable('本地题库读取失败：$error');
     }
   }
 
@@ -127,14 +137,57 @@ class PracticeRepositoryImpl implements PracticeRepository {
       );
     }
 
-    final response = await _apiClient.submitAnswer(sessionId, {
-      'questionId': int.parse(
-        questionId,
-      ), // Transform string ID to backend number
-      'userAnswer': userAnswer,
-      'duration': duration,
-    });
-    return response;
+    try {
+      return await _apiClient.submitAnswer(sessionId, {
+        'questionId': int.parse(
+          questionId,
+        ), // Transform string ID to backend number
+        'userAnswer': userAnswer,
+        'duration': duration,
+      });
+    } on DioException catch (error) {
+      // 只有「连不上服务器」时才降级：4xx/5xx 是服务端明确拒绝，必须原样抛出，
+      // 否则会把鉴权/参数错误伪装成"离线"，用户永远看不到真正原因。
+      if (error.response != null) {
+        rethrow;
+      }
+      return _degradeToOffline(
+        serverSessionId: sessionId,
+        questionId: questionId,
+        userAnswer: userAnswer,
+        duration: duration,
+      );
+    }
+  }
+
+  /// 会话进行到一半断网：把这一题按离线口径判分入队，练习不至于中断。
+  ///
+  /// 幂等键取 `local_<serverSessionId>`：这半场练习只会补交一次，
+  /// 服务端会新开一场（`agent_` 前缀）只含断网后的题，不会与已在线提交的题重复计数。
+  Future<Map<String, dynamic>> _degradeToOffline({
+    required String serverSessionId,
+    required String questionId,
+    required String userAnswer,
+    required int duration,
+  }) async {
+    final localId = 'local_$serverSessionId';
+    try {
+      await _localStore.ensureLocalSession(
+        localId: localId,
+        mode: 'offline-resume',
+        questionIds: <String>[questionId],
+      );
+    } catch (error) {
+      debugPrint('[Practice] 断网降级建会话失败: $error');
+    }
+
+    final result = await _submitOfflineAnswer(
+      sessionId: localId,
+      questionId: questionId,
+      userAnswer: userAnswer,
+      duration: duration,
+    );
+    return <String, dynamic>{...result, 'offline': true};
   }
 
   /// 离线判分：用缓存的答案比对，并把作答写入待同步队列。

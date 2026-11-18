@@ -224,8 +224,10 @@ class PracticeController extends Notifier<PracticeSessionState> {
       // 从后端响应获取正确性和正确答案
       final isCorrect = response['isCorrect'] as bool;
       final correctAnswer = response['correctAnswer'] as String;
+      // 中途断网降级：后续题目继续走本地判分，界面显示离线提示条
+      final degradedToOffline = response['offline'] == true;
 
-      state = state.copyWith(isLoading: true);
+      state = state.copyWith(isLoading: true, isOffline: degradedToOffline);
       String explanation = '';
       try {
         final detail = await _repository.getQuestionDetail(question.id);

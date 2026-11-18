@@ -53,9 +53,10 @@ jobs:
       - name: 静态分析
         run: flutter analyze --no-fatal-infos
 
-      # 现有测试里混有打真网的集成脚本（无后端时必然失败），先放行不阻断。
-      - name: 运行测试（允许失败）
-        continue-on-error: true
+      # 打真网的用例已用 @Tags(['integration']) 在 dart_test.yaml 里默认跳过，
+      # 剩下的是纯逻辑测试，因此这里必须是硬闸——否则"测试红了"也不挡合并，
+      # 回归信号等于没有。
+      - name: 运行测试
         run: flutter test
 
   apk:

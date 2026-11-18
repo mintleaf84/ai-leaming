@@ -91,13 +91,30 @@ class LocalPracticeStore {
     await batch.commit(noResult: true);
   }
 
+  /// 缓存最长可用天数。超过这个时间未联网刷新，就不再拿旧题面判分：
+  /// 题目可能在后台被改过（错字、答案更正），用旧答案判对错会污染掌握度。
+  static const int cacheMaxAgeDays = 7;
+
   /// 从缓存随机抽题；[tag] 用 JSON 引号包裹后 LIKE 匹配，避免子串误命中。
-  Future<List<Question>> pickRandom({int limit = 10, String? tag}) async {
+  ///
+  /// 只返回 [cacheMaxAgeDays] 内拿到的题；全部过期时返回空列表，
+  /// 由调用方转成「请联网同步题库」的明确提示，而不是静默用旧答案。
+  Future<List<Question>> pickRandom({
+    int limit = 10,
+    String? tag,
+    int maxAgeDays = cacheMaxAgeDays,
+  }) async {
     final db = await _resolveDb();
+    final cutoff = DateTime.now().millisecondsSinceEpoch -
+        Duration(days: maxAgeDays).inMilliseconds;
     final rows = await db.query(
       'cached_questions',
-      where: tag == null ? null : 'tags LIKE ?',
-      whereArgs: tag == null ? null : <String>['%"$tag"%'],
+      where: tag == null
+          ? 'fetched_at >= ?'
+          : 'fetched_at >= ? AND tags LIKE ?',
+      whereArgs: tag == null
+          ? <Object?>[cutoff]
+          : <Object?>[cutoff, '%"$tag"%'],
       orderBy: 'RANDOM()',
       limit: limit,
     );
@@ -134,6 +151,28 @@ class LocalPracticeStore {
       return 0;
     }
     return rows.first['c'] as int? ?? 0;
+  }
+
+  /// 确保某个 localId 在 local_sessions 里存在（中途断网时补建，幂等）。
+  ///
+  /// 幂等键用 `local_<服务端sessionId>`：同一场练习只会补交一次，
+  /// 重试不会在服务端重复建会话。
+  Future<void> ensureLocalSession({
+    required String localId,
+    required String mode,
+    required List<String> questionIds,
+  }) async {
+    final db = await _resolveDb();
+    await db.insert(
+      'local_sessions',
+      <String, Object?>{
+        'local_id': localId,
+        'mode': mode,
+        'question_ids': jsonEncode(questionIds),
+        'started_at': DateTime.now().millisecondsSinceEpoch,
+      },
+      conflictAlgorithm: ConflictAlgorithm.ignore,
+    );
   }
 
   /// 创建本地会话，返回 localId（同时作为同步幂等键 sessionKey）。

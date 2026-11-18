@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
+import '../../../core/auth/token_util.dart';
 import '../data/auth_repository_impl.dart';
 
 class SplashScreen extends ConsumerStatefulWidget {
@@ -28,15 +29,14 @@ class _SplashScreenState extends ConsumerState<SplashScreen> {
       final repo = ref.read(authRepositoryProvider);
       final token = await repo.getToken();
 
-      if (mounted) {
-        if (token != null && token.isNotEmpty) {
-          // Token 存在，跳过登录页
-          context.go('/dashboard');
-        } else {
-          // 无 Token，正常转入登录页面
-          context.go('/login');
-        }
+      final hasToken = token != null && token.isNotEmpty;
+      final hasValidToken = hasToken && !TokenUtil.isExpired(token);
+      if (hasToken && !hasValidToken) {
+        // 已过期：清掉残留，避免带着废 token 进主界面后处处 401
+        await repo.logout();
       }
+      if (!mounted) return;
+      context.go(hasValidToken ? '/dashboard' : '/login');
     } catch (e) {
       if (mounted) {
         context.go('/login');

@@ -24,6 +24,7 @@ import {
   type AgentAnswersImportInput,
 } from "@/lib/services/import-service";
 import {
+  archiveCard,
   buildNextReviewText,
   computeStreakDays,
   findCard,
@@ -31,6 +32,7 @@ import {
   listDeckCards,
   normalizeItemIndexes,
   submitReview,
+  unarchiveCard,
 } from "@/lib/services/recall";
 import {
   deleteCard,
@@ -2174,6 +2176,265 @@ app.openapi(srsSummaryRoute, async (c) => {
     );
   } catch (err) {
     logger.error({ err }, "[External] 读取 SRS 概览失败");
+    return c.json({ error: "服务器内部错误" }, 500);
+  }
+});
+
+// ---------- POST /recall/cards/{cardId}/archive ----------
+// 归档是「按身份」的动作：卡片内容全局共享，但每个人都该能自己把它移出队列。
+
+const archiveRoute = createRoute({
+  method: "post",
+  path: "/recall/cards/{cardId}/archive",
+  middleware: [requireScopeMiddleware("write")] as const,
+  summary: "把一张回忆卡移出当前身份的复习队列（归档）",
+  description:
+    "写接口，需 write 作用域。只影响**调用身份**的队列，不改卡片内容与别人的进度。天然幂等：重复归档仍是同一个结果。卡片不存在返回 404。",
+  request: {
+    params: z.object({ cardId: z.string().describe("卡片数字主键") }),
+  },
+  responses: {
+    200: {
+      content: {
+        "application/json": {
+          schema: z.object({
+            cardId: z.number().int(),
+            archived: z.literal(true).describe("恒为 true"),
+          }),
+        },
+      },
+      description: "已归档",
+    },
+    400: { description: "cardId 不是正整数" },
+    401: { description: "未授权 - 缺少 / 无效 / 已停用的 API Key" },
+    403: { description: "已禁止 - 该 API Key 的作用域不足（需要 write）" },
+    404: { description: "卡片不存在" },
+    429: RateLimitedResponse,
+    500: { description: "服务器内部错误" },
+  },
+});
+
+app.openapi(archiveRoute, async (c) => {
+  const identity = requireIdentity(c);
+  const { cardId } = c.req.valid("param");
+  const id = parsePositiveInt(cardId);
+  if (id === null) {
+    return c.json({ error: "cardId 必须是正整数" }, 400);
+  }
+
+  try {
+    await archiveCard(identity.effectiveUserId, id);
+    return c.json({ cardId: id, archived: true as const }, 200);
+  } catch (err) {
+    return toErrorResponse(c, err, { scope: "external.recall" });
+  }
+});
+
+// ---------- DELETE /recall/cards/{cardId}/archive ----------
+
+const unarchiveRoute = createRoute({
+  method: "delete",
+  path: "/recall/cards/{cardId}/archive",
+  middleware: [requireScopeMiddleware("write")] as const,
+  summary: "把一张回忆卡放回复习队列（取消归档）",
+  description:
+    "写接口，需 write 作用域。只影响**调用身份**。天然幂等：没归档过时返回 `restored: false`（没有可恢复的状态行），不算错误。",
+  request: {
+    params: z.object({ cardId: z.string().describe("卡片数字主键") }),
+  },
+  responses: {
+    200: {
+      content: {
+        "application/json": {
+          schema: z.object({
+            cardId: z.number().int(),
+            restored: z
+              .boolean()
+              .describe("true = 恢复了一条状态行；false = 本来就没有归档记录"),
+          }),
+        },
+      },
+      description: "已取消归档（或本来就没有归档）",
+    },
+    400: { description: "cardId 不是正整数" },
+    401: { description: "未授权 - 缺少 / 无效 / 已停用的 API Key" },
+    403: { description: "已禁止 - 该 API Key 的作用域不足（需要 write）" },
+    429: RateLimitedResponse,
+    500: { description: "服务器内部错误" },
+  },
+});
+
+app.openapi(unarchiveRoute, async (c) => {
+  const identity = requireIdentity(c);
+  const { cardId } = c.req.valid("param");
+  const id = parsePositiveInt(cardId);
+  if (id === null) {
+    return c.json({ error: "cardId 必须是正整数" }, 400);
+  }
+
+  try {
+    const restored = await unarchiveCard(identity.effectiveUserId, id);
+    return c.json({ cardId: id, restored }, 200);
+  } catch (err) {
+    return toErrorResponse(c, err, { scope: "external.recall" });
+  }
+});
+
+// ---------- POST /srs/reviews ----------
+// 错题 SRS 的唯一写入口。以前这条链路只在答题流程里发生（PracticeService 内部），
+// 外部数据推不动复习队列 —— agent 补做一道错题后没法让它进入明天的复习。
+
+const SrsReviewRequestSchema = z
+  .object({
+    questionId: z.number().int().positive().describe("题目 ID"),
+    isCorrect: z
+      .boolean()
+      .describe("本次是否答对（服务端不重算；传错会污染调度）"),
+    durationMs: z
+      .number()
+      .int()
+      .min(0)
+      .optional()
+      .describe("作答耗时（毫秒），默认 0；影响评分推导"),
+    userAnswerLength: z
+      .number()
+      .int()
+      .min(0)
+      .optional()
+      .describe("填空类作答的字符数；影响评分推导"),
+    answeredAt: z
+      .string()
+      .optional()
+      .describe(
+        "本次作答时间（ISO 8601）。同时是幂等键：同一时间去重试不会二次推进调度",
+      ),
+  })
+  .openapi("ExternalSrsReviewRequest");
+
+const SrsReviewResponseSchema = z
+  .object({
+    questionId: z.number().int(),
+    dueDate: z.string().describe("下次到期时间（ISO 8601 UTC）"),
+    stability: z.number().describe("FSRS 记忆稳定度"),
+    difficulty: z.number().describe("FSRS 难度"),
+    reps: z.number().int().describe("累计复习次数"),
+    lapses: z.number().int().describe("累计遗忘次数"),
+    state: z
+      .number()
+      .int()
+      .describe("FSRS 状态：0 New / 1 Learning / 2 Review / 3 Relearning"),
+    duplicate: z
+      .boolean()
+      .describe("true = 同一 answeredAt 已处理过，本次未推进调度"),
+  })
+  .openapi("ExternalSrsReviewResponse");
+
+const srsReviewRoute = createRoute({
+  method: "post",
+  path: "/srs/reviews",
+  middleware: [requireScopeMiddleware("write")] as const,
+  summary: "提交一次错题复习（推进该身份的 SRS 调度）",
+  description:
+    "写接口，需 write 作用域。按 `isCorrect` 与耗时推导 FSRS 评分并推进该身份的 `question_srs`，这是让外部数据影响复习队列的唯一入口。**幂等**：带 `answeredAt` 时，同一时间的重试直接返回当前状态（`duplicate: true`），不会二次推进。题目不存在返回 404。",
+  request: {
+    body: {
+      required: true,
+      content: { "application/json": { schema: SrsReviewRequestSchema } },
+    },
+  },
+  responses: {
+    200: {
+      content: {
+        "application/json": { schema: SrsReviewResponseSchema },
+      },
+      description: "推进后的调度状态（或幂等重放）",
+    },
+    400: { description: "请求体校验失败 / answeredAt 不是合法时间" },
+    401: { description: "未授权 - 缺少 / 无效 / 已停用的 API Key" },
+    403: { description: "已禁止 - 该 API Key 的作用域不足（需要 write）" },
+    404: { description: "题目不存在" },
+    429: RateLimitedResponse,
+    500: { description: "服务器内部错误" },
+  },
+});
+
+app.openapi(srsReviewRoute, async (c) => {
+  const identity = requireIdentity(c);
+  const body = c.req.valid("json");
+  const userId = identity.effectiveUserId;
+
+  const answeredAt = body.answeredAt ? new Date(body.answeredAt) : new Date();
+  if (Number.isNaN(answeredAt.getTime())) {
+    return c.json({ error: "answeredAt 不是合法时间" }, 400);
+  }
+
+  // 题目存在性先判：srsService 用 throw Error 表达"题目不存在"，
+  // 路由层没有可靠办法把它与真实故障区分成 404 / 500
+  const [question] = await drizzleDb
+    .select({ id: drizzleSchema.questions.id })
+    .from(drizzleSchema.questions)
+    .where(eq(drizzleSchema.questions.id, body.questionId))
+    .limit(1);
+  if (!question) {
+    return c.json({ error: `题目不存在：${body.questionId}` }, 404);
+  }
+
+  const [existing] = await drizzleDb
+    .select()
+    .from(drizzleSchema.question_srs)
+    .where(
+      and(
+        eq(drizzleSchema.question_srs.user_id, userId),
+        eq(drizzleSchema.question_srs.question_id, body.questionId),
+      ),
+    )
+    .limit(1);
+
+  // 幂等：answeredAt 落到 last_review 上，同一时间重试直接返回当前状态。
+  // 不用客户端 UUID 是为了不新增一张表 —— 复习本来就是"一个时间点一条"。
+  const answeredAtIso = answeredAt.toISOString();
+  if (existing?.last_review === answeredAtIso) {
+    return c.json(
+      {
+        questionId: body.questionId,
+        dueDate: existing.due_date,
+        stability: existing.stability,
+        difficulty: existing.difficulty,
+        reps: existing.reps,
+        lapses: existing.lapses,
+        state: existing.state,
+        duplicate: true,
+      },
+      200,
+    );
+  }
+
+  try {
+    const item = await srsService.updateQuestionSrs(
+      userId,
+      body.questionId,
+      body.isCorrect,
+      body.durationMs ?? 0,
+      answeredAt,
+      undefined,
+      body.userAnswerLength,
+    );
+
+    return c.json(
+      {
+        questionId: body.questionId,
+        dueDate: item.due.toISOString(),
+        stability: item.stability,
+        difficulty: item.difficulty,
+        reps: item.reps,
+        lapses: item.lapses,
+        state: item.state,
+        duplicate: false,
+      },
+      200,
+    );
+  } catch (err) {
+    logger.error({ err }, "[External] 推进 SRS 失败");
     return c.json({ error: "服务器内部错误" }, 500);
   }
 });

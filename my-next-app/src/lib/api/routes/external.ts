@@ -2226,6 +2226,8 @@ app.openapi(archiveRoute, async (c) => {
     await archiveCard(identity.effectiveUserId, id);
     return c.json({ cardId: id, archived: true as const }, 200);
   } catch (err) {
+    // audit-allow: 统一交给 recallErrorResponse 归类（业务错误 → 4xx 带可读原因，
+    //   未知错误已在那里记结构化日志后回 500），此处不再重复记日志
     return toErrorResponse(c, err, { scope: "external.recall" });
   }
 });
@@ -2276,6 +2278,8 @@ app.openapi(unarchiveRoute, async (c) => {
     const restored = await unarchiveCard(identity.effectiveUserId, id);
     return c.json({ cardId: id, restored }, 200);
   } catch (err) {
+    // audit-allow: 统一交给 recallErrorResponse 归类（业务错误 → 4xx 带可读原因，
+    //   未知错误已在那里记结构化日志后回 500），此处不再重复记日志
     return toErrorResponse(c, err, { scope: "external.recall" });
   }
 });

@@ -10,6 +10,8 @@ class QuestionsState {
   final String? error;
   final int currentPage;
   final bool hasMore;
+  /// 搜索关键词（空串表示不过滤）。后端 `GET /questions?search=` 已支持。
+  final String search;
 
   const QuestionsState({
     this.items = const [],
@@ -18,6 +20,7 @@ class QuestionsState {
     this.error,
     this.currentPage = 1,
     this.hasMore = true,
+    this.search = '',
   });
 
   QuestionsState copyWith({
@@ -27,6 +30,7 @@ class QuestionsState {
     String? error,
     int? currentPage,
     bool? hasMore,
+    String? search,
   }) {
     return QuestionsState(
       items: items ?? this.items,
@@ -35,6 +39,7 @@ class QuestionsState {
       error: error,
       currentPage: currentPage ?? this.currentPage,
       hasMore: hasMore ?? this.hasMore,
+      search: search ?? this.search,
     );
   }
 }
@@ -70,6 +75,7 @@ class QuestionsController extends Notifier<QuestionsState> {
       final response = await _repository.getQuestions(
         page: state.currentPage,
         limit: _limit,
+        search: state.search.isEmpty ? null : state.search,
       );
 
       final newItems = isRefresh
@@ -89,6 +95,19 @@ class QuestionsController extends Notifier<QuestionsState> {
   }
 
   Future<void> refresh() async {
+    await fetchQuestions(isRefresh: true);
+  }
+
+  /// 按关键词重新检索（清空当前列表并从第 1 页开始）。
+  Future<void> applySearch(String keyword) async {
+    state = state.copyWith(
+      search: keyword.trim(),
+      items: const [],
+      total: 0,
+      currentPage: 1,
+      hasMore: true,
+      error: null,
+    );
     await fetchQuestions(isRefresh: true);
   }
 }

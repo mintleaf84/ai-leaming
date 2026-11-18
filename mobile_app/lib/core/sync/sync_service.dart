@@ -43,6 +43,9 @@ class SyncService {
 
   StreamSubscription<List<ConnectivityResult>>? _connectivitySubscription;
 
+  /// 宽限期跳过的作答需要一个后续触发（否则网络不变时会一直卡着）。
+  Timer? _followUpTimer;
+
   static const String _offlineAnswersPath = '/practice/offline-answers';
   static const String _sessionName = '离线练习';
 
@@ -130,12 +133,14 @@ class SyncService {
       }
     }
 
-    return SyncResult(
+    final result = SyncResult(
       sessions: syncedSessions,
       answers: syncedAnswers,
       duplicated: duplicatedSessions,
       error: errors.isEmpty ? null : errors.join('\n'),
     );
+    await _scheduleFollowUpIfNeeded();
+    return result;
   }
 
   /// 监听网络状态，恢复联网时自动 flush。
@@ -170,6 +175,26 @@ class SyncService {
   void dispose() {
     unawaited(_connectivitySubscription?.cancel());
     _connectivitySubscription = null;
+    _followUpTimer?.cancel();
+    _followUpTimer = null;
+  }
+
+  /// 还有未同步记录时安排一次延迟补交。
+  ///
+  /// 场景：作答刚发生，`pendingSessions()` 因 5 秒宽限期把它跳过；若无后续触发，
+  /// 只要网络状态不变，这条作答会一直等到下次启动才上传。
+  Future<void> _scheduleFollowUpIfNeeded() async {
+    if (_followUpTimer?.isActive ?? false) {
+      return;
+    }
+    final remaining = await _store.pendingCount();
+    if (remaining == 0) {
+      return;
+    }
+    _followUpTimer = Timer(
+      const Duration(seconds: 8),
+      () => unawaited(_flushAndLog()),
+    );
   }
 
   String _describeDioError(DioException error, String localId) {

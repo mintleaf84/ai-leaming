@@ -199,8 +199,14 @@ test.describe("练习核心引擎", () => {
       await firstOption.click({ button: "right" });
       await loggedInPage.waitForTimeout(500);
 
-      // 再次右键取消排除
-      await firstOption.click({ button: "right" });
+      // 排除后选项主体带 aria-disabled，Playwright 的 click 会一直等它可用，
+      // 右键不会再派发 contextmenu。恢复入口是同一容器里的「恢复选项」按钮。
+      const restoreBtn = firstOption
+        .locator("xpath=..")
+        .getByTitle("恢复选项");
+      await expect(restoreBtn).toBeVisible({ timeout: 5000 });
+      await restoreBtn.click();
+      await expect(firstOption).not.toHaveAttribute("aria-disabled", "true");
       await loggedInPage.waitForTimeout(500);
     }
 

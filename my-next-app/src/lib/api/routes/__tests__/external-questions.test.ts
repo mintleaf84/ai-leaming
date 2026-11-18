@@ -202,6 +202,40 @@ describe("题库写接口", () => {
       expect(await countQuestions()).toBe(2);
     });
 
+    it("填空题的内容里带分隔符也不会撞键（指纹用整体 JSON 编码）", async () => {
+      // 旧的 `content\u0001options\u0001answer` 拼接下，这两道不同的题会得到同一个哈希输入：
+      //   q1: content="AAAAA"            answer="B\u0001[]\u0001CCCC"
+      //   q2: content="AAAAA\u0001[]\u0001B" answer="CCCC"
+      // 新编码（整体 JSON 数组）不会。
+      const q1 = await (
+        await request("/questions", {
+          method: "POST",
+          body: singleChoice({
+            type: "fill_blank",
+            options: [],
+            content: "AAAAA",
+            answer: "B\u0001[]\u0001CCCC",
+          }),
+        })
+      ).json();
+      const q2 = await (
+        await request("/questions", {
+          method: "POST",
+          body: singleChoice({
+            type: "fill_blank",
+            options: [],
+            content: "AAAAA\u0001[]\u0001B",
+            answer: "CCCC",
+          }),
+        })
+      ).json();
+
+      expect(q1.duplicate).toBe(false);
+      expect(q2.duplicate).toBe(false);
+      expect(q1.externalId).not.toBe(q2.externalId);
+      expect(await countQuestions()).toBe(2);
+    });
+
     it("预演不落库，但告诉你会不会重复", async () => {
       const dry = await request("/questions?dryRun=true", {
         method: "POST",

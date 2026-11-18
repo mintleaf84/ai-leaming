@@ -2924,6 +2924,16 @@ app.openapi(questionsPatchRoute, async (c) => {
       .returning({ id: drizzleSchema.questions.id });
 
     if (updated.length === 0) {
+      // 0 行有两种原因：题目被删了（404），或行在读到之后被改过（409 乐观锁冲突）。
+      // 混成一种会让"题没了"被当成"稍后重试"
+      const [stillThere] = await drizzleDb
+        .select({ id: drizzleSchema.questions.id })
+        .from(drizzleSchema.questions)
+        .where(eq(drizzleSchema.questions.id, questionId))
+        .limit(1);
+      if (!stillThere) {
+        return c.json({ error: `题目不存在：${questionId}` }, 404);
+      }
       return c.json(
         {
           error: "题目在你读取之后已被他人修改，请重读后再提交",
@@ -2947,6 +2957,28 @@ app.openapi(questionsPatchRoute, async (c) => {
 
     return c.json({ id: questionId, externalId, changed }, 200);
   } catch (err) {
+    // 唯一索引冲突：两个不同题目同时改成同一指纹，先提交的成功、后提交的在这里炸。
+    // 这类冲突是业务语义（409 + 谁占了），不是服务器故障（500）
+    const message = err instanceof Error ? err.message : String(err);
+    if (
+      message.includes("UNIQUE constraint failed") &&
+      message.includes("external_id")
+    ) {
+      const [holder] = await drizzleDb
+        .select({ id: drizzleSchema.questions.id })
+        .from(drizzleSchema.questions)
+        .where(eq(drizzleSchema.questions.external_id, externalId))
+        .limit(1);
+      return c.json(
+        {
+          error: holder
+            ? `改后的内容与题目 ${holder.id} 相同（内容指纹撞键）`
+            : "改后的内容与另一道题相同（内容指纹撞键）",
+          ...(holder ? { conflictingId: holder.id } : {}),
+        },
+        409,
+      );
+    }
     logger.error({ err }, "[External] 改题失败");
     return c.json({ error: "服务器内部错误" }, 500);
   }

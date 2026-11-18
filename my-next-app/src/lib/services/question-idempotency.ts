@@ -71,5 +71,14 @@ export function buildApiExternalId(q: {
   options?: unknown;
   answer?: string | null;
 }): string {
-  return `api:${questionContentDigest(q.content, q.options, q.answer)}`;
+  // 不能复用 `questionContentDigest` 的 `\u0001` 拼接：填空题的题干与答案允许出现该
+  // 控制字符，不同字段组合可能撞出同一个哈希输入。改成整体 JSON 序列化数组：
+  // 每个字段自带边界（引号与转义），不存在"跨字段拼接"的歧义。
+  // 既有导入域（admin:/pdf:）的键格式保持不变，避免存量行失配。
+  const canonical = JSON.stringify([
+    q.content,
+    JSON.stringify(q.options ?? []),
+    q.answer ?? "",
+  ]);
+  return `api:${createHash("sha1").update(canonical).digest("hex").slice(0, DIGEST_LENGTH)}`;
 }

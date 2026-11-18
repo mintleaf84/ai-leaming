@@ -3686,9 +3686,7 @@
                       "type": "string"
                     }
                   },
-                  "required": [
-                    "error"
-                  ],
+                  "required": ["error"],
                   "type": "object"
                 }
               }

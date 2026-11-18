@@ -6,6 +6,7 @@ import { hashPassword } from "@/lib/auth/password";
 import { affectedRows } from "@/lib/db/affected-rows";
 import { buildAdminExternalId } from "@/lib/services/question-idempotency";
 import { indexQuestion } from "@/lib/services/question-vector-index";
+import { withTransaction } from "@/lib/db/executor";
 import { touchesEmbeddingText } from "@/lib/services/question-index-policy";
 
 /**
@@ -359,15 +360,19 @@ export const adminService = {
   async deleteUser(userId: number) {
     if (userId === 1) throw new Error("Cannot delete super admin");
 
-    // 显式清理 PDF 导入任务态：连接没开 `PRAGMA foreign_keys`，声明的
-    // ON DELETE CASCADE 不会触发，OCR 原文与分块文本会作为孤儿行留在库里
-    await drizzleDb
-      .delete(drizzleSchema.pdf_import_tasks)
-      .where(eq(drizzleSchema.pdf_import_tasks.user_id, userId));
+    // 删任务态与删用户必须原子：先删成功、后删失败会让"用户还在但任务没了"，
+    // 且无法回滚（OCR 原文是用户重传的唯一副本）
+    await withTransaction(async (exec) => {
+      // 显式清理 PDF 导入任务态：连接没开 `PRAGMA foreign_keys`，声明的
+      // ON DELETE CASCADE 不会触发，OCR 原文与分块文本会作为孤儿行留在库里
+      await exec
+        .delete(drizzleSchema.pdf_import_tasks)
+        .where(eq(drizzleSchema.pdf_import_tasks.user_id, userId));
 
-    await drizzleDb
-      .delete(drizzleSchema.users)
-      .where(eq(drizzleSchema.users.id, userId));
+      await exec
+        .delete(drizzleSchema.users)
+        .where(eq(drizzleSchema.users.id, userId));
+    });
     return true;
   },
 

@@ -170,8 +170,13 @@ describe("Scheduler Service", () => {
 
       // 验证旧任务被停止
       expect(firstTask.stop).toHaveBeenCalled();
-      // 验证新任务被创建
-      expect(mockCronSchedule).toHaveBeenCalledTimes(2);
+      // 验证新任务被创建：备份 + 过期导入任务清理各一条
+      // 两次初始化 × (备份 + 过期导入任务清理) = 4 次
+      expect(mockCronSchedule).toHaveBeenCalledTimes(4);
+      expect(mockCronSchedule).toHaveBeenCalledWith(
+        "17 * * * *",
+        expect.any(Function),
+      );
     });
 
     it("应打印初始化完成的日志", async () => {

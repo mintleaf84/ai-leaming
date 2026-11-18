@@ -388,12 +388,16 @@ describe("pdfImportService", () => {
       const result = await reloaded.parseSingleChunk(USER_A, taskId, 0);
 
       expect(result.chunkIndex).toBe(0);
+      // 解析必须真的成功：解析器抛错时服务层也会返回 chunkIndex: 0，但会带 warning
+      expect(result.warnings).toEqual([]);
       // 关键断言：传进解析器的正是当初落库的那个分块
-      // （服务层把解析器的返回值原样透传，所以这里看 mock 而不是看 questions 的形状）
       expect(mockParseSingleChunk).toHaveBeenCalledWith("chunk1");
     });
 
     it("写入新任务时顺手清理过期行，但不误删仍有效的任务", async () => {
+      // 先放一条**有效**任务：如果清理逻辑写成"删掉所有旧行再插入"，
+      // 只检查过期行消失 + 新任务存在是发现不了的
+      const survivor = await seedTask();
       const stale = await seedTask();
       // as any：drizzleDb.run 接受 SQL 字面量，这里用原生语句直接改 expires_at
       await dbm.drizzleDb.run(
@@ -407,6 +411,12 @@ describe("pdfImportService", () => {
         `SELECT id FROM pdf_import_tasks WHERE id = '${stale}'` as any,
       )) as unknown[];
       expect(staleRows).toHaveLength(0);
+
+      // 先于本轮写入的那条有效任务也必须还在
+      const survivorRows = (await dbm.drizzleDb.all(
+        `SELECT id FROM pdf_import_tasks WHERE id = '${survivor}'` as any,
+      )) as unknown[];
+      expect(survivorRows).toHaveLength(1);
 
       // 新任务必须还在，且真的可解析（否则"清理"可能把有效行一起删了也照样通过）
       const freshRows = (await dbm.drizzleDb.all(
@@ -432,6 +442,41 @@ describe("pdfImportService", () => {
       await expect(
         pdfImportService.parseSingleChunk(USER_A, taskId, 0),
       ).rejects.toThrow("任务不存在或已过期");
+    });
+  });
+
+  describe("删用户时的任务态清理（真实库）", () => {
+    it("deleteUser 会连带删掉该用户的导入任务行（FK 未启用，cascade 不生效）", async () => {
+      // 造一个专属用户，避免影响其它用例的固定用户
+      const victim = 900_001;
+      await dbm.drizzleDb.run(
+        `INSERT OR IGNORE INTO users (id, username, password_hash) VALUES (${victim}, 'pdf-victim', 'x')` as any,
+      );
+      const parser = await import("@/lib/import/pdf-question-parser");
+      mockPerformPaddleOCR.mockResolvedValue(
+        "1. 教育学研究的基本方法是\nA.观察法",
+      );
+      (parser.splitIntoQuestionChunks as any).mockReturnValue(["chunk1"]);
+      await pdfImportService.ocrAndSplit(
+        victim,
+        Buffer.from("fake-pdf"),
+        "test.pdf",
+        "application/pdf",
+      );
+
+      const adminService = (await import("../admin-service")).adminService;
+      await adminService.deleteUser(victim);
+
+      // as any：原生 SQL 直查，验证真实落盘结果
+      const tasks = (await dbm.drizzleDb.all(
+        `SELECT id FROM pdf_import_tasks WHERE user_id = ${victim}` as any,
+      )) as unknown[];
+      expect(tasks).toHaveLength(0);
+
+      const users = (await dbm.drizzleDb.all(
+        `SELECT id FROM users WHERE id = ${victim}` as any,
+      )) as unknown[];
+      expect(users).toHaveLength(0);
     });
   });
 

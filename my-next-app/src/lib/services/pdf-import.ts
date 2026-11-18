@@ -26,7 +26,7 @@ import { buildPdfExternalId } from "@/lib/services/question-idempotency";
 import { log } from "@/lib/logger";
 import { safeParseJson } from "@/lib/utils/json";
 import { withTransaction } from "@/lib/db/executor";
-import { NotFoundError } from "@/lib/errors/app-error";
+import { AppError, NotFoundError } from "@/lib/errors/app-error";
 
 /**
  * 任务态存 `pdf_import_tasks` 表（不再放进程内存）。
@@ -58,7 +58,18 @@ const CACHE_TTL_MS = 30 * 60 * 1000; // 30 分钟
 interface OwnedTask {
   userId: number;
   chunks: string[];
-  ocrText: string;
+}
+
+/**
+ * 任务落库失败：对外只暴露"请重试"，不携带 SQL 与绑定参数（见 saveTask 的说明）。
+ */
+export class PdfImportStorageError extends AppError {
+  constructor() {
+    super("business", "任务保存失败，请重试", {
+      code: "pdf-import.task.storage-failed",
+    });
+    this.name = "PdfImportStorageError";
+  }
 }
 
 /** 按 taskId + 归属 + 未过期取任务；任一不满足都当成"不存在或已过期" */
@@ -66,8 +77,13 @@ async function requireOwnedTask(
   userId: number,
   taskId: string,
 ): Promise<OwnedTask> {
+  // 只取需要的列：逐块解析会被调用 N 次，把整段 OCR 原文（可能几百 KB）读出来
+  // 只为抛弃它是纯浪费；ocrText 由需要它的调用方另取
   const [row] = await drizzleDb
-    .select()
+    .select({
+      user_id: pdf_import_tasks.user_id,
+      chunks_json: pdf_import_tasks.chunks_json,
+    })
     .from(pdf_import_tasks)
     .where(
       and(
@@ -98,14 +114,17 @@ async function requireOwnedTask(
   const parsed = safeParseJson<unknown>(row.chunks_json, []);
   // safeParseJson 只保证"能解析"，不保证形状：null / 数字 / 混合数组都会在后面
   // 的 chunks.length 上炸。坏行与过期行同样处理——当作不存在，让用户重传
-  const chunks = Array.isArray(parsed)
-    ? parsed.filter((item): item is string => typeof item === "string")
-    : [];
+  // 不能 filter：`["第1块", 42, "第3块"]` 过滤后会变成两块，客户端按索引 1 取到的
+  // 其实是第 3 块（静默错位）。整批不合格就整批作废，让用户重传
+  const chunks =
+    Array.isArray(parsed) && parsed.every((item) => typeof item === "string")
+      ? (parsed as string[])
+      : [];
   if (chunks.length === 0) {
     throw new PdfImportTaskNotFoundError();
   }
 
-  return { userId: row.user_id, chunks, ocrText: row.ocr_text };
+  return { userId: row.user_id, chunks };
 }
 
 /**
@@ -124,20 +143,31 @@ async function saveTask(
 
   // 插入与过期清理放同一事务：否则清理失败会把"已经写成功"的任务报成失败，
   // 调用方拿不到 taskId，而那行数据又确实在库里（评审指出过）
-  await withTransaction(async (exec) => {
-    await exec.insert(pdf_import_tasks).values({
-      id: taskId,
-      user_id: userId,
-      ocr_text: ocrText,
-      chunks_json: JSON.stringify(chunks),
-      expires_at: now + CACHE_TTL_MS,
-      created_at: sql`CURRENT_TIMESTAMP`,
-    });
+  try {
+    await withTransaction(async (exec) => {
+      await exec.insert(pdf_import_tasks).values({
+        id: taskId,
+        user_id: userId,
+        ocr_text: ocrText,
+        chunks_json: JSON.stringify(chunks),
+        expires_at: now + CACHE_TTL_MS,
+        created_at: sql`CURRENT_TIMESTAMP`,
+      });
 
-    await exec
-      .delete(pdf_import_tasks)
-      .where(lt(pdf_import_tasks.expires_at, now));
-  });
+      await exec
+        .delete(pdf_import_tasks)
+        .where(lt(pdf_import_tasks.expires_at, now));
+    });
+  } catch (err) {
+    // Drizzle 0.45 的异常 message 里带 SQL 与**绑定参数**——这张表的参数就是 OCR 原文。
+    // 直接抛出会把它写进日志、并经路由的 `(e as Error).message` 返回给客户端。
+    // 这里只记结构化字段（不含 message），对外抛不带细节的领域错误
+    log.error("[PdfImport] 任务落库失败（已隐去 SQL 与绑定参数）", {
+      userId,
+      errorName: err instanceof Error ? err.name : typeof err,
+    });
+    throw new PdfImportStorageError();
+  }
 
   return taskId;
 }

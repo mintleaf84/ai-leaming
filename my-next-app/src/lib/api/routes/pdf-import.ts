@@ -5,6 +5,7 @@ import {
   PdfImportTaskNotFoundError,
 } from "@/lib/services/pdf-import";
 import { log } from "@/lib/logger";
+import { AppError } from "@/lib/errors/app-error";
 import { toErrorResponse } from "@/lib/api/error-response";
 
 const app = new OpenAPIHono();
@@ -65,8 +66,14 @@ app.openapi(previewDef, async (c) => {
 
     return c.json({ taskId, totalChunks }, 200);
   } catch (e) {
-    log.error("[PdfImportRoute] preview failed:", e);
-    return c.json({ error: `解析失败: ${(e as Error).message}` }, 500);
+    // 只把**领域错误**的文案透给客户端：数据库/驱动异常的 message 里可能带 SQL 与
+    // 绑定参数（这张表的参数就是 OCR 原文），既不能回显也不能写进日志
+    log.error("[PdfImportRoute] preview failed:", {
+      errorName: e instanceof Error ? e.name : typeof e,
+    });
+    const message =
+      e instanceof AppError ? e.publicMessage : "解析失败，请重试";
+    return c.json({ error: message }, 500);
   }
 });
 
@@ -191,8 +198,12 @@ app.openapi(textImportDef, async (c) => {
     );
     return c.json({ taskId, totalChunks }, 200);
   } catch (e) {
-    log.error("[PdfImportRoute] text-import failed:", e);
-    return c.json({ error: `处理失败: ${(e as Error).message}` }, 500);
+    log.error("[PdfImportRoute] text-import failed:", {
+      errorName: e instanceof Error ? e.name : typeof e,
+    });
+    const message =
+      e instanceof AppError ? e.publicMessage : "处理失败，请重试";
+    return c.json({ error: message }, 500);
   }
 });
 

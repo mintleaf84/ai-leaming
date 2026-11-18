@@ -56,12 +56,12 @@ Authorization: Bearer sk_xxxxxxxx
 
 ### 题库（全局共享）
 
-| 方法 | 路径             | 参数                                                | 用途                 |
-| ---- | ---------------- | --------------------------------------------------- | -------------------- |
-| GET  | `/questions`     | `page`=1、`limit`=20、`tag`（可选，按标签精确匹配） | 分页拉题库           |
-| GET  | `/questions/:id` | 路径 `id`                                           | 单题详情；不存在 404 |
-| POST | `/questions`     | `admin` 作用域，JSON 体见 §11               | 建题；内容指纹幂等 |
-| PATCH | `/questions/:id` | `admin` 作用域，部分更新                     | 改题；改后指纹撞别的题返回 409 |
+| 方法  | 路径             | 参数                                                | 用途                           |
+| ----- | ---------------- | --------------------------------------------------- | ------------------------------ |
+| GET   | `/questions`     | `page`=1、`limit`=20、`tag`（可选，按标签精确匹配） | 分页拉题库                     |
+| GET   | `/questions/:id` | 路径 `id`                                           | 单题详情；不存在 404           |
+| POST  | `/questions`     | `admin` 作用域，JSON 体见 §11                       | 建题；内容指纹幂等             |
+| PATCH | `/questions/:id` | `admin` 作用域，部分更新                            | 改题；改后指纹撞别的题返回 409 |
 
 单题字段：`id`(number)、`type`(string|null)、`dimension`(string|null)、`content`、`options`(string[])、
 `answer`(string)、`explanation`(string|null)、`tags`(string[])。

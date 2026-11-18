@@ -1910,6 +1910,385 @@
         "summary": "按标签的掌握度（分数 / 正确率 / 作答次数）"
       }
     },
+    "/api/external/mindmaps": {
+      "get": {
+        "description": "只读接口，需 read 作用域。按更新时间倒序分页。只返回标题级信息，内容用 `GET /mindmaps/{id}`。跨用户数据不可见。",
+        "parameters": [
+          {
+            "description": "返回条数，默认 20，上限 100",
+            "in": "query",
+            "name": "limit",
+            "required": false,
+            "schema": {
+              "default": "20",
+              "description": "返回条数，默认 20，上限 100",
+              "type": "string"
+            }
+          },
+          {
+            "description": "偏移量，默认 0",
+            "in": "query",
+            "name": "offset",
+            "required": false,
+            "schema": {
+              "default": "0",
+              "description": "偏移量，默认 0",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "properties": {
+                    "data": {
+                      "items": {
+                        "properties": {
+                          "id": {
+                            "description": "导图 ID（取内容用 GET /mindmaps/{id}）",
+                            "type": "integer"
+                          },
+                          "title": {
+                            "description": "标题",
+                            "type": "string"
+                          },
+                          "updatedAt": {
+                            "description": "更新时间（SQLite UTC 文本）",
+                            "nullable": true,
+                            "type": "string"
+                          }
+                        },
+                        "required": [
+                          "id",
+                          "title",
+                          "updatedAt"
+                        ],
+                        "type": "object"
+                      },
+                      "type": "array"
+                    },
+                    "meta": {
+                      "properties": {
+                        "limit": {
+                          "description": "本次请求的实际条数上限（已被截到 100 以内）",
+                          "type": "integer"
+                        },
+                        "offset": {
+                          "description": "本次请求的偏移量",
+                          "type": "integer"
+                        },
+                        "total": {
+                          "description": "符合条件的总条数",
+                          "type": "integer"
+                        }
+                      },
+                      "required": [
+                        "limit",
+                        "offset",
+                        "total"
+                      ],
+                      "type": "object"
+                    }
+                  },
+                  "required": [
+                    "data",
+                    "meta"
+                  ],
+                  "type": "object"
+                }
+              }
+            },
+            "description": "思维导图列表"
+          },
+          "401": {
+            "description": "未授权 - 缺少 / 无效 / 已停用的 API Key"
+          },
+          "403": {
+            "description": "已禁止 - 该 API Key 的作用域不足"
+          },
+          "429": {
+            "description": "请求过于频繁 - 超过该 API Key 的限额，按 Retry-After 退避后重试"
+          },
+          "500": {
+            "description": "服务器内部错误"
+          }
+        },
+        "summary": "列出当前用户的思维导图"
+      }
+    },
+    "/api/external/mindmaps/{id}": {
+      "get": {
+        "description": "只读接口，需 read 作用域。`content` 是导图的 Markdown/大纲源文（与界面编辑器同一份字符串）。导图不存在或不属于当前身份一律 404。",
+        "parameters": [
+          {
+            "description": "导图 ID",
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "description": "导图 ID",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "properties": {
+                    "content": {
+                      "description": "导图内容（Markdown 大纲源文）",
+                      "type": "string"
+                    },
+                    "createdAt": {
+                      "nullable": true,
+                      "type": "string"
+                    },
+                    "id": {
+                      "type": "integer"
+                    },
+                    "title": {
+                      "type": "string"
+                    },
+                    "updatedAt": {
+                      "nullable": true,
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "id",
+                    "title",
+                    "content",
+                    "createdAt",
+                    "updatedAt"
+                  ],
+                  "type": "object"
+                }
+              }
+            },
+            "description": "思维导图内容"
+          },
+          "401": {
+            "description": "未授权 - 缺少 / 无效 / 已停用的 API Key"
+          },
+          "403": {
+            "description": "已禁止 - 该 API Key 的作用域不足"
+          },
+          "404": {
+            "description": "导图不存在（或不属于当前身份）"
+          },
+          "429": {
+            "description": "请求过于频繁 - 超过该 API Key 的限额，按 Retry-After 退避后重试"
+          },
+          "500": {
+            "description": "服务器内部错误"
+          }
+        },
+        "summary": "读取一张思维导图的内容"
+      }
+    },
+    "/api/external/notes": {
+      "get": {
+        "description": "只读接口，需 read 作用域。按更新时间倒序分页；传 `q` 时在标题与正文里做 LIKE 搜索。只返回预览（正文前 200 字），全文用 `GET /notes/{id}`。跨用户数据不可见。",
+        "parameters": [
+          {
+            "description": "返回条数，默认 20，上限 100",
+            "in": "query",
+            "name": "limit",
+            "required": false,
+            "schema": {
+              "default": "20",
+              "description": "返回条数，默认 20，上限 100",
+              "type": "string"
+            }
+          },
+          {
+            "description": "偏移量，默认 0",
+            "in": "query",
+            "name": "offset",
+            "required": false,
+            "schema": {
+              "default": "0",
+              "description": "偏移量，默认 0",
+              "type": "string"
+            }
+          },
+          {
+            "description": "标题/正文关键词；不传返回全部（按更新时间倒序）",
+            "in": "query",
+            "name": "q",
+            "required": false,
+            "schema": {
+              "description": "标题/正文关键词；不传返回全部（按更新时间倒序）",
+              "minLength": 1,
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "properties": {
+                    "data": {
+                      "items": {
+                        "properties": {
+                          "id": {
+                            "description": "笔记 ID（取全文用 GET /notes/{id}）",
+                            "type": "integer"
+                          },
+                          "preview": {
+                            "description": "正文前 200 字（列表只给预览，避免刷爆上下文）",
+                            "type": "string"
+                          },
+                          "title": {
+                            "description": "标题",
+                            "type": "string"
+                          },
+                          "updatedAt": {
+                            "description": "更新时间（SQLite UTC 文本）",
+                            "nullable": true,
+                            "type": "string"
+                          }
+                        },
+                        "required": [
+                          "id",
+                          "title",
+                          "preview",
+                          "updatedAt"
+                        ],
+                        "type": "object"
+                      },
+                      "type": "array"
+                    },
+                    "meta": {
+                      "properties": {
+                        "limit": {
+                          "description": "本次请求的实际条数上限（已被截到 100 以内）",
+                          "type": "integer"
+                        },
+                        "offset": {
+                          "description": "本次请求的偏移量",
+                          "type": "integer"
+                        },
+                        "total": {
+                          "description": "符合条件的总条数",
+                          "type": "integer"
+                        }
+                      },
+                      "required": [
+                        "limit",
+                        "offset",
+                        "total"
+                      ],
+                      "type": "object"
+                    }
+                  },
+                  "required": [
+                    "data",
+                    "meta"
+                  ],
+                  "type": "object"
+                }
+              }
+            },
+            "description": "笔记列表"
+          },
+          "400": {
+            "description": "参数校验失败"
+          },
+          "401": {
+            "description": "未授权 - 缺少 / 无效 / 已停用的 API Key"
+          },
+          "403": {
+            "description": "已禁止 - 该 API Key 的作用域不足"
+          },
+          "429": {
+            "description": "请求过于频繁 - 超过该 API Key 的限额，按 Retry-After 退避后重试"
+          },
+          "500": {
+            "description": "服务器内部错误"
+          }
+        },
+        "summary": "列出当前用户的笔记（可关键词搜索）"
+      }
+    },
+    "/api/external/notes/{id}": {
+      "get": {
+        "description": "只读接口，需 read 作用域。返回标题、正文与时间戳；笔记不存在或不属于当前身份一律 404（不泄露 ID 是否存在）。",
+        "parameters": [
+          {
+            "description": "笔记 ID",
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "description": "笔记 ID",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "properties": {
+                    "content": {
+                      "description": "正文（Markdown 源文）",
+                      "type": "string"
+                    },
+                    "createdAt": {
+                      "nullable": true,
+                      "type": "string"
+                    },
+                    "id": {
+                      "type": "integer"
+                    },
+                    "title": {
+                      "type": "string"
+                    },
+                    "updatedAt": {
+                      "nullable": true,
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "id",
+                    "title",
+                    "content",
+                    "createdAt",
+                    "updatedAt"
+                  ],
+                  "type": "object"
+                }
+              }
+            },
+            "description": "笔记全文"
+          },
+          "401": {
+            "description": "未授权 - 缺少 / 无效 / 已停用的 API Key"
+          },
+          "403": {
+            "description": "已禁止 - 该 API Key 的作用域不足"
+          },
+          "404": {
+            "description": "笔记不存在（或不属于当前身份）"
+          },
+          "429": {
+            "description": "请求过于频繁 - 超过该 API Key 的限额，按 Retry-After 退避后重试"
+          },
+          "500": {
+            "description": "服务器内部错误"
+          }
+        },
+        "summary": "读取一篇笔记的全文"
+      }
+    },
     "/api/external/practice/answers": {
       "post": {
         "parameters": [
@@ -4048,6 +4427,139 @@
           }
         },
         "summary": "提交一次回忆作答（判分 + 调度 + 落日志）"
+      }
+    },
+    "/api/external/srs/summary": {
+      "get": {
+        "description": "只读接口，需 read 作用域。给出错题 SRS 的卡片总量、状态分布、未来 7 天每天要复习多少张/约多少分钟。这是「明天该复习什么」的最小数据面——具体题目用 `GET /wrong-book` 取。",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "properties": {
+                    "daily": {
+                      "description": "逐日负载；agent 用来排计划，不要一次渲染给用户",
+                      "items": {
+                        "properties": {
+                          "count": {
+                            "description": "当天待复习张数",
+                            "type": "integer"
+                          },
+                          "date": {
+                            "description": "日期（YYYY-MM-DD）",
+                            "type": "string"
+                          },
+                          "minutes": {
+                            "description": "当天预估分钟数",
+                            "type": "integer"
+                          }
+                        },
+                        "required": [
+                          "date",
+                          "count",
+                          "minutes"
+                        ],
+                        "type": "object"
+                      },
+                      "type": "array"
+                    },
+                    "learnedCount": {
+                      "description": "已进入学习/复习的卡片数",
+                      "type": "integer"
+                    },
+                    "next7Days": {
+                      "description": "未来 7 天的复习负载合计",
+                      "properties": {
+                        "count": {
+                          "description": "未来 7 天待复习总张数",
+                          "type": "integer"
+                        },
+                        "minutes": {
+                          "description": "预估总时长（分钟）",
+                          "type": "integer"
+                        }
+                      },
+                      "required": [
+                        "count",
+                        "minutes"
+                      ],
+                      "type": "object"
+                    },
+                    "retention": {
+                      "description": "保留率统计",
+                      "properties": {
+                        "totalReviews": {
+                          "description": "累计复习次数",
+                          "type": "integer"
+                        },
+                        "trueRetention": {
+                          "description": "真实保留率（0-1）",
+                          "type": "number"
+                        }
+                      },
+                      "required": [
+                        "trueRetention",
+                        "totalReviews"
+                      ],
+                      "type": "object"
+                    },
+                    "stateDistribution": {
+                      "properties": {
+                        "learning": {
+                          "type": "integer"
+                        },
+                        "new": {
+                          "type": "integer"
+                        },
+                        "relearning": {
+                          "type": "integer"
+                        },
+                        "review": {
+                          "type": "integer"
+                        }
+                      },
+                      "required": [
+                        "new",
+                        "learning",
+                        "review",
+                        "relearning"
+                      ],
+                      "type": "object"
+                    },
+                    "totalCards": {
+                      "description": "进入 SRS 的错题卡总数",
+                      "type": "integer"
+                    }
+                  },
+                  "required": [
+                    "totalCards",
+                    "stateDistribution",
+                    "learnedCount",
+                    "retention",
+                    "next7Days",
+                    "daily"
+                  ],
+                  "type": "object"
+                }
+              }
+            },
+            "description": "SRS 概览"
+          },
+          "401": {
+            "description": "未授权 - 缺少 / 无效 / 已停用的 API Key"
+          },
+          "403": {
+            "description": "已禁止 - 该 API Key 的作用域不足"
+          },
+          "429": {
+            "description": "请求过于频繁 - 超过该 API Key 的限额，按 Retry-After 退避后重试"
+          },
+          "500": {
+            "description": "服务器内部错误"
+          }
+        },
+        "summary": "SRS 复习负载概览（含未来 7 天预估）"
       }
     },
     "/api/external/stats": {

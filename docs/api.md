@@ -197,8 +197,10 @@ curl -s -X POST "$BASE/api/external/recall/reviews" \
 `/wrong-book`；要"复习压力有多大"用 `/srs/summary`。
 
 `/srs/reviews` 请求体：`{ questionId, isCorrect, durationMs?, userAnswerLength?, answeredAt? }`，
-返回 `{ dueDate, stability, difficulty, reps, lapses, state, duplicate }`；`answeredAt` 兼作幂等键
-（同一时间重试不二次推进）。归档接口 `POST/DELETE /recall/cards/:cardId/archive` 只影响调用身份。
+返回 `{ questionId, dueDate, stability, difficulty, reps, lapses, state, duplicate }`；
+`answeredAt` 兼作幂等键（同一时间重试不二次推进，读-判-写在同一条事务里串行执行）。
+归档接口 `POST/DELETE /recall/cards/:cardId/archive` 只影响调用身份，取消归档返回
+`restored:false` 表示本来就没归档过（不是错误）。
 
 **为什么补这三个**：此前笔记、导图、SRS 负载只有 Server Action（浏览器界面用），agent 拿不到。
 补完之后「关掉浏览器只靠本文档」可完成的任务从 4 类扩到 7 类（题库、练习、错题、复习、笔记、导图、学情）。
@@ -302,9 +304,12 @@ curl -s -X POST "$BASE/api/external/practice/answers" \
 - **写接口单批上限 500 条**（schema `max(500)`），且题目校验是整批原子的：有一道不存在就全部不写。
 - **`isCorrect` 以调用方为准**：服务端不比对标准答案，传错会直接污染掌握度与错题本。
 - **两套分页口径**（题库 `page/pagination`，其余 `limit/offset/meta`），写通用翻页逻辑时要分开处理。
-- **写接口现状**：`POST /practice/answers`、`POST /recall/reviews`、`POST /recall/decks`、`POST /recall/cards`、
-  `DELETE /recall/decks/:deckKey/cards/:cardKey`。**题库写接口**（增/改/删题）与**`question_srs` 写入**仍未开放：
-  外部数据推动不了错题的复习队列。
+- **写接口现状**（共 8 条）：`POST /practice/answers`、`POST /recall/reviews`、`POST /recall/decks`、
+  `POST /recall/cards`、`DELETE /recall/decks/:deckKey/cards/:cardKey`、
+  `POST /recall/cards/:cardId/archive`、`DELETE /recall/cards/:cardId/archive`、`POST /srs/reviews`。
+  **题库写接口**（增/改/删题）仍未开放：agent 能练题、能推动复习队列，但不能改题库内容。
+- **导入与 SRS 是两条路**：`POST /practice/answers` 只写会话/日志/掌握度，**不触发 SRS**；
+  要让错题进入复习队列必须显式调用 `POST /srs/reviews`。这样"记录作答"与"安排复习"可以分开决定。
 - **回忆卡的归档是「按身份」的**：`POST/DELETE /recall/cards/:cardId/archive` 只改调用身份的队列，
   不动卡片内容与别人的进度。
 - **回忆卡的删除是全局的**：卡片内容共享，DELETE 会连所有人的进度与作答日志一起删掉，且无法撤回。

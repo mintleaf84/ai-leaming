@@ -42,6 +42,8 @@ import {
 } from "@/lib/services/recall-import";
 import { logger } from "@/lib/logger";
 import { knowledgeService } from "@/lib/services/knowledge";
+import { withKeyedLock } from "@/lib/services/keyed-lock";
+import { withTransaction } from "@/lib/db/executor";
 import { mindmapService } from "@/lib/services/mindmap";
 import { srsService, summarizeFutureReviews } from "@/lib/services/srs";
 import { toErrorResponse } from "@/lib/api/error-response";
@@ -2367,7 +2369,10 @@ app.openapi(srsReviewRoute, async (c) => {
   const body = c.req.valid("json");
   const userId = identity.effectiveUserId;
 
-  const answeredAt = body.answeredAt ? new Date(body.answeredAt) : new Date();
+  // 只把 undefined 当成"用当前时间"；空串/非法串必须 400，
+  // 否则 answeredAt:"" 会静默退化成"现在"，把幂等键变成每次都不一样
+  const answeredAt =
+    body.answeredAt === undefined ? new Date() : new Date(body.answeredAt);
   if (Number.isNaN(answeredAt.getTime())) {
     return c.json({ error: "answeredAt 不是合法时间" }, 400);
   }
@@ -2383,47 +2388,64 @@ app.openapi(srsReviewRoute, async (c) => {
     return c.json({ error: `题目不存在：${body.questionId}` }, 404);
   }
 
-  const [existing] = await drizzleDb
-    .select()
-    .from(drizzleSchema.question_srs)
-    .where(
-      and(
-        eq(drizzleSchema.question_srs.user_id, userId),
-        eq(drizzleSchema.question_srs.question_id, body.questionId),
-      ),
-    )
-    .limit(1);
-
-  // 幂等：answeredAt 落到 last_review 上，同一时间重试直接返回当前状态。
-  // 不用客户端 UUID 是为了不新增一张表 —— 复习本来就是"一个时间点一条"。
   const answeredAtIso = answeredAt.toISOString();
-  if (existing?.last_review === answeredAtIso) {
-    return c.json(
-      {
-        questionId: body.questionId,
-        dueDate: existing.due_date,
-        stability: existing.stability,
-        difficulty: existing.difficulty,
-        reps: existing.reps,
-        lapses: existing.lapses,
-        state: existing.state,
-        duplicate: true,
-      },
-      200,
-    );
-  }
 
   try {
-    const item = await srsService.updateQuestionSrs(
-      userId,
-      body.questionId,
-      body.isCorrect,
-      body.durationMs ?? 0,
-      answeredAt,
-      undefined,
-      body.userAnswerLength,
+    // 读-判-写必须在同一事务里，并按 (user, question) 串行：
+    // 否则两笔并发请求会各自读到同一份旧状态、各自 +1，后写的把前者覆盖掉
+    // （评审指出的两条竞态）；阅读速度的采样也走同一个 exec，调度失败时一起回滚
+    const outcome = await withKeyedLock(
+      `srs:${userId}:${body.questionId}`,
+      () =>
+        withTransaction(async (exec) => {
+          const [existing] = await exec
+            .select()
+            .from(drizzleSchema.question_srs)
+            .where(
+              and(
+                eq(drizzleSchema.question_srs.user_id, userId),
+                eq(drizzleSchema.question_srs.question_id, body.questionId),
+              ),
+            )
+            .limit(1);
+
+          // 幂等：answeredAt 落到 last_review 上，同一时间重试直接返回当前状态。
+          // 不用客户端 UUID 是为了不新增一张表 —— 复习本来就是"一个时间点一条"。
+          if (existing?.last_review === answeredAtIso) {
+            return { duplicate: true as const, row: existing };
+          }
+
+          const item = await srsService.updateQuestionSrs(
+            userId,
+            body.questionId,
+            body.isCorrect,
+            body.durationMs ?? 0,
+            answeredAt,
+            undefined,
+            body.userAnswerLength,
+            exec,
+          );
+          return { duplicate: false as const, item };
+        }),
     );
 
+    if (outcome.duplicate) {
+      return c.json(
+        {
+          questionId: body.questionId,
+          dueDate: outcome.row.due_date,
+          stability: outcome.row.stability,
+          difficulty: outcome.row.difficulty,
+          reps: outcome.row.reps,
+          lapses: outcome.row.lapses,
+          state: outcome.row.state,
+          duplicate: true,
+        },
+        200,
+      );
+    }
+
+    const item = outcome.item;
     return c.json(
       {
         questionId: body.questionId,

@@ -157,6 +157,39 @@ describe("写侧闭环：归档与 SRS 推进", () => {
   });
 
   describe("DELETE /recall/cards/{cardId}/archive", () => {
+    it("复习过但没归档的卡片：取消归档返回 restored=false 且不改状态行", async () => {
+      const { cardId, questionId } = await seed();
+      await request("/srs/reviews", {
+        method: "POST",
+        body: { questionId, isCorrect: true },
+      });
+      await request("/recall/reviews", {
+        method: "POST",
+        body: { cardId, typed: "条目一 条目二" },
+      });
+
+      const before = await testDbHelper.db
+        .select()
+        .from(schema.recall_card_states)
+        .where(eq(schema.recall_card_states.card_id, cardId));
+      expect(before).toHaveLength(1);
+      expect(before[0].archived).toBe(0);
+
+      const res = await request(`/recall/cards/${cardId}/archive`, {
+        method: "DELETE",
+      });
+      expect(res.status).toBe(200);
+      // 有状态行 ≠ 已归档：不能把"没归档过"报成"恢复了一条"
+      expect(await res.json()).toEqual({ cardId, restored: false });
+
+      const after = await testDbHelper.db
+        .select()
+        .from(schema.recall_card_states)
+        .where(eq(schema.recall_card_states.card_id, cardId));
+      expect(after).toHaveLength(1);
+      expect(after[0].updated_at).toBe(before[0].updated_at);
+    });
+
     it("取消归档把卡片放回队列；没归档过时 restored=false 而不是报错", async () => {
       const { cardId } = await seed();
 
@@ -267,6 +300,42 @@ describe("写侧闭环：归档与 SRS 推进", () => {
 
       expect(second.duplicate).toBe(false);
       expect(second.reps).toBe(first.reps + 1);
+    });
+
+    it("answeredAt 为空串必须 400，不能静默退化成服务器时间", async () => {
+      const { questionId } = await seed();
+      const res = await request("/srs/reviews", {
+        method: "POST",
+        body: { questionId, isCorrect: true, answeredAt: "" },
+      });
+      expect(res.status).toBe(400);
+    });
+
+    it("同一 answeredAt 的并发请求只推进一次（读-判-写串行）", async () => {
+      const { questionId } = await seed();
+      const payload = {
+        questionId,
+        isCorrect: true,
+        answeredAt: "2026-11-18T09:00:00Z",
+      };
+
+      const [a, b] = await Promise.all([
+        request("/srs/reviews", { method: "POST", body: payload }),
+        request("/srs/reviews", { method: "POST", body: payload }),
+      ]);
+      const first = await a.json();
+      const second = await b.json();
+
+      // 一笔真推进、一笔重放；两者 reps 必须一致（不能各自 +1）
+      const duplicates = [first.duplicate, second.duplicate].filter(Boolean);
+      expect(duplicates).toHaveLength(1);
+      expect(first.reps).toBe(second.reps);
+
+      const [row] = await testDbHelper.db
+        .select()
+        .from(schema.question_srs)
+        .where(eq(schema.question_srs.question_id, questionId));
+      expect(row.reps).toBe(1);
     });
 
     it("题目不存在返回 404；非法 answeredAt 返回 400", async () => {

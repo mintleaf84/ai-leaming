@@ -1,6 +1,6 @@
 import { OpenAPIHono, createRoute, z } from "@hono/zod-openapi";
 import { drizzleDb, drizzleSchema } from "@/lib/db";
-import { and, eq, sql, count } from "drizzle-orm";
+import { and, count, eq, isNull, sql } from "drizzle-orm";
 import { safeParseJson } from "@/lib/utils/json";
 import {
   requireScope,
@@ -322,8 +322,15 @@ const getRoute = createRoute({
 app.openapi(getRoute, async (c) => {
   const { id } = c.req.valid("param");
 
+  // 与 PATCH 共用同一套解析：`parseInt("1e1")` 会得到 1，而 `Number("1e1")` 是 10，
+  // 同一路径两套规则会让"读到的题"和"改到的题"不是同一道（评审指出过）
+  const questionId = parsePositiveInt(id);
+  if (questionId === null) {
+    return c.json({ error: "题目 ID 必须是正整数" }, 400);
+  }
+
   const row = await drizzleDb.query.questions.findFirst({
-    where: eq(drizzleSchema.questions.id, parseInt(id)),
+    where: eq(drizzleSchema.questions.id, questionId),
   });
 
   if (!row) {
@@ -2512,7 +2519,11 @@ const QuestionWriteBodySchema = z
 
 const QuestionWriteResponseSchema = z
   .object({
-    id: z.number().int().describe("题目 ID"),
+    id: z
+      .number()
+      .int()
+      .nullable()
+      .describe("题目 ID；预演且内容不存在时为 null（不要拿它去调查详情接口）"),
     externalId: z.string().describe("内容指纹（幂等键，`api:` 前缀）"),
     duplicate: z
       .boolean()
@@ -2590,8 +2601,9 @@ app.openapi(questionsCreateRoute, async (c) => {
   }
 
   if (dryRun) {
+    // 预演且库里没有这道题：不给假 ID（0 会被调用方当成真实题目去查详情）
     return c.json(
-      { id: 0, externalId, duplicate: false, dryRun: true as const },
+      { id: null, externalId, duplicate: false, dryRun: true as const },
       200,
     );
   }
@@ -2615,13 +2627,29 @@ app.openapi(questionsCreateRoute, async (c) => {
       .returning({ id: drizzleSchema.questions.id });
 
     // 并发窗口：预检没命中、插入时另一次请求先提交 → 唯一索引吞掉插入
+    // 并发窗口：预检没命中、插入时另一次请求先提交 → 唯一索引吞掉插入。
+    // 回查要有限重试：胜出的那行可能在写入与回查之间被删掉，此时既不能返回
+    // id:0 冒充"已存在"，也不能静默改口说"新建成功"
     if (!inserted) {
-      const [raced] = await drizzleDb
-        .select({ id: drizzleSchema.questions.id })
-        .from(drizzleSchema.questions)
-        .where(eq(drizzleSchema.questions.external_id, externalId))
-        .limit(1);
-      return c.json({ id: raced?.id ?? 0, externalId, duplicate: true }, 200);
+      for (let attempt = 0; attempt < 3; attempt += 1) {
+        const [raced] = await drizzleDb
+          .select({ id: drizzleSchema.questions.id })
+          .from(drizzleSchema.questions)
+          .where(eq(drizzleSchema.questions.external_id, externalId))
+          .limit(1);
+        if (raced) {
+          return c.json({ id: raced.id, externalId, duplicate: true }, 200);
+        }
+        await new Promise((resolve) => setTimeout(resolve, 10 * (attempt + 1)));
+      }
+      logger.warn(
+        { externalId },
+        "[External] 建题冲突后读不到既有行（可能已被删除），提示重试",
+      );
+      return c.json(
+        { error: "建题冲突后未能读到既有题目，请重试", externalId },
+        409,
+      );
     }
 
     // 建完立刻重建向量（不 await）：检索索引落后于题库会让 agent 检索不到新题
@@ -2695,7 +2723,26 @@ const questionsPatchRoute = createRoute({
     401: { description: "未授权 - 缺少 / 无效 / 已停用的 API Key" },
     403: { description: "已禁止 - 该 API Key 的作用域不足（需要 admin）" },
     404: { description: "题目不存在" },
-    409: { description: "改后的内容与另一道题相同（指纹撞键）" },
+    409: {
+      description:
+        "两种冲突：改后内容与另一道题相同（带 conflictingId），或题目在你读取后被他人修改（code=question.patch.conflict，重读后重试）",
+      content: {
+        "application/json": {
+          schema: z.object({
+            error: z.string(),
+            conflictingId: z
+              .number()
+              .int()
+              .optional()
+              .describe("撞键时指向的另一道题的 ID"),
+            code: z
+              .string()
+              .optional()
+              .describe("乐观锁冲突时固定为 question.patch.conflict"),
+          }),
+        },
+      },
+    },
     429: RateLimitedResponse,
     500: { description: "服务器内部错误" },
   },
@@ -2721,13 +2768,26 @@ app.openapi(questionsPatchRoute, async (c) => {
     return c.json({ error: `题目不存在：${questionId}` }, 404);
   }
 
-  // 合并后再整体校验：部分更新同样不能产出"单选却只有一个选项"这类坏行
+  // 先记下"读到的版本"，写入时用它做乐观并发控制（见下方 where 条件）：
+  // 两个请求各自读到同一版本时，后提交的那个会因为行已变而更新不到行，
+  // 从而不会把前一次的编辑覆盖回旧值
+  const snapshot = {
+    content: existing.content,
+    options: existing.options,
+    answer: existing.answer,
+  };
+
+  const currentOptions = safeParseJson<string[]>(existing.options, []);
+  const currentTags = safeParseJson<string[]>(existing.tags, []);
+
+  // 合并只用于**校验**：部分更新同样不能产出"单选却只有一个选项"这类坏行。
+  // 注意不能把 merged 整体写回库 —— 那会把未提交字段的默认值（type/dimension）落盘
   const merged = {
     content: patch.content ?? existing.content,
-    options: patch.options ?? safeParseJson<string[]>(existing.options, []),
+    options: patch.options ?? currentOptions,
     answer: patch.answer ?? existing.answer ?? "",
     explanation: patch.explanation ?? existing.explanation ?? "",
-    tags: patch.tags ?? safeParseJson<string[]>(existing.tags, []),
+    tags: patch.tags ?? currentTags,
     dimension: patch.dimension ?? existing.dimension ?? "knowledge",
     type:
       patch.type ??
@@ -2743,29 +2803,87 @@ app.openapi(questionsPatchRoute, async (c) => {
     );
   }
   const data = parsed.data;
-  const externalId = buildApiExternalId({
-    content: data.content,
-    options: data.options,
-    answer: data.answer,
-  });
 
-  // 指纹撞到**别的**行：说明这次修改会让两道题变成同一道，交给人决定怎么处理
-  const [clash] = await drizzleDb
-    .select({ id: drizzleSchema.questions.id })
-    .from(drizzleSchema.questions)
-    .where(eq(drizzleSchema.questions.external_id, externalId))
-    .limit(1);
-  if (clash && clash.id !== questionId) {
-    return c.json(
-      {
-        error: `改后的内容与题目 ${clash.id} 相同（内容指纹撞键）`,
-        conflictingId: clash.id,
-      },
-      409,
-    );
+  // 只有客户端真的提交了、且值确实不同才算"变更"：
+  // 原样回传当前值不该触发向量重建，也不该出现在回执里
+  const nextValues: Record<string, unknown> = {};
+  if (patch.content !== undefined && patch.content !== existing.content) {
+    nextValues.content = data.content;
+  }
+  if (
+    patch.options !== undefined &&
+    JSON.stringify(patch.options) !== JSON.stringify(currentOptions)
+  ) {
+    nextValues.options = JSON.stringify(data.options);
+  }
+  if (patch.answer !== undefined && patch.answer !== existing.answer) {
+    nextValues.answer = data.answer;
+  }
+  if (
+    patch.explanation !== undefined &&
+    patch.explanation !== existing.explanation
+  ) {
+    nextValues.explanation = data.explanation;
+  }
+  if (
+    patch.tags !== undefined &&
+    JSON.stringify(patch.tags) !== JSON.stringify(currentTags)
+  ) {
+    nextValues.tags = JSON.stringify(data.tags);
+  }
+  if (patch.dimension !== undefined && patch.dimension !== existing.dimension) {
+    nextValues.dimension = data.dimension as
+      "knowledge" | "understanding" | "application";
+  }
+  if (patch.type !== undefined && patch.type !== existing.type) {
+    nextValues.type = data.type;
   }
 
-  const changed = Object.keys(patch);
+  const changed = Object.keys(nextValues);
+
+  // 指纹只在"内容三要素"真的变了时重算，且**只改自己这一域的键**：
+  // 粉笔导入的行用上游题目 ID 当 external_id，被改成 api: 指纹后，
+  // 下一次同 sourceKey 的导入就匹配不到它，会插出重复题（评审指出过）
+  const contentTouched =
+    nextValues.content !== undefined ||
+    nextValues.options !== undefined ||
+    nextValues.answer !== undefined;
+  const ownsExternalId =
+    existing.external_id === null ||
+    existing.external_id === undefined ||
+    existing.external_id.startsWith("api:");
+  const externalId =
+    contentTouched && ownsExternalId
+      ? buildApiExternalId({
+          content: data.content,
+          options: data.options,
+          answer: data.answer,
+        })
+      : (existing.external_id ??
+        buildApiExternalId({
+          content: data.content,
+          options: data.options,
+          answer: data.answer,
+        }));
+
+  if (externalId !== existing.external_id) {
+    // 指纹撞到**别的**行：说明这次修改会让两道题变成同一道，交给人决定怎么处理
+    const [clash] = await drizzleDb
+      .select({ id: drizzleSchema.questions.id })
+      .from(drizzleSchema.questions)
+      .where(eq(drizzleSchema.questions.external_id, externalId))
+      .limit(1);
+    if (clash && clash.id !== questionId) {
+      return c.json(
+        {
+          error: `改后的内容与题目 ${clash.id} 相同（内容指纹撞键）`,
+          conflictingId: clash.id,
+        },
+        409,
+      );
+    }
+  }
+
   if (dryRun) {
     return c.json(
       { id: questionId, externalId, changed, dryRun: true as const },
@@ -2773,24 +2891,48 @@ app.openapi(questionsPatchRoute, async (c) => {
     );
   }
 
+  if (changed.length === 0) {
+    // 提交了但没有实际差异：不写库、不重建向量，如实回执
+    return c.json({ id: questionId, externalId, changed }, 200);
+  }
+
   try {
-    await drizzleDb
+    // 乐观并发控制：只更新"读到的那一版"；行已被别人改过就更新不到，
+    // 由调用方重读后重试，而不是把别人的编辑覆盖回旧值
+    const updated = await drizzleDb
       .update(drizzleSchema.questions)
       .set({
-        content: data.content,
-        options: JSON.stringify(data.options),
-        answer: data.answer,
-        explanation: data.explanation,
-        tags: JSON.stringify(data.tags),
-        dimension: data.dimension as
-          "knowledge" | "understanding" | "application",
-        type: data.type,
-        external_id: externalId,
+        ...nextValues,
+        ...(externalId !== existing.external_id
+          ? { external_id: externalId }
+          : {}),
       })
-      .where(eq(drizzleSchema.questions.id, questionId));
+      .where(
+        and(
+          eq(drizzleSchema.questions.id, questionId),
+          eq(drizzleSchema.questions.content, snapshot.content),
+          // options/answer 可为 NULL：`eq(col, null)` 在 SQL 里永远不成立，
+          // 必须按 isNull 比较，否则可空列会让乐观锁恒失败
+          snapshot.options === null
+            ? isNull(drizzleSchema.questions.options)
+            : eq(drizzleSchema.questions.options, snapshot.options),
+          snapshot.answer === null
+            ? isNull(drizzleSchema.questions.answer)
+            : eq(drizzleSchema.questions.answer, snapshot.answer),
+        ),
+      )
+      .returning({ id: drizzleSchema.questions.id });
 
-    // changed 是字段名数组；touchesEmbeddingText 接受"字段名到值的映射"，
-    // 这里按数组构造一个只有键的映射即可（它只判断字段是否存在）
+    if (updated.length === 0) {
+      return c.json(
+        {
+          error: "题目在你读取之后已被他人修改，请重读后再提交",
+          code: "question.patch.conflict",
+        },
+        409,
+      );
+    }
+
     if (
       touchesEmbeddingText(
         Object.fromEntries(changed.map((key) => [key, true])),

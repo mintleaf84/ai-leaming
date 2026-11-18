@@ -404,9 +404,16 @@ AI_LEAMING_BASE_URL=https://your-host AI_LEAMING_API_KEY=sk_xxx node dist/index.
 - `answer`：单选传标号（`A`）或选项原文；多选传 JSON 数组字符串（`"[\"A\",\"B\"]"`）；
   判断题 `A`/`B` 且 `options` 必须两个；填空题 `options` 可为空、`answer` 为自由文本。
 - 校验口径与后台导入**完全一致**（同一个 `QuestionSchema`），不合法返回 `400` + `issues`。
+- **唯一的刻意差异**：`dimension` 只接受 `knowledge` / `understanding` / `application` 三档
+  （后台的 schema 允许任意字符串）。外部 agent 拿不到你们内部的维度命名，放开只会写出
+  统计口径之外的脏值；真要扩维度，先扩枚举再放开。
+- `400` 有两种形状：处理器内的语义校验是 `{ error, issues: string[] }`；路由层的类型校验
+  （字段类型不对）沿用框架默认响应。按 `issues` 判定的客户端请以第一种为准。
 - **幂等键 = 内容指纹** `api:` + (题干 + 选项 + 答案)。同一份内容重复提交返回既有 `id` 且
   `duplicate: true`，不新增行；改了选项顺序/答案/题干就是另一道题。
-- 预演：`?dryRun=true` 返回 `{ duplicate, externalId, dryRun: true }`，库内零变更。
+- 预演：`?dryRun=true` 返回 `{ duplicate, externalId, dryRun: true }`，**题库业务数据零变更**
+  （审计日志与 `api_keys.last_used_at` 照常写入，与 §9 的口径一致）。
+  未命中时 `id` 为 `null`（不是 0），不要拿它去调查详情接口。
 
 响应：`{ id, externalId, duplicate }`。新建成功后会异步重建该题的检索向量（不阻塞响应）。
 

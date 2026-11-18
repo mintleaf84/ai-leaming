@@ -190,7 +190,8 @@
             "type": "string"
           },
           "id": {
-            "description": "题目 ID",
+            "description": "题目 ID；预演且内容不存在时为 null（不要拿它去调查详情接口）",
+            "nullable": true,
             "type": "integer"
           }
         },
@@ -3669,7 +3670,30 @@
             "description": "题目不存在"
           },
           "409": {
-            "description": "改后的内容与另一道题相同（指纹撞键）"
+            "content": {
+              "application/json": {
+                "schema": {
+                  "properties": {
+                    "code": {
+                      "description": "乐观锁冲突时固定为 question.patch.conflict",
+                      "type": "string"
+                    },
+                    "conflictingId": {
+                      "description": "撞键时指向的另一道题的 ID",
+                      "type": "integer"
+                    },
+                    "error": {
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "error"
+                  ],
+                  "type": "object"
+                }
+              }
+            },
+            "description": "两种冲突：改后内容与另一道题相同（带 conflictingId），或题目在你读取后被他人修改（code=question.patch.conflict，重读后重试）"
           },
           "429": {
             "content": {

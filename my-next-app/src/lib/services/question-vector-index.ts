@@ -164,6 +164,27 @@ async function indexRow(
     return "skipped";
   }
 
+  // 写入前再核对一次题面：embedding 是一次网络调用（可能几百毫秒到几秒），
+  // 期间题目可能已被编辑。若直接写入，旧题面的向量会覆盖新题面的（后到的写入胜），
+  // 检索就会按已不存在的题干召回。
+  //
+  // 这里做的是"写前校验"，仍有极小的检查-写入窗口；彻底消除需要把校验与 upsert
+  // 放进同一个数据库事务（向量表与题目表在同一个 SQLite 文件里，具备条件，
+  // 但需要 vecStore 暴露事务内写入入口）。当前窗口远小于 embedding 调用时长。
+  const latest = await findQuestion(row.id);
+  if (
+    !latest ||
+    latest.content !== row.content ||
+    (latest.options ?? null) !== (row.options ?? null) ||
+    (latest.answer ?? null) !== (row.answer ?? null)
+  ) {
+    logger.warn(
+      { questionId: row.id },
+      "[QuestionVectorIndex] embedding 期间题面已变更，丢弃本次向量（避免旧向量覆盖新题面）",
+    );
+    return "skipped";
+  }
+
   vecStore.upsertQuestionVector(row.id, vector);
   return "indexed";
 }

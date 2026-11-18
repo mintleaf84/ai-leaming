@@ -266,9 +266,10 @@ describe("外部 API：写路由必须声明 write 作用域", () => {
       const routePath = /path:\s*"([^"]+)"/.exec(block)?.[1];
       if (!method || !routePath) continue;
       if (!["post", "delete", "patch", "put"].includes(method)) continue;
-      const hasWrite = block.includes('requireScopeMiddleware("write")');
-      const hasAdmin = block.includes('requireScopeMiddleware("admin")');
-      if (!hasWrite && !hasAdmin) {
+      // 只看 `middleware: [...]` 这一段：注释里出现 admin/write 字样不算数
+      // （否则把 PATCH 降级成 write、只在注释里留一句 admin 也能骗过门禁）
+      const middleware = /middleware:\s*\[([^\]]*)\]/.exec(block)?.[1] ?? "";
+      if (!/requireScopeMiddleware\("(write|admin)"\)/.test(middleware)) {
         missing.push(`${method.toUpperCase()} ${routePath}`);
       }
     }
@@ -284,7 +285,8 @@ describe("外部 API：写路由必须声明 write 作用域", () => {
       const method = /method:\s*"([a-z]+)"/.exec(block)?.[1];
       const routePath = /path:\s*"([^"]+)"/.exec(block)?.[1];
       if (!method || !routePath) continue;
-      if (block.includes('requireScopeMiddleware("admin")')) {
+      const middleware = /middleware:\s*\[([^\]]*)\]/.exec(block)?.[1] ?? "";
+      if (/requireScopeMiddleware\("admin"\)/.test(middleware)) {
         adminOnly.push(`${method.toUpperCase()} ${routePath}`);
       }
     }

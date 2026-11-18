@@ -125,6 +125,27 @@ describe("题库写接口", () => {
       expect(await countQuestions()).toBe(0);
     });
 
+    it("PATCH 同样是 403：低权限 key 改不动题，且数据不变", async () => {
+      const created = await (
+        await request("/questions", { method: "POST", body: singleChoice() })
+      ).json();
+
+      for (const key of [WRITE_KEY, READ_KEY]) {
+        const res = await request(`/questions/${created.id}`, {
+          method: "PATCH",
+          body: { content: "低权限 key 试图修改的题干内容。" },
+          key,
+        });
+        expect(res.status).toBe(403);
+      }
+
+      const [row] = await testDbHelper.db
+        .select()
+        .from(schema.questions)
+        .where(eq(schema.questions.id, created.id));
+      expect(row.content).toBe("下列哪项属于教育法律？");
+    });
+
     it("admin key 才能建题", async () => {
       const res = await request("/questions", {
         method: "POST",
@@ -156,7 +177,12 @@ describe("题库写接口", () => {
     });
 
     it("改了选项顺序就是另一道题（指纹包含选项顺序）", async () => {
-      await request("/questions", { method: "POST", body: singleChoice() });
+      // 答案用**选项原文**且两次完全相同：若指纹只算「题干+答案」，这条会失败，
+      // 才能真正证明选项顺序参与了指纹
+      await request("/questions", {
+        method: "POST",
+        body: singleChoice({ answer: "《教育法》" }),
+      });
       const reordered = await (
         await request("/questions", {
           method: "POST",
@@ -167,7 +193,7 @@ describe("题库写接口", () => {
               "《课程标准》",
               "《教学计划》",
             ],
-            answer: "B",
+            answer: "《教育法》",
           }),
         })
       ).json();
@@ -293,12 +319,14 @@ describe("题库写接口", () => {
         await request("/questions", { method: "POST", body: singleChoice() })
       ).json();
 
-      const changed = await (
-        await request(`/questions/${created.id}`, {
-          method: "PATCH",
-          body: { content: "下列哪项**不属于**教育法律？" },
-        })
-      ).json();
+      const patched = await request(`/questions/${created.id}`, {
+        method: "PATCH",
+        body: { content: "下列哪项**不属于**教育法律？" },
+      });
+      // 先确认 PATCH 真的成功：否则 undefined !== 旧指纹 也会让下面的断言通过
+      expect(patched.status).toBe(200);
+      const changed = await patched.json();
+      expect(typeof changed.externalId).toBe("string");
       expect(changed.externalId).not.toBe(created.externalId);
 
       const invalid = await request(`/questions/${created.id}`, {
@@ -335,6 +363,79 @@ describe("题库写接口", () => {
       expect(res.status).toBe(409);
       const body = await res.json();
       expect(body.conflictingId).toBe(first.id);
+    });
+
+    it("只提交未变的字段时不产生写入，changed 为空", async () => {
+      const created = await (
+        await request("/questions", { method: "POST", body: singleChoice() })
+      ).json();
+
+      const res = await request(`/questions/${created.id}`, {
+        method: "PATCH",
+        // 值与原记录一致：既不该报变更，也不该触发向量重建
+        body: { content: "下列哪项属于教育法律？" },
+      });
+      expect(res.status).toBe(200);
+      expect(await res.json()).toMatchObject({ changed: [] });
+    });
+
+    it("只改解析不会把 type/dimension 的默认值写回库", async () => {
+      // 老数据可能 type/dimension 为 NULL；只改解析不应把它们"顺手"填成 single/knowledge
+      const [seeded] = await testDbHelper.db
+        .insert(schema.questions)
+        .values({
+          content: "一道历史遗留的老题，没有题型与维度。",
+          options: JSON.stringify(["甲", "乙"]),
+          answer: "A",
+          explanation: "原始解析。",
+          tags: JSON.stringify(["历史"]),
+          type: null,
+          dimension: null,
+        })
+        .returning({ id: schema.questions.id });
+
+      const res = await request(`/questions/${seeded.id}`, {
+        method: "PATCH",
+        body: { explanation: "只改了这一行解析内容。" },
+      });
+      expect(res.status).toBe(200);
+
+      const [row] = await testDbHelper.db
+        .select()
+        .from(schema.questions)
+        .where(eq(schema.questions.id, seeded.id));
+      expect(row.type).toBeNull();
+      expect(row.dimension).toBeNull();
+      expect(row.explanation).toBe("只改了这一行解析内容。");
+    });
+
+    it("不覆盖导入题目的上游来源键（粉笔 sourceKey 仍可匹配）", async () => {
+      const [seeded] = await testDbHelper.db
+        .insert(schema.questions)
+        .values({
+          content: "粉笔导入的一道题。",
+          options: JSON.stringify(["甲", "乙"]),
+          answer: "A",
+          explanation: "原始解析。",
+          tags: JSON.stringify(["教育学"]),
+          type: "single",
+          dimension: "knowledge",
+          // 上游题目 ID：粉笔导入用它做 upsert，被改成 api: 指纹会插出重复题
+          external_id: "fenbi:987654",
+        })
+        .returning({ id: schema.questions.id });
+
+      const res = await request(`/questions/${seeded.id}`, {
+        method: "PATCH",
+        body: { content: "粉笔导入的一道题（题干被修正过）。" },
+      });
+      expect(res.status).toBe(200);
+
+      const [row] = await testDbHelper.db
+        .select()
+        .from(schema.questions)
+        .where(eq(schema.questions.id, seeded.id));
+      expect(row.external_id).toBe("fenbi:987654");
     });
 
     it("预演不落库；不存在返回 404；非法 id 返回 400", async () => {

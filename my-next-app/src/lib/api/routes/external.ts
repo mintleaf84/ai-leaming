@@ -42,6 +42,10 @@ import {
 } from "@/lib/services/recall-import";
 import { logger } from "@/lib/logger";
 import { knowledgeService } from "@/lib/services/knowledge";
+import { QuestionSchema } from "@/lib/schemas";
+import { buildApiExternalId } from "@/lib/services/question-idempotency";
+import { indexQuestion } from "@/lib/services/question-vector-index";
+import { touchesEmbeddingText } from "@/lib/services/question-index-policy";
 import { withKeyedLock } from "@/lib/services/keyed-lock";
 import { withTransaction } from "@/lib/db/executor";
 import { mindmapService } from "@/lib/services/mindmap";
@@ -152,6 +156,14 @@ const DryRunQuerySchema = z.object({
  */
 function wantsDryRun(query: { dryRun?: "true" | "false" }): boolean {
   return query.dryRun === "true";
+}
+
+/** zod 的 issue → 稳定的字符串数组（契约里 issues 是 string[]，不是内部结构） */
+function formatIssues(error: z.ZodError): string[] {
+  return error.issues.map((issue) => {
+    const path = issue.path.map(String).join(".");
+    return `${path || "body"}: ${issue.message}`;
+  });
 }
 
 /**
@@ -2461,6 +2473,339 @@ app.openapi(srsReviewRoute, async (c) => {
     );
   } catch (err) {
     logger.error({ err }, "[External] 推进 SRS 失败");
+    return c.json({ error: "服务器内部错误" }, 500);
+  }
+});
+
+// ==================== 题库写接口（admin 作用域） ====================
+// 为什么是 admin 而不是 write：题库是**全局共享资产**，任何 write key 都能改它
+// 等于把所有人的练习内容交给任意 agent。建/改题按 admin 作用域放行，签发时人工决定。
+//
+// 幂等键：内容指纹 `api:` + (题干 + 选项 + 答案)。同一份内容重复建题不新增行；
+// 改题后指纹重算，与既有行撞键返回 409 而不是静默覆盖。
+
+const QuestionWriteBodySchema = z
+  .object({
+    content: z.string().min(5).describe("题干，至少 5 个字符"),
+    options: z
+      .array(z.string().min(1))
+      .max(10)
+      .default([])
+      .describe("选项文本；判断题固定两个、填空题可为空"),
+    answer: z
+      .string()
+      .min(1)
+      .describe(
+        '正确答案：单选传标号（A）或多选传 JSON 数组字符串（["A","B"]），判断题 A/B，填空题为自由文本',
+      ),
+    explanation: z.string().min(5).describe("解析，至少 5 个字符"),
+    tags: z.array(z.string().min(1)).min(1).describe("知识点标签，至少 1 个"),
+    dimension: z
+      .enum(["knowledge", "understanding", "application"])
+      .describe("能力维度"),
+    type: z
+      .enum(["single", "multi", "truefalse", "fill_blank"])
+      .default("single")
+      .describe("题型，默认 single"),
+  })
+  .openapi("ExternalQuestionWriteBody");
+
+const QuestionWriteResponseSchema = z
+  .object({
+    id: z.number().int().describe("题目 ID"),
+    externalId: z.string().describe("内容指纹（幂等键，`api:` 前缀）"),
+    duplicate: z
+      .boolean()
+      .describe("true = 同内容已存在，本次未新增（返回既有 id）"),
+    dryRun: z.boolean().optional().openapi({
+      description: "仅预演时出现且恒为 true：业务数据没有变更",
+    }),
+  })
+  .openapi("ExternalQuestionWriteResponse");
+
+const questionsCreateRoute = createRoute({
+  method: "post",
+  path: "/questions",
+  middleware: [requireScopeMiddleware("admin")] as const,
+  summary: "新建一道题（内容指纹幂等，需 admin 作用域）",
+  description:
+    "写接口，**需 admin 作用域**：题库是全局共享资产，write key 不能改。幂等键是内容指纹 `api:`+（题干+选项+答案）——同一份内容重复提交返回既有 `id` 且 `duplicate: true`，不会新增行。校验口径与后台导入完全一致（`QuestionSchema`）。预演传 `?dryRun=true`。",
+  request: {
+    query: DryRunQuerySchema,
+    body: {
+      required: true,
+      content: { "application/json": { schema: QuestionWriteBodySchema } },
+    },
+  },
+  responses: {
+    200: {
+      content: {
+        "application/json": { schema: QuestionWriteResponseSchema },
+      },
+      description: "已写入（或幂等命中既有题目）",
+    },
+    400: { description: "内容校验失败（带 issues）" },
+    401: { description: "未授权 - 缺少 / 无效 / 已停用的 API Key" },
+    403: { description: "已禁止 - 该 API Key 的作用域不足（需要 admin）" },
+    429: RateLimitedResponse,
+    500: { description: "服务器内部错误" },
+  },
+});
+
+app.openapi(questionsCreateRoute, async (c) => {
+  const body = c.req.valid("json");
+  const dryRun = wantsDryRun(c.req.valid("query"));
+
+  // 校验与后台导入共用同一份 schema：两处规则一旦分叉，同一道题会"后台能导、API 不能建"
+  const parsed = QuestionSchema.safeParse(body);
+  if (!parsed.success) {
+    return c.json(
+      { error: "内容校验失败", issues: formatIssues(parsed.error) },
+      400,
+    );
+  }
+  const data = parsed.data;
+  const externalId = buildApiExternalId({
+    content: data.content,
+    options: data.options,
+    answer: data.answer,
+  });
+
+  const [existing] = await drizzleDb
+    .select({ id: drizzleSchema.questions.id })
+    .from(drizzleSchema.questions)
+    .where(eq(drizzleSchema.questions.external_id, externalId))
+    .limit(1);
+
+  if (existing) {
+    return c.json(
+      {
+        id: existing.id,
+        externalId,
+        duplicate: true,
+        ...(dryRun ? { dryRun: true as const } : {}),
+      },
+      200,
+    );
+  }
+
+  if (dryRun) {
+    return c.json(
+      { id: 0, externalId, duplicate: false, dryRun: true as const },
+      200,
+    );
+  }
+
+  try {
+    const [inserted] = await drizzleDb
+      .insert(drizzleSchema.questions)
+      .values({
+        external_id: externalId,
+        content: data.content,
+        options: JSON.stringify(data.options),
+        answer: data.answer,
+        explanation: data.explanation,
+        tags: JSON.stringify(data.tags),
+        dimension: data.dimension as
+          "knowledge" | "understanding" | "application",
+        type: data.type,
+        created_at: sql`CURRENT_TIMESTAMP`,
+      })
+      .onConflictDoNothing({ target: drizzleSchema.questions.external_id })
+      .returning({ id: drizzleSchema.questions.id });
+
+    // 并发窗口：预检没命中、插入时另一次请求先提交 → 唯一索引吞掉插入
+    if (!inserted) {
+      const [raced] = await drizzleDb
+        .select({ id: drizzleSchema.questions.id })
+        .from(drizzleSchema.questions)
+        .where(eq(drizzleSchema.questions.external_id, externalId))
+        .limit(1);
+      return c.json({ id: raced?.id ?? 0, externalId, duplicate: true }, 200);
+    }
+
+    // 建完立刻重建向量（不 await）：检索索引落后于题库会让 agent 检索不到新题
+    void indexQuestion(inserted.id).catch((err: unknown) => {
+      logger.warn(
+        { err, questionId: inserted.id },
+        "[External] 新题向量索引失败",
+      );
+    });
+
+    return c.json({ id: inserted.id, externalId, duplicate: false }, 200);
+  } catch (err) {
+    logger.error({ err }, "[External] 建题失败");
+    return c.json({ error: "服务器内部错误" }, 500);
+  }
+});
+
+// ---------- PATCH /questions/{id} ----------
+
+// 不能用 QuestionWriteBodySchema.partial()：zod 的 `.default()` 在 partial 后仍会
+// 补值，导致"只改解析"的请求被悄悄带上 type:"single"、options:[] 等默认值，
+// 合并后把原有选项清空（校验直接 400），changed 也会谎报一堆没改的字段。
+// 因此这里手写一份"无默认值、全可选"的 schema，真正的合法性交给合并后的 QuestionSchema。
+const QuestionPatchBodySchema = z
+  .object({
+    content: z.string().min(5).optional(),
+    options: z.array(z.string().min(1)).max(10).optional(),
+    answer: z.string().min(1).optional(),
+    explanation: z.string().min(5).optional(),
+    tags: z.array(z.string().min(1)).min(1).optional(),
+    dimension: z.enum(["knowledge", "understanding", "application"]).optional(),
+    type: z.enum(["single", "multi", "truefalse", "fill_blank"]).optional(),
+  })
+  .refine((value) => Object.keys(value).length > 0, {
+    message: "至少要改一个字段",
+  })
+  .openapi("ExternalQuestionPatchBody");
+
+const questionsPatchRoute = createRoute({
+  method: "patch",
+  path: "/questions/{id}",
+  middleware: [requireScopeMiddleware("admin")] as const,
+  summary: "修改一道题（需 admin 作用域）",
+  description:
+    "写接口，**需 admin 作用域**。部分更新：只改传了的字段，改完仍要整体满足 `QuestionSchema`（否则 400 带 issues）。改题干/选项/答案会重算内容指纹；若新指纹与**另一道题**撞键返回 409（不静默合并）。预演传 `?dryRun=true`，返回将会变更的字段名。",
+  request: {
+    params: z.object({ id: z.string().describe("题目 ID") }),
+    query: DryRunQuerySchema,
+    body: {
+      required: true,
+      content: { "application/json": { schema: QuestionPatchBodySchema } },
+    },
+  },
+  responses: {
+    200: {
+      content: {
+        "application/json": {
+          schema: z.object({
+            id: z.number().int(),
+            externalId: z.string().describe("更新后的内容指纹"),
+            changed: z.array(z.string()).describe("本次实际变更的字段名"),
+            dryRun: z.boolean().optional().openapi({
+              description: "仅预演时出现且恒为 true：业务数据没有变更",
+            }),
+          }),
+        },
+      },
+      description: "已更新（或预演结果）",
+    },
+    400: { description: "合并后校验失败（带 issues）/ ID 非正整数" },
+    401: { description: "未授权 - 缺少 / 无效 / 已停用的 API Key" },
+    403: { description: "已禁止 - 该 API Key 的作用域不足（需要 admin）" },
+    404: { description: "题目不存在" },
+    409: { description: "改后的内容与另一道题相同（指纹撞键）" },
+    429: RateLimitedResponse,
+    500: { description: "服务器内部错误" },
+  },
+});
+
+app.openapi(questionsPatchRoute, async (c) => {
+  const { id } = c.req.valid("param");
+  const patch = c.req.valid("json");
+  const dryRun = wantsDryRun(c.req.valid("query"));
+
+  const questionId = parsePositiveInt(id);
+  if (questionId === null) {
+    return c.json({ error: "题目 ID 必须是正整数" }, 400);
+  }
+
+  const [existing] = await drizzleDb
+    .select()
+    .from(drizzleSchema.questions)
+    .where(eq(drizzleSchema.questions.id, questionId))
+    .limit(1);
+
+  if (!existing) {
+    return c.json({ error: `题目不存在：${questionId}` }, 404);
+  }
+
+  // 合并后再整体校验：部分更新同样不能产出"单选却只有一个选项"这类坏行
+  const merged = {
+    content: patch.content ?? existing.content,
+    options: patch.options ?? safeParseJson<string[]>(existing.options, []),
+    answer: patch.answer ?? existing.answer ?? "",
+    explanation: patch.explanation ?? existing.explanation ?? "",
+    tags: patch.tags ?? safeParseJson<string[]>(existing.tags, []),
+    dimension: patch.dimension ?? existing.dimension ?? "knowledge",
+    type:
+      patch.type ??
+      (existing.type as "single" | "multi" | "truefalse" | "fill_blank") ??
+      "single",
+  };
+
+  const parsed = QuestionSchema.safeParse(merged);
+  if (!parsed.success) {
+    return c.json(
+      { error: "合并后校验失败", issues: formatIssues(parsed.error) },
+      400,
+    );
+  }
+  const data = parsed.data;
+  const externalId = buildApiExternalId({
+    content: data.content,
+    options: data.options,
+    answer: data.answer,
+  });
+
+  // 指纹撞到**别的**行：说明这次修改会让两道题变成同一道，交给人决定怎么处理
+  const [clash] = await drizzleDb
+    .select({ id: drizzleSchema.questions.id })
+    .from(drizzleSchema.questions)
+    .where(eq(drizzleSchema.questions.external_id, externalId))
+    .limit(1);
+  if (clash && clash.id !== questionId) {
+    return c.json(
+      {
+        error: `改后的内容与题目 ${clash.id} 相同（内容指纹撞键）`,
+        conflictingId: clash.id,
+      },
+      409,
+    );
+  }
+
+  const changed = Object.keys(patch);
+  if (dryRun) {
+    return c.json(
+      { id: questionId, externalId, changed, dryRun: true as const },
+      200,
+    );
+  }
+
+  try {
+    await drizzleDb
+      .update(drizzleSchema.questions)
+      .set({
+        content: data.content,
+        options: JSON.stringify(data.options),
+        answer: data.answer,
+        explanation: data.explanation,
+        tags: JSON.stringify(data.tags),
+        dimension: data.dimension as
+          "knowledge" | "understanding" | "application",
+        type: data.type,
+        external_id: externalId,
+      })
+      .where(eq(drizzleSchema.questions.id, questionId));
+
+    // changed 是字段名数组；touchesEmbeddingText 接受"字段名到值的映射"，
+    // 这里按数组构造一个只有键的映射即可（它只判断字段是否存在）
+    if (
+      touchesEmbeddingText(
+        Object.fromEntries(changed.map((key) => [key, true])),
+      )
+    ) {
+      void indexQuestion(questionId, { pruneOnSkip: true }).catch(
+        (err: unknown) => {
+          logger.warn({ err, questionId }, "[External] 改题后向量索引失败");
+        },
+      );
+    }
+
+    return c.json({ id: questionId, externalId, changed }, 200);
+  } catch (err) {
+    logger.error({ err }, "[External] 改题失败");
     return c.json({ error: "服务器内部错误" }, 500);
   }
 });

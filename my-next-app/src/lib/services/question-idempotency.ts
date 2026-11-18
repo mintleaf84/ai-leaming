@@ -58,3 +58,18 @@ export function buildAdminExternalId(q: {
     typeof q.answer === "string" ? q.answer : null,
   )}`;
 }
+
+/**
+ * 外部 API 建题的键：`api:` 前缀占 4 字符。
+ *
+ * 与 `admin:` / `pdf:` / 粉笔上游 ID 的键空间互不重叠，所以「同一道题经不同入口
+ * 进来」不会被误判成重复——各入口的幂等域是独立的，这是有意的：
+ * 外部 agent 建题与人工导入撞车时，宁可多一行让人删，也不要静默合并丢失来源。
+ */
+export function buildApiExternalId(q: {
+  content: string;
+  options?: unknown;
+  answer?: string | null;
+}): string {
+  return `api:${questionContentDigest(q.content, q.options, q.answer)}`;
+}

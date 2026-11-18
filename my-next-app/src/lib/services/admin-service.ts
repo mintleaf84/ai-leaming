@@ -6,6 +6,7 @@ import { hashPassword } from "@/lib/auth/password";
 import { affectedRows } from "@/lib/db/affected-rows";
 import { buildAdminExternalId } from "@/lib/services/question-idempotency";
 import { indexQuestion } from "@/lib/services/question-vector-index";
+import { touchesEmbeddingText } from "@/lib/services/question-index-policy";
 
 /**
  * 哪些字段参与 embedding 文本（见 `question-vector-index.ts` 的
@@ -14,11 +15,8 @@ import { indexQuestion } from "@/lib/services/question-vector-index";
  * 只有它们变了才需要重算向量；解析/标签/维度/题型是展示属性，改它们不该花一次
  * embedding 网络调用。
  */
-const EMBEDDING_TEXT_FIELDS = ["content", "options", "answer"] as const;
-
-function touchesEmbeddingText(data: Record<string, unknown>): boolean {
-  return EMBEDDING_TEXT_FIELDS.some((field) => data[field] !== undefined);
-}
+// 判定逻辑抽到 question-index-policy：外部 API 改题也要用同一份实现，
+// 两处各写一遍迟早会分叉（见该文件注释）
 
 export interface AdminStats {
   users: number;

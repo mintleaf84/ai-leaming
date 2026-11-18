@@ -60,6 +60,8 @@ Authorization: Bearer sk_xxxxxxxx
 | ---- | ---------------- | --------------------------------------------------- | -------------------- |
 | GET  | `/questions`     | `page`=1、`limit`=20、`tag`（可选，按标签精确匹配） | 分页拉题库           |
 | GET  | `/questions/:id` | 路径 `id`                                           | 单题详情；不存在 404 |
+| POST | `/questions`     | `admin` 作用域，JSON 体见 §11               | 建题；内容指纹幂等 |
+| PATCH | `/questions/:id` | `admin` 作用域，部分更新                     | 改题；改后指纹撞别的题返回 409 |
 
 单题字段：`id`(number)、`type`(string|null)、`dimension`(string|null)、`content`、`options`(string[])、
 `answer`(string)、`explanation`(string|null)、`tags`(string[])。
@@ -304,10 +306,12 @@ curl -s -X POST "$BASE/api/external/practice/answers" \
 - **写接口单批上限 500 条**（schema `max(500)`），且题目校验是整批原子的：有一道不存在就全部不写。
 - **`isCorrect` 以调用方为准**：服务端不比对标准答案，传错会直接污染掌握度与错题本。
 - **两套分页口径**（题库 `page/pagination`，其余 `limit/offset/meta`），写通用翻页逻辑时要分开处理。
-- **写接口现状**（共 8 条）：`POST /practice/answers`、`POST /recall/reviews`、`POST /recall/decks`、
+- **写接口现状**（共 10 条）：`POST /practice/answers`、`POST /recall/reviews`、`POST /recall/decks`、
   `POST /recall/cards`、`DELETE /recall/decks/:deckKey/cards/:cardKey`、
-  `POST /recall/cards/:cardId/archive`、`DELETE /recall/cards/:cardId/archive`、`POST /srs/reviews`。
-  **题库写接口**（增/改/删题）仍未开放：agent 能练题、能推动复习队列，但不能改题库内容。
+  `POST /recall/cards/:cardId/archive`、`DELETE /recall/cards/:cardId/archive`、`POST /srs/reviews`、
+  `POST /questions`、`PATCH /questions/:id`。
+  **题库写接口需要 `admin` 作用域**（题库是全局资产，write key 不能改），且**不提供删除**：
+  删题会连带删掉所有人的作答与复习记录，没有可撤回的路径，暂时只在后台做。
 - **导入与 SRS 是两条路**：`POST /practice/answers` 只写会话/日志/掌握度，**不触发 SRS**；
   要让错题进入复习队列必须显式调用 `POST /srs/reviews`。这样"记录作答"与"安排复习"可以分开决定。
 - **回忆卡的归档是「按身份」的**：`POST/DELETE /recall/cards/:cardId/archive` 只改调用身份的队列，
@@ -378,3 +382,43 @@ AI_LEAMING_BASE_URL=https://your-host AI_LEAMING_API_KEY=sk_xxx node dist/index.
 - 写工具都透传 `dryRun`；`delete_recall_card` 的描述里要求「先预演、报数字、再确认」。
 - 领域使用规约（选哪个工具、错误怎么读、什么时候必须先预演）写在
   [`skills/ai-leaming/SKILL.md`](../skills/ai-leaming/SKILL.md)。
+
+## 11. 题库写接口（`admin` 作用域）
+
+题库是**全局共享资产**：所有 key 都能读，但只有 `admin` 能写。`write` key 调这两个接口一律 403。
+
+### 建题：`POST /questions`
+
+```json
+{
+  "content": "下列哪项属于教育法律？",
+  "options": ["《教育法》", "《教师手册》", "《课程标准》", "《教学计划》"],
+  "answer": "A",
+  "explanation": "《教育法》是全国人大制定的教育基本法律。",
+  "tags": ["教育法规"],
+  "dimension": "knowledge",
+  "type": "single"
+}
+```
+
+- `answer`：单选传标号（`A`）或选项原文；多选传 JSON 数组字符串（`"[\"A\",\"B\"]"`）；
+  判断题 `A`/`B` 且 `options` 必须两个；填空题 `options` 可为空、`answer` 为自由文本。
+- 校验口径与后台导入**完全一致**（同一个 `QuestionSchema`），不合法返回 `400` + `issues`。
+- **幂等键 = 内容指纹** `api:` + (题干 + 选项 + 答案)。同一份内容重复提交返回既有 `id` 且
+  `duplicate: true`，不新增行；改了选项顺序/答案/题干就是另一道题。
+- 预演：`?dryRun=true` 返回 `{ duplicate, externalId, dryRun: true }`，库内零变更。
+
+响应：`{ id, externalId, duplicate }`。新建成功后会异步重建该题的检索向量（不阻塞响应）。
+
+### 改题：`PATCH /questions/:id`
+
+- 部分更新，只改传了的字段；合并后仍要整体满足 `QuestionSchema`，否则 `400` + `issues`。
+- 改题干/选项/答案会重算指纹；若新指纹与**另一道题**相同，返回 `409` 并给出 `conflictingId`
+  ——不静默合并，避免两道不同的题被吞成一份。
+- 只改解析/标签/维度不会改变指纹，也不会重建向量。
+- 预演：`?dryRun=true` 返回 `{ changed: ["content", ...], externalId, dryRun: true }`。
+
+### 为什么没有删除接口
+
+删题会连带删掉所有人的作答日志、错题与复习进度，且无法撤回。这个操作目前只留在后台
+由人工执行；对外暴露删除需要先有软删除/回收站，不在当前范围内。

@@ -257,21 +257,41 @@ describe("外部 API：写路由必须声明 write 作用域", () => {
     return blocks;
   }
 
-  it('每个 POST/DELETE/PATCH 都带 requireScopeMiddleware("write")', () => {
+  it("每个 POST/DELETE/PATCH 都声明了写作用域（write 或更强的 admin）", () => {
+    // admin ⊃ write：题库是全局资产，建/改题要 admin，这比 write 更严；
+    // 断言的是"不能被 read 作用域改数据"，所以两种都算合规
     const missing: string[] = [];
     for (const block of routeBlocks()) {
       const method = /method:\s*"([a-z]+)"/.exec(block)?.[1];
       const routePath = /path:\s*"([^"]+)"/.exec(block)?.[1];
       if (!method || !routePath) continue;
       if (!["post", "delete", "patch", "put"].includes(method)) continue;
-      if (!block.includes('requireScopeMiddleware("write")')) {
+      const hasWrite = block.includes('requireScopeMiddleware("write")');
+      const hasAdmin = block.includes('requireScopeMiddleware("admin")');
+      if (!hasWrite && !hasAdmin) {
         missing.push(`${method.toUpperCase()} ${routePath}`);
       }
     }
     expect(
       missing,
-      "写路由没声明 write 作用域 = 只读 key 也能改数据（作用域提升）",
+      "写路由没声明 write/admin 作用域 = 只读 key 也能改数据（作用域提升）",
     ).toEqual([]);
+  });
+
+  it("admin 作用域的写路由只出现在题库写接口（别把普通写逻辑升级成 admin）", () => {
+    const adminOnly: string[] = [];
+    for (const block of routeBlocks()) {
+      const method = /method:\s*"([a-z]+)"/.exec(block)?.[1];
+      const routePath = /path:\s*"([^"]+)"/.exec(block)?.[1];
+      if (!method || !routePath) continue;
+      if (block.includes('requireScopeMiddleware("admin")')) {
+        adminOnly.push(`${method.toUpperCase()} ${routePath}`);
+      }
+    }
+    expect(adminOnly.sort()).toEqual([
+      "PATCH /questions/{id}",
+      "POST /questions",
+    ]);
   });
 
   it("GET 路由不得挂 write 作用域（避免把读权限误提升）", () => {

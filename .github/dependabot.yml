@@ -75,11 +75,16 @@ updates:
     schedule:
       interval: "monthly"
     labels: ["deps", "mcp"]
-    open-pull-requests-limit: 1
+    # 0 = 关闭常规版本更新（含 @types/node 的 major 噪音），只保留安全更新；
+    # open-pull-requests-limit 对安全更新不生效，所以安全修复不会被这道闸挡住
+    open-pull-requests-limit: 0
     commit-message:
       prefix: "chore(deps)"
     groups:
       mcp:
+        # 默认只作用于 version-updates；显式改成 security-updates，
+        # 否则多个依赖同时有安全修复时会各开一个 PR
+        applies-to: "security-updates"
         patterns: ["*"]
 
   # CI 里用到的 action

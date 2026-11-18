@@ -828,6 +828,7 @@ export async function unarchiveCard(
       id: recall_card_states.id,
       reps: recall_card_states.reps,
       last_review: recall_card_states.last_review,
+      archived: recall_card_states.archived,
     })
     .from(recall_card_states)
     .where(
@@ -839,6 +840,9 @@ export async function unarchiveCard(
     .limit(1);
 
   if (!row) return false;
+  // 有状态行不等于"已归档"：复习过的卡也有行。只在确实归档过时才动手，
+  // 否则对一张没归档的卡调用取消归档会静默改写它的 updated_at 并谎报 restored
+  if (row.archived !== 1) return false;
 
   if (row.reps === 0 && row.last_review === null) {
     await drizzleDb

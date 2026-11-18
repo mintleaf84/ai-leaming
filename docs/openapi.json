@@ -361,6 +361,82 @@
           "duplicate"
         ],
         "type": "object"
+      },
+      "ExternalSrsReviewRequest": {
+        "properties": {
+          "answeredAt": {
+            "description": "本次作答时间（ISO 8601）。同时是幂等键：同一时间去重试不会二次推进调度",
+            "type": "string"
+          },
+          "durationMs": {
+            "description": "作答耗时（毫秒），默认 0；影响评分推导",
+            "minimum": 0,
+            "type": "integer"
+          },
+          "isCorrect": {
+            "description": "本次是否答对（服务端不重算；传错会污染调度）",
+            "type": "boolean"
+          },
+          "questionId": {
+            "description": "题目 ID",
+            "exclusiveMinimum": true,
+            "minimum": 0,
+            "type": "integer"
+          },
+          "userAnswerLength": {
+            "description": "填空类作答的字符数；影响评分推导",
+            "minimum": 0,
+            "type": "integer"
+          }
+        },
+        "required": ["questionId", "isCorrect"],
+        "type": "object"
+      },
+      "ExternalSrsReviewResponse": {
+        "properties": {
+          "difficulty": {
+            "description": "FSRS 难度",
+            "type": "number"
+          },
+          "dueDate": {
+            "description": "下次到期时间（ISO 8601 UTC）",
+            "type": "string"
+          },
+          "duplicate": {
+            "description": "true = 同一 answeredAt 已处理过，本次未推进调度",
+            "type": "boolean"
+          },
+          "lapses": {
+            "description": "累计遗忘次数",
+            "type": "integer"
+          },
+          "questionId": {
+            "type": "integer"
+          },
+          "reps": {
+            "description": "累计复习次数",
+            "type": "integer"
+          },
+          "stability": {
+            "description": "FSRS 记忆稳定度",
+            "type": "number"
+          },
+          "state": {
+            "description": "FSRS 状态：0 New / 1 Learning / 2 Review / 3 Relearning",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "questionId",
+          "dueDate",
+          "stability",
+          "difficulty",
+          "reps",
+          "lapses",
+          "state",
+          "duplicate"
+        ],
+        "type": "object"
       }
     }
   },
@@ -3655,6 +3731,222 @@
         "summary": "获取单张回忆卡详情（含呈现模式与待重测条目）"
       }
     },
+    "/api/external/recall/cards/{cardId}/archive": {
+      "delete": {
+        "description": "写接口，需 write 作用域。只影响**调用身份**。天然幂等：没归档过时返回 `restored: false`（没有可恢复的状态行），不算错误。",
+        "parameters": [
+          {
+            "description": "卡片数字主键",
+            "in": "path",
+            "name": "cardId",
+            "required": true,
+            "schema": {
+              "description": "卡片数字主键",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "properties": {
+                    "cardId": {
+                      "type": "integer"
+                    },
+                    "restored": {
+                      "description": "true = 恢复了一条状态行；false = 本来就没有归档记录",
+                      "type": "boolean"
+                    }
+                  },
+                  "required": ["cardId", "restored"],
+                  "type": "object"
+                }
+              }
+            },
+            "description": "已取消归档（或本来就没有归档）"
+          },
+          "400": {
+            "description": "cardId 不是正整数"
+          },
+          "401": {
+            "description": "未授权 - 缺少 / 无效 / 已停用的 API Key"
+          },
+          "403": {
+            "description": "已禁止 - 该 API Key 的作用域不足（需要 write）"
+          },
+          "429": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "properties": {
+                    "error": {
+                      "description": "可读错误信息",
+                      "type": "string"
+                    },
+                    "retryAfter": {
+                      "description": "建议等待的秒数，与 Retry-After 头一致",
+                      "type": "integer"
+                    }
+                  },
+                  "required": ["error", "retryAfter"],
+                  "type": "object"
+                }
+              }
+            },
+            "description": "请求过于频繁 - 超过该 API Key 的限额；按 Retry-After 头或 body.retryAfter 退避后重试",
+            "headers": {
+              "Retry-After": {
+                "description": "建议等待的秒数",
+                "required": true,
+                "schema": {
+                  "description": "建议等待的秒数",
+                  "type": "string"
+                }
+              },
+              "X-RateLimit-Limit": {
+                "description": "该桶的额度",
+                "required": true,
+                "schema": {
+                  "description": "该桶的额度",
+                  "type": "string"
+                }
+              },
+              "X-RateLimit-Remaining": {
+                "description": "剩余额度（超限时为 0）",
+                "required": true,
+                "schema": {
+                  "description": "剩余额度（超限时为 0）",
+                  "type": "string"
+                }
+              },
+              "X-RateLimit-Reset": {
+                "description": "窗口重置时间（Unix 秒）",
+                "required": true,
+                "schema": {
+                  "description": "窗口重置时间（Unix 秒）",
+                  "type": "string"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "服务器内部错误"
+          }
+        },
+        "summary": "把一张回忆卡放回复习队列（取消归档）"
+      },
+      "post": {
+        "description": "写接口，需 write 作用域。只影响**调用身份**的队列，不改卡片内容与别人的进度。天然幂等：重复归档仍是同一个结果。卡片不存在返回 404。",
+        "parameters": [
+          {
+            "description": "卡片数字主键",
+            "in": "path",
+            "name": "cardId",
+            "required": true,
+            "schema": {
+              "description": "卡片数字主键",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "properties": {
+                    "archived": {
+                      "description": "恒为 true",
+                      "enum": [true],
+                      "type": "boolean"
+                    },
+                    "cardId": {
+                      "type": "integer"
+                    }
+                  },
+                  "required": ["cardId", "archived"],
+                  "type": "object"
+                }
+              }
+            },
+            "description": "已归档"
+          },
+          "400": {
+            "description": "cardId 不是正整数"
+          },
+          "401": {
+            "description": "未授权 - 缺少 / 无效 / 已停用的 API Key"
+          },
+          "403": {
+            "description": "已禁止 - 该 API Key 的作用域不足（需要 write）"
+          },
+          "404": {
+            "description": "卡片不存在"
+          },
+          "429": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "properties": {
+                    "error": {
+                      "description": "可读错误信息",
+                      "type": "string"
+                    },
+                    "retryAfter": {
+                      "description": "建议等待的秒数，与 Retry-After 头一致",
+                      "type": "integer"
+                    }
+                  },
+                  "required": ["error", "retryAfter"],
+                  "type": "object"
+                }
+              }
+            },
+            "description": "请求过于频繁 - 超过该 API Key 的限额；按 Retry-After 头或 body.retryAfter 退避后重试",
+            "headers": {
+              "Retry-After": {
+                "description": "建议等待的秒数",
+                "required": true,
+                "schema": {
+                  "description": "建议等待的秒数",
+                  "type": "string"
+                }
+              },
+              "X-RateLimit-Limit": {
+                "description": "该桶的额度",
+                "required": true,
+                "schema": {
+                  "description": "该桶的额度",
+                  "type": "string"
+                }
+              },
+              "X-RateLimit-Remaining": {
+                "description": "剩余额度（超限时为 0）",
+                "required": true,
+                "schema": {
+                  "description": "剩余额度（超限时为 0）",
+                  "type": "string"
+                }
+              },
+              "X-RateLimit-Reset": {
+                "description": "窗口重置时间（Unix 秒）",
+                "required": true,
+                "schema": {
+                  "description": "窗口重置时间（Unix 秒）",
+                  "type": "string"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "服务器内部错误"
+          }
+        },
+        "summary": "把一张回忆卡移出当前身份的复习队列（归档）"
+      }
+    },
     "/api/external/recall/decks": {
       "get": {
         "description": "只读接口，需 read 作用域。卡组内容全局共享，`activeCount` / `archivedCount` / `dueCount` 只统计当前 API Key 所属用户的数据。按卡组标题升序。",
@@ -4618,6 +4910,104 @@
           }
         },
         "summary": "提交一次回忆作答（判分 + 调度 + 落日志）"
+      }
+    },
+    "/api/external/srs/reviews": {
+      "post": {
+        "description": "写接口，需 write 作用域。按 `isCorrect` 与耗时推导 FSRS 评分并推进该身份的 `question_srs`，这是让外部数据影响复习队列的唯一入口。**幂等**：带 `answeredAt` 时，同一时间的重试直接返回当前状态（`duplicate: true`），不会二次推进。题目不存在返回 404。",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ExternalSrsReviewRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ExternalSrsReviewResponse"
+                }
+              }
+            },
+            "description": "推进后的调度状态（或幂等重放）"
+          },
+          "400": {
+            "description": "请求体校验失败 / answeredAt 不是合法时间"
+          },
+          "401": {
+            "description": "未授权 - 缺少 / 无效 / 已停用的 API Key"
+          },
+          "403": {
+            "description": "已禁止 - 该 API Key 的作用域不足（需要 write）"
+          },
+          "404": {
+            "description": "题目不存在"
+          },
+          "429": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "properties": {
+                    "error": {
+                      "description": "可读错误信息",
+                      "type": "string"
+                    },
+                    "retryAfter": {
+                      "description": "建议等待的秒数，与 Retry-After 头一致",
+                      "type": "integer"
+                    }
+                  },
+                  "required": ["error", "retryAfter"],
+                  "type": "object"
+                }
+              }
+            },
+            "description": "请求过于频繁 - 超过该 API Key 的限额；按 Retry-After 头或 body.retryAfter 退避后重试",
+            "headers": {
+              "Retry-After": {
+                "description": "建议等待的秒数",
+                "required": true,
+                "schema": {
+                  "description": "建议等待的秒数",
+                  "type": "string"
+                }
+              },
+              "X-RateLimit-Limit": {
+                "description": "该桶的额度",
+                "required": true,
+                "schema": {
+                  "description": "该桶的额度",
+                  "type": "string"
+                }
+              },
+              "X-RateLimit-Remaining": {
+                "description": "剩余额度（超限时为 0）",
+                "required": true,
+                "schema": {
+                  "description": "剩余额度（超限时为 0）",
+                  "type": "string"
+                }
+              },
+              "X-RateLimit-Reset": {
+                "description": "窗口重置时间（Unix 秒）",
+                "required": true,
+                "schema": {
+                  "description": "窗口重置时间（Unix 秒）",
+                  "type": "string"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "服务器内部错误"
+          }
+        },
+        "summary": "提交一次错题复习（推进该身份的 SRS 调度）"
       }
     },
     "/api/external/srs/summary": {

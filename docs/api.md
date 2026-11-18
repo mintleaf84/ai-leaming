@@ -124,6 +124,8 @@ Authorization: Bearer sk_xxxxxxxx
 | POST   | `/recall/decks`                         | `write` | 导入卡组（`json` 字符串，`onConflict=keep\|accept`）   |
 | POST   | `/recall/cards`                         | `write` | 新建 / 修改单卡                                        |
 | DELETE | `/recall/decks/:deckKey/cards/:cardKey` | `write` | 删除单卡（连同其作答日志与所有人的进度）               |
+| POST   | `/recall/cards/:cardId/archive`         | `write` | 归档：把卡片移出**当前身份**的复习队列（幂等）         |
+| DELETE | `/recall/cards/:cardId/archive`         | `write` | 取消归档：放回复习队列（没归档过时 `restored: false`） |
 
 字段要点：
 
@@ -165,13 +167,14 @@ curl -s -X POST "$BASE/api/external/recall/reviews" \
 
 ### 个人内容（按调用身份隔离）
 
-| 方法 | 路径            | 作用域 | 用途                                                       |
-| ---- | --------------- | ------ | ---------------------------------------------------------- |
-| GET  | `/notes`        | `read` | 笔记列表（`limit`、`offset`、`q` 关键词）；只给 200 字预览 |
-| GET  | `/notes/:id`    | `read` | 笔记全文；不存在或不属于本身份一律 404                     |
-| GET  | `/mindmaps`     | `read` | 思维导图列表（`limit`、`offset`）                          |
-| GET  | `/mindmaps/:id` | `read` | 导图内容（`content` 为 Markdown 大纲源文）                 |
-| GET  | `/srs/summary`  | `read` | SRS 复习负载：卡片总量、状态分布、未来 7 天逐日预估        |
+| 方法 | 路径            | 作用域  | 用途                                                       |
+| ---- | --------------- | ------- | ---------------------------------------------------------- |
+| GET  | `/notes`        | `read`  | 笔记列表（`limit`、`offset`、`q` 关键词）；只给 200 字预览 |
+| GET  | `/notes/:id`    | `read`  | 笔记全文；不存在或不属于本身份一律 404                     |
+| GET  | `/mindmaps`     | `read`  | 思维导图列表（`limit`、`offset`）                          |
+| GET  | `/mindmaps/:id` | `read`  | 导图内容（`content` 为 Markdown 大纲源文）                 |
+| GET  | `/srs/summary`  | `read`  | SRS 复习负载：卡片总量、状态分布、未来 7 天逐日预估        |
+| POST | `/srs/reviews`  | `write` | 推进错题 SRS（`answeredAt` 幂等）：外部数据能推动复习队列  |
 
 字段要点：
 
@@ -192,6 +195,12 @@ curl -s -X POST "$BASE/api/external/recall/reviews" \
 
 所以 `next7Days.count` 可能大于你在 `/wrong-book` 里实际取到的题数。要"今天该练什么"用
 `/wrong-book`；要"复习压力有多大"用 `/srs/summary`。
+
+`/srs/reviews` 请求体：`{ questionId, isCorrect, durationMs?, userAnswerLength?, answeredAt? }`，
+返回 `{ questionId, dueDate, stability, difficulty, reps, lapses, state, duplicate }`；
+`answeredAt` 兼作幂等键（同一时间重试不二次推进，读-判-写在同一条事务里串行执行）。
+归档接口 `POST/DELETE /recall/cards/:cardId/archive` 只影响调用身份，取消归档返回
+`restored:false` 表示本来就没归档过（不是错误）。
 
 **为什么补这三个**：此前笔记、导图、SRS 负载只有 Server Action（浏览器界面用），agent 拿不到。
 补完之后「关掉浏览器只靠本文档」可完成的任务从 4 类扩到 7 类（题库、练习、错题、复习、笔记、导图、学情）。
@@ -295,10 +304,14 @@ curl -s -X POST "$BASE/api/external/practice/answers" \
 - **写接口单批上限 500 条**（schema `max(500)`），且题目校验是整批原子的：有一道不存在就全部不写。
 - **`isCorrect` 以调用方为准**：服务端不比对标准答案，传错会直接污染掌握度与错题本。
 - **两套分页口径**（题库 `page/pagination`，其余 `limit/offset/meta`），写通用翻页逻辑时要分开处理。
-- **写接口现状**：`POST /practice/answers`、`POST /recall/reviews`、`POST /recall/decks`、`POST /recall/cards`、
-  `DELETE /recall/decks/:deckKey/cards/:cardKey`。**题库写接口**（增/改/删题）与**`question_srs` 写入**仍未开放：
-  外部数据推动不了错题的复习队列。
-- **回忆自测没有归档 / 取消归档接口**：只有读、作答、导入、建改删卡；归档目前只在浏览器界面里操作。
+- **写接口现状**（共 8 条）：`POST /practice/answers`、`POST /recall/reviews`、`POST /recall/decks`、
+  `POST /recall/cards`、`DELETE /recall/decks/:deckKey/cards/:cardKey`、
+  `POST /recall/cards/:cardId/archive`、`DELETE /recall/cards/:cardId/archive`、`POST /srs/reviews`。
+  **题库写接口**（增/改/删题）仍未开放：agent 能练题、能推动复习队列，但不能改题库内容。
+- **导入与 SRS 是两条路**：`POST /practice/answers` 只写会话/日志/掌握度，**不触发 SRS**；
+  要让错题进入复习队列必须显式调用 `POST /srs/reviews`。这样"记录作答"与"安排复习"可以分开决定。
+- **回忆卡的归档是「按身份」的**：`POST/DELETE /recall/cards/:cardId/archive` 只改调用身份的队列，
+  不动卡片内容与别人的进度。
 - **回忆卡的删除是全局的**：卡片内容共享，DELETE 会连所有人的进度与作答日志一起删掉，且无法撤回。
   删除回执带 `reviewLogs` / `cardStates`（本次连带删掉的行数）；**动手前先用 §9 的 dry-run 看一眼**。
 - **限流按 API Key 计**（不按 IP——agent 常共用出口 IP）：读 600 次/分钟、写 120 次/分钟，

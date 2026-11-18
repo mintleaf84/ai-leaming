@@ -4,13 +4,13 @@ AI 教招刷题系统的 Flutter 客户端（Android 为主）。与 Next.js 后
 
 ## 技术栈
 
-| 层 | 选型 |
-| --- | --- |
-| 状态管理 | Riverpod 3（`Notifier` / `AsyncNotifier` / `NotifierProvider`）+ flutter_hooks |
-| 路由 | go_router（`lib/app_router.dart` 集中声明） |
-| 网络 | dio + retrofit（`lib/shared/datasources/api_client.dart`） |
-| 模型 | freezed 3 + json_serializable |
-| 本地存储 | sqflite（离线题库与待同步作答）+ flutter_secure_storage（JWT） |
+| 层       | 选型                                                                                                      |
+| -------- | --------------------------------------------------------------------------------------------------------- |
+| 状态管理 | Riverpod 3（`Notifier` / `AsyncNotifier` / `NotifierProvider`）+ flutter_hooks                            |
+| 路由     | go_router（`lib/app_router.dart` 集中声明）                                                               |
+| 网络     | dio + retrofit（`lib/shared/datasources/api_client.dart`）                                                |
+| 模型     | freezed 3 + json_serializable                                                                             |
+| 本地存储 | sqflite（离线题库与待同步作答）+ flutter_secure_storage（JWT）                                            |
 | 目录结构 | feature-first：`lib/features/<feature>/{domain,data,presentation}`，跨模块单例放 `lib/shared`、`lib/core` |
 
 ## 本地运行

@@ -9,7 +9,7 @@ description: 用 ai-leaming 的 MCP 工具驱动教招刷题——查题库、�
 
 ## 先决条件
 
-- 已挂载 `ai-leaming` MCP server（11 个工具）。
+- 已挂载 `ai-leaming` MCP server（20 个工具，含笔记/导图/SRS 负载）。
 - key 的作用域决定能做什么：`read` 只能查，`write` 才能导入作答/提交复习/删卡。
   遇到 `403` 说明 key 不够，不要重试，直接告诉用户去换一把 write key。
 

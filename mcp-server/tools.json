@@ -297,6 +297,258 @@
           "description": "true = 只预演不删除"
         }
       ]
+    },
+    {
+      "name": "import_recall_deck",
+      "title": "导入回忆卡组",
+      "description": "把一个卡组文件（JSON 字符串，schema=1）导入/更新为回忆卡组。同内容重复导入不新增、不重置任何人的进度。要往已有卡组加一张卡用 create_recall_card。",
+      "method": "POST",
+      "path": "/recall/decks",
+      "params": [
+        {
+          "name": "json",
+          "in": "body",
+          "type": "string",
+          "required": true,
+          "description": "卡组文件内容的 JSON 字符串（含 schema/deckId/title/cards）"
+        },
+        {
+          "name": "onConflict",
+          "in": "body",
+          "type": "string",
+          "required": false,
+          "description": "keep（默认，保留库内内容）或 accept（采用文件内容）"
+        },
+        {
+          "name": "dryRun",
+          "in": "query",
+          "type": "boolean",
+          "required": false,
+          "description": "true = 只预演不写库"
+        }
+      ]
+    },
+    {
+      "name": "create_recall_card",
+      "title": "新建/修改回忆卡",
+      "description": "在指定卡组里新建或修改一张回忆卡（卡片内容是全局共享的，写入不会重置任何人的复习进度）。kind=list 用 items（1–6 条，每条 {text, keywords[]}）；kind=cloze 用 blanks（每空 1–3 个可接受答案）。",
+      "method": "POST",
+      "path": "/recall/cards",
+      "params": [
+        {
+          "name": "deckKey",
+          "in": "body",
+          "type": "string",
+          "required": true,
+          "description": "卡组标识"
+        },
+        {
+          "name": "cardId",
+          "in": "body",
+          "type": "string",
+          "required": true,
+          "description": "卡组内的卡片标识"
+        },
+        {
+          "name": "prompt",
+          "in": "body",
+          "type": "string",
+          "required": true,
+          "description": "题干"
+        },
+        {
+          "name": "kind",
+          "in": "body",
+          "type": "string",
+          "required": true,
+          "description": "list 或 cloze"
+        },
+        {
+          "name": "items",
+          "in": "body",
+          "type": "array",
+          "required": false,
+          "description": "列举卡条目（kind=list 必填）",
+          "items": {
+            "type": "object",
+            "properties": {
+              "text": {
+                "type": "string",
+                "required": true,
+                "description": "条目文本"
+              },
+              "keywords": {
+                "type": "array",
+                "required": true,
+                "description": "关键词，任一命中即判「已写」"
+              }
+            }
+          }
+        },
+        {
+          "name": "blanks",
+          "in": "body",
+          "type": "array",
+          "required": false,
+          "description": "填空卡空位（kind=cloze 必填）",
+          "items": {
+            "type": "object",
+            "properties": {
+              "answers": {
+                "type": "array",
+                "required": true,
+                "description": "该空可接受的答案"
+              }
+            }
+          }
+        },
+        {
+          "name": "dryRun",
+          "in": "query",
+          "type": "boolean",
+          "required": false,
+          "description": "true = 只预演不写库"
+        }
+      ]
+    },
+    {
+      "name": "get_recall_card",
+      "title": "单张卡详情",
+      "description": "取一张回忆卡的正文与当前身份的复习进度（state.reps / state.due / pendingItems）。复习后确认调度是否真的被推动用它。",
+      "method": "GET",
+      "path": "/recall/cards/{cardId}",
+      "params": [
+        {
+          "name": "cardId",
+          "in": "path",
+          "type": "string",
+          "required": true,
+          "description": "卡片数字主键"
+        }
+      ]
+    },
+    {
+      "name": "list_notes",
+      "title": "笔记列表",
+      "description": "列出当前身份的笔记（可按关键词搜索）。只返回 200 字预览，正文用 get_note。",
+      "method": "GET",
+      "path": "/notes",
+      "params": [
+        {
+          "name": "limit",
+          "in": "query",
+          "type": "integer",
+          "required": false,
+          "description": "默认 20、上限 100"
+        },
+        {
+          "name": "offset",
+          "in": "query",
+          "type": "integer",
+          "required": false,
+          "description": "偏移量"
+        },
+        {
+          "name": "q",
+          "in": "query",
+          "type": "string",
+          "required": false,
+          "description": "标题/正文关键词"
+        }
+      ]
+    },
+    {
+      "name": "get_note",
+      "title": "笔记全文",
+      "description": "取一篇笔记的正文（Markdown 源文）。",
+      "method": "GET",
+      "path": "/notes/{id}",
+      "params": [
+        {
+          "name": "id",
+          "in": "path",
+          "type": "string",
+          "required": true,
+          "description": "笔记 ID"
+        }
+      ]
+    },
+    {
+      "name": "list_mindmaps",
+      "title": "思维导图列表",
+      "description": "列出当前身份的思维导图（标题级）。内容用 get_mindmap。",
+      "method": "GET",
+      "path": "/mindmaps",
+      "params": [
+        {
+          "name": "limit",
+          "in": "query",
+          "type": "integer",
+          "required": false,
+          "description": "默认 20、上限 100"
+        },
+        {
+          "name": "offset",
+          "in": "query",
+          "type": "integer",
+          "required": false,
+          "description": "偏移量"
+        }
+      ]
+    },
+    {
+      "name": "get_mindmap",
+      "title": "思维导图内容",
+      "description": "取一张导图的内容（Markdown 大纲源文）。",
+      "method": "GET",
+      "path": "/mindmaps/{id}",
+      "params": [
+        {
+          "name": "id",
+          "in": "path",
+          "type": "string",
+          "required": true,
+          "description": "导图 ID"
+        }
+      ]
+    },
+    {
+      "name": "get_srs_summary",
+      "title": "SRS 复习负载",
+      "description": "错题 SRS 的负载概览：卡片总量、状态分布、保留率、未来 7 天逐日预估。要「今天练什么」用 get_wrong_book；要「复习压力多大」用这个。",
+      "method": "GET",
+      "path": "/srs/summary",
+      "params": []
+    },
+    {
+      "name": "get_recall_deck",
+      "title": "卡组详情",
+      "description": "取一个回忆卡组的详情与卡片列表（含每张卡的 cardId 与当前身份的进度）。拿到 cardId 才能 submit_review。",
+      "method": "GET",
+      "path": "/recall/decks/{deckKey}",
+      "params": [
+        {
+          "name": "deckKey",
+          "in": "path",
+          "type": "string",
+          "required": true,
+          "description": "卡组标识"
+        },
+        {
+          "name": "limit",
+          "in": "query",
+          "type": "integer",
+          "required": false,
+          "description": "卡片分页条数，默认 20、上限 100"
+        },
+        {
+          "name": "offset",
+          "in": "query",
+          "type": "integer",
+          "required": false,
+          "description": "偏移量"
+        }
+      ]
     }
   ]
 }

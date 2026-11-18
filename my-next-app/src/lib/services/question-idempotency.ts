@@ -58,3 +58,27 @@ export function buildAdminExternalId(q: {
     typeof q.answer === "string" ? q.answer : null,
   )}`;
 }
+
+/**
+ * 外部 API 建题的键：`api:` 前缀占 4 字符。
+ *
+ * 与 `admin:` / `pdf:` / 粉笔上游 ID 的键空间互不重叠，所以「同一道题经不同入口
+ * 进来」不会被误判成重复——各入口的幂等域是独立的，这是有意的：
+ * 外部 agent 建题与人工导入撞车时，宁可多一行让人删，也不要静默合并丢失来源。
+ */
+export function buildApiExternalId(q: {
+  content: string;
+  options?: unknown;
+  answer?: string | null;
+}): string {
+  // 不能复用 `questionContentDigest` 的 `\u0001` 拼接：填空题的题干与答案允许出现该
+  // 控制字符，不同字段组合可能撞出同一个哈希输入。改成整体 JSON 序列化数组：
+  // 每个字段自带边界（引号与转义），不存在"跨字段拼接"的歧义。
+  // 既有导入域（admin:/pdf:）的键格式保持不变，避免存量行失配。
+  const canonical = JSON.stringify([
+    q.content,
+    JSON.stringify(q.options ?? []),
+    q.answer ?? "",
+  ]);
+  return `api:${createHash("sha1").update(canonical).digest("hex").slice(0, DIGEST_LENGTH)}`;
+}

@@ -83,6 +83,121 @@
         "required": ["sessionId", "inserted", "duplicated"],
         "type": "object"
       },
+      "ExternalQuestionPatchBody": {
+        "properties": {
+          "answer": {
+            "minLength": 1,
+            "type": "string"
+          },
+          "content": {
+            "minLength": 5,
+            "type": "string"
+          },
+          "dimension": {
+            "enum": ["knowledge", "understanding", "application"],
+            "type": "string"
+          },
+          "explanation": {
+            "minLength": 5,
+            "type": "string"
+          },
+          "options": {
+            "items": {
+              "minLength": 1,
+              "type": "string"
+            },
+            "maxItems": 10,
+            "type": "array"
+          },
+          "tags": {
+            "items": {
+              "minLength": 1,
+              "type": "string"
+            },
+            "minItems": 1,
+            "type": "array"
+          },
+          "type": {
+            "enum": ["single", "multi", "truefalse", "fill_blank"],
+            "type": "string"
+          }
+        },
+        "type": "object"
+      },
+      "ExternalQuestionWriteBody": {
+        "properties": {
+          "answer": {
+            "description": "正确答案：单选传标号（A）或多选传 JSON 数组字符串（[\"A\",\"B\"]），判断题 A/B，填空题为自由文本",
+            "minLength": 1,
+            "type": "string"
+          },
+          "content": {
+            "description": "题干，至少 5 个字符",
+            "minLength": 5,
+            "type": "string"
+          },
+          "dimension": {
+            "description": "能力维度",
+            "enum": ["knowledge", "understanding", "application"],
+            "type": "string"
+          },
+          "explanation": {
+            "description": "解析，至少 5 个字符",
+            "minLength": 5,
+            "type": "string"
+          },
+          "options": {
+            "default": [],
+            "description": "选项文本；判断题固定两个、填空题可为空",
+            "items": {
+              "minLength": 1,
+              "type": "string"
+            },
+            "maxItems": 10,
+            "type": "array"
+          },
+          "tags": {
+            "description": "知识点标签，至少 1 个",
+            "items": {
+              "minLength": 1,
+              "type": "string"
+            },
+            "minItems": 1,
+            "type": "array"
+          },
+          "type": {
+            "default": "single",
+            "description": "题型，默认 single",
+            "enum": ["single", "multi", "truefalse", "fill_blank"],
+            "type": "string"
+          }
+        },
+        "required": ["content", "answer", "explanation", "tags", "dimension"],
+        "type": "object"
+      },
+      "ExternalQuestionWriteResponse": {
+        "properties": {
+          "dryRun": {
+            "description": "仅预演时出现且恒为 true：业务数据没有变更",
+            "type": "boolean"
+          },
+          "duplicate": {
+            "description": "true = 同内容已存在，本次未新增（返回既有 id）",
+            "type": "boolean"
+          },
+          "externalId": {
+            "description": "内容指纹（幂等键，`api:` 前缀）",
+            "type": "string"
+          },
+          "id": {
+            "description": "题目 ID；预演且内容不存在时为 null（不要拿它去调查详情接口）",
+            "nullable": true,
+            "type": "integer"
+          }
+        },
+        "required": ["id", "externalId", "duplicate"],
+        "type": "object"
+      },
       "ExternalRecallCardUpsertRequest": {
         "properties": {
           "blanks": {
@@ -3240,6 +3355,113 @@
             }
           }
         }
+      },
+      "post": {
+        "description": "写接口，**需 admin 作用域**：题库是全局共享资产，write key 不能改。幂等键是内容指纹 `api:`+（题干+选项+答案）——同一份内容重复提交返回既有 `id` 且 `duplicate: true`，不会新增行。校验口径与后台导入完全一致（`QuestionSchema`）。预演传 `?dryRun=true`。",
+        "parameters": [
+          {
+            "description": "true = 预演：走完真实校验与计算后回滚，返回\"如果真执行会怎样\"，库内零变更",
+            "in": "query",
+            "name": "dryRun",
+            "required": false,
+            "schema": {
+              "description": "true = 预演：走完真实校验与计算后回滚，返回\"如果真执行会怎样\"，库内零变更",
+              "enum": ["true", "false"],
+              "example": "true",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ExternalQuestionWriteBody"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ExternalQuestionWriteResponse"
+                }
+              }
+            },
+            "description": "已写入（或幂等命中既有题目）"
+          },
+          "400": {
+            "description": "内容校验失败（带 issues）"
+          },
+          "401": {
+            "description": "未授权 - 缺少 / 无效 / 已停用的 API Key"
+          },
+          "403": {
+            "description": "已禁止 - 该 API Key 的作用域不足（需要 admin）"
+          },
+          "429": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "properties": {
+                    "error": {
+                      "description": "可读错误信息",
+                      "type": "string"
+                    },
+                    "retryAfter": {
+                      "description": "建议等待的秒数，与 Retry-After 头一致",
+                      "type": "integer"
+                    }
+                  },
+                  "required": ["error", "retryAfter"],
+                  "type": "object"
+                }
+              }
+            },
+            "description": "请求过于频繁 - 超过该 API Key 的限额；按 Retry-After 头或 body.retryAfter 退避后重试",
+            "headers": {
+              "Retry-After": {
+                "description": "建议等待的秒数",
+                "required": true,
+                "schema": {
+                  "description": "建议等待的秒数",
+                  "type": "string"
+                }
+              },
+              "X-RateLimit-Limit": {
+                "description": "该桶的额度",
+                "required": true,
+                "schema": {
+                  "description": "该桶的额度",
+                  "type": "string"
+                }
+              },
+              "X-RateLimit-Remaining": {
+                "description": "剩余额度（超限时为 0）",
+                "required": true,
+                "schema": {
+                  "description": "剩余额度（超限时为 0）",
+                  "type": "string"
+                }
+              },
+              "X-RateLimit-Reset": {
+                "description": "窗口重置时间（Unix 秒）",
+                "required": true,
+                "schema": {
+                  "description": "窗口重置时间（Unix 秒）",
+                  "type": "string"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "服务器内部错误"
+          }
+        },
+        "summary": "新建一道题（内容指纹幂等，需 admin 作用域）"
       }
     },
     "/api/external/questions/{id}": {
@@ -3366,6 +3588,171 @@
             }
           }
         }
+      },
+      "patch": {
+        "description": "写接口，**需 admin 作用域**。部分更新：只改传了的字段，改完仍要整体满足 `QuestionSchema`（否则 400 带 issues）。改题干/选项/答案会重算内容指纹；若新指纹与**另一道题**撞键返回 409（不静默合并）。预演传 `?dryRun=true`，返回将会变更的字段名。",
+        "parameters": [
+          {
+            "description": "题目 ID",
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "description": "题目 ID",
+              "type": "string"
+            }
+          },
+          {
+            "description": "true = 预演：走完真实校验与计算后回滚，返回\"如果真执行会怎样\"，库内零变更",
+            "in": "query",
+            "name": "dryRun",
+            "required": false,
+            "schema": {
+              "description": "true = 预演：走完真实校验与计算后回滚，返回\"如果真执行会怎样\"，库内零变更",
+              "enum": ["true", "false"],
+              "example": "true",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ExternalQuestionPatchBody"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "properties": {
+                    "changed": {
+                      "description": "本次实际变更的字段名",
+                      "items": {
+                        "type": "string"
+                      },
+                      "type": "array"
+                    },
+                    "dryRun": {
+                      "description": "仅预演时出现且恒为 true：业务数据没有变更",
+                      "type": "boolean"
+                    },
+                    "externalId": {
+                      "description": "更新后的内容指纹",
+                      "type": "string"
+                    },
+                    "id": {
+                      "type": "integer"
+                    }
+                  },
+                  "required": ["id", "externalId", "changed"],
+                  "type": "object"
+                }
+              }
+            },
+            "description": "已更新（或预演结果）"
+          },
+          "400": {
+            "description": "合并后校验失败（带 issues）/ ID 非正整数"
+          },
+          "401": {
+            "description": "未授权 - 缺少 / 无效 / 已停用的 API Key"
+          },
+          "403": {
+            "description": "已禁止 - 该 API Key 的作用域不足（需要 admin）"
+          },
+          "404": {
+            "description": "题目不存在"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "properties": {
+                    "code": {
+                      "description": "乐观锁冲突时固定为 question.patch.conflict",
+                      "type": "string"
+                    },
+                    "conflictingId": {
+                      "description": "撞键时指向的另一道题的 ID",
+                      "type": "integer"
+                    },
+                    "error": {
+                      "type": "string"
+                    }
+                  },
+                  "required": ["error"],
+                  "type": "object"
+                }
+              }
+            },
+            "description": "两种冲突：改后内容与另一道题相同（带 conflictingId），或题目在你读取后被他人修改（code=question.patch.conflict，重读后重试）"
+          },
+          "429": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "properties": {
+                    "error": {
+                      "description": "可读错误信息",
+                      "type": "string"
+                    },
+                    "retryAfter": {
+                      "description": "建议等待的秒数，与 Retry-After 头一致",
+                      "type": "integer"
+                    }
+                  },
+                  "required": ["error", "retryAfter"],
+                  "type": "object"
+                }
+              }
+            },
+            "description": "请求过于频繁 - 超过该 API Key 的限额；按 Retry-After 头或 body.retryAfter 退避后重试",
+            "headers": {
+              "Retry-After": {
+                "description": "建议等待的秒数",
+                "required": true,
+                "schema": {
+                  "description": "建议等待的秒数",
+                  "type": "string"
+                }
+              },
+              "X-RateLimit-Limit": {
+                "description": "该桶的额度",
+                "required": true,
+                "schema": {
+                  "description": "该桶的额度",
+                  "type": "string"
+                }
+              },
+              "X-RateLimit-Remaining": {
+                "description": "剩余额度（超限时为 0）",
+                "required": true,
+                "schema": {
+                  "description": "剩余额度（超限时为 0）",
+                  "type": "string"
+                }
+              },
+              "X-RateLimit-Reset": {
+                "description": "窗口重置时间（Unix 秒）",
+                "required": true,
+                "schema": {
+                  "description": "窗口重置时间（Unix 秒）",
+                  "type": "string"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "服务器内部错误"
+          }
+        },
+        "summary": "修改一道题（需 admin 作用域）"
       }
     },
     "/api/external/recall/cards": {

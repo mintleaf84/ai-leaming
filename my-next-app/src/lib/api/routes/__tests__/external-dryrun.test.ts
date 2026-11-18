@@ -425,34 +425,42 @@ describe("写接口 dry-run", () => {
 
   describe("POST /recall/reviews", () => {
     it("预演返回的评分与到期时间与真提交一致，且不写日志/进度", async () => {
-      await seedBase();
-      const ids = await seedDeck("deck-review");
-      const cardId = ids.get("c01")!;
-      const before = await tableCounts();
+      // 锁时钟：`submitReview` 的 reviewedAt 截到秒，两次请求跨秒时调度基线不同，
+      // nextDue 即使评分一致也会差一天——那会让这条用例偶发失败
+      vi.useFakeTimers({ toFake: ["Date"] });
+      vi.setSystemTime(new Date("2026-11-18T08:00:00.000Z"));
+      try {
+        await seedBase();
+        const ids = await seedDeck("deck-review");
+        const cardId = ids.get("c01")!;
+        const before = await tableCounts();
 
-      const dry = await request("/recall/reviews?dryRun=true", {
-        method: "POST",
-        body: { cardId, typed: "建立安全制度 开展安全演练" },
-      });
-      expect(dry.status).toBe(200);
-      const dryBody = await dry.json();
-      expect(dryBody.dryRun).toBe(true);
-      expect(dryBody.verdicts).toEqual(["ok", "ok"]);
-      expect(await tableCounts()).toEqual(before);
+        const dry = await request("/recall/reviews?dryRun=true", {
+          method: "POST",
+          body: { cardId, typed: "建立安全制度 开展安全演练" },
+        });
+        expect(dry.status).toBe(200);
+        const dryBody = await dry.json();
+        expect(dryBody.dryRun).toBe(true);
+        expect(dryBody.verdicts).toEqual(["ok", "ok"]);
+        expect(await tableCounts()).toEqual(before);
 
-      const real = await request("/recall/reviews", {
-        method: "POST",
-        body: { cardId, typed: "建立安全制度 开展安全演练" },
-      });
-      const realBody = await real.json();
-      expect(realBody.rating).toBe(dryBody.rating);
-      expect(realBody.nextDue).toBe(dryBody.nextDue);
-      expect(realBody.pendingItems).toEqual(dryBody.pendingItems);
-      expect(realBody.dryRun).toBeUndefined();
+        const real = await request("/recall/reviews", {
+          method: "POST",
+          body: { cardId, typed: "建立安全制度 开展安全演练" },
+        });
+        const realBody = await real.json();
+        expect(realBody.rating).toBe(dryBody.rating);
+        expect(realBody.nextDue).toBe(dryBody.nextDue);
+        expect(realBody.pendingItems).toEqual(dryBody.pendingItems);
+        expect(realBody.dryRun).toBeUndefined();
 
-      const after = await tableCounts();
-      expect(after.reviewLogs).toBe(before.reviewLogs + 1);
-      expect(after.cardStates).toBe(before.cardStates + 1);
+        const after = await tableCounts();
+        expect(after.reviewLogs).toBe(before.reviewLogs + 1);
+        expect(after.cardStates).toBe(before.cardStates + 1);
+      } finally {
+        vi.useRealTimers();
+      }
     });
 
     it("预演的幂等重放语义与真提交一致：同 clientKey 第二次是 duplicate", async () => {

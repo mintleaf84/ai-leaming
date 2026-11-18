@@ -1772,6 +1772,10 @@ const recallCardDeleteRoute = createRoute({
       },
       description: "已删除（预演时只返回将删除的计数）",
     },
+    400: {
+      description:
+        "参数校验失败（如 dryRun 取值不是 true/false）—— 此时不会删除任何东西",
+    },
     401: { description: "未授权 - 缺少 / 无效 / 已停用的 API Key" },
     403: { description: "已禁止 - 该 API Key 的作用域不足（需要 write）" },
     429: {

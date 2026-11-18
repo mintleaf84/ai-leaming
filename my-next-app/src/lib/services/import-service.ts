@@ -6,6 +6,7 @@ import { safeParseJson } from "../utils/json";
 import { generateId } from "../utils/id";
 import { log } from "@/lib/logger";
 import { withTransaction } from "@/lib/db/executor";
+import { DryRunRollback, isDryRunRollback } from "./dry-run";
 
 const { practice_sessions, questions, practice_logs, user_mastery } =
   drizzleSchema;
@@ -285,6 +286,8 @@ export interface AgentAnswersImportResult {
   sessionId: string;
   inserted: number;
   duplicated: boolean;
+  /** 仅 dry-run 时出现：true 表示这次没有真正写库（计数是"如果真执行会写入多少"） */
+  dryRun?: true;
 }
 
 /**
@@ -447,11 +450,15 @@ export const importService = {
    * 幂等键是 `sessionKey`（由 agent 生成、跨重试稳定），落库时加 `agent:` 前缀
    * 写进 `practice_sessions.source_key`，与粉笔导入共用同一套「先查后写 + 唯一索引兜并发」。
    *
+   * `options.dryRun` 为 true 时走完真实写入路径后强制回滚：题目不存在仍抛
+   * `InvalidQuestionIdsError`（预演必须能暴露 400），返回值多一个 `dryRun: true`。
+   *
    * @throws InvalidQuestionIdsError 请求里有不存在于题库的 questionId（整批拒绝）
    */
   importAgentAnswers: async (
     userId: number,
     data: AgentAnswersImportInput,
+    options: { dryRun?: boolean } = {},
   ): Promise<AgentAnswersImportResult> => {
     const sessionId = `agent_${generateId("", 15)}`;
     const sourceKey = `${AGENT_SOURCE_KEY_PREFIX}${data.sessionKey}`;
@@ -459,23 +466,40 @@ export const importService = {
     // 0. 幂等预检：同一用户同一 sessionKey 只算一次，重复提交不再写日志、
     //    不再累加掌握度（否则 agent 重试会把 mastery 分数刷虚高）。
     const existingId = await findExistingSession(userId, sourceKey);
-    if (existingId) return duplicatedAgentResult(existingId);
+    if (existingId) {
+      const duplicated = duplicatedAgentResult(existingId);
+      // 与真实的预演分支保持同一语义：命中幂等时也要带 dryRun，调用方才能
+      // 用同一个判断（duplicate 先看，再看 dryRun）区分四种结果
+      return options.dryRun ? { ...duplicated, dryRun: true } : duplicated;
+    }
 
     let inserted: number;
     try {
       inserted = await withImportLock(() =>
         withTransaction(async (exec) => {
           // 事务内所有写操作都必须走 tx（理由见 importFenbiData 同位置注释）
-          return await writeAgentAnswers(
+          const count = await writeAgentAnswers(
             exec,
             userId,
             data,
             sessionId,
             sourceKey,
           );
+          // 预演：写入已经发生过（含题目预检与掌握度累加），这里抛哨兵让事务整体回滚，
+          // 只把计数带出去 —— 这样"会写多少条"与"真写多少条"永远同一段代码算出来
+          if (options.dryRun) throw new DryRunRollback({ inserted: count });
+          return count;
         }),
       );
     } catch (e) {
+      if (isDryRunRollback<{ inserted: number }>(e)) {
+        return {
+          sessionId,
+          inserted: e.value.inserted,
+          duplicated: false,
+          dryRun: true,
+        };
+      }
       // 并发窗口：预检通过但另一请求先提交，唯一索引兜底后按重复处理
       if (isUniqueViolation(e)) {
         const concurrentId = await findExistingSession(userId, sourceKey);

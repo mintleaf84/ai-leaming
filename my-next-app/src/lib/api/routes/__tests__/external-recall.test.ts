@@ -726,10 +726,14 @@ describe("/api/external/recall", () => {
         method: "DELETE",
       });
       expect(del.status).toBe(200);
+      // 删除回执带「连带删掉了多少条作答日志与进度」：删卡是全局且不可撤回的，
+      // 调用方（含 agent 的 dry-run 预演）需要这组数字才能判断影响面
       expect(await del.json()).toEqual({
         cardId: created.cardId,
         cardKey: "api-c1",
         deleted: true,
+        reviewLogs: 0,
+        cardStates: 0,
       });
 
       expect((await request(`/recall/cards/${created.cardId}`)).status).toBe(

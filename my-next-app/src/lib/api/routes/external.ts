@@ -1845,10 +1845,7 @@ const notesRoute = createRoute({
     400: { description: "参数校验失败" },
     401: { description: "未授权 - 缺少 / 无效 / 已停用的 API Key" },
     403: { description: "已禁止 - 该 API Key 的作用域不足" },
-    429: {
-      description:
-        "请求过于频繁 - 超过该 API Key 的限额，按 Retry-After 退避后重试",
-    },
+    429: RateLimitedResponse,
     500: { description: "服务器内部错误" },
   },
 });
@@ -1911,10 +1908,7 @@ const notesDetailRoute = createRoute({
     401: { description: "未授权 - 缺少 / 无效 / 已停用的 API Key" },
     403: { description: "已禁止 - 该 API Key 的作用域不足" },
     404: { description: "笔记不存在（或不属于当前身份）" },
-    429: {
-      description:
-        "请求过于频繁 - 超过该 API Key 的限额，按 Retry-After 退避后重试",
-    },
+    429: RateLimitedResponse,
     500: { description: "服务器内部错误" },
   },
 });
@@ -1986,10 +1980,7 @@ const mindmapsRoute = createRoute({
     },
     401: { description: "未授权 - 缺少 / 无效 / 已停用的 API Key" },
     403: { description: "已禁止 - 该 API Key 的作用域不足" },
-    429: {
-      description:
-        "请求过于频繁 - 超过该 API Key 的限额，按 Retry-After 退避后重试",
-    },
+    429: RateLimitedResponse,
     500: { description: "服务器内部错误" },
   },
 });
@@ -2043,10 +2034,7 @@ const mindmapDetailRoute = createRoute({
     401: { description: "未授权 - 缺少 / 无效 / 已停用的 API Key" },
     403: { description: "已禁止 - 该 API Key 的作用域不足" },
     404: { description: "导图不存在（或不属于当前身份）" },
-    429: {
-      description:
-        "请求过于频繁 - 超过该 API Key 的限额，按 Retry-After 退避后重试",
-    },
+    429: RateLimitedResponse,
     500: { description: "服务器内部错误" },
   },
 });
@@ -2135,10 +2123,7 @@ const srsSummaryRoute = createRoute({
     },
     401: { description: "未授权 - 缺少 / 无效 / 已停用的 API Key" },
     403: { description: "已禁止 - 该 API Key 的作用域不足" },
-    429: {
-      description:
-        "请求过于频繁 - 超过该 API Key 的限额，按 Retry-After 退避后重试",
-    },
+    429: RateLimitedResponse,
     500: { description: "服务器内部错误" },
   },
 });

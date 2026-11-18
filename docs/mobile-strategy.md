@@ -62,3 +62,16 @@
 - 不删 `mobile_app/`：冻结在 `feat/mobile-p0-p4` 分支，代码与离线模型作为参考实现；
 - 不为移动端补 recall / notes / mindmap / graph 的 JWT 接口——Capacitor 方案下它们天然可用；
 - 不做 iOS：无 Mac，签名与打包均不可行。
+
+## 附：Flutter 客户端在冻结前的 4 条兜底修复（2026-11-18）
+
+方向定下后，Flutter 不再投新功能，但下面四条会**静默写错数据**，属于必须先堵的洞：
+
+| # | 问题 | 修复 |
+| --- | --- | --- |
+| A1 | 已拿到服务端 `sessionId` 的会话，中途断网后再也提交不了（离线只在建会话时生效） | `submitAnswer` 在 `response == null` 时降级为本地判分入队，幂等键 `local_<serverSessionId>`；4xx/5xx 仍原样抛出 |
+| A2 | 离线用缓存里的旧答案判分（题目被后台改过会污染掌握度） | `pickRandom` 只取 7 天内刷新的题面；为空/过期时抛 `OfflineCacheUnavailable`，给「请联网同步题库」的可读文案 |
+| B1/B2 | 未登录可直接进主界面；Splash 只判 token 非空，不看过期 | 新增 `TokenUtil` 解析 JWT `exp`；GoRouter 加异步 `redirect`；过期 token 先登出再回登录页 |
+| D2 | `flutter test` 是 `continue-on-error`，测试红了也不挡合并 | 改为硬闸（打真网用例已在 `dart_test.yaml` 默认跳过）；CI 实测 **26 passed / 2 skipped** |
+
+已知取舍：A1 降级会在补交时于服务端**另开一场** `agent_` 会话（只含断网后的题），历史里会看到同一场练习被拆成两段。这是为了避免与已在线提交的题重复计数而做的选择，不是 bug。

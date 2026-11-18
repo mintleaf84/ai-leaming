@@ -13,6 +13,7 @@ import { Hono } from "hono";
 import { setupTestDb, type TestDbHelper } from "@/lib/__tests__/test-db-utils";
 import * as schema from "@/lib/db/drizzle-schema";
 import {
+  reviewLoop,
   runDocTasks,
   type ApiRequest,
   type DocTaskFixtures,
@@ -200,6 +201,63 @@ describe("AI-native 文档任务（仅 /api/external）", () => {
       (row) => (row as { tag: string }).tag,
     );
     expect(tags).toContain("教育法规");
+  });
+
+  it("卡组里已有别的卡时，复习的是 cardKey 指定的那张（不是第一张）", async () => {
+    // 先塞一张占位卡进同一个卡组，让目标卡不是列表第一张
+    await request("POST", "/recall/decks", {
+      json: JSON.stringify({
+        schema: 1,
+        deckId: "deck-shared",
+        title: "共享卡组",
+        groups: [],
+        cards: [
+          {
+            cardId: "placeholder",
+            kind: "list",
+            prompt: "占位卡：不应被复习",
+            items: [{ text: "占位", keywords: ["占位"] }],
+          },
+        ],
+      }),
+    });
+
+    const dbg = await request("GET", "/recall/decks/deck-shared?limit=10");
+    console.error(
+      JSON.stringify(
+        (dbg.body as any).data?.map((r: any) => [r.cardId, r.cardKey]),
+      ),
+    );
+    const result = await reviewLoop(request, {
+      deckKey: "deck-shared",
+      cardId: "target",
+      cardPrompt: "目标卡：应被复习",
+      typed: "教育目的 教育方法",
+    });
+
+    const dbg2 = await request("GET", "/recall/decks/deck-shared?limit=10");
+    console.error(
+      JSON.stringify(
+        (dbg2.body as any).data?.map((r: any) => [r.cardId, r.cardKey]),
+      ),
+      "picked",
+      result.cardId,
+    );
+    const target = await request("GET", `/recall/cards/${result.cardId}`);
+    const targetBody = target.body as {
+      cardKey: string;
+      state: { reps: number };
+    };
+    expect(targetBody.cardKey).toBe("target");
+    expect(targetBody.state.reps).toBeGreaterThanOrEqual(1);
+
+    // 占位卡不能被复习到
+    const deck = await request("GET", "/recall/decks/deck-shared?limit=10");
+    const rows = (
+      deck.body as { data: Array<{ cardKey: string; state: unknown }> }
+    ).data;
+    const placeholder = rows.find((row) => row.cardKey === "placeholder");
+    expect(placeholder?.state ?? null).toBeNull();
   });
 
   it("重复跑同一批任务：导入幂等命中、复习幂等重放，库内不重复计数", async () => {

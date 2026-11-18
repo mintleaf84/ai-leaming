@@ -245,10 +245,14 @@ export async function reviewLoop(
   const detail = asRecord(
     await expectOk(req, "GET", `/recall/decks/${options.deckKey}?limit=10`),
   );
+  // 必须按 cardKey 选，不能取第一张：卡组导入不删旧卡，若这个卡组里已有别的卡，
+  // "第一张"就不是要复习的那张，后续提交与校验都会落到错误的卡上
   const card = asArray(detail.data)
     .map(asRecord)
-    .find((asRecord) => true);
-  if (!card) fail("导入卡组后读不到卡片", detail);
+    .find((item) => str(item.cardKey) === options.cardId);
+  if (!card) {
+    fail(`卡组 ${options.deckKey} 里找不到 cardKey=${options.cardId}`, detail);
+  }
   const cardId = num(card.cardId);
   if (cardId <= 0) fail("卡片缺少数字主键", card);
 

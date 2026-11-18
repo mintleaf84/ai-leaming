@@ -182,8 +182,9 @@ async function reviewLoop(deckKey) {
   await callTool("import_recall_deck", { json: JSON.stringify(deckFile) });
 
   const deck = await callTool("get_recall_deck", { deckKey, limit: 10 });
-  const card = (deck.data ?? [])[0];
-  if (!card) fail("导入卡组后读不到卡片", deck);
+  // 按 cardKey 选卡，而不是取第一张：卡组导入不删旧卡，复用时第一张未必是目标卡
+  const card = (deck.data ?? []).find((item) => item.cardKey === "c1");
+  if (!card) fail(`卡组 ${deckKey} 里找不到 cardKey=c1`, deck);
 
   const review = await callTool("submit_review", {
     cardId: card.cardId,

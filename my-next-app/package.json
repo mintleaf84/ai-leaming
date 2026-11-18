@@ -21,7 +21,8 @@
     "contract:check": "tsx scripts/dump-openapi.ts --check",
     "perf:budget": "node scripts/check-perf-budget.mjs",
     "perf:baseline": "node scripts/check-perf-budget.mjs --update",
-    "vitals:report": "node scripts/vitals-report.mjs"
+    "vitals:report": "node scripts/vitals-report.mjs",
+    "mcp:check": "node scripts/mcp-check.mjs"
   },
   "dependencies": {
     "@ai-sdk/openai": "^3.0.143",

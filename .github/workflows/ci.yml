@@ -210,6 +210,35 @@ jobs:
   # 契约护栏：Flutter（mobile_app）与 Next.js 各自手写客户端，历史上出现过 7 处
   # 「一端改字段、另一端不知道」的漂移。docs/openapi.json 是两端契约的快照，
   # 任何路由改动都必须同步更新快照，否则这里红。
+  mcp:
+    name: MCP server 构建与冒烟
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
+          persist-credentials: false
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+          cache-dependency-path: mcp-server/package-lock.json
+
+      - name: 安装依赖
+        working-directory: mcp-server
+        run: npm install --no-audit --no-fund
+
+      - name: 构建
+        working-directory: mcp-server
+        run: npm run build
+
+      # 起 stub 后端 + stdio 握手，验证工具表能真的打到 /api/external
+      - name: 冒烟测试
+        working-directory: mcp-server
+        run: npm run smoke
+
   contract:
     name: OpenAPI 契约快照
     runs-on: ubuntu-latest
@@ -232,3 +261,7 @@ jobs:
       # 有意改接口时：npm run contract:dump 并提交 docs/openapi.json
       - name: 校验契约快照
         run: npm run contract:check
+
+      # MCP 工具表是 agent 眼里的"世界"，与快照漂移只会在运行时炸成 404
+      - name: 校验 MCP 工具表
+        run: npm run mcp:check

@@ -1,0 +1,142 @@
+{
+  "$comment": "MCP 工具的唯一事实源：server 用它注册工具，scripts/mcp-check.mjs 用它对照 docs/openapi.json。新增工具必须先改这里，再跑 npm run mcp:check。",
+  "tools": [
+    {
+      "name": "list_questions",
+      "title": "题库分页",
+      "description": "分页拉取题库（全局共享）。先用它按标签找题；已知题目 id 时改用 get_question，不要反复翻页。",
+      "method": "GET",
+      "path": "/questions",
+      "params": [
+        { "name": "page", "in": "query", "type": "integer", "required": false, "description": "页码，默认 1" },
+        { "name": "limit", "in": "query", "type": "integer", "required": false, "description": "每页条数，默认 20、上限 100" },
+        { "name": "tag", "in": "query", "type": "string", "required": false, "description": "按标签精确匹配（如「教育法规」）" }
+      ]
+    },
+    {
+      "name": "get_question",
+      "title": "单题详情",
+      "description": "按 id 取一道题（含 answer 与 explanation）。已知 id 时优先用它，不要用 list_questions 翻页找。",
+      "method": "GET",
+      "path": "/questions/{id}",
+      "params": [
+        { "name": "id", "in": "path", "type": "string", "required": true, "description": "题目 id" }
+      ]
+    },
+    {
+      "name": "list_practice_sessions",
+      "title": "练习会话列表",
+      "description": "按开始时间倒序分页列出当前身份的练习会话。要看某一场的逐题作答，用 get_practice_session。",
+      "method": "GET",
+      "path": "/practice/sessions",
+      "params": [
+        { "name": "limit", "in": "query", "type": "integer", "required": false, "description": "默认 20、上限 100" },
+        { "name": "offset", "in": "query", "type": "integer", "required": false, "description": "偏移量，默认 0" },
+        { "name": "mode", "in": "query", "type": "string", "required": false, "description": "按练习模式筛选" }
+      ]
+    },
+    {
+      "name": "get_practice_session",
+      "title": "单场练习详情",
+      "description": "取一场练习的元信息与逐题作答记录。",
+      "method": "GET",
+      "path": "/practice/sessions/{id}",
+      "params": [
+        { "name": "id", "in": "path", "type": "string", "required": true, "description": "会话 id" }
+      ]
+    },
+    {
+      "name": "import_answers",
+      "title": "导入答题记录",
+      "description": "把一批作答写进练习会话（唯一写入口，幂等键 sessionKey）。重试必须沿用同一个 sessionKey。破坏性低但会累加掌握度：不确定时先传 dryRun=true 看 inserted 计数。",
+      "method": "POST",
+      "path": "/practice/answers",
+      "params": [
+        { "name": "sessionKey", "in": "body", "type": "string", "required": true, "description": "调用方生成的幂等键，跨重试稳定" },
+        { "name": "sessionName", "in": "body", "type": "string", "required": false, "description": "会话名称" },
+        {
+          "name": "answers",
+          "in": "body",
+          "type": "array",
+          "required": true,
+          "description": "答题记录数组（1–500 条）",
+          "items": {
+            "type": "object",
+            "properties": {
+              "questionId": { "type": "integer", "required": true, "description": "题目 id" },
+              "userAnswer": { "type": "string", "required": false, "description": "用户作答" },
+              "isCorrect": { "type": "boolean", "required": true, "description": "是否答对（服务端不重算）" },
+              "durationMs": { "type": "integer", "required": false, "description": "作答耗时（毫秒）" }
+            }
+          }
+        },
+        { "name": "dryRun", "in": "query", "type": "boolean", "required": false, "description": "true = 只预演不写库" }
+      ]
+    },
+    {
+      "name": "get_wrong_book",
+      "title": "错题本",
+      "description": "当前身份的错题清单（已排除「已掌握」的题）。要判断「今天该练什么」用它，不要用 SRS 概览。",
+      "method": "GET",
+      "path": "/wrong-book",
+      "params": [
+        { "name": "limit", "in": "query", "type": "integer", "required": false, "description": "默认 20、上限 100" },
+        { "name": "offset", "in": "query", "type": "integer", "required": false, "description": "偏移量" },
+        { "name": "tag", "in": "query", "type": "string", "required": false, "description": "按知识点标签筛选" }
+      ]
+    },
+    {
+      "name": "get_mastery",
+      "title": "掌握度",
+      "description": "按知识点标签的掌握度分数与正确率。用于定位薄弱点，不要用它对单题判分。",
+      "method": "GET",
+      "path": "/mastery",
+      "params": [
+        { "name": "limit", "in": "query", "type": "integer", "required": false, "description": "默认 20、上限 100" },
+        { "name": "offset", "in": "query", "type": "integer", "required": false, "description": "偏移量" }
+      ]
+    },
+    {
+      "name": "get_overview",
+      "title": "学情概览",
+      "description": "一次拿到累计作答、正确率、连续天数、平均掌握度与薄弱点。做总结或制定计划时先调它，避免多次分页拼接。",
+      "method": "GET",
+      "path": "/stats",
+      "params": []
+    },
+    {
+      "name": "get_recall_queue",
+      "title": "今日复习队列",
+      "description": "今天要做的回忆卡 id 序列（顺序即建议顺序）与估时。要题目正文再用 get_recall_card。",
+      "method": "GET",
+      "path": "/recall/queue",
+      "params": []
+    },
+    {
+      "name": "submit_review",
+      "title": "提交回忆作答",
+      "description": "提交一次回忆作答：服务端判分、推进调度、落日志。必须带 clientKey（跨重试稳定），否则重试会二次推进调度。不确定结果时先 dryRun=true 看 verdicts 与 nextDue。",
+      "method": "POST",
+      "path": "/recall/reviews",
+      "params": [
+        { "name": "cardId", "in": "body", "type": "integer", "required": true, "description": "卡片数字主键" },
+        { "name": "typed", "in": "body", "type": "string", "required": true, "description": "用户输入的回忆内容" },
+        { "name": "clientKey", "in": "body", "type": "string", "required": false, "description": "幂等键（UUID），重试必须沿用" },
+        { "name": "allBlank", "in": "body", "type": "boolean", "required": false, "description": "用户点了「全没想起」" },
+        { "name": "dryRun", "in": "query", "type": "boolean", "required": false, "description": "true = 只预演不写库" }
+      ]
+    },
+    {
+      "name": "delete_recall_card",
+      "title": "删除回忆卡",
+      "description": "删除一张回忆卡。**删除是全局且不可撤回的**（连别人的进度与作答日志一起删）。调用前必须先传 dryRun=true 看 reviewLogs / cardStates，把数字报给用户确认后再真删。",
+      "method": "DELETE",
+      "path": "/recall/decks/{deckKey}/cards/{cardKey}",
+      "params": [
+        { "name": "deckKey", "in": "path", "type": "string", "required": true, "description": "卡组标识" },
+        { "name": "cardKey", "in": "path", "type": "string", "required": true, "description": "卡片在卡组内的标识" },
+        { "name": "dryRun", "in": "query", "type": "boolean", "required": false, "description": "true = 只预演不删除" }
+      ]
+    }
+  ]
+}

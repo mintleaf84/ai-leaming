@@ -18,7 +18,8 @@ import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { StdioServerTransport } from "@modelcontextprotocol/sdk/server/stdio.js";
 import { z } from "zod";
 
-type ParamType = "string" | "integer" | "number" | "boolean" | "array" | "object";
+type ParamType =
+  "string" | "integer" | "number" | "boolean" | "array" | "object";
 
 interface ParamDescriptor {
   name: string;
@@ -43,10 +44,9 @@ const { tools } = JSON.parse(readFileSync(toolsFile, "utf8")) as {
   tools: ToolDescriptor[];
 };
 
-const BASE_URL = (process.env.AI_LEAMING_BASE_URL ?? "http://localhost:3000").replace(
-  /\/$/,
-  "",
-);
+const BASE_URL = (
+  process.env.AI_LEAMING_BASE_URL ?? "http://localhost:3000"
+).replace(/\/$/, "");
 const API_KEY = process.env.AI_LEAMING_API_KEY ?? "";
 
 if (!API_KEY) {

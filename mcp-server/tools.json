@@ -8,9 +8,27 @@
       "method": "GET",
       "path": "/questions",
       "params": [
-        { "name": "page", "in": "query", "type": "integer", "required": false, "description": "页码，默认 1" },
-        { "name": "limit", "in": "query", "type": "integer", "required": false, "description": "每页条数，默认 20、上限 100" },
-        { "name": "tag", "in": "query", "type": "string", "required": false, "description": "按标签精确匹配（如「教育法规」）" }
+        {
+          "name": "page",
+          "in": "query",
+          "type": "integer",
+          "required": false,
+          "description": "页码，默认 1"
+        },
+        {
+          "name": "limit",
+          "in": "query",
+          "type": "integer",
+          "required": false,
+          "description": "每页条数，默认 20、上限 100"
+        },
+        {
+          "name": "tag",
+          "in": "query",
+          "type": "string",
+          "required": false,
+          "description": "按标签精确匹配（如「教育法规」）"
+        }
       ]
     },
     {
@@ -20,7 +38,13 @@
       "method": "GET",
       "path": "/questions/{id}",
       "params": [
-        { "name": "id", "in": "path", "type": "string", "required": true, "description": "题目 id" }
+        {
+          "name": "id",
+          "in": "path",
+          "type": "string",
+          "required": true,
+          "description": "题目 id"
+        }
       ]
     },
     {
@@ -30,9 +54,27 @@
       "method": "GET",
       "path": "/practice/sessions",
       "params": [
-        { "name": "limit", "in": "query", "type": "integer", "required": false, "description": "默认 20、上限 100" },
-        { "name": "offset", "in": "query", "type": "integer", "required": false, "description": "偏移量，默认 0" },
-        { "name": "mode", "in": "query", "type": "string", "required": false, "description": "按练习模式筛选" }
+        {
+          "name": "limit",
+          "in": "query",
+          "type": "integer",
+          "required": false,
+          "description": "默认 20、上限 100"
+        },
+        {
+          "name": "offset",
+          "in": "query",
+          "type": "integer",
+          "required": false,
+          "description": "偏移量，默认 0"
+        },
+        {
+          "name": "mode",
+          "in": "query",
+          "type": "string",
+          "required": false,
+          "description": "按练习模式筛选"
+        }
       ]
     },
     {
@@ -42,7 +84,13 @@
       "method": "GET",
       "path": "/practice/sessions/{id}",
       "params": [
-        { "name": "id", "in": "path", "type": "string", "required": true, "description": "会话 id" }
+        {
+          "name": "id",
+          "in": "path",
+          "type": "string",
+          "required": true,
+          "description": "会话 id"
+        }
       ]
     },
     {
@@ -52,8 +100,20 @@
       "method": "POST",
       "path": "/practice/answers",
       "params": [
-        { "name": "sessionKey", "in": "body", "type": "string", "required": true, "description": "调用方生成的幂等键，跨重试稳定" },
-        { "name": "sessionName", "in": "body", "type": "string", "required": false, "description": "会话名称" },
+        {
+          "name": "sessionKey",
+          "in": "body",
+          "type": "string",
+          "required": true,
+          "description": "调用方生成的幂等键，跨重试稳定"
+        },
+        {
+          "name": "sessionName",
+          "in": "body",
+          "type": "string",
+          "required": false,
+          "description": "会话名称"
+        },
         {
           "name": "answers",
           "in": "body",
@@ -63,14 +123,36 @@
           "items": {
             "type": "object",
             "properties": {
-              "questionId": { "type": "integer", "required": true, "description": "题目 id" },
-              "userAnswer": { "type": "string", "required": false, "description": "用户作答" },
-              "isCorrect": { "type": "boolean", "required": true, "description": "是否答对（服务端不重算）" },
-              "durationMs": { "type": "integer", "required": false, "description": "作答耗时（毫秒）" }
+              "questionId": {
+                "type": "integer",
+                "required": true,
+                "description": "题目 id"
+              },
+              "userAnswer": {
+                "type": "string",
+                "required": false,
+                "description": "用户作答"
+              },
+              "isCorrect": {
+                "type": "boolean",
+                "required": true,
+                "description": "是否答对（服务端不重算）"
+              },
+              "durationMs": {
+                "type": "integer",
+                "required": false,
+                "description": "作答耗时（毫秒）"
+              }
             }
           }
         },
-        { "name": "dryRun", "in": "query", "type": "boolean", "required": false, "description": "true = 只预演不写库" }
+        {
+          "name": "dryRun",
+          "in": "query",
+          "type": "boolean",
+          "required": false,
+          "description": "true = 只预演不写库"
+        }
       ]
     },
     {
@@ -80,9 +162,27 @@
       "method": "GET",
       "path": "/wrong-book",
       "params": [
-        { "name": "limit", "in": "query", "type": "integer", "required": false, "description": "默认 20、上限 100" },
-        { "name": "offset", "in": "query", "type": "integer", "required": false, "description": "偏移量" },
-        { "name": "tag", "in": "query", "type": "string", "required": false, "description": "按知识点标签筛选" }
+        {
+          "name": "limit",
+          "in": "query",
+          "type": "integer",
+          "required": false,
+          "description": "默认 20、上限 100"
+        },
+        {
+          "name": "offset",
+          "in": "query",
+          "type": "integer",
+          "required": false,
+          "description": "偏移量"
+        },
+        {
+          "name": "tag",
+          "in": "query",
+          "type": "string",
+          "required": false,
+          "description": "按知识点标签筛选"
+        }
       ]
     },
     {
@@ -92,8 +192,20 @@
       "method": "GET",
       "path": "/mastery",
       "params": [
-        { "name": "limit", "in": "query", "type": "integer", "required": false, "description": "默认 20、上限 100" },
-        { "name": "offset", "in": "query", "type": "integer", "required": false, "description": "偏移量" }
+        {
+          "name": "limit",
+          "in": "query",
+          "type": "integer",
+          "required": false,
+          "description": "默认 20、上限 100"
+        },
+        {
+          "name": "offset",
+          "in": "query",
+          "type": "integer",
+          "required": false,
+          "description": "偏移量"
+        }
       ]
     },
     {
@@ -119,11 +231,41 @@
       "method": "POST",
       "path": "/recall/reviews",
       "params": [
-        { "name": "cardId", "in": "body", "type": "integer", "required": true, "description": "卡片数字主键" },
-        { "name": "typed", "in": "body", "type": "string", "required": true, "description": "用户输入的回忆内容" },
-        { "name": "clientKey", "in": "body", "type": "string", "required": false, "description": "幂等键（UUID），重试必须沿用" },
-        { "name": "allBlank", "in": "body", "type": "boolean", "required": false, "description": "用户点了「全没想起」" },
-        { "name": "dryRun", "in": "query", "type": "boolean", "required": false, "description": "true = 只预演不写库" }
+        {
+          "name": "cardId",
+          "in": "body",
+          "type": "integer",
+          "required": true,
+          "description": "卡片数字主键"
+        },
+        {
+          "name": "typed",
+          "in": "body",
+          "type": "string",
+          "required": true,
+          "description": "用户输入的回忆内容"
+        },
+        {
+          "name": "clientKey",
+          "in": "body",
+          "type": "string",
+          "required": false,
+          "description": "幂等键（UUID），重试必须沿用"
+        },
+        {
+          "name": "allBlank",
+          "in": "body",
+          "type": "boolean",
+          "required": false,
+          "description": "用户点了「全没想起」"
+        },
+        {
+          "name": "dryRun",
+          "in": "query",
+          "type": "boolean",
+          "required": false,
+          "description": "true = 只预演不写库"
+        }
       ]
     },
     {
@@ -133,9 +275,27 @@
       "method": "DELETE",
       "path": "/recall/decks/{deckKey}/cards/{cardKey}",
       "params": [
-        { "name": "deckKey", "in": "path", "type": "string", "required": true, "description": "卡组标识" },
-        { "name": "cardKey", "in": "path", "type": "string", "required": true, "description": "卡片在卡组内的标识" },
-        { "name": "dryRun", "in": "query", "type": "boolean", "required": false, "description": "true = 只预演不删除" }
+        {
+          "name": "deckKey",
+          "in": "path",
+          "type": "string",
+          "required": true,
+          "description": "卡组标识"
+        },
+        {
+          "name": "cardKey",
+          "in": "path",
+          "type": "string",
+          "required": true,
+          "description": "卡片在卡组内的标识"
+        },
+        {
+          "name": "dryRun",
+          "in": "query",
+          "type": "boolean",
+          "required": false,
+          "description": "true = 只预演不删除"
+        }
       ]
     }
   ]

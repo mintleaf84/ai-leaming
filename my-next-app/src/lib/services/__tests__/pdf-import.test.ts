@@ -315,11 +315,79 @@ describe("pdfImportService", () => {
         "test.pdf",
         "application/pdf",
       );
-      pdfImportService.cleanup(USER_A, taskId);
+      await pdfImportService.cleanup(USER_A, taskId);
 
       await expect(
         pdfImportService.parseSingleChunk(USER_A, taskId, 0),
       ).rejects.toThrow("任务不存在或已过期");
+    });
+  });
+
+  describe("任务态落库（跨实例可见）", () => {
+    async function seedTask(): Promise<string> {
+      const parser = await import("@/lib/import/pdf-question-parser");
+      mockPerformPaddleOCR.mockResolvedValue(
+        "1. 教育学研究的基本方法是\nA.观察法",
+      );
+      (parser.splitIntoQuestionChunks as any).mockReturnValue(["chunk1"]);
+      const { taskId } = await pdfImportService.ocrAndSplit(
+        USER_A,
+        Buffer.from("fake-pdf"),
+        "test.pdf",
+        "application/pdf",
+      );
+      return taskId;
+    }
+
+    it("任务写进 pdf_import_tasks，而不是进程内存", async () => {
+      const taskId = await seedTask();
+
+      const rows = (await dbm.drizzleDb.all(
+        `SELECT id, user_id, chunks_json, expires_at FROM pdf_import_tasks WHERE id = '${taskId}'` as any,
+      )) as any[];
+      expect(rows).toHaveLength(1);
+      expect(rows[0].user_id).toBe(USER_A);
+      expect(JSON.parse(rows[0].chunks_json)).toEqual(["chunk1"]);
+      // 过期时间是未来时刻（30 分钟 TTL）
+      expect(Number(rows[0].expires_at)).toBeGreaterThan(Date.now());
+    });
+
+    it("过期的行即使存在也视为不存在（按 expires_at 判定，不靠定时器）", async () => {
+      const taskId = await seedTask();
+
+      await dbm.drizzleDb.run(
+        `UPDATE pdf_import_tasks SET expires_at = ${Date.now() - 1000} WHERE id = '${taskId}'` as any,
+      );
+
+      await expect(
+        pdfImportService.parseSingleChunk(USER_A, taskId, 0),
+      ).rejects.toThrow("任务不存在或已过期");
+    });
+
+    it("重新加载模块（等价于另一个实例）后仍能读到任务", async () => {
+      const taskId = await seedTask();
+
+      // 清掉模块级缓存后重新 import：若任务态还在内存里，这一步就读不到了
+      vi.resetModules();
+      const reloaded = (await import("../pdf-import")).pdfImportService;
+      const result = await reloaded.parseSingleChunk(USER_A, taskId, 0);
+
+      expect(result.chunkIndex).toBe(0);
+      expect(Array.isArray(result.questions)).toBe(true);
+    });
+
+    it("写入新任务时顺手清理过期行（机会式清理，不需要 setInterval）", async () => {
+      const stale = await seedTask();
+      await dbm.drizzleDb.run(
+        `UPDATE pdf_import_tasks SET expires_at = ${Date.now() - 1000} WHERE id = '${stale}'` as any,
+      );
+
+      await seedTask();
+
+      const rows = (await dbm.drizzleDb.all(
+        `SELECT id FROM pdf_import_tasks WHERE id = '${stale}'` as any,
+      )) as any[];
+      expect(rows).toHaveLength(0);
     });
   });
 
@@ -354,7 +422,7 @@ describe("pdfImportService", () => {
       const taskId = await seedTaskFor(USER_A);
       mockParseSingleChunk.mockResolvedValue([makeQuestion()]);
 
-      expect(pdfImportService.cleanup(USER_B, taskId)).toBe(false);
+      expect(await pdfImportService.cleanup(USER_B, taskId)).toBe(false);
 
       // 关键：清理失败不能把别人的缓存一起删掉
       const result = await pdfImportService.parseSingleChunk(USER_A, taskId, 0);
@@ -363,7 +431,7 @@ describe("pdfImportService", () => {
 
     it("owner 清理后自己也无法再解析（cleanup 真的生效）", async () => {
       const taskId = await seedTaskFor(USER_A);
-      expect(pdfImportService.cleanup(USER_A, taskId)).toBe(true);
+      expect(await pdfImportService.cleanup(USER_A, taskId)).toBe(true);
       await expect(
         pdfImportService.parseSingleChunk(USER_A, taskId, 0),
       ).rejects.toThrow("任务不存在或已过期");

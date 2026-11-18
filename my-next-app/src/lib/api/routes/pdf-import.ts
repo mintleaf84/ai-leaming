@@ -147,7 +147,7 @@ app.openapi(cleanupDef, async (c) => {
   const body = await c.req.valid("json");
   // 幂等：没删到东西（不存在 / 不是你的）也返回 200，但 `ok` 为 false。
   // 两种失败返回同一个形状，避免探测他人 taskId 是否存在。
-  const ok = pdfImportService.cleanup(user.id, body.taskId);
+  const ok = await pdfImportService.cleanup(user.id, body.taskId);
   return c.json({ ok }, 200);
 });
 

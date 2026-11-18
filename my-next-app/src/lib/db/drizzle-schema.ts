@@ -35,6 +35,38 @@ export const notes = sqliteTable("notes", {
 });
 
 // --- 题目表 ---
+
+/**
+ * PDF/AI 导入的**中间任务态**（分块文本 + OCR 原文）。
+ *
+ * 为什么落库而不是放进程内存：任务态一旦只存在于某个进程里，"提交"与"轮询"落到
+ * 不同实例就查不到，多实例部署直接失效；重启也会丢正在进行的导入。
+ * 放库后任务跨请求、跨实例、跨重启可见（同一份数据只有一个写者，SQLite 足够）。
+ *
+ * 生命周期由 `expires_at` 控制（30 分钟），过期行由写入时的机会式清理回收，
+ * 不再依赖 setInterval —— 定时器在多实例下每个实例都会跑，清理反而更贵。
+ */
+export const pdf_import_tasks = sqliteTable(
+  "pdf_import_tasks",
+  {
+    id: text("id").primaryKey(),
+    user_id: integer("user_id")
+      .notNull()
+      .references(() => users.id, { onDelete: "cascade" }),
+    /** OCR 清洗后的全文（确认导入时要回填来源文本） */
+    ocr_text: text("ocr_text").notNull(),
+    /** 分块文本数组的 JSON（前端逐块调用 parse-chunk 时按索引取） */
+    chunks_json: text("chunks_json").notNull(),
+    /** 过期时间（毫秒时间戳）；读取时按它判定，过期即视为不存在 */
+    expires_at: integer("expires_at").notNull(),
+    created_at: text("created_at").default(sql`CURRENT_TIMESTAMP`),
+  },
+  (table) => ({
+    idx_user: index("idx_pdf_import_tasks_user").on(table.user_id),
+    idx_expires: index("idx_pdf_import_tasks_expires").on(table.expires_at),
+  }),
+);
+
 export const questions = sqliteTable(
   "questions",
   {

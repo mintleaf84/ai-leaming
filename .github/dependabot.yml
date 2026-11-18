@@ -69,6 +69,19 @@ updates:
       - dependency-name: "@testing-library/jest-dom"
         update-types: ["version-update:semver-major"]
 
+  # MCP server：独立小包，只在有安全修复时才值得动
+  - package-ecosystem: "npm"
+    directory: "/mcp-server"
+    schedule:
+      interval: "monthly"
+    labels: ["deps", "mcp"]
+    open-pull-requests-limit: 1
+    commit-message:
+      prefix: "chore(deps)"
+    groups:
+      mcp:
+        patterns: ["*"]
+
   # CI 里用到的 action
   - package-ecosystem: "github-actions"
     directory: "/"

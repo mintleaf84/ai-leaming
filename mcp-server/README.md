@@ -29,9 +29,16 @@ AI_LEAMING_API_KEY=sk_xxx \
 工具清单的唯一事实源是 [`tools.json`](./tools.json) —— server 直接读它注册工具，
 `npm run mcp:check`（仓库根目录）会拿它对照 `docs/openapi.json`，路径/方法/参数任一处漂移就红。
 
-11 个工具分四组：题库（`list_questions` / `get_question`）、练习（`list_practice_sessions` /
-`get_practice_session` / `import_answers`）、学情（`get_wrong_book` / `get_mastery` / `get_overview`）、
-复习（`get_recall_queue` / `submit_review` / `delete_recall_card`）。
+20 个工具分五组：
+
+- 题库：`list_questions` / `get_question`
+- 练习：`list_practice_sessions` / `get_practice_session` / `import_answers`
+- 学情：`get_wrong_book` / `get_mastery` / `get_overview` / `get_srs_summary`
+- 复习：`get_recall_queue` / `get_recall_deck` / `import_recall_deck` / `create_recall_card` /
+  `get_recall_card` / `submit_review` / `delete_recall_card`
+- 内容：`list_notes` / `get_note` / `list_mindmaps` / `get_mindmap`
+
+工具清单由 `tools.json` 定义，`npm run mcp:check` 会与 `docs/openapi.json` 逐条对照。
 
 写工具都支持 `dryRun`，`delete_recall_card` 的描述里明确要求"先预演、报数字、再确认"。
 

@@ -59,6 +59,17 @@ if (!API_KEY) {
 
 /** 把 JSON 里的类型描述翻成 zod schema（描述会进 tools/list，直接影响 agent 选工具） */
 function toZod(param: ParamDescriptor): z.ZodTypeAny {
+  // 路径参数一律接受 string | number 并转成字符串：agent 看到 cardId 是数字就直接传数字，
+  // 严格只收 string 会把它变成一次无意义的调用失败（本脚本自己就踩过）
+  if (param.in === "path") {
+    const pathSchema = z
+      .union([z.string(), z.number()])
+      .transform((value) => String(value));
+    return param.description
+      ? pathSchema.describe(param.description)
+      : pathSchema;
+  }
+
   let schema: z.ZodTypeAny;
   switch (param.type) {
     case "integer":

@@ -11,7 +11,8 @@
     "build": "tsc -p tsconfig.json",
     "typecheck": "tsc -p tsconfig.json --noEmit",
     "start": "node dist/index.js",
-    "smoke": "node scripts/smoke.mjs"
+    "smoke": "node scripts/smoke.mjs",
+    "doc-tasks": "node scripts/doc-tasks.mjs"
   },
   "dependencies": {
     "@modelcontextprotocol/sdk": "1.32.2",

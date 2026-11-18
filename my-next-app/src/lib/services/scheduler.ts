@@ -54,8 +54,9 @@ export async function initScheduler() {
         log.info(`🧹 [Scheduler] 清理过期导入任务 ${deleted.length} 条`);
       }
     } catch (error) {
+      // audit-allow: 显式降级——本次清理终止、等下一个 cron 周期，
+      // 失败已记结构化日志，不需要向上抛（cron 回调没有调用方）
       log.error("❌ [Scheduler] 清理过期导入任务失败:", error);
-      // 显式降级：本次任务终止，等下一个 cron 周期
     }
   });
 

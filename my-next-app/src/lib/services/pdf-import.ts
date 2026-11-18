@@ -79,12 +79,29 @@ async function requireOwnedTask(
     .limit(1);
 
   if (!row) {
+    // 顺手回收本用户的过期行：只靠"下次写入时清理"的话，长期不再导入的用户
+    // 那些过期 OCR 文本会无限期留在库里（评审指出过）。失败不影响本次读取
+    void drizzleDb
+      .delete(pdf_import_tasks)
+      .where(
+        and(
+          eq(pdf_import_tasks.user_id, userId),
+          lt(pdf_import_tasks.expires_at, Date.now()),
+        ),
+      )
+      .catch((err: unknown) => {
+        log.warn("[PdfImport] 过期任务回收失败（不影响本次读取）", err);
+      });
     throw new PdfImportTaskNotFoundError();
   }
 
-  const chunks = safeParseJson<string[]>(row.chunks_json, []);
+  const parsed = safeParseJson<unknown>(row.chunks_json, []);
+  // safeParseJson 只保证"能解析"，不保证形状：null / 数字 / 混合数组都会在后面
+  // 的 chunks.length 上炸。坏行与过期行同样处理——当作不存在，让用户重传
+  const chunks = Array.isArray(parsed)
+    ? parsed.filter((item): item is string => typeof item === "string")
+    : [];
   if (chunks.length === 0) {
-    // 行在但内容坏了（历史脏数据）：当作过期，让用户重传，而不是抛 500
     throw new PdfImportTaskNotFoundError();
   }
 
@@ -105,18 +122,22 @@ async function saveTask(
   const taskId = randomUUID();
   const now = Date.now();
 
-  await drizzleDb.insert(pdf_import_tasks).values({
-    id: taskId,
-    user_id: userId,
-    ocr_text: ocrText,
-    chunks_json: JSON.stringify(chunks),
-    expires_at: now + CACHE_TTL_MS,
-    created_at: sql`CURRENT_TIMESTAMP`,
-  });
+  // 插入与过期清理放同一事务：否则清理失败会把"已经写成功"的任务报成失败，
+  // 调用方拿不到 taskId，而那行数据又确实在库里（评审指出过）
+  await withTransaction(async (exec) => {
+    await exec.insert(pdf_import_tasks).values({
+      id: taskId,
+      user_id: userId,
+      ocr_text: ocrText,
+      chunks_json: JSON.stringify(chunks),
+      expires_at: now + CACHE_TTL_MS,
+      created_at: sql`CURRENT_TIMESTAMP`,
+    });
 
-  await drizzleDb
-    .delete(pdf_import_tasks)
-    .where(lt(pdf_import_tasks.expires_at, now));
+    await exec
+      .delete(pdf_import_tasks)
+      .where(lt(pdf_import_tasks.expires_at, now));
+  });
 
   return taskId;
 }

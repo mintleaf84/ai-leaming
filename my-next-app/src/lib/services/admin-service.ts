@@ -359,6 +359,12 @@ export const adminService = {
   async deleteUser(userId: number) {
     if (userId === 1) throw new Error("Cannot delete super admin");
 
+    // 显式清理 PDF 导入任务态：连接没开 `PRAGMA foreign_keys`，声明的
+    // ON DELETE CASCADE 不会触发，OCR 原文与分块文本会作为孤儿行留在库里
+    await drizzleDb
+      .delete(drizzleSchema.pdf_import_tasks)
+      .where(eq(drizzleSchema.pdf_import_tasks.user_id, userId));
+
     await drizzleDb
       .delete(drizzleSchema.users)
       .where(eq(drizzleSchema.users.id, userId));

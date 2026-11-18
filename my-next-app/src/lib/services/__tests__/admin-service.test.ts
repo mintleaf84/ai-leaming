@@ -61,6 +61,8 @@ const { mockDrizzleDb, mockDrizzleSchema } = vi.hoisted(() => {
       external_id: "external_id",
     },
     practice_logs: { id: "id" },
+    // deleteUser 会显式清理导入任务态（连接没开 foreign_keys，cascade 不生效）
+    pdf_import_tasks: { id: "id", user_id: "user_id" },
     ai_configs: { id: "id", is_active: "is_active" },
     user_subscriptions: {
       user_id: "user_id",

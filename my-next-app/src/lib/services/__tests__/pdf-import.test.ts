@@ -342,9 +342,16 @@ describe("pdfImportService", () => {
     it("任务写进 pdf_import_tasks，而不是进程内存", async () => {
       const taskId = await seedTask();
 
+      // as any：drizzleDb.all 的类型签名要求 Drizzle 查询对象，这里刻意用原生 SQL
+      // 直接读表，避免"用 ORM 读自己刚写的数据"掩盖真实落盘形状
       const rows = (await dbm.drizzleDb.all(
         `SELECT id, user_id, chunks_json, expires_at FROM pdf_import_tasks WHERE id = '${taskId}'` as any,
-      )) as any[];
+      )) as Array<{
+        id: string;
+        user_id: number;
+        chunks_json: string;
+        expires_at: number;
+      }>;
       expect(rows).toHaveLength(1);
       expect(rows[0].user_id).toBe(USER_A);
       expect(JSON.parse(rows[0].chunks_json)).toEqual(["chunk1"]);
@@ -364,30 +371,67 @@ describe("pdfImportService", () => {
       ).rejects.toThrow("任务不存在或已过期");
     });
 
-    it("重新加载模块（等价于另一个实例）后仍能读到任务", async () => {
+    it("重新加载模块（等价于另一个实例）后仍能读到任务，且拿到的是落库的分块", async () => {
       const taskId = await seedTask();
 
-      // 清掉模块级缓存后重新 import：若任务态还在内存里，这一步就读不到了
+      // 让解析器真的成功返回：否则"解析失败 → questions: []"也能让断言通过，
+      // 测不出"重载后是否拿到了持久化的分块文本"
+      mockParseSingleChunk.mockReset();
+      mockParseSingleChunk.mockResolvedValue({
+        questions: [makeQuestion()],
+        warnings: [],
+      });
+
+      // 清掉模块级状态后重新 import：若任务态还在内存里，这一步就读不到了
       vi.resetModules();
       const reloaded = (await import("../pdf-import")).pdfImportService;
       const result = await reloaded.parseSingleChunk(USER_A, taskId, 0);
 
       expect(result.chunkIndex).toBe(0);
-      expect(Array.isArray(result.questions)).toBe(true);
+      // 关键断言：传进解析器的正是当初落库的那个分块
+      // （服务层把解析器的返回值原样透传，所以这里看 mock 而不是看 questions 的形状）
+      expect(mockParseSingleChunk).toHaveBeenCalledWith("chunk1");
     });
 
-    it("写入新任务时顺手清理过期行（机会式清理，不需要 setInterval）", async () => {
+    it("写入新任务时顺手清理过期行，但不误删仍有效的任务", async () => {
       const stale = await seedTask();
+      // as any：drizzleDb.run 接受 SQL 字面量，这里用原生语句直接改 expires_at
       await dbm.drizzleDb.run(
         `UPDATE pdf_import_tasks SET expires_at = ${Date.now() - 1000} WHERE id = '${stale}'` as any,
       );
 
-      await seedTask();
+      const fresh = await seedTask();
 
-      const rows = (await dbm.drizzleDb.all(
+      // 过期行被清掉
+      const staleRows = (await dbm.drizzleDb.all(
         `SELECT id FROM pdf_import_tasks WHERE id = '${stale}'` as any,
-      )) as any[];
-      expect(rows).toHaveLength(0);
+      )) as unknown[];
+      expect(staleRows).toHaveLength(0);
+
+      // 新任务必须还在，且真的可解析（否则"清理"可能把有效行一起删了也照样通过）
+      const freshRows = (await dbm.drizzleDb.all(
+        `SELECT id FROM pdf_import_tasks WHERE id = '${fresh}'` as any,
+      )) as unknown[];
+      expect(freshRows).toHaveLength(1);
+      mockParseSingleChunk.mockResolvedValue({
+        questions: [makeQuestion()],
+        warnings: [],
+      });
+      await expect(
+        pdfImportService.parseSingleChunk(USER_A, fresh, 0),
+      ).resolves.toMatchObject({ chunkIndex: 0 });
+    });
+
+    it("chunks_json 结构损坏（不是字符串数组）时按「不存在」处理，不抛 500", async () => {
+      const taskId = await seedTask();
+      // as any：故意写入非法形状，验证服务层的兜底
+      await dbm.drizzleDb.run(
+        `UPDATE pdf_import_tasks SET chunks_json = 'null' WHERE id = '${taskId}'` as any,
+      );
+
+      await expect(
+        pdfImportService.parseSingleChunk(USER_A, taskId, 0),
+      ).rejects.toThrow("任务不存在或已过期");
     });
   });
 

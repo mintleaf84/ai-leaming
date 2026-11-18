@@ -206,3 +206,29 @@ jobs:
       # 收紧基线用 npm run perf:baseline 并在 PR 里说明原因。
       - name: 性能预算（路由 JS + public 大文件）
         run: npm run perf:budget
+
+  # 契约护栏：Flutter（mobile_app）与 Next.js 各自手写客户端，历史上出现过 7 处
+  # 「一端改字段、另一端不知道」的漂移。docs/openapi.json 是两端契约的快照，
+  # 任何路由改动都必须同步更新快照，否则这里红。
+  contract:
+    name: OpenAPI 契约快照
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
+          persist-credentials: false
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+          cache-dependency-path: my-next-app/package-lock.json
+
+      - name: 安装依赖
+        run: npm ci
+
+      # 有意改接口时：npm run contract:dump 并提交 docs/openapi.json
+      - name: 校验契约快照
+        run: npm run contract:check

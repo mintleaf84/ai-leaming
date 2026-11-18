@@ -9,6 +9,14 @@
 # packages, and plugins designed to encourage good coding practices.
 include: package:flutter_lints/flutter.yaml
 
+# 生成文件不参与本项目的 lint 判定：*.freezed.dart / *.g.dart 的内容由
+# build_runner 产出，其中的 duplicate_ignore 之类告警我们无法也不该手改。
+# 真实源码仍然全量检查。
+analyzer:
+  exclude:
+    - "**/*.freezed.dart"
+    - "**/*.g.dart"
+
 linter:
   # The lint rules applied to this project can be customized in the
   # section below to disable rules from the `package:flutter_lints/flutter.yaml`

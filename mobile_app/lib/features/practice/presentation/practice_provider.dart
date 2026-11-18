@@ -23,6 +23,8 @@ class PracticeSessionState {
   final bool isAnalyzingFirstPrinciples;
   final bool isLoading;
   final String? error;
+  /// 本次练习是否在离线状态（本地会话，作答先落队列、回连再补交）。
+  final bool isOffline;
 
   const PracticeSessionState({
     this.sessionId,
@@ -36,6 +38,7 @@ class PracticeSessionState {
     this.isAnalyzingFirstPrinciples = false,
     this.isLoading = false,
     this.error,
+    this.isOffline = false,
   });
 
   PracticeSessionState copyWith({
@@ -50,6 +53,7 @@ class PracticeSessionState {
     bool? isAnalyzingFirstPrinciples,
     bool? isLoading,
     String? error,
+    bool? isOffline,
   }) {
     return PracticeSessionState(
       sessionId: sessionId ?? this.sessionId,
@@ -63,6 +67,7 @@ class PracticeSessionState {
       isAnalyzingFirstPrinciples: isAnalyzingFirstPrinciples ?? this.isAnalyzingFirstPrinciples,
       isLoading: isLoading ?? this.isLoading,
       error: error,
+      isOffline: isOffline ?? this.isOffline,
     );
   }
 
@@ -113,6 +118,61 @@ class PracticeController extends Notifier<PracticeSessionState> {
         results: {},
         correctAnswers: {},
         explanations: {},
+        isOffline: sessionResponse.sessionId.startsWith('local_'),
+      );
+
+      _questionStartTime = DateTime.now();
+    } catch (e) {
+      state = state.copyWith(isLoading: false, error: e.toString());
+    }
+  }
+
+  /// 把题干与选项拼成一段文本。
+  ///
+  /// 后端 `/practice/first-principles` 只用传入的字段构造 prompt，不会去查题库，
+  /// 所以「下列说法正确的是？」这类题必须把 A/B/C/D 的正文一起带上，
+  /// 否则模型无从解释为什么正确答案是 B。
+  String _composeQuestionContent(Question question) {
+    if (question.options.isEmpty) {
+      return question.content;
+    }
+    const labels = ['A', 'B', 'C', 'D', 'E', 'F', 'G'];
+    final buffer = StringBuffer(question.content)
+      ..writeln()
+      ..writeln();
+    for (var i = 0; i < question.options.length; i++) {
+      final label = i < labels.length ? labels[i] : '${i + 1}';
+      buffer.writeln('$label. ${question.options[i]}');
+    }
+    return buffer.toString().trimRight();
+  }
+
+  /// 从服务端已有会话加载题目（错题本「开始练习」用）
+  /// 与 createSession 的差别：不新建会话，直接复用 wrong-book/practice 建好的那一场。
+  Future<void> loadSession(String sessionId) async {
+    // 上一场可能还留在状态里（provider 不是 autoDispose）：先清空，
+    // 避免加载失败时页面继续渲染旧题目/旧会话。
+    state = const PracticeSessionState(isLoading: true);
+
+    try {
+      final token = await _storage.read(key: 'jwt_token');
+      if (token == null) {
+        state = state.copyWith(isLoading: false, error: '请先登录');
+        return;
+      }
+
+      final sessionResponse = await _repository.getSession(sessionId);
+
+      state = state.copyWith(
+        isLoading: false,
+        sessionId: sessionResponse.sessionId,
+        questions: sessionResponse.questions,
+        currentIndex: 0,
+        userAnswers: {},
+        results: {},
+        correctAnswers: {},
+        explanations: {},
+        isOffline: sessionResponse.sessionId.startsWith('local_'),
       );
 
       _questionStartTime = DateTime.now();
@@ -186,8 +246,16 @@ class PracticeController extends Notifier<PracticeSessionState> {
       // 从后端响应获取正确性和正确答案
       final isCorrect = response['isCorrect'] as bool;
       final correctAnswer = response['correctAnswer'] as String;
+      // 中途断网降级：后续题目继续走本地判分，界面显示离线提示条
+      final degradedToOffline = response['offline'] == true;
+      // 已经是离线会话时不能被 false 覆盖回在线（本地会话首答就会触发）
+      final nowOffline = degradedToOffline || state.isOffline;
+      final persisted = response['persisted'] != false;
 
-      state = state.copyWith(isLoading: true);
+      state = state.copyWith(isLoading: true, isOffline: nowOffline);
+      if (!persisted) {
+        state = state.copyWith(error: '本次作答未能保存到本地，网络恢复后请重练此题');
+      }
       String explanation = '';
       try {
         final detail = await _repository.getQuestionDetail(question.id);
@@ -242,12 +310,18 @@ class PracticeController extends Notifier<PracticeSessionState> {
     // 如果已经有缓存，则不再请求
     if (state.firstPrinciples.containsKey(questionId)) return;
 
+    final selectedList = state.userAnswers[questionId];
+
     state = state.copyWith(isAnalyzingFirstPrinciples: true);
 
     try {
       final response = await _repository.analyzeFirstPrinciples(
-        questionId: questionId,
-        content: question.content,
+        questionContent: _composeQuestionContent(question),
+        correctAnswer: state.correctAnswers[questionId] ?? question.answer ?? '',
+        explanation: question.explanation,
+        wrongAnswer: (selectedList?.isNotEmpty ?? false)
+            ? selectedList!.join(',')
+            : null,
       );
 
       final newFirstPrinciples = Map<String, FirstPrinciplesResponse>.from(

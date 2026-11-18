@@ -1,6 +1,10 @@
 import { OpenAPIHono, createRoute, z } from "@hono/zod-openapi";
 import { getErrorMessage } from "@/lib/utils/error";
 import { practiceService } from "@/lib/services/practice";
+import {
+  importService,
+  InvalidQuestionIdsError,
+} from "@/lib/services/import-service";
 import { authMiddleware, getCurrentUser } from "@/lib/api/middlewares/auth";
 import { toErrorResponse } from "@/lib/api/error-response";
 import { log, logger } from "@/lib/logger";
@@ -92,10 +96,151 @@ app.openapi(createSessionRoute, async (c) => {
   );
 });
 
+// Get Session Questions
+// 用途：错题本 `/wrong-book/practice` 只创建了会话行（questions_json 存 id 列表），
+// 客户端需要按 sessionId 取回待作答的题目。复用 practiceService.getSessionById，
+// 不在这里重写 questions_json 解析（两处解析必然漂移）。
+const getSessionRoute = createRoute({
+  method: "get",
+  path: "/session/{sessionId}",
+  middleware: [authMiddleware] as const,
+  request: {
+    params: z.object({ sessionId: z.string() }),
+  },
+  responses: {
+    200: {
+      description: "Session questions",
+      content: {
+        "application/json": {
+          schema: z.object({
+            sessionId: z.string(),
+            questions: z.array(
+              z.object({
+                id: z.number(),
+                content: z.string(),
+                options: z.array(z.string()),
+                type: z.string().optional(),
+                material: z.string().nullable().optional(),
+                material_html: z.string().nullable().optional(),
+              }),
+            ),
+            completedCount: z.number(),
+            practiceMode: z.string().optional(),
+          }),
+        },
+      },
+    },
+    404: {
+      description: "练习会话不存在（或不属于当前用户）",
+      content: {
+        "application/json": { schema: z.object({ error: z.string() }) },
+      },
+    },
+  },
+});
+
+app.openapi(getSessionRoute, async (c) => {
+  const user = getCurrentUser(c);
+  const { sessionId } = c.req.valid("param");
+
+  const session = await practiceService.getSessionById(user.id, sessionId);
+
+  // 不属于当前用户时同样返回 404，不泄露 id 是否存在（与仓库既有约定一致）
+  if (!session) {
+    return c.json({ error: "练习会话不存在" }, 404);
+  }
+
+  return c.json(
+    {
+      sessionId: session.sessionId,
+      questions: session.questions.map((q) => ({
+        id: q.id,
+        content: q.content,
+        options: q.options,
+        type: q.type,
+        material: q.material ?? null,
+        material_html: q.material_html ?? null,
+      })),
+      completedCount: session.completedCount ?? 0,
+      practiceMode: session.practiceMode,
+    },
+    200,
+  );
+});
+
+// 离线答题回传
+// 场景：Flutter 端断网时在本地作答，回连后整批补交。语义与
+// `/api/external/practice/answers` 完全一致（同一 sessionKey 只算一次、
+// 写 practice_sessions + practice_logs + 掌握度），差别只在鉴权：
+// 这里走用户 JWT，移动端不需要持有 API Key。
+// 判分信任客户端：离线时没有服务端答案，只能本地判定，这一点与 external 一致。
+const OfflineAnswerSchema = z.object({
+  questionId: z.number().int().positive(),
+  userAnswer: z.string().nullable().optional(),
+  isCorrect: z.boolean(),
+  durationMs: z.number().int().min(0).nullable().optional(),
+});
+
+const OfflineAnswersSchema = z.object({
+  // 幂等键：客户端用本地会话 uuid，跨重试稳定（不允许每次重试重新生成）
+  sessionKey: z.string().min(1).max(200),
+  sessionName: z.string().max(200).optional(),
+  answers: z.array(OfflineAnswerSchema).min(1).max(500),
+});
+
+const offlineAnswersRoute = createRoute({
+  method: "post",
+  path: "/offline-answers",
+  middleware: [authMiddleware] as const,
+  request: {
+    body: {
+      required: true,
+      content: { "application/json": { schema: OfflineAnswersSchema } },
+    },
+  },
+  responses: {
+    200: {
+      description: "导入成功（或幂等命中）",
+      content: {
+        "application/json": {
+          schema: z.object({
+            sessionId: z.string(),
+            inserted: z.number().int(),
+            duplicated: z.boolean(),
+          }),
+        },
+      },
+    },
+    400: { description: "请求体校验失败 / 存在题库中不存在的 questionId" },
+  },
+});
+
+app.openapi(offlineAnswersRoute, async (c) => {
+  const user = getCurrentUser(c);
+  const body = c.req.valid("json");
+
+  try {
+    const result = await importService.importAgentAnswers(user.id, body);
+    return c.json(result, 200);
+  } catch (err) {
+    if (err instanceof InvalidQuestionIdsError) {
+      return c.json(
+        {
+          error: err.message,
+          invalidQuestionIds: err.invalidQuestionIds.slice(0, 5),
+        },
+        400,
+      );
+    }
+    logger.error({ err }, "[Practice] 离线答题回传失败");
+    return c.json({ error: "服务器内部错误" }, 500);
+  }
+});
+
 // Submit Answer
 const submitRoute = createRoute({
   method: "post",
-  path: "/session/:sessionId/submit",
+  path: "/session/{sessionId}/submit",
   middleware: [authMiddleware] as const,
   request: {
     params: z.object({ sessionId: z.string() }),

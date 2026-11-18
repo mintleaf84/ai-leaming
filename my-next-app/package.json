@@ -17,6 +17,8 @@
     "preinstall": "node scripts/check-node-version.cjs",
     "lint:baseline": "node scripts/check-lint-ratchet.cjs --update",
     "audit:catches": "node scripts/audit-catches.cjs",
+    "contract:dump": "tsx scripts/dump-openapi.ts",
+    "contract:check": "tsx scripts/dump-openapi.ts --check",
     "perf:budget": "node scripts/check-perf-budget.mjs",
     "perf:baseline": "node scripts/check-perf-budget.mjs --update",
     "vitals:report": "node scripts/vitals-report.mjs"

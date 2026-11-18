@@ -9,7 +9,14 @@ import {
 import type { UIMessage } from "ai";
 import type { ToolSet } from "ai";
 import { streamChatWrapper } from "@/lib/ai/client";
-import { saveMessage } from "@/lib/services/chat";
+import {
+  createSession,
+  deleteSession,
+  getSession,
+  getSessionMessages,
+  listSessions,
+  saveMessage,
+} from "@/lib/services/chat";
 import {
   buildEnhancedSystemPrompt,
   parseCommand,
@@ -208,6 +215,218 @@ app.openapi(chatRoute, async (c) => {
     return createUIMessageStreamResponse({ stream });
   } catch (error: unknown) {
     logger.error({ err: error }, "[Hono Chat API] error");
+    return c.json({ error: getErrorMessage(error) }, 500);
+  }
+});
+
+const SessionIdParamSchema = z.object({
+  id: z.string().min(1),
+});
+
+const CreateSessionBodySchema = z.object({
+  title: z.string().min(1).max(100).optional(),
+});
+
+const SessionListSchema = z.object({
+  id: z.number(),
+  title: z.string(),
+  created_at: z.string(),
+  updated_at: z.string(),
+  message_count: z.number(),
+});
+
+const MessageSchema = z.object({
+  id: z.number(),
+  session_id: z.number(),
+  role: z.enum(["user", "assistant", "system"]),
+  content: z.string(),
+  is_favorite: z.number(),
+  created_at: z.string(),
+});
+
+// GET /sessions — 会话列表（Flutter 读 data['sessions']）
+const listSessionsRoute = createRoute({
+  method: "get",
+  path: "/sessions",
+  middleware: [authMiddleware] as const,
+  request: {
+    query: z.object({
+      limit: z.coerce.number().int().min(1).max(100).default(20),
+    }),
+  },
+  responses: {
+    200: {
+      description: "会话列表",
+      content: {
+        "application/json": {
+          schema: z.object({
+            sessions: z.array(SessionListSchema),
+          }),
+        },
+      },
+    },
+    401: { description: "未授权" },
+    500: { description: "服务器错误" },
+  },
+});
+
+app.openapi(listSessionsRoute, async (c) => {
+  const user = getCurrentUser(c);
+  if (!user) return c.json({ error: "Unauthorized" }, 401);
+
+  const { limit } = c.req.valid("query");
+
+  try {
+    const sessions = await listSessions(Number(user.id), limit);
+    return c.json({ sessions });
+  } catch (error: unknown) {
+    logger.error({ err: error }, "[Hono Chat API] listSessions error");
+    return c.json({ error: getErrorMessage(error) }, 500);
+  }
+});
+
+// POST /sessions — 新建会话（Flutter 读 data['sessionId']）
+const createSessionRoute = createRoute({
+  method: "post",
+  path: "/sessions",
+  middleware: [authMiddleware] as const,
+  request: {
+    body: {
+      content: {
+        "application/json": {
+          schema: CreateSessionBodySchema,
+        },
+      },
+    },
+  },
+  responses: {
+    200: {
+      description: "新会话 id",
+      content: {
+        "application/json": {
+          schema: z.object({
+            sessionId: z.number(),
+          }),
+        },
+      },
+    },
+    401: { description: "未授权" },
+    500: { description: "服务器错误" },
+  },
+});
+
+app.openapi(createSessionRoute, async (c) => {
+  const user = getCurrentUser(c);
+  if (!user) return c.json({ error: "Unauthorized" }, 401);
+
+  const { title } = c.req.valid("json");
+
+  try {
+    const sessionId = await createSession(Number(user.id), title);
+    return c.json({ sessionId });
+  } catch (error: unknown) {
+    logger.error({ err: error }, "[Hono Chat API] createSession error");
+    return c.json({ error: getErrorMessage(error) }, 500);
+  }
+});
+
+// GET /sessions/:id — 会话详情含消息（Flutter 读 data['messages']）
+const getSessionRoute = createRoute({
+  method: "get",
+  path: "/sessions/{id}",
+  middleware: [authMiddleware] as const,
+  request: {
+    params: SessionIdParamSchema,
+  },
+  responses: {
+    200: {
+      description: "会话详情",
+      content: {
+        "application/json": {
+          schema: z.object({
+            session: SessionListSchema,
+            messages: z.array(MessageSchema),
+          }),
+        },
+      },
+    },
+    401: { description: "未授权" },
+    404: { description: "会话不存在" },
+    500: { description: "服务器错误" },
+  },
+});
+
+app.openapi(getSessionRoute, async (c) => {
+  const user = getCurrentUser(c);
+  if (!user) return c.json({ error: "Unauthorized" }, 401);
+
+  const { id } = c.req.valid("param");
+  const sessionId = Number(id);
+  if (!Number.isInteger(sessionId)) {
+    return c.json({ error: "会话不存在" }, 404);
+  }
+
+  const userId = Number(user.id);
+
+  try {
+    const session = await getSession(userId, sessionId);
+    if (!session) {
+      return c.json({ error: "会话不存在" }, 404);
+    }
+    const messages = await getSessionMessages(userId, sessionId);
+    return c.json({ session, messages });
+  } catch (error: unknown) {
+    logger.error({ err: error }, "[Hono Chat API] getSession error");
+    return c.json({ error: getErrorMessage(error) }, 500);
+  }
+});
+
+// DELETE /sessions/:id — 删除会话（级联消息）
+const deleteSessionRoute = createRoute({
+  method: "delete",
+  path: "/sessions/{id}",
+  middleware: [authMiddleware] as const,
+  request: {
+    params: SessionIdParamSchema,
+  },
+  responses: {
+    200: {
+      description: "删除成功",
+      content: {
+        "application/json": {
+          schema: z.object({
+            success: z.boolean(),
+          }),
+        },
+      },
+    },
+    401: { description: "未授权" },
+    404: { description: "会话不存在" },
+    500: { description: "服务器错误" },
+  },
+});
+
+app.openapi(deleteSessionRoute, async (c) => {
+  const user = getCurrentUser(c);
+  if (!user) return c.json({ error: "Unauthorized" }, 401);
+
+  const { id } = c.req.valid("param");
+  const sessionId = Number(id);
+  if (!Number.isInteger(sessionId)) {
+    return c.json({ error: "会话不存在" }, 404);
+  }
+
+  const userId = Number(user.id);
+  const session = await getSession(userId, sessionId);
+  if (!session) {
+    return c.json({ error: "会话不存在" }, 404);
+  }
+
+  try {
+    await deleteSession(userId, sessionId);
+    return c.json({ success: true });
+  } catch (error: unknown) {
+    logger.error({ err: error }, "[Hono Chat API] deleteSession error");
     return c.json({ error: getErrorMessage(error) }, 500);
   }
 });

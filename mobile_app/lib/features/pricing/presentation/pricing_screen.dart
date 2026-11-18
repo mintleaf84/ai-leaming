@@ -15,7 +15,6 @@ class PricingScreen extends ConsumerStatefulWidget {
 class _PricingScreenState extends ConsumerState<PricingScreen> {
   List<Map<String, dynamic>> _plans = [];
   bool _isLoading = true;
-  String? _error;
 
   @override
   void initState() {

@@ -107,10 +107,9 @@ class _QuestionListScreenState extends ConsumerState<QuestionListScreen> {
                   ),
                   style: TextStyle(color: textColor, fontSize: 14.sp),
                   onSubmitted: (value) {
-                    // TODO: Implement search with Provider
-                    ScaffoldMessenger.of(
-                      context,
-                    ).showSnackBar(const SnackBar(content: Text('搜索功能开发中...')));
+                    ref
+                        .read(questionsControllerProvider.notifier)
+                        .applySearch(value);
                   },
                 ),
               ),

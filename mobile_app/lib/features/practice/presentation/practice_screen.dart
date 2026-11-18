@@ -5,7 +5,6 @@ import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:go_router/go_router.dart';
 import 'package:mobile_app/features/practice/presentation/practice_provider.dart';
 import 'package:mobile_app/features/practice/domain/question.dart';
-import 'package:mobile_app/core/theme/app_theme.dart';
 import 'package:mobile_app/shared/widgets/animated_option_card.dart';
 import 'package:mobile_app/shared/widgets/skeleton_widgets.dart';
 import 'package:mobile_app/features/practice/presentation/widgets/first_principles_panel.dart';
@@ -24,14 +23,18 @@ class _PracticeScreenState extends ConsumerState<PracticeScreen> {
   @override
   void initState() {
     super.initState();
-    // 页面加载时创建会话，优先使用配置参数
+    // 页面加载时创建会话，优先使用配置参数。
+    // 带 sessionId 时表示「从错题本进来」，复用已建好的会话，不再新建。
+    final sessionId = widget.config?['sessionId'] as String?;
     final limit = (widget.config?['limit'] as int?) ?? 10;
     final mode = (widget.config?['mode'] as String?) ?? 'random';
     Future.microtask(() {
-      ref.read(practiceControllerProvider.notifier).createSession(
-        limit: limit,
-        mode: mode,
-      );
+      final controller = ref.read(practiceControllerProvider.notifier);
+      if (sessionId != null && sessionId.isNotEmpty) {
+        controller.loadSession(sessionId);
+      } else {
+        controller.createSession(limit: limit, mode: mode);
+      }
     });
   }
 
@@ -79,7 +82,12 @@ class _PracticeScreenState extends ConsumerState<PracticeScreen> {
               ? _buildErrorView(state.error!)
               : state.questions.isEmpty
               ? _buildEmptyView()
-              : _buildQuestionView(state),
+              : Column(
+                  children: [
+                    if (state.isOffline) _buildOfflineBanner(),
+                    Expanded(child: _buildQuestionView(state)),
+                  ],
+                ),
         ),
       ),
     );
@@ -121,6 +129,27 @@ class _PracticeScreenState extends ConsumerState<PracticeScreen> {
             child: Text(
               '返回首页',
               style: TextStyle(fontSize: 14.sp, color: Colors.grey),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  /// 离线提示条：说明本次作答会在恢复网络后自动补交。
+  Widget _buildOfflineBanner() {
+    return Container(
+      width: double.infinity,
+      color: const Color(0xFFFFF4E5),
+      padding: EdgeInsets.symmetric(horizontal: 16.w, vertical: 8.h),
+      child: Row(
+        children: [
+          Icon(Icons.cloud_off_outlined, size: 16.sp, color: const Color(0xFFB26A00)),
+          SizedBox(width: 8.w),
+          Expanded(
+            child: Text(
+              '离线模式：作答会先存在本地，恢复网络后自动同步',
+              style: TextStyle(fontSize: 12.sp, color: const Color(0xFFB26A00)),
             ),
           ),
         ],

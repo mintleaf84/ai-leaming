@@ -1,4 +1,7 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android">
+    <!-- release 构建不会合并 debug/profile 清单的权限，缺这条会导致装到手机上
+         之后所有网络请求失败（登录都过不去）。 -->
+    <uses-permission android:name="android.permission.INTERNET"/>
     <application
         android:label="mobile_app"
         android:name="${applicationName}"

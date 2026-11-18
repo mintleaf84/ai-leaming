@@ -48,7 +48,7 @@ class DashboardScreen extends HookConsumerWidget {
                         _buildProgressCard(statsState.stats),
                         SizedBox(height: 32.h),
                         // Todo List
-                        _buildTodoList(),
+                        _buildTodoList(statsState.stats),
                         SizedBox(height: 100.h), // Space for bottom nav
                       ],
                     ),
@@ -600,7 +600,10 @@ class DashboardScreen extends HookConsumerWidget {
     );
   }
 
-  Widget _buildTodoList() {
+  /// 待办清单：条目全部由 [LearningStats] 的真实字段推导，没有占位文案。
+  Widget _buildTodoList(LearningStats stats) {
+    final entries = _buildTodoEntries(stats);
+
     return Column(
       children: [
         Row(
@@ -624,17 +627,101 @@ class DashboardScreen extends HookConsumerWidget {
             borderRadius: BorderRadius.circular(8.r),
             border: Border.all(color: const Color(0xFFE8E8E5)),
           ),
-          child: Row(
+          child: Column(
             children: [
-              Icon(
-                Icons.check_circle_outline,
-                size: 20.sp,
-                color: Colors.grey[400],
-              ),
-              SizedBox(width: 12.w),
+              for (int i = 0; i < entries.length; i++) ...[
+                if (i > 0)
+                  Divider(height: 20.h, color: const Color(0xFFF0F0EC)),
+                _buildTodoRow(entries[i]),
+              ],
+            ],
+          ),
+        ),
+      ],
+    );
+  }
+
+  List<_TodoEntry> _buildTodoEntries(LearningStats stats) {
+    const dailyGoal = 20;
+    final remaining = dailyGoal - stats.todayCount;
+    final wrongCount = stats.todayCount - stats.todayCorrect;
+    final todayPracticed = stats.todayCount > 0;
+    final accuracy = (stats.todayAccuracy * 100).toStringAsFixed(1);
+
+    final practiceTitle = remaining > 0
+        ? '今日还需练习 $remaining 题'
+        : '今日 $dailyGoal 题目标已完成';
+    final practiceSubtitle = todayPracticed
+        ? '已练 ${stats.todayCount} 题 · 正确率 $accuracy%'
+        : '今日还没有练习记录';
+    final wrongTitle = wrongCount > 0
+        ? '复盘今日 $wrongCount 道错题'
+        : '今日暂无错题需要复盘';
+    final wrongSubtitle = wrongCount > 0 ? '在错题本中重做一遍' : '答错的题目会自动进入错题本';
+    final streakTitle = stats.streakDays > 0
+        ? '连续学习 ${stats.streakDays} 天'
+        : '开启连续学习记录';
+    final streakSubtitle =
+        '累计 ${stats.totalSessions} 场练习 · ${stats.totalCount} 题';
+
+    return <_TodoEntry>[
+      _TodoEntry(
+        icon: Icons.play_circle_outline,
+        title: practiceTitle,
+        subtitle: practiceSubtitle,
+        isDone: remaining <= 0,
+      ),
+      _TodoEntry(
+        icon: Icons.error_outline,
+        title: wrongTitle,
+        subtitle: wrongSubtitle,
+        isDone: wrongCount <= 0,
+      ),
+      _TodoEntry(
+        icon: Icons.local_fire_department_outlined,
+        title: streakTitle,
+        subtitle: streakSubtitle,
+        isDone: todayPracticed && stats.streakDays > 0,
+      ),
+    ];
+  }
+
+  Widget _buildTodoRow(_TodoEntry entry) {
+    return Row(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Icon(
+          entry.isDone ? Icons.check_circle : entry.icon,
+          size: 20.sp,
+          color: entry.isDone
+              ? const Color(0xFF52B788)
+              : const Color(0xFF9B9A97),
+        ),
+        SizedBox(width: 12.w),
+        Expanded(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
               Text(
-                '完成今日练习后自动生成待办项',
-                style: TextStyle(fontSize: 14.sp, color: Colors.grey[400]),
+                entry.title,
+                style: TextStyle(
+                  fontSize: 14.sp,
+                  fontWeight: FontWeight.w600,
+                  color: entry.isDone
+                      ? const Color(0xFF9B9A97)
+                      : const Color(0xFF37352F),
+                  decoration: entry.isDone
+                      ? TextDecoration.lineThrough
+                      : TextDecoration.none,
+                ),
+              ),
+              SizedBox(height: 2.h),
+              Text(
+                entry.subtitle,
+                style: TextStyle(
+                  fontSize: 12.sp,
+                  color: const Color(0xFF9B9A97),
+                ),
               ),
             ],
           ),
@@ -737,4 +824,19 @@ class DashboardScreen extends HookConsumerWidget {
       ),
     );
   }
+}
+
+/// 待办清单条目：字段全部由 LearningStats 推导，不引入额外数据源。
+class _TodoEntry {
+  const _TodoEntry({
+    required this.icon,
+    required this.title,
+    required this.subtitle,
+    required this.isDone,
+  });
+
+  final IconData icon;
+  final String title;
+  final String subtitle;
+  final bool isDone;
 }

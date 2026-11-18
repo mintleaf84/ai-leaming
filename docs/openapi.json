@@ -1,0 +1,5844 @@
+{
+  "components": {
+    "parameters": {},
+    "schemas": {
+      "ExternalAgentAnswer": {
+        "properties": {
+          "durationMs": {
+            "description": "本题作答耗时（毫秒），可省略",
+            "example": 12000,
+            "minimum": 0,
+            "nullable": true,
+            "type": "integer"
+          },
+          "isCorrect": {
+            "description": "本题是否正确，由调用方（agent）判定后传入；服务端不会用标准答案重算",
+            "example": true,
+            "type": "boolean"
+          },
+          "questionId": {
+            "description": "题目 ID，必须是题库中存在的题目；不存在则整批拒绝（400）",
+            "example": 123,
+            "exclusiveMinimum": true,
+            "minimum": 0,
+            "type": "integer"
+          },
+          "userAnswer": {
+            "description": "用户作答内容（选择题如 \"A\"，填空题可为原文或空）",
+            "example": "A",
+            "nullable": true,
+            "type": "string"
+          }
+        },
+        "required": ["questionId", "isCorrect"],
+        "type": "object"
+      },
+      "ExternalAgentAnswersRequest": {
+        "properties": {
+          "answers": {
+            "description": "答题记录，1..500 条",
+            "items": {
+              "$ref": "#/components/schemas/ExternalAgentAnswer"
+            },
+            "maxItems": 500,
+            "minItems": 1,
+            "type": "array"
+          },
+          "sessionKey": {
+            "description": "幂等键，由调用方生成并跨重试保持不变；同一用户的同一 sessionKey 重复提交只会算一次",
+            "example": "agent-run-2026-11-13-a",
+            "maxLength": 200,
+            "minLength": 1,
+            "type": "string"
+          },
+          "sessionName": {
+            "description": "会话名称，省略时记为「由 agent 导入」",
+            "example": "由 agent 导入",
+            "maxLength": 200,
+            "type": "string"
+          }
+        },
+        "required": ["sessionKey", "answers"],
+        "type": "object"
+      },
+      "ExternalAgentAnswersResponse": {
+        "properties": {
+          "duplicated": {
+            "description": "true 表示该 sessionKey 已导入过，本次未产生任何新数据",
+            "type": "boolean"
+          },
+          "inserted": {
+            "description": "本次写入的答题记录条数；幂等命中时为 0",
+            "type": "integer"
+          },
+          "sessionId": {
+            "description": "写入（或幂等命中）的会话 ID",
+            "type": "string"
+          }
+        },
+        "required": ["sessionId", "inserted", "duplicated"],
+        "type": "object"
+      },
+      "ExternalRecallCardUpsertRequest": {
+        "properties": {
+          "blanks": {
+            "description": "填空卡空位；kind=cloze 时必填",
+            "items": {
+              "properties": {
+                "answers": {
+                  "description": "该空可接受的答案（1–3 个）",
+                  "items": {
+                    "type": "string"
+                  },
+                  "type": "array"
+                }
+              },
+              "required": ["answers"],
+              "type": "object"
+            },
+            "minItems": 1,
+            "type": "array"
+          },
+          "cardId": {
+            "description": "卡组内的卡片标识（文件里的 cardId，非数字主键）",
+            "example": "L1-c01",
+            "maxLength": 120,
+            "minLength": 1,
+            "type": "string"
+          },
+          "deckKey": {
+            "description": "卡组标识",
+            "example": "deck-1",
+            "maxLength": 120,
+            "minLength": 1,
+            "type": "string"
+          },
+          "groupId": {
+            "description": "分组；不传 = 沿用旧值，传 null = 移出分组",
+            "maxLength": 120,
+            "minLength": 1,
+            "nullable": true,
+            "type": "string"
+          },
+          "items": {
+            "description": "列举卡条目，1–6 条；kind=list 时必填",
+            "items": {
+              "properties": {
+                "keywords": {
+                  "description": "关键词，任一命中即判「已写」",
+                  "items": {
+                    "type": "string"
+                  },
+                  "type": "array"
+                },
+                "text": {
+                  "description": "条目文本",
+                  "type": "string"
+                }
+              },
+              "required": ["text", "keywords"],
+              "type": "object"
+            },
+            "maxItems": 6,
+            "minItems": 1,
+            "type": "array"
+          },
+          "kind": {
+            "description": "list = 列举卡（用 items）/ cloze = 填空卡（用 blanks）",
+            "enum": ["list", "cloze"],
+            "type": "string"
+          },
+          "prompt": {
+            "description": "题干",
+            "minLength": 1,
+            "type": "string"
+          },
+          "verbatim": {
+            "description": "逐字判分开关；不传 = 沿用库内旧值",
+            "type": "boolean"
+          }
+        },
+        "required": ["deckKey", "cardId", "prompt", "kind"],
+        "type": "object"
+      },
+      "ExternalRecallCardUpsertResponse": {
+        "properties": {
+          "cardId": {
+            "description": "卡片的数字主键",
+            "type": "integer"
+          },
+          "cardKey": {
+            "description": "卡片文件内标识（与请求里的 cardId 相同）",
+            "type": "string"
+          }
+        },
+        "required": ["cardId", "cardKey"],
+        "type": "object"
+      },
+      "ExternalRecallDeckImportRequest": {
+        "properties": {
+          "json": {
+            "description": "卡组文件内容（JSON 字符串，schema=1）",
+            "example": "{\"schema\":1,\"deckId\":\"deck-1\",\"title\":\"教育法规\",\"cards\":[…]",
+            "minLength": 1,
+            "type": "string"
+          },
+          "onConflict": {
+            "description": "内容冲突策略：keep（默认，保留库内内容）/ accept（采用文件内容，进度不受影响）",
+            "enum": ["keep", "accept"],
+            "type": "string"
+          }
+        },
+        "required": ["json"],
+        "type": "object"
+      },
+      "ExternalRecallDeckImportResponse": {
+        "properties": {
+          "conflicts": {
+            "description": "内容冲突清单",
+            "items": {
+              "properties": {
+                "action": {
+                  "description": "该冲突的处理方式",
+                  "enum": ["keep", "accept"],
+                  "type": "string"
+                },
+                "cardId": {
+                  "description": "卡片标识",
+                  "type": "string"
+                }
+              },
+              "required": ["cardId", "action"],
+              "type": "object"
+            },
+            "type": "array"
+          },
+          "createdCards": {
+            "description": "本次新建的卡片数",
+            "type": "integer"
+          },
+          "deckKey": {
+            "description": "卡组标识",
+            "type": "string"
+          },
+          "missingInFile": {
+            "description": "库里有、文件里没有的 cardId（不会删除）",
+            "items": {
+              "type": "string"
+            },
+            "type": "array"
+          },
+          "skippedCards": {
+            "description": "内容一致、完全跳过的卡片数",
+            "type": "integer"
+          },
+          "updatedCards": {
+            "description": "内容被文件覆盖的卡片数（仅 accept）",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "deckKey",
+          "createdCards",
+          "updatedCards",
+          "skippedCards",
+          "conflicts",
+          "missingInFile"
+        ],
+        "type": "object"
+      },
+      "ExternalRecallReviewRequest": {
+        "properties": {
+          "allBlank": {
+            "description": "用户点了「全没想起」：所有呈现条目都算未写",
+            "type": "boolean"
+          },
+          "cardId": {
+            "description": "卡片数字主键（来自 GET /recall/cards/:cardId 或队列 ids）",
+            "example": 42,
+            "exclusiveMinimum": true,
+            "minimum": 0,
+            "type": "integer"
+          },
+          "clientKey": {
+            "description": "幂等键（客户端进入判分屏时生成的 UUID）。同一次作答的所有重试必须沿用同一个 key；服务端命中后返回首次结果（duplicate=true），不会二次推进调度",
+            "example": "6f1c1d5e-2a4b-4f0e-9c2f-8f0a2d1b7c33",
+            "maxLength": 120,
+            "minLength": 1,
+            "type": "string"
+          },
+          "overrides": {
+            "description": "用户改判项，可空",
+            "items": {
+              "properties": {
+                "index": {
+                  "description": "卡内条目下标（与 pendingItems 同一坐标系）",
+                  "minimum": 0,
+                  "type": "integer"
+                },
+                "to": {
+                  "description": "改判结果",
+                  "enum": ["ok", "miss"],
+                  "type": "string"
+                }
+              },
+              "required": ["index", "to"],
+              "type": "object"
+            },
+            "type": "array"
+          },
+          "typed": {
+            "description": "用户作答原文；填空卡按呈现顺序分段",
+            "example": "1. 建立安全制度 2. 开展安全演练",
+            "type": "string"
+          }
+        },
+        "required": ["cardId", "typed"],
+        "type": "object"
+      },
+      "ExternalRecallReviewResponse": {
+        "properties": {
+          "duplicate": {
+            "description": "true = 该 clientKey 已提交过，本次为幂等重放，未推进调度",
+            "type": "boolean"
+          },
+          "nextDue": {
+            "description": "下次到期时间（ISO 8601 UTC）",
+            "type": "string"
+          },
+          "nextReviewText": {
+            "description": "可直接展示的提示，如「下次 11 月 20 日」「明天只重测这 2 条」",
+            "type": "string"
+          },
+          "pendingItems": {
+            "description": "下次要重测的条目下标；null 表示无需重测",
+            "items": {
+              "type": "integer"
+            },
+            "nullable": true,
+            "type": "array"
+          },
+          "rating": {
+            "description": "推导出的 FSRS 评分（用户不直接选择）",
+            "enum": ["again", "hard", "good"],
+            "type": "string"
+          },
+          "verdicts": {
+            "description": "最终判分（已应用改判），与本次呈现的条目一一对应",
+            "items": {
+              "enum": ["ok", "miss"],
+              "type": "string"
+            },
+            "type": "array"
+          }
+        },
+        "required": [
+          "verdicts",
+          "rating",
+          "nextDue",
+          "pendingItems",
+          "nextReviewText",
+          "duplicate"
+        ],
+        "type": "object"
+      }
+    }
+  },
+  "info": {
+    "description": "API for AI Learning Mobile App",
+    "title": "AI Learning Mobile API",
+    "version": "1.0.0"
+  },
+  "openapi": "3.0.0",
+  "paths": {
+    "/api/admin/backup": {
+      "get": {
+        "responses": {
+          "200": {
+            "description": "成功返回数据库二进制文件"
+          },
+          "401": {
+            "description": "未授权"
+          },
+          "500": {
+            "description": "备份失败"
+          }
+        },
+        "summary": "下载数据库备份"
+      }
+    },
+    "/api/admin/backup-history": {
+      "get": {
+        "responses": {
+          "200": {
+            "description": "成功返回历史记录"
+          },
+          "401": {
+            "description": "未授权"
+          }
+        },
+        "summary": "获取备份与恢复操作的历史记录"
+      }
+    },
+    "/api/admin/export/questions": {
+      "get": {
+        "parameters": [
+          {
+            "in": "query",
+            "name": "search",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "tag",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "dimension",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "text/csv": {
+                "schema": {
+                  "type": "string"
+                }
+              }
+            },
+            "description": "CSV 文件数据"
+          },
+          "401": {
+            "description": "未授权"
+          }
+        },
+        "summary": "导出题库为CSV"
+      }
+    },
+    "/api/admin/feedback": {
+      "get": {
+        "parameters": [
+          {
+            "in": "query",
+            "name": "status",
+            "required": false,
+            "schema": {
+              "enum": ["pending", "resolved", "dismissed"],
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "feedback_type",
+            "required": false,
+            "schema": {
+              "enum": [
+                "wrong_answer",
+                "wrong_content",
+                "wrong_explanation",
+                "other"
+              ],
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "limit",
+            "required": false,
+            "schema": {
+              "default": 20,
+              "maximum": 100,
+              "minimum": 1,
+              "type": "integer"
+            }
+          },
+          {
+            "in": "query",
+            "name": "offset",
+            "required": false,
+            "schema": {
+              "default": 0,
+              "minimum": 0,
+              "nullable": true,
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "properties": {
+                    "items": {
+                      "items": {
+                        "properties": {
+                          "created_at": {
+                            "nullable": true,
+                            "type": "string"
+                          },
+                          "description": {
+                            "nullable": true,
+                            "type": "string"
+                          },
+                          "feedback_type": {
+                            "type": "string"
+                          },
+                          "id": {
+                            "type": "number"
+                          },
+                          "question_content": {
+                            "nullable": true,
+                            "type": "string"
+                          },
+                          "question_id": {
+                            "type": "number"
+                          },
+                          "resolved_at": {
+                            "nullable": true,
+                            "type": "string"
+                          },
+                          "status": {
+                            "type": "string"
+                          },
+                          "user_id": {
+                            "type": "number"
+                          },
+                          "username": {
+                            "nullable": true,
+                            "type": "string"
+                          }
+                        },
+                        "required": [
+                          "id",
+                          "question_id",
+                          "question_content",
+                          "user_id",
+                          "username",
+                          "feedback_type",
+                          "description",
+                          "status",
+                          "created_at",
+                          "resolved_at"
+                        ],
+                        "type": "object"
+                      },
+                      "type": "array"
+                    },
+                    "total": {
+                      "type": "number"
+                    }
+                  },
+                  "required": ["items", "total"],
+                  "type": "object"
+                }
+              }
+            },
+            "description": "反馈列表"
+          },
+          "401": {
+            "description": "未授权"
+          }
+        },
+        "summary": "获取反馈列表"
+      }
+    },
+    "/api/admin/feedback/counts": {
+      "get": {
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "properties": {
+                    "dismissed": {
+                      "type": "number"
+                    },
+                    "pending": {
+                      "type": "number"
+                    },
+                    "resolved": {
+                      "type": "number"
+                    }
+                  },
+                  "required": ["pending", "resolved", "dismissed"],
+                  "type": "object"
+                }
+              }
+            },
+            "description": "状态计数"
+          },
+          "401": {
+            "description": "未授权"
+          }
+        },
+        "summary": "获取反馈状态计数"
+      }
+    },
+    "/api/admin/feedback/{id}/dismiss": {
+      "post": {
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "required": false,
+            "schema": {
+              "nullable": true,
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "properties": {
+                    "success": {
+                      "type": "boolean"
+                    }
+                  },
+                  "required": ["success"],
+                  "type": "object"
+                }
+              }
+            },
+            "description": "操作成功"
+          },
+          "401": {
+            "description": "未授权"
+          }
+        },
+        "summary": "忽略反馈"
+      }
+    },
+    "/api/admin/feedback/{id}/resolve": {
+      "post": {
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "required": false,
+            "schema": {
+              "nullable": true,
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "properties": {
+                    "success": {
+                      "type": "boolean"
+                    }
+                  },
+                  "required": ["success"],
+                  "type": "object"
+                }
+              }
+            },
+            "description": "操作成功"
+          },
+          "401": {
+            "description": "未授权"
+          }
+        },
+        "summary": "标记反馈为已解决"
+      }
+    },
+    "/api/admin/restore": {
+      "post": {
+        "responses": {
+          "200": {
+            "description": "还原成功"
+          },
+          "400": {
+            "description": "无效文件"
+          },
+          "401": {
+            "description": "未授权"
+          },
+          "500": {
+            "description": "还原失败"
+          }
+        },
+        "summary": "上传并还原数据库"
+      }
+    },
+    "/api/admin/sql-scripts/cleanup": {
+      "post": {
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "properties": {
+                    "deleted": {
+                      "type": "number"
+                    },
+                    "error": {
+                      "type": "string"
+                    }
+                  },
+                  "required": ["deleted"],
+                  "type": "object"
+                }
+              }
+            },
+            "description": "清理结果"
+          },
+          "401": {
+            "description": "未授权"
+          }
+        },
+        "summary": "清理过期的 SQL 脚本备份"
+      }
+    },
+    "/api/admin/sql-scripts/execute": {
+      "post": {
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "properties": {
+                  "description": {
+                    "minLength": 1,
+                    "type": "string"
+                  },
+                  "sql": {
+                    "minLength": 1,
+                    "type": "string"
+                  }
+                },
+                "required": ["sql", "description"],
+                "type": "object"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "properties": {
+                    "backupPath": {
+                      "type": "string"
+                    },
+                    "error": {
+                      "type": "string"
+                    },
+                    "executionTime": {
+                      "type": "number"
+                    },
+                    "rowsAffected": {
+                      "type": "number"
+                    },
+                    "success": {
+                      "type": "boolean"
+                    }
+                  },
+                  "required": ["success"],
+                  "type": "object"
+                }
+              }
+            },
+            "description": "执行结果"
+          },
+          "401": {
+            "description": "未授权"
+          }
+        },
+        "summary": "执行 SQL 脚本（自动备份）"
+      }
+    },
+    "/api/admin/sql-scripts/history": {
+      "get": {
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "properties": {
+                    "history": {
+                      "items": {
+                        "properties": {
+                          "backupFile": {
+                            "nullable": true,
+                            "type": "string"
+                          },
+                          "description": {
+                            "type": "string"
+                          },
+                          "error": {
+                            "nullable": true,
+                            "type": "string"
+                          },
+                          "executionTime": {
+                            "nullable": true,
+                            "type": "number"
+                          },
+                          "id": {
+                            "type": "number"
+                          },
+                          "rowsAffected": {
+                            "nullable": true,
+                            "type": "number"
+                          },
+                          "success": {
+                            "type": "boolean"
+                          },
+                          "timestamp": {
+                            "anyOf": [
+                              {
+                                "type": "string"
+                              },
+                              {
+                                "format": "date-time",
+                                "type": "string"
+                              }
+                            ]
+                          },
+                          "userId": {
+                            "type": "number"
+                          }
+                        },
+                        "required": [
+                          "id",
+                          "timestamp",
+                          "userId",
+                          "description",
+                          "success",
+                          "rowsAffected",
+                          "executionTime",
+                          "backupFile",
+                          "error"
+                        ],
+                        "type": "object"
+                      },
+                      "type": "array"
+                    }
+                  },
+                  "required": ["history"],
+                  "type": "object"
+                }
+              }
+            },
+            "description": "执行历史"
+          },
+          "401": {
+            "description": "未授权"
+          }
+        },
+        "summary": "获取 SQL 脚本执行历史"
+      }
+    },
+    "/api/admin/sql-scripts/validate": {
+      "post": {
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "properties": {
+                  "description": {
+                    "type": "string"
+                  },
+                  "sql": {
+                    "minLength": 1,
+                    "type": "string"
+                  }
+                },
+                "required": ["sql"],
+                "type": "object"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "properties": {
+                    "error": {
+                      "type": "string"
+                    },
+                    "estimatedRows": {
+                      "nullable": true,
+                      "type": "number"
+                    },
+                    "valid": {
+                      "type": "boolean"
+                    },
+                    "warnings": {
+                      "items": {
+                        "type": "string"
+                      },
+                      "type": "array"
+                    }
+                  },
+                  "required": ["valid"],
+                  "type": "object"
+                }
+              }
+            },
+            "description": "验证结果"
+          },
+          "401": {
+            "description": "未授权"
+          }
+        },
+        "summary": "验证 SQL 脚本安全性"
+      }
+    },
+    "/api/admin/system": {
+      "get": {
+        "responses": {
+          "200": {
+            "description": "成功返回系统信息"
+          },
+          "401": {
+            "description": "未授权"
+          }
+        },
+        "summary": "获取系统运行状态"
+      },
+      "post": {
+        "responses": {
+          "200": {
+            "description": "操作成功"
+          },
+          "400": {
+            "description": "无效操作"
+          },
+          "401": {
+            "description": "未授权"
+          }
+        },
+        "summary": "执行系统管理操作（如演示模式开关）"
+      }
+    },
+    "/api/annotations": {
+      "delete": {
+        "parameters": [
+          {
+            "description": "标注ID",
+            "in": "query",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "description": "标注ID",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "成功"
+          },
+          "404": {
+            "description": "不存在"
+          }
+        }
+      },
+      "get": {
+        "parameters": [
+          {
+            "description": "题目ID",
+            "in": "query",
+            "name": "questionId",
+            "required": true,
+            "schema": {
+              "description": "题目ID",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "成功"
+          },
+          "401": {
+            "description": "未授权"
+          }
+        }
+      },
+      "post": {
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "properties": {
+                  "color": {
+                    "type": "string"
+                  },
+                  "endOffset": {
+                    "type": "number"
+                  },
+                  "questionId": {
+                    "type": "number"
+                  },
+                  "startOffset": {
+                    "type": "number"
+                  },
+                  "tag": {
+                    "enum": ["highlight", "underline", "wavy"],
+                    "type": "string"
+                  }
+                },
+                "required": ["questionId", "startOffset", "endOffset", "tag"],
+                "type": "object"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "成功"
+          },
+          "401": {
+            "description": "未授权"
+          }
+        }
+      }
+    },
+    "/api/auth/login": {
+      "post": {
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "properties": {
+                  "password": {
+                    "type": "string"
+                  },
+                  "username": {
+                    "type": "string"
+                  }
+                },
+                "required": ["username", "password"],
+                "type": "object"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "properties": {
+                    "token": {
+                      "type": "string"
+                    },
+                    "user": {
+                      "properties": {
+                        "id": {
+                          "type": "number"
+                        },
+                        "role": {
+                          "type": "string"
+                        },
+                        "username": {
+                          "type": "string"
+                        }
+                      },
+                      "required": ["id", "username", "role"],
+                      "type": "object"
+                    }
+                  },
+                  "required": ["token", "user"],
+                  "type": "object"
+                }
+              }
+            },
+            "description": "Login successful"
+          },
+          "401": {
+            "description": "Invalid credentials"
+          },
+          "429": {
+            "description": "Too Many Requests"
+          }
+        }
+      }
+    },
+    "/api/auth/logout": {
+      "post": {
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "properties": {
+                    "success": {
+                      "type": "boolean"
+                    }
+                  },
+                  "required": ["success"],
+                  "type": "object"
+                }
+              }
+            },
+            "description": "Logout successful"
+          }
+        }
+      }
+    },
+    "/api/auth/register": {
+      "post": {
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "properties": {
+                  "password": {
+                    "minLength": 6,
+                    "type": "string"
+                  },
+                  "username": {
+                    "minLength": 3,
+                    "type": "string"
+                  }
+                },
+                "required": ["username", "password"],
+                "type": "object"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "properties": {
+                    "token": {
+                      "type": "string"
+                    },
+                    "user": {
+                      "properties": {
+                        "id": {
+                          "type": "number"
+                        },
+                        "role": {
+                          "type": "string"
+                        },
+                        "username": {
+                          "type": "string"
+                        }
+                      },
+                      "required": ["id", "username", "role"],
+                      "type": "object"
+                    }
+                  },
+                  "required": ["token", "user"],
+                  "type": "object"
+                }
+              }
+            },
+            "description": "Registration successful"
+          },
+          "400": {
+            "description": "Username already exists or invalid input"
+          },
+          "429": {
+            "description": "Too Many Requests"
+          }
+        }
+      }
+    },
+    "/api/billing/plans": {
+      "get": {
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "properties": {
+                    "plans": {
+                      "items": {
+                        "properties": {
+                          "features": {
+                            "items": {
+                              "type": "string"
+                            },
+                            "type": "array"
+                          },
+                          "id": {
+                            "type": "string"
+                          },
+                          "name": {
+                            "type": "string"
+                          },
+                          "priceCents": {
+                            "type": "number"
+                          },
+                          "slug": {
+                            "type": "string"
+                          }
+                        },
+                        "required": [
+                          "id",
+                          "name",
+                          "slug",
+                          "priceCents",
+                          "features"
+                        ],
+                        "type": "object"
+                      },
+                      "type": "array"
+                    }
+                  },
+                  "required": ["plans"],
+                  "type": "object"
+                }
+              }
+            },
+            "description": "套餐列表"
+          },
+          "401": {
+            "description": "未授权"
+          },
+          "500": {
+            "description": "服务器错误"
+          }
+        }
+      }
+    },
+    "/api/chat": {
+      "post": {
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "properties": {
+                  "context": {
+                    "type": "string"
+                  },
+                  "enableRag": {
+                    "type": "boolean"
+                  },
+                  "messages": {
+                    "items": {
+                      "additionalProperties": {
+                        "nullable": true
+                      },
+                      "type": "object"
+                    },
+                    "type": "array"
+                  },
+                  "mode": {
+                    "enum": ["standard", "socratic"],
+                    "type": "string"
+                  },
+                  "sessionId": {
+                    "type": "number"
+                  }
+                },
+                "required": ["messages"],
+                "type": "object"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "成功 (流式或指令响应)"
+          },
+          "401": {
+            "description": "未授权"
+          },
+          "429": {
+            "description": "配额超限"
+          },
+          "500": {
+            "description": "服务器错误"
+          }
+        }
+      }
+    },
+    "/api/chat/sessions": {
+      "get": {
+        "parameters": [
+          {
+            "in": "query",
+            "name": "limit",
+            "required": false,
+            "schema": {
+              "default": 20,
+              "maximum": 100,
+              "minimum": 1,
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "properties": {
+                    "sessions": {
+                      "items": {
+                        "properties": {
+                          "created_at": {
+                            "type": "string"
+                          },
+                          "id": {
+                            "type": "number"
+                          },
+                          "message_count": {
+                            "type": "number"
+                          },
+                          "title": {
+                            "type": "string"
+                          },
+                          "updated_at": {
+                            "type": "string"
+                          }
+                        },
+                        "required": [
+                          "id",
+                          "title",
+                          "created_at",
+                          "updated_at",
+                          "message_count"
+                        ],
+                        "type": "object"
+                      },
+                      "type": "array"
+                    }
+                  },
+                  "required": ["sessions"],
+                  "type": "object"
+                }
+              }
+            },
+            "description": "会话列表"
+          },
+          "401": {
+            "description": "未授权"
+          },
+          "500": {
+            "description": "服务器错误"
+          }
+        }
+      },
+      "post": {
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "properties": {
+                  "title": {
+                    "maxLength": 100,
+                    "minLength": 1,
+                    "type": "string"
+                  }
+                },
+                "type": "object"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "properties": {
+                    "sessionId": {
+                      "type": "number"
+                    }
+                  },
+                  "required": ["sessionId"],
+                  "type": "object"
+                }
+              }
+            },
+            "description": "新会话 id"
+          },
+          "401": {
+            "description": "未授权"
+          },
+          "500": {
+            "description": "服务器错误"
+          }
+        }
+      }
+    },
+    "/api/chat/sessions/{id}": {
+      "delete": {
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "minLength": 1,
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "properties": {
+                    "success": {
+                      "type": "boolean"
+                    }
+                  },
+                  "required": ["success"],
+                  "type": "object"
+                }
+              }
+            },
+            "description": "删除成功"
+          },
+          "401": {
+            "description": "未授权"
+          },
+          "404": {
+            "description": "会话不存在"
+          },
+          "500": {
+            "description": "服务器错误"
+          }
+        }
+      },
+      "get": {
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "minLength": 1,
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "properties": {
+                    "messages": {
+                      "items": {
+                        "properties": {
+                          "content": {
+                            "type": "string"
+                          },
+                          "created_at": {
+                            "type": "string"
+                          },
+                          "id": {
+                            "type": "number"
+                          },
+                          "is_favorite": {
+                            "type": "number"
+                          },
+                          "role": {
+                            "enum": ["user", "assistant", "system"],
+                            "type": "string"
+                          },
+                          "session_id": {
+                            "type": "number"
+                          }
+                        },
+                        "required": [
+                          "id",
+                          "session_id",
+                          "role",
+                          "content",
+                          "is_favorite",
+                          "created_at"
+                        ],
+                        "type": "object"
+                      },
+                      "type": "array"
+                    },
+                    "session": {
+                      "properties": {
+                        "created_at": {
+                          "type": "string"
+                        },
+                        "id": {
+                          "type": "number"
+                        },
+                        "message_count": {
+                          "type": "number"
+                        },
+                        "title": {
+                          "type": "string"
+                        },
+                        "updated_at": {
+                          "type": "string"
+                        }
+                      },
+                      "required": [
+                        "id",
+                        "title",
+                        "created_at",
+                        "updated_at",
+                        "message_count"
+                      ],
+                      "type": "object"
+                    }
+                  },
+                  "required": ["session", "messages"],
+                  "type": "object"
+                }
+              }
+            },
+            "description": "会话详情"
+          },
+          "401": {
+            "description": "未授权"
+          },
+          "404": {
+            "description": "会话不存在"
+          },
+          "500": {
+            "description": "服务器错误"
+          }
+        }
+      }
+    },
+    "/api/external/knowledge/cards": {
+      "get": {
+        "description": "只读接口，需 read 作用域。返回当前 API Key 所属用户的知识卡片（问答对 + 要点），按创建时间倒序分页，可按分类筛选。跨用户数据不可见。",
+        "parameters": [
+          {
+            "description": "返回条数，默认 20，上限 100",
+            "in": "query",
+            "name": "limit",
+            "required": false,
+            "schema": {
+              "default": "20",
+              "description": "返回条数，默认 20，上限 100",
+              "type": "string"
+            }
+          },
+          {
+            "description": "偏移量，默认 0",
+            "in": "query",
+            "name": "offset",
+            "required": false,
+            "schema": {
+              "default": "0",
+              "description": "偏移量，默认 0",
+              "type": "string"
+            }
+          },
+          {
+            "description": "按分类筛选，不传返回全部分类",
+            "in": "query",
+            "name": "category",
+            "required": false,
+            "schema": {
+              "description": "按分类筛选，不传返回全部分类",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "properties": {
+                    "data": {
+                      "items": {
+                        "properties": {
+                          "back": {
+                            "description": "卡片背面（答案）",
+                            "type": "string"
+                          },
+                          "category": {
+                            "description": "分类，缺失时为空字符串",
+                            "type": "string"
+                          },
+                          "createdAt": {
+                            "description": "创建时间",
+                            "nullable": true,
+                            "type": "string"
+                          },
+                          "front": {
+                            "description": "卡片正面（问题）",
+                            "type": "string"
+                          },
+                          "id": {
+                            "description": "卡片 ID",
+                            "type": "integer"
+                          },
+                          "keyPoints": {
+                            "description": "要点",
+                            "items": {
+                              "properties": {
+                                "definition": {
+                                  "description": "释义",
+                                  "type": "string"
+                                },
+                                "term": {
+                                  "description": "术语",
+                                  "type": "string"
+                                }
+                              },
+                              "required": ["term", "definition"],
+                              "type": "object"
+                            },
+                            "type": "array"
+                          },
+                          "tags": {
+                            "description": "标签",
+                            "items": {
+                              "type": "string"
+                            },
+                            "type": "array"
+                          },
+                          "title": {
+                            "description": "标题",
+                            "type": "string"
+                          }
+                        },
+                        "required": [
+                          "id",
+                          "title",
+                          "category",
+                          "tags",
+                          "front",
+                          "back",
+                          "keyPoints",
+                          "createdAt"
+                        ],
+                        "type": "object"
+                      },
+                      "type": "array"
+                    },
+                    "meta": {
+                      "properties": {
+                        "limit": {
+                          "description": "本次请求的实际条数上限（已被截到 100 以内）",
+                          "type": "integer"
+                        },
+                        "offset": {
+                          "description": "本次请求的偏移量",
+                          "type": "integer"
+                        },
+                        "total": {
+                          "description": "符合条件的总条数",
+                          "type": "integer"
+                        }
+                      },
+                      "required": ["limit", "offset", "total"],
+                      "type": "object"
+                    }
+                  },
+                  "required": ["data", "meta"],
+                  "type": "object"
+                }
+              }
+            },
+            "description": "知识卡片列表"
+          },
+          "401": {
+            "description": "未授权 - 缺少 / 无效 / 已停用的 API Key"
+          },
+          "403": {
+            "description": "已禁止 - 该 API Key 的作用域不足"
+          }
+        },
+        "summary": "列出当前用户的知识卡片"
+      }
+    },
+    "/api/external/mastery": {
+      "get": {
+        "description": "只读接口，需 read 作用域。返回当前 API Key 所属用户在每个标签上的掌握度分数（0-100）、正确率与累计作答次数，按标签名升序分页。跨用户数据不可见。",
+        "parameters": [
+          {
+            "description": "返回条数，默认 20，上限 100",
+            "in": "query",
+            "name": "limit",
+            "required": false,
+            "schema": {
+              "default": "20",
+              "description": "返回条数，默认 20，上限 100",
+              "type": "string"
+            }
+          },
+          {
+            "description": "偏移量，默认 0",
+            "in": "query",
+            "name": "offset",
+            "required": false,
+            "schema": {
+              "default": "0",
+              "description": "偏移量，默认 0",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "properties": {
+                    "data": {
+                      "items": {
+                        "properties": {
+                          "accuracy": {
+                            "description": "正确率（0-100 整数百分比）",
+                            "type": "integer"
+                          },
+                          "correctCount": {
+                            "description": "累计答对数",
+                            "type": "integer"
+                          },
+                          "lastUpdated": {
+                            "description": "最近更新时间，未知为 null",
+                            "nullable": true,
+                            "type": "string"
+                          },
+                          "score": {
+                            "description": "掌握度分数（0-100）",
+                            "type": "number"
+                          },
+                          "tag": {
+                            "description": "标签（知识点路径）",
+                            "type": "string"
+                          },
+                          "totalCount": {
+                            "description": "累计作答次数",
+                            "type": "integer"
+                          }
+                        },
+                        "required": [
+                          "tag",
+                          "score",
+                          "correctCount",
+                          "totalCount",
+                          "accuracy",
+                          "lastUpdated"
+                        ],
+                        "type": "object"
+                      },
+                      "type": "array"
+                    },
+                    "meta": {
+                      "properties": {
+                        "limit": {
+                          "description": "本次请求的实际条数上限（已被截到 100 以内）",
+                          "type": "integer"
+                        },
+                        "offset": {
+                          "description": "本次请求的偏移量",
+                          "type": "integer"
+                        },
+                        "total": {
+                          "description": "符合条件的总条数",
+                          "type": "integer"
+                        }
+                      },
+                      "required": ["limit", "offset", "total"],
+                      "type": "object"
+                    }
+                  },
+                  "required": ["data", "meta"],
+                  "type": "object"
+                }
+              }
+            },
+            "description": "掌握度列表"
+          },
+          "401": {
+            "description": "未授权 - 缺少 / 无效 / 已停用的 API Key"
+          },
+          "403": {
+            "description": "已禁止 - 该 API Key 的作用域不足"
+          }
+        },
+        "summary": "按标签的掌握度（分数 / 正确率 / 作答次数）"
+      }
+    },
+    "/api/external/practice/answers": {
+      "post": {
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ExternalAgentAnswersRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ExternalAgentAnswersResponse"
+                }
+              }
+            },
+            "description": "导入成功（或幂等命中，见 duplicated 字段）"
+          },
+          "400": {
+            "description": "请求体校验失败 / 存在题库中不存在的 questionId"
+          },
+          "401": {
+            "description": "未授权 - 缺少 / 无效 / 已停用的 API Key"
+          },
+          "403": {
+            "description": "已禁止 - 该 API Key 的作用域不足（需要 write）"
+          },
+          "500": {
+            "description": "服务器内部错误"
+          }
+        }
+      }
+    },
+    "/api/external/practice/sessions": {
+      "get": {
+        "description": "只读接口，需 read 作用域。返回当前 API Key 所属用户的练习会话（按开始时间倒序），含题目数、答对数与正确率。用户 key 只能看到自己的会话；全局 key 看到 API_GLOBAL_USER_ID 对应用户的数据。",
+        "parameters": [
+          {
+            "description": "返回条数，默认 20，上限 100",
+            "in": "query",
+            "name": "limit",
+            "required": false,
+            "schema": {
+              "default": "20",
+              "description": "返回条数，默认 20，上限 100",
+              "type": "string"
+            }
+          },
+          {
+            "description": "偏移量，默认 0",
+            "in": "query",
+            "name": "offset",
+            "required": false,
+            "schema": {
+              "default": "0",
+              "description": "偏移量，默认 0",
+              "type": "string"
+            }
+          },
+          {
+            "description": "按练习模式筛选，不传返回全部",
+            "in": "query",
+            "name": "mode",
+            "required": false,
+            "schema": {
+              "description": "按练习模式筛选，不传返回全部",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "properties": {
+                    "data": {
+                      "items": {
+                        "properties": {
+                          "accuracy": {
+                            "description": "正确率（0-100 整数百分比）",
+                            "type": "integer"
+                          },
+                          "correctCount": {
+                            "description": "答对数",
+                            "type": "integer"
+                          },
+                          "id": {
+                            "description": "会话 ID",
+                            "type": "string"
+                          },
+                          "mode": {
+                            "description": "练习模式，未知为 null",
+                            "nullable": true,
+                            "type": "string"
+                          },
+                          "name": {
+                            "description": "会话名称，未命名为 null",
+                            "nullable": true,
+                            "type": "string"
+                          },
+                          "startedAt": {
+                            "description": "开始时间（ISO 8601 UTC，由 service 层用 dayjs 统一格式化）",
+                            "type": "string"
+                          },
+                          "totalQuestions": {
+                            "description": "题目数",
+                            "type": "integer"
+                          }
+                        },
+                        "required": [
+                          "id",
+                          "name",
+                          "mode",
+                          "totalQuestions",
+                          "correctCount",
+                          "accuracy",
+                          "startedAt"
+                        ],
+                        "type": "object"
+                      },
+                      "type": "array"
+                    },
+                    "meta": {
+                      "properties": {
+                        "limit": {
+                          "description": "本次请求的实际条数上限（已被截到 100 以内）",
+                          "type": "integer"
+                        },
+                        "offset": {
+                          "description": "本次请求的偏移量",
+                          "type": "integer"
+                        },
+                        "total": {
+                          "description": "符合条件的总条数",
+                          "type": "integer"
+                        }
+                      },
+                      "required": ["limit", "offset", "total"],
+                      "type": "object"
+                    }
+                  },
+                  "required": ["data", "meta"],
+                  "type": "object"
+                }
+              }
+            },
+            "description": "会话列表"
+          },
+          "401": {
+            "description": "未授权 - 缺少 / 无效 / 已停用的 API Key"
+          },
+          "403": {
+            "description": "已禁止 - 该 API Key 的作用域不足"
+          }
+        },
+        "summary": "列出当前调用身份的练习会话"
+      }
+    },
+    "/api/external/practice/sessions/{id}": {
+      "get": {
+        "description": "只读接口，需 read 作用域。返回会话元信息、逐题作答记录（题目内容、选项、用户答案、是否正确、耗时）与汇总。会话不属于当前调用身份时返回 404（不区分不存在与无权访问）。",
+        "parameters": [
+          {
+            "description": "练习会话 ID",
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "description": "练习会话 ID",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "properties": {
+                    "questions": {
+                      "items": {
+                        "properties": {
+                          "content": {
+                            "description": "题干",
+                            "type": "string"
+                          },
+                          "correctAnswer": {
+                            "description": "正确答案",
+                            "type": "string"
+                          },
+                          "durationMs": {
+                            "description": "本题耗时（毫秒）",
+                            "type": "integer"
+                          },
+                          "isCorrect": {
+                            "description": "是否答对",
+                            "type": "boolean"
+                          },
+                          "options": {
+                            "description": "选项",
+                            "items": {
+                              "type": "string"
+                            },
+                            "type": "array"
+                          },
+                          "questionId": {
+                            "description": "题目 ID",
+                            "type": "integer"
+                          },
+                          "tags": {
+                            "description": "标签",
+                            "items": {
+                              "type": "string"
+                            },
+                            "type": "array"
+                          },
+                          "userAnswer": {
+                            "description": "用户答案",
+                            "type": "string"
+                          }
+                        },
+                        "required": [
+                          "questionId",
+                          "content",
+                          "options",
+                          "userAnswer",
+                          "correctAnswer",
+                          "isCorrect",
+                          "durationMs",
+                          "tags"
+                        ],
+                        "type": "object"
+                      },
+                      "type": "array"
+                    },
+                    "session": {
+                      "properties": {
+                        "accuracy": {
+                          "description": "正确率（0-100 整数百分比）",
+                          "type": "integer"
+                        },
+                        "correctCount": {
+                          "description": "答对数",
+                          "type": "integer"
+                        },
+                        "id": {
+                          "description": "会话 ID",
+                          "type": "string"
+                        },
+                        "mode": {
+                          "description": "练习模式，未知为 null",
+                          "nullable": true,
+                          "type": "string"
+                        },
+                        "name": {
+                          "description": "会话名称，未命名为 null",
+                          "nullable": true,
+                          "type": "string"
+                        },
+                        "startedAt": {
+                          "description": "开始时间（ISO 8601 UTC，由 service 层用 dayjs 统一格式化）",
+                          "type": "string"
+                        },
+                        "totalQuestions": {
+                          "description": "题目数",
+                          "type": "integer"
+                        }
+                      },
+                      "required": [
+                        "id",
+                        "name",
+                        "mode",
+                        "totalQuestions",
+                        "correctCount",
+                        "accuracy",
+                        "startedAt"
+                      ],
+                      "type": "object"
+                    },
+                    "summary": {
+                      "properties": {
+                        "accuracy": {
+                          "description": "本场正确率（0-100 整数百分比）",
+                          "type": "integer"
+                        },
+                        "correctCount": {
+                          "description": "本场答对数",
+                          "type": "integer"
+                        },
+                        "totalDurationMs": {
+                          "description": "本场累计耗时（毫秒）",
+                          "type": "integer"
+                        },
+                        "totalQuestions": {
+                          "description": "本场题目数",
+                          "type": "integer"
+                        }
+                      },
+                      "required": [
+                        "totalQuestions",
+                        "correctCount",
+                        "accuracy",
+                        "totalDurationMs"
+                      ],
+                      "type": "object"
+                    }
+                  },
+                  "required": ["session", "questions", "summary"],
+                  "type": "object"
+                }
+              }
+            },
+            "description": "会话详情"
+          },
+          "401": {
+            "description": "未授权 - 缺少 / 无效 / 已停用的 API Key"
+          },
+          "403": {
+            "description": "已禁止 - 该 API Key 的作用域不足"
+          },
+          "404": {
+            "description": "会话不存在或不属于当前调用身份"
+          }
+        },
+        "summary": "获取单场练习详情与逐题作答记录"
+      }
+    },
+    "/api/external/questions": {
+      "get": {
+        "parameters": [
+          {
+            "in": "query",
+            "name": "page",
+            "required": false,
+            "schema": {
+              "default": "1",
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "limit",
+            "required": false,
+            "schema": {
+              "default": "20",
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "tag",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "properties": {
+                    "data": {
+                      "items": {
+                        "properties": {
+                          "answer": {
+                            "type": "string"
+                          },
+                          "content": {
+                            "type": "string"
+                          },
+                          "dimension": {
+                            "nullable": true,
+                            "type": "string"
+                          },
+                          "explanation": {
+                            "nullable": true,
+                            "type": "string"
+                          },
+                          "id": {
+                            "type": "number"
+                          },
+                          "options": {
+                            "items": {
+                              "type": "string"
+                            },
+                            "type": "array"
+                          },
+                          "tags": {
+                            "items": {
+                              "type": "string"
+                            },
+                            "type": "array"
+                          },
+                          "type": {
+                            "nullable": true,
+                            "type": "string"
+                          }
+                        },
+                        "required": [
+                          "id",
+                          "content",
+                          "options",
+                          "answer",
+                          "tags"
+                        ],
+                        "type": "object"
+                      },
+                      "type": "array"
+                    },
+                    "pagination": {
+                      "properties": {
+                        "limit": {
+                          "type": "number"
+                        },
+                        "page": {
+                          "type": "number"
+                        },
+                        "total": {
+                          "type": "number"
+                        },
+                        "totalPages": {
+                          "type": "number"
+                        }
+                      },
+                      "required": ["page", "limit", "total", "totalPages"],
+                      "type": "object"
+                    }
+                  },
+                  "required": ["data", "pagination"],
+                  "type": "object"
+                }
+              }
+            },
+            "description": "获取题库列表（分页）"
+          },
+          "401": {
+            "description": "未授权 - 缺少 / 无效 / 已停用的 API Key"
+          },
+          "403": {
+            "description": "已禁止 - 该 API Key 的作用域不足"
+          }
+        }
+      }
+    },
+    "/api/external/questions/{id}": {
+      "get": {
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "properties": {
+                    "answer": {
+                      "type": "string"
+                    },
+                    "content": {
+                      "type": "string"
+                    },
+                    "dimension": {
+                      "nullable": true,
+                      "type": "string"
+                    },
+                    "explanation": {
+                      "nullable": true,
+                      "type": "string"
+                    },
+                    "id": {
+                      "type": "number"
+                    },
+                    "options": {
+                      "items": {
+                        "type": "string"
+                      },
+                      "type": "array"
+                    },
+                    "tags": {
+                      "items": {
+                        "type": "string"
+                      },
+                      "type": "array"
+                    },
+                    "type": {
+                      "nullable": true,
+                      "type": "string"
+                    }
+                  },
+                  "required": ["id", "content", "options", "answer", "tags"],
+                  "type": "object"
+                }
+              }
+            },
+            "description": "获取单道题目详情"
+          },
+          "404": {
+            "description": "题目不存在"
+          }
+        }
+      }
+    },
+    "/api/external/recall/cards": {
+      "post": {
+        "description": "写接口，需 write 作用域。卡片内容全局共享，写入**不会**重置任何人的复习进度。校验规则与整包导入一致（列举 1–6 条、每空 1–3 个可接受答案）。卡组不存在返回 404，内容非法返回 400（带 issues）。",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ExternalRecallCardUpsertRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ExternalRecallCardUpsertResponse"
+                }
+              }
+            },
+            "description": "已写入（新建或更新）"
+          },
+          "400": {
+            "description": "内容校验失败（带 issues）/ kind 与 items/blanks 不匹配"
+          },
+          "401": {
+            "description": "未授权 - 缺少 / 无效 / 已停用的 API Key"
+          },
+          "403": {
+            "description": "已禁止 - 该 API Key 的作用域不足（需要 write）"
+          },
+          "404": {
+            "description": "卡组不存在"
+          },
+          "500": {
+            "description": "服务器内部错误"
+          }
+        },
+        "summary": "新建或修改一张回忆卡"
+      }
+    },
+    "/api/external/recall/cards/{cardId}": {
+      "get": {
+        "description": "只读接口，需 read 作用域。`cardId` 是数字主键。`mode` 为 `retest` 时界面只呈现 `pendingItems` 里的条目；`state` 为 null 表示该身份从未复习过这张卡。卡片不存在返回 404。",
+        "parameters": [
+          {
+            "description": "卡片数字主键",
+            "in": "path",
+            "name": "cardId",
+            "required": true,
+            "schema": {
+              "description": "卡片数字主键",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "properties": {
+                    "blanks": {
+                      "items": {
+                        "properties": {
+                          "answers": {
+                            "description": "该空可接受的答案（1–3 个）",
+                            "items": {
+                              "type": "string"
+                            },
+                            "type": "array"
+                          }
+                        },
+                        "required": ["answers"],
+                        "type": "object"
+                      },
+                      "nullable": true,
+                      "type": "array"
+                    },
+                    "cardId": {
+                      "type": "integer"
+                    },
+                    "cardKey": {
+                      "type": "string"
+                    },
+                    "deckKey": {
+                      "type": "string"
+                    },
+                    "deckTitle": {
+                      "type": "string"
+                    },
+                    "groupKey": {
+                      "nullable": true,
+                      "type": "string"
+                    },
+                    "items": {
+                      "items": {
+                        "properties": {
+                          "keywords": {
+                            "description": "关键词，任一命中即判「已写」",
+                            "items": {
+                              "type": "string"
+                            },
+                            "type": "array"
+                          },
+                          "text": {
+                            "description": "条目文本",
+                            "type": "string"
+                          }
+                        },
+                        "required": ["text", "keywords"],
+                        "type": "object"
+                      },
+                      "nullable": true,
+                      "type": "array"
+                    },
+                    "kind": {
+                      "description": "卡片类型：list = 列举卡，cloze = 填空卡",
+                      "enum": ["list", "cloze"],
+                      "type": "string"
+                    },
+                    "mode": {
+                      "description": "first = 首次作答整卡；retest = 只重测待重测条目",
+                      "enum": ["first", "retest"],
+                      "type": "string"
+                    },
+                    "pendingItems": {
+                      "description": "待重测条目下标；null 表示没有（与 mode 联动）",
+                      "items": {
+                        "type": "integer"
+                      },
+                      "nullable": true,
+                      "type": "array"
+                    },
+                    "prompt": {
+                      "type": "string"
+                    },
+                    "state": {
+                      "description": "该调用身份在这张卡上的进度；null = 从未复习过（新卡）",
+                      "nullable": true,
+                      "properties": {
+                        "archived": {
+                          "description": "是否已归档（移出队列）",
+                          "type": "boolean"
+                        },
+                        "difficulty": {
+                          "description": "FSRS 难度",
+                          "type": "number"
+                        },
+                        "due": {
+                          "description": "下次到期时间（ISO 8601 UTC）",
+                          "type": "string"
+                        },
+                        "lapses": {
+                          "description": "累计遗忘次数",
+                          "type": "integer"
+                        },
+                        "last_review": {
+                          "description": "最近一次复习时间，未知为 null",
+                          "nullable": true,
+                          "type": "string"
+                        },
+                        "pendingItems": {
+                          "description": "待重测的条目下标；null 表示没有待重测条目",
+                          "items": {
+                            "type": "integer"
+                          },
+                          "nullable": true,
+                          "type": "array"
+                        },
+                        "reps": {
+                          "description": "累计复习次数",
+                          "type": "integer"
+                        },
+                        "stability": {
+                          "description": "FSRS 记忆稳定度",
+                          "type": "number"
+                        },
+                        "state": {
+                          "description": "FSRS 状态：0 New / 1 Learning / 2 Review / 3 Relearning",
+                          "type": "integer"
+                        }
+                      },
+                      "required": [
+                        "due",
+                        "stability",
+                        "difficulty",
+                        "state",
+                        "reps",
+                        "lapses",
+                        "last_review",
+                        "pendingItems",
+                        "archived"
+                      ],
+                      "type": "object"
+                    },
+                    "verbatim": {
+                      "type": "boolean"
+                    }
+                  },
+                  "required": [
+                    "cardId",
+                    "cardKey",
+                    "deckKey",
+                    "deckTitle",
+                    "kind",
+                    "groupKey",
+                    "prompt",
+                    "items",
+                    "blanks",
+                    "verbatim",
+                    "state",
+                    "mode",
+                    "pendingItems"
+                  ],
+                  "type": "object"
+                }
+              }
+            },
+            "description": "卡片详情"
+          },
+          "400": {
+            "description": "cardId 不是正整数"
+          },
+          "401": {
+            "description": "未授权 - 缺少 / 无效 / 已停用的 API Key"
+          },
+          "403": {
+            "description": "已禁止 - 该 API Key 的作用域不足"
+          },
+          "404": {
+            "description": "卡片不存在"
+          }
+        },
+        "summary": "获取单张回忆卡详情（含呈现模式与待重测条目）"
+      }
+    },
+    "/api/external/recall/decks": {
+      "get": {
+        "description": "只读接口，需 read 作用域。卡组内容全局共享，`activeCount` / `archivedCount` / `dueCount` 只统计当前 API Key 所属用户的数据。按卡组标题升序。",
+        "parameters": [
+          {
+            "description": "返回条数，默认 20，上限 100",
+            "in": "query",
+            "name": "limit",
+            "required": false,
+            "schema": {
+              "default": "20",
+              "description": "返回条数，默认 20，上限 100",
+              "type": "string"
+            }
+          },
+          {
+            "description": "偏移量，默认 0",
+            "in": "query",
+            "name": "offset",
+            "required": false,
+            "schema": {
+              "default": "0",
+              "description": "偏移量，默认 0",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "properties": {
+                    "data": {
+                      "items": {
+                        "properties": {
+                          "activeCount": {
+                            "description": "该用户未归档、已有复习状态的卡片数（含未到期）",
+                            "type": "integer"
+                          },
+                          "archivedCount": {
+                            "description": "该用户已归档（移出队列）的卡片数",
+                            "type": "integer"
+                          },
+                          "cardCount": {
+                            "description": "卡组内卡片总数",
+                            "type": "integer"
+                          },
+                          "deckKey": {
+                            "description": "卡组标识（导入导出文件里的 deckId）",
+                            "type": "string"
+                          },
+                          "dueCount": {
+                            "description": "该用户当前到期可复习的卡片数",
+                            "type": "integer"
+                          },
+                          "title": {
+                            "description": "卡组标题",
+                            "type": "string"
+                          }
+                        },
+                        "required": [
+                          "deckKey",
+                          "title",
+                          "cardCount",
+                          "activeCount",
+                          "archivedCount",
+                          "dueCount"
+                        ],
+                        "type": "object"
+                      },
+                      "type": "array"
+                    },
+                    "meta": {
+                      "properties": {
+                        "limit": {
+                          "description": "本次请求的实际条数上限（已被截到 100 以内）",
+                          "type": "integer"
+                        },
+                        "offset": {
+                          "description": "本次请求的偏移量",
+                          "type": "integer"
+                        },
+                        "total": {
+                          "description": "符合条件的总条数",
+                          "type": "integer"
+                        }
+                      },
+                      "required": ["limit", "offset", "total"],
+                      "type": "object"
+                    }
+                  },
+                  "required": ["data", "meta"],
+                  "type": "object"
+                }
+              }
+            },
+            "description": "卡组列表"
+          },
+          "401": {
+            "description": "未授权 - 缺少 / 无效 / 已停用的 API Key"
+          },
+          "403": {
+            "description": "已禁止 - 该 API Key 的作用域不足"
+          }
+        },
+        "summary": "列出回忆自测卡组（含当前身份的进度统计）"
+      },
+      "post": {
+        "description": "写接口，需 write 作用域。幂等：同一份文件重复导入不新增、不重置任何人的复习进度。文件里没有的卡片不删除，只在 `missingInFile` 里报告。`schema` 版本不支持或内容校验失败返回 400 且库内零写入。",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ExternalRecallDeckImportRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ExternalRecallDeckImportResponse"
+                }
+              }
+            },
+            "description": "导入结果"
+          },
+          "400": {
+            "description": "卡组内容校验失败（带 issues）"
+          },
+          "401": {
+            "description": "未授权 - 缺少 / 无效 / 已停用的 API Key"
+          },
+          "403": {
+            "description": "已禁止 - 该 API Key 的作用域不足（需要 write）"
+          },
+          "500": {
+            "description": "服务器内部错误"
+          }
+        },
+        "summary": "导入（或更新）一个回忆卡组"
+      }
+    },
+    "/api/external/recall/decks/{deckKey}": {
+      "get": {
+        "description": "只读接口，需 read 作用域。卡片内容全局共享，`state` 只反映当前 API Key 所属用户的进度（无记录为 null）。按卡片主键升序分页，默认 20、上限 100。卡组不存在返回 404。",
+        "parameters": [
+          {
+            "description": "卡组标识",
+            "in": "path",
+            "name": "deckKey",
+            "required": true,
+            "schema": {
+              "description": "卡组标识",
+              "type": "string"
+            }
+          },
+          {
+            "description": "返回条数，默认 20，上限 100",
+            "in": "query",
+            "name": "limit",
+            "required": false,
+            "schema": {
+              "default": "20",
+              "description": "返回条数，默认 20，上限 100",
+              "type": "string"
+            }
+          },
+          {
+            "description": "偏移量，默认 0",
+            "in": "query",
+            "name": "offset",
+            "required": false,
+            "schema": {
+              "default": "0",
+              "description": "偏移量，默认 0",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "properties": {
+                    "data": {
+                      "items": {
+                        "properties": {
+                          "blanks": {
+                            "description": "填空卡空位；列举卡为 null",
+                            "items": {
+                              "properties": {
+                                "answers": {
+                                  "description": "该空可接受的答案（1–3 个）",
+                                  "items": {
+                                    "type": "string"
+                                  },
+                                  "type": "array"
+                                }
+                              },
+                              "required": ["answers"],
+                              "type": "object"
+                            },
+                            "nullable": true,
+                            "type": "array"
+                          },
+                          "cardId": {
+                            "description": "卡片数字主键（提交作答时用它）",
+                            "type": "integer"
+                          },
+                          "cardKey": {
+                            "description": "卡片文件内标识（卡组内唯一）",
+                            "type": "string"
+                          },
+                          "groupKey": {
+                            "description": "所属分组，未分组为 null",
+                            "nullable": true,
+                            "type": "string"
+                          },
+                          "items": {
+                            "description": "列举卡条目；填空卡为 null",
+                            "items": {
+                              "properties": {
+                                "keywords": {
+                                  "description": "关键词，任一命中即判「已写」",
+                                  "items": {
+                                    "type": "string"
+                                  },
+                                  "type": "array"
+                                },
+                                "text": {
+                                  "description": "条目文本",
+                                  "type": "string"
+                                }
+                              },
+                              "required": ["text", "keywords"],
+                              "type": "object"
+                            },
+                            "nullable": true,
+                            "type": "array"
+                          },
+                          "kind": {
+                            "description": "卡片类型：list = 列举卡，cloze = 填空卡",
+                            "enum": ["list", "cloze"],
+                            "type": "string"
+                          },
+                          "prompt": {
+                            "description": "题干",
+                            "type": "string"
+                          },
+                          "state": {
+                            "description": "该调用身份在这张卡上的进度；null = 从未复习过（新卡）",
+                            "nullable": true,
+                            "properties": {
+                              "archived": {
+                                "description": "是否已归档（移出队列）",
+                                "type": "boolean"
+                              },
+                              "difficulty": {
+                                "description": "FSRS 难度",
+                                "type": "number"
+                              },
+                              "due": {
+                                "description": "下次到期时间（ISO 8601 UTC）",
+                                "type": "string"
+                              },
+                              "lapses": {
+                                "description": "累计遗忘次数",
+                                "type": "integer"
+                              },
+                              "last_review": {
+                                "description": "最近一次复习时间，未知为 null",
+                                "nullable": true,
+                                "type": "string"
+                              },
+                              "pendingItems": {
+                                "description": "待重测的条目下标；null 表示没有待重测条目",
+                                "items": {
+                                  "type": "integer"
+                                },
+                                "nullable": true,
+                                "type": "array"
+                              },
+                              "reps": {
+                                "description": "累计复习次数",
+                                "type": "integer"
+                              },
+                              "stability": {
+                                "description": "FSRS 记忆稳定度",
+                                "type": "number"
+                              },
+                              "state": {
+                                "description": "FSRS 状态：0 New / 1 Learning / 2 Review / 3 Relearning",
+                                "type": "integer"
+                              }
+                            },
+                            "required": [
+                              "due",
+                              "stability",
+                              "difficulty",
+                              "state",
+                              "reps",
+                              "lapses",
+                              "last_review",
+                              "pendingItems",
+                              "archived"
+                            ],
+                            "type": "object"
+                          },
+                          "verbatim": {
+                            "description": "是否逐字判分（仅列举卡有意义）",
+                            "type": "boolean"
+                          }
+                        },
+                        "required": [
+                          "cardId",
+                          "cardKey",
+                          "kind",
+                          "groupKey",
+                          "prompt",
+                          "items",
+                          "blanks",
+                          "verbatim",
+                          "state"
+                        ],
+                        "type": "object"
+                      },
+                      "type": "array"
+                    },
+                    "deck": {
+                      "properties": {
+                        "deckKey": {
+                          "type": "string"
+                        },
+                        "groups": {
+                          "items": {
+                            "properties": {
+                              "groupId": {
+                                "type": "string"
+                              },
+                              "order": {
+                                "type": "integer"
+                              },
+                              "title": {
+                                "type": "string"
+                              }
+                            },
+                            "required": ["groupId", "title"],
+                            "type": "object"
+                          },
+                          "type": "array"
+                        },
+                        "title": {
+                          "type": "string"
+                        }
+                      },
+                      "required": ["deckKey", "title", "groups"],
+                      "type": "object"
+                    },
+                    "meta": {
+                      "properties": {
+                        "limit": {
+                          "description": "本次请求的实际条数上限（已被截到 100 以内）",
+                          "type": "integer"
+                        },
+                        "offset": {
+                          "description": "本次请求的偏移量",
+                          "type": "integer"
+                        },
+                        "total": {
+                          "description": "符合条件的总条数",
+                          "type": "integer"
+                        }
+                      },
+                      "required": ["limit", "offset", "total"],
+                      "type": "object"
+                    }
+                  },
+                  "required": ["deck", "data", "meta"],
+                  "type": "object"
+                }
+              }
+            },
+            "description": "卡组详情 + 卡片列表"
+          },
+          "401": {
+            "description": "未授权 - 缺少 / 无效 / 已停用的 API Key"
+          },
+          "403": {
+            "description": "已禁止 - 该 API Key 的作用域不足"
+          },
+          "404": {
+            "description": "卡组不存在"
+          }
+        },
+        "summary": "获取卡组详情与卡片列表（含当前身份的复习状态）"
+      }
+    },
+    "/api/external/recall/decks/{deckKey}/cards/{cardKey}": {
+      "delete": {
+        "description": "写接口，需 write 作用域。删除是全局的：卡片内容共存，删除后所有用户都看不到它，其作答日志与进度一并删除（与界面上的删除行为一致）。卡组或卡片不存在返回 404。",
+        "parameters": [
+          {
+            "description": "卡组标识",
+            "in": "path",
+            "name": "deckKey",
+            "required": true,
+            "schema": {
+              "description": "卡组标识",
+              "type": "string"
+            }
+          },
+          {
+            "description": "卡片在卡组内的标识（文件里的 cardId）",
+            "in": "path",
+            "name": "cardKey",
+            "required": true,
+            "schema": {
+              "description": "卡片在卡组内的标识（文件里的 cardId）",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "properties": {
+                    "cardId": {
+                      "description": "被删除卡片的数字主键",
+                      "type": "integer"
+                    },
+                    "cardKey": {
+                      "description": "被删除卡片的文件内标识",
+                      "type": "string"
+                    },
+                    "deleted": {
+                      "description": "恒为 true",
+                      "enum": [true],
+                      "type": "boolean"
+                    }
+                  },
+                  "required": ["cardId", "cardKey", "deleted"],
+                  "type": "object"
+                }
+              }
+            },
+            "description": "已删除"
+          },
+          "401": {
+            "description": "未授权 - 缺少 / 无效 / 已停用的 API Key"
+          },
+          "403": {
+            "description": "已禁止 - 该 API Key 的作用域不足（需要 write）"
+          },
+          "404": {
+            "description": "卡组不存在 / 卡片不在该卡组里"
+          },
+          "500": {
+            "description": "服务器内部错误"
+          }
+        },
+        "summary": "删除一张回忆卡（含其全部作答日志与进度）"
+      }
+    },
+    "/api/external/recall/queue": {
+      "get": {
+        "description": "只读接口，需 read 作用域。`ids` 是本次要做的卡片主键序列（到期优先、按 due 升序，其后是今天投放的新卡）；`due` / `fresh` 是**条数**而不是 id 数组，编号一律从 `ids` 取。队列是纯查询，同一时刻重复调用结果一致。",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "properties": {
+                    "due": {
+                      "description": "到期卡条数（含重测卡）",
+                      "type": "integer"
+                    },
+                    "estimatedMinutes": {
+                      "description": "展示用估时（分钟）",
+                      "type": "integer"
+                    },
+                    "fresh": {
+                      "description": "今日投放的新卡条数",
+                      "type": "integer"
+                    },
+                    "ids": {
+                      "description": "本次要做的卡片主键，顺序即建议作答顺序",
+                      "items": {
+                        "type": "integer"
+                      },
+                      "type": "array"
+                    },
+                    "streakDays": {
+                      "description": "连续学习天数（学习日 04:00 切换）",
+                      "type": "integer"
+                    },
+                    "total": {
+                      "description": "队列总条数 = due + fresh",
+                      "type": "integer"
+                    }
+                  },
+                  "required": [
+                    "ids",
+                    "due",
+                    "fresh",
+                    "total",
+                    "estimatedMinutes",
+                    "streakDays"
+                  ],
+                  "type": "object"
+                }
+              }
+            },
+            "description": "今日队列"
+          },
+          "401": {
+            "description": "未授权 - 缺少 / 无效 / 已停用的 API Key"
+          },
+          "403": {
+            "description": "已禁止 - 该 API Key 的作用域不足"
+          }
+        },
+        "summary": "获取今日回忆队列（到期优先 + 新卡额度）"
+      }
+    },
+    "/api/external/recall/reviews": {
+      "post": {
+        "description": "写接口，需 write 作用域。服务端按卡片内容判分、推导评分并推进 FSRS 调度。带 `clientKey` 时按 `(user_id, clientKey)` 幂等：重试命中返回 `duplicate: true` 与首次结果，**不会二次推进调度**。卡片不存在返回 404。",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ExternalRecallReviewRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ExternalRecallReviewResponse"
+                }
+              }
+            },
+            "description": "判分结果（或幂等重放，见 duplicate）"
+          },
+          "400": {
+            "description": "请求体校验失败 / 改判下标非法"
+          },
+          "401": {
+            "description": "未授权 - 缺少 / 无效 / 已停用的 API Key"
+          },
+          "403": {
+            "description": "已禁止 - 该 API Key 的作用域不足（需要 write）"
+          },
+          "404": {
+            "description": "卡片不存在"
+          },
+          "500": {
+            "description": "服务器内部错误"
+          }
+        },
+        "summary": "提交一次回忆作答（判分 + 调度 + 落日志）"
+      }
+    },
+    "/api/external/stats": {
+      "get": {
+        "description": "只读接口，需 read 作用域。返回当前 API Key 所属用户的学习总览：累计作答数、答对数、正确率、会话数、连续学习天数、平均掌握度、薄弱知识点等。正确率与平均掌握度均为 0-100 的整数百分比。",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "properties": {
+                    "accuracy": {
+                      "description": "累计正确率（0-100）",
+                      "type": "integer"
+                    },
+                    "averageMastery": {
+                      "description": "平均掌握度（0-100）",
+                      "type": "integer"
+                    },
+                    "observationZoneCount": {
+                      "description": "观察区知识点数",
+                      "type": "integer"
+                    },
+                    "pendingReviewCount": {
+                      "description": "待复习错题数（最近 7 天答错去重）",
+                      "type": "integer"
+                    },
+                    "streakDays": {
+                      "description": "连续学习天数",
+                      "type": "integer"
+                    },
+                    "todayAnswered": {
+                      "description": "今日作答次数",
+                      "type": "integer"
+                    },
+                    "todayCorrect": {
+                      "description": "今日答对数",
+                      "type": "integer"
+                    },
+                    "totalAnswered": {
+                      "description": "累计作答次数（题次）",
+                      "type": "integer"
+                    },
+                    "totalCorrect": {
+                      "description": "累计答对数",
+                      "type": "integer"
+                    },
+                    "totalSessions": {
+                      "description": "累计练习会话数",
+                      "type": "integer"
+                    },
+                    "weakPoints": {
+                      "items": {
+                        "properties": {
+                          "score": {
+                            "description": "掌握度分数（0-100）",
+                            "type": "number"
+                          },
+                          "tag": {
+                            "description": "知识点标签",
+                            "type": "string"
+                          }
+                        },
+                        "required": ["tag", "score"],
+                        "type": "object"
+                      },
+                      "type": "array"
+                    }
+                  },
+                  "required": [
+                    "totalAnswered",
+                    "totalCorrect",
+                    "accuracy",
+                    "totalSessions",
+                    "streakDays",
+                    "averageMastery",
+                    "todayAnswered",
+                    "todayCorrect",
+                    "pendingReviewCount",
+                    "observationZoneCount",
+                    "weakPoints"
+                  ],
+                  "type": "object"
+                }
+              }
+            },
+            "description": "学习总览"
+          },
+          "401": {
+            "description": "未授权 - 缺少 / 无效 / 已停用的 API Key"
+          },
+          "403": {
+            "description": "已禁止 - 该 API Key 的作用域不足"
+          }
+        },
+        "summary": "学习总览（作答量 / 正确率 / 连续天数）"
+      }
+    },
+    "/api/external/wrong-book": {
+      "get": {
+        "description": "只读接口，需 read 作用域。返回当前 API Key 所属用户尚未标记为已掌握的错题，按错误次数与最近错误时间倒序。跨用户数据不可见。",
+        "parameters": [
+          {
+            "description": "返回条数，默认 20，上限 100",
+            "in": "query",
+            "name": "limit",
+            "required": false,
+            "schema": {
+              "default": "20",
+              "description": "返回条数，默认 20，上限 100",
+              "type": "string"
+            }
+          },
+          {
+            "description": "偏移量，默认 0",
+            "in": "query",
+            "name": "offset",
+            "required": false,
+            "schema": {
+              "default": "0",
+              "description": "偏移量，默认 0",
+              "type": "string"
+            }
+          },
+          {
+            "description": "按标签筛选，不传返回全部错题",
+            "in": "query",
+            "name": "tag",
+            "required": false,
+            "schema": {
+              "description": "按标签筛选，不传返回全部错题",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "properties": {
+                    "data": {
+                      "items": {
+                        "properties": {
+                          "content": {
+                            "description": "题干",
+                            "type": "string"
+                          },
+                          "lastWrongAt": {
+                            "description": "最近一次答错时间",
+                            "type": "string"
+                          },
+                          "questionId": {
+                            "description": "题目 ID",
+                            "type": "integer"
+                          },
+                          "srs": {
+                            "description": "SRS 状态，尚未进入复习队列时为 null",
+                            "nullable": true,
+                            "properties": {
+                              "difficulty": {
+                                "description": "SRS 难度",
+                                "type": "number"
+                              },
+                              "dueDate": {
+                                "description": "SRS 下次复习时间",
+                                "type": "string"
+                              },
+                              "stability": {
+                                "description": "SRS 记忆稳定度",
+                                "type": "number"
+                              }
+                            },
+                            "required": ["stability", "difficulty", "dueDate"],
+                            "type": "object"
+                          },
+                          "tags": {
+                            "description": "标签",
+                            "items": {
+                              "type": "string"
+                            },
+                            "type": "array"
+                          },
+                          "wrongCount": {
+                            "description": "累计答错次数",
+                            "type": "integer"
+                          }
+                        },
+                        "required": [
+                          "questionId",
+                          "content",
+                          "tags",
+                          "wrongCount",
+                          "lastWrongAt",
+                          "srs"
+                        ],
+                        "type": "object"
+                      },
+                      "type": "array"
+                    },
+                    "meta": {
+                      "properties": {
+                        "limit": {
+                          "description": "本次请求的实际条数上限（已被截到 100 以内）",
+                          "type": "integer"
+                        },
+                        "offset": {
+                          "description": "本次请求的偏移量",
+                          "type": "integer"
+                        },
+                        "total": {
+                          "description": "符合条件的总条数",
+                          "type": "integer"
+                        }
+                      },
+                      "required": ["limit", "offset", "total"],
+                      "type": "object"
+                    }
+                  },
+                  "required": ["data", "meta"],
+                  "type": "object"
+                }
+              }
+            },
+            "description": "错题列表"
+          },
+          "401": {
+            "description": "未授权 - 缺少 / 无效 / 已停用的 API Key"
+          },
+          "403": {
+            "description": "已禁止 - 该 API Key 的作用域不足"
+          }
+        },
+        "summary": "列出当前用户的错题（可按标签筛选）"
+      }
+    },
+    "/api/external/wrong-book/stats": {
+      "get": {
+        "description": "只读接口，需 read 作用域。统计当前 API Key 所属用户的错题：去重后的错题总数、按标签分布、按题目维度（knowledge / understanding / application）分布。口径与错题列表一致（排除已掌握题目）。",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "properties": {
+                    "byDimension": {
+                      "items": {
+                        "properties": {
+                          "count": {
+                            "description": "该维度下的错题数",
+                            "type": "integer"
+                          },
+                          "dimension": {
+                            "description": "题目维度，缺失时为 unknown",
+                            "type": "string"
+                          }
+                        },
+                        "required": ["dimension", "count"],
+                        "type": "object"
+                      },
+                      "type": "array"
+                    },
+                    "byTag": {
+                      "items": {
+                        "properties": {
+                          "count": {
+                            "description": "该标签下的错题数",
+                            "type": "integer"
+                          },
+                          "tag": {
+                            "description": "标签",
+                            "type": "string"
+                          }
+                        },
+                        "required": ["tag", "count"],
+                        "type": "object"
+                      },
+                      "type": "array"
+                    },
+                    "total": {
+                      "description": "去重后的错题总数",
+                      "type": "integer"
+                    }
+                  },
+                  "required": ["total", "byTag", "byDimension"],
+                  "type": "object"
+                }
+              }
+            },
+            "description": "错题统计"
+          },
+          "401": {
+            "description": "未授权 - 缺少 / 无效 / 已停用的 API Key"
+          },
+          "403": {
+            "description": "已禁止 - 该 API Key 的作用域不足"
+          }
+        },
+        "summary": "错题统计（总数 / 按标签 / 按维度）"
+      }
+    },
+    "/api/feedback": {
+      "post": {
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "properties": {
+                  "description": {
+                    "maxLength": 500,
+                    "type": "string"
+                  },
+                  "feedback_type": {
+                    "enum": [
+                      "wrong_answer",
+                      "wrong_content",
+                      "wrong_explanation",
+                      "other"
+                    ],
+                    "type": "string"
+                  },
+                  "question_id": {
+                    "type": "number"
+                  }
+                },
+                "required": ["question_id", "feedback_type"],
+                "type": "object"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "properties": {
+                    "id": {
+                      "type": "number"
+                    },
+                    "success": {
+                      "type": "boolean"
+                    }
+                  },
+                  "required": ["success", "id"],
+                  "type": "object"
+                }
+              }
+            },
+            "description": "反馈提交成功"
+          },
+          "400": {
+            "description": "参数错误"
+          },
+          "401": {
+            "description": "未授权"
+          }
+        },
+        "summary": "提交题目纠错反馈"
+      }
+    },
+    "/api/generate": {
+      "post": {
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "properties": {
+                  "command": {
+                    "type": "string"
+                  },
+                  "option": {
+                    "enum": [
+                      "continue",
+                      "improve",
+                      "fix",
+                      "shorter",
+                      "longer",
+                      "zap"
+                    ],
+                    "type": "string"
+                  },
+                  "prompt": {
+                    "type": "string"
+                  }
+                },
+                "required": ["prompt", "option"],
+                "type": "object"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "成功 (流式响应)"
+          },
+          "401": {
+            "description": "未授权"
+          },
+          "403": {
+            "description": "配额不足"
+          },
+          "500": {
+            "description": "服务器错误"
+          }
+        }
+      }
+    },
+    "/api/history": {
+      "get": {
+        "parameters": [
+          {
+            "in": "query",
+            "name": "page",
+            "required": false,
+            "schema": {
+              "default": "1",
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "pageSize",
+            "required": false,
+            "schema": {
+              "default": "10",
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "mode",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "properties": {
+                    "items": {
+                      "items": {
+                        "properties": {
+                          "accuracy": {
+                            "type": "number"
+                          },
+                          "correctCount": {
+                            "type": "number"
+                          },
+                          "createdAt": {
+                            "type": "string"
+                          },
+                          "id": {
+                            "type": "string"
+                          },
+                          "practiceMode": {
+                            "type": "string"
+                          },
+                          "reviewCount": {
+                            "type": "number"
+                          },
+                          "sessionName": {
+                            "type": "string"
+                          },
+                          "totalQuestions": {
+                            "type": "number"
+                          }
+                        },
+                        "required": [
+                          "id",
+                          "totalQuestions",
+                          "correctCount",
+                          "reviewCount",
+                          "createdAt",
+                          "accuracy"
+                        ],
+                        "type": "object"
+                      },
+                      "type": "array"
+                    },
+                    "page": {
+                      "type": "number"
+                    },
+                    "pageSize": {
+                      "type": "number"
+                    },
+                    "total": {
+                      "type": "number"
+                    },
+                    "totalPages": {
+                      "type": "number"
+                    }
+                  },
+                  "required": [
+                    "items",
+                    "total",
+                    "page",
+                    "pageSize",
+                    "totalPages"
+                  ],
+                  "type": "object"
+                }
+              }
+            },
+            "description": "User practice history"
+          }
+        }
+      }
+    },
+    "/api/history/:id": {
+      "get": {
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "properties": {
+                    "logs": {
+                      "items": {
+                        "properties": {
+                          "aiMnemonic": {
+                            "nullable": true,
+                            "type": "string"
+                          },
+                          "correctAnswer": {
+                            "type": "string"
+                          },
+                          "duration": {
+                            "type": "number"
+                          },
+                          "explanation": {
+                            "type": "string"
+                          },
+                          "isCorrect": {
+                            "type": "boolean"
+                          },
+                          "options": {
+                            "items": {
+                              "type": "string"
+                            },
+                            "type": "array"
+                          },
+                          "questionContent": {
+                            "type": "string"
+                          },
+                          "questionId": {
+                            "type": "number"
+                          },
+                          "tags": {
+                            "items": {
+                              "type": "string"
+                            },
+                            "type": "array"
+                          },
+                          "userAnswer": {
+                            "type": "string"
+                          }
+                        },
+                        "required": [
+                          "questionId",
+                          "questionContent",
+                          "options",
+                          "correctAnswer",
+                          "userAnswer",
+                          "isCorrect",
+                          "duration",
+                          "tags"
+                        ],
+                        "type": "object"
+                      },
+                      "type": "array"
+                    },
+                    "session": {
+                      "properties": {
+                        "accuracy": {
+                          "type": "number"
+                        },
+                        "correctCount": {
+                          "type": "number"
+                        },
+                        "createdAt": {
+                          "type": "string"
+                        },
+                        "id": {
+                          "type": "string"
+                        },
+                        "practiceMode": {
+                          "type": "string"
+                        },
+                        "reviewCount": {
+                          "type": "number"
+                        },
+                        "sessionName": {
+                          "type": "string"
+                        },
+                        "totalQuestions": {
+                          "type": "number"
+                        }
+                      },
+                      "required": [
+                        "id",
+                        "totalQuestions",
+                        "correctCount",
+                        "reviewCount",
+                        "createdAt",
+                        "accuracy"
+                      ],
+                      "type": "object"
+                    }
+                  },
+                  "required": ["session", "logs"],
+                  "type": "object"
+                }
+              }
+            },
+            "description": "Session detail"
+          },
+          "404": {
+            "description": "Session not found"
+          }
+        }
+      }
+    },
+    "/api/import/fenbi-webhook": {
+      "post": {
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "properties": {
+                  "exerciseJson": {
+                    "type": "string"
+                  },
+                  "solutionsJson": {
+                    "type": "string"
+                  },
+                  "statsJson": {
+                    "type": "string"
+                  }
+                },
+                "required": ["exerciseJson", "solutionsJson"],
+                "type": "object"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "properties": {
+                    "duplicated": {
+                      "type": "boolean"
+                    },
+                    "error": {
+                      "type": "string"
+                    },
+                    "importedCount": {
+                      "type": "number"
+                    },
+                    "message": {
+                      "type": "string"
+                    },
+                    "newQuestionsCount": {
+                      "type": "number"
+                    },
+                    "sessionId": {
+                      "type": "string"
+                    },
+                    "skippedQuestionsCount": {
+                      "type": "number"
+                    },
+                    "success": {
+                      "type": "boolean"
+                    }
+                  },
+                  "required": ["success", "message"],
+                  "type": "object"
+                }
+              }
+            },
+            "description": "Import result"
+          },
+          "500": {
+            "description": "Server error"
+          }
+        }
+      }
+    },
+    "/api/knowledge/cards": {
+      "get": {
+        "parameters": [
+          {
+            "in": "query",
+            "name": "category",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "limit",
+            "required": false,
+            "schema": {
+              "default": "100",
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "format",
+            "required": false,
+            "schema": {
+              "default": "json",
+              "type": "string"
+            }
+          },
+          {
+            "description": "Comma separated IDs",
+            "in": "query",
+            "name": "ids",
+            "required": false,
+            "schema": {
+              "description": "Comma separated IDs",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "properties": {
+                    "cards": {
+                      "items": {
+                        "properties": {
+                          "back": {
+                            "type": "string"
+                          },
+                          "category": {
+                            "type": "string"
+                          },
+                          "created_at": {
+                            "type": "string"
+                          },
+                          "front": {
+                            "type": "string"
+                          },
+                          "id": {
+                            "type": "number"
+                          },
+                          "key_points": {
+                            "items": {
+                              "properties": {
+                                "definition": {
+                                  "type": "string"
+                                },
+                                "term": {
+                                  "type": "string"
+                                }
+                              },
+                              "required": ["term", "definition"],
+                              "type": "object"
+                            },
+                            "type": "array"
+                          },
+                          "session_id": {
+                            "type": "number"
+                          },
+                          "source_content": {
+                            "type": "string"
+                          },
+                          "tags": {
+                            "items": {
+                              "type": "string"
+                            },
+                            "type": "array"
+                          },
+                          "title": {
+                            "type": "string"
+                          },
+                          "updated_at": {
+                            "type": "string"
+                          }
+                        },
+                        "required": [
+                          "title",
+                          "category",
+                          "tags",
+                          "front",
+                          "back",
+                          "key_points"
+                        ],
+                        "type": "object"
+                      },
+                      "type": "array"
+                    },
+                    "categories": {
+                      "items": {
+                        "type": "string"
+                      },
+                      "type": "array"
+                    },
+                    "stats": {
+                      "properties": {
+                        "byCategory": {
+                          "items": {
+                            "properties": {
+                              "category": {
+                                "type": "string"
+                              },
+                              "count": {
+                                "type": "number"
+                              }
+                            },
+                            "required": ["category", "count"],
+                            "type": "object"
+                          },
+                          "type": "array"
+                        },
+                        "total": {
+                          "type": "number"
+                        }
+                      },
+                      "required": ["total", "byCategory"],
+                      "type": "object"
+                    }
+                  },
+                  "required": ["cards", "categories", "stats"],
+                  "type": "object"
+                }
+              },
+              "text/tab-separated-values": {
+                "schema": {
+                  "type": "string"
+                }
+              }
+            },
+            "description": "List knowledge cards"
+          }
+        }
+      },
+      "post": {
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "properties": {
+                  "back": {
+                    "type": "string"
+                  },
+                  "category": {
+                    "type": "string"
+                  },
+                  "front": {
+                    "type": "string"
+                  },
+                  "key_points": {
+                    "items": {
+                      "properties": {
+                        "definition": {
+                          "type": "string"
+                        },
+                        "term": {
+                          "type": "string"
+                        }
+                      },
+                      "required": ["term", "definition"],
+                      "type": "object"
+                    },
+                    "type": "array"
+                  },
+                  "session_id": {
+                    "type": "number"
+                  },
+                  "source_content": {
+                    "type": "string"
+                  },
+                  "tags": {
+                    "items": {
+                      "type": "string"
+                    },
+                    "type": "array"
+                  },
+                  "title": {
+                    "type": "string"
+                  }
+                },
+                "type": "object"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "properties": {
+                    "id": {
+                      "type": "number"
+                    },
+                    "message": {
+                      "type": "string"
+                    }
+                  },
+                  "required": ["id", "message"],
+                  "type": "object"
+                }
+              }
+            },
+            "description": "Card created"
+          },
+          "500": {
+            "description": "Server error"
+          }
+        }
+      }
+    },
+    "/api/knowledge/extract": {
+      "post": {
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "properties": {
+                  "content": {
+                    "type": "string"
+                  },
+                  "instruction": {
+                    "type": "string"
+                  },
+                  "save": {
+                    "default": true,
+                    "type": "boolean"
+                  },
+                  "sessionId": {
+                    "type": "number"
+                  }
+                },
+                "required": ["content"],
+                "type": "object"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "properties": {
+                    "card": {
+                      "properties": {
+                        "back": {
+                          "type": "string"
+                        },
+                        "category": {
+                          "type": "string"
+                        },
+                        "created_at": {
+                          "type": "string"
+                        },
+                        "front": {
+                          "type": "string"
+                        },
+                        "id": {
+                          "type": "number"
+                        },
+                        "key_points": {
+                          "items": {
+                            "properties": {
+                              "definition": {
+                                "type": "string"
+                              },
+                              "term": {
+                                "type": "string"
+                              }
+                            },
+                            "required": ["term", "definition"],
+                            "type": "object"
+                          },
+                          "type": "array"
+                        },
+                        "session_id": {
+                          "type": "number"
+                        },
+                        "source_content": {
+                          "type": "string"
+                        },
+                        "tags": {
+                          "items": {
+                            "type": "string"
+                          },
+                          "type": "array"
+                        },
+                        "title": {
+                          "type": "string"
+                        },
+                        "updated_at": {
+                          "type": "string"
+                        }
+                      },
+                      "required": [
+                        "title",
+                        "category",
+                        "tags",
+                        "front",
+                        "back",
+                        "key_points"
+                      ],
+                      "type": "object"
+                    },
+                    "id": {
+                      "type": "number"
+                    },
+                    "message": {
+                      "type": "string"
+                    },
+                    "suggestions": {
+                      "items": {
+                        "type": "string"
+                      },
+                      "type": "array"
+                    }
+                  },
+                  "required": ["card", "message"],
+                  "type": "object"
+                }
+              }
+            },
+            "description": "Knowledge extracted"
+          },
+          "422": {
+            "description": "Parsing failed"
+          },
+          "500": {
+            "description": "Server error"
+          }
+        }
+      }
+    },
+    "/api/mastery/stats": {
+      "get": {
+        "parameters": [
+          {
+            "in": "query",
+            "name": "tag",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "properties": {
+                    "avgScore": {
+                      "type": "number"
+                    },
+                    "count": {
+                      "type": "number"
+                    }
+                  },
+                  "required": ["avgScore", "count"],
+                  "type": "object"
+                }
+              }
+            },
+            "description": "Get statistics for a specific tag hierarchy"
+          }
+        }
+      }
+    },
+    "/api/mastery/tree": {
+      "get": {
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "properties": {
+                      "children": {
+                        "items": {
+                          "additionalProperties": {
+                            "nullable": true
+                          },
+                          "type": "object"
+                        },
+                        "type": "array"
+                      },
+                      "level": {
+                        "type": "number"
+                      },
+                      "name": {
+                        "type": "string"
+                      },
+                      "path": {
+                        "type": "string"
+                      },
+                      "score": {
+                        "type": "number"
+                      }
+                    },
+                    "required": ["name", "path", "score", "level", "children"],
+                    "type": "object"
+                  },
+                  "type": "array"
+                }
+              }
+            },
+            "description": "Get user mastery tree"
+          }
+        }
+      }
+    },
+    "/api/pdf-import/cleanup": {
+      "post": {
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "properties": {
+                  "taskId": {
+                    "type": "string"
+                  }
+                },
+                "required": ["taskId"],
+                "type": "object"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "properties": {
+                    "ok": {
+                      "type": "boolean"
+                    }
+                  },
+                  "required": ["ok"],
+                  "type": "object"
+                }
+              }
+            },
+            "description": "清理结果"
+          }
+        }
+      }
+    },
+    "/api/pdf-import/confirm": {
+      "post": {
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "properties": {
+                  "addToWrongBook": {
+                    "default": true,
+                    "type": "boolean"
+                  },
+                  "folderId": {
+                    "type": "number"
+                  },
+                  "questions": {
+                    "items": {
+                      "properties": {
+                        "answer": {
+                          "type": "string"
+                        },
+                        "confidence": {
+                          "type": "number"
+                        },
+                        "content": {
+                          "type": "string"
+                        },
+                        "explanation": {
+                          "type": "string"
+                        },
+                        "options": {
+                          "items": {
+                            "type": "string"
+                          },
+                          "type": "array"
+                        },
+                        "tags": {
+                          "items": {
+                            "type": "string"
+                          },
+                          "type": "array"
+                        },
+                        "type": {
+                          "enum": ["single", "multi", "truefalse"],
+                          "type": "string"
+                        }
+                      },
+                      "required": [
+                        "content",
+                        "options",
+                        "type",
+                        "answer",
+                        "explanation",
+                        "confidence",
+                        "tags"
+                      ],
+                      "type": "object"
+                    },
+                    "type": "array"
+                  }
+                },
+                "required": ["questions"],
+                "type": "object"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "nullable": true
+                }
+              }
+            },
+            "description": "导入结果"
+          },
+          "500": {
+            "description": "导入失败"
+          }
+        }
+      }
+    },
+    "/api/pdf-import/parse-chunk": {
+      "post": {
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "properties": {
+                  "chunkIndex": {
+                    "minimum": 0,
+                    "type": "integer"
+                  },
+                  "taskId": {
+                    "type": "string"
+                  }
+                },
+                "required": ["taskId", "chunkIndex"],
+                "type": "object"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "nullable": true
+                }
+              }
+            },
+            "description": "块解析结果"
+          },
+          "400": {
+            "description": "无效参数"
+          },
+          "404": {
+            "description": "任务不存在，或不属于当前用户"
+          },
+          "500": {
+            "description": "解析失败"
+          }
+        }
+      }
+    },
+    "/api/pdf-import/preview": {
+      "post": {
+        "requestBody": {
+          "content": {
+            "multipart/form-data": {
+              "schema": {
+                "properties": {
+                  "file": {
+                    "nullable": true
+                  }
+                },
+                "type": "object"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "nullable": true
+                }
+              }
+            },
+            "description": "预览结果"
+          },
+          "400": {
+            "description": "无效文件"
+          },
+          "500": {
+            "description": "解析失败"
+          }
+        }
+      }
+    },
+    "/api/pdf-import/text-import": {
+      "post": {
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "properties": {
+                  "text": {
+                    "minLength": 20,
+                    "type": "string"
+                  }
+                },
+                "required": ["text"],
+                "type": "object"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "properties": {
+                    "taskId": {
+                      "type": "string"
+                    },
+                    "totalChunks": {
+                      "type": "number"
+                    }
+                  },
+                  "required": ["taskId", "totalChunks"],
+                  "type": "object"
+                }
+              }
+            },
+            "description": "分块结果"
+          },
+          "400": {
+            "description": "无效参数"
+          },
+          "500": {
+            "description": "处理失败"
+          }
+        }
+      }
+    },
+    "/api/practice/first-principles": {
+      "post": {
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "properties": {
+                  "correctAnswer": {
+                    "type": "string"
+                  },
+                  "explanation": {
+                    "type": "string"
+                  },
+                  "questionContent": {
+                    "type": "string"
+                  },
+                  "wrongAnswer": {
+                    "type": "string"
+                  }
+                },
+                "required": ["questionContent", "correctAnswer"],
+                "type": "object"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "properties": {
+                    "analysis": {
+                      "type": "string"
+                    },
+                    "cached": {
+                      "type": "boolean"
+                    }
+                  },
+                  "required": ["analysis", "cached"],
+                  "type": "object"
+                }
+              }
+            },
+            "description": "Analysis result"
+          },
+          "403": {
+            "description": "Quota exceeded"
+          },
+          "500": {
+            "description": "Server error"
+          }
+        }
+      }
+    },
+    "/api/practice/offline-answers": {
+      "post": {
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "properties": {
+                  "answers": {
+                    "items": {
+                      "properties": {
+                        "durationMs": {
+                          "minimum": 0,
+                          "nullable": true,
+                          "type": "integer"
+                        },
+                        "isCorrect": {
+                          "type": "boolean"
+                        },
+                        "questionId": {
+                          "exclusiveMinimum": true,
+                          "minimum": 0,
+                          "type": "integer"
+                        },
+                        "userAnswer": {
+                          "nullable": true,
+                          "type": "string"
+                        }
+                      },
+                      "required": ["questionId", "isCorrect"],
+                      "type": "object"
+                    },
+                    "maxItems": 500,
+                    "minItems": 1,
+                    "type": "array"
+                  },
+                  "sessionKey": {
+                    "maxLength": 200,
+                    "minLength": 1,
+                    "type": "string"
+                  },
+                  "sessionName": {
+                    "maxLength": 200,
+                    "type": "string"
+                  }
+                },
+                "required": ["sessionKey", "answers"],
+                "type": "object"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "properties": {
+                    "duplicated": {
+                      "type": "boolean"
+                    },
+                    "inserted": {
+                      "type": "integer"
+                    },
+                    "sessionId": {
+                      "type": "string"
+                    }
+                  },
+                  "required": ["sessionId", "inserted", "duplicated"],
+                  "type": "object"
+                }
+              }
+            },
+            "description": "导入成功（或幂等命中）"
+          },
+          "400": {
+            "description": "请求体校验失败 / 存在题库中不存在的 questionId"
+          }
+        }
+      }
+    },
+    "/api/practice/session": {
+      "post": {
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "properties": {
+                  "limit": {
+                    "default": 10,
+                    "type": "number"
+                  },
+                  "mode": {
+                    "enum": ["random", "wrong", "tag", "first-principles"],
+                    "type": "string"
+                  }
+                },
+                "required": ["mode"],
+                "type": "object"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "properties": {
+                    "questions": {
+                      "items": {
+                        "properties": {
+                          "content": {
+                            "type": "string"
+                          },
+                          "id": {
+                            "type": "number"
+                          },
+                          "material": {
+                            "nullable": true,
+                            "type": "string"
+                          },
+                          "material_html": {
+                            "nullable": true,
+                            "type": "string"
+                          },
+                          "options": {
+                            "items": {
+                              "type": "string"
+                            },
+                            "type": "array"
+                          },
+                          "type": {
+                            "type": "string"
+                          }
+                        },
+                        "required": ["id", "content", "options"],
+                        "type": "object"
+                      },
+                      "type": "array"
+                    },
+                    "sessionId": {
+                      "type": "string"
+                    }
+                  },
+                  "required": ["sessionId", "questions"],
+                  "type": "object"
+                }
+              }
+            },
+            "description": "Session created"
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "properties": {
+                    "error": {
+                      "type": "string"
+                    }
+                  },
+                  "required": ["error"],
+                  "type": "object"
+                }
+              }
+            },
+            "description": "Invalid input"
+          }
+        }
+      }
+    },
+    "/api/practice/session/{sessionId}": {
+      "get": {
+        "parameters": [
+          {
+            "in": "path",
+            "name": "sessionId",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "properties": {
+                    "completedCount": {
+                      "type": "number"
+                    },
+                    "practiceMode": {
+                      "type": "string"
+                    },
+                    "questions": {
+                      "items": {
+                        "properties": {
+                          "content": {
+                            "type": "string"
+                          },
+                          "id": {
+                            "type": "number"
+                          },
+                          "material": {
+                            "nullable": true,
+                            "type": "string"
+                          },
+                          "material_html": {
+                            "nullable": true,
+                            "type": "string"
+                          },
+                          "options": {
+                            "items": {
+                              "type": "string"
+                            },
+                            "type": "array"
+                          },
+                          "type": {
+                            "type": "string"
+                          }
+                        },
+                        "required": ["id", "content", "options"],
+                        "type": "object"
+                      },
+                      "type": "array"
+                    },
+                    "sessionId": {
+                      "type": "string"
+                    }
+                  },
+                  "required": ["sessionId", "questions", "completedCount"],
+                  "type": "object"
+                }
+              }
+            },
+            "description": "Session questions"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "properties": {
+                    "error": {
+                      "type": "string"
+                    }
+                  },
+                  "required": ["error"],
+                  "type": "object"
+                }
+              }
+            },
+            "description": "练习会话不存在（或不属于当前用户）"
+          }
+        }
+      }
+    },
+    "/api/practice/session/{sessionId}/submit": {
+      "post": {
+        "parameters": [
+          {
+            "in": "path",
+            "name": "sessionId",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "properties": {
+                  "duration": {
+                    "type": "number"
+                  },
+                  "questionId": {
+                    "type": "number"
+                  },
+                  "userAnswer": {
+                    "type": "string"
+                  }
+                },
+                "required": ["questionId", "userAnswer", "duration"],
+                "type": "object"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "properties": {
+                    "correctAnswer": {
+                      "type": "string"
+                    },
+                    "isCorrect": {
+                      "type": "boolean"
+                    }
+                  },
+                  "required": ["isCorrect", "correctAnswer"],
+                  "type": "object"
+                }
+              }
+            },
+            "description": "Answer submitted"
+          },
+          "404": {
+            "description": "练习会话不存在（或不属于当前用户）"
+          }
+        }
+      }
+    },
+    "/api/profile": {
+      "get": {
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "properties": {
+                    "createdAt": {
+                      "type": "string"
+                    },
+                    "id": {
+                      "type": "number"
+                    },
+                    "role": {
+                      "type": "string"
+                    },
+                    "stats": {
+                      "properties": {
+                        "knowledgeCardCount": {
+                          "description": "知识卡片数量",
+                          "type": "number"
+                        },
+                        "overallAccuracy": {
+                          "description": "综合正确率 (0-1)",
+                          "type": "number"
+                        },
+                        "totalAnswered": {
+                          "description": "总答题数",
+                          "type": "number"
+                        },
+                        "totalCorrect": {
+                          "description": "总答对数",
+                          "type": "number"
+                        },
+                        "totalSessions": {
+                          "description": "总练习会话数",
+                          "type": "number"
+                        },
+                        "wrongBookCount": {
+                          "description": "未掌握错题数量",
+                          "type": "number"
+                        }
+                      },
+                      "required": [
+                        "totalSessions",
+                        "totalAnswered",
+                        "totalCorrect",
+                        "overallAccuracy",
+                        "knowledgeCardCount",
+                        "wrongBookCount"
+                      ],
+                      "type": "object"
+                    },
+                    "username": {
+                      "type": "string"
+                    }
+                  },
+                  "required": ["id", "username", "role", "createdAt", "stats"],
+                  "type": "object"
+                }
+              }
+            },
+            "description": "用户个人信息"
+          },
+          "404": {
+            "description": "用户不存在"
+          }
+        }
+      }
+    },
+    "/api/questions": {
+      "get": {
+        "parameters": [
+          {
+            "in": "query",
+            "name": "page",
+            "required": false,
+            "schema": {
+              "default": "1",
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "limit",
+            "required": false,
+            "schema": {
+              "default": "20",
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "search",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "type",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "properties": {
+                    "items": {
+                      "items": {
+                        "properties": {
+                          "content": {
+                            "type": "string"
+                          },
+                          "dimension": {
+                            "type": "string"
+                          },
+                          "id": {
+                            "type": "number"
+                          },
+                          "options": {
+                            "items": {
+                              "type": "string"
+                            },
+                            "type": "array"
+                          },
+                          "tags": {
+                            "items": {
+                              "type": "string"
+                            },
+                            "type": "array"
+                          },
+                          "type": {
+                            "enum": ["single", "multi"],
+                            "type": "string"
+                          }
+                        },
+                        "required": ["id", "content", "options", "tags"],
+                        "type": "object"
+                      },
+                      "type": "array"
+                    },
+                    "total": {
+                      "type": "number"
+                    }
+                  },
+                  "required": ["items", "total"],
+                  "type": "object"
+                }
+              }
+            },
+            "description": "List of questions"
+          }
+        }
+      }
+    },
+    "/api/questions/:id": {
+      "get": {
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "properties": {
+                    "answer": {
+                      "type": "string"
+                    },
+                    "content": {
+                      "type": "string"
+                    },
+                    "dimension": {
+                      "type": "string"
+                    },
+                    "explanation": {
+                      "type": "string"
+                    },
+                    "id": {
+                      "type": "number"
+                    },
+                    "options": {
+                      "items": {
+                        "type": "string"
+                      },
+                      "type": "array"
+                    },
+                    "tags": {
+                      "items": {
+                        "type": "string"
+                      },
+                      "type": "array"
+                    },
+                    "type": {
+                      "enum": ["single", "multi"],
+                      "type": "string"
+                    }
+                  },
+                  "required": ["id", "content", "options", "tags"],
+                  "type": "object"
+                }
+              }
+            },
+            "description": "Question detail"
+          },
+          "404": {
+            "description": "Question not found"
+          }
+        }
+      }
+    },
+    "/api/stats": {
+      "get": {
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "properties": {
+                    "overallAccuracy": {
+                      "description": "历史总正确率 (0-1)",
+                      "type": "number"
+                    },
+                    "streakDays": {
+                      "description": "连续学习天数",
+                      "type": "number"
+                    },
+                    "todayAccuracy": {
+                      "description": "今日正确率 (0-1)",
+                      "type": "number"
+                    },
+                    "todayCorrect": {
+                      "description": "今日答对题数",
+                      "type": "number"
+                    },
+                    "todayCount": {
+                      "description": "今日练习题数",
+                      "type": "number"
+                    },
+                    "totalCorrect": {
+                      "description": "历史总答对次数",
+                      "type": "number"
+                    },
+                    "totalCount": {
+                      "description": "历史总练习次数（题数）",
+                      "type": "number"
+                    },
+                    "totalSessions": {
+                      "description": "历史总会话数",
+                      "type": "number"
+                    }
+                  },
+                  "required": [
+                    "todayCount",
+                    "todayCorrect",
+                    "todayAccuracy",
+                    "totalCount",
+                    "totalCorrect",
+                    "overallAccuracy",
+                    "streakDays",
+                    "totalSessions"
+                  ],
+                  "type": "object"
+                }
+              }
+            },
+            "description": "用户学习统计数据"
+          }
+        }
+      }
+    },
+    "/api/textbook": {
+      "get": {
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "properties": {
+                      "author": {
+                        "nullable": true,
+                        "type": "string"
+                      },
+                      "chapterCount": {
+                        "description": "章节数量",
+                        "type": "number"
+                      },
+                      "cover_url": {
+                        "nullable": true,
+                        "type": "string"
+                      },
+                      "created_at": {
+                        "nullable": true,
+                        "type": "string"
+                      },
+                      "description": {
+                        "nullable": true,
+                        "type": "string"
+                      },
+                      "id": {
+                        "type": "number"
+                      },
+                      "title": {
+                        "type": "string"
+                      }
+                    },
+                    "required": ["id", "title", "chapterCount"],
+                    "type": "object"
+                  },
+                  "type": "array"
+                }
+              }
+            },
+            "description": "教材列表"
+          }
+        },
+        "summary": "获取教材列表"
+      }
+    },
+    "/api/textbook/:id": {
+      "delete": {
+        "parameters": [
+          {
+            "description": "教科书ID",
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "description": "教科书ID",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "成功"
+          },
+          "400": {
+            "description": "无效ID"
+          },
+          "401": {
+            "description": "未授权"
+          },
+          "500": {
+            "description": "服务器错误"
+          }
+        },
+        "summary": "删除教科书"
+      },
+      "get": {
+        "parameters": [
+          {
+            "description": "教材ID",
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "description": "教材ID",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "properties": {
+                    "author": {
+                      "nullable": true,
+                      "type": "string"
+                    },
+                    "chapterCount": {
+                      "description": "章节数量",
+                      "type": "number"
+                    },
+                    "chapters": {
+                      "items": {
+                        "properties": {
+                          "created_at": {
+                            "nullable": true,
+                            "type": "string"
+                          },
+                          "id": {
+                            "type": "number"
+                          },
+                          "level": {
+                            "nullable": true,
+                            "type": "number"
+                          },
+                          "order_index": {
+                            "nullable": true,
+                            "type": "number"
+                          },
+                          "parent_id": {
+                            "nullable": true,
+                            "type": "number"
+                          },
+                          "textbook_id": {
+                            "type": "number"
+                          },
+                          "title": {
+                            "type": "string"
+                          }
+                        },
+                        "required": [
+                          "id",
+                          "textbook_id",
+                          "title",
+                          "order_index",
+                          "level"
+                        ],
+                        "type": "object"
+                      },
+                      "type": "array"
+                    },
+                    "cover_url": {
+                      "nullable": true,
+                      "type": "string"
+                    },
+                    "created_at": {
+                      "nullable": true,
+                      "type": "string"
+                    },
+                    "description": {
+                      "nullable": true,
+                      "type": "string"
+                    },
+                    "id": {
+                      "type": "number"
+                    },
+                    "title": {
+                      "type": "string"
+                    }
+                  },
+                  "required": ["id", "title", "chapterCount", "chapters"],
+                  "type": "object"
+                }
+              }
+            },
+            "description": "教材详情"
+          },
+          "400": {
+            "description": "无效ID"
+          },
+          "404": {
+            "description": "教材不存在"
+          }
+        },
+        "summary": "获取教材详情（含章节列表）"
+      }
+    },
+    "/api/vitals": {
+      "post": {
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "properties": {
+                  "fromRoute": {
+                    "maxLength": 200,
+                    "minLength": 1,
+                    "type": "string"
+                  },
+                  "kind": {
+                    "enum": ["vital", "launch", "nav"],
+                    "type": "string"
+                  },
+                  "name": {
+                    "maxLength": 20,
+                    "minLength": 1,
+                    "type": "string"
+                  },
+                  "rating": {
+                    "enum": ["good", "needs-improvement", "poor"],
+                    "type": "string"
+                  },
+                  "route": {
+                    "maxLength": 200,
+                    "minLength": 1,
+                    "type": "string"
+                  },
+                  "value": {
+                    "minimum": 0,
+                    "type": "number"
+                  }
+                },
+                "required": ["name", "value", "route"],
+                "type": "object"
+              }
+            }
+          }
+        },
+        "responses": {
+          "204": {
+            "description": "已接收"
+          },
+          "400": {
+            "description": "参数错误"
+          },
+          "429": {
+            "description": "超出上报频率"
+          }
+        },
+        "summary": "上报一条性能采样（匿名，按 IP 限流）"
+      }
+    },
+    "/api/wrong-book": {
+      "get": {
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "properties": {
+                      "correctAnswer": {
+                        "type": "string"
+                      },
+                      "lastWrongAt": {
+                        "type": "string"
+                      },
+                      "questionContent": {
+                        "type": "string"
+                      },
+                      "questionId": {
+                        "type": "string"
+                      },
+                      "tags": {
+                        "items": {
+                          "type": "string"
+                        },
+                        "type": "array"
+                      },
+                      "userLastAnswer": {
+                        "type": "string"
+                      },
+                      "wrongCount": {
+                        "type": "number"
+                      }
+                    },
+                    "required": [
+                      "questionId",
+                      "questionContent",
+                      "tags",
+                      "wrongCount",
+                      "lastWrongAt",
+                      "correctAnswer",
+                      "userLastAnswer"
+                    ],
+                    "type": "object"
+                  },
+                  "type": "array"
+                }
+              }
+            },
+            "description": "获取错题列表（排除已掌握）"
+          }
+        }
+      }
+    },
+    "/api/wrong-book/:id": {
+      "get": {
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "properties": {
+                    "correctAnswer": {
+                      "type": "string"
+                    },
+                    "explanation": {
+                      "type": "string"
+                    },
+                    "historyLogs": {
+                      "items": {
+                        "properties": {
+                          "isCorrect": {
+                            "type": "boolean"
+                          },
+                          "timestamp": {
+                            "type": "string"
+                          },
+                          "userAnswer": {
+                            "type": "string"
+                          }
+                        },
+                        "required": ["timestamp", "userAnswer", "isCorrect"],
+                        "type": "object"
+                      },
+                      "type": "array"
+                    },
+                    "lastWrongAt": {
+                      "type": "string"
+                    },
+                    "options": {
+                      "items": {
+                        "type": "string"
+                      },
+                      "type": "array"
+                    },
+                    "questionContent": {
+                      "type": "string"
+                    },
+                    "questionId": {
+                      "type": "string"
+                    },
+                    "questionType": {
+                      "type": "string"
+                    },
+                    "tags": {
+                      "items": {
+                        "type": "string"
+                      },
+                      "type": "array"
+                    },
+                    "userLastAnswer": {
+                      "type": "string"
+                    },
+                    "wrongCount": {
+                      "type": "number"
+                    }
+                  },
+                  "required": [
+                    "questionId",
+                    "questionContent",
+                    "tags",
+                    "wrongCount",
+                    "lastWrongAt",
+                    "correctAnswer",
+                    "userLastAnswer",
+                    "options",
+                    "explanation",
+                    "questionType",
+                    "historyLogs"
+                  ],
+                  "type": "object"
+                }
+              }
+            },
+            "description": "错题详情（含历史作答）"
+          },
+          "404": {
+            "description": "未找到题目"
+          }
+        }
+      }
+    },
+    "/api/wrong-book/:id/master": {
+      "delete": {
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "properties": {
+                    "message": {
+                      "type": "string"
+                    },
+                    "success": {
+                      "type": "boolean"
+                    }
+                  },
+                  "required": ["success"],
+                  "type": "object"
+                }
+              }
+            },
+            "description": "取消已掌握标记"
+          }
+        }
+      },
+      "post": {
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "properties": {
+                    "message": {
+                      "type": "string"
+                    },
+                    "success": {
+                      "type": "boolean"
+                    }
+                  },
+                  "required": ["success"],
+                  "type": "object"
+                }
+              }
+            },
+            "description": "标记错题为已掌握"
+          }
+        }
+      }
+    },
+    "/api/wrong-book/by-tag": {
+      "get": {
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "properties": {
+                      "count": {
+                        "type": "number"
+                      },
+                      "questions": {
+                        "items": {
+                          "properties": {
+                            "correctAnswer": {
+                              "type": "string"
+                            },
+                            "lastWrongAt": {
+                              "type": "string"
+                            },
+                            "questionContent": {
+                              "type": "string"
+                            },
+                            "questionId": {
+                              "type": "string"
+                            },
+                            "tags": {
+                              "items": {
+                                "type": "string"
+                              },
+                              "type": "array"
+                            },
+                            "userLastAnswer": {
+                              "type": "string"
+                            },
+                            "wrongCount": {
+                              "type": "number"
+                            }
+                          },
+                          "required": [
+                            "questionId",
+                            "questionContent",
+                            "tags",
+                            "wrongCount",
+                            "lastWrongAt",
+                            "correctAnswer",
+                            "userLastAnswer"
+                          ],
+                          "type": "object"
+                        },
+                        "type": "array"
+                      },
+                      "tag": {
+                        "type": "string"
+                      }
+                    },
+                    "required": ["tag", "count", "questions"],
+                    "type": "object"
+                  },
+                  "type": "array"
+                }
+              }
+            },
+            "description": "按知识点分组的错题"
+          }
+        }
+      }
+    },
+    "/api/wrong-book/practice": {
+      "post": {
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "properties": {
+                  "questionIds": {
+                    "items": {
+                      "type": "string"
+                    },
+                    "minItems": 1,
+                    "type": "array"
+                  }
+                },
+                "required": ["questionIds"],
+                "type": "object"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "properties": {
+                    "message": {
+                      "type": "string"
+                    },
+                    "sessionId": {
+                      "type": "string"
+                    },
+                    "success": {
+                      "type": "boolean"
+                    }
+                  },
+                  "required": ["success"],
+                  "type": "object"
+                }
+              }
+            },
+            "description": "创建错题练习会话"
+          }
+        }
+      }
+    },
+    "/api/wrong-book/random": {
+      "get": {
+        "parameters": [
+          {
+            "description": "抽题数量",
+            "in": "query",
+            "name": "count",
+            "required": false,
+            "schema": {
+              "default": "10",
+              "description": "抽题数量",
+              "type": "string"
+            }
+          },
+          {
+            "description": "按知识点筛选",
+            "in": "query",
+            "name": "tag",
+            "required": false,
+            "schema": {
+              "description": "按知识点筛选",
+              "type": "string"
+            }
+          },
+          {
+            "description": "抽题模式: priority=加权优先, random=纯随机",
+            "in": "query",
+            "name": "mode",
+            "required": false,
+            "schema": {
+              "default": "priority",
+              "description": "抽题模式: priority=加权优先, random=纯随机",
+              "enum": ["priority", "random"],
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "properties": {
+                      "correctAnswer": {
+                        "type": "string"
+                      },
+                      "lastWrongAt": {
+                        "type": "string"
+                      },
+                      "questionContent": {
+                        "type": "string"
+                      },
+                      "questionId": {
+                        "type": "string"
+                      },
+                      "tags": {
+                        "items": {
+                          "type": "string"
+                        },
+                        "type": "array"
+                      },
+                      "userLastAnswer": {
+                        "type": "string"
+                      },
+                      "wrongCount": {
+                        "type": "number"
+                      }
+                    },
+                    "required": [
+                      "questionId",
+                      "questionContent",
+                      "tags",
+                      "wrongCount",
+                      "lastWrongAt",
+                      "correctAnswer",
+                      "userLastAnswer"
+                    ],
+                    "type": "object"
+                  },
+                  "type": "array"
+                }
+              }
+            },
+            "description": "随机获取一组错题"
+          }
+        }
+      }
+    },
+    "/api/wrong-book/stats": {
+      "get": {
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "properties": {
+                    "frequent": {
+                      "type": "number"
+                    },
+                    "recent": {
+                      "type": "number"
+                    },
+                    "total": {
+                      "type": "number"
+                    }
+                  },
+                  "required": ["total", "recent", "frequent"],
+                  "type": "object"
+                }
+              }
+            },
+            "description": "错题统计"
+          }
+        }
+      }
+    }
+  }
+}

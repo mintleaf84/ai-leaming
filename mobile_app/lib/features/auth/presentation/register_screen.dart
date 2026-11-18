@@ -11,7 +11,6 @@ class RegisterScreen extends HookConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final usernameController = useTextEditingController();
-    final emailController = useTextEditingController();
     final passwordController = useTextEditingController();
     final isPasswordVisible = useState(false);
 
@@ -89,13 +88,7 @@ class RegisterScreen extends HookConsumerWidget {
                           usernameController,
                           hint: '请输入用户名',
                         ),
-                        SizedBox(height: 20.h),
-                        _buildInputGroup(
-                          '电子邮箱',
-                          Icons.mail_outline,
-                          emailController,
-                          hint: 'example@email.com',
-                        ),
+
                         SizedBox(height: 20.h),
                         _buildInputGroup(
                           '密码',

@@ -19,7 +19,10 @@ publish_to: 'none' # Remove this line if you wish to publish to pub.dev
 version: 1.0.0+1
 
 environment:
-  sdk: ^3.10.7
+  # 原来写 ^3.10.7，导致 CI 的 Flutter 3.38.4（自带 Dart 3.10.3）无法解析依赖。
+  # 放宽到下界 3.10.0：语言特性没有跨 patch 的硬需求，而版本下限越贴近 CI 能复现的
+  # 工具链，越不容易出现「本机能跑、CI 解析失败」。若将来用到新语法，再上调。
+  sdk: ^3.10.0
 
 # Dependencies specify other packages that your package needs in order to work.
 # To automatically upgrade your package dependencies to the latest versions
@@ -50,6 +53,9 @@ dependencies:
   shimmer: ^3.0.0
   intl: ^0.20.2
   confetti: ^0.8.0
+  sqflite: ^2.4.0
+  path: ^1.9.0
+  connectivity_plus: ^7.0.0
 
 dev_dependencies:
   flutter_test:

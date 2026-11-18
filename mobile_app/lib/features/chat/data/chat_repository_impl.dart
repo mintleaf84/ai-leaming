@@ -66,16 +66,55 @@ class ChatRepositoryImpl implements ChatRepository {
 
       final responseBody = response.data as ResponseBody;
 
-      await for (final chunk in responseBody.stream) {
-        print('====== CHUNK RECEIVED ======');
-        final textChunk = utf8.decode(
-          chunk,
-          allowMalformed: true,
-        ); // 允许略过截断的 utf8 多字节字符段
-        print('Decoded Chunk: $textChunk');
-        yield textChunk;
+      // 解析单行 SSE 数据：text-delta 透传 delta，error 抛出，
+      // 其余类型、[DONE] 与畸形帧一律跳过（返回 null）。
+      String? parseSseLine(String line) {
+        if (!line.startsWith('data:')) return null;
+        final payload = line.substring(5).trim();
+        if (payload.isEmpty || payload == '[DONE]') return null;
+        Object? decoded;
+        try {
+          decoded = jsonDecode(payload);
+        } catch (_) {
+          return null;
+        }
+        if (decoded is! Map<String, dynamic>) return null;
+        final type = decoded['type'];
+        if (type == 'error') {
+          throw Exception(
+            'SSE error frame: ${decoded['errorText'] ?? payload}',
+          );
+        }
+        if (type == 'text-delta') {
+          final delta = decoded['delta'];
+          if (delta is String) return delta;
+        }
+        return null;
       }
-      print('====== STREAM FINISHED ======');
+
+      // SSE 帧可能被网络任意切分：跨 chunk 维护行缓冲，按行解析。
+      // Utf8Decoder.bind 会把被 chunk 边界截断的多字节字符跨 chunk 拼接，
+      // allowMalformed 仅兜底真正的坏字节。
+      final lineBuffer = StringBuffer();
+      final textStream = const Utf8Decoder(
+        allowMalformed: true,
+      ).bind(responseBody.stream);
+      await for (final textChunk in textStream) {
+        lineBuffer.write(textChunk);
+        final lines = lineBuffer.toString().split('\n');
+        lineBuffer
+          ..clear()
+          ..write(lines.removeLast()); // 末段可能是未收尾的半行，留给下一个 chunk
+        for (final line in lines) {
+          final delta = parseSseLine(line);
+          if (delta != null) yield delta;
+        }
+      }
+      // 流结束后处理缓冲区里残留的最后一行
+      if (lineBuffer.isNotEmpty) {
+        final delta = parseSseLine(lineBuffer.toString());
+        if (delta != null) yield delta;
+      }
     } on DioException catch (e) {
       if (e.response != null) {
         throw Exception(

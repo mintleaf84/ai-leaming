@@ -129,6 +129,12 @@ const MODULES: Record<string, ModuleRule> = {
     scope: "global",
     reason: "题库全局共享，读接口不含个人数据",
   },
+  billing: {
+    mount: "/api/billing",
+    scope: "global",
+    reason:
+      "套餐目录是产品级静态配置（subscription_plans 无 user_id），所有登录用户看到同一份价格表；用户自己的订阅在 user_subscriptions，不由本模块读写",
+  },
   textbook: {
     mount: "/api/textbook",
     scope: "global",

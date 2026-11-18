@@ -14,6 +14,9 @@ abstract class PracticeRepository {
 
   Future<PracticeSession> createSession({required int limit, String mode = 'random'});
 
+  /// 按 sessionId 取回待作答题目（错题本「开始练习」续练用）
+  Future<PracticeSession> getSession(String sessionId);
+
   Future<Map<String, dynamic>> submitAnswer({
     required String sessionId,
     required String questionId,
@@ -22,7 +25,9 @@ abstract class PracticeRepository {
   });
 
   Future<FirstPrinciplesResponse> analyzeFirstPrinciples({
-    required String questionId,
-    required String content,
+    required String questionContent,
+    required String correctAnswer,
+    String? explanation,
+    String? wrongAnswer,
   });
 }

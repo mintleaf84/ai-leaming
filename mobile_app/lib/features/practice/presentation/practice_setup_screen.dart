@@ -14,18 +14,18 @@ class PracticeSetupScreen extends ConsumerStatefulWidget {
 }
 
 class _PracticeSetupScreenState extends ConsumerState<PracticeSetupScreen> {
-  // 练习模式定义
+  // 练习模式定义（后端 API 目前只支持 random，其余入口置灰待开放）
   static const _modes = [
-    _PracticeMode(id: 'smart', label: '智能刷题', emoji: '🧠', desc: '40% 顽固 + 40% 盲区 + 20% 随机，AI 深度复盘'),
-    _PracticeMode(id: 'review', label: '错题强化', emoji: '🔄', desc: '专练历史错题，按错误次数排序'),
-    _PracticeMode(id: 'focus', label: '专项突破', emoji: '🎯', desc: '聚焦指定知识点，精准突破'),
-    _PracticeMode(id: 'random', label: '随机挑战', emoji: '🎲', desc: '完全随机抽题，快速查漏补缺'),
+    _PracticeMode(id: 'smart', label: '智能刷题', emoji: '🧠', desc: '40% 顽固 + 40% 盲区 + 20% 随机，AI 深度复盘', enabled: false),
+    _PracticeMode(id: 'review', label: '错题强化', emoji: '🔄', desc: '专练历史错题，按错误次数排序', enabled: false),
+    _PracticeMode(id: 'focus', label: '专项突破', emoji: '🎯', desc: '聚焦指定知识点，精准突破', enabled: false),
+    _PracticeMode(id: 'random', label: '随机挑战', emoji: '🎲', desc: '完全随机抽题，快速查漏补缺', enabled: true),
   ];
 
   // 题目数量选项
   static const _limitOptions = [10, 15, 20, 25, 30, 50];
 
-  String _selectedMode = 'smart';
+  String _selectedMode = 'random';
   int _selectedLimit = 20;
 
   @override
@@ -105,46 +105,54 @@ class _PracticeSetupScreenState extends ConsumerState<PracticeSetupScreen> {
       childAspectRatio: 1.5,
       children: _modes.map((mode) {
         final isSelected = _selectedMode == mode.id;
+        final card = AnimatedContainer(
+          duration: const Duration(milliseconds: 150),
+          padding: EdgeInsets.all(12.w),
+          decoration: BoxDecoration(
+            color: isSelected ? const Color(0xFF37352F) : Colors.white,
+            borderRadius: BorderRadius.circular(12.r),
+            border: Border.all(
+              color: isSelected
+                  ? const Color(0xFF37352F)
+                  : const Color(0xFFE8E8E5),
+              width: isSelected ? 2 : 1,
+            ),
+            boxShadow: isSelected
+                ? [
+                    BoxShadow(
+                      color: Colors.black.withValues(alpha: 0.12),
+                      blurRadius: 8,
+                      offset: const Offset(0, 4),
+                    ),
+                  ]
+                : null,
+          ),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Text(mode.emoji, style: TextStyle(fontSize: 22.sp)),
+              Text(
+                mode.enabled ? mode.label : '${mode.label}（暂未开放）',
+                style: TextStyle(
+                  fontSize: 13.sp,
+                  fontWeight: FontWeight.w600,
+                  color: isSelected
+                      ? Colors.white
+                      : mode.enabled
+                      ? const Color(0xFF37352F)
+                      : const Color(0xFF9B9B94),
+                ),
+              ),
+            ],
+          ),
+        );
+        if (!mode.enabled) {
+          return Opacity(opacity: 0.45, child: card);
+        }
         return GestureDetector(
           onTap: () => setState(() => _selectedMode = mode.id),
-          child: AnimatedContainer(
-            duration: const Duration(milliseconds: 150),
-            padding: EdgeInsets.all(12.w),
-            decoration: BoxDecoration(
-              color: isSelected ? const Color(0xFF37352F) : Colors.white,
-              borderRadius: BorderRadius.circular(12.r),
-              border: Border.all(
-                color: isSelected
-                    ? const Color(0xFF37352F)
-                    : const Color(0xFFE8E8E5),
-                width: isSelected ? 2 : 1,
-              ),
-              boxShadow: isSelected
-                  ? [
-                      BoxShadow(
-                        color: Colors.black.withValues(alpha: 0.12),
-                        blurRadius: 8,
-                        offset: const Offset(0, 4),
-                      ),
-                    ]
-                  : null,
-            ),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                Text(mode.emoji, style: TextStyle(fontSize: 22.sp)),
-                Text(
-                  mode.label,
-                  style: TextStyle(
-                    fontSize: 13.sp,
-                    fontWeight: FontWeight.w600,
-                    color: isSelected ? Colors.white : const Color(0xFF37352F),
-                  ),
-                ),
-              ],
-            ),
-          ),
+          child: card,
         );
       }).toList(),
     );
@@ -242,11 +250,13 @@ class _PracticeMode {
   final String label;
   final String emoji;
   final String desc;
+  final bool enabled;
 
   const _PracticeMode({
     required this.id,
     required this.label,
     required this.emoji,
     required this.desc,
+    required this.enabled,
   });
 }

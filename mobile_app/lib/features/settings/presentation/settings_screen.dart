@@ -5,6 +5,8 @@ import 'package:go_router/go_router.dart';
 import 'settings_provider.dart';
 import '../../../core/theme/theme_provider.dart';
 import '../../auth/presentation/auth_provider.dart';
+import '../../profile/presentation/profile_provider.dart';
+import '../../../core/sync/sync_providers.dart';
 
 /// 设置页面
 ///
@@ -17,17 +19,31 @@ class SettingsScreen extends ConsumerStatefulWidget {
 }
 
 class _SettingsScreenState extends ConsumerState<SettingsScreen> {
-  // 模拟数据 (后续可从 Provider 获取)
-  String userName = 'NotionUser';
-  String userEmail = 'user@example.com';
+  // 每日学习目标：后端 users 表暂无该字段，仅保存在页面状态里（不落盘，切页即回到默认值）。
   int dailyGoal = 50;
   bool notificationEnabled = true;
+
+  /// 本地已缓存题目数。只在初始化时查一次库，避免每次 rebuild 重新发起查询。
+  late final Future<int> _cachedCountFuture;
+
+  @override
+  void initState() {
+    super.initState();
+    _cachedCountFuture = ref
+        .read(localPracticeStoreProvider)
+        .cachedQuestionCount();
+    // 首帧前拉取一次真实资料；用 microtask 避开构建期改写 Provider 状态。
+    Future.microtask(
+      () => ref.read(profileControllerProvider.notifier).load(),
+    );
+  }
 
   @override
   Widget build(BuildContext context) {
     final themeMode = ref.watch(themeModeProvider);
     final settingsState = ref.watch(settingsProvider);
     final reviewMode = settingsState.reviewMode;
+    final profile = ref.watch(profileControllerProvider).profile;
     final isDarkMode =
         themeMode == ThemeMode.dark ||
         (themeMode == ThemeMode.system &&
@@ -90,20 +106,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                           icon: Icons.person_outline,
                           title: '用户名',
                           trailing: Text(
-                            userName,
-                            style: TextStyle(
-                              fontSize: 14.sp,
-                              color: secondaryColor,
-                            ),
-                          ),
-                          textColor: textColor,
-                        ),
-                        _buildDivider(borderColor),
-                        _buildSettingsTile(
-                          icon: Icons.mail_outline,
-                          title: '邮箱',
-                          trailing: Text(
-                            userEmail,
+                            profile?.username ?? '未登录',
                             style: TextStyle(
                               fontSize: 14.sp,
                               color: secondaryColor,
@@ -205,13 +208,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                         _buildSettingsTile(
                           icon: Icons.cleaning_services_outlined,
                           title: '清理缓存',
-                          trailing: Text(
-                            '12.4 MB',
-                            style: TextStyle(
-                              fontSize: 14.sp,
-                              color: secondaryColor,
-                            ),
-                          ),
+                          trailing: _buildCachedCountTrailing(secondaryColor),
                           textColor: textColor,
                           onTap: () => _showClearCacheDialog(),
                         ),
@@ -230,14 +227,10 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                         _buildDivider(borderColor),
                         _buildSettingsTile(
                           icon: Icons.cloud_upload_outlined,
-                          title: '备份与同步',
-                          trailing: Icon(
-                            Icons.arrow_forward_ios,
-                            size: 16.sp,
-                            color: secondaryColor.withValues(alpha: 0.7),
-                          ),
+                          title: '同步离线记录',
+                          trailing: _buildPendingTrailing(secondaryColor),
                           textColor: textColor,
-                          onTap: () => _showSnackBar('同步服务连接中...'),
+                          onTap: _syncOfflineAnswers,
                         ),
                       ],
                     ),
@@ -301,6 +294,71 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
         ),
       ),
     );
+  }
+
+  /// 待同步条数：读本地库，没有待同步记录时不打扰用户。
+  Widget _buildPendingTrailing(Color secondaryColor) {
+    return FutureBuilder<int>(
+      future: ref.read(localPracticeStoreProvider).pendingCount(),
+      builder: (context, snapshot) {
+        final pending = snapshot.data ?? 0;
+        if (snapshot.connectionState != ConnectionState.done) {
+          return SizedBox(
+            width: 14.w,
+            height: 14.w,
+            child: const CircularProgressIndicator(strokeWidth: 2),
+          );
+        }
+        return Text(
+          pending == 0 ? '已同步' : '待同步 $pending 条',
+          style: TextStyle(fontSize: 14.sp, color: secondaryColor),
+        );
+      },
+    );
+  }
+
+  /// 已缓存题目数：真实读本地库，不再写死存储容量。
+  Widget _buildCachedCountTrailing(Color secondaryColor) {
+    return FutureBuilder<int>(
+      future: _cachedCountFuture,
+      builder: (context, snapshot) {
+        if (snapshot.connectionState != ConnectionState.done) {
+          return SizedBox(
+            width: 14.w,
+            height: 14.w,
+            child: const CircularProgressIndicator(strokeWidth: 2),
+          );
+        }
+        return Text(
+          '已缓存 ${snapshot.data ?? 0} 题',
+          style: TextStyle(fontSize: 14.sp, color: secondaryColor),
+        );
+      },
+    );
+  }
+
+  /// 手动触发一次离线记录补交，并把真实结果告诉用户（不再假装"连接中"）。
+  Future<void> _syncOfflineAnswers() async {
+    final store = ref.read(localPracticeStoreProvider);
+    final pendingBefore = await store.pendingCount();
+    if (!mounted) {
+      return;
+    }
+    if (pendingBefore == 0) {
+      _showSnackBar('没有待同步的离线记录');
+      return;
+    }
+
+    final result = await ref.read(syncServiceProvider).flush();
+    if (!mounted) {
+      return;
+    }
+    if (result.error != null) {
+      _showSnackBar('同步未完成：${result.error}');
+    } else {
+      _showSnackBar('已同步 ${result.answers} 条作答（${result.sessions} 个会话）');
+    }
+    setState(() {});
   }
 
   Widget _buildSectionTitle(String title, Color color) {

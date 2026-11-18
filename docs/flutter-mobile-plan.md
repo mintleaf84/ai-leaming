@@ -289,3 +289,25 @@ npm run typecheck && npm run lint:ci && npx vitest run --maxWorkers=8 && npm run
 ### 唯一阻塞项
 
 `android.yml` 的 `apk` job 会先检查 `vars.API_BASE_URL`，为空则直接失败（避免产出连不上后端的废包）。仓库里没有部署域名记录，需要提供实际地址后设置变量并触发一次打包。
+
+### 最终收口（2026-11-18）
+
+P0 七条全部落地：契约对齐四项（第一性原理请求体、练习模式收敛、错题本续练、套餐页）+
+聊天会话四端点 + 聊天流解析；追加第七条——**注册页删掉邮箱输入框**（后端 `POST /auth/register`
+只接受 username/password，users 表无 email 列）。
+
+P3 全部完成：
+
+| 项 | 结果 |
+| --- | --- |
+| 设置页真数据 | 用户名读 `profileControllerProvider`；邮箱行删除（后端无此字段）；「清理缓存」显示本地真实题数 |
+| 掌握度入口 | profile 快捷区新增「掌握度」，`/mastery` 从无人可达变为可达 |
+| 知识卡新建 | FAB 打开对话框（正面/背面/可选分类），复用 `KnowledgeController.createCard`，字段对齐 `CreateCardSchema` |
+| 首页待办 | 由 `LearningStats` 推导（今日还差几题 / 今日错题复盘 / 连续天数），无占位文案 |
+| 题库搜索 | `applySearch()` 走 `GET /questions?search=`，搜索框不再是「开发中」 |
+
+### 未做（明确记录，不是遗漏）
+
+- **APK 实际打包**：按用户决定暂不出包。`android.yml` 的 `apk` job 已就绪（含 `API_BASE_URL` 空值提前失败），
+  需要时设置仓库变量并触发一次即可，无需改代码。
+- `cached_questions` 未存 `dimension`；离线只覆盖练习，recall 与 AI 聊天仍是在线专属。

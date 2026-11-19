@@ -31,8 +31,12 @@ Authorization: Bearer sk_xxxxxxxx
 | `/practice/answers`                                                                 | POST   | `write`    |
 | `/recall/reviews`、`/recall/decks`、`/recall/cards`                                 | POST   | `write`    |
 | `/recall/decks/:deckKey/cards/:cardKey`                                             | DELETE | `write`    |
+| `/questions`、`/questions/batch`                                                    | POST   | `admin`    |
+| `/questions/:id`                                                                    | PATCH  | `admin`    |
 
-当前**没有** admin 专属的外部接口：`admin` 在本 API 中等价于 `write`。
+`admin` 只用于**题库写接口**（建题 / 批量建题 / 改题）：题库是全局共享资产，
+write key 能建题等于把所有人的练习内容交给任意 agent，所以按更严的 `admin` 签发。
+其余模块没有 admin 专属接口，`admin` 在那些路径上等价于 `write`。
 
 ### 状态码语义（不要混用）
 
@@ -47,7 +51,7 @@ Authorization: Bearer sk_xxxxxxxx
 
 **404 是刻意的**：访问他人会话一律 404 而不是 403——403 等于告诉对方「这个 id 存在」。
 
-## 2. 接口清单（共 23 条）
+## 2. 接口清单（共 29 条）
 
 两套分页口径，注意区分：
 
@@ -56,12 +60,13 @@ Authorization: Bearer sk_xxxxxxxx
 
 ### 题库（全局共享）
 
-| 方法  | 路径             | 参数                                                | 用途                           |
-| ----- | ---------------- | --------------------------------------------------- | ------------------------------ |
-| GET   | `/questions`     | `page`=1、`limit`=20、`tag`（可选，按标签精确匹配） | 分页拉题库                     |
-| GET   | `/questions/:id` | 路径 `id`                                           | 单题详情；不存在 404           |
-| POST  | `/questions`     | `admin` 作用域，JSON 体见 §11                       | 建题；内容指纹幂等             |
-| PATCH | `/questions/:id` | `admin` 作用域，部分更新                            | 改题；改后指纹撞别的题返回 409 |
+| 方法  | 路径               | 参数                                                | 用途                                   |
+| ----- | ------------------ | --------------------------------------------------- | -------------------------------------- |
+| GET   | `/questions`       | `page`=1、`limit`=20、`tag`（可选，按标签精确匹配） | 分页拉题库                             |
+| GET   | `/questions/:id`   | 路径 `id`                                           | 单题详情；不存在 404                   |
+| POST  | `/questions`       | `admin` 作用域，JSON 体见 §11                       | 建题；内容指纹幂等                     |
+| POST  | `/questions/batch` | `admin` 作用域，JSON 体见 §11                       | 批量建题（≤100 条）；`externalId` 幂等 |
+| PATCH | `/questions/:id`   | `admin` 作用域，部分更新                            | 改题；改后指纹撞别的题返回 409         |
 
 单题字段：`id`(number)、`type`(string|null)、`dimension`(string|null)、`content`、`options`(string[])、
 `answer`(string)、`explanation`(string|null)、`tags`(string[])。
@@ -289,6 +294,8 @@ curl -s -X POST "$BASE/api/external/practice/answers" \
 3. 只读接口（GET）可直接调用；写接口需要 write 作用域：`POST /api/external/practice/answers`、
    `POST /api/external/recall/reviews`、`POST /api/external/recall/decks`、`POST /api/external/recall/cards`、
    `DELETE /api/external/recall/decks/:deckKey/cards/:cardKey`。
+   题库写接口（`POST /questions`、`POST /questions/batch`、`PATCH /questions/:id`）需要 **admin** 作用域，
+   没有 admin key 时不要尝试，停下来报告。
 4. 写操作必须自带幂等键：练习导入用 `sessionKey`，回忆作答用 `clientKey`；同一次任务的重试沿用同一个 key，
    内容变了才换新 key。收到 `duplicated: true` / `duplicate: true` 表示之前已写入成功，不要再重试。
 5. 遇到 404 不要重试：它表示资源不存在或不属于当前 key 的数据；
@@ -306,10 +313,10 @@ curl -s -X POST "$BASE/api/external/practice/answers" \
 - **写接口单批上限 500 条**（schema `max(500)`），且题目校验是整批原子的：有一道不存在就全部不写。
 - **`isCorrect` 以调用方为准**：服务端不比对标准答案，传错会直接污染掌握度与错题本。
 - **两套分页口径**（题库 `page/pagination`，其余 `limit/offset/meta`），写通用翻页逻辑时要分开处理。
-- **写接口现状**（共 10 条）：`POST /practice/answers`、`POST /recall/reviews`、`POST /recall/decks`、
+- **写接口现状**（共 11 条）：`POST /practice/answers`、`POST /recall/reviews`、`POST /recall/decks`、
   `POST /recall/cards`、`DELETE /recall/decks/:deckKey/cards/:cardKey`、
   `POST /recall/cards/:cardId/archive`、`DELETE /recall/cards/:cardId/archive`、`POST /srs/reviews`、
-  `POST /questions`、`PATCH /questions/:id`。
+  `POST /questions`、`POST /questions/batch`、`PATCH /questions/:id`。
   **题库写接口需要 `admin` 作用域**（题库是全局资产，write key 不能改），且**不提供删除**：
   删题会连带删掉所有人的作答与复习记录，没有可撤回的路径，暂时只在后台做。
 - **导入与 SRS 是两条路**：`POST /practice/answers` 只写会话/日志/掌握度，**不触发 SRS**；
@@ -416,6 +423,55 @@ AI_LEAMING_BASE_URL=https://your-host AI_LEAMING_API_KEY=sk_xxx node dist/index.
   未命中时 `id` 为 `null`（不是 0），不要拿它去调查详情接口。
 
 响应：`{ id, externalId, duplicate }`。新建成功后会异步重建该题的检索向量（不阻塞响应）。
+
+### 批量建题：`POST /questions/batch`
+
+给"手里有成百道题、且知道上游题号"的场景用（如粉笔导出件）。路径单独一条而不是给
+`POST /questions` 加数组——单题与批量的 body 形状、幂等键、回执都不同，混在一起契约说不清。
+
+```json
+{
+  "questions": [
+    {
+      "externalId": "jz1680_jz00312",
+      "content": "下列哪项属于教育法律？",
+      "options": ["《教育法》", "《教师手册》", "《课程标准》"],
+      "answer": "A",
+      "explanation": "《教育法》是全国人大制定的教育基本法律。",
+      "tags": ["教育法规"],
+      "type": "single",
+      "dimension": "knowledge",
+      "source": "jz1680",
+      "material": "材料原文（可选）"
+    }
+  ]
+}
+```
+
+- **作用域是 `admin`**（与单题建题一致）；`write` / `read` key 一律 403。
+- 条数 1–100（`questions` 数组）；逐条校验复用 `QuestionSchema`（与后台导入、单题建题同一口径），
+  `type` 省略按 `single`、`dimension` 省略按 `knowledge` 落库。
+- **整批原子**：任一条不合法返回 `400` + `issues`（每个 issue 前缀带条目下标，
+  如 `questions.1.answer: …`），**一条都不写**；`issues` 最多回 20 条，总数见 `issueCount`。
+- **幂等**：每条优先用 `externalId`（上游题号，跨重试稳定）；省略时退回内容指纹
+  `api:`+（题干+选项+答案）。命中既有题 → `status: "skipped"` 并回既有 `questionId`，
+  **不更新内容**（要改题走 `PATCH /questions/{id}`）。
+- **批内重复 `externalId`**：第一份 `created`，其余 `skipped` 并指向同一个 `questionId`，
+  库内只落一行；此时以**第一份**的内容为准。
+- 预演：`?dryRun=true` 时只查不写，`created` 表示「会新建几条」、新题的 `questionId` 为 `null`
+  （不要拿它去调查详情接口）；已有题照常回既有 id。
+
+响应：`{ created, skipped, items: [{ index, externalId, questionId, status }], duplicate }`：
+
+| 字段         | 含义                                                                   |
+| ------------ | ---------------------------------------------------------------------- |
+| `index`      | 该条在请求 `questions` 里的下标（从 0 开始）                           |
+| `externalId` | 实际使用的幂等键（没传 `externalId` 时是内容指纹）                     |
+| `questionId` | 落库或命中的题目 id；预演且需新建时为 `null`                           |
+| `status`     | `created` = 本次新建；`skipped` = 命中既有题或批内重复（内容未被修改） |
+| `duplicate`  | `true` = 整批没有新建任何题（全部重复）                                |
+
+新建成功的题会异步重建检索向量（不阻塞响应）。
 
 ### 改题：`PATCH /questions/:id`
 

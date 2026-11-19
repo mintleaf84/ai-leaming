@@ -48,6 +48,84 @@
       ]
     },
     {
+      "name": "create_questions_batch",
+      "title": "批量建题",
+      "description": "一次建 1–100 道题。逐条按上游 externalId 幂等（省略则用「题干+选项+答案」内容指纹）：已存在的题记为 skipped 并回既有 questionId，不更新内容。需要 admin 作用域。整批原子——任一条校验失败则一条都不写（400 + issues）。不确定时先传 dryRun=true 看 created 计数。",
+      "method": "POST",
+      "path": "/questions/batch",
+      "params": [
+        {
+          "name": "questions",
+          "in": "body",
+          "type": "array",
+          "required": true,
+          "description": "待建题目（1–100 条，整批原子）",
+          "items": {
+            "type": "object",
+            "properties": {
+              "externalId": {
+                "type": "string",
+                "required": false,
+                "description": "幂等键（推荐）：上游题号，如 jz1680_jz00312"
+              },
+              "content": {
+                "type": "string",
+                "required": true,
+                "description": "题干纯文本"
+              },
+              "options": {
+                "type": "array",
+                "required": false,
+                "description": "选项文本（判断题两个、填空题为空）"
+              },
+              "answer": {
+                "type": "string",
+                "required": true,
+                "description": "正确答案（多选题传 JSON 数组字符串）"
+              },
+              "explanation": {
+                "type": "string",
+                "required": false,
+                "description": "解析"
+              },
+              "tags": {
+                "type": "array",
+                "required": false,
+                "description": "知识点标签（至少 1 个）"
+              },
+              "dimension": {
+                "type": "string",
+                "required": false,
+                "description": "knowledge / understanding / application，默认 knowledge"
+              },
+              "type": {
+                "type": "string",
+                "required": false,
+                "description": "single / multi / truefalse / fill_blank，默认 single"
+              },
+              "source": {
+                "type": "string",
+                "required": false,
+                "description": "来源标识（原样落库）"
+              },
+              "material": {
+                "type": "string",
+                "required": false,
+                "description": "材料原文（原样落库）"
+              }
+            }
+          }
+        },
+        {
+          "name": "dryRun",
+          "in": "query",
+          "type": "boolean",
+          "required": false,
+          "description": "true = 只预演不写库（新题 questionId 为 null）"
+        }
+      ]
+    },
+    {
       "name": "list_practice_sessions",
       "title": "练习会话列表",
       "description": "按开始时间倒序分页列出当前身份的练习会话。要看某一场的逐题作答，用 get_practice_session。",

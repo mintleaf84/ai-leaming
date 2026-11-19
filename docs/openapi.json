@@ -83,6 +83,132 @@
         "required": ["sessionId", "inserted", "duplicated"],
         "type": "object"
       },
+      "ExternalQuestionBatchItem": {
+        "properties": {
+          "answer": {
+            "description": "正确答案：单选传标号（A）/ 多选题传 JSON 数组字符串（\"['A','C']\"）/ 判断题 A 或 B / 填空题为自由文本",
+            "type": "string"
+          },
+          "content": {
+            "description": "题干纯文本",
+            "type": "string"
+          },
+          "dimension": {
+            "description": "能力维度，省略时按 knowledge 落库",
+            "enum": ["knowledge", "understanding", "application"],
+            "type": "string"
+          },
+          "explanation": {
+            "description": "解析",
+            "type": "string"
+          },
+          "externalId": {
+            "description": "幂等键（推荐）：上游题号这类跨重试稳定的标识。同一 externalId 重复提交只会落一行；省略时退回内容指纹（题干+选项+答案）",
+            "example": "jz1680_jz00312",
+            "maxLength": 200,
+            "minLength": 1,
+            "type": "string"
+          },
+          "material": {
+            "description": "材料原文（原样落库，可为空）",
+            "type": "string"
+          },
+          "options": {
+            "description": "选项文本；判断题必须是两个、填空题可为空",
+            "items": {
+              "type": "string"
+            },
+            "type": "array"
+          },
+          "source": {
+            "description": "来源标识（原样落库，如 fenbi_import）",
+            "maxLength": 200,
+            "type": "string"
+          },
+          "tags": {
+            "description": "知识点标签，至少 1 个",
+            "items": {
+              "type": "string"
+            },
+            "type": "array"
+          },
+          "type": {
+            "description": "题型，省略时按 single 落库",
+            "enum": ["single", "multi", "truefalse", "fill_blank"],
+            "type": "string"
+          }
+        },
+        "required": ["content", "answer"],
+        "type": "object"
+      },
+      "ExternalQuestionBatchItemResult": {
+        "properties": {
+          "externalId": {
+            "description": "实际使用的幂等键（请求没给 externalId 时是内容指纹）",
+            "type": "string"
+          },
+          "index": {
+            "description": "该条在请求 questions 数组里的下标（从 0 开始）",
+            "type": "integer"
+          },
+          "questionId": {
+            "description": "题目 ID；预演且需要新建时为 null（不要拿 null 去调查详情接口）",
+            "nullable": true,
+            "type": "integer"
+          },
+          "status": {
+            "description": "created = 本次新建；skipped = 命中既有题或批内重复（内容未被修改）",
+            "enum": ["created", "skipped"],
+            "type": "string"
+          }
+        },
+        "required": ["index", "externalId", "questionId", "status"],
+        "type": "object"
+      },
+      "ExternalQuestionBatchRequest": {
+        "properties": {
+          "questions": {
+            "description": "待建题目，1–100 条；整批原子：任一条不合法则一条都不写",
+            "items": {
+              "$ref": "#/components/schemas/ExternalQuestionBatchItem"
+            },
+            "maxItems": 100,
+            "minItems": 1,
+            "type": "array"
+          }
+        },
+        "required": ["questions"],
+        "type": "object"
+      },
+      "ExternalQuestionBatchResponse": {
+        "properties": {
+          "created": {
+            "description": "本次新建条数",
+            "type": "integer"
+          },
+          "dryRun": {
+            "description": "仅预演时出现且恒为 true：题库业务数据零变更",
+            "type": "boolean"
+          },
+          "duplicate": {
+            "description": "true = 本次没有新建任何题（整批都是重复）",
+            "type": "boolean"
+          },
+          "items": {
+            "description": "逐条结果，顺序与请求 questions 一致",
+            "items": {
+              "$ref": "#/components/schemas/ExternalQuestionBatchItemResult"
+            },
+            "type": "array"
+          },
+          "skipped": {
+            "description": "跳过条数（既有题 + 批内重复 externalId）",
+            "type": "integer"
+          }
+        },
+        "required": ["created", "skipped", "items", "duplicate"],
+        "type": "object"
+      },
       "ExternalQuestionPatchBody": {
         "properties": {
           "answer": {
@@ -3462,6 +3588,115 @@
           }
         },
         "summary": "新建一道题（内容指纹幂等，需 admin 作用域）"
+      }
+    },
+    "/api/external/questions/batch": {
+      "post": {
+        "description": "写接口，**需 admin 作用域**：题库是全局共享资产，write key 不能写。逐条校验复用 `QuestionSchema`（与后台导入、单题建题同一口径），**整批原子**：任一条不合法返回 400 且一条都不写。幂等：每条优先用 `externalId`，省略则退回内容指纹 `api:`+（题干+选项+答案）；命中既有题按 `skipped` 返回既有 `questionId`，**不更新内容**（改内容走 `PATCH /questions/{id}`）。预演传 `?dryRun=true`：只查不写，`created` 表示「会新建几条」。",
+        "parameters": [
+          {
+            "description": "true = 预演：走完真实校验与计算后回滚，返回\"如果真执行会怎样\"，库内零变更",
+            "in": "query",
+            "name": "dryRun",
+            "required": false,
+            "schema": {
+              "description": "true = 预演：走完真实校验与计算后回滚，返回\"如果真执行会怎样\"，库内零变更",
+              "enum": ["true", "false"],
+              "example": "true",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ExternalQuestionBatchRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ExternalQuestionBatchResponse"
+                }
+              }
+            },
+            "description": "逐条结果（幂等命中按 skipped 返回，不报错）"
+          },
+          "400": {
+            "description": "请求体校验失败 / 任一条内容不合法（整批未写入，带 issues）"
+          },
+          "401": {
+            "description": "未授权 - 缺少 / 无效 / 已停用的 API Key"
+          },
+          "403": {
+            "description": "已禁止 - 该 API Key 的作用域不足（需要 admin）"
+          },
+          "429": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "properties": {
+                    "error": {
+                      "description": "可读错误信息",
+                      "type": "string"
+                    },
+                    "retryAfter": {
+                      "description": "建议等待的秒数，与 Retry-After 头一致",
+                      "type": "integer"
+                    }
+                  },
+                  "required": ["error", "retryAfter"],
+                  "type": "object"
+                }
+              }
+            },
+            "description": "请求过于频繁 - 超过该 API Key 的限额；按 Retry-After 头或 body.retryAfter 退避后重试",
+            "headers": {
+              "Retry-After": {
+                "description": "建议等待的秒数",
+                "required": true,
+                "schema": {
+                  "description": "建议等待的秒数",
+                  "type": "string"
+                }
+              },
+              "X-RateLimit-Limit": {
+                "description": "该桶的额度",
+                "required": true,
+                "schema": {
+                  "description": "该桶的额度",
+                  "type": "string"
+                }
+              },
+              "X-RateLimit-Remaining": {
+                "description": "剩余额度（超限时为 0）",
+                "required": true,
+                "schema": {
+                  "description": "剩余额度（超限时为 0）",
+                  "type": "string"
+                }
+              },
+              "X-RateLimit-Reset": {
+                "description": "窗口重置时间（Unix 秒）",
+                "required": true,
+                "schema": {
+                  "description": "窗口重置时间（Unix 秒）",
+                  "type": "string"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "服务器内部错误"
+          }
+        },
+        "summary": "批量建题（上游 externalId 幂等，需 admin 作用域）"
       }
     },
     "/api/external/questions/{id}": {

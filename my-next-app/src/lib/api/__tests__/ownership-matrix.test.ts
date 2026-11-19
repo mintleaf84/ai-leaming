@@ -293,6 +293,7 @@ describe("外部 API：写路由必须声明 write 作用域", () => {
     expect(adminOnly.sort()).toEqual([
       "PATCH /questions/{id}",
       "POST /questions",
+      "POST /questions/batch",
     ]);
   });
 

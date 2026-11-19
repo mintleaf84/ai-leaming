@@ -78,9 +78,7 @@ describe("GET /api/meta", () => {
     const filledRes = await createRootApp().request(API_PREFIX);
     const filledBody = (await filledRes.json()) as MetaBody;
 
-    expect(filledBody.downloadUrl).toBe(
-      "https://example.test/app-release.apk",
-    );
+    expect(filledBody.downloadUrl).toBe("https://example.test/app-release.apk");
   });
 
   it("响应头带 Cache-Control: no-store", async () => {

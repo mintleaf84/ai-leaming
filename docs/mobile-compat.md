@@ -8,9 +8,9 @@
 
 手机上的 APK 是唯一会独立变旧的客户端，所以：
 
-| 朝向 | 场景 | 服务端能发现吗 |
-| --- | --- | --- |
-| App 旧 / 服务端新 | 服务端先部署，APK 还没更新 | 能（`minClientVersion`） |
+| 朝向                  | 场景                             | 服务端能发现吗                                     |
+| --------------------- | -------------------------------- | -------------------------------------------------- |
+| App 旧 / 服务端新     | 服务端先部署，APK 还没更新       | 能（`minClientVersion`）                           |
 | **App 新 / 服务端旧** | 先装包、后端还没部署；或部署回滚 | **不能**——旧服务端不认识新 App，只能客户端自己判断 |
 
 因此协商必须双端都有，且判断依据不对称：服务端管"旧客户端"，客户端管"旧服务端"。
@@ -23,7 +23,14 @@
   "minClientVersion": "1.0.0",
   "latestClientVersion": "1.0.0",
   "downloadUrl": "https://…/app-release.apk",
-  "features": ["questions", "practice", "recall", "offline-answers", "chat-sessions", "…"]
+  "features": [
+    "questions",
+    "practice",
+    "recall",
+    "offline-answers",
+    "chat-sessions",
+    "…"
+  ]
 }
 ```
 
@@ -38,13 +45,13 @@
 构建期常量（`app_version.dart`）：
 `appVersion`（与 `pubspec.yaml` 的 `version` 主段一致，测试锁定）、`minServerContract`（这版 App 要求的最低服务端契约）、`maxKnownServerContract`（本 App 实际验证过的上限）。
 
-| 输入 | 判定 | 阻断 | 出口 |
-| --- | --- | --- | --- |
-| `/meta` 取不到（断网 / 5xx / 解析失败） | `serverUnreachable` | 否 | 直接进入（离线刷题照常） |
-| `meta.contractVersion < minServerContract` | `serverTooOld` | 是 | 重试 / 先离线练习 |
-| `clientVersion < meta.minClientVersion` | `clientTooOld` | 是 | 复制下载地址 / 仍然进入 |
-| `meta.contractVersion > maxKnownServerContract` | `clientUnverified` | 否 | 顶部可关闭提示 |
-| 其余 | `ok` | 否 | — |
+| 输入                                            | 判定                | 阻断 | 出口                     |
+| ----------------------------------------------- | ------------------- | ---- | ------------------------ |
+| `/meta` 取不到（断网 / 5xx / 解析失败）         | `serverUnreachable` | 否   | 直接进入（离线刷题照常） |
+| `meta.contractVersion < minServerContract`      | `serverTooOld`      | 是   | 重试 / 先离线练习        |
+| `clientVersion < meta.minClientVersion`         | `clientTooOld`      | 是   | 复制下载地址 / 仍然进入  |
+| `meta.contractVersion > maxKnownServerContract` | `clientUnverified`  | 否   | 顶部可关闭提示           |
+| 其余                                            | `ok`                | 否   | —                        |
 
 **首次绘制不等网络**：闸在加载中一律渲染 App 本体，判定为阻断后再切屏——否则弱网下的冷启动会被一个协商请求拖住。
 
@@ -65,16 +72,16 @@
 
 ## 6. 门禁
 
-| 门禁 | 位置 | 拦住什么 |
-| --- | --- | --- |
-| OpenAPI 快照一致性 | CI `contract` job（`npm run contract:check`） | 后端改了路由却没更新快照 |
-| Dart 契约断言 | `mobile_app/test/contract/openapi_contract_test.dart` | 后端**删/改名**了 Flutter 用到的 path 或字段 |
-| 归属矩阵 | `my-next-app/src/lib/api/__tests__/ownership-matrix.test.ts` | 新路由没想清归属/越权面 |
-| `/meta` 形状与免鉴权 | `meta.test.ts` / `contract-version.test.ts` | 协商端点被人"顺手加鉴权"或字段漂移 |
-| 版本常量一致性 | `test/core/compat/*` | `appVersion` 与 `pubspec.yaml` 漂移 |
+| 门禁                 | 位置                                                         | 拦住什么                                     |
+| -------------------- | ------------------------------------------------------------ | -------------------------------------------- |
+| OpenAPI 快照一致性   | CI `contract` job（`npm run contract:check`）                | 后端改了路由却没更新快照                     |
+| Dart 契约断言        | `mobile_app/test/contract/openapi_contract_test.dart`        | 后端**删/改名**了 Flutter 用到的 path 或字段 |
+| 归属矩阵             | `my-next-app/src/lib/api/__tests__/ownership-matrix.test.ts` | 新路由没想清归属/越权面                      |
+| `/meta` 形状与免鉴权 | `meta.test.ts` / `contract-version.test.ts`                  | 协商端点被人"顺手加鉴权"或字段漂移           |
+| 版本常量一致性       | `test/core/compat/*`                                         | `appVersion` 与 `pubspec.yaml` 漂移          |
 
 ## 7. 兼容矩阵（每次部署后手工加一行）
 
-| 日期 | 后端 contractVersion | 最低 App 版本 | 验证过的 App 版本 | 备注 |
-| --- | --- | --- | --- | --- |
-| 2026-11-19 | 1 | 1.0.0 | 1.0.0（未上真机） | 首次引入协商；真机验收待做 |
+| 日期       | 后端 contractVersion | 最低 App 版本 | 验证过的 App 版本 | 备注                       |
+| ---------- | -------------------- | ------------- | ----------------- | -------------------------- |
+| 2026-11-19 | 1                    | 1.0.0         | 1.0.0（未上真机） | 首次引入协商；真机验收待做 |

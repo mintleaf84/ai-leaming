@@ -86,6 +86,12 @@ class PracticeSessionState {
 /// 练习会话控制器 (Riverpod 3.x Notifier pattern)
 class PracticeController extends Notifier<PracticeSessionState> {
   DateTime? _questionStartTime;
+
+  /// 会话代次：每次 createSession / reset 自增。
+  ///
+  /// 有返回栈之后会出现"退出 A 场、立刻开始 B 场"：A 的网络请求如果晚于 B 返回，
+  /// 会把 B 的会话与题目覆盖掉（更糟的是清空 B 已产生的作答）。迟到的响应必须丢弃。
+  int _sessionGeneration = 0;
   final FlutterSecureStorage _storage = const FlutterSecureStorage();
 
   @override
@@ -95,6 +101,7 @@ class PracticeController extends Notifier<PracticeSessionState> {
 
   /// 创建新会话
   Future<void> createSession({int limit = 10, String mode = 'random'}) async {
+    final generation = ++_sessionGeneration;
     state = state.copyWith(isLoading: true, error: null);
 
     try {
@@ -108,6 +115,9 @@ class PracticeController extends Notifier<PracticeSessionState> {
         limit: limit,
         mode: mode,
       );
+
+      // 期间用户已退出/又开了新的一场：丢弃这次响应
+      if (generation != _sessionGeneration) return;
 
       state = state.copyWith(
         isLoading: false,
@@ -123,6 +133,7 @@ class PracticeController extends Notifier<PracticeSessionState> {
 
       _questionStartTime = DateTime.now();
     } catch (e) {
+      if (generation != _sessionGeneration) return;
       state = state.copyWith(isLoading: false, error: e.toString());
     }
   }
@@ -343,6 +354,8 @@ class PracticeController extends Notifier<PracticeSessionState> {
 
   /// 重置会话
   void reset() {
+    // 让还在飞的 createSession 失效，避免它稍后把状态写回来
+    _sessionGeneration++;
     state = const PracticeSessionState();
   }
 }

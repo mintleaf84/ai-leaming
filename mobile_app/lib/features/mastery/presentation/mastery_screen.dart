@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
-import 'package:go_router/go_router.dart';
+import '../../../core/navigation/app_nav.dart';
 import 'mastery_provider.dart';
 
 class MasteryScreen extends ConsumerStatefulWidget {
@@ -32,7 +32,7 @@ class _MasteryScreenState extends ConsumerState<MasteryScreen> {
         elevation: 0,
         leading: IconButton(
           icon: const Icon(Icons.arrow_back, color: Color(0xFF37352F)),
-          onPressed: () => context.go('/dashboard'),
+          onPressed: () => context.backOrHome(),
         ),
         titleTextStyle: TextStyle(
           color: const Color(0xFF37352F),

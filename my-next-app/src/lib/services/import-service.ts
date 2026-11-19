@@ -236,8 +236,7 @@ async function writeImport(
           is_correct: r.isCorrect,
           duration_ms: r.durationMs,
           origin: "import",
-          status:
-            (r.userAnswer ?? "").trim() === "" ? "skipped" : "answered",
+          status: (r.userAnswer ?? "").trim() === "" ? "skipped" : "answered",
         };
       })
       .filter((v): v is NonNullable<typeof v> => v !== null);

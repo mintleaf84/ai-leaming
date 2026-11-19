@@ -63,7 +63,9 @@ describe("练习日志来源与作答状态", () => {
     )) as unknown as Record<string, unknown>[];
     expect(log[0].origin).toBe("web");
     expect(log[0].status).toBe("skipped");
-    expect(await scalar("SELECT count(*) FROM question_srs WHERE question_id=9201")).toBe(0);
+    expect(
+      await scalar("SELECT count(*) FROM question_srs WHERE question_id=9201"),
+    ).toBe(0);
   });
 
   it("正常作答 → status=answered，SRS 建卡", async () => {
@@ -75,7 +77,9 @@ describe("练习日志来源与作答状态", () => {
     )) as unknown as Record<string, unknown>[];
     expect(rows.at(-1)?.origin).toBe("web");
     expect(rows.at(-1)?.status).toBe("answered");
-    expect(await scalar("SELECT count(*) FROM question_srs WHERE question_id=9201")).toBe(1);
+    expect(
+      await scalar("SELECT count(*) FROM question_srs WHERE question_id=9201"),
+    ).toBe(1);
   });
 
   it("Agent 导入 → origin=agent，批量同步不建 SRS", async () => {
@@ -83,7 +87,12 @@ describe("练习日志来源与作答状态", () => {
     await importService.importAgentAnswers(1, {
       sessionKey: "agent-origin-test-1",
       answers: [
-        { questionId: 9202, userAnswer: "B", isCorrect: true, durationMs: 3000 },
+        {
+          questionId: 9202,
+          userAnswer: "B",
+          isCorrect: true,
+          durationMs: 3000,
+        },
       ],
     });
 
@@ -95,7 +104,9 @@ describe("练习日志来源与作答状态", () => {
 
     const { srsService } = await import("../srs");
     await srsService.syncFromPracticeLogs(1);
-    expect(await scalar("SELECT count(*) FROM question_srs WHERE question_id=9202")).toBe(0);
+    expect(
+      await scalar("SELECT count(*) FROM question_srs WHERE question_id=9202"),
+    ).toBe(0);
   });
 
   it("skipped 历史日志同样被同步跳过", async () => {
@@ -105,6 +116,8 @@ describe("练习日志来源与作答状态", () => {
     );
     const { srsService } = await import("../srs");
     await srsService.syncFromPracticeLogs(1);
-    expect(await scalar("SELECT count(*) FROM question_srs WHERE question_id=9203")).toBe(0);
+    expect(
+      await scalar("SELECT count(*) FROM question_srs WHERE question_id=9203"),
+    ).toBe(0);
   });
 });

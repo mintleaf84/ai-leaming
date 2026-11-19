@@ -552,7 +552,7 @@ GateResult runGate(GateInput input) {
     if (isLess(cov.pct, newFileFloor)) {
       untestedNewFiles.add(
         '$path 覆盖率 ${percentText(cov.pct)} < ${percentText(newFileFloor)}'
-        '（lines=$cov.lines）',
+        '（lines=${cov.lines}）',
       );
     }
   }

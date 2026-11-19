@@ -89,17 +89,19 @@ describe("改题回刷历史判分", () => {
   it("多选集合比较：顺序不同算对，漏选算错（REST 判分补齐）", async () => {
     const { checkAnswerCorrectness } = await import("../answer-check");
     const options = ["甲", "乙", "丙", "丁"];
-    expect(checkAnswerCorrectness('["D","B"]', '["B","D"]', options, "multi")).toBe(
-      true,
+    expect(
+      checkAnswerCorrectness('["D","B"]', '["B","D"]', options, "multi"),
+    ).toBe(true);
+    expect(checkAnswerCorrectness("B", '["B","D"]', options, "multi")).toBe(
+      false,
     );
-    expect(checkAnswerCorrectness("B", '["B","D"]', options, "multi")).toBe(false);
     expect(checkAnswerCorrectness("A,B", '["B","D"]', options, "multi")).toBe(
       false,
     );
     // 混用形态：用户写选项文本、答案存字母（或反之）时，同一集合必须判对
-    expect(checkAnswerCorrectness('["丁","甲"]', '["A","D"]', options, "multi")).toBe(
-      true,
-    );
+    expect(
+      checkAnswerCorrectness('["丁","甲"]', '["A","D"]', options, "multi"),
+    ).toBe(true);
     expect(
       checkAnswerCorrectness('["A","D"]', '["丁","甲"]', options, "multi"),
     ).toBe(true);
@@ -114,15 +116,17 @@ describe("改题回刷历史判分", () => {
     expect(result.usersReset).toBe(1);
     expect(result.sessionsUpdated).toBe(1);
 
-    expect(await scalar("SELECT is_correct FROM practice_logs WHERE id=9001")).toBe(
-      0,
-    );
-    expect(await scalar("SELECT is_correct FROM practice_logs WHERE id=9002")).toBe(
-      1,
-    );
+    expect(
+      await scalar("SELECT is_correct FROM practice_logs WHERE id=9001"),
+    ).toBe(0);
+    expect(
+      await scalar("SELECT is_correct FROM practice_logs WHERE id=9002"),
+    ).toBe(1);
     // 会话：9001 错、9002 对、9003 对 → 2
     expect(
-      await scalar("SELECT correct_count FROM practice_sessions WHERE id='sess-regrade'"),
+      await scalar(
+        "SELECT correct_count FROM practice_sessions WHERE id='sess-regrade'",
+      ),
     ).toBe(2);
 
     // 同一用例内断言 SRS 重置：避免依赖「上一个用例先跑过」的执行顺序
@@ -153,8 +157,8 @@ describe("改题回刷历史判分", () => {
 
   it("updateQuestion 钩子：只改答案也触发回刷", async () => {
     await adminService.updateQuestion(9103, { answer: '["A","C"]' });
-    expect(await scalar("SELECT is_correct FROM practice_logs WHERE id=9004")).toBe(
-      1,
-    );
+    expect(
+      await scalar("SELECT is_correct FROM practice_logs WHERE id=9004"),
+    ).toBe(1);
   });
 });

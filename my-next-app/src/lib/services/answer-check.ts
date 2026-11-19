@@ -93,7 +93,10 @@ export function checkAnswerCorrectness(
       if (!trimmed) return [];
       // 历史数据可能是 "A,B" / "AB" 两种形态
       if (trimmed.includes(",")) {
-        return trimmed.split(",").map((s) => s.trim()).filter(Boolean);
+        return trimmed
+          .split(",")
+          .map((s) => s.trim())
+          .filter(Boolean);
       }
       return /^[A-Z]+$/.test(trimmed) ? trimmed.split("") : [trimmed];
     };

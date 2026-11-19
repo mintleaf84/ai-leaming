@@ -462,24 +462,24 @@ CI（ubuntu-latest）两样都有，不受影响；但**不要**顺手升级这�
 
 §12 的门禁把两条规则当成**全局**规则，而 CI 跑的是「分支 + 最新 main」的合并结果：
 
-| PR | 误报 | 根因 |
-| --- | --- | --- |
-| #248 | `lib/core/compat/app_version.dart` 被拦"新增文件 <60%" | 文件是 main 新增的，不在基线里，被当成"本 PR 新增" |
-| #247 | `lib/shared/skeletons/skeleton_fakes.dart` 被拦单文件回退 | 本 PR 改了这个文件（行数变化 → 95.5% vs 基线 100%） |
-| #247 | `lib/core/theme/app_colors.dart`（50 行配色常量）被要求 60% | 口径过宽：常量文件没有行为可测 |
+| PR   | 误报                                                        | 根因                                                |
+| ---- | ----------------------------------------------------------- | --------------------------------------------------- |
+| #248 | `lib/core/compat/app_version.dart` 被拦"新增文件 <60%"      | 文件是 main 新增的，不在基线里，被当成"本 PR 新增"  |
+| #247 | `lib/shared/skeletons/skeleton_fakes.dart` 被拦单文件回退   | 本 PR 改了这个文件（行数变化 → 95.5% vs 基线 100%） |
+| #247 | `lib/core/theme/app_colors.dart`（50 行配色常量）被要求 60% | 口径过宽：常量文件没有行为可测                      |
 
 结论：规则本身没错，缺的是**作用域**——"这个文件是不是本 PR 引入/改动的"必须问 git，而不是问基线。
 
 ### 13.2 六条口径（G1–G6）
 
-| # | 口径 | 实现位置 |
-| --- | --- | --- |
-| G1 | 默认基线 `git merge-base HEAD origin/main`，回退 `origin/master`；都失败则**降级**并明确警告，只跳过 G2/G4，global/scope 底线与"基线外文件"规则照旧；支持 `--base=<sha>` | `coverage_gate.dart::_resolveBase` + `runGate` 的 `degraded` 分支 |
-| G2 | "新增文件 <60%"只看 `git diff --diff-filter=A <base>...HEAD -- lib` | `runGate` 第 4 段 |
-| G3 | 该规则再收窄到逻辑层：`features/*/{data,domain}/**`、`lib/core/**`（排除 `lib/core/theme/**`）、`lib/shared/datasources/**` | `requiresNewFileCoverage` |
-| G4 | 单文件回退（>2pp）只对本 PR **未触碰**的文件生效（`git diff --name-only <base>...HEAD -- lib`） | `runGate` 第 3 段 |
-| G5 | 报告"本 PR 净变化"：`git diff -U0` 的 `@@` 头取 `+` 侧行号，与 lcov `DA:` 行号求交；再报 global − 基线 measured | `parseAddedLineRanges` + `_netChange` |
-| G6 | 基线新增 `exempt` 清单：跳过两条拦截，但**仍计入分母** | `exemptPathsOf` / `applyUpdate` 原样保留 |
+| #   | 口径                                                                                                                                                                     | 实现位置                                                          |
+| --- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------ | ----------------------------------------------------------------- |
+| G1  | 默认基线 `git merge-base HEAD origin/main`，回退 `origin/master`；都失败则**降级**并明确警告，只跳过 G2/G4，global/scope 底线与"基线外文件"规则照旧；支持 `--base=<sha>` | `coverage_gate.dart::_resolveBase` + `runGate` 的 `degraded` 分支 |
+| G2  | "新增文件 <60%"只看 `git diff --diff-filter=A <base>...HEAD -- lib`                                                                                                      | `runGate` 第 4 段                                                 |
+| G3  | 该规则再收窄到逻辑层：`features/*/{data,domain}/**`、`lib/core/**`（排除 `lib/core/theme/**`）、`lib/shared/datasources/**`                                              | `requiresNewFileCoverage`                                         |
+| G4  | 单文件回退（>2pp）只对本 PR **未触碰**的文件生效（`git diff --name-only <base>...HEAD -- lib`）                                                                          | `runGate` 第 3 段                                                 |
+| G5  | 报告"本 PR 净变化"：`git diff -U0` 的 `@@` 头取 `+` 侧行号，与 lcov `DA:` 行号求交；再报 global − 基线 measured                                                          | `parseAddedLineRanges` + `_netChange`                             |
+| G6  | 基线新增 `exempt` 清单：跳过两条拦截，但**仍计入分母**                                                                                                                   | `exemptPathsOf` / `applyUpdate` 原样保留                          |
 
 ### 13.3 代码结构
 
@@ -494,18 +494,18 @@ CI（ubuntu-latest）两样都有，不受影响；但**不要**顺手升级这�
 
 ### 13.4 验收结果（本机，2026-11-20）
 
-| 项 | 结果 |
-| --- | --- |
-| `dart analyze tool/` | No issues found |
-| `flutter analyze` | 0 error / 0 warning（29 info 为存量） |
-| `flutter test test/tool` | 8 passed |
-| `flutter test --coverage` | 521 passed、2 skipped |
-| `dart run tool/coverage_gate.dart` | PASS；103 文件 / 7837 行 / 36.6%（floor 35.6%），7 个 LF 代理，exempt 1 个 |
-| `--base=HEAD~6`（演示非零净变化） | 新增可执行行 403 行、覆盖 384 行（95.3%） |
-| 变异 a（清空 `addedFiles`，基线外低覆盖文件存在） | 不再报"新增文件"，exit 0 |
-| 变异 b（把 touched 文件从 `touchedFiles` 移除） | 报单文件回退（81.3% vs 99.0%），exit 1 |
-| 变异 c（`--base=deadbeef`） | 打印"无法解析成 commit，已跳过 PR 作用域规则（G2/G4）"，exit 0 |
-| `--update`（对基线副本） | 只升不降逻辑不变，`exempt` 原样保留 |
+| 项                                                | 结果                                                                       |
+| ------------------------------------------------- | -------------------------------------------------------------------------- |
+| `dart analyze tool/`                              | No issues found                                                            |
+| `flutter analyze`                                 | 0 error / 0 warning（29 info 为存量）                                      |
+| `flutter test test/tool`                          | 8 passed                                                                   |
+| `flutter test --coverage`                         | 521 passed、2 skipped                                                      |
+| `dart run tool/coverage_gate.dart`                | PASS；103 文件 / 7837 行 / 36.6%（floor 35.6%），7 个 LF 代理，exempt 1 个 |
+| `--base=HEAD~6`（演示非零净变化）                 | 新增可执行行 403 行、覆盖 384 行（95.3%）                                  |
+| 变异 a（清空 `addedFiles`，基线外低覆盖文件存在） | 不再报"新增文件"，exit 0                                                   |
+| 变异 b（把 touched 文件从 `touchedFiles` 移除）   | 报单文件回退（81.3% vs 99.0%），exit 1                                     |
+| 变异 c（`--base=deadbeef`）                       | 打印"无法解析成 commit，已跳过 PR 作用域规则（G2/G4）"，exit 0             |
+| `--update`（对基线副本）                          | 只升不降逻辑不变，`exempt` 原样保留                                        |
 
 ### 13.5 与计划不一致处
 

@@ -235,6 +235,9 @@ async function writeImport(
           user_answer: r.userAnswer,
           is_correct: r.isCorrect,
           duration_ms: r.durationMs,
+          origin: "import",
+          status:
+            (r.userAnswer ?? "").trim() === "" ? "skipped" : "answered",
         };
       })
       .filter((v): v is NonNullable<typeof v> => v !== null);
@@ -361,6 +364,9 @@ async function writeAgentAnswers(
       user_answer: a.userAnswer ?? null,
       is_correct: a.isCorrect,
       duration_ms: a.durationMs ?? null,
+      // 对错由 agent 判定、服务端不复核：标 agent 来源，SRS 同步会跳过
+      origin: "agent",
+      status: (a.userAnswer ?? "").trim() === "" ? "skipped" : "answered",
     })),
   );
 

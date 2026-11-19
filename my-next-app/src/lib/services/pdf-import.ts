@@ -319,6 +319,9 @@ async function writeConfirm(
         user_answer: "",
         is_correct: false,
         duration_ms: 0,
+        origin: "import",
+        // 错题本收藏不是「作答」：单独标 wrong_book，不参与统计口径推导
+        status: "wrong_book",
       })),
     );
   }

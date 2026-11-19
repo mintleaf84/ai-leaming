@@ -2,8 +2,8 @@ import 'package:flutter/material.dart';
 import 'dart:math' as math;
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
-import 'package:go_router/go_router.dart';
 import 'package:confetti/confetti.dart';
+import '../../../core/navigation/app_nav.dart';
 import 'practice_provider.dart';
 import '../../../core/utils/haptic_util.dart';
 
@@ -293,7 +293,8 @@ class _ResultScreenState extends ConsumerState<ResultScreen> {
           child: ElevatedButton(
             onPressed: () {
               ref.read(practiceControllerProvider.notifier).reset();
-              context.go('/dashboard');
+              // 「返回首页」要丢掉练习/结果这层栈，不能 pop 回上一页
+              context.replace(AppRoutes.dashboard);
             },
             style: ElevatedButton.styleFrom(
               backgroundColor: const Color(0xFF37352F),
@@ -317,7 +318,7 @@ class _ResultScreenState extends ConsumerState<ResultScreen> {
           child: OutlinedButton(
             onPressed: () {
               ref.read(practiceControllerProvider.notifier).reset();
-              context.go('/practice');
+              context.replace(AppRoutes.practice);
             },
             style: OutlinedButton.styleFrom(
               foregroundColor: const Color(0xFF37352F),

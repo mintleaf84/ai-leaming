@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
-import 'package:go_router/go_router.dart';
+import '../../../core/navigation/app_nav.dart';
 import '../domain/question.dart';
 import 'questions_provider.dart';
 import '../../../shared/skeletons/skeleton_fakes.dart';
@@ -59,7 +59,7 @@ class _QuestionListScreenState extends ConsumerState<QuestionListScreen> {
               child: Row(
                 children: [
                   IconButton(
-                    onPressed: () => context.go('/dashboard'),
+                    onPressed: () => context.backOrHome(),
                     icon: Icon(Icons.arrow_back, color: textColor),
                   ),
                   Text('📚', style: TextStyle(fontSize: 28.sp)),

@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:go_router/go_router.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
+import '../../../core/navigation/app_nav.dart';
 import '../../../core/auth/token_util.dart';
 import '../data/auth_repository_impl.dart';
 
@@ -36,10 +36,10 @@ class _SplashScreenState extends ConsumerState<SplashScreen> {
         await repo.logout();
       }
       if (!mounted) return;
-      context.go(hasValidToken ? '/dashboard' : '/login');
+      context.replace(hasValidToken ? AppRoutes.dashboard : AppRoutes.login);
     } catch (e) {
       if (mounted) {
-        context.go('/login');
+        context.replace(AppRoutes.login);
       }
     }
   }

@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
-import 'package:go_router/go_router.dart';
+import '../../../core/navigation/app_nav.dart';
 import 'package:skeletonizer/skeletonizer.dart';
 import 'wrong_book_provider.dart';
 import '../../../shared/skeletons/skeleton_fakes.dart';
@@ -35,7 +35,7 @@ class _WrongBookScreenState extends ConsumerState<WrongBookScreen> {
         elevation: 0,
         leading: IconButton(
           icon: const Icon(Icons.arrow_back, color: Color(0xFF37352F)),
-          onPressed: () => context.go('/dashboard'),
+          onPressed: () => context.backOrHome(),
         ),
         title: Text(
           '错题本',
@@ -506,9 +506,13 @@ class _WrongBookScreenState extends ConsumerState<WrongBookScreen> {
                       if (sessionId != null && mounted) {
                         // 走 extra 传参：/practice 只读 state.extra，用 query 传
                         // sessionId 会被静默忽略、变成随机新练习。
-                        context.go(
-                          '/practice',
+                        context.pushDetail(
+                          AppRoutes.practice,
                           extra: {'sessionId': sessionId, 'mode': 'review'},
+                          // 回来时页面仍挂载，必须手动刷新：练习会改变错题状态与统计
+                          onReturn: () => ref
+                              .read(wrongBookControllerProvider.notifier)
+                              .loadData(),
                         );
                       } else if (mounted) {
                         ScaffoldMessenger.of(context).showSnackBar(

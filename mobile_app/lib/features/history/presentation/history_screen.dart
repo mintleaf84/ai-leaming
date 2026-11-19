@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
-import 'package:go_router/go_router.dart';
+import '../../../core/navigation/app_nav.dart';
 import 'package:skeletonizer/skeletonizer.dart';
 import 'history_provider.dart';
 import '../domain/history_item.dart';
@@ -54,7 +54,7 @@ class _HistoryScreenState extends ConsumerState<HistoryScreen> {
         elevation: 0,
         leading: IconButton(
           icon: const Icon(Icons.arrow_back, color: Color(0xFF37352F)),
-          onPressed: () => context.go('/dashboard'),
+          onPressed: () => context.backOrHome(),
         ),
         title: Text(
           '练习历史',
@@ -105,7 +105,7 @@ class _HistoryScreenState extends ConsumerState<HistoryScreen> {
         title: '暂无练习记录',
         subtitle: '完成一次练习后会显示在这里',
         actionLabel: '开始练习',
-        onAction: () => context.go('/practice'),
+        onAction: () => context.pushDetail(AppRoutes.practice),
       );
     }
 
@@ -165,7 +165,7 @@ class _HistoryScreenState extends ConsumerState<HistoryScreen> {
           child: InkWell(
             borderRadius: BorderRadius.circular(12.r),
             onTap: () {
-              context.go('/history/${item.id}');
+              context.pushDetail(AppRoutes.historyDetail(item.id));
             },
             child: Padding(
               padding: EdgeInsets.all(16.w),

@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
-import 'package:go_router/go_router.dart';
+import '../../../core/navigation/app_nav.dart';
 import 'textbook_provider.dart';
 import '../domain/textbook.dart';
 
@@ -22,7 +22,7 @@ class TextbookDetailScreen extends ConsumerWidget {
           elevation: 0,
           leading: IconButton(
             icon: const Icon(Icons.arrow_back, color: Color(0xFF37352F)),
-            onPressed: () => context.go('/textbooks'),
+            onPressed: () => context.backOrHome(),
           ),
         ),
         body: const Center(child: CircularProgressIndicator()),
@@ -33,7 +33,7 @@ class TextbookDetailScreen extends ConsumerWidget {
           elevation: 0,
           leading: IconButton(
             icon: const Icon(Icons.arrow_back, color: Color(0xFF37352F)),
-            onPressed: () => context.go('/textbooks'),
+            onPressed: () => context.backOrHome(),
           ),
         ),
         body: Center(
@@ -58,7 +58,7 @@ class TextbookDetailScreen extends ConsumerWidget {
               elevation: 0,
               leading: IconButton(
                 icon: const Icon(Icons.arrow_back, color: Color(0xFF37352F)),
-                onPressed: () => context.go('/textbooks'),
+                onPressed: () => context.backOrHome(),
               ),
             ),
             body: Center(
@@ -89,7 +89,7 @@ class TextbookDetailScreen extends ConsumerWidget {
         elevation: 0,
         leading: IconButton(
           icon: const Icon(Icons.arrow_back, color: Color(0xFF37352F)),
-          onPressed: () => context.go('/textbooks'),
+          onPressed: () => context.backOrHome(),
         ),
         title: Text(
           tb.title,

@@ -1,5 +1,7 @@
+import 'package:flutter/foundation.dart';
 import 'package:freezed_annotation/freezed_annotation.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
+import '../../../core/error/user_message.dart';
 import '../../../core/network/dio_client.dart';
 import '../../../shared/datasources/api_client.dart';
 import '../../auth/presentation/auth_provider.dart';
@@ -71,7 +73,9 @@ class HistoryController extends Notifier<HistoryListState> {
       );
     } catch (e) {
       if (seq != _requestSeq) return;
-      state = state.copyWith(isLoading: false, error: e.toString());
+      // 原始异常只进日志，界面用统一文案（审计 #24）。
+      debugPrint('[History] 加载练习记录失败: $e');
+      state = state.copyWith(isLoading: false, error: userMessageOf(e));
     }
   }
 
@@ -101,7 +105,8 @@ class HistoryController extends Notifier<HistoryListState> {
       );
     } catch (e) {
       if (seq != _requestSeq) return;
-      state = state.copyWith(isLoading: false, error: e.toString());
+      debugPrint('[History] 加载更多失败: $e');
+      state = state.copyWith(isLoading: false, error: userMessageOf(e));
     }
   }
 
@@ -139,7 +144,8 @@ Future<HistoryDetailState> _loadHistoryDetail(String sessionId, Ref ref) async {
 
     return HistoryDetailState(isLoading: false, session: session, logs: logs);
   } catch (e) {
-    return HistoryDetailState(isLoading: false, error: e.toString());
+    debugPrint('[History] 加载会话详情失败: $e');
+    return HistoryDetailState(isLoading: false, error: userMessageOf(e));
   }
 }
 

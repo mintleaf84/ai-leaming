@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:intl/intl.dart';
 import '../../../core/navigation/app_nav.dart';
+import '../../../core/error/user_message.dart';
 import 'package:skeletonizer/skeletonizer.dart';
 import 'history_provider.dart';
 import '../../settings/presentation/settings_provider.dart';
@@ -70,7 +71,11 @@ class _HistoryDetailScreenState extends ConsumerState<HistoryDetailScreen> {
       ),
       body: asyncState.when(
         loading: () => _buildSkeleton(),
-        error: (error, _) => _buildErrorView(error.toString(), textColor),
+        error: (error, _) {
+          // 原始异常只进日志，界面用统一文案（审计 #24）。
+          debugPrint('[HistoryDetail] 加载失败: $error');
+          return _buildErrorView(userMessageOf(error), textColor);
+        },
         data: (state) => reviewMode == ReviewMode.immersive
             ? _buildImmersiveBody(
                 state,

@@ -1,4 +1,6 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:flutter/foundation.dart';
+import '../../../core/error/user_message.dart';
 import '../domain/practice_repository.dart';
 import '../data/practice_repository_impl.dart';
 import '../domain/question.dart';
@@ -100,7 +102,8 @@ class QuestionsController extends Notifier<QuestionsState> {
         hasMore: newItems.length < response.total,
       );
     } catch (e) {
-      state = state.copyWith(isLoading: false, error: e.toString());
+      debugPrint('[Questions] 加载题库失败: $e');
+      state = state.copyWith(isLoading: false, error: userMessageOf(e));
     }
   }
 

@@ -5,6 +5,7 @@ import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mobile_app/features/practice/data/local_practice_store.dart';
 import 'package:mobile_app/features/practice/data/practice_repository_impl.dart';
+import 'package:mobile_app/features/practice/domain/practice_exceptions.dart';
 import 'package:mobile_app/features/practice/domain/question.dart';
 import 'package:mobile_app/shared/datasources/api_client.dart';
 
@@ -485,6 +486,27 @@ void main() {
       );
       expect(store.ensuredSessions, isEmpty);
       expect(store.recordedAnswers, isEmpty);
+    });
+
+    test('题号不是数字：抛业务错误，不发请求、不降级', () async {
+      await expectLater(
+        repository.submitAnswer(
+          sessionId: 'agent_42',
+          questionId: 'abc',
+          userAnswer: 'A',
+          duration: 1,
+        ),
+        throwsA(
+          isA<InvalidQuestionIdException>().having(
+            (error) => error.userMessage,
+            'userMessage',
+            '题目编号异常，请刷新后重试',
+          ),
+        ),
+      );
+
+      expect(adapter.requests, isEmpty, reason: '题号都解析不了，不该把请求发出去');
+      expect(store.ensuredSessions, isEmpty, reason: '这不是网络问题，不能顺手降级成本地作答');
     });
   });
 

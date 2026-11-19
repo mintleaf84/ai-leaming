@@ -1,4 +1,6 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:flutter/foundation.dart';
+import '../../../core/error/user_message.dart';
 import '../../../core/network/dio_client.dart';
 import '../../../shared/datasources/api_client.dart';
 import '../domain/user_profile.dart';
@@ -47,7 +49,8 @@ class ProfileController extends Notifier<ProfileState> {
       final profile = UserProfile.fromJson(response as Map<String, dynamic>);
       state = state.copyWith(isLoading: false, profile: profile);
     } catch (e) {
-      state = state.copyWith(isLoading: false, error: e.toString());
+      debugPrint('[Profile] 加载个人信息失败: $e');
+      state = state.copyWith(isLoading: false, error: userMessageOf(e));
     }
   }
 }

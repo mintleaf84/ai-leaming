@@ -16,6 +16,7 @@ import {
   RotateCcw,
 } from "lucide-react";
 import { toast } from "sonner";
+import { formatBeijingDateTime } from "@/lib/utils/datetime";
 
 interface BackupHistoryItem {
   id: number;
@@ -297,7 +298,7 @@ export function BackupManager() {
                   </span>
                   <p className="text-xs text-muted-foreground">
                     {item.created_at
-                      ? new Date(item.created_at).toLocaleString("zh-CN")
+                      ? formatBeijingDateTime(item.created_at)
                       : "-"}
                   </p>
                 </div>

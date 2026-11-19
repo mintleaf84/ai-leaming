@@ -20,6 +20,7 @@ import {
 import { SubscriptionPlan, UserSubscriptionDetail } from "@/types";
 import { ErrorState } from "@/components/ui/error-state";
 import _Link from "next/link";
+import { formatBeijingDate } from "@/lib/utils/datetime";
 
 // 套餐图标映射
 const planIcons: Record<string, React.ReactNode> = {
@@ -34,6 +35,9 @@ const _planColors: Record<string, string> = {
   basic: "from-blue-500 to-indigo-600",
   pro: "from-amber-500 to-orange-600",
 };
+
+/** 今天的日期标签（模块加载时算一次；跨零点再刷新即可） */
+const todayLabel = formatBeijingDate(Date.now());
 
 export default function PricingPage() {
   const _router = useRouter();
@@ -303,7 +307,7 @@ export default function PricingPage() {
                     variant="secondary"
                     className="bg-neutral-100 text-neutral-500 font-normal"
                   >
-                    {new Date().toLocaleDateString()}
+                    {todayLabel}
                   </Badge>
                 </div>
               </CardHeader>

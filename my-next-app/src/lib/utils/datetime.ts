@@ -44,7 +44,7 @@ export function getBeijingDiffDays(
  */
 export function formatBeijingDate(
   date: Date | string | number | undefined,
-  pattern: string,
+  pattern = "YYYY-MM-DD",
 ): string {
   return dayjs(date).tz(BEIJING_TIMEZONE).format(pattern);
 }
@@ -109,4 +109,11 @@ export function formatBeijingDisplayDate(date: Date): string {
 export function getBeijingLocaleString(date?: Date): string {
   // 匹配 zh-CN 的默认 LocaleString 行为，例如 "2024/6/15 08:00:00"
   return dayjs(date).tz(BEIJING_TIMEZONE).format("YYYY/M/D HH:mm:ss");
+}
+
+/** 统一的"日期 + 时分"格式（管理页/日志用），固定北京时间 */
+export function formatBeijingDateTime(
+  date: Date | string | number | undefined,
+): string {
+  return formatBeijingDate(date, "YYYY-MM-DD HH:mm");
 }

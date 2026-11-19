@@ -13,6 +13,7 @@ import { QuestionRowSchema } from "@/lib/schemas";
 import logger from "@/lib/logger";
 import { DemoService } from "@/lib/practice/demo";
 import { safeParseJson } from "@/lib/utils/json";
+import { checkAnswerCorrectness } from "@/lib/services/answer-check";
 import { generateId, generateSessionId } from "@/lib/utils/id";
 import { NotFoundError } from "@/lib/errors/app-error";
 import { withTransaction } from "@/lib/db/executor";
@@ -62,65 +63,6 @@ function mapQuestion(q: unknown): Question {
       dimension: data.dimension || "knowledge",
     } as Question;
   }
-}
-
-/**
- * 增强型答案比对函数，支持标号(A/B/C)与文本的双向匹配
- * 与前端 use-practice-controller.ts 保持逻辑一致
- */
-function checkAnswerCorrectness(
-  userAnswer: string,
-  correctAnswer: string,
-  options: string[],
-  questionType?: string,
-): boolean {
-  // 填空题：按中文分号分割，逐空匹配（支持单空多答案用 | 分隔）
-  if (questionType === "fill_blank") {
-    const userBlanks = userAnswer.split("；").map((s) => s.trim());
-    const correctBlanks = correctAnswer.split("；").map((s) => s.trim());
-    if (userBlanks.length !== correctBlanks.length) return false;
-    return userBlanks.every((ub, i) => {
-      if (!ub) return false; // 拒绝空白用户输入
-      const acceptedAnswers = correctBlanks[i]
-        .split("|")
-        .map((s) => s.trim())
-        .filter(Boolean);
-      return acceptedAnswers.some((ans) => ans === ub);
-    });
-  }
-
-  // 1. 精确匹配
-  if (userAnswer === correctAnswer) return true;
-
-  // 2. 用户提交标号(A/B/C...) → 对比选项文本
-  if (userAnswer.length === 1 && userAnswer >= "A" && userAnswer <= "Z") {
-    const idx = userAnswer.charCodeAt(0) - 65;
-    if (options[idx] === correctAnswer) return true;
-  }
-
-  // 3. 正确答案标号 → 对比用户提交文本
-  if (
-    correctAnswer.length === 1 &&
-    correctAnswer >= "A" &&
-    correctAnswer <= "Z"
-  ) {
-    const idx = correctAnswer.charCodeAt(0) - 65;
-    if (options[idx] === userAnswer) return true;
-  }
-
-  // 4. 判断题特殊处理：A=正确, B=错误
-  if (options.length === 2) {
-    if (
-      (userAnswer === "A" && correctAnswer === "正确") ||
-      (userAnswer === "B" && correctAnswer === "错误") ||
-      (userAnswer === "正确" && correctAnswer === "A") ||
-      (userAnswer === "错误" && correctAnswer === "B")
-    ) {
-      return true;
-    }
-  }
-
-  return false;
 }
 
 export const practiceService = {
@@ -287,6 +229,8 @@ export const practiceService = {
     isCorrect: boolean,
     duration: number,
     totalDurationMs?: number,
+    // true = 在写日志的同一事务内重新读题判分（用于 submitAnswerWithValidation）
+    revalidateAnswer = false,
   ) {
     // 1+2. 归属校验、答题日志写入、会话统计更新必须在**同一个事务**里。
     //
@@ -294,6 +238,8 @@ export const practiceService = {
     // 或转给别的用户，日志照样会写进一个不再属于当前用户的 session。放进事务后，
     // 校验与写入看到的是同一个快照（SQLite 写事务串行化），窗口消失。
     // 顺带把"日志"与"统计"绑成原子：任何一步失败都不会留下有日志无统计的脏数据。
+    let gradedIsCorrect = isCorrect;
+
     await withTransaction(async (exec) => {
       if (sessionId) {
         const [owned] = await exec
@@ -311,12 +257,38 @@ export const practiceService = {
         if (!owned) throw new PracticeSessionNotFoundError(sessionId);
       }
 
+      // 判分与写入同一快照：事务外读到的答案可能已被改题回刷更新，
+      // 迟到的日志会按旧答案落库且回刷扫描不到（评审指出的竞争窗口）。
+      if (revalidateAnswer) {
+        const [current] = await exec
+          .select({
+            answer: questions.answer,
+            options: questions.options,
+            type: questions.type,
+          })
+          .from(questions)
+          .where(eq(questions.id, questionId))
+          .limit(1);
+        if (current) {
+          const currentOptions: string[] =
+            typeof current.options === "string"
+              ? safeParseJson<string[]>(current.options, [])
+              : current.options || [];
+          gradedIsCorrect = checkAnswerCorrectness(
+            userAnswer,
+            current.answer ?? "",
+            currentOptions,
+            current.type ?? undefined,
+          );
+        }
+      }
+
       await exec.insert(practice_logs).values({
         session_id: sessionId,
         user_id: userId,
         question_id: questionId,
         user_answer: userAnswer,
-        is_correct: isCorrect,
+        is_correct: gradedIsCorrect,
         duration_ms: duration,
       });
 
@@ -324,7 +296,7 @@ export const practiceService = {
         await exec
           .update(practice_sessions)
           .set({
-            correct_count: sql`${practice_sessions.correct_count} + ${isCorrect ? 1 : 0}`,
+            correct_count: sql`${practice_sessions.correct_count} + ${gradedIsCorrect ? 1 : 0}`,
             total_duration_ms: totalDurationMs ?? undefined,
           })
           .where(
@@ -357,7 +329,7 @@ export const practiceService = {
             userId,
             tag,
             q.dimension as Dimension,
-            isCorrect,
+            gradedIsCorrect,
           );
         }),
       );
@@ -373,7 +345,7 @@ export const practiceService = {
       updatedSrs = await srsService.updateQuestionSrs(
         userId,
         questionId,
-        isCorrect,
+        gradedIsCorrect,
         duration,
         undefined,
         undefined,
@@ -444,6 +416,8 @@ export const practiceService = {
       userAnswer,
       isCorrect,
       duration,
+      undefined,
+      true,
     );
 
     return { isCorrect, correctAnswer };

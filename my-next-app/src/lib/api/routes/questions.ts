@@ -1,6 +1,7 @@
 import { OpenAPIHono, createRoute, z } from "@hono/zod-openapi";
 import { questionService } from "@/lib/services/question";
 import { authMiddleware } from "@/lib/api/middlewares/auth";
+import { parsePagination } from "@/lib/api/pagination";
 
 const app = new OpenAPIHono();
 
@@ -46,8 +47,9 @@ const listRoute = createRoute({
 
 app.openapi(listRoute, async (c) => {
   const { page, limit, search, type } = c.req.valid("query");
-  const pageNum = parseInt(page);
-  const limitNum = parseInt(limit);
+  // 分页统一走共享实现：非法值回落默认、上限截断，避免 NaN 下沉到 SQL
+  const { limit: limitNum } = parsePagination({ limit });
+  const pageNum = Math.max(1, parseInt(page, 10) || 1);
 
   const result = await questionService.list({
     offset: (pageNum - 1) * limitNum,

@@ -2,6 +2,7 @@ import { drizzleDb } from "@/lib/db";
 import { sql } from "drizzle-orm";
 import type { WrongQuestionItem } from "./wrong-question";
 import { affectedRows } from "@/lib/db/affected-rows";
+import { safeParseJson } from "@/lib/utils/json";
 
 export interface QuestionFolder {
   id: number;
@@ -201,7 +202,7 @@ export const questionFolderService = {
       return rows.map((r) => ({
         questionId: r.question_id,
         questionContent: r.content,
-        tags: r.tags ? (JSON.parse(r.tags) as string[]) : [],
+        tags: safeParseJson<string[]>(r.tags as string | null | undefined, []),
         wrongCount: 0,
         lastWrongAt: "",
         correctAnswer: r.answer || "",

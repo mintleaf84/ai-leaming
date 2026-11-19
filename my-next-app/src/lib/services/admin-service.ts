@@ -6,8 +6,10 @@ import { hashPassword } from "@/lib/auth/password";
 import { affectedRows } from "@/lib/db/affected-rows";
 import { buildAdminExternalId } from "@/lib/services/question-idempotency";
 import { indexQuestion } from "@/lib/services/question-vector-index";
+import { regradeQuestionLogs } from "@/lib/services/question-regrade";
 import { withTransaction } from "@/lib/db/executor";
 import { touchesEmbeddingText } from "@/lib/services/question-index-policy";
+import { coerceJsonColumn } from "@/lib/utils/json";
 
 /**
  * 哪些字段参与 embedding 文本（见 `question-vector-index.ts` 的
@@ -167,9 +169,8 @@ export const adminService = {
     // 解析 JSON 字段
     const parsedItems = items.map((q) => ({
       ...q,
-      options:
-        typeof q.options === "string" ? JSON.parse(q.options) : q.options,
-      tags: typeof q.tags === "string" ? JSON.parse(q.tags) : q.tags,
+      options: coerceJsonColumn<unknown[]>(q.options, []),
+      tags: coerceJsonColumn<unknown[]>(q.tags, []),
     }));
 
     return {
@@ -275,10 +276,21 @@ export const adminService = {
     if (data.options) updateData.options = JSON.stringify(data.options);
     if (data.tags) updateData.tags = JSON.stringify(data.tags);
 
-    await drizzleDb
-      .update(drizzleSchema.questions)
-      .set(updateData)
-      .where(eq(drizzleSchema.questions.id, id));
+    // 答案/选项/题型变更会改变历史判分：与改题同事务回刷（P0-1，见 question-regrade.ts）。
+    // 题型决定判分走单选还是多选/填空分支（例如 single 误标改 multi 后，
+    // ["C","A"] 与 ["A","C"] 应从错变对），必须一起触发。
+    // 只改解析/标签/维度不触发——它们不参与判分。
+    const needsRegrade =
+      data.answer !== undefined ||
+      data.options !== undefined ||
+      data.type !== undefined;
+    await withTransaction(async (exec) => {
+      await exec
+        .update(drizzleSchema.questions)
+        .set(updateData)
+        .where(eq(drizzleSchema.questions.id, id));
+      if (needsRegrade) await regradeQuestionLogs(id, exec);
+    });
 
     if (touchesEmbeddingText(data)) {
       // 不 await：embedding 是一次网络调用，管理端保存不该被它拖住。
@@ -309,9 +321,8 @@ export const adminService = {
 
     return {
       ...res,
-      options:
-        typeof res.options === "string" ? JSON.parse(res.options) : res.options,
-      tags: typeof res.tags === "string" ? JSON.parse(res.tags) : res.tags,
+      options: coerceJsonColumn<unknown[]>(res.options, []),
+      tags: coerceJsonColumn<unknown[]>(res.tags, []),
     } as Question;
   },
 

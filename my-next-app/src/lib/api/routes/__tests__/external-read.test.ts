@@ -456,13 +456,24 @@ describe("External read-only API (Agent API P2)", () => {
     });
 
     it("paginates", async () => {
-      const res = await app.request("/mastery?limit=0", {
+      const res = await app.request("/mastery?limit=1", {
         headers: authHeader(KEY_A),
       });
       const body = await res.json();
-      // limit=0 被夹到 1
       expect(body.meta.limit).toBe(1);
       expect(body.data).toHaveLength(1);
+    });
+
+    it("非法 limit 回落到默认值，而不是当成 1 条", async () => {
+      // `?limit=0` / `?limit=abc` / `?limit=12oops` 都是"参数错"，按默认 20 处理；
+      // 静默返回 1 条会让调用方以为"只有一条数据"
+      for (const raw of ["0", "-5", "abc", "12oops"]) {
+        const res = await app.request(`/mastery?limit=${raw}`, {
+          headers: authHeader(KEY_A),
+        });
+        const body = await res.json();
+        expect(body.meta.limit).toBe(20);
+      }
     });
   });
 

@@ -4,6 +4,7 @@ import { eq, and, desc, asc, sql, inArray } from "drizzle-orm";
 import type { InferSelectModel } from "drizzle-orm";
 import { TAG_COLORS } from "@/types";
 import { ragService } from "@/lib/ai/rag";
+import { safeParseJson } from "@/lib/utils/json";
 
 /**
  * 知识卡片相关类型
@@ -122,11 +123,11 @@ export async function getAllKnowledgeCards(
 
   return rows.map((row) => ({
     ...row,
-    tags: JSON.parse(row.tags || "[]") as string[],
-    key_points: JSON.parse(row.key_points || "[]") as {
-      term: string;
-      definition: string;
-    }[],
+    tags: safeParseJson<string[]>(row.tags as string | null | undefined, []),
+    key_points: safeParseJson<{ term: string; definition: string }[]>(
+      row.key_points as string | null | undefined,
+      [],
+    ),
   })) as KnowledgeCard[];
 }
 
@@ -165,11 +166,11 @@ export async function getKnowledgeCard(
 
   return {
     ...row,
-    tags: JSON.parse(row.tags || "[]") as string[],
-    key_points: JSON.parse(row.key_points || "[]") as {
-      term: string;
-      definition: string;
-    }[],
+    tags: safeParseJson<string[]>(row.tags as string | null | undefined, []),
+    key_points: safeParseJson<{ term: string; definition: string }[]>(
+      row.key_points as string | null | undefined,
+      [],
+    ),
   } as KnowledgeCard;
 }
 

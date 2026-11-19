@@ -30,6 +30,10 @@ app.use(
 // 注册 Swagger UI
 app.get("/doc", swaggerUI({ url: "/api/openapi.json" }));
 
+// 公开契约协商端点（版本 + 能力列表）：必须匿名可访问，不加 authMiddleware
+import metaRoute from "@/lib/api/routes/meta";
+app.route("/meta", metaRoute);
+
 // 注册 OpenAPI 文档端点
 app.doc("/openapi.json", {
   openapi: "3.0.0",

@@ -347,3 +347,17 @@ Android/Windows/Linux 用 `FadeForwardsPageTransitionsBuilder`，iOS/macOS 用 C
 
 解完冲突后的验证：`flutter analyze` 0 error / 0 warning；`flutter test` **69 passed / 2 skipped**
 （#225 带进来的 `navigation_rules_test.dart` 也全绿）。
+
+### 9.2 交付包记录（main 构建，2026-11-19）
+
+| 项 | 值 |
+| --- | --- |
+| 构建 | `Android` workflow run [44533507475](https://github.com/mintleaf84/ai-leaming/actions/runs/44533507475)（`workflow_dispatch`，ref = `main` @ eeea755） |
+| 两个 job | `Flutter 静态分析与测试` success + `构建 Release APK` success |
+| 产物 | `app-release.apk` **55,761,968 B（53.17 MB）**，本地副本 `~/downloads/ai-leaming-main-1119.apk`，sha256 前缀 `e3d3893f07c1a947…` |
+| 体积对比（vs 基线 main @10:28，55,540,733 B） | **+221,235 B = +216 KB**（判据 ≤300KB，**通过**） |
+| 签名 | `CN=ai-leaming-mobile, OU=dev, O=mintleaf84, C=CN`（与仓库 secrets 里的固定 keystore 一致，可直接覆盖升级旧包） |
+| 字体 | `MaterialSymbolsOutlined.ttf` 112,728 B；`MaterialIcons-Regular.otf` 1,992 B（只剩 `apple`） |
+
+> 说明：§6 M-11 里记录的 +152KB 是**分支**构建（run 44519273867，早于 #225 导航重构合并）；
+> 交付口径以本节的 main 构建 +216KB 为准，两者都远低于 300KB 判据。

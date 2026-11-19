@@ -38,11 +38,14 @@ const TOUCH_TARGET_FILES = [
 ];
 
 describe("hover-reveal：触屏设备上按钮常显（W2）", () => {
-  it.each(TOUCH_TARGET_FILES)("%s 使用 hover-reveal 而非 md:opacity-0", (rel) => {
-    const source = fs.readFileSync(path.join(ROOT, rel), "utf8");
-    expect(source).toContain("hover-reveal");
-    expect(source).not.toMatch(/md:opacity-0/);
-  });
+  it.each(TOUCH_TARGET_FILES)(
+    "%s 使用 hover-reveal 而非 md:opacity-0",
+    (rel) => {
+      const source = fs.readFileSync(path.join(ROOT, rel), "utf8");
+      expect(source).toContain("hover-reveal");
+      expect(source).not.toMatch(/md:opacity-0/);
+    },
+  );
 
   it("globals.css 定义了 hover-reveal，且只在 (hover: hover) 下隐藏", () => {
     const css = fs.readFileSync(path.join(ROOT, "src/app/globals.css"), "utf8");
@@ -55,9 +58,8 @@ describe("hover-reveal：触屏设备上按钮常显（W2）", () => {
   });
 
   it("类名在渲染结果里真的落到了按钮上（不是只写在注释里）", async () => {
-    const { DeleteTextbookButton } = await import(
-      "@/components/textbooks/DeleteTextbookButton"
-    );
+    const { DeleteTextbookButton } =
+      await import("@/components/textbooks/DeleteTextbookButton");
     render(<DeleteTextbookButton id={1} title="测试教材" />);
     const button = screen.getByRole("button");
     expect(button.className).toContain("hover-reveal");

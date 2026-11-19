@@ -13,9 +13,7 @@ async function SrsAnalysisContent() {
   // 这里原来只渲染一句"加载失败"，没有恢复路径。抛给路由错误边界，
   // 用户能拿到带「重试」的 ErrorState，而不是死路一条。
   if (!result?.data) {
-    throw new Error(
-      result?.serverError || "记忆分析数据加载失败，请稍后重试",
-    );
+    throw new Error(result?.serverError || "记忆分析数据加载失败，请稍后重试");
   }
 
   return <SrsAnalysisClient stats={result.data} />;

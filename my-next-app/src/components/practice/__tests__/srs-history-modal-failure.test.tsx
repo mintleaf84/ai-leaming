@@ -31,9 +31,7 @@ describe("记忆溯源：失败不能显示成「还没复习过」（W1）", ()
   it("历史 action 失败时显示错误态", async () => {
     mockHistory.mockResolvedValue({ serverError: "SRS 记录读取失败" });
 
-    render(
-      <SrsHistoryModal questionId={1} isOpen onClose={() => {}} />,
-    );
+    render(<SrsHistoryModal questionId={1} isOpen onClose={() => {}} />);
 
     expect(await screen.findByText("记忆轨迹加载失败")).toBeInTheDocument();
     expect(screen.getByText("SRS 记录读取失败")).toBeInTheDocument();
@@ -53,9 +51,7 @@ describe("记忆溯源：失败不能显示成「还没复习过」（W1）", ()
         ],
       });
 
-    render(
-      <SrsHistoryModal questionId={1} isOpen onClose={() => {}} />,
-    );
+    render(<SrsHistoryModal questionId={1} isOpen onClose={() => {}} />);
 
     fireEvent.click(await screen.findByRole("button", { name: /重试/ }));
 

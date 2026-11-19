@@ -263,12 +263,12 @@ APK 不走应用商店，升级靠用户手动装新包，而 Android 只接受*
 
 ### 9.1 secrets 清单（缺任意一项，`android.yml` 直接失败）
 
-| Secret                        | 内容                                        |
-| ----------------------------- | ------------------------------------------- |
-| `ANDROID_KEYSTORE_BASE64`     | `.jks` 文件的 base64 原文（`base64 -w0`）   |
-| `ANDROID_KEYSTORE_PASSWORD`   | keystore 口令                              |
-| `ANDROID_KEY_ALIAS`           | 密钥别名                                    |
-| `ANDROID_KEY_PASSWORD`        | 密钥口令（可与 keystore 口令相同）          |
+| Secret                      | 内容                                      |
+| --------------------------- | ----------------------------------------- |
+| `ANDROID_KEYSTORE_BASE64`   | `.jks` 文件的 base64 原文（`base64 -w0`） |
+| `ANDROID_KEYSTORE_PASSWORD` | keystore 口令                             |
+| `ANDROID_KEY_ALIAS`         | 密钥别名                                  |
+| `ANDROID_KEY_PASSWORD`      | 密钥口令（可与 keystore 口令相同）        |
 
 证书主体固定为 `CN=ai-leaming-mobile, OU=dev, O=mintleaf84, C=CN`（见 `docs/mobile-ui-kit.md` §9.2），
 升级前后可用下面这条命令核对"装机的包是不是同一把钥匙签的"：
@@ -289,10 +289,10 @@ keytool -printcert -jarfile app-release.apk | grep -E "Owner|SHA256"
 
 备份后按下表登记，每次新建或轮换 keystore 时更新（**这张表只写位置，不写口令、不放文件**）：
 
-| 备份副本          | 位置（填写具体条目/介质编号） | 最后核对日期 |
-| ----------------- | ----------------------------- | ------------ |
-| 密码管理器        | 待登记                        | 待登记       |
-| 离线加密介质      | 待登记                        | 待登记       |
+| 备份副本     | 位置（填写具体条目/介质编号） | 最后核对日期 |
+| ------------ | ----------------------------- | ------------ |
+| 密码管理器   | 待登记                        | 待登记       |
+| 离线加密介质 | 待登记                        | 待登记       |
 
 ### 9.3 仓库侧的硬约束
 

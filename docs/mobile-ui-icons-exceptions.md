@@ -7,14 +7,14 @@
 
 ## 1. 真正的例外（保留 Material Icons / 存在视觉差异）
 
-| Material Icons              | 处理                        | 原因                                                                                                                                                                                                                               |
-| --------------------------- | --------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `Icons.apple`               | 保留，收进 `AppIcons.apple` | Material Symbols **没有品牌图标**（Apple 登录按钮专用）。这是全仓唯一仍指向 `Icons` 的常量。                                                                                                                                       |
-| `Icons.info_outline`        | → `Symbols.info`            | Symbols 没有 `info_outline` 变体，只有实心 `info`（圆圈内的 i 由描边变实底）。                                                                                                                                                     |
-| `Icons.play_circle_outline` | → `Symbols.play_circle`     | 同上，只有实心 `play_circle`。                                                                                                                                                                                                     |
-| `Icons.circle`              | 保留，收进 `AppIcons.dot`   | 单选题「已选中」标记：10sp 白色叠在 20×20 深色圆底上。`Symbols.circle` 是**空心环**，实测墨量只有原图标 36%，10sp 下等于看不见（用户实测反馈「图标没了」）；Symbols 里没有尺寸对得上的实心圆点（`fiber_manual_record` 直径太小）。 |
-| `Icons.cancel`（实心叉）    | 保留，收进 `AppIcons.cancelSolid` | Material Symbols 的 `cancel` 只有"空心圆 + 斜杠"一种形态，**没有实心变体**（不存在 `cancel_filled`）。同屏并排的 `check_circle_filled`（答对）是实心，判错若用 `Symbols.cancel` 就是一实一空像两个族（审计 #12）。判错标记改用实心版，空心 `AppIcons.cancel` 仍留给"关闭/清除"类语义。 |
-| `Icons.check_box`（实心框） | 保留，收进 `AppIcons.checkBoxSolid` | Material Symbols 的 `check_box` 只有描边方块，没有 filled 变体，与同一行的 `check_box_outline_blank` 肉眼几乎分不出来（点没点上分不清）。错题本「全选」的已选中态改用实心版（审计 #12）。 |
+| Material Icons              | 处理                                | 原因                                                                                                                                                                                                                                                                                   |
+| --------------------------- | ----------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `Icons.apple`               | 保留，收进 `AppIcons.apple`         | Material Symbols **没有品牌图标**（Apple 登录按钮专用）。这是全仓唯一仍指向 `Icons` 的常量。                                                                                                                                                                                           |
+| `Icons.info_outline`        | → `Symbols.info`                    | Symbols 没有 `info_outline` 变体，只有实心 `info`（圆圈内的 i 由描边变实底）。                                                                                                                                                                                                         |
+| `Icons.play_circle_outline` | → `Symbols.play_circle`             | 同上，只有实心 `play_circle`。                                                                                                                                                                                                                                                         |
+| `Icons.circle`              | 保留，收进 `AppIcons.dot`           | 单选题「已选中」标记：10sp 白色叠在 20×20 深色圆底上。`Symbols.circle` 是**空心环**，实测墨量只有原图标 36%，10sp 下等于看不见（用户实测反馈「图标没了」）；Symbols 里没有尺寸对得上的实心圆点（`fiber_manual_record` 直径太小）。                                                     |
+| `Icons.cancel`（实心叉）    | 保留，收进 `AppIcons.cancelSolid`   | Material Symbols 的 `cancel` 只有"空心圆 + 斜杠"一种形态，**没有实心变体**（不存在 `cancel_filled`）。同屏并排的 `check_circle_filled`（答对）是实心，判错若用 `Symbols.cancel` 就是一实一空像两个族（审计 #12）。判错标记改用实心版，空心 `AppIcons.cancel` 仍留给"关闭/清除"类语义。 |
+| `Icons.check_box`（实心框） | 保留，收进 `AppIcons.checkBoxSolid` | Material Symbols 的 `check_box` 只有描边方块，没有 filled 变体，与同一行的 `check_box_outline_blank` 肉眼几乎分不出来（点没点上分不清）。错题本「全选」的已选中态改用实心版（审计 #12）。                                                                                              |
 
 以上五处是**观感会变**的地方，验收时重点看：登录页 Apple 按钮、设置页/帮助类的 info 提示、练习页的播放圆形按钮、练习详情判对/判错那一行、错题本底部"全选"勾选前后。
 
@@ -29,13 +29,13 @@
 
 ## 3. 替换统计（2026-11-19 实测）
 
-| 指标                         | 数值                                                                  |
-| ---------------------------- | --------------------------------------------------------------------- |
-| 替换前 `Icons.*` 出现次数    | 129                                                                   |
-| 替换前唯一图标名             | 63（含 `apple`）                                                      |
+| 指标                         | 数值                                                                                                  |
+| ---------------------------- | ----------------------------------------------------------------------------------------------------- |
+| 替换前 `Icons.*` 出现次数    | 129                                                                                                   |
+| 替换前唯一图标名             | 63（含 `apple`）                                                                                      |
 | 替换后页面代码里裸 `Icons.*` | **0**（`AppIcons` 内部另有 4 个 Material Icons 常量：`apple`、`dot`、`cancelSolid`、`checkBoxSolid`） |
-| `AppIcons.*` 使用点          | 145 处（2026-11-20 实测），覆盖 65 个语义名（新增 `cancelSolid` / `checkBoxSolid`） |
-| 涉及文件                     | 20 个（`lib/features/**` 18 + `lib/shared/widgets` 2）                |
+| `AppIcons.*` 使用点          | 145 处（2026-11-20 实测），覆盖 65 个语义名（新增 `cancelSolid` / `checkBoxSolid`）                   |
+| 涉及文件                     | 20 个（`lib/features/**` 18 + `lib/shared/widgets` 2）                                                |
 
 复核命令：
 

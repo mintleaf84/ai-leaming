@@ -720,9 +720,10 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
             onPressed: () async {
               Navigator.pop(context);
               await ref.read(authControllerProvider.notifier).logout();
-              if (context.mounted) {
-                context.replace(AppRoutes.login);
-              }
+              if (!context.mounted) return;
+              // 登出失败：state 里已经是 AsyncError，界面停在原页（不弹新 UI）。
+              if (ref.read(authControllerProvider).hasError) return;
+              context.replace(AppRoutes.login);
             },
             child: Text(
               '退出',

@@ -15,8 +15,9 @@ import 'package:mobile_app/features/auth/presentation/auth_provider.dart';
 ///    login 成功即可恢复 `AsyncData`，错误态被清掉。
 /// 3. **登出清掉错误态**：登出后是干净的 `AsyncData(null)`，界面不会残留
 ///    上一次登录失败的提示。
-/// 4. **登出异常向外抛**：`logout` 没有 guard，仓库抛异常会冒到调用方，且状态
-///    不变（见报告「疑似缺陷」：本地 token 删除失败时界面无从感知）。
+/// 4. **登出失败只进 state**：`logout` 用 `AsyncValue.guard` 兜住仓库异常，
+///    失败时状态是 `AsyncError` 且 `authEpoch` 不变（用户其实还在登录态，
+///    清掉历史/对话等于让用户丢数据）；成功才 bump 版本号。
 class FakeAuthRepository implements AuthRepository {
   final List<List<String>> loginCalls = [];
   final List<List<String>> registerCalls = [];
@@ -143,6 +144,18 @@ void main() {
       expect(state.hasError, isFalse);
       expect(state, isA<AsyncData<void>>());
     });
+
+    test('响应缺 token（AuthException）：状态是 AsyncError 且保留 AuthException', () async {
+      repository.loginError = const AuthException('登录响应缺少 token，请重试');
+      final container = makeContainer();
+
+      await container.read(authControllerProvider.notifier).login('cjb', 'pwd');
+
+      final state = container.read(authControllerProvider);
+      expect(state, isA<AsyncError<void>>());
+      expect(state.error, isA<AuthException>());
+      expect(state.error.toString(), contains('缺少 token'));
+    });
   });
 
   group('register', () {
@@ -187,19 +200,17 @@ void main() {
       expect(state.hasError, isFalse, reason: '登出后不该还挂着上次登录失败的提示');
     });
 
-    test('仓库抛异常时向外抛且状态不变（现状，见报告）', () async {
+    test('仓库抛异常：状态是 AsyncError，异常不再冒到调用方', () async {
       repository.logoutError = Exception('本地 token 删除失败');
       final container = makeContainer();
       final notifier = container.read(authControllerProvider.notifier);
-      final before = container.read(authControllerProvider);
 
-      await expectLater(notifier.logout(), throwsA(isA<Exception>()));
+      await notifier.logout();
 
-      expect(
-        container.read(authControllerProvider),
-        same(before),
-        reason: '现状：logout 没有 guard，异常冒出去时状态保持原样',
-      );
+      expect(repository.logoutCalls, 1);
+      final state = container.read(authControllerProvider);
+      expect(state, isA<AsyncError<void>>());
+      expect(state.error.toString(), contains('本地 token 删除失败'));
     });
   });
 
@@ -240,6 +251,23 @@ void main() {
 
       await notifier.logout();
       expect(container.read(authEpochProvider), 2);
+    });
+
+    test('登出失败：版本号不变（还在登录态，不该清历史/对话）', () async {
+      repository.logoutError = Exception('本地 token 删除失败');
+      final container = makeContainer();
+      final notifier = container.read(authControllerProvider.notifier);
+      await notifier.login('cjb', 'pwd');
+      expect(container.read(authEpochProvider), 1);
+
+      await notifier.logout();
+
+      expect(container.read(authControllerProvider).hasError, isTrue);
+      expect(
+        container.read(authEpochProvider),
+        1,
+        reason: '清理失败说明用户其实还在登录态，bump 会把历史/对话清空',
+      );
     });
   });
 }

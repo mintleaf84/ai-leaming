@@ -26,10 +26,16 @@ export interface Pagination {
   offset: number;
 }
 
+/**
+ * 严格整数解析：`Number.parseInt("12oops")` 会得到 12（静默忽略尾巴），
+ * 那等于把非法参数当成有效分页值。这里要求整串就是一个整数。
+ */
 function toInt(raw: string | undefined, fallback: number): number {
   if (raw === undefined) return fallback;
-  const parsed = Number.parseInt(raw, 10);
-  return Number.isFinite(parsed) ? parsed : fallback;
+  const trimmed = raw.trim();
+  if (trimmed === "") return fallback;
+  const parsed = Number(trimmed);
+  return Number.isInteger(parsed) ? parsed : fallback;
 }
 
 /**
@@ -45,8 +51,9 @@ export function parsePagination(
   const defaultLimit = options.defaultLimit ?? DEFAULT_LIMIT;
   const maxLimit = options.maxLimit ?? MAX_LIMIT;
 
+  // 非正整数一律回落到默认值（`limit=0` 应当拿到默认的 20，而不是 1）
   const rawLimit = toInt(query.limit ?? undefined, defaultLimit);
-  const limit = Math.min(maxLimit, Math.max(1, rawLimit));
+  const limit = rawLimit < 1 ? defaultLimit : Math.min(maxLimit, rawLimit);
 
   const rawOffset = toInt(query.offset ?? undefined, 0);
   const offset = Math.max(0, rawOffset);

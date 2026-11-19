@@ -4,7 +4,7 @@ import React, { useEffect, useState, useRef, useMemo } from "react";
 import { motion } from "framer-motion";
 import { Virtuoso, VirtuosoHandle } from "react-virtuoso";
 import { Loader2 } from "lucide-react";
-import { useQuery } from "@tanstack/react-query";
+import { useAppQuery } from "@/hooks/useAppQuery";
 import { getSessionDetailAction } from "@/server/actions/history";
 import { type SessionDetail } from "@/lib/services/history";
 import {
@@ -56,7 +56,7 @@ export const HistoryCardExpanded: React.FC<HistoryCardExpandedProps> = ({
     isError,
     error,
     refetch,
-  } = useQuery({
+  } = useAppQuery({
     queryKey: ["sessionDetail", sessionId],
     queryFn: async () => {
       const res = await getSessionDetailAction(sessionId);

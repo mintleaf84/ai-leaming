@@ -1,7 +1,8 @@
 "use client";
 
 import { useState } from "react";
-import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { useQueryClient } from "@tanstack/react-query";
+import { useAppQuery } from "@/hooks/useAppQuery";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -39,7 +40,7 @@ export function MaintenancePanel() {
   const [busy, setBusy] = useState(false);
   const [confirming, setConfirming] = useState(false);
 
-  const { data: status, isError } = useQuery({
+  const { data: status, isError } = useAppQuery({
     queryKey: STATUS_KEY,
     queryFn: async () => {
       const res = await fetch("/api/admin/maintenance/dedupe");

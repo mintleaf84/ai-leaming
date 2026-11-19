@@ -290,23 +290,22 @@ tree-shake 证据（`unzip -l` 对比同一路径）：
 > （`flutter_tester` / `impellerc` 需要 GLIBC_2.18，用 `conda env ct-glibc` 的 2.28 loader 包装后可用），
 > 因此 `flutter analyze` 与 `flutter test` **都在本机跑通**，不再依赖 CI 反馈。
 
-| 批次                              | 分支                                       | PR    | analyze                      | test                       |
-| --------------------------------- | ------------------------------------------ | ----- | ---------------------------- | -------------------------- |
-| 依赖 + 页面过渡（M-01/M-07/M-08） | `feat/mobile-deps-transitions`             | #226  | 0 error / 0 warning，30 info | 56 → 58 passed / 2 skipped |
-| 骨架屏（M-02~M-06）               | `feat/mobile-skeletons`（stacked on #226） | #227  | 0 error / 0 warning，30 info | 63 passed / 2 skipped      |
-| 图标（M-09~M-11 代码部分）        | `feat/mobile-icons`（stacked on #227）     | #228  | 0 error / 0 warning，30 info | 63 passed / 2 skipped      |
+| 批次                              | 分支                                       | PR   | analyze                      | test                       |
+| --------------------------------- | ------------------------------------------ | ---- | ---------------------------- | -------------------------- |
+| 依赖 + 页面过渡（M-01/M-07/M-08） | `feat/mobile-deps-transitions`             | #226 | 0 error / 0 warning，30 info | 56 → 58 passed / 2 skipped |
+| 骨架屏（M-02~M-06）               | `feat/mobile-skeletons`（stacked on #226） | #227 | 0 error / 0 warning，30 info | 63 passed / 2 skipped      |
+| 图标（M-09~M-11 代码部分）        | `feat/mobile-icons`（stacked on #227）     | #228 | 0 error / 0 warning，30 info | 63 passed / 2 skipped      |
 
 CI 侧复核（GitHub Actions，`Android` workflow）：
 
-| 分支 / PR                           | Flutter 静态分析与测试                                         | Release APK                        |
-| ----------------------------------- | -------------------------------------------------------------- | ---------------------------------- |
-| `feat/mobile-deps-transitions`（#226） | pass 1m29s（run 44520942655）                                | skipping（PR 不打包）              |
-| `feat/mobile-skeletons`（#227）        | pass（run [44521689946](https://github.com/mintleaf84/ai-leaming/actions/runs/44521689946)，手动 dispatch） | success |
-| `feat/mobile-icons`（#228）            | pass 1m30s（run 44521620278）                                | success（run 44519273867）         |
+| 分支 / PR                              | Flutter 静态分析与测试                                                                                      | Release APK                |
+| -------------------------------------- | ----------------------------------------------------------------------------------------------------------- | -------------------------- |
+| `feat/mobile-deps-transitions`（#226） | pass 1m29s（run 44520942655）                                                                               | skipping（PR 不打包）      |
+| `feat/mobile-skeletons`（#227）        | pass（run [44521689946](https://github.com/mintleaf84/ai-leaming/actions/runs/44521689946)，手动 dispatch） | success                    |
+| `feat/mobile-icons`（#228）            | pass 1m30s（run 44521620278）                                                                               | success（run 44519273867） |
 
 > 注：#227 的 PR 事件没有自动触发 `Android` workflow（同仓 #226/#228 都正常触发，原因未查明），
 > 因此对该分支用 `workflow_dispatch` 补跑，结论与本地一致。
-
 
 执行中修正的三处计划假设：
 

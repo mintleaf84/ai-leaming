@@ -10,11 +10,17 @@
 
 - **工作区**：`/public/home/cjb/ai-leaming-wt-mobile`（分支 `feat/mobile`，基线 `origin/main` 612f2db）。
   **不要动** `~/ai-leaming` 主检出，也不要动另外 4 个 worktree（`wt-sandbox` / `wt-cross-rest` / `wt-mockdb` / `wt-recall-races` / `wt-ainative`）。
-- **工具链锁死**：Flutter **3.38.4** / Dart **3.10.7**。依据：`mobile_app/pubspec.lock` 的 `sdks:`（`dart: ">=3.10.7"`、`flutter: ">=3.38.4"`）
-  与 `.github/workflows/android.yml:42` 的 `flutter-version: "3.38.4"`。**任何为此上调 toolchain 的方案都不在本计划范围内。**
-- **本机没有 Flutter/Dart SDK**（`which flutter dart` 为空）。唯一验收通道是 CI 的 `Android / Flutter 静态分析与测试` job：
-  `flutter pub get` → `dart run build_runner build --delete-conflicting-outputs` → `flutter analyze --no-fatal-infos` → `flutter test`。
-  反馈周期 5–10 分钟。**禁止声称"本地跑过"**，只能贴 CI 日志。
+- **工具链锁死**：Flutter **3.38.4** / Dart **3.10.3**。依据：`mobile_app/pubspec.lock` 的 `sdks:`
+  （`dart: ">=3.10.3"`、`flutter: ">=3.38.4"`）与 `.github/workflows/android.yml:42` 的 `flutter-version: "3.38.4"`（该版本自带 Dart 3.10.3）。
+  **任何为此上调 toolchain 的方案都不在本计划范围内。**
+  注：旧 `pubspec.lock` 曾写着 `dart: ">=3.10.7"`（依赖推导出的下界，与 CI 工具链不一致），本次 `pub get` 重新生成后已归位到 3.10.3。
+- **验收通道（本次已打通本地闭环）**：HPC 原本没有 Flutter，执行期把 Flutter 3.38.4 拉到 `/tmp/opencode/sdk/flutter`；
+  其 `flutter_tester` / `impellerc` 需要 GLIBC_2.18（本机 2.17），用 conda `ct-glibc` 环境的 2.28 loader 包装后可运行。因此：
+  ```bash
+  export PATH=/tmp/opencode/sdk/flutter/bin:$PATH PUB_CACHE=/tmp/opencode/sdk/pubcache
+  cd mobile_app && flutter pub get && flutter analyze --no-fatal-infos && flutter test
+  ```
+  CI 的 `Android / Flutter 静态分析与测试` job 作为**复核**（两次结果需一致）；仍禁止只凭"看起来对"下结论。
 - **每批一个 PR**，提交信息中文 `<type>: <简述>`。依赖统一在 M-01 一次加完，后面只消费不新增，避免三个 PR 抢 `pubspec.lock`。
 - **禁止**为过闸新增 `// ignore:`。`analysis_options.yaml` 只排除 `*.g.dart` / `*.freezed.dart`，真实源码全量检查。
 - **每个 PR 附三样证据**：analyze/test 输出片段、改动行数、受影响调用点清单。没有证据的"改完更好了"不接受。
@@ -36,7 +42,7 @@
 
 ## 2. 依赖决策（pub.dev API 实测）
 
-| 包                       | 选定版本                      | 包自身环境约束                                                                                               | 与 Flutter 3.38.4 / Dart 3.10.7 | 结论                                                           |
+| 包                       | 选定版本                      | 包自身环境约束                                                                                               | 与 Flutter 3.38.4 / Dart 3.10.3 | 结论                                                           |
 | ------------------------ | ----------------------------- | ------------------------------------------------------------------------------------------------------------ | ------------------------------- | -------------------------------------------------------------- |
 | `skeletonizer`           | `^3.0.0`（3.0.0，2026-09-11） | `sdk >=3.7.0`，`flutter >=3.32.0`                                                                            | 兼容                            | **引入**                                                       |
 | `material_symbols_icons` | `^4.2960.0`（2026-07-23）     | `sdk >=3.0.0`，`flutter >=3.7.0`                                                                             | 兼容                            | **引入**，体积需实测（M-10）                                   |

@@ -83,4 +83,19 @@ void main() {
     expect(find.textContaining('42'), findsOneWidget);
     expect(find.textContaining('3'), findsWidgets);
   });
+
+  testWidgets('版本行：本地构建没有 BUILD_SHA，回落到固定版本号且不带指纹', (tester) async {
+    await pumpScreen(
+      tester,
+      const SettingsScreen(),
+      overrides: fakeSettings(),
+    );
+    await tester.pump();
+    await tester.pump();
+
+    // CI 会用 --dart-define 传 APP_VERSION/BUILD_SHA；测试进程里两者都是空串，
+    // 因此这里锁的是「本地构建的回落」这条路径。
+    expect(find.text('v1.2.0'), findsOneWidget);
+    expect(find.textContaining('·'), findsNothing);
+  });
 }

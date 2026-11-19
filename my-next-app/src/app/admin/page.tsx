@@ -11,7 +11,9 @@ export default async function AdminDashboardPage() {
   return (
     <div className="p-4 md:p-8 space-y-8">
       <div>
-        <h1 className="text-2xl font-semibold tracking-tight md:text-3xl">概览</h1>
+        <h1 className="text-2xl font-semibold tracking-tight md:text-3xl">
+          概览
+        </h1>
         <p className="text-muted-foreground mt-2">系统运行状态与关键指标监控</p>
       </div>
 

@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
+import React, { useCallback, useEffect, useState } from "react";
 import {
   Dialog,
   DialogContent,
@@ -22,6 +22,7 @@ import {
 } from "@/server/actions/srs";
 import type { SrsHistoryEntry, SrsPrediction } from "@/lib/services/srs";
 import dayjs from "dayjs";
+import { ErrorState } from "@/components/ui/error-state";
 
 // If the project uses a standard UI library, I should check the Dialog component
 // Based on package.json, it has @radix-ui/react-dialog
@@ -40,22 +41,44 @@ export function SrsHistoryModal({
   const [history, setHistory] = useState<SrsHistoryEntry[]>([]);
   const [predictions, setPredictions] = useState<SrsPrediction[]>([]);
   const [loading, setLoading] = useState(true);
+  // 失败与"这道题还没复习过"必须分开：否则接口挂了会显示"暂无复习记录"，
+  // 用户会以为记忆数据被清空了。
+  const [loadError, setLoadError] = useState<string | null>(null);
+
+  const loadData = useCallback(async () => {
+    setLoading(true);
+    try {
+      const [hResult, pResult] = await Promise.all([
+        getQuestionSrsHistoryAction(questionId),
+        getQuestionSrsPredictionsAction(questionId),
+      ]);
+      const failure = hResult?.serverError || pResult?.serverError;
+      if (failure) {
+        setLoadError(failure);
+        return;
+      }
+      setHistory(hResult?.data ?? []);
+      setPredictions(pResult?.data ?? []);
+      setLoadError(null);
+    } catch (error) {
+      setLoadError(
+        error instanceof Error && error.message
+          ? error.message
+          : "记忆轨迹加载失败",
+      );
+    } finally {
+      setLoading(false);
+    }
+  }, [questionId]);
 
   useEffect(() => {
-    const loadData = async () => {
-      if (isOpen) {
-        setLoading(true);
-        const [hResult, pResult] = await Promise.all([
-          getQuestionSrsHistoryAction(questionId),
-          getQuestionSrsPredictionsAction(questionId),
-        ]);
-        if (hResult.data) setHistory(hResult.data);
-        if (pResult.data) setPredictions(pResult.data);
-        setLoading(false);
-      }
-    };
-    loadData();
-  }, [isOpen, questionId]);
+    if (isOpen) {
+      // 弹窗打开才拉数据：loadData 首行 setLoading(true)，属于对外部系统的
+      // 请求启动，无法在渲染期派生
+      // eslint-disable-next-line react-hooks/set-state-in-effect
+      void loadData();
+    }
+  }, [isOpen, loadData]);
 
   return (
     <Dialog open={isOpen} onOpenChange={(open) => !open && onClose()}>
@@ -75,6 +98,13 @@ export function SrsHistoryModal({
             <Loader2 className="w-6 h-6 animate-spin text-primary" />
             <span className="text-xs">正在追溯记忆轨迹...</span>
           </div>
+        ) : loadError ? (
+          <ErrorState
+            title="记忆轨迹加载失败"
+            description={loadError}
+            onRetry={() => void loadData()}
+            className="py-10"
+          />
         ) : (
           <div className="space-y-6 mt-4">
             {/* Predictions */}

@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { useRouter } from "next/navigation";
 import { getKnowledgeTreeAction } from "@/server/actions/practice";
 import type { KnowledgeNode } from "@/lib/services/knowledge-tree";
@@ -24,6 +24,7 @@ import {
 } from "lucide-react";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
+import { ErrorState } from "@/components/ui/error-state";
 
 // 递归树节点组件
 function TreeNode({
@@ -161,6 +162,9 @@ export function KnowledgePointSelector({
   const [treeData, setTreeData] = useState<KnowledgeNode[]>([]);
   const [selectedTags, setSelectedTags] = useState<string[]>([]);
   const [loading, setLoading] = useState(false);
+  // 拉取失败要显式呈现：否则对话框里只剩"暂无知识点数据，请先导入教材"，
+  // 用户会去翻教材，而不是重试。
+  const [loadError, setLoadError] = useState<string | null>(null);
   const [mounted, setMounted] = useState(false);
 
   useEffect(() => {
@@ -168,16 +172,32 @@ export function KnowledgePointSelector({
     setMounted(true);
   }, []);
 
-  useEffect(() => {
-    if (open && treeData.length === 0) {
-      // eslint-disable-next-line react-hooks/set-state-in-effect
-      setLoading(true);
-      getKnowledgeTreeAction()
-        .then((result) => setTreeData(result.data?.tree || []))
-        .catch(() => toast.error("获取知识点失败"))
-        .finally(() => setLoading(false));
+  const loadTree = useCallback(async () => {
+    setLoading(true);
+    try {
+      const result = await getKnowledgeTreeAction();
+      if (result?.serverError) throw new Error(result.serverError);
+      setTreeData(result.data?.tree || []);
+      setLoadError(null);
+    } catch (error) {
+      setLoadError(
+        error instanceof Error && error.message
+          ? error.message
+          : "获取知识点失败",
+      );
+    } finally {
+      setLoading(false);
     }
-  }, [open, treeData.length]);
+  }, []);
+
+  useEffect(() => {
+    if (open && treeData.length === 0 && !loadError) {
+      // loadTree 首行就 setLoading(true)：这是"打开对话框才拉数据"的必要副作用，
+      // 与 React 建议的"渲染期派生"不同（数据来自网络）
+      // eslint-disable-next-line react-hooks/set-state-in-effect
+      void loadTree();
+    }
+  }, [open, treeData.length, loadError, loadTree]);
 
   const toggleTag = (path: string) => {
     setSelectedTags((prev) =>
@@ -219,6 +239,13 @@ export function KnowledgePointSelector({
             <div className="flex justify-center py-12">
               <Loader2 className="w-8 h-8 animate-spin text-emerald-600" />
             </div>
+          ) : loadError ? (
+            <ErrorState
+              title="知识点加载失败"
+              description={loadError}
+              onRetry={() => void loadTree()}
+              className="py-10"
+            />
           ) : (
             <ScrollArea className="h-[400px] w-full rounded-xl border border-border bg-muted/30 p-2">
               {treeData.length > 0 ? (

@@ -111,7 +111,11 @@ export default function HistoryPage() {
   }, [loadHistory]);
 
   useEffect(() => {
-    getAvailableModesAction().then((res) => setAvailableModes(res?.data || []));
+    getAvailableModesAction()
+      .then((res) => setAvailableModes(res?.data || []))
+      // 模式列表只是筛选项：拿不到就不显示筛选按钮组，不影响主列表，
+      // 但要吞掉 rejection，避免 unhandled rejection 噪声。
+      .catch(() => setAvailableModes([]));
   }, []);
 
   // Actions

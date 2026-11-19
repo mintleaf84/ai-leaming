@@ -26,23 +26,23 @@
 
 三件事，三个批次，互不依赖：
 
-| 批次 | 内容 | 依赖 | 粗估 |
-| --- | --- | --- | --- |
-| 1 | 骨架屏改用 `skeletonizer`，且**六屏全部改成"真 widget 骨架"** | — | 11.5h |
-| 2 | 页面过渡改回平台默认，接 Android 预测性返回 | 无（不依赖任何新包） | 1.5h |
-| 3 | 129 处 `Icons.*` **全量**换成 Material Symbols | — | 8h |
+| 批次 | 内容                                                          | 依赖                 | 粗估  |
+| ---- | ------------------------------------------------------------- | -------------------- | ----- |
+| 1    | 骨架屏改用 `skeletonizer`，且**六屏全部改成"真 widget 骨架"** | —                    | 11.5h |
+| 2    | 页面过渡改回平台默认，接 Android 预测性返回                   | 无（不依赖任何新包） | 1.5h  |
+| 3    | 129 处 `Icons.*` **全量**换成 Material Symbols                | —                    | 8h    |
 
 ---
 
 ## 2. 依赖决策（pub.dev API 实测）
 
-| 包 | 选定版本 | 包自身环境约束 | 与 Flutter 3.38.4 / Dart 3.10.7 | 结论 |
-| --- | --- | --- | --- | --- |
-| `skeletonizer` | `^3.0.0`（3.0.0，2026-09-11） | `sdk >=3.7.0`，`flutter >=3.32.0` | 兼容 | **引入** |
-| `material_symbols_icons` | `^4.2960.0`（2026-07-23） | `sdk >=3.0.0`，`flutter >=3.7.0` | 兼容 | **引入**，体积需实测（M-10） |
-| `animations` | ~~2.2.0~~ | 2.2.0：`sdk ^3.9.0` / `flutter >=3.35.0`；**3.0.0：`sdk ^3.12.0` / `flutter >=3.44.0` + 依赖 `material_ui`** | 2.2.0 本可用，3.x 不可用 | **不引入**（见 D-1：页面过渡改为跟随平台默认，此包无用武之地） |
-| `shimmer` | 移除 | — | — | 被 `skeletonizer` 取代（M-05） |
-| `state_notifier` | 移除 | — | — | `lib/` `test/` 零 import，仅 riverpod 传递引入（D-4） |
+| 包                       | 选定版本                      | 包自身环境约束                                                                                               | 与 Flutter 3.38.4 / Dart 3.10.7 | 结论                                                           |
+| ------------------------ | ----------------------------- | ------------------------------------------------------------------------------------------------------------ | ------------------------------- | -------------------------------------------------------------- |
+| `skeletonizer`           | `^3.0.0`（3.0.0，2026-09-11） | `sdk >=3.7.0`，`flutter >=3.32.0`                                                                            | 兼容                            | **引入**                                                       |
+| `material_symbols_icons` | `^4.2960.0`（2026-07-23）     | `sdk >=3.0.0`，`flutter >=3.7.0`                                                                             | 兼容                            | **引入**，体积需实测（M-10）                                   |
+| `animations`             | ~~2.2.0~~                     | 2.2.0：`sdk ^3.9.0` / `flutter >=3.35.0`；**3.0.0：`sdk ^3.12.0` / `flutter >=3.44.0` + 依赖 `material_ui`** | 2.2.0 本可用，3.x 不可用        | **不引入**（见 D-1：页面过渡改为跟随平台默认，此包无用武之地） |
+| `shimmer`                | 移除                          | —                                                                                                            | —                               | 被 `skeletonizer` 取代（M-05）                                 |
+| `state_notifier`         | 移除                          | —                                                                                                            | —                               | `lib/` `test/` 零 import，仅 riverpod 传递引入（D-4）          |
 
 关键坑，留给下一个人：
 
@@ -70,7 +70,7 @@
   1. 这六屏的卡片渲染器现在是 **State 的私有方法**（`_buildHistoryCard`、`_buildCardItem`、`_buildQuestionCard`、`_buildQuestionView`…），
      无法从 `lib/shared/skeletons/` 调用，**必须先抽成公共 widget**；
   2. 每个模型要一个 fake 实例（freezed，required 字段多）。
-  所以工作量从 3h 涨到约 11h，且 diff 落在 6 个 feature 的主文件上。
+     所以工作量从 3h 涨到约 11h，且 diff 落在 6 个 feature 的主文件上。
 - **收益**：骨架与真实布局永不脱节（改布局不用改骨架），且抽出的卡片 widget 可被单测覆盖（现在 0 条 widget 测试）。
 - **风险与栅栏**：fake 数据泄漏到真链路是唯一严重风险 →
   fake 全部集中在 `lib/shared/skeletons/skeletons.dart`，**CI 加一条 grep 栅栏**：`lib/features/**` 出现 `skeletons/skeletons.dart` 即报红。
@@ -95,11 +95,11 @@
 
 三套并存的骨架实现，接口各不相同：
 
-| 位置 | 行数 | 实现方式 | 调用点 |
-| --- | --- | --- | --- |
-| `lib/shared/widgets/skeleton_loading.dart` | 192 | `package:shimmer` + `SkeletonText`/`SkeletonCard` | `HistorySkeletonList`（history_screen:78）、`KnowledgeSkeletonList`（knowledge_screen:103）、`HistoryDetailSkeletonList`（history_detail_screen:71/124/181） |
-| `lib/shared/widgets/skeleton_widgets.dart` | 181 | 自写 `ShimmerWrap`/`_ShimmerBox`（AnimationController） | `PracticeSkeleton`（practice_screen:80）、`QuestionListSkeleton`（question_list_screen:125） |
-| `lib/features/wrong_book/presentation/wrong_book_screen.dart:614` | ~45 | 内联静态灰块（无动效） | `_buildSkeleton()` |
+| 位置                                                              | 行数 | 实现方式                                                | 调用点                                                                                                                                                       |
+| ----------------------------------------------------------------- | ---- | ------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| `lib/shared/widgets/skeleton_loading.dart`                        | 192  | `package:shimmer` + `SkeletonText`/`SkeletonCard`       | `HistorySkeletonList`（history_screen:78）、`KnowledgeSkeletonList`（knowledge_screen:103）、`HistoryDetailSkeletonList`（history_detail_screen:71/124/181） |
+| `lib/shared/widgets/skeleton_widgets.dart`                        | 181  | 自写 `ShimmerWrap`/`_ShimmerBox`（AnimationController） | `PracticeSkeleton`（practice_screen:80）、`QuestionListSkeleton`（question_list_screen:125）                                                                 |
+| `lib/features/wrong_book/presentation/wrong_book_screen.dart:614` | ~45  | 内联静态灰块（无动效）                                  | `_buildSkeleton()`                                                                                                                                           |
 
 `ShimmerWrap` / `_ShimmerBox`（skeleton_widgets.dart:31 / :6）**全仓零调用点**，约 85 行死代码。
 
@@ -119,14 +119,14 @@
 
 - **落点**（全部是 State 私有方法，抽成公共 widget，**行为不变**）：
 
-  | 现位置 | 现名 | 抽成 |
-  | --- | --- | --- |
-  | `history_screen.dart:127` | `_buildHistoryCard(HistoryItem)` | `HistoryCard` |
+  | 现位置                                  | 现名                                                     | 抽成                                                   |
+  | --------------------------------------- | -------------------------------------------------------- | ------------------------------------------------------ |
+  | `history_screen.dart:127`               | `_buildHistoryCard(HistoryItem)`                         | `HistoryCard`                                          |
   | `history_detail_screen.dart:447 / :541` | `_buildListQuestionCard` / `_buildImmersiveQuestionCard` | `HistoryQuestionCard`（两态合一，用 `immersive` 参数） |
-  | `knowledge_screen.dart:196` | `_buildCardItem(KnowledgeCard)` | `KnowledgeCardView` |
-  | `wrong_book_screen.dart:207` | `_buildQuestionCard(WrongQuestion, bool)` | `WrongQuestionCard` |
-  | `practice_screen.dart:190` | `_buildQuestionView(PracticeSessionState)` | `PracticeQuestionBody` |
-  | `question_list_screen.dart:165` | 内联 itemBuilder | `QuestionListCard` |
+  | `knowledge_screen.dart:196`             | `_buildCardItem(KnowledgeCard)`                          | `KnowledgeCardView`                                    |
+  | `wrong_book_screen.dart:207`            | `_buildQuestionCard(WrongQuestion, bool)`                | `WrongQuestionCard`                                    |
+  | `practice_screen.dart:190`              | `_buildQuestionView(PracticeSessionState)`               | `PracticeQuestionBody`                                 |
+  | `question_list_screen.dart:165`         | 内联 itemBuilder                                         | `QuestionListCard`                                     |
 
 - **改法约束**：抽出时**只搬代码不改样式**；回调一律显式传参（`onTap`、`onSelect`），禁止新 widget 里读 provider——
   一旦新 widget 内部读 provider，M-04 就没法用 fake 数据渲染。
@@ -259,14 +259,14 @@
 
 ## 7. 不做（明确写下，避免反复讨论）
 
-| 不做 | 原因 |
-| --- | --- |
-| `animations` / `SharedAxisTransition` 接管全站页面过渡 | D-1：与 Android 15+ 默认启用的预测性返回割裂；`animations` 3.x 还要求 Flutter 3.44 + `material_ui` |
+| 不做                                                         | 原因                                                                                                      |
+| ------------------------------------------------------------ | --------------------------------------------------------------------------------------------------------- |
+| `animations` / `SharedAxisTransition` 接管全站页面过渡       | D-1：与 Android 15+ 默认启用的预测性返回割裂；`animations` 3.x 还要求 Flutter 3.44 + `material_ui`        |
 | `material_3_expressive` / `m3e_core` / `material_expressive` | 要 Flutter ≥3.47 + `material_ui`，且 v1.1+ **禁用** `package:flutter/material.dart`——等于全仓 import 迁移 |
-| `getwidget` / `shadcn_ui` / `forui` | 与现有 Notion 风自建 token（`#F7F7F5` / `#37352F`）冲突，换库等于重做视觉 |
-| 在 Manifest 加 `enableOnBackInvokedCallback` | targetSdk 36 下系统默认已启用，显式加会引入重复处理风险（Flutter issue 185257 已有类似报告） |
-| 动 Web 侧（`my-next-app`）与 `ui-guard` | 那套护栏是 Playwright + 20 路由 web 用例，**不覆盖 Flutter** |
-| 上调 Flutter / Dart 版本 | 会让 `pubspec.lock` 的 `sdks:` 与 CI 钉的 3.38.4 不一致，属独立决策 |
+| `getwidget` / `shadcn_ui` / `forui`                          | 与现有 Notion 风自建 token（`#F7F7F5` / `#37352F`）冲突，换库等于重做视觉                                 |
+| 在 Manifest 加 `enableOnBackInvokedCallback`                 | targetSdk 36 下系统默认已启用，显式加会引入重复处理风险（Flutter issue 185257 已有类似报告）              |
+| 动 Web 侧（`my-next-app`）与 `ui-guard`                      | 那套护栏是 Playwright + 20 路由 web 用例，**不覆盖 Flutter**                                              |
+| 上调 Flutter / Dart 版本                                     | 会让 `pubspec.lock` 的 `sdks:` 与 CI 钉的 3.38.4 不一致，属独立决策                                       |
 
 ---
 

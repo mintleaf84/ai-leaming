@@ -98,7 +98,9 @@ function toZod(param: ParamDescriptor): z.ZodTypeAny {
       break;
     }
     case "object":
-      schema = z.record(z.unknown());
+      // zod 4 的 record 需要显式 key 类型（zod 3 也接受这个写法），
+      // 否则 dependabot 把 zod 提到 4 时构建直接失败
+      schema = z.record(z.string(), z.unknown());
       break;
     default:
       schema = z.string();

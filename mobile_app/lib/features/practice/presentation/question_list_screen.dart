@@ -7,6 +7,7 @@ import 'questions_provider.dart';
 import '../../../shared/skeletons/skeleton_fakes.dart';
 import 'package:skeletonizer/skeletonizer.dart';
 import '../../../core/theme/app_icons.dart';
+import '../../../core/theme/app_colors.dart';
 
 class QuestionListScreen extends ConsumerStatefulWidget {
   const QuestionListScreen({super.key});
@@ -41,13 +42,10 @@ class _QuestionListScreenState extends ConsumerState<QuestionListScreen> {
   Widget build(BuildContext context) {
     final questionsState = ref.watch(questionsControllerProvider);
     final theme = Theme.of(context);
-    final isDarkMode = theme.brightness == Brightness.dark;
 
     final bgColor = theme.scaffoldBackgroundColor;
     final textColor = theme.colorScheme.onSurface;
-    final secondaryColor = isDarkMode
-        ? const Color(0xFF8A8A8A)
-        : const Color(0xFF787774);
+    final secondaryColor = context.colors.textSecondary;
 
     return Scaffold(
       backgroundColor: bgColor,
@@ -85,9 +83,7 @@ class _QuestionListScreenState extends ConsumerState<QuestionListScreen> {
               child: Container(
                 height: 44.h,
                 decoration: BoxDecoration(
-                  color: isDarkMode
-                      ? const Color(0xFF2F2F2F)
-                      : const Color(0xFFF1F1EF),
+                  color: context.colors.surfaceAlt,
                   borderRadius: BorderRadius.circular(8.r),
                 ),
                 child: TextField(
@@ -120,7 +116,7 @@ class _QuestionListScreenState extends ConsumerState<QuestionListScreen> {
               child: RefreshIndicator(
                 onRefresh: () =>
                     ref.read(questionsControllerProvider.notifier).refresh(),
-                color: const Color(0xFF135BEC),
+                color: context.colors.accent,
                 child: questionsState.items.isEmpty && questionsState.isLoading
                     ? _buildSkeleton()
                     : questionsState.items.isEmpty &&
@@ -132,7 +128,7 @@ class _QuestionListScreenState extends ConsumerState<QuestionListScreen> {
                             Icon(
                               AppIcons.errorOutline,
                               size: 48.sp,
-                              color: const Color(0xFFEB5757),
+                              color: context.colors.error,
                             ),
                             SizedBox(height: 16.h),
                             Text(
@@ -166,9 +162,9 @@ class _QuestionListScreenState extends ConsumerState<QuestionListScreen> {
                           if (index == questionsState.items.length) {
                             return Padding(
                               padding: EdgeInsets.symmetric(vertical: 24.h),
-                              child: const Center(
+                              child: Center(
                                 child: CircularProgressIndicator(
-                                  color: Color(0xFF135BEC),
+                                  color: context.colors.accent,
                                 ),
                               ),
                             );
@@ -189,12 +185,9 @@ class _QuestionListScreenState extends ConsumerState<QuestionListScreen> {
   /// 题库列表卡片：真实列表与骨架共用同一份布局。
   Widget _buildQuestionCard(Question question) {
     final theme = Theme.of(context);
-    final isDarkMode = theme.brightness == Brightness.dark;
     final cardColor = theme.cardColor;
     final textColor = theme.colorScheme.onSurface;
-    final secondaryColor = isDarkMode
-        ? const Color(0xFF8A8A8A)
-        : const Color(0xFF787774);
+    final secondaryColor = context.colors.textSecondary;
     final borderColor = theme.dividerColor;
 
     return Container(
@@ -231,7 +224,7 @@ class _QuestionListScreenState extends ConsumerState<QuestionListScreen> {
                       child: Text(
                         question.type == 'single' ? '单选' : '多选',
                         style: TextStyle(
-                          fontSize: 10.sp,
+                          fontSize: 12.sp,
                           color: question.type == 'single'
                               ? const Color(0xFF1976D2)
                               : const Color(0xFF7B1FA2),
@@ -283,7 +276,7 @@ class _QuestionListScreenState extends ConsumerState<QuestionListScreen> {
                             '#$tag',
                             style: TextStyle(
                               fontSize: 12.sp,
-                              color: const Color(0xFF135BEC),
+                              color: context.colors.accent,
                             ),
                           ),
                         )
@@ -319,7 +312,6 @@ class _QuestionListScreenState extends ConsumerState<QuestionListScreen> {
       backgroundColor: Colors.transparent,
       builder: (context) {
         final theme = Theme.of(context);
-        final isDarkMode = theme.brightness == Brightness.dark;
         return DraggableScrollableSheet(
           initialChildSize: 0.8,
           minChildSize: 0.4,
@@ -343,9 +335,7 @@ class _QuestionListScreenState extends ConsumerState<QuestionListScreen> {
                         width: 40.w,
                         height: 4.h,
                         decoration: BoxDecoration(
-                          color: isDarkMode
-                              ? const Color(0xFF424242)
-                              : const Color(0xFFD0D0D0),
+                          color: context.colors.border,
                           borderRadius: BorderRadius.circular(2.r),
                         ),
                       ),
@@ -387,9 +377,7 @@ class _QuestionListScreenState extends ConsumerState<QuestionListScreen> {
                                 question.dimension ?? '综合',
                                 style: TextStyle(
                                   fontSize: 14.sp,
-                                  color: isDarkMode
-                                      ? Colors.grey[400]
-                                      : Colors.grey[600],
+                                  color: context.colors.textSecondary,
                                 ),
                               ),
                             ),
@@ -412,15 +400,9 @@ class _QuestionListScreenState extends ConsumerState<QuestionListScreen> {
                             margin: EdgeInsets.only(bottom: 12.h),
                             padding: EdgeInsets.all(16.w),
                             decoration: BoxDecoration(
-                              color: isDarkMode
-                                  ? const Color(0xFF2C2C2C)
-                                  : const Color(0xFFF8F9FA),
+                              color: context.colors.surfaceAlt,
                               borderRadius: BorderRadius.circular(12.r),
-                              border: Border.all(
-                                color: isDarkMode
-                                    ? const Color(0xFF424242)
-                                    : const Color(0xFFEEEEEE),
-                              ),
+                              border: Border.all(color: context.colors.border),
                             ),
                             child: Text(
                               '${String.fromCharCode(65 + e.key)}. ${e.value}',
@@ -437,11 +419,7 @@ class _QuestionListScreenState extends ConsumerState<QuestionListScreen> {
                             width: double.infinity,
                             padding: EdgeInsets.all(16.w),
                             decoration: BoxDecoration(
-                              color: isDarkMode
-                                  ? const Color(
-                                      0xFF1E3A8A,
-                                    ).withValues(alpha: 0.2)
-                                  : const Color(0xFFEDF2FF),
+                              color: context.colors.accentContainer,
                               borderRadius: BorderRadius.circular(12.r),
                             ),
                             child: Column(
@@ -451,7 +429,7 @@ class _QuestionListScreenState extends ConsumerState<QuestionListScreen> {
                                   children: [
                                     Icon(
                                       AppIcons.lightbulbOutline,
-                                      color: const Color(0xFF135BEC),
+                                      color: context.colors.accent,
                                       size: 20.sp,
                                     ),
                                     SizedBox(width: 8.w),
@@ -460,7 +438,7 @@ class _QuestionListScreenState extends ConsumerState<QuestionListScreen> {
                                       style: TextStyle(
                                         fontSize: 16.sp,
                                         fontWeight: FontWeight.bold,
-                                        color: const Color(0xFF135BEC),
+                                        color: context.colors.accent,
                                       ),
                                     ),
                                   ],
@@ -526,8 +504,8 @@ class _QuestionListScreenState extends ConsumerState<QuestionListScreen> {
                               );
                             },
                             style: ElevatedButton.styleFrom(
-                              backgroundColor: const Color(0xFF135BEC),
-                              foregroundColor: Colors.white,
+                              backgroundColor: context.colors.accent,
+                              foregroundColor: context.colors.onAccent,
                               padding: EdgeInsets.symmetric(vertical: 16.h),
                               shape: RoundedRectangleBorder(
                                 borderRadius: BorderRadius.circular(12.r),

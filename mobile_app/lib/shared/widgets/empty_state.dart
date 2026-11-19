@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
-import '../../core/theme/app_theme.dart';
+import '../../../core/theme/app_colors.dart';
 
 /// 通用空状态组件
 ///
@@ -74,7 +74,7 @@ class EmptyState extends StatelessWidget {
               Text(
                 subtitle,
                 style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                  color: context.secondaryTextColor,
+                  color: context.colors.textSecondary,
                   height: 1.6,
                 ),
                 textAlign: TextAlign.center,

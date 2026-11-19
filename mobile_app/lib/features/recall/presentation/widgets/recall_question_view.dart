@@ -117,7 +117,7 @@ class _RecallQuestionViewState extends State<RecallQuestionView> {
                   child: Text(
                     '只重测上次没想起来的 ${presented.length} 条',
                     style: TextStyle(
-                      fontSize: 11.sp,
+                      fontSize: 12.sp,
                       height: 1.4,
                       color: scheme.onSurface.withValues(alpha: 0.7),
                     ),

@@ -5,6 +5,8 @@ import '../../../core/navigation/app_nav.dart';
 import 'textbook_provider.dart';
 import '../domain/textbook.dart';
 import '../../../core/theme/app_icons.dart';
+import '../../../core/theme/app_colors.dart';
+import '../../../shared/widgets/state_views.dart';
 
 /// 教材库列表页
 class TextbookListScreen extends ConsumerStatefulWidget {
@@ -28,12 +30,11 @@ class _TextbookListScreenState extends ConsumerState<TextbookListScreen> {
     final state = ref.watch(textbookListControllerProvider);
 
     return Scaffold(
-      backgroundColor: const Color(0xFFF7F7F5),
+      backgroundColor: context.colors.background,
       appBar: AppBar(
-        backgroundColor: Colors.white,
         elevation: 0,
         leading: IconButton(
-          icon: const Icon(AppIcons.arrowBack, color: Color(0xFF37352F)),
+          icon: Icon(AppIcons.arrowBack, color: context.colors.text),
           onPressed: () => context.backOrHome(),
         ),
         title: Text(
@@ -41,12 +42,12 @@ class _TextbookListScreenState extends ConsumerState<TextbookListScreen> {
           style: TextStyle(
             fontSize: 18.sp,
             fontWeight: FontWeight.w600,
-            color: const Color(0xFF37352F),
+            color: context.colors.text,
           ),
         ),
         actions: [
           IconButton(
-            icon: const Icon(AppIcons.refresh, color: Color(0xFF37352F)),
+            icon: Icon(AppIcons.refresh, color: context.colors.text),
             onPressed: () =>
                 ref.read(textbookListControllerProvider.notifier).load(),
           ),
@@ -55,54 +56,18 @@ class _TextbookListScreenState extends ConsumerState<TextbookListScreen> {
       body: state.isLoading
           ? const Center(child: CircularProgressIndicator())
           : state.error != null
-          ? _buildErrorView(state.error!)
+          ? AppErrorView(
+              message: '请检查网络后重试',
+              onRetry: () =>
+                  ref.read(textbookListControllerProvider.notifier).load(),
+            )
           : state.textbooks.isEmpty
-          ? _buildEmptyView()
+          ? const AppEmptyView(
+              emoji: '\u{1F4D6}',
+              title: '暂无教材',
+              hint: '请联系管理员上传教材',
+            )
           : _buildList(state.textbooks),
-    );
-  }
-
-  Widget _buildErrorView(String error) {
-    return Center(
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          Icon(AppIcons.errorOutline, size: 48.sp, color: Colors.red[300]),
-          SizedBox(height: 16.h),
-          Text(
-            '加载失败',
-            style: TextStyle(fontSize: 16.sp, fontWeight: FontWeight.bold),
-          ),
-          SizedBox(height: 24.h),
-          ElevatedButton.icon(
-            onPressed: () =>
-                ref.read(textbookListControllerProvider.notifier).load(),
-            icon: const Icon(AppIcons.refresh),
-            label: const Text('重试'),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildEmptyView() {
-    return Center(
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          Text('📖', style: TextStyle(fontSize: 64.sp)),
-          SizedBox(height: 16.h),
-          Text(
-            '暂无教材',
-            style: TextStyle(fontSize: 18.sp, fontWeight: FontWeight.bold),
-          ),
-          SizedBox(height: 8.h),
-          Text(
-            '请联系管理员上传教材',
-            style: TextStyle(fontSize: 14.sp, color: Colors.grey),
-          ),
-        ],
-      ),
     );
   }
 
@@ -124,9 +89,9 @@ class _TextbookListScreenState extends ConsumerState<TextbookListScreen> {
       child: Container(
         padding: EdgeInsets.all(16.w),
         decoration: BoxDecoration(
-          color: Colors.white,
+          color: context.colors.surface,
           borderRadius: BorderRadius.circular(12.r),
-          border: Border.all(color: const Color(0xFFE8E8E5)),
+          border: Border.all(color: context.colors.border),
         ),
         child: Row(
           children: [
@@ -135,7 +100,7 @@ class _TextbookListScreenState extends ConsumerState<TextbookListScreen> {
               width: 56.w,
               height: 72.h,
               decoration: BoxDecoration(
-                color: const Color(0xFF37352F).withValues(alpha: 0.06),
+                color: context.colors.text.withValues(alpha: 0.06),
                 borderRadius: BorderRadius.circular(6.r),
               ),
               alignment: Alignment.center,
@@ -152,7 +117,7 @@ class _TextbookListScreenState extends ConsumerState<TextbookListScreen> {
                     style: TextStyle(
                       fontSize: 16.sp,
                       fontWeight: FontWeight.w600,
-                      color: const Color(0xFF37352F),
+                      color: context.colors.text,
                     ),
                     maxLines: 2,
                     overflow: TextOverflow.ellipsis,
@@ -164,7 +129,7 @@ class _TextbookListScreenState extends ConsumerState<TextbookListScreen> {
                       textbook.author!,
                       style: TextStyle(
                         fontSize: 12.sp,
-                        color: const Color(0xFF9B9A97),
+                        color: context.colors.textSecondary,
                       ),
                     ),
                   ],
@@ -177,14 +142,14 @@ class _TextbookListScreenState extends ConsumerState<TextbookListScreen> {
                           vertical: 3.h,
                         ),
                         decoration: BoxDecoration(
-                          color: const Color(0xFFF0FDF4),
+                          color: context.colors.successContainer,
                           borderRadius: BorderRadius.circular(4.r),
                         ),
                         child: Text(
                           '${textbook.chapterCount} 章',
                           style: TextStyle(
-                            fontSize: 11.sp,
-                            color: const Color(0xFF10b981),
+                            fontSize: 12.sp,
+                            color: context.colors.success,
                             fontWeight: FontWeight.w500,
                           ),
                         ),
@@ -197,7 +162,7 @@ class _TextbookListScreenState extends ConsumerState<TextbookListScreen> {
             Icon(
               AppIcons.chevronRight,
               size: 20.sp,
-              color: const Color(0xFF9B9A97),
+              color: context.colors.textSecondary,
             ),
           ],
         ),

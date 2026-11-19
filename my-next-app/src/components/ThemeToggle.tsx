@@ -20,7 +20,7 @@ export function ThemeToggle() {
         variant="ghost"
         size="icon"
         onClick={() => setTheme("light")}
-        className={`h-7 w-7 rounded-md hover:bg-muted ${mounted && theme === "light" ? "text-blue-600 bg-blue-50/50 dark:bg-slate-800 dark:text-blue-400" : "text-muted-foreground"}`}
+        className={`h-11 w-11 rounded-md hover:bg-muted ${mounted && theme === "light" ? "text-blue-600 bg-blue-50/50 dark:bg-slate-800 dark:text-blue-400" : "text-muted-foreground"}`}
         title="亮色模式"
       >
         <Sun className="h-4 w-4" />
@@ -30,7 +30,7 @@ export function ThemeToggle() {
         variant="ghost"
         size="icon"
         onClick={() => setTheme("dark")}
-        className={`h-7 w-7 rounded-md hover:bg-muted ${mounted && theme === "dark" ? "text-blue-600 bg-blue-50/50 dark:bg-slate-800 dark:text-blue-400" : "text-muted-foreground"}`}
+        className={`h-11 w-11 rounded-md hover:bg-muted ${mounted && theme === "dark" ? "text-blue-600 bg-blue-50/50 dark:bg-slate-800 dark:text-blue-400" : "text-muted-foreground"}`}
         title="暗黑模式"
       >
         <Moon className="h-4 w-4" />
@@ -40,7 +40,7 @@ export function ThemeToggle() {
         variant="ghost"
         size="icon"
         onClick={() => setTheme("eye-care")}
-        className={`h-7 w-7 rounded-md hover:bg-muted ${mounted && theme === "eye-care" ? "text-amber-600 bg-amber-50/50" : "text-muted-foreground"}`}
+        className={`h-11 w-11 rounded-md hover:bg-muted ${mounted && theme === "eye-care" ? "text-amber-600 bg-amber-50/50" : "text-muted-foreground"}`}
         title="护眼模式"
       >
         <Eye className="h-4 w-4" />
@@ -50,7 +50,7 @@ export function ThemeToggle() {
         variant="ghost"
         size="icon"
         onClick={() => setTheme("zhuoyu")}
-        className={`h-7 w-7 rounded-md hover:bg-muted ${mounted && theme === "zhuoyu" ? "text-emerald-600 bg-emerald-50/50" : "text-muted-foreground"}`}
+        className={`h-11 w-11 rounded-md hover:bg-muted ${mounted && theme === "zhuoyu" ? "text-emerald-600 bg-emerald-50/50" : "text-muted-foreground"}`}
         title="琢玉模式"
       >
         <div className="relative w-4 h-4 flex items-center justify-center">

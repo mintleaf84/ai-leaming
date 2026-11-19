@@ -8,6 +8,10 @@ import {
 } from "@/lib/services/wrong-question";
 import { practiceService } from "@/lib/services/practice";
 import { drizzleDb } from "@/lib/db";
+import {
+  contentHash,
+  findQuestionIdByContent,
+} from "@/lib/services/question-dedup";
 import { questions, practice_logs } from "@/lib/db/drizzle-schema";
 import { QuestionSchema } from "@/lib/schemas";
 import { RandomWrongQuestionsSchema } from "@/lib/validations/wrong-questions";
@@ -79,32 +83,44 @@ export const createManualWrongQuestionAction = authenticatedAction
     const dimension = z
       .enum(["knowledge", "understanding", "application"])
       .parse(input.dimension);
-    const [createdQuestion] = await drizzleDb
-      .insert(questions)
-      .values({
-        content: input.content,
-        options: JSON.stringify(input.options),
-        answer: input.answer,
-        explanation: input.explanation,
-        tags: JSON.stringify(input.tags),
-        dimension,
-        type: input.type,
-        source: "manual_wrong_book",
-      })
-      .returning({ id: questions.id });
+    // 内容级去重：同一道题再次手动录入时复用已有题目，只补一条错题本记录
+    const existingId = await findQuestionIdByContent(input.content, undefined, {
+      options: input.options,
+    });
+    let questionId = existingId;
+    if (!questionId) {
+      const [createdQuestion] = await drizzleDb
+        .insert(questions)
+        .values({
+          content: input.content,
+          content_hash: contentHash(input.content, input.options),
+          options: JSON.stringify(input.options),
+          answer: input.answer,
+          explanation: input.explanation,
+          tags: JSON.stringify(input.tags),
+          dimension,
+          type: input.type,
+          source: "manual_wrong_book",
+        })
+        .returning({ id: questions.id });
+      questionId = createdQuestion?.id ?? null;
+    }
 
-    if (!createdQuestion?.id) {
+    if (!questionId) {
       throw new Error("手动录题失败");
     }
 
     await drizzleDb.insert(practice_logs).values({
       user_id: user.id,
-      question_id: createdQuestion.id,
+      question_id: questionId,
       user_answer: null,
       is_correct: false,
+      origin: "web",
+      // 错题本收藏不是「作答」
+      status: "wrong_book",
     });
 
-    return { success: true, questionId: createdQuestion.id };
+    return { success: true, questionId };
   });
 
 /**

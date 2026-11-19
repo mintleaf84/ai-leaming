@@ -8,6 +8,7 @@ import 'knowledge_provider.dart';
 import '../../../shared/skeletons/skeleton_fakes.dart';
 import '../../../shared/widgets/empty_state.dart';
 import '../../../core/theme/app_icons.dart';
+import '../../../core/theme/app_colors.dart';
 
 class KnowledgeScreen extends ConsumerStatefulWidget {
   const KnowledgeScreen({super.key});
@@ -33,21 +34,20 @@ class _KnowledgeScreenState extends ConsumerState<KnowledgeScreen> {
     final state = ref.watch(knowledgeControllerProvider);
 
     return Scaffold(
-      backgroundColor: const Color(0xFFF7F7F5),
+      backgroundColor: context.colors.background,
       appBar: AppBar(
         title: const Text('知识卡片'),
-        backgroundColor: Colors.white,
         elevation: 0,
         leading: IconButton(
-          icon: const Icon(AppIcons.arrowBack, color: Color(0xFF37352F)),
+          icon: Icon(AppIcons.arrowBack, color: context.colors.text),
           onPressed: () => context.backOrHome(),
         ),
         titleTextStyle: TextStyle(
-          color: const Color(0xFF37352F),
+          color: context.colors.text,
           fontSize: 18.sp,
           fontWeight: FontWeight.bold,
         ),
-        iconTheme: const IconThemeData(color: Color(0xFF37352F)),
+        iconTheme: IconThemeData(color: context.colors.text),
         actions: [
           IconButton(
             icon: const Icon(AppIcons.refresh),
@@ -88,11 +88,11 @@ class _KnowledgeScreenState extends ConsumerState<KnowledgeScreen> {
                             .loadCards(category: selectedCategory);
                       }
                     },
-                    selectedColor: const Color(0xFF37352F),
+                    selectedColor: context.colors.primary,
                     labelStyle: TextStyle(
                       color: isSelected
-                          ? Colors.white
-                          : const Color(0xFF37352F),
+                          ? context.colors.onPrimary
+                          : context.colors.text,
                     ),
                   );
                 },
@@ -111,7 +111,7 @@ class _KnowledgeScreenState extends ConsumerState<KnowledgeScreen> {
                         Icon(
                           AppIcons.errorOutline,
                           size: 48.sp,
-                          color: Colors.red[300],
+                          color: context.colors.error,
                         ),
                         SizedBox(height: 16.h),
                         Text(
@@ -119,13 +119,16 @@ class _KnowledgeScreenState extends ConsumerState<KnowledgeScreen> {
                           style: TextStyle(
                             fontSize: 18.sp,
                             fontWeight: FontWeight.w600,
-                            color: const Color(0xFF37352F),
+                            color: context.colors.text,
                           ),
                         ),
                         SizedBox(height: 8.h),
                         Text(
                           '请检查网络后重试',
-                          style: TextStyle(fontSize: 14.sp, color: Colors.grey),
+                          style: TextStyle(
+                            fontSize: 14.sp,
+                            color: context.colors.textSecondary,
+                          ),
                         ),
                         SizedBox(height: 24.h),
                         ElevatedButton.icon(
@@ -135,8 +138,8 @@ class _KnowledgeScreenState extends ConsumerState<KnowledgeScreen> {
                           icon: const Icon(AppIcons.refresh, size: 18),
                           label: const Text('重试'),
                           style: ElevatedButton.styleFrom(
-                            backgroundColor: const Color(0xFF135BEC),
-                            foregroundColor: Colors.white,
+                            backgroundColor: context.colors.accent,
+                            foregroundColor: context.colors.onAccent,
                             shape: RoundedRectangleBorder(
                               borderRadius: BorderRadius.circular(8.r),
                             ),
@@ -165,8 +168,8 @@ class _KnowledgeScreenState extends ConsumerState<KnowledgeScreen> {
       ),
       floatingActionButton: FloatingActionButton(
         onPressed: _openCreateCardDialog,
-        backgroundColor: const Color(0xFF37352F),
-        child: const Icon(AppIcons.add),
+        backgroundColor: context.colors.primary,
+        child: Icon(AppIcons.add, color: context.colors.onPrimary),
       ),
     );
   }
@@ -216,9 +219,9 @@ class _KnowledgeScreenState extends ConsumerState<KnowledgeScreen> {
   Widget _buildCardItem(KnowledgeCard card) {
     return Container(
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: context.colors.surface,
         borderRadius: BorderRadius.circular(12.r),
-        border: Border.all(color: const Color(0xFFE0E0E0)),
+        border: Border.all(color: context.colors.border),
         boxShadow: [
           BoxShadow(
             color: Colors.black.withValues(alpha: 0.02),
@@ -233,7 +236,7 @@ class _KnowledgeScreenState extends ConsumerState<KnowledgeScreen> {
           style: TextStyle(
             fontSize: 16.sp,
             fontWeight: FontWeight.w600,
-            color: const Color(0xFF37352F),
+            color: context.colors.text,
           ),
         ),
         subtitle: Padding(
@@ -243,19 +246,25 @@ class _KnowledgeScreenState extends ConsumerState<KnowledgeScreen> {
               Container(
                 padding: EdgeInsets.symmetric(horizontal: 6.w, vertical: 2.h),
                 decoration: BoxDecoration(
-                  color: Colors.grey[100],
+                  color: context.colors.surfaceAlt,
                   borderRadius: BorderRadius.circular(4.r),
                 ),
                 child: Text(
                   card.category,
-                  style: TextStyle(fontSize: 10.sp, color: Colors.grey[700]),
+                  style: TextStyle(
+                    fontSize: 12.sp,
+                    color: context.colors.textSecondary,
+                  ),
                 ),
               ),
               SizedBox(width: 8.w),
               if (card.tags.isNotEmpty)
                 Text(
                   '#${card.tags.first}',
-                  style: TextStyle(fontSize: 10.sp, color: Colors.blueGrey),
+                  style: TextStyle(
+                    fontSize: 12.sp,
+                    color: context.colors.textSecondary,
+                  ),
                 ),
             ],
           ),
@@ -266,7 +275,7 @@ class _KnowledgeScreenState extends ConsumerState<KnowledgeScreen> {
             width: double.infinity,
             padding: EdgeInsets.all(12.w),
             decoration: BoxDecoration(
-              color: const Color(0xFFFAFAFA),
+              color: context.colors.surfaceAlt,
               borderRadius: BorderRadius.circular(8.r),
             ),
             child: Column(
@@ -275,7 +284,7 @@ class _KnowledgeScreenState extends ConsumerState<KnowledgeScreen> {
                 Text(card.back, style: TextStyle(fontSize: 15.sp, height: 1.5)),
                 if (card.keyPoints.isNotEmpty) ...[
                   SizedBox(height: 12.h),
-                  Divider(height: 1, color: Colors.grey[300]),
+                  Divider(height: 1, color: context.colors.border),
                   SizedBox(height: 8.h),
                   ...card.keyPoints.map(
                     (kp) => Padding(
@@ -283,11 +292,11 @@ class _KnowledgeScreenState extends ConsumerState<KnowledgeScreen> {
                       child: Row(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          const Text(
+                          Text(
                             '• ',
                             style: TextStyle(
                               fontWeight: FontWeight.bold,
-                              color: Colors.blue,
+                              color: context.colors.accent,
                             ),
                           ),
                           Expanded(
@@ -440,7 +449,7 @@ class _CreateCardDialogState extends State<_CreateCardDialog> {
               SizedBox(height: 12.h),
               Text(
                 _errorText!,
-                style: TextStyle(fontSize: 12.sp, color: Colors.red[600]),
+                style: TextStyle(fontSize: 12.sp, color: context.colors.error),
               ),
             ],
           ],
@@ -456,16 +465,16 @@ class _CreateCardDialogState extends State<_CreateCardDialog> {
         ElevatedButton(
           onPressed: _isSubmitting ? null : _submit,
           style: ElevatedButton.styleFrom(
-            backgroundColor: const Color(0xFF37352F),
-            foregroundColor: Colors.white,
+            backgroundColor: context.colors.primary,
+            foregroundColor: context.colors.onPrimary,
           ),
           child: _isSubmitting
               ? SizedBox(
                   width: 16.w,
                   height: 16.w,
-                  child: const CircularProgressIndicator(
+                  child: CircularProgressIndicator(
                     strokeWidth: 2,
-                    color: Colors.white,
+                    color: context.colors.onPrimary,
                   ),
                 )
               : const Text('保存'),

@@ -4,6 +4,7 @@ import 'package:flutter_screenutil/flutter_screenutil.dart';
 import '../../../core/navigation/app_nav.dart';
 import 'mastery_provider.dart';
 import '../../../core/theme/app_icons.dart';
+import '../../../core/theme/app_colors.dart';
 
 class MasteryScreen extends ConsumerStatefulWidget {
   const MasteryScreen({super.key});
@@ -26,21 +27,20 @@ class _MasteryScreenState extends ConsumerState<MasteryScreen> {
     final state = ref.watch(masteryControllerProvider);
 
     return Scaffold(
-      backgroundColor: const Color(0xFFF7F7F5),
+      backgroundColor: context.colors.background,
       appBar: AppBar(
         title: const Text('学习掌握度'),
-        backgroundColor: Colors.white,
         elevation: 0,
         leading: IconButton(
-          icon: const Icon(AppIcons.arrowBack, color: Color(0xFF37352F)),
+          icon: Icon(AppIcons.arrowBack, color: context.colors.text),
           onPressed: () => context.backOrHome(),
         ),
         titleTextStyle: TextStyle(
-          color: const Color(0xFF37352F),
+          color: context.colors.text,
           fontSize: 18.sp,
           fontWeight: FontWeight.bold,
         ),
-        iconTheme: const IconThemeData(color: Color(0xFF37352F)),
+        iconTheme: IconThemeData(color: context.colors.text),
         actions: [
           IconButton(
             icon: const Icon(AppIcons.refresh),
@@ -50,8 +50,8 @@ class _MasteryScreenState extends ConsumerState<MasteryScreen> {
         ],
       ),
       body: state.isLoading
-          ? const Center(
-              child: CircularProgressIndicator(color: Color(0xFF135BEC)),
+          ? Center(
+              child: CircularProgressIndicator(color: context.colors.accent),
             )
           : state.error != null
           ? Center(
@@ -61,7 +61,7 @@ class _MasteryScreenState extends ConsumerState<MasteryScreen> {
                   Icon(
                     AppIcons.errorOutline,
                     size: 48.sp,
-                    color: Colors.red[300],
+                    color: context.colors.error,
                   ),
                   SizedBox(height: 16.h),
                   Text(
@@ -69,13 +69,16 @@ class _MasteryScreenState extends ConsumerState<MasteryScreen> {
                     style: TextStyle(
                       fontSize: 18.sp,
                       fontWeight: FontWeight.w600,
-                      color: const Color(0xFF37352F),
+                      color: context.colors.text,
                     ),
                   ),
                   SizedBox(height: 8.h),
                   Text(
                     '请检查网络后重试',
-                    style: TextStyle(fontSize: 14.sp, color: Colors.grey),
+                    style: TextStyle(
+                      fontSize: 14.sp,
+                      color: context.colors.textSecondary,
+                    ),
                   ),
                   SizedBox(height: 24.h),
                   ElevatedButton.icon(
@@ -84,8 +87,8 @@ class _MasteryScreenState extends ConsumerState<MasteryScreen> {
                     icon: const Icon(AppIcons.refresh, size: 18),
                     label: const Text('重试'),
                     style: ElevatedButton.styleFrom(
-                      backgroundColor: const Color(0xFF135BEC),
-                      foregroundColor: Colors.white,
+                      backgroundColor: context.colors.accent,
+                      foregroundColor: context.colors.onAccent,
                       shape: RoundedRectangleBorder(
                         borderRadius: BorderRadius.circular(8.r),
                       ),
@@ -118,13 +121,13 @@ class _MasteryScreenState extends ConsumerState<MasteryScreen> {
       margin: EdgeInsets.only(bottom: 8.h),
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(8.r),
-        side: BorderSide(color: Colors.grey[200]!),
+        side: BorderSide(color: context.colors.border),
       ),
       child: ExpansionTile(
         initiallyExpanded: node.level < 1, // Expand top level by default
         leading: CircularProgressIndicator(
           value: score / 100,
-          backgroundColor: Colors.grey[100],
+          backgroundColor: context.colors.surfaceAlt,
           color: color,
           strokeWidth: 4,
         ),
@@ -144,7 +147,10 @@ class _MasteryScreenState extends ConsumerState<MasteryScreen> {
         ),
         subtitle: Text(
           '层级: ${node.level}',
-          style: TextStyle(fontSize: 10.sp, color: Colors.grey),
+          style: TextStyle(
+            fontSize: 12.sp,
+            color: context.colors.textSecondary,
+          ),
         ),
         children: hasChildren
             ? node.children
@@ -161,8 +167,8 @@ class _MasteryScreenState extends ConsumerState<MasteryScreen> {
   }
 
   Color _getScoreColor(double score) {
-    if (score >= 80) return Colors.green;
-    if (score >= 60) return Colors.orange;
-    return Colors.red;
+    if (score >= 80) return context.colors.success;
+    if (score >= 60) return context.colors.warning;
+    return context.colors.error;
   }
 }

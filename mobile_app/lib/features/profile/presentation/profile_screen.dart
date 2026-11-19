@@ -5,6 +5,8 @@ import '../../../core/navigation/app_nav.dart';
 import 'profile_provider.dart';
 import '../domain/user_profile.dart';
 import '../../../core/theme/app_icons.dart';
+import '../../../core/theme/app_colors.dart';
+import '../../../shared/widgets/state_views.dart';
 
 /// 个人中心页面
 class ProfileScreen extends ConsumerStatefulWidget {
@@ -29,9 +31,8 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
     final theme = Theme.of(context);
 
     return Scaffold(
-      backgroundColor: const Color(0xFFF7F7F5),
+      backgroundColor: context.colors.background,
       appBar: AppBar(
-        backgroundColor: Colors.white,
         elevation: 0,
         leading: IconButton(
           icon: Icon(AppIcons.arrowBack, color: theme.colorScheme.onSurface),
@@ -42,12 +43,12 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
           style: TextStyle(
             fontSize: 18.sp,
             fontWeight: FontWeight.w600,
-            color: const Color(0xFF37352F),
+            color: context.colors.text,
           ),
         ),
         actions: [
           IconButton(
-            icon: const Icon(AppIcons.refresh, color: Color(0xFF37352F)),
+            icon: Icon(AppIcons.refresh, color: context.colors.text),
             onPressed: () =>
                 ref.read(profileControllerProvider.notifier).load(),
           ),
@@ -56,39 +57,14 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
       body: state.isLoading
           ? const Center(child: CircularProgressIndicator())
           : state.error != null
-          ? _buildErrorView(state.error!)
+          ? AppErrorView(
+              message: state.error!,
+              onRetry: () =>
+                  ref.read(profileControllerProvider.notifier).load(),
+            )
           : state.profile != null
           ? _buildContent(state.profile!)
           : const SizedBox.shrink(),
-    );
-  }
-
-  Widget _buildErrorView(String error) {
-    return Center(
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          Icon(AppIcons.errorOutline, size: 48.sp, color: Colors.red[300]),
-          SizedBox(height: 16.h),
-          Text(
-            '加载失败',
-            style: TextStyle(fontSize: 16.sp, fontWeight: FontWeight.bold),
-          ),
-          SizedBox(height: 8.h),
-          Text(
-            error,
-            style: TextStyle(fontSize: 12.sp, color: Colors.grey),
-            textAlign: TextAlign.center,
-          ),
-          SizedBox(height: 24.h),
-          ElevatedButton.icon(
-            onPressed: () =>
-                ref.read(profileControllerProvider.notifier).load(),
-            icon: const Icon(AppIcons.refresh, size: 18),
-            label: const Text('重试'),
-          ),
-        ],
-      ),
     );
   }
 
@@ -130,9 +106,9 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
     return Container(
       padding: EdgeInsets.all(20.w),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: context.colors.surface,
         borderRadius: BorderRadius.circular(16.r),
-        border: Border.all(color: const Color(0xFFE8E8E5)),
+        border: Border.all(color: context.colors.border),
       ),
       child: Row(
         children: [
@@ -141,7 +117,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
             width: 64.w,
             height: 64.w,
             decoration: BoxDecoration(
-              color: const Color(0xFF37352F).withValues(alpha: 0.08),
+              color: context.colors.text.withValues(alpha: 0.08),
               shape: BoxShape.circle,
             ),
             alignment: Alignment.center,
@@ -158,7 +134,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                   style: TextStyle(
                     fontSize: 20.sp,
                     fontWeight: FontWeight.bold,
-                    color: const Color(0xFF37352F),
+                    color: context.colors.text,
                   ),
                 ),
                 SizedBox(height: 4.h),
@@ -170,14 +146,14 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                         vertical: 2.h,
                       ),
                       decoration: BoxDecoration(
-                        color: const Color(0xFFE8F3FF),
+                        color: context.colors.accentContainer,
                         borderRadius: BorderRadius.circular(4.r),
                       ),
                       child: Text(
                         roleLabel,
                         style: TextStyle(
-                          fontSize: 11.sp,
-                          color: const Color(0xFF135BEC),
+                          fontSize: 12.sp,
+                          color: context.colors.accent,
                           fontWeight: FontWeight.w500,
                         ),
                       ),
@@ -189,7 +165,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                   '加入于 $joinDate',
                   style: TextStyle(
                     fontSize: 12.sp,
-                    color: const Color(0xFF9B9A97),
+                    color: context.colors.textSecondary,
                   ),
                 ),
               ],
@@ -206,7 +182,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
       style: TextStyle(
         fontSize: 12.sp,
         fontWeight: FontWeight.w600,
-        color: const Color(0xFF9B9A97),
+        color: context.colors.textSecondary,
         letterSpacing: 0.5,
       ),
     );
@@ -245,9 +221,9 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
     return Container(
       padding: EdgeInsets.all(14.w),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: context.colors.surface,
         borderRadius: BorderRadius.circular(12.r),
-        border: Border.all(color: const Color(0xFFE8E8E5)),
+        border: Border.all(color: context.colors.border),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -261,8 +237,8 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                 child: Text(
                   label,
                   style: TextStyle(
-                    fontSize: 11.sp,
-                    color: const Color(0xFF9B9A97),
+                    fontSize: 12.sp,
+                    color: context.colors.textSecondary,
                   ),
                   overflow: TextOverflow.ellipsis,
                 ),
@@ -277,14 +253,14 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                 style: TextStyle(
                   fontSize: 20.sp,
                   fontWeight: FontWeight.bold,
-                  color: const Color(0xFF37352F),
+                  color: context.colors.text,
                 ),
               ),
               Text(
                 subtitle,
                 style: TextStyle(
-                  fontSize: 11.sp,
-                  color: const Color(0xFF9B9A97),
+                  fontSize: 12.sp,
+                  color: context.colors.textSecondary,
                 ),
               ),
             ],
@@ -306,9 +282,9 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
 
     return Container(
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: context.colors.surface,
         borderRadius: BorderRadius.circular(12.r),
-        border: Border.all(color: const Color(0xFFE8E8E5)),
+        border: Border.all(color: context.colors.border),
       ),
       child: Column(
         children: items
@@ -345,21 +321,21 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
             padding: EdgeInsets.symmetric(horizontal: 16.w, vertical: 14.h),
             child: Row(
               children: [
-                Icon(icon, size: 20.sp, color: const Color(0xFF37352F)),
+                Icon(icon, size: 20.sp, color: context.colors.text),
                 SizedBox(width: 12.w),
                 Expanded(
                   child: Text(
                     label,
                     style: TextStyle(
                       fontSize: 15.sp,
-                      color: const Color(0xFF37352F),
+                      color: context.colors.text,
                     ),
                   ),
                 ),
                 Icon(
                   AppIcons.chevronRight,
                   size: 20.sp,
-                  color: const Color(0xFF9B9A97),
+                  color: context.colors.textSecondary,
                 ),
               ],
             ),
@@ -368,7 +344,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
         if (showDivider)
           Divider(
             height: 1.h,
-            color: const Color(0xFFE8E8E5),
+            color: context.colors.border,
             indent: 16.w,
             endIndent: 16.w,
           ),

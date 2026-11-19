@@ -5,6 +5,7 @@ import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:dio/dio.dart';
 import '../../../core/navigation/app_nav.dart';
 import 'auth_provider.dart';
+import '../../../core/theme/app_colors.dart';
 import '../../../core/theme/app_icons.dart';
 
 class LoginScreen extends HookConsumerWidget {
@@ -42,14 +43,14 @@ class LoginScreen extends HookConsumerWidget {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text(errorMessage),
-            backgroundColor: const Color(0xFFEB5757),
+            backgroundColor: context.colors.error,
           ),
         );
       }
     });
 
     return Scaffold(
-      backgroundColor: Colors.white,
+      backgroundColor: context.colors.background,
       body: SafeArea(
         child: Padding(
           padding: EdgeInsets.symmetric(horizontal: 32.w),
@@ -72,7 +73,7 @@ class LoginScreen extends HookConsumerWidget {
                           style: TextStyle(
                             fontSize: 28.sp,
                             fontWeight: FontWeight.bold,
-                            color: const Color(0xFF1A1A1A),
+                            color: context.colors.text,
                             fontFamily: 'Inter',
                           ),
                         ),
@@ -80,6 +81,7 @@ class LoginScreen extends HookConsumerWidget {
 
                         // Form
                         _buildInputGroup(
+                          context,
                           '邮箱/用户名',
                           AppIcons.personOutline,
                           usernameController,
@@ -87,6 +89,7 @@ class LoginScreen extends HookConsumerWidget {
                         ),
                         SizedBox(height: 16.h),
                         _buildInputGroup(
+                          context,
                           '密码',
                           AppIcons.lockOutline,
                           passwordController,
@@ -106,7 +109,7 @@ class LoginScreen extends HookConsumerWidget {
                             child: Text(
                               '忘记密码？',
                               style: TextStyle(
-                                color: Colors.grey,
+                                color: context.colors.textSecondary,
                                 fontSize: 13.sp,
                               ),
                             ),
@@ -152,8 +155,8 @@ class LoginScreen extends HookConsumerWidget {
                                         .login(username, password);
                                   },
                             style: FilledButton.styleFrom(
-                              backgroundColor: const Color(0xFF135BEC),
-                              foregroundColor: Colors.white,
+                              backgroundColor: context.colors.accent,
+                              foregroundColor: context.colors.onAccent,
                               shape: RoundedRectangleBorder(
                                 borderRadius: BorderRadius.circular(8.r),
                               ),
@@ -162,8 +165,8 @@ class LoginScreen extends HookConsumerWidget {
                                 ? SizedBox(
                                     width: 20.w,
                                     height: 20.h,
-                                    child: const CircularProgressIndicator(
-                                      color: Colors.white,
+                                    child: CircularProgressIndicator(
+                                      color: context.colors.onAccent,
                                       strokeWidth: 2,
                                     ),
                                   )
@@ -197,18 +200,18 @@ class LoginScreen extends HookConsumerWidget {
                     // Divider
                     Row(
                       children: [
-                        Expanded(child: Divider(color: Colors.grey[200])),
+                        Expanded(child: Divider(color: context.colors.border)),
                         Padding(
                           padding: EdgeInsets.symmetric(horizontal: 16.w),
                           child: Text(
                             '或者',
                             style: TextStyle(
-                              color: Colors.grey[400],
+                              color: context.colors.textSecondary,
                               fontSize: 12.sp,
                             ),
                           ),
                         ),
-                        Expanded(child: Divider(color: Colors.grey[200])),
+                        Expanded(child: Divider(color: context.colors.border)),
                       ],
                     ),
 
@@ -218,11 +221,16 @@ class LoginScreen extends HookConsumerWidget {
                     Row(
                       children: [
                         Expanded(
-                          child: _buildSocialButton('Apple', AppIcons.apple),
+                          child: _buildSocialButton(
+                            context,
+                            'Apple',
+                            AppIcons.apple,
+                          ),
                         ),
                         SizedBox(width: 12.w),
                         Expanded(
                           child: _buildSocialButton(
+                            context,
                             '微信',
                             AppIcons.chatBubbleOutline,
                             color: const Color(0xFF07C160),
@@ -241,14 +249,14 @@ class LoginScreen extends HookConsumerWidget {
                           text: TextSpan(
                             text: '还没有账号？ ',
                             style: TextStyle(
-                              color: Colors.grey,
+                              color: context.colors.textSecondary,
                               fontSize: 13.sp,
                             ),
-                            children: const [
+                            children: [
                               TextSpan(
                                 text: '立即注册',
                                 style: TextStyle(
-                                  color: Color(0xFF135BEC),
+                                  color: context.colors.accent,
                                   fontWeight: FontWeight.w500,
                                   decoration: TextDecoration.underline,
                                 ),
@@ -269,6 +277,7 @@ class LoginScreen extends HookConsumerWidget {
   }
 
   Widget _buildInputGroup(
+    BuildContext context,
     String label,
     IconData icon,
     TextEditingController controller, {
@@ -280,9 +289,9 @@ class LoginScreen extends HookConsumerWidget {
     return Container(
       height: 52.h,
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: context.colors.surface,
         borderRadius: BorderRadius.circular(8.r),
-        border: Border.all(color: Colors.grey[200]!),
+        border: Border.all(color: context.colors.border),
         boxShadow: [
           BoxShadow(
             color: Colors.black.withValues(alpha: 0.05),
@@ -294,7 +303,7 @@ class LoginScreen extends HookConsumerWidget {
       child: Row(
         children: [
           SizedBox(width: 14.w),
-          Icon(icon, color: Colors.grey[400], size: 20.sp),
+          Icon(icon, color: context.colors.textSecondary, size: 20.sp),
           SizedBox(width: 12.w),
           Expanded(
             child: TextField(
@@ -304,7 +313,10 @@ class LoginScreen extends HookConsumerWidget {
               decoration: InputDecoration(
                 border: InputBorder.none,
                 hintText: hint ?? label,
-                hintStyle: TextStyle(color: Colors.grey[400], fontSize: 16.sp),
+                hintStyle: TextStyle(
+                  color: context.colors.textSecondary,
+                  fontSize: 16.sp,
+                ),
                 contentPadding: isPassword
                     ? EdgeInsets.only(top: 14.h)
                     : EdgeInsets.zero,
@@ -315,15 +327,15 @@ class LoginScreen extends HookConsumerWidget {
                           (obscureText ?? true)
                               ? AppIcons.visibilityOff
                               : AppIcons.visibility,
-                          color: Colors.grey[400],
+                          color: context.colors.textSecondary,
                           size: 20.sp,
                         ),
                         onPressed: onToggleVisibility,
                       )
                     : null,
               ),
-              style: TextStyle(fontSize: 16.sp, color: const Color(0xFF1A1A1A)),
-              cursorColor: const Color(0xFF135BEC),
+              style: TextStyle(fontSize: 16.sp, color: context.colors.text),
+              cursorColor: context.colors.accent,
             ),
           ),
           if (!isPassword) SizedBox(width: 14.w),
@@ -332,12 +344,17 @@ class LoginScreen extends HookConsumerWidget {
     );
   }
 
-  Widget _buildSocialButton(String label, IconData icon, {Color? color}) {
+  Widget _buildSocialButton(
+    BuildContext context,
+    String label,
+    IconData icon, {
+    Color? color,
+  }) {
     return Container(
       height: 44.h,
       decoration: BoxDecoration(
-        border: Border.all(color: Colors.grey[200]!),
-        color: Colors.white,
+        border: Border.all(color: context.colors.border),
+        color: context.colors.surface,
         borderRadius: BorderRadius.circular(8.r),
       ),
       child: Row(
@@ -350,7 +367,7 @@ class LoginScreen extends HookConsumerWidget {
             style: TextStyle(
               fontSize: 14.sp,
               fontWeight: FontWeight.normal,
-              color: const Color(0xFF37352F), // Notion-like text color
+              color: context.colors.text, // Notion-like text color
             ),
           ),
         ],

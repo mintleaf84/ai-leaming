@@ -165,7 +165,7 @@ class _StatTile extends StatelessWidget {
           Text(
             label,
             style: TextStyle(
-              fontSize: 11.sp,
+              fontSize: 12.sp,
               color: scheme.onSurface.withValues(alpha: 0.6),
             ),
           ),

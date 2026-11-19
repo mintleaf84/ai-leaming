@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+
+import 'app_colors.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 
 /// 应用主题定义
@@ -69,6 +71,10 @@ class AppTheme {
           TargetPlatform.macOS: CupertinoPageTransitionsBuilder(),
         },
       ),
+
+      // 语义色层：页面通过 context.colors 取色（见 app_colors.dart）
+      // 语义色层：页面通过 context.colors 取色（见 app_colors.dart）
+      extensions: const <ThemeExtension<dynamic>>[AppColors.light],
 
       // AppBar 主题
       appBarTheme: AppBarTheme(
@@ -165,6 +171,9 @@ class AppTheme {
           TargetPlatform.macOS: CupertinoPageTransitionsBuilder(),
         },
       ),
+
+      // 语义色层
+      extensions: const <ThemeExtension<dynamic>>[AppColors.dark],
 
       // AppBar 主题
       appBarTheme: AppBarTheme(
@@ -278,20 +287,3 @@ class AppTheme {
 }
 
 /// 扩展方法：获取自适应颜色
-extension ThemeExtension on BuildContext {
-  /// 获取当前是否为暗色模式
-  bool get isDarkMode => Theme.of(this).brightness == Brightness.dark;
-
-  /// 获取主要文字颜色
-  Color get textColor => Theme.of(this).colorScheme.onSurface;
-
-  /// 获取次要文字颜色
-  Color get secondaryTextColor =>
-      isDarkMode ? const Color(0xFF8A8A8A) : const Color(0xFF9B9A97);
-
-  /// 获取卡片背景色
-  Color get cardBackgroundColor => Theme.of(this).cardColor;
-
-  /// 获取边框颜色
-  Color get borderColor => Theme.of(this).dividerColor;
-}

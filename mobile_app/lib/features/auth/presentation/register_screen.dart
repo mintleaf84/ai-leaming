@@ -4,6 +4,7 @@ import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import '../../../core/navigation/app_nav.dart';
 import 'auth_provider.dart';
+import '../../../core/theme/app_colors.dart';
 import '../../../core/theme/app_icons.dart';
 
 class RegisterScreen extends HookConsumerWidget {
@@ -29,7 +30,7 @@ class RegisterScreen extends HookConsumerWidget {
     });
 
     return Scaffold(
-      backgroundColor: Colors.white,
+      backgroundColor: context.colors.background,
       body: SafeArea(
         child: Padding(
           padding: EdgeInsets.symmetric(horizontal: 32.w),
@@ -41,7 +42,7 @@ class RegisterScreen extends HookConsumerWidget {
                 onPressed: () => context.backOrHome(fallback: AppRoutes.login),
                 icon: const Icon(AppIcons.arrowBack),
                 style: IconButton.styleFrom(
-                  backgroundColor: Colors.grey[100],
+                  backgroundColor: context.colors.surfaceAlt,
                   padding: EdgeInsets.all(12.w),
                 ),
               ),
@@ -65,7 +66,7 @@ class RegisterScreen extends HookConsumerWidget {
                             style: TextStyle(
                               fontSize: 28.sp,
                               fontWeight: FontWeight.bold,
-                              color: const Color(0xFF1A1A1A),
+                              color: context.colors.text,
                               fontFamily: 'Inter',
                             ),
                           ),
@@ -76,7 +77,7 @@ class RegisterScreen extends HookConsumerWidget {
                             '开启你的极简学习之旅',
                             style: TextStyle(
                               fontSize: 14.sp,
-                              color: Colors.grey,
+                              color: context.colors.textSecondary,
                             ),
                           ),
                         ),
@@ -84,6 +85,7 @@ class RegisterScreen extends HookConsumerWidget {
 
                         // Form
                         _buildInputGroup(
+                          context,
                           '用户名',
                           AppIcons.personOutline,
                           usernameController,
@@ -92,6 +94,7 @@ class RegisterScreen extends HookConsumerWidget {
 
                         SizedBox(height: 20.h),
                         _buildInputGroup(
+                          context,
                           '密码',
                           AppIcons.lockOutline,
                           passwordController,
@@ -121,8 +124,8 @@ class RegisterScreen extends HookConsumerWidget {
                                         );
                                   },
                             style: FilledButton.styleFrom(
-                              backgroundColor: const Color(0xFF1A1A1A),
-                              foregroundColor: Colors.white,
+                              backgroundColor: context.colors.primary,
+                              foregroundColor: context.colors.onPrimary,
                               shape: RoundedRectangleBorder(
                                 borderRadius: BorderRadius.circular(8.r),
                               ),
@@ -131,8 +134,8 @@ class RegisterScreen extends HookConsumerWidget {
                                 ? SizedBox(
                                     width: 20.w,
                                     height: 20.h,
-                                    child: const CircularProgressIndicator(
-                                      color: Colors.white,
+                                    child: CircularProgressIndicator(
+                                      color: context.colors.onPrimary,
                                       strokeWidth: 2,
                                     ),
                                   )
@@ -162,14 +165,14 @@ class RegisterScreen extends HookConsumerWidget {
                               text: TextSpan(
                                 text: '已有账号？ ',
                                 style: TextStyle(
-                                  color: Colors.grey,
+                                  color: context.colors.textSecondary,
                                   fontSize: 13.sp,
                                 ),
-                                children: const [
+                                children: [
                                   TextSpan(
                                     text: '立即登录',
                                     style: TextStyle(
-                                      color: Color(0xFF1A1A1A),
+                                      color: context.colors.text,
                                       fontWeight: FontWeight.w500,
                                       decoration: TextDecoration.underline,
                                     ),
@@ -193,7 +196,7 @@ class RegisterScreen extends HookConsumerWidget {
                     width: 48.w,
                     height: 4.h,
                     decoration: BoxDecoration(
-                      color: Colors.grey[300],
+                      color: context.colors.border,
                       borderRadius: BorderRadius.circular(2.r),
                     ),
                   ),
@@ -207,6 +210,7 @@ class RegisterScreen extends HookConsumerWidget {
   }
 
   Widget _buildInputGroup(
+    BuildContext context,
     String label,
     IconData icon,
     TextEditingController controller, {
@@ -223,15 +227,15 @@ class RegisterScreen extends HookConsumerWidget {
         Container(
           height: 48.h,
           decoration: BoxDecoration(
-            color: Colors.white,
+            color: context.colors.surface,
             borderRadius: BorderRadius.circular(8.r),
-            border: Border.all(color: Colors.grey[200]!),
+            border: Border.all(color: context.colors.border),
             // Removed BoxShadow to match the flat Notion reference
           ),
           child: Row(
             children: [
               SizedBox(width: 14.w),
-              Icon(icon, color: Colors.grey[400], size: 20.sp),
+              Icon(icon, color: context.colors.textSecondary, size: 20.sp),
               SizedBox(width: 12.w),
               Expanded(
                 child: TextField(
@@ -241,24 +245,21 @@ class RegisterScreen extends HookConsumerWidget {
                     border: InputBorder.none,
                     hintText: hint ?? label, // Use hint as the main label
                     hintStyle: TextStyle(
-                      color: Colors.grey[400],
+                      color: context.colors.textSecondary,
                       fontSize: 15.sp,
                     ),
                     contentPadding: EdgeInsets.zero,
                     isDense: true,
                   ),
-                  style: TextStyle(
-                    fontSize: 16.sp,
-                    color: const Color(0xFF1A1A1A),
-                  ),
-                  cursorColor: const Color(0xFF135BEC),
+                  style: TextStyle(fontSize: 16.sp, color: context.colors.text),
+                  cursorColor: context.colors.accent,
                 ),
               ),
               if (isPassword)
                 IconButton(
                   icon: Icon(
                     isVisible ? AppIcons.visibility : AppIcons.visibilityOff,
-                    color: Colors.grey[400],
+                    color: context.colors.textSecondary,
                     size: 20.sp,
                   ),
                   onPressed: onToggleVisibility,

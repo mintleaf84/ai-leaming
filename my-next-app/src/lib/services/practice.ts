@@ -229,9 +229,14 @@ export const practiceService = {
     isCorrect: boolean,
     duration: number,
     totalDurationMs?: number,
+    origin: "web" | "agent" | "import" = "web",
     // true = 在写日志的同一事务内重新读题判分（用于 submitAnswerWithValidation）
     revalidateAnswer = false,
   ) {
+    // 空答案=未作答（skipped）：保留日志用于还原作答过程，但不算对错、不进 SRS、
+    // 不计入掌握度（P0-3：历史上 348 条空答案被当成「做错」喂进了 FSRS）
+    const skipped = userAnswer.trim() === "";
+
     // 1+2. 归属校验、答题日志写入、会话统计更新必须在**同一个事务**里。
     //
     // 只在写库前单独 SELECT 一次归属，会留下 TOCTOU 窗口：校验通过后会话被删除
@@ -290,13 +295,15 @@ export const practiceService = {
         user_answer: userAnswer,
         is_correct: gradedIsCorrect,
         duration_ms: duration,
+        origin,
+        status: skipped ? "skipped" : "answered",
       });
 
       if (sessionId) {
         await exec
           .update(practice_sessions)
           .set({
-            correct_count: sql`${practice_sessions.correct_count} + ${gradedIsCorrect ? 1 : 0}`,
+            correct_count: sql`${practice_sessions.correct_count} + ${gradedIsCorrect && !skipped ? 1 : 0}`,
             total_duration_ms: totalDurationMs ?? undefined,
           })
           .where(
@@ -319,7 +326,7 @@ export const practiceService = {
       .where(eq(questions.id, questionId))
       .limit(1);
 
-    if (q && q.tags) {
+    if (q && q.tags && !skipped) {
       const tags = safeParseJson<string[]>(q.tags, []);
 
       const { masteryService } = await import("@/lib/services/mastery");
@@ -336,25 +343,29 @@ export const practiceService = {
     }
 
     // 4. 更新 FSRS 状态（错题强化逻辑）
+    // 跳过的不排期；agent 来源的对错由调用方判定、服务端不复核，同样不排期
+    // （P0-2/P0-3；agent 记录只作历史统计，见 docs/audit 报告）
     let updatedSrs = undefined;
-    try {
-      const { srsService } = await import("@/lib/services/srs");
-      // 填空题传入用户答案长度，用于计算打字时间
-      const userAnswerLength =
-        q?.type === "fill_blank" ? userAnswer.length : undefined;
-      updatedSrs = await srsService.updateQuestionSrs(
-        userId,
-        questionId,
-        gradedIsCorrect,
-        duration,
-        undefined,
-        undefined,
-        userAnswerLength,
-      );
-    } catch (e) {
-      logger.error({ err: e }, "Failed to update SRS state in submitAnswer");
-      // 显式降级：SRS 更新失败不影响答题结果落库，返回无 SRS 数据的成功结果
-      return { success: true, srs: undefined };
+    if (!skipped && origin !== "agent") {
+      try {
+        const { srsService } = await import("@/lib/services/srs");
+        // 填空题传入用户答案长度，用于计算打字时间
+        const userAnswerLength =
+          q?.type === "fill_blank" ? userAnswer.length : undefined;
+        updatedSrs = await srsService.updateQuestionSrs(
+          userId,
+          questionId,
+          gradedIsCorrect,
+          duration,
+          undefined,
+          undefined,
+          userAnswerLength,
+        );
+      } catch (e) {
+        logger.error({ err: e }, "Failed to update SRS state in submitAnswer");
+        // 显式降级：SRS 更新失败不影响答题结果落库，返回无 SRS 数据的成功结果
+        return { success: true, srs: undefined };
+      }
     }
 
     return {
@@ -417,6 +428,7 @@ export const practiceService = {
       isCorrect,
       duration,
       undefined,
+      "web",
       true,
     );
 

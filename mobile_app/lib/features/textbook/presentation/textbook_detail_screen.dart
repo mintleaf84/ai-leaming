@@ -5,6 +5,7 @@ import '../../../core/navigation/app_nav.dart';
 import 'textbook_provider.dart';
 import '../domain/textbook.dart';
 import '../../../core/theme/app_icons.dart';
+import '../../../core/theme/app_colors.dart';
 
 /// 教材详情页（章节列表）
 class TextbookDetailScreen extends ConsumerWidget {
@@ -19,10 +20,9 @@ class TextbookDetailScreen extends ConsumerWidget {
     return asyncState.when(
       loading: () => Scaffold(
         appBar: AppBar(
-          backgroundColor: Colors.white,
           elevation: 0,
           leading: IconButton(
-            icon: const Icon(AppIcons.arrowBack, color: Color(0xFF37352F)),
+            icon: Icon(AppIcons.arrowBack, color: context.colors.text),
             onPressed: () => context.backOrHome(),
           ),
         ),
@@ -30,10 +30,9 @@ class TextbookDetailScreen extends ConsumerWidget {
       ),
       error: (err, _) => Scaffold(
         appBar: AppBar(
-          backgroundColor: Colors.white,
           elevation: 0,
           leading: IconButton(
-            icon: const Icon(AppIcons.arrowBack, color: Color(0xFF37352F)),
+            icon: Icon(AppIcons.arrowBack, color: context.colors.text),
             onPressed: () => context.backOrHome(),
           ),
         ),
@@ -41,8 +40,11 @@ class TextbookDetailScreen extends ConsumerWidget {
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              Icon(AppIcons.errorOutline,
-                  size: 48.sp, color: Colors.red[300]),
+              Icon(
+                AppIcons.errorOutline,
+                size: 48.sp,
+                color: context.colors.error,
+              ),
               SizedBox(height: 16.h),
               Text('加载失败',
                   style: TextStyle(
@@ -55,17 +57,19 @@ class TextbookDetailScreen extends ConsumerWidget {
         if (state.error != null) {
           return Scaffold(
             appBar: AppBar(
-              backgroundColor: Colors.white,
               elevation: 0,
               leading: IconButton(
-                icon: const Icon(AppIcons.arrowBack, color: Color(0xFF37352F)),
+                icon: Icon(AppIcons.arrowBack, color: context.colors.text),
                 onPressed: () => context.backOrHome(),
               ),
             ),
             body: Center(
               child: Text(
                 state.error!,
-                style: TextStyle(fontSize: 14.sp, color: Colors.red),
+                style: TextStyle(
+                  fontSize: 14.sp,
+                  color: context.colors.error,
+                ),
               ),
             ),
           );
@@ -84,12 +88,11 @@ class TextbookDetailScreen extends ConsumerWidget {
         detail.chapters.where((c) => c.parentId == null).toList();
 
     return Scaffold(
-      backgroundColor: const Color(0xFFF7F7F5),
+      backgroundColor: context.colors.background,
       appBar: AppBar(
-        backgroundColor: Colors.white,
         elevation: 0,
         leading: IconButton(
-          icon: const Icon(AppIcons.arrowBack, color: Color(0xFF37352F)),
+          icon: Icon(AppIcons.arrowBack, color: context.colors.text),
           onPressed: () => context.backOrHome(),
         ),
         title: Text(
@@ -97,7 +100,7 @@ class TextbookDetailScreen extends ConsumerWidget {
           style: TextStyle(
             fontSize: 16.sp,
             fontWeight: FontWeight.w600,
-            color: const Color(0xFF37352F),
+            color: context.colors.text,
           ),
         ),
       ),
@@ -109,9 +112,9 @@ class TextbookDetailScreen extends ConsumerWidget {
               margin: EdgeInsets.all(16.w),
               padding: EdgeInsets.all(20.w),
               decoration: BoxDecoration(
-                color: Colors.white,
+                color: context.colors.surface,
                 borderRadius: BorderRadius.circular(16.r),
-                border: Border.all(color: const Color(0xFFE8E8E5)),
+                border: Border.all(color: context.colors.border),
               ),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
@@ -129,7 +132,7 @@ class TextbookDetailScreen extends ConsumerWidget {
                               style: TextStyle(
                                 fontSize: 18.sp,
                                 fontWeight: FontWeight.bold,
-                                color: const Color(0xFF37352F),
+                                color: context.colors.text,
                               ),
                             ),
                             if (tb.author != null &&
@@ -139,7 +142,7 @@ class TextbookDetailScreen extends ConsumerWidget {
                                 '作者：${tb.author}',
                                 style: TextStyle(
                                   fontSize: 12.sp,
-                                  color: const Color(0xFF9B9A97),
+                                  color: context.colors.textSecondary,
                                 ),
                               ),
                             ],
@@ -155,7 +158,7 @@ class TextbookDetailScreen extends ConsumerWidget {
                       tb.description!,
                       style: TextStyle(
                         fontSize: 13.sp,
-                        color: const Color(0xFF787774),
+                        color: context.colors.textSecondary,
                         height: 1.5,
                       ),
                     ),
@@ -167,14 +170,14 @@ class TextbookDetailScreen extends ConsumerWidget {
                       vertical: 3.h,
                     ),
                     decoration: BoxDecoration(
-                      color: const Color(0xFFF0FDF4),
+                      color: context.colors.successContainer,
                       borderRadius: BorderRadius.circular(4.r),
                     ),
                     child: Text(
                       '共 ${tb.chapterCount} 章',
                       style: TextStyle(
                         fontSize: 12.sp,
-                        color: const Color(0xFF10b981),
+                        color: context.colors.success,
                         fontWeight: FontWeight.w500,
                       ),
                     ),
@@ -192,7 +195,7 @@ class TextbookDetailScreen extends ConsumerWidget {
                 style: TextStyle(
                   fontSize: 12.sp,
                   fontWeight: FontWeight.w600,
-                  color: const Color(0xFF9B9A97),
+                  color: context.colors.textSecondary,
                   letterSpacing: 0.5,
                 ),
               ),
@@ -208,7 +211,7 @@ class TextbookDetailScreen extends ConsumerWidget {
                     '暂无章节内容',
                     style: TextStyle(
                       fontSize: 14.sp,
-                      color: const Color(0xFF9B9A97),
+                      color: context.colors.textSecondary,
                     ),
                   ),
                 ),
@@ -250,9 +253,9 @@ class TextbookDetailScreen extends ConsumerWidget {
     return Container(
       margin: EdgeInsets.only(bottom: 8.h),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: context.colors.surface,
         borderRadius: BorderRadius.circular(10.r),
-        border: Border.all(color: const Color(0xFFE8E8E5)),
+        border: Border.all(color: context.colors.border),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -265,8 +268,8 @@ class TextbookDetailScreen extends ConsumerWidget {
                 Container(
                   width: 6.w,
                   height: 6.w,
-                  decoration: const BoxDecoration(
-                    color: Color(0xFF37352F),
+                  decoration: BoxDecoration(
+                    color: context.colors.text,
                     shape: BoxShape.circle,
                   ),
                 ),
@@ -277,7 +280,7 @@ class TextbookDetailScreen extends ConsumerWidget {
                     style: TextStyle(
                       fontSize: 14.sp,
                       fontWeight: FontWeight.w600,
-                      color: const Color(0xFF37352F),
+                      color: context.colors.text,
                     ),
                   ),
                 ),
@@ -294,7 +297,7 @@ class TextbookDetailScreen extends ConsumerWidget {
                     Icon(
                       AppIcons.subdirectoryArrowRight,
                       size: 14.sp,
-                      color: const Color(0xFF9B9A97),
+                      color: context.colors.textSecondary,
                     ),
                     SizedBox(width: 6.w),
                     Expanded(
@@ -302,7 +305,7 @@ class TextbookDetailScreen extends ConsumerWidget {
                         sub.title,
                         style: TextStyle(
                           fontSize: 13.sp,
-                          color: const Color(0xFF787774),
+                          color: context.colors.textSecondary,
                         ),
                       ),
                     ),

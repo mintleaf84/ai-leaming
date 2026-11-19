@@ -3,6 +3,7 @@ import 'package:flutter_markdown/flutter_markdown.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:skeletonizer/skeletonizer.dart';
 import '../../core/theme/app_icons.dart';
+import '../../core/theme/app_colors.dart';
 
 class AiAnalysisCard extends StatelessWidget {
   final String? content;
@@ -88,7 +89,7 @@ class AiAnalysisCard extends StatelessWidget {
           if (isLoading)
             _buildShimmer(isDark)
           else if (error != null)
-            _buildError(error!, theme.colorScheme.error)
+            _buildError(context, error!, theme.colorScheme.error)
           else
             MarkdownBody(
               data: content!,
@@ -128,7 +129,7 @@ class AiAnalysisCard extends StatelessWidget {
     );
   }
 
-  Widget _buildError(String error, Color errorColor) {
+  Widget _buildError(BuildContext context, String error, Color errorColor) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -146,7 +147,7 @@ class AiAnalysisCard extends StatelessWidget {
                 '点击重试',
                 style: TextStyle(
                   fontSize: 13.sp,
-                  color: Colors.blue,
+                  color: context.colors.accent,
                   decoration: TextDecoration.underline,
                 ),
               ),

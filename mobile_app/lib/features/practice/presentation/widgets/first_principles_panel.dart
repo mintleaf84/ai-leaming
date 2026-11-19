@@ -2,8 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:mobile_app/features/practice/presentation/practice_provider.dart';
-import 'package:mobile_app/core/theme/app_theme.dart';
 import 'package:mobile_app/core/theme/app_icons.dart';
+import 'package:mobile_app/core/theme/app_colors.dart';
 
 /// 第一性原理 AI 分析面板
 /// 
@@ -24,7 +24,7 @@ class FirstPrinciplesPanel extends ConsumerWidget {
     return Container(
       padding: EdgeInsets.symmetric(horizontal: 24.w, vertical: 32.h),
       decoration: BoxDecoration(
-        color: context.cardBackgroundColor,
+        color: context.colors.surface,
         borderRadius: BorderRadius.vertical(top: Radius.circular(32.r)),
       ),
       child: Column(
@@ -40,12 +40,12 @@ class FirstPrinciplesPanel extends ConsumerWidget {
                   Container(
                     padding: EdgeInsets.all(8.w),
                     decoration: BoxDecoration(
-                      color: const Color(0xFF135BEC).withValues(alpha: 0.1),
+                      color: context.colors.accentContainer,
                       borderRadius: BorderRadius.circular(12.r),
                     ),
                     child: Icon(
                       AppIcons.smartToy,
-                      color: const Color(0xFF135BEC),
+                      color: context.colors.accent,
                       size: 24.sp,
                     ),
                   ),
@@ -64,7 +64,7 @@ class FirstPrinciplesPanel extends ConsumerWidget {
                         '从本质逻辑出发解构问题',
                         style: TextStyle(
                           fontSize: 12.sp,
-                          color: context.secondaryTextColor,
+                          color: context.colors.textSecondary,
                         ),
                       ),
                     ],
@@ -73,14 +73,14 @@ class FirstPrinciplesPanel extends ConsumerWidget {
               ),
               IconButton(
                 onPressed: () => Navigator.pop(context),
-                icon: Icon(AppIcons.close, color: context.secondaryTextColor),
+                icon: Icon(AppIcons.close, color: context.colors.textSecondary),
               ),
             ],
           ),
           SizedBox(height: 32.h),
           
           if (isAnalyzing)
-            _buildLoadingState()
+            _buildLoadingState(context)
           else if (response != null)
             _buildAnalysisContent(context, response)
           else
@@ -92,11 +92,11 @@ class FirstPrinciplesPanel extends ConsumerWidget {
     );
   }
 
-  Widget _buildLoadingState() {
+  Widget _buildLoadingState(BuildContext context) {
     return Column(
       children: [
         SizedBox(height: 48.h),
-        const CircularProgressIndicator(color: Color(0xFF135BEC)),
+        CircularProgressIndicator(color: context.colors.accent),
         SizedBox(height: 24.h),
         Text(
           '正在深入解构逻辑本质...',
@@ -111,6 +111,7 @@ class FirstPrinciplesPanel extends ConsumerWidget {
     return Column(
       children: [
         _buildStep(
+          context,
           '🎯',
           '核心本质',
           '剥离冗余信息，识别问题的最基础事实。',
@@ -118,6 +119,7 @@ class FirstPrinciplesPanel extends ConsumerWidget {
           true,
         ),
         _buildStep(
+          context,
           '🧱',
           '基本要素',
           '问题的构成组件及其相互关系。',
@@ -125,6 +127,7 @@ class FirstPrinciplesPanel extends ConsumerWidget {
           true,
         ),
         _buildStep(
+          context,
           '💡',
           '重构理解',
           '基于底层逻辑得出的最终结论。',
@@ -135,7 +138,14 @@ class FirstPrinciplesPanel extends ConsumerWidget {
     );
   }
 
-  Widget _buildStep(String emoji, String title, String subtitle, String content, bool showDivider) {
+  Widget _buildStep(
+    BuildContext context,
+    String emoji,
+    String title,
+    String subtitle,
+    String content,
+    bool showDivider,
+  ) {
     return Row(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -145,9 +155,9 @@ class FirstPrinciplesPanel extends ConsumerWidget {
               width: 44.w,
               height: 44.h,
               decoration: BoxDecoration(
-                color: Colors.white,
+                color: context.colors.surface,
                 shape: BoxShape.circle,
-                border: Border.all(color: const Color(0xFFE0E0E0)),
+                border: Border.all(color: context.colors.border),
                 boxShadow: [
                   BoxShadow(
                     color: Colors.black.withValues(alpha: 0.03),
@@ -163,7 +173,7 @@ class FirstPrinciplesPanel extends ConsumerWidget {
               Container(
                 width: 1.w,
                 height: 60.h,
-                color: const Color(0xFFE0E0E0),
+                color: context.colors.border,
               ),
           ],
         ),
@@ -177,13 +187,13 @@ class FirstPrinciplesPanel extends ConsumerWidget {
                 style: TextStyle(
                   fontSize: 15.sp,
                   fontWeight: FontWeight.bold,
-                  color: const Color(0xFF37352F),
+                  color: context.colors.text,
                 ),
               ),
               Text(
                 subtitle,
                 style: TextStyle(
-                  fontSize: 11.sp,
+                  fontSize: 12.sp,
                   color: Colors.grey[500],
                 ),
               ),
@@ -192,7 +202,7 @@ class FirstPrinciplesPanel extends ConsumerWidget {
                 width: double.infinity,
                 padding: EdgeInsets.all(12.w),
                 decoration: BoxDecoration(
-                  color: const Color(0xFFF9F9F8),
+                  color: context.colors.surfaceAlt,
                   borderRadius: BorderRadius.circular(12.r),
                 ),
                 child: Text(
@@ -200,7 +210,7 @@ class FirstPrinciplesPanel extends ConsumerWidget {
                   style: TextStyle(
                     fontSize: 13.sp,
                     height: 1.5,
-                    color: const Color(0xFF37352F).withValues(alpha: 0.8),
+                    color: context.colors.text.withValues(alpha: 0.8),
                   ),
                 ),
               ),

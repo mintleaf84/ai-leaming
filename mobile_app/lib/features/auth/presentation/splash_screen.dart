@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import '../../../core/navigation/app_nav.dart';
 import '../../../core/auth/token_util.dart';
+import '../../../core/theme/app_colors.dart';
 import '../data/auth_repository_impl.dart';
 
 class SplashScreen extends ConsumerStatefulWidget {
@@ -47,14 +48,14 @@ class _SplashScreenState extends ConsumerState<SplashScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Colors.white,
+      backgroundColor: context.colors.background,
       body: Center(
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
             Text('✨', style: TextStyle(fontSize: 64.sp)),
             SizedBox(height: 24.h),
-            const CircularProgressIndicator(color: Color(0xFF135BEC)),
+            CircularProgressIndicator(color: context.colors.accent),
           ],
         ),
       ),

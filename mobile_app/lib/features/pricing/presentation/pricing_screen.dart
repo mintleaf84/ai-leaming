@@ -4,6 +4,7 @@ import 'package:flutter_screenutil/flutter_screenutil.dart';
 import '../../../core/navigation/app_nav.dart';
 import '../../../core/network/dio_client.dart';
 import '../../../core/theme/app_icons.dart';
+import '../../../core/theme/app_colors.dart';
 
 /// 定价页面（与 Web /pricing 功能对齐）
 class PricingScreen extends ConsumerStatefulWidget {
@@ -50,12 +51,11 @@ class _PricingScreenState extends ConsumerState<PricingScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xFFF7F7F5),
+      backgroundColor: context.colors.background,
       appBar: AppBar(
-        backgroundColor: Colors.white,
         elevation: 0,
         leading: IconButton(
-          icon: const Icon(AppIcons.arrowBack, color: Color(0xFF37352F)),
+          icon: Icon(AppIcons.arrowBack, color: context.colors.text),
           onPressed: () => context.backOrHome(),
         ),
         title: Text(
@@ -63,7 +63,7 @@ class _PricingScreenState extends ConsumerState<PricingScreen> {
           style: TextStyle(
             fontSize: 18.sp,
             fontWeight: FontWeight.w600,
-            color: const Color(0xFF37352F),
+            color: context.colors.text,
           ),
         ),
         centerTitle: true,
@@ -92,7 +92,7 @@ class _PricingScreenState extends ConsumerState<PricingScreen> {
                   style: TextStyle(
                     fontSize: 24.sp,
                     fontWeight: FontWeight.w700,
-                    color: const Color(0xFF37352F),
+                    color: context.colors.text,
                   ),
                 ),
                 SizedBox(height: 8.h),
@@ -100,7 +100,7 @@ class _PricingScreenState extends ConsumerState<PricingScreen> {
                   '解锁 AI 诊断与高级复盘能力',
                   style: TextStyle(
                     fontSize: 14.sp,
-                    color: const Color(0xFF787774),
+                    color: context.colors.textSecondary,
                   ),
                 ),
               ],
@@ -116,7 +116,7 @@ class _PricingScreenState extends ConsumerState<PricingScreen> {
               '价格含税 · 随时取消 · 支持支付宝/微信',
               style: TextStyle(
                 fontSize: 12.sp,
-                color: const Color(0xFF787774),
+                color: context.colors.textSecondary,
               ),
             ),
           ),
@@ -140,13 +140,15 @@ class _PricingScreenState extends ConsumerState<PricingScreen> {
 
     // 套餐颜色
     final cardColor = slug == 'pro'
-        ? const Color(0xFF37352F)
+        ? context.colors.primary
         : slug == 'basic'
-            ? const Color(0xFF135BEC)
-            : Colors.white;
-    final textColor = (slug == 'pro' || slug == 'basic')
-        ? Colors.white
-        : const Color(0xFF37352F);
+            ? context.colors.accent
+            : context.colors.surface;
+    final textColor = slug == 'pro'
+        ? context.colors.onPrimary
+        : slug == 'basic'
+        ? context.colors.onAccent
+        : context.colors.text;
 
     return Container(
       margin: EdgeInsets.only(bottom: 16.h),
@@ -156,7 +158,7 @@ class _PricingScreenState extends ConsumerState<PricingScreen> {
         borderRadius: BorderRadius.circular(16.r),
         border: isHighlighted
             ? null
-            : Border.all(color: const Color(0xFFE8E8E5)),
+            : Border.all(color: context.colors.border),
         boxShadow: isHighlighted
             ? [
                 BoxShadow(

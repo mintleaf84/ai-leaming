@@ -225,7 +225,7 @@ class RecallJudgeView extends StatelessWidget {
                 Text(
                   '第 ${position + 1} 空',
                   style: TextStyle(
-                    fontSize: 11.sp,
+                    fontSize: 12.sp,
                     color: secondary,
                     fontFeatures: recallTabularFigures,
                   ),
@@ -322,7 +322,7 @@ class _VerdictRow extends StatelessWidget {
                       '已改判',
                       maxLines: 1,
                       style: TextStyle(
-                        fontSize: 11.sp,
+                        fontSize: 12.sp,
                         color: scheme.onSurface.withValues(alpha: 0.55),
                       ),
                     ),

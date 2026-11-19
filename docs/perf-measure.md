@@ -32,18 +32,18 @@ node scripts/measure-concurrency.mjs \
   --heavy-sql --db-file data/app.db
 ```
 
-| 参数 | 默认 | 说明 |
-| --- | --- | --- |
-| `--base-url` | `http://localhost:3000` | 被测服务地址 |
-| `--duration` | `20` | 并行期秒数 |
-| `--concurrency` | `1` | **轻请求**并发数（轮询轻接口的 worker 数） |
-| `--baseline-seconds` | `3` | 基线期秒数（只有轻请求） |
-| `--light-path` | `/api/meta` | 轻接口：无鉴权、无 IO，用来量"纯排队"成本 |
-| `--light-interval` | `0` | 轻请求间隔（ms）；0 表示打完立刻打下一个 |
-| `--heavy-path` / `--heavy-method` / `--heavy-body` | `GET /api/v1/questions?limit=100` | HTTP 模式的重活 |
-| `--heavy-concurrency` | `1` | 重活并发数 |
-| `--cookie` | `$BENCH_COOKIE` | 登录态；不传时重活那条腿会全 401 |
-| `--heavy-sql` / `--db-file` / `--sql-batch` | 关 / `data/app.db` / `200` | 本地批写模式；会建 `perf_probe` 表并在结束时 DROP |
+| 参数                                               | 默认                              | 说明                                              |
+| -------------------------------------------------- | --------------------------------- | ------------------------------------------------- |
+| `--base-url`                                       | `http://localhost:3000`           | 被测服务地址                                      |
+| `--duration`                                       | `20`                              | 并行期秒数                                        |
+| `--concurrency`                                    | `1`                               | **轻请求**并发数（轮询轻接口的 worker 数）        |
+| `--baseline-seconds`                               | `3`                               | 基线期秒数（只有轻请求）                          |
+| `--light-path`                                     | `/api/meta`                       | 轻接口：无鉴权、无 IO，用来量"纯排队"成本         |
+| `--light-interval`                                 | `0`                               | 轻请求间隔（ms）；0 表示打完立刻打下一个          |
+| `--heavy-path` / `--heavy-method` / `--heavy-body` | `GET /api/v1/questions?limit=100` | HTTP 模式的重活                                   |
+| `--heavy-concurrency`                              | `1`                               | 重活并发数                                        |
+| `--cookie`                                         | `$BENCH_COOKIE`                   | 登录态；不传时重活那条腿会全 401                  |
+| `--heavy-sql` / `--db-file` / `--sql-batch`        | 关 / `data/app.db` / `200`        | 本地批写模式；会建 `perf_probe` 表并在结束时 DROP |
 
 `--heavy-sql` 的批写跑在**子进程**里：同步驱动如果在测量进程内跑，会把测量器自己的
 事件循环也堵住，量出来的 p95 恒等于整个测量时长（踩过）。所以父进程只做 HTTP 采样。
@@ -66,11 +66,11 @@ node scripts/measure-concurrency.mjs \
 
 ## 4. 判据
 
-| 现象 | 结论 |
-| --- | --- |
-| 轻接口 p95 从 ~20ms 跳到**秒级** | 确认重活把轻请求串行化了（事件循环被占死） |
-| p95 放大 ≥10× 但仍在百毫秒级 | 有排队，尚未卡死；先看重活是不是可以分片/降频 |
-| p95 放大 <2× | 本次重活没有把事件循环占死 |
+| 现象                             | 结论                                          |
+| -------------------------------- | --------------------------------------------- |
+| 轻接口 p95 从 ~20ms 跳到**秒级** | 确认重活把轻请求串行化了（事件循环被占死）    |
+| p95 放大 ≥10× 但仍在百毫秒级     | 有排队，尚未卡死；先看重活是不是可以分片/降频 |
+| p95 放大 <2×                     | 本次重活没有把事件循环占死                    |
 
 脚本会按这三档直接打印结论。**不要**把"p95 涨了 20%"当成串行化证据 —— 并发下排队
 本身就会抬 p95，判据是量级。
@@ -79,13 +79,13 @@ node scripts/measure-concurrency.mjs \
 
 同一批查询在**临时库**（按 `drizzle/` 迁移建库，不碰生产库）上的 `EXPLAIN QUERY PLAN`：
 
-| 查询 | 补索引前 | 补索引后（`drizzle/0019_perf_indexes.sql`） |
-| --- | --- | --- |
-| `session_reviews WHERE session_id=?` | `SCAN session_reviews` | `SEARCH ... USING INDEX idx_session_reviews_session` |
-| `textbook_chapters WHERE textbook_id=? ORDER BY order_index,id` | `SCAN` + `USE TEMP B-TREE FOR ORDER BY` | `SEARCH ... USING INDEX idx_textbook_chapters_textbook`（无临时排序） |
-| `notes WHERE user_id=? ORDER BY updated_at DESC` | `SCAN` + `USE TEMP B-TREE FOR ORDER BY` | `SEARCH ... USING INDEX idx_notes_user_updated`（无临时排序） |
+| 查询                                                                 | 补索引前                                                           | 补索引后（`drizzle/0019_perf_indexes.sql`）                             |
+| -------------------------------------------------------------------- | ------------------------------------------------------------------ | ----------------------------------------------------------------------- |
+| `session_reviews WHERE session_id=?`                                 | `SCAN session_reviews`                                             | `SEARCH ... USING INDEX idx_session_reviews_session`                    |
+| `textbook_chapters WHERE textbook_id=? ORDER BY order_index,id`      | `SCAN` + `USE TEMP B-TREE FOR ORDER BY`                            | `SEARCH ... USING INDEX idx_textbook_chapters_textbook`（无临时排序）   |
+| `notes WHERE user_id=? ORDER BY updated_at DESC`                     | `SCAN` + `USE TEMP B-TREE FOR ORDER BY`                            | `SEARCH ... USING INDEX idx_notes_user_updated`（无临时排序）           |
 | `knowledge_cards WHERE user_id=? ORDER BY created_at DESC LIMIT 100` | `SEARCH idx_knowledge_cards_user` + `USE TEMP B-TREE FOR ORDER BY` | `SEARCH ... USING INDEX idx_knowledge_cards_user_created`（无临时排序） |
-| `practice_logs WHERE question_id=? AND user_id=? AND is_correct=0` | `SEARCH idx_practice_logs_user_correct` | **不变**（已有复合索引，不需要再加） |
+| `practice_logs WHERE question_id=? AND user_id=? AND is_correct=0`   | `SEARCH idx_practice_logs_user_correct`                            | **不变**（已有复合索引，不需要再加）                                    |
 
 复现：用 `better-sqlite3` 打开一个临时文件库，按 `drizzle/meta/_journal.json` 的
 顺序执行 `drizzle/*.sql`，再对上面五条 SQL 跑 `EXPLAIN QUERY PLAN`。

@@ -150,7 +150,7 @@ function SessionItem({
 
       {/* 操作按钮组（悬停显示） */}
       {!isEditing && (
-        <div className="absolute right-1 top-1/2 -translate-y-1/2 flex items-center gap-0.5 opacity-0 group-hover:opacity-100 transition-all">
+        <div className="absolute right-1 top-1/2 -translate-y-1/2 flex items-center gap-0.5 rounded-md max-md:bg-background/80 max-md:backdrop-blur supports-[backdrop-filter]:max-md:bg-background/60 opacity-100 md:opacity-0 md:group-hover:opacity-100 md:focus-within:opacity-100 transition-all">
           <button
             aria-label="重命名会话"
             onClick={(e) => {

@@ -99,9 +99,9 @@ export default function LogsPage() {
     <div className="p-4 md:p-8 space-y-6">
       <div className="flex items-center justify-between">
         <div>
-          <h2 className="text-2xl md:text-3xl font-bold tracking-tight">
+          <h1 className="text-2xl font-semibold tracking-tight md:text-3xl">
             操作日志
-          </h2>
+          </h1>
           <p className="text-muted-foreground mt-2">
             记录管理员的所有操作，便于审计和问题追溯。
           </p>

@@ -10,6 +10,7 @@ import { ServerResources } from "./_components/ServerResources";
 import { ModelRanking } from "./_components/ModelRanking";
 import { DemoModePanel } from "./_components/DemoModePanel";
 import { FeatureFlagsPanel } from "./_components/FeatureFlagsPanel";
+import { ErrorState } from "@/components/ui/error-state";
 
 const STATUS_KEY = "admin-system-status";
 
@@ -17,7 +18,13 @@ export default function SystemPage() {
   const queryClient = useQueryClient();
 
   // 5 秒轮询系统状态，React Query 自动管理缓存与重试
-  const { data: status, isLoading: loading } = useQuery({
+  const {
+    data: status,
+    isLoading: loading,
+    isError,
+    error,
+    refetch,
+  } = useQuery({
     queryKey: [STATUS_KEY],
     queryFn: async () => {
       const res = await fetch("/api/admin/system");
@@ -45,13 +52,34 @@ export default function SystemPage() {
     queryClient.invalidateQueries({ queryKey: [STATUS_KEY] });
 
   if (loading && !status) return <div className="p-8">加载中...</div>;
+  // 请求失败与"没有数据"必须分开：否则接口 500 时页面只剩一句
+  // "无法获取系统状态"，看不出是服务端故障还是会话本身没有数据。
+  // 这里不看 status 有没有缓存值：轮询失败时继续显示上一轮的资源数字，
+  // 等于把"读不到"说成"一切正常"，比报错更误导。
+  if (isError) {
+    return (
+      <div className="p-8">
+        <ErrorState
+          title="系统信息加载失败"
+          description={
+            error instanceof Error && error.message
+              ? `系统信息读取失败。（${error.message}）`
+              : "系统信息读取失败。"
+          }
+          onRetry={() => void refetch()}
+        />
+      </div>
+    );
+  }
   if (!status) return <div className="p-8">无法获取系统状态</div>;
 
   return (
     <div className="p-8 space-y-8">
       <div className="flex justify-between items-center">
         <div>
-          <h2 className="text-3xl font-bold tracking-tight">系统监控</h2>
+          <h1 className="text-2xl font-semibold tracking-tight md:text-3xl">
+            系统监控
+          </h1>
           <p className="text-muted-foreground mt-2">
             实时服务器资源、AI 成本与健康状态
           </p>

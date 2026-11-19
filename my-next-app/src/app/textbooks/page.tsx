@@ -25,7 +25,9 @@ export default async function TextbooksPage() {
     <div className="container py-8 max-w-7xl mx-auto">
       <div className="flex items-center justify-between mb-8">
         <div>
-          <h1 className="text-3xl font-bold tracking-tight">教材库</h1>
+          <h1 className="text-2xl font-semibold tracking-tight md:text-3xl">
+            教材库
+          </h1>
           <p className="text-muted-foreground mt-2">
             管理和学习您的专业教材，支持 AI 辅助阅读与检索。
           </p>

@@ -62,9 +62,17 @@ export function AnnotatableText({
   // 选区由键盘建立时，工具条弹出后要把焦点接过去：否则键盘用户从文档头开始数
   // Tab，工具条实际上不可达。
   const openedByKeyboardRef = useRef(false);
+  // 标注拉取失败只提示一次控制台，避免每题一条刷屏
+  const warnedAnnotationFailureRef = useRef(false);
 
   // 使用 useQuery 加载标注数据，5 分钟缓存
-  const { data: annotationData } = useQuery({
+  // isError 只做静默降级：正文必须照常显示，标注是附加信息
+  const {
+    data: annotationData,
+    isError: annotationsIsError,
+    error: annotationsError,
+    refetch: refetchAnnotations,
+  } = useQuery({
     queryKey: ["annotations", questionId],
     queryFn: () =>
       fetchJson<{ annotations: unknown[] }>(
@@ -96,6 +104,20 @@ export function AnnotatableText({
       );
     }
   }, [annotationData]);
+
+  // 标注加载失败只打一次结构化 warn（不弹 toast：每道题一次会刷屏），
+  // 然后完全降级为纯文本 —— 可忽略型 catch/warn，日志里留痕供排查
+  useEffect(() => {
+    if (!annotationsIsError || warnedAnnotationFailureRef.current) return;
+    warnedAnnotationFailureRef.current = true;
+    console.warn("[AnnotatableText] 标注加载失败，已降级为无标注显示", {
+      questionId,
+      reason:
+        annotationsError instanceof Error
+          ? annotationsError.message
+          : String(annotationsError),
+    });
+  }, [annotationsIsError, annotationsError, questionId]);
 
   // 处理文本选择（鼠标松开 / 键盘选完都走这里）
   const handleSelectionChange = useCallback(() => {
@@ -381,6 +403,19 @@ export function AnnotatableText({
 
   return (
     <div className="relative">
+      {/* 标注查询失败：一行紧凑提示，不挤走正文，也不打断阅读 */}
+      {annotationsIsError && (
+        <div className="mb-2 flex items-center gap-2 text-xs text-muted-foreground">
+          <span>标注没加载出来，正文显示不受影响。</span>
+          <button
+            type="button"
+            onClick={() => void refetchAnnotations()}
+            className="underline underline-offset-2 hover:text-foreground"
+          >
+            重试
+          </button>
+        </div>
+      )}
       {/* 文本内容 —— 选区的完成由 document 上的 mouseup/keyup 捕获（见上方 effect），
           容器本身不承担点击语义 */}
       <div

@@ -117,7 +117,7 @@ export default function SettingsPage() {
       {/* Left Sidebar (Settings Navigation) */}
       <div className="w-full md:w-64 flex flex-col border-r border-border bg-background/50 backdrop-blur-sm md:h-screen md:sticky md:top-0">
         <div className="p-6">
-          <h1 className="text-2xl font-serif font-bold text-foreground">
+          <h1 className="text-2xl font-serif font-semibold text-foreground">
             设置与偏好
           </h1>
           <p className="text-xs text-muted-foreground mt-1">打造专属学习环境</p>

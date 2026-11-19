@@ -23,9 +23,9 @@ const MarkdownViewer = ({ content, isUser = false }: MarkdownViewerProps) => {
   const components: Components = {
     // 标题
     h1: ({ children }) => (
-      <h1 className="text-xl font-bold mt-6 mb-3 pb-2 border-b border-border">
+      <h2 className="text-xl font-semibold mt-6 mb-3 pb-2 border-b border-border">
         {children}
-      </h1>
+      </h2>
     ),
     h2: ({ children }) => (
       <h2 className="text-lg font-bold mt-5 mb-2">{children}</h2>

@@ -110,7 +110,7 @@ export default function SrsAnalysisClient({
       {/* Header Area */}
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div>
-          <h1 className="text-3xl font-serif font-bold text-foreground tracking-tight flex items-center gap-3">
+          <h1 className="text-3xl font-serif font-semibold text-foreground tracking-tight flex items-center gap-3">
             <Brain className="w-8 h-8 text-primary" />
             记忆引擎分析
           </h1>

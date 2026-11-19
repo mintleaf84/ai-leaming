@@ -55,11 +55,12 @@ class AppTheme {
 
       // 页面转场：显式写死，不依赖 Flutter 默认值（默认值会随 SDK 版本漂移，
       // 导致同一份代码在升级后观感突变）。
-      // Android 用 M3 的 FadeForwards（新页面淡入上移，Android 14 风格），
+      // Android 用预测性返回（Android 15+ 对 targetSdk 35+ 的应用默认启用返回手势预览；
+      // 非返回手势时该 builder 自身回落 FadeForwards，所以"推入"观感与 M3 一致）。
       // iOS/macOS 保持系统横向滑动；桌面其余平台走 Android 规则。
       pageTransitionsTheme: const PageTransitionsTheme(
         builders: {
-          TargetPlatform.android: FadeForwardsPageTransitionsBuilder(),
+          TargetPlatform.android: PredictiveBackPageTransitionsBuilder(),
           // 桌面端同样显式指定：Flutter 对未列出的平台会用"默认值"，
           // 而默认值随 SDK 版本变化，桌面构建就会出现与移动端不同的转场
           TargetPlatform.windows: FadeForwardsPageTransitionsBuilder(),
@@ -118,6 +119,10 @@ class AppTheme {
         selectedItemColor: primaryColor,
         unselectedItemColor: _lightTextSecondary,
       ),
+
+      // 页面过渡：跟随平台默认。Android 走预测性返回（Android 15+ 对
+      // targetSdk 35+ 的应用默认启用，开发者选项开关已移除），其余平台保持
+      // 各自的默认过渡，不再全站套自定义 SharedAxis（见 docs/mobile-ui-kit.md D-1）。
     );
   }
 
@@ -146,11 +151,12 @@ class AppTheme {
 
       // 页面转场：显式写死，不依赖 Flutter 默认值（默认值会随 SDK 版本漂移，
       // 导致同一份代码在升级后观感突变）。
-      // Android 用 M3 的 FadeForwards（新页面淡入上移，Android 14 风格），
+      // Android 用预测性返回（Android 15+ 对 targetSdk 35+ 的应用默认启用返回手势预览；
+      // 非返回手势时该 builder 自身回落 FadeForwards，所以"推入"观感与 M3 一致）。
       // iOS/macOS 保持系统横向滑动；桌面其余平台走 Android 规则。
       pageTransitionsTheme: const PageTransitionsTheme(
         builders: {
-          TargetPlatform.android: FadeForwardsPageTransitionsBuilder(),
+          TargetPlatform.android: PredictiveBackPageTransitionsBuilder(),
           // 桌面端同样显式指定：Flutter 对未列出的平台会用"默认值"，
           // 而默认值随 SDK 版本变化，桌面构建就会出现与移动端不同的转场
           TargetPlatform.windows: FadeForwardsPageTransitionsBuilder(),
@@ -209,8 +215,11 @@ class AppTheme {
         selectedItemColor: _darkText,
         unselectedItemColor: _darkTextSecondary,
       ),
+
     );
   }
+
+  // ==================== 共用配置 ====================
 
   // ==================== 辅助方法 ====================
 

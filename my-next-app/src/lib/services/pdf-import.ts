@@ -22,6 +22,7 @@ import { and, eq, gt, inArray, lt, sql } from "drizzle-orm";
 import { srsService } from "@/lib/services/srs";
 import type { PdfImportResult, ParsedPdfQuestion } from "@/types/pdf-import";
 import { randomUUID } from "crypto";
+import { contentHash, findQuestionIdByContent } from "@/lib/services/question-dedup";
 import { buildPdfExternalId } from "@/lib/services/question-idempotency";
 import { log } from "@/lib/logger";
 import { safeParseJson } from "@/lib/utils/json";
@@ -215,7 +216,7 @@ async function writeConfirm(
   questionsToImport: ParsedPdfQuestion[],
   folderId: number | undefined,
   addToWrongBook: boolean,
-): Promise<{ insertedIds: number[]; skippedCount: number }> {
+): Promise<{ insertedIds: number[]; resolvedIds: number[]; skippedCount: number }> {
   // 1. 生成幂等键并做批内去重（同一批里出现两道完全相同的题，只落一条）
   const pending = new Map<string, ParsedPdfQuestion>();
   let skippedCount = 0;
@@ -247,16 +248,26 @@ async function writeConfirm(
   const toInsert = [...pending.entries()].filter(
     ([externalId]) => !existingIds.has(externalId),
   );
-  if (toInsert.length === 0) return { insertedIds: [], skippedCount };
+  if (toInsert.length === 0) return { insertedIds: [], resolvedIds: [], skippedCount };
 
   // 3. 插入新增题目。onConflictDoNothing 兜住"预检后另一个请求先提交"的并发窗口：
   //    此时 returning 为空，按跳过计数，不会因唯一索引整批失败。
   const insertedIds: number[] = [];
+  const reusedIds: number[] = [];
   for (const [externalId, q] of toInsert) {
+    // 内容级去重：同题干已存在（external_id 不同或缺失，如神笔/PDF 交叉导入）时复用
+    const existingByContent = await findQuestionIdByContent(q.content, exec);
+    if (existingByContent) {
+      reusedIds.push(existingByContent);
+      skippedCount += 1;
+      continue;
+    }
+
     const result = await exec
       .insert(questions)
       .values({
         external_id: externalId,
+        content_hash: contentHash(q.content),
         content: q.content,
         options: JSON.stringify(q.options),
         answer: q.answer,
@@ -280,7 +291,9 @@ async function writeConfirm(
     }
   }
 
-  if (insertedIds.length === 0) return { insertedIds, skippedCount };
+  // 文件夹/错题本要覆盖「本次新增 + 复用已有」两类题目
+  const resolvedIds = [...insertedIds, ...reusedIds];
+  if (resolvedIds.length === 0) return { insertedIds, resolvedIds, skippedCount };
 
   // 4. 文件夹关联：直接写关联表（INSERT OR IGNORE 语义），不调 questionFolderService
   //    —— 后者内部用全局 drizzleDb，在事务里会踩同一个连接。
@@ -301,7 +314,7 @@ async function writeConfirm(
       await exec
         .insert(question_folder_items)
         .values(
-          insertedIds.map((questionId) => ({
+          resolvedIds.map((questionId) => ({
             folder_id: folderId,
             question_id: questionId,
           })),
@@ -313,7 +326,7 @@ async function writeConfirm(
   // 5. 加入错题本：与题目写入同一事务，避免"题目进来了、错题本没有"的半截状态
   if (addToWrongBook) {
     await exec.insert(practice_logs).values(
-      insertedIds.map((questionId) => ({
+      resolvedIds.map((questionId) => ({
         user_id: userId,
         question_id: questionId,
         user_answer: "",
@@ -326,7 +339,7 @@ async function writeConfirm(
     );
   }
 
-  return { insertedIds, skippedCount };
+  return { insertedIds, resolvedIds, skippedCount };
 }
 
 export const pdfImportService = {
@@ -454,7 +467,7 @@ export const pdfImportService = {
       // 题目 + 文件夹关联 + 错题本日志整体一个事务：任一步失败全回滚。
       // 旧实现逐条 insert 后再做关联/日志，后置步骤失败时题目已经落库，用户
       // 重试就会造出重复题目（本项目评审指出的数据正确性缺口）。
-      const { insertedIds, skippedCount } = await withConfirmLock(() =>
+      const { insertedIds, resolvedIds, skippedCount } = await withConfirmLock(() =>
         withTransaction(async (exec) =>
           // 事务内所有写操作都必须走 exec，用全局 drizzleDb 会报 SQLITE_BUSY
           writeConfirm(
@@ -470,9 +483,10 @@ export const pdfImportService = {
       // FSRS 复习卡放在事务提交之后：它可重入（重复调用按同一题覆盖更新），
       // 失败也只是"复习队列里少一条"，下次同步/补跑即可修复。
       // 放进事务会让一条 SRS 写入失败连带回滚已导入的题目 —— 代价远大于收益。
-      if (addToWrongBook && insertedIds.length > 0) {
+      // 复用已有题也要补复习卡（重入安全）
+      if (addToWrongBook && resolvedIds.length > 0) {
         await Promise.all(
-          insertedIds.map(async (questionId) => {
+          resolvedIds.map(async (questionId) => {
             try {
               await srsService.updateQuestionSrs(
                 userId,

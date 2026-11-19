@@ -88,10 +88,13 @@ export const questions = sqliteTable(
     material_html: text("material_html"),
     ai_mnemonic: text("ai_mnemonic"),
     external_id: text("external_id"),
+    // 内容级去重键 = sha256(归一化题干)，导入时用于跨来源/无 external_id 的去重
+    content_hash: text("content_hash"),
     created_at: text("created_at").default(sql`CURRENT_TIMESTAMP`),
   },
   (table) => ({
     unq_ext: unique("questions_external_id_unique").on(table.external_id),
+    idx_content_hash: index("idx_questions_content_hash").on(table.content_hash),
   }),
 );
 

@@ -1,6 +1,7 @@
 import { drizzleDb, drizzleSchema } from "../db";
 import { and, eq, inArray, sql } from "drizzle-orm";
 import { FenbiImportResult } from "../import/fenbi-parser";
+import { contentHash, findQuestionIdByContent } from "@/lib/services/question-dedup";
 import { sanitizeHtml } from "../utils/security";
 import { safeParseJson } from "../utils/json";
 import { generateId } from "../utils/id";
@@ -186,11 +187,32 @@ async function writeImport(
         ? (q.dimension as "knowledge" | "understanding" | "application")
         : "knowledge";
 
+      const sanitizedContent = sanitizeHtml(q.content);
+
+      // 内容级去重：同题干已存在且不是同一条 external_id 记录时，复用已有 id。
+      // 同 external_id 仍走下面的 upsert —— 那是「刷新解析」而不是「新题」。
+      const existingByContent = await findQuestionIdByContent(
+        sanitizedContent,
+        exec,
+      );
+      if (existingByContent) {
+        const [existingRow] = await exec
+          .select({ external_id: questions.external_id })
+          .from(questions)
+          .where(eq(questions.id, existingByContent))
+          .limit(1);
+        if (!q.externalId || existingRow?.external_id !== q.externalId) {
+          questionIdMap.set(q.externalId, existingByContent);
+          continue;
+        }
+      }
+
       const result = await exec
         .insert(questions)
         .values({
           external_id: q.externalId,
-          content: sanitizeHtml(q.content),
+          content_hash: contentHash(sanitizedContent),
+          content: sanitizedContent,
           options: JSON.stringify(q.options),
           answer: q.answer,
           explanation: sanitizeHtml(q.explanation),

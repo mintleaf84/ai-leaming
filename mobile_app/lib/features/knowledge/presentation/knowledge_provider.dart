@@ -87,6 +87,10 @@ class KnowledgeListState {
 
 /// 知识卡片控制器
 class KnowledgeController extends Notifier<KnowledgeListState> {
+  /// 请求序号：每发起一次加载自增，回调落地前比对，避免「先发后到」的旧响应
+  /// 覆盖新响应（快速切分类时会出现）。
+  int _requestSeq = 0;
+
   @override
   KnowledgeListState build() => const KnowledgeListState();
 
@@ -97,6 +101,7 @@ class KnowledgeController extends Notifier<KnowledgeListState> {
 
   /// 加载卡片列表
   Future<void> loadCards({String? category}) async {
+    final seq = ++_requestSeq;
     state = state.copyWith(isLoading: true, error: null);
 
     try {
@@ -113,12 +118,16 @@ class KnowledgeController extends Notifier<KnowledgeListState> {
           .map((e) => e as String)
           .toList();
 
+      // 已经有更新的请求发出，这份旧结果（含其失败）必须整体丢弃。
+      if (seq != _requestSeq) return;
+
       state = state.copyWith(
         isLoading: false,
         cards: cards,
         categories: categories,
       );
     } catch (e) {
+      if (seq != _requestSeq) return;
       state = state.copyWith(isLoading: false, error: e.toString());
     }
   }

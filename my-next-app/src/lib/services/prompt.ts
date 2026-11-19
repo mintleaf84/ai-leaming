@@ -7,6 +7,7 @@ import {
   DEFAULT_CHAT_SYSTEM_PROMPT,
   PROMPT_VARIABLE_EXAMPLES,
 } from "@/lib/ai/prompts";
+import { safeParseJson } from "@/lib/utils/json";
 
 export interface PromptTemplate {
   key: string;
@@ -35,7 +36,10 @@ export const promptService = {
       ...row,
       description: row.description ?? "",
       updated_at: row.updated_at ?? undefined,
-      variables: JSON.parse(row.variables || "[]") as string[],
+      variables: safeParseJson<string[]>(
+        row.variables as string | null | undefined,
+        [],
+      ),
     }));
 
     const existingKeys = new Set(dbRows.map((r) => r.key));

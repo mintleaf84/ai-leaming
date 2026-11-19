@@ -7,6 +7,7 @@ import {
   exportUserDataAction,
   importUserDataAction,
 } from "@/server/actions/data";
+import { getBeijingDateString } from "@/lib/utils/datetime";
 
 interface DataManagementSectionProps {
   onDataChange: () => void;
@@ -31,7 +32,7 @@ export function DataManagementSection({
       const url = URL.createObjectURL(blob);
       const a = document.createElement("a");
       a.href = url;
-      a.download = `ai-learning-backup-${new Date().toISOString().split("T")[0]}.json`;
+      a.download = `ai-learning-backup-${getBeijingDateString()}.json`;
 
       if (typeof window !== "undefined" && document.body) {
         requestAnimationFrame(() => {

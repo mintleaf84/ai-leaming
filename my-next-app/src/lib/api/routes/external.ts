@@ -44,6 +44,12 @@ import { logger } from "@/lib/logger";
 import { knowledgeService } from "@/lib/services/knowledge";
 import { QuestionSchema } from "@/lib/schemas";
 import { buildApiExternalId } from "@/lib/services/question-idempotency";
+import {
+  createQuestionsBatch,
+  QUESTION_BATCH_MAX,
+  ReservedExternalIdError,
+  type QuestionBatchCreateInput,
+} from "@/lib/services/question-batch";
 import { indexQuestion } from "@/lib/services/question-vector-index";
 import { touchesEmbeddingText } from "@/lib/services/question-index-policy";
 import { withKeyedLock } from "@/lib/services/keyed-lock";
@@ -52,6 +58,7 @@ import { mindmapService } from "@/lib/services/mindmap";
 import { srsService, summarizeFutureReviews } from "@/lib/services/srs";
 import { toErrorResponse } from "@/lib/api/error-response";
 import { createHash } from "node:crypto";
+import { parsePagination } from "@/lib/api/pagination";
 import { checkRateLimitWith } from "@/lib/auth/rate-limit";
 
 const app = new OpenAPIHono();
@@ -397,20 +404,6 @@ const SessionListItemSchema = z.object({
 });
 
 /** 解析 limit/offset 字符串参数：非法值退回默认，limit 截到 [1, 100] */
-function parsePagination(query: { limit?: string; offset?: string }): {
-  limit: number;
-  offset: number;
-} {
-  const rawLimit = Number(query.limit);
-  const rawOffset = Number(query.offset);
-  const limit = Number.isFinite(rawLimit)
-    ? Math.min(MAX_LIMIT, Math.max(1, Math.trunc(rawLimit)))
-    : DEFAULT_LIMIT;
-  const offset = Number.isFinite(rawOffset)
-    ? Math.max(0, Math.trunc(rawOffset))
-    : 0;
-  return { limit, offset };
-}
 
 /**
  * 取鉴权中间件已解析的身份。
@@ -2983,6 +2976,264 @@ app.openapi(questionsPatchRoute, async (c) => {
     return c.json({ error: "服务器内部错误" }, 500);
   }
 });
+
+// ==================== 题库批量建题（admin 作用域） ====================
+// 与单题 `POST /questions` 的关系：同一个作用域（题库是全局资产）、同一份校验
+// （`QuestionSchema`），差别在**幂等键**——批量导入的调用方手里有上游题号
+// （粉笔的 `jz1680_jz00312` 这类），比内容指纹更稳：题干被修订也不会变成新题。
+// 路径单独一条而不是复用 `POST /questions`：body 形状（单题 / 数组）与幂等语义
+// 都不同，混在一条路由里会让契约和文档都说不清。
+
+const QuestionBatchItemSchema = z
+  .object({
+    externalId: z.string().trim().min(1).max(200).optional().openapi({
+      description:
+        "幂等键（推荐）：上游题号这类跨重试稳定的标识。同一 externalId 重复提交只会落一行；省略时退回内容指纹（题干+选项+答案）。不能以 `api:` 开头——该前缀是服务端内容指纹保留的命名空间",
+      example: "jz1680_jz00312",
+    }),
+    content: z.string().openapi({ description: "题干纯文本" }),
+    options: z
+      .array(z.string())
+      .optional()
+      .openapi({ description: "选项文本；判断题必须是两个、填空题可为空" }),
+    answer: z.string().openapi({
+      description:
+        '正确答案：单选传标号（A）/ 多选题传 JSON 数组字符串（如 ["A","C"]）/ 判断题 A 或 B / 填空题为自由文本',
+    }),
+    explanation: z.string().openapi({
+      description: "解析（至少 5 个字符，与 QuestionSchema 一致）",
+    }),
+    tags: z.array(z.string()).openapi({ description: "知识点标签，至少 1 个" }),
+    dimension: z
+      .enum(["knowledge", "understanding", "application"])
+      .optional()
+      .openapi({ description: "能力维度，省略时按 knowledge 落库" }),
+    type: z
+      .enum(["single", "multi", "truefalse", "fill_blank"])
+      .optional()
+      .openapi({ description: "题型，省略时按 single 落库" }),
+    source: z
+      .string()
+      .max(200)
+      .optional()
+      .openapi({ description: "来源标识（原样落库，如 fenbi_import）" }),
+    material: z
+      .string()
+      .optional()
+      .openapi({ description: "材料原文（原样落库，可为空）" }),
+  })
+  .openapi("ExternalQuestionBatchItem");
+
+const QuestionBatchBodySchema = z
+  .object({
+    questions: z
+      .array(QuestionBatchItemSchema)
+      .min(1)
+      .max(QUESTION_BATCH_MAX)
+      .openapi({
+        description: `待建题目，1–${QUESTION_BATCH_MAX} 条；整批原子：任一条不合法则一条都不写`,
+      }),
+  })
+  .openapi("ExternalQuestionBatchRequest");
+
+const QuestionBatchItemResultSchema = z
+  .object({
+    index: z
+      .number()
+      .int()
+      .describe("该条在请求 questions 数组里的下标（从 0 开始）"),
+    externalId: z
+      .string()
+      .describe("实际使用的幂等键（请求没给 externalId 时是内容指纹）"),
+    questionId: z
+      .number()
+      .int()
+      .nullable()
+      .describe(
+        "题目 ID；预演且需要新建时为 null（不要拿 null 去调查详情接口）",
+      ),
+    status: z
+      .enum(["created", "skipped"])
+      .describe(
+        "created = 本次新建；skipped = 命中既有题或批内重复（内容未被修改）",
+      ),
+  })
+  .openapi("ExternalQuestionBatchItemResult");
+
+const QuestionBatchResponseSchema = z
+  .object({
+    created: z.number().int().describe("本次新建条数"),
+    skipped: z
+      .number()
+      .int()
+      .describe("跳过条数（既有题 + 批内重复 externalId）"),
+    items: z
+      .array(QuestionBatchItemResultSchema)
+      .describe("逐条结果，顺序与请求 questions 一致"),
+    duplicate: z
+      .boolean()
+      .describe("true = 本次没有新建任何题（整批都是重复）"),
+    dryRun: z.boolean().optional().openapi({
+      description: "仅预演时出现且恒为 true：题库业务数据零变更",
+    }),
+  })
+  .openapi("ExternalQuestionBatchResponse");
+
+const questionsBatchCreateRoute = createRoute({
+  method: "post",
+  path: "/questions/batch",
+  middleware: [requireScopeMiddleware("admin")] as const,
+  summary: "批量建题（上游 externalId 幂等，需 admin 作用域）",
+  description:
+    "写接口，**需 admin 作用域**：题库是全局共享资产，write key 不能写。逐条校验复用 `QuestionSchema`（与后台导入、单题建题同一口径），**整批原子**：任一条不合法返回 400 且一条都不写。幂等：每条优先用 `externalId`，省略则退回内容指纹 `api:`+（题干+选项+答案）；命中既有题按 `skipped` 返回既有 `questionId`，**不更新内容**（改内容走 `PATCH /questions/{id}`）。预演传 `?dryRun=true`：只查不写，`created` 表示「会新建几条」。",
+  request: {
+    query: DryRunQuerySchema,
+    body: {
+      required: true,
+      content: { "application/json": { schema: QuestionBatchBodySchema } },
+    },
+  },
+  responses: {
+    200: {
+      content: {
+        "application/json": { schema: QuestionBatchResponseSchema },
+      },
+      description: "逐条结果（幂等命中按 skipped 返回，不报错）",
+    },
+    400: {
+      description: "请求体校验失败 / 任一条内容不合法（整批未写入，带 issues）",
+    },
+    401: { description: "未授权 - 缺少 / 无效 / 已停用的 API Key" },
+    403: { description: "已禁止 - 该 API Key 的作用域不足（需要 admin）" },
+    429: RateLimitedResponse,
+    500: { description: "服务器内部错误" },
+  },
+});
+
+/** 批量校验的 issue 截断条数：100 条全错时逐条回会把 400 响应撑到几十 KB */
+const MAX_BATCH_ISSUES = 20;
+
+/**
+ * 批量建题的结构校验 issue → 契约里的字符串数组。
+ *
+ * `@hono/zod-openapi` 默认的 400 是框架体（`{success:false, error:{issues:[...]}}`），
+ * 与批量契约 `{error, issues, issueCount}` 不是一回事：调用方按契约读 `issues`
+ * 会拿到空数组，只能看到一句"请求体校验失败"。这里把 zod issue 拼成与处理器内
+ * 语义校验**同一种**形状（`questions.<index>.<path>: <message>`），两处口径才一致。
+ */
+function mapBatchBodyIssues(error: z.ZodError): string[] {
+  return error.issues.map((issue) => {
+    const [root, index, ...rest] = issue.path;
+    const path =
+      root === "questions" && typeof index === "number"
+        ? `questions.${index}.${rest.map(String).join(".") || "body"}`
+        : issue.path.map(String).join(".") || "body";
+    return `${path}: ${issue.message}`;
+  });
+}
+
+app.openapi(
+  questionsBatchCreateRoute,
+  async (c) => {
+    const body = c.req.valid("json");
+    const dryRun = wantsDryRun(c.req.valid("query"));
+
+    // 逐条复用 QuestionSchema：两处规则一旦分叉，会出现"后台能导、单题能建、批量不能"
+    const issues: string[] = [];
+    const items: QuestionBatchCreateInput[] = [];
+    body.questions.forEach((raw, index) => {
+      const { externalId, source, material, ...core } = raw;
+      const parsed = QuestionSchema.safeParse({
+        ...core,
+        // 这两个默认值与后台导入一致：维度缺省 knowledge、题型缺省 single
+        options: core.options ?? [],
+        dimension: core.dimension ?? "knowledge",
+      });
+      if (!parsed.success) {
+        for (const issue of parsed.error.issues) {
+          const path = issue.path.map(String).join(".");
+          issues.push(`questions.${index}.${path || "body"}: ${issue.message}`);
+        }
+        return;
+      }
+      items.push({
+        ...parsed.data,
+        // QuestionSchema 的 dimension 是「三档枚举 or 任意字符串」，这里已经过
+        // 枚举校验（schema 层），按契约类型收窄
+        dimension: parsed.data
+          .dimension as QuestionBatchCreateInput["dimension"],
+        externalId,
+        source,
+        material,
+      });
+    });
+
+    if (issues.length > 0) {
+      return c.json(
+        {
+          error: "批量建题校验失败（整批未写入）",
+          issues: issues.slice(0, MAX_BATCH_ISSUES),
+          issueCount: issues.length,
+        },
+        400,
+      );
+    }
+
+    try {
+      const result = await createQuestionsBatch(items, { dryRun });
+
+      if (!dryRun) {
+        // 新题立刻重建检索向量（不 await）：索引落后会让 agent 检索不到刚建的题。
+        // 失败只记 warn —— 建题本身已经成功，回 500 会让调用方重推整批
+        for (const item of result.items) {
+          if (item.status !== "created" || item.questionId === null) continue;
+          const questionId = item.questionId;
+          void indexQuestion(questionId).catch((err: unknown) => {
+            logger.warn(
+              { err, questionId },
+              "[External] 批量建题后向量索引失败",
+            );
+          });
+        }
+      }
+
+      return c.json(result, 200);
+    } catch (err) {
+      // 保留前缀：语义上是调用方输入错误（400 + issues），不是服务端故障。
+      // 服务层在任何查询/写入之前统一拒绝，因此这里一条都没写
+      if (err instanceof ReservedExternalIdError) {
+        const reservedIssues = err.indexes.map(
+          (index) => `questions.${index}.externalId: ${err.message}`,
+        );
+        return c.json(
+          {
+            error: "批量建题校验失败（整批未写入）",
+            issues: reservedIssues.slice(0, MAX_BATCH_ISSUES),
+            issueCount: reservedIssues.length,
+          },
+          400,
+        );
+      }
+      // 真实故障（含事务失败）：整批已回滚，记结构化日志后按 500 返回
+      logger.error({ err }, "[External] 批量建题失败");
+      return c.json({ error: "服务器内部错误" }, 500);
+    }
+  },
+  (result, c) => {
+    // 结构校验（缺必填 / 类型错）发生在处理器之前：默认 400 是框架体，
+    // 这里换成批量契约的形状，调用方不必为两种 400 写两套解析
+    if (result.success) return;
+    const issues = mapBatchBodyIssues(result.error);
+    return c.json(
+      {
+        error: "批量建题校验失败（整批未写入）",
+        issues: issues.slice(0, MAX_BATCH_ISSUES),
+        issueCount: issues.length,
+      },
+      400,
+    );
+  },
+);
 
 // ==================== 工具函数 ====================
 

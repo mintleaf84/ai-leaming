@@ -27,6 +27,7 @@ import {
 } from "lucide-react";
 import { toast } from "sonner";
 import { ErrorState } from "@/components/ui/error-state";
+import { formatBeijingDateTime } from "@/lib/utils/datetime";
 
 interface SqlHistory {
   id: number;
@@ -187,14 +188,7 @@ export default function SqlRunnerPage() {
   };
 
   const formatDate = (date: string | Date) => {
-    const d = new Date(date);
-    return d.toLocaleString("zh-CN", {
-      year: "numeric",
-      month: "2-digit",
-      day: "2-digit",
-      hour: "2-digit",
-      minute: "2-digit",
-    });
+    return formatBeijingDateTime(date);
   };
 
   return (

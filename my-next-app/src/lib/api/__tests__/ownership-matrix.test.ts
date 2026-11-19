@@ -150,6 +150,9 @@ const MODULES: Record<string, ModuleRule> = {
 
   // ---- 公开（无需登录） ----
   auth: { mount: "/api/auth", scope: "public" },
+  // 契约协商：只回版本号与能力名，不含任何用户数据；老客户端可能在登录前调用，
+  // 因此必须匿名可用（见 routes/meta.ts 文件头）。
+  meta: { mount: "/api/meta", scope: "public" },
   // 前端性能指标上报（docs/performance.md T-01）：匿名、只写不读，
   // 入参固定为 name/value/route/rating，不含任何可以定位到"谁的数据"的标识符，
   // 因此没有越权面，也不需要跨用户测试。
@@ -300,6 +303,7 @@ describe("外部 API：写路由必须声明 write 作用域", () => {
     expect(adminOnly.sort()).toEqual([
       "PATCH /questions/{id}",
       "POST /questions",
+      "POST /questions/batch",
     ]);
   });
 

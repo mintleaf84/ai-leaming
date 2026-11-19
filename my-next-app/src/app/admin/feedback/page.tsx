@@ -25,6 +25,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { toast } from "sonner";
+import { formatBeijingDate } from "@/lib/utils/datetime";
 
 interface FeedbackItem {
   id: number;
@@ -132,12 +133,7 @@ export default function FeedbackPage() {
 
   const formatTime = (timestamp: string | null) => {
     if (!timestamp) return "-";
-    return new Date(timestamp).toLocaleString("zh-CN", {
-      month: "numeric",
-      day: "numeric",
-      hour: "2-digit",
-      minute: "2-digit",
-    });
+    return formatBeijingDate(timestamp, "M月D日 HH:mm");
   };
 
   const totalPages = Math.ceil(total / limit);

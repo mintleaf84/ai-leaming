@@ -7,6 +7,7 @@ import {
   mastered_questions,
 } from "@/lib/db/drizzle-schema";
 import dayjs from "dayjs";
+import { safeParseJson } from "@/lib/utils/json";
 
 export interface WrongQuestionItem {
   questionId: number;
@@ -139,7 +140,7 @@ export const wrongQuestionService = {
     const questionsList: WrongQuestionItem[] = rows.map((r) => ({
       questionId: r.questionId!,
       questionContent: r.questionContent!,
-      tags: typeof r.tags === "string" ? JSON.parse(r.tags) : r.tags || [],
+      tags: safeParseJson<string[]>(r.tags as string | null | undefined, []),
       wrongCount: r.wrongCount,
       lastWrongAt: r.lastWrongAt,
       correctAnswer: r.correctAnswer!,
@@ -315,7 +316,7 @@ export const wrongQuestionService = {
     return rows.map((r) => ({
       questionId: r.questionId!,
       questionContent: r.questionContent!,
-      tags: typeof r.tags === "string" ? JSON.parse(r.tags) : r.tags || [],
+      tags: safeParseJson<string[]>(r.tags as string | null | undefined, []),
       wrongCount: r.wrongCount,
       lastWrongAt: r.lastWrongAt || "",
       correctAnswer: r.correctAnswer!,
@@ -413,13 +414,19 @@ export const wrongQuestionService = {
       questionContent: question.questions.content,
       options:
         typeof question.questions.options === "string"
-          ? JSON.parse(question.questions.options)
+          ? safeParseJson<string[]>(
+              question.questions.options as string | null | undefined,
+              [],
+            )
           : question.questions.options || [],
       correctAnswer: question.questions.answer,
       explanation: question.questions.explanation || "",
       tags:
         typeof question.questions.tags === "string"
-          ? JSON.parse(question.questions.tags)
+          ? safeParseJson<string[]>(
+              question.questions.tags as string | null | undefined,
+              [],
+            )
           : question.questions.tags || [],
       questionType: question.questions.type || "single",
       wrongCount: stats?.wrongCount || 0,
@@ -460,7 +467,7 @@ export const wrongQuestionService = {
     return rows.map((r) => ({
       questionId: r.questionId!,
       questionContent: r.questionContent!,
-      tags: typeof r.tags === "string" ? JSON.parse(r.tags) : r.tags || [],
+      tags: safeParseJson<string[]>(r.tags as string | null | undefined, []),
       wrongCount: 0, // 已掌握题目不需要错题计数
       lastWrongAt: r.masteredAt || "",
       correctAnswer: r.correctAnswer!,

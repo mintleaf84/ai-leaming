@@ -60,6 +60,9 @@ class WrongBookRepository {
 }
 
 /// Repository Provider
+///
+/// 用 `watch` 而不是 `read`：dioProvider 会在服务器地址变更后重建，仓库必须跟着
+/// 换成新 dio，否则换服务器后错题本仍然打旧地址。
 final wrongBookRepositoryProvider = Provider<WrongBookRepository>((ref) {
-  return WrongBookRepository(ref.read(dioProvider));
+  return WrongBookRepository(ref.watch(dioProvider));
 });

@@ -7,6 +7,8 @@ import '../../../core/theme/theme_provider.dart';
 import '../../auth/presentation/auth_provider.dart';
 import '../../profile/presentation/profile_provider.dart';
 import '../../../core/sync/sync_providers.dart';
+import '../../../core/network/server_config.dart';
+import '../../../shared/widgets/server_address_form.dart';
 
 /// 设置页面
 ///
@@ -44,6 +46,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
     final settingsState = ref.watch(settingsProvider);
     final reviewMode = settingsState.reviewMode;
     final profile = ref.watch(profileControllerProvider).profile;
+    final serverConfig = ref.watch(serverConfigProvider);
     final isDarkMode =
         themeMode == ThemeMode.dark ||
         (themeMode == ThemeMode.system &&
@@ -231,6 +234,44 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                           trailing: _buildPendingTrailing(secondaryColor),
                           textColor: textColor,
                           onTap: _syncOfflineAnswers,
+                        ),
+                      ],
+                    ),
+                    SizedBox(height: 24.h),
+                    // 服务器
+                    _buildSectionTitle('服务器', secondaryColor),
+                    _buildCard(
+                      cardColor: cardColor,
+                      borderColor: borderColor,
+                      children: [
+                        _buildSettingsTile(
+                          icon: Icons.dns_outlined,
+                          title: '服务器地址',
+                          trailing: serverConfig.isConfigured
+                              ? Text(
+                                  '已生效',
+                                  style: TextStyle(
+                                    fontSize: 14.sp,
+                                    color: secondaryColor,
+                                  ),
+                                )
+                              : Text(
+                                  '未配置',
+                                  style: TextStyle(
+                                    fontSize: 14.sp,
+                                    color: const Color(0xFFEB5757),
+                                  ),
+                                ),
+                          textColor: textColor,
+                        ),
+                        _buildDivider(borderColor),
+                        // 输入框初始值即当前生效地址；格式校验与保存失败都经
+                        // ServerConfigState.errorMessage 在表单内展示（不弹 toast）。
+                        Padding(
+                          padding: EdgeInsets.fromLTRB(14.w, 8.h, 14.w, 14.h),
+                          child: ServerAddressForm(
+                            initialValue: serverConfig.effectiveBaseUrl,
+                          ),
                         ),
                       ],
                     ),

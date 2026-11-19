@@ -6,6 +6,7 @@ import { hashPassword } from "@/lib/auth/password";
 import { affectedRows } from "@/lib/db/affected-rows";
 import { buildAdminExternalId } from "@/lib/services/question-idempotency";
 import { indexQuestion } from "@/lib/services/question-vector-index";
+import { regradeQuestionLogs } from "@/lib/services/question-regrade";
 import { withTransaction } from "@/lib/db/executor";
 import { touchesEmbeddingText } from "@/lib/services/question-index-policy";
 import { coerceJsonColumn } from "@/lib/utils/json";
@@ -275,10 +276,16 @@ export const adminService = {
     if (data.options) updateData.options = JSON.stringify(data.options);
     if (data.tags) updateData.tags = JSON.stringify(data.tags);
 
-    await drizzleDb
-      .update(drizzleSchema.questions)
-      .set(updateData)
-      .where(eq(drizzleSchema.questions.id, id));
+    // 答案/选项变更会改变历史判分：与改题同事务回刷（P0-1，见 question-regrade.ts）。
+    // 只改解析/标签/维度/题型不触发——它们不参与判分。
+    const needsRegrade = data.answer !== undefined || data.options !== undefined;
+    await withTransaction(async (exec) => {
+      await exec
+        .update(drizzleSchema.questions)
+        .set(updateData)
+        .where(eq(drizzleSchema.questions.id, id));
+      if (needsRegrade) await regradeQuestionLogs(id, exec);
+    });
 
     if (touchesEmbeddingText(data)) {
       // 不 await：embedding 是一次网络调用，管理端保存不该被它拖住。

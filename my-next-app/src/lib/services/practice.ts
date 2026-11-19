@@ -13,6 +13,7 @@ import { QuestionRowSchema } from "@/lib/schemas";
 import logger from "@/lib/logger";
 import { DemoService } from "@/lib/practice/demo";
 import { safeParseJson } from "@/lib/utils/json";
+import { checkAnswerCorrectness } from "@/lib/services/answer-check";
 import { generateId, generateSessionId } from "@/lib/utils/id";
 import { NotFoundError } from "@/lib/errors/app-error";
 import { withTransaction } from "@/lib/db/executor";
@@ -62,65 +63,6 @@ function mapQuestion(q: unknown): Question {
       dimension: data.dimension || "knowledge",
     } as Question;
   }
-}
-
-/**
- * 增强型答案比对函数，支持标号(A/B/C)与文本的双向匹配
- * 与前端 use-practice-controller.ts 保持逻辑一致
- */
-function checkAnswerCorrectness(
-  userAnswer: string,
-  correctAnswer: string,
-  options: string[],
-  questionType?: string,
-): boolean {
-  // 填空题：按中文分号分割，逐空匹配（支持单空多答案用 | 分隔）
-  if (questionType === "fill_blank") {
-    const userBlanks = userAnswer.split("；").map((s) => s.trim());
-    const correctBlanks = correctAnswer.split("；").map((s) => s.trim());
-    if (userBlanks.length !== correctBlanks.length) return false;
-    return userBlanks.every((ub, i) => {
-      if (!ub) return false; // 拒绝空白用户输入
-      const acceptedAnswers = correctBlanks[i]
-        .split("|")
-        .map((s) => s.trim())
-        .filter(Boolean);
-      return acceptedAnswers.some((ans) => ans === ub);
-    });
-  }
-
-  // 1. 精确匹配
-  if (userAnswer === correctAnswer) return true;
-
-  // 2. 用户提交标号(A/B/C...) → 对比选项文本
-  if (userAnswer.length === 1 && userAnswer >= "A" && userAnswer <= "Z") {
-    const idx = userAnswer.charCodeAt(0) - 65;
-    if (options[idx] === correctAnswer) return true;
-  }
-
-  // 3. 正确答案标号 → 对比用户提交文本
-  if (
-    correctAnswer.length === 1 &&
-    correctAnswer >= "A" &&
-    correctAnswer <= "Z"
-  ) {
-    const idx = correctAnswer.charCodeAt(0) - 65;
-    if (options[idx] === userAnswer) return true;
-  }
-
-  // 4. 判断题特殊处理：A=正确, B=错误
-  if (options.length === 2) {
-    if (
-      (userAnswer === "A" && correctAnswer === "正确") ||
-      (userAnswer === "B" && correctAnswer === "错误") ||
-      (userAnswer === "正确" && correctAnswer === "A") ||
-      (userAnswer === "错误" && correctAnswer === "B")
-    ) {
-      return true;
-    }
-  }
-
-  return false;
 }
 
 export const practiceService = {

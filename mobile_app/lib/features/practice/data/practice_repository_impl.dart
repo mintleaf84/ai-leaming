@@ -5,9 +5,11 @@ import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../core/auth/token_util.dart';
+import '../../../core/error/user_message.dart';
 import '../../../core/network/dio_client.dart';
 import '../../../core/sync/sync_providers.dart';
 import '../../../shared/datasources/api_client.dart';
+import '../domain/practice_exceptions.dart';
 import '../domain/practice_repository.dart';
 import '../domain/question.dart';
 import '../domain/practice_session.dart';
@@ -24,10 +26,16 @@ final practiceRepositoryProvider = Provider<PracticeRepository>((ref) {
 });
 
 /// 离线缓存不可用（为空或已过期）时抛出，带可直接展示的中文原因。
-class OfflineCacheUnavailable implements Exception {
+///
+/// 实现 [UserFacingException]：这类异常的文案是业务层精心写的（「本地题库为空
+/// 或已超过 7 天未刷新…」），不该被 [userMessageOf] 归到「出了点问题」。
+class OfflineCacheUnavailable implements UserFacingException {
   const OfflineCacheUnavailable(this.message);
 
   final String message;
+
+  @override
+  String get userMessage => message;
 
   @override
   String toString() => message;
@@ -86,7 +94,10 @@ class PracticeRepositoryImpl implements PracticeRepository {
   }
 
   @override
-  Future<PracticeSession> createSession({required int limit, String mode = 'random'}) async {
+  Future<PracticeSession> createSession({
+    required int limit,
+    String mode = 'random',
+  }) async {
     try {
       return await _apiClient.createSession({'mode': mode, 'limit': limit});
     } on DioException catch (error) {
@@ -108,9 +119,7 @@ class PracticeRepositoryImpl implements PracticeRepository {
     try {
       final questions = await _localStore.pickRandom(limit: limit);
       if (questions.isEmpty) {
-        throw const OfflineCacheUnavailable(
-          '本地题库为空或已超过 7 天未刷新，请联网同步题库后再离线练习',
-        );
+        throw const OfflineCacheUnavailable('本地题库为空或已超过 7 天未刷新，请联网同步题库后再离线练习');
       }
       final userId = await _currentUserId();
       if (userId == null) {
@@ -157,11 +166,18 @@ class PracticeRepositoryImpl implements PracticeRepository {
       );
     }
 
+    // 服务端契约里题号是数字，但**不能假设**：脏缓存/手工构造的请求会让
+    // `int.parse` 抛 `FormatException`，界面拿到的就是 `Invalid radix-10 ...`。
+    // 非数字按业务错误处理，文案见 [InvalidQuestionIdException]。
+    final questionIdNumber = int.tryParse(questionId.trim());
+    if (questionIdNumber == null) {
+      debugPrint('[Practice] 题号不是数字，拒绝提交: $questionId');
+      throw InvalidQuestionIdException(questionId);
+    }
+
     try {
       return await _apiClient.submitAnswer(sessionId, {
-        'questionId': int.parse(
-          questionId,
-        ), // Transform string ID to backend number
+        'questionId': questionIdNumber, // Transform string ID to backend number
         'userAnswer': userAnswer,
         'duration': duration,
       });
@@ -228,9 +244,7 @@ class PracticeRepositoryImpl implements PracticeRepository {
     final question = await _localStore.questionById(questionId);
     if (question == null) {
       // 没有缓存（或缓存已过期）就没有可信答案，宁可不判分也不写错数据
-      throw const OfflineCacheUnavailable(
-        '本地没有这道题的最新题面，无法离线判分，请联网后重试',
-      );
+      throw const OfflineCacheUnavailable('本地没有这道题的最新题面，无法离线判分，请联网后重试');
     }
     final correctAnswer = question.answer ?? '';
     final isCorrect = _judgeLocally(

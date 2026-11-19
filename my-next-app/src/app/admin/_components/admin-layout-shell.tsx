@@ -26,6 +26,29 @@ export function AdminLayoutShell({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
   const router = useRouter();
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+  // 数据维护提醒：管理员打开后台时若存在待清理的重复题，顶部常驻提示。
+  // 只在挂载时查一次（轻量：单表扫描），清理完成后通过系统运维页刷新。
+  const [maintenance, setMaintenance] = useState<{
+    needsCleanup: boolean;
+    duplicateGroups: number;
+    fallbackWithCopy: number;
+    unhashedQuestions: number;
+  } | null>(null);
+
+  useEffect(() => {
+    let cancelled = false;
+    fetch("/api/admin/maintenance/dedupe")
+      .then((res) => (res.ok ? res.json() : null))
+      .then((data) => {
+        if (!cancelled && data) setMaintenance(data);
+      })
+      .catch(() => {
+        // 提醒是锦上添花：接口失败不打断后台使用
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, []);
 
   // 移动端菜单是浮层：键盘用户必须能关掉它。Esc 挂在 shell 上（document 级），
   // 不挂在遮罩上 —— 遮罩对键盘用户不可达（不可聚焦），挂上去等于没挂。
@@ -183,6 +206,26 @@ export function AdminLayoutShell({ children }: { children: React.ReactNode }) {
         </header>
 
         <main className="flex-1 overflow-y-auto overflow-x-hidden">
+          {maintenance?.needsCleanup && (
+            <div
+              role="alert"
+              className="mx-4 mt-4 rounded-lg border border-amber-300 bg-amber-50 px-4 py-3 text-sm text-amber-900 dark:border-amber-800 dark:bg-amber-950/50 dark:text-amber-200"
+            >
+              <strong>数据维护待执行：</strong>
+              {maintenance.duplicateGroups} 组重复题
+              {maintenance.fallbackWithCopy > 0 &&
+                `（其中 ${maintenance.fallbackWithCopy} 条为兜底副本）`}
+              {maintenance.unhashedQuestions > 0 &&
+                `，${maintenance.unhashedQuestions} 道题未回填去重指纹`}
+              。
+              <Link
+                href="/admin/system"
+                className="ml-1 font-medium underline underline-offset-2"
+              >
+                前往系统运维 → 数据维护处理
+              </Link>
+            </div>
+          )}
           <div className="h-full">{children}</div>
         </main>
       </div>

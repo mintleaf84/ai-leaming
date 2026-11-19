@@ -326,3 +326,47 @@ export async function dedupeFallbackQuestions(
 
   return report;
 }
+
+export interface DedupeStatus {
+  duplicateGroups: number;
+  fallbackQuestions: number;
+  fallbackWithCopy: number;
+  unhashedQuestions: number;
+  needsCleanup: boolean;
+}
+
+/**
+ * 轻量状态查询（后台横幅用）：只扫一遍题目表，不查日志/SRS。
+ *
+ * needsCleanup 的判定只看**待处理的重复**（兜底题有真实副本 / 未回填哈希），
+ * 不看「孤本兜底题」——它们打上 source=fallback 之后横幅应消失。
+ */
+export async function getDedupeStatus(): Promise<DedupeStatus> {
+  const rows = (await drizzleDb
+    .select({ content: questions.content, type: questions.type, content_hash: questions.content_hash })
+    .from(questions)) as Pick<Row, "content" | "type" | "content_hash">[];
+
+  const byContent = new Map<string, number>();
+  for (const row of rows) {
+    byContent.set(row.content, (byContent.get(row.content) ?? 0) + 1);
+  }
+  const duplicateGroups = [...byContent.values()].filter((n) => n > 1).length;
+
+  const typedContents = new Set(
+    rows.filter((r) => r.type !== null).map((r) => r.content),
+  );
+  const fallbackQuestions = rows.filter((r) => r.type === null).length;
+  const fallbackWithCopy = rows.filter(
+    (r) => r.type === null && typedContents.has(r.content),
+  ).length;
+  const unhashedQuestions = rows.filter((r) => !r.content_hash).length;
+
+  return {
+    duplicateGroups,
+    fallbackQuestions,
+    fallbackWithCopy,
+    unhashedQuestions,
+    needsCleanup:
+      duplicateGroups > 0 || fallbackWithCopy > 0 || unhashedQuestions > 0,
+  };
+}

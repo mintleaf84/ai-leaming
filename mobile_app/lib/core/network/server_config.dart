@@ -40,6 +40,31 @@ final serverBaseUrlStoreProvider = Provider<ServerBaseUrlStore>(
   (ref) => const SecureServerBaseUrlStore(),
 );
 
+/// 与 auth 侧一致的 JWT 存储位置。
+///
+/// `features/auth/data/auth_repository_impl.dart` / `core/network/dio_client.dart`
+/// 都是 `const FlutterSecureStorage()` + key `jwt_token`；const 构造是同一个
+/// canonical 实例，这里沿用同一实例与同一键，不另造存储。
+final authJwtStorageProvider = Provider<FlutterSecureStorage>(
+  (ref) => const FlutterSecureStorage(),
+);
+
+/// JWT 在安全存储里的键名（与 auth 侧保持一致）。
+const String authJwtStorageKey = 'jwt_token';
+
+/// 启动时读取持久化地址；main() 与单测共用这一份实现。
+///
+/// 读失败（安全存储不可用等）按「未配置」处理并留日志：App 仍能启动，用户可以在
+/// 启动页重新填写，而不是白屏。
+Future<String?> readInitialServerBaseUrl(ServerBaseUrlStore store) async {
+  try {
+    return await store.read();
+  } catch (error) {
+    debugPrint('[ServerConfig] 读取已保存的服务器地址失败: $error');
+    return null;
+  }
+}
+
 /// main() 在 runApp 之前读出的持久化地址（dioProvider 是同步构建的，地址必须先就绪）。
 ///
 /// 默认 null 表示「没有运行时配置」，测试里 override 成任意值即可模拟启动状态。
@@ -116,11 +141,31 @@ class ServerConfigNotifier extends Notifier<ServerConfigState> {
       return message;
     }
 
+    final previousBaseUrl = state.effectiveBaseUrl;
     state = ServerConfigState(
       storedBaseUrl: normalized,
       effectiveBaseUrl: ApiConstants.resolveBaseUrl(runtimeBaseUrl: normalized),
     );
+
+    // 换到另一个 origin（scheme+host+port）时，旧服务器的 JWT 在新服务器上要么
+    // 无效、要么对应另一个用户；先清掉，让后续请求以未登录身份走正常流程，而不是
+    // 把旧凭据发给新后端。只清 token，不动本地题库与待同步作答。
+    if (previousBaseUrl != null &&
+        !ApiConstants.isSameOrigin(previousBaseUrl, normalized)) {
+      await _clearAuthToken();
+    }
     return null;
+  }
+
+  /// 清除 auth 侧持久化的 JWT（同一个 flutter_secure_storage 与 `jwt_token` 键）。
+  Future<void> _clearAuthToken() async {
+    try {
+      await ref.read(authJwtStorageProvider).delete(key: authJwtStorageKey);
+    } catch (error) {
+      // 清理失败不阻断换址：新后端会用 401 拒绝旧 token，AuthInterceptor 随即
+      // 走登出流程，旧凭据不会长期留在请求头里。
+      debugPrint('[ServerConfig] 清除旧服务器 JWT 失败: $error');
+    }
   }
 
   /// 用户重新编辑输入框时清掉上一次的失败提示。

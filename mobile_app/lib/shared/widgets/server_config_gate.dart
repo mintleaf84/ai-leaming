@@ -22,6 +22,25 @@ class ServerConfigGate extends ConsumerWidget {
       return child;
     }
 
+    // 这个组件挂在 `MaterialApp.router` 的 builder 里，不在 Navigator 的 Overlay
+    // 之下；而输入框的文本选择浮层（手柄、放大镜）要求祖先中存在 Overlay，否则
+    // 用户点按/长按输入框会抛 "No Overlay widget found"。因此配置页自带一个最小
+    // MaterialApp，用它自己的 Navigator/Overlay 承载表单。
+    return MaterialApp(
+      debugShowCheckedModeBanner: false,
+      theme: Theme.of(context),
+      home: _ServerConfigScreen(initialValue: state.effectiveBaseUrl),
+    );
+  }
+}
+
+class _ServerConfigScreen extends StatelessWidget {
+  const _ServerConfigScreen({this.initialValue});
+
+  final String? initialValue;
+
+  @override
+  Widget build(BuildContext context) {
     final theme = Theme.of(context);
     return Scaffold(
       body: SafeArea(
@@ -48,7 +67,7 @@ class ServerConfigGate extends ConsumerWidget {
                   ),
                 ),
                 SizedBox(height: 24.h),
-                ServerAddressForm(initialValue: state.effectiveBaseUrl),
+                ServerAddressForm(initialValue: initialValue),
               ],
             ),
           ),

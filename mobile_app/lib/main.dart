@@ -11,7 +11,9 @@ import 'shared/widgets/server_config_gate.dart';
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
   // dioProvider 是同步构建的，持久化的服务器地址必须在 runApp 之前就绪。
-  final storedBaseUrl = await _readStoredBaseUrl();
+  final storedBaseUrl = await readInitialServerBaseUrl(
+    const SecureServerBaseUrlStore(),
+  );
   runApp(
     ProviderScope(
       overrides: [
@@ -20,19 +22,6 @@ Future<void> main() async {
       child: const MyApp(),
     ),
   );
-}
-
-/// 启动前读一次已保存的服务器地址。
-///
-/// 读失败（安全存储不可用等）按「未配置」处理并留日志：App 仍能启动，用户可以在
-/// 启动页重新填写，而不是白屏。
-Future<String?> _readStoredBaseUrl() async {
-  try {
-    return await const SecureServerBaseUrlStore().read();
-  } catch (error) {
-    debugPrint('[ServerConfig] 读取已保存的服务器地址失败: $error');
-    return null;
-  }
 }
 
 class MyApp extends ConsumerWidget {

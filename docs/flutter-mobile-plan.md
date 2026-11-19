@@ -288,13 +288,13 @@ npm run typecheck && npm run lint:ci && npx vitest run --maxWorkers=8 && npm run
 
 ### CI 现状（PR #210）
 
-`flutter analyze`、`lint:ci`、`typecheck`、`vitest`（210 文件 / 1716 用例）、`next build`、`OpenAPI 契约快照`、UI 护栏全部通过。APK 打包 job 仍未真正跑过一次——它需要仓库变量 `API_BASE_URL`，见下。
+`flutter analyze`、`lint:ci`、`typecheck`、`vitest`（210 文件 / 1716 用例）、`next build`、`OpenAPI 契约快照`、UI 护栏全部通过。APK 打包 job 仍未真正跑过一次。
 
-### 唯一阻塞项
+### API_BASE_URL 是可选配置
 
-`android.yml` 的 `apk` job 会先检查 `vars.API_BASE_URL`，为空时给 `::warning::` 但继续出包——
+`android.yml` 的 `apk` job 只在 `vars.API_BASE_URL` 为空时给 `::warning::` 并继续出包——
 产物启动后进入「需要配置服务器地址」页，用户可在 App 内填写并持久化（三级回落：运行时设置 >
-编译期 dart-define > 未配置）。有部署域名时仍建议设置变量预置。
+编译期 dart-define > 未配置）。因此它不阻塞出包；有部署域名时设置变量只是为了省掉用户首次配置。
 
 ### 最终收口（2026-11-18）
 

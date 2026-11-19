@@ -28,6 +28,65 @@ void main() {
       expect(ApiConstants.isValidBaseUrl('http://'), false);
       expect(ApiConstants.isValidBaseUrl('http://exa mple.com/api'), false);
     });
+
+    test('拒绝带 query 的地址（与相对路径拼接后地址会失效）', () {
+      expect(
+        ApiConstants.isValidBaseUrl('http://10.0.2.2:3000/api?token=abc'),
+        false,
+      );
+    });
+
+    test('拒绝带 fragment 的地址', () {
+      expect(
+        ApiConstants.isValidBaseUrl('http://10.0.2.2:3000/api#v2'),
+        false,
+      );
+    });
+  });
+
+  group('ApiConstants.isSameOrigin', () {
+    test('scheme + host + port 相同视为同源（路径不同也算）', () {
+      expect(
+        ApiConstants.isSameOrigin(
+          'http://10.0.2.2:3000/api',
+          'http://10.0.2.2:3000/api/v2',
+        ),
+        true,
+      );
+      // 省略端口等于默认端口。
+      expect(
+        ApiConstants.isSameOrigin('http://api.example.com/api', 'http://api.example.com:80/v2'),
+        true,
+      );
+    });
+
+    test('host、port 或 scheme 任一不同都不是同源', () {
+      expect(
+        ApiConstants.isSameOrigin(
+          'http://10.0.2.2:3000/api',
+          'http://10.0.2.2:3001/api',
+        ),
+        false,
+      );
+      expect(
+        ApiConstants.isSameOrigin(
+          'http://10.0.2.2:3000/api',
+          'https://10.0.2.2:3000/api',
+        ),
+        false,
+      );
+      expect(
+        ApiConstants.isSameOrigin(
+          'http://10.0.2.2:3000/api',
+          'http://192.168.1.10:3000/api',
+        ),
+        false,
+      );
+    });
+
+    test('解析失败按不同源处理', () {
+      expect(ApiConstants.isSameOrigin('not-a-url', 'not-a-url'), false);
+    });
   });
 
   group('ApiConstants.normalizeBaseUrl', () {
@@ -95,15 +154,11 @@ void main() {
       );
     });
 
-    test('编译期为 null 时读取编译期常量；未传 dart-define 即空串，不指向任何地址', () {
-      final resolved = ApiConstants.resolveBaseUrl(runtimeBaseUrl: '');
-
-      if (ApiConstants.compileTimeBaseUrl.isEmpty) {
-        expect(resolved, isNull);
-      } else {
-        // 有人带 --dart-define 跑测试时按编译期地址生效，同样符合回落规则。
-        expect(resolved, ApiConstants.normalizeBaseUrl(ApiConstants.compileTimeBaseUrl));
-      }
+    test('未传 dart-define 时 compileTimeBaseUrl 为空串，且解析结果为 null', () {
+      // 不随常量取值推导：这条用例的目的就是钉住「没有默认地址」这一约定，
+      // 一旦有人给 compileTimeBaseUrl 加了非空默认值，这里必须失败。
+      expect(ApiConstants.compileTimeBaseUrl, '');
+      expect(ApiConstants.resolveBaseUrl(runtimeBaseUrl: ''), isNull);
     });
 
     test('回落结果统一规范化（去掉末尾斜杠）', () {

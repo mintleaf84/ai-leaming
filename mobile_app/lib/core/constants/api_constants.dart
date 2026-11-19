@@ -26,10 +26,12 @@ class ApiConstants {
   static const String masteryStats = '/mastery/stats';
   static const String firstPrinciples = '/practice/first-principles';
 
-  /// 地址格式校验：必须是 http/https、必须带主机名、不含空白字符。
+  /// 地址格式校验：必须是 http/https、必须带主机名、不含空白字符、不带 query/fragment。
   ///
   /// 用 [Uri.tryParse] 而不是手写正则：`localhost:3000/api` 这类输入会被解析成
   /// scheme=localhost，靠 scheme 判断就能挡住，不需要第二个正则去猜。
+  /// query/fragment 一律拒绝：baseUrl 会和 `'/auth/login'` 这类相对路径拼接，
+  /// `http://host/api?x=1` 拼出来的地址是错的（`?x=1/auth/login`）。
   static bool isValidBaseUrl(String raw) {
     final value = raw.trim();
     if (value.isEmpty || value.contains(RegExp(r'\s'))) {
@@ -42,8 +44,30 @@ class ApiConstants {
     if (uri.scheme != 'http' && uri.scheme != 'https') {
       return false;
     }
+    if (uri.hasQuery || uri.hasFragment) {
+      return false;
+    }
     // `http://` 能解析出空 host；`http://.` 之类也要挡掉，要求至少一个字母数字。
     return uri.host.isNotEmpty && RegExp(r'[A-Za-z0-9]').hasMatch(uri.host);
+  }
+
+  /// 两个地址是否同源（scheme + host + port）。
+  ///
+  /// 用于「换服务器时是否要清掉旧 JWT」：同源换路径（例如 `/api` → `/api/v2`）
+  /// 凭据仍然有效，不该把用户踢下线。解析失败、或任一方没有 host（相对路径、
+  /// 随手输入的字符串）都按不同源处理——宁可多清一次 token。
+  static bool isSameOrigin(String a, String b) {
+    final first = Uri.tryParse(a.trim());
+    final second = Uri.tryParse(b.trim());
+    if (first == null || second == null) {
+      return false;
+    }
+    if (first.host.isEmpty || second.host.isEmpty) {
+      return false;
+    }
+    return first.scheme == second.scheme &&
+        first.host == second.host &&
+        first.port == second.port;
   }
 
   /// 去掉首尾空白与末尾斜杠：dio 拼接 `'/auth/login'` 时不会出现双斜杠。

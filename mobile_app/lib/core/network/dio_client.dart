@@ -1,4 +1,5 @@
 import 'package:dio/dio.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import '../constants/api_constants.dart';
@@ -65,9 +66,15 @@ class AuthInterceptor extends Interceptor {
           .read(key: 'jwt_token')
           .then((token) {
             if (token != null) {
-              ref.read(authControllerProvider.notifier).logout().then((_) {
-                appRouter.go(AppRoutes.login);
-              });
+              // 401 已经说明登录态失效：清理失败只记录，跳转不能被拖住，
+              // 也不能让异常变成未捕获异常。
+              ref
+                  .read(authControllerProvider.notifier)
+                  .logout()
+                  .catchError((Object error) {
+                    debugPrint('[Auth] 401 后清理登录态失败: $error');
+                  })
+                  .whenComplete(() => appRouter.go(AppRoutes.login));
             }
             handler.next(err);
           })

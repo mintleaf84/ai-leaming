@@ -1,7 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:mobile_app/core/storage/preferences.dart';
 import 'package:mobile_app/core/theme/theme_provider.dart';
+
+import '../../support/fake_preferences_store.dart';
 
 /// 主题模式是**全局单例状态**，`MaterialApp.themeMode` 直接 watch 它。
 /// 这个测试守的线：
@@ -14,11 +17,17 @@ import 'package:mobile_app/core/theme/theme_provider.dart';
 /// 4. 状态变化必须真的通知监听者 —— `Notifier` 里 `state = ...` 赋值相同值时
 ///    Riverpod 不会通知，主题页的选中态就靠这个更新。
 ///
-/// 注：当前实现**不做持久化**（`build()` 恒为 system），所以这里没有"重启后
-/// 恢复上次选择"的用例；真要加持久化，本文件需要补一条往返用例。
+/// 注：持久化（审计 #19）由 `theme_persistence_test.dart` 单独覆盖。这里注入
+/// 一个空的假 store，让 `build()` 里的异步读盘不会碰平台通道，也让本文件专注
+/// 于「内存状态机」这一层。
 void main() {
   ProviderContainer makeContainer() {
-    final container = ProviderContainer();
+    final container = ProviderContainer(
+      overrides: [
+        preferencesStoreProvider.overrideWithValue(FakePreferencesStore()),
+      ],
+      retry: (_, _) => null,
+    );
     addTearDown(container.dispose);
     return container;
   }

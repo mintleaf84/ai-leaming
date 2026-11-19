@@ -6,6 +6,34 @@
 
 ---
 
+
+## 0. 目录与状态
+
+| 段 | 内容 | 状态 |
+| --- | --- | --- |
+| §1–§10 | 复用分析、现状基线、P0–P5 阶段规划、工期 | 历史方案（部分已被 §11 覆盖） |
+| §11 | 执行进度（2026-11-18） | **[已完成]** |
+| §12 | 覆盖率门禁与测试补强 | **[已完成]**（PR #248） |
+| §13 | 覆盖率门禁第二轮（PR 作用域 / 豁免 / 净变化） | **[已完成]**（PR #250） |
+| §14 | 覆盖率后续（P5 与 §12.7 分级） | P5 已完成，见 §17 |
+| §15 | #247 收口 | **[已完成]**（#247） |
+| §16 | P0 缺陷修复（登录漏发 token / logout 无 guard） | **[已完成]**（PR #251） |
+| §17 | P5 逐屏冒烟清单 | **[已完成]**（PR #255） |
+| §18 | 门禁第三轮（diff coverage） | **[不做]** |
+| §19 | 设置持久化 | **[已完成]**（PR #253） |
+| §20 | 离线边界与提示 | 方案 A 已完成，B 待反馈 |
+| §21 | 移动端可访问性 | **[已完成]**（PR #252） |
+| §22 | P5 测试基建与反模式 | **[已完成]**（随 PR #255） |
+| §23 | 真机验收闭环 | 计划（需真机） |
+| §24 | 错误文案统一 | **[已完成]**（PR #253） |
+| §25 | 备考主路径摩擦（F1–F5） | 计划 |
+| §26 | APK 发布链路（R1–R6） | 计划 |
+| §27 | CI 时长与测试预算 | 计划 |
+
+> 维护约定：新增段落追加到末尾并在此表登记；状态只有四种——`[已完成]` / `计划` / `[不做]` / `待决策`。
+
+---
+
 ## 1. 结论：现在这套 Next.js 代码，能复用什么
 
 **一句话**：不能复用一行 UI 代码，但**后端已经把该复用的都分离好了**——Flutter 端要做的不是重写 Next.js，而是把已存在的第二个客户端接到同一份契约上，并补它接错的口。
@@ -525,3 +553,348 @@ CI（ubuntu-latest）两样都有，不受影响；但**不要**顺手升级这�
 - `mobile_app/coverage_baseline.json` 增加 `exempt`，初值 `lib/core/theme/app_icons.dart`（lcov 只认 1 行、实测 0%）。
 - `.github/workflows/android.yml` 的 analyze job 改为 `fetch-depth: 0`（`merge-base` 需要完整历史）。
 - 未改 `lib/` 下任何生产代码；未 commit。
+
+## 14. 覆盖率后续（P5 与 §12.7 分级）
+
+| 阶段 | 范围                                                                                                                                                                    | 预计                            | 前置                |
+| ---- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------- | ------------------- |
+| P5   | 6 个高风险屏（practice 367 / history_detail 401 / wrong_book 332 / settings 341 / dashboard 332 / chat 254）+ `shared/widgets` 5 个自建组件，只断言渲染/关键交互/不溢出 | global → ~43%，`screens` → ~30% | 无（可与 §13 并行） |
+| P5b  | 4 个最大屏的"错误态/空态"分支（配合 #247 引入的 `state_views`）                                                                                                         | `screens` → ~35%                | #247 合入           |
+
+§12.7 的 9 条按影响分级，不做一次性清理：
+
+| 级别 | 条目                                                                                       | 理由                                              |
+| ---- | ------------------------------------------------------------------------------------------ | ------------------------------------------------- |
+| P0   | ①登录漏发 token 静默成功 ⑥`auth.logout` 无 guard                                           | 用户可见的错误被吞掉，且会让人误以为已登录/已登出 |
+| P1   | ⑧settings/theme 无持久化 ③`int.parse(questionId)` 抛 `FormatException`                     | 体验问题；后者是错误文案不可读                    |
+| P2   | ②死代码 ④provider 无测试 ⑤`AppNav.replace` 扩展冲突 ⑦localId 微秒冲突 ⑨`copyWith` 吞 error | 无当前触发路径，随相关改动顺带处理                |
+
+## 15. #247 收口（计划）
+
+### 15.1 现状
+
+- 分支 `fix/mobile-ui-tokens`（worktree `~/ai-leaming-wt-mobile`），37 文件 +1482/−842
+- CI 红 7 项：global 34.5%<35.6、core 69.3<75.5、shared 41.4<46.0、screens 16.6<16.8、
+  `skeleton_fakes.dart` 回退 4.5pp、`app_colors.dart` 2%、`state_views.dart` 1.3%
+- **该 worktree 里已有 4 个未提交测试（493 行）**：`test/shared/state_views_test.dart`、
+  `test/core/theme/app_colors_test.dart`、`test/features/recall/recall_widgets_test.dart`、
+  改过的 `test/shared/skeleton_fakes_test.dart` —— 正好对应上面两条"新增文件"和一条"回退"
+
+### 15.2 步骤
+
+| #   | 动作                                                                                 | 判据                                                                      |
+| --- | ------------------------------------------------------------------------------------ | ------------------------------------------------------------------------- |
+| 1   | 确认那 4 个测试的归属（另一个会话在写就等它收尾，不并发改）                          | 文件 mtime 与 git status 稳定                                             |
+| 2   | 在 wt-mobile 跑 `flutter test test/shared test/core/theme test/features/recall`      | 全绿；`state_views`/`app_colors` 覆盖 ≥60%                                |
+| 3   | rebase 到含门禁第二轮的 main                                                         | 无冲突；`flutter pub get` 后全量 `flutter test` 绿                        |
+| 4   | 本地跑 `flutter test --coverage && dart run tool/coverage_gate.dart`                 | 只剩"真该拦"项：不得再出现 touched 文件的单文件回退、常量文件的"新增"违规 |
+| 5   | 若 global 仍低于 floor：二选一 —— 补测 / `--update --allow-lower` 并在 PR 描述写理由 | 二选一必须显式记录，不许静默改基线                                        |
+| 6   | push → CI 全绿 → squash 合并                                                         | 12 项检查                                                                 |
+
+### 15.3 不做
+
+- 不给 20 个屏补 widget 测试（那是 P5，不是这个 PR 的职责）
+- 不把 `app_colors.dart` 塞进 `exempt` 来"绕过"——既然已有测试，就让它正常计入
+
+## 16. P0 缺陷修复（计划）
+
+两条都属于"错误被吞掉、用户误以为成功"：
+
+| 缺陷                                                            | 修法                                                                                     | 新增测试                                                                            | UI 影响                                      |
+| --------------------------------------------------------------- | ---------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------- | -------------------------------------------- |
+| `AuthRepositoryImpl.login/register` 在响应无 `token` 时静默成功 | 取到 token 后判空，抛 `AuthException('登录响应缺少 token')`（消息面向用户）              | 3 条：无 token → 抛错且**不写** `jwt_token`；有 token → 写入；空串 token 同无 token | 登录页已有 error 展示，无需改 UI             |
+| `auth_provider.logout` 无 `AsyncValue.guard`                    | `state = await AsyncValue.guard(() => repo.logout())`；`authEpoch.bump()` 只在成功后调用 | 2 条：仓库抛错 → `state.hasError` 且 epoch 不变、界面不跳转；成功 → epoch +1        | 设置页目前不显示登出失败，**是否加提示待定** |
+
+顺序：先登录 token（纯数据层，零 UI 风险），再 logout（要决定 UI）。
+
+### 16.1 修复时发现的两个补充点
+
+1. **`state.hasValue` 不能用**：Riverpod 3 的 `AsyncError` 会合并上一次的 `AsyncData` 的值，
+   因此 `AsyncValue.guard` 失败后 `hasValue == true`。判据必须写 `!state.hasError`（已用变异测试证明
+   原写法会把失败当成功）。
+2. **第三个 logout 调用点**：`splash_screen.dart:36` 直接调 `repo.logout()`（不经过 controller），
+   没有 guard 也没有 epoch。它不在本次 5 文件范围内，列为 P0 尾项一并处理（改走 controller 即可）。
+
+## 17. P5 逐屏冒烟（计划）
+
+原则：**只断言"渲染不崩 + 关键状态可见 + 不溢出"**，不追像素、不断言长文案原文（文案会改）。
+统一用假 repository / override provider 喂数据，禁止打真实网络。
+
+| 屏                       | 行数 | 必须覆盖的状态                                    | 断言什么                                                   | 不做什么                      |
+| ------------------------ | ---: | ------------------------------------------------- | ---------------------------------------------------------- | ----------------------------- |
+| `practice_screen`        |  367 | loading / 作答中 / 判分反馈 / 提交失败（断网）    | 题干与选项渲染；选中态切换；失败时停在当前题且有可重试入口 | 不测计时器精度、不测音效/触感 |
+| `history_detail_screen`  |  401 | 有 logs / 空 logs / 加载失败                      | 会话摘要与 log 行数；空态文案；失败可重试                  | 不测图表像素                  |
+| `wrong_book_screen`      |  332 | 列表 / 按标签 / 已掌握 / 多选                     | 三视图切换后列表内容正确；多选计数；"开始练习"按钮可用性   | 不测动画                      |
+| `settings_screen`        |  341 | 服务器地址已配/未配 / 清理缓存                    | 表单回填；清理后题数归零提示；登出入口存在                 | 不测键盘行为                  |
+| `dashboard_screen`       |  332 | 有待办 / 无待办                                   | 三张待办卡按 `LearningStats` 显示；无数据时不出现假数字    | 不测下拉刷新动画              |
+| `chat_screen`            |  254 | 空对话 / 生成中 / 失败可重试                      | 发送后出现占位；停止按钮出现；失败消息带重试               | 不测流式逐字动画              |
+| `shared/widgets`（5 个） |  449 | 四态（loading/empty/error/data）、选中/禁用、折叠 | 每个组件 2–4 条渲染断言                                    | 不测配色像素值                |
+
+预计：全局 → ~43%，`screens` 17.8% → ~30%。**前置**：#247 合入（它引入了 `state_views` 统一四态，P5 直接复用）。
+
+## 18. 门禁第三轮（明确不做，记录理由）
+
+"只统计本 PR 新增行被覆盖的比例"（diff coverage）是业界标准做法，但在 G5 已给出净变化、
+G1–G4 已修掉两类误报的前提下，收益递减：需要把 lcov 行号与 diff hunk 精确对齐，误判成本高于收益。
+等出现"G5 报告看不懂"或"PR 反复因 1 行未覆盖卡住"再考虑。
+
+## 19. 设置持久化（计划）
+
+### 19.1 现状
+
+- `mobile_app/lib` 里 **0 处 `shared_preferences`**（`pubspec.yaml` 也没有该依赖）
+- `theme_provider.dart`：`build()` 恒返回 `ThemeMode.system`，切了只活在内存
+- `settings_provider.dart`：复习模式默认 `ReviewMode.list`，重启回默认
+- 后果：每次冷启动主题跳回浅色、复习模式重置——用户每天要重设一次，且会以为"设置没生效"
+
+### 19.2 修法
+
+| #   | 动作                                                                                                                     | 判据                                           |
+| --- | ------------------------------------------------------------------------------------------------------------------------ | ---------------------------------------------- |
+| 1   | `pubspec.yaml` 加 `shared_preferences`                                                                                   | `flutter pub get` 后 `pubspec.lock` 有对应条目 |
+| 2   | 新增 `core/storage/preferences.dart`：`PreferencesStore` 抽象（`readString/writeString`）+ `SharedPreferencesStore` 实现 | 便于测试注入，不在 provider 里直接调静态 API   |
+| 3   | `theme_provider` 启动读 `theme_mode`（`system/light/dark`），非法值或读失败 → 回 `system`                                | 单测：往返、非法值兜底、读抛错兜底             |
+| 4   | `settings_provider` 同理读写 `review_mode`                                                                               | 单测：同上                                     |
+| 5   | 写入失败**不能**让 UI 报错或回滚（设置仍然生效，只是下次启动丢）                                                         | 单测：写抛错 → 状态仍更新，仅 `debugPrint`     |
+
+### 19.3 验收
+
+- `flutter test` 全绿（新增 6 条）；`flutter analyze` error/warning = 0
+- 门禁：`domain_data`/`providers` 不应下降（新增代码都有测）
+- 手工：改主题 → 杀进程 → 重开仍是暗色
+
+工作量：0.5 天。
+
+## 20. 离线边界与提示（计划）
+
+### 20.1 现状
+
+- 离线只覆盖练习（`cached_questions` + `pending_answers` + `SyncService`）
+- recall（记忆卡）与聊天**没有本地层**：断网进入 recall 会先转圈再报错，聊天发送后卡在占位
+- 没有统一的"当前无网"信号（`connectivity_plus` 只被 `SyncService` 用）
+
+### 20.2 两个方案
+
+| 方案          | 范围                                                                                                                                       | 判据                                                                               | 工作量 |
+| ------------- | ------------------------------------------------------------------------------------------------------------------------------------------ | ---------------------------------------------------------------------------------- | ------ |
+| **A（先做）** | 断网时给明确提示并禁用入口：recall/chat 的入口按钮显示"需要联网"，点进去显示统一离线态（复用 #247 的 `state_views`）；聊天发送前拦截并提示 | 断网 → recall 入口禁用且文案明确；聊天点发送不产生空占位；恢复网络后入口自动可用   | 0.5 天 |
+| B（后续）     | recall 队列本地缓存 + 提交入队，复用 `pending_answers` 的幂等键模式                                                                        | 断网可打开缓存的队列、可提交（入队）、回网 flush 幂等；`pendingCount` 覆盖两类数据 | 1–2 天 |
+
+### 20.3 决策点
+
+- 是否值得为 recall 做离线（备考场景地铁/教室无网）—— 取决于真实使用里"无网时是否想背卡"
+- 若做 B，需要给 `pending_answers` 加 `kind` 列（`practice` / `recall`），涉及 v2→v3 迁移，**必须**有迁移测试（`local_schema_test.dart` 已有 v1→v2 先例）
+
+先做 A；B 等 A 上线后用真实反馈决定。
+
+## 21. 移动端可访问性（计划）
+
+### 21.1 现状（`grep` 实测，main）
+
+| 指标                                      |                  数量 | 含义                                                 |
+| ----------------------------------------- | --------------------: | ---------------------------------------------------- |
+| `Semantics(`                              | 3（116 个 dart 文件） | 几乎为零                                             |
+| `IconButton(`                             |                    33 | 只有 4 处有 `tooltip:` → 约 29 个图标按钮读屏无标签  |
+| `SemanticsService`                        |                     0 | 判分对错、同步完成、加载失败全靠视觉，读屏用户全静默 |
+| 可点容器（`GestureDetector(`/`InkWell(`） |                    30 | 多半没有 `button: true` 与 label                     |
+| `ExcludeSemantics`                        |                     0 | 装饰性图标没被排除，读屏会念出无意义内容             |
+
+Web 侧已有 a11y 棘轮（`eslint jsx-a11y` + 交互类命中 45→0），移动端目前**一条护栏都没有**。
+
+### 21.2 分三批
+
+| 批次        | 范围                                                                                                               | 判据                                                                                        | 工作量 |
+| ----------- | ------------------------------------------------------------------------------------------------------------------ | ------------------------------------------------------------------------------------------- | ------ |
+| B1 图标按钮 | 33 处 `IconButton` 补 `tooltip:`（同时作为语义标签）；装饰性 `Icon` 包 `ExcludeSemantics`                          | 静态扫描测试：每个 `IconButton(` 附近必须有 `tooltip:` 或 `semanticsLabel:`，白名单只减不增 | 0.5d   |
+| B2 可点容器 | 30 处 `GestureDetector`/`InkWell` 加 `Semantics(button: true, label: ...)`，或换成带语义的 `InkWell` + `Semantics` | 同上：可点容器必须有 label；白名单只减不增                                                  | 0.5d   |
+| B3 状态播报 | 判分结果、同步完成、加载失败三处 `SemanticsService.announce`                                                       | 单测：调用发生时播报文案正确（mock `SemanticsService`）                                     | 0.5d   |
+
+### 21.3 验收
+
+- TalkBack（Android）/ VoiceOver（iOS）走查 5 条关键流：登录 → 刷题 → 错题本 → 设置 → recall
+- `flutter analyze` 0 error/warning；新增静态扫描测试进 `flutter test`（与 `navigation_rules_test.dart` 同一套路）
+
+## 22. P5 的测试基建与反模式（计划）
+
+P5 要新增约 20 个 widget 测试文件，先定基建，否则每个文件各写一套、且容易变成脆测试。
+
+### 22.1 基建（写进 `test/support/`）
+
+| 文件                  | 内容                                                                                                                                              |
+| --------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `pump_screen.dart`    | `pumpScreen(tester, Widget child, {overrides})`：统一 `ScreenUtil.init`（375×667，`textScaler` 1.0 与 1.3 两档）+ `MaterialApp` + `ProviderScope` |
+| `fake_providers.dart` | 每个 provider 一个 override 工厂（`fakePractice(questions: ...)`），集中管理，避免每个测试自己拼                                                  |
+
+### 22.2 反模式（写进文件头，review 时逐条核）
+
+1. 不断言文案原文——用 `find.byKey` 或语义标签（文案会改，测试不该跟着改）
+2. 不断言像素/颜色值——那是 golden 的活，P5 不做 golden
+3. 不用 `Future.delayed` 等待——用 `pumpAndSettle` + 可控的假流/假 Completer
+4. 不测第三方组件内部（`Skeletonizer`/`flutter_markdown` 自己渲染成什么）
+5. 每个测试只锁一件事，名字写"行为 + 理由"
+
+### 22.3 覆盖率目标曲线与性能预算
+
+| 阶段                 | global | `screens` | `shared` |
+| -------------------- | -----: | --------: | -------: |
+| 现状                 |  36.6% |     17.8% |    47.0% |
+| P5 完成              |   ~43% |      ~30% |     ~55% |
+| P5b（错误/空态分支） |   ~46% |      ~35% |     ~60% |
+
+- 单测耗时预算：每条 < 300ms；`flutter test` 总时长 < 90s（当前约 48s，P5 后需盯住，超了就拆 `integration` 标签）
+
+## 23. 真机验收闭环（计划）
+
+### 23.1 现状
+
+`mobile_app` 从未在真机验收：暗色 20 屏、Android 15 返回手势、iOS 侧滑、三处图标差异都只有"代码层结论"。
+`android.yml` 的 `apk` job 已就绪（`workflow_dispatch` / tag 触发），但产物没有形成验收记录。
+
+### 23.2 流程
+
+| #   | 动作                                                                                                             | 产物                           |
+| --- | ---------------------------------------------------------------------------------------------------------------- | ------------------------------ |
+| 1   | 触发 `Android` workflow（`workflow_dispatch`）                                                                   | APK artifact（约 53MB）        |
+| 2   | 装到你的手机                                                                                                     | —                              |
+| 3   | 按 12 项清单逐条截图：暗色下 6 屏 / 浅色下 2 屏 / 返回手势 / 侧滑 / 长文本 1.3 倍字号 / 键盘弹出 / 空态 / 错误态 | `docs/verify/2026-11-xx/*.png` |
+| 4   | 结论写回 `docs/mobile-ui-kit.md` 的"未完成事项"                                                                  | 逐条"已验/未验 + 结论"         |
+
+### 23.3 判据
+
+清单 12 项逐条有截图或明确标"未验"，不允许只写"应该没问题"。
+工作量：清单 0.5d + 你的手机时间；每次 UI PR 合入后复用同一清单。
+
+## 24. 错误文案统一（计划）
+
+### 24.1 现状
+
+用户会直接看到：`'服务器打盹了 (${statusCode ?? "未知"})'`（`login_screen.dart:39`）、
+`FormatException: ...` 原文（`practice_repository_impl.dart` 的 `int.parse`）、各 provider 的 `e.toString()`。
+
+### 24.2 修法
+
+1. 新增 `core/error/user_message.dart`：`String userMessageOf(Object error)`，按类型映射：
+   超时 / 断网 / 401 / 403 / 404 / 5xx / 解析失败 / 未知，未知兜底「出了点问题，请重试」
+2. 所有 UI 侧 `error.toString()` 改为 `userMessageOf(error)`；`debugPrint` 保留原始异常
+3. 顺带修 §12.7 ③：`submitAnswer` 的 `int.parse` 改为校验后抛业务错误（`'题目编号异常，请刷新后重试'`）
+
+### 24.3 判据
+
+- 单测 8 条（每种映射一条 + 未知兜底 + 不泄漏堆栈）
+- 静态扫描：UI 层（`presentation/**`）不得出现 `error.toString()`，白名单只减不增
+- 工作量：0.5d
+
+## 25. 备考主路径摩擦（计划）
+
+前提：这个 App 的真实用法是「每天 45 分钟、4 月考试」，所以判断标准是**从打开到开始今天的第一道题要几步**，
+而不是功能有多少。
+
+### 25.1 已核实的摩擦点
+
+| #   | 现象                                       | 证据                                                                                  | 后果                                                   |
+| --- | ------------------------------------------ | ------------------------------------------------------------------------------------- | ------------------------------------------------------ |
+| F1  | 首页三张功能卡的数值是字面量占位           | `dashboard_screen.dart:178` `trailingValue: '几分钟'`、`:190` `'--'`、`:201` `'回顾'` | 用户看到"累计 --"，会以为数据没加载/坏了               |
+| F2  | 没有底部导航，所有功能都从首页卡片进入     | 全仓无 `BottomNavigationBar`（只有 `wrong_book_screen` 内部用过一次槽位）             | 从记忆卡深处回首页要连按返回；切换功能必须回首页       |
+| F3  | 待办条目点击进的是"练习设置"，不是直接开练 | `dashboard_screen.dart:148` `onTap → AppRoutes.practiceSetup`                         | 多一步选择（模式/题量），而待办已经知道"还差 N 题"     |
+| F4  | 记忆卡入口不显示"今天到期多少张"           | `:178` 只有"每次/几分钟"                                                              | 用户不知道今天要不要做、要做几张，容易跳过             |
+| F5  | 练习中断后没有"继续上次"                   | 当前 sessionId 不持久化（`practice_provider` 只在内存）；离线队列只兜住"已提交的作答" | 中途杀进程/切走太久 → 这场的剩余题目丢失，只能重开一场 |
+
+### 25.2 修法与判据
+
+| #   | 修法                                                                                                    | 判据                                                                    | 工作量 |
+| --- | ------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------- | ------ |
+| F1  | 三张卡接真实数据：记忆卡→到期张数、错题→累计条数、历史→最近一次练习时间（都有现成 provider/repository） | widget test 断言三处不再是字面量；无数据时显示"暂无"而不是 `--`         | 0.5d   |
+| F4  | 记忆卡卡面显示"今日到期 N 张"（`recall` 队列 provider 已有该数）                                        | 到期 0 → 显示"今天已完成"；>0 → 显示数字                                | 0.5d   |
+| F3  | 待办条目直接开练（带 `limit=remaining`、模式沿用上次）                                                  | 点击 → 直接进 `practice_screen` 第 1 题；不再经过 setup                 | 0.5d   |
+| F2  | 4 个高频入口做底部导航：首页 / 练习 / 记忆卡 / 错题本；tab 切换不堆栈                                   | 4 个 tab 两两互达 ≤1 次点击；返回键在 tab 根页退出 App 而不是回上一 tab | 1d     |
+| F5  | 把当前 `sessionId` + 进度存 `preferences`，首页出现"继续上次练习"                                       | 杀进程重开 → 首页出现"继续"；进入后从第 N 题开始；完成后清除            | 1d     |
+
+### 25.3 顺序与前置
+
+F1 → F4 → F3 → F2 → F5。
+
+- F1/F4 只读现有数据，可与任何批次并行
+- F2 会动 `app_router.dart` 与导航结构，**必须在 #247 合入后做**（它改了 20 屏的顶栏/底色）
+- F5 依赖 §19 的 `PreferencesStore`，排在 §19 之后
+
+### 25.4 不做
+
+- 不做"智能推荐今天该练什么"（当前没有足够数据支撑，且会掩盖 F1–F4 这些更基础的问题）
+- 不重排首页视觉层级（#247 刚统一了颜色层，等真机验收后再谈）
+
+## 26. APK 发布链路（计划）
+
+### 26.1 现状（读 `android.yml` 实测）
+
+| 项 | 现状 | 问题 |
+| --- | --- | --- |
+| 触发 | `workflow_dispatch` + `push: tags v*`；`needs: [analyze]` | 合理，保持 |
+| 版本号 | `pubspec.yaml` 固定 `1.0.0+1`；gradle 取 `flutter.versionCode` | **每次构建 versionCode 都是 1**，系统里版本号永远不变，无法从用户上报区分构建 |
+| 签名 | secrets 里的固定 keystore，缺配置直接失败 | 已做对（debug keystore 会导致装不上旧包） |
+| 产物 | `upload-artifact: app-release`，未设 retention | 名字不含版本；默认 90 天 |
+| 发布 | 无 GitHub Release、无 changelog | 只能去 Actions 页面翻 run |
+| 指纹 | 无 | APK 内不知道对应哪个 commit |
+
+### 26.2 修法
+
+| # | 动作 | 判据 | 工作量 |
+| --- | --- | --- | --- |
+| R1 | 版本号由 CI 派生：`flutter build apk --build-name=<pubspec 语义版本> --build-number=${{ github.run_number }}` | 连续两次 dispatch → versionCode 1→2；设置页"关于"显示 `1.0.0 (2)` | 0.5d |
+| R2 | artifact 改名 `app-release-<name>+<code>`，`retention-days: 30` | 两次构建的 artifact 名不同、可在下载页区分 | 同上 |
+| R3 | 打 tag 时创建 GitHub Release，APK 作为 release asset（正文取 commit 列表或 `CHANGELOG.md` 对应段） | `git tag v1.1.0 && git push --tags` → Release 自动出现且带 APK | 0.5d |
+| R4 | 构建指纹：`--dart-define=BUILD_SHA=${{ github.sha }}`，设置页"关于"显示前 8 位 | 设置页可见；与 `git rev-parse --short HEAD` 一致 | 0.5d |
+| R5 | 密钥备份：keystore 只存在 secrets，**丢失即无法覆盖升级**（只能换包名重发）。文档写明离线备份位置（密码管理器/加密介质），不入库 | `docs/deploy.md` 增一节"Android 签名密钥备份" | 0.2d |
+| R6 | **回滚**：Android 不允许 versionCode 降级安装，所以回滚 ≠ 装旧包。正确做法是从旧 tag 重新构建，但 build-number 继续用当前 `run_number`（旧代码 + 更大的版本号） | 回滚演练一次：旧 tag 构建 → 能覆盖安装 → 设置页版本号更高、功能是旧版 | 0.5d |
+| R7 | ABI 拆分（**不做**）：`--split-per-abi` 可把 53MB 拆成三个约 20MB 的包 | 只有一个真机，多维护 3 个产物不划算 | — |
+
+### 26.3 顺序
+
+R1+R2（先让包可区分）→ R3 → R4 → R5（文档）→ R6（演练一次）。
+
+前置：无。与 §23 真机验收互补——§23 用 APK 做验收，§26 让"哪个 APK"这件事可追溯。
+
+### 26.4 判据汇总
+
+1. 连续两次 `workflow_dispatch`：versionCode 递增、artifact 名不同
+2. 打 tag：Release 自动创建且附 APK
+3. 回滚演练：旧 tag 重建的包能覆盖安装，设置页版本号更高
+4. 文档：密钥备份位置写清，且仓库内不出现 keystore
+
+## 27. CI 时长与测试预算（计划）
+
+### 27.1 实测（`gh run view --json jobs`）
+
+| job | 时长 | 备注 |
+| --- | ---: | --- |
+| Lint & Type Check | 2.0min | 含 `npm ci` |
+| 单元测试 (Vitest) | 3.6min | 含 `npm ci` |
+| OpenAPI 契约快照 | 1.2min | 含 `npm ci` |
+| MCP 构建与文档任务验收 | 1.0min | 含 `npm ci` |
+| Flutter 静态分析与测试（android.yml） | 2.4min | pub get + build_runner + analyze + test --coverage + 门禁 |
+| Playwright layout-guard / perf-guard / E2E | 未取到 | 与 CI 并行，`ui-guard.yml` 独立 workflow |
+| 构建 Release APK | 45min 超时上限 | 仅 dispatch/tag 触发，实测待测 |
+
+### 27.2 四个问题
+
+1. **`ci.yml` 没有路径过滤**：本次纯文档 PR #249 也跑了全套 8 个 web 检查（lint / vitest / openapi / mcp / 2×playwright / e2e / next build）
+2. **每个 job 各自 `npm ci`**：lint、vitest、openapi、mcp、playwright×2、e2e ≈ 7 次安装，是墙钟时间的主要构成
+3. **快闸与慢闸同层**：Playwright 61 条与 typecheck 平级，PR 反馈被最慢的拖住
+4. **失败日志会过期**：#243 / #222 的失败原因现在已查不到（`--log-failed` 返回空），排障只能重跑
+
+### 27.3 方案
+
+| # | 动作 | 判据 | 工作量 |
+| --- | --- | --- | --- |
+| C1 | 路径过滤：`ci.yml` / `ui-guard.yml` 加 `paths-ignore: ['docs/**', '**/*.md', 'mobile_app/**']`（`android.yml` 已有 `paths`，保持） | 只改 docs 的 PR：web CI 不触发或 <30s | 0.2d |
+| C2 | 分层：PR 只跑快闸（lint/typecheck/vitest/openapi/mcp/next build）；Playwright 与 E2E 改为 **main push + label `run-e2e` + 每晚定时** | PR 反馈 p50 < 4min；main 仍全量 | 0.5d |
+| C3 | 合并安装：openapi / mcp 并进 lint job（共用 node_modules），或抽 composite action + `cache` | CI 总时长下降 ≥30% | 0.5d |
+| C4 | Flutter 测试预算：518 条 48s → 目标 <90s；单条 <300ms；超预算先查 `pumpAndSettle` 次数与 `--concurrency` | `flutter test` 超过 90s 即视为需要拆分 | 0.2d |
+| C5 | 失败证据：`if: always()` 上传关键日志 artifact | 30 天后仍能取到失败原因 | 0.3d |
+| C6 | 文档：`AGENTS.md` 写"PR 最小闸门清单"（哪些挡合并、哪些只是信号） | 新 PR 能自答"我该等哪些检查" | 0.1d |
+
+### 27.4 不做
+
+- 自建 runner 承接 web CI（`SELF_HOSTED` 开关已有，但本机 glibc 2.17 跑不了 Chromium）
+- 删掉 Playwright：61 条 layout-guard 是 UI 回归的唯一护栏，只是不该挡每个 PR
+
+

@@ -38,6 +38,41 @@ npm test             # Vitest（监听模式）
 npm run db:migrate   # 执行数据库迁移
 ```
 
+## PR 最小闸门清单（该等哪些检查）
+
+CI 分两层：**快闸**每个 PR 必跑（p50 目标 < 4 分钟），**慢闸**只在 main / 标签 / 夜间跑。
+分层只改触发时机，不降低强度：main 与夜间仍然全量。
+
+| 检查（check 名） | 挡合并 | 什么时候跑 | 内容 |
+| --- | --- | --- | --- |
+| `Lint & Type Check` | ✅ 必需 | 每个 PR | `audit:catches` / `lint:ci` / `typecheck` / 契约快照 / MCP 工具表 / MCP 构建+冒烟 / 文档任务 |
+| `单元测试 (Vitest)` | ✅ 必需 | 每个 PR | `vitest run --coverage` |
+| `Next.js 构建校验` | ✅ 必需 | 每个 PR（与 lint 并行） | `db:migrate` + `next build` + `perf:budget` |
+| `E2E (Playwright · chromium)` | ⬜ 信号 | main push / PR 标签 `run-e2e` / 每晚 03:00 / 手动 | 10 条关键路径 |
+| `UI 布局护栏 (layout-guard)` | ⬜ 信号 | 同上（每晚 03:10） | 61 条几何断言 |
+| `UI 交互性能护栏 (perf-guard)` | ⬜ 观察期 | 同上 | LoAF / 点击延迟，`continue-on-error` |
+| `Flutter 静态分析与测试` | ✅（移动端） | 仅 `mobile_app/**` 改动 | analyze + test + 覆盖率门禁 |
+
+要点：
+
+- **PR 只需要等前三个**。慢闸没跑不是"未通过"，是没触发；要前置验证就给 PR 打标签。
+- **纯文档 / 移动端 PR 不跑 web 检查**：`ci.yml` 的 `changes` job 判定「本次 PR 是否含
+  `docs/**`、`**/*.md`、`mobile_app/**` 以外的文件」，全部是文档/移动端时快闸按
+  `if:` 跳过（报 Success，不会卡在 "Expected — waiting"）。文档与代码混改照常全跑。
+- **为什么不用 `paths-ignore`**：被路径过滤掉的工作流不创建 check run，必需检查会永远
+  Pending，纯文档 PR 反而合不进去（GitHub 官方 troubleshooting 明列此坑）。
+
+手动拉起慢闸：
+
+```bash
+gh pr edit <PR号> --add-label run-e2e   # 打标签后重新 push 或 re-run 该 PR 的 run
+gh workflow run ci.yml --ref <branch>   # 或在 Actions 页面 Run workflow（全量含慢闸）
+cd my-next-app && npx playwright test --project=layout-guard   # 本地等价
+```
+
+失败证据：关键 job 失败时会把步骤日志上传为 `ci-failure-<job名>` artifact（保留 14 天，
+Playwright 报告同时上传），线上日志过期后仍可复盘——`gh run --log-failed` 曾取回空内容。
+
 ## 架构约束（CRITICAL）
 
 ### API 层：Hono（禁止新增 Next.js API Routes）

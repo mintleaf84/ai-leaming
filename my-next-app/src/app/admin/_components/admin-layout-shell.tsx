@@ -21,7 +21,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
 import { useRouter } from "next/navigation";
-import { useQuery } from "@tanstack/react-query";
+import { useAppQuery } from "@/hooks/useAppQuery";
 
 export function AdminLayoutShell({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
@@ -29,7 +29,7 @@ export function AdminLayoutShell({ children }: { children: React.ReactNode }) {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   // 数据维护提醒：与系统运维页的维护卡片共用同一个 queryKey，
   // 清理后 invalidate 会让横幅和卡片一起更新（不再依赖整页重载）。
-  const { data: maintenance } = useQuery({
+  const { data: maintenance } = useAppQuery({
     queryKey: ["admin-maintenance-dedupe"],
     queryFn: async () => {
       const res = await fetch("/api/admin/maintenance/dedupe");

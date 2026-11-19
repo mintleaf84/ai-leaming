@@ -506,6 +506,36 @@ body[data-scroll-locked] main {
     animation: fade-in-up 0.4s cubic-bezier(0.4, 0, 0.2, 1) both;
   }
 
+  /* ------------------------------------------------------------------
+   * hover-reveal：列表行上的次要操作（删除 / 重命名）只在"真有鼠标"时隐藏。
+   *
+   * 为什么不用 `md:opacity-0`：断点判断的是**视口宽度**，不是输入设备。
+   * 手机横屏（>=768px）、带触摸屏的笔记本、外接鼠标的平板都会判错：
+   * 前者让按钮常驻（丑），后两者让按钮永远 opacity-0 —— 手指点不到
+   * （W2 事故：手机/触屏上"删除"按钮点不到）。
+   *
+   * `@media (hover: hover)` 问的才是"这个设备能不能悬停"，触屏设备上
+   * 直接常显，键盘用户靠 :focus-visible 强制显示（按钮仍在 tab 序里）。
+   * ------------------------------------------------------------------ */
+  .hover-reveal {
+    opacity: 1;
+  }
+
+  @media (hover: hover) {
+    .hover-reveal {
+      opacity: 0;
+    }
+
+    .group:hover .hover-reveal,
+    .group:focus-within .hover-reveal {
+      opacity: 1;
+    }
+
+    .hover-reveal:focus-visible {
+      opacity: 1;
+    }
+  }
+
   /* 错落感动效 (Staggered Children) */
   .stagger-1 {
     animation-delay: 50ms;

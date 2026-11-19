@@ -50,11 +50,21 @@ function StatsSkeleton() {
 async function DashboardStatsCards() {
   const result = await getUserStatsAction();
 
-  if (result.serverError || !result.data) {
-    redirect("/login");
+  // 认证失败 → 去登录页；但服务端故障不能也送登录页：那样用户登录回来
+  // 还是坏页面，看不到"是统计接口挂了"。真正的故障抛给路由错误边界，
+  // 由它给出「重试」按钮。
+  const failure = result?.serverError;
+  if (failure) {
+    if (/unauthorized|forbidden|未登录|无权限/i.test(failure)) {
+      redirect("/login");
+    }
+    throw new Error(failure);
   }
 
-  const stats = result.data;
+  const stats = result?.data;
+  if (!stats) {
+    throw new Error("无法读取学习统计，请稍后重试");
+  }
 
   return (
     <div className="grid grid-cols-1 md:grid-cols-3 gap-8">

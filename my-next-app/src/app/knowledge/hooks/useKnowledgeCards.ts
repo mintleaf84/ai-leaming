@@ -1,7 +1,8 @@
 "use client";
 
 import { useState, useCallback, useMemo } from "react";
-import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { useAppQuery } from "@/hooks/useAppQuery";
 import type { KnowledgeCard } from "@/lib/services/knowledge";
 import { fetchJson } from "@/lib/utils/api-client";
 
@@ -42,7 +43,7 @@ export function useKnowledgeCards() {
     isLoading: loading,
     isError,
     error,
-  } = useQuery({
+  } = useAppQuery({
     queryKey: [KNOWLEDGE_CARDS_KEY, selectedCategory],
     queryFn: async () => {
       const params = new URLSearchParams();

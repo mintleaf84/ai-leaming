@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 
+import '../../core/error/user_message.dart';
 import '../../features/practice/presentation/first_principles_provider.dart';
 import '../../features/practice/domain/first_principles_params.dart';
 import '../../features/history/domain/practice_log.dart';
@@ -86,10 +87,16 @@ class _FirstPrinciplesSectionState
 
     final asyncValue = ref.watch(firstPrinciplesProvider(params));
 
+    final error = asyncValue.error;
+    if (error != null) {
+      // 原始异常只进日志，界面用统一文案（审计 #24）。
+      debugPrint('[FirstPrinciples] 分析失败: $error');
+    }
+
     return AiAnalysisCard(
       isLoading: asyncValue.isLoading,
       content: asyncValue.asData?.value.analysis,
-      error: asyncValue.error?.toString(),
+      error: error == null ? null : userMessageOf(error),
       onRetry: () => ref.refresh(firstPrinciplesProvider(params)),
       onCollapse: () => setState(() => _isExpanded = false),
     );

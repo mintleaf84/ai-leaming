@@ -2,6 +2,7 @@ import 'package:dio/dio.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mobile_app/features/auth/data/auth_repository_impl.dart';
+import 'package:mobile_app/features/auth/domain/auth_repository.dart';
 import 'package:mobile_app/shared/datasources/api_client.dart';
 
 import '../../../support/recording_adapter.dart';
@@ -14,6 +15,8 @@ import '../../../support/recording_adapter.dart';
 ///    写错 key 或忘记 await，界面会「登录成功但下一个请求 401」。
 /// 3. **失败时不得写入 token**：服务端 401 时异常要往上抛，且存储里不能留下
 ///    半截凭据——否则用户会带着一个假 token 进主界面，所有请求一起失败。
+/// 4. **成功响应缺 token 也算失败**：`write(value: null)` 是删除不是写入，
+///    旧实现会「登录成功」却没有任何凭据，必须抛 [AuthException]。
 ///
 /// 存储用 `FlutterSecureStorage.setMockInitialValues` 换成内存实现，
 /// 断言的是「客户端写/删了什么」，不是平台通道。
@@ -66,6 +69,40 @@ void main() {
         reason: '失败不能留下半截凭据，否则后续请求全带着坏 token',
       );
     });
+
+    test('响应里没有 token：抛 AuthException，且不写入 token', () async {
+      adapter.responseBody = <String, dynamic>{
+        'user': <String, dynamic>{'id': 7, 'username': 'alice'},
+      };
+
+      await expectLater(
+        repository.login('alice', 's3cret'),
+        throwsA(
+          isA<AuthException>().having(
+            (error) => error.message,
+            'message',
+            contains('登录'),
+          ),
+        ),
+      );
+
+      expect(
+        await storage.read(key: 'jwt_token'),
+        isNull,
+        reason: '没有 token 就是登录失败，不能让界面以为成功了',
+      );
+    });
+
+    test('token 是空字符串：抛 AuthException，且不写入 token', () async {
+      adapter.responseBody = <String, dynamic>{'token': ''};
+
+      await expectLater(
+        repository.login('alice', 's3cret'),
+        throwsA(isA<AuthException>()),
+      );
+
+      expect(await storage.read(key: 'jwt_token'), isNull);
+    });
   });
 
   group('register', () {
@@ -92,6 +129,25 @@ void main() {
         repository.register('bob', 'pw123456'),
         throwsA(isA<DioException>()),
       );
+      expect(await storage.read(key: 'jwt_token'), isNull);
+    });
+
+    test('响应里没有 token：抛 AuthException（文案是注册），且不写入 token', () async {
+      adapter.responseBody = <String, dynamic>{
+        'user': <String, dynamic>{'id': 8, 'username': 'bob'},
+      };
+
+      await expectLater(
+        repository.register('bob', 'pw123456'),
+        throwsA(
+          isA<AuthException>().having(
+            (error) => error.message,
+            'message',
+            allOf(contains('注册'), contains('token')),
+          ),
+        ),
+      );
+
       expect(await storage.read(key: 'jwt_token'), isNull);
     });
   });

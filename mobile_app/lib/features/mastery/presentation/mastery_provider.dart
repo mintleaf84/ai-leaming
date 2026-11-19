@@ -1,4 +1,6 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import '../../../core/error/user_message.dart';
 import '../../../core/network/dio_client.dart';
 import '../../../shared/datasources/api_client.dart';
 
@@ -82,7 +84,8 @@ class MasteryController extends Notifier<MasteryState> {
 
       state = state.copyWith(isLoading: false, tree: tree);
     } catch (e) {
-      state = state.copyWith(isLoading: false, error: e.toString());
+      debugPrint('[Mastery] 加载掌握度失败: $e');
+      state = state.copyWith(isLoading: false, error: userMessageOf(e));
     }
   }
 }

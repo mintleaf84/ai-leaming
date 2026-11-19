@@ -5,6 +5,7 @@ import 'package:flutter_hooks/flutter_hooks.dart';
 import 'package:skeletonizer/skeletonizer.dart';
 import '../../../core/compat/contract_meta_repository.dart';
 import '../../../core/navigation/app_nav.dart';
+import '../../../core/network/connectivity_provider.dart';
 import '../../stats/presentation/stats_provider.dart';
 import '../../stats/domain/learning_stats.dart';
 import '../../../core/theme/app_icons.dart';
@@ -29,6 +30,10 @@ class DashboardScreen extends HookConsumerWidget {
     final showRecall = recallEntryAvailable(
       ref.watch(contractDecisionProvider).value,
     );
+    // 离线判定（审计 #20）：`AsyncValue` 首帧是 loading，拿不准按在线处理，
+    // 理由见 connectivity_provider.dart。
+    final isOnline = ref.watch(isOnlineProvider).value ?? true;
+
     return Scaffold(
       backgroundColor: context.colors.background, // Notion-like background
       body: Stack(
@@ -51,7 +56,11 @@ class DashboardScreen extends HookConsumerWidget {
                         Divider(height: 1.h, color: context.colors.border),
                         SizedBox(height: 24.h),
                         // Action Grid
-                        _buildActionGrid(context, showRecall: showRecall),
+                        _buildActionGrid(
+                          context,
+                          showRecall: showRecall,
+                          isOnline: isOnline,
+                        ),
                         SizedBox(height: 32.h),
                         // Progress Card + Todo List（统计区三态：骨架 / 错误 / 数据）
                         _buildStatsSection(context, ref, statsState),
@@ -124,7 +133,11 @@ class DashboardScreen extends HookConsumerWidget {
     );
   }
 
-  Widget _buildActionGrid(BuildContext context, {required bool showRecall}) {
+  Widget _buildActionGrid(
+    BuildContext context, {
+    required bool showRecall,
+    required bool isOnline,
+  }) {
     return Column(
       children: [
         IntrinsicHeight(
@@ -172,6 +185,10 @@ class DashboardScreen extends HookConsumerWidget {
         //
         // 服务端自述没有 recall 能力时整张卡不出现（连它的间距一起）：
         // 留一个空槽位比隐藏更难看，而灰显一张点不动的卡是欺骗。
+        //
+        // 离线是例外（审计 #20 方案 A）：这张卡进去就要拉会话，断网只会在下一页
+        // 撞一个空屏。所以断网时保留卡片但**禁用**，并把原因写在卡上——用户看到
+        // 的是「离线 / 联网后可用」，而不是一张点了没反应的卡。
         if (showRecall) ...[
           _buildWideCard(
             context,
@@ -180,9 +197,10 @@ class DashboardScreen extends HookConsumerWidget {
             tagColor: context.colors.successContainer,
             tagTextColor: context.colors.success,
             title: '记忆卡',
-            trailingLabel: '每次',
-            trailingValue: '几分钟',
-            onTap: () => context.pushDetail(AppRoutes.recall),
+            trailingLabel: isOnline ? '每次' : '离线',
+            trailingValue: isOnline ? '几分钟' : '联网后可用',
+            onTap: isOnline ? () => context.pushDetail(AppRoutes.recall) : null,
+            disabledNote: isOnline ? null : '离线，联网后可进入记忆卡',
           ),
           SizedBox(height: 16.h),
         ],
@@ -355,6 +373,10 @@ class DashboardScreen extends HookConsumerWidget {
   ///
   /// 右侧那两行（如「累计 / --」「每次 / 几分钟」）刻意只放**不依赖数据的描述**：
   /// 首页没有队列与统计快照，写死一个数字就是编数据。
+  ///
+  /// `onTap` 为 null 表示入口**禁用**（当前只有离线时的记忆卡）：此时卡片降透明度、
+  /// 不再响应点击，并在标签下方写出 [disabledNote] 说明原因。禁用而不是隐藏，
+  /// 是因为用户需要知道「有这个功能，只是现在用不了」。
   Widget _buildWideCard(
     BuildContext context, {
     required String icon,
@@ -364,128 +386,150 @@ class DashboardScreen extends HookConsumerWidget {
     required String title,
     required String trailingLabel,
     required String trailingValue,
-    required VoidCallback onTap,
+    required VoidCallback? onTap,
+    String? disabledNote,
   }) {
-    return GestureDetector(
-      onTap: onTap,
-      child: Container(
-        // 同两列卡：最小高度而不是固定高度，1.3 倍字号时不溢出
-        constraints: BoxConstraints(minHeight: 96.h),
-        decoration: BoxDecoration(
-          color: context.colors.surface,
-          borderRadius: BorderRadius.circular(16.r),
-          border: Border.all(color: context.colors.border),
-          boxShadow: [
-            BoxShadow(
-              color: Colors.black.withValues(alpha: 0.02),
-              blurRadius: 4,
-              offset: const Offset(0, 2),
-            ),
-          ],
-        ),
-        child: Stack(
-          children: [
-            Positioned(
-              right: 40.w,
-              top: 0,
-              bottom: 0,
-              child: Center(
-                child: Opacity(
-                  opacity: 0.1,
-                  child: Text(icon, style: TextStyle(fontSize: 60.sp)),
+    final enabled = onTap != null;
+    return Semantics(
+      button: true,
+      enabled: enabled,
+      label: enabled ? title : '$title，$disabledNote',
+      child: GestureDetector(
+        onTap: onTap,
+        child: Opacity(
+          opacity: enabled ? 1 : 0.55,
+          child: Container(
+            // 同两列卡：最小高度而不是固定高度，1.3 倍字号时不溢出
+            constraints: BoxConstraints(minHeight: 96.h),
+            decoration: BoxDecoration(
+              color: context.colors.surface,
+              borderRadius: BorderRadius.circular(16.r),
+              border: Border.all(color: context.colors.border),
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.black.withValues(alpha: 0.02),
+                  blurRadius: 4,
+                  offset: const Offset(0, 2),
                 ),
-              ),
+              ],
             ),
-            Padding(
-              padding: EdgeInsets.all(16.w),
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  // 标签 + 标题：字号放大时允许两行，不裁字
-                  Flexible(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        Container(
-                          padding: EdgeInsets.symmetric(
-                            horizontal: 6.w,
-                            vertical: 2.h,
-                          ),
-                          decoration: BoxDecoration(
-                            color: tagColor,
-                            borderRadius: BorderRadius.circular(4.r),
-                          ),
-                          child: Text(
-                            tag,
-                            maxLines: 1,
-                            overflow: TextOverflow.ellipsis,
-                            style: TextStyle(
-                              fontSize: 12.sp,
-                              color: tagTextColor,
-                              fontWeight: FontWeight.w600,
-                            ),
-                          ),
-                        ),
-                        SizedBox(height: 4.h),
-                        Text(
-                          title,
-                          maxLines: 2,
-                          overflow: TextOverflow.ellipsis,
-                          style: TextStyle(
-                            fontSize: 18.sp,
-                            fontWeight: FontWeight.bold,
-                            color: context.colors.text,
-                          ),
-                        ),
-                      ],
+            child: Stack(
+              children: [
+                Positioned(
+                  right: 40.w,
+                  top: 0,
+                  bottom: 0,
+                  child: Center(
+                    child: Opacity(
+                      opacity: 0.1,
+                      child: Text(icon, style: TextStyle(fontSize: 60.sp)),
                     ),
                   ),
-                  SizedBox(width: 8.w),
-                  Container(
-                    decoration: BoxDecoration(
-                      border: Border(
-                        left: BorderSide(color: context.colors.border),
-                      ),
-                    ),
-                    padding: EdgeInsets.only(left: 16.w),
-                    child: Row(
-                      children: [
-                        Column(
+                ),
+                Padding(
+                  padding: EdgeInsets.all(16.w),
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      // 标签 + 标题：字号放大时允许两行，不裁字
+                      Flexible(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
                           mainAxisAlignment: MainAxisAlignment.center,
-                          crossAxisAlignment: CrossAxisAlignment.end,
                           children: [
-                            Text(
-                              trailingLabel,
-                              style: TextStyle(
-                                fontSize: 12.sp,
-                                color: context.colors.textSecondary,
+                            Container(
+                              padding: EdgeInsets.symmetric(
+                                horizontal: 6.w,
+                                vertical: 2.h,
+                              ),
+                              decoration: BoxDecoration(
+                                color: tagColor,
+                                borderRadius: BorderRadius.circular(4.r),
+                              ),
+                              child: Text(
+                                tag,
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
+                                style: TextStyle(
+                                  fontSize: 12.sp,
+                                  color: tagTextColor,
+                                  fontWeight: FontWeight.w600,
+                                ),
                               ),
                             ),
+                            SizedBox(height: 4.h),
                             Text(
-                              trailingValue,
-                              maxLines: 1,
+                              title,
+                              maxLines: 2,
                               overflow: TextOverflow.ellipsis,
                               style: TextStyle(
-                                fontSize: 14.sp,
+                                fontSize: 18.sp,
                                 fontWeight: FontWeight.bold,
+                                color: context.colors.text,
                               ),
+                            ),
+                            if (disabledNote != null) ...[
+                              SizedBox(height: 2.h),
+                              Text(
+                                disabledNote,
+                                maxLines: 2,
+                                overflow: TextOverflow.ellipsis,
+                                style: TextStyle(
+                                  fontSize: 11.sp,
+                                  color: context.colors.textSecondary,
+                                ),
+                              ),
+                            ],
+                          ],
+                        ),
+                      ),
+                      SizedBox(width: 8.w),
+                      Container(
+                        decoration: BoxDecoration(
+                          border: Border(
+                            left: BorderSide(color: context.colors.border),
+                          ),
+                        ),
+                        padding: EdgeInsets.only(left: 16.w),
+                        child: Row(
+                          children: [
+                            Column(
+                              mainAxisAlignment: MainAxisAlignment.center,
+                              crossAxisAlignment: CrossAxisAlignment.end,
+                              children: [
+                                Text(
+                                  trailingLabel,
+                                  style: TextStyle(
+                                    fontSize: 12.sp,
+                                    color: context.colors.textSecondary,
+                                  ),
+                                ),
+                                Text(
+                                  trailingValue,
+                                  maxLines: 1,
+                                  overflow: TextOverflow.ellipsis,
+                                  style: TextStyle(
+                                    fontSize: 14.sp,
+                                    fontWeight: FontWeight.bold,
+                                  ),
+                                ),
+                              ],
+                            ),
+                            SizedBox(width: 8.w),
+                            Icon(
+                              AppIcons.chevronRight,
+                              size: 20.sp,
+                              color: context.colors.text,
                             ),
                           ],
                         ),
-                        SizedBox(width: 8.w),
-                        Icon(
-                          AppIcons.chevronRight,
-                          size: 20.sp,
-                          color: context.colors.text,
-                        ),
-                      ],
-                    ),
+                      ),
+                    ],
                   ),
-                ],
-              ),
+                ),
+              ],
             ),
-          ],
+          ),
         ),
       ),
     );

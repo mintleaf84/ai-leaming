@@ -35,6 +35,7 @@ export const submitAnswerAction = authenticatedAction
       input.isCorrect,
       input.duration,
       input.totalDurationMs,
+      "web",
       // 客户端判分只作参考：服务端在写日志的同一事务里重新读题判分，
       // 避免并发改题时落库旧判分（CodeRabbit：提交与回刷的竞争窗口）
       true,

@@ -22,6 +22,11 @@ class AuthRepositoryImpl implements AuthRepository {
       'password': password,
     });
     final token = response['token'];
+    // 先校验再落盘：token 为 null 时 `write(value: null)` 是删除而非写入，
+    // 方法却会正常返回——界面跳进主界面，下一个请求立刻 401。
+    if (token is! String || token.isEmpty) {
+      throw const AuthException('登录响应缺少 token，请重试');
+    }
     await _storage.write(key: 'jwt_token', value: token);
   }
 
@@ -32,6 +37,9 @@ class AuthRepositoryImpl implements AuthRepository {
       'password': password,
     });
     final token = response['token'];
+    if (token is! String || token.isEmpty) {
+      throw const AuthException('注册响应缺少 token，请重试');
+    }
     await _storage.write(key: 'jwt_token', value: token);
   }
 

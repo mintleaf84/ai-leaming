@@ -1,4 +1,6 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:flutter/foundation.dart';
+import '../../../core/error/user_message.dart';
 import '../../../core/network/dio_client.dart';
 import '../../../shared/datasources/api_client.dart';
 import '../domain/textbook.dart';
@@ -59,7 +61,9 @@ class TextbookListController extends Notifier<TextbookListState> {
       state = state.copyWith(isLoading: false, textbooks: list);
     } catch (e) {
       if (seq != _requestSeq) return;
-      state = state.copyWith(isLoading: false, error: e.toString());
+      // 原始异常只进日志，界面用统一文案（审计 #24）。
+      debugPrint('[Textbook] 加载教材列表失败: $e');
+      state = state.copyWith(isLoading: false, error: userMessageOf(e));
     }
   }
 }
@@ -101,7 +105,8 @@ final textbookDetailProvider =
               TextbookDetail.fromJson(response as Map<String, dynamic>);
           return TextbookDetailState(isLoading: false, detail: detail);
         } catch (e) {
-          return TextbookDetailState(isLoading: false, error: e.toString());
+          debugPrint('[Textbook] 加载教材详情失败: $e');
+          return TextbookDetailState(isLoading: false, error: userMessageOf(e));
         }
       },
     );

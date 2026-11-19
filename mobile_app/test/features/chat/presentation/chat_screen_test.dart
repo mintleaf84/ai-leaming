@@ -105,10 +105,9 @@ void main() {
     await tester.pump();
     await tester.pump();
 
-    // 已知缺陷（未改 lib，按当前行为锁定）：`ChatNotifier.onDone` 只把内部
-    // `_isGenerating` 置 false，没有改 state，界面因此收不到重建通知，按钮
-    // 仍停在「停止」，要等下一次状态变化才恢复。修好后这条断言应改成 send。
-    expect(find.byIcon(AppIcons.stop), findsOneWidget);
-    expect(find.byIcon(AppIcons.send), findsNothing);
+    // onDone 现在会发布一次状态（a11y 批次顺手修掉的缺陷），按钮必须回到「发送」；
+    // 不发布状态时界面会一直停在「停止」，点击回调却已走发送分支。
+    expect(find.byIcon(AppIcons.send), findsOneWidget);
+    expect(find.byIcon(AppIcons.stop), findsNothing);
   });
 }

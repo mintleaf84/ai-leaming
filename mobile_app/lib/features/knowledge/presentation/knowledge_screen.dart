@@ -39,6 +39,7 @@ class _KnowledgeScreenState extends ConsumerState<KnowledgeScreen> {
         title: const Text('知识卡片'),
         elevation: 0,
         leading: IconButton(
+          tooltip: '返回',
           icon: Icon(AppIcons.arrowBack, color: context.colors.text),
           onPressed: () => context.backOrHome(),
         ),
@@ -50,6 +51,7 @@ class _KnowledgeScreenState extends ConsumerState<KnowledgeScreen> {
         iconTheme: IconThemeData(color: context.colors.text),
         actions: [
           IconButton(
+            tooltip: '刷新知识卡片',
             icon: const Icon(AppIcons.refresh),
             onPressed: () => ref
                 .read(knowledgeControllerProvider.notifier)

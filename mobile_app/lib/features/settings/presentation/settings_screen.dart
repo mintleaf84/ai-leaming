@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
+import '../../../core/a11y/status_announcer.dart';
 import '../../../core/navigation/app_nav.dart';
 import 'settings_provider.dart';
 import '../../../core/theme/theme_provider.dart';
@@ -75,6 +76,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                 child: Row(
                   children: [
                     IconButton(
+                      tooltip: '返回',
                       onPressed: () => context.backOrHome(),
                       icon: Icon(AppIcons.arrowBack, color: textColor),
                     ),
@@ -396,8 +398,11 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
     }
     if (result.error != null) {
       _showSnackBar('同步未完成：${result.error}');
+      announceStatus(context, '同步未完成：${result.error}');
     } else {
-      _showSnackBar('已同步 ${result.answers} 条作答（${result.sessions} 个会话）');
+      final message = '已同步 ${result.answers} 条作答（${result.sessions} 个会话）';
+      _showSnackBar(message);
+      announceStatus(context, message);
     }
     setState(() {});
   }

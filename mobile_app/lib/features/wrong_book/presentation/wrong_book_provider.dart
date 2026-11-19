@@ -120,10 +120,12 @@ class WrongBookController extends Notifier<WrongBookState> {
       if (result['success'] == true) {
         return result['sessionId'] as String?;
       }
+      // 服务端明确拒绝时也要可见，否则界面表现为「点了没反应」。
+      state = state.copyWith(error: '创建练习失败，请重试');
       return null;
     } catch (e) {
       debugPrint('创建错题练习失败: $e');
-      state = state.copyWith(isCreatingPractice: false);
+      state = state.copyWith(isCreatingPractice: false, error: '创建练习失败，请重试');
       return null;
     }
   }
@@ -135,6 +137,8 @@ class WrongBookController extends Notifier<WrongBookState> {
       await loadData();
     } catch (e) {
       debugPrint('标记已掌握失败: $e');
+      // 只补错误提示，不动已加载的列表（loadData 没跑，列表本来就没被清）。
+      state = state.copyWith(error: '操作失败，请重试');
     }
   }
 
@@ -145,6 +149,7 @@ class WrongBookController extends Notifier<WrongBookState> {
       await loadData();
     } catch (e) {
       debugPrint('取消掌握失败: $e');
+      state = state.copyWith(error: '操作失败，请重试');
     }
   }
 }

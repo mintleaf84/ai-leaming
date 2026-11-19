@@ -348,7 +348,7 @@
 | ------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
 | 证据   | 12 处 `opacity-0 group-hover:opacity-100`，其中 5 处是真功能：`components/textbooks/DeleteTextbookButton.tsx:59`、`app/notes/NoteSidebar.tsx:160`、`app/mindmap/MindmapSidebar.tsx:99`、`components/chat/ChatSidebar.tsx:153`、`app/admin/activity/_components/ActivityList.tsx:238` |
 | 后果   | 触屏没有 hover → 按钮永不出现，删除/编辑类功能在手机上等于不存在                                                                                                                                                                                                                     |
-| 修法   | 改为移动端常显、桌面保持悬停：`opacity-100 md:opacity-0 md:group-hover:opacity-100`（同时保留 `focus-visible:opacity-100` 供键盘）                                                                                                                                                   |
+| 修法   | 改用 `@media (hover: hover)` 判定（已落地为 `globals.css` 的 `.hover-reveal`）：只有真正支持悬停的设备才隐藏，触屏与混合设备常显；保留 `:focus-visible` 与 `.group:focus-within` 供键盘。**不要用 `md:` 断点**——宽度达标的触屏设备仍无法 hover                                                                                                                                                   |
 | 判据   | Playwright 375×667 视口断言 5 个按钮 `toBeVisible()`；桌面视口仍为悬停出现；`npm run typecheck` 0 error                                                                                                                                                                              |
 | 工作量 | 0.5d                                                                                                                                                                                                                                                                                 |
 
@@ -382,7 +382,7 @@ W2（改动小、可当天合）→ W1 批次 A → W1 批次 B。两者互不�
 | 4   | `textbook_chapters(textbook_id)`                          | 表零索引（:551）                                   | 加                           |
 | 5   | `knowledge_cards(user_id, created_at)` / `notes(user_id)` | 前者两个单列索引，后者零索引（:26）                | 加复合 / 加单列              |
 
-结论：5 条里 1 条已修，4 条仍缺。
+结论：5 条里 1 条已修，4 条仍缺。**后续进展（PR #256）**：4 条缺失索引已全部补上（迁移 `drizzle/0021_perf_indexes.sql`），`EXPLAIN` 从 SCAN 变 SEARCH；本节保留为当时的复核记录。
 
 ### S1 索引快赢（0.5d）
 
@@ -398,7 +398,7 @@ W2（改动小、可当天合）→ W1 批次 A → W1 批次 B。两者互不�
 
 | 动作                                                                                         | 证据                                             | 判据                                       |
 | -------------------------------------------------------------------------------------------- | ------------------------------------------------ | ------------------------------------------ |
-| `knowledge.ts` / `questions.ts` 的 `limit` 加 clamp（对照 `external.ts:267` 的 `MAX_LIMIT`） | 现在只 `parseInt`，`limit=100000` 可用           | 传 100000 → 实际返回 ≤ MAX；加一条路由测试 |
+| `knowledge.ts` / `questions.ts` 的 `limit` clamp **已落地**（PR #256，走 `parsePagination`，上限 100）；`history` 详情已去掉 `material_html`、`wrong-book` 详情改显式列 | 现状为已实现，后续只需补其它返回体的字段裁剪 | 传 100000 → 实际返回 ≤ 100（已有测试） |
 | `history.ts:216-236`、`wrong-question.ts:363-372` 改为只取需要的列                           | 现在整行取回，带 `material_html` / `ai_mnemonic` | 响应体字节数对比（同一请求前后各量一次）   |
 
 ### S3 请求路径上的同步重活（1–2d，需先量再定）
@@ -425,7 +425,7 @@ W2（改动小、可当天合）→ W1 批次 A → W1 批次 B。两者互不�
 | 动作                                                                               | 证据                                         |
 | ---------------------------------------------------------------------------------- | -------------------------------------------- |
 | `getGlobalFeatureFlag` 用 `cache()` 包一层（layout 三次串行 + dashboard 再查一遍） | `layout.tsx:69-74`、`feature-flags.ts:17-38` |
-| middleware matcher 排除静态资源与 `?_rsc=`                                         | `middleware.ts:114`                          |
+| middleware matcher 排除静态资源（`icons/`、`fonts/`）**已落地**；`?_rsc=` **不要排除**——排除会让受保护页面的客户端导航绕过未登录重定向 | `middleware.ts` |
 
 判据：一次页面请求的 SELECT 次数（打点计数）从 N 降到 N-3。
 

@@ -740,7 +740,7 @@ P5 要新增约 20 个 widget 测试文件，先定基建，否则每个文件�
 | P5 完成              |   ~43% |      ~30% |     ~55% |
 | P5b（错误/空态分支） |   ~46% |      ~35% |     ~60% |
 
-- 单测耗时预算：每条 < 300ms；`flutter test` 总时长 < 90s（当前约 48s，P5 后需盯住，超了就拆 `integration` 标签）
+- 单测耗时预算：每条 < 300ms；`flutter test` 总时长 < 90s。超预算时的处理顺序：先查 `pumpAndSettle` 次数与用例粒度 → 再考虑 `--concurrency`。**不要**把慢用例打 `integration` 标签——`dart_test.yaml` 默认跳过该标签、CI 也不带 `--run-skipped`，等于让它退出 CI
 
 ## 23. 真机验收闭环（计划）
 
@@ -884,7 +884,7 @@ R1+R2（先让包可区分）→ R3 → R4 → R5（文档）→ R6（演练一�
 
 | #   | 动作                                                                                                                                 | 判据                                   | 工作量 |
 | --- | ------------------------------------------------------------------------------------------------------------------------------------ | -------------------------------------- | ------ |
-| C1  | 路径过滤：`ci.yml` / `ui-guard.yml` 加 `paths-ignore: ['docs/**', '**/*.md', 'mobile_app/**']`（`android.yml` 已有 `paths`，保持）   | 只改 docs 的 PR：web CI 不触发或 <30s  | 0.2d   |
+| C1  | **已落地**：`ui-guard.yml` 用 `paths-ignore`；`ci.yml` **不能**用 `paths-ignore`（被路径过滤的必需检查会永远 Pending），改用 `changes` job + job 级 `if`（PR #257） | 只改 docs 的 PR：web 快闸 <30s 且不产生 Pending 卡点 | 已完成 |
 | C2  | 分层：PR 只跑快闸（lint/typecheck/vitest/openapi/mcp/next build）；Playwright 与 E2E 改为 **main push + label `run-e2e` + 每晚定时** | PR 反馈 p50 < 4min；main 仍全量        | 0.5d   |
 | C3  | 合并安装：openapi / mcp 并进 lint job（共用 node_modules），或抽 composite action + `cache`                                          | CI 总时长下降 ≥30%                     | 0.5d   |
 | C4  | Flutter 测试预算：518 条 48s → 目标 <90s；单条 <300ms；超预算先查 `pumpAndSettle` 次数与 `--concurrency`                             | `flutter test` 超过 90s 即视为需要拆分 | 0.2d   |

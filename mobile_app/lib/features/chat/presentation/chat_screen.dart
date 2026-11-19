@@ -11,6 +11,8 @@ import 'package:flutter_hooks/flutter_hooks.dart';
 import '../../../core/theme/app_icons.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../core/navigation/app_nav.dart';
+import '../../../core/network/connectivity_provider.dart';
+import '../../../core/error/user_message.dart';
 
 class ChatScreen extends HookConsumerWidget {
   const ChatScreen({super.key});
@@ -21,6 +23,8 @@ class ChatScreen extends HookConsumerWidget {
     final textController = useTextEditingController();
     final scrollController = useScrollController();
     final isRagEnabled = useState(false);
+    // 离线判定（审计 #20）：loading 按在线处理，理由见 connectivity_provider.dart。
+    final isOnline = ref.watch(isOnlineProvider).value ?? true;
 
     // 监听消息变化，并在绘制下一帧时自动滚到最底部
     ref.listen<AsyncValue<List<ChatMessage>>>(chatProvider, (previous, next) {
@@ -222,6 +226,31 @@ class ChatScreen extends HookConsumerWidget {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
+                // 离线提示（审计 #20 方案 A）：断网时发送会被拦下，所以先在输入区
+                // 上方说明原因，而不是让用户点一下才发现发不出去。
+                if (!isOnline)
+                  Padding(
+                    padding: EdgeInsets.only(bottom: 8.h, left: 4.w),
+                    child: Row(
+                      children: [
+                        Icon(
+                          AppIcons.cloudOffOutlined,
+                          size: 14.sp,
+                          color: context.colors.warning,
+                        ),
+                        SizedBox(width: 4.w),
+                        Expanded(
+                          child: Text(
+                            '当前离线，发送已暂停，联网后自动恢复',
+                            style: TextStyle(
+                              fontSize: 12.sp,
+                              color: context.colors.warning,
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
                 // RAG Toggle
                 Padding(
                   padding: EdgeInsets.only(bottom: 8.h, left: 4.w),
@@ -287,6 +316,10 @@ class ChatScreen extends HookConsumerWidget {
                           ),
                           maxLines: null,
                           onSubmitted: (val) {
+                            if (!isOnline) {
+                              _showOfflineSendHint(context);
+                              return;
+                            }
                             if (val.trim().isNotEmpty) {
                               ref
                                   .read(chatProvider.notifier)
@@ -311,6 +344,12 @@ class ChatScreen extends HookConsumerWidget {
                           notifier.stopGeneration();
                           return;
                         }
+                        // 离线不发：发了也只会在列表里留下一条空的 assistant 占位
+                        // 和一句 ⚠️，不如直接说清楚「等联网」。
+                        if (!isOnline) {
+                          _showOfflineSendHint(context);
+                          return;
+                        }
                         final val = textController.text;
                         if (val.trim().isNotEmpty) {
                           notifier.sendMessage(
@@ -321,25 +360,33 @@ class ChatScreen extends HookConsumerWidget {
                           ref.invalidate(chatSessionsProvider);
                         }
                       },
-                      child: Container(
-                        padding: EdgeInsets.all(12.w),
-                        decoration: BoxDecoration(
-                          color: ref.watch(chatProvider.notifier).isGenerating
-                              ? context.colors.error
-                              : context.colors.primary,
-                          shape: BoxShape.circle,
+                      child: Opacity(
+                        // 离线且不在生成中：发送键视觉上也「按不动」，与文案一致。
+                        opacity:
+                            !isOnline &&
+                                !ref.watch(chatProvider.notifier).isGenerating
+                            ? 0.5
+                            : 1,
+                        child: Container(
+                          padding: EdgeInsets.all(12.w),
+                          decoration: BoxDecoration(
+                            color: ref.watch(chatProvider.notifier).isGenerating
+                                ? context.colors.error
+                                : context.colors.primary,
+                            shape: BoxShape.circle,
+                          ),
+                          child: ref.watch(chatProvider.notifier).isGenerating
+                              ? Icon(
+                                  AppIcons.stop,
+                                  color: context.colors.onError,
+                                  size: 20.sp,
+                                )
+                              : Icon(
+                                  AppIcons.send,
+                                  color: context.colors.onPrimary,
+                                  size: 20.sp,
+                                ),
                         ),
-                        child: ref.watch(chatProvider.notifier).isGenerating
-                            ? Icon(
-                                AppIcons.stop,
-                                color: context.colors.onError,
-                                size: 20.sp,
-                              )
-                            : Icon(
-                                AppIcons.send,
-                                color: context.colors.onPrimary,
-                                size: 20.sp,
-                              ),
                       ),
                     ),
                   ],
@@ -350,6 +397,16 @@ class ChatScreen extends HookConsumerWidget {
         ],
       ),
     );
+  }
+
+  /// 离线时点发送的即时反馈。
+  ///
+  /// 输入区上方已经有一条常驻说明；这里再给一次 SnackBar，是因为用户往往直接
+  /// 盯输入框和发送键，不看上方那行小字。
+  void _showOfflineSendHint(BuildContext context) {
+    ScaffoldMessenger.of(context)
+      ..hideCurrentSnackBar()
+      ..showSnackBar(const SnackBar(content: Text('当前离线，联网后才能发送消息')));
   }
 
   Widget _buildEndDrawer(BuildContext context, WidgetRef ref) {
@@ -447,7 +504,9 @@ class ChatScreen extends HookConsumerWidget {
                                     onPressed: () => Navigator.pop(c, true),
                                     child: Text(
                                       '删除',
-                                      style: TextStyle(color: context.colors.error),
+                                      style: TextStyle(
+                                        color: context.colors.error,
+                                      ),
                                     ),
                                   ),
                                 ],
@@ -466,9 +525,13 @@ class ChatScreen extends HookConsumerWidget {
                                       .createNewSession();
                                 }
                               } catch (e) {
+                                // 原始异常只进日志，界面只给统一文案（审计 #24）。
+                                debugPrint('[Chat] 删除会话失败: $e');
                                 if (context.mounted) {
                                   ScaffoldMessenger.of(context).showSnackBar(
-                                    SnackBar(content: Text('删除失败: $e')),
+                                    SnackBar(
+                                      content: Text('删除失败：${userMessageOf(e)}'),
+                                    ),
                                   );
                                 }
                               }
@@ -523,9 +586,7 @@ class ChatScreen extends HookConsumerWidget {
             child: Container(
               padding: EdgeInsets.all(16.w),
               decoration: BoxDecoration(
-                color: isUser
-                    ? context.colors.primary
-                    : context.colors.surface,
+                color: isUser ? context.colors.primary : context.colors.surface,
                 borderRadius: BorderRadius.circular(16.r).copyWith(
                   bottomRight: isUser ? const Radius.circular(0) : null,
                   topLeft: !isUser ? const Radius.circular(0) : null,
@@ -538,7 +599,9 @@ class ChatScreen extends HookConsumerWidget {
                 data: content.isEmpty && !isUser ? '正在思考...' : content,
                 styleSheet: MarkdownStyleSheet(
                   p: TextStyle(
-                    color: isUser ? context.colors.onPrimary : context.colors.text,
+                    color: isUser
+                        ? context.colors.onPrimary
+                        : context.colors.text,
                     fontSize: 15.sp,
                     height: 1.5,
                   ),

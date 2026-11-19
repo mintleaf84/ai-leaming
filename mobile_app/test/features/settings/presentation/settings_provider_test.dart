@@ -1,6 +1,9 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:mobile_app/core/storage/preferences.dart';
 import 'package:mobile_app/features/settings/presentation/settings_provider.dart';
+
+import '../../../support/fake_preferences_store.dart';
 
 /// 这个测试守的是复习模式设置的**默认值与切换语义**（这个 provider 只有 7 行，
 /// 不承载异步逻辑）：
@@ -12,11 +15,19 @@ import 'package:mobile_app/features/settings/presentation/settings_provider.dart
 ///    顺手把别的设置重置）。
 /// 3. **状态按 container 隔离**：不同 container 之间不共享，测试里的脏值不会
 ///    串到别的用例。
-/// 4. **不持久化**：没有任何存储层，销毁重建就回默认（现状，不是缺陷但要知道：
-///    重启 App 后用户的模式选择会丢）。
+/// 4. **持久化走可注入的 store**（审计 #19）：这里注入内存假 store，
+///    验证「切换会写盘、重建能从同一份 store 读回」，不碰平台通道。
+///    读写失败/非法值的兜底由 `settings_persistence_test.dart` 覆盖。
 void main() {
-  ProviderContainer makeContainer() {
-    final container = ProviderContainer(retry: (_, _) => null);
+  ProviderContainer makeContainer({FakePreferencesStore? store}) {
+    final container = ProviderContainer(
+      overrides: [
+        preferencesStoreProvider.overrideWithValue(
+          store ?? FakePreferencesStore(),
+        ),
+      ],
+      retry: (_, _) => null,
+    );
     addTearDown(container.dispose);
     return container;
   }
@@ -81,14 +92,21 @@ void main() {
       expect(b.read(settingsProvider).reviewMode, ReviewMode.list);
     });
 
-    test('设置不落盘：销毁重建后回到默认（现状）', () {
-      final first = makeContainer();
+    test('设置会落盘：同一个 store 下销毁重建后仍是上次的选择', () async {
+      final store = FakePreferencesStore();
+      final first = makeContainer(store: store);
       first.read(settingsProvider.notifier).setReviewMode(ReviewMode.immersive);
+      await Future<void>.delayed(Duration.zero);
       first.dispose();
 
-      final second = makeContainer();
+      final second = makeContainer(store: store);
+      await second.read(settingsProvider.notifier).restore();
 
-      expect(second.read(settingsProvider).reviewMode, ReviewMode.list);
+      expect(
+        second.read(settingsProvider).reviewMode,
+        ReviewMode.immersive,
+        reason: '重启 App 后用户的复习模式不该被重置',
+      );
     });
   });
 }

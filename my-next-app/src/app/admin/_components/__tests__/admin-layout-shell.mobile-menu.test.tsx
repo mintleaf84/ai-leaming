@@ -3,7 +3,8 @@ import React from "react";
 import { render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import "@testing-library/jest-dom";
-import { describe, it, expect, vi } from "vitest";
+import { describe, it, expect, vi, beforeEach } from "vitest";
+import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 
 /**
  * 批次 B5：移动端遮罩原本是 `div onClick`，键盘用户关不掉菜单
@@ -25,13 +26,26 @@ vi.mock("sonner", () => ({
   toast: { error: vi.fn(), success: vi.fn() },
 }));
 
+// 横幅用 React Query 取维护状态：测试里返回 404 即可（不渲染提醒）
+beforeEach(() => {
+  vi.stubGlobal(
+    "fetch",
+    vi.fn().mockResolvedValue({ ok: false, json: async () => ({}) }),
+  );
+});
+
 import { AdminLayoutShell } from "../admin-layout-shell";
 
 function renderShell() {
+  const client = new QueryClient({
+    defaultOptions: { queries: { retry: false } },
+  });
   return render(
-    <AdminLayoutShell>
-      <div>后台内容</div>
-    </AdminLayoutShell>,
+    <QueryClientProvider client={client}>
+      <AdminLayoutShell>
+        <div>后台内容</div>
+      </AdminLayoutShell>
+    </QueryClientProvider>,
   );
 }
 

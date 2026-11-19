@@ -1092,6 +1092,49 @@
         "summary": "标记反馈为已解决"
       }
     },
+    "/api/admin/maintenance/dedupe": {
+      "get": {
+        "responses": {
+          "200": {
+            "description": "返回待处理项计数"
+          },
+          "401": {
+            "description": "未授权"
+          }
+        },
+        "summary": "数据维护状态"
+      },
+      "post": {
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "properties": {
+                  "apply": {
+                    "default": false,
+                    "type": "boolean"
+                  }
+                },
+                "type": "object"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "返回清理报告与备份路径"
+          },
+          "401": {
+            "description": "未授权"
+          },
+          "500": {
+            "description": "清理失败（数据库未按预期变更时请先查日志）"
+          }
+        },
+        "summary": "执行兜底题重复清理（apply 前自动备份）"
+      }
+    },
     "/api/admin/restore": {
       "post": {
         "responses": {

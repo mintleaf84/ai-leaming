@@ -10,6 +10,10 @@ import path from "path";
 import { logAdminAction } from "@/lib/admin/audit";
 import { getApiCallStats } from "@/lib/admin/api-stats-service";
 import { questionFeedbackService } from "@/lib/services/question-feedback-service";
+import {
+  dedupeFallbackQuestions,
+  getDedupeStatus,
+} from "@/lib/services/question-dedupe-cleanup";
 import type { Dimension } from "@/types";
 import { logger } from "@/lib/logger";
 import { safeParseJson } from "@/lib/utils/json";
@@ -912,4 +916,101 @@ adminRoute.openapi(cleanupSqlBackupsDef, async (c) => {
   const result = await SqlScriptService.cleanupOldBackups();
 
   return c.json(result, 200);
+});
+
+/** GET /api/admin/maintenance/dedupe - 数据维护状态（重复题/兜底题/未回填哈希） */
+const dedupeStatusDef = createRoute({
+  method: "get",
+  path: "/maintenance/dedupe",
+  summary: "数据维护状态",
+  responses: {
+    200: { description: "返回待处理项计数" },
+    401: { description: "未授权" },
+  },
+});
+
+adminRoute.openapi(dedupeStatusDef, async (c) => {
+  try {
+    await requireRole(["admin"]);
+  } catch (err) {
+    // audit-allow: 仅把鉴权类错误转换为 401
+    if (isAuthError(err)) return c.json({ error: "Unauthorized" }, 401);
+    throw err;
+  }
+  return c.json(await getDedupeStatus(), 200);
+});
+
+/**
+ * POST /api/admin/maintenance/dedupe - 兜底题重复清理
+ *
+ * body: { apply?: boolean }——默认 false 只预检；true 时先 VACUUM INTO 备份再执行。
+ * 幂等：重复执行不会二次迁移/删除（见 question-dedupe-cleanup.ts）。
+ */
+const dedupeRunDef = createRoute({
+  method: "post",
+  path: "/maintenance/dedupe",
+  summary: "执行兜底题重复清理（apply 前自动备份）",
+  request: {
+    body: {
+      required: true,
+      content: {
+        "application/json": {
+          schema: z.object({ apply: z.boolean().optional().default(false) }),
+        },
+      },
+    },
+  },
+  responses: {
+    200: { description: "返回清理报告与备份路径" },
+    401: { description: "未授权" },
+    500: { description: "清理失败（数据库未按预期变更时请先查日志）" },
+  },
+});
+
+adminRoute.openapi(dedupeRunDef, async (c) => {
+  let user;
+  try {
+    user = await requireRole(["admin"]);
+  } catch (err) {
+    // audit-allow: 仅把鉴权类错误转换为 401
+    if (isAuthError(err)) return c.json({ error: "Unauthorized" }, 401);
+    throw err;
+  }
+
+  const { apply } = c.req.valid("json");
+
+  try {
+    let backupPath: string | undefined;
+    if (apply) {
+      // 与 /backup 同一纪律：VACUUM INTO 生成一致快照，失败即中止，绝不带病执行
+      const dir = path.resolve(process.cwd(), "data");
+      if (!fs.existsSync(dir)) fs.mkdirSync(dir, { recursive: true });
+      backupPath = path.join(
+        dir,
+        `backup-before-dedupe-${new Date().toISOString().replace(/[:.]/g, "-")}.db`,
+      );
+      await drizzleDb.run(sql`VACUUM INTO ${backupPath}`);
+      if (!fs.existsSync(backupPath) || fs.statSync(backupPath).size < 1024) {
+        return c.json({ error: "备份失败，清理已中止" }, 500);
+      }
+    }
+
+    const report = await dedupeFallbackQuestions({ dryRun: !apply });
+
+    if (apply) {
+      await logAdminAction(
+        user.id,
+        user.username,
+        "DATA_DEDUPE",
+        "system",
+        "questions",
+        { ...report } as unknown as Record<string, unknown>,
+      );
+    }
+
+    return c.json({ ok: true, report, backupPath }, 200);
+  } catch (error) {
+    logger.error({ err: error }, "[Admin] 数据清理失败");
+    return c.json({ error: "清理失败，详见服务端日志" }, 500);
+  }
 });

@@ -1,5 +1,6 @@
 import 'dart:convert';
 import 'package:flutter/foundation.dart';
+import '../../../core/error/user_message.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../data/practice_repository_impl.dart';
 import '../domain/practice_repository.dart';
@@ -134,7 +135,9 @@ class PracticeController extends Notifier<PracticeSessionState> {
       _questionStartTime = DateTime.now();
     } catch (e) {
       if (generation != _sessionGeneration) return;
-      state = state.copyWith(isLoading: false, error: e.toString());
+      // 原始异常只进日志，界面用统一文案（审计 #24）。
+      debugPrint('[Practice] 创建练习失败: $e');
+      state = state.copyWith(isLoading: false, error: userMessageOf(e));
     }
   }
 
@@ -188,7 +191,8 @@ class PracticeController extends Notifier<PracticeSessionState> {
 
       _questionStartTime = DateTime.now();
     } catch (e) {
-      state = state.copyWith(isLoading: false, error: e.toString());
+      debugPrint('[Practice] 加载会话失败: $e');
+      state = state.copyWith(isLoading: false, error: userMessageOf(e));
     }
   }
 
@@ -347,7 +351,7 @@ class PracticeController extends Notifier<PracticeSessionState> {
     } catch (e) {
       state = state.copyWith(
         isAnalyzingFirstPrinciples: false,
-        error: '获取 AI 分析失败: $e',
+        error: '获取 AI 分析失败：${userMessageOf(e)}',
       );
     }
   }

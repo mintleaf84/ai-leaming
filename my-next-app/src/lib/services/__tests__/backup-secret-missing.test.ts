@@ -33,9 +33,9 @@ describe("生产环境缺少 BACKUP_ENCRYPTION_KEY", () => {
 
   it("只在真正加解密时抛业务错误，且错误码可诊断", async () => {
     // saveConfig 在写库之前就要加密密码 → 会在 encrypt 处抛
-    await expect(BackupService.saveConfig({ pass: "p" })).rejects.toBeInstanceOf(
-      BackupSecretMissingError,
-    );
+    await expect(
+      BackupService.saveConfig({ pass: "p" }),
+    ).rejects.toBeInstanceOf(BackupSecretMissingError);
 
     const error = new BackupSecretMissingError();
     expect(error.code).toBe("backup.secret.missing");

@@ -856,7 +856,7 @@ R1+R2（先让包可区分）→ R3 → R4 → R5（文档）→ R6（演练一�
 
 1. 连续两次 `workflow_dispatch`：versionCode 递增、artifact 名不同
 2. 打 tag：Release 自动创建且附 APK
-3. 回滚演练：旧 tag 重建的包能覆盖安装，设置页版本号更高
+3. 回滚演练：旧 tag 重建的包能覆盖安装（`aapt dump badging` 比对 versionCode 更大；versionName 显示旧版本是预期——回滚只保证能装回去）
 4. 文档：密钥备份位置写清，且仓库内不出现 keystore
 
 ## 27. CI 时长与测试预算（计划）

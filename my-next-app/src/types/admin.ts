@@ -26,6 +26,7 @@ export type AdminAction =
   | "RESOLVE_FEEDBACK"
   | "DISMISS_FEEDBACK"
   | "EXECUTE_SQL_SCRIPT"
+  | "DATA_DEDUPE"
   | "OTHER";
 
 // 目标类型枚举
@@ -76,6 +77,7 @@ export const ADMIN_ACTION_LABELS: Record<AdminAction, string> = {
   RESOLVE_FEEDBACK: "解决反馈",
   DISMISS_FEEDBACK: "忽略反馈",
   EXECUTE_SQL_SCRIPT: "执行SQL脚本",
+  DATA_DEDUPE: "数据维护：重复题清理",
   OTHER: "其他操作",
 };
 

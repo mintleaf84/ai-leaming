@@ -88,10 +88,15 @@ export const questions = sqliteTable(
     material_html: text("material_html"),
     ai_mnemonic: text("ai_mnemonic"),
     external_id: text("external_id"),
+    // 内容级去重键 = sha256(归一化题干)，导入时用于跨来源/无 external_id 的去重
+    content_hash: text("content_hash"),
     created_at: text("created_at").default(sql`CURRENT_TIMESTAMP`),
   },
   (table) => ({
     unq_ext: unique("questions_external_id_unique").on(table.external_id),
+    idx_content_hash: index("idx_questions_content_hash").on(
+      table.content_hash,
+    ),
   }),
 );
 
@@ -169,6 +174,10 @@ export const practice_logs = sqliteTable(
       mode: "boolean",
     }).default(false),
     duration_ms: integer("duration_ms"),
+    // 来源：web=用户练习，agent=外部 Agent 导入（对错由调用方判定），import=文件导入
+    origin: text("origin").notNull().default("web"),
+    // 作答状态：answered=正常作答，skipped=未作答/空答案（不进 SRS），wrong_book=错题本收藏
+    status: text("status").notNull().default("answered"),
     timestamp: text("timestamp").default(sql`CURRENT_TIMESTAMP`),
   },
   (table) => ({
@@ -185,6 +194,7 @@ export const practice_logs = sqliteTable(
     // 按会话取日志（历史详情 / 学习报告 / 续做计数）的唯一过滤条件，
     // 见 drizzle/0016 的说明：没它这三处都是全表扫。
     idx_session: index("idx_practice_logs_session").on(table.session_id),
+    idx_origin: index("idx_practice_logs_origin").on(table.origin),
   }),
 );
 

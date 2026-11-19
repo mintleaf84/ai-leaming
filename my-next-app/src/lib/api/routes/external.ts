@@ -3013,11 +3013,9 @@ const QuestionBatchItemSchema = z
       description:
         '正确答案：单选传标号（A）/ 多选题传 JSON 数组字符串（如 ["A","C"]）/ 判断题 A 或 B / 填空题为自由文本',
     }),
-    explanation: z
-      .string()
-      .openapi({
-        description: "解析（至少 5 个字符，与 QuestionSchema 一致）",
-      }),
+    explanation: z.string().openapi({
+      description: "解析（至少 5 个字符，与 QuestionSchema 一致）",
+    }),
     tags: z.array(z.string()).openapi({ description: "知识点标签，至少 1 个" }),
     dimension: z
       .enum(["knowledge", "understanding", "application"])

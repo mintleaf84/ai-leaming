@@ -454,6 +454,8 @@ AI_LEAMING_BASE_URL=https://your-host AI_LEAMING_API_KEY=sk_xxx node dist/index.
   `type` 省略按 `single`、`dimension` 省略按 `knowledge` 落库。
 - **整批原子**：任一条不合法返回 `400` + `issues`（每个 issue 前缀带条目下标，
   如 `questions.1.answer: …`），**一条都不写**；`issues` 最多回 20 条，总数见 `issueCount`。
+  **结构校验失败（缺必填字段 / 类型不对）返回同一个形状**（`questions.<index>.<path>: <message>`），
+  不会回框架默认的 `{success:false,error:{issues}}`——调用方只需写一套 400 解析。
 - **幂等**：每条优先用 `externalId`（上游题号，跨重试稳定）；省略时退回内容指纹
   `api:`+（题干+选项+答案）。命中既有题 → `status: "skipped"` 并回既有 `questionId`，
   **不更新内容**（要改题走 `PATCH /questions/{id}`）。

@@ -3,11 +3,12 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:intl/intl.dart';
 import '../../../core/navigation/app_nav.dart';
+import 'package:skeletonizer/skeletonizer.dart';
 import 'history_provider.dart';
 import '../../settings/presentation/settings_provider.dart';
 import '../domain/history_item.dart';
 import '../domain/practice_log.dart';
-import '../../../shared/widgets/skeleton_loading.dart';
+import '../../../shared/skeletons/skeleton_fakes.dart';
 import 'dart:math' as math;
 import '../../../shared/widgets/first_principles_section.dart';
 
@@ -68,7 +69,7 @@ class _HistoryDetailScreenState extends ConsumerState<HistoryDetailScreen> {
         ],
       ),
       body: asyncState.when(
-        loading: () => const HistoryDetailSkeletonList(),
+        loading: () => _buildSkeleton(),
         error: (error, _) => _buildErrorView(error.toString(), textColor),
         data: (state) => reviewMode == ReviewMode.immersive
             ? _buildImmersiveBody(
@@ -111,6 +112,33 @@ class _HistoryDetailScreenState extends ConsumerState<HistoryDetailScreen> {
     );
   }
 
+  /// 加载骨架：用清单版卡片撑出布局，由 Skeletonizer 统一涂成灰块
+  Widget _buildSkeleton() {
+    final theme = Theme.of(context);
+    final cardColor = theme.cardColor;
+    final textColor = theme.colorScheme.onSurface;
+    final secondaryColor = theme.brightness == Brightness.dark
+        ? const Color(0xFF8A8A8A)
+        : const Color(0xFF787774);
+    final borderColor = theme.dividerColor;
+
+    return Skeletonizer(
+      enabled: true,
+      child: ListView.builder(
+        padding: EdgeInsets.all(16.w),
+        itemCount: 3,
+        itemBuilder: (context, index) => _buildListQuestionCard(
+          index + 1,
+          fakePracticeLog(index: index),
+          cardColor,
+          textColor,
+          secondaryColor,
+          borderColor,
+        ),
+      ),
+    );
+  }
+
   // --- 清单模式 ---
 
   Widget _buildListBody(
@@ -121,7 +149,7 @@ class _HistoryDetailScreenState extends ConsumerState<HistoryDetailScreen> {
     Color borderColor,
   ) {
     if (state.isLoading) {
-      return const HistoryDetailSkeletonList();
+      return _buildSkeleton();
     }
     if (state.session == null) {
       return Center(
@@ -178,7 +206,7 @@ class _HistoryDetailScreenState extends ConsumerState<HistoryDetailScreen> {
     Color borderColor,
   ) {
     if (state.isLoading) {
-      return const HistoryDetailSkeletonList();
+      return _buildSkeleton();
     }
     if (state.session == null) {
       return Center(

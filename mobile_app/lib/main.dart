@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
+import 'package:skeletonizer/skeletonizer.dart';
 import 'app_router.dart';
 import 'core/network/server_config.dart';
 import 'core/sync/sync_providers.dart';
@@ -49,8 +50,17 @@ class MyApp extends ConsumerWidget {
           themeMode: themeMode,
           routerConfig: appRouter,
           // 没有任何可用后端地址时停在这里，而不是让各页面各自无限加载。
-          builder: (context, routedChild) =>
-              ServerConfigGate(child: routedChild ?? const SizedBox.shrink()),
+          //
+          // SkeletonizerConfig 统一给所有骨架屏定"跟随当前主题明暗"的着色；
+          // 不配的话它按平台亮度判断，App 内手动切到暗色时骨架会仍是浅色。
+          builder: (context, routedChild) => SkeletonizerConfig(
+            data: SkeletonizerConfigData(
+              brightness: Theme.of(context).brightness,
+            ),
+            child: ServerConfigGate(
+              child: routedChild ?? const SizedBox.shrink(),
+            ),
+          ),
         );
       },
     );

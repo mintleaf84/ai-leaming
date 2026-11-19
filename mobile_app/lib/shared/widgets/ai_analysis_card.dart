@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_markdown/flutter_markdown.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
-import 'package:shimmer/shimmer.dart';
+import 'package:skeletonizer/skeletonizer.dart';
 
 class AiAnalysisCard extends StatelessWidget {
   final String? content;
@@ -111,20 +111,17 @@ class AiAnalysisCard extends StatelessWidget {
   }
 
   Widget _buildShimmer(bool isDark) {
-    final baseColor = isDark ? Colors.grey[800]! : Colors.grey[300]!;
-    final highlightColor = isDark ? Colors.grey[700]! : Colors.grey[100]!;
-
-    return Shimmer.fromColors(
-      baseColor: baseColor,
-      highlightColor: highlightColor,
+    // 骨架与 skeletonizer 全线一致：用 Bone 撑出 4 行正文的占位（见 docs/mobile-ui-kit.md M-05）。
+    // 行高沿用真实 Markdown 正文的 1.6 倍行距，避免加载完成后卡片高度跳动。
+    return Skeletonizer.zone(
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Container(width: double.infinity, height: 14.h, color: Colors.white),
+          const Bone.text(words: 8),
           SizedBox(height: 8.h),
-          Container(width: double.infinity, height: 14.h, color: Colors.white),
+          const Bone.text(words: 8),
           SizedBox(height: 8.h),
-          Container(width: 200.w, height: 14.h, color: Colors.white),
+          const Bone.text(words: 4),
         ],
       ),
     );

@@ -97,6 +97,9 @@ export async function dedupeFallbackQuestions(
   ).length;
 
   const plannedDeletedIds = new Set<number>();
+  // 预检模拟：记录「本次计划迁移到某真实题」的 (user, canonical) 卡，
+  // 后续同用户第二张卡应计为合并而不是迁移（与实际执行结果一致）
+  const plannedCards = new Set<string>();
   const report: DedupeCleanupReport = {
     dryRun,
     hashesBackfilled,
@@ -174,7 +177,10 @@ export async function dedupeFallbackQuestions(
           )
           .limit(1);
 
-        if (!existing) {
+        const cardKey = `${card.user_id}:${canonical.id}`;
+        const simulatedExisting = dryRun && plannedCards.has(cardKey);
+        if (!existing && !simulatedExisting) {
+          plannedCards.add(cardKey);
           report.srsMoved += 1;
           if (!dryRun) {
             await drizzleDb
@@ -185,11 +191,12 @@ export async function dedupeFallbackQuestions(
           continue;
         }
 
-        // 双卡：保留复习更充分的那张
+        // 双卡（或预检模拟出的第二张）：保留复习更充分的那张
         const keepFallback =
           card.reps > existing.reps ||
           (card.reps === existing.reps &&
             (card.last_review ?? "") > (existing.last_review ?? ""));
+        plannedCards.add(cardKey);
         report.srsMerged += 1;
         if (!dryRun) {
           if (keepFallback) {

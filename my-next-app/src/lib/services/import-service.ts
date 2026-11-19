@@ -4,6 +4,7 @@ import { FenbiImportResult } from "../import/fenbi-parser";
 import {
   contentHash,
   findQuestionIdByContent,
+  normalizeQuestionContent,
 } from "@/lib/services/question-dedup";
 import { sanitizeHtml } from "../utils/security";
 import { safeParseJson } from "../utils/json";
@@ -212,8 +213,23 @@ async function writeImport(
           { options: q.options },
         );
         if (existingByContent) {
-          questionIdMap.set(q.externalId, existingByContent);
-          continue;
+          // 题干+选项相同但答案不同：不能静默复用（否则导入的新答案被丢弃，
+          // 判分继续按旧答案）。这种少见冲突按新题落库，交人工/清理裁决。
+          const [existingRow] = await exec
+            .select({ answer: questions.answer })
+            .from(questions)
+            .where(eq(questions.id, existingByContent))
+            .limit(1);
+          const sameAnswer =
+            normalizeQuestionContent(existingRow?.answer ?? "") ===
+            normalizeQuestionContent(q.answer ?? "");
+          if (sameAnswer) {
+            questionIdMap.set(q.externalId, existingByContent);
+            continue;
+          }
+          log.error(
+            `[Import] 同题干+选项但答案不同，按新题导入（不复用旧题）：existing=${existingByContent} external=${q.externalId}`,
+          );
         }
       }
 
@@ -245,6 +261,7 @@ async function writeImport(
             correct_ratio: sql`excluded.correct_ratio`,
             most_wrong_answer: sql`excluded.most_wrong_answer`,
             content_hash: sql`excluded.content_hash`,
+            options: sql`excluded.options`,
           },
         })
         .returning({ id: questions.id });

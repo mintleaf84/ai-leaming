@@ -39,7 +39,7 @@ export function MaintenancePanel() {
   const [busy, setBusy] = useState(false);
   const [confirming, setConfirming] = useState(false);
 
-  const { data: status } = useQuery({
+  const { data: status, isError } = useQuery({
     queryKey: STATUS_KEY,
     queryFn: async () => {
       const res = await fetch("/api/admin/maintenance/dedupe");
@@ -82,11 +82,13 @@ export function MaintenancePanel() {
       <CardHeader>
         <CardTitle className="flex items-center gap-2">
           数据维护：重复题清理
-          {status?.needsCleanup ? (
-            <Badge variant="destructive">待处理</Badge>
-          ) : (
-            <Badge variant="secondary">无待处理项</Badge>
-          )}
+          {status ? (
+            status.needsCleanup ? (
+              <Badge variant="destructive">待处理</Badge>
+            ) : (
+              <Badge variant="secondary">无待处理项</Badge>
+            )
+          ) : null}
         </CardTitle>
       </CardHeader>
       <CardContent className="space-y-4">
@@ -96,6 +98,14 @@ export function MaintenancePanel() {
           卡、 删除兜底副本。执行前服务端会自动 VACUUM INTO 备份。
         </p>
 
+        {isError && (
+          <p className="text-sm text-destructive">
+            状态获取失败：请刷新重试；不确定时不要执行清理。
+          </p>
+        )}
+        {!status && !isError && (
+          <p className="text-sm text-muted-foreground">加载状态中…</p>
+        )}
         {status && (
           <div className="flex flex-wrap gap-2 text-sm">
             <Badge

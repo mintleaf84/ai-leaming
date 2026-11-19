@@ -21,34 +21,27 @@ import {
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
 import { useRouter } from "next/navigation";
+import { useQuery } from "@tanstack/react-query";
 
 export function AdminLayoutShell({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
   const router = useRouter();
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
-  // 数据维护提醒：管理员打开后台时若存在待清理的重复题，顶部常驻提示。
-  // 只在挂载时查一次（轻量：单表扫描），清理完成后通过系统运维页刷新。
-  const [maintenance, setMaintenance] = useState<{
-    needsCleanup: boolean;
-    duplicateGroups: number;
-    fallbackWithCopy: number;
-    unhashedQuestions: number;
-  } | null>(null);
-
-  useEffect(() => {
-    let cancelled = false;
-    fetch("/api/admin/maintenance/dedupe")
-      .then((res) => (res.ok ? res.json() : null))
-      .then((data) => {
-        if (!cancelled && data) setMaintenance(data);
-      })
-      .catch(() => {
-        // 提醒是锦上添花：接口失败不打断后台使用
-      });
-    return () => {
-      cancelled = true;
-    };
-  }, []);
+  // 数据维护提醒：与系统运维页的维护卡片共用同一个 queryKey，
+  // 清理后 invalidate 会让横幅和卡片一起更新（不再依赖整页重载）。
+  const { data: maintenance } = useQuery({
+    queryKey: ["admin-maintenance-dedupe"],
+    queryFn: async () => {
+      const res = await fetch("/api/admin/maintenance/dedupe");
+      if (!res.ok) throw new Error("获取数据维护状态失败");
+      return (await res.json()) as {
+        needsCleanup: boolean;
+        duplicateGroups: number;
+        fallbackWithCopy: number;
+        unhashedQuestions: number;
+      };
+    },
+  });
 
   // 移动端菜单是浮层：键盘用户必须能关掉它。Esc 挂在 shell 上（document 级），
   // 不挂在遮罩上 —— 遮罩对键盘用户不可达（不可聚焦），挂上去等于没挂。

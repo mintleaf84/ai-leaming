@@ -264,7 +264,9 @@ async function writeConfirm(
   const reusedIds: number[] = [];
   for (const [externalId, q] of toInsert) {
     // 内容级去重：同题干已存在（external_id 不同或缺失，如神笔/PDF 交叉导入）时复用
-    const existingByContent = await findQuestionIdByContent(q.content, exec);
+    const existingByContent = await findQuestionIdByContent(q.content, exec, {
+      options: q.options,
+    });
     if (existingByContent) {
       reusedIds.push(existingByContent);
       skippedCount += 1;
@@ -275,7 +277,7 @@ async function writeConfirm(
       .insert(questions)
       .values({
         external_id: externalId,
-        content_hash: contentHash(q.content),
+        content_hash: contentHash(q.content, q.options),
         content: q.content,
         options: JSON.stringify(q.options),
         answer: q.answer,

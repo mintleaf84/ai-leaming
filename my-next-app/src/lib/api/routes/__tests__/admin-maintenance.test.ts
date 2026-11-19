@@ -76,13 +76,15 @@ describe("Admin 数据维护 · 重复题清理", () => {
     ]);
   });
 
+  let createdBackups: string[] = [];
+
   afterEach(async () => {
     await testDbHelper.close();
-    for (const f of fs
-      .readdirSync("data")
-      .filter((f) => f.startsWith("backup-before-dedupe-"))) {
-      fs.rmSync(`data/${f}`, { force: true });
+    // 只清理本测试响应里返回的备份，绝不按前缀扫描共享 data/ 目录
+    for (const backup of createdBackups) {
+      fs.rmSync(backup, { force: true });
     }
+    createdBackups = [];
   });
 
   it("GET 状态返回待处理项", async () => {
@@ -122,6 +124,7 @@ describe("Admin 数据维护 · 重复题清理", () => {
     expect(res.status).toBe(200);
     expect(data.report.deletedQuestions).toBe(1);
     expect(typeof data.backupPath).toBe("string");
+    createdBackups.push(data.backupPath);
     expect(fs.existsSync(data.backupPath)).toBe(true);
     expect(mockLogAdminAction).toHaveBeenCalledWith(
       1,

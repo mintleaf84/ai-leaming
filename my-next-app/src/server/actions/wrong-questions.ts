@@ -84,14 +84,16 @@ export const createManualWrongQuestionAction = authenticatedAction
       .enum(["knowledge", "understanding", "application"])
       .parse(input.dimension);
     // 内容级去重：同一道题再次手动录入时复用已有题目，只补一条错题本记录
-    const existingId = await findQuestionIdByContent(input.content);
+    const existingId = await findQuestionIdByContent(input.content, undefined, {
+      options: input.options,
+    });
     let questionId = existingId;
     if (!questionId) {
       const [createdQuestion] = await drizzleDb
         .insert(questions)
         .values({
           content: input.content,
-          content_hash: contentHash(input.content),
+          content_hash: contentHash(input.content, input.options),
           options: JSON.stringify(input.options),
           answer: input.answer,
           explanation: input.explanation,

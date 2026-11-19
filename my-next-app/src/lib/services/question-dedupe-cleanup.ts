@@ -46,6 +46,7 @@ export interface DedupeCleanupReport {
 interface Row {
   id: number;
   content: string;
+  options: string | null;
   type: string | null;
   source: string | null;
   content_hash: string | null;
@@ -60,6 +61,7 @@ export async function dedupeFallbackQuestions(
     .select({
       id: questions.id,
       content: questions.content,
+      options: questions.options,
       type: questions.type,
       source: questions.source,
       content_hash: questions.content_hash,
@@ -70,7 +72,7 @@ export async function dedupeFallbackQuestions(
   let hashesBackfilled = 0;
   for (const row of rows) {
     if (row.content_hash) continue;
-    const hash = contentHash(row.content ?? "");
+    const hash = contentHash(row.content ?? "", row.options);
     if (!hash) continue;
     hashesBackfilled += 1;
     row.content_hash = hash;
@@ -94,6 +96,7 @@ export async function dedupeFallbackQuestions(
     (g) => g.length > 1,
   ).length;
 
+  const plannedDeletedIds = new Set<number>();
   const report: DedupeCleanupReport = {
     dryRun,
     hashesBackfilled,
@@ -261,6 +264,7 @@ export async function dedupeFallbackQuestions(
       }
 
       report.deletedQuestions += 1;
+      plannedDeletedIds.add(fb.id);
       if (!dryRun) {
         await drizzleDb.delete(questions).where(eq(questions.id, fb.id));
       }
@@ -272,6 +276,7 @@ export async function dedupeFallbackQuestions(
     .select({
       id: questions.id,
       content: questions.content,
+      options: questions.options,
       content_hash: questions.content_hash,
       type: questions.type,
       source: questions.source,
@@ -279,7 +284,8 @@ export async function dedupeFallbackQuestions(
     .from(questions)) as Row[];
   const byHash = new Map<string, Row[]>();
   const hashOf = (row: Row) =>
-    row.content_hash ?? (row.content ? contentHash(row.content) : "");
+    row.content_hash ??
+    (row.content ? contentHash(row.content, row.options) : "");
   for (const row of remaining) {
     const h = hashOf(row);
     if (!h) continue;
@@ -308,12 +314,15 @@ export async function dedupeFallbackQuestions(
     .select({
       id: questions.id,
       content: questions.content,
+      options: questions.options,
       content_hash: questions.content_hash,
       type: questions.type,
     })
     .from(questions)) as Row[];
   const afterGroups = new Map<string, Row[]>();
   for (const row of after) {
+    // 预检时兜底副本尚未删除；按「执行后」口径统计，排除本次计划删除的行
+    if (dryRun && plannedDeletedIds.has(row.id)) continue;
     const h = hashOf(row);
     if (!h) continue;
     const list = afterGroups.get(h) ?? [];
@@ -345,23 +354,31 @@ export async function getDedupeStatus(): Promise<DedupeStatus> {
   const rows = (await drizzleDb
     .select({
       content: questions.content,
+      options: questions.options,
       type: questions.type,
       content_hash: questions.content_hash,
     })
-    .from(questions)) as Pick<Row, "content" | "type" | "content_hash">[];
+    .from(questions)) as Pick<
+    Row,
+    "content" | "options" | "type" | "content_hash"
+  >[];
 
-  const byContent = new Map<string, number>();
+  const keyOf = (row: Pick<Row, "content" | "options">) =>
+    contentHash(row.content ?? "", row.options ?? null);
+
+  const byKey = new Map<string, number>();
   for (const row of rows) {
-    byContent.set(row.content, (byContent.get(row.content) ?? 0) + 1);
+    const k = keyOf(row);
+    byKey.set(k, (byKey.get(k) ?? 0) + 1);
   }
-  const duplicateGroups = [...byContent.values()].filter((n) => n > 1).length;
+  const duplicateGroups = [...byKey.values()].filter((n) => n > 1).length;
 
-  const typedContents = new Set(
-    rows.filter((r) => r.type !== null).map((r) => r.content),
+  const typedKeys = new Set(
+    rows.filter((r) => r.type !== null).map((r) => keyOf(r)),
   );
   const fallbackQuestions = rows.filter((r) => r.type === null).length;
   const fallbackWithCopy = rows.filter(
-    (r) => r.type === null && typedContents.has(r.content),
+    (r) => r.type === null && typedKeys.has(keyOf(r)),
   ).length;
   const unhashedQuestions = rows.filter((r) => !r.content_hash).length;
 
@@ -370,7 +387,8 @@ export async function getDedupeStatus(): Promise<DedupeStatus> {
     fallbackQuestions,
     fallbackWithCopy,
     unhashedQuestions,
-    needsCleanup:
-      duplicateGroups > 0 || fallbackWithCopy > 0 || unhashedQuestions > 0,
+    // 只把本次清理能处理的项目算待处理：带 type 的重复组只报告不合并，
+    // 计入会让后台横幅永远消不掉（评审意见）。
+    needsCleanup: fallbackWithCopy > 0 || unhashedQuestions > 0,
   };
 }

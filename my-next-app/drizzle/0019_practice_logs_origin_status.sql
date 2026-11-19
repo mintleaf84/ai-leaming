@@ -11,9 +11,11 @@
 ALTER TABLE `practice_logs` ADD COLUMN `origin` text DEFAULT 'web' NOT NULL;--> statement-breakpoint
 ALTER TABLE `practice_logs` ADD COLUMN `status` text DEFAULT 'answered' NOT NULL;--> statement-breakpoint
 -- 历史回填：能确定的尽量确定，不能确定的一律保持 web/answered（不猜测）
+-- 只按可确证的来源回填：Agent 导入的会话带 agent: 前缀。
+-- 无 session 的日志可能是合法 web 作答（submitAnswer 允许 sessionId=null），
+-- 不能仅凭「没有会话」推断为 agent（迁移自身原则：不确定就不猜）。
 UPDATE `practice_logs` SET `origin` = 'agent'
-  WHERE `session_id` IS NULL
-     OR `session_id` IN (SELECT `id` FROM `practice_sessions` WHERE `source_key` LIKE 'agent:%');--> statement-breakpoint
+  WHERE `session_id` IN (SELECT `id` FROM `practice_sessions` WHERE `source_key` LIKE 'agent:%');--> statement-breakpoint
 UPDATE `practice_logs` SET `origin` = 'import'
   WHERE `origin` = 'web'
     AND `session_id` IN (SELECT `id` FROM `practice_sessions` WHERE `practice_mode` = 'import');--> statement-breakpoint

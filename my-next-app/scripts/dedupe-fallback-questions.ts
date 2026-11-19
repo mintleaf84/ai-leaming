@@ -35,7 +35,10 @@ async function main() {
 }
 
 main().catch((error) => {
-  console.error("❌ 清理失败，数据库未变更（事务外失败需人工核对）");
+  console.error(
+    "❌ 清理失败。注意：哈希回填等步骤可能已部分写入。请保留备份、核对已完成的写入，" +
+      "再决定重试或从备份恢复。",
+  );
   console.error(error);
   process.exit(1);
 });

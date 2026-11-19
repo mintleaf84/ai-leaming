@@ -17,20 +17,34 @@ import { createHash } from "node:crypto";
 import { drizzleDb } from "@/lib/db";
 import type { Executor } from "@/lib/db/executor";
 import { questions } from "@/lib/db/drizzle-schema";
-import { eq } from "drizzle-orm";
+import { eq, isNull } from "drizzle-orm";
+import { safeParseJson } from "@/lib/utils/json";
 
 /** 归一化题干：NFKC + 小写 + 去空白/标点/符号 */
 export function normalizeQuestionContent(text: string): string {
+  // 保留算术/比较符号（+ - . / × ÷ = %）：删掉会把「1+2」和「1-2」归一成同一题
   return (text ?? "")
     .normalize("NFKC")
     .toLowerCase()
-    .replace(/[\s\u3000\p{P}\p{S}]/gu, "");
+    .replace(/[^\p{L}\p{N}+\-./×÷=%]/gu, "");
 }
 
-/** 题干内容哈希（sha256，hex） */
-export function contentHash(text: string): string {
+/** 选项归一化：逐项规范化后用 | 连接（顺序有意义，参与答案字母） */
+export function normalizeOptions(options: unknown): string {
+  if (!options) return "";
+  let list: unknown[] = [];
+  if (Array.isArray(options)) list = options;
+  else if (typeof options === "string") {
+    const parsed = safeParseJson<unknown>(options, null);
+    list = Array.isArray(parsed) ? parsed : [options];
+  }
+  return list.map((o) => normalizeQuestionContent(String(o))).join("|");
+}
+
+/** 题目内容哈希（sha256，hex）：题干 + 选项（含选项才不会把「下列说法正确」误合并） */
+export function contentHash(text: string, options?: unknown): string {
   return createHash("sha256")
-    .update(normalizeQuestionContent(text))
+    .update(`${normalizeQuestionContent(text)}||${normalizeOptions(options)}`)
     .digest("hex");
 }
 
@@ -46,11 +60,11 @@ export function contentHash(text: string): string {
 export async function findQuestionIdByContent(
   content: string,
   exec: Executor = drizzleDb,
-  options: { excludeId?: number } = {},
+  opts: { excludeId?: number; options?: unknown } = {},
 ): Promise<number | null> {
   const normalized = normalizeQuestionContent(content);
   if (!normalized) return null;
-  const hash = contentHash(content);
+  const hash = contentHash(content, opts.options);
 
   const byHash = await exec
     .select({ id: questions.id })
@@ -58,25 +72,36 @@ export async function findQuestionIdByContent(
     .where(eq(questions.content_hash, hash))
     .limit(1);
   for (const row of byHash) {
-    if (row.id !== options.excludeId) return row.id;
+    if (row.id !== opts.excludeId) return row.id;
   }
 
-  // 兜底：未回填的存量行（SQLite 里 NULL 不参与索引比较，只能按长度缩小后扫描）
-  const candidates = await exec
-    .select({ id: questions.id, content: questions.content })
-    .from(questions)
-    .where(eq(questions.content_hash, null as unknown as string))
-    .limit(5000);
-
-  for (const row of candidates) {
-    if (row.id === options.excludeId) continue;
-    if (normalizeQuestionContent(row.content) !== normalized) continue;
-    // 命中即回填，下次走索引
-    await exec
-      .update(questions)
-      .set({ content_hash: hash })
-      .where(eq(questions.id, row.id));
-    return row.id;
+  // 兜底：未回填的存量行。必须用 IS NULL（drizzle eq(null) 生成 = NULL，永远不命中）
+  // 且分页扫描到底，不能用固定 limit 猜测「后面没有」。
+  const PAGE = 1000;
+  let offset = 0;
+  for (;;) {
+    const candidates = await exec
+      .select({
+        id: questions.id,
+        content: questions.content,
+        options: questions.options,
+      })
+      .from(questions)
+      .where(isNull(questions.content_hash))
+      .limit(PAGE)
+      .offset(offset);
+    if (candidates.length === 0) break;
+    for (const row of candidates) {
+      if (row.id === opts.excludeId) continue;
+      if (contentHash(row.content, row.options) !== hash) continue;
+      await exec
+        .update(questions)
+        .set({ content_hash: hash })
+        .where(eq(questions.id, row.id));
+      return row.id;
+    }
+    if (candidates.length < PAGE) break;
+    offset += PAGE;
   }
   return null;
 }

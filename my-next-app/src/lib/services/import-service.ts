@@ -192,19 +192,26 @@ async function writeImport(
 
       const sanitizedContent = sanitizeHtml(q.content);
 
-      // 内容级去重：同题干已存在且不是同一条 external_id 记录时，复用已有 id。
-      // 同 external_id 仍走下面的 upsert —— 那是「刷新解析」而不是「新题」。
-      const existingByContent = await findQuestionIdByContent(
-        sanitizedContent,
-        exec,
-      );
-      if (existingByContent) {
-        const [existingRow] = await exec
-          .select({ external_id: questions.external_id })
-          .from(questions)
-          .where(eq(questions.id, existingByContent))
-          .limit(1);
-        if (!q.externalId || existingRow?.external_id !== q.externalId) {
+      // 先按 external_id 判断：已存在则走下面的 upsert（刷新解析），
+      // 不能被内容查重劫持到一条内容相同的旧副本上。
+      const externalIdExists = q.externalId
+        ? (
+            await exec
+              .select({ id: questions.id })
+              .from(questions)
+              .where(eq(questions.external_id, q.externalId))
+              .limit(1)
+          ).length > 0
+        : false;
+
+      // 内容级去重：仅在 external_id 不存在时，跨来源复用同题干+同选项的已有题
+      if (!externalIdExists) {
+        const existingByContent = await findQuestionIdByContent(
+          sanitizedContent,
+          exec,
+          { options: q.options },
+        );
+        if (existingByContent) {
           questionIdMap.set(q.externalId, existingByContent);
           continue;
         }
@@ -214,7 +221,7 @@ async function writeImport(
         .insert(questions)
         .values({
           external_id: q.externalId,
-          content_hash: contentHash(sanitizedContent),
+          content_hash: contentHash(sanitizedContent, q.options),
           content: sanitizedContent,
           options: JSON.stringify(q.options),
           answer: q.answer,
@@ -237,6 +244,7 @@ async function writeImport(
             material_html: sql`excluded.material_html`,
             correct_ratio: sql`excluded.correct_ratio`,
             most_wrong_answer: sql`excluded.most_wrong_answer`,
+            content_hash: sql`excluded.content_hash`,
           },
         })
         .returning({ id: questions.id });
@@ -274,6 +282,7 @@ async function writeImport(
   // 4. 汇总并更新 Mastery
   const masteryChanges = new Map<string, MasteryDelta>();
   for (const record of data.records) {
+    if ((record.userAnswer ?? "").trim() === "") continue; // 空答案=未作答，不计掌握度
     const question = data.questions.find(
       (q) => q.externalId === record.externalId,
     );
@@ -371,7 +380,9 @@ async function writeAgentAnswers(
     session_name: data.sessionName ?? "由 agent 导入",
     source_key: sourceKey,
     total_questions: data.answers.length,
-    correct_count: data.answers.filter((a) => a.isCorrect).length,
+    correct_count: data.answers.filter(
+      (a) => a.isCorrect && (a.userAnswer ?? "").trim() !== "",
+    ).length,
     practice_mode: "import",
     // 存纯 id 数组：getSessionById 只对「数字/字符串数组」走 id 分支，
     // 存对象数组会落到"完整对象"分支，详情页解析直接坏掉
@@ -397,6 +408,7 @@ async function writeAgentAnswers(
   // 4. 按题目 tags 增量累加掌握度（与粉笔导入同一段逻辑）
   const masteryChanges = new Map<string, MasteryDelta>();
   for (const answer of data.answers) {
+    if ((answer.userAnswer ?? "").trim() === "") continue; // 空答案=未作答，不计掌握度
     const parsedTags = safeParseJson<unknown>(
       found.get(answer.questionId)?.tags,
       [],

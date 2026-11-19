@@ -100,8 +100,8 @@ try {
   const list = await rpc("tools/list", {});
   const tools = list.result?.tools ?? [];
   check(
-    tools.length === 20,
-    `tools/list 应返回 20 个工具，实际 ${tools.length}`,
+    tools.length === 21,
+    `tools/list 应返回 21 个工具，实际 ${tools.length}`,
   );
   check(
     tools.some((tool) => tool.name === "delete_recall_card"),
@@ -143,6 +143,35 @@ try {
     `路径参数未替换：${seen.at(-1)?.url}`,
   );
 
+  // 批量建题：工具要注册上，且 batch 路径与 dryRun query 拼装正确
+  check(
+    tools.some((tool) => tool.name === "create_questions_batch"),
+    "缺少 create_questions_batch",
+  );
+  await rpc("tools/call", {
+    name: "create_questions_batch",
+    arguments: {
+      questions: [
+        {
+          externalId: "smoke-1",
+          content: "冒烟题",
+          answer: "A",
+          explanation: "冒烟用的解析文本。",
+          tags: ["冒烟"],
+        },
+      ],
+      dryRun: true,
+    },
+  });
+  check(
+    seen.at(-1)?.method === "POST",
+    `create_questions_batch 应为 POST，实际 ${seen.at(-1)?.method}`,
+  );
+  check(
+    seen.at(-1)?.url === "/api/external/questions/batch?dryRun=true",
+    `批量建题路径不对：${seen.at(-1)?.url}`,
+  );
+
   // 写工具的 dryRun 必须变成 query 而不是 body
   await rpc("tools/call", {
     name: "delete_recall_card",
@@ -168,5 +197,5 @@ if (failures.length > 0) {
 }
 
 console.log(
-  "✔ MCP 冒烟测试通过：20 个工具、路径参数替换、dryRun 走 query、鉴权头正确。",
+  "✔ MCP 冒烟测试通过：21 个工具、路径参数替换、dryRun 走 query、鉴权头正确。",
 );

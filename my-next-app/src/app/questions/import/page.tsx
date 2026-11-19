@@ -244,7 +244,9 @@ export default function PdfImportPage() {
             返回错题本
           </Button>
         </Link>
-        <h1 className="text-2xl font-bold">错题导入</h1>
+        <h1 className="text-2xl font-semibold tracking-tight md:text-3xl">
+          错题导入
+        </h1>
       </div>
 
       {step === "upload" ? (

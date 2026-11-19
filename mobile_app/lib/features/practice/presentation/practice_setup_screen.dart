@@ -4,6 +4,7 @@ import 'package:flutter_screenutil/flutter_screenutil.dart';
 import '../../../core/navigation/app_nav.dart';
 import 'practice_provider.dart';
 import '../../../core/theme/app_icons.dart';
+import '../../../core/theme/app_colors.dart';
 
 /// 练习配置页面（与 Web /practice/setup 功能对齐）
 class PracticeSetupScreen extends ConsumerStatefulWidget {
@@ -32,12 +33,11 @@ class _PracticeSetupScreenState extends ConsumerState<PracticeSetupScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xFFF7F7F5),
+      backgroundColor: context.colors.background,
       appBar: AppBar(
-        backgroundColor: Colors.white,
         elevation: 0,
         leading: IconButton(
-          icon: const Icon(AppIcons.arrowBack, color: Color(0xFF37352F)),
+          icon: Icon(AppIcons.arrowBack, color: context.colors.text),
           onPressed: () => context.backOrHome(),
         ),
         title: Text(
@@ -45,7 +45,7 @@ class _PracticeSetupScreenState extends ConsumerState<PracticeSetupScreen> {
           style: TextStyle(
             fontSize: 18.sp,
             fontWeight: FontWeight.w600,
-            color: const Color(0xFF37352F),
+            color: context.colors.text,
           ),
         ),
         centerTitle: true,
@@ -82,14 +82,14 @@ class _PracticeSetupScreenState extends ConsumerState<PracticeSetupScreen> {
   Widget _buildSectionTitle(String title, IconData icon) {
     return Row(
       children: [
-        Icon(icon, size: 18.sp, color: const Color(0xFF37352F)),
+        Icon(icon, size: 18.sp, color: context.colors.text),
         SizedBox(width: 8.w),
         Text(
           title,
           style: TextStyle(
             fontSize: 16.sp,
             fontWeight: FontWeight.w600,
-            color: const Color(0xFF37352F),
+            color: context.colors.text,
           ),
         ),
       ],
@@ -110,12 +110,14 @@ class _PracticeSetupScreenState extends ConsumerState<PracticeSetupScreen> {
           duration: const Duration(milliseconds: 150),
           padding: EdgeInsets.all(12.w),
           decoration: BoxDecoration(
-            color: isSelected ? const Color(0xFF37352F) : Colors.white,
+            color: isSelected
+                ? context.colors.primary
+                : context.colors.surface,
             borderRadius: BorderRadius.circular(12.r),
             border: Border.all(
               color: isSelected
-                  ? const Color(0xFF37352F)
-                  : const Color(0xFFE8E8E5),
+                  ? context.colors.primary
+                  : context.colors.border,
               width: isSelected ? 2 : 1,
             ),
             boxShadow: isSelected
@@ -139,10 +141,10 @@ class _PracticeSetupScreenState extends ConsumerState<PracticeSetupScreen> {
                   fontSize: 13.sp,
                   fontWeight: FontWeight.w600,
                   color: isSelected
-                      ? Colors.white
+                      ? context.colors.onPrimary
                       : mode.enabled
-                      ? const Color(0xFF37352F)
-                      : const Color(0xFF9B9B94),
+                      ? context.colors.text
+                      : context.colors.textSecondary,
                 ),
               ),
             ],
@@ -171,12 +173,14 @@ class _PracticeSetupScreenState extends ConsumerState<PracticeSetupScreen> {
             duration: const Duration(milliseconds: 150),
             padding: EdgeInsets.symmetric(horizontal: 18.w, vertical: 10.h),
             decoration: BoxDecoration(
-              color: isSelected ? const Color(0xFF37352F) : Colors.white,
+              color: isSelected
+                  ? context.colors.primary
+                  : context.colors.surface,
               borderRadius: BorderRadius.circular(8.r),
               border: Border.all(
                 color: isSelected
-                    ? const Color(0xFF37352F)
-                    : const Color(0xFFE8E8E5),
+                    ? context.colors.primary
+                    : context.colors.border,
               ),
             ),
             child: Text(
@@ -184,7 +188,9 @@ class _PracticeSetupScreenState extends ConsumerState<PracticeSetupScreen> {
               style: TextStyle(
                 fontSize: 14.sp,
                 fontWeight: FontWeight.w500,
-                color: isSelected ? Colors.white : const Color(0xFF37352F),
+                color: isSelected
+                    ? context.colors.onPrimary
+                    : context.colors.text,
               ),
             ),
           ),
@@ -197,9 +203,11 @@ class _PracticeSetupScreenState extends ConsumerState<PracticeSetupScreen> {
     return Container(
       padding: EdgeInsets.fromLTRB(20.w, 16.h, 20.w, 32.h),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: context.colors.surface,
         border: Border(
-          top: BorderSide(color: Colors.black.withValues(alpha: 0.05)),
+          top: BorderSide(
+            color: context.colors.border.withValues(alpha: 0.5),
+          ),
         ),
       ),
       child: SizedBox(
@@ -208,8 +216,8 @@ class _PracticeSetupScreenState extends ConsumerState<PracticeSetupScreen> {
         child: ElevatedButton(
           onPressed: _startPractice,
           style: ElevatedButton.styleFrom(
-            backgroundColor: const Color(0xFF37352F),
-            foregroundColor: Colors.white,
+            backgroundColor: context.colors.primary,
+            foregroundColor: context.colors.onPrimary,
             shape: RoundedRectangleBorder(
               borderRadius: BorderRadius.circular(10.r),
             ),

@@ -9,6 +9,7 @@ import '../domain/chat_message.dart';
 import 'package:flutter/scheduler.dart';
 import 'package:flutter_hooks/flutter_hooks.dart';
 import '../../../core/theme/app_icons.dart';
+import '../../../core/theme/app_colors.dart';
 import '../../../core/navigation/app_nav.dart';
 
 class ChatScreen extends HookConsumerWidget {
@@ -37,14 +38,13 @@ class ChatScreen extends HookConsumerWidget {
     });
 
     return Scaffold(
-      backgroundColor: const Color(0xFFF7F7F5),
+      backgroundColor: context.colors.background,
       appBar: AppBar(
-        backgroundColor: Colors.white,
         elevation: 0,
         leading: IconButton(
           icon: Icon(
             AppIcons.arrowBackIos,
-            color: const Color(0xFF37352F),
+            color: context.colors.text,
             size: 20.sp,
           ),
           onPressed: () => context.backOrHome(),
@@ -52,7 +52,7 @@ class ChatScreen extends HookConsumerWidget {
         title: Text(
           '智能教研助手',
           style: TextStyle(
-            color: const Color(0xFF37352F),
+            color: context.colors.text,
             fontSize: 18.sp,
             fontWeight: FontWeight.bold,
           ),
@@ -61,7 +61,7 @@ class ChatScreen extends HookConsumerWidget {
           IconButton(
             icon: Icon(
               AppIcons.addCircleOutline,
-              color: const Color(0xFF37352F),
+              color: context.colors.text,
               size: 22.sp,
             ),
             onPressed: () {
@@ -73,7 +73,7 @@ class ChatScreen extends HookConsumerWidget {
             builder: (context) => IconButton(
               icon: Icon(
                 AppIcons.history,
-                color: const Color(0xFF37352F),
+                color: context.colors.text,
                 size: 22.sp,
               ),
               onPressed: () => Scaffold.of(context).openEndDrawer(),
@@ -98,11 +98,17 @@ class ChatScreen extends HookConsumerWidget {
                         SizedBox(height: 16.h),
                         Text(
                           '你好，我是你的 AI 学习助手',
-                          style: TextStyle(color: Colors.grey, fontSize: 16.sp),
+                          style: TextStyle(
+                            color: context.colors.textSecondary,
+                            fontSize: 16.sp,
+                          ),
                         ),
                         Text(
                           '有什么可以帮你的吗？',
-                          style: TextStyle(color: Colors.grey, fontSize: 14.sp),
+                          style: TextStyle(
+                            color: context.colors.textSecondary,
+                            fontSize: 14.sp,
+                          ),
                         ),
                       ],
                     ),
@@ -124,7 +130,7 @@ class ChatScreen extends HookConsumerWidget {
                     return Column(
                       crossAxisAlignment: CrossAxisAlignment.stretch,
                       children: [
-                        _buildMessageBubble(isUser, msg.content),
+                        _buildMessageBubble(context, isUser, msg.content),
                         // 失败消息下方显示重试按钮
                         if (isFailed && index == messages.length - 1)
                           Padding(
@@ -143,7 +149,7 @@ class ChatScreen extends HookConsumerWidget {
                                   style: TextStyle(fontSize: 13.sp),
                                 ),
                                 style: TextButton.styleFrom(
-                                  foregroundColor: const Color(0xFF135BEC),
+                                  foregroundColor: context.colors.accent,
                                 ),
                               ),
                             ),
@@ -161,7 +167,7 @@ class ChatScreen extends HookConsumerWidget {
                     Icon(
                       AppIcons.errorOutline,
                       size: 48.sp,
-                      color: Colors.red[300],
+                      color: context.colors.error,
                     ),
                     SizedBox(height: 16.h),
                     Text(
@@ -174,7 +180,10 @@ class ChatScreen extends HookConsumerWidget {
                     SizedBox(height: 8.h),
                     Text(
                       '请检查网络后重试',
-                      style: TextStyle(fontSize: 13.sp, color: Colors.grey),
+                      style: TextStyle(
+                        fontSize: 13.sp,
+                        color: context.colors.textSecondary,
+                      ),
                     ),
                     SizedBox(height: 16.h),
                     ElevatedButton.icon(
@@ -182,8 +191,8 @@ class ChatScreen extends HookConsumerWidget {
                       icon: const Icon(AppIcons.refresh, size: 16),
                       label: const Text('重试'),
                       style: ElevatedButton.styleFrom(
-                        backgroundColor: const Color(0xFF135BEC),
-                        foregroundColor: Colors.white,
+                        backgroundColor: context.colors.accent,
+                        foregroundColor: context.colors.onAccent,
                       ),
                     ),
                   ],
@@ -201,7 +210,7 @@ class ChatScreen extends HookConsumerWidget {
               bottom: MediaQuery.of(context).padding.bottom + 12.h,
             ),
             decoration: BoxDecoration(
-              color: Colors.white,
+              color: context.colors.surface,
               boxShadow: [
                 BoxShadow(
                   color: Colors.black.withValues(alpha: 0.05),
@@ -222,8 +231,8 @@ class ChatScreen extends HookConsumerWidget {
                         AppIcons.libraryBooks,
                         size: 14.sp,
                         color: isRagEnabled.value
-                            ? const Color(0xFF135BEC)
-                            : Colors.grey,
+                            ? context.colors.accent
+                            : context.colors.textSecondary,
                       ),
                       SizedBox(width: 4.w),
                       Text(
@@ -231,8 +240,8 @@ class ChatScreen extends HookConsumerWidget {
                         style: TextStyle(
                           fontSize: 12.sp,
                           color: isRagEnabled.value
-                              ? const Color(0xFF135BEC)
-                              : Colors.grey,
+                              ? context.colors.accent
+                              : context.colors.textSecondary,
                           fontWeight: isRagEnabled.value
                               ? FontWeight.bold
                               : FontWeight.normal,
@@ -247,7 +256,7 @@ class ChatScreen extends HookConsumerWidget {
                           child: Switch(
                             value: isRagEnabled.value,
                             onChanged: (val) => isRagEnabled.value = val,
-                            activeTrackColor: const Color(0xFF135BEC),
+                            activeTrackColor: context.colors.accent,
                           ),
                         ),
                       ),
@@ -259,7 +268,7 @@ class ChatScreen extends HookConsumerWidget {
                     Expanded(
                       child: Container(
                         decoration: BoxDecoration(
-                          color: const Color(0xFFF0F0F0),
+                          color: context.colors.surfaceAlt,
                           borderRadius: BorderRadius.circular(24.r),
                         ),
                         child: TextField(
@@ -267,7 +276,7 @@ class ChatScreen extends HookConsumerWidget {
                           decoration: InputDecoration(
                             hintText: '输入你想问的问题...',
                             hintStyle: TextStyle(
-                              color: Colors.grey,
+                              color: context.colors.textSecondary,
                               fontSize: 14.sp,
                             ),
                             border: InputBorder.none,
@@ -316,15 +325,19 @@ class ChatScreen extends HookConsumerWidget {
                         padding: EdgeInsets.all(12.w),
                         decoration: BoxDecoration(
                           color: ref.watch(chatProvider.notifier).isGenerating
-                              ? const Color(0xFFDC2626)
-                              : const Color(0xFF37352F),
+                              ? context.colors.error
+                              : context.colors.primary,
                           shape: BoxShape.circle,
                         ),
                         child: ref.watch(chatProvider.notifier).isGenerating
-                            ? Icon(AppIcons.stop, color: Colors.white, size: 20.sp)
+                            ? Icon(
+                                AppIcons.stop,
+                                color: context.colors.onError,
+                                size: 20.sp,
+                              )
                             : Icon(
                                 AppIcons.send,
-                                color: Colors.white,
+                                color: context.colors.onPrimary,
                                 size: 20.sp,
                               ),
                       ),
@@ -344,7 +357,7 @@ class ChatScreen extends HookConsumerWidget {
     final currentSessionId = ref.watch(chatProvider.notifier).currentSessionId;
 
     return Drawer(
-      backgroundColor: const Color(0xFFF7F7F5),
+      backgroundColor: context.colors.background,
       child: SafeArea(
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -356,11 +369,11 @@ class ChatScreen extends HookConsumerWidget {
                 style: TextStyle(
                   fontSize: 18.sp,
                   fontWeight: FontWeight.bold,
-                  color: const Color(0xFF37352F),
+                  color: context.colors.text,
                 ),
               ),
             ),
-            Divider(height: 1, color: Colors.grey[300]),
+            Divider(height: 1, color: context.colors.border),
             Expanded(
               child: sessionsAsync.when(
                 data: (sessions) {
@@ -368,7 +381,10 @@ class ChatScreen extends HookConsumerWidget {
                     return Center(
                       child: Text(
                         '暂无会话记录',
-                        style: TextStyle(color: Colors.grey, fontSize: 14.sp),
+                        style: TextStyle(
+                          color: context.colors.textSecondary,
+                          fontSize: 14.sp,
+                        ),
                       ),
                     );
                   }
@@ -390,17 +406,20 @@ class ChatScreen extends HookConsumerWidget {
                                 ? FontWeight.bold
                                 : FontWeight.normal,
                             color: isSelected
-                                ? const Color(0xFF135BEC)
-                                : const Color(0xFF37352F),
+                                ? context.colors.accent
+                                : context.colors.text,
                           ),
                         ),
                         subtitle: Text(
                           session['updated_at']?.toString().substring(0, 10) ??
                               '',
-                          style: TextStyle(fontSize: 12.sp, color: Colors.grey),
+                          style: TextStyle(
+                            fontSize: 12.sp,
+                            color: context.colors.textSecondary,
+                          ),
                         ),
                         selected: isSelected,
-                        selectedTileColor: const Color(0xFFE8F3FF),
+                        selectedTileColor: context.colors.accentContainer,
                         onTap: () {
                           Navigator.pop(context); // Close Drawer
                           ref
@@ -411,7 +430,7 @@ class ChatScreen extends HookConsumerWidget {
                           icon: Icon(
                             AppIcons.deleteOutline,
                             size: 18.sp,
-                            color: Colors.grey,
+                            color: context.colors.textSecondary,
                           ),
                           onPressed: () async {
                             final confirm = await showDialog<bool>(
@@ -426,9 +445,9 @@ class ChatScreen extends HookConsumerWidget {
                                   ),
                                   TextButton(
                                     onPressed: () => Navigator.pop(c, true),
-                                    child: const Text(
+                                    child: Text(
                                       '删除',
-                                      style: TextStyle(color: Colors.red),
+                                      style: TextStyle(color: context.colors.error),
                                     ),
                                   ),
                                 ],
@@ -464,7 +483,10 @@ class ChatScreen extends HookConsumerWidget {
                 error: (error, stack) => Center(
                   child: Text(
                     '加载失败',
-                    style: TextStyle(color: Colors.red, fontSize: 14.sp),
+                    style: TextStyle(
+                      color: context.colors.error,
+                      fontSize: 14.sp,
+                    ),
                   ),
                 ),
               ),
@@ -475,7 +497,11 @@ class ChatScreen extends HookConsumerWidget {
     );
   }
 
-  Widget _buildMessageBubble(bool isUser, String content) {
+  Widget _buildMessageBubble(
+    BuildContext context,
+    bool isUser,
+    String content,
+  ) {
     return Padding(
       padding: EdgeInsets.only(bottom: 24.h),
       child: Row(
@@ -486,7 +512,7 @@ class ChatScreen extends HookConsumerWidget {
         children: [
           if (!isUser) ...[
             CircleAvatar(
-              backgroundColor: const Color(0xFFE8F3FF),
+              backgroundColor: context.colors.accentContainer,
               radius: 16.r,
               child: Text('🤖', style: TextStyle(fontSize: 16.sp)),
             ),
@@ -497,20 +523,22 @@ class ChatScreen extends HookConsumerWidget {
             child: Container(
               padding: EdgeInsets.all(16.w),
               decoration: BoxDecoration(
-                color: isUser ? const Color(0xFF37352F) : Colors.white,
+                color: isUser
+                    ? context.colors.primary
+                    : context.colors.surface,
                 borderRadius: BorderRadius.circular(16.r).copyWith(
                   bottomRight: isUser ? const Radius.circular(0) : null,
                   topLeft: !isUser ? const Radius.circular(0) : null,
                 ),
                 border: !isUser
-                    ? Border.all(color: const Color(0xFFE0E0E0))
+                    ? Border.all(color: context.colors.border)
                     : null,
               ),
               child: MarkdownBody(
                 data: content.isEmpty && !isUser ? '正在思考...' : content,
                 styleSheet: MarkdownStyleSheet(
                   p: TextStyle(
-                    color: isUser ? Colors.white : const Color(0xFF37352F),
+                    color: isUser ? context.colors.onPrimary : context.colors.text,
                     fontSize: 15.sp,
                     height: 1.5,
                   ),
@@ -522,9 +550,13 @@ class ChatScreen extends HookConsumerWidget {
           if (isUser) ...[
             SizedBox(width: 12.w),
             CircleAvatar(
-              backgroundColor: const Color(0xFFF0F0F0),
+              backgroundColor: context.colors.surfaceAlt,
               radius: 16.r,
-              child: Icon(AppIcons.person, size: 16.sp, color: Colors.grey),
+              child: Icon(
+                AppIcons.person,
+                size: 16.sp,
+                color: context.colors.textSecondary,
+              ),
             ),
           ],
         ],

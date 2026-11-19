@@ -7,7 +7,7 @@ export function WrongBookSkeleton() {
       <main className="container mx-auto max-w-4xl px-4 py-8 pb-32">
         {/* 头部骨架 */}
         <div className="mb-8 animate-pulse">
-          <h1 className="text-3xl font-bold flex items-center gap-3">
+          <h1 className="text-2xl font-semibold tracking-tight flex items-center gap-3 md:text-3xl">
             <BookOpen className="text-muted h-8 w-8" />
             <div className="h-8 w-24 bg-muted rounded"></div>
           </h1>

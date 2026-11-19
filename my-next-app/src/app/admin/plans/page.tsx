@@ -267,7 +267,9 @@ export default function PlansPage() {
       {/* 页头 */}
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-bold">套餐管理</h1>
+          <h1 className="text-2xl font-semibold tracking-tight md:text-3xl">
+            套餐管理
+          </h1>
           <p className="text-muted-foreground mt-1">配置订阅套餐与用量限制</p>
         </div>
         <Button onClick={handleAdd}>

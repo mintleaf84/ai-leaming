@@ -46,7 +46,7 @@ export default async function LandingPage() {
       <main className="flex flex-col md:flex-row items-center justify-between max-w-7xl mx-auto px-6 py-12 md:py-24 gap-12">
         {/* Left Content */}
         <div className="flex-1 space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-1000">
-          <h1 className="text-5xl md:text-7xl font-bold font-serif leading-tight tracking-tight">
+          <h1 className="text-5xl md:text-7xl font-semibold font-serif leading-tight tracking-tight">
             精琢每一分，
             <br />
             只为成师<span className="text-emerald-600">。</span>

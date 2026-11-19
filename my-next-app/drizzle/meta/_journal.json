@@ -134,6 +134,20 @@
       "when": 1783900000000,
       "tag": "0018_pdf_import_tasks",
       "breakpoints": true
+    },
+    {
+      "idx": 19,
+      "version": "6",
+      "when": 1784000000000,
+      "tag": "0019_practice_logs_origin_status",
+      "breakpoints": true
+    },
+    {
+      "idx": 20,
+      "version": "6",
+      "when": 1784100000000,
+      "tag": "0020_questions_content_hash",
+      "breakpoints": true
     }
   ]
 }

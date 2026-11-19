@@ -58,9 +58,9 @@ export default function ActivityMonitoringPage() {
     <div className="p-4 md:p-8 space-y-8">
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div>
-          <h2 className="text-2xl md:text-3xl font-bold tracking-tight">
+          <h1 className="text-2xl font-semibold tracking-tight md:text-3xl">
             用户行为监控
-          </h2>
+          </h1>
           <p className="text-muted-foreground mt-2">
             实时查看全站练习流水，分析用户做题习惯与 AI 使用深度。
           </p>

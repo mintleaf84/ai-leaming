@@ -150,7 +150,7 @@ export default function PricingPage() {
             <Sparkles className="w-3.5 h-3.5 mr-1.5" />
             订阅方案
           </Badge>
-          <h1 className="text-4xl md:text-5xl font-serif font-bold text-neutral-800 tracking-tight">
+          <h1 className="text-4xl md:text-5xl font-serif font-semibold text-neutral-800 tracking-tight">
             投资您的<span className="text-emerald-700 mx-2">未来</span>
           </h1>
           <p className="text-lg text-neutral-500 max-w-2xl mx-auto font-sans leading-relaxed">

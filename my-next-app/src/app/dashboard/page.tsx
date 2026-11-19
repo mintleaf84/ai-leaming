@@ -145,7 +145,7 @@ async function DashboardStatsCards() {
               <Button
                 variant="ghost"
                 size="icon"
-                className="h-6 w-6 text-muted-foreground hover:text-primary"
+                className="h-11 w-11 text-muted-foreground hover:text-primary"
               >
                 <div className="relative">
                   <div className="absolute top-0 right-0 w-1.5 h-1.5 bg-muted-foreground/50 rounded-full"></div>
@@ -269,7 +269,7 @@ export default async function Home() {
       <div className="max-w-6xl mx-auto space-y-10">
         {/* Header：即时渲染，无需等待数据 */}
         <div className="flex items-end justify-between">
-          <h1 className="text-4xl font-serif font-medium text-foreground tracking-tight">
+          <h1 className="text-4xl font-serif font-semibold text-foreground tracking-tight">
             {greeting}，修习者
           </h1>
           <div className="text-sm text-muted-foreground font-medium">

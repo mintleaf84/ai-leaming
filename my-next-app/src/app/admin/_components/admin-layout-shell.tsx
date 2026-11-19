@@ -21,11 +21,27 @@ import {
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
 import { useRouter } from "next/navigation";
+import { useQuery } from "@tanstack/react-query";
 
 export function AdminLayoutShell({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
   const router = useRouter();
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+  // 数据维护提醒：与系统运维页的维护卡片共用同一个 queryKey，
+  // 清理后 invalidate 会让横幅和卡片一起更新（不再依赖整页重载）。
+  const { data: maintenance } = useQuery({
+    queryKey: ["admin-maintenance-dedupe"],
+    queryFn: async () => {
+      const res = await fetch("/api/admin/maintenance/dedupe");
+      if (!res.ok) throw new Error("获取数据维护状态失败");
+      return (await res.json()) as {
+        needsCleanup: boolean;
+        duplicateGroups: number;
+        fallbackWithCopy: number;
+        unhashedQuestions: number;
+      };
+    },
+  });
 
   // 移动端菜单是浮层：键盘用户必须能关掉它。Esc 挂在 shell 上（document 级），
   // 不挂在遮罩上 —— 遮罩对键盘用户不可达（不可聚焦），挂上去等于没挂。
@@ -115,10 +131,10 @@ export function AdminLayoutShell({ children }: { children: React.ReactNode }) {
       {/* Desktop Sidebar */}
       <aside className="w-64 bg-card border-r border-border flex flex-col hidden md:flex shrink-0">
         <div className="p-6 border-b border-border">
-          <h1 className="text-xl font-bold flex items-center gap-2 text-primary">
+          <div className="text-xl font-semibold flex items-center gap-2 text-primary">
             <Settings className="w-6 h-6" />
             管理后台
-          </h1>
+          </div>
           <p className="text-xs text-muted-foreground mt-1">系统管理中心</p>
         </div>
         {navContent}
@@ -144,10 +160,10 @@ export function AdminLayoutShell({ children }: { children: React.ReactNode }) {
       >
         <div className="p-6 border-b border-border flex justify-between items-center">
           <div>
-            <h1 className="text-xl font-bold flex items-center gap-2 text-primary">
+            <div className="text-xl font-semibold flex items-center gap-2 text-primary">
               <Settings className="w-6 h-6" />
               管理后台
-            </h1>
+            </div>
             <p className="text-xs text-muted-foreground mt-1">系统管理中心</p>
           </div>
           <Button
@@ -176,13 +192,33 @@ export function AdminLayoutShell({ children }: { children: React.ReactNode }) {
           >
             <Menu className="w-6 h-6" />
           </Button>
-          <h1 className="ml-4 font-bold text-lg text-primary flex items-center gap-2">
+          <div className="ml-4 font-semibold text-lg text-primary flex items-center gap-2">
             <Settings className="w-5 h-5" />
             管理后台
-          </h1>
+          </div>
         </header>
 
         <main className="flex-1 overflow-y-auto overflow-x-hidden">
+          {maintenance?.needsCleanup && (
+            <div
+              role="alert"
+              className="mx-4 mt-4 rounded-lg border border-amber-300 bg-amber-50 px-4 py-3 text-sm text-amber-900 dark:border-amber-800 dark:bg-amber-950/50 dark:text-amber-200"
+            >
+              <strong>数据维护待执行：</strong>
+              {maintenance.duplicateGroups} 组重复题
+              {maintenance.fallbackWithCopy > 0 &&
+                `（其中 ${maintenance.fallbackWithCopy} 条为兜底副本）`}
+              {maintenance.unhashedQuestions > 0 &&
+                `，${maintenance.unhashedQuestions} 道题未回填去重指纹`}
+              。
+              <Link
+                href="/admin/system"
+                className="ml-1 font-medium underline underline-offset-2"
+              >
+                前往系统运维 → 数据维护处理
+              </Link>
+            </div>
+          )}
           <div className="h-full">{children}</div>
         </main>
       </div>

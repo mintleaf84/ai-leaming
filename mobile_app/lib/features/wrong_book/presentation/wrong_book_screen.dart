@@ -7,6 +7,8 @@ import 'wrong_book_provider.dart';
 import '../../../shared/skeletons/skeleton_fakes.dart';
 import '../domain/wrong_question.dart';
 import '../../../core/theme/app_icons.dart';
+import '../../../core/theme/app_colors.dart';
+import '../../../shared/widgets/state_views.dart';
 
 /// 错题本页面
 class WrongBookScreen extends ConsumerStatefulWidget {
@@ -30,12 +32,11 @@ class _WrongBookScreenState extends ConsumerState<WrongBookScreen> {
     final state = ref.watch(wrongBookControllerProvider);
 
     return Scaffold(
-      backgroundColor: const Color(0xFFF7F7F5),
+      backgroundColor: context.colors.background,
       appBar: AppBar(
-        backgroundColor: Colors.white,
         elevation: 0,
         leading: IconButton(
-          icon: const Icon(AppIcons.arrowBack, color: Color(0xFF37352F)),
+          icon: Icon(AppIcons.arrowBack, color: context.colors.text),
           onPressed: () => context.backOrHome(),
         ),
         title: Text(
@@ -43,13 +44,13 @@ class _WrongBookScreenState extends ConsumerState<WrongBookScreen> {
           style: TextStyle(
             fontSize: 18.sp,
             fontWeight: FontWeight.w600,
-            color: const Color(0xFF37352F),
+            color: context.colors.text,
           ),
         ),
         centerTitle: true,
         actions: [
           IconButton(
-            icon: const Icon(AppIcons.refresh, color: Color(0xFF37352F)),
+            icon: Icon(AppIcons.refresh, color: context.colors.text),
             onPressed: () =>
                 ref.read(wrongBookControllerProvider.notifier).loadData(),
           ),
@@ -84,11 +85,11 @@ class _WrongBookScreenState extends ConsumerState<WrongBookScreen> {
       padding: EdgeInsets.all(16.w),
       child: Row(
         children: [
-          _buildStatCard('总错题', stats.total, const Color(0xFFDC2626)),
+          _buildStatCard('总错题', stats.total, context.colors.error),
           SizedBox(width: 12.w),
-          _buildStatCard('近7天', stats.recent, const Color(0xFFFF9500)),
+          _buildStatCard('近7天', stats.recent, context.colors.warning),
           SizedBox(width: 12.w),
-          _buildStatCard('高频错题', stats.frequent, const Color(0xFF135BEC)),
+          _buildStatCard('高频错题', stats.frequent, context.colors.accent),
         ],
       ),
     );
@@ -99,9 +100,9 @@ class _WrongBookScreenState extends ConsumerState<WrongBookScreen> {
       child: Container(
         padding: EdgeInsets.symmetric(vertical: 12.h, horizontal: 12.w),
         decoration: BoxDecoration(
-          color: Colors.white,
+          color: context.colors.surface,
           borderRadius: BorderRadius.circular(12.r),
-          border: Border.all(color: const Color(0xFFE0E0E0)),
+          border: Border.all(color: context.colors.border),
         ),
         child: Column(
           children: [
@@ -116,7 +117,10 @@ class _WrongBookScreenState extends ConsumerState<WrongBookScreen> {
             SizedBox(height: 4.h),
             Text(
               label,
-              style: TextStyle(fontSize: 11.sp, color: Colors.grey),
+              style: TextStyle(
+                fontSize: 12.sp,
+                color: context.colors.textSecondary,
+              ),
             ),
           ],
         ),
@@ -131,9 +135,9 @@ class _WrongBookScreenState extends ConsumerState<WrongBookScreen> {
       margin: EdgeInsets.symmetric(horizontal: 16.w),
       padding: EdgeInsets.all(4.w),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: context.colors.surface,
         borderRadius: BorderRadius.circular(10.r),
-        border: Border.all(color: const Color(0xFFE0E0E0)),
+        border: Border.all(color: context.colors.border),
       ),
       child: Row(
         children: [
@@ -158,7 +162,7 @@ class _WrongBookScreenState extends ConsumerState<WrongBookScreen> {
         child: Container(
           padding: EdgeInsets.symmetric(vertical: 10.h),
           decoration: BoxDecoration(
-            color: isSelected ? const Color(0xFF37352F) : Colors.transparent,
+            color: isSelected ? context.colors.primary : Colors.transparent,
             borderRadius: BorderRadius.circular(8.r),
           ),
           child: Text(
@@ -167,7 +171,9 @@ class _WrongBookScreenState extends ConsumerState<WrongBookScreen> {
             style: TextStyle(
               fontSize: 13.sp,
               fontWeight: isSelected ? FontWeight.w600 : FontWeight.normal,
-              color: isSelected ? Colors.white : const Color(0xFF37352F),
+              color: isSelected
+                  ? context.colors.onPrimary
+                  : context.colors.text,
             ),
           ),
         ),
@@ -215,12 +221,10 @@ class _WrongBookScreenState extends ConsumerState<WrongBookScreen> {
       child: Container(
         padding: EdgeInsets.all(14.w),
         decoration: BoxDecoration(
-          color: Colors.white,
+          color: context.colors.surface,
           borderRadius: BorderRadius.circular(12.r),
           border: Border.all(
-            color: isSelected
-                ? const Color(0xFF135BEC)
-                : const Color(0xFFE0E0E0),
+            color: isSelected ? context.colors.accent : context.colors.border,
             width: isSelected ? 1.5 : 1,
           ),
         ),
@@ -233,19 +237,21 @@ class _WrongBookScreenState extends ConsumerState<WrongBookScreen> {
               height: 22.w,
               margin: EdgeInsets.only(top: 2.h, right: 12.w),
               decoration: BoxDecoration(
-                color: isSelected
-                    ? const Color(0xFF135BEC)
-                    : Colors.transparent,
+                color: isSelected ? context.colors.accent : Colors.transparent,
                 borderRadius: BorderRadius.circular(6.r),
                 border: Border.all(
                   color: isSelected
-                      ? const Color(0xFF135BEC)
-                      : Colors.grey[300]!,
+                      ? context.colors.accent
+                      : context.colors.border,
                   width: 1.5,
                 ),
               ),
               child: isSelected
-                  ? Icon(AppIcons.check, size: 14.sp, color: Colors.white)
+                  ? Icon(
+                      AppIcons.check,
+                      size: 14.sp,
+                      color: context.colors.onAccent,
+                    )
                   : null,
             ),
             // 内容
@@ -260,7 +266,7 @@ class _WrongBookScreenState extends ConsumerState<WrongBookScreen> {
                     style: TextStyle(
                       fontSize: 14.sp,
                       fontWeight: FontWeight.w500,
-                      color: const Color(0xFF37352F),
+                      color: context.colors.text,
                       height: 1.4,
                     ),
                   ),
@@ -274,7 +280,7 @@ class _WrongBookScreenState extends ConsumerState<WrongBookScreen> {
                           vertical: 2.h,
                         ),
                         decoration: BoxDecoration(
-                          color: const Color(0xFFFEF2F2),
+                          color: context.colors.errorContainer,
                           borderRadius: BorderRadius.circular(4.r),
                         ),
                         child: Text(
@@ -282,7 +288,7 @@ class _WrongBookScreenState extends ConsumerState<WrongBookScreen> {
                           style: TextStyle(
                             fontSize: 10.sp,
                             fontWeight: FontWeight.w600,
-                            color: const Color(0xFFDC2626),
+                            color: context.colors.error,
                           ),
                         ),
                       ),
@@ -295,21 +301,24 @@ class _WrongBookScreenState extends ConsumerState<WrongBookScreen> {
                             vertical: 2.h,
                           ),
                           decoration: BoxDecoration(
-                            color: const Color(0xFFF3F4F6),
+                            color: context.colors.surfaceAlt,
                             borderRadius: BorderRadius.circular(4.r),
                           ),
                           child: Text(
                             q.tags.first,
                             style: TextStyle(
-                              fontSize: 10.sp,
-                              color: Colors.grey[600],
+                              fontSize: 12.sp,
+                              color: context.colors.textSecondary,
                             ),
                           ),
                         ),
                       const Spacer(),
                       // 标记已掌握按钮
-                      GestureDetector(
-                        onTap: () {
+                      //
+                      // 原来是 GestureDetector 包 11sp 的纯文字（实测约 33×15），
+                      // 审计 #5：手指点不中。改 TextButton 并锁死最小 44×44。
+                      TextButton(
+                        onPressed: () {
                           ref
                               .read(wrongBookControllerProvider.notifier)
                               .markAsMastered(q.questionId);
@@ -320,11 +329,15 @@ class _WrongBookScreenState extends ConsumerState<WrongBookScreen> {
                             ),
                           );
                         },
+                        style: TextButton.styleFrom(
+                          foregroundColor: context.colors.success,
+                          minimumSize: const Size(44, 44),
+                          padding: EdgeInsets.symmetric(horizontal: 4.w),
+                        ),
                         child: Text(
                           '已掌握',
                           style: TextStyle(
-                            fontSize: 11.sp,
-                            color: const Color(0xFF4EA05E),
+                            fontSize: 12.sp,
                             fontWeight: FontWeight.w500,
                           ),
                         ),
@@ -354,9 +367,9 @@ class _WrongBookScreenState extends ConsumerState<WrongBookScreen> {
         return Container(
           margin: EdgeInsets.only(bottom: 10.h),
           decoration: BoxDecoration(
-            color: Colors.white,
+            color: context.colors.surface,
             borderRadius: BorderRadius.circular(12.r),
-            border: Border.all(color: const Color(0xFFE0E0E0)),
+            border: Border.all(color: context.colors.border),
           ),
           child: ExpansionTile(
             tilePadding: EdgeInsets.symmetric(horizontal: 16.w),
@@ -366,7 +379,7 @@ class _WrongBookScreenState extends ConsumerState<WrongBookScreen> {
                 Container(
                   padding: EdgeInsets.symmetric(horizontal: 8.w, vertical: 4.h),
                   decoration: BoxDecoration(
-                    color: const Color(0xFF135BEC).withValues(alpha: 0.1),
+                    color: context.colors.accentContainer,
                     borderRadius: BorderRadius.circular(6.r),
                   ),
                   child: Text(
@@ -374,14 +387,17 @@ class _WrongBookScreenState extends ConsumerState<WrongBookScreen> {
                     style: TextStyle(
                       fontSize: 13.sp,
                       fontWeight: FontWeight.w600,
-                      color: const Color(0xFF135BEC),
+                      color: context.colors.accent,
                     ),
                   ),
                 ),
                 const Spacer(),
                 Text(
                   '${group.count} 题',
-                  style: TextStyle(fontSize: 12.sp, color: Colors.grey),
+                  style: TextStyle(
+                    fontSize: 12.sp,
+                    color: context.colors.textSecondary,
+                  ),
                 ),
               ],
             ),
@@ -396,7 +412,7 @@ class _WrongBookScreenState extends ConsumerState<WrongBookScreen> {
                         vertical: 2.h,
                       ),
                       decoration: BoxDecoration(
-                        color: const Color(0xFFFEF2F2),
+                        color: context.colors.errorContainer,
                         borderRadius: BorderRadius.circular(4.r),
                       ),
                       child: Text(
@@ -404,7 +420,7 @@ class _WrongBookScreenState extends ConsumerState<WrongBookScreen> {
                         style: TextStyle(
                           fontSize: 10.sp,
                           fontWeight: FontWeight.bold,
-                          color: const Color(0xFFDC2626),
+                          color: context.colors.error,
                         ),
                       ),
                     ),
@@ -416,7 +432,7 @@ class _WrongBookScreenState extends ConsumerState<WrongBookScreen> {
                         overflow: TextOverflow.ellipsis,
                         style: TextStyle(
                           fontSize: 13.sp,
-                          color: const Color(0xFF37352F),
+                          color: context.colors.text,
                         ),
                       ),
                     ),
@@ -440,12 +456,18 @@ class _WrongBookScreenState extends ConsumerState<WrongBookScreen> {
           SizedBox(height: 16.h),
           Text(
             '已掌握的错题会显示在这里',
-            style: TextStyle(fontSize: 16.sp, color: Colors.grey),
+            style: TextStyle(
+              fontSize: 16.sp,
+              color: context.colors.textSecondary,
+            ),
           ),
           SizedBox(height: 8.h),
           Text(
             '在列表中点击"已掌握"将题目归档',
-            style: TextStyle(fontSize: 13.sp, color: Colors.grey[400]),
+            style: TextStyle(
+              fontSize: 13.sp,
+              color: context.colors.textSecondary,
+            ),
           ),
         ],
       ),
@@ -464,39 +486,39 @@ class _WrongBookScreenState extends ConsumerState<WrongBookScreen> {
         bottom: MediaQuery.of(context).padding.bottom + 12.h,
       ),
       decoration: BoxDecoration(
-        color: Colors.white,
-        border: Border(top: BorderSide(color: Colors.grey[200]!)),
+        color: context.colors.surface,
+        border: Border(top: BorderSide(color: context.colors.border)),
       ),
       child: Row(
         children: [
           // 全选
-          GestureDetector(
-            onTap: () =>
+          //
+          // 原来是 GestureDetector 包一行图标+文字，命中区只有 20sp 图标那么高，
+          // 审计 #5：手指点不中。TextButton 自带 Material/InkWell，最小 44×44。
+          TextButton.icon(
+            onPressed: () =>
                 ref.read(wrongBookControllerProvider.notifier).selectAll(),
-            child: Row(
-              children: [
-                Icon(
-                  count == state.questions.length
-                      ? AppIcons.checkBox
-                      : AppIcons.checkBoxOutlineBlank,
-                  size: 20.sp,
-                  color: const Color(0xFF37352F),
-                ),
-                SizedBox(width: 6.w),
-                Text(
-                  '全选',
-                  style: TextStyle(
-                    fontSize: 13.sp,
-                    color: const Color(0xFF37352F),
-                  ),
-                ),
-              ],
+            icon: Icon(
+              count == state.questions.length
+                  ? AppIcons.checkBoxSolid
+                  : AppIcons.checkBoxOutlineBlank,
+              size: 20.sp,
+              color: context.colors.text,
+            ),
+            label: Text(
+              '全选',
+              style: TextStyle(fontSize: 13.sp, color: context.colors.text),
+            ),
+            style: TextButton.styleFrom(
+              minimumSize: const Size(44, 44),
+              padding: EdgeInsets.symmetric(horizontal: 8.w),
             ),
           ),
           const Spacer(),
           // 开始练习
           SizedBox(
-            height: 40.h,
+            // 触屏命中区下限 44（审计 #5）
+            height: 44.h,
             child: ElevatedButton(
               onPressed: count == 0 || state.isCreatingPractice
                   ? null
@@ -522,9 +544,9 @@ class _WrongBookScreenState extends ConsumerState<WrongBookScreen> {
                       }
                     },
               style: ElevatedButton.styleFrom(
-                backgroundColor: const Color(0xFF135BEC),
-                foregroundColor: Colors.white,
-                disabledBackgroundColor: Colors.grey[300],
+                backgroundColor: context.colors.accent,
+                foregroundColor: context.colors.onAccent,
+                disabledBackgroundColor: context.colors.surfaceAlt,
                 shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(8.r),
                 ),
@@ -533,8 +555,8 @@ class _WrongBookScreenState extends ConsumerState<WrongBookScreen> {
                   ? SizedBox(
                       width: 18.sp,
                       height: 18.sp,
-                      child: const CircularProgressIndicator(
-                        color: Colors.white,
+                      child: CircularProgressIndicator(
+                        color: context.colors.onAccent,
                         strokeWidth: 2,
                       ),
                     )
@@ -555,66 +577,18 @@ class _WrongBookScreenState extends ConsumerState<WrongBookScreen> {
   // ==================== 空状态 / 骨架屏 / 错误 ====================
 
   Widget _buildEmptyState() {
-    return Center(
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          Text('🎉', style: TextStyle(fontSize: 64.sp)),
-          SizedBox(height: 16.h),
-          Text(
-            '太棒了，没有错题！',
-            style: TextStyle(
-              fontSize: 18.sp,
-              fontWeight: FontWeight.bold,
-              color: const Color(0xFF37352F),
-            ),
-          ),
-          SizedBox(height: 8.h),
-          Text(
-            '继续保持，加油哦',
-            style: TextStyle(fontSize: 14.sp, color: Colors.grey),
-          ),
-        ],
-      ),
+    // 列表视图为空 / 按知识点视图为空都走这里
+    return const AppEmptyView(
+      emoji: '\u{1F389}',
+      title: '太棒了，没有错题！',
+      hint: '继续保持，加油哦',
     );
   }
 
   Widget _buildErrorView() {
-    return Center(
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          Icon(AppIcons.errorOutline, size: 48.sp, color: Colors.red[300]),
-          SizedBox(height: 16.h),
-          Text(
-            '加载失败',
-            style: TextStyle(
-              fontSize: 18.sp,
-              fontWeight: FontWeight.w600,
-              color: const Color(0xFF37352F),
-            ),
-          ),
-          SizedBox(height: 8.h),
-          Text(
-            '请检查网络后重试',
-            style: TextStyle(fontSize: 14.sp, color: Colors.grey),
-          ),
-          SizedBox(height: 24.h),
-          ElevatedButton.icon(
-            onPressed: () =>
-                ref.read(wrongBookControllerProvider.notifier).loadData(),
-            icon: const Icon(AppIcons.refresh, size: 18),
-            label: const Text('重试'),
-            style: ElevatedButton.styleFrom(
-              backgroundColor: const Color(0xFF135BEC),
-              foregroundColor: Colors.white,
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(8.r),
-              ),
-            ),
-          ),
-        ],
-      ),
+    return AppErrorView(
+      message: '请检查网络后重试',
+      onRetry: () => ref.read(wrongBookControllerProvider.notifier).loadData(),
     );
   }
 

@@ -20,7 +20,7 @@ import {
   practice_logs,
   system_settings,
 } from "@/lib/db/drizzle-schema";
-import { eq, and, or, sql, lte, isNull, count, gte } from "drizzle-orm";
+import { eq, and, or, sql, lte, isNull, count, gte, ne } from "drizzle-orm";
 import { withTransaction } from "@/lib/db/executor";
 import { getBeijingDateString } from "@/lib/utils/datetime";
 
@@ -667,6 +667,9 @@ export const srsService = {
         .where(
           and(
             eq(practice_logs.user_id, userId),
+            // 跳过未作答记录；agent 导入的对错由调用方判定、服务端不复核，不排期
+            eq(practice_logs.status, "answered"),
+            ne(practice_logs.origin, "agent"),
             or(
               // 尚无 SRS 卡片：首次同步
               isNull(question_srs.question_id),

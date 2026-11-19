@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import '../../core/utils/haptic_util.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import '../../core/theme/app_icons.dart';
+import '../../core/theme/app_colors.dart';
 
 /// 带动画效果的选项卡片
 ///
@@ -170,66 +171,78 @@ class _AnimatedOptionCardState extends State<AnimatedOptionCard>
   }
 
   Widget _buildCard() {
-    Color bgColor = Colors.white;
-    Color borderColor = const Color(0xFFE1E1E1);
+    Color bgColor = context.colors.surface;
+    Color borderColor = context.colors.border;
     Color? ringColor;
     Widget? leadingIcon;
 
     if (widget.isCorrect) {
-      bgColor = const Color(0xFFEDF6EE);
-      borderColor = const Color(0xFF5C9D6E).withValues(alpha: 0.3);
-      ringColor = const Color(0xFF5C9D6E).withValues(alpha: 0.5);
+      bgColor = context.colors.successContainer;
+      borderColor = context.colors.success.withValues(alpha: 0.3);
+      ringColor = context.colors.success.withValues(alpha: 0.5);
       leadingIcon = Container(
         width: 20.w,
         height: 20.h,
         decoration: BoxDecoration(
-          color: const Color(0xFF4EA05E),
+          color: context.colors.success,
           shape: widget.isMultiSelect ? BoxShape.rectangle : BoxShape.circle,
           borderRadius: widget.isMultiSelect
               ? BorderRadius.circular(4.r)
               : null,
         ),
-        child: Icon(AppIcons.check, size: 14.sp, color: Colors.white),
+        child: Icon(
+          AppIcons.check,
+          size: 14.sp,
+          color: context.colors.onSuccess,
+        ),
       );
     } else if (widget.isWrong) {
-      bgColor = const Color(0xFFFBE4E4);
-      borderColor = const Color(0xFFE06C75).withValues(alpha: 0.3);
-      ringColor = const Color(0xFFE06C75).withValues(alpha: 0.5);
+      bgColor = context.colors.errorContainer;
+      borderColor = context.colors.error.withValues(alpha: 0.3);
+      ringColor = context.colors.error.withValues(alpha: 0.5);
       leadingIcon = Container(
         width: 20.w,
         height: 20.h,
         decoration: BoxDecoration(
-          color: const Color(0xFFD95656),
+          color: context.colors.error,
           shape: widget.isMultiSelect ? BoxShape.rectangle : BoxShape.circle,
           borderRadius: widget.isMultiSelect
               ? BorderRadius.circular(4.r)
               : null,
         ),
-        child: Icon(AppIcons.close, size: 14.sp, color: Colors.white),
+        child: Icon(
+          AppIcons.close,
+          size: 14.sp,
+          color: context.colors.onError,
+        ),
       );
     } else if (widget.showCorrectHint && !widget.isSelected) {
       // 未选中但是正确答案（多选时提示用户漏选）
-      bgColor = const Color(0xFFF0F9F1);
-      borderColor = const Color(0xFF5C9D6E).withValues(alpha: 0.2);
+      bgColor = context.colors.successContainer;
+      borderColor = context.colors.success.withValues(alpha: 0.2);
       leadingIcon = Container(
         width: 20.w,
         height: 20.h,
         decoration: BoxDecoration(
-          border: Border.all(color: const Color(0xFF4EA05E), width: 1.5),
+          border: Border.all(color: context.colors.success, width: 1.5),
           shape: widget.isMultiSelect ? BoxShape.rectangle : BoxShape.circle,
           borderRadius: widget.isMultiSelect
               ? BorderRadius.circular(4.r)
               : null,
         ),
-        child: Icon(AppIcons.check, size: 12.sp, color: const Color(0xFF4EA05E)),
+        child: Icon(
+          AppIcons.check,
+          size: 12.sp,
+          color: context.colors.success,
+        ),
       );
     } else if (widget.isSelected) {
-      borderColor = const Color(0xFF37352F).withValues(alpha: 0.4);
+      borderColor = context.colors.primary.withValues(alpha: 0.4);
       leadingIcon = Container(
         width: 20.w,
         height: 20.h,
         decoration: BoxDecoration(
-          color: const Color(0xFF37352F),
+          color: context.colors.primary,
           shape: widget.isMultiSelect ? BoxShape.rectangle : BoxShape.circle,
           borderRadius: widget.isMultiSelect
               ? BorderRadius.circular(4.r)
@@ -238,7 +251,7 @@ class _AnimatedOptionCardState extends State<AnimatedOptionCard>
         child: Icon(
           widget.isMultiSelect ? AppIcons.check : AppIcons.dot,
           size: widget.isMultiSelect ? 14.sp : 10.sp,
-          color: Colors.white,
+          color: context.colors.onPrimary,
         ),
       );
     } else {
@@ -247,7 +260,7 @@ class _AnimatedOptionCardState extends State<AnimatedOptionCard>
         height: 20.h,
         decoration: BoxDecoration(
           border: Border.all(
-            color: const Color(0xFF37352F).withValues(alpha: 0.2),
+            color: context.colors.primary.withValues(alpha: 0.2),
           ),
           shape: widget.isMultiSelect ? BoxShape.rectangle : BoxShape.circle,
           borderRadius: widget.isMultiSelect
@@ -282,7 +295,7 @@ class _AnimatedOptionCardState extends State<AnimatedOptionCard>
               style: TextStyle(
                 fontSize: 15.sp,
                 fontWeight: FontWeight.w500,
-                color: const Color(0xFF37352F),
+                color: context.colors.text,
               ),
             ),
           ),

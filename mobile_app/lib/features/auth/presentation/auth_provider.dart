@@ -49,10 +49,18 @@ class AuthController extends AsyncNotifier<void> {
 
   Future<void> logout() async {
     final repo = ref.read(authRepositoryProvider);
-    await repo.logout();
-    state = const AsyncValue.data(null);
-    // 登出必须通知：上面的 state 与旧值相等（AsyncData(null) == AsyncData(null)），
-    // Riverpod 判等后不会通知监听者，账号私有数据只能靠这个版本号被清掉。
-    ref.read(authEpochProvider.notifier).bump();
+    // 失败也要落进 state：界面据此判断「还在登录态、不要跳登录页」。
+    state = await AsyncValue.guard(() => repo.logout());
+    // 注意判 `hasError` 而不是 `hasValue`：Riverpod 3 的 AsyncError 会把上一次
+    // 的 AsyncData 值合并进来（`AsyncError.hasValue == true`），用 hasValue
+    // 判断会把失败当成功。
+    if (!state.hasError) {
+      state = const AsyncValue.data(null);
+      // 登出必须通知：上面的 state 与旧值相等（AsyncData(null) == AsyncData(null)），
+      // Riverpod 判等后不会通知监听者，账号私有数据只能靠这个版本号被清掉。
+      // 失败时**不** bump：本地清理失败说明用户其实还在登录态，
+      // 清掉历史/对话反而让用户丢掉数据。
+      ref.read(authEpochProvider.notifier).bump();
+    }
   }
 }

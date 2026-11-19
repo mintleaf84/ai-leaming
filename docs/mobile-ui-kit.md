@@ -115,65 +115,52 @@
 - **验收**：CI `pub get` 成功；`pubspec.lock` 的 `sdks:` 段未变；`flutter analyze` 仍 0 error。
 - **回滚**：只改 pubspec + lock。
 
-### M-02 抽出六屏卡片 widget ｜4h｜依赖 M-01
+### M-02 每屏新增 `_buildSkeleton()`（复用屏内既有卡片方法）｜3h｜依赖 M-01
 
-- **落点**（全部是 State 私有方法，抽成公共 widget，**行为不变**）：
+> **相对 D-2 原文的偏离（执行时修正）**：原计划先把 6 个卡片渲染器抽成公共 widget 再骨架化，理由是
+> "`lib/shared/skeletons/` 调不到 State 的私有方法"。实际实现改为**在屏内 `_buildSkeleton()` 里直接调用
+> 同一个私有方法**——同样满足"真 widget 骨架"（布局来自真实卡片，改布局不用改骨架），但省掉 6 个文件的
+> 重构 diff 和随之而来的回归面。代价：不产出可单测的公共卡片 widget（原计划的附带收益取消）。
 
-  | 现位置                                  | 现名                                                     | 抽成                                                   |
-  | --------------------------------------- | -------------------------------------------------------- | ------------------------------------------------------ |
-  | `history_screen.dart:127`               | `_buildHistoryCard(HistoryItem)`                         | `HistoryCard`                                          |
-  | `history_detail_screen.dart:447 / :541` | `_buildListQuestionCard` / `_buildImmersiveQuestionCard` | `HistoryQuestionCard`（两态合一，用 `immersive` 参数） |
-  | `knowledge_screen.dart:196`             | `_buildCardItem(KnowledgeCard)`                          | `KnowledgeCardView`                                    |
-  | `wrong_book_screen.dart:207`            | `_buildQuestionCard(WrongQuestion, bool)`                | `WrongQuestionCard`                                    |
-  | `practice_screen.dart:190`              | `_buildQuestionView(PracticeSessionState)`               | `PracticeQuestionBody`                                 |
-  | `question_list_screen.dart:165`         | 内联 itemBuilder                                         | `QuestionListCard`                                     |
-
-- **改法约束**：抽出时**只搬代码不改样式**；回调一律显式传参（`onTap`、`onSelect`），禁止新 widget 里读 provider——
-  一旦新 widget 内部读 provider，M-04 就没法用 fake 数据渲染。
-- **验收**：CI analyze/test 绿；六屏真机逐个走一遍（loading / 有数据 / 错误 / 空），视觉与改前一致（附前后截图）；
-  `grep -c "Widget _build.*Card\|Widget _buildQuestionView" lib/features` 递减到 0。
-- **回滚**：单 PR revert（纯重构，无依赖牵连）。
-
-### M-03 fake 模型工厂 + CI 栅栏 ｜1.5h｜依赖 M-02
-
-- **落点**：新增 `lib/shared/skeletons/skeletons.dart`（唯一允许出现 fake 数据的地方）。
-- **改法**：
+- **落点**：六屏各加一个私有方法，形如：
   ```dart
-  // 只放"形状够画出骨架"的最小实例，字段值必须是明显的假值（"示例标题" 之类），
-  // 防止有人把它当真数据接到 provider 上。
-  HistoryItem fakeHistoryItem({int i = 0}) => HistoryItem(...);
-  KnowledgeCard fakeKnowledgeCard({int i = 0}) => ...;
+  Widget _buildSkeleton() => Skeletonizer(
+        enabled: true,
+        child: ListView.builder(
+          padding: <沿用真实列表 padding>,
+          itemCount: 3,
+          itemBuilder: (context, index) => _buildHistoryCard(fakeHistoryItem(index: index)),
+        ),
+      );
   ```
-  `PracticeQuestionBody` 需要 `PracticeSessionState`，为此只造**最小可渲染**版本（`state.copyWith` 不可用就写构造器），
-  不在 fake 里造任何回调副作用（`onTap: () {}` 之类必须为空实现）。
-- **栅栏**：`.github/workflows/android.yml` 的 `analyze` job 加一步（放在 `flutter analyze` 前）：
-  ```bash
-  if grep -rn "skeletons/skeletons.dart" lib/features; then
-    echo "::error::fake 数据不允许出现在 feature 层（见 docs/mobile-ui-kit.md D-2）"; exit 1
-  fi
-  ```
-- **验收**：故意在某个 feature 里 import 一次，CI 报红；删掉后转绿。
-- **回滚**：删文件 + 删 CI 步骤。
-
-### M-04 六屏接真 widget 骨架 ｜5h｜依赖 M-03
-
-- **落点**：六个 screen 的 loading 分支 + 删除三处旧骨架实现。
-- **改法**：
-  ```dart
-  Skeletonizer(
-    enabled: true,
-    child: ListView.builder(                     // 真实卡片，真实布局
-      itemCount: 3,
-      itemBuilder: (_, i) => HistoryCard(item: fakeHistoryItem(i: i)),
-    ),
-  )
-  ```
-  - 卡片外的区域（`wrong_book` 统计条、`history_detail` 筛选栏、`knowledge` 顶部分类条）**没有对应真实 widget 的**，
-    用 `Skeletonizer.zone` + `Bone.rectangle` 画，不强行造假 widget。
-  - 亮/暗色跟随 `SkeletonizerConfig`（在 `app_theme.dart` 挂一次，不要每屏各配一遍）。
-  - 删除：`skeleton_loading.dart`、`skeleton_widgets.dart`、`wrong_book_screen.dart:614` 的内联骨架。
-- **验收**：六屏 loading→loaded 切换无塌陷、无闪白（录屏）；CI 绿；`grep -rn "ShimmerWrap\|_ShimmerBox\|SkeletonText" lib` 为 0。
+  | 屏                               | 复用的私有方法                                  | 假数据                     |
+  | -------------------------------- | ----------------------------------------------- | -------------------------- |
+  | `history_screen.dart:127`        | `_buildHistoryCard(HistoryItem)`                | `fakeHistoryItem`          |
+  | `history_detail_screen.dart:447` | `_buildListQuestionCard(PracticeLog)`           | `fakePracticeLog`          |
+  | `knowledge_screen.dart:196`      | `_buildCardItem(KnowledgeCard)`                 | `fakeKnowledgeCard`        |
+  | `wrong_book_screen.dart:207`     | `_buildQuestionCard(WrongQuestion, bool)`       | `fakeWrongQuestion`        |
+  | `practice_screen.dart:190`       | `_buildQuestionView(PracticeSessionState)`      | `fakePracticeSessionState` |
+  | `question_list_screen.dart:165`  | 先抽 `_buildQuestionCard(Question)`（只搬代码） | `fakeQuestion`             |
+- **附带改动**：`main.dart` 的 `MaterialApp.builder` 里挂一层 `SkeletonizerConfig`，
+  用 `Theme.of(context).brightness` 决定明暗——否则 App 内手动切暗色时骨架仍是浅色。
+- **验收**：`flutter analyze --no-fatal-infos` 的 error/warning 为 0；六屏 loading 分支不再 import 旧骨架 widget。
 - **回滚**：单 PR revert。
+
+### M-03 fake 模型工厂 ｜1h｜依赖 M-02
+
+- **落点**：新增 `lib/shared/skeletons/skeleton_fakes.dart`（唯一允许出现假数据的地方）。
+- **改法**：六个 fake 工厂：`fakeHistoryItem` / `fakePracticeLog` / `fakeKnowledgeCard` /
+  `fakeWrongQuestion` / `fakeQuestion` / `fakePracticeSessionState`，字段值一律是明显的假值（`骨架占位文本`）。
+- **泄漏防治**：文件头写死引用约束——只允许 `lib/features/*/presentation/*_screen.dart` 与
+  `lib/shared/skeletons/**` 引用。**取消原计划里的 CI grep 栅栏**：假数据本来就要被各屏骨架引用，
+  grep 会把合法用法一起拦掉；改为 review 清单项（在 PR 模板/评审时人工核对 import）。
+- **验收**：`grep -rn "skeleton_fakes" lib` 的结果只出现在六屏 screen 与 shared/skeletons 自身。
+
+### M-04 删除旧骨架实现 ｜0.5h｜依赖 M-02
+
+- **落点**：`lib/shared/widgets/skeleton_loading.dart`（192 行）、`lib/shared/widgets/skeleton_widgets.dart`（181 行）。
+- **改法**：`git rm` 两个文件（仓库规矩：移动/删除 Dart 文件用 `git mv` / `git rm`），确认无引用残留。
+- **验收**：`grep -rn "SkeletonText\|SkeletonCard\|HistorySkeletonList\|KnowledgeSkeletonList\|HistoryDetailSkeletonList\|PracticeSkeleton\|QuestionListSkeleton\|ShimmerWrap" lib` 为空。
 
 ### M-05 移除 `shimmer` 与 `state_notifier` ｜0.5h｜依赖 M-04
 
@@ -255,6 +242,24 @@
   删掉 `*_rounded` / `*_sharp` 引用（多 family 会注册多套字体，tree-shake 救不回）。
 - **验收**：PR 贴两个 `ls -l` 输出 + 结论。
 
+**执行结果（2026-11-19，判据通过）**：
+
+| 项                                                                                                                                              | 值                                                 |
+| ----------------------------------------------------------------------------------------------------------------------------------------------- | -------------------------------------------------- |
+| 基线包（main @10:28，run [44506006197](https://github.com/mintleaf84/ai-leaming/actions/runs/44506006197)，commit 612f2db）                     | `app-release.apk` **55,540,733 B（52.98 MB）**     |
+| 改后包（`feat/mobile-icons`，run [44519273867](https://github.com/mintleaf84/ai-leaming/actions/runs/44519273867)，含骨架屏 + 图标 + 过渡三批） | `app-release.apk` **55,696,432 B（53.11 MB）**     |
+| 增量                                                                                                                                            | **+155,699 B = +152 KB**（判据 ≤ 300KB，**通过**） |
+
+tree-shake 证据（`unzip -l` 对比同一路径）：
+
+| 资源                                                              | 改前    | 改后                                                 |
+| ----------------------------------------------------------------- | ------- | ---------------------------------------------------- |
+| `fonts/MaterialIcons-Regular.otf`                                 | 8,772 B | **1,992 B**（只剩 `apple` 一个图标）                 |
+| `packages/material_symbols_icons/.../MaterialSymbolsOutlined.ttf` | —       | **112,728 B**（4264 个图标的全量字体被裁到 112KB）   |
+| `MaterialSymbolsRounded.ttf` / `MaterialSymbolsSharp.ttf`         | —       | 2,608 B / 2,380 B（只有极少数图标用到这两个 family） |
+
+结论：**不需要**砍到单 family；`--tree-shake-icons` 对 Material Symbols 生效，多 family 只多付约 5KB。
+
 ---
 
 ## 7. 不做（明确写下，避免反复讨论）
@@ -276,3 +281,46 @@
 2. **`PracticeQuestionBody` 的 fake 造不出来**（M-03）→ 该屏退回 `Skeletonizer.zone + Bone` 手写，并在 PR 说明原因；其余五屏不受影响。
 3. **APK 增量超 300KB**（M-11）→ 砍到单 family 再测；仍超则把图标替换回退到"只换高频 25 处"，**这是唯一允许偏离 D-3 的情形，且必须回报用户确认**。
 4. **CI 上 `flutter test` 因 fake 渲染报布局溢出** → 骨架用 `Viewport` 固定高度测试，不要改真实卡片样式。
+
+---
+
+## 9. 执行记录（2026-11-19）
+
+> 本机的验证通道：HPC 上没有 Flutter SDK，本次下载了 Flutter 3.38.4 + Dart 3.10.3 到 `/tmp/opencode/sdk/flutter`
+> （`flutter_tester` / `impellerc` 需要 GLIBC_2.18，用 `conda env ct-glibc` 的 2.28 loader 包装后可用），
+> 因此 `flutter analyze` 与 `flutter test` **都在本机跑通**，不再依赖 CI 反馈。
+
+| 批次                              | 分支                                       | PR   | analyze                      | test                       |
+| --------------------------------- | ------------------------------------------ | ---- | ---------------------------- | -------------------------- |
+| 依赖 + 页面过渡（M-01/M-07/M-08） | `feat/mobile-deps-transitions`             | #226 | 0 error / 0 warning，30 info | 56 → 58 passed / 2 skipped |
+| 骨架屏（M-02~M-06）               | `feat/mobile-skeletons`（stacked on #226） | #227 | 0 error / 0 warning，30 info | 63 passed / 2 skipped      |
+| 图标（M-09~M-11 代码部分）        | `feat/mobile-icons`（stacked on #227）     | #228 | 0 error / 0 warning，30 info | 63 passed / 2 skipped      |
+
+CI 侧复核（GitHub Actions，`Android` workflow）：
+
+| 分支 / PR                              | Flutter 静态分析与测试                                                                                      | Release APK                |
+| -------------------------------------- | ----------------------------------------------------------------------------------------------------------- | -------------------------- |
+| `feat/mobile-deps-transitions`（#226） | pass 1m29s（run 44520942655）                                                                               | skipping（PR 不打包）      |
+| `feat/mobile-skeletons`（#227）        | pass（run [44521689946](https://github.com/mintleaf84/ai-leaming/actions/runs/44521689946)，手动 dispatch） | success                    |
+| `feat/mobile-icons`（#228）            | pass 1m30s（run 44521620278）                                                                               | success（run 44519273867） |
+
+> 注：#227 的 PR 事件没有自动触发 `Android` workflow（同仓 #226/#228 都正常触发，原因未查明），
+> 因此对该分支用 `workflow_dispatch` 补跑，结论与本地一致。
+
+执行中修正的三处计划假设：
+
+1. **D-2 的"先抽公共 widget"不必要**：改为屏内 `_buildSkeleton()` 直接复用私有卡片方法（见 §4 M-02 的偏离说明）。
+2. **CI grep 栅栏取消**：假数据本来就要被六屏引用，grep 会拦掉合法用法 → 改为 review 清单项（见 §4 M-03）。
+3. **`pubspec.lock` 存量漂移**：原 lock 缺 `connectivity_plus` / `sqflite` 等已声明的直接依赖，本次 `pub get` 一并修正（随 #226 提交）。
+
+已闭环的补充项：
+
+- **M-11 APK 体积/tree-shake 校验通过**：+152 KB（≤300KB），字体被裁到 112KB，明细见 §6 M-11 的执行结果。
+- **CI 复核**：`#226` 的 `Flutter 静态分析与测试` pass（1m26s）；`feat/mobile-icons` 上手动触发的
+  `Android` run 44519273867 两个 job（analyze + Release APK）全 success。
+
+仍未完成（只能在真机上做，非代码可闭环）：
+
+- **真机观感验收**：六屏 loading→loaded 录屏、Android 15+ 预测性返回手势、iOS 侧滑、图标三处视觉差异
+  （见 `docs/mobile-ui-icons-exceptions.md` §1）。
+- **三个 PR 的合并**：#226 → #227 → #228 顺序合并（stacked），需要仓库管理员操作。

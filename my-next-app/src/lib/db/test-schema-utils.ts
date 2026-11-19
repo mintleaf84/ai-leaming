@@ -31,6 +31,7 @@ export const TEST_SCHEMA_SQL = `
         material_html TEXT,
         ai_mnemonic TEXT,
         external_id TEXT UNIQUE,
+        content_hash TEXT,
         created_at TEXT DEFAULT CURRENT_TIMESTAMP
     );
 
@@ -62,6 +63,8 @@ export const TEST_SCHEMA_SQL = `
         is_correct INTEGER NOT NULL,
         is_monitored_correct INTEGER DEFAULT false,
         duration_ms INTEGER,
+        origin TEXT DEFAULT 'web' NOT NULL,
+        status TEXT DEFAULT 'answered' NOT NULL,
         timestamp TEXT DEFAULT CURRENT_TIMESTAMP
     );
 

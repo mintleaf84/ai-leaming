@@ -1,6 +1,11 @@
 import { drizzleDb, drizzleSchema } from "../db";
 import { and, eq, inArray, sql } from "drizzle-orm";
 import { FenbiImportResult } from "../import/fenbi-parser";
+import {
+  contentHash,
+  findQuestionIdByContent,
+  normalizeQuestionContent,
+} from "@/lib/services/question-dedup";
 import { sanitizeHtml } from "../utils/security";
 import { safeParseJson } from "../utils/json";
 import { generateId } from "../utils/id";
@@ -186,11 +191,54 @@ async function writeImport(
         ? (q.dimension as "knowledge" | "understanding" | "application")
         : "knowledge";
 
+      const sanitizedContent = sanitizeHtml(q.content);
+
+      // 先按 external_id 判断：已存在则走下面的 upsert（刷新解析），
+      // 不能被内容查重劫持到一条内容相同的旧副本上。
+      const externalIdExists = q.externalId
+        ? (
+            await exec
+              .select({ id: questions.id })
+              .from(questions)
+              .where(eq(questions.external_id, q.externalId))
+              .limit(1)
+          ).length > 0
+        : false;
+
+      // 内容级去重：仅在 external_id 不存在时，跨来源复用同题干+同选项的已有题
+      if (!externalIdExists) {
+        const existingByContent = await findQuestionIdByContent(
+          sanitizedContent,
+          exec,
+          { options: q.options },
+        );
+        if (existingByContent) {
+          // 题干+选项相同但答案不同：不能静默复用（否则导入的新答案被丢弃，
+          // 判分继续按旧答案）。这种少见冲突按新题落库，交人工/清理裁决。
+          const [existingRow] = await exec
+            .select({ answer: questions.answer })
+            .from(questions)
+            .where(eq(questions.id, existingByContent))
+            .limit(1);
+          const sameAnswer =
+            normalizeQuestionContent(existingRow?.answer ?? "") ===
+            normalizeQuestionContent(q.answer ?? "");
+          if (sameAnswer) {
+            questionIdMap.set(q.externalId, existingByContent);
+            continue;
+          }
+          log.error(
+            `[Import] 同题干+选项但答案不同，按新题导入（不复用旧题）：existing=${existingByContent} external=${q.externalId}`,
+          );
+        }
+      }
+
       const result = await exec
         .insert(questions)
         .values({
           external_id: q.externalId,
-          content: sanitizeHtml(q.content),
+          content_hash: contentHash(sanitizedContent, q.options),
+          content: sanitizedContent,
           options: JSON.stringify(q.options),
           answer: q.answer,
           explanation: sanitizeHtml(q.explanation),
@@ -212,6 +260,8 @@ async function writeImport(
             material_html: sql`excluded.material_html`,
             correct_ratio: sql`excluded.correct_ratio`,
             most_wrong_answer: sql`excluded.most_wrong_answer`,
+            content_hash: sql`excluded.content_hash`,
+            options: sql`excluded.options`,
           },
         })
         .returning({ id: questions.id });
@@ -235,6 +285,8 @@ async function writeImport(
           user_answer: r.userAnswer,
           is_correct: r.isCorrect,
           duration_ms: r.durationMs,
+          origin: "import",
+          status: (r.userAnswer ?? "").trim() === "" ? "skipped" : "answered",
         };
       })
       .filter((v): v is NonNullable<typeof v> => v !== null);
@@ -247,6 +299,7 @@ async function writeImport(
   // 4. 汇总并更新 Mastery
   const masteryChanges = new Map<string, MasteryDelta>();
   for (const record of data.records) {
+    if ((record.userAnswer ?? "").trim() === "") continue; // 空答案=未作答，不计掌握度
     const question = data.questions.find(
       (q) => q.externalId === record.externalId,
     );
@@ -344,7 +397,9 @@ async function writeAgentAnswers(
     session_name: data.sessionName ?? "由 agent 导入",
     source_key: sourceKey,
     total_questions: data.answers.length,
-    correct_count: data.answers.filter((a) => a.isCorrect).length,
+    correct_count: data.answers.filter(
+      (a) => a.isCorrect && (a.userAnswer ?? "").trim() !== "",
+    ).length,
     practice_mode: "import",
     // 存纯 id 数组：getSessionById 只对「数字/字符串数组」走 id 分支，
     // 存对象数组会落到"完整对象"分支，详情页解析直接坏掉
@@ -361,12 +416,16 @@ async function writeAgentAnswers(
       user_answer: a.userAnswer ?? null,
       is_correct: a.isCorrect,
       duration_ms: a.durationMs ?? null,
+      // 对错由 agent 判定、服务端不复核：标 agent 来源，SRS 同步会跳过
+      origin: "agent",
+      status: (a.userAnswer ?? "").trim() === "" ? "skipped" : "answered",
     })),
   );
 
   // 4. 按题目 tags 增量累加掌握度（与粉笔导入同一段逻辑）
   const masteryChanges = new Map<string, MasteryDelta>();
   for (const answer of data.answers) {
+    if ((answer.userAnswer ?? "").trim() === "") continue; // 空答案=未作答，不计掌握度
     const parsedTags = safeParseJson<unknown>(
       found.get(answer.questionId)?.tags,
       [],

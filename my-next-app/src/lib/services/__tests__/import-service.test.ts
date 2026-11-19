@@ -205,6 +205,7 @@ describe("Import Service", () => {
       records: [
         {
           externalId: "ext-1",
+          userAnswer: "A",
           isCorrect: true,
         },
       ],

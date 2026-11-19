@@ -87,15 +87,16 @@ jobs:
       - name: 生成代码（build_runner）
         run: dart run build_runner build --delete-conflicting-outputs
 
-      # 注意：vars.API_BASE_URL 未配置时 dart-define 会传空串，产物装到手机上连不上
-      # 任何后端。与其静默出个废包，不如提前失败并说明怎么配。
+      # 注意：vars.API_BASE_URL 未配置时 dart-define 会传空串，产物没有内置后端地址。
+      # 这不是废包：App 内可以填「服务器地址」并持久化，启动时若三级回落
+      # （运行时设置 > 编译期 dart-define > 无）全部为空，会进入明确的配置页。
+      # 因此这里只告警、不阻断出包；有域名时仍建议预置，省掉用户首次配置。
       - name: 检查 API_BASE_URL 变量
         env:
           API_BASE_URL_VALUE: ${{ vars.API_BASE_URL }}
         run: |
           if [ -z "$API_BASE_URL_VALUE" ]; then
-            echo "::error::仓库变量 API_BASE_URL 未配置。请在 Settings → Secrets and variables → Actions → Variables 添加，例如 https://your-domain/api"
-            exit 1
+            echo "::warning::仓库变量 API_BASE_URL 未配置，本次产物不含内置地址；首次启动需在 App 内填写服务器地址（Settings → Secrets and variables → Actions → Variables 可预置，例如 https://your-domain/api）"
           fi
 
       # 固定签名：GitHub 的 hosted runner 每次都是新虚拟机，debug keystore 每次不同，

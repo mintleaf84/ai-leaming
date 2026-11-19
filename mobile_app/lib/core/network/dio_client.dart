@@ -2,13 +2,19 @@ import 'package:dio/dio.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import '../constants/api_constants.dart';
+import 'server_config.dart';
 import '../../features/auth/presentation/auth_provider.dart';
 import '../../app_router.dart';
 
 final dioProvider = Provider<Dio>((ref) {
   final dio = Dio();
 
-  dio.options.baseUrl = ApiConstants.baseUrl;
+  // 地址来自三级回落（运行时设置 > 编译期 dart-define > 未配置）。
+  // 未配置时 baseUrl 留空：上层用 ServerConfigGate 挡住界面，不发请求。
+  final baseUrl = ref.watch(serverConfigProvider).effectiveBaseUrl;
+  if (baseUrl != null) {
+    dio.options.baseUrl = baseUrl;
+  }
   dio.options.connectTimeout = const Duration(
     milliseconds: ApiConstants.connectTimeout,
   );

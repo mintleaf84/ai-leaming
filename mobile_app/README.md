@@ -21,8 +21,10 @@ dart run build_runner build --delete-conflicting-outputs
 flutter run --dart-define=API_BASE_URL=http://<你的后端>:3000/api
 ```
 
-`API_BASE_URL` 默认 `http://127.0.0.1:3000/api`（见 `lib/core/constants/api_constants.dart`）：
-真机必须显式传值，`127.0.0.1` 在手机上指向手机自己。Android 模拟器访问宿主机用 `10.0.2.2`。
+`API_BASE_URL` 没有默认值（见 `lib/core/constants/api_constants.dart`）。地址按三级回落：
+**运行时设置**（App 内「设置 → 服务器地址」，存 flutter_secure_storage）> **编译期 `--dart-define`** >
+都没有则启动后进入「需要配置服务器地址」页，不发任何请求。真机首次运行建议直接在 App 内填写；
+`127.0.0.1` 在手机上指向手机自己，Android 模拟器访问宿主机用 `10.0.2.2`。
 
 ## 离线刷题
 
@@ -47,6 +49,7 @@ flutter test --run-skipped -t integration   # 需要本地后端在 127.0.0.1:30
 `.github/workflows/android.yml`：
 
 - **PR 阶段**：`flutter analyze`（warning 即失败）+ `flutter test`，任何 `mobile_app/**` 改动都会触发；
-- **手动或打 tag**：构建 release APK 并上传 artifact，需要仓库变量 `API_BASE_URL`（为空时 job 直接失败，避免产出连不上后端的包）。
+- **手动或打 tag**：构建 release APK 并上传 artifact；仓库变量 `API_BASE_URL` 未配置时只告警（产物不带内置地址，
+  首次启动在 App 内填写服务器地址即可）。
 
 签名：`android/key.properties` 存在时用 release 签名，否则回落 debug 签名；`key.properties` 与 `*.jks` 不入库。

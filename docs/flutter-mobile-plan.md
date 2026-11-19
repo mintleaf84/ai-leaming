@@ -181,7 +181,7 @@ jobs:
 
 配套前置改动（都在 `mobile_app/`）：
 
-1. **baseURL 参数化**：`ApiConstants.baseUrl` 改为 `String.fromEnvironment('API_BASE_URL', defaultValue: 'http://127.0.0.1:3000/api')`。现在硬编码 `localhost:3000`，装到手机上必然连不上。
+1. **baseURL 参数化**：`ApiConstants.compileTimeBaseUrl` 取 `String.fromEnvironment('API_BASE_URL')`（无默认值）。三级回落：运行时设置（App 内「设置 → 服务器地址」，存 flutter_secure_storage）> 编译期 `--dart-define` > 都没有则进入「需要配置服务器地址」页，不发请求。早期硬编码 `localhost:3000`，装到手机上必然连不上。
 2. **applicationId 改掉**：`com.example.mobile_app` → `com.mintleaf84.aileaming`（`android/app/build.gradle.kts:22`）。`com.example.*` 无法上架，且与别的 demo 冲突。
 3. **签名**：现在 release 用 debug 签名（`:35`）。要长期自用升级，**必须**生成一个固定 keystore，`key.properties` 走 secrets（`ANDROID_KEYSTORE_BASE64` / `_PASSWORD` / `_KEY_ALIAS`），`key.properties` 与 `*.jks` 加进 `.gitignore`。否则每次换签名都得卸载重装、丢本地数据。
 4. **版本号单一事实来源**：`pubspec.yaml` 的 `version: 1.0.0+1` 为唯一来源（`versionCode` 由 Flutter 从 `+N` 推），tag `v1.0.0` 与之一致。
@@ -292,7 +292,9 @@ npm run typecheck && npm run lint:ci && npx vitest run --maxWorkers=8 && npm run
 
 ### 唯一阻塞项
 
-`android.yml` 的 `apk` job 会先检查 `vars.API_BASE_URL`，为空则直接失败（避免产出连不上后端的废包）。仓库里没有部署域名记录，需要提供实际地址后设置变量并触发一次打包。
+`android.yml` 的 `apk` job 会先检查 `vars.API_BASE_URL`，为空时给 `::warning::` 但继续出包——
+产物启动后进入「需要配置服务器地址」页，用户可在 App 内填写并持久化（三级回落：运行时设置 >
+编译期 dart-define > 未配置）。有部署域名时仍建议设置变量预置。
 
 ### 最终收口（2026-11-18）
 
@@ -312,6 +314,6 @@ P3 全部完成：
 
 ### 未做（明确记录，不是遗漏）
 
-- **APK 实际打包**：按用户决定暂不出包。`android.yml` 的 `apk` job 已就绪（含 `API_BASE_URL` 空值提前失败），
-  需要时设置仓库变量并触发一次即可，无需改代码。
+- **APK 实际打包**：按用户决定暂不出包。`android.yml` 的 `apk` job 已就绪（`API_BASE_URL` 未配置时只告警，
+  产物由用户在 App 内填服务器地址），需要时设置仓库变量并触发一次即可，无需改代码。
 - `cached_questions` 未存 `dimension`；离线只覆盖练习，recall 与 AI 聊天仍是在线专属。

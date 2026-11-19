@@ -1,12 +1,16 @@
+/// 后端地址常量与地址解析规则。
+///
+/// 地址按三级回落生效（见 [resolveBaseUrl]）：
+///   1. 运行时配置：用户在 App 内「设置 → 服务器地址」填写，落 flutter_secure_storage；
+///   2. 编译期配置：构建时 `--dart-define=API_BASE_URL=...`（CI 出包走仓库变量）；
+///   3. 都没有：返回 null，由上层进入「需要配置服务器地址」状态，不做任何网络请求。
 class ApiConstants {
-  // Use 10.0.2.2 for Android Emulator to access localhost
-  // Use localhost for iOS Simulator
-  // Use actual IP for physical device / Windows Desktop apps
-  // static const String baseUrl = 'http://192.168.0.101:3000/api';
-  // 构建时可用 --dart-define=API_BASE_URL=... 覆盖（CI 出包走 vars.API_BASE_URL）
-  static const String baseUrl = String.fromEnvironment(
+  /// 构建期注入的后端地址。未传 `--dart-define=API_BASE_URL` 时为空串。
+  ///
+  /// 刻意不给默认值：写死 `127.0.0.1` 只会让装到手机上的包静默连不上任何后端，
+  /// 且失败得毫无线索。宁可显式进入「先配置服务器地址」状态。
+  static const String compileTimeBaseUrl = String.fromEnvironment(
     'API_BASE_URL',
-    defaultValue: 'http://127.0.0.1:3000/api',
   );
 
   static const int connectTimeout = 10000; // 10秒
@@ -21,4 +25,53 @@ class ApiConstants {
   static const String masteryTree = '/mastery/tree';
   static const String masteryStats = '/mastery/stats';
   static const String firstPrinciples = '/practice/first-principles';
+
+  /// 地址格式校验：必须是 http/https、必须带主机名、不含空白字符。
+  ///
+  /// 用 [Uri.tryParse] 而不是手写正则：`localhost:3000/api` 这类输入会被解析成
+  /// scheme=localhost，靠 scheme 判断就能挡住，不需要第二个正则去猜。
+  static bool isValidBaseUrl(String raw) {
+    final value = raw.trim();
+    if (value.isEmpty || value.contains(RegExp(r'\s'))) {
+      return false;
+    }
+    final uri = Uri.tryParse(value);
+    if (uri == null) {
+      return false;
+    }
+    if (uri.scheme != 'http' && uri.scheme != 'https') {
+      return false;
+    }
+    // `http://` 能解析出空 host；`http://.` 之类也要挡掉，要求至少一个字母数字。
+    return uri.host.isNotEmpty && RegExp(r'[A-Za-z0-9]').hasMatch(uri.host);
+  }
+
+  /// 去掉首尾空白与末尾斜杠：dio 拼接 `'/auth/login'` 时不会出现双斜杠。
+  static String normalizeBaseUrl(String raw) {
+    var value = raw.trim();
+    while (value.length > 1 && value.endsWith('/')) {
+      value = value.substring(0, value.length - 1);
+    }
+    return value;
+  }
+
+  /// 三级回落的唯一实现（纯函数，便于单测）。
+  ///
+  /// [runtimeBaseUrl] 为 null/空串/格式非法时继续回落；[compileTimeBaseUrl]
+  /// 传 null 表示取上面的编译期常量。返回 null 代表没有任何可用地址。
+  static String? resolveBaseUrl({
+    String? runtimeBaseUrl,
+    String? compileTimeBaseUrl,
+  }) {
+    final runtime = runtimeBaseUrl?.trim() ?? '';
+    if (isValidBaseUrl(runtime)) {
+      return normalizeBaseUrl(runtime);
+    }
+    final compiled = (compileTimeBaseUrl ?? ApiConstants.compileTimeBaseUrl)
+        .trim();
+    if (isValidBaseUrl(compiled)) {
+      return normalizeBaseUrl(compiled);
+    }
+    return null;
+  }
 }

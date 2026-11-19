@@ -121,4 +121,37 @@ describe("Knowledge Hono Routes", () => {
       expect(data.id).toBe(42);
     });
   });
+
+  describe("GET /cards — limit 上限", () => {
+    it("limit=100000 被夹到 100（与 external.ts 的 MAX_LIMIT 一致）", async () => {
+      mockKnowledgeService.getAllKnowledgeCards.mockReturnValue([]);
+      mockKnowledgeService.getKnowledgeStats.mockReturnValue({ total: 0 });
+      mockKnowledgeService.getCategories.mockReturnValue([]);
+
+      const res = await app.request("/cards?limit=100000");
+      expect(res.status).toBe(200);
+
+      // 第 2 个参数是 limit：不夹的话这里会是 100000，SQL 直接拉全表
+      expect(mockKnowledgeService.getAllKnowledgeCards).toHaveBeenCalledWith(
+        undefined,
+        100,
+        undefined,
+        1,
+      );
+    });
+
+    it("非法 limit 回落到默认值而不是 NaN", async () => {
+      mockKnowledgeService.getAllKnowledgeCards.mockReturnValue([]);
+      mockKnowledgeService.getKnowledgeStats.mockReturnValue({ total: 0 });
+      mockKnowledgeService.getCategories.mockReturnValue([]);
+
+      const res = await app.request("/cards?limit=abc");
+      expect(res.status).toBe(200);
+
+      const [, limitArg] = mockKnowledgeService.getAllKnowledgeCards.mock
+        .calls[0] as [unknown, number];
+      expect(Number.isInteger(limitArg)).toBe(true);
+      expect(limitArg).toBeGreaterThan(0);
+    });
+  });
 });

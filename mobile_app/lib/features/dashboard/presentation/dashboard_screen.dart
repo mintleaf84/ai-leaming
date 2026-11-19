@@ -14,9 +14,7 @@ class DashboardScreen extends HookConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     // 页面挂载时加载统计数据
     useEffect(() {
-      Future.microtask(
-        () => ref.read(statsControllerProvider.notifier).load(),
-      );
+      Future.microtask(() => ref.read(statsControllerProvider.notifier).load());
       return null;
     }, const []);
 
@@ -119,48 +117,77 @@ class DashboardScreen extends HookConsumerWidget {
   Widget _buildActionGrid(BuildContext context) {
     return Column(
       children: [
-        Row(
-          children: [
-            Expanded(
-              child: GestureDetector(
-                onTap: () => context.pushDetail(AppRoutes.questions),
-                child: _buildActionCard(
-                  icon: '📚',
-                  tag: '查缺补漏',
-                  tagColor: const Color(0xFFE8F3FF),
-                  tagTextColor: const Color(0xFF135BEC),
-                  title: '全量\n题库',
-                  subtitleLabel: '探索',
-                  subtitleValue: '获取所有题目',
+        IntrinsicHeight(
+          child: Row(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              Expanded(
+                child: GestureDetector(
+                  onTap: () => context.pushDetail(AppRoutes.questions),
+                  child: _buildActionCard(
+                    icon: '📚',
+                    tag: '查缺补漏',
+                    tagColor: const Color(0xFFE8F3FF),
+                    tagTextColor: const Color(0xFF135BEC),
+                    title: '全量\n题库',
+                    subtitleLabel: '探索',
+                    subtitleValue: '获取所有题目',
+                  ),
                 ),
               ),
-            ),
-            SizedBox(width: 16.w),
-            Expanded(
-              child: GestureDetector(
-                onTap: () => context.pushDetail(AppRoutes.practiceSetup),
-                child: _buildActionCard(
-                  icon: '🧠',
-                  tag: '待复习',
-                  tagColor: const Color(0xFFFFF4E5),
-                  tagTextColor: const Color(0xFFFF9500),
-                  title: '智能\n复习',
-                  subtitleLabel: '今日待办',
-                  subtitleValue: '开始练习',
+              SizedBox(width: 16.w),
+              Expanded(
+                child: GestureDetector(
+                  onTap: () => context.pushDetail(AppRoutes.practiceSetup),
+                  child: _buildActionCard(
+                    icon: '🧠',
+                    tag: '待复习',
+                    tagColor: const Color(0xFFFFF4E5),
+                    tagTextColor: const Color(0xFFFF9500),
+                    title: '智能\n复习',
+                    subtitleLabel: '今日待办',
+                    subtitleValue: '开始练习',
+                  ),
                 ),
               ),
-            ),
-          ],
+            ],
+          ),
         ),
         SizedBox(height: 16.h),
-        GestureDetector(
+        // 整宽行：按"每天要做 → 补漏 → 回看"的优先级往下排。
+        // 记忆卡放在第一行整宽位而不是挤进两列：两列里落单一张会留半个空槽，
+        // 而它本身就是"开始一件事"的入口，用整宽行更接近顶部两张卡的语义。
+        _buildWideCard(
+          icon: '📇',
+          tag: '每日记一点',
+          tagColor: const Color(0xFFE9F5EC),
+          tagTextColor: const Color(0xFF4EA05E),
+          title: '记忆卡',
+          trailingLabel: '每次',
+          trailingValue: '几分钟',
+          onTap: () => context.pushDetail(AppRoutes.recall),
+        ),
+        SizedBox(height: 16.h),
+        _buildWideCard(
+          icon: '📕',
+          tag: '重点关注',
+          tagColor: const Color(0xFFFEF2F2),
+          tagTextColor: const Color(0xFFDC2626),
+          title: '我的错题',
+          trailingLabel: '累计',
+          trailingValue: '--',
           onTap: () => context.pushDetail(AppRoutes.wrongBook),
-          child: _buildFullWidthCard(),
         ),
         SizedBox(height: 16.h),
-        GestureDetector(
+        _buildWideCard(
+          icon: '⏳',
+          tag: '温故知新',
+          tagColor: const Color(0xFFF3F4F6),
+          tagTextColor: const Color(0xFF4B5563),
+          title: '练习历史',
+          trailingLabel: '最近',
+          trailingValue: '回顾',
           onTap: () => context.pushDetail(AppRoutes.history),
-          child: _buildHistoryCard(),
         ),
       ],
     );
@@ -176,8 +203,11 @@ class DashboardScreen extends HookConsumerWidget {
     required String subtitleLabel,
     required String subtitleValue,
   }) {
+    // 固定高度改最小高度：字号放大到 1.3 倍时内容比 176 高，定高会溢出 11px；
+    // 用 minHeight 让卡片自己长高（标准字号下渲染完全一致），
+    // 同排两张由外层 IntrinsicHeight + stretch 保持等高。
     return Container(
-      height: 176.h,
+      constraints: BoxConstraints(minHeight: 176.h),
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(16.r),
@@ -250,31 +280,35 @@ class DashboardScreen extends HookConsumerWidget {
                     Row(
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
-                        Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text(
-                              subtitleLabel,
-                              style: TextStyle(
-                                fontSize: 10.sp,
-                                color: Colors.grey,
-                                letterSpacing: 0.5,
+                        // 原来给副标题写死 80.w，字号放大后「获取所有题目」会被截成
+                        // 「获取所有题…」。改成 Flexible：宽度跟着剩余空间走，
+                        // 只有真的放不下才省略，箭头永远留在右边。
+                        Flexible(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                subtitleLabel,
+                                style: TextStyle(
+                                  fontSize: 10.sp,
+                                  color: Colors.grey,
+                                  letterSpacing: 0.5,
+                                ),
                               ),
-                            ),
-                            SizedBox(height: 2.h),
-                            SizedBox(
-                              width: 80.w,
-                              child: Text(
+                              SizedBox(height: 2.h),
+                              Text(
                                 subtitleValue,
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
                                 style: TextStyle(
                                   fontSize: 12.sp,
                                   fontWeight: FontWeight.w500,
                                 ),
-                                overflow: TextOverflow.ellipsis,
                               ),
-                            ),
-                          ],
+                            ],
+                          ),
                         ),
+                        SizedBox(width: 4.w),
                         Icon(
                           AppIcons.arrowForward,
                           size: 16.sp,
@@ -292,222 +326,145 @@ class DashboardScreen extends HookConsumerWidget {
     );
   }
 
-  Widget _buildFullWidthCard() {
-    return Container(
-      height: 96.h,
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(16.r),
-        border: Border.all(color: const Color(0xFFE0E0E0)),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withValues(alpha: 0.02),
-            blurRadius: 4,
-            offset: const Offset(0, 2),
-          ),
-        ],
-      ),
-      child: Stack(
-        children: [
-          Positioned(
-            right: 40.w,
-            top: 0,
-            bottom: 0,
-            child: Center(
-              child: Opacity(
-                opacity: 0.1,
-                child: Text('📕', style: TextStyle(fontSize: 60.sp)),
+  /// 整宽入口卡（错题本 / 练习历史 / 记忆卡共用一种形态）。
+  ///
+  /// 原本是两份逐字重复的实现（只有 emoji、标签、标题、右侧两行字不同），
+  /// 加第三个入口时合并成一个：三张卡的圆角、阴影、emoji 水印位置、分割线
+  /// 从此不可能各写一套。
+  ///
+  /// 右侧那两行（如「累计 / --」「每次 / 几分钟」）刻意只放**不依赖数据的描述**：
+  /// 首页没有队列与统计快照，写死一个数字就是编数据。
+  Widget _buildWideCard({
+    required String icon,
+    required String tag,
+    required Color tagColor,
+    required Color tagTextColor,
+    required String title,
+    required String trailingLabel,
+    required String trailingValue,
+    required VoidCallback onTap,
+  }) {
+    return GestureDetector(
+      onTap: onTap,
+      child: Container(
+        // 同两列卡：最小高度而不是固定高度，1.3 倍字号时不溢出
+        constraints: BoxConstraints(minHeight: 96.h),
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(16.r),
+          border: Border.all(color: const Color(0xFFE0E0E0)),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withValues(alpha: 0.02),
+              blurRadius: 4,
+              offset: const Offset(0, 2),
+            ),
+          ],
+        ),
+        child: Stack(
+          children: [
+            Positioned(
+              right: 40.w,
+              top: 0,
+              bottom: 0,
+              child: Center(
+                child: Opacity(
+                  opacity: 0.1,
+                  child: Text(icon, style: TextStyle(fontSize: 60.sp)),
+                ),
               ),
             ),
-          ),
-          Padding(
-            padding: EdgeInsets.all(16.w),
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    Container(
-                      padding: EdgeInsets.symmetric(
-                        horizontal: 6.w,
-                        vertical: 2.h,
-                      ),
-                      decoration: BoxDecoration(
-                        color: const Color(0xFFFEF2F2),
-                        borderRadius: BorderRadius.circular(4.r),
-                      ),
-                      child: Text(
-                        '重点关注',
-                        style: TextStyle(
-                          fontSize: 10.sp,
-                          color: const Color(0xFFDC2626),
-                          fontWeight: FontWeight.w600,
-                        ),
-                      ),
-                    ),
-                    SizedBox(height: 4.h),
-                    Text(
-                      '我的错题',
-                      style: TextStyle(
-                        fontSize: 18.sp,
-                        fontWeight: FontWeight.bold,
-                        color: const Color(0xFF37352F),
-                      ),
-                    ),
-                  ],
-                ),
-                Container(
-                  decoration: BoxDecoration(
-                    border: Border(left: BorderSide(color: Colors.grey[200]!)),
-                  ),
-                  padding: EdgeInsets.only(left: 16.w),
-                  child: Row(
-                    children: [
-                      Column(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        crossAxisAlignment: CrossAxisAlignment.end,
-                        children: [
-                          Text(
-                            '累计',
+            Padding(
+              padding: EdgeInsets.all(16.w),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  // 标签 + 标题：字号放大时允许两行，不裁字
+                  Flexible(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        Container(
+                          padding: EdgeInsets.symmetric(
+                            horizontal: 6.w,
+                            vertical: 2.h,
+                          ),
+                          decoration: BoxDecoration(
+                            color: tagColor,
+                            borderRadius: BorderRadius.circular(4.r),
+                          ),
+                          child: Text(
+                            tag,
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
                             style: TextStyle(
                               fontSize: 10.sp,
-                              color: Colors.grey,
+                              color: tagTextColor,
+                              fontWeight: FontWeight.w600,
                             ),
                           ),
-                          Text(
-                            '--',
-                            style: TextStyle(
-                              fontSize: 14.sp,
-                              fontWeight: FontWeight.bold,
-                            ),
+                        ),
+                        SizedBox(height: 4.h),
+                        Text(
+                          title,
+                          maxLines: 2,
+                          overflow: TextOverflow.ellipsis,
+                          style: TextStyle(
+                            fontSize: 18.sp,
+                            fontWeight: FontWeight.bold,
+                            color: const Color(0xFF37352F),
                           ),
-                        ],
-                      ),
-                      SizedBox(width: 8.w),
-                      Icon(
-                        AppIcons.chevronRight,
-                        size: 20.sp,
-                        color: const Color(0xFF37352F),
-                      ),
-                    ],
+                        ),
+                      ],
+                    ),
                   ),
-                ),
-              ],
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildHistoryCard() {
-    return Container(
-      height: 96.h,
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(16.r),
-        border: Border.all(color: const Color(0xFFE0E0E0)),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withValues(alpha: 0.02),
-            blurRadius: 4,
-            offset: const Offset(0, 2),
-          ),
-        ],
-      ),
-      child: Stack(
-        children: [
-          Positioned(
-            right: 40.w,
-            top: 0,
-            bottom: 0,
-            child: Center(
-              child: Opacity(
-                opacity: 0.1,
-                child: Text('⏳', style: TextStyle(fontSize: 60.sp)),
+                  SizedBox(width: 8.w),
+                  Container(
+                    decoration: BoxDecoration(
+                      border: Border(
+                        left: BorderSide(color: Colors.grey[200]!),
+                      ),
+                    ),
+                    padding: EdgeInsets.only(left: 16.w),
+                    child: Row(
+                      children: [
+                        Column(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          crossAxisAlignment: CrossAxisAlignment.end,
+                          children: [
+                            Text(
+                              trailingLabel,
+                              style: TextStyle(
+                                fontSize: 10.sp,
+                                color: Colors.grey,
+                              ),
+                            ),
+                            Text(
+                              trailingValue,
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                              style: TextStyle(
+                                fontSize: 14.sp,
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
+                          ],
+                        ),
+                        SizedBox(width: 8.w),
+                        Icon(
+                          AppIcons.chevronRight,
+                          size: 20.sp,
+                          color: const Color(0xFF37352F),
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
               ),
             ),
-          ),
-          Padding(
-            padding: EdgeInsets.all(16.w),
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    Container(
-                      padding: EdgeInsets.symmetric(
-                        horizontal: 6.w,
-                        vertical: 2.h,
-                      ),
-                      decoration: BoxDecoration(
-                        color: const Color(0xFFF3F4F6),
-                        borderRadius: BorderRadius.circular(4.r),
-                      ),
-                      child: Text(
-                        '温故知新',
-                        style: TextStyle(
-                          fontSize: 10.sp,
-                          color: const Color(0xFF4B5563),
-                          fontWeight: FontWeight.w600,
-                        ),
-                      ),
-                    ),
-                    SizedBox(height: 4.h),
-                    Text(
-                      '练习历史',
-                      style: TextStyle(
-                        fontSize: 18.sp,
-                        fontWeight: FontWeight.bold,
-                        color: const Color(0xFF37352F),
-                      ),
-                    ),
-                  ],
-                ),
-                Container(
-                  decoration: BoxDecoration(
-                    border: Border(left: BorderSide(color: Colors.grey[200]!)),
-                  ),
-                  padding: EdgeInsets.only(left: 16.w),
-                  child: Row(
-                    children: [
-                      Column(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        crossAxisAlignment: CrossAxisAlignment.end,
-                        children: [
-                          Text(
-                            '最近',
-                            style: TextStyle(
-                              fontSize: 10.sp,
-                              color: Colors.grey,
-                            ),
-                          ),
-                          Text(
-                            '回顾',
-                            style: TextStyle(
-                              fontSize: 14.sp,
-                              fontWeight: FontWeight.bold,
-                            ),
-                          ),
-                        ],
-                      ),
-                      SizedBox(width: 8.w),
-                      Icon(
-                        AppIcons.chevronRight,
-                        size: 20.sp,
-                        color: const Color(0xFF37352F),
-                      ),
-                    ],
-                  ),
-                ),
-              ],
-            ),
-          ),
-        ],
+          ],
+        ),
       ),
     );
   }
@@ -655,9 +612,7 @@ class DashboardScreen extends HookConsumerWidget {
     final practiceSubtitle = todayPracticed
         ? '已练 ${stats.todayCount} 题 · 正确率 $accuracy%'
         : '今日还没有练习记录';
-    final wrongTitle = wrongCount > 0
-        ? '复盘今日 $wrongCount 道错题'
-        : '今日暂无错题需要复盘';
+    final wrongTitle = wrongCount > 0 ? '复盘今日 $wrongCount 道错题' : '今日暂无错题需要复盘';
     final wrongSubtitle = wrongCount > 0 ? '在错题本中重做一遍' : '答错的题目会自动进入错题本';
     final streakTitle = stats.streakDays > 0
         ? '连续学习 ${stats.streakDays} 天'

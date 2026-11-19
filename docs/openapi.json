@@ -678,6 +678,101 @@
           "duplicate"
         ],
         "type": "object"
+      },
+      "MobileRecallReviewRequest": {
+        "properties": {
+          "allBlank": {
+            "description": "用户点了「全没想起」：所有呈现条目都算未写",
+            "type": "boolean"
+          },
+          "cardId": {
+            "description": "卡片数字主键（来自 GET /cards/:cardId 或队列 ids）",
+            "example": 42,
+            "exclusiveMinimum": true,
+            "minimum": 0,
+            "type": "integer"
+          },
+          "clientKey": {
+            "description": "幂等键（客户端进入判分屏时生成的 UUID）。同一次作答的所有重试必须沿用同一个 key；服务端命中后返回首次结果（duplicate=true），不会二次推进调度",
+            "example": "6f1c1d5e-2a4b-4f0e-9c2f-8f0a2d1b7c33",
+            "maxLength": 120,
+            "minLength": 1,
+            "type": "string"
+          },
+          "overrides": {
+            "description": "用户改判项，可空",
+            "items": {
+              "properties": {
+                "index": {
+                  "description": "卡内条目下标（与 pendingItems 同一坐标系）",
+                  "minimum": 0,
+                  "type": "integer"
+                },
+                "to": {
+                  "description": "改判结果",
+                  "enum": ["ok", "miss"],
+                  "type": "string"
+                }
+              },
+              "required": ["index", "to"],
+              "type": "object"
+            },
+            "type": "array"
+          },
+          "typed": {
+            "description": "用户作答原文；填空卡按呈现顺序分段",
+            "example": "1. 建立安全制度 2. 开展安全演练",
+            "type": "string"
+          }
+        },
+        "required": ["cardId", "typed"],
+        "type": "object"
+      },
+      "MobileRecallReviewResponse": {
+        "properties": {
+          "duplicate": {
+            "description": "true = 该 clientKey 已提交过，本次为幂等重放，未推进调度",
+            "type": "boolean"
+          },
+          "nextDue": {
+            "description": "下次到期时间（ISO 8601 UTC）",
+            "type": "string"
+          },
+          "nextReviewText": {
+            "description": "可直接展示的提示，如「下次 11 月 20 日」「明天只重测这 2 条」",
+            "type": "string"
+          },
+          "pendingItems": {
+            "description": "下次要重测的条目下标；null 表示无需重测",
+            "items": {
+              "type": "integer"
+            },
+            "nullable": true,
+            "type": "array"
+          },
+          "rating": {
+            "description": "推导出的 FSRS 评分（用户不直接选择）",
+            "enum": ["again", "hard", "good"],
+            "type": "string"
+          },
+          "verdicts": {
+            "description": "最终判分（已应用改判），与本次呈现的条目一一对应",
+            "items": {
+              "enum": ["ok", "miss"],
+              "type": "string"
+            },
+            "type": "array"
+          }
+        },
+        "required": [
+          "verdicts",
+          "rating",
+          "nextDue",
+          "pendingItems",
+          "nextReviewText",
+          "duplicate"
+        ],
+        "type": "object"
       }
     }
   },
@@ -7944,6 +8039,740 @@
             "description": "Question not found"
           }
         }
+      }
+    },
+    "/api/recall/cards/{cardId}": {
+      "get": {
+        "description": "`cardId` 是数字主键。`mode` 为 `retest` 时界面只呈现 `pendingItems` 里的条目；`state` 为 null 表示当前用户从未复习过这张卡。卡片不存在返回 404。",
+        "parameters": [
+          {
+            "description": "卡片数字主键",
+            "in": "path",
+            "name": "cardId",
+            "required": true,
+            "schema": {
+              "description": "卡片数字主键",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "properties": {
+                    "blanks": {
+                      "items": {
+                        "properties": {
+                          "answers": {
+                            "description": "该空可接受的答案（1–3 个）",
+                            "items": {
+                              "type": "string"
+                            },
+                            "type": "array"
+                          }
+                        },
+                        "required": ["answers"],
+                        "type": "object"
+                      },
+                      "nullable": true,
+                      "type": "array"
+                    },
+                    "cardId": {
+                      "type": "integer"
+                    },
+                    "cardKey": {
+                      "type": "string"
+                    },
+                    "deckKey": {
+                      "type": "string"
+                    },
+                    "deckTitle": {
+                      "type": "string"
+                    },
+                    "groupKey": {
+                      "nullable": true,
+                      "type": "string"
+                    },
+                    "items": {
+                      "items": {
+                        "properties": {
+                          "keywords": {
+                            "description": "关键词，任一命中即判「已写」",
+                            "items": {
+                              "type": "string"
+                            },
+                            "type": "array"
+                          },
+                          "text": {
+                            "description": "条目文本",
+                            "type": "string"
+                          }
+                        },
+                        "required": ["text", "keywords"],
+                        "type": "object"
+                      },
+                      "nullable": true,
+                      "type": "array"
+                    },
+                    "kind": {
+                      "description": "卡片类型：list = 列举卡，cloze = 填空卡",
+                      "enum": ["list", "cloze"],
+                      "type": "string"
+                    },
+                    "mode": {
+                      "description": "first = 首次作答整卡；retest = 只重测待重测条目",
+                      "enum": ["first", "retest"],
+                      "type": "string"
+                    },
+                    "pendingItems": {
+                      "description": "待重测条目下标；null 表示没有（与 mode 联动）",
+                      "items": {
+                        "type": "integer"
+                      },
+                      "nullable": true,
+                      "type": "array"
+                    },
+                    "prompt": {
+                      "type": "string"
+                    },
+                    "state": {
+                      "description": "当前用户在这张卡上的进度；null = 从未复习过（新卡）",
+                      "nullable": true,
+                      "properties": {
+                        "archived": {
+                          "description": "是否已归档（移出队列）",
+                          "type": "boolean"
+                        },
+                        "difficulty": {
+                          "description": "FSRS 难度",
+                          "type": "number"
+                        },
+                        "due": {
+                          "description": "下次到期时间（ISO 8601 UTC）",
+                          "type": "string"
+                        },
+                        "lapses": {
+                          "description": "累计遗忘次数",
+                          "type": "integer"
+                        },
+                        "last_review": {
+                          "description": "最近一次复习时间，未知为 null",
+                          "nullable": true,
+                          "type": "string"
+                        },
+                        "pendingItems": {
+                          "description": "待重测的条目下标；null 表示没有待重测条目",
+                          "items": {
+                            "type": "integer"
+                          },
+                          "nullable": true,
+                          "type": "array"
+                        },
+                        "reps": {
+                          "description": "累计复习次数",
+                          "type": "integer"
+                        },
+                        "stability": {
+                          "description": "FSRS 记忆稳定度",
+                          "type": "number"
+                        },
+                        "state": {
+                          "description": "FSRS 状态：0 New / 1 Learning / 2 Review / 3 Relearning",
+                          "type": "integer"
+                        }
+                      },
+                      "required": [
+                        "due",
+                        "stability",
+                        "difficulty",
+                        "state",
+                        "reps",
+                        "lapses",
+                        "last_review",
+                        "pendingItems",
+                        "archived"
+                      ],
+                      "type": "object"
+                    },
+                    "verbatim": {
+                      "type": "boolean"
+                    }
+                  },
+                  "required": [
+                    "cardId",
+                    "cardKey",
+                    "deckKey",
+                    "deckTitle",
+                    "kind",
+                    "groupKey",
+                    "prompt",
+                    "items",
+                    "blanks",
+                    "verbatim",
+                    "state",
+                    "mode",
+                    "pendingItems"
+                  ],
+                  "type": "object"
+                }
+              }
+            },
+            "description": "卡片详情"
+          },
+          "400": {
+            "description": "cardId 不是正整数"
+          },
+          "401": {
+            "description": "未授权 - 缺少 / 无效 / 已过期的 JWT"
+          },
+          "404": {
+            "description": "卡片不存在"
+          }
+        },
+        "summary": "获取单张回忆卡详情（含呈现模式与待重测条目）"
+      }
+    },
+    "/api/recall/cards/{cardId}/archive": {
+      "delete": {
+        "description": "只影响**当前登录用户**。天然幂等：没归档过时返回 `restored: false`（没有可恢复的状态行），不算错误。",
+        "parameters": [
+          {
+            "description": "卡片数字主键",
+            "in": "path",
+            "name": "cardId",
+            "required": true,
+            "schema": {
+              "description": "卡片数字主键",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "properties": {
+                    "cardId": {
+                      "type": "integer"
+                    },
+                    "restored": {
+                      "description": "true = 恢复了一条状态行；false = 本来就没有归档记录",
+                      "type": "boolean"
+                    }
+                  },
+                  "required": ["cardId", "restored"],
+                  "type": "object"
+                }
+              }
+            },
+            "description": "已取消归档（或本来就没有归档）"
+          },
+          "400": {
+            "description": "cardId 不是正整数"
+          },
+          "401": {
+            "description": "未授权 - 缺少 / 无效 / 已过期的 JWT"
+          }
+        },
+        "summary": "把一张回忆卡放回复习队列（取消归档）"
+      },
+      "post": {
+        "description": "只影响**当前登录用户**的队列，不改卡片内容与别人的进度。天然幂等：重复归档仍是同一个结果。卡片不存在返回 404。",
+        "parameters": [
+          {
+            "description": "卡片数字主键",
+            "in": "path",
+            "name": "cardId",
+            "required": true,
+            "schema": {
+              "description": "卡片数字主键",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "properties": {
+                    "archived": {
+                      "description": "恒为 true",
+                      "enum": [true],
+                      "type": "boolean"
+                    },
+                    "cardId": {
+                      "type": "integer"
+                    }
+                  },
+                  "required": ["cardId", "archived"],
+                  "type": "object"
+                }
+              }
+            },
+            "description": "已归档"
+          },
+          "400": {
+            "description": "cardId 不是正整数"
+          },
+          "401": {
+            "description": "未授权 - 缺少 / 无效 / 已过期的 JWT"
+          },
+          "404": {
+            "description": "卡片不存在"
+          }
+        },
+        "summary": "把一张回忆卡移出当前用户的复习队列（归档）"
+      }
+    },
+    "/api/recall/decks": {
+      "get": {
+        "description": "卡组内容全局共享，`activeCount` / `archivedCount` / `dueCount` 只统计当前登录用户的数据。按卡组标题升序。",
+        "parameters": [
+          {
+            "description": "返回条数，默认 20，上限 100",
+            "in": "query",
+            "name": "limit",
+            "required": false,
+            "schema": {
+              "default": "20",
+              "description": "返回条数，默认 20，上限 100",
+              "type": "string"
+            }
+          },
+          {
+            "description": "偏移量，默认 0",
+            "in": "query",
+            "name": "offset",
+            "required": false,
+            "schema": {
+              "default": "0",
+              "description": "偏移量，默认 0",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "properties": {
+                    "data": {
+                      "items": {
+                        "properties": {
+                          "activeCount": {
+                            "description": "该用户未归档、已有复习状态的卡片数（含未到期）",
+                            "type": "integer"
+                          },
+                          "archivedCount": {
+                            "description": "该用户已归档（移出队列）的卡片数",
+                            "type": "integer"
+                          },
+                          "cardCount": {
+                            "description": "卡组内卡片总数",
+                            "type": "integer"
+                          },
+                          "deckKey": {
+                            "description": "卡组标识（导入导出文件里的 deckId）",
+                            "type": "string"
+                          },
+                          "dueCount": {
+                            "description": "该用户当前到期可复习的卡片数",
+                            "type": "integer"
+                          },
+                          "title": {
+                            "description": "卡组标题",
+                            "type": "string"
+                          }
+                        },
+                        "required": [
+                          "deckKey",
+                          "title",
+                          "cardCount",
+                          "activeCount",
+                          "archivedCount",
+                          "dueCount"
+                        ],
+                        "type": "object"
+                      },
+                      "type": "array"
+                    },
+                    "meta": {
+                      "properties": {
+                        "limit": {
+                          "description": "本次请求的实际条数上限（已被截到 100 以内）",
+                          "type": "integer"
+                        },
+                        "offset": {
+                          "description": "本次请求的偏移量",
+                          "type": "integer"
+                        },
+                        "total": {
+                          "description": "符合条件的总条数",
+                          "type": "integer"
+                        }
+                      },
+                      "required": ["limit", "offset", "total"],
+                      "type": "object"
+                    }
+                  },
+                  "required": ["data", "meta"],
+                  "type": "object"
+                }
+              }
+            },
+            "description": "卡组列表"
+          },
+          "401": {
+            "description": "未授权 - 缺少 / 无效 / 已过期的 JWT"
+          }
+        },
+        "summary": "列出回忆自测卡组（含当前用户的进度统计）"
+      }
+    },
+    "/api/recall/decks/{deckKey}": {
+      "get": {
+        "description": "卡片内容全局共享，`state` 只反映当前用户的进度（无记录为 null）。按卡片主键升序分页，默认 20、上限 100。卡组不存在返回 404。",
+        "parameters": [
+          {
+            "description": "卡组标识",
+            "in": "path",
+            "name": "deckKey",
+            "required": true,
+            "schema": {
+              "description": "卡组标识",
+              "type": "string"
+            }
+          },
+          {
+            "description": "返回条数，默认 20，上限 100",
+            "in": "query",
+            "name": "limit",
+            "required": false,
+            "schema": {
+              "default": "20",
+              "description": "返回条数，默认 20，上限 100",
+              "type": "string"
+            }
+          },
+          {
+            "description": "偏移量，默认 0",
+            "in": "query",
+            "name": "offset",
+            "required": false,
+            "schema": {
+              "default": "0",
+              "description": "偏移量，默认 0",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "properties": {
+                    "data": {
+                      "items": {
+                        "properties": {
+                          "blanks": {
+                            "items": {
+                              "properties": {
+                                "answers": {
+                                  "description": "该空可接受的答案（1–3 个）",
+                                  "items": {
+                                    "type": "string"
+                                  },
+                                  "type": "array"
+                                }
+                              },
+                              "required": ["answers"],
+                              "type": "object"
+                            },
+                            "nullable": true,
+                            "type": "array"
+                          },
+                          "cardId": {
+                            "type": "integer"
+                          },
+                          "cardKey": {
+                            "type": "string"
+                          },
+                          "groupKey": {
+                            "nullable": true,
+                            "type": "string"
+                          },
+                          "items": {
+                            "items": {
+                              "properties": {
+                                "keywords": {
+                                  "description": "关键词，任一命中即判「已写」",
+                                  "items": {
+                                    "type": "string"
+                                  },
+                                  "type": "array"
+                                },
+                                "text": {
+                                  "description": "条目文本",
+                                  "type": "string"
+                                }
+                              },
+                              "required": ["text", "keywords"],
+                              "type": "object"
+                            },
+                            "nullable": true,
+                            "type": "array"
+                          },
+                          "kind": {
+                            "description": "卡片类型：list = 列举卡，cloze = 填空卡",
+                            "enum": ["list", "cloze"],
+                            "type": "string"
+                          },
+                          "prompt": {
+                            "type": "string"
+                          },
+                          "state": {
+                            "description": "当前用户在这张卡上的进度；null = 从未复习过（新卡）",
+                            "nullable": true,
+                            "properties": {
+                              "archived": {
+                                "description": "是否已归档（移出队列）",
+                                "type": "boolean"
+                              },
+                              "difficulty": {
+                                "description": "FSRS 难度",
+                                "type": "number"
+                              },
+                              "due": {
+                                "description": "下次到期时间（ISO 8601 UTC）",
+                                "type": "string"
+                              },
+                              "lapses": {
+                                "description": "累计遗忘次数",
+                                "type": "integer"
+                              },
+                              "last_review": {
+                                "description": "最近一次复习时间，未知为 null",
+                                "nullable": true,
+                                "type": "string"
+                              },
+                              "pendingItems": {
+                                "description": "待重测的条目下标；null 表示没有待重测条目",
+                                "items": {
+                                  "type": "integer"
+                                },
+                                "nullable": true,
+                                "type": "array"
+                              },
+                              "reps": {
+                                "description": "累计复习次数",
+                                "type": "integer"
+                              },
+                              "stability": {
+                                "description": "FSRS 记忆稳定度",
+                                "type": "number"
+                              },
+                              "state": {
+                                "description": "FSRS 状态：0 New / 1 Learning / 2 Review / 3 Relearning",
+                                "type": "integer"
+                              }
+                            },
+                            "required": [
+                              "due",
+                              "stability",
+                              "difficulty",
+                              "state",
+                              "reps",
+                              "lapses",
+                              "last_review",
+                              "pendingItems",
+                              "archived"
+                            ],
+                            "type": "object"
+                          },
+                          "verbatim": {
+                            "type": "boolean"
+                          }
+                        },
+                        "required": [
+                          "cardId",
+                          "cardKey",
+                          "kind",
+                          "groupKey",
+                          "prompt",
+                          "items",
+                          "blanks",
+                          "verbatim",
+                          "state"
+                        ],
+                        "type": "object"
+                      },
+                      "type": "array"
+                    },
+                    "deck": {
+                      "properties": {
+                        "deckKey": {
+                          "type": "string"
+                        },
+                        "groups": {
+                          "items": {
+                            "properties": {
+                              "groupId": {
+                                "type": "string"
+                              },
+                              "order": {
+                                "type": "integer"
+                              },
+                              "title": {
+                                "type": "string"
+                              }
+                            },
+                            "required": ["groupId", "title"],
+                            "type": "object"
+                          },
+                          "type": "array"
+                        },
+                        "title": {
+                          "type": "string"
+                        }
+                      },
+                      "required": ["deckKey", "title", "groups"],
+                      "type": "object"
+                    },
+                    "meta": {
+                      "properties": {
+                        "limit": {
+                          "description": "本次请求的实际条数上限（已被截到 100 以内）",
+                          "type": "integer"
+                        },
+                        "offset": {
+                          "description": "本次请求的偏移量",
+                          "type": "integer"
+                        },
+                        "total": {
+                          "description": "符合条件的总条数",
+                          "type": "integer"
+                        }
+                      },
+                      "required": ["limit", "offset", "total"],
+                      "type": "object"
+                    }
+                  },
+                  "required": ["deck", "data", "meta"],
+                  "type": "object"
+                }
+              }
+            },
+            "description": "卡组详情 + 卡片列表"
+          },
+          "401": {
+            "description": "未授权 - 缺少 / 无效 / 已过期的 JWT"
+          },
+          "404": {
+            "description": "卡组不存在"
+          }
+        },
+        "summary": "获取卡组详情与卡片列表（含当前用户的复习状态）"
+      }
+    },
+    "/api/recall/queue": {
+      "get": {
+        "description": "`ids` 是本次要做的卡片主键序列（到期优先、按 due 升序，其后是今天投放的新卡）；`due` / `fresh` 是**条数**而不是 id 数组，编号一律从 `ids` 取。纯查询，同一时刻重复调用结果一致。",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "properties": {
+                    "due": {
+                      "description": "到期卡条数（含重测卡）",
+                      "type": "integer"
+                    },
+                    "estimatedMinutes": {
+                      "description": "展示用估时（分钟）",
+                      "type": "integer"
+                    },
+                    "fresh": {
+                      "description": "今日投放的新卡条数",
+                      "type": "integer"
+                    },
+                    "ids": {
+                      "description": "本次要做的卡片主键，顺序即建议作答顺序",
+                      "items": {
+                        "type": "integer"
+                      },
+                      "type": "array"
+                    },
+                    "streakDays": {
+                      "description": "连续学习天数（学习日 04:00 切换）",
+                      "type": "integer"
+                    },
+                    "total": {
+                      "description": "队列总条数 = due + fresh",
+                      "type": "integer"
+                    }
+                  },
+                  "required": [
+                    "ids",
+                    "due",
+                    "fresh",
+                    "total",
+                    "estimatedMinutes",
+                    "streakDays"
+                  ],
+                  "type": "object"
+                }
+              }
+            },
+            "description": "今日队列"
+          },
+          "401": {
+            "description": "未授权 - 缺少 / 无效 / 已过期的 JWT"
+          }
+        },
+        "summary": "获取今日回忆队列（到期优先 + 新卡额度）"
+      }
+    },
+    "/api/recall/reviews": {
+      "post": {
+        "description": "服务端按卡片内容判分、推导评分并推进 FSRS 调度。带 `clientKey` 时按 `(user_id, clientKey)` 幂等：重试命中返回 `duplicate: true` 与首次结果，**不会二次推进调度**。卡片不存在返回 404。",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/MobileRecallReviewRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MobileRecallReviewResponse"
+                }
+              }
+            },
+            "description": "判分结果（或幂等重放，见 duplicate）"
+          },
+          "400": {
+            "description": "请求体校验失败 / 改判下标非法"
+          },
+          "401": {
+            "description": "未授权 - 缺少 / 无效 / 已过期的 JWT"
+          },
+          "404": {
+            "description": "卡片不存在"
+          }
+        },
+        "summary": "提交一次回忆作答（判分 + 调度 + 落日志）"
       }
     },
     "/api/stats": {

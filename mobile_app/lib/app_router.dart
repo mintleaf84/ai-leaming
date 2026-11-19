@@ -17,6 +17,7 @@ import 'features/mastery/presentation/mastery_screen.dart';
 import 'features/settings/presentation/settings_screen.dart';
 import 'features/chat/presentation/chat_screen.dart';
 import 'features/wrong_book/presentation/wrong_book_screen.dart';
+import 'features/recall/presentation/recall_session_screen.dart';
 import 'features/profile/presentation/profile_screen.dart';
 import 'features/textbook/presentation/textbook_list_screen.dart';
 import 'features/textbook/presentation/textbook_detail_screen.dart';
@@ -61,8 +62,14 @@ final appRouter = GoRouter(
     return null;
   },
   routes: [
-    GoRoute(path: AppRoutes.splash, builder: (context, state) => const SplashScreen()),
-    GoRoute(path: AppRoutes.login, builder: (context, state) => const LoginScreen()),
+    GoRoute(
+      path: AppRoutes.splash,
+      builder: (context, state) => const SplashScreen(),
+    ),
+    GoRoute(
+      path: AppRoutes.login,
+      builder: (context, state) => const LoginScreen(),
+    ),
     GoRoute(
       path: AppRoutes.dashboard,
       builder: (context, state) => const DashboardScreen(),
@@ -87,7 +94,10 @@ final appRouter = GoRouter(
         return PracticeScreen(config: config);
       },
     ),
-    GoRoute(path: AppRoutes.result, builder: (context, state) => const ResultScreen()),
+    GoRoute(
+      path: AppRoutes.result,
+      builder: (context, state) => const ResultScreen(),
+    ),
     GoRoute(
       path: AppRoutes.history,
       builder: (context, state) => const HistoryScreen(),
@@ -113,10 +123,19 @@ final appRouter = GoRouter(
       path: AppRoutes.settings,
       builder: (context, state) => const SettingsScreen(),
     ),
-    GoRoute(path: AppRoutes.chat, builder: (context, state) => const ChatScreen()),
+    GoRoute(
+      path: AppRoutes.chat,
+      builder: (context, state) => const ChatScreen(),
+    ),
     GoRoute(
       path: AppRoutes.wrongBook,
       builder: (context, state) => const WrongBookScreen(),
+    ),
+    // 记忆卡复习：从首页 pushDetail 进入，栈里有首页，所以不用传 onExit
+    // （屏内的「返回」「先回去」走 context.backOrHome()）。
+    GoRoute(
+      path: AppRoutes.recall,
+      builder: (context, state) => const RecallSessionScreen(),
     ),
     GoRoute(
       path: AppRoutes.profile,

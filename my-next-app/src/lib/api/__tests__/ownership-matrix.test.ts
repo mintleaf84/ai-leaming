@@ -99,6 +99,13 @@ const MODULES: Record<string, ModuleRule> = {
     scope: "user",
     crossUserTest: "src/lib/api/routes/__tests__/practice-ownership.test.ts",
   },
+  // 回忆卡的复习进度/日志按用户隔离（卡组内容全局共享，但不是越权面）；
+  // 跨用户断言见测试文件里的「用户隔离」段：另一个用户读同一 cardId 必须 state=null。
+  recall: {
+    mount: "/api/recall",
+    scope: "user",
+    crossUserTest: "src/lib/api/routes/__tests__/recall-jwt.test.ts",
+  },
   profile: {
     mount: "/api/profile",
     scope: "user",

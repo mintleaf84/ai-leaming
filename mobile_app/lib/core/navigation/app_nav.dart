@@ -39,6 +39,7 @@ abstract final class AppRoutes {
   static const settings = '/settings';
   static const chat = '/chat';
   static const wrongBook = '/wrong-book';
+  static const recall = '/recall';
   static const profile = '/profile';
   static const pricing = '/pricing';
   static const textbooks = '/textbooks';
@@ -52,11 +53,7 @@ extension AppNav on BuildContext {
   ///
   /// 返回 `void` 而不是 Future：所有调用点都是 `onTap: () => ...`，
   /// 保留 Future 只会触发 `unawaited_futures` 且没人真的 await。
-  void pushDetail(
-    String location, {
-    Object? extra,
-    VoidCallback? onReturn,
-  }) {
+  void pushDetail(String location, {Object? extra, VoidCallback? onReturn}) {
     final navigation = push<Object?>(location, extra: extra);
     if (onReturn == null) {
       unawaited(navigation);

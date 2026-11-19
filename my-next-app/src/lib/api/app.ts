@@ -50,6 +50,10 @@ app.route("/questions", questionsRoute);
 import practiceRoute from "@/lib/api/routes/practice";
 app.route("/practice", practiceRoute);
 
+// 回忆自测（用户 JWT 面）：与 /external/recall/* 同一套协议，鉴权换成登录 JWT
+import recallRoute from "@/lib/api/routes/recall";
+app.route("/recall", recallRoute);
+
 import historyRoute from "@/lib/api/routes/history";
 app.route("/history", historyRoute);
 

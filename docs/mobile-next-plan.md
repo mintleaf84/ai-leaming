@@ -6,9 +6,9 @@
 
 ## 0. 正在飞的会话（本 lane 不得触碰）
 
-| 会话 | 分支 / PR                | 已改文件面                                                                                                                          |
-| ---- | ------------------------ | ----------------------------------------------------------------------------------------------------------------------------------- |
-| A    | `feat/flutter-nav-unified` #225 | `mobile_app/lib/app_router.dart`、各屏导航调用点（统一导航模型与转场）                                                        |
+| 会话 | 分支 / PR                                        | 已改文件面                                                                                           |
+| ---- | ------------------------------------------------ | ---------------------------------------------------------------------------------------------------- |
+| A    | `feat/flutter-nav-unified` #225                  | `mobile_app/lib/app_router.dart`、各屏导航调用点（统一导航模型与转场）                               |
 | B    | `feat/mobile-icons` #228（stacked on #227/#226） | `core/theme/app_icons.dart`、**几乎每个 screen** 的图标位、`app_theme.dart`、骨架屏六屏、`pubspec.*` |
 
 **结论：任何要改 `app_router.dart` / 已有 screen / `app_theme.dart` / `pubspec.yaml` 的工作都会撞车。**
@@ -17,14 +17,14 @@
 
 ## 1. 剩余工作盘点（有证据，不是凭印象）
 
-| #   | 事项                                     | 证据                                                                                                                     | 是否与在飞会话冲突 | 价值 |
-| --- | ---------------------------------------- | ------------------------------------------------------------------------------------------------------------------------ | ------------------ | ---- |
-| A   | **记忆卡复习（recall）在移动端完全缺失** | `mobile_app/lib/features/` 无 `recall/`；`app_router.dart` 17 条路由无 `/recall`；后端 `/api/external/recall/*` 全为 API Key 作用域，JWT 端无对应面 | 否（新增文件）     | 高   |
-| B   | 离线只覆盖练习，recall/聊天在线专属      | `flutter-mobile-plan.md` §11「未做」                                                                                    | 否                 | 中（依赖 A） |
-| C   | `cached_questions` 缺 `dimension` 列     | 同上                                                                                                                     | 否                 | 低   |
-| D   | APK 从未真正出过包；M-11 体积未实测      | `android.yml` 就绪但未触发；`mobile-ui-kit.md` M-11 待办                                                                 | 否                 | 中（需真人装机） |
-| E   | Flutter 侧无障碍从未审计                 | 仅 `register_screen.dart` 有 1 处 `Semantics`；`ux-a11y-audit.md` 只覆盖 Web                                                     | **是**（几乎每屏） | 中   |
-| F   | 契约漂移只有后端快照，Dart 侧无断言      | `flutter-mobile-plan.md` §4.3 计划项，`mobile_app/test` 无 openapi 相关                                                        | 否                 | 低   |
+| #   | 事项                                     | 证据                                                                                                                                                | 是否与在飞会话冲突 | 价值             |
+| --- | ---------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------ | ---------------- |
+| A   | **记忆卡复习（recall）在移动端完全缺失** | `mobile_app/lib/features/` 无 `recall/`；`app_router.dart` 17 条路由无 `/recall`；后端 `/api/external/recall/*` 全为 API Key 作用域，JWT 端无对应面 | 否（新增文件）     | 高               |
+| B   | 离线只覆盖练习，recall/聊天在线专属      | `flutter-mobile-plan.md` §11「未做」                                                                                                                | 否                 | 中（依赖 A）     |
+| C   | `cached_questions` 缺 `dimension` 列     | 同上                                                                                                                                                | 否                 | 低               |
+| D   | APK 从未真正出过包；M-11 体积未实测      | `android.yml` 就绪但未触发；`mobile-ui-kit.md` M-11 待办                                                                                            | 否                 | 中（需真人装机） |
+| E   | Flutter 侧无障碍从未审计                 | 仅 `register_screen.dart` 有 1 处 `Semantics`；`ux-a11y-audit.md` 只覆盖 Web                                                                        | **是**（几乎每屏） | 中               |
+| F   | 契约漂移只有后端快照，Dart 侧无断言      | `flutter-mobile-plan.md` §4.3 计划项，`mobile_app/test` 无 openapi 相关                                                                             | 否                 | 低               |
 
 ## 2. 选 A：记忆卡复习（recall）
 
@@ -45,16 +45,17 @@ FSRS 闭环（`services/recall.ts` 判分/调度、`recall-import.ts` 卡组、`
 
 最小端点集（按「能完整复习一轮」倒推）：
 
-| 方法   | 路径                          | 复用服务                                          |
-| ------ | ----------------------------- | ------------------------------------------------- |
-| GET    | `/recall/queue`               | `getTodayQueue` + `computeStreakDays`              |
-| GET    | `/recall/decks`               | `listDecks(userId)`                                |
-| GET    | `/recall/decks/:deckKey`      | `listDeckCards`                                    |
-| GET    | `/recall/cards/:cardId`       | `getCard`                                          |
-| POST   | `/recall/reviews`             | `submitReview`（`clientKey` 幂等，原样保留）       |
-| POST   | `/recall/cards/:cardId/archive` | `archiveCard`                                    |
+| 方法 | 路径                            | 复用服务                                     |
+| ---- | ------------------------------- | -------------------------------------------- |
+| GET  | `/recall/queue`                 | `getTodayQueue` + `computeStreakDays`        |
+| GET  | `/recall/decks`                 | `listDecks(userId)`                          |
+| GET  | `/recall/decks/:deckKey`        | `listDeckCards`                              |
+| GET  | `/recall/cards/:cardId`         | `getCard`                                    |
+| POST | `/recall/reviews`               | `submitReview`（`clientKey` 幂等，原样保留） |
+| POST | `/recall/cards/:cardId/archive` | `archiveCard`                                |
 
 硬要求：
+
 1. **不复制判分/调度逻辑**——只在路由层做参数校验与身份透传（`external.ts:1024` 的注释即口径）；
 2. `clientKey` 幂等必须透传，否则弱网重试会把 FSRS 推进两次；
 3. OpenAPI 快照同步更新（`npm run contract:dump`），否则 CI `contract` job 红；
@@ -91,16 +92,17 @@ FSRS 闭环（`services/recall.ts` 判分/调度、`recall-import.ts` 卡组、`
 
 ## 3.5 执行进度（2026-11-19）
 
-| 层 | 内容 | 位置 | 验证 |
-| --- | --- | --- | --- |
-| 后端 | 7 条 JWT 端点（queue / decks / deck / card / reviews / archive / unarchive），判分·调度·幂等全部透传既有服务层 | `my-next-app/src/lib/api/routes/recall.ts`、`app.ts` 挂载 | `ownership-matrix` 已登记为 `user` 作用域并挂跨用户测试；真库集成 24 例 |
-| 契约 | 快照只增 `/api/recall/*` 6 条路径 | `docs/openapi.json` | `contract:check` 通过 |
-| 领域/数据 | 手写 `fromJson`、`RecallRepository`、Riverpod provider；`RecallReviewDraft` 首次 `toPayload()` 即冻结，`clientKey` 跨重试稳定 | `mobile_app/lib/features/recall/{domain,data}/` | 57 例单测 |
-| 预判 | 归一化、list 单向关键词、cloze 双向包含+长度门槛、retest 脏下标过滤 | `domain/recall_preview.dart` | 47 例；期望值由实跑 Web 端 `preview.ts`+`matcher.ts` 生成 |
-| 复习屏 | today/question/judge/done/empty/error 六态；失败按「结果未知（重放同载荷）/ 被拒（跳过这张）/ 会话失效（交全局 401）」三分 | `mobile_app/lib/features/recall/presentation/` | 8 例 widget/状态机测试（含 404 与超时两条路径） |
-| 接线 | `AppRoutes.recall` + `/recall` 路由 + 首页「记忆卡」整宽入口；顺带修掉首页 1.3 倍字号两处溢出 | `app_router.dart`、`app_nav.dart`、`dashboard_screen.dart` | `navigation_rules_test`、375@1.3x 渲染无溢出 |
+| 层        | 内容                                                                                                                          | 位置                                                       | 验证                                                                    |
+| --------- | ----------------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------- | ----------------------------------------------------------------------- |
+| 后端      | 7 条 JWT 端点（queue / decks / deck / card / reviews / archive / unarchive），判分·调度·幂等全部透传既有服务层                | `my-next-app/src/lib/api/routes/recall.ts`、`app.ts` 挂载  | `ownership-matrix` 已登记为 `user` 作用域并挂跨用户测试；真库集成 24 例 |
+| 契约      | 快照只增 `/api/recall/*` 6 条路径                                                                                             | `docs/openapi.json`                                        | `contract:check` 通过                                                   |
+| 领域/数据 | 手写 `fromJson`、`RecallRepository`、Riverpod provider；`RecallReviewDraft` 首次 `toPayload()` 即冻结，`clientKey` 跨重试稳定 | `mobile_app/lib/features/recall/{domain,data}/`            | 57 例单测                                                               |
+| 预判      | 归一化、list 单向关键词、cloze 双向包含+长度门槛、retest 脏下标过滤                                                           | `domain/recall_preview.dart`                               | 47 例；期望值由实跑 Web 端 `preview.ts`+`matcher.ts` 生成               |
+| 复习屏    | today/question/judge/done/empty/error 六态；失败按「结果未知（重放同载荷）/ 被拒（跳过这张）/ 会话失效（交全局 401）」三分    | `mobile_app/lib/features/recall/presentation/`             | 8 例 widget/状态机测试（含 404 与超时两条路径）                         |
+| 接线      | `AppRoutes.recall` + `/recall` 路由 + 首页「记忆卡」整宽入口；顺带修掉首页 1.3 倍字号两处溢出                                 | `app_router.dart`、`app_nav.dart`、`dashboard_screen.dart` | `navigation_rules_test`、375@1.3x 渲染无溢出                            |
 
 **未做（明确记录）**：
+
 - 真机验收（本轮只有 CI 级证据，没有手机上的真实队列/断网/弱网）；
 - 卡组浏览屏（`GET /decks`、`GET /decks/{deckKey}` 与 `recallDeckProvider` 已就绪，但没有屏消费）；
 - 离线复习（recall 仍在线专属，与离线练习题分属两套同步路径）；

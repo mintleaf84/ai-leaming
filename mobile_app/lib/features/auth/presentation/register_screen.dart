@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_hooks/flutter_hooks.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
-import 'package:go_router/go_router.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
+import '../../../core/navigation/app_nav.dart';
 import 'auth_provider.dart';
 
 class RegisterScreen extends HookConsumerWidget {
@@ -19,7 +19,7 @@ class RegisterScreen extends HookConsumerWidget {
     // Listen to Auth State changes for navigation
     ref.listen<AsyncValue<void>>(authControllerProvider, (previous, next) {
       if (next is AsyncData) {
-        context.go('/dashboard');
+        context.replace(AppRoutes.dashboard);
       } else if (next is AsyncError) {
         ScaffoldMessenger.of(
           context,
@@ -37,7 +37,7 @@ class RegisterScreen extends HookConsumerWidget {
             children: [
               // Top Back Button (Not Scrollable, Pinned to Top)
               IconButton(
-                onPressed: () => context.pop(),
+                onPressed: () => context.backOrHome(),
                 icon: const Icon(Icons.arrow_back),
                 style: IconButton.styleFrom(
                   backgroundColor: Colors.grey[100],
@@ -156,7 +156,7 @@ class RegisterScreen extends HookConsumerWidget {
                         SizedBox(height: 20.h),
                         Center(
                           child: GestureDetector(
-                            onTap: () => context.go('/login'),
+                            onTap: () => context.backOrHome(fallback: AppRoutes.login),
                             child: RichText(
                               text: TextSpan(
                                 text: '已有账号？ ',

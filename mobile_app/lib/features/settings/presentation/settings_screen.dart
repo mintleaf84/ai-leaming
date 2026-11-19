@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
-import 'package:go_router/go_router.dart';
+import '../../../core/navigation/app_nav.dart';
 import 'settings_provider.dart';
 import '../../../core/theme/theme_provider.dart';
 import '../../auth/presentation/auth_provider.dart';
@@ -75,7 +75,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                 child: Row(
                   children: [
                     IconButton(
-                      onPressed: () => context.go('/dashboard'),
+                      onPressed: () => context.backOrHome(),
                       icon: Icon(Icons.arrow_back, color: textColor),
                     ),
                     Text('⚙️', style: TextStyle(fontSize: 32.sp)),
@@ -718,7 +718,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
               Navigator.pop(context);
               await ref.read(authControllerProvider.notifier).logout();
               if (context.mounted) {
-                context.go('/login');
+                context.replace(AppRoutes.login);
               }
             },
             child: const Text('退出', style: TextStyle(color: Color(0xFFEB5757))),

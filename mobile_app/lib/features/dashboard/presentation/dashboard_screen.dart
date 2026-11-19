@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
-import 'package:go_router/go_router.dart';
 import 'package:flutter_hooks/flutter_hooks.dart';
+import '../../../core/navigation/app_nav.dart';
 import '../../stats/presentation/stats_provider.dart';
 import '../../stats/domain/learning_stats.dart';
 
@@ -122,7 +122,7 @@ class DashboardScreen extends HookConsumerWidget {
           children: [
             Expanded(
               child: GestureDetector(
-                onTap: () => context.go('/questions'),
+                onTap: () => context.pushDetail(AppRoutes.questions),
                 child: _buildActionCard(
                   icon: '📚',
                   tag: '查缺补漏',
@@ -137,7 +137,7 @@ class DashboardScreen extends HookConsumerWidget {
             SizedBox(width: 16.w),
             Expanded(
               child: GestureDetector(
-                onTap: () => context.go('/practice/setup'),
+                onTap: () => context.pushDetail(AppRoutes.practiceSetup),
                 child: _buildActionCard(
                   icon: '🧠',
                   tag: '待复习',
@@ -153,12 +153,12 @@ class DashboardScreen extends HookConsumerWidget {
         ),
         SizedBox(height: 16.h),
         GestureDetector(
-          onTap: () => context.go('/wrong-book'),
+          onTap: () => context.pushDetail(AppRoutes.wrongBook),
           child: _buildFullWidthCard(),
         ),
         SizedBox(height: 16.h),
         GestureDetector(
-          onTap: () => context.go('/history'),
+          onTap: () => context.pushDetail(AppRoutes.history),
           child: _buildHistoryCard(),
         ),
       ],
@@ -757,25 +757,25 @@ class DashboardScreen extends HookConsumerWidget {
             Icons.smart_toy,
             'AI助手',
             false,
-            () => context.go('/chat'),
+            () => context.pushDetail(AppRoutes.chat),
           ),
           _buildNavItem(
             Icons.book,
             '知识库',
             false,
-            () => context.go('/knowledge'),
+            () => context.pushDetail(AppRoutes.knowledge),
           ),
           _buildNavItem(
             Icons.library_books,
             '教材',
             false,
-            () => context.go('/textbooks'),
+            () => context.pushDetail(AppRoutes.textbooks),
           ),
           _buildNavItem(
             Icons.person_outline,
             '我的',
             false,
-            () => context.go('/profile'),
+            () => context.pushDetail(AppRoutes.profile),
           ),
         ],
       ),

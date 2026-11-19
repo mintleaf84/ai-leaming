@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
-import 'package:go_router/go_router.dart';
+import '../../../core/navigation/app_nav.dart';
 import '../../../core/network/dio_client.dart';
 
 /// 定价页面（与 Web /pricing 功能对齐）
@@ -53,7 +53,7 @@ class _PricingScreenState extends ConsumerState<PricingScreen> {
         elevation: 0,
         leading: IconButton(
           icon: const Icon(Icons.arrow_back, color: Color(0xFF37352F)),
-          onPressed: () => context.pop(),
+          onPressed: () => context.backOrHome(),
         ),
         title: Text(
           '订阅套餐',

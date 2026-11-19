@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
-import 'package:go_router/go_router.dart';
+import '../../../core/navigation/app_nav.dart';
 import 'practice_provider.dart';
 
 /// 练习配置页面（与 Web /practice/setup 功能对齐）
@@ -37,7 +37,7 @@ class _PracticeSetupScreenState extends ConsumerState<PracticeSetupScreen> {
         elevation: 0,
         leading: IconButton(
           icon: const Icon(Icons.arrow_back, color: Color(0xFF37352F)),
-          onPressed: () => context.go('/dashboard'),
+          onPressed: () => context.backOrHome(),
         ),
         title: Text(
           '配置练习',
@@ -237,7 +237,7 @@ class _PracticeSetupScreenState extends ConsumerState<PracticeSetupScreen> {
     // 重置练习状态，再跳转到练习页
     ref.read(practiceControllerProvider.notifier).reset();
     // 携带配置参数跳转练习页面（limit 通过路由参数传递）
-    context.go('/practice', extra: {
+    context.pushDetail(AppRoutes.practice, extra: {
       'mode': _selectedMode,
       'limit': _selectedLimit,
     });

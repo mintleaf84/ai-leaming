@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
-import 'package:go_router/go_router.dart';
 import 'package:flutter_markdown/flutter_markdown.dart';
 import 'chat_provider.dart';
 import '../data/chat_repository_impl.dart';
@@ -9,6 +8,7 @@ import '../domain/chat_message.dart';
 
 import 'package:flutter/scheduler.dart';
 import 'package:flutter_hooks/flutter_hooks.dart';
+import '../../../core/navigation/app_nav.dart';
 
 class ChatScreen extends HookConsumerWidget {
   const ChatScreen({super.key});
@@ -46,7 +46,7 @@ class ChatScreen extends HookConsumerWidget {
             color: const Color(0xFF37352F),
             size: 20.sp,
           ),
-          onPressed: () => context.go('/dashboard'),
+          onPressed: () => context.backOrHome(),
         ),
         title: Text(
           '智能教研助手',

@@ -1,9 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_hooks/flutter_hooks.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
-import 'package:go_router/go_router.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:dio/dio.dart';
+import '../../../core/navigation/app_nav.dart';
 import 'auth_provider.dart';
 
 class LoginScreen extends HookConsumerWidget {
@@ -19,7 +19,7 @@ class LoginScreen extends HookConsumerWidget {
     // Listen to Auth State changes for navigation & error handling
     ref.listen<AsyncValue<void>>(authControllerProvider, (previous, next) {
       if (next is AsyncData) {
-        context.go('/dashboard');
+        context.replace(AppRoutes.dashboard);
       } else if (next is AsyncError) {
         String errorMessage = '发生未知错误，请稍后重试';
         final error = next.error;
@@ -235,7 +235,7 @@ class LoginScreen extends HookConsumerWidget {
                     // Register Link
                     Center(
                       child: GestureDetector(
-                        onTap: () => context.go('/register'),
+                        onTap: () => context.pushDetail(AppRoutes.register),
                         child: RichText(
                           text: TextSpan(
                             text: '还没有账号？ ',

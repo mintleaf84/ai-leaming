@@ -53,6 +53,18 @@ class AppTheme {
         onError: Colors.white,
       ),
 
+      // 页面转场：显式写死，不依赖 Flutter 默认值（默认值会随 SDK 版本漂移，
+      // 导致同一份代码在升级后观感突变）。
+      // Android 用 M3 的 FadeForwards（新页面淡入上移，Android 14 风格），
+      // iOS/macOS 保持系统横向滑动；桌面其余平台走 Android 规则。
+      pageTransitionsTheme: const PageTransitionsTheme(
+        builders: {
+          TargetPlatform.android: FadeForwardsPageTransitionsBuilder(),
+          TargetPlatform.iOS: CupertinoPageTransitionsBuilder(),
+          TargetPlatform.macOS: CupertinoPageTransitionsBuilder(),
+        },
+      ),
+
       // AppBar 主题
       appBarTheme: AppBarTheme(
         backgroundColor: _lightSurface,
@@ -126,6 +138,18 @@ class AppTheme {
         onSecondary: Colors.white,
         onSurface: _darkText,
         onError: Colors.white,
+      ),
+
+      // 页面转场：显式写死，不依赖 Flutter 默认值（默认值会随 SDK 版本漂移，
+      // 导致同一份代码在升级后观感突变）。
+      // Android 用 M3 的 FadeForwards（新页面淡入上移，Android 14 风格），
+      // iOS/macOS 保持系统横向滑动；桌面其余平台走 Android 规则。
+      pageTransitionsTheme: const PageTransitionsTheme(
+        builders: {
+          TargetPlatform.android: FadeForwardsPageTransitionsBuilder(),
+          TargetPlatform.iOS: CupertinoPageTransitionsBuilder(),
+          TargetPlatform.macOS: CupertinoPageTransitionsBuilder(),
+        },
       ),
 
       // AppBar 主题

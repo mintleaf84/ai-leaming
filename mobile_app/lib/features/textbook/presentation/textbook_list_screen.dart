@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
-import 'package:go_router/go_router.dart';
+import '../../../core/navigation/app_nav.dart';
 import 'textbook_provider.dart';
 import '../domain/textbook.dart';
 
@@ -33,7 +33,7 @@ class _TextbookListScreenState extends ConsumerState<TextbookListScreen> {
         elevation: 0,
         leading: IconButton(
           icon: const Icon(Icons.arrow_back, color: Color(0xFF37352F)),
-          onPressed: () => context.go('/dashboard'),
+          onPressed: () => context.backOrHome(),
         ),
         title: Text(
           '📚 教材库',
@@ -118,7 +118,7 @@ class _TextbookListScreenState extends ConsumerState<TextbookListScreen> {
 
   Widget _buildTextbookCard(BuildContext context, Textbook textbook) {
     return InkWell(
-      onTap: () => context.go('/textbooks/${textbook.id}'),
+      onTap: () => context.pushDetail(AppRoutes.textbookDetail(textbook.id)),
       borderRadius: BorderRadius.circular(12.r),
       child: Container(
         padding: EdgeInsets.all(16.w),

@@ -12,6 +12,7 @@ import '../../../shared/skeletons/skeleton_fakes.dart';
 import 'dart:math' as math;
 import '../../../shared/widgets/first_principles_section.dart';
 import '../../../core/theme/app_icons.dart';
+import '../../../core/theme/app_colors.dart';
 
 class HistoryDetailScreen extends ConsumerStatefulWidget {
   final String sessionId;
@@ -36,9 +37,7 @@ class _HistoryDetailScreenState extends ConsumerState<HistoryDetailScreen> {
     final bgColor = theme.scaffoldBackgroundColor;
     final cardColor = theme.cardColor;
     final textColor = theme.colorScheme.onSurface;
-    final secondaryColor = theme.brightness == Brightness.dark
-        ? const Color(0xFF8A8A8A)
-        : const Color(0xFF787774);
+    final secondaryColor = context.colors.textSecondary;
     final borderColor = theme.dividerColor;
 
     return Scaffold(
@@ -64,7 +63,7 @@ class _HistoryDetailScreenState extends ConsumerState<HistoryDetailScreen> {
             icon: Icon(
               _showWrongOnly ? AppIcons.filterAlt : AppIcons.filterAltOutlined,
             ),
-            color: _showWrongOnly ? const Color(0xFFEB5757) : textColor,
+            color: _showWrongOnly ? context.colors.error : textColor,
             onPressed: () => setState(() => _showWrongOnly = !_showWrongOnly),
           ),
         ],
@@ -96,7 +95,11 @@ class _HistoryDetailScreenState extends ConsumerState<HistoryDetailScreen> {
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          Icon(AppIcons.errorOutline, size: 48.sp, color: Colors.red),
+          Icon(
+            AppIcons.errorOutline,
+            size: 48.sp,
+            color: context.colors.error,
+          ),
           SizedBox(height: 16.h),
           Text(
             '加载失败',
@@ -118,9 +121,7 @@ class _HistoryDetailScreenState extends ConsumerState<HistoryDetailScreen> {
     final theme = Theme.of(context);
     final cardColor = theme.cardColor;
     final textColor = theme.colorScheme.onSurface;
-    final secondaryColor = theme.brightness == Brightness.dark
-        ? const Color(0xFF8A8A8A)
-        : const Color(0xFF787774);
+    final secondaryColor = context.colors.textSecondary;
     final borderColor = theme.dividerColor;
 
     return Skeletonizer(
@@ -355,7 +356,7 @@ class _HistoryDetailScreenState extends ConsumerState<HistoryDetailScreen> {
                           Text(
                             '正确率',
                             style: TextStyle(
-                              fontSize: 10.sp,
+                              fontSize: 12.sp,
                               color: secondaryColor,
                               decoration: TextDecoration.none,
                             ),
@@ -371,14 +372,14 @@ class _HistoryDetailScreenState extends ConsumerState<HistoryDetailScreen> {
                     _buildStatRow(
                       '✓ 答对',
                       '${session.correctCount}',
-                      const Color(0xFF4EA05E),
+                      context.colors.success,
                       textColor,
                     ),
                     SizedBox(height: 8.h),
                     _buildStatRow(
                       '✗ 答错',
                       '${session.totalQuestions - session.correctCount}',
-                      const Color(0xFFD95656),
+                      context.colors.error,
                       textColor,
                     ),
                     SizedBox(height: 8.h),
@@ -446,7 +447,7 @@ class _HistoryDetailScreenState extends ConsumerState<HistoryDetailScreen> {
             style: TextStyle(
               fontSize: 12.sp,
               fontWeight: FontWeight.w500,
-              color: const Color(0xFFEB5757),
+              color: context.colors.error,
             ),
           ),
       ],
@@ -483,8 +484,8 @@ class _HistoryDetailScreenState extends ConsumerState<HistoryDetailScreen> {
   ) {
     final isCorrect = log.isCorrect;
     final statusColor = isCorrect
-        ? const Color(0xFF4CAF50)
-        : const Color(0xFFEF5350);
+        ? context.colors.success
+        : context.colors.error;
 
     return Container(
       margin: EdgeInsets.only(bottom: 12.h),
@@ -529,7 +530,9 @@ class _HistoryDetailScreenState extends ConsumerState<HistoryDetailScreen> {
                   mainAxisSize: MainAxisSize.min,
                   children: [
                     Icon(
-                      isCorrect ? AppIcons.checkCircle : AppIcons.cancel,
+                      isCorrect
+                          ? AppIcons.checkCircle
+                          : AppIcons.cancelSolid,
                       size: 20.sp,
                       color: statusColor,
                     ),
@@ -577,8 +580,8 @@ class _HistoryDetailScreenState extends ConsumerState<HistoryDetailScreen> {
   ) {
     final isCorrect = log.isCorrect;
     final statusColor = isCorrect
-        ? const Color(0xFF4CAF50)
-        : const Color(0xFFEF5350);
+        ? context.colors.success
+        : context.colors.error;
 
     return Container(
       margin: EdgeInsets.symmetric(horizontal: 16.w, vertical: 12.h),
@@ -617,7 +620,9 @@ class _HistoryDetailScreenState extends ConsumerState<HistoryDetailScreen> {
                     style: TextStyle(
                       fontSize: 12.sp,
                       fontWeight: FontWeight.bold,
-                      color: Colors.white,
+                      color: isCorrect
+                          ? context.colors.onSuccess
+                          : context.colors.onError,
                     ),
                   ),
                 ),
@@ -715,7 +720,7 @@ class _HistoryDetailScreenState extends ConsumerState<HistoryDetailScreen> {
               ),
               child: Text(
                 tag,
-                style: TextStyle(fontSize: 10.sp, color: secondaryColor),
+                style: TextStyle(fontSize: 12.sp, color: secondaryColor),
               ),
             ),
           )
@@ -742,13 +747,13 @@ class _HistoryDetailScreenState extends ConsumerState<HistoryDetailScreen> {
         Color optionTextCol = textColor;
 
         if (isTargetCorrect) {
-          optionBg = const Color(0xFF4CAF50).withValues(alpha: 0.1);
-          optionBorder = const Color(0xFF4CAF50);
-          optionTextCol = const Color(0xFF2E7D32);
+          optionBg = context.colors.successContainer;
+          optionBorder = context.colors.success;
+          optionTextCol = context.colors.success;
         } else if (isSelected && !log.isCorrect) {
-          optionBg = const Color(0xFFEF5350).withValues(alpha: 0.1);
-          optionBorder = const Color(0xFFEF5350);
-          optionTextCol = const Color(0xFFC62828);
+          optionBg = context.colors.errorContainer;
+          optionBorder = context.colors.error;
+          optionTextCol = context.colors.error;
         }
 
         return Container(
@@ -784,7 +789,7 @@ class _HistoryDetailScreenState extends ConsumerState<HistoryDetailScreen> {
               if (isTargetCorrect)
                 Icon(AppIcons.checkCircle, size: 16.sp, color: optionBorder),
               if (isSelected && !log.isCorrect)
-                Icon(AppIcons.cancel, size: 16.sp, color: optionBorder),
+                Icon(AppIcons.cancelSolid, size: 16.sp, color: optionBorder),
             ],
           ),
         );
@@ -812,7 +817,7 @@ class _HistoryDetailScreenState extends ConsumerState<HistoryDetailScreen> {
               Icon(
                 AppIcons.lightbulbOutline,
                 size: 18.sp,
-                color: const Color(0xFFFF9500),
+                color: context.colors.warning,
               ),
               SizedBox(width: 6.w),
               Text(
@@ -836,9 +841,9 @@ class _HistoryDetailScreenState extends ConsumerState<HistoryDetailScreen> {
   }
 
   Color _getAccuracyColor(int accuracy) {
-    if (accuracy >= 80) return const Color(0xFF4EA05E);
-    if (accuracy >= 60) return const Color(0xFFFF9500);
-    return const Color(0xFFD95656);
+    if (accuracy >= 80) return context.colors.success;
+    if (accuracy >= 60) return context.colors.warning;
+    return context.colors.error;
   }
 }
 

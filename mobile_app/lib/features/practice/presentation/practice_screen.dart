@@ -10,6 +10,8 @@ import 'package:mobile_app/features/practice/presentation/widgets/first_principl
 import '../../../core/navigation/app_nav.dart';
 import 'package:skeletonizer/skeletonizer.dart';
 import 'package:mobile_app/core/theme/app_icons.dart';
+import 'package:mobile_app/core/theme/app_colors.dart';
+import 'package:mobile_app/shared/widgets/state_views.dart';
 
 class PracticeScreen extends ConsumerStatefulWidget {
   /// 来自配置页的练习参数（可选，默认随机10题）
@@ -53,7 +55,7 @@ class _PracticeScreenState extends ConsumerState<PracticeScreen> {
           ),
           TextButton(
             onPressed: () => Navigator.of(context).pop(true),
-            style: TextButton.styleFrom(foregroundColor: Colors.red),
+            style: TextButton.styleFrom(foregroundColor: context.colors.error),
             child: const Text('确认退出'),
           ),
         ],
@@ -79,13 +81,13 @@ class _PracticeScreenState extends ConsumerState<PracticeScreen> {
         }
       },
       child: Scaffold(
-        backgroundColor: const Color(0xFFFFFFFF),
+        backgroundColor: context.colors.background,
         body: SafeArea(
           bottom: false,
           child: state.isLoading && state.questions.isEmpty
               ? _buildSkeleton()
               : state.error != null && state.questions.isEmpty
-              ? _buildErrorView(state.error!)
+              ? _buildErrorView()
               : state.questions.isEmpty
               ? _buildEmptyView()
               : Column(
@@ -108,47 +110,14 @@ class _PracticeScreenState extends ConsumerState<PracticeScreen> {
     );
   }
 
-  Widget _buildErrorView(String error) {
-    return Center(
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          Icon(AppIcons.errorOutline, size: 48.sp, color: Colors.red[300]),
-          SizedBox(height: 16.h),
-          Text(
-            '加载失败',
-            style: TextStyle(fontSize: 18.sp, fontWeight: FontWeight.bold),
-          ),
-          SizedBox(height: 8.h),
-          Text(
-            '请检查网络后重试',
-            style: TextStyle(fontSize: 14.sp, color: Colors.grey),
-          ),
-          SizedBox(height: 24.h),
-          ElevatedButton.icon(
-            onPressed: () =>
-                ref.read(practiceControllerProvider.notifier).createSession(),
-            icon: const Icon(AppIcons.refresh, size: 18),
-            label: const Text('重试'),
-            style: ElevatedButton.styleFrom(
-              backgroundColor: const Color(0xFF135BEC),
-              foregroundColor: Colors.white,
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(8.r),
-              ),
-            ),
-          ),
-          SizedBox(height: 12.h),
-          TextButton(
-            // 同上：这一屏在"练习异常/空题"分支，回首页=丢弃栈
-            onPressed: () => context.replace(AppRoutes.dashboard),
-            child: Text(
-              '返回首页',
-              style: TextStyle(fontSize: 14.sp, color: Colors.grey),
-            ),
-          ),
-        ],
-      ),
+  Widget _buildErrorView() {
+    return AppErrorView(
+      message: '请检查网络后重试',
+      onRetry: () =>
+          ref.read(practiceControllerProvider.notifier).createSession(),
+      // 这一屏没有 AppBar：不给第二个出口，失败后只能靠系统返回键（还会弹退出确认）
+      secondaryLabel: '返回首页',
+      onSecondary: () => context.replace(AppRoutes.dashboard),
     );
   }
 
@@ -156,16 +125,23 @@ class _PracticeScreenState extends ConsumerState<PracticeScreen> {
   Widget _buildOfflineBanner() {
     return Container(
       width: double.infinity,
-      color: const Color(0xFFFFF4E5),
+      color: context.colors.warningContainer,
       padding: EdgeInsets.symmetric(horizontal: 16.w, vertical: 8.h),
       child: Row(
         children: [
-          Icon(AppIcons.cloudOffOutlined, size: 16.sp, color: const Color(0xFFB26A00)),
+          Icon(
+            AppIcons.cloudOffOutlined,
+            size: 16.sp,
+            color: context.colors.warning,
+          ),
           SizedBox(width: 8.w),
           Expanded(
             child: Text(
               '离线模式：作答会先存在本地，恢复网络后自动同步',
-              style: TextStyle(fontSize: 12.sp, color: const Color(0xFFB26A00)),
+              style: TextStyle(
+                fontSize: 12.sp,
+                color: context.colors.warning,
+              ),
             ),
           ),
         ],
@@ -174,32 +150,12 @@ class _PracticeScreenState extends ConsumerState<PracticeScreen> {
   }
 
   Widget _buildEmptyView() {
-    return Center(
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          Text('📚', style: TextStyle(fontSize: 64.sp)),
-          SizedBox(height: 16.h),
-          Text(
-            '题库中暂无题目',
-            style: TextStyle(fontSize: 18.sp, fontWeight: FontWeight.bold),
-          ),
-          SizedBox(height: 8.h),
-          Text(
-            '请稍后再试',
-            style: TextStyle(fontSize: 14.sp, color: Colors.grey),
-          ),
-          SizedBox(height: 24.h),
-          TextButton.icon(
-            onPressed: () => context.replace(AppRoutes.dashboard),
-            icon: const Icon(AppIcons.arrowBack, size: 18),
-            label: const Text('返回首页'),
-            style: TextButton.styleFrom(
-              foregroundColor: const Color(0xFF37352F),
-            ),
-          ),
-        ],
-      ),
+    return AppEmptyView(
+      emoji: '\u{1F4DA}',
+      title: '题库中暂无题目',
+      hint: '请稍后再试',
+      actionLabel: '返回首页',
+      onAction: () => context.replace(AppRoutes.dashboard),
     );
   }
 
@@ -245,7 +201,7 @@ class _PracticeScreenState extends ConsumerState<PracticeScreen> {
                       ),
                       decoration: BoxDecoration(
                         color: isTrueFalse
-                            ? const Color(0xFFFFF3E0) // 判断题：橙色背景
+                            ? context.colors.warningContainer // 判断题：橙色背景
                             : isMulti
                                 ? const Color(0xFFF3E5F5)
                                 : const Color(0xFFE3F2FD),
@@ -254,10 +210,10 @@ class _PracticeScreenState extends ConsumerState<PracticeScreen> {
                       child: Text(
                         isTrueFalse ? '判断题' : isMulti ? '多选题' : '单选题',
                         style: TextStyle(
-                          fontSize: 11.sp,
+                          fontSize: 12.sp,
                           fontWeight: FontWeight.w600,
                           color: isTrueFalse
-                              ? const Color(0xFFE65100) // 判断题：橙色文字
+                              ? context.colors.warning // 判断题：橙色文字
                               : isMulti
                                   ? const Color(0xFF7B1FA2)
                                   : const Color(0xFF1976D2),
@@ -274,7 +230,7 @@ class _PracticeScreenState extends ConsumerState<PracticeScreen> {
                         fontSize: 22.sp,
                         fontWeight: FontWeight.w600,
                         height: 1.4,
-                        color: const Color(0xFF37352F),
+                        color: context.colors.text,
                         fontFamily: 'Noto Serif SC',
                       ),
                     ),
@@ -348,21 +304,21 @@ class _PracticeScreenState extends ConsumerState<PracticeScreen> {
                   }
                 },
                 icon: const Icon(AppIcons.close),
-                color: const Color(0xFF37352F).withValues(alpha: 0.6),
+                color: context.colors.text.withValues(alpha: 0.6),
               ),
               Text(
                 '刷题模式',
                 style: TextStyle(
                   fontSize: 12.sp,
                   fontWeight: FontWeight.w500,
-                  color: const Color(0xFF37352F).withValues(alpha: 0.4),
+                  color: context.colors.text.withValues(alpha: 0.4),
                   letterSpacing: 2,
                 ),
               ),
               IconButton(
                 onPressed: () {},
                 icon: const Icon(AppIcons.moreHoriz),
-                color: const Color(0xFF37352F).withValues(alpha: 0.6),
+                color: context.colors.text.withValues(alpha: 0.6),
               ),
             ],
           ),
@@ -372,8 +328,8 @@ class _PracticeScreenState extends ConsumerState<PracticeScreen> {
             borderRadius: BorderRadius.circular(4.r),
             child: LinearProgressIndicator(
               value: state.progress,
-              backgroundColor: const Color(0xFF37352F).withValues(alpha: 0.05),
-              color: const Color(0xFF37352F),
+              backgroundColor: context.colors.text.withValues(alpha: 0.05),
+              color: context.colors.text,
               minHeight: 6.h,
             ),
           ),
@@ -385,7 +341,7 @@ class _PracticeScreenState extends ConsumerState<PracticeScreen> {
                 '${state.currentIndex + 1} / ${state.questions.length}',
                 style: TextStyle(
                   fontSize: 10.sp,
-                  color: const Color(0xFF37352F).withValues(alpha: 0.4),
+                  color: context.colors.text.withValues(alpha: 0.4),
                   fontFamily: 'monospace',
                 ),
               ),
@@ -393,7 +349,7 @@ class _PracticeScreenState extends ConsumerState<PracticeScreen> {
                 '${(state.progress * 100).toInt()}%',
                 style: TextStyle(
                   fontSize: 10.sp,
-                  color: const Color(0xFF37352F).withValues(alpha: 0.4),
+                  color: context.colors.text.withValues(alpha: 0.4),
                   fontFamily: 'monospace',
                 ),
               ),
@@ -413,21 +369,21 @@ class _PracticeScreenState extends ConsumerState<PracticeScreen> {
           '综合练习',
           style: TextStyle(
             fontSize: 12.sp,
-            color: const Color(0xFF37352F).withValues(alpha: 0.5),
+            color: context.colors.text.withValues(alpha: 0.5),
           ),
         ),
         Text(
           ' / ',
           style: TextStyle(
             fontSize: 12.sp,
-            color: const Color(0xFF37352F).withValues(alpha: 0.3),
+            color: context.colors.text.withValues(alpha: 0.3),
           ),
         ),
         Text(
           '随机模式',
           style: TextStyle(
             fontSize: 12.sp,
-            color: const Color(0xFF37352F).withValues(alpha: 0.5),
+            color: context.colors.text.withValues(alpha: 0.5),
           ),
         ),
       ],
@@ -458,10 +414,14 @@ class _PracticeScreenState extends ConsumerState<PracticeScreen> {
       width: double.infinity,
       padding: EdgeInsets.all(16.w),
       decoration: BoxDecoration(
-        color: isCorrect ? const Color(0xFFF6FFED) : const Color(0xFFFEF2F2),
+        color: isCorrect
+            ? context.colors.successContainer
+            : context.colors.errorContainer,
         borderRadius: BorderRadius.circular(8.r),
         border: Border.all(
-          color: isCorrect ? const Color(0xFFB7EB8F) : const Color(0xFFFECACA),
+          color: isCorrect
+              ? context.colors.success.withValues(alpha: 0.4)
+              : context.colors.error.withValues(alpha: 0.4),
           width: 0.5,
         ),
       ),
@@ -486,8 +446,8 @@ class _PracticeScreenState extends ConsumerState<PracticeScreen> {
                     fontSize: 15.sp,
                     fontWeight: FontWeight.w600,
                     color: isCorrect
-                        ? const Color(0xFF237804)
-                        : const Color(0xFFB91C1C),
+                        ? context.colors.success
+                        : context.colors.error,
                   ),
                 ),
                 SizedBox(height: 8.h),
@@ -496,7 +456,7 @@ class _PracticeScreenState extends ConsumerState<PracticeScreen> {
                   style: TextStyle(
                     fontSize: 14.sp,
                     fontWeight: FontWeight.w600,
-                    color: const Color(0xFF37352F),
+                    color: context.colors.text,
                   ),
                 ),
                 if (state.isLoading || explanation != null) ...[
@@ -505,7 +465,7 @@ class _PracticeScreenState extends ConsumerState<PracticeScreen> {
                     width: double.infinity,
                     padding: EdgeInsets.all(12.w),
                     decoration: BoxDecoration(
-                      color: Colors.white.withValues(alpha: 0.6),
+                      color: context.colors.surface.withValues(alpha: 0.6),
                       borderRadius: BorderRadius.circular(6.r),
                     ),
                     child: state.isLoading
@@ -514,9 +474,9 @@ class _PracticeScreenState extends ConsumerState<PracticeScreen> {
                               SizedBox(
                                 height: 14.w,
                                 width: 14.w,
-                                child: const CircularProgressIndicator(
+                                child: CircularProgressIndicator(
                                   strokeWidth: 2,
-                                  color: Color(0xFF135BEC),
+                                  color: context.colors.accent,
                                 ),
                               ),
                               SizedBox(width: 8.w),
@@ -524,7 +484,7 @@ class _PracticeScreenState extends ConsumerState<PracticeScreen> {
                                 '正在生成解析...',
                                 style: TextStyle(
                                   fontSize: 13.sp,
-                                  color: const Color(0xFF787774),
+                                  color: context.colors.textSecondary,
                                 ),
                               ),
                             ],
@@ -534,9 +494,7 @@ class _PracticeScreenState extends ConsumerState<PracticeScreen> {
                             style: TextStyle(
                               fontSize: 14.sp,
                               height: 1.6,
-                              color: const Color(
-                                0xFF37352F,
-                              ).withValues(alpha: 0.9),
+                              color: context.colors.text.withValues(alpha: 0.9),
                             ),
                           ),
                   ),
@@ -557,21 +515,21 @@ class _PracticeScreenState extends ConsumerState<PracticeScreen> {
                     },
                     icon: Icon(
                       AppIcons.smartToy,
-                      color: const Color(0xFF135BEC),
+                      color: context.colors.accent,
                       size: 16.sp,
                     ),
                     label: Text(
                       'AI 第一性原理解读',
                       style: TextStyle(
-                        color: const Color(0xFF135BEC),
+                        color: context.colors.accent,
                         fontSize: 13.sp,
                         fontWeight: FontWeight.w500,
                       ),
                     ),
                     style: OutlinedButton.styleFrom(
-                      backgroundColor: Colors.white,
-                      side: const BorderSide(
-                        color: Color(0xFF135BEC),
+                      backgroundColor: context.colors.surface,
+                      side: BorderSide(
+                        color: context.colors.accent,
                         width: 1,
                       ),
                       shape: RoundedRectangleBorder(
@@ -602,7 +560,7 @@ class _PracticeScreenState extends ConsumerState<PracticeScreen> {
         bottom: 32.h,
       ),
       decoration: BoxDecoration(
-        color: Colors.white.withValues(alpha: 0.85),
+        color: context.colors.surface.withValues(alpha: 0.85),
         border: Border(
           top: BorderSide(color: Colors.black.withValues(alpha: 0.05)),
         ),
@@ -658,27 +616,27 @@ class _PracticeScreenState extends ConsumerState<PracticeScreen> {
             width: 40.w,
             height: 40.h,
             decoration: BoxDecoration(
-              color: const Color(
-                0xFF37352F,
-              ).withValues(alpha: isEnabled ? 0.05 : 0.02),
+              color: context.colors.text.withValues(
+                alpha: isEnabled ? 0.05 : 0.02,
+              ),
               borderRadius: BorderRadius.circular(12.r),
             ),
             child: Icon(
               icon,
-              color: const Color(
-                0xFF37352F,
-              ).withValues(alpha: isEnabled ? 1 : 0.3),
+              color: context.colors.text.withValues(
+                alpha: isEnabled ? 1 : 0.3,
+              ),
             ),
           ),
           SizedBox(height: 4.h),
           Text(
             label,
             style: TextStyle(
-              fontSize: 10.sp,
+              fontSize: 12.sp,
               fontWeight: FontWeight.w500,
-              color: const Color(
-                0xFF37352F,
-              ).withValues(alpha: isEnabled ? 0.6 : 0.3),
+              color: context.colors.text.withValues(
+                alpha: isEnabled ? 0.6 : 0.3,
+              ),
             ),
           ),
         ],
@@ -713,7 +671,7 @@ class _PracticeScreenState extends ConsumerState<PracticeScreen> {
               width: 56.w,
               height: 56.h,
               decoration: BoxDecoration(
-                color: const Color(0xFF37352F),
+                color: context.colors.primary,
                 borderRadius: BorderRadius.circular(16.r),
                 boxShadow: [
                   BoxShadow(
@@ -725,7 +683,7 @@ class _PracticeScreenState extends ConsumerState<PracticeScreen> {
               ),
               child: Icon(
                 hasNext ? AppIcons.arrowForward : AppIcons.check,
-                color: Colors.white,
+                color: context.colors.onPrimary,
                 size: 28.sp,
               ),
             ),
@@ -733,9 +691,9 @@ class _PracticeScreenState extends ConsumerState<PracticeScreen> {
             Text(
               hasNext ? '下一题' : '完成',
               style: TextStyle(
-                fontSize: 10.sp,
+                fontSize: 12.sp,
                 fontWeight: FontWeight.w600,
-                color: const Color(0xFF37352F),
+                color: context.colors.text,
               ),
             ),
           ],
@@ -762,8 +720,8 @@ class _PracticeScreenState extends ConsumerState<PracticeScreen> {
             height: 56.h,
             decoration: BoxDecoration(
               color: canSubmit
-                  ? const Color(0xFF37352F)
-                  : const Color(0xFF37352F).withValues(alpha: 0.2),
+                  ? context.colors.primary
+                  : context.colors.primary.withValues(alpha: 0.2),
               borderRadius: BorderRadius.circular(16.r),
               boxShadow: (canSubmit && !isConfirming)
                   ? [
@@ -778,22 +736,26 @@ class _PracticeScreenState extends ConsumerState<PracticeScreen> {
             child: isConfirming
                 ? Padding(
                     padding: EdgeInsets.all(16.w),
-                    child: const CircularProgressIndicator(
-                      color: Colors.white,
+                    child: CircularProgressIndicator(
+                      color: context.colors.onPrimary,
                       strokeWidth: 2,
                     ),
                   )
-                : Icon(AppIcons.check, color: Colors.white, size: 28.sp),
+                : Icon(
+                    AppIcons.check,
+                    color: context.colors.onPrimary,
+                    size: 28.sp,
+                  ),
           ),
           SizedBox(height: 4.h),
           Text(
             isConfirming ? '判卷中...' : '确认',
             style: TextStyle(
-              fontSize: 10.sp,
+              fontSize: 12.sp,
               fontWeight: FontWeight.w600,
               color: canSubmit
-                  ? const Color(0xFF37352F)
-                  : const Color(0xFF37352F).withValues(alpha: 0.4),
+                  ? context.colors.text
+                  : context.colors.text.withValues(alpha: 0.4),
             ),
           ),
         ],

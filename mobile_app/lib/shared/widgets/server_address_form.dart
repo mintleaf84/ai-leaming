@@ -4,6 +4,7 @@ import 'package:flutter_screenutil/flutter_screenutil.dart';
 
 import '../../core/constants/api_constants.dart';
 import '../../core/network/server_config.dart';
+import '../../core/theme/app_colors.dart';
 
 /// 服务器地址输入表单。
 ///
@@ -92,7 +93,7 @@ class _ServerAddressFormState extends ConsumerState<ServerAddressForm> {
             '已保存并生效：$_savedValue',
             style: theme.textTheme.bodySmall?.copyWith(
               fontSize: 12.sp,
-              color: const Color(0xFF2383E2),
+              color: context.colors.accent,
             ),
           ),
         ],

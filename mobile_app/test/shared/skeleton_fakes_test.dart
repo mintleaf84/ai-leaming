@@ -45,6 +45,15 @@ void main() {
       expect(state.userAnswers, isEmpty);
       expect(state.results, isEmpty);
     });
+
+    test('首页统计假数据能撑起进度卡（首页骨架用）', () {
+      final stats = fakeStatsSummary();
+      expect(stats.todayCount, 20);
+      expect(stats.todayCorrect, 15);
+      expect(stats.todayAccuracy, 0.75);
+      expect(stats.totalSessions, 16);
+      expect(stats.streakDays, 3);
+    });
   });
 
   testWidgets('Skeletonizer 开启后骨骼可渲染且不抛异常', (WidgetTester tester) async {
@@ -69,6 +78,7 @@ void main() {
       find.byWidgetPredicate((Widget widget) => widget is Bone),
       findsAtLeastNWidgets(2),
     );
+
   });
 
   testWidgets('关闭时骨骼替换为真实子组件', (WidgetTester tester) async {

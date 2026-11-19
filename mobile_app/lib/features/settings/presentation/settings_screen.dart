@@ -10,6 +10,7 @@ import '../../../core/sync/sync_providers.dart';
 import '../../../core/network/server_config.dart';
 import '../../../shared/widgets/server_address_form.dart';
 import '../../../core/theme/app_icons.dart';
+import '../../../core/theme/app_colors.dart';
 
 /// 设置页面
 ///
@@ -58,9 +59,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
     final bgColor = theme.scaffoldBackgroundColor;
     final cardColor = theme.cardColor;
     final textColor = theme.colorScheme.onSurface;
-    final secondaryColor = isDarkMode
-        ? const Color(0xFF8A8A8A)
-        : const Color(0xFF787774);
+    final secondaryColor = context.colors.textSecondary;
     final borderColor = theme.dividerColor;
 
     return Scaffold(
@@ -167,7 +166,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                                         : ReviewMode.list,
                                   );
                             },
-                            activeTrackColor: const Color(0xFF2383E2),
+                            activeTrackColor: context.colors.accent,
                           ),
                           textColor: textColor,
                         ),
@@ -181,7 +180,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                             onChanged: (value) {
                               ref.read(themeModeProvider.notifier).toggle();
                             },
-                            activeTrackColor: const Color(0xFF2383E2),
+                            activeTrackColor: context.colors.accent,
                           ),
                           textColor: textColor,
                         ),
@@ -196,7 +195,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                                 notificationEnabled = value;
                               });
                             },
-                            activeTrackColor: const Color(0xFF2383E2),
+                            activeTrackColor: context.colors.accent,
                           ),
                           textColor: textColor,
                         ),
@@ -260,7 +259,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                                   '未配置',
                                   style: TextStyle(
                                     fontSize: 14.sp,
-                                    color: const Color(0xFFEB5757),
+                                    color: context.colors.error,
                                   ),
                                 ),
                           textColor: textColor,
@@ -320,7 +319,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                               style: TextStyle(
                                 fontSize: 15.sp,
                                 fontWeight: FontWeight.w500,
-                                color: const Color(0xFFEB5757),
+                                color: context.colors.error,
                               ),
                             ),
                           ),
@@ -696,7 +695,10 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
               Navigator.pop(context);
               _showSnackBar('错题本已清空');
             },
-            child: const Text('确定', style: TextStyle(color: Color(0xFFEB5757))),
+            child: Text(
+              '确定',
+              style: TextStyle(color: context.colors.error),
+            ),
           ),
         ],
       ),
@@ -722,7 +724,10 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                 context.replace(AppRoutes.login);
               }
             },
-            child: const Text('退出', style: TextStyle(color: Color(0xFFEB5757))),
+            child: Text(
+              '退出',
+              style: TextStyle(color: context.colors.error),
+            ),
           ),
         ],
       ),

@@ -13,6 +13,7 @@ import '../../features/history/domain/practice_log.dart';
 import '../../features/knowledge/presentation/knowledge_provider.dart';
 import '../../features/practice/domain/question.dart';
 import '../../features/practice/presentation/practice_provider.dart';
+import '../../features/stats/domain/learning_stats.dart';
 import '../../features/wrong_book/domain/wrong_question.dart';
 
 /// 骨架里统一使用的占位文本（长度足够撑出多行布局）。
@@ -84,6 +85,23 @@ Question fakeQuestion({int index = 0}) {
     dimension: '教育学',
     explanation: kSkeletonText,
     answer: 'A',
+  );
+}
+
+/// 首页（dashboard）统计骨架：撑开「今日进度卡 + 待办清单」的真实布局。
+///
+/// 数值全部写成整齐的假值（20 题 / 75% / 3 天），只为让文字占位条的
+/// 长度接近真实数据；Skeletonizer 会把它们涂成骨块，用户看不到数字。
+LearningStats fakeStatsSummary() {
+  return const LearningStats(
+    todayCount: 20,
+    todayCorrect: 15,
+    todayAccuracy: 0.75,
+    totalCount: 320,
+    totalCorrect: 240,
+    overallAccuracy: 0.75,
+    streakDays: 3,
+    totalSessions: 16,
   );
 }
 

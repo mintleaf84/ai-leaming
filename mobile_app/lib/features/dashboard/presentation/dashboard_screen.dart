@@ -2,11 +2,14 @@ import 'package:flutter/material.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:flutter_hooks/flutter_hooks.dart';
+import 'package:skeletonizer/skeletonizer.dart';
 import '../../../core/compat/contract_meta_repository.dart';
 import '../../../core/navigation/app_nav.dart';
 import '../../stats/presentation/stats_provider.dart';
 import '../../stats/domain/learning_stats.dart';
 import '../../../core/theme/app_icons.dart';
+import '../../../core/theme/app_colors.dart';
+import '../../../shared/skeletons/skeleton_fakes.dart';
 import '../../../shared/widgets/contract_gate.dart';
 
 class DashboardScreen extends HookConsumerWidget {
@@ -27,7 +30,7 @@ class DashboardScreen extends HookConsumerWidget {
       ref.watch(contractDecisionProvider).value,
     );
     return Scaffold(
-      backgroundColor: const Color(0xFFF7F7F5), // Notion-like background
+      backgroundColor: context.colors.background, // Notion-like background
       body: Stack(
         children: [
           SafeArea(
@@ -42,19 +45,16 @@ class DashboardScreen extends HookConsumerWidget {
                       children: [
                         SizedBox(height: 16.h),
                         // Header
-                        _buildHeader(),
+                        _buildHeader(context),
                         SizedBox(height: 24.h),
                         // Divider
-                        Divider(height: 1.h, color: Colors.grey[300]),
+                        Divider(height: 1.h, color: context.colors.border),
                         SizedBox(height: 24.h),
                         // Action Grid
                         _buildActionGrid(context, showRecall: showRecall),
                         SizedBox(height: 32.h),
-                        // Progress Card
-                        _buildProgressCard(statsState.stats),
-                        SizedBox(height: 32.h),
-                        // Todo List
-                        _buildTodoList(statsState.stats),
+                        // Progress Card + Todo List（统计区三态：骨架 / 错误 / 数据）
+                        _buildStatsSection(context, ref, statsState),
                         SizedBox(height: 100.h), // Space for bottom nav
                       ],
                     ),
@@ -75,7 +75,7 @@ class DashboardScreen extends HookConsumerWidget {
     );
   }
 
-  Widget _buildHeader() {
+  Widget _buildHeader(BuildContext context) {
     final now = DateTime.now();
     final hour = now.hour;
     String greeting = '我的学习\n空间';
@@ -108,14 +108,17 @@ class DashboardScreen extends HookConsumerWidget {
             fontSize: 36.sp,
             fontWeight: FontWeight.bold,
             height: 1.1,
-            color: const Color(0xFF37352F),
+            color: context.colors.text,
             fontFamily: 'Inter',
           ),
         ),
         SizedBox(height: 4.h),
         Text(
           dateStr,
-          style: TextStyle(fontSize: 14.sp, color: const Color(0xFF9B9A97)),
+          style: TextStyle(
+            fontSize: 14.sp,
+            color: context.colors.textSecondary,
+          ),
         ),
       ],
     );
@@ -132,10 +135,11 @@ class DashboardScreen extends HookConsumerWidget {
                 child: GestureDetector(
                   onTap: () => context.pushDetail(AppRoutes.questions),
                   child: _buildActionCard(
+                    context,
                     icon: '📚',
                     tag: '查缺补漏',
-                    tagColor: const Color(0xFFE8F3FF),
-                    tagTextColor: const Color(0xFF135BEC),
+                    tagColor: context.colors.accentContainer,
+                    tagTextColor: context.colors.accent,
                     title: '全量\n题库',
                     subtitleLabel: '探索',
                     subtitleValue: '获取所有题目',
@@ -147,10 +151,11 @@ class DashboardScreen extends HookConsumerWidget {
                 child: GestureDetector(
                   onTap: () => context.pushDetail(AppRoutes.practiceSetup),
                   child: _buildActionCard(
+                    context,
                     icon: '🧠',
                     tag: '待复习',
-                    tagColor: const Color(0xFFFFF4E5),
-                    tagTextColor: const Color(0xFFFF9500),
+                    tagColor: context.colors.warningContainer,
+                    tagTextColor: context.colors.warning,
                     title: '智能\n复习',
                     subtitleLabel: '今日待办',
                     subtitleValue: '开始练习',
@@ -169,10 +174,11 @@ class DashboardScreen extends HookConsumerWidget {
         // 留一个空槽位比隐藏更难看，而灰显一张点不动的卡是欺骗。
         if (showRecall) ...[
           _buildWideCard(
+            context,
             icon: '📇',
             tag: '每日记一点',
-            tagColor: const Color(0xFFE9F5EC),
-            tagTextColor: const Color(0xFF4EA05E),
+            tagColor: context.colors.successContainer,
+            tagTextColor: context.colors.success,
             title: '记忆卡',
             trailingLabel: '每次',
             trailingValue: '几分钟',
@@ -181,10 +187,11 @@ class DashboardScreen extends HookConsumerWidget {
           SizedBox(height: 16.h),
         ],
         _buildWideCard(
+          context,
           icon: '📕',
           tag: '重点关注',
-          tagColor: const Color(0xFFFEF2F2),
-          tagTextColor: const Color(0xFFDC2626),
+          tagColor: context.colors.errorContainer,
+          tagTextColor: context.colors.error,
           title: '我的错题',
           trailingLabel: '累计',
           trailingValue: '--',
@@ -192,9 +199,10 @@ class DashboardScreen extends HookConsumerWidget {
         ),
         SizedBox(height: 16.h),
         _buildWideCard(
+          context,
           icon: '⏳',
           tag: '温故知新',
-          tagColor: const Color(0xFFF3F4F6),
+          tagColor: context.colors.surfaceAlt,
           tagTextColor: const Color(0xFF4B5563),
           title: '练习历史',
           trailingLabel: '最近',
@@ -206,7 +214,8 @@ class DashboardScreen extends HookConsumerWidget {
   }
 
   // Corrected Action Card with Stack
-  Widget _buildActionCard({
+  Widget _buildActionCard(
+    BuildContext context, {
     required String icon,
     required String tag,
     required Color tagColor,
@@ -221,9 +230,9 @@ class DashboardScreen extends HookConsumerWidget {
     return Container(
       constraints: BoxConstraints(minHeight: 176.h),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: context.colors.surface,
         borderRadius: BorderRadius.circular(16.r),
-        border: Border.all(color: const Color(0xFFE0E0E0)),
+        border: Border.all(color: context.colors.border),
         boxShadow: [
           BoxShadow(
             color: Colors.black.withValues(alpha: 0.02),
@@ -266,7 +275,7 @@ class DashboardScreen extends HookConsumerWidget {
                       child: Text(
                         tag,
                         style: TextStyle(
-                          fontSize: 10.sp,
+                          fontSize: 12.sp,
                           color: tagTextColor,
                           fontWeight: FontWeight.w600,
                         ),
@@ -278,7 +287,7 @@ class DashboardScreen extends HookConsumerWidget {
                       style: TextStyle(
                         fontSize: 18.sp,
                         fontWeight: FontWeight.bold,
-                        color: const Color(0xFF37352F),
+                        color: context.colors.text,
                         height: 1.2,
                       ),
                     ),
@@ -287,7 +296,7 @@ class DashboardScreen extends HookConsumerWidget {
 
                 Column(
                   children: [
-                    Divider(height: 1, color: Colors.grey[100]),
+                    Divider(height: 1, color: context.colors.border),
                     SizedBox(height: 12.h),
                     Row(
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -302,8 +311,8 @@ class DashboardScreen extends HookConsumerWidget {
                               Text(
                                 subtitleLabel,
                                 style: TextStyle(
-                                  fontSize: 10.sp,
-                                  color: Colors.grey,
+                                  fontSize: 12.sp,
+                                  color: context.colors.textSecondary,
                                   letterSpacing: 0.5,
                                 ),
                               ),
@@ -324,7 +333,7 @@ class DashboardScreen extends HookConsumerWidget {
                         Icon(
                           AppIcons.arrowForward,
                           size: 16.sp,
-                          color: const Color(0xFF37352F),
+                          color: context.colors.text,
                         ),
                       ],
                     ),
@@ -346,7 +355,8 @@ class DashboardScreen extends HookConsumerWidget {
   ///
   /// 右侧那两行（如「累计 / --」「每次 / 几分钟」）刻意只放**不依赖数据的描述**：
   /// 首页没有队列与统计快照，写死一个数字就是编数据。
-  Widget _buildWideCard({
+  Widget _buildWideCard(
+    BuildContext context, {
     required String icon,
     required String tag,
     required Color tagColor,
@@ -362,9 +372,9 @@ class DashboardScreen extends HookConsumerWidget {
         // 同两列卡：最小高度而不是固定高度，1.3 倍字号时不溢出
         constraints: BoxConstraints(minHeight: 96.h),
         decoration: BoxDecoration(
-          color: Colors.white,
+          color: context.colors.surface,
           borderRadius: BorderRadius.circular(16.r),
-          border: Border.all(color: const Color(0xFFE0E0E0)),
+          border: Border.all(color: context.colors.border),
           boxShadow: [
             BoxShadow(
               color: Colors.black.withValues(alpha: 0.02),
@@ -411,7 +421,7 @@ class DashboardScreen extends HookConsumerWidget {
                             maxLines: 1,
                             overflow: TextOverflow.ellipsis,
                             style: TextStyle(
-                              fontSize: 10.sp,
+                              fontSize: 12.sp,
                               color: tagTextColor,
                               fontWeight: FontWeight.w600,
                             ),
@@ -425,7 +435,7 @@ class DashboardScreen extends HookConsumerWidget {
                           style: TextStyle(
                             fontSize: 18.sp,
                             fontWeight: FontWeight.bold,
-                            color: const Color(0xFF37352F),
+                            color: context.colors.text,
                           ),
                         ),
                       ],
@@ -435,7 +445,7 @@ class DashboardScreen extends HookConsumerWidget {
                   Container(
                     decoration: BoxDecoration(
                       border: Border(
-                        left: BorderSide(color: Colors.grey[200]!),
+                        left: BorderSide(color: context.colors.border),
                       ),
                     ),
                     padding: EdgeInsets.only(left: 16.w),
@@ -448,8 +458,8 @@ class DashboardScreen extends HookConsumerWidget {
                             Text(
                               trailingLabel,
                               style: TextStyle(
-                                fontSize: 10.sp,
-                                color: Colors.grey,
+                                fontSize: 12.sp,
+                                color: context.colors.textSecondary,
                               ),
                             ),
                             Text(
@@ -467,7 +477,7 @@ class DashboardScreen extends HookConsumerWidget {
                         Icon(
                           AppIcons.chevronRight,
                           size: 20.sp,
-                          color: const Color(0xFF37352F),
+                          color: context.colors.text,
                         ),
                       ],
                     ),
@@ -481,7 +491,102 @@ class DashboardScreen extends HookConsumerWidget {
     );
   }
 
-  Widget _buildProgressCard(LearningStats stats) {
+  /// 统计区（今日进度卡 + 待办清单）的三态（见审计 #4）。
+  ///
+  /// 问题：这两个区块原来完全没有 loading / error 分支，断网时渲染的是
+  /// `LearningStats.empty`——「今日目标：尚未开始 0%」，和"今天真没学"一模一样。
+  ///
+  /// 约束：**只替换这一块**。上面的入口卡（题库/复习/错题/历史）与底部导航
+  /// 不受影响，断网也照样能点。
+  Widget _buildStatsSection(
+    BuildContext context,
+    WidgetRef ref,
+    StatsState state,
+  ) {
+    if (state.isLoading && _hasNoStats(state.stats)) {
+      return _buildStatsSkeleton(context);
+    }
+    if (state.error != null) {
+      return _buildStatsError(context, ref);
+    }
+    return Column(
+      children: [
+        _buildProgressCard(context, state.stats),
+        SizedBox(height: 32.h),
+        _buildTodoList(context, state.stats),
+      ],
+    );
+  }
+
+  /// 「还没有统计快照」：首次加载与失败时 `stats` 仍是 `LearningStats.empty`。
+  /// 一旦拿到过数据就不再回退成骨架，刷新时不会整块闪一下。
+  bool _hasNoStats(LearningStats stats) =>
+      stats.totalSessions == 0 && stats.totalCount == 0;
+
+  /// 加载态：用假数据驱动真实的进度卡与待办清单，再由 Skeletonizer 抹成骨块，
+  /// 骨架版式与真实版式不会脱节（见 docs/mobile-ui-kit.md D-2）。
+  Widget _buildStatsSkeleton(BuildContext context) {
+    final fake = fakeStatsSummary();
+    return Skeletonizer(
+      enabled: true,
+      child: Column(
+        children: [
+          _buildProgressCard(context, fake),
+          SizedBox(height: 32.h),
+          _buildTodoList(context, fake),
+        ],
+      ),
+    );
+  }
+
+  /// 失败态：一行说明 + 重试，就地替换统计区，不接管整页。
+  Widget _buildStatsError(BuildContext context, WidgetRef ref) {
+    return Semantics(
+      container: true,
+      label: '统计数据加载失败，可重试',
+      child: Container(
+        padding: EdgeInsets.symmetric(horizontal: 16.w, vertical: 12.h),
+        decoration: BoxDecoration(
+          color: context.colors.errorContainer,
+          borderRadius: BorderRadius.circular(12.r),
+          border: Border.all(
+            color: context.colors.error.withValues(alpha: 0.3),
+          ),
+        ),
+        child: Row(
+          children: [
+            Icon(
+              AppIcons.errorOutline,
+              size: 18.sp,
+              color: context.colors.error,
+            ),
+            SizedBox(width: 8.w),
+            Expanded(
+              child: Text(
+                '统计没加载出来',
+                style: TextStyle(fontSize: 13.sp, color: context.colors.error),
+              ),
+            ),
+            SizedBox(width: 8.w),
+            // 触控区 ≥44×44：TextButton 默认高度约 36
+            ConstrainedBox(
+              constraints: const BoxConstraints(minHeight: 44, minWidth: 44),
+              child: TextButton(
+                onPressed: () =>
+                    ref.read(statsControllerProvider.notifier).load(),
+                style: TextButton.styleFrom(
+                  foregroundColor: context.colors.error,
+                ),
+                child: const Text('重试'),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildProgressCard(BuildContext context, LearningStats stats) {
     final todayCount = stats.todayCount;
     final todayAccuracy = stats.todayAccuracy;
     final streakDays = stats.streakDays;
@@ -497,9 +602,9 @@ class DashboardScreen extends HookConsumerWidget {
     return Container(
       padding: EdgeInsets.all(20.w),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: context.colors.surface,
         borderRadius: BorderRadius.circular(12.r),
-        border: Border.all(color: const Color(0xFFE0E0E0)),
+        border: Border.all(color: context.colors.border),
         boxShadow: [
           BoxShadow(
             color: Colors.black.withValues(alpha: 0.02),
@@ -516,7 +621,7 @@ class DashboardScreen extends HookConsumerWidget {
                 width: 40.w,
                 height: 40.h,
                 decoration: BoxDecoration(
-                  color: const Color(0xFF37352F).withValues(alpha: 0.08),
+                  color: context.colors.text.withValues(alpha: 0.08),
                   shape: BoxShape.circle,
                 ),
                 alignment: Alignment.center,
@@ -535,7 +640,10 @@ class DashboardScreen extends HookConsumerWidget {
                   ),
                   Text(
                     progressText,
-                    style: TextStyle(fontSize: 12.sp, color: Colors.grey),
+                    style: TextStyle(
+                      fontSize: 12.sp,
+                      color: context.colors.textSecondary,
+                    ),
                   ),
                 ],
               ),
@@ -546,8 +654,8 @@ class DashboardScreen extends HookConsumerWidget {
             borderRadius: BorderRadius.circular(5.r),
             child: LinearProgressIndicator(
               value: progress,
-              backgroundColor: const Color(0xFFF0F0F0),
-              color: const Color(0xFF37352F),
+              backgroundColor: context.colors.surfaceAlt,
+              color: context.colors.text,
               minHeight: 10.h,
             ),
           ),
@@ -557,7 +665,10 @@ class DashboardScreen extends HookConsumerWidget {
             children: [
               Text(
                 progressText,
-                style: TextStyle(fontSize: 12.sp, color: Colors.grey),
+                style: TextStyle(
+                  fontSize: 12.sp,
+                  color: context.colors.textSecondary,
+                ),
               ),
               Text(
                 accuracyText,
@@ -571,7 +682,7 @@ class DashboardScreen extends HookConsumerWidget {
   }
 
   /// 待办清单：条目全部由 [LearningStats] 的真实字段推导，没有占位文案。
-  Widget _buildTodoList(LearningStats stats) {
+  Widget _buildTodoList(BuildContext context, LearningStats stats) {
     final entries = _buildTodoEntries(stats);
 
     return Column(
@@ -584,7 +695,7 @@ class DashboardScreen extends HookConsumerWidget {
               style: TextStyle(
                 fontSize: 12.sp,
                 fontWeight: FontWeight.w600,
-                color: Colors.grey,
+                color: context.colors.textSecondary,
               ),
             ),
           ],
@@ -593,16 +704,15 @@ class DashboardScreen extends HookConsumerWidget {
         Container(
           padding: EdgeInsets.all(16.w),
           decoration: BoxDecoration(
-            color: Colors.white,
+            color: context.colors.surface,
             borderRadius: BorderRadius.circular(8.r),
-            border: Border.all(color: const Color(0xFFE8E8E5)),
+            border: Border.all(color: context.colors.border),
           ),
           child: Column(
             children: [
               for (int i = 0; i < entries.length; i++) ...[
-                if (i > 0)
-                  Divider(height: 20.h, color: const Color(0xFFF0F0EC)),
-                _buildTodoRow(entries[i]),
+                if (i > 0) Divider(height: 20.h, color: context.colors.border),
+                _buildTodoRow(context, entries[i]),
               ],
             ],
           ),
@@ -654,7 +764,7 @@ class DashboardScreen extends HookConsumerWidget {
     ];
   }
 
-  Widget _buildTodoRow(_TodoEntry entry) {
+  Widget _buildTodoRow(BuildContext context, _TodoEntry entry) {
     return Row(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -662,8 +772,8 @@ class DashboardScreen extends HookConsumerWidget {
           entry.isDone ? AppIcons.checkCircle : entry.icon,
           size: 20.sp,
           color: entry.isDone
-              ? const Color(0xFF52B788)
-              : const Color(0xFF9B9A97),
+              ? context.colors.success
+              : context.colors.textSecondary,
         ),
         SizedBox(width: 12.w),
         Expanded(
@@ -676,8 +786,8 @@ class DashboardScreen extends HookConsumerWidget {
                   fontSize: 14.sp,
                   fontWeight: FontWeight.w600,
                   color: entry.isDone
-                      ? const Color(0xFF9B9A97)
-                      : const Color(0xFF37352F),
+                      ? context.colors.textSecondary
+                      : context.colors.text,
                   decoration: entry.isDone
                       ? TextDecoration.lineThrough
                       : TextDecoration.none,
@@ -688,7 +798,7 @@ class DashboardScreen extends HookConsumerWidget {
                 entry.subtitle,
                 style: TextStyle(
                   fontSize: 12.sp,
-                  color: const Color(0xFF9B9A97),
+                  color: context.colors.textSecondary,
                 ),
               ),
             ],
@@ -707,8 +817,8 @@ class DashboardScreen extends HookConsumerWidget {
         right: 24.w,
       ),
       decoration: BoxDecoration(
-        color: Colors.white,
-        border: Border(top: BorderSide(color: Colors.grey[200]!)),
+        color: context.colors.surface,
+        border: Border(top: BorderSide(color: context.colors.border)),
         boxShadow: [
           BoxShadow(
             color: Colors.black.withValues(alpha: 0.02),
@@ -720,26 +830,30 @@ class DashboardScreen extends HookConsumerWidget {
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
-          _buildNavItem(AppIcons.dashboard, '工作区', true, null),
+          _buildNavItem(context, AppIcons.dashboard, '工作区', true, null),
           _buildNavItem(
+            context,
             AppIcons.smartToy,
             'AI助手',
             false,
             () => context.pushDetail(AppRoutes.chat),
           ),
           _buildNavItem(
+            context,
             AppIcons.book,
             '知识库',
             false,
             () => context.pushDetail(AppRoutes.knowledge),
           ),
           _buildNavItem(
+            context,
             AppIcons.libraryBooks,
             '教材',
             false,
             () => context.pushDetail(AppRoutes.textbooks),
           ),
           _buildNavItem(
+            context,
             AppIcons.personOutline,
             '我的',
             false,
@@ -751,13 +865,14 @@ class DashboardScreen extends HookConsumerWidget {
   }
 
   Widget _buildNavItem(
+    BuildContext context,
     IconData icon,
     String label,
     bool isSelected,
     VoidCallback? onTap,
   ) {
-    final activeColor = const Color(0xFF37352F);
-    final inactiveColor = const Color(0xFF9B9A97);
+    final activeColor = context.colors.text;
+    final inactiveColor = context.colors.textSecondary;
 
     return GestureDetector(
       onTap: onTap,
@@ -781,7 +896,7 @@ class DashboardScreen extends HookConsumerWidget {
             AnimatedDefaultTextStyle(
               duration: const Duration(milliseconds: 200),
               style: TextStyle(
-                fontSize: 10.sp,
+                fontSize: 12.sp,
                 fontWeight: isSelected ? FontWeight.w700 : FontWeight.w500,
                 color: isSelected ? activeColor : inactiveColor,
               ),

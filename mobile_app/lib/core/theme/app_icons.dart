@@ -23,9 +23,24 @@ class AppIcons {
   static const IconData book = Symbols.book;  // 原 Icons.book
   static const IconData bookOutlined = Symbols.book;  // 原 Icons.book_outlined
   static const IconData cancel = Symbols.cancel;  // 原 Icons.cancel
+
+  /// 实心叉（判错标记）。
+  ///
+  /// **刻意不映射到 Symbols**：Material Symbols 的 `cancel` 只有"空心圆 + 斜杠"
+  /// 一种形态，没有实心变体（不存在 `cancel_filled`），而同屏并排的
+  /// `checkCircle`（`check_circle_filled`）是实心——一实一空看起来像两个不同族。
+  /// 审计 #12：实心/空心混排。保留 Material Icons 的实心版本。
+  static const IconData cancelSolid = Icons.cancel;
   static const IconData chatBubbleOutline = Symbols.chat_bubble_outline;  // 原 Icons.chat_bubble_outline
   static const IconData check = Symbols.check;  // 原 Icons.check
   static const IconData checkBox = Symbols.check_box;  // 原 Icons.check_box
+
+  /// 实心复选框（"全选"已选中态）。
+  ///
+  /// **刻意不映射到 Symbols**：`Symbols.check_box` 只有描边方块，没有 filled 变体，
+  /// 与同一行的 `check_box_outline_blank` 几乎看不出差别（点没点上分不清）。
+  /// 审计 #12：实心/空心混排。保留 Material Icons 的实心版本。
+  static const IconData checkBoxSolid = Icons.check_box;
   static const IconData checkBoxOutlineBlank = Symbols.check_box_outline_blank;  // 原 Icons.check_box_outline_blank
   static const IconData checkCircle = Symbols.check_circle_filled;  // 原 Icons.check_circle
   static const IconData checkCircleOutline = Symbols.check_circle_outline;  // 原 Icons.check_circle_outline

@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:mobile_app/features/practice/presentation/practice_provider.dart';
 import 'package:mobile_app/core/theme/app_theme.dart';
+import 'package:mobile_app/core/theme/app_icons.dart';
 
 /// 第一性原理 AI 分析面板
 /// 
@@ -43,7 +44,7 @@ class FirstPrinciplesPanel extends ConsumerWidget {
                       borderRadius: BorderRadius.circular(12.r),
                     ),
                     child: Icon(
-                      Icons.smart_toy,
+                      AppIcons.smartToy,
                       color: const Color(0xFF135BEC),
                       size: 24.sp,
                     ),
@@ -72,7 +73,7 @@ class FirstPrinciplesPanel extends ConsumerWidget {
               ),
               IconButton(
                 onPressed: () => Navigator.pop(context),
-                icon: Icon(Icons.close, color: context.secondaryTextColor),
+                icon: Icon(AppIcons.close, color: context.secondaryTextColor),
               ),
             ],
           ),

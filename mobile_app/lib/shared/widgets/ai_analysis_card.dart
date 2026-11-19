@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_markdown/flutter_markdown.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:skeletonizer/skeletonizer.dart';
+import '../../core/theme/app_icons.dart';
 
 class AiAnalysisCard extends StatelessWidget {
   final String? content;
@@ -75,7 +76,7 @@ class AiAnalysisCard extends StatelessWidget {
                   child: Padding(
                     padding: EdgeInsets.all(4.w),
                     child: Icon(
-                      Icons.keyboard_arrow_up,
+                      AppIcons.keyboardArrowUp,
                       size: 20.sp,
                       color: headerColor,
                     ),

@@ -5,6 +5,7 @@ import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:dio/dio.dart';
 import '../../../core/navigation/app_nav.dart';
 import 'auth_provider.dart';
+import '../../../core/theme/app_icons.dart';
 
 class LoginScreen extends HookConsumerWidget {
   const LoginScreen({super.key});
@@ -80,14 +81,14 @@ class LoginScreen extends HookConsumerWidget {
                         // Form
                         _buildInputGroup(
                           '邮箱/用户名',
-                          Icons.person_outline,
+                          AppIcons.personOutline,
                           usernameController,
                           hint: '邮箱/用户名',
                         ),
                         SizedBox(height: 16.h),
                         _buildInputGroup(
                           '密码',
-                          Icons.lock_outline,
+                          AppIcons.lockOutline,
                           passwordController,
                           isPassword: true,
                           obscureText: !isPasswordVisible.value,
@@ -177,7 +178,7 @@ class LoginScreen extends HookConsumerWidget {
                                         ),
                                       ),
                                       SizedBox(width: 8.w),
-                                      Icon(Icons.arrow_forward, size: 18.sp),
+                                      Icon(AppIcons.arrowForward, size: 18.sp),
                                     ],
                                   ),
                           ),
@@ -217,13 +218,13 @@ class LoginScreen extends HookConsumerWidget {
                     Row(
                       children: [
                         Expanded(
-                          child: _buildSocialButton('Apple', Icons.apple),
+                          child: _buildSocialButton('Apple', AppIcons.apple),
                         ),
                         SizedBox(width: 12.w),
                         Expanded(
                           child: _buildSocialButton(
                             '微信',
-                            Icons.chat_bubble_outline,
+                            AppIcons.chatBubbleOutline,
                             color: const Color(0xFF07C160),
                           ),
                         ),
@@ -312,8 +313,8 @@ class LoginScreen extends HookConsumerWidget {
                     ? IconButton(
                         icon: Icon(
                           (obscureText ?? true)
-                              ? Icons.visibility_off
-                              : Icons.visibility,
+                              ? AppIcons.visibilityOff
+                              : AppIcons.visibility,
                           color: Colors.grey[400],
                           size: 20.sp,
                         ),

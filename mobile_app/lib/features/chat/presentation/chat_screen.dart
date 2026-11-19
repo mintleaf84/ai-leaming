@@ -8,6 +8,7 @@ import '../domain/chat_message.dart';
 
 import 'package:flutter/scheduler.dart';
 import 'package:flutter_hooks/flutter_hooks.dart';
+import '../../../core/theme/app_icons.dart';
 import '../../../core/navigation/app_nav.dart';
 
 class ChatScreen extends HookConsumerWidget {
@@ -42,7 +43,7 @@ class ChatScreen extends HookConsumerWidget {
         elevation: 0,
         leading: IconButton(
           icon: Icon(
-            Icons.arrow_back_ios,
+            AppIcons.arrowBackIos,
             color: const Color(0xFF37352F),
             size: 20.sp,
           ),
@@ -59,7 +60,7 @@ class ChatScreen extends HookConsumerWidget {
         actions: [
           IconButton(
             icon: Icon(
-              Icons.add_circle_outline,
+              AppIcons.addCircleOutline,
               color: const Color(0xFF37352F),
               size: 22.sp,
             ),
@@ -71,7 +72,7 @@ class ChatScreen extends HookConsumerWidget {
           Builder(
             builder: (context) => IconButton(
               icon: Icon(
-                Icons.history,
+                AppIcons.history,
                 color: const Color(0xFF37352F),
                 size: 22.sp,
               ),
@@ -136,7 +137,7 @@ class ChatScreen extends HookConsumerWidget {
                                       .read(chatProvider.notifier)
                                       .retryLastMessage();
                                 },
-                                icon: Icon(Icons.refresh, size: 16.sp),
+                                icon: Icon(AppIcons.refresh, size: 16.sp),
                                 label: Text(
                                   '重试',
                                   style: TextStyle(fontSize: 13.sp),
@@ -158,7 +159,7 @@ class ChatScreen extends HookConsumerWidget {
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
                     Icon(
-                      Icons.error_outline,
+                      AppIcons.errorOutline,
                       size: 48.sp,
                       color: Colors.red[300],
                     ),
@@ -178,7 +179,7 @@ class ChatScreen extends HookConsumerWidget {
                     SizedBox(height: 16.h),
                     ElevatedButton.icon(
                       onPressed: () => ref.invalidate(chatProvider),
-                      icon: const Icon(Icons.refresh, size: 16),
+                      icon: const Icon(AppIcons.refresh, size: 16),
                       label: const Text('重试'),
                       style: ElevatedButton.styleFrom(
                         backgroundColor: const Color(0xFF135BEC),
@@ -218,7 +219,7 @@ class ChatScreen extends HookConsumerWidget {
                   child: Row(
                     children: [
                       Icon(
-                        Icons.library_books,
+                        AppIcons.libraryBooks,
                         size: 14.sp,
                         color: isRagEnabled.value
                             ? const Color(0xFF135BEC)
@@ -320,9 +321,9 @@ class ChatScreen extends HookConsumerWidget {
                           shape: BoxShape.circle,
                         ),
                         child: ref.watch(chatProvider.notifier).isGenerating
-                            ? Icon(Icons.stop, color: Colors.white, size: 20.sp)
+                            ? Icon(AppIcons.stop, color: Colors.white, size: 20.sp)
                             : Icon(
-                                Icons.send,
+                                AppIcons.send,
                                 color: Colors.white,
                                 size: 20.sp,
                               ),
@@ -408,7 +409,7 @@ class ChatScreen extends HookConsumerWidget {
                         },
                         trailing: IconButton(
                           icon: Icon(
-                            Icons.delete_outline,
+                            AppIcons.deleteOutline,
                             size: 18.sp,
                             color: Colors.grey,
                           ),
@@ -523,7 +524,7 @@ class ChatScreen extends HookConsumerWidget {
             CircleAvatar(
               backgroundColor: const Color(0xFFF0F0F0),
               radius: 16.r,
-              child: Icon(Icons.person, size: 16.sp, color: Colors.grey),
+              child: Icon(AppIcons.person, size: 16.sp, color: Colors.grey),
             ),
           ],
         ],

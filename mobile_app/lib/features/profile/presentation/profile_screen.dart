@@ -4,6 +4,7 @@ import 'package:flutter_screenutil/flutter_screenutil.dart';
 import '../../../core/navigation/app_nav.dart';
 import 'profile_provider.dart';
 import '../domain/user_profile.dart';
+import '../../../core/theme/app_icons.dart';
 
 /// 个人中心页面
 class ProfileScreen extends ConsumerStatefulWidget {
@@ -33,7 +34,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
         backgroundColor: Colors.white,
         elevation: 0,
         leading: IconButton(
-          icon: Icon(Icons.arrow_back, color: theme.colorScheme.onSurface),
+          icon: Icon(AppIcons.arrowBack, color: theme.colorScheme.onSurface),
           onPressed: () => context.backOrHome(),
         ),
         title: Text(
@@ -46,7 +47,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
         ),
         actions: [
           IconButton(
-            icon: const Icon(Icons.refresh, color: Color(0xFF37352F)),
+            icon: const Icon(AppIcons.refresh, color: Color(0xFF37352F)),
             onPressed: () =>
                 ref.read(profileControllerProvider.notifier).load(),
           ),
@@ -67,7 +68,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          Icon(Icons.error_outline, size: 48.sp, color: Colors.red[300]),
+          Icon(AppIcons.errorOutline, size: 48.sp, color: Colors.red[300]),
           SizedBox(height: 16.h),
           Text(
             '加载失败',
@@ -83,7 +84,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
           ElevatedButton.icon(
             onPressed: () =>
                 ref.read(profileControllerProvider.notifier).load(),
-            icon: const Icon(Icons.refresh, size: 18),
+            icon: const Icon(AppIcons.refresh, size: 18),
             label: const Text('重试'),
           ),
         ],
@@ -295,12 +296,12 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
 
   Widget _buildQuickActions() {
     final items = [
-      (icon: Icons.history, label: '练习历史', route: '/history'),
-      (icon: Icons.book_outlined, label: '错题本', route: '/wrong-book'),
-      (icon: Icons.style_outlined, label: '知识卡片', route: '/knowledge'),
-      (icon: Icons.hub_outlined, label: '掌握度', route: '/mastery'),
-      (icon: Icons.workspace_premium_outlined, label: '订阅套餐', route: '/pricing'),
-      (icon: Icons.settings_outlined, label: '设置', route: '/settings'),
+      (icon: AppIcons.history, label: '练习历史', route: '/history'),
+      (icon: AppIcons.bookOutlined, label: '错题本', route: '/wrong-book'),
+      (icon: AppIcons.styleOutlined, label: '知识卡片', route: '/knowledge'),
+      (icon: AppIcons.hubOutlined, label: '掌握度', route: '/mastery'),
+      (icon: AppIcons.workspacePremiumOutlined, label: '订阅套餐', route: '/pricing'),
+      (icon: AppIcons.settingsOutlined, label: '设置', route: '/settings'),
     ];
 
     return Container(
@@ -356,7 +357,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                   ),
                 ),
                 Icon(
-                  Icons.chevron_right,
+                  AppIcons.chevronRight,
                   size: 20.sp,
                   color: const Color(0xFF9B9A97),
                 ),

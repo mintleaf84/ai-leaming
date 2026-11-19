@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import '../../../core/navigation/app_nav.dart';
 import '../../../core/network/dio_client.dart';
+import '../../../core/theme/app_icons.dart';
 
 /// 定价页面（与 Web /pricing 功能对齐）
 class PricingScreen extends ConsumerStatefulWidget {
@@ -54,7 +55,7 @@ class _PricingScreenState extends ConsumerState<PricingScreen> {
         backgroundColor: Colors.white,
         elevation: 0,
         leading: IconButton(
-          icon: const Icon(Icons.arrow_back, color: Color(0xFF37352F)),
+          icon: const Icon(AppIcons.arrowBack, color: Color(0xFF37352F)),
           onPressed: () => context.backOrHome(),
         ),
         title: Text(
@@ -199,7 +200,7 @@ class _PricingScreenState extends ConsumerState<PricingScreen> {
                   child: Row(
                     children: [
                       Icon(
-                        Icons.check_circle_outline,
+                        AppIcons.checkCircleOutline,
                         size: 16.sp,
                         color: textColor.withValues(alpha: 0.8),
                       ),

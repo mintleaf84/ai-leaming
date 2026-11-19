@@ -5,6 +5,7 @@ import 'package:flutter_hooks/flutter_hooks.dart';
 import '../../../core/navigation/app_nav.dart';
 import '../../stats/presentation/stats_provider.dart';
 import '../../stats/domain/learning_stats.dart';
+import '../../../core/theme/app_icons.dart';
 
 class DashboardScreen extends HookConsumerWidget {
   const DashboardScreen({super.key});
@@ -275,7 +276,7 @@ class DashboardScreen extends HookConsumerWidget {
                           ],
                         ),
                         Icon(
-                          Icons.arrow_forward,
+                          AppIcons.arrowForward,
                           size: 16.sp,
                           color: const Color(0xFF37352F),
                         ),
@@ -386,7 +387,7 @@ class DashboardScreen extends HookConsumerWidget {
                       ),
                       SizedBox(width: 8.w),
                       Icon(
-                        Icons.chevron_right,
+                        AppIcons.chevronRight,
                         size: 20.sp,
                         color: const Color(0xFF37352F),
                       ),
@@ -496,7 +497,7 @@ class DashboardScreen extends HookConsumerWidget {
                       ),
                       SizedBox(width: 8.w),
                       Icon(
-                        Icons.chevron_right,
+                        AppIcons.chevronRight,
                         size: 20.sp,
                         color: const Color(0xFF37352F),
                       ),
@@ -666,19 +667,19 @@ class DashboardScreen extends HookConsumerWidget {
 
     return <_TodoEntry>[
       _TodoEntry(
-        icon: Icons.play_circle_outline,
+        icon: AppIcons.playCircleOutline,
         title: practiceTitle,
         subtitle: practiceSubtitle,
         isDone: remaining <= 0,
       ),
       _TodoEntry(
-        icon: Icons.error_outline,
+        icon: AppIcons.errorOutline,
         title: wrongTitle,
         subtitle: wrongSubtitle,
         isDone: wrongCount <= 0,
       ),
       _TodoEntry(
-        icon: Icons.local_fire_department_outlined,
+        icon: AppIcons.localFireDepartmentOutlined,
         title: streakTitle,
         subtitle: streakSubtitle,
         isDone: todayPracticed && stats.streakDays > 0,
@@ -691,7 +692,7 @@ class DashboardScreen extends HookConsumerWidget {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Icon(
-          entry.isDone ? Icons.check_circle : entry.icon,
+          entry.isDone ? AppIcons.checkCircle : entry.icon,
           size: 20.sp,
           color: entry.isDone
               ? const Color(0xFF52B788)
@@ -752,27 +753,27 @@ class DashboardScreen extends HookConsumerWidget {
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
-          _buildNavItem(Icons.dashboard, '工作区', true, null),
+          _buildNavItem(AppIcons.dashboard, '工作区', true, null),
           _buildNavItem(
-            Icons.smart_toy,
+            AppIcons.smartToy,
             'AI助手',
             false,
             () => context.pushDetail(AppRoutes.chat),
           ),
           _buildNavItem(
-            Icons.book,
+            AppIcons.book,
             '知识库',
             false,
             () => context.pushDetail(AppRoutes.knowledge),
           ),
           _buildNavItem(
-            Icons.library_books,
+            AppIcons.libraryBooks,
             '教材',
             false,
             () => context.pushDetail(AppRoutes.textbooks),
           ),
           _buildNavItem(
-            Icons.person_outline,
+            AppIcons.personOutline,
             '我的',
             false,
             () => context.pushDetail(AppRoutes.profile),

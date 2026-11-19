@@ -7,6 +7,7 @@ import 'package:skeletonizer/skeletonizer.dart';
 import 'knowledge_provider.dart';
 import '../../../shared/skeletons/skeleton_fakes.dart';
 import '../../../shared/widgets/empty_state.dart';
+import '../../../core/theme/app_icons.dart';
 
 class KnowledgeScreen extends ConsumerStatefulWidget {
   const KnowledgeScreen({super.key});
@@ -38,7 +39,7 @@ class _KnowledgeScreenState extends ConsumerState<KnowledgeScreen> {
         backgroundColor: Colors.white,
         elevation: 0,
         leading: IconButton(
-          icon: const Icon(Icons.arrow_back, color: Color(0xFF37352F)),
+          icon: const Icon(AppIcons.arrowBack, color: Color(0xFF37352F)),
           onPressed: () => context.backOrHome(),
         ),
         titleTextStyle: TextStyle(
@@ -49,7 +50,7 @@ class _KnowledgeScreenState extends ConsumerState<KnowledgeScreen> {
         iconTheme: const IconThemeData(color: Color(0xFF37352F)),
         actions: [
           IconButton(
-            icon: const Icon(Icons.refresh),
+            icon: const Icon(AppIcons.refresh),
             onPressed: () => ref
                 .read(knowledgeControllerProvider.notifier)
                 .loadCards(category: selectedCategory),
@@ -108,7 +109,7 @@ class _KnowledgeScreenState extends ConsumerState<KnowledgeScreen> {
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
                         Icon(
-                          Icons.error_outline,
+                          AppIcons.errorOutline,
                           size: 48.sp,
                           color: Colors.red[300],
                         ),
@@ -131,7 +132,7 @@ class _KnowledgeScreenState extends ConsumerState<KnowledgeScreen> {
                           onPressed: () => ref
                               .read(knowledgeControllerProvider.notifier)
                               .loadCards(category: selectedCategory),
-                          icon: const Icon(Icons.refresh, size: 18),
+                          icon: const Icon(AppIcons.refresh, size: 18),
                           label: const Text('重试'),
                           style: ElevatedButton.styleFrom(
                             backgroundColor: const Color(0xFF135BEC),
@@ -165,7 +166,7 @@ class _KnowledgeScreenState extends ConsumerState<KnowledgeScreen> {
       floatingActionButton: FloatingActionButton(
         onPressed: _openCreateCardDialog,
         backgroundColor: const Color(0xFF37352F),
-        child: const Icon(Icons.add),
+        child: const Icon(AppIcons.add),
       ),
     );
   }

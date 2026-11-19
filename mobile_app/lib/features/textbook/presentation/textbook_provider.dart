@@ -30,6 +30,10 @@ class TextbookListState {
 
 /// 教材列表控制器
 class TextbookListController extends Notifier<TextbookListState> {
+  /// 请求序号：每发起一次加载自增，回调落地前比对，避免「先发后到」的旧响应
+  /// 覆盖新响应（连点刷新时会出现）。
+  int _requestSeq = 0;
+
   @override
   TextbookListState build() => const TextbookListState();
 
@@ -40,6 +44,7 @@ class TextbookListController extends Notifier<TextbookListState> {
 
   /// 加载教材列表
   Future<void> load() async {
+    final seq = ++_requestSeq;
     state = state.copyWith(isLoading: true, error: null);
 
     try {
@@ -47,8 +52,13 @@ class TextbookListController extends Notifier<TextbookListState> {
       final list = (response as List<dynamic>)
           .map((e) => Textbook.fromJson(e as Map<String, dynamic>))
           .toList();
+
+      // 已经有更新的请求发出，这份旧结果（含其失败）必须整体丢弃。
+      if (seq != _requestSeq) return;
+
       state = state.copyWith(isLoading: false, textbooks: list);
     } catch (e) {
+      if (seq != _requestSeq) return;
       state = state.copyWith(isLoading: false, error: e.toString());
     }
   }

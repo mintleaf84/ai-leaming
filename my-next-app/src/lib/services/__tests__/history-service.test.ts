@@ -103,6 +103,9 @@ beforeAll(async () => {
         dimension: "knowledge",
         type: "single",
         external_id: "history-ext-9001",
+        // 详情只渲染纯文本 material；material_html 是单题最大的字段，不该被查出来
+        material: "叶绿体是光合作用的场所。",
+        material_html: "<p>叶绿体是光合作用的场所。</p>",
       },
       {
         id: Q_FAIL,
@@ -321,6 +324,18 @@ describe("getSessionDetail", () => {
     const wrong = detail!.logs.find((l) => l.questionId === Q_FAIL)!;
     expect(wrong.isCorrect).toBe(false);
     expect(wrong.reviewData).toEqual({ note: "回看英国工业革命" });
+  });
+
+  it("字段裁剪：返回 material 纯文本，但**不**返回 material_html", async () => {
+    await seedLogs("hs-25");
+
+    const detail = await historyService.getSessionDetail(USER_A, "hs-25");
+    const log = detail!.logs.find((l) => l.questionId === Q_PARSE)!;
+
+    expect(log.material).toBe("叶绿体是光合作用的场所。");
+    // material_html 是材料原文（单题最大字段），详情链路不渲染它；一旦有人把它
+    // 加回 select + map，这条断言会红。
+    expect("materialHtml" in log).toBe(false);
   });
 
   it("会话属于别人时返回 null", async () => {

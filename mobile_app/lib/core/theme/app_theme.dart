@@ -102,6 +102,11 @@ class AppTheme {
         selectedItemColor: primaryColor,
         unselectedItemColor: _lightTextSecondary,
       ),
+
+      // 页面过渡：跟随平台默认。Android 走预测性返回（Android 15+ 对
+      // targetSdk 35+ 的应用默认启用，开发者选项开关已移除），其余平台保持
+      // 各自的默认过渡，不再全站套自定义 SharedAxis（见 docs/mobile-ui-kit.md D-1）。
+      pageTransitionsTheme: _pageTransitionsTheme,
     );
   }
 
@@ -177,8 +182,25 @@ class AppTheme {
         selectedItemColor: _darkText,
         unselectedItemColor: _darkTextSecondary,
       ),
+
+      // 页面过渡：与亮色主题同一份配置（过渡与配色无关）。
+      pageTransitionsTheme: _pageTransitionsTheme,
     );
   }
+
+  // ==================== 共用配置 ====================
+
+  /// 页面过渡策略：只覆盖 Android，其余平台用 Flutter 默认值。
+  ///
+  /// Android 显式使用 [PredictiveBackPageTransitionsBuilder]——非返回手势时它会
+  /// 自动回落到 `FadeForwardsPageTransitionsBuilder`，因此不需要为"推入"另配一套。
+  static const PageTransitionsTheme _pageTransitionsTheme =
+      PageTransitionsTheme(
+        builders: <TargetPlatform, PageTransitionsBuilder>{
+          TargetPlatform.android: PredictiveBackPageTransitionsBuilder(),
+          TargetPlatform.iOS: CupertinoPageTransitionsBuilder(),
+        },
+      );
 
   // ==================== 辅助方法 ====================
 

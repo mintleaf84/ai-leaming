@@ -19,6 +19,7 @@ class AppIcons {
   static const IconData arrowBackIos = Symbols.arrow_back_ios;  // 原 Icons.arrow_back_ios
   static const IconData arrowForward = Symbols.arrow_forward;  // 原 Icons.arrow_forward
   static const IconData arrowForwardIos = Symbols.arrow_forward_ios;  // 原 Icons.arrow_forward_ios
+  static const IconData archiveOutlined = Symbols.archive;  // 原 Icons.archive_outlined
   static const IconData book = Symbols.book;  // 原 Icons.book
   static const IconData bookOutlined = Symbols.book;  // 原 Icons.book_outlined
   static const IconData cancel = Symbols.cancel;  // 原 Icons.cancel
@@ -40,6 +41,7 @@ class AppIcons {
   static const IconData deleteOutline = Symbols.delete_outline;  // 原 Icons.delete_outline
   static const IconData dnsOutlined = Symbols.dns;  // 原 Icons.dns_outlined
   static const IconData errorOutline = Symbols.error_outline;  // 原 Icons.error_outline
+  static const IconData eventOutlined = Symbols.event;  // 原 Icons.event_outlined
   static const IconData expandMore = Symbols.expand_more;  // 原 Icons.expand_more
   static const IconData feedbackOutlined = Symbols.feedback;  // 原 Icons.feedback_outlined
   static const IconData filterAlt = Symbols.filter_alt;  // 原 Icons.filter_alt
@@ -59,6 +61,7 @@ class AppIcons {
   static const IconData person = Symbols.person_filled;  // 原 Icons.person
   static const IconData personOutline = Symbols.person_outline;  // 原 Icons.person_outline
   static const IconData playCircleOutline = Symbols.play_circle;  // 原 Icons.play_circle_outline
+  static const IconData radioButtonUnchecked = Symbols.radio_button_unchecked;  // 原 Icons.radio_button_unchecked
   static const IconData refresh = Symbols.refresh;  // 原 Icons.refresh
   static const IconData search = Symbols.search;  // 原 Icons.search
   static const IconData send = Symbols.send;  // 原 Icons.send

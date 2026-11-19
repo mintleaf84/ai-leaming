@@ -7,6 +7,7 @@ import 'package:mobile_app/features/practice/domain/question.dart';
 import 'package:mobile_app/shared/widgets/animated_option_card.dart';
 import 'package:mobile_app/shared/skeletons/skeleton_fakes.dart';
 import 'package:mobile_app/features/practice/presentation/widgets/first_principles_panel.dart';
+import '../../../core/a11y/status_announcer.dart';
 import '../../../core/navigation/app_nav.dart';
 import 'package:skeletonizer/skeletonizer.dart';
 import 'package:mobile_app/core/theme/app_icons.dart';
@@ -294,6 +295,7 @@ class _PracticeScreenState extends ConsumerState<PracticeScreen> {
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
               IconButton(
+                tooltip: '退出练习',
                 onPressed: () async {
                   final shouldPop = await _showExitDialog();
                   if (shouldPop ?? false) {
@@ -316,6 +318,7 @@ class _PracticeScreenState extends ConsumerState<PracticeScreen> {
                 ),
               ),
               IconButton(
+                tooltip: '更多操作',
                 onPressed: () {},
                 icon: const Icon(AppIcons.moreHoriz),
                 color: context.colors.text.withValues(alpha: 0.6),
@@ -705,11 +708,19 @@ class _PracticeScreenState extends ConsumerState<PracticeScreen> {
     // 已选择则显示确认按钮 (启用，如果不在判卷中)
     return GestureDetector(
       onTap: (canSubmit && !isConfirming)
-          ? () {
+          ? () async {
               // 服务端校验正确答案
-              ref
+              final questionId =
+                  ref.read(practiceControllerProvider).currentQuestion?.id;
+              await ref
                   .read(practiceControllerProvider.notifier)
                   .submitCurrentAnswer();
+              if (!mounted || questionId == null) return;
+              // 判分结果只体现在选项卡片的颜色上，读屏用户没有感知 → 主动播报。
+              final verdict =
+                  ref.read(practiceControllerProvider).results[questionId];
+              if (verdict == null) return;
+              announceStatus(context, verdict ? '回答正确' : '回答错误');
             }
           : null,
       child: Column(

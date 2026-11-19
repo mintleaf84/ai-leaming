@@ -32,6 +32,7 @@ class _MasteryScreenState extends ConsumerState<MasteryScreen> {
         title: const Text('学习掌握度'),
         elevation: 0,
         leading: IconButton(
+          tooltip: '返回',
           icon: Icon(AppIcons.arrowBack, color: context.colors.text),
           onPressed: () => context.backOrHome(),
         ),
@@ -43,6 +44,7 @@ class _MasteryScreenState extends ConsumerState<MasteryScreen> {
         iconTheme: IconThemeData(color: context.colors.text),
         actions: [
           IconButton(
+            tooltip: '刷新掌握度',
             icon: const Icon(AppIcons.refresh),
             onPressed: () =>
                 ref.read(masteryControllerProvider.notifier).loadTree(),

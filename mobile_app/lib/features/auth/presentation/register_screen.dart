@@ -39,6 +39,7 @@ class RegisterScreen extends HookConsumerWidget {
             children: [
               // Top Back Button (Not Scrollable, Pinned to Top)
               IconButton(
+                tooltip: '返回',
                 onPressed: () => context.backOrHome(fallback: AppRoutes.login),
                 icon: const Icon(AppIcons.arrowBack),
                 style: IconButton.styleFrom(
@@ -257,6 +258,7 @@ class RegisterScreen extends HookConsumerWidget {
               ),
               if (isPassword)
                 IconButton(
+                  tooltip: isVisible ? '隐藏密码' : '显示密码',
                   icon: Icon(
                     isVisible ? AppIcons.visibility : AppIcons.visibilityOff,
                     color: context.colors.textSecondary,

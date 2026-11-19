@@ -71,15 +71,20 @@ class AiAnalysisCard extends StatelessWidget {
                 ),
               ),
               if (onCollapse != null)
-                InkWell(
-                  onTap: onCollapse,
-                  borderRadius: BorderRadius.circular(12.r),
-                  child: Padding(
-                    padding: EdgeInsets.all(4.w),
-                    child: Icon(
-                      AppIcons.keyboardArrowUp,
-                      size: 20.sp,
-                      color: headerColor,
+                // 纯图标（收起箭头）：无可见文字，补语义标签。
+                Semantics(
+                  button: true,
+                  label: '收起分析',
+                  child: InkWell(
+                    onTap: onCollapse,
+                    borderRadius: BorderRadius.circular(12.r),
+                    child: Padding(
+                      padding: EdgeInsets.all(4.w),
+                      child: Icon(
+                        AppIcons.keyboardArrowUp,
+                        size: 20.sp,
+                        color: headerColor,
+                      ),
                     ),
                   ),
                 ),

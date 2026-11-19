@@ -22,6 +22,7 @@ class TextbookDetailScreen extends ConsumerWidget {
         appBar: AppBar(
           elevation: 0,
           leading: IconButton(
+            tooltip: '返回',
             icon: Icon(AppIcons.arrowBack, color: context.colors.text),
             onPressed: () => context.backOrHome(),
           ),
@@ -32,6 +33,7 @@ class TextbookDetailScreen extends ConsumerWidget {
         appBar: AppBar(
           elevation: 0,
           leading: IconButton(
+            tooltip: '返回',
             icon: Icon(AppIcons.arrowBack, color: context.colors.text),
             onPressed: () => context.backOrHome(),
           ),
@@ -59,6 +61,7 @@ class TextbookDetailScreen extends ConsumerWidget {
             appBar: AppBar(
               elevation: 0,
               leading: IconButton(
+                tooltip: '返回',
                 icon: Icon(AppIcons.arrowBack, color: context.colors.text),
                 onPressed: () => context.backOrHome(),
               ),
@@ -92,6 +95,7 @@ class TextbookDetailScreen extends ConsumerWidget {
       appBar: AppBar(
         elevation: 0,
         leading: IconButton(
+          tooltip: '返回',
           icon: Icon(AppIcons.arrowBack, color: context.colors.text),
           onPressed: () => context.backOrHome(),
         ),

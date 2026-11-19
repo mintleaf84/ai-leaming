@@ -72,6 +72,7 @@ class FirstPrinciplesPanel extends ConsumerWidget {
                 ],
               ),
               IconButton(
+                tooltip: '关闭',
                 onPressed: () => Navigator.pop(context),
                 icon: Icon(AppIcons.close, color: context.colors.textSecondary),
               ),

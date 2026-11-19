@@ -151,7 +151,15 @@ try {
   await rpc("tools/call", {
     name: "create_questions_batch",
     arguments: {
-      questions: [{ externalId: "smoke-1", content: "冒烟题", answer: "A" }],
+      questions: [
+        {
+          externalId: "smoke-1",
+          content: "冒烟题",
+          answer: "A",
+          explanation: "冒烟用的解析文本。",
+          tags: ["冒烟"],
+        },
+      ],
       dryRun: true,
     },
   });

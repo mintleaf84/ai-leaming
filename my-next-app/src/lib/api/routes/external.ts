@@ -47,6 +47,7 @@ import { buildApiExternalId } from "@/lib/services/question-idempotency";
 import {
   createQuestionsBatch,
   QUESTION_BATCH_MAX,
+  ReservedExternalIdError,
   type QuestionBatchCreateInput,
 } from "@/lib/services/question-batch";
 import { indexQuestion } from "@/lib/services/question-vector-index";
@@ -3000,7 +3001,7 @@ const QuestionBatchItemSchema = z
   .object({
     externalId: z.string().trim().min(1).max(200).optional().openapi({
       description:
-        "幂等键（推荐）：上游题号这类跨重试稳定的标识。同一 externalId 重复提交只会落一行；省略时退回内容指纹（题干+选项+答案）",
+        "幂等键（推荐）：上游题号这类跨重试稳定的标识。同一 externalId 重复提交只会落一行；省略时退回内容指纹（题干+选项+答案）。不能以 `api:` 开头——该前缀是服务端内容指纹保留的命名空间",
       example: "jz1680_jz00312",
     }),
     content: z.string().openapi({ description: "题干纯文本" }),
@@ -3010,12 +3011,14 @@ const QuestionBatchItemSchema = z
       .openapi({ description: "选项文本；判断题必须是两个、填空题可为空" }),
     answer: z.string().openapi({
       description:
-        "正确答案：单选传标号（A）/ 多选题传 JSON 数组字符串（\"['A','C']\"）/ 判断题 A 或 B / 填空题为自由文本",
+        '正确答案：单选传标号（A）/ 多选题传 JSON 数组字符串（如 ["A","C"]）/ 判断题 A 或 B / 填空题为自由文本',
     }),
-    explanation: z.string().optional().openapi({ description: "解析" }),
-    tags: z.array(z.string()).optional().openapi({
-      description: "知识点标签，至少 1 个",
-    }),
+    explanation: z
+      .string()
+      .openapi({
+        description: "解析（至少 5 个字符，与 QuestionSchema 一致）",
+      }),
+    tags: z.array(z.string()).openapi({ description: "知识点标签，至少 1 个" }),
     dimension: z
       .enum(["knowledge", "understanding", "application"])
       .optional()
@@ -3186,6 +3189,21 @@ app.openapi(questionsBatchCreateRoute, async (c) => {
 
     return c.json(result, 200);
   } catch (err) {
+    // 保留前缀：语义上是调用方输入错误（400 + issues），不是服务端故障。
+    // 服务层在任何查询/写入之前统一拒绝，因此这里一条都没写
+    if (err instanceof ReservedExternalIdError) {
+      const reservedIssues = err.indexes.map(
+        (index) => `questions.${index}.externalId: ${err.message}`,
+      );
+      return c.json(
+        {
+          error: "批量建题校验失败（整批未写入）",
+          issues: reservedIssues.slice(0, MAX_BATCH_ISSUES),
+          issueCount: reservedIssues.length,
+        },
+        400,
+      );
+    }
     // 真实故障（含事务失败）：整批已回滚，记结构化日志后按 500 返回
     logger.error({ err }, "[External] 批量建题失败");
     return c.json({ error: "服务器内部错误" }, 500);

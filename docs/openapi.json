@@ -86,7 +86,7 @@
       "ExternalQuestionBatchItem": {
         "properties": {
           "answer": {
-            "description": "正确答案：单选传标号（A）/ 多选题传 JSON 数组字符串（\"['A','C']\"）/ 判断题 A 或 B / 填空题为自由文本",
+            "description": "正确答案：单选传标号（A）/ 多选题传 JSON 数组字符串（如 [\"A\",\"C\"]）/ 判断题 A 或 B / 填空题为自由文本",
             "type": "string"
           },
           "content": {
@@ -99,11 +99,11 @@
             "type": "string"
           },
           "explanation": {
-            "description": "解析",
+            "description": "解析（至少 5 个字符，与 QuestionSchema 一致）",
             "type": "string"
           },
           "externalId": {
-            "description": "幂等键（推荐）：上游题号这类跨重试稳定的标识。同一 externalId 重复提交只会落一行；省略时退回内容指纹（题干+选项+答案）",
+            "description": "幂等键（推荐）：上游题号这类跨重试稳定的标识。同一 externalId 重复提交只会落一行；省略时退回内容指纹（题干+选项+答案）。不能以 `api:` 开头——该前缀是服务端内容指纹保留的命名空间",
             "example": "jz1680_jz00312",
             "maxLength": 200,
             "minLength": 1,
@@ -138,7 +138,7 @@
             "type": "string"
           }
         },
-        "required": ["content", "answer"],
+        "required": ["content", "answer", "explanation", "tags"],
         "type": "object"
       },
       "ExternalQuestionBatchItemResult": {

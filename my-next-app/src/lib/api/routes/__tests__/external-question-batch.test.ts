@@ -371,6 +371,34 @@ describe("题库批量建题 POST /questions/batch", () => {
       expect(await allQuestions()).toHaveLength(0);
     });
 
+    it("缺 explanation / tags → 400（与 QuestionSchema 的必填口径一致）", async () => {
+      for (const field of ["explanation", "tags"]) {
+        const item = choice();
+        delete (item as Record<string, unknown>)[field];
+
+        const res = await postBatch({ questions: [item] });
+        expect(res.status).toBe(400);
+      }
+      expect(await allQuestions()).toHaveLength(0);
+    });
+
+    it("externalId 以保留前缀 api: 开头 → 400 + issues，整批不写", async () => {
+      const res = await postBatch({
+        questions: [
+          choice({ externalId: "api:vendor-1" }),
+          choice({ externalId: "ok-1", content: "同批里的另一道合法题。" }),
+        ],
+      });
+
+      expect(res.status).toBe(400);
+      const json = await res.json();
+      expect(json.error).toContain("整批未写入");
+      // 指向具体条目，并说明是保留前缀
+      expect(json.issues[0]).toContain("questions.0.externalId");
+      expect(json.issues[0]).toContain("api:");
+      expect(await allQuestions()).toHaveLength(0);
+    });
+
     it("未知 type → 400", async () => {
       const res = await postBatch({
         questions: [choice({ type: "essay" })],

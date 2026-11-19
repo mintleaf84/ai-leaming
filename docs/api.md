@@ -450,12 +450,15 @@ AI_LEAMING_BASE_URL=https://your-host AI_LEAMING_API_KEY=sk_xxx node dist/index.
 
 - **作用域是 `admin`**（与单题建题一致）；`write` / `read` key 一律 403。
 - 条数 1–100（`questions` 数组）；逐条校验复用 `QuestionSchema`（与后台导入、单题建题同一口径），
+  即 `explanation` 至少 5 个字符、`tags` 至少 1 个，两者**必填**；
   `type` 省略按 `single`、`dimension` 省略按 `knowledge` 落库。
 - **整批原子**：任一条不合法返回 `400` + `issues`（每个 issue 前缀带条目下标，
   如 `questions.1.answer: …`），**一条都不写**；`issues` 最多回 20 条，总数见 `issueCount`。
 - **幂等**：每条优先用 `externalId`（上游题号，跨重试稳定）；省略时退回内容指纹
   `api:`+（题干+选项+答案）。命中既有题 → `status: "skipped"` 并回既有 `questionId`，
   **不更新内容**（要改题走 `PATCH /questions/{id}`）。
+  `externalId` **不能以 `api:` 开头**：该前缀是服务端内容指纹的保留命名空间，
+  调用方占用它会在 `PATCH` 时被当成自有指纹重算、悄悄覆盖掉幂等键（返回 400 + `issues`）。
 - **批内重复 `externalId`**：第一份 `created`，其余 `skipped` 并指向同一个 `questionId`，
   库内只落一行；此时以**第一份**的内容为准。
 - 预演：`?dryRun=true` 时只查不写，`created` 表示「会新建几条」、新题的 `questionId` 为 `null`

@@ -34,6 +34,29 @@ import { logger } from "@/lib/logger";
 export const QUESTION_BATCH_MAX = 100;
 
 /**
+ * 内容指纹的保留前缀。
+ *
+ * `api:` 是服务端自己算出来的键（`buildApiExternalId`）。调用方若拿它当自己的
+ * `externalId`，`PATCH /questions/{id}` 会把这个键当成"自有指纹"重算，
+ * 悄悄覆盖掉调用方的幂等键 —— 下一次同 `externalId` 的批量重推就匹配不到，
+ * 会插出重复题。所以调用方键一律不许以它开头。
+ */
+export const RESERVED_EXTERNAL_ID_PREFIX = "api:";
+
+/** 调用方 externalId 撞了保留前缀：路由映射成 400 + issues（整批不写） */
+export class ReservedExternalIdError extends Error {
+  readonly indexes: number[];
+
+  constructor(indexes: number[]) {
+    super(
+      `externalId 不能以 "${RESERVED_EXTERNAL_ID_PREFIX}" 开头（该前缀为服务端内容指纹保留）`,
+    );
+    this.name = "ReservedExternalIdError";
+    this.indexes = indexes;
+  }
+}
+
+/**
  * 单条 INSERT 的行数上限。
  *
  * SQLite 的绑定变量上限按「列数 × 行数」计（`SQLITE_MAX_VARIABLE_NUMBER`）。
@@ -131,6 +154,18 @@ export async function createQuestionsBatch(
     throw new Error(
       `[QuestionBatch] 单批最多 ${QUESTION_BATCH_MAX} 条，收到 ${items.length} 条`,
     );
+  }
+
+  // 保留前缀检查先于任何查询/写入：命中就整批拒绝，不产生半批数据
+  const reservedIndexes = items
+    .map((item, index) =>
+      item.externalId?.trim().startsWith(RESERVED_EXTERNAL_ID_PREFIX)
+        ? index
+        : -1,
+    )
+    .filter((index) => index >= 0);
+  if (reservedIndexes.length > 0) {
+    throw new ReservedExternalIdError(reservedIndexes);
   }
 
   const keys = items.map(resolveKey);

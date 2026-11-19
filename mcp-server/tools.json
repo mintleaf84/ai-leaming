@@ -66,7 +66,7 @@
               "externalId": {
                 "type": "string",
                 "required": false,
-                "description": "幂等键（推荐）：上游题号，如 jz1680_jz00312"
+                "description": "幂等键（推荐）：上游题号，如 jz1680_jz00312。不能以 api: 开头（服务端内容指纹保留）"
               },
               "content": {
                 "type": "string",
@@ -85,12 +85,12 @@
               },
               "explanation": {
                 "type": "string",
-                "required": false,
-                "description": "解析"
+                "required": true,
+                "description": "解析（至少 5 个字符）"
               },
               "tags": {
                 "type": "array",
-                "required": false,
+                "required": true,
                 "description": "知识点标签（至少 1 个）"
               },
               "dimension": {

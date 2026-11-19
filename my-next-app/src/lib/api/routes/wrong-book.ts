@@ -379,9 +379,22 @@ app.openapi(getDetailRoute, async (c) => {
   const { id } = c.req.valid("param");
   const qId = Number(id);
 
-  const question = await drizzleDb.query.questions.findFirst({
-    where: eq(drizzleSchema.questions.id, qId),
-  });
+  // 只取详情页真正渲染的列：整行查询会把 material_html（材料原文，单题最大字段）
+  // 与 ai_mnemonic 一起搬进内存，而响应里根本不含它们。
+  const [question] = await drizzleDb
+    .select({
+      id: drizzleSchema.questions.id,
+      content: drizzleSchema.questions.content,
+      options: drizzleSchema.questions.options,
+      answer: drizzleSchema.questions.answer,
+      explanation: drizzleSchema.questions.explanation,
+      tags: drizzleSchema.questions.tags,
+      type: drizzleSchema.questions.type,
+    })
+    .from(drizzleSchema.questions)
+    .where(eq(drizzleSchema.questions.id, qId))
+    .limit(1)
+    .all();
 
   if (!question) return c.json({ error: "未找到题目" }, 404);
 

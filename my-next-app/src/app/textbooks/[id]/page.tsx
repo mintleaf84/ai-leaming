@@ -9,6 +9,7 @@ import remarkGfm from "remark-gfm";
 import remarkMath from "remark-math";
 import rehypeKatex from "rehype-katex";
 import rehypeRaw from "rehype-raw";
+import rehypeSanitize from "rehype-sanitize";
 import {
   Drawer,
   DrawerContent,
@@ -132,7 +133,11 @@ export default async function TextbookReaderPage({
                   <h1>{currentChapter.title}</h1>
                   <ReactMarkdown
                     remarkPlugins={[remarkGfm, remarkMath]}
-                    rehypePlugins={[rehypeKatex, rehypeRaw]}
+                    // 顺序很重要：先把 markdown 里的原始 HTML 还原（rehypeRaw），
+                    // 再按白名单清洗（rehypeSanitize），最后才渲染公式（rehypeKatex）
+                    // —— katex 产出的 MathML 不应被清洗，否则公式会消失。
+                    // 缺少 rehypeSanitize 时，教材里的任意 HTML（含 onerror）会被直接执行。
+                    rehypePlugins={[rehypeRaw, rehypeSanitize, rehypeKatex]}
                     components={{
                       code: ({
                         className,

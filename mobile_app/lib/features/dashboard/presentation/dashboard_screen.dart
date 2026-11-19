@@ -2,10 +2,12 @@ import 'package:flutter/material.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:flutter_hooks/flutter_hooks.dart';
+import '../../../core/compat/contract_meta_repository.dart';
 import '../../../core/navigation/app_nav.dart';
 import '../../stats/presentation/stats_provider.dart';
 import '../../stats/domain/learning_stats.dart';
 import '../../../core/theme/app_icons.dart';
+import '../../../shared/widgets/contract_gate.dart';
 
 class DashboardScreen extends HookConsumerWidget {
   const DashboardScreen({super.key});
@@ -19,6 +21,11 @@ class DashboardScreen extends HookConsumerWidget {
     }, const []);
 
     final statsState = ref.watch(statsControllerProvider);
+    // 能力协商：服务端明确说没有 `recall` 就隐藏入口（不是灰显后报错）。
+    // 协商中/断网按"支持"处理，见 recallEntryAvailable。
+    final showRecall = recallEntryAvailable(
+      ref.watch(contractDecisionProvider).value,
+    );
     return Scaffold(
       backgroundColor: const Color(0xFFF7F7F5), // Notion-like background
       body: Stack(
@@ -41,7 +48,7 @@ class DashboardScreen extends HookConsumerWidget {
                         Divider(height: 1.h, color: Colors.grey[300]),
                         SizedBox(height: 24.h),
                         // Action Grid
-                        _buildActionGrid(context),
+                        _buildActionGrid(context, showRecall: showRecall),
                         SizedBox(height: 32.h),
                         // Progress Card
                         _buildProgressCard(statsState.stats),
@@ -114,7 +121,7 @@ class DashboardScreen extends HookConsumerWidget {
     );
   }
 
-  Widget _buildActionGrid(BuildContext context) {
+  Widget _buildActionGrid(BuildContext context, {required bool showRecall}) {
     return Column(
       children: [
         IntrinsicHeight(
@@ -157,17 +164,22 @@ class DashboardScreen extends HookConsumerWidget {
         // 整宽行：按"每天要做 → 补漏 → 回看"的优先级往下排。
         // 记忆卡放在第一行整宽位而不是挤进两列：两列里落单一张会留半个空槽，
         // 而它本身就是"开始一件事"的入口，用整宽行更接近顶部两张卡的语义。
-        _buildWideCard(
-          icon: '📇',
-          tag: '每日记一点',
-          tagColor: const Color(0xFFE9F5EC),
-          tagTextColor: const Color(0xFF4EA05E),
-          title: '记忆卡',
-          trailingLabel: '每次',
-          trailingValue: '几分钟',
-          onTap: () => context.pushDetail(AppRoutes.recall),
-        ),
-        SizedBox(height: 16.h),
+        //
+        // 服务端自述没有 recall 能力时整张卡不出现（连它的间距一起）：
+        // 留一个空槽位比隐藏更难看，而灰显一张点不动的卡是欺骗。
+        if (showRecall) ...[
+          _buildWideCard(
+            icon: '📇',
+            tag: '每日记一点',
+            tagColor: const Color(0xFFE9F5EC),
+            tagTextColor: const Color(0xFF4EA05E),
+            title: '记忆卡',
+            trailingLabel: '每次',
+            trailingValue: '几分钟',
+            onTap: () => context.pushDetail(AppRoutes.recall),
+          ),
+          SizedBox(height: 16.h),
+        ],
         _buildWideCard(
           icon: '📕',
           tag: '重点关注',

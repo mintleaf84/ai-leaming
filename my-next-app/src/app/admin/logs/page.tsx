@@ -15,6 +15,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
 import { ErrorState } from "@/components/ui/error-state";
+import { formatBeijingDate } from "@/lib/utils/datetime";
 
 export default function LogsPage() {
   const [logs, setLogs] = useState<AdminLogEntry[]>([]);
@@ -91,13 +92,7 @@ export default function LogsPage() {
 
   // 格式化时间
   const formatTime = (timestamp: string): string => {
-    return new Date(timestamp).toLocaleString("zh-CN", {
-      month: "long",
-      day: "numeric",
-      hour: "2-digit",
-      minute: "2-digit",
-      second: "2-digit",
-    });
+    return formatBeijingDate(timestamp, "M月D日 HH:mm:ss");
   };
 
   return (

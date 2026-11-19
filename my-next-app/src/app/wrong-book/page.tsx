@@ -45,6 +45,7 @@ import { FolderQuestionList } from "./components/FolderQuestionList";
 import { AddToFolderDialog } from "./components/AddToFolderDialog";
 import { AddQuestionDialog } from "./components/AddQuestionDialog";
 import { PageJumpInput } from "@/components/ui/page-jump-input";
+import { formatBeijingDate } from "@/lib/utils/datetime";
 
 export default function WrongBookPage() {
   // 复练排序模式：priority = 按错误频次+遗忘权重，random = 纯随机
@@ -569,7 +570,7 @@ export default function WrongBookPage() {
                               <CheckCircle2 className="w-3 h-3 text-success" />
                               掌握于{" "}
                               {q.lastWrongAt
-                                ? new Date(q.lastWrongAt).toLocaleDateString()
+                                ? formatBeijingDate(q.lastWrongAt)
                                 : "未知"}
                             </span>
                           </div>

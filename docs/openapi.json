@@ -7197,6 +7197,57 @@
         }
       }
     },
+    "/api/meta": {
+      "get": {
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "properties": {
+                    "contractVersion": {
+                      "description": "契约版本（整数，不兼容变更才 +1）",
+                      "minimum": 1,
+                      "type": "integer"
+                    },
+                    "downloadUrl": {
+                      "description": "APK 下载地址；未配置时为 null（不是空字符串）",
+                      "nullable": true,
+                      "type": "string"
+                    },
+                    "features": {
+                      "description": "服务端具备的能力名（只增不减）",
+                      "items": {
+                        "type": "string"
+                      },
+                      "type": "array"
+                    },
+                    "latestClientVersion": {
+                      "description": "当前最新客户端版本",
+                      "type": "string"
+                    },
+                    "minClientVersion": {
+                      "description": "服务端仍愿意服务的最低客户端版本",
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "contractVersion",
+                    "minClientVersion",
+                    "latestClientVersion",
+                    "downloadUrl",
+                    "features"
+                  ],
+                  "type": "object"
+                }
+              }
+            },
+            "description": "服务端契约信息"
+          }
+        },
+        "summary": "契约协商（版本 + 能力列表，公开无鉴权）"
+      }
+    },
     "/api/pdf-import/cleanup": {
       "post": {
         "requestBody": {

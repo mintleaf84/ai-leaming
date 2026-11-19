@@ -7,6 +7,7 @@ import 'core/network/server_config.dart';
 import 'core/sync/sync_providers.dart';
 import 'core/theme/app_theme.dart';
 import 'core/theme/theme_provider.dart';
+import 'shared/widgets/contract_gate.dart';
 import 'shared/widgets/server_config_gate.dart';
 
 Future<void> main() async {
@@ -57,8 +58,12 @@ class MyApp extends ConsumerWidget {
             data: SkeletonizerConfigData(
               brightness: Theme.of(context).brightness,
             ),
+            // 两层闸的先后有语义：先确认「有服务器地址」，再拿这个地址问
+            // `/meta` 做版本协商。没有地址就协商，只会得到一个必然失败的请求。
             child: ServerConfigGate(
-              child: routedChild ?? const SizedBox.shrink(),
+              child: ContractGate(
+                child: routedChild ?? const SizedBox.shrink(),
+              ),
             ),
           ),
         );

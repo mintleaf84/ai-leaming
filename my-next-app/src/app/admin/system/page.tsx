@@ -77,7 +77,9 @@ export default function SystemPage() {
     <div className="p-8 space-y-8">
       <div className="flex justify-between items-center">
         <div>
-          <h1 className="text-2xl font-semibold tracking-tight md:text-3xl">系统监控</h1>
+          <h1 className="text-2xl font-semibold tracking-tight md:text-3xl">
+            系统监控
+          </h1>
           <p className="text-muted-foreground mt-2">
             实时服务器资源、AI 成本与健康状态
           </p>

@@ -130,7 +130,9 @@ export default async function TextbookReaderPage({
             {currentChapter ? (
               <>
                 <article className="prose dark:prose-invert max-w-none">
-                  <h1 className="text-2xl font-semibold tracking-tight md:text-3xl">{currentChapter.title}</h1>
+                  <h1 className="text-2xl font-semibold tracking-tight md:text-3xl">
+                    {currentChapter.title}
+                  </h1>
                   <ReactMarkdown
                     remarkPlugins={[remarkGfm, remarkMath]}
                     // 顺序很重要：先把 markdown 里的原始 HTML 还原（rehypeRaw），

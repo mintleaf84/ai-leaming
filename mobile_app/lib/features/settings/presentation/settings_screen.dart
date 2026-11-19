@@ -16,6 +16,22 @@ import '../../../core/theme/app_colors.dart';
 /// 设置页面
 ///
 /// Notion 风格的设置界面，支持深色模式。
+/// CI 传入的版本与构建指纹（`--dart-define`）。
+///
+/// 本地构建时两者都是空串：此时回落到仓库里的固定版本号，不显示指纹。
+/// 为什么要从 CI 传：APK 的 versionCode 由 `github.run_number` 派生，
+/// 用户上报问题时必须能对应到具体某次构建。
+const String _buildSha = String.fromEnvironment('BUILD_SHA');
+const String _appVersion = String.fromEnvironment('APP_VERSION');
+
+/// 设置页与「关于」共用的版本文案：`v1.0.0 (12) · a1b2c3d4`。
+String get _versionLabel {
+  final base = _appVersion.isEmpty ? 'v1.2.0' : 'v$_appVersion';
+  if (_buildSha.isEmpty) return base;
+  final short = _buildSha.length >= 8 ? _buildSha.substring(0, 8) : _buildSha;
+  return '$base · $short';
+}
+
 class SettingsScreen extends ConsumerStatefulWidget {
   const SettingsScreen({super.key});
 
@@ -300,7 +316,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                           icon: AppIcons.infoOutline,
                           title: '当前版本',
                           trailing: Text(
-                            'v1.2.0',
+                            _versionLabel,
                             style: TextStyle(
                               fontSize: 14.sp,
                               color: secondaryColor,
@@ -603,7 +619,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
     showAboutDialog(
       context: context,
       applicationName: 'Zhuoyu AI',
-      applicationVersion: 'v1.2.0',
+      applicationVersion: _versionLabel,
       applicationIcon: Padding(
         padding: EdgeInsets.symmetric(vertical: 8.h),
         child: Text('🧠', style: TextStyle(fontSize: 48.sp)),

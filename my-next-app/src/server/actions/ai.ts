@@ -37,7 +37,7 @@ export async function generateCorrectionQuizAction(
 
   // 1. 检查缓存
   if (!force) {
-    const cached = await aiCacheService.getQuiz(cacheKey);
+    const cached = await aiCacheService.getQuiz<CorrectionQuiz>(cacheKey);
     if (cached) {
       logger.info("[QuizCache] 命中缓存");
       return cached;
@@ -166,7 +166,8 @@ export async function generateRegressionChallengeAction(
 
   // 1. 检查缓存
   if (!force) {
-    const cached = await aiCacheService.getChallenge(cacheKey);
+    const cached =
+      await aiCacheService.getChallenge<RegressionChallenge>(cacheKey);
     if (cached) {
       logger.info("[ChallengeCache] 命中缓存");
       return cached;

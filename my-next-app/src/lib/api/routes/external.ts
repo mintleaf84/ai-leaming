@@ -58,6 +58,7 @@ import { mindmapService } from "@/lib/services/mindmap";
 import { srsService, summarizeFutureReviews } from "@/lib/services/srs";
 import { toErrorResponse } from "@/lib/api/error-response";
 import { createHash } from "node:crypto";
+import { parsePagination } from "@/lib/api/pagination";
 import { checkRateLimitWith } from "@/lib/auth/rate-limit";
 
 const app = new OpenAPIHono();
@@ -403,20 +404,6 @@ const SessionListItemSchema = z.object({
 });
 
 /** 解析 limit/offset 字符串参数：非法值退回默认，limit 截到 [1, 100] */
-function parsePagination(query: { limit?: string; offset?: string }): {
-  limit: number;
-  offset: number;
-} {
-  const rawLimit = Number(query.limit);
-  const rawOffset = Number(query.offset);
-  const limit = Number.isFinite(rawLimit)
-    ? Math.min(MAX_LIMIT, Math.max(1, Math.trunc(rawLimit)))
-    : DEFAULT_LIMIT;
-  const offset = Number.isFinite(rawOffset)
-    ? Math.max(0, Math.trunc(rawOffset))
-    : 0;
-  return { limit, offset };
-}
 
 /**
  * 取鉴权中间件已解析的身份。

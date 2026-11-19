@@ -4,6 +4,7 @@ import { searchSimilarContent, ragService, type RagResult } from "@/lib/ai/rag";
 import { SqliteVecVectorStore, RagEmbeddings } from "@/lib/ai/langchain-store";
 import { getPromptFromDb, SOCRATIC_TUTOR_PROMPT } from "@/lib/ai/prompts";
 import { log } from "@/lib/logger";
+import { safeParseJson } from "@/lib/utils/json";
 
 /**
  * 知识库检索工具 (LangChain 风格)
@@ -253,7 +254,7 @@ export async function handleQuizCommand(keyword: string): Promise<string> {
     const tagsArray = Array.isArray(metaTags)
       ? metaTags
       : typeof metaTags === "string"
-        ? JSON.parse(metaTags || "[]")
+        ? safeParseJson<unknown[]>(metaTags, [])
         : [];
     response += `**${index + 1}. ${content.substring(0, 50)}...**\n`;
     response += `   - 难度层级: ${meta["dimension"] || "未标注"}\n`;

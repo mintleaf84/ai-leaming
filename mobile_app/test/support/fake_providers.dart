@@ -7,6 +7,7 @@ import 'package:mocktail/mocktail.dart';
 import 'package:mobile_app/core/network/server_config.dart';
 import 'package:mobile_app/core/compat/contract_compat.dart';
 import 'package:mobile_app/core/compat/contract_meta_repository.dart';
+import 'package:mobile_app/core/storage/preferences.dart';
 import 'package:mobile_app/core/sync/sync_providers.dart';
 import 'package:mobile_app/core/sync/sync_service.dart';
 import 'package:mobile_app/features/chat/data/chat_repository_impl.dart';
@@ -23,11 +24,15 @@ import 'package:mobile_app/features/practice/domain/practice_session.dart';
 import 'package:mobile_app/features/practice/domain/question.dart';
 import 'package:mobile_app/features/profile/domain/user_profile.dart';
 import 'package:mobile_app/features/profile/presentation/profile_provider.dart';
+import 'package:mobile_app/features/recall/data/recall_providers.dart';
+import 'package:mobile_app/features/recall/domain/recall_queue.dart';
 import 'package:mobile_app/features/settings/presentation/settings_provider.dart';
 import 'package:mobile_app/features/stats/domain/learning_stats.dart';
 import 'package:mobile_app/features/stats/presentation/stats_provider.dart';
 import 'package:mobile_app/features/wrong_book/data/wrong_book_repository.dart';
 import 'package:mobile_app/features/wrong_book/domain/wrong_question.dart';
+
+import 'fake_preferences_store.dart';
 
 /// 屏级 widget 测试的 provider override 工厂。
 ///
@@ -108,13 +113,14 @@ HistoryItem fakeHistoryItem({
   int totalQuestions = 10,
   int correctCount = 7,
   int accuracy = 70,
+  String createdAt = '2026-11-20T09:30:00.000Z',
 }) {
   return HistoryItem(
     id: id,
     sessionName: '综合练习',
     totalQuestions: totalQuestions,
     correctCount: correctCount,
-    createdAt: '2026-11-20T09:30:00.000Z',
+    createdAt: createdAt,
     accuracy: accuracy,
   );
 }
@@ -190,6 +196,9 @@ class FakePracticeRepository implements PracticeRepository {
   int submitCalls = 0;
   final List<String> submittedAnswers = <String>[];
 
+  /// 被 `getSession` 加载过的会话 id（续练/错题本入口据此断言「进的是这一场」）。
+  final List<String> loadedSessions = <String>[];
+
   @override
   Future<PracticeSession> createSession({
     required int limit,
@@ -206,6 +215,7 @@ class FakePracticeRepository implements PracticeRepository {
 
   @override
   Future<PracticeSession> getSession(String sessionId) async {
+    loadedSessions.add(sessionId);
     final error = createError;
     if (error != null) throw error;
     return PracticeSession(sessionId: sessionId, questions: questions);
@@ -491,6 +501,74 @@ List<Object> fakeHistoryDetail(
 List<Object> fakeReviewMode(ReviewMode mode) {
   return <Object>[
     settingsProvider.overrideWith(() => FakeSettingsNotifier(mode)),
+  ];
+}
+
+/// 历史列表替身：首页只读 `items.first.createdAt`，练习历史屏读整页。
+///
+/// 用假控制器而不是 override 整个 provider：`HistoryListState` 是 freezed，
+/// 直接塞状态也能过，但首页还会 `loadHistory()`——假控制器能顺带断言
+/// 「首页确实补了一次请求」，而不是凭空显示一个时间。
+class FakeHistoryController extends HistoryController {
+  FakeHistoryController(this.initial);
+
+  final HistoryListState initial;
+  int loadCalls = 0;
+
+  @override
+  HistoryListState build() => initial;
+
+  @override
+  Future<void> loadHistory() async {
+    loadCalls++;
+  }
+}
+
+List<Object> fakeHistory({
+  FakeHistoryController? controller,
+  List<HistoryItem>? items,
+  bool isLoading = false,
+  String? error,
+}) {
+  final fake =
+      controller ??
+      FakeHistoryController(
+        HistoryListState(
+          items: items ?? const <HistoryItem>[],
+          isLoading: isLoading,
+          error: error,
+        ),
+      );
+  return <Object>[historyControllerProvider.overrideWith(() => fake)];
+}
+
+/// 今日回忆队列（首页记忆卡读 `due`）。
+List<Object> fakeRecallQueue({
+  int due = 0,
+  int fresh = 0,
+  int? total,
+  int estimatedMinutes = 0,
+  int streakDays = 0,
+}) {
+  final queue = RecallQueue(
+    ids: <int>[for (var i = 0; i < (total ?? due + fresh); i++) i + 1],
+    due: due,
+    fresh: fresh,
+    total: total ?? due + fresh,
+    estimatedMinutes: estimatedMinutes,
+    streakDays: streakDays,
+  );
+  return <Object>[
+    recallQueueProvider.overrideWith((ref) async => queue),
+  ];
+}
+
+/// 本地键值存储（断点、主题、复习模式都走它）。
+List<Object> fakePreferences({Map<String, String>? initial}) {
+  return <Object>[
+    preferencesStoreProvider.overrideWithValue(
+      FakePreferencesStore(initial: initial),
+    ),
   ];
 }
 

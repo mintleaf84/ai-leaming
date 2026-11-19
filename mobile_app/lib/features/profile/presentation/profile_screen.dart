@@ -278,6 +278,10 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
       (icon: AppIcons.bookOutlined, label: '错题本', route: '/wrong-book'),
       (icon: AppIcons.styleOutlined, label: '知识卡片', route: '/knowledge'),
       (icon: AppIcons.hubOutlined, label: '掌握度', route: '/mastery'),
+      // 底部导航换成四个高频入口（首页/练习/记忆卡/错题本）后，
+      // 教材库与 AI 助手不再占常驻位置，改从这里进（不丢功能）。
+      (icon: AppIcons.libraryBooks, label: '教材库', route: AppRoutes.textbooks),
+      (icon: AppIcons.smartToy, label: 'AI 助手', route: AppRoutes.chat),
       (icon: AppIcons.workspacePremiumOutlined, label: '订阅套餐', route: '/pricing'),
       (icon: AppIcons.settingsOutlined, label: '设置', route: '/settings'),
     ];

@@ -29,14 +29,16 @@ class _PracticeScreenState extends ConsumerState<PracticeScreen> {
   void initState() {
     super.initState();
     // 页面加载时创建会话，优先使用配置参数。
-    // 带 sessionId 时表示「从错题本进来」，复用已建好的会话，不再新建。
+    // 带 sessionId 时表示「从错题本进来 / 首页继续上次练习」，复用已建好的会话，
+    // 不再新建；带 startIndex 时直接落到断点那一题（见 practice_resume.dart）。
     final sessionId = widget.config?['sessionId'] as String?;
+    final startIndex = (widget.config?['startIndex'] as int?) ?? 0;
     final limit = (widget.config?['limit'] as int?) ?? 10;
     final mode = (widget.config?['mode'] as String?) ?? 'random';
     Future.microtask(() {
       final controller = ref.read(practiceControllerProvider.notifier);
       if (sessionId != null && sessionId.isNotEmpty) {
-        controller.loadSession(sessionId);
+        controller.loadSession(sessionId, startIndex: startIndex);
       } else {
         controller.createSession(limit: limit, mode: mode);
       }

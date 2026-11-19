@@ -8,6 +8,9 @@ import 'package:mobile_app/features/practice/data/practice_repository_impl.dart'
 import 'package:mobile_app/features/practice/domain/practice_session.dart';
 import 'package:mobile_app/features/practice/domain/question.dart';
 import 'package:mobile_app/features/practice/presentation/practice_provider.dart';
+import 'package:mobile_app/core/storage/preferences.dart';
+
+import '../../support/fake_preferences_store.dart';
 
 class MockPracticeRepository extends Mock implements PracticeRepository {}
 
@@ -32,6 +35,9 @@ void main() {
     final container = ProviderContainer(
       overrides: [
         practiceRepositoryProvider.overrideWithValue(practiceRepository),
+        // 控制器现在会顺手写「未完成练习」断点：内存实现，
+        // 不碰 shared_preferences 的平台通道（否则每条用例都会打一行 binding 警告）
+        preferencesStoreProvider.overrideWithValue(FakePreferencesStore()),
       ],
     );
     addTearDown(container.dispose);

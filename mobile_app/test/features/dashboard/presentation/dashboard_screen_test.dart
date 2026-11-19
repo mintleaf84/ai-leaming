@@ -30,6 +30,9 @@ void main() {
           ),
         ),
         ...fakeContractPending(),
+        ...fakeRecallQueue(),
+        ...fakeWrongBook(),
+        ...fakeHistory(),
       ],
     );
     await tester.pump();
@@ -50,7 +53,13 @@ void main() {
     await pumpScreen(
       tester,
       const DashboardScreen(),
-      overrides: <Object>[...fakeStats(), ...fakeContractPending()],
+      overrides: <Object>[
+        ...fakeStats(),
+        ...fakeContractPending(),
+        ...fakeRecallQueue(),
+        ...fakeWrongBook(),
+        ...fakeHistory(),
+      ],
     );
     await tester.pump();
 
@@ -71,6 +80,9 @@ void main() {
       overrides: <Object>[
         ...fakeStats(controller: controller),
         ...fakeContractPending(),
+        ...fakeRecallQueue(),
+        ...fakeWrongBook(),
+        ...fakeHistory(),
       ],
     );
     await tester.pump();
@@ -80,6 +92,10 @@ void main() {
     final retry = find.text('重试');
     expect(retry, findsOneWidget);
 
+    // 首页内容比一屏长，错误条可能落在折叠线以下：先滚到可见再点，
+    // 否则 tap 会打在屏幕外（用例会假绿：加载次数早就在挂载时 +1 了）。
+    await tester.ensureVisible(retry);
+    await tester.pump();
     await tester.tap(retry);
     await tester.pump();
     expect(controller.loadCalls, greaterThanOrEqualTo(1));
@@ -92,6 +108,9 @@ void main() {
       overrides: <Object>[
         ...fakeStats(isLoading: true),
         ...fakeContractPending(),
+        ...fakeRecallQueue(),
+        ...fakeWrongBook(),
+        ...fakeHistory(),
       ],
     );
     await tester.pump();

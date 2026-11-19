@@ -1,11 +1,14 @@
+import 'dart:async';
 import 'dart:convert';
 import 'package:flutter/foundation.dart';
 import '../../../core/error/user_message.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../data/practice_repository_impl.dart';
 import '../domain/practice_repository.dart';
+import '../domain/practice_resume.dart';
 import '../domain/question.dart';
 import '../domain/first_principles_response.dart';
+import 'practice_resume_provider.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 
 /// 防重复提交标志
@@ -95,14 +98,42 @@ class PracticeController extends Notifier<PracticeSessionState> {
   int _sessionGeneration = 0;
   final FlutterSecureStorage _storage = const FlutterSecureStorage();
 
+  /// 本场练习的模式，只用于写断点（后端目前只支持 `random`）。
+  String _mode = 'random';
+
   @override
   PracticeSessionState build() => const PracticeSessionState();
 
   PracticeRepository get _repository => ref.read(practiceRepositoryProvider);
 
+  /// 把当前进度写进断点（首页「继续上次练习」读它）。
+  ///
+  /// 只在**有会话且有题**时写：`reset()` 之后的空状态不该被写成一个断点。
+  /// 写盘失败只打日志，不影响正在进行的练习。
+  void _persistResume() {
+    final sessionId = state.sessionId;
+    if (sessionId == null || sessionId.isEmpty || state.questions.isEmpty) {
+      return;
+    }
+    unawaited(
+      ref
+          .read(practiceResumeControllerProvider.notifier)
+          .save(
+            PracticeResume(
+              sessionId: sessionId,
+              answered: state.results.length,
+              total: state.questions.length,
+              mode: _mode,
+              savedAt: DateTime.now(),
+            ),
+          ),
+    );
+  }
+
   /// 创建新会话
   Future<void> createSession({int limit = 10, String mode = 'random'}) async {
     final generation = ++_sessionGeneration;
+    _mode = mode;
     state = state.copyWith(isLoading: true, error: null);
 
     try {
@@ -133,6 +164,7 @@ class PracticeController extends Notifier<PracticeSessionState> {
       );
 
       _questionStartTime = DateTime.now();
+      _persistResume();
     } catch (e) {
       if (generation != _sessionGeneration) return;
       // 原始异常只进日志，界面用统一文案（审计 #24）。
@@ -161,9 +193,12 @@ class PracticeController extends Notifier<PracticeSessionState> {
     return buffer.toString().trimRight();
   }
 
-  /// 从服务端已有会话加载题目（错题本「开始练习」用）
-  /// 与 createSession 的差别：不新建会话，直接复用 wrong-book/practice 建好的那一场。
-  Future<void> loadSession(String sessionId) async {
+  /// 从服务端已有会话加载题目（错题本「开始练习」/ 首页「继续上次练习」用）
+  /// 与 createSession 的差别：不新建会话，直接复用已经建好的那一场。
+  ///
+  /// [startIndex] 是续练的起点：断点里存的是「已答数」，续练时直接落到那一题，
+  /// 免得用户把已经判过的题再答一遍（服务端会重复记一次作答）。
+  Future<void> loadSession(String sessionId, {int startIndex = 0}) async {
     // 上一场可能还留在状态里（provider 不是 autoDispose）：先清空，
     // 避免加载失败时页面继续渲染旧题目/旧会话。
     state = const PracticeSessionState(isLoading: true);
@@ -177,11 +212,16 @@ class PracticeController extends Notifier<PracticeSessionState> {
 
       final sessionResponse = await _repository.getSession(sessionId);
 
+      final questions = sessionResponse.questions;
+      final safeIndex = questions.isEmpty
+          ? 0
+          : startIndex.clamp(0, questions.length - 1);
+
       state = state.copyWith(
         isLoading: false,
         sessionId: sessionResponse.sessionId,
-        questions: sessionResponse.questions,
-        currentIndex: 0,
+        questions: questions,
+        currentIndex: safeIndex,
         userAnswers: {},
         results: {},
         correctAnswers: {},
@@ -190,6 +230,7 @@ class PracticeController extends Notifier<PracticeSessionState> {
       );
 
       _questionStartTime = DateTime.now();
+      _persistResume();
     } catch (e) {
       debugPrint('[Practice] 加载会话失败: $e');
       state = state.copyWith(isLoading: false, error: userMessageOf(e));
@@ -294,6 +335,8 @@ class PracticeController extends Notifier<PracticeSessionState> {
         explanations: newExplanations,
         isLoading: false,
       );
+      // 已答数变了：断点跟着更新（杀进程后能接着这一题往后做）
+      _persistResume();
     } catch (e) {
       // 静默失败，不影响用户体验
       debugPrint('提交答案失败: $e');
@@ -361,6 +404,9 @@ class PracticeController extends Notifier<PracticeSessionState> {
     // 让还在飞的 createSession 失效，避免它稍后把状态写回来
     _sessionGeneration++;
     state = const PracticeSessionState();
+    // 这一场到此为止（结束/主动退出/换一场）：断点一并作废。
+    // 首页据此隐藏「继续上次练习」，不会点进一个已经结束的会话。
+    unawaited(ref.read(practiceResumeControllerProvider.notifier).clear());
   }
 }
 

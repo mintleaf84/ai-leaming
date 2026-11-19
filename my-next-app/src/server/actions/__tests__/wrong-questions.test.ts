@@ -165,9 +165,8 @@ describe("Wrong Questions Actions", () => {
       });
 
       it("同题干已存在时复用已有题目，只写错题日志", async () => {
-        const { findQuestionIdByContent } = await import(
-          "@/lib/services/question-dedup"
-        );
+        const { findQuestionIdByContent } =
+          await import("@/lib/services/question-dedup");
         vi.mocked(findQuestionIdByContent).mockResolvedValueOnce(456);
 
         vi.mocked(drizzleDb.insert).mockReturnValue({

@@ -18,9 +18,8 @@ async function main() {
   const apply = process.argv.includes("--apply");
   const { initDatabase } = await import("../src/lib/db");
   await initDatabase();
-  const { dedupeFallbackQuestions } = await import(
-    "../src/lib/services/question-dedupe-cleanup"
-  );
+  const { dedupeFallbackQuestions } =
+    await import("../src/lib/services/question-dedupe-cleanup");
 
   console.log(apply ? "⚠️  APPLY 模式：将写库" : "🔍 DRY-RUN：只统计，不写库");
   const report = await dedupeFallbackQuestions({ dryRun: !apply });

@@ -94,7 +94,9 @@ export const questions = sqliteTable(
   },
   (table) => ({
     unq_ext: unique("questions_external_id_unique").on(table.external_id),
-    idx_content_hash: index("idx_questions_content_hash").on(table.content_hash),
+    idx_content_hash: index("idx_questions_content_hash").on(
+      table.content_hash,
+    ),
   }),
 );
 

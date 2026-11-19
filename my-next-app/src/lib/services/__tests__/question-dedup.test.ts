@@ -45,7 +45,12 @@ const payload = (sourceKey: string, externalId: string) =>
       },
     ],
     records: [
-      { externalId, userAnswer: '["A","B","C","D"]', isCorrect: true, durationMs: 1000 },
+      {
+        externalId,
+        userAnswer: '["A","B","C","D"]',
+        isCorrect: true,
+        durationMs: 1000,
+      },
     ],
   }) as never;
 
@@ -69,9 +74,8 @@ describe("题目内容级去重", () => {
   });
 
   it("归一化对全角/标点/空白稳定", async () => {
-    const { normalizeQuestionContent, contentHash } = await import(
-      "../question-dedup"
-    );
+    const { normalizeQuestionContent, contentHash } =
+      await import("../question-dedup");
     expect(normalizeQuestionContent("（Ａ）　教育，目的。")).toBe(
       normalizeQuestionContent("(A)教育目的"),
     );
@@ -79,14 +83,20 @@ describe("题目内容级去重", () => {
   });
 
   it("同题干不同 external_id 的第二次导入不新增题目，日志照常记录", async () => {
-    await importService.importFenbiData(1, payload("dedup-src-1", "dedup-ext-1"));
+    await importService.importFenbiData(
+      1,
+      payload("dedup-src-1", "dedup-ext-1"),
+    );
     const first = await dbm.drizzleDb.all(
       "SELECT id, content_hash FROM questions WHERE content LIKE '下列属于教育目的的功能的有%'" as never,
     );
     expect(first.length).toBe(1);
     expect((first[0] as { content_hash: string }).content_hash).toBeTruthy();
 
-    await importService.importFenbiData(1, payload("dedup-src-2", "dedup-ext-2"));
+    await importService.importFenbiData(
+      1,
+      payload("dedup-src-2", "dedup-ext-2"),
+    );
     const after = await dbm.drizzleDb.all(
       "SELECT id FROM questions WHERE content LIKE '下列属于教育目的的功能的有%'" as never,
     );

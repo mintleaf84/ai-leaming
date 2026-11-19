@@ -90,7 +90,9 @@ export async function dedupeFallbackQuestions(
     list.push(row);
     groups.set(row.content_hash, list);
   }
-  const duplicateGroups = [...groups.values()].filter((g) => g.length > 1).length;
+  const duplicateGroups = [...groups.values()].filter(
+    (g) => g.length > 1,
+  ).length;
 
   const report: DedupeCleanupReport = {
     dryRun,

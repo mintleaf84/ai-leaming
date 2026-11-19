@@ -22,7 +22,10 @@ import { and, eq, gt, inArray, lt, sql } from "drizzle-orm";
 import { srsService } from "@/lib/services/srs";
 import type { PdfImportResult, ParsedPdfQuestion } from "@/types/pdf-import";
 import { randomUUID } from "crypto";
-import { contentHash, findQuestionIdByContent } from "@/lib/services/question-dedup";
+import {
+  contentHash,
+  findQuestionIdByContent,
+} from "@/lib/services/question-dedup";
 import { buildPdfExternalId } from "@/lib/services/question-idempotency";
 import { log } from "@/lib/logger";
 import { safeParseJson } from "@/lib/utils/json";
@@ -216,7 +219,11 @@ async function writeConfirm(
   questionsToImport: ParsedPdfQuestion[],
   folderId: number | undefined,
   addToWrongBook: boolean,
-): Promise<{ insertedIds: number[]; resolvedIds: number[]; skippedCount: number }> {
+): Promise<{
+  insertedIds: number[];
+  resolvedIds: number[];
+  skippedCount: number;
+}> {
   // 1. 生成幂等键并做批内去重（同一批里出现两道完全相同的题，只落一条）
   const pending = new Map<string, ParsedPdfQuestion>();
   let skippedCount = 0;
@@ -248,7 +255,8 @@ async function writeConfirm(
   const toInsert = [...pending.entries()].filter(
     ([externalId]) => !existingIds.has(externalId),
   );
-  if (toInsert.length === 0) return { insertedIds: [], resolvedIds: [], skippedCount };
+  if (toInsert.length === 0)
+    return { insertedIds: [], resolvedIds: [], skippedCount };
 
   // 3. 插入新增题目。onConflictDoNothing 兜住"预检后另一个请求先提交"的并发窗口：
   //    此时 returning 为空，按跳过计数，不会因唯一索引整批失败。
@@ -293,7 +301,8 @@ async function writeConfirm(
 
   // 文件夹/错题本要覆盖「本次新增 + 复用已有」两类题目
   const resolvedIds = [...insertedIds, ...reusedIds];
-  if (resolvedIds.length === 0) return { insertedIds, resolvedIds, skippedCount };
+  if (resolvedIds.length === 0)
+    return { insertedIds, resolvedIds, skippedCount };
 
   // 4. 文件夹关联：直接写关联表（INSERT OR IGNORE 语义），不调 questionFolderService
   //    —— 后者内部用全局 drizzleDb，在事务里会踩同一个连接。
@@ -467,17 +476,18 @@ export const pdfImportService = {
       // 题目 + 文件夹关联 + 错题本日志整体一个事务：任一步失败全回滚。
       // 旧实现逐条 insert 后再做关联/日志，后置步骤失败时题目已经落库，用户
       // 重试就会造出重复题目（本项目评审指出的数据正确性缺口）。
-      const { insertedIds, resolvedIds, skippedCount } = await withConfirmLock(() =>
-        withTransaction(async (exec) =>
-          // 事务内所有写操作都必须走 exec，用全局 drizzleDb 会报 SQLITE_BUSY
-          writeConfirm(
-            exec,
-            userId,
-            questionsToImport,
-            folderId,
-            addToWrongBook,
+      const { insertedIds, resolvedIds, skippedCount } = await withConfirmLock(
+        () =>
+          withTransaction(async (exec) =>
+            // 事务内所有写操作都必须走 exec，用全局 drizzleDb 会报 SQLITE_BUSY
+            writeConfirm(
+              exec,
+              userId,
+              questionsToImport,
+              folderId,
+              addToWrongBook,
+            ),
           ),
-        ),
       );
 
       // FSRS 复习卡放在事务提交之后：它可重入（重复调用按同一题覆盖更新），

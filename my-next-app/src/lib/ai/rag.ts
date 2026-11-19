@@ -5,6 +5,7 @@ import { getAiConfig } from "./client";
 import { drizzleDb, drizzleSchema, getLegacyDb } from "@/lib/db";
 import { sql, like, or } from "drizzle-orm";
 import { env } from "@/env";
+import { safeParseJson } from "@/lib/utils/json";
 
 // 内存 LRU 缓存（进程级，避免同进程重复查询 DB）
 const EMBED_CACHE_MAX = 2000;
@@ -504,7 +505,11 @@ export const ragService = {
       return filtered.slice(0, limit).map((r) => ({
         content: r.content as string,
         score: 1 - (r.distance as number),
-        metadata: JSON.parse((r.metadata as string) || "{}"),
+        // 一条脏 metadata 不能拖垮整次检索：这里失败只让该条 metadata 为空对象
+        metadata: safeParseJson<Record<string, unknown>>(
+          r.metadata as string | null | undefined,
+          {},
+        ),
       }));
     } catch (e) {
       console.error("[RAG] Vector Search Error:", e);

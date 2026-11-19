@@ -317,3 +317,141 @@ P3 全部完成：
 - **APK 实际打包**：按用户决定暂不出包。`android.yml` 的 `apk` job 已就绪（`API_BASE_URL` 未配置时只告警，
   产物由用户在 App 内填服务器地址），需要时设置仓库变量并触发一次即可，无需改代码。
 - `cached_questions` 未存 `dimension`；离线只覆盖练习，recall 与 AI 聊天仍是在线专属。
+
+## 12. 覆盖率门禁与测试补强（2026-11-20）
+
+### 12.1 为什么先立门禁
+
+改之前 Flutter 端只有 182 个用例、全部落在纯逻辑层，`android.yml` 里 `flutter test` 是硬闸但**没有覆盖率环节**，
+所以"补测试"是一次性努力：谁都可以加代码不加测试，数字只会往下漂。因此先落门禁，再补测试。
+
+口径有三条是刻意的：
+
+1. **分母来自文件系统枚举 `lib/**/*.dart`**，不是 lcov 里出现的文件。`flutter test --coverage` 只上报被测试
+   传递 import 到的文件——按 lcov 当分母，"新增一个没人 import 的文件"反而会让全局数字变好看。
+   未出现在 lcov 的手写文件按"非空非注释行数"补 LF 代理、命中记 0（本次有 7 个，含
+   `shared/widgets/server_config_gate.dart`、`features/recall/data/recall_providers.dart`）。
+2. **生成代码不计入**（`*.g.dart` / `*.freezed.dart`）与 `lib/main.dart` 排除，避免拿生成物冲数字。
+3. **分 scope 设底线**，因为单一全局数字会被最好的模块掩盖：`domain_data`（features/*/domain|data）、
+   `core`、`shared`、`providers`、`screens`、`other` 六个互斥 scope 各有 floor。
+
+### 12.2 落地物
+
+| 文件 | 作用 |
+| --- | --- |
+| `mobile_app/tool/coverage_gate.dart` | 纯 Dart（仅 `dart:io`），解析 lcov + 枚举分母 + 四条拦截规则 + markdown 报告 |
+| `mobile_app/coverage_baseline.json` | 各 scope 的 floor 与逐文件 measured，**只升不降** |
+| `.github/workflows/android.yml` | `flutter test --coverage` → 覆盖率门禁 → 上传 `coverage/lcov.info`（`if: always()`，保留 14 天） |
+
+四条拦截规则：全局 < floor、任一 scope < floor、基线内单文件回退 > 2pp、基线外新增文件落在
+domain/data/core/shared 且 < 60%。
+
+用法：
+
+```bash
+dart run tool/coverage_gate.dart                    # 判定（CI 跑的就是这条）
+dart run tool/coverage_gate.dart --update           # 只升不降地抬底线（floor = max(旧, 实测-1pp)）
+dart run tool/coverage_gate.dart --update --allow-lower   # 确需下调，并在 PR 描述写理由
+```
+
+### 12.3 前后对比（P0–P4 已落地）
+
+| 指标 | 改前（2026-11-19，origin/main） | 改后（2026-11-20） |
+| --- | --- | --- |
+| 用例数 | 182 passed / 2 skipped | **429 passed / 2 skipped** |
+| 全局行覆盖 | 21.7%（1628 / 7499） | **34.2%（2574 / 7528）** |
+| `domain_data` | 44.5% | **80.7%** |
+| `core` | 35.3% | **74.1%** |
+| `shared` | 4.6% | **20.5%**（P5 未做） |
+| `providers` | 24.5% | **84.4%** |
+| `screens` | 17.8% | 17.8%（P5 未做；其中 recall 贡献大部分） |
+
+分阶段：P0–P2 → 26.5%；P3（9 个 provider）→ 33.0%；P4（本地库/同步）→ 33.6%（P4 的分母主要落在 `screens`，所以全局涨幅小但风险降得最多）。
+
+关键文件（单文件覆盖率）：
+
+| 文件 | 改前 | 改后 |
+| --- | ---: | ---: |
+| `core/auth/token_util.dart` | 0% | 95.2% |
+| `core/navigation/app_nav.dart` | 0% | 83.3% |
+| `core/theme/theme_provider.dart` | 0% | 100% |
+| `core/utils/haptic_util.dart` | 0% | 93.3% |
+| `shared/widgets/server_config_gate.dart` | 0%（未进 lcov） | 100% |
+| `features/practice/data/practice_repository_impl.dart` | 2.3% | 83.0% |
+| `features/wrong_book/data/wrong_book_repository.dart` | 0% | 92.6% |
+| `features/chat/data/chat_repository_impl.dart` | 0% | 77.8% |
+| `features/auth/data/auth_repository_impl.dart` | 0% | 81.2% |
+| `features/practice/data/local_practice_store.dart` | 0% | 99.3% |
+| `core/local/local_schema.dart`（本次抽出） | — | 90.9% |
+| `core/sync/sync_service.dart` | 2.7% | 80.0% |
+| 9 个 `*_provider.dart` | 0–15.6% | 87.5%–100% |
+
+新增 22 个文件（20 个测试文件 + 2 个共享桩 `test/support/{recording_adapter,ffi_db}.dart`），
+另在既有 `textbook_provider_test.dart` 追加 211 行（零删除）。测试文件数 18 → 38。
+全部沿用既有写法（手写 fake、`ProviderContainer` override、断言"发出去的请求"而不是服务端实现），
+未引入除 `sqflite_common_ffi` 之外的新依赖。
+
+### 12.4 本机跑测试的配方
+
+```bash
+export PATH=~/local/sdk/flutter/bin:$PATH PUB_CACHE=~/local/sdk/pubcache
+cd mobile_app && flutter test --coverage && dart run tool/coverage_gate.dart
+```
+
+本机 glibc 2.17，`flutter_tester.real` 需要 2.18，`bin/cache/artifacts/engine/linux-x64/flutter_tester`
+是一个 loader 包装脚本。**注意**：以 loader 直接执行时 `/proc/self/exe` 指向 loader，引擎按它找不到
+`icudtl.dat`，所以包装脚本必须显式传 `--icu-data-file-path=<engine>/icudtl.dat`（2026-11-20 修复，
+缺这一条时所有测试都会以 `icu_util.cc Check failed` 崩溃）。重建 SDK 后要重新打这个补丁。
+
+`flutter test` 会改 3 个 plugin registrant（macos / windows），提交前 `git checkout --` 还原。
+
+### 12.5 后续阶段（只剩 P5）
+
+| 阶段 | 范围 | 预计增量 |
+| --- | --- | --- |
+| P5 | 6 个高风险屏的 widget 冒烟（practice 367、history_detail 401、wrong_book 332、settings 341、dashboard 332、chat 254）+ `shared/widgets` 的 5 个自建组件，只断言渲染/关键交互/不溢出 | +10pp，全局到 ~43%，`screens` 从 17.8% 到 ~30% |
+
+P3（9 个 provider）与 P4（本地库/同步）已完成，见 12.3。
+
+不做的：14 个屏全铺 widget 测试、给生成代码写测试、追 80% 这个数字本身。
+
+### 12.5.1 P4 的环境坑：`sqflite_common_ffi` 必须锁 2.3.7+1
+
+`sqflite_common_ffi` 2.4.x 起依赖 `package:sqlite3` 3.x，用 Dart build hooks 下载官方预编译
+`libsqlite3.so`——那个二进制要求 **GLIBC 2.33**，本机 CentOS 7（glibc 2.17）加载即失败
+（`version 'GLIBC_2.33' not found`），且到 `release-assets.githubusercontent.com` 也不通。
+因此锁 `sqflite_common_ffi: 2.3.7+1`（走系统 `libsqlite3.so.0`），并在 `test/support/ffi_db.dart` 里：
+
+- `open.overrideFor(OperatingSystem.linux, () => DynamicLibrary.open('libsqlite3.so.0'))`——本机只有运行时库，没有 `-dev` 的 `.so` 软链；
+- 用 `databaseFactoryFfiNoIsolate`——`overrideFor` 只作用于当前 isolate，isolate 版本会重新 dlopen 丢掉 override。
+
+CI（ubuntu-latest）两样都有，不受影响；但**不要**顺手升级这个依赖，会直接打挂本机测试。
+
+### 12.6 补测试时发现、**已修**的缺陷（2026-11-20 第二轮）
+
+这些是补测试时"按当前行为锁定"的问题，随后单独修掉，测试断言同步改严（没有删用例、没有放宽）：
+
+| 缺陷 | 修法 | 回归护栏 |
+| --- | --- | --- |
+| `chat_provider.retryLastMessage` 重试会再追加一条相同的用户消息，且 `_streamSubscription` 单字段被覆盖，`stopGeneration` 只能取消最后一次 | `sendMessage` 加 generation 令牌（`_generation`）+ `appendUserMessage` 开关；流回调、`onDone`、`onError` 全部先比对令牌；`clearMessages` 复位生成标志 | 重试后 `role=='user'` 恰好 1 条；"连续两次 sendMessage，第一次流的迟到回调不污染第二次"（用可迟到的假流构造） |
+| 登出后旧账号的历史与对话仍留在内存；`history.loadMore` 会把新账号第 2 页拼到旧账号第 1 页之后 | 新增 `authEpochProvider`（登录/注册成功、登出各 +1），`history`/`chat` 改 watch 版本号并重建。**不能**直接 watch `authControllerProvider`：它的 state 是 `AsyncValue<void>`，登出写入的 `AsyncData(null)` 与旧值相等，Riverpod 判等后不通知 | 登出后列表/对话清空、`currentSessionId == null`；loadMore 不含旧账号数据；变异验证：注释掉 `logout` 里的 `bump()` → 4 条用例变红 |
+| `history` / `knowledge` / `textbook` 无请求序号防护，先发后到的旧响应覆盖新结果 | 三个 controller 统一 `int _requestSeq`，成功与失败分支都在写 state 前比对 | 并发用例改为"最新请求胜出"；另加"旧请求的 500 不能盖掉新结果" |
+| `wrong_book.startPractice` 抛异常/服务端 `success=false` 时静默返回 null（界面"点了没反应"）；`markAsMastered` 失败无提示 | 两条失败路径都写 `error`；标记掌握/取消掌握失败也写 `error` 且不清空列表 | 断言 `error` 文案存在且列表长度不变 |
+| `SyncService.startAutoSync` 的连通性回调无并发闸，网络抖动可并发跑多个 `flush()` | `bool _flushing` + `try/finally`，重复调用直接返回 `SyncResult.empty()` | 用 `Completer` 卡住第一次响应构造并发，断言 `adapter.requests` 只有 1 条 |
+
+### 12.7 仍未修（需产品/lib 决策）
+
+1. `AuthRepositoryImpl.login/register`：服务端漏发 `token` 时 `_storage.write(value: null)` 静默不写并正常返回，
+   用户看到"登录成功"但下一个请求 401。建议加 `if (token == null) throw ...`。
+2. `ChatRepositoryImpl` 的 `if (response.statusCode != 200)` 不可达（Dio 对非 2xx 先抛），是死代码。
+3. `PracticeRepositoryImpl.submitAnswer` 在线路径 `int.parse(questionId)`：非数字题号抛 `FormatException`
+   而不是可读业务错误。
+4. `chatRepositoryProvider` 的"克隆 dio + 剔除 LogInterceptor"逻辑无测试（provider 级）。
+5. `AppNav.replace` 与 go_router 的 `GoRouterHelper.replace` 签名相同：任何同时 import 两者并调
+   `context.replace(...)` 的文件会报 "defined in multiple extensions"。当前生产代码没踩到。
+6. `auth_provider.logout` 没有 `AsyncValue.guard`：仓库抛异常时异常冒到调用方、状态不变，
+   界面无法提示"登出失败"。
+7. `createLocalSession` 用 `microsecondsSinceEpoch` 生成 localId，同一微秒内建两个会话会主键冲突（概率极低）。
+8. `settings_provider`（复习模式）与 `theme_provider`（主题）都没有持久化层，重启回默认。
+9. 三个状态类的 `copyWith` 里 `error` 是无条件覆盖，无法"保留错误 + 更新其他字段"；
+   反过来说任何一次 `copyWith(isLoading: ...)` 都会顺手吞掉错误。

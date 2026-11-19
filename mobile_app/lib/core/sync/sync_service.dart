@@ -46,6 +46,10 @@ class SyncService {
   /// 宽限期跳过的作答需要一个后续触发（否则网络不变时会一直卡着）。
   Timer? _followUpTimer;
 
+  /// 并发闸：连通性回调、补交定时器、手动触发可能同时进来。放两个 flush
+  /// 并行跑会重复上传同一批作答、`SyncResult` 计数互相污染。
+  bool _flushing = false;
+
   static const String _offlineAnswersPath = '/practice/offline-answers';
   static const String _sessionName = '离线练习';
 
@@ -54,6 +58,19 @@ class SyncService {
   /// 单个会话失败不影响其余会话；401 时立即中止整个 flush
   /// （token 失效，继续发只会继续 401）。
   Future<SyncResult> flush() async {
+    if (_flushing) {
+      // 已有一轮在跑：这一轮的触发直接放弃，让在跑的那次上报结果。
+      return const SyncResult.empty();
+    }
+    _flushing = true;
+    try {
+      return await _flushOnce();
+    } finally {
+      _flushing = false;
+    }
+  }
+
+  Future<SyncResult> _flushOnce() async {
     // 待同步数据按账号归属过滤：换账号后绝不能拿新账号的凭据上传旧账号的作答。
     final token = await _storage.read(key: 'jwt_token');
     final userId = token == null ? null : TokenUtil.userIdOf(token);

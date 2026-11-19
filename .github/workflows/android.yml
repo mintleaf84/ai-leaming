@@ -57,7 +57,24 @@ jobs:
       # 剩下的是纯逻辑测试，因此这里必须是硬闸——否则"测试红了"也不挡合并，
       # 回归信号等于没有。
       - name: 运行测试
-        run: flutter test
+        run: flutter test --coverage
+
+      # 覆盖率硬闸：分母由文件系统枚举 lib/**/*.dart 得到（新增文件即使没进
+      # lcov 也会按"非空非注释行数"计入、命中记 0），因此"只加代码不加测试"
+      # 不会把全局数字稀释得更好看。分 scope 设底线，单文件只升不降（容忍 2pp
+      # 抖动）；底线存在 mobile_app/coverage_baseline.json，只有显式
+      # `dart run tool/coverage_gate.dart --update` 才能抬升，下降需 --allow-lower。
+      - name: 覆盖率门禁
+        run: dart run tool/coverage_gate.dart
+
+      # 失败时也要留 lcov，否则没法区分"真回退"和"统计口径变了"。
+      - name: 上传覆盖率报告
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: coverage-lcov
+          path: mobile_app/coverage/lcov.info
+          retention-days: 14
 
   apk:
     name: 构建 Release APK

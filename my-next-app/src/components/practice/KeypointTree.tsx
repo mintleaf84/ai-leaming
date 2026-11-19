@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState, useEffect, useMemo, useCallback } from "react";
-import { useQuery } from "@tanstack/react-query";
+import { useAppQuery } from "@/hooks/useAppQuery";
 import {
   ChevronRight,
   ChevronDown,
@@ -176,7 +176,7 @@ export function KeypointTree({
     isError,
     error,
     refetch,
-  } = useQuery({
+  } = useAppQuery({
     queryKey: ["keypoints-tree"],
     queryFn: () => fetchJson<KeypointNode[]>("/data/keypoints.json"),
     staleTime: Infinity,

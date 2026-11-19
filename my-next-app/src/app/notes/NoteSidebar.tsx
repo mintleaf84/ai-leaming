@@ -157,7 +157,7 @@ export function NoteSidebar({ notes: initialNotes }: NoteSidebarProps) {
 
                 <button
                   onClick={(e) => handleDelete(note.id, e)}
-                  className="opacity-100 md:opacity-0 md:group-hover:opacity-100 md:focus-visible:opacity-100 p-1 hover:bg-destructive/10 hover:text-destructive rounded transition-all"
+                  className="hover-reveal p-1 hover:bg-destructive/10 hover:text-destructive rounded transition-all"
                   title="删除"
                 >
                   <Trash2 className="w-3 h-3" />

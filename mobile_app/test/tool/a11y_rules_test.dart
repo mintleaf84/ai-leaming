@@ -150,16 +150,62 @@ bool hasNamedArgumentAtOwnLevel(String call, String argumentName) {
   return false;
 }
 
+/// 字符串字面量的区间：扫描 `IconButton(` 这类子串时，必须跳过字符串内部，
+/// 否则源码里的示例文本（`const s = 'IconButton(...)'`）会被当成真实按钮。
+List<(int, int)> _stringRanges(String flat) {
+  final ranges = <(int, int)>[];
+  var i = 0;
+  while (i < flat.length) {
+    final char = flat[i];
+    final isRaw = char == 'r' &&
+        i + 1 < flat.length &&
+        (flat[i + 1] == "'" || flat[i + 1] == '"');
+    if (isRaw || char == "'" || char == '"') {
+      final quoteStart = isRaw ? i + 1 : i;
+      final quoteChar = flat[quoteStart];
+      final triple = flat.startsWith(quoteChar * 3, quoteStart);
+      final quote = triple ? quoteChar * 3 : quoteChar;
+      var j = quoteStart + quote.length;
+      while (j < flat.length) {
+        if (!isRaw && flat[j] == r'\' && j + 1 < flat.length) {
+          j += 2;
+          continue;
+        }
+        if (flat.startsWith(quote, j)) {
+          j += quote.length;
+          break;
+        }
+        j++;
+      }
+      ranges.add((i, j));
+      i = j;
+      continue;
+    }
+    i++;
+  }
+  return ranges;
+}
+
+bool _insideString(List<(int, int)> ranges, int index) {
+  for (final (start, end) in ranges) {
+    if (index >= start && index < end) return true;
+  }
+  return false;
+}
+
 /// 规则 1：`IconButton(` 缺 `tooltip:` / `semanticsLabel:`。
 List<A11yViolation> findIconButtonViolations(String source, String path) {
   final flat = stripCommentsAndFlatten(source);
   final violations = <A11yViolation>[];
+  final strings = _stringRanges(flat);
   var index = 0;
   var ordinal = 0;
   while (true) {
     final found = flat.indexOf('IconButton(', index);
     if (found < 0) break;
     index = found + 1;
+    // 字符串里的示例不是真实按钮
+    if (_insideString(strings, found)) continue;
     final openIndex = found + 'IconButton'.length;
     final call = extractCall(flat, openIndex);
     if (call == null) continue;
@@ -194,7 +240,9 @@ List<A11yViolation> findTappableContainerViolations(
   final flat = stripCommentsAndFlatten(source);
   final violations = <A11yViolation>[];
   final callStack = <String>[];
-  var ordinal = 0;
+  // 每种 widget 各自计数：共用 ordinal 时，新增一个 InkWell 会让后续
+  // GestureDetector 的编号整体后移，白名单就错位了。
+  final ordinals = <String, int>{};
   var i = 0;
 
   while (i < flat.length) {
@@ -243,12 +291,18 @@ List<A11yViolation> findTappableContainerViolations(
           // 纯手势（只有 onTapDown/onPanUpdate/onTapCancel…）不算「可点容器」：
           // 给它加 button 语义反而会误导读屏用户以为能点。
           final isTappable = hasNamedArgumentAtOwnLevel(call, 'onTap');
+          final ordinal = ordinals[name] ?? 0;
+          ordinals[name] = ordinal + 1;
           final key = '$path#$name#$ordinal';
-          ordinal++;
           if (isTappable) {
             final hasSemantics = call.contains('Semantics(') ||
                 enclosing.contains('Semantics');
-            final hasVisibleText = _visibleTextPattern.hasMatch(call);
+            // 只看 child 子树：onTap 里弹出的对话框即使有 Text('确认删除')，
+            // 按钮本身在对话框打开前仍然是不可读的。
+            final childAt = call.indexOf('child:');
+            final childSlice =
+                childAt >= 0 ? call.substring(childAt) : call;
+            final hasVisibleText = _visibleTextPattern.hasMatch(childSlice);
             if (!hasSemantics && !hasVisibleText) {
               violations.add(
                 A11yViolation(
@@ -318,6 +372,42 @@ void main() {
       final violations = findIconButtonViolations(
         '''IconButton(onPressed: () {}, icon: const Icon(Icons.close), '''
         '''style: null) // 说明：'(' 半个括号''',
+        'lib/x.dart',
+      );
+      expect(violations, hasLength(1));
+    });
+
+    test('字符串里的 IconButton 示例不算真实按钮', () {
+      expect(
+        findIconButtonViolations(
+          '''const example = 'IconButton(icon: Icon(Icons.add))';'''
+          '''\nvoid f() {}''',
+          'lib/x.dart',
+        ),
+        isEmpty,
+      );
+    });
+
+    test('可点容器编号按 widget 类型分别计数（插入另一种类型不错位）', () {
+      final violations = findTappableContainerViolations(
+        '''Column(children: ['''
+        '''InkWell(onTap: a, child: Text('x')), '''
+        '''GestureDetector(onTap: b, child: Container()), '''
+        '''GestureDetector(onTap: c, child: Container()),'''
+        '''])''',
+        'lib/x.dart',
+      );
+      // 只有两个纯图标 GestureDetector 违规，且编号各自从 0 起
+      expect(violations.map((v) => v.where).toList(), [
+        'lib/x.dart#GestureDetector#0',
+        'lib/x.dart#GestureDetector#1',
+      ]);
+    });
+
+    test('onTap 里弹出的对话框文字不算按钮标签', () {
+      final violations = findTappableContainerViolations(
+        '''GestureDetector(onTap: () { showDialog(builder: (_) => Text('确认删除')); }, '''
+        '''child: Container(child: Icon(Icons.delete)))''',
         'lib/x.dart',
       );
       expect(violations, hasLength(1));

@@ -18,6 +18,9 @@ services:
       - JWT_SECRET=${JWT_SECRET}
       - AI_API_KEY=${AI_API_KEY}
       - AI_API_URL=${AI_API_URL}
+      # WebDAV 备份密码的加解密密钥。留空时 start.sh 会自动生成并持久化到
+      # data/.env.production（重启不变）；多实例共享同一个 data 目录时才安全。
+      - BACKUP_ENCRYPTION_KEY=${BACKUP_ENCRYPTION_KEY:-}
     restart: always
     # 网络配置（可选，单容器默认为 bridge）
     networks:

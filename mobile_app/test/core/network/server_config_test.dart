@@ -2,12 +2,10 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mobile_app/core/network/server_config.dart';
 
-/// 内存版存储：单测不碰平台通道。
+/// 内存版存储：单测不碰平台通道。字段直接赋值，不走构造参数。
 class _FakeServerBaseUrlStore implements ServerBaseUrlStore {
-  _FakeServerBaseUrlStore({this.value, this.failOnWrite = false});
-
   String? value;
-  bool failOnWrite;
+  bool failOnWrite = false;
   int writeCount = 0;
 
   @override

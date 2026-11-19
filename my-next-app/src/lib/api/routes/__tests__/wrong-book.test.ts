@@ -116,4 +116,36 @@ describe("WrongBook Hono Routes", () => {
       });
     });
   });
+
+  describe("GET /:id", () => {
+    it("详情只返回渲染所需字段，不含 material_html / ai_mnemonic", async () => {
+      // 查询顺序：题目 → 错题统计 → 历史作答 → 最近一次错答
+      mockAll
+        .mockReturnValueOnce([
+          {
+            id: 101,
+            content: "题干",
+            options: '["A","B"]',
+            answer: "A",
+            explanation: "解析",
+            tags: '["tag1"]',
+            type: "single",
+          },
+        ])
+        .mockReturnValueOnce([{ wrongCount: 2, lastWrongAt: "2024-01-01" }])
+        .mockReturnValueOnce([])
+        .mockReturnValueOnce([]);
+
+      const res = await app.request("/101");
+      expect(res.status).toBe(200);
+
+      const data = await res.json();
+      expect(data.questionId).toBe("101");
+      expect(data.questionContent).toBe("题干");
+      expect(data.wrongCount).toBe(2);
+      // 整行查询会把这些大字段一起搬出来；响应里本来就没有它们
+      expect(data).not.toHaveProperty("materialHtml");
+      expect(data).not.toHaveProperty("aiMnemonic");
+    });
+  });
 });

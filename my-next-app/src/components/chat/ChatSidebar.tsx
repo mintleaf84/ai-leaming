@@ -14,6 +14,7 @@ import { useTerminology } from "@/lib/hooks/use-terminology";
 import { isImeComposing } from "@/lib/utils/ime";
 import { renameChatSessionAction } from "@/server/actions/chat";
 import type { ChatSession } from "@/lib/services/chat";
+import { formatBeijingDate } from "@/lib/utils/datetime";
 
 interface ChatSidebarProps {
   sessions: ChatSession[];
@@ -28,13 +29,7 @@ interface ChatSidebarProps {
 
 // 日期格式化
 const formatDate = (dateString: string) => {
-  const date = new Date(dateString);
-  return date.toLocaleDateString("zh-CN", {
-    month: "short",
-    day: "numeric",
-    hour: "2-digit",
-    minute: "2-digit",
-  });
+  return formatBeijingDate(dateString, "M月D日 HH:mm");
 };
 
 const highlightText = (text: string, query: string) => {

@@ -22,6 +22,7 @@ import {
 } from "@/lib/db/drizzle-schema";
 import { eq, and, or, sql, lte, isNull, count, gte } from "drizzle-orm";
 import { withTransaction } from "@/lib/db/executor";
+import { getBeijingDateString } from "@/lib/utils/datetime";
 
 // 批量同步配置
 const SYNC_BATCH_SIZE = 100;
@@ -471,7 +472,7 @@ export const srsService = {
     const futureDays = Array.from({ length: 7 }, (_, i) => {
       const d = new Date();
       d.setDate(d.getDate() + i);
-      return d.toISOString().split("T")[0];
+      return getBeijingDateString(d);
     });
 
     const rawFutureRows = await drizzleDb

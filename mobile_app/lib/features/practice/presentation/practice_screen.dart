@@ -2,12 +2,12 @@ import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
-import 'package:go_router/go_router.dart';
 import 'package:mobile_app/features/practice/presentation/practice_provider.dart';
 import 'package:mobile_app/features/practice/domain/question.dart';
 import 'package:mobile_app/shared/widgets/animated_option_card.dart';
 import 'package:mobile_app/shared/widgets/skeleton_widgets.dart';
 import 'package:mobile_app/features/practice/presentation/widgets/first_principles_panel.dart';
+import '../../../core/navigation/app_nav.dart';
 
 class PracticeScreen extends ConsumerStatefulWidget {
   /// 来自配置页的练习参数（可选，默认随机10题）
@@ -69,7 +69,11 @@ class _PracticeScreenState extends ConsumerState<PracticeScreen> {
         if (didPop) return;
         final shouldPop = await _showExitDialog();
         if (shouldPop ?? false) {
-          if (context.mounted) context.pop();
+          if (context.mounted) {
+            // 退出前丢掉本场状态：配置页还在栈里，不清空的话"再开一场"会与旧会话竞争
+            ref.read(practiceControllerProvider.notifier).reset();
+            context.backOrHome();
+          }
         }
       },
       child: Scaffold(
@@ -125,7 +129,8 @@ class _PracticeScreenState extends ConsumerState<PracticeScreen> {
           ),
           SizedBox(height: 12.h),
           TextButton(
-            onPressed: () => context.go('/dashboard'),
+            // 同上：这一屏在"练习异常/空题"分支，回首页=丢弃栈
+            onPressed: () => context.replace(AppRoutes.dashboard),
             child: Text(
               '返回首页',
               style: TextStyle(fontSize: 14.sp, color: Colors.grey),
@@ -175,7 +180,7 @@ class _PracticeScreenState extends ConsumerState<PracticeScreen> {
           ),
           SizedBox(height: 24.h),
           TextButton.icon(
-            onPressed: () => context.go('/dashboard'),
+            onPressed: () => context.replace(AppRoutes.dashboard),
             icon: const Icon(Icons.arrow_back, size: 18),
             label: const Text('返回首页'),
             style: TextButton.styleFrom(
@@ -325,7 +330,10 @@ class _PracticeScreenState extends ConsumerState<PracticeScreen> {
                 onPressed: () async {
                   final shouldPop = await _showExitDialog();
                   if (shouldPop ?? false) {
-                    if (context.mounted) context.pop();
+                    if (context.mounted) {
+                      ref.read(practiceControllerProvider.notifier).reset();
+                      context.backOrHome();
+                    }
                   }
                 },
                 icon: const Icon(Icons.close),
@@ -686,7 +694,7 @@ class _PracticeScreenState extends ConsumerState<PracticeScreen> {
       return GestureDetector(
         onTap: hasNext
             ? () => ref.read(practiceControllerProvider.notifier).nextQuestion()
-            : () => context.go('/result'), // 完成所有题目，跳转结果页
+            : () => context.replace(AppRoutes.result), // 完成所有题目，跳转结果页
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [

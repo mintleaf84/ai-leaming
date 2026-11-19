@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
-import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
+import '../../../core/navigation/app_nav.dart';
 import 'history_provider.dart';
 import '../../settings/presentation/settings_provider.dart';
 import '../domain/history_item.dart';
@@ -46,7 +46,7 @@ class _HistoryDetailScreenState extends ConsumerState<HistoryDetailScreen> {
         elevation: 0,
         leading: IconButton(
           icon: Icon(Icons.arrow_back, color: textColor),
-          onPressed: () => context.go('/history'),
+          onPressed: () => context.backOrHome(),
         ),
         title: Text(
           '练习详情',

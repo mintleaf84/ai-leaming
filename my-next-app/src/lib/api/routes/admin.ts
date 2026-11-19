@@ -13,6 +13,8 @@ import { questionFeedbackService } from "@/lib/services/question-feedback-servic
 import type { Dimension } from "@/types";
 import { logger } from "@/lib/logger";
 import { safeParseJson } from "@/lib/utils/json";
+import Papa from "papaparse";
+import { getBeijingDateString } from "@/lib/utils/datetime";
 
 export const adminRoute = new OpenAPIHono();
 
@@ -41,18 +43,17 @@ function isAuthError(err: unknown): boolean {
   );
 }
 
-function escapeCsv(field: unknown): string {
-  if (field === null || field === undefined) return "";
-  const str = String(field);
-  if (
-    str.includes('"') ||
-    str.includes(",") ||
-    str.includes("\n") ||
-    str.includes("\r")
-  ) {
-    return `"${str.replace(/"/g, '""')}"`;
-  }
-  return str;
+/**
+ * 公式注入防护（OWASP CSV Injection）：以 = + - @ 或制表符开头的单元格，
+ * 在 Excel/WPS 里会被当成公式执行。加一个前导单引号让它们变成纯文本。
+ *
+ * 转义本身交给 papaparse（引号/逗号/换行的规则容易写错，且它处理 BOM 与换行更稳）。
+ */
+const CSV_INJECTION_PREFIX = /^[=+\-@\t\r]/;
+
+function neutralizeCsvFormula(value: unknown): unknown {
+  if (typeof value !== "string") return value;
+  return CSV_INJECTION_PREFIX.test(value) ? `'${value}` : value;
 }
 
 // --- Routes ---
@@ -498,10 +499,9 @@ adminRoute.openapi(exportQuestionsDef, async (c) => {
     "正确率(%)",
     "创建时间",
   ];
-  let csvContent = "\uFEFF" + headers.map(escapeCsv).join(",") + "\n";
-
-  for (const q of questions) {
-    const row = [
+  const rows: unknown[][] = [
+    headers,
+    ...questions.map((q) => [
       q.id,
       q.type,
       q.dimension,
@@ -512,11 +512,19 @@ adminRoute.openapi(exportQuestionsDef, async (c) => {
       q.tags,
       q.correct_ratio,
       q.created_at,
-    ];
-    csvContent += row.map(escapeCsv).join(",") + "\n";
-  }
+    ]),
+  ];
 
-  const fileName = `questions_export_${new Date().toISOString().split("T")[0]}.csv`;
+  // BOM 必须放在最前面：没有它 Excel 打开中文会乱码
+  const csvContent =
+    "\uFEFF" +
+    Papa.unparse(rows.map((row) => row.map(neutralizeCsvFormula)), {
+      quotes: false,
+      newline: "\n",
+    }) +
+    "\n";
+
+  const fileName = `questions_export_${getBeijingDateString()}.csv`;
   return c.text(csvContent, 200, {
     "Content-Type": "text/csv; charset=utf-8",
     "Content-Disposition": `attachment; filename="${fileName}"`,

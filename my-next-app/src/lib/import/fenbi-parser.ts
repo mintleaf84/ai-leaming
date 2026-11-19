@@ -8,6 +8,8 @@ import {
   keypointNamesToHierarchy,
 } from "./keypoint-tree";
 import { log } from "@/lib/logger";
+import { stripHtml } from "@/lib/utils/security";
+import { getBeijingDateString } from "@/lib/utils/datetime";
 
 // ==================== 类型定义 ====================
 
@@ -169,20 +171,8 @@ interface _FenbiStatsData {
   data: Record<string, FenbiStatsItem>;
 }
 
-/**
- * 移除 HTML 标签，保留纯文本
- */
-function stripHtml(html: string): string {
-  if (!html) return "";
-  return html
-    .replace(/<[^>]*>/g, "")
-    .replace(/&nbsp;/g, " ")
-    .replace(/&lt;/g, "<")
-    .replace(/&gt;/g, ">")
-    .replace(/&amp;/g, "&")
-    .replace(/&quot;/g, '"')
-    .trim();
-}
+// 去标签/解实体统一走 utils/security：此前这里与 utils 各有一份实现，
+// 且行为不同（这份会解 `&quot;`、那份不会），换用哪份就会出现不同的题干文本
 
 /**
  * 处理填空题内容：将 input 标签替换为下划线占位符
@@ -380,7 +370,7 @@ export function parseFenbiData(
   const sessionName =
     solutionsData.name ||
     exerciseData.name ||
-    `粉笔导入 ${new Date().toLocaleDateString("zh-CN")}`;
+    `粉笔导入 ${getBeijingDateString()}`;
 
   const questions: ParsedQuestion[] = [];
   const records: ParsedRecord[] = [];

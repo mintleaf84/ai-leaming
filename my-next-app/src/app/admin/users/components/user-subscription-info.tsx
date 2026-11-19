@@ -5,6 +5,7 @@ import { CreditCard } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { cn } from "@/lib/utils/utils";
 import type { UserWithSubscription } from "../types";
+import { formatBeijingDate } from "@/lib/utils/datetime";
 
 // 获取套餐徽章颜色
 function getPlanBadgeVariant(planId: string) {
@@ -48,7 +49,7 @@ function getSubscriptionBadge(
 // 到期时间文案（表格与卡片共用）
 function formatExpiresAt(expiresAt?: string | null) {
   return expiresAt
-    ? `到期 ${new Date(expiresAt).toLocaleDateString("zh-CN")}`
+    ? `到期 ${formatBeijingDate(expiresAt)}`
     : "永久";
 }
 

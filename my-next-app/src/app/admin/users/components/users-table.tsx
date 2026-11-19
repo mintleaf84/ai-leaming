@@ -15,6 +15,7 @@ import {
 import type { UserWithSubscription } from "../types";
 import { UserRoleControl } from "./user-role-control";
 import { UserSubscriptionInfo } from "./user-subscription-info";
+import { formatBeijingDateTime } from "@/lib/utils/datetime";
 
 interface UsersTableProps {
   users: UserWithSubscription[];
@@ -61,7 +62,7 @@ export function UsersTable({
               <TableCell className="font-mono">{user.id}</TableCell>
               <TableCell className="font-medium">{user.username}</TableCell>
               <TableCell className="text-muted-foreground">
-                {new Date(user.created_at).toLocaleString("zh-CN")}
+                {formatBeijingDateTime(user.created_at)}
               </TableCell>
               <TableCell>
                 <UserRoleControl user={user} onRoleChange={onRoleChange} />

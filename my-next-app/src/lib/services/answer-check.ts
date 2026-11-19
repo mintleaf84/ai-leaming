@@ -79,7 +79,10 @@ export function checkAnswerCorrectness(
     });
   }
 
-  // 多选：先解析成数组（兼容 JSON 数组与逗号分隔串），再等长集合比较
+  // 多选：先解析成数组（兼容 JSON 数组与逗号分隔串），
+  // 再把两侧元素统一成「选项字母身份」后做等长集合比较。
+  // 不能先按原文排序再逐项 matchesSingle：`["丁","甲"]` 与 `["A","D"]` 是同一集合，
+  // 但原文排序后首项是「丁」vs「A」，会被误判为错（CodeRabbit major）。
   if (questionType === "multi") {
     const parse = (val: string): string[] => {
       const parsed = safeParseJson<unknown>(val, null);
@@ -94,10 +97,16 @@ export function checkAnswerCorrectness(
       }
       return /^[A-Z]+$/.test(trimmed) ? trimmed.split("") : [trimmed];
     };
-    const correctArr = parse(correctAnswer).sort();
-    const answerArr = parse(userAnswer).sort();
+    const toOptionKey = (value: string): string => {
+      const v = value.trim();
+      if (/^[A-Za-z]$/.test(v)) return v.toUpperCase();
+      const idx = options.findIndex((option) => option.trim() === v);
+      return idx >= 0 ? String.fromCharCode(65 + idx) : v;
+    };
+    const correctArr = parse(correctAnswer).map(toOptionKey).sort();
+    const answerArr = parse(userAnswer).map(toOptionKey).sort();
     if (correctArr.length !== answerArr.length) return false;
-    return answerArr.every((v, i) => matchesSingle(v, correctArr[i], options));
+    return answerArr.every((v, i) => v === correctArr[i]);
   }
 
   return matchesSingle(userAnswer, correctAnswer, options);

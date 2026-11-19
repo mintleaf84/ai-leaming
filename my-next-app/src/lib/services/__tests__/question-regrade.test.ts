@@ -96,6 +96,13 @@ describe("改题回刷历史判分", () => {
     expect(checkAnswerCorrectness("A,B", '["B","D"]', options, "multi")).toBe(
       false,
     );
+    // 混用形态：用户写选项文本、答案存字母（或反之）时，同一集合必须判对
+    expect(checkAnswerCorrectness('["丁","甲"]', '["A","D"]', options, "multi")).toBe(
+      true,
+    );
+    expect(
+      checkAnswerCorrectness('["A","D"]', '["丁","甲"]', options, "multi"),
+    ).toBe(true);
   });
 
   it("回刷 q9101：两条日志翻正，会话 correct_count 对齐", async () => {
@@ -117,9 +124,8 @@ describe("改题回刷历史判分", () => {
     expect(
       await scalar("SELECT correct_count FROM practice_sessions WHERE id='sess-regrade'"),
     ).toBe(2);
-  });
 
-  it("受影响用户的 FSRS 卡重置为 Relearning、立即到期、lapses+1", async () => {
+    // 同一用例内断言 SRS 重置：避免依赖「上一个用例先跑过」的执行顺序
     const rows = (await dbm.drizzleDb.all(
       "SELECT state, scheduled_days, elapsed_days, lapses, due_date FROM question_srs WHERE user_id=1 AND question_id=9101" as never,
     )) as unknown as Record<string, unknown>[];
@@ -133,7 +139,13 @@ describe("改题回刷历史判分", () => {
     );
   });
 
-  it("幂等：重复回刷不再翻任何日志", async () => {
+  it("幂等：重复回刷不再翻任何日志（自带夹具，可单独运行）", async () => {
+    // 先把一条日志改回旧判分，模拟「已回刷过又出现脏行」，再连跑两次
+    await dbm.drizzleDb.run(
+      "UPDATE practice_logs SET is_correct=1 WHERE id=9001" as never,
+    );
+    const first = await regrade(9101);
+    expect(first.logsFlipped).toBe(1);
     const again = await regrade(9101);
     expect(again.logsFlipped).toBe(0);
     expect(again.logsScanned).toBe(2);

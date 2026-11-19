@@ -3126,40 +3126,117 @@ const questionsBatchCreateRoute = createRoute({
 /** 批量校验的 issue 截断条数：100 条全错时逐条回会把 400 响应撑到几十 KB */
 const MAX_BATCH_ISSUES = 20;
 
-app.openapi(questionsBatchCreateRoute, async (c) => {
-  const body = c.req.valid("json");
-  const dryRun = wantsDryRun(c.req.valid("query"));
-
-  // 逐条复用 QuestionSchema：两处规则一旦分叉，会出现"后台能导、单题能建、批量不能"
-  const issues: string[] = [];
-  const items: QuestionBatchCreateInput[] = [];
-  body.questions.forEach((raw, index) => {
-    const { externalId, source, material, ...core } = raw;
-    const parsed = QuestionSchema.safeParse({
-      ...core,
-      // 这两个默认值与后台导入一致：维度缺省 knowledge、题型缺省 single
-      options: core.options ?? [],
-      dimension: core.dimension ?? "knowledge",
-    });
-    if (!parsed.success) {
-      for (const issue of parsed.error.issues) {
-        const path = issue.path.map(String).join(".");
-        issues.push(`questions.${index}.${path || "body"}: ${issue.message}`);
-      }
-      return;
-    }
-    items.push({
-      ...parsed.data,
-      // QuestionSchema 的 dimension 是「三档枚举 or 任意字符串」，这里已经过
-      // 枚举校验（schema 层），按契约类型收窄
-      dimension: parsed.data.dimension as QuestionBatchCreateInput["dimension"],
-      externalId,
-      source,
-      material,
-    });
+/**
+ * 批量建题的结构校验 issue → 契约里的字符串数组。
+ *
+ * `@hono/zod-openapi` 默认的 400 是框架体（`{success:false, error:{issues:[...]}}`），
+ * 与批量契约 `{error, issues, issueCount}` 不是一回事：调用方按契约读 `issues`
+ * 会拿到空数组，只能看到一句"请求体校验失败"。这里把 zod issue 拼成与处理器内
+ * 语义校验**同一种**形状（`questions.<index>.<path>: <message>`），两处口径才一致。
+ */
+function mapBatchBodyIssues(error: z.ZodError): string[] {
+  return error.issues.map((issue) => {
+    const [root, index, ...rest] = issue.path;
+    const path =
+      root === "questions" && typeof index === "number"
+        ? `questions.${index}.${rest.map(String).join(".") || "body"}`
+        : issue.path.map(String).join(".") || "body";
+    return `${path}: ${issue.message}`;
   });
+}
 
-  if (issues.length > 0) {
+app.openapi(
+  questionsBatchCreateRoute,
+  async (c) => {
+    const body = c.req.valid("json");
+    const dryRun = wantsDryRun(c.req.valid("query"));
+
+    // 逐条复用 QuestionSchema：两处规则一旦分叉，会出现"后台能导、单题能建、批量不能"
+    const issues: string[] = [];
+    const items: QuestionBatchCreateInput[] = [];
+    body.questions.forEach((raw, index) => {
+      const { externalId, source, material, ...core } = raw;
+      const parsed = QuestionSchema.safeParse({
+        ...core,
+        // 这两个默认值与后台导入一致：维度缺省 knowledge、题型缺省 single
+        options: core.options ?? [],
+        dimension: core.dimension ?? "knowledge",
+      });
+      if (!parsed.success) {
+        for (const issue of parsed.error.issues) {
+          const path = issue.path.map(String).join(".");
+          issues.push(`questions.${index}.${path || "body"}: ${issue.message}`);
+        }
+        return;
+      }
+      items.push({
+        ...parsed.data,
+        // QuestionSchema 的 dimension 是「三档枚举 or 任意字符串」，这里已经过
+        // 枚举校验（schema 层），按契约类型收窄
+        dimension: parsed.data
+          .dimension as QuestionBatchCreateInput["dimension"],
+        externalId,
+        source,
+        material,
+      });
+    });
+
+    if (issues.length > 0) {
+      return c.json(
+        {
+          error: "批量建题校验失败（整批未写入）",
+          issues: issues.slice(0, MAX_BATCH_ISSUES),
+          issueCount: issues.length,
+        },
+        400,
+      );
+    }
+
+    try {
+      const result = await createQuestionsBatch(items, { dryRun });
+
+      if (!dryRun) {
+        // 新题立刻重建检索向量（不 await）：索引落后会让 agent 检索不到刚建的题。
+        // 失败只记 warn —— 建题本身已经成功，回 500 会让调用方重推整批
+        for (const item of result.items) {
+          if (item.status !== "created" || item.questionId === null) continue;
+          const questionId = item.questionId;
+          void indexQuestion(questionId).catch((err: unknown) => {
+            logger.warn(
+              { err, questionId },
+              "[External] 批量建题后向量索引失败",
+            );
+          });
+        }
+      }
+
+      return c.json(result, 200);
+    } catch (err) {
+      // 保留前缀：语义上是调用方输入错误（400 + issues），不是服务端故障。
+      // 服务层在任何查询/写入之前统一拒绝，因此这里一条都没写
+      if (err instanceof ReservedExternalIdError) {
+        const reservedIssues = err.indexes.map(
+          (index) => `questions.${index}.externalId: ${err.message}`,
+        );
+        return c.json(
+          {
+            error: "批量建题校验失败（整批未写入）",
+            issues: reservedIssues.slice(0, MAX_BATCH_ISSUES),
+            issueCount: reservedIssues.length,
+          },
+          400,
+        );
+      }
+      // 真实故障（含事务失败）：整批已回滚，记结构化日志后按 500 返回
+      logger.error({ err }, "[External] 批量建题失败");
+      return c.json({ error: "服务器内部错误" }, 500);
+    }
+  },
+  (result, c) => {
+    // 结构校验（缺必填 / 类型错）发生在处理器之前：默认 400 是框架体，
+    // 这里换成批量契约的形状，调用方不必为两种 400 写两套解析
+    if (result.success) return;
+    const issues = mapBatchBodyIssues(result.error);
     return c.json(
       {
         error: "批量建题校验失败（整批未写入）",
@@ -3168,45 +3245,8 @@ app.openapi(questionsBatchCreateRoute, async (c) => {
       },
       400,
     );
-  }
-
-  try {
-    const result = await createQuestionsBatch(items, { dryRun });
-
-    if (!dryRun) {
-      // 新题立刻重建检索向量（不 await）：索引落后会让 agent 检索不到刚建的题。
-      // 失败只记 warn —— 建题本身已经成功，回 500 会让调用方重推整批
-      for (const item of result.items) {
-        if (item.status !== "created" || item.questionId === null) continue;
-        const questionId = item.questionId;
-        void indexQuestion(questionId).catch((err: unknown) => {
-          logger.warn({ err, questionId }, "[External] 批量建题后向量索引失败");
-        });
-      }
-    }
-
-    return c.json(result, 200);
-  } catch (err) {
-    // 保留前缀：语义上是调用方输入错误（400 + issues），不是服务端故障。
-    // 服务层在任何查询/写入之前统一拒绝，因此这里一条都没写
-    if (err instanceof ReservedExternalIdError) {
-      const reservedIssues = err.indexes.map(
-        (index) => `questions.${index}.externalId: ${err.message}`,
-      );
-      return c.json(
-        {
-          error: "批量建题校验失败（整批未写入）",
-          issues: reservedIssues.slice(0, MAX_BATCH_ISSUES),
-          issueCount: reservedIssues.length,
-        },
-        400,
-      );
-    }
-    // 真实故障（含事务失败）：整批已回滚，记结构化日志后按 500 返回
-    logger.error({ err }, "[External] 批量建题失败");
-    return c.json({ error: "服务器内部错误" }, 500);
-  }
-});
+  },
+);
 
 // ==================== 工具函数 ====================
 

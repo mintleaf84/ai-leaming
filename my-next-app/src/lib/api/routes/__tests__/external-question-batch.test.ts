@@ -382,6 +382,35 @@ describe("题库批量建题 POST /questions/batch", () => {
       expect(await allQuestions()).toHaveLength(0);
     });
 
+    it("结构校验失败（缺必填字段）也返回批量契约形状，不是框架默认体", async () => {
+      const item = choice();
+      delete (item as Record<string, unknown>).content;
+
+      const res = await postBatch({ questions: [item] });
+      expect(res.status).toBe(400);
+
+      const json = await res.json();
+      // 契约字段齐全（框架默认体是 {success:false,error:{issues:[...]}}）
+      expect(json.error).toContain("整批未写入");
+      expect(Array.isArray(json.issues)).toBe(true);
+      expect(json.issues[0]).toContain("questions.0.content");
+      expect(json.issueCount).toBe(json.issues.length);
+      expect(await allQuestions()).toHaveLength(0);
+    });
+
+    it("结构错超过 20 条时 issues 截到 20 条，issueCount 仍是全量", async () => {
+      // 25 条空对象 = 25 × 4 个必填 issue（content/answer/explanation/tags）
+      const questions = Array.from({ length: 25 }, () => ({}));
+
+      const res = await postBatch({ questions });
+      expect(res.status).toBe(400);
+
+      const json = await res.json();
+      expect(json.issues).toHaveLength(20);
+      expect(json.issueCount).toBeGreaterThan(20);
+      expect(await allQuestions()).toHaveLength(0);
+    });
+
     it("externalId 以保留前缀 api: 开头 → 400 + issues，整批不写", async () => {
       const res = await postBatch({
         questions: [

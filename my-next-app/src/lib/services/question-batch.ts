@@ -251,34 +251,38 @@ export async function createQuestionsBatch(
           }
         }
       }
-    });
-  }
 
-  // 3. 并发窗口：预检没命中、插入时被别的请求抢先（唯一索引吞掉插入）。
-  //    回查一次拿既有 id —— 这是"抢占者赢了"，语义上就是 skipped，不是错误
-  const racedKeys = pendingKeys.filter((key) => !createdIdByKey.has(key));
-  if (racedKeys.length > 0) {
-    const racedRows = await drizzleDb
-      .select({
-        id: drizzleSchema.questions.id,
-        external_id: drizzleSchema.questions.external_id,
-      })
-      .from(drizzleSchema.questions)
-      .where(inArray(drizzleSchema.questions.external_id, racedKeys));
-    for (const row of racedRows) {
-      if (typeof row.external_id === "string") {
-        existingIdByKey.set(row.external_id, row.id);
+      // 3. 并发窗口：预检没命中、插入时被别的请求抢先（唯一索引吞掉插入）。
+      //    回查一次拿既有 id —— 这是"抢占者赢了"，语义上就是 skipped，不是错误。
+      //
+      //    回查必须走同一个事务连接（`exec`）：若它在事务外抛错，上面已提交的
+      //    新行无法回滚，调用方重试时这些键只会被判 skipped，向量索引永远不会建
+      //    （评审指出过）。放进事务内则失败整块回滚，重试时重新插入并建索引。
+      const racedKeys = pendingKeys.filter((key) => !createdIdByKey.has(key));
+      if (racedKeys.length > 0) {
+        const racedRows = await exec
+          .select({
+            id: drizzleSchema.questions.id,
+            external_id: drizzleSchema.questions.external_id,
+          })
+          .from(drizzleSchema.questions)
+          .where(inArray(drizzleSchema.questions.external_id, racedKeys));
+        for (const row of racedRows) {
+          if (typeof row.external_id === "string") {
+            existingIdByKey.set(row.external_id, row.id);
+          }
+        }
+        // 回查仍读不到：那行在插入与回查之间被删了（或落库被静默丢弃）。
+        // 不编 id、不冒充 created —— 明确记一条结构化 warn，回执里 id 为 null
+        const vanished = racedKeys.filter((key) => !existingIdByKey.has(key));
+        if (vanished.length > 0) {
+          logger.warn(
+            { count: vanished.length, externalIds: vanished.slice(0, 5) },
+            "[QuestionBatch] 插入被唯一索引吞掉后仍读不到既有行（可能已被并发删除），回执 id 为 null",
+          );
+        }
       }
-    }
-    // 回查仍读不到：那行在插入与回查之间被删了（或落库被静默丢弃）。
-    // 不编 id、不冒充 created —— 明确记一条结构化 warn，回执里 id 为 null
-    const vanished = racedKeys.filter((key) => !existingIdByKey.has(key));
-    if (vanished.length > 0) {
-      logger.warn(
-        { count: vanished.length, externalIds: vanished.slice(0, 5) },
-        "[QuestionBatch] 插入被唯一索引吞掉后仍读不到既有行（可能已被并发删除），回执 id 为 null",
-      );
-    }
+    });
   }
 
   const results = items.map((_item, index) => {

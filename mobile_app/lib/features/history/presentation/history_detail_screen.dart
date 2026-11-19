@@ -47,6 +47,7 @@ class _HistoryDetailScreenState extends ConsumerState<HistoryDetailScreen> {
         backgroundColor: cardColor,
         elevation: 0,
         leading: IconButton(
+          tooltip: '返回',
           icon: Icon(AppIcons.arrowBack, color: textColor),
           onPressed: () => context.backOrHome(),
         ),
@@ -61,6 +62,7 @@ class _HistoryDetailScreenState extends ConsumerState<HistoryDetailScreen> {
         centerTitle: true,
         actions: [
           IconButton(
+            tooltip: _showWrongOnly ? '显示全部题目' : '只看错题',
             icon: Icon(
               _showWrongOnly ? AppIcons.filterAlt : AppIcons.filterAltOutlined,
             ),

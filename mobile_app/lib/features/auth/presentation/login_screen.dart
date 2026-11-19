@@ -316,6 +316,7 @@ class LoginScreen extends HookConsumerWidget {
                 isDense: true,
                 suffixIcon: isPassword
                     ? IconButton(
+                      tooltip: (obscureText ?? true) ? '显示密码' : '隐藏密码',
                         icon: Icon(
                           (obscureText ?? true)
                               ? AppIcons.visibilityOff

@@ -96,7 +96,7 @@ export function MindmapSidebar({ records }: MindmapSidebarProps) {
 
                 <button
                   onClick={(e) => handleDelete(record.id, e)}
-                  className="opacity-0 group-hover:opacity-100 p-1.5 hover:bg-destructive/10 hover:text-destructive rounded transition-all"
+                  className="hover-reveal p-1.5 hover:bg-destructive/10 hover:text-destructive rounded transition-all"
                   title="删除"
                 >
                   <Trash2 className="w-3 h-3" />

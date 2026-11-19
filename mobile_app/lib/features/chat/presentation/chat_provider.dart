@@ -100,6 +100,16 @@ class ChatNotifier extends AsyncNotifier<List<ChatMessage>> {
   void stopGeneration() {
     // 先让令牌失效再取消订阅：即便有回调已经在事件队列里排队，也会被令牌挡掉。
     _abortActiveStream();
+    // 与 onDone 同理：不发布状态的话，按钮会停在「停止生成」。
+    _publishGenerationStopped();
+  }
+
+  /// 生成结束后让界面重建一次（消息内容不变，只是把 `_isGenerating` 的变化
+  /// 通过 state 传播出去）。用新列表实例触发通知，避免依赖内容判等。
+  void _publishGenerationStopped() {
+    final latest = state.value;
+    if (latest == null) return;
+    state = AsyncData(List<ChatMessage>.of(latest));
   }
 
   /// 重试上次失败的消息
@@ -238,6 +248,10 @@ class ChatNotifier extends AsyncNotifier<List<ChatMessage>> {
             _isGenerating = false;
             _streamSubscription = null;
             _pendingCompleter = null;
+            // `_isGenerating` 是普通字段，改它不会通知 provider 的监听者。
+            // 不发布一次状态，界面上的「停止生成」图标与语义标签会一直停在
+            // 生成中，而点击回调已经走发送分支（读屏用户会点错）。
+            _publishGenerationStopped();
           }
           if (!completer.isCompleted) completer.complete();
         },

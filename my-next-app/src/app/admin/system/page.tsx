@@ -1,7 +1,8 @@
 "use client";
 
 import React from "react";
-import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { useAppQuery } from "@/hooks/useAppQuery";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
 import { SystemStatus } from "./_components/types";
@@ -25,7 +26,7 @@ export default function SystemPage() {
     isError,
     error,
     refetch,
-  } = useQuery({
+  } = useAppQuery({
     queryKey: [STATUS_KEY],
     queryFn: async () => {
       const res = await fetch("/api/admin/system");

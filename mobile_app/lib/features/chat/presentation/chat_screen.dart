@@ -46,6 +46,7 @@ class ChatScreen extends HookConsumerWidget {
       appBar: AppBar(
         elevation: 0,
         leading: IconButton(
+          tooltip: '返回',
           icon: Icon(
             AppIcons.arrowBackIos,
             color: context.colors.text,
@@ -336,7 +337,12 @@ class ChatScreen extends HookConsumerWidget {
                       ),
                     ),
                     SizedBox(width: 12.w),
-                    GestureDetector(
+Semantics(
+                      button: true,
+                      label: ref.watch(chatProvider.notifier).isGenerating
+                        ? '停止生成'
+                        : '发送消息',
+                      child:                     GestureDetector(
                       onTap: () {
                         final notifier = ref.read(chatProvider.notifier);
                         // 生成中 → 停止；否则 → 发送
@@ -388,6 +394,7 @@ class ChatScreen extends HookConsumerWidget {
                                 ),
                         ),
                       ),
+                    ),
                     ),
                   ],
                 ),
@@ -484,6 +491,7 @@ class ChatScreen extends HookConsumerWidget {
                               .loadSession(sessionId);
                         },
                         trailing: IconButton(
+                          tooltip: '删除对话',
                           icon: Icon(
                             AppIcons.deleteOutline,
                             size: 18.sp,

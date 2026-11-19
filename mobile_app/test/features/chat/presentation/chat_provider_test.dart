@@ -255,6 +255,46 @@ void main() {
     });
   });
 
+  group('生成结束要通知界面', () {
+    test('流正常结束：发布一次状态，监听者能重建（否则按钮停在「停止生成」）', () async {
+      final container = makeContainer();
+      var notifications = 0;
+      container.listen(chatProvider, (_, __) => notifications++);
+
+      final future = container.read(chatProvider.notifier).sendMessage('问题');
+      await pumpEventQueue();
+      repository.streams.single.add('答');
+      await pumpEventQueue();
+
+      final before = notifications;
+      await repository.streams.single.close();
+      await future;
+
+      expect(
+        notifications,
+        greaterThan(before),
+        reason: 'onDone 只改普通字段不会通知 provider，界面会一直停在生成中',
+      );
+      expect(container.read(chatProvider.notifier).isGenerating, isFalse);
+    });
+
+    test('手动停止生成同样发布状态', () async {
+      final container = makeContainer();
+      var notifications = 0;
+      container.listen(chatProvider, (_, __) => notifications++);
+
+      final future = container.read(chatProvider.notifier).sendMessage('问题');
+      await pumpEventQueue();
+      final before = notifications;
+
+      container.read(chatProvider.notifier).stopGeneration();
+      await future;
+
+      expect(notifications, greaterThan(before));
+      expect(container.read(chatProvider.notifier).isGenerating, isFalse);
+    });
+  });
+
   group('发送消息成功路径', () {
     test('先插用户消息与空 assistant 占位，chunk 累积进占位而不是追加新消息', () async {
       final container = makeContainer();

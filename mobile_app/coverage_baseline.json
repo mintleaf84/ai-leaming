@@ -1,9 +1,9 @@
 {
   "_comment": "覆盖率门禁基线：由 tool/coverage_gate.dart --update 生成，只升不降。floor 是硬闸，measured 用于检测单文件回退。",
-  "generated_at": "2026-11-19T18:06:00.894634Z",
+  "generated_at": "2026-11-19T18:24:00.917335Z",
   "global": {
-    "floor": 33.2,
-    "measured": 34.19
+    "floor": 35.6,
+    "measured": 36.58
   },
   "scopes": {
     "domain_data": {
@@ -11,12 +11,12 @@
       "measured": 80.66
     },
     "core": {
-      "floor": 73.1,
-      "measured": 74.11
+      "floor": 75.5,
+      "measured": 76.46
     },
     "shared": {
-      "floor": 19.5,
-      "measured": 20.49
+      "floor": 46.0,
+      "measured": 46.98
     },
     "providers": {
       "floor": 83.4,
@@ -24,7 +24,7 @@
     },
     "screens": {
       "floor": 16.8,
-      "measured": 17.76
+      "measured": 17.75
     },
     "other": {
       "floor": 0.0,
@@ -37,6 +37,18 @@
     },
     "lib/core/auth/token_util.dart": {
       "measured": 95.24
+    },
+    "lib/core/compat/app_version.dart": {
+      "measured": 0.0
+    },
+    "lib/core/compat/contract_compat.dart": {
+      "measured": 100.0
+    },
+    "lib/core/compat/contract_meta.dart": {
+      "measured": 100.0
+    },
+    "lib/core/compat/contract_meta_repository.dart": {
+      "measured": 68.42
     },
     "lib/core/constants/api_constants.dart": {
       "measured": 100.0
@@ -313,6 +325,9 @@
     },
     "lib/shared/widgets/animated_option_card.dart": {
       "measured": 0.0
+    },
+    "lib/shared/widgets/contract_gate.dart": {
+      "measured": 98.7
     },
     "lib/shared/widgets/empty_state.dart": {
       "measured": 2.33

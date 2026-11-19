@@ -99,7 +99,14 @@ export function checkAnswerCorrectness(
     };
     const toOptionKey = (value: string): string => {
       const v = value.trim();
-      if (/^[A-Za-z]$/.test(v)) return v.toUpperCase();
+      // 只有落在选项范围内的单字母才是「标号」；否则可能是选项文本本身
+      // （如 options=["X","Y","Z","W"] 时的 "X"），必须继续按文本查找
+      if (/^[A-Za-z]$/.test(v)) {
+        const idx = v.toUpperCase().charCodeAt(0) - 65;
+        if (options.length === 0 || idx < options.length) {
+          return v.toUpperCase();
+        }
+      }
       const idx = options.findIndex((option) => option.trim() === v);
       return idx >= 0 ? String.fromCharCode(65 + idx) : v;
     };

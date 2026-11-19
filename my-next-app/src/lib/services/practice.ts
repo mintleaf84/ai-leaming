@@ -229,6 +229,8 @@ export const practiceService = {
     isCorrect: boolean,
     duration: number,
     totalDurationMs?: number,
+    // true = 在写日志的同一事务内重新读题判分（用于 submitAnswerWithValidation）
+    revalidateAnswer = false,
   ) {
     // 1+2. 归属校验、答题日志写入、会话统计更新必须在**同一个事务**里。
     //
@@ -236,6 +238,8 @@ export const practiceService = {
     // 或转给别的用户，日志照样会写进一个不再属于当前用户的 session。放进事务后，
     // 校验与写入看到的是同一个快照（SQLite 写事务串行化），窗口消失。
     // 顺带把"日志"与"统计"绑成原子：任何一步失败都不会留下有日志无统计的脏数据。
+    let gradedIsCorrect = isCorrect;
+
     await withTransaction(async (exec) => {
       if (sessionId) {
         const [owned] = await exec
@@ -253,12 +257,38 @@ export const practiceService = {
         if (!owned) throw new PracticeSessionNotFoundError(sessionId);
       }
 
+      // 判分与写入同一快照：事务外读到的答案可能已被改题回刷更新，
+      // 迟到的日志会按旧答案落库且回刷扫描不到（评审指出的竞争窗口）。
+      if (revalidateAnswer) {
+        const [current] = await exec
+          .select({
+            answer: questions.answer,
+            options: questions.options,
+            type: questions.type,
+          })
+          .from(questions)
+          .where(eq(questions.id, questionId))
+          .limit(1);
+        if (current) {
+          const currentOptions: string[] =
+            typeof current.options === "string"
+              ? safeParseJson<string[]>(current.options, [])
+              : current.options || [];
+          gradedIsCorrect = checkAnswerCorrectness(
+            userAnswer,
+            current.answer ?? "",
+            currentOptions,
+            current.type ?? undefined,
+          );
+        }
+      }
+
       await exec.insert(practice_logs).values({
         session_id: sessionId,
         user_id: userId,
         question_id: questionId,
         user_answer: userAnswer,
-        is_correct: isCorrect,
+        is_correct: gradedIsCorrect,
         duration_ms: duration,
       });
 
@@ -266,7 +296,7 @@ export const practiceService = {
         await exec
           .update(practice_sessions)
           .set({
-            correct_count: sql`${practice_sessions.correct_count} + ${isCorrect ? 1 : 0}`,
+            correct_count: sql`${practice_sessions.correct_count} + ${gradedIsCorrect ? 1 : 0}`,
             total_duration_ms: totalDurationMs ?? undefined,
           })
           .where(
@@ -299,7 +329,7 @@ export const practiceService = {
             userId,
             tag,
             q.dimension as Dimension,
-            isCorrect,
+            gradedIsCorrect,
           );
         }),
       );
@@ -315,7 +345,7 @@ export const practiceService = {
       updatedSrs = await srsService.updateQuestionSrs(
         userId,
         questionId,
-        isCorrect,
+        gradedIsCorrect,
         duration,
         undefined,
         undefined,
@@ -386,6 +416,8 @@ export const practiceService = {
       userAnswer,
       isCorrect,
       duration,
+      undefined,
+      true,
     );
 
     return { isCorrect, correctAnswer };

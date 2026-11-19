@@ -6,29 +6,28 @@
 
 ---
 
-
 ## 0. 目录与状态
 
-| 段 | 内容 | 状态 |
-| --- | --- | --- |
-| §1–§10 | 复用分析、现状基线、P0–P5 阶段规划、工期 | 历史方案（部分已被 §11 覆盖） |
-| §11 | 执行进度（2026-11-18） | **[已完成]** |
-| §12 | 覆盖率门禁与测试补强 | **[已完成]**（PR #248） |
-| §13 | 覆盖率门禁第二轮（PR 作用域 / 豁免 / 净变化） | **[已完成]**（PR #250） |
-| §14 | 覆盖率后续（P5 与 §12.7 分级） | P5 已完成，见 §17 |
-| §15 | #247 收口 | **[已完成]**（#247） |
-| §16 | P0 缺陷修复（登录漏发 token / logout 无 guard） | **[已完成]**（PR #251） |
-| §17 | P5 逐屏冒烟清单 | **[已完成]**（PR #255） |
-| §18 | 门禁第三轮（diff coverage） | **[不做]** |
-| §19 | 设置持久化 | **[已完成]**（PR #253） |
-| §20 | 离线边界与提示 | 方案 A 已完成，B 待反馈 |
-| §21 | 移动端可访问性 | **[已完成]**（PR #252） |
-| §22 | P5 测试基建与反模式 | **[已完成]**（随 PR #255） |
-| §23 | 真机验收闭环 | 计划（需真机） |
-| §24 | 错误文案统一 | **[已完成]**（PR #253） |
-| §25 | 备考主路径摩擦（F1–F5） | 计划 |
-| §26 | APK 发布链路（R1–R6） | 计划 |
-| §27 | CI 时长与测试预算 | 计划 |
+| 段     | 内容                                            | 状态                          |
+| ------ | ----------------------------------------------- | ----------------------------- |
+| §1–§10 | 复用分析、现状基线、P0–P5 阶段规划、工期        | 历史方案（部分已被 §11 覆盖） |
+| §11    | 执行进度（2026-11-18）                          | **[已完成]**                  |
+| §12    | 覆盖率门禁与测试补强                            | **[已完成]**（PR #248）       |
+| §13    | 覆盖率门禁第二轮（PR 作用域 / 豁免 / 净变化）   | **[已完成]**（PR #250）       |
+| §14    | 覆盖率后续（P5 与 §12.7 分级）                  | P5 已完成，见 §17             |
+| §15    | #247 收口                                       | **[已完成]**（#247）          |
+| §16    | P0 缺陷修复（登录漏发 token / logout 无 guard） | **[已完成]**（PR #251）       |
+| §17    | P5 逐屏冒烟清单                                 | **[已完成]**（PR #255）       |
+| §18    | 门禁第三轮（diff coverage）                     | **[不做]**                    |
+| §19    | 设置持久化                                      | **[已完成]**（PR #253）       |
+| §20    | 离线边界与提示                                  | 方案 A 已完成，B 待反馈       |
+| §21    | 移动端可访问性                                  | **[已完成]**（PR #252）       |
+| §22    | P5 测试基建与反模式                             | **[已完成]**（随 PR #255）    |
+| §23    | 真机验收闭环                                    | 计划（需真机）                |
+| §24    | 错误文案统一                                    | **[已完成]**（PR #253）       |
+| §25    | 备考主路径摩擦（F1–F5）                         | 计划                          |
+| §26    | APK 发布链路（R1–R6）                           | 计划                          |
+| §27    | CI 时长与测试预算                               | 计划                          |
 
 > 维护约定：新增段落追加到末尾并在此表登记；状态只有四种——`[已完成]` / `计划` / `[不做]` / `待决策`。
 
@@ -826,26 +825,26 @@ F1 → F4 → F3 → F2 → F5。
 
 ### 26.1 现状（读 `android.yml` 实测）
 
-| 项 | 现状 | 问题 |
-| --- | --- | --- |
-| 触发 | `workflow_dispatch` + `push: tags v*`；`needs: [analyze]` | 合理，保持 |
+| 项     | 现状                                                           | 问题                                                                          |
+| ------ | -------------------------------------------------------------- | ----------------------------------------------------------------------------- |
+| 触发   | `workflow_dispatch` + `push: tags v*`；`needs: [analyze]`      | 合理，保持                                                                    |
 | 版本号 | `pubspec.yaml` 固定 `1.0.0+1`；gradle 取 `flutter.versionCode` | **每次构建 versionCode 都是 1**，系统里版本号永远不变，无法从用户上报区分构建 |
-| 签名 | secrets 里的固定 keystore，缺配置直接失败 | 已做对（debug keystore 会导致装不上旧包） |
-| 产物 | `upload-artifact: app-release`，未设 retention | 名字不含版本；默认 90 天 |
-| 发布 | 无 GitHub Release、无 changelog | 只能去 Actions 页面翻 run |
-| 指纹 | 无 | APK 内不知道对应哪个 commit |
+| 签名   | secrets 里的固定 keystore，缺配置直接失败                      | 已做对（debug keystore 会导致装不上旧包）                                     |
+| 产物   | `upload-artifact: app-release`，未设 retention                 | 名字不含版本；默认 90 天                                                      |
+| 发布   | 无 GitHub Release、无 changelog                                | 只能去 Actions 页面翻 run                                                     |
+| 指纹   | 无                                                             | APK 内不知道对应哪个 commit                                                   |
 
 ### 26.2 修法
 
-| # | 动作 | 判据 | 工作量 |
-| --- | --- | --- | --- |
-| R1 | 版本号由 CI 派生：`flutter build apk --build-name=<pubspec 语义版本> --build-number=${{ github.run_number }}` | 连续两次 dispatch → versionCode 1→2；设置页"关于"显示 `1.0.0 (2)` | 0.5d |
-| R2 | artifact 改名 `app-release-<name>+<code>`，`retention-days: 30` | 两次构建的 artifact 名不同、可在下载页区分 | 同上 |
-| R3 | 打 tag 时创建 GitHub Release，APK 作为 release asset（正文取 commit 列表或 `CHANGELOG.md` 对应段） | `git tag v1.1.0 && git push --tags` → Release 自动出现且带 APK | 0.5d |
-| R4 | 构建指纹：`--dart-define=BUILD_SHA=${{ github.sha }}`，设置页"关于"显示前 8 位 | 设置页可见；与 `git rev-parse --short HEAD` 一致 | 0.5d |
-| R5 | 密钥备份：keystore 只存在 secrets，**丢失即无法覆盖升级**（只能换包名重发）。文档写明离线备份位置（密码管理器/加密介质），不入库 | `docs/deploy.md` 增一节"Android 签名密钥备份" | 0.2d |
-| R6 | **回滚**：Android 不允许 versionCode 降级安装，所以回滚 ≠ 装旧包。正确做法是从旧 tag 重新构建，但 build-number 继续用当前 `run_number`（旧代码 + 更大的版本号） | 回滚演练一次：旧 tag 构建 → 能覆盖安装 → 设置页版本号更高、功能是旧版 | 0.5d |
-| R7 | ABI 拆分（**不做**）：`--split-per-abi` 可把 53MB 拆成三个约 20MB 的包 | 只有一个真机，多维护 3 个产物不划算 | — |
+| #   | 动作                                                                                                                                                            | 判据                                                                  | 工作量 |
+| --- | --------------------------------------------------------------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------- | ------ |
+| R1  | 版本号由 CI 派生：`flutter build apk --build-name=<pubspec 语义版本> --build-number=${{ github.run_number }}`                                                   | 连续两次 dispatch → versionCode 1→2；设置页"关于"显示 `1.0.0 (2)`     | 0.5d   |
+| R2  | artifact 改名 `app-release-<name>+<code>`，`retention-days: 30`                                                                                                 | 两次构建的 artifact 名不同、可在下载页区分                            | 同上   |
+| R3  | 打 tag 时创建 GitHub Release，APK 作为 release asset（正文取 commit 列表或 `CHANGELOG.md` 对应段）                                                              | `git tag v1.1.0 && git push --tags` → Release 自动出现且带 APK        | 0.5d   |
+| R4  | 构建指纹：`--dart-define=BUILD_SHA=${{ github.sha }}`，设置页"关于"显示前 8 位                                                                                  | 设置页可见；与 `git rev-parse --short HEAD` 一致                      | 0.5d   |
+| R5  | 密钥备份：keystore 只存在 secrets，**丢失即无法覆盖升级**（只能换包名重发）。文档写明离线备份位置（密码管理器/加密介质），不入库                                | `docs/deploy.md` 增一节"Android 签名密钥备份"                         | 0.2d   |
+| R6  | **回滚**：Android 不允许 versionCode 降级安装，所以回滚 ≠ 装旧包。正确做法是从旧 tag 重新构建，但 build-number 继续用当前 `run_number`（旧代码 + 更大的版本号） | 回滚演练一次：旧 tag 构建 → 能覆盖安装 → 设置页版本号更高、功能是旧版 | 0.5d   |
+| R7  | ABI 拆分（**不做**）：`--split-per-abi` 可把 53MB 拆成三个约 20MB 的包                                                                                          | 只有一个真机，多维护 3 个产物不划算                                   | —      |
 
 ### 26.3 顺序
 
@@ -864,15 +863,15 @@ R1+R2（先让包可区分）→ R3 → R4 → R5（文档）→ R6（演练一�
 
 ### 27.1 实测（`gh run view --json jobs`）
 
-| job | 时长 | 备注 |
-| --- | ---: | --- |
-| Lint & Type Check | 2.0min | 含 `npm ci` |
-| 单元测试 (Vitest) | 3.6min | 含 `npm ci` |
-| OpenAPI 契约快照 | 1.2min | 含 `npm ci` |
-| MCP 构建与文档任务验收 | 1.0min | 含 `npm ci` |
-| Flutter 静态分析与测试（android.yml） | 2.4min | pub get + build_runner + analyze + test --coverage + 门禁 |
-| Playwright layout-guard / perf-guard / E2E | 未取到 | 与 CI 并行，`ui-guard.yml` 独立 workflow |
-| 构建 Release APK | 45min 超时上限 | 仅 dispatch/tag 触发，实测待测 |
+| job                                        |           时长 | 备注                                                      |
+| ------------------------------------------ | -------------: | --------------------------------------------------------- |
+| Lint & Type Check                          |         2.0min | 含 `npm ci`                                               |
+| 单元测试 (Vitest)                          |         3.6min | 含 `npm ci`                                               |
+| OpenAPI 契约快照                           |         1.2min | 含 `npm ci`                                               |
+| MCP 构建与文档任务验收                     |         1.0min | 含 `npm ci`                                               |
+| Flutter 静态分析与测试（android.yml）      |         2.4min | pub get + build_runner + analyze + test --coverage + 门禁 |
+| Playwright layout-guard / perf-guard / E2E |         未取到 | 与 CI 并行，`ui-guard.yml` 独立 workflow                  |
+| 构建 Release APK                           | 45min 超时上限 | 仅 dispatch/tag 触发，实测待测                            |
 
 ### 27.2 四个问题
 
@@ -883,18 +882,16 @@ R1+R2（先让包可区分）→ R3 → R4 → R5（文档）→ R6（演练一�
 
 ### 27.3 方案
 
-| # | 动作 | 判据 | 工作量 |
-| --- | --- | --- | --- |
-| C1 | 路径过滤：`ci.yml` / `ui-guard.yml` 加 `paths-ignore: ['docs/**', '**/*.md', 'mobile_app/**']`（`android.yml` 已有 `paths`，保持） | 只改 docs 的 PR：web CI 不触发或 <30s | 0.2d |
-| C2 | 分层：PR 只跑快闸（lint/typecheck/vitest/openapi/mcp/next build）；Playwright 与 E2E 改为 **main push + label `run-e2e` + 每晚定时** | PR 反馈 p50 < 4min；main 仍全量 | 0.5d |
-| C3 | 合并安装：openapi / mcp 并进 lint job（共用 node_modules），或抽 composite action + `cache` | CI 总时长下降 ≥30% | 0.5d |
-| C4 | Flutter 测试预算：518 条 48s → 目标 <90s；单条 <300ms；超预算先查 `pumpAndSettle` 次数与 `--concurrency` | `flutter test` 超过 90s 即视为需要拆分 | 0.2d |
-| C5 | 失败证据：`if: always()` 上传关键日志 artifact | 30 天后仍能取到失败原因 | 0.3d |
-| C6 | 文档：`AGENTS.md` 写"PR 最小闸门清单"（哪些挡合并、哪些只是信号） | 新 PR 能自答"我该等哪些检查" | 0.1d |
+| #   | 动作                                                                                                                                 | 判据                                   | 工作量 |
+| --- | ------------------------------------------------------------------------------------------------------------------------------------ | -------------------------------------- | ------ |
+| C1  | 路径过滤：`ci.yml` / `ui-guard.yml` 加 `paths-ignore: ['docs/**', '**/*.md', 'mobile_app/**']`（`android.yml` 已有 `paths`，保持）   | 只改 docs 的 PR：web CI 不触发或 <30s  | 0.2d   |
+| C2  | 分层：PR 只跑快闸（lint/typecheck/vitest/openapi/mcp/next build）；Playwright 与 E2E 改为 **main push + label `run-e2e` + 每晚定时** | PR 反馈 p50 < 4min；main 仍全量        | 0.5d   |
+| C3  | 合并安装：openapi / mcp 并进 lint job（共用 node_modules），或抽 composite action + `cache`                                          | CI 总时长下降 ≥30%                     | 0.5d   |
+| C4  | Flutter 测试预算：518 条 48s → 目标 <90s；单条 <300ms；超预算先查 `pumpAndSettle` 次数与 `--concurrency`                             | `flutter test` 超过 90s 即视为需要拆分 | 0.2d   |
+| C5  | 失败证据：`if: always()` 上传关键日志 artifact                                                                                       | 30 天后仍能取到失败原因                | 0.3d   |
+| C6  | 文档：`AGENTS.md` 写"PR 最小闸门清单"（哪些挡合并、哪些只是信号）                                                                    | 新 PR 能自答"我该等哪些检查"           | 0.1d   |
 
 ### 27.4 不做
 
 - 自建 runner 承接 web CI（`SELF_HOSTED` 开关已有，但本机 glibc 2.17 跑不了 Chromium）
 - 删掉 Playwright：61 条 layout-guard 是 UI 回归的唯一护栏，只是不该挡每个 PR
-
-

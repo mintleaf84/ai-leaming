@@ -175,6 +175,8 @@ describe("Practice Actions", () => {
     it("应该记录答案并更新掌握度", async () => {
       state.selectResults = [
         [{ id: "sess-1" }], // 归属校验：sessionId 属于当前用户
+        // 事务内重新读题判分（revalidateAnswer=true）
+        [{ answer: "A", options: '["A","B"]', type: "single" }],
         [
           {
             // 题目 tags 查询
@@ -182,7 +184,6 @@ describe("Practice Actions", () => {
             dimension: "knowledge",
           },
         ],
-        [{ answer: "A" }], // 答案验证查询
       ];
 
       const result = await submitAnswerAction({

@@ -85,6 +85,21 @@ vi.mock("@/lib/db", () => ({
   drizzleSchema: mockDrizzleSchema,
 }));
 
+// updateQuestion 现在会在事务内调用 regradeQuestionLogs（改题回刷，P0-1）。
+// 本文件用链式 mock 模拟 drizzle，回刷内部的多步查询无法被这套 mock 表达，
+// 故在此隔离：既能保住「更新题目」的单测，也能断言钩子确实被调用。
+vi.mock("../question-regrade", () => ({
+  regradeQuestionLogs: vi.fn().mockResolvedValue({
+    questionId: 0,
+    logsScanned: 0,
+    logsFlipped: 0,
+    flippedToCorrect: 0,
+    flippedToIncorrect: 0,
+    usersReset: 0,
+    sessionsUpdated: 0,
+  }),
+}));
+
 // Mock 密码哈希，避免 bcrypt 计算
 vi.mock("@/lib/auth/password", () => ({
   hashPassword: vi.fn().mockResolvedValue("hashed_password"),
@@ -368,6 +383,8 @@ describe("AdminService", () => {
       });
       expect(result).toBe(true);
       expect(mockDrizzleDb.update).toHaveBeenCalled();
+      const { regradeQuestionLogs } = await import("../question-regrade");
+      expect(regradeQuestionLogs).toHaveBeenCalledWith(1, expect.anything());
     });
   });
 

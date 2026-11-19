@@ -176,6 +176,25 @@ void main() {
     );
   });
 
+  test('生产路由不得改用 CustomTransitionPage / PageRouteBuilder（会绕过主题过渡）', () {
+    // 主题里的 pageTransitionsTheme 只对 MaterialPage 生效；一旦有人给某条路由写了
+    // pageBuilder: (c, s) => CustomTransitionPage(...)，那条路由的转场就与全站不一致，
+    // 而且不会再跟随 TargetPlatform 的配置。
+    final source = stripCommentsAndFlatten(
+      File('lib/app_router.dart').readAsStringSync(),
+    );
+    for (final forbidden in <String>[
+      'CustomTransitionPage',
+      'PageRouteBuilder',
+    ]) {
+      expect(
+        source.contains(forbidden),
+        isFalse,
+        reason: 'app_router.dart 出现 $forbidden：转场将绕过 pageTransitionsTheme',
+      );
+    }
+  });
+
   test('路由表引用的路径都来自 AppRoutes 常量（没有裸字符串）', () {
     final source = File('lib/app_router.dart').readAsStringSync();
     final literalPaths = RegExp(r"path:\s*'([^']*)'")

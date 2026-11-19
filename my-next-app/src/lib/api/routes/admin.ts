@@ -518,10 +518,13 @@ adminRoute.openapi(exportQuestionsDef, async (c) => {
   // BOM 必须放在最前面：没有它 Excel 打开中文会乱码
   const csvContent =
     "\uFEFF" +
-    Papa.unparse(rows.map((row) => row.map(neutralizeCsvFormula)), {
-      quotes: false,
-      newline: "\n",
-    }) +
+    Papa.unparse(
+      rows.map((row) => row.map(neutralizeCsvFormula)),
+      {
+        quotes: false,
+        newline: "\n",
+      },
+    ) +
     "\n";
 
   const fileName = `questions_export_${getBeijingDateString()}.csv`;

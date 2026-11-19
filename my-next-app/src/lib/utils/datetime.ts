@@ -112,6 +112,8 @@ export function getBeijingLocaleString(date?: Date): string {
 }
 
 /** 统一的"日期 + 时分"格式（管理页/日志用），固定北京时间 */
-export function formatBeijingDateTime(date: Date | string | number | undefined): string {
+export function formatBeijingDateTime(
+  date: Date | string | number | undefined,
+): string {
   return formatBeijingDate(date, "YYYY-MM-DD HH:mm");
 }

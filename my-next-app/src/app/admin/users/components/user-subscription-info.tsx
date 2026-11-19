@@ -48,9 +48,7 @@ function getSubscriptionBadge(
 
 // 到期时间文案（表格与卡片共用）
 function formatExpiresAt(expiresAt?: string | null) {
-  return expiresAt
-    ? `到期 ${formatBeijingDate(expiresAt)}`
-    : "永久";
+  return expiresAt ? `到期 ${formatBeijingDate(expiresAt)}` : "永久";
 }
 
 interface UserSubscriptionInfoProps {

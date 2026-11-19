@@ -90,7 +90,16 @@ export function sanitizeHtml(html: string): string {
     ALLOWED_URI_REGEXP,
     ALLOW_DATA_ATTR: false,
     // 明确禁止 <template> 之类的内容载体被还原
-    FORBID_TAGS: ["style", "script", "iframe", "object", "embed", "form", "svg", "math"],
+    FORBID_TAGS: [
+      "style",
+      "script",
+      "iframe",
+      "object",
+      "embed",
+      "form",
+      "svg",
+      "math",
+    ],
   });
 }
 
@@ -122,7 +131,10 @@ function decodeEntities(value: string): string {
     "&nbsp;": " ",
   };
   return value
-    .replace(/&(amp|lt|gt|quot|#39|apos|nbsp);/g, (match) => named[match] ?? match)
+    .replace(
+      /&(amp|lt|gt|quot|#39|apos|nbsp);/g,
+      (match) => named[match] ?? match,
+    )
     .replace(/&#(\d+);/g, (_, code: string) =>
       String.fromCodePoint(Number(code)),
     )

@@ -57,7 +57,12 @@ docker compose pull
 docker compose up -d
 ```
 
-`JWT_SECRET` 缺失时 `start.sh:6-22` 会自动生成并写入 `data/.env.production`（持久化，重启不变）。
+`JWT_SECRET` 与 `BACKUP_ENCRYPTION_KEY` 缺失时 `start.sh` 会自动生成并写入 `data/.env.production`
+（持久化，重启不变）。后者用于加解密 WebDAV 密码：**它丢了就等于备份密码丢了**，
+换机器/迁移时必须连 `data/` 一起搬，否则已保存的 WebDAV 密码解不开（页面会提示重新填写）。
+多实例共享同一个数据库时，两个实例必须拿到**同一个** `BACKUP_ENCRYPTION_KEY`（共享 `data/`，
+或显式在 compose 的 `environment` 里给同一个值）。
+
 **不要手工清 `data/`**——那是数据库和所有登录态。
 
 ## 4. 日常更新（三选一）

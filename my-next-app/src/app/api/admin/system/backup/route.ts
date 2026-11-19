@@ -79,8 +79,12 @@ export async function PATCH(req: Request) {
       delete body.pass;
     }
     const testConfig = { ...config, ...body };
-    const success = await BackupService.testConnection(testConfig);
-    return NextResponse.json({ success });
+    // testConnection 现在会真的写一个探针文件再删掉（只读账号/配额满在"读"这一步看不出来）
+    const result = await BackupService.testConnection(testConfig);
+    return NextResponse.json({
+      success: result.ok,
+      ...(result.message ? { error: result.message } : {}),
+    });
   } catch (error: unknown) {
     logger.error({ err: error }, "[API] 备份连接测试失败");
     return NextResponse.json({

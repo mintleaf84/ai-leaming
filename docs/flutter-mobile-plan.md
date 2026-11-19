@@ -882,14 +882,14 @@ R1+R2（先让包可区分）→ R3 → R4 → R5（文档）→ R6（演练一�
 
 ### 27.3 方案
 
-| #   | 动作                                                                                                                                 | 判据                                   | 工作量 |
-| --- | ------------------------------------------------------------------------------------------------------------------------------------ | -------------------------------------- | ------ |
+| #   | 动作                                                                                                                                                                | 判据                                                 | 工作量 |
+| --- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------- | ------ |
 | C1  | **已落地**：`ui-guard.yml` 用 `paths-ignore`；`ci.yml` **不能**用 `paths-ignore`（被路径过滤的必需检查会永远 Pending），改用 `changes` job + job 级 `if`（PR #257） | 只改 docs 的 PR：web 快闸 <30s 且不产生 Pending 卡点 | 已完成 |
-| C2  | 分层：PR 只跑快闸（lint/typecheck/vitest/openapi/mcp/next build）；Playwright 与 E2E 改为 **main push + label `run-e2e` + 每晚定时** | PR 反馈 p50 < 4min；main 仍全量        | 0.5d   |
-| C3  | 合并安装：openapi / mcp 并进 lint job（共用 node_modules），或抽 composite action + `cache`                                          | CI 总时长下降 ≥30%                     | 0.5d   |
-| C4  | Flutter 测试预算：518 条 48s → 目标 <90s；单条 <300ms；超预算先查 `pumpAndSettle` 次数与 `--concurrency`                             | `flutter test` 超过 90s 即视为需要拆分 | 0.2d   |
-| C5  | 失败证据：`if: always()` 上传关键日志 artifact                                                                                       | 30 天后仍能取到失败原因                | 0.3d   |
-| C6  | 文档：`AGENTS.md` 写"PR 最小闸门清单"（哪些挡合并、哪些只是信号）                                                                    | 新 PR 能自答"我该等哪些检查"           | 0.1d   |
+| C2  | 分层：PR 只跑快闸（lint/typecheck/vitest/openapi/mcp/next build）；Playwright 与 E2E 改为 **main push + label `run-e2e` + 每晚定时**                                | PR 反馈 p50 < 4min；main 仍全量                      | 0.5d   |
+| C3  | 合并安装：openapi / mcp 并进 lint job（共用 node_modules），或抽 composite action + `cache`                                                                         | CI 总时长下降 ≥30%                                   | 0.5d   |
+| C4  | Flutter 测试预算：518 条 48s → 目标 <90s；单条 <300ms；超预算先查 `pumpAndSettle` 次数与 `--concurrency`                                                            | `flutter test` 超过 90s 即视为需要拆分               | 0.2d   |
+| C5  | 失败证据：`if: always()` 上传关键日志 artifact                                                                                                                      | 30 天后仍能取到失败原因                              | 0.3d   |
+| C6  | 文档：`AGENTS.md` 写"PR 最小闸门清单"（哪些挡合并、哪些只是信号）                                                                                                   | 新 PR 能自答"我该等哪些检查"                         | 0.1d   |
 
 ### 27.4 不做
 

@@ -195,10 +195,10 @@ export default function SqlRunnerPage() {
     <div className="p-4 md:p-8 space-y-6 max-w-6xl mx-auto">
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div>
-          <h2 className="text-2xl font-bold tracking-tight flex items-center gap-2">
+          <h1 className="text-2xl font-semibold tracking-tight flex items-center gap-2 md:text-3xl">
             <Database className="h-6 w-6" />
             SQL 脚本执行器
-          </h2>
+          </h1>
           <p className="text-muted-foreground mt-1">
             安全执行 SQL 脚本，自动备份数据库，支持快速回滚
           </p>

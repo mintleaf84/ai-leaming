@@ -293,7 +293,7 @@ export default function OcrPage() {
         {/* 页面标题 */}
         <div className="flex items-start justify-between">
           <div>
-            <h1 className="text-3xl font-bold tracking-tight flex items-center gap-3">
+            <h1 className="text-2xl font-semibold tracking-tight md:text-3xl flex items-center gap-3">
               <ScanLine className="w-8 h-8 text-primary" />
               文字识别 (OCR)
             </h1>

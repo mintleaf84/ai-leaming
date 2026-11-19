@@ -156,7 +156,7 @@ export default function BackupSettingsPage() {
     <div className="p-4 md:p-8 space-y-6 max-w-4xl mx-auto">
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div>
-          <h2 className="text-2xl font-bold tracking-tight">数据库备份</h2>
+          <h1 className="text-2xl font-semibold tracking-tight md:text-3xl">数据库备份</h1>
           <p className="text-muted-foreground mt-1">
             通过 WebDAV 协议将您的学习数据安全备份到远程云端。
           </p>

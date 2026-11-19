@@ -83,7 +83,7 @@ export function ReportView({ initialData: reportData }: ReportViewProps) {
   return (
     <div className="min-h-screen bg-gradient-to-br from-background via-background to-muted/30 pb-20 font-sans">
       <div className="p-4 md:p-8 max-w-4xl mx-auto">
-        <h1 className="text-2xl md:text-3xl font-bold mb-8 text-foreground font-serif">
+        <h1 className="text-2xl md:text-3xl font-semibold mb-8 text-foreground font-serif">
           练习结算报告
         </h1>
 

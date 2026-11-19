@@ -9,7 +9,7 @@ export default function OfflinePage() {
       <div className="w-20 h-20 bg-muted/50 rounded-full flex items-center justify-center mb-6 animate-pulse">
         <WifiOff className="w-10 h-10 text-muted-foreground" />
       </div>
-      <h1 className="text-2xl font-bold mb-2">网络连接已断开</h1>
+      <h1 className="text-2xl font-semibold tracking-tight mb-2">网络连接已断开</h1>
       <p className="text-muted-foreground mb-8 max-w-xs">
         “琢玉”已为您预缓存了核心功能，但某些动态内容（如 AI
         聊天）需要互联网连接。

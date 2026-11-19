@@ -65,7 +65,7 @@ export const KnowledgeHeader: React.FC<KnowledgeHeaderProps> = ({
               </div>
             </div>
             <div>
-              <h1 className="text-xl font-bold text-foreground">
+              <h1 className="text-2xl font-semibold tracking-tight text-foreground md:text-3xl">
                 {t("knowledge.title")}
               </h1>
               <p className="text-sm text-muted-foreground">

@@ -38,7 +38,7 @@ export function ChatHeader({
           <Bot className="w-6 h-6 text-primary-foreground" />
         </div>
         <div>
-          <h1 className="text-base font-bold text-foreground">
+          <h1 className="text-base font-semibold text-foreground">
             {showFavorites ? "我的收藏" : "AI 智能教研助手"}
           </h1>
           <p className="text-[10px] text-muted-foreground font-mono tracking-wider">

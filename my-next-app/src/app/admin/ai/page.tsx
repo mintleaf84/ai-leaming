@@ -14,7 +14,7 @@ export default function AiManagementPage() {
   return (
     <div className="p-8 space-y-6">
       <div>
-        <h2 className="text-3xl font-bold tracking-tight">AI 与提示词</h2>
+        <h1 className="text-2xl font-semibold tracking-tight md:text-3xl">AI 与提示词</h1>
         <p className="text-muted-foreground mt-2">
           配置多模型服务商及其路由，并优化系统提示词模板。
         </p>

@@ -176,7 +176,7 @@ export default function PracticeSetupPage() {
             <ChevronLeft className="w-5 h-5" />
             返回首页
           </Link>
-          <h1 className="font-bold text-lg">配置练习</h1>
+          <h1 className="text-lg font-semibold">配置练习</h1>
           <div className="w-20" /> {/* 占位 */}
         </div>
       </header>

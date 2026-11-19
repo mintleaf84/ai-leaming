@@ -69,7 +69,7 @@ export default function DashboardPage() {
             <Orbit className="w-7 h-7" />
           </div>
           <div>
-            <h1 className="text-3xl md:text-4xl font-serif font-bold text-foreground tracking-tight">
+            <h1 className="text-3xl md:text-4xl font-serif font-semibold text-foreground tracking-tight">
               知识图谱
             </h1>
             <p className="text-muted-foreground mt-1.5 font-sans">

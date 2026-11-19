@@ -142,9 +142,9 @@ export default function FeedbackPage() {
     <div className="p-4 md:p-8 space-y-6">
       <div className="flex items-center justify-between">
         <div>
-          <h2 className="text-2xl md:text-3xl font-bold tracking-tight">
+          <h1 className="text-2xl font-semibold tracking-tight md:text-3xl">
             纠错反馈
-          </h2>
+          </h1>
           <p className="text-muted-foreground mt-2">
             管理用户提交的题目纠错反馈。
           </p>

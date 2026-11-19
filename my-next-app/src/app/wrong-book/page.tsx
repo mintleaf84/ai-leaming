@@ -149,7 +149,7 @@ export default function WrongBookPage() {
               <ChevronLeft className="h-4 w-4" />
               返回练习
             </Link>
-            <h1 className="text-3xl font-bold text-foreground flex items-center gap-3">
+            <h1 className="text-2xl font-semibold tracking-tight text-foreground md:text-3xl flex items-center gap-3">
               <BookOpen className="text-red-500 h-8 w-8" />
               错题本
             </h1>
@@ -183,7 +183,7 @@ export default function WrongBookPage() {
             返回练习
           </Link>
           <div className="flex items-center justify-between">
-            <h1 className="text-3xl font-bold text-foreground flex items-center gap-3">
+            <h1 className="text-2xl font-semibold tracking-tight text-foreground md:text-3xl flex items-center gap-3">
               <BookOpen className="text-red-500 h-8 w-8" />
               错题本
             </h1>

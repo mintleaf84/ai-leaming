@@ -219,6 +219,10 @@ export const historyService = {
     if (!sessionRow) return null;
 
     // 2. 联合查询日志、题目及回顾数据
+    //
+    // 只裁掉 material_html：它是材料的原始 HTML（单题最大的字段），历史详情页与
+    // REST /sessions/{id} 都不渲染它，只渲染 material 的纯文本版本。其余列下游
+    // （QuestionCard / 导出 Markdown）都在用，不能一起裁。
     const logs = await drizzleDb
       .select({
         questionId: practice_logs.question_id,
@@ -235,7 +239,6 @@ export const historyService = {
         most_wrong_answer: questions.most_wrong_answer,
         ai_mnemonic: questions.ai_mnemonic,
         material: questions.material,
-        material_html: questions.material_html,
         reviewData: session_reviews.review_data,
       })
       .from(practice_logs)
@@ -284,7 +287,6 @@ export const historyService = {
         reviewData: safeParseJson(l.reviewData, null),
         aiMnemonic: l.ai_mnemonic || null,
         material: l.material || null,
-        materialHtml: l.material_html || null,
       })),
     };
   },

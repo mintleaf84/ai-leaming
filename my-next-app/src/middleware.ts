@@ -148,9 +148,14 @@ export async function middleware(req: NextRequest) {
 // Routes Middleware should not run on
 //
 // 静态资源后缀在这里排除，避免每个字体/图标/SW 请求都做一次 jose 验签 + 一条日志。
-// 只按「文件后缀」排除，不排除查询串 —— `?_rsc=` 的客户端导航请求正是要计时的对象。
+// 只按「文件后缀」排除，不排除查询串 —— `?_rsc=` 的客户端导航请求正是要计时的对象
+// （docs/performance.md T-03 的慢请求统计口径），且这些请求同样需要未登录重定向，
+// 排除掉等于把受保护页面的客户端导航从鉴权链路上摘下来。
+//
+// `public/icons`、`public/fonts` 是 PWA 图标与字体目录（manifest 会一次拉十几个图标），
+// 与任何页面路由都不重名，一并按目录排除，纯减少匹配面、不改行为。
 export const config = {
   matcher: [
-    "/((?!api|_next/static|_next/image|favicon.ico|sw.js|manifest.webmanifest|.*\\.(?:png|jpg|jpeg|gif|svg|webp|ico|woff2?|ttf|otf|map|txt|xml)$).*)",
+    "/((?!api|_next/static|_next/image|favicon.ico|sw.js|manifest.webmanifest|icons/|fonts/|.*\\.(?:png|jpg|jpeg|gif|svg|webp|ico|woff2?|ttf|otf|map|txt|xml)$).*)",
   ],
 };

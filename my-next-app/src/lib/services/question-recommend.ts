@@ -4,6 +4,7 @@ import { Document } from "@langchain/core/documents";
 import { RagEmbeddings, SqliteVecVectorStore } from "@/lib/ai/langchain-store";
 import { ragService, type RagResult } from "@/lib/ai/rag";
 import { log } from "@/lib/logger";
+import { safeParseJson } from "@/lib/utils/json";
 
 /**
  * 读取「向量库已完成初始化」的持久化标志。
@@ -102,7 +103,10 @@ export const wrongQuestionRecommend = {
             wrongAnswer: log.userAnswer || "",
             correctAnswer: q.answer || "",
             explanation: q.explanation || "",
-            tags: q.tags ? (JSON.parse(q.tags) as string[]) : [],
+            tags: safeParseJson<string[]>(
+              q.tags as string | null | undefined,
+              [],
+            ),
             dimension: q.dimension || "",
             timestamp: log.timestamp || "",
           };
@@ -245,7 +249,10 @@ export const wrongQuestionRecommend = {
         metadata: {
           source_type: "question",
           question_id: q.id,
-          tags: q.tags ? JSON.parse(q.tags) : [],
+          tags: safeParseJson<unknown[]>(
+            q.tags as string | null | undefined,
+            [],
+          ),
           dimension: q.dimension,
           explanation: q.explanation,
         },
@@ -326,7 +333,10 @@ export const wrongQuestionRecommend = {
       for (const q of similarQuestions) {
         if (recommended.length >= limit) break;
 
-        const qTags = q.tags ? JSON.parse(q.tags) : [];
+        const qTags = safeParseJson<string[]>(
+          q.tags as string | null | undefined,
+          [],
+        );
         const hasMatchingTag = qTags.some((tag: string) =>
           tagArray.some((t) => tag.includes(t) || t.includes(tag)),
         );

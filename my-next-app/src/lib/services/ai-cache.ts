@@ -1,5 +1,6 @@
 import { drizzleDb, drizzleSchema } from "@/lib/db";
 import { eq } from "drizzle-orm";
+import { safeParseJson } from "@/lib/utils/json";
 
 /**
  * AI 缓存服务 - 管理纠偏、挑战、第一性原理等 AI 生成内容的持久化
@@ -8,13 +9,14 @@ export const aiCacheService = {
   /**
    * 获取纠偏找茬缓存
    */
-  async getQuiz(hash: string) {
+  async getQuiz<T = unknown>(hash: string): Promise<T | null> {
     const res = await drizzleDb
       .select()
       .from(drizzleSchema.ai_quiz_cache)
       .where(eq(drizzleSchema.ai_quiz_cache.hash, hash))
       .get();
-    return res ? JSON.parse(res.data) : null;
+    // 缓存里的 JSON 坏掉时按"未命中"处理，而不是让整个请求 500
+    return res ? safeParseJson<T | null>(res.data, null) : null;
   },
 
   /**
@@ -33,13 +35,13 @@ export const aiCacheService = {
   /**
    * 获取回归挑战缓存
    */
-  async getChallenge(hash: string) {
+  async getChallenge<T = unknown>(hash: string): Promise<T | null> {
     const res = await drizzleDb
       .select()
       .from(drizzleSchema.ai_challenge_cache)
       .where(eq(drizzleSchema.ai_challenge_cache.hash, hash))
       .get();
-    return res ? JSON.parse(res.data) : null;
+    return res ? safeParseJson<T | null>(res.data, null) : null;
   },
 
   /**

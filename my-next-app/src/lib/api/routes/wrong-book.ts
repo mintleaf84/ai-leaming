@@ -2,6 +2,7 @@ import { OpenAPIHono, createRoute, z } from "@hono/zod-openapi";
 import { drizzleDb, drizzleSchema } from "@/lib/db";
 import { authMiddleware, getCurrentUser } from "@/lib/api/middlewares/auth";
 import { eq, and, sql, desc, count, notInArray } from "drizzle-orm";
+import { parsePagination } from "@/lib/api/pagination";
 
 const app = new OpenAPIHono();
 
@@ -292,7 +293,8 @@ app.openapi(getRandomRoute, async (c) => {
   const user = getCurrentUser(c);
   const userId = Number(user.id);
   const { count: limitStr, tag, mode } = c.req.valid("query");
-  const limitNum = Math.min(parseInt(limitStr), 50);
+  // 保留既有口径：最多 50 道，但非法/0/负数不再是 NaN 或 0
+  const limitNum = parsePagination({ limit: limitStr }, { maxLimit: 50 }).limit;
 
   const priorityOrder = sql`(
             COUNT(*) * 5.0 + 

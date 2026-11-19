@@ -8,6 +8,7 @@ import { buildAdminExternalId } from "@/lib/services/question-idempotency";
 import { indexQuestion } from "@/lib/services/question-vector-index";
 import { withTransaction } from "@/lib/db/executor";
 import { touchesEmbeddingText } from "@/lib/services/question-index-policy";
+import { coerceJsonColumn } from "@/lib/utils/json";
 
 /**
  * 哪些字段参与 embedding 文本（见 `question-vector-index.ts` 的
@@ -167,9 +168,8 @@ export const adminService = {
     // 解析 JSON 字段
     const parsedItems = items.map((q) => ({
       ...q,
-      options:
-        typeof q.options === "string" ? JSON.parse(q.options) : q.options,
-      tags: typeof q.tags === "string" ? JSON.parse(q.tags) : q.tags,
+      options: coerceJsonColumn<unknown[]>(q.options, []),
+      tags: coerceJsonColumn<unknown[]>(q.tags, []),
     }));
 
     return {
@@ -309,9 +309,8 @@ export const adminService = {
 
     return {
       ...res,
-      options:
-        typeof res.options === "string" ? JSON.parse(res.options) : res.options,
-      tags: typeof res.tags === "string" ? JSON.parse(res.tags) : res.tags,
+      options: coerceJsonColumn<unknown[]>(res.options, []),
+      tags: coerceJsonColumn<unknown[]>(res.tags, []),
     } as Question;
   },
 

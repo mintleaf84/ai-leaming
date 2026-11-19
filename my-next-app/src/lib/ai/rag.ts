@@ -163,7 +163,13 @@ export const ragService = {
   /**
    * 批量获取向量（带缓存，使用 embedMany 减少 API 调用）
    */
-  getEmbeddings: async (texts: string[]): Promise<number[][]> => {
+  getEmbeddings: async (
+    texts: string[],
+    options: {
+      /** 回退路径产生了降级伪向量时回调（调用方据此决定是否入库） */
+      onDegraded?: (index: number) => void;
+    } = {},
+  ): Promise<number[][]> => {
     if (env.E2E_TEST === "true") {
       const { embeddingDimensions } = await getAiConfig();
       return texts.map(() =>
@@ -220,7 +226,17 @@ export const ragService = {
       // 回退到逐条调用
       try {
         for (const idx of uncachedIndices) {
-          results[idx] = await ragService.getEmbedding(texts[idx]);
+          const { vector, degraded } = await ragService.getEmbeddingResult(
+            texts[idx],
+          );
+          results[idx] = vector;
+          // 降级伪向量与文本无关：写进向量索引等于永久污染（且会让人以为已经建好了）
+          if (degraded) {
+            options.onDegraded?.(idx);
+            continue;
+          }
+          memCacheSet(texts[idx], vector);
+          await dbCacheSet(cacheKey(texts[idx]), texts[idx], vector);
         }
       } catch (fallbackErr) {
         // audit-allow: 逐条回退也失败时没有更多手段，返回已算出的部分结果
@@ -319,9 +335,16 @@ export const ragService = {
       const texts = batch.map((item) => item.content || "");
 
       try {
-        const embeddings = await ragService.getEmbeddings(texts);
+        const degraded = new Set<number>();
+        const embeddings = await ragService.getEmbeddings(texts, {
+          onDegraded: (index) => degraded.add(index),
+        });
 
         for (let j = 0; j < batch.length; j++) {
+          if (degraded.has(j)) {
+            // 伪向量不入库：否则 `questions_initialized` 会被置位，之后永远不再重建
+            continue;
+          }
           const vec = embeddings[j];
           if (!vec) {
             if (j === 0)
@@ -350,7 +373,16 @@ export const ragService = {
         );
         for (const item of batch) {
           try {
-            await ragService.addChunk(item.content || "", item.metadata);
+            const { vector, degraded } = await ragService.getEmbeddingResult(
+              item.content || "",
+            );
+            if (degraded) continue;
+            const infoVec = legacyDb
+              .prepare("INSERT INTO content_vec(embedding) VALUES (?)")
+              .run(JSON.stringify(vector));
+            await drizzleDb.run(
+              sql`INSERT INTO content_chunks (id, content, metadata) VALUES (${Number(infoVec.lastInsertRowid)}, ${item.content || ""}, ${JSON.stringify(item.metadata)})`,
+            );
             successCount++;
           } catch (singleErr) {
             if (successCount === 0)

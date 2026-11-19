@@ -5,6 +5,7 @@ import { ragService } from "@/lib/ai/rag";
 import { Question, Dimension } from "@/types";
 import { QuestionRowSchema } from "@/lib/schemas";
 import logger from "@/lib/logger";
+import { coerceJsonColumn } from "@/lib/utils/json";
 
 /**
  * 题目摘要（用于卡片展示）
@@ -29,9 +30,8 @@ function mapQuestion(q: Record<string, unknown>): Question {
     );
     return {
       ...q,
-      options:
-        typeof q.options === "string" ? JSON.parse(q.options) : q.options || [],
-      tags: typeof q.tags === "string" ? JSON.parse(q.tags) : q.tags || [],
+      options: coerceJsonColumn<unknown[]>(q.options, []),
+      tags: coerceJsonColumn<unknown[]>(q.tags, []),
       type: q.type || "single",
       dimension: q.dimension || "knowledge",
     } as Question;

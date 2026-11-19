@@ -40,12 +40,12 @@ flutter run --dart-define=API_BASE_URL=http://<你的后端>:3000/api
 路径常量与跳转都收敛在 `lib/core/navigation/app_nav.dart`，页面里**不要再直接调**
 `context.go` / `context.push` / `context.pop`（`test/navigation_rules_test.dart` 会让 CI 红）。
 
-| 意图 | 用法 | 语义 |
-| --- | --- | --- |
-| 进入下一层（详情、流程） | `context.pushDetail(AppRoutes.textbookDetail(id))` | 有返回栈；系统返回键 / `backOrHome()` 都能回 |
-| 替换当前位置 | `context.replace(AppRoutes.dashboard)` | 登录成功、练习结束去结果页、退出登录；不留返回栈 |
-| 返回 | `context.backOrHome()` | 有上一层就 pop；没有就回首页，**不会"点了没反应"** |
-| 返回后刷新 | `context.pushDetail(route, onReturn: () => ref.invalidate(...))` | push 之后列表页仍挂载，`initState` 不会重跑，必须显式刷新 |
+| 意图                     | 用法                                                             | 语义                                                      |
+| ------------------------ | ---------------------------------------------------------------- | --------------------------------------------------------- |
+| 进入下一层（详情、流程） | `context.pushDetail(AppRoutes.textbookDetail(id))`               | 有返回栈；系统返回键 / `backOrHome()` 都能回              |
+| 替换当前位置             | `context.replace(AppRoutes.dashboard)`                           | 登录成功、练习结束去结果页、退出登录；不留返回栈          |
+| 返回                     | `context.backOrHome()`                                           | 有上一层就 pop；没有就回首页，**不会"点了没反应"**        |
+| 返回后刷新               | `context.pushDetail(route, onReturn: () => ref.invalidate(...))` | push 之后列表页仍挂载，`initState` 不会重跑，必须显式刷新 |
 
 背景：此前 41 处 `context.go`、0 处 `push`，导致详情页没有返回栈、`context.pop()` 无页可 pop
 （release 下按钮点了没反应）。转场风格在 `ThemeData.pageTransitionsTheme` 里显式写死

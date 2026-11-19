@@ -359,7 +359,6 @@ Android/Windows/Linux 用 `FadeForwardsPageTransitionsBuilder`，iOS/macOS 用 C
 | 签名                                          | `CN=ai-leaming-mobile, OU=dev, O=mintleaf84, C=CN`（与仓库 secrets 里的固定 keystore 一致，可直接覆盖升级旧包）                                        |
 | 字体                                          | `MaterialSymbolsOutlined.ttf` 112,728 B；`MaterialIcons-Regular.otf` 1,992 B（只剩 `apple`）                                                           |
 
-
 ### 9.3 图标回归修复与第二次交付（2026-11-19 晚）
 
 用户装包后反馈「有些图标直接没有了」。定位：**不是字体缺字形**（APK 内 61 个 Symbols 码点全部有轮廓，逐字节校验过），
@@ -372,12 +371,12 @@ Android/Windows/Linux 用 `FadeForwardsPageTransitionsBuilder`，iOS/macOS 用 C
 
 第二次交付包（run [44549554161](https://github.com/mintleaf84/ai-leaming/actions/runs/44549554161)，main @ 7f42f5b）：
 
-| 项 | 值 |
-| --- | --- |
-| 产物 | `app-release.apk` **56,124,716 B（53.52 MB）**，`~/downloads/ai-leaming-main-1119b.apk` |
-| 相对首个交付包（55,761,968） | +362,748 B |
-| 增量归因 | `libapp.so` 约 +350KB + 字体 +4.6KB；`libapp.so` 的增长来自同期他人合入的 recall 卡片功能（`recall_card.dart` 288 行 / `recall_deck.dart` 193 行等），**与本计划三批无关** |
-| 本计划自身增量黑白 | 以 §6 M-11 的分支对照为准：**+152KB**（同一基线、未混入 #225 与 recall 功能） |
+| 项                           | 值                                                                                                                                                                         |
+| ---------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| 产物                         | `app-release.apk` **56,124,716 B（53.52 MB）**，`~/downloads/ai-leaming-main-1119b.apk`                                                                                    |
+| 相对首个交付包（55,761,968） | +362,748 B                                                                                                                                                                 |
+| 增量归因                     | `libapp.so` 约 +350KB + 字体 +4.6KB；`libapp.so` 的增长来自同期他人合入的 recall 卡片功能（`recall_card.dart` 288 行 / `recall_deck.dart` 193 行等），**与本计划三批无关** |
+| 本计划自身增量黑白           | 以 §6 M-11 的分支对照为准：**+152KB**（同一基线、未混入 #225 与 recall 功能）                                                                                              |
 
 > 说明：§6 M-11 里记录的 +152KB 是**分支**构建（run 44519273867，早于 #225 导航重构合并）；
 > 交付口径以本节的 main 构建 +216KB 为准，两者都远低于 300KB 判据。

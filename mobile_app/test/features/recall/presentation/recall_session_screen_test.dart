@@ -70,6 +70,7 @@ Map<String, dynamic> _cardBody({
   int itemCount = 2,
   String mode = 'first',
   List<int>? pendingItems,
+  String prompt = '简述教育目的的功能。',
 }) {
   const texts = <String>['导向作用', '激励作用', '评价作用', '教育作用'];
   const keywords = <String>['导向', '激励', '评价', '教育'];
@@ -84,7 +85,7 @@ Map<String, dynamic> _cardBody({
     'cardId': cardId,
     'cardKey': 'g1',
     'kind': 'list',
-    'prompt': '简述教育目的的功能。',
+    'prompt': prompt,
     'items': items,
     'verbatim': false,
     'state': null,
@@ -231,6 +232,8 @@ void main() {
     // 「全没想起」在结果未知时不该再出现：它会让服务端重放首次结果，
     // 界面却以为是另一种提交方式
     expect(find.text('全没想起'), findsNothing);
+    // 超时属于"结果未知"，不能给「跳过这张」（那会把可能已落库的作答丢掉）
+    expect(find.text('跳过这张'), findsNothing);
 
     await tester.tap(find.text('重试提交'));
     await settle(tester);
@@ -325,6 +328,107 @@ void main() {
     expect(queueCalls, 2);
   });
 
+  testWidgets('提交被服务端拒绝（404）：给「跳过这张」而不是「重试提交」，跳过后进入下一张', (tester) async {
+    adapter = _StubAdapter((options) {
+      final path = options.path;
+      if (path.endsWith('/recall/queue')) {
+        return _json(_queueBody(ids: [11, 12]));
+      }
+      if (path.contains('/recall/cards/')) {
+        final id = int.parse(path.split('/').last);
+        return _json(_cardBody(cardId: id, prompt: '第 $id 张的题干。'));
+      }
+      if (path.endsWith('/recall/reviews')) {
+        return _json(<String, dynamic>{
+          'error': <String, dynamic>{'message': '卡片不存在'},
+        }, statusCode: 404);
+      }
+      return _json(<String, dynamic>{}, statusCode: 500);
+    });
+
+    await tester.pumpWidget(buildApp());
+    await goToJudge(tester);
+    expect(find.text('第 11 张的题干。'), findsOneWidget);
+
+    await tester.tap(find.text('确认结果'));
+    await settle(tester);
+
+    // 明确拒绝：不许再给"重试"（同一份载荷必然再被拒），要给真正的出口
+    expect(find.text('这张卡提交不上'), findsOneWidget);
+    expect(find.text('这张卡在服务器上已经不存在了。'), findsOneWidget);
+    expect(find.text('跳过这张'), findsOneWidget);
+    expect(find.text('留在这里'), findsOneWidget);
+    expect(find.text('重试提交'), findsNothing);
+    // 判定没有被锁住：这份载荷已经作废，改判不会和"发出去的内容"打架
+    expect(find.textContaining('判定已经锁住了'), findsNothing);
+
+    await tester.tap(find.text('跳过这张'));
+    await settle(tester);
+
+    expect(find.text('第 12 张的题干。'), findsOneWidget);
+    expect(find.text('看看对不对'), findsOneWidget);
+    // 跳过不写任何东西：被拒的载荷没有被再发一次
+    expect(adapter.posts.length, 1);
+    // 也不许伪造结论
+    expect(find.textContaining('下次'), findsNothing);
+  });
+
+  testWidgets('被拒绝后「留在这里」→ 再提交：换新的 clientKey，不重放被拒载荷', (tester) async {
+    adapter = _StubAdapter((options) {
+      final path = options.path;
+      if (path.endsWith('/recall/queue')) return _json(_queueBody());
+      if (path.contains('/recall/cards/')) return _json(_cardBody());
+      if (path.endsWith('/recall/reviews')) {
+        return _json(<String, dynamic>{}, statusCode: 400);
+      }
+      return _json(<String, dynamic>{}, statusCode: 500);
+    });
+
+    await tester.pumpWidget(buildApp());
+    await goToJudge(tester);
+
+    await tester.tap(find.text('确认结果'));
+    await settle(tester);
+    expect(find.text('留在这里'), findsOneWidget);
+
+    await tester.tap(find.text('留在这里'));
+    await settle(tester);
+    expect(find.text('这张卡提交不上'), findsNothing);
+    expect(find.text('确认结果'), findsOneWidget);
+
+    await tester.tap(find.text('确认结果'));
+    await settle(tester);
+
+    final posts = adapter.posts;
+    expect(posts.length, 2);
+    final first = posts[0].data as Map<String, dynamic>;
+    final second = posts[1].data as Map<String, dynamic>;
+    expect(second['clientKey'], isNot(first['clientKey']));
+  });
+
+  testWidgets('提交遇到 5xx：仍按"结果未知"处理，给「重试提交」而不是「跳过这张」', (tester) async {
+    adapter = _StubAdapter((options) {
+      final path = options.path;
+      if (path.endsWith('/recall/queue')) return _json(_queueBody());
+      if (path.contains('/recall/cards/')) return _json(_cardBody());
+      if (path.endsWith('/recall/reviews')) {
+        return _json(<String, dynamic>{}, statusCode: 503);
+      }
+      return _json(<String, dynamic>{}, statusCode: 500);
+    });
+
+    await tester.pumpWidget(buildApp());
+    await goToJudge(tester);
+
+    await tester.tap(find.text('确认结果'));
+    await settle(tester);
+
+    expect(find.text('重试提交'), findsOneWidget);
+    expect(find.text('跳过这张'), findsNothing);
+    // 5xx 可能已经写进去了：判定锁住，提示重试会重发同一份
+    expect(find.textContaining('判定已经锁住了'), findsOneWidget);
+  });
+
   testWidgets('长内容 + 1.3 倍字号 + 键盘弹出：作答屏不溢出，主操作仍在', (tester) async {
     tester.view.physicalSize = const Size(360, 720);
     tester.view.devicePixelRatio = 1.0;
@@ -339,7 +443,7 @@ void main() {
       return _json(<String, dynamic>{}, statusCode: 500);
     });
 
-    await tester.pumpWidget(buildApp(textScaler: TextScaler.linear(1.3)));
+    await tester.pumpWidget(buildApp(textScaler: const TextScaler.linear(1.3)));
     await goToQuestion(tester);
 
     // 模拟输入法占掉 300dp

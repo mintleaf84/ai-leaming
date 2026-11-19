@@ -81,14 +81,21 @@ class RecallSessionState {
   /// 加载失败的可读原因。
   final String? errorMessage;
 
-  /// 提交失败的可读原因（结果未知，需要重试）。
+  /// 提交失败的可读原因。
   final String? submitError;
 
   /// 提交进行中：禁改判、禁重复提交。
   final bool submitting;
 
-  /// 提交结果未知：判定锁住，重试只能重放同一份载荷。
+  /// 提交**结果未知**（超时/断网/5xx）：判定锁住，重试只能重放同一份载荷。
   final bool retryLocked;
+
+  /// 提交被服务端**明确拒绝**（400/403/404/422）：同一份载荷再发也不会成功。
+  ///
+  /// 与 [retryLocked] 互斥，且**不锁判定**：既然这份载荷已经作废，就允许用户
+  /// 继续改判、也允许他从头再试（那会换一个新的幂等键）；同时给出「跳过这张」
+  /// 这条真正的出口，避免用户被一个永远重试不成功的按钮堵死。
+  final bool submitRejected;
 
   /// 归档进行中。
   final bool archiving;
@@ -109,6 +116,7 @@ class RecallSessionState {
     this.submitError,
     this.submitting = false,
     this.retryLocked = false,
+    this.submitRejected = false,
     this.archiving = false,
   });
 
@@ -122,6 +130,9 @@ class RecallSessionState {
   List<String> get segments => segmentAnswer(typed, presented.length);
 
   /// 判定是否锁死（提交中 / 已出结论 / 结果未知）。
+  ///
+  /// 被拒绝（[submitRejected]）**不在**此列：那份载荷已经作废，改判不会和
+  /// "已经发出去的内容"打架。
   bool get verdictLocked => submitting || retryLocked || result != null;
 
   RecallSessionState copyWith({
@@ -144,6 +155,7 @@ class RecallSessionState {
     bool clearSubmitError = false,
     bool? submitting,
     bool? retryLocked,
+    bool? submitRejected,
     bool? archiving,
   }) {
     return RecallSessionState(
@@ -162,6 +174,7 @@ class RecallSessionState {
       submitError: clearSubmitError ? null : (submitError ?? this.submitError),
       submitting: submitting ?? this.submitting,
       retryLocked: retryLocked ?? this.retryLocked,
+      submitRejected: submitRejected ?? this.submitRejected,
       archiving: archiving ?? this.archiving,
     );
   }
@@ -379,8 +392,15 @@ class RecallSessionController extends Notifier<RecallSessionState> {
 
     if (state.result != null) return;
 
-    final draft = _draft;
-    if (draft == null) return;
+    // 被拒绝之后草稿已作废（见 _send 的 rejected 分支）：用户再点一次「确认结果」
+    // 属于一次**新的**尝试，必须换新的幂等键——重发被拒的那份只会再被拒一次。
+    var draft = _draft;
+    if (draft == null) {
+      final card = state.card;
+      if (card == null) return;
+      draft = RecallReviewDraft(cardId: card.cardId, typed: state.typed);
+      _draft = draft;
+    }
 
     if (!draft.isFrozen) {
       if (allBlank) {
@@ -410,7 +430,11 @@ class RecallSessionController extends Notifier<RecallSessionState> {
     required bool allBlank,
   }) async {
     final round = _round;
-    state = state.copyWith(submitting: true, clearSubmitError: true);
+    state = state.copyWith(
+      submitting: true,
+      clearSubmitError: true,
+      submitRejected: false,
+    );
 
     try {
       final result = await _repository.submitReviewPayload(payload);
@@ -433,6 +457,7 @@ class RecallSessionController extends Notifier<RecallSessionState> {
       state = state.copyWith(
         submitting: false,
         retryLocked: false,
+        submitRejected: false,
         result: result,
         finalVerdicts: List.unmodifiable(resolved),
         clearSubmitError: true,
@@ -443,13 +468,70 @@ class RecallSessionController extends Notifier<RecallSessionState> {
       _submittedAllBlank = false;
     } catch (error) {
       if (!ref.mounted || round != _round) return;
-      // 结果未知：不解冻、不换 key、不推进界面，只把判定锁住并给出可读原因
-      state = state.copyWith(
-        submitting: false,
-        retryLocked: true,
-        submitError: describeRecallError(error),
-      );
+
+      final message = describeRecallError(error);
+      switch (classifySubmitFailure(error)) {
+        case RecallSubmitFailure.unknown:
+          // 结果未知：不解冻、不换 key、不推进界面，只把判定锁住并给出可读原因。
+          // 服务端可能已经写进去了，唯一安全的动作是重放同一份载荷。
+          state = state.copyWith(
+            submitting: false,
+            retryLocked: true,
+            submitRejected: false,
+            submitError: message,
+          );
+
+        case RecallSubmitFailure.rejected:
+          // 服务端明确拒绝：这份载荷作废。不锁判定、也绝不再发同一份，
+          // 交给用户选出口（跳过这张 / 留在这里重新作答）。
+          _discardDraft();
+          state = state.copyWith(
+            submitting: false,
+            retryLocked: false,
+            submitRejected: true,
+            submitError: message,
+          );
+
+        case RecallSubmitFailure.sessionExpired:
+          // 401 交给全局拦截器（登出 + 回登录页）。这里既不锁判定、也不假装
+          // "再试一次有用"：提示一句原因，人还在这一屏，重新登录后可以再提交。
+          _discardDraft();
+          state = state.copyWith(
+            submitting: false,
+            retryLocked: false,
+            submitRejected: false,
+            submitError: message,
+          );
+      }
     }
+  }
+
+  /// 丢掉本次作答的草稿与冻结载荷（只在"这份载荷已经不可能成功"时调用）。
+  void _discardDraft() {
+    _draft = null;
+    _frozenPayload = null;
+    _submittedAllBlank = false;
+  }
+
+  /// 被拒绝后的出口一：放弃这次作答，直接推进到队列里下一张。
+  ///
+  /// 只推进队列，**不写任何本地/远端状态、也不伪造结论**：这次提交被服务端拒了，
+  /// 我们既不知道它有没有部分生效，也不该替用户说"记下了"。用户下次遇到这张卡
+  /// 会重新作答（那次会换新的幂等键，所以不会被当成重放）。
+  Future<void> skipRejectedCard() async {
+    if (state.phase != RecallPhase.judge) return;
+    _discardDraft();
+    await advance();
+  }
+
+  /// 被拒绝后的出口二：「留在这里」——收起提示，回到可改判、可再提交的样子。
+  void dismissSubmitFailure() {
+    if (state.phase != RecallPhase.judge) return;
+    state = state.copyWith(
+      submitRejected: false,
+      retryLocked: false,
+      clearSubmitError: true,
+    );
   }
 
   // ==================== 推进 ====================
@@ -512,9 +594,70 @@ class RecallSessionController extends Notifier<RecallSessionState> {
       if (!ref.mounted) return describeRecallError(error);
       if (round != _round) return null;
       state = state.copyWith(archiving: false);
-      return describeRecallError(error);
+
+      // 404：这张卡在服务端已经不存在了（卡组重导入、别处删卡之后，队列里还留着旧 id）。
+      // 归档的本意就是让它离开队列，所以直接把用户带到下一张，而不是让他在一张
+      // 已经不存在的卡上反复点。
+      if (isCardGoneError(error)) {
+        await advance();
+        return '这张卡已经不在了，已跳到下一张。';
+      }
+      return '归档没有成功：${describeRecallError(error)}';
     }
   }
+}
+
+/// 这次提交失败属于哪一类——决定界面给「重试」还是「跳过」。
+///
+/// 分这两类的唯一理由：**同一份载荷重发有没有可能成功**。
+/// 判分屏只有一个主操作位，选错了会把用户堵死（一直点"重试"永远不动）。
+enum RecallSubmitFailure {
+  /// 结果未知（超时 / 连不上 / 5xx / 网关卡住）：服务端可能**已经**写进去了，
+  /// 所以只能重放同一份载荷 + 同一个 `clientKey`，靠服务端幂等去重。
+  unknown,
+
+  /// 服务端明确拒绝（400/403/404/422 等 4xx）：它读懂了请求并拒绝了，
+  /// 同一份载荷再发一次必然再被拒，重试按钮就是死路。
+  rejected,
+
+  /// 会话失效（401）：交给全局拦截器登出，界面不锁死。
+  sessionExpired,
+}
+
+/// 按异常形态分类（纯函数，测试可直接断言）。
+///
+/// 非 Dio 异常（例如响应形状漂移抛的 [FormatException]）一律算 [unknown]：
+/// 我们拿到了一个 200 但读不懂，说明服务端**很可能已经落库**了，
+/// 这时重放同一个 key 才是最安全的动作。
+RecallSubmitFailure classifySubmitFailure(Object error) {
+  if (error is! DioException) return RecallSubmitFailure.unknown;
+
+  switch (error.type) {
+    case DioExceptionType.badResponse:
+      final status = error.response?.statusCode;
+      if (status == 401) return RecallSubmitFailure.sessionExpired;
+      if (status != null && status >= 500) return RecallSubmitFailure.unknown;
+      // 其余 4xx：服务端理解并拒绝了这份载荷（幂等键冲突有专门语义，
+      // 不会走到这里——重复提交返回的是 200 + duplicate: true）
+      if (status != null && status >= 400) return RecallSubmitFailure.rejected;
+      return RecallSubmitFailure.unknown;
+
+    case DioExceptionType.connectionTimeout:
+    case DioExceptionType.sendTimeout:
+    case DioExceptionType.receiveTimeout:
+    case DioExceptionType.connectionError:
+    case DioExceptionType.badCertificate:
+    case DioExceptionType.cancel:
+    case DioExceptionType.unknown:
+      return RecallSubmitFailure.unknown;
+  }
+}
+
+/// 这张卡是否在服务端已经不存在（归档时的 404）。
+bool isCardGoneError(Object error) {
+  return error is DioException &&
+      error.type == DioExceptionType.badResponse &&
+      error.response?.statusCode == 404;
 }
 
 /// 把异常翻译成用户能读懂的一句话。

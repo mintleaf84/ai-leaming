@@ -89,8 +89,27 @@ FSRS 闭环（`services/recall.ts` 判分/调度、`recall-import.ts` 卡组、`
   `Semantics`/`MergeSemantics` + 44dp 触摸目标 + 动态字体三项做一次全量过一遍。
 - **F（Dart 契约断言）**：三十行单测，等 recall 路由进来后一并加，正好覆盖新端点。
 
+## 3.5 执行进度（2026-11-19）
+
+| 层 | 内容 | 位置 | 验证 |
+| --- | --- | --- | --- |
+| 后端 | 7 条 JWT 端点（queue / decks / deck / card / reviews / archive / unarchive），判分·调度·幂等全部透传既有服务层 | `my-next-app/src/lib/api/routes/recall.ts`、`app.ts` 挂载 | `ownership-matrix` 已登记为 `user` 作用域并挂跨用户测试；真库集成 24 例 |
+| 契约 | 快照只增 `/api/recall/*` 6 条路径 | `docs/openapi.json` | `contract:check` 通过 |
+| 领域/数据 | 手写 `fromJson`、`RecallRepository`、Riverpod provider；`RecallReviewDraft` 首次 `toPayload()` 即冻结，`clientKey` 跨重试稳定 | `mobile_app/lib/features/recall/{domain,data}/` | 57 例单测 |
+| 预判 | 归一化、list 单向关键词、cloze 双向包含+长度门槛、retest 脏下标过滤 | `domain/recall_preview.dart` | 47 例；期望值由实跑 Web 端 `preview.ts`+`matcher.ts` 生成 |
+| 复习屏 | today/question/judge/done/empty/error 六态；失败按「结果未知（重放同载荷）/ 被拒（跳过这张）/ 会话失效（交全局 401）」三分 | `mobile_app/lib/features/recall/presentation/` | 8 例 widget/状态机测试（含 404 与超时两条路径） |
+| 接线 | `AppRoutes.recall` + `/recall` 路由 + 首页「记忆卡」整宽入口；顺带修掉首页 1.3 倍字号两处溢出 | `app_router.dart`、`app_nav.dart`、`dashboard_screen.dart` | `navigation_rules_test`、375@1.3x 渲染无溢出 |
+
+**未做（明确记录）**：
+- 真机验收（本轮只有 CI 级证据，没有手机上的真实队列/断网/弱网）；
+- 卡组浏览屏（`GET /decks`、`GET /decks/{deckKey}` 与 `recallDeckProvider` 已就绪，但没有屏消费）；
+- 离线复习（recall 仍在线专属，与离线练习题分属两套同步路径）；
+- 提交失败后直接退出页面时，冻结载荷随 `autoDispose` 丢失（服务端可能已落库，需本地持久化草稿才能彻底闭环）。
+
 ## 4. 与现有分支的关系
 
-- 本 lane 基于 `origin/main`（`dc62b27`），**不包含** #225–#228 的改动；
-- 后端文件（`routes/recall.ts`、主路由挂载、快照、测试）与它们零重叠，可独立 PR、先合；
-- Flutter 部分新增目录零重叠，只有 Phase 3 的接线需 rebase 到最新 UI 分支后重做。
+- 本 lane 开工时基于 `dc62b27`，**未触碰**当时在飞的 #225–#228 文件；三张 PR 合入后已 rebase 到
+  `origin/main`（`f419692`），接线按新版 `AppNav`/`AppIcons` 重写，无遗留冲突；
+- 后端文件（`routes/recall.ts`、主路由挂载、快照、`ownership-matrix` 登记）与 UI 改动零重叠，
+  若需要可拆成两个 PR 分别评审；
+- 与仍在审的 #229（转场护栏）、#231（Dart 版本文档）无文件交集。

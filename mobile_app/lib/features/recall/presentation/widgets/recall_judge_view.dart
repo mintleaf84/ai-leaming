@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 
+import '../../../../core/theme/app_icons.dart';
 import '../../domain/recall_card.dart';
 import '../../domain/recall_review.dart';
 import 'recall_cloze_prompt.dart';
@@ -30,6 +31,7 @@ class RecallJudgeView extends StatelessWidget {
     this.result,
     this.submitting = false,
     this.retryLocked = false,
+    this.submitRejected = false,
     this.submitError,
     this.resultKey,
   });
@@ -51,7 +53,13 @@ class RecallJudgeView extends StatelessWidget {
   final ValueChanged<int> onToggle;
   final RecallReviewResult? result;
   final bool submitting;
+
+  /// 提交结果未知：判定锁住，重试只能重放同一份载荷。
   final bool retryLocked;
+
+  /// 提交被服务端拒绝：这份载荷作废，界面给「跳过这张」出口。
+  final bool submitRejected;
+
   final String? submitError;
 
   /// 结论块的位置：判分屏可能比一屏高，状态机据此把它滚进视野。
@@ -128,7 +136,10 @@ class RecallJudgeView extends StatelessWidget {
             ],
             if (submitError != null && result == null) ...[
               SizedBox(height: 12.h),
-              _SubmitFailureNotice(message: submitError!),
+              _SubmitFailureNotice(
+                message: submitError!,
+                rejected: submitRejected,
+              ),
             ],
             if (result != null) ...[
               SizedBox(height: 14.h),
@@ -293,7 +304,7 @@ class _VerdictRow extends StatelessWidget {
                     transitionBuilder: (child, animation) =>
                         ScaleTransition(scale: animation, child: child),
                     child: Icon(
-                      ok ? Icons.check_circle : Icons.radio_button_unchecked,
+                      ok ? AppIcons.checkCircle : AppIcons.radioButtonUnchecked,
                       key: ValueKey<bool>(ok),
                       size: 19.sp,
                       color: tone.foreground,
@@ -326,14 +337,18 @@ class _VerdictRow extends StatelessWidget {
   }
 }
 
-/// 提交失败（结果未知）的说明块。
+/// 提交失败的说明块。
 ///
-/// 文案必须先说"没记下来"、再说"怎么办"：用户此刻最怕的是"到底记没记上"，
-/// 而答案（重试只重放同一份载荷）恰好是可以承诺的。
+/// 两种失败必须说成两件事，否则用户会照着错的那句操作：
+/// - **结果未知**（超时/断网/5xx）：先承认"没记下来"，再说明"重试发的还是这一份，
+///   不会重复记"——这是他此刻最想知道的；
+/// - **被拒绝**（4xx）：这份作答已经作废，重发必然再被拒，所以要直接告诉他
+///   "可以跳到下一张"，并把这句话写进块里，因为出口在底栏、容易被忽略。
 class _SubmitFailureNotice extends StatelessWidget {
-  const _SubmitFailureNotice({required this.message});
+  const _SubmitFailureNotice({required this.message, required this.rejected});
 
   final String message;
+  final bool rejected;
 
   @override
   Widget build(BuildContext context) {
@@ -352,7 +367,7 @@ class _SubmitFailureNotice extends StatelessWidget {
           Padding(
             padding: EdgeInsets.only(top: 1.h),
             child: Icon(
-              Icons.cloud_off_outlined,
+              rejected ? AppIcons.errorOutline : AppIcons.cloudOffOutlined,
               size: 16.sp,
               color: scheme.error,
             ),
@@ -363,7 +378,7 @@ class _SubmitFailureNotice extends StatelessWidget {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  '这次没有记下来',
+                  rejected ? '这张卡提交不上' : '这次没有记下来',
                   style: TextStyle(
                     fontSize: 13.sp,
                     fontWeight: FontWeight.w600,
@@ -379,6 +394,17 @@ class _SubmitFailureNotice extends StatelessWidget {
                     color: scheme.onSurface.withValues(alpha: 0.68),
                   ),
                 ),
+                if (rejected) ...[
+                  SizedBox(height: 2.h),
+                  Text(
+                    '再发一次也不会成功；可以跳到下一张，也可以留在这里重新作答。',
+                    style: TextStyle(
+                      fontSize: 12.sp,
+                      height: 1.5,
+                      color: scheme.onSurface.withValues(alpha: 0.68),
+                    ),
+                  ),
+                ],
               ],
             ),
           ),

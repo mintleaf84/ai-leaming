@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 
+import '../../../../core/theme/app_icons.dart';
 import '../../domain/recall_card.dart';
 import 'recall_cloze_prompt.dart';
 import 'recall_layout.dart';
@@ -96,7 +97,7 @@ class _RecallQuestionViewState extends State<RecallQuestionView> {
                   iconSize: 20.sp,
                   constraints: BoxConstraints(minWidth: 48.w, minHeight: 48.h),
                   icon: Icon(
-                    Icons.archive_outlined,
+                    AppIcons.archiveOutlined,
                     color: scheme.onSurface.withValues(alpha: 0.45),
                   ),
                 ),

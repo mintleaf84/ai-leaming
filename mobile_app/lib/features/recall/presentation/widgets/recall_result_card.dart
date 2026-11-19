@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 
+import '../../../../core/theme/app_icons.dart';
 import '../../domain/recall_review.dart';
 import 'recall_tones.dart';
 
@@ -64,7 +65,7 @@ class RecallResultCard extends StatelessWidget {
               Padding(
                 padding: EdgeInsets.only(top: 1.h),
                 child: Icon(
-                  good ? Icons.check_circle_outline : Icons.event_outlined,
+                  good ? AppIcons.checkCircleOutline : AppIcons.eventOutlined,
                   size: (dense ? 16 : 18).sp,
                   color: tone.foreground,
                 ),

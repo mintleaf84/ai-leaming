@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 
+import '../../../../core/theme/app_icons.dart';
 import 'recall_layout.dart';
 import 'recall_tones.dart';
 
@@ -65,7 +66,7 @@ class RecallEmptyView extends StatelessWidget {
             height: 44.h,
             child: OutlinedButton.icon(
               onPressed: onRefresh,
-              icon: Icon(Icons.refresh, size: 16.sp),
+              icon: Icon(AppIcons.refresh, size: 16.sp),
               label: Text('再拉一次', style: TextStyle(fontSize: 14.sp)),
               style: OutlinedButton.styleFrom(
                 foregroundColor: scheme.onSurface,
@@ -111,7 +112,7 @@ class RecallErrorView extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Icon(
-            Icons.cloud_off_outlined,
+            AppIcons.cloudOffOutlined,
             size: 40.sp,
             color: scheme.onSurface.withValues(alpha: 0.32),
           ),

@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 
+import '../../../core/navigation/app_nav.dart';
+import '../../../core/theme/app_icons.dart';
 import '../domain/recall_review.dart';
 import 'recall_session_controller.dart';
 import 'widgets/recall_action_bar.dart';
@@ -47,14 +49,17 @@ class _RecallSessionScreenState extends ConsumerState<RecallSessionScreen> {
     });
   }
 
+  /// 离开回忆页。
+  ///
+  /// 默认走 [AppNav.backOrHome]：从首页 pushDetail 进来的（现在就是这样）会返回首页，
+  /// 万一将来把 /recall 当独立入口打开、栈里没有上一页，也不会"点了没反应"。
   void _exit() {
     final custom = widget.onExit;
     if (custom != null) {
       custom();
       return;
     }
-    final navigator = Navigator.of(context);
-    if (navigator.canPop()) navigator.pop();
+    context.backOrHome();
   }
 
   // ==================== 归档 ====================
@@ -89,7 +94,8 @@ class _RecallSessionScreenState extends ConsumerState<RecallSessionScreen> {
     if (!mounted) return;
     messenger.showSnackBar(
       SnackBar(
-        content: Text(error == null ? '已归档，继续下一张。' : '归档没有成功：$error'),
+        // 控制器返回的已经是整句（含"这张卡已经不在了"这类结果说明）
+        content: Text(error ?? '已归档，继续下一张。'),
         duration: const Duration(seconds: 3),
       ),
     );
@@ -210,6 +216,7 @@ class _RecallSessionScreenState extends ConsumerState<RecallSessionScreen> {
             submitError: state.submitError,
             submitting: state.submitting,
             retryLocked: state.retryLocked,
+            submitRejected: state.submitRejected,
             result: state.result,
             resultKey: _resultKey,
             onToggle: _controller.toggleVerdict,
@@ -235,12 +242,12 @@ class _RecallSessionScreenState extends ConsumerState<RecallSessionScreen> {
         );
 
       case RecallPhase.error:
-        final canGoBack =
-            widget.onExit != null || Navigator.of(context).canPop();
+        // 不再自己判断"有没有上一页"：/recall 由 pushDetail 进入，backOrHome
+        // 保证没有上一页时也会回首页，所以「先回去」永远可用。
         return RecallErrorView(
           message: state.errorMessage ?? '稍后再试一次。',
           onRetry: () => _controller.retryLoad(),
-          onBack: canGoBack ? _exit : null,
+          onBack: _exit,
         );
     }
   }
@@ -297,8 +304,23 @@ class _RecallSessionScreenState extends ConsumerState<RecallSessionScreen> {
       final hasNext = state.pending.length > 1;
       return RecallPrimaryButton(
         label: hasNext ? '下一张' : '完成',
-        icon: hasNext ? Icons.arrow_forward : null,
+        icon: hasNext ? AppIcons.arrowForward : null,
         onPressed: state.archiving ? null : () => _controller.advance(),
+      );
+    }
+
+    if (state.submitRejected) {
+      // 被服务端拒绝：这份作答已经作废，重发必然再被拒。给一条真正的出口，
+      // 而不是让用户对着永远不成功的「重试」点。
+      return RecallDualActions(
+        primary: RecallPrimaryButton(
+          label: '跳过这张',
+          onPressed: () => _controller.skipRejectedCard(),
+        ),
+        secondary: RecallSecondaryButton(
+          label: '留在这里',
+          onPressed: () => _controller.dismissSubmitFailure(),
+        ),
       );
     }
 

@@ -352,6 +352,10 @@ describe("/api/recall（用户 JWT 面）", () => {
   });
 
   // ---------- 用户隔离 ----------
+  //
+  // 本段是 `ownership-matrix.test.ts` 登记的跨用户测试：卡组内容全局共享，
+  // 但复习进度/日志是用户私有的——另一个用户读同一 cardId 必须拿不到 A 的 state，
+  // A 归档也不能影响另一个用户的队列。
 
   describe("用户隔离", () => {
     it("A 复习后 B 读同一 cardId 仍是 state=null（进度不串）", async () => {

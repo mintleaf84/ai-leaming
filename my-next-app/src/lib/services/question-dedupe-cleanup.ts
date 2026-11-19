@@ -343,7 +343,11 @@ export interface DedupeStatus {
  */
 export async function getDedupeStatus(): Promise<DedupeStatus> {
   const rows = (await drizzleDb
-    .select({ content: questions.content, type: questions.type, content_hash: questions.content_hash })
+    .select({
+      content: questions.content,
+      type: questions.type,
+      content_hash: questions.content_hash,
+    })
     .from(questions)) as Pick<Row, "content" | "type" | "content_hash">[];
 
   const byContent = new Map<string, number>();

@@ -78,9 +78,9 @@ describe("Admin 数据维护 · 重复题清理", () => {
 
   afterEach(async () => {
     await testDbHelper.close();
-    for (const f of fs.readdirSync("data").filter((f) =>
-      f.startsWith("backup-before-dedupe-"),
-    )) {
+    for (const f of fs
+      .readdirSync("data")
+      .filter((f) => f.startsWith("backup-before-dedupe-"))) {
       fs.rmSync(`data/${f}`, { force: true });
     }
   });

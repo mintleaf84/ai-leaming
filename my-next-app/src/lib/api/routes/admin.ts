@@ -10,7 +10,10 @@ import path from "path";
 import { logAdminAction } from "@/lib/admin/audit";
 import { getApiCallStats } from "@/lib/admin/api-stats-service";
 import { questionFeedbackService } from "@/lib/services/question-feedback-service";
-import { dedupeFallbackQuestions, getDedupeStatus } from "@/lib/services/question-dedupe-cleanup";
+import {
+  dedupeFallbackQuestions,
+  getDedupeStatus,
+} from "@/lib/services/question-dedupe-cleanup";
 import type { Dimension } from "@/types";
 import { logger } from "@/lib/logger";
 import { safeParseJson } from "@/lib/utils/json";

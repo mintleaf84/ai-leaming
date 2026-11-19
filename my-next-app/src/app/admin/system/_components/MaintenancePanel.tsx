@@ -89,19 +89,25 @@ export function MaintenancePanel() {
       <CardContent className="space-y-4">
         <p className="text-sm text-muted-foreground">
           兜底题与真实题同题干时会重复入库（历史上多选答案还会被截断）。清理会：
-          回填去重指纹、把日志/反馈/文件夹迁移到真实题、按复习充分度合并 SRS 卡、
-          删除兜底副本。执行前服务端会自动 VACUUM INTO 备份。
+          回填去重指纹、把日志/反馈/文件夹迁移到真实题、按复习充分度合并 SRS
+          卡、 删除兜底副本。执行前服务端会自动 VACUUM INTO 备份。
         </p>
 
         {status && (
           <div className="flex flex-wrap gap-2 text-sm">
-            <Badge variant={status.duplicateGroups > 0 ? "destructive" : "outline"}>
+            <Badge
+              variant={status.duplicateGroups > 0 ? "destructive" : "outline"}
+            >
               重复组 {status.duplicateGroups}
             </Badge>
-            <Badge variant={status.fallbackWithCopy > 0 ? "destructive" : "outline"}>
+            <Badge
+              variant={status.fallbackWithCopy > 0 ? "destructive" : "outline"}
+            >
               兜底副本 {status.fallbackWithCopy}
             </Badge>
-            <Badge variant={status.unhashedQuestions > 0 ? "destructive" : "outline"}>
+            <Badge
+              variant={status.unhashedQuestions > 0 ? "destructive" : "outline"}
+            >
               未回填指纹 {status.unhashedQuestions}
             </Badge>
           </div>
@@ -154,7 +160,11 @@ export function MaintenancePanel() {
               >
                 {busy ? "执行中…" : "确认执行"}
               </Button>
-              <Button variant="ghost" disabled={busy} onClick={() => setConfirming(false)}>
+              <Button
+                variant="ghost"
+                disabled={busy}
+                onClick={() => setConfirming(false)}
+              >
                 取消
               </Button>
             </div>

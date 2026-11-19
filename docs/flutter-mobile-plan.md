@@ -337,11 +337,11 @@ P3 全部完成：
 
 ### 12.2 落地物
 
-| 文件 | 作用 |
-| --- | --- |
-| `mobile_app/tool/coverage_gate.dart` | 纯 Dart（仅 `dart:io`），解析 lcov + 枚举分母 + 四条拦截规则 + markdown 报告 |
-| `mobile_app/coverage_baseline.json` | 各 scope 的 floor 与逐文件 measured，**只升不降** |
-| `.github/workflows/android.yml` | `flutter test --coverage` → 覆盖率门禁 → 上传 `coverage/lcov.info`（`if: always()`，保留 14 天） |
+| 文件                                 | 作用                                                                                             |
+| ------------------------------------ | ------------------------------------------------------------------------------------------------ |
+| `mobile_app/tool/coverage_gate.dart` | 纯 Dart（仅 `dart:io`），解析 lcov + 枚举分母 + 四条拦截规则 + markdown 报告                     |
+| `mobile_app/coverage_baseline.json`  | 各 scope 的 floor 与逐文件 measured，**只升不降**                                                |
+| `.github/workflows/android.yml`      | `flutter test --coverage` → 覆盖率门禁 → 上传 `coverage/lcov.info`（`if: always()`，保留 14 天） |
 
 四条拦截规则：全局 < floor、任一 scope < floor、基线内单文件回退 > 2pp、基线外新增文件落在
 domain/data/core/shared 且 < 60%。
@@ -356,35 +356,35 @@ dart run tool/coverage_gate.dart --update --allow-lower   # 确需下调，并�
 
 ### 12.3 前后对比（P0–P4 已落地）
 
-| 指标 | 改前（2026-11-19，origin/main） | 改后（2026-11-20） |
-| --- | --- | --- |
-| 用例数 | 182 passed / 2 skipped | **429 passed / 2 skipped** |
-| 全局行覆盖 | 21.7%（1628 / 7499） | **34.2%（2574 / 7528）** |
-| `domain_data` | 44.5% | **80.7%** |
-| `core` | 35.3% | **74.1%** |
-| `shared` | 4.6% | **20.5%**（P5 未做） |
-| `providers` | 24.5% | **84.4%** |
-| `screens` | 17.8% | 17.8%（P5 未做；其中 recall 贡献大部分） |
+| 指标          | 改前（2026-11-19，origin/main） | 改后（2026-11-20）                       |
+| ------------- | ------------------------------- | ---------------------------------------- |
+| 用例数        | 182 passed / 2 skipped          | **429 passed / 2 skipped**               |
+| 全局行覆盖    | 21.7%（1628 / 7499）            | **34.2%（2574 / 7528）**                 |
+| `domain_data` | 44.5%                           | **80.7%**                                |
+| `core`        | 35.3%                           | **74.1%**                                |
+| `shared`      | 4.6%                            | **20.5%**（P5 未做）                     |
+| `providers`   | 24.5%                           | **84.4%**                                |
+| `screens`     | 17.8%                           | 17.8%（P5 未做；其中 recall 贡献大部分） |
 
 分阶段：P0–P2 → 26.5%；P3（9 个 provider）→ 33.0%；P4（本地库/同步）→ 33.6%（P4 的分母主要落在 `screens`，所以全局涨幅小但风险降得最多）。
 
 关键文件（单文件覆盖率）：
 
-| 文件 | 改前 | 改后 |
-| --- | ---: | ---: |
-| `core/auth/token_util.dart` | 0% | 95.2% |
-| `core/navigation/app_nav.dart` | 0% | 83.3% |
-| `core/theme/theme_provider.dart` | 0% | 100% |
-| `core/utils/haptic_util.dart` | 0% | 93.3% |
-| `shared/widgets/server_config_gate.dart` | 0%（未进 lcov） | 100% |
-| `features/practice/data/practice_repository_impl.dart` | 2.3% | 83.0% |
-| `features/wrong_book/data/wrong_book_repository.dart` | 0% | 92.6% |
-| `features/chat/data/chat_repository_impl.dart` | 0% | 77.8% |
-| `features/auth/data/auth_repository_impl.dart` | 0% | 81.2% |
-| `features/practice/data/local_practice_store.dart` | 0% | 99.3% |
-| `core/local/local_schema.dart`（本次抽出） | — | 90.9% |
-| `core/sync/sync_service.dart` | 2.7% | 80.0% |
-| 9 个 `*_provider.dart` | 0–15.6% | 87.5%–100% |
+| 文件                                                   |            改前 |       改后 |
+| ------------------------------------------------------ | --------------: | ---------: |
+| `core/auth/token_util.dart`                            |              0% |      95.2% |
+| `core/navigation/app_nav.dart`                         |              0% |      83.3% |
+| `core/theme/theme_provider.dart`                       |              0% |       100% |
+| `core/utils/haptic_util.dart`                          |              0% |      93.3% |
+| `shared/widgets/server_config_gate.dart`               | 0%（未进 lcov） |       100% |
+| `features/practice/data/practice_repository_impl.dart` |            2.3% |      83.0% |
+| `features/wrong_book/data/wrong_book_repository.dart`  |              0% |      92.6% |
+| `features/chat/data/chat_repository_impl.dart`         |              0% |      77.8% |
+| `features/auth/data/auth_repository_impl.dart`         |              0% |      81.2% |
+| `features/practice/data/local_practice_store.dart`     |              0% |      99.3% |
+| `core/local/local_schema.dart`（本次抽出）             |               — |      90.9% |
+| `core/sync/sync_service.dart`                          |            2.7% |      80.0% |
+| 9 个 `*_provider.dart`                                 |         0–15.6% | 87.5%–100% |
 
 新增 22 个文件（20 个测试文件 + 2 个共享桩 `test/support/{recording_adapter,ffi_db}.dart`），
 另在既有 `textbook_provider_test.dart` 追加 211 行（零删除）。测试文件数 18 → 38。
@@ -407,9 +407,9 @@ cd mobile_app && flutter test --coverage && dart run tool/coverage_gate.dart
 
 ### 12.5 后续阶段（只剩 P5）
 
-| 阶段 | 范围 | 预计增量 |
-| --- | --- | --- |
-| P5 | 6 个高风险屏的 widget 冒烟（practice 367、history_detail 401、wrong_book 332、settings 341、dashboard 332、chat 254）+ `shared/widgets` 的 5 个自建组件，只断言渲染/关键交互/不溢出 | +10pp，全局到 ~43%，`screens` 从 17.8% 到 ~30% |
+| 阶段 | 范围                                                                                                                                                                                | 预计增量                                       |
+| ---- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------- |
+| P5   | 6 个高风险屏的 widget 冒烟（practice 367、history_detail 401、wrong_book 332、settings 341、dashboard 332、chat 254）+ `shared/widgets` 的 5 个自建组件，只断言渲染/关键交互/不溢出 | +10pp，全局到 ~43%，`screens` 从 17.8% 到 ~30% |
 
 P3（9 个 provider）与 P4（本地库/同步）已完成，见 12.3。
 
@@ -431,13 +431,13 @@ CI（ubuntu-latest）两样都有，不受影响；但**不要**顺手升级这�
 
 这些是补测试时"按当前行为锁定"的问题，随后单独修掉，测试断言同步改严（没有删用例、没有放宽）：
 
-| 缺陷 | 修法 | 回归护栏 |
-| --- | --- | --- |
-| `chat_provider.retryLastMessage` 重试会再追加一条相同的用户消息，且 `_streamSubscription` 单字段被覆盖，`stopGeneration` 只能取消最后一次 | `sendMessage` 加 generation 令牌（`_generation`）+ `appendUserMessage` 开关；流回调、`onDone`、`onError` 全部先比对令牌；`clearMessages` 复位生成标志 | 重试后 `role=='user'` 恰好 1 条；"连续两次 sendMessage，第一次流的迟到回调不污染第二次"（用可迟到的假流构造） |
-| 登出后旧账号的历史与对话仍留在内存；`history.loadMore` 会把新账号第 2 页拼到旧账号第 1 页之后 | 新增 `authEpochProvider`（登录/注册成功、登出各 +1），`history`/`chat` 改 watch 版本号并重建。**不能**直接 watch `authControllerProvider`：它的 state 是 `AsyncValue<void>`，登出写入的 `AsyncData(null)` 与旧值相等，Riverpod 判等后不通知 | 登出后列表/对话清空、`currentSessionId == null`；loadMore 不含旧账号数据；变异验证：注释掉 `logout` 里的 `bump()` → 4 条用例变红 |
-| `history` / `knowledge` / `textbook` 无请求序号防护，先发后到的旧响应覆盖新结果 | 三个 controller 统一 `int _requestSeq`，成功与失败分支都在写 state 前比对 | 并发用例改为"最新请求胜出"；另加"旧请求的 500 不能盖掉新结果" |
-| `wrong_book.startPractice` 抛异常/服务端 `success=false` 时静默返回 null（界面"点了没反应"）；`markAsMastered` 失败无提示 | 两条失败路径都写 `error`；标记掌握/取消掌握失败也写 `error` 且不清空列表 | 断言 `error` 文案存在且列表长度不变 |
-| `SyncService.startAutoSync` 的连通性回调无并发闸，网络抖动可并发跑多个 `flush()` | `bool _flushing` + `try/finally`，重复调用直接返回 `SyncResult.empty()` | 用 `Completer` 卡住第一次响应构造并发，断言 `adapter.requests` 只有 1 条 |
+| 缺陷                                                                                                                                      | 修法                                                                                                                                                                                                                                        | 回归护栏                                                                                                                         |
+| ----------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------- |
+| `chat_provider.retryLastMessage` 重试会再追加一条相同的用户消息，且 `_streamSubscription` 单字段被覆盖，`stopGeneration` 只能取消最后一次 | `sendMessage` 加 generation 令牌（`_generation`）+ `appendUserMessage` 开关；流回调、`onDone`、`onError` 全部先比对令牌；`clearMessages` 复位生成标志                                                                                       | 重试后 `role=='user'` 恰好 1 条；"连续两次 sendMessage，第一次流的迟到回调不污染第二次"（用可迟到的假流构造）                    |
+| 登出后旧账号的历史与对话仍留在内存；`history.loadMore` 会把新账号第 2 页拼到旧账号第 1 页之后                                             | 新增 `authEpochProvider`（登录/注册成功、登出各 +1），`history`/`chat` 改 watch 版本号并重建。**不能**直接 watch `authControllerProvider`：它的 state 是 `AsyncValue<void>`，登出写入的 `AsyncData(null)` 与旧值相等，Riverpod 判等后不通知 | 登出后列表/对话清空、`currentSessionId == null`；loadMore 不含旧账号数据；变异验证：注释掉 `logout` 里的 `bump()` → 4 条用例变红 |
+| `history` / `knowledge` / `textbook` 无请求序号防护，先发后到的旧响应覆盖新结果                                                           | 三个 controller 统一 `int _requestSeq`，成功与失败分支都在写 state 前比对                                                                                                                                                                   | 并发用例改为"最新请求胜出"；另加"旧请求的 500 不能盖掉新结果"                                                                    |
+| `wrong_book.startPractice` 抛异常/服务端 `success=false` 时静默返回 null（界面"点了没反应"）；`markAsMastered` 失败无提示                 | 两条失败路径都写 `error`；标记掌握/取消掌握失败也写 `error` 且不清空列表                                                                                                                                                                    | 断言 `error` 文案存在且列表长度不变                                                                                              |
+| `SyncService.startAutoSync` 的连通性回调无并发闸，网络抖动可并发跑多个 `flush()`                                                          | `bool _flushing` + `try/finally`，重复调用直接返回 `SyncResult.empty()`                                                                                                                                                                     | 用 `Completer` 卡住第一次响应构造并发，断言 `adapter.requests` 只有 1 条                                                         |
 
 ### 12.7 仍未修（需产品/lib 决策）
 

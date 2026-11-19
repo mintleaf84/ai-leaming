@@ -2,9 +2,10 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:go_router/go_router.dart';
+import 'package:skeletonizer/skeletonizer.dart';
 import 'history_provider.dart';
 import '../domain/history_item.dart';
-import '../../../shared/widgets/skeleton_loading.dart';
+import '../../../shared/skeletons/skeleton_fakes.dart';
 import '../../../shared/widgets/empty_state.dart';
 
 /// 历史记录列表页
@@ -75,7 +76,7 @@ class _HistoryScreenState extends ConsumerState<HistoryScreen> {
   Widget _buildBody(HistoryListState state) {
     // 加载状态：显示骨架屏
     if (state.isLoading && state.items.isEmpty) {
-      return const HistorySkeletonList();
+      return _buildSkeleton();
     }
 
     if (state.error != null && state.items.isEmpty) {
@@ -121,6 +122,19 @@ class _HistoryScreenState extends ConsumerState<HistoryScreen> {
         }
         return _buildHistoryCard(state.items[index]);
       },
+    );
+  }
+
+  /// 加载骨架：用真实卡片撑出布局，由 Skeletonizer 统一涂成灰块
+  Widget _buildSkeleton() {
+    return Skeletonizer(
+      enabled: true,
+      child: ListView.builder(
+        padding: EdgeInsets.symmetric(horizontal: 16.w, vertical: 12.h),
+        itemCount: 3,
+        itemBuilder: (context, index) =>
+            _buildHistoryCard(fakeHistoryItem(index: index)),
+      ),
     );
   }
 

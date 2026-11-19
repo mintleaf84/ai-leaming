@@ -115,65 +115,52 @@
 - **验收**：CI `pub get` 成功；`pubspec.lock` 的 `sdks:` 段未变；`flutter analyze` 仍 0 error。
 - **回滚**：只改 pubspec + lock。
 
-### M-02 抽出六屏卡片 widget ｜4h｜依赖 M-01
+### M-02 每屏新增 `_buildSkeleton()`（复用屏内既有卡片方法）｜3h｜依赖 M-01
 
-- **落点**（全部是 State 私有方法，抽成公共 widget，**行为不变**）：
+> **相对 D-2 原文的偏离（执行时修正）**：原计划先把 6 个卡片渲染器抽成公共 widget 再骨架化，理由是
+> "`lib/shared/skeletons/` 调不到 State 的私有方法"。实际实现改为**在屏内 `_buildSkeleton()` 里直接调用
+> 同一个私有方法**——同样满足"真 widget 骨架"（布局来自真实卡片，改布局不用改骨架），但省掉 6 个文件的
+> 重构 diff 和随之而来的回归面。代价：不产出可单测的公共卡片 widget（原计划的附带收益取消）。
 
-  | 现位置 | 现名 | 抽成 |
+- **落点**：六屏各加一个私有方法，形如：
+  ```dart
+  Widget _buildSkeleton() => Skeletonizer(
+        enabled: true,
+        child: ListView.builder(
+          padding: <沿用真实列表 padding>,
+          itemCount: 3,
+          itemBuilder: (context, index) => _buildHistoryCard(fakeHistoryItem(index: index)),
+        ),
+      );
+  ```
+  | 屏 | 复用的私有方法 | 假数据 |
   | --- | --- | --- |
-  | `history_screen.dart:127` | `_buildHistoryCard(HistoryItem)` | `HistoryCard` |
-  | `history_detail_screen.dart:447 / :541` | `_buildListQuestionCard` / `_buildImmersiveQuestionCard` | `HistoryQuestionCard`（两态合一，用 `immersive` 参数） |
-  | `knowledge_screen.dart:196` | `_buildCardItem(KnowledgeCard)` | `KnowledgeCardView` |
-  | `wrong_book_screen.dart:207` | `_buildQuestionCard(WrongQuestion, bool)` | `WrongQuestionCard` |
-  | `practice_screen.dart:190` | `_buildQuestionView(PracticeSessionState)` | `PracticeQuestionBody` |
-  | `question_list_screen.dart:165` | 内联 itemBuilder | `QuestionListCard` |
-
-- **改法约束**：抽出时**只搬代码不改样式**；回调一律显式传参（`onTap`、`onSelect`），禁止新 widget 里读 provider——
-  一旦新 widget 内部读 provider，M-04 就没法用 fake 数据渲染。
-- **验收**：CI analyze/test 绿；六屏真机逐个走一遍（loading / 有数据 / 错误 / 空），视觉与改前一致（附前后截图）；
-  `grep -c "Widget _build.*Card\|Widget _buildQuestionView" lib/features` 递减到 0。
-- **回滚**：单 PR revert（纯重构，无依赖牵连）。
-
-### M-03 fake 模型工厂 + CI 栅栏 ｜1.5h｜依赖 M-02
-
-- **落点**：新增 `lib/shared/skeletons/skeletons.dart`（唯一允许出现 fake 数据的地方）。
-- **改法**：
-  ```dart
-  // 只放"形状够画出骨架"的最小实例，字段值必须是明显的假值（"示例标题" 之类），
-  // 防止有人把它当真数据接到 provider 上。
-  HistoryItem fakeHistoryItem({int i = 0}) => HistoryItem(...);
-  KnowledgeCard fakeKnowledgeCard({int i = 0}) => ...;
-  ```
-  `PracticeQuestionBody` 需要 `PracticeSessionState`，为此只造**最小可渲染**版本（`state.copyWith` 不可用就写构造器），
-  不在 fake 里造任何回调副作用（`onTap: () {}` 之类必须为空实现）。
-- **栅栏**：`.github/workflows/android.yml` 的 `analyze` job 加一步（放在 `flutter analyze` 前）：
-  ```bash
-  if grep -rn "skeletons/skeletons.dart" lib/features; then
-    echo "::error::fake 数据不允许出现在 feature 层（见 docs/mobile-ui-kit.md D-2）"; exit 1
-  fi
-  ```
-- **验收**：故意在某个 feature 里 import 一次，CI 报红；删掉后转绿。
-- **回滚**：删文件 + 删 CI 步骤。
-
-### M-04 六屏接真 widget 骨架 ｜5h｜依赖 M-03
-
-- **落点**：六个 screen 的 loading 分支 + 删除三处旧骨架实现。
-- **改法**：
-  ```dart
-  Skeletonizer(
-    enabled: true,
-    child: ListView.builder(                     // 真实卡片，真实布局
-      itemCount: 3,
-      itemBuilder: (_, i) => HistoryCard(item: fakeHistoryItem(i: i)),
-    ),
-  )
-  ```
-  - 卡片外的区域（`wrong_book` 统计条、`history_detail` 筛选栏、`knowledge` 顶部分类条）**没有对应真实 widget 的**，
-    用 `Skeletonizer.zone` + `Bone.rectangle` 画，不强行造假 widget。
-  - 亮/暗色跟随 `SkeletonizerConfig`（在 `app_theme.dart` 挂一次，不要每屏各配一遍）。
-  - 删除：`skeleton_loading.dart`、`skeleton_widgets.dart`、`wrong_book_screen.dart:614` 的内联骨架。
-- **验收**：六屏 loading→loaded 切换无塌陷、无闪白（录屏）；CI 绿；`grep -rn "ShimmerWrap\|_ShimmerBox\|SkeletonText" lib` 为 0。
+  | `history_screen.dart:127` | `_buildHistoryCard(HistoryItem)` | `fakeHistoryItem` |
+  | `history_detail_screen.dart:447` | `_buildListQuestionCard(PracticeLog)` | `fakePracticeLog` |
+  | `knowledge_screen.dart:196` | `_buildCardItem(KnowledgeCard)` | `fakeKnowledgeCard` |
+  | `wrong_book_screen.dart:207` | `_buildQuestionCard(WrongQuestion, bool)` | `fakeWrongQuestion` |
+  | `practice_screen.dart:190` | `_buildQuestionView(PracticeSessionState)` | `fakePracticeSessionState` |
+  | `question_list_screen.dart:165` | 先抽 `_buildQuestionCard(Question)`（只搬代码） | `fakeQuestion` |
+- **附带改动**：`main.dart` 的 `MaterialApp.builder` 里挂一层 `SkeletonizerConfig`，
+  用 `Theme.of(context).brightness` 决定明暗——否则 App 内手动切暗色时骨架仍是浅色。
+- **验收**：`flutter analyze --no-fatal-infos` 的 error/warning 为 0；六屏 loading 分支不再 import 旧骨架 widget。
 - **回滚**：单 PR revert。
+
+### M-03 fake 模型工厂 ｜1h｜依赖 M-02
+
+- **落点**：新增 `lib/shared/skeletons/skeleton_fakes.dart`（唯一允许出现假数据的地方）。
+- **改法**：六个 fake 工厂：`fakeHistoryItem` / `fakePracticeLog` / `fakeKnowledgeCard` /
+  `fakeWrongQuestion` / `fakeQuestion` / `fakePracticeSessionState`，字段值一律是明显的假值（`骨架占位文本`）。
+- **泄漏防治**：文件头写死引用约束——只允许 `lib/features/*/presentation/*_screen.dart` 与
+  `lib/shared/skeletons/**` 引用。**取消原计划里的 CI grep 栅栏**：假数据本来就要被各屏骨架引用，
+  grep 会把合法用法一起拦掉；改为 review 清单项（在 PR 模板/评审时人工核对 import）。
+- **验收**：`grep -rn "skeleton_fakes" lib` 的结果只出现在六屏 screen 与 shared/skeletons 自身。
+
+### M-04 删除旧骨架实现 ｜0.5h｜依赖 M-02
+
+- **落点**：`lib/shared/widgets/skeleton_loading.dart`（192 行）、`lib/shared/widgets/skeleton_widgets.dart`（181 行）。
+- **改法**：`git rm` 两个文件（仓库规矩：移动/删除 Dart 文件用 `git mv` / `git rm`），确认无引用残留。
+- **验收**：`grep -rn "SkeletonText\|SkeletonCard\|HistorySkeletonList\|KnowledgeSkeletonList\|HistoryDetailSkeletonList\|PracticeSkeleton\|QuestionListSkeleton\|ShimmerWrap" lib` 为空。
 
 ### M-05 移除 `shimmer` 与 `state_notifier` ｜0.5h｜依赖 M-04
 

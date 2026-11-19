@@ -6,8 +6,9 @@ import 'package:go_router/go_router.dart';
 import 'package:mobile_app/features/practice/presentation/practice_provider.dart';
 import 'package:mobile_app/features/practice/domain/question.dart';
 import 'package:mobile_app/shared/widgets/animated_option_card.dart';
-import 'package:mobile_app/shared/widgets/skeleton_widgets.dart';
+import 'package:mobile_app/shared/skeletons/skeleton_fakes.dart';
 import 'package:mobile_app/features/practice/presentation/widgets/first_principles_panel.dart';
+import 'package:skeletonizer/skeletonizer.dart';
 
 class PracticeScreen extends ConsumerStatefulWidget {
   /// 来自配置页的练习参数（可选，默认随机10题）
@@ -77,7 +78,7 @@ class _PracticeScreenState extends ConsumerState<PracticeScreen> {
         body: SafeArea(
           bottom: false,
           child: state.isLoading && state.questions.isEmpty
-              ? const PracticeSkeleton()
+              ? _buildSkeleton()
               : state.error != null && state.questions.isEmpty
               ? _buildErrorView(state.error!)
               : state.questions.isEmpty
@@ -90,6 +91,15 @@ class _PracticeScreenState extends ConsumerState<PracticeScreen> {
                 ),
         ),
       ),
+    );
+  }
+
+  /// 整题视图骨架：用假状态驱动真实布局，再由 Skeletonizer 抹成骨块，
+  /// 保证「加载中」与「加载完成」的版式完全一致（见 docs/mobile-ui-kit.md D-2）。
+  Widget _buildSkeleton() {
+    return Skeletonizer(
+      enabled: true,
+      child: _buildQuestionView(fakePracticeSessionState()),
     );
   }
 

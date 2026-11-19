@@ -4,7 +4,8 @@ import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:go_router/go_router.dart';
 import '../domain/question.dart';
 import 'questions_provider.dart';
-import '../../../shared/widgets/skeleton_widgets.dart';
+import '../../../shared/skeletons/skeleton_fakes.dart';
+import 'package:skeletonizer/skeletonizer.dart';
 
 class QuestionListScreen extends ConsumerStatefulWidget {
   const QuestionListScreen({super.key});
@@ -42,12 +43,10 @@ class _QuestionListScreenState extends ConsumerState<QuestionListScreen> {
     final isDarkMode = theme.brightness == Brightness.dark;
 
     final bgColor = theme.scaffoldBackgroundColor;
-    final cardColor = theme.cardColor;
     final textColor = theme.colorScheme.onSurface;
     final secondaryColor = isDarkMode
         ? const Color(0xFF8A8A8A)
         : const Color(0xFF787774);
-    final borderColor = theme.dividerColor;
 
     return Scaffold(
       backgroundColor: bgColor,
@@ -122,7 +121,7 @@ class _QuestionListScreenState extends ConsumerState<QuestionListScreen> {
                     ref.read(questionsControllerProvider.notifier).refresh(),
                 color: const Color(0xFF135BEC),
                 child: questionsState.items.isEmpty && questionsState.isLoading
-                    ? const QuestionListSkeleton()
+                    ? _buildSkeleton()
                     : questionsState.items.isEmpty &&
                           questionsState.error != null
                     ? Center(
@@ -175,119 +174,139 @@ class _QuestionListScreenState extends ConsumerState<QuestionListScreen> {
                           }
 
                           final question = questionsState.items[index];
-                          return Container(
-                            decoration: BoxDecoration(
-                              color: cardColor,
-                              borderRadius: BorderRadius.circular(8.r),
-                              border: Border.all(color: borderColor),
-                            ),
-                            child: Material(
-                              color: Colors.transparent,
-                              child: InkWell(
-                                onTap: () {
-                                  _showQuestionPreview(context, question);
-                                },
-                                borderRadius: BorderRadius.circular(8.r),
-                                child: Padding(
-                                  padding: EdgeInsets.all(16.w),
-                                  child: Column(
-                                    crossAxisAlignment:
-                                        CrossAxisAlignment.start,
-                                    children: [
-                                      Row(
-                                        children: [
-                                          Container(
-                                            padding: EdgeInsets.symmetric(
-                                              horizontal: 6.w,
-                                              vertical: 2.h,
-                                            ),
-                                            decoration: BoxDecoration(
-                                              color: question.type == 'single'
-                                                  ? const Color(0xFFE3F2FD)
-                                                  : const Color(0xFFF3E5F5),
-                                              borderRadius:
-                                                  BorderRadius.circular(4.r),
-                                            ),
-                                            child: Text(
-                                              question.type == 'single'
-                                                  ? '单选'
-                                                  : '多选',
-                                              style: TextStyle(
-                                                fontSize: 10.sp,
-                                                color: question.type == 'single'
-                                                    ? const Color(0xFF1976D2)
-                                                    : const Color(0xFF7B1FA2),
-                                                fontWeight: FontWeight.bold,
-                                              ),
-                                            ),
-                                          ),
-                                          SizedBox(width: 8.w),
-                                          Expanded(
-                                            child: Text(
-                                              question.dimension ?? '综合能力',
-                                              style: TextStyle(
-                                                fontSize: 12.sp,
-                                                color: secondaryColor,
-                                              ),
-                                              maxLines: 1,
-                                              overflow: TextOverflow.ellipsis,
-                                            ),
-                                          ),
-                                          Text(
-                                            'ID: ${question.id}',
-                                            style: TextStyle(
-                                              fontSize: 10.sp,
-                                              color: secondaryColor.withValues(
-                                                alpha: 0.5,
-                                              ),
-                                              fontFamily: 'monospace',
-                                            ),
-                                          ),
-                                        ],
-                                      ),
-                                      SizedBox(height: 12.h),
-                                      Text(
-                                        question.content,
-                                        style: TextStyle(
-                                          fontSize: 15.sp,
-                                          color: textColor,
-                                          height: 1.4,
-                                        ),
-                                        maxLines: 3,
-                                        overflow: TextOverflow.ellipsis,
-                                      ),
-                                      if (question.tags.isNotEmpty) ...[
-                                        SizedBox(height: 12.h),
-                                        Wrap(
-                                          spacing: 8.w,
-                                          runSpacing: 4.h,
-                                          children: question.tags
-                                              .map(
-                                                (tag) => Text(
-                                                  '#$tag',
-                                                  style: TextStyle(
-                                                    fontSize: 12.sp,
-                                                    color: const Color(
-                                                      0xFF135BEC,
-                                                    ),
-                                                  ),
-                                                ),
-                                              )
-                                              .toList(),
-                                        ),
-                                      ],
-                                    ],
-                                  ),
-                                ),
-                              ),
-                            ),
-                          );
+                          return _buildQuestionCard(question);
                         },
                       ),
               ),
             ),
           ],
         ),
+      ),
+    );
+  }
+
+  /// 题库列表卡片：真实列表与骨架共用同一份布局。
+  Widget _buildQuestionCard(Question question) {
+    final theme = Theme.of(context);
+    final isDarkMode = theme.brightness == Brightness.dark;
+    final cardColor = theme.cardColor;
+    final textColor = theme.colorScheme.onSurface;
+    final secondaryColor = isDarkMode
+        ? const Color(0xFF8A8A8A)
+        : const Color(0xFF787774);
+    final borderColor = theme.dividerColor;
+
+    return Container(
+      decoration: BoxDecoration(
+        color: cardColor,
+        borderRadius: BorderRadius.circular(8.r),
+        border: Border.all(color: borderColor),
+      ),
+      child: Material(
+        color: Colors.transparent,
+        child: InkWell(
+          onTap: () {
+            _showQuestionPreview(context, question);
+          },
+          borderRadius: BorderRadius.circular(8.r),
+          child: Padding(
+            padding: EdgeInsets.all(16.w),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  children: [
+                    Container(
+                      padding: EdgeInsets.symmetric(
+                        horizontal: 6.w,
+                        vertical: 2.h,
+                      ),
+                      decoration: BoxDecoration(
+                        color: question.type == 'single'
+                            ? const Color(0xFFE3F2FD)
+                            : const Color(0xFFF3E5F5),
+                        borderRadius: BorderRadius.circular(4.r),
+                      ),
+                      child: Text(
+                        question.type == 'single' ? '单选' : '多选',
+                        style: TextStyle(
+                          fontSize: 10.sp,
+                          color: question.type == 'single'
+                              ? const Color(0xFF1976D2)
+                              : const Color(0xFF7B1FA2),
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                    ),
+                    SizedBox(width: 8.w),
+                    Expanded(
+                      child: Text(
+                        question.dimension ?? '综合能力',
+                        style: TextStyle(
+                          fontSize: 12.sp,
+                          color: secondaryColor,
+                        ),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                    ),
+                    Text(
+                      'ID: ${question.id}',
+                      style: TextStyle(
+                        fontSize: 10.sp,
+                        color: secondaryColor.withValues(alpha: 0.5),
+                        fontFamily: 'monospace',
+                      ),
+                    ),
+                  ],
+                ),
+                SizedBox(height: 12.h),
+                Text(
+                  question.content,
+                  style: TextStyle(
+                    fontSize: 15.sp,
+                    color: textColor,
+                    height: 1.4,
+                  ),
+                  maxLines: 3,
+                  overflow: TextOverflow.ellipsis,
+                ),
+                if (question.tags.isNotEmpty) ...[
+                  SizedBox(height: 12.h),
+                  Wrap(
+                    spacing: 8.w,
+                    runSpacing: 4.h,
+                    children: question.tags
+                        .map(
+                          (tag) => Text(
+                            '#$tag',
+                            style: TextStyle(
+                              fontSize: 12.sp,
+                              color: const Color(0xFF135BEC),
+                            ),
+                          ),
+                        )
+                        .toList(),
+                  ),
+                ],
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
+  /// 列表骨架：3 张假题卡片复刻真实版式，再由 Skeletonizer 抹成骨块。
+  Widget _buildSkeleton() {
+    return Skeletonizer(
+      enabled: true,
+      child: ListView.separated(
+        padding: EdgeInsets.symmetric(horizontal: 20.w, vertical: 12.h),
+        itemCount: 3,
+        separatorBuilder: (context, index) => SizedBox(height: 12.h),
+        itemBuilder: (context, index) =>
+            _buildQuestionCard(fakeQuestion(index: index)),
       ),
     );
   }

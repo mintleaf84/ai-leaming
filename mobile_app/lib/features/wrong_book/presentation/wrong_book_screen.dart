@@ -2,7 +2,9 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:go_router/go_router.dart';
+import 'package:skeletonizer/skeletonizer.dart';
 import 'wrong_book_provider.dart';
+import '../../../shared/skeletons/skeleton_fakes.dart';
 import '../domain/wrong_question.dart';
 
 /// 错题本页面
@@ -611,37 +613,44 @@ class _WrongBookScreenState extends ConsumerState<WrongBookScreen> {
     );
   }
 
+  /// 加载态骨架：用 Skeletonizer 包裹真实错题卡片渲染器，布局与真实列表一致。
+  ///
+  /// 统计条（`_buildStatCard` 需要真实 `WrongBookStats`）不复用，改用
+  /// `Skeletonizer.zone` + `Bone` 画出同尺寸的占位条。
   Widget _buildSkeleton() {
-    return Padding(
-      padding: EdgeInsets.all(16.w),
+    return Skeletonizer(
+      enabled: true,
       child: Column(
         children: [
-          // 统计卡片骨架
-          Row(
-            children: List.generate(
-              3,
-              (i) => Expanded(
-                child: Container(
-                  height: 70.h,
-                  margin: EdgeInsets.only(right: i < 2 ? 12.w : 0),
-                  decoration: BoxDecoration(
-                    color: Colors.grey[200],
-                    borderRadius: BorderRadius.circular(12.r),
+          // 统计卡片占位（高度/间距与 _buildStatsBar 对齐）。
+          // 外层 Skeletonizer 已开启，Bone 直接交给它上色即可，不用再套 zone。
+          Padding(
+            padding: EdgeInsets.all(16.w),
+            child: Row(
+              children: [
+                for (int i = 0; i < 3; i++) ...<Widget>[
+                  if (i > 0) SizedBox(width: 12.w),
+                  Expanded(
+                    child: Bone(
+                      height: 70.h,
+                      borderRadius: BorderRadius.circular(12.r),
+                    ),
                   ),
-                ),
-              ),
+                ],
+              ],
             ),
           ),
-          SizedBox(height: 16.h),
-          // 列表骨架
-          ...List.generate(
-            5,
-            (_) => Container(
-              height: 80.h,
-              margin: EdgeInsets.only(bottom: 10.h),
-              decoration: BoxDecoration(
-                color: Colors.grey[200],
-                borderRadius: BorderRadius.circular(12.r),
+          // 错题列表占位（真实列表是 separated + 10.h 间隔，卡片无 margin）
+          Expanded(
+            child: ListView.builder(
+              padding: EdgeInsets.all(16.w),
+              itemCount: 3,
+              itemBuilder: (context, index) => Padding(
+                padding: EdgeInsets.only(bottom: 10.h),
+                child: _buildQuestionCard(
+                  fakeWrongQuestion(index: index),
+                  false,
+                ),
               ),
             ),
           ),

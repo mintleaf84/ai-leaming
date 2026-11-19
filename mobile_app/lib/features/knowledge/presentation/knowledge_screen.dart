@@ -2,9 +2,10 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:go_router/go_router.dart';
+import 'package:skeletonizer/skeletonizer.dart';
 
 import 'knowledge_provider.dart';
-import '../../../shared/widgets/skeleton_loading.dart';
+import '../../../shared/skeletons/skeleton_fakes.dart';
 import '../../../shared/widgets/empty_state.dart';
 
 class KnowledgeScreen extends ConsumerStatefulWidget {
@@ -100,7 +101,7 @@ class _KnowledgeScreenState extends ConsumerState<KnowledgeScreen> {
           // Content
           Expanded(
             child: state.isLoading
-                ? const KnowledgeSkeletonList()
+                ? _buildSkeleton()
                 : state.error != null
                 ? Center(
                     child: Column(
@@ -191,6 +192,24 @@ class _KnowledgeScreenState extends ConsumerState<KnowledgeScreen> {
     ScaffoldMessenger.of(
       context,
     ).showSnackBar(const SnackBar(content: Text('知识卡片创建成功')));
+  }
+
+  /// 加载态骨架：用 Skeletonizer 包裹真实卡片渲染器，骨架布局与真实列表
+  /// 永远不会脱节（改 `_buildCardItem` 不需要同步改骨架）。
+  Widget _buildSkeleton() {
+    return Skeletonizer(
+      enabled: true,
+      child: ListView.builder(
+        padding: EdgeInsets.all(16.w),
+        itemCount: 3,
+        // 真实列表用 ListView.separated + 12.h 间隔；卡片自身无 margin，
+        // 这里用等量底部留白复刻同一间距。
+        itemBuilder: (context, index) => Padding(
+          padding: EdgeInsets.only(bottom: 12.h),
+          child: _buildCardItem(fakeKnowledgeCard(index: index)),
+        ),
+      ),
+    );
   }
 
   Widget _buildCardItem(KnowledgeCard card) {

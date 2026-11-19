@@ -61,12 +61,15 @@ export default function QuestionPicker({
         setSearchError(result.message || "搜索题目失败");
       }
     } catch (error) {
+      // 搜索失败要可见：degraded（日志 + 错误态 + 显式 return）
+      console.error("[QuestionPicker] 搜索题目失败", error);
       setQuestions([]);
       setSearchError(
         error instanceof Error && error.message
           ? error.message
           : "搜索题目失败",
       );
+      return;
     } finally {
       setLoading(false);
     }

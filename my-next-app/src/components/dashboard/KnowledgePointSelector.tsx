@@ -180,11 +180,14 @@ export function KnowledgePointSelector({
       setTreeData(result.data?.tree || []);
       setLoadError(null);
     } catch (error) {
+      // 首屏数据加载失败：degraded（日志 + 错误态 + 显式 return），见 error-handling.md
+      console.error("[KnowledgePointSelector] 获取知识点失败", error);
       setLoadError(
         error instanceof Error && error.message
           ? error.message
           : "获取知识点失败",
       );
+      return;
     } finally {
       setLoading(false);
     }

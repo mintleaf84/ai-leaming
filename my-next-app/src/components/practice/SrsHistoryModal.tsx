@@ -61,11 +61,14 @@ export function SrsHistoryModal({
       setPredictions(pResult?.data ?? []);
       setLoadError(null);
     } catch (error) {
+      // 弹层数据加载失败：degraded（日志 + 错误态 + 显式 return）
+      console.error("[SrsHistoryModal] 记忆轨迹加载失败", error);
       setLoadError(
         error instanceof Error && error.message
           ? error.message
           : "记忆轨迹加载失败",
       );
+      return;
     } finally {
       setLoading(false);
     }

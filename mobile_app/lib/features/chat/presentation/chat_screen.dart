@@ -42,6 +42,7 @@ class ChatScreen extends HookConsumerWidget {
       appBar: AppBar(
         elevation: 0,
         leading: IconButton(
+          tooltip: '返回',
           icon: Icon(
             AppIcons.arrowBackIos,
             color: context.colors.text,
@@ -303,43 +304,51 @@ class ChatScreen extends HookConsumerWidget {
                       ),
                     ),
                     SizedBox(width: 12.w),
-                    GestureDetector(
+                    // 纯图标按钮：没有可见文字，必须自己给语义标签，
+                    // 否则读屏只会念「按钮」，用户不知道按下去是发消息还是停生成。
+                    Semantics(
+                      button: true,
+                      label: ref.watch(chatProvider.notifier).isGenerating
+                          ? '停止生成'
+                          : '发送消息',
+                      child: GestureDetector(
                       onTap: () {
-                        final notifier = ref.read(chatProvider.notifier);
-                        // 生成中 → 停止；否则 → 发送
-                        if (notifier.isGenerating) {
-                          notifier.stopGeneration();
-                          return;
-                        }
-                        final val = textController.text;
-                        if (val.trim().isNotEmpty) {
-                          notifier.sendMessage(
-                            val.trim(),
-                            enableRag: isRagEnabled.value,
-                          );
-                          textController.clear();
-                          ref.invalidate(chatSessionsProvider);
-                        }
-                      },
-                      child: Container(
-                        padding: EdgeInsets.all(12.w),
-                        decoration: BoxDecoration(
-                          color: ref.watch(chatProvider.notifier).isGenerating
-                              ? context.colors.error
-                              : context.colors.primary,
-                          shape: BoxShape.circle,
+                          final notifier = ref.read(chatProvider.notifier);
+                          // 生成中 → 停止；否则 → 发送
+                          if (notifier.isGenerating) {
+                            notifier.stopGeneration();
+                            return;
+                          }
+                          final val = textController.text;
+                          if (val.trim().isNotEmpty) {
+                            notifier.sendMessage(
+                              val.trim(),
+                              enableRag: isRagEnabled.value,
+                            );
+                            textController.clear();
+                            ref.invalidate(chatSessionsProvider);
+                          }
+                        },
+                        child: Container(
+                          padding: EdgeInsets.all(12.w),
+                          decoration: BoxDecoration(
+                            color: ref.watch(chatProvider.notifier).isGenerating
+                                ? context.colors.error
+                                : context.colors.primary,
+                            shape: BoxShape.circle,
+                          ),
+                          child: ref.watch(chatProvider.notifier).isGenerating
+                              ? Icon(
+                                  AppIcons.stop,
+                                  color: context.colors.onError,
+                                  size: 20.sp,
+                                )
+                              : Icon(
+                                  AppIcons.send,
+                                  color: context.colors.onPrimary,
+                                  size: 20.sp,
+                                ),
                         ),
-                        child: ref.watch(chatProvider.notifier).isGenerating
-                            ? Icon(
-                                AppIcons.stop,
-                                color: context.colors.onError,
-                                size: 20.sp,
-                              )
-                            : Icon(
-                                AppIcons.send,
-                                color: context.colors.onPrimary,
-                                size: 20.sp,
-                              ),
                       ),
                     ),
                   ],
@@ -427,6 +436,7 @@ class ChatScreen extends HookConsumerWidget {
                               .loadSession(sessionId);
                         },
                         trailing: IconButton(
+                          tooltip: '删除会话',
                           icon: Icon(
                             AppIcons.deleteOutline,
                             size: 18.sp,

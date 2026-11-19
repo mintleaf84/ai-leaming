@@ -35,6 +35,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
       appBar: AppBar(
         elevation: 0,
         leading: IconButton(
+          tooltip: '返回',
           icon: Icon(AppIcons.arrowBack, color: theme.colorScheme.onSurface),
           onPressed: () => context.backOrHome(),
         ),
@@ -48,6 +49,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
         ),
         actions: [
           IconButton(
+            tooltip: '刷新个人信息',
             icon: Icon(AppIcons.refresh, color: context.colors.text),
             onPressed: () =>
                 ref.read(profileControllerProvider.notifier).load(),

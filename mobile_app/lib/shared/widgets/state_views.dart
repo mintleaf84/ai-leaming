@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
+import '../../core/a11y/status_announcer.dart';
 import '../../core/theme/app_colors.dart';
 import '../../core/theme/app_icons.dart';
 
@@ -17,7 +18,10 @@ import '../../core/theme/app_icons.dart';
 /// - 文案由调用方给，本文件不猜业务语义。
 
 /// 加载失败视图：图标 + 标题 + 说明 + 重试（可选一个次要出口）。
-class AppErrorView extends StatelessWidget {
+///
+/// 是 StatefulWidget 只为一件事：**挂载时播报一次**。错误视图是「新插入的
+/// 节点」，读屏的焦点不会自己移过来，用户会以为点了按钮没反应。
+class AppErrorView extends StatefulWidget {
   const AppErrorView({
     super.key,
     required this.message,
@@ -45,9 +49,25 @@ class AppErrorView extends StatelessWidget {
   final VoidCallback? onSecondary;
 
   @override
+  State<AppErrorView> createState() => _AppErrorViewState();
+}
+
+class _AppErrorViewState extends State<AppErrorView> {
+  @override
+  void initState() {
+    super.initState();
+    // 放到帧后：此时 widget 已在树上，`View.maybeOf` 才拿得到。
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) return;
+      announceStatus(context, '${widget.title ?? '加载失败'}。${widget.message}');
+    });
+  }
+
+  @override
   Widget build(BuildContext context) {
     final colors = context.colors;
-    final resolvedTitle = title ?? '加载失败';
+    final resolvedTitle = widget.title ?? '加载失败';
+    final message = widget.message;
 
     return Semantics(
       container: true,
@@ -77,7 +97,7 @@ class AppErrorView extends StatelessWidget {
               ),
               SizedBox(height: 24.h),
               ElevatedButton.icon(
-                onPressed: onRetry,
+                onPressed: widget.onRetry,
                 icon: Icon(AppIcons.refresh, size: 18.sp),
                 label: Text('重试', style: TextStyle(fontSize: 14.sp)),
                 style: ElevatedButton.styleFrom(
@@ -90,7 +110,8 @@ class AppErrorView extends StatelessWidget {
                   ),
                 ),
               ),
-              if (secondaryLabel != null && onSecondary != null) ...[
+              if (widget.secondaryLabel != null &&
+                  widget.onSecondary != null) ...[
                 SizedBox(height: 4.h),
                 ConstrainedBox(
                   constraints: const BoxConstraints(
@@ -98,12 +119,12 @@ class AppErrorView extends StatelessWidget {
                     minWidth: 44,
                   ),
                   child: TextButton(
-                    onPressed: onSecondary,
+                    onPressed: widget.onSecondary,
                     style: TextButton.styleFrom(
                       foregroundColor: colors.textSecondary,
                     ),
                     child: Text(
-                      secondaryLabel!,
+                      widget.secondaryLabel!,
                       style: TextStyle(fontSize: 14.sp),
                     ),
                   ),

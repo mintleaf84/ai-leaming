@@ -47,14 +47,19 @@ vi.mock("fs/promises", () => ({
 }));
 
 // Mock WebDAV (避免真实的网路请求)
+//
+// 用**共享单例**而不是每次 new 一个：测试需要在 createClient 之后拿到同一个 client
+// 去断言/改行为（例如让 putFileContents 抛 403）。
+const webdavClientMock = vi.hoisted(() => ({
+  getDirectoryContents: vi.fn(),
+  putFileContents: vi.fn(),
+  exists: vi.fn(),
+  createDirectory: vi.fn(),
+  deleteFile: vi.fn(),
+}));
+
 vi.mock("webdav", () => ({
-  createClient: vi.fn(() => ({
-    getDirectoryContents: vi.fn().mockResolvedValue([]),
-    putFileContents: vi.fn().mockResolvedValue(true),
-    exists: vi.fn().mockResolvedValue(true),
-    createDirectory: vi.fn().mockResolvedValue(true),
-    deleteFile: vi.fn().mockResolvedValue(true),
-  })),
+  createClient: vi.fn(() => webdavClientMock),
 }));
 
 // Mock Encryption (避免处理真实的加密二进制)
@@ -136,7 +141,15 @@ describe("BackupService", () => {
     expect(config.user).toBe("user1");
   });
 
-  it("should test connection successfully", async () => {
+  beforeEach(() => {
+    webdavClientMock.getDirectoryContents.mockResolvedValue([]);
+    webdavClientMock.putFileContents.mockResolvedValue(true);
+    webdavClientMock.exists.mockResolvedValue(true);
+    webdavClientMock.createDirectory.mockResolvedValue(true);
+    webdavClientMock.deleteFile.mockResolvedValue(true);
+  });
+
+  it("连接测试会真的写一个探针文件并删掉（只读账号要在这一步暴露）", async () => {
     const config = {
       enabled: true,
       url: "http://dav.com",
@@ -144,11 +157,36 @@ describe("BackupService", () => {
       pass: "pass",
       remotePath: "/backups",
       retentionDays: 30,
+      passwordStatus: "ok" as const,
     };
 
-    const success = await BackupService.testConnection(config);
-    expect(success).toBe(true);
+    const result = await BackupService.testConnection(config);
+    expect(result.ok).toBe(true);
     expect(createClient).toHaveBeenCalledWith(config.url, expect.anything());
+
+    expect(webdavClientMock.putFileContents).toHaveBeenCalledTimes(1);
+    expect(webdavClientMock.deleteFile).toHaveBeenCalledTimes(1);
+  });
+
+  it("写探针文件失败时返回 ok=false 与可读原因（而不是笼统的 false）", async () => {
+    webdavClientMock.putFileContents.mockRejectedValueOnce(
+      Object.assign(new Error("Invalid response: 403 Forbidden"), {
+        status: 403,
+      }),
+    );
+
+    const result = await BackupService.testConnection({
+      enabled: true,
+      url: "http://dav.com",
+      user: "user",
+      pass: "pass",
+      remotePath: "/backups",
+      retentionDays: 30,
+      passwordStatus: "ok",
+    });
+
+    expect(result.ok).toBe(false);
+    expect(result.message).toContain("403");
   });
 
   it("should perform backup correctly", async () => {

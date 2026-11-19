@@ -19,20 +19,93 @@ const _allowedFiles = {
   'lib/core/network/dio_client.dart',
 };
 
-/// 把整份源码压成一行再匹配：这样跨行写法（`context\n  .go(...)`）也逃不掉。
-String _flatten(String source) {
-  final withoutBlockComments = source.replaceAll(
-    RegExp(r'/\*.*?\*/', dotAll: true),
-    ' ',
-  );
-  final withoutLineComments = withoutBlockComments
-      .split('\n')
-      .map((line) {
-        final index = line.indexOf('//');
-        return index >= 0 ? line.substring(0, index) : line;
-      })
-      .join(' ');
-  return withoutLineComments.replaceAll(RegExp(r'\s+'), ' ');
+/// 把注释换成空格（**保留字符串里的内容**），再把空白折叠成单个空格。
+///
+/// 为什么不能简单地按 `//` 切：`final url = 'https://example.org'; context.go(...)`
+/// 里 `//` 属于字符串，粗暴切分会把这行后面的真实调用一起删掉、守卫就假绿了。
+/// 这里做一个最小的 Dart 词法扫描：单/双引号、三引号、raw 字符串、行注释、块注释。
+String stripCommentsAndFlatten(String source) {
+  final out = StringBuffer();
+  var i = 0;
+  final n = source.length;
+
+  void skipToEndOfLine() {
+    while (i < n && source[i] != '\n') {
+      out.write(' ');
+      i++;
+    }
+  }
+
+  void skipBlockComment() {
+    // 已经确认 [i] == '/' 且 [i+1] == '*'
+    out.write('  ');
+    i += 2;
+    while (i < n && !(source[i] == '*' && i + 1 < n && source[i + 1] == '/')) {
+      out.write(source[i] == '\n' ? '\n' : ' ');
+      i++;
+    }
+    if (i < n) {
+      out.write('  ');
+      i += 2;
+    }
+  }
+
+  void copyString({required String quote, required bool raw}) {
+    // 已确认当前位置是引号起始
+    out.write(source.substring(i, i + quote.length));
+    i += quote.length;
+    while (i < n) {
+      if (!raw && source[i] == '\\' && i + 1 < n) {
+        out.write(source.substring(i, i + 2));
+        i += 2;
+        continue;
+      }
+      if (source.startsWith(quote, i)) {
+        out.write(quote);
+        i += quote.length;
+        return;
+      }
+      out.write(source[i]);
+      i++;
+    }
+  }
+
+  while (i < n) {
+    final char = source[i];
+
+    // 行注释
+    if (char == '/' && i + 1 < n && source[i + 1] == '/') {
+      skipToEndOfLine();
+      continue;
+    }
+    // 块注释
+    if (char == '/' && i + 1 < n && source[i + 1] == '*') {
+      skipBlockComment();
+      continue;
+    }
+    // raw 字符串：r'...' / r"..."
+    if (char == 'r' &&
+        i + 1 < n &&
+        (source[i + 1] == "'" || source[i + 1] == '"')) {
+      out.write('r');
+      i++;
+      final quoteChar = source[i];
+      final triple = source.startsWith(quoteChar * 3, i);
+      copyString(quote: triple ? quoteChar * 3 : quoteChar, raw: true);
+      continue;
+    }
+    // 普通字符串（含三引号）
+    if (char == "'" || char == '"') {
+      final triple = source.startsWith(char * 3, i);
+      copyString(quote: triple ? char * 3 : char, raw: false);
+      continue;
+    }
+
+    out.write(char);
+    i++;
+  }
+
+  return out.toString().replaceAll(RegExp(r'\s+'), ' ');
 }
 
 /// 直接调用形态：
@@ -46,6 +119,33 @@ final _patterns = <RegExp>[
 ];
 
 void main() {
+  group('注释剥离器本身', () {
+    test('字符串里的 // 不会吞掉同一行后面的真实调用', () {
+      final flat = stripCommentsAndFlatten(
+        "final url = 'https://example.org'; context.go(AppRoutes.dashboard);",
+      );
+      expect(flat, contains('context.go('));
+    });
+
+    test('行注释与块注释会被替换成空白', () {
+      final flat = stripCommentsAndFlatten(
+        "// context.go('/a')\n/* context.pop() */\nvoid f() {}",
+      );
+      expect(flat, isNot(contains('context.go(')));
+      expect(flat, isNot(contains('context.pop(')));
+    });
+
+    test('跨行调用压平后仍能被识别', () {
+      final flat = stripCommentsAndFlatten('context\n  .go(\n  AppRoutes.login);');
+      expect(_patterns.first.hasMatch(flat), isTrue);
+    });
+
+    test('带类型实参的调用也能被识别', () {
+      final flat = stripCommentsAndFlatten('context.push<Object?>(AppRoutes.a);');
+      expect(_patterns.first.hasMatch(flat), isTrue);
+    });
+  });
+
   test('页面层不得直接调用 go_router 的 go/push/pop（走 AppNav）', () {
     final libDir = Directory('lib');
     expect(libDir.existsSync(), isTrue, reason: '测试需在 mobile_app/ 下运行');
@@ -54,10 +154,10 @@ void main() {
 
     for (final entity in libDir.listSync(recursive: true)) {
       if (entity is! File || !entity.path.endsWith('.dart')) continue;
-      final normalized = entity.path.replaceAll(r'\', '/');
+      final normalized = entity.path.replaceAll('\\', '/');
       if (_allowedFiles.contains(normalized)) continue;
 
-      final flat = _flatten(entity.readAsStringSync());
+      final flat = stripCommentsAndFlatten(entity.readAsStringSync());
       for (final pattern in _patterns) {
         final match = pattern.firstMatch(flat);
         if (match != null) {

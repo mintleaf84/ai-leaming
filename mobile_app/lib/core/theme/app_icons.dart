@@ -31,7 +31,12 @@ class AppIcons {
   static const IconData checkCircleOutline = Symbols.check_circle_outline;  // 原 Icons.check_circle_outline
   static const IconData chevronLeft = Symbols.chevron_left;  // 原 Icons.chevron_left
   static const IconData chevronRight = Symbols.chevron_right;  // 原 Icons.chevron_right
-  static const IconData circle = Symbols.circle;  // 原 Icons.circle
+  /// 实心小圆点（单选题"已选中"标记，10sp 白色叠在深色圆底上）。
+  ///
+  /// **刻意不映射到 Symbols**：`Symbols.circle` 是空心环，10sp 下只剩一圈发丝线，
+  /// 在深色圆底上等于看不见（实测墨量只有原图标的 36%）。Material Symbols 里也没有
+  /// 尺寸对得上的实心圆点（`fiber_manual_record` 直径太小），故保留 Material Icons。
+  static const IconData dot = Icons.circle;
   static const IconData cleaningServicesOutlined = Symbols.cleaning_services;  // 原 Icons.cleaning_services_outlined
   static const IconData close = Symbols.close;  // 原 Icons.close
   static const IconData cloudOffOutlined = Symbols.cloud_off;  // 原 Icons.cloud_off_outlined

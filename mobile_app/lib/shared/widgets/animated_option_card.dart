@@ -236,7 +236,7 @@ class _AnimatedOptionCardState extends State<AnimatedOptionCard>
               : null,
         ),
         child: Icon(
-          widget.isMultiSelect ? AppIcons.check : AppIcons.circle,
+          widget.isMultiSelect ? AppIcons.check : AppIcons.dot,
           size: widget.isMultiSelect ? 14.sp : 10.sp,
           color: Colors.white,
         ),

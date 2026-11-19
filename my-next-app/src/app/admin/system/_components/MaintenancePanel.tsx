@@ -68,7 +68,10 @@ export function MaintenancePanel() {
       }
       await queryClient.invalidateQueries({ queryKey: STATUS_KEY });
     } catch (error) {
+      // 客户端三形态：记录后以 toast 降级（与 BackupManager 一致）
+      console.error("数据维护操作失败", error);
       toast.error(error instanceof Error ? error.message : "操作失败");
+      return;
     } finally {
       setBusy(false);
     }

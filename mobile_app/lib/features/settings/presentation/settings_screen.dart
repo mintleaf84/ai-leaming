@@ -9,6 +9,7 @@ import '../../profile/presentation/profile_provider.dart';
 import '../../../core/sync/sync_providers.dart';
 import '../../../core/network/server_config.dart';
 import '../../../shared/widgets/server_address_form.dart';
+import '../../../core/theme/app_icons.dart';
 
 /// 设置页面
 ///
@@ -76,7 +77,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                   children: [
                     IconButton(
                       onPressed: () => context.backOrHome(),
-                      icon: Icon(Icons.arrow_back, color: textColor),
+                      icon: Icon(AppIcons.arrowBack, color: textColor),
                     ),
                     Text('⚙️', style: TextStyle(fontSize: 32.sp)),
                     SizedBox(width: 12.w),
@@ -106,7 +107,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                         _buildTileWithAvatar(textColor, secondaryColor),
                         _buildDivider(borderColor),
                         _buildSettingsTile(
-                          icon: Icons.person_outline,
+                          icon: AppIcons.personOutline,
                           title: '用户名',
                           trailing: Text(
                             profile?.username ?? '未登录',
@@ -127,7 +128,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                       borderColor: borderColor,
                       children: [
                         _buildSettingsTile(
-                          icon: Icons.flag_outlined,
+                          icon: AppIcons.flagOutlined,
                           title: '每日学习目标',
                           trailing: Row(
                             mainAxisSize: MainAxisSize.min,
@@ -141,7 +142,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                               ),
                               SizedBox(width: 4.w),
                               Icon(
-                                Icons.arrow_forward_ios,
+                                AppIcons.arrowForwardIos,
                                 size: 16.sp,
                                 color: secondaryColor.withValues(alpha: 0.7),
                               ),
@@ -153,7 +154,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                         ),
                         _buildDivider(borderColor),
                         _buildSettingsTile(
-                          icon: Icons.view_carousel_outlined,
+                          icon: AppIcons.viewCarouselOutlined,
                           title: '沉浸式复习',
                           trailing: Switch(
                             value: reviewMode == ReviewMode.immersive,
@@ -173,7 +174,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
 
                         _buildDivider(borderColor),
                         _buildSettingsTile(
-                          icon: Icons.dark_mode_outlined,
+                          icon: AppIcons.darkModeOutlined,
                           title: '深色模式',
                           trailing: Switch(
                             value: isDarkMode,
@@ -186,7 +187,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                         ),
                         _buildDivider(borderColor),
                         _buildSettingsTile(
-                          icon: Icons.notifications_outlined,
+                          icon: AppIcons.notificationsOutlined,
                           title: '提醒通知',
                           trailing: Switch(
                             value: notificationEnabled,
@@ -209,7 +210,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                       borderColor: borderColor,
                       children: [
                         _buildSettingsTile(
-                          icon: Icons.cleaning_services_outlined,
+                          icon: AppIcons.cleaningServicesOutlined,
                           title: '清理缓存',
                           trailing: _buildCachedCountTrailing(secondaryColor),
                           textColor: textColor,
@@ -217,10 +218,10 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                         ),
                         _buildDivider(borderColor),
                         _buildSettingsTile(
-                          icon: Icons.delete_outline,
+                          icon: AppIcons.deleteOutline,
                           title: '清空错题本',
                           trailing: Icon(
-                            Icons.arrow_forward_ios,
+                            AppIcons.arrowForwardIos,
                             size: 16.sp,
                             color: secondaryColor.withValues(alpha: 0.7),
                           ),
@@ -229,7 +230,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                         ),
                         _buildDivider(borderColor),
                         _buildSettingsTile(
-                          icon: Icons.cloud_upload_outlined,
+                          icon: AppIcons.cloudUploadOutlined,
                           title: '同步离线记录',
                           trailing: _buildPendingTrailing(secondaryColor),
                           textColor: textColor,
@@ -245,7 +246,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                       borderColor: borderColor,
                       children: [
                         _buildSettingsTile(
-                          icon: Icons.dns_outlined,
+                          icon: AppIcons.dnsOutlined,
                           title: '服务器地址',
                           trailing: serverConfig.isConfigured
                               ? Text(
@@ -283,10 +284,10 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                       borderColor: borderColor,
                       children: [
                         _buildSettingsTile(
-                          icon: Icons.feedback_outlined,
+                          icon: AppIcons.feedbackOutlined,
                           title: '反馈建议',
                           trailing: Icon(
-                            Icons.arrow_forward_ios,
+                            AppIcons.arrowForwardIos,
                             size: 16.sp,
                             color: secondaryColor.withValues(alpha: 0.7),
                           ),
@@ -295,7 +296,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                         ),
                         _buildDivider(borderColor),
                         _buildSettingsTile(
-                          icon: Icons.info_outline,
+                          icon: AppIcons.infoOutline,
                           title: '当前版本',
                           trailing: Text(
                             'v1.2.0',
@@ -483,7 +484,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
               ),
             ),
             Icon(
-              Icons.arrow_forward_ios,
+              AppIcons.arrowForwardIos,
               size: 16.sp,
               color: secondaryColor.withValues(alpha: 0.7),
             ),

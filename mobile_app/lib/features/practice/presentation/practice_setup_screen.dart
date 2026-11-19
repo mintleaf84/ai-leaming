@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import '../../../core/navigation/app_nav.dart';
 import 'practice_provider.dart';
+import '../../../core/theme/app_icons.dart';
 
 /// 练习配置页面（与 Web /practice/setup 功能对齐）
 class PracticeSetupScreen extends ConsumerStatefulWidget {
@@ -36,7 +37,7 @@ class _PracticeSetupScreenState extends ConsumerState<PracticeSetupScreen> {
         backgroundColor: Colors.white,
         elevation: 0,
         leading: IconButton(
-          icon: const Icon(Icons.arrow_back, color: Color(0xFF37352F)),
+          icon: const Icon(AppIcons.arrowBack, color: Color(0xFF37352F)),
           onPressed: () => context.backOrHome(),
         ),
         title: Text(
@@ -58,12 +59,12 @@ class _PracticeSetupScreenState extends ConsumerState<PracticeSetupScreen> {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   // 模式选择
-                  _buildSectionTitle('选择练习模式', Icons.tune),
+                  _buildSectionTitle('选择练习模式', AppIcons.tune),
                   SizedBox(height: 12.h),
                   _buildModeGrid(),
                   SizedBox(height: 28.h),
                   // 题目数量
-                  _buildSectionTitle('题目数量', Icons.format_list_numbered),
+                  _buildSectionTitle('题目数量', AppIcons.formatListNumbered),
                   SizedBox(height: 12.h),
                   _buildLimitSelector(),
                   SizedBox(height: 40.h),

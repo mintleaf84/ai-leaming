@@ -7,6 +7,7 @@ import 'history_provider.dart';
 import '../domain/history_item.dart';
 import '../../../shared/skeletons/skeleton_fakes.dart';
 import '../../../shared/widgets/empty_state.dart';
+import '../../../core/theme/app_icons.dart';
 
 /// 历史记录列表页
 class HistoryScreen extends ConsumerStatefulWidget {
@@ -53,7 +54,7 @@ class _HistoryScreenState extends ConsumerState<HistoryScreen> {
         backgroundColor: Colors.white,
         elevation: 0,
         leading: IconButton(
-          icon: const Icon(Icons.arrow_back, color: Color(0xFF37352F)),
+          icon: const Icon(AppIcons.arrowBack, color: Color(0xFF37352F)),
           onPressed: () => context.backOrHome(),
         ),
         title: Text(
@@ -84,7 +85,7 @@ class _HistoryScreenState extends ConsumerState<HistoryScreen> {
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Icon(Icons.error_outline, size: 48.sp, color: Colors.red),
+            Icon(AppIcons.errorOutline, size: 48.sp, color: Colors.red),
             SizedBox(height: 16.h),
             Text('加载失败', style: TextStyle(fontSize: 18.sp)),
             SizedBox(height: 8.h),
@@ -186,7 +187,7 @@ class _HistoryScreenState extends ConsumerState<HistoryScreen> {
                           ),
                         ],
                       ),
-                      Icon(Icons.chevron_right, size: 20.sp, color: Colors.grey),
+                      Icon(AppIcons.chevronRight, size: 20.sp, color: Colors.grey),
                     ],
                   ),
                   SizedBox(height: 12.h),

@@ -9,6 +9,7 @@ import 'package:mobile_app/shared/skeletons/skeleton_fakes.dart';
 import 'package:mobile_app/features/practice/presentation/widgets/first_principles_panel.dart';
 import '../../../core/navigation/app_nav.dart';
 import 'package:skeletonizer/skeletonizer.dart';
+import 'package:mobile_app/core/theme/app_icons.dart';
 
 class PracticeScreen extends ConsumerStatefulWidget {
   /// 来自配置页的练习参数（可选，默认随机10题）
@@ -112,7 +113,7 @@ class _PracticeScreenState extends ConsumerState<PracticeScreen> {
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          Icon(Icons.error_outline, size: 48.sp, color: Colors.red[300]),
+          Icon(AppIcons.errorOutline, size: 48.sp, color: Colors.red[300]),
           SizedBox(height: 16.h),
           Text(
             '加载失败',
@@ -127,7 +128,7 @@ class _PracticeScreenState extends ConsumerState<PracticeScreen> {
           ElevatedButton.icon(
             onPressed: () =>
                 ref.read(practiceControllerProvider.notifier).createSession(),
-            icon: const Icon(Icons.refresh, size: 18),
+            icon: const Icon(AppIcons.refresh, size: 18),
             label: const Text('重试'),
             style: ElevatedButton.styleFrom(
               backgroundColor: const Color(0xFF135BEC),
@@ -159,7 +160,7 @@ class _PracticeScreenState extends ConsumerState<PracticeScreen> {
       padding: EdgeInsets.symmetric(horizontal: 16.w, vertical: 8.h),
       child: Row(
         children: [
-          Icon(Icons.cloud_off_outlined, size: 16.sp, color: const Color(0xFFB26A00)),
+          Icon(AppIcons.cloudOffOutlined, size: 16.sp, color: const Color(0xFFB26A00)),
           SizedBox(width: 8.w),
           Expanded(
             child: Text(
@@ -191,7 +192,7 @@ class _PracticeScreenState extends ConsumerState<PracticeScreen> {
           SizedBox(height: 24.h),
           TextButton.icon(
             onPressed: () => context.replace(AppRoutes.dashboard),
-            icon: const Icon(Icons.arrow_back, size: 18),
+            icon: const Icon(AppIcons.arrowBack, size: 18),
             label: const Text('返回首页'),
             style: TextButton.styleFrom(
               foregroundColor: const Color(0xFF37352F),
@@ -346,7 +347,7 @@ class _PracticeScreenState extends ConsumerState<PracticeScreen> {
                     }
                   }
                 },
-                icon: const Icon(Icons.close),
+                icon: const Icon(AppIcons.close),
                 color: const Color(0xFF37352F).withValues(alpha: 0.6),
               ),
               Text(
@@ -360,7 +361,7 @@ class _PracticeScreenState extends ConsumerState<PracticeScreen> {
               ),
               IconButton(
                 onPressed: () {},
-                icon: const Icon(Icons.more_horiz),
+                icon: const Icon(AppIcons.moreHoriz),
                 color: const Color(0xFF37352F).withValues(alpha: 0.6),
               ),
             ],
@@ -555,7 +556,7 @@ class _PracticeScreenState extends ConsumerState<PracticeScreen> {
                       );
                     },
                     icon: Icon(
-                      Icons.smart_toy,
+                      AppIcons.smartToy,
                       color: const Color(0xFF135BEC),
                       size: 16.sp,
                     ),
@@ -611,7 +612,7 @@ class _PracticeScreenState extends ConsumerState<PracticeScreen> {
         children: [
           // 上一题
           _buildNavButton(
-            icon: Icons.chevron_left,
+            icon: AppIcons.chevronLeft,
             label: '上一题',
             onTap: state.hasPrev
                 ? () => ref
@@ -629,7 +630,7 @@ class _PracticeScreenState extends ConsumerState<PracticeScreen> {
           ),
           // 下一题
           _buildNavButton(
-            icon: Icons.chevron_right,
+            icon: AppIcons.chevronRight,
             label: '下一题',
             onTap: state.hasNext
                 ? () => ref
@@ -723,7 +724,7 @@ class _PracticeScreenState extends ConsumerState<PracticeScreen> {
                 ],
               ),
               child: Icon(
-                hasNext ? Icons.arrow_forward : Icons.check,
+                hasNext ? AppIcons.arrowForward : AppIcons.check,
                 color: Colors.white,
                 size: 28.sp,
               ),
@@ -782,7 +783,7 @@ class _PracticeScreenState extends ConsumerState<PracticeScreen> {
                       strokeWidth: 2,
                     ),
                   )
-                : Icon(Icons.check, color: Colors.white, size: 28.sp),
+                : Icon(AppIcons.check, color: Colors.white, size: 28.sp),
           ),
           SizedBox(height: 4.h),
           Text(

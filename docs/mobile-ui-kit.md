@@ -298,14 +298,14 @@ tree-shake 证据（`unzip -l` 对比同一路径）：
 
 CI 侧复核（GitHub Actions，`Android` workflow）：
 
-| 分支 / PR                              | Flutter 静态分析与测试                                                                                      | Release APK                |
-| -------------------------------------- | ----------------------------------------------------------------------------------------------------------- | -------------------------- |
-| `feat/mobile-deps-transitions`（#226） | pass 1m29s（run 44520942655）                                                                               | skipping（PR 不打包）      |
-| `feat/mobile-skeletons`（#227）        | pass（run [44521689946](https://github.com/mintleaf84/ai-leaming/actions/runs/44521689946)，手动 dispatch） | success                    |
-| `feat/mobile-icons`（#228）            | pass 1m30s（run 44521620278）                                                                               | success（run 44519273867） |
+| 分支 / PR                              | Flutter 静态分析与测试                      | Release APK                |
+| -------------------------------------- | ------------------------------------------- | -------------------------- |
+| `feat/mobile-deps-transitions`（#226） | pass 1m28s（run 44524212353，合并 main 后） | skipping（PR 不打包）      |
+| `feat/mobile-skeletons`（#227）        | pass 1m34s（run 44524996714）               | success                    |
+| `feat/mobile-icons`（#228）            | pass 1m17s（run 44525594885）               | success（run 44519273867） |
 
-> 注：#227 的 PR 事件没有自动触发 `Android` workflow（同仓 #226/#228 都正常触发，原因未查明），
-> 因此对该分支用 `workflow_dispatch` 补跑，结论与本地一致。
+> 注：#227 首次创建 PR 时没有自动触发 `Android` workflow（#226/#228 均正常），一度用 `workflow_dispatch`
+> 补跑（run 44521689946，analyze + APK 双 success）；后续 push 后 PR 事件已恢复正常，上表为最终一次 run。
 
 执行中修正的三处计划假设：
 
@@ -324,3 +324,20 @@ CI 侧复核（GitHub Actions，`Android` workflow）：
 - **真机观感验收**：六屏 loading→loaded 录屏、Android 15+ 预测性返回手势、iOS 侧滑、图标三处视觉差异
   （见 `docs/mobile-ui-icons-exceptions.md` §1）。
 - **三个 PR 的合并**：#226 → #227 → #228 顺序合并（stacked），需要仓库管理员操作。
+
+### 9.1 与 #225（统一导航模型与页面转场）的冲突处理
+
+main 在本次工作期间合入了 #225，它独立给两个主题加了 `pageTransitionsTheme`：
+Android/Windows/Linux 用 `FadeForwardsPageTransitionsBuilder`，iOS/macOS 用 Cupertino。
+
+合并结论（已在三个分支上解完冲突）：
+
+- **保留 #225 的"显式写死 5 个平台、不依赖 SDK 默认值"**（这点比本计划原方案更细，同意了他们的理由）；
+- **Android 一项改为 `PredictiveBackPageTransitionsBuilder`**（D-1）：它在非返回手势时自身回落 `FadeForwards`，
+  所以既拿到 Android 15+ 的跟手预览，又保留 #225 想要的"推入用 FadeForwards"观感；
+- 我们的 `_pageTransitionsTheme` 静态块随之删除（与 #225 的实现重复）。
+- 5 个 screen 的冲突是"我们换了图标 + 他们换了导航调用"的同位置改动，按**两边都留**解：
+  导航调用取 #225 的 `context.backOrHome()/AppRoutes`，图标取 `AppIcons.*`。
+
+解完冲突后的验证：`flutter analyze` 0 error / 0 warning；`flutter test` **69 passed / 2 skipped**
+（#225 带进来的 `navigation_rules_test.dart` 也全绿）。

@@ -4,6 +4,7 @@ import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import '../../../core/navigation/app_nav.dart';
 import 'auth_provider.dart';
+import '../../../core/theme/app_icons.dart';
 
 class RegisterScreen extends HookConsumerWidget {
   const RegisterScreen({super.key});
@@ -38,7 +39,7 @@ class RegisterScreen extends HookConsumerWidget {
               // Top Back Button (Not Scrollable, Pinned to Top)
               IconButton(
                 onPressed: () => context.backOrHome(fallback: AppRoutes.login),
-                icon: const Icon(Icons.arrow_back),
+                icon: const Icon(AppIcons.arrowBack),
                 style: IconButton.styleFrom(
                   backgroundColor: Colors.grey[100],
                   padding: EdgeInsets.all(12.w),
@@ -84,7 +85,7 @@ class RegisterScreen extends HookConsumerWidget {
                         // Form
                         _buildInputGroup(
                           '用户名',
-                          Icons.person_outline,
+                          AppIcons.personOutline,
                           usernameController,
                           hint: '请输入用户名',
                         ),
@@ -92,7 +93,7 @@ class RegisterScreen extends HookConsumerWidget {
                         SizedBox(height: 20.h),
                         _buildInputGroup(
                           '密码',
-                          Icons.lock_outline,
+                          AppIcons.lockOutline,
                           passwordController,
                           isPassword: true,
                           isVisible: isPasswordVisible.value,
@@ -146,7 +147,7 @@ class RegisterScreen extends HookConsumerWidget {
                                         ),
                                       ),
                                       SizedBox(width: 8.w),
-                                      Icon(Icons.arrow_forward, size: 18.sp),
+                                      Icon(AppIcons.arrowForward, size: 18.sp),
                                     ],
                                   ),
                           ),
@@ -256,7 +257,7 @@ class RegisterScreen extends HookConsumerWidget {
               if (isPassword)
                 IconButton(
                   icon: Icon(
-                    isVisible ? Icons.visibility : Icons.visibility_off,
+                    isVisible ? AppIcons.visibility : AppIcons.visibilityOff,
                     color: Colors.grey[400],
                     size: 20.sp,
                   ),

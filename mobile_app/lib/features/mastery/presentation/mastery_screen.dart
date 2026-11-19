@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import '../../../core/navigation/app_nav.dart';
 import 'mastery_provider.dart';
+import '../../../core/theme/app_icons.dart';
 
 class MasteryScreen extends ConsumerStatefulWidget {
   const MasteryScreen({super.key});
@@ -31,7 +32,7 @@ class _MasteryScreenState extends ConsumerState<MasteryScreen> {
         backgroundColor: Colors.white,
         elevation: 0,
         leading: IconButton(
-          icon: const Icon(Icons.arrow_back, color: Color(0xFF37352F)),
+          icon: const Icon(AppIcons.arrowBack, color: Color(0xFF37352F)),
           onPressed: () => context.backOrHome(),
         ),
         titleTextStyle: TextStyle(
@@ -42,7 +43,7 @@ class _MasteryScreenState extends ConsumerState<MasteryScreen> {
         iconTheme: const IconThemeData(color: Color(0xFF37352F)),
         actions: [
           IconButton(
-            icon: const Icon(Icons.refresh),
+            icon: const Icon(AppIcons.refresh),
             onPressed: () =>
                 ref.read(masteryControllerProvider.notifier).loadTree(),
           ),
@@ -58,7 +59,7 @@ class _MasteryScreenState extends ConsumerState<MasteryScreen> {
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
                   Icon(
-                    Icons.error_outline,
+                    AppIcons.errorOutline,
                     size: 48.sp,
                     color: Colors.red[300],
                   ),
@@ -80,7 +81,7 @@ class _MasteryScreenState extends ConsumerState<MasteryScreen> {
                   ElevatedButton.icon(
                     onPressed: () =>
                         ref.read(masteryControllerProvider.notifier).loadTree(),
-                    icon: const Icon(Icons.refresh, size: 18),
+                    icon: const Icon(AppIcons.refresh, size: 18),
                     label: const Text('重试'),
                     style: ElevatedButton.styleFrom(
                       backgroundColor: const Color(0xFF135BEC),

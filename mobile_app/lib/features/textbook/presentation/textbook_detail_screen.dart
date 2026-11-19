@@ -4,6 +4,7 @@ import 'package:flutter_screenutil/flutter_screenutil.dart';
 import '../../../core/navigation/app_nav.dart';
 import 'textbook_provider.dart';
 import '../domain/textbook.dart';
+import '../../../core/theme/app_icons.dart';
 
 /// 教材详情页（章节列表）
 class TextbookDetailScreen extends ConsumerWidget {
@@ -21,7 +22,7 @@ class TextbookDetailScreen extends ConsumerWidget {
           backgroundColor: Colors.white,
           elevation: 0,
           leading: IconButton(
-            icon: const Icon(Icons.arrow_back, color: Color(0xFF37352F)),
+            icon: const Icon(AppIcons.arrowBack, color: Color(0xFF37352F)),
             onPressed: () => context.backOrHome(),
           ),
         ),
@@ -32,7 +33,7 @@ class TextbookDetailScreen extends ConsumerWidget {
           backgroundColor: Colors.white,
           elevation: 0,
           leading: IconButton(
-            icon: const Icon(Icons.arrow_back, color: Color(0xFF37352F)),
+            icon: const Icon(AppIcons.arrowBack, color: Color(0xFF37352F)),
             onPressed: () => context.backOrHome(),
           ),
         ),
@@ -40,7 +41,7 @@ class TextbookDetailScreen extends ConsumerWidget {
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              Icon(Icons.error_outline,
+              Icon(AppIcons.errorOutline,
                   size: 48.sp, color: Colors.red[300]),
               SizedBox(height: 16.h),
               Text('加载失败',
@@ -57,7 +58,7 @@ class TextbookDetailScreen extends ConsumerWidget {
               backgroundColor: Colors.white,
               elevation: 0,
               leading: IconButton(
-                icon: const Icon(Icons.arrow_back, color: Color(0xFF37352F)),
+                icon: const Icon(AppIcons.arrowBack, color: Color(0xFF37352F)),
                 onPressed: () => context.backOrHome(),
               ),
             ),
@@ -88,7 +89,7 @@ class TextbookDetailScreen extends ConsumerWidget {
         backgroundColor: Colors.white,
         elevation: 0,
         leading: IconButton(
-          icon: const Icon(Icons.arrow_back, color: Color(0xFF37352F)),
+          icon: const Icon(AppIcons.arrowBack, color: Color(0xFF37352F)),
           onPressed: () => context.backOrHome(),
         ),
         title: Text(
@@ -291,7 +292,7 @@ class TextbookDetailScreen extends ConsumerWidget {
                 child: Row(
                   children: [
                     Icon(
-                      Icons.subdirectory_arrow_right,
+                      AppIcons.subdirectoryArrowRight,
                       size: 14.sp,
                       color: const Color(0xFF9B9A97),
                     ),

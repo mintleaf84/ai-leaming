@@ -11,6 +11,7 @@ import '../domain/practice_log.dart';
 import '../../../shared/skeletons/skeleton_fakes.dart';
 import 'dart:math' as math;
 import '../../../shared/widgets/first_principles_section.dart';
+import '../../../core/theme/app_icons.dart';
 
 class HistoryDetailScreen extends ConsumerStatefulWidget {
   final String sessionId;
@@ -46,7 +47,7 @@ class _HistoryDetailScreenState extends ConsumerState<HistoryDetailScreen> {
         backgroundColor: cardColor,
         elevation: 0,
         leading: IconButton(
-          icon: Icon(Icons.arrow_back, color: textColor),
+          icon: Icon(AppIcons.arrowBack, color: textColor),
           onPressed: () => context.backOrHome(),
         ),
         title: Text(
@@ -61,7 +62,7 @@ class _HistoryDetailScreenState extends ConsumerState<HistoryDetailScreen> {
         actions: [
           IconButton(
             icon: Icon(
-              _showWrongOnly ? Icons.filter_alt : Icons.filter_alt_outlined,
+              _showWrongOnly ? AppIcons.filterAlt : AppIcons.filterAltOutlined,
             ),
             color: _showWrongOnly ? const Color(0xFFEB5757) : textColor,
             onPressed: () => setState(() => _showWrongOnly = !_showWrongOnly),
@@ -95,7 +96,7 @@ class _HistoryDetailScreenState extends ConsumerState<HistoryDetailScreen> {
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          Icon(Icons.error_outline, size: 48.sp, color: Colors.red),
+          Icon(AppIcons.errorOutline, size: 48.sp, color: Colors.red),
           SizedBox(height: 16.h),
           Text(
             '加载失败',
@@ -240,7 +241,7 @@ class _HistoryDetailScreenState extends ConsumerState<HistoryDetailScreen> {
                   ),
                   SizedBox(height: 48.h),
                   if (filteredLogs.isNotEmpty) ...[
-                    Icon(Icons.swipe_left, size: 32.sp, color: secondaryColor),
+                    Icon(AppIcons.swipeLeft, size: 32.sp, color: secondaryColor),
                     SizedBox(height: 8.h),
                     Text(
                       '左滑开始复习',
@@ -312,7 +313,7 @@ class _HistoryDetailScreenState extends ConsumerState<HistoryDetailScreen> {
           children: [
             Row(
               children: [
-                Icon(Icons.access_time, size: 16.sp, color: secondaryColor),
+                Icon(AppIcons.accessTime, size: 16.sp, color: secondaryColor),
                 SizedBox(width: 6.w),
                 Text(
                   formattedTime,
@@ -528,12 +529,12 @@ class _HistoryDetailScreenState extends ConsumerState<HistoryDetailScreen> {
                   mainAxisSize: MainAxisSize.min,
                   children: [
                     Icon(
-                      isCorrect ? Icons.check_circle : Icons.cancel,
+                      isCorrect ? AppIcons.checkCircle : AppIcons.cancel,
                       size: 20.sp,
                       color: statusColor,
                     ),
                     SizedBox(width: 4.w),
-                    Icon(Icons.expand_more, size: 20.sp, color: secondaryColor),
+                    Icon(AppIcons.expandMore, size: 20.sp, color: secondaryColor),
                   ],
                 ),
                 iconColor: secondaryColor,
@@ -781,9 +782,9 @@ class _HistoryDetailScreenState extends ConsumerState<HistoryDetailScreen> {
                 ),
               ),
               if (isTargetCorrect)
-                Icon(Icons.check_circle, size: 16.sp, color: optionBorder),
+                Icon(AppIcons.checkCircle, size: 16.sp, color: optionBorder),
               if (isSelected && !log.isCorrect)
-                Icon(Icons.cancel, size: 16.sp, color: optionBorder),
+                Icon(AppIcons.cancel, size: 16.sp, color: optionBorder),
             ],
           ),
         );
@@ -809,7 +810,7 @@ class _HistoryDetailScreenState extends ConsumerState<HistoryDetailScreen> {
           Row(
             children: [
               Icon(
-                Icons.lightbulb_outline,
+                AppIcons.lightbulbOutline,
                 size: 18.sp,
                 color: const Color(0xFFFF9500),
               ),

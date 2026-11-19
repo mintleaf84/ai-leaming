@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import '../../core/utils/haptic_util.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
+import '../../core/theme/app_icons.dart';
 
 /// 带动画效果的选项卡片
 ///
@@ -188,7 +189,7 @@ class _AnimatedOptionCardState extends State<AnimatedOptionCard>
               ? BorderRadius.circular(4.r)
               : null,
         ),
-        child: Icon(Icons.check, size: 14.sp, color: Colors.white),
+        child: Icon(AppIcons.check, size: 14.sp, color: Colors.white),
       );
     } else if (widget.isWrong) {
       bgColor = const Color(0xFFFBE4E4);
@@ -204,7 +205,7 @@ class _AnimatedOptionCardState extends State<AnimatedOptionCard>
               ? BorderRadius.circular(4.r)
               : null,
         ),
-        child: Icon(Icons.close, size: 14.sp, color: Colors.white),
+        child: Icon(AppIcons.close, size: 14.sp, color: Colors.white),
       );
     } else if (widget.showCorrectHint && !widget.isSelected) {
       // 未选中但是正确答案（多选时提示用户漏选）
@@ -220,7 +221,7 @@ class _AnimatedOptionCardState extends State<AnimatedOptionCard>
               ? BorderRadius.circular(4.r)
               : null,
         ),
-        child: Icon(Icons.check, size: 12.sp, color: const Color(0xFF4EA05E)),
+        child: Icon(AppIcons.check, size: 12.sp, color: const Color(0xFF4EA05E)),
       );
     } else if (widget.isSelected) {
       borderColor = const Color(0xFF37352F).withValues(alpha: 0.4);
@@ -235,7 +236,7 @@ class _AnimatedOptionCardState extends State<AnimatedOptionCard>
               : null,
         ),
         child: Icon(
-          widget.isMultiSelect ? Icons.check : Icons.circle,
+          widget.isMultiSelect ? AppIcons.check : AppIcons.circle,
           size: widget.isMultiSelect ? 14.sp : 10.sp,
           color: Colors.white,
         ),

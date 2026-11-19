@@ -4,6 +4,7 @@ import 'package:flutter_screenutil/flutter_screenutil.dart';
 import '../../../core/navigation/app_nav.dart';
 import 'textbook_provider.dart';
 import '../domain/textbook.dart';
+import '../../../core/theme/app_icons.dart';
 
 /// 教材库列表页
 class TextbookListScreen extends ConsumerStatefulWidget {
@@ -32,7 +33,7 @@ class _TextbookListScreenState extends ConsumerState<TextbookListScreen> {
         backgroundColor: Colors.white,
         elevation: 0,
         leading: IconButton(
-          icon: const Icon(Icons.arrow_back, color: Color(0xFF37352F)),
+          icon: const Icon(AppIcons.arrowBack, color: Color(0xFF37352F)),
           onPressed: () => context.backOrHome(),
         ),
         title: Text(
@@ -45,7 +46,7 @@ class _TextbookListScreenState extends ConsumerState<TextbookListScreen> {
         ),
         actions: [
           IconButton(
-            icon: const Icon(Icons.refresh, color: Color(0xFF37352F)),
+            icon: const Icon(AppIcons.refresh, color: Color(0xFF37352F)),
             onPressed: () =>
                 ref.read(textbookListControllerProvider.notifier).load(),
           ),
@@ -66,7 +67,7 @@ class _TextbookListScreenState extends ConsumerState<TextbookListScreen> {
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          Icon(Icons.error_outline, size: 48.sp, color: Colors.red[300]),
+          Icon(AppIcons.errorOutline, size: 48.sp, color: Colors.red[300]),
           SizedBox(height: 16.h),
           Text(
             '加载失败',
@@ -76,7 +77,7 @@ class _TextbookListScreenState extends ConsumerState<TextbookListScreen> {
           ElevatedButton.icon(
             onPressed: () =>
                 ref.read(textbookListControllerProvider.notifier).load(),
-            icon: const Icon(Icons.refresh),
+            icon: const Icon(AppIcons.refresh),
             label: const Text('重试'),
           ),
         ],
@@ -194,7 +195,7 @@ class _TextbookListScreenState extends ConsumerState<TextbookListScreen> {
               ),
             ),
             Icon(
-              Icons.chevron_right,
+              AppIcons.chevronRight,
               size: 20.sp,
               color: const Color(0xFF9B9A97),
             ),

@@ -6,6 +6,7 @@ import '../domain/question.dart';
 import 'questions_provider.dart';
 import '../../../shared/skeletons/skeleton_fakes.dart';
 import 'package:skeletonizer/skeletonizer.dart';
+import '../../../core/theme/app_icons.dart';
 
 class QuestionListScreen extends ConsumerStatefulWidget {
   const QuestionListScreen({super.key});
@@ -60,7 +61,7 @@ class _QuestionListScreenState extends ConsumerState<QuestionListScreen> {
                 children: [
                   IconButton(
                     onPressed: () => context.backOrHome(),
-                    icon: Icon(Icons.arrow_back, color: textColor),
+                    icon: Icon(AppIcons.arrowBack, color: textColor),
                   ),
                   Text('📚', style: TextStyle(fontSize: 28.sp)),
                   SizedBox(width: 8.w),
@@ -97,7 +98,7 @@ class _QuestionListScreenState extends ConsumerState<QuestionListScreen> {
                       fontSize: 14.sp,
                     ),
                     prefixIcon: Icon(
-                      Icons.search,
+                      AppIcons.search,
                       color: secondaryColor,
                       size: 20.sp,
                     ),
@@ -129,7 +130,7 @@ class _QuestionListScreenState extends ConsumerState<QuestionListScreen> {
                           mainAxisAlignment: MainAxisAlignment.center,
                           children: [
                             Icon(
-                              Icons.error_outline,
+                              AppIcons.errorOutline,
                               size: 48.sp,
                               color: const Color(0xFFEB5757),
                             ),
@@ -449,7 +450,7 @@ class _QuestionListScreenState extends ConsumerState<QuestionListScreen> {
                                 Row(
                                   children: [
                                     Icon(
-                                      Icons.lightbulb_outline,
+                                      AppIcons.lightbulbOutline,
                                       color: const Color(0xFF135BEC),
                                       size: 20.sp,
                                     ),

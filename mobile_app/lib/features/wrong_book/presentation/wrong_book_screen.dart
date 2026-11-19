@@ -6,6 +6,7 @@ import 'package:skeletonizer/skeletonizer.dart';
 import 'wrong_book_provider.dart';
 import '../../../shared/skeletons/skeleton_fakes.dart';
 import '../domain/wrong_question.dart';
+import '../../../core/theme/app_icons.dart';
 
 /// 错题本页面
 class WrongBookScreen extends ConsumerStatefulWidget {
@@ -34,7 +35,7 @@ class _WrongBookScreenState extends ConsumerState<WrongBookScreen> {
         backgroundColor: Colors.white,
         elevation: 0,
         leading: IconButton(
-          icon: const Icon(Icons.arrow_back, color: Color(0xFF37352F)),
+          icon: const Icon(AppIcons.arrowBack, color: Color(0xFF37352F)),
           onPressed: () => context.backOrHome(),
         ),
         title: Text(
@@ -48,7 +49,7 @@ class _WrongBookScreenState extends ConsumerState<WrongBookScreen> {
         centerTitle: true,
         actions: [
           IconButton(
-            icon: const Icon(Icons.refresh, color: Color(0xFF37352F)),
+            icon: const Icon(AppIcons.refresh, color: Color(0xFF37352F)),
             onPressed: () =>
                 ref.read(wrongBookControllerProvider.notifier).loadData(),
           ),
@@ -244,7 +245,7 @@ class _WrongBookScreenState extends ConsumerState<WrongBookScreen> {
                 ),
               ),
               child: isSelected
-                  ? Icon(Icons.check, size: 14.sp, color: Colors.white)
+                  ? Icon(AppIcons.check, size: 14.sp, color: Colors.white)
                   : null,
             ),
             // 内容
@@ -476,8 +477,8 @@ class _WrongBookScreenState extends ConsumerState<WrongBookScreen> {
               children: [
                 Icon(
                   count == state.questions.length
-                      ? Icons.check_box
-                      : Icons.check_box_outline_blank,
+                      ? AppIcons.checkBox
+                      : AppIcons.checkBoxOutlineBlank,
                   size: 20.sp,
                   color: const Color(0xFF37352F),
                 ),
@@ -583,7 +584,7 @@ class _WrongBookScreenState extends ConsumerState<WrongBookScreen> {
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          Icon(Icons.error_outline, size: 48.sp, color: Colors.red[300]),
+          Icon(AppIcons.errorOutline, size: 48.sp, color: Colors.red[300]),
           SizedBox(height: 16.h),
           Text(
             '加载失败',
@@ -602,7 +603,7 @@ class _WrongBookScreenState extends ConsumerState<WrongBookScreen> {
           ElevatedButton.icon(
             onPressed: () =>
                 ref.read(wrongBookControllerProvider.notifier).loadData(),
-            icon: const Icon(Icons.refresh, size: 18),
+            icon: const Icon(AppIcons.refresh, size: 18),
             label: const Text('重试'),
             style: ElevatedButton.styleFrom(
               backgroundColor: const Color(0xFF135BEC),

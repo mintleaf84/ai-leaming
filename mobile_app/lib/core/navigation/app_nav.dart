@@ -52,8 +52,19 @@ extension AppNav on BuildContext {
   ///
   /// 返回 `void` 而不是 Future：所有调用点都是 `onTap: () => ...`，
   /// 保留 Future 只会触发 `unawaited_futures` 且没人真的 await。
-  void pushDetail(String location, {Object? extra}) {
-    unawaited(push<Object?>(location, extra: extra));
+  void pushDetail(
+    String location, {
+    Object? extra,
+    VoidCallback? onReturn,
+  }) {
+    final navigation = push<Object?>(location, extra: extra);
+    if (onReturn == null) {
+      unawaited(navigation);
+      return;
+    }
+    // 页面被 push 之后仍然挂载（这是有返回栈的代价）：列表页要在这里失效缓存，
+    // 否则"从详情/练习返回"会看到旧数据
+    unawaited(navigation.whenComplete(onReturn));
   }
 
   /// 替换当前位置（登录成功、练习结束、退出登录）。不留返回栈。

@@ -69,7 +69,11 @@ class _PracticeScreenState extends ConsumerState<PracticeScreen> {
         if (didPop) return;
         final shouldPop = await _showExitDialog();
         if (shouldPop ?? false) {
-          if (context.mounted) context.backOrHome();
+          if (context.mounted) {
+            // 退出前丢掉本场状态：配置页还在栈里，不清空的话"再开一场"会与旧会话竞争
+            ref.read(practiceControllerProvider.notifier).reset();
+            context.backOrHome();
+          }
         }
       },
       child: Scaffold(
@@ -176,7 +180,7 @@ class _PracticeScreenState extends ConsumerState<PracticeScreen> {
           ),
           SizedBox(height: 24.h),
           TextButton.icon(
-            onPressed: () => context.backOrHome(),
+            onPressed: () => context.replace(AppRoutes.dashboard),
             icon: const Icon(Icons.arrow_back, size: 18),
             label: const Text('返回首页'),
             style: TextButton.styleFrom(
@@ -326,7 +330,10 @@ class _PracticeScreenState extends ConsumerState<PracticeScreen> {
                 onPressed: () async {
                   final shouldPop = await _showExitDialog();
                   if (shouldPop ?? false) {
-                    if (context.mounted) context.backOrHome();
+                    if (context.mounted) {
+                      ref.read(practiceControllerProvider.notifier).reset();
+                      context.backOrHome();
+                    }
                   }
                 },
                 icon: const Icon(Icons.close),

@@ -4,25 +4,46 @@
 // 结果「详情页返回」没有上一页可回、`context.pop()` 点了没反应。这类问题不会让
 // 静态分析报错，只会在真机上表现为"按钮不灵"，所以必须靠机制拦住。
 //
-// 规则只有一条：**页面层不许直接调 go_router 的 `context.go` / `context.push` /
-// `context.pop`**，一律走 `core/navigation/app_nav.dart` 里的三种意图
-// （pushDetail / replace / backOrHome）。
+// 规则：**页面层不许直接调 go_router 的 go/push/pop**，一律走
+// `core/navigation/app_nav.dart` 的三种意图（pushDetail / replace / backOrHome）。
 library;
 
 import 'dart:io';
 
 import 'package:flutter_test/flutter_test.dart';
 
-/// 允许直接使用 go_router 的位置：路由表本身与导航封装。
+/// 允许直接使用 go_router 的位置：路由表、导航封装、401 拦截器（基础设施层）。
 const _allowedFiles = {
   'lib/app_router.dart',
   'lib/core/navigation/app_nav.dart',
+  'lib/core/network/dio_client.dart',
 };
 
-/// 直接调用的形态（`context.go(` / `context.push(` / `context.pop(` / `GoRouter.of(...).go(`）
-final _directCall = RegExp(
-  r'context\s*\.\s*(go|push|pushReplacement|pop|canPop)\s*\(',
-);
+/// 把整份源码压成一行再匹配：这样跨行写法（`context\n  .go(...)`）也逃不掉。
+String _flatten(String source) {
+  final withoutBlockComments = source.replaceAll(
+    RegExp(r'/\*.*?\*/', dotAll: true),
+    ' ',
+  );
+  final withoutLineComments = withoutBlockComments
+      .split('\n')
+      .map((line) {
+        final index = line.indexOf('//');
+        return index >= 0 ? line.substring(0, index) : line;
+      })
+      .join(' ');
+  return withoutLineComments.replaceAll(RegExp(r'\s+'), ' ');
+}
+
+/// 直接调用形态：
+/// - `context.go(...)` / `context.push<T>(...)` / `context.pop()` / `context.canPop()`
+/// - `GoRouter.of(context).go(...)`
+/// - `appRouter.go(...)`
+final _patterns = <RegExp>[
+  RegExp(r'\bcontext\s*\.\s*(go|push|pushReplacement|pop|canPop)\s*(<[^>]*>)?\s*\('),
+  RegExp(r'\bGoRouter\s*\.\s*of\s*\([^)]*\)\s*\.\s*(go|push|pop)\s*\('),
+  RegExp(r'\bappRouter\s*\.\s*(go|push|pop)\s*\('),
+];
 
 void main() {
   test('页面层不得直接调用 go_router 的 go/push/pop（走 AppNav）', () {
@@ -36,14 +57,12 @@ void main() {
       final normalized = entity.path.replaceAll(r'\', '/');
       if (_allowedFiles.contains(normalized)) continue;
 
-      final lines = entity.readAsLinesSync();
-      for (var i = 0; i < lines.length; i++) {
-        final line = lines[i];
-        // 注释里提到这些 API 是允许的（本文件与 app_nav 的说明都这么写）
-        final trimmed = line.trimLeft();
-        if (trimmed.startsWith('//') || trimmed.startsWith('///')) continue;
-        if (_directCall.hasMatch(line)) {
-          offenders.add('$normalized:${i + 1}  ${trimmed}');
+      final flat = _flatten(entity.readAsStringSync());
+      for (final pattern in _patterns) {
+        final match = pattern.firstMatch(flat);
+        if (match != null) {
+          final start = match.start < 40 ? 0 : match.start - 40;
+          offenders.add('$normalized  …${flat.substring(start, match.end)}…');
         }
       }
     }

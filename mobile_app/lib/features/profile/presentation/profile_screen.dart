@@ -333,7 +333,12 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
     return Column(
       children: [
         InkWell(
-          onTap: () => context.pushDetail(route),
+          onTap: () => context.pushDetail(
+            route,
+            // 返回后刷新统计：知识卡片页新建的卡不会自己通知 profile，
+            // 不刷新的话"知识卡片 N 张"会一直是进页面时的旧值
+            onReturn: () => ref.read(profileControllerProvider.notifier).load(),
+          ),
           borderRadius: BorderRadius.circular(12.r),
           child: Padding(
             padding: EdgeInsets.symmetric(horizontal: 16.w, vertical: 14.h),

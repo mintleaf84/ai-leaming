@@ -233,14 +233,22 @@ class _PracticeSetupScreenState extends ConsumerState<PracticeSetupScreen> {
     );
   }
 
+  /// 防止"开始练习"被连点：连点会 push 出多条 /practice 路由，
+  /// 每条的 initState 都会 createSession，最后落到哪个会话取决于返回顺序。
+  bool _navigating = false;
+
   void _startPractice() {
+    if (_navigating) return;
+    _navigating = true;
     // 重置练习状态，再跳转到练习页
     ref.read(practiceControllerProvider.notifier).reset();
     // 携带配置参数跳转练习页面（limit 通过路由参数传递）
-    context.pushDetail(AppRoutes.practice, extra: {
-      'mode': _selectedMode,
-      'limit': _selectedLimit,
-    });
+    context.pushDetail(
+      AppRoutes.practice,
+      extra: {'mode': _selectedMode, 'limit': _selectedLimit},
+      // 从练习页回来（或返回键取消）时解锁，否则这个页面就再也点不动了
+      onReturn: () => _navigating = false,
+    );
   }
 }
 

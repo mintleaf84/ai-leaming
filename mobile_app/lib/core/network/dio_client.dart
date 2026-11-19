@@ -5,6 +5,7 @@ import '../constants/api_constants.dart';
 import 'server_config.dart';
 import '../../features/auth/presentation/auth_provider.dart';
 import '../../app_router.dart';
+import '../navigation/app_nav.dart';
 
 final dioProvider = Provider<Dio>((ref) {
   final dio = Dio();
@@ -65,7 +66,7 @@ class AuthInterceptor extends Interceptor {
           .then((token) {
             if (token != null) {
               ref.read(authControllerProvider.notifier).logout().then((_) {
-                appRouter.go('/login');
+                appRouter.go(AppRoutes.login);
               });
             }
             handler.next(err);

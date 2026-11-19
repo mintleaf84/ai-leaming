@@ -37,7 +37,7 @@ class RegisterScreen extends HookConsumerWidget {
             children: [
               // Top Back Button (Not Scrollable, Pinned to Top)
               IconButton(
-                onPressed: () => context.backOrHome(),
+                onPressed: () => context.backOrHome(fallback: AppRoutes.login),
                 icon: const Icon(Icons.arrow_back),
                 style: IconButton.styleFrom(
                   backgroundColor: Colors.grey[100],
@@ -156,7 +156,7 @@ class RegisterScreen extends HookConsumerWidget {
                         SizedBox(height: 20.h),
                         Center(
                           child: GestureDetector(
-                            onTap: () => context.backOrHome(fallback: AppRoutes.login),
+                            onTap: () => context.replace(AppRoutes.login),
                             child: RichText(
                               text: TextSpan(
                                 text: '已有账号？ ',

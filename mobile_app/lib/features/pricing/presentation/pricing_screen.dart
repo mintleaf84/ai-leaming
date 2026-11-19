@@ -26,6 +26,7 @@ class _PricingScreenState extends ConsumerState<PricingScreen> {
     try {
       final dio = ref.read(dioProvider);
       final response = await dio.get('/billing/plans');
+      if (!mounted) return; // 请求返回前已 pop：再 setState 会抛 setState-after-dispose
       if (response.statusCode == 200) {
         final data = response.data as Map<String, dynamic>;
         final plans = data['plans'] as List<dynamic>? ?? [];
@@ -37,6 +38,7 @@ class _PricingScreenState extends ConsumerState<PricingScreen> {
     } catch (e) {
       // 接口失败时展示内置套餐，静默降级并记录日志
       debugPrint('加载套餐失败，降级展示内置套餐: $e');
+      if (!mounted) return;
       setState(() {
         _plans = [];
         _isLoading = false;

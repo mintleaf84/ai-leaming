@@ -235,7 +235,7 @@ class LoginScreen extends HookConsumerWidget {
                     // Register Link
                     Center(
                       child: GestureDetector(
-                        onTap: () => context.pushDetail(AppRoutes.register),
+                        onTap: () => context.replace(AppRoutes.register),
                         child: RichText(
                           text: TextSpan(
                             text: '还没有账号？ ',

@@ -41,7 +41,11 @@ final appRouter = GoRouter(
   initialLocation: '/',
   redirect: (context, state) async {
     final path = state.matchedLocation;
-    const openRoutes = <String>{'/', '/login', '/register'};
+    const openRoutes = <String>{
+      AppRoutes.splash,
+      AppRoutes.login,
+      AppRoutes.register,
+    };
     final isOpen = openRoutes.contains(path);
 
     final token = await const FlutterSecureStorage().read(key: 'jwt_token');
@@ -49,10 +53,10 @@ final appRouter = GoRouter(
         token != null && token.isNotEmpty && !TokenUtil.isExpired(token);
 
     if (!loggedIn && !isOpen) {
-      return '/login';
+      return AppRoutes.login;
     }
-    if (loggedIn && (path == '/login' || path == '/register')) {
-      return '/dashboard';
+    if (loggedIn && (path == AppRoutes.login || path == AppRoutes.register)) {
+      return AppRoutes.dashboard;
     }
     return null;
   },

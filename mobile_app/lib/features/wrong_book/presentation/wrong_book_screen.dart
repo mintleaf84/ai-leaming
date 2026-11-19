@@ -507,6 +507,10 @@ class _WrongBookScreenState extends ConsumerState<WrongBookScreen> {
                         context.pushDetail(
                           AppRoutes.practice,
                           extra: {'sessionId': sessionId, 'mode': 'review'},
+                          // 回来时页面仍挂载，必须手动刷新：练习会改变错题状态与统计
+                          onReturn: () => ref
+                              .read(wrongBookControllerProvider.notifier)
+                              .loadData(),
                         );
                       } else if (mounted) {
                         ScaffoldMessenger.of(context).showSnackBar(

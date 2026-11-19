@@ -13,6 +13,7 @@ import {
 } from "@/server/actions/report";
 import { QuestionCard, AnswerSheet } from "@/components/history";
 import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog";
+import { ErrorState } from "@/components/ui/error-state";
 import { toast } from "sonner";
 import { ExpandedHeader } from "./ExpandedHeader";
 import { QuestionsListHeader } from "./QuestionsListHeader";
@@ -52,7 +53,9 @@ export const HistoryCardExpanded: React.FC<HistoryCardExpandedProps> = ({
   const {
     data: detail,
     isLoading,
+    isError,
     error,
+    refetch,
   } = useQuery({
     queryKey: ["sessionDetail", sessionId],
     queryFn: async () => {
@@ -181,6 +184,20 @@ export const HistoryCardExpanded: React.FC<HistoryCardExpandedProps> = ({
                   <p className="text-sm font-bold text-muted-foreground animate-pulse">
                     正在调取练习存证...
                   </p>
+                </div>
+              ) : isError ? (
+                // 详情请求失败时不能落到"没有题目"的空列表上：那会让用户
+                // 以为这套练习是一道题都没做
+                <div className="flex-1 flex items-center justify-center p-6">
+                  <ErrorState
+                    title="练习记录加载失败"
+                    description={
+                      error instanceof Error && error.message
+                        ? `这段练习记录没加载出来。（${error.message}）`
+                        : "这段练习记录没加载出来。"
+                    }
+                    onRetry={() => void refetch()}
+                  />
                 </div>
               ) : (
                 scrollParent && (

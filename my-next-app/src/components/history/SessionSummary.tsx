@@ -11,6 +11,11 @@ interface SessionSummaryProps {
   totalQuestions: number;
   accuracy: number;
   reviewCount: number;
+  /**
+   * 标题层级：详情页（/history/[id]）用它当页面唯一标题 → "h1"；
+   * 列表页展开卡片里它是区块标题 → "h2"（默认）。一屏只能有一个 h1。
+   */
+  headingLevel?: "h1" | "h2";
 }
 
 /**
@@ -22,7 +27,9 @@ export function SessionSummary({
   totalQuestions,
   accuracy,
   reviewCount,
+  headingLevel = "h2",
 }: SessionSummaryProps) {
+  const Heading = headingLevel;
   // 根据正确率显示不同的鼓励语
   const getMessage = () => {
     if (accuracy >= 80) return "🎉 卓越的表现！";
@@ -37,7 +44,9 @@ export function SessionSummary({
           <div className="text-sm text-muted-foreground mb-1">
             练习总结 · {dayjs.utc(createdAt).local().format("YYYY/M/D")}
           </div>
-          <h1 className="text-3xl font-bold text-foreground">{getMessage()}</h1>
+          <Heading className="text-2xl font-semibold text-foreground md:text-3xl">
+            {getMessage()}
+          </Heading>
         </div>
         <div className="flex gap-4 md:gap-8">
           <div className="text-center">

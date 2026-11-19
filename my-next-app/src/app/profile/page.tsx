@@ -138,7 +138,9 @@ export default function ProfilePage() {
                 {profile.username.charAt(0).toUpperCase()}
               </div>
               <div>
-                <h1 className="text-2xl font-bold">{profile.username}</h1>
+                <h1 className="text-2xl font-semibold tracking-tight md:text-3xl">
+                  {profile.username}
+                </h1>
                 <p className="text-muted-foreground flex items-center gap-2 mt-1">
                   <Calendar className="w-4 h-4" />
                   {formatDate(profile.created_at)} 加入

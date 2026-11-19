@@ -268,6 +268,7 @@ export default function SessionDetailPage({
 
       {/* 练习总结 */}
       <SessionSummary
+        headingLevel="h1"
         createdAt={detail.session.createdAt}
         totalQuestions={detail.session.totalQuestions}
         accuracy={detail.session.accuracy}

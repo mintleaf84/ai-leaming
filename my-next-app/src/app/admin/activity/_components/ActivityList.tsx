@@ -235,7 +235,7 @@ export function ActivityList() {
                   <Button
                     variant="ghost"
                     size="icon"
-                    className="h-8 w-8 self-end opacity-0 group-hover:opacity-100 transition-opacity"
+                    className="h-8 w-8 self-end opacity-100 md:opacity-0 md:group-hover:opacity-100 md:focus-visible:opacity-100 transition-opacity"
                   >
                     <Search className="w-4 h-4" />
                   </Button>

@@ -54,7 +54,7 @@ export default async function CultivationPage() {
 
         {/* 顶部标题 */}
         <div className="text-center mb-12 space-y-4">
-          <h1 className="text-4xl md:text-5xl font-serif font-medium tracking-widest text-transparent bg-clip-text bg-gradient-to-b from-emerald-100 to-emerald-500">
+          <h1 className="text-4xl md:text-5xl font-serif font-semibold tracking-widest text-transparent bg-clip-text bg-gradient-to-b from-emerald-100 to-emerald-500">
             琢玉成仙
           </h1>
           <p className="text-zinc-400 text-sm tracking-widest italic uppercase opacity-60">

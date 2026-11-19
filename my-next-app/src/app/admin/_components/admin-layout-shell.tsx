@@ -115,10 +115,10 @@ export function AdminLayoutShell({ children }: { children: React.ReactNode }) {
       {/* Desktop Sidebar */}
       <aside className="w-64 bg-card border-r border-border flex flex-col hidden md:flex shrink-0">
         <div className="p-6 border-b border-border">
-          <h1 className="text-xl font-bold flex items-center gap-2 text-primary">
+          <div className="text-xl font-semibold flex items-center gap-2 text-primary">
             <Settings className="w-6 h-6" />
             管理后台
-          </h1>
+          </div>
           <p className="text-xs text-muted-foreground mt-1">系统管理中心</p>
         </div>
         {navContent}
@@ -144,10 +144,10 @@ export function AdminLayoutShell({ children }: { children: React.ReactNode }) {
       >
         <div className="p-6 border-b border-border flex justify-between items-center">
           <div>
-            <h1 className="text-xl font-bold flex items-center gap-2 text-primary">
+            <div className="text-xl font-semibold flex items-center gap-2 text-primary">
               <Settings className="w-6 h-6" />
               管理后台
-            </h1>
+            </div>
             <p className="text-xs text-muted-foreground mt-1">系统管理中心</p>
           </div>
           <Button
@@ -176,10 +176,10 @@ export function AdminLayoutShell({ children }: { children: React.ReactNode }) {
           >
             <Menu className="w-6 h-6" />
           </Button>
-          <h1 className="ml-4 font-bold text-lg text-primary flex items-center gap-2">
+          <div className="ml-4 font-semibold text-lg text-primary flex items-center gap-2">
             <Settings className="w-5 h-5" />
             管理后台
-          </h1>
+          </div>
         </header>
 
         <main className="flex-1 overflow-y-auto overflow-x-hidden">

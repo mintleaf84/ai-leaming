@@ -32,7 +32,7 @@ export function AccessLock({ onUnlock, accessCode }: AccessLockProps) {
             <Lock className="w-6 h-6 text-blue-600 dark:text-blue-400" />
           </div>
         </div>
-        <h1 className="text-xl font-bold text-center mb-6 text-foreground">
+        <h1 className="text-2xl font-semibold text-center mb-6 text-foreground">
           管理员登录
         </h1>
         <input

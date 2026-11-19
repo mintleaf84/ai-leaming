@@ -36,6 +36,7 @@ class _WrongBookScreenState extends ConsumerState<WrongBookScreen> {
       appBar: AppBar(
         elevation: 0,
         leading: IconButton(
+          tooltip: '返回',
           icon: Icon(AppIcons.arrowBack, color: context.colors.text),
           onPressed: () => context.backOrHome(),
         ),
@@ -50,6 +51,7 @@ class _WrongBookScreenState extends ConsumerState<WrongBookScreen> {
         centerTitle: true,
         actions: [
           IconButton(
+            tooltip: '刷新错题本',
             icon: Icon(AppIcons.refresh, color: context.colors.text),
             onPressed: () =>
                 ref.read(wrongBookControllerProvider.notifier).loadData(),

@@ -34,6 +34,7 @@ class _TextbookListScreenState extends ConsumerState<TextbookListScreen> {
       appBar: AppBar(
         elevation: 0,
         leading: IconButton(
+          tooltip: '返回',
           icon: Icon(AppIcons.arrowBack, color: context.colors.text),
           onPressed: () => context.backOrHome(),
         ),
@@ -47,6 +48,7 @@ class _TextbookListScreenState extends ConsumerState<TextbookListScreen> {
         ),
         actions: [
           IconButton(
+            tooltip: '刷新教材列表',
             icon: Icon(AppIcons.refresh, color: context.colors.text),
             onPressed: () =>
                 ref.read(textbookListControllerProvider.notifier).load(),

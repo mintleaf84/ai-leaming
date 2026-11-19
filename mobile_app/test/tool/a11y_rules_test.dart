@@ -295,13 +295,13 @@ List<A11yViolation> findTappableContainerViolations(
           ordinals[name] = ordinal + 1;
           final key = '$path#$name#$ordinal';
           if (isTappable) {
-            final hasSemantics = call.contains('Semantics(') ||
-                enclosing.contains('Semantics');
-            // 只看 child 子树：onTap 里弹出的对话框即使有 Text('确认删除')，
-            // 按钮本身在对话框打开前仍然是不可读的。
+            // 只看 child 子树：onTap 里弹出的对话框即使有 Text('确认删除') 或
+            // Semantics(label: ...)，按钮本身在对话框打开前仍然不可读。
             final childAt = call.indexOf('child:');
             final childSlice =
                 childAt >= 0 ? call.substring(childAt) : call;
+            final hasSemantics = childSlice.contains('Semantics(') ||
+                enclosing.contains('Semantics');
             final hasVisibleText = _visibleTextPattern.hasMatch(childSlice);
             if (!hasSemantics && !hasVisibleText) {
               violations.add(
@@ -402,6 +402,16 @@ void main() {
         'lib/x.dart#GestureDetector#0',
         'lib/x.dart#GestureDetector#1',
       ]);
+    });
+
+    test('onTap 里对话框的 Semantics 也不算按钮标签', () {
+      final violations = findTappableContainerViolations(
+        '''GestureDetector(onTap: () { showDialog(builder: (_) => '''
+        '''Semantics(label: '确认删除', child: Container())); }, '''
+        '''child: Container(child: Icon(Icons.delete)))''',
+        'lib/x.dart',
+      );
+      expect(violations, hasLength(1));
     });
 
     test('onTap 里弹出的对话框文字不算按钮标签', () {
@@ -519,7 +529,9 @@ void main() {
         final path = file.path.replaceAll('\\', '/');
         if (path == 'lib/core/a11y/status_announcer.dart') continue;
         final flat = stripCommentsAndFlatten(file.readAsStringSync());
-        if (flat.contains('SemanticsService.announce(')) {
+        // 新 API 与已废弃的 announce 都要拦：只拦旧的，业务代码可以绕过封装
+        if (flat.contains('SemanticsService.announce(') ||
+            flat.contains('SemanticsService.sendAnnouncement(')) {
           offenders.add(path);
         }
       }

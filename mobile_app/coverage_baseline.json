@@ -1,5 +1,5 @@
 {
-  "_comment": "覆盖率门禁基线：由 tool/coverage_gate.dart --update 生成，只升不降。floor 是硬闸，measured 用于检测单文件回退。",
+  "_comment": "覆盖率门禁基线：由 tool/coverage_gate.dart --update 生成，只升不降。floor 是硬闸，measured 用于检测单文件回退；exempt 里的文件跳过「新增文件 <60%」与「单文件回退」，但仍计入分母。",
   "generated_at": "2026-11-19T18:24:00.917335Z",
   "global": {
     "floor": 35.6,
@@ -31,6 +31,12 @@
       "measured": 0.0
     }
   },
+  "exempt": [
+    {
+      "path": "lib/core/theme/app_icons.dart",
+      "reason": "纯图标常量，无行为"
+    }
+  ],
   "files": {
     "lib/app_router.dart": {
       "measured": 0.0

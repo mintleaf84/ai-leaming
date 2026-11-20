@@ -32,6 +32,7 @@
 | §29    | 移动端诊断日志（本地环形缓冲）                  | 计划                          |
 | §30    | 移动端数据备份与换机                            | 计划（P1 换机检查优先）        |
 | §31    | 多设备一致性（服务端重判离线作答）              | 计划                          |
+| §32    | 专项练习（tag / wrong 模式）                    | 计划                          |
 
 > 维护约定：新增段落追加到末尾并在此表登记；状态只有四种——`[已完成]` / `计划` / `[不做]` / `待决策`。
 
@@ -931,11 +932,16 @@ FROM question_srs
 WHERE user_id = 1
 GROUP BY bucket ORDER BY bucket;
 
--- Q2 积压的"题"集中在哪些知识点（决定排序与批量处理）
-SELECT q.knowledge_point, COUNT(*) AS n
+-- Q2 积压集中在哪些标签（questions 表没有 knowledge_point 列，只有 tags JSON 与 dimension）
+SELECT q.tags, COUNT(*) AS n
 FROM question_srs s JOIN questions q ON q.id = s.question_id
 WHERE s.user_id = 1 AND julianday(s.due_date) < julianday('now')
-GROUP BY q.knowledge_point ORDER BY n DESC LIMIT 15;
+GROUP BY q.tags ORDER BY n DESC LIMIT 15;
+-- 若要按单个标签聚合，SQLite 需要 json_each：
+-- SELECT j.value AS tag, COUNT(*) n FROM question_srs s
+--   JOIN questions q ON q.id = s.question_id, json_each(q.tags) j
+--   WHERE s.user_id = 1 AND julianday(s.due_date) < julianday('now')
+--   GROUP BY j.value ORDER BY n DESC LIMIT 15;
 
 -- Q3 从未复习过的（reps=0）占比：这批是"生题"，策略与"复习过的"不同
 SELECT CASE WHEN reps = 0 THEN 'never' ELSE 'reviewed' END AS kind,
@@ -1077,3 +1083,55 @@ FROM recall_card_states WHERE user_id = 1 GROUP BY kind;
 - 不做断点上云（需要服务端新表 + 冲突合并，收益低于成本）
 - 不做设备间实时同步（单人备考场景不需要）
 - 不做"离线作答冲突合并"（服务端按 sessionKey 幂等已足够）
+
+## 32. 专项练习（tag / wrong 模式，计划）
+
+### 32.1 现状：四种模式只实现了一种
+
+| 事实 | 证据 |
+| --- | --- |
+| 路由枚举了 `random / wrong / tag / first-principles` 四种模式 | `src/lib/api/routes/practice.ts:15` |
+| 但非 `random` 一律 400 | `practice.ts:74` `if (mode !== "random") return { error: "Only random mode supported currently via API" }` |
+| 服务层只有 `createRandomSession` | `src/lib/services/practice.ts:188`（`ORDER BY RANDOM() LIMIT n`） |
+| Web 练习页会读 `?mode=` 并传下去 | `use-practice-controller.tsx:86-96` → 传了也被 400，等于无效参数 |
+
+结论：**「按知识点专项练」和「只练错题」在 API 层是关闭的**，而这正是备考最需要的两条。
+
+### 32.2 数据现实（决定实现方式）
+
+| 想按什么筛 | 实际可用字段 | 注意 |
+| --- | --- | --- |
+| 知识点 | `questions.tags`（JSON 数组字符串） | **没有 `knowledge_point` 列**；只能 `tags LIKE '%"<tag>"%'`（2169 行全扫也够快） |
+| 维度 | `questions.dimension`（knowledge/understanding/application） | 可选，先不做 |
+| 错题 | `practice_logs.is_correct = 0` 反查 + `mastered_questions` 排除 | 没有独立错题表（`getWrongQuestions` 就是这么算的，`question-recommend.ts:47`） |
+
+### 32.3 后端（0.5d）
+
+| # | 动作 | 判据 |
+| --- | --- | --- |
+| B1 | 新增 `createTagSession(userId, tag, limit)`：`tags LIKE '%"tag"%'` + 排除 `mastered_questions` + `ORDER BY RANDOM() LIMIT` | 单测：只返回含该 tag 的题；已掌握的题不出现；无匹配时返回空 `questions` 且 `sessionId` 为空（不是 500） |
+| B2 | 新增 `createWrongSession(userId, limit)`：从 `practice_logs.is_correct=0` 取 distinct question_id、排除已掌握、再随机截断 | 单测：只含做错过的题；掌握后不再出现；题量不足时返回全部 |
+| B3 | 路由放行 `tag`/`wrong`（`first-principles` 仍 400，并在错误文案里说明"暂未开放"） | 契约测试：`mode=tag` 缺 `tag` 参数 → 400 且文案可读；`mode=wrong` 正常 200 |
+| B4 | 请求体加可选 `tag` 字段（`z.string().max(50).optional()`） | OpenAPI 快照更新，`contract:check` 绿 |
+
+### 32.4 客户端（1d）
+
+| # | 动作 | 判据 |
+| --- | --- | --- |
+| C1 | `practice_setup_screen` 加模式选择（随机 / 按知识点 / 只练错题）+ 知识点选择器 | widget test：三种模式都能选中并带上参数发起 |
+| C2 | 知识点数据源：优先用 `/knowledge/cards` 返回的 `categories`；为空时回落到「从题库 tags 聚合」（后端加一个轻量 `GET /practice/tags`，只 `SELECT DISTINCT json_each(tags)`） | 无标签时选择器显示「题库还没有标签」且禁用「开始」 |
+| C3 | 首页「今日还需练习 N 题」仍走 random；错题本「开始练习」保持现有 `/wrong-book/practice` 路径不动（已能用） | 不回归 |
+
+### 32.5 判据汇总
+
+1. `mode=tag` + `tag=教育目的` → 返回的题全部含该标签，且不含已掌握
+2. `mode=wrong` → 只返回做错过的题；把某题标记掌握后不再出现
+3. 无匹配（标签拼错/题库无标签）→ 空态文案「这个标签下暂时没有题目」，不是错误页
+4. 移动端三种模式各一条 widget test；`flutter analyze` 0 error/warning；门禁 PASS
+5. 服务端 `npx tsc --noEmit` 0 error；相关 vitest 全绿；OpenAPI 契约不漂移
+
+### 32.6 不做
+
+- 不做 `first-principles` 模式（枚举里留着，明确 400 + 文案说明）
+- 不做"按掌握度加权组卷"（需要掌握度算法先可信；等 §28 的 SRS 治理有数据再说）
+- 不做多标签组合筛选（先用单标签，够用再加）

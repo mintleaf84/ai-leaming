@@ -201,7 +201,6 @@ class _QuestionMaterialCardState extends State<QuestionMaterialCard> {
             fontSize: FontSize(fontSize),
             lineHeight: LineHeight.number(QuestionMaterialCard.lineHeight),
             color: context.colors.text.withValues(alpha: 0.9),
-            fontFamily: 'Noto Serif SC',
           ),
           'p': Style(margin: Margins.only(bottom: 8)),
           'img': Style(width: Width(100, Unit.percent)),
@@ -214,7 +213,6 @@ class _QuestionMaterialCardState extends State<QuestionMaterialCard> {
         fontSize: fontSize.sp,
         height: QuestionMaterialCard.lineHeight,
         color: context.colors.text.withValues(alpha: 0.9),
-        fontFamily: 'Noto Serif SC',
       ),
     );
   }

@@ -36,7 +36,9 @@ export function loadDrafts(sessionId: string): ExamDraftMap {
     return {};
   }
   const drafts: ExamDraftMap = {};
-  for (const [questionId, draft] of Object.entries(parsed as Record<string, unknown>)) {
+  for (const [questionId, draft] of Object.entries(
+    parsed as Record<string, unknown>,
+  )) {
     const id = Number(questionId);
     if (!Number.isFinite(id) || typeof draft !== "object" || draft === null) {
       continue;
@@ -45,12 +47,16 @@ export function loadDrafts(sessionId: string): ExamDraftMap {
     if (record.kind === "choice" && Array.isArray(record.letters)) {
       drafts[id] = {
         kind: "choice",
-        letters: record.letters.filter((item): item is string => typeof item === "string"),
+        letters: record.letters.filter(
+          (item): item is string => typeof item === "string",
+        ),
       };
     } else if (record.kind === "fill" && Array.isArray(record.blanks)) {
       drafts[id] = {
         kind: "fill",
-        blanks: record.blanks.map((item) => (typeof item === "string" ? item : "")),
+        blanks: record.blanks.map((item) =>
+          typeof item === "string" ? item : "",
+        ),
       };
     }
   }
@@ -87,7 +93,10 @@ export function clearDrafts(sessionId: string): void {
  * 原样存一份，刷新/切后台回来仍按同一个 deadline 计时，**不在本地推算**
  * （本地推算会在关标签页再打开、跨设备时彻底错位）。
  */
-export function saveDeadline(sessionId: string, deadlineAt: string | null): void {
+export function saveDeadline(
+  sessionId: string,
+  deadlineAt: string | null,
+): void {
   const store = storage();
   if (!store) return;
   try {

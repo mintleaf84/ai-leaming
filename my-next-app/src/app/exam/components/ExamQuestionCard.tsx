@@ -264,7 +264,10 @@ export function ExamQuestionCard({
                       {option}
                     </span>
                     {isMulti && selected && (
-                      <Check className="h-4 w-4 shrink-0 text-primary" aria-hidden />
+                      <Check
+                        className="h-4 w-4 shrink-0 text-primary"
+                        aria-hidden
+                      />
                     )}
                   </button>
                   <button

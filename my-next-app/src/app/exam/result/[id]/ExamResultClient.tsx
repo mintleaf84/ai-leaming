@@ -136,8 +136,12 @@ export default function ExamResultClient({ sessionId }: ExamResultClientProps) {
 
   const { paper, result, questions, answers } = detail;
   const percent = Math.round(result.score * 100);
-  const wrongCount = result.perQuestion.filter((item) => !item.isCorrect).length;
-  const questionById = new Map(questions.map((question) => [question.id, question]));
+  const wrongCount = result.perQuestion.filter(
+    (item) => !item.isCorrect,
+  ).length;
+  const questionById = new Map(
+    questions.map((question) => [question.id, question]),
+  );
   const answerById = new Map(
     (answers ?? []).map((entry) => [entry.questionId, entry.userAnswer ?? ""]),
   );
@@ -173,7 +177,9 @@ export default function ExamResultClient({ sessionId }: ExamResultClientProps) {
               >
                 {percent}
               </span>
-              <span className="text-lg font-medium text-muted-foreground">分</span>
+              <span className="text-lg font-medium text-muted-foreground">
+                分
+              </span>
             </div>
             <p className="mt-2 text-sm text-muted-foreground">
               答对 {result.correctCount} / {result.totalQuestions} 题 · 正确率{" "}
@@ -215,7 +221,11 @@ export default function ExamResultClient({ sessionId }: ExamResultClientProps) {
             </Link>
           </Button>
         )}
-        <Button onClick={() => void retryExam()} disabled={retrying} className="gap-1.5">
+        <Button
+          onClick={() => void retryExam()}
+          disabled={retrying}
+          className="gap-1.5"
+        >
           {retrying ? (
             <Loader2 className="h-4 w-4 animate-spin" aria-hidden />
           ) : (
@@ -268,7 +278,9 @@ export default function ExamResultClient({ sessionId }: ExamResultClientProps) {
 
                   <div className="min-w-0 flex-1">
                     <div className="flex flex-wrap items-center gap-2 text-[11px] text-muted-foreground">
-                      <span className="font-mono tabular-nums">第 {index + 1} 题</span>
+                      <span className="font-mono tabular-nums">
+                        第 {index + 1} 题
+                      </span>
                       <span
                         className={cn(
                           "rounded px-1.5 py-0.5 font-semibold",

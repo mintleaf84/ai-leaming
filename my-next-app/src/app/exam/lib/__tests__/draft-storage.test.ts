@@ -36,7 +36,10 @@ describe("作答草稿的本地暂存", () => {
 
     window.sessionStorage.setItem(
       `exam-draft:${SESSION}`,
-      JSON.stringify({ 1: { kind: "unknown" }, 2: { kind: "choice", letters: "x" } }),
+      JSON.stringify({
+        1: { kind: "unknown" },
+        2: { kind: "choice", letters: "x" },
+      }),
     );
     expect(loadDrafts(SESSION)).toEqual({});
   });

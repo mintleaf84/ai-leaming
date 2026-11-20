@@ -42,7 +42,11 @@ import {
   sql,
 } from "drizzle-orm";
 import type { SQL } from "drizzle-orm";
-import { ConflictError, NotFoundError, ValidationError } from "@/lib/errors/app-error";
+import {
+  ConflictError,
+  NotFoundError,
+  ValidationError,
+} from "@/lib/errors/app-error";
 import { withTransaction, type Executor } from "@/lib/db/executor";
 import { checkAnswerCorrectness } from "@/lib/services/answer-check";
 import { mapQuestion } from "@/lib/services/practice";
@@ -263,7 +267,10 @@ export interface ExamAttemptDetail {
 
 // --- 纯函数辅助 ---
 
-function toQuestionPayload(q: Question, hideAnswer: boolean): ExamQuestionPayload {
+function toQuestionPayload(
+  q: Question,
+  hideAnswer: boolean,
+): ExamQuestionPayload {
   return {
     id: q.id,
     content: q.content,
@@ -392,7 +399,8 @@ function resolveTypes(types?: string[]): ObjectiveQuestionType[] {
 function anyTagCondition(tags?: string[]): SQL | undefined {
   if (!tags || tags.length === 0) return undefined;
   const conditions = tags.map(
-    (tag) => sql`EXISTS (SELECT 1 FROM json_each(${questions.tags}) WHERE value = ${tag})`,
+    (tag) =>
+      sql`EXISTS (SELECT 1 FROM json_each(${questions.tags}) WHERE value = ${tag})`,
   );
   return or(...conditions);
 }
@@ -595,7 +603,9 @@ async function resultFromLogs(
       explanation: q.explanation ?? "",
     };
   });
-  const durations = paperQuestions.map((q) => Number(byQuestion.get(q.id)?.duration_ms ?? 0));
+  const durations = paperQuestions.map((q) =>
+    Number(byQuestion.get(q.id)?.duration_ms ?? 0),
+  );
   const submittedAtMs = submittedAt ? Date.parse(submittedAt) : Date.now();
   return summarize(graded, durations, submittedAtMs, deadlineAt, duplicate);
 }
@@ -694,7 +704,10 @@ export const examService = {
   async createPaper(
     userId: number,
     input: CreatePaperInput,
-  ): Promise<{ paper: ExamPaperSummary; items: Array<{ position: number; questionId: number }> }> {
+  ): Promise<{
+    paper: ExamPaperSummary;
+    items: Array<{ position: number; questionId: number }>;
+  }> {
     const title = (input.title ?? "").trim();
     if (!title) {
       throw new ValidationError("title 不能为空", {
@@ -770,7 +783,11 @@ export const examService = {
     if (!row) throw new ExamPaperNotFoundError(paperId);
 
     return {
-      paper: toPaperSummary(row, { attemptCount: 0, bestScore: null, lastAttemptAt: null }),
+      paper: toPaperSummary(row, {
+        attemptCount: 0,
+        bestScore: null,
+        lastAttemptAt: null,
+      }),
       items: questionIds.map((questionId, index) => ({
         position: index + 1,
         questionId,
@@ -824,7 +841,10 @@ export const examService = {
   },
 
   /** 删除试卷（§2：已有作答返回 409，先保留历史） */
-  async deletePaper(userId: number, paperId: number): Promise<{ deleted: true }> {
+  async deletePaper(
+    userId: number,
+    paperId: number,
+  ): Promise<{ deleted: true }> {
     const row = await loadPaperRow(userId, paperId);
     if (!row) throw new ExamPaperNotFoundError(paperId);
 
@@ -897,9 +917,7 @@ export const examService = {
         : 0;
 
     // 所有段共享的候选条件
-    const baseConditions: SQL[] = [
-      inArray(questions.type, types) as SQL,
-    ];
+    const baseConditions: SQL[] = [inArray(questions.type, types) as SQL];
     const tagCondition = anyTagCondition(tags);
     if (tagCondition) baseConditions.push(tagCondition);
     if (dimensions && dimensions.length > 0) {
@@ -1106,7 +1124,11 @@ export const examService = {
       .limit(1);
 
     // 不存在 / 不属于当前用户 / 不是试卷作答：一律 404
-    if (!session || session.paper_id === null || session.paper_id === undefined) {
+    if (
+      !session ||
+      session.paper_id === null ||
+      session.paper_id === undefined
+    ) {
       throw new ExamAttemptNotFoundError(sessionId);
     }
 
@@ -1144,7 +1166,10 @@ export const examService = {
       const raw = answerByQuestion.get(q.id);
       const userAnswer = raw?.userAnswer ?? "";
       const skipped = userAnswer.trim() === "";
-      const durationMs = Math.max(0, Math.floor(Number(raw?.durationMs ?? 0)) || 0);
+      const durationMs = Math.max(
+        0,
+        Math.floor(Number(raw?.durationMs ?? 0)) || 0,
+      );
       const isCorrect = skipped
         ? false
         : checkAnswerCorrectness(

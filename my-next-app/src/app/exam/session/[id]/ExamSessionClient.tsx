@@ -67,7 +67,9 @@ interface ExamSessionClientProps {
  * 答案只在交卷时一次性提交，客户端不做判分 —— 判分的唯一实现在服务端
  * `checkAnswerCorrectness`，客户端再判一次只会多一套会漂移的规则。
  */
-export default function ExamSessionClient({ sessionId }: ExamSessionClientProps) {
+export default function ExamSessionClient({
+  sessionId,
+}: ExamSessionClientProps) {
   const router = useRouter();
   const {
     data: attempt,
@@ -83,7 +85,9 @@ export default function ExamSessionClient({ sessionId }: ExamSessionClientProps)
   });
 
   // 草稿只存在本机（见 draft-storage 的注释）：首帧就能恢复，不必等接口
-  const [drafts, setDrafts] = useState<ExamDraftMap>(() => loadDrafts(sessionId));
+  const [drafts, setDrafts] = useState<ExamDraftMap>(() =>
+    loadDrafts(sessionId),
+  );
   const [index, setIndex] = useState(0);
   const [submitting, setSubmitting] = useState(false);
   const [submitted, setSubmitted] = useState(false);
@@ -99,7 +103,9 @@ export default function ExamSessionClient({ sessionId }: ExamSessionClientProps)
   const stemRef = useRef<HTMLHeadingElement | null>(null);
   const [gate] = useState(createSubmitGate);
   // 刷新后 deadline 可能在本地缓存里（见 draft-storage.saveDeadline 的注释）
-  const [cachedDeadline] = useState<string | null>(() => loadDeadline(sessionId));
+  const [cachedDeadline] = useState<string | null>(() =>
+    loadDeadline(sessionId),
+  );
 
   const questions = useMemo(() => attempt?.questions ?? [], [attempt]);
   const current = questions[index];
@@ -277,7 +283,8 @@ export default function ExamSessionClient({ sessionId }: ExamSessionClientProps)
         <ErrorState
           title="作答页没加载出来"
           description={
-            error?.message ?? (attempt && !current ? "这份试卷里没有题目。" : undefined)
+            error?.message ??
+            (attempt && !current ? "这份试卷里没有题目。" : undefined)
           }
           onRetry={retry}
         />
@@ -285,7 +292,8 @@ export default function ExamSessionClient({ sessionId }: ExamSessionClientProps)
     );
   }
 
-  const confirmMessage = submitConfirmMessage(unanswered, questions.length) ?? "";
+  const confirmMessage =
+    submitConfirmMessage(unanswered, questions.length) ?? "";
 
   return (
     <div className="min-h-dvh bg-background pb-28 md:pb-10">
@@ -326,7 +334,9 @@ export default function ExamSessionClient({ sessionId }: ExamSessionClientProps)
                 className="h-full rounded-full bg-primary"
                 style={{
                   width: `${
-                    questions.length > 0 ? (answered / questions.length) * 100 : 0
+                    questions.length > 0
+                      ? (answered / questions.length) * 100
+                      : 0
                   }%`,
                 }}
               />
@@ -386,7 +396,9 @@ export default function ExamSessionClient({ sessionId }: ExamSessionClientProps)
           <aside className="hidden lg:block">
             <div className="sticky top-28 rounded-xl border border-border bg-card p-4">
               <div className="mb-3 flex items-center justify-between">
-                <h2 className="text-sm font-semibold text-foreground">答题卡</h2>
+                <h2 className="text-sm font-semibold text-foreground">
+                  答题卡
+                </h2>
                 <span className="text-xs tabular-nums text-muted-foreground">
                   {answered}/{questions.length}
                 </span>
@@ -433,7 +445,8 @@ export default function ExamSessionClient({ sessionId }: ExamSessionClientProps)
               <SheetHeader>
                 <SheetTitle>答题卡</SheetTitle>
                 <SheetDescription>
-                  已答 {answered} 题，未答 {unanswered} 题。点题号可以直接跳过去。
+                  已答 {answered} 题，未答 {unanswered}{" "}
+                  题。点题号可以直接跳过去。
                 </SheetDescription>
               </SheetHeader>
               <div className="mt-4">
@@ -458,7 +471,11 @@ export default function ExamSessionClient({ sessionId }: ExamSessionClientProps)
               交卷
             </Button>
           ) : (
-            <Button size="sm" className="flex-1" onClick={() => goTo(index + 1)}>
+            <Button
+              size="sm"
+              className="flex-1"
+              onClick={() => goTo(index + 1)}
+            >
               下一题
             </Button>
           )}

@@ -85,7 +85,9 @@ describe("作答页", () => {
     vi.spyOn(globalThis, "fetch").mockImplementation(async (input, init) => {
       const url = String(input);
       if (url.includes("/submit")) {
-        submitCalls.push(JSON.parse(String(init?.body ?? "{}")) as CapturedSubmit);
+        submitCalls.push(
+          JSON.parse(String(init?.body ?? "{}")) as CapturedSubmit,
+        );
         return jsonResponse(SUBMIT_RESULT);
       }
       if (url.includes("/api/exam/attempts/")) {
@@ -125,7 +127,9 @@ describe("作答页", () => {
     // 下一页：第二个「下一题」是移动端底栏的，桌面端在前
     fireEvent.click(screen.getAllByRole("button", { name: "下一题" })[0]);
     await waitFor(() =>
-      expect(screen.getByText("「教学相长」出自哪部典籍？")).toBeInTheDocument(),
+      expect(
+        screen.getByText("「教学相长」出自哪部典籍？"),
+      ).toBeInTheDocument(),
     );
 
     // 还有 1 题没作答 → 必须先确认

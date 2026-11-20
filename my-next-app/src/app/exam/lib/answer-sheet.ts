@@ -9,8 +9,7 @@ import type { ExamQuestion, SubmitAnswerInput } from "./types";
 
 /** 一道题的作答草稿 */
 export type ExamDraft =
-  | { kind: "choice"; letters: string[] }
-  | { kind: "fill"; blanks: string[] };
+  { kind: "choice"; letters: string[] } | { kind: "fill"; blanks: string[] };
 
 export type ExamDraftMap = Record<number, ExamDraft | undefined>;
 

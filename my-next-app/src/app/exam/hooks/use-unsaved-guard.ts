@@ -21,7 +21,10 @@ interface UnsavedGuardOptions {
  * 已知边界：浏览器"后退"键不会触发 click，只能靠 `beforeunload` 之外的
  * popstate 处理——那需要往历史里塞哑条目，代价比收益大，这里刻意不做。
  */
-export function useUnsavedGuard({ active, onBlocked }: UnsavedGuardOptions): void {
+export function useUnsavedGuard({
+  active,
+  onBlocked,
+}: UnsavedGuardOptions): void {
   const onBlockedRef = useRef(onBlocked);
 
   useEffect(() => {

@@ -43,7 +43,10 @@ export function createSubmitGate(): SubmitGate {
 
 /** 交卷用的稳定标识：同一份作答重试时不变（`crypto.randomUUID` 不可用时退化为时间戳） */
 export function createClientKey(): string {
-  if (typeof crypto !== "undefined" && typeof crypto.randomUUID === "function") {
+  if (
+    typeof crypto !== "undefined" &&
+    typeof crypto.randomUUID === "function"
+  ) {
     return crypto.randomUUID();
   }
   return `exam-${Date.now()}-${Math.random().toString(36).slice(2, 10)}`;

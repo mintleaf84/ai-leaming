@@ -138,7 +138,10 @@ export function ManualPaperDialog({
       setError("至少选 1 道题。");
       return;
     }
-    if (timed && (!Number.isFinite(duration) || duration < 1 || duration > 300)) {
+    if (
+      timed &&
+      (!Number.isFinite(duration) || duration < 1 || duration > 300)
+    ) {
       setError("限时时长请在 1～300 分钟之间。");
       return;
     }
@@ -187,7 +190,10 @@ export function ManualPaperDialog({
         <div className="border-b border-border px-5 py-3">
           <div className="grid gap-3 sm:grid-cols-[minmax(0,1fr)_auto] sm:items-end">
             <div className="space-y-1.5">
-              <Label htmlFor="manual-title" className="text-xs text-muted-foreground">
+              <Label
+                htmlFor="manual-title"
+                className="text-xs text-muted-foreground"
+              >
                 试卷名称
               </Label>
               <Input
@@ -225,7 +231,9 @@ export function ManualPaperDialog({
                     min={1}
                     max={300}
                     value={Number.isFinite(duration) ? duration : ""}
-                    onChange={(event) => setDuration(Number(event.target.value))}
+                    onChange={(event) =>
+                      setDuration(Number(event.target.value))
+                    }
                     aria-label="限时分钟数"
                     className="h-9 w-20"
                   />
@@ -270,7 +278,10 @@ export function ManualPaperDialog({
                 setPage(1);
               }}
             >
-              <SelectTrigger className="h-8 w-32 text-xs" aria-label="按题型筛选">
+              <SelectTrigger
+                className="h-8 w-32 text-xs"
+                aria-label="按题型筛选"
+              >
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
@@ -282,7 +293,8 @@ export function ManualPaperDialog({
               </SelectContent>
             </Select>
             <span className="text-xs text-muted-foreground">
-              已选 <strong className="text-foreground">{selected.size}</strong> 题
+              已选 <strong className="text-foreground">{selected.size}</strong>{" "}
+              题
             </span>
           </div>
 
@@ -334,7 +346,9 @@ export function ManualPaperDialog({
           ) : items.length === 0 ? (
             <div className="flex flex-col items-center justify-center py-14 text-center text-sm text-muted-foreground">
               <BookOpen className="mb-3 h-8 w-8 opacity-40" aria-hidden />
-              {query.trim() ? "没有匹配的题目，换个关键词试试。" : "题库里还没有题目。"}
+              {query.trim()
+                ? "没有匹配的题目，换个关键词试试。"
+                : "题库里还没有题目。"}
             </div>
           ) : (
             <ul className="space-y-1">

@@ -13,7 +13,10 @@ interface AnswerSheetProps {
 const LEGEND = [
   { label: "当前", className: "ring-2 ring-primary bg-card text-primary" },
   { label: "已答", className: "bg-primary text-primary-foreground" },
-  { label: "未答", className: "border border-border bg-card text-muted-foreground" },
+  {
+    label: "未答",
+    className: "border border-border bg-card text-muted-foreground",
+  },
 ];
 
 /**
@@ -52,7 +55,10 @@ export function AnswerSheet({ cells, onJump, className }: AnswerSheetProps) {
       <div className="flex flex-wrap items-center gap-x-4 gap-y-1.5 text-xs text-muted-foreground">
         {LEGEND.map((item) => (
           <span key={item.label} className="inline-flex items-center gap-1.5">
-            <span aria-hidden className={cn("h-3 w-3 rounded-sm", item.className)} />
+            <span
+              aria-hidden
+              className={cn("h-3 w-3 rounded-sm", item.className)}
+            />
             {item.label}
           </span>
         ))}

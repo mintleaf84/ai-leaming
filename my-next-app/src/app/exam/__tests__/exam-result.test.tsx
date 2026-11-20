@@ -80,7 +80,9 @@ describe("成绩单", () => {
   });
 
   it("渲染得分、正确率、用时与逐题解析", async () => {
-    vi.spyOn(globalThis, "fetch").mockResolvedValue(jsonResponse(RESULT_DETAIL));
+    vi.spyOn(globalThis, "fetch").mockResolvedValue(
+      jsonResponse(RESULT_DETAIL),
+    );
 
     render(
       <QueryProvider>
@@ -107,9 +109,7 @@ describe("成绩单", () => {
     expect(
       screen.getByRole("link", { name: /错题重练（1 题）/ }),
     ).toBeInTheDocument();
-    expect(
-      screen.getByText(/已自动加入错题本/),
-    ).toBeInTheDocument();
+    expect(screen.getByText(/已自动加入错题本/)).toBeInTheDocument();
   });
 
   it("还没交卷时不编造成绩，只给出回去继续作答的路", async () => {

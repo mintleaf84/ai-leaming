@@ -79,16 +79,16 @@ async function request<T>(path: string, init?: RequestInit): Promise<T> {
     });
   } catch (error) {
     // 转换重抛：网络层失败要变成用户能读懂的文案，调用方只处理一种错误类型
-    throw new ExamRequestError(
-      "网络连接失败，请检查网络后重试",
-      0,
-      error,
-    );
+    throw new ExamRequestError("网络连接失败，请检查网络后重试", 0, error);
   }
 
   if (!response.ok) {
     const body = (await response.json().catch(() => null)) as unknown;
-    throw new ExamRequestError(messageFromBody(body, response.status), response.status, body);
+    throw new ExamRequestError(
+      messageFromBody(body, response.status),
+      response.status,
+      body,
+    );
   }
 
   const text = await response.text();
@@ -96,7 +96,11 @@ async function request<T>(path: string, init?: RequestInit): Promise<T> {
   try {
     return JSON.parse(text) as T;
   } catch (error) {
-    throw new ExamRequestError("服务返回的内容无法解析，请稍后重试", response.status, error);
+    throw new ExamRequestError(
+      "服务返回的内容无法解析，请稍后重试",
+      response.status,
+      error,
+    );
   }
 }
 
@@ -113,7 +117,8 @@ function normalizeQuestion(input: unknown): ExamQuestion {
     answer: typeof raw.answer === "string" ? raw.answer : null,
     explanation: typeof raw.explanation === "string" ? raw.explanation : null,
     material: typeof raw.material === "string" ? raw.material : null,
-    material_html: typeof raw.material_html === "string" ? raw.material_html : null,
+    material_html:
+      typeof raw.material_html === "string" ? raw.material_html : null,
   };
 }
 
@@ -121,7 +126,8 @@ function normalizePaper(input: unknown): ExamPaper {
   const raw = isRecord(input) ? input : {};
   return {
     id: toNumberOr(raw.id, 0),
-    title: typeof raw.title === "string" && raw.title ? raw.title : "未命名试卷",
+    title:
+      typeof raw.title === "string" && raw.title ? raw.title : "未命名试卷",
     kind: raw.kind === "timed" ? "timed" : "fixed",
     durationMinutes: toOptionalNumber(raw.durationMinutes),
     source: raw.source === "auto" ? "auto" : "manual",
@@ -156,14 +162,16 @@ function normalizeResult(input: unknown): ExamResult | null {
     overtimeMs: toNumberOr(input.overtimeMs, 0),
     overtime: input.overtime === true,
     duplicate: input.duplicate === true,
-    perQuestion: perQuestion.filter(isRecord).map((entry): ExamPerQuestionResult => ({
-      questionId: toNumberOr(entry.questionId, 0),
-      isCorrect: entry.isCorrect === true,
-      correctAnswer:
-        typeof entry.correctAnswer === "string" ? entry.correctAnswer : null,
-      explanation:
-        typeof entry.explanation === "string" ? entry.explanation : null,
-    })),
+    perQuestion: perQuestion
+      .filter(isRecord)
+      .map((entry): ExamPerQuestionResult => ({
+        questionId: toNumberOr(entry.questionId, 0),
+        isCorrect: entry.isCorrect === true,
+        correctAnswer:
+          typeof entry.correctAnswer === "string" ? entry.correctAnswer : null,
+        explanation:
+          typeof entry.explanation === "string" ? entry.explanation : null,
+      })),
   };
 }
 
@@ -214,7 +222,9 @@ export async function fetchPaperList(params: {
   return { items: items.map(normalizePaper), total };
 }
 
-export async function fetchPaperDetail(paperId: number): Promise<ExamPaperDetail> {
+export async function fetchPaperDetail(
+  paperId: number,
+): Promise<ExamPaperDetail> {
   const body = await request<unknown>(`/papers/${paperId}`);
   const raw = isRecord(body) ? body : {};
   const itemsRaw = Array.isArray(raw.items) ? raw.items : [];
@@ -244,7 +254,9 @@ export async function createPaper(input: CreatePaperInput): Promise<ExamPaper> {
   return readPaper(body);
 }
 
-export async function generatePaper(input: GeneratePaperInput): Promise<ExamPaper> {
+export async function generatePaper(
+  input: GeneratePaperInput,
+): Promise<ExamPaper> {
   const body = await request<unknown>("/papers/generate", {
     method: "POST",
     body: JSON.stringify(input),
@@ -270,7 +282,9 @@ export async function startAttempt(paperId: number): Promise<ExamAttemptStart> {
   };
 }
 
-export async function fetchAttempt(sessionId: string): Promise<ExamAttemptDetail> {
+export async function fetchAttempt(
+  sessionId: string,
+): Promise<ExamAttemptDetail> {
   const body = await request<unknown>(`/attempts/${sessionId}`);
   const raw = isRecord(body) ? body : {};
   const questions = Array.isArray(raw.questions) ? raw.questions : [];
@@ -291,9 +305,15 @@ export async function submitAttempt(
     method: "POST",
     body: JSON.stringify(payload),
   });
-  const result = normalizeResult(isRecord(body) && isRecord(body.result) ? body.result : body);
+  const result = normalizeResult(
+    isRecord(body) && isRecord(body.result) ? body.result : body,
+  );
   if (!result) {
-    throw new ExamRequestError("交卷结果无法解析，请稍后在成绩单查看", 200, body);
+    throw new ExamRequestError(
+      "交卷结果无法解析，请稍后在成绩单查看",
+      200,
+      body,
+    );
   }
   return result;
 }

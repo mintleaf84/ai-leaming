@@ -87,7 +87,9 @@ export default function ExamPreviewClient({ paperId }: ExamPreviewClientProps) {
     return (
       <div className="mx-auto w-full max-w-3xl px-4 py-8 md:px-8">
         <div className="rounded-xl border border-dashed border-border bg-card/40 px-6 py-12 text-center">
-          <p className="text-base font-medium text-foreground">试卷地址不正确</p>
+          <p className="text-base font-medium text-foreground">
+            试卷地址不正确
+          </p>
           <p className="mt-1 text-sm text-muted-foreground">
             链接里的试卷编号不是有效数字，回到列表重新选一份。
           </p>
@@ -228,9 +230,8 @@ export default function ExamPreviewClient({ paperId }: ExamPreviewClientProps) {
                           item.question.dimension}
                       </span>
                     )}
-                    {(item.question.material || item.question.material_html) && (
-                      <span>含材料</span>
-                    )}
+                    {(item.question.material ||
+                      item.question.material_html) && <span>含材料</span>}
                   </div>
                   <p className="mt-1.5 line-clamp-3 text-sm leading-relaxed text-foreground">
                     {item.question.content}

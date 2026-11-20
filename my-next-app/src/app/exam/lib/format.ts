@@ -27,7 +27,8 @@ export function formatScore(score: number | null | undefined): string {
 
 /** 毫秒 → `12 分 34 秒` / `45 秒` */
 export function formatDuration(ms: number | null | undefined): string {
-  if (typeof ms !== "number" || !Number.isFinite(ms) || ms <= 0) return "不到 1 秒";
+  if (typeof ms !== "number" || !Number.isFinite(ms) || ms <= 0)
+    return "不到 1 秒";
   const totalSeconds = Math.round(ms / 1000);
   const minutes = Math.floor(totalSeconds / 60);
   const seconds = totalSeconds % 60;
@@ -40,7 +41,9 @@ export function formatOvertime(ms: number): string {
 }
 
 /** 试卷类型短标签：`限时 60 分钟` / `不限时` */
-export function formatPaperKind(paper: Pick<ExamPaper, "kind" | "durationMinutes">): string {
+export function formatPaperKind(
+  paper: Pick<ExamPaper, "kind" | "durationMinutes">,
+): string {
   if (paper.kind === "timed" && paper.durationMinutes) {
     return `限时 ${paper.durationMinutes} 分钟`;
   }

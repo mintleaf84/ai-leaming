@@ -26,12 +26,16 @@ describe("shouldInterceptNavigation", () => {
   });
 
   it("同页锚点、空链接、非站内地址不拦", () => {
-    expect(shouldInterceptNavigation("#answer-sheet", CURRENT, false)).toBe(false);
-    expect(shouldInterceptNavigation(null, CURRENT, false)).toBe(false);
-    expect(shouldInterceptNavigation("mailto:a@b.com", CURRENT, false)).toBe(false);
-    expect(shouldInterceptNavigation("/exam/session/sess-1", CURRENT, false)).toBe(
+    expect(shouldInterceptNavigation("#answer-sheet", CURRENT, false)).toBe(
       false,
     );
+    expect(shouldInterceptNavigation(null, CURRENT, false)).toBe(false);
+    expect(shouldInterceptNavigation("mailto:a@b.com", CURRENT, false)).toBe(
+      false,
+    );
+    expect(
+      shouldInterceptNavigation("/exam/session/sess-1", CURRENT, false),
+    ).toBe(false);
   });
 
   it("带域名的同页链接按路径判定", () => {
@@ -43,7 +47,11 @@ describe("shouldInterceptNavigation", () => {
       ),
     ).toBe(false);
     expect(
-      shouldInterceptNavigation("http://localhost:3000/history", CURRENT, false),
+      shouldInterceptNavigation(
+        "http://localhost:3000/history",
+        CURRENT,
+        false,
+      ),
     ).toBe(true);
   });
 });

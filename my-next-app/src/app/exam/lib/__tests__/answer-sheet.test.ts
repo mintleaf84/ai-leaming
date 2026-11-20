@@ -13,7 +13,9 @@ import {
 } from "../answer-sheet";
 import type { ExamQuestion } from "../types";
 
-function question(overrides: Partial<ExamQuestion> & { id: number }): ExamQuestion {
+function question(
+  overrides: Partial<ExamQuestion> & { id: number },
+): ExamQuestion {
   return {
     content: "题干",
     options: ["甲", "乙", "丙"],
@@ -63,8 +65,12 @@ describe("isDraftAnswered", () => {
 
 describe("draftToUserAnswer", () => {
   it("单选/判断提交标号", () => {
-    expect(draftToUserAnswer({ kind: "choice", letters: ["B"] }, "single")).toBe("B");
-    expect(draftToUserAnswer({ kind: "choice", letters: ["A"] }, "truefalse")).toBe("A");
+    expect(
+      draftToUserAnswer({ kind: "choice", letters: ["B"] }, "single"),
+    ).toBe("B");
+    expect(
+      draftToUserAnswer({ kind: "choice", letters: ["A"] }, "truefalse"),
+    ).toBe("A");
   });
 
   it("多选提交排序后的 JSON 数组（与服务端集合比较对齐）", () => {
@@ -74,9 +80,9 @@ describe("draftToUserAnswer", () => {
   });
 
   it("填空用中文分号连接，空值返回空串", () => {
-    expect(draftToUserAnswer({ kind: "fill", blanks: ["甲", "乙"] }, "fill_blank")).toBe(
-      "甲；乙",
-    );
+    expect(
+      draftToUserAnswer({ kind: "fill", blanks: ["甲", "乙"] }, "fill_blank"),
+    ).toBe("甲；乙");
     expect(draftToUserAnswer(undefined, "single")).toBe("");
   });
 });
@@ -145,6 +151,8 @@ describe("collectAnswers", () => {
   it("用时缺失按 0，且不出现负数", () => {
     const drafts: ExamDraftMap = { 1: { kind: "choice", letters: ["A"] } };
     expect(collectAnswers([questions[0]], drafts, {})[0].durationMs).toBe(0);
-    expect(collectAnswers([questions[0]], drafts, { 1: -50 })[0].durationMs).toBe(0);
+    expect(
+      collectAnswers([questions[0]], drafts, { 1: -50 })[0].durationMs,
+    ).toBe(0);
   });
 });

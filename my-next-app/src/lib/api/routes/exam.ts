@@ -306,8 +306,7 @@ const getPaperRoute = createRoute({
   request: { params: z.object({ id: z.coerce.number().int().positive() }) },
   responses: {
     200: {
-      description:
-        "试卷详情（预览：不含 answer/explanation）与最近一次作答",
+      description: "试卷详情（预览：不含 answer/explanation）与最近一次作答",
       content: {
         "application/json": { schema: PaperDetailSchema },
       },

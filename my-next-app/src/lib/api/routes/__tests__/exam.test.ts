@@ -70,7 +70,10 @@ async function tokenFor(userId: number): Promise<string> {
 }
 
 function headers(token: string): Record<string, string> {
-  return { Authorization: `Bearer ${token}`, "Content-Type": "application/json" };
+  return {
+    Authorization: `Bearer ${token}`,
+    "Content-Type": "application/json",
+  };
 }
 
 interface PaperSummary {
@@ -400,7 +403,8 @@ describe("试卷 / 模考 API", () => {
         method: "POST",
         body: { title: "统计卷", questionIds: [Q_SINGLE, Q_TRUE] },
       });
-      const paperId = ((await created.json()) as { paper: PaperSummary }).paper.id;
+      const paperId = ((await created.json()) as { paper: PaperSummary }).paper
+        .id;
 
       const patched = await api(token, `/papers/${paperId}`, {
         method: "PATCH",
@@ -423,8 +427,10 @@ describe("试卷 / 模考 API", () => {
         Q_TRUE,
       ]);
       // 预览不返回 answer / explanation（冻结决定 4）
-      const previewQuestion = detailBody.items[0]
-        .question as unknown as Record<string, unknown>;
+      const previewQuestion = detailBody.items[0].question as unknown as Record<
+        string,
+        unknown
+      >;
       expect("answer" in previewQuestion).toBe(false);
       expect("explanation" in previewQuestion).toBe(false);
       // 解析文本同样不能出现在预览里（options 本身含选项文本，不能用整串判断）
@@ -470,7 +476,9 @@ describe("试卷 / 模考 API", () => {
       expect(listed?.lastAttemptAt).toBeTruthy();
 
       // 5. 详情里出现 lastAttempt
-      const detailAfter = (await (await api(token, `/papers/${paperId}`)).json()) as PaperDetail;
+      const detailAfter = (await (
+        await api(token, `/papers/${paperId}`)
+      ).json()) as PaperDetail;
       expect(detailAfter.lastAttempt?.sessionId).toBe(sessionId);
       expect(detailAfter.lastAttempt?.score).toBe(1);
       // 冻结决定 10：固定三字段，不多不少
@@ -491,9 +499,11 @@ describe("试卷 / 模考 API", () => {
         method: "POST",
         body: { title: "待删卷", questionIds: [Q_SINGLE] },
       });
-      const throwawayId = ((await throwaway.json()) as { paper: PaperSummary }).paper.id;
+      const throwawayId = ((await throwaway.json()) as { paper: PaperSummary })
+        .paper.id;
       expect(
-        (await api(token, `/papers/${throwawayId}`, { method: "DELETE" })).status,
+        (await api(token, `/papers/${throwawayId}`, { method: "DELETE" }))
+          .status,
       ).toBe(200);
       expect((await api(token, `/papers/${throwawayId}`)).status).toBe(404);
     });
@@ -799,7 +809,8 @@ describe("试卷 / 模考 API", () => {
           questionIds: [Q_TRUE],
         },
       });
-      const timedPaperId = ((await created.json()) as { paper: PaperSummary }).paper.id;
+      const timedPaperId = ((await created.json()) as { paper: PaperSummary })
+        .paper.id;
 
       const started = await api(token, `/papers/${timedPaperId}/attempts`, {
         method: "POST",
@@ -835,7 +846,8 @@ describe("试卷 / 模考 API", () => {
         method: "POST",
         body: { title: "A 的私有卷", questionIds: [Q_SINGLE] },
       });
-      const privatePaperId = ((await created.json()) as { paper: PaperSummary }).paper.id;
+      const privatePaperId = ((await created.json()) as { paper: PaperSummary })
+        .paper.id;
 
       expect((await api(tokenB, `/papers/${privatePaperId}`)).status).toBe(404);
       expect(
@@ -847,9 +859,8 @@ describe("试卷 / 模考 API", () => {
         ).status,
       ).toBe(404);
       expect(
-        (
-          await api(tokenB, `/papers/${privatePaperId}`, { method: "DELETE" })
-        ).status,
+        (await api(tokenB, `/papers/${privatePaperId}`, { method: "DELETE" }))
+          .status,
       ).toBe(404);
       expect(
         (
@@ -881,7 +892,8 @@ describe("试卷 / 模考 API", () => {
         method: "POST",
         body: { title: "A 的作答卷", questionIds: [Q_SINGLE, Q_TRUE] },
       });
-      const paperId = ((await created.json()) as { paper: PaperSummary }).paper.id;
+      const paperId = ((await created.json()) as { paper: PaperSummary }).paper
+        .id;
       const started = await api(tokenA, `/papers/${paperId}/attempts`, {
         method: "POST",
         body: {},

@@ -40,9 +40,7 @@ export function isExpired(remaining: number | null): boolean {
 
 export function isWarning(remaining: number | null): boolean {
   return (
-    remaining !== null &&
-    remaining > 0 &&
-    remaining <= COUNTDOWN_WARNING_MS
+    remaining !== null && remaining > 0 && remaining <= COUNTDOWN_WARNING_MS
   );
 }
 

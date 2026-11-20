@@ -1,5 +1,9 @@
 import { describe, expect, it } from "vitest";
-import { createClientKey, createSubmitGate, submitConfirmMessage } from "../submit";
+import {
+  createClientKey,
+  createSubmitGate,
+  submitConfirmMessage,
+} from "../submit";
 
 describe("submitConfirmMessage", () => {
   it("有未作答题时必须二次确认，并念出数量", () => {

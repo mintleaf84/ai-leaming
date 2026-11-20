@@ -66,7 +66,9 @@ function Field({
       <div className="flex items-baseline justify-between gap-3">
         <Label className="text-sm font-semibold text-foreground">{label}</Label>
         {hint && (
-          <span className="text-right text-xs text-muted-foreground">{hint}</span>
+          <span className="text-right text-xs text-muted-foreground">
+            {hint}
+          </span>
         )}
       </div>
       {children}
@@ -148,7 +150,11 @@ export function GeneratePaperDialog({
   const [tags, setTags] = useState<string[]>([]);
   const [showTagTree, setShowTagTree] = useState(false);
   const [dimensions, setDimensions] = useState<string[]>([]);
-  const [types, setTypes] = useState<string[]>(["single", "multi", "truefalse"]);
+  const [types, setTypes] = useState<string[]>([
+    "single",
+    "multi",
+    "truefalse",
+  ]);
   const [excludeRecent, setExcludeRecent] = useState("0");
   const [weights, setWeights] = useState({ wrong: 0.3, weak: 0.3, fresh: 0.4 });
   const [submitting, setSubmitting] = useState(false);
@@ -178,7 +184,10 @@ export function GeneratePaperDialog({
       setError("题量至少 1 题。");
       return;
     }
-    if (timed && (!Number.isFinite(duration) || duration < 1 || duration > 300)) {
+    if (
+      timed &&
+      (!Number.isFinite(duration) || duration < 1 || duration > 300)
+    ) {
       setError("限时时长请在 1～300 分钟之间。");
       return;
     }
@@ -317,7 +326,9 @@ export function GeneratePaperDialog({
                     min={1}
                     max={300}
                     value={Number.isFinite(duration) ? duration : ""}
-                    onChange={(event) => setDuration(Number(event.target.value))}
+                    onChange={(event) =>
+                      setDuration(Number(event.target.value))
+                    }
                     aria-label="自定义限时分钟数"
                     className="h-8 w-20"
                   />
@@ -358,7 +369,9 @@ export function GeneratePaperDialog({
                 label: DIMENSION_LABELS[value] ?? value,
               }))}
               selected={dimensions}
-              onToggle={(value) => toggleInList(dimensions, value, setDimensions)}
+              onToggle={(value) =>
+                toggleInList(dimensions, value, setDimensions)
+              }
             />
           </Field>
 
@@ -371,11 +384,11 @@ export function GeneratePaperDialog({
           </Field>
 
           <Field label="排除最近做过的题">
-            <Select
-              value={excludeRecent}
-              onValueChange={setExcludeRecent}
-            >
-              <SelectTrigger className="h-9 w-full sm:w-48" aria-label="排除最近做过的题">
+            <Select value={excludeRecent} onValueChange={setExcludeRecent}>
+              <SelectTrigger
+                className="h-9 w-full sm:w-48"
+                aria-label="排除最近做过的题"
+              >
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
@@ -388,10 +401,7 @@ export function GeneratePaperDialog({
             </Select>
           </Field>
 
-          <Field
-            label="抽题权重"
-            hint="按比例分配，不必相加等于 1"
-          >
+          <Field label="抽题权重" hint="按比例分配，不必相加等于 1">
             <div className="grid grid-cols-3 gap-3">
               {(
                 [
@@ -454,7 +464,9 @@ export function GeneratePaperDialog({
               取消
             </Button>
             <Button onClick={() => void submit()} disabled={submitting}>
-              {submitting && <Loader2 className="mr-1 h-4 w-4 animate-spin" aria-hidden />}
+              {submitting && (
+                <Loader2 className="mr-1 h-4 w-4 animate-spin" aria-hidden />
+              )}
               生成试卷
             </Button>
           </div>

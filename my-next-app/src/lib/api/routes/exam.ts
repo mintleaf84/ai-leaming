@@ -35,6 +35,15 @@ const QuestionPayloadSchema = z.object({
   material: z.string().nullable(),
 });
 
+/**
+ * 试卷预览用的题目：**不含 answer / explanation**（冻结决定 4）。
+ * 对象里不出现这两个键，OpenAPI 快照直接表达"没有"。
+ */
+const QuestionPreviewSchema = QuestionPayloadSchema.omit({
+  answer: true,
+  explanation: true,
+});
+
 const PaperSummarySchema = z.object({
   id: z.number(),
   title: z.string(),
@@ -46,6 +55,7 @@ const PaperSummarySchema = z.object({
   updatedAt: z.string().nullable(),
   attemptCount: z.number(),
   bestScore: z.number().nullable(),
+  lastScore: z.number().nullable(),
   lastAttemptAt: z.string().nullable(),
 });
 
@@ -126,12 +136,16 @@ const listPapersRoute = createRoute({
   },
   responses: {
     200: {
-      description: "试卷列表（含作答统计）",
+      description: "试卷列表（含作答统计；形状与 recall/external 列表一致）",
       content: {
         "application/json": {
           schema: z.object({
-            papers: z.array(PaperSummarySchema),
-            total: z.number(),
+            data: z.array(PaperSummarySchema),
+            meta: z.object({
+              limit: z.number(),
+              offset: z.number(),
+              total: z.number(),
+            }),
           }),
         },
       },
@@ -290,13 +304,14 @@ const getPaperRoute = createRoute({
   request: { params: z.object({ id: z.coerce.number().int().positive() }) },
   responses: {
     200: {
-      description: "试卷详情（含完整题目与最近一次作答）",
+      description:
+        "试卷详情（预览：不含 answer/explanation）与最近一次作答",
       content: {
         "application/json": {
           schema: z.object({
             paper: PaperSummarySchema,
             items: z.array(
-              z.object({ position: z.number(), question: QuestionPayloadSchema }),
+              z.object({ position: z.number(), question: QuestionPreviewSchema }),
             ),
             lastAttempt: AttemptSummarySchema.nullable(),
           }),

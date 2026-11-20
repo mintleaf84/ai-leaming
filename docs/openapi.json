@@ -3026,6 +3026,10 @@
                           "nullable": true,
                           "type": "string"
                         },
+                        "lastScore": {
+                          "nullable": true,
+                          "type": "number"
+                        },
                         "source": {
                           "enum": ["manual", "auto"],
                           "type": "string"
@@ -3052,6 +3056,7 @@
                         "updatedAt",
                         "attemptCount",
                         "bestScore",
+                        "lastScore",
                         "lastAttemptAt"
                       ],
                       "type": "object"
@@ -3362,7 +3367,7 @@
               "application/json": {
                 "schema": {
                   "properties": {
-                    "papers": {
+                    "data": {
                       "items": {
                         "properties": {
                           "attemptCount": {
@@ -3391,6 +3396,10 @@
                             "nullable": true,
                             "type": "string"
                           },
+                          "lastScore": {
+                            "nullable": true,
+                            "type": "number"
+                          },
                           "source": {
                             "enum": ["manual", "auto"],
                             "type": "string"
@@ -3417,22 +3426,35 @@
                           "updatedAt",
                           "attemptCount",
                           "bestScore",
+                          "lastScore",
                           "lastAttemptAt"
                         ],
                         "type": "object"
                       },
                       "type": "array"
                     },
-                    "total": {
-                      "type": "number"
+                    "meta": {
+                      "properties": {
+                        "limit": {
+                          "type": "number"
+                        },
+                        "offset": {
+                          "type": "number"
+                        },
+                        "total": {
+                          "type": "number"
+                        }
+                      },
+                      "required": ["limit", "offset", "total"],
+                      "type": "object"
                     }
                   },
-                  "required": ["papers", "total"],
+                  "required": ["data", "meta"],
                   "type": "object"
                 }
               }
             },
-            "description": "试卷列表（含作答统计）"
+            "description": "试卷列表（含作答统计；形状与 recall/external 列表一致）"
           },
           "401": {
             "description": "未授权 - 缺少 / 无效 / 已过期的 JWT"
@@ -3528,6 +3550,10 @@
                           "nullable": true,
                           "type": "string"
                         },
+                        "lastScore": {
+                          "nullable": true,
+                          "type": "number"
+                        },
                         "source": {
                           "enum": ["manual", "auto"],
                           "type": "string"
@@ -3554,6 +3580,7 @@
                         "updatedAt",
                         "attemptCount",
                         "bestScore",
+                        "lastScore",
                         "lastAttemptAt"
                       ],
                       "type": "object"
@@ -3707,6 +3734,10 @@
                           "nullable": true,
                           "type": "string"
                         },
+                        "lastScore": {
+                          "nullable": true,
+                          "type": "number"
+                        },
                         "source": {
                           "enum": ["manual", "auto"],
                           "type": "string"
@@ -3733,6 +3764,7 @@
                         "updatedAt",
                         "attemptCount",
                         "bestScore",
+                        "lastScore",
                         "lastAttemptAt"
                       ],
                       "type": "object"
@@ -3903,17 +3935,11 @@
                           },
                           "question": {
                             "properties": {
-                              "answer": {
-                                "type": "string"
-                              },
                               "content": {
                                 "type": "string"
                               },
                               "dimension": {
                                 "nullable": true,
-                                "type": "string"
-                              },
-                              "explanation": {
                                 "type": "string"
                               },
                               "id": {
@@ -3944,8 +3970,6 @@
                               "id",
                               "content",
                               "options",
-                              "answer",
-                              "explanation",
                               "tags",
                               "dimension",
                               "type",
@@ -4032,6 +4056,10 @@
                           "nullable": true,
                           "type": "string"
                         },
+                        "lastScore": {
+                          "nullable": true,
+                          "type": "number"
+                        },
                         "source": {
                           "enum": ["manual", "auto"],
                           "type": "string"
@@ -4058,6 +4086,7 @@
                         "updatedAt",
                         "attemptCount",
                         "bestScore",
+                        "lastScore",
                         "lastAttemptAt"
                       ],
                       "type": "object"
@@ -4068,7 +4097,7 @@
                 }
               }
             },
-            "description": "试卷详情（含完整题目与最近一次作答）"
+            "description": "试卷详情（预览：不含 answer/explanation）与最近一次作答"
           },
           "404": {
             "description": "试卷不存在（或不属于当前用户）"
@@ -4149,6 +4178,10 @@
                           "nullable": true,
                           "type": "string"
                         },
+                        "lastScore": {
+                          "nullable": true,
+                          "type": "number"
+                        },
                         "source": {
                           "enum": ["manual", "auto"],
                           "type": "string"
@@ -4175,6 +4208,7 @@
                         "updatedAt",
                         "attemptCount",
                         "bestScore",
+                        "lastScore",
                         "lastAttemptAt"
                       ],
                       "type": "object"

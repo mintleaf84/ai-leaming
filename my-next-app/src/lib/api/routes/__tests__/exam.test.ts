@@ -82,7 +82,24 @@ interface PaperSummary {
   totalQuestions: number;
   attemptCount: number;
   bestScore: number | null;
+  lastScore: number | null;
   lastAttemptAt: string | null;
+}
+
+/** 试卷预览的题目（GET /papers/{id}）：不含 answer / explanation */
+interface QuestionPreview {
+  id: number;
+  content: string;
+  options: string[];
+  tags: string[];
+  dimension: string | null;
+  type: string | null;
+  material: string | null;
+}
+
+interface PaperListBody {
+  data: PaperSummary[];
+  meta: { limit: number; offset: number; total: number };
 }
 
 interface QuestionPayload {
@@ -99,7 +116,7 @@ interface QuestionPayload {
 
 interface PaperDetail {
   paper: PaperSummary;
-  items: Array<{ position: number; question: QuestionPayload }>;
+  items: Array<{ position: number; question: QuestionPreview }>;
   lastAttempt: { sessionId: string; score: number | null } | null;
 }
 
@@ -411,7 +428,13 @@ describe("试卷 / 模考 API", () => {
         Q_SINGLE,
         Q_TRUE,
       ]);
-      expect(detailBody.items[0].question.answer).toBe("乙");
+      // 预览不返回 answer / explanation（冻结决定 4）
+      const previewQuestion = detailBody.items[0]
+        .question as unknown as Record<string, unknown>;
+      expect("answer" in previewQuestion).toBe(false);
+      expect("explanation" in previewQuestion).toBe(false);
+      // 解析文本同样不能出现在预览里（options 本身含选项文本，不能用整串判断）
+      expect(JSON.stringify(detailBody.items)).not.toContain("测试解析内容");
       expect(detailBody.lastAttempt).toBeNull();
 
       // 3. 作答并交卷，制造一次历史
@@ -434,11 +457,15 @@ describe("试卷 / 模考 API", () => {
       // 4. 列表统计来自真实 practice_sessions 聚合
       const list = await api(token, "/papers?limit=50");
       expect(list.status).toBe(200);
-      const listBody = (await list.json()) as { papers: PaperSummary[] };
-      const listed = listBody.papers.find((p) => p.id === paperId);
+      const listBody = (await list.json()) as PaperListBody;
+      expect(listBody.meta).toMatchObject({ limit: 50, offset: 0 });
+      expect(listBody.meta.total).toBeGreaterThanOrEqual(1);
+      const listed = listBody.data.find((p) => p.id === paperId);
       expect(listed).toMatchObject({
         attemptCount: 1,
         bestScore: 1,
+        // 只做过一次，最近成绩 = 最好成绩
+        lastScore: 1,
         totalQuestions: 2,
       });
       expect(listed?.lastAttemptAt).toBeTruthy();
@@ -715,11 +742,12 @@ describe("试卷 / 模考 API", () => {
 
       const list = (await (
         await api(token, "/papers?limit=50")
-      ).json()) as { papers: PaperSummary[] };
-      const listed = list.papers.find((p) => p.id === paperId);
+      ).json()) as PaperListBody;
+      const listed = list.data.find((p) => p.id === paperId);
       expect(listed?.attemptCount).toBe(2);
-      // 两次成绩取最好（第一次 2/3）
+      // 两次成绩取最好（第一次 2/3）；最近一次是 0
       expect(listed?.bestScore).toBeCloseTo(2 / 3);
+      expect(listed?.lastScore).toBe(0);
     });
 
     it("限时卷：deadline 已过仍可交，overtime=true 且 overtimeMs>0", async () => {
@@ -804,8 +832,8 @@ describe("试卷 / 模考 API", () => {
       // B 的列表里不出现 A 的卷
       const listB = (await (
         await api(tokenB, "/papers?limit=50")
-      ).json()) as { papers: PaperSummary[] };
-      expect(listB.papers.some((p) => p.id === privatePaperId)).toBe(false);
+      ).json()) as PaperListBody;
+      expect(listB.data.some((p) => p.id === privatePaperId)).toBe(false);
     });
 
     it("他人作答会话的读/交卷/重放一律 404，且不改 A 的数据", async () => {

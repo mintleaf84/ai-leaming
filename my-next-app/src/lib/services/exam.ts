@@ -154,6 +154,8 @@ export interface ExamPaperSummary {
   updatedAt: string | null;
   attemptCount: number;
   bestScore: number | null;
+  /** 最近一次作答的得分（无作答为 null）；Web 的"最近成绩"列 */
+  lastScore: number | null;
   lastAttemptAt: string | null;
 }
 
@@ -169,6 +171,17 @@ export interface ExamQuestionPayload {
   type: string | null;
   material: string | null;
 }
+
+/**
+ * 试卷预览（GET /papers/{id}）的题目形状：**不含 answer / explanation**。
+ *
+ * 冻结决定：答案只在服务端参与判分，预览页连空串也不返回 —— 避免"看起来像
+ * 契约里有这个字段"被客户端误用，也让 OpenAPI 快照能直接表达"没有这两个字段"。
+ */
+export type ExamQuestionPreview = Omit<
+  ExamQuestionPayload,
+  "answer" | "explanation"
+>;
 
 export interface ExamAttemptSummary {
   sessionId: string;
@@ -265,9 +278,27 @@ function toQuestionPayload(q: Question, hideAnswer: boolean): ExamQuestionPayloa
   };
 }
 
+function toQuestionPreview(q: Question): ExamQuestionPreview {
+  const payload = toQuestionPayload(q, false);
+  return {
+    id: payload.id,
+    content: payload.content,
+    options: payload.options,
+    tags: payload.tags,
+    dimension: payload.dimension,
+    type: payload.type,
+    material: payload.material,
+  };
+}
+
 function toPaperSummary(
   row: typeof exam_papers.$inferSelect,
-  stats?: { attemptCount?: number; bestScore?: number | null; lastAttemptAt?: string | null },
+  stats?: {
+    attemptCount?: number;
+    bestScore?: number | null;
+    lastScore?: number | null;
+    lastAttemptAt?: string | null;
+  },
 ): ExamPaperSummary {
   return {
     id: row.id,
@@ -280,6 +311,7 @@ function toPaperSummary(
     updatedAt: row.updated_at ?? null,
     attemptCount: stats?.attemptCount ?? 0,
     bestScore: stats?.bestScore ?? null,
+    lastScore: stats?.lastScore ?? null,
     lastAttemptAt: stats?.lastAttemptAt ?? null,
   };
 }
@@ -414,9 +446,27 @@ async function attemptStats(userId: number, paperId: number) {
         eq(practice_sessions.paper_id, paperId),
       ),
     );
+  // 最近一次的得分不能用 max(exam_score)（那是最好成绩）：单独取一行，
+  // created_at 只到秒，同秒两次作答用 rowid 兜底（表是 rowid 表）
+  const [lastAttempt] = await drizzleDb
+    .select({ score: practice_sessions.exam_score })
+    .from(practice_sessions)
+    .where(
+      and(
+        eq(practice_sessions.user_id, userId),
+        eq(practice_sessions.paper_id, paperId),
+      ),
+    )
+    .orderBy(desc(practice_sessions.created_at), desc(sql`rowid`))
+    .limit(1);
+
   return {
     attemptCount: Number(row?.attemptCount ?? 0),
     bestScore: row?.bestScore === null ? null : Number(row?.bestScore),
+    lastScore:
+      lastAttempt?.score === null || lastAttempt?.score === undefined
+        ? null
+        : Number(lastAttempt.score),
     lastAttemptAt: row?.lastAttemptAt ?? null,
   };
 }
@@ -488,11 +538,19 @@ async function resultFromLogs(
 // --- 服务 ---
 
 export const examService = {
-  /** 试卷列表（含作答统计） */
+  /**
+   * 试卷列表（含作答统计）。
+   *
+   * 响应形状按冻结决定与 recall/external 列表口径统一为 `{data, meta}`，
+   * 不返回裸数组。
+   */
   async listPapers(
     userId: number,
     options: { limit?: number; offset?: number } = {},
-  ): Promise<{ papers: ExamPaperSummary[]; total: number }> {
+  ): Promise<{
+    data: ExamPaperSummary[];
+    meta: { limit: number; offset: number; total: number };
+  }> {
     const limit = options.limit ?? 20;
     const offset = options.offset ?? 0;
 
@@ -509,8 +567,10 @@ export const examService = {
       .from(exam_papers)
       .where(eq(exam_papers.user_id, userId));
 
+    const total = Number(countRow?.total ?? 0);
+
     if (rows.length === 0) {
-      return { papers: [], total: Number(countRow?.total ?? 0) };
+      return { data: [], meta: { limit, offset, total } };
     }
 
     // 一次聚合全部作答统计，避免 N+1
@@ -520,6 +580,14 @@ export const examService = {
         attemptCount: sql<number>`count(*)`,
         bestScore: sql<number | null>`max(${practice_sessions.exam_score})`,
         lastAttemptAt: sql<string | null>`max(${practice_sessions.created_at})`,
+        // 最近一次得分：按 (created_at DESC, rowid DESC) 取一行（created_at 只到秒）
+        lastScore: sql<number | null>`(
+          SELECT ps2.exam_score FROM practice_sessions ps2
+          WHERE ps2.paper_id = ${practice_sessions.paper_id}
+            AND ps2.user_id = ${userId}
+          ORDER BY ps2.created_at DESC, ps2.rowid DESC
+          LIMIT 1
+        )`,
       })
       .from(practice_sessions)
       .where(
@@ -541,14 +609,18 @@ export const examService = {
           {
             attemptCount: Number(s.attemptCount ?? 0),
             bestScore: s.bestScore === null ? null : Number(s.bestScore),
+            lastScore:
+              s.lastScore === null || s.lastScore === undefined
+                ? null
+                : Number(s.lastScore),
             lastAttemptAt: s.lastAttemptAt ?? null,
           },
         ]),
     );
 
     return {
-      papers: rows.map((row) => toPaperSummary(row, statsByPaper.get(row.id))),
-      total: Number(countRow?.total ?? 0),
+      data: rows.map((row) => toPaperSummary(row, statsByPaper.get(row.id))),
+      meta: { limit, offset, total },
     };
   },
 
@@ -640,10 +712,14 @@ export const examService = {
     };
   },
 
-  /** 试卷详情（§2 GET /papers/{id}）：items 带完整题目（含答案），另附最近一次作答 */
+  /**
+   * 试卷详情（§2 GET /papers/{id}）：预览用，**不返回 answer / explanation**。
+   *
+   * 冻结决定：答案只在服务端参与判分；预览页不需要，也不该有"看起来可读"的字段。
+   */
   async getPaper(userId: number, paperId: number): Promise<{
     paper: ExamPaperSummary;
-    items: Array<{ position: number; question: ExamQuestionPayload }>;
+    items: Array<{ position: number; question: ExamQuestionPreview }>;
     lastAttempt: ExamAttemptSummary | null;
   }> {
     const row = await loadPaperRow(userId, paperId);
@@ -672,8 +748,7 @@ export const examService = {
       paper: toPaperSummary(row, await attemptStats(userId, paperId)),
       items: items.map((item) => ({
         position: item.position,
-        // 详情只有试卷所有者能看，仍按契约返回 answer（§2 只在作答态置空）
-        question: toQuestionPayload(mapQuestion(item.question), false),
+        question: toQuestionPreview(mapQuestion(item.question)),
       })),
       lastAttempt: last
         ? {

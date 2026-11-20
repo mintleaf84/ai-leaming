@@ -2945,6 +2945,1364 @@
         "summary": "修改/删除单条草稿条目"
       }
     },
+    "/api/exam/attempts/{sessionId}": {
+      "get": {
+        "parameters": [
+          {
+            "in": "path",
+            "name": "sessionId",
+            "required": true,
+            "schema": {
+              "minLength": 1,
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "properties": {
+                    "answers": {
+                      "items": {
+                        "properties": {
+                          "durationMs": {
+                            "type": "number"
+                          },
+                          "isCorrect": {
+                            "type": "boolean"
+                          },
+                          "questionId": {
+                            "type": "number"
+                          },
+                          "status": {
+                            "type": "string"
+                          },
+                          "userAnswer": {
+                            "type": "string"
+                          }
+                        },
+                        "required": [
+                          "questionId",
+                          "userAnswer",
+                          "isCorrect",
+                          "status",
+                          "durationMs"
+                        ],
+                        "type": "object"
+                      },
+                      "type": "array"
+                    },
+                    "deadlineAt": {
+                      "nullable": true,
+                      "type": "string"
+                    },
+                    "paper": {
+                      "properties": {
+                        "attemptCount": {
+                          "type": "number"
+                        },
+                        "bestScore": {
+                          "nullable": true,
+                          "type": "number"
+                        },
+                        "createdAt": {
+                          "nullable": true,
+                          "type": "string"
+                        },
+                        "durationMinutes": {
+                          "nullable": true,
+                          "type": "number"
+                        },
+                        "id": {
+                          "type": "number"
+                        },
+                        "kind": {
+                          "enum": ["fixed", "timed"],
+                          "type": "string"
+                        },
+                        "lastAttemptAt": {
+                          "nullable": true,
+                          "type": "string"
+                        },
+                        "source": {
+                          "enum": ["manual", "auto"],
+                          "type": "string"
+                        },
+                        "title": {
+                          "type": "string"
+                        },
+                        "totalQuestions": {
+                          "type": "number"
+                        },
+                        "updatedAt": {
+                          "nullable": true,
+                          "type": "string"
+                        }
+                      },
+                      "required": [
+                        "id",
+                        "title",
+                        "kind",
+                        "durationMinutes",
+                        "source",
+                        "totalQuestions",
+                        "createdAt",
+                        "updatedAt",
+                        "attemptCount",
+                        "bestScore",
+                        "lastAttemptAt"
+                      ],
+                      "type": "object"
+                    },
+                    "questions": {
+                      "items": {
+                        "properties": {
+                          "answer": {
+                            "type": "string"
+                          },
+                          "content": {
+                            "type": "string"
+                          },
+                          "dimension": {
+                            "nullable": true,
+                            "type": "string"
+                          },
+                          "explanation": {
+                            "type": "string"
+                          },
+                          "id": {
+                            "type": "number"
+                          },
+                          "material": {
+                            "nullable": true,
+                            "type": "string"
+                          },
+                          "options": {
+                            "items": {
+                              "type": "string"
+                            },
+                            "type": "array"
+                          },
+                          "tags": {
+                            "items": {
+                              "type": "string"
+                            },
+                            "type": "array"
+                          },
+                          "type": {
+                            "nullable": true,
+                            "type": "string"
+                          }
+                        },
+                        "required": [
+                          "id",
+                          "content",
+                          "options",
+                          "answer",
+                          "explanation",
+                          "tags",
+                          "dimension",
+                          "type",
+                          "material"
+                        ],
+                        "type": "object"
+                      },
+                      "type": "array"
+                    },
+                    "result": {
+                      "properties": {
+                        "correctCount": {
+                          "type": "number"
+                        },
+                        "duplicate": {
+                          "type": "boolean"
+                        },
+                        "durationMs": {
+                          "type": "number"
+                        },
+                        "overtime": {
+                          "type": "boolean"
+                        },
+                        "overtimeMs": {
+                          "type": "number"
+                        },
+                        "perQuestion": {
+                          "items": {
+                            "properties": {
+                              "correctAnswer": {
+                                "type": "string"
+                              },
+                              "explanation": {
+                                "type": "string"
+                              },
+                              "isCorrect": {
+                                "type": "boolean"
+                              },
+                              "questionId": {
+                                "type": "number"
+                              }
+                            },
+                            "required": [
+                              "questionId",
+                              "isCorrect",
+                              "correctAnswer",
+                              "explanation"
+                            ],
+                            "type": "object"
+                          },
+                          "type": "array"
+                        },
+                        "score": {
+                          "type": "number"
+                        },
+                        "totalQuestions": {
+                          "type": "number"
+                        }
+                      },
+                      "required": [
+                        "score",
+                        "correctCount",
+                        "totalQuestions",
+                        "durationMs",
+                        "overtimeMs",
+                        "overtime",
+                        "duplicate",
+                        "perQuestion"
+                      ],
+                      "type": "object"
+                    },
+                    "sessionId": {
+                      "type": "string"
+                    },
+                    "submittedAt": {
+                      "nullable": true,
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "sessionId",
+                    "paper",
+                    "deadlineAt",
+                    "submittedAt",
+                    "questions"
+                  ],
+                  "type": "object"
+                }
+              }
+            },
+            "description": "作答态（answer 置空）或结果态（含 result/answers）"
+          },
+          "404": {
+            "description": "作答不存在（或不属于当前用户 / 不是试卷作答）"
+          }
+        }
+      }
+    },
+    "/api/exam/attempts/{sessionId}/submit": {
+      "post": {
+        "parameters": [
+          {
+            "in": "path",
+            "name": "sessionId",
+            "required": true,
+            "schema": {
+              "minLength": 1,
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "properties": {
+                  "answers": {
+                    "items": {
+                      "properties": {
+                        "durationMs": {
+                          "minimum": 0,
+                          "nullable": true,
+                          "type": "integer"
+                        },
+                        "questionId": {
+                          "exclusiveMinimum": true,
+                          "minimum": 0,
+                          "type": "integer"
+                        },
+                        "userAnswer": {
+                          "nullable": true,
+                          "type": "string"
+                        }
+                      },
+                      "required": ["questionId"],
+                      "type": "object"
+                    },
+                    "maxItems": 500,
+                    "type": "array"
+                  },
+                  "clientKey": {
+                    "maxLength": 200,
+                    "type": "string"
+                  }
+                },
+                "required": ["answers"],
+                "type": "object"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "properties": {
+                    "correctCount": {
+                      "type": "number"
+                    },
+                    "duplicate": {
+                      "type": "boolean"
+                    },
+                    "durationMs": {
+                      "type": "number"
+                    },
+                    "overtime": {
+                      "type": "boolean"
+                    },
+                    "overtimeMs": {
+                      "type": "number"
+                    },
+                    "perQuestion": {
+                      "items": {
+                        "properties": {
+                          "correctAnswer": {
+                            "type": "string"
+                          },
+                          "explanation": {
+                            "type": "string"
+                          },
+                          "isCorrect": {
+                            "type": "boolean"
+                          },
+                          "questionId": {
+                            "type": "number"
+                          }
+                        },
+                        "required": [
+                          "questionId",
+                          "isCorrect",
+                          "correctAnswer",
+                          "explanation"
+                        ],
+                        "type": "object"
+                      },
+                      "type": "array"
+                    },
+                    "score": {
+                      "type": "number"
+                    },
+                    "totalQuestions": {
+                      "type": "number"
+                    }
+                  },
+                  "required": [
+                    "score",
+                    "correctCount",
+                    "totalQuestions",
+                    "durationMs",
+                    "overtimeMs",
+                    "overtime",
+                    "duplicate",
+                    "perQuestion"
+                  ],
+                  "type": "object"
+                }
+              }
+            },
+            "description": "已交卷（重复提交回 duplicate:true，不写库）"
+          },
+          "404": {
+            "description": "作答不存在（或不属于当前用户 / 不是试卷作答）"
+          }
+        }
+      }
+    },
+    "/api/exam/papers": {
+      "get": {
+        "parameters": [
+          {
+            "in": "query",
+            "name": "limit",
+            "required": false,
+            "schema": {
+              "default": 20,
+              "maximum": 100,
+              "minimum": 1,
+              "type": "integer"
+            }
+          },
+          {
+            "in": "query",
+            "name": "offset",
+            "required": false,
+            "schema": {
+              "default": 0,
+              "minimum": 0,
+              "nullable": true,
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "properties": {
+                    "papers": {
+                      "items": {
+                        "properties": {
+                          "attemptCount": {
+                            "type": "number"
+                          },
+                          "bestScore": {
+                            "nullable": true,
+                            "type": "number"
+                          },
+                          "createdAt": {
+                            "nullable": true,
+                            "type": "string"
+                          },
+                          "durationMinutes": {
+                            "nullable": true,
+                            "type": "number"
+                          },
+                          "id": {
+                            "type": "number"
+                          },
+                          "kind": {
+                            "enum": ["fixed", "timed"],
+                            "type": "string"
+                          },
+                          "lastAttemptAt": {
+                            "nullable": true,
+                            "type": "string"
+                          },
+                          "source": {
+                            "enum": ["manual", "auto"],
+                            "type": "string"
+                          },
+                          "title": {
+                            "type": "string"
+                          },
+                          "totalQuestions": {
+                            "type": "number"
+                          },
+                          "updatedAt": {
+                            "nullable": true,
+                            "type": "string"
+                          }
+                        },
+                        "required": [
+                          "id",
+                          "title",
+                          "kind",
+                          "durationMinutes",
+                          "source",
+                          "totalQuestions",
+                          "createdAt",
+                          "updatedAt",
+                          "attemptCount",
+                          "bestScore",
+                          "lastAttemptAt"
+                        ],
+                        "type": "object"
+                      },
+                      "type": "array"
+                    },
+                    "total": {
+                      "type": "number"
+                    }
+                  },
+                  "required": ["papers", "total"],
+                  "type": "object"
+                }
+              }
+            },
+            "description": "试卷列表（含作答统计）"
+          },
+          "401": {
+            "description": "未授权 - 缺少 / 无效 / 已过期的 JWT"
+          }
+        }
+      },
+      "post": {
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "properties": {
+                  "durationMinutes": {
+                    "maximum": 600,
+                    "minimum": 1,
+                    "nullable": true,
+                    "type": "integer"
+                  },
+                  "kind": {
+                    "default": "fixed",
+                    "enum": ["fixed", "timed"],
+                    "type": "string"
+                  },
+                  "questionIds": {
+                    "items": {
+                      "exclusiveMinimum": true,
+                      "minimum": 0,
+                      "type": "integer"
+                    },
+                    "maxItems": 300,
+                    "minItems": 1,
+                    "type": "array"
+                  },
+                  "title": {
+                    "maxLength": 200,
+                    "minLength": 1,
+                    "type": "string"
+                  }
+                },
+                "required": ["title", "questionIds"],
+                "type": "object"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "properties": {
+                    "items": {
+                      "items": {
+                        "properties": {
+                          "position": {
+                            "type": "number"
+                          },
+                          "questionId": {
+                            "type": "number"
+                          }
+                        },
+                        "required": ["position", "questionId"],
+                        "type": "object"
+                      },
+                      "type": "array"
+                    },
+                    "paper": {
+                      "properties": {
+                        "attemptCount": {
+                          "type": "number"
+                        },
+                        "bestScore": {
+                          "nullable": true,
+                          "type": "number"
+                        },
+                        "createdAt": {
+                          "nullable": true,
+                          "type": "string"
+                        },
+                        "durationMinutes": {
+                          "nullable": true,
+                          "type": "number"
+                        },
+                        "id": {
+                          "type": "number"
+                        },
+                        "kind": {
+                          "enum": ["fixed", "timed"],
+                          "type": "string"
+                        },
+                        "lastAttemptAt": {
+                          "nullable": true,
+                          "type": "string"
+                        },
+                        "source": {
+                          "enum": ["manual", "auto"],
+                          "type": "string"
+                        },
+                        "title": {
+                          "type": "string"
+                        },
+                        "totalQuestions": {
+                          "type": "number"
+                        },
+                        "updatedAt": {
+                          "nullable": true,
+                          "type": "string"
+                        }
+                      },
+                      "required": [
+                        "id",
+                        "title",
+                        "kind",
+                        "durationMinutes",
+                        "source",
+                        "totalQuestions",
+                        "createdAt",
+                        "updatedAt",
+                        "attemptCount",
+                        "bestScore",
+                        "lastAttemptAt"
+                      ],
+                      "type": "object"
+                    }
+                  },
+                  "required": ["paper", "items"],
+                  "type": "object"
+                }
+              }
+            },
+            "description": "试卷已创建"
+          },
+          "400": {
+            "description": "参数不合法 / questionIds 含不存在或非客观题的题目（body 含 missingQuestionIds、unsupportedQuestionIds）"
+          }
+        }
+      }
+    },
+    "/api/exam/papers/generate": {
+      "post": {
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "properties": {
+                  "count": {
+                    "maximum": 300,
+                    "minimum": 1,
+                    "type": "integer"
+                  },
+                  "dimensions": {
+                    "items": {
+                      "enum": ["knowledge", "understanding", "application"],
+                      "type": "string"
+                    },
+                    "maxItems": 3,
+                    "type": "array"
+                  },
+                  "durationMinutes": {
+                    "maximum": 600,
+                    "minimum": 1,
+                    "nullable": true,
+                    "type": "integer"
+                  },
+                  "excludeRecentDays": {
+                    "maximum": 365,
+                    "minimum": 0,
+                    "type": "integer"
+                  },
+                  "kind": {
+                    "default": "fixed",
+                    "enum": ["fixed", "timed"],
+                    "type": "string"
+                  },
+                  "tags": {
+                    "items": {
+                      "maxLength": 50,
+                      "minLength": 1,
+                      "type": "string"
+                    },
+                    "maxItems": 30,
+                    "type": "array"
+                  },
+                  "title": {
+                    "maxLength": 200,
+                    "minLength": 1,
+                    "type": "string"
+                  },
+                  "types": {
+                    "items": {
+                      "enum": ["single", "multi", "truefalse", "fill_blank"],
+                      "type": "string"
+                    },
+                    "maxItems": 4,
+                    "type": "array"
+                  },
+                  "weights": {
+                    "properties": {
+                      "fresh": {
+                        "maximum": 1,
+                        "minimum": 0,
+                        "type": "number"
+                      },
+                      "weak": {
+                        "maximum": 1,
+                        "minimum": 0,
+                        "type": "number"
+                      },
+                      "wrong": {
+                        "maximum": 1,
+                        "minimum": 0,
+                        "type": "number"
+                      }
+                    },
+                    "type": "object"
+                  }
+                },
+                "required": ["title", "count"],
+                "type": "object"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "properties": {
+                    "items": {
+                      "items": {
+                        "properties": {
+                          "position": {
+                            "type": "number"
+                          },
+                          "questionId": {
+                            "type": "number"
+                          }
+                        },
+                        "required": ["position", "questionId"],
+                        "type": "object"
+                      },
+                      "type": "array"
+                    },
+                    "paper": {
+                      "properties": {
+                        "attemptCount": {
+                          "type": "number"
+                        },
+                        "bestScore": {
+                          "nullable": true,
+                          "type": "number"
+                        },
+                        "createdAt": {
+                          "nullable": true,
+                          "type": "string"
+                        },
+                        "durationMinutes": {
+                          "nullable": true,
+                          "type": "number"
+                        },
+                        "id": {
+                          "type": "number"
+                        },
+                        "kind": {
+                          "enum": ["fixed", "timed"],
+                          "type": "string"
+                        },
+                        "lastAttemptAt": {
+                          "nullable": true,
+                          "type": "string"
+                        },
+                        "source": {
+                          "enum": ["manual", "auto"],
+                          "type": "string"
+                        },
+                        "title": {
+                          "type": "string"
+                        },
+                        "totalQuestions": {
+                          "type": "number"
+                        },
+                        "updatedAt": {
+                          "nullable": true,
+                          "type": "string"
+                        }
+                      },
+                      "required": [
+                        "id",
+                        "title",
+                        "kind",
+                        "durationMinutes",
+                        "source",
+                        "totalQuestions",
+                        "createdAt",
+                        "updatedAt",
+                        "attemptCount",
+                        "bestScore",
+                        "lastAttemptAt"
+                      ],
+                      "type": "object"
+                    },
+                    "rules": {
+                      "properties": {
+                        "count": {
+                          "maximum": 300,
+                          "minimum": 1,
+                          "type": "integer"
+                        },
+                        "dimensions": {
+                          "items": {
+                            "enum": [
+                              "knowledge",
+                              "understanding",
+                              "application"
+                            ],
+                            "type": "string"
+                          },
+                          "maxItems": 3,
+                          "type": "array"
+                        },
+                        "durationMinutes": {
+                          "maximum": 600,
+                          "minimum": 1,
+                          "nullable": true,
+                          "type": "integer"
+                        },
+                        "excludeRecentDays": {
+                          "maximum": 365,
+                          "minimum": 0,
+                          "type": "integer"
+                        },
+                        "kind": {
+                          "default": "fixed",
+                          "enum": ["fixed", "timed"],
+                          "type": "string"
+                        },
+                        "tags": {
+                          "items": {
+                            "maxLength": 50,
+                            "minLength": 1,
+                            "type": "string"
+                          },
+                          "maxItems": 30,
+                          "type": "array"
+                        },
+                        "title": {
+                          "maxLength": 200,
+                          "minLength": 1,
+                          "type": "string"
+                        },
+                        "types": {
+                          "items": {
+                            "enum": [
+                              "single",
+                              "multi",
+                              "truefalse",
+                              "fill_blank"
+                            ],
+                            "type": "string"
+                          },
+                          "maxItems": 4,
+                          "type": "array"
+                        },
+                        "weights": {
+                          "properties": {
+                            "fresh": {
+                              "maximum": 1,
+                              "minimum": 0,
+                              "type": "number"
+                            },
+                            "weak": {
+                              "maximum": 1,
+                              "minimum": 0,
+                              "type": "number"
+                            },
+                            "wrong": {
+                              "maximum": 1,
+                              "minimum": 0,
+                              "type": "number"
+                            }
+                          },
+                          "type": "object"
+                        }
+                      },
+                      "required": ["title", "count"],
+                      "type": "object"
+                    }
+                  },
+                  "required": ["paper", "rules", "items"],
+                  "type": "object"
+                }
+              }
+            },
+            "description": "自动组卷完成（落成一张 source=auto 的普通试卷）"
+          },
+          "400": {
+            "description": "参数不合法 / 候选不足（body 含 requested、available、shortfall）"
+          }
+        }
+      }
+    },
+    "/api/exam/papers/{id}": {
+      "delete": {
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "exclusiveMinimum": true,
+              "minimum": 0,
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "properties": {
+                    "deleted": {
+                      "type": "boolean"
+                    }
+                  },
+                  "required": ["deleted"],
+                  "type": "object"
+                }
+              }
+            },
+            "description": "试卷已删除（items 级联删除）"
+          },
+          "404": {
+            "description": "试卷不存在（或不属于当前用户）"
+          },
+          "409": {
+            "description": "试卷已有作答记录，不能删除"
+          }
+        }
+      },
+      "get": {
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "exclusiveMinimum": true,
+              "minimum": 0,
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "properties": {
+                    "items": {
+                      "items": {
+                        "properties": {
+                          "position": {
+                            "type": "number"
+                          },
+                          "question": {
+                            "properties": {
+                              "answer": {
+                                "type": "string"
+                              },
+                              "content": {
+                                "type": "string"
+                              },
+                              "dimension": {
+                                "nullable": true,
+                                "type": "string"
+                              },
+                              "explanation": {
+                                "type": "string"
+                              },
+                              "id": {
+                                "type": "number"
+                              },
+                              "material": {
+                                "nullable": true,
+                                "type": "string"
+                              },
+                              "options": {
+                                "items": {
+                                  "type": "string"
+                                },
+                                "type": "array"
+                              },
+                              "tags": {
+                                "items": {
+                                  "type": "string"
+                                },
+                                "type": "array"
+                              },
+                              "type": {
+                                "nullable": true,
+                                "type": "string"
+                              }
+                            },
+                            "required": [
+                              "id",
+                              "content",
+                              "options",
+                              "answer",
+                              "explanation",
+                              "tags",
+                              "dimension",
+                              "type",
+                              "material"
+                            ],
+                            "type": "object"
+                          }
+                        },
+                        "required": ["position", "question"],
+                        "type": "object"
+                      },
+                      "type": "array"
+                    },
+                    "lastAttempt": {
+                      "nullable": true,
+                      "properties": {
+                        "correctCount": {
+                          "type": "number"
+                        },
+                        "createdAt": {
+                          "nullable": true,
+                          "type": "string"
+                        },
+                        "deadlineAt": {
+                          "nullable": true,
+                          "type": "string"
+                        },
+                        "paperId": {
+                          "nullable": true,
+                          "type": "number"
+                        },
+                        "score": {
+                          "nullable": true,
+                          "type": "number"
+                        },
+                        "sessionId": {
+                          "type": "string"
+                        },
+                        "submittedAt": {
+                          "nullable": true,
+                          "type": "string"
+                        },
+                        "totalQuestions": {
+                          "type": "number"
+                        }
+                      },
+                      "required": [
+                        "sessionId",
+                        "paperId",
+                        "deadlineAt",
+                        "submittedAt",
+                        "score",
+                        "correctCount",
+                        "totalQuestions",
+                        "createdAt"
+                      ],
+                      "type": "object"
+                    },
+                    "paper": {
+                      "properties": {
+                        "attemptCount": {
+                          "type": "number"
+                        },
+                        "bestScore": {
+                          "nullable": true,
+                          "type": "number"
+                        },
+                        "createdAt": {
+                          "nullable": true,
+                          "type": "string"
+                        },
+                        "durationMinutes": {
+                          "nullable": true,
+                          "type": "number"
+                        },
+                        "id": {
+                          "type": "number"
+                        },
+                        "kind": {
+                          "enum": ["fixed", "timed"],
+                          "type": "string"
+                        },
+                        "lastAttemptAt": {
+                          "nullable": true,
+                          "type": "string"
+                        },
+                        "source": {
+                          "enum": ["manual", "auto"],
+                          "type": "string"
+                        },
+                        "title": {
+                          "type": "string"
+                        },
+                        "totalQuestions": {
+                          "type": "number"
+                        },
+                        "updatedAt": {
+                          "nullable": true,
+                          "type": "string"
+                        }
+                      },
+                      "required": [
+                        "id",
+                        "title",
+                        "kind",
+                        "durationMinutes",
+                        "source",
+                        "totalQuestions",
+                        "createdAt",
+                        "updatedAt",
+                        "attemptCount",
+                        "bestScore",
+                        "lastAttemptAt"
+                      ],
+                      "type": "object"
+                    }
+                  },
+                  "required": ["paper", "items", "lastAttempt"],
+                  "type": "object"
+                }
+              }
+            },
+            "description": "试卷详情（含完整题目与最近一次作答）"
+          },
+          "404": {
+            "description": "试卷不存在（或不属于当前用户）"
+          }
+        }
+      },
+      "patch": {
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "exclusiveMinimum": true,
+              "minimum": 0,
+              "type": "integer"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "properties": {
+                  "durationMinutes": {
+                    "maximum": 600,
+                    "minimum": 1,
+                    "nullable": true,
+                    "type": "integer"
+                  },
+                  "kind": {
+                    "enum": ["fixed", "timed"],
+                    "type": "string"
+                  },
+                  "title": {
+                    "maxLength": 200,
+                    "minLength": 1,
+                    "type": "string"
+                  }
+                },
+                "type": "object"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "properties": {
+                    "paper": {
+                      "properties": {
+                        "attemptCount": {
+                          "type": "number"
+                        },
+                        "bestScore": {
+                          "nullable": true,
+                          "type": "number"
+                        },
+                        "createdAt": {
+                          "nullable": true,
+                          "type": "string"
+                        },
+                        "durationMinutes": {
+                          "nullable": true,
+                          "type": "number"
+                        },
+                        "id": {
+                          "type": "number"
+                        },
+                        "kind": {
+                          "enum": ["fixed", "timed"],
+                          "type": "string"
+                        },
+                        "lastAttemptAt": {
+                          "nullable": true,
+                          "type": "string"
+                        },
+                        "source": {
+                          "enum": ["manual", "auto"],
+                          "type": "string"
+                        },
+                        "title": {
+                          "type": "string"
+                        },
+                        "totalQuestions": {
+                          "type": "number"
+                        },
+                        "updatedAt": {
+                          "nullable": true,
+                          "type": "string"
+                        }
+                      },
+                      "required": [
+                        "id",
+                        "title",
+                        "kind",
+                        "durationMinutes",
+                        "source",
+                        "totalQuestions",
+                        "createdAt",
+                        "updatedAt",
+                        "attemptCount",
+                        "bestScore",
+                        "lastAttemptAt"
+                      ],
+                      "type": "object"
+                    }
+                  },
+                  "required": ["paper"],
+                  "type": "object"
+                }
+              }
+            },
+            "description": "试卷元信息已更新"
+          },
+          "400": {
+            "description": "参数不合法（如 timed 缺 durationMinutes）"
+          },
+          "404": {
+            "description": "试卷不存在（或不属于当前用户）"
+          }
+        }
+      }
+    },
+    "/api/exam/papers/{id}/attempts": {
+      "post": {
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "exclusiveMinimum": true,
+              "minimum": 0,
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "properties": {
+                    "deadlineAt": {
+                      "nullable": true,
+                      "type": "string"
+                    },
+                    "paperId": {
+                      "type": "number"
+                    },
+                    "questions": {
+                      "items": {
+                        "properties": {
+                          "answer": {
+                            "type": "string"
+                          },
+                          "content": {
+                            "type": "string"
+                          },
+                          "dimension": {
+                            "nullable": true,
+                            "type": "string"
+                          },
+                          "explanation": {
+                            "type": "string"
+                          },
+                          "id": {
+                            "type": "number"
+                          },
+                          "material": {
+                            "nullable": true,
+                            "type": "string"
+                          },
+                          "options": {
+                            "items": {
+                              "type": "string"
+                            },
+                            "type": "array"
+                          },
+                          "tags": {
+                            "items": {
+                              "type": "string"
+                            },
+                            "type": "array"
+                          },
+                          "type": {
+                            "nullable": true,
+                            "type": "string"
+                          }
+                        },
+                        "required": [
+                          "id",
+                          "content",
+                          "options",
+                          "answer",
+                          "explanation",
+                          "tags",
+                          "dimension",
+                          "type",
+                          "material"
+                        ],
+                        "type": "object"
+                      },
+                      "type": "array"
+                    },
+                    "sessionId": {
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "sessionId",
+                    "paperId",
+                    "deadlineAt",
+                    "questions"
+                  ],
+                  "type": "object"
+                }
+              }
+            },
+            "description": "作答已开始（题目里的 answer 已置空）"
+          },
+          "400": {
+            "description": "试卷没有题目"
+          },
+          "404": {
+            "description": "试卷不存在（或不属于当前用户）"
+          }
+        }
+      }
+    },
     "/api/external/knowledge/cards": {
       "get": {
         "description": "只读接口，需 read 作用域。返回当前 API Key 所属用户的知识卡片（问答对 + 要点），按创建时间倒序分页，可按分类筛选。跨用户数据不可见。",

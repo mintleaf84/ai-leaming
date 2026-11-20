@@ -13,6 +13,7 @@ import '../../../core/theme/app_colors.dart';
 import '../../../core/navigation/app_nav.dart';
 import '../../../core/network/connectivity_provider.dart';
 import '../../../core/error/user_message.dart';
+import '../../../shared/widgets/state_views.dart';
 
 class ChatScreen extends HookConsumerWidget {
   const ChatScreen({super.key});
@@ -165,43 +166,10 @@ class ChatScreen extends HookConsumerWidget {
                 );
               },
               loading: () => const Center(child: CircularProgressIndicator()),
-              error: (err, stack) => Center(
-                child: Column(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    Icon(
-                      AppIcons.errorOutline,
-                      size: 48.sp,
-                      color: context.colors.error,
-                    ),
-                    SizedBox(height: 16.h),
-                    Text(
-                      '加载失败',
-                      style: TextStyle(
-                        fontSize: 16.sp,
-                        fontWeight: FontWeight.w600,
-                      ),
-                    ),
-                    SizedBox(height: 8.h),
-                    Text(
-                      '请检查网络后重试',
-                      style: TextStyle(
-                        fontSize: 13.sp,
-                        color: context.colors.textSecondary,
-                      ),
-                    ),
-                    SizedBox(height: 16.h),
-                    ElevatedButton.icon(
-                      onPressed: () => ref.invalidate(chatProvider),
-                      icon: const Icon(AppIcons.refresh, size: 16),
-                      label: const Text('重试'),
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: context.colors.accent,
-                        foregroundColor: context.colors.onAccent,
-                      ),
-                    ),
-                  ],
-                ),
+              // 统一错误态（审计 #9）：不再本屏自写一套图标/字号/按钮。
+              error: (err, stack) => AppErrorView(
+                message: '会话没加载出来，请检查网络后重试',
+                onRetry: () => ref.invalidate(chatProvider),
               ),
             ),
           ),
@@ -253,44 +221,68 @@ class ChatScreen extends HookConsumerWidget {
                     ),
                   ),
                 // RAG Toggle
-                Padding(
-                  padding: EdgeInsets.only(bottom: 8.h, left: 4.w),
-                  child: Row(
-                    children: [
-                      Icon(
-                        AppIcons.libraryBooks,
-                        size: 14.sp,
-                        color: isRagEnabled.value
-                            ? context.colors.accent
-                            : context.colors.textSecondary,
-                      ),
-                      SizedBox(width: 4.w),
-                      Text(
-                        '检索知识库以增强回答',
-                        style: TextStyle(
-                          fontSize: 12.sp,
-                          color: isRagEnabled.value
-                              ? context.colors.accent
-                              : context.colors.textSecondary,
-                          fontWeight: isRagEnabled.value
-                              ? FontWeight.bold
-                              : FontWeight.normal,
+                // 整行可点（原来只有 40×24 的开关能点，旁边文字点不动），
+                // 命中区撑到 ≥44 高；开关只保留视觉，点击统一由本行处理，
+                // 避免开关与 InkWell 抢手势导致「点一次跳两下」。
+                Semantics(
+                  container: true,
+                  toggled: isRagEnabled.value,
+                  label: '检索知识库以增强回答',
+                  child: InkWell(
+                    onTap: () => isRagEnabled.value = !isRagEnabled.value,
+                    borderRadius: BorderRadius.circular(8.r),
+                    child: ConstrainedBox(
+                      constraints: const BoxConstraints(minHeight: 44),
+                      child: Padding(
+                        padding: EdgeInsets.only(bottom: 8.h, left: 4.w),
+                        child: Row(
+                          children: [
+                            Icon(
+                              AppIcons.libraryBooks,
+                              size: 14.sp,
+                              color: isRagEnabled.value
+                                  ? context.colors.accent
+                                  : context.colors.textSecondary,
+                            ),
+                            SizedBox(width: 4.w),
+                            Expanded(
+                              child: Text(
+                                '检索知识库以增强回答',
+                                style: TextStyle(
+                                  fontSize: 12.sp,
+                                  color: isRagEnabled.value
+                                      ? context.colors.accent
+                                      : context.colors.textSecondary,
+                                  fontWeight: isRagEnabled.value
+                                      ? FontWeight.bold
+                                      : FontWeight.normal,
+                                ),
+                              ),
+                            ),
+                            SizedBox(width: 8.w),
+                            SizedBox(
+                              height: 24.h,
+                              width: 40.w,
+                              // 开关只做视觉：语义与点击都由整行负责，
+                              // 否则读屏会把「可切换」播报两遍。
+                              child: ExcludeSemantics(
+                                child: IgnorePointer(
+                                  child: FittedBox(
+                                    fit: BoxFit.fill,
+                                    child: Switch(
+                                      value: isRagEnabled.value,
+                                      onChanged: (val) =>
+                                          isRagEnabled.value = val,
+                                      activeTrackColor: context.colors.accent,
+                                    ),
+                                  ),
+                                ),
+                              ),
+                            ),
+                          ],
                         ),
                       ),
-                      SizedBox(width: 8.w),
-                      SizedBox(
-                        height: 24.h,
-                        width: 40.w,
-                        child: FittedBox(
-                          fit: BoxFit.fill,
-                          child: Switch(
-                            value: isRagEnabled.value,
-                            onChanged: (val) => isRagEnabled.value = val,
-                            activeTrackColor: context.colors.accent,
-                          ),
-                        ),
-                      ),
-                    ],
+                    ),
                   ),
                 ),
                 Row(

@@ -92,7 +92,10 @@ void main() {
     );
     await settle(tester);
 
-    expect(find.text('请求失败（500）'), findsOneWidget);
+    // 统一错误态后不再把原始异常铺在屏上，只给可读文案 + 重试入口
+    expect(find.text('教材内容没加载出来'), findsOneWidget);
+    expect(find.text('请求失败（500）'), findsNothing);
+    expect(find.text('重试'), findsOneWidget);
     expect(find.text('暂无章节内容'), findsNothing);
   });
 

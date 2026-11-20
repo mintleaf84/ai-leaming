@@ -130,9 +130,11 @@ void main() {
   testWidgets('「立即登录」链接回登录页', (WidgetTester tester) async {
     final router = await pumpRegister(tester);
 
-    // 富文本链接包在 GestureDetector 里：`find.text` 默认不匹配 RichText。
-    final link = find.byWidgetPredicate(
-      (Widget w) => w is GestureDetector && w.child is RichText,
+    // 链接现在是 TextButton（命中区 ≥44），文案仍是富文本里的「立即登录」。
+    // RichText 的 plainText 是「已有账号？ 立即登录」，所以用 textContaining 而不是 text。
+    final link = find.ancestor(
+      of: find.textContaining('立即登录', findRichText: true),
+      matching: find.byType(TextButton),
     );
     expect(link, findsOneWidget);
     await tester.tap(link);

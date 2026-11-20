@@ -6,6 +6,7 @@ import 'textbook_provider.dart';
 import '../domain/textbook.dart';
 import '../../../core/theme/app_icons.dart';
 import '../../../core/theme/app_colors.dart';
+import '../../../shared/widgets/state_views.dart';
 
 /// 教材详情页（章节列表）
 class TextbookDetailScreen extends ConsumerWidget {
@@ -38,25 +39,18 @@ class TextbookDetailScreen extends ConsumerWidget {
             onPressed: () => context.backOrHome(),
           ),
         ),
-        body: Center(
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              Icon(
-                AppIcons.errorOutline,
-                size: 48.sp,
-                color: context.colors.error,
-              ),
-              SizedBox(height: 16.h),
-              Text('加载失败',
-                  style: TextStyle(
-                      fontSize: 16.sp, fontWeight: FontWeight.bold)),
-            ],
-          ),
+        // 统一错误态（审计 #9）：这里原来只有一行「加载失败」，**没有任何出口**，
+        // 用户只能退出页面。invalidate 会让 provider 重新请求一次。
+        body: AppErrorView(
+          message: '教材内容没加载出来，请检查网络后重试',
+          onRetry: () => ref.invalidate(textbookDetailProvider(textbookId)),
         ),
       ),
       data: (state) {
         if (state.error != null) {
+          // 原始异常由 provider 写入 debugPrint，这里只留一份可追踪的记录，
+          // 屏上不再铺异常文本。
+          debugPrint('[Textbook] 详情加载失败(id=$textbookId): ${state.error}');
           return Scaffold(
             appBar: AppBar(
               elevation: 0,
@@ -66,14 +60,9 @@ class TextbookDetailScreen extends ConsumerWidget {
                 onPressed: () => context.backOrHome(),
               ),
             ),
-            body: Center(
-              child: Text(
-                state.error!,
-                style: TextStyle(
-                  fontSize: 14.sp,
-                  color: context.colors.error,
-                ),
-              ),
+            body: AppErrorView(
+              message: '教材内容没加载出来',
+              onRetry: () => ref.invalidate(textbookDetailProvider(textbookId)),
             ),
           );
         }

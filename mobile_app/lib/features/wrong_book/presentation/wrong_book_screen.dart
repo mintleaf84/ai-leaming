@@ -145,7 +145,10 @@ class _WrongBookScreenState extends ConsumerState<WrongBookScreen> {
         children: [
           _buildTab('列表', WrongBookViewMode.list, current),
           _buildTab('按知识点', WrongBookViewMode.byTag, current),
-          _buildTab('已掌握', WrongBookViewMode.mastered, current),
+          // 「已掌握」页签已移除：服务端只有 `POST/DELETE /wrong-book/:id/master`，
+          // 没有「已掌握列表」接口（`GET /wrong-book` 反而把已掌握题目排除掉），
+          // 留着页签就是点了永远空的入口。补上接口（服务端已有
+          // `wrongQuestionService.getMasteredQuestions`，缺一条路由）后再恢复。
         ],
       ),
     );
@@ -192,8 +195,9 @@ class _WrongBookScreenState extends ConsumerState<WrongBookScreen> {
       case WrongBookViewMode.byTag:
         return _buildByTagView(state);
       case WrongBookViewMode.mastered:
-        // 已掌握视图暂用占位（后续可扩展 API）
-        return _buildMasteredPlaceholder();
+        // 不可达：「已掌握」页签已移除（见 _buildViewModeTabs 注释）。
+        // 枚举值暂时保留是为了不破坏既有调用方；真的走到这里就按列表展示。
+        return _buildListView(state);
     }
   }
 
@@ -295,26 +299,38 @@ class _WrongBookScreenState extends ConsumerState<WrongBookScreen> {
                         ),
                       ),
                       SizedBox(width: 6.w),
-                      // 标签
+                      // 标签：后端自由文本，可能是很长的一句知识点名。
+                      // 必须占位并单行省略——否则和右侧 44dp 的按钮同排，
+                      // 长标签会把这一行撑出屏幕（RenderFlex overflow）。
+                      // 用 Expanded + Align 而不是 Spacer：标签短时 chip 仍按内容
+                      // 宽度靠左（Align 不拉伸），长时吃满剩余宽度再省略。
                       if (q.tags.isNotEmpty)
-                        Container(
-                          padding: EdgeInsets.symmetric(
-                            horizontal: 6.w,
-                            vertical: 2.h,
-                          ),
-                          decoration: BoxDecoration(
-                            color: context.colors.surfaceAlt,
-                            borderRadius: BorderRadius.circular(4.r),
-                          ),
-                          child: Text(
-                            q.tags.first,
-                            style: TextStyle(
-                              fontSize: 12.sp,
-                              color: context.colors.textSecondary,
+                        Expanded(
+                          child: Align(
+                            alignment: Alignment.centerLeft,
+                            child: Container(
+                              padding: EdgeInsets.symmetric(
+                                horizontal: 6.w,
+                                vertical: 2.h,
+                              ),
+                              decoration: BoxDecoration(
+                                color: context.colors.surfaceAlt,
+                                borderRadius: BorderRadius.circular(4.r),
+                              ),
+                              child: Text(
+                                q.tags.first,
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
+                                style: TextStyle(
+                                  fontSize: 12.sp,
+                                  color: context.colors.textSecondary,
+                                ),
+                              ),
                             ),
                           ),
-                        ),
-                      const Spacer(),
+                        )
+                      else
+                        const Spacer(),
                       // 标记已掌握按钮
                       //
                       // 原来是 GestureDetector 包 11sp 的纯文字（实测约 33×15），
@@ -378,22 +394,34 @@ class _WrongBookScreenState extends ConsumerState<WrongBookScreen> {
             childrenPadding: EdgeInsets.fromLTRB(16.w, 0, 16.w, 12.h),
             title: Row(
               children: [
-                Container(
-                  padding: EdgeInsets.symmetric(horizontal: 8.w, vertical: 4.h),
-                  decoration: BoxDecoration(
-                    color: context.colors.accentContainer,
-                    borderRadius: BorderRadius.circular(6.r),
-                  ),
-                  child: Text(
-                    group.tag,
-                    style: TextStyle(
-                      fontSize: 13.sp,
-                      fontWeight: FontWeight.w600,
-                      color: context.colors.accent,
+                // 知识点名同样是后端自由文本：Expanded 占满剩余宽度（替代原来的
+                // Spacer），Align 让 chip 仍按内容宽度靠左，超长时单行省略。
+                Expanded(
+                  child: Align(
+                    alignment: Alignment.centerLeft,
+                    child: Container(
+                      padding: EdgeInsets.symmetric(
+                        horizontal: 8.w,
+                        vertical: 4.h,
+                      ),
+                      decoration: BoxDecoration(
+                        color: context.colors.accentContainer,
+                        borderRadius: BorderRadius.circular(6.r),
+                      ),
+                      child: Text(
+                        group.tag,
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: TextStyle(
+                          fontSize: 13.sp,
+                          fontWeight: FontWeight.w600,
+                          color: context.colors.accent,
+                        ),
+                      ),
                     ),
                   ),
                 ),
-                const Spacer(),
+                SizedBox(width: 8.w),
                 Text(
                   '${group.count} 题',
                   style: TextStyle(
@@ -445,34 +473,6 @@ class _WrongBookScreenState extends ConsumerState<WrongBookScreen> {
           ),
         );
       },
-    );
-  }
-
-  // --- 已掌握占位 ---
-  Widget _buildMasteredPlaceholder() {
-    return Center(
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          Text('🏆', style: TextStyle(fontSize: 48.sp)),
-          SizedBox(height: 16.h),
-          Text(
-            '已掌握的错题会显示在这里',
-            style: TextStyle(
-              fontSize: 16.sp,
-              color: context.colors.textSecondary,
-            ),
-          ),
-          SizedBox(height: 8.h),
-          Text(
-            '在列表中点击"已掌握"将题目归档',
-            style: TextStyle(
-              fontSize: 13.sp,
-              color: context.colors.textSecondary,
-            ),
-          ),
-        ],
-      ),
     );
   }
 

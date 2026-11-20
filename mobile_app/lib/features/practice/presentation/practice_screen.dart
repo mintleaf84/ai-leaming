@@ -253,7 +253,6 @@ class _PracticeScreenState extends ConsumerState<PracticeScreen> {
                         fontWeight: FontWeight.w600,
                         height: 1.4,
                         color: context.colors.text,
-                        fontFamily: 'Noto Serif SC',
                       ),
                     ),
                     SizedBox(height: 32.h),
@@ -636,19 +635,27 @@ class _PracticeScreenState extends ConsumerState<PracticeScreen> {
       child: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
-          Container(
-            width: 40.w,
-            height: 40.h,
-            decoration: BoxDecoration(
-              color: context.colors.text.withValues(
-                alpha: isEnabled ? 0.05 : 0.02,
-              ),
-              borderRadius: BorderRadius.circular(12.r),
-            ),
-            child: Icon(
-              icon,
-              color: context.colors.text.withValues(
-                alpha: isEnabled ? 1 : 0.3,
+          // 视觉尺寸保持 40，命中区撑到 44（Material 最小触控目标）：
+          // 外层 44×44 盒子居中放 40 的方按钮，多点出的 2dp 两侧不改变布局观感。
+          SizedBox(
+            width: 44.w,
+            height: 44.h,
+            child: Center(
+              child: Container(
+                width: 40.w,
+                height: 40.h,
+                decoration: BoxDecoration(
+                  color: context.colors.text.withValues(
+                    alpha: isEnabled ? 0.05 : 0.02,
+                  ),
+                  borderRadius: BorderRadius.circular(12.r),
+                ),
+                child: Icon(
+                  icon,
+                  color: context.colors.text.withValues(
+                    alpha: isEnabled ? 1 : 0.3,
+                  ),
+                ),
               ),
             ),
           ),

@@ -35,6 +35,18 @@
     {
       "path": "lib/core/theme/app_icons.dart",
       "reason": "纯图标常量，无行为"
+    },
+    {
+      "path": "lib/core/compat/app_version.dart",
+      "reason": "构建期版本号常量，无分支；与 pubspec 的一致性由契约测试守"
+    },
+    {
+      "path": "lib/core/local/local_db.dart",
+      "reason": "懒加载单例只打开连接；表结构与迁移语句在 local_schema_test 覆盖"
+    },
+    {
+      "path": "lib/features/practice/domain/practice_repository.dart",
+      "reason": "纯抽象接口（只有签名无方法体），行为由 practice_repository_impl 测试覆盖"
     }
   ],
   "files": {

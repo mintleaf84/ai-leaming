@@ -4,7 +4,6 @@ import {
   derivePendingCount,
   progressPercent,
   selectPendingItems,
-  sortAgentSets,
 } from "../stats";
 import type { AgentSetItem, AgentSetSummary } from "../types";
 
@@ -112,17 +111,6 @@ describe("applyFlag", () => {
     expect(second.removed).toBe(false);
     expect(second.summary.pendingCount).toBe(first.summary.pendingCount);
     expect(second.summary.flaggedCount).toBe(first.summary.flaggedCount);
-  });
-});
-
-describe("sortAgentSets", () => {
-  it("未读批次在前，其余按推送时间倒序", () => {
-    const sets = [
-      summary({ id: 1, unread: false, createdAt: "2026-11-20T08:00:00.000Z" }),
-      summary({ id: 2, unread: true, createdAt: "2026-11-19T08:00:00.000Z" }),
-      summary({ id: 3, unread: false, createdAt: "2026-11-21T08:00:00.000Z" }),
-    ];
-    expect(sortAgentSets(sets).map((entry) => entry.id)).toEqual([2, 3, 1]);
   });
 });
 

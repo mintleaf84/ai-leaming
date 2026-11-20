@@ -109,7 +109,7 @@ function normalizeItems(rawItems: unknown): AgentSetItem[] {
   return rawItems
     .map((entry, index): AgentSetItem | null => {
       if (!isRecord(entry)) return null;
-      // 契约写 `{position, question}`；若服务端直接摊平题目，同样能读
+      // 冻结形状是扁平题（`{id,content,…}`）；兼容早期 `{position, question}` 写法
       const questionSource = isRecord(entry.question) ? entry.question : entry;
       const position = firstNumber(entry, ["position", "index"]);
       const question = normalizeQuestion(questionSource, index + 1);
@@ -167,6 +167,16 @@ export function normalizeSetSummary(
     (unreadCount !== null && unreadCount > 0);
 
   const total = Math.max(itemCount, totalQuestions);
+  // 冻结形状（§4.3）只给 questionCount / pendingCount / flaggedCount，没有 doneCount：
+  // 已做 = 总量 − 未做 − 已反馈。详情里服务端只回待做的题时（itemCount），
+  // 用它反推 done 也不会把「全做完了」算成「一题没做」。
+  const doneBase = doneCount ?? Math.max(0, total - Math.min(itemCount, total));
+  const pending = derivePendingCount({
+    totalQuestions: total,
+    doneCount: doneBase,
+    flaggedCount,
+    serverPending,
+  });
   return {
     id: firstNumber(raw, ["id", "setId", "set_id"]) ?? fallbackId,
     title: firstString(raw, ["title", "name"]) ?? "未命名题集",
@@ -179,14 +189,9 @@ export function normalizeSetSummary(
     status: firstString(raw, ["status"]) ?? "active",
     createdAt: firstString(raw, ["createdAt", "created_at"]),
     totalQuestions: total,
-    doneCount: doneCount ?? 0,
+    doneCount: doneCount ?? Math.max(0, total - pending - flaggedCount),
     flaggedCount,
-    pendingCount: derivePendingCount({
-      totalQuestions: total,
-      doneCount: doneCount ?? 0,
-      flaggedCount,
-      serverPending,
-    }),
+    pendingCount: pending,
     unread,
     lastScore: firstNumber(raw, [
       "lastScore",
@@ -203,15 +208,25 @@ export function normalizeSetSummary(
   };
 }
 
+/**
+ * 冻结形状是 `{data, meta:{limit,offset,total}}`（§4.3）；`{items}` / 裸数组
+ * 是过渡期的兼容写法，留着不会坏事。
+ */
 function readListBody(body: unknown): { raws: unknown[]; total: number | null } {
   if (Array.isArray(body)) return { raws: body, total: body.length };
   if (isRecord(body)) {
-    for (const key of ["items", "sets", "questionSets", "data"] as const) {
+    const meta = isRecord(body.meta) ? body.meta : null;
+    const metaTotal = meta ? firstNumber(meta, ["total"]) : null;
+    for (const key of ["data", "items", "sets", "questionSets"] as const) {
       const value = body[key];
       if (Array.isArray(value)) {
-        return { raws: value, total: firstNumber(body, ["total"]) };
+        return {
+          raws: value,
+          total: metaTotal ?? firstNumber(body, ["total"]),
+        };
       }
     }
+    return { raws: [], total: metaTotal ?? 0 };
   }
   return { raws: [], total: 0 };
 }
@@ -255,11 +270,21 @@ async function request<T>(path: string, init?: RequestInit): Promise<T> {
 
 export interface AgentSetList {
   items: AgentSetSummary[];
+  /** 服务端 `meta.total`；没有 meta 时退回本页条数 */
   total: number;
 }
 
-export async function fetchAgentSetList(): Promise<AgentSetList> {
-  const body = await request<unknown>(BASE);
+export async function fetchAgentSetList(params?: {
+  limit?: number;
+  offset?: number;
+}): Promise<AgentSetList> {
+  const query = new URLSearchParams();
+  if (typeof params?.limit === "number") query.set("limit", String(params.limit));
+  if (typeof params?.offset === "number") {
+    query.set("offset", String(params.offset));
+  }
+  const suffix = query.toString() ? `?${query.toString()}` : "";
+  const body = await request<unknown>(`${BASE}${suffix}`);
   const { raws, total } = readListBody(body);
   const items = raws
     .map((raw) => normalizeSetSummary(raw, 0))
@@ -273,9 +298,12 @@ export async function fetchAgentSetDetail(
   const body = await request<unknown>(`${BASE}/${setId}`);
   const raw = isRecord(body) ? body : {};
 
-  // `{set, items}` / `{set, questions}` / 摊平（{id,title,questions}）三种都认
+  // `{set, questions}` 是冻结形状；`{set, items}` / 摊平是过渡写法。
+  // `flaggedCount` 在**顶层**（§4.3），要并进 set 里再归一。
   const nested = isRecord(raw.set) ? raw.set : isRecord(raw.data) ? raw.data : null;
-  const setRaw = nested ?? raw;
+  const setRaw = nested
+    ? { ...nested, flaggedCount: raw.flaggedCount ?? nested.flaggedCount }
+    : raw;
   const rawItems = Array.isArray(raw.questions)
     ? raw.questions
     : Array.isArray(raw.items)
@@ -368,9 +396,15 @@ export async function flagAgentSetQuestion(
   };
 }
 
-/** 转正入库：转正后题目进题库与掌握度统计 */
-export async function promoteAgentSet(setId: number): Promise<void> {
-  await request<unknown>(`${BASE}/${setId}/promote`, { method: "POST" });
+/** 转正入库：转正后题目进题库与掌握度统计。返回转正题数（契约 §4.3） */
+export async function promoteAgentSet(
+  setId: number,
+): Promise<{ promotedCount: number | null }> {
+  const body = await request<unknown>(`${BASE}/${setId}/promote`, {
+    method: "POST",
+  });
+  const raw = isRecord(body) ? body : {};
+  return { promotedCount: firstNumber(raw, ["promotedCount", "count"]) };
 }
 
 /** 一键成卷：返回新建试卷的 id，供页面跳到 `/exam/{id}` */

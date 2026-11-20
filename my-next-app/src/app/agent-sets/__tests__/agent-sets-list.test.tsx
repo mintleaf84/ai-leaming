@@ -1,4 +1,5 @@
-import { render, screen } from "@testing-library/react";
+import { render, screen, waitFor } from "@testing-library/react";
+import userEvent from "@testing-library/user-event";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { QueryProvider } from "@/lib/providers/QueryProvider";
 
@@ -23,7 +24,7 @@ describe("AI 题集列表", () => {
 
   it("真的没有题集时说明题从哪来，而不是只写「暂无数据」", async () => {
     vi.spyOn(globalThis, "fetch").mockResolvedValue(
-      jsonResponse({ items: [], total: 0 }),
+      jsonResponse({ data: [], meta: { limit: 12, offset: 0, total: 0 } }),
     );
 
     render(
@@ -56,33 +57,36 @@ describe("AI 题集列表", () => {
     expect(screen.getByRole("button", { name: /重试/ })).toBeInTheDocument();
   });
 
-  it("有题集时渲染来源、考点、未做数、最近成绩与新批次角标", async () => {
+  it("按冻结形状 {data,meta} 渲染来源、考点、未做数、最近成绩与新批次角标", async () => {
     vi.spyOn(globalThis, "fetch").mockResolvedValue(
       jsonResponse({
-        items: [
+        data: [
           {
             id: 5,
             title: "教育心理学 · 学习动机强化",
             agent: "claude-code",
             model: "claude-sonnet-4.5",
             targetTags: ["学习动机", "自我效能"],
-            totalQuestions: 10,
-            doneCount: 2,
-            flaggedCount: 1,
-            unread: true,
+            questionCount: 10,
+            pendingCount: 7,
+            unreadCount: 1,
             lastScore: 0.855,
             createdAt: "2026-11-21T02:00:00.000Z",
           },
           {
             id: 4,
             title: "教育法规 · 旧批次",
-            totalQuestions: 6,
-            doneCount: 6,
+            agent: null,
+            model: null,
+            targetTags: [],
+            questionCount: 6,
             pendingCount: 0,
-            unread: false,
+            unreadCount: 0,
+            lastScore: null,
+            createdAt: "2026-11-19T02:00:00.000Z",
           },
         ],
-        total: 2,
+        meta: { limit: 12, offset: 0, total: 2 },
       }),
     );
 
@@ -100,11 +104,57 @@ describe("AI 题集列表", () => {
     ).toBeInTheDocument();
     expect(screen.getByText("学习动机")).toBeInTheDocument();
     expect(screen.getByText("未做 7 题")).toBeInTheDocument();
-    expect(screen.getByText("已反馈 1 题")).toBeInTheDocument();
     expect(screen.getByText("86 分")).toBeInTheDocument();
-    // 新批次角标只出现在未读那一张卡上
+    // 新批次角标只出现在 unreadCount > 0 那一张卡上
     expect(screen.getAllByText("新")).toHaveLength(1);
     // 做完了的批次不再喊「未做」
     expect(screen.getByText("都做完了")).toBeInTheDocument();
+    // 来源缺失时给可读兜底，而不是空一行
+    expect(screen.getByText("来自 来源未标注")).toBeInTheDocument();
+  });
+
+  it("按 meta.total 分页，翻页时带 limit/offset 重新取数", async () => {
+    const user = userEvent.setup();
+    const fetchMock = vi
+      .spyOn(globalThis, "fetch")
+      .mockImplementation(async (input) => {
+        const url = String(input);
+        const offset = Number(new URL(url, "http://x").searchParams.get("offset") ?? 0);
+        return jsonResponse({
+          data: [
+            {
+              id: 100 + offset,
+              title: `第 ${offset / 12 + 1} 页的批次`,
+              questionCount: 5,
+              pendingCount: 5,
+              unreadCount: 0,
+              lastScore: null,
+              createdAt: "2026-11-21T02:00:00.000Z",
+            },
+          ],
+          meta: { limit: 12, offset, total: 30 },
+        });
+      });
+
+    render(
+      <QueryProvider>
+        <AgentSetsListClient />
+      </QueryProvider>,
+    );
+
+    expect(await screen.findByText("第 1 页的批次")).toBeInTheDocument();
+    expect(fetchMock.mock.calls[0]?.[0]).toContain("limit=12");
+    expect(fetchMock.mock.calls[0]?.[0]).toContain("offset=0");
+
+    await user.click(screen.getByRole("button", { name: "2" }));
+
+    expect(await screen.findByText("第 2 页的批次")).toBeInTheDocument();
+    await waitFor(() => {
+      expect(
+        fetchMock.mock.calls.some(([input]) =>
+          String(input).includes("offset=12"),
+        ),
+      ).toBe(true);
+    });
   });
 });

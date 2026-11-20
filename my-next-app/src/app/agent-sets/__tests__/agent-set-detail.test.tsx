@@ -22,6 +22,7 @@ function jsonResponse(body: unknown, status = 200) {
   });
 }
 
+/** 冻结形状（契约 §4.3）：`{set, questions:[扁平], flaggedCount}`，不含答案 */
 const DETAIL = {
   set: {
     id: 5,
@@ -32,43 +33,41 @@ const DETAIL = {
     note: "你最近在「自我效能」上错了 3 次，这批题都围绕它。",
     status: "active",
     createdAt: "2026-11-21T02:00:00.000Z",
-    totalQuestions: 3,
-    doneCount: 0,
-    flaggedCount: 0,
+    questionCount: 3,
     pendingCount: 3,
-    unread: true,
+    unreadCount: 1,
+    lastScore: null,
   },
-  items: [
+  questions: [
     {
-      position: 1,
-      question: {
-        id: 101,
-        content: "学生把失败归因于运气，最可能影响的是？",
-        options: ["自我效能感", "学习迁移"],
-        type: "single",
-        dimension: "understanding",
-        tags: ["学习动机"],
-      },
+      id: 101,
+      content: "学生把失败归因于运气，最可能影响的是？",
+      options: ["自我效能感", "学习迁移"],
+      type: "single",
+      dimension: "understanding",
+      tags: ["学习动机"],
+      material: null,
     },
     {
-      position: 2,
-      question: {
-        id: 102,
-        content: "成就动机理论中，追求成功动机强的人倾向于？",
-        options: ["选择中等难度任务", "选择极难任务"],
-        type: "single",
-      },
+      id: 102,
+      content: "成就动机理论中，追求成功动机强的人倾向于？",
+      options: ["选择中等难度任务", "选择极难任务"],
+      type: "single",
+      dimension: null,
+      tags: [],
+      material: null,
     },
     {
-      position: 3,
-      question: {
-        id: 103,
-        content: "自我效能感的四个来源不包括？",
-        options: ["遗传", "替代经验"],
-        type: "single",
-      },
+      id: 103,
+      content: "自我效能感的四个来源不包括？",
+      options: ["遗传", "替代经验"],
+      type: "single",
+      dimension: null,
+      tags: [],
+      material: null,
     },
   ],
+  flaggedCount: 0,
 };
 
 describe("题集详情", () => {
@@ -137,7 +136,10 @@ describe("题集详情", () => {
     vi.spyOn(globalThis, "fetch").mockImplementation(async (input, init) => {
       const url = String(input);
       if (url.endsWith("/attempts")) {
-        return jsonResponse({ sessionId: "session-1" });
+        return jsonResponse({
+          sessionId: "session-1",
+          questions: DETAIL.questions,
+        });
       }
       if (url.endsWith("/session/session-1/submit")) {
         const body = JSON.parse(String(init?.body ?? "{}")) as {

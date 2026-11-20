@@ -94,19 +94,3 @@ export function progressPercent(done: number, total: number): number {
   const ratio = clampCount(done) / safeTotal;
   return Math.max(0, Math.min(100, Math.round(ratio * 100)));
 }
-
-/**
- * 列表排序：新批次（未读）在前，其余按推送时间倒序。
- * 题集的"新"是有时效的——昨天推的两批，用户打开时最想看到的是没看过的那批。
- */
-export function sortAgentSets(sets: AgentSetSummary[]): AgentSetSummary[] {
-  const time = (value: string | null): number => {
-    if (!value) return 0;
-    const parsed = Date.parse(value);
-    return Number.isFinite(parsed) ? parsed : 0;
-  };
-  return [...sets].sort((a, b) => {
-    if (a.unread !== b.unread) return a.unread ? -1 : 1;
-    return time(b.createdAt) - time(a.createdAt);
-  });
-}

@@ -1,14 +1,16 @@
 /**
- * Agent 题集的接口形状 —— 对齐 `docs/agent-question-set-plan.md` §3 / §4.2 / §5。
+ * Agent 题集的接口形状 —— 对齐 `docs/agent-question-set-plan.md` §3 / §4.2 / §4.3。
  *
- * 服务端由另一条 lane 并行实现。契约只定到「列表含未做数与来源」「详情不含答案」
- * 这一级，字段名没有逐字钉死，所以这里全部按**可能出现的几种写法**归一（见
- * `api.ts` 的 normalize 系列）：
- *   - 包装可能是 `{items}` / `{sets}` / `{data}` / 裸数组；
- *   - 题量可能是 `totalQuestions` / `count` / `questionCount`；
- *   - 未读数可能是 `unread` / `isUnread` / `unreadCount`。
+ * §4.3 已冻结响应形状：
+ *   - 列表 `{data:[…], meta:{limit,offset,total}}`
+ *   - 详情 `{set, questions:[扁平题], flaggedCount}`（不含 answer/explanation）
+ *   - attempts `{sessionId, questions}`；flag `{questionId, flagged, remaining}`
+ *   - promote `{setId, promoted, promotedCount}`；paper 与试卷详情同形
+ *   - 分数一律 0–1，`durationMs` 为整数毫秒
  *
- * 归一之后页面只认下面这一套字段，服务端补齐后再改一处即可。
+ * 服务端只给 `questionCount / pendingCount / flaggedCount`，**没有 doneCount**：
+ * 这里的 `doneCount` 由 `总量 − 未做 − 已反馈` 派生（见 `api.ts`），页面只认下面
+ * 这一套字段。
  */
 import type { ExamQuestion } from "@/app/exam/lib/types";
 
@@ -28,15 +30,15 @@ export interface AgentSetSummary {
   note: string | null;
   status: AgentSetStatus;
   createdAt: string | null;
-  /** 批次总题量 */
+  /** 批次总题量（服务端 `questionCount`） */
   totalQuestions: number;
-  /** 已做（有作答记录）的题数 */
+  /** 已做：服务端没有该字段时按 `总量 − 未做 − 已反馈` 派生 */
   doneCount: number;
-  /** 被你标为「有问题」并已移除的题数 */
+  /** 被你标为「有问题」并已移除的题数（列表接口不返回，按 0 处理） */
   flaggedCount: number;
-  /** 还剩多少题可以做（服务端给就用服务端的，否则本地派生） */
+  /** 还剩多少题可以做（服务端 `pendingCount`） */
   pendingCount: number;
-  /** 新批次未读（契约没有独立的已读接口，按服务端返回的字段渲染） */
+  /** 新批次未读数大于 0 即为未读（服务端 `unreadCount`） */
   unread: boolean;
   /** 最近一次成绩，0~1；没有作答记录时为 null */
   lastScore: number | null;

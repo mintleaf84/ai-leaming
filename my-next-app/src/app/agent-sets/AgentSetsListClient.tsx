@@ -1,30 +1,44 @@
 "use client";
 
+import { useState } from "react";
 import { Inbox, Layers, Info } from "lucide-react";
 import { useAppQuery } from "@/hooks/useAppQuery";
 import { EmptyState } from "@/components/ui/empty-state";
 import { ErrorState } from "@/components/ui/error-state";
+import { Pagination } from "@/components/ui/pagination";
 import { Skeleton } from "@/components/ui/skeleton";
 import { AgentSetCard } from "./components/AgentSetCard";
 import { fetchAgentSetList } from "./lib/api";
-import { sortAgentSets } from "./lib/stats";
+
+const PAGE_SIZE = 12;
 
 /**
  * AI 题集列表。
  *
- * 数据只来自 `GET /api/agent-sets`（cookie 认证）。取数据走全站统一的
- * `useAppQuery`：接口 500 必须渲染成错误态，而不是"还没有题集"——后者会让用户
- * 以为 Agent 推的题丢了。
+ * 数据只来自 `GET /api/agent-sets`（cookie 认证，冻结形状 `{data, meta}`）。
+ * 取数据走全站统一的 `useAppQuery`：接口 500 必须渲染成错误态，而不是
+ * "还没有题集"——后者会让用户以为 Agent 推的题丢了。
+ *
+ * 排序交给服务端（契约 §4.3 的 `meta.limit/offset/total` 说明它按页返回）：
+ * 客户端再按"未读优先"重排，会让第 2 页的新批次跑到第 1 页前面，翻页就乱了。
  *
  * 这一页没有"新建"：题集是外部 Agent 推来的，用户能做的只有查看、练、反馈。
  */
 export default function AgentSetsListClient() {
+  const [page, setPage] = useState(1);
+
   const { data, isLoading, isError, error, retry } = useAppQuery({
-    queryKey: ["agent-sets"],
-    queryFn: fetchAgentSetList,
+    queryKey: ["agent-sets", page],
+    queryFn: () =>
+      fetchAgentSetList({
+        limit: PAGE_SIZE,
+        offset: (page - 1) * PAGE_SIZE,
+      }),
   });
 
-  const sets = sortAgentSets(data?.items ?? []);
+  const sets = data?.items ?? [];
+  const total = data?.total ?? 0;
+  const totalPages = Math.max(1, Math.ceil(total / PAGE_SIZE));
   const hasUnread = sets.some((set) => set.unread);
 
   return (
@@ -54,7 +68,11 @@ export default function AgentSetsListClient() {
         </span>
       </p>
 
-      <section aria-label="我的题集" className="mt-5 md:mt-6" aria-busy={isLoading}>
+      <section
+        aria-label="我的题集"
+        className="mt-5 md:mt-6"
+        aria-busy={isLoading}
+      >
         {isLoading && (
           <div className="space-y-3">
             {Array.from({ length: 3 }).map((_, index) => (
@@ -81,13 +99,24 @@ export default function AgentSetsListClient() {
         )}
 
         {!isLoading && !isError && sets.length > 0 && (
-          <ul className="space-y-3">
-            {sets.map((set) => (
-              <li key={set.id}>
-                <AgentSetCard set={set} />
-              </li>
-            ))}
-          </ul>
+          <>
+            <ul className="space-y-3">
+              {sets.map((set) => (
+                <li key={set.id}>
+                  <AgentSetCard set={set} />
+                </li>
+              ))}
+            </ul>
+            {totalPages > 1 && (
+              <div className="mt-6 flex justify-center">
+                <Pagination
+                  currentPage={page}
+                  totalPages={totalPages}
+                  onPageChange={setPage}
+                />
+              </div>
+            )}
+          </>
         )}
       </section>
 

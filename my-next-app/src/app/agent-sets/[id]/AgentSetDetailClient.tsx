@@ -160,10 +160,14 @@ export default function AgentSetDetailClient({ setId }: AgentSetDetailClientProp
     if (!summary) return;
     setPromoting(true);
     try {
-      await promoteAgentSet(summary.id);
+      const { promotedCount } = await promoteAgentSet(summary.id);
       setPromotedLocally(true);
       setPromoteOpen(false);
-      toast.success("已转正：题目进入题库，之后会算进掌握度");
+      toast.success(
+        promotedCount && promotedCount > 0
+          ? `已转正 ${promotedCount} 题：已进入题库，之后会算进掌握度`
+          : "已转正：题目进入题库，之后会算进掌握度",
+      );
     } catch (caught) {
       console.error("[agent-sets] 转正失败", { setId, err: caught });
       toast.error(

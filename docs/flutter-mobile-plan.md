@@ -911,10 +911,10 @@ R1+R2（先让包可区分）→ R3 → R4 → R5（文档）→ R6（演练一�
 
 两套 SRS 并存，**不要混谈**：
 
-| 表 | 粒度 | 规模（审计快照） | 备注 |
-| --- | --- | --- | --- |
-| `question_srs` | 题级（每题一条） | 2482 行，**2473 条已到期** | 审计里说的"2473 张"是这一套；用户 1 占 1993 |
-| `recall_card_states` | 卡级（记忆卡） | 未统计 | 有 `archived` 列，可批量归档 |
+| 表                   | 粒度             | 规模（审计快照）           | 备注                                        |
+| -------------------- | ---------------- | -------------------------- | ------------------------------------------- |
+| `question_srs`       | 题级（每题一条） | 2482 行，**2473 条已到期** | 审计里说的"2473 张"是这一套；用户 1 占 1993 |
+| `recall_card_states` | 卡级（记忆卡）   | 未统计                     | 有 `archived` 列，可批量归档                |
 
 积压的时间背景：快照前最后活动是 8 月底，积压约 2.5 个月。
 
@@ -964,11 +964,11 @@ FROM recall_card_states WHERE user_id = 1 GROUP BY kind;
 
 ### 28.3 策略候选（等数据后三选一或组合）
 
-| 候选 | 做法 | 前提数据 | 判据 | 工作量 |
-| --- | --- | --- | --- | --- |
-| A 分桶展示 | 复习入口从"到期 N 张"改成"今天 N / 积压 M"，积压单独入口且默认不混入今日队列 | Q1 显示积压占比高 | 首页不再出现三位数总到期数；今日队列 ≤ 每日上限 | 1d |
-| B 批量归档 | 对"超过 X 天未复习且 reps 高"的题批量 `archived`/降优先级（`recall_card_states` 已有 `archived`；题级需加列或映射） | Q1+Q3 显示老积压以已复习题为主 | 归档后今日队列可被清空；归档可撤销 | 1–1.5d |
-| C 每日上限 | 队列按每日上限截断（如 30 题/20 卡），剩余顺延 | 任意 | 单日不会出现"永远背不完" | 0.5d |
+| 候选       | 做法                                                                                                                | 前提数据                       | 判据                                            | 工作量 |
+| ---------- | ------------------------------------------------------------------------------------------------------------------- | ------------------------------ | ----------------------------------------------- | ------ |
+| A 分桶展示 | 复习入口从"到期 N 张"改成"今天 N / 积压 M"，积压单独入口且默认不混入今日队列                                        | Q1 显示积压占比高              | 首页不再出现三位数总到期数；今日队列 ≤ 每日上限 | 1d     |
+| B 批量归档 | 对"超过 X 天未复习且 reps 高"的题批量 `archived`/降优先级（`recall_card_states` 已有 `archived`；题级需加列或映射） | Q1+Q3 显示老积压以已复习题为主 | 归档后今日队列可被清空；归档可撤销              | 1–1.5d |
+| C 每日上限 | 队列按每日上限截断（如 30 题/20 卡），剩余顺延                                                                      | 任意                           | 单日不会出现"永远背不完"                        | 0.5d   |
 
 ### 28.4 不做
 
@@ -985,13 +985,13 @@ FROM recall_card_states WHERE user_id = 1 GROUP BY kind;
 
 ### 29.2 设计
 
-| 层 | 内容 |
-| --- | --- |
-| `ErrorLogEntry` | `at / kind / message / stack`，`toJson`/`fromJson`（坏数据返回 null） |
-| `ErrorLog` | 内存环形缓冲 **200 条**（丢最旧）；`add/entries/exportText/clear`；`load/persist` 走既有 `PreferencesStore`（key `diagnostics_log`），**读写失败只 debugPrint** |
-| 全局钩子 | `FlutterError.onError`（kind=flutter，仍调用 `presentError`）、`PlatformDispatcher.onError`（platform）、`runZonedGuarded` 包 `runApp`（zone） |
-| 启动顺序 | `await ErrorLog.load()` 再 `runApp`；加载失败不阻塞启动 |
-| 设置页 | 「数据管理」加「诊断日志 N 条」→ 弹窗显示最近 20 条 + 「复制全部」（`Clipboard.setData`）+ 「清空」；无记录显示「暂无记录」 |
+| 层              | 内容                                                                                                                                                            |
+| --------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `ErrorLogEntry` | `at / kind / message / stack`，`toJson`/`fromJson`（坏数据返回 null）                                                                                           |
+| `ErrorLog`      | 内存环形缓冲 **200 条**（丢最旧）；`add/entries/exportText/clear`；`load/persist` 走既有 `PreferencesStore`（key `diagnostics_log`），**读写失败只 debugPrint** |
+| 全局钩子        | `FlutterError.onError`（kind=flutter，仍调用 `presentError`）、`PlatformDispatcher.onError`（platform）、`runZonedGuarded` 包 `runApp`（zone）                  |
+| 启动顺序        | `await ErrorLog.load()` 再 `runApp`；加载失败不阻塞启动                                                                                                         |
+| 设置页          | 「数据管理」加「诊断日志 N 条」→ 弹窗显示最近 20 条 + 「复制全部」（`Clipboard.setData`）+ 「清空」；无记录显示「暂无记录」                                     |
 
 ### 29.3 判据
 

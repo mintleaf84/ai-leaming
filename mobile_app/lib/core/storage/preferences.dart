@@ -48,4 +48,8 @@ final preferencesStoreProvider = Provider<PreferencesStore>(
 abstract final class PreferencesKeys {
   static const String themeMode = 'theme_mode';
   static const String reviewMode = 'review_mode';
+
+  /// 本地诊断日志（JSON 数组，最多 200 条）。
+  /// 见 `core/diagnostics/error_log.dart`。
+  static const String diagnosticsLog = 'diagnostics_log';
 }

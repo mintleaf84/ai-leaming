@@ -27,6 +27,8 @@ import 'features/exam/presentation/exam_list_screen.dart';
 import 'features/exam/presentation/exam_paper_screen.dart';
 import 'features/exam/presentation/exam_session_screen.dart';
 import 'features/exam/domain/exam_attempt.dart';
+import 'features/agent_sets/presentation/agent_sets_screen.dart';
+import 'features/agent_sets/presentation/agent_set_practice_screen.dart';
 
 import 'features/practice/presentation/question_list_screen.dart';
 import 'features/questions/presentation/draft_review_screen.dart';
@@ -146,9 +148,8 @@ GoRouter buildAppRouter({String initialLocation = '/'}) {
           ),
           GoRoute(
             path: ':id/edit',
-            builder: (context, state) => QuestionFormScreen(
-              questionId: state.pathParameters['id'],
-            ),
+            builder: (context, state) =>
+                QuestionFormScreen(questionId: state.pathParameters['id']),
           ),
         ],
       ),
@@ -158,9 +159,8 @@ GoRouter buildAppRouter({String initialLocation = '/'}) {
         routes: [
           GoRoute(
             path: ':id',
-            builder: (context, state) => DraftReviewScreen(
-              draftId: state.pathParameters['id']!,
-            ),
+            builder: (context, state) =>
+                DraftReviewScreen(draftId: state.pathParameters['id']!),
           ),
         ],
       ),
@@ -247,6 +247,18 @@ GoRouter buildAppRouter({String initialLocation = '/'}) {
                 initialAttempt: extra is ExamAttempt ? extra : null,
               );
             },
+          ),
+        ],
+      ),
+      GoRoute(
+        path: AppRoutes.agentSets,
+        builder: (context, state) => const AgentSetsScreen(),
+        routes: [
+          GoRoute(
+            path: ':id',
+            builder: (context, state) => AgentSetPracticeScreen(
+              setId: int.tryParse(state.pathParameters['id'] ?? '') ?? 0,
+            ),
           ),
         ],
       ),

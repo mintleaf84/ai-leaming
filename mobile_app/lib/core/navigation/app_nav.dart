@@ -46,14 +46,17 @@ abstract final class AppRoutes {
   static const questionNew = '/questions/new';
   static const drafts = '/drafts';
   static const exam = '/exam';
+  static const agentSets = '/agent-sets';
 
   static String historyDetail(String sessionId) => '/history/$sessionId';
   static String textbookDetail(int textbookId) => '/textbooks/$textbookId';
-  static String questionEdit(String questionId) => '/questions/$questionId/edit';
+  static String questionEdit(String questionId) =>
+      '/questions/$questionId/edit';
   static String draftDetail(String draftId) => '/drafts/$draftId';
   static String examPaper(int paperId) => '/exam/paper/$paperId';
   static String examSession(String sessionId) =>
       '/exam/session/${Uri.encodeComponent(sessionId)}';
+  static String agentSet(int setId) => '/agent-sets/$setId';
 }
 
 extension AppNav on BuildContext {

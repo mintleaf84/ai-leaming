@@ -5,10 +5,11 @@ import 'package:flutter_screenutil/flutter_screenutil.dart';
 import '../../../../core/navigation/app_nav.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../shared/domain/recall_queue.dart';
+import '../../../agent_sets/presentation/agent_set_inbox_provider.dart';
 import 'dashboard_action_card.dart';
 import 'dashboard_wide_card.dart';
 
-/// 首页功能入口区：两列卡 + 整宽入口（记忆卡 / 试卷 / 错题 / 历史）。
+/// 首页功能入口区：两列卡 + 整宽入口（记忆卡 / 试卷 / AI 题集 / 错题 / 历史）。
 ///
 /// 从 `dashboard_screen._buildActionGrid` 原样搬出（纯搬移，无行为改动）。
 /// 能力协商与离线判定仍由屏负责（屏拿着 `ref`），这里只接收结论。
@@ -17,6 +18,8 @@ class DashboardActionGrid extends StatelessWidget {
     super.key,
     required this.showRecall,
     required this.showExam,
+    required this.showAgentSets,
+    required this.agentSetInbox,
     required this.isOnline,
     required this.recallQueue,
     required this.wrongTotal,
@@ -25,6 +28,10 @@ class DashboardActionGrid extends StatelessWidget {
 
   final bool showRecall;
   final bool showExam;
+  final bool showAgentSets;
+
+  /// 未读汇总快照（启动/回前台由 `AgentSetInboxWatcher` 拉取，这里只读）。
+  final AgentSetInboxState agentSetInbox;
   final bool isOnline;
   final AsyncValue<RecallQueue>? recallQueue;
   final AsyncValue<int> wrongTotal;
@@ -109,6 +116,27 @@ class DashboardActionGrid extends StatelessWidget {
             trailingValue: isOnline ? '自动组卷' : '需要联网',
             onTap: isOnline ? () => context.pushDetail(AppRoutes.exam) : null,
             disabledNote: isOnline ? null : '离线，联网后可进入试卷',
+          ),
+          SizedBox(height: 16.h),
+        ],
+        // AI 题集：外部 Agent 推来的题。放在试卷下方——它也是「整批做题」，
+        // 但频次比试卷低；未读角标放在标题旁，不挤占右侧的数字位。
+        if (showAgentSets) ...[
+          DashboardWideCard(
+            icon: '🤖',
+            tag: 'Agent 推题',
+            tagColor: context.colors.successContainer,
+            tagTextColor: context.colors.success,
+            title: 'AI 题集',
+            trailingLabel: '新题',
+            trailingValue: isOnline
+                ? agentSetInbox.inbox?.entryValue ?? '暂无'
+                : '需要联网',
+            badgeCount: agentSetInbox.unreadCount,
+            onTap: isOnline
+                ? () => context.pushDetail(AppRoutes.agentSets)
+                : null,
+            disabledNote: isOnline ? null : '离线，联网后可查看 AI 题集',
           ),
           SizedBox(height: 16.h),
         ],

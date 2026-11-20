@@ -80,8 +80,10 @@ void main() {
       findsOneWidget,
       reason: '到期 0 张时不该显示「0 张」（读起来像还没开始）',
     );
-    // 错题 + 历史两处都是「暂无」
-    expect(find.text('暂无'), findsNWidgets(2));
+    // 错题 + 历史 + AI 题集三处都是「暂无」。
+    // AI 题集那份快照由启动/回前台统一拉取，首页用例不触发，所以它还没拉过；
+    // 「没拉过」也写「暂无」，不写「0 道未读」（那是「看过了」的意思）。
+    expect(find.text('暂无'), findsNWidgets(3));
     expectNoPlaceholders();
   });
 
@@ -101,8 +103,8 @@ void main() {
     );
     await tester.pump();
 
-    // 记忆卡 + 错题 + 历史：三处都取不到 → 三处「暂无」
-    expect(find.text('暂无'), findsNWidgets(3));
+    // 记忆卡 + 错题 + 历史 + AI 题集：四处都取不到 → 四处「暂无」
+    expect(find.text('暂无'), findsNWidgets(4));
     expectNoPlaceholders();
   });
 

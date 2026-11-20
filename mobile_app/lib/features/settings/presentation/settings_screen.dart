@@ -272,6 +272,21 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                           onTap: _syncOfflineAnswers,
                         ),
                         SettingsDivider(borderColor: borderColor),
+                        // 粉笔账号同步：把粉笔的知识点练习记录导入练习历史 / 错题本。
+                        // 绑定/同步过程都在 `/settings/fenbi` 里完成，这里只放入口。
+                        SettingsTile(
+                          icon: AppIcons.hubOutlined,
+                          title: '粉笔同步',
+                          trailing: Icon(
+                            AppIcons.arrowForwardIos,
+                            size: 16.sp,
+                            color: secondaryColor.withValues(alpha: 0.7),
+                          ),
+                          textColor: textColor,
+                          onTap: () =>
+                              context.pushDetail(AppRoutes.fenbiSync),
+                        ),
+                        SettingsDivider(borderColor: borderColor),
                         // 换机前检查（§30 P1）：显示待同步条数，同步成功才宣称
                         // 「可以换机」。与上面「同步离线记录」的区别是这里把
                         // 「换机前必须同步」的后果说清楚，而不是只报数字。

@@ -1152,3 +1152,62 @@ export const recall_review_logs = sqliteTable(
     ).on(table.user_id, table.client_key),
   }),
 );
+
+// --- 粉笔账号同步：绑定关系（docs/fenbi-sync-design.md §3） ---
+// 一个用户最多绑定一个粉笔账号（uq_fenbi_accounts_user）。
+// password_enc / cookie_enc 都是 AES-256-GCM 密文（密钥 FENBI_SECRET，见
+// src/lib/fenbi/crypto.ts）；密钥缺失时这两列恒为 NULL，只允许扫码绑定。
+export const fenbi_accounts = sqliteTable(
+  "fenbi_accounts",
+  {
+    id: integer("id").primaryKey({ autoIncrement: true }),
+    user_id: integer("user_id")
+      .notNull()
+      .references(() => users.id, { onDelete: "cascade" }),
+    // 粉笔侧用户 id：登录返回 data.id，数字但按 text 存（跨端 JSON 里可能是字符串）
+    fenbi_user_id: text("fenbi_user_id"),
+    // 明文手机号（仅用于掩码展示与重新登录；不进日志）
+    phone: text("phone"),
+    password_enc: text("password_enc"),
+    cookie_enc: text("cookie_enc"),
+    linked_at: text("linked_at").default(sql`CURRENT_TIMESTAMP`),
+    last_sync_at: text("last_sync_at"),
+    // 上次同步摘要 JSON（imported/skipped/newQuestions/failed/at）
+    last_sync_result: text("last_sync_result"),
+    // active|expired|revoked：expired/revoked 时不自动重试，等用户重新绑定
+    status: text("status", { enum: ["active", "expired", "revoked"] })
+      .notNull()
+      .default("active"),
+    created_at: text("created_at").default(sql`CURRENT_TIMESTAMP`),
+    updated_at: text("updated_at").default(sql`CURRENT_TIMESTAMP`),
+  },
+  (table) => ({
+    unq_user: uniqueIndex("uq_fenbi_accounts_user").on(table.user_id),
+  }),
+);
+
+// --- 粉笔账号同步：已同步的练习（第三层去重，§4.3） ---
+// 增量同步先查 (user_id, exercise_id)，命中即跳过，避免每次把历史重放一遍。
+// exercise_id 用 text：粉笔 id 已到 2.1e9（int32 边界附近），未来可能越界。
+export const fenbi_synced_exercises = sqliteTable(
+  "fenbi_synced_exercises",
+  {
+    id: integer("id").primaryKey({ autoIncrement: true }),
+    user_id: integer("user_id")
+      .notNull()
+      .references(() => users.id, { onDelete: "cascade" }),
+    exercise_id: text("exercise_id").notNull(),
+    // 落库用的幂等键（fenbi:exercise:{id}），便于反查 practice_sessions
+    source_key: text("source_key"),
+    // 命中既有会话时的 sessionId（重复导入时也填，方便排查）
+    session_id: text("session_id"),
+    imported_at: text("imported_at").default(sql`CURRENT_TIMESTAMP`),
+    // 原始 {exercise, questions} 的 sha256：内容变了（补作答）时能看出来
+    payload_sha256: text("payload_sha256"),
+  },
+  (table) => ({
+    unq_user_exercise: uniqueIndex(
+      "uq_fenbi_synced_exercises_user_exercise",
+    ).on(table.user_id, table.exercise_id),
+  }),
+);

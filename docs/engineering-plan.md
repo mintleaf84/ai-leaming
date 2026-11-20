@@ -453,6 +453,70 @@ W2（改动小、可当天合）→ W1 批次 A → W1 批次 B。两者互不�
 
 不做：换数据库（sqlite→pg）；keyset 分页全量改造（`practice_logs` 仅 4990 行，offset 够用）。
 
+## Web 覆盖率门禁（计划，2026-11-20）
+
+移动端已有三档门禁（global / scope / 单文件回退），Web 侧**只有测试数量，没有覆盖率信号**：
+`@vitest/coverage-v8` 装在 devDependencies 里但没人调用，`verify` 四闸里没有覆盖率，
+`vitest.config.ts` 也没有 thresholds。
+
+### W-COV1 先量（0.2d）
+
+```bash
+cd my-next-app
+npx vitest run --coverage --coverage.reporter=text-summary
+npx vitest run --coverage --coverage.reporter=json-summary
+```
+
+记录：全局行覆盖、`src/lib/**`（逻辑层）与 `src/app/**`+`src/components/**`（UI）分别多少。
+**没有这组数之前不设阈值**（设高了挡所有 PR，设低了等于没有）。
+
+### W-COV2 用 vitest 原生 thresholds（0.3d）
+
+不自己写 gate 脚本（mobile 那个是因为 Dart 侧没有原生支持；vitest 有）：
+
+```ts
+// vitest.config.ts
+coverage: {
+  provider: 'v8',
+  reporter: ['text-summary', 'lcov'],
+  exclude: ['**/*.test.{ts,tsx}', 'scripts/**', 'drizzle/**', '.next/**'],
+  thresholds: {
+    lines: <实测-1>,
+    'src/lib/services/**': { lines: <实测-1> },
+    'src/lib/api/**':      { lines: <实测-1> },
+    'src/lib/auth/**':     { lines: <实测-1> },
+    'src/lib/db/**':       { lines: <实测-1> },
+    'src/app/**':          { lines: <实测-1> },
+    'src/components/**':   { lines: <实测-1> },
+  },
+}
+```
+
+- 只升不降：每次提升后把 thresholds 抬到「实测 − 1pp」，与 mobile 的 `coverage_baseline.json` 同一口径
+- 目录阈值的作用与 mobile 的 scope 相同：防止「服务层写得好」掩盖「页面全没测」
+
+### W-COV3 接进 CI（0.2d）
+
+| 动作 | 说明 |
+| --- | --- |
+| `package.json` 加 `test:coverage` | `vitest run --coverage` |
+| `ci.yml` 的 `unit-test` job 改跑 `npm run test:coverage` | 耗时从 3.6min 涨到约 5min（v8 插桩），可接受 |
+| 失败时上传 `coverage/lcov.info`（`if: always()`） | 与 mobile 的 `coverage-lcov` 同名风格 |
+| `verify` 四闸 → 五闸（加 `test:coverage`） | 本地一条命令能跑完 |
+
+### W-COV4 判据
+
+1. 改动前后各跑一次，贴出 `text-summary`（global 与两个分组的行覆盖）
+2. 故意删一个测试 → CI 红且报「threshold not met」
+3. 故意把某文件覆盖降到阈值下 → 红
+4. PR 反馈时长增量 ≤ 2min
+
+### W-COV5 不做
+
+- 不追 80%：Web 有 27 个整页 client 组件、8 个 550–882 行巨型组件，追高必然写大量脆测试
+- 不做 per-file 阈值（vitest 的 glob 阈值已够；单文件阈值在 Web 上噪音大于收益）
+- 不给 `scripts/**` 与 `drizzle/**` 要求覆盖（一次性脚本与 SQL）
+
 ## 数据正确性（计划，2026-11-20）
 
 这两条不是"新功能"，是**已经错了的数据**。先修，否则所有统计与判分都不可信。

@@ -4,6 +4,7 @@ import 'package:flutter/foundation.dart';
 import 'package:sqflite/sqflite.dart';
 
 import '../../../core/local/local_db.dart';
+import '../domain/practice_backup.dart';
 import '../domain/question.dart';
 
 /// 一条待同步的单题作答记录。
@@ -395,6 +396,168 @@ class LocalPracticeStore {
       return 0;
     }
     return rows.first['c'] as int? ?? 0;
+  }
+
+  /// 把整库题目的 `fetched_at` 统一成同一个时间戳（题库预下载完成时用）。
+  ///
+  /// 为什么必须统一：`cacheQuestions` 每页各写一次 `now`，逐页刷新会让
+  /// 「先下的页」在整库下完时就已接近 7 天过期线，用户明明刚下完却抽不到题。
+  /// 整库完成即代表「这一版题库全部是同一时刻拿到的」，时间戳也只能有一个。
+  Future<void> markAllQuestionsFetchedAt(int fetchedAt) async {
+    final db = await _resolveDb();
+    await db.update(
+      'cached_questions',
+      <String, Object?>{'fetched_at': fetchedAt},
+    );
+  }
+
+  /// 某账号的待同步作答（备份导出用）。
+  ///
+  /// 不过滤 5 秒宽限期：换机前导出的必须是**全部**未同步记录，
+  /// 刚作答的那几条同样会随设备一起消失。
+  Future<List<BackupAnswer>> unsyncedAnswersFor(String userId) async {
+    final db = await _resolveDb();
+    final rows = await db.query(
+      'pending_answers',
+      where: 'synced_at IS NULL AND user_id = ?',
+      whereArgs: <Object?>[userId],
+      orderBy: 'answered_at',
+    );
+    return <BackupAnswer>[
+      for (final row in rows)
+        if (BackupAnswer.fromRow(row) case final answer?) answer,
+    ];
+  }
+
+  /// 某账号的本地练习会话（备份导出用）。
+  Future<List<BackupLocalSession>> localSessionsFor(String userId) async {
+    final db = await _resolveDb();
+    final rows = await db.query(
+      'local_sessions',
+      where: 'user_id = ?',
+      whereArgs: <Object?>[userId],
+      orderBy: 'started_at',
+    );
+    return <BackupLocalSession>[
+      for (final row in rows)
+        if (BackupLocalSession.fromRow(row) case final session?) session,
+    ];
+  }
+
+  /// 导入备份作答，返回真正新增的条数。
+  ///
+  /// 幂等键仍是 `client_key`：已存在的直接跳过（返回计数不含它们）。
+  /// 归属一律写成 [userId]（导入前已校验过备份账号与当前登录一致）。
+  Future<int> insertBackupAnswers(
+    List<BackupAnswer> answers, {
+    required String userId,
+  }) async {
+    if (answers.isEmpty) {
+      return 0;
+    }
+    final db = await _resolveDb();
+    final existing = await _existingKeys(
+      db,
+      table: 'pending_answers',
+      column: 'client_key',
+      keys: <String>[for (final answer in answers) answer.clientKey],
+    );
+    final missing = <BackupAnswer>[
+      for (final answer in answers)
+        if (!existing.contains(answer.clientKey)) answer,
+    ];
+    if (missing.isEmpty) {
+      return 0;
+    }
+    final batch = db.batch();
+    for (final answer in missing) {
+      batch.insert(
+        'pending_answers',
+        <String, Object?>{
+          'client_key': answer.clientKey,
+          'local_id': answer.localId,
+          'user_id': userId,
+          'question_id': answer.questionId,
+          'user_answer': answer.userAnswer,
+          'is_correct': answer.isCorrect ? 1 : 0,
+          'duration_ms': answer.durationMs,
+          'answered_at': answer.answeredAt,
+          // 导入的作答一律视为**未同步**：换机场景下它们本来就还没上传。
+          'synced_at': null,
+        },
+        conflictAlgorithm: ConflictAlgorithm.ignore,
+      );
+    }
+    await batch.commit(noResult: true);
+    return missing.length;
+  }
+
+  /// 导入备份会话，返回真正新增的条数（`local_id` 已存在则跳过）。
+  Future<int> insertBackupSessions(
+    List<BackupLocalSession> sessions, {
+    required String userId,
+  }) async {
+    if (sessions.isEmpty) {
+      return 0;
+    }
+    final db = await _resolveDb();
+    final existing = await _existingKeys(
+      db,
+      table: 'local_sessions',
+      column: 'local_id',
+      keys: <String>[for (final session in sessions) session.localId],
+    );
+    final missing = <BackupLocalSession>[
+      for (final session in sessions)
+        if (!existing.contains(session.localId)) session,
+    ];
+    if (missing.isEmpty) {
+      return 0;
+    }
+    final batch = db.batch();
+    for (final session in missing) {
+      batch.insert(
+        'local_sessions',
+        <String, Object?>{
+          'local_id': session.localId,
+          'user_id': userId,
+          'mode': session.mode,
+          'question_ids': jsonEncode(session.questionIds),
+          'started_at': session.startedAt,
+          'synced_session_id': session.syncedSessionId,
+        },
+        conflictAlgorithm: ConflictAlgorithm.ignore,
+      );
+    }
+    await batch.commit(noResult: true);
+    return missing.length;
+  }
+
+  /// 分批查已存在的键（SQLite 的 `IN` 参数个数有上限，不能一次塞几千个）。
+  Future<Set<String>> _existingKeys(
+    Database db, {
+    required String table,
+    required String column,
+    required List<String> keys,
+  }) async {
+    const chunkSize = 100;
+    final existing = <String>{};
+    for (var start = 0; start < keys.length; start += chunkSize) {
+      final end = start + chunkSize > keys.length ? keys.length : start + chunkSize;
+      final chunk = keys.sublist(start, end);
+      final placeholders = List<String>.filled(chunk.length, '?').join(',');
+      final rows = await db.rawQuery(
+        'SELECT $column AS k FROM $table WHERE $column IN ($placeholders)',
+        chunk,
+      );
+      for (final row in rows) {
+        final key = row['k'];
+        if (key is String) {
+          existing.add(key);
+        }
+      }
+    }
+    return existing;
   }
 
   Future<void> setMeta(String key, String value) async {

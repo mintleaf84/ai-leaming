@@ -17,6 +17,8 @@ const { mockPracticeService, mockImportService, InvalidQuestionIdsError } =
       InvalidQuestionIdsError,
       mockPracticeService: {
         createRandomSession: vi.fn(),
+        createTagSession: vi.fn(),
+        createWrongSession: vi.fn(),
         submitAnswerWithValidation: vi.fn(),
         getSessionById: vi.fn(),
       },
@@ -64,6 +66,90 @@ describe("Practice Hono Routes", () => {
       const data = await res.json();
       expect(data.sessionId).toBe("123");
       expect(data.questions).toHaveLength(1);
+    });
+
+    it("mode=tag 走 createTagSession 并透传 tag", async () => {
+      mockPracticeService.createTagSession.mockResolvedValue({
+        sessionId: "tag-1",
+        questions: [{ id: 3, content: "Q", options: [], type: "single" }],
+      });
+
+      const res = await app.request("/session", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ mode: "tag", tag: "宪法", limit: 5 }),
+      });
+
+      expect(res.status).toBe(200);
+      expect((await res.json()).sessionId).toBe("tag-1");
+      expect(mockPracticeService.createTagSession).toHaveBeenCalledWith(
+        1,
+        "宪法",
+        5,
+      );
+      expect(mockPracticeService.createRandomSession).not.toHaveBeenCalled();
+    });
+
+    it("mode=tag 缺 tag 参数时 400 且文案可读", async () => {
+      const res = await app.request("/session", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ mode: "tag" }),
+      });
+
+      expect(res.status).toBe(400);
+      const data = await res.json();
+      expect(data.error).toContain("tag");
+      expect(mockPracticeService.createTagSession).not.toHaveBeenCalled();
+    });
+
+    it("mode=wrong 走 createWrongSession", async () => {
+      mockPracticeService.createWrongSession.mockResolvedValue({
+        sessionId: "wrong-2",
+        questions: [{ id: 4, content: "Q", options: [], type: "single" }],
+      });
+
+      const res = await app.request("/session", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ mode: "wrong", limit: 20 }),
+      });
+
+      expect(res.status).toBe(200);
+      expect((await res.json()).sessionId).toBe("wrong-2");
+      expect(mockPracticeService.createWrongSession).toHaveBeenCalledWith(
+        1,
+        20,
+      );
+    });
+
+    it("无匹配题时回空 questions + 空 sessionId（不是 500）", async () => {
+      mockPracticeService.createWrongSession.mockResolvedValue({
+        sessionId: "",
+        questions: [],
+      });
+
+      const res = await app.request("/session", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ mode: "wrong" }),
+      });
+
+      expect(res.status).toBe(200);
+      const data = await res.json();
+      expect(data.sessionId).toBe("");
+      expect(data.questions).toEqual([]);
+    });
+
+    it("mode=first-principles 仍 400，文案为「暂未开放」", async () => {
+      const res = await app.request("/session", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ mode: "first-principles" }),
+      });
+
+      expect(res.status).toBe(400);
+      expect((await res.json()).error).toContain("暂未开放");
     });
   });
 
@@ -121,6 +207,7 @@ describe("Practice Hono Routes", () => {
         sessionId: "agent_abc",
         inserted: 1,
         duplicated: false,
+        regraded: 1,
       });
 
       const res = await app.request("/offline-answers", {
@@ -133,6 +220,8 @@ describe("Practice Hono Routes", () => {
       const data = await res.json();
       expect(data.inserted).toBe(1);
       expect(data.duplicated).toBe(false);
+      // 客户端自报对错与服务端重判不一致的条数要透传给客户端
+      expect(data.regraded).toBe(1);
       // 身份必须来自 JWT（userId=1），不能由请求体决定
       expect(mockImportService.importAgentAnswers).toHaveBeenCalledWith(
         1,
@@ -145,6 +234,7 @@ describe("Practice Hono Routes", () => {
         sessionId: "agent_abc",
         inserted: 0,
         duplicated: true,
+        regraded: 0,
       });
 
       const res = await app.request("/offline-answers", {
@@ -154,7 +244,9 @@ describe("Practice Hono Routes", () => {
       });
 
       expect(res.status).toBe(200);
-      expect((await res.json()).duplicated).toBe(true);
+      const data = await res.json();
+      expect(data.duplicated).toBe(true);
+      expect(data.regraded).toBe(0);
     });
 
     it("题目不存在时整批拒绝并回传前 5 个非法 id", async () => {

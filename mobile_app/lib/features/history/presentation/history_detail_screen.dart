@@ -626,7 +626,6 @@ class _HistoryDetailScreenState extends ConsumerState<HistoryDetailScreen> {
                       fontWeight: FontWeight.w600,
                       color: textColor,
                       height: 1.5,
-                      fontFamily: 'Noto Serif SC', // 使用衬线字体增强阅读感
                     ),
                   ),
                   SizedBox(height: 24.h),

@@ -47,8 +47,11 @@ export interface PracticeSessionConfig {
 
 /**
  * 将数据库原始行映射为业务 Question 类型
+ *
+ * 导出给试卷服务复用：题目行 → Question 的修复/校验规则必须只有一份，
+ * 否则试卷详情与练习会话会出现"同一道题两个形状"。
  */
-function mapQuestion(q: unknown): Question {
+export function mapQuestion(q: unknown): Question {
   const data = q as Record<string, unknown>;
   try {
     return QuestionRowSchema.parse(data);

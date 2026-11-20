@@ -5,6 +5,7 @@ import '../../../core/navigation/app_nav.dart';
 import 'mastery_provider.dart';
 import '../../../core/theme/app_icons.dart';
 import '../../../core/theme/app_colors.dart';
+import '../../../shared/widgets/state_views.dart';
 
 class MasteryScreen extends ConsumerStatefulWidget {
   const MasteryScreen({super.key});
@@ -56,48 +57,11 @@ class _MasteryScreenState extends ConsumerState<MasteryScreen> {
               child: CircularProgressIndicator(color: context.colors.accent),
             )
           : state.error != null
-          ? Center(
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  Icon(
-                    AppIcons.errorOutline,
-                    size: 48.sp,
-                    color: context.colors.error,
-                  ),
-                  SizedBox(height: 16.h),
-                  Text(
-                    '加载失败',
-                    style: TextStyle(
-                      fontSize: 18.sp,
-                      fontWeight: FontWeight.w600,
-                      color: context.colors.text,
-                    ),
-                  ),
-                  SizedBox(height: 8.h),
-                  Text(
-                    '请检查网络后重试',
-                    style: TextStyle(
-                      fontSize: 14.sp,
-                      color: context.colors.textSecondary,
-                    ),
-                  ),
-                  SizedBox(height: 24.h),
-                  ElevatedButton.icon(
-                    onPressed: () =>
-                        ref.read(masteryControllerProvider.notifier).loadTree(),
-                    icon: const Icon(AppIcons.refresh, size: 18),
-                    label: const Text('重试'),
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: context.colors.accent,
-                      foregroundColor: context.colors.onAccent,
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(8.r),
-                      ),
-                    ),
-                  ),
-                ],
-              ),
+          // 统一错误态（审计 #9）：原来本屏字号 16/18 混用、按钮尺寸自定义。
+          ? AppErrorView(
+              message: '掌握度数据没加载出来',
+              onRetry: () =>
+                  ref.read(masteryControllerProvider.notifier).loadTree(),
             )
           : state.tree.isEmpty
           ? const Center(child: Text('暂无数据'))

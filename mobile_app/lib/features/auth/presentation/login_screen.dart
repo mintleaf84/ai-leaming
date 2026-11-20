@@ -67,7 +67,6 @@ class LoginScreen extends HookConsumerWidget {
                             fontSize: 28.sp,
                             fontWeight: FontWeight.bold,
                             color: context.colors.text,
-                            fontFamily: 'Inter',
                           ),
                         ),
                         SizedBox(height: 40.h),
@@ -98,7 +97,21 @@ class LoginScreen extends HookConsumerWidget {
                         Align(
                           alignment: Alignment.centerRight,
                           child: TextButton(
-                            onPressed: () {},
+                            // 后端目前没有找回密码接口（/api/auth 只有
+                            // login / register / logout），点进新页面只会再
+                            // 造一个死页面，所以这里如实告知，不做假跳转。
+                            onPressed: () {
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                const SnackBar(
+                                  content: Text('暂未开放：请联系管理员重置密码'),
+                                ),
+                              );
+                            },
+                            style: TextButton.styleFrom(
+                              // 13sp 字只有约 17dp 高，撑到 44dp 命中区。
+                              minimumSize: const Size(44, 44),
+                              padding: EdgeInsets.symmetric(horizontal: 8.w),
+                            ),
                             child: Text(
                               '忘记密码？',
                               style: TextStyle(
@@ -185,59 +198,30 @@ class LoginScreen extends HookConsumerWidget {
                 ),
               ),
 
-              // Bottom Section: Divider, Social, Register
+              // Bottom Section: Register
               Padding(
                 padding: EdgeInsets.only(bottom: 24.h),
                 child: Column(
                   children: [
-                    // Divider
-                    Row(
-                      children: [
-                        Expanded(child: Divider(color: context.colors.border)),
-                        Padding(
-                          padding: EdgeInsets.symmetric(horizontal: 16.w),
-                          child: Text(
-                            '或者',
-                            style: TextStyle(
-                              color: context.colors.textSecondary,
-                              fontSize: 12.sp,
-                            ),
-                          ),
-                        ),
-                        Expanded(child: Divider(color: context.colors.border)),
-                      ],
+                    Text(
+                      '更多登录方式即将开放',
+                      style: TextStyle(
+                        color: context.colors.textSecondary,
+                        fontSize: 12.sp,
+                      ),
                     ),
 
-                    SizedBox(height: 24.h),
-
-                    // Social Logins
-                    Row(
-                      children: [
-                        Expanded(
-                          child: _buildSocialButton(
-                            context,
-                            'Apple',
-                            AppIcons.apple,
-                          ),
-                        ),
-                        SizedBox(width: 12.w),
-                        Expanded(
-                          child: _buildSocialButton(
-                            context,
-                            '微信',
-                            AppIcons.chatBubbleOutline,
-                            color: const Color(0xFF07C160),
-                          ),
-                        ),
-                      ],
-                    ),
-
-                    SizedBox(height: 32.h),
+                    SizedBox(height: 8.h),
 
                     // Register Link
                     Center(
-                      child: GestureDetector(
-                        onTap: () => context.replace(AppRoutes.register),
+                      child: TextButton(
+                        onPressed: () => context.replace(AppRoutes.register),
+                        style: TextButton.styleFrom(
+                          // 13sp 富文本只有约 17dp 高，撑到 44dp 命中区。
+                          minimumSize: const Size(44, 44),
+                          padding: EdgeInsets.symmetric(horizontal: 8.w),
+                        ),
                         child: RichText(
                           text: TextSpan(
                             text: '还没有账号？ ',
@@ -333,37 +317,6 @@ class LoginScreen extends HookConsumerWidget {
             ),
           ),
           if (!isPassword) SizedBox(width: 14.w),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildSocialButton(
-    BuildContext context,
-    String label,
-    IconData icon, {
-    Color? color,
-  }) {
-    return Container(
-      height: 44.h,
-      decoration: BoxDecoration(
-        border: Border.all(color: context.colors.border),
-        color: context.colors.surface,
-        borderRadius: BorderRadius.circular(8.r),
-      ),
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          Icon(icon, size: 20.sp, color: color ?? Colors.black),
-          SizedBox(width: 8.w),
-          Text(
-            label,
-            style: TextStyle(
-              fontSize: 14.sp,
-              fontWeight: FontWeight.normal,
-              color: context.colors.text, // Notion-like text color
-            ),
-          ),
         ],
       ),
     );

@@ -246,14 +246,13 @@ class DashboardScreen extends HookConsumerWidget {
       children: [
         Text(emoji, style: TextStyle(fontSize: 48.sp)),
         SizedBox(height: 8.h),
+        // 问候语保留首页的品牌语气（大字号），但字号/字重走主题档位，
+        // 不在这里硬编码 sp；headlineLarge 是主题里最接近原 36sp 粗体的一档。
         Text(
           greeting,
-          style: TextStyle(
-            fontSize: 36.sp,
-            fontWeight: FontWeight.bold,
+          style: Theme.of(context).textTheme.headlineLarge?.copyWith(
             height: 1.1,
             color: context.colors.text,
-            fontFamily: 'Inter',
           ),
         ),
         SizedBox(height: 4.h),
@@ -378,7 +377,7 @@ class DashboardScreen extends HookConsumerWidget {
           icon: '⏳',
           tag: '温故知新',
           tagColor: context.colors.surfaceAlt,
-          tagTextColor: const Color(0xFF4B5563),
+          tagTextColor: context.colors.textSecondary,
           title: '练习历史',
           trailingLabel: '最近',
           trailingValue: _lastPracticeValue(lastPracticeAt),
@@ -796,6 +795,11 @@ class DashboardScreen extends HookConsumerWidget {
     // 今日进度：每日目标见 [dailyGoal]（与待办清单同源）
     final progress = (todayCount / dailyGoal).clamp(0.0, 1.0);
     final progressText = todayCount > 0 ? '今日已练习 $todayCount 题' : '今日目标：尚未开始';
+    // 进度条下方只放"目标 + 完成率"这类补充信息：同一句 progressText 在标题下
+    // 已经报过练习量，再渲染一次会让右侧的数字失去上下文。
+    final goalText = todayCount > 0
+        ? '目标 $dailyGoal 题 · 已完成 ${(progress * 100).round()}%'
+        : '目标 $dailyGoal 题';
     final accuracyText = todayCount > 0
         ? '${(todayAccuracy * 100).toStringAsFixed(1)}%'
         : '0%';
@@ -862,17 +866,22 @@ class DashboardScreen extends HookConsumerWidget {
           ),
           SizedBox(height: 12.h),
           Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              Text(
-                progressText,
-                style: TextStyle(
-                  fontSize: 12.sp,
-                  color: context.colors.textSecondary,
+              // 左侧目标文案用 Expanded + 省略号：长机型/长文案都不会把右侧正确率挤出屏
+              Expanded(
+                child: Text(
+                  goalText,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: TextStyle(
+                    fontSize: 12.sp,
+                    color: context.colors.textSecondary,
+                  ),
                 ),
               ),
+              SizedBox(width: 8.w),
               Text(
-                accuracyText,
+                '正确率 $accuracyText',
                 style: TextStyle(fontSize: 12.sp, fontWeight: FontWeight.bold),
               ),
             ],

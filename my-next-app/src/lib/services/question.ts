@@ -152,6 +152,30 @@ export interface QuestionUpdateResult {
   regrade: RegradeResult | null;
 }
 
+/**
+ * 材料纯文本 → `material_html`。
+ *
+ * 移动端建题只发 `material`（纯文本），**不能原样塞进 HTML 字段**：材料里出现
+ * `<script>` 或单纯一个 `<` 都会让前端渲染错位（甚至 XSS）。这里逐行转义后包
+ * `<p>`，换行即分段。显式传了 `material_html`（导入/AI 已经产出 HTML）时以显式值为准。
+ */
+export function materialTextToHtml(text: string | null | undefined): string | null {
+  if (text === null || text === undefined) return null;
+  if (text.trim() === "") return null;
+  return text
+    .split(/\r?\n/)
+    .map(
+      (line) =>
+        `<p>${line
+          .replace(/&/g, "&amp;")
+          .replace(/</g, "&lt;")
+          .replace(/>/g, "&gt;")
+          .replace(/"/g, "&quot;")
+          .replace(/'/g, "&#39;")}</p>`,
+    )
+    .join("");
+}
+
 /** 内容校验失败：issues 一次报全（路由层交给 `toErrorResponse` 渲染） */
 export class QuestionValidationError extends ValidationError {
   constructor(issues: string[], message = "题目内容校验失败") {
@@ -457,7 +481,8 @@ export const questionService = {
           type: valid.type,
           source: options.source ?? data.source ?? null,
           material: data.material ?? null,
-          material_html: data.material_html ?? null,
+          material_html:
+            data.material_html ?? materialTextToHtml(data.material),
           created_at: sql`CURRENT_TIMESTAMP`,
         })
         .onConflictDoNothing({ target: drizzleSchema.questions.external_id })
@@ -627,6 +652,17 @@ export const questionService = {
     }
     if (data.type !== undefined && data.type !== existing.type) {
       nextValues.type = valid.type;
+    }
+    // 材料以纯文本为准：`material` 变化时同步重算转义后的 HTML
+    if (data.material !== undefined && data.material !== existing.material) {
+      nextValues.material = data.material;
+      nextValues.material_html =
+        data.material_html ?? materialTextToHtml(data.material);
+    } else if (
+      data.material_html !== undefined &&
+      data.material_html !== existing.material_html
+    ) {
+      nextValues.material_html = data.material_html;
     }
 
     const changed = Object.keys(nextValues);

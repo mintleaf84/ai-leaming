@@ -234,6 +234,54 @@ describe("questions 建题/改题", () => {
     expect(Number(updateLog.n)).toBeGreaterThanOrEqual(1);
   });
 
+  it("材料口径：只发 material（纯文本）→ 落库 material_html 为转义后的分段 HTML", async () => {
+    const material = "第一段 <script>alert(1)</script>\n第二段 & 符号";
+    const created = await app.request("/", {
+      method: "POST",
+      headers: auth(tokenA),
+      body: JSON.stringify({
+        ...QUESTION,
+        content: "材料题：阅读材料后回答，材料字段口径测试。",
+        material,
+      }),
+    });
+    expect(created.status).toBe(201);
+    const id = (await created.json()).id as number;
+
+    const [row] = await dbm.drizzleDb.all<{
+      material: string;
+      material_html: string;
+    }>(sql`SELECT material, material_html FROM questions WHERE id = ${id}`);
+    expect(row.material).toBe(material);
+    // 纯文本不得原样进 HTML：标签被转义、换行拆成段落
+    expect(row.material_html).not.toContain("<script>");
+    expect(row.material_html).toContain("&lt;script&gt;");
+    expect(row.material_html).toContain("&amp;");
+    expect(row.material_html).toBe(
+      "<p>第一段 &lt;script&gt;alert(1)&lt;/script&gt;</p><p>第二段 &amp; 符号</p>",
+    );
+
+    // GET 详情回传原文与 HTML，移动端编辑表单可直接回填 material
+    const detail = await app.request(`/${id}`, { headers: auth(tokenA) });
+    const detailBody = await detail.json();
+    expect(detailBody.material).toBe(material);
+    expect(detailBody.material_html).toBe(row.material_html);
+
+    // PATCH material 同步重算 HTML
+    const patched = await app.request(`/${id}`, {
+      method: "PATCH",
+      headers: auth(tokenA),
+      body: JSON.stringify({ material: "新材料 <b>x</b>" }),
+    });
+    expect(patched.status).toBe(200);
+    const [after] = await dbm.drizzleDb.all<{
+      material: string;
+      material_html: string;
+    }>(sql`SELECT material, material_html FROM questions WHERE id = ${id}`);
+    expect(after.material).toBe("新材料 <b>x</b>");
+    expect(after.material_html).toBe("<p>新材料 &lt;b&gt;x&lt;/b&gt;</p>");
+  });
+
   it("未登录 401", async () => {
     const res = await app.request("/", {
       method: "POST",

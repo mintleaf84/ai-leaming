@@ -1998,6 +1998,953 @@
         }
       }
     },
+    "/api/drafts": {
+      "get": {
+        "description": "按 `created_at` 倒序返回草稿摘要，只含计数不含 items 正文。默认排除 `discarded`；显式 `?status=discarded` 可查。",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "status",
+            "required": false,
+            "schema": {
+              "enum": [
+                "captured",
+                "analyzing",
+                "ready",
+                "failed",
+                "confirmed",
+                "discarded"
+              ],
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "properties": {
+                    "items": {
+                      "items": {
+                        "properties": {
+                          "confirmedCount": {
+                            "type": "integer"
+                          },
+                          "createdAt": {
+                            "type": "string"
+                          },
+                          "errorCode": {
+                            "type": "string"
+                          },
+                          "id": {
+                            "type": "string"
+                          },
+                          "itemCount": {
+                            "type": "integer"
+                          },
+                          "source": {
+                            "enum": ["camera", "gallery", "text", "pdf"],
+                            "type": "string"
+                          },
+                          "status": {
+                            "enum": [
+                              "captured",
+                              "analyzing",
+                              "ready",
+                              "failed",
+                              "confirmed",
+                              "discarded"
+                            ],
+                            "type": "string"
+                          }
+                        },
+                        "required": [
+                          "id",
+                          "status",
+                          "source",
+                          "itemCount",
+                          "confirmedCount"
+                        ],
+                        "type": "object"
+                      },
+                      "type": "array"
+                    }
+                  },
+                  "required": ["items"],
+                  "type": "object"
+                }
+              }
+            },
+            "description": "草稿摘要列表"
+          },
+          "401": {
+            "description": "未登录"
+          }
+        },
+        "summary": "草稿列表（仅本人的；默认不含已丢弃）"
+      },
+      "post": {
+        "description": "图片按 sha256 落 `data/drafts/<sha256>` 去重；请求体用 base64（`data:image/...;base64,` 前缀可选），不引入 multipart。source=text 时传 `text`。",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "properties": {
+                  "file_name": {
+                    "type": "string"
+                  },
+                  "image_base64": {
+                    "maxLength": 20000000,
+                    "type": "string"
+                  },
+                  "image_mime_type": {
+                    "type": "string"
+                  },
+                  "source": {
+                    "enum": ["camera", "gallery", "text", "pdf"],
+                    "type": "string"
+                  },
+                  "text": {
+                    "type": "string"
+                  }
+                },
+                "required": ["source"],
+                "type": "object"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "properties": {
+                    "draft": {
+                      "properties": {
+                        "ai_model": {
+                          "nullable": true,
+                          "type": "string"
+                        },
+                        "ai_prompt_version": {
+                          "nullable": true,
+                          "type": "string"
+                        },
+                        "ai_provider": {
+                          "nullable": true,
+                          "type": "string"
+                        },
+                        "ai_raw_json": {
+                          "nullable": true,
+                          "type": "string"
+                        },
+                        "created_at": {
+                          "nullable": true,
+                          "type": "string"
+                        },
+                        "error_code": {
+                          "nullable": true,
+                          "type": "string"
+                        },
+                        "expires_at": {
+                          "nullable": true,
+                          "type": "integer"
+                        },
+                        "id": {
+                          "type": "string"
+                        },
+                        "image_rel_path": {
+                          "nullable": true,
+                          "type": "string"
+                        },
+                        "image_sha256": {
+                          "nullable": true,
+                          "type": "string"
+                        },
+                        "source": {
+                          "enum": ["camera", "gallery", "text", "pdf"],
+                          "type": "string"
+                        },
+                        "status": {
+                          "enum": [
+                            "captured",
+                            "analyzing",
+                            "ready",
+                            "failed",
+                            "confirmed",
+                            "discarded"
+                          ],
+                          "type": "string"
+                        },
+                        "user_id": {
+                          "type": "integer"
+                        }
+                      },
+                      "required": [
+                        "id",
+                        "user_id",
+                        "source",
+                        "status",
+                        "image_sha256",
+                        "image_rel_path",
+                        "ai_provider",
+                        "ai_model",
+                        "ai_prompt_version",
+                        "ai_raw_json",
+                        "error_code",
+                        "created_at",
+                        "expires_at"
+                      ],
+                      "type": "object"
+                    },
+                    "items": {
+                      "items": {
+                        "properties": {
+                          "answer": {
+                            "type": "string"
+                          },
+                          "confirmed": {
+                            "type": "boolean"
+                          },
+                          "content": {
+                            "type": "string"
+                          },
+                          "explanation": {
+                            "type": "string"
+                          },
+                          "idx": {
+                            "type": "integer"
+                          },
+                          "material_html": {
+                            "nullable": true,
+                            "type": "string"
+                          },
+                          "options": {
+                            "items": {
+                              "type": "string"
+                            },
+                            "type": "array"
+                          },
+                          "tags": {
+                            "items": {
+                              "type": "string"
+                            },
+                            "type": "array"
+                          },
+                          "type": {
+                            "type": "string"
+                          }
+                        },
+                        "required": [
+                          "idx",
+                          "content",
+                          "options",
+                          "answer",
+                          "explanation",
+                          "tags",
+                          "type",
+                          "material_html",
+                          "confirmed"
+                        ],
+                        "type": "object"
+                      },
+                      "type": "array"
+                    }
+                  },
+                  "required": ["draft", "items"],
+                  "type": "object"
+                }
+              }
+            },
+            "description": "草稿已创建（status=captured）"
+          },
+          "400": {
+            "description": "参数/图片不合法"
+          },
+          "401": {
+            "description": "未登录"
+          }
+        },
+        "summary": "创建草稿（可带 base64 图片）"
+      }
+    },
+    "/api/drafts/{id}": {
+      "delete": {
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "minLength": 1,
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "properties": {
+                    "id": {
+                      "type": "string"
+                    },
+                    "status": {
+                      "enum": ["discarded"],
+                      "type": "string"
+                    }
+                  },
+                  "required": ["id", "status"],
+                  "type": "object"
+                }
+              }
+            },
+            "description": "已丢弃（重复调用幂等）"
+          },
+          "401": {
+            "description": "未登录"
+          },
+          "404": {
+            "description": "草稿不存在，或不属于当前用户"
+          }
+        },
+        "summary": "丢弃草稿（软删除）"
+      },
+      "get": {
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "minLength": 1,
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "properties": {
+                    "draft": {
+                      "properties": {
+                        "ai_model": {
+                          "nullable": true,
+                          "type": "string"
+                        },
+                        "ai_prompt_version": {
+                          "nullable": true,
+                          "type": "string"
+                        },
+                        "ai_provider": {
+                          "nullable": true,
+                          "type": "string"
+                        },
+                        "ai_raw_json": {
+                          "nullable": true,
+                          "type": "string"
+                        },
+                        "created_at": {
+                          "nullable": true,
+                          "type": "string"
+                        },
+                        "error_code": {
+                          "nullable": true,
+                          "type": "string"
+                        },
+                        "expires_at": {
+                          "nullable": true,
+                          "type": "integer"
+                        },
+                        "id": {
+                          "type": "string"
+                        },
+                        "image_rel_path": {
+                          "nullable": true,
+                          "type": "string"
+                        },
+                        "image_sha256": {
+                          "nullable": true,
+                          "type": "string"
+                        },
+                        "source": {
+                          "enum": ["camera", "gallery", "text", "pdf"],
+                          "type": "string"
+                        },
+                        "status": {
+                          "enum": [
+                            "captured",
+                            "analyzing",
+                            "ready",
+                            "failed",
+                            "confirmed",
+                            "discarded"
+                          ],
+                          "type": "string"
+                        },
+                        "user_id": {
+                          "type": "integer"
+                        }
+                      },
+                      "required": [
+                        "id",
+                        "user_id",
+                        "source",
+                        "status",
+                        "image_sha256",
+                        "image_rel_path",
+                        "ai_provider",
+                        "ai_model",
+                        "ai_prompt_version",
+                        "ai_raw_json",
+                        "error_code",
+                        "created_at",
+                        "expires_at"
+                      ],
+                      "type": "object"
+                    },
+                    "items": {
+                      "items": {
+                        "properties": {
+                          "answer": {
+                            "type": "string"
+                          },
+                          "confirmed": {
+                            "type": "boolean"
+                          },
+                          "content": {
+                            "type": "string"
+                          },
+                          "explanation": {
+                            "type": "string"
+                          },
+                          "idx": {
+                            "type": "integer"
+                          },
+                          "material_html": {
+                            "nullable": true,
+                            "type": "string"
+                          },
+                          "options": {
+                            "items": {
+                              "type": "string"
+                            },
+                            "type": "array"
+                          },
+                          "tags": {
+                            "items": {
+                              "type": "string"
+                            },
+                            "type": "array"
+                          },
+                          "type": {
+                            "type": "string"
+                          }
+                        },
+                        "required": [
+                          "idx",
+                          "content",
+                          "options",
+                          "answer",
+                          "explanation",
+                          "tags",
+                          "type",
+                          "material_html",
+                          "confirmed"
+                        ],
+                        "type": "object"
+                      },
+                      "type": "array"
+                    }
+                  },
+                  "required": ["draft", "items"],
+                  "type": "object"
+                }
+              }
+            },
+            "description": "草稿与识别条目"
+          },
+          "401": {
+            "description": "未登录"
+          },
+          "404": {
+            "description": "草稿不存在，或不属于当前用户"
+          }
+        },
+        "summary": "草稿详情（含 items）"
+      }
+    },
+    "/api/drafts/{id}/analyze": {
+      "post": {
+        "description": "写 `analyzing` → 成功 `ready` + items；失败 `failed` + `error_code` 且可重试（本次仍返回 200，客户端按 status 展示重试入口）。",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "minLength": 1,
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "properties": {
+                    "draft": {
+                      "properties": {
+                        "ai_model": {
+                          "nullable": true,
+                          "type": "string"
+                        },
+                        "ai_prompt_version": {
+                          "nullable": true,
+                          "type": "string"
+                        },
+                        "ai_provider": {
+                          "nullable": true,
+                          "type": "string"
+                        },
+                        "ai_raw_json": {
+                          "nullable": true,
+                          "type": "string"
+                        },
+                        "created_at": {
+                          "nullable": true,
+                          "type": "string"
+                        },
+                        "error_code": {
+                          "nullable": true,
+                          "type": "string"
+                        },
+                        "expires_at": {
+                          "nullable": true,
+                          "type": "integer"
+                        },
+                        "id": {
+                          "type": "string"
+                        },
+                        "image_rel_path": {
+                          "nullable": true,
+                          "type": "string"
+                        },
+                        "image_sha256": {
+                          "nullable": true,
+                          "type": "string"
+                        },
+                        "source": {
+                          "enum": ["camera", "gallery", "text", "pdf"],
+                          "type": "string"
+                        },
+                        "status": {
+                          "enum": [
+                            "captured",
+                            "analyzing",
+                            "ready",
+                            "failed",
+                            "confirmed",
+                            "discarded"
+                          ],
+                          "type": "string"
+                        },
+                        "user_id": {
+                          "type": "integer"
+                        }
+                      },
+                      "required": [
+                        "id",
+                        "user_id",
+                        "source",
+                        "status",
+                        "image_sha256",
+                        "image_rel_path",
+                        "ai_provider",
+                        "ai_model",
+                        "ai_prompt_version",
+                        "ai_raw_json",
+                        "error_code",
+                        "created_at",
+                        "expires_at"
+                      ],
+                      "type": "object"
+                    },
+                    "items": {
+                      "items": {
+                        "properties": {
+                          "answer": {
+                            "type": "string"
+                          },
+                          "confirmed": {
+                            "type": "boolean"
+                          },
+                          "content": {
+                            "type": "string"
+                          },
+                          "explanation": {
+                            "type": "string"
+                          },
+                          "idx": {
+                            "type": "integer"
+                          },
+                          "material_html": {
+                            "nullable": true,
+                            "type": "string"
+                          },
+                          "options": {
+                            "items": {
+                              "type": "string"
+                            },
+                            "type": "array"
+                          },
+                          "tags": {
+                            "items": {
+                              "type": "string"
+                            },
+                            "type": "array"
+                          },
+                          "type": {
+                            "type": "string"
+                          }
+                        },
+                        "required": [
+                          "idx",
+                          "content",
+                          "options",
+                          "answer",
+                          "explanation",
+                          "tags",
+                          "type",
+                          "material_html",
+                          "confirmed"
+                        ],
+                        "type": "object"
+                      },
+                      "type": "array"
+                    },
+                    "ok": {
+                      "type": "boolean"
+                    }
+                  },
+                  "required": ["draft", "items", "ok"],
+                  "type": "object"
+                }
+              }
+            },
+            "description": "识别结束：ok=false 时 status=failed，error_code 为失败原因"
+          },
+          "401": {
+            "description": "未登录"
+          },
+          "404": {
+            "description": "草稿不存在，或不属于当前用户"
+          },
+          "409": {
+            "description": "当前状态不允许识别（已确认/已丢弃/已就绪）"
+          }
+        },
+        "summary": "触发 AI 识别（OCR + 结构化）"
+      }
+    },
+    "/api/drafts/{id}/confirm": {
+      "post": {
+        "description": "把 `confirmed=1` 的条目写成 questions：任一失败整体回滚，草稿仍 ready。幂等键 `draft:<draftId>:<idx>`，重复确认 `created=0`、`conflicts` 指向已存在的题目。",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "minLength": 1,
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "properties": {
+                    "conflicts": {
+                      "type": "integer"
+                    },
+                    "created": {
+                      "type": "integer"
+                    },
+                    "questionIds": {
+                      "items": {
+                        "type": "integer"
+                      },
+                      "type": "array"
+                    },
+                    "skipped": {
+                      "type": "integer"
+                    }
+                  },
+                  "required": [
+                    "created",
+                    "skipped",
+                    "conflicts",
+                    "questionIds"
+                  ],
+                  "type": "object"
+                }
+              }
+            },
+            "description": "确认结果"
+          },
+          "400": {
+            "description": "条目校验失败（带 issues），本次零写入"
+          },
+          "401": {
+            "description": "未登录"
+          },
+          "404": {
+            "description": "草稿不存在，或不属于当前用户"
+          },
+          "409": {
+            "description": "草稿已丢弃"
+          }
+        },
+        "summary": "确认入库（单事务）"
+      }
+    },
+    "/api/drafts/{id}/items/{idx}": {
+      "patch": {
+        "description": "只改传了的字段；`confirmed` 由前端显式置位；`deleted=true` 删除该条（idx 不重排）。",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "minLength": 1,
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "idx",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "properties": {
+                  "answer": {
+                    "type": "string"
+                  },
+                  "confirmed": {
+                    "type": "boolean"
+                  },
+                  "content": {
+                    "type": "string"
+                  },
+                  "deleted": {
+                    "type": "boolean"
+                  },
+                  "explanation": {
+                    "type": "string"
+                  },
+                  "material_html": {
+                    "nullable": true,
+                    "type": "string"
+                  },
+                  "options": {
+                    "items": {
+                      "type": "string"
+                    },
+                    "type": "array"
+                  },
+                  "tags": {
+                    "items": {
+                      "type": "string"
+                    },
+                    "type": "array"
+                  },
+                  "type": {
+                    "type": "string"
+                  }
+                },
+                "type": "object"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "properties": {
+                    "draft": {
+                      "properties": {
+                        "ai_model": {
+                          "nullable": true,
+                          "type": "string"
+                        },
+                        "ai_prompt_version": {
+                          "nullable": true,
+                          "type": "string"
+                        },
+                        "ai_provider": {
+                          "nullable": true,
+                          "type": "string"
+                        },
+                        "ai_raw_json": {
+                          "nullable": true,
+                          "type": "string"
+                        },
+                        "created_at": {
+                          "nullable": true,
+                          "type": "string"
+                        },
+                        "error_code": {
+                          "nullable": true,
+                          "type": "string"
+                        },
+                        "expires_at": {
+                          "nullable": true,
+                          "type": "integer"
+                        },
+                        "id": {
+                          "type": "string"
+                        },
+                        "image_rel_path": {
+                          "nullable": true,
+                          "type": "string"
+                        },
+                        "image_sha256": {
+                          "nullable": true,
+                          "type": "string"
+                        },
+                        "source": {
+                          "enum": ["camera", "gallery", "text", "pdf"],
+                          "type": "string"
+                        },
+                        "status": {
+                          "enum": [
+                            "captured",
+                            "analyzing",
+                            "ready",
+                            "failed",
+                            "confirmed",
+                            "discarded"
+                          ],
+                          "type": "string"
+                        },
+                        "user_id": {
+                          "type": "integer"
+                        }
+                      },
+                      "required": [
+                        "id",
+                        "user_id",
+                        "source",
+                        "status",
+                        "image_sha256",
+                        "image_rel_path",
+                        "ai_provider",
+                        "ai_model",
+                        "ai_prompt_version",
+                        "ai_raw_json",
+                        "error_code",
+                        "created_at",
+                        "expires_at"
+                      ],
+                      "type": "object"
+                    },
+                    "items": {
+                      "items": {
+                        "properties": {
+                          "answer": {
+                            "type": "string"
+                          },
+                          "confirmed": {
+                            "type": "boolean"
+                          },
+                          "content": {
+                            "type": "string"
+                          },
+                          "explanation": {
+                            "type": "string"
+                          },
+                          "idx": {
+                            "type": "integer"
+                          },
+                          "material_html": {
+                            "nullable": true,
+                            "type": "string"
+                          },
+                          "options": {
+                            "items": {
+                              "type": "string"
+                            },
+                            "type": "array"
+                          },
+                          "tags": {
+                            "items": {
+                              "type": "string"
+                            },
+                            "type": "array"
+                          },
+                          "type": {
+                            "type": "string"
+                          }
+                        },
+                        "required": [
+                          "idx",
+                          "content",
+                          "options",
+                          "answer",
+                          "explanation",
+                          "tags",
+                          "type",
+                          "material_html",
+                          "confirmed"
+                        ],
+                        "type": "object"
+                      },
+                      "type": "array"
+                    }
+                  },
+                  "required": ["draft", "items"],
+                  "type": "object"
+                }
+              }
+            },
+            "description": "更新后的草稿"
+          },
+          "400": {
+            "description": "参数不合法"
+          },
+          "401": {
+            "description": "未登录"
+          },
+          "404": {
+            "description": "草稿/条目不存在，或不属于当前用户"
+          },
+          "409": {
+            "description": "草稿已确认/已丢弃，条目不可再改"
+          }
+        },
+        "summary": "修改/删除单条草稿条目"
+      }
+    },
     "/api/external/knowledge/cards": {
       "get": {
         "description": "只读接口，需 read 作用域。返回当前 API Key 所属用户的知识卡片（问答对 + 要点），按创建时间倒序分页，可按分类筛选。跨用户数据不可见。",
@@ -8070,6 +9017,121 @@
             "description": "List of questions"
           }
         }
+      },
+      "post": {
+        "description": "幂等键 = `manual:<userId>:<内容指纹>`：同一用户重复提交同一内容返回既有题（`created=false`），不新增行。写操作进 `admin_logs`（action=QUESTION_CREATE）。",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "properties": {
+                  "answer": {
+                    "description": "正确答案：单选 \"A\"、多选 [\"A\",\"B\"]（JSON 字符串）、判断题 A/B、填空为文本",
+                    "minLength": 1,
+                    "type": "string"
+                  },
+                  "content": {
+                    "description": "题干，至少 5 个字符",
+                    "minLength": 5,
+                    "type": "string"
+                  },
+                  "dimension": {
+                    "enum": ["knowledge", "understanding", "application"],
+                    "type": "string"
+                  },
+                  "explanation": {
+                    "minLength": 5,
+                    "type": "string"
+                  },
+                  "material": {
+                    "type": "string"
+                  },
+                  "material_html": {
+                    "type": "string"
+                  },
+                  "options": {
+                    "default": [],
+                    "items": {
+                      "minLength": 1,
+                      "type": "string"
+                    },
+                    "maxItems": 10,
+                    "type": "array"
+                  },
+                  "tags": {
+                    "items": {
+                      "minLength": 1,
+                      "type": "string"
+                    },
+                    "minItems": 1,
+                    "type": "array"
+                  },
+                  "type": {
+                    "default": "single",
+                    "enum": ["single", "multi", "truefalse", "fill_blank"],
+                    "type": "string"
+                  }
+                },
+                "required": [
+                  "content",
+                  "answer",
+                  "explanation",
+                  "tags",
+                  "dimension"
+                ],
+                "type": "object"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "properties": {
+                    "created": {
+                      "type": "boolean"
+                    },
+                    "id": {
+                      "type": "integer"
+                    }
+                  },
+                  "required": ["id", "created"],
+                  "type": "object"
+                }
+              }
+            },
+            "description": "幂等命中既有题（created=false）"
+          },
+          "201": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "properties": {
+                    "created": {
+                      "type": "boolean"
+                    },
+                    "id": {
+                      "type": "integer"
+                    }
+                  },
+                  "required": ["id", "created"],
+                  "type": "object"
+                }
+              }
+            },
+            "description": "已新建"
+          },
+          "400": {
+            "description": "内容校验失败（带 issues）"
+          },
+          "401": {
+            "description": "未登录"
+          }
+        },
+        "summary": "新建一道题（登录即可）"
       }
     },
     "/api/questions/:id": {
@@ -8105,6 +9167,14 @@
                     "id": {
                       "type": "number"
                     },
+                    "material": {
+                      "nullable": true,
+                      "type": "string"
+                    },
+                    "material_html": {
+                      "nullable": true,
+                      "type": "string"
+                    },
                     "options": {
                       "items": {
                         "type": "string"
@@ -8133,6 +9203,185 @@
             "description": "Question not found"
           }
         }
+      }
+    },
+    "/api/questions/{id}": {
+      "patch": {
+        "description": "部分更新，合并后仍要整体满足 `QuestionSchema`。答案/选项/题型变化时在同一事务里回刷历史判分（`regradeQuestionLogs`）。只能改自己建的题（`manual:`/`draft:` 归属），全局题登录用户均可维护。",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "properties": {
+                  "answer": {
+                    "minLength": 1,
+                    "type": "string"
+                  },
+                  "content": {
+                    "minLength": 5,
+                    "type": "string"
+                  },
+                  "dimension": {
+                    "enum": ["knowledge", "understanding", "application"],
+                    "type": "string"
+                  },
+                  "explanation": {
+                    "minLength": 5,
+                    "type": "string"
+                  },
+                  "material": {
+                    "nullable": true,
+                    "type": "string"
+                  },
+                  "material_html": {
+                    "nullable": true,
+                    "type": "string"
+                  },
+                  "options": {
+                    "items": {
+                      "minLength": 1,
+                      "type": "string"
+                    },
+                    "maxItems": 10,
+                    "type": "array"
+                  },
+                  "tags": {
+                    "items": {
+                      "minLength": 1,
+                      "type": "string"
+                    },
+                    "minItems": 1,
+                    "type": "array"
+                  },
+                  "type": {
+                    "enum": ["single", "multi", "truefalse", "fill_blank"],
+                    "type": "string"
+                  }
+                },
+                "type": "object"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "properties": {
+                    "changed": {
+                      "items": {
+                        "type": "string"
+                      },
+                      "type": "array"
+                    },
+                    "id": {
+                      "type": "integer"
+                    },
+                    "question": {
+                      "properties": {
+                        "answer": {
+                          "nullable": true,
+                          "type": "string"
+                        },
+                        "content": {
+                          "type": "string"
+                        },
+                        "dimension": {
+                          "type": "string"
+                        },
+                        "explanation": {
+                          "nullable": true,
+                          "type": "string"
+                        },
+                        "id": {
+                          "type": "number"
+                        },
+                        "material": {
+                          "nullable": true,
+                          "type": "string"
+                        },
+                        "material_html": {
+                          "nullable": true,
+                          "type": "string"
+                        },
+                        "options": {
+                          "items": {
+                            "type": "string"
+                          },
+                          "type": "array"
+                        },
+                        "tags": {
+                          "items": {
+                            "type": "string"
+                          },
+                          "type": "array"
+                        },
+                        "type": {
+                          "enum": ["single", "multi"],
+                          "type": "string"
+                        }
+                      },
+                      "required": ["id", "content", "options", "tags"],
+                      "type": "object"
+                    },
+                    "regrade": {
+                      "nullable": true,
+                      "properties": {
+                        "logsFlipped": {
+                          "type": "integer"
+                        },
+                        "logsScanned": {
+                          "type": "integer"
+                        },
+                        "sessionsUpdated": {
+                          "type": "integer"
+                        },
+                        "usersReset": {
+                          "type": "integer"
+                        }
+                      },
+                      "required": [
+                        "logsScanned",
+                        "logsFlipped",
+                        "usersReset",
+                        "sessionsUpdated"
+                      ],
+                      "type": "object"
+                    }
+                  },
+                  "required": ["id", "changed", "regrade", "question"],
+                  "type": "object"
+                }
+              }
+            },
+            "description": "已更新（或没有实际变更）"
+          },
+          "400": {
+            "description": "ID 非法/合并后校验失败（带 issues）"
+          },
+          "401": {
+            "description": "未登录"
+          },
+          "403": {
+            "description": "非本人创建的题目"
+          },
+          "404": {
+            "description": "题目不存在"
+          }
+        },
+        "summary": "修改一道题（登录即可）"
       }
     },
     "/api/recall/cards/{cardId}": {

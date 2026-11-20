@@ -96,6 +96,8 @@ const getRoute = createRoute({
             explanation: z.string().optional(),
             answer: z.string().optional(), // Reveal answer in detail? Or only after submit?
             // Usually detail view implies study mode, so maybe yes.
+            material: z.string().nullable().optional(),
+            material_html: z.string().nullable().optional(),
           }),
         },
       },
@@ -127,6 +129,8 @@ app.openapi(getRoute, async (c) => {
     dimension: question.dimension,
     explanation: question.explanation,
     answer: question.answer,
+    material: question.material ?? null,
+    material_html: question.material_html ?? null,
   });
 });
 
@@ -164,6 +168,8 @@ const QuestionPatchBodySchema = z
       .enum(["knowledge", "understanding", "application"])
       .optional(),
     type: z.enum(["single", "multi", "truefalse", "fill_blank"]).optional(),
+    material: z.string().nullable().optional(),
+    material_html: z.string().nullable().optional(),
   })
   .refine((value) => Object.keys(value).length > 0, {
     message: "至少要改一个字段",
@@ -271,6 +277,8 @@ const updateQuestionRoute = createRoute({
             question: QuestionResponseSchema.extend({
               explanation: z.string().nullable().optional(),
               answer: z.string().nullable().optional(),
+              material: z.string().nullable().optional(),
+              material_html: z.string().nullable().optional(),
             }),
           }),
         },
@@ -321,6 +329,8 @@ app.openapi(updateQuestionRoute, async (c) => {
               dimension: question.dimension,
               explanation: question.explanation,
               answer: question.answer,
+              material: question.material ?? null,
+              material_html: question.material_html ?? null,
             }
           : null,
       },

@@ -47,6 +47,72 @@ const DraftWithItemsSchema = z.object({
 
 const DraftIdParam = z.object({ id: z.string().min(1) });
 
+// ---------------- GET /api/drafts（草稿箱列表） ----------------
+
+const listDraftsRoute = createRoute({
+  method: "get",
+  path: "/",
+  middleware: [authMiddleware] as const,
+  summary: "草稿列表（仅本人的；默认不含已丢弃）",
+  description:
+    "按 `created_at` 倒序返回草稿摘要，只含计数不含 items 正文。默认排除 `discarded`；显式 `?status=discarded` 可查。",
+  request: {
+    query: z.object({
+      status: z
+        .enum([
+          "captured",
+          "analyzing",
+          "ready",
+          "failed",
+          "confirmed",
+          "discarded",
+        ])
+        .optional(),
+    }),
+  },
+  responses: {
+    200: {
+      content: {
+        "application/json": {
+          schema: z.object({
+            items: z.array(
+              z.object({
+                id: z.string(),
+                status: z.enum([
+                  "captured",
+                  "analyzing",
+                  "ready",
+                  "failed",
+                  "confirmed",
+                  "discarded",
+                ]),
+                source: z.enum(["camera", "gallery", "text", "pdf"]),
+                itemCount: z.number().int(),
+                confirmedCount: z.number().int(),
+                errorCode: z.string().optional(),
+                createdAt: z.string().optional(),
+              }),
+            ),
+          }),
+        },
+      },
+      description: "草稿摘要列表",
+    },
+    401: { description: "未登录" },
+  },
+});
+
+app.openapi(listDraftsRoute, async (c) => {
+  try {
+    const user = getCurrentUser(c);
+    const { status } = c.req.valid("query");
+    const items = await draftService.list(user.id, { status });
+    return c.json({ items }, 200);
+  } catch (error) {
+    return toErrorResponse(c, error, { scope: "drafts.list" });
+  }
+});
+
 // ---------------- POST /api/drafts ----------------
 
 const createDraftRoute = createRoute({

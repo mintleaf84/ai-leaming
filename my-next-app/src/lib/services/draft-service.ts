@@ -16,7 +16,7 @@
 import fs from "node:fs/promises";
 import path from "node:path";
 import { createHash, randomUUID } from "node:crypto";
-import { and, asc, eq, lt } from "drizzle-orm";
+import { and, asc, desc, eq, inArray, lt, sql } from "drizzle-orm";
 import { z } from "zod";
 import { drizzleDb, drizzleSchema } from "@/lib/db";
 import { resolveDbFilePath } from "@/lib/db/db-file";
@@ -120,6 +120,17 @@ export interface DraftConfirmResult {
   conflicts: number;
   /** 已写入/已存在的题目 id（按 item idx 对齐） */
   questionIds: number[];
+}
+
+/** 草稿列表项（移动端草稿箱）：不返回 items 正文，只给计数 */
+export interface DraftSummary {
+  id: string;
+  status: DraftStatus;
+  source: DraftSource;
+  itemCount: number;
+  confirmedCount: number;
+  errorCode?: string;
+  createdAt?: string;
 }
 
 export class DraftNotFoundError extends NotFoundError {
@@ -426,6 +437,62 @@ export const draftService = {
 
   get: async (userId: number, id: string): Promise<DraftWithItems> => {
     return loadDraft(userId, id);
+  },
+
+  /**
+   * 草稿列表（移动端草稿箱）。
+   *
+   * 归属过滤与详情一致（`user_id`）；默认**不返回已丢弃**的草稿（丢弃语义就是
+   * "从草稿箱消失"），显式 `status=discarded` 时仍可查到。按创建时间倒序，
+   * created_at 精度只到秒，同一秒内用 id 兜底排序保证稳定。
+   */
+  list: async (
+    userId: number,
+    options: { status?: DraftStatus } = {},
+  ): Promise<DraftSummary[]> => {
+    const conditions = [eq(drizzleSchema.question_drafts.user_id, userId)];
+    if (options.status) {
+      conditions.push(eq(drizzleSchema.question_drafts.status, options.status));
+    } else {
+      conditions.push(
+        sql`${drizzleSchema.question_drafts.status} <> 'discarded'`,
+      );
+    }
+
+    const rows = await drizzleDb
+      .select()
+      .from(drizzleSchema.question_drafts)
+      .where(and(...conditions))
+      .orderBy(
+        desc(drizzleSchema.question_drafts.created_at),
+        desc(drizzleSchema.question_drafts.id),
+      );
+
+    if (rows.length === 0) return [];
+    const ids = rows.map((row) => row.id);
+    const counts = await drizzleDb
+      .select({
+        draft_id: drizzleSchema.question_draft_items.draft_id,
+        itemCount: sql<number>`count(*)`,
+        confirmedCount: sql<number>`sum(case when ${drizzleSchema.question_draft_items.confirmed} = 1 then 1 else 0 end)`,
+      })
+      .from(drizzleSchema.question_draft_items)
+      .where(inArray(drizzleSchema.question_draft_items.draft_id, ids))
+      .groupBy(drizzleSchema.question_draft_items.draft_id);
+
+    const byId = new Map(counts.map((row) => [row.draft_id, row]));
+    return rows.map((row) => {
+      const count = byId.get(row.id);
+      return {
+        id: row.id,
+        status: row.status as DraftStatus,
+        source: row.source as DraftSource,
+        itemCount: Number(count?.itemCount ?? 0),
+        confirmedCount: Number(count?.confirmedCount ?? 0),
+        ...(row.error_code ? { errorCode: row.error_code } : {}),
+        ...(row.created_at ? { createdAt: row.created_at } : {}),
+      };
+    });
   },
 
   analyze: async (

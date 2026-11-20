@@ -314,4 +314,68 @@ describe("drafts API", () => {
     });
     expect(res.status).toBe(401);
   });
+
+  it("列表：只含本人草稿、默认排除 discarded、支持 status 过滤与计数", async () => {
+    const tokenA = await tokenFor(A);
+    const tokenB = await tokenFor(B);
+
+    // B 的草稿不应出现在 A 的列表里（跨用户隔离）
+    const { body: bDraft } = await createDraft(tokenB);
+
+    const { body: first } = await createDraft(tokenA);
+    const firstId = first.draft.id as string;
+    // 让 first 有 2 条 items（1 条已确认），验证累计字段
+    await dbm.drizzleDb.run(
+      sql`INSERT INTO question_draft_items (draft_id, idx, content, confirmed)
+          VALUES (${firstId}, 0, '条目一', 1), (${firstId}, 1, '条目二', 0)`,
+    );
+
+    const { body: third } = await createDraft(tokenA);
+    const thirdId = third.draft.id as string;
+    await dbm.drizzleDb.run(
+      sql`UPDATE question_drafts SET created_at = '2020-01-01 00:00:00' WHERE id = ${firstId}`,
+    );
+    await dbm.drizzleDb.run(
+      sql`UPDATE question_drafts SET created_at = '2030-01-01 00:00:00' WHERE id = ${thirdId}`,
+    );
+
+    const { body: second } = await createDraft(tokenA);
+    const secondId = second.draft.id as string;
+    await app.request(`/${secondId}`, {
+      method: "DELETE",
+      headers: auth(tokenA),
+    });
+
+    const res = await app.request("/", { headers: auth(tokenA) });
+    expect(res.status).toBe(200);
+    const list = (await res.json()).items as Array<{
+      id: string;
+      itemCount: number;
+      confirmedCount: number;
+      status: string;
+      source: string;
+    }>;
+
+    const ids = list.map((item) => item.id);
+    expect(ids).toContain(firstId);
+    expect(ids).not.toContain(secondId); // discarded 默认隐藏
+    expect(ids).not.toContain(bDraft.draft.id); // 跨用户隔离
+    // created_at 倒序：2030 的 third 在 2020 的 first 之前
+    expect(ids.indexOf(thirdId)).toBeLessThan(ids.indexOf(firstId));
+
+    const target = list.find((item) => item.id === firstId)!;
+    expect(target.itemCount).toBe(2);
+    expect(target.confirmedCount).toBe(1);
+    expect(target.status).toBe("captured");
+    expect(target.source).toBe("camera");
+
+    const discarded = await app.request("/?status=discarded", {
+      headers: auth(tokenA),
+    });
+    const discardedIds = ((await discarded.json()).items as Array<{
+      id: string;
+    }>).map((item) => item.id);
+    expect(discardedIds).toContain(secondId);
+    expect(discardedIds).not.toContain(firstId);
+  });
 });

@@ -29,6 +29,8 @@
 /data/*.db-journal
 /data/*.db.bak-*
 !/data/.gitkeep
+# 草稿图片（docs/flutter-mobile-plan.md §34）：按 sha256 落盘，属于用户数据，不进仓库
+/data/drafts/
 
 # ===============================
 # Testing

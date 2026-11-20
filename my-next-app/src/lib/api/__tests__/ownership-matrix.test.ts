@@ -94,6 +94,11 @@ const MODULES: Record<string, ModuleRule> = {
     scope: "user",
     crossUserTest: "src/lib/api/routes/__tests__/pdf-import-ownership.test.ts",
   },
+  drafts: {
+    mount: "/api/drafts",
+    scope: "user",
+    crossUserTest: "src/lib/api/routes/__tests__/drafts.test.ts",
+  },
   practice: {
     mount: "/api/practice",
     scope: "user",

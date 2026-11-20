@@ -51,6 +51,10 @@ app.route("/auth", authRoute);
 import questionsRoute from "@/lib/api/routes/questions";
 app.route("/questions", questionsRoute);
 
+// AI 草稿校对流（docs/flutter-mobile-plan.md §34）
+import draftsRoute from "@/lib/api/routes/drafts";
+app.route("/drafts", draftsRoute);
+
 import practiceRoute from "@/lib/api/routes/practice";
 app.route("/practice", practiceRoute);
 

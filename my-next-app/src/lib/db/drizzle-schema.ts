@@ -112,6 +112,72 @@ export const questions = sqliteTable(
   }),
 );
 
+// --- AI 草稿校对流（docs/flutter-mobile-plan.md §34） ---
+
+/**
+ * 草稿本体（拍照/相册/文本 → AI 识别 → 人工校对 → 确认入库）。
+ *
+ * 状态机：captured → analyzing → ready/failed；ready → confirmed；任意 → discarded。
+ * `ai_raw_json` 保留模型原始返回，`ai_prompt_version` 与 provider/model 一起落库，
+ * 出问题时能定位到"哪一版 prompt、哪个模型、当时的原始输出"。
+ */
+export const question_drafts = sqliteTable(
+  "question_drafts",
+  {
+    id: text("id").primaryKey(),
+    user_id: integer("user_id")
+      .notNull()
+      .references(() => users.id, { onDelete: "cascade" }),
+    source: text("source", {
+      enum: ["camera", "gallery", "text", "pdf"],
+    }).notNull(),
+    status: text("status", {
+      enum: ["captured", "analyzing", "ready", "failed", "confirmed", "discarded"],
+    }).notNull(),
+    /** 图片内容指纹；同一个 sha256 只落一份文件（与 pdf-import 的任务态不同，草稿要长期可校对） */
+    image_sha256: text("image_sha256"),
+    /** 相对 `data/` 的路径，如 `drafts/<sha256>` */
+    image_rel_path: text("image_rel_path"),
+    ai_provider: text("ai_provider"),
+    ai_model: text("ai_model"),
+    ai_prompt_version: text("ai_prompt_version"),
+    ai_raw_json: text("ai_raw_json"),
+    error_code: text("error_code"),
+    created_at: text("created_at").default(sql`CURRENT_TIMESTAMP`),
+    /** 毫秒时间戳；过期草稿在写入路径上机会式清理（不依赖定时器） */
+    expires_at: integer("expires_at"),
+  },
+  (table) => ({
+    idx_user_created: index("idx_question_drafts_user_created").on(
+      table.user_id,
+      sql`${table.created_at} DESC`,
+    ),
+    idx_expires: index("idx_question_drafts_expires").on(table.expires_at),
+  }),
+);
+
+/** 草稿识别出的单条题目（未确认前只是文本，不参与判分/检索） */
+export const question_draft_items = sqliteTable(
+  "question_draft_items",
+  {
+    draft_id: text("draft_id")
+      .notNull()
+      .references(() => question_drafts.id, { onDelete: "cascade" }),
+    idx: integer("idx").notNull(),
+    content: text("content"),
+    options: text("options"), // JSON string
+    answer: text("answer"),
+    explanation: text("explanation"),
+    tags: text("tags"), // JSON string
+    type: text("type"),
+    material_html: text("material_html"),
+    confirmed: integer("confirmed").notNull().default(0),
+  },
+  (table) => ({
+    pk: primaryKey({ columns: [table.draft_id, table.idx] }),
+  }),
+);
+
 // --- 用户掌握度表 ---
 export const user_mastery = sqliteTable(
   "user_mastery",

@@ -166,9 +166,20 @@ const MODULES: Record<string, ModuleRule> = {
 
 function moduleFiles(): string[] {
   return fs
-    .readdirSync(ROUTES_DIR)
-    .filter((f) => f.endsWith(".ts"))
-    .map((f) => f.replace(/\.ts$/, ""))
+    .readdirSync(ROUTES_DIR, { withFileTypes: true })
+    .flatMap((entry) => {
+      if (entry.isFile() && entry.name.endsWith(".ts")) {
+        return [entry.name.replace(/\.ts$/, "")];
+      }
+      // 目录形式的路由模块（如 `external/`，聚合入口是 `index.ts`）按目录名登记
+      if (
+        entry.isDirectory() &&
+        fs.existsSync(path.join(ROUTES_DIR, entry.name, "index.ts"))
+      ) {
+        return [entry.name];
+      }
+      return [];
+    })
     .sort();
 }
 
@@ -255,7 +266,23 @@ describe("归属矩阵：每个路由模块都要被归类", () => {
 });
 
 describe("外部 API：写路由必须声明 write 作用域", () => {
-  const source = fs.readFileSync(path.join(ROUTES_DIR, "external.ts"), "utf8");
+  /**
+   * 外部 API 已按资源拆成 `routes/external/*.ts`（聚合入口 `external/index.ts`）。
+   * 静态门禁只需要"全部 createRoute 源码"，拼回一个串即可，无需关心文件边界。
+   */
+  function readExternalSource(): string {
+    const single = path.join(ROUTES_DIR, "external.ts");
+    if (fs.existsSync(single)) return fs.readFileSync(single, "utf8");
+    const dir = path.join(ROUTES_DIR, "external");
+    return fs
+      .readdirSync(dir)
+      .filter((name) => name.endsWith(".ts"))
+      .sort()
+      .map((name) => fs.readFileSync(path.join(dir, name), "utf8"))
+      .join("\n");
+  }
+
+  const source = readExternalSource();
 
   /**
    * 粗粒度切分 `createRoute({ ... })` 块：从 `createRoute({` 到下一个

@@ -82,7 +82,7 @@ void main() {
     expect(find.byIcon(AppIcons.cloudUploadOutlined), findsOneWidget);
 
     // 本地库读数真的接到了界面上（不是写死的容量）
-    expect(find.textContaining('42'), findsOneWidget);
+    expect(find.text('已缓存 42 题'), findsOneWidget);
     expect(find.textContaining('3'), findsWidgets);
   });
 

@@ -14,6 +14,9 @@ import '../../../core/network/server_config.dart';
 import '../../../shared/widgets/server_address_form.dart';
 import '../../../core/theme/app_icons.dart';
 import '../../../core/theme/app_colors.dart';
+import '../../practice/presentation/widgets/device_migration_panel.dart';
+import '../../practice/presentation/widgets/practice_backup_panel.dart';
+import '../../practice/presentation/widgets/question_prefetch_panel.dart';
 
 /// 设置页面
 ///
@@ -254,6 +257,17 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                           textColor: textColor,
                           onTap: _syncOfflineAnswers,
                         ),
+                        _buildDivider(borderColor),
+                        // 换机前检查（§30 P1）：显示待同步条数，同步成功才宣称
+                        // 「可以换机」。与上面「同步离线记录」的区别是这里把
+                        // 「换机前必须同步」的后果说清楚，而不是只报数字。
+                        const DeviceMigrationPanel(),
+                        _buildDivider(borderColor),
+                        // 导出/导入（§30 P2）：只走剪贴板，不引文件/分享依赖。
+                        const PracticeBackupPanel(),
+                        _buildDivider(borderColor),
+                        // 题库预下载：按页拉全量，支持中断续传。
+                        const QuestionPrefetchPanel(),
                         _buildDivider(borderColor),
                         // 诊断日志：本地记录异常与堆栈（不含用户内容），
                         // 用户遇到问题时可以复制出来反馈。

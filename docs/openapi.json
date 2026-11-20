@@ -8604,11 +8604,20 @@
                     "inserted": {
                       "type": "integer"
                     },
+                    "regraded": {
+                      "description": "客户端 isCorrect 与服务端重新判分不一致的条数（幂等命中时为 0）",
+                      "type": "integer"
+                    },
                     "sessionId": {
                       "type": "string"
                     }
                   },
-                  "required": ["sessionId", "inserted", "duplicated"],
+                  "required": [
+                    "sessionId",
+                    "inserted",
+                    "duplicated",
+                    "regraded"
+                  ],
                   "type": "object"
                 }
               }
@@ -8634,6 +8643,10 @@
                   },
                   "mode": {
                     "enum": ["random", "wrong", "tag", "first-principles"],
+                    "type": "string"
+                  },
+                  "tag": {
+                    "maxLength": 50,
                     "type": "string"
                   }
                 },

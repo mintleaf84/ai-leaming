@@ -147,7 +147,10 @@ describe("AI-native 文档任务（仅 /api/external）", () => {
       },
       {
         questionId: questionIds[2],
-        userAnswer: "A",
+        // §31：服务端按题库重判，客户端自报的 isCorrect 只作参考。
+        // 这里必须给**真实错答**（该题正确答案是 A），否则服务端会判对、
+        // 这条记录不会进错题本。
+        userAnswer: "B",
         isCorrect: false,
         durationMs: 6000,
       },

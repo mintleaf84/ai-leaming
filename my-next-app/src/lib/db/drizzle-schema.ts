@@ -437,6 +437,11 @@ export const api_call_logs = sqliteTable(
  * 只存 p75 需要的原始点：route + name + value。INP 是"跟手"的唯一官方指标，
  * 没有它就只能靠体感判断优化是否有效。单用户场景不采样、不聚合写入，
  * 直接一行一个指标；量级为每天百行，查询用 (route, name, created_at) 索引。
+ *
+ * 保留期 90 天，由 `scheduler.ts` 的日志保留任务按 `created_at < cutoff` 删除。
+ * 注意：本表两个索引都以 `route` 打头，**没有** `created_at` 前缀索引，所以那条
+ * DELETE 是全表扫（日增百行 × 90 天窗口，成本可忽略）。真要按时间批量删再补
+ * `idx_web_vitals_created`，属于独立迁移，别在业务 PR 里顺手加。
  */
 export const web_vitals = sqliteTable(
   "web_vitals",

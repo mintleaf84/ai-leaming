@@ -87,6 +87,10 @@ echo "===== $(date '+%F %T') deploy start (target=$TARGET) ====="
 cd "$APP_DIR" || { echo "❌ 目录不存在"; exit 1; }
 docker compose version >/dev/null 2>&1 || { echo "❌ 找不到 docker compose"; exit 1; }
 
+# 告警旁路（O2）：读取 ALERT_WEBHOOK_URL，未配置时脚本自己 exit 0；
+# 即使本机没有这份 checkout，`|| true` 也保证不会因为告警缺失而中断部署。
+notify() { bash ./scripts/notify.sh "$@" || true; }
+
 # ── 0. 回滚点：优先记 sha（可重新拉取），拿不到就把当前镜像 id 打成可用的本地标签
 CUR_SHA=$(docker inspect -f '{{index .Config.Labels "org.opencontainers.image.revision"}}' ai-learning-app 2>/dev/null || echo "")
 CUR_ID=$(docker inspect -f '{{.Image}}' ai-learning-app 2>/dev/null || echo "")
@@ -121,16 +125,23 @@ rollback() {
   echo "↩ 开始回滚（数据先退，镜像再退：迁移单向，顺序反了旧代码会读新 schema）"
   docker compose stop
   rm -f data/ai-learning.db data/ai-learning.db-wal data/ai-learning.db-shm
-  cp -a "data/${SNAP}" data/ai-learning.db || { echo "❌ 数据恢复失败，需人工介入"; exit 1; }
+  cp -a "data/${SNAP}" data/ai-learning.db || {
+    echo "❌ 数据恢复失败，需人工介入"
+    notify 回滚失败 "$TARGET" "数据恢复失败：data/${SNAP} 覆盖数据库失败，容器已停，需人工介入"
+    exit 1
+  }
   if [ -n "$CUR_SHA" ]; then
     set_tag "$CUR_SHA"
   elif [ -n "$CUR_ID" ]; then
     set_tag "rollback"
   else
-    echo "❌ 没有回滚点，保持当前状态，需人工介入"; exit 1
+    echo "❌ 没有回滚点，保持当前状态，需人工介入"
+    notify 回滚失败 "$TARGET" "无可用回滚点（CUR_SHA/CUR_ID 均为空），线上仍是失败版本，需人工介入"
+    exit 1
   fi
   docker compose up -d --pull never
   echo "↩ 已回滚到 ${CUR_SHA:-本地 :rollback} + data/${SNAP}"
+  notify 回滚成功 "$TARGET" "已回滚到 ${CUR_SHA:-本地 :rollback}，数据恢复到 data/${SNAP}"
 }
 
 # ── 2. 切换版本并重启；启动失败也要回滚，不能直接退出
@@ -150,6 +161,7 @@ for i in $(seq 1 30); do
 done
 if [ "$ok" != 1 ]; then
   echo "❌ 健康检查失败"
+  notify 健康检查失败 "$TARGET" "60s 内 http://127.0.0.1:3000/api/hello 未返回 200"
   [ "$HAVE_ROLLBACK" = 1 ] && rollback || echo "⚠ 无回滚点，保留现场供排查"
   exit 1
 fi
@@ -197,6 +209,34 @@ curl -fsS http://127.0.0.1:3000/api/hello && echo " OK"
 ### 4.3 宝塔 Docker 面板的"重建"按钮
 
 **不推荐**：不备份、不做健康检查、不记录回滚点。只在"容器起不来"的应急救火时用。
+
+### 4.4 部署告警（可选，O2）
+
+失败最怕的是"没人知道"。`scripts/notify.sh` 是唯一的告警出口，配置只有一项：
+
+```ini
+# 部署机 .env（或宝塔计划任务里 export）
+ALERT_WEBHOOK_URL=https://example.com/hook
+```
+
+三处调用点（都在 §4.1 的脚本里，文本格式 `[事件] 时间 | image=tag | reason=`）：
+
+| 事件           | 触发时机                       |
+| -------------- | ------------------------------ |
+| `健康检查失败` | 60s 内 `/api/hello` 不返回 200 |
+| `回滚成功`     | 数据 + 镜像都退回旧版本        |
+| `回滚失败`     | 数据恢复失败，或没有回滚点     |
+
+三条硬约定：
+
+- **未配置 `ALERT_WEBHOOK_URL` 时脚本打印警告并 exit 0**，部署行为与没有告警功能时完全一致；
+  告警是旁路，绝不能因为它没配就卡住发布或回滚。
+- 发送失败（网络/超时/5xx）同样只留一行 stderr，`curl` 上限 10s，不会把部署脚本拖死。
+- 文本内容是纯文本，群机器人（企业微信/钉钉/Slack 的 text 字段）直接可用；要 JSON 的接收方
+  在网关侧包一层，脚本不猜格式。
+
+验证方式：`ALERT_WEBHOOK_URL=http://127.0.0.1:9898/hook bash scripts/notify.sh 健康检查失败 abc123 "演练"`，
+本地起个 echo 服务看是否收到即可。
 
 ## 5. 回滚
 

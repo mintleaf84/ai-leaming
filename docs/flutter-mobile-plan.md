@@ -28,6 +28,15 @@
 | §25    | 备考主路径摩擦（F1–F5）                         | **[已完成]**（首页真实数值、待办直开练、续练、底部导航） |
 | §26    | APK 发布链路（R1–R6）                           | **[已完成]**（版本派生 / Release / 回滚 / 密钥备份）     |
 | §27    | CI 时长与测试预算                               | 计划                                                     |
+| §28    | SRS 积压治理（先量再定）                        | 计划（待 4 条 SQL 结果）                                 |
+| §29    | 移动端诊断日志（本地环形缓冲）                  | 计划                                                     |
+| §30    | 移动端数据备份与换机                            | 计划（P1 换机检查优先）                                  |
+| §31    | 多设备一致性（服务端重判离线作答）              | 计划                                                     |
+| §32    | 专项练习（tag / wrong 模式）                    | 计划                                                     |
+| §33    | 材料题在移动端的渲染                            | 计划（P0，需先量 material 占比）                         |
+| §34    | AI 草稿校对流（服务端草稿 + 移动端校对）        | 计划                                                     |
+| §35    | 移动端建题/改题                                 | 计划                                                     |
+| §36    | 整库备份与恢复（升级 §30）                      | 计划                                                     |
 
 > 维护约定：新增段落追加到末尾并在此表登记；状态只有四种——`[已完成]` / `计划` / `[不做]` / `待决策`。
 
@@ -895,3 +904,375 @@ R1+R2（先让包可区分）→ R3 → R4 → R5（文档）→ R6（演练一�
 
 - 自建 runner 承接 web CI（`SELF_HOSTED` 开关已有，但本机 glibc 2.17 跑不了 Chromium）
 - 删掉 Playwright：61 条 layout-guard 是 UI 回归的唯一护栏，只是不该挡每个 PR
+
+## 28. SRS 积压治理（计划，先量再定）
+
+### 28.1 现状与口径
+
+两套 SRS 并存，**不要混谈**：
+
+| 表                   | 粒度             | 规模（审计快照）           | 备注                                        |
+| -------------------- | ---------------- | -------------------------- | ------------------------------------------- |
+| `question_srs`       | 题级（每题一条） | 2482 行，**2473 条已到期** | 审计里说的"2473 张"是这一套；用户 1 占 1993 |
+| `recall_card_states` | 卡级（记忆卡）   | 未统计                     | 有 `archived` 列，可批量归档                |
+
+积压的时间背景：快照前最后活动是 8 月底，积压约 2.5 个月。
+
+### 28.2 第一步：量（不写代码，先跑 4 条 SQL）
+
+在线上库**只读副本**上执行（`VACUUM INTO` 出来的快照即可，不要直连生产写）：
+
+```sql
+-- Q1 到期分桶：决定"今日/本周/积压"怎么切
+SELECT CASE
+         WHEN julianday('now') - julianday(due_date) <= 0  THEN '0-未到期'
+         WHEN julianday('now') - julianday(due_date) <= 1  THEN '1-今天'
+         WHEN julianday('now') - julianday(due_date) <= 7  THEN '2-一周内'
+         WHEN julianday('now') - julianday(due_date) <= 30 THEN '3-一月内'
+         ELSE '4-超过一月'
+       END AS bucket,
+       COUNT(*) AS n
+FROM question_srs
+WHERE user_id = 1
+GROUP BY bucket ORDER BY bucket;
+
+-- Q2 积压集中在哪些标签（questions 表没有 knowledge_point 列，只有 tags JSON 与 dimension）
+SELECT q.tags, COUNT(*) AS n
+FROM question_srs s JOIN questions q ON q.id = s.question_id
+WHERE s.user_id = 1 AND julianday(s.due_date) < julianday('now')
+GROUP BY q.tags ORDER BY n DESC LIMIT 15;
+-- 若要按单个标签聚合，SQLite 需要 json_each：
+-- SELECT j.value AS tag, COUNT(*) n FROM question_srs s
+--   JOIN questions q ON q.id = s.question_id, json_each(q.tags) j
+--   WHERE s.user_id = 1 AND julianday(s.due_date) < julianday('now')
+--   GROUP BY j.value ORDER BY n DESC LIMIT 15;
+
+-- Q3 从未复习过的（reps=0）占比：这批是"生题"，策略与"复习过的"不同
+SELECT CASE WHEN reps = 0 THEN 'never' ELSE 'reviewed' END AS kind,
+       state, COUNT(*) AS n
+FROM question_srs WHERE user_id = 1
+GROUP BY kind, state;
+
+-- Q4 卡级积压（记忆卡，另一套）
+SELECT CASE WHEN archived = 1 THEN 'archived' ELSE 'active' END AS kind,
+       COUNT(*) AS n,
+       SUM(CASE WHEN due IS NOT NULL AND julianday(due) < julianday('now') THEN 1 ELSE 0 END) AS due_now
+FROM recall_card_states WHERE user_id = 1 GROUP BY kind;
+```
+
+**产出**：把 4 条结果贴回来，据此定策略。没有这组数之前不写任何治理代码。
+
+### 28.3 策略候选（等数据后三选一或组合）
+
+| 候选       | 做法                                                                                                                | 前提数据                       | 判据                                            | 工作量 |
+| ---------- | ------------------------------------------------------------------------------------------------------------------- | ------------------------------ | ----------------------------------------------- | ------ |
+| A 分桶展示 | 复习入口从"到期 N 张"改成"今天 N / 积压 M"，积压单独入口且默认不混入今日队列                                        | Q1 显示积压占比高              | 首页不再出现三位数总到期数；今日队列 ≤ 每日上限 | 1d     |
+| B 批量归档 | 对"超过 X 天未复习且 reps 高"的题批量 `archived`/降优先级（`recall_card_states` 已有 `archived`；题级需加列或映射） | Q1+Q3 显示老积压以已复习题为主 | 归档后今日队列可被清空；归档可撤销              | 1–1.5d |
+| C 每日上限 | 队列按每日上限截断（如 30 题/20 卡），剩余顺延                                                                      | 任意                           | 单日不会出现"永远背不完"                        | 0.5d   |
+
+### 28.4 不做
+
+- 不改 FSRS 参数（`stability`/`difficulty` 的历史值不可重建，调参等于用错数据训练）
+- 不重建调度、不批量 `UPDATE due_date`
+- 不删存量行（归档是软操作，可撤销）
+
+## 29. 移动端诊断日志（计划）
+
+### 29.1 为什么
+
+现在 `lib` 里 0 处 `FlutterError.onError`、0 处 `PlatformDispatcher.onError`、无 Sentry/Crashlytics。
+用户遇到闪退只能描述"刚才卡了一下"，无法定位。不接第三方（无账号/无 DSN/不想引依赖）也能拿到可用信息。
+
+### 29.2 设计
+
+| 层              | 内容                                                                                                                                                            |
+| --------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `ErrorLogEntry` | `at / kind / message / stack`，`toJson`/`fromJson`（坏数据返回 null）                                                                                           |
+| `ErrorLog`      | 内存环形缓冲 **200 条**（丢最旧）；`add/entries/exportText/clear`；`load/persist` 走既有 `PreferencesStore`（key `diagnostics_log`），**读写失败只 debugPrint** |
+| 全局钩子        | `FlutterError.onError`（kind=flutter，仍调用 `presentError`）、`PlatformDispatcher.onError`（platform）、`runZonedGuarded` 包 `runApp`（zone）                  |
+| 启动顺序        | `await ErrorLog.load()` 再 `runApp`；加载失败不阻塞启动                                                                                                         |
+| 设置页          | 「数据管理」加「诊断日志 N 条」→ 弹窗显示最近 20 条 + 「复制全部」（`Clipboard.setData`）+ 「清空」；无记录显示「暂无记录」                                     |
+
+### 29.3 判据
+
+- 单测 5 条：环形丢最旧、最新在前、JSON 往返、坏 JSON 返回 null、落盘失败不影响 `add`
+- widget 测试 2 条：有日志显示条数并可打开弹窗、无日志显示「暂无记录」
+- 变异验证：注释掉 `FlutterError.onError` 赋值 → 对应用例变红
+- `flutter analyze` error/warning = 0；门禁 PASS（新增 lib 文件 ≥60%）
+- 工作量：0.5d
+
+### 29.4 不做
+
+- 不做自动上传（无后端接收端，且涉及隐私）
+- 不记录用户内容（题干、答案不进日志，只记异常与堆栈）
+
+## 30. 移动端数据备份与换机（计划）
+
+### 30.1 现状：哪些数据只在这台手机上
+
+| 数据                         | 位置              | 丢了会怎样                 | 能否重建             |
+| ---------------------------- | ----------------- | -------------------------- | -------------------- |
+| 待同步作答 `pending_answers` | 本地 SQLite       | **永久丢失**（服务端没有） | 否                   |
+| 离线会话 `local_sessions`    | 本地 SQLite       | 会话结构丢失，作答失去归属 | 否                   |
+| 练习断点 `practice_resume`   | SharedPreferences | 丢掉"继续上次练习"         | 否                   |
+| 设置（主题/复习模式）        | SharedPreferences | 回默认                     | 可重设               |
+| 题库缓存 `cached_questions`  | 本地 SQLite       | 离线时无题可出             | **是**（联网重新拉） |
+| 诊断日志                     | SharedPreferences | 无影响                     | 否（也无价值）       |
+
+服务端持有：已同步的作答、SRS、记忆卡状态、笔记等——**这些不需要备份**。
+
+关键事实：**`SyncService.flush()` 本来就能把待同步数据推上去**。所以"换机"的第一版根本不需要导出文件，只需要保证"换机前同步干净"。
+
+### 30.2 分三阶段
+
+| 阶段                     | 做什么                                                                                                                                                                                                                          | 判据                                                                                                                                     | 工作量 |
+| ------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------- | ------ |
+| P1 换机检查（先做）      | 设置页「换机前检查」：显示待同步条数；点「立即同步」调 `SyncService.flush()`；同步干净后显示「可以换机了」。有未同步数据时明确警告"换机前必须同步，否则这部分作答会丢"                                                          | 待同步 3 条 → 显示 3；flush 成功 → 显示 0 且提示可换机；flush 失败 → 保留条数并显示失败原因（不谎报成功）                                | 0.5d   |
+| P2 导出/导入（离线兜底） | 导出**只含不可重建的数据**：`pending_answers` + `local_sessions` + 断点 + 设置。JSON 走**剪贴板**（不引 path_provider/share_plus），格式 `{version:1, exportedAt, userId, pendingAnswers[], localSessions[], resume, settings}` | 导出后剪贴板是合法 JSON；导入时 `userId` 与当前登录不一致 → 拒绝（防串账号）；`client_key` 已存在 → 跳过；导入结束报告 `新增 N / 跳过 M` | 1d     |
+| P3 完整备份              | 含 `cached_questions` 的整库导出                                                                                                                                                                                                | **不做**：题库可联网重建，文件会从 KB 级涨到 MB 级，还要处理 schema 版本                                                                 | —      |
+
+### 30.3 安全与隐私
+
+- 导出内容含作答记录（题号/对错/时长），**不含** token、密码、题干正文
+- 导出/导入**不写日志**（避免诊断日志里留下数据）
+- 明文 JSON：设置页导出时明确提示"包含你的作答记录，请勿分享给他人"
+- 不引入加密依赖；若以后要加密，另立计划（需要密钥管理方案）
+
+### 30.4 判据汇总
+
+1. P1：`flutter test` 覆盖"有待同步 → 同步 → 清零"与"同步失败不谎报"
+2. P2：单测覆盖导出 JSON 结构、导入 userId 不匹配拒绝、幂等跳过、坏 JSON 不崩
+3. 手工：导出 → 清空本地库 → 导入 → `pendingCount` 恢复且 flush 后服务端条数正确
+4. 门禁 PASS；`flutter analyze` error/warning = 0
+
+### 30.5 不做
+
+- 不做自动云备份（无存储后端，且涉及隐私）
+- 不做整库导出（P3）
+- 不在导出里放题库缓存（可重建，且体积大）
+
+## 31. 多设备一致性（计划）
+
+### 31.1 先把"不一致"逐条判定，不要笼统谈同步
+
+| #   | 场景                                              | 现状                                                                                                                                                                                              | 是否需要修                       |
+| --- | ------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | -------------------------------- |
+| 1   | 手机离线判分用了 7 天内的旧答案，服务端答案已更正 | **服务端信任客户端传来的 `isCorrect`**（`import-service.ts:417` 直接写 `is_correct: a.isCorrect`），只有"改题"时才 `regradeQuestionLogs` 回刷——如果改题发生在离线作答**之前**，这批作答不会被回刷 | **要修（唯一真问题）**           |
+| 2   | 手机与网页同时开练                                | 服务端 session 各自独立，互不影响                                                                                                                                                                 | 不用修                           |
+| 3   | 两台设备各自离线练习后各自 flush                  | 幂等键 `sessionKey = localId:batchStart` 含本机 localId → 各自成场，不冲突但会多出两场"离线练习"                                                                                                  | 接受（写入文档即可）             |
+| 4   | 练习断点跨设备                                    | 断点只存本机 `SharedPreferences`，另一台看不到"继续上次"                                                                                                                                          | 明确**不支持**（写进设置页说明） |
+| 5   | 设置（主题/复习模式）跨设备                       | 各机独立                                                                                                                                                                                          | 接受                             |
+
+### 31.2 唯一要修的：服务端不能信任客户端判分
+
+| 项     | 内容                                                                                                                                                                                                                                                                                 |
+| ------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| 证据   | 在线提交走 `practice.ts:282` 的 `checkAnswerCorrectness`（服务端重判）；离线导入 `import-service.ts:417` 直接落客户端给的 `is_correct`                                                                                                                                               |
+| 后果   | 手机缓存陈旧（最长 7 天）时，错的判分被永久写库；若题目更正发生在这之前，`regradeQuestionLogs` 不会覆盖这批 → 掌握度与错题本被污染，且无法追溯                                                                                                                                       |
+| 修法   | `importAgentAnswers` 收到每条作答后，用 `checkAnswerCorrectness(question, userAnswer)` **重判**，以服务端结果为准；把 `requestedIsCorrect != gradedIsCorrect` 的条数计入返回（`regraded: N`），客户端可提示"服务端纠正了 N 题"；**保留**客户端原值到日志字段（便于排查，不参与统计） |
+| 判据   | 单测：客户端传 `isCorrect=true` 但答案错 → 入库 `is_correct=0` 且 `regraded=1`；传对 → 不变、`regraded=0`；幂等重发同 `sessionKey` 不重复计数；`answers` 里含题库不存在的 questionId 仍走原 400                                                                                      |
+| 客户端 | `SyncService` 读 `regraded > 0` 时 `debugPrint` 并在同步结果里带一句（不弹窗，避免打扰）                                                                                                                                                                                             |
+| 工作量 | 0.5d（服务端 0.2 + 测试 0.2 + 客户端 0.1）                                                                                                                                                                                                                                           |
+
+### 31.3 明确接受的三件事（写进文档，不再讨论）
+
+1. 断点不跨设备：换设备就是重新开始一场，本地断点只在原机有效
+2. 两台设备离线各成一场：服务端会看到两场 `offline-resume`/`random` 会话，这是幂等键的必然结果，不算 bug
+3. 设置不同步：主题/复习模式各机独立
+
+### 31.4 不做
+
+- 不做断点上云（需要服务端新表 + 冲突合并，收益低于成本）
+- 不做设备间实时同步（单人备考场景不需要）
+- 不做"离线作答冲突合并"（服务端按 sessionKey 幂等已足够）
+
+## 32. 专项练习（tag / wrong 模式，计划）
+
+### 32.1 现状：四种模式只实现了一种
+
+| 事实                                                          | 证据                                                                                                       |
+| ------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------- |
+| 路由枚举了 `random / wrong / tag / first-principles` 四种模式 | `src/lib/api/routes/practice.ts:15`                                                                        |
+| 但非 `random` 一律 400                                        | `practice.ts:74` `if (mode !== "random") return { error: "Only random mode supported currently via API" }` |
+| 服务层只有 `createRandomSession`                              | `src/lib/services/practice.ts:188`（`ORDER BY RANDOM() LIMIT n`）                                          |
+| Web 练习页会读 `?mode=` 并传下去                              | `use-practice-controller.tsx:86-96` → 传了也被 400，等于无效参数                                           |
+
+结论：**「按知识点专项练」和「只练错题」在 API 层是关闭的**，而这正是备考最需要的两条。
+
+### 32.2 数据现实（决定实现方式）
+
+| 想按什么筛 | 实际可用字段                                                    | 注意                                                                             |
+| ---------- | --------------------------------------------------------------- | -------------------------------------------------------------------------------- |
+| 知识点     | `questions.tags`（JSON 数组字符串）                             | **没有 `knowledge_point` 列**；只能 `tags LIKE '%"<tag>"%'`（2169 行全扫也够快） |
+| 维度       | `questions.dimension`（knowledge/understanding/application）    | 可选，先不做                                                                     |
+| 错题       | `practice_logs.is_correct = 0` 反查 + `mastered_questions` 排除 | 没有独立错题表（`getWrongQuestions` 就是这么算的，`question-recommend.ts:47`）   |
+
+### 32.3 后端（0.5d）
+
+| #   | 动作                                                                                                                       | 判据                                                                                                    |
+| --- | -------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------- |
+| B1  | 新增 `createTagSession(userId, tag, limit)`：`tags LIKE '%"tag"%'` + 排除 `mastered_questions` + `ORDER BY RANDOM() LIMIT` | 单测：只返回含该 tag 的题；已掌握的题不出现；无匹配时返回空 `questions` 且 `sessionId` 为空（不是 500） |
+| B2  | 新增 `createWrongSession(userId, limit)`：从 `practice_logs.is_correct=0` 取 distinct question_id、排除已掌握、再随机截断  | 单测：只含做错过的题；掌握后不再出现；题量不足时返回全部                                                |
+| B3  | 路由放行 `tag`/`wrong`（`first-principles` 仍 400，并在错误文案里说明"暂未开放"）                                          | 契约测试：`mode=tag` 缺 `tag` 参数 → 400 且文案可读；`mode=wrong` 正常 200                              |
+| B4  | 请求体加可选 `tag` 字段（`z.string().max(50).optional()`）                                                                 | OpenAPI 快照更新，`contract:check` 绿                                                                   |
+
+### 32.4 客户端（1d）
+
+| #   | 动作                                                                                                                                                                       | 判据                                               |
+| --- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | -------------------------------------------------- |
+| C1  | `practice_setup_screen` 加模式选择（随机 / 按知识点 / 只练错题）+ 知识点选择器                                                                                             | widget test：三种模式都能选中并带上参数发起        |
+| C2  | 知识点数据源：优先用 `/knowledge/cards` 返回的 `categories`；为空时回落到「从题库 tags 聚合」（后端加一个轻量 `GET /practice/tags`，只 `SELECT DISTINCT json_each(tags)`） | 无标签时选择器显示「题库还没有标签」且禁用「开始」 |
+| C3  | 首页「今日还需练习 N 题」仍走 random；错题本「开始练习」保持现有 `/wrong-book/practice` 路径不动（已能用）                                                                 | 不回归                                             |
+
+### 32.5 判据汇总
+
+1. `mode=tag` + `tag=教育目的` → 返回的题全部含该标签，且不含已掌握
+2. `mode=wrong` → 只返回做错过的题；把某题标记掌握后不再出现
+3. 无匹配（标签拼错/题库无标签）→ 空态文案「这个标签下暂时没有题目」，不是错误页
+4. 移动端三种模式各一条 widget test；`flutter analyze` 0 error/warning；门禁 PASS
+5. 服务端 `npx tsc --noEmit` 0 error；相关 vitest 全绿；OpenAPI 契约不漂移
+
+### 32.6 不做
+
+- 不做 `first-principles` 模式（枚举里留着，明确 400 + 文案说明）
+- 不做"按掌握度加权组卷"（需要掌握度算法先可信；等 §28 的 SRS 治理有数据再说）
+- 不做多标签组合筛选（先用单标签，够用再加）
+
+## 33. 材料题在移动端的渲染（P0，最小改动）
+
+### 33.1 现状
+
+- 服务端返回：`practice.ts:50-51` 的 `material` / `material_html`（列表与详情都带）
+- 移动端：`Question` 模型**没有这两个字段**（`lib/features/practice/domain/question.dart`），`lib` 里 0 处渲染 → **材料题在手机上只剩题干**
+- `material_html` 是 DOMPurify 清洗后的 HTML，白名单含 `img/table/sub/sup/code`（`src/lib/utils/security.ts:19-40`），所以不是纯文本
+
+### 33.2 先量
+
+```sql
+SELECT COUNT(*) AS total,
+       SUM(CASE WHEN material IS NOT NULL AND material != '' THEN 1 ELSE 0 END) AS with_material,
+       SUM(CASE WHEN material_html LIKE '%<img%' THEN 1 ELSE 0 END) AS with_img,
+       SUM(CASE WHEN material_html LIKE '%<table%' THEN 1 ELSE 0 END) AS with_table
+FROM questions;
+```
+
+结论决定渲染器：只有文字 → 纯文本/Markdown 足够；有 `<img>`/`<table>` → 需要 HTML 渲染。
+
+### 33.3 方案
+
+| #   | 动作                                                                                            | 判据                                                    | 工作量 |
+| --- | ----------------------------------------------------------------------------------------------- | ------------------------------------------------------- | ------ |
+| M1  | `Question` 加 `material`/`materialHtml`（`fromJson` 兼容缺字段）                                | 单测：带材料解析成功；无材料为 null                     | 0.2d   |
+| M2  | 练习页题干上方渲染材料卡片（可折叠，默认展开；材料长时限制高度 + 展开）                         | widget test：有材料显示、无材料不占位；1.3 倍字号不溢出 | 0.3d   |
+| M3  | 渲染器按 33.2 结果定：纯文字 → `Text`/markdown；含 img/table → `flutter_html`（新依赖，需批准） | 含 img 的材料能显示图片；表格不塌                       | 0.3d   |
+
+### 33.4 不做
+
+- 不做材料题的分屏/左右对照（先保证能读）
+- 不把 `material_html` 落本地离线缓存（缓存只有题干，见 `LocalPracticeStore`；离线材料题先不支持，明确提示）
+
+## 34. AI 草稿校对流（计划）
+
+参照 MathRecall 的 `DraftStatus{captured,analyzing,ready,failed,confirmed,discarded}` + `aiProvider/aiModel/aiPromptVersion/aiRawJson/errorCode`，
+但**放服务端**（多端一致、AI key 在服务端、留痕可查）。
+
+### 34.1 数据模型
+
+```sql
+question_drafts(
+  id TEXT PRIMARY KEY, user_id INTEGER NOT NULL,
+  source TEXT NOT NULL,              -- camera | gallery | text | pdf
+  status TEXT NOT NULL,              -- captured|analyzing|ready|failed|confirmed|discarded
+  image_sha256 TEXT, image_rel_path TEXT,
+  ai_provider TEXT, ai_model TEXT, ai_prompt_version TEXT,
+  ai_raw_json TEXT, error_code TEXT,
+  created_at TEXT, expires_at INTEGER
+);
+question_draft_items(
+  draft_id TEXT NOT NULL, idx INTEGER NOT NULL,
+  content TEXT, options TEXT, answer TEXT, explanation TEXT,
+  tags TEXT, type TEXT, material_html TEXT,
+  confirmed INTEGER DEFAULT 0,
+  PRIMARY KEY (draft_id, idx)
+);
+```
+
+要点：
+
+- `ai_raw_json` 保存模型原始返回，便于复现与排障
+- `prompt_version` 与 provider/model 一起落库 → 出了问题能定位是哪版 prompt
+- `expires_at` + 定时清理（与 O1 的日志保留同一套 scheduler）
+
+### 34.2 接口
+
+| 方法   | 路径                         | 说明                                                                                     |
+| ------ | ---------------------------- | ---------------------------------------------------------------------------------------- |
+| POST   | `/api/drafts`                | 创建草稿（可带图片，落 `image_sha256` + `rel_path`，按 sha256 去重）                     |
+| POST   | `/api/drafts/:id/analyze`    | 触发 AI 识别；写 `analyzing` → 成功 `ready` + items，失败 `failed` + `error_code`        |
+| GET    | `/api/drafts/:id`            | 草稿 + items（供校对页）                                                                 |
+| PATCH  | `/api/drafts/:id/items/:idx` | 单条修改/删除（`confirmed` 由前端显式置位）                                              |
+| POST   | `/api/drafts/:id/confirm`    | **事务内**把 `confirmed=1` 的 items 写成 questions，返回 `{created, skipped, conflicts}` |
+| DELETE | `/api/drafts/:id`            | 丢弃（软：status=discarded）                                                             |
+
+判据：
+
+- `confirm` 是单事务：任一 item 失败 → 全部回滚，草稿仍 `ready`
+- 重复 `confirm` 幂等（第二次 `created=0`）
+- 识别失败可重试，`error_code` 保留上一次原因
+
+### 34.3 移动端
+
+拍照/相册（`image_picker`，新依赖）→ 上传 → 识别中（可离开页面，回来看状态）→ 校对页逐条编辑/删除 → 确认入库。
+
+判据：上传失败可重试；识别中退出再进能看到进度；校对页长文本 1.3 倍字号不溢出。
+
+工作量：服务端 2d + 移动端 2d。
+
+## 35. 移动端建题/改题（计划）
+
+### 35.1 现状
+
+- 内部 API 只有 `GET /api/questions` 与 `GET /api/questions/:id`（`questions.ts` 里没有写方法）
+- 批量建题在未合并的 PR #233（`POST /api/external/questions`，write 作用域 + externalId 幂等）
+- Web 有 `/questions/import`，无通用编辑页
+
+### 35.2 方案
+
+| #   | 动作                                                                                 | 判据                                                                                                  | 工作量 |
+| --- | ------------------------------------------------------------------------------------ | ----------------------------------------------------------------------------------------------------- | ------ |
+| Q1  | 抽 `questionService.create/update`，internal 路由复用（不复制 external 的校验逻辑）  | 单测：创建/更新走同一校验                                                                             | 0.5d   |
+| Q2  | `POST /api/questions`、`PATCH /api/questions/:id`（登录即可；写操作进 `admin_logs`） | 契约测试：创建后 `GET /:id` 可读到；更新后 `correct_ratio`/历史判分回刷（复用 `regradeQuestionLogs`） | 0.5d   |
+| Q3  | 移动端建题/改题表单（题干/选项/答案/解析/标签/类型/材料）                            | widget test：必填校验、保存后返回详情、材料为空不报错                                                 | 1d     |
+
+### 35.3 不做
+
+- 不做批量导入 UI（Web 已有 `/questions/import`）
+- 不做富文本编辑器（先纯文本 + 材料 HTML 只读）
+
+## 36. 移动端整库备份与恢复（升级 §30 的 P2/P3）
+
+§30 原方案是"剪贴板只导不可重建数据"，只够保命。整库备份参照 MathRecall：
+
+### 36.1 备份包结构
+
+```
+manifest.json        # version, exportedAt, userId, counts{表:行数}, sha256(database.sqlite)
+database.sqlite      # 直接拷贝本地库文件（WAL 需先 checkpoint）
+prefs.json           # 主题/复习模式/断点
+```
+
+### 36.2 恢复方式（关键）
+
+**不替换正在使用的数据库文件**，而是在一个事务里整表复制：父表→子表顺序（`local_sessions` → `pending_answers` → `cached_questions` → `sync_meta`），失败由 SQLite 回滚。
+理由：替换文件需要关库/重启 App，且失败后无法回退。
+
+### 36.3 通道
+
+- 导出：`path_provider` 写临时文件 → `share_plus` 分享（**两个新依赖**）
+- 导入：`file_picker` 选择文件（**第三个新依赖**）→ 校验 manifest → 事务恢复
+- 判据：导出后可被系统分享；恢复前后行数一致；manifest 与库文件 sha256 不符时拒绝；恢复失败时原库不变
+
+### 36.4 与 §30 的关系
+
+§30 P1（换机前检查 + 强制同步）仍先做——它解决 90% 场景；§36 是"服务器不可用/长期离线"时的兜底。
+工作量：2d（含三个依赖引入与平台权限）。

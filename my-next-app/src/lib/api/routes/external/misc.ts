@@ -213,6 +213,11 @@ const WrongBookItemSchema = z.object({
   questionId: z.number().int().describe("题目 ID"),
   content: z.string().describe("题干"),
   tags: z.array(z.string()).describe("标签"),
+  origin: z
+    .enum(["import", "agent"])
+    .describe(
+      "题目来源：import=题库题，agent=AI 题集推来的题（错题本照收，标出来便于辨认）",
+    ),
   wrongCount: z.number().int().describe("累计答错次数"),
   lastWrongAt: z.string().describe("最近一次答错时间"),
   srs: z
@@ -269,6 +274,7 @@ app.openapi(wrongBookRoute, async (c) => {
       questionId: item.questionId,
       content: item.questionContent,
       tags: item.tags,
+      origin: item.origin === "agent" ? "agent" : "import",
       wrongCount: item.wrongCount,
       lastWrongAt: item.lastWrongAt,
       srs: item.srs

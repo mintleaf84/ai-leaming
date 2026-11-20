@@ -179,9 +179,11 @@ describe("Practice Actions", () => {
         [{ answer: "A", options: '["A","B"]', type: "single" }],
         [
           {
-            // 题目 tags 查询
+            // 题目 tags 查询（origin 必须显式给：只有 import 题才计入掌握度，
+            // 见 docs/agent-question-set-plan.md §2 的隔离过滤）
             tags: JSON.stringify(["Tag1"]),
             dimension: "knowledge",
+            origin: "import",
           },
         ],
       ];

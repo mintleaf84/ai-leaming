@@ -191,8 +191,9 @@ export const questionFolderService = {
         explanation: string;
         tags: string;
         dimension: string;
+        origin: string;
       }>(sql`
-        SELECT q.id as question_id, q.content, q.answer, q.explanation, q.tags, q.dimension
+        SELECT q.id as question_id, q.content, q.answer, q.explanation, q.tags, q.dimension, q.origin
         FROM question_folder_items fi
         JOIN questions q ON q.id = fi.question_id
         WHERE fi.folder_id = ${folderId}
@@ -203,6 +204,7 @@ export const questionFolderService = {
         questionId: r.question_id,
         questionContent: r.content,
         tags: safeParseJson<string[]>(r.tags as string | null | undefined, []),
+        origin: r.origin || "import",
         wrongCount: 0,
         lastWrongAt: "",
         correctAnswer: r.answer || "",

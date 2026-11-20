@@ -476,12 +476,18 @@ export const practiceService = {
         tags: questions.tags,
         dimension: questions.dimension,
         type: questions.type,
+        // 隔离过滤（docs/agent-question-set-plan.md §2）：只有正常题库题（origin='import'）
+        // 才计入掌握度聚合。Agent 题集题与已报错的题作答后只留 practice_logs
+        // （错题本/历史照常可见），不污染掌握度曲线；转正（origin 改 import）后才开始计入。
+        origin: questions.origin,
       })
       .from(questions)
       .where(eq(questions.id, questionId))
       .limit(1);
 
-    if (q && q.tags && !skipped) {
+    const countsTowardMastery = q?.origin === "import";
+
+    if (q && q.tags && !skipped && countsTowardMastery) {
       const tags = safeParseJson<string[]>(q.tags, []);
 
       const { masteryService } = await import("@/lib/services/mastery");
@@ -500,8 +506,10 @@ export const practiceService = {
     // 4. 更新 FSRS 状态（错题强化逻辑）
     // 跳过的不排期；agent 来源的对错由调用方判定、服务端不复核，同样不排期
     // （P0-2/P0-3；agent 记录只作历史统计，见 docs/audit 报告）
+    // 隔离过滤：非正常题库题（Agent 题集题 / 已报错题）也不排期 —— 它们不在题库
+    // 与复习队列里出现，排期只会让 FSRS 队列指向看不见的题。
     let updatedSrs = undefined;
-    if (!skipped && origin !== "agent") {
+    if (!skipped && origin !== "agent" && countsTowardMastery) {
       try {
         const { srsService } = await import("@/lib/services/srs");
         // 填空题传入用户答案长度，用于计算打字时间

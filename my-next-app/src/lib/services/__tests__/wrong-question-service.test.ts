@@ -83,6 +83,8 @@ vi.mock("@/lib/db/drizzle-schema", () => ({
     options: "questions.options",
     explanation: "questions.explanation",
     type: "questions.type",
+    // 隔离过滤（origin='flagged' 不进错题本）用到
+    origin: "questions.origin",
   },
   question_srs: {
     question_id: "question_srs.question_id",
@@ -105,6 +107,8 @@ vi.mock("drizzle-orm", () => ({
   sql: vi.fn((s) => ({ type: "sql", sql: s })),
   gte: vi.fn((a, b) => ({ type: "gte", a, b })),
   notInArray: vi.fn((a, b) => ({ type: "notInArray", a, b })),
+  // 已报错的题（origin='flagged'）不进错题本列表 / 随机推荐
+  ne: vi.fn((a, b) => ({ type: "ne", a, b })),
 }));
 
 import { wrongQuestionService } from "../wrong-question";

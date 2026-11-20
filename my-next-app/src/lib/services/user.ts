@@ -129,7 +129,9 @@ export const userService = {
    * 0–100 的整数百分比。硬套会让接口字段名与语义双双对不上，因此保留独立方法，
    * 逐条沿用原路由里的聚合（口径、`COUNT(DISTINCT …)`、`toFixed(4)` 都不变）。
    */
-  async getProfileOverview(userId: number): Promise<UserProfileOverview | null> {
+  async getProfileOverview(
+    userId: number,
+  ): Promise<UserProfileOverview | null> {
     const userRow = await drizzleDb.query.users.findFirst({
       where: eq(drizzleSchema.users.id, userId),
       columns: { id: true, username: true, role: true, created_at: true },
@@ -156,7 +158,8 @@ export const userService = {
 
     const totalAnswered = answerStats[0]?.total ?? 0;
     const totalCorrect = Number(answerStats[0]?.correct ?? 0);
-    const overallAccuracy = totalAnswered > 0 ? totalCorrect / totalAnswered : 0;
+    const overallAccuracy =
+      totalAnswered > 0 ? totalCorrect / totalAnswered : 0;
 
     // 知识卡片数量
     const cardCount = await drizzleDb

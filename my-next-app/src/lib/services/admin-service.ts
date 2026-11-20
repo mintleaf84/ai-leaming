@@ -666,7 +666,9 @@ export const adminService = {
     const conditions = [];
 
     if (filters.search)
-      conditions.push(like(drizzleSchema.questions.content, `%${filters.search}%`));
+      conditions.push(
+        like(drizzleSchema.questions.content, `%${filters.search}%`),
+      );
     if (filters.tag)
       conditions.push(
         sql`EXISTS (SELECT 1 FROM json_each(${drizzleSchema.questions.tags}) WHERE value = ${filters.tag})`,

@@ -138,6 +138,9 @@ jobs:
       - name: catch 形态审计（logged / fallback / silent 不得增加）
         run: npm run audit:catches
 
+      - name: 分层门禁（路由层禁止直连 db，白名单只减不增）
+        run: npm run audit:layering
+
       # 失败证据：关键步骤输出 tee 到 $RUNNER_TEMP/ci-logs/，失败时随 artifact 保留 14 天。
       # 起因是 gh run --log-failed 取回空内容、线上日志过期后完全无法复盘。
       - name: ESLint（warning 棘轮）与类型检查（并行）

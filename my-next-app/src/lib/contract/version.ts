@@ -50,6 +50,7 @@ export const FEATURES = [
   "questions",
   "practice",
   "offline-answers",
+  "exam",
   "recall",
   "chat",
   "chat-sessions",

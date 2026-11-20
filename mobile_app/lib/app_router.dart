@@ -3,6 +3,7 @@ import 'package:go_router/go_router.dart';
 
 import 'core/auth/token_util.dart';
 import 'core/navigation/app_nav.dart';
+import 'core/navigation/app_shell.dart';
 import 'features/auth/presentation/splash_screen.dart';
 import 'features/auth/presentation/register_screen.dart';
 import 'features/auth/presentation/login_screen.dart';
@@ -38,125 +39,164 @@ import 'features/practice/presentation/question_list_screen.dart';
 /// 3. 返回用 `context.backOrHome()` —— 栈里没有上一层时回首页，不会"点了没反应"。
 ///
 /// 路径常量统一放在 [AppRoutes]，页面里不要再写字符串字面量。
-final appRouter = GoRouter(
-  initialLocation: '/',
-  redirect: (context, state) async {
-    final path = state.matchedLocation;
-    const openRoutes = <String>{
-      AppRoutes.splash,
-      AppRoutes.login,
-      AppRoutes.register,
-    };
-    final isOpen = openRoutes.contains(path);
+///
+/// **底部导航**：首页 / 练习 / 记忆卡 / 错题本 是 `StatefulShellRoute.indexedStack`
+/// 的四个分支（见 `core/navigation/app_shell.dart`）。切 tab 走 `goBranch`，
+/// 不堆栈；详情页仍由 `pushDetail` 盖在 shell 之上（返回即回到当前 tab）。
+///
+/// 为什么是工厂函数而不是全局单例：`appRouter` 是进程内单例，测试里再想要一份
+/// 干净的路由（同一进程跑多条用例）只能重建。`main.dart` / 401 拦截器继续用
+/// [appRouter]，测试用 [buildAppRouter]。
+///
+/// [initialLocation] 默认是启动页；测试直接落在某个 tab 时传具体路径，
+/// 省掉「启动页延时跳转」这段与用例无关的等待。
+GoRouter buildAppRouter({String initialLocation = '/'}) {
+  return GoRouter(
+    initialLocation: initialLocation,
+    redirect: (context, state) async {
+      final path = state.matchedLocation;
+      const openRoutes = <String>{
+        AppRoutes.splash,
+        AppRoutes.login,
+        AppRoutes.register,
+      };
+      final isOpen = openRoutes.contains(path);
 
-    final token = await const FlutterSecureStorage().read(key: 'jwt_token');
-    final loggedIn =
-        token != null && token.isNotEmpty && !TokenUtil.isExpired(token);
+      final token = await const FlutterSecureStorage().read(key: 'jwt_token');
+      final loggedIn =
+          token != null && token.isNotEmpty && !TokenUtil.isExpired(token);
 
-    if (!loggedIn && !isOpen) {
-      return AppRoutes.login;
-    }
-    if (loggedIn && (path == AppRoutes.login || path == AppRoutes.register)) {
-      return AppRoutes.dashboard;
-    }
-    return null;
-  },
-  routes: [
-    GoRoute(
-      path: AppRoutes.splash,
-      builder: (context, state) => const SplashScreen(),
-    ),
-    GoRoute(
-      path: AppRoutes.login,
-      builder: (context, state) => const LoginScreen(),
-    ),
-    GoRoute(
-      path: AppRoutes.dashboard,
-      builder: (context, state) => const DashboardScreen(),
-    ),
-    GoRoute(
-      path: AppRoutes.register,
-      builder: (context, state) => const RegisterScreen(),
-    ),
-    GoRoute(
-      path: AppRoutes.questions,
-      builder: (context, state) => const QuestionListScreen(),
-    ),
-    GoRoute(
-      path: AppRoutes.practiceSetup,
-      builder: (context, state) => const PracticeSetupScreen(),
-    ),
-    GoRoute(
-      path: AppRoutes.practice,
-      builder: (context, state) {
-        // 接收来自练习配置页的参数
-        final config = state.extra as Map<String, dynamic>?;
-        return PracticeScreen(config: config);
-      },
-    ),
-    GoRoute(
-      path: AppRoutes.result,
-      builder: (context, state) => const ResultScreen(),
-    ),
-    GoRoute(
-      path: AppRoutes.history,
-      builder: (context, state) => const HistoryScreen(),
-      routes: [
-        GoRoute(
-          path: ':id',
-          builder: (context, state) {
-            final id = state.pathParameters['id']!;
-            return HistoryDetailScreen(sessionId: id);
-          },
-        ),
-      ],
-    ),
-    GoRoute(
-      path: AppRoutes.knowledge,
-      builder: (context, state) => const KnowledgeScreen(),
-    ),
-    GoRoute(
-      path: AppRoutes.mastery,
-      builder: (context, state) => const MasteryScreen(),
-    ),
-    GoRoute(
-      path: AppRoutes.settings,
-      builder: (context, state) => const SettingsScreen(),
-    ),
-    GoRoute(
-      path: AppRoutes.chat,
-      builder: (context, state) => const ChatScreen(),
-    ),
-    GoRoute(
-      path: AppRoutes.wrongBook,
-      builder: (context, state) => const WrongBookScreen(),
-    ),
-    // 记忆卡复习：从首页 pushDetail 进入，栈里有首页，所以不用传 onExit
-    // （屏内的「返回」「先回去」走 context.backOrHome()）。
-    GoRoute(
-      path: AppRoutes.recall,
-      builder: (context, state) => const RecallSessionScreen(),
-    ),
-    GoRoute(
-      path: AppRoutes.profile,
-      builder: (context, state) => const ProfileScreen(),
-    ),
-    GoRoute(
-      path: AppRoutes.pricing,
-      builder: (context, state) => const PricingScreen(),
-    ),
-    GoRoute(
-      path: AppRoutes.textbooks,
-      builder: (context, state) => const TextbookListScreen(),
-      routes: [
-        GoRoute(
-          path: ':id',
-          builder: (context, state) {
-            final id = int.parse(state.pathParameters['id']!);
-            return TextbookDetailScreen(textbookId: id);
-          },
-        ),
-      ],
-    ),
-  ],
-);
+      if (!loggedIn && !isOpen) {
+        return AppRoutes.login;
+      }
+      if (loggedIn && (path == AppRoutes.login || path == AppRoutes.register)) {
+        return AppRoutes.dashboard;
+      }
+      return null;
+    },
+    routes: [
+      GoRoute(
+        path: AppRoutes.splash,
+        builder: (context, state) => const SplashScreen(),
+      ),
+      GoRoute(
+        path: AppRoutes.login,
+        builder: (context, state) => const LoginScreen(),
+      ),
+      GoRoute(
+        path: AppRoutes.register,
+        builder: (context, state) => const RegisterScreen(),
+      ),
+      // 四个高频入口：每个分支各有自己的导航栈，切 tab 不丢栈、也不堆栈。
+      StatefulShellRoute.indexedStack(
+        builder: (context, state, navigationShell) =>
+            AppShell(navigationShell: navigationShell),
+        branches: [
+          StatefulShellBranch(
+            routes: [
+              GoRoute(
+                path: AppRoutes.dashboard,
+                builder: (context, state) => const DashboardScreen(),
+              ),
+            ],
+          ),
+          StatefulShellBranch(
+            routes: [
+              GoRoute(
+                path: AppRoutes.practiceSetup,
+                builder: (context, state) => const PracticeSetupScreen(),
+              ),
+            ],
+          ),
+          StatefulShellBranch(
+            routes: [
+              // 记忆卡：屏内的「返回」「先回去」走 context.backOrHome()，
+              // 在 tab 根页时即切回首页分支。
+              GoRoute(
+                path: AppRoutes.recall,
+                builder: (context, state) => const RecallSessionScreen(),
+              ),
+            ],
+          ),
+          StatefulShellBranch(
+            routes: [
+              GoRoute(
+                path: AppRoutes.wrongBook,
+                builder: (context, state) => const WrongBookScreen(),
+              ),
+            ],
+          ),
+        ],
+      ),
+      GoRoute(
+        path: AppRoutes.questions,
+        builder: (context, state) => const QuestionListScreen(),
+      ),
+      GoRoute(
+        path: AppRoutes.practice,
+        builder: (context, state) {
+          // 接收来自练习配置页 / 待办直开练 / 续练的参数
+          final config = state.extra as Map<String, dynamic>?;
+          return PracticeScreen(config: config);
+        },
+      ),
+      GoRoute(
+        path: AppRoutes.result,
+        builder: (context, state) => const ResultScreen(),
+      ),
+      GoRoute(
+        path: AppRoutes.history,
+        builder: (context, state) => const HistoryScreen(),
+        routes: [
+          GoRoute(
+            path: ':id',
+            builder: (context, state) {
+              final id = state.pathParameters['id']!;
+              return HistoryDetailScreen(sessionId: id);
+            },
+          ),
+        ],
+      ),
+      GoRoute(
+        path: AppRoutes.knowledge,
+        builder: (context, state) => const KnowledgeScreen(),
+      ),
+      GoRoute(
+        path: AppRoutes.mastery,
+        builder: (context, state) => const MasteryScreen(),
+      ),
+      GoRoute(
+        path: AppRoutes.settings,
+        builder: (context, state) => const SettingsScreen(),
+      ),
+      GoRoute(
+        path: AppRoutes.chat,
+        builder: (context, state) => const ChatScreen(),
+      ),
+      GoRoute(
+        path: AppRoutes.profile,
+        builder: (context, state) => const ProfileScreen(),
+      ),
+      GoRoute(
+        path: AppRoutes.pricing,
+        builder: (context, state) => const PricingScreen(),
+      ),
+      GoRoute(
+        path: AppRoutes.textbooks,
+        builder: (context, state) => const TextbookListScreen(),
+        routes: [
+          GoRoute(
+            path: ':id',
+            builder: (context, state) {
+              final id = int.parse(state.pathParameters['id']!);
+              return TextbookDetailScreen(textbookId: id);
+            },
+          ),
+        ],
+      ),
+    ],
+  );
+}
+
+/// 进程内唯一的路由实例（`main.dart` 与 401 拦截器用它）。
+final appRouter = buildAppRouter();

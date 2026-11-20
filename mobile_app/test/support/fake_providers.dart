@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:convert';
 
 import 'package:dio/dio.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
@@ -7,6 +8,7 @@ import 'package:mocktail/mocktail.dart';
 import 'package:mobile_app/core/network/server_config.dart';
 import 'package:mobile_app/core/compat/contract_compat.dart';
 import 'package:mobile_app/core/compat/contract_meta_repository.dart';
+import 'package:mobile_app/core/storage/preferences.dart';
 import 'package:mobile_app/core/sync/sync_providers.dart';
 import 'package:mobile_app/core/sync/sync_service.dart';
 import 'package:mobile_app/features/chat/data/chat_repository_impl.dart';
@@ -23,11 +25,15 @@ import 'package:mobile_app/features/practice/domain/practice_session.dart';
 import 'package:mobile_app/features/practice/domain/question.dart';
 import 'package:mobile_app/features/profile/domain/user_profile.dart';
 import 'package:mobile_app/features/profile/presentation/profile_provider.dart';
+import 'package:mobile_app/features/recall/data/recall_providers.dart';
+import 'package:mobile_app/features/recall/domain/recall_queue.dart';
 import 'package:mobile_app/features/settings/presentation/settings_provider.dart';
 import 'package:mobile_app/features/stats/domain/learning_stats.dart';
 import 'package:mobile_app/features/stats/presentation/stats_provider.dart';
 import 'package:mobile_app/features/wrong_book/data/wrong_book_repository.dart';
 import 'package:mobile_app/features/wrong_book/domain/wrong_question.dart';
+
+import 'fake_preferences_store.dart';
 
 /// 屏级 widget 测试的 provider override 工厂。
 ///
@@ -43,16 +49,36 @@ import 'package:mobile_app/features/wrong_book/domain/wrong_question.dart';
 // 平台通道
 // ---------------------------------------------------------------------------
 
+/// 拼一个只用于读 payload 的 JWT（签名段不参与客户端逻辑）。
+///
+/// 客户端从 `jwt_token` 里读 `user.id` 给本地数据打归属，所以测试桩必须是
+/// 可解析的 JWT——随便一个字符串会让「当前账号」变成 null，断点/离线数据
+/// 的归属校验就测不出来。
+String fakeJwt({int userId = 1, String username = 'tester'}) {
+  String segment(Object value) {
+    return base64Url.encode(utf8.encode(jsonEncode(value))).replaceAll('=', '');
+  }
+
+  final header = segment(<String, dynamic>{'alg': 'HS256', 'typ': 'JWT'});
+  final payload = segment(<String, dynamic>{
+    'user': <String, dynamic>{'id': userId, 'username': username},
+    'exp': 9999999999,
+  });
+  return '$header.$payload.signature-not-verified';
+}
+
 /// 把 `flutter_secure_storage` 换成内存实现。
 ///
 /// 练习/设置屏在 initState 里直接读 `jwt_token`（`const FlutterSecureStorage()`
 /// 是 canonical 实例，所以这个静态桩对它们同样生效）。不调用它的话，
 /// 平台通道会抛 MissingPluginException，屏会落到「请先登录」错误态。
-void useFakeSecureStorage({String? jwtToken = 'test_token'}) {
+///
+/// 默认 token 是一个**可解析**的 JWT（用户 id = 1）：断点与离线会话都要按
+/// 账号归属校验，不可解析的 token 会被当作「没有账号」，相关路径全部走不通。
+void useFakeSecureStorage({String? jwtToken, bool loggedIn = true}) {
+  final token = jwtToken ?? fakeJwt();
   FlutterSecureStorage.setMockInitialValues(
-    jwtToken == null
-        ? <String, String>{}
-        : <String, String>{'jwt_token': jwtToken},
+    loggedIn ? <String, String>{'jwt_token': token} : <String, String>{},
   );
 }
 
@@ -108,13 +134,14 @@ HistoryItem fakeHistoryItem({
   int totalQuestions = 10,
   int correctCount = 7,
   int accuracy = 70,
+  String createdAt = '2026-11-20T09:30:00.000Z',
 }) {
   return HistoryItem(
     id: id,
     sessionName: '综合练习',
     totalQuestions: totalQuestions,
     correctCount: correctCount,
-    createdAt: '2026-11-20T09:30:00.000Z',
+    createdAt: createdAt,
     accuracy: accuracy,
   );
 }
@@ -182,6 +209,8 @@ class FakePracticeRepository implements PracticeRepository {
   String sessionId;
   Object? createError;
   Completer<void>? createGate;
+  /// 挂住 `getSession`：用来观察续练的迟到响应（竞态用例）。
+  Completer<void>? getSessionGate;
   Map<String, dynamic> submitResponse;
   Object? submitError;
   Question? detail;
@@ -189,6 +218,12 @@ class FakePracticeRepository implements PracticeRepository {
   int createCalls = 0;
   int submitCalls = 0;
   final List<String> submittedAnswers = <String>[];
+
+  /// 每次提交带上来的「整场题序」（降级成本地会话时用来记全题序）。
+  final List<List<String>?> submittedSessionQuestionIds = <List<String>?>[];
+
+  /// 被 `getSession` 加载过的会话 id（续练/错题本入口据此断言「进的是这一场」）。
+  final List<String> loadedSessions = <String>[];
 
   @override
   Future<PracticeSession> createSession({
@@ -206,6 +241,11 @@ class FakePracticeRepository implements PracticeRepository {
 
   @override
   Future<PracticeSession> getSession(String sessionId) async {
+    loadedSessions.add(sessionId);
+    final gate = getSessionGate;
+    if (gate != null) {
+      await gate.future;
+    }
     final error = createError;
     if (error != null) throw error;
     return PracticeSession(sessionId: sessionId, questions: questions);
@@ -217,9 +257,11 @@ class FakePracticeRepository implements PracticeRepository {
     required String questionId,
     required String userAnswer,
     required int duration,
+    List<String>? sessionQuestionIds,
   }) async {
     submitCalls++;
     submittedAnswers.add(userAnswer);
+    submittedSessionQuestionIds.add(sessionQuestionIds);
     final error = submitError;
     if (error != null) throw error;
     return submitResponse;
@@ -491,6 +533,74 @@ List<Object> fakeHistoryDetail(
 List<Object> fakeReviewMode(ReviewMode mode) {
   return <Object>[
     settingsProvider.overrideWith(() => FakeSettingsNotifier(mode)),
+  ];
+}
+
+/// 历史列表替身：首页只读 `items.first.createdAt`，练习历史屏读整页。
+///
+/// 用假控制器而不是 override 整个 provider：`HistoryListState` 是 freezed，
+/// 直接塞状态也能过，但首页还会 `loadHistory()`——假控制器能顺带断言
+/// 「首页确实补了一次请求」，而不是凭空显示一个时间。
+class FakeHistoryController extends HistoryController {
+  FakeHistoryController(this.initial);
+
+  final HistoryListState initial;
+  int loadCalls = 0;
+
+  @override
+  HistoryListState build() => initial;
+
+  @override
+  Future<void> loadHistory() async {
+    loadCalls++;
+  }
+}
+
+List<Object> fakeHistory({
+  FakeHistoryController? controller,
+  List<HistoryItem>? items,
+  bool isLoading = false,
+  String? error,
+}) {
+  final fake =
+      controller ??
+      FakeHistoryController(
+        HistoryListState(
+          items: items ?? const <HistoryItem>[],
+          isLoading: isLoading,
+          error: error,
+        ),
+      );
+  return <Object>[historyControllerProvider.overrideWith(() => fake)];
+}
+
+/// 今日回忆队列（首页记忆卡读 `due`）。
+List<Object> fakeRecallQueue({
+  int due = 0,
+  int fresh = 0,
+  int? total,
+  int estimatedMinutes = 0,
+  int streakDays = 0,
+}) {
+  final queue = RecallQueue(
+    ids: <int>[for (var i = 0; i < (total ?? due + fresh); i++) i + 1],
+    due: due,
+    fresh: fresh,
+    total: total ?? due + fresh,
+    estimatedMinutes: estimatedMinutes,
+    streakDays: streakDays,
+  );
+  return <Object>[
+    recallQueueProvider.overrideWith((ref) async => queue),
+  ];
+}
+
+/// 本地键值存储（断点、主题、复习模式都走它）。
+List<Object> fakePreferences({Map<String, String>? initial}) {
+  return <Object>[
+    preferencesStoreProvider.overrideWithValue(
+      FakePreferencesStore(initial: initial),
+    ),
   ];
 }
 

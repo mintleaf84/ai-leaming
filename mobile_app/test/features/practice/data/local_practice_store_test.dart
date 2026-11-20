@@ -180,6 +180,22 @@ void main() {
     test('非数字 id 返回 null 不抛', () async {
       expect(await store.questionById('q-abc'), isNull);
     });
+
+    test('answer 为 null / 空串的题取不到（续练不能拿空答案判分）', () async {
+      await store.cacheQuestions(<Question>[
+        question('1'),
+        question('2', answer: null),
+        question('3', answer: ''),
+      ]);
+
+      expect(await store.questionById('1'), isNotNull);
+      expect(
+        await store.questionById('2'),
+        isNull,
+        reason: '缓存被列表接口用 answer=null 覆盖后，这道题不能拿来离线续练/判分',
+      );
+      expect(await store.questionById('3'), isNull);
+    });
   });
 
   group('本地会话', () {
@@ -219,6 +235,47 @@ void main() {
       expect(rows.length, 1);
       expect(rows.single['mode'], 'random');
       expect(rows.single['question_ids'], '["1"]');
+    });
+
+    test('localSessionQuestionIds 按开练顺序返回题号（离线续练的唯一依据）', () async {
+      final localId = await store.createLocalSession(
+        userId: 'u1',
+        mode: 'random',
+        questionIds: const <String>['3', '1', '2'],
+      );
+
+      expect(
+        await store.localSessionQuestionIds(localId),
+        <String>['3', '1', '2'],
+        reason: '顺序必须保留：续练落点按「第一道未答题」计算，顺序变了就错位',
+      );
+    });
+
+    test('localSessionQuestionIds 找不到会话时返回 null（不抛错）', () async {
+      expect(await store.localSessionQuestionIds('local_missing'), isNull);
+    });
+
+    test('localSessionQuestionIds 遇到坏 JSON 返回 null，不让续练崩在解析上', () async {
+      await db.insert('local_sessions', <String, Object?>{
+        'local_id': 'local_bad',
+        'user_id': 'u1',
+        'mode': 'random',
+        'question_ids': '["1",',
+        'started_at': nowMs(),
+      });
+
+      expect(await store.localSessionQuestionIds('local_bad'), isNull);
+    });
+
+    test('localSessionOwner 给出会话归属；会话不存在时返回 null', () async {
+      final localId = await store.createLocalSession(
+        userId: 'u1',
+        mode: 'random',
+        questionIds: const <String>['1'],
+      );
+
+      expect(await store.localSessionOwner(localId), 'u1');
+      expect(await store.localSessionOwner('local_missing'), isNull);
     });
   });
 

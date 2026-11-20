@@ -30,6 +30,9 @@ void main() {
           ),
         ),
         ...fakeContractPending(),
+        ...fakeRecallQueue(),
+        ...fakeWrongBook(),
+        ...fakeHistory(),
       ],
     );
     await tester.pump();
@@ -50,7 +53,13 @@ void main() {
     await pumpScreen(
       tester,
       const DashboardScreen(),
-      overrides: <Object>[...fakeStats(), ...fakeContractPending()],
+      overrides: <Object>[
+        ...fakeStats(),
+        ...fakeContractPending(),
+        ...fakeRecallQueue(),
+        ...fakeWrongBook(),
+        ...fakeHistory(),
+      ],
     );
     await tester.pump();
 
@@ -71,6 +80,9 @@ void main() {
       overrides: <Object>[
         ...fakeStats(controller: controller),
         ...fakeContractPending(),
+        ...fakeRecallQueue(),
+        ...fakeWrongBook(),
+        ...fakeHistory(),
       ],
     );
     await tester.pump();
@@ -80,9 +92,20 @@ void main() {
     final retry = find.text('重试');
     expect(retry, findsOneWidget);
 
+    // 首页内容比一屏长，错误条可能落在折叠线以下：先滚到可见再点，
+    // 否则 tap 会打在屏幕外（用例会假绿：加载次数早就在挂载时 +1 了）。
+    await tester.ensureVisible(retry);
+    await tester.pump();
+    // 挂载时已经加载过一次：先记下来，点完只认「又多了一次」，
+    // 否则这条断言在「点了没反应」时也会绿（review C9）。
+    final before = controller.loadCalls;
     await tester.tap(retry);
     await tester.pump();
-    expect(controller.loadCalls, greaterThanOrEqualTo(1));
+    expect(
+      controller.loadCalls,
+      before + 1,
+      reason: '点重试必须真的再加载一次',
+    );
   });
 
   testWidgets('加载中且无数据：出骨架，不把空数据当结论', (tester) async {
@@ -92,6 +115,9 @@ void main() {
       overrides: <Object>[
         ...fakeStats(isLoading: true),
         ...fakeContractPending(),
+        ...fakeRecallQueue(),
+        ...fakeWrongBook(),
+        ...fakeHistory(),
       ],
     );
     await tester.pump();

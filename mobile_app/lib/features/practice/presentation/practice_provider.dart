@@ -28,6 +28,12 @@ class PracticeSessionState {
   final Map<String, String> explanations; // questionId -> explanation
   final Map<String, FirstPrinciplesResponse> firstPrinciples; // questionId -> AI分析
   final bool isAnalyzingFirstPrinciples;
+  /// 第一性原理分析**专用**的失败原因（面板的失败态读它）。
+  ///
+  /// 不能复用 [error]：那是整场练习的粗粒度错误（创建会话失败、断点保存失败等），
+  /// 面板拿它判断会把一条与 AI 分析无关的红字显示成「分析失败」。
+  /// 语义与 [error] 一致：下一次 copyWith 不带它就清空（重试中 / 成功 / 换题都清）。
+  final String? firstPrinciplesError;
   final bool isLoading;
   final String? error;
   /// 本次练习是否在离线状态（本地会话，作答先落队列、回连再补交）。
@@ -43,6 +49,7 @@ class PracticeSessionState {
     this.explanations = const {},
     this.firstPrinciples = const {},
     this.isAnalyzingFirstPrinciples = false,
+    this.firstPrinciplesError,
     this.isLoading = false,
     this.error,
     this.isOffline = false,
@@ -58,6 +65,7 @@ class PracticeSessionState {
     Map<String, String>? explanations,
     Map<String, FirstPrinciplesResponse>? firstPrinciples,
     bool? isAnalyzingFirstPrinciples,
+    String? firstPrinciplesError,
     bool? isLoading,
     String? error,
     bool? isOffline,
@@ -72,6 +80,7 @@ class PracticeSessionState {
       explanations: explanations ?? this.explanations,
       firstPrinciples: firstPrinciples ?? this.firstPrinciples,
       isAnalyzingFirstPrinciples: isAnalyzingFirstPrinciples ?? this.isAnalyzingFirstPrinciples,
+      firstPrinciplesError: firstPrinciplesError,
       isLoading: isLoading ?? this.isLoading,
       error: error,
       isOffline: isOffline ?? this.isOffline,
@@ -520,9 +529,12 @@ class PracticeController extends Notifier<PracticeSessionState> {
         isAnalyzingFirstPrinciples: false,
       );
     } catch (e) {
+      // 失败原因落在面板专用字段上（成功/重试/换题时随 copyWith 清空），
+      // 不污染整场练习共享的 `error`。
+      debugPrint('[Practice] 获取第一性原理分析失败: $e');
       state = state.copyWith(
         isAnalyzingFirstPrinciples: false,
-        error: '获取 AI 分析失败：${userMessageOf(e)}',
+        firstPrinciplesError: '获取 AI 分析失败：${userMessageOf(e)}',
       );
     }
   }

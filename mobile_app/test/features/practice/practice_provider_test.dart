@@ -1,8 +1,11 @@
+import 'dart:async';
+
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mocktail/mocktail.dart';
 
+import 'package:mobile_app/features/practice/domain/first_principles_response.dart';
 import 'package:mobile_app/features/practice/domain/practice_repository.dart';
 import 'package:mobile_app/features/practice/data/practice_repository_impl.dart';
 import 'package:mobile_app/features/practice/domain/practice_session.dart';
@@ -183,6 +186,162 @@ void main() {
       notifier.toggleAnswer('A');
       state = container.read(practiceControllerProvider);
       expect(state.userAnswers['10'], ['C']);
+    });
+  });
+
+  group('第一性原理失败态（面板专用字段）', () {
+    /// 造一场已就绪的练习：`fetchFirstPrinciples` 需要会话里有这道题。
+    Future<ProviderContainer> readyContainer() async {
+      final container = makeProviderContainer(mockRepository);
+      when(() => mockRepository.createSession(limit: any(named: 'limit')))
+          .thenAnswer(
+            (_) async => const PracticeSession(
+              sessionId: 'session_1',
+              questions: [
+                Question(
+                  id: '1',
+                  content: '测试题1',
+                  options: ['A', 'B', 'C', 'D'],
+                  type: 'single',
+                ),
+              ],
+            ),
+          );
+      await container.read(practiceControllerProvider.notifier).createSession();
+      return container;
+    }
+
+    test('失败只写 firstPrinciplesError，不污染整场 error；成功后清空', () async {
+      final container = await readyContainer();
+      Object? failure = Exception('socket closed');
+
+      when(
+        () => mockRepository.analyzeFirstPrinciples(
+          questionContent: any(named: 'questionContent'),
+          correctAnswer: any(named: 'correctAnswer'),
+          explanation: any(named: 'explanation'),
+          wrongAnswer: any(named: 'wrongAnswer'),
+        ),
+      ).thenAnswer((_) async {
+        if (failure != null) throw failure;
+        return const FirstPrinciplesResponse(
+          analysis: '【答案】B',
+          cached: false,
+        );
+      });
+
+      final notifier = container.read(practiceControllerProvider.notifier);
+      await notifier.fetchFirstPrinciples('1');
+
+      var state = container.read(practiceControllerProvider);
+      expect(state.isAnalyzingFirstPrinciples, false);
+      expect(
+        state.firstPrinciplesError,
+        '获取 AI 分析失败：出了点问题，请重试',
+        reason: '面板要能显示一句人话，而不是原始异常',
+      );
+      expect(
+        state.error,
+        isNull,
+        reason: '整场练习的 error 会驱动练习页的整屏失败态，不能被 AI 分析失败占用',
+      );
+
+      // 重试成功：结果落地，旧错误一起清掉。
+      failure = null;
+      await notifier.fetchFirstPrinciples('1');
+
+      state = container.read(practiceControllerProvider);
+      expect(state.firstPrinciplesError, isNull);
+      expect(state.firstPrinciples['1']?.analysis, '【答案】B');
+    });
+
+    test('重试开始时先清掉上一次的错误（不会一边转圈一边红字）', () async {
+      final container = await readyContainer();
+      Object? failure = Exception('socket closed');
+      final gate = Completer<void>();
+
+      when(
+        () => mockRepository.analyzeFirstPrinciples(
+          questionContent: any(named: 'questionContent'),
+          correctAnswer: any(named: 'correctAnswer'),
+          explanation: any(named: 'explanation'),
+          wrongAnswer: any(named: 'wrongAnswer'),
+        ),
+      ).thenAnswer((_) async {
+        if (failure != null) throw failure;
+        await gate.future;
+        return const FirstPrinciplesResponse(
+          analysis: '【答案】B',
+          cached: false,
+        );
+      });
+
+      final notifier = container.read(practiceControllerProvider.notifier);
+      await notifier.fetchFirstPrinciples('1');
+      expect(
+        container.read(practiceControllerProvider).firstPrinciplesError,
+        isNotNull,
+      );
+
+      // 第二次请求挂住：此刻应当只有「正在分析」，没有旧错误。
+      failure = null;
+      final retry = notifier.fetchFirstPrinciples('1');
+      await Future<void>.delayed(Duration.zero);
+
+      final state = container.read(practiceControllerProvider);
+      expect(state.isAnalyzingFirstPrinciples, true);
+      expect(state.firstPrinciplesError, isNull);
+
+      gate.complete();
+      await retry;
+      expect(container.read(practiceControllerProvider).firstPrinciplesError, isNull);
+    });
+
+    test('换题（nextQuestion）清掉上一题的错误', () async {
+      final container = makeProviderContainer(mockRepository);
+      when(() => mockRepository.createSession(limit: any(named: 'limit')))
+          .thenAnswer(
+            (_) async => const PracticeSession(
+              sessionId: 'session_1',
+              questions: [
+                Question(
+                  id: '1',
+                  content: '测试题1',
+                  options: ['A', 'B', 'C', 'D'],
+                  type: 'single',
+                ),
+                Question(
+                  id: '2',
+                  content: '测试题2',
+                  options: ['A', 'B', 'C', 'D'],
+                  type: 'single',
+                ),
+              ],
+            ),
+          );
+      when(
+        () => mockRepository.analyzeFirstPrinciples(
+          questionContent: any(named: 'questionContent'),
+          correctAnswer: any(named: 'correctAnswer'),
+          explanation: any(named: 'explanation'),
+          wrongAnswer: any(named: 'wrongAnswer'),
+        ),
+      ).thenThrow(Exception('socket closed'));
+
+      final notifier = container.read(practiceControllerProvider.notifier);
+      await notifier.createSession();
+      await notifier.fetchFirstPrinciples('1');
+      expect(
+        container.read(practiceControllerProvider).firstPrinciplesError,
+        isNotNull,
+      );
+
+      notifier.nextQuestion();
+      expect(
+        container.read(practiceControllerProvider).firstPrinciplesError,
+        isNull,
+        reason: '换到下一题还挂着上一题的失败红字，用户会以为是这道题的分析失败',
+      );
     });
   });
 }

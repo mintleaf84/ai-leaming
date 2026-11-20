@@ -36,7 +36,10 @@ class ProfileController extends Notifier<ProfileState> {
   ProfileState build() => const ProfileState();
 
   ApiClient get _apiClient {
-    final dio = ref.watch(dioProvider);
+    // 用 read 而不是 watch：这里在控制器方法里取一次用，不参与 build 的依赖图。
+    // watch 会把「后端地址变了」变成对本控制器的 invalidateSelf，正在加载的
+    // 列表被重建回空态，方法里随后落地的 state 也就写不回去了。
+    final dio = ref.read(dioProvider);
     return ApiClient(dio);
   }
 

@@ -1,11 +1,13 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 
+import 'package:mobile_app/core/diagnostics/error_log.dart';
 import 'package:mobile_app/core/theme/app_icons.dart';
 import 'package:mobile_app/features/settings/presentation/settings_screen.dart';
 import 'package:mobile_app/shared/widgets/server_address_form.dart';
 
 import '../../../support/fake_network_images.dart';
+import '../../../support/fake_preferences_store.dart';
 import '../../../support/fake_providers.dart';
 import '../../../support/pump_screen.dart';
 
@@ -80,8 +82,61 @@ void main() {
     expect(find.byIcon(AppIcons.cloudUploadOutlined), findsOneWidget);
 
     // 本地库读数真的接到了界面上（不是写死的容量）
-    expect(find.textContaining('42'), findsOneWidget);
+    expect(find.text('已缓存 42 题'), findsOneWidget);
     expect(find.textContaining('3'), findsWidgets);
+  });
+
+  testWidgets('诊断日志：有日志时显示条数，点开弹窗能看到记录', (tester) async {
+    final log = ErrorLog(store: FakePreferencesStore());
+    log.add(
+      StateError('boom-1'),
+      StackTrace.fromString('#0 one (a.dart:1:1)'),
+      kind: 'flutter',
+    );
+    log.add(StateError('boom-2'), null, kind: 'zone');
+
+    await pumpScreen(
+      tester,
+      const SettingsScreen(),
+      overrides: <Object>[
+        ...fakeSettings(),
+        errorLogProvider.overrideWithValue(log),
+      ],
+    );
+    await tester.pump();
+
+    // 右侧条数来自日志本身，不是写死的
+    expect(find.text('2 条'), findsOneWidget);
+
+    final tile = find.text('诊断日志');
+    await tester.ensureVisible(tile);
+    await tester.pump();
+    await tester.tap(tile);
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 300));
+
+    expect(find.text('复制全部'), findsOneWidget);
+    expect(find.text('清空'), findsOneWidget);
+    // 最新在前：boom-2（zone）在 boom-1（flutter）之前
+    expect(find.textContaining('zone: Bad state: boom-2'), findsOneWidget);
+    expect(find.textContaining('flutter: Bad state: boom-1'), findsOneWidget);
+  });
+
+  testWidgets('诊断日志：没有记录时显示暂无记录', (tester) async {
+    final log = ErrorLog(store: FakePreferencesStore());
+
+    await pumpScreen(
+      tester,
+      const SettingsScreen(),
+      overrides: <Object>[
+        ...fakeSettings(),
+        errorLogProvider.overrideWithValue(log),
+      ],
+    );
+    await tester.pump();
+
+    expect(find.text('暂无记录'), findsOneWidget);
+    expect(find.textContaining(' 条'), findsNothing);
   });
 
   testWidgets('版本行：本地构建没有 BUILD_SHA，回落到固定版本号且不带指纹', (tester) async {

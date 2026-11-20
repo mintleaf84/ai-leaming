@@ -43,9 +43,13 @@ abstract final class AppRoutes {
   static const profile = '/profile';
   static const pricing = '/pricing';
   static const textbooks = '/textbooks';
+  static const questionNew = '/questions/new';
+  static const drafts = '/drafts';
 
   static String historyDetail(String sessionId) => '/history/$sessionId';
   static String textbookDetail(int textbookId) => '/textbooks/$textbookId';
+  static String questionEdit(String questionId) => '/questions/$questionId/edit';
+  static String draftDetail(String draftId) => '/drafts/$draftId';
 }
 
 extension AppNav on BuildContext {

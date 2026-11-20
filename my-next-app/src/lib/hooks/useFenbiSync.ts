@@ -74,6 +74,18 @@ function createRequestError(message: string, status: number): RequestError {
   return error;
 }
 
+/**
+ * 解析响应体；非 JSON（网关错误页、204 等）返回 null，交给调用方走兜底文案。
+ */
+async function readJsonOrNull(response: Response): Promise<unknown> {
+  try {
+    return await response.json();
+  } catch {
+    // audit-allow: 非 JSON 响应（网关错误页等）不是错误，按"无响应体"处理
+    return null;
+  }
+}
+
 async function requestJson<T>(path: string, init?: RequestInit): Promise<T> {
   let response: Response;
   try {
@@ -88,13 +100,7 @@ async function requestJson<T>(path: string, init?: RequestInit): Promise<T> {
     throw createRequestError(FENBI_NETWORK_MESSAGE, 0);
   }
 
-  let payload: unknown = null;
-  try {
-    payload = await response.json();
-  } catch {
-    // 非 JSON 响应（网关错误页等）走下面的兜底文案
-    payload = null;
-  }
+  const payload = await readJsonOrNull(response);
 
   if (!response.ok) {
     const record = (payload ?? {}) as { error?: unknown; message?: unknown };
@@ -136,6 +142,7 @@ function normalizeResult(value: unknown): FenbiSyncResult | null {
     try {
       return normalizeResult(JSON.parse(value));
     } catch {
+      // audit-allow: 历史列的脏数据（非 JSON 文本）按"无同步结果"处理
       return null;
     }
   }
@@ -227,6 +234,7 @@ export function useFenbiSync(): UseFenbiSyncResult {
         },
       };
     } catch (error) {
+      // audit-allow: 错误转成 actionError 并随返回值交给调用方展示
       const message = describeFenbiError(error);
       setActionError(message);
       return { ok: false, message };
@@ -245,6 +253,7 @@ export function useFenbiSync(): UseFenbiSyncResult {
       await refetch();
       return { ok: true, result: { imported: 0, skipped: 0, newQuestions: 0 } };
     } catch (error) {
+      // audit-allow: 解绑失败转成 actionError，由界面展示并可重试
       const message = describeFenbiError(error);
       setActionError(message);
       return { ok: false, message };

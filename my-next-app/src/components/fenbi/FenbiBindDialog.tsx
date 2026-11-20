@@ -202,6 +202,7 @@ function QrcodeSession({
           onClose();
         }
       } catch (error) {
+        // audit-allow: 轮询失败转成弹层内可读文案（setQrError），组件卸载时静默退出
         if (cancelled) return;
         setQrError(describeFenbiError(error));
       }
@@ -335,8 +336,10 @@ function PasswordPanel({
       onLinked();
       onClose();
     } catch (error) {
+      // audit-allow: 错误已转成表单内可读文案，不吞也不上抛（弹层保持打开可重试）
       // 后端的 error 已经是中文，直接用；风控类会换成「等 10 分钟 / 改扫码」
       setFormError(describeFenbiError(error));
+      return;
     } finally {
       setIsSubmitting(false);
     }

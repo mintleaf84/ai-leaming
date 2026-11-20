@@ -98,6 +98,7 @@ void main() {
           questionId: any(named: 'questionId'),
           userAnswer: any(named: 'userAnswer'),
           duration: any(named: 'duration'),
+          sessionQuestionIds: any(named: 'sessionQuestionIds'),
         ),
       ).thenAnswer((_) async => {'isCorrect': true, 'correctAnswer': 'A'});
 

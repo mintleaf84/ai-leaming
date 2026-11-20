@@ -19,6 +19,10 @@ import '../../../support/pump_screen.dart';
 /// 所以用例不只断言「有数据时显示对」，还断言「占位符彻底消失」——
 /// 否则以后有人再塞一个 `'--'` 进去，前一类用例照样绿。
 void main() {
+  // 断点恢复要按账号归属校验（读 `jwt_token` 拿 user id）：没有这个桩，
+  // 首页会把断点当成「不属于当前账号」而丢掉，用例就测不到「继续上次练习」。
+  setUpAll(useFakeSecureStorage);
+
   /// 三张卡共用的文案：这些字符串在卡面上**不该再出现**。
   const placeholders = <String>['--', '几分钟', '回顾'];
 
@@ -112,6 +116,7 @@ void main() {
       'nextIndex': 2,
       'total': 8,
       'mode': 'random',
+      'userId': '1',
       'savedAt': DateTime.now().toIso8601String(),
     });
 

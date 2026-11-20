@@ -223,6 +223,7 @@ void main() {
       'nextIndex': 2,
       'total': 8,
       'mode': 'random',
+      'userId': '1',
       'savedAt': DateTime.now().toIso8601String(),
     });
     final practice = FakePracticeRepository(

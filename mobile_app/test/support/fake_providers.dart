@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:convert';
 
 import 'package:dio/dio.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
@@ -48,16 +49,36 @@ import 'fake_preferences_store.dart';
 // 平台通道
 // ---------------------------------------------------------------------------
 
+/// 拼一个只用于读 payload 的 JWT（签名段不参与客户端逻辑）。
+///
+/// 客户端从 `jwt_token` 里读 `user.id` 给本地数据打归属，所以测试桩必须是
+/// 可解析的 JWT——随便一个字符串会让「当前账号」变成 null，断点/离线数据
+/// 的归属校验就测不出来。
+String fakeJwt({int userId = 1, String username = 'tester'}) {
+  String segment(Object value) {
+    return base64Url.encode(utf8.encode(jsonEncode(value))).replaceAll('=', '');
+  }
+
+  final header = segment(<String, dynamic>{'alg': 'HS256', 'typ': 'JWT'});
+  final payload = segment(<String, dynamic>{
+    'user': <String, dynamic>{'id': userId, 'username': username},
+    'exp': 9999999999,
+  });
+  return '$header.$payload.signature-not-verified';
+}
+
 /// 把 `flutter_secure_storage` 换成内存实现。
 ///
 /// 练习/设置屏在 initState 里直接读 `jwt_token`（`const FlutterSecureStorage()`
 /// 是 canonical 实例，所以这个静态桩对它们同样生效）。不调用它的话，
 /// 平台通道会抛 MissingPluginException，屏会落到「请先登录」错误态。
-void useFakeSecureStorage({String? jwtToken = 'test_token'}) {
+///
+/// 默认 token 是一个**可解析**的 JWT（用户 id = 1）：断点与离线会话都要按
+/// 账号归属校验，不可解析的 token 会被当作「没有账号」，相关路径全部走不通。
+void useFakeSecureStorage({String? jwtToken, bool loggedIn = true}) {
+  final token = jwtToken ?? fakeJwt();
   FlutterSecureStorage.setMockInitialValues(
-    jwtToken == null
-        ? <String, String>{}
-        : <String, String>{'jwt_token': jwtToken},
+    loggedIn ? <String, String>{'jwt_token': token} : <String, String>{},
   );
 }
 
@@ -198,6 +219,9 @@ class FakePracticeRepository implements PracticeRepository {
   int submitCalls = 0;
   final List<String> submittedAnswers = <String>[];
 
+  /// 每次提交带上来的「整场题序」（降级成本地会话时用来记全题序）。
+  final List<List<String>?> submittedSessionQuestionIds = <List<String>?>[];
+
   /// 被 `getSession` 加载过的会话 id（续练/错题本入口据此断言「进的是这一场」）。
   final List<String> loadedSessions = <String>[];
 
@@ -233,9 +257,11 @@ class FakePracticeRepository implements PracticeRepository {
     required String questionId,
     required String userAnswer,
     required int duration,
+    List<String>? sessionQuestionIds,
   }) async {
     submitCalls++;
     submittedAnswers.add(userAnswer);
+    submittedSessionQuestionIds.add(sessionQuestionIds);
     final error = submitError;
     if (error != null) throw error;
     return submitResponse;

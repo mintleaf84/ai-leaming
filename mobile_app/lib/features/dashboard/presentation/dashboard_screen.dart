@@ -181,6 +181,7 @@ class DashboardScreen extends HookConsumerWidget {
           'sessionId': resume.sessionId,
           'startIndex': resume.startIndex,
           'answered': resume.answers,
+          'legacyAnswered': resume.legacyAnswered,
           'mode': resume.mode,
         },
       ),

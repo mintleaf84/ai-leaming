@@ -180,6 +180,22 @@ void main() {
     test('非数字 id 返回 null 不抛', () async {
       expect(await store.questionById('q-abc'), isNull);
     });
+
+    test('answer 为 null / 空串的题取不到（续练不能拿空答案判分）', () async {
+      await store.cacheQuestions(<Question>[
+        question('1'),
+        question('2', answer: null),
+        question('3', answer: ''),
+      ]);
+
+      expect(await store.questionById('1'), isNotNull);
+      expect(
+        await store.questionById('2'),
+        isNull,
+        reason: '缓存被列表接口用 answer=null 覆盖后，这道题不能拿来离线续练/判分',
+      );
+      expect(await store.questionById('3'), isNull);
+    });
   });
 
   group('本地会话', () {
@@ -249,6 +265,17 @@ void main() {
       });
 
       expect(await store.localSessionQuestionIds('local_bad'), isNull);
+    });
+
+    test('localSessionOwner 给出会话归属；会话不存在时返回 null', () async {
+      final localId = await store.createLocalSession(
+        userId: 'u1',
+        mode: 'random',
+        questionIds: const <String>['1'],
+      );
+
+      expect(await store.localSessionOwner(localId), 'u1');
+      expect(await store.localSessionOwner('local_missing'), isNull);
     });
   });
 

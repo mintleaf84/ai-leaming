@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'dart:convert';
 import 'package:flutter/foundation.dart';
+import '../../../core/auth/token_util.dart';
 import '../../../core/error/user_message.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../data/practice_repository_impl.dart';
@@ -109,6 +110,16 @@ class PracticeController extends Notifier<PracticeSessionState> {
   /// 本场练习的模式，只用于写断点（后端目前只支持 `random`）。
   String _mode = 'random';
 
+  /// 当前账号 id（`TokenUtil.userIdOf(jwt_token)`）：断点必须带归属，
+  /// 否则账号 B 能接着做 A 的练习（review 二轮 3）。
+  String? _userId;
+
+  /// 旧格式断点留下的「已答数」连续前缀（新格式断点为 0）。
+  ///
+  /// 旧格式只有 `answered`、没有题号，恢复后 `answers` 为空；若落点仍按
+  /// 「第一道未答题」算，重写断点会把进度覆盖成 0（review 二轮 2）。
+  int _legacyAnswered = 0;
+
   @override
   PracticeSessionState build() => const PracticeSessionState();
 
@@ -125,6 +136,11 @@ class PracticeController extends Notifier<PracticeSessionState> {
   void _persistResume() {
     final sessionId = state.sessionId;
     if (sessionId == null || sessionId.isEmpty || state.questions.isEmpty) {
+      return;
+    }
+    // 没有账号归属的断点不可恢复（读取时会因归属不匹配被丢弃），不写。
+    final userId = _userId;
+    if (userId == null) {
       return;
     }
     unawaited(
@@ -144,6 +160,8 @@ class PracticeController extends Notifier<PracticeSessionState> {
               nextIndex: _firstUnansweredIndex(),
               total: state.questions.length,
               mode: _mode,
+              userId: userId,
+              legacyAnswered: _legacyAnswered,
               savedAt: DateTime.now(),
             ),
           ),
@@ -154,8 +172,11 @@ class PracticeController extends Notifier<PracticeSessionState> {
   ///
   /// 跳题作答（答了第 3 题、第 1 题没答）时这里返回 0——恢复后从真正没做的
   /// 题开始，而不是从「已答数」推出来的位置。
+  ///
+  /// 旧格式断点的连续前缀（[_legacyAnswered]）视为已答：从它往后找，
+  /// 这样「恢复 → 立即落盘」不会把进度写回 0，用户答完前缀后的第一题才会越过它。
   int _firstUnansweredIndex() {
-    for (var i = 0; i < state.questions.length; i++) {
+    for (var i = _legacyAnswered; i < state.questions.length; i++) {
       if (!_persistedQuestionIds.contains(state.questions[i].id)) {
         return i;
       }
@@ -177,6 +198,7 @@ class PracticeController extends Notifier<PracticeSessionState> {
         state = state.copyWith(isLoading: false, error: '请先登录');
         return;
       }
+      _userId = TokenUtil.userIdOf(token);
 
       final sessionResponse = await _repository.createSession(
         limit: limit,
@@ -187,6 +209,7 @@ class PracticeController extends Notifier<PracticeSessionState> {
       if (generation != _sessionGeneration) return;
 
       _persistedQuestionIds.clear();
+      _legacyAnswered = 0;
       state = state.copyWith(
         isLoading: false,
         sessionId: sessionResponse.sessionId,
@@ -239,6 +262,7 @@ class PracticeController extends Notifier<PracticeSessionState> {
     String sessionId, {
     int startIndex = 0,
     List<ResumeAnswer> answered = const <ResumeAnswer>[],
+    int legacyAnswered = 0,
   }) async {
     // 代次：`reset()` / 新的 createSession 已经让这次加载失效时，
     // 迟到的响应（含异常分支）必须整体丢弃，不能把旧会话写回来。
@@ -255,6 +279,10 @@ class PracticeController extends Notifier<PracticeSessionState> {
         state = state.copyWith(isLoading: false, error: '请先登录');
         return;
       }
+      _userId = TokenUtil.userIdOf(token);
+      // 旧格式断点没有题号，只有「已答数」这个连续前缀：落点必须从它往后算，
+      // 否则恢复即落盘会把进度写回 0（review 二轮 2）。
+      _legacyAnswered = legacyAnswered > 0 ? legacyAnswered : 0;
 
       final sessionResponse = await _repository.getSession(sessionId);
       if (generation != _sessionGeneration) return;
@@ -296,6 +324,9 @@ class PracticeController extends Notifier<PracticeSessionState> {
   }
 
   /// 续练落点：第一道没有已答记录的题；没有已答记录时用传入的兜底下标。
+  ///
+  /// 扫描从 [_legacyAnswered] 之后开始：旧格式断点的「已答数」是一段连续前缀，
+  /// 前缀里的题没有题号可比，只能按位置当作已答。
   int _resumeIndex(
     List<Question> questions,
     Iterable<String> answeredIds,
@@ -303,9 +334,10 @@ class PracticeController extends Notifier<PracticeSessionState> {
   ) {
     if (questions.isEmpty) return 0;
     if (answeredIds.isNotEmpty) {
-      for (var i = 0; i < questions.length; i++) {
+      for (var i = _legacyAnswered; i < questions.length; i++) {
         if (!answeredIds.contains(questions[i].id)) return i;
       }
+      return questions.length - 1;
     }
     return fallback.clamp(0, questions.length - 1);
   }
@@ -370,6 +402,10 @@ class PracticeController extends Notifier<PracticeSessionState> {
         questionId: question.id,
         userAnswer: userAnswer,
         duration: duration,
+        // 降级成本地会话时要记全整场题序，否则重启后续练只剩断网那一题。
+        sessionQuestionIds: <String>[
+          for (final q in state.questions) q.id,
+        ],
       );
 
       // 从后端响应获取正确性和正确答案
@@ -381,7 +417,20 @@ class PracticeController extends Notifier<PracticeSessionState> {
       final nowOffline = degradedToOffline || state.isOffline;
       final persisted = response['persisted'] != false;
 
-      state = state.copyWith(isLoading: true, isOffline: nowOffline);
+      // 降级后这场练习在服务端已经「断了」：后续作答必须直接走本地会话，
+      // 断点也只能记 `local_<服务端会话 id>`——记服务端 id 的话，离线重启
+      // 后 `getSession('agent_42')` 必然失败，续练直接不可用（review 二轮 4）。
+      final serverSessionId = state.sessionId!;
+      final nextSessionId =
+          degradedToOffline && !serverSessionId.startsWith('local_')
+          ? 'local_$serverSessionId'
+          : serverSessionId;
+
+      state = state.copyWith(
+        isLoading: true,
+        isOffline: nowOffline,
+        sessionId: nextSessionId,
+      );
       if (!persisted) {
         state = state.copyWith(error: '本次作答未能保存到本地，网络恢复后请重练此题');
       } else {
@@ -485,6 +534,7 @@ class PracticeController extends Notifier<PracticeSessionState> {
     // 让还在飞的 createSession / loadSession 失效，避免它们稍后把状态写回来
     _sessionGeneration++;
     _persistedQuestionIds.clear();
+    _legacyAnswered = 0;
     state = const PracticeSessionState();
     // 这一场到此为止（结束/主动退出/换一场）：断点一并作废。
     // 首页据此隐藏「继续上次练习」，不会点进一个已经结束的会话。

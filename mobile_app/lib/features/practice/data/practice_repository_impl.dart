@@ -156,9 +156,23 @@ class PracticeRepositoryImpl implements PracticeRepository {
 
   /// 从本地会话记录 + 题目缓存重建一场离线练习。
   ///
-  /// 题面缺失或已过期（> [LocalPracticeStore.cacheMaxAgeDays] 天未联网）时
-  /// 明确拒绝：没有可信答案的题不能拿来继续判分。
+  /// 三道闸门都不能省：
+  /// 1. 会话必须属于当前账号（本地库按设备共享，登出不清会话）；
+  /// 2. 题面缺失或已过期（> [LocalPracticeStore.cacheMaxAgeDays] 天未联网）拒绝；
+  /// 3. 题面必须带可信答案（[LocalPracticeStore.questionById] 已过滤空答案）。
+  ///
+  /// 任何一题不满足都整体拒绝，**不跳过那一题**：跳过会让题序错位，
+  /// 断点里的「第几题」与恢复出来的题对不上，进度就永久错了。
   Future<PracticeSession> _loadLocalSession(String localId) async {
+    final owner = await _localStore.localSessionOwner(localId);
+    if (owner == null) {
+      throw const OfflineCacheUnavailable('本地找不到这场练习的记录，请重新开始一场');
+    }
+    final currentUserId = await _currentUserId();
+    if (currentUserId == null || owner != currentUserId) {
+      throw const OfflineCacheUnavailable('这场离线练习不属于当前账号，请重新开始一场');
+    }
+
     final questionIds = await _localStore.localSessionQuestionIds(localId);
     if (questionIds == null || questionIds.isEmpty) {
       throw const OfflineCacheUnavailable('本地找不到这场练习的记录，请重新开始一场');
@@ -167,7 +181,16 @@ class PracticeRepositoryImpl implements PracticeRepository {
     for (final questionId in questionIds) {
       final question = await _localStore.questionById(questionId);
       if (question == null) {
-        throw const OfflineCacheUnavailable('本地题面已过期，联网同步题库后可以继续这场练习');
+        throw const OfflineCacheUnavailable(
+          '本地题面已过期或缺少答案，请联网刷新题库后再继续这场练习',
+        );
+      }
+      final answer = question.answer;
+      if (answer == null || answer.trim().isEmpty) {
+        // 兜底：即使存储层将来放宽了过滤，没有答案的题也不能拿来续练判分。
+        throw const OfflineCacheUnavailable(
+          '本地题面已过期或缺少答案，请联网刷新题库后再继续这场练习',
+        );
       }
       questions.add(question);
     }
@@ -180,6 +203,7 @@ class PracticeRepositoryImpl implements PracticeRepository {
     required String questionId,
     required String userAnswer,
     required int duration,
+    List<String>? sessionQuestionIds,
   }) async {
     // 本地会话（local_ 前缀）没有服务端记录：本地判分 + 落待同步队列。
     if (sessionId.startsWith('local_')) {
@@ -217,6 +241,7 @@ class PracticeRepositoryImpl implements PracticeRepository {
         questionId: questionId,
         userAnswer: userAnswer,
         duration: duration,
+        sessionQuestionIds: sessionQuestionIds,
       );
     }
   }
@@ -225,23 +250,33 @@ class PracticeRepositoryImpl implements PracticeRepository {
   ///
   /// 幂等键取 `local_<serverSessionId>`：这半场练习只会补交一次，
   /// 服务端会新开一场（`agent_` 前缀）只含断网后的题，不会与已在线提交的题重复计数。
+  ///
+  /// [sessionQuestionIds] 是整场题序（控制器传进来）：降级后的本地会话必须记全，
+  /// 否则重启后续练只剩断网那一题，题序与断点全对不上（review 二轮 4）。
   Future<Map<String, dynamic>> _degradeToOffline({
     required String serverSessionId,
     required String questionId,
     required String userAnswer,
     required int duration,
+    List<String>? sessionQuestionIds,
   }) async {
     final localId = 'local_$serverSessionId';
     final userId = await _currentUserId();
     if (userId == null) {
       throw const OfflineCacheUnavailable('登录已失效，无法离线记录本次作答');
     }
+    final questionIds = <String>[
+      ...(sessionQuestionIds ?? <String>[questionId]),
+    ];
+    if (!questionIds.contains(questionId)) {
+      questionIds.add(questionId);
+    }
     try {
       await _localStore.ensureLocalSession(
         localId: localId,
         userId: userId,
         mode: 'offline-resume',
-        questionIds: <String>[questionId],
+        questionIds: questionIds,
       );
     } catch (error) {
       debugPrint('[Practice] 断网降级建会话失败: $error');

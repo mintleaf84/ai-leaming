@@ -131,9 +131,11 @@ class LocalPracticeStore {
     return questions;
   }
 
-  /// 按 ID 取单题（离线判分用）。找不到、或缓存超过 [cacheMaxAgeDays] 返回 null。
+  /// 按 ID 取单题（离线判分/离线续练用）。找不到、缓存过期、**或没有答案**时返回 null。
   ///
-  /// 新鲜度检查与 [pickRandom] 保持一致：断网续练同样不能拿旧题面判分。
+  /// 新鲜度与「必须有答案」两条检查都与 [pickRandom] 保持一致：缓存可能被
+  /// `cacheQuestions` 用 `answer=null` 覆盖（服务端列表接口不带答案），
+  /// 拿这种题续练会在提交时用空答案判分，把用户做对的题全判错。
   Future<Question?> questionById(String id, {int maxAgeDays = cacheMaxAgeDays}) async {
     final numericId = int.tryParse(id);
     if (numericId == null) {
@@ -144,7 +146,7 @@ class LocalPracticeStore {
         Duration(days: maxAgeDays).inMilliseconds;
     final rows = await db.query(
       'cached_questions',
-      where: 'id = ? AND fetched_at >= ?',
+      where: "id = ? AND fetched_at >= ? AND answer IS NOT NULL AND answer != ''",
       whereArgs: <Object?>[numericId, cutoff],
       limit: 1,
     );
@@ -237,6 +239,26 @@ class LocalPracticeStore {
       debugPrint('[Practice] 本地会话题目解析失败: $error');
       return null;
     }
+  }
+
+  /// 某个本地会话的归属账号；会话不存在（或没写 user_id）时返回 null。
+  ///
+  /// 离线续练必须先比对归属：`local_sessions` 是按设备共享的，退出登录并不会
+  /// 清掉上一位用户的会话，不校验就会出现「B 能接着做 A 的离线练习」。
+  Future<String?> localSessionOwner(String localId) async {
+    final db = await _resolveDb();
+    final rows = await db.query(
+      'local_sessions',
+      columns: <String>['user_id'],
+      where: 'local_id = ?',
+      whereArgs: <Object?>[localId],
+      limit: 1,
+    );
+    if (rows.isEmpty) {
+      return null;
+    }
+    final owner = rows.first['user_id'];
+    return owner is String && owner.isNotEmpty ? owner : null;
   }
 
   /// 记录一次作答；同一 (localId, questionId) 重复作答覆盖旧记录。

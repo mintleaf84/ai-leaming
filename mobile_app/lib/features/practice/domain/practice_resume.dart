@@ -50,6 +50,8 @@ class PracticeResume {
     required this.nextIndex,
     required this.total,
     this.mode = 'random',
+    this.userId,
+    this.legacyAnswered = 0,
     required this.savedAt,
   });
 
@@ -67,6 +69,20 @@ class PracticeResume {
 
   /// 练习模式（后端目前只支持 `random`，字段留着以免以后换模式时又改一次格式）。
   final String mode;
+
+  /// 断点归属的账号 id（`TokenUtil.userIdOf(jwt_token)`）。
+  ///
+  /// 断点曾经是全局 key：退出登录不清，账号 B 能看到并接着做 A 的练习。
+  /// 读取时与当前账号比对，不一致就整份丢弃。
+  final String? userId;
+
+  /// 旧格式断点里的「已答数」（顺序作答时的连续前缀）。
+  ///
+  /// 旧格式只有 `answered`、没有题号，恢复后 `answers` 为空。若照常按
+  /// 「第一道未答题」重写断点，`nextIndex` 会退化成 0（进度丢失）。
+  /// 这里保留这个前缀，落点时取 `max(第一道未答题, legacyAnswered)`，
+  /// 并且用户真正作答后新位置自然越过它。
+  final int legacyAnswered;
 
   /// 最后一次落盘时间。
   final DateTime savedAt;
@@ -89,6 +105,8 @@ class PracticeResume {
     'nextIndex': nextIndex,
     'total': total,
     'mode': mode,
+    if (userId != null) 'userId': userId,
+    if (legacyAnswered > 0) 'legacyAnswered': legacyAnswered,
     'savedAt': savedAt.toIso8601String(),
   };
 
@@ -121,12 +139,12 @@ class PracticeResume {
     }
 
     final rawNext = json['nextIndex'];
-    final legacyAnswered = json['answered'];
+    final legacyAnsweredRaw = json['answered'];
     final int nextIndex;
     if (rawNext is int) {
       nextIndex = rawNext;
-    } else if (rawAnswers == null && legacyAnswered is int) {
-      nextIndex = legacyAnswered;
+    } else if (rawAnswers == null && legacyAnsweredRaw is int) {
+      nextIndex = legacyAnsweredRaw;
     } else {
       return null;
     }
@@ -134,7 +152,15 @@ class PracticeResume {
     if (answers.length >= total) return null;
     if (nextIndex < 0 || nextIndex >= total) return null;
 
+    // 旧格式的「已答数」作为连续已答前缀保留下来：没有它，恢复后立即重写
+    // 断点会把 nextIndex 覆盖成「第一道未答题」= 0（review 二轮 2）。
+    final legacyRaw = json['legacyAnswered'] ?? legacyAnsweredRaw;
+    final legacyAnswered = legacyRaw is int && legacyRaw > 0 && legacyRaw < total
+        ? legacyRaw
+        : 0;
+
     final mode = json['mode'];
+    final userId = json['userId'];
     final savedAt = json['savedAt'];
     return PracticeResume(
       sessionId: sessionId,
@@ -142,6 +168,8 @@ class PracticeResume {
       nextIndex: nextIndex,
       total: total,
       mode: mode is String && mode.isNotEmpty ? mode : 'random',
+      userId: userId is String && userId.isNotEmpty ? userId : null,
+      legacyAnswered: legacyAnswered,
       savedAt: savedAt is String
           ? DateTime.tryParse(savedAt) ?? DateTime.now()
           : DateTime.now(),

@@ -1,5 +1,6 @@
 import 'dart:async';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import '../../practice/presentation/practice_resume_provider.dart';
 import '../data/auth_repository_impl.dart';
 
 final authControllerProvider = AsyncNotifierProvider<AuthController, void>(() {
@@ -35,6 +36,7 @@ class AuthController extends AsyncNotifier<void> {
     // 只有真的登录成功才算登录态变化；失败时界面仍停在未登录，不该触发清理。
     if (state.hasValue && !state.hasError) {
       ref.read(authEpochProvider.notifier).bump();
+      await _clearAccountPrivatePracticeData();
     }
   }
 
@@ -44,6 +46,7 @@ class AuthController extends AsyncNotifier<void> {
     state = await AsyncValue.guard(() => repo.register(username, password));
     if (state.hasValue && !state.hasError) {
       ref.read(authEpochProvider.notifier).bump();
+      await _clearAccountPrivatePracticeData();
     }
   }
 
@@ -61,6 +64,16 @@ class AuthController extends AsyncNotifier<void> {
       // 失败时**不** bump：本地清理失败说明用户其实还在登录态，
       // 清掉历史/对话反而让用户丢掉数据。
       ref.read(authEpochProvider.notifier).bump();
+      await _clearAccountPrivatePracticeData();
     }
+  }
+
+  /// 登录态变化后清掉「未完成练习」断点。
+  ///
+  /// 断点存在设备级 key 里、内容含上一账号的进度：不清的话账号 B 首页会看到
+  /// 「继续上次练习」并接着做 A 的练习（review 二轮 3）。读取时的归属校验是
+  /// 第二道闸，这里做的是「换账号即清」的第一道。
+  Future<void> _clearAccountPrivatePracticeData() async {
+    await ref.read(practiceResumeControllerProvider.notifier).clear();
   }
 }

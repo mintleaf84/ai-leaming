@@ -272,6 +272,7 @@ void main() {
       'answered': 2,
       'total': 8,
       'mode': 'random',
+      'userId': '1',
       'savedAt': DateTime.now().toIso8601String(),
     });
     final store = FakePreferencesStore(
@@ -290,6 +291,7 @@ void main() {
     expect(restored, isNotNull);
     expect(restored!.sessionId, 'session_9');
     expect(restored.startIndex, 2);
+    expect(restored.legacyAnswered, 2, reason: '旧格式的已答前缀必须留下来，否则重写断点会归零');
   });
 
   test('重启后能从本地存储恢复断点（新格式：题号 + 对错）', () async {
@@ -302,6 +304,7 @@ void main() {
       'nextIndex': 1,
       'total': 8,
       'mode': 'random',
+      'userId': '1',
       'savedAt': DateTime.now().toIso8601String(),
     });
     final store = FakePreferencesStore(
@@ -320,6 +323,218 @@ void main() {
     expect(restored.answeredCount, 2);
     expect(restored.answers.map((a) => a.questionId), <String>['1', '3']);
     expect(restored.nextIndex, 1);
+  });
+
+  /// 旧格式断点只有「已答数」、没有题号：恢复后 `answers` 为空，
+  /// 若落点仍按「第一道未答题」算，恢复即落盘会把进度写回 0（review 二轮 2）。
+  test('旧格式断点：恢复后立即落盘进度不丢，答完前缀后的题才前进', () async {
+    const key = PreferencesKeys.practiceResume;
+    final store = FakePreferencesStore(
+      initial: <String, String>{
+        key: jsonEncode(<String, dynamic>{
+          'sessionId': 'session_9',
+          'answered': 2,
+          'total': 8,
+          'mode': 'random',
+          'userId': '1',
+          'savedAt': DateTime.now().toIso8601String(),
+        }),
+      },
+    );
+    final repo = FakePracticeRepository(
+      questions: <Question>[for (var i = 1; i <= 8; i++) fakeQuestion(id: '$i')],
+    );
+    final fresh = ProviderContainer(
+      overrides: [
+        practiceRepositoryProvider.overrideWithValue(repo),
+        preferencesStoreProvider.overrideWithValue(store),
+        historyControllerProvider.overrideWith(
+          () => FakeHistoryController(const HistoryListState(items: [])),
+        ),
+      ],
+    );
+    addTearDown(fresh.dispose);
+
+    await fresh.read(practiceResumeControllerProvider.notifier).restore();
+    final restored = fresh.read(practiceResumeControllerProvider)!;
+    expect(restored.nextIndex, 2);
+
+    final controller = fresh.read(practiceControllerProvider.notifier);
+    await controller.loadSession(
+      restored.sessionId,
+      startIndex: restored.startIndex,
+      answered: restored.answers,
+      legacyAnswered: restored.legacyAnswered,
+    );
+    await flush();
+
+    expect(fresh.read(practiceControllerProvider).currentIndex, 2);
+    expect(
+      fresh.read(practiceResumeControllerProvider)!.nextIndex,
+      2,
+      reason: '续练本身会重写断点：不能把「已答 2 题」覆盖成 0',
+    );
+    expect(PracticeResume.decode(store.values[key])!.nextIndex, 2);
+    expect(PracticeResume.decode(store.values[key])!.legacyAnswered, 2);
+
+    // 答第 3 题（下标 2）后，落点才前进到第 4 题
+    controller.toggleAnswer('A');
+    await controller.submitCurrentAnswer();
+    await flush();
+
+    final saved = fresh.read(practiceResumeControllerProvider)!;
+    expect(saved.nextIndex, 3);
+    expect(saved.answers.map((a) => a.questionId), <String>['3']);
+  });
+
+  /// 在线会话中途断网降级后，断点必须改记 `local_<服务端会话 id>`：
+  /// 记服务端 id 的话离线重启会打到一个必然失败的地址（review 二轮 4）。
+  test('在线会话断网降级：断点改记 local_ 会话，重启后按原题序续练', () async {
+    repository.submitResponse = const <String, dynamic>{
+      'isCorrect': true,
+      'correctAnswer': 'A',
+      'offline': true,
+      'persisted': true,
+    };
+    final controller = container.read(practiceControllerProvider.notifier);
+    await controller.createSession(limit: 3);
+    await flush();
+
+    controller.toggleAnswer('A');
+    await controller.submitCurrentAnswer();
+    await flush();
+
+    final state = container.read(practiceControllerProvider);
+    expect(state.sessionId, 'local_session_1', reason: '降级后本场就是本地会话');
+    expect(state.isOffline, isTrue);
+    expect(
+      repository.submittedSessionQuestionIds.single,
+      <String>['1', '2', '3'],
+      reason: '降级时要带上整场题序，本地会话才能按原顺序重建',
+    );
+
+    final saved = resume()!;
+    expect(saved.sessionId, 'local_session_1');
+    expect(saved.sessionId, startsWith('local_'));
+    expect(saved.answeredCount, 1);
+
+    // 模拟杀进程重启：新容器、同一份本地存储
+    final restarted = ProviderContainer(
+      overrides: [
+        practiceRepositoryProvider.overrideWithValue(repository),
+        preferencesStoreProvider.overrideWithValue(prefs),
+        historyControllerProvider.overrideWith(
+          () => FakeHistoryController(const HistoryListState(items: [])),
+        ),
+      ],
+    );
+    addTearDown(restarted.dispose);
+
+    await restarted.read(practiceResumeControllerProvider.notifier).restore();
+    final restored = restarted.read(practiceResumeControllerProvider)!;
+    expect(restored.sessionId, 'local_session_1');
+
+    final restartedController = restarted.read(
+      practiceControllerProvider.notifier,
+    );
+    await restartedController.loadSession(
+      restored.sessionId,
+      startIndex: restored.startIndex,
+      answered: restored.answers,
+      legacyAnswered: restored.legacyAnswered,
+    );
+
+    final reloaded = restarted.read(practiceControllerProvider);
+    expect(reloaded.sessionId, 'local_session_1');
+    expect(reloaded.isOffline, isTrue);
+    expect(
+      reloaded.questions.map((q) => q.id),
+      <String>['1', '2', '3'],
+      reason: '题序完整，断点「第 2 题」才对得上',
+    );
+    expect(reloaded.currentIndex, 1);
+    expect(reloaded.results, <String, bool>{'1': true});
+  });
+
+  group('断点归属：设备级 key 不能跨账号（review 二轮 3）', () {
+    String resumeJson({String? userId}) => jsonEncode(<String, dynamic>{
+      'sessionId': 'session_9',
+      'answers': <Map<String, dynamic>>[
+        <String, dynamic>{'id': '1', 'correct': true},
+      ],
+      'nextIndex': 1,
+      'total': 8,
+      'mode': 'random',
+      if (userId != null) 'userId': userId,
+      'savedAt': DateTime.now().toIso8601String(),
+    });
+
+    test('A 的断点 + 当前登录的是 B：不恢复，且 key 被清掉', () async {
+      const key = PreferencesKeys.practiceResume;
+      final store = FakePreferencesStore(
+        initial: <String, String>{key: resumeJson(userId: '1')},
+      );
+      // 当前账号换成 B
+      useFakeSecureStorage(jwtToken: fakeJwt(userId: 2));
+      addTearDown(useFakeSecureStorage);
+
+      final fresh = ProviderContainer(
+        overrides: [preferencesStoreProvider.overrideWithValue(store)],
+      );
+      addTearDown(fresh.dispose);
+
+      await fresh.read(practiceResumeControllerProvider.notifier).restore();
+
+      expect(
+        fresh.read(practiceResumeControllerProvider),
+        isNull,
+        reason: '首页不能出现「继续上次练习」——那是 A 的进度',
+      );
+      expect(store.values[key], '', reason: '跨账号的断点必须就地删除');
+    });
+
+    test('同一账号：断点正常恢复', () async {
+      final store = FakePreferencesStore(
+        initial: <String, String>{
+          PreferencesKeys.practiceResume: resumeJson(userId: '1'),
+        },
+      );
+      final fresh = ProviderContainer(
+        overrides: [preferencesStoreProvider.overrideWithValue(store)],
+      );
+      addTearDown(fresh.dispose);
+
+      await fresh.read(practiceResumeControllerProvider.notifier).restore();
+
+      final restored = fresh.read(practiceResumeControllerProvider);
+      expect(restored, isNotNull);
+      expect(restored!.userId, '1');
+      expect(restored.nextIndex, 1);
+    });
+
+    test('没有 userId 的旧断点无法确认归属：不恢复并清除', () async {
+      const key = PreferencesKeys.practiceResume;
+      final store = FakePreferencesStore(
+        initial: <String, String>{key: resumeJson()},
+      );
+      final fresh = ProviderContainer(
+        overrides: [preferencesStoreProvider.overrideWithValue(store)],
+      );
+      addTearDown(fresh.dispose);
+
+      await fresh.read(practiceResumeControllerProvider.notifier).restore();
+
+      expect(fresh.read(practiceResumeControllerProvider), isNull);
+      expect(store.values[key], '');
+    });
+
+    test('落盘的断点带上当前账号 id', () async {
+      final controller = container.read(practiceControllerProvider.notifier);
+      await controller.createSession(limit: 3);
+      await flush();
+
+      expect(persisted()!.userId, '1');
+    });
   });
 
   group('练习结束后的首页数据（review B6/B7）', () {

@@ -38,6 +38,9 @@ class _PracticeScreenState extends ConsumerState<PracticeScreen> {
     final answered =
         (widget.config?['answered'] as List<ResumeAnswer>?) ??
         const <ResumeAnswer>[];
+    // 旧格式断点的连续已答前缀（见 practice_resume.dart）：不传的话恢复即
+    // 落盘会把进度写回 0。
+    final legacyAnswered = (widget.config?['legacyAnswered'] as int?) ?? 0;
     final limit = (widget.config?['limit'] as int?) ?? 10;
     final mode = (widget.config?['mode'] as String?) ?? 'random';
     Future.microtask(() {
@@ -47,6 +50,7 @@ class _PracticeScreenState extends ConsumerState<PracticeScreen> {
           sessionId,
           startIndex: startIndex,
           answered: answered,
+          legacyAnswered: legacyAnswered,
         );
       } else {
         controller.createSession(limit: limit, mode: mode);

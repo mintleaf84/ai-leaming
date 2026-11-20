@@ -5,6 +5,10 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:mobile_app/features/auth/data/auth_repository_impl.dart';
 import 'package:mobile_app/features/auth/domain/auth_repository.dart';
 import 'package:mobile_app/features/auth/presentation/auth_provider.dart';
+import 'package:mobile_app/core/storage/preferences.dart';
+
+import '../../../support/fake_preferences_store.dart';
+import '../../../support/fake_providers.dart';
 
 /// 这个测试守的是登录/注册的**异步状态机**和**错误可见性**：
 ///
@@ -60,6 +64,10 @@ class FakeAuthRepository implements AuthRepository {
 void main() {
   late FakeAuthRepository repository;
 
+  // 断点在登录态变化时会被清理，那条链路要读 `jwt_token` 与本地键值存储：
+  // 用内存桩，别让平台通道异常盖住真正的断言。
+  setUpAll(useFakeSecureStorage);
+
   setUp(() {
     repository = FakeAuthRepository();
   });
@@ -67,7 +75,10 @@ void main() {
   ProviderContainer makeContainer() {
     final container = ProviderContainer(
       retry: (_, _) => null,
-      overrides: [authRepositoryProvider.overrideWithValue(repository)],
+      overrides: [
+        authRepositoryProvider.overrideWithValue(repository),
+        preferencesStoreProvider.overrideWithValue(FakePreferencesStore()),
+      ],
     );
     addTearDown(container.dispose);
     return container;
@@ -217,8 +228,7 @@ void main() {
   /// `authEpochProvider` 是 history / chat 判断「账号私有数据该清空」的唯一信号：
   /// `authControllerProvider` 的 state 是 `AsyncValue<void>`，登出写回的
   /// `AsyncData(null)` 与旧值相等，Riverpod 判等后不会通知依赖方。
-  group('authEpoch（登出通知的唯一信号）', () {
-    test('登录成功：版本号 +1', () async {
+  group('authEpoch（登出通知的唯一信号）', () {    test('登录成功：版本号 +1', () async {
       final container = makeContainer();
       expect(container.read(authEpochProvider), 0);
 
@@ -268,6 +278,64 @@ void main() {
         1,
         reason: '清理失败说明用户其实还在登录态，bump 会把历史/对话清空',
       );
+    });
+  });
+
+  /// 断点（`practice_resume`）是设备级 key，内容带上一账号的进度：
+  /// 登录态一变就必须清，否则 B 首页会看到 A 的「继续上次练习」。
+  group('登录态变化清掉练习断点（review 二轮 3）', () {
+    const rawResume =
+        '{"sessionId":"session_9","answers":[],"nextIndex":1,"total":8,'
+        '"mode":"random","userId":"1"}';
+
+    ProviderContainer makeContainerWithPrefs(FakePreferencesStore prefs) {
+      final container = ProviderContainer(
+        retry: (_, _) => null,
+        overrides: [
+          authRepositoryProvider.overrideWithValue(repository),
+          preferencesStoreProvider.overrideWithValue(prefs),
+        ],
+      );
+      addTearDown(container.dispose);
+      return container;
+    }
+
+    test('登出：断点被清空（B 登录后看不到 A 的进度）', () async {
+      final prefs = FakePreferencesStore(
+        initial: <String, String>{PreferencesKeys.practiceResume: rawResume},
+      );
+      final container = makeContainerWithPrefs(prefs);
+
+      await container.read(authControllerProvider.notifier).logout();
+
+      expect(
+        prefs.values[PreferencesKeys.practiceResume],
+        '',
+        reason: '空串等价于「没有断点」（见 PracticeResumeController.clear）',
+      );
+    });
+
+    test('登录：同样清空（换账号不能沿用上一位用户的断点）', () async {
+      final prefs = FakePreferencesStore(
+        initial: <String, String>{PreferencesKeys.practiceResume: rawResume},
+      );
+      final container = makeContainerWithPrefs(prefs);
+
+      await container.read(authControllerProvider.notifier).login('cjb', 'pwd');
+
+      expect(prefs.values[PreferencesKeys.practiceResume], '');
+    });
+
+    test('登出失败：断点保留（用户其实还在登录态，别丢他的进度）', () async {
+      final prefs = FakePreferencesStore(
+        initial: <String, String>{PreferencesKeys.practiceResume: rawResume},
+      );
+      final container = makeContainerWithPrefs(prefs);
+      repository.logoutError = Exception('本地 token 删除失败');
+
+      await container.read(authControllerProvider.notifier).logout();
+
+      expect(prefs.values[PreferencesKeys.practiceResume], rawResume);
     });
   });
 }

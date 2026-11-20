@@ -286,7 +286,9 @@ describe("Scheduler Service", () => {
         "api_audit_logs",
         "web_vitals",
       ]);
-      expect(LOG_RETENTION.some((r) => r.table === "practice_logs")).toBe(false);
+      expect(LOG_RETENTION.some((r) => r.table === "practice_logs")).toBe(
+        false,
+      );
     });
 
     it("截止时间用 CURRENT_TIMESTAMP 的格式，保证能走 created_at 索引", () => {
@@ -302,7 +304,9 @@ describe("Scheduler Service", () => {
 
       expect(mockRun).not.toHaveBeenCalled();
       expect(results).toHaveLength(LOG_RETENTION.length);
-      expect(results.every((r) => r.matched === 7 && r.deleted === 0)).toBe(true);
+      expect(results.every((r) => r.matched === 7 && r.deleted === 0)).toBe(
+        true,
+      );
       expect(mockLog.info).toHaveBeenCalledWith(
         expect.stringContaining("[dry-run]"),
       );
@@ -324,7 +328,9 @@ describe("Scheduler Service", () => {
       const results = await runLogRetention({ dryRun: false });
 
       expect(mockRun).not.toHaveBeenCalled();
-      expect(results.every((r) => r.matched === 0 && r.deleted === 0)).toBe(true);
+      expect(results.every((r) => r.matched === 0 && r.deleted === 0)).toBe(
+        true,
+      );
     });
 
     it("实删按表统计删除行数", async () => {

@@ -37,7 +37,10 @@ export const LOG_RETENTION: ReadonlyArray<{
  * （TEXT 列按字典序比较，同格式下等价于按时间比较）；用 ISO 的 `T` 分隔符
  * 会让比较退化成全表扫描，且 'T' > ' ' 导致边界那天被误删。
  */
-export function retentionCutoff(days: number, now: number = Date.now()): string {
+export function retentionCutoff(
+  days: number,
+  now: number = Date.now(),
+): string {
   return new Date(now - days * 86_400_000)
     .toISOString()
     .slice(0, 19)

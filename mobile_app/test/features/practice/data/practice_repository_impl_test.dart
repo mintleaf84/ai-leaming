@@ -2,7 +2,11 @@ import 'dart:convert';
 
 import 'package:dio/dio.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:mobile_app/core/error/user_message.dart';
+import 'package:mobile_app/core/network/dio_client.dart';
+import 'package:mobile_app/core/sync/sync_providers.dart';
 import 'package:mobile_app/features/practice/data/local_practice_store.dart';
 import 'package:mobile_app/features/practice/data/practice_repository_impl.dart';
 import 'package:mobile_app/features/practice/domain/practice_exceptions.dart';
@@ -706,6 +710,34 @@ void main() {
         <String>['2', '1'],
         reason: '题序必须与开练时一致，否则断点落点会错位',
       );
+    });
+  });
+
+  /// 这两块以前没人守：
+  /// - `practiceRepositoryProvider` 的装配（dio + 本地库注入）；
+  /// - `OfflineCacheUnavailable` 作为 [UserFacingException] 的契约（文案要能直接
+  ///   上屏，不能被 `userMessageOf` 归到「出了点问题」）。
+  group('provider 装配与离线错误类型', () {
+    test('practiceRepositoryProvider 用 dio + 本地库装配出实现类', () {
+      final container = ProviderContainer(
+        overrides: [
+          dioProvider.overrideWithValue(
+            Dio(BaseOptions(baseUrl: 'http://localhost:3000/api')),
+          ),
+          localPracticeStoreProvider.overrideWithValue(store),
+        ],
+      );
+      addTearDown(container.dispose);
+
+      expect(container.read(practiceRepositoryProvider), isA<PracticeRepositoryImpl>());
+    });
+
+    test('OfflineCacheUnavailable 的文案原样上屏（不被兜底文案替换）', () {
+      const error = OfflineCacheUnavailable('本地题库为空或已超过 7 天未刷新');
+
+      expect(error.userMessage, '本地题库为空或已超过 7 天未刷新');
+      expect(userMessageOf(error), error.userMessage);
+      expect(error.toString(), error.message);
     });
   });
 }

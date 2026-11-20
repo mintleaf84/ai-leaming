@@ -2,7 +2,7 @@ import 'package:dio/dio.dart';
 import 'package:retrofit/retrofit.dart';
 import '../../core/constants/api_constants.dart';
 import '../../features/practice/domain/first_principles_response.dart';
-import '../../features/practice/domain/question.dart';
+import '../domain/question.dart';
 import '../../features/practice/domain/practice_session.dart';
 
 part 'api_client.g.dart';

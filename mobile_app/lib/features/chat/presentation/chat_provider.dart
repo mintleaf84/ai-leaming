@@ -1,7 +1,7 @@
 import 'dart:async';
 import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import '../../auth/presentation/auth_provider.dart';
+import '../../../core/auth/auth_epoch.dart';
 import '../domain/chat_message.dart';
 import '../data/chat_repository_impl.dart';
 

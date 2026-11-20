@@ -1,0 +1,279 @@
+[
+  {
+    "name": "AppError",
+    "status": 400,
+    "body": {
+      "error": "示例业务错误",
+      "code": "business"
+    }
+  },
+  {
+    "name": "ValidationError",
+    "status": 400,
+    "body": {
+      "error": "参数不合法",
+      "code": "validation"
+    }
+  },
+  {
+    "name": "BusinessError",
+    "status": 400,
+    "body": {
+      "error": "业务拒绝",
+      "code": "business"
+    }
+  },
+  {
+    "name": "NotFoundError",
+    "status": 404,
+    "body": {
+      "error": "资源不存在",
+      "code": "not-found"
+    }
+  },
+  {
+    "name": "ConflictError",
+    "status": 409,
+    "body": {
+      "error": "已存在",
+      "code": "conflict"
+    }
+  },
+  {
+    "name": "ForbiddenError",
+    "status": 403,
+    "body": {
+      "error": "无权访问",
+      "code": "forbidden"
+    }
+  },
+  {
+    "name": "RecallDeckValidationError",
+    "status": 400,
+    "body": {
+      "error": "卡组内容校验失败",
+      "code": "recall.deck.invalid",
+      "issues": [
+        "cards[0]: 题干为空",
+        "cards[1]: 答案为空"
+      ],
+      "issueCount": 2
+    }
+  },
+  {
+    "name": "BackupSecretMissingError",
+    "status": 400,
+    "body": {
+      "error": "备份功能未启用：服务端未配置 BACKUP_ENCRYPTION_KEY（无法加解密 WebDAV 密码）",
+      "code": "backup.secret.missing"
+    }
+  },
+  {
+    "name": "BackupPasswordUndecryptableError",
+    "status": 400,
+    "body": {
+      "error": "已保存的 WebDAV 密码无法解密：服务端备份密钥与保存时不一致，请在页面上重新填写密码",
+      "code": "backup.password.undecryptable"
+    }
+  },
+  {
+    "name": "DraftNotFoundError",
+    "status": 404,
+    "body": {
+      "error": "草稿不存在：draft-1",
+      "code": "draft.not-found"
+    }
+  },
+  {
+    "name": "DraftStateError",
+    "status": 409,
+    "body": {
+      "error": "草稿状态已变化",
+      "code": "draft.state"
+    }
+  },
+  {
+    "name": "DraftConfirmError",
+    "status": 400,
+    "body": {
+      "error": "存在无法写入的草稿条目",
+      "code": "draft.confirm.invalid",
+      "issues": [
+        "items[0]: 内容为空"
+      ],
+      "issueCount": 1
+    }
+  },
+  {
+    "name": "PdfImportTaskNotFoundError",
+    "status": 404,
+    "body": {
+      "error": "任务不存在或已过期，请重新上传",
+      "code": "pdf-import.task.not-found"
+    }
+  },
+  {
+    "name": "PdfImportStorageError",
+    "status": 400,
+    "body": {
+      "error": "任务保存失败，请重试",
+      "code": "pdf-import.task.storage-failed"
+    }
+  },
+  {
+    "name": "PracticeSessionNotFoundError",
+    "status": 404,
+    "body": {
+      "error": "练习会话不存在",
+      "code": "practice.session.not-found"
+    }
+  },
+  {
+    "name": "QuestionValidationError",
+    "status": 400,
+    "body": {
+      "error": "题目内容校验失败",
+      "code": "question.validation",
+      "issues": [
+        "content: 太短"
+      ],
+      "issueCount": 1
+    }
+  },
+  {
+    "name": "QuestionForbiddenError",
+    "status": 403,
+    "body": {
+      "error": "只能修改自己创建的题目",
+      "code": "question.forbidden"
+    }
+  },
+  {
+    "name": "RecallImportError",
+    "status": 400,
+    "body": {
+      "error": "未知的冲突策略：x",
+      "code": "recall.import.bad-strategy"
+    }
+  },
+  {
+    "name": "RecallNotFoundError",
+    "status": 404,
+    "body": {
+      "error": "卡组不存在：demo",
+      "code": "not-found"
+    }
+  },
+  {
+    "name": "RecallServiceError",
+    "status": 400,
+    "body": {
+      "error": "改判项必须是 { index, to } 对象",
+      "code": "validation"
+    }
+  },
+  {
+    "name": "RecallCardNotFoundError",
+    "status": 404,
+    "body": {
+      "error": "卡片 L1-c07 不存在",
+      "code": "recall.card.not-found"
+    }
+  },
+  {
+    "name": "AuthError",
+    "status": 500,
+    "body": {
+      "error": "服务器内部错误",
+      "code": "internal"
+    }
+  },
+  {
+    "name": "InvalidQuestionIdsError",
+    "status": 500,
+    "body": {
+      "error": "服务器内部错误",
+      "code": "internal"
+    }
+  },
+  {
+    "name": "ReservedExternalIdError",
+    "status": 500,
+    "body": {
+      "error": "服务器内部错误",
+      "code": "internal"
+    }
+  },
+  {
+    "name": "AiRawResponseError",
+    "status": 500,
+    "body": {
+      "error": "服务器内部错误",
+      "code": "internal"
+    }
+  },
+  {
+    "name": "ApiError",
+    "status": 500,
+    "body": {
+      "error": "服务器内部错误",
+      "code": "internal"
+    }
+  },
+  {
+    "name": "DryRunRollback",
+    "status": 500,
+    "body": {
+      "error": "服务器内部错误",
+      "code": "internal"
+    }
+  },
+  {
+    "name": "Error",
+    "status": 500,
+    "body": {
+      "error": "服务器内部错误",
+      "code": "internal"
+    }
+  },
+  {
+    "name": "TypeError",
+    "status": 500,
+    "body": {
+      "error": "服务器内部错误",
+      "code": "internal"
+    }
+  },
+  {
+    "name": "string",
+    "status": 500,
+    "body": {
+      "error": "服务器内部错误",
+      "code": "internal"
+    }
+  },
+  {
+    "name": "undefined",
+    "status": 500,
+    "body": {
+      "error": "服务器内部错误",
+      "code": "internal"
+    }
+  },
+  {
+    "name": "null",
+    "status": 500,
+    "body": {
+      "error": "服务器内部错误",
+      "code": "internal"
+    }
+  },
+  {
+    "name": "plainObject",
+    "status": 500,
+    "body": {
+      "error": "服务器内部错误",
+      "code": "internal"
+    }
+  }
+]

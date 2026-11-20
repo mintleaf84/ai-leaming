@@ -5,9 +5,13 @@
  *
  * 三条硬约束：
  * 1. **confirm 是单事务**：任意一条 confirmed item 写不进去 → 整体回滚，草稿仍 `ready`；
+ *    读 items 也在同一事务内，避免拿 PATCH 之前的快照入库；
  * 2. **confirm 幂等**：每道题的幂等键是 `draft:<draftId>:<idx>`（上游操作 ID，跨重试稳定），
  *    重复 confirm 命中既有行只记 `conflicts`，不会重复建题；
  * 3. **归属**：所有入口都按 `user_id` 过滤，别人的草稿一律 404（不区分"不存在/无权"）。
+ *
+ * 并发识别靠 `analyze_token`：每次 analyze 领取任务时写下自己的 token，结果落地前
+ * 在同一事务内校验 `status='analyzing'` 且 token 仍是自己，否则整批结果丢弃。
  *
  * 图片按 sha256 落 `data/drafts/<sha256>`：同一张截图重复上传只存一份；请求体用
  * base64（与既有 OCR 约定一致），不引入 multipart 依赖。
@@ -144,6 +148,41 @@ export class DraftConfirmError extends BusinessError {
   constructor(issues: string[], message = "存在无法写入的草稿条目") {
     super(message, { code: "draft.confirm.invalid", issues });
   }
+}
+
+/**
+ * 状态 → 「不能识别」的冲突错误（`null` = 可以识别）。
+ *
+ * 抽成一处是因为 analyze 要判两次：进入时预检一次（给出准确原因），
+ * 领取识别任务时再判一次（CAS 更新 0 行说明状态被并发改动，需按最新状态报错）。
+ */
+function analyzableConflict(status: DraftStatus): DraftStateError | null {
+  if (status === "discarded") return new DraftStateError("草稿已丢弃，不能识别");
+  if (status === "confirmed") {
+    return new DraftStateError("草稿已确认入库，不能重新识别");
+  }
+  if (status === "ready") {
+    return new DraftStateError("草稿已识别完成，直接校对即可");
+  }
+  return null;
+}
+
+/**
+ * 状态 → 「条目不可改」的冲突错误（`null` = 可改）。
+ *
+ * `analyzing` 也在拦截范围内：识别结果落地时会重建 items，此时改的东西会被覆盖，
+ * 属于"看起来成功、其实丢了"的坏体验。`captured` / `failed` 仍可改 ——
+ * 文本草稿识别失败后要允许用户先改原文再重试。
+ */
+function itemEditableConflict(status: DraftStatus): DraftStateError | null {
+  if (status === "confirmed") {
+    return new DraftStateError("草稿已确认入库，条目不可再改");
+  }
+  if (status === "discarded") return new DraftStateError("草稿已丢弃");
+  if (status === "analyzing") {
+    return new DraftStateError("草稿正在识别，条目暂不可改，稍后重试");
+  }
+  return null;
 }
 
 /** 草稿图片目录：与 DB 文件同级的 `data/drafts`（备份 DB 时不会漏掉图片目录） */
@@ -423,29 +462,33 @@ export const draftService = {
     }
 
     const id = randomUUID();
-    await drizzleDb.insert(drizzleSchema.question_drafts).values({
-      id,
-      user_id: userId,
-      source: input.source,
-      status: "captured",
-      image_sha256: imageSha,
-      image_rel_path: imageRel,
-      // 文本草稿把原文先塞进 ai_raw_json 的 input 位？不：ai_raw_json 只存模型返回，
-      // 原文暂时放 error_code 会污染语义 —— 用 items 表的一行承载原文更干净
-      expires_at: now.getTime() + DRAFT_TTL_MS,
-    });
-
-    if (input.source === "text" && input.text) {
-      await drizzleDb.insert(drizzleSchema.question_draft_items).values({
-        draft_id: id,
-        idx: 0,
-        content: input.text,
-        options: JSON.stringify([]),
-        tags: JSON.stringify([]),
-        type: "single",
-        confirmed: 0,
+    // 父行与原文条目必须同一事务：分开写时条目失败会留下一条**没有原文的空 captured
+    // 草稿**，而原文只存在于这次请求里 —— 用户重试也拿不回来，只能丢弃重拍。
+    // 文本草稿的原文为什么落在 items 表：`ai_raw_json` 只存模型返回，`error_code`
+    // 是诊断码，拿它们承载原文都会污染语义。
+    await withTransaction(async (exec) => {
+      await exec.insert(drizzleSchema.question_drafts).values({
+        id,
+        user_id: userId,
+        source: input.source,
+        status: "captured",
+        image_sha256: imageSha,
+        image_rel_path: imageRel,
+        expires_at: now.getTime() + DRAFT_TTL_MS,
       });
-    }
+
+      if (input.source === "text" && input.text) {
+        await exec.insert(drizzleSchema.question_draft_items).values({
+          draft_id: id,
+          idx: 0,
+          content: input.text,
+          options: JSON.stringify([]),
+          tags: JSON.stringify([]),
+          type: "single",
+          confirmed: 0,
+        });
+      }
+    });
 
     return loadDraft(userId, id);
   },
@@ -512,26 +555,39 @@ export const draftService = {
 
   analyze: async (userId: number, id: string): Promise<DraftAnalyzeResult> => {
     const { draft, items } = await loadDraft(userId, id);
-    if (draft.status === "discarded") {
-      throw new DraftStateError("草稿已丢弃，不能识别");
-    }
-    if (draft.status === "confirmed") {
-      throw new DraftStateError("草稿已确认入库，不能重新识别");
-    }
-    if (draft.status === "ready") {
-      throw new DraftStateError("草稿已识别完成，直接校对即可");
-    }
+    const preConflict = analyzableConflict(draft.status);
+    if (preConflict) throw preConflict;
 
-    // captured / analyzing（上次进程中断留下的卡死态）/ failed 都允许重新识别
-    await drizzleDb
+    /*
+     * 领取这次识别（CAS）：`captured` / `analyzing`（上次进程中断留下的卡死态）/
+     * `failed` 都允许重新识别，其余状态 0 行更新 → 状态在预检之后被并发改动。
+     *
+     * 每次识别写自己的 `analyze_token`：两个并发 analyze 都能把状态改成
+     * `analyzing`，只有 token 才能分辨"现在库里那一次是谁"。
+     */
+    const analyzeToken = randomUUID();
+    const claimed = await drizzleDb
       .update(drizzleSchema.question_drafts)
-      .set({ status: "analyzing", error_code: null })
+      .set({ status: "analyzing", error_code: null, analyze_token: analyzeToken })
       .where(
         and(
           eq(drizzleSchema.question_drafts.id, id),
           eq(drizzleSchema.question_drafts.user_id, userId),
+          inArray(drizzleSchema.question_drafts.status, [
+            "captured",
+            "analyzing",
+            "failed",
+          ]),
         ),
+      )
+      .returning({ id: drizzleSchema.question_drafts.id });
+    if (claimed.length === 0) {
+      const current = await loadDraft(userId, id);
+      throw (
+        analyzableConflict(current.draft.status) ??
+        new DraftStateError("草稿状态已变化，请重试")
       );
+    }
 
     const aiMeta = await describeAiModel();
     let recognizedText = "";
@@ -576,7 +632,9 @@ export const draftService = {
       const errorCode = classifyError(error);
       if (error instanceof AiRawResponseError)
         rawText = error.rawResponse ?? null;
-      await drizzleDb
+      // 失败分支同样要认 token：期间被 confirm/discard 接手、或更新的识别任务已
+      // 接管时，不能把别人的状态改回 failed（0 行更新 = 本次结果作废）。
+      const failedRows = await drizzleDb
         .update(drizzleSchema.question_drafts)
         .set({
           status: "failed",
@@ -584,19 +642,24 @@ export const draftService = {
           ai_provider: aiMeta.provider,
           ai_model: aiMeta.model,
           ai_prompt_version: DRAFT_PROMPT_VERSION,
+          analyze_token: null,
           ...(rawText ? { ai_raw_json: rawText } : {}),
         })
         .where(
           and(
             eq(drizzleSchema.question_drafts.id, id),
             eq(drizzleSchema.question_drafts.user_id, userId),
+            eq(drizzleSchema.question_drafts.status, "analyzing"),
+            eq(drizzleSchema.question_drafts.analyze_token, analyzeToken),
           ),
-        );
+        )
+        .returning({ id: drizzleSchema.question_drafts.id });
       logger.warn(
         {
           err: error instanceof Error ? error.message : String(error),
           draftId: id,
           errorCode,
+          superseded: failedRows.length === 0,
         },
         "[DraftService] 草稿识别失败（可重试）",
       );
@@ -627,7 +690,34 @@ export const draftService = {
       };
     });
 
-    await withTransaction(async (exec) => {
+    const committed = await withTransaction(async (exec) => {
+      /*
+       * 提交前在**同一事务内**校验 token 与状态：
+       * - 状态不再是 `analyzing`：期间被 confirm / discard 接手，本次结果作废；
+       * - token 不是自己：更新的识别任务已接管，旧结果不能覆盖新结果。
+       * 校验与写入同事务，才不会被 PATCH/confirm 插进中间。
+       */
+      const [current] = await exec
+        .select({
+          status: drizzleSchema.question_drafts.status,
+          analyze_token: drizzleSchema.question_drafts.analyze_token,
+        })
+        .from(drizzleSchema.question_drafts)
+        .where(
+          and(
+            eq(drizzleSchema.question_drafts.id, id),
+            eq(drizzleSchema.question_drafts.user_id, userId),
+          ),
+        )
+        .limit(1);
+      if (
+        !current ||
+        current.status !== "analyzing" ||
+        current.analyze_token !== analyzeToken
+      ) {
+        return false;
+      }
+
       await exec
         .delete(drizzleSchema.question_draft_items)
         .where(eq(drizzleSchema.question_draft_items.draft_id, id));
@@ -652,13 +742,33 @@ export const draftService = {
         .set({
           status: "ready",
           error_code: null,
+          analyze_token: null,
           ai_provider: aiMeta.provider,
           ai_model: aiMeta.model,
           ai_prompt_version: DRAFT_PROMPT_VERSION,
           ai_raw_json: rawText,
         })
-        .where(eq(drizzleSchema.question_drafts.id, id));
+        .where(
+          and(
+            eq(drizzleSchema.question_drafts.id, id),
+            eq(drizzleSchema.question_drafts.user_id, userId),
+          ),
+        );
+      return true;
     });
+
+    if (!committed) {
+      const current = await loadDraft(userId, id);
+      // 并发的另一次识别已先提交：同一张图/同一段文本的结果等价，返回库里的那份
+      if (current.draft.status === "ready") return { ...current, ok: true };
+      logger.warn(
+        { draftId: id, status: current.draft.status },
+        "[DraftService] 识别结果被并发状态变更作废，未写库",
+      );
+      throw new DraftStateError(
+        `草稿状态已变化（${current.draft.status}），本次识别结果已丢弃`,
+      );
+    }
 
     const ready = await loadDraft(userId, id);
     return { ...ready, ok: true };
@@ -670,68 +780,83 @@ export const draftService = {
     idx: number,
     patch: DraftItemPatch,
   ): Promise<DraftWithItems> => {
-    const { draft } = await loadDraft(userId, id);
-    if (draft.status === "confirmed") {
-      throw new DraftStateError("草稿已确认入库，条目不可再改");
-    }
-    if (draft.status === "discarded") {
-      throw new DraftStateError("草稿已丢弃");
-    }
+    /*
+     * 「读状态 + 判断 + 改写」必须在同一事务里：原来先 `loadDraft` 再单条 update，
+     * 中间被 confirm（草稿已入库）或另一 PATCH（覆盖同一行）插进来时，
+     * 判断依据就已经过期了。
+     */
+    await withTransaction(async (exec) => {
+      const [draftRow] = await exec
+        .select({ status: drizzleSchema.question_drafts.status })
+        .from(drizzleSchema.question_drafts)
+        .where(
+          and(
+            eq(drizzleSchema.question_drafts.id, id),
+            eq(drizzleSchema.question_drafts.user_id, userId),
+          ),
+        )
+        .limit(1);
+      if (!draftRow) throw new DraftNotFoundError(id);
 
-    const [existing] = await drizzleDb
-      .select()
-      .from(drizzleSchema.question_draft_items)
-      .where(
-        and(
-          eq(drizzleSchema.question_draft_items.draft_id, id),
-          eq(drizzleSchema.question_draft_items.idx, idx),
-        ),
-      )
-      .limit(1);
-    if (!existing) {
-      throw new NotFoundError(`草稿条目不存在：${id}#${idx}`, {
-        code: "draft.item.not-found",
-      });
-    }
+      const conflict = itemEditableConflict(draftRow.status as DraftStatus);
+      if (conflict) throw conflict;
 
-    if (patch.deleted) {
-      await drizzleDb
-        .delete(drizzleSchema.question_draft_items)
+      const [existing] = await exec
+        .select()
+        .from(drizzleSchema.question_draft_items)
         .where(
           and(
             eq(drizzleSchema.question_draft_items.draft_id, id),
             eq(drizzleSchema.question_draft_items.idx, idx),
           ),
-        );
-      return loadDraft(userId, id);
-    }
+        )
+        .limit(1);
+      if (!existing) {
+        throw new NotFoundError(`草稿条目不存在：${id}#${idx}`, {
+          code: "draft.item.not-found",
+        });
+      }
 
-    const values: Record<string, unknown> = {};
-    if (patch.content !== undefined) values.content = patch.content;
-    if (patch.options !== undefined)
-      values.options = JSON.stringify(patch.options);
-    if (patch.answer !== undefined) values.answer = patch.answer;
-    if (patch.explanation !== undefined) values.explanation = patch.explanation;
-    if (patch.tags !== undefined) values.tags = JSON.stringify(patch.tags);
-    if (patch.type !== undefined) values.type = patch.type;
-    if (patch.material_html !== undefined) {
-      values.material_html = patch.material_html;
-    }
-    if (patch.confirmed !== undefined) {
-      values.confirmed = patch.confirmed ? 1 : 0;
-    }
+      if (patch.deleted) {
+        await exec
+          .delete(drizzleSchema.question_draft_items)
+          .where(
+            and(
+              eq(drizzleSchema.question_draft_items.draft_id, id),
+              eq(drizzleSchema.question_draft_items.idx, idx),
+            ),
+          );
+        return;
+      }
 
-    if (Object.keys(values).length > 0) {
-      await drizzleDb
-        .update(drizzleSchema.question_draft_items)
-        .set(values)
-        .where(
-          and(
-            eq(drizzleSchema.question_draft_items.draft_id, id),
-            eq(drizzleSchema.question_draft_items.idx, idx),
-          ),
-        );
-    }
+      const values: Record<string, unknown> = {};
+      if (patch.content !== undefined) values.content = patch.content;
+      if (patch.options !== undefined)
+        values.options = JSON.stringify(patch.options);
+      if (patch.answer !== undefined) values.answer = patch.answer;
+      if (patch.explanation !== undefined)
+        values.explanation = patch.explanation;
+      if (patch.tags !== undefined) values.tags = JSON.stringify(patch.tags);
+      if (patch.type !== undefined) values.type = patch.type;
+      if (patch.material_html !== undefined) {
+        values.material_html = patch.material_html;
+      }
+      if (patch.confirmed !== undefined) {
+        values.confirmed = patch.confirmed ? 1 : 0;
+      }
+
+      if (Object.keys(values).length > 0) {
+        await exec
+          .update(drizzleSchema.question_draft_items)
+          .set(values)
+          .where(
+            and(
+              eq(drizzleSchema.question_draft_items.draft_id, id),
+              eq(drizzleSchema.question_draft_items.idx, idx),
+            ),
+          );
+      }
+    });
 
     return loadDraft(userId, id);
   },
@@ -747,49 +872,83 @@ export const draftService = {
     id: string,
     actor: { username: string },
   ): Promise<DraftConfirmResult> => {
-    const { draft, items } = await loadDraft(userId, id);
-    if (draft.status === "discarded") {
-      throw new DraftStateError("草稿已丢弃，不能确认");
-    }
-
-    const confirmedItems = items.filter((item) => item.confirmed);
-    const skipped = items.length - confirmedItems.length;
-    if (confirmedItems.length === 0) {
-      return { created: 0, skipped, conflicts: 0, questionIds: [] };
-    }
-
-    // 先聚合全部校验问题：调用方一次能看到所有坏条目，而不是改一条报一条
-    const issues: string[] = [];
-    const inputs = confirmedItems.map((item) => {
-      const parsed = QuestionSchema.safeParse({
-        content: item.content,
-        options: item.options,
-        answer: item.answer,
-        explanation: item.explanation,
-        tags: item.tags,
-        type: item.type,
-        dimension: "knowledge",
-      });
-      if (!parsed.success) {
-        for (const issue of parsed.error.issues) {
-          issues.push(
-            `items[${item.idx}].${issue.path.join(".") || "body"}: ${issue.message}`,
-          );
-        }
-        return null;
+    /*
+     * 整个 confirm（读状态 + 读 items + 建题 + 置 confirmed）在**同一事务**内：
+     * 原来先在事务外 `loadDraft`，读到的是 PATCH 之前的快照 —— 用户刚勾掉的条目
+     * 仍会被写进题库，勾选的修改却丢了。事务里重读一次，读到什么就写什么。
+     */
+    const outcome = await withTransaction(async (exec) => {
+      const [row] = await exec
+        .select({ status: drizzleSchema.question_drafts.status })
+        .from(drizzleSchema.question_drafts)
+        .where(
+          and(
+            eq(drizzleSchema.question_drafts.id, id),
+            eq(drizzleSchema.question_drafts.user_id, userId),
+          ),
+        )
+        .limit(1);
+      if (!row) throw new DraftNotFoundError(id);
+      if (row.status === "discarded") {
+        throw new DraftStateError("草稿已丢弃，不能确认");
       }
-      return { idx: item.idx, data: parsed.data, item };
-    });
-    if (issues.length > 0 || inputs.some((input) => input === null)) {
-      throw new DraftConfirmError(
-        issues.length > 0 ? issues : ["草稿条目校验失败"],
+      if (row.status === "analyzing") {
+        // 识别结果即将重建 items，此刻确认等于确认一批马上被替换的内容
+        throw new DraftStateError("草稿正在识别，稍后再确认");
+      }
+
+      const itemRows = await exec
+        .select()
+        .from(drizzleSchema.question_draft_items)
+        .where(eq(drizzleSchema.question_draft_items.draft_id, id))
+        .orderBy(asc(drizzleSchema.question_draft_items.idx));
+      const items = itemRows.map((item) =>
+        mapItem(item as unknown as Record<string, unknown>),
       );
-    }
 
-    const createdIds: number[] = [];
-    const existingIds: number[] = [];
+      const confirmedItems = items.filter((item) => item.confirmed);
+      const skipped = items.length - confirmedItems.length;
+      if (confirmedItems.length === 0) {
+        return {
+          created: 0,
+          skipped,
+          conflicts: 0,
+          questionIds: [] as number[],
+          createdIds: [] as number[],
+        };
+      }
 
-    await withTransaction(async (exec) => {
+      // 先聚合全部校验问题：调用方一次能看到所有坏条目，而不是改一条报一条
+      const issues: string[] = [];
+      const inputs = confirmedItems.map((item) => {
+        const parsed = QuestionSchema.safeParse({
+          content: item.content,
+          options: item.options,
+          answer: item.answer,
+          explanation: item.explanation,
+          tags: item.tags,
+          type: item.type,
+          dimension: "knowledge",
+        });
+        if (!parsed.success) {
+          for (const issue of parsed.error.issues) {
+            issues.push(
+              `items[${item.idx}].${issue.path.join(".") || "body"}: ${issue.message}`,
+            );
+          }
+          return null;
+        }
+        return { idx: item.idx, data: parsed.data, item };
+      });
+      if (issues.length > 0 || inputs.some((input) => input === null)) {
+        throw new DraftConfirmError(
+          issues.length > 0 ? issues : ["草稿条目校验失败"],
+        );
+      }
+
+      const createdIds: number[] = [];
+      const existingIds: number[] = [];
+
       for (const input of inputs) {
         if (!input) continue;
         const { idx, data, item } = input;
@@ -824,11 +983,24 @@ export const draftService = {
       await exec
         .update(drizzleSchema.question_drafts)
         .set({ status: "confirmed" })
-        .where(eq(drizzleSchema.question_drafts.id, id));
+        .where(
+          and(
+            eq(drizzleSchema.question_drafts.id, id),
+            eq(drizzleSchema.question_drafts.user_id, userId),
+          ),
+        );
+
+      return {
+        created: createdIds.length,
+        skipped,
+        conflicts: existingIds.length,
+        questionIds: [...createdIds, ...existingIds],
+        createdIds,
+      };
     });
 
     // 事务提交后再建向量：索引是独立连接，事务内看不到未提交的行
-    for (const questionId of createdIds) {
+    for (const questionId of outcome.createdIds) {
       void indexQuestion(questionId).catch((error: unknown) => {
         logger.warn(
           { err: error, questionId },
@@ -838,10 +1010,10 @@ export const draftService = {
     }
 
     return {
-      created: createdIds.length,
-      skipped,
-      conflicts: existingIds.length,
-      questionIds: [...createdIds, ...existingIds],
+      created: outcome.created,
+      skipped: outcome.skipped,
+      conflicts: outcome.conflicts,
+      questionIds: outcome.questionIds,
     };
   },
 

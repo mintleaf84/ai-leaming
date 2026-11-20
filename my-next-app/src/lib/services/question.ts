@@ -1,6 +1,7 @@
 import { drizzleDb, drizzleSchema } from "@/lib/db";
 import { isVectorAvailable, searchQuestionVectors } from "@/lib/db/vec-store";
 import { eq, like, and, sql, desc, inArray } from "drizzle-orm";
+import { createHash } from "node:crypto";
 import { ragService } from "@/lib/ai/rag";
 import { Question, Dimension } from "@/types";
 import { QuestionRowSchema, QuestionSchema } from "@/lib/schemas";
@@ -204,9 +205,34 @@ function formatIssues(error: {
 /** 内部建题的幂等键：按用户隔离，同一用户同一内容重复提交不新增行 */
 export function buildManualExternalId(
   userId: number,
-  data: { content: string; options?: unknown; answer?: string | null },
+  data: {
+    content: string;
+    options?: unknown;
+    answer?: string | null;
+    /** 材料属于题目身份，必须进键（见下） */
+    material?: string | null;
+  },
 ): string {
-  return `manual:${userId}:${buildApiExternalId(data).slice("api:".length)}`;
+  const base = buildApiExternalId(data).slice("api:".length);
+  const material = normalizeMaterialForIdempotency(data.material);
+  // 无材料的题保持旧键不变（存量行仍能命中，不会因为升级再造一批重复题）；
+  // 有材料时追加材料摘要：**材料属于题目身份** —— 同一题干/选项/答案配不同材料
+  // 是两道题，不含材料的键会把它们合并，材料被静默丢弃。
+  if (!material) return `manual:${userId}:${base}`;
+  const materialDigest = createHash("sha1")
+    .update(material)
+    .digest("hex")
+    .slice(0, 36);
+  return `manual:${userId}:${base}-${materialDigest}`;
+}
+
+/**
+ * 材料进幂等键前的规范化：只判"是不是同一段材料"，
+ * 折叠空白（换行/缩进差异不该把同一道材料题拆成两道）。
+ */
+function normalizeMaterialForIdempotency(material: unknown): string {
+  if (typeof material !== "string") return "";
+  return material.replace(/\s+/g, " ").trim();
 }
 
 /**
@@ -453,7 +479,13 @@ export const questionService = {
       const valid = parsed.data;
 
       const externalId =
-        options.externalId ?? buildManualExternalId(options.actor.id, valid);
+        options.externalId ??
+        buildManualExternalId(options.actor.id, {
+          content: valid.content,
+          options: valid.options,
+          answer: valid.answer,
+          material: data.material ?? null,
+        });
 
       const [existing] = await exec
         .select()
@@ -483,8 +515,12 @@ export const questionService = {
           type: valid.type,
           source: options.source ?? data.source ?? null,
           material: data.material ?? null,
+          // 显式 `material_html: null` 是"清空"，不能被自动生成的 HTML 覆盖；
+          // 只有没传（undefined）才从纯文本生成
           material_html:
-            data.material_html ?? materialTextToHtml(data.material),
+            data.material_html !== undefined
+              ? data.material_html
+              : materialTextToHtml(data.material),
           created_at: sql`CURRENT_TIMESTAMP`,
         })
         .onConflictDoNothing({ target: drizzleSchema.questions.external_id })
@@ -659,11 +695,15 @@ export const questionService = {
     if (data.type !== undefined && data.type !== existing.type) {
       nextValues.type = valid.type;
     }
-    // 材料以纯文本为准：`material` 变化时同步重算转义后的 HTML
+    // 材料以纯文本为准：`material` 变化时同步重算转义后的 HTML。
+    // 显式传 `material_html`（含 `null` = 清空）一律以显式值为准 —— 用 `??` 会让
+    // "清空材料正文 HTML" 被自动生成的值顶回来，前端永远清不掉。
     if (data.material !== undefined && data.material !== existing.material) {
       nextValues.material = data.material;
       nextValues.material_html =
-        data.material_html ?? materialTextToHtml(data.material);
+        data.material_html !== undefined
+          ? data.material_html
+          : materialTextToHtml(data.material);
     } else if (
       data.material_html !== undefined &&
       data.material_html !== existing.material_html

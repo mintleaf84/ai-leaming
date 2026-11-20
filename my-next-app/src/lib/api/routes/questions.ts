@@ -7,12 +7,29 @@ import logger from "@/lib/logger";
 
 const app = new OpenAPIHono();
 
+/**
+ * 题型枚举：**四种题型全列**，与写入 schema / `QuestionSchema` 同一口径。
+ *
+ * 这里只列 `single`/`multi` 时，`truefalse`/`fill_blank` 会在响应里被过滤成
+ * `undefined`，客户端回填表单就丢了题型（判断题被当单选、填空题被当选择题）。
+ */
+const QUESTION_TYPES = ["single", "multi", "truefalse", "fill_blank"] as const;
+const QuestionTypeSchema = z.enum(QUESTION_TYPES);
+
+function normalizeQuestionType(
+  type: string | null | undefined,
+): (typeof QUESTION_TYPES)[number] | undefined {
+  return QUESTION_TYPES.includes(type as (typeof QUESTION_TYPES)[number])
+    ? (type as (typeof QUESTION_TYPES)[number])
+    : undefined;
+}
+
 // Response Schema (Subset of DB schema for client)
 const QuestionResponseSchema = z.object({
   id: z.number(),
   content: z.string(),
   options: z.array(z.string()),
-  type: z.enum(["single", "multi"]).optional(),
+  type: QuestionTypeSchema.optional(),
   tags: z.array(z.string()),
   dimension: z.string().optional(),
 });
@@ -65,7 +82,7 @@ app.openapi(listRoute, async (c) => {
     id: q.id,
     content: q.content,
     options: q.options,
-    type: q.type === "single" || q.type === "multi" ? q.type : undefined,
+    type: normalizeQuestionType(q.type),
     tags: q.tags,
     dimension: q.dimension,
   }));
@@ -119,10 +136,7 @@ app.openapi(getRoute, async (c) => {
     id: question.id,
     content: question.content,
     options: question.options,
-    type:
-      question.type === "single" || question.type === "multi"
-        ? question.type
-        : undefined,
+    type: normalizeQuestionType(question.type),
     tags: question.tags,
     dimension: question.dimension,
     explanation: question.explanation,
@@ -320,10 +334,7 @@ app.openapi(updateQuestionRoute, async (c) => {
               id: question.id,
               content: question.content,
               options: question.options,
-              type:
-                question.type === "single" || question.type === "multi"
-                  ? question.type
-                  : undefined,
+              type: normalizeQuestionType(question.type),
               tags: question.tags,
               dimension: question.dimension,
               explanation: question.explanation,

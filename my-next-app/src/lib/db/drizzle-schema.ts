@@ -150,6 +150,12 @@ export const question_drafts = sqliteTable(
     ai_prompt_version: text("ai_prompt_version"),
     ai_raw_json: text("ai_raw_json"),
     error_code: text("error_code"),
+    /**
+     * 本次识别任务的令牌：每次 analyze 写入自己的 token，结果落地前在同一事务里
+     * 与状态一起校验。没有它，两个并发识别都能把状态改成 `analyzing`，
+     * 后完成的那次会覆盖先完成的那次（items 被重建、状态被改写）。
+     */
+    analyze_token: text("analyze_token"),
     created_at: text("created_at").default(sql`CURRENT_TIMESTAMP`),
     /** 毫秒时间戳；过期草稿在写入路径上机会式清理（不依赖定时器） */
     expires_at: integer("expires_at"),

@@ -162,6 +162,13 @@
       "when": 1784300000000,
       "tag": "0022_question_drafts",
       "breakpoints": true
+    },
+    {
+      "idx": 23,
+      "version": "6",
+      "when": 1784400000000,
+      "tag": "0023_draft_analyze_token",
+      "breakpoints": true
     }
   ]
 }

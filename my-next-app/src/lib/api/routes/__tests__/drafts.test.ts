@@ -308,6 +308,130 @@ describe("drafts API", () => {
     expect((await get.json()).draft.status).toBe("discarded");
   });
 
+  it("识别期间草稿被丢弃：结果作废（409），不把 discarded 改回 ready", async () => {
+    const tokenA = await tokenFor(A);
+    const { body } = await createDraft(tokenA);
+    const draftId = body.draft.id as string;
+
+    // 识别进行中（OCR 还没返回）草稿被丢弃 —— 结果落地时必须作废
+    OCR.performPaddleOCR.mockImplementationOnce(async () => {
+      const discarded = await app.request(`/${draftId}`, {
+        method: "DELETE",
+        headers: auth(tokenA),
+      });
+      expect(discarded.status).toBe(200);
+      return "识别文本：形成性评价发生在教学过程中";
+    });
+    AI.generateStructuredData.mockResolvedValueOnce({ items: [VALID_ITEM] });
+
+    const res = await app.request(`/${draftId}/analyze`, {
+      method: "POST",
+      headers: auth(tokenA),
+    });
+    expect(res.status).toBe(409);
+
+    const [row] = await dbm.drizzleDb.all<{ status: string }>(
+      sql`SELECT status FROM question_drafts WHERE id = ${draftId}`,
+    );
+    expect(row.status).toBe("discarded");
+    const [items] = await dbm.drizzleDb.all<{ n: number }>(
+      sql`SELECT count(*) AS n FROM question_draft_items WHERE draft_id = ${draftId}`,
+    );
+    expect(Number(items.n)).toBe(0);
+  });
+
+  it("并发识别：后发起的任务接管，先发起的结果不覆盖它（token 校验）", async () => {
+    const tokenA = await tokenFor(A);
+    const { body } = await createDraft(tokenA);
+    const draftId = body.draft.id as string;
+
+    const secondContent = "第二次识别的题干：接管后应保留这条";
+    let secondStatus = 0;
+    OCR.performPaddleOCR.mockImplementationOnce(async () => {
+      // 第一次识别还在跑，第二次 analyze 已发起并跑完（占住 analyze_token）
+      AI.generateStructuredData.mockResolvedValueOnce({
+        items: [{ ...VALID_ITEM, content: secondContent }],
+      });
+      const second = await app.request(`/${draftId}/analyze`, {
+        method: "POST",
+        headers: auth(tokenA),
+      });
+      secondStatus = second.status;
+      return "第一次识别文本";
+    });
+
+    const first = await app.request(`/${draftId}/analyze`, {
+      method: "POST",
+      headers: auth(tokenA),
+    });
+
+    expect(secondStatus).toBe(200);
+    // 先发起的那次结果被丢弃：不报错，返回库里（第二次）那份，不覆盖 items
+    expect(first.status).toBe(200);
+    const firstBody = await first.json();
+    expect(firstBody.ok).toBe(true);
+    expect(firstBody.items[0].content).toBe(secondContent);
+
+    const rows = await dbm.drizzleDb.all<{ content: string }>(
+      sql`SELECT content FROM question_draft_items WHERE draft_id = ${draftId}`,
+    );
+    expect(rows).toHaveLength(1);
+    expect(rows[0].content).toBe(secondContent);
+  });
+
+  it("识别进行中改条目 → 409（改完也会被识别结果重建）", async () => {
+    const tokenA = await tokenFor(A);
+    const { body } = await createDraft(tokenA);
+    const draftId = body.draft.id as string;
+
+    let patchStatus = 0;
+    OCR.performPaddleOCR.mockImplementationOnce(async () => {
+      const patch = await app.request(`/${draftId}/items/0`, {
+        method: "PATCH",
+        headers: auth(tokenA),
+        body: JSON.stringify({ content: "识别中改动的内容" }),
+      });
+      patchStatus = patch.status;
+      return "识别文本：形成性评价发生在教学过程中";
+    });
+    AI.generateStructuredData.mockResolvedValueOnce({ items: [VALID_ITEM] });
+
+    const res = await app.request(`/${draftId}/analyze`, {
+      method: "POST",
+      headers: auth(tokenA),
+    });
+    expect(res.status).toBe(200);
+    expect(patchStatus).toBe(409);
+  });
+
+  it("已确认的草稿条目不可再改 → 409", async () => {
+    const tokenA = await tokenFor(A);
+    const { body } = await createDraft(tokenA);
+    const draftId = body.draft.id as string;
+
+    await app.request(`/${draftId}/analyze`, {
+      method: "POST",
+      headers: auth(tokenA),
+    });
+    await app.request(`/${draftId}/items/0`, {
+      method: "PATCH",
+      headers: auth(tokenA),
+      body: JSON.stringify({ confirmed: true }),
+    });
+    const confirmed = await app.request(`/${draftId}/confirm`, {
+      method: "POST",
+      headers: auth(tokenA),
+    });
+    expect(confirmed.status).toBe(200);
+
+    const patch = await app.request(`/${draftId}/items/0`, {
+      method: "PATCH",
+      headers: auth(tokenA),
+      body: JSON.stringify({ explanation: "确认后再改解析，长度足够。" }),
+    });
+    expect(patch.status).toBe(409);
+  });
+
   it("未登录一律 401", async () => {
     const res = await app.request("/", {
       method: "POST",
@@ -360,6 +484,7 @@ describe("drafts API", () => {
 
     const ids = list.map((item) => item.id);
     expect(ids).toContain(firstId);
+    expect(ids).toContain(thirdId); // 列表漏了 thirdId 时，下面的 indexOf 比较会假通过
     expect(ids).not.toContain(secondId); // discarded 默认隐藏
     expect(ids).not.toContain(bDraft.draft.id); // 跨用户隔离
     // created_at 倒序：2030 的 third 在 2020 的 first 之前

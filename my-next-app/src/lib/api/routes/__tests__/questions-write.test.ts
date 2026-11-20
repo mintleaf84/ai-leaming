@@ -282,6 +282,139 @@ describe("questions 建题/改题", () => {
     expect(after.material_html).toBe("<p>新材料 &lt;b&gt;x&lt;/b&gt;</p>");
   });
 
+  it("题型不被过滤：truefalse / fill_blank 在 GET 与 PATCH 响应里都保留", async () => {
+    const truefalse = await app.request("/", {
+      method: "POST",
+      headers: auth(tokenA),
+      body: JSON.stringify({
+        content: "判断题：形成性评价发生在教学过程中。",
+        options: ["正确", "错误"],
+        answer: "A",
+        explanation: "形成性评价贯穿教学过程，故该说法正确。",
+        tags: ["教学评价"],
+        dimension: "knowledge",
+        type: "truefalse",
+      }),
+    });
+    expect(truefalse.status).toBe(201);
+    const tfId = (await truefalse.json()).id as number;
+
+    const tfDetail = await app.request(`/${tfId}`, { headers: auth(tokenA) });
+    expect((await tfDetail.json()).type).toBe("truefalse");
+
+    // PATCH 响应里的 question 也要带题型（客户端靠它回填表单）
+    const tfPatched = await app.request(`/${tfId}`, {
+      method: "PATCH",
+      headers: auth(tokenA),
+      body: JSON.stringify({ explanation: "改过的解析：形成性评价贯穿教学过程。" }),
+    });
+    expect(tfPatched.status).toBe(200);
+    expect((await tfPatched.json()).question.type).toBe("truefalse");
+
+    const fillBlank = await app.request("/", {
+      method: "POST",
+      headers: auth(tokenA),
+      body: JSON.stringify({
+        content: "填空题：布鲁纳认为学习的实质是主动形成____。",
+        options: [],
+        answer: "认知结构",
+        explanation: "布鲁纳强调主动建构认知结构。",
+        tags: ["学习理论"],
+        dimension: "knowledge",
+        type: "fill_blank",
+      }),
+    });
+    expect(fillBlank.status).toBe(201);
+    const fbId = (await fillBlank.json()).id as number;
+
+    const fbDetail = await app.request(`/${fbId}`, { headers: auth(tokenA) });
+    expect((await fbDetail.json()).type).toBe("fill_blank");
+
+    const fbPatched = await app.request(`/${fbId}`, {
+      method: "PATCH",
+      headers: auth(tokenA),
+      body: JSON.stringify({ answer: "认知结构（表征系统）" }),
+    });
+    expect((await fbPatched.json()).question.type).toBe("fill_blank");
+  });
+
+  it("显式 material_html: null 是清空，不被自动生成的 HTML 覆盖", async () => {
+    const created = await app.request("/", {
+      method: "POST",
+      headers: auth(tokenA),
+      body: JSON.stringify({
+        ...QUESTION,
+        content: "材料题：显式清空 material_html 的口径测试。",
+        material: "一段会生成 HTML 的材料",
+      }),
+    });
+    expect(created.status).toBe(201);
+    const id = (await created.json()).id as number;
+
+    const [before] = await dbm.drizzleDb.all<{ material_html: string }>(
+      sql`SELECT material_html FROM questions WHERE id = ${id}`,
+    );
+    expect(before.material_html).toBe("<p>一段会生成 HTML 的材料</p>");
+
+    const cleared = await app.request(`/${id}`, {
+      method: "PATCH",
+      headers: auth(tokenA),
+      body: JSON.stringify({ material_html: null }),
+    });
+    expect(cleared.status).toBe(200);
+    expect((await cleared.json()).question.material_html).toBeNull();
+
+    const [after] = await dbm.drizzleDb.all<{
+      material: string;
+      material_html: string | null;
+    }>(sql`SELECT material, material_html FROM questions WHERE id = ${id}`);
+    expect(after.material_html).toBeNull();
+    expect(after.material).toBe("一段会生成 HTML 的材料");
+  });
+
+  it("材料属于题目身份：同题干/选项/答案但材料不同 → 两道题，材料不被丢弃", async () => {
+    const base = {
+      ...QUESTION,
+      content: "材料题：同一题干配不同材料，应落成两道题。",
+      material: "材料甲：第一段内容\n第二段内容",
+    };
+    const first = await app.request("/", {
+      method: "POST",
+      headers: auth(tokenA),
+      body: JSON.stringify(base),
+    });
+    expect(first.status).toBe(201);
+    const firstBody = await first.json();
+    expect(firstBody.created).toBe(true);
+
+    const second = await app.request("/", {
+      method: "POST",
+      headers: auth(tokenA),
+      body: JSON.stringify({ ...base, material: "材料乙：完全不同的材料" }),
+    });
+    const secondBody = await second.json();
+    expect(secondBody.created).toBe(true);
+    expect(secondBody.id).not.toBe(firstBody.id);
+
+    // 材料只差空白（换行/缩进）视为同一道题，不重复建
+    const sameAgain = await app.request("/", {
+      method: "POST",
+      headers: auth(tokenA),
+      body: JSON.stringify({
+        ...base,
+        material: " 材料甲：第一段内容   第二段内容 ",
+      }),
+    });
+    const sameBody = await sameAgain.json();
+    expect(sameBody.created).toBe(false);
+    expect(sameBody.id).toBe(firstBody.id);
+
+    const [row] = await dbm.drizzleDb.all<{ material: string }>(
+      sql`SELECT material FROM questions WHERE id = ${secondBody.id}`,
+    );
+    expect(row.material).toBe("材料乙：完全不同的材料");
+  });
+
   it("未登录 401", async () => {
     const res = await app.request("/", {
       method: "POST",

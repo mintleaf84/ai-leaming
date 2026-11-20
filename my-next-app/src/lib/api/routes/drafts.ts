@@ -173,7 +173,7 @@ const analyzeDraftRoute = createRoute({
   middleware: [authMiddleware] as const,
   summary: "触发 AI 识别（OCR + 结构化）",
   description:
-    "写 `analyzing` → 成功 `ready` + items；失败 `failed` + `error_code` 且可重试（本次仍返回 200，客户端按 status 展示重试入口）。",
+    "写 `analyzing` → 成功 `ready` + items；失败 `failed` + `error_code` 且可重试（失败仍返回 200，客户端按 status 展示重试入口）。`ok=false` 表示本次识别没产出结果（status 可能仍被并发变更改写）。",
   request: { params: DraftIdParam },
   responses: {
     200: {
@@ -182,11 +182,15 @@ const analyzeDraftRoute = createRoute({
           schema: DraftWithItemsSchema.extend({ ok: z.boolean() }),
         },
       },
-      description: "识别结束：ok=false 时 status=failed，error_code 为失败原因",
+      description:
+        "识别结束：ok=false 时本次结果未落地（status=failed，或被并发状态变更作废）",
     },
     401: { description: "未登录" },
     404: { description: "草稿不存在，或不属于当前用户" },
-    409: { description: "当前状态不允许识别（已确认/已丢弃/已就绪）" },
+    409: {
+      description:
+        "当前状态不允许识别（已确认/已丢弃/已就绪），或识别期间草稿被并发改动导致结果作废",
+    },
   },
 });
 
@@ -274,7 +278,7 @@ const patchItemRoute = createRoute({
     400: { description: "参数不合法" },
     401: { description: "未登录" },
     404: { description: "草稿/条目不存在，或不属于当前用户" },
-    409: { description: "草稿已确认/已丢弃，条目不可再改" },
+    409: { description: "草稿已确认/已丢弃，或正在识别，条目不可改" },
   },
 });
 
@@ -322,7 +326,7 @@ const confirmDraftRoute = createRoute({
     400: { description: "条目校验失败（带 issues），本次零写入" },
     401: { description: "未登录" },
     404: { description: "草稿不存在，或不属于当前用户" },
-    409: { description: "草稿已丢弃" },
+    409: { description: "草稿已丢弃，或正在识别（识别结果会重建条目）" },
   },
 });
 

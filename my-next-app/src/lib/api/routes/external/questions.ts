@@ -301,9 +301,7 @@ app.openapi(questionsCreateRoute, async (c) => {
       explanation: data.explanation,
       tags: JSON.stringify(data.tags),
       dimension: data.dimension as
-        | "knowledge"
-        | "understanding"
-        | "application",
+        "knowledge" | "understanding" | "application",
       type: data.type,
     });
 

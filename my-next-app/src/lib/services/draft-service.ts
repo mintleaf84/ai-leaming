@@ -46,12 +46,7 @@ export const DRAFT_IMAGE_MAX_BYTES = 12 * 1024 * 1024;
 
 export type DraftSource = "camera" | "gallery" | "text" | "pdf";
 export type DraftStatus =
-  | "captured"
-  | "analyzing"
-  | "ready"
-  | "failed"
-  | "confirmed"
-  | "discarded";
+  "captured" | "analyzing" | "ready" | "failed" | "confirmed" | "discarded";
 
 export interface DraftItem {
   idx: number;
@@ -170,10 +165,20 @@ function resolveDraftImagePath(relPath: string): string {
 }
 
 function detectImageMime(buffer: Buffer): string {
-  if (buffer.length >= 8 && buffer.subarray(0, 8).equals(Buffer.from([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a]))) {
+  if (
+    buffer.length >= 8 &&
+    buffer
+      .subarray(0, 8)
+      .equals(Buffer.from([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a]))
+  ) {
     return "image/png";
   }
-  if (buffer.length >= 3 && buffer[0] === 0xff && buffer[1] === 0xd8 && buffer[2] === 0xff) {
+  if (
+    buffer.length >= 3 &&
+    buffer[0] === 0xff &&
+    buffer[1] === 0xd8 &&
+    buffer[2] === 0xff
+  ) {
     return "image/jpeg";
   }
   if (
@@ -183,7 +188,10 @@ function detectImageMime(buffer: Buffer): string {
   ) {
     return "image/webp";
   }
-  if (buffer.length >= 5 && buffer.subarray(0, 5).toString("latin1") === "%PDF-") {
+  if (
+    buffer.length >= 5 &&
+    buffer.subarray(0, 5).toString("latin1") === "%PDF-"
+  ) {
     return "application/pdf";
   }
   return "image/jpeg";
@@ -316,12 +324,12 @@ const DraftAiItemSchema = z.object({
   options: z.array(z.string()).describe("选项文本数组；填空题为空数组"),
   answer: z
     .string()
-    .describe('答案：单选 "A"，多选 JSON 数组字符串 ["A","B"]，判断 A/B，填空为文本'),
+    .describe(
+      '答案：单选 "A"，多选 JSON 数组字符串 ["A","B"]，判断 A/B，填空为文本',
+    ),
   explanation: z.string().describe("解析；原文没有就写简短推理"),
   tags: z.array(z.string()).describe("知识点标签，至少一个"),
-  type: z
-    .enum(["single", "multi", "truefalse", "fill_blank"])
-    .describe("题型"),
+  type: z.enum(["single", "multi", "truefalse", "fill_blank"]).describe("题型"),
   material_html: z
     .string()
     .nullable()
@@ -355,7 +363,8 @@ function classifyError(error: unknown): string {
   if (error instanceof AiRawResponseError) return "ai_invalid_output";
   if (error instanceof z.ZodError) return "ai_invalid_output";
   const message = error instanceof Error ? error.message : String(error);
-  if (/PADDLE_OCR_TOKEN|识别|layout-parsing/i.test(message)) return "ocr_failed";
+  if (/PADDLE_OCR_TOKEN|识别|layout-parsing/i.test(message))
+    return "ocr_failed";
   return "ai_failed";
 }
 
@@ -495,10 +504,7 @@ export const draftService = {
     });
   },
 
-  analyze: async (
-    userId: number,
-    id: string,
-  ): Promise<DraftAnalyzeResult> => {
+  analyze: async (userId: number, id: string): Promise<DraftAnalyzeResult> => {
     const { draft, items } = await loadDraft(userId, id);
     if (draft.status === "discarded") {
       throw new DraftStateError("草稿已丢弃，不能识别");
@@ -562,7 +568,8 @@ export const draftService = {
       rawText = JSON.stringify(aiResult);
     } catch (error) {
       const errorCode = classifyError(error);
-      if (error instanceof AiRawResponseError) rawText = error.rawResponse ?? null;
+      if (error instanceof AiRawResponseError)
+        rawText = error.rawResponse ?? null;
       await drizzleDb
         .update(drizzleSchema.question_drafts)
         .set({
@@ -695,7 +702,8 @@ export const draftService = {
 
     const values: Record<string, unknown> = {};
     if (patch.content !== undefined) values.content = patch.content;
-    if (patch.options !== undefined) values.options = JSON.stringify(patch.options);
+    if (patch.options !== undefined)
+      values.options = JSON.stringify(patch.options);
     if (patch.answer !== undefined) values.answer = patch.answer;
     if (patch.explanation !== undefined) values.explanation = patch.explanation;
     if (patch.tags !== undefined) values.tags = JSON.stringify(patch.tags);
@@ -767,7 +775,9 @@ export const draftService = {
       return { idx: item.idx, data: parsed.data, item };
     });
     if (issues.length > 0 || inputs.some((input) => input === null)) {
-      throw new DraftConfirmError(issues.length > 0 ? issues : ["草稿条目校验失败"]);
+      throw new DraftConfirmError(
+        issues.length > 0 ? issues : ["草稿条目校验失败"],
+      );
     }
 
     const createdIds: number[] = [];
@@ -786,9 +796,7 @@ export const draftService = {
             explanation: data.explanation,
             tags: data.tags,
             dimension: data.dimension as
-              | "knowledge"
-              | "understanding"
-              | "application",
+              "knowledge" | "understanding" | "application",
             type: data.type,
             material_html: item.material_html,
             source: "draft",

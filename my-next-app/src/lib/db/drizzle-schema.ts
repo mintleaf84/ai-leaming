@@ -132,7 +132,14 @@ export const question_drafts = sqliteTable(
       enum: ["camera", "gallery", "text", "pdf"],
     }).notNull(),
     status: text("status", {
-      enum: ["captured", "analyzing", "ready", "failed", "confirmed", "discarded"],
+      enum: [
+        "captured",
+        "analyzing",
+        "ready",
+        "failed",
+        "confirmed",
+        "discarded",
+      ],
     }).notNull(),
     /** 图片内容指纹；同一个 sha256 只落一份文件（与 pdf-import 的任务态不同，草稿要长期可校对） */
     image_sha256: text("image_sha256"),

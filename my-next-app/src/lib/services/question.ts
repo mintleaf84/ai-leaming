@@ -159,7 +159,9 @@ export interface QuestionUpdateResult {
  * `<script>` 或单纯一个 `<` 都会让前端渲染错位（甚至 XSS）。这里逐行转义后包
  * `<p>`，换行即分段。显式传了 `material_html`（导入/AI 已经产出 HTML）时以显式值为准。
  */
-export function materialTextToHtml(text: string | null | undefined): string | null {
+export function materialTextToHtml(
+  text: string | null | undefined,
+): string | null {
   if (text === null || text === undefined) return null;
   if (text.trim() === "") return null;
   return text
@@ -190,7 +192,9 @@ export class QuestionForbiddenError extends ForbiddenError {
   }
 }
 
-function formatIssues(error: { issues: Array<{ path: PropertyKey[]; message: string }> }): string[] {
+function formatIssues(error: {
+  issues: Array<{ path: PropertyKey[]; message: string }>;
+}): string[] {
   return error.issues.map((issue) => {
     const path = issue.path.map(String).join(".");
     return `${path || "body"}: ${issue.message}`;
@@ -475,9 +479,7 @@ export const questionService = {
           explanation: valid.explanation,
           tags: JSON.stringify(valid.tags),
           dimension: valid.dimension as
-            | "knowledge"
-            | "understanding"
-            | "application",
+            "knowledge" | "understanding" | "application",
           type: valid.type,
           source: options.source ?? data.source ?? null,
           material: data.material ?? null,
@@ -506,11 +508,17 @@ export const questionService = {
       }
 
       if (options.audit !== false) {
-        await writeQuestionAudit(exec, options.actor, "QUESTION_CREATE", row.id, {
-          externalId,
-          source: options.source ?? data.source ?? null,
-          content: valid.content.slice(0, 120),
-        });
+        await writeQuestionAudit(
+          exec,
+          options.actor,
+          "QUESTION_CREATE",
+          row.id,
+          {
+            externalId,
+            source: options.source ?? data.source ?? null,
+            content: valid.content.slice(0, 120),
+          },
+        );
       }
 
       // 事务内不建向量：索引走独立连接，要等提交后才能看到这一行
@@ -646,9 +654,7 @@ export const questionService = {
     }
     if (data.dimension !== undefined && data.dimension !== existing.dimension) {
       nextValues.dimension = valid.dimension as
-        | "knowledge"
-        | "understanding"
-        | "application";
+        "knowledge" | "understanding" | "application";
     }
     if (data.type !== undefined && data.type !== existing.type) {
       nextValues.type = valid.type;
@@ -685,10 +691,16 @@ export const questionService = {
     });
 
     if (options.audit !== false) {
-      await writeQuestionAudit(drizzleDb, options.actor, "QUESTION_UPDATE", id, {
-        changed,
-        ...(regrade ? { regrade } : {}),
-      });
+      await writeQuestionAudit(
+        drizzleDb,
+        options.actor,
+        "QUESTION_UPDATE",
+        id,
+        {
+          changed,
+          ...(regrade ? { regrade } : {}),
+        },
+      );
     }
 
     if (touchesEmbeddingText(nextValues) && options.indexVector !== false) {

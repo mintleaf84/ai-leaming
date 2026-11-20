@@ -1,9 +1,6 @@
 import { OpenAPIHono, createRoute, z } from "@hono/zod-openapi";
 import { questionService } from "@/lib/services/question";
-import {
-  authMiddleware,
-  getCurrentUser,
-} from "@/lib/api/middlewares/auth";
+import { authMiddleware, getCurrentUser } from "@/lib/api/middlewares/auth";
 import { parsePagination } from "@/lib/api/pagination";
 import { toErrorResponse } from "@/lib/api/error-response";
 
@@ -144,7 +141,9 @@ const QuestionWriteBodySchema = z.object({
   answer: z
     .string()
     .min(1)
-    .describe('正确答案：单选 "A"、多选 ["A","B"]（JSON 字符串）、判断题 A/B、填空为文本'),
+    .describe(
+      '正确答案：单选 "A"、多选 ["A","B"]（JSON 字符串）、判断题 A/B、填空为文本',
+    ),
   explanation: z.string().min(5),
   tags: z.array(z.string().min(1)).min(1),
   dimension: z.enum(["knowledge", "understanding", "application"]),
@@ -164,9 +163,7 @@ const QuestionPatchBodySchema = z
     answer: z.string().min(1).optional(),
     explanation: z.string().min(5).optional(),
     tags: z.array(z.string().min(1)).min(1).optional(),
-    dimension: z
-      .enum(["knowledge", "understanding", "application"])
-      .optional(),
+    dimension: z.enum(["knowledge", "understanding", "application"]).optional(),
     type: z.enum(["single", "multi", "truefalse", "fill_blank"]).optional(),
     material: z.string().nullable().optional(),
     material_html: z.string().nullable().optional(),

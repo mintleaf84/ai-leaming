@@ -103,10 +103,13 @@ export interface WrongBookDetail {
  * 与"最近一次错答"不是一回事。
  */
 function lastWrongAnswerSql(userId: number) {
-  return sql<string>`(SELECT user_answer FROM practice_logs 
-                             WHERE question_id = ${practice_logs.question_id} 
-                             AND user_id = ${userId} AND is_correct = 0 
-                             ORDER BY timestamp DESC LIMIT 1)`;
+  // 内层表必须起别名：不加别名时 `${practice_logs.question_id}` 会渲染成
+  // "practice_logs"."question_id"，SQLite 把它解析到内层表，条件退化成自身比较
+  // （拿到的是该用户任意一题的最新错答，而不是本题的）。
+  return sql<string>`(SELECT la.user_answer FROM practice_logs AS la
+                             WHERE la.question_id = ${practice_logs.question_id}
+                             AND la.user_id = ${userId} AND la.is_correct = 0
+                             ORDER BY la.timestamp DESC LIMIT 1)`;
 }
 
 /**
@@ -419,7 +422,12 @@ export const wrongQuestionService = {
       })
       .onConflictDoUpdate({
         target: [mastered_questions.user_id, mastered_questions.question_id],
-        set: { mastered_at: sql`CURRENT_TIMESTAMP`, note: note || null },
+        // 只有显式传了 note 才覆盖：路由的「重新标记已掌握」不该清掉已有备注。
+        // 迁移前路由自己的 upsert 只刷 mastered_at，备注是保留的。
+        set: {
+          mastered_at: sql`CURRENT_TIMESTAMP`,
+          ...(note === undefined ? {} : { note: note || null }),
+        },
       });
     return true;
   },

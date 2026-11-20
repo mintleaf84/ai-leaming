@@ -52,4 +52,8 @@ abstract final class PreferencesKeys {
   /// 本地诊断日志（JSON 数组，最多 200 条）。
   /// 见 `core/diagnostics/error_log.dart`。
   static const String diagnosticsLog = 'diagnostics_log';
+
+  /// 未完成练习的断点（JSON：sessionId / answered / total / mode / savedAt）。
+  /// 见 `features/practice/domain/practice_resume.dart`。
+  static const String practiceResume = 'practice_resume';
 }

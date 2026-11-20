@@ -306,7 +306,9 @@ describe("questions 建题/改题", () => {
     const tfPatched = await app.request(`/${tfId}`, {
       method: "PATCH",
       headers: auth(tokenA),
-      body: JSON.stringify({ explanation: "改过的解析：形成性评价贯穿教学过程。" }),
+      body: JSON.stringify({
+        explanation: "改过的解析：形成性评价贯穿教学过程。",
+      }),
     });
     expect(tfPatched.status).toBe(200);
     expect((await tfPatched.json()).question.type).toBe("truefalse");

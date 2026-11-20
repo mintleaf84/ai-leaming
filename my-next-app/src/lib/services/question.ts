@@ -1,11 +1,24 @@
 import { drizzleDb, drizzleSchema } from "@/lib/db";
 import { isVectorAvailable, searchQuestionVectors } from "@/lib/db/vec-store";
 import { eq, like, and, sql, desc, inArray } from "drizzle-orm";
+import { createHash } from "node:crypto";
 import { ragService } from "@/lib/ai/rag";
 import { Question, Dimension } from "@/types";
-import { QuestionRowSchema } from "@/lib/schemas";
+import { QuestionRowSchema, QuestionSchema } from "@/lib/schemas";
 import logger from "@/lib/logger";
-import { coerceJsonColumn } from "@/lib/utils/json";
+import { coerceJsonColumn, safeParseJson } from "@/lib/utils/json";
+import type { Executor } from "@/lib/db/executor";
+import { withTransaction } from "@/lib/db/executor";
+import {
+  ValidationError,
+  NotFoundError,
+  ForbiddenError,
+} from "@/lib/errors/app-error";
+import { buildApiExternalId } from "@/lib/services/question-idempotency";
+import { regradeQuestionLogs } from "@/lib/services/question-regrade";
+import type { RegradeResult } from "@/lib/services/question-regrade";
+import { touchesEmbeddingText } from "@/lib/services/question-index-policy";
+import { indexQuestion } from "@/lib/services/question-vector-index";
 
 /**
  * 题目摘要（用于卡片展示）
@@ -89,6 +102,183 @@ function warnEmbeddingDegradedOnce(): void {
   logger.warn(
     "[QuestionService] embedding 走了降级路径（伪向量），跳过相似题检索并返回空结果（后续不再重复告警）",
   );
+}
+
+/**
+ * 建题/改题的操作者。
+ *
+ * 题库本身是全局资产（没有 owner 列），但**由谁建的题**必须留痕：
+ * `admin_logs` 记 actor，内部建题用 `manual:<userId>:` 前缀把归属编码进幂等键，
+ * 这样"自己建的题自己能改、别人的题改不动"在没有 user_id 列的前提下也可判定。
+ */
+export interface QuestionWriteActor {
+  id: number;
+  username: string;
+  ip_address?: string | null;
+}
+
+export interface QuestionCreateOptions {
+  actor: QuestionWriteActor;
+  /** 外部传入的幂等键（草稿 confirm 用 `draft:<draftId>:<idx>`） */
+  externalId?: string;
+  source?: string;
+  /** 调用方已用 `QuestionSchema` 校验过（草稿 confirm 聚合完 issues 再写） */
+  validated?: boolean;
+  /** 事务执行器（草稿 confirm 单事务） */
+  exec?: Executor;
+  /** false = 不写 admin_logs（草稿逐条确认时只留草稿级记录） */
+  audit?: boolean;
+  /** 默认 true；事务内由调用方提交后统一重建 */
+  indexVector?: boolean;
+}
+
+export interface QuestionCreateResult {
+  id: number;
+  created: boolean;
+  /** 命中既有幂等键时，库里那道题的内容 */
+  question: Question | null;
+  /** 其余数据库列（旧形态调用方直接当行用） */
+  [key: string]: unknown;
+}
+
+export interface QuestionUpdateOptions {
+  actor: QuestionWriteActor;
+  audit?: boolean;
+  indexVector?: boolean;
+}
+
+export interface QuestionUpdateResult {
+  id: number;
+  changed: string[];
+  regrade: RegradeResult | null;
+}
+
+/**
+ * 材料纯文本 → `material_html`。
+ *
+ * 移动端建题只发 `material`（纯文本），**不能原样塞进 HTML 字段**：材料里出现
+ * `<script>` 或单纯一个 `<` 都会让前端渲染错位（甚至 XSS）。这里逐行转义后包
+ * `<p>`，换行即分段。显式传了 `material_html`（导入/AI 已经产出 HTML）时以显式值为准。
+ */
+export function materialTextToHtml(
+  text: string | null | undefined,
+): string | null {
+  if (text === null || text === undefined) return null;
+  if (text.trim() === "") return null;
+  return text
+    .split(/\r?\n/)
+    .map(
+      (line) =>
+        `<p>${line
+          .replace(/&/g, "&amp;")
+          .replace(/</g, "&lt;")
+          .replace(/>/g, "&gt;")
+          .replace(/"/g, "&quot;")
+          .replace(/'/g, "&#39;")}</p>`,
+    )
+    .join("");
+}
+
+/** 内容校验失败：issues 一次报全（路由层交给 `toErrorResponse` 渲染） */
+export class QuestionValidationError extends ValidationError {
+  constructor(issues: string[], message = "题目内容校验失败") {
+    super(message, { code: "question.validation", issues });
+  }
+}
+
+/** 非本人创建（manual:/draft: 前缀归属不匹配） */
+export class QuestionForbiddenError extends ForbiddenError {
+  constructor(message = "只能修改自己创建的题目") {
+    super(message, { code: "question.forbidden" });
+  }
+}
+
+function formatIssues(error: {
+  issues: Array<{ path: PropertyKey[]; message: string }>;
+}): string[] {
+  return error.issues.map((issue) => {
+    const path = issue.path.map(String).join(".");
+    return `${path || "body"}: ${issue.message}`;
+  });
+}
+
+/** 内部建题的幂等键：按用户隔离，同一用户同一内容重复提交不新增行 */
+export function buildManualExternalId(
+  userId: number,
+  data: {
+    content: string;
+    options?: unknown;
+    answer?: string | null;
+    /** 材料属于题目身份，必须进键（见下） */
+    material?: string | null;
+  },
+): string {
+  const base = buildApiExternalId(data).slice("api:".length);
+  const material = normalizeMaterialForIdempotency(data.material);
+  // 无材料的题保持旧键不变（存量行仍能命中，不会因为升级再造一批重复题）；
+  // 有材料时追加材料摘要：**材料属于题目身份** —— 同一题干/选项/答案配不同材料
+  // 是两道题，不含材料的键会把它们合并，材料被静默丢弃。
+  if (!material) return `manual:${userId}:${base}`;
+  const materialDigest = createHash("sha1")
+    .update(material)
+    .digest("hex")
+    .slice(0, 36);
+  return `manual:${userId}:${base}-${materialDigest}`;
+}
+
+/**
+ * 材料进幂等键前的规范化：只判"是不是同一段材料"，
+ * 折叠空白（换行/缩进差异不该把同一道材料题拆成两道）。
+ */
+function normalizeMaterialForIdempotency(material: unknown): string {
+  if (typeof material !== "string") return "";
+  return material.replace(/\s+/g, " ").trim();
+}
+
+/**
+ * 归属判定：`manual:<uid>:` 与 `draft:<draftId>:` 这两类键带 owner；
+ * 其余（`api:` 内容指纹、粉笔等上游题号）是全局题库，登录用户均可维护。
+ */
+export async function assertQuestionWritable(
+  question: { external_id?: string | null },
+  actorId: number,
+  exec: Executor = drizzleDb,
+): Promise<void> {
+  const externalId = question.external_id ?? "";
+  const manual = /^manual:(\d+):/.exec(externalId);
+  if (manual && Number(manual[1]) !== actorId) {
+    throw new QuestionForbiddenError();
+  }
+  const draft = /^draft:([^:]+):/.exec(externalId);
+  if (draft) {
+    const [owner] = await exec
+      .select({ user_id: drizzleSchema.question_drafts.user_id })
+      .from(drizzleSchema.question_drafts)
+      .where(eq(drizzleSchema.question_drafts.id, draft[1]))
+      .limit(1);
+    if (!owner || owner.user_id !== actorId) {
+      throw new QuestionForbiddenError("只能修改自己草稿确认的题目");
+    }
+  }
+}
+
+/** 题目写操作留痕（`admin_logs` 是唯一的审计入口，不要另建表） */
+async function writeQuestionAudit(
+  exec: Executor,
+  actor: QuestionWriteActor,
+  action: "QUESTION_CREATE" | "QUESTION_UPDATE",
+  questionId: number,
+  details: Record<string, unknown>,
+): Promise<void> {
+  await exec.insert(drizzleSchema.admin_logs).values({
+    user_id: actor.id,
+    username: actor.username || `user-${actor.id}`,
+    action,
+    target_type: "question",
+    target_id: String(questionId),
+    details: JSON.stringify(details),
+    ip_address: actor.ip_address ?? null,
+  });
 }
 
 export const questionService = {
@@ -262,9 +452,130 @@ export const questionService = {
   },
 
   /**
-   * 创建题目 (管理后台)
+   * 创建题目。
+   *
+   * 两种调用形态：
+   * - 旧形态 `create(data)`（管理端导入脚本 / 既有测试）：直接落库，不做额外校验；
+   * - 新形态 `create(data, { actor })`（内部 API / 草稿 confirm）：走 `QuestionSchema`
+   *   校验 + 幂等键 + 审计日志。**校验只有这一份**，外部 API 路由也用它。
+   *
+   * 幂等键：调用方给了 `externalId` 就用它；否则是 `manual:<userId>:<内容指纹>`。
+   * 命中既有行时返回 `created: false` 与既有行，不覆盖内容（建题不是同步最新版）。
    */
-  async create(data: Partial<Question>) {
+  async create(
+    data: Partial<Question>,
+    options?: QuestionCreateOptions,
+  ): Promise<QuestionCreateResult> {
+    const exec = options?.exec ?? drizzleDb;
+
+    // ---- 新形态：统一校验 + 幂等 + 审计 ----
+    if (options?.actor) {
+      const parsed = options.validated
+        ? { success: true as const, data: data as Required<typeof data> }
+        : QuestionSchema.safeParse(data);
+      if (!parsed.success) {
+        throw new QuestionValidationError(formatIssues(parsed.error));
+      }
+      const valid = parsed.data;
+
+      const externalId =
+        options.externalId ??
+        buildManualExternalId(options.actor.id, {
+          content: valid.content,
+          options: valid.options,
+          answer: valid.answer,
+          material: data.material ?? null,
+        });
+
+      const [existing] = await exec
+        .select()
+        .from(drizzleSchema.questions)
+        .where(eq(drizzleSchema.questions.external_id, externalId))
+        .limit(1);
+      if (existing) {
+        return {
+          id: existing.id,
+          created: false,
+          question: mapQuestion(existing as unknown as Record<string, unknown>),
+          ...(existing as unknown as Record<string, unknown>),
+        };
+      }
+
+      const inserted = await exec
+        .insert(drizzleSchema.questions)
+        .values({
+          external_id: externalId,
+          content: valid.content,
+          options: JSON.stringify(valid.options),
+          answer: valid.answer,
+          explanation: valid.explanation,
+          tags: JSON.stringify(valid.tags),
+          dimension: valid.dimension as
+            "knowledge" | "understanding" | "application",
+          type: valid.type,
+          source: options.source ?? data.source ?? null,
+          material: data.material ?? null,
+          // 显式 `material_html: null` 是"清空"，不能被自动生成的 HTML 覆盖；
+          // 只有没传（undefined）才从纯文本生成
+          material_html:
+            data.material_html !== undefined
+              ? data.material_html
+              : materialTextToHtml(data.material),
+          created_at: sql`CURRENT_TIMESTAMP`,
+        })
+        .onConflictDoNothing({ target: drizzleSchema.questions.external_id })
+        .returning();
+
+      // 并发窗口：预检没命中、插入时另一请求先提交 → 唯一索引吞掉插入
+      const row =
+        inserted[0] ??
+        (
+          await exec
+            .select()
+            .from(drizzleSchema.questions)
+            .where(eq(drizzleSchema.questions.external_id, externalId))
+            .limit(1)
+        )[0];
+      if (!row) {
+        throw new QuestionValidationError(
+          [`无法写入题目（幂等键 ${externalId} 冲突后读不到既有行）`],
+          "建题冲突，请重试",
+        );
+      }
+
+      if (options.audit !== false) {
+        await writeQuestionAudit(
+          exec,
+          options.actor,
+          "QUESTION_CREATE",
+          row.id,
+          {
+            externalId,
+            source: options.source ?? data.source ?? null,
+            content: valid.content.slice(0, 120),
+          },
+        );
+      }
+
+      // 事务内不建向量：索引走独立连接，要等提交后才能看到这一行
+      if (options.indexVector !== false && !options.exec) {
+        void indexQuestion(row.id).catch((error: unknown) => {
+          logger.warn(
+            { err: error, questionId: row.id },
+            "[QuestionService] 新题向量索引失败，可用重索引脚本补齐",
+          );
+        });
+      }
+
+      return {
+        id: row.id,
+        created: inserted.length > 0,
+        question: mapQuestion(row as unknown as Record<string, unknown>),
+        ...(row as unknown as Record<string, unknown>),
+      };
+    }
+
+    // ---- 旧形态：保持既有契约（管理端脚本直接落库） ----
     const result = await drizzleDb
       .insert(drizzleSchema.questions)
       .values({
@@ -273,22 +584,176 @@ export const questionService = {
         tags: JSON.stringify(data.tags),
       } as never)
       .returning();
-    return result[0];
+    const row = result[0] as unknown as Record<string, unknown>;
+    // 旧契约只返回数据库行本身（既有测试用 toEqual 比对整行）；created/question
+    // 以不可枚举属性挂上，既保持运行时可用又不改变既有契约的形状
+    Object.defineProperty(row, "created", {
+      value: true,
+      enumerable: false,
+    });
+    Object.defineProperty(row, "question", {
+      value: null,
+      enumerable: false,
+    });
+    return row as unknown as QuestionCreateResult;
   },
 
   /**
-   * 更新题目 (管理后台)
+   * 更新题目。
+   *
+   * 旧形态 `update(id, data)` 只写库；新形态 `update(id, data, { actor })` 额外：
+   *   1. 校验归属（`manual:`/`draft:` 前缀带 owner，其余为全局题）；
+   *   2. 合并后整体过 `QuestionSchema`（部分更新也不能产出坏行）；
+   *   3. 答案/选项/题型变化时与写入**同事务**回刷历史判分（`regradeQuestionLogs`）；
+   *   4. 写 `admin_logs`；改题干/选项/答案时异步重建向量。
    */
-  async update(id: number, data: Partial<Question>) {
-    const updateData: Record<string, unknown> = { ...data };
-    if (data.options) updateData.options = JSON.stringify(data.options);
-    if (data.tags) updateData.tags = JSON.stringify(data.tags);
+  async update(
+    id: number,
+    data: Partial<Question>,
+    options?: QuestionUpdateOptions,
+  ): Promise<QuestionUpdateResult> {
+    if (!options?.actor) {
+      const legacyData: Record<string, unknown> = { ...data };
+      if (data.options) legacyData.options = JSON.stringify(data.options);
+      if (data.tags) legacyData.tags = JSON.stringify(data.tags);
 
-    await drizzleDb
-      .update(drizzleSchema.questions)
-      .set(updateData)
-      .where(eq(drizzleSchema.questions.id, id));
-    return true;
+      await drizzleDb
+        .update(drizzleSchema.questions)
+        .set(legacyData)
+        .where(eq(drizzleSchema.questions.id, id));
+      // 旧契约返回 true（既有测试与调用方按布尔断言）；新形态才返回结构化结果
+      return true as unknown as QuestionUpdateResult;
+    }
+
+    const [existing] = await drizzleDb
+      .select()
+      .from(drizzleSchema.questions)
+      .where(eq(drizzleSchema.questions.id, id))
+      .limit(1);
+    if (!existing) {
+      throw new NotFoundError(`题目不存在：${id}`, {
+        code: "question.not-found",
+      });
+    }
+    await assertQuestionWritable(existing, options.actor.id);
+
+    const currentOptions = safeParseJson<string[]>(existing.options, []);
+    const currentTags = safeParseJson<string[]>(existing.tags, []);
+
+    // 合并只用于校验：不能把未提交字段的默认值写回库
+    const merged = {
+      content: data.content ?? existing.content,
+      options: data.options ?? currentOptions,
+      answer: data.answer ?? existing.answer ?? "",
+      explanation: data.explanation ?? existing.explanation ?? "",
+      tags: data.tags ?? currentTags,
+      dimension: data.dimension ?? existing.dimension ?? "knowledge",
+      type:
+        data.type ??
+        (existing.type as "single" | "multi" | "truefalse" | "fill_blank") ??
+        "single",
+    };
+    const parsed = QuestionSchema.safeParse(merged);
+    if (!parsed.success) {
+      throw new QuestionValidationError(
+        formatIssues(parsed.error),
+        "合并后校验失败",
+      );
+    }
+    const valid = parsed.data;
+
+    // 只有客户端提交了、且值确实不同的字段才算变更
+    const nextValues: Record<string, unknown> = {};
+    if (data.content !== undefined && data.content !== existing.content) {
+      nextValues.content = valid.content;
+    }
+    if (
+      data.options !== undefined &&
+      JSON.stringify(data.options) !== JSON.stringify(currentOptions)
+    ) {
+      nextValues.options = JSON.stringify(valid.options);
+    }
+    if (data.answer !== undefined && data.answer !== existing.answer) {
+      nextValues.answer = valid.answer;
+    }
+    if (
+      data.explanation !== undefined &&
+      data.explanation !== existing.explanation
+    ) {
+      nextValues.explanation = valid.explanation;
+    }
+    if (
+      data.tags !== undefined &&
+      JSON.stringify(data.tags) !== JSON.stringify(currentTags)
+    ) {
+      nextValues.tags = JSON.stringify(valid.tags);
+    }
+    if (data.dimension !== undefined && data.dimension !== existing.dimension) {
+      nextValues.dimension = valid.dimension as
+        "knowledge" | "understanding" | "application";
+    }
+    if (data.type !== undefined && data.type !== existing.type) {
+      nextValues.type = valid.type;
+    }
+    // 材料以纯文本为准：`material` 变化时同步重算转义后的 HTML。
+    // 显式传 `material_html`（含 `null` = 清空）一律以显式值为准 —— 用 `??` 会让
+    // "清空材料正文 HTML" 被自动生成的值顶回来，前端永远清不掉。
+    if (data.material !== undefined && data.material !== existing.material) {
+      nextValues.material = data.material;
+      nextValues.material_html =
+        data.material_html !== undefined
+          ? data.material_html
+          : materialTextToHtml(data.material);
+    } else if (
+      data.material_html !== undefined &&
+      data.material_html !== existing.material_html
+    ) {
+      nextValues.material_html = data.material_html;
+    }
+
+    const changed = Object.keys(nextValues);
+    if (changed.length === 0) {
+      return { id, changed, regrade: null };
+    }
+
+    const needsRegrade =
+      data.answer !== undefined ||
+      data.options !== undefined ||
+      data.type !== undefined;
+
+    const regrade = await withTransaction(async (exec) => {
+      await exec
+        .update(drizzleSchema.questions)
+        .set(nextValues)
+        .where(eq(drizzleSchema.questions.id, id));
+      if (needsRegrade) return regradeQuestionLogs(id, exec);
+      return null;
+    });
+
+    if (options.audit !== false) {
+      await writeQuestionAudit(
+        drizzleDb,
+        options.actor,
+        "QUESTION_UPDATE",
+        id,
+        {
+          changed,
+          ...(regrade ? { regrade } : {}),
+        },
+      );
+    }
+
+    if (touchesEmbeddingText(nextValues) && options.indexVector !== false) {
+      // 内容已变：不 await；拿不到新向量时删旧向量，避免按旧题干召回
+      void indexQuestion(id, { pruneOnSkip: true }).catch((error: unknown) => {
+        logger.warn(
+          { err: error, questionId: id },
+          "[QuestionService] 题目向量重建失败，保存已生效",
+        );
+      });
+    }
+
+    return { id, changed, regrade };
   },
 
   /**

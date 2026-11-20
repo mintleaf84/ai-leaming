@@ -143,6 +143,38 @@ export const TEST_SCHEMA_SQL = `
     -- 与 drizzle/0019 对齐
     CREATE INDEX IF NOT EXISTS idx_session_reviews_session
         ON session_reviews (session_id);
+
+    -- 与 drizzle/0022 对齐：AI 草稿校对流
+    CREATE TABLE IF NOT EXISTS question_drafts (
+        id TEXT PRIMARY KEY NOT NULL,
+        user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+        source TEXT NOT NULL,
+        status TEXT NOT NULL,
+        image_sha256 TEXT,
+        image_rel_path TEXT,
+        ai_provider TEXT,
+        ai_model TEXT,
+        ai_prompt_version TEXT,
+        ai_raw_json TEXT,
+        error_code TEXT,
+        created_at TEXT DEFAULT CURRENT_TIMESTAMP,
+        expires_at INTEGER,
+        analyze_token TEXT
+    );
+
+    CREATE TABLE IF NOT EXISTS question_draft_items (
+        draft_id TEXT NOT NULL REFERENCES question_drafts(id) ON DELETE CASCADE,
+        idx INTEGER NOT NULL,
+        content TEXT,
+        options TEXT,
+        answer TEXT,
+        explanation TEXT,
+        tags TEXT,
+        type TEXT,
+        material_html TEXT,
+        confirmed INTEGER DEFAULT 0 NOT NULL,
+        PRIMARY KEY (draft_id, idx)
+    );
 `;
 
 export function createTestTables(db: Database.Database) {

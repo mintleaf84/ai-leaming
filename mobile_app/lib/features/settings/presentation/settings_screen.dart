@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import '../../../core/a11y/status_announcer.dart';
+import '../../../core/diagnostics/error_log.dart';
 import '../../../core/navigation/app_nav.dart';
 import 'settings_provider.dart';
 import '../../../core/theme/theme_provider.dart';
@@ -54,9 +56,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
         .read(localPracticeStoreProvider)
         .cachedQuestionCount();
     // 首帧前拉取一次真实资料；用 microtask 避开构建期改写 Provider 状态。
-    Future.microtask(
-      () => ref.read(profileControllerProvider.notifier).load(),
-    );
+    Future.microtask(() => ref.read(profileControllerProvider.notifier).load());
   }
 
   @override
@@ -66,6 +66,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
     final reviewMode = settingsState.reviewMode;
     final profile = ref.watch(profileControllerProvider).profile;
     final serverConfig = ref.watch(serverConfigProvider);
+    final errorLog = ref.watch(errorLogProvider);
     final isDarkMode =
         themeMode == ThemeMode.dark ||
         (themeMode == ThemeMode.system &&
@@ -252,6 +253,27 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                           trailing: _buildPendingTrailing(secondaryColor),
                           textColor: textColor,
                           onTap: _syncOfflineAnswers,
+                        ),
+                        _buildDivider(borderColor),
+                        // 诊断日志：本地记录异常与堆栈（不含用户内容），
+                        // 用户遇到问题时可以复制出来反馈。
+                        ListenableBuilder(
+                          listenable: errorLog,
+                          builder: (context, _) => _buildSettingsTile(
+                            icon: AppIcons.history,
+                            title: '诊断日志',
+                            trailing: Text(
+                              errorLog.length == 0
+                                  ? '暂无记录'
+                                  : '${errorLog.length} 条',
+                              style: TextStyle(
+                                fontSize: 14.sp,
+                                color: secondaryColor,
+                              ),
+                            ),
+                            textColor: textColor,
+                            onTap: _showDiagnosticsDialog,
+                          ),
                         ),
                       ],
                     ),
@@ -559,6 +581,58 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
     ).showSnackBar(SnackBar(content: Text(message)));
   }
 
+  void _showDiagnosticsDialog() {
+    final log = ref.read(errorLogProvider);
+    showDialog(
+      context: context,
+      builder: (dialogContext) => AlertDialog(
+        title: const Text('诊断日志'),
+        content: SizedBox(
+          width: double.maxFinite,
+          child: ListenableBuilder(
+            listenable: log,
+            builder: (context, _) {
+              final entries = log.entries;
+              if (entries.isEmpty) {
+                return const Text('暂无记录');
+              }
+              // 只展示最近 20 条：弹窗是用来「快速看一眼 + 复制」的，
+              // 完整内容交给「复制全部」。
+              final recent = entries.take(20).map(log.formatEntry).join('\n');
+              return SingleChildScrollView(
+                child: Text(
+                  recent,
+                  style: TextStyle(
+                    fontFamily: 'monospace',
+                    fontSize: 11.sp,
+                    height: 1.4,
+                    color: context.colors.textSecondary,
+                  ),
+                ),
+              );
+            },
+          ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () async {
+              await Clipboard.setData(ClipboardData(text: log.exportText()));
+              if (!mounted) return;
+              _showSnackBar('诊断日志已复制到剪贴板');
+            },
+            child: const Text('复制全部'),
+          ),
+          TextButton(
+            onPressed: () async {
+              await log.clear();
+            },
+            child: Text('清空', style: TextStyle(color: context.colors.error)),
+          ),
+        ],
+      ),
+    );
+  }
+
   void _showClearCacheDialog() {
     showDialog(
       context: context,
@@ -716,10 +790,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
               Navigator.pop(context);
               _showSnackBar('错题本已清空');
             },
-            child: Text(
-              '确定',
-              style: TextStyle(color: context.colors.error),
-            ),
+            child: Text('确定', style: TextStyle(color: context.colors.error)),
           ),
         ],
       ),
@@ -746,10 +817,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
               if (ref.read(authControllerProvider).hasError) return;
               context.replace(AppRoutes.login);
             },
-            child: Text(
-              '退出',
-              style: TextStyle(color: context.colors.error),
-            ),
+            child: Text('退出', style: TextStyle(color: context.colors.error)),
           ),
         ],
       ),

@@ -15,19 +15,23 @@ import 'shared/widgets/contract_gate.dart';
 import 'shared/widgets/server_config_gate.dart';
 
 Future<void> main() async {
-  WidgetsFlutterBinding.ensureInitialized();
-  // 先装钩子再干别的：初始化期间的异常也要能落到本地诊断日志里。
-  installGlobalErrorHandlers();
-  // 读回上次运行留下的记录。load 内部吞掉所有异常，读不到就当空日志，绝不阻塞启动。
-  await ErrorLog.instance.load();
-  // dioProvider 是同步构建的，持久化的服务器地址必须在 runApp 之前就绪。
-  final storedBaseUrl = await readInitialServerBaseUrl(
-    const SecureServerBaseUrlStore(),
-  );
-  // zone 内未捕获的异步异常（没 await 的 Future 抛错）不会走 FlutterError.onError，
-  // 只有 runZonedGuarded 能兜住。runApp 本身放在 zone 里，页面里的异步错误才在同一 zone。
+  // Binding 初始化与 runApp 必须在**同一个 zone** 里。
+  //
+  // 之前 `ensureInitialized()` 在 root zone、`runApp` 在 `runZonedGuarded` 的
+  // 子 zone，Flutter 会报 "Zone mismatch"（框架在 runApp 时校验「当前 zone 是否
+  // 与初始化 Binding 的 zone 一致」）。把初始化整体搬进 zone 后，initialize 期间
+  // 与运行期的异常也都由同一个 handler 收口。
   runZonedGuarded(
-    () {
+    () async {
+      WidgetsFlutterBinding.ensureInitialized();
+      // 先装钩子再干别的：初始化期间的异常也要能落到本地诊断日志里。
+      installGlobalErrorHandlers();
+      // 读回上次运行留下的记录。load 内部吞掉所有异常，读不到就当空日志，绝不阻塞启动。
+      await ErrorLog.instance.load();
+      // dioProvider 是同步构建的，持久化的服务器地址必须在 runApp 之前就绪。
+      final storedBaseUrl = await readInitialServerBaseUrl(
+        const SecureServerBaseUrlStore(),
+      );
       runApp(
         ProviderScope(
           overrides: [
@@ -37,6 +41,8 @@ Future<void> main() async {
         ),
       );
     },
+    // zone 内未捕获的异步异常（没 await 的 Future 抛错）不会走 FlutterError.onError，
+    // 只有 runZonedGuarded 能兜住。
     (Object error, StackTrace stack) {
       ErrorLog.instance.add(error, stack, kind: 'zone');
     },

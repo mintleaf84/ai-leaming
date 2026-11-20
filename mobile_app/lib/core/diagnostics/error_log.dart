@@ -102,6 +102,22 @@ class ErrorLog extends ChangeNotifier {
 
   final List<ErrorLogEntry> _entries = <ErrorLogEntry>[];
 
+  /// 单条消息的字符上限；超出加省略号。异常 message 里可能整段夹带用户内容
+  /// （比如回显输入框文本），不设上限会把这些原样写进诊断日志。
+  static const int maxMessageLength = 200;
+
+  /// 堆栈最多保留的行数：够定位调用点，又不至于把整段堆栈塞进磁盘。
+  static const int maxStackLines = 3;
+
+  /// [load] 进行中：此时 [add] 只写内存、不落盘。
+  ///
+  /// 否则启动瞬间来的异常会把「只含这条新记录」的快照写到磁盘上，随后
+  /// [load] 把历史合并进内存却不再写回 —— 下次启动历史就没了。
+  bool _loading = false;
+
+  /// [load] 期间是否收到过新记录；有才在合并完成后补写一次。
+  bool _dirtyWhileLoading = false;
+
   /// 最新在前。
   List<ErrorLogEntry> get entries => List<ErrorLogEntry>.unmodifiable(_entries);
 
@@ -117,19 +133,25 @@ class ErrorLog extends ChangeNotifier {
       ErrorLogEntry(
         at: DateTime.now().toUtc(),
         kind: kind,
-        message: error.toString(),
-        stack: stack?.toString(),
+        message: _sanitize(error),
+        stack: _sanitizeStack(stack),
       ),
     );
     while (_entries.length > capacity) {
       _entries.removeLast();
     }
-    notifyListeners();
+    _notifyAsync();
+    if (_loading) {
+      // 磁盘上还有没合并回来的历史，现在写会把它们覆盖掉；等 load 收尾统一写。
+      _dirtyWhileLoading = true;
+      return;
+    }
     unawaited(persist());
   }
 
   /// 从磁盘读回上次运行留下的记录。失败只打日志。
   Future<void> load() async {
+    _loading = true;
     try {
       final String? raw = await _store.read(PreferencesKeys.diagnosticsLog);
       if (raw == null || raw.isEmpty) return;
@@ -150,9 +172,17 @@ class ErrorLog extends ChangeNotifier {
       if (_entries.length > capacity) {
         _entries.removeRange(capacity, _entries.length);
       }
-      notifyListeners();
+      _notifyAsync();
     } catch (error) {
       debugPrint('ErrorLog.load 失败：$error');
+    } finally {
+      _loading = false;
+      // 只有「加载期间进来过新记录」才补写：没读到东西时也写，等于用空数组
+      // 抹掉磁盘上读不出来的历史。
+      if (_dirtyWhileLoading) {
+        _dirtyWhileLoading = false;
+        await persist();
+      }
     }
   }
 
@@ -195,8 +225,65 @@ class ErrorLog extends ChangeNotifier {
   /// 清空内存与磁盘。失败只打日志（内存一定清掉）。
   Future<void> clear() async {
     _entries.clear();
-    notifyListeners();
+    _notifyAsync();
     await persist();
+  }
+
+  /// 异步派发变更通知。
+  ///
+  /// 全局钩子可能在 build/layout 期间被调用，此时同步 `notifyListeners()` 会让
+  /// 监听方（设置页）在构建中 `setState`，触发「setState() called during build」
+  /// 的二次异常 —— 记录问题变成制造问题。丢到微任务里，等当前帧的逻辑跑完再说。
+  ///
+  /// 监听器自己抛错也必须吞掉：诊断设施不能反过来把异常抛回 `add` 的调用点。
+  void _notifyAsync() {
+    scheduleMicrotask(() {
+      try {
+        notifyListeners();
+      } catch (error) {
+        debugPrint('ErrorLog 通知监听者失败：$error');
+      }
+    });
+  }
+
+  /// 记录前的脱敏与截断。
+  ///
+  /// 诊断日志可能被用户整段复制发出来，所以**不能**直接存 `error.toString()`：
+  /// - `FormatException.toString()` 会把 `source` 一并打出来，而 `jsonDecode`
+  ///   的 source 往往就是学生答案原文；
+  /// - 任意 `Exception('...')` 的 message 也可能夹带用户输入，多行 message 更会
+  ///   把整段内容带进来。
+  static String _sanitize(Object error) {
+    final String raw;
+    if (error is FormatException) {
+      // 只留 message：source / offset 一律丢弃。
+      raw = 'FormatException: ${error.message}';
+    } else {
+      raw = error.toString();
+    }
+    return _clipToFirstLine(raw);
+  }
+
+  /// 只留第一行；超过 [maxMessageLength] 截断并加省略号。
+  static String _clipToFirstLine(String raw) {
+    var line = raw;
+    final int newline = line.indexOf('\n');
+    if (newline >= 0) line = line.substring(0, newline);
+    if (line.endsWith('\r')) line = line.substring(0, line.length - 1);
+    if (line.length <= maxMessageLength) return line;
+    return '${line.substring(0, maxMessageLength)}…';
+  }
+
+  /// 堆栈只留前 [maxStackLines] 行非空内容。
+  static String? _sanitizeStack(StackTrace? stack) {
+    if (stack == null) return null;
+    final List<String> kept = <String>[];
+    for (final String line in const LineSplitter().convert(stack.toString())) {
+      if (line.trim().isEmpty) continue;
+      kept.add(line);
+      if (kept.length == maxStackLines) break;
+    }
+    return kept.isEmpty ? null : kept.join('\n');
   }
 
   static String _formatTimestamp(DateTime at) {

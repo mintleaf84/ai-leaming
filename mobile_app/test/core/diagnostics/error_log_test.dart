@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:convert';
 import 'dart:ui';
 
@@ -190,14 +191,144 @@ void main() {
       );
     });
 
-    test('add 会通知监听者', () {
+    test('add 异步通知监听者，不在同步栈里回调', () async {
       final log = ErrorLog(store: FakePreferencesStore());
       var notified = 0;
       log.addListener(() => notified++);
 
       log.add(StateError('boom'), null);
 
+      // 同步返回时必须还没通知：全局钩子可能在 build/layout 期间调用 add，
+      // 同步回调会让设置页在构建中 setState。
+      expect(notified, 0);
+      await pumpEventQueue();
       expect(notified, 1);
+    });
+
+    test('监听器抛错不会让 add 抛出，条目仍然写入', () async {
+      final log = ErrorLog(store: FakePreferencesStore());
+      log.addListener(() => throw FlutterError('listener boom'));
+
+      log.add(StateError('boom'), null);
+
+      expect(log.entries.single.message, 'Bad state: boom');
+      // 微任务里抛出的 FlutterError 必须被 _notifyAsync 吞掉，否则这里会失败。
+      await pumpEventQueue();
+      expect(log.entries.length, 1);
+    });
+
+    test('load 期间的写入不覆盖磁盘历史，合并后统一落盘一次', () async {
+      final history = jsonEncode(<Object?>[
+        <String, Object?>{
+          'at': '2026-11-19T10:00:00.000Z',
+          'kind': 'flutter',
+          'message': 'old',
+        },
+      ]);
+      final store = _BlockingStore(
+        initial: <String, String>{PreferencesKeys.diagnosticsLog: history},
+      );
+      final log = ErrorLog(store: store);
+
+      final loading = log.load();
+      log.add(StateError('during-1'), null);
+      log.add(StateError('during-2'), null);
+
+      // 磁盘上还有没合并回来的历史，加载期间一条都不能写。
+      expect(store.writes, isEmpty);
+
+      store.release();
+      await loading;
+
+      expect(store.writes.length, 1);
+      final onDisk = jsonDecode(store.values[PreferencesKeys.diagnosticsLog]!)
+          as List<Object?>;
+      final messages = onDisk
+          .map((item) => (item! as Map<Object?, Object?>)['message'])
+          .toList();
+      expect(messages.length, 3);
+      expect(messages, contains('old'));
+      expect(messages, contains('Bad state: during-1'));
+      expect(messages, contains('Bad state: during-2'));
+      // 内存里也是合并后的三条，最新在前。
+      expect(log.entries.first.message, 'Bad state: during-2');
+    });
+
+    test('load 期间没有新记录时不重复落盘', () async {
+      final store = FakePreferencesStore(
+        initial: <String, String>{
+          PreferencesKeys.diagnosticsLog: jsonEncode(<Object?>[
+            <String, Object?>{
+              'at': '2026-11-19T10:00:00.000Z',
+              'kind': 'flutter',
+              'message': 'old',
+            },
+          ]),
+        },
+      );
+      final log = ErrorLog(store: store);
+
+      await log.load();
+
+      expect(store.writes, isEmpty);
+      expect(log.entries.single.message, 'old');
+    });
+  });
+
+  group('ErrorLog 脱敏', () {
+    test('FormatException 只记 message，丢弃 source（学生答案不外泄）', () {
+      final log = ErrorLog(store: FakePreferencesStore());
+
+      log.add(
+        const FormatException('bad json', '学生答案：机密', 3),
+        StackTrace.fromString('#0 parse (x.dart:1:1)'),
+      );
+
+      expect(log.entries.single.message, 'FormatException: bad json');
+      expect(log.entries.single.message, isNot(contains('学生答案')));
+      expect(log.entries.single.message, isNot(contains('机密')));
+      expect(log.exportText(), isNot(contains('学生答案')));
+    });
+
+    test('超长 message 截断到 200 字符并加省略号', () {
+      final log = ErrorLog(store: FakePreferencesStore());
+      final long = 'x' * 500;
+
+      log.add(Exception(long), null);
+
+      final message = log.entries.single.message;
+      expect(message.length, ErrorLog.maxMessageLength + 1);
+      expect(message.endsWith('…'), isTrue);
+      expect(message.startsWith('Exception: '), isTrue);
+      expect(message.substring(0, message.length - 1), isNot(contains(long)));
+    });
+
+    test('多行 message 只留第一行，普通异常保留类型名', () {
+      final log = ErrorLog(store: FakePreferencesStore());
+
+      log.add(StateError('first line\nsecond line: 学生答案'), null);
+
+      expect(log.entries.single.message, 'Bad state: first line');
+      expect(log.entries.single.message, isNot(contains('学生答案')));
+    });
+
+    test('堆栈只保留前 3 行', () {
+      final log = ErrorLog(store: FakePreferencesStore());
+
+      log.add(
+        StateError('boom'),
+        StackTrace.fromString('#0 a\n#1 b\n#2 c\n#3 d\n#4 e'),
+      );
+
+      expect(log.entries.single.stack, '#0 a\n#1 b\n#2 c');
+    });
+
+    test('空堆栈记为 null 而不是空串', () {
+      final log = ErrorLog(store: FakePreferencesStore());
+
+      log.add(StateError('boom'), StackTrace.fromString('\n  \n'));
+
+      expect(log.entries.single.stack, isNull);
     });
   });
 
@@ -252,4 +383,19 @@ void main() {
       expect(log.entries.single.message, 'Bad state: platform boom');
     });
   });
+}
+
+/// 可控阻塞的 store：制造「load 还没读完、add 已经在写」的时序。
+class _BlockingStore extends FakePreferencesStore {
+  _BlockingStore({super.initial});
+
+  final Completer<void> _gate = Completer<void>();
+
+  void release() => _gate.complete();
+
+  @override
+  Future<String?> read(String key) async {
+    await _gate.future;
+    return super.read(key);
+  }
 }

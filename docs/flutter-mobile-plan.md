@@ -33,6 +33,10 @@
 | §30    | 移动端数据备份与换机                            | 计划（P1 换机检查优先）        |
 | §31    | 多设备一致性（服务端重判离线作答）              | 计划                          |
 | §32    | 专项练习（tag / wrong 模式）                    | 计划                          |
+| §33    | 材料题在移动端的渲染                            | 计划（P0，需先量 material 占比）|
+| §34    | AI 草稿校对流（服务端草稿 + 移动端校对）        | 计划                          |
+| §35    | 移动端建题/改题                                 | 计划                          |
+| §36    | 整库备份与恢复（升级 §30）                      | 计划                          |
 
 > 维护约定：新增段落追加到末尾并在此表登记；状态只有四种——`[已完成]` / `计划` / `[不做]` / `待决策`。
 
@@ -1135,3 +1139,140 @@ FROM recall_card_states WHERE user_id = 1 GROUP BY kind;
 - 不做 `first-principles` 模式（枚举里留着，明确 400 + 文案说明）
 - 不做"按掌握度加权组卷"（需要掌握度算法先可信；等 §28 的 SRS 治理有数据再说）
 - 不做多标签组合筛选（先用单标签，够用再加）
+
+## 33. 材料题在移动端的渲染（P0，最小改动）
+
+### 33.1 现状
+
+- 服务端返回：`practice.ts:50-51` 的 `material` / `material_html`（列表与详情都带）
+- 移动端：`Question` 模型**没有这两个字段**（`lib/features/practice/domain/question.dart`），`lib` 里 0 处渲染 → **材料题在手机上只剩题干**
+- `material_html` 是 DOMPurify 清洗后的 HTML，白名单含 `img/table/sub/sup/code`（`src/lib/utils/security.ts:19-40`），所以不是纯文本
+
+### 33.2 先量
+
+```sql
+SELECT COUNT(*) AS total,
+       SUM(CASE WHEN material IS NOT NULL AND material != '' THEN 1 ELSE 0 END) AS with_material,
+       SUM(CASE WHEN material_html LIKE '%<img%' THEN 1 ELSE 0 END) AS with_img,
+       SUM(CASE WHEN material_html LIKE '%<table%' THEN 1 ELSE 0 END) AS with_table
+FROM questions;
+```
+
+结论决定渲染器：只有文字 → 纯文本/Markdown 足够；有 `<img>`/`<table>` → 需要 HTML 渲染。
+
+### 33.3 方案
+
+| # | 动作 | 判据 | 工作量 |
+| --- | --- | --- | --- |
+| M1 | `Question` 加 `material`/`materialHtml`（`fromJson` 兼容缺字段） | 单测：带材料解析成功；无材料为 null | 0.2d |
+| M2 | 练习页题干上方渲染材料卡片（可折叠，默认展开；材料长时限制高度 + 展开） | widget test：有材料显示、无材料不占位；1.3 倍字号不溢出 | 0.3d |
+| M3 | 渲染器按 33.2 结果定：纯文字 → `Text`/markdown；含 img/table → `flutter_html`（新依赖，需批准） | 含 img 的材料能显示图片；表格不塌 | 0.3d |
+
+### 33.4 不做
+
+- 不做材料题的分屏/左右对照（先保证能读）
+- 不把 `material_html` 落本地离线缓存（缓存只有题干，见 `LocalPracticeStore`；离线材料题先不支持，明确提示）
+
+## 34. AI 草稿校对流（计划）
+
+参照 MathRecall 的 `DraftStatus{captured,analyzing,ready,failed,confirmed,discarded}` + `aiProvider/aiModel/aiPromptVersion/aiRawJson/errorCode`，
+但**放服务端**（多端一致、AI key 在服务端、留痕可查）。
+
+### 34.1 数据模型
+
+```sql
+question_drafts(
+  id TEXT PRIMARY KEY, user_id INTEGER NOT NULL,
+  source TEXT NOT NULL,              -- camera | gallery | text | pdf
+  status TEXT NOT NULL,              -- captured|analyzing|ready|failed|confirmed|discarded
+  image_sha256 TEXT, image_rel_path TEXT,
+  ai_provider TEXT, ai_model TEXT, ai_prompt_version TEXT,
+  ai_raw_json TEXT, error_code TEXT,
+  created_at TEXT, expires_at INTEGER
+);
+question_draft_items(
+  draft_id TEXT NOT NULL, idx INTEGER NOT NULL,
+  content TEXT, options TEXT, answer TEXT, explanation TEXT,
+  tags TEXT, type TEXT, material_html TEXT,
+  confirmed INTEGER DEFAULT 0,
+  PRIMARY KEY (draft_id, idx)
+);
+```
+
+要点：
+- `ai_raw_json` 保存模型原始返回，便于复现与排障
+- `prompt_version` 与 provider/model 一起落库 → 出了问题能定位是哪版 prompt
+- `expires_at` + 定时清理（与 O1 的日志保留同一套 scheduler）
+
+### 34.2 接口
+
+| 方法 | 路径 | 说明 |
+| --- | --- | --- |
+| POST | `/api/drafts` | 创建草稿（可带图片，落 `image_sha256` + `rel_path`，按 sha256 去重） |
+| POST | `/api/drafts/:id/analyze` | 触发 AI 识别；写 `analyzing` → 成功 `ready` + items，失败 `failed` + `error_code` |
+| GET | `/api/drafts/:id` | 草稿 + items（供校对页） |
+| PATCH | `/api/drafts/:id/items/:idx` | 单条修改/删除（`confirmed` 由前端显式置位） |
+| POST | `/api/drafts/:id/confirm` | **事务内**把 `confirmed=1` 的 items 写成 questions，返回 `{created, skipped, conflicts}` |
+| DELETE | `/api/drafts/:id` | 丢弃（软：status=discarded） |
+
+判据：
+- `confirm` 是单事务：任一 item 失败 → 全部回滚，草稿仍 `ready`
+- 重复 `confirm` 幂等（第二次 `created=0`）
+- 识别失败可重试，`error_code` 保留上一次原因
+
+### 34.3 移动端
+
+拍照/相册（`image_picker`，新依赖）→ 上传 → 识别中（可离开页面，回来看状态）→ 校对页逐条编辑/删除 → 确认入库。
+
+判据：上传失败可重试；识别中退出再进能看到进度；校对页长文本 1.3 倍字号不溢出。
+
+工作量：服务端 2d + 移动端 2d。
+
+## 35. 移动端建题/改题（计划）
+
+### 35.1 现状
+
+- 内部 API 只有 `GET /api/questions` 与 `GET /api/questions/:id`（`questions.ts` 里没有写方法）
+- 批量建题在未合并的 PR #233（`POST /api/external/questions`，write 作用域 + externalId 幂等）
+- Web 有 `/questions/import`，无通用编辑页
+
+### 35.2 方案
+
+| # | 动作 | 判据 | 工作量 |
+| --- | --- | --- | --- |
+| Q1 | 抽 `questionService.create/update`，internal 路由复用（不复制 external 的校验逻辑） | 单测：创建/更新走同一校验 | 0.5d |
+| Q2 | `POST /api/questions`、`PATCH /api/questions/:id`（登录即可；写操作进 `admin_logs`） | 契约测试：创建后 `GET /:id` 可读到；更新后 `correct_ratio`/历史判分回刷（复用 `regradeQuestionLogs`） | 0.5d |
+| Q3 | 移动端建题/改题表单（题干/选项/答案/解析/标签/类型/材料） | widget test：必填校验、保存后返回详情、材料为空不报错 | 1d |
+
+### 35.3 不做
+
+- 不做批量导入 UI（Web 已有 `/questions/import`）
+- 不做富文本编辑器（先纯文本 + 材料 HTML 只读）
+
+## 36. 移动端整库备份与恢复（升级 §30 的 P2/P3）
+
+§30 原方案是"剪贴板只导不可重建数据"，只够保命。整库备份参照 MathRecall：
+
+### 36.1 备份包结构
+
+```
+manifest.json        # version, exportedAt, userId, counts{表:行数}, sha256(database.sqlite)
+database.sqlite      # 直接拷贝本地库文件（WAL 需先 checkpoint）
+prefs.json           # 主题/复习模式/断点
+```
+
+### 36.2 恢复方式（关键）
+
+**不替换正在使用的数据库文件**，而是在一个事务里整表复制：父表→子表顺序（`local_sessions` → `pending_answers` → `cached_questions` → `sync_meta`），失败由 SQLite 回滚。
+理由：替换文件需要关库/重启 App，且失败后无法回退。
+
+### 36.3 通道
+
+- 导出：`path_provider` 写临时文件 → `share_plus` 分享（**两个新依赖**）
+- 导入：`file_picker` 选择文件（**第三个新依赖**）→ 校验 manifest → 事务恢复
+- 判据：导出后可被系统分享；恢复前后行数一致；manifest 与库文件 sha256 不符时拒绝；恢复失败时原库不变
+
+### 36.4 与 §30 的关系
+
+§30 P1（换机前检查 + 强制同步）仍先做——它解决 90% 场景；§36 是"服务器不可用/长期离线"时的兜底。
+工作量：2d（含三个依赖引入与平台权限）。

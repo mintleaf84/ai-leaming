@@ -3,6 +3,7 @@ import { questionService } from "@/lib/services/question";
 import { authMiddleware, getCurrentUser } from "@/lib/api/middlewares/auth";
 import { parsePagination } from "@/lib/api/pagination";
 import { toErrorResponse } from "@/lib/api/error-response";
+import logger from "@/lib/logger";
 
 const app = new OpenAPIHono();
 
@@ -238,6 +239,7 @@ app.openapi(createQuestionRoute, async (c) => {
       result.created ? 201 : 200,
     );
   } catch (error) {
+    logger.error({ err: error }, "[Questions] questions.create 失败");
     return toErrorResponse(c, error, { scope: "questions.create" });
   }
 });
@@ -334,6 +336,7 @@ app.openapi(updateQuestionRoute, async (c) => {
       200,
     );
   } catch (error) {
+    logger.error({ err: error }, "[Questions] questions.update 失败");
     return toErrorResponse(c, error, { scope: "questions.update" });
   }
 });

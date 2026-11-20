@@ -368,15 +368,21 @@ function classifyError(error: unknown): string {
   return "ai_failed";
 }
 
+/** 取 URL 的 host；解析失败返回 null（调用方决定降级值）。 */
+function _hostOf(baseURL: string): string | null {
+  try {
+    return new URL(baseURL).host;
+  } catch (error) {
+    logger.debug({ err: error, baseURL }, "[DraftService] baseURL 非绝对地址，provider 退化");
+    return null;
+  }
+}
+
 async function describeAiModel(): Promise<{ provider: string; model: string }> {
   try {
     const config = await getAiConfig("economy");
-    let provider = "openai-compatible";
-    try {
-      provider = new URL(config.baseURL).host;
-    } catch {
-      // audit-allow: baseURL 可能是相对路径，provider 退化为固定字符串即可
-    }
+    // baseURL 可能是相对路径，取不到 host 就退化为固定字符串（可接受降级）
+    const provider = _hostOf(config.baseURL) ?? "openai-compatible";
     return { provider, model: config.modelName };
   } catch (error) {
     // audit-allow: 配置读取失败不影响主流程（真正的 AI 调用会给出更准确的错误）

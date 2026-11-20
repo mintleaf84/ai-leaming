@@ -1,6 +1,7 @@
 import { OpenAPIHono, createRoute, z } from "@hono/zod-openapi";
 import { authMiddleware, getCurrentUser } from "@/lib/api/middlewares/auth";
 import { toErrorResponse } from "@/lib/api/error-response";
+import logger from "@/lib/logger";
 import {
   draftService,
   type DraftItemPatch,
@@ -112,6 +113,7 @@ app.openapi(listDraftsRoute, async (c) => {
     const items = await draftService.list(user.id, { status });
     return c.json({ items }, 200);
   } catch (error) {
+    logger.error({ err: error }, "[Drafts] drafts.list 失败");
     return toErrorResponse(c, error, { scope: "drafts.list" });
   }
 });
@@ -158,6 +160,7 @@ app.openapi(createDraftRoute, async (c) => {
     const result = await draftService.create(user.id, body);
     return c.json(result, 201);
   } catch (error) {
+    logger.error({ err: error }, "[Drafts] drafts.create 失败");
     return toErrorResponse(c, error, { scope: "drafts.create" });
   }
 });
@@ -194,6 +197,7 @@ app.openapi(analyzeDraftRoute, async (c) => {
     const result = await draftService.analyze(user.id, id);
     return c.json(result, 200);
   } catch (error) {
+    logger.error({ err: error }, "[Drafts] drafts.analyze 失败");
     return toErrorResponse(c, error, { scope: "drafts.analyze" });
   }
 });
@@ -223,6 +227,7 @@ app.openapi(getDraftRoute, async (c) => {
     const result = await draftService.get(user.id, id);
     return c.json(result, 200);
   } catch (error) {
+    logger.error({ err: error }, "[Drafts] drafts.get 失败");
     return toErrorResponse(c, error, { scope: "drafts.get" });
   }
 });
@@ -285,6 +290,7 @@ app.openapi(patchItemRoute, async (c) => {
     const result = await draftService.updateItem(user.id, id, itemIdx, body);
     return c.json(result, 200);
   } catch (error) {
+    logger.error({ err: error }, "[Drafts] drafts.update-item 失败");
     return toErrorResponse(c, error, { scope: "drafts.update-item" });
   }
 });
@@ -329,6 +335,7 @@ app.openapi(confirmDraftRoute, async (c) => {
     });
     return c.json(result, 200);
   } catch (error) {
+    logger.error({ err: error }, "[Drafts] drafts.confirm 失败");
     return toErrorResponse(c, error, { scope: "drafts.confirm" });
   }
 });
@@ -365,6 +372,7 @@ app.openapi(discardDraftRoute, async (c) => {
     const result = await draftService.discard(user.id, id);
     return c.json(result, 200);
   } catch (error) {
+    logger.error({ err: error }, "[Drafts] drafts.discard 失败");
     return toErrorResponse(c, error, { scope: "drafts.discard" });
   }
 });

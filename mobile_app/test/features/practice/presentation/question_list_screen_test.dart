@@ -101,6 +101,52 @@ void main() {
     expect(find.textContaining('加载失败'), findsNothing);
     expect(find.byType(CircularProgressIndicator), findsNothing);
     expect(repository.listCalls, 1);
+    expect(
+      find.text('这里还没有题目'),
+      findsOneWidget,
+      reason: '列表空着不写字就是一片白，用户分不清「没有题」和「还没加载完」',
+    );
+    expect(find.text('清空搜索'), findsNothing, reason: '没有搜索词时不该出现「清空搜索」');
+  });
+
+  testWidgets('搜索没有结果：给空态与「清空搜索」，点了回到全部题目', (tester) async {
+    final all = <Question>[question(1), question(2)];
+    final repository = FakeQbankRepository(
+      responder: (request) => request.search == null
+          ? (items: all, total: all.length)
+          : (items: const <Question>[], total: 0),
+    );
+
+    await pumpList(tester, repository);
+    await settle(tester);
+
+    await tester.enterText(find.byType(TextField), '不存在的词');
+    await tester.testTextInput.receiveAction(TextInputAction.done);
+    await settle(tester);
+
+    expect(repository.requests.last.search, '不存在的词');
+    expect(
+      find.text('没有找到相关题目'),
+      findsOneWidget,
+      reason: '搜索无结果必须说清是「没搜到」，而不是当成题库为空',
+    );
+    expect(find.text('这里还没有题目'), findsNothing);
+
+    await tester.tap(find.text('清空搜索'));
+    await settle(tester);
+
+    expect(
+      repository.requests.last.search,
+      isNull,
+      reason: '清空搜索要真的按「不带关键词」重新检索，而不是只改文案',
+    );
+    expect(
+      tester.widget<TextField>(find.byType(TextField)).controller?.text,
+      isEmpty,
+      reason: '输入框也得清空，否则框里还是旧词、列表却是全部',
+    );
+    expect(find.textContaining('第 1 题'), findsOneWidget);
+    expect(find.text('没有找到相关题目'), findsNothing);
   });
 
   testWidgets('加载失败可重试，重试真的再发一次请求', (tester) async {

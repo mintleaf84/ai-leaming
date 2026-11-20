@@ -5,6 +5,7 @@ import '../../../core/navigation/app_nav.dart';
 import '../domain/question.dart';
 import 'questions_provider.dart';
 import '../../../shared/skeletons/skeleton_fakes.dart';
+import '../../../shared/widgets/empty_state.dart';
 import 'package:skeletonizer/skeletonizer.dart';
 import '../../../core/theme/app_icons.dart';
 import '../../../core/theme/app_colors.dart';
@@ -18,6 +19,9 @@ class QuestionListScreen extends ConsumerStatefulWidget {
 
 class _QuestionListScreenState extends ConsumerState<QuestionListScreen> {
   final ScrollController _scrollController = ScrollController();
+  /// 搜索框的输入：空态里的「清空搜索」要同时清掉输入框与查询词，
+  /// 否则框里还留着旧词、列表却是全部的，看起来像没生效。
+  final TextEditingController _searchController = TextEditingController();
 
   @override
   void initState() {
@@ -28,6 +32,7 @@ class _QuestionListScreenState extends ConsumerState<QuestionListScreen> {
   @override
   void dispose() {
     _scrollController.dispose();
+    _searchController.dispose();
     super.dispose();
   }
 
@@ -88,6 +93,7 @@ class _QuestionListScreenState extends ConsumerState<QuestionListScreen> {
                   borderRadius: BorderRadius.circular(8.r),
                 ),
                 child: TextField(
+                  controller: _searchController,
                   decoration: InputDecoration(
                     hintText: '搜索题目内容或标签...',
                     hintStyle: TextStyle(
@@ -147,6 +153,8 @@ class _QuestionListScreenState extends ConsumerState<QuestionListScreen> {
                           ],
                         ),
                       )
+                    : questionsState.items.isEmpty
+                    ? _buildEmptyState(questionsState.search)
                     : ListView.separated(
                         controller: _scrollController,
                         padding: EdgeInsets.symmetric(
@@ -290,6 +298,37 @@ class _QuestionListScreenState extends ConsumerState<QuestionListScreen> {
         ),
       ),
     );
+  }
+
+  /// 空列表：区分「没有搜到」与「题库本身没有题」。
+  ///
+  /// 之前这里直接渲染一个空的 `ListView`，整片空白，用户既不知道是没有匹配
+  /// 还是加载失败。现在给出文案；有搜索词时再给「清空搜索」一键回到全部。
+  Widget _buildEmptyState(String search) {
+    final hasSearch = search.isNotEmpty;
+
+    return LayoutBuilder(
+      builder: (context, constraints) => SingleChildScrollView(
+        // 空态也要能下拉刷新：列表空了正是最需要重新拉一次的时候。
+        physics: const AlwaysScrollableScrollPhysics(),
+        child: ConstrainedBox(
+          constraints: BoxConstraints(minHeight: constraints.maxHeight),
+          child: EmptyState(
+            icon: '📚',
+            title: hasSearch ? '没有找到相关题目' : '这里还没有题目',
+            subtitle: hasSearch ? '换个关键词试试，或清空搜索查看全部' : '题库暂时没有内容，稍后再来看看',
+            actionLabel: hasSearch ? '清空搜索' : null,
+            onAction: hasSearch ? _clearSearch : null,
+          ),
+        ),
+      ),
+    );
+  }
+
+  /// 清空搜索词：输入框与查询状态一起复位，再从第 1 页重新拉全部题目。
+  void _clearSearch() {
+    _searchController.clear();
+    ref.read(questionsControllerProvider.notifier).applySearch('');
   }
 
   /// 列表骨架：3 张假题卡片复刻真实版式，再由 Skeletonizer 抹成骨块。

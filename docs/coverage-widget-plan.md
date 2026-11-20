@@ -215,13 +215,14 @@ flutter test --coverage && dart run tool/coverage_gate.dart
 
 **B5（profile / settings / chat 剩余分支）不再需要**：目标（screens 70%+、global 76%+）已超额完成（81.9% / 83.8%）。剩余未覆盖主要是 `profile_screen`(178 行)、`settings_screen`(144)、`textbook_detail` 的深层分支以及既有 legacy 屏，边际收益低于维护成本。
 
-## 6.7 期间发现但未修的 lib 缺陷
+## 6.7 期间发现的 lib 缺陷（已在后续 PR 修复）
 
-1. `first_principles_panel.dart` 读 `response.coreEssence/fundamentalComponents/reconstructedUnderstanding`，而模型只有 `analysis`/`cached` → **AI 分析返回即 `NoSuchMethodError`**（用户可见崩溃）。B0 用"缺陷锁定"用例守着，修模型后必须改成断言正文。
-2. `first_principles_panel` 无失败态（不读 `state.error`），且 375×667×1.3 字号下头部 Row 溢出 6.9px。
-3. `question_list_screen` 无空态：搜索无结果是整片空白。
-4. `login_screen` 失败只 `debugPrint`，界面无可读错误提示（B1 留了一条 skip 的 TODO 用例）。
-5. `KnowledgeController` 在异步路径用 `ref.watch(dioProvider)`（应为 `ref.read`）。
+1. ✅ **`first_principles_panel.dart` 读不存在的三个字段**（`coreEssence`/`fundamentalComponents`/`reconstructedUnderstanding`），模型只有 `analysis`/`cached` → AI 返回即 `NoSuchMethodError`。已改为按真实契约渲染 `analysis`（`【…】` 小标题 + 正文 + 「已缓存」标签）。
+2. ✅ 该面板无失败态、375×667×1.3 字号下头部 Row 溢出 → 新增专用 `firstPrinciplesError` + 重试；头部 `Expanded` + 正文可滚动，并补回溢出用例。
+3. ✅ `question_list_screen` 无空态 → 区分「这里还没有题目」/「没有找到相关题目」，后者给「清空搜索」并真实重检索。
+4. ✅ **注册页**无空值校验（登录页有）→ 同口径拦截 + SnackBar；B1 的 `skip` 用例拆成两条真断言。
+   注：B1 原报告写的是"登录页失败只 `debugPrint`"，**核实为误判**——登录页本就有 `SnackBar` 且 401 有专门文案。
+5. ✅ `KnowledgeController` 等 6 个 provider 的 `_apiClient` getter 用 `ref.watch(dioProvider)`（异步路径应为 `read`）→ 全部改 `read`；knowledge 有专属回归用例（换后端地址不得重建列表）。
 
 ## 7. 排期与风险
 

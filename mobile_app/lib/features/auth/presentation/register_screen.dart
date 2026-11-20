@@ -116,13 +116,36 @@ class RegisterScreen extends HookConsumerWidget {
                             onPressed: authState.isLoading
                                 ? null
                                 : () {
+                                    // 与登录页同一口径：空凭据在界面拦下，
+                                    // 不把空用户名/空密码发给服务端。
+                                    final username = usernameController.text
+                                        .trim();
+                                    final password = passwordController.text
+                                        .trim();
+
+                                    if (username.isEmpty) {
+                                      ScaffoldMessenger.of(
+                                        context,
+                                      ).showSnackBar(
+                                        const SnackBar(
+                                          content: Text('请输入用户名'),
+                                        ),
+                                      );
+                                      return;
+                                    }
+                                    if (password.isEmpty) {
+                                      ScaffoldMessenger.of(
+                                        context,
+                                      ).showSnackBar(
+                                        const SnackBar(content: Text('请输入密码')),
+                                      );
+                                      return;
+                                    }
+
                                     // Start registration
                                     ref
                                         .read(authControllerProvider.notifier)
-                                        .register(
-                                          usernameController.text,
-                                          passwordController.text,
-                                        );
+                                        .register(username, password);
                                   },
                             style: FilledButton.styleFrom(
                               backgroundColor: context.colors.primary,

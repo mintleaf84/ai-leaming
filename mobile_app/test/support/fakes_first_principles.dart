@@ -28,11 +28,15 @@ class FakePracticeController extends PracticeController {
 ///
 /// [responses] 的键是 questionId：面板按 `state.firstPrinciples[questionId]`
 /// 取自己的那一份，取不到才落空态——所以这里必须能指定「别的题有、这题没有」。
+///
+/// [firstPrinciplesError] 是**面板专用**的失败原因；[error] 是整场练习共享的
+/// 粗粒度错误（创建会话失败之类），面板不该拿它当自己的失败态。
 List<Object> fakeFirstPrinciples({
   bool isAnalyzing = false,
   Map<String, FirstPrinciplesResponse> responses =
       const <String, FirstPrinciplesResponse>{},
   String? error,
+  String? firstPrinciplesError,
 }) {
   return <Object>[
     practiceControllerProvider.overrideWith(
@@ -41,6 +45,7 @@ List<Object> fakeFirstPrinciples({
           firstPrinciples: responses,
           isAnalyzingFirstPrinciples: isAnalyzing,
           error: error,
+          firstPrinciplesError: firstPrinciplesError,
         ),
       ),
     ),

@@ -141,21 +141,41 @@ void main() {
     expectLocation(router, AppRoutes.login);
   });
 
-  testWidgets(
-    '空用户名/空密码应在界面上拦截，而不是直接发请求',
-    (WidgetTester tester) async {
-      // TODO(B1): 待修——注册页**没有**空值校验（登录页有）。
-      // `onPressed` 直接把 `text` 原样交给 `register()`，空凭据会打到服务端，
-      // 用户看到的是服务端错误码而不是「请输入用户名」。lib 不放本批次改，
-      // 修好后把这条 skip 换成真断言（`registerCalls == 0`）。
-      final router = await pumpRegister(tester);
+  testWidgets('空用户名：界面拦截并提示，不把空凭据发给服务端', (WidgetTester tester) async {
+    final router = await pumpRegister(tester);
 
-      await tester.tap(submitButton());
-      await flush(tester);
+    await tester.tap(submitButton());
+    await flush(tester);
 
-      expect(repository.registerCalls, 0);
-      expectLocation(router, AppRoutes.register);
-    },
-    skip: true,
-  );
+    expect(repository.registerCalls, 0);
+    // 输入框的 hint 也叫「请输入用户名」，必须只认 SnackBar 里的那一句。
+    expect(
+      find.descendant(
+        of: find.byType(SnackBar),
+        matching: find.text('请输入用户名'),
+      ),
+      findsOneWidget,
+    );
+    expectLocation(router, AppRoutes.register);
+    expect(find.byType(RegisterScreen), findsOneWidget);
+  });
+
+  testWidgets('空密码：界面拦截并提示，不发请求', (WidgetTester tester) async {
+    final router = await pumpRegister(tester);
+
+    await tester.enterText(find.byType(TextField).at(0), 'newbie');
+    await tester.pump();
+    await tester.tap(submitButton());
+    await flush(tester);
+
+    expect(repository.registerCalls, 0, reason: '空密码也不该打服务端');
+    expect(
+      find.descendant(
+        of: find.byType(SnackBar),
+        matching: find.text('请输入密码'),
+      ),
+      findsOneWidget,
+    );
+    expectLocation(router, AppRoutes.register);
+  });
 }

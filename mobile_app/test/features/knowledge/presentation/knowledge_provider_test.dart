@@ -248,6 +248,36 @@ void main() {
     });
   });
 
+  group('依赖读取方式', () {
+    test('后端地址变化不会把已加载的列表重建回空态（控制器方法里只能 read）', () async {
+      // `ref.watch` 在控制器方法里用等于把「换了后端地址」注册成对这个控制器的
+      // 重建依赖：Dio 一变，控制器 build 重跑、state 回到初始空列表，
+      // 方法里随后落地的结果也写不回去。这里用 invalidate(dioProvider) 模拟
+      // 地址切换，断言列表还在。
+      adapter.responseBody = listJson([1, 2]);
+      final container = ProviderContainer(
+        retry: (_, _) => null,
+        overrides: [dioProvider.overrideWith((ref) => makeDio())],
+      );
+      addTearDown(container.dispose);
+
+      final notifier = container.read(knowledgeControllerProvider.notifier);
+      await notifier.loadCards();
+      expect(container.read(knowledgeControllerProvider).cards, hasLength(2));
+
+      container.invalidate(dioProvider);
+      await pumpEventQueue();
+
+      final state = container.read(knowledgeControllerProvider);
+      expect(
+        state.cards,
+        hasLength(2),
+        reason: '换后端地址不该让已经上屏的卡片闪回空白',
+      );
+      expect(state.error, isNull);
+    });
+  });
+
   group('竞态（请求序号防护）', () {
     test('后发请求胜出，先发的慢请求结果被丢弃', () async {
       final slowGate = Completer<void>();

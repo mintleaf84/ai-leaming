@@ -158,7 +158,8 @@ export const TEST_SCHEMA_SQL = `
         ai_raw_json TEXT,
         error_code TEXT,
         created_at TEXT DEFAULT CURRENT_TIMESTAMP,
-        expires_at INTEGER
+        expires_at INTEGER,
+        analyze_token TEXT
     );
 
     CREATE TABLE IF NOT EXISTS question_draft_items (

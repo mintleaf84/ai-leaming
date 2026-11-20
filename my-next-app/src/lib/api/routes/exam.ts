@@ -59,15 +59,24 @@ const PaperSummarySchema = z.object({
   lastAttemptAt: z.string().nullable(),
 });
 
-const AttemptSummarySchema = z.object({
+/** 试卷详情里的"最近一次已交卷作答"（冻结决定 10）：固定三字段 */
+const LastAttemptSchema = z.object({
   sessionId: z.string(),
-  paperId: z.number().nullable(),
-  deadlineAt: z.string().nullable(),
-  submittedAt: z.string().nullable(),
-  score: z.number().nullable(),
-  correctCount: z.number(),
-  totalQuestions: z.number(),
-  createdAt: z.string().nullable(),
+  /** 0–1 小数（冻结决定 7） */
+  score: z.number(),
+  submittedAt: z.string(),
+});
+
+/**
+ * 试卷详情 DTO：`GET /papers/{id}` 与 `POST /papers/generate` **完全同形**
+ * （冻结决定 8，自动组卷后客户端直接跳详情，不再解一层 rules 包装）。
+ */
+const PaperDetailSchema = z.object({
+  paper: PaperSummarySchema,
+  items: z.array(
+    z.object({ position: z.number(), question: QuestionPreviewSchema }),
+  ),
+  lastAttempt: LastAttemptSchema.nullable(),
 });
 
 const PerQuestionSchema = z.object({
@@ -261,17 +270,10 @@ const generatePaperRoute = createRoute({
   },
   responses: {
     200: {
-      description: "自动组卷完成（落成一张 source=auto 的普通试卷）",
+      description:
+        "自动组卷完成（source=auto 的普通试卷；响应与 GET /papers/{id} 完全同形）",
       content: {
-        "application/json": {
-          schema: z.object({
-            paper: PaperSummarySchema,
-            rules: GeneratePaperSchema,
-            items: z.array(
-              z.object({ position: z.number(), questionId: z.number() }),
-            ),
-          }),
-        },
+        "application/json": { schema: PaperDetailSchema },
       },
     },
     400: {
@@ -307,15 +309,7 @@ const getPaperRoute = createRoute({
       description:
         "试卷详情（预览：不含 answer/explanation）与最近一次作答",
       content: {
-        "application/json": {
-          schema: z.object({
-            paper: PaperSummarySchema,
-            items: z.array(
-              z.object({ position: z.number(), question: QuestionPreviewSchema }),
-            ),
-            lastAttempt: AttemptSummarySchema.nullable(),
-          }),
-        },
+        "application/json": { schema: PaperDetailSchema },
       },
     },
     404: {
@@ -487,17 +481,13 @@ const getAttemptRoute = createRoute({
             deadlineAt: z.string().nullable(),
             submittedAt: z.string().nullable(),
             questions: z.array(QuestionPayloadSchema),
-            answers: z
-              .array(
-                z.object({
-                  questionId: z.number(),
-                  userAnswer: z.string(),
-                  isCorrect: z.boolean(),
-                  status: z.string(),
-                  durationMs: z.number(),
-                }),
-              )
-              .optional(),
+            // 冻结决定 9：固定两字段；未作答的题不出现；作答态为空数组
+            answers: z.array(
+              z.object({
+                questionId: z.number(),
+                userAnswer: z.string(),
+              }),
+            ),
             result: SubmitResultSchema.optional(),
           }),
         },

@@ -2967,29 +2967,14 @@
                     "answers": {
                       "items": {
                         "properties": {
-                          "durationMs": {
-                            "type": "number"
-                          },
-                          "isCorrect": {
-                            "type": "boolean"
-                          },
                           "questionId": {
                             "type": "number"
-                          },
-                          "status": {
-                            "type": "string"
                           },
                           "userAnswer": {
                             "type": "string"
                           }
                         },
-                        "required": [
-                          "questionId",
-                          "userAnswer",
-                          "isCorrect",
-                          "status",
-                          "durationMs"
-                        ],
+                        "required": ["questionId", "userAnswer"],
                         "type": "object"
                       },
                       "type": "array"
@@ -3191,7 +3176,8 @@
                     "paper",
                     "deadlineAt",
                     "submittedAt",
-                    "questions"
+                    "questions",
+                    "answers"
                   ],
                   "type": "object"
                 }
@@ -3697,14 +3683,71 @@
                           "position": {
                             "type": "number"
                           },
-                          "questionId": {
-                            "type": "number"
+                          "question": {
+                            "properties": {
+                              "content": {
+                                "type": "string"
+                              },
+                              "dimension": {
+                                "nullable": true,
+                                "type": "string"
+                              },
+                              "id": {
+                                "type": "number"
+                              },
+                              "material": {
+                                "nullable": true,
+                                "type": "string"
+                              },
+                              "options": {
+                                "items": {
+                                  "type": "string"
+                                },
+                                "type": "array"
+                              },
+                              "tags": {
+                                "items": {
+                                  "type": "string"
+                                },
+                                "type": "array"
+                              },
+                              "type": {
+                                "nullable": true,
+                                "type": "string"
+                              }
+                            },
+                            "required": [
+                              "id",
+                              "content",
+                              "options",
+                              "tags",
+                              "dimension",
+                              "type",
+                              "material"
+                            ],
+                            "type": "object"
                           }
                         },
-                        "required": ["position", "questionId"],
+                        "required": ["position", "question"],
                         "type": "object"
                       },
                       "type": "array"
+                    },
+                    "lastAttempt": {
+                      "nullable": true,
+                      "properties": {
+                        "score": {
+                          "type": "number"
+                        },
+                        "sessionId": {
+                          "type": "string"
+                        },
+                        "submittedAt": {
+                          "type": "string"
+                        }
+                      },
+                      "required": ["sessionId", "score", "submittedAt"],
+                      "type": "object"
                     },
                     "paper": {
                       "properties": {
@@ -3768,100 +3811,14 @@
                         "lastAttemptAt"
                       ],
                       "type": "object"
-                    },
-                    "rules": {
-                      "properties": {
-                        "count": {
-                          "maximum": 300,
-                          "minimum": 1,
-                          "type": "integer"
-                        },
-                        "dimensions": {
-                          "items": {
-                            "enum": [
-                              "knowledge",
-                              "understanding",
-                              "application"
-                            ],
-                            "type": "string"
-                          },
-                          "maxItems": 3,
-                          "type": "array"
-                        },
-                        "durationMinutes": {
-                          "maximum": 600,
-                          "minimum": 1,
-                          "nullable": true,
-                          "type": "integer"
-                        },
-                        "excludeRecentDays": {
-                          "maximum": 365,
-                          "minimum": 0,
-                          "type": "integer"
-                        },
-                        "kind": {
-                          "default": "fixed",
-                          "enum": ["fixed", "timed"],
-                          "type": "string"
-                        },
-                        "tags": {
-                          "items": {
-                            "maxLength": 50,
-                            "minLength": 1,
-                            "type": "string"
-                          },
-                          "maxItems": 30,
-                          "type": "array"
-                        },
-                        "title": {
-                          "maxLength": 200,
-                          "minLength": 1,
-                          "type": "string"
-                        },
-                        "types": {
-                          "items": {
-                            "enum": [
-                              "single",
-                              "multi",
-                              "truefalse",
-                              "fill_blank"
-                            ],
-                            "type": "string"
-                          },
-                          "maxItems": 4,
-                          "type": "array"
-                        },
-                        "weights": {
-                          "properties": {
-                            "fresh": {
-                              "maximum": 1,
-                              "minimum": 0,
-                              "type": "number"
-                            },
-                            "weak": {
-                              "maximum": 1,
-                              "minimum": 0,
-                              "type": "number"
-                            },
-                            "wrong": {
-                              "maximum": 1,
-                              "minimum": 0,
-                              "type": "number"
-                            }
-                          },
-                          "type": "object"
-                        }
-                      },
-                      "required": ["title", "count"],
-                      "type": "object"
                     }
                   },
-                  "required": ["paper", "rules", "items"],
+                  "required": ["paper", "items", "lastAttempt"],
                   "type": "object"
                 }
               }
             },
-            "description": "自动组卷完成（落成一张 source=auto 的普通试卷）"
+            "description": "自动组卷完成（source=auto 的普通试卷；响应与 GET /papers/{id} 完全同形）"
           },
           "400": {
             "description": "参数不合法 / 候选不足（body 含 requested、available、shortfall）"
@@ -3986,46 +3943,17 @@
                     "lastAttempt": {
                       "nullable": true,
                       "properties": {
-                        "correctCount": {
-                          "type": "number"
-                        },
-                        "createdAt": {
-                          "nullable": true,
-                          "type": "string"
-                        },
-                        "deadlineAt": {
-                          "nullable": true,
-                          "type": "string"
-                        },
-                        "paperId": {
-                          "nullable": true,
-                          "type": "number"
-                        },
                         "score": {
-                          "nullable": true,
                           "type": "number"
                         },
                         "sessionId": {
                           "type": "string"
                         },
                         "submittedAt": {
-                          "nullable": true,
                           "type": "string"
-                        },
-                        "totalQuestions": {
-                          "type": "number"
                         }
                       },
-                      "required": [
-                        "sessionId",
-                        "paperId",
-                        "deadlineAt",
-                        "submittedAt",
-                        "score",
-                        "correctCount",
-                        "totalQuestions",
-                        "createdAt"
-                      ],
+                      "required": ["sessionId", "score", "submittedAt"],
                       "type": "object"
                     },
                     "paper": {

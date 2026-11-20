@@ -35,6 +35,7 @@ import {
   eq,
   gt,
   inArray,
+  isNotNull,
   lt,
   notInArray,
   or,
@@ -183,15 +184,17 @@ export type ExamQuestionPreview = Omit<
   "answer" | "explanation"
 >;
 
-export interface ExamAttemptSummary {
+/**
+ * 试卷详情里的"最近一次**已交卷**作答"（冻结决定 10）。
+ *
+ * 只有三个字段：`sessionId` / `score`(0–1 小数) / `submittedAt`。
+ * 未交卷的 attempt 没有成绩，也就不构成"最近一次作答"（否则 score 只能编造）。
+ */
+export interface ExamLastAttempt {
   sessionId: string;
-  paperId: number | null;
-  deadlineAt: string | null;
-  submittedAt: string | null;
-  score: number | null;
-  correctCount: number;
-  totalQuestions: number;
-  createdAt: string | null;
+  /** `correct/total`，0–1 小数（冻结决定 7：全链路不混百分制） */
+  score: number;
+  submittedAt: string;
 }
 
 export interface CreatePaperInput {
@@ -249,14 +252,11 @@ export interface ExamAttemptDetail {
   deadlineAt: string | null;
   submittedAt: string | null;
   questions: ExamQuestionPayload[];
-  /** 已交卷时才有：本次作答的每条日志（含未作答的 skipped） */
-  answers?: Array<{
-    questionId: number;
-    userAnswer: string;
-    isCorrect: boolean;
-    status: string;
-    durationMs: number;
-  }>;
+  /**
+   * 固定的两字段形状（冻结决定 9）：`{questionId, userAnswer}`；
+   * **未作答（skipped）的题不出现**。作答态为空数组。
+   */
+  answers: Array<{ questionId: number; userAnswer: string }>;
   /** 已交卷时才有：与 POST /submit 同一形状（duplicate 恒为 false） */
   result?: ExamSubmitResult;
 }
@@ -432,12 +432,76 @@ async function loadPaperQuestions(
   return rows.map((r) => mapQuestion(r.question));
 }
 
+export interface PaperDetail {
+  paper: ExamPaperSummary;
+  items: Array<{ position: number; question: ExamQuestionPreview }>;
+  lastAttempt: ExamLastAttempt | null;
+}
+
+/**
+ * 试卷详情（GET /papers/{id} 与 POST /papers/generate 共用，冻结决定 8：
+ * 自动组卷的响应必须与详情**完全同形**，客户端拿到直接跳详情页）。
+ *
+ * 不存在或不属于当前用户 → 404；`lastAttempt` 只取**已交卷**的最近一次。
+ */
+async function loadPaperDetail(
+  userId: number,
+  paperId: number,
+): Promise<PaperDetail> {
+  const row = await loadPaperRow(userId, paperId);
+  if (!row) throw new ExamPaperNotFoundError(paperId);
+
+  const items = await drizzleDb
+    .select({ position: exam_paper_items.position, question: questions })
+    .from(exam_paper_items)
+    .innerJoin(questions, eq(questions.id, exam_paper_items.question_id))
+    .where(eq(exam_paper_items.paper_id, paperId))
+    .orderBy(asc(exam_paper_items.position));
+
+  const [last] = await drizzleDb
+    .select({
+      id: practice_sessions.id,
+      score: practice_sessions.exam_score,
+      submittedAt: practice_sessions.exam_submitted_at,
+    })
+    .from(practice_sessions)
+    .where(
+      and(
+        eq(practice_sessions.user_id, userId),
+        eq(practice_sessions.paper_id, paperId),
+        isNotNull(practice_sessions.exam_submitted_at),
+      ),
+    )
+    .orderBy(desc(practice_sessions.created_at), desc(sql`rowid`))
+    .limit(1);
+
+  return {
+    paper: toPaperSummary(row, await attemptStats(userId, paperId)),
+    items: items.map((item) => ({
+      position: item.position,
+      question: toQuestionPreview(mapQuestion(item.question)),
+    })),
+    // 冻结决定 10：固定三字段；未交卷的 attempt 没有成绩，不进入 lastAttempt
+    lastAttempt:
+      last && last.submittedAt
+        ? {
+            sessionId: last.id,
+            score: Number(last.score ?? 0),
+            submittedAt: last.submittedAt,
+          }
+        : null,
+  };
+}
+
 async function attemptStats(userId: number, paperId: number) {
   const [row] = await drizzleDb
     .select({
       attemptCount: sql<number>`count(*)`,
       bestScore: sql<number | null>`max(${practice_sessions.exam_score})`,
-      lastAttemptAt: sql<string | null>`max(${practice_sessions.created_at})`,
+      // 只统计已交卷的：未交卷没有成绩，"最近成绩/最近作答"不该指向它
+      lastAttemptAt: sql<string | null>`max(CASE
+          WHEN ${practice_sessions.exam_submitted_at} IS NOT NULL
+          THEN ${practice_sessions.created_at} END)`,
     })
     .from(practice_sessions)
     .where(
@@ -455,6 +519,7 @@ async function attemptStats(userId: number, paperId: number) {
       and(
         eq(practice_sessions.user_id, userId),
         eq(practice_sessions.paper_id, paperId),
+        isNotNull(practice_sessions.exam_submitted_at),
       ),
     )
     .orderBy(desc(practice_sessions.created_at), desc(sql`rowid`))
@@ -585,6 +650,7 @@ export const examService = {
           SELECT ps2.exam_score FROM practice_sessions ps2
           WHERE ps2.paper_id = ${practice_sessions.paper_id}
             AND ps2.user_id = ${userId}
+            AND ps2.exam_submitted_at IS NOT NULL
           ORDER BY ps2.created_at DESC, ps2.rowid DESC
           LIMIT 1
         )`,
@@ -712,57 +778,9 @@ export const examService = {
     };
   },
 
-  /**
-   * 试卷详情（§2 GET /papers/{id}）：预览用，**不返回 answer / explanation**。
-   *
-   * 冻结决定：答案只在服务端参与判分；预览页不需要，也不该有"看起来可读"的字段。
-   */
-  async getPaper(userId: number, paperId: number): Promise<{
-    paper: ExamPaperSummary;
-    items: Array<{ position: number; question: ExamQuestionPreview }>;
-    lastAttempt: ExamAttemptSummary | null;
-  }> {
-    const row = await loadPaperRow(userId, paperId);
-    if (!row) throw new ExamPaperNotFoundError(paperId);
-
-    const items = await drizzleDb
-      .select({ position: exam_paper_items.position, question: questions })
-      .from(exam_paper_items)
-      .innerJoin(questions, eq(questions.id, exam_paper_items.question_id))
-      .where(eq(exam_paper_items.paper_id, paperId))
-      .orderBy(asc(exam_paper_items.position));
-
-    const [last] = await drizzleDb
-      .select()
-      .from(practice_sessions)
-      .where(
-        and(
-          eq(practice_sessions.user_id, userId),
-          eq(practice_sessions.paper_id, paperId),
-        ),
-      )
-      .orderBy(desc(practice_sessions.created_at))
-      .limit(1);
-
-    return {
-      paper: toPaperSummary(row, await attemptStats(userId, paperId)),
-      items: items.map((item) => ({
-        position: item.position,
-        question: toQuestionPreview(mapQuestion(item.question)),
-      })),
-      lastAttempt: last
-        ? {
-            sessionId: last.id,
-            paperId: last.paper_id ?? null,
-            deadlineAt: last.deadline_at ?? null,
-            submittedAt: last.exam_submitted_at ?? null,
-            score: last.exam_score ?? null,
-            correctCount: last.correct_count ?? 0,
-            totalQuestions: last.total_questions ?? 0,
-            createdAt: last.created_at ?? null,
-          }
-        : null,
-    };
+  /** 试卷详情（§2 GET /papers/{id}）：预览用，**不返回 answer / explanation** */
+  async getPaper(userId: number, paperId: number): Promise<PaperDetail> {
+    return loadPaperDetail(userId, paperId);
   },
 
   /** 修改试卷元信息（§2 PATCH：不含题目编辑，MVP） */
@@ -838,11 +856,7 @@ export const examService = {
   async generatePaper(
     userId: number,
     rules: GeneratePaperRules,
-  ): Promise<{
-    paper: ExamPaperSummary;
-    rules: GeneratePaperRules & { weights: { wrong: number; weak: number; fresh: number } };
-    items: Array<{ position: number; questionId: number }>;
-  }> {
+  ): Promise<PaperDetail> {
     const title = (rules.title ?? "").trim();
     if (!title) {
       throw new ValidationError("title 不能为空", {
@@ -1015,21 +1029,9 @@ export const examService = {
       return inserted.id;
     });
 
-    const row = await loadPaperRow(userId, paperId);
-    if (!row) throw new ExamPaperNotFoundError(paperId);
-
-    return {
-      paper: toPaperSummary(row, {
-        attemptCount: 0,
-        bestScore: null,
-        lastAttemptAt: null,
-      }),
-      rules: rulesSnapshot,
-      items: questionIds.map((questionId, index) => ({
-        position: index + 1,
-        questionId,
-      })),
-    };
+    // 冻结决定 8：与 GET /papers/{id} 完全同形（{paper, items, lastAttempt}），
+    // 不额外包 rules —— 规则快照仍落库（exam_papers.rules_json），只是不进响应
+    return loadPaperDetail(userId, paperId);
   },
 
   /** 开始作答（§2 POST /papers/{id}/attempts）：建 exam 会话，返回题目（答案置空） */
@@ -1303,6 +1305,7 @@ export const examService = {
       submittedAt: session.exam_submitted_at ?? null,
       // 未交卷：answer / explanation 一律置空（防作弊，§2）
       questions: paperQuestions.map((q) => toQuestionPayload(q, !submitted)),
+      answers: [],
     };
 
     if (!submitted) return detail;
@@ -1311,27 +1314,28 @@ export const examService = {
       .select({
         questionId: practice_logs.question_id,
         userAnswer: practice_logs.user_answer,
-        isCorrect: practice_logs.is_correct,
         status: practice_logs.status,
-        durationMs: practice_logs.duration_ms,
       })
       .from(practice_logs)
       .where(eq(practice_logs.session_id, sessionId))
       .orderBy(asc(practice_logs.id));
 
-    const byQuestion = new Map<number, (typeof logs)[number]>();
-    for (const log of logs) byQuestion.set(log.questionId, log);
+    // 冻结决定 9：只回 {questionId, userAnswer}，未作答的题不出现；
+    // 顺序按试卷 position（与 questions 对齐），不按日志插入顺序
+    const answerByQuestion = new Map<number, string>();
+    for (const log of logs) {
+      if (log.status === "skipped") continue;
+      const userAnswer = (log.userAnswer ?? "").trim();
+      if (userAnswer === "") continue;
+      answerByQuestion.set(log.questionId, log.userAnswer ?? "");
+    }
 
-    detail.answers = paperQuestions.map((q) => {
-      const log = byQuestion.get(q.id);
-      return {
+    detail.answers = paperQuestions
+      .filter((q) => answerByQuestion.has(q.id))
+      .map((q) => ({
         questionId: q.id,
-        userAnswer: log?.userAnswer ?? "",
-        isCorrect: Boolean(log?.isCorrect),
-        status: log?.status ?? "skipped",
-        durationMs: Number(log?.durationMs ?? 0),
-      };
-    });
+        userAnswer: answerByQuestion.get(q.id) ?? "",
+      }));
 
     detail.result = await resultFromLogs(
       sessionId,

@@ -117,7 +117,7 @@ interface QuestionPayload {
 interface PaperDetail {
   paper: PaperSummary;
   items: Array<{ position: number; question: QuestionPreview }>;
-  lastAttempt: { sessionId: string; score: number | null } | null;
+  lastAttempt: { sessionId: string; score: number; submittedAt: string } | null;
 }
 
 interface AttemptStart {
@@ -133,13 +133,7 @@ interface AttemptDetail {
   deadlineAt: string | null;
   submittedAt: string | null;
   questions: QuestionPayload[];
-  answers?: Array<{
-    questionId: number;
-    userAnswer: string;
-    isCorrect: boolean;
-    status: string;
-    durationMs: number;
-  }>;
+  answers: Array<{ questionId: number; userAnswer: string }>;
   result?: SubmitResult;
 }
 
@@ -468,12 +462,24 @@ describe("试卷 / 模考 API", () => {
         lastScore: 1,
         totalQuestions: 2,
       });
+      // 冻结决定 7：0–1 小数口径，不混百分制
+      expect(listed?.bestScore).toBeGreaterThanOrEqual(0);
+      expect(listed?.bestScore).toBeLessThanOrEqual(1);
+      expect(listed?.lastScore).toBeGreaterThanOrEqual(0);
+      expect(listed?.lastScore).toBeLessThanOrEqual(1);
       expect(listed?.lastAttemptAt).toBeTruthy();
 
       // 5. 详情里出现 lastAttempt
       const detailAfter = (await (await api(token, `/papers/${paperId}`)).json()) as PaperDetail;
       expect(detailAfter.lastAttempt?.sessionId).toBe(sessionId);
       expect(detailAfter.lastAttempt?.score).toBe(1);
+      // 冻结决定 10：固定三字段，不多不少
+      expect(Object.keys(detailAfter.lastAttempt ?? {}).sort()).toEqual([
+        "score",
+        "sessionId",
+        "submittedAt",
+      ]);
+      expect(detailAfter.lastAttempt?.submittedAt).toBeTruthy();
 
       // 6. 有作答 → 409；无作答的卷可以删
       const blocked = await api(token, `/papers/${paperId}`, {
@@ -500,19 +506,44 @@ describe("试卷 / 模考 API", () => {
         body: { title: "自动卷 1", count: 4, tags: ["exam-auto"] },
       });
       expect(res.status).toBe(200);
-      const body = (await res.json()) as {
-        paper: PaperSummary;
-        rules: { weights: { wrong: number; weak: number; fresh: number } };
-        items: Array<{ position: number; questionId: number }>;
-      };
+      const body = (await res.json()) as PaperDetail;
 
+      // 冻结决定 8：与 GET /papers/{id} 完全同形（没有 rules 包装）
+      expect(Object.keys(body).sort()).toEqual([
+        "items",
+        "lastAttempt",
+        "paper",
+      ]);
       expect(body.paper).toMatchObject({ source: "auto", totalQuestions: 4 });
-      expect(body.rules.weights).toEqual({ wrong: 0.3, weak: 0.3, fresh: 0.4 });
+      expect(body.lastAttempt).toBeNull();
 
-      const ids = body.items.map((i) => i.questionId);
+      const ids = body.items.map((i) => i.question.id);
       expect(new Set(ids).size).toBe(4);
       expect(ids.every((id) => AUTO_POOL.includes(id))).toBe(true);
       expect(body.items.map((i) => i.position)).toEqual([1, 2, 3, 4]);
+      // 预览不返回答案
+      const previewKeys = Object.keys(
+        body.items[0].question as unknown as Record<string, unknown>,
+      );
+      expect(previewKeys).not.toContain("answer");
+      expect(previewKeys).not.toContain("explanation");
+
+      // 规则快照仍落库（只是不进响应）
+      const rulesRow = await dbm.drizzleDb.get<{ rules_json: string }>(
+        sql`SELECT rules_json FROM exam_papers WHERE id = ${body.paper.id}`,
+      );
+      const rulesSnapshot = JSON.parse(rulesRow?.rules_json ?? "{}") as {
+        count: number;
+        tags: string[];
+        weights: { wrong: number; weak: number; fresh: number };
+      };
+      expect(rulesSnapshot.count).toBe(4);
+      expect(rulesSnapshot.tags).toEqual(["exam-auto"]);
+      expect(rulesSnapshot.weights).toEqual({
+        wrong: 0.3,
+        weak: 0.3,
+        fresh: 0.4,
+      });
     });
 
     it("count 超可用 → 400 且带 requested/available/shortfall（不静默缩水）", async () => {
@@ -543,10 +574,8 @@ describe("试卷 / 模考 API", () => {
         },
       });
       expect(res.status).toBe(200);
-      const body = (await res.json()) as {
-        items: Array<{ questionId: number }>;
-      };
-      expect(body.items.map((i) => i.questionId).sort()).toEqual([Q_W1, Q_W2]);
+      const body = (await res.json()) as PaperDetail;
+      expect(body.items.map((i) => i.question.id).sort()).toEqual([Q_W1, Q_W2]);
     });
 
     it("weights.weak=1 取掌握度低的知识点下的题", async () => {
@@ -560,10 +589,8 @@ describe("试卷 / 模考 API", () => {
         },
       });
       expect(res.status).toBe(200);
-      const body = (await res.json()) as {
-        items: Array<{ questionId: number }>;
-      };
-      const ids = body.items.map((i) => i.questionId).sort();
+      const body = (await res.json()) as PaperDetail;
+      const ids = body.items.map((i) => i.question.id).sort();
       expect(ids).toEqual([Q_K1, Q_K2]);
     });
 
@@ -578,10 +605,8 @@ describe("试卷 / 模考 API", () => {
         },
       });
       expect(res.status).toBe(200);
-      const body = (await res.json()) as {
-        items: Array<{ questionId: number }>;
-      };
-      expect(body.items.map((i) => i.questionId).sort()).toEqual([Q_W3, Q_W4]);
+      const body = (await res.json()) as PaperDetail;
+      expect(body.items.map((i) => i.question.id).sort()).toEqual([Q_W3, Q_W4]);
     });
   });
 
@@ -622,6 +647,8 @@ describe("试卷 / 模考 API", () => {
       const detailBody = (await detail.json()) as AttemptDetail;
       expect(detailBody.submittedAt).toBeNull();
       expect(detailBody.result).toBeUndefined();
+      // 冻结决定 9：作答态 answers 是空数组（字段始终存在）
+      expect(detailBody.answers).toEqual([]);
       for (const q of detailBody.questions) {
         expect(q.answer).toBe("");
         expect(q.explanation).toBe("");
@@ -677,6 +704,16 @@ describe("试卷 / 模考 API", () => {
         status: "skipped",
         is_correct: 0,
       });
+
+      // 冻结决定 9：answers 只回 {questionId, userAnswer}，skipped 的 Q_FILL 不出现
+      const detail = (await (
+        await api(token, `/attempts/${sessionId}`)
+      ).json()) as AttemptDetail;
+      expect(detail.answers).toEqual([
+        { questionId: Q_SINGLE, userAnswer: "B" },
+        { questionId: Q_MULTI, userAnswer: "D,A" },
+      ]);
+      expect(detail.result?.correctCount).toBe(2);
 
       // 会话汇总写回
       const row = await sessionRow(sessionId);

@@ -61,6 +61,7 @@ dependencies:
   # 写 ^2.5.4 时求解器仍会因 SDK 约束自动落到 2.5.5，不会拉到 2.5.6。
   shared_preferences: ^2.5.4
   flutter_html: ^3.0.0
+  flutter_html_table: ^3.0.0
 
 # flutter_html 3.0.0 直接 import 了 `package:html/src/query_selector.dart` 的内部
 # 函数 `matches`，而 `html` 0.15.7 把该函数删了（只留 `SelectorEvaluator.matches`），

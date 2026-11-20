@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart';
 import 'package:flutter/scheduler.dart';
 import 'package:flutter_html/flutter_html.dart';
+import 'package:flutter_html_table/flutter_html_table.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 
 import 'package:mobile_app/core/theme/app_colors.dart';
@@ -25,12 +26,15 @@ class QuestionMaterialCard extends StatefulWidget {
   /// 材料富文本（已清洗的 HTML）。
   final String? materialHtml;
 
-  /// 材料正文字号 = 正文基准 14 × 1.3。材料题的主体是材料而不是那一句题干，
-  /// 所以比解析（14）大一档；改动只动这一个常量。
+  /// 材料正文基准字号（sp）。
+  ///
+  /// 系统字号放大由 `MediaQuery.textScaler` 负责——**不要**在这里再乘一个系数，
+  /// 否则系统设成 1.3 倍时会变成 1.69 倍。测试里的「1.3 倍字号」指
+  /// `pumpScreen(textScale: 1.3)`，不是这个常量。
   static const double baseFontSize = 14;
 
   /// 相对正文基准的字号倍数。
-  static const double fontScale = 1.3;
+  static const double fontScale = 1.0;
 
   /// 折叠阈值：超过这么多行才折叠。
   static const int collapsedLines = 6;
@@ -186,8 +190,10 @@ class _QuestionMaterialCardState extends State<QuestionMaterialCard> {
     if (html != null && html.trim().isNotEmpty) {
       return Html(
         data: html,
-        // 服务端已清洗，这里不再二次过滤；但表格/iframe 等扩展标签没装对应
-        // 扩展包，遇到时 flutter_html 会退化成渲染其子节点文本，不会崩。
+        // 表格是独立扩展包（flutter_html 3.x 拆出去的），不装会把 <table> 退化成纯文本
+        extensions: const [TableHtmlExtension()],
+        // 服务端已清洗（DOMPurify 白名单含 img/table/sub/sup），这里不再二次过滤。
+        // 表格靠 flutter_html_table 扩展渲染；iframe 不在白名单里，不会出现。
         style: {
           'body': Style(
             margin: Margins.zero,

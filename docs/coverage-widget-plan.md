@@ -155,6 +155,8 @@ screens 里 lcov 统计的 6245 行中 **2661 行未覆盖**，且高度集中�
    curl -fL -o flutter.tar.xz https://storage.googleapis.com/flutter_infra_release/releases/stable/linux/flutter_linux_3.38.4-stable.tar.xz
    tar xf flutter.tar.xz && rm flutter.tar.xz
    export PATH=/tmp/opencode/sdk/flutter/bin:$PATH PUB_CACHE=/tmp/opencode/sdk/pubcache
+   # 注意：上面的 cd 会把当前目录留在 /tmp/opencode/sdk，验证前必须切回项目
+   cd /public/home/cjb/ai-leaming/mobile_app
    ```
    然后：`flutter test --coverage && dart run tool/coverage_gate.dart`
 2. **走 CI 取数**（无 SDK 时）：

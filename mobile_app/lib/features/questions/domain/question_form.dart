@@ -9,7 +9,7 @@
 ///    一个出口 [QuestionFormValues.toPayload]。
 library;
 
-import '../../practice/domain/question.dart';
+import '../../../shared/domain/question.dart';
 
 /// 题型。`wire` 是服务端标准值（`fill_blank` 带下划线，不能直接用枚举名）。
 enum QuestionType {

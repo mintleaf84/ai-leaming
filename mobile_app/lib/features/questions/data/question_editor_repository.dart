@@ -2,7 +2,7 @@ import 'package:dio/dio.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../core/network/dio_client.dart';
-import '../../practice/domain/question.dart';
+import '../../../shared/domain/question.dart';
 import '../domain/question_draft.dart';
 
 /// 建题/改题与草稿校对共用的仓库实例。

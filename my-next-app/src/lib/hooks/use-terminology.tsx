@@ -18,6 +18,7 @@ const TERMS: Record<string, { standard: string; neo: string }> = {
   // Navigation
   "nav.home": { standard: "首页", neo: "修习" },
   "nav.practice": { standard: "智能练习", neo: "精进" },
+  "nav.exam": { standard: "试卷", neo: "模考" },
   "nav.wrong_book": { standard: "错题本", neo: "错题集" },
   "nav.history": { standard: "练习记录", neo: "日志" },
   "nav.ai_tutor": { standard: "AI 助教", neo: "灵犀" },

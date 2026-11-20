@@ -11,6 +11,7 @@ import '../../../shared/domain/practice_resume.dart';
 import '../../practice/presentation/practice_resume_provider.dart';
 import '../../recall/data/recall_providers.dart';
 import '../../../shared/domain/recall_queue.dart';
+import '../../exam/presentation/exam_entry.dart';
 import '../../stats/presentation/stats_provider.dart';
 import '../../../shared/domain/learning_stats.dart';
 import '../../../shared/repositories/wrong_book_repository.dart';
@@ -56,6 +57,10 @@ class DashboardScreen extends HookConsumerWidget {
     final showRecall = recallEntryAvailable(
       ref.watch(contractDecisionProvider).value,
     );
+    // 试卷入口同一套能力协商：服务端说没有 `exam` 就隐藏（不是灰显后 404）。
+    final showExam = examEntryAvailable(
+      ref.watch(contractDecisionProvider).value,
+    );
     // 离线判定（审计 #20）：`AsyncValue` 首帧是 loading，拿不准按在线处理，
     // 理由见 connectivity_provider.dart。
     final isOnline = ref.watch(isOnlineProvider).value ?? true;
@@ -97,6 +102,7 @@ class DashboardScreen extends HookConsumerWidget {
                     _buildActionGrid(
                       context,
                       showRecall: showRecall,
+                      showExam: showExam,
                       isOnline: isOnline,
                       recallQueue: recallQueue,
                       wrongTotal: wrongTotal,
@@ -265,6 +271,7 @@ class DashboardScreen extends HookConsumerWidget {
   Widget _buildActionGrid(
     BuildContext context, {
     required bool showRecall,
+    required bool showExam,
     required bool isOnline,
     required AsyncValue<RecallQueue>? recallQueue,
     required AsyncValue<int> wrongTotal,
@@ -333,6 +340,24 @@ class DashboardScreen extends HookConsumerWidget {
             trailingValue: _recallValue(recallQueue, isOnline: isOnline),
             onTap: isOnline ? () => context.pushDetail(AppRoutes.recall) : null,
             disabledNote: isOnline ? null : '离线，联网后可进入记忆卡',
+          ),
+          SizedBox(height: 16.h),
+        ],
+        // 试卷：整卷 + 限时 + 交卷后统一批改。放在记忆卡下方、错题本上方——
+        // 与「今天要做的事」相邻，但仍排在每日回忆之后（模考不是每天都做的）。
+        // 断网时保留入口但禁用：进去第一件事就是拉列表，离线只会撞空屏。
+        if (showExam) ...[
+          _buildWideCard(
+            context,
+            icon: '📝',
+            tag: '整卷模考',
+            tagColor: context.colors.accentContainer,
+            tagTextColor: context.colors.accent,
+            title: '试卷',
+            trailingLabel: '模考',
+            trailingValue: isOnline ? '自动组卷' : '需要联网',
+            onTap: isOnline ? () => context.pushDetail(AppRoutes.exam) : null,
+            disabledNote: isOnline ? null : '离线，联网后可进入试卷',
           ),
           SizedBox(height: 16.h),
         ],

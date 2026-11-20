@@ -16,6 +16,8 @@ const protectedRoutes = [
   "/wrong-book",
   // 回忆自测：队列与判分都按登录用户隔离
   "/recall",
+  // 试卷/模考：试卷归属与作答记录都是个人数据
+  "/exam",
 ];
 const publicRoutes = ["/login", "/register"];
 

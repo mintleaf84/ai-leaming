@@ -23,6 +23,10 @@ import 'features/profile/presentation/profile_screen.dart';
 import 'features/textbook/presentation/textbook_list_screen.dart';
 import 'features/textbook/presentation/textbook_detail_screen.dart';
 import 'features/pricing/presentation/pricing_screen.dart';
+import 'features/exam/presentation/exam_list_screen.dart';
+import 'features/exam/presentation/exam_paper_screen.dart';
+import 'features/exam/presentation/exam_session_screen.dart';
+import 'features/exam/domain/exam_attempt.dart';
 
 import 'features/practice/presentation/question_list_screen.dart';
 import 'features/questions/presentation/draft_review_screen.dart';
@@ -218,6 +222,30 @@ GoRouter buildAppRouter({String initialLocation = '/'}) {
             builder: (context, state) {
               final id = int.parse(state.pathParameters['id']!);
               return TextbookDetailScreen(textbookId: id);
+            },
+          ),
+        ],
+      ),
+      GoRoute(
+        path: AppRoutes.exam,
+        builder: (context, state) => const ExamListScreen(),
+        routes: [
+          GoRoute(
+            path: 'paper/:id',
+            builder: (context, state) => ExamPaperScreen(
+              paperId: int.tryParse(state.pathParameters['id'] ?? '') ?? 0,
+            ),
+          ),
+          GoRoute(
+            path: 'session/:id',
+            builder: (context, state) {
+              // `extra` 可能是从预览页带过来的开场数据，也可能是深链接（null）；
+              // 只接受确切类型，避免历史路由参数形状把整屏打崩。
+              final extra = state.extra;
+              return ExamSessionScreen(
+                sessionId: state.pathParameters['id']!,
+                initialAttempt: extra is ExamAttempt ? extra : null,
+              );
             },
           ),
         ],

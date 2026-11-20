@@ -63,7 +63,7 @@ export function MakePaperDialog({
       );
       onCreated(paperId);
     } catch (caught) {
-    // audit-allow: 失败已用 toast/setError 呈现给用户，属可见降级；console.error 仅供排障
+      // audit-allow: 失败已用 toast/setError 呈现给用户，属可见降级；console.error 仅供排障
       // 失败必须留在弹窗里可见：关掉弹窗再 toast，用户会以为"已经生成过了"
       console.error("[agent-sets] 成卷失败", {
         setId: set.id,

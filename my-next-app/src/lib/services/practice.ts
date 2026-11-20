@@ -6,6 +6,7 @@ import {
   question_srs,
   session_reviews,
   mastered_questions,
+  first_principles_cache,
 } from "@/lib/db/drizzle-schema";
 import { eq, and, desc, gt, sql, inArray, notInArray } from "drizzle-orm";
 import { Question, Dimension } from "@/types";
@@ -107,6 +108,40 @@ async function persistPracticeSession(
   });
 
   return { questions: questionData, sessionId };
+}
+
+/**
+ * 第一性原理分析缓存表的兜底建表。
+ *
+ * 表与索引**已经由迁移创建**（`drizzle/0001_old_bishop.sql`：
+ * `first_principles_cache` + `idx_fp_cache_hash`），原先每来一次请求就在路由里
+ * 跑一遍 `CREATE TABLE IF NOT EXISTS`，既有 DDL 在请求路径上的问题，也多一次
+ * 无谓的写事务。这里把兜底 memo 成"每进程最多一次"：即便某套环境跳过了迁移
+ * （例如只 `drizzle-kit push` 了部分表），第一次请求仍能自愈，语义不变。
+ */
+let fpCacheTableReady: Promise<void> | null = null;
+
+async function ensureFirstPrinciplesCacheTable(): Promise<void> {
+  if (!fpCacheTableReady) {
+    fpCacheTableReady = (async () => {
+      await drizzleDb.run(sql`
+        CREATE TABLE IF NOT EXISTS first_principles_cache (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            question_hash TEXT UNIQUE NOT NULL,
+            analysis TEXT NOT NULL,
+            created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+        );
+      `);
+      await drizzleDb.run(
+        sql`CREATE INDEX IF NOT EXISTS idx_fp_cache_hash ON first_principles_cache(question_hash);`,
+      );
+    })().catch((e) => {
+      // 建表失败不阻塞本次分析：下方按"无缓存"路径继续
+      logger.error({ err: e }, "[FirstPrinciples] 创建缓存表失败");
+      fpCacheTableReady = null;
+    });
+  }
+  return fpCacheTableReady;
 }
 
 export const practiceService = {
@@ -732,5 +767,59 @@ export const practiceService = {
     });
 
     return sessionId;
+  },
+
+  /**
+   * 第一性原理分析缓存键。
+   *
+   * 口径必须稳定：内容 trim + 截断 100 字符 + **原始长度**（截断后长度会撞车），
+   * 再拼上正确答案与用户错答。改口径等于让所有历史缓存失效，别顺手"优化"。
+   */
+  buildFirstPrinciplesCacheKey(
+    questionContent: string,
+    correctAnswer: string,
+    wrongAnswer?: string,
+  ): string {
+    const content = questionContent + correctAnswer + (wrongAnswer || "");
+    const normalized = content.trim().slice(0, 100) + content.length;
+    let hash = 0;
+    for (let i = 0; i < normalized.length; i++) {
+      const char = normalized.charCodeAt(i);
+      hash = (hash << 5) - hash + char;
+      hash = hash & hash;
+    }
+    return hash.toString(36);
+  },
+
+  /** 命中返回缓存的解析文本，未命中返回 null */
+  async getCachedFirstPrinciplesAnalysis(
+    cacheKey: string,
+  ): Promise<string | null> {
+    await ensureFirstPrinciplesCacheTable();
+
+    const [cached] = await drizzleDb
+      .select({ analysis: first_principles_cache.analysis })
+      .from(first_principles_cache)
+      .where(eq(first_principles_cache.question_hash, cacheKey))
+      .limit(1);
+
+    return cached?.analysis ?? null;
+  },
+
+  /** 写入/覆盖缓存（question_hash 唯一，冲突即更新） */
+  async saveFirstPrinciplesAnalysis(
+    cacheKey: string,
+    analysis: string,
+  ): Promise<void> {
+    await drizzleDb
+      .insert(first_principles_cache)
+      .values({
+        question_hash: cacheKey,
+        analysis,
+      })
+      .onConflictDoUpdate({
+        target: first_principles_cache.question_hash,
+        set: { analysis },
+      });
   },
 };

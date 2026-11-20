@@ -412,7 +412,10 @@ function _hostOf(baseURL: string): string | null {
   try {
     return new URL(baseURL).host;
   } catch (error) {
-    logger.debug({ err: error, baseURL }, "[DraftService] baseURL 非绝对地址，provider 退化");
+    logger.debug(
+      { err: error, baseURL },
+      "[DraftService] baseURL 非绝对地址，provider 退化",
+    );
     return null;
   }
 }

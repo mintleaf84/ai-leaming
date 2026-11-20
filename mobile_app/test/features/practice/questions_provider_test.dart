@@ -6,6 +6,7 @@ import 'package:mobile_app/features/practice/domain/practice_repository.dart';
 import 'package:mobile_app/features/practice/data/practice_repository_impl.dart';
 import 'package:mobile_app/features/practice/domain/question.dart';
 import 'package:mobile_app/features/practice/presentation/questions_provider.dart';
+import 'package:mobile_app/shared/events/data_change_events.dart';
 
 class MockPracticeRepository extends Mock implements PracticeRepository {}
 
@@ -41,6 +42,34 @@ void main() {
       ],
       total: 5,
     );
+
+    test('别处改了题库（questionBankEpoch +1）：不依赖页面在树上也会重拉第一页', () async {
+      // 建题入口除了题库列表，还有 AI 草稿页（push 到 /questions/new）；
+      // 那时列表页不在树上，信号只能由控制器自己接。
+      final container = makeProviderContainer();
+      when(
+        () => mockRepository.getQuestions(
+          page: any(named: 'page'),
+          limit: any(named: 'limit'),
+          search: any(named: 'search'),
+        ),
+      ).thenAnswer((_) async => tResponse1);
+
+      // 第一次拉到第 2 页（模拟用户已经翻过页）。
+      final notifier = container.read(questionsControllerProvider.notifier);
+      await notifier.fetchQuestions();
+      await notifier.fetchQuestions();
+      expect(container.read(questionsControllerProvider).currentPage, 3);
+
+      container.read(questionBankEpochProvider.notifier).bump();
+      await Future<void>.delayed(Duration.zero);
+
+      final state = container.read(questionsControllerProvider);
+      expect(state.currentPage, 2, reason: '重拉后指针回到「第 1 页已加载」');
+      verify(
+        () => mockRepository.getQuestions(page: 1, limit: 20, search: null),
+      ).called(2);
+    });
 
     test('初次加载及分页无限滚动 (fetchQuestions)', () async {
       // 1. Arrange

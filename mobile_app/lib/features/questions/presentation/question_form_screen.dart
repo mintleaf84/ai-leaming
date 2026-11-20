@@ -6,7 +6,7 @@ import '../../../core/error/user_message.dart';
 import '../../../core/navigation/app_nav.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../core/theme/app_icons.dart';
-import '../../practice/presentation/questions_provider.dart';
+import '../../../shared/events/data_change_events.dart';
 import '../../../shared/widgets/state_views.dart';
 import '../data/question_editor_repository.dart';
 import '../domain/question_form.dart';
@@ -166,9 +166,12 @@ class _QuestionFormScreenState extends ConsumerState<QuestionFormScreen> {
       }
       if (!mounted) return;
 
-      // 题库列表是另一屏的 state：新建/改题后它必须重新拉，否则返回列表
-      // 看不到刚保存的这道题。
-      ref.invalidate(questionsControllerProvider);
+      // 题库列表是另一屏（practice feature）的 state：新建/改题后它必须重新拉，
+      // 否则返回列表看不到刚保存的这道题。
+      //
+      // 这里只 bump 版本号，不直接 `invalidate` 对方的 provider——那样 questions
+      // 就依赖了 practice 的表现层。列表页自己 listen 这个版本号并刷新。
+      ref.read(questionBankEpochProvider.notifier).bump();
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text(widget.isEditing ? '已保存修改' : '已创建题目')),
       );

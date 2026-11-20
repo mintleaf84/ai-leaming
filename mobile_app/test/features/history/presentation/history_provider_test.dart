@@ -8,6 +8,7 @@ import 'package:mobile_app/features/auth/data/auth_repository_impl.dart';
 import 'package:mobile_app/features/auth/domain/auth_repository.dart';
 import 'package:mobile_app/features/auth/presentation/auth_provider.dart';
 import 'package:mobile_app/features/history/presentation/history_provider.dart';
+import 'package:mobile_app/shared/events/data_change_events.dart';
 
 import '../../../support/recording_adapter.dart';
 
@@ -380,6 +381,33 @@ void main() {
         reason: '旧账号的第 1 页不能和新账号的第 2 页拼在一起',
       );
       expect(state.items.map((e) => e.id), ['B_p2']);
+    });
+  });
+
+  group('跨 feature 通知（historyEpochProvider）', () {
+    test('版本号 +1 就重拉第一页（练习结束 → 首页「最近练习」跟着更新）', () async {
+      adapter.responseBody = pageJson(['s_new']);
+      final container = makeContainer();
+
+      // 先让控制器 build 起来：监听是在 build 里注册的。
+      expect(container.read(historyControllerProvider).items, isEmpty);
+      expect(adapter.requests, isEmpty, reason: '初始态不该自行发请求');
+
+      container.read(historyEpochProvider.notifier).bump();
+      await pumpEventQueue();
+
+      expect(adapter.requests, hasLength(1));
+      expect(adapter.requests.single.path, '/history');
+      expect(container.read(historyControllerProvider).items.single.id, 's_new');
+    });
+
+    test('没 bump 就不会自发拉取（信号是唯一的触发源）', () async {
+      final container = makeContainer();
+
+      container.read(historyControllerProvider);
+      await pumpEventQueue();
+
+      expect(adapter.requests, isEmpty);
     });
   });
 

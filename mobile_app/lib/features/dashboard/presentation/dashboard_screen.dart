@@ -6,7 +6,7 @@ import 'package:skeletonizer/skeletonizer.dart';
 import '../../../core/compat/contract_meta_repository.dart';
 import '../../../core/navigation/app_nav.dart';
 import '../../../core/network/connectivity_provider.dart';
-import '../../history/presentation/history_provider.dart';
+import '../../../shared/providers/history_provider.dart';
 import '../../../shared/domain/practice_resume.dart';
 import '../../practice/presentation/practice_resume_provider.dart';
 import '../../recall/data/recall_providers.dart';

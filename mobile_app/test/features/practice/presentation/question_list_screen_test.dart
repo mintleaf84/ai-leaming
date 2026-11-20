@@ -1,12 +1,14 @@
 import 'dart:async';
 
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:skeletonizer/skeletonizer.dart';
 
 import 'package:mobile_app/features/practice/data/practice_repository_impl.dart';
 import 'package:mobile_app/features/practice/domain/question.dart';
 import 'package:mobile_app/features/practice/presentation/question_list_screen.dart';
+import 'package:mobile_app/shared/events/data_change_events.dart';
 
 import '../../../support/fake_providers.dart';
 import '../../../support/fakes_qbank.dart';
@@ -244,6 +246,39 @@ void main() {
       find.byType(CircularProgressIndicator),
       findsNothing,
       reason: '到底之后不该还挂着「加载更多」指示',
+    );
+  });
+
+  testWidgets('别处改了题库（questionBankEpoch +1）：列表从第 1 页重拉', (tester) async {
+    final repository = FakeQbankRepository(
+      questions: <Question>[question(1), question(2)],
+    );
+
+    await pumpList(tester, repository);
+    await settle(tester);
+    expect(repository.listCalls, 1);
+
+    // questions feature 保存成功后只 bump 版本号（不去碰列表的 provider）。
+    final container = ProviderScope.containerOf(
+      tester.element(find.byType(QuestionListScreen)),
+    );
+    container.read(questionBankEpochProvider.notifier).bump();
+    await settle(tester);
+
+    expect(
+      repository.listCalls,
+      2,
+      reason: '新建/改题后不重拉，返回列表就看不到刚保存的题',
+    );
+    expect(
+      repository.requests.last.page,
+      1,
+      reason: '重拉必须从第 1 页开始，新题按 createdAt 排在第 1 页',
+    );
+    expect(
+      repository.requests.last.search,
+      isNull,
+      reason: '刷新保留当前关键词；这里本来就没有搜索词',
     );
   });
 

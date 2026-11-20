@@ -57,12 +57,12 @@ grep -rho "AppIcons\.[a-zA-Z0-9_]*" lib --include=*.dart | sort -u | wc -l      
 
 **定位过程与证据**：
 
-| 检查 | 结果 |
-| --- | --- |
-| APK 内 `FontManifest` | `packages/material_symbols_icons/MaterialSymbolsOutlined` 正确注册 |
-| 该字体的 cmap | 61 个在用码点全在，`glyf` 轮廓也都不为空（所以第一轮排查误判为"字体没问题"） |
-| **该字体的 `gvar` 表** | **96 个字形里 72 个解析抛 `IndexError: sharedTuples index out of range`** |
-| 上游未裁剪的同一字体 | 40/40 解析正常 |
+| 检查                   | 结果                                                                         |
+| ---------------------- | ---------------------------------------------------------------------------- |
+| APK 内 `FontManifest`  | `packages/material_symbols_icons/MaterialSymbolsOutlined` 正确注册           |
+| 该字体的 cmap          | 61 个在用码点全在，`glyf` 轮廓也都不为空（所以第一轮排查误判为"字体没问题"） |
+| **该字体的 `gvar` 表** | **96 个字形里 72 个解析抛 `IndexError: sharedTuples index out of range`**    |
+| 上游未裁剪的同一字体   | 40/40 解析正常                                                               |
 
 **根因**：Flutter 3.38.4 的 `--tree-shake-icons` 用 font-subset 裁剪**可变字体**时破坏了 `gvar`
 （变体增量表），产出的是坏字体；设备端整族加载/解析失败 → 全部不渲染。

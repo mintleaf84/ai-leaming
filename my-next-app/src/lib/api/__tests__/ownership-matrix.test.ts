@@ -104,6 +104,13 @@ const MODULES: Record<string, ModuleRule> = {
     scope: "user",
     crossUserTest: "src/lib/api/routes/__tests__/practice-ownership.test.ts",
   },
+  // 试卷归属用户（exam_papers.user_id）；他人试卷 / 他人的 exam session 一律 404，
+  // 跨用户断言见 exam.test.ts 的「跨用户」段
+  exam: {
+    mount: "/api/exam",
+    scope: "user",
+    crossUserTest: "src/lib/api/routes/__tests__/exam.test.ts",
+  },
   // 回忆卡的复习进度/日志按用户隔离（卡组内容全局共享，但不是越权面）；
   // 跨用户断言见测试文件里的「用户隔离」段：另一个用户读同一 cardId 必须 state=null。
   recall: {

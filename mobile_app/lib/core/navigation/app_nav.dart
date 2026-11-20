@@ -37,6 +37,7 @@ abstract final class AppRoutes {
   static const knowledge = '/knowledge';
   static const mastery = '/mastery';
   static const settings = '/settings';
+  static const fenbiSync = '/settings/fenbi';
   static const chat = '/chat';
   static const wrongBook = '/wrong-book';
   static const recall = '/recall';

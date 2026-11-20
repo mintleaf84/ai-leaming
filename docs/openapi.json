@@ -10351,6 +10351,364 @@
         "summary": "提交题目纠错反馈"
       }
     },
+    "/api/fenbi/link": {
+      "delete": {
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "properties": {
+                    "ok": {
+                      "enum": [true],
+                      "type": "boolean"
+                    }
+                  },
+                  "required": ["ok"],
+                  "type": "object"
+                }
+              }
+            },
+            "description": "解绑成功"
+          },
+          "400": {
+            "description": "参数错误 / 未绑定 / 登录态失效 / 未配置加密密钥"
+          },
+          "429": {
+            "description": "粉笔风控（430）或本地同步限频（每用户 60 秒）"
+          },
+          "500": {
+            "description": "服务器内部错误"
+          },
+          "502": {
+            "description": "粉笔不可达或返回异常"
+          }
+        },
+        "summary": "解绑粉笔账号并清除密码/cookie"
+      },
+      "post": {
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "properties": {
+                  "password": {
+                    "maxLength": 64,
+                    "minLength": 1,
+                    "type": "string"
+                  },
+                  "phone": {
+                    "maxLength": 20,
+                    "minLength": 5,
+                    "type": "string"
+                  }
+                },
+                "required": ["phone", "password"],
+                "type": "object"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "properties": {
+                    "ok": {
+                      "enum": [true],
+                      "type": "boolean"
+                    }
+                  },
+                  "required": ["ok"],
+                  "type": "object"
+                }
+              }
+            },
+            "description": "绑定成功"
+          },
+          "400": {
+            "description": "参数错误 / 未绑定 / 登录态失效 / 未配置加密密钥"
+          },
+          "429": {
+            "description": "粉笔风控（430）或本地同步限频（每用户 60 秒）"
+          },
+          "500": {
+            "description": "服务器内部错误"
+          },
+          "502": {
+            "description": "粉笔不可达或返回异常"
+          }
+        },
+        "summary": "手机号 + 密码绑定粉笔账号"
+      }
+    },
+    "/api/fenbi/qrcode": {
+      "post": {
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "properties": {
+                    "lgtoken": {
+                      "type": "string"
+                    },
+                    "qrContent": {
+                      "type": "string"
+                    }
+                  },
+                  "required": ["lgtoken", "qrContent"],
+                  "type": "object"
+                }
+              }
+            },
+            "description": "二维码"
+          },
+          "400": {
+            "description": "参数错误 / 未绑定 / 登录态失效 / 未配置加密密钥"
+          },
+          "429": {
+            "description": "粉笔风控（430）或本地同步限频（每用户 60 秒）"
+          },
+          "500": {
+            "description": "服务器内部错误"
+          },
+          "502": {
+            "description": "粉笔不可达或返回异常"
+          }
+        },
+        "summary": "生成扫码登录二维码"
+      }
+    },
+    "/api/fenbi/qrcode/status": {
+      "get": {
+        "parameters": [
+          {
+            "in": "query",
+            "name": "lgtoken",
+            "required": true,
+            "schema": {
+              "minLength": 1,
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "properties": {
+                    "linked": {
+                      "type": "boolean"
+                    },
+                    "status": {
+                      "enum": ["pending", "scanned", "confirmed", "expired"],
+                      "type": "string"
+                    }
+                  },
+                  "required": ["status", "linked"],
+                  "type": "object"
+                }
+              }
+            },
+            "description": "扫码状态"
+          },
+          "400": {
+            "description": "参数错误 / 未绑定 / 登录态失效 / 未配置加密密钥"
+          },
+          "429": {
+            "description": "粉笔风控（430）或本地同步限频（每用户 60 秒）"
+          },
+          "500": {
+            "description": "服务器内部错误"
+          },
+          "502": {
+            "description": "粉笔不可达或返回异常"
+          }
+        },
+        "summary": "轮询扫码状态"
+      }
+    },
+    "/api/fenbi/status": {
+      "get": {
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "properties": {
+                    "fenbiUserId": {
+                      "nullable": true,
+                      "type": "string"
+                    },
+                    "lastResult": {
+                      "nullable": true,
+                      "properties": {
+                        "failed": {
+                          "items": {
+                            "properties": {
+                              "exerciseId": {
+                                "type": "string"
+                              },
+                              "reason": {
+                                "type": "string"
+                              }
+                            },
+                            "required": ["exerciseId", "reason"],
+                            "type": "object"
+                          },
+                          "type": "array"
+                        },
+                        "imported": {
+                          "type": "number"
+                        },
+                        "newQuestions": {
+                          "type": "number"
+                        },
+                        "skipped": {
+                          "type": "number"
+                        }
+                      },
+                      "required": [
+                        "imported",
+                        "skipped",
+                        "newQuestions",
+                        "failed"
+                      ],
+                      "type": "object"
+                    },
+                    "lastSyncAt": {
+                      "nullable": true,
+                      "type": "string"
+                    },
+                    "linked": {
+                      "type": "boolean"
+                    },
+                    "phoneMasked": {
+                      "nullable": true,
+                      "type": "string"
+                    },
+                    "status": {
+                      "enum": ["active", "expired", "revoked", null],
+                      "nullable": true,
+                      "type": "string"
+                    },
+                    "syncable": {
+                      "enum": [true],
+                      "type": "boolean"
+                    },
+                    "unsupported": {
+                      "items": {
+                        "type": "string"
+                      },
+                      "type": "array"
+                    }
+                  },
+                  "required": [
+                    "linked",
+                    "phoneMasked",
+                    "fenbiUserId",
+                    "lastSyncAt",
+                    "lastResult",
+                    "status",
+                    "syncable",
+                    "unsupported"
+                  ],
+                  "type": "object"
+                }
+              }
+            },
+            "description": "绑定状态"
+          },
+          "400": {
+            "description": "参数错误 / 未绑定 / 登录态失效 / 未配置加密密钥"
+          },
+          "429": {
+            "description": "粉笔风控（430）或本地同步限频（每用户 60 秒）"
+          },
+          "500": {
+            "description": "服务器内部错误"
+          },
+          "502": {
+            "description": "粉笔不可达或返回异常"
+          }
+        },
+        "summary": "粉笔绑定状态与上次同步摘要"
+      }
+    },
+    "/api/fenbi/sync": {
+      "post": {
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "properties": {
+                  "full": {
+                    "type": "boolean"
+                  }
+                },
+                "type": "object"
+              }
+            }
+          },
+          "required": false
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "properties": {
+                    "failed": {
+                      "items": {
+                        "properties": {
+                          "exerciseId": {
+                            "type": "string"
+                          },
+                          "reason": {
+                            "type": "string"
+                          }
+                        },
+                        "required": ["exerciseId", "reason"],
+                        "type": "object"
+                      },
+                      "type": "array"
+                    },
+                    "imported": {
+                      "type": "number"
+                    },
+                    "newQuestions": {
+                      "type": "number"
+                    },
+                    "skipped": {
+                      "type": "number"
+                    }
+                  },
+                  "required": ["imported", "skipped", "newQuestions", "failed"],
+                  "type": "object"
+                }
+              }
+            },
+            "description": "同步结果"
+          },
+          "400": {
+            "description": "参数错误 / 未绑定 / 登录态失效 / 未配置加密密钥"
+          },
+          "429": {
+            "description": "粉笔风控（430）或本地同步限频（每用户 60 秒）"
+          },
+          "500": {
+            "description": "服务器内部错误"
+          },
+          "502": {
+            "description": "粉笔不可达或返回异常"
+          }
+        },
+        "summary": "立即同步粉笔做题记录"
+      }
+    },
     "/api/generate": {
       "post": {
         "requestBody": {

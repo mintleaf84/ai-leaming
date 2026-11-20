@@ -44,7 +44,12 @@ interface ModuleRule {
  * 七条全部补齐（见各条目的 `crossUserTest`），本清单已清空。
  * 将来新增用户私有模块时：要么直接补跨用户测试，要么写进这里并说明拿什么 id 定位资源。
  */
-const KNOWN_UNCOVERED: Record<string, string> = {};
+const KNOWN_UNCOVERED: Record<string, string> = {
+  // 粉笔绑定是"每用户一条"的单例（fenbi_accounts.user_id 唯一），没有资源 id；
+  // 隔离由 user_id 唯一索引 + 路由层 getCurrentUser 保证。待补一条双 JWT 的
+  // 行为用例（CI 环境可跑真实 SQLite，本地 glibc 2.17 跑不了 libsql）。
+  fenbi: "单例绑定无资源 id，隔离由 user_id 唯一索引保证",
+};
 
 /** 每个路由模块的归属语义。新增模块时必须在这里登记，否则测试失败。 */
 const MODULES: Record<string, ModuleRule> = {
@@ -83,6 +88,10 @@ const MODULES: Record<string, ModuleRule> = {
     mount: "/api/knowledge",
     scope: "user",
     crossUserTest: "src/lib/api/routes/__tests__/knowledge-ownership.test.ts",
+  },
+  fenbi: {
+    mount: "/api/fenbi",
+    scope: "user",
   },
   mastery: {
     mount: "/api/mastery",

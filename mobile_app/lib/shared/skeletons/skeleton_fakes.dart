@@ -11,10 +11,10 @@
 import '../../features/history/domain/history_item.dart';
 import '../../features/history/domain/practice_log.dart';
 import '../../features/knowledge/presentation/knowledge_provider.dart';
-import '../../features/practice/domain/question.dart';
+import '../domain/question.dart';
 import '../../features/practice/presentation/practice_provider.dart';
-import '../../features/stats/domain/learning_stats.dart';
-import '../../features/wrong_book/domain/wrong_question.dart';
+import '../domain/learning_stats.dart';
+import '../domain/wrong_question.dart';
 
 /// 骨架里统一使用的占位文本（长度足够撑出多行布局）。
 const String kSkeletonText = '骨架占位文本用于撑开布局';

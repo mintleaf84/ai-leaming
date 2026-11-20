@@ -5,6 +5,7 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 
+import '../../../core/auth/auth_epoch.dart';
 import '../../../core/auth/token_util.dart';
 import '../../../core/storage/preferences.dart';
 import '../domain/practice_resume.dart';
@@ -30,6 +31,18 @@ class PracticeResumeController extends Notifier<PracticeResume?> {
 
   @override
   PracticeResume? build() {
+    // 登录态一变（登录/换账号/登出）就清掉断点。
+    //
+    // 这段清理以前写在 `AuthController` 里，等于让 auth 反向 import practice；
+    // 现在改成 practice 自己 watch 核心的版本号信号，依赖方向回到
+    // practice → core（auth 只知道 core）。
+    //
+    // 只 `listen` 不 `watch`：断点不该因为登录态变化整份重建再读盘——这里要的
+    // 是「变化即作废」，清完保持空状态等下一次练习写入。
+    ref.listen<int>(authEpochProvider, (previous, next) {
+      if (previous == next) return;
+      unawaited(clear());
+    });
     unawaited(restore());
     return null;
   }

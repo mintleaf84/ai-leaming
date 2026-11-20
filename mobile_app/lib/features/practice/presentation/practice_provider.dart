@@ -10,7 +10,7 @@ import '../domain/practice_resume.dart';
 import '../domain/question.dart';
 import '../domain/first_principles_response.dart';
 import '../../history/presentation/history_provider.dart';
-import '../../wrong_book/data/wrong_book_repository.dart';
+import '../../../shared/repositories/wrong_book_repository.dart';
 import 'practice_resume_provider.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 

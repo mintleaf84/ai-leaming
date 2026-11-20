@@ -49,3 +49,34 @@ grep -rho "AppIcons\.[a-zA-Z0-9_]*" lib --include=*.dart | sort -u | wc -l      
 
 - 没有做"图标轴（weight/fill/grade）调参"——统一使用包默认值，避免每屏各自调参导致粗细漂移。
 - APK 体积增量尚未实测（需要手动触发 `Android` workflow 的 `apk` job 对比 `main` 的 release 包），见 `docs/mobile-ui-kit.md` M-11。
+
+## 5. 2026-11-20：可变字体在 release 包里整族不渲染（真机事故）
+
+**现象**：用户装 release APK 后，导航栏「教材」、设置里「深色模式」「反馈建议」以及大片其它图标**完全空白**；
+文字正常，同一页里 Material Icons 的（`apple`、单选圆点 `dot`、`cancelSolid`、`checkBoxSolid`）正常。
+
+**定位过程与证据**：
+
+| 检查                   | 结果                                                                         |
+| ---------------------- | ---------------------------------------------------------------------------- |
+| APK 内 `FontManifest`  | `packages/material_symbols_icons/MaterialSymbolsOutlined` 正确注册           |
+| 该字体的 cmap          | 61 个在用码点全在，`glyf` 轮廓也都不为空（所以第一轮排查误判为"字体没问题"） |
+| **该字体的 `gvar` 表** | **96 个字形里 72 个解析抛 `IndexError: sharedTuples index out of range`**    |
+| 上游未裁剪的同一字体   | 40/40 解析正常                                                               |
+
+**根因**：Flutter 3.38.4 的 `--tree-shake-icons` 用 font-subset 裁剪**可变字体**时破坏了 `gvar`
+（变体增量表），产出的是坏字体；设备端整族加载/解析失败 → 全部不渲染。
+`flutter analyze` / `flutter test` 发现不了：测试环境用 Ahem 把所有图标画成方块，且静态检查不读 `gvar`。
+
+**修复**：不再依赖 `material_symbols_icons` 的可变字体。
+
+- 用 fontTools 把用到的 61 个图标**实例化成静态字体**：`mobile_app/assets/fonts/AppSymbols.ttf`
+  （57 个唯一码点、9,384 B、**无 gvar/fvar**），在 `pubspec.yaml` 注册 family `AppSymbols`。
+- `AppIcons` 改为 `IconData(0xXXXX, fontFamily: 'AppSymbols')`，**码点沿用上游原值**便于对照；
+  129 处调用点一行未改。
+- 移除 `material_symbols_icons` 依赖。
+- 新增 `test/core/theme/app_icons_test.dart`：显式加载字体、数像素，三个"报过空白"的图标
+  必须画出 >50 个暗像素，且不同图标不能画出同一形状（防豆腐块）。
+
+**给后来者的教训**：图标类改动不能只靠 analyze/test；凡是引入**可变字体**（含 Material Symbols、
+可变图标包）都要在真机 release 包里验证，或者干脆用静态实例化字体。

@@ -453,6 +453,59 @@ W2（改动小、可当天合）→ W1 批次 A → W1 批次 B。两者互不�
 
 不做：换数据库（sqlite→pg）；keyset 分页全量改造（`practice_logs` 仅 4990 行，offset 够用）。
 
+## 运维收口（计划，2026-11-20）
+
+三件事都属于"现在不出事，但出事时没有工具"。
+
+### O1 日志表保留策略（0.5d）
+
+| 表 | 现状 | 建议保留 | 理由 |
+| --- | --- | --- | --- |
+| `pdf_import_tasks` | **已有**每小时清理（`scheduler.ts:47`，按 `expires_at`） | 现状 | 临时任务 |
+| `admin_logs` | **无清理** | 180 天 | 操作审计，排查历史问题够用 |
+| `api_logs` | **无清理** | 90 天 | 每请求一行，增长最快 |
+| `api_audit_logs` | **无清理** | 180 天 | 安全追溯 |
+| `web_vitals` | **无清理** | 90 天 | 性能趋势，`vitals:report` 只回看近期 |
+| `practice_logs` | **不清理** | 永久 | 学习数据（判分、SRS、统计的来源） |
+
+做法：`scheduler.ts` 加一个每日任务（与 03:00 备份错开，例如 04:10），每条 `DELETE ... WHERE created_at < datetime('now','-N days')`，**先 dry-run 打印将删行数**，确认后开启实际删除；日志里记每次删除行数。
+
+判据：
+- dry-run 输出各表将删行数，与 `COUNT(*) WHERE created_at < cutoff` 一致
+- 跑一次后行数下降、`practice_logs` 行数**不变**
+- 删除按 `created_at` 走既有索引（`EXPLAIN QUERY PLAN` 确认非全表扫）
+- 失败时只记结构化日志并等下一周期（与现有 purge 任务同款 `audit-allow` 注释）
+
+### O2 告警通道（0.5d）
+
+现状：`docs/deploy.md` 的部署脚本有 60s 健康检查（失败会回滚），但**失败后没人知道**——只有你下次打开页面才会发现。
+
+做法（不引依赖）：
+- 新增 `scripts/notify.sh`：读 `ALERT_WEBHOOK_URL`（飞书/Telegram 任一），`curl` POST 一段文本；**未配置时打印警告并 exit 0**（不阻塞部署）
+- `deploy.md` 的更新脚本在「健康检查失败 / 回滚成功 / 回滚失败」三处调用它，正文含：时间、镜像 tag、失败原因、当前版本
+- 判据：把 webhook 指向一个本地 echo 服务，模拟健康检查失败 → 收到一条含 tag 与原因的消息；未配 webhook → 部署行为不变
+
+### O3 zod high 风险处置（0.5–1d）
+
+现状：`gh api .../dependabot/alerts` 显示 1 high（`zod`）+ 4 medium（`glob`/`minimatch`×2/`postcss-selector-parser`）；PR #222（zod 3→4）卡在 MCP 构建。
+
+两条路，**必须先判定可达性再选**：
+
+| 路 | 做法 | 前提 |
+| --- | --- | --- |
+| 升级 | 完成 #222：zod 4 的破坏性变更（`z.string().email()` 迁移、`.passthrough()` 语义）逐处改；MCP 侧 schema 跟着改 | 改动量 ≤ 半天；否则走另一条 |
+| 接受 | 锁 `zod@3.x`，在 `docs/decisions.md` 写明：漏洞路径是否可达、为何接受、复审日期 | 需要确认 zod 只用于服务端入参校验（输入先经框架/路由层），无可控输入直达受影响 API |
+
+判据：
+- `npm audit --omit=dev` 的 high 归零，或 decisions.md 有一条带日期的风险接受记录
+- 若选升级：`npm run verify` 全绿 + MCP 冒烟通过
+
+### O4 不做
+
+- 不接 Prometheus/Grafana（单人项目，`/metrics` 已有但没人看）
+- 不做日志集中采集（stdout + docker logs 足够）
+- 不清理 `practice_logs`（学习数据不可再生）
+
 ## Web 覆盖率门禁（计划，2026-11-20）
 
 移动端已有三档门禁（global / scope / 单文件回退），Web 侧**只有测试数量，没有覆盖率信号**：

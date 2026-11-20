@@ -157,7 +157,8 @@ export class DraftConfirmError extends BusinessError {
  * 领取识别任务时再判一次（CAS 更新 0 行说明状态被并发改动，需按最新状态报错）。
  */
 function analyzableConflict(status: DraftStatus): DraftStateError | null {
-  if (status === "discarded") return new DraftStateError("草稿已丢弃，不能识别");
+  if (status === "discarded")
+    return new DraftStateError("草稿已丢弃，不能识别");
   if (status === "confirmed") {
     return new DraftStateError("草稿已确认入库，不能重新识别");
   }
@@ -571,7 +572,11 @@ export const draftService = {
     const analyzeToken = randomUUID();
     const claimed = await drizzleDb
       .update(drizzleSchema.question_drafts)
-      .set({ status: "analyzing", error_code: null, analyze_token: analyzeToken })
+      .set({
+        status: "analyzing",
+        error_code: null,
+        analyze_token: analyzeToken,
+      })
       .where(
         and(
           eq(drizzleSchema.question_drafts.id, id),

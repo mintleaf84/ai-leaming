@@ -25,6 +25,9 @@ import 'features/textbook/presentation/textbook_detail_screen.dart';
 import 'features/pricing/presentation/pricing_screen.dart';
 
 import 'features/practice/presentation/question_list_screen.dart';
+import 'features/questions/presentation/draft_review_screen.dart';
+import 'features/questions/presentation/drafts_screen.dart';
+import 'features/questions/presentation/question_form_screen.dart';
 
 /// 未登录（或 token 过期）时一律回登录页；已登录时不再停在登录/注册页。
 ///
@@ -131,6 +134,31 @@ GoRouter buildAppRouter({String initialLocation = '/'}) {
       GoRoute(
         path: AppRoutes.questions,
         builder: (context, state) => const QuestionListScreen(),
+        routes: [
+          // 子路由写相对段：go_router 会把父路径前缀补上（`/questions/new`）。
+          GoRoute(
+            path: 'new',
+            builder: (context, state) => const QuestionFormScreen(),
+          ),
+          GoRoute(
+            path: ':id/edit',
+            builder: (context, state) => QuestionFormScreen(
+              questionId: state.pathParameters['id'],
+            ),
+          ),
+        ],
+      ),
+      GoRoute(
+        path: AppRoutes.drafts,
+        builder: (context, state) => const DraftsScreen(),
+        routes: [
+          GoRoute(
+            path: ':id',
+            builder: (context, state) => DraftReviewScreen(
+              draftId: state.pathParameters['id']!,
+            ),
+          ),
+        ],
       ),
       GoRoute(
         path: AppRoutes.practice,

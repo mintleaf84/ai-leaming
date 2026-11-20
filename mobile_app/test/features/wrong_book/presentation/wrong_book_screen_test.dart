@@ -1,13 +1,18 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:skeletonizer/skeletonizer.dart';
 
+import 'package:mobile_app/core/navigation/app_nav.dart';
 import 'package:mobile_app/features/wrong_book/domain/wrong_question.dart';
 import 'package:mobile_app/features/wrong_book/presentation/wrong_book_provider.dart';
 import 'package:mobile_app/features/wrong_book/presentation/wrong_book_screen.dart';
 import 'package:mobile_app/shared/widgets/state_views.dart';
 
 import '../../../support/fake_providers.dart';
+import '../../../support/pump_router.dart';
 import '../../../support/pump_screen.dart';
 
 /// 错题本冒烟。
@@ -145,5 +150,117 @@ void main() {
     expect(repository.loadCalls, 2);
     expect(find.byType(AppErrorView), findsNothing);
     expect(find.text('错题甲：下列说法正确的是？'), findsOneWidget);
+  });
+
+  // ---------------------------------------------------------------------
+  // 状态分派：加载中（骨架）/ 已掌握兜底 / 按知识点空态 / 返回 / 刷新
+  // ---------------------------------------------------------------------
+
+  final skeleton = find.byWidgetPredicate((widget) => widget is Skeletonizer);
+
+  testWidgets('加载中先出骨架，数据到位后换成真实列表', (tester) async {
+    final gate = Completer<void>();
+    final questions = twoQuestions();
+
+    await pumpScreen(
+      tester,
+      const WrongBookScreen(),
+      overrides: fakeWrongBook(questions: questions, gate: gate),
+    );
+
+    // initState 的 loadData 卡在 gate 上：这一帧必须是骨架，而不是「没有错题」
+    expect(skeleton, findsOneWidget);
+    expect(find.text('错题甲：下列说法正确的是？'), findsNothing);
+
+    gate.complete();
+    await tester.pump();
+    await tester.pump();
+
+    expect(skeleton, findsNothing);
+    expect(find.text('错题甲：下列说法正确的是？'), findsOneWidget);
+  });
+
+  testWidgets('右上刷新：重新拉一次数据', (tester) async {
+    final repository = FakeWrongBookRepository()
+      ..questions = twoQuestions()
+      ..groupedByTag = <WrongQuestionsByTag>[];
+
+    await pumpScreen(
+      tester,
+      const WrongBookScreen(),
+      overrides: fakeWrongBook(repository: repository),
+    );
+    await tester.pump();
+
+    expect(repository.loadCalls, 1);
+
+    await tester.tap(find.byTooltip('刷新错题本'));
+    await tester.pump();
+    await tester.pump();
+
+    expect(repository.loadCalls, 2);
+  });
+
+  testWidgets('已掌握视图：枚举值仍保留，这里按列表兜底且不出底部操作栏', (tester) async {
+    final questions = twoQuestions();
+    await pumpScreen(
+      tester,
+      const WrongBookScreen(),
+      overrides: fakeWrongBook(questions: questions),
+    );
+    await tester.pump();
+
+    final container = ProviderScope.containerOf(
+      tester.element(find.byType(WrongBookScreen)),
+    );
+    container
+        .read(wrongBookControllerProvider.notifier)
+        .setViewMode(WrongBookViewMode.mastered);
+    await tester.pump();
+
+    // 页签上没有「已掌握」，但状态值仍可能被别处设进来：不能白屏
+    expect(find.text('错题甲：下列说法正确的是？'), findsOneWidget);
+    // 底部操作栏只在列表视图出现，这里是兜底展示的另一个视图
+    expect(find.byType(ElevatedButton), findsNothing);
+  });
+
+  testWidgets('按知识点视图为空时给空态，而不是一行空白', (tester) async {
+    await pumpScreen(
+      tester,
+      const WrongBookScreen(),
+      overrides: fakeWrongBook(
+        questions: <WrongQuestion>[],
+        groupedByTag: <WrongQuestionsByTag>[],
+      ),
+    );
+    await tester.pump();
+
+    await tester.tap(find.text('按知识点'));
+    await tester.pump();
+
+    expect(find.byType(AppEmptyView), findsOneWidget);
+    expect(find.text('太棒了，没有错题！'), findsOneWidget);
+  });
+
+  testWidgets('返回按钮：栈里有上一页就回上一页', (tester) async {
+    final router = await pumpRouter(
+      tester,
+      initialLocation: AppRoutes.dashboard,
+      routes: <String, WidgetBuilder>{
+        AppRoutes.dashboard: (context) => routeStub(AppRoutes.dashboard),
+        AppRoutes.wrongBook: (context) => const WrongBookScreen(),
+      },
+      overrides: fakeWrongBook(questions: twoQuestions()),
+    );
+
+    router.push(AppRoutes.wrongBook);
+    await tester.pump();
+    await tester.pump();
+    expect(find.byType(WrongBookScreen), findsOneWidget);
+
+    await tester.tap(find.byTooltip('返回'));
+    await tester.pumpAndSettle();
+
+    expectLocation(router, AppRoutes.dashboard);
   });
 }

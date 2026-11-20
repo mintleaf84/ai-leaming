@@ -37,10 +37,10 @@ import '../navigation_rules_test.dart' show stripCommentsAndFlatten;
 /// 静态扫描只看得到调用名、看不到里面的 `Text`。这四处都有可见标题文案，
 /// 读屏会念出来，不需要再叠一层 `Semantics(label:)`（叠了反而念两遍）。
 const a11yAllowlist = <String, String>{
-  'lib/features/dashboard/presentation/dashboard_screen.dart#GestureDetector#0':
-      '文字在 _buildActionCard 里（「全量题库/探索」），静态扫描跨不过函数边界',
-  'lib/features/dashboard/presentation/dashboard_screen.dart#GestureDetector#1':
-      '文字在 _buildActionCard 里（「智能复习/开始练习」），静态扫描跨不过函数边界',
+  'lib/features/dashboard/presentation/widgets/dashboard_action_grid.dart#GestureDetector#0':
+      '文字在 DashboardActionCard 里（「全量题库/探索」），静态扫描跨不过 widget 边界',
+  'lib/features/dashboard/presentation/widgets/dashboard_action_grid.dart#GestureDetector#1':
+      '文字在 DashboardActionCard 里（「智能复习/开始练习」），静态扫描跨不过 widget 边界',
   'lib/features/practice/presentation/practice_setup_screen.dart#GestureDetector#0':
       'child 是 _buildModeCard 返回的卡片，模式名与说明都是可见 Text',
   'lib/shared/widgets/animated_option_card.dart#GestureDetector#0':

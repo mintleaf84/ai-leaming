@@ -112,6 +112,77 @@ export const questions = sqliteTable(
   }),
 );
 
+// --- 试卷 / 模考（docs/exam-paper-plan.md §1） ---
+
+/**
+ * 试卷本体。
+ *
+ * 一次作答**不是**新表：复用 `practice_sessions`（`practice_mode='exam'` +
+ * `paper_id` 指向本表），因此错题本、历史、统计、掌握度都自动生效
+ * （见 docs/exam-paper-plan.md §1 的取舍说明）。
+ *
+ * 自动卷把当时生效的规则存进 `rules_json`：题目可以后续被改/删，但"这张卷是
+ * 按什么规则组的"必须可追溯。`kind='fixed'` 时 `duration_minutes` 强制为 NULL。
+ */
+export const exam_papers = sqliteTable(
+  "exam_papers",
+  {
+    id: integer("id").primaryKey({ autoIncrement: true }),
+    user_id: integer("user_id")
+      .notNull()
+      .references(() => users.id, { onDelete: "cascade" }),
+    title: text("title").notNull(),
+    kind: text("kind", { enum: ["fixed", "timed"] })
+      .notNull()
+      .default("fixed"),
+    duration_minutes: integer("duration_minutes"),
+    source: text("source", { enum: ["manual", "auto"] })
+      .notNull()
+      .default("manual"),
+    rules_json: text("rules_json"),
+    total_questions: integer("total_questions").notNull().default(0),
+    created_at: text("created_at").default(sql`CURRENT_TIMESTAMP`),
+    updated_at: text("updated_at").default(sql`CURRENT_TIMESTAMP`),
+  },
+  (table) => ({
+    idx_user_created: index("idx_exam_papers_user_created").on(
+      table.user_id,
+      sql`${table.created_at} DESC`,
+    ),
+  }),
+);
+
+/**
+ * 试卷内的题目（有序）。
+ *
+ * `UNIQUE(paper_id, question_id)` 把"同一张卷重复出现同一题"变成数据库级约束，
+ * `UNIQUE(paper_id, position)` 保证答题顺序没有空洞/重复。
+ */
+export const exam_paper_items = sqliteTable(
+  "exam_paper_items",
+  {
+    id: integer("id").primaryKey({ autoIncrement: true }),
+    paper_id: integer("paper_id")
+      .notNull()
+      .references(() => exam_papers.id, { onDelete: "cascade" }),
+    question_id: integer("question_id")
+      .notNull()
+      .references(() => questions.id),
+    /** 从 1 开始，决定答题顺序 */
+    position: integer("position").notNull(),
+  },
+  (table) => ({
+    uq_paper_question: unique("uq_exam_paper_items_question").on(
+      table.paper_id,
+      table.question_id,
+    ),
+    uq_paper_position: unique("uq_exam_paper_items_position").on(
+      table.paper_id,
+      table.position,
+    ),
+  }),
+);
+
 // --- AI 草稿校对流（docs/flutter-mobile-plan.md §34） ---
 
 /**
@@ -231,6 +302,15 @@ export const practice_sessions = sqliteTable(
     is_demo: integer("is_demo").default(0),
     analysis_report: text("analysis_report"), // AI 深度分析报告（JSON）
     total_duration_ms: integer("total_duration_ms").default(0),
+    // --- 试卷作答（docs/exam-paper-plan.md §1）---
+    // 历史行（普通练习）这些列全为 NULL，语义不变。
+    paper_id: integer("paper_id").references(() => exam_papers.id),
+    /** ISO 时间串；不限时（kind=fixed）为 NULL */
+    deadline_at: text("deadline_at"),
+    /** 交卷时间（ISO）；NULL = 未交卷。非空即幂等：重放不再写库 */
+    exam_submitted_at: text("exam_submitted_at"),
+    /** 每题 1 分：correct/total */
+    exam_score: real("exam_score"),
     created_at: text("created_at").default(sql`CURRENT_TIMESTAMP`),
   },
   (table) => ({
@@ -238,6 +318,8 @@ export const practice_sessions = sqliteTable(
       table.user_id,
       sql`${table.created_at} DESC`,
     ),
+    // 试卷列表聚合（attemptCount/bestScore）与"有作答禁止删卷"检查都按 paper_id 过滤
+    idx_paper: index("idx_practice_sessions_paper").on(table.paper_id),
     // SQLite 中 NULL 互不相等，故历史数据（source_key 为空）不受影响
     uq_user_source: uniqueIndex("uq_practice_sessions_user_source").on(
       table.user_id,
@@ -267,7 +349,8 @@ export const practice_logs = sqliteTable(
     // D1：作答时长，单位**毫秒**（移动端历史上按秒上报，历史值可能偏小 1000 倍；
     // 服务端对 <1000 的新提交打 warn 作为兜底信号，不改写历史数据）
     duration_ms: integer("duration_ms"),
-    // 来源：web=用户练习，agent=外部 Agent 导入（对错由调用方判定），import=文件导入
+    // 来源：web=用户练习，agent=外部 Agent 导入（对错由调用方判定），import=文件导入，
+    // exam=试卷交卷（判定由服务端 `checkAnswerCorrectness` 统一完成）
     origin: text("origin").notNull().default("web"),
     // 作答状态：answered=正常作答，skipped=未作答/空答案（不进 SRS），wrong_book=错题本收藏
     status: text("status").notNull().default("answered"),

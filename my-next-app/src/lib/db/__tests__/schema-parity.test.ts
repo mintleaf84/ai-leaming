@@ -56,6 +56,10 @@ const MIGRATION_ONLY_TABLES = new Set([
   // 回忆自测（0012）的集成测试用真实迁移 + 文件库，不进内存夹具
   // PDF/AI 导入任务态（0018）同上：用真实迁移 + 文件库的集成测试覆盖
   "pdf_import_tasks",
+  // 试卷（0024）同样由真实迁移 + 文件库的集成测试覆盖（exam.test.ts）：
+  // 试卷的归属、级联删除、组卷过滤都依赖真实索引与约束，内存夹具替不了
+  "exam_papers",
+  "exam_paper_items",
   "recall_card_states",
   "recall_cards",
   "recall_decks",

@@ -24,7 +24,7 @@ import {
 } from "@/lib/services/question-batch";
 import { indexQuestion } from "@/lib/services/question-vector-index";
 import { touchesEmbeddingText } from "@/lib/services/question-index-policy";
-import { parsePagination } from "@/lib/api/pagination";
+import { parsePageParams } from "@/lib/api/pagination";
 import {
   DryRunQuerySchema,
   RateLimitedResponse,
@@ -84,14 +84,17 @@ const listRoute = createRoute({
 
 app.openapi(listRoute, async (c) => {
   const { page, limit, tag } = c.req.valid("query");
-  // `page` 是本接口独有的页码口径（其余接口统一 limit/offset）；
-  // `limit` 走共用解析器：非法值回落默认 20、上限截到 100，且恒为整数。
-  const pageNum = Math.max(1, parseInt(page));
-  const { limit: limitNum } = parsePagination(
-    { limit },
-    { defaultLimit: 20, maxLimit: 100 },
+  // `page` + `limit` 是外部题库接口独有的页码口径（其余接口统一 limit/offset），
+  // 但解析规则与 `history` / `questions` 共用 `parsePageParams`：非法 page 回落 1、
+  // 非法 limit 回落 20、limit 上限截到 100，offset 由它算好 —— 这里不再手写。
+  const {
+    page: pageNum,
+    pageSize: limitNum,
+    offset,
+  } = parsePageParams(
+    { page, limit },
+    { defaultPageSize: 20, maxPageSize: 100 },
   );
-  const offset = (pageNum - 1) * limitNum;
 
   const { total, rows } = await listQuestionsPage({
     limit: limitNum,

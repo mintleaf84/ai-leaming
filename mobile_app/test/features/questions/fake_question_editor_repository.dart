@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:dio/dio.dart';
 import 'package:mobile_app/features/practice/domain/question.dart';
 import 'package:mobile_app/features/questions/domain/question_draft.dart';
@@ -36,6 +38,10 @@ class FakeQuestionEditorRepository extends QuestionEditorRepository {
 
   Object? loadError;
   Object? saveError;
+
+  /// 确认入库可以挂住（`confirmDraft` 等这个 Completer 完成）。
+  /// 用来观察「确认中」按钮里的 spinner 与结果回来前的界面。
+  Completer<void>? confirmGate;
 
   final List<Map<String, dynamic>> createdPayloads = <Map<String, dynamic>>[];
   final List<String> updatedIds = <String>[];
@@ -121,6 +127,8 @@ class FakeQuestionEditorRepository extends QuestionEditorRepository {
 
   @override
   Future<DraftConfirmResult> confirmDraft(String draftId) async {
+    final gate = confirmGate;
+    if (gate != null) await gate.future;
     final error = saveError;
     if (error != null) throw error;
     confirmedDrafts.add(draftId);

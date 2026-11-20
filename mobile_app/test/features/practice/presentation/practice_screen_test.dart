@@ -6,6 +6,7 @@ import 'package:skeletonizer/skeletonizer.dart';
 import 'package:mobile_app/core/theme/app_icons.dart';
 import 'package:mobile_app/features/practice/domain/question.dart';
 import 'package:mobile_app/features/practice/presentation/practice_screen.dart';
+import 'package:mobile_app/features/practice/presentation/widgets/question_material_card.dart';
 import 'package:mobile_app/shared/widgets/animated_option_card.dart';
 import 'package:mobile_app/shared/widgets/state_views.dart';
 
@@ -179,5 +180,107 @@ void main() {
 
     expect(find.byType(AppEmptyView), findsOneWidget);
     expect(find.byType(AppErrorView), findsNothing);
+  });
+
+  // ---------------------------------------------------------------------
+  // 材料题（服务端 practice.ts 的 material / material_html）
+  // ---------------------------------------------------------------------
+
+  /// 材料卡折叠判定要等「布局 → post-frame 回报高度 → setState」这一跳，
+  /// `settle()` 只推两帧有时不够，多推一帧到稳态。
+  Future<void> settleMaterial(WidgetTester tester) async {
+    await settle(tester);
+    await tester.pump();
+    await tester.pump();
+  }
+
+  testWidgets('材料题：有 material_html 时渲染「材料」卡与富文本', (tester) async {
+    final question = fakeQuestion(
+      content: '根据材料，下列说法正确的是？',
+      material: '材料纯文本兜底',
+      materialHtml: '<p>材料<b>富文本</b>正文</p>',
+    );
+    final repository = FakePracticeRepository(questions: <Question>[question]);
+
+    await pumpScreen(
+      tester,
+      const PracticeScreen(),
+      overrides: fakePractice(repository: repository),
+    );
+    await settleMaterial(tester);
+
+    expect(find.byType(QuestionMaterialCard), findsOneWidget);
+    expect(find.text('材料'), findsOneWidget);
+    // HTML 优先：卡片里出现的是富文本的内容，不是纯文本兜底
+    expect(find.text('材料富文本正文', findRichText: true), findsOneWidget);
+    expect(find.text('材料纯文本兜底'), findsNothing);
+    expect(tester.takeException(), isNull);
+  });
+
+  testWidgets('材料题：只有纯文本 material 时也能渲染材料卡', (tester) async {
+    final question = fakeQuestion(
+      material: '只有纯文本的材料正文。',
+    );
+    final repository = FakePracticeRepository(questions: <Question>[question]);
+
+    await pumpScreen(
+      tester,
+      const PracticeScreen(),
+      overrides: fakePractice(repository: repository),
+    );
+    await settleMaterial(tester);
+
+    expect(find.byType(QuestionMaterialCard), findsOneWidget);
+    expect(find.text('材料'), findsOneWidget);
+    expect(find.text('只有纯文本的材料正文。'), findsOneWidget);
+    expect(tester.takeException(), isNull);
+  });
+
+  testWidgets('非材料题：无 material / material_html 时材料卡不占位', (tester) async {
+    final question = fakeQuestion(content: '普通单选题：没有材料。');
+    final repository = FakePracticeRepository(questions: <Question>[question]);
+
+    await pumpScreen(
+      tester,
+      const PracticeScreen(),
+      overrides: fakePractice(repository: repository),
+    );
+    await settleMaterial(tester);
+
+    // 卡片本身在树里（统一入口），但渲染成 SizedBox.shrink，不占任何高度
+    expect(find.byType(QuestionMaterialCard), findsOneWidget);
+    expect(find.text('材料'), findsNothing);
+    expect(find.text('展开'), findsNothing);
+    expect(tester.takeException(), isNull);
+  });
+
+  testWidgets('材料题：超长材料 + 1.3 倍字号不溢出，折叠后可展开', (tester) async {
+    // 400 字 × 18.2 字号，在 375 宽下必然超过 6 行 → 触发折叠
+    final longMaterial = List<String>.generate(
+      20,
+      (index) => '第${index + 1}段材料：教学过程中教师应遵循直观性原则、'
+          '启发性原则与循序渐进原则，并结合学生身心发展规律组织课堂。',
+    ).join('\n');
+    final question = fakeQuestion(material: longMaterial);
+    final repository = FakePracticeRepository(questions: <Question>[question]);
+
+    await pumpScreen(
+      tester,
+      const PracticeScreen(),
+      overrides: fakePractice(repository: repository),
+      textScale: 1.3,
+    );
+    await settleMaterial(tester);
+
+    // 关键：长材料 + 大字号不能抛 RenderFlex/Overflow 异常
+    expect(tester.takeException(), isNull);
+    expect(find.text('材料'), findsOneWidget);
+    // 超过 6 行 → 折叠，出现「展开」出口
+    expect(find.text('展开'), findsOneWidget);
+
+    await tester.tap(find.text('展开'));
+    await settleMaterial(tester);
+    expect(find.text('收起'), findsOneWidget);
+    expect(tester.takeException(), isNull);
   });
 }

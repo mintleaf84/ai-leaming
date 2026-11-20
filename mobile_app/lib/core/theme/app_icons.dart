@@ -62,6 +62,7 @@ class AppIcons {
   static const IconData dnsOutlined = Symbols.dns;  // 原 Icons.dns_outlined
   static const IconData errorOutline = Symbols.error_outline;  // 原 Icons.error_outline
   static const IconData eventOutlined = Symbols.event;  // 原 Icons.event_outlined
+  static const IconData expandLess = Symbols.expand_less;  // 原 Icons.expand_less
   static const IconData expandMore = Symbols.expand_more;  // 原 Icons.expand_more
   static const IconData feedbackOutlined = Symbols.feedback;  // 原 Icons.feedback_outlined
   static const IconData filterAlt = Symbols.filter_alt;  // 原 Icons.filter_alt

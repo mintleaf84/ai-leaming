@@ -28,6 +28,8 @@
 | §25    | 备考主路径摩擦（F1–F5）                         | 计划                          |
 | §26    | APK 发布链路（R1–R6）                           | 计划                          |
 | §27    | CI 时长与测试预算                               | 计划                          |
+| §28    | SRS 积压治理（先量再定）                        | 计划（待 4 条 SQL 结果）      |
+| §29    | 移动端诊断日志（本地环形缓冲）                  | 计划                          |
 
 > 维护约定：新增段落追加到末尾并在此表登记；状态只有四种——`[已完成]` / `计划` / `[不做]` / `待决策`。
 
@@ -895,3 +897,100 @@ R1+R2（先让包可区分）→ R3 → R4 → R5（文档）→ R6（演练一�
 
 - 自建 runner 承接 web CI（`SELF_HOSTED` 开关已有，但本机 glibc 2.17 跑不了 Chromium）
 - 删掉 Playwright：61 条 layout-guard 是 UI 回归的唯一护栏，只是不该挡每个 PR
+
+## 28. SRS 积压治理（计划，先量再定）
+
+### 28.1 现状与口径
+
+两套 SRS 并存，**不要混谈**：
+
+| 表 | 粒度 | 规模（审计快照） | 备注 |
+| --- | --- | --- | --- |
+| `question_srs` | 题级（每题一条） | 2482 行，**2473 条已到期** | 审计里说的"2473 张"是这一套；用户 1 占 1993 |
+| `recall_card_states` | 卡级（记忆卡） | 未统计 | 有 `archived` 列，可批量归档 |
+
+积压的时间背景：快照前最后活动是 8 月底，积压约 2.5 个月。
+
+### 28.2 第一步：量（不写代码，先跑 4 条 SQL）
+
+在线上库**只读副本**上执行（`VACUUM INTO` 出来的快照即可，不要直连生产写）：
+
+```sql
+-- Q1 到期分桶：决定"今日/本周/积压"怎么切
+SELECT CASE
+         WHEN julianday('now') - julianday(due_date) <= 0  THEN '0-未到期'
+         WHEN julianday('now') - julianday(due_date) <= 1  THEN '1-今天'
+         WHEN julianday('now') - julianday(due_date) <= 7  THEN '2-一周内'
+         WHEN julianday('now') - julianday(due_date) <= 30 THEN '3-一月内'
+         ELSE '4-超过一月'
+       END AS bucket,
+       COUNT(*) AS n
+FROM question_srs
+WHERE user_id = 1
+GROUP BY bucket ORDER BY bucket;
+
+-- Q2 积压的"题"集中在哪些知识点（决定排序与批量处理）
+SELECT q.knowledge_point, COUNT(*) AS n
+FROM question_srs s JOIN questions q ON q.id = s.question_id
+WHERE s.user_id = 1 AND julianday(s.due_date) < julianday('now')
+GROUP BY q.knowledge_point ORDER BY n DESC LIMIT 15;
+
+-- Q3 从未复习过的（reps=0）占比：这批是"生题"，策略与"复习过的"不同
+SELECT CASE WHEN reps = 0 THEN 'never' ELSE 'reviewed' END AS kind,
+       state, COUNT(*) AS n
+FROM question_srs WHERE user_id = 1
+GROUP BY kind, state;
+
+-- Q4 卡级积压（记忆卡，另一套）
+SELECT CASE WHEN archived = 1 THEN 'archived' ELSE 'active' END AS kind,
+       COUNT(*) AS n,
+       SUM(CASE WHEN due IS NOT NULL AND julianday(due) < julianday('now') THEN 1 ELSE 0 END) AS due_now
+FROM recall_card_states WHERE user_id = 1 GROUP BY kind;
+```
+
+**产出**：把 4 条结果贴回来，据此定策略。没有这组数之前不写任何治理代码。
+
+### 28.3 策略候选（等数据后三选一或组合）
+
+| 候选 | 做法 | 前提数据 | 判据 | 工作量 |
+| --- | --- | --- | --- | --- |
+| A 分桶展示 | 复习入口从"到期 N 张"改成"今天 N / 积压 M"，积压单独入口且默认不混入今日队列 | Q1 显示积压占比高 | 首页不再出现三位数总到期数；今日队列 ≤ 每日上限 | 1d |
+| B 批量归档 | 对"超过 X 天未复习且 reps 高"的题批量 `archived`/降优先级（`recall_card_states` 已有 `archived`；题级需加列或映射） | Q1+Q3 显示老积压以已复习题为主 | 归档后今日队列可被清空；归档可撤销 | 1–1.5d |
+| C 每日上限 | 队列按每日上限截断（如 30 题/20 卡），剩余顺延 | 任意 | 单日不会出现"永远背不完" | 0.5d |
+
+### 28.4 不做
+
+- 不改 FSRS 参数（`stability`/`difficulty` 的历史值不可重建，调参等于用错数据训练）
+- 不重建调度、不批量 `UPDATE due_date`
+- 不删存量行（归档是软操作，可撤销）
+
+## 29. 移动端诊断日志（计划）
+
+### 29.1 为什么
+
+现在 `lib` 里 0 处 `FlutterError.onError`、0 处 `PlatformDispatcher.onError`、无 Sentry/Crashlytics。
+用户遇到闪退只能描述"刚才卡了一下"，无法定位。不接第三方（无账号/无 DSN/不想引依赖）也能拿到可用信息。
+
+### 29.2 设计
+
+| 层 | 内容 |
+| --- | --- |
+| `ErrorLogEntry` | `at / kind / message / stack`，`toJson`/`fromJson`（坏数据返回 null） |
+| `ErrorLog` | 内存环形缓冲 **200 条**（丢最旧）；`add/entries/exportText/clear`；`load/persist` 走既有 `PreferencesStore`（key `diagnostics_log`），**读写失败只 debugPrint** |
+| 全局钩子 | `FlutterError.onError`（kind=flutter，仍调用 `presentError`）、`PlatformDispatcher.onError`（platform）、`runZonedGuarded` 包 `runApp`（zone） |
+| 启动顺序 | `await ErrorLog.load()` 再 `runApp`；加载失败不阻塞启动 |
+| 设置页 | 「数据管理」加「诊断日志 N 条」→ 弹窗显示最近 20 条 + 「复制全部」（`Clipboard.setData`）+ 「清空」；无记录显示「暂无记录」 |
+
+### 29.3 判据
+
+- 单测 5 条：环形丢最旧、最新在前、JSON 往返、坏 JSON 返回 null、落盘失败不影响 `add`
+- widget 测试 2 条：有日志显示条数并可打开弹窗、无日志显示「暂无记录」
+- 变异验证：注释掉 `FlutterError.onError` 赋值 → 对应用例变红
+- `flutter analyze` error/warning = 0；门禁 PASS（新增 lib 文件 ≥60%）
+- 工作量：0.5d
+
+### 29.4 不做
+
+- 不做自动上传（无后端接收端，且涉及隐私）
+- 不记录用户内容（题干、答案不进日志，只记异常与堆栈）
+

@@ -92,5 +92,65 @@ void main() {
       expect(state.currentPage, 2);
       verify(() => mockRepository.getQuestions(page: 1, limit: 20)).called(1);
     });
+
+    test('加载失败时 error 是面向用户的文案，不是原始异常', () async {
+      final container = makeProviderContainer();
+      when(
+        () => mockRepository.getQuestions(page: 1, limit: any(named: 'limit')),
+      ).thenThrow(Exception('boom: socket closed'));
+
+      final notifier = container.read(questionsControllerProvider.notifier);
+      await notifier.fetchQuestions();
+
+      final state = container.read(questionsControllerProvider);
+      expect(state.isLoading, isFalse);
+      expect(state.error, isNotNull);
+      // 用户可见文案里不能出现原始异常内容
+      expect(state.error, isNot(contains('boom')));
+      expect(state.items, isEmpty);
+    });
+
+    test('翻页失败时保留已上屏的题目，错误只体现在 error', () async {
+      final container = makeProviderContainer();
+      when(
+        () => mockRepository.getQuestions(page: 1, limit: any(named: 'limit')),
+      ).thenAnswer((_) async => tResponse1);
+
+      final notifier = container.read(questionsControllerProvider.notifier);
+      await notifier.fetchQuestions();
+
+      when(
+        () => mockRepository.getQuestions(page: 2, limit: any(named: 'limit')),
+      ).thenThrow(Exception('boom'));
+
+      await notifier.fetchQuestions();
+
+      final state = container.read(questionsControllerProvider);
+      expect(state.items.length, 2, reason: '已加载的题目不能被一次翻页失败清空');
+      expect(state.error, isNotNull);
+      expect(state.isLoading, isFalse);
+    });
+
+    test('applySearch 清空列表并从第 1 页重查', () async {
+      final container = makeProviderContainer();
+      when(
+        () => mockRepository.getQuestions(
+          page: any(named: 'page'),
+          limit: any(named: 'limit'),
+          search: any(named: 'search'),
+        ),
+      ).thenAnswer((_) async => tResponse1);
+
+      final notifier = container.read(questionsControllerProvider.notifier);
+      await notifier.applySearch('  教育  ');
+
+      final state = container.read(questionsControllerProvider);
+      expect(state.search, '教育', reason: '关键词要 trim');
+      expect(state.currentPage, 2, reason: '重查完成后指针前进一页');
+      expect(state.error, isNull);
+      verify(
+        () => mockRepository.getQuestions(page: 1, limit: 20, search: '教育'),
+      ).called(1);
+    });
   });
 }

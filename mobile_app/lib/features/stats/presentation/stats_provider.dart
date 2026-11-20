@@ -1,4 +1,6 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:flutter/foundation.dart';
+import '../../../core/error/user_message.dart';
 import '../../../core/network/dio_client.dart';
 import '../../../shared/datasources/api_client.dart';
 import '../domain/learning_stats.dart';
@@ -47,7 +49,8 @@ class StatsController extends Notifier<StatsState> {
       final stats = LearningStats.fromJson(response as Map<String, dynamic>);
       state = state.copyWith(isLoading: false, stats: stats);
     } catch (e) {
-      state = state.copyWith(isLoading: false, error: e.toString());
+      debugPrint('[Stats] 加载统计数据失败: $e');
+      state = state.copyWith(isLoading: false, error: userMessageOf(e));
     }
   }
 }

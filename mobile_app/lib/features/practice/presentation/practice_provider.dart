@@ -1,10 +1,17 @@
+import 'dart:async';
 import 'dart:convert';
 import 'package:flutter/foundation.dart';
+import '../../../core/auth/token_util.dart';
+import '../../../core/error/user_message.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../data/practice_repository_impl.dart';
 import '../domain/practice_repository.dart';
+import '../domain/practice_resume.dart';
 import '../domain/question.dart';
 import '../domain/first_principles_response.dart';
+import '../../history/presentation/history_provider.dart';
+import '../../wrong_book/data/wrong_book_repository.dart';
+import 'practice_resume_provider.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 
 /// 防重复提交标志
@@ -94,22 +101,104 @@ class PracticeController extends Notifier<PracticeSessionState> {
   int _sessionGeneration = 0;
   final FlutterSecureStorage _storage = const FlutterSecureStorage();
 
+  /// 本场**已落盘**的题号（`persisted=true` 的作答）。
+  ///
+  /// 断点只认这一份：`persisted=false` 的作答（离线入队失败）在服务端/本地
+  /// 都没有记录，重启后必须回到那道题重练，不能被「已答过」挡在后面。
+  final Set<String> _persistedQuestionIds = <String>{};
+
+  /// 本场练习的模式，只用于写断点（后端目前只支持 `random`）。
+  String _mode = 'random';
+
+  /// 当前账号 id（`TokenUtil.userIdOf(jwt_token)`）：断点必须带归属，
+  /// 否则账号 B 能接着做 A 的练习（review 二轮 3）。
+  String? _userId;
+
+  /// 旧格式断点留下的「已答数」连续前缀（新格式断点为 0）。
+  ///
+  /// 旧格式只有 `answered`、没有题号，恢复后 `answers` 为空；若落点仍按
+  /// 「第一道未答题」算，重写断点会把进度覆盖成 0（review 二轮 2）。
+  int _legacyAnswered = 0;
+
   @override
   PracticeSessionState build() => const PracticeSessionState();
 
   PracticeRepository get _repository => ref.read(practiceRepositoryProvider);
 
+  /// 把当前进度写进断点（首页「继续上次练习」读它）。
+  ///
+  /// 只在**有会话且有题**时写：`reset()` 之后的空状态不该被写成一个断点。
+  /// 写盘失败只打日志，不影响正在进行的练习。
+  ///
+  /// 写进去的是「已答题号 + 对错」与「第一道未答题的下标」，不是 `results.length`：
+  /// 后者在跳题作答时会把恢复位置指到一道已经判过的题上，续练还会把真实进度
+  /// 覆盖成 0（review A1/A2）。
+  void _persistResume() {
+    final sessionId = state.sessionId;
+    if (sessionId == null || sessionId.isEmpty || state.questions.isEmpty) {
+      return;
+    }
+    // 没有账号归属的断点不可恢复（读取时会因归属不匹配被丢弃），不写。
+    final userId = _userId;
+    if (userId == null) {
+      return;
+    }
+    unawaited(
+      ref
+          .read(practiceResumeControllerProvider.notifier)
+          .save(
+            PracticeResume(
+              sessionId: sessionId,
+              answers: <ResumeAnswer>[
+                for (final entry in state.results.entries)
+                  if (_persistedQuestionIds.contains(entry.key))
+                    ResumeAnswer(
+                      questionId: entry.key,
+                      isCorrect: entry.value,
+                    ),
+              ],
+              nextIndex: _firstUnansweredIndex(),
+              total: state.questions.length,
+              mode: _mode,
+              userId: userId,
+              legacyAnswered: _legacyAnswered,
+              savedAt: DateTime.now(),
+            ),
+          ),
+    );
+  }
+
+  /// 第一道没有落盘作答的题的下标。
+  ///
+  /// 跳题作答（答了第 3 题、第 1 题没答）时这里返回 0——恢复后从真正没做的
+  /// 题开始，而不是从「已答数」推出来的位置。
+  ///
+  /// 旧格式断点的连续前缀（[_legacyAnswered]）视为已答：从它往后找，
+  /// 这样「恢复 → 立即落盘」不会把进度写回 0，用户答完前缀后的第一题才会越过它。
+  int _firstUnansweredIndex() {
+    for (var i = _legacyAnswered; i < state.questions.length; i++) {
+      if (!_persistedQuestionIds.contains(state.questions[i].id)) {
+        return i;
+      }
+    }
+    // 全答完：停在最后一题（这场随即会被结果页清掉断点）
+    return state.questions.length - 1;
+  }
+
   /// 创建新会话
   Future<void> createSession({int limit = 10, String mode = 'random'}) async {
     final generation = ++_sessionGeneration;
+    _mode = mode;
     state = state.copyWith(isLoading: true, error: null);
 
     try {
       final token = await _storage.read(key: 'jwt_token');
+      if (generation != _sessionGeneration) return;
       if (token == null) {
         state = state.copyWith(isLoading: false, error: '请先登录');
         return;
       }
+      _userId = TokenUtil.userIdOf(token);
 
       final sessionResponse = await _repository.createSession(
         limit: limit,
@@ -119,6 +208,8 @@ class PracticeController extends Notifier<PracticeSessionState> {
       // 期间用户已退出/又开了新的一场：丢弃这次响应
       if (generation != _sessionGeneration) return;
 
+      _persistedQuestionIds.clear();
+      _legacyAnswered = 0;
       state = state.copyWith(
         isLoading: false,
         sessionId: sessionResponse.sessionId,
@@ -132,9 +223,12 @@ class PracticeController extends Notifier<PracticeSessionState> {
       );
 
       _questionStartTime = DateTime.now();
+      _persistResume();
     } catch (e) {
       if (generation != _sessionGeneration) return;
-      state = state.copyWith(isLoading: false, error: e.toString());
+      // 原始异常只进日志，界面用统一文案（审计 #24）。
+      debugPrint('[Practice] 创建练习失败: $e');
+      state = state.copyWith(isLoading: false, error: userMessageOf(e));
     }
   }
 
@@ -158,38 +252,94 @@ class PracticeController extends Notifier<PracticeSessionState> {
     return buffer.toString().trimRight();
   }
 
-  /// 从服务端已有会话加载题目（错题本「开始练习」用）
-  /// 与 createSession 的差别：不新建会话，直接复用 wrong-book/practice 建好的那一场。
-  Future<void> loadSession(String sessionId) async {
+  /// 从服务端已有会话加载题目（错题本「开始练习」/ 首页「继续上次练习」用）
+  /// 与 createSession 的差别：不新建会话，直接复用已经建好的那一场。
+  ///
+  /// [startIndex] 是续练的兜底起点（没有已答记录时用）。
+  /// [answered] 是断点里持久化的已答记录：恢复时一并回填 `results`，
+  /// 落点则取「第一道未答题」——比传进来的下标更准（跳题作答时两者不同）。
+  Future<void> loadSession(
+    String sessionId, {
+    int startIndex = 0,
+    List<ResumeAnswer> answered = const <ResumeAnswer>[],
+    int legacyAnswered = 0,
+  }) async {
+    // 代次：`reset()` / 新的 createSession 已经让这次加载失效时，
+    // 迟到的响应（含异常分支）必须整体丢弃，不能把旧会话写回来。
+    final generation = ++_sessionGeneration;
+
     // 上一场可能还留在状态里（provider 不是 autoDispose）：先清空，
     // 避免加载失败时页面继续渲染旧题目/旧会话。
     state = const PracticeSessionState(isLoading: true);
 
     try {
       final token = await _storage.read(key: 'jwt_token');
+      if (generation != _sessionGeneration) return;
       if (token == null) {
         state = state.copyWith(isLoading: false, error: '请先登录');
         return;
       }
+      _userId = TokenUtil.userIdOf(token);
+      // 旧格式断点没有题号，只有「已答数」这个连续前缀：落点必须从它往后算，
+      // 否则恢复即落盘会把进度写回 0（review 二轮 2）。
+      _legacyAnswered = legacyAnswered > 0 ? legacyAnswered : 0;
 
       final sessionResponse = await _repository.getSession(sessionId);
+      if (generation != _sessionGeneration) return;
+
+      final questions = sessionResponse.questions;
+      // 只认这一场里真实存在的题号：断点可能来自题面已变（题被换掉）的会话，
+      // 多出来的结果会把结果页的正确率算到题目总数之外。
+      final questionIds = <String>{for (final q in questions) q.id};
+      final restored = <String, bool>{
+        for (final answer in answered)
+          if (questionIds.contains(answer.questionId))
+            answer.questionId: answer.isCorrect,
+      };
+      _persistedQuestionIds
+        ..clear()
+        ..addAll(restored.keys);
 
       state = state.copyWith(
         isLoading: false,
         sessionId: sessionResponse.sessionId,
-        questions: sessionResponse.questions,
-        currentIndex: 0,
+        questions: questions,
+        currentIndex: _resumeIndex(questions, restored.keys, startIndex),
         userAnswers: {},
-        results: {},
+        results: restored,
         correctAnswers: {},
         explanations: {},
         isOffline: sessionResponse.sessionId.startsWith('local_'),
       );
 
       _questionStartTime = DateTime.now();
+      // 回填之后立刻重写一次断点：`results` 已经是「整场已答状态」，
+      // 不会出现续练把已答数覆盖成 0 的情况（review A2）。
+      _persistResume();
     } catch (e) {
-      state = state.copyWith(isLoading: false, error: e.toString());
+      if (generation != _sessionGeneration) return;
+      debugPrint('[Practice] 加载会话失败: $e');
+      state = state.copyWith(isLoading: false, error: userMessageOf(e));
     }
+  }
+
+  /// 续练落点：第一道没有已答记录的题；没有已答记录时用传入的兜底下标。
+  ///
+  /// 扫描从 [_legacyAnswered] 之后开始：旧格式断点的「已答数」是一段连续前缀，
+  /// 前缀里的题没有题号可比，只能按位置当作已答。
+  int _resumeIndex(
+    List<Question> questions,
+    Iterable<String> answeredIds,
+    int fallback,
+  ) {
+    if (questions.isEmpty) return 0;
+    if (answeredIds.isNotEmpty) {
+      for (var i = _legacyAnswered; i < questions.length; i++) {
+        if (!answeredIds.contains(questions[i].id)) return i;
+      }
+      return questions.length - 1;
+    }
+    return fallback.clamp(0, questions.length - 1);
   }
 
   /// 切换选项（单选覆盖，多选 toggle）
@@ -252,6 +402,10 @@ class PracticeController extends Notifier<PracticeSessionState> {
         questionId: question.id,
         userAnswer: userAnswer,
         duration: duration,
+        // 降级成本地会话时要记全整场题序，否则重启后续练只剩断网那一题。
+        sessionQuestionIds: <String>[
+          for (final q in state.questions) q.id,
+        ],
       );
 
       // 从后端响应获取正确性和正确答案
@@ -263,10 +417,29 @@ class PracticeController extends Notifier<PracticeSessionState> {
       final nowOffline = degradedToOffline || state.isOffline;
       final persisted = response['persisted'] != false;
 
-      state = state.copyWith(isLoading: true, isOffline: nowOffline);
+      // 降级后这场练习在服务端已经「断了」：后续作答必须直接走本地会话，
+      // 断点也只能记 `local_<服务端会话 id>`——记服务端 id 的话，离线重启
+      // 后 `getSession('agent_42')` 必然失败，续练直接不可用（review 二轮 4）。
+      final serverSessionId = state.sessionId!;
+      final nextSessionId =
+          degradedToOffline && !serverSessionId.startsWith('local_')
+          ? 'local_$serverSessionId'
+          : serverSessionId;
+
+      state = state.copyWith(
+        isLoading: true,
+        isOffline: nowOffline,
+        sessionId: nextSessionId,
+      );
       if (!persisted) {
         state = state.copyWith(error: '本次作答未能保存到本地，网络恢复后请重练此题');
+      } else {
+        // 只有真的落盘（服务端记录 / 本地队列）的作答才推进断点：
+        // 没保存下来的那道题重启后必须能回到它（review A3）。
+        _persistedQuestionIds.add(question.id);
       }
+      // 错题总数随作答变化：首页角标必须能失效，否则永远停在旧数字（review B7）。
+      ref.invalidate(wrongBookTotalProvider);
       String explanation = '';
       try {
         final detail = await _repository.getQuestionDetail(question.id);
@@ -290,6 +463,8 @@ class PracticeController extends Notifier<PracticeSessionState> {
         explanations: newExplanations,
         isLoading: false,
       );
+      // 已答数变了：断点跟着更新（杀进程后能接着这一题往后做）
+      _persistResume();
     } catch (e) {
       // 静默失败，不影响用户体验
       debugPrint('提交答案失败: $e');
@@ -347,16 +522,29 @@ class PracticeController extends Notifier<PracticeSessionState> {
     } catch (e) {
       state = state.copyWith(
         isAnalyzingFirstPrinciples: false,
-        error: '获取 AI 分析失败: $e',
+        error: '获取 AI 分析失败：${userMessageOf(e)}',
       );
     }
   }
 
   /// 重置会话
   void reset() {
-    // 让还在飞的 createSession 失效，避免它稍后把状态写回来
+    // 有没有「刚结束的一场」：决定首页要不要重新拉一次历史。
+    final hadSession = state.sessionId != null && state.questions.isNotEmpty;
+    // 让还在飞的 createSession / loadSession 失效，避免它们稍后把状态写回来
     _sessionGeneration++;
+    _persistedQuestionIds.clear();
+    _legacyAnswered = 0;
     state = const PracticeSessionState();
+    // 这一场到此为止（结束/主动退出/换一场）：断点一并作废。
+    // 首页据此隐藏「继续上次练习」，不会点进一个已经结束的会话。
+    unawaited(ref.read(practiceResumeControllerProvider.notifier).clear());
+    if (hadSession) {
+      // 首页「最近练习」与错题数不能沿用练习前的列表：练习结束后重新拉一次，
+      // 而不是把「列表非空」当成数据新鲜（review B6）。首页在 shell 的
+      // IndexedStack 里不会重建，只能靠这份共享状态通知它。
+      unawaited(ref.read(historyControllerProvider.notifier).loadHistory());
+    }
   }
 }
 

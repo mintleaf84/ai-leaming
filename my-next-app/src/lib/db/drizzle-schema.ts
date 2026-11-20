@@ -23,16 +23,28 @@ export const users = sqliteTable("users", {
 });
 
 // --- 笔记表 ---
-export const notes = sqliteTable("notes", {
-  id: integer("id").primaryKey({ autoIncrement: true }),
-  user_id: integer("user_id")
-    .notNull()
-    .references(() => users.id, { onDelete: "cascade" }),
-  title: text("title").notNull(),
-  content: text("content"),
-  created_at: text("created_at").default(sql`CURRENT_TIMESTAMP`),
-  updated_at: text("updated_at").default(sql`CURRENT_TIMESTAMP`),
-});
+export const notes = sqliteTable(
+  "notes",
+  {
+    id: integer("id").primaryKey({ autoIncrement: true }),
+    user_id: integer("user_id")
+      .notNull()
+      .references(() => users.id, { onDelete: "cascade" }),
+    title: text("title").notNull(),
+    content: text("content"),
+    created_at: text("created_at").default(sql`CURRENT_TIMESTAMP`),
+    updated_at: text("updated_at").default(sql`CURRENT_TIMESTAMP`),
+  },
+  (table) => ({
+    // 笔记列表的唯一过滤条件是 user_id，排序键是 updated_at（见
+    // knowledge.ts 的 getNoteList）。复合索引的 user_id 是最左前缀，
+    // 等值查询与单列索引等价，同时消掉 ORDER BY 的临时 B 树。
+    idx_user_updated: index("idx_notes_user_updated").on(
+      table.user_id,
+      sql`${table.updated_at} DESC`,
+    ),
+  }),
+);
 
 // --- 题目表 ---
 
@@ -88,10 +100,15 @@ export const questions = sqliteTable(
     material_html: text("material_html"),
     ai_mnemonic: text("ai_mnemonic"),
     external_id: text("external_id"),
+    // 内容级去重键 = sha256(归一化题干)，导入时用于跨来源/无 external_id 的去重
+    content_hash: text("content_hash"),
     created_at: text("created_at").default(sql`CURRENT_TIMESTAMP`),
   },
   (table) => ({
     unq_ext: unique("questions_external_id_unique").on(table.external_id),
+    idx_content_hash: index("idx_questions_content_hash").on(
+      table.content_hash,
+    ),
   }),
 );
 
@@ -169,6 +186,10 @@ export const practice_logs = sqliteTable(
       mode: "boolean",
     }).default(false),
     duration_ms: integer("duration_ms"),
+    // 来源：web=用户练习，agent=外部 Agent 导入（对错由调用方判定），import=文件导入
+    origin: text("origin").notNull().default("web"),
+    // 作答状态：answered=正常作答，skipped=未作答/空答案（不进 SRS），wrong_book=错题本收藏
+    status: text("status").notNull().default("answered"),
     timestamp: text("timestamp").default(sql`CURRENT_TIMESTAMP`),
   },
   (table) => ({
@@ -185,19 +206,27 @@ export const practice_logs = sqliteTable(
     // 按会话取日志（历史详情 / 学习报告 / 续做计数）的唯一过滤条件，
     // 见 drizzle/0016 的说明：没它这三处都是全表扫。
     idx_session: index("idx_practice_logs_session").on(table.session_id),
+    idx_origin: index("idx_practice_logs_origin").on(table.origin),
   }),
 );
 
 // --- 错题/回顾表 ---
-export const session_reviews = sqliteTable("session_reviews", {
-  id: integer("id").primaryKey({ autoIncrement: true }),
-  session_id: text("session_id")
-    .notNull()
-    .references(() => practice_sessions.id),
-  question_id: integer("question_id").notNull(),
-  review_data: text("review_data"), // JSON string
-  created_at: text("created_at").default(sql`CURRENT_TIMESTAMP`),
-});
+export const session_reviews = sqliteTable(
+  "session_reviews",
+  {
+    id: integer("id").primaryKey({ autoIncrement: true }),
+    session_id: text("session_id")
+      .notNull()
+      .references(() => practice_sessions.id),
+    question_id: integer("question_id").notNull(),
+    review_data: text("review_data"), // JSON string
+    created_at: text("created_at").default(sql`CURRENT_TIMESTAMP`),
+  },
+  (table) => ({
+    // 会话详情左连接 / 删会话时按 session_id 取回顾，此前是零索引全表扫。
+    idx_session: index("idx_session_reviews_session").on(table.session_id),
+  }),
+);
 
 // --- 观察区 ---
 export const observation_zone = sqliteTable(
@@ -339,6 +368,12 @@ export const knowledge_cards = sqliteTable(
       sql`${table.created_at} DESC`,
     ),
     idx_user: index("idx_knowledge_cards_user").on(table.user_id),
+    // 卡片列表恒按 user_id 过滤 + created_at 倒序（knowledge.ts:getAllKnowledgeCards）。
+    // 单列 idx_user 只能命中过滤，排序仍要临时 B 树把该用户所有卡片物化一遍。
+    idx_user_created: index("idx_knowledge_cards_user_created").on(
+      table.user_id,
+      sql`${table.created_at} DESC`,
+    ),
   }),
 );
 
@@ -548,19 +583,30 @@ export const textbooks = sqliteTable("textbooks", {
 });
 
 // --- 教材章节表 ---
-export const textbook_chapters = sqliteTable("textbook_chapters", {
-  id: integer("id").primaryKey({ autoIncrement: true }),
-  textbook_id: integer("textbook_id")
-    .notNull()
-    .references(() => textbooks.id, { onDelete: "cascade" }),
-  title: text("title").notNull(),
-  content: text("content").notNull(),
-  order_index: integer("order_index").default(0),
-  parent_id: integer("parent_id"),
-  level: integer("level").default(1),
-  created_at: text("created_at").default(sql`CURRENT_TIMESTAMP`),
-  updated_at: text("updated_at").default(sql`CURRENT_TIMESTAMP`),
-});
+export const textbook_chapters = sqliteTable(
+  "textbook_chapters",
+  {
+    id: integer("id").primaryKey({ autoIncrement: true }),
+    textbook_id: integer("textbook_id")
+      .notNull()
+      .references(() => textbooks.id, { onDelete: "cascade" }),
+    title: text("title").notNull(),
+    content: text("content").notNull(),
+    order_index: integer("order_index").default(0),
+    parent_id: integer("parent_id"),
+    level: integer("level").default(1),
+    created_at: text("created_at").default(sql`CURRENT_TIMESTAMP`),
+    updated_at: text("updated_at").default(sql`CURRENT_TIMESTAMP`),
+  },
+  (table) => ({
+    // 章节列表按 textbook_id 过滤 + order_index 排序（textbook.ts:157），
+    // 此前零索引，打开任意教材都是全表扫 + 临时排序。
+    idx_textbook_order: index("idx_textbook_chapters_textbook").on(
+      table.textbook_id,
+      table.order_index,
+    ),
+  }),
+);
 
 // --- 文本标注表 ---
 export const text_annotations = sqliteTable(

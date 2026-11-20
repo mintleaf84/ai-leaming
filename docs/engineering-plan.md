@@ -276,6 +276,346 @@
 | 开 `noUncheckedIndexedAccess`               | 已评估：数百处索引断言噪音大于收益               |
 | 给函数补注释                                | 注释密度已偏高，问题不在注释                     |
 
+## 本轮收口（2026-11-20）
+
+覆盖率门禁（PR #248）合入 main 后，仓库里积了 5 个开放 PR 和 8 个陈旧 worktree，先收口再开新坑。
+
+### PR 积压
+
+| PR                                | 现状                                  | 动作                                                                          | 阻塞点             |
+| --------------------------------- | ------------------------------------- | ----------------------------------------------------------------------------- | ------------------ |
+| #245 JSON 列再收敛                | 无失败、无 pending                    | 直接 squash 合并                                                              | 无                 |
+| #247 暗色主题语义色（UI 审计 P0） | 红 7 项（含 2 条门禁误报 + 1 条真降） | 先按 `flutter-mobile-plan.md` §13.3 二选一，再重跑                            | 门禁第二轮（§13）  |
+| #239 日志来源与作答状态           | CONFLICTING，1 pending                | rebase 到 main，重跑                                                          | 与 #238 的改动重叠 |
+| #243 deps minor 批量（13 个）     | 红 3 项（Lint + Playwright×2）        | 先看是不是依赖真坏了；若是审计/类型噪音，按既有口径（门禁只拦运行时依赖）收敛 | 未知               |
+| #222 zod 3→4（mcp-server）        | 红 1 项（MCP 构建与文档验收）         | 同上；zod 4 是大版本，可能需改 schema 写法                                    | 未知               |
+
+顺序：#245（无风险）→ #247（等 §13）→ #239（rebase）→ #243/#222（排障）。
+
+### worktree 清理
+
+判据（**不要**用"分支是否 main 的祖先"——squash 合并永远不是）：分支自有改动涉及的文件，
+在 main 上是否已有相同内容。
+
+| worktree        | 分支                          | PR        | 实测                                      | 处置                                   |
+| --------------- | ----------------------------- | --------- | ----------------------------------------- | -------------------------------------- |
+| wt-mockdb       | fix/history-filters           | #187 已合 | 2 个文件与 main 完全一致                  | **已删**（2026-11-20）                 |
+| wt-recall-races | fix/recall-session-races      | #183 已合 | 2 个文件与 main 完全一致                  | **已删**                               |
+| wt-ainative     | refactor/json-columns-batch2  | #245 开放 | 10 文件 +138/−62                          | 保留（等 PR）                          |
+| wt-mobile       | fix/mobile-ui-tokens          | #247 开放 | 37 文件 +1482/−842，另有 4 个未提交测试   | 保留（#247 收口，见 mobile §15）       |
+| wt-regrade      | feat/practice-log-origin      | #239 开放 | —                                         | 保留（等 PR）                          |
+| wt-cross-rest   | test/cross-user-rest-fresh    | **无 PR** | 9 文件 +1371/−18                          | 待决：开 PR / 丢弃 / 保留              |
+| wt-create-q     | feat/external-question-create | #233 已合 | 3 个文件与 main 仍有差异（main 多 55 行） | 待核：确认是 main 后续改动还是分支独有 |
+| wt-dbaudit      | audit/prod-db-20261114        | #237 已合 | 1 个文件 20/20 行不同                     | 待核                                   |
+| wt-sandbox      | chore/deps-libsql-0.18        | #203 已合 | 2 个文件，分支有 49 行 main 没有          | 待核（可能有未合并的后续提交）         |
+
+待核三个的判据：`git log --oneline <main>..<branch>` 看是否只有 merge 提交；若含实质提交，
+要么补 PR，要么 `git diff` 后确认无用再删。
+
+### PR 排障步骤
+
+| PR   | 步骤                                                                                                                                                          | 停止条件                                                   |
+| ---- | ------------------------------------------------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------- |
+| #245 | `gh pr view 245 --json mergeable,mergeStateStatus` 复核（当前 `UNKNOWN`）；MERGEABLE 且 12 项绿 → squash 合并                                                 | 出现冲突则先 rebase                                        |
+| #239 | 冲突来自与 #238 的同文件改动 → `git rebase origin/main`；冲突按"保留 #238 的服务端判分 + 保留 #239 的来源字段"解；解完跑相关 vitest                           | 若两者语义真冲突（同一字段两种写法）→ 回退 #239 重开       |
+| #243 | 失败日志已过期 → 本地 `npm ci && npm run verify` 复现；若失败源于依赖本身（类型/ESLint 规则变化），按"门禁只拦运行时依赖"口径收敛，**不改业务代码迁就新版本** | 需要改业务代码 > 20 行 → 关闭该 PR 并锁回旧版本            |
+| #222 | zod 3→4 是大版本（`z.string().email()` 迁移、`.passthrough()` 语义变化）→ 先 `cd mcp-server && npm run build` 复现，逐处改                                    | 工作量 > 半天 → 关闭并锁 `zod@3`，等 mcp-server 有测试再升 |
+
+### 移动端
+
+门禁第二轮与覆盖率后续见 `flutter-mobile-plan.md` §13–§18。
+
+## 体验收口（2026-11-20）
+
+来源：`docs/ui-audit-2026-11-20.md` 的 P0/P1 中**尚未修**的部分，按"用户会以为产品坏了"排序。
+移动端两条见 `flutter-mobile-plan.md` §19、§20。
+
+### W1 Web 接口失败显示成空态（P0，最伤信任）
+
+| 项                         | 内容                                                                                                                                                                                       |
+| -------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| 证据                       | `my-next-app/src` 共 **22 处 `useQuery`，0 处解构 `isError`**；`components/ui/error-state.tsx` 已在 19 个文件里用过，缺的是数据入口区分三态                                                |
+| 后果                       | 500/断网时走空列表分支，用户看到"暂无数据"，会以为数据被删 → 反复刷新、重录                                                                                                                |
+| 约定                       | 渲染顺序固定 **loading → error → empty → data**；错误态必须带 `onRetry`（接 `refetch`）；文案区分"没有数据"与"加载失败，点击重试"                                                          |
+| 批次 A（6 个高频页，0.5d） | `knowledge` / `history` / `wrong-book` / `stats` / `dashboard` / `textbook`                                                                                                                |
+| 批次 B（其余 16 处，0.5d） | 逐处解构 `isError` + `error`，共用 error-state                                                                                                                                             |
+| 判据                       | 每处渲染分支里出现 `isError`（grep 可核）；`npm run typecheck` 0 error；`lint:ci` 不新增；CI 的 layout-guard 61 条不回归；每个页面加一条 vitest：mock 抛错 → 渲染错误态且 `onRetry` 被调用 |
+| 验证限制                   | **本机 glibc 2.17 跑不了 Chromium**，UI 只能靠 CI 的 Playwright + 真机自查；不承诺本地截图                                                                                                 |
+
+### W2 手机上点不到的按钮（P1，功能不可用）
+
+| 项     | 内容                                                                                                                                                                                                                                                                                 |
+| ------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| 证据   | 12 处 `opacity-0 group-hover:opacity-100`，其中 5 处是真功能：`components/textbooks/DeleteTextbookButton.tsx:59`、`app/notes/NoteSidebar.tsx:160`、`app/mindmap/MindmapSidebar.tsx:99`、`components/chat/ChatSidebar.tsx:153`、`app/admin/activity/_components/ActivityList.tsx:238` |
+| 后果   | 触屏没有 hover → 按钮永不出现，删除/编辑类功能在手机上等于不存在                                                                                                                                                                                                                     |
+| 修法   | 改用 `@media (hover: hover)` 判定（已落地为 `globals.css` 的 `.hover-reveal`）：只有真正支持悬停的设备才隐藏，触屏与混合设备常显；保留 `:focus-visible` 与 `.group:focus-within` 供键盘。**不要用 `md:` 断点**——宽度达标的触屏设备仍无法 hover                                       |
+| 判据   | Playwright 375×667 视口断言 5 个按钮 `toBeVisible()`；桌面视口仍为悬停出现；`npm run typecheck` 0 error                                                                                                                                                                              |
+| 工作量 | 0.5d                                                                                                                                                                                                                                                                                 |
+
+### W1.1 防复发：把"裸 useQuery"变成门禁
+
+补完 22 处只是清账，新页面仍会写裸 `useQuery`。按既有棘轮习惯，同批加门禁：
+
+| #   | 动作                                                                                                                                                                              | 判据                                        |
+| --- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------- |
+| 1   | 封装 `hooks/useAppQuery.ts`：内部固定 `loading → error → empty → data`，`error` 时返回可直接渲染的 `{isError, error, retry}`                                                      | 单测：抛错 → 返回 isError；成功 → 返回 data |
+| 2   | 静态扫描测试（照 `navigation_rules_test.dart` 的做法，纯文本扫描）：`app/**/page.tsx` 与 `app/**/components/**` 禁止直接 import `react-query` 的 `useQuery`，只允许 `useAppQuery` | 新增一处裸 `useQuery` → 测试红              |
+| 3   | 迁移白名单：现有 22 处记在 `useQueryAllowlist`，只减不增；每迁一处从名单划掉                                                                                                      | 名单长度只能变小                            |
+
+工作量：封装 + 扫描 0.5d；迁移随 W1 批次 A/B 走。
+
+### 执行顺序
+
+W2（改动小、可当天合）→ W1 批次 A → W1 批次 B。两者互不依赖，可并行。
+
+## 服务端性能与索引（计划，2026-11-20）
+
+来源：`docs/mobile-performance.md` §8 的审计结论。**先复核再动手**——审计基于旧提交，部分项已被修掉。
+
+### 复核结果（当前 main）
+
+| #   | 审计项                                                    | 现状（`src/lib/db/drizzle-schema.ts`）             | 动作                         |
+| --- | --------------------------------------------------------- | -------------------------------------------------- | ---------------------------- |
+| 1   | `practice_logs.session_id`                                | **已加** `idx_session`（:187）                     | 无需动作                     |
+| 2   | `session_reviews(session_id)`                             | 表零索引（:192）                                   | 加                           |
+| 3   | `practice_logs(question_id, user_id, is_correct)`         | 有 `idx_question` + `idx_user_correct`，缺三列复合 | 先 `EXPLAIN QUERY PLAN` 再定 |
+| 4   | `textbook_chapters(textbook_id)`                          | 表零索引（:551）                                   | 加                           |
+| 5   | `knowledge_cards(user_id, created_at)` / `notes(user_id)` | 前者两个单列索引，后者零索引（:26）                | 加复合 / 加单列              |
+
+结论：5 条里 1 条已修，4 条仍缺。**后续进展（PR #256）**：4 条缺失索引已全部补上（迁移 `drizzle/0021_perf_indexes.sql`），`EXPLAIN` 从 SCAN 变 SEARCH；本节保留为当时的复核记录。
+
+### S1 索引快赢（0.5d）
+
+| 动作                                                                                                                                   | 判据                                                                                                |
+| -------------------------------------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------- |
+| 加 4 个索引：`session_reviews(session_id)`、`textbook_chapters(textbook_id)`、`notes(user_id)`、`knowledge_cards(user_id, created_at)` | 每条的 `EXPLAIN QUERY PLAN` 从 `SCAN` 变 `SEARCH ... USING INDEX`（在线上库快照副本上跑，不碰生产） |
+| 同步 schema-parity：`test-schema-utils.ts` 里手写 DDL 必须一起改                                                                       | schema-parity 测试绿（漏改必红）                                                                    |
+| 迁移用项目既有方式（drizzle generate + 应用启动时迁移），**不手写 UPDATE**                                                             | 迁移在空库与线上快照副本上各跑一次，行数不变                                                        |
+
+风险：`knowledge_cards` 是写多表（每次建卡），加复合索引会让写略慢；数据量小（千级），可接受。
+
+### S2 查询上限与字段裁剪（0.5–1d）
+
+| 动作                                                                                                                                                                    | 证据                                             | 判据                                     |
+| ----------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------ | ---------------------------------------- |
+| `knowledge.ts` / `questions.ts` 的 `limit` clamp **已落地**（PR #256，走 `parsePagination`，上限 100）；`history` 详情已去掉 `material_html`、`wrong-book` 详情改显式列 | 现状为已实现，后续只需补其它返回体的字段裁剪     | 传 100000 → 实际返回 ≤ 100（已有测试）   |
+| `history.ts:216-236`、`wrong-question.ts:363-372` 改为只取需要的列                                                                                                      | 现在整行取回，带 `material_html` / `ai_mnemonic` | 响应体字节数对比（同一请求前后各量一次） |
+
+### S3 请求路径上的同步重活（1–2d，需先量再定）
+
+| 候选                                                          | 证据                     | 前置测量                         |
+| ------------------------------------------------------------- | ------------------------ | -------------------------------- |
+| `bcryptjs` 10 rounds（60–100ms/次登录）                       | `password.ts:3-8`        | 登录接口 p95                     |
+| `admin.ts:213` `readFileSync` 整库 + 同步 `copyFile`/`rename` | 备份路径                 | 备份期间其他请求 p95             |
+| `siliconflow-ocr.ts` / `mineru-service.ts` 的 CPU 重活        | 纯 JS/WASM、整包内存解压 | 一次 OCR 期间 `/api/history` p95 |
+| AI 调用无队列（`knowledge.ts:244-260` 等 30s）                | 在 web 进程里同步等      | 同上                             |
+
+做法：先做**测量**（并发两条会话：一条触发重活，一条轮询轻接口，记 p95），确认是"秒级抖动"再立项；
+外置方案是 `worker_threads` 或独立进程 + 队列表，属架构改动，需单独评审。
+
+#### S3.1 压测执行步骤（脚本已就绪：`scripts/measure-concurrency.mjs`）
+
+| #   | 步骤       | 说明                                                                                                                  |
+| --- | ---------- | --------------------------------------------------------------------------------------------------------------------- |
+| 1   | 准备库副本 | 线上库 `VACUUM INTO '/tmp/snapshot.db'`，**不要直连生产**；`DATABASE_URL` 指向副本                                    |
+| 2   | 起服务     | `node server.js`（生产构建，非 dev），记端口                                                                          |
+| 3   | 基线       | `node scripts/measure-concurrency.mjs --base-url http://127.0.0.1:3000 --duration 30 --concurrency 1`（只轮询轻接口） |
+| 4   | 压测       | 同命令加 `--heavy /api/practice/first-principles`（或 SQL 模式批写），`--concurrency 2`，跑 60s                       |
+| 5   | 记录       | 轻接口 p50/p95/p99 前后对比；重活耗时                                                                                 |
+
+**决策矩阵**（拿到数字后按此定，不凭感觉）：
+
+| 轻接口 p95 抬升   | 结论                                                     |
+| ----------------- | -------------------------------------------------------- |
+| < 2× 且 < 200ms   | S4 不立项；S3 只做"把 AI 调用移出请求路径"这一项         |
+| 2–10×             | 先做 S4 的第一步（两把锁统一成一把）+ S3 的 CPU 重活外置 |
+| > 10× 或 p95 > 1s | S4 全量立项（读连接/WAL/统一锁），并考虑单开进程跑重活   |
+
+### S4 单连接串行化（2–3d，架构）
+
+- `db/index.ts:128-140` `@libsql/client` 本地文件单连接 → 所有读写串行
+- 两把"互斥锁"（`withImportLock` / `withConfirmLock`）实际是不同队列，可同时进事务
+- 方案候选：① 统一成一把锁（低风险，先做）；② 读路径走独立只读连接（需确认 libsql 是否支持）；③ 换 WAL 模式并确认 `busy_timeout`
+- 判据：并发压测（SRS 同步 + `/api/history` 轮询）p95 从秒级回到 <100ms
+
+### S5 每请求固定开销（0.5d）
+
+| 动作                                                                                                                                   | 证据                                         |
+| -------------------------------------------------------------------------------------------------------------------------------------- | -------------------------------------------- |
+| `getGlobalFeatureFlag` 用 `cache()` 包一层（layout 三次串行 + dashboard 再查一遍）                                                     | `layout.tsx:69-74`、`feature-flags.ts:17-38` |
+| middleware matcher 排除静态资源（`icons/`、`fonts/`）**已落地**；`?_rsc=` **不要排除**——排除会让受保护页面的客户端导航绕过未登录重定向 | `middleware.ts`                              |
+
+判据：一次页面请求的 SELECT 次数（打点计数）从 N 降到 N-3。
+
+### 顺序与不做
+
+顺序：S1 → S2 → S5 → S3（先量）→ S4（评审后）。
+
+不做：换数据库（sqlite→pg）；keyset 分页全量改造（`practice_logs` 仅 4990 行，offset 够用）。
+
+## 运维收口（计划，2026-11-20）
+
+三件事都属于"现在不出事，但出事时没有工具"。
+
+### O1 日志表保留策略（0.5d）
+
+| 表                 | 现状                                                     | 建议保留 | 理由                                 |
+| ------------------ | -------------------------------------------------------- | -------- | ------------------------------------ |
+| `pdf_import_tasks` | **已有**每小时清理（`scheduler.ts:47`，按 `expires_at`） | 现状     | 临时任务                             |
+| `admin_logs`       | **无清理**                                               | 180 天   | 操作审计，排查历史问题够用           |
+| `api_logs`         | **无清理**                                               | 90 天    | 每请求一行，增长最快                 |
+| `api_audit_logs`   | **无清理**                                               | 180 天   | 安全追溯                             |
+| `web_vitals`       | **无清理**                                               | 90 天    | 性能趋势，`vitals:report` 只回看近期 |
+| `practice_logs`    | **不清理**                                               | 永久     | 学习数据（判分、SRS、统计的来源）    |
+
+做法：`scheduler.ts` 加一个每日任务（与 03:00 备份错开，例如 04:10），每条 `DELETE ... WHERE created_at < datetime('now','-N days')`，**先 dry-run 打印将删行数**，确认后开启实际删除；日志里记每次删除行数。
+
+判据：
+
+- dry-run 输出各表将删行数，与 `COUNT(*) WHERE created_at < cutoff` 一致
+- 跑一次后行数下降、`practice_logs` 行数**不变**
+- 删除按 `created_at` 走既有索引（`EXPLAIN QUERY PLAN` 确认非全表扫）
+- 失败时只记结构化日志并等下一周期（与现有 purge 任务同款 `audit-allow` 注释）
+
+### O2 告警通道（0.5d）
+
+现状：`docs/deploy.md` 的部署脚本有 60s 健康检查（失败会回滚），但**失败后没人知道**——只有你下次打开页面才会发现。
+
+做法（不引依赖）：
+
+- 新增 `scripts/notify.sh`：读 `ALERT_WEBHOOK_URL`（飞书/Telegram 任一），`curl` POST 一段文本；**未配置时打印警告并 exit 0**（不阻塞部署）
+- `deploy.md` 的更新脚本在「健康检查失败 / 回滚成功 / 回滚失败」三处调用它，正文含：时间、镜像 tag、失败原因、当前版本
+- 判据：把 webhook 指向一个本地 echo 服务，模拟健康检查失败 → 收到一条含 tag 与原因的消息；未配 webhook → 部署行为不变
+
+### O3 zod high 风险处置（0.5–1d）
+
+现状：`gh api .../dependabot/alerts` 显示 1 high（`zod`）+ 4 medium（`glob`/`minimatch`×2/`postcss-selector-parser`）；PR #222（zod 3→4）卡在 MCP 构建。
+
+两条路，**必须先判定可达性再选**：
+
+| 路   | 做法                                                                                                          | 前提                                                                               |
+| ---- | ------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------- |
+| 升级 | 完成 #222：zod 4 的破坏性变更（`z.string().email()` 迁移、`.passthrough()` 语义）逐处改；MCP 侧 schema 跟着改 | 改动量 ≤ 半天；否则走另一条                                                        |
+| 接受 | 锁 `zod@3.x`，在 `docs/decisions.md` 写明：漏洞路径是否可达、为何接受、复审日期                               | 需要确认 zod 只用于服务端入参校验（输入先经框架/路由层），无可控输入直达受影响 API |
+
+判据：
+
+- `npm audit --omit=dev` 的 high 归零，或 decisions.md 有一条带日期的风险接受记录
+- 若选升级：`npm run verify` 全绿 + MCP 冒烟通过
+
+### O4 不做
+
+- 不接 Prometheus/Grafana（单人项目，`/metrics` 已有但没人看）
+- 不做日志集中采集（stdout + docker logs 足够）
+- 不清理 `practice_logs`（学习数据不可再生）
+
+## Web 覆盖率门禁（计划，2026-11-20）
+
+移动端已有三档门禁（global / scope / 单文件回退），Web 侧**只有测试数量，没有覆盖率信号**：
+`@vitest/coverage-v8` 装在 devDependencies 里但没人调用，`verify` 四闸里没有覆盖率，
+`vitest.config.ts` 也没有 thresholds。
+
+### W-COV1 先量（0.2d）
+
+```bash
+cd my-next-app
+npx vitest run --coverage --coverage.reporter=text-summary
+npx vitest run --coverage --coverage.reporter=json-summary
+```
+
+记录：全局行覆盖、`src/lib/**`（逻辑层）与 `src/app/**`+`src/components/**`（UI）分别多少。
+**没有这组数之前不设阈值**（设高了挡所有 PR，设低了等于没有）。
+
+### W-COV2 用 vitest 原生 thresholds（0.3d）
+
+不自己写 gate 脚本（mobile 那个是因为 Dart 侧没有原生支持；vitest 有）：
+
+```ts
+// vitest.config.ts
+coverage: {
+  provider: 'v8',
+  reporter: ['text-summary', 'lcov'],
+  exclude: ['**/*.test.{ts,tsx}', 'scripts/**', 'drizzle/**', '.next/**'],
+  thresholds: {
+    lines: <实测-1>,
+    'src/lib/services/**': { lines: <实测-1> },
+    'src/lib/api/**':      { lines: <实测-1> },
+    'src/lib/auth/**':     { lines: <实测-1> },
+    'src/lib/db/**':       { lines: <实测-1> },
+    'src/app/**':          { lines: <实测-1> },
+    'src/components/**':   { lines: <实测-1> },
+  },
+}
+```
+
+- 只升不降：每次提升后把 thresholds 抬到「实测 − 1pp」，与 mobile 的 `coverage_baseline.json` 同一口径
+- 目录阈值的作用与 mobile 的 scope 相同：防止「服务层写得好」掩盖「页面全没测」
+
+### W-COV3 接进 CI（0.2d）
+
+| 动作                                                     | 说明                                         |
+| -------------------------------------------------------- | -------------------------------------------- |
+| `package.json` 加 `test:coverage`                        | `vitest run --coverage`                      |
+| `ci.yml` 的 `unit-test` job 改跑 `npm run test:coverage` | 耗时从 3.6min 涨到约 5min（v8 插桩），可接受 |
+| 失败时上传 `coverage/lcov.info`（`if: always()`）        | 与 mobile 的 `coverage-lcov` 同名风格        |
+| `verify` 四闸 → 五闸（加 `test:coverage`）               | 本地一条命令能跑完                           |
+
+### W-COV4 判据
+
+1. 改动前后各跑一次，贴出 `text-summary`（global 与两个分组的行覆盖）
+2. 故意删一个测试 → CI 红且报「threshold not met」
+3. 故意把某文件覆盖降到阈值下 → 红
+4. PR 反馈时长增量 ≤ 2min
+
+### W-COV5 不做
+
+- 不追 80%：Web 有 27 个整页 client 组件、8 个 550–882 行巨型组件，追高必然写大量脆测试
+- 不做 per-file 阈值（vitest 的 glob 阈值已够；单文件阈值在 Web 上噪音大于收益）
+- 不给 `scripts/**` 与 `drizzle/**` 要求覆盖（一次性脚本与 SQL）
+
+## 数据正确性（计划，2026-11-20）
+
+这两条不是"新功能"，是**已经错了的数据**。先修，否则所有统计与判分都不可信。
+
+### D1 移动端作答时长小 1000 倍（P0）
+
+| 项     | 内容                                                                                                                                                                                                                                                           |
+| ------ | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| 证据   | `mobile_app/lib/features/practice/presentation/practice_provider.dart:249` 用 `DateTime.now().difference(...).inSeconds`；服务端 `src/lib/api/routes/practice.ts:274` 把 `duration` 直接写进 `practice_logs.duration_ms`；Web 发的是毫秒（`Date.now()-start`） |
+| 影响   | 移动端每题的 `duration_ms` 只有真实值的 1/1000；会话 `total_duration_ms`、平均用时、任何按时长做的统计全错                                                                                                                                                     |
+| 修法   | Flutter 改 `inMilliseconds`；服务端 schema 的 `duration` 字段加注释写明**毫秒**；**存量不回填**（无法区分每行来源，回填赌错比不动更糟）                                                                                                                        |
+| 判据   | Flutter 单测：fake 时间推进 3s → 请求体 `duration == 3000`；服务端路由测试：入库 `duration_ms == 3000`；schema 注释进 codegen 校验                                                                                                                             |
+| 工作量 | 0.5d                                                                                                                                                                                                                                                           |
+
+### D2 `type` 为 NULL 的 84 题（P0，判分错）
+
+| 项     | 内容                                                                                                                                                                                                                                                                   |
+| ------ | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| 证据   | `docs/audit/2026-11-19-prod-db-2026-11-14-audit.md`：84 题 `type=NULL`                                                                                                                                                                                                 |
+| 影响   | 判分按 `type` 分支：多选忽略顺序、单选/判断按字母集合、填空按整串。`NULL` 会落进 else 分支被当单选处理 → 多选题判错，用户背的答案与系统不一致                                                                                                                          |
+| 修法   | ① 先量：导出这 84 题的 `id/题干摘要/选项数/answer`；② 按规则推断（answer 含多个字母 → multi；选项为"正确/错误" → truefalse；否则 single）；③ **dry-run 输出 84 行对照表人工确认**；④ 确认后 apply；⑤ 前端兜底：`type == null` 时按"选项集合比较"判分，避免清洗前继续错 |
+| 判据   | dry-run 表逐行有推断依据且可回滚；apply 后 `SELECT COUNT(*) FROM questions WHERE type IS NULL` = 0；抽查 10 题判分与人工一致                                                                                                                                           |
+| 工作量 | 0.5–1d（含人工确认）                                                                                                                                                                                                                                                   |
+
+### D3 不做
+
+- 不改 `practice_logs` 历史行的时长（无来源标记）
+- 不按"看起来像多选"自动改 `type`（必须人工过一遍 dry-run 表）
+
+## 移动端功能缺口（决策框架，2026-11-20）
+
+Web 有、移动端没有的功能：`notes`（笔记）、`mindmap`（思维导图）、`knowledge-graph`（知识图谱）、`ocr`（拍照识别）、`cultivation`（养成）。
+
+| 功能     | 手机上真的会用吗           | 建议                                           | 成本                  |
+| -------- | -------------------------- | ---------------------------------------------- | --------------------- |
+| 笔记     | 碎片时间大概率不会写长笔记 | 不做移植；如需查看，深链到 Web（浏览器打开）   | 移植 3–5d / 深链 0.5d |
+| 思维导图 | 编辑需要大屏与拖拽         | 只读查看可考虑；编辑不做                       | 只读 2d               |
+| 知识图谱 | 探索型功能，屏幕小体验差   | 不做                                           | —                     |
+| OCR      | 拍照搜题在手机上反而合理   | 优先级高于前三者，但要先确认题库覆盖率是否值得 | 2–3d                  |
+| 养成     | 纯 Web 趣味功能            | 不做                                           | —                     |
+
+**决策点（待你定）**：只做"深链跳 Web"（0.5d），还是连 OCR 一起做（2–3d），还是都不做。
+
 ## 执行约定
 
 - 每个 phase 一个 PR，合入前 CI 全绿；

@@ -58,6 +58,7 @@ class _QuestionListScreenState extends ConsumerState<QuestionListScreen> {
               child: Row(
                 children: [
                   IconButton(
+                    tooltip: '返回',
                     onPressed: () => context.backOrHome(),
                     icon: Icon(AppIcons.arrowBack, color: textColor),
                   ),

@@ -31,6 +31,7 @@ export const TEST_SCHEMA_SQL = `
         material_html TEXT,
         ai_mnemonic TEXT,
         external_id TEXT UNIQUE,
+        content_hash TEXT,
         created_at TEXT DEFAULT CURRENT_TIMESTAMP
     );
 
@@ -62,8 +63,18 @@ export const TEST_SCHEMA_SQL = `
         is_correct INTEGER NOT NULL,
         is_monitored_correct INTEGER DEFAULT false,
         duration_ms INTEGER,
+        origin TEXT DEFAULT 'web' NOT NULL,
+        status TEXT DEFAULT 'answered' NOT NULL,
         timestamp TEXT DEFAULT CURRENT_TIMESTAMP
     );
+
+    -- 与 drizzle/0016、0019 对齐：会话维度与错题统计都靠这些索引，缺了内存库
+    -- 虽然仍能跑，但会掩盖"真实库有没有索引"这类问题（EXPLAIN 会变成全表扫）。
+    CREATE INDEX IF NOT EXISTS idx_practice_logs_session
+        ON practice_logs (session_id);
+
+    CREATE INDEX IF NOT EXISTS idx_practice_logs_user_correct
+        ON practice_logs (user_id, is_correct);
 
     CREATE TABLE IF NOT EXISTS user_mastery (
         user_id INTEGER DEFAULT 1 NOT NULL REFERENCES users(id) ON DELETE CASCADE,
@@ -128,6 +139,10 @@ export const TEST_SCHEMA_SQL = `
         review_data TEXT,
         created_at TEXT DEFAULT CURRENT_TIMESTAMP
     );
+
+    -- 与 drizzle/0019 对齐
+    CREATE INDEX IF NOT EXISTS idx_session_reviews_session
+        ON session_reviews (session_id);
 `;
 
 export function createTestTables(db: Database.Database) {

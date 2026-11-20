@@ -27,6 +27,7 @@ import {
 } from "lucide-react";
 import { toast } from "sonner";
 import { isImeComposing } from "@/lib/utils/ime";
+import { ErrorState } from "@/components/ui/error-state";
 import {
   Select,
   SelectContent,
@@ -39,6 +40,9 @@ export function ActivityList() {
   const [activities, setActivities] = useState<UserActivityEntry[]>([]);
   const [total, setTotal] = useState(0);
   const [loading, setLoading] = useState(true);
+  // 请求失败必须单独记：否则接口挂了也只会渲染"暂无行为记录"，
+  // 把服务端故障说成"没有用户练过题"。
+  const [loadError, setLoadError] = useState<string | null>(null);
   const [page, setPage] = useState(1);
   const [initialLoadComplete, setInitialLoadComplete] = useState(false);
   const pageSize = 20;
@@ -59,10 +63,14 @@ export function ActivityList() {
       });
 
       if (result.serverError) {
+        setLoadError(result.serverError || "加载记录失败");
         toast.error(result.serverError || "加载记录失败");
       } else if (result.data) {
         setActivities(result.data.logs as UserActivityEntry[]);
         setTotal(result.data.total);
+        setLoadError(null);
+      } else {
+        setLoadError("加载记录失败");
       }
       setLoading(false);
     },
@@ -166,6 +174,13 @@ export function ActivityList() {
             <Loader2 className="w-8 h-8 animate-spin mb-4" />
             <p>正在拉取最新练习流...</p>
           </div>
+        ) : loadError && activities.length === 0 ? (
+          <ErrorState
+            title="行为记录加载失败"
+            description={loadError}
+            onRetry={() => void loadActivities()}
+            className="bg-card rounded-2xl border border-dashed border-border"
+          />
         ) : activities.length === 0 ? (
           <div className="text-center py-20 bg-card rounded-2xl border border-dashed border-border text-muted-foreground">
             暂无行为记录
@@ -235,7 +250,7 @@ export function ActivityList() {
                   <Button
                     variant="ghost"
                     size="icon"
-                    className="h-8 w-8 self-end opacity-100 md:opacity-0 md:group-hover:opacity-100 md:focus-visible:opacity-100 transition-opacity"
+                    className="hover-reveal h-8 w-8 self-end transition-opacity"
                   >
                     <Search className="w-4 h-4" />
                   </Button>

@@ -2,6 +2,7 @@
 
 > 面向"单机 Docker + 宝塔面板"的实际部署方式。设计前提见 `docs/decisions.md`（部署相关条目）。
 > 一句话原则：**镜像不可变、部署可回滚、迁移前必备份。**
+> 移动端（Android APK）不走这套：签名密钥备份见 §9，APK 回滚见 §10。
 
 ## 1. 部署形态
 
@@ -253,3 +254,128 @@ Service Worker 只在 **HTTPS 或 localhost** 下注册。用 `http://IP:3000` �
 | 页面能开但 PWA 不装/不缓存   | 是否 HTTPS；`chrome://inspect` → Application → Service Workers             |
 | 更新后登录态全丢             | 是否误删了 `data/.env.production`                                          |
 | 更新后读库报"no such column" | 数据没回退就回退了镜像，按 §5 顺序重来                                     |
+
+## 9. Android 签名密钥备份
+
+APK 不走应用商店，升级靠用户手动装新包，而 Android 只接受**同一个签名证书**的覆盖安装。
+因此 release keystore 是这条链路上**唯一不可再生**的资产：它只存在于 GitHub Actions secrets，
+仓库里（按设计）没有任何副本，一旦丢失或密码遗忘，就再也无法给已装机的用户发升级包。
+
+### 9.1 secrets 清单（缺任意一项，`android.yml` 直接失败）
+
+| Secret                      | 内容                                      |
+| --------------------------- | ----------------------------------------- |
+| `ANDROID_KEYSTORE_BASE64`   | `.jks` 文件的 base64 原文（`base64 -w0`） |
+| `ANDROID_KEYSTORE_PASSWORD` | keystore 口令                             |
+| `ANDROID_KEY_ALIAS`         | 密钥别名                                  |
+| `ANDROID_KEY_PASSWORD`      | 密钥口令（可与 keystore 口令相同）        |
+
+证书主体固定为 `CN=ai-leaming-mobile, OU=dev, O=mintleaf84, C=CN`（见 `docs/mobile-ui-kit.md` §9.2），
+升级前后可用下面这条命令核对"装机的包是不是同一把钥匙签的"：
+
+```bash
+# 打印 APK 签名证书指纹（对比两个包是否同源）
+keytool -printcert -jarfile app-release.apk | grep -E "Owner|SHA256"
+```
+
+### 9.2 离线备份要求
+
+**必须在 CI 之外保留两份副本**，且都不能是仓库、不能是同一台机器上的同一块盘：
+
+1. **密码管理器条目** `ai-leaming-android-release`：keystore 文件作为附件，外加三条口令
+   （store / key alias / key password）写在同一入口，避免"有文件没密码"；
+2. **离线加密介质**：keystore 文件放进加密容器（VeraCrypt / 加密 U 盘）单独存放，
+   与密码管理器互为兜底——只存密码管理器，账号被锁就全丢；只存 U 盘，介质损坏就全丢。
+
+备份后按下表登记，每次新建或轮换 keystore 时更新（**这张表只写位置，不写口令、不放文件**）：
+
+| 备份副本     | 位置（填写具体条目/介质编号） | 最后核对日期 |
+| ------------ | ----------------------------- | ------------ |
+| 密码管理器   | 待登记                        | 待登记       |
+| 离线加密介质 | 待登记                        | 待登记       |
+
+### 9.3 仓库侧的硬约束
+
+- `mobile_app/android/key.properties`、`*.jks`、`*.keystore` 已在 `.gitignore`；
+- 合并前可用下面这条自查（输出必须为空）：
+
+```bash
+git ls-files | grep -E '\.(jks|keystore)$|key\.properties$' || echo "OK: 仓库内无密钥文件"
+```
+
+- **不要把 keystore 写进 `docs/`、issue、PR 描述或聊天记录**——一旦进了 git 历史，
+  就等于永久公开（force push 也清不掉 fork 与缓存）。
+
+### 9.4 已经丢了怎么办
+
+无法补救，只能换身份重发：
+
+1. 改 `mobile_app/android/app/build.gradle.kts` 的 `applicationId`（如
+   `com.mintleaf84.aileaming` → `com.mintleaf84.aileaming2`），`namespace` 同步；
+2. 重新生成 keystore 并更新 4 个 secrets；
+3. 用户必须**卸载旧包再装新包**（两个包名在系统里是两个应用），旧包的本地数据
+   （离线答题记录、待同步队列）随之丢失——这也是 §9.2 要备份的唯一理由。
+
+## 10. APK 回滚
+
+### 10.1 为什么不能"装回旧包"
+
+Android 的覆盖安装要求 `versionCode` **不小于**已安装版本，否则 `adb install` 报
+`INSTALL_FAILED_VERSION_DOWNGRADE`，系统安装器直接拒绝。所以 APK 的回滚不是"下载旧
+APK 再装一次"，而是**用旧代码重新出一个 versionCode 更大的包**。
+
+`android.yml` 的版本号规则（R1）正好支持这件事：
+
+- `versionName` 来自 `pubspec.yaml` 的语义版本（`1.0.0+1` → `1.0.0`），由代码决定，回滚时会**变小**；
+- `versionCode` 来自 `${{ github.run_number }}`，仓库级单调递增，**重跑旧代码也只会更大**。
+
+判断"能不能装上"看的是 versionCode（`aapt dump badging app-release.apk | head -1` 或
+`adb shell dumpsys package com.mintleaf84.aileaming | grep versionCode`），
+不是设置页显示的那串语义版本号——回滚后显示旧版本号是**预期行为**，不是失败。
+
+### 10.2 操作步骤
+
+前提：tag 上的 workflow 文件是"旧版"的，直接 `--ref <旧 tag>` 重跑会用旧 workflow
+（没有 R1 的版本派生，versionCode 又回到 1，装不上）。因此**先把新 workflow 带到旧代码上**：
+
+```bash
+# 1) 以旧 tag 为基线建回滚分支（代码是旧的，workflow 是新的）
+git fetch --tags origin
+git switch -c rollback/v1.1.0 v1.1.0
+git checkout origin/main -- .github/workflows/android.yml   # 只取新版 workflow
+git commit -m "chore: 回滚构建引入新版 android.yml（版本号派生 + Release）"
+git push -u origin rollback/v1.1.0
+
+# 2) 用分支触发构建（workflow_dispatch 读的是该 ref 上的 workflow 文件）
+gh workflow run android.yml --ref rollback/v1.1.0
+gh run watch "$(gh run list --workflow=android.yml --limit=1 --json databaseId --jq '.[0].databaseId')"
+
+# 3) 取产物：artifact 名带版本（app-release-1.1.0+<run_number>）
+gh run download <run-id> -n 'app-release-1.1.0+<run_number>'
+```
+
+若要**同时**产出一个正式 Release（例如要发给多个用户），把回滚分支打成新 tag
+（不要复用旧 tag：tag 不可变，重指会让人分不清哪个是原始发布）：
+
+```bash
+git tag v1.1.0-rollback.1
+git push origin v1.1.0-rollback.1   # tag 触发 → 自动建 Release 并附 APK
+```
+
+### 10.3 验收判据
+
+1. `adb install -r app-release-1.1.0+<code>.apk` 成功，**没有** `INSTALL_FAILED_VERSION_DOWNGRADE`；
+2. 新包的 versionCode 严格大于出问题那版：
+   `aapt dump badging app-release.apk | grep versionCode` 两包对比；
+3. 打开 App 功能回到旧 tag 的行为（例如出问题的功能消失/恢复原样）；
+4. 用户数据仍在：离线答题记录与待同步队列未丢（同包名 + 同签名覆盖安装才会保留，
+   换包名等于新应用，见 §9.4）。
+
+### 10.4 两个容易踩的点
+
+- **Release 资产会被覆盖**：同一 tag 重跑构建时，`android.yml` 走的是
+  `gh release upload --clobber`（幂等），不会因"Release 已存在"报错，但该 tag 的 APK
+  会被这次构建的产物替换——所以回滚请用新 tag，别重跑旧 tag 的 workflow；
+- **`run_number` 不是无限资源**：workflow 文件被改名/重建时计数会重置。真到那一步，
+  在 `pubspec.yaml` 的 `version` 里手工抬主段（如 `1.2.0+1`）仍然无效（versionCode 由 CI 覆盖），
+  正确做法是临时把 `--build-number` 钉成一个大数，并立刻在 `docs/decisions.md` 记一笔。

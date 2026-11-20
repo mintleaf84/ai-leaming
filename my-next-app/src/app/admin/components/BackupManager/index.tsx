@@ -1,7 +1,8 @@
 "use client";
 
 import React, { useState, useRef } from "react";
-import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { useQueryClient } from "@tanstack/react-query";
+import { useAppQuery } from "@/hooks/useAppQuery";
 import { Button } from "@/components/ui/button";
 import {
   Download,
@@ -41,7 +42,7 @@ export function BackupManager() {
     isError: historyIsError,
     error: historyError,
     refetch: fetchHistory,
-  } = useQuery({
+  } = useAppQuery({
     queryKey: [HISTORY_KEY],
     queryFn: async () => {
       const res = await fetch("/api/admin/backup-history");

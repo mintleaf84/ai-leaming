@@ -4,6 +4,7 @@ import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:dio/dio.dart';
 import '../../../core/navigation/app_nav.dart';
+import '../../../core/error/user_message.dart';
 import 'auth_provider.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../core/theme/app_icons.dart';
@@ -23,22 +24,14 @@ class LoginScreen extends HookConsumerWidget {
       if (next is AsyncData) {
         context.replace(AppRoutes.dashboard);
       } else if (next is AsyncError) {
-        String errorMessage = '发生未知错误，请稍后重试';
         final error = next.error;
-        if (error is DioException) {
-          if (error.type == DioExceptionType.connectionTimeout ||
-              error.type == DioExceptionType.receiveTimeout) {
-            errorMessage = '网络连接超时，请检查您的网络';
-          } else if (error.response?.statusCode == 401) {
-            errorMessage = '账号或密码错误';
-          } else if (error.type == DioExceptionType.connectionError) {
-            errorMessage = '网络开了小差，请检查网络设置';
-          } else {
-            errorMessage = '服务器打盹了 (${error.response?.statusCode ?? "未知"})';
-          }
-        } else {
-          errorMessage = error.toString();
-        }
+        // 登录页的 401 是「账号或密码错误」，不是通用的「登录已过期」，
+        // 所以这一条在统一文案之前单独拦下（审计 #24 的唯一例外）。
+        final String errorMessage =
+            error is DioException && error.response?.statusCode == 401
+            ? '账号或密码错误'
+            : userMessageOf(error);
+        debugPrint('[Login] 登录失败: $error');
 
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
@@ -323,6 +316,7 @@ class LoginScreen extends HookConsumerWidget {
                 isDense: true,
                 suffixIcon: isPassword
                     ? IconButton(
+                      tooltip: (obscureText ?? true) ? '显示密码' : '隐藏密码',
                         icon: Icon(
                           (obscureText ?? true)
                               ? AppIcons.visibilityOff

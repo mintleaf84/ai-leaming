@@ -3,10 +3,13 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:mobile_app/features/practice/presentation/practice_provider.dart';
+import 'package:mobile_app/features/practice/domain/practice_resume.dart';
 import 'package:mobile_app/features/practice/domain/question.dart';
 import 'package:mobile_app/shared/widgets/animated_option_card.dart';
 import 'package:mobile_app/shared/skeletons/skeleton_fakes.dart';
 import 'package:mobile_app/features/practice/presentation/widgets/first_principles_panel.dart';
+import 'package:mobile_app/features/practice/presentation/widgets/question_material_card.dart';
+import '../../../core/a11y/status_announcer.dart';
 import '../../../core/navigation/app_nav.dart';
 import 'package:skeletonizer/skeletonizer.dart';
 import 'package:mobile_app/core/theme/app_icons.dart';
@@ -28,14 +31,28 @@ class _PracticeScreenState extends ConsumerState<PracticeScreen> {
   void initState() {
     super.initState();
     // 页面加载时创建会话，优先使用配置参数。
-    // 带 sessionId 时表示「从错题本进来」，复用已建好的会话，不再新建。
+    // 带 sessionId 时表示「从错题本进来 / 首页继续上次练习」，复用已建好的会话，
+    // 不再新建；带 startIndex 时直接落到断点那一题（见 practice_resume.dart）。
     final sessionId = widget.config?['sessionId'] as String?;
+    final startIndex = (widget.config?['startIndex'] as int?) ?? 0;
+    // 断点里的已答记录（题号 + 对错）：恢复时回填结果、定位第一道未答题。
+    final answered =
+        (widget.config?['answered'] as List<ResumeAnswer>?) ??
+        const <ResumeAnswer>[];
+    // 旧格式断点的连续已答前缀（见 practice_resume.dart）：不传的话恢复即
+    // 落盘会把进度写回 0。
+    final legacyAnswered = (widget.config?['legacyAnswered'] as int?) ?? 0;
     final limit = (widget.config?['limit'] as int?) ?? 10;
     final mode = (widget.config?['mode'] as String?) ?? 'random';
     Future.microtask(() {
       final controller = ref.read(practiceControllerProvider.notifier);
       if (sessionId != null && sessionId.isNotEmpty) {
-        controller.loadSession(sessionId);
+        controller.loadSession(
+          sessionId,
+          startIndex: startIndex,
+          answered: answered,
+          legacyAnswered: legacyAnswered,
+        );
       } else {
         controller.createSession(limit: limit, mode: mode);
       }
@@ -221,6 +238,11 @@ class _PracticeScreenState extends ConsumerState<PracticeScreen> {
                       ),
                     ),
                     SizedBox(height: 12.h),
+                    // 材料题：材料卡在题干上方（无材料时整块不占位）
+                    QuestionMaterialCard(
+                      material: question.material,
+                      materialHtml: question.materialHtml,
+                    ),
                     // Question Icon & Text
                     Text('📜', style: TextStyle(fontSize: 40.sp)),
                     SizedBox(height: 16.h),
@@ -294,6 +316,7 @@ class _PracticeScreenState extends ConsumerState<PracticeScreen> {
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
               IconButton(
+                tooltip: '退出练习',
                 onPressed: () async {
                   final shouldPop = await _showExitDialog();
                   if (shouldPop ?? false) {
@@ -316,6 +339,7 @@ class _PracticeScreenState extends ConsumerState<PracticeScreen> {
                 ),
               ),
               IconButton(
+                tooltip: '更多操作',
                 onPressed: () {},
                 icon: const Icon(AppIcons.moreHoriz),
                 color: context.colors.text.withValues(alpha: 0.6),
@@ -705,11 +729,19 @@ class _PracticeScreenState extends ConsumerState<PracticeScreen> {
     // 已选择则显示确认按钮 (启用，如果不在判卷中)
     return GestureDetector(
       onTap: (canSubmit && !isConfirming)
-          ? () {
+          ? () async {
               // 服务端校验正确答案
-              ref
+              final questionId =
+                  ref.read(practiceControllerProvider).currentQuestion?.id;
+              await ref
                   .read(practiceControllerProvider.notifier)
                   .submitCurrentAnswer();
+              if (!mounted || questionId == null) return;
+              // 判分结果只体现在选项卡片的颜色上，读屏用户没有感知 → 主动播报。
+              final verdict =
+                  ref.read(practiceControllerProvider).results[questionId];
+              if (verdict == null) return;
+              announceStatus(context, verdict ? '回答正确' : '回答错误');
             }
           : null,
       child: Column(

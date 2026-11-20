@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'package:flutter/material.dart';
 import 'dart:math' as math;
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -5,6 +6,7 @@ import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:confetti/confetti.dart';
 import '../../../core/navigation/app_nav.dart';
 import 'practice_provider.dart';
+import 'practice_resume_provider.dart';
 import '../../../core/utils/haptic_util.dart';
 import '../../../core/theme/app_colors.dart';
 
@@ -23,7 +25,13 @@ class _ResultScreenState extends ConsumerState<ResultScreen> {
   void initState() {
     super.initState();
     _confettiController = ConfettiController(duration: const Duration(seconds: 3));
-    
+
+    // 已经到结果页：这场练习没有「续练」可言，断点立即作废。
+    // 放在这里而不是「返回首页」按钮里，是因为用户也可能直接从结果页杀掉 App。
+    unawaited(
+      ref.read(practiceResumeControllerProvider.notifier).clear(),
+    );
+
     // 页面加载后延迟触发庆祝
     Future.delayed(const Duration(milliseconds: 500), () {
       final state = ref.read(practiceControllerProvider);

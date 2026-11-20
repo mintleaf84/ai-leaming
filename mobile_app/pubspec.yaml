@@ -55,6 +55,21 @@ dependencies:
   sqflite: ^2.4.0
   path: ^1.9.0
   connectivity_plus: ^7.0.0
+  # 设置持久化（主题模式 / 复习模式）。锁 ^2.5.4 而不是最新版：2.5.6 的
+  # SDK 下界是 Dart ^3.11.0，而本机与 CI 都是 Flutter 3.38.4（Dart 3.10.3），
+  # 写 ^2.5.4 时求解器仍会因 SDK 约束自动落到 2.5.5，不会拉到 2.5.6。
+  shared_preferences: ^2.5.4
+  flutter_html: ^3.0.0
+  flutter_html_table: ^3.0.0
+
+# flutter_html 3.0.0 直接 import 了 `package:html/src/query_selector.dart` 的内部
+# 函数 `matches`，而 `html` 0.15.7 把该函数删了（只留 `SelectorEvaluator.matches`），
+# 于是编译期报 `Method not found: 'matches'`。flutter_html 已停止维护、不会再修，
+# 所以把 `html` 钉在 0.15.6（最后一个还带顶层 `matches` 的版本）。
+# 影响面：`html` 在本项目只被 flutter_html 与 flutter_markdown 用到，二者都只读 DOM，
+# 0.15.6 → 0.15.7 的差异不影响它们。升级 flutter_html 或换解析库时删掉这段。
+dependency_overrides:
+  html: 0.15.6
 
 dev_dependencies:
   flutter_test:

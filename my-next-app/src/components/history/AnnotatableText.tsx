@@ -2,7 +2,8 @@
 
 import React, { useState, useEffect, useCallback, useRef } from "react";
 import { createPortal } from "react-dom";
-import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { useQueryClient } from "@tanstack/react-query";
+import { useAppQuery } from "@/hooks/useAppQuery";
 import { Highlighter, Underline, Waves, Copy } from "lucide-react";
 import { toast } from "sonner";
 import { fetchJson, apiClient } from "@/lib/utils/api-client";
@@ -72,7 +73,7 @@ export function AnnotatableText({
     isError: annotationsIsError,
     error: annotationsError,
     refetch: refetchAnnotations,
-  } = useQuery({
+  } = useAppQuery({
     queryKey: ["annotations", questionId],
     queryFn: () =>
       fetchJson<{ annotations: unknown[] }>(

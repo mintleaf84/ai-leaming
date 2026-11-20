@@ -47,7 +47,8 @@ void main() {
     );
     await tester.pumpAndSettle();
 
-    final button = find.byType(ElevatedButton);
+    // EmptyState 现在是 AppEmptyView 的薄壳，动作按钮是 TextButton
+    final button = find.byType(TextButton);
     expect(button, findsOneWidget);
 
     await tester.tap(button);

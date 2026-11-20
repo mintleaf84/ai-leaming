@@ -7,6 +7,7 @@ import 'package:skeletonizer/skeletonizer.dart';
 import 'knowledge_provider.dart';
 import '../../../shared/skeletons/skeleton_fakes.dart';
 import '../../../shared/widgets/empty_state.dart';
+import '../../../shared/widgets/state_views.dart';
 import '../../../core/theme/app_icons.dart';
 import '../../../core/theme/app_colors.dart';
 
@@ -106,49 +107,13 @@ class _KnowledgeScreenState extends ConsumerState<KnowledgeScreen> {
             child: state.isLoading
                 ? _buildSkeleton()
                 : state.error != null
-                ? Center(
-                    child: Column(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        Icon(
-                          AppIcons.errorOutline,
-                          size: 48.sp,
-                          color: context.colors.error,
-                        ),
-                        SizedBox(height: 16.h),
-                        Text(
-                          '加载失败',
-                          style: TextStyle(
-                            fontSize: 18.sp,
-                            fontWeight: FontWeight.w600,
-                            color: context.colors.text,
-                          ),
-                        ),
-                        SizedBox(height: 8.h),
-                        Text(
-                          '请检查网络后重试',
-                          style: TextStyle(
-                            fontSize: 14.sp,
-                            color: context.colors.textSecondary,
-                          ),
-                        ),
-                        SizedBox(height: 24.h),
-                        ElevatedButton.icon(
-                          onPressed: () => ref
-                              .read(knowledgeControllerProvider.notifier)
-                              .loadCards(category: selectedCategory),
-                          icon: const Icon(AppIcons.refresh, size: 18),
-                          label: const Text('重试'),
-                          style: ElevatedButton.styleFrom(
-                            backgroundColor: context.colors.accent,
-                            foregroundColor: context.colors.onAccent,
-                            shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(8.r),
-                            ),
-                          ),
-                        ),
-                      ],
-                    ),
+                ? AppErrorView(
+                    // 不展示 state.error 的原始文本；说明里点明「筛选没丢」，
+                    // 用户重试后返回的就是同一分类下的列表。
+                    message: '知识卡片没加载出来，可能是服务端异常。你的筛选条件没有变。',
+                    onRetry: () => ref
+                        .read(knowledgeControllerProvider.notifier)
+                        .loadCards(category: selectedCategory),
                   )
                 : state.cards.isEmpty
                 ? const EmptyState(
@@ -169,6 +134,8 @@ class _KnowledgeScreenState extends ConsumerState<KnowledgeScreen> {
         ],
       ),
       floatingActionButton: FloatingActionButton(
+        // 只有图标的 FAB 读屏只会念出「按钮」；补 tooltip 兼作语义标签。
+        tooltip: '新建知识卡片',
         onPressed: _openCreateCardDialog,
         backgroundColor: context.colors.primary,
         child: Icon(AppIcons.add, color: context.colors.onPrimary),
@@ -306,7 +273,7 @@ class _KnowledgeScreenState extends ConsumerState<KnowledgeScreen> {
                               text: TextSpan(
                                 style: TextStyle(
                                   fontSize: 13.sp,
-                                  color: Colors.black87,
+                                  color: context.colors.text,
                                 ),
                                 children: [
                                   TextSpan(

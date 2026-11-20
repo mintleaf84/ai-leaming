@@ -1,6 +1,7 @@
 import { OpenAPIHono, createRoute, z } from "@hono/zod-openapi";
 import { historyService } from "@/lib/services/history";
 import { authMiddleware, getCurrentUser } from "@/lib/api/middlewares/auth";
+import { parsePageParams } from "@/lib/api/pagination";
 
 const app = new OpenAPIHono();
 
@@ -50,9 +51,14 @@ const listRoute = createRoute({
 
 app.openapi(listRoute, async (c) => {
   const user = getCurrentUser(c);
-  const { page, pageSize, mode } = c.req.valid("query");
-  const pageNum = parseInt(page);
-  const pageSizeNum = parseInt(pageSize);
+  const query = c.req.valid("query");
+  const { mode } = query;
+  // 分页统一走共享实现：`page` 非法/<1 回落到 1，`pageSize` 非法回落到 10（保持原
+  // `pageSize.default("10")`），上限 100。这里不用 `parsePagination`——那套是
+  // `limit`/`offset`，改用它等于把对外参数名从 `pageSize` 换掉。
+  const { page: pageNum, pageSize: pageSizeNum } = parsePageParams(query, {
+    defaultPageSize: 10,
+  });
 
   const result = await historyService.getHistory(Number(user.id), {
     page: pageNum,

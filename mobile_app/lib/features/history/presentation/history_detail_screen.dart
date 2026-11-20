@@ -3,7 +3,6 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:intl/intl.dart';
 import '../../../core/navigation/app_nav.dart';
-import '../../../core/error/user_message.dart';
 import 'package:skeletonizer/skeletonizer.dart';
 import 'history_provider.dart';
 import '../../settings/presentation/settings_provider.dart';
@@ -12,6 +11,7 @@ import '../domain/practice_log.dart';
 import '../../../shared/skeletons/skeleton_fakes.dart';
 import 'dart:math' as math;
 import '../../../shared/widgets/first_principles_section.dart';
+import '../../../shared/widgets/state_views.dart';
 import '../../../core/theme/app_icons.dart';
 import '../../../core/theme/app_colors.dart';
 
@@ -76,7 +76,10 @@ class _HistoryDetailScreenState extends ConsumerState<HistoryDetailScreen> {
         error: (error, _) {
           // 原始异常只进日志，界面用统一文案（审计 #24）。
           debugPrint('[HistoryDetail] 加载失败: $error');
-          return _buildErrorView(userMessageOf(error), textColor);
+          return AppErrorView(
+            message: '这段练习记录没加载出来。',
+            onRetry: () => ref.invalidate(historyDetailProvider(widget.sessionId)),
+          );
         },
         data: (state) => reviewMode == ReviewMode.immersive
             ? _buildImmersiveBody(
@@ -93,32 +96,6 @@ class _HistoryDetailScreenState extends ConsumerState<HistoryDetailScreen> {
                 secondaryColor,
                 borderColor,
               ),
-      ),
-    );
-  }
-
-  Widget _buildErrorView(String error, Color textColor) {
-    return Center(
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          Icon(
-            AppIcons.errorOutline,
-            size: 48.sp,
-            color: context.colors.error,
-          ),
-          SizedBox(height: 16.h),
-          Text(
-            '加载失败',
-            style: TextStyle(fontSize: 18.sp, color: textColor),
-          ),
-          SizedBox(height: 16.h),
-          ElevatedButton(
-            onPressed: () =>
-                ref.invalidate(historyDetailProvider(widget.sessionId)),
-            child: const Text('重试'),
-          ),
-        ],
       ),
     );
   }
@@ -186,7 +163,10 @@ class _HistoryDetailScreenState extends ConsumerState<HistoryDetailScreen> {
           _buildFilterBar(textColor, secondaryColor, allLogs),
           SizedBox(height: 12.h),
           if (filteredLogs.isEmpty)
-            _buildEmptyState(secondaryColor)
+            AppEmptyView(
+              emoji: '🎉',
+              title: _showWrongOnly ? '太棒了！没有错题' : '暂无题目',
+            )
           else
             ...filteredLogs.asMap().entries.map((entry) {
               final log = entry.value;
@@ -461,24 +441,6 @@ class _HistoryDetailScreenState extends ConsumerState<HistoryDetailScreen> {
     );
   }
 
-  Widget _buildEmptyState(Color secondaryColor) {
-    return Center(
-      child: Padding(
-        padding: EdgeInsets.symmetric(vertical: 40.h),
-        child: Column(
-          children: [
-            Text('🎉', style: TextStyle(fontSize: 48.sp)),
-            SizedBox(height: 12.h),
-            Text(
-              _showWrongOnly ? '太棒了！没有错题' : '暂无题目',
-              style: TextStyle(fontSize: 16.sp, color: secondaryColor),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
   // --- 卡片组件 ---
 
   Widget _buildListQuestionCard(
@@ -664,7 +626,6 @@ class _HistoryDetailScreenState extends ConsumerState<HistoryDetailScreen> {
                       fontWeight: FontWeight.w600,
                       color: textColor,
                       height: 1.5,
-                      fontFamily: 'Noto Serif SC', // 使用衬线字体增强阅读感
                     ),
                   ),
                   SizedBox(height: 24.h),

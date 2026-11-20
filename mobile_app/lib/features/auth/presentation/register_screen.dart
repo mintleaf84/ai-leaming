@@ -68,7 +68,6 @@ class RegisterScreen extends HookConsumerWidget {
                               fontSize: 28.sp,
                               fontWeight: FontWeight.bold,
                               color: context.colors.text,
-                              fontFamily: 'Inter',
                             ),
                           ),
                         ),
@@ -183,8 +182,13 @@ class RegisterScreen extends HookConsumerWidget {
                         // Footer
                         SizedBox(height: 20.h),
                         Center(
-                          child: GestureDetector(
-                            onTap: () => context.replace(AppRoutes.login),
+                          child: TextButton(
+                            onPressed: () => context.replace(AppRoutes.login),
+                            style: TextButton.styleFrom(
+                              // 13sp 富文本只有约 17dp 高，撑到 44dp 命中区。
+                              minimumSize: const Size(44, 44),
+                              padding: EdgeInsets.symmetric(horizontal: 8.w),
+                            ),
                             child: RichText(
                               text: TextSpan(
                                 text: '已有账号？ ',

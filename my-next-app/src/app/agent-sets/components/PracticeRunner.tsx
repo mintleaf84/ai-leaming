@@ -101,6 +101,7 @@ export function PracticeRunner({
       setAnsweredCount((count) => count + 1);
       if (result.isCorrect) setCorrectCount((count) => count + 1);
     } catch (caught) {
+      // audit-allow: 失败已用 toast/setError 呈现给用户，属可见降级；console.error 仅供排障
       // 判分失败不能假装"没答过"：留在本题，允许再点一次
       console.error("[agent-sets] 判分失败", {
         sessionId,
@@ -166,6 +167,7 @@ export function PracticeRunner({
         Math.max(0, nextQueue.length - Math.min(index, nextQueue.length));
       toast.success(`已反馈给 Agent，本批剩余 ${remaining} 题`);
     } catch (caught) {
+      // audit-allow: 失败已用 toast/setError 呈现给用户，属可见降级；console.error 仅供排障
       console.error("[agent-sets] 反馈题目失败", {
         setId,
         targetId,

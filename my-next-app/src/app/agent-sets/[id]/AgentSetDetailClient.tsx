@@ -125,6 +125,7 @@ export default function AgentSetDetailClient({
       }
       setRun({ sessionId: attempt.sessionId, questions: queue });
     } catch (caught) {
+      // audit-allow: 失败已用 toast/setError 呈现给用户，属可见降级；console.error 仅供排障
       console.error("[agent-sets] 开始练习失败", { setId, err: caught });
       toast.error(
         caught instanceof Error ? caught.message : "开始练习失败，请稍后重试",
@@ -156,6 +157,7 @@ export default function AgentSetDetailClient({
         result.remaining ?? Math.max(0, summary.pendingCount - 1);
       toast.success(`已反馈给 Agent，本批剩余 ${remaining} 题`);
     } catch (caught) {
+      // audit-allow: 失败已用 toast/setError 呈现给用户，属可见降级；console.error 仅供排障
       console.error("[agent-sets] 反馈题目失败", {
         setId,
         questionId,
@@ -182,6 +184,7 @@ export default function AgentSetDetailClient({
           : "已转正：题目进入题库，之后会算进掌握度",
       );
     } catch (caught) {
+      // audit-allow: 失败已用 toast/setError 呈现给用户，属可见降级；console.error 仅供排障
       console.error("[agent-sets] 转正失败", { setId, err: caught });
       toast.error(
         caught instanceof Error ? caught.message : "转正失败，请稍后重试",

@@ -45,11 +45,15 @@ abstract final class AppRoutes {
   static const textbooks = '/textbooks';
   static const questionNew = '/questions/new';
   static const drafts = '/drafts';
+  static const exam = '/exam';
 
   static String historyDetail(String sessionId) => '/history/$sessionId';
   static String textbookDetail(int textbookId) => '/textbooks/$textbookId';
   static String questionEdit(String questionId) => '/questions/$questionId/edit';
   static String draftDetail(String draftId) => '/drafts/$draftId';
+  static String examPaper(int paperId) => '/exam/paper/$paperId';
+  static String examSession(String sessionId) =>
+      '/exam/session/${Uri.encodeComponent(sessionId)}';
 }
 
 extension AppNav on BuildContext {

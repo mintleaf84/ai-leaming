@@ -58,6 +58,10 @@ app.route("/drafts", draftsRoute);
 import practiceRoute from "@/lib/api/routes/practice";
 app.route("/practice", practiceRoute);
 
+// 试卷 / 模考（docs/exam-paper-plan.md §2）：服务端唯一实现，Web 与移动端共用
+import examRoute from "@/lib/api/routes/exam";
+app.route("/exam", examRoute);
+
 // 回忆自测（用户 JWT 面）：与 /external/recall/* 同一套协议，鉴权换成登录 JWT
 import recallRoute from "@/lib/api/routes/recall";
 app.route("/recall", recallRoute);

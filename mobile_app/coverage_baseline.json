@@ -1,45 +1,57 @@
 {
   "_comment": "覆盖率门禁基线：由 tool/coverage_gate.dart --update 生成，只升不降。floor 是硬闸，measured 用于检测单文件回退；exempt 里的文件跳过\"新增文件 <60%\"与\"单文件回退\"，但仍计入分母。",
-  "generated_at": "2026-11-19T21:44:13.207866Z",
+  "generated_at": "2026-11-20T09:33:11.425177Z",
   "global": {
-    "floor": 59.5,
-    "measured": 60.46
+    "floor": 82.8,
+    "measured": 83.84
   },
   "scopes": {
     "domain_data": {
-      "floor": 80.2,
-      "measured": 81.18
+      "floor": 86.6,
+      "measured": 87.63
     },
     "core": {
-      "floor": 80.9,
-      "measured": 81.89
+      "floor": 84.8,
+      "measured": 85.81
     },
     "shared": {
       "floor": 84.7,
       "measured": 85.71
     },
     "providers": {
-      "floor": 86.2,
-      "measured": 87.17
+      "floor": 87.0,
+      "measured": 87.96
     },
     "screens": {
-      "floor": 47.3,
-      "measured": 48.33
+      "floor": 80.9,
+      "measured": 81.91
     },
     "other": {
-      "floor": 0.0,
-      "measured": 0.0
+      "floor": 78.3,
+      "measured": 79.27
     }
   },
   "exempt": [
     {
       "path": "lib/core/theme/app_icons.dart",
       "reason": "纯图标常量，无行为"
+    },
+    {
+      "path": "lib/core/compat/app_version.dart",
+      "reason": "构建期版本号常量，无分支；与 pubspec 的一致性由契约测试守"
+    },
+    {
+      "path": "lib/core/local/local_db.dart",
+      "reason": "懒加载单例只打开连接；表结构与迁移语句在 local_schema_test 覆盖"
+    },
+    {
+      "path": "lib/features/practice/domain/practice_repository.dart",
+      "reason": "纯抽象接口（只有签名无方法体），行为由 practice_repository_impl 测试覆盖"
     }
   ],
   "files": {
     "lib/app_router.dart": {
-      "measured": 0.0
+      "measured": 79.27
     },
     "lib/core/a11y/status_announcer.dart": {
       "measured": 100.0
@@ -62,6 +74,12 @@
     "lib/core/constants/api_constants.dart": {
       "measured": 100.0
     },
+    "lib/core/diagnostics/error_hooks.dart": {
+      "measured": 85.71
+    },
+    "lib/core/diagnostics/error_log.dart": {
+      "measured": 94.31
+    },
     "lib/core/error/user_message.dart": {
       "measured": 91.67
     },
@@ -72,7 +90,10 @@
       "measured": 90.91
     },
     "lib/core/navigation/app_nav.dart": {
-      "measured": 83.33
+      "measured": 100.0
+    },
+    "lib/core/navigation/app_shell.dart": {
+      "measured": 100.0
     },
     "lib/core/network/connectivity_provider.dart": {
       "measured": 100.0
@@ -108,7 +129,7 @@
       "measured": 93.33
     },
     "lib/core/utils/json_converters.dart": {
-      "measured": 75.0
+      "measured": 100.0
     },
     "lib/features/auth/data/auth_repository_impl.dart": {
       "measured": 88.89
@@ -123,13 +144,13 @@
       "measured": 100.0
     },
     "lib/features/auth/presentation/login_screen.dart": {
-      "measured": 0.66
+      "measured": 97.6
     },
     "lib/features/auth/presentation/register_screen.dart": {
-      "measured": 0.85
+      "measured": 98.46
     },
     "lib/features/auth/presentation/splash_screen.dart": {
-      "measured": 4.0
+      "measured": 100.0
     },
     "lib/features/chat/data/chat_repository_impl.dart": {
       "measured": 79.17
@@ -147,7 +168,7 @@
       "measured": 71.73
     },
     "lib/features/dashboard/presentation/dashboard_screen.dart": {
-      "measured": 97.18
+      "measured": 98.24
     },
     "lib/features/history/domain/history_item.dart": {
       "measured": 100.0
@@ -156,31 +177,34 @@
       "measured": 100.0
     },
     "lib/features/history/presentation/history_detail_screen.dart": {
-      "measured": 80.52
+      "measured": 80.76
     },
     "lib/features/history/presentation/history_provider.dart": {
       "measured": 100.0
     },
     "lib/features/history/presentation/history_screen.dart": {
-      "measured": 0.76
+      "measured": 98.0
     },
     "lib/features/knowledge/presentation/knowledge_provider.dart": {
       "measured": 97.96
     },
     "lib/features/knowledge/presentation/knowledge_screen.dart": {
-      "measured": 0.47
+      "measured": 98.77
     },
     "lib/features/mastery/presentation/mastery_provider.dart": {
       "measured": 96.67
     },
     "lib/features/mastery/presentation/mastery_screen.dart": {
-      "measured": 1.2
+      "measured": 96.91
     },
     "lib/features/practice/data/local_practice_store.dart": {
-      "measured": 99.28
+      "measured": 99.57
+    },
+    "lib/features/practice/data/practice_backup_service.dart": {
+      "measured": 77.19
     },
     "lib/features/practice/data/practice_repository_impl.dart": {
-      "measured": 82.95
+      "measured": 85.45
     },
     "lib/features/practice/domain/first_principles_params.dart": {
       "measured": 0.0
@@ -188,11 +212,17 @@
     "lib/features/practice/domain/first_principles_response.dart": {
       "measured": 100.0
     },
+    "lib/features/practice/domain/practice_backup.dart": {
+      "measured": 97.92
+    },
     "lib/features/practice/domain/practice_exceptions.dart": {
       "measured": 100.0
     },
     "lib/features/practice/domain/practice_repository.dart": {
       "measured": 0.0
+    },
+    "lib/features/practice/domain/practice_resume.dart": {
+      "measured": 96.61
     },
     "lib/features/practice/domain/practice_session.dart": {
       "measured": 100.0
@@ -204,28 +234,46 @@
       "measured": 100.0
     },
     "lib/features/practice/presentation/practice_provider.dart": {
-      "measured": 61.97
+      "measured": 81.16
+    },
+    "lib/features/practice/presentation/practice_resume_provider.dart": {
+      "measured": 94.74
     },
     "lib/features/practice/presentation/practice_screen.dart": {
-      "measured": 56.0
+      "measured": 57.48
     },
     "lib/features/practice/presentation/practice_setup_screen.dart": {
-      "measured": 1.85
+      "measured": 91.47
     },
     "lib/features/practice/presentation/question_list_screen.dart": {
-      "measured": 0.36
+      "measured": 98.63
+    },
+    "lib/features/practice/presentation/question_prefetch_provider.dart": {
+      "measured": 85.05
     },
     "lib/features/practice/presentation/questions_provider.dart": {
       "measured": 100.0
     },
     "lib/features/practice/presentation/result_screen.dart": {
-      "measured": 0.65
+      "measured": 98.28
+    },
+    "lib/features/practice/presentation/widgets/device_migration_panel.dart": {
+      "measured": 90.7
     },
     "lib/features/practice/presentation/widgets/first_principles_panel.dart": {
-      "measured": 0.0
+      "measured": 50.98
+    },
+    "lib/features/practice/presentation/widgets/practice_backup_panel.dart": {
+      "measured": 30.93
+    },
+    "lib/features/practice/presentation/widgets/question_material_card.dart": {
+      "measured": 97.89
+    },
+    "lib/features/practice/presentation/widgets/question_prefetch_panel.dart": {
+      "measured": 84.13
     },
     "lib/features/pricing/presentation/pricing_screen.dart": {
-      "measured": 0.99
+      "measured": 99.12
     },
     "lib/features/profile/domain/user_profile.dart": {
       "measured": 100.0
@@ -236,11 +284,32 @@
     "lib/features/profile/presentation/profile_screen.dart": {
       "measured": 0.57
     },
+    "lib/features/questions/data/question_editor_repository.dart": {
+      "measured": 96.36
+    },
+    "lib/features/questions/domain/question_draft.dart": {
+      "measured": 96.26
+    },
+    "lib/features/questions/domain/question_form.dart": {
+      "measured": 100.0
+    },
+    "lib/features/questions/presentation/draft_providers.dart": {
+      "measured": 70.3
+    },
+    "lib/features/questions/presentation/draft_review_screen.dart": {
+      "measured": 89.64
+    },
+    "lib/features/questions/presentation/drafts_screen.dart": {
+      "measured": 91.13
+    },
+    "lib/features/questions/presentation/question_form_screen.dart": {
+      "measured": 92.66
+    },
     "lib/features/recall/data/recall_providers.dart": {
-      "measured": 0.0
+      "measured": 20.0
     },
     "lib/features/recall/data/recall_repository.dart": {
-      "measured": 95.12
+      "measured": 97.56
     },
     "lib/features/recall/domain/recall_answer_alignment.dart": {
       "measured": 100.0
@@ -306,7 +375,7 @@
       "measured": 100.0
     },
     "lib/features/settings/presentation/settings_screen.dart": {
-      "measured": 61.41
+      "measured": 63.82
     },
     "lib/features/stats/domain/learning_stats.dart": {
       "measured": 100.0
@@ -318,16 +387,16 @@
       "measured": 100.0
     },
     "lib/features/textbook/presentation/textbook_detail_screen.dart": {
-      "measured": 0.0
+      "measured": 97.73
     },
     "lib/features/textbook/presentation/textbook_list_screen.dart": {
-      "measured": 1.09
+      "measured": 96.74
     },
     "lib/features/textbook/presentation/textbook_provider.dart": {
       "measured": 89.19
     },
     "lib/features/wrong_book/data/wrong_book_repository.dart": {
-      "measured": 96.3
+      "measured": 96.67
     },
     "lib/features/wrong_book/domain/wrong_question.dart": {
       "measured": 90.57

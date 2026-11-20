@@ -85,10 +85,34 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 45
     needs: [analyze]
+    # 默认只读；只有 tag 构建要写 Release（R3），所以把写权限收在这一层，
+    # 不给 analyze job 也不要写在 workflow 顶层。
+    permissions:
+      contents: write
     steps:
       - uses: actions/checkout@v4
         with:
           persist-credentials: false
+          # Release 正文取 tag 的 commit 列表、上一版 tag 用 git describe 定位，
+          # 都需要完整历史与 tag（默认 depth=1 两者都拿不到）。
+          fetch-depth: 0
+
+      # R1：versionCode 交给 CI 派生。pubspec 的 version 只有主段（1.0.0）是人工维护的
+      # 语义版本，+N 不再由人改（改了也容易忘），统一用 run_number。
+      # run_number 是仓库级单调递增的：即使回滚时重跑旧 tag，编号也只会更大，
+      # 正好满足 Android「versionCode 不能降级」的安装约束（见 docs/deploy.md §10）。
+      - name: 派生版本号
+        id: version
+        run: |
+          raw="$(sed -n 's/^version:[[:space:]]*//p' pubspec.yaml | head -1 | tr -d '\r[:space:]')"
+          name="${raw%%+*}"
+          if [ -z "$name" ]; then
+            echo "::error::mobile_app/pubspec.yaml 里没有可解析的 version 行（期望形如 1.0.0+1）"
+            exit 1
+          fi
+          echo "name=$name" >> "$GITHUB_OUTPUT"
+          echo "code=${{ github.run_number }}" >> "$GITHUB_OUTPUT"
+          echo "本次构建版本：$name+${{ github.run_number }}"
 
       - uses: actions/setup-java@v4
         with:
@@ -148,11 +172,82 @@ jobs:
             echo "keyPassword=$(esc "$KEY_PASSWORD")"
           } > android/key.properties
 
+      # R1 + R4：--build-name 覆盖 versionName（取 pubspec 主段），--build-number 覆盖
+      # versionCode（取 run_number），gradle 侧读的正是 flutter.versionCode/versionName，
+      # 因此 android/app/build.gradle.kts 无需改动。
+      # BUILD_SHA 是构建指纹、APP_VERSION 是给人看的版本串：两者都靠 dart-define 送进 App。
+      # 设置页「关于」的展示属于 Dart 侧改动（当前 App 里版本号是硬编码），未在本次改动内；
+      # define 先传，是为了让那一步只需要改一行 UI，不必再回头动 workflow。
       - name: 构建 Release APK
-        run: flutter build apk --release --dart-define=API_BASE_URL=${{ vars.API_BASE_URL }}
+        run: >-
+          flutter build apk --release
+          --build-name=${{ steps.version.outputs.name }}
+          --build-number=${{ steps.version.outputs.code }}
+          --dart-define=API_BASE_URL=${{ vars.API_BASE_URL }}
+          --dart-define=BUILD_SHA=${{ github.sha }}
+          --dart-define=APP_VERSION=${{ steps.version.outputs.name }}+${{ steps.version.outputs.code }}
 
+      # 发布用文件单独拷一份带版本号的名字：gh release upload 用文件 basename 当 asset 名，
+      # 直接传 app-release.apk 会让所有 Release 的资产同名、下载后无法区分。
+      # 副本放在 build/ 里（.gitignore 已忽略），避免本地手工执行这几步时在仓库里留文件。
+      - name: 整理产物
+        id: package
+        run: |
+          out="build/app/outputs/flutter-apk"
+          versioned="$out/app-release-${{ steps.version.outputs.name }}+${{ steps.version.outputs.code }}.apk"
+          cp "$out/app-release.apk" "$versioned"
+          echo "file=build/app/outputs/flutter-apk/$(basename "$versioned")" >> "$GITHUB_OUTPUT"
+          ls -lh "$versioned"
+
+      # R2：artifact 名带版本，两次构建在下载页可区分；保留 30 天（默认 90 天太长，
+      # 而 Release 上的资产是长期留存的那一份，artifact 只是当次调试用）。
       - name: 上传 APK 构件
         uses: actions/upload-artifact@v4
         with:
-          name: app-release
-          path: mobile_app/build/app/outputs/flutter-apk/app-release.apk
+          name: app-release-${{ steps.version.outputs.name }}+${{ steps.version.outputs.code }}
+          path: ${{ github.workspace }}/mobile_app/${{ steps.package.outputs.file }}
+          retention-days: 30
+
+      # R3：只在打 tag（v*）时建 Release。用 gh 而不是引第三方 action：
+      # 仓库已有 gh 使用习惯，ubuntu-latest 自带 gh，少一个需要 pin 的供应链依赖。
+      # 幂等：同一 tag 重跑时改成覆盖资产 + 更新正文，而不是因「Release 已存在」报错。
+      - name: 创建 GitHub Release（仅 tag）
+        if: startsWith(github.ref, 'refs/tags/')
+        env:
+          GH_TOKEN: ${{ github.token }}
+          TAG: ${{ github.ref_name }}
+          APK: ${{ steps.package.outputs.file }}
+        run: |
+          # 上一版 tag 用来说明"本次改了什么"；没有上一版（首个 tag）就退化为全部历史。
+          prev="$(git describe --tags --abbrev=0 "${TAG}^" 2>/dev/null || true)"
+          if [ -n "$prev" ]; then
+            range="$prev..$TAG"
+            echo "对比范围：$range"
+          else
+            range="$TAG"
+            echo "未找到上一个 tag，正文列出全部可达提交"
+          fi
+
+          {
+            echo "版本：\`${{ steps.version.outputs.name }}+${{ steps.version.outputs.code }}\`"
+            echo "构建：\`${{ github.sha }}\`"
+            if [ -n "$prev" ]; then
+              echo "对比：https://github.com/${{ github.repository }}/compare/$prev...$TAG"
+            fi
+            echo
+            echo "## 变更"
+            echo
+            git log --no-merges --pretty=format:'- %s (%h)' "$range"
+            echo
+          } > release-notes.md
+
+          if gh release view "$TAG" >/dev/null 2>&1; then
+            echo "Release $TAG 已存在：覆盖资产并更新正文"
+            gh release upload "$TAG" "$APK" --clobber
+            gh release edit "$TAG" --notes-file release-notes.md
+          else
+            gh release create "$TAG" "$APK" \
+              --title "$TAG" \
+              --notes-file release-notes.md
+          fi
+

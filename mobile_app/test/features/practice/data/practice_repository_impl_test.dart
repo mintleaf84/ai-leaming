@@ -36,6 +36,12 @@ class FakeLocalStore implements LocalPracticeStore {
   final Map<String, Question> questions = <String, Question>{};
   Object? questionByIdError;
 
+  /// 本地会话里的题目 id（离线续练用）；null 表示「本地没有这场会话」。
+  List<String>? localQuestionIds;
+
+  /// 本地会话的归属账号（默认与 `makeJwt()` 的 user id 一致）。
+  String? localOwner = '7';
+
   List<Question>? cachedQuestions;
   Object? cacheError;
 
@@ -68,6 +74,16 @@ class FakeLocalStore implements LocalPracticeStore {
       throw error;
     }
     return questions[id];
+  }
+
+  @override
+  Future<List<String>?> localSessionQuestionIds(String localId) async {
+    return localQuestionIds;
+  }
+
+  @override
+  Future<String?> localSessionOwner(String localId) async {
+    return localQuestionIds == null ? null : localOwner;
   }
 
   @override
@@ -428,6 +444,7 @@ void main() {
         questionId: '3',
         userAnswer: '["A","B"]',
         duration: 2,
+        sessionQuestionIds: const <String>['1', '3', '5'],
       );
 
       expect(adapter.requests.single.path, '/practice/session/agent_42/submit');
@@ -438,8 +455,26 @@ void main() {
       final ensured = store.ensuredSessions.single;
       expect(ensured['localId'], 'local_agent_42');
       expect(ensured['mode'], 'offline-resume');
-      expect(ensured['questionIds'], <String>['3']);
+      expect(
+        ensured['questionIds'],
+        <String>['1', '3', '5'],
+        reason: '降级后的本地会话必须记全整场题序，否则重启续练只剩断网那一题',
+      );
       expect(store.recordedAnswers.single['localId'], 'local_agent_42');
+    });
+
+    test('没传整场题序时至少记下当前题（不写空列表）', () async {
+      adapter.handler = (options) => offlineException(options);
+      store.questions['3'] = cachedQuestion;
+
+      await repository.submitAnswer(
+        sessionId: 'agent_42',
+        questionId: '3',
+        userAnswer: 'A',
+        duration: 0,
+      );
+
+      expect(store.ensuredSessions.single['questionIds'], <String>['3']);
     });
 
     test('同一题再次断网降级，幂等键保持不变', () async {
@@ -555,6 +590,122 @@ void main() {
       expect(adapter.requests.single.path, '/practice/session/agent_9');
       expect(session.sessionId, 'agent_9');
       expect(session.questions.single.id, '1');
+    });
+
+    test('local_ 会话从本地记录 + 题目缓存重建，不发 HTTP（离线续练）', () async {
+      store.localQuestionIds = <String>['1', '2'];
+      store.questions['1'] = const Question(
+        id: '1',
+        content: '本地题一',
+        options: <String>['A', 'B'],
+        answer: 'A',
+      );
+      store.questions['2'] = const Question(
+        id: '2',
+        content: '本地题二',
+        options: <String>['A', 'B'],
+        answer: 'B',
+      );
+
+      final session = await repository.getSession('local_123');
+
+      expect(adapter.requests, isEmpty, reason: '本地会话在服务端不存在，不该打请求');
+      expect(session.sessionId, 'local_123');
+      expect(
+        session.questions.map((q) => q.content),
+        <String>['本地题一', '本地题二'],
+        reason: '题目顺序必须与开练时一致（否则续练落点会错位）',
+      );
+    });
+
+    test('local_ 会话的题面已过期/缺失：明确拒绝，不拿空答案判分', () async {
+      store.localQuestionIds = <String>['1', '2'];
+      store.questions['1'] = const Question(
+        id: '1',
+        content: '本地题一',
+        options: <String>['A', 'B'],
+      );
+
+      await expectLater(
+        repository.getSession('local_123'),
+        throwsA(
+          isA<OfflineCacheUnavailable>().having(
+            (e) => e.userMessage,
+            'userMessage',
+            contains('过期'),
+          ),
+        ),
+      );
+      expect(adapter.requests, isEmpty);
+    });
+
+    test('local_ 会话在本地找不到记录：给出可读原因', () async {
+      store.localQuestionIds = null;
+
+      await expectLater(
+        repository.getSession('local_missing'),
+        throwsA(isA<OfflineCacheUnavailable>()),
+      );
+    });
+
+    test('local_ 会话不属于当前账号：拒绝恢复（A 的离线练习不能被 B 接着做）', () async {
+      store.localQuestionIds = <String>['1'];
+      store.localOwner = '9';
+      store.questions['1'] = const Question(
+        id: '1',
+        content: '本地题一',
+        options: <String>['A', 'B'],
+        answer: 'A',
+      );
+
+      await expectLater(
+        repository.getSession('local_123'),
+        throwsOfflineCache('不属于当前账号'),
+      );
+      expect(adapter.requests, isEmpty);
+    });
+
+    test('缓存里的题没有答案：恢复被拒，文案指向「联网刷新题库」', () async {
+      store.localQuestionIds = <String>['1', '2'];
+      store.questions['1'] = const Question(
+        id: '1',
+        content: '本地题一',
+        options: <String>['A', 'B'],
+        answer: 'A',
+      );
+      // 缓存被列表接口覆盖过：answer 缺失。用空答案判分会把整场判错。
+      store.questions['2'] = const Question(
+        id: '2',
+        content: '本地题二',
+        options: <String>['A', 'B'],
+      );
+
+      await expectLater(
+        repository.getSession('local_123'),
+        throwsOfflineCache('请联网刷新题库'),
+      );
+      expect(adapter.requests, isEmpty);
+    });
+
+    test('题面与答案都在：恢复成功且题序不变', () async {
+      store.localQuestionIds = <String>['2', '1'];
+      for (final id in <String>['1', '2']) {
+        store.questions[id] = Question(
+          id: id,
+          content: '本地题$id',
+          options: const <String>['A', 'B'],
+          answer: 'A',
+        );
+      }
+
+      final session = await repository.getSession('local_123');
+
+      expect(session.sessionId, 'local_123');
+      expect(
+        session.questions.map((q) => q.id),
+        <String>['2', '1'],
+        reason: '题序必须与开练时一致，否则断点落点会错位',
+      );
     });
   });
 }

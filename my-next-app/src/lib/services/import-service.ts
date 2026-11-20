@@ -12,6 +12,7 @@ import { generateId } from "../utils/id";
 import { log, logger } from "@/lib/logger";
 import { checkAnswerCorrectness } from "@/lib/services/answer-check";
 import { withTransaction } from "@/lib/db/executor";
+import { ValidationError } from "@/lib/errors/app-error";
 import { DryRunRollback, isDryRunRollback } from "./dry-run";
 
 const { practice_sessions, questions, practice_logs, user_mastery } =
@@ -355,12 +356,18 @@ export interface AgentAnswersImportResult {
 /**
  * 题目不可见（不存在 / 已被删除）时抛出，由路由层映射成 400。
  * 带上全部非法 ID，路由只回前 5 个，避免错误响应体被刷爆。
+ *
+ * 继承 `ValidationError` 只是**兜底**：路由里的 `instanceof` 分支优先命中，
+ * 响应逐字节不变；万一某条路由漏写了分支，`toErrorResponse` 会给 400 + 可读文案，
+ * 而不是把调用方输入错误报成 500。
  */
-export class InvalidQuestionIdsError extends Error {
+export class InvalidQuestionIdsError extends ValidationError {
   readonly invalidQuestionIds: number[];
 
   constructor(invalidQuestionIds: number[]) {
-    super(`以下题目不存在或不可见: ${invalidQuestionIds.join(", ")}`);
+    super(`以下题目不存在或不可见: ${invalidQuestionIds.join(", ")}`, {
+      code: "questions.ids.invalid",
+    });
     this.name = "InvalidQuestionIdsError";
     this.invalidQuestionIds = invalidQuestionIds;
   }

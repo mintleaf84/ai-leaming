@@ -93,7 +93,8 @@ void main() {
     await settle(tester);
 
     expect(find.text('加载失败'), findsOneWidget);
-    expect(find.text('请检查网络后重试'), findsOneWidget);
+    // 错误态已统一为 AppErrorView，文案换成面向用户的说明（不再回显原始异常）
+    expect(find.text('掌握度数据没加载出来'), findsOneWidget);
     expect(adapter.requests, hasLength(1));
 
     await tester.tap(find.text('重试'));

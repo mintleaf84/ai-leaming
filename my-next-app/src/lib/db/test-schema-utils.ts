@@ -15,6 +15,27 @@ export const TEST_SCHEMA_SQL = `
         created_at TEXT DEFAULT CURRENT_TIMESTAMP
     );
 
+    -- Agent 推题 / 题集（drizzle/0025）。放在 questions 之前：questions.agent_set_id
+    -- 引用了它，libsql 在 prepare 时会解析父表是否存在（缺表会让 INSERT 直接失败）。
+    CREATE TABLE IF NOT EXISTS agent_question_sets (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+        batch_key TEXT NOT NULL,
+        title TEXT NOT NULL,
+        agent TEXT,
+        model TEXT,
+        prompt_version TEXT,
+        target_tags TEXT,
+        note TEXT,
+        status TEXT DEFAULT 'active' NOT NULL,
+        -- 「打开即已读」的首次打开时间（drizzle/0026）
+        read_at TEXT,
+        created_at TEXT DEFAULT CURRENT_TIMESTAMP
+    );
+
+    CREATE UNIQUE INDEX IF NOT EXISTS agent_question_sets_user_batch_unique
+        ON agent_question_sets (user_id, batch_key);
+
     CREATE TABLE IF NOT EXISTS questions (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
         content TEXT NOT NULL,
@@ -32,6 +53,11 @@ export const TEST_SCHEMA_SQL = `
         ai_mnemonic TEXT,
         external_id TEXT UNIQUE,
         content_hash TEXT,
+        -- Agent 题集隔离标记（drizzle/0025）：默认 import，历史行语义不变
+        origin TEXT DEFAULT 'import' NOT NULL,
+        agent_set_id INTEGER REFERENCES agent_question_sets(id),
+        agent_position INTEGER,
+        agent_flag_reason TEXT,
         created_at TEXT DEFAULT CURRENT_TIMESTAMP
     );
 
@@ -53,6 +79,8 @@ export const TEST_SCHEMA_SQL = `
         deadline_at TEXT,
         exam_submitted_at TEXT,
         exam_score REAL,
+        -- Agent 题集作答（drizzle/0025）：practice_mode='agent_set' 时指向题集
+        agent_set_id INTEGER,
         created_at TEXT DEFAULT CURRENT_TIMESTAMP
     );
 

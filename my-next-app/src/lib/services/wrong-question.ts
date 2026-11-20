@@ -1,5 +1,5 @@
 import { drizzleDb } from "@/lib/db";
-import { eq, and, desc, sql, gte, notInArray, count } from "drizzle-orm";
+import { eq, and, desc, ne, sql, gte, notInArray, count } from "drizzle-orm";
 import {
   practice_logs,
   practice_sessions,
@@ -14,6 +14,11 @@ export interface WrongQuestionItem {
   questionId: number;
   questionContent: string;
   tags: string[];
+  /**
+   * 题目来源：import=题库题，agent=AI 题集题（错题本照收，标出来便于辨认）。
+   * 可选是因为本类型也被若干只读路径复用（已掌握列表 / 随机推荐），那里不需要来源。
+   */
+  origin?: string;
   wrongCount: number;
   lastWrongAt: string;
   correctAnswer: string;
@@ -70,6 +75,11 @@ export interface WrongBookListItem {
   questionId: string;
   questionContent: string;
   tags: string[];
+  /**
+   * 题目来源（docs/agent-question-set-plan.md §2：错题本**不过滤** Agent 题，
+   * 但要让用户/客户端看得出来"这题是 AI 推的"）：import / agent。
+   */
+  origin: string;
   wrongCount: number;
   lastWrongAt: string;
   correctAnswer: string;
@@ -85,6 +95,8 @@ export interface WrongBookDetail {
   explanation: string;
   tags: string[];
   questionType: string;
+  /** 来源（import=题库题，agent=AI 题集题）；flagged 的题不返回详情 */
+  origin: string;
   wrongCount: number;
   lastWrongAt: string;
   userLastAnswer: string;
@@ -128,6 +140,7 @@ function toWrongBookItem(row: {
   questionId: number | null;
   questionContent: string | null;
   tags: string | null;
+  origin: string | null;
   correctAnswer: string | null;
   wrongCount: number;
   lastWrongAt: string | null;
@@ -137,6 +150,7 @@ function toWrongBookItem(row: {
     questionId: String(row.questionId),
     questionContent: String(row.questionContent),
     tags: JSON.parse(row.tags || "[]") as string[],
+    origin: row.origin || "import",
     wrongCount: Number(row.wrongCount),
     lastWrongAt: row.lastWrongAt || "",
     correctAnswer: String(row.correctAnswer),
@@ -170,6 +184,8 @@ export const wrongQuestionService = {
     const baseWhere = and(
       eq(practice_logs.user_id, userId),
       eq(practice_logs.is_correct, false),
+      // 与 listWrongBook 同口径：已报错的题不进错题本
+      ne(questions.origin, "flagged"),
       excludeIds.length > 0
         ? notInArray(practice_logs.question_id, excludeIds)
         : undefined,
@@ -179,18 +195,15 @@ export const wrongQuestionService = {
     );
 
     // 先获取总数（带 tag 筛选时同样需要 join questions）
-    const countQuery = drizzleDb
+    // where 里引用了 `questions`（origin 过滤），因此 count 查询必须一并 join；
+    // 这与原来"只在按 tag 筛选时才 join"的结果集相同（question_id 是到
+    // questions 的外键，LEFT 语义上没有可丢的行），只是少了一个分支。
+    const countResult = (await drizzleDb
       .select({ count: sql`COUNT(DISTINCT ${practice_logs.question_id})` })
       .from(practice_logs)
-      .where(baseWhere);
-    const countResult = (await (
-      tag
-        ? countQuery.innerJoin(
-            questions,
-            eq(practice_logs.question_id, questions.id),
-          )
-        : countQuery
-    ).get()) as { count: number };
+      .innerJoin(questions, eq(practice_logs.question_id, questions.id))
+      .where(baseWhere)
+      .get()) as { count: number };
     const total = countResult?.count || 0;
 
     // 分页查询主数据
@@ -199,6 +212,7 @@ export const wrongQuestionService = {
         questionId: practice_logs.question_id,
         questionContent: questions.content,
         tags: questions.tags,
+        origin: questions.origin,
         correctAnswer: questions.answer,
         wrongCount: sql<number>`COUNT(*)`,
         lastWrongAt: sql<string>`MAX(${practice_logs.timestamp})`,
@@ -226,6 +240,7 @@ export const wrongQuestionService = {
       questionId: r.questionId!,
       questionContent: r.questionContent!,
       tags: safeParseJson<string[]>(r.tags as string | null | undefined, []),
+      origin: r.origin || "import",
       wrongCount: r.wrongCount,
       lastWrongAt: r.lastWrongAt,
       correctAnswer: r.correctAnswer!,
@@ -376,6 +391,7 @@ export const wrongQuestionService = {
         questionId: practice_logs.question_id,
         questionContent: questions.content,
         tags: questions.tags,
+        origin: questions.origin,
         correctAnswer: questions.answer,
         wrongCount: sql<number>`COUNT(*)`,
         lastWrongAt: sql<string>`MAX(${practice_logs.timestamp})`,
@@ -388,6 +404,8 @@ export const wrongQuestionService = {
           eq(practice_logs.is_correct, false),
           // 排除已掌握
           sql`${practice_logs.question_id} NOT IN (SELECT question_id FROM ${mastered_questions} WHERE user_id = ${userId})`,
+          // 已报错的题不再推荐（与错题本列表同口径）
+          ne(questions.origin, "flagged"),
           tag
             ? sql`EXISTS (SELECT 1 FROM json_each(${questions.tags}) WHERE value = ${tag})`
             : undefined,
@@ -585,6 +603,7 @@ export const wrongQuestionService = {
         questionId: practice_logs.question_id,
         questionContent: questions.content,
         tags: questions.tags,
+        origin: questions.origin,
         correctAnswer: questions.answer,
         wrongCount: count(),
         lastWrongAt: sql<string>`MAX(${practice_logs.timestamp})`,
@@ -597,6 +616,10 @@ export const wrongQuestionService = {
           eq(practice_logs.user_id, userId),
           eq(practice_logs.is_correct, false),
           notInArray(practice_logs.question_id, masteredSubquery),
+          // 隔离过滤（docs/agent-question-set-plan.md §2）：Agent 题集题照收
+          // （origin='agent'），但用户已报「这题有问题」的（origin='flagged'）
+          // 不再出现在错题本里 —— 题面本身有问题，留着只会反复误导。
+          ne(questions.origin, "flagged"),
         ),
       )
       .groupBy(practice_logs.question_id)
@@ -691,6 +714,7 @@ export const wrongQuestionService = {
         questionId: practice_logs.question_id,
         questionContent: questions.content,
         tags: questions.tags,
+        origin: questions.origin,
         correctAnswer: questions.answer,
         wrongCount: count(),
         lastWrongAt: sql<string>`MAX(${practice_logs.timestamp})`,
@@ -703,6 +727,8 @@ export const wrongQuestionService = {
           eq(practice_logs.user_id, userId),
           eq(practice_logs.is_correct, false),
           notInArray(practice_logs.question_id, masteredSubquery),
+          // 已报错的题不参与抽题（与列表同口径）
+          ne(questions.origin, "flagged"),
           tag
             ? sql`EXISTS (SELECT 1 FROM json_each(${questions.tags}) WHERE value = ${tag})`
             : sql`1=1`,
@@ -737,13 +763,15 @@ export const wrongQuestionService = {
         explanation: questions.explanation,
         tags: questions.tags,
         type: questions.type,
+        origin: questions.origin,
       })
       .from(questions)
       .where(eq(questions.id, questionId))
       .limit(1)
       .all();
 
-    if (!question) return null;
+    // 已报错的题（origin='flagged'）与"不存在"一样按 404 处理：它已被移出可用集
+    if (!question || question.origin === "flagged") return null;
 
     const stats = await drizzleDb
       .select({
@@ -798,6 +826,7 @@ export const wrongQuestionService = {
       explanation: question.explanation || "",
       tags: JSON.parse(question.tags || "[]") as string[],
       questionType: question.type || "single",
+      origin: question.origin || "import",
       wrongCount: Number(stats[0]?.wrongCount ?? 0),
       lastWrongAt: stats[0]?.lastWrongAt || "",
       userLastAnswer: lastWrongRow[0]?.user_answer || "",

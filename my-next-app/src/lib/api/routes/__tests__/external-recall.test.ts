@@ -194,7 +194,7 @@ describe("/api/external/recall", () => {
       ]),
     );
     // 路由总数 = 26 条（P0–P2a）+ 题库写 3 条（POST/PATCH questions + POST /questions/batch）
-    expect(operations).toHaveLength(29);
+    expect(operations).toHaveLength(34);
 
     // 路径参数必须是 OpenAPI 的 `{param}` 形式：`:param` 不是合法路径，
     // SDK 生成器会把它当成字面路径（存量缺陷，见 PR #162 评审）

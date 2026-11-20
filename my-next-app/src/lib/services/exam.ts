@@ -153,7 +153,8 @@ export interface ExamPaperSummary {
   title: string;
   kind: "fixed" | "timed";
   durationMinutes: number | null;
-  source: "manual" | "auto";
+  /** manual=手工组卷，auto=自动组卷，agent=AI 题集一键成卷（§4.2） */
+  source: "manual" | "auto" | "agent";
   totalQuestions: number;
   createdAt: string | null;
   updatedAt: string | null;
@@ -206,6 +207,11 @@ export interface CreatePaperInput {
   kind?: "fixed" | "timed";
   durationMinutes?: number | null;
   questionIds: number[];
+  /**
+   * 卷面来源；默认 `manual`（公开的 `POST /papers` 不传）。
+   * `agent` 只由「AI 题集一键成卷」内部使用（docs/agent-question-set-plan.md §4.2）。
+   */
+  source?: "manual" | "agent";
 }
 
 export interface UpdatePaperInput {
@@ -312,7 +318,7 @@ function toPaperSummary(
     title: row.title,
     kind: (row.kind as "fixed" | "timed") ?? "fixed",
     durationMinutes: row.duration_minutes ?? null,
-    source: (row.source as "manual" | "auto") ?? "manual",
+    source: (row.source as "manual" | "auto" | "agent") ?? "manual",
     totalQuestions: row.total_questions ?? 0,
     createdAt: row.created_at ?? null,
     updatedAt: row.updated_at ?? null,
@@ -762,7 +768,7 @@ export const examService = {
           title,
           kind: timing.kind,
           duration_minutes: timing.durationMinutes,
-          source: "manual",
+          source: input.source ?? "manual",
           rules_json: null,
           total_questions: questionIds.length,
         })
@@ -917,7 +923,13 @@ export const examService = {
         : 0;
 
     // 所有段共享的候选条件
-    const baseConditions: SQL[] = [inArray(questions.type, types) as SQL];
+    // 隔离过滤（docs/agent-question-set-plan.md §2）：自动组卷候选只取正常题库题
+    // （origin='import'）。Agent 题集题要进卷必须显式「一键成卷」（取该题集自己的
+    // 题），或先转正；否则会从"题库抽题"里静默混进 AI 题。
+    const baseConditions: SQL[] = [
+      inArray(questions.type, types) as SQL,
+      eq(questions.origin, "import") as SQL,
+    ];
     const tagCondition = anyTagCondition(tags);
     if (tagCondition) baseConditions.push(tagCondition);
     if (dimensions && dimensions.length > 0) {
@@ -1391,10 +1403,35 @@ async function applyLearningEffects(
 ): Promise<void> {
   const answered = graded.filter((item) => !item.skipped);
 
+  // 隔离过滤（docs/agent-question-set-plan.md §2）：只有正常题库题（origin='import'）
+  // 的作答才计入掌握度 / FSRS。AI 题集一键成的卷（source='agent'）答完只留
+  // practice_logs，错题本/历史照常可见；转正后才开始计入。
+  //
+  // 为什么要单独查一次 origin：`Question` 由 `QuestionRowSchema` 映射，不含
+  // origin 列（schema 只保留题库业务字段），不能直接从 `item.question` 读。
+  const importQuestionIds = new Set<number>();
   if (answered.length > 0) {
+    const originRows = await drizzleDb
+      .select({ id: questions.id, origin: questions.origin })
+      .from(questions)
+      .where(
+        inArray(
+          questions.id,
+          answered.map((item) => item.question.id),
+        ),
+      );
+    for (const row of originRows) {
+      if (row.origin === "import") importQuestionIds.add(row.id);
+    }
+  }
+  const answeredImport = answered.filter((item) =>
+    importQuestionIds.has(item.question.id),
+  );
+
+  if (answeredImport.length > 0) {
     try {
       const { masteryService } = await import("@/lib/services/mastery");
-      for (const item of answered) {
+      for (const item of answeredImport) {
         for (const tag of item.question.tags ?? []) {
           await masteryService.updateMastery(
             userId,
@@ -1406,7 +1443,7 @@ async function applyLearningEffects(
       }
     } catch (err) {
       logger.error(
-        { err, userId, questionCount: answered.length },
+        { err, userId, questionCount: answeredImport.length },
         "[Exam] 掌握度更新失败（交卷结果已落库）",
       );
       // 显式降级：掌握度是派生数据，失败不影响交卷结果，也不再继续打 FSRS
@@ -1414,11 +1451,11 @@ async function applyLearningEffects(
     }
   }
 
-  if (answered.length === 0) return;
+  if (answeredImport.length === 0) return;
 
   try {
     const { srsService } = await import("@/lib/services/srs");
-    for (const item of answered) {
+    for (const item of answeredImport) {
       try {
         await srsService.updateQuestionSrs(
           userId,

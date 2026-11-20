@@ -16,6 +16,7 @@ import srsRoutes from "./srs";
 import recallRoutes from "./recall";
 import notesRoutes from "./notes";
 import miscRoutes from "./misc";
+import agentSetsRoute from "../external-agent-sets";
 
 const app = new OpenAPIHono();
 
@@ -44,6 +45,9 @@ app.route("/", miscRoutes);
 app.route("/", recallRoutes);
 app.route("/", notesRoutes);
 app.route("/", srsRoutes);
+// Agent 推题 / 题集（docs/agent-question-set-plan.md §4.1）：最终路径
+// `/api/external/agent/question-sets...`；作用域与 key 绑定由子路由自己校验
+app.route("/agent", agentSetsRoute);
 
 // 限流配额对象需要可写（单测会临时下调，见 external-ratelimit.test.ts）
 export { externalRateLimits };

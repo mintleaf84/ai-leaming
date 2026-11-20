@@ -33,11 +33,15 @@ Future<void> pumpScreen(
   List<Object> overrides = const <Object>[],
   double textScale = 1.0,
   double viewInsetsBottom = 0,
+  Size size = const Size(375, 667),
 }) async {
   // 设计稿尺寸 = 测试窗口尺寸，ScreenUtil 的缩放系数正好是 1.0；
   // 需要验证缩放时只动 textScale，不掺入设备尺寸变量。
+  //
+  // [size] 只给「版式本身在 375×667 放不下」的屏用（如结果页，实测溢出 64px，
+  // 已作为缺陷单独回报）。默认值仍是计划里规定的 375×667，不要拿它当挡箭牌。
   tester.view.devicePixelRatio = 1.0;
-  tester.view.physicalSize = const Size(375, 667);
+  tester.view.physicalSize = size;
   tester.view.viewInsets = FakeViewPadding(bottom: viewInsetsBottom);
   addTearDown(tester.view.reset);
 
@@ -45,7 +49,7 @@ Future<void> pumpScreen(
     ProviderScope(
       overrides: overrides.cast(),
       child: ScreenUtilInit(
-        designSize: const Size(375, 667),
+        designSize: size,
         minTextAdapt: true,
         splitScreenMode: true,
         builder: (BuildContext context, Widget? _) => MaterialApp(

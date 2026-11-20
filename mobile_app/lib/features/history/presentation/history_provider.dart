@@ -4,7 +4,7 @@ import 'package:hooks_riverpod/hooks_riverpod.dart';
 import '../../../core/error/user_message.dart';
 import '../../../core/network/dio_client.dart';
 import '../../../shared/datasources/api_client.dart';
-import '../../auth/presentation/auth_provider.dart';
+import '../../../core/auth/auth_epoch.dart';
 import '../domain/history_item.dart';
 import '../domain/practice_log.dart';
 

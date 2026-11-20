@@ -8,7 +8,7 @@ import 'package:flutter_screenutil/flutter_screenutil.dart';
 import '../../../../core/error/user_message.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_icons.dart';
-import '../../../settings/presentation/settings_provider.dart';
+import '../../../../core/settings/settings_provider.dart';
 import '../../data/practice_backup_service.dart';
 import '../practice_resume_provider.dart';
 

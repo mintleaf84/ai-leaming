@@ -5,7 +5,7 @@ import 'package:intl/intl.dart';
 import '../../../core/navigation/app_nav.dart';
 import 'package:skeletonizer/skeletonizer.dart';
 import 'history_provider.dart';
-import '../../settings/presentation/settings_provider.dart';
+import '../../../core/settings/settings_provider.dart';
 import '../domain/history_item.dart';
 import '../domain/practice_log.dart';
 import '../../../shared/skeletons/skeleton_fakes.dart';

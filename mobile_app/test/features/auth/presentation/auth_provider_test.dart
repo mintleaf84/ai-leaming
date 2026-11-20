@@ -5,6 +5,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:mobile_app/features/auth/data/auth_repository_impl.dart';
 import 'package:mobile_app/features/auth/domain/auth_repository.dart';
 import 'package:mobile_app/features/auth/presentation/auth_provider.dart';
+import 'package:mobile_app/features/practice/presentation/practice_resume_provider.dart';
 import 'package:mobile_app/core/storage/preferences.dart';
 
 import '../../../support/fake_preferences_store.dart';
@@ -283,10 +284,19 @@ void main() {
 
   /// 断点（`practice_resume`）是设备级 key，内容带上一账号的进度：
   /// 登录态一变就必须清，否则 B 首页会看到 A 的「继续上次练习」。
+  ///
+  /// 清理的**执行者**是 practice 侧：`PracticeResumeController` watch
+  /// `authEpochProvider`，登录态版本号一变就清断点（以前写在 `AuthController`
+  /// 里，等于让 auth 反向 import practice）。所以这里的用例要先把断点控制器
+  /// 唤醒——没有监听者，版本号变化不会有人响应。
   group('登录态变化清掉练习断点（review 二轮 3）', () {
     const rawResume =
         '{"sessionId":"session_9","answers":[],"nextIndex":1,"total":8,'
         '"mode":"random","userId":"1"}';
+
+    // 用内存版 secure storage：`fakeJwt()` 的 `userId` 是 1，与 rawResume 的
+    // 归属一致，断点才能被正常恢复（否则读盘时就被当成「别人的断点」丢掉）。
+    setUp(useFakeSecureStorage);
 
     ProviderContainer makeContainerWithPrefs(FakePreferencesStore prefs) {
       final container = ProviderContainer(
@@ -300,19 +310,32 @@ void main() {
       return container;
     }
 
+    /// 唤醒断点控制器并完成读盘（它是 watch `authEpochProvider` 的监听方）。
+    Future<void> wakeResume(ProviderContainer container) async {
+      await container.read(practiceResumeControllerProvider.notifier).restore();
+    }
+
     test('登出：断点被清空（B 登录后看不到 A 的进度）', () async {
       final prefs = FakePreferencesStore(
         initial: <String, String>{PreferencesKeys.practiceResume: rawResume},
       );
       final container = makeContainerWithPrefs(prefs);
+      await wakeResume(container);
+      expect(
+        container.read(practiceResumeControllerProvider),
+        isNotNull,
+        reason: '唤醒后归属匹配（userId=1），断点应先恢复出来',
+      );
 
       await container.read(authControllerProvider.notifier).logout();
+      await pumpEventQueue();
 
       expect(
         prefs.values[PreferencesKeys.practiceResume],
         '',
         reason: '空串等价于「没有断点」（见 PracticeResumeController.clear）',
       );
+      expect(container.read(practiceResumeControllerProvider), isNull);
     });
 
     test('登录：同样清空（换账号不能沿用上一位用户的断点）', () async {
@@ -320,10 +343,13 @@ void main() {
         initial: <String, String>{PreferencesKeys.practiceResume: rawResume},
       );
       final container = makeContainerWithPrefs(prefs);
+      await wakeResume(container);
 
       await container.read(authControllerProvider.notifier).login('cjb', 'pwd');
+      await pumpEventQueue();
 
       expect(prefs.values[PreferencesKeys.practiceResume], '');
+      expect(container.read(practiceResumeControllerProvider), isNull);
     });
 
     test('登出失败：断点保留（用户其实还在登录态，别丢他的进度）', () async {
@@ -331,11 +357,28 @@ void main() {
         initial: <String, String>{PreferencesKeys.practiceResume: rawResume},
       );
       final container = makeContainerWithPrefs(prefs);
+      await wakeResume(container);
       repository.logoutError = Exception('本地 token 删除失败');
 
       await container.read(authControllerProvider.notifier).logout();
+      await pumpEventQueue();
 
       expect(prefs.values[PreferencesKeys.practiceResume], rawResume);
+      expect(container.read(practiceResumeControllerProvider), isNotNull);
+    });
+
+    test('版本号变化即清断点（practice 侧监听的就绪信号）', () async {
+      final prefs = FakePreferencesStore(
+        initial: <String, String>{PreferencesKeys.practiceResume: rawResume},
+      );
+      final container = makeContainerWithPrefs(prefs);
+      await wakeResume(container);
+
+      container.read(authEpochProvider.notifier).bump();
+      await pumpEventQueue();
+
+      expect(prefs.values[PreferencesKeys.practiceResume], '');
+      expect(container.read(practiceResumeControllerProvider), isNull);
     });
   });
 }

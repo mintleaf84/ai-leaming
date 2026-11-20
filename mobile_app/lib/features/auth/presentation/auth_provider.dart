@@ -1,26 +1,16 @@
 import 'dart:async';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import '../../practice/presentation/practice_resume_provider.dart';
+import '../../../core/auth/auth_epoch.dart';
 import '../data/auth_repository_impl.dart';
+
+// `authEpochProvider` 住在 `core/auth/auth_epoch.dart`（跨 feature 的核心信号，
+// 不该让 history/chat/practice 反向依赖 auth 的表现层）。这里 re-export，
+// 老的 `import '.../auth_provider.dart'` 拿得到同一个 provider。
+export '../../../core/auth/auth_epoch.dart';
 
 final authControllerProvider = AsyncNotifierProvider<AuthController, void>(() {
   return AuthController();
 });
-
-/// 登录态版本号：登录、注册、登出各 +1。
-///
-/// 为什么不直接 watch authControllerProvider：它的 state 是 `AsyncValue<void>`，
-/// 登出写入的 `AsyncData(null)` 与旧值相等，Riverpod 判等后不会通知监听者。
-/// 需要"登录态变了就清空账号私有数据"的地方（history / chat）watch 这个版本号。
-final authEpochProvider = NotifierProvider<AuthEpoch, int>(AuthEpoch.new);
-
-class AuthEpoch extends Notifier<int> {
-  @override
-  int build() => 0;
-
-  /// 登录态发生实质变化（换账号/登出）时调用。
-  void bump() => state = state + 1;
-}
 
 class AuthController extends AsyncNotifier<void> {
   @override
@@ -36,7 +26,6 @@ class AuthController extends AsyncNotifier<void> {
     // 只有真的登录成功才算登录态变化；失败时界面仍停在未登录，不该触发清理。
     if (state.hasValue && !state.hasError) {
       ref.read(authEpochProvider.notifier).bump();
-      await _clearAccountPrivatePracticeData();
     }
   }
 
@@ -46,7 +35,6 @@ class AuthController extends AsyncNotifier<void> {
     state = await AsyncValue.guard(() => repo.register(username, password));
     if (state.hasValue && !state.hasError) {
       ref.read(authEpochProvider.notifier).bump();
-      await _clearAccountPrivatePracticeData();
     }
   }
 
@@ -64,16 +52,6 @@ class AuthController extends AsyncNotifier<void> {
       // 失败时**不** bump：本地清理失败说明用户其实还在登录态，
       // 清掉历史/对话反而让用户丢掉数据。
       ref.read(authEpochProvider.notifier).bump();
-      await _clearAccountPrivatePracticeData();
     }
-  }
-
-  /// 登录态变化后清掉「未完成练习」断点。
-  ///
-  /// 断点存在设备级 key 里、内容含上一账号的进度：不清的话账号 B 首页会看到
-  /// 「继续上次练习」并接着做 A 的练习（review 二轮 3）。读取时的归属校验是
-  /// 第二道闸，这里做的是「换账号即清」的第一道。
-  Future<void> _clearAccountPrivatePracticeData() async {
-    await ref.read(practiceResumeControllerProvider.notifier).clear();
   }
 }

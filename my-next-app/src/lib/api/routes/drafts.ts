@@ -1,7 +1,10 @@
 import { OpenAPIHono, createRoute, z } from "@hono/zod-openapi";
 import { authMiddleware, getCurrentUser } from "@/lib/api/middlewares/auth";
 import { toErrorResponse } from "@/lib/api/error-response";
-import { draftService, type DraftItemPatch } from "@/lib/services/draft-service";
+import {
+  draftService,
+  type DraftItemPatch,
+} from "@/lib/services/draft-service";
 
 const app = new OpenAPIHono();
 

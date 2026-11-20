@@ -106,7 +106,9 @@ describe("drafts API", () => {
       );
     }
 
-    OCR.performPaddleOCR.mockResolvedValue("1. 下列哪一项属于形成性评价？A...B...");
+    OCR.performPaddleOCR.mockResolvedValue(
+      "1. 下列哪一项属于形成性评价？A...B...",
+    );
     AI.generateStructuredData.mockResolvedValue({ items: [VALID_ITEM] });
   });
 
@@ -372,9 +374,11 @@ describe("drafts API", () => {
     const discarded = await app.request("/?status=discarded", {
       headers: auth(tokenA),
     });
-    const discardedIds = ((await discarded.json()).items as Array<{
-      id: string;
-    }>).map((item) => item.id);
+    const discardedIds = (
+      (await discarded.json()).items as Array<{
+        id: string;
+      }>
+    ).map((item) => item.id);
     expect(discardedIds).toContain(secondId);
     expect(discardedIds).not.toContain(firstId);
   });

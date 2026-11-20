@@ -368,6 +368,11 @@ class LocalPracticeStore {
 
   Question _rowToQuestion(Map<String, Object?> row) {
     // cached_questions 未存 dimension（任务规格如此），离线重建的该字段为 null。
+    //
+    // material / materialHtml 同理不缓存：材料正文动辄上千字，且离线会话只用来
+    // 补交答案，展示题干足够。所以离线重建的题**一定**是 material == null &&
+    // materialHtml == null——这是「离线没存」而不是「题目本来没材料」，
+    // 练习页因此不显示材料卡，也不应据此提示用户「本题无材料」。
     return Question(
       id: (row['id'] as int).toString(),
       content: row['content'] as String,

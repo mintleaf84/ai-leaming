@@ -15,7 +15,11 @@ T _$identity<T>(T value) => value;
 /// @nodoc
 mixin _$Question {
 
-@StringIdConverter() String get id; String get content; List<String> get options; String get type; List<String> get tags; String? get dimension; String? get explanation; String? get answer;
+@StringIdConverter() String get id; String get content; List<String> get options; String get type; List<String> get tags; String? get dimension; String? get explanation; String? get answer;/// 材料题原文（纯文本）。服务端 `practice.ts` 返回，只有材料题才有；
+/// 旧接口/离线缓存里没有该字段时为 null。
+ String? get material;/// 材料题的富文本版本（服务端已用 DOMPurify 按白名单清洗）。
+/// 优先于 [material] 渲染，因为表格/上下标/图片只有 HTML 才能表达。
+@JsonKey(name: 'material_html') String? get materialHtml;
 /// Create a copy of Question
 /// with the given fields replaced by the non-null parameter values.
 @JsonKey(includeFromJson: false, includeToJson: false)
@@ -28,16 +32,16 @@ $QuestionCopyWith<Question> get copyWith => _$QuestionCopyWithImpl<Question>(thi
 
 @override
 bool operator ==(Object other) {
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is Question&&(identical(other.id, id) || other.id == id)&&(identical(other.content, content) || other.content == content)&&const DeepCollectionEquality().equals(other.options, options)&&(identical(other.type, type) || other.type == type)&&const DeepCollectionEquality().equals(other.tags, tags)&&(identical(other.dimension, dimension) || other.dimension == dimension)&&(identical(other.explanation, explanation) || other.explanation == explanation)&&(identical(other.answer, answer) || other.answer == answer));
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is Question&&(identical(other.id, id) || other.id == id)&&(identical(other.content, content) || other.content == content)&&const DeepCollectionEquality().equals(other.options, options)&&(identical(other.type, type) || other.type == type)&&const DeepCollectionEquality().equals(other.tags, tags)&&(identical(other.dimension, dimension) || other.dimension == dimension)&&(identical(other.explanation, explanation) || other.explanation == explanation)&&(identical(other.answer, answer) || other.answer == answer)&&(identical(other.material, material) || other.material == material)&&(identical(other.materialHtml, materialHtml) || other.materialHtml == materialHtml));
 }
 
 @JsonKey(includeFromJson: false, includeToJson: false)
 @override
-int get hashCode => Object.hash(runtimeType,id,content,const DeepCollectionEquality().hash(options),type,const DeepCollectionEquality().hash(tags),dimension,explanation,answer);
+int get hashCode => Object.hash(runtimeType,id,content,const DeepCollectionEquality().hash(options),type,const DeepCollectionEquality().hash(tags),dimension,explanation,answer,material,materialHtml);
 
 @override
 String toString() {
-  return 'Question(id: $id, content: $content, options: $options, type: $type, tags: $tags, dimension: $dimension, explanation: $explanation, answer: $answer)';
+  return 'Question(id: $id, content: $content, options: $options, type: $type, tags: $tags, dimension: $dimension, explanation: $explanation, answer: $answer, material: $material, materialHtml: $materialHtml)';
 }
 
 
@@ -48,7 +52,7 @@ abstract mixin class $QuestionCopyWith<$Res>  {
   factory $QuestionCopyWith(Question value, $Res Function(Question) _then) = _$QuestionCopyWithImpl;
 @useResult
 $Res call({
-@StringIdConverter() String id, String content, List<String> options, String type, List<String> tags, String? dimension, String? explanation, String? answer
+@StringIdConverter() String id, String content, List<String> options, String type, List<String> tags, String? dimension, String? explanation, String? answer, String? material,@JsonKey(name: 'material_html') String? materialHtml
 });
 
 
@@ -65,7 +69,7 @@ class _$QuestionCopyWithImpl<$Res>
 
 /// Create a copy of Question
 /// with the given fields replaced by the non-null parameter values.
-@pragma('vm:prefer-inline') @override $Res call({Object? id = null,Object? content = null,Object? options = null,Object? type = null,Object? tags = null,Object? dimension = freezed,Object? explanation = freezed,Object? answer = freezed,}) {
+@pragma('vm:prefer-inline') @override $Res call({Object? id = null,Object? content = null,Object? options = null,Object? type = null,Object? tags = null,Object? dimension = freezed,Object? explanation = freezed,Object? answer = freezed,Object? material = freezed,Object? materialHtml = freezed,}) {
   return _then(_self.copyWith(
 id: null == id ? _self.id : id // ignore: cast_nullable_to_non_nullable
 as String,content: null == content ? _self.content : content // ignore: cast_nullable_to_non_nullable
@@ -75,6 +79,8 @@ as String,tags: null == tags ? _self.tags : tags // ignore: cast_nullable_to_non
 as List<String>,dimension: freezed == dimension ? _self.dimension : dimension // ignore: cast_nullable_to_non_nullable
 as String?,explanation: freezed == explanation ? _self.explanation : explanation // ignore: cast_nullable_to_non_nullable
 as String?,answer: freezed == answer ? _self.answer : answer // ignore: cast_nullable_to_non_nullable
+as String?,material: freezed == material ? _self.material : material // ignore: cast_nullable_to_non_nullable
+as String?,materialHtml: freezed == materialHtml ? _self.materialHtml : materialHtml // ignore: cast_nullable_to_non_nullable
 as String?,
   ));
 }
@@ -160,10 +166,10 @@ return $default(_that);case _:
 /// }
 /// ```
 
-@optionalTypeArgs TResult maybeWhen<TResult extends Object?>(TResult Function(@StringIdConverter()  String id,  String content,  List<String> options,  String type,  List<String> tags,  String? dimension,  String? explanation,  String? answer)?  $default,{required TResult orElse(),}) {final _that = this;
+@optionalTypeArgs TResult maybeWhen<TResult extends Object?>(TResult Function(@StringIdConverter()  String id,  String content,  List<String> options,  String type,  List<String> tags,  String? dimension,  String? explanation,  String? answer,  String? material, @JsonKey(name: 'material_html')  String? materialHtml)?  $default,{required TResult orElse(),}) {final _that = this;
 switch (_that) {
 case _Question() when $default != null:
-return $default(_that.id,_that.content,_that.options,_that.type,_that.tags,_that.dimension,_that.explanation,_that.answer);case _:
+return $default(_that.id,_that.content,_that.options,_that.type,_that.tags,_that.dimension,_that.explanation,_that.answer,_that.material,_that.materialHtml);case _:
   return orElse();
 
 }
@@ -181,10 +187,10 @@ return $default(_that.id,_that.content,_that.options,_that.type,_that.tags,_that
 /// }
 /// ```
 
-@optionalTypeArgs TResult when<TResult extends Object?>(TResult Function(@StringIdConverter()  String id,  String content,  List<String> options,  String type,  List<String> tags,  String? dimension,  String? explanation,  String? answer)  $default,) {final _that = this;
+@optionalTypeArgs TResult when<TResult extends Object?>(TResult Function(@StringIdConverter()  String id,  String content,  List<String> options,  String type,  List<String> tags,  String? dimension,  String? explanation,  String? answer,  String? material, @JsonKey(name: 'material_html')  String? materialHtml)  $default,) {final _that = this;
 switch (_that) {
 case _Question():
-return $default(_that.id,_that.content,_that.options,_that.type,_that.tags,_that.dimension,_that.explanation,_that.answer);case _:
+return $default(_that.id,_that.content,_that.options,_that.type,_that.tags,_that.dimension,_that.explanation,_that.answer,_that.material,_that.materialHtml);case _:
   throw StateError('Unexpected subclass');
 
 }
@@ -201,10 +207,10 @@ return $default(_that.id,_that.content,_that.options,_that.type,_that.tags,_that
 /// }
 /// ```
 
-@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>(TResult? Function(@StringIdConverter()  String id,  String content,  List<String> options,  String type,  List<String> tags,  String? dimension,  String? explanation,  String? answer)?  $default,) {final _that = this;
+@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>(TResult? Function(@StringIdConverter()  String id,  String content,  List<String> options,  String type,  List<String> tags,  String? dimension,  String? explanation,  String? answer,  String? material, @JsonKey(name: 'material_html')  String? materialHtml)?  $default,) {final _that = this;
 switch (_that) {
 case _Question() when $default != null:
-return $default(_that.id,_that.content,_that.options,_that.type,_that.tags,_that.dimension,_that.explanation,_that.answer);case _:
+return $default(_that.id,_that.content,_that.options,_that.type,_that.tags,_that.dimension,_that.explanation,_that.answer,_that.material,_that.materialHtml);case _:
   return null;
 
 }
@@ -216,7 +222,7 @@ return $default(_that.id,_that.content,_that.options,_that.type,_that.tags,_that
 @JsonSerializable()
 
 class _Question implements Question {
-  const _Question({@StringIdConverter() required this.id, required this.content, required final  List<String> options, this.type = 'single', final  List<String> tags = const [], this.dimension, this.explanation, this.answer}): _options = options,_tags = tags;
+  const _Question({@StringIdConverter() required this.id, required this.content, required final  List<String> options, this.type = 'single', final  List<String> tags = const [], this.dimension, this.explanation, this.answer, this.material, @JsonKey(name: 'material_html') this.materialHtml}): _options = options,_tags = tags;
   factory _Question.fromJson(Map<String, dynamic> json) => _$QuestionFromJson(json);
 
 @override@StringIdConverter() final  String id;
@@ -239,6 +245,12 @@ class _Question implements Question {
 @override final  String? dimension;
 @override final  String? explanation;
 @override final  String? answer;
+/// 材料题原文（纯文本）。服务端 `practice.ts` 返回，只有材料题才有；
+/// 旧接口/离线缓存里没有该字段时为 null。
+@override final  String? material;
+/// 材料题的富文本版本（服务端已用 DOMPurify 按白名单清洗）。
+/// 优先于 [material] 渲染，因为表格/上下标/图片只有 HTML 才能表达。
+@override@JsonKey(name: 'material_html') final  String? materialHtml;
 
 /// Create a copy of Question
 /// with the given fields replaced by the non-null parameter values.
@@ -253,16 +265,16 @@ Map<String, dynamic> toJson() {
 
 @override
 bool operator ==(Object other) {
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is _Question&&(identical(other.id, id) || other.id == id)&&(identical(other.content, content) || other.content == content)&&const DeepCollectionEquality().equals(other._options, _options)&&(identical(other.type, type) || other.type == type)&&const DeepCollectionEquality().equals(other._tags, _tags)&&(identical(other.dimension, dimension) || other.dimension == dimension)&&(identical(other.explanation, explanation) || other.explanation == explanation)&&(identical(other.answer, answer) || other.answer == answer));
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is _Question&&(identical(other.id, id) || other.id == id)&&(identical(other.content, content) || other.content == content)&&const DeepCollectionEquality().equals(other._options, _options)&&(identical(other.type, type) || other.type == type)&&const DeepCollectionEquality().equals(other._tags, _tags)&&(identical(other.dimension, dimension) || other.dimension == dimension)&&(identical(other.explanation, explanation) || other.explanation == explanation)&&(identical(other.answer, answer) || other.answer == answer)&&(identical(other.material, material) || other.material == material)&&(identical(other.materialHtml, materialHtml) || other.materialHtml == materialHtml));
 }
 
 @JsonKey(includeFromJson: false, includeToJson: false)
 @override
-int get hashCode => Object.hash(runtimeType,id,content,const DeepCollectionEquality().hash(_options),type,const DeepCollectionEquality().hash(_tags),dimension,explanation,answer);
+int get hashCode => Object.hash(runtimeType,id,content,const DeepCollectionEquality().hash(_options),type,const DeepCollectionEquality().hash(_tags),dimension,explanation,answer,material,materialHtml);
 
 @override
 String toString() {
-  return 'Question(id: $id, content: $content, options: $options, type: $type, tags: $tags, dimension: $dimension, explanation: $explanation, answer: $answer)';
+  return 'Question(id: $id, content: $content, options: $options, type: $type, tags: $tags, dimension: $dimension, explanation: $explanation, answer: $answer, material: $material, materialHtml: $materialHtml)';
 }
 
 
@@ -273,7 +285,7 @@ abstract mixin class _$QuestionCopyWith<$Res> implements $QuestionCopyWith<$Res>
   factory _$QuestionCopyWith(_Question value, $Res Function(_Question) _then) = __$QuestionCopyWithImpl;
 @override @useResult
 $Res call({
-@StringIdConverter() String id, String content, List<String> options, String type, List<String> tags, String? dimension, String? explanation, String? answer
+@StringIdConverter() String id, String content, List<String> options, String type, List<String> tags, String? dimension, String? explanation, String? answer, String? material,@JsonKey(name: 'material_html') String? materialHtml
 });
 
 
@@ -290,7 +302,7 @@ class __$QuestionCopyWithImpl<$Res>
 
 /// Create a copy of Question
 /// with the given fields replaced by the non-null parameter values.
-@override @pragma('vm:prefer-inline') $Res call({Object? id = null,Object? content = null,Object? options = null,Object? type = null,Object? tags = null,Object? dimension = freezed,Object? explanation = freezed,Object? answer = freezed,}) {
+@override @pragma('vm:prefer-inline') $Res call({Object? id = null,Object? content = null,Object? options = null,Object? type = null,Object? tags = null,Object? dimension = freezed,Object? explanation = freezed,Object? answer = freezed,Object? material = freezed,Object? materialHtml = freezed,}) {
   return _then(_Question(
 id: null == id ? _self.id : id // ignore: cast_nullable_to_non_nullable
 as String,content: null == content ? _self.content : content // ignore: cast_nullable_to_non_nullable
@@ -300,6 +312,8 @@ as String,tags: null == tags ? _self._tags : tags // ignore: cast_nullable_to_no
 as List<String>,dimension: freezed == dimension ? _self.dimension : dimension // ignore: cast_nullable_to_non_nullable
 as String?,explanation: freezed == explanation ? _self.explanation : explanation // ignore: cast_nullable_to_non_nullable
 as String?,answer: freezed == answer ? _self.answer : answer // ignore: cast_nullable_to_non_nullable
+as String?,material: freezed == material ? _self.material : material // ignore: cast_nullable_to_non_nullable
+as String?,materialHtml: freezed == materialHtml ? _self.materialHtml : materialHtml // ignore: cast_nullable_to_non_nullable
 as String?,
   ));
 }

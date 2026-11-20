@@ -7,6 +7,7 @@ import 'package:mobile_app/features/practice/domain/question.dart';
 import 'package:mobile_app/shared/widgets/animated_option_card.dart';
 import 'package:mobile_app/shared/skeletons/skeleton_fakes.dart';
 import 'package:mobile_app/features/practice/presentation/widgets/first_principles_panel.dart';
+import 'package:mobile_app/features/practice/presentation/widgets/question_material_card.dart';
 import '../../../core/a11y/status_announcer.dart';
 import '../../../core/navigation/app_nav.dart';
 import 'package:skeletonizer/skeletonizer.dart';
@@ -222,6 +223,11 @@ class _PracticeScreenState extends ConsumerState<PracticeScreen> {
                       ),
                     ),
                     SizedBox(height: 12.h),
+                    // 材料题：材料卡在题干上方（无材料时整块不占位）
+                    QuestionMaterialCard(
+                      material: question.material,
+                      materialHtml: question.materialHtml,
+                    ),
                     // Question Icon & Text
                     Text('📜', style: TextStyle(fontSize: 40.sp)),
                     SizedBox(height: 16.h),

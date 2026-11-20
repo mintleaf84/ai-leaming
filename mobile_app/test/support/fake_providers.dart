@@ -69,6 +69,8 @@ Question fakeQuestion({
   List<String> tags = const <String>['教育学'],
   String? explanation,
   String? answer,
+  String? material,
+  String? materialHtml,
 }) {
   return Question(
     id: id,
@@ -78,6 +80,8 @@ Question fakeQuestion({
     tags: tags,
     explanation: explanation,
     answer: answer,
+    material: material,
+    materialHtml: materialHtml,
   );
 }
 

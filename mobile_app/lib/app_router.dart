@@ -16,6 +16,7 @@ import 'features/history/presentation/history_detail_screen.dart';
 import 'features/knowledge/presentation/knowledge_screen.dart';
 import 'features/mastery/presentation/mastery_screen.dart';
 import 'features/settings/presentation/settings_screen.dart';
+import 'features/fenbi/presentation/fenbi_sync_screen.dart';
 import 'features/chat/presentation/chat_screen.dart';
 import 'features/wrong_book/presentation/wrong_book_screen.dart';
 import 'features/recall/presentation/recall_session_screen.dart';
@@ -200,6 +201,11 @@ GoRouter buildAppRouter({String initialLocation = '/'}) {
       GoRoute(
         path: AppRoutes.settings,
         builder: (context, state) => const SettingsScreen(),
+      ),
+      // 粉笔账号同步：设置页「数据管理」里的入口压在这条路由上。
+      GoRoute(
+        path: AppRoutes.fenbiSync,
+        builder: (context, state) => const FenbiSyncScreen(),
       ),
       GoRoute(
         path: AppRoutes.chat,

@@ -17,6 +17,7 @@
 import { OpenAPIHono, createRoute, z } from "@hono/zod-openapi";
 import { authMiddleware, getCurrentUser } from "@/lib/api/middlewares/auth";
 import { toErrorResponse } from "@/lib/api/error-response";
+import { parsePagination } from "@/lib/api/pagination";
 import {
   archiveCard,
   buildNextReviewText,
@@ -57,20 +58,9 @@ const PaginationMetaSchema = z.object({
   total: z.number().int().describe("符合条件的总条数"),
 });
 
-function parsePagination(query: { limit?: string; offset?: string }): {
-  limit: number;
-  offset: number;
-} {
-  const rawLimit = Number(query.limit);
-  const rawOffset = Number(query.offset);
-  const limit = Number.isFinite(rawLimit)
-    ? Math.min(MAX_LIMIT, Math.max(1, Math.trunc(rawLimit)))
-    : DEFAULT_LIMIT;
-  const offset = Number.isFinite(rawOffset)
-    ? Math.max(0, Math.trunc(rawOffset))
-    : 0;
-  return { limit, offset };
-}
+// 分页解析走共享实现（P6 收敛）。本文件原先内联了一份语义相近的副本，
+// 差别只在非法输入：`limit=0`/负数原先被夹到 1、小数被 trunc，现在统一回落到默认值。
+// 这正是 `pagination.ts` 文档写明的口径（非数字/0/负数一律回落默认）。
 
 /** 路径里的数字卡片主键；非法值返回 null（由路由回 400） */
 function parsePositiveInt(raw: string): number | null {

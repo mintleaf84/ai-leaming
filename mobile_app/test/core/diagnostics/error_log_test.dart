@@ -383,6 +383,22 @@ void main() {
       expect(log.entries.single.message, 'Bad state: platform boom');
     });
   });
+  test('监听器抛错不会形成 add→notify→add 的自激', () async {
+    final log = ErrorLog(store: FakePreferencesStore());
+    var notifications = 0;
+    log.addListener(() {
+      notifications++;
+      // 模拟 ChangeNotifier 把监听器异常转给 FlutterError → 我们的 onError
+      log.add(StateError('listener boom'), null, kind: 'flutter');
+    });
+
+    log.add(StateError('first'), null, kind: 'zone');
+    await pumpEventQueue();
+    await pumpEventQueue();
+
+    expect(notifications, 1, reason: '通知期间产生的异常不应再触发新一轮通知');
+    expect(log.entries.where((e) => e.message.contains('listener boom')), isEmpty);
+  });
 }
 
 /// 可控阻塞的 store：制造「load 还没读完、add 已经在写」的时序。

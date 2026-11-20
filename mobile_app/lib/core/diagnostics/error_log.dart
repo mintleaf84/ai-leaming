@@ -128,6 +128,8 @@ class ErrorLog extends ChangeNotifier {
   /// 落盘是「顺手做」的（fire-and-forget）：内存里的记录必须立刻可用，
   /// 不能因为磁盘慢就丢掉这次异常。[persist] 自己吞掉所有异常。
   void add(Object error, StackTrace? stack, {String kind = 'error'}) {
+    // 通知期间产生的异常不记：否则监听器抛错会形成 add→notify→add 的异步自激。
+    if (_notifying) return;
     _entries.insert(
       0,
       ErrorLogEntry(
@@ -236,12 +238,20 @@ class ErrorLog extends ChangeNotifier {
   /// 的二次异常 —— 记录问题变成制造问题。丢到微任务里，等当前帧的逻辑跑完再说。
   ///
   /// 监听器自己抛错也必须吞掉：诊断设施不能反过来把异常抛回 `add` 的调用点。
+  /// 正在派发通知：此时若监听器抛错，ChangeNotifier 会转给
+  /// `FlutterError.reportError` → 我们的 onError → 再 add 一条 → 再通知。
+  /// 用这个标志把二次记录挡掉，避免日志自激。
+  bool _notifying = false;
+
   void _notifyAsync() {
     scheduleMicrotask(() {
+      _notifying = true;
       try {
         notifyListeners();
       } catch (error) {
         debugPrint('ErrorLog 通知监听者失败：$error');
+      } finally {
+        _notifying = false;
       }
     });
   }

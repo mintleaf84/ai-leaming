@@ -4,12 +4,18 @@
  * 拆分自 `routes/external.ts`；路径、方法、schema、中间件与错误文案均未改动。
  */
 import { OpenAPIHono, createRoute, z } from "@hono/zod-openapi";
-import { drizzleDb, drizzleSchema } from "@/lib/db";
-import { and, count, eq, isNull, sql } from "drizzle-orm";
 import { safeParseJson } from "@/lib/utils/json";
 import { logger } from "@/lib/logger";
 import { QuestionSchema } from "@/lib/schemas";
 import { buildApiExternalId } from "@/lib/services/question-idempotency";
+import {
+  findQuestionById,
+  findQuestionIdByExternalId,
+  insertQuestionIfAbsent,
+  listQuestionsPage,
+  questionIdExists,
+  updateQuestionWithSnapshot,
+} from "@/lib/services/external/questions-service";
 import {
   createQuestionsBatch,
   QUESTION_BATCH_MAX,
@@ -87,32 +93,11 @@ app.openapi(listRoute, async (c) => {
   );
   const offset = (pageNum - 1) * limitNum;
 
-  const whereClause = tag
-    ? sql`EXISTS (SELECT 1 FROM json_each(${drizzleSchema.questions.tags}) WHERE value = ${tag})`
-    : undefined;
-
-  const [totalRow] = await drizzleDb
-    .select({ value: count() })
-    .from(drizzleSchema.questions)
-    .where(whereClause);
-
-  const rows = await drizzleDb
-    .select({
-      id: drizzleSchema.questions.id,
-      type: drizzleSchema.questions.type,
-      dimension: drizzleSchema.questions.dimension,
-      content: drizzleSchema.questions.content,
-      options: drizzleSchema.questions.options,
-      answer: drizzleSchema.questions.answer,
-      explanation: drizzleSchema.questions.explanation,
-      tags: drizzleSchema.questions.tags,
-    })
-    .from(drizzleSchema.questions)
-    .where(whereClause)
-    .orderBy(drizzleSchema.questions.id)
-    .limit(limitNum)
-    .offset(offset)
-    .all();
+  const { total, rows } = await listQuestionsPage({
+    limit: limitNum,
+    offset,
+    tag,
+  });
 
   // 反序列化 JSON 字符串字段
   const data = rows.map((row) => ({
@@ -131,8 +116,8 @@ app.openapi(listRoute, async (c) => {
     pagination: {
       page: pageNum,
       limit: limitNum,
-      total: totalRow.value,
-      totalPages: Math.ceil(totalRow.value / limitNum),
+      total,
+      totalPages: Math.ceil(total / limitNum),
     },
   });
 });
@@ -169,9 +154,7 @@ app.openapi(getRoute, async (c) => {
     return c.json({ error: "题目 ID 必须是正整数" }, 400);
   }
 
-  const row = await drizzleDb.query.questions.findFirst({
-    where: eq(drizzleSchema.questions.id, questionId),
-  });
+  const row = await findQuestionById(questionId);
 
   if (!row) {
     return c.json({ error: "题目不存在" }, 404);
@@ -287,16 +270,12 @@ app.openapi(questionsCreateRoute, async (c) => {
     answer: data.answer,
   });
 
-  const [existing] = await drizzleDb
-    .select({ id: drizzleSchema.questions.id })
-    .from(drizzleSchema.questions)
-    .where(eq(drizzleSchema.questions.external_id, externalId))
-    .limit(1);
+  const existingId = await findQuestionIdByExternalId(externalId);
 
-  if (existing) {
+  if (existingId !== null) {
     return c.json(
       {
-        id: existing.id,
+        id: existingId,
         externalId,
         duplicate: true,
         ...(dryRun ? { dryRun: true as const } : {}),
@@ -314,36 +293,26 @@ app.openapi(questionsCreateRoute, async (c) => {
   }
 
   try {
-    const [inserted] = await drizzleDb
-      .insert(drizzleSchema.questions)
-      .values({
-        external_id: externalId,
-        content: data.content,
-        options: JSON.stringify(data.options),
-        answer: data.answer,
-        explanation: data.explanation,
-        tags: JSON.stringify(data.tags),
-        dimension: data.dimension as
-          "knowledge" | "understanding" | "application",
-        type: data.type,
-        created_at: sql`CURRENT_TIMESTAMP`,
-      })
-      .onConflictDoNothing({ target: drizzleSchema.questions.external_id })
-      .returning({ id: drizzleSchema.questions.id });
+    const insertedId = await insertQuestionIfAbsent({
+      externalId,
+      content: data.content,
+      options: JSON.stringify(data.options),
+      answer: data.answer,
+      explanation: data.explanation,
+      tags: JSON.stringify(data.tags),
+      dimension: data.dimension as
+        "knowledge" | "understanding" | "application",
+      type: data.type,
+    });
 
-    // 并发窗口：预检没命中、插入时另一次请求先提交 → 唯一索引吞掉插入
     // 并发窗口：预检没命中、插入时另一次请求先提交 → 唯一索引吞掉插入。
     // 回查要有限重试：胜出的那行可能在写入与回查之间被删掉，此时既不能返回
     // id:0 冒充"已存在"，也不能静默改口说"新建成功"
-    if (!inserted) {
+    if (insertedId === null) {
       for (let attempt = 0; attempt < 3; attempt += 1) {
-        const [raced] = await drizzleDb
-          .select({ id: drizzleSchema.questions.id })
-          .from(drizzleSchema.questions)
-          .where(eq(drizzleSchema.questions.external_id, externalId))
-          .limit(1);
-        if (raced) {
-          return c.json({ id: raced.id, externalId, duplicate: true }, 200);
+        const racedId = await findQuestionIdByExternalId(externalId);
+        if (racedId !== null) {
+          return c.json({ id: racedId, externalId, duplicate: true }, 200);
         }
         await new Promise((resolve) => setTimeout(resolve, 10 * (attempt + 1)));
       }
@@ -358,14 +327,14 @@ app.openapi(questionsCreateRoute, async (c) => {
     }
 
     // 建完立刻重建向量（不 await）：检索索引落后于题库会让 agent 检索不到新题
-    void indexQuestion(inserted.id).catch((err: unknown) => {
+    void indexQuestion(insertedId).catch((err: unknown) => {
       logger.warn(
-        { err, questionId: inserted.id },
+        { err, questionId: insertedId },
         "[External] 新题向量索引失败",
       );
     });
 
-    return c.json({ id: inserted.id, externalId, duplicate: false }, 200);
+    return c.json({ id: insertedId, externalId, duplicate: false }, 200);
   } catch (err) {
     logger.error({ err }, "[External] 建题失败");
     return c.json({ error: "服务器内部错误" }, 500);
@@ -463,11 +432,7 @@ app.openapi(questionsPatchRoute, async (c) => {
     return c.json({ error: "题目 ID 必须是正整数" }, 400);
   }
 
-  const [existing] = await drizzleDb
-    .select()
-    .from(drizzleSchema.questions)
-    .where(eq(drizzleSchema.questions.id, questionId))
-    .limit(1);
+  const existing = await findQuestionById(questionId);
 
   if (!existing) {
     return c.json({ error: `题目不存在：${questionId}` }, 404);
@@ -573,16 +538,12 @@ app.openapi(questionsPatchRoute, async (c) => {
 
   if (externalId !== existing.external_id) {
     // 指纹撞到**别的**行：说明这次修改会让两道题变成同一道，交给人决定怎么处理
-    const [clash] = await drizzleDb
-      .select({ id: drizzleSchema.questions.id })
-      .from(drizzleSchema.questions)
-      .where(eq(drizzleSchema.questions.external_id, externalId))
-      .limit(1);
-    if (clash && clash.id !== questionId) {
+    const clashId = await findQuestionIdByExternalId(externalId);
+    if (clashId !== null && clashId !== questionId) {
       return c.json(
         {
-          error: `改后的内容与题目 ${clash.id} 相同（内容指纹撞键）`,
-          conflictingId: clash.id,
+          error: `改后的内容与题目 ${clashId} 相同（内容指纹撞键）`,
+          conflictingId: clashId,
         },
         409,
       );
@@ -604,39 +565,18 @@ app.openapi(questionsPatchRoute, async (c) => {
   try {
     // 乐观并发控制：只更新"读到的那一版"；行已被别人改过就更新不到，
     // 由调用方重读后重试，而不是把别人的编辑覆盖回旧值
-    const updated = await drizzleDb
-      .update(drizzleSchema.questions)
-      .set({
-        ...nextValues,
-        ...(externalId !== existing.external_id
-          ? { external_id: externalId }
-          : {}),
-      })
-      .where(
-        and(
-          eq(drizzleSchema.questions.id, questionId),
-          eq(drizzleSchema.questions.content, snapshot.content),
-          // options/answer 可为 NULL：`eq(col, null)` 在 SQL 里永远不成立，
-          // 必须按 isNull 比较，否则可空列会让乐观锁恒失败
-          snapshot.options === null
-            ? isNull(drizzleSchema.questions.options)
-            : eq(drizzleSchema.questions.options, snapshot.options),
-          snapshot.answer === null
-            ? isNull(drizzleSchema.questions.answer)
-            : eq(drizzleSchema.questions.answer, snapshot.answer),
-        ),
-      )
-      .returning({ id: drizzleSchema.questions.id });
+    const updatedIds = await updateQuestionWithSnapshot({
+      questionId,
+      nextValues,
+      externalId,
+      previousExternalId: existing.external_id,
+      snapshot,
+    });
 
-    if (updated.length === 0) {
+    if (updatedIds.length === 0) {
       // 0 行有两种原因：题目被删了（404），或行在读到之后被改过（409 乐观锁冲突）。
       // 混成一种会让"题没了"被当成"稍后重试"
-      const [stillThere] = await drizzleDb
-        .select({ id: drizzleSchema.questions.id })
-        .from(drizzleSchema.questions)
-        .where(eq(drizzleSchema.questions.id, questionId))
-        .limit(1);
-      if (!stillThere) {
+      if (!(await questionIdExists(questionId))) {
         return c.json({ error: `题目不存在：${questionId}` }, 404);
       }
       return c.json(
@@ -669,17 +609,13 @@ app.openapi(questionsPatchRoute, async (c) => {
       message.includes("UNIQUE constraint failed") &&
       message.includes("external_id")
     ) {
-      const [holder] = await drizzleDb
-        .select({ id: drizzleSchema.questions.id })
-        .from(drizzleSchema.questions)
-        .where(eq(drizzleSchema.questions.external_id, externalId))
-        .limit(1);
+      const holderId = await findQuestionIdByExternalId(externalId);
       return c.json(
         {
-          error: holder
-            ? `改后的内容与题目 ${holder.id} 相同（内容指纹撞键）`
+          error: holderId
+            ? `改后的内容与题目 ${holderId} 相同（内容指纹撞键）`
             : "改后的内容与另一道题相同（内容指纹撞键）",
-          ...(holder ? { conflictingId: holder.id } : {}),
+          ...(holderId !== null ? { conflictingId: holderId } : {}),
         },
         409,
       );

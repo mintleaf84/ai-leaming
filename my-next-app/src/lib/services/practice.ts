@@ -5,8 +5,9 @@ import {
   questions,
   question_srs,
   session_reviews,
+  mastered_questions,
 } from "@/lib/db/drizzle-schema";
-import { eq, and, desc, gt, sql, inArray } from "drizzle-orm";
+import { eq, and, desc, gt, sql, inArray, notInArray } from "drizzle-orm";
 import { Question, Dimension } from "@/types";
 import { PracticeMode, PracticeConfig } from "@/types/practice";
 import { QuestionRowSchema } from "@/lib/schemas";
@@ -63,6 +64,46 @@ function mapQuestion(q: unknown): Question {
       dimension: data.dimension || "knowledge",
     } as Question;
   }
+}
+
+/**
+ * 已掌握题目子查询（tag / wrong 模式统一排除）。
+ * 与错题本列表（`routes/wrong-book.ts`）同一口径：掌握了就不再推。
+ */
+function masteredQuestionIdsSubquery(userId: number) {
+  return drizzleDb
+    .select({ id: mastered_questions.question_id })
+    .from(mastered_questions)
+    .where(eq(mastered_questions.user_id, userId));
+}
+
+/**
+ * 把一组题目固化成练习会话行（random / tag / wrong 共用）。
+ *
+ * 题目集为空时**不建会话行**：返回空 `sessionId`，让路由层回
+ * `{ sessionId: "", questions: [] }`（空结果不是错误，不能炸成 500）。
+ */
+async function persistPracticeSession(
+  userId: number,
+  practiceMode: string,
+  questionData: Question[],
+): Promise<{ questions: Question[]; sessionId: string }> {
+  if (questionData.length === 0) {
+    return { questions: [], sessionId: "" };
+  }
+
+  const sessionId = generateSessionId();
+
+  await drizzleDb.insert(practice_sessions).values({
+    id: sessionId,
+    user_id: userId,
+    total_questions: questionData.length,
+    questions_json: JSON.stringify(questionData),
+    practice_mode: practiceMode,
+    is_demo: 0,
+  });
+
+  return { questions: questionData, sessionId };
 }
 
 export const practiceService = {
@@ -192,30 +233,95 @@ export const practiceService = {
     questions: Question[];
     sessionId: string;
   }> {
-    const sessionId = generateSessionId();
-
     const rawQuestions = await drizzleDb
       .select()
       .from(questions)
       .orderBy(sql`RANDOM()`)
       .limit(limit);
 
-    if (!rawQuestions || rawQuestions.length === 0) {
-      return { questions: [], sessionId: "" };
-    }
+    return persistPracticeSession(
+      userId,
+      "random",
+      rawQuestions.map(mapQuestion),
+    );
+  },
 
-    const questionData = rawQuestions.map((q) => mapQuestion(q));
+  /**
+   * 按知识点创建练习会话（§32 `mode=tag`）。
+   *
+   * tags 是 JSON 文本列，用 `json_each` 逐元素精确比对：`tags LIKE '%"X"%'`
+   * 会被「同前缀的更长 tag」和转义差异坑到，仓库里其余知识点筛选
+   * （`question.ts` / `wrong-book.ts` / `practice-scheduling.ts`）一律用 json_each。
+   * 已掌握题目排除，口径与错题本列表一致。
+   */
+  async createTagSession(
+    userId: number,
+    tag: string,
+    limit: number = 10,
+  ): Promise<{
+    questions: Question[];
+    sessionId: string;
+  }> {
+    const normalizedTag = tag.trim();
+    // 空 tag 不落到 SQL（`value = ''` 只会白跑一次全表扫）
+    if (normalizedTag === "") return { questions: [], sessionId: "" };
 
-    await drizzleDb.insert(practice_sessions).values({
-      id: sessionId,
-      user_id: userId,
-      total_questions: questionData.length,
-      questions_json: JSON.stringify(questionData),
-      practice_mode: "random",
-      is_demo: 0,
-    });
+    const rawQuestions = await drizzleDb
+      .select()
+      .from(questions)
+      .where(
+        and(
+          sql`EXISTS (SELECT 1 FROM json_each(${questions.tags}) WHERE value = ${normalizedTag})`,
+          notInArray(questions.id, masteredQuestionIdsSubquery(userId)),
+        ),
+      )
+      .orderBy(sql`RANDOM()`)
+      .limit(limit);
 
-    return { questions: questionData, sessionId };
+    return persistPracticeSession(userId, "tag", rawQuestions.map(mapQuestion));
+  },
+
+  /**
+   * 创建「做错过的题」练习会话（§32 `mode=wrong`）。
+   *
+   * 取 `practice_logs.is_correct = 0` 的 distinct question_id，排除已掌握；
+   * 用子查询而不是把 id 列表拉回内存再 `inArray`：错题可能上千条，会撞
+   * SQLite 的变量上限（999）。
+   */
+  async createWrongSession(
+    userId: number,
+    limit: number = 10,
+  ): Promise<{
+    questions: Question[];
+    sessionId: string;
+  }> {
+    const wrongQuestionIds = drizzleDb
+      .selectDistinct({ id: practice_logs.question_id })
+      .from(practice_logs)
+      .where(
+        and(
+          eq(practice_logs.user_id, userId),
+          eq(practice_logs.is_correct, false),
+        ),
+      );
+
+    const rawQuestions = await drizzleDb
+      .select()
+      .from(questions)
+      .where(
+        and(
+          inArray(questions.id, wrongQuestionIds),
+          notInArray(questions.id, masteredQuestionIdsSubquery(userId)),
+        ),
+      )
+      .orderBy(sql`RANDOM()`)
+      .limit(limit);
+
+    return persistPracticeSession(
+      userId,
+      "wrong",
+      rawQuestions.map(mapQuestion),
+    );
   },
 
   /**
@@ -236,6 +342,17 @@ export const practiceService = {
     // 空答案=未作答（skipped）：保留日志用于还原作答过程，但不算对错、不进 SRS、
     // 不计入掌握度（P0-3：历史上 348 条空答案被当成「做错」喂进了 FSRS）
     const skipped = userAnswer.trim() === "";
+
+    // `duration` 的单位是**毫秒**（原样写进 practice_logs.duration_ms / FSRS 排期）。
+    // D1：移动端历史上按秒上报（`inSeconds`），库里因此混入 2~60 的错值。
+    // 这里只告警、不改写数据（改写会抹掉真实作答时长，历史值是否修由单独的数据
+    // 修整决定），目的是让「还在按秒发」的调用方在日志里现形。
+    if (duration > 0 && duration < 1000) {
+      logger.warn(
+        { userId, sessionId, questionId, duration },
+        "[Practice] 作答时长疑似按秒上报（协议单位是毫秒，<1000ms 视为可疑）",
+      );
+    }
 
     // 1+2. 归属校验、答题日志写入、会话统计更新必须在**同一个事务**里。
     //

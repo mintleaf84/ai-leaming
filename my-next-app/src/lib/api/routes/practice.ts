@@ -8,17 +8,22 @@ import {
 import { authMiddleware, getCurrentUser } from "@/lib/api/middlewares/auth";
 import { toErrorResponse } from "@/lib/api/error-response";
 import { log, logger } from "@/lib/logger";
+import type { Question } from "@/types";
 
 const app = new OpenAPIHono();
 
 const CreateSessionSchema = z.object({
   mode: z.enum(["random", "wrong", "tag", "first-principles"]),
   limit: z.number().default(10),
+  // 仅 mode=tag 使用：知识点名（与 questions.tags 里的元素精确相等）
+  tag: z.string().max(50).optional(),
 });
 
 const SubmitAnswerSchema = z.object({
   questionId: z.number(),
   userAnswer: z.string(),
+  // 单位：**毫秒**（落库 practice_logs.duration_ms）。移动端历史上按秒发过，
+  // 服务端对 <1000 的值会打 warn，见 practiceService.submitAnswer。
   duration: z.number(),
 });
 
@@ -68,18 +73,38 @@ const createSessionRoute = createRoute({
 
 app.openapi(createSessionRoute, async (c) => {
   const user = getCurrentUser(c);
-  const { mode, limit } = c.req.valid("json");
+  const { mode, limit, tag } = c.req.valid("json");
 
-  // Simplification: only random supported for now via createRandomSession
-  if (mode !== "random") {
-    return c.json(
-      { error: "Only random mode supported currently via API" },
-      400,
-    );
+  // §32：tag / wrong 已放行，first-principles 仍不在这里（它走 /first-principles
+  // 的 AI 分析，不是出题模式），保留 400 但文案改成「暂未开放」。
+  let result: { sessionId: string; questions: Question[] };
+  switch (mode) {
+    case "random":
+      result = await practiceService.createRandomSession(user.id, limit);
+      break;
+    case "tag": {
+      const normalizedTag = (tag ?? "").trim();
+      if (!normalizedTag) {
+        return c.json(
+          { error: "mode=tag 需要提供 tag 参数（知识点名称，1-50 字符）" },
+          400,
+        );
+      }
+      result = await practiceService.createTagSession(
+        user.id,
+        normalizedTag,
+        limit,
+      );
+      break;
+    }
+    case "wrong":
+      result = await practiceService.createWrongSession(user.id, limit);
+      break;
+    default:
+      return c.json({ error: "first-principles 出题模式暂未开放" }, 400);
   }
 
-  const result = await practiceService.createRandomSession(user.id, limit);
-
+  // 空结果（没有匹配的题）不是错误：回空 questions + 空 sessionId
   return c.json(
     {
       sessionId: result.sessionId,
@@ -173,10 +198,12 @@ app.openapi(getSessionRoute, async (c) => {
 // `/api/external/practice/answers` 完全一致（同一 sessionKey 只算一次、
 // 写 practice_sessions + practice_logs + 掌握度），差别只在鉴权：
 // 这里走用户 JWT，移动端不需要持有 API Key。
-// 判分信任客户端：离线时没有服务端答案，只能本地判定，这一点与 external 一致。
+// **对错由服务端重新判分**（§31）：题库是同一份，离线时客户端的 isCorrect
+// 只是本地缓存值，不能作为入库依据；不一致条数在响应 `regraded` 里返回。
 const OfflineAnswerSchema = z.object({
   questionId: z.number().int().positive(),
   userAnswer: z.string().nullable().optional(),
+  // 客户端本地判定结果：仅用于比对差异（regraded），不决定入库值
   isCorrect: z.boolean(),
   durationMs: z.number().int().min(0).nullable().optional(),
 });
@@ -207,6 +234,10 @@ const offlineAnswersRoute = createRoute({
             sessionId: z.string(),
             inserted: z.number().int(),
             duplicated: z.boolean(),
+            regraded: z.number().int().openapi({
+              description:
+                "客户端 isCorrect 与服务端重新判分不一致的条数（幂等命中时为 0）",
+            }),
           }),
         },
       },

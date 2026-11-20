@@ -185,6 +185,8 @@ export const practice_logs = sqliteTable(
     is_monitored_correct: integer("is_monitored_correct", {
       mode: "boolean",
     }).default(false),
+    // D1：作答时长，单位**毫秒**（移动端历史上按秒上报，历史值可能偏小 1000 倍；
+    // 服务端对 <1000 的新提交打 warn 作为兜底信号，不改写历史数据）
     duration_ms: integer("duration_ms"),
     // 来源：web=用户练习，agent=外部 Agent 导入（对错由调用方判定），import=文件导入
     origin: text("origin").notNull().default("web"),

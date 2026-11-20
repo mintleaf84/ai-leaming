@@ -4,7 +4,12 @@ import Link from "next/link";
 import { ArrowRight, CheckCheck, Sparkles, Wand2 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Badge } from "@/components/ui/badge";
-import { formatSetDate, formatSetSource, formatSetScore, splitTags } from "../lib/display";
+import {
+  formatSetDate,
+  formatSetSource,
+  formatSetScore,
+  splitTags,
+} from "../lib/display";
 import { progressPercent } from "../lib/stats";
 import type { AgentSetSummary } from "../lib/types";
 

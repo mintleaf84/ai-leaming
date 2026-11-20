@@ -3,7 +3,9 @@ import { describeRequestError, readShortfall, serverMessage } from "../errors";
 
 describe("serverMessage", () => {
   it("优先取服务端的 error / message / detail", () => {
-    expect(serverMessage({ error: "这题已经反馈过了" })).toBe("这题已经反馈过了");
+    expect(serverMessage({ error: "这题已经反馈过了" })).toBe(
+      "这题已经反馈过了",
+    );
     expect(serverMessage({ message: " 题集已归档 " })).toBe("题集已归档");
     expect(serverMessage({ detail: "invalid" })).toBe("invalid");
   });

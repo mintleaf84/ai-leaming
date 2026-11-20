@@ -101,9 +101,7 @@ describe("题集详情", () => {
     ).toBeInTheDocument();
     expect(screen.getAllByText("3 题").length).toBeGreaterThan(0);
 
-    await user.click(
-      screen.getByRole("button", { name: "反馈第 1 题有问题" }),
-    );
+    await user.click(screen.getByRole("button", { name: "反馈第 1 题有问题" }));
 
     // 二次确认里把后果讲清楚（移走 + 不计成绩 + 反馈给 Agent）
     expect(await screen.findByText("第 1 题有问题？")).toBeInTheDocument();
@@ -118,9 +116,7 @@ describe("题集详情", () => {
         screen.queryByText("学生把失败归因于运气，最可能影响的是？"),
       ).not.toBeInTheDocument();
     });
-    expect(toast.success).toHaveBeenCalledWith(
-      "已反馈给 Agent，本批剩余 2 题",
-    );
+    expect(toast.success).toHaveBeenCalledWith("已反馈给 Agent，本批剩余 2 题");
     expect(
       fetchMock.mock.calls.some(([input]) =>
         String(input).endsWith("/agent-sets/5/questions/101/flag"),

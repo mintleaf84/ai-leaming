@@ -62,7 +62,11 @@ export function readCreatedPaperId(body: unknown): number | null {
   candidates.push(body.paperId, body.id);
 
   for (const candidate of candidates) {
-    if (typeof candidate === "number" && Number.isFinite(candidate) && candidate > 0) {
+    if (
+      typeof candidate === "number" &&
+      Number.isFinite(candidate) &&
+      candidate > 0
+    ) {
       return candidate;
     }
     if (typeof candidate === "string" && /^\d+$/.test(candidate)) {

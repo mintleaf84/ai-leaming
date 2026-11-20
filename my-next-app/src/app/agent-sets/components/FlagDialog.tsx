@@ -14,7 +14,12 @@ import {
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 
-const PRESETS = ["题干或选项有误", "答案对不上", "和别的题重复", "超出考试范围"];
+const PRESETS = [
+  "题干或选项有误",
+  "答案对不上",
+  "和别的题重复",
+  "超出考试范围",
+];
 
 interface FlagDialogProps {
   /** 第几题，只用于文案 */

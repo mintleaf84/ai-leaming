@@ -203,7 +203,11 @@ interface SetResults {
     flagged: boolean;
     flagReason: string | null;
   }>;
-  flagged: Array<{ questionId: number; content: string; reason: string | null }>;
+  flagged: Array<{
+    questionId: number;
+    content: string;
+    reason: string | null;
+  }>;
 }
 
 interface AttemptBody {
@@ -462,15 +466,18 @@ describe("AI 题集：Agent 推题 + 消费侧闭环", () => {
       }
 
       // 自动组卷候选：按 agent 题独有的 tag 抽 1 道 → 候选不足 400
-      const genRes = await createRootApp().request("/api/exam/papers/generate", {
-        method: "POST",
-        headers: jwtHeaders(tokenA),
-        body: JSON.stringify({
-          title: "试图从题库抽 AI 题",
-          count: 1,
-          tags: [AGENT_TAG],
-        }),
-      });
+      const genRes = await createRootApp().request(
+        "/api/exam/papers/generate",
+        {
+          method: "POST",
+          headers: jwtHeaders(tokenA),
+          body: JSON.stringify({
+            title: "试图从题库抽 AI 题",
+            count: 1,
+            tags: [AGENT_TAG],
+          }),
+        },
+      );
       expect(genRes.status).toBe(400);
       const genBody = (await genRes.json()) as {
         code?: string;
@@ -901,10 +908,9 @@ describe("AI 题集：Agent 推题 + 消费侧闭环", () => {
           body: JSON.stringify({ mode: "tag", tag: AGENT_TAG, limit: 1 }),
         },
       );
-      expect(
-        practiceSession.status,
-        await practiceSession.clone().text(),
-      ).toBe(200);
+      expect(practiceSession.status, await practiceSession.clone().text()).toBe(
+        200,
+      );
       const session = (await practiceSession.json()) as {
         sessionId: string;
         questions: Array<{ id: number }>;
@@ -948,23 +954,19 @@ describe("AI 题集：Agent 推题 + 消费侧闭环", () => {
       expect((await listOnce()).data[0].unreadCount).toBe(10);
 
       // 打开详情 = 已读：响应里 unreadCount 已经归零（写在前、算在后）
-      const detail = await createRootApp().request(
-        `/api/agent-sets/${setId}`,
-        { headers: jwtHeaders(tokenA) },
-      );
+      const detail = await createRootApp().request(`/api/agent-sets/${setId}`, {
+        headers: jwtHeaders(tokenA),
+      });
       expect(detail.status).toBe(200);
-      expect(
-        ((await detail.json()) as ConsumerDetail).set.unreadCount,
-      ).toBe(0);
+      expect(((await detail.json()) as ConsumerDetail).set.unreadCount).toBe(0);
 
       // 列表随之归零
       expect((await listOnce()).data[0].unreadCount).toBe(0);
 
       // 再打开一次：幂等，不报错、仍为 0
-      const again = await createRootApp().request(
-        `/api/agent-sets/${setId}`,
-        { headers: jwtHeaders(tokenA) },
-      );
+      const again = await createRootApp().request(`/api/agent-sets/${setId}`, {
+        headers: jwtHeaders(tokenA),
+      });
       expect(again.status).toBe(200);
       expect(((await again.json()) as ConsumerDetail).set.unreadCount).toBe(0);
 
@@ -986,7 +988,8 @@ describe("AI 题集：Agent 推题 + 消费侧闭环", () => {
         { headers: jwtHeaders(tokenA) },
       );
       expect(consumerList.status).toBe(200);
-      const consumerBody = (await consumerList.json()) as ListBody<ConsumerSetSummary>;
+      const consumerBody =
+        (await consumerList.json()) as ListBody<ConsumerSetSummary>;
       expect(consumerBody.meta).toEqual({ limit: 20, offset: 0, total: 1 });
       expect(consumerBody.data[0]).toMatchObject({
         id: setId,

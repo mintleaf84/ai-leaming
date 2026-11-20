@@ -44,7 +44,10 @@ function isRecord(value: unknown): value is Record<string, unknown> {
   return typeof value === "object" && value !== null && !Array.isArray(value);
 }
 
-function firstNumber(raw: Record<string, unknown>, keys: string[]): number | null {
+function firstNumber(
+  raw: Record<string, unknown>,
+  keys: string[],
+): number | null {
   for (const key of keys) {
     const value = raw[key];
     if (typeof value === "number" && Number.isFinite(value)) return value;
@@ -55,7 +58,10 @@ function firstNumber(raw: Record<string, unknown>, keys: string[]): number | nul
   return null;
 }
 
-function firstString(raw: Record<string, unknown>, keys: string[]): string | null {
+function firstString(
+  raw: Record<string, unknown>,
+  keys: string[],
+): string | null {
   for (const key of keys) {
     const value = raw[key];
     if (typeof value === "string" && value.trim()) return value.trim();
@@ -212,7 +218,10 @@ export function normalizeSetSummary(
  * 冻结形状是 `{data, meta:{limit,offset,total}}`（§4.3）；`{items}` / 裸数组
  * 是过渡期的兼容写法，留着不会坏事。
  */
-function readListBody(body: unknown): { raws: unknown[]; total: number | null } {
+function readListBody(body: unknown): {
+  raws: unknown[];
+  total: number | null;
+} {
   if (Array.isArray(body)) return { raws: body, total: body.length };
   if (isRecord(body)) {
     const meta = isRecord(body.meta) ? body.meta : null;
@@ -279,7 +288,8 @@ export async function fetchAgentSetList(params?: {
   offset?: number;
 }): Promise<AgentSetList> {
   const query = new URLSearchParams();
-  if (typeof params?.limit === "number") query.set("limit", String(params.limit));
+  if (typeof params?.limit === "number")
+    query.set("limit", String(params.limit));
   if (typeof params?.offset === "number") {
     query.set("offset", String(params.offset));
   }
@@ -300,7 +310,11 @@ export async function fetchAgentSetDetail(
 
   // `{set, questions}` 是冻结形状；`{set, items}` / 摊平是过渡写法。
   // `flaggedCount` 在**顶层**（§4.3），要并进 set 里再归一。
-  const nested = isRecord(raw.set) ? raw.set : isRecord(raw.data) ? raw.data : null;
+  const nested = isRecord(raw.set)
+    ? raw.set
+    : isRecord(raw.data)
+      ? raw.data
+      : null;
   const setRaw = nested
     ? { ...nested, flaggedCount: raw.flaggedCount ?? nested.flaggedCount }
     : raw;
@@ -345,17 +359,14 @@ export async function startAgentSetAttempt(
 
   if (!sessionId) {
     // 没有会话 id 就发不出判分请求；宁可当场报错，也不要进入一个"答了不记分"的假练习
-    throw new AgentSetRequestError(
-      "练习没能开始，请稍后重试",
-      200,
-      body,
-    );
+    throw new AgentSetRequestError("练习没能开始，请稍后重试", 200, body);
   }
 
   return {
     sessionId,
     questions: rawQuestions.map((entry, index) => {
-      const source = isRecord(entry) && isRecord(entry.question) ? entry.question : entry;
+      const source =
+        isRecord(entry) && isRecord(entry.question) ? entry.question : entry;
       return normalizeQuestion(source, index + 1);
     }),
   };
@@ -387,12 +398,18 @@ export async function flagAgentSetQuestion(
     `${BASE}/${setId}/questions/${questionId}/flag`,
     {
       method: "POST",
-      body: JSON.stringify(reason && reason.trim() ? { reason: reason.trim() } : {}),
+      body: JSON.stringify(
+        reason && reason.trim() ? { reason: reason.trim() } : {},
+      ),
     },
   );
   const raw = isRecord(body) ? body : {};
   return {
-    remaining: firstNumber(raw, ["remaining", "remainingCount", "pendingCount"]),
+    remaining: firstNumber(raw, [
+      "remaining",
+      "remainingCount",
+      "pendingCount",
+    ]),
   };
 }
 

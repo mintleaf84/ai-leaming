@@ -2,6 +2,7 @@
 
 > 状态：待你确认后开工
 > 已对齐的决策（本文件为唯一记录）：
+>
 > 1. 推来的题进**独立 Agent 题集**，不污染题库搜索与统计；
 > 2. 题集可逐题练，也可**一键成卷**（复用刚上线的试卷/模考）；
 > 3. agent 可读：题集结果 + 错题 + 掌握度 + **题库全量（含答案解析）**；
@@ -17,14 +18,14 @@
 
 ## 1. 现状（已具备的零件）
 
-| 能力 | 现状 |
-| --- | --- |
-| agent 写题 | `POST /api/external/questions`（单题、admin 作用域、内容指纹幂等、`?dryRun=true`） |
-| agent 回传作答 | `POST /api/external/practice/answers`（`sessionKey` 幂等、按 tags 增量刷掌握度） |
-| agent 读数据 | `read` 作用域：题库（含答案）/错题/掌握度/统计/历史/记忆卡队列 |
-| 身份 | API Key 可绑 `user_id`，作用域 read ⊂ write ⊂ admin；全局限流 |
-| 消费侧 | 练习（`practice_sessions`/`practice_logs`）、试卷/模考（`exam_papers`）、错题本、掌握度 |
-| 移动端 | 能力协商（`/api/meta` 的 `features`）、离线练习与回传 |
+| 能力           | 现状                                                                                    |
+| -------------- | --------------------------------------------------------------------------------------- |
+| agent 写题     | `POST /api/external/questions`（单题、admin 作用域、内容指纹幂等、`?dryRun=true`）      |
+| agent 回传作答 | `POST /api/external/practice/answers`（`sessionKey` 幂等、按 tags 增量刷掌握度）        |
+| agent 读数据   | `read` 作用域：题库（含答案）/错题/掌握度/统计/历史/记忆卡队列                          |
+| 身份           | API Key 可绑 `user_id`，作用域 read ⊂ write ⊂ admin；全局限流                           |
+| 消费侧         | 练习（`practice_sessions`/`practice_logs`）、试卷/模考（`exam_papers`）、错题本、掌握度 |
+| 移动端         | 能力协商（`/api/meta` 的 `features`）、离线练习与回传                                   |
 
 **缺口**：没有「一次推送 = 一批题」的容器，没有「我的作答结果」反向读给 agent，没有消费入口与通知。
 
@@ -73,32 +74,32 @@ ALTER TABLE questions ADD COLUMN agent_position INTEGER;  -- 批次内顺序（1
 
 ### 4.1 Agent 侧（`/api/external`，沿用 API Key）
 
-| 方法 | 路径 | 说明 |
-| --- | --- | --- |
-| POST | `/agent/question-sets` | `{batchKey, title, agent?, model?, promptVersion?, targetTags?, note?, questions:[{externalId?, content, options, answer, explanation?, type, dimension?, tags?, material?}]}`；**整批校验**（任一题不合格整批 400，不做部分成功）；`(user_id,batchKey)` 幂等返回既有批次 `duplicate:true`；单批上限 100 题；支持 `?dryRun=true` |
-| GET | `/agent/question-sets` | 列表：`id/title/counts/doneCount/flaggedCount/createdAt` |
-| GET | `/agent/question-sets/{id}` | 含题目与答案（agent 需要看自己推了什么） |
-| GET | `/agent/question-sets/{id}/results` | **核心回流**：每题 `answered/isCorrect/durationMs/flagged/flagReason`，聚合 `correctRate/avgDurationMs/tagBreakdown`，`flagged[]` 单独列出（含题干与你的理由） |
-| POST | `/agent/question-sets/{id}/archive` | 归档（不影响历史） |
+| 方法 | 路径                                | 说明                                                                                                                                                                                                                                                                                                                             |
+| ---- | ----------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| POST | `/agent/question-sets`              | `{batchKey, title, agent?, model?, promptVersion?, targetTags?, note?, questions:[{externalId?, content, options, answer, explanation?, type, dimension?, tags?, material?}]}`；**整批校验**（任一题不合格整批 400，不做部分成功）；`(user_id,batchKey)` 幂等返回既有批次 `duplicate:true`；单批上限 100 题；支持 `?dryRun=true` |
+| GET  | `/agent/question-sets`              | 列表：`id/title/counts/doneCount/flaggedCount/createdAt`                                                                                                                                                                                                                                                                         |
+| GET  | `/agent/question-sets/{id}`         | 含题目与答案（agent 需要看自己推了什么）                                                                                                                                                                                                                                                                                         |
+| GET  | `/agent/question-sets/{id}/results` | **核心回流**：每题 `answered/isCorrect/durationMs/flagged/flagReason`，聚合 `correctRate/avgDurationMs/tagBreakdown`，`flagged[]` 单独列出（含题干与你的理由）                                                                                                                                                                   |
+| POST | `/agent/question-sets/{id}/archive` | 归档（不影响历史）                                                                                                                                                                                                                                                                                                               |
 
 作用域：**admin**（题库是全局资产，沿用建题口径）；key 必须绑 `userId`，否则 403。
 读结果只允许该 `userId` 的批次，跨用户 404。
 
 ### 4.2 消费侧（JWT，`/api/agent-sets`）
 
-| 方法 | 路径 | 说明 |
-| --- | --- | --- |
-| GET | `/agent-sets` | 我的题集（含未做数、来源、目标考点） |
-| GET | `/agent-sets/{id}` | 题集详情（**不含答案**） |
-| POST | `/agent-sets/{id}/attempts` | 开始练：建 `practice_sessions`（`practice_mode='agent_set'`、`agent_set_id`），逐题即时判分（复用现有 `POST /practice/session/:id/submit`） |
-| POST | `/agent-sets/{id}/questions/{questionId}/flag` | `{reason?}` → 该题从题集移除并记录，返回剩余题数 |
-| POST | `/agent-sets/{id}/promote` | 转正入库（`origin='import'`） |
-| POST | `/agent-sets/{id}/paper` | **一键成卷**：建一张 `exam_papers`（`source='agent'`），题目取该题集可用题 |
-
+| 方法 | 路径                                           | 说明                                                                                                                                        |
+| ---- | ---------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------- |
+| GET  | `/agent-sets`                                  | 我的题集（含未做数、来源、目标考点）                                                                                                        |
+| GET  | `/agent-sets/{id}`                             | 题集详情（**不含答案**）                                                                                                                    |
+| POST | `/agent-sets/{id}/attempts`                    | 开始练：建 `practice_sessions`（`practice_mode='agent_set'`、`agent_set_id`），逐题即时判分（复用现有 `POST /practice/session/:id/submit`） |
+| POST | `/agent-sets/{id}/questions/{questionId}/flag` | `{reason?}` → 该题从题集移除并记录，返回剩余题数                                                                                            |
+| POST | `/agent-sets/{id}/promote`                     | 转正入库（`origin='import'`）                                                                                                               |
+| POST | `/agent-sets/{id}/paper`                       | **一键成卷**：建一张 `exam_papers`（`source='agent'`），题目取该题集可用题                                                                  |
 
 ### 4.3 已冻结的响应形状（三条 lane 必须逐字对齐）
 
 消费侧（JWT）：
+
 - `GET /agent-sets` → `{data:[{id,title,agent,model,targetTags:[string],questionCount,pendingCount,unreadCount,lastScore(0–1|null),createdAt}],meta:{limit,offset,total}}`
 - `GET /agent-sets/{id}` → `{set:{...同上},questions:[{id,content,options:[string],type,dimension,tags:[string],material}],flaggedCount}`（**不含 answer/explanation**）
 - `POST /agent-sets/{id}/attempts` → `{sessionId,questions:[...同上]}`（逐题提交仍走 `POST /practice/session/{sessionId}/submit`）
@@ -107,6 +108,7 @@ ALTER TABLE questions ADD COLUMN agent_position INTEGER;  -- 批次内顺序（1
 - `POST /agent-sets/{id}/paper` → 与试卷详情同形 `{paper,items,lastAttempt}`
 
 Agent 侧（API Key，admin）：
+
 - `POST /agent/question-sets` → `{id,batchKey,duplicate,questionCount}`
 - `GET /agent/question-sets` → `{data:[...],meta:{limit,offset,total}}`（含 `questionCount/doneCount/flaggedCount/createdAt`）
 - `GET /agent/question-sets/{id}` → `{set:{...},questions:[...]}`（**含答案与解析**，agent 要能看自己推了什么）
@@ -134,6 +136,7 @@ Agent 侧（API Key，admin）：
 - iOS 侧不可靠。
 
 建议分两步：
+
 1. **先做**：App 启动/回前台时拉一次未读 → 有新的就发一条本地通知 + 首页角标（成本低、行为可预期）；
 2. **可选后补**：Android `workmanager` 周期拉取（引入依赖 + 电量/厂商适配）。
 

@@ -50,7 +50,9 @@ interface RunState {
  *
  * 报错（这题有问题）只做本地列表更新 + 服务端移除；成卷与转正都走各自接口。
  */
-export default function AgentSetDetailClient({ setId }: AgentSetDetailClientProps) {
+export default function AgentSetDetailClient({
+  setId,
+}: AgentSetDetailClientProps) {
   const router = useRouter();
   const validId = Number.isFinite(setId) && setId > 0;
 
@@ -72,16 +74,18 @@ export default function AgentSetDetailClient({ setId }: AgentSetDetailClientProp
   const [starting, setStarting] = useState(false);
   const [run, setRun] = useState<RunState | null>(null);
 
-  const base = data
-    ? { summary: data.set, items: data.items }
-    : null;
+  const base = data ? { summary: data.set, items: data.items } : null;
 
   // 依次应用本地反馈：未做 −1、已反馈 +1，并把题从列表里去掉
   const local = base
     ? removedIds.reduce(
-        (acc, questionId) =>
-          applyFlag(acc.summary, acc.items, questionId),
-        { summary: base.summary, items: base.items, removed: false, remaining: 0 },
+        (acc, questionId) => applyFlag(acc.summary, acc.items, questionId),
+        {
+          summary: base.summary,
+          items: base.items,
+          removed: false,
+          remaining: 0,
+        },
       )
     : null;
 
@@ -90,7 +94,9 @@ export default function AgentSetDetailClient({ setId }: AgentSetDetailClientProp
   const pending = selectPendingItems(items);
   const promoted = summary?.status === "promoted" || promotedLocally;
   const created = summary ? formatSetDate(summary.createdAt) : null;
-  const tags = summary ? splitTags(summary.targetTags, 6) : { shown: [], rest: 0 };
+  const tags = summary
+    ? splitTags(summary.targetTags, 6)
+    : { shown: [], rest: 0 };
 
   const handleStart = async () => {
     if (!summary || starting || pending.length === 0) return;
@@ -142,12 +148,19 @@ export default function AgentSetDetailClient({ setId }: AgentSetDetailClientProp
     const questionId = flagTarget.question.id;
     try {
       const result = await flagAgentSetQuestion(summary.id, questionId, reason);
-      setRemovedIds((ids) => (ids.includes(questionId) ? ids : [...ids, questionId]));
+      setRemovedIds((ids) =>
+        ids.includes(questionId) ? ids : [...ids, questionId],
+      );
       setFlagTarget(null);
-      const remaining = result.remaining ?? Math.max(0, summary.pendingCount - 1);
+      const remaining =
+        result.remaining ?? Math.max(0, summary.pendingCount - 1);
       toast.success(`已反馈给 Agent，本批剩余 ${remaining} 题`);
     } catch (caught) {
-      console.error("[agent-sets] 反馈题目失败", { setId, questionId, err: caught });
+      console.error("[agent-sets] 反馈题目失败", {
+        setId,
+        questionId,
+        err: caught,
+      });
       setFlagError(
         caught instanceof Error ? caught.message : "反馈失败，请稍后重试",
       );
@@ -265,7 +278,9 @@ export default function AgentSetDetailClient({ setId }: AgentSetDetailClientProp
                 <Wand2 className="h-3.5 w-3.5" aria-hidden />
                 来自 {formatSetSource(summary.agent, summary.model)}
               </span>
-              {created && <span className="text-muted-foreground/60">· {created}</span>}
+              {created && (
+                <span className="text-muted-foreground/60">· {created}</span>
+              )}
             </p>
 
             {summary.note && (
@@ -281,7 +296,9 @@ export default function AgentSetDetailClient({ setId }: AgentSetDetailClientProp
 
             {tags.shown.length > 0 && (
               <div className="mt-3 flex flex-wrap items-center gap-1.5">
-                <span className="text-xs text-muted-foreground/70">目标考点</span>
+                <span className="text-xs text-muted-foreground/70">
+                  目标考点
+                </span>
                 {tags.shown.map((tag) => (
                   <span
                     key={tag}
@@ -351,7 +368,9 @@ export default function AgentSetDetailClient({ setId }: AgentSetDetailClientProp
               { label: "已反馈", value: `${summary.flaggedCount} 题` },
             ].map((stat) => (
               <div key={stat.label} className="bg-card px-4 py-3">
-                <dt className="text-[11px] text-muted-foreground">{stat.label}</dt>
+                <dt className="text-[11px] text-muted-foreground">
+                  {stat.label}
+                </dt>
                 <dd className="mt-0.5 text-base font-semibold tabular-nums text-foreground">
                   {stat.value}
                 </dd>

@@ -165,7 +165,9 @@ export const questions = sqliteTable(
     origin: text("origin", { enum: ["import", "agent", "flagged"] })
       .notNull()
       .default("import"),
-    agent_set_id: integer("agent_set_id").references(() => agent_question_sets.id),
+    agent_set_id: integer("agent_set_id").references(
+      () => agent_question_sets.id,
+    ),
     /** 批次内顺序（1..n），决定题集练习与成卷的题序 */
     agent_position: integer("agent_position"),
     /** 报错理由（用户填的原文）；只有 origin='flagged' 时才可能非空 */

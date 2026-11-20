@@ -205,7 +205,11 @@ describe("Practice Service", () => {
   describe("submitAnswer", () => {
     it("should log answer and update stats with correct parameters", async () => {
       // origin='import'：只有正常题库题才计入掌握度 / 排 FSRS（隔离过滤）
-      const mockQ = { tags: '["tag1"]', dimension: "knowledge", origin: "import" };
+      const mockQ = {
+        tags: '["tag1"]',
+        dimension: "knowledge",
+        origin: "import",
+      };
       (mockDrizzleDb.select as any).mockReturnValue(mockDrizzleDb);
       (mockDrizzleDb.from as any).mockReturnValue(mockDrizzleDb);
       (mockDrizzleDb.where as any).mockReturnValue(mockDrizzleDb);
@@ -229,7 +233,11 @@ describe("Practice Service", () => {
 
     it("should update SRS state on correct answer", async () => {
       // origin='import'：只有正常题库题才计入掌握度 / 排 FSRS（隔离过滤）
-      const mockQ = { tags: '["tag1"]', dimension: "knowledge", origin: "import" };
+      const mockQ = {
+        tags: '["tag1"]',
+        dimension: "knowledge",
+        origin: "import",
+      };
       (mockDrizzleDb.select as any).mockReturnValue(mockDrizzleDb);
       (mockDrizzleDb.from as any).mockReturnValue(mockDrizzleDb);
       (mockDrizzleDb.where as any).mockReturnValue(mockDrizzleDb);

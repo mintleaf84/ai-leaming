@@ -93,8 +93,8 @@ export function MakePaperDialog({
             把这批题做成一张试卷
           </DialogTitle>
           <DialogDescription className="mt-1.5 text-sm leading-relaxed text-muted-foreground">
-            会用还没做的 {availableCount} 道题组卷。生成后照常作答、自动判分，成绩
-            记在这份试卷下。
+            会用还没做的 {availableCount}{" "}
+            道题组卷。生成后照常作答、自动判分，成绩 记在这份试卷下。
           </DialogDescription>
         </div>
 

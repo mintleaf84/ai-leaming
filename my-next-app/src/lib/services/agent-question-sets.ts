@@ -379,10 +379,7 @@ function toAgentSummary(row: SetRow, agg: Aggregates): AgentSetSummary {
   };
 }
 
-function toConsumerSummary(
-  row: SetRow,
-  agg: Aggregates,
-): ConsumerSetSummary {
+function toConsumerSummary(row: SetRow, agg: Aggregates): ConsumerSetSummary {
   const questionCount = Number(agg.questionCount ?? 0);
   const usableCount = Number(agg.usableCount ?? 0);
   const doneCount = Number(agg.doneCount ?? 0);
@@ -478,7 +475,9 @@ async function loadAggregates(
   };
 }
 
-async function loadSetQuestions(setId: number): Promise<Array<typeof questions.$inferSelect>> {
+async function loadSetQuestions(
+  setId: number,
+): Promise<Array<typeof questions.$inferSelect>> {
   return drizzleDb
     .select()
     .from(questions)
@@ -494,10 +493,7 @@ async function loadUsableAgentQuestions(
     .select()
     .from(questions)
     .where(
-      and(
-        eq(questions.agent_set_id, setId),
-        eq(questions.origin, "agent"),
-      ),
+      and(eq(questions.agent_set_id, setId), eq(questions.origin, "agent")),
     )
     .orderBy(asc(questions.agent_position), asc(questions.id));
 }
@@ -516,10 +512,7 @@ async function loadVisibleQuestions(
     .select()
     .from(questions)
     .where(
-      and(
-        eq(questions.agent_set_id, setId),
-        ne(questions.origin, "flagged"),
-      ),
+      and(eq(questions.agent_set_id, setId), ne(questions.origin, "flagged")),
     )
     .orderBy(asc(questions.agent_position), asc(questions.id));
 }
@@ -612,9 +605,7 @@ function validateQuestions(inputs: AgentSetQuestionInput[]): Array<{
       tags: result.data.tags,
       // QuestionSchema 的 dimension 是"三档枚举 or 任意字符串"，插入时按列类型收窄
       dimension: result.data.dimension as
-        | "knowledge"
-        | "understanding"
-        | "application",
+        "knowledge" | "understanding" | "application",
       type: result.data.type,
       material: raw.material ?? null,
     });
@@ -1096,10 +1087,7 @@ export const agentQuestionSetService = {
       .select({ id: questions.id })
       .from(questions)
       .where(
-        and(
-          eq(questions.agent_set_id, setId),
-          eq(questions.origin, "agent"),
-        ),
+        and(eq(questions.agent_set_id, setId), eq(questions.origin, "agent")),
       );
 
     if (promotedIds.length > 0) {
@@ -1107,10 +1095,7 @@ export const agentQuestionSetService = {
         .update(questions)
         .set({ origin: "import" })
         .where(
-          and(
-            eq(questions.agent_set_id, setId),
-            eq(questions.origin, "agent"),
-          ),
+          and(eq(questions.agent_set_id, setId), eq(questions.origin, "agent")),
         );
 
       // 转正后才重建向量索引：Agent 题集题在隔离期不进检索（不污染题库搜索），

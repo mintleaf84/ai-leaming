@@ -7,7 +7,9 @@ import { formatBeijingDate } from "@/lib/utils/datetime";
 /**
  * 0~1 的比例 → 「86 分」。服务端若已经给了 0~100 的数就不再乘一次。
  */
-export function formatSetScore(score: number | null | undefined): string | null {
+export function formatSetScore(
+  score: number | null | undefined,
+): string | null {
   if (typeof score !== "number" || !Number.isFinite(score)) return null;
   const percent = score <= 1 ? score * 100 : score;
   return `${Math.round(percent)} 分`;
@@ -28,7 +30,9 @@ const AGENT_NAME_OVERRIDES: Record<string, string> = {
 };
 
 /** `claude-code` → `Claude Code`；认不出来的原样保留，不猜 */
-export function humanizeAgentName(name: string | null | undefined): string | null {
+export function humanizeAgentName(
+  name: string | null | undefined,
+): string | null {
   if (!name || !name.trim()) return null;
   const raw = name.trim();
   const override = AGENT_NAME_OVERRIDES[raw.toLowerCase()];
@@ -66,10 +70,16 @@ export function summarizeStem(content: string, max = 110): string {
 }
 
 /** 考点 chips 最多显示几个，剩下的收成 `+N` */
-export function splitTags(tags: string[], max = 4): {
+export function splitTags(
+  tags: string[],
+  max = 4,
+): {
   shown: string[];
   rest: number;
 } {
   const cleaned = tags.map((tag) => tag.trim()).filter(Boolean);
-  return { shown: cleaned.slice(0, max), rest: Math.max(0, cleaned.length - max) };
+  return {
+    shown: cleaned.slice(0, max),
+    rest: Math.max(0, cleaned.length - max),
+  };
 }

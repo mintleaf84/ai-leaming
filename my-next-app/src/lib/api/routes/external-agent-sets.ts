@@ -57,8 +57,14 @@ const SetSummarySchema = z
     targetTags: z.array(z.string()).describe("Agent 声称针对的考点"),
     note: z.string().nullable().describe("「为什么给你出这些」"),
     status: z.enum(["active", "archived", "promoted"]),
-    questionCount: z.number().int().describe("该批可用题数（已报错的题不计入）"),
-    doneCount: z.number().int().describe("该批已作答的题数（只看本批次的作答）"),
+    questionCount: z
+      .number()
+      .int()
+      .describe("该批可用题数（已报错的题不计入）"),
+    doneCount: z
+      .number()
+      .int()
+      .describe("该批已作答的题数（只看本批次的作答）"),
     flaggedCount: z.number().int().describe("用户报「这题有问题」的题数"),
     createdAt: z.string().nullable(),
   })
@@ -68,7 +74,10 @@ const SetQuestionSchema = z
   .object({
     id: z.number().int(),
     position: z.number().int().nullable().describe("批次内顺序（1..n）"),
-    externalId: z.string().nullable().describe("你推送时给的题号（没给为 null）"),
+    externalId: z
+      .string()
+      .nullable()
+      .describe("你推送时给的题号（没给为 null）"),
     content: z.string(),
     options: z.array(z.string()),
     answer: z.string().describe("正确答案"),
@@ -85,7 +94,11 @@ const SetResultItemSchema = z
     questionId: z.number().int(),
     answered: z.boolean(),
     isCorrect: z.boolean().describe("未作答时为 false（看 answered 区分）"),
-    durationMs: z.number().int().nullable().describe("最近一次作答耗时（毫秒）"),
+    durationMs: z
+      .number()
+      .int()
+      .nullable()
+      .describe("最近一次作答耗时（毫秒）"),
     flagged: z.boolean(),
     flagReason: z.string().nullable(),
   })
@@ -196,7 +209,10 @@ const CreateSetResponseSchema = z
     duplicate: z
       .boolean()
       .describe("true = 该 batchKey 已存在，本次没有写入任何数据"),
-    questionCount: z.number().int().describe("该批题数（幂等命中为既有批次的题数）"),
+    questionCount: z
+      .number()
+      .int()
+      .describe("该批题数（幂等命中为既有批次的题数）"),
     dryRun: z
       .boolean()
       .optional()

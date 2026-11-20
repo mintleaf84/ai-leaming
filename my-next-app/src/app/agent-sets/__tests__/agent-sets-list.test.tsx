@@ -119,7 +119,9 @@ describe("AI 题集列表", () => {
       .spyOn(globalThis, "fetch")
       .mockImplementation(async (input) => {
         const url = String(input);
-        const offset = Number(new URL(url, "http://x").searchParams.get("offset") ?? 0);
+        const offset = Number(
+          new URL(url, "http://x").searchParams.get("offset") ?? 0,
+        );
         return jsonResponse({
           data: [
             {

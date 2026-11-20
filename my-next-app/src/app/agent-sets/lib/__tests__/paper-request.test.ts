@@ -40,7 +40,9 @@ describe("buildPaperRequest", () => {
       timed: false,
       durationMinutes: 30,
     });
-    expect(request.title).toBe(defaultPaperTitle({ title: "教育心理学 · 弱项强化" }));
+    expect(request.title).toBe(
+      defaultPaperTitle({ title: "教育心理学 · 弱项强化" }),
+    );
   });
 });
 

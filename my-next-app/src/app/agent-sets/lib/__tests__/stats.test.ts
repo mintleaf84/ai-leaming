@@ -85,9 +85,9 @@ describe("derivePendingCount", () => {
 describe("selectPendingItems", () => {
   it("已做的题不再出现在待做列表里", () => {
     const items = [item(1, true), item(2), item(3, true)];
-    expect(selectPendingItems(items).map((entry) => entry.question.id)).toEqual([
-      2,
-    ]);
+    expect(selectPendingItems(items).map((entry) => entry.question.id)).toEqual(
+      [2],
+    );
   });
 });
 

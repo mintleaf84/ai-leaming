@@ -19,10 +19,7 @@ import {
   isDraftAnswered,
   type ExamDraft,
 } from "@/app/exam/lib/answer-sheet";
-import {
-  flagAgentSetQuestion,
-  submitAgentSetAnswer,
-} from "../lib/api";
+import { flagAgentSetQuestion, submitAgentSetAnswer } from "../lib/api";
 import { progressPercent } from "../lib/stats";
 import type { AgentSetItem } from "../lib/types";
 import { ConfirmDialog } from "./ConfirmDialog";
@@ -95,7 +92,10 @@ export function PracticeRunner({
       const result = await submitAgentSetAnswer(sessionId, {
         questionId: current.question.id,
         userAnswer,
-        duration: Math.max(0, Date.now() - (enteredAtRef.current || Date.now())),
+        duration: Math.max(
+          0,
+          Date.now() - (enteredAtRef.current || Date.now()),
+        ),
       });
       setJudged(result.isCorrect);
       setAnsweredCount((count) => count + 1);
@@ -124,8 +124,7 @@ export function PracticeRunner({
   const handleToggleOption = (letter: string) => {
     if (judged !== null || submitting) return;
     setDraft((prev) => {
-      const letters =
-        prev?.kind === "choice" ? prev.letters : [];
+      const letters = prev?.kind === "choice" ? prev.letters : [];
       return {
         kind: "choice",
         letters: letters.includes(letter)
@@ -167,7 +166,11 @@ export function PracticeRunner({
         Math.max(0, nextQueue.length - Math.min(index, nextQueue.length));
       toast.success(`已反馈给 Agent，本批剩余 ${remaining} 题`);
     } catch (caught) {
-      console.error("[agent-sets] 反馈题目失败", { setId, targetId, err: caught });
+      console.error("[agent-sets] 反馈题目失败", {
+        setId,
+        targetId,
+        err: caught,
+      });
       setFlagError(
         caught instanceof Error ? caught.message : "反馈失败，请稍后重试",
       );
@@ -190,12 +193,15 @@ export function PracticeRunner({
         {answeredCount > 0 ? (
           <p className="mt-2 text-sm text-muted-foreground">
             做完 {answeredCount} 题，答对{" "}
-            <span className="font-semibold text-foreground">{correctCount}</span>{" "}
+            <span className="font-semibold text-foreground">
+              {correctCount}
+            </span>{" "}
             题，正确率 {accuracy}%。记录已写进练习记录，答错的题在错题本里。
           </p>
         ) : (
           <p className="mt-2 text-sm text-muted-foreground">
-            这批题都已经做过了，或者你刚刚把它们都反馈了。等 Agent 推新的一批来吧。
+            这批题都已经做过了，或者你刚刚把它们都反馈了。等 Agent
+            推新的一批来吧。
           </p>
         )}
 
@@ -308,19 +314,11 @@ export function PracticeRunner({
                 {judged ? (
                   <CheckCircle2 className="h-5 w-5 text-success" aria-hidden />
                 ) : (
-                  <XCircle
-                    className="h-5 w-5 text-destructive"
-                    aria-hidden
-                  />
+                  <XCircle className="h-5 w-5 text-destructive" aria-hidden />
                 )}
                 {judged ? "回答正确" : "回答错误"}
               </p>
-              <Button
-                size="sm"
-                onClick={advance}
-                className="gap-1.5"
-                autoFocus
-              >
+              <Button size="sm" onClick={advance} className="gap-1.5" autoFocus>
                 {index + 1 >= total ? "查看结果" : "下一题"}
                 <ArrowRight className="h-4 w-4" aria-hidden />
               </Button>

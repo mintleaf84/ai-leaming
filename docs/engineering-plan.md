@@ -620,29 +620,29 @@ Web 有、移动端没有的功能：`notes`（笔记）、`mindmap`（思维导
 
 ### 0. 实测基线（评价依据，不是感觉）
 
-| 指标 | 值 |
-| --- | --- |
-| Web 规模 | 739 文件 / 131,836 行；测试 47,892 行（0.36×） |
-| Mobile 规模 | 148 文件 / 30,564 行；测试 24,028 行（0.79×） |
-| 依赖方向 | `lib→app` 反向 **0**、`services→routes` **0**、`routes→services` 39 ✅ |
-| **路由直连 db** | **22 / 23 个路由文件** ❌ |
-| 最大文件 | `routes/external.ts` **3,242 行**（占全部路由 9,178 行的 35%） |
-| 错误类型 | 27 个自定义 Error 类 + `toErrorResponse` 35 处调用 |
-| 移动端跨 feature import | **28 处**（其中 `auth_provider → practice_resume_provider` 方向错误） |
+| 指标                        | 值                                                                                          |
+| --------------------------- | ------------------------------------------------------------------------------------------- |
+| Web 规模                    | 739 文件 / 131,836 行；测试 47,892 行（0.36×）                                              |
+| Mobile 规模                 | 148 文件 / 30,564 行；测试 24,028 行（0.79×）                                               |
+| 依赖方向                    | `lib→app` 反向 **0**、`services→routes` **0**、`routes→services` 39 ✅                      |
+| **路由直连 db**             | **22 / 23 个路由文件** ❌                                                                   |
+| 最大文件                    | `routes/external.ts` **3,242 行**（占全部路由 9,178 行的 35%）                              |
+| 错误类型                    | 27 个自定义 Error 类 + `toErrorResponse` 35 处调用                                          |
+| 移动端跨 feature import     | **28 处**（其中 `auth_provider → practice_resume_provider` 方向错误）                       |
 | 移动端 >500 行 presentation | **11 个**（`dashboard_screen` 1,047、`history_detail` 898、`settings` 840、`practice` 797） |
-| 分页重复 | 5 个路由用共享 `parsePagination`，`history.ts`/`external.ts` 仍手写 |
-| 类型逃逸 | `as any` 非测试仅 **2** 处；`as unknown as` 非测试 43 处 |
+| 分页重复                    | 5 个路由用共享 `parsePagination`，`history.ts`/`external.ts` 仍手写                         |
+| 类型逃逸                    | `as any` 非测试仅 **2** 处；`as unknown as` 非测试 43 处                                    |
 
 ### 1. 六个问题与修法
 
-| # | 问题 | 修法 | 判据 |
-| --- | --- | --- | --- |
-| P1 | 路由直连 db（22/23），service 层被绕过 | 加**分层门禁**：`scripts/audit-layering.cjs` 扫描 `src/lib/api/routes/**` 里的 `from "@/lib/db"`，白名单存量、只减不增；随后按资源分批把查询搬进 service | 新增一处 route→db import 直接红；白名单从 22 递减到 0 |
-| P2 | `external.ts` 3,242 行 | 按资源拆 `routes/external/{questions,srs,recall,notes,misc}.ts` + `routes/external/index.ts` 聚合路由表 | **OpenAPI 快照零 diff**（路径与字段完全不变）+ 全量测试绿 |
-| P3 | 27 个 Error 类无统一码表 | 新增 `src/lib/api/error-codes.ts`：`{code, status, message, retryable}`；27 个类映射到 code；`toErrorResponse` 只查表 | 现有 35 处调用的 **状态码与文案逐条不变**（对拍测试）；新增一种错误只需加一行表项 |
-| P4 | 移动端跨 feature 依赖 28 处 | ① `Question`/`PracticeResume`/`WrongQuestion` 等跨域模型上提到 `lib/shared/domain/`；② `auth→practice` 改注入：auth 只 bump `authEpoch`，由 practice 侧 `watch` 自己清断点（现在反过来是 auth 调 practice） | 跨 feature import 28 → **≤10**；`dart analyze` 0 error；全量测试绿 |
-| P5 | 11 个 >500 行 presentation | 按 section 拆（`dashboard_screen` 的 `_buildXxx` 已是天然边界），每屏不超过 500 行 | 单文件 <500 行且**行为零改动**（仅搬移，不改逻辑） |
-| P6 | 分页仍 2 处手写 | `history.ts`/`external.ts` 改用 `parsePagination` | 相同 query 解析结果与现在一致（对拍） |
+| #   | 问题                                   | 修法                                                                                                                                                                                                        | 判据                                                                              |
+| --- | -------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------- |
+| P1  | 路由直连 db（22/23），service 层被绕过 | 加**分层门禁**：`scripts/audit-layering.cjs` 扫描 `src/lib/api/routes/**` 里的 `from "@/lib/db"`，白名单存量、只减不增；随后按资源分批把查询搬进 service                                                    | 新增一处 route→db import 直接红；白名单从 22 递减到 0                             |
+| P2  | `external.ts` 3,242 行                 | 按资源拆 `routes/external/{questions,srs,recall,notes,misc}.ts` + `routes/external/index.ts` 聚合路由表                                                                                                     | **OpenAPI 快照零 diff**（路径与字段完全不变）+ 全量测试绿                         |
+| P3  | 27 个 Error 类无统一码表               | 新增 `src/lib/api/error-codes.ts`：`{code, status, message, retryable}`；27 个类映射到 code；`toErrorResponse` 只查表                                                                                       | 现有 35 处调用的 **状态码与文案逐条不变**（对拍测试）；新增一种错误只需加一行表项 |
+| P4  | 移动端跨 feature 依赖 28 处            | ① `Question`/`PracticeResume`/`WrongQuestion` 等跨域模型上提到 `lib/shared/domain/`；② `auth→practice` 改注入：auth 只 bump `authEpoch`，由 practice 侧 `watch` 自己清断点（现在反过来是 auth 调 practice） | 跨 feature import 28 → **≤10**；`dart analyze` 0 error；全量测试绿                |
+| P5  | 11 个 >500 行 presentation             | 按 section 拆（`dashboard_screen` 的 `_buildXxx` 已是天然边界），每屏不超过 500 行                                                                                                                          | 单文件 <500 行且**行为零改动**（仅搬移，不改逻辑）                                |
+| P6  | 分页仍 2 处手写                        | `history.ts`/`external.ts` 改用 `parsePagination`                                                                                                                                                           | 相同 query 解析结果与现在一致（对拍）                                             |
 
 ### 2. 明确不做
 
@@ -655,52 +655,52 @@ Web 有、移动端没有的功能：`notes`（笔记）、`mindmap`（思维导
 
 **Wave 1（4 条 lane，互不碰同一文件）**
 
-| Lane | 范围 | 独占文件 | 工作量 |
-| --- | --- | --- | --- |
-| W1 | P2 拆 `external.ts` + 该文件的 route→service 迁移 | `routes/external/**`（新）、`routes/external.ts`（删） | 1d |
-| W2 | P3 错误码表 | `lib/api/error-codes.ts`（新）、`lib/api/error-response.ts`、27 个 Error 类所在文件、映射测试 | 0.5d |
-| W3 | P1 门禁脚本（**只加脚本与白名单，不动路由**） | `scripts/audit-layering.cjs`（新）、`ci.yml` 加一步、白名单 json | 0.5d |
-| M1 | P4 移动端 domain 上提 | `lib/shared/domain/**`（新）、各 feature 的 import 行 | 1d |
+| Lane | 范围                                              | 独占文件                                                                                      | 工作量 |
+| ---- | ------------------------------------------------- | --------------------------------------------------------------------------------------------- | ------ |
+| W1   | P2 拆 `external.ts` + 该文件的 route→service 迁移 | `routes/external/**`（新）、`routes/external.ts`（删）                                        | 1d     |
+| W2   | P3 错误码表                                       | `lib/api/error-codes.ts`（新）、`lib/api/error-response.ts`、27 个 Error 类所在文件、映射测试 | 0.5d   |
+| W3   | P1 门禁脚本（**只加脚本与白名单，不动路由**）     | `scripts/audit-layering.cjs`（新）、`ci.yml` 加一步、白名单 json                              | 0.5d   |
+| M1   | P4 移动端 domain 上提                             | `lib/shared/domain/**`（新）、各 feature 的 import 行                                         | 1d     |
 
 **Wave 2（W3 落地后，白名单量化进度）**
 
-| Lane | 范围 | 说明 |
-| --- | --- | --- |
-| W4a | P1 迁移：`routes/{practice,questions,knowledge,wrong-book}.ts` | 每迁一个从白名单划掉一个 |
-| W4b | P1 迁移：`routes/{recall,history,srs,admin}.ts` | 与 W4a 不同文件，可并行 |
-| M2 | P5 大文件拆分（4 屏） | 必须在 M1 之后（`dashboard` 依赖 practice 模型） |
-| W5 | P6 分页收敛（`history.ts`） | 与 W4b 同文件 → 合进 W4b |
+| Lane | 范围                                                           | 说明                                             |
+| ---- | -------------------------------------------------------------- | ------------------------------------------------ |
+| W4a  | P1 迁移：`routes/{practice,questions,knowledge,wrong-book}.ts` | 每迁一个从白名单划掉一个                         |
+| W4b  | P1 迁移：`routes/{recall,history,srs,admin}.ts`                | 与 W4a 不同文件，可并行                          |
+| M2   | P5 大文件拆分（4 屏）                                          | 必须在 M1 之后（`dashboard` 依赖 practice 模型） |
+| W5   | P6 分页收敛（`history.ts`）                                    | 与 W4b 同文件 → 合进 W4b                         |
 
 **依赖关系**：W1/W2/W3/M1 可同时开；W4a/W4b 需等 W3 的脚本（否则没有"迁移进度"的量化）；M2 需等 M1。
 
 ### 4. 验收（每条 lane 各自做，不跑全量）
 
-| Lane | 验收 |
-| --- | --- |
-| W1 | `npm run contract:check` 快照零 diff；`npx tsc --noEmit` 0 error；相关路由测试全绿 |
-| W2 | 对拍测试：给定 27 种错误，`toErrorResponse` 输出的 `status` + `error` 文案与改前逐条一致 |
-| W3 | 故意加一处 route→db import → 脚本红；白名单条目只能减 |
-| M1 | 跨 feature import 计数从 28 降到 ≤10（脚本可核）；`flutter test` 全绿；覆盖率门禁不降 |
-| M2 | 4 屏各 <500 行；`flutter test` 全绿（行为零改动） |
-| W4a/W4b | 每批迁移后 `contract:check` 一致 + route 定向测试绿；白名单相应递减 |
+| Lane    | 验收                                                                                     |
+| ------- | ---------------------------------------------------------------------------------------- |
+| W1      | `npm run contract:check` 快照零 diff；`npx tsc --noEmit` 0 error；相关路由测试全绿       |
+| W2      | 对拍测试：给定 27 种错误，`toErrorResponse` 输出的 `status` + `error` 文案与改前逐条一致 |
+| W3      | 故意加一处 route→db import → 脚本红；白名单条目只能减                                    |
+| M1      | 跨 feature import 计数从 28 降到 ≤10（脚本可核）；`flutter test` 全绿；覆盖率门禁不降    |
+| M2      | 4 屏各 <500 行；`flutter test` 全绿（行为零改动）                                        |
+| W4a/W4b | 每批迁移后 `contract:check` 一致 + route 定向测试绿；白名单相应递减                      |
 
 ### 5. 风险与止损
 
-| 风险 | 止损 |
-| --- | --- |
-| route→service 迁移误改查询语义 | 契约快照 + 每批只动"搬移"，不顺手优化 SQL；有争议的查询留在白名单里下一批 |
-| 拆 `external.ts` 时路由注册顺序变化导致 404 | 快照零 diff 是硬判据；额外加一条"所有 external 路径逐个可达"的路由表测试 |
-| 错误码表改变既有 4xx 文案 → 前端文案回归 | 对拍测试锁死；文案有改动必须在 PR 里逐条列出 |
-| domain 上提引发 import 大面积改动 | `dart analyze` 硬闸；先上提模型文件、再改引用，两步提交 |
-| 大文件拆分产生"仅搬移的假绿" | 每条 PR 声明"零行为改动"，判据是全量测试绿 + 无逻辑 diff（review 时只看是否只移动） |
+| 风险                                        | 止损                                                                                |
+| ------------------------------------------- | ----------------------------------------------------------------------------------- |
+| route→service 迁移误改查询语义              | 契约快照 + 每批只动"搬移"，不顺手优化 SQL；有争议的查询留在白名单里下一批           |
+| 拆 `external.ts` 时路由注册顺序变化导致 404 | 快照零 diff 是硬判据；额外加一条"所有 external 路径逐个可达"的路由表测试            |
+| 错误码表改变既有 4xx 文案 → 前端文案回归    | 对拍测试锁死；文案有改动必须在 PR 里逐条列出                                        |
+| domain 上提引发 import 大面积改动           | `dart analyze` 硬闸；先上提模型文件、再改引用，两步提交                             |
+| 大文件拆分产生"仅搬移的假绿"                | 每条 PR 声明"零行为改动"，判据是全量测试绿 + 无逻辑 diff（review 时只看是否只移动） |
 
 ### 6. 工期
 
-| 批次 | 内容 | AI 墙钟 | 你的时间 |
-| --- | --- | --- | --- |
-| Wave 1 | W1+W2+W3+M1 并行 | 1.5–2d | 0.5d（review/合并） |
-| Wave 2 | W4a+W4b+M2 并行 | 1.5–2d | 0.5d |
-| 合计 | | **3–4d** | 1d |
+| 批次   | 内容             | AI 墙钟  | 你的时间            |
+| ------ | ---------------- | -------- | ------------------- |
+| Wave 1 | W1+W2+W3+M1 并行 | 1.5–2d   | 0.5d（review/合并） |
+| Wave 2 | W4a+W4b+M2 并行  | 1.5–2d   | 0.5d                |
+| 合计   |                  | **3–4d** | 1d                  |
 
 ## 执行约定
 

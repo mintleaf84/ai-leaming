@@ -68,7 +68,12 @@ function range(from: number, to: number): number[] {
 
 interface PageBody {
   data: Array<{ id: number }>;
-  pagination: { page: number; limit: number; total: number; totalPages: number };
+  pagination: {
+    page: number;
+    limit: number;
+    total: number;
+    totalPages: number;
+  };
 }
 
 async function listPage(query = ""): Promise<PageBody> {

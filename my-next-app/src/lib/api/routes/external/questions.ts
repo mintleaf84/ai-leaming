@@ -91,7 +91,10 @@ app.openapi(listRoute, async (c) => {
     page: pageNum,
     pageSize: limitNum,
     offset,
-  } = parsePageParams({ page, limit }, { defaultPageSize: 20, maxPageSize: 100 });
+  } = parsePageParams(
+    { page, limit },
+    { defaultPageSize: 20, maxPageSize: 100 },
+  );
 
   const { total, rows } = await listQuestionsPage({
     limit: limitNum,

@@ -81,9 +81,7 @@ const getByTagRoute = createRoute({
 
 app.openapi(getByTagRoute, async (c) => {
   const user = getCurrentUser(c);
-  const questions = await wrongQuestionService.listWrongBook(
-    Number(user.id),
-  );
+  const questions = await wrongQuestionService.listWrongBook(Number(user.id));
 
   // 一道题有多个知识点时会在每个 tag 下各出现一次（既有口径）
   const tagMap = new Map<string, typeof questions>();

@@ -91,10 +91,7 @@ export const annotationService = {
     const result = await drizzleDb
       .delete(text_annotations)
       .where(
-        and(
-          eq(text_annotations.id, id),
-          eq(text_annotations.user_id, userId),
-        ),
+        and(eq(text_annotations.id, id), eq(text_annotations.user_id, userId)),
       );
 
     return result.rowsAffected !== 0;

@@ -384,9 +384,8 @@ app.openapi(firstPrinciplesRoute, async (c) => {
     );
 
     // 检查缓存（命中不消耗配额）
-    const cached = await practiceService.getCachedFirstPrinciplesAnalysis(
-      cacheKey,
-    );
+    const cached =
+      await practiceService.getCachedFirstPrinciplesAnalysis(cacheKey);
 
     if (cached) {
       return c.json({ analysis: cached, cached: true });

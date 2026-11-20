@@ -2043,8 +2043,17 @@
                             "type": "integer"
                           },
                           "questionCount": {
-                            "description": "可用题数",
+                            "description": "批次原始题量（含被用户报错移除的题）",
                             "type": "integer"
+                          },
+                          "status": {
+                            "description": "active=可练；promoted=已转正入库；archived=已归档",
+                            "enum": [
+                              "active",
+                              "promoted",
+                              "archived"
+                            ],
+                            "type": "string"
                           },
                           "targetTags": {
                             "items": {
@@ -2066,6 +2075,7 @@
                           "agent",
                           "model",
                           "targetTags",
+                          "status",
                           "questionCount",
                           "pendingCount",
                           "unreadCount",
@@ -2210,8 +2220,17 @@
                           "type": "integer"
                         },
                         "questionCount": {
-                          "description": "可用题数",
+                          "description": "批次原始题量（含被用户报错移除的题）",
                           "type": "integer"
+                        },
+                        "status": {
+                          "description": "active=可练；promoted=已转正入库；archived=已归档",
+                          "enum": [
+                            "active",
+                            "promoted",
+                            "archived"
+                          ],
+                          "type": "string"
                         },
                         "targetTags": {
                           "items": {
@@ -2233,6 +2252,7 @@
                         "agent",
                         "model",
                         "targetTags",
+                        "status",
                         "questionCount",
                         "pendingCount",
                         "unreadCount",

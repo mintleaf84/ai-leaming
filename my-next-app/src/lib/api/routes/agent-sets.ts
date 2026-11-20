@@ -30,7 +30,13 @@ const SetSummarySchema = z.object({
   agent: z.string().nullable(),
   model: z.string().nullable(),
   targetTags: z.array(z.string()),
-  questionCount: z.number().int().describe("可用题数"),
+  status: z
+    .enum(["active", "promoted", "archived"])
+    .describe("active=可练；promoted=已转正入库；archived=已归档"),
+  questionCount: z
+    .number()
+    .int()
+    .describe("批次原始题量（含被用户报错移除的题）"),
   pendingCount: z.number().int().describe("未作答的可用题数"),
   unreadCount: z
     .number()

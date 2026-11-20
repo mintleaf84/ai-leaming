@@ -132,8 +132,10 @@ export interface ConsumerSetSummary {
   agent: string | null;
   model: string | null;
   targetTags: string[];
-  /** 可用题数 */
+  /** 批次原始题量（含被用户报错移除的题）；Web 的「已做 = 总数 − 未做 − 已反馈」依赖这个口径 */
   questionCount: number;
+  /** 题集状态：active | promoted（已转正入库）| archived */
+  status: AgentSetStatus;
   /** 未作答的可用题数 */
   pendingCount: number;
   /**
@@ -397,6 +399,7 @@ function toConsumerSummary(
     agent: row.agent ?? null,
     model: row.model ?? null,
     targetTags: toTargetTags(row.target_tags),
+    status: (row.status as AgentSetStatus) ?? "active",
     questionCount,
     // 未做 = 可用题 − 已做；flagged 的题本来就不在"可做"里
     pendingCount: Math.max(0, usableCount - doneCount),

@@ -15,9 +15,17 @@ name: CI
 # 本仓库分支保护的必需检查是「Lint & Type Check / 单元测试 (Vitest) / Next.js 构建校验」。
 # 按 GitHub 文档（Troubleshooting required status checks），被 paths/paths-ignore 过滤掉的
 # 工作流**不会创建 check run**，必需检查会永远停在 "Expected — waiting for status to be
-# reported" —— 纯文档 PR 反而合不进去。而"被 if: 条件跳过的 job 报 Success"，所以这里改成
-# 「工作流照常触发 → changes job 判定变更范围 → 快闸 job 用 if: 跳过」，对纯文档 PR 的
-# 效果与 paths-ignore 相同（不跑任何 web 检查），但不会卡住合并。
+# reported"。
+#
+# 2026-11-20 修正：曾以为"被 job 级 if: 跳过的 job 报 Success"，实测**不是**——
+# 跳过报 `skipped`，而 `skipped` **不能**满足必需检查。结果：纯移动端/docs 的 PR
+# （如 #272）三项必需检查全部 skipped，PR 永远合不进去（连 --admin 也被拒）。
+#
+# 因此三条必需检查 job **一律 always() 运行**；changes job 只留给 E2E 这类
+# 非必需检查做范围判断。移动端 PR 会因此多跑约 5 分钟 web 检查——这是可接受的
+# 代价：可合并性优先于 PR 墙钟。若将来要恢复"跳过"，必须让这三条检查**始终产出
+# success**（例如把重活抽成 reusable workflow，job 内用 step 级 if: 调用），
+# 不能靠 job 级 if:。
 on:
   push:
     branches: ["master", "main"]
@@ -98,7 +106,9 @@ jobs:
   lint:
     name: Lint & Type Check
     needs: [changes]
-    if: needs.changes.outputs.web == 'true'
+    # 必需检查不能靠 job 级 if: 跳过（skipped ≠ success，PR 会永远合不进去）：
+    # 这三条一律运行，范围判断只留给 E2E。见文件头 2026-11-20 说明。
+    if: always()
     runs-on: ${{ (github.event_name == 'push' && vars.SELF_HOSTED == 'true') && 'self-hosted' || 'ubuntu-latest' }}
     timeout-minutes: 20
     steps:
@@ -196,7 +206,9 @@ jobs:
   unit-test:
     name: 单元测试 (Vitest)
     needs: [changes]
-    if: needs.changes.outputs.web == 'true'
+    # 必需检查不能靠 job 级 if: 跳过（skipped ≠ success，PR 会永远合不进去）：
+    # 这三条一律运行，范围判断只留给 E2E。见文件头 2026-11-20 说明。
+    if: always()
     runs-on: ${{ (github.event_name == 'push' && vars.SELF_HOSTED == 'true') && 'self-hosted' || 'ubuntu-latest' }}
     timeout-minutes: 30
     steps:
@@ -335,7 +347,9 @@ jobs:
     runs-on: ${{ (github.event_name == 'push' && vars.SELF_HOSTED == 'true') && 'self-hosted' || 'ubuntu-latest' }}
     timeout-minutes: 30
     needs: [changes]
-    if: needs.changes.outputs.web == 'true'
+    # 必需检查不能靠 job 级 if: 跳过（skipped ≠ success，PR 会永远合不进去）：
+    # 这三条一律运行，范围判断只留给 E2E。见文件头 2026-11-20 说明。
+    if: always()
     env:
       NEXT_PUBLIC_APP_URL: http://localhost:3000
       JWT_SECRET: ci-placeholder-secret

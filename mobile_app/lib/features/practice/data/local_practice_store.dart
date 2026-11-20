@@ -1,5 +1,6 @@
 import 'dart:convert';
 
+import 'package:flutter/foundation.dart';
 import 'package:sqflite/sqflite.dart';
 
 import '../../../core/local/local_db.dart';
@@ -130,9 +131,11 @@ class LocalPracticeStore {
     return questions;
   }
 
-  /// 按 ID 取单题（离线判分用）。找不到、或缓存超过 [cacheMaxAgeDays] 返回 null。
+  /// 按 ID 取单题（离线判分/离线续练用）。找不到、缓存过期、**或没有答案**时返回 null。
   ///
-  /// 新鲜度检查与 [pickRandom] 保持一致：断网续练同样不能拿旧题面判分。
+  /// 新鲜度与「必须有答案」两条检查都与 [pickRandom] 保持一致：缓存可能被
+  /// `cacheQuestions` 用 `answer=null` 覆盖（服务端列表接口不带答案），
+  /// 拿这种题续练会在提交时用空答案判分，把用户做对的题全判错。
   Future<Question?> questionById(String id, {int maxAgeDays = cacheMaxAgeDays}) async {
     final numericId = int.tryParse(id);
     if (numericId == null) {
@@ -143,7 +146,7 @@ class LocalPracticeStore {
         Duration(days: maxAgeDays).inMilliseconds;
     final rows = await db.query(
       'cached_questions',
-      where: 'id = ? AND fetched_at >= ?',
+      where: "id = ? AND fetched_at >= ? AND answer IS NOT NULL AND answer != ''",
       whereArgs: <Object?>[numericId, cutoff],
       limit: 1,
     );
@@ -205,6 +208,57 @@ class LocalPracticeStore {
       },
     );
     return localId;
+  }
+
+  /// 取某个本地会话的题目 id 列表（离线续练用）；找不到返回 null。
+  ///
+  /// 离线会话（`local_` 前缀）没有服务端记录，重启后只能靠 local_sessions 里
+  /// 这份 question_ids + 题目缓存重建——否则「继续上次练习」会打到一个必然
+  /// 404 的地址上。
+  Future<List<String>?> localSessionQuestionIds(String localId) async {
+    final db = await _resolveDb();
+    final rows = await db.query(
+      'local_sessions',
+      columns: <String>['question_ids'],
+      where: 'local_id = ?',
+      whereArgs: <Object?>[localId],
+      limit: 1,
+    );
+    if (rows.isEmpty) {
+      return null;
+    }
+    final raw = rows.first['question_ids'];
+    if (raw is! String || raw.isEmpty) {
+      return null;
+    }
+    try {
+      final decoded = jsonDecode(raw);
+      if (decoded is! List) return null;
+      return <String>[for (final id in decoded) id.toString()];
+    } catch (error) {
+      debugPrint('[Practice] 本地会话题目解析失败: $error');
+      return null;
+    }
+  }
+
+  /// 某个本地会话的归属账号；会话不存在（或没写 user_id）时返回 null。
+  ///
+  /// 离线续练必须先比对归属：`local_sessions` 是按设备共享的，退出登录并不会
+  /// 清掉上一位用户的会话，不校验就会出现「B 能接着做 A 的离线练习」。
+  Future<String?> localSessionOwner(String localId) async {
+    final db = await _resolveDb();
+    final rows = await db.query(
+      'local_sessions',
+      columns: <String>['user_id'],
+      where: 'local_id = ?',
+      whereArgs: <Object?>[localId],
+      limit: 1,
+    );
+    if (rows.isEmpty) {
+      return null;
+    }
+    final owner = rows.first['user_id'];
+    return owner is String && owner.isNotEmpty ? owner : null;
   }
 
   /// 记录一次作答；同一 (localId, questionId) 重复作答覆盖旧记录。

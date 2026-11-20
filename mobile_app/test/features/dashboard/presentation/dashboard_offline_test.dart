@@ -13,6 +13,8 @@ import 'package:mobile_app/core/theme/app_theme.dart';
 import 'package:mobile_app/features/dashboard/presentation/dashboard_screen.dart';
 import 'package:mobile_app/features/stats/presentation/stats_provider.dart';
 
+import '../../../support/fake_providers.dart';
+
 /// 首页入口的离线禁用（审计 #20 方案 A）。
 ///
 /// 为什么只钉「记忆卡」：它进去第一件事就是拉会话，断网只会落到一个空屏；
@@ -58,6 +60,10 @@ void main() {
         ),
         statsControllerProvider.overrideWith(_FakeStatsController.new),
         connectivityChangesProvider.overrideWithValue(connectivity.stream),
+        // 首页的三张卡会读队列/错题/历史：不桩住就会在用例里发真请求
+        ...fakeRecallQueue().cast(),
+        ...fakeWrongBook().cast(),
+        ...fakeHistory().cast(),
       ],
       child: ScreenUtilInit(
         designSize: const Size(390, 884),

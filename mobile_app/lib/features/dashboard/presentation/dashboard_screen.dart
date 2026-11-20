@@ -6,21 +6,47 @@ import 'package:skeletonizer/skeletonizer.dart';
 import '../../../core/compat/contract_meta_repository.dart';
 import '../../../core/navigation/app_nav.dart';
 import '../../../core/network/connectivity_provider.dart';
+import '../../history/presentation/history_provider.dart';
+import '../../practice/domain/practice_resume.dart';
+import '../../practice/presentation/practice_resume_provider.dart';
+import '../../recall/data/recall_providers.dart';
+import '../../recall/domain/recall_queue.dart';
 import '../../stats/presentation/stats_provider.dart';
 import '../../stats/domain/learning_stats.dart';
+import '../../wrong_book/data/wrong_book_repository.dart';
 import '../../../core/theme/app_icons.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../shared/skeletons/skeleton_fakes.dart';
 import '../../../shared/widgets/contract_gate.dart';
 
+/// 首页：备考主路径的起点。
+///
+/// 三张功能卡右侧的数值**必须**来自真实数据（审计 §25 F1/F4）：
+/// 写死「--」「几分钟」「回顾」会让用户以为数据没加载或坏了。取不到数据时
+/// 显示「暂无」，而不是编一个看起来合理的数字。
 class DashboardScreen extends HookConsumerWidget {
   const DashboardScreen({super.key});
+
+  /// 每日目标题数（与统计区的进度卡同源，避免两处各写一个 20）。
+  static const int dailyGoal = 20;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     // 页面挂载时加载统计数据
     useEffect(() {
       Future.microtask(() => ref.read(statsControllerProvider.notifier).load());
+      return null;
+    }, const []);
+
+    // 最近一次练习时间：首页挂载即取一次。
+    //
+    // 不按「列表非空」判断数据新鲜度：练习结束后列表还是练习前的那一份。
+    // 练习结束（`PracticeController.reset`）会主动让历史重新拉取，首页
+    // watch 的是同一份状态，跟着更新（review B6）。
+    useEffect(() {
+      Future.microtask(
+        () => ref.read(historyControllerProvider.notifier).loadHistory(),
+      );
       return null;
     }, const []);
 
@@ -34,52 +60,130 @@ class DashboardScreen extends HookConsumerWidget {
     // 理由见 connectivity_provider.dart。
     final isOnline = ref.watch(isOnlineProvider).value ?? true;
 
+    // 三张卡的数据源。能力协商说没有 recall 时不发 `/recall/queue`
+    // （条件 watch：省掉一个必然 404 的请求）。
+    final recallQueue = showRecall ? ref.watch(recallQueueProvider) : null;
+    final wrongTotal = ref.watch(wrongBookTotalProvider);
+    final historyState = ref.watch(historyControllerProvider);
+    // 未完成练习的断点：有就出「继续上次练习」，没有就不占位置。
+    final resume = ref.watch(practiceResumeControllerProvider);
+
     return Scaffold(
       backgroundColor: context.colors.background, // Notion-like background
-      body: Stack(
-        children: [
-          SafeArea(
-            bottom: false,
-            child: CustomScrollView(
-              slivers: [
-                SliverToBoxAdapter(
-                  child: Padding(
-                    padding: EdgeInsets.symmetric(horizontal: 24.w),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        SizedBox(height: 16.h),
-                        // Header
-                        _buildHeader(context),
-                        SizedBox(height: 24.h),
-                        // Divider
-                        Divider(height: 1.h, color: context.colors.border),
-                        SizedBox(height: 24.h),
-                        // Action Grid
-                        _buildActionGrid(
-                          context,
-                          showRecall: showRecall,
-                          isOnline: isOnline,
-                        ),
-                        SizedBox(height: 32.h),
-                        // Progress Card + Todo List（统计区三态：骨架 / 错误 / 数据）
-                        _buildStatsSection(context, ref, statsState),
-                        SizedBox(height: 100.h), // Space for bottom nav
-                      ],
+      body: SafeArea(
+        bottom: false,
+        child: CustomScrollView(
+          slivers: [
+            SliverToBoxAdapter(
+              child: Padding(
+                padding: EdgeInsets.symmetric(horizontal: 24.w),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    SizedBox(height: 16.h),
+                    // Header
+                    _buildHeader(context),
+                    SizedBox(height: 24.h),
+                    // Divider
+                    Divider(height: 1.h, color: context.colors.border),
+                    SizedBox(height: 24.h),
+                    // 未完成练习：入口放在功能卡之前——它比任何一张卡都更接近
+                    // 「今天还剩几题」这件事。
+                    if (resume != null) ...[
+                      _buildResumeCard(context, resume),
+                      SizedBox(height: 16.h),
+                    ],
+                    // Action Grid
+                    _buildActionGrid(
+                      context,
+                      showRecall: showRecall,
+                      isOnline: isOnline,
+                      recallQueue: recallQueue,
+                      wrongTotal: wrongTotal,
+                      lastPracticeAt: _lastPracticeAt(historyState),
                     ),
-                  ),
+                    SizedBox(height: 32.h),
+                    // Progress Card + Todo List（统计区三态：骨架 / 错误 / 数据）
+                    _buildStatsSection(context, ref, statsState),
+                    // 底部导航由 AppShell 持有（不在这里画），
+                    // 留 24 的呼吸位即可，不再为浮层导航预留 100。
+                    SizedBox(height: 24.h),
+                  ],
                 ),
-              ],
+              ),
             ),
-          ),
-          // Bottom Navigation
-          Positioned(
-            left: 0,
-            right: 0,
-            bottom: 0,
-            child: _buildBottomNav(context),
-          ),
-        ],
+          ],
+        ),
+      ),
+    );
+  }
+
+  /// 最近一次练习时间；没有记录或解析失败时返回 null。
+  DateTime? _lastPracticeAt(HistoryListState state) {
+    if (state.items.isEmpty) return null;
+    return DateTime.tryParse(state.items.first.createdAt)?.toLocal();
+  }
+
+  /// 记忆卡右侧数值：今日到期张数。
+  ///
+  /// 到期 0 时给「今天已完成」而不是「0 张」——后者读起来像「今天还没开始」。
+  /// 队列还没回来/失败时给「暂无」：宁可承认不知道，也不写一个假数字。
+  String _recallValue(AsyncValue<RecallQueue>? queue, {required bool isOnline}) {
+    if (!isOnline) return '联网后可用';
+    final value = queue?.value;
+    if (value == null) return '暂无';
+    if (value.due > 0) return '${value.due} 张';
+    return '今天已完成';
+  }
+
+  /// 错题卡右侧数值：累计条数。
+  String _wrongValue(AsyncValue<int> total) {
+    final value = total.value;
+    if (value == null || value <= 0) return '暂无';
+    return '$value 条';
+  }
+
+  /// 练习历史卡右侧数值：最近一次练习时间。
+  String _lastPracticeValue(DateTime? at) {
+    if (at == null) return '暂无';
+    final now = DateTime.now();
+    final today = DateTime(now.year, now.month, now.day);
+    final day = DateTime(at.year, at.month, at.day);
+    final days = today.difference(day).inDays;
+    final hm =
+        '${at.hour.toString().padLeft(2, '0')}:'
+        '${at.minute.toString().padLeft(2, '0')}';
+    if (days <= 0) return '今天 $hm';
+    if (days == 1) return '昨天 $hm';
+    if (days < 7) return '$days 天前';
+    return '${at.month}月${at.day}日';
+  }
+
+  /// 「继续上次练习」：回到那一场的断点题。
+  ///
+  /// 不经过配置页：断点里已经有会话与进度，再让用户选模式/题量是多余的一步。
+  /// 已答记录（题号 + 对错）一并带过去：练习页据此回填结果、定位第一道未答题。
+  Widget _buildResumeCard(BuildContext context, PracticeResume resume) {
+    final total = resume.total;
+    final position = resume.startIndex + 1;
+    return _buildWideCard(
+      context,
+      icon: '▶️',
+      tag: '未完成',
+      tagColor: context.colors.warningContainer,
+      tagTextColor: context.colors.warning,
+      title: '继续上次练习',
+      trailingLabel: '进度',
+      trailingValue: '$position/$total 题',
+      onTap: () => context.pushDetail(
+        AppRoutes.practice,
+        extra: <String, dynamic>{
+          'sessionId': resume.sessionId,
+          'startIndex': resume.startIndex,
+          'answered': resume.answers,
+          'legacyAnswered': resume.legacyAnswered,
+          'mode': resume.mode,
+        },
       ),
     );
   }
@@ -106,6 +210,31 @@ class DashboardScreen extends HookConsumerWidget {
     final weekDays = ['一', '二', '三', '四', '五', '六', '日'];
     final dateStr = '${now.month}月${now.day}日 星期${weekDays[now.weekday - 1]}';
 
+    return Row(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Expanded(child: _buildGreeting(context, emoji, greeting, dateStr)),
+        // 「我的」原来是底部导航的一格；导航换成四个高频入口后，
+        // 个人中心改由头像入口进入（不占常驻位置，但仍然一步可达）。
+        IconButton(
+          tooltip: '我的',
+          onPressed: () => context.pushDetail(AppRoutes.profile),
+          icon: Icon(
+            AppIcons.personOutline,
+            color: context.colors.text,
+            size: 24.sp,
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildGreeting(
+    BuildContext context,
+    String emoji,
+    String greeting,
+    String dateStr,
+  ) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -137,6 +266,9 @@ class DashboardScreen extends HookConsumerWidget {
     BuildContext context, {
     required bool showRecall,
     required bool isOnline,
+    required AsyncValue<RecallQueue>? recallQueue,
+    required AsyncValue<int> wrongTotal,
+    required DateTime? lastPracticeAt,
   }) {
     return Column(
       children: [
@@ -197,8 +329,8 @@ class DashboardScreen extends HookConsumerWidget {
             tagColor: context.colors.successContainer,
             tagTextColor: context.colors.success,
             title: '记忆卡',
-            trailingLabel: isOnline ? '每次' : '离线',
-            trailingValue: isOnline ? '几分钟' : '联网后可用',
+            trailingLabel: isOnline ? '今日到期' : '离线',
+            trailingValue: _recallValue(recallQueue, isOnline: isOnline),
             onTap: isOnline ? () => context.pushDetail(AppRoutes.recall) : null,
             disabledNote: isOnline ? null : '离线，联网后可进入记忆卡',
           ),
@@ -212,7 +344,7 @@ class DashboardScreen extends HookConsumerWidget {
           tagTextColor: context.colors.error,
           title: '我的错题',
           trailingLabel: '累计',
-          trailingValue: '--',
+          trailingValue: _wrongValue(wrongTotal),
           onTap: () => context.pushDetail(AppRoutes.wrongBook),
         ),
         SizedBox(height: 16.h),
@@ -224,7 +356,7 @@ class DashboardScreen extends HookConsumerWidget {
           tagTextColor: const Color(0xFF4B5563),
           title: '练习历史',
           trailingLabel: '最近',
-          trailingValue: '回顾',
+          trailingValue: _lastPracticeValue(lastPracticeAt),
           onTap: () => context.pushDetail(AppRoutes.history),
         ),
       ],
@@ -371,8 +503,9 @@ class DashboardScreen extends HookConsumerWidget {
   /// 加第三个入口时合并成一个：三张卡的圆角、阴影、emoji 水印位置、分割线
   /// 从此不可能各写一套。
   ///
-  /// 右侧那两行（如「累计 / --」「每次 / 几分钟」）刻意只放**不依赖数据的描述**：
-  /// 首页没有队列与统计快照，写死一个数字就是编数据。
+  /// 右侧那两行（如「累计 / 24 条」「今日到期 / 3 张」）是**真实数据**：
+  /// 数据没到或取失败时显示「暂无」，绝不写死一个看起来合理的数字
+  /// （审计 §25 F1/F4：写死「--」「几分钟」会让用户以为数据坏了）。
   ///
   /// `onTap` 为 null 表示入口**禁用**（当前只有离线时的记忆卡）：此时卡片降透明度、
   /// 不再响应点击，并在标签下方写出 [disabledNote] 说明原因。禁用而不是隐藏，
@@ -635,8 +768,7 @@ class DashboardScreen extends HookConsumerWidget {
     final todayAccuracy = stats.todayAccuracy;
     final streakDays = stats.streakDays;
 
-    // 今日进度：假设每日目标 20 题
-    const dailyGoal = 20;
+    // 今日进度：每日目标见 [dailyGoal]（与待办清单同源）
     final progress = (todayCount / dailyGoal).clamp(0.0, 1.0);
     final progressText = todayCount > 0 ? '今日已练习 $todayCount 题' : '今日目标：尚未开始';
     final accuracyText = todayCount > 0
@@ -726,8 +858,15 @@ class DashboardScreen extends HookConsumerWidget {
   }
 
   /// 待办清单：条目全部由 [LearningStats] 的真实字段推导，没有占位文案。
+  ///
+  /// 「今日还需练习 N 题」这一条可以直接开练（F3）：待办已经知道还差几题，
+  /// 再让用户去配置页选模式/题量是多余的一步。其余两条只做提示，不可点。
   Widget _buildTodoList(BuildContext context, LearningStats stats) {
     final entries = _buildTodoEntries(stats);
+    final remaining = dailyGoal - stats.todayCount;
+    // 目标已完成（remaining ≤ 0）时仍允许继续练：给练习页一个正常题量，
+    // 而不是把 0 传下去变成一场空练习。
+    final limit = remaining > 0 ? remaining : 10;
 
     return Column(
       children: [
@@ -756,7 +895,22 @@ class DashboardScreen extends HookConsumerWidget {
             children: [
               for (int i = 0; i < entries.length; i++) ...[
                 if (i > 0) Divider(height: 20.h, color: context.colors.border),
-                _buildTodoRow(context, entries[i]),
+                _buildTodoRow(
+                  context,
+                  entries[i],
+                  // 只有「今日还需练习」这一条能一键开练；模式用练习页的默认
+                  // （后端目前只支持 random，settings 里的 reviewMode 是
+                  // 清单/沉浸的展示口径，传过去会 400）。
+                  onTap: i == 0
+                      ? () => context.pushDetail(
+                          AppRoutes.practice,
+                          extra: <String, dynamic>{
+                            'limit': limit,
+                            'mode': 'random',
+                          },
+                        )
+                      : null,
+                ),
               ],
             ],
           ),
@@ -766,7 +920,6 @@ class DashboardScreen extends HookConsumerWidget {
   }
 
   List<_TodoEntry> _buildTodoEntries(LearningStats stats) {
-    const dailyGoal = 20;
     final remaining = dailyGoal - stats.todayCount;
     final wrongCount = stats.todayCount - stats.todayCorrect;
     final todayPracticed = stats.todayCount > 0;
@@ -808,8 +961,12 @@ class DashboardScreen extends HookConsumerWidget {
     ];
   }
 
-  Widget _buildTodoRow(BuildContext context, _TodoEntry entry) {
-    return Row(
+  Widget _buildTodoRow(
+    BuildContext context,
+    _TodoEntry entry, {
+    VoidCallback? onTap,
+  }) {
+    final row = Row(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Icon(
@@ -848,105 +1005,26 @@ class DashboardScreen extends HookConsumerWidget {
             ],
           ),
         ),
+        if (onTap != null)
+          Icon(
+            AppIcons.chevronRight,
+            size: 18.sp,
+            color: context.colors.textSecondary,
+          ),
       ],
     );
-  }
 
-  Widget _buildBottomNav(BuildContext context) {
-    return Container(
-      padding: EdgeInsets.only(
-        top: 12.h,
-        bottom: 24.h,
-        left: 24.w,
-        right: 24.w,
-      ),
-      decoration: BoxDecoration(
-        color: context.colors.surface,
-        border: Border(top: BorderSide(color: context.colors.border)),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withValues(alpha: 0.02),
-            offset: const Offset(0, -4),
-            blurRadius: 6,
-          ),
-        ],
-      ),
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-        children: [
-          _buildNavItem(context, AppIcons.dashboard, '工作区', true, null),
-          _buildNavItem(
-            context,
-            AppIcons.smartToy,
-            'AI助手',
-            false,
-            () => context.pushDetail(AppRoutes.chat),
-          ),
-          _buildNavItem(
-            context,
-            AppIcons.book,
-            '知识库',
-            false,
-            () => context.pushDetail(AppRoutes.knowledge),
-          ),
-          _buildNavItem(
-            context,
-            AppIcons.libraryBooks,
-            '教材',
-            false,
-            () => context.pushDetail(AppRoutes.textbooks),
-          ),
-          _buildNavItem(
-            context,
-            AppIcons.personOutline,
-            '我的',
-            false,
-            () => context.pushDetail(AppRoutes.profile),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildNavItem(
-    BuildContext context,
-    IconData icon,
-    String label,
-    bool isSelected,
-    VoidCallback? onTap,
-  ) {
-    final activeColor = context.colors.text;
-    final inactiveColor = context.colors.textSecondary;
-
-    return GestureDetector(
-      onTap: onTap,
-      behavior: HitTestBehavior.opaque,
-      child: Container(
-        padding: EdgeInsets.symmetric(horizontal: 12.w, vertical: 4.h),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            AnimatedScale(
-              scale: isSelected ? 1.1 : 1.0,
-              duration: const Duration(milliseconds: 200),
-              curve: Curves.easeOutBack,
-              child: Icon(
-                icon,
-                size: 24.sp,
-                color: isSelected ? activeColor : inactiveColor,
-              ),
-            ),
-            SizedBox(height: 4.h),
-            AnimatedDefaultTextStyle(
-              duration: const Duration(milliseconds: 200),
-              style: TextStyle(
-                fontSize: 12.sp,
-                fontWeight: isSelected ? FontWeight.w700 : FontWeight.w500,
-                color: isSelected ? activeColor : inactiveColor,
-              ),
-              child: Text(label),
-            ),
-          ],
+    if (onTap == null) return row;
+    // 语义写在容器上：InkWell 的可点子项是变量，读屏拿不到可见文字。
+    return Semantics(
+      button: true,
+      label: entry.title,
+      child: InkWell(
+        onTap: onTap,
+        borderRadius: BorderRadius.circular(8.r),
+        child: Padding(
+          padding: EdgeInsets.symmetric(vertical: 4.h),
+          child: row,
         ),
       ),
     );

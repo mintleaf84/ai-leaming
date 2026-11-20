@@ -48,4 +48,8 @@ final preferencesStoreProvider = Provider<PreferencesStore>(
 abstract final class PreferencesKeys {
   static const String themeMode = 'theme_mode';
   static const String reviewMode = 'review_mode';
+
+  /// 未完成练习的断点（JSON：sessionId / answered / total / mode / savedAt）。
+  /// 见 `features/practice/domain/practice_resume.dart`。
+  static const String practiceResume = 'practice_resume';
 }

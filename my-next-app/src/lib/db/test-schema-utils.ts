@@ -48,6 +48,11 @@ export const TEST_SCHEMA_SQL = `
         is_demo INTEGER DEFAULT 0,
         analysis_report TEXT,
         total_duration_ms INTEGER DEFAULT 0,
+        -- 试卷作答（drizzle/0024）：历史行全为 NULL，普通练习语义不变
+        paper_id INTEGER REFERENCES exam_papers(id),
+        deadline_at TEXT,
+        exam_submitted_at TEXT,
+        exam_score REAL,
         created_at TEXT DEFAULT CURRENT_TIMESTAMP
     );
 

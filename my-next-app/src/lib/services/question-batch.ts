@@ -28,6 +28,7 @@ import { inArray } from "drizzle-orm";
 import { drizzleDb, drizzleSchema } from "@/lib/db";
 import { withTransaction } from "@/lib/db/executor";
 import { buildApiExternalId } from "@/lib/services/question-idempotency";
+import { ValidationError } from "@/lib/errors/app-error";
 import { logger } from "@/lib/logger";
 
 /** 单批上限：与路由 schema 的 `.max(100)` 同一口径（服务层也拦一道） */
@@ -44,12 +45,13 @@ export const QUESTION_BATCH_MAX = 100;
 export const RESERVED_EXTERNAL_ID_PREFIX = "api:";
 
 /** 调用方 externalId 撞了保留前缀：路由映射成 400 + issues（整批不写） */
-export class ReservedExternalIdError extends Error {
+export class ReservedExternalIdError extends ValidationError {
   readonly indexes: number[];
 
   constructor(indexes: number[]) {
     super(
       `externalId 不能以 "${RESERVED_EXTERNAL_ID_PREFIX}" 开头（该前缀为服务端内容指纹保留）`,
+      { code: "questions.external-id.reserved" },
     );
     this.name = "ReservedExternalIdError";
     this.indexes = indexes;

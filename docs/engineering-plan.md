@@ -413,6 +413,24 @@ W2（改动小、可当天合）→ W1 批次 A → W1 批次 B。两者互不�
 做法：先做**测量**（并发两条会话：一条触发重活，一条轮询轻接口，记 p95），确认是"秒级抖动"再立项；
 外置方案是 `worker_threads` 或独立进程 + 队列表，属架构改动，需单独评审。
 
+#### S3.1 压测执行步骤（脚本已就绪：`scripts/measure-concurrency.mjs`）
+
+| #   | 步骤       | 说明                                                                                                                  |
+| --- | ---------- | --------------------------------------------------------------------------------------------------------------------- |
+| 1   | 准备库副本 | 线上库 `VACUUM INTO '/tmp/snapshot.db'`，**不要直连生产**；`DATABASE_URL` 指向副本                                    |
+| 2   | 起服务     | `node server.js`（生产构建，非 dev），记端口                                                                          |
+| 3   | 基线       | `node scripts/measure-concurrency.mjs --base-url http://127.0.0.1:3000 --duration 30 --concurrency 1`（只轮询轻接口） |
+| 4   | 压测       | 同命令加 `--heavy /api/practice/first-principles`（或 SQL 模式批写），`--concurrency 2`，跑 60s                       |
+| 5   | 记录       | 轻接口 p50/p95/p99 前后对比；重活耗时                                                                                 |
+
+**决策矩阵**（拿到数字后按此定，不凭感觉）：
+
+| 轻接口 p95 抬升   | 结论                                                     |
+| ----------------- | -------------------------------------------------------- |
+| < 2× 且 < 200ms   | S4 不立项；S3 只做"把 AI 调用移出请求路径"这一项         |
+| 2–10×             | 先做 S4 的第一步（两把锁统一成一把）+ S3 的 CPU 重活外置 |
+| > 10× 或 p95 > 1s | S4 全量立项（读连接/WAL/统一锁），并考虑单开进程跑重活   |
+
 ### S4 单连接串行化（2–3d，架构）
 
 - `db/index.ts:128-140` `@libsql/client` 本地文件单连接 → 所有读写串行
@@ -434,6 +452,169 @@ W2（改动小、可当天合）→ W1 批次 A → W1 批次 B。两者互不�
 顺序：S1 → S2 → S5 → S3（先量）→ S4（评审后）。
 
 不做：换数据库（sqlite→pg）；keyset 分页全量改造（`practice_logs` 仅 4990 行，offset 够用）。
+
+## 运维收口（计划，2026-11-20）
+
+三件事都属于"现在不出事，但出事时没有工具"。
+
+### O1 日志表保留策略（0.5d）
+
+| 表                 | 现状                                                     | 建议保留 | 理由                                 |
+| ------------------ | -------------------------------------------------------- | -------- | ------------------------------------ |
+| `pdf_import_tasks` | **已有**每小时清理（`scheduler.ts:47`，按 `expires_at`） | 现状     | 临时任务                             |
+| `admin_logs`       | **无清理**                                               | 180 天   | 操作审计，排查历史问题够用           |
+| `api_logs`         | **无清理**                                               | 90 天    | 每请求一行，增长最快                 |
+| `api_audit_logs`   | **无清理**                                               | 180 天   | 安全追溯                             |
+| `web_vitals`       | **无清理**                                               | 90 天    | 性能趋势，`vitals:report` 只回看近期 |
+| `practice_logs`    | **不清理**                                               | 永久     | 学习数据（判分、SRS、统计的来源）    |
+
+做法：`scheduler.ts` 加一个每日任务（与 03:00 备份错开，例如 04:10），每条 `DELETE ... WHERE created_at < datetime('now','-N days')`，**先 dry-run 打印将删行数**，确认后开启实际删除；日志里记每次删除行数。
+
+判据：
+
+- dry-run 输出各表将删行数，与 `COUNT(*) WHERE created_at < cutoff` 一致
+- 跑一次后行数下降、`practice_logs` 行数**不变**
+- 删除按 `created_at` 走既有索引（`EXPLAIN QUERY PLAN` 确认非全表扫）
+- 失败时只记结构化日志并等下一周期（与现有 purge 任务同款 `audit-allow` 注释）
+
+### O2 告警通道（0.5d）
+
+现状：`docs/deploy.md` 的部署脚本有 60s 健康检查（失败会回滚），但**失败后没人知道**——只有你下次打开页面才会发现。
+
+做法（不引依赖）：
+
+- 新增 `scripts/notify.sh`：读 `ALERT_WEBHOOK_URL`（飞书/Telegram 任一），`curl` POST 一段文本；**未配置时打印警告并 exit 0**（不阻塞部署）
+- `deploy.md` 的更新脚本在「健康检查失败 / 回滚成功 / 回滚失败」三处调用它，正文含：时间、镜像 tag、失败原因、当前版本
+- 判据：把 webhook 指向一个本地 echo 服务，模拟健康检查失败 → 收到一条含 tag 与原因的消息；未配 webhook → 部署行为不变
+
+### O3 zod high 风险处置（0.5–1d）
+
+现状：`gh api .../dependabot/alerts` 显示 1 high（`zod`）+ 4 medium（`glob`/`minimatch`×2/`postcss-selector-parser`）；PR #222（zod 3→4）卡在 MCP 构建。
+
+两条路，**必须先判定可达性再选**：
+
+| 路   | 做法                                                                                                          | 前提                                                                               |
+| ---- | ------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------- |
+| 升级 | 完成 #222：zod 4 的破坏性变更（`z.string().email()` 迁移、`.passthrough()` 语义）逐处改；MCP 侧 schema 跟着改 | 改动量 ≤ 半天；否则走另一条                                                        |
+| 接受 | 锁 `zod@3.x`，在 `docs/decisions.md` 写明：漏洞路径是否可达、为何接受、复审日期                               | 需要确认 zod 只用于服务端入参校验（输入先经框架/路由层），无可控输入直达受影响 API |
+
+判据：
+
+- `npm audit --omit=dev` 的 high 归零，或 decisions.md 有一条带日期的风险接受记录
+- 若选升级：`npm run verify` 全绿 + MCP 冒烟通过
+
+### O4 不做
+
+- 不接 Prometheus/Grafana（单人项目，`/metrics` 已有但没人看）
+- 不做日志集中采集（stdout + docker logs 足够）
+- 不清理 `practice_logs`（学习数据不可再生）
+
+## Web 覆盖率门禁（计划，2026-11-20）
+
+移动端已有三档门禁（global / scope / 单文件回退），Web 侧**只有测试数量，没有覆盖率信号**：
+`@vitest/coverage-v8` 装在 devDependencies 里但没人调用，`verify` 四闸里没有覆盖率，
+`vitest.config.ts` 也没有 thresholds。
+
+### W-COV1 先量（0.2d）
+
+```bash
+cd my-next-app
+npx vitest run --coverage --coverage.reporter=text-summary
+npx vitest run --coverage --coverage.reporter=json-summary
+```
+
+记录：全局行覆盖、`src/lib/**`（逻辑层）与 `src/app/**`+`src/components/**`（UI）分别多少。
+**没有这组数之前不设阈值**（设高了挡所有 PR，设低了等于没有）。
+
+### W-COV2 用 vitest 原生 thresholds（0.3d）
+
+不自己写 gate 脚本（mobile 那个是因为 Dart 侧没有原生支持；vitest 有）：
+
+```ts
+// vitest.config.ts
+coverage: {
+  provider: 'v8',
+  reporter: ['text-summary', 'lcov'],
+  exclude: ['**/*.test.{ts,tsx}', 'scripts/**', 'drizzle/**', '.next/**'],
+  thresholds: {
+    lines: <实测-1>,
+    'src/lib/services/**': { lines: <实测-1> },
+    'src/lib/api/**':      { lines: <实测-1> },
+    'src/lib/auth/**':     { lines: <实测-1> },
+    'src/lib/db/**':       { lines: <实测-1> },
+    'src/app/**':          { lines: <实测-1> },
+    'src/components/**':   { lines: <实测-1> },
+  },
+}
+```
+
+- 只升不降：每次提升后把 thresholds 抬到「实测 − 1pp」，与 mobile 的 `coverage_baseline.json` 同一口径
+- 目录阈值的作用与 mobile 的 scope 相同：防止「服务层写得好」掩盖「页面全没测」
+
+### W-COV3 接进 CI（0.2d）
+
+| 动作                                                     | 说明                                         |
+| -------------------------------------------------------- | -------------------------------------------- |
+| `package.json` 加 `test:coverage`                        | `vitest run --coverage`                      |
+| `ci.yml` 的 `unit-test` job 改跑 `npm run test:coverage` | 耗时从 3.6min 涨到约 5min（v8 插桩），可接受 |
+| 失败时上传 `coverage/lcov.info`（`if: always()`）        | 与 mobile 的 `coverage-lcov` 同名风格        |
+| `verify` 四闸 → 五闸（加 `test:coverage`）               | 本地一条命令能跑完                           |
+
+### W-COV4 判据
+
+1. 改动前后各跑一次，贴出 `text-summary`（global 与两个分组的行覆盖）
+2. 故意删一个测试 → CI 红且报「threshold not met」
+3. 故意把某文件覆盖降到阈值下 → 红
+4. PR 反馈时长增量 ≤ 2min
+
+### W-COV5 不做
+
+- 不追 80%：Web 有 27 个整页 client 组件、8 个 550–882 行巨型组件，追高必然写大量脆测试
+- 不做 per-file 阈值（vitest 的 glob 阈值已够；单文件阈值在 Web 上噪音大于收益）
+- 不给 `scripts/**` 与 `drizzle/**` 要求覆盖（一次性脚本与 SQL）
+
+## 数据正确性（计划，2026-11-20）
+
+这两条不是"新功能"，是**已经错了的数据**。先修，否则所有统计与判分都不可信。
+
+### D1 移动端作答时长小 1000 倍（P0）
+
+| 项     | 内容                                                                                                                                                                                                                                                           |
+| ------ | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| 证据   | `mobile_app/lib/features/practice/presentation/practice_provider.dart:249` 用 `DateTime.now().difference(...).inSeconds`；服务端 `src/lib/api/routes/practice.ts:274` 把 `duration` 直接写进 `practice_logs.duration_ms`；Web 发的是毫秒（`Date.now()-start`） |
+| 影响   | 移动端每题的 `duration_ms` 只有真实值的 1/1000；会话 `total_duration_ms`、平均用时、任何按时长做的统计全错                                                                                                                                                     |
+| 修法   | Flutter 改 `inMilliseconds`；服务端 schema 的 `duration` 字段加注释写明**毫秒**；**存量不回填**（无法区分每行来源，回填赌错比不动更糟）                                                                                                                        |
+| 判据   | Flutter 单测：fake 时间推进 3s → 请求体 `duration == 3000`；服务端路由测试：入库 `duration_ms == 3000`；schema 注释进 codegen 校验                                                                                                                             |
+| 工作量 | 0.5d                                                                                                                                                                                                                                                           |
+
+### D2 `type` 为 NULL 的 84 题（P0，判分错）
+
+| 项     | 内容                                                                                                                                                                                                                                                                   |
+| ------ | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| 证据   | `docs/audit/2026-11-19-prod-db-2026-11-14-audit.md`：84 题 `type=NULL`                                                                                                                                                                                                 |
+| 影响   | 判分按 `type` 分支：多选忽略顺序、单选/判断按字母集合、填空按整串。`NULL` 会落进 else 分支被当单选处理 → 多选题判错，用户背的答案与系统不一致                                                                                                                          |
+| 修法   | ① 先量：导出这 84 题的 `id/题干摘要/选项数/answer`；② 按规则推断（answer 含多个字母 → multi；选项为"正确/错误" → truefalse；否则 single）；③ **dry-run 输出 84 行对照表人工确认**；④ 确认后 apply；⑤ 前端兜底：`type == null` 时按"选项集合比较"判分，避免清洗前继续错 |
+| 判据   | dry-run 表逐行有推断依据且可回滚；apply 后 `SELECT COUNT(*) FROM questions WHERE type IS NULL` = 0；抽查 10 题判分与人工一致                                                                                                                                           |
+| 工作量 | 0.5–1d（含人工确认）                                                                                                                                                                                                                                                   |
+
+### D3 不做
+
+- 不改 `practice_logs` 历史行的时长（无来源标记）
+- 不按"看起来像多选"自动改 `type`（必须人工过一遍 dry-run 表）
+
+## 移动端功能缺口（决策框架，2026-11-20）
+
+Web 有、移动端没有的功能：`notes`（笔记）、`mindmap`（思维导图）、`knowledge-graph`（知识图谱）、`ocr`（拍照识别）、`cultivation`（养成）。
+
+| 功能     | 手机上真的会用吗           | 建议                                           | 成本                  |
+| -------- | -------------------------- | ---------------------------------------------- | --------------------- |
+| 笔记     | 碎片时间大概率不会写长笔记 | 不做移植；如需查看，深链到 Web（浏览器打开）   | 移植 3–5d / 深链 0.5d |
+| 思维导图 | 编辑需要大屏与拖拽         | 只读查看可考虑；编辑不做                       | 只读 2d               |
+| 知识图谱 | 探索型功能，屏幕小体验差   | 不做                                           | —                     |
+| OCR      | 拍照搜题在手机上反而合理   | 优先级高于前三者，但要先确认题库覆盖率是否值得 | 2–3d                  |
+| 养成     | 纯 Web 趣味功能            | 不做                                           | —                     |
+
+**决策点（待你定）**：只做"深链跳 Web"（0.5d），还是连 OCR 一起做（2–3d），还是都不做。
 
 ## 执行约定
 

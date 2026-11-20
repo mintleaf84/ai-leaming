@@ -21,6 +21,7 @@ import {
   Network,
   Brain,
   FileCheck,
+  Layers,
 } from "lucide-react";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { cn } from "@/lib/utils";
@@ -116,6 +117,7 @@ export function AppSidebar({ userSection, featureFlags }: SidebarProps) {
     { name: t("nav.home"), href: "/dashboard", icon: Home },
     { name: t("nav.practice"), href: "/practice", icon: BookOpen },
     { name: t("nav.exam"), href: "/exam", icon: FileCheck },
+    { name: t("nav.agentSets"), href: "/agent-sets", icon: Layers },
     { name: t("nav.recall"), href: "/recall", icon: Brain },
     { name: t("nav.wrong_book"), href: "/wrong-book", icon: BookX },
     { name: t("nav.history"), href: "/history", icon: History },

@@ -49,9 +49,14 @@ export async function listQuestionsPage(options: {
   offset: number;
   tag?: string;
 }): Promise<{ total: number; rows: QuestionListRow[] }> {
-  const whereClause = options.tag
+  const tagCondition = options.tag
     ? sql`EXISTS (SELECT 1 FROM json_each(${questions.tags}) WHERE value = ${options.tag})`
     : undefined;
+
+  // 隔离过滤（docs/agent-question-set-plan.md §2）：Agent 读到的「题库」与
+  // 用户端题库列表同一口径 —— 只含 origin='import'。Agent 自己推来的题走
+  // `/api/external/agent/question-sets/{id}` 读，不会在这里重复出现。
+  const whereClause = and(eq(questions.origin, "import"), tagCondition);
 
   const [totalRow] = await drizzleDb
     .select({ value: count() })

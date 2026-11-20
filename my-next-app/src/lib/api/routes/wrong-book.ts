@@ -11,6 +11,11 @@ const WrongQuestionSchema = z.object({
   questionId: z.string(),
   questionContent: z.string(),
   tags: z.array(z.string()),
+  /**
+   * 题目来源：import=题库题，agent=AI 题集题（docs/agent-question-set-plan.md §2：
+   * 错题本照收 Agent 题，但必须让客户端能标出「来自 AI 题集」）。
+   */
+  origin: z.string(),
   wrongCount: z.number(),
   lastWrongAt: z.string(),
   correctAnswer: z.string(),

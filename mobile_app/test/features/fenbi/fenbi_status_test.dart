@@ -154,4 +154,70 @@ void main() {
       );
     });
   });
+  group('状态复制与展示文案', () {
+    test('lastResult 直接是对象时也解析（服务端未走 TEXT 列的路径）', () {
+      final status = FenbiSyncStatus.fromJson(<String, dynamic>{
+        'linked': true,
+        'lastResult': <String, dynamic>{'imported': 2, 'skipped': 1},
+      });
+
+      expect(status.lastResult!.imported, 2);
+      expect(status.lastResult!.skipped, 1);
+    });
+
+    test('copyWith 只改传入字段，不动掩码/绑定状态', () {
+      const base = FenbiSyncStatus(
+        linked: true,
+        phoneMasked: '138****1234',
+        syncable: true,
+      );
+
+      final updated = base.copyWith(
+        lastResult: const FenbiSyncResult(imported: 4),
+      );
+
+      expect(updated.linked, isTrue);
+      expect(updated.phoneMasked, '138****1234');
+      expect(updated.syncable, isTrue);
+      expect(updated.lastResult!.imported, 4);
+    });
+
+    test('linked / syncable 的字符串 "true"/"false" 也能读', () {
+      final status = FenbiSyncStatus.fromJson(<String, dynamic>{
+        'linked': 'true',
+        'syncable': 'false',
+      });
+
+      expect(status.linked, isTrue);
+      expect(status.syncable, isFalse);
+    });
+
+    test('lastSyncAt 是数字字符串时按毫秒时间戳解析', () {
+      final status = FenbiSyncStatus.fromJson(<String, dynamic>{
+        'linked': true,
+        'lastSyncAt': '1795198538292',
+      });
+
+      expect(status.lastSyncAt!.millisecondsSinceEpoch, 1795198538292);
+    });
+
+    test('失败原因超过 80 字时截断并加省略号（不把整段堆栈塞进卡片）', () {
+      final result = FenbiSyncResult.fromJson(<String, dynamic>{
+        'failed': <Object?>[
+          <String, dynamic>{'exerciseId': 1, 'reason': '错' * 200},
+        ],
+      });
+
+      expect(result.failed.single.reason, hasLength(81));
+      expect(result.failed.single.reason, endsWith('…'));
+    });
+
+    test('五种扫码状态都有中文文案，终态只有 confirmed / expired', () {
+      expect(FenbiQrPhase.pending.label, '等待扫码');
+      expect(FenbiQrPhase.scanned.label, contains('确认'));
+      expect(FenbiQrPhase.confirmed.label, contains('正在绑定'));
+      expect(FenbiQrPhase.expired.label, contains('重新生成'));
+      expect(FenbiQrPhase.unknown.label, isNotEmpty);
+    });
+  });
 }

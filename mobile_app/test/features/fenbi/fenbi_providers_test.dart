@@ -177,13 +177,17 @@ void main() {
       container = newContainer();
       keepSyncAlive();
       final gate = Completer<ResponseBody>();
+      final entered = Completer<void>();
       adapter.handler = (options) {
-        if (options.path == '/fenbi/link') return gate.future;
+        if (options.path == '/fenbi/link') {
+          if (!entered.isCompleted) entered.complete();
+          return gate.future;
+        }
         return jsonBody(statusJson());
       };
 
       final first = controller().link(phone: '13812341234', password: 'pw');
-      await Future<void>.delayed(Duration.zero);
+      await entered.future;
       final second = await controller().link(
         phone: '13812341234',
         password: 'pw',
@@ -267,13 +271,17 @@ void main() {
       container = newContainer();
       keepSyncAlive();
       final gate = Completer<ResponseBody>();
+      final entered = Completer<void>();
       adapter.handler = (options) {
-        if (options.path == '/fenbi/sync') return gate.future;
+        if (options.path == '/fenbi/sync') {
+          if (!entered.isCompleted) entered.complete();
+          return gate.future;
+        }
         return jsonBody(statusJson());
       };
 
       final first = controller().sync();
-      await Future<void>.delayed(Duration.zero);
+      await entered.future;
       final second = await controller().sync();
 
       expect(second.isOk, isFalse);
@@ -343,13 +351,17 @@ void main() {
       container = newContainer();
       keepSyncAlive();
       final gate = Completer<ResponseBody>();
+      final entered = Completer<void>();
       adapter.handler = (options) {
-        if (options.method == 'DELETE') return gate.future;
+        if (options.method == 'DELETE') {
+          if (!entered.isCompleted) entered.complete();
+          return gate.future;
+        }
         return jsonBody(statusJson(linked: false));
       };
 
       final first = controller().unlink();
-      await Future<void>.delayed(Duration.zero);
+      await entered.future;
       final second = await controller().unlink();
 
       expect(second.isOk, isFalse);
@@ -367,12 +379,13 @@ void main() {
     // 让 `ref.onDispose` 里的定时器取消跑在测试收尾之前。
     FenbiQrScanState qrState() => container.read(fenbiQrControllerProvider);
 
+    /// 发起扫码：`start()` 内部要等一次 HTTP。在假时钟里不能直接 await
+    /// （请求链上有 0 时长定时器，只 `pump()` 不推进时钟不会跑），
+    /// 所以推 1ms 把请求跑完，再按状态断言。
     Future<void> startQr(WidgetTester tester) async {
-      final starting = container
-          .read(fenbiQrControllerProvider.notifier)
-          .start();
-      await tester.pump();
-      await starting;
+      unawaited(container.read(fenbiQrControllerProvider.notifier).start());
+      await tester.pump(const Duration(milliseconds: 1));
+      await tester.pump(const Duration(milliseconds: 1));
     }
 
     testWidgets('pending → scanned → confirmed：每 2s 一次，确认后停表', (tester) async {
@@ -397,7 +410,7 @@ void main() {
 
       // 第一次轮询：pending
       await tester.pump(const Duration(seconds: 2));
-      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 1));
       expect(qrState().phase, FenbiQrPhase.pending);
       expect(adapter.gets.single.queryParameters, <String, dynamic>{
         'lgtoken': 'lt-1',
@@ -405,12 +418,12 @@ void main() {
 
       status = 'scanned';
       await tester.pump(const Duration(seconds: 2));
-      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 1));
       expect(qrState().phase, FenbiQrPhase.scanned);
 
       status = 'confirmed';
       await tester.pump(const Duration(seconds: 2));
-      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 1));
       expect(qrState().phase, FenbiQrPhase.confirmed);
 
       // 终态之后不再打接口（停表）
@@ -461,15 +474,15 @@ void main() {
 
       adapter.handler = (options) => offlineException(options);
       await tester.pump(const Duration(seconds: 2));
-      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 1));
       expect(qrState().errorMessage, isNull, reason: '一次抖动不该打断扫码');
 
       await tester.pump(const Duration(seconds: 2));
-      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 1));
       expect(qrState().errorMessage, isNull);
 
       await tester.pump(const Duration(seconds: 2));
-      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 1));
       expect(qrState().errorMessage, '网络好像断了，请检查网络后重试');
 
       // 停表后不再请求
@@ -501,8 +514,8 @@ void main() {
       expect(adapter.gets, hasLength(1), reason: 'in-flight 时不叠加请求');
 
       gate.complete(jsonBody(<String, dynamic>{'status': 'pending'}));
-      await tester.pump();
-      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 1));
+      await tester.pump(const Duration(milliseconds: 1));
       expect(qrState().phase, FenbiQrPhase.pending);
 
       qrSub.close();
@@ -525,7 +538,7 @@ void main() {
 
       for (var i = 0; i < FenbiQrController.maxPolls; i++) {
         await tester.pump(const Duration(seconds: 2));
-        await tester.pump();
+        await tester.pump(const Duration(milliseconds: 1));
       }
 
       expect(qrState().phase, FenbiQrPhase.expired);

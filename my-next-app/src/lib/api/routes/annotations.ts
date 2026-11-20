@@ -116,10 +116,7 @@ app.openapi(deleteAnnotationDef, async (c) => {
   if (!user) return c.json({ error: "Unauthorized" }, 401);
 
   const { id } = c.req.valid("query");
-  const deleted = await annotationService.remove(
-    Number(user.id),
-    parseInt(id),
-  );
+  const deleted = await annotationService.remove(Number(user.id), parseInt(id));
 
   if (!deleted) return c.json({ error: "标注不存在或无权删除" }, 404);
   return c.json({ message: "标注已删除" });

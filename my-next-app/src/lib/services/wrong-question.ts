@@ -117,10 +117,7 @@ function lastWrongAnswerSql(userId: number) {
  * 排序列一律重写表达式，保证 ORDER BY 里是真实存在的东西。
  */
 function wrongOrderBy() {
-  return [
-    desc(count()),
-    desc(sql`MAX(${practice_logs.timestamp})`),
-  ] as const;
+  return [desc(count()), desc(sql`MAX(${practice_logs.timestamp})`)] as const;
 }
 
 /** 聚合行（DB 原始形态）→ 页面形态 */

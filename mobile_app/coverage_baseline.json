@@ -79,6 +79,10 @@
     {
       "path": "lib/features/settings/presentation/settings_provider.dart",
       "reason": "一期过渡转发（只有 export，无行为，二期删除）：实现已上提到 shared/domain 或 core/settings"
+    },
+    {
+      "path": "lib/features/history/presentation/history_provider.dart",
+      "reason": "一期过渡转发（只有 export，无行为，二期删除）：实现已上提到 shared/providers"
     }
   ],
   "files": {
@@ -216,9 +220,6 @@
     },
     "lib/features/history/presentation/history_detail_screen.dart": {
       "measured": 80.76
-    },
-    "lib/features/history/presentation/history_provider.dart": {
-      "measured": 100.0
     },
     "lib/features/history/presentation/history_screen.dart": {
       "measured": 98.0

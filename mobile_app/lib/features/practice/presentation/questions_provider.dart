@@ -1,6 +1,9 @@
+import 'dart:async';
+
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter/foundation.dart';
 import '../../../core/error/user_message.dart';
+import '../../../shared/events/data_change_events.dart';
 import '../domain/practice_repository.dart';
 import '../data/practice_repository_impl.dart';
 import '../domain/question.dart';
@@ -55,6 +58,13 @@ class QuestionsController extends Notifier<QuestionsState> {
 
   @override
   QuestionsState build() {
+    // 题库被别处改过（questions feature 保存成功）就重拉第一页。版本号由
+    // `shared/events/` 提供，监听放在控制器里而不是列表页里：建题入口不止
+    // 题库列表（AI 草稿页也能直接 push 建题），那时列表页不在树上，
+    // 挂在页面上的 listener 收不到信号，下次打开看到的还是旧列表。
+    ref.listen(questionBankEpochProvider, (_, _) {
+      unawaited(refresh());
+    });
     // Initial fetch
     Future.microtask(() => fetchQuestions());
     return const QuestionsState();

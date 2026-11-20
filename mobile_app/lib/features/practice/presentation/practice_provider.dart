@@ -9,7 +9,7 @@ import '../domain/practice_repository.dart';
 import '../domain/practice_resume.dart';
 import '../domain/question.dart';
 import '../domain/first_principles_response.dart';
-import '../../history/presentation/history_provider.dart';
+import '../../../shared/events/data_change_events.dart';
 import '../../../shared/repositories/wrong_book_repository.dart';
 import 'practice_resume_provider.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
@@ -552,10 +552,13 @@ class PracticeController extends Notifier<PracticeSessionState> {
     // 首页据此隐藏「继续上次练习」，不会点进一个已经结束的会话。
     unawaited(ref.read(practiceResumeControllerProvider.notifier).clear());
     if (hadSession) {
-      // 首页「最近练习」与错题数不能沿用练习前的列表：练习结束后重新拉一次，
+      // 首页「最近练习」与错题数不能沿用练习前的列表：练习结束后让历史重新拉一次，
       // 而不是把「列表非空」当成数据新鲜（review B6）。首页在 shell 的
-      // IndexedStack 里不会重建，只能靠这份共享状态通知它。
-      unawaited(ref.read(historyControllerProvider.notifier).loadHistory());
+      // IndexedStack 里不会重建，只能靠共享状态通知它。
+      //
+      // 这里只 bump 版本号，不直接持有 history 的控制器（否则 practice 反向依赖
+      // history 的表现层）；`HistoryController` 自己 listen 并重拉第一页。
+      ref.read(historyEpochProvider.notifier).bump();
     }
   }
 }

@@ -7,6 +7,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:mobile_app/core/storage/preferences.dart';
 import 'package:mobile_app/features/history/domain/history_item.dart';
 import 'package:mobile_app/features/history/presentation/history_provider.dart';
+import 'package:mobile_app/shared/events/data_change_events.dart';
 import 'package:mobile_app/features/practice/data/practice_repository_impl.dart';
 import 'package:mobile_app/features/practice/domain/practice_resume.dart';
 import 'package:mobile_app/features/practice/domain/question.dart';
@@ -537,20 +538,91 @@ void main() {
     });
   });
 
+  group('本地存储故障不炸练习（断点可丢，练习不能挂）', () {
+    test('读盘失败：按「没有断点」处理，不抛', () async {
+      final store = FakePreferencesStore(readError: StateError('disk gone'));
+      final fresh = ProviderContainer(
+        overrides: [preferencesStoreProvider.overrideWithValue(store)],
+      );
+      addTearDown(fresh.dispose);
+
+      await fresh.read(practiceResumeControllerProvider.notifier).restore();
+
+      expect(fresh.read(practiceResumeControllerProvider), isNull);
+    });
+
+    test('落盘失败：内存状态照常更新（首页能显示「继续上次练习」）', () async {
+      final store = FakePreferencesStore(writeError: StateError('disk full'));
+      final fresh = ProviderContainer(
+        overrides: [preferencesStoreProvider.overrideWithValue(store)],
+      );
+      addTearDown(fresh.dispose);
+
+      final controller = fresh.read(practiceResumeControllerProvider.notifier);
+      await controller.save(
+        PracticeResume(
+          sessionId: 'session_9',
+          answers: const <ResumeAnswer>[],
+          nextIndex: 0,
+          total: 8,
+          userId: '1',
+          savedAt: DateTime.now(),
+        ),
+      );
+
+      expect(
+        fresh.read(practiceResumeControllerProvider)?.sessionId,
+        'session_9',
+        reason: '写盘失败只影响「下次能否续练」，不该把本次练习的状态一起丢掉',
+      );
+      expect(store.values, isEmpty);
+    });
+
+    test('清除失败：内存状态照样清空（作废的入口不能留在首页）', () async {
+      final store = FakePreferencesStore(writeError: StateError('disk full'));
+      final fresh = ProviderContainer(
+        overrides: [preferencesStoreProvider.overrideWithValue(store)],
+      );
+      addTearDown(fresh.dispose);
+
+      final controller = fresh.read(practiceResumeControllerProvider.notifier);
+      await controller.save(
+        PracticeResume(
+          sessionId: 'session_9',
+          answers: const <ResumeAnswer>[],
+          nextIndex: 0,
+          total: 8,
+          userId: '1',
+          savedAt: DateTime.now(),
+        ),
+      );
+      expect(fresh.read(practiceResumeControllerProvider), isNotNull);
+
+      await controller.clear();
+
+      expect(fresh.read(practiceResumeControllerProvider), isNull);
+    });
+  });
+
   group('练习结束后的首页数据（review B6/B7）', () {
-    test('reset 让首页历史重新拉取', () async {
+    // 练习结束不再直接调 `historyControllerProvider.loadHistory()`（那会让
+    // practice 反向依赖 history 的表现层），而是 bump `historyEpochProvider`；
+    // `HistoryController` 自己 listen 并重拉第一页。
+    // 「bump 真的触发重拉」由 `history_provider_test.dart` 用真控制器验证，
+    // 这里只守产生方：该 bump 的时候 bump、不该打扰的时候不动。
+    test('reset bump 历史版本号（首页据此重拉「最近练习」）', () async {
       final controller = container.read(practiceControllerProvider.notifier);
       await controller.createSession(limit: 3);
       await flush();
-      final before = history.loadCalls;
+      final before = container.read(historyEpochProvider);
 
       controller.reset();
       await flush();
 
       expect(
-        history.loadCalls,
+        container.read(historyEpochProvider),
         before + 1,
-        reason: '练习结束要重新取「最近练习」，不能沿用练习前的列表',
+        reason: '练习结束要通知历史重取「最近练习」，不能沿用练习前的列表',
       );
     });
 
@@ -559,7 +631,7 @@ void main() {
       controller.reset();
       await flush();
 
-      expect(history.loadCalls, 0);
+      expect(container.read(historyEpochProvider), 0);
     });
 
     test('作答提交成功后错题总数失效（首页角标能更新）', () async {

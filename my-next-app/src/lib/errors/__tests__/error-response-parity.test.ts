@@ -115,8 +115,7 @@ describe("补血统的兜底口径（不写 instanceof 分支时）", () => {
     const reservedError = await renderError(new ReservedExternalIdError([2]));
     expect(reservedError.status).toBe(400);
     expect(reservedError.body).toEqual({
-      error:
-        'externalId 不能以 "api:" 开头（该前缀为服务端内容指纹保留）',
+      error: 'externalId 不能以 "api:" 开头（该前缀为服务端内容指纹保留）',
       code: "questions.external-id.reserved",
     });
   });

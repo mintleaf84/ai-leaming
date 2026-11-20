@@ -16,5 +16,8 @@ export async function renderError(error: unknown): Promise<RenderedError> {
   const app = new Hono();
   app.get("/probe", (c) => toErrorResponse(c, error, { scope: "parity" }));
   const res = await app.request("/probe");
-  return { status: res.status, body: (await res.json()) as Record<string, unknown> };
+  return {
+    status: res.status,
+    body: (await res.json()) as Record<string, unknown>,
+  };
 }

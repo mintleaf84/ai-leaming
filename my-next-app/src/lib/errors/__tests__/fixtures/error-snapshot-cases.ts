@@ -8,20 +8,46 @@
  *
  * 只放"能安全 new 出来"的类：构造函数参数取最小合法值，不连库、不读环境变量。
  */
-import { AppError, BusinessError, ConflictError, ForbiddenError, NotFoundError, ValidationError } from "@/lib/errors/app-error";
+import {
+  AppError,
+  BusinessError,
+  ConflictError,
+  ForbiddenError,
+  NotFoundError,
+  ValidationError,
+} from "@/lib/errors/app-error";
 import { AiRawResponseError } from "@/lib/ai/types";
 import { RecallDeckValidationError } from "@/lib/recall/schema";
 import { ApiError } from "@/lib/utils/api-client";
 import { AuthError } from "@/lib/services/auth";
-import { BackupPasswordUndecryptableError, BackupSecretMissingError } from "@/lib/services/backup-service";
-import { DraftConfirmError, DraftNotFoundError, DraftStateError } from "@/lib/services/draft-service";
+import {
+  BackupPasswordUndecryptableError,
+  BackupSecretMissingError,
+} from "@/lib/services/backup-service";
+import {
+  DraftConfirmError,
+  DraftNotFoundError,
+  DraftStateError,
+} from "@/lib/services/draft-service";
 import { InvalidQuestionIdsError } from "@/lib/services/import-service";
-import { PdfImportStorageError, PdfImportTaskNotFoundError } from "@/lib/services/pdf-import";
+import {
+  PdfImportStorageError,
+  PdfImportTaskNotFoundError,
+} from "@/lib/services/pdf-import";
 import { PracticeSessionNotFoundError } from "@/lib/services/practice";
 import { ReservedExternalIdError } from "@/lib/services/question-batch";
-import { QuestionForbiddenError, QuestionValidationError } from "@/lib/services/question";
-import { RecallImportError, RecallNotFoundError } from "@/lib/services/recall-import";
-import { RecallCardNotFoundError, RecallServiceError } from "@/lib/services/recall";
+import {
+  QuestionForbiddenError,
+  QuestionValidationError,
+} from "@/lib/services/question";
+import {
+  RecallImportError,
+  RecallNotFoundError,
+} from "@/lib/services/recall-import";
+import {
+  RecallCardNotFoundError,
+  RecallServiceError,
+} from "@/lib/services/recall";
 import { DryRunRollback } from "@/lib/services/dry-run";
 
 export interface ErrorSnapshotCase {
@@ -43,15 +69,24 @@ export const ERROR_SNAPSHOT_CASES: ErrorSnapshotCase[] = [
   {
     name: "RecallDeckValidationError",
     make: () =>
-      new RecallDeckValidationError(["cards[0]: 题干为空", "cards[1]: 答案为空"]),
+      new RecallDeckValidationError([
+        "cards[0]: 题干为空",
+        "cards[1]: 答案为空",
+      ]),
   },
-  { name: "BackupSecretMissingError", make: () => new BackupSecretMissingError() },
+  {
+    name: "BackupSecretMissingError",
+    make: () => new BackupSecretMissingError(),
+  },
   {
     name: "BackupPasswordUndecryptableError",
     make: () => new BackupPasswordUndecryptableError(),
   },
   { name: "DraftNotFoundError", make: () => new DraftNotFoundError("draft-1") },
-  { name: "DraftStateError", make: () => new DraftStateError("草稿状态已变化") },
+  {
+    name: "DraftStateError",
+    make: () => new DraftStateError("草稿状态已变化"),
+  },
   {
     name: "DraftConfirmError",
     make: () => new DraftConfirmError(["items[0]: 内容为空"]),
@@ -72,7 +107,11 @@ export const ERROR_SNAPSHOT_CASES: ErrorSnapshotCase[] = [
   { name: "QuestionForbiddenError", make: () => new QuestionForbiddenError() },
   {
     name: "RecallImportError",
-    make: () => new RecallImportError("未知的冲突策略：x", { kind: "validation", code: "recall.import.bad-strategy" }),
+    make: () =>
+      new RecallImportError("未知的冲突策略：x", {
+        kind: "validation",
+        code: "recall.import.bad-strategy",
+      }),
   },
   {
     name: "RecallNotFoundError",
@@ -114,5 +153,8 @@ export const ERROR_SNAPSHOT_CASES: ErrorSnapshotCase[] = [
   { name: "string", make: () => "字符串错误" },
   { name: "undefined", make: () => undefined },
   { name: "null", make: () => null },
-  { name: "plainObject", make: () => ({ code: "weird", message: "非 Error 对象" }) },
+  {
+    name: "plainObject",
+    make: () => ({ code: "weird", message: "非 Error 对象" }),
+  },
 ];

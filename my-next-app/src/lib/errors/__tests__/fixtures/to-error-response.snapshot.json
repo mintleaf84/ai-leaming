@@ -53,10 +53,7 @@
     "body": {
       "error": "卡组内容校验失败",
       "code": "recall.deck.invalid",
-      "issues": [
-        "cards[0]: 题干为空",
-        "cards[1]: 答案为空"
-      ],
+      "issues": ["cards[0]: 题干为空", "cards[1]: 答案为空"],
       "issueCount": 2
     }
   },
@@ -98,9 +95,7 @@
     "body": {
       "error": "存在无法写入的草稿条目",
       "code": "draft.confirm.invalid",
-      "issues": [
-        "items[0]: 内容为空"
-      ],
+      "issues": ["items[0]: 内容为空"],
       "issueCount": 1
     }
   },
@@ -134,9 +129,7 @@
     "body": {
       "error": "题目内容校验失败",
       "code": "question.validation",
-      "issues": [
-        "content: 太短"
-      ],
+      "issues": ["content: 太短"],
       "issueCount": 1
     }
   },

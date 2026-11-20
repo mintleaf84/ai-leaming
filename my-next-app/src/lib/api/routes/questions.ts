@@ -1,7 +1,7 @@
 import { OpenAPIHono, createRoute, z } from "@hono/zod-openapi";
 import { questionService } from "@/lib/services/question";
 import { authMiddleware, getCurrentUser } from "@/lib/api/middlewares/auth";
-import { parsePagination } from "@/lib/api/pagination";
+import { parsePageParams } from "@/lib/api/pagination";
 import { toErrorResponse } from "@/lib/api/error-response";
 import logger from "@/lib/logger";
 
@@ -66,12 +66,13 @@ const listRoute = createRoute({
 
 app.openapi(listRoute, async (c) => {
   const { page, limit, search, type } = c.req.valid("query");
-  // 分页统一走共享实现：非法值回落默认、上限截断，避免 NaN 下沉到 SQL
-  const { limit: limitNum } = parsePagination({ limit });
-  const pageNum = Math.max(1, parseInt(page, 10) || 1);
+  // 分页统一走共享实现：`page` 非法/<1 → 1，`limit` 非法/<1 → 20、上限 100，
+  // offset 一并算好（不再自己 `(pageNum-1)*limitNum`，避免负数 offset 下沉到 SQL）。
+  // query 参数名仍是 `page`/`limit`，与既有客户端契约一致。
+  const { pageSize: limitNum, offset } = parsePageParams({ page, limit });
 
   const result = await questionService.list({
-    offset: (pageNum - 1) * limitNum,
+    offset,
     limit: limitNum,
     search,
     type: type ? [type] : undefined,

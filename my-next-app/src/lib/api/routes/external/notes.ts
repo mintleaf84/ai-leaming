@@ -4,11 +4,13 @@
  * 拆分自 `routes/external.ts`；路径、方法、schema、中间件与错误文案均未改动。
  */
 import { OpenAPIHono, createRoute, z } from "@hono/zod-openapi";
-import { drizzleDb, drizzleSchema } from "@/lib/db";
-import { and, eq } from "drizzle-orm";
 import { logger } from "@/lib/logger";
 import { knowledgeService } from "@/lib/services/knowledge";
 import { mindmapService } from "@/lib/services/mindmap";
+import {
+  findMindmapForUser,
+  findNoteForUser,
+} from "@/lib/services/external/notes-service";
 import { parsePagination } from "@/lib/api/pagination";
 import {
   PaginationMetaSchema,
@@ -162,18 +164,10 @@ app.openapi(notesDetailRoute, async (c) => {
     return c.json({ error: "笔记 ID 必须是正整数" }, 400);
   }
 
-  // 这里直接查库而不是复用 knowledgeService.getNoteDetail：后者用 throw Error
-  // 表达"不存在"，路由层只能靠匹配错误文案来分辨 404，文案一改就静默变成 500
-  const [note] = await drizzleDb
-    .select()
-    .from(drizzleSchema.notes)
-    .where(
-      and(
-        eq(drizzleSchema.notes.id, noteId),
-        eq(drizzleSchema.notes.user_id, identity.effectiveUserId),
-      ),
-    )
-    .limit(1);
+  // 这里不走 knowledgeService.getNoteDetail：后者用 throw Error 表达"不存在"，
+  // 路由层只能靠匹配错误文案来分辨 404，文案一改就静默变成 500。
+  // 改调非抛出的归属查询（同一句 SQL，不存在为 null）
+  const note = await findNoteForUser(identity.effectiveUserId, noteId);
 
   if (!note) {
     return c.json({ error: `笔记不存在：${noteId}` }, 404);
@@ -289,16 +283,7 @@ app.openapi(mindmapDetailRoute, async (c) => {
     return c.json({ error: "导图 ID 必须是正整数" }, 400);
   }
 
-  const [row] = await drizzleDb
-    .select()
-    .from(drizzleSchema.mindmaps)
-    .where(
-      and(
-        eq(drizzleSchema.mindmaps.id, mindmapId),
-        eq(drizzleSchema.mindmaps.user_id, identity.effectiveUserId),
-      ),
-    )
-    .limit(1);
+  const row = await findMindmapForUser(identity.effectiveUserId, mindmapId);
 
   if (!row) {
     return c.json({ error: `导图不存在：${mindmapId}` }, 404);

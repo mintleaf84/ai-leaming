@@ -1,8 +1,4 @@
 {
   "description": "路由层直连 db 的存量清单（scripts/audit-layering.cjs）。只减不增：修好一个就 --update 删一条；确需新增只能用 --allow-add=<path> --reason=\"<理由>\" 并在 PR 里说明。测试文件不在扫描范围内。",
-  "files": {
-    "src/lib/api/routes/external/notes.ts": "external.ts 拆分后的原样搬移，待迁到 services/external-*.ts（原白名单条目 routes/external.ts 的等价改写）",
-    "src/lib/api/routes/external/questions.ts": "external.ts 拆分后的原样搬移，待迁到 services/external-*.ts（原白名单条目 routes/external.ts 的等价改写）",
-    "src/lib/api/routes/external/srs.ts": "external.ts 拆分后的原样搬移，待迁到 services/external-*.ts（原白名单条目 routes/external.ts 的等价改写）"
-  }
+  "files": {}
 }

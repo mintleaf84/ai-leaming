@@ -329,43 +329,8 @@ app.openapi(submitRoute, async (c) => {
 
 // --- First Principles Logic ---
 
-import { drizzleDb, drizzleSchema } from "@/lib/db";
-import { eq, sql } from "drizzle-orm";
 import { generateTextWrapper } from "@/lib/ai/client";
 import { checkAndConsumeQuota } from "@/lib/billing/subscription-service";
-
-// 确保缓存表存在 (在 LibSQL 环境下，建议通过迁移文件预创表，这里保留作为兜底，改为异步)
-async function ensureCacheTable() {
-  try {
-    await drizzleDb.run(sql`
-            CREATE TABLE IF NOT EXISTS first_principles_cache (
-                id INTEGER PRIMARY KEY AUTOINCREMENT,
-                question_hash TEXT UNIQUE NOT NULL,
-                analysis TEXT NOT NULL,
-                created_at DATETIME DEFAULT CURRENT_TIMESTAMP
-            );
-        `);
-    await drizzleDb.run(
-      sql`CREATE INDEX IF NOT EXISTS idx_fp_cache_hash ON first_principles_cache(question_hash);`,
-    );
-  } catch (e) {
-    // 缓存表创建失败不阻塞本次分析（下方按"无缓存"路径继续）
-    log.error("[FirstPrinciples] 创建缓存表失败:", e);
-    return;
-  }
-}
-
-// 生成内容哈希
-function generateHash(content: string): string {
-  const normalized = content.trim().slice(0, 100) + content.length;
-  let hash = 0;
-  for (let i = 0; i < normalized.length; i++) {
-    const char = normalized.charCodeAt(i);
-    hash = (hash << 5) - hash + char;
-    hash = hash & hash;
-  }
-  return hash.toString(36);
-}
 
 const FirstPrinciplesSchema = z.object({
   questionContent: z.string(),
@@ -412,20 +377,19 @@ app.openapi(firstPrinciplesRoute, async (c) => {
     c.req.valid("json");
 
   try {
-    await ensureCacheTable();
-    const cacheKey = generateHash(
-      questionContent + correctAnswer + (wrongAnswer || ""),
+    const cacheKey = practiceService.buildFirstPrinciplesCacheKey(
+      questionContent,
+      correctAnswer,
+      wrongAnswer,
     );
 
-    // 检查缓存
-    const [cached] = await drizzleDb
-      .select({ analysis: drizzleSchema.first_principles_cache.analysis })
-      .from(drizzleSchema.first_principles_cache)
-      .where(eq(drizzleSchema.first_principles_cache.question_hash, cacheKey))
-      .limit(1);
+    // 检查缓存（命中不消耗配额）
+    const cached = await practiceService.getCachedFirstPrinciplesAnalysis(
+      cacheKey,
+    );
 
     if (cached) {
-      return c.json({ analysis: cached.analysis, cached: true });
+      return c.json({ analysis: cached, cached: true });
     }
 
     // 检查配额
@@ -478,16 +442,7 @@ ${explanation ? `参考解析：${explanation}` : ""}
 
     // 保存到缓存
     try {
-      await drizzleDb
-        .insert(drizzleSchema.first_principles_cache)
-        .values({
-          question_hash: cacheKey,
-          analysis: text,
-        })
-        .onConflictDoUpdate({
-          target: drizzleSchema.first_principles_cache.question_hash,
-          set: { analysis: text },
-        });
+      await practiceService.saveFirstPrinciplesAnalysis(cacheKey, text);
     } catch (cacheError) {
       // 缓存写失败不影响本次分析结果：显式返回本次生成内容（与落到 catch 之后的路径等价）
       log.error("[FirstPrinciples] 缓存保存失败:", cacheError);

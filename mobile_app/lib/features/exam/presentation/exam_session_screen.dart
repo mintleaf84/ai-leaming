@@ -8,17 +8,17 @@ import 'package:flutter_screenutil/flutter_screenutil.dart';
 
 import '../../../core/navigation/app_nav.dart';
 import '../../../core/theme/app_colors.dart';
-import '../../../core/theme/app_icons.dart';
 import '../../../shared/widgets/state_views.dart';
 import '../data/exam_repository.dart';
 import '../domain/exam_attempt.dart';
 import '../domain/exam_question.dart';
 import '../domain/exam_submit_result.dart';
 import 'exam_error_text.dart';
-import 'exam_format.dart';
 import 'widgets/exam_answer_sheet.dart';
-import 'widgets/exam_question_view.dart';
+import 'widgets/exam_dialogs.dart';
 import 'widgets/exam_result_view.dart';
+import 'widgets/exam_session_app_bar.dart';
+import 'widgets/exam_session_question_pane.dart';
 
 /// 限时作答 + 成绩单。
 ///
@@ -278,24 +278,7 @@ class _ExamSessionScreenState extends ConsumerState<ExamSessionScreen>
     final unanswered = _questions.length - _answeredCount;
     final confirmed = await showDialog<bool>(
       context: context,
-      builder: (dialogContext) => AlertDialog(
-        title: const Text('确认交卷'),
-        content: Text(
-          unanswered > 0
-              ? '还有 $unanswered 道题没作答，未作答会按错计入成绩。交卷后不能修改。'
-              : '全部答完了。交卷后不能修改，确定交卷吗？',
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.of(dialogContext).pop(false),
-            child: const Text('再检查一下'),
-          ),
-          TextButton(
-            onPressed: () => Navigator.of(dialogContext).pop(true),
-            child: const Text('交卷'),
-          ),
-        ],
-      ),
+      builder: (_) => ExamSubmitConfirmDialog(unanswered: unanswered),
     );
     if (confirmed != true || !mounted) return;
     await _submit();
@@ -362,20 +345,7 @@ class _ExamSessionScreenState extends ConsumerState<ExamSessionScreen>
   Future<void> _showAutoSubmitFailure(String message) async {
     final retry = await showDialog<bool>(
       context: context,
-      builder: (dialogContext) => AlertDialog(
-        title: const Text('时间到了'),
-        content: Text('自动交卷没有成功：$message\n可以点「重试」再交一次；不交也不会丢答案，但这场不会计入成绩。'),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.of(dialogContext).pop(false),
-            child: const Text('稍后'),
-          ),
-          TextButton(
-            onPressed: () => Navigator.of(dialogContext).pop(true),
-            child: const Text('重试'),
-          ),
-        ],
-      ),
+      builder: (_) => ExamAutoSubmitFailureDialog(message: message),
     );
     if (retry == true && mounted) {
       await _submit();
@@ -400,21 +370,7 @@ class _ExamSessionScreenState extends ConsumerState<ExamSessionScreen>
     }
     final leave = await showDialog<bool>(
       context: context,
-      builder: (dialogContext) => AlertDialog(
-        title: const Text('离开作答？'),
-        content: const Text('这次作答还没交卷，离开后不会计分，也不会进练习历史。'),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.of(dialogContext).pop(false),
-            child: const Text('继续作答'),
-          ),
-          TextButton(
-            onPressed: () => Navigator.of(dialogContext).pop(true),
-            style: TextButton.styleFrom(foregroundColor: context.colors.error),
-            child: const Text('离开'),
-          ),
-        ],
-      ),
+      builder: (_) => const ExamLeaveConfirmDialog(),
     );
     if (leave == true && mounted) context.backOrHome();
   }
@@ -464,60 +420,26 @@ class _ExamSessionScreenState extends ConsumerState<ExamSessionScreen>
       },
       child: Scaffold(
         backgroundColor: colors.background,
-        appBar: AppBar(
-          elevation: 0,
-          leading: IconButton(
-            tooltip: result != null ? '返回' : '离开作答',
-            icon: Icon(
-              result != null ? AppIcons.arrowBack : AppIcons.close,
-              color: colors.text,
-            ),
-            onPressed: () {
-              if (result != null) {
-                context.backOrHome();
-              } else {
-                unawaited(_confirmLeave());
-              }
-            },
-          ),
-          title: Text(
-            result != null
-                ? '成绩单'
-                : (_paperTitle.isNotEmpty
-                      ? _paperTitle
-                      : (_isTimed ? '限时作答' : '作答')),
-            maxLines: 1,
-            overflow: TextOverflow.ellipsis,
-            style: TextStyle(
-              fontSize: 16.sp,
-              fontWeight: FontWeight.w600,
-              color: colors.text,
-            ),
-          ),
-          centerTitle: true,
-          actions: [
-            if (result == null && !_loading && _loadError == null)
-              Padding(
-                padding: EdgeInsets.only(right: 6.w),
-                child: TextButton(
-                  onPressed: _submitting ? null : _confirmSubmit,
-                  style: TextButton.styleFrom(
-                    foregroundColor: colors.accent,
-                    minimumSize: const Size(48, 44),
-                  ),
-                  child: Text(
-                    '交卷',
-                    style: TextStyle(
-                      fontSize: 14.sp,
-                      fontWeight: FontWeight.w600,
-                    ),
-                  ),
-                ),
-              ),
-            if (result == null && _isTimed && _remaining != null)
-              _TimerBadge(remaining: _remaining!, colors: colors),
-            SizedBox(width: 8.w),
-          ],
+        appBar: ExamSessionAppBar(
+          colors: colors,
+          title: result != null
+              ? '成绩单'
+              : (_paperTitle.isNotEmpty
+                    ? _paperTitle
+                    : (_isTimed ? '限时作答' : '作答')),
+          hasResult: result != null,
+          showSubmit: result == null && !_loading && _loadError == null,
+          submitting: _submitting,
+          timed: _isTimed,
+          remaining: _remaining,
+          onLeading: () {
+            if (result != null) {
+              context.backOrHome();
+            } else {
+              unawaited(_confirmLeave());
+            }
+          },
+          onSubmit: _confirmSubmit,
         ),
         body: _buildBody(colors),
       ),
@@ -554,281 +476,22 @@ class _ExamSessionScreenState extends ConsumerState<ExamSessionScreen>
       );
     }
 
-    return Column(
-      children: [
-        _buildProgress(colors),
-        Expanded(
-          child: SingleChildScrollView(
-            controller: _scrollController,
-            padding: EdgeInsets.fromLTRB(20.w, 12.h, 20.w, 24.h),
-            child: ExamQuestionView(
-              key: ValueKey<int>(question.id),
-              question: question,
-              position: _index + 1,
-              selected: _answers[question.id] ?? '',
-              onSelectOption: (label) => _selectOption(question, label),
-              onTyped: (value) => _setTyped(question, value),
-            ),
-          ),
-        ),
-        _buildBottomBar(colors),
-      ],
-    );
-  }
-
-  Widget _buildProgress(AppColors colors) {
-    final total = _questions.length;
-    return Padding(
-      padding: EdgeInsets.fromLTRB(20.w, 4.h, 20.w, 8.h),
-      child: Column(
-        children: [
-          Row(
-            children: [
-              Expanded(
-                child: Text(
-                  '第 ${_index + 1} / $total 题',
-                  style: TextStyle(
-                    fontSize: 12.sp,
-                    fontWeight: FontWeight.w600,
-                    color: colors.text,
-                    fontFeatures: const <FontFeature>[
-                      FontFeature.tabularFigures(),
-                    ],
-                  ),
-                ),
-              ),
-              Text(
-                '已答 $_answeredCount',
-                style: TextStyle(
-                  fontSize: 11.sp,
-                  color: colors.textSecondary,
-                  fontFeatures: const <FontFeature>[
-                    FontFeature.tabularFigures(),
-                  ],
-                ),
-              ),
-            ],
-          ),
-          SizedBox(height: 6.h),
-          ClipRRect(
-            borderRadius: BorderRadius.circular(4.r),
-            child: LinearProgressIndicator(
-              value: total == 0 ? 0 : (_index + 1) / total,
-              minHeight: 4.h,
-              backgroundColor: colors.surfaceAlt,
-              valueColor: AlwaysStoppedAnimation<Color>(colors.accent),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildBottomBar(AppColors colors) {
-    final isLast = _index >= _questions.length - 1;
-    return Container(
-      padding: EdgeInsets.fromLTRB(16.w, 10.h, 16.w, 10.h),
-      decoration: BoxDecoration(
-        color: colors.surface,
-        border: Border(top: BorderSide(color: colors.border)),
-      ),
-      child: SafeArea(
-        top: false,
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            if (_submitting) ...[
-              Row(
-                children: [
-                  SizedBox(
-                    width: 12.w,
-                    height: 12.w,
-                    child: const CircularProgressIndicator(strokeWidth: 2),
-                  ),
-                  SizedBox(width: 8.w),
-                  Text(
-                    '正在交卷…',
-                    style: TextStyle(
-                      fontSize: 12.sp,
-                      color: colors.textSecondary,
-                    ),
-                  ),
-                ],
-              ),
-              SizedBox(height: 8.h),
-            ] else if (_submitError != null) ...[
-              Row(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Icon(AppIcons.errorOutline, size: 14.sp, color: colors.error),
-                  SizedBox(width: 6.w),
-                  Expanded(
-                    child: Text(
-                      _editingLocked
-                          ? '交卷没成功：$_submitError 答案已锁定，重试会提交刚才那一份。'
-                          : '交卷没成功：$_submitError 答案还在，可以再交一次。',
-                      style: TextStyle(
-                        fontSize: 12.sp,
-                        height: 1.5,
-                        color: colors.error,
-                      ),
-                    ),
-                  ),
-                ],
-              ),
-              SizedBox(height: 8.h),
-            ],
-            Row(
-              children: [
-                Expanded(
-                  child: _BarButton(
-                    label: '上一题',
-                    icon: AppIcons.chevronLeft,
-                    colors: colors,
-                    onPressed: _index > 0 ? () => _goTo(_index - 1) : null,
-                  ),
-                ),
-                SizedBox(width: 8.w),
-                Expanded(
-                  child: _BarButton(
-                    label: '答题卡',
-                    icon: AppIcons.formatListNumbered,
-                    colors: colors,
-                    onPressed: _submitting ? null : _openAnswerSheet,
-                  ),
-                ),
-                SizedBox(width: 8.w),
-                Expanded(
-                  child: SizedBox(
-                    height: 44,
-                    child: isLast
-                        ? FilledButton(
-                            onPressed: _submitting ? null : _confirmSubmit,
-                            style: FilledButton.styleFrom(
-                              backgroundColor: colors.primary,
-                              foregroundColor: colors.onPrimary,
-                              padding: EdgeInsets.zero,
-                              shape: RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(10.r),
-                              ),
-                            ),
-                            child: Text(
-                              '交卷',
-                              style: TextStyle(
-                                fontSize: 13.sp,
-                                fontWeight: FontWeight.w600,
-                              ),
-                            ),
-                          )
-                        : _BarButton(
-                            label: '下一题',
-                            icon: AppIcons.chevronRight,
-                            trailingIcon: true,
-                            colors: colors,
-                            onPressed: _submitting
-                                ? null
-                                : () => _goTo(_index + 1),
-                          ),
-                  ),
-                ),
-              ],
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-}
-
-/// 倒计时徽标：最后一分钟变红。
-class _TimerBadge extends StatelessWidget {
-  const _TimerBadge({required this.remaining, required this.colors});
-
-  final Duration remaining;
-  final AppColors colors;
-
-  @override
-  Widget build(BuildContext context) {
-    final urgent = remaining.inSeconds <= 60;
-    final foreground = urgent ? colors.error : colors.textSecondary;
-    return Semantics(
-      label: '剩余时间 ${formatExamRemaining(remaining) ?? '--'}',
-      child: Container(
-        padding: EdgeInsets.symmetric(horizontal: 8.w, vertical: 4.h),
-        decoration: BoxDecoration(
-          color: urgent ? colors.errorContainer : colors.surfaceAlt,
-          borderRadius: BorderRadius.circular(6.r),
-        ),
-        child: Row(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Icon(AppIcons.accessTime, size: 13.sp, color: foreground),
-            SizedBox(width: 4.w),
-            Text(
-              formatExamRemaining(remaining) ?? '--:--',
-              style: TextStyle(
-                fontSize: 12.sp,
-                fontWeight: FontWeight.w700,
-                color: foreground,
-                fontFeatures: const <FontFeature>[FontFeature.tabularFigures()],
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-}
-
-/// 底部动作按钮（上一题/答题卡/下一题共用）。
-class _BarButton extends StatelessWidget {
-  const _BarButton({
-    required this.label,
-    required this.icon,
-    required this.colors,
-    required this.onPressed,
-    this.trailingIcon = false,
-  });
-
-  final String label;
-  final IconData icon;
-  final AppColors colors;
-  final VoidCallback? onPressed;
-  final bool trailingIcon;
-
-  @override
-  Widget build(BuildContext context) {
-    final children = <Widget>[
-      Icon(icon, size: 16.sp),
-      SizedBox(width: 2.w),
-      Flexible(
-        child: Text(
-          label,
-          maxLines: 1,
-          overflow: TextOverflow.ellipsis,
-          style: TextStyle(fontSize: 13.sp, fontWeight: FontWeight.w500),
-        ),
-      ),
-    ];
-    return SizedBox(
-      height: 44,
-      child: OutlinedButton(
-        onPressed: onPressed,
-        style: OutlinedButton.styleFrom(
-          foregroundColor: colors.text,
-          side: BorderSide(color: colors.border),
-          padding: EdgeInsets.symmetric(horizontal: 6.w),
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(10.r),
-          ),
-        ),
-        child: Row(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: trailingIcon
-              ? children.reversed.toList(growable: false)
-              : children,
-        ),
-      ),
+    return ExamSessionQuestionPane(
+      colors: colors,
+      index: _index,
+      total: _questions.length,
+      answeredCount: _answeredCount,
+      question: question,
+      selected: _answers[question.id] ?? '',
+      scrollController: _scrollController,
+      submitting: _submitting,
+      submitError: _submitError,
+      editingLocked: _editingLocked,
+      onSelectOption: _selectOption,
+      onTyped: _setTyped,
+      onGoTo: _goTo,
+      onOpenAnswerSheet: _openAnswerSheet,
+      onConfirmSubmit: _confirmSubmit,
     );
   }
 }

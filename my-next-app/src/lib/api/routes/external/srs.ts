@@ -4,14 +4,14 @@
  * 拆分自 `routes/external.ts`；路径、方法、schema、中间件与错误文案均未改动。
  */
 import { OpenAPIHono, createRoute, z } from "@hono/zod-openapi";
-import { drizzleDb, drizzleSchema } from "@/lib/db";
-import { and, eq } from "drizzle-orm";
 import { logger } from "@/lib/logger";
 import { archiveCard, unarchiveCard } from "@/lib/services/recall";
 import { srsService, summarizeFutureReviews } from "@/lib/services/srs";
 import { toErrorResponse } from "@/lib/api/error-response";
-import { withTransaction } from "@/lib/db/executor";
-import { withKeyedLock } from "@/lib/services/keyed-lock";
+import {
+  questionExists,
+  recordExternalReview,
+} from "@/lib/services/external/srs-service";
 import {
   RateLimitedResponse,
   parsePositiveInt,
@@ -300,55 +300,24 @@ app.openapi(srsReviewRoute, async (c) => {
 
   // 题目存在性先判：srsService 用 throw Error 表达"题目不存在"，
   // 路由层没有可靠办法把它与真实故障区分成 404 / 500
-  const [question] = await drizzleDb
-    .select({ id: drizzleSchema.questions.id })
-    .from(drizzleSchema.questions)
-    .where(eq(drizzleSchema.questions.id, body.questionId))
-    .limit(1);
-  if (!question) {
+  if (!(await questionExists(body.questionId))) {
     return c.json({ error: `题目不存在：${body.questionId}` }, 404);
   }
 
   const answeredAtIso = answeredAt.toISOString();
 
   try {
-    // 读-判-写必须在同一事务里，并按 (user, question) 串行：
+    // 读-判-写必须在同一事务里，并按 (user, question) 串行（见 services/external/srs-service.ts）：
     // 否则两笔并发请求会各自读到同一份旧状态、各自 +1，后写的把前者覆盖掉
-    // （评审指出的两条竞态）；阅读速度的采样也走同一个 exec，调度失败时一起回滚
-    const outcome = await withKeyedLock(
-      `srs:${userId}:${body.questionId}`,
-      () =>
-        withTransaction(async (exec) => {
-          const [existing] = await exec
-            .select()
-            .from(drizzleSchema.question_srs)
-            .where(
-              and(
-                eq(drizzleSchema.question_srs.user_id, userId),
-                eq(drizzleSchema.question_srs.question_id, body.questionId),
-              ),
-            )
-            .limit(1);
-
-          // 幂等：answeredAt 落到 last_review 上，同一时间重试直接返回当前状态。
-          // 不用客户端 UUID 是为了不新增一张表 —— 复习本来就是"一个时间点一条"。
-          if (existing?.last_review === answeredAtIso) {
-            return { duplicate: true as const, row: existing };
-          }
-
-          const item = await srsService.updateQuestionSrs(
-            userId,
-            body.questionId,
-            body.isCorrect,
-            body.durationMs ?? 0,
-            answeredAt,
-            undefined,
-            body.userAnswerLength,
-            exec,
-          );
-          return { duplicate: false as const, item };
-        }),
-    );
+    const outcome = await recordExternalReview({
+      userId,
+      questionId: body.questionId,
+      isCorrect: body.isCorrect,
+      durationMs: body.durationMs ?? 0,
+      answeredAt,
+      answeredAtIso,
+      userAnswerLength: body.userAnswerLength,
+    });
 
     if (outcome.duplicate) {
       return c.json(

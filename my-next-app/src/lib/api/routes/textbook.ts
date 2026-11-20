@@ -3,9 +3,6 @@ import { getErrorMessage } from "@/lib/utils/error";
 import { textbookService } from "@/lib/services/textbook";
 import { authMiddleware } from "@/lib/api/middlewares/auth";
 import { requireRole } from "@/lib/auth/auth";
-import { drizzleDb } from "@/lib/db";
-import { textbook_chapters } from "@/lib/db/drizzle-schema";
-import { eq, count } from "drizzle-orm";
 import { logger } from "@/lib/logger";
 
 const app = new OpenAPIHono();
@@ -60,11 +57,7 @@ app.openapi(listTextbookDef, async (c) => {
   // 为每本教材附带章节数量
   const result = await Promise.all(
     textbooks.map(async (tb) => {
-      const chapterRow = await drizzleDb
-        .select({ value: count() })
-        .from(textbook_chapters)
-        .where(eq(textbook_chapters.textbook_id, tb.id))
-        .get();
+      const chapterCount = await textbookService.countChapters(tb.id);
 
       return {
         id: tb.id,
@@ -72,7 +65,7 @@ app.openapi(listTextbookDef, async (c) => {
         author: tb.author,
         description: tb.description,
         cover_url: tb.cover_url,
-        chapterCount: chapterRow?.value || 0,
+        chapterCount,
         created_at: tb.created_at,
       };
     }),

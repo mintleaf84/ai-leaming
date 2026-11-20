@@ -200,4 +200,28 @@ void main() {
     expect(find.text('教综模考 11月20日'), findsOneWidget);
     expect(find.text('加载失败'), findsNothing);
   });
+
+  testWidgets('已有数据时刷新失败：列表保留，另给一条提示条', (tester) async {
+    var fail = false;
+    final adapter = ExamStubAdapter((_) {
+      if (fail) {
+        return examJson(<String, dynamic>{'message': '断了'}, statusCode: 500);
+      }
+      return examJson(examPaperPageJson());
+    });
+    await pumpList(tester, adapter);
+
+    expect(find.text('教综模考 11月20日'), findsOneWidget);
+
+    fail = true;
+    await tester.tap(find.byTooltip('刷新试卷列表'));
+    await settle(tester);
+
+    expect(find.text('加载失败'), findsNothing, reason: '有旧数据就不该整屏报错');
+    expect(find.text('教综模考 11月20日'), findsOneWidget, reason: '旧数据不丢');
+
+    await tester.drag(find.byType(ListView), const Offset(0, -320));
+    await tester.pumpAndSettle();
+    expect(find.textContaining('500'), findsOneWidget, reason: '提示条说明这次刷新失败');
+  });
 }

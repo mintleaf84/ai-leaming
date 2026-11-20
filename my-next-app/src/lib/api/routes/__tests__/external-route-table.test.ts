@@ -44,6 +44,11 @@ const USER = 41;
  * 新增接口时同步更新本清单 —— 这是有意的摩擦：移动端/agent 的契约面就这么大。
  */
 const EXTERNAL_PATHS = [
+  // Agent 推题 / 题集（docs/agent-question-set-plan.md §4.1）
+  "/agent/question-sets",
+  "/agent/question-sets/{id}",
+  "/agent/question-sets/{id}/archive",
+  "/agent/question-sets/{id}/results",
   "/knowledge/cards",
   "/mastery",
   "/mindmaps",
@@ -98,6 +103,11 @@ const EXTERNAL_OPERATIONS: Record<string, string[]> = {
   "/stats": ["get"],
   "/wrong-book": ["get"],
   "/wrong-book/stats": ["get"],
+  // Agent 推题 / 题集（挂载在 /api/external/agent 下，作用域 admin）
+  "/agent/question-sets": ["get", "post"],
+  "/agent/question-sets/{id}": ["get"],
+  "/agent/question-sets/{id}/archive": ["post"],
+  "/agent/question-sets/{id}/results": ["get"],
 };
 
 function createRootApp() {
@@ -138,8 +148,8 @@ describe("外部 API 路由表", () => {
     const paths = Object.keys(operations);
 
     expect(paths).toEqual([...EXTERNAL_PATHS]);
-    expect(paths.length).toBe(25);
-    expect(paths[0]).toBe("/knowledge/cards");
+    expect(paths.length).toBe(29);
+    expect(paths[0]).toBe("/agent/question-sets");
     expect(paths.at(-1)).toBe("/wrong-book/stats");
 
     // 每个路径的方法也要对齐：漏挂一个方法同样是契约破坏
@@ -153,7 +163,7 @@ describe("外部 API 路由表", () => {
       (sum, path) => sum + operations[path].length,
       0,
     );
-    expect(operationCount).toBe(29);
+    expect(operationCount).toBe(34);
   });
 
   it("每个路径都被真正挂载（不是框架默认 404）", async () => {
@@ -201,7 +211,7 @@ describe("外部 API 路由表", () => {
       }
     }
 
-    expect(reachability).toHaveLength(29);
+    expect(reachability).toHaveLength(34);
     expect(reachability[0]).toEqual({
       method: "GET",
       path: "/knowledge/cards",

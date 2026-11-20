@@ -104,6 +104,19 @@ const MODULES: Record<string, ModuleRule> = {
     scope: "user",
     crossUserTest: "src/lib/api/routes/__tests__/practice-ownership.test.ts",
   },
+  // AI 题集（docs/agent-question-set-plan.md §4.2）：题集归属用户
+  // （agent_question_sets.user_id），他人题集/结果一律 404；
+  // Agent 侧同一批数据的写读接口（API key 必须绑 userId）也按 user 域登记。
+  "agent-sets": {
+    mount: "/api/agent-sets",
+    scope: "user",
+    crossUserTest: "src/lib/api/routes/__tests__/agent-sets.test.ts",
+  },
+  "external-agent-sets": {
+    mount: "/api/external/agent",
+    scope: "user",
+    crossUserTest: "src/lib/api/routes/__tests__/agent-sets.test.ts",
+  },
   // 试卷归属用户（exam_papers.user_id）；他人试卷 / 他人的 exam session 一律 404，
   // 跨用户断言见 exam.test.ts 的「跨用户」段
   exam: {

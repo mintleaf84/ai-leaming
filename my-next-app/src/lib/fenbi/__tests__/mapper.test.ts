@@ -13,7 +13,7 @@ import type { FenbiExerciseDetail, FenbiQuestionsPayload } from "../client";
  *
  * 断言口径全部来自设计文档 §2.4 / §2.5，不依赖导入器内部实现细节。
  */
-const FIXTURE_PATH = "/tmp/fenbi-fixtures/sample.json";
+const FIXTURE_PATH = path.resolve(__dirname, "fixtures", "sample.json");
 
 interface Sample {
   history: { cursor: number; datas: Array<Record<string, unknown>> };

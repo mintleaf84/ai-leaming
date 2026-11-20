@@ -101,6 +101,10 @@ class FenbiApi {
     if (status == 429) {
       return const FenbiApiException('操作太频繁了，请等一分钟再试。');
     }
+    // `{ error }` 是 4xx 的契约（设计 §5）。5xx 的响应体可能是内部错误原文
+    // （"boom"、堆栈、SQL 片段），照抄上屏等于把服务端内部信息给用户看，
+    // 统一交给 `userMessageOf` 的「服务器出了点问题（500）」。
+    if (status == null || status < 400 || status >= 500) return null;
 
     final map = _asMap(error.response?.data);
     if (map == null) return null;

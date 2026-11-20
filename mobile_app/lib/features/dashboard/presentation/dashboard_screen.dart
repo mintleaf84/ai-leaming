@@ -38,14 +38,15 @@ class DashboardScreen extends HookConsumerWidget {
       return null;
     }, const []);
 
-    // 最近一次练习时间：历史列表为空且没在加载时补一次（首页只读第一页第一条）。
+    // 最近一次练习时间：首页挂载即取一次。
+    //
+    // 不按「列表非空」判断数据新鲜度：练习结束后列表还是练习前的那一份。
+    // 练习结束（`PracticeController.reset`）会主动让历史重新拉取，首页
+    // watch 的是同一份状态，跟着更新（review B6）。
     useEffect(() {
-      final state = ref.read(historyControllerProvider);
-      if (state.items.isEmpty && !state.isLoading && state.error == null) {
-        Future.microtask(
-          () => ref.read(historyControllerProvider.notifier).loadHistory(),
-        );
-      }
+      Future.microtask(
+        () => ref.read(historyControllerProvider.notifier).loadHistory(),
+      );
       return null;
     }, const []);
 
@@ -161,6 +162,7 @@ class DashboardScreen extends HookConsumerWidget {
   /// 「继续上次练习」：回到那一场的断点题。
   ///
   /// 不经过配置页：断点里已经有会话与进度，再让用户选模式/题量是多余的一步。
+  /// 已答记录（题号 + 对错）一并带过去：练习页据此回填结果、定位第一道未答题。
   Widget _buildResumeCard(BuildContext context, PracticeResume resume) {
     final total = resume.total;
     final position = resume.startIndex + 1;
@@ -178,6 +180,7 @@ class DashboardScreen extends HookConsumerWidget {
         extra: <String, dynamic>{
           'sessionId': resume.sessionId,
           'startIndex': resume.startIndex,
+          'answered': resume.answers,
           'mode': resume.mode,
         },
       ),

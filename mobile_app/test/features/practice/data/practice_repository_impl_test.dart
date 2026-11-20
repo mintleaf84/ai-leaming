@@ -36,6 +36,9 @@ class FakeLocalStore implements LocalPracticeStore {
   final Map<String, Question> questions = <String, Question>{};
   Object? questionByIdError;
 
+  /// 本地会话里的题目 id（离线续练用）；null 表示「本地没有这场会话」。
+  List<String>? localQuestionIds;
+
   List<Question>? cachedQuestions;
   Object? cacheError;
 
@@ -68,6 +71,11 @@ class FakeLocalStore implements LocalPracticeStore {
       throw error;
     }
     return questions[id];
+  }
+
+  @override
+  Future<List<String>?> localSessionQuestionIds(String localId) async {
+    return localQuestionIds;
   }
 
   @override
@@ -555,6 +563,60 @@ void main() {
       expect(adapter.requests.single.path, '/practice/session/agent_9');
       expect(session.sessionId, 'agent_9');
       expect(session.questions.single.id, '1');
+    });
+
+    test('local_ 会话从本地记录 + 题目缓存重建，不发 HTTP（离线续练）', () async {
+      store.localQuestionIds = <String>['1', '2'];
+      store.questions['1'] = const Question(
+        id: '1',
+        content: '本地题一',
+        options: <String>['A', 'B'],
+      );
+      store.questions['2'] = const Question(
+        id: '2',
+        content: '本地题二',
+        options: <String>['A', 'B'],
+      );
+
+      final session = await repository.getSession('local_123');
+
+      expect(adapter.requests, isEmpty, reason: '本地会话在服务端不存在，不该打请求');
+      expect(session.sessionId, 'local_123');
+      expect(
+        session.questions.map((q) => q.content),
+        <String>['本地题一', '本地题二'],
+        reason: '题目顺序必须与开练时一致（否则续练落点会错位）',
+      );
+    });
+
+    test('local_ 会话的题面已过期/缺失：明确拒绝，不拿空答案判分', () async {
+      store.localQuestionIds = <String>['1', '2'];
+      store.questions['1'] = const Question(
+        id: '1',
+        content: '本地题一',
+        options: <String>['A', 'B'],
+      );
+
+      await expectLater(
+        repository.getSession('local_123'),
+        throwsA(
+          isA<OfflineCacheUnavailable>().having(
+            (e) => e.userMessage,
+            'userMessage',
+            contains('过期'),
+          ),
+        ),
+      );
+      expect(adapter.requests, isEmpty);
+    });
+
+    test('local_ 会话在本地找不到记录：给出可读原因', () async {
+      store.localQuestionIds = null;
+
+      await expectLater(
+        repository.getSession('local_missing'),
+        throwsA(isA<OfflineCacheUnavailable>()),
+      );
     });
   });
 }

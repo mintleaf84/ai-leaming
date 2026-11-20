@@ -220,6 +220,36 @@ void main() {
       expect(rows.single['mode'], 'random');
       expect(rows.single['question_ids'], '["1"]');
     });
+
+    test('localSessionQuestionIds 按开练顺序返回题号（离线续练的唯一依据）', () async {
+      final localId = await store.createLocalSession(
+        userId: 'u1',
+        mode: 'random',
+        questionIds: const <String>['3', '1', '2'],
+      );
+
+      expect(
+        await store.localSessionQuestionIds(localId),
+        <String>['3', '1', '2'],
+        reason: '顺序必须保留：续练落点按「第一道未答题」计算，顺序变了就错位',
+      );
+    });
+
+    test('localSessionQuestionIds 找不到会话时返回 null（不抛错）', () async {
+      expect(await store.localSessionQuestionIds('local_missing'), isNull);
+    });
+
+    test('localSessionQuestionIds 遇到坏 JSON 返回 null，不让续练崩在解析上', () async {
+      await db.insert('local_sessions', <String, Object?>{
+        'local_id': 'local_bad',
+        'user_id': 'u1',
+        'mode': 'random',
+        'question_ids': '["1",',
+        'started_at': nowMs(),
+      });
+
+      expect(await store.localSessionQuestionIds('local_bad'), isNull);
+    });
   });
 
   group('recordAnswer', () {

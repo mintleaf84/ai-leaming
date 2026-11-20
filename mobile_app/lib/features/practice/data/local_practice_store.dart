@@ -1,5 +1,6 @@
 import 'dart:convert';
 
+import 'package:flutter/foundation.dart';
 import 'package:sqflite/sqflite.dart';
 
 import '../../../core/local/local_db.dart';
@@ -205,6 +206,37 @@ class LocalPracticeStore {
       },
     );
     return localId;
+  }
+
+  /// 取某个本地会话的题目 id 列表（离线续练用）；找不到返回 null。
+  ///
+  /// 离线会话（`local_` 前缀）没有服务端记录，重启后只能靠 local_sessions 里
+  /// 这份 question_ids + 题目缓存重建——否则「继续上次练习」会打到一个必然
+  /// 404 的地址上。
+  Future<List<String>?> localSessionQuestionIds(String localId) async {
+    final db = await _resolveDb();
+    final rows = await db.query(
+      'local_sessions',
+      columns: <String>['question_ids'],
+      where: 'local_id = ?',
+      whereArgs: <Object?>[localId],
+      limit: 1,
+    );
+    if (rows.isEmpty) {
+      return null;
+    }
+    final raw = rows.first['question_ids'];
+    if (raw is! String || raw.isEmpty) {
+      return null;
+    }
+    try {
+      final decoded = jsonDecode(raw);
+      if (decoded is! List) return null;
+      return <String>[for (final id in decoded) id.toString()];
+    } catch (error) {
+      debugPrint('[Practice] 本地会话题目解析失败: $error');
+      return null;
+    }
   }
 
   /// 记录一次作答；同一 (localId, questionId) 重复作答覆盖旧记录。

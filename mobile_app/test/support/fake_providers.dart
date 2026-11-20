@@ -188,6 +188,8 @@ class FakePracticeRepository implements PracticeRepository {
   String sessionId;
   Object? createError;
   Completer<void>? createGate;
+  /// 挂住 `getSession`：用来观察续练的迟到响应（竞态用例）。
+  Completer<void>? getSessionGate;
   Map<String, dynamic> submitResponse;
   Object? submitError;
   Question? detail;
@@ -216,6 +218,10 @@ class FakePracticeRepository implements PracticeRepository {
   @override
   Future<PracticeSession> getSession(String sessionId) async {
     loadedSessions.add(sessionId);
+    final gate = getSessionGate;
+    if (gate != null) {
+      await gate.future;
+    }
     final error = createError;
     if (error != null) throw error;
     return PracticeSession(sessionId: sessionId, questions: questions);

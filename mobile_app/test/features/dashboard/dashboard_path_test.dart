@@ -216,7 +216,11 @@ void main() {
   testWidgets('F5：有断点时首页出「继续上次练习」，点了落到断点题', (tester) async {
     final resume = jsonEncode(<String, dynamic>{
       'sessionId': 'session_9',
-      'answered': 2,
+      'answers': <Map<String, dynamic>>[
+        <String, dynamic>{'id': '1', 'correct': true},
+        <String, dynamic>{'id': '2', 'correct': false},
+      ],
+      'nextIndex': 2,
       'total': 8,
       'mode': 'random',
       'savedAt': DateTime.now().toIso8601String(),

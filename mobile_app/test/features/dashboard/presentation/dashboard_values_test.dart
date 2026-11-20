@@ -1,6 +1,5 @@
 import 'dart:convert';
 
-import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 import 'package:mobile_app/core/storage/preferences.dart';
@@ -106,7 +105,11 @@ void main() {
   testWidgets('有未完成练习：首页出「继续上次练习」并显示进度', (tester) async {
     final resume = jsonEncode(<String, dynamic>{
       'sessionId': 'session_9',
-      'answered': 2,
+      'answers': <Map<String, dynamic>>[
+        <String, dynamic>{'id': '1', 'correct': true},
+        <String, dynamic>{'id': '2', 'correct': false},
+      ],
+      'nextIndex': 2,
       'total': 8,
       'mode': 'random',
       'savedAt': DateTime.now().toIso8601String(),

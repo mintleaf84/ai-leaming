@@ -139,14 +139,39 @@ class PracticeRepositoryImpl implements PracticeRepository {
     }
   }
 
-  /// 按 sessionId 取回待作答题目（错题本「开始练习」用）。
+  /// 按 sessionId 取回待作答题目（错题本「开始练习」/ 首页「继续上次练习」用）。
   /// 后端 `GET /api/practice/session/:sessionId` 返回
   /// `{sessionId, questions[], completedCount, practiceMode}`，
   /// 多出的字段由 json_serializable 忽略。
   @override
   Future<PracticeSession> getSession(String sessionId) async {
+    // 离线会话（`local_` 前缀）在服务端不存在：重启后续练必须从本地会话 +
+    // 题目缓存重建，否则会打到一个必然 404 的地址上（review A4）。
+    if (sessionId.startsWith('local_')) {
+      return _loadLocalSession(sessionId);
+    }
     final response = await _dio.get('/practice/session/$sessionId');
     return PracticeSession.fromJson(response.data as Map<String, dynamic>);
+  }
+
+  /// 从本地会话记录 + 题目缓存重建一场离线练习。
+  ///
+  /// 题面缺失或已过期（> [LocalPracticeStore.cacheMaxAgeDays] 天未联网）时
+  /// 明确拒绝：没有可信答案的题不能拿来继续判分。
+  Future<PracticeSession> _loadLocalSession(String localId) async {
+    final questionIds = await _localStore.localSessionQuestionIds(localId);
+    if (questionIds == null || questionIds.isEmpty) {
+      throw const OfflineCacheUnavailable('本地找不到这场练习的记录，请重新开始一场');
+    }
+    final questions = <Question>[];
+    for (final questionId in questionIds) {
+      final question = await _localStore.questionById(questionId);
+      if (question == null) {
+        throw const OfflineCacheUnavailable('本地题面已过期，联网同步题库后可以继续这场练习');
+      }
+      questions.add(question);
+    }
+    return PracticeSession(sessionId: localId, questions: questions);
   }
 
   @override

@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:mobile_app/features/practice/presentation/practice_provider.dart';
+import 'package:mobile_app/features/practice/domain/practice_resume.dart';
 import 'package:mobile_app/features/practice/domain/question.dart';
 import 'package:mobile_app/shared/widgets/animated_option_card.dart';
 import 'package:mobile_app/shared/skeletons/skeleton_fakes.dart';
@@ -33,12 +34,20 @@ class _PracticeScreenState extends ConsumerState<PracticeScreen> {
     // 不再新建；带 startIndex 时直接落到断点那一题（见 practice_resume.dart）。
     final sessionId = widget.config?['sessionId'] as String?;
     final startIndex = (widget.config?['startIndex'] as int?) ?? 0;
+    // 断点里的已答记录（题号 + 对错）：恢复时回填结果、定位第一道未答题。
+    final answered =
+        (widget.config?['answered'] as List<ResumeAnswer>?) ??
+        const <ResumeAnswer>[];
     final limit = (widget.config?['limit'] as int?) ?? 10;
     final mode = (widget.config?['mode'] as String?) ?? 'random';
     Future.microtask(() {
       final controller = ref.read(practiceControllerProvider.notifier);
       if (sessionId != null && sessionId.isNotEmpty) {
-        controller.loadSession(sessionId, startIndex: startIndex);
+        controller.loadSession(
+          sessionId,
+          startIndex: startIndex,
+          answered: answered,
+        );
       } else {
         controller.createSession(limit: limit, mode: mode);
       }

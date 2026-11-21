@@ -20,6 +20,8 @@ const protectedRoutes = [
   "/exam",
   // AI 题集：外部 Agent 推给个人的批次，练习会话同样按登录用户隔离
   "/agent-sets",
+  // 粉笔同步：绑定的账号与同步记录都是个人数据
+  "/fenbi",
 ];
 const publicRoutes = ["/login", "/register"];
 

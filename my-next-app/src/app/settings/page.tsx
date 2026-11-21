@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useEffect, useState } from "react";
+import Link from "next/link";
 import {
   getSettingsAction,
   updateSettingsAction,
@@ -243,6 +244,20 @@ export default function SettingsPage() {
                   数据管理
                 </h3>
                 <div className="space-y-4">
+                  <div className="p-4 bg-muted/50 rounded-xl border border-border flex items-center justify-between">
+                    <div>
+                      <div className="font-medium text-sm text-foreground">
+                        粉笔同步
+                      </div>
+                      <div className="text-xs text-muted-foreground">
+                        绑定粉笔账号，把知识点练习记录同步过来
+                      </div>
+                    </div>
+                    <Button variant="outline" size="sm" asChild>
+                      <Link href="/fenbi">去绑定</Link>
+                    </Button>
+                  </div>
+
                   <div className="p-4 bg-muted/50 rounded-xl border border-border flex items-center justify-between">
                     <div>
                       <div className="font-medium text-sm text-foreground">

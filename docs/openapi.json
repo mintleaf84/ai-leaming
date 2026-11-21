@@ -10456,9 +10456,12 @@
                     },
                     "qrContent": {
                       "type": "string"
+                    },
+                    "qrDataUrl": {
+                      "type": "string"
                     }
                   },
-                  "required": ["lgtoken", "qrContent"],
+                  "required": ["lgtoken", "qrContent", "qrDataUrl"],
                   "type": "object"
                 }
               }

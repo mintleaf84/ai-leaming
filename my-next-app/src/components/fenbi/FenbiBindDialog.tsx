@@ -214,9 +214,9 @@ function QrcodeSession({
     };
   }, [ticket, qrState, onLinked, onClose]);
 
-  const qrImageSrc = ticket
-    ? `https://api.qrserver.com/v1/create-qr-code/?size=224x224&margin=8&data=${encodeURIComponent(ticket.qrContent)}`
-    : null;
+  // 二维码由服务端渲染成 data URL：第三方图片服务在受限网络下不可达
+  // （曾导致这里是一块空白），也没必要把登录 token 发给别人。
+  const qrImageSrc = ticket?.qrDataUrl ?? null;
 
   return (
     <div className="space-y-4">
@@ -274,12 +274,10 @@ function QrcodeSession({
                 aria-label="粉笔登录二维码，请用粉笔 App 扫码"
                 className="rounded-lg bg-white p-3"
               >
-                {/* 临时方案：项目里没有引入二维码库，先借公共服务渲染这张图。
-                    上线前应换成自建二维码组件（qrContent 是粉笔给的原始链接）。 */}
-                {/* eslint-disable-next-line @next/next/no-img-element -- 临时二维码渲染，见上方注释 */}
+                {/* eslint-disable-next-line @next/next/no-img-element -- data URL 的 SVG，用 next/image 反而要走 remotePatterns */}
                 <img
                   src={qrImageSrc}
-                  alt=""
+                  alt="粉笔登录二维码"
                   width={224}
                   height={224}
                   className="h-56 w-56"

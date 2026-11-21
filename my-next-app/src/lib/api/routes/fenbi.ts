@@ -27,6 +27,7 @@
 import { OpenAPIHono, createRoute, z } from "@hono/zod-openapi";
 import type { Context } from "hono";
 
+import { buildQrDataUrl } from "@/lib/fenbi/qr-image";
 import { authMiddleware, getCurrentUser } from "@/lib/api/middlewares/auth";
 import { toErrorResponse } from "@/lib/api/error-response";
 import { BusinessError, isAppError } from "@/lib/errors/app-error";
@@ -299,6 +300,14 @@ app.openapi(linkDef, async (c) => {
 const QrCodeSchema = z.object({
   lgtoken: z.string(),
   qrContent: z.string(),
+  /**
+   * 二维码图片（`data:image/svg+xml;base64,…`）。
+   *
+   * 服务端渲染而不是让前端拼第三方图片服务：受限网络下 api.qrserver.com
+   * 不可达，界面上就是一块空白（已发生的真实故障）；而且登录 token 没必要
+   * 发给第三方。见 `lib/fenbi/qr-image.ts`。
+   */
+  qrDataUrl: z.string(),
 });
 
 const qrcodeDef = createRoute({
@@ -318,7 +327,8 @@ const qrcodeDef = createRoute({
 app.openapi(qrcodeDef, async (c) => {
   try {
     const qr = await genQrCode();
-    return c.json(qr, 200);
+    const qrDataUrl = await buildQrDataUrl(qr.qrContent);
+    return c.json({ ...qr, qrDataUrl }, 200);
   } catch (error) {
     // audit-allow: 已交给 respondError 统一映射（它内部会记结构化日志并回中文文案）
     return respondError(c, error, "fenbi.qrcode");

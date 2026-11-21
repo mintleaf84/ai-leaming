@@ -47,6 +47,8 @@ export type FenbiQrcodeState = "pending" | "scanned" | "confirmed" | "expired";
 export interface FenbiQrcodeTicket {
   lgtoken: string;
   qrContent: string;
+  /** 服务端渲染好的二维码（data URL），前端直接当图片用，不走第三方服务 */
+  qrDataUrl: string;
 }
 
 export const FENBI_STATUS_QUERY_KEY = ["fenbi-status"] as const;
@@ -297,10 +299,14 @@ export async function createFenbiQrcode(): Promise<FenbiQrcodeTicket> {
       method: "POST",
     },
   );
-  if (!payload.lgtoken || !payload.qrContent) {
+  if (!payload.lgtoken || !payload.qrContent || !payload.qrDataUrl) {
     throw createRequestError("二维码没有生成成功，请重新获取。", 0);
   }
-  return { lgtoken: payload.lgtoken, qrContent: payload.qrContent };
+  return {
+    lgtoken: payload.lgtoken,
+    qrContent: payload.qrContent,
+    qrDataUrl: payload.qrDataUrl,
+  };
 }
 
 function normalizeQrcodeState(value: unknown): FenbiQrcodeState {

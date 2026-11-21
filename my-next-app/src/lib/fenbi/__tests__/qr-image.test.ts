@@ -20,7 +20,9 @@ function decode(dataUrl: string): string {
 
 describe("buildQrDataUrl", () => {
   it("返回自包含的 SVG data URL，且不引用任何外部域名", async () => {
-    const dataUrl = await buildQrDataUrl("https://fenbi.example.com/s?t=abc123");
+    const dataUrl = await buildQrDataUrl(
+      "https://fenbi.example.com/s?t=abc123",
+    );
 
     expect(dataUrl.startsWith("data:image/svg+xml;base64,")).toBe(true);
     expect(dataUrl).not.toContain("qrserver");

@@ -44,7 +44,12 @@ interface ModuleRule {
  * 七条全部补齐（见各条目的 `crossUserTest`），本清单已清空。
  * 将来新增用户私有模块时：要么直接补跨用户测试，要么写进这里并说明拿什么 id 定位资源。
  */
-const KNOWN_UNCOVERED: Record<string, string> = {};
+const KNOWN_UNCOVERED: Record<string, string> = {
+  // 粉笔绑定是"每用户一条"的单例（fenbi_accounts.user_id 唯一），没有资源 id；
+  // 隔离由 user_id 唯一索引 + 路由层 getCurrentUser 保证。待补一条双 JWT 的
+  // 行为用例（CI 环境可跑真实 SQLite，本地 glibc 2.17 跑不了 libsql）。
+  fenbi: "单例绑定无资源 id，隔离由 user_id 唯一索引保证",
+};
 
 /** 每个路由模块的归属语义。新增模块时必须在这里登记，否则测试失败。 */
 const MODULES: Record<string, ModuleRule> = {
@@ -84,6 +89,10 @@ const MODULES: Record<string, ModuleRule> = {
     scope: "user",
     crossUserTest: "src/lib/api/routes/__tests__/knowledge-ownership.test.ts",
   },
+  fenbi: {
+    mount: "/api/fenbi",
+    scope: "user",
+  },
   mastery: {
     mount: "/api/mastery",
     scope: "user",
@@ -103,6 +112,19 @@ const MODULES: Record<string, ModuleRule> = {
     mount: "/api/practice",
     scope: "user",
     crossUserTest: "src/lib/api/routes/__tests__/practice-ownership.test.ts",
+  },
+  // AI 题集（docs/agent-question-set-plan.md §4.2）：题集归属用户
+  // （agent_question_sets.user_id），他人题集/结果一律 404；
+  // Agent 侧同一批数据的写读接口（API key 必须绑 userId）也按 user 域登记。
+  "agent-sets": {
+    mount: "/api/agent-sets",
+    scope: "user",
+    crossUserTest: "src/lib/api/routes/__tests__/agent-sets.test.ts",
+  },
+  "external-agent-sets": {
+    mount: "/api/external/agent",
+    scope: "user",
+    crossUserTest: "src/lib/api/routes/__tests__/agent-sets.test.ts",
   },
   // 试卷归属用户（exam_papers.user_id）；他人试卷 / 他人的 exam session 一律 404，
   // 跨用户断言见 exam.test.ts 的「跨用户」段

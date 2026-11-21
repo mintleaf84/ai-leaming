@@ -1,0 +1,325 @@
+{
+  "history": {
+    "cursor": -1,
+    "datas": [
+      {
+        "key": "1_32_20p94gh",
+        "id": 2173997585,
+        "userId": 165252908,
+        "createdTime": 1795198538292,
+        "updatedTime": 1795198539075,
+        "status": 1,
+        "quizId": 884,
+        "client": "APP_WEB",
+        "features": {},
+        "version": 0,
+        "userAnswers": {},
+        "elapsedTime": 0,
+        "currentTime": 1795198587224,
+        "sheet": {
+          "id": 1931141784,
+          "keypointId": 0,
+          "type": 3,
+          "name": "快速智能练习",
+          "paperId": 0,
+          "questionCount": 3,
+          "time": 0,
+          "chapters": [
+            {
+              "name": null,
+              "desc": null,
+              "time": 0,
+              "questionCount": 3,
+              "answerCount": 0,
+              "presetScore": 0.0,
+              "timingType": 0,
+              "correctCount": 2
+            }
+          ],
+          "questionIds": [16015073, 16015182, 16015110],
+          "requestType": 0,
+          "requestNum": 15,
+          "difficulty": 5.0,
+          "features": {}
+        },
+        "questionCount": 3,
+        "correctCount": 2,
+        "score": 0.0
+      },
+      {
+        "key": "1_32_20p94o1",
+        "id": 2173997825,
+        "userId": 165252908,
+        "createdTime": 1795198527574,
+        "updatedTime": 1795198527574,
+        "status": 0,
+        "quizId": 884,
+        "client": "WEB",
+        "features": {},
+        "version": 0,
+        "userAnswers": {},
+        "elapsedTime": 0,
+        "currentTime": 1795198587224,
+        "sheet": {
+          "id": 1931141497,
+          "keypointId": 0,
+          "type": 3,
+          "name": "快速智能练习",
+          "paperId": 0,
+          "questionCount": 3,
+          "time": 0,
+          "chapters": [
+            {
+              "name": null,
+              "desc": null,
+              "time": 0,
+              "questionCount": 3,
+              "answerCount": 0,
+              "presetScore": 0.0,
+              "timingType": 0
+            }
+          ],
+          "questionIds": [16015124, 16015158, 16015184],
+          "requestType": 0,
+          "requestNum": 15,
+          "difficulty": 5.0,
+          "features": {}
+        }
+      },
+      {
+        "key": "1_32_20p94gc",
+        "id": 2173997580,
+        "userId": 165252908,
+        "createdTime": 1795198515488,
+        "updatedTime": 1795198515488,
+        "status": 0,
+        "quizId": 884,
+        "client": "WEB",
+        "features": {},
+        "version": 0,
+        "userAnswers": {},
+        "elapsedTime": 0,
+        "currentTime": 1795198587224,
+        "sheet": {
+          "id": 1931141780,
+          "keypointId": 0,
+          "type": 3,
+          "name": "快速智能练习",
+          "paperId": 0,
+          "questionCount": 15,
+          "time": 0,
+          "chapters": [
+            {
+              "name": null,
+              "desc": null,
+              "time": 0,
+              "questionCount": 15,
+              "answerCount": 0,
+              "presetScore": 0.0,
+              "timingType": 0
+            }
+          ],
+          "questionIds": [
+            16015079, 16015094, 2370500, 16015139, 16015167, 15205705, 16015065,
+            15205706, 16015159, 16015170, 16015156, 16015198, 16015205,
+            16015199, 16015210
+          ],
+          "requestType": 0,
+          "requestNum": 15,
+          "difficulty": 4.9,
+          "features": {}
+        }
+      },
+      {
+        "key": "1_32_20p94gb",
+        "id": 2173997579,
+        "userId": 165252908,
+        "createdTime": 1795198514886,
+        "updatedTime": 1795198514886,
+        "status": 0,
+        "quizId": 884,
+        "client": "WEB",
+        "features": {},
+        "version": 0,
+        "userAnswers": {},
+        "elapsedTime": 0,
+        "currentTime": 1795198587224,
+        "sheet": {
+          "id": 1931141779,
+          "keypointId": 0,
+          "type": 3,
+          "name": "快速智能练习",
+          "paperId": 0,
+          "questionCount": 5,
+          "time": 0,
+          "chapters": [
+            {
+              "name": null,
+              "desc": null,
+              "time": 0,
+              "questionCount": 5,
+              "answerCount": 0,
+              "presetScore": 0.0,
+              "timingType": 0
+            }
+          ],
+          "questionIds": [16015061, 16015149, 15205699, 15205697, 15205696],
+          "requestType": 0,
+          "requestNum": 15,
+          "difficulty": 5.0,
+          "features": {}
+        }
+      }
+    ]
+  },
+  "exercise": {
+    "key": "1_32_20p94gh",
+    "id": 2173997585,
+    "userId": 165252908,
+    "createdTime": 1795198538292,
+    "updatedTime": 1795198539075,
+    "status": 1,
+    "quizId": 884,
+    "client": "APP_WEB",
+    "features": {},
+    "version": 0,
+    "userAnswers": {
+      "0": {
+        "questionId": 16015073,
+        "answer": {
+          "choice": "1",
+          "type": 201
+        },
+        "questionIndex": 0,
+        "time": 9,
+        "flag": 0
+      },
+      "1": {
+        "questionId": 16015182,
+        "answer": {
+          "choice": "3",
+          "type": 201
+        },
+        "questionIndex": 1,
+        "time": 9,
+        "flag": 0
+      },
+      "2": {
+        "questionId": 16015110,
+        "answer": {
+          "choice": "2",
+          "type": 201
+        },
+        "questionIndex": 2,
+        "time": 9,
+        "flag": 0
+      }
+    },
+    "elapsedTime": 27,
+    "currentTime": 1795198587309,
+    "sheet": {
+      "id": 1931141784,
+      "keypointId": 0,
+      "type": 3,
+      "name": "快速智能练习",
+      "paperId": 0,
+      "questionCount": 3,
+      "time": 0,
+      "chapters": [
+        {
+          "name": null,
+          "desc": null,
+          "time": 0,
+          "questionCount": 3,
+          "answerCount": 3,
+          "presetScore": 0.0,
+          "timingType": 0,
+          "correctCount": 2
+        }
+      ],
+      "questionIds": [16015073, 16015182, 16015110],
+      "requestType": 0,
+      "requestNum": 15,
+      "difficulty": 5.0,
+      "features": {}
+    },
+    "questionCount": 3,
+    "correctCount": 2,
+    "score": 0.0
+  },
+  "questions": {
+    "materials": [],
+    "q2subQuestionIds": null,
+    "cdnUrls": null,
+    "questions": [
+      {
+        "id": 16015073,
+        "content": "<p>聚会结束后，当时的场景历历在目。这属于（  ）。</p>",
+        "material": null,
+        "type": 1,
+        "difficulty": 5,
+        "createdTime": 1783302451753,
+        "shortSource": null,
+        "accessories": [
+          {
+            "options": ["语义记忆", "情景记忆", "延时记忆", "感觉记忆"],
+            "type": 101
+          }
+        ],
+        "correctAnswer": {
+          "choice": "1",
+          "type": 201
+        },
+        "hasVideo": 0,
+        "materialIndexes": null
+      },
+      {
+        "id": 16015182,
+        "content": "<p>某县中学教师张某对本校给予的行政处分不服，依法可以向（  ）提出教师申诉。</p>",
+        "material": null,
+        "type": 1,
+        "difficulty": 5,
+        "createdTime": 1783303584030,
+        "shortSource": null,
+        "accessories": [
+          {
+            "options": [
+              "县级人民政府",
+              "学校教工代表大会",
+              "县级教育行政部门",
+              "省级教育行政部门"
+            ],
+            "type": 101
+          }
+        ],
+        "correctAnswer": {
+          "choice": "2",
+          "type": 201
+        },
+        "hasVideo": 0,
+        "materialIndexes": null
+      },
+      {
+        "id": 16015110,
+        "content": "<p>美国教育学者泰勒提出的课程开发模式是（  ）。</p>",
+        "material": null,
+        "type": 1,
+        "difficulty": 5,
+        "createdTime": 1783302832464,
+        "shortSource": null,
+        "accessories": [
+          {
+            "options": ["过程模式", "情景模式", "目标模式", "实践模式"],
+            "type": 101
+          }
+        ],
+        "correctAnswer": {
+          "choice": "2",
+          "type": 201
+        },
+        "hasVideo": 0,
+        "materialIndexes": null
+      }
+    ]
+  }
+}

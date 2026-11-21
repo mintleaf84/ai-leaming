@@ -61,6 +61,11 @@ dependencies:
   shared_preferences: ^2.5.4
   flutter_html: ^3.0.0
   flutter_html_table: ^3.0.0
+  # 「AI 题集有新题」的本地通知（契约 §6：只做启动/回前台提醒，不做 FCM/workmanager）。
+  # 锁 ^22.3.3 而不是最新的 23.x：23.x 要求 Dart ^3.12 + Flutter >=3.44，
+  # 而本机与 CI 都是 Flutter 3.38.4（Dart 3.10.3）。22.x 的 Android 侧要求
+  # compileSdk 36 + core library desugaring（见 android/app/build.gradle.kts）。
+  flutter_local_notifications: ^22.3.3
 
 # flutter_html 3.0.0 直接 import 了 `package:html/src/query_selector.dart` 的内部
 # 函数 `matches`，而 `html` 0.15.7 把该函数删了（只留 `SelectorEvaluator.matches`），

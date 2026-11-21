@@ -133,6 +133,11 @@ function mapFenbiError(c: Context, error: unknown) {
       429,
     );
   }
+  if (error instanceof FenbiSecretUnavailableError) {
+    // 扫码 confirmed 后落库时才可能触发（密码绑定在入口已拦）：给明确原因，
+    // 不要退化成笼统的 500「服务器内部错误」
+    return errorBody(c, error.message, "fenbi.secret_unavailable", 400);
+  }
   if (error instanceof FenbiAuthError) {
     return errorBody(
       c,

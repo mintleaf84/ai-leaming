@@ -11,6 +11,8 @@ import '../../recall/data/recall_providers.dart';
 import '../../../shared/domain/learning_stats.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../exam/presentation/exam_entry.dart';
+import '../../agent_sets/presentation/agent_set_inbox_provider.dart';
+import '../../agent_sets/presentation/agent_sets_entry.dart';
 import '../../stats/presentation/stats_provider.dart';
 import '../../../shared/repositories/wrong_book_repository.dart';
 import '../../../shared/widgets/contract_gate.dart';
@@ -67,6 +69,13 @@ class DashboardScreen extends HookConsumerWidget {
     final showExam = examEntryAvailable(
       ref.watch(contractDecisionProvider).value,
     );
+    // AI 题集：外部 Agent 推来的题。服务端还没上线这个能力时整张卡不出现。
+    final showAgentSets = agentSetsEntryAvailable(
+      ref.watch(contractDecisionProvider).value,
+    );
+    // 未读角标读的是「启动/回前台拉过的那一份」，首页自己不再发请求
+    // （见 AgentSetInboxWatcher）。
+    final agentSetInbox = ref.watch(agentSetInboxProvider);
     // 离线判定（审计 #20）：`AsyncValue` 首帧是 loading，拿不准按在线处理，
     // 理由见 connectivity_provider.dart。
     final isOnline = ref.watch(isOnlineProvider).value ?? true;
@@ -108,6 +117,8 @@ class DashboardScreen extends HookConsumerWidget {
                     DashboardActionGrid(
                       showRecall: showRecall,
                       showExam: showExam,
+                      showAgentSets: showAgentSets,
+                      agentSetInbox: agentSetInbox,
                       isOnline: isOnline,
                       recallQueue: recallQueue,
                       wrongTotal: wrongTotal,

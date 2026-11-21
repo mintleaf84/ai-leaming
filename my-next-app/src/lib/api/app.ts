@@ -58,9 +58,18 @@ app.route("/drafts", draftsRoute);
 import practiceRoute from "@/lib/api/routes/practice";
 app.route("/practice", practiceRoute);
 
+// AI 题集的消费侧（docs/agent-question-set-plan.md §4.2）：JWT 鉴权，
+// 用户私有数据；判分复用 /practice 的逐题提交
+import agentSetsRoute from "@/lib/api/routes/agent-sets";
+app.route("/agent-sets", agentSetsRoute);
+
 // 试卷 / 模考（docs/exam-paper-plan.md §2）：服务端唯一实现，Web 与移动端共用
 import examRoute from "@/lib/api/routes/exam";
 app.route("/exam", examRoute);
+
+// 粉笔账号同步（docs/fenbi-sync-design.md §5）：Web 与移动端共用
+import fenbiRoute from "@/lib/api/routes/fenbi";
+app.route("/fenbi", fenbiRoute);
 
 // 回忆自测（用户 JWT 面）：与 /external/recall/* 同一套协议，鉴权换成登录 JWT
 import recallRoute from "@/lib/api/routes/recall";

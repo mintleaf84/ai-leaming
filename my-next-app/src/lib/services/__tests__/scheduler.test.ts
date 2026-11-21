@@ -193,9 +193,13 @@ describe("Scheduler Service", () => {
 
       // 验证旧任务被停止
       expect(firstTask.stop).toHaveBeenCalled();
-      // 验证新任务被创建：备份 + 过期导入任务清理 + 日志保留清理各一条
-      // 两次初始化 × 3 个任务 = 6 次
-      expect(mockCronSchedule).toHaveBeenCalledTimes(6);
+      // 验证新任务被创建：备份 + 过期导入任务清理 + 日志保留清理 + 粉笔同步各一条
+      // 两次初始化 × 4 个任务 = 8 次
+      expect(mockCronSchedule).toHaveBeenCalledTimes(8);
+      expect(mockCronSchedule).toHaveBeenCalledWith(
+        "20 5 * * *",
+        expect.any(Function),
+      );
       expect(mockCronSchedule).toHaveBeenCalledWith(
         "17 * * * *",
         expect.any(Function),

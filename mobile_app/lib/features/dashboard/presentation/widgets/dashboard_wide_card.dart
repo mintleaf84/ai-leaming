@@ -3,6 +3,7 @@ import 'package:flutter_screenutil/flutter_screenutil.dart';
 
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_icons.dart';
+import '../../../agent_sets/presentation/widgets/agent_set_unread_badge.dart';
 
 /// 整宽入口卡（错题本 / 练习历史 / 记忆卡 / 试卷 / 继续上次练习共用一种形态）。
 ///
@@ -31,6 +32,7 @@ class DashboardWideCard extends StatelessWidget {
     required this.trailingValue,
     required this.onTap,
     this.disabledNote,
+    this.badgeCount = 0,
   });
 
   final String icon;
@@ -42,6 +44,9 @@ class DashboardWideCard extends StatelessWidget {
   final String trailingValue;
   final VoidCallback? onTap;
   final String? disabledNote;
+
+  /// 标题旁的数字角标（目前只有「AI 题集」的未读数用它）。0 表示不显示。
+  final int badgeCount;
 
   @override
   Widget build(BuildContext context) {
@@ -114,15 +119,26 @@ class DashboardWideCard extends StatelessWidget {
                               ),
                             ),
                             SizedBox(height: 4.h),
-                            Text(
-                              title,
-                              maxLines: 2,
-                              overflow: TextOverflow.ellipsis,
-                              style: TextStyle(
-                                fontSize: 18.sp,
-                                fontWeight: FontWeight.bold,
-                                color: context.colors.text,
-                              ),
+                            Row(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                Flexible(
+                                  child: Text(
+                                    title,
+                                    maxLines: 2,
+                                    overflow: TextOverflow.ellipsis,
+                                    style: TextStyle(
+                                      fontSize: 18.sp,
+                                      fontWeight: FontWeight.bold,
+                                      color: context.colors.text,
+                                    ),
+                                  ),
+                                ),
+                                if (badgeCount > 0) ...[
+                                  SizedBox(width: 6.w),
+                                  AgentSetUnreadBadge(count: badgeCount),
+                                ],
+                              ],
                             ),
                             if (disabledNote != null) ...[
                               SizedBox(height: 2.h),

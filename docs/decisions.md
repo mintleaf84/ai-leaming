@@ -50,7 +50,6 @@ PR 才翻出来（`#289` 的债就是这样在 `#292` 才暴露）。
 **验收判据（落代码时）**：`audit:layering` 白名单在 `server/actions` 下为 0；`app/**/route.ts` 只剩 catch-all；
 `handleServerError` 对非 `AppError` 返回固定文案且 `logger` 有完整错误；79 个调用点零改动。
 
-
 ## 2026-11-21 · admin 备份/恢复评审的 9 条：本轮不修，全部记在案
 
 > 背景：`admin.ts` 的数据访问下沉是**纯搬移**（P1 的分层收口）。评审在搬移后的

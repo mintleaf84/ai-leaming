@@ -1,7 +1,6 @@
 import { OpenAPIHono, createRoute, z } from "@hono/zod-openapi";
-import { drizzleDb, drizzleSchema } from "@/lib/db";
+import { wrongQuestionService } from "@/lib/services/wrong-question";
 import { authMiddleware, getCurrentUser } from "@/lib/api/middlewares/auth";
-import { eq, and, sql, desc, count, notInArray } from "drizzle-orm";
 import { parsePagination } from "@/lib/api/pagination";
 
 const app = new OpenAPIHono();
@@ -12,6 +11,11 @@ const WrongQuestionSchema = z.object({
   questionId: z.string(),
   questionContent: z.string(),
   tags: z.array(z.string()),
+  /**
+   * 题目来源：import=题库题，agent=AI 题集题（docs/agent-question-set-plan.md §2：
+   * 错题本照收 Agent 题，但必须让客户端能标出「来自 AI 题集」）。
+   */
+  origin: z.string(),
   wrongCount: z.number(),
   lastWrongAt: z.string(),
   correctAnswer: z.string(),
@@ -59,57 +63,7 @@ const getListRoute = createRoute({
 
 app.openapi(getListRoute, async (c) => {
   const user = getCurrentUser(c);
-  const userId = Number(user.id);
-
-  const masteredSubquery = drizzleDb
-    .select({ id: drizzleSchema.mastered_questions.question_id })
-    .from(drizzleSchema.mastered_questions)
-    .where(eq(drizzleSchema.mastered_questions.user_id, userId));
-
-  const rows = await drizzleDb
-    .select({
-      questionId: drizzleSchema.practice_logs.question_id,
-      questionContent: drizzleSchema.questions.content,
-      tags: drizzleSchema.questions.tags,
-      correctAnswer: drizzleSchema.questions.answer,
-      wrongCount: count(),
-      lastWrongAt: sql<string>`MAX(${drizzleSchema.practice_logs.timestamp})`,
-      userLastAnswer: sql<string>`(SELECT user_answer FROM practice_logs 
-                             WHERE question_id = ${drizzleSchema.practice_logs.question_id} 
-                             AND user_id = ${userId} AND is_correct = 0 
-                             ORDER BY timestamp DESC LIMIT 1)`,
-    })
-    .from(drizzleSchema.practice_logs)
-    .innerJoin(
-      drizzleSchema.questions,
-      eq(drizzleSchema.practice_logs.question_id, drizzleSchema.questions.id),
-    )
-    .where(
-      and(
-        eq(drizzleSchema.practice_logs.user_id, userId),
-        eq(drizzleSchema.practice_logs.is_correct, false),
-        notInArray(drizzleSchema.practice_logs.question_id, masteredSubquery),
-      ),
-    )
-    .groupBy(drizzleSchema.practice_logs.question_id)
-    // 这里不能用 select 里的 JS key（`desc(sql\`wrongCount\`)`）：drizzle 不会为
-    // 聚合生成 `AS wrongCount`，SQLite 会报 `no such column: wrongCount`（列表恒 500）。
-    // 排序列一律重写表达式，保证 ORDER BY 里是真实存在的东西。
-    .orderBy(
-      desc(count()),
-      desc(sql`MAX(${drizzleSchema.practice_logs.timestamp})`),
-    )
-    .all();
-
-  const result = rows.map((r) => ({
-    questionId: String(r.questionId),
-    questionContent: String(r.questionContent),
-    tags: JSON.parse(r.tags || "[]") as string[],
-    wrongCount: Number(r.wrongCount),
-    lastWrongAt: r.lastWrongAt || "",
-    correctAnswer: String(r.correctAnswer),
-    userLastAnswer: r.userLastAnswer || "",
-  }));
+  const result = await wrongQuestionService.listWrongBook(Number(user.id));
 
   return c.json(result, 200);
 });
@@ -132,57 +86,9 @@ const getByTagRoute = createRoute({
 
 app.openapi(getByTagRoute, async (c) => {
   const user = getCurrentUser(c);
-  const userId = Number(user.id);
+  const questions = await wrongQuestionService.listWrongBook(Number(user.id));
 
-  const masteredSubquery = drizzleDb
-    .select({ id: drizzleSchema.mastered_questions.question_id })
-    .from(drizzleSchema.mastered_questions)
-    .where(eq(drizzleSchema.mastered_questions.user_id, userId));
-
-  const rows = await drizzleDb
-    .select({
-      questionId: drizzleSchema.practice_logs.question_id,
-      questionContent: drizzleSchema.questions.content,
-      tags: drizzleSchema.questions.tags,
-      correctAnswer: drizzleSchema.questions.answer,
-      wrongCount: count(),
-      lastWrongAt: sql<string>`MAX(${drizzleSchema.practice_logs.timestamp})`,
-      userLastAnswer: sql<string>`(SELECT user_answer FROM practice_logs 
-                             WHERE question_id = ${drizzleSchema.practice_logs.question_id} 
-                             AND user_id = ${userId} AND is_correct = 0 
-                             ORDER BY timestamp DESC LIMIT 1)`,
-    })
-    .from(drizzleSchema.practice_logs)
-    .innerJoin(
-      drizzleSchema.questions,
-      eq(drizzleSchema.practice_logs.question_id, drizzleSchema.questions.id),
-    )
-    .where(
-      and(
-        eq(drizzleSchema.practice_logs.user_id, userId),
-        eq(drizzleSchema.practice_logs.is_correct, false),
-        notInArray(drizzleSchema.practice_logs.question_id, masteredSubquery),
-      ),
-    )
-    .groupBy(drizzleSchema.practice_logs.question_id)
-    // 同 GET /：ORDER BY 里不能引用 select 的 JS key（无 `AS` 别名），只能用表达式
-    .orderBy(
-      desc(count()),
-      desc(sql`MAX(${drizzleSchema.practice_logs.timestamp})`),
-    )
-    .all();
-
-  const questions = rows.map((r) => ({
-    questionId: String(r.questionId),
-    questionContent: String(r.questionContent),
-    tags: JSON.parse(r.tags || "[]") as string[],
-    wrongCount: Number(r.wrongCount),
-    lastWrongAt: r.lastWrongAt || "",
-    correctAnswer: String(r.correctAnswer),
-    userLastAnswer: r.userLastAnswer || "",
-  }));
-
-  // 按 tag 分组
+  // 一道题有多个知识点时会在每个 tag 下各出现一次（既有口径）
   const tagMap = new Map<string, typeof questions>();
   questions.forEach((q) => {
     q.tags.forEach((tag) => {
@@ -214,54 +120,9 @@ const getStatsRoute = createRoute({
 
 app.openapi(getStatsRoute, async (c) => {
   const user = getCurrentUser(c);
-  const userId = Number(user.id);
+  const stats = await wrongQuestionService.getWrongBookStats(Number(user.id));
 
-  const totalStats = await drizzleDb
-    .select({
-      count: sql<number>`COUNT(DISTINCT ${drizzleSchema.practice_logs.question_id})`,
-    })
-    .from(drizzleSchema.practice_logs)
-    .where(
-      and(
-        eq(drizzleSchema.practice_logs.user_id, userId),
-        eq(drizzleSchema.practice_logs.is_correct, false),
-      ),
-    );
-
-  const recentStats = await drizzleDb
-    .select({
-      count: sql<number>`COUNT(DISTINCT ${drizzleSchema.practice_logs.question_id})`,
-    })
-    .from(drizzleSchema.practice_logs)
-    .where(
-      and(
-        eq(drizzleSchema.practice_logs.user_id, userId),
-        eq(drizzleSchema.practice_logs.is_correct, false),
-        sql`date(${drizzleSchema.practice_logs.timestamp}) >= date('now', '-7 days')`,
-      ),
-    );
-
-  const frequentRows = await drizzleDb
-    .select({ cnt: count() })
-    .from(drizzleSchema.practice_logs)
-    .where(
-      and(
-        eq(drizzleSchema.practice_logs.user_id, userId),
-        eq(drizzleSchema.practice_logs.is_correct, false),
-      ),
-    )
-    .groupBy(drizzleSchema.practice_logs.question_id)
-    .having(sql`count(*) >= 2`)
-    .all();
-
-  return c.json(
-    {
-      total: Number(totalStats[0]?.count ?? 0),
-      recent: Number(recentStats[0]?.count ?? 0),
-      frequent: frequentRows.length,
-    },
-    200,
-  );
+  return c.json(stats, 200);
 });
 
 // ==================== GET /random — 随机抽题 (智能权重) ====================
@@ -291,66 +152,14 @@ const getRandomRoute = createRoute({
 
 app.openapi(getRandomRoute, async (c) => {
   const user = getCurrentUser(c);
-  const userId = Number(user.id);
   const { count: limitStr, tag, mode } = c.req.valid("query");
   // 保留既有口径：最多 50 道，但非法/0/负数不再是 NaN 或 0
   const limitNum = parsePagination({ limit: limitStr }, { maxLimit: 50 }).limit;
 
-  const priorityOrder = sql`(
-            COUNT(*) * 5.0 + 
-            (JULIANDAY('now') - JULIANDAY(MAX(${drizzleSchema.practice_logs.timestamp}))) * 2.0
-        ) * (ABS(RANDOM() % 1000) / 1000.0) DESC`;
-
-  const randomOrder = sql`RANDOM()`;
-
-  const masteredSubquery = drizzleDb
-    .select({ id: drizzleSchema.mastered_questions.question_id })
-    .from(drizzleSchema.mastered_questions)
-    .where(eq(drizzleSchema.mastered_questions.user_id, userId));
-
-  let query = drizzleDb
-    .select({
-      questionId: drizzleSchema.practice_logs.question_id,
-      questionContent: drizzleSchema.questions.content,
-      tags: drizzleSchema.questions.tags,
-      correctAnswer: drizzleSchema.questions.answer,
-      wrongCount: count(),
-      lastWrongAt: sql<string>`MAX(${drizzleSchema.practice_logs.timestamp})`,
-      userLastAnswer: sql<string>`(SELECT user_answer FROM practice_logs 
-                             WHERE question_id = ${drizzleSchema.practice_logs.question_id} 
-                             AND user_id = ${userId} AND is_correct = 0 
-                             ORDER BY timestamp DESC LIMIT 1)`,
-    })
-    .from(drizzleSchema.practice_logs)
-    .innerJoin(
-      drizzleSchema.questions,
-      eq(drizzleSchema.practice_logs.question_id, drizzleSchema.questions.id),
-    )
-    .where(
-      and(
-        eq(drizzleSchema.practice_logs.user_id, userId),
-        eq(drizzleSchema.practice_logs.is_correct, false),
-        notInArray(drizzleSchema.practice_logs.question_id, masteredSubquery),
-        tag
-          ? sql`EXISTS (SELECT 1 FROM json_each(${drizzleSchema.questions.tags}) WHERE value = ${tag})`
-          : sql`1=1`,
-      ),
-    )
-    .groupBy(drizzleSchema.practice_logs.question_id)
-    .orderBy(mode === "priority" ? priorityOrder : randomOrder)
-    .limit(limitNum);
-
-  const rows = await query.all();
-
-  const result = rows.map((r) => ({
-    questionId: String(r.questionId),
-    questionContent: String(r.questionContent),
-    tags: JSON.parse(r.tags || "[]") as string[],
-    wrongCount: Number(r.wrongCount),
-    lastWrongAt: r.lastWrongAt || "",
-    correctAnswer: String(r.correctAnswer),
-    userLastAnswer: r.userLastAnswer || "",
-  }));
+  const result = await wrongQuestionService.pickWrongQuestions(
+    Number(user.id),
+    { limit: limitNum, tag, mode },
+  );
 
   return c.json(result, 200);
 });
@@ -375,94 +184,16 @@ const getDetailRoute = createRoute({
 
 app.openapi(getDetailRoute, async (c) => {
   const user = getCurrentUser(c);
-  const userId = Number(user.id);
   const { id } = c.req.valid("param");
-  const qId = Number(id);
 
-  // 只取详情页真正渲染的列：整行查询会把 material_html（材料原文，单题最大字段）
-  // 与 ai_mnemonic 一起搬进内存，而响应里根本不含它们。
-  const [question] = await drizzleDb
-    .select({
-      id: drizzleSchema.questions.id,
-      content: drizzleSchema.questions.content,
-      options: drizzleSchema.questions.options,
-      answer: drizzleSchema.questions.answer,
-      explanation: drizzleSchema.questions.explanation,
-      tags: drizzleSchema.questions.tags,
-      type: drizzleSchema.questions.type,
-    })
-    .from(drizzleSchema.questions)
-    .where(eq(drizzleSchema.questions.id, qId))
-    .limit(1)
-    .all();
-
-  if (!question) return c.json({ error: "未找到题目" }, 404);
-
-  const stats = await drizzleDb
-    .select({
-      wrongCount: count(),
-      lastWrongAt: sql<string>`MAX(${drizzleSchema.practice_logs.timestamp})`,
-    })
-    .from(drizzleSchema.practice_logs)
-    .where(
-      and(
-        eq(drizzleSchema.practice_logs.question_id, qId),
-        eq(drizzleSchema.practice_logs.user_id, userId),
-        eq(drizzleSchema.practice_logs.is_correct, false),
-      ),
-    );
-
-  const historyLogs = await drizzleDb
-    .select({
-      timestamp: drizzleSchema.practice_logs.timestamp,
-      userAnswer: drizzleSchema.practice_logs.user_answer,
-      isCorrect: drizzleSchema.practice_logs.is_correct,
-    })
-    .from(drizzleSchema.practice_logs)
-    .where(
-      and(
-        eq(drizzleSchema.practice_logs.question_id, qId),
-        eq(drizzleSchema.practice_logs.user_id, userId),
-      ),
-    )
-    .orderBy(desc(drizzleSchema.practice_logs.timestamp))
-    .limit(20)
-    .all();
-
-  const lastWrongRow = await drizzleDb
-    .select({ user_answer: drizzleSchema.practice_logs.user_answer })
-    .from(drizzleSchema.practice_logs)
-    .where(
-      and(
-        eq(drizzleSchema.practice_logs.question_id, qId),
-        eq(drizzleSchema.practice_logs.user_id, userId),
-        eq(drizzleSchema.practice_logs.is_correct, false),
-      ),
-    )
-    .orderBy(desc(drizzleSchema.practice_logs.timestamp))
-    .limit(1)
-    .all();
-
-  return c.json(
-    {
-      questionId: String(question.id),
-      questionContent: String(question.content),
-      options: JSON.parse(question.options || "[]") as string[],
-      correctAnswer: String(question.answer),
-      explanation: question.explanation || "",
-      tags: JSON.parse(question.tags || "[]") as string[],
-      questionType: question.type || "single",
-      wrongCount: Number(stats[0]?.wrongCount ?? 0),
-      lastWrongAt: stats[0]?.lastWrongAt || "",
-      userLastAnswer: lastWrongRow[0]?.user_answer || "",
-      historyLogs: historyLogs.map((log) => ({
-        timestamp: log.timestamp || "",
-        userAnswer: log.userAnswer || "",
-        isCorrect: Boolean(log.isCorrect),
-      })),
-    },
-    200,
+  const detail = await wrongQuestionService.getWrongBookDetail(
+    Number(user.id),
+    Number(id),
   );
+
+  if (!detail) return c.json({ error: "未找到题目" }, 404);
+
+  return c.json(detail, 200);
 });
 
 // ==================== POST /practice — 创建错题练习 ====================
@@ -500,15 +231,10 @@ app.openapi(createPracticeRoute, async (c) => {
   const user = getCurrentUser(c);
   const { questionIds } = c.req.valid("json");
 
-  const sessionId = `wrong-${Date.now()}`;
-
-  await drizzleDb.insert(drizzleSchema.practice_sessions).values({
-    id: sessionId,
-    user_id: Number(user.id),
-    total_questions: questionIds.length,
-    practice_mode: "review",
-    questions_json: JSON.stringify(questionIds),
-  });
+  const sessionId = await wrongQuestionService.createWrongBookPracticeSession(
+    Number(user.id),
+    questionIds,
+  );
 
   return c.json({ success: true, sessionId }, 200);
 });
@@ -541,19 +267,8 @@ app.openapi(masterRoute, async (c) => {
   const user = getCurrentUser(c);
   const { id } = c.req.valid("param");
 
-  await drizzleDb
-    .insert(drizzleSchema.mastered_questions)
-    .values({
-      user_id: Number(user.id),
-      question_id: Number(id),
-    })
-    .onConflictDoUpdate({
-      target: [
-        drizzleSchema.mastered_questions.user_id,
-        drizzleSchema.mastered_questions.question_id,
-      ],
-      set: { mastered_at: sql`CURRENT_TIMESTAMP` },
-    });
+  // 幂等：已存在则只刷新 mastered_at（`markAsMastered` 的 upsert 语义）
+  await wrongQuestionService.markAsMastered(Number(user.id), Number(id));
 
   return c.json({ success: true }, 200);
 });
@@ -586,14 +301,7 @@ app.openapi(unmasterRoute, async (c) => {
   const user = getCurrentUser(c);
   const { id } = c.req.valid("param");
 
-  await drizzleDb
-    .delete(drizzleSchema.mastered_questions)
-    .where(
-      and(
-        eq(drizzleSchema.mastered_questions.user_id, Number(user.id)),
-        eq(drizzleSchema.mastered_questions.question_id, Number(id)),
-      ),
-    );
+  await wrongQuestionService.unmarkMastered(Number(user.id), Number(id));
 
   return c.json({ success: true }, 200);
 });

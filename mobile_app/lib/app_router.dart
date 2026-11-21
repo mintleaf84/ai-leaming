@@ -16,6 +16,7 @@ import 'features/history/presentation/history_detail_screen.dart';
 import 'features/knowledge/presentation/knowledge_screen.dart';
 import 'features/mastery/presentation/mastery_screen.dart';
 import 'features/settings/presentation/settings_screen.dart';
+import 'features/fenbi/presentation/fenbi_sync_screen.dart';
 import 'features/chat/presentation/chat_screen.dart';
 import 'features/wrong_book/presentation/wrong_book_screen.dart';
 import 'features/recall/presentation/recall_session_screen.dart';
@@ -23,6 +24,12 @@ import 'features/profile/presentation/profile_screen.dart';
 import 'features/textbook/presentation/textbook_list_screen.dart';
 import 'features/textbook/presentation/textbook_detail_screen.dart';
 import 'features/pricing/presentation/pricing_screen.dart';
+import 'features/exam/presentation/exam_list_screen.dart';
+import 'features/exam/presentation/exam_paper_screen.dart';
+import 'features/exam/presentation/exam_session_screen.dart';
+import 'features/exam/domain/exam_attempt.dart';
+import 'features/agent_sets/presentation/agent_sets_screen.dart';
+import 'features/agent_sets/presentation/agent_set_practice_screen.dart';
 
 import 'features/practice/presentation/question_list_screen.dart';
 import 'features/questions/presentation/draft_review_screen.dart';
@@ -142,9 +149,8 @@ GoRouter buildAppRouter({String initialLocation = '/'}) {
           ),
           GoRoute(
             path: ':id/edit',
-            builder: (context, state) => QuestionFormScreen(
-              questionId: state.pathParameters['id'],
-            ),
+            builder: (context, state) =>
+                QuestionFormScreen(questionId: state.pathParameters['id']),
           ),
         ],
       ),
@@ -154,9 +160,8 @@ GoRouter buildAppRouter({String initialLocation = '/'}) {
         routes: [
           GoRoute(
             path: ':id',
-            builder: (context, state) => DraftReviewScreen(
-              draftId: state.pathParameters['id']!,
-            ),
+            builder: (context, state) =>
+                DraftReviewScreen(draftId: state.pathParameters['id']!),
           ),
         ],
       ),
@@ -197,6 +202,11 @@ GoRouter buildAppRouter({String initialLocation = '/'}) {
         path: AppRoutes.settings,
         builder: (context, state) => const SettingsScreen(),
       ),
+      // 粉笔账号同步：设置页「数据管理」里的入口压在这条路由上。
+      GoRoute(
+        path: AppRoutes.fenbiSync,
+        builder: (context, state) => const FenbiSyncScreen(),
+      ),
       GoRoute(
         path: AppRoutes.chat,
         builder: (context, state) => const ChatScreen(),
@@ -219,6 +229,42 @@ GoRouter buildAppRouter({String initialLocation = '/'}) {
               final id = int.parse(state.pathParameters['id']!);
               return TextbookDetailScreen(textbookId: id);
             },
+          ),
+        ],
+      ),
+      GoRoute(
+        path: AppRoutes.exam,
+        builder: (context, state) => const ExamListScreen(),
+        routes: [
+          GoRoute(
+            path: 'paper/:id',
+            builder: (context, state) => ExamPaperScreen(
+              paperId: int.tryParse(state.pathParameters['id'] ?? '') ?? 0,
+            ),
+          ),
+          GoRoute(
+            path: 'session/:id',
+            builder: (context, state) {
+              // `extra` 可能是从预览页带过来的开场数据，也可能是深链接（null）；
+              // 只接受确切类型，避免历史路由参数形状把整屏打崩。
+              final extra = state.extra;
+              return ExamSessionScreen(
+                sessionId: state.pathParameters['id']!,
+                initialAttempt: extra is ExamAttempt ? extra : null,
+              );
+            },
+          ),
+        ],
+      ),
+      GoRoute(
+        path: AppRoutes.agentSets,
+        builder: (context, state) => const AgentSetsScreen(),
+        routes: [
+          GoRoute(
+            path: ':id',
+            builder: (context, state) => AgentSetPracticeScreen(
+              setId: int.tryParse(state.pathParameters['id'] ?? '') ?? 0,
+            ),
           ),
         ],
       ),

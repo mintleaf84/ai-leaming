@@ -6,6 +6,7 @@ import {
   question_srs,
   session_reviews,
   mastered_questions,
+  first_principles_cache,
 } from "@/lib/db/drizzle-schema";
 import { eq, and, desc, gt, sql, inArray, notInArray } from "drizzle-orm";
 import { Question, Dimension } from "@/types";
@@ -46,8 +47,11 @@ export interface PracticeSessionConfig {
 
 /**
  * 将数据库原始行映射为业务 Question 类型
+ *
+ * 导出给试卷服务复用：题目行 → Question 的修复/校验规则必须只有一份，
+ * 否则试卷详情与练习会话会出现"同一道题两个形状"。
  */
-function mapQuestion(q: unknown): Question {
+export function mapQuestion(q: unknown): Question {
   const data = q as Record<string, unknown>;
   try {
     return QuestionRowSchema.parse(data);
@@ -104,6 +108,40 @@ async function persistPracticeSession(
   });
 
   return { questions: questionData, sessionId };
+}
+
+/**
+ * 第一性原理分析缓存表的兜底建表。
+ *
+ * 表与索引**已经由迁移创建**（`drizzle/0001_old_bishop.sql`：
+ * `first_principles_cache` + `idx_fp_cache_hash`），原先每来一次请求就在路由里
+ * 跑一遍 `CREATE TABLE IF NOT EXISTS`，既有 DDL 在请求路径上的问题，也多一次
+ * 无谓的写事务。这里把兜底 memo 成"每进程最多一次"：即便某套环境跳过了迁移
+ * （例如只 `drizzle-kit push` 了部分表），第一次请求仍能自愈，语义不变。
+ */
+let fpCacheTableReady: Promise<void> | null = null;
+
+async function ensureFirstPrinciplesCacheTable(): Promise<void> {
+  if (!fpCacheTableReady) {
+    fpCacheTableReady = (async () => {
+      await drizzleDb.run(sql`
+        CREATE TABLE IF NOT EXISTS first_principles_cache (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            question_hash TEXT UNIQUE NOT NULL,
+            analysis TEXT NOT NULL,
+            created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+        );
+      `);
+      await drizzleDb.run(
+        sql`CREATE INDEX IF NOT EXISTS idx_fp_cache_hash ON first_principles_cache(question_hash);`,
+      );
+    })().catch((e) => {
+      // 建表失败不阻塞本次分析：下方按"无缓存"路径继续
+      logger.error({ err: e }, "[FirstPrinciples] 创建缓存表失败");
+      fpCacheTableReady = null;
+    });
+  }
+  return fpCacheTableReady;
 }
 
 export const practiceService = {
@@ -438,12 +476,18 @@ export const practiceService = {
         tags: questions.tags,
         dimension: questions.dimension,
         type: questions.type,
+        // 隔离过滤（docs/agent-question-set-plan.md §2）：只有正常题库题（origin='import'）
+        // 才计入掌握度聚合。Agent 题集题与已报错的题作答后只留 practice_logs
+        // （错题本/历史照常可见），不污染掌握度曲线；转正（origin 改 import）后才开始计入。
+        origin: questions.origin,
       })
       .from(questions)
       .where(eq(questions.id, questionId))
       .limit(1);
 
-    if (q && q.tags && !skipped) {
+    const countsTowardMastery = q?.origin === "import";
+
+    if (q && q.tags && !skipped && countsTowardMastery) {
       const tags = safeParseJson<string[]>(q.tags, []);
 
       const { masteryService } = await import("@/lib/services/mastery");
@@ -462,8 +506,10 @@ export const practiceService = {
     // 4. 更新 FSRS 状态（错题强化逻辑）
     // 跳过的不排期；agent 来源的对错由调用方判定、服务端不复核，同样不排期
     // （P0-2/P0-3；agent 记录只作历史统计，见 docs/audit 报告）
+    // 隔离过滤：非正常题库题（Agent 题集题 / 已报错题）也不排期 —— 它们不在题库
+    // 与复习队列里出现，排期只会让 FSRS 队列指向看不见的题。
     let updatedSrs = undefined;
-    if (!skipped && origin !== "agent") {
+    if (!skipped && origin !== "agent" && countsTowardMastery) {
       try {
         const { srsService } = await import("@/lib/services/srs");
         // 填空题传入用户答案长度，用于计算打字时间
@@ -729,5 +775,59 @@ export const practiceService = {
     });
 
     return sessionId;
+  },
+
+  /**
+   * 第一性原理分析缓存键。
+   *
+   * 口径必须稳定：内容 trim + 截断 100 字符 + **原始长度**（截断后长度会撞车），
+   * 再拼上正确答案与用户错答。改口径等于让所有历史缓存失效，别顺手"优化"。
+   */
+  buildFirstPrinciplesCacheKey(
+    questionContent: string,
+    correctAnswer: string,
+    wrongAnswer?: string,
+  ): string {
+    const content = questionContent + correctAnswer + (wrongAnswer || "");
+    const normalized = content.trim().slice(0, 100) + content.length;
+    let hash = 0;
+    for (let i = 0; i < normalized.length; i++) {
+      const char = normalized.charCodeAt(i);
+      hash = (hash << 5) - hash + char;
+      hash = hash & hash;
+    }
+    return hash.toString(36);
+  },
+
+  /** 命中返回缓存的解析文本，未命中返回 null */
+  async getCachedFirstPrinciplesAnalysis(
+    cacheKey: string,
+  ): Promise<string | null> {
+    await ensureFirstPrinciplesCacheTable();
+
+    const [cached] = await drizzleDb
+      .select({ analysis: first_principles_cache.analysis })
+      .from(first_principles_cache)
+      .where(eq(first_principles_cache.question_hash, cacheKey))
+      .limit(1);
+
+    return cached?.analysis ?? null;
+  },
+
+  /** 写入/覆盖缓存（question_hash 唯一，冲突即更新） */
+  async saveFirstPrinciplesAnalysis(
+    cacheKey: string,
+    analysis: string,
+  ): Promise<void> {
+    await drizzleDb
+      .insert(first_principles_cache)
+      .values({
+        question_hash: cacheKey,
+        analysis,
+      })
+      .onConflictDoUpdate({
+        target: first_principles_cache.question_hash,
+        set: { analysis },
+      });
   },
 };

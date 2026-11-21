@@ -8,11 +8,11 @@ import 'package:go_router/go_router.dart';
 import 'package:mobile_app/core/navigation/app_nav.dart';
 import 'package:mobile_app/core/theme/app_theme.dart';
 import 'package:mobile_app/features/practice/domain/question.dart';
-import 'package:mobile_app/features/practice/data/practice_repository_impl.dart';
 import 'package:mobile_app/features/questions/data/question_editor_repository.dart';
 import 'package:mobile_app/features/questions/presentation/question_form_screen.dart';
 
-import '../../../support/fake_providers.dart';
+import 'package:mobile_app/shared/events/data_change_events.dart';
+
 import '../fake_question_editor_repository.dart';
 
 /// 建题 / 改题表单的 widget 测试。
@@ -32,9 +32,6 @@ void main() {
 
   List<Object> overrides() => <Object>[
     questionEditorRepositoryProvider.overrideWithValue(repository),
-    // 保存成功后会 invalidate 题库列表：换成假仓库，避免真 Dio / 本地库
-    // 在测试环境里发请求。
-    practiceRepositoryProvider.overrideWithValue(FakePracticeRepository()),
   ];
 
   Future<void> pumpForm(WidgetTester tester, {String? questionId}) async {
@@ -137,6 +134,17 @@ void main() {
 
     // 保存成功后返回上一页（题库列表）。
     expect(find.text('题库列表'), findsOneWidget);
+
+    // 题库列表在另一个 feature（practice）里：本页只 bump 版本号，
+    // 由列表页自己 listen 后重拉（不直接 invalidate 别人的 provider）。
+    final container = ProviderScope.containerOf(
+      tester.element(find.byType(MaterialApp)),
+    );
+    expect(
+      container.read(questionBankEpochProvider),
+      1,
+      reason: '保存成功后必须通知题库列表刷新，否则返回列表看不到刚创建的题',
+    );
   });
 
   testWidgets('改题：先按详情预填，保存走 PATCH /questions/{id}', (tester) async {

@@ -1,15 +1,20 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
+import 'package:skeletonizer/skeletonizer.dart';
+
 import '../../../core/navigation/app_nav.dart';
-import '../domain/question.dart';
-import 'questions_provider.dart';
+import '../../../core/theme/app_colors.dart';
+import '../../../core/theme/app_icons.dart';
 import '../../../shared/skeletons/skeleton_fakes.dart';
 import '../../../shared/widgets/empty_state.dart';
-import 'package:skeletonizer/skeletonizer.dart';
-import '../../../core/theme/app_icons.dart';
-import '../../../core/theme/app_colors.dart';
+import 'questions_provider.dart';
+import 'widgets/question_list_card.dart';
 
+/// 全量题库列表页。
+///
+/// 卡片与「题目预览」弹层在 `widgets/` 下（纯搬移）；本文件只保留搜索、分页
+/// 触底加载与三态（骨架 / 空 / 失败）。
 class QuestionListScreen extends ConsumerStatefulWidget {
   const QuestionListScreen({super.key});
 
@@ -180,121 +185,12 @@ class _QuestionListScreenState extends ConsumerState<QuestionListScreen> {
                           }
 
                           final question = questionsState.items[index];
-                          return _buildQuestionCard(question);
+                          return QuestionListCard(question: question);
                         },
                       ),
               ),
             ),
           ],
-        ),
-      ),
-    );
-  }
-
-  /// 题库列表卡片：真实列表与骨架共用同一份布局。
-  Widget _buildQuestionCard(Question question) {
-    final theme = Theme.of(context);
-    final cardColor = theme.cardColor;
-    final textColor = theme.colorScheme.onSurface;
-    final secondaryColor = context.colors.textSecondary;
-    final borderColor = theme.dividerColor;
-
-    return Container(
-      decoration: BoxDecoration(
-        color: cardColor,
-        borderRadius: BorderRadius.circular(8.r),
-        border: Border.all(color: borderColor),
-      ),
-      child: Material(
-        color: Colors.transparent,
-        child: InkWell(
-          onTap: () {
-            _showQuestionPreview(context, question);
-          },
-          borderRadius: BorderRadius.circular(8.r),
-          child: Padding(
-            padding: EdgeInsets.all(16.w),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Row(
-                  children: [
-                    Container(
-                      padding: EdgeInsets.symmetric(
-                        horizontal: 6.w,
-                        vertical: 2.h,
-                      ),
-                      decoration: BoxDecoration(
-                        color: question.type == 'single'
-                            ? const Color(0xFFE3F2FD)
-                            : const Color(0xFFF3E5F5),
-                        borderRadius: BorderRadius.circular(4.r),
-                      ),
-                      child: Text(
-                        question.type == 'single' ? '单选' : '多选',
-                        style: TextStyle(
-                          fontSize: 12.sp,
-                          color: question.type == 'single'
-                              ? const Color(0xFF1976D2)
-                              : const Color(0xFF7B1FA2),
-                          fontWeight: FontWeight.bold,
-                        ),
-                      ),
-                    ),
-                    SizedBox(width: 8.w),
-                    Expanded(
-                      child: Text(
-                        question.dimension ?? '综合能力',
-                        style: TextStyle(
-                          fontSize: 12.sp,
-                          color: secondaryColor,
-                        ),
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                      ),
-                    ),
-                    Text(
-                      'ID: ${question.id}',
-                      style: TextStyle(
-                        fontSize: 10.sp,
-                        color: secondaryColor.withValues(alpha: 0.5),
-                        fontFamily: 'monospace',
-                      ),
-                    ),
-                  ],
-                ),
-                SizedBox(height: 12.h),
-                Text(
-                  question.content,
-                  style: TextStyle(
-                    fontSize: 15.sp,
-                    color: textColor,
-                    height: 1.4,
-                  ),
-                  maxLines: 3,
-                  overflow: TextOverflow.ellipsis,
-                ),
-                if (question.tags.isNotEmpty) ...[
-                  SizedBox(height: 12.h),
-                  Wrap(
-                    spacing: 8.w,
-                    runSpacing: 4.h,
-                    children: question.tags
-                        .map(
-                          (tag) => Text(
-                            '#$tag',
-                            style: TextStyle(
-                              fontSize: 12.sp,
-                              color: context.colors.accent,
-                            ),
-                          ),
-                        )
-                        .toList(),
-                  ),
-                ],
-              ],
-            ),
-          ),
         ),
       ),
     );
@@ -340,235 +236,8 @@ class _QuestionListScreenState extends ConsumerState<QuestionListScreen> {
         itemCount: 3,
         separatorBuilder: (context, index) => SizedBox(height: 12.h),
         itemBuilder: (context, index) =>
-            _buildQuestionCard(fakeQuestion(index: index)),
+            QuestionListCard(question: fakeQuestion(index: index)),
       ),
-    );
-  }
-
-  void _showQuestionPreview(BuildContext context, Question question) {
-    showModalBottomSheet(
-      context: context,
-      isScrollControlled: true,
-      backgroundColor: Colors.transparent,
-      builder: (context) {
-        final theme = Theme.of(context);
-        return DraggableScrollableSheet(
-          initialChildSize: 0.8,
-          minChildSize: 0.4,
-          maxChildSize: 0.95,
-          builder: (context, scrollController) {
-            return Container(
-              decoration: BoxDecoration(
-                color: theme.scaffoldBackgroundColor,
-                borderRadius: BorderRadius.vertical(top: Radius.circular(20.r)),
-              ),
-              child: Column(
-                children: [
-                  // 拖拽手柄（Drag Handle）
-                  GestureDetector(
-                    behavior: HitTestBehavior.opaque,
-                    child: Container(
-                      width: double.infinity,
-                      padding: EdgeInsets.symmetric(vertical: 12.h),
-                      alignment: Alignment.center,
-                      child: Container(
-                        width: 40.w,
-                        height: 4.h,
-                        decoration: BoxDecoration(
-                          color: context.colors.border,
-                          borderRadius: BorderRadius.circular(2.r),
-                        ),
-                      ),
-                    ),
-                  ),
-                  // 可滚动内容（使用 DraggableScrollableSheet 的 scrollController）
-                  Expanded(
-                    child: ListView(
-                      controller: scrollController,
-                      padding: EdgeInsets.all(24.w),
-                      children: [
-                        Row(
-                          children: [
-                            Container(
-                              padding: EdgeInsets.symmetric(
-                                horizontal: 8.w,
-                                vertical: 4.h,
-                              ),
-                              decoration: BoxDecoration(
-                                color: question.type == 'single'
-                                    ? const Color(0xFFE3F2FD)
-                                    : const Color(0xFFF3E5F5),
-                                borderRadius: BorderRadius.circular(6.r),
-                              ),
-                              child: Text(
-                                question.type == 'single' ? '单选' : '多选',
-                                style: TextStyle(
-                                  fontSize: 12.sp,
-                                  color: question.type == 'single'
-                                      ? const Color(0xFF1976D2)
-                                      : const Color(0xFF7B1FA2),
-                                  fontWeight: FontWeight.bold,
-                                ),
-                              ),
-                            ),
-                            SizedBox(width: 12.w),
-                            Expanded(
-                              child: Text(
-                                question.dimension ?? '综合',
-                                style: TextStyle(
-                                  fontSize: 14.sp,
-                                  color: context.colors.textSecondary,
-                                ),
-                              ),
-                            ),
-                          ],
-                        ),
-                        SizedBox(height: 24.h),
-                        Text(
-                          question.content,
-                          style: TextStyle(
-                            fontSize: 20.sp,
-                            fontWeight: FontWeight.w600,
-                            height: 1.5,
-                            color: theme.colorScheme.onSurface,
-                          ),
-                        ),
-                        SizedBox(height: 32.h),
-                        ...question.options.asMap().entries.map((e) {
-                          return Container(
-                            width: double.infinity,
-                            margin: EdgeInsets.only(bottom: 12.h),
-                            padding: EdgeInsets.all(16.w),
-                            decoration: BoxDecoration(
-                              color: context.colors.surfaceAlt,
-                              borderRadius: BorderRadius.circular(12.r),
-                              border: Border.all(color: context.colors.border),
-                            ),
-                            child: Text(
-                              '${String.fromCharCode(65 + e.key)}. ${e.value}',
-                              style: TextStyle(
-                                fontSize: 16.sp,
-                                color: theme.colorScheme.onSurface,
-                              ),
-                            ),
-                          );
-                        }),
-                        if (question.explanation != null) ...[
-                          SizedBox(height: 24.h),
-                          Container(
-                            width: double.infinity,
-                            padding: EdgeInsets.all(16.w),
-                            decoration: BoxDecoration(
-                              color: context.colors.accentContainer,
-                              borderRadius: BorderRadius.circular(12.r),
-                            ),
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                Row(
-                                  children: [
-                                    Icon(
-                                      AppIcons.lightbulbOutline,
-                                      color: context.colors.accent,
-                                      size: 20.sp,
-                                    ),
-                                    SizedBox(width: 8.w),
-                                    Text(
-                                      '解析',
-                                      style: TextStyle(
-                                        fontSize: 16.sp,
-                                        fontWeight: FontWeight.bold,
-                                        color: context.colors.accent,
-                                      ),
-                                    ),
-                                  ],
-                                ),
-                                SizedBox(height: 12.h),
-                                Text(
-                                  question.explanation!,
-                                  style: TextStyle(
-                                    fontSize: 15.sp,
-                                    height: 1.5,
-                                    color: theme.colorScheme.onSurface
-                                        .withValues(alpha: 0.8),
-                                  ),
-                                ),
-                              ],
-                            ),
-                          ),
-                        ],
-                        SizedBox(height: 48.h),
-                      ],
-                    ),
-                  ),
-                  // 底部按钮
-                  Container(
-                    padding: EdgeInsets.all(24.w),
-                    decoration: BoxDecoration(
-                      color: theme.scaffoldBackgroundColor,
-                      boxShadow: [
-                        BoxShadow(
-                          color: Colors.black.withValues(alpha: 0.05),
-                          offset: const Offset(0, -4),
-                          blurRadius: 8,
-                        ),
-                      ],
-                    ),
-                    child: Row(
-                      children: [
-                        Expanded(
-                          child: OutlinedButton(
-                            onPressed: () => Navigator.pop(context),
-                            style: OutlinedButton.styleFrom(
-                              padding: EdgeInsets.symmetric(vertical: 16.h),
-                              shape: RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(12.r),
-                              ),
-                            ),
-                            child: Text(
-                              '关闭',
-                              style: TextStyle(fontSize: 16.sp),
-                            ),
-                          ),
-                        ),
-                        SizedBox(width: 16.w),
-                        Expanded(
-                          flex: 2,
-                          child: ElevatedButton(
-                            onPressed: () {
-                              Navigator.pop(context);
-                              ScaffoldMessenger.of(context).showSnackBar(
-                                const SnackBar(
-                                  content: Text('单题练习跳转功能准备接管...'),
-                                ),
-                              );
-                            },
-                            style: ElevatedButton.styleFrom(
-                              backgroundColor: context.colors.accent,
-                              foregroundColor: context.colors.onAccent,
-                              padding: EdgeInsets.symmetric(vertical: 16.h),
-                              shape: RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(12.r),
-                              ),
-                            ),
-                            child: Text(
-                              '加入练习',
-                              style: TextStyle(
-                                fontSize: 16.sp,
-                                fontWeight: FontWeight.bold,
-                              ),
-                            ),
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                ],
-              ),
-            );
-          },
-        );
-      },
     );
   }
 }

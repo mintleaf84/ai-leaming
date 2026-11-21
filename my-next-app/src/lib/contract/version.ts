@@ -50,6 +50,7 @@ export const FEATURES = [
   "questions",
   "practice",
   "offline-answers",
+  "exam",
   "recall",
   "chat",
   "chat-sessions",
@@ -65,6 +66,9 @@ export const FEATURES = [
   "feedback",
   "import",
   "pdf-import",
+  // AI 题集（docs/agent-question-set-plan.md §4.2）：客户端据此决定是否显示
+  // 「AI 题集」入口与未读角标（能力名与挂载前缀一致，不能写成下划线）
+  "agent-sets",
 ] as const;
 
 export type ContractFeature = (typeof FEATURES)[number];

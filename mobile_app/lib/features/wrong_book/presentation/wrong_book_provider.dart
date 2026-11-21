@@ -4,6 +4,11 @@ import '../data/wrong_book_repository.dart';
 import '../domain/wrong_question.dart';
 
 /// 视图模式
+///
+/// `mastered` 不再出现在页签里：服务端没有「已掌握列表」接口
+/// （只有 `POST/DELETE /wrong-book/:id/master`，而 `GET /wrong-book` 会排除已掌握
+/// 题目），接上去就是永远空的视图。值先保留，等 `GET /wrong-book/mastered`
+/// 落地（服务端 `wrong-question.ts` 已有 `getMasteredQuestions`）再接 UI。
 enum WrongBookViewMode { list, byTag, mastered }
 
 /// 错题本状态

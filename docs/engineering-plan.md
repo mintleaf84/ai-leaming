@@ -112,8 +112,7 @@
 
 - [x] `type Executor` + `withTransaction()`：9 处 `tx as unknown as typeof drizzleDb` **全部消除**
       （`import-service`×2、`recall-import`×3、`chat`/`pdf-import`/`recall`/`srs` 各 1）
-- [x] 错误映射收敛：`AppError` + 5 类语义（validation / business / not-found / conflict / forbidden）
-      + domain code；`toErrorResponse()` 是唯一 HTTP 映射点（9 个类只换父类、不改名）
+- [x] 错误映射收敛：`AppError` + 5 类语义（validation / business / not-found / conflict / forbidden）+ domain code；`toErrorResponse()` 是唯一 HTTP 映射点（9 个类只换父类、不改名）
 - [x] server action 侧**不按字面统一**（见 `decisions.md` 2026-11-17）：`next-safe-action`
       的 `handleServerError` 只回字符串，透传 `kind` 要改 40+ 客户端调用点的契约；
       取舍是「HTTP 边界用 5 类语义，action 边界只保证 message 可读」，不为了打勾去改调用点
@@ -240,13 +239,13 @@
 
 ### 批次 B：结构与无障碍债 ✅ 全部完成
 
-| #     | 事项                                                                                                                                                                                                                       | 门禁                                                                                                     | 依赖                                                                                          |
-| ----- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------- |
-| B1 ✅ | `label` 无关联控件 **41 → 0**（第 42 条是 forwardRef 误报，永久保留）                                                                                                                                                      | a11y 静态 **96 → 55** 后 `--update`；棘轮自动拦新增                                                      | 无                                                                                            | ✅ 完成：41 处按「补 htmlFor / Radix id / 隐式关联 / `<fieldset>`」分四类改，基线 96 → **55**；`ui/label.tsx` 的 forwardRef 误报**故意不动**                                                                                                                        |
-| B2 ✅ | 自建 `fixed inset-0` 浮层 **8 处换 Radix**（`dialog.tsx`/`alert-dialog.tsx`），不再手写焦点陷阱                                                                                                                            | 每个浮层一条：打开后 `document.activeElement` 在浮层内、`Esc` 可关、关闭后焦点回到触发按钮               | **必须排 T-12（滚动模型归一）之后**：`fixed` 浮层在 body 滚动与内滚容器下行为不同，先改会白做 | ✅ 完成：8 处全部换 Radix（4 处 `DialogContentBare` 裸壳 / 3 处 `DialogContent` / 1 处 `AlertDialog`）；`layoutId` 配对测试钉住动画；`StudyModeOverlay` 把 Esc 显式让回全局监听。a11y 55 → **48**                                                                   |
-| B3 ✅ | `focus-states` **8 处**补可见焦点环 + 焦点环对比度实测                                                                                                                                                                     | 8 条：`focus()` 后 `outline`/`box-shadow` 非 none；对比度给出实测数字（**1.4.11 是 AA，3:1**，不是 AAA） | 无                                                                                            | ✅ 完成（7/8）：先算对比度再选 token —— `--ring` 三套主题 3.93–6.49:1 达标，`--border`/`--muted` 只有 1.08–1.44:1 被排除；第 8 处 `SimpleMindMapViewer:109` 是误判（该 div 无 `tabindex`，拿不到焦点），真缺口是库塞的 `contenteditable`，留给设计                  |
-| B4 ✅ | `live region`：聊天流式、答题切题、计数变化                                                                                                                                                                                | 断言 `role="status"` 存在且切题后文本随之更新                                                            | 无                                                                                            | ✅ 完成：聊天**不用逐字 live**（会念几十遍），改 sr-only `role=status` 播三档整句 + 正文 `aria-busy`；切题移动焦点到题干；计数播整句；登录失败 `role=alert` + 聚焦                                                                                                  |
-| B5 ✅ | **交互类命中分诊 45 → <10**（`click-events-have-key-events` 22 + `no-static-element-interactions` 23）：合法的遮罩/卡片浮起改成真语义（`<button>`、`role="button"`+`tabIndex`+`onKeyDown`），遮罩类随 B2 换 Radix 自动消失 | 每条降下来的都在报告里写「改了什么语义」；终态：交互类 <10 且总数 ≤54                                    | **与 B2 同批做**：换 Radix 会让大部分遮罩命中直接消失，分成两批会撞同一批文件                 | ✅ 完成：交互类 **45 → 0**（a11y 总数 48 → **9**，只剩 `no-autofocus` 8 条与 `label` 那条 forwardRef 误报）；手法统一是「删容器 onClick、让事件从真控件冒上来」，**没有一处贴 `role="button"`**，因此没有嵌套 button；顺带修掉「≤5 题时点播放不开始练习」这个真 bug |
+| # | 事项 | 门禁 | 依赖 |
+| ----- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| B1 ✅ | `label` 无关联控件 **41 → 0**（第 42 条是 forwardRef 误报，永久保留） | a11y 静态 **96 → 55** 后 `--update`；棘轮自动拦新增 | 无 | ✅ 完成：41 处按「补 htmlFor / Radix id / 隐式关联 / `<fieldset>`」分四类改，基线 96 → **55**；`ui/label.tsx` 的 forwardRef 误报**故意不动** |
+| B2 ✅ | 自建 `fixed inset-0` 浮层 **8 处换 Radix**（`dialog.tsx`/`alert-dialog.tsx`），不再手写焦点陷阱 | 每个浮层一条：打开后 `document.activeElement` 在浮层内、`Esc` 可关、关闭后焦点回到触发按钮 | **必须排 T-12（滚动模型归一）之后**：`fixed` 浮层在 body 滚动与内滚容器下行为不同，先改会白做 | ✅ 完成：8 处全部换 Radix（4 处 `DialogContentBare` 裸壳 / 3 处 `DialogContent` / 1 处 `AlertDialog`）；`layoutId` 配对测试钉住动画；`StudyModeOverlay` 把 Esc 显式让回全局监听。a11y 55 → **48** |
+| B3 ✅ | `focus-states` **8 处**补可见焦点环 + 焦点环对比度实测 | 8 条：`focus()` 后 `outline`/`box-shadow` 非 none；对比度给出实测数字（**1.4.11 是 AA，3:1**，不是 AAA） | 无 | ✅ 完成（7/8）：先算对比度再选 token —— `--ring` 三套主题 3.93–6.49:1 达标，`--border`/`--muted` 只有 1.08–1.44:1 被排除；第 8 处 `SimpleMindMapViewer:109` 是误判（该 div 无 `tabindex`，拿不到焦点），真缺口是库塞的 `contenteditable`，留给设计 |
+| B4 ✅ | `live region`：聊天流式、答题切题、计数变化 | 断言 `role="status"` 存在且切题后文本随之更新 | 无 | ✅ 完成：聊天**不用逐字 live**（会念几十遍），改 sr-only `role=status` 播三档整句 + 正文 `aria-busy`；切题移动焦点到题干；计数播整句；登录失败 `role=alert` + 聚焦 |
+| B5 ✅ | **交互类命中分诊 45 → <10**（`click-events-have-key-events` 22 + `no-static-element-interactions` 23）：合法的遮罩/卡片浮起改成真语义（`<button>`、`role="button"`+`tabIndex`+`onKeyDown`），遮罩类随 B2 换 Radix 自动消失 | 每条降下来的都在报告里写「改了什么语义」；终态：交互类 <10 且总数 ≤54 | **与 B2 同批做**：换 Radix 会让大部分遮罩命中直接消失，分成两批会撞同一批文件 | ✅ 完成：交互类 **45 → 0**（a11y 总数 48 → **9**，只剩 `no-autofocus` 8 条与 `label` 那条 forwardRef 误报）；手法统一是「删容器 onClick、让事件从真控件冒上来」，**没有一处贴 `role="button"`**，因此没有嵌套 button；顺带修掉「≤5 题时点播放不开始练习」这个真 bug |
 
 ### 批次 C：RAG 残留与门禁收口（1d）
 
@@ -615,6 +614,215 @@ Web 有、移动端没有的功能：`notes`（笔记）、`mindmap`（思维导
 | 养成     | 纯 Web 趣味功能            | 不做                                           | —                     |
 
 **决策点（待你定）**：只做"深链跳 Web"（0.5d），还是连 OCR 一起做（2–3d），还是都不做。
+
+## 模块化收口（计划，2026-11-20）
+
+### 0. 实测基线（评价依据，不是感觉）
+
+| 指标                        | 值                                                                                                                                                                                               |
+| --------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| Web 规模                    | 739 文件 / 131,836 行；测试 47,892 行（0.36×）                                                                                                                                                   |
+| Mobile 规模                 | 148 文件 / 30,564 行；测试 24,028 行（0.79×）                                                                                                                                                    |
+| 依赖方向                    | `lib→app` 反向 **0**、`services→routes` **0**、`routes→services` 39 ✅                                                                                                                           |
+| **路由直连 db**             | **7 / 23 个生产路由文件**（`admin` `annotations` `external` `practice` `profile` `textbook` `wrong-book`）❌                                                                                     |
+| 最大文件                    | `routes/external.ts` **3,242 行**（占全部路由 9,178 行的 35%）                                                                                                                                   |
+| 错误映射                    | **码表已存在**：`AppError.kind → STATUS_BY_KIND` + 唯一渲染点 `toErrorResponse`（44 行）。26 个生产 Error 类中 **19 个已继承 `AppError`**，5 个仍为裸 `Error`，路由里 `instanceof` 链剩 **3 处** |
+| 移动端跨 feature import     | **28 处**（其中 `auth_provider → practice_resume_provider` 方向错误）                                                                                                                            |
+| 移动端 >500 行 presentation | **10 个**（`dashboard_screen` 1,047、`history_detail` 898、`settings` 840、`practice` 797；已排除 `.freezed.dart` 生成文件）                                                                     |
+| 分页重复                    | 5 个路由用共享 `parsePagination`，`history.ts`/`external.ts`/`questions.ts:71` 仍手写                                                                                                            |
+| 类型逃逸                    | `as any` 非测试仅 **2** 处；`as unknown as` 非测试 43 处                                                                                                                                         |
+
+> **口径注**：`路由直连 db` 只统计**生产代码**。宽口径 22 个文件里有 **15 个在 `__tests__/` 下** —— 测试用 `vi.mock("@/lib/db")` / `await import("@/lib/db")` 造真实依赖 fixture 是合法写法，把它们算进门禁会让 15 条白名单永远删不掉，"只减不增"就失去意义。
+
+### 1. 六个问题与修法
+
+| #   | 问题                                  | 修法                                                                                                                                                                                                                                                              | 判据                                                                                     |
+| --- | ------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------- |
+| P1  | 7 个生产路由直连 db，service 层被绕过 | 加**分层门禁**：`scripts/audit-layering.cjs` **按模块路径解析**判定（覆盖 `@/lib/db` 及 `drizzle-schema`/`executor`/`db-file` 等子模块，含相对路径），白名单存量、只减不增；随后按资源分批把查询搬进 service                                                      | 新增一处 route→db import 直接红；白名单 7 → 0                                            |
+| P2  | `external.ts` 3,242 行                | 按资源拆 `routes/external/{questions,srs,recall,notes,misc}.ts` + `routes/external/index.ts` 聚合路由表                                                                                                                                                           | **OpenAPI 快照零 diff**（路径与字段完全不变）+ 全量测试绿                                |
+| P3  | 码表已存在，缺口在别处                | **不新建 error-codes.ts**（会与 `app-error.ts` 重表漂移）：① 给 `InvalidQuestionIdsError`/`ReservedExternalIdError` 补 `AppError` 血统当安全网（响应不变，漏写分支时从 500 变 400）；② 修 3 处 `code: "custom"` 泛化码；③ 收敛 `practice.ts` 的 `instanceof` 分支 | 26 类错误的 `status` + `body.error` 对拍逐条不变；`custom` 码归零                        |
+| P4  | 移动端跨 feature 依赖 28 处           | ① `Question`/`PracticeResume`/`WrongQuestion` 等跨域模型上提到 `lib/shared/domain/`；② **`auth→practice` 依赖反转**：auth 只 bump `authEpoch`，由 practice 侧 `watch(authEpochProvider)` 自己清断点                                                               | 跨 feature import 28 → **≤10**；`auth` 目录 0 处 import practice；`dart analyze` 0 error |
+| P5  | 10 个 >500 行 presentation            | 按 section 拆（`dashboard_screen` 的 `_buildXxx` 已是天然边界），每屏不超过 500 行                                                                                                                                                                                | 单文件 <500 行且**行为零改动**（仅搬移，不改逻辑）                                       |
+| P6  | 3 处手写分页                          | `history.ts`/`external.ts`/`questions.ts` 改用 `parsePagination`                                                                                                                                                                                                  | 相同 query 解析结果与现在一致（对拍）                                                    |
+
+### 2. 明确不做
+
+- 不追「每个文件 <300 行」：行数是症状不是目标，拆到 500 行以内即可
+- 不新建第二张错误码表：`app-error.ts` 已是唯一事实来源
+- 不把 26 个 Error 合并成 1 个：它们承载不同业务语义（`InvalidQuestionIdsError` / `OfflineCacheUnavailable`…），合并会丢可分类性
+- 不动外部分页语义（offset 保持，不趁机改 keyset）
+- 不在本计划里改渲染层（27 个 client 页面 / 8 个巨型组件另属 §9 的渲染层治理）
+
+### 3. 并行切分（按文件冲突，不按编号）
+
+**Wave 1（4 条 lane，互不碰同一文件）**
+
+| Lane | 范围                                                                      | 独占文件                                                                                                     | 工作量 |
+| ---- | ------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------ | ------ |
+| W1   | P2 拆 `external.ts` + 该文件 route→service 迁移 + **P6 的 external 分页** | `routes/external/**`（新）、`routes/external.ts`（删）                                                       | 1d     |
+| W2   | P3（补血统 / 修泛化码 / 收 instanceof）                                   | `lib/errors/app-error.ts`、`services/{import-service,question-batch}.ts`、`routes/practice.ts`、对拍测试     | 0.5d   |
+| W3   | P1 门禁脚本（**只加脚本与白名单，不动路由**）                             | `scripts/audit-layering.cjs`（新）、`ci.yml` 加一步、白名单 json                                             | 0.5d   |
+| M1   | P4 模型上提 **+ auth→practice 依赖反转**                                  | `lib/shared/domain/**`（新）、各 feature 的 import 行、`auth_provider.dart`、`practice_resume_provider.dart` | 1d     |
+
+**Wave 2（W3 落地后，白名单量化进度）**
+
+| Lane | 范围（白名单 7 条，external 归 W1）                              | 说明                                                                      |
+| ---- | ---------------------------------------------------------------- | ------------------------------------------------------------------------- |
+| W4a  | `routes/{admin,profile}.ts` → `services/{admin-service,user}.ts` | admin 还引 `@/lib/db/db-file`（备份/表检查/重连），一并下沉               |
+| W4b  | `routes/{wrong-book,practice,annotations,textbook}.ts`           | wrong-book 17 处引用最多；`annotations`/`textbook` 目前无 service，需新建 |
+| M2a  | P5 拆分：`dashboard_screen`(1047)、`history_detail`(898)         | 必须在 M1 之后（dashboard 依赖 practice 模型）                            |
+| M2b  | P5 拆分：`settings`(840)、`practice`(797) + 其余 6 个            | 与 M2a 不同文件，可并行                                                   |
+| W5   | P6 分页收敛（`history.ts`、`questions.ts:71`）                   | 与 W4b 不同文件；external 已归 W1                                         |
+
+**依赖关系**：W1/W2/W3/M1 可同时开；W4a/W4b 需等 W3 的脚本（否则没有"迁移进度"的量化）；M2a/M2b 需等 M1。白名单终态 **7 → 0**：W1 吃掉 `external.ts`，W4a 吃掉 2 条，W4b 吃掉 4 条。
+
+### 4. 验收（每条 lane 各自做，不跑全量）
+
+| Lane    | 验收                                                                                                                                    |
+| ------- | --------------------------------------------------------------------------------------------------------------------------------------- |
+| W1      | `npm run contract:check` 快照零 diff；`npx tsc --noEmit` 0 error；external 路由测试全绿；分页对拍                                       |
+| W2      | 对拍测试：26 种错误 + 未知错误，`toErrorResponse` 的 `status` + `error` 文案与改前逐条一致；`node scripts/audit-catches.cjs` 无新增标记 |
+| W3      | `npm run audit:layering` 通过（白名单 7）；故意加一处 route→db import → 脚本红并指名                                                    |
+| M1      | 跨 feature import 28 → ≤10（grep 可核）；`grep -rn "import '.*practice" lib/features/auth` = 0；`flutter test` 全绿；覆盖率门禁不降     |
+| M2a/M2b | 目标屏各 <500 行；`flutter test` 全绿（行为零改动）                                                                                     |
+| W4a/W4b | 每批迁移后 `contract:check` 一致 + route 定向测试绿；白名单相应递减（`--update` 删条目）                                                |
+
+### 5. 风险与止损
+
+| 风险                                               | 止损                                                                                |
+| -------------------------------------------------- | ----------------------------------------------------------------------------------- |
+| route→service 迁移误改查询语义                     | 契约快照 + 每批只动"搬移"，不顺手优化 SQL；有争议的查询留在白名单里下一批           |
+| 拆 `external.ts` 时路由注册顺序变化导致 404        | 快照零 diff 是硬判据；额外加一条"所有 external 路径逐个可达"的路由表测试            |
+| 补 `AppError` 血统改变既有 4xx 文案 → 前端文案回归 | 对拍测试锁死；`instanceof` 分支保持优先命中，响应逐字节不变                         |
+| domain 上提引发 import 大面积改动                  | `dart analyze` 硬闸；先上提模型文件、再改引用，两步提交                             |
+| 大文件拆分产生"仅搬移的假绿"                       | 每条 PR 声明"零行为改动"，判据是全量测试绿 + 无逻辑 diff（review 时只看是否只移动） |
+
+### 6. 完成情况（2026-11-21 实测，main `e68859a4`）
+
+| #   | 判据                 | 计划基线                                                                      | 完成后实测                                                                          | 落地 PR             |
+| --- | -------------------- | ----------------------------------------------------------------------------- | ----------------------------------------------------------------------------------- | ------------------- |
+| P1  | 路由层直连 db        | **7 / 23** 生产路由文件                                                       | **0 / 30**（`audit:layering` 白名单 0 条，红灯验证仍有效）                          | #277 #283 #284 #287 |
+| P2  | `external.ts` 体量   | 3,242 行单文件                                                                | 拆为 7 文件 / 3,289 行，最大 890；**25 路径 29 operation 契约零 diff** + 路由表护栏 | #279 #287           |
+| P3  | 错误映射             | 码表**已存在**（`AppError.kind → STATUS_BY_KIND`）；26 个生产类中 19 个已继承 | 2 个裸类补血统（漏写分支时 500→400）；27 类 + 6 种未归类输入的响应快照逐条锁死      | #278                |
+| P4  | 跨 feature import    | 28（真实跨 feature 22）                                                       | **10**（真实口径）；`auth→practice` = 0                                             | #285 #290           |
+| P5  | >500 行 presentation | 10 个                                                                         | **0 个**（最大 493）                                                                | #288 #289 #292      |
+| P6  | 手写分页             | 3 处                                                                          | **0 处**（`recall.ts` 内联副本一并收掉）                                            | #281 #291           |
+
+补充口径：
+
+- P1 的"22/23"是**宽口径**（含 `__tests__/` 里造 fixture 的 15 个文件）。生产代码是 7 个；
+  门禁只扫生产代码，否则那 15 条永远删不掉。
+- P3 原计划的"新建 `error-codes.ts` 三元组表"**没有做**——`app-error.ts` 已有码表，
+  再建一张会漂移。改为补血统 + 对拍快照，见 `decisions.md`。
+- P5 的 10 个是排除 `.freezed.dart`/`.g.dart` 生成文件后的手写文件数。
+- P6 只有"非法输入"的口径变了（`page=abc` 从 NaN 下沉 SQL 变成 1；`page=12oops` 从静默取 12 变成 1），
+  合法输入逐字不变，每条都在测试注释里记了改前实测值。
+
+### 7. 工期
+
+| 批次   | 内容                    | AI 墙钟  | 你的时间            |
+| ------ | ----------------------- | -------- | ------------------- |
+| Wave 1 | W1+W2+W3+M1 并行        | 1.5–2d   | 0.5d（review/合并） |
+| Wave 2 | W4a+W4b+M2a+M2b+W5 并行 | 1.5–2d   | 0.5d                |
+| 合计   |                         | **3–4d** | 1d                  |
+
+## 消费方契约与可移植性收口（计划，2026-11-21）
+
+来源：对比 Codex / DSH / ZCode / OpenViking 之后，筛掉「插件内核」「独立 context 服务」这类与我们问题形状
+正交的做法，只保留三条低成本守卫。**三条都不是"修问题"，而是"防回潮"** —— 实测基线已经达标，
+所以现在落成本最低，晚一年落就要先还债。
+
+### 0. 实测基线（2026-11-21，评价依据不是感觉）
+
+| 项         | 实测                                                                                                                 | 说明                                                                                                                                   |
+| ---------- | -------------------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------- |
+| 客户端边界 | `"use client"` **198** 个文件；其中 **40 处** `import type`（编译期擦除）、**1 处值 import**                         | 那一处是 `SrsAnalysisClient → @/lib/services/srs-summary`，纯 `reduce` 无 IO，合规。**按路径前缀禁 `@/lib/services` 会误伤 42 个文件** |
+| 共享层     | `src/lib/utils/**` **0** 处 `node:*`；全 lib 仅 **6** 处（crypto×4、path×1、fs×1），都在 services 与 external/shared | 注意：`grep node:` 会被函数名 `convertNode` 误命中，门禁必须匹配 import 语句而不是子串                                                 |
+| 路由层     | 30 个路由文件，**0** 处 import `react` / `next/*`                                                                    | 路由层目前没有渲染层依赖                                                                                                               |
+| MCP 工具表 | `tools.json` **632 行**、21 工具、**48** 条参数、0 个 requestBody；手写部分只有 **1402** 字符描述                    | `mcp:check` 能事后对拍，但表本身是手工抄写                                                                                             |
+| 移动端端点 | **43** 个 REST 调用点（annotation 9 + 手写字符串 34），与快照**漂移 0**                                              | 初判"对不上"的 6 条全是 `:id` ↔ `$var` 的归一化差异，不是真漂移                                                                        |
+| 契约规模   | **99** 条路径（`/api` 前缀）                                                                                         | 三个消费面共用                                                                                                                         |
+
+> **三条踩过的坑，直接决定实现方式**：
+> ① 客户端边界只能按**传递依赖**判定 —— 40 个文件是 `import type`，只禁路径前缀会造出 42 条假白名单；
+> ② `node:` 要用 import 语句匹配，不能子串匹配（`convertNode`）；
+> ③ 移动端的"端点"要和 go_router 的页面路径区分开，只能从 `@GET(...)` 注解与 `dio.*` 调用里取。
+
+### 1. P1 可移植性棘轮（0.5d，独立）
+
+新增 `scripts/audit-portability.cjs`，**复用 `audit-layering.cjs` 已有的模块解析器**
+（它已能解析 `@/lib/db/*` 子模块与相对路径，别重写）：
+
+- **规则 A（传递依赖）**：从每个 `"use client"` 文件出发，只跟随**值 import**（跳过 `import type`），
+  递归解析 `@/` 与相对路径（`visited` 去重），命中 `@/lib/db`、`node:*`、`better-sqlite3`、`@libsql/*`、
+  `drizzle-orm` 即违规，报告时给出**完整的引用链**（如 `Page.tsx → x.ts → @/lib/services/question → @/lib/db`），
+  否则改的人不知道该断哪一刀。
+- **规则 B**：`src/lib/utils/**` 的 import 语句不得出现 `node:*`（现状 0，锁死）。
+- **规则 C**：`src/lib/api/routes/**` 的 import 语句不得出现 `react` / `next/*`（现状 0）。
+
+白名单机制复用 `audit-layering.cjs`（只减不增），**初值 0**。
+
+**判据**：故意在某个 `"use client"` 文件里加 `import { db } from "@/lib/db"` → 脚本红并打印引用链；
+接进 CI（与 `audit:layering` 同一处）。
+
+**不做**：不引 `eslint-plugin-boundaries`。多一层配置与版本耦合，收益与 60 行脚本相同；
+也不做"禁止 client import 任何 service"的一刀切 —— 会误伤纯计算模块（如 `srs-summary`）。
+
+### 2. P2 MCP 工具表改为「生成 + 覆盖」（0.5d）
+
+现状：21 个工具里，`method` / `path` / `params`（48 条，含 `in` / `type` / `required`）全部是快照里已有的信息，
+手工抄写；`mcp:check` 只能**事后**发现抄错。契约里写着「新增工具必须先改这里」，但"先改这里"本身就是负担。
+
+新增 `scripts/gen-mcp-tools.mjs`：
+
+- 输入：`docs/openapi.json` + `mcp-server/tools.meta.json`（**手写**：`name` / `title` / `description`，以及参数文案覆盖）
+- 输出：`mcp-server/tools.json`（生成产物，进 git，便于 review diff）
+- `npm run mcp:gen` 生成；`npm run mcp:gen -- --check` 在 CI 比对，有 diff 即红
+
+**判据**：生成结果与现有 21 工具的 `(name, method, path, params)` **语义等价**（一次人工对拍，diff 只看格式）；
+`mcp:check` 保留为独立复核（防生成器与快照"同时错"这种自证陷阱）。
+
+**不做**：不改工具语义、不新增工具；`description` 不交给 AI 生成 —— 它是给模型看的稳定契约，不该随快照漂移。
+
+### 3. P3 消费方装配清单（1d，依赖 P2 的派生代码）
+
+现状：三个消费面（Flutter / MCP / 第三方 Agent）共用 99 条路径，但「谁用哪些」只存在于代码里。
+删端点或改路径时，移动端会**运行时**才 404，且报错看起来像"数据不存在"，很难追到"清单过时"。
+
+新增 `contracts/consumers.json` + `scripts/check-consumers.mjs`：
+
+- 清单声明：`flutter: [{ method, path, source }]`、`mcp: [tool → endpoint]`
+- **双向**校验：
+  1. 清单里每条端点必须在快照中存在（防"清单写了不存在的接口"）；
+  2. Flutter 代码里出现的端点必须都在清单里（防"偷偷加调用却没登记"）。
+- 端点提取复用 P2 的派生解析器，只认两种写法：`@GET('/path')` 注解 与 `dio.get('/path')` 调用
+  （**不要**扫裸字符串 —— 会把 go_router 的 `/dashboard`、`/settings` 当成端点，实测误报 22 条）。
+
+**判据**：临时从快照里删一条被移动端使用的路径 → 校验红并点名「flutter 在用 `/wrong-book/:id`」。
+
+**不做**：不做运行时 schema 校验（zod 已在服务端做）；**不覆盖 Web** —— Web 走 RSC 直连 service、不经 REST，
+硬塞进清单会误导（见 [`decisions.md`](./decisions.md) 2026-11-21 三个入口条目）。
+
+### 4. 顺序与工期
+
+P1 独立先行；P2 → P3 串行（P3 复用 P2 的派生解析器）。
+
+| 批次 | 内容                   | AI 墙钟 | 你的时间        |
+| ---- | ---------------------- | ------- | --------------- |
+| P1   | 可移植性棘轮 + 接 CI   | 0.5d    | 10min（review） |
+| P2   | 工具表生成 + `--check` | 0.5d    | 10min           |
+| P3   | 装配清单 + 双向校验    | 1d      | 20min           |
+| 合计 | 三条各自独立 PR        | **2d**  | 40min           |
+
+### 5. 三条都不做的事（防止"抄成负担"）
+
+- **不引插件内核 / DI 容器**（DSH 的 cordis）：单线产品没有多人并行插件的收益，代价是每次改动多一层间接。
+  参照物 DeepStudent 换内核后 0.20.1→0.20.5 四天五版全是迁移修复。
+- **不引独立 context 服务**（OpenViking）：RAG 已在单库内解决，多一个服务 = 多一个故障点、多一份运维。
+- **不追"每个模块可替换"**：可维护性来自**边界可校验**，不来自**边界可插拔**。
+
+> 一句话：这三条都是「把已经做对的事锁住」，不是「把没做的事补上」。所以工期短、风险低，
+> 唯一的失败模式是做成半吊子（有脚本但没接 CI、有清单但没双向校验）。
 
 ## 执行约定
 

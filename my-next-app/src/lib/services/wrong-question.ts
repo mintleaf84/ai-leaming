@@ -1,7 +1,8 @@
 import { drizzleDb } from "@/lib/db";
-import { eq, and, desc, sql, gte, notInArray } from "drizzle-orm";
+import { eq, and, desc, ne, sql, gte, notInArray, count } from "drizzle-orm";
 import {
   practice_logs,
+  practice_sessions,
   questions,
   question_srs,
   mastered_questions,
@@ -13,6 +14,11 @@ export interface WrongQuestionItem {
   questionId: number;
   questionContent: string;
   tags: string[];
+  /**
+   * 题目来源：import=题库题，agent=AI 题集题（错题本照收，标出来便于辨认）。
+   * 可选是因为本类型也被若干只读路径复用（已掌握列表 / 随机推荐），那里不需要来源。
+   */
+  origin?: string;
   wrongCount: number;
   lastWrongAt: string;
   correctAnswer: string;
@@ -60,6 +66,99 @@ export interface WrongQuestionDetail {
 }
 
 /**
+ * 错题本页面（`routes/wrong-book.ts`）对外形态的列表项。
+ *
+ * 与 `WrongQuestionItem` 的区别是 `questionId` 为字符串：错题本前端拿它当
+ * 不透明 ID 用（旧实现就这么发），改成数字会破坏既有调用方。
+ */
+export interface WrongBookListItem {
+  questionId: string;
+  questionContent: string;
+  tags: string[];
+  /**
+   * 题目来源（docs/agent-question-set-plan.md §2：错题本**不过滤** Agent 题，
+   * 但要让用户/客户端看得出来"这题是 AI 推的"）：import / agent。
+   */
+  origin: string;
+  wrongCount: number;
+  lastWrongAt: string;
+  correctAnswer: string;
+  userLastAnswer: string;
+}
+
+/** 错题详情页（`GET /api/wrong-book/:id`）的响应形态 */
+export interface WrongBookDetail {
+  questionId: string;
+  questionContent: string;
+  options: string[];
+  correctAnswer: string;
+  explanation: string;
+  tags: string[];
+  questionType: string;
+  /** 来源（import=题库题，agent=AI 题集题）；flagged 的题不返回详情 */
+  origin: string;
+  wrongCount: number;
+  lastWrongAt: string;
+  userLastAnswer: string;
+  historyLogs: {
+    timestamp: string;
+    userAnswer: string;
+    isCorrect: boolean;
+  }[];
+}
+
+/**
+ * 每道错题"最近一次错答"的相关子查询。
+ *
+ * 列表 / 抽题 / 详情三处的口径必须一致：按 timestamp 倒序取 is_correct = 0
+ * 的最新一条。写成 MAX(user_answer) 会拿到字典序最大值（旧 service 的写法），
+ * 与"最近一次错答"不是一回事。
+ */
+function lastWrongAnswerSql(userId: number) {
+  // 内层表必须起别名：不加别名时 `${practice_logs.question_id}` 会渲染成
+  // "practice_logs"."question_id"，SQLite 把它解析到内层表，条件退化成自身比较
+  // （拿到的是该用户任意一题的最新错答，而不是本题的）。
+  return sql<string>`(SELECT la.user_answer FROM practice_logs AS la
+                             WHERE la.question_id = ${practice_logs.question_id}
+                             AND la.user_id = ${userId} AND la.is_correct = 0
+                             ORDER BY la.timestamp DESC LIMIT 1)`;
+}
+
+/**
+ * 错题聚合的排序键。
+ *
+ * **不能**引用 select 里的 JS key（`desc(sql\`wrongCount\`)`）：drizzle 不会为
+ * 聚合生成 `AS wrongCount`，SQLite 会报 `no such column: wrongCount`（列表恒 500）。
+ * 排序列一律重写表达式，保证 ORDER BY 里是真实存在的东西。
+ */
+function wrongOrderBy() {
+  return [desc(count()), desc(sql`MAX(${practice_logs.timestamp})`)] as const;
+}
+
+/** 聚合行（DB 原始形态）→ 页面形态 */
+function toWrongBookItem(row: {
+  questionId: number | null;
+  questionContent: string | null;
+  tags: string | null;
+  origin: string | null;
+  correctAnswer: string | null;
+  wrongCount: number;
+  lastWrongAt: string | null;
+  userLastAnswer: string | null;
+}): WrongBookListItem {
+  return {
+    questionId: String(row.questionId),
+    questionContent: String(row.questionContent),
+    tags: JSON.parse(row.tags || "[]") as string[],
+    origin: row.origin || "import",
+    wrongCount: Number(row.wrongCount),
+    lastWrongAt: row.lastWrongAt || "",
+    correctAnswer: String(row.correctAnswer),
+    userLastAnswer: row.userLastAnswer || "",
+  };
+}
+
+/**
  * 错题服务 - 管理错题本、掌握状态及智能推荐
  */
 export const wrongQuestionService = {
@@ -85,6 +184,8 @@ export const wrongQuestionService = {
     const baseWhere = and(
       eq(practice_logs.user_id, userId),
       eq(practice_logs.is_correct, false),
+      // 与 listWrongBook 同口径：已报错的题不进错题本
+      ne(questions.origin, "flagged"),
       excludeIds.length > 0
         ? notInArray(practice_logs.question_id, excludeIds)
         : undefined,
@@ -94,18 +195,15 @@ export const wrongQuestionService = {
     );
 
     // 先获取总数（带 tag 筛选时同样需要 join questions）
-    const countQuery = drizzleDb
+    // where 里引用了 `questions`（origin 过滤），因此 count 查询必须一并 join；
+    // 这与原来"只在按 tag 筛选时才 join"的结果集相同（question_id 是到
+    // questions 的外键，LEFT 语义上没有可丢的行），只是少了一个分支。
+    const countResult = (await drizzleDb
       .select({ count: sql`COUNT(DISTINCT ${practice_logs.question_id})` })
       .from(practice_logs)
-      .where(baseWhere);
-    const countResult = (await (
-      tag
-        ? countQuery.innerJoin(
-            questions,
-            eq(practice_logs.question_id, questions.id),
-          )
-        : countQuery
-    ).get()) as { count: number };
+      .innerJoin(questions, eq(practice_logs.question_id, questions.id))
+      .where(baseWhere)
+      .get()) as { count: number };
     const total = countResult?.count || 0;
 
     // 分页查询主数据
@@ -114,6 +212,7 @@ export const wrongQuestionService = {
         questionId: practice_logs.question_id,
         questionContent: questions.content,
         tags: questions.tags,
+        origin: questions.origin,
         correctAnswer: questions.answer,
         wrongCount: sql<number>`COUNT(*)`,
         lastWrongAt: sql<string>`MAX(${practice_logs.timestamp})`,
@@ -141,6 +240,7 @@ export const wrongQuestionService = {
       questionId: r.questionId!,
       questionContent: r.questionContent!,
       tags: safeParseJson<string[]>(r.tags as string | null | undefined, []),
+      origin: r.origin || "import",
       wrongCount: r.wrongCount,
       lastWrongAt: r.lastWrongAt,
       correctAnswer: r.correctAnswer!,
@@ -291,6 +391,7 @@ export const wrongQuestionService = {
         questionId: practice_logs.question_id,
         questionContent: questions.content,
         tags: questions.tags,
+        origin: questions.origin,
         correctAnswer: questions.answer,
         wrongCount: sql<number>`COUNT(*)`,
         lastWrongAt: sql<string>`MAX(${practice_logs.timestamp})`,
@@ -303,6 +404,8 @@ export const wrongQuestionService = {
           eq(practice_logs.is_correct, false),
           // 排除已掌握
           sql`${practice_logs.question_id} NOT IN (SELECT question_id FROM ${mastered_questions} WHERE user_id = ${userId})`,
+          // 已报错的题不再推荐（与错题本列表同口径）
+          ne(questions.origin, "flagged"),
           tag
             ? sql`EXISTS (SELECT 1 FROM json_each(${questions.tags}) WHERE value = ${tag})`
             : undefined,
@@ -337,7 +440,12 @@ export const wrongQuestionService = {
       })
       .onConflictDoUpdate({
         target: [mastered_questions.user_id, mastered_questions.question_id],
-        set: { mastered_at: sql`CURRENT_TIMESTAMP`, note: note || null },
+        // 只有显式传了 note 才覆盖：路由的「重新标记已掌握」不该清掉已有备注。
+        // 迁移前路由自己的 upsert 只刷 mastered_at，备注是保留的。
+        set: {
+          mastered_at: sql`CURRENT_TIMESTAMP`,
+          ...(note === undefined ? {} : { note: note || null }),
+        },
       });
     return true;
   },
@@ -473,5 +581,284 @@ export const wrongQuestionService = {
       correctAnswer: r.correctAnswer!,
       userLastAnswer: "",
     }));
+  },
+
+  /**
+   * 错题本列表（`GET /api/wrong-book/`）。
+   *
+   * 与 `getList` 的差异不是口味问题，迁移时按行为等价保留原口径：
+   * - 不分页、不截 50 条（页面一次取全部，前端自己分组/过滤）；
+   * - `userLastAnswer` 取"最近一次**错**答"（相关子查询），`getList` 取
+   *   `MAX(user_answer)`（字典序最大值，语义不同）；
+   * - 不带 SRS 字段（列表页不渲染，多一次 leftJoin 只是白花钱）。
+   */
+  async listWrongBook(userId: number): Promise<WrongBookListItem[]> {
+    const masteredSubquery = drizzleDb
+      .select({ id: mastered_questions.question_id })
+      .from(mastered_questions)
+      .where(eq(mastered_questions.user_id, userId));
+
+    const rows = await drizzleDb
+      .select({
+        questionId: practice_logs.question_id,
+        questionContent: questions.content,
+        tags: questions.tags,
+        origin: questions.origin,
+        correctAnswer: questions.answer,
+        wrongCount: count(),
+        lastWrongAt: sql<string>`MAX(${practice_logs.timestamp})`,
+        userLastAnswer: lastWrongAnswerSql(userId),
+      })
+      .from(practice_logs)
+      .innerJoin(questions, eq(practice_logs.question_id, questions.id))
+      .where(
+        and(
+          eq(practice_logs.user_id, userId),
+          eq(practice_logs.is_correct, false),
+          notInArray(practice_logs.question_id, masteredSubquery),
+          // 隔离过滤（docs/agent-question-set-plan.md §2）：Agent 题集题照收
+          // （origin='agent'），但用户已报「这题有问题」的（origin='flagged'）
+          // 不再出现在错题本里 —— 题面本身有问题，留着只会反复误导。
+          ne(questions.origin, "flagged"),
+        ),
+      )
+      .groupBy(practice_logs.question_id)
+      .orderBy(...wrongOrderBy())
+      .all();
+
+    return rows.map(toWrongBookItem);
+  },
+
+  /**
+   * 错题统计（`GET /api/wrong-book/stats`）。
+   *
+   * 与 `getStats` 的差异（迁移时保留原口径，别互换）：
+   * - "最近 7 天"用 `date(timestamp) >= date('now','-7 days')`（按自然日），
+   *   不是"7×24 小时前"的时间戳比较；
+   * - `frequent` = 错误次数 ≥ 2 的**去重题目数**（分组行数），不是总错误条数。
+   */
+  async getWrongBookStats(
+    userId: number,
+  ): Promise<{ total: number; recent: number; frequent: number }> {
+    const totalStats = await drizzleDb
+      .select({
+        count: sql<number>`COUNT(DISTINCT ${practice_logs.question_id})`,
+      })
+      .from(practice_logs)
+      .where(
+        and(
+          eq(practice_logs.user_id, userId),
+          eq(practice_logs.is_correct, false),
+        ),
+      );
+
+    const recentStats = await drizzleDb
+      .select({
+        count: sql<number>`COUNT(DISTINCT ${practice_logs.question_id})`,
+      })
+      .from(practice_logs)
+      .where(
+        and(
+          eq(practice_logs.user_id, userId),
+          eq(practice_logs.is_correct, false),
+          sql`date(${practice_logs.timestamp}) >= date('now', '-7 days')`,
+        ),
+      );
+
+    const frequentRows = await drizzleDb
+      .select({ cnt: count() })
+      .from(practice_logs)
+      .where(
+        and(
+          eq(practice_logs.user_id, userId),
+          eq(practice_logs.is_correct, false),
+        ),
+      )
+      .groupBy(practice_logs.question_id)
+      .having(sql`count(*) >= 2`)
+      .all();
+
+    return {
+      total: Number(totalStats[0]?.count ?? 0),
+      recent: Number(recentStats[0]?.count ?? 0),
+      frequent: frequentRows.length,
+    };
+  },
+
+  /**
+   * 智能抽题（`GET /api/wrong-book/random`）。
+   *
+   * `mode=priority`：错误次数 × 5 + 距上次错的天数 × 2，再乘一个随机扰动；
+   * `mode=random`：纯随机。两个 ORDER BY 都直接塞 SQL 表达式（不能引用 select key）。
+   */
+  async pickWrongQuestions(
+    userId: number,
+    options: { limit: number; tag?: string; mode?: "priority" | "random" },
+  ): Promise<WrongBookListItem[]> {
+    const { limit, tag, mode = "priority" } = options;
+
+    const priorityOrder = sql`(
+            COUNT(*) * 5.0 + 
+            (JULIANDAY('now') - JULIANDAY(MAX(${practice_logs.timestamp}))) * 2.0
+        ) * (ABS(RANDOM() % 1000) / 1000.0) DESC`;
+
+    const randomOrder = sql`RANDOM()`;
+
+    const masteredSubquery = drizzleDb
+      .select({ id: mastered_questions.question_id })
+      .from(mastered_questions)
+      .where(eq(mastered_questions.user_id, userId));
+
+    const rows = await drizzleDb
+      .select({
+        questionId: practice_logs.question_id,
+        questionContent: questions.content,
+        tags: questions.tags,
+        origin: questions.origin,
+        correctAnswer: questions.answer,
+        wrongCount: count(),
+        lastWrongAt: sql<string>`MAX(${practice_logs.timestamp})`,
+        userLastAnswer: lastWrongAnswerSql(userId),
+      })
+      .from(practice_logs)
+      .innerJoin(questions, eq(practice_logs.question_id, questions.id))
+      .where(
+        and(
+          eq(practice_logs.user_id, userId),
+          eq(practice_logs.is_correct, false),
+          notInArray(practice_logs.question_id, masteredSubquery),
+          // 已报错的题不参与抽题（与列表同口径）
+          ne(questions.origin, "flagged"),
+          tag
+            ? sql`EXISTS (SELECT 1 FROM json_each(${questions.tags}) WHERE value = ${tag})`
+            : sql`1=1`,
+        ),
+      )
+      .groupBy(practice_logs.question_id)
+      .orderBy(mode === "priority" ? priorityOrder : randomOrder)
+      .limit(limit)
+      .all();
+
+    return rows.map(toWrongBookItem);
+  },
+
+  /**
+   * 错题详情（`GET /api/wrong-book/:id`）。
+   *
+   * 只取详情页真正渲染的列：整行查询会把 `material_html`（材料原文，单题最大
+   * 字段）与 `ai_mnemonic` 一起搬进内存，而响应里根本不含它们。
+   * 与 `getDetail` 的差异：不返回 SRS（详情页不渲染），`userLastAnswer` 用单独
+   * 一条"最近错答"查询（`getDetail` 从历史列表里 find）。
+   */
+  async getWrongBookDetail(
+    userId: number,
+    questionId: number,
+  ): Promise<WrongBookDetail | null> {
+    const [question] = await drizzleDb
+      .select({
+        id: questions.id,
+        content: questions.content,
+        options: questions.options,
+        answer: questions.answer,
+        explanation: questions.explanation,
+        tags: questions.tags,
+        type: questions.type,
+        origin: questions.origin,
+      })
+      .from(questions)
+      .where(eq(questions.id, questionId))
+      .limit(1)
+      .all();
+
+    // 已报错的题（origin='flagged'）与"不存在"一样按 404 处理：它已被移出可用集
+    if (!question || question.origin === "flagged") return null;
+
+    const stats = await drizzleDb
+      .select({
+        wrongCount: count(),
+        lastWrongAt: sql<string>`MAX(${practice_logs.timestamp})`,
+      })
+      .from(practice_logs)
+      .where(
+        and(
+          eq(practice_logs.question_id, questionId),
+          eq(practice_logs.user_id, userId),
+          eq(practice_logs.is_correct, false),
+        ),
+      );
+
+    const historyLogs = await drizzleDb
+      .select({
+        timestamp: practice_logs.timestamp,
+        userAnswer: practice_logs.user_answer,
+        isCorrect: practice_logs.is_correct,
+      })
+      .from(practice_logs)
+      .where(
+        and(
+          eq(practice_logs.question_id, questionId),
+          eq(practice_logs.user_id, userId),
+        ),
+      )
+      .orderBy(desc(practice_logs.timestamp))
+      .limit(20)
+      .all();
+
+    const lastWrongRow = await drizzleDb
+      .select({ user_answer: practice_logs.user_answer })
+      .from(practice_logs)
+      .where(
+        and(
+          eq(practice_logs.question_id, questionId),
+          eq(practice_logs.user_id, userId),
+          eq(practice_logs.is_correct, false),
+        ),
+      )
+      .orderBy(desc(practice_logs.timestamp))
+      .limit(1)
+      .all();
+
+    return {
+      questionId: String(question.id),
+      questionContent: String(question.content),
+      options: JSON.parse(question.options || "[]") as string[],
+      correctAnswer: String(question.answer),
+      explanation: question.explanation || "",
+      tags: JSON.parse(question.tags || "[]") as string[],
+      questionType: question.type || "single",
+      origin: question.origin || "import",
+      wrongCount: Number(stats[0]?.wrongCount ?? 0),
+      lastWrongAt: stats[0]?.lastWrongAt || "",
+      userLastAnswer: lastWrongRow[0]?.user_answer || "",
+      historyLogs: historyLogs.map((row) => ({
+        timestamp: row.timestamp || "",
+        userAnswer: row.userAnswer || "",
+        isCorrect: Boolean(row.isCorrect),
+      })),
+    };
+  },
+
+  /**
+   * 建错题练习会话（`POST /api/wrong-book/practice`）。
+   *
+   * 没复用 `practiceService.createReviewSession`，因为对外可见的三处不同：
+   * 会话 id 形态（`wrong-<时间戳>`）、`practice_mode`（`review`）、
+   * `questions_json` 存的是**字符串 id 列表**。改这些等于改客户端契约。
+   */
+  async createWrongBookPracticeSession(
+    userId: number,
+    questionIds: string[],
+  ): Promise<string> {
+    const sessionId = `wrong-${Date.now()}`;
+
+    await drizzleDb.insert(practice_sessions).values({
+      id: sessionId,
+      user_id: userId,
+      total_questions: questionIds.length,
+      practice_mode: "review",
+      questions_json: JSON.stringify(questionIds),
+    });
+
+    return sessionId;
   },
 };

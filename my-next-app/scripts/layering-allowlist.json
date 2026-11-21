@@ -1,12 +1,4 @@
 {
   "description": "路由层直连 db 的存量清单（scripts/audit-layering.cjs）。只减不增：修好一个就 --update 删一条；确需新增只能用 --allow-add=<path> --reason=\"<理由>\" 并在 PR 里说明。测试文件不在扫描范围内。",
-  "files": {
-    "src/lib/api/routes/admin.ts": "待迁移到 services/admin-service.ts：备份/恢复、表检查、连接重开仍在路由里直接操作 SQLite 文件（@/lib/db + @/lib/db/db-file）",
-    "src/lib/api/routes/annotations.ts": "待新建 services/annotation.ts：批注 CRUD 目前没有对应 service，查询直接写在路由里",
-    "src/lib/api/routes/external.ts": "待 external lane 拆到 services/external-*.ts：外部 API 的写入与事务（@/lib/db/executor）仍内联在路由，本 lane 不动该文件避免冲突",
-    "src/lib/api/routes/practice.ts": "待迁移到 services/practice.ts：first-principles 缓存表的建表与读写还在路由末尾，service 只覆盖了会话与判分",
-    "src/lib/api/routes/profile.ts": "待迁移到 services/user.ts：userService.getUserProfileFull 已是同语义实现，路由里的统计聚合尚未改调它",
-    "src/lib/api/routes/textbook.ts": "待迁移到 services/textbook.ts：章节列表/计数的 drizzle 查询仍写在路由里（@/lib/db + @/lib/db/drizzle-schema）",
-    "src/lib/api/routes/wrong-book.ts": "待迁移到 services/wrong-question.ts：wrongQuestionService 已有列表/统计能力，路由里仍自写聚合查询"
-  }
+  "files": {}
 }

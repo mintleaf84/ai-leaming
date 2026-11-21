@@ -117,4 +117,26 @@ void main() {
     expect(find.byType(ExpansionTile), findsNothing);
     expect(find.textContaining('70%'), findsOneWidget);
   });
+
+  testWidgets('沉浸模式：左滑到第 1 题，题干 / 选项 / 解析都在', (tester) async {
+    await pumpScreen(
+      tester,
+      const HistoryDetailScreen(sessionId: sessionId),
+      overrides: <Object>[
+        ...fakeHistoryDetail(
+          sessionId,
+          state: stateWith(<PracticeLog>[fakeLog(content: '第一题题干')]),
+        ),
+        ...fakeReviewMode(ReviewMode.immersive),
+      ],
+    );
+
+    await tester.drag(find.byType(PageView), const Offset(-400, 0));
+    await tester.pumpAndSettle();
+
+    expect(find.text('第 1 题'), findsOneWidget);
+    expect(find.text('第一题题干'), findsOneWidget);
+    expect(find.textContaining('选项甲'), findsOneWidget);
+    expect(find.textContaining('这是解析正文'), findsOneWidget);
+  });
 }

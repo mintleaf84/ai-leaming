@@ -11,6 +11,7 @@ import 'core/network/server_config.dart';
 import 'core/sync/sync_providers.dart';
 import 'core/theme/app_theme.dart';
 import 'core/theme/theme_provider.dart';
+import 'features/agent_sets/presentation/agent_set_inbox_provider.dart';
 import 'shared/widgets/contract_gate.dart';
 import 'shared/widgets/server_config_gate.dart';
 
@@ -83,9 +84,14 @@ class MyApp extends ConsumerWidget {
             ),
             // 两层闸的先后有语义：先确认「有服务器地址」，再拿这个地址问
             // `/meta` 做版本协商。没有地址就协商，只会得到一个必然失败的请求。
+            //
+            // 未读监听挂在两层闸**之内**：协商判定客户端太旧而拦下 App 时，
+            // 再去拉题集列表只是多一条无意义的失败请求。
             child: ServerConfigGate(
               child: ContractGate(
-                child: routedChild ?? const SizedBox.shrink(),
+                child: AgentSetInboxWatcher(
+                  child: routedChild ?? const SizedBox.shrink(),
+                ),
               ),
             ),
           ),

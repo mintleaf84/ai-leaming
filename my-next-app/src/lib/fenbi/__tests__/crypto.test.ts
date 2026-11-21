@@ -20,20 +20,20 @@ import {
 const VALID_KEY = crypto.randomBytes(32).toString("base64");
 
 describe("crypto / 密钥缺失", () => {
-  const original = process.env.FENBI_SECRET;
+  const originalFenbi = process.env.FENBI_SECRET;
+  const originalJwt = process.env.JWT_SECRET;
 
   afterEach(() => {
-    if (original === undefined) delete process.env.FENBI_SECRET;
-    else process.env.FENBI_SECRET = original;
+    if (originalFenbi === undefined) delete process.env.FENBI_SECRET;
+    else process.env.FENBI_SECRET = originalFenbi;
+    if (originalJwt === undefined) delete process.env.JWT_SECRET;
+    else process.env.JWT_SECRET = originalJwt;
   });
 
-  it("未设置 FENBI_SECRET 时 canStoreSecret() 为 false", () => {
+  it("FENBI_SECRET 与 JWT_SECRET 都没有时 canStoreSecret() 为 false", () => {
     delete process.env.FENBI_SECRET;
+    delete process.env.JWT_SECRET;
     expect(canStoreSecret()).toBe(false);
-  });
-
-  it("密钥缺失时加密/解密都抛 FenbiSecretUnavailableError", () => {
-    delete process.env.FENBI_SECRET;
     expect(() => encryptSecret("secret")).toThrow(FenbiSecretUnavailableError);
     expect(() => decryptSecret("v1.aa.bb.cc")).toThrow(
       FenbiSecretUnavailableError,
@@ -41,14 +41,63 @@ describe("crypto / 密钥缺失", () => {
   });
 
   it("密钥不是 32 字节 base64 时同样视为缺失（不做静默降级）", () => {
+    delete process.env.JWT_SECRET;
     process.env.FENBI_SECRET = Buffer.from("too-short").toString("base64");
     expect(canStoreSecret()).toBe(false);
     expect(() => encryptSecret("secret")).toThrow(FenbiSecretUnavailableError);
   });
 
   it("密钥含非法 base64 字符时视为缺失", () => {
+    delete process.env.JWT_SECRET;
     process.env.FENBI_SECRET = "!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!";
     expect(canStoreSecret()).toBe(false);
+  });
+
+  it("配了非法 FENBI_SECRET 时 fail closed：即使有 JWT_SECRET 也不回退派生", () => {
+    process.env.JWT_SECRET = "root-secret";
+    process.env.FENBI_SECRET = Buffer.from("too-short").toString("base64");
+    expect(canStoreSecret()).toBe(false);
+    expect(() => encryptSecret("secret")).toThrow(FenbiSecretUnavailableError);
+  });
+});
+
+describe("crypto / 从 JWT_SECRET 派生（HKDF）", () => {
+  const originalFenbi = process.env.FENBI_SECRET;
+  const originalJwt = process.env.JWT_SECRET;
+
+  beforeEach(() => {
+    delete process.env.FENBI_SECRET;
+    process.env.JWT_SECRET = "root-secret-a";
+  });
+
+  afterEach(() => {
+    if (originalFenbi === undefined) delete process.env.FENBI_SECRET;
+    else process.env.FENBI_SECRET = originalFenbi;
+    if (originalJwt === undefined) delete process.env.JWT_SECRET;
+    else process.env.JWT_SECRET = originalJwt;
+  });
+
+  it("只有 JWT_SECRET 时 canStoreSecret() 为 true，且可往返解密", () => {
+    expect(canStoreSecret()).toBe(true);
+    expect(decryptSecret(encryptSecret("p@ss"))).toBe("p@ss");
+  });
+
+  it("同一根秘密派生稳定：先加密、隔一次调用再解也能解开", () => {
+    const cipher = encryptSecret("stable");
+    expect(canStoreSecret()).toBe(true);
+    expect(decryptSecret(cipher)).toBe("stable");
+  });
+
+  it("换 JWT_SECRET 后旧密文解不开（FenbiSecretDecryptError）", () => {
+    const cipher = encryptSecret("will-break");
+    process.env.JWT_SECRET = "root-secret-b";
+    expect(() => decryptSecret(cipher)).toThrow(FenbiSecretDecryptError);
+  });
+
+  it("专用 FENBI_SECRET 优先于派生：配上之后 JWT 派生的密文解不开", () => {
+    const derivedCipher = encryptSecret("derived");
+    process.env.FENBI_SECRET = VALID_KEY;
+    expect(() => decryptSecret(derivedCipher)).toThrow(FenbiSecretDecryptError);
   });
 });
 

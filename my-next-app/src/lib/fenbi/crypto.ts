@@ -1,11 +1,18 @@
 /**
  * 粉笔账号凭据的加密与脱敏（docs/fenbi-sync-design.md §3）。
  *
- * ## 为什么单独一层，而不是复用 `utils/encryption.ts`
+ * ## 密钥来源（两级，见设计文档 §8）
  *
- * 那份实现用 PBKDF2 从**任意长度**的口令派生子密钥，而设计文档冻结的口径是
- * 「`FENBI_SECRET` 必须是 32 字节 base64」：密钥不合格时**拒绝存密码**，只允许
- * 扫码绑定。两套语义混在一个函数里迟早会有人把坏密钥当合法口令用。
+ * 1. `FENBI_SECRET`：专用密钥，必须是 32 字节 base64。配了就用它。
+ * 2. 未配时从 `JWT_SECRET` 用 **HKDF-SHA256** 派生（info = `fenbi-cred-v1`）。
+ *    这是「密钥分离」的标准做法（RFC 5869）：同一个根秘密派生出用途独立的子密钥，
+ *    而不是把根秘密直接当 AES 密钥用。
+ *
+ * 配了 `FENBI_SECRET` 但格式非法时**fail closed**（拒绝加密），不会悄悄回退到
+ * 派生——写错的密钥被当成另一个"合法密钥"用，比直接报错危险得多。
+ *
+ * 轮换语义：换 `JWT_SECRET`（派生根变化）会让所有已绑定账号解不开，必须重新绑定。
+ * 已在文档里写明，不要在无迁移脚本的情况下轮换。
  *
  * ## 存储格式
  *
@@ -29,7 +36,7 @@ const FORMAT_VERSION = "v1";
 /** 密钥缺失/不合格：调用方应回退到扫码绑定，而不是重试 */
 export class FenbiSecretUnavailableError extends Error {
   constructor(
-    message = "服务端未配置 FENBI_SECRET，暂不支持保存粉笔密码，请使用扫码绑定",
+    message = "服务端缺少可用的加密密钥（FENBI_SECRET 或 JWT_SECRET），无法保存粉笔凭据",
   ) {
     super(message);
     this.name = "FenbiSecretUnavailableError";
@@ -44,27 +51,49 @@ export class FenbiSecretDecryptError extends Error {
   }
 }
 
+/** HKDF 的用途标签：换它等于换密钥，已绑定的账号会解不开 */
+const DERIVE_INFO = "fenbi-cred-v1";
+/** HKDF salt 留空即可（根秘密已有足够熵），显式写出来避免有人改动 */
+const DERIVE_SALT = Buffer.alloc(0);
+
 /**
- * 读取并校验 `FENBI_SECRET`。
+ * 读取加密密钥。
+ *
+ * 优先 `FENBI_SECRET`（32 字节 base64）；未配置时从 `JWT_SECRET` 派生。
+ * 配了但格式非法 → 返回 null（fail closed，不回退派生）。
  *
  * 每次调用都重新读环境变量（不缓存）：测试要在同一个进程里模拟"密钥缺失"，
  * 缓存会让第二次断言永远拿到第一次的密钥。
  */
 function readSecret(): Buffer | null {
   const raw = process.env.FENBI_SECRET?.trim();
-  if (!raw) return null;
+  if (raw) {
+    // base64 只允许标准字符集：Buffer.from 对非法字符是静默丢弃的，
+    // 不校验就会把「写错的密钥」当成另一个合法密钥用。
+    if (!/^[A-Za-z0-9+/]+={0,2}$/.test(raw)) return null;
+    if (raw.length % 4 !== 0) return null;
 
-  // base64 只允许标准字符集：Buffer.from 对非法字符是静默丢弃的，
-  // 不校验就会把「写错的密钥」当成另一个合法密钥用。
-  if (!/^[A-Za-z0-9+/]+={0,2}$/.test(raw)) return null;
-  if (raw.length % 4 !== 0) return null;
+    const key = Buffer.from(raw, "base64");
+    if (key.length !== KEY_LENGTH) return null;
+    return key;
+  }
 
-  const key = Buffer.from(raw, "base64");
-  if (key.length !== KEY_LENGTH) return null;
-  return key;
+  const root = process.env.JWT_SECRET?.trim();
+  if (!root) return null;
+
+  // HKDF-SHA256：同一根秘密 + 固定 info 得到稳定的 32 字节子密钥。
+  // 与直接复用根秘密相比，JWT 的 HMAC 使用面不会碰到这把 AES 密钥。
+  const derived = crypto.hkdfSync(
+    "sha256",
+    Buffer.from(root, "utf8"),
+    DERIVE_SALT,
+    Buffer.from(DERIVE_INFO, "utf8"),
+    KEY_LENGTH,
+  );
+  return Buffer.from(derived);
 }
 
-/** 服务端是否具备保存密码的条件（缺 FENBI_SECRET 时为 false） */
+/** 服务端是否具备保存凭据的条件（有专用密钥或可派生的 JWT_SECRET） */
 export function canStoreSecret(): boolean {
   return readSecret() !== null;
 }

@@ -389,6 +389,11 @@ export const questionService = {
   ): Promise<{ items: Question[]; total: number }> {
     const conditions = [];
 
+    // 隔离过滤（docs/agent-question-set-plan.md §2）：题库列表只出正常题库题。
+    // Agent 题集题（origin='agent'）与用户报错的题（origin='flagged'）不出现在
+    // 这里；历史行与既有写入路径默认 origin='import'，因此既有行为零变化。
+    conditions.push(eq(drizzleSchema.questions.origin, "import"));
+
     if (filter.search) {
       conditions.push(
         like(drizzleSchema.questions.content, `%${filter.search}%`),

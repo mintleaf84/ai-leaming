@@ -176,6 +176,27 @@
       "when": 1784500000000,
       "tag": "0024_exam_papers",
       "breakpoints": true
+    },
+    {
+      "idx": 25,
+      "version": "6",
+      "when": 1784600000000,
+      "tag": "0025_fenbi_sync",
+      "breakpoints": true
+    },
+    {
+      "idx": 26,
+      "version": "6",
+      "when": 1784700000000,
+      "tag": "0026_agent_question_sets",
+      "breakpoints": true
+    },
+    {
+      "idx": 27,
+      "version": "6",
+      "when": 1784800000000,
+      "tag": "0027_agent_set_read_at",
+      "breakpoints": true
     }
   ]
 }

@@ -41,6 +41,8 @@ const MIGRATION_ONLY_TABLES = new Set([
   "chat_messages",
   "chat_sessions",
   "daily_usage",
+  "fenbi_accounts",
+  "fenbi_synced_exercises",
   "first_principles_cache",
   "knowledge_cards",
   "mastered_questions",

@@ -49,7 +49,8 @@ const PaperSummarySchema = z.object({
   title: z.string(),
   kind: z.enum(["fixed", "timed"]),
   durationMinutes: z.number().nullable(),
-  source: z.enum(["manual", "auto"]),
+  /** agent = AI 题集一键成卷（docs/agent-question-set-plan.md §4.2） */
+  source: z.enum(["manual", "auto", "agent"]),
   totalQuestions: z.number(),
   createdAt: z.string().nullable(),
   updatedAt: z.string().nullable(),

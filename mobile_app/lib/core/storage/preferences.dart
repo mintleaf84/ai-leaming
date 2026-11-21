@@ -56,4 +56,11 @@ abstract final class PreferencesKeys {
   /// 未完成练习的断点（JSON：sessionId / answered / total / mode / savedAt）。
   /// 见 `features/practice/domain/practice_resume.dart`。
   static const String practiceResume = 'practice_resume';
+
+  /// 上次已通知过的 AI 题集未读数（整数）。见
+  /// `features/agent_sets/presentation/agent_set_inbox_provider.dart`。
+  ///
+  /// 存下来是为了「同一批未读不重复弹通知」：只放在内存里的话，杀进程再打开
+  /// 会把同一批题当成新题再通知一次。
+  static const String agentSetUnreadSeen = 'agent_set_unread_seen';
 }

@@ -18,6 +18,8 @@ const protectedRoutes = [
   "/recall",
   // 试卷/模考：试卷归属与作答记录都是个人数据
   "/exam",
+  // AI 题集：外部 Agent 推给个人的批次，练习会话同样按登录用户隔离
+  "/agent-sets",
 ];
 const publicRoutes = ["/login", "/register"];
 

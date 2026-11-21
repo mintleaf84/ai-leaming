@@ -8,6 +8,7 @@ import logger from "@/lib/logger";
 import { Question } from "@/types";
 import { QuestionRowSchema } from "@/lib/schemas";
 import { generateId } from "@/lib/utils/id";
+import { coerceJsonColumn } from "@/lib/utils/json";
 
 /**
  * 将数据库原始行映射为业务 Question 类型
@@ -22,9 +23,8 @@ function mapQuestion(q: Record<string, unknown>): Question {
     );
     return {
       ...q,
-      options:
-        typeof q.options === "string" ? JSON.parse(q.options) : q.options || [],
-      tags: typeof q.tags === "string" ? JSON.parse(q.tags) : q.tags || [],
+      options: coerceJsonColumn<unknown[]>(q.options, []),
+      tags: coerceJsonColumn<unknown[]>(q.tags, []),
       type: q.type || "single",
       dimension: q.dimension || "knowledge",
     } as Question;

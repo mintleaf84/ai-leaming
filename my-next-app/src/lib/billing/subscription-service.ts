@@ -14,6 +14,7 @@ import {
   UsageCheckResult,
   USAGE_TYPE_LABELS,
 } from "../../types/subscription";
+import { coerceJsonColumn } from "@/lib/utils/json";
 
 const { subscription_plans, user_subscriptions, daily_usage } = drizzleSchema;
 
@@ -430,14 +431,11 @@ function parsePlanRow(row: Record<string, unknown>): SubscriptionPlan {
     price_monthly: row.price_monthly as number,
     sort_order: row.sort_order as number | undefined,
     created_at: row.created_at as string | undefined,
-    limits:
-      typeof row.limits === "string"
-        ? JSON.parse(row.limits || "{}")
-        : row.limits,
-    features:
-      typeof row.features === "string"
-        ? JSON.parse(row.features || "[]")
-        : row.features,
+    limits: coerceJsonColumn<Record<UsageType, number>>(
+      row.limits,
+      {} as Record<UsageType, number>,
+    ),
+    features: coerceJsonColumn<string[]>(row.features, []),
     is_active: Boolean(row.is_active),
   };
 }

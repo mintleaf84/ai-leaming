@@ -8,6 +8,7 @@ import {
 import { createQuestionScheduler } from "@/lib/srs/fsrs-config";
 import dayjs from "dayjs";
 import utc from "dayjs/plugin/utc";
+import { logger } from "@/lib/logger";
 
 dayjs.extend(utc);
 import { drizzleDb } from "@/lib/db";
@@ -23,6 +24,7 @@ import {
 import { eq, and, or, sql, lte, isNull, count, gte, ne } from "drizzle-orm";
 import { withTransaction } from "@/lib/db/executor";
 import { getBeijingDateString } from "@/lib/utils/datetime";
+import { safeParseJson } from "@/lib/utils/json";
 
 // 批量同步配置
 const SYNC_BATCH_SIZE = 100;
@@ -105,13 +107,16 @@ async function getReadingSpeed(
  * 解析失败（脏数据/非 JSON 字符串）时按原文处理，属于数据兼容降级。
  */
 function parseOptionsText(optionsJson: string): string {
-  try {
-    const options = JSON.parse(optionsJson);
-    return Array.isArray(options) ? options.join("") : "";
-  } catch (e) {
-    console.warn("[SRS] 选项 JSON 解析失败，按纯文本估算字数:", e);
+  const options = safeParseJson<unknown>(optionsJson, null);
+  if (options === null) {
+    // 脏数据/非 JSON：按原文估算字数（不阻断，但要留痕）
+    logger.warn(
+      { optionsLength: optionsJson.length },
+      "[SRS] 选项 JSON 解析失败，按纯文本估算字数",
+    );
     return optionsJson || "";
   }
+  return Array.isArray(options) ? options.join("") : "";
 }
 
 /**

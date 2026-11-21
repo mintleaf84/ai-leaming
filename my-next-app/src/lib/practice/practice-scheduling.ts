@@ -9,6 +9,7 @@ import { PracticeConfig } from "@/types/practice";
 import { Question } from "@/types";
 import { QuestionRowSchema } from "@/lib/schemas";
 import { logger } from "@/lib/logger";
+import { coerceJsonColumn } from "@/lib/utils/json";
 
 const { questions, practice_logs, observation_zone, question_srs } =
   drizzleSchema;
@@ -24,9 +25,8 @@ function mapRawToQuestion(q: Record<string, unknown>): Question {
     logger.warn({ err }, "[PracticeScheduling] 题目行解析失败，使用宽松映射");
     return {
       ...q,
-      options:
-        typeof q.options === "string" ? JSON.parse(q.options) : q.options || [],
-      tags: typeof q.tags === "string" ? JSON.parse(q.tags) : q.tags || [],
+      options: coerceJsonColumn<unknown[]>(q.options, []),
+      tags: coerceJsonColumn<unknown[]>(q.tags, []),
       type: q.type || "single",
       dimension: q.dimension || "knowledge",
     } as Question;

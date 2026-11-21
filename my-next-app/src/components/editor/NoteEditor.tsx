@@ -27,6 +27,7 @@ import {
 import { Separator } from "@/components/ui/separator";
 import GenerativeMenuSwitch from "./generative/generative-menu-switch";
 import QuestionPicker from "./QuestionPicker";
+import { safeParseJson } from "@/lib/utils/json";
 
 const extensions = [...defaultExtensions, slashCommand];
 
@@ -41,20 +42,18 @@ export default function NoteEditor({
 }: NoteEditorProps) {
   const [content, _setContent] = useState<JSONContent | null>(() => {
     if (!initialContent) return null;
-    try {
-      return JSON.parse(initialContent);
-    } catch (_e) {
-      // audit-allow: 兼容历史纯文本笔记内容，解析失败时包装为最小合法文档结构
-      return {
-        type: "doc",
-        content: [
-          {
-            type: "paragraph",
-            content: [{ type: "text", text: initialContent }],
-          },
-        ],
-      };
-    }
+    const parsed = safeParseJson<JSONContent | null>(initialContent, null);
+    if (parsed) return parsed;
+    // 兼容历史纯文本笔记内容，解析失败时包装为最小合法文档结构
+    return {
+      type: "doc",
+      content: [
+        {
+          type: "paragraph",
+          content: [{ type: "text", text: initialContent }],
+        },
+      ],
+    };
   });
   const [saveStatus, setSaveStatus] = useState("已保存");
 

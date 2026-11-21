@@ -98,7 +98,7 @@ function toZod(param: ParamDescriptor): z.ZodTypeAny {
       break;
     }
     case "object":
-      schema = z.record(z.unknown());
+      schema = z.record(z.string(), z.unknown());
       break;
     default:
       schema = z.string();

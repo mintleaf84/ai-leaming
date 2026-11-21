@@ -57,7 +57,10 @@ const getTreeRoute = createRoute({
 app.openapi(getTreeRoute, async (c) => {
   const user = getCurrentUser(c);
   const tree = await masteryService.getMasteryTree(Number(user.id));
-  return c.json(tree);
+  // 响应 schema 里的 children 是"宽松记录"（z.record），而 MasteryTreeNode 的
+  // children 是递归数组（JSONValue 联合）。运行时载荷一致，这里只做类型对齐；
+  // 换成递归 z.lazy schema 会改动契约快照，不值得为一次依赖升级付这个代价。
+  return c.json(tree as unknown as z.infer<typeof MasteryTreeResponseSchema>);
 });
 
 // GET /api/v1/mastery/stats?tag=failed

@@ -1,4 +1,6 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:flutter/foundation.dart';
+import '../../../core/error/user_message.dart';
 import '../../../core/network/dio_client.dart';
 import '../../../shared/datasources/api_client.dart';
 import '../domain/learning_stats.dart';
@@ -34,7 +36,10 @@ class StatsController extends Notifier<StatsState> {
   StatsState build() => const StatsState();
 
   ApiClient get _apiClient {
-    final dio = ref.watch(dioProvider);
+    // 用 read 而不是 watch：这里在控制器方法里取一次用，不参与 build 的依赖图。
+    // watch 会把「后端地址变了」变成对本控制器的 invalidateSelf，正在加载的
+    // 列表被重建回空态，方法里随后落地的 state 也就写不回去了。
+    final dio = ref.read(dioProvider);
     return ApiClient(dio);
   }
 
@@ -47,7 +52,8 @@ class StatsController extends Notifier<StatsState> {
       final stats = LearningStats.fromJson(response as Map<String, dynamic>);
       state = state.copyWith(isLoading: false, stats: stats);
     } catch (e) {
-      state = state.copyWith(isLoading: false, error: e.toString());
+      debugPrint('[Stats] 加载统计数据失败: $e');
+      state = state.copyWith(isLoading: false, error: userMessageOf(e));
     }
   }
 }

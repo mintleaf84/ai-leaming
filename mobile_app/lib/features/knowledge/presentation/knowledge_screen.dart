@@ -1,11 +1,15 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
-import 'package:go_router/go_router.dart';
+import '../../../core/navigation/app_nav.dart';
+import 'package:skeletonizer/skeletonizer.dart';
 
 import 'knowledge_provider.dart';
-import '../../../shared/widgets/skeleton_loading.dart';
+import '../../../shared/skeletons/skeleton_fakes.dart';
 import '../../../shared/widgets/empty_state.dart';
+import '../../../shared/widgets/state_views.dart';
+import '../../../core/theme/app_icons.dart';
+import '../../../core/theme/app_colors.dart';
 
 class KnowledgeScreen extends ConsumerStatefulWidget {
   const KnowledgeScreen({super.key});
@@ -31,24 +35,25 @@ class _KnowledgeScreenState extends ConsumerState<KnowledgeScreen> {
     final state = ref.watch(knowledgeControllerProvider);
 
     return Scaffold(
-      backgroundColor: const Color(0xFFF7F7F5),
+      backgroundColor: context.colors.background,
       appBar: AppBar(
         title: const Text('知识卡片'),
-        backgroundColor: Colors.white,
         elevation: 0,
         leading: IconButton(
-          icon: const Icon(Icons.arrow_back, color: Color(0xFF37352F)),
-          onPressed: () => context.go('/dashboard'),
+          tooltip: '返回',
+          icon: Icon(AppIcons.arrowBack, color: context.colors.text),
+          onPressed: () => context.backOrHome(),
         ),
         titleTextStyle: TextStyle(
-          color: const Color(0xFF37352F),
+          color: context.colors.text,
           fontSize: 18.sp,
           fontWeight: FontWeight.bold,
         ),
-        iconTheme: const IconThemeData(color: Color(0xFF37352F)),
+        iconTheme: IconThemeData(color: context.colors.text),
         actions: [
           IconButton(
-            icon: const Icon(Icons.refresh),
+            tooltip: '刷新知识卡片',
+            icon: const Icon(AppIcons.refresh),
             onPressed: () => ref
                 .read(knowledgeControllerProvider.notifier)
                 .loadCards(category: selectedCategory),
@@ -86,11 +91,11 @@ class _KnowledgeScreenState extends ConsumerState<KnowledgeScreen> {
                             .loadCards(category: selectedCategory);
                       }
                     },
-                    selectedColor: const Color(0xFF37352F),
+                    selectedColor: context.colors.primary,
                     labelStyle: TextStyle(
                       color: isSelected
-                          ? Colors.white
-                          : const Color(0xFF37352F),
+                          ? context.colors.onPrimary
+                          : context.colors.text,
                     ),
                   );
                 },
@@ -100,48 +105,15 @@ class _KnowledgeScreenState extends ConsumerState<KnowledgeScreen> {
           // Content
           Expanded(
             child: state.isLoading
-                ? const KnowledgeSkeletonList()
+                ? _buildSkeleton()
                 : state.error != null
-                ? Center(
-                    child: Column(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        Icon(
-                          Icons.error_outline,
-                          size: 48.sp,
-                          color: Colors.red[300],
-                        ),
-                        SizedBox(height: 16.h),
-                        Text(
-                          '加载失败',
-                          style: TextStyle(
-                            fontSize: 18.sp,
-                            fontWeight: FontWeight.w600,
-                            color: const Color(0xFF37352F),
-                          ),
-                        ),
-                        SizedBox(height: 8.h),
-                        Text(
-                          '请检查网络后重试',
-                          style: TextStyle(fontSize: 14.sp, color: Colors.grey),
-                        ),
-                        SizedBox(height: 24.h),
-                        ElevatedButton.icon(
-                          onPressed: () => ref
-                              .read(knowledgeControllerProvider.notifier)
-                              .loadCards(category: selectedCategory),
-                          icon: const Icon(Icons.refresh, size: 18),
-                          label: const Text('重试'),
-                          style: ElevatedButton.styleFrom(
-                            backgroundColor: const Color(0xFF135BEC),
-                            foregroundColor: Colors.white,
-                            shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(8.r),
-                            ),
-                          ),
-                        ),
-                      ],
-                    ),
+                ? AppErrorView(
+                    // 不展示 state.error 的原始文本；说明里点明「筛选没丢」，
+                    // 用户重试后返回的就是同一分类下的列表。
+                    message: '知识卡片没加载出来，可能是服务端异常。你的筛选条件没有变。',
+                    onRetry: () => ref
+                        .read(knowledgeControllerProvider.notifier)
+                        .loadCards(category: selectedCategory),
                   )
                 : state.cards.isEmpty
                 ? const EmptyState(
@@ -162,9 +134,11 @@ class _KnowledgeScreenState extends ConsumerState<KnowledgeScreen> {
         ],
       ),
       floatingActionButton: FloatingActionButton(
+        // 只有图标的 FAB 读屏只会念出「按钮」；补 tooltip 兼作语义标签。
+        tooltip: '新建知识卡片',
         onPressed: _openCreateCardDialog,
-        backgroundColor: const Color(0xFF37352F),
-        child: const Icon(Icons.add),
+        backgroundColor: context.colors.primary,
+        child: Icon(AppIcons.add, color: context.colors.onPrimary),
       ),
     );
   }
@@ -193,12 +167,30 @@ class _KnowledgeScreenState extends ConsumerState<KnowledgeScreen> {
     ).showSnackBar(const SnackBar(content: Text('知识卡片创建成功')));
   }
 
+  /// 加载态骨架：用 Skeletonizer 包裹真实卡片渲染器，骨架布局与真实列表
+  /// 永远不会脱节（改 `_buildCardItem` 不需要同步改骨架）。
+  Widget _buildSkeleton() {
+    return Skeletonizer(
+      enabled: true,
+      child: ListView.builder(
+        padding: EdgeInsets.all(16.w),
+        itemCount: 3,
+        // 真实列表用 ListView.separated + 12.h 间隔；卡片自身无 margin，
+        // 这里用等量底部留白复刻同一间距。
+        itemBuilder: (context, index) => Padding(
+          padding: EdgeInsets.only(bottom: 12.h),
+          child: _buildCardItem(fakeKnowledgeCard(index: index)),
+        ),
+      ),
+    );
+  }
+
   Widget _buildCardItem(KnowledgeCard card) {
     return Container(
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: context.colors.surface,
         borderRadius: BorderRadius.circular(12.r),
-        border: Border.all(color: const Color(0xFFE0E0E0)),
+        border: Border.all(color: context.colors.border),
         boxShadow: [
           BoxShadow(
             color: Colors.black.withValues(alpha: 0.02),
@@ -213,7 +205,7 @@ class _KnowledgeScreenState extends ConsumerState<KnowledgeScreen> {
           style: TextStyle(
             fontSize: 16.sp,
             fontWeight: FontWeight.w600,
-            color: const Color(0xFF37352F),
+            color: context.colors.text,
           ),
         ),
         subtitle: Padding(
@@ -223,19 +215,25 @@ class _KnowledgeScreenState extends ConsumerState<KnowledgeScreen> {
               Container(
                 padding: EdgeInsets.symmetric(horizontal: 6.w, vertical: 2.h),
                 decoration: BoxDecoration(
-                  color: Colors.grey[100],
+                  color: context.colors.surfaceAlt,
                   borderRadius: BorderRadius.circular(4.r),
                 ),
                 child: Text(
                   card.category,
-                  style: TextStyle(fontSize: 10.sp, color: Colors.grey[700]),
+                  style: TextStyle(
+                    fontSize: 12.sp,
+                    color: context.colors.textSecondary,
+                  ),
                 ),
               ),
               SizedBox(width: 8.w),
               if (card.tags.isNotEmpty)
                 Text(
                   '#${card.tags.first}',
-                  style: TextStyle(fontSize: 10.sp, color: Colors.blueGrey),
+                  style: TextStyle(
+                    fontSize: 12.sp,
+                    color: context.colors.textSecondary,
+                  ),
                 ),
             ],
           ),
@@ -246,7 +244,7 @@ class _KnowledgeScreenState extends ConsumerState<KnowledgeScreen> {
             width: double.infinity,
             padding: EdgeInsets.all(12.w),
             decoration: BoxDecoration(
-              color: const Color(0xFFFAFAFA),
+              color: context.colors.surfaceAlt,
               borderRadius: BorderRadius.circular(8.r),
             ),
             child: Column(
@@ -255,7 +253,7 @@ class _KnowledgeScreenState extends ConsumerState<KnowledgeScreen> {
                 Text(card.back, style: TextStyle(fontSize: 15.sp, height: 1.5)),
                 if (card.keyPoints.isNotEmpty) ...[
                   SizedBox(height: 12.h),
-                  Divider(height: 1, color: Colors.grey[300]),
+                  Divider(height: 1, color: context.colors.border),
                   SizedBox(height: 8.h),
                   ...card.keyPoints.map(
                     (kp) => Padding(
@@ -263,11 +261,11 @@ class _KnowledgeScreenState extends ConsumerState<KnowledgeScreen> {
                       child: Row(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          const Text(
+                          Text(
                             '• ',
                             style: TextStyle(
                               fontWeight: FontWeight.bold,
-                              color: Colors.blue,
+                              color: context.colors.accent,
                             ),
                           ),
                           Expanded(
@@ -275,7 +273,7 @@ class _KnowledgeScreenState extends ConsumerState<KnowledgeScreen> {
                               text: TextSpan(
                                 style: TextStyle(
                                   fontSize: 13.sp,
-                                  color: Colors.black87,
+                                  color: context.colors.text,
                                 ),
                                 children: [
                                   TextSpan(
@@ -420,7 +418,7 @@ class _CreateCardDialogState extends State<_CreateCardDialog> {
               SizedBox(height: 12.h),
               Text(
                 _errorText!,
-                style: TextStyle(fontSize: 12.sp, color: Colors.red[600]),
+                style: TextStyle(fontSize: 12.sp, color: context.colors.error),
               ),
             ],
           ],
@@ -436,16 +434,16 @@ class _CreateCardDialogState extends State<_CreateCardDialog> {
         ElevatedButton(
           onPressed: _isSubmitting ? null : _submit,
           style: ElevatedButton.styleFrom(
-            backgroundColor: const Color(0xFF37352F),
-            foregroundColor: Colors.white,
+            backgroundColor: context.colors.primary,
+            foregroundColor: context.colors.onPrimary,
           ),
           child: _isSubmitting
               ? SizedBox(
                   width: 16.w,
                   height: 16.w,
-                  child: const CircularProgressIndicator(
+                  child: CircularProgressIndicator(
                     strokeWidth: 2,
-                    color: Colors.white,
+                    color: context.colors.onPrimary,
                   ),
                 )
               : const Text('保存'),

@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState, useEffect, useMemo, useCallback } from "react";
-import { useQuery } from "@tanstack/react-query";
+import { useAppQuery } from "@/hooks/useAppQuery";
 import {
   ChevronRight,
   ChevronDown,
@@ -170,7 +170,13 @@ export function KeypointTree({
   const [searchTerm, setSearchTerm] = useState("");
 
   // 使用 useQuery 加载静态知识点数据，staleTime: Infinity 保证应用生命周期内只请求一次
-  const { data: keypointData = [], isLoading: loading } = useQuery({
+  const {
+    data: keypointData = [],
+    isLoading: loading,
+    isError,
+    error,
+    refetch,
+  } = useAppQuery({
     queryKey: ["keypoints-tree"],
     queryFn: () => fetchJson<KeypointNode[]>("/data/keypoints.json"),
     staleTime: Infinity,
@@ -282,6 +288,27 @@ export function KeypointTree({
     return (
       <div className="text-center py-8 text-muted-foreground">
         加载知识点结构...
+      </div>
+    );
+  }
+
+  // 知识点树只是筛选辅助：失败时给一行紧凑提示 + 重试，不占满侧栏，
+  // 用户照样能按其它条件筛题
+  if (isError) {
+    return (
+      <div
+        role="status"
+        className="border rounded-lg p-3 flex items-center justify-between gap-2 text-sm text-muted-foreground"
+      >
+        <span
+          className="truncate"
+          title={error instanceof Error ? error.message : undefined}
+        >
+          知识点列表没加载出来，可先不按知识点筛选。
+        </span>
+        <Button variant="ghost" size="sm" onClick={() => void refetch()}>
+          重试
+        </Button>
       </div>
     );
   }

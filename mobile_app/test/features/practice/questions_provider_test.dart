@@ -6,6 +6,7 @@ import 'package:mobile_app/features/practice/domain/practice_repository.dart';
 import 'package:mobile_app/features/practice/data/practice_repository_impl.dart';
 import 'package:mobile_app/features/practice/domain/question.dart';
 import 'package:mobile_app/features/practice/presentation/questions_provider.dart';
+import 'package:mobile_app/shared/events/data_change_events.dart';
 
 class MockPracticeRepository extends Mock implements PracticeRepository {}
 
@@ -41,6 +42,34 @@ void main() {
       ],
       total: 5,
     );
+
+    test('别处改了题库（questionBankEpoch +1）：不依赖页面在树上也会重拉第一页', () async {
+      // 建题入口除了题库列表，还有 AI 草稿页（push 到 /questions/new）；
+      // 那时列表页不在树上，信号只能由控制器自己接。
+      final container = makeProviderContainer();
+      when(
+        () => mockRepository.getQuestions(
+          page: any(named: 'page'),
+          limit: any(named: 'limit'),
+          search: any(named: 'search'),
+        ),
+      ).thenAnswer((_) async => tResponse1);
+
+      // 第一次拉到第 2 页（模拟用户已经翻过页）。
+      final notifier = container.read(questionsControllerProvider.notifier);
+      await notifier.fetchQuestions();
+      await notifier.fetchQuestions();
+      expect(container.read(questionsControllerProvider).currentPage, 3);
+
+      container.read(questionBankEpochProvider.notifier).bump();
+      await Future<void>.delayed(Duration.zero);
+
+      final state = container.read(questionsControllerProvider);
+      expect(state.currentPage, 2, reason: '重拉后指针回到「第 1 页已加载」');
+      verify(
+        () => mockRepository.getQuestions(page: 1, limit: 20, search: null),
+      ).called(2);
+    });
 
     test('初次加载及分页无限滚动 (fetchQuestions)', () async {
       // 1. Arrange
@@ -91,6 +120,66 @@ void main() {
       expect(state.items.length, 2);
       expect(state.currentPage, 2);
       verify(() => mockRepository.getQuestions(page: 1, limit: 20)).called(1);
+    });
+
+    test('加载失败时 error 是面向用户的文案，不是原始异常', () async {
+      final container = makeProviderContainer();
+      when(
+        () => mockRepository.getQuestions(page: 1, limit: any(named: 'limit')),
+      ).thenThrow(Exception('boom: socket closed'));
+
+      final notifier = container.read(questionsControllerProvider.notifier);
+      await notifier.fetchQuestions();
+
+      final state = container.read(questionsControllerProvider);
+      expect(state.isLoading, isFalse);
+      expect(state.error, isNotNull);
+      // 用户可见文案里不能出现原始异常内容
+      expect(state.error, isNot(contains('boom')));
+      expect(state.items, isEmpty);
+    });
+
+    test('翻页失败时保留已上屏的题目，错误只体现在 error', () async {
+      final container = makeProviderContainer();
+      when(
+        () => mockRepository.getQuestions(page: 1, limit: any(named: 'limit')),
+      ).thenAnswer((_) async => tResponse1);
+
+      final notifier = container.read(questionsControllerProvider.notifier);
+      await notifier.fetchQuestions();
+
+      when(
+        () => mockRepository.getQuestions(page: 2, limit: any(named: 'limit')),
+      ).thenThrow(Exception('boom'));
+
+      await notifier.fetchQuestions();
+
+      final state = container.read(questionsControllerProvider);
+      expect(state.items.length, 2, reason: '已加载的题目不能被一次翻页失败清空');
+      expect(state.error, isNotNull);
+      expect(state.isLoading, isFalse);
+    });
+
+    test('applySearch 清空列表并从第 1 页重查', () async {
+      final container = makeProviderContainer();
+      when(
+        () => mockRepository.getQuestions(
+          page: any(named: 'page'),
+          limit: any(named: 'limit'),
+          search: any(named: 'search'),
+        ),
+      ).thenAnswer((_) async => tResponse1);
+
+      final notifier = container.read(questionsControllerProvider.notifier);
+      await notifier.applySearch('  教育  ');
+
+      final state = container.read(questionsControllerProvider);
+      expect(state.search, '教育', reason: '关键词要 trim');
+      expect(state.currentPage, 2, reason: '重查完成后指针前进一页');
+      expect(state.error, isNull);
+      verify(
+        () => mockRepository.getQuestions(page: 1, limit: 20, search: '教育'),
+      ).called(1);
     });
   });
 }

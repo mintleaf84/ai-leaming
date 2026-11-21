@@ -1,7 +1,8 @@
 "use client";
 
 import { useState, useCallback, useMemo } from "react";
-import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { useAppQuery } from "@/hooks/useAppQuery";
 import type { KnowledgeCard } from "@/lib/services/knowledge";
 import { fetchJson } from "@/lib/utils/api-client";
 
@@ -35,7 +36,14 @@ export function useKnowledgeCards() {
   );
 
   // ---- 查询：使用 useQuery 自动缓存 ----
-  const { data, isLoading: loading } = useQuery({
+  // isError / error 必须暴露给页面：否则接口 500 时 data 为空，页面会把
+  // "加载失败"渲染成"未找到匹配的卡片"，用户以为是自己筛掉了数据。
+  const {
+    data,
+    isLoading: loading,
+    isError,
+    error,
+  } = useAppQuery({
     queryKey: [KNOWLEDGE_CARDS_KEY, selectedCategory],
     queryFn: async () => {
       const params = new URLSearchParams();
@@ -186,6 +194,8 @@ export function useKnowledgeCards() {
     categories,
     stats,
     loading,
+    isError,
+    error,
     selectedCategory,
     setSelectedCategory,
     searchQuery,

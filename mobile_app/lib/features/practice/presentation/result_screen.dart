@@ -1,11 +1,14 @@
+import 'dart:async';
 import 'package:flutter/material.dart';
 import 'dart:math' as math;
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
-import 'package:go_router/go_router.dart';
 import 'package:confetti/confetti.dart';
+import '../../../core/navigation/app_nav.dart';
 import 'practice_provider.dart';
+import 'practice_resume_provider.dart';
 import '../../../core/utils/haptic_util.dart';
+import '../../../core/theme/app_colors.dart';
 
 /// 练习结果页面
 class ResultScreen extends ConsumerStatefulWidget {
@@ -22,7 +25,13 @@ class _ResultScreenState extends ConsumerState<ResultScreen> {
   void initState() {
     super.initState();
     _confettiController = ConfettiController(duration: const Duration(seconds: 3));
-    
+
+    // 已经到结果页：这场练习没有「续练」可言，断点立即作废。
+    // 放在这里而不是「返回首页」按钮里，是因为用户也可能直接从结果页杀掉 App。
+    unawaited(
+      ref.read(practiceResumeControllerProvider.notifier).clear(),
+    );
+
     // 页面加载后延迟触发庆祝
     Future.delayed(const Duration(milliseconds: 500), () {
       final state = ref.read(practiceControllerProvider);
@@ -56,7 +65,7 @@ class _ResultScreenState extends ConsumerState<ResultScreen> {
         : 0;
 
     return Scaffold(
-      backgroundColor: const Color(0xFFF7F7F5),
+      backgroundColor: context.colors.background,
       body: Stack(
         children: [
           SafeArea(
@@ -82,7 +91,7 @@ class _ResultScreenState extends ConsumerState<ResultScreen> {
                     style: TextStyle(
                       fontSize: 28.sp,
                       fontWeight: FontWeight.bold,
-                      color: const Color(0xFF37352F),
+                      color: context.colors.text,
                     ),
                   ),
                   SizedBox(height: 8.h),
@@ -90,7 +99,7 @@ class _ResultScreenState extends ConsumerState<ResultScreen> {
                     _getResultSubtitle(accuracy),
                     style: TextStyle(
                       fontSize: 14.sp,
-                      color: const Color(0xFF9B9A97),
+                      color: context.colors.textSecondary,
                     ),
                     textAlign: TextAlign.center,
                   ),
@@ -167,13 +176,13 @@ class _ResultScreenState extends ConsumerState<ResultScreen> {
 
     if (accuracy >= 80) {
       emoji = '🎉';
-      bgColor = const Color(0xFFEDF6EE);
+      bgColor = context.colors.successContainer;
     } else if (accuracy >= 60) {
       emoji = '👍';
-      bgColor = const Color(0xFFFFF4E5);
+      bgColor = context.colors.warningContainer;
     } else {
       emoji = '💪';
-      bgColor = const Color(0xFFFEF2F2);
+      bgColor = context.colors.errorContainer;
     }
 
     return Container(
@@ -201,9 +210,9 @@ class _ResultScreenState extends ConsumerState<ResultScreen> {
     return Container(
       padding: EdgeInsets.all(24.w),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: context.colors.surface,
         borderRadius: BorderRadius.circular(16.r),
-        border: Border.all(color: const Color(0xFFE0E0E0)),
+        border: Border.all(color: context.colors.border),
         boxShadow: [
           BoxShadow(
             color: Colors.black.withValues(alpha: 0.02),
@@ -224,7 +233,7 @@ class _ResultScreenState extends ConsumerState<ResultScreen> {
                 style: TextStyle(
                   fontSize: 64.sp,
                   fontWeight: FontWeight.bold,
-                  color: const Color(0xFF37352F),
+                  color: context.colors.text,
                   height: 1,
                 ),
               ),
@@ -235,7 +244,7 @@ class _ResultScreenState extends ConsumerState<ResultScreen> {
                   style: TextStyle(
                     fontSize: 24.sp,
                     fontWeight: FontWeight.bold,
-                    color: const Color(0xFF9B9A97),
+                    color: context.colors.textSecondary,
                   ),
                 ),
               ),
@@ -244,18 +253,21 @@ class _ResultScreenState extends ConsumerState<ResultScreen> {
           SizedBox(height: 8.h),
           Text(
             '正确率',
-            style: TextStyle(fontSize: 14.sp, color: const Color(0xFF9B9A97)),
+            style: TextStyle(
+              fontSize: 14.sp,
+              color: context.colors.textSecondary,
+            ),
           ),
           SizedBox(height: 24.h),
-          Divider(color: Colors.grey[200]),
+          Divider(color: context.colors.border),
           SizedBox(height: 16.h),
           // 详细统计
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceAround,
             children: [
-              _buildStatItem('总题数', '$total', const Color(0xFF37352F)),
-              _buildStatItem('正确', '$correct', const Color(0xFF4EA05E)),
-              _buildStatItem('错误', '$incorrect', const Color(0xFFD95656)),
+              _buildStatItem('总题数', '$total', context.colors.text),
+              _buildStatItem('正确', '$correct', context.colors.success),
+              _buildStatItem('错误', '$incorrect', context.colors.error),
             ],
           ),
         ],
@@ -277,7 +289,10 @@ class _ResultScreenState extends ConsumerState<ResultScreen> {
         SizedBox(height: 4.h),
         Text(
           label,
-          style: TextStyle(fontSize: 12.sp, color: const Color(0xFF9B9A97)),
+          style: TextStyle(
+            fontSize: 12.sp,
+            color: context.colors.textSecondary,
+          ),
         ),
       ],
     );
@@ -293,11 +308,12 @@ class _ResultScreenState extends ConsumerState<ResultScreen> {
           child: ElevatedButton(
             onPressed: () {
               ref.read(practiceControllerProvider.notifier).reset();
-              context.go('/dashboard');
+              // 「返回首页」要丢掉练习/结果这层栈，不能 pop 回上一页
+              context.replace(AppRoutes.dashboard);
             },
             style: ElevatedButton.styleFrom(
-              backgroundColor: const Color(0xFF37352F),
-              foregroundColor: Colors.white,
+              backgroundColor: context.colors.primary,
+              foregroundColor: context.colors.onPrimary,
               shape: RoundedRectangleBorder(
                 borderRadius: BorderRadius.circular(12.r),
               ),
@@ -317,11 +333,11 @@ class _ResultScreenState extends ConsumerState<ResultScreen> {
           child: OutlinedButton(
             onPressed: () {
               ref.read(practiceControllerProvider.notifier).reset();
-              context.go('/practice');
+              context.replace(AppRoutes.practice);
             },
             style: OutlinedButton.styleFrom(
-              foregroundColor: const Color(0xFF37352F),
-              side: const BorderSide(color: Color(0xFFE0E0E0)),
+              foregroundColor: context.colors.text,
+              side: BorderSide(color: context.colors.border),
               shape: RoundedRectangleBorder(
                 borderRadius: BorderRadius.circular(12.r),
               ),

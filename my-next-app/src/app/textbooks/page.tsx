@@ -8,6 +8,7 @@ import { Plus, Book, User, Calendar } from "lucide-react";
 import { DeleteTextbookButton } from "@/components/textbooks/DeleteTextbookButton";
 import { getGlobalFeatureFlag } from "@/server/actions/feature-flags";
 import { redirect } from "next/navigation";
+import { formatBeijingDate } from "@/lib/utils/datetime";
 
 // Force dynamic because we are reading from DB directly in Server Component
 export const revalidate = 60; // 开启 ISR，每 60 秒可以在后台重头生成一次，其余时间享受瞬时访问速度
@@ -24,7 +25,9 @@ export default async function TextbooksPage() {
     <div className="container py-8 max-w-7xl mx-auto">
       <div className="flex items-center justify-between mb-8">
         <div>
-          <h1 className="text-3xl font-bold tracking-tight">教材库</h1>
+          <h1 className="text-2xl font-semibold tracking-tight md:text-3xl">
+            教材库
+          </h1>
           <p className="text-muted-foreground mt-2">
             管理和学习您的专业教材，支持 AI 辅助阅读与检索。
           </p>
@@ -93,7 +96,7 @@ export default async function TextbooksPage() {
                         <Calendar className="h-3 w-3 mr-1" />
                         <span>
                           {book.created_at
-                            ? new Date(book.created_at).toLocaleDateString()
+                            ? formatBeijingDate(book.created_at)
                             : "-"}
                         </span>
                       </div>

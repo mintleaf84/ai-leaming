@@ -1,842 +1,198 @@
 import 'package:flutter/material.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
-import 'package:go_router/go_router.dart';
 import 'package:flutter_hooks/flutter_hooks.dart';
+import 'package:skeletonizer/skeletonizer.dart';
+import '../../../core/compat/contract_meta_repository.dart';
+import '../../../core/network/connectivity_provider.dart';
+import '../../../shared/providers/history_provider.dart';
+import '../../practice/presentation/practice_resume_provider.dart';
+import '../../recall/data/recall_providers.dart';
+import '../../../shared/domain/learning_stats.dart';
+import '../../../core/theme/app_colors.dart';
+import '../../exam/presentation/exam_entry.dart';
+import '../../agent_sets/presentation/agent_set_inbox_provider.dart';
+import '../../agent_sets/presentation/agent_sets_entry.dart';
 import '../../stats/presentation/stats_provider.dart';
-import '../../stats/domain/learning_stats.dart';
+import '../../../shared/repositories/wrong_book_repository.dart';
+import '../../../shared/widgets/contract_gate.dart';
+import '../../../shared/skeletons/skeleton_fakes.dart';
+import 'widgets/dashboard_action_grid.dart';
+import 'widgets/dashboard_header.dart';
+import 'widgets/dashboard_progress_card.dart';
+import 'widgets/dashboard_resume_card.dart';
+import 'widgets/dashboard_stats_error.dart';
+import 'widgets/dashboard_todo_list.dart';
 
+/// 首页：备考主路径的起点。
+///
+/// 三张功能卡右侧的数值**必须**来自真实数据（审计 §25 F1/F4）：
+/// 写死「--」「几分钟」「回顾」会让用户以为数据没加载或坏了。取不到数据时
+/// 显示「暂无」，而不是编一个看起来合理的数字。
+///
+/// 视听件按区块拆在 `widgets/` 下（纯搬移，无行为改动）：顶栏、入口区、
+/// 断点卡、进度卡、待办清单、失败态各一份。统计区的三态分派与骨架屏
+/// 留在这里——骨架假数据只允许屏直接引用（见 `skeleton_fakes.dart` 约定）。
 class DashboardScreen extends HookConsumerWidget {
   const DashboardScreen({super.key});
+
+  /// 每日目标题数（与统计区的进度卡同源，避免两处各写一个 20）。
+  static const int dailyGoal = 20;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     // 页面挂载时加载统计数据
     useEffect(() {
+      Future.microtask(() => ref.read(statsControllerProvider.notifier).load());
+      return null;
+    }, const []);
+
+    // 最近一次练习时间：首页挂载即取一次。
+    //
+    // 不按「列表非空」判断数据新鲜度：练习结束后列表还是练习前的那一份。
+    // 练习结束（`PracticeController.reset`）会主动让历史重新拉取，首页
+    // watch 的是同一份状态，跟着更新（review B6）。
+    useEffect(() {
       Future.microtask(
-        () => ref.read(statsControllerProvider.notifier).load(),
+        () => ref.read(historyControllerProvider.notifier).loadHistory(),
       );
       return null;
     }, const []);
 
     final statsState = ref.watch(statsControllerProvider);
+    // 能力协商：服务端明确说没有 `recall` 就隐藏入口（不是灰显后报错）。
+    // 协商中/断网按"支持"处理，见 recallEntryAvailable。
+    final showRecall = recallEntryAvailable(
+      ref.watch(contractDecisionProvider).value,
+    );
+    // 试卷入口同一套能力协商：服务端说没有 `exam` 就隐藏（不是灰显后 404）。
+    final showExam = examEntryAvailable(
+      ref.watch(contractDecisionProvider).value,
+    );
+    // AI 题集：外部 Agent 推来的题。服务端还没上线这个能力时整张卡不出现。
+    final showAgentSets = agentSetsEntryAvailable(
+      ref.watch(contractDecisionProvider).value,
+    );
+    // 未读角标读的是「启动/回前台拉过的那一份」，首页自己不再发请求
+    // （见 AgentSetInboxWatcher）。
+    final agentSetInbox = ref.watch(agentSetInboxProvider);
+    // 离线判定（审计 #20）：`AsyncValue` 首帧是 loading，拿不准按在线处理，
+    // 理由见 connectivity_provider.dart。
+    final isOnline = ref.watch(isOnlineProvider).value ?? true;
+
+    // 三张卡的数据源。能力协商说没有 recall 时不发 `/recall/queue`
+    // （条件 watch：省掉一个必然 404 的请求）。
+    final recallQueue = showRecall ? ref.watch(recallQueueProvider) : null;
+    final wrongTotal = ref.watch(wrongBookTotalProvider);
+    final historyState = ref.watch(historyControllerProvider);
+    // 未完成练习的断点：有就出「继续上次练习」，没有就不占位置。
+    final resume = ref.watch(practiceResumeControllerProvider);
+
     return Scaffold(
-      backgroundColor: const Color(0xFFF7F7F5), // Notion-like background
-      body: Stack(
-        children: [
-          SafeArea(
-            bottom: false,
-            child: CustomScrollView(
-              slivers: [
-                SliverToBoxAdapter(
-                  child: Padding(
-                    padding: EdgeInsets.symmetric(horizontal: 24.w),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        SizedBox(height: 16.h),
-                        // Header
-                        _buildHeader(),
-                        SizedBox(height: 24.h),
-                        // Divider
-                        Divider(height: 1.h, color: Colors.grey[300]),
-                        SizedBox(height: 24.h),
-                        // Action Grid
-                        _buildActionGrid(context),
-                        SizedBox(height: 32.h),
-                        // Progress Card
-                        _buildProgressCard(statsState.stats),
-                        SizedBox(height: 32.h),
-                        // Todo List
-                        _buildTodoList(statsState.stats),
-                        SizedBox(height: 100.h), // Space for bottom nav
-                      ],
+      backgroundColor: context.colors.background, // Notion-like background
+      body: SafeArea(
+        bottom: false,
+        child: CustomScrollView(
+          slivers: [
+            SliverToBoxAdapter(
+              child: Padding(
+                padding: EdgeInsets.symmetric(horizontal: 24.w),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    SizedBox(height: 16.h),
+                    // Header
+                    const DashboardHeader(),
+                    SizedBox(height: 24.h),
+                    // Divider
+                    Divider(height: 1.h, color: context.colors.border),
+                    SizedBox(height: 24.h),
+                    // 未完成练习：入口放在功能卡之前——它比任何一张卡都更接近
+                    // 「今天还剩几题」这件事。
+                    if (resume != null) ...[
+                      DashboardResumeCard(resume: resume),
+                      SizedBox(height: 16.h),
+                    ],
+                    // Action Grid
+                    DashboardActionGrid(
+                      showRecall: showRecall,
+                      showExam: showExam,
+                      showAgentSets: showAgentSets,
+                      agentSetInbox: agentSetInbox,
+                      isOnline: isOnline,
+                      recallQueue: recallQueue,
+                      wrongTotal: wrongTotal,
+                      lastPracticeAt: _lastPracticeAt(historyState),
                     ),
-                  ),
-                ),
-              ],
-            ),
-          ),
-          // Bottom Navigation
-          Positioned(
-            left: 0,
-            right: 0,
-            bottom: 0,
-            child: _buildBottomNav(context),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildHeader() {
-    final now = DateTime.now();
-    final hour = now.hour;
-    String greeting = '我的学习\n空间';
-    String emoji = '📖';
-    if (hour < 5) {
-      greeting = '夜深了,\n还在学习吗?';
-      emoji = '🦉';
-    } else if (hour < 12) {
-      greeting = '早上好,\n开始学习吧!';
-      emoji = '🌅';
-    } else if (hour < 18) {
-      greeting = '下午好,\n继续保持!';
-      emoji = '☀️';
-    } else {
-      greeting = '晚上好,\n总结今日所学';
-      emoji = '🌙';
-    }
-
-    final weekDays = ['一', '二', '三', '四', '五', '六', '日'];
-    final dateStr = '${now.month}月${now.day}日 星期${weekDays[now.weekday - 1]}';
-
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Text(emoji, style: TextStyle(fontSize: 48.sp)),
-        SizedBox(height: 8.h),
-        Text(
-          greeting,
-          style: TextStyle(
-            fontSize: 36.sp,
-            fontWeight: FontWeight.bold,
-            height: 1.1,
-            color: const Color(0xFF37352F),
-            fontFamily: 'Inter',
-          ),
-        ),
-        SizedBox(height: 4.h),
-        Text(
-          dateStr,
-          style: TextStyle(fontSize: 14.sp, color: const Color(0xFF9B9A97)),
-        ),
-      ],
-    );
-  }
-
-  Widget _buildActionGrid(BuildContext context) {
-    return Column(
-      children: [
-        Row(
-          children: [
-            Expanded(
-              child: GestureDetector(
-                onTap: () => context.go('/questions'),
-                child: _buildActionCard(
-                  icon: '📚',
-                  tag: '查缺补漏',
-                  tagColor: const Color(0xFFE8F3FF),
-                  tagTextColor: const Color(0xFF135BEC),
-                  title: '全量\n题库',
-                  subtitleLabel: '探索',
-                  subtitleValue: '获取所有题目',
-                ),
-              ),
-            ),
-            SizedBox(width: 16.w),
-            Expanded(
-              child: GestureDetector(
-                onTap: () => context.go('/practice/setup'),
-                child: _buildActionCard(
-                  icon: '🧠',
-                  tag: '待复习',
-                  tagColor: const Color(0xFFFFF4E5),
-                  tagTextColor: const Color(0xFFFF9500),
-                  title: '智能\n复习',
-                  subtitleLabel: '今日待办',
-                  subtitleValue: '开始练习',
+                    SizedBox(height: 32.h),
+                    // Progress Card + Todo List（统计区三态：骨架 / 错误 / 数据）
+                    _buildStatsSection(context, ref, statsState),
+                    // 底部导航由 AppShell 持有（不在这里画），
+                    // 留 24 的呼吸位即可，不再为浮层导航预留 100。
+                    SizedBox(height: 24.h),
+                  ],
                 ),
               ),
             ),
           ],
         ),
-        SizedBox(height: 16.h),
-        GestureDetector(
-          onTap: () => context.go('/wrong-book'),
-          child: _buildFullWidthCard(),
-        ),
-        SizedBox(height: 16.h),
-        GestureDetector(
-          onTap: () => context.go('/history'),
-          child: _buildHistoryCard(),
-        ),
+      ),
+    );
+  }
+
+  /// 最近一次练习时间；没有记录或解析失败时返回 null。
+  DateTime? _lastPracticeAt(HistoryListState state) {
+    if (state.items.isEmpty) return null;
+    return DateTime.tryParse(state.items.first.createdAt)?.toLocal();
+  }
+
+  /// 统计区（今日进度卡 + 待办清单）的三态（见审计 #4）。
+  ///
+  /// 问题：这两个区块原来完全没有 loading / error 分支，断网时渲染的是
+  /// `LearningStats.empty`——「今日目标：尚未开始 0%」，和"今天真没学"一模一样。
+  ///
+  /// 约束：**只替换这一块**。上面的入口卡（题库/复习/错题/历史）与底部导航
+  /// 不受影响，断网也照样能点。
+  Widget _buildStatsSection(
+    BuildContext context,
+    WidgetRef ref,
+    StatsState state,
+  ) {
+    if (state.isLoading && _hasNoStats(state.stats)) {
+      return _buildStatsSkeleton(context);
+    }
+    if (state.error != null) {
+      return DashboardStatsError(
+        onRetry: () => ref.read(statsControllerProvider.notifier).load(),
+      );
+    }
+    return Column(
+      children: [
+        DashboardProgressCard(stats: state.stats, dailyGoal: dailyGoal),
+        SizedBox(height: 32.h),
+        DashboardTodoList(stats: state.stats, dailyGoal: dailyGoal),
       ],
     );
   }
 
-  // Corrected Action Card with Stack
-  Widget _buildActionCard({
-    required String icon,
-    required String tag,
-    required Color tagColor,
-    required Color tagTextColor,
-    required String title,
-    required String subtitleLabel,
-    required String subtitleValue,
-  }) {
-    return Container(
-      height: 176.h,
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(16.r),
-        border: Border.all(color: const Color(0xFFE0E0E0)),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withValues(alpha: 0.02),
-            blurRadius: 4,
-            offset: const Offset(0, 2),
-          ),
-        ],
-      ),
-      child: Stack(
-        children: [
-          Positioned(
-            right: 0,
-            top: 0,
-            child: Padding(
-              padding: EdgeInsets.all(16.w),
-              child: Opacity(
-                opacity: 0.1, // Faded
-                child: Text(icon, style: TextStyle(fontSize: 60.sp)),
-              ),
-            ),
-          ),
-          Padding(
-            padding: EdgeInsets.all(16.w),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Container(
-                      padding: EdgeInsets.symmetric(
-                        horizontal: 6.w,
-                        vertical: 2.h,
-                      ),
-                      decoration: BoxDecoration(
-                        color: tagColor,
-                        borderRadius: BorderRadius.circular(4.r),
-                      ),
-                      child: Text(
-                        tag,
-                        style: TextStyle(
-                          fontSize: 10.sp,
-                          color: tagTextColor,
-                          fontWeight: FontWeight.w600,
-                        ),
-                      ),
-                    ),
-                    SizedBox(height: 12.h),
-                    Text(
-                      title,
-                      style: TextStyle(
-                        fontSize: 18.sp,
-                        fontWeight: FontWeight.bold,
-                        color: const Color(0xFF37352F),
-                        height: 1.2,
-                      ),
-                    ),
-                  ],
-                ),
+  /// 「还没有统计快照」：首次加载与失败时 `stats` 仍是 `LearningStats.empty`。
+  /// 一旦拿到过数据就不再回退成骨架，刷新时不会整块闪一下。
+  bool _hasNoStats(LearningStats stats) =>
+      stats.totalSessions == 0 && stats.totalCount == 0;
 
-                Column(
-                  children: [
-                    Divider(height: 1, color: Colors.grey[100]),
-                    SizedBox(height: 12.h),
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: [
-                        Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text(
-                              subtitleLabel,
-                              style: TextStyle(
-                                fontSize: 10.sp,
-                                color: Colors.grey,
-                                letterSpacing: 0.5,
-                              ),
-                            ),
-                            SizedBox(height: 2.h),
-                            SizedBox(
-                              width: 80.w,
-                              child: Text(
-                                subtitleValue,
-                                style: TextStyle(
-                                  fontSize: 12.sp,
-                                  fontWeight: FontWeight.w500,
-                                ),
-                                overflow: TextOverflow.ellipsis,
-                              ),
-                            ),
-                          ],
-                        ),
-                        Icon(
-                          Icons.arrow_forward,
-                          size: 16.sp,
-                          color: const Color(0xFF37352F),
-                        ),
-                      ],
-                    ),
-                  ],
-                ),
-              ],
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildFullWidthCard() {
-    return Container(
-      height: 96.h,
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(16.r),
-        border: Border.all(color: const Color(0xFFE0E0E0)),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withValues(alpha: 0.02),
-            blurRadius: 4,
-            offset: const Offset(0, 2),
-          ),
-        ],
-      ),
-      child: Stack(
-        children: [
-          Positioned(
-            right: 40.w,
-            top: 0,
-            bottom: 0,
-            child: Center(
-              child: Opacity(
-                opacity: 0.1,
-                child: Text('📕', style: TextStyle(fontSize: 60.sp)),
-              ),
-            ),
-          ),
-          Padding(
-            padding: EdgeInsets.all(16.w),
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    Container(
-                      padding: EdgeInsets.symmetric(
-                        horizontal: 6.w,
-                        vertical: 2.h,
-                      ),
-                      decoration: BoxDecoration(
-                        color: const Color(0xFFFEF2F2),
-                        borderRadius: BorderRadius.circular(4.r),
-                      ),
-                      child: Text(
-                        '重点关注',
-                        style: TextStyle(
-                          fontSize: 10.sp,
-                          color: const Color(0xFFDC2626),
-                          fontWeight: FontWeight.w600,
-                        ),
-                      ),
-                    ),
-                    SizedBox(height: 4.h),
-                    Text(
-                      '我的错题',
-                      style: TextStyle(
-                        fontSize: 18.sp,
-                        fontWeight: FontWeight.bold,
-                        color: const Color(0xFF37352F),
-                      ),
-                    ),
-                  ],
-                ),
-                Container(
-                  decoration: BoxDecoration(
-                    border: Border(left: BorderSide(color: Colors.grey[200]!)),
-                  ),
-                  padding: EdgeInsets.only(left: 16.w),
-                  child: Row(
-                    children: [
-                      Column(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        crossAxisAlignment: CrossAxisAlignment.end,
-                        children: [
-                          Text(
-                            '累计',
-                            style: TextStyle(
-                              fontSize: 10.sp,
-                              color: Colors.grey,
-                            ),
-                          ),
-                          Text(
-                            '--',
-                            style: TextStyle(
-                              fontSize: 14.sp,
-                              fontWeight: FontWeight.bold,
-                            ),
-                          ),
-                        ],
-                      ),
-                      SizedBox(width: 8.w),
-                      Icon(
-                        Icons.chevron_right,
-                        size: 20.sp,
-                        color: const Color(0xFF37352F),
-                      ),
-                    ],
-                  ),
-                ),
-              ],
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildHistoryCard() {
-    return Container(
-      height: 96.h,
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(16.r),
-        border: Border.all(color: const Color(0xFFE0E0E0)),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withValues(alpha: 0.02),
-            blurRadius: 4,
-            offset: const Offset(0, 2),
-          ),
-        ],
-      ),
-      child: Stack(
-        children: [
-          Positioned(
-            right: 40.w,
-            top: 0,
-            bottom: 0,
-            child: Center(
-              child: Opacity(
-                opacity: 0.1,
-                child: Text('⏳', style: TextStyle(fontSize: 60.sp)),
-              ),
-            ),
-          ),
-          Padding(
-            padding: EdgeInsets.all(16.w),
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    Container(
-                      padding: EdgeInsets.symmetric(
-                        horizontal: 6.w,
-                        vertical: 2.h,
-                      ),
-                      decoration: BoxDecoration(
-                        color: const Color(0xFFF3F4F6),
-                        borderRadius: BorderRadius.circular(4.r),
-                      ),
-                      child: Text(
-                        '温故知新',
-                        style: TextStyle(
-                          fontSize: 10.sp,
-                          color: const Color(0xFF4B5563),
-                          fontWeight: FontWeight.w600,
-                        ),
-                      ),
-                    ),
-                    SizedBox(height: 4.h),
-                    Text(
-                      '练习历史',
-                      style: TextStyle(
-                        fontSize: 18.sp,
-                        fontWeight: FontWeight.bold,
-                        color: const Color(0xFF37352F),
-                      ),
-                    ),
-                  ],
-                ),
-                Container(
-                  decoration: BoxDecoration(
-                    border: Border(left: BorderSide(color: Colors.grey[200]!)),
-                  ),
-                  padding: EdgeInsets.only(left: 16.w),
-                  child: Row(
-                    children: [
-                      Column(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        crossAxisAlignment: CrossAxisAlignment.end,
-                        children: [
-                          Text(
-                            '最近',
-                            style: TextStyle(
-                              fontSize: 10.sp,
-                              color: Colors.grey,
-                            ),
-                          ),
-                          Text(
-                            '回顾',
-                            style: TextStyle(
-                              fontSize: 14.sp,
-                              fontWeight: FontWeight.bold,
-                            ),
-                          ),
-                        ],
-                      ),
-                      SizedBox(width: 8.w),
-                      Icon(
-                        Icons.chevron_right,
-                        size: 20.sp,
-                        color: const Color(0xFF37352F),
-                      ),
-                    ],
-                  ),
-                ),
-              ],
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildProgressCard(LearningStats stats) {
-    final todayCount = stats.todayCount;
-    final todayAccuracy = stats.todayAccuracy;
-    final streakDays = stats.streakDays;
-
-    // 今日进度：假设每日目标 20 题
-    const dailyGoal = 20;
-    final progress = (todayCount / dailyGoal).clamp(0.0, 1.0);
-    final progressText = todayCount > 0 ? '今日已练习 $todayCount 题' : '今日目标：尚未开始';
-    final accuracyText = todayCount > 0
-        ? '${(todayAccuracy * 100).toStringAsFixed(1)}%'
-        : '0%';
-
-    return Container(
-      padding: EdgeInsets.all(20.w),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(12.r),
-        border: Border.all(color: const Color(0xFFE0E0E0)),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withValues(alpha: 0.02),
-            blurRadius: 4,
-            offset: const Offset(0, 2),
-          ),
-        ],
-      ),
+  /// 加载态：用假数据驱动真实的进度卡与待办清单，再由 Skeletonizer 抹成骨块，
+  /// 骨架版式与真实版式不会脱节（见 docs/mobile-ui-kit.md D-2）。
+  Widget _buildStatsSkeleton(BuildContext context) {
+    final fake = fakeStatsSummary();
+    return Skeletonizer(
+      enabled: true,
       child: Column(
         children: [
-          Row(
-            children: [
-              Container(
-                width: 40.w,
-                height: 40.h,
-                decoration: BoxDecoration(
-                  color: const Color(0xFF37352F).withValues(alpha: 0.08),
-                  shape: BoxShape.circle,
-                ),
-                alignment: Alignment.center,
-                child: Text('🔥', style: TextStyle(fontSize: 20.sp)),
-              ),
-              SizedBox(width: 12.w),
-              Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    streakDays > 0 ? '连续学习 $streakDays 天！' : '开始今日学习！',
-                    style: TextStyle(
-                      fontSize: 18.sp,
-                      fontWeight: FontWeight.bold,
-                    ),
-                  ),
-                  Text(
-                    progressText,
-                    style: TextStyle(fontSize: 12.sp, color: Colors.grey),
-                  ),
-                ],
-              ),
-            ],
-          ),
-          SizedBox(height: 16.h),
-          ClipRRect(
-            borderRadius: BorderRadius.circular(5.r),
-            child: LinearProgressIndicator(
-              value: progress,
-              backgroundColor: const Color(0xFFF0F0F0),
-              color: const Color(0xFF37352F),
-              minHeight: 10.h,
-            ),
-          ),
-          SizedBox(height: 12.h),
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              Text(
-                progressText,
-                style: TextStyle(fontSize: 12.sp, color: Colors.grey),
-              ),
-              Text(
-                accuracyText,
-                style: TextStyle(fontSize: 12.sp, fontWeight: FontWeight.bold),
-              ),
-            ],
-          ),
+          DashboardProgressCard(stats: fake, dailyGoal: dailyGoal),
+          SizedBox(height: 32.h),
+          DashboardTodoList(stats: fake, dailyGoal: dailyGoal),
         ],
       ),
     );
   }
-
-  /// 待办清单：条目全部由 [LearningStats] 的真实字段推导，没有占位文案。
-  Widget _buildTodoList(LearningStats stats) {
-    final entries = _buildTodoEntries(stats);
-
-    return Column(
-      children: [
-        Row(
-          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-          children: [
-            Text(
-              '待办清单',
-              style: TextStyle(
-                fontSize: 12.sp,
-                fontWeight: FontWeight.w600,
-                color: Colors.grey,
-              ),
-            ),
-          ],
-        ),
-        SizedBox(height: 12.h),
-        Container(
-          padding: EdgeInsets.all(16.w),
-          decoration: BoxDecoration(
-            color: Colors.white,
-            borderRadius: BorderRadius.circular(8.r),
-            border: Border.all(color: const Color(0xFFE8E8E5)),
-          ),
-          child: Column(
-            children: [
-              for (int i = 0; i < entries.length; i++) ...[
-                if (i > 0)
-                  Divider(height: 20.h, color: const Color(0xFFF0F0EC)),
-                _buildTodoRow(entries[i]),
-              ],
-            ],
-          ),
-        ),
-      ],
-    );
-  }
-
-  List<_TodoEntry> _buildTodoEntries(LearningStats stats) {
-    const dailyGoal = 20;
-    final remaining = dailyGoal - stats.todayCount;
-    final wrongCount = stats.todayCount - stats.todayCorrect;
-    final todayPracticed = stats.todayCount > 0;
-    final accuracy = (stats.todayAccuracy * 100).toStringAsFixed(1);
-
-    final practiceTitle = remaining > 0
-        ? '今日还需练习 $remaining 题'
-        : '今日 $dailyGoal 题目标已完成';
-    final practiceSubtitle = todayPracticed
-        ? '已练 ${stats.todayCount} 题 · 正确率 $accuracy%'
-        : '今日还没有练习记录';
-    final wrongTitle = wrongCount > 0
-        ? '复盘今日 $wrongCount 道错题'
-        : '今日暂无错题需要复盘';
-    final wrongSubtitle = wrongCount > 0 ? '在错题本中重做一遍' : '答错的题目会自动进入错题本';
-    final streakTitle = stats.streakDays > 0
-        ? '连续学习 ${stats.streakDays} 天'
-        : '开启连续学习记录';
-    final streakSubtitle =
-        '累计 ${stats.totalSessions} 场练习 · ${stats.totalCount} 题';
-
-    return <_TodoEntry>[
-      _TodoEntry(
-        icon: Icons.play_circle_outline,
-        title: practiceTitle,
-        subtitle: practiceSubtitle,
-        isDone: remaining <= 0,
-      ),
-      _TodoEntry(
-        icon: Icons.error_outline,
-        title: wrongTitle,
-        subtitle: wrongSubtitle,
-        isDone: wrongCount <= 0,
-      ),
-      _TodoEntry(
-        icon: Icons.local_fire_department_outlined,
-        title: streakTitle,
-        subtitle: streakSubtitle,
-        isDone: todayPracticed && stats.streakDays > 0,
-      ),
-    ];
-  }
-
-  Widget _buildTodoRow(_TodoEntry entry) {
-    return Row(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Icon(
-          entry.isDone ? Icons.check_circle : entry.icon,
-          size: 20.sp,
-          color: entry.isDone
-              ? const Color(0xFF52B788)
-              : const Color(0xFF9B9A97),
-        ),
-        SizedBox(width: 12.w),
-        Expanded(
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(
-                entry.title,
-                style: TextStyle(
-                  fontSize: 14.sp,
-                  fontWeight: FontWeight.w600,
-                  color: entry.isDone
-                      ? const Color(0xFF9B9A97)
-                      : const Color(0xFF37352F),
-                  decoration: entry.isDone
-                      ? TextDecoration.lineThrough
-                      : TextDecoration.none,
-                ),
-              ),
-              SizedBox(height: 2.h),
-              Text(
-                entry.subtitle,
-                style: TextStyle(
-                  fontSize: 12.sp,
-                  color: const Color(0xFF9B9A97),
-                ),
-              ),
-            ],
-          ),
-        ),
-      ],
-    );
-  }
-
-  Widget _buildBottomNav(BuildContext context) {
-    return Container(
-      padding: EdgeInsets.only(
-        top: 12.h,
-        bottom: 24.h,
-        left: 24.w,
-        right: 24.w,
-      ),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        border: Border(top: BorderSide(color: Colors.grey[200]!)),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withValues(alpha: 0.02),
-            offset: const Offset(0, -4),
-            blurRadius: 6,
-          ),
-        ],
-      ),
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-        children: [
-          _buildNavItem(Icons.dashboard, '工作区', true, null),
-          _buildNavItem(
-            Icons.smart_toy,
-            'AI助手',
-            false,
-            () => context.go('/chat'),
-          ),
-          _buildNavItem(
-            Icons.book,
-            '知识库',
-            false,
-            () => context.go('/knowledge'),
-          ),
-          _buildNavItem(
-            Icons.library_books,
-            '教材',
-            false,
-            () => context.go('/textbooks'),
-          ),
-          _buildNavItem(
-            Icons.person_outline,
-            '我的',
-            false,
-            () => context.go('/profile'),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildNavItem(
-    IconData icon,
-    String label,
-    bool isSelected,
-    VoidCallback? onTap,
-  ) {
-    final activeColor = const Color(0xFF37352F);
-    final inactiveColor = const Color(0xFF9B9A97);
-
-    return GestureDetector(
-      onTap: onTap,
-      behavior: HitTestBehavior.opaque,
-      child: Container(
-        padding: EdgeInsets.symmetric(horizontal: 12.w, vertical: 4.h),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            AnimatedScale(
-              scale: isSelected ? 1.1 : 1.0,
-              duration: const Duration(milliseconds: 200),
-              curve: Curves.easeOutBack,
-              child: Icon(
-                icon,
-                size: 24.sp,
-                color: isSelected ? activeColor : inactiveColor,
-              ),
-            ),
-            SizedBox(height: 4.h),
-            AnimatedDefaultTextStyle(
-              duration: const Duration(milliseconds: 200),
-              style: TextStyle(
-                fontSize: 10.sp,
-                fontWeight: isSelected ? FontWeight.w700 : FontWeight.w500,
-                color: isSelected ? activeColor : inactiveColor,
-              ),
-              child: Text(label),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-}
-
-/// 待办清单条目：字段全部由 LearningStats 推导，不引入额外数据源。
-class _TodoEntry {
-  const _TodoEntry({
-    required this.icon,
-    required this.title,
-    required this.subtitle,
-    required this.isDone,
-  });
-
-  final IconData icon;
-  final String title;
-  final String subtitle;
-  final bool isDone;
 }

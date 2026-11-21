@@ -49,13 +49,32 @@ dependencies:
   flutter_markdown: ^0.7.7+1
   url_launcher: ^6.3.2
   flutter_screenutil: ^5.9.3
-  state_notifier: ^1.0.0
-  shimmer: ^3.0.0
+  skeletonizer: ^3.0.0
   intl: ^0.20.2
   confetti: ^0.8.0
   sqflite: ^2.4.0
   path: ^1.9.0
   connectivity_plus: ^7.0.0
+  # 设置持久化（主题模式 / 复习模式）。锁 ^2.5.4 而不是最新版：2.5.6 的
+  # SDK 下界是 Dart ^3.11.0，而本机与 CI 都是 Flutter 3.38.4（Dart 3.10.3），
+  # 写 ^2.5.4 时求解器仍会因 SDK 约束自动落到 2.5.5，不会拉到 2.5.6。
+  shared_preferences: ^2.5.4
+  flutter_html: ^3.0.0
+  flutter_html_table: ^3.0.0
+  # 「AI 题集有新题」的本地通知（契约 §6：只做启动/回前台提醒，不做 FCM/workmanager）。
+  # 锁 ^22.3.3 而不是最新的 23.x：23.x 要求 Dart ^3.12 + Flutter >=3.44，
+  # 而本机与 CI 都是 Flutter 3.38.4（Dart 3.10.3）。22.x 的 Android 侧要求
+  # compileSdk 36 + core library desugaring（见 android/app/build.gradle.kts）。
+  flutter_local_notifications: ^22.3.3
+
+# flutter_html 3.0.0 直接 import 了 `package:html/src/query_selector.dart` 的内部
+# 函数 `matches`，而 `html` 0.15.7 把该函数删了（只留 `SelectorEvaluator.matches`），
+# 于是编译期报 `Method not found: 'matches'`。flutter_html 已停止维护、不会再修，
+# 所以把 `html` 钉在 0.15.6（最后一个还带顶层 `matches` 的版本）。
+# 影响面：`html` 在本项目只被 flutter_html 与 flutter_markdown 用到，二者都只读 DOM，
+# 0.15.6 → 0.15.7 的差异不影响它们。升级 flutter_html 或换解析库时删掉这段。
+dependency_overrides:
+  html: 0.15.6
 
 dev_dependencies:
   flutter_test:
@@ -72,6 +91,11 @@ dev_dependencies:
   json_serializable: ^6.11.2
   freezed: ^3.2.3
   mocktail: ^1.0.4
+  # 内存库跑离线存储/同步测试用。锁 2.3.7+1 而不是 2.4.x：从 2.4.0 起
+  # `package:sqlite3` 改用 Dart build hooks 下载官方预编译 libsqlite3.so，
+  # 那个二进制要求 GLIBC_2.33，本机 CentOS 7（glibc 2.17）加载直接失败；
+  # 2.3.x 走系统 libsqlite3（见 test/support/ffi_db.dart），没有这个问题。
+  sqflite_common_ffi: 2.3.7+1
 
 # For information on the generic Dart part of this file, see the
 # following page: https://dart.dev/tools/pub/pubspec
@@ -83,6 +107,13 @@ flutter:
   # included with your application, so that you can use the icons in
   # the material Icons class.
   uses-material-design: true
+
+  # 图标静态子集（从 Material Symbols 实例化，无 gvar）：
+  # 可变字体经 --tree-shake-icons 子集化后 gvar 表会损坏，release 包里整族不渲染。
+  fonts:
+    - family: AppSymbols
+      fonts:
+        - asset: assets/fonts/AppSymbols.ttf
 
   # To add assets to your application, add an assets section, like this:
   # assets:

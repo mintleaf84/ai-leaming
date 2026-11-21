@@ -1,7 +1,6 @@
 import { OpenAPIHono, createRoute, z } from "@hono/zod-openapi";
-import { drizzleDb, drizzleSchema } from "@/lib/db";
 import { authMiddleware, getCurrentUser } from "@/lib/api/middlewares/auth";
-import { eq, count, sum, sql, and, notInArray } from "drizzle-orm";
+import { userService } from "@/lib/services/user";
 
 const app = new OpenAPIHono();
 
@@ -39,76 +38,24 @@ const getProfileRoute = createRoute({
 
 app.openapi(getProfileRoute, async (c) => {
   const user = getCurrentUser(c);
-  const userId = Number(user.id);
+  const profile = await userService.getProfileOverview(Number(user.id));
 
-  // 查询用户基础信息
-  const userRow = await drizzleDb.query.users.findFirst({
-    where: eq(drizzleSchema.users.id, userId),
-    columns: { id: true, username: true, role: true, created_at: true },
-  });
-
-  if (!userRow) {
+  if (!profile) {
     return c.json({ error: "用户不存在" }, 404);
   }
 
-  // 总会话数
-  const sessionCount = await drizzleDb
-    .select({ count: count() })
-    .from(drizzleSchema.practice_sessions)
-    .where(eq(drizzleSchema.practice_sessions.user_id, userId));
-
-  // 答题总数 & 正确数
-  const answerStats = await drizzleDb
-    .select({
-      total: count(),
-      correct: sum(
-        sql`CASE WHEN ${drizzleSchema.practice_logs.is_correct} = 1 THEN 1 ELSE 0 END`,
-      ),
-    })
-    .from(drizzleSchema.practice_logs)
-    .where(eq(drizzleSchema.practice_logs.user_id, userId));
-
-  const totalAnswered = answerStats[0]?.total ?? 0;
-  const totalCorrect = Number(answerStats[0]?.correct ?? 0);
-  const overallAccuracy = totalAnswered > 0 ? totalCorrect / totalAnswered : 0;
-
-  // 知识卡片数量
-  const cardCount = await drizzleDb
-    .select({ count: count() })
-    .from(drizzleSchema.knowledge_cards)
-    .where(eq(drizzleSchema.knowledge_cards.user_id, userId));
-
-  // 未掌握错题数
-  const masteredSubquery = drizzleDb
-    .select({ question_id: drizzleSchema.mastered_questions.question_id })
-    .from(drizzleSchema.mastered_questions)
-    .where(eq(drizzleSchema.mastered_questions.user_id, userId));
-
-  const wrongBookCount = await drizzleDb
-    .select({
-      count: sql`COUNT(DISTINCT ${drizzleSchema.practice_logs.question_id})`,
-    })
-    .from(drizzleSchema.practice_logs)
-    .where(
-      and(
-        eq(drizzleSchema.practice_logs.user_id, userId),
-        eq(drizzleSchema.practice_logs.is_correct, false),
-        notInArray(drizzleSchema.practice_logs.question_id, masteredSubquery),
-      ),
-    );
-
   return c.json({
-    id: userRow.id,
-    username: userRow.username,
-    role: userRow.role,
-    createdAt: userRow.created_at || "",
+    id: profile.id,
+    username: profile.username,
+    role: profile.role,
+    createdAt: profile.created_at,
     stats: {
-      totalSessions: sessionCount[0]?.count ?? 0,
-      totalAnswered,
-      totalCorrect,
-      overallAccuracy: parseFloat(overallAccuracy.toFixed(4)),
-      knowledgeCardCount: cardCount[0]?.count ?? 0,
-      wrongBookCount: Number(wrongBookCount[0]?.count ?? 0),
+      totalSessions: profile.stats.total_sessions,
+      totalAnswered: profile.stats.total_answered,
+      totalCorrect: profile.stats.total_correct,
+      overallAccuracy: profile.stats.overall_accuracy,
+      knowledgeCardCount: profile.stats.knowledge_card_count,
+      wrongBookCount: profile.stats.wrong_book_count,
     },
   });
 });

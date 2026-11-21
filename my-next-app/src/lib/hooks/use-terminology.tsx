@@ -18,6 +18,7 @@ const TERMS: Record<string, { standard: string; neo: string }> = {
   // Navigation
   "nav.home": { standard: "首页", neo: "修习" },
   "nav.practice": { standard: "智能练习", neo: "精进" },
+  "nav.exam": { standard: "试卷", neo: "模考" },
   "nav.wrong_book": { standard: "错题本", neo: "错题集" },
   "nav.history": { standard: "练习记录", neo: "日志" },
   "nav.ai_tutor": { standard: "AI 助教", neo: "灵犀" },
@@ -31,6 +32,7 @@ const TERMS: Record<string, { standard: string; neo: string }> = {
   "nav.ocr": { standard: "文字识别", neo: "观文" },
   "nav.mindmap": { standard: "思维导图工作台", neo: "道图" },
   "nav.recall": { standard: "回忆自测", neo: "温故" },
+  "nav.agentSets": { standard: "AI 题集", neo: "锦题" },
 
   // Sections
   "section.start": { standard: "开始", neo: "启程" },

@@ -30,6 +30,10 @@ app.use(
 // 注册 Swagger UI
 app.get("/doc", swaggerUI({ url: "/api/openapi.json" }));
 
+// 公开契约协商端点（版本 + 能力列表）：必须匿名可访问，不加 authMiddleware
+import metaRoute from "@/lib/api/routes/meta";
+app.route("/meta", metaRoute);
+
 // 注册 OpenAPI 文档端点
 app.doc("/openapi.json", {
   openapi: "3.0.0",
@@ -47,8 +51,29 @@ app.route("/auth", authRoute);
 import questionsRoute from "@/lib/api/routes/questions";
 app.route("/questions", questionsRoute);
 
+// AI 草稿校对流（docs/flutter-mobile-plan.md §34）
+import draftsRoute from "@/lib/api/routes/drafts";
+app.route("/drafts", draftsRoute);
+
 import practiceRoute from "@/lib/api/routes/practice";
 app.route("/practice", practiceRoute);
+
+// AI 题集的消费侧（docs/agent-question-set-plan.md §4.2）：JWT 鉴权，
+// 用户私有数据；判分复用 /practice 的逐题提交
+import agentSetsRoute from "@/lib/api/routes/agent-sets";
+app.route("/agent-sets", agentSetsRoute);
+
+// 试卷 / 模考（docs/exam-paper-plan.md §2）：服务端唯一实现，Web 与移动端共用
+import examRoute from "@/lib/api/routes/exam";
+app.route("/exam", examRoute);
+
+// 粉笔账号同步（docs/fenbi-sync-design.md §5）：Web 与移动端共用
+import fenbiRoute from "@/lib/api/routes/fenbi";
+app.route("/fenbi", fenbiRoute);
+
+// 回忆自测（用户 JWT 面）：与 /external/recall/* 同一套协议，鉴权换成登录 JWT
+import recallRoute from "@/lib/api/routes/recall";
+app.route("/recall", recallRoute);
 
 import historyRoute from "@/lib/api/routes/history";
 app.route("/history", historyRoute);

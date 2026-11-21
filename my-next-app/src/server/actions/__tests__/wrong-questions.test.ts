@@ -27,7 +27,14 @@ vi.mock("@/lib/auth/auth", () => ({
 }));
 
 vi.mock("@/lib/logger", () => ({
-  default: { error: vi.fn(), info: vi.fn() },
+  default: { error: vi.fn(), info: vi.fn(), log: vi.fn(), warn: vi.fn() },
+  log: { error: vi.fn(), info: vi.fn(), warn: vi.fn() },
+}));
+
+// 手动录题现在先做内容级去重（P1-1）；默认无同题，插入路径不变
+vi.mock("@/lib/services/question-dedup", () => ({
+  findQuestionIdByContent: vi.fn().mockResolvedValue(null),
+  contentHash: vi.fn(() => "test-content-hash"),
 }));
 
 describe("Wrong Questions Actions", () => {
@@ -155,6 +162,30 @@ describe("Wrong Questions Actions", () => {
         expect(result.data?.success).toBe(true);
         expect(result.data?.questionId).toBe(123);
         expect(drizzleDb.insert).toHaveBeenCalledTimes(2);
+      });
+
+      it("同题干已存在时复用已有题目，只写错题日志", async () => {
+        const { findQuestionIdByContent } =
+          await import("@/lib/services/question-dedup");
+        vi.mocked(findQuestionIdByContent).mockResolvedValueOnce(456);
+
+        vi.mocked(drizzleDb.insert).mockReturnValue({
+          values: vi.fn().mockResolvedValue(undefined),
+        } as any);
+
+        const result = await createManualWrongQuestionAction({
+          content: "测试题目内容12345",
+          options: ["选项A", "选项B"],
+          answer: "A",
+          explanation: "这是一个测试解析",
+          tags: ["测试标签"],
+          dimension: "knowledge",
+          type: "single",
+        });
+
+        expect(result.data?.questionId).toBe(456);
+        // 不插题目，只插一条 practice_logs
+        expect(drizzleDb.insert).toHaveBeenCalledTimes(1);
       });
     });
 

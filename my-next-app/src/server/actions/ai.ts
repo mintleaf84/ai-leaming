@@ -23,6 +23,7 @@ import {
   decrementUsage,
 } from "@/lib/billing/subscription-service";
 import { aiCacheService } from "@/lib/services/ai-cache";
+import { coerceJsonColumn } from "@/lib/utils/json";
 
 /**
  * 生成错题强化练习
@@ -37,7 +38,7 @@ export async function generateCorrectionQuizAction(
 
   // 1. 检查缓存
   if (!force) {
-    const cached = await aiCacheService.getQuiz(cacheKey);
+    const cached = await aiCacheService.getQuiz<CorrectionQuiz>(cacheKey);
     if (cached) {
       logger.info("[QuizCache] 命中缓存");
       return cached;
@@ -95,17 +96,8 @@ export async function generateCorrectionQuizAction(
 
     if (similar && similar.length > 0) {
       const q = similar[0] as QuestionRow;
-      let options: string[] = [];
-      try {
-        options =
-          typeof q.options === "string"
-            ? JSON.parse(q.options)
-            : q.options || [];
-      } catch {
-        // audit-allow: 题库里的 options 可能是历史脏数据，解析失败按空数组继续
-        options = [];
-        logger.debug("[AI] 题库 options 解析失败，降级为空选项");
-      }
+      // 题库里的 options 可能是历史脏数据：解析失败按空数组继续，不阻断出题
+      const options = coerceJsonColumn<string[]>(q.options, []);
 
       return {
         analysis: "AI 生成暂时不可用，我们为您检索了一道相关的强化训练题。",
@@ -130,15 +122,7 @@ export async function generateCorrectionQuizAction(
  */
 function toChallenges(rows: QuestionRow[]) {
   const mapped = rows.map((q) => {
-    let options: string[] = [];
-    try {
-      options =
-        typeof q.options === "string" ? JSON.parse(q.options) : q.options || [];
-    } catch {
-      // audit-allow: 同上，脏数据降级为空选项
-      options = [];
-      logger.debug("[AI] 题库 options 解析失败，降级为空选项");
-    }
+    const options = coerceJsonColumn<string[]>(q.options, []);
     return {
       content: q.content,
       options: Array.isArray(options) ? options : [],
@@ -166,7 +150,8 @@ export async function generateRegressionChallengeAction(
 
   // 1. 检查缓存
   if (!force) {
-    const cached = await aiCacheService.getChallenge(cacheKey);
+    const cached =
+      await aiCacheService.getChallenge<RegressionChallenge>(cacheKey);
     if (cached) {
       logger.info("[ChallengeCache] 命中缓存");
       return cached;

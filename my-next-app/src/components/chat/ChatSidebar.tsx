@@ -14,6 +14,7 @@ import { useTerminology } from "@/lib/hooks/use-terminology";
 import { isImeComposing } from "@/lib/utils/ime";
 import { renameChatSessionAction } from "@/server/actions/chat";
 import type { ChatSession } from "@/lib/services/chat";
+import { formatBeijingDate } from "@/lib/utils/datetime";
 
 interface ChatSidebarProps {
   sessions: ChatSession[];
@@ -28,13 +29,7 @@ interface ChatSidebarProps {
 
 // 日期格式化
 const formatDate = (dateString: string) => {
-  const date = new Date(dateString);
-  return date.toLocaleDateString("zh-CN", {
-    month: "short",
-    day: "numeric",
-    hour: "2-digit",
-    minute: "2-digit",
-  });
+  return formatBeijingDate(dateString, "M月D日 HH:mm");
 };
 
 const highlightText = (text: string, query: string) => {
@@ -155,7 +150,7 @@ function SessionItem({
 
       {/* 操作按钮组（悬停显示） */}
       {!isEditing && (
-        <div className="absolute right-1 top-1/2 -translate-y-1/2 flex items-center gap-0.5 opacity-0 group-hover:opacity-100 transition-all">
+        <div className="hover-reveal absolute right-1 top-1/2 -translate-y-1/2 flex items-center gap-0.5 rounded-md max-md:bg-background/80 max-md:backdrop-blur supports-[backdrop-filter]:max-md:bg-background/60 transition-all">
           <button
             aria-label="重命名会话"
             onClick={(e) => {

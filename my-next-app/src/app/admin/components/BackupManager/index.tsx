@@ -1,7 +1,8 @@
 "use client";
 
 import React, { useState, useRef } from "react";
-import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { useQueryClient } from "@tanstack/react-query";
+import { useAppQuery } from "@/hooks/useAppQuery";
 import { Button } from "@/components/ui/button";
 import {
   Download,
@@ -16,6 +17,8 @@ import {
   RotateCcw,
 } from "lucide-react";
 import { toast } from "sonner";
+import { formatBeijingDateTime } from "@/lib/utils/datetime";
+import { ErrorState } from "@/components/ui/error-state";
 
 interface BackupHistoryItem {
   id: number;
@@ -36,8 +39,10 @@ export function BackupManager() {
   const {
     data: history = [],
     isLoading: loadingHistory,
+    isError: historyIsError,
+    error: historyError,
     refetch: fetchHistory,
-  } = useQuery({
+  } = useAppQuery({
     queryKey: [HISTORY_KEY],
     queryFn: async () => {
       const res = await fetch("/api/admin/backup-history");
@@ -255,9 +260,26 @@ export function BackupManager() {
           </Button>
         </div>
 
-        {history.length === 0 ? (
+        {/* 顺序：加载中 → 请求失败 → 无记录 → 列表。失败排在空态之前，
+            否则接口 500 时历史区显示"暂无备份记录"，管理员会以为从未备份过 */}
+        {loadingHistory ? (
           <div className="px-6 py-8 text-center text-sm text-muted-foreground">
-            {loadingHistory ? "加载中..." : "暂无备份记录"}
+            加载中...
+          </div>
+        ) : historyIsError ? (
+          <ErrorState
+            title="备份历史加载失败"
+            description={
+              historyError instanceof Error && historyError.message
+                ? `备份列表读取失败。（${historyError.message}）`
+                : "备份列表读取失败。"
+            }
+            onRetry={() => void fetchHistory()}
+            className="py-8"
+          />
+        ) : history.length === 0 ? (
+          <div className="px-6 py-8 text-center text-sm text-muted-foreground">
+            暂无备份记录
           </div>
         ) : (
           <div className="divide-y divide-border">
@@ -297,7 +319,7 @@ export function BackupManager() {
                   </span>
                   <p className="text-xs text-muted-foreground">
                     {item.created_at
-                      ? new Date(item.created_at).toLocaleString("zh-CN")
+                      ? formatBeijingDateTime(item.created_at)
                       : "-"}
                   </p>
                 </div>

@@ -15,6 +15,27 @@ export const TEST_SCHEMA_SQL = `
         created_at TEXT DEFAULT CURRENT_TIMESTAMP
     );
 
+    -- Agent 推题 / 题集（drizzle/0025）。放在 questions 之前：questions.agent_set_id
+    -- 引用了它，libsql 在 prepare 时会解析父表是否存在（缺表会让 INSERT 直接失败）。
+    CREATE TABLE IF NOT EXISTS agent_question_sets (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+        batch_key TEXT NOT NULL,
+        title TEXT NOT NULL,
+        agent TEXT,
+        model TEXT,
+        prompt_version TEXT,
+        target_tags TEXT,
+        note TEXT,
+        status TEXT DEFAULT 'active' NOT NULL,
+        -- 「打开即已读」的首次打开时间（drizzle/0026）
+        read_at TEXT,
+        created_at TEXT DEFAULT CURRENT_TIMESTAMP
+    );
+
+    CREATE UNIQUE INDEX IF NOT EXISTS agent_question_sets_user_batch_unique
+        ON agent_question_sets (user_id, batch_key);
+
     CREATE TABLE IF NOT EXISTS questions (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
         content TEXT NOT NULL,
@@ -31,6 +52,12 @@ export const TEST_SCHEMA_SQL = `
         material_html TEXT,
         ai_mnemonic TEXT,
         external_id TEXT UNIQUE,
+        content_hash TEXT,
+        -- Agent 题集隔离标记（drizzle/0025）：默认 import，历史行语义不变
+        origin TEXT DEFAULT 'import' NOT NULL,
+        agent_set_id INTEGER REFERENCES agent_question_sets(id),
+        agent_position INTEGER,
+        agent_flag_reason TEXT,
         created_at TEXT DEFAULT CURRENT_TIMESTAMP
     );
 
@@ -47,6 +74,13 @@ export const TEST_SCHEMA_SQL = `
         is_demo INTEGER DEFAULT 0,
         analysis_report TEXT,
         total_duration_ms INTEGER DEFAULT 0,
+        -- 试卷作答（drizzle/0024）：历史行全为 NULL，普通练习语义不变
+        paper_id INTEGER REFERENCES exam_papers(id),
+        deadline_at TEXT,
+        exam_submitted_at TEXT,
+        exam_score REAL,
+        -- Agent 题集作答（drizzle/0025）：practice_mode='agent_set' 时指向题集
+        agent_set_id INTEGER,
         created_at TEXT DEFAULT CURRENT_TIMESTAMP
     );
 
@@ -62,8 +96,18 @@ export const TEST_SCHEMA_SQL = `
         is_correct INTEGER NOT NULL,
         is_monitored_correct INTEGER DEFAULT false,
         duration_ms INTEGER,
+        origin TEXT DEFAULT 'web' NOT NULL,
+        status TEXT DEFAULT 'answered' NOT NULL,
         timestamp TEXT DEFAULT CURRENT_TIMESTAMP
     );
+
+    -- 与 drizzle/0016、0019 对齐：会话维度与错题统计都靠这些索引，缺了内存库
+    -- 虽然仍能跑，但会掩盖"真实库有没有索引"这类问题（EXPLAIN 会变成全表扫）。
+    CREATE INDEX IF NOT EXISTS idx_practice_logs_session
+        ON practice_logs (session_id);
+
+    CREATE INDEX IF NOT EXISTS idx_practice_logs_user_correct
+        ON practice_logs (user_id, is_correct);
 
     CREATE TABLE IF NOT EXISTS user_mastery (
         user_id INTEGER DEFAULT 1 NOT NULL REFERENCES users(id) ON DELETE CASCADE,
@@ -127,6 +171,42 @@ export const TEST_SCHEMA_SQL = `
         question_id INTEGER NOT NULL,
         review_data TEXT,
         created_at TEXT DEFAULT CURRENT_TIMESTAMP
+    );
+
+    -- 与 drizzle/0019 对齐
+    CREATE INDEX IF NOT EXISTS idx_session_reviews_session
+        ON session_reviews (session_id);
+
+    -- 与 drizzle/0022 对齐：AI 草稿校对流
+    CREATE TABLE IF NOT EXISTS question_drafts (
+        id TEXT PRIMARY KEY NOT NULL,
+        user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+        source TEXT NOT NULL,
+        status TEXT NOT NULL,
+        image_sha256 TEXT,
+        image_rel_path TEXT,
+        ai_provider TEXT,
+        ai_model TEXT,
+        ai_prompt_version TEXT,
+        ai_raw_json TEXT,
+        error_code TEXT,
+        created_at TEXT DEFAULT CURRENT_TIMESTAMP,
+        expires_at INTEGER,
+        analyze_token TEXT
+    );
+
+    CREATE TABLE IF NOT EXISTS question_draft_items (
+        draft_id TEXT NOT NULL REFERENCES question_drafts(id) ON DELETE CASCADE,
+        idx INTEGER NOT NULL,
+        content TEXT,
+        options TEXT,
+        answer TEXT,
+        explanation TEXT,
+        tags TEXT,
+        type TEXT,
+        material_html TEXT,
+        confirmed INTEGER DEFAULT 0 NOT NULL,
+        PRIMARY KEY (draft_id, idx)
     );
 `;
 

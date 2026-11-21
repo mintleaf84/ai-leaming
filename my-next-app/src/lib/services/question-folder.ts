@@ -2,6 +2,7 @@ import { drizzleDb } from "@/lib/db";
 import { sql } from "drizzle-orm";
 import type { WrongQuestionItem } from "./wrong-question";
 import { affectedRows } from "@/lib/db/affected-rows";
+import { safeParseJson } from "@/lib/utils/json";
 
 export interface QuestionFolder {
   id: number;
@@ -190,8 +191,9 @@ export const questionFolderService = {
         explanation: string;
         tags: string;
         dimension: string;
+        origin: string;
       }>(sql`
-        SELECT q.id as question_id, q.content, q.answer, q.explanation, q.tags, q.dimension
+        SELECT q.id as question_id, q.content, q.answer, q.explanation, q.tags, q.dimension, q.origin
         FROM question_folder_items fi
         JOIN questions q ON q.id = fi.question_id
         WHERE fi.folder_id = ${folderId}
@@ -201,7 +203,8 @@ export const questionFolderService = {
       return rows.map((r) => ({
         questionId: r.question_id,
         questionContent: r.content,
-        tags: r.tags ? (JSON.parse(r.tags) as string[]) : [],
+        tags: safeParseJson<string[]>(r.tags as string | null | undefined, []),
+        origin: r.origin || "import",
         wrongCount: 0,
         lastWrongAt: "",
         correctAnswer: r.answer || "",

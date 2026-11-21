@@ -175,14 +175,17 @@ describe("Practice Actions", () => {
     it("应该记录答案并更新掌握度", async () => {
       state.selectResults = [
         [{ id: "sess-1" }], // 归属校验：sessionId 属于当前用户
+        // 事务内重新读题判分（revalidateAnswer=true）
+        [{ answer: "A", options: '["A","B"]', type: "single" }],
         [
           {
-            // 题目 tags 查询
+            // 题目 tags 查询（origin 必须显式给：只有 import 题才计入掌握度，
+            // 见 docs/agent-question-set-plan.md §2 的隔离过滤）
             tags: JSON.stringify(["Tag1"]),
             dimension: "knowledge",
+            origin: "import",
           },
         ],
-        [{ answer: "A" }], // 答案验证查询
       ];
 
       const result = await submitAnswerAction({

@@ -8,11 +8,29 @@ name: UI Guard
 #
 # perf-guard（LoAF 长动画帧 / 事件处理时长）仍在观察期，continue-on-error: true，
 # 阈值先按 300ms，两周无假红后收紧到 200ms 并转为阻断（见 docs/performance.md T-09）。
+#
+# 触发时机（2026-11 CI 时长治理，与 ci.yml 的 E2E 同步）：
+# 浏览器级验证不再每个 PR 都跑 —— 它是 PR 墙钟里最贵的一段（4~5min），
+# 而几何/性能回归的检出收益在 main 与夜间全量里同样成立。
+#   · main push / 每晚 schedule / workflow_dispatch：全量跑，失败仍然阻断（T-08 不变）
+#   · PR：默认不跑；需要前置验证时给 PR 打 `run-e2e` 标签即可拉起
+# 用 job 级 if: 而不是整条工作流路径过滤，是为了让被跳过的 job 报 "skipped"
+# 而不是让必需检查卡在 "Expected — waiting for status to be reported"。
 on:
   pull_request:
     branches: [ "master", "main" ]
+    # labeled 必须显式列出：否则给 PR 打 run-e2e 标签不会启动 run
+    types: [opened, synchronize, reopened, labeled]
+    # 纯文档 / 移动端改动不触发（mobile_app 由 android.yml 管）
+    paths-ignore:
+      - "docs/**"
+      - "**/*.md"
+      - "mobile_app/**"
   push:
     branches: [ "main" ]
+  schedule:
+    # 每天 03:10（Asia/Shanghai）与 ci.yml 的 03:00 错开，避免抢同一批 runner
+    - cron: "10 19 * * *"
   workflow_dispatch:
 
 permissions:
@@ -32,8 +50,13 @@ jobs:
     runs-on: ${{ (github.event_name == 'push' && vars.SELF_HOSTED == 'true') && 'self-hosted' || 'ubuntu-latest' }}
     timeout-minutes: 40
     # 已翻转（T-08）：main 上 run 43935305511 的护栏步骤为 success，
-    # 存量溢出清完，失败必须挡住合并。
+    # 存量溢出清完，失败必须挡住合并。main / 夜间失败即阻断，PR 需打 run-e2e 才跑。
     continue-on-error: false
+    if: >-
+      github.event_name == 'push' ||
+      github.event_name == 'schedule' ||
+      github.event_name == 'workflow_dispatch' ||
+      contains(github.event.pull_request.labels.*.name, 'run-e2e')
     env:
       JWT_SECRET: ci-placeholder-secret
       AI_API_KEY: ci-placeholder-key
@@ -71,16 +94,24 @@ jobs:
       - name: 安装 Playwright 浏览器（chromium）
         run: npx playwright install chromium
 
+      # 失败证据：慢闸只在夜间/main 跑，日志一旦随 run 过期就彻底无法复盘
+      # （gh run --log-failed 曾返回空），因此把输出 tee 到文件并随 artifact 保留 14 天。
       - name: 运行布局护栏（61 条：20 路由 × 3 视口 + 1 条专项）
-        run: npx playwright test --project=layout-guard
+        run: |
+          set -o pipefail
+          mkdir -p "$RUNNER_TEMP/ci-logs"
+          npx playwright test --project=layout-guard 2>&1 | tee "$RUNNER_TEMP/ci-logs/layout-guard.log"
 
-      - name: 上传 Playwright 报告
-        if: failure()
+      - name: 上传 Playwright 报告与失败日志（保留 14 天）
+        if: always()
         uses: actions/upload-artifact@v4
         with:
           name: playwright-report-ui-guard
-          path: my-next-app/playwright-report/
-          retention-days: 7
+          path: |
+            my-next-app/playwright-report/
+            my-next-app/test-results/
+            ${{ runner.temp }}/ci-logs/
+          retention-days: 14
 
   # 交互性能护栏（docs/performance.md T-09）：LoAF 长动画帧 + 点击事件处理时长。
   # 与 layout-guard 共用同一份 webServer（生产构建 + 种子库），但判定目标不同：
@@ -93,6 +124,11 @@ jobs:
     runs-on: ${{ (github.event_name == 'push' && vars.SELF_HOSTED == 'true') && 'self-hosted' || 'ubuntu-latest' }}
     timeout-minutes: 40
     continue-on-error: true
+    if: >-
+      github.event_name == 'push' ||
+      github.event_name == 'schedule' ||
+      github.event_name == 'workflow_dispatch' ||
+      contains(github.event.pull_request.labels.*.name, 'run-e2e')
     env:
       JWT_SECRET: ci-placeholder-secret
       AI_API_KEY: ci-placeholder-key
@@ -130,12 +166,18 @@ jobs:
         run: npx playwright install chromium
 
       - name: 运行交互性能护栏（4 条：3 路由首屏 LoAF + 1 条点击延迟）
-        run: npx playwright test --project=perf-guard
+        run: |
+          set -o pipefail
+          mkdir -p "$RUNNER_TEMP/ci-logs"
+          npx playwright test --project=perf-guard 2>&1 | tee "$RUNNER_TEMP/ci-logs/perf-guard.log"
 
-      - name: 上传 Playwright 报告与性能采样
+      - name: 上传 Playwright 报告与性能采样（保留 14 天）
         if: always()
         uses: actions/upload-artifact@v4
         with:
           name: playwright-report-perf-guard
-          path: my-next-app/playwright-report/
-          retention-days: 7
+          path: |
+            my-next-app/playwright-report/
+            my-next-app/test-results/
+            ${{ runner.temp }}/ci-logs/
+          retention-days: 14

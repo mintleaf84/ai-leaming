@@ -25,6 +25,8 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { toast } from "sonner";
+import { formatBeijingDate } from "@/lib/utils/datetime";
+import { ErrorState } from "@/components/ui/error-state";
 
 interface FeedbackItem {
   id: number;
@@ -70,6 +72,8 @@ export default function FeedbackPage() {
     dismissed: 0,
   });
   const [loading, setLoading] = useState(true);
+  // 失败与"没有反馈"必须分开：接口 500 时 items 为空，页面原本显示"暂无反馈"。
+  const [loadError, setLoadError] = useState<string | null>(null);
   const [statusFilter, setStatusFilter] = useState<string>("all");
   const [typeFilter, setTypeFilter] = useState<string>("all");
   const [page, setPage] = useState(0);
@@ -103,6 +107,14 @@ export default function FeedbackPage() {
     if (countsResult?.data) {
       setCounts(countsResult.data);
     }
+    // 列表与计数任一失败都算这次加载失败：否则会出现"列表空 + 计数全 0"的
+    // 假正常态。
+    const failure = listResult?.serverError || countsResult?.serverError;
+    if (failure || !listResult?.data) {
+      setLoadError(failure || "加载反馈列表失败");
+    } else {
+      setLoadError(null);
+    }
     setLoading(false);
   }, [page, statusFilter, typeFilter]);
 
@@ -132,12 +144,7 @@ export default function FeedbackPage() {
 
   const formatTime = (timestamp: string | null) => {
     if (!timestamp) return "-";
-    return new Date(timestamp).toLocaleString("zh-CN", {
-      month: "numeric",
-      day: "numeric",
-      hour: "2-digit",
-      minute: "2-digit",
-    });
+    return formatBeijingDate(timestamp, "M月D日 HH:mm");
   };
 
   const totalPages = Math.ceil(total / limit);
@@ -146,9 +153,9 @@ export default function FeedbackPage() {
     <div className="p-4 md:p-8 space-y-6">
       <div className="flex items-center justify-between">
         <div>
-          <h2 className="text-2xl md:text-3xl font-bold tracking-tight">
+          <h1 className="text-2xl font-semibold tracking-tight md:text-3xl">
             纠错反馈
-          </h2>
+          </h1>
           <p className="text-muted-foreground mt-2">
             管理用户提交的题目纠错反馈。
           </p>
@@ -247,6 +254,13 @@ export default function FeedbackPage() {
             </div>
           ))}
         </div>
+      ) : loadError && items.length === 0 ? (
+        <ErrorState
+          title="反馈列表加载失败"
+          description={loadError}
+          onRetry={() => void loadData()}
+          className="bg-card rounded-2xl border border-dashed border-border"
+        />
       ) : items.length === 0 ? (
         <div className="text-center py-20 bg-card rounded-2xl border border-dashed border-border">
           <div className="w-16 h-16 mx-auto mb-4 bg-muted rounded-full flex items-center justify-center">

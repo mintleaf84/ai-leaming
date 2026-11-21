@@ -2,6 +2,390 @@
   "components": {
     "parameters": {},
     "schemas": {
+      "AgentQuestionSetCreateRequest": {
+        "properties": {
+          "agent": {
+            "description": "哪个工具推的，如 claude-code",
+            "maxLength": 100,
+            "type": "string"
+          },
+          "batchKey": {
+            "description": "批次幂等键：同一 key 重推返回原批次（duplicate=true）且不新增；批次不可变，新内容请用新 key",
+            "maxLength": 200,
+            "minLength": 1,
+            "type": "string"
+          },
+          "model": {
+            "maxLength": 100,
+            "type": "string"
+          },
+          "note": {
+            "description": "「为什么给你出这些」",
+            "maxLength": 2000,
+            "type": "string"
+          },
+          "promptVersion": {
+            "maxLength": 100,
+            "type": "string"
+          },
+          "questions": {
+            "description": "本批题目，1–100 道；整批原子：任一条不合法则一条都不写",
+            "items": {
+              "properties": {
+                "answer": {
+                  "description": "正确答案：单选传标号（A）/ 多选传 JSON 数组字符串（如 [\"A\",\"C\"]）/ 判断 A 或 B / 填空自由文本",
+                  "type": "string"
+                },
+                "content": {
+                  "description": "题干纯文本",
+                  "type": "string"
+                },
+                "dimension": {
+                  "description": "能力维度，省略时按 knowledge 落库",
+                  "enum": ["knowledge", "understanding", "application"],
+                  "type": "string"
+                },
+                "explanation": {
+                  "description": "解析（至少 5 个字符，与 QuestionSchema 一致）",
+                  "type": "string"
+                },
+                "externalId": {
+                  "description": "你自己的题号（可选）：会原样回显，并参与外部幂等键的命名空间",
+                  "maxLength": 200,
+                  "minLength": 1,
+                  "type": "string"
+                },
+                "material": {
+                  "description": "材料原文（原样落库，可为空）",
+                  "type": "string"
+                },
+                "options": {
+                  "description": "选项文本；判断题两个、填空题可空",
+                  "items": {
+                    "type": "string"
+                  },
+                  "type": "array"
+                },
+                "tags": {
+                  "description": "知识点标签，至少 1 个",
+                  "items": {
+                    "type": "string"
+                  },
+                  "type": "array"
+                },
+                "type": {
+                  "description": "题型，省略时按 single 落库",
+                  "enum": ["single", "multi", "truefalse", "fill_blank"],
+                  "type": "string"
+                }
+              },
+              "required": ["content", "answer", "explanation", "tags"],
+              "type": "object"
+            },
+            "maxItems": 100,
+            "minItems": 1,
+            "type": "array"
+          },
+          "targetTags": {
+            "items": {
+              "type": "string"
+            },
+            "maxItems": 50,
+            "type": "array"
+          },
+          "title": {
+            "maxLength": 200,
+            "minLength": 1,
+            "type": "string"
+          }
+        },
+        "required": ["batchKey", "title", "questions"],
+        "type": "object"
+      },
+      "AgentQuestionSetCreateResponse": {
+        "properties": {
+          "batchKey": {
+            "type": "string"
+          },
+          "dryRun": {
+            "description": "仅预演时出现且恒为 true：库内零变更",
+            "type": "boolean"
+          },
+          "duplicate": {
+            "description": "true = 该 batchKey 已存在，本次没有写入任何数据",
+            "type": "boolean"
+          },
+          "id": {
+            "description": "批次 ID；预演且需要新建时为 null",
+            "nullable": true,
+            "type": "integer"
+          },
+          "questionCount": {
+            "description": "该批题数（幂等命中为既有批次的题数）",
+            "type": "integer"
+          }
+        },
+        "required": ["id", "batchKey", "duplicate", "questionCount"],
+        "type": "object"
+      },
+      "AgentQuestionSetQuestion": {
+        "properties": {
+          "answer": {
+            "description": "正确答案",
+            "type": "string"
+          },
+          "content": {
+            "type": "string"
+          },
+          "dimension": {
+            "nullable": true,
+            "type": "string"
+          },
+          "explanation": {
+            "nullable": true,
+            "type": "string"
+          },
+          "externalId": {
+            "description": "你推送时给的题号（没给为 null）",
+            "nullable": true,
+            "type": "string"
+          },
+          "id": {
+            "type": "integer"
+          },
+          "material": {
+            "nullable": true,
+            "type": "string"
+          },
+          "options": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array"
+          },
+          "position": {
+            "description": "批次内顺序（1..n）",
+            "nullable": true,
+            "type": "integer"
+          },
+          "tags": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array"
+          },
+          "type": {
+            "nullable": true,
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "position",
+          "externalId",
+          "content",
+          "options",
+          "answer",
+          "explanation",
+          "type",
+          "dimension",
+          "tags",
+          "material"
+        ],
+        "type": "object"
+      },
+      "AgentQuestionSetResultItem": {
+        "properties": {
+          "answered": {
+            "type": "boolean"
+          },
+          "durationMs": {
+            "description": "最近一次作答耗时（毫秒）",
+            "nullable": true,
+            "type": "integer"
+          },
+          "flagReason": {
+            "nullable": true,
+            "type": "string"
+          },
+          "flagged": {
+            "type": "boolean"
+          },
+          "isCorrect": {
+            "description": "未作答时为 false（看 answered 区分）",
+            "type": "boolean"
+          },
+          "questionId": {
+            "type": "integer"
+          }
+        },
+        "required": [
+          "questionId",
+          "answered",
+          "isCorrect",
+          "durationMs",
+          "flagged",
+          "flagReason"
+        ],
+        "type": "object"
+      },
+      "AgentQuestionSetResults": {
+        "properties": {
+          "flagged": {
+            "description": "被用户报「这题有问题」的题：修正后请推新批次",
+            "items": {
+              "properties": {
+                "content": {
+                  "type": "string"
+                },
+                "questionId": {
+                  "type": "integer"
+                },
+                "reason": {
+                  "nullable": true,
+                  "type": "string"
+                }
+              },
+              "required": ["questionId", "content", "reason"],
+              "type": "object"
+            },
+            "type": "array"
+          },
+          "items": {
+            "items": {
+              "$ref": "#/components/schemas/AgentQuestionSetResultItem"
+            },
+            "type": "array"
+          },
+          "setId": {
+            "type": "integer"
+          },
+          "summary": {
+            "properties": {
+              "answered": {
+                "description": "已作答的可用题数",
+                "type": "integer"
+              },
+              "avgDurationMs": {
+                "description": "已作答题的平均耗时（毫秒）",
+                "type": "integer"
+              },
+              "correctRate": {
+                "description": "correct / answered，0–1 小数",
+                "type": "number"
+              },
+              "tagBreakdown": {
+                "items": {
+                  "properties": {
+                    "answered": {
+                      "type": "integer"
+                    },
+                    "correctRate": {
+                      "description": "0–1 小数",
+                      "type": "number"
+                    },
+                    "tag": {
+                      "type": "string"
+                    }
+                  },
+                  "required": ["tag", "answered", "correctRate"],
+                  "type": "object"
+                },
+                "type": "array"
+              },
+              "total": {
+                "description": "该批题总数（含已报错的题）",
+                "type": "integer"
+              }
+            },
+            "required": [
+              "answered",
+              "total",
+              "correctRate",
+              "avgDurationMs",
+              "tagBreakdown"
+            ],
+            "type": "object"
+          }
+        },
+        "required": ["setId", "summary", "items", "flagged"],
+        "type": "object"
+      },
+      "AgentQuestionSetSummary": {
+        "properties": {
+          "agent": {
+            "description": "哪个工具推的，如 claude-code",
+            "nullable": true,
+            "type": "string"
+          },
+          "batchKey": {
+            "description": "Agent 的批次幂等键",
+            "type": "string"
+          },
+          "createdAt": {
+            "nullable": true,
+            "type": "string"
+          },
+          "doneCount": {
+            "description": "该批已作答的题数（只看本批次的作答）",
+            "type": "integer"
+          },
+          "flaggedCount": {
+            "description": "用户报「这题有问题」的题数",
+            "type": "integer"
+          },
+          "id": {
+            "type": "integer"
+          },
+          "model": {
+            "nullable": true,
+            "type": "string"
+          },
+          "note": {
+            "description": "「为什么给你出这些」",
+            "nullable": true,
+            "type": "string"
+          },
+          "promptVersion": {
+            "nullable": true,
+            "type": "string"
+          },
+          "questionCount": {
+            "description": "该批可用题数（已报错的题不计入）",
+            "type": "integer"
+          },
+          "status": {
+            "enum": ["active", "archived", "promoted"],
+            "type": "string"
+          },
+          "targetTags": {
+            "description": "Agent 声称针对的考点",
+            "items": {
+              "type": "string"
+            },
+            "type": "array"
+          },
+          "title": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "batchKey",
+          "title",
+          "agent",
+          "model",
+          "promptVersion",
+          "targetTags",
+          "note",
+          "status",
+          "questionCount",
+          "doneCount",
+          "flaggedCount",
+          "createdAt"
+        ],
+        "type": "object"
+      },
       "ExternalAgentAnswer": {
         "properties": {
           "durationMs": {
@@ -81,6 +465,132 @@
           }
         },
         "required": ["sessionId", "inserted", "duplicated"],
+        "type": "object"
+      },
+      "ExternalQuestionBatchItem": {
+        "properties": {
+          "answer": {
+            "description": "正确答案：单选传标号（A）/ 多选题传 JSON 数组字符串（如 [\"A\",\"C\"]）/ 判断题 A 或 B / 填空题为自由文本",
+            "type": "string"
+          },
+          "content": {
+            "description": "题干纯文本",
+            "type": "string"
+          },
+          "dimension": {
+            "description": "能力维度，省略时按 knowledge 落库",
+            "enum": ["knowledge", "understanding", "application"],
+            "type": "string"
+          },
+          "explanation": {
+            "description": "解析（至少 5 个字符，与 QuestionSchema 一致）",
+            "type": "string"
+          },
+          "externalId": {
+            "description": "幂等键（推荐）：上游题号这类跨重试稳定的标识。同一 externalId 重复提交只会落一行；省略时退回内容指纹（题干+选项+答案）。不能以 `api:` 开头——该前缀是服务端内容指纹保留的命名空间",
+            "example": "jz1680_jz00312",
+            "maxLength": 200,
+            "minLength": 1,
+            "type": "string"
+          },
+          "material": {
+            "description": "材料原文（原样落库，可为空）",
+            "type": "string"
+          },
+          "options": {
+            "description": "选项文本；判断题必须是两个、填空题可为空",
+            "items": {
+              "type": "string"
+            },
+            "type": "array"
+          },
+          "source": {
+            "description": "来源标识（原样落库，如 fenbi_import）",
+            "maxLength": 200,
+            "type": "string"
+          },
+          "tags": {
+            "description": "知识点标签，至少 1 个",
+            "items": {
+              "type": "string"
+            },
+            "type": "array"
+          },
+          "type": {
+            "description": "题型，省略时按 single 落库",
+            "enum": ["single", "multi", "truefalse", "fill_blank"],
+            "type": "string"
+          }
+        },
+        "required": ["content", "answer", "explanation", "tags"],
+        "type": "object"
+      },
+      "ExternalQuestionBatchItemResult": {
+        "properties": {
+          "externalId": {
+            "description": "实际使用的幂等键（请求没给 externalId 时是内容指纹）",
+            "type": "string"
+          },
+          "index": {
+            "description": "该条在请求 questions 数组里的下标（从 0 开始）",
+            "type": "integer"
+          },
+          "questionId": {
+            "description": "题目 ID；预演且需要新建时为 null（不要拿 null 去调查详情接口）",
+            "nullable": true,
+            "type": "integer"
+          },
+          "status": {
+            "description": "created = 本次新建；skipped = 命中既有题或批内重复（内容未被修改）",
+            "enum": ["created", "skipped"],
+            "type": "string"
+          }
+        },
+        "required": ["index", "externalId", "questionId", "status"],
+        "type": "object"
+      },
+      "ExternalQuestionBatchRequest": {
+        "properties": {
+          "questions": {
+            "description": "待建题目，1–100 条；整批原子：任一条不合法则一条都不写",
+            "items": {
+              "$ref": "#/components/schemas/ExternalQuestionBatchItem"
+            },
+            "maxItems": 100,
+            "minItems": 1,
+            "type": "array"
+          }
+        },
+        "required": ["questions"],
+        "type": "object"
+      },
+      "ExternalQuestionBatchResponse": {
+        "properties": {
+          "created": {
+            "description": "本次新建条数",
+            "type": "integer"
+          },
+          "dryRun": {
+            "description": "仅预演时出现且恒为 true：题库业务数据零变更",
+            "type": "boolean"
+          },
+          "duplicate": {
+            "description": "true = 本次没有新建任何题（整批都是重复）",
+            "type": "boolean"
+          },
+          "items": {
+            "description": "逐条结果，顺序与请求 questions 一致",
+            "items": {
+              "$ref": "#/components/schemas/ExternalQuestionBatchItemResult"
+            },
+            "type": "array"
+          },
+          "skipped": {
+            "description": "跳过条数（既有题 + 批内重复 externalId）",
+            "type": "integer"
+          }
+        },
+        "required": ["created", "skipped", "items", "duplicate"],
         "type": "object"
       },
       "ExternalQuestionPatchBody": {
@@ -552,6 +1062,101 @@
           "duplicate"
         ],
         "type": "object"
+      },
+      "MobileRecallReviewRequest": {
+        "properties": {
+          "allBlank": {
+            "description": "用户点了「全没想起」：所有呈现条目都算未写",
+            "type": "boolean"
+          },
+          "cardId": {
+            "description": "卡片数字主键（来自 GET /cards/:cardId 或队列 ids）",
+            "example": 42,
+            "exclusiveMinimum": true,
+            "minimum": 0,
+            "type": "integer"
+          },
+          "clientKey": {
+            "description": "幂等键（客户端进入判分屏时生成的 UUID）。同一次作答的所有重试必须沿用同一个 key；服务端命中后返回首次结果（duplicate=true），不会二次推进调度",
+            "example": "6f1c1d5e-2a4b-4f0e-9c2f-8f0a2d1b7c33",
+            "maxLength": 120,
+            "minLength": 1,
+            "type": "string"
+          },
+          "overrides": {
+            "description": "用户改判项，可空",
+            "items": {
+              "properties": {
+                "index": {
+                  "description": "卡内条目下标（与 pendingItems 同一坐标系）",
+                  "minimum": 0,
+                  "type": "integer"
+                },
+                "to": {
+                  "description": "改判结果",
+                  "enum": ["ok", "miss"],
+                  "type": "string"
+                }
+              },
+              "required": ["index", "to"],
+              "type": "object"
+            },
+            "type": "array"
+          },
+          "typed": {
+            "description": "用户作答原文；填空卡按呈现顺序分段",
+            "example": "1. 建立安全制度 2. 开展安全演练",
+            "type": "string"
+          }
+        },
+        "required": ["cardId", "typed"],
+        "type": "object"
+      },
+      "MobileRecallReviewResponse": {
+        "properties": {
+          "duplicate": {
+            "description": "true = 该 clientKey 已提交过，本次为幂等重放，未推进调度",
+            "type": "boolean"
+          },
+          "nextDue": {
+            "description": "下次到期时间（ISO 8601 UTC）",
+            "type": "string"
+          },
+          "nextReviewText": {
+            "description": "可直接展示的提示，如「下次 11 月 20 日」「明天只重测这 2 条」",
+            "type": "string"
+          },
+          "pendingItems": {
+            "description": "下次要重测的条目下标；null 表示无需重测",
+            "items": {
+              "type": "integer"
+            },
+            "nullable": true,
+            "type": "array"
+          },
+          "rating": {
+            "description": "推导出的 FSRS 评分（用户不直接选择）",
+            "enum": ["again", "hard", "good"],
+            "type": "string"
+          },
+          "verdicts": {
+            "description": "最终判分（已应用改判），与本次呈现的条目一一对应",
+            "items": {
+              "enum": ["ok", "miss"],
+              "type": "string"
+            },
+            "type": "array"
+          }
+        },
+        "required": [
+          "verdicts",
+          "rating",
+          "nextDue",
+          "pendingItems",
+          "nextReviewText",
+          "duplicate"
+        ],
+        "type": "object"
       }
     }
   },
@@ -871,6 +1476,49 @@
         "summary": "标记反馈为已解决"
       }
     },
+    "/api/admin/maintenance/dedupe": {
+      "get": {
+        "responses": {
+          "200": {
+            "description": "返回待处理项计数"
+          },
+          "401": {
+            "description": "未授权"
+          }
+        },
+        "summary": "数据维护状态"
+      },
+      "post": {
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "properties": {
+                  "apply": {
+                    "default": false,
+                    "type": "boolean"
+                  }
+                },
+                "type": "object"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "返回清理报告与备份路径"
+          },
+          "401": {
+            "description": "未授权"
+          },
+          "500": {
+            "description": "清理失败（数据库未按预期变更时请先查日志）"
+          }
+        },
+        "summary": "执行兜底题重复清理（apply 前自动备份）"
+      }
+    },
     "/api/admin/restore": {
       "post": {
         "responses": {
@@ -1141,6 +1789,717 @@
           }
         },
         "summary": "执行系统管理操作（如演示模式开关）"
+      }
+    },
+    "/api/agent-sets": {
+      "get": {
+        "parameters": [
+          {
+            "in": "query",
+            "name": "limit",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "offset",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "properties": {
+                    "data": {
+                      "items": {
+                        "properties": {
+                          "agent": {
+                            "nullable": true,
+                            "type": "string"
+                          },
+                          "createdAt": {
+                            "nullable": true,
+                            "type": "string"
+                          },
+                          "id": {
+                            "type": "integer"
+                          },
+                          "lastScore": {
+                            "description": "最近一次作答的正确率（0–1）",
+                            "nullable": true,
+                            "type": "number"
+                          },
+                          "model": {
+                            "nullable": true,
+                            "type": "string"
+                          },
+                          "pendingCount": {
+                            "description": "未作答的可用题数",
+                            "type": "integer"
+                          },
+                          "questionCount": {
+                            "description": "批次原始题量（含被用户报错移除的题）",
+                            "type": "integer"
+                          },
+                          "status": {
+                            "description": "active=可练；promoted=已转正入库；archived=已归档",
+                            "enum": ["active", "promoted", "archived"],
+                            "type": "string"
+                          },
+                          "targetTags": {
+                            "items": {
+                              "type": "string"
+                            },
+                            "type": "array"
+                          },
+                          "title": {
+                            "type": "string"
+                          },
+                          "unreadCount": {
+                            "description": "未读题数：该批还没有任何作答记录时等于 questionCount，否则为 0（客户端求和即首页角标）",
+                            "type": "integer"
+                          }
+                        },
+                        "required": [
+                          "id",
+                          "title",
+                          "agent",
+                          "model",
+                          "targetTags",
+                          "status",
+                          "questionCount",
+                          "pendingCount",
+                          "unreadCount",
+                          "lastScore",
+                          "createdAt"
+                        ],
+                        "type": "object"
+                      },
+                      "type": "array"
+                    },
+                    "meta": {
+                      "properties": {
+                        "limit": {
+                          "type": "integer"
+                        },
+                        "offset": {
+                          "type": "integer"
+                        },
+                        "total": {
+                          "type": "integer"
+                        }
+                      },
+                      "required": ["limit", "offset", "total"],
+                      "type": "object"
+                    }
+                  },
+                  "required": ["data", "meta"],
+                  "type": "object"
+                }
+              }
+            },
+            "description": "我的 AI 题集（未做数、未读数、最近成绩、目标考点）"
+          },
+          "401": {
+            "description": "未授权 - 缺少 / 无效 / 已过期的 JWT"
+          }
+        }
+      }
+    },
+    "/api/agent-sets/{id}": {
+      "get": {
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "exclusiveMinimum": true,
+              "minimum": 0,
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "properties": {
+                    "flaggedCount": {
+                      "description": "已报「这题有问题」的题数",
+                      "type": "integer"
+                    },
+                    "questions": {
+                      "items": {
+                        "properties": {
+                          "content": {
+                            "type": "string"
+                          },
+                          "dimension": {
+                            "nullable": true,
+                            "type": "string"
+                          },
+                          "id": {
+                            "type": "integer"
+                          },
+                          "material": {
+                            "nullable": true,
+                            "type": "string"
+                          },
+                          "options": {
+                            "items": {
+                              "type": "string"
+                            },
+                            "type": "array"
+                          },
+                          "tags": {
+                            "items": {
+                              "type": "string"
+                            },
+                            "type": "array"
+                          },
+                          "type": {
+                            "nullable": true,
+                            "type": "string"
+                          }
+                        },
+                        "required": [
+                          "id",
+                          "content",
+                          "options",
+                          "type",
+                          "dimension",
+                          "tags",
+                          "material"
+                        ],
+                        "type": "object"
+                      },
+                      "type": "array"
+                    },
+                    "set": {
+                      "properties": {
+                        "agent": {
+                          "nullable": true,
+                          "type": "string"
+                        },
+                        "createdAt": {
+                          "nullable": true,
+                          "type": "string"
+                        },
+                        "id": {
+                          "type": "integer"
+                        },
+                        "lastScore": {
+                          "description": "最近一次作答的正确率（0–1）",
+                          "nullable": true,
+                          "type": "number"
+                        },
+                        "model": {
+                          "nullable": true,
+                          "type": "string"
+                        },
+                        "pendingCount": {
+                          "description": "未作答的可用题数",
+                          "type": "integer"
+                        },
+                        "questionCount": {
+                          "description": "批次原始题量（含被用户报错移除的题）",
+                          "type": "integer"
+                        },
+                        "status": {
+                          "description": "active=可练；promoted=已转正入库；archived=已归档",
+                          "enum": ["active", "promoted", "archived"],
+                          "type": "string"
+                        },
+                        "targetTags": {
+                          "items": {
+                            "type": "string"
+                          },
+                          "type": "array"
+                        },
+                        "title": {
+                          "type": "string"
+                        },
+                        "unreadCount": {
+                          "description": "未读题数：该批还没有任何作答记录时等于 questionCount，否则为 0（客户端求和即首页角标）",
+                          "type": "integer"
+                        }
+                      },
+                      "required": [
+                        "id",
+                        "title",
+                        "agent",
+                        "model",
+                        "targetTags",
+                        "status",
+                        "questionCount",
+                        "pendingCount",
+                        "unreadCount",
+                        "lastScore",
+                        "createdAt"
+                      ],
+                      "type": "object"
+                    }
+                  },
+                  "required": ["set", "questions", "flaggedCount"],
+                  "type": "object"
+                }
+              }
+            },
+            "description": "题集详情（不含答案；questions 只含可用题）"
+          },
+          "401": {
+            "description": "未授权 - 缺少 / 无效 / 已过期的 JWT"
+          },
+          "404": {
+            "description": "题集不存在（或不属于当前用户）"
+          }
+        }
+      }
+    },
+    "/api/agent-sets/{id}/attempts": {
+      "post": {
+        "description": "建一条 `practice_mode='agent_set'` 的练习会话（`agent_set_id` 指向题集），返回**不含答案**的题目。逐题提交复用 `POST /api/practice/session/{sessionId}/submit`（判分只有那一份实现）。每次调用都是新的作答会话。",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "exclusiveMinimum": true,
+              "minimum": 0,
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "properties": {
+                    "questions": {
+                      "items": {
+                        "properties": {
+                          "content": {
+                            "type": "string"
+                          },
+                          "dimension": {
+                            "nullable": true,
+                            "type": "string"
+                          },
+                          "id": {
+                            "type": "integer"
+                          },
+                          "material": {
+                            "nullable": true,
+                            "type": "string"
+                          },
+                          "options": {
+                            "items": {
+                              "type": "string"
+                            },
+                            "type": "array"
+                          },
+                          "tags": {
+                            "items": {
+                              "type": "string"
+                            },
+                            "type": "array"
+                          },
+                          "type": {
+                            "nullable": true,
+                            "type": "string"
+                          }
+                        },
+                        "required": [
+                          "id",
+                          "content",
+                          "options",
+                          "type",
+                          "dimension",
+                          "tags",
+                          "material"
+                        ],
+                        "type": "object"
+                      },
+                      "type": "array"
+                    },
+                    "sessionId": {
+                      "type": "string"
+                    }
+                  },
+                  "required": ["sessionId", "questions"],
+                  "type": "object"
+                }
+              }
+            },
+            "description": "会话已创建"
+          },
+          "400": {
+            "description": "题集没有可用题目（全部被标记或已转正）"
+          },
+          "401": {
+            "description": "未授权 - 缺少 / 无效 / 已过期的 JWT"
+          },
+          "404": {
+            "description": "题集不存在（或不属于当前用户）"
+          },
+          "409": {
+            "description": "题集已归档 / 已转正，不能再作答"
+          }
+        },
+        "summary": "开始练这批题（建练习会话）"
+      }
+    },
+    "/api/agent-sets/{id}/paper": {
+      "post": {
+        "description": "建一张 `source='agent'` 的试卷，题目取该题集**未报错**的题（顺序即题集内顺序）。返回形状与 `GET /api/exam/papers/{id}` **完全同形**（`{paper, items, lastAttempt}`），随后可直接 `POST /api/exam/papers/{id}/attempts` 开始作答。",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "exclusiveMinimum": true,
+              "minimum": 0,
+              "type": "integer"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "properties": {
+                  "durationMinutes": {
+                    "maximum": 600,
+                    "minimum": 1,
+                    "nullable": true,
+                    "type": "integer"
+                  },
+                  "kind": {
+                    "default": "fixed",
+                    "enum": ["fixed", "timed"],
+                    "type": "string"
+                  },
+                  "title": {
+                    "maxLength": 200,
+                    "minLength": 1,
+                    "type": "string"
+                  }
+                },
+                "type": "object"
+              }
+            }
+          },
+          "required": false
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "properties": {
+                    "items": {
+                      "items": {
+                        "properties": {
+                          "position": {
+                            "type": "integer"
+                          },
+                          "question": {
+                            "properties": {
+                              "content": {
+                                "type": "string"
+                              },
+                              "dimension": {
+                                "nullable": true,
+                                "type": "string"
+                              },
+                              "id": {
+                                "type": "integer"
+                              },
+                              "material": {
+                                "nullable": true,
+                                "type": "string"
+                              },
+                              "options": {
+                                "items": {
+                                  "type": "string"
+                                },
+                                "type": "array"
+                              },
+                              "tags": {
+                                "items": {
+                                  "type": "string"
+                                },
+                                "type": "array"
+                              },
+                              "type": {
+                                "nullable": true,
+                                "type": "string"
+                              }
+                            },
+                            "required": [
+                              "id",
+                              "content",
+                              "options",
+                              "tags",
+                              "dimension",
+                              "type",
+                              "material"
+                            ],
+                            "type": "object"
+                          }
+                        },
+                        "required": ["position", "question"],
+                        "type": "object"
+                      },
+                      "type": "array"
+                    },
+                    "lastAttempt": {
+                      "nullable": true,
+                      "properties": {
+                        "score": {
+                          "description": "0–1 小数",
+                          "type": "number"
+                        },
+                        "sessionId": {
+                          "type": "string"
+                        },
+                        "submittedAt": {
+                          "type": "string"
+                        }
+                      },
+                      "required": ["sessionId", "score", "submittedAt"],
+                      "type": "object"
+                    },
+                    "paper": {
+                      "properties": {
+                        "attemptCount": {
+                          "type": "integer"
+                        },
+                        "bestScore": {
+                          "nullable": true,
+                          "type": "number"
+                        },
+                        "createdAt": {
+                          "nullable": true,
+                          "type": "string"
+                        },
+                        "durationMinutes": {
+                          "nullable": true,
+                          "type": "number"
+                        },
+                        "id": {
+                          "type": "integer"
+                        },
+                        "kind": {
+                          "enum": ["fixed", "timed"],
+                          "type": "string"
+                        },
+                        "lastAttemptAt": {
+                          "nullable": true,
+                          "type": "string"
+                        },
+                        "lastScore": {
+                          "nullable": true,
+                          "type": "number"
+                        },
+                        "source": {
+                          "enum": ["manual", "auto", "agent"],
+                          "type": "string"
+                        },
+                        "title": {
+                          "type": "string"
+                        },
+                        "totalQuestions": {
+                          "type": "integer"
+                        },
+                        "updatedAt": {
+                          "nullable": true,
+                          "type": "string"
+                        }
+                      },
+                      "required": [
+                        "id",
+                        "title",
+                        "kind",
+                        "durationMinutes",
+                        "source",
+                        "totalQuestions",
+                        "createdAt",
+                        "updatedAt",
+                        "attemptCount",
+                        "bestScore",
+                        "lastScore",
+                        "lastAttemptAt"
+                      ],
+                      "type": "object"
+                    }
+                  },
+                  "required": ["paper", "items", "lastAttempt"],
+                  "type": "object"
+                }
+              }
+            },
+            "description": "试卷已创建（与试卷详情同形）"
+          },
+          "400": {
+            "description": "题集没有可用题目 / 限时卷参数不合法"
+          },
+          "401": {
+            "description": "未授权 - 缺少 / 无效 / 已过期的 JWT"
+          },
+          "404": {
+            "description": "题集不存在（或不属于当前用户）"
+          },
+          "409": {
+            "description": "题集已归档 / 已转正"
+          }
+        },
+        "summary": "一键成卷：把这批可用题做成一张试卷"
+      }
+    },
+    "/api/agent-sets/{id}/promote": {
+      "post": {
+        "description": "把该批仍可用的题 `origin` 改为 `import`（从此进题库列表 / 自动组卷 / 掌握度），题集状态置 `promoted`。已报错的题**不转正**。`agent_set_id` 保留，结果回流仍可追溯。",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "exclusiveMinimum": true,
+              "minimum": 0,
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "properties": {
+                    "promoted": {
+                      "description": "恒为 true（重复转正返回 409）",
+                      "type": "boolean"
+                    },
+                    "promotedCount": {
+                      "description": "转正题数",
+                      "type": "integer"
+                    },
+                    "setId": {
+                      "type": "integer"
+                    }
+                  },
+                  "required": ["setId", "promoted", "promotedCount"],
+                  "type": "object"
+                }
+              }
+            },
+            "description": "已转正"
+          },
+          "401": {
+            "description": "未授权 - 缺少 / 无效 / 已过期的 JWT"
+          },
+          "404": {
+            "description": "题集不存在（或不属于当前用户）"
+          },
+          "409": {
+            "description": "题集已归档 / 已转正"
+          }
+        },
+        "summary": "转正入库：该批可用题并入正常题库"
+      }
+    },
+    "/api/agent-sets/{id}/questions/{questionId}/flag": {
+      "post": {
+        "description": "该题 `origin` 置 `flagged`（不再出现在题集/成卷/练习里，也不会进掌握度），理由落库并在 agent 的结果回流 `flagged[]` 中回传。幂等：重复标记不报错、不覆盖首次理由。返回剩余可用题数。",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "exclusiveMinimum": true,
+              "minimum": 0,
+              "type": "integer"
+            }
+          },
+          {
+            "in": "path",
+            "name": "questionId",
+            "required": true,
+            "schema": {
+              "exclusiveMinimum": true,
+              "minimum": 0,
+              "type": "integer"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "properties": {
+                  "reason": {
+                    "description": "哪里有问题（题干错 / 答案错 / 选项重复…），原文落库并回传给 agent",
+                    "maxLength": 500,
+                    "type": "string"
+                  }
+                },
+                "type": "object"
+              }
+            }
+          },
+          "required": false
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "properties": {
+                    "flagged": {
+                      "description": "恒为 true（重复标记同样为 true）",
+                      "type": "boolean"
+                    },
+                    "questionId": {
+                      "type": "integer"
+                    },
+                    "remaining": {
+                      "description": "剩余可用题数",
+                      "type": "integer"
+                    }
+                  },
+                  "required": ["questionId", "flagged", "remaining"],
+                  "type": "object"
+                }
+              }
+            },
+            "description": "已标记"
+          },
+          "401": {
+            "description": "未授权 - 缺少 / 无效 / 已过期的 JWT"
+          },
+          "404": {
+            "description": "题集不存在（或该题不在这个题集里）"
+          },
+          "409": {
+            "description": "题集已归档 / 已转正，不能再标记"
+          }
+        },
+        "summary": "报「这题有问题」：移出可用集并记录理由"
       }
     },
     "/api/annotations": {
@@ -1732,6 +3091,2792 @@
             "description": "服务器错误"
           }
         }
+      }
+    },
+    "/api/drafts": {
+      "get": {
+        "description": "按 `created_at` 倒序返回草稿摘要，只含计数不含 items 正文。默认排除 `discarded`；显式 `?status=discarded` 可查。",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "status",
+            "required": false,
+            "schema": {
+              "enum": [
+                "captured",
+                "analyzing",
+                "ready",
+                "failed",
+                "confirmed",
+                "discarded"
+              ],
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "properties": {
+                    "items": {
+                      "items": {
+                        "properties": {
+                          "confirmedCount": {
+                            "type": "integer"
+                          },
+                          "createdAt": {
+                            "type": "string"
+                          },
+                          "errorCode": {
+                            "type": "string"
+                          },
+                          "id": {
+                            "type": "string"
+                          },
+                          "itemCount": {
+                            "type": "integer"
+                          },
+                          "source": {
+                            "enum": ["camera", "gallery", "text", "pdf"],
+                            "type": "string"
+                          },
+                          "status": {
+                            "enum": [
+                              "captured",
+                              "analyzing",
+                              "ready",
+                              "failed",
+                              "confirmed",
+                              "discarded"
+                            ],
+                            "type": "string"
+                          }
+                        },
+                        "required": [
+                          "id",
+                          "status",
+                          "source",
+                          "itemCount",
+                          "confirmedCount"
+                        ],
+                        "type": "object"
+                      },
+                      "type": "array"
+                    }
+                  },
+                  "required": ["items"],
+                  "type": "object"
+                }
+              }
+            },
+            "description": "草稿摘要列表"
+          },
+          "401": {
+            "description": "未登录"
+          }
+        },
+        "summary": "草稿列表（仅本人的；默认不含已丢弃）"
+      },
+      "post": {
+        "description": "图片按 sha256 落 `data/drafts/<sha256>` 去重；请求体用 base64（`data:image/...;base64,` 前缀可选），不引入 multipart。source=text 时传 `text`。",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "properties": {
+                  "file_name": {
+                    "type": "string"
+                  },
+                  "image_base64": {
+                    "maxLength": 20000000,
+                    "type": "string"
+                  },
+                  "image_mime_type": {
+                    "type": "string"
+                  },
+                  "source": {
+                    "enum": ["camera", "gallery", "text", "pdf"],
+                    "type": "string"
+                  },
+                  "text": {
+                    "type": "string"
+                  }
+                },
+                "required": ["source"],
+                "type": "object"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "properties": {
+                    "draft": {
+                      "properties": {
+                        "ai_model": {
+                          "nullable": true,
+                          "type": "string"
+                        },
+                        "ai_prompt_version": {
+                          "nullable": true,
+                          "type": "string"
+                        },
+                        "ai_provider": {
+                          "nullable": true,
+                          "type": "string"
+                        },
+                        "ai_raw_json": {
+                          "nullable": true,
+                          "type": "string"
+                        },
+                        "created_at": {
+                          "nullable": true,
+                          "type": "string"
+                        },
+                        "error_code": {
+                          "nullable": true,
+                          "type": "string"
+                        },
+                        "expires_at": {
+                          "nullable": true,
+                          "type": "integer"
+                        },
+                        "id": {
+                          "type": "string"
+                        },
+                        "image_rel_path": {
+                          "nullable": true,
+                          "type": "string"
+                        },
+                        "image_sha256": {
+                          "nullable": true,
+                          "type": "string"
+                        },
+                        "source": {
+                          "enum": ["camera", "gallery", "text", "pdf"],
+                          "type": "string"
+                        },
+                        "status": {
+                          "enum": [
+                            "captured",
+                            "analyzing",
+                            "ready",
+                            "failed",
+                            "confirmed",
+                            "discarded"
+                          ],
+                          "type": "string"
+                        },
+                        "user_id": {
+                          "type": "integer"
+                        }
+                      },
+                      "required": [
+                        "id",
+                        "user_id",
+                        "source",
+                        "status",
+                        "image_sha256",
+                        "image_rel_path",
+                        "ai_provider",
+                        "ai_model",
+                        "ai_prompt_version",
+                        "ai_raw_json",
+                        "error_code",
+                        "created_at",
+                        "expires_at"
+                      ],
+                      "type": "object"
+                    },
+                    "items": {
+                      "items": {
+                        "properties": {
+                          "answer": {
+                            "type": "string"
+                          },
+                          "confirmed": {
+                            "type": "boolean"
+                          },
+                          "content": {
+                            "type": "string"
+                          },
+                          "explanation": {
+                            "type": "string"
+                          },
+                          "idx": {
+                            "type": "integer"
+                          },
+                          "material_html": {
+                            "nullable": true,
+                            "type": "string"
+                          },
+                          "options": {
+                            "items": {
+                              "type": "string"
+                            },
+                            "type": "array"
+                          },
+                          "tags": {
+                            "items": {
+                              "type": "string"
+                            },
+                            "type": "array"
+                          },
+                          "type": {
+                            "type": "string"
+                          }
+                        },
+                        "required": [
+                          "idx",
+                          "content",
+                          "options",
+                          "answer",
+                          "explanation",
+                          "tags",
+                          "type",
+                          "material_html",
+                          "confirmed"
+                        ],
+                        "type": "object"
+                      },
+                      "type": "array"
+                    }
+                  },
+                  "required": ["draft", "items"],
+                  "type": "object"
+                }
+              }
+            },
+            "description": "草稿已创建（status=captured）"
+          },
+          "400": {
+            "description": "参数/图片不合法"
+          },
+          "401": {
+            "description": "未登录"
+          }
+        },
+        "summary": "创建草稿（可带 base64 图片）"
+      }
+    },
+    "/api/drafts/{id}": {
+      "delete": {
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "minLength": 1,
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "properties": {
+                    "id": {
+                      "type": "string"
+                    },
+                    "status": {
+                      "enum": ["discarded"],
+                      "type": "string"
+                    }
+                  },
+                  "required": ["id", "status"],
+                  "type": "object"
+                }
+              }
+            },
+            "description": "已丢弃（重复调用幂等）"
+          },
+          "401": {
+            "description": "未登录"
+          },
+          "404": {
+            "description": "草稿不存在，或不属于当前用户"
+          }
+        },
+        "summary": "丢弃草稿（软删除）"
+      },
+      "get": {
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "minLength": 1,
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "properties": {
+                    "draft": {
+                      "properties": {
+                        "ai_model": {
+                          "nullable": true,
+                          "type": "string"
+                        },
+                        "ai_prompt_version": {
+                          "nullable": true,
+                          "type": "string"
+                        },
+                        "ai_provider": {
+                          "nullable": true,
+                          "type": "string"
+                        },
+                        "ai_raw_json": {
+                          "nullable": true,
+                          "type": "string"
+                        },
+                        "created_at": {
+                          "nullable": true,
+                          "type": "string"
+                        },
+                        "error_code": {
+                          "nullable": true,
+                          "type": "string"
+                        },
+                        "expires_at": {
+                          "nullable": true,
+                          "type": "integer"
+                        },
+                        "id": {
+                          "type": "string"
+                        },
+                        "image_rel_path": {
+                          "nullable": true,
+                          "type": "string"
+                        },
+                        "image_sha256": {
+                          "nullable": true,
+                          "type": "string"
+                        },
+                        "source": {
+                          "enum": ["camera", "gallery", "text", "pdf"],
+                          "type": "string"
+                        },
+                        "status": {
+                          "enum": [
+                            "captured",
+                            "analyzing",
+                            "ready",
+                            "failed",
+                            "confirmed",
+                            "discarded"
+                          ],
+                          "type": "string"
+                        },
+                        "user_id": {
+                          "type": "integer"
+                        }
+                      },
+                      "required": [
+                        "id",
+                        "user_id",
+                        "source",
+                        "status",
+                        "image_sha256",
+                        "image_rel_path",
+                        "ai_provider",
+                        "ai_model",
+                        "ai_prompt_version",
+                        "ai_raw_json",
+                        "error_code",
+                        "created_at",
+                        "expires_at"
+                      ],
+                      "type": "object"
+                    },
+                    "items": {
+                      "items": {
+                        "properties": {
+                          "answer": {
+                            "type": "string"
+                          },
+                          "confirmed": {
+                            "type": "boolean"
+                          },
+                          "content": {
+                            "type": "string"
+                          },
+                          "explanation": {
+                            "type": "string"
+                          },
+                          "idx": {
+                            "type": "integer"
+                          },
+                          "material_html": {
+                            "nullable": true,
+                            "type": "string"
+                          },
+                          "options": {
+                            "items": {
+                              "type": "string"
+                            },
+                            "type": "array"
+                          },
+                          "tags": {
+                            "items": {
+                              "type": "string"
+                            },
+                            "type": "array"
+                          },
+                          "type": {
+                            "type": "string"
+                          }
+                        },
+                        "required": [
+                          "idx",
+                          "content",
+                          "options",
+                          "answer",
+                          "explanation",
+                          "tags",
+                          "type",
+                          "material_html",
+                          "confirmed"
+                        ],
+                        "type": "object"
+                      },
+                      "type": "array"
+                    }
+                  },
+                  "required": ["draft", "items"],
+                  "type": "object"
+                }
+              }
+            },
+            "description": "草稿与识别条目"
+          },
+          "401": {
+            "description": "未登录"
+          },
+          "404": {
+            "description": "草稿不存在，或不属于当前用户"
+          }
+        },
+        "summary": "草稿详情（含 items）"
+      }
+    },
+    "/api/drafts/{id}/analyze": {
+      "post": {
+        "description": "写 `analyzing` → 成功 `ready` + items；失败 `failed` + `error_code` 且可重试（失败仍返回 200，客户端按 status 展示重试入口）。`ok=false` 表示本次识别没产出结果（status 可能仍被并发变更改写）。",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "minLength": 1,
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "properties": {
+                    "draft": {
+                      "properties": {
+                        "ai_model": {
+                          "nullable": true,
+                          "type": "string"
+                        },
+                        "ai_prompt_version": {
+                          "nullable": true,
+                          "type": "string"
+                        },
+                        "ai_provider": {
+                          "nullable": true,
+                          "type": "string"
+                        },
+                        "ai_raw_json": {
+                          "nullable": true,
+                          "type": "string"
+                        },
+                        "created_at": {
+                          "nullable": true,
+                          "type": "string"
+                        },
+                        "error_code": {
+                          "nullable": true,
+                          "type": "string"
+                        },
+                        "expires_at": {
+                          "nullable": true,
+                          "type": "integer"
+                        },
+                        "id": {
+                          "type": "string"
+                        },
+                        "image_rel_path": {
+                          "nullable": true,
+                          "type": "string"
+                        },
+                        "image_sha256": {
+                          "nullable": true,
+                          "type": "string"
+                        },
+                        "source": {
+                          "enum": ["camera", "gallery", "text", "pdf"],
+                          "type": "string"
+                        },
+                        "status": {
+                          "enum": [
+                            "captured",
+                            "analyzing",
+                            "ready",
+                            "failed",
+                            "confirmed",
+                            "discarded"
+                          ],
+                          "type": "string"
+                        },
+                        "user_id": {
+                          "type": "integer"
+                        }
+                      },
+                      "required": [
+                        "id",
+                        "user_id",
+                        "source",
+                        "status",
+                        "image_sha256",
+                        "image_rel_path",
+                        "ai_provider",
+                        "ai_model",
+                        "ai_prompt_version",
+                        "ai_raw_json",
+                        "error_code",
+                        "created_at",
+                        "expires_at"
+                      ],
+                      "type": "object"
+                    },
+                    "items": {
+                      "items": {
+                        "properties": {
+                          "answer": {
+                            "type": "string"
+                          },
+                          "confirmed": {
+                            "type": "boolean"
+                          },
+                          "content": {
+                            "type": "string"
+                          },
+                          "explanation": {
+                            "type": "string"
+                          },
+                          "idx": {
+                            "type": "integer"
+                          },
+                          "material_html": {
+                            "nullable": true,
+                            "type": "string"
+                          },
+                          "options": {
+                            "items": {
+                              "type": "string"
+                            },
+                            "type": "array"
+                          },
+                          "tags": {
+                            "items": {
+                              "type": "string"
+                            },
+                            "type": "array"
+                          },
+                          "type": {
+                            "type": "string"
+                          }
+                        },
+                        "required": [
+                          "idx",
+                          "content",
+                          "options",
+                          "answer",
+                          "explanation",
+                          "tags",
+                          "type",
+                          "material_html",
+                          "confirmed"
+                        ],
+                        "type": "object"
+                      },
+                      "type": "array"
+                    },
+                    "ok": {
+                      "type": "boolean"
+                    }
+                  },
+                  "required": ["draft", "items", "ok"],
+                  "type": "object"
+                }
+              }
+            },
+            "description": "识别结束：ok=false 时本次结果未落地（status=failed，或被并发状态变更作废）"
+          },
+          "401": {
+            "description": "未登录"
+          },
+          "404": {
+            "description": "草稿不存在，或不属于当前用户"
+          },
+          "409": {
+            "description": "当前状态不允许识别（已确认/已丢弃/已就绪），或识别期间草稿被并发改动导致结果作废"
+          }
+        },
+        "summary": "触发 AI 识别（OCR + 结构化）"
+      }
+    },
+    "/api/drafts/{id}/confirm": {
+      "post": {
+        "description": "把 `confirmed=1` 的条目写成 questions：任一失败整体回滚，草稿仍 ready。幂等键 `draft:<draftId>:<idx>`，重复确认 `created=0`、`conflicts` 指向已存在的题目。",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "minLength": 1,
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "properties": {
+                    "conflicts": {
+                      "type": "integer"
+                    },
+                    "created": {
+                      "type": "integer"
+                    },
+                    "questionIds": {
+                      "items": {
+                        "type": "integer"
+                      },
+                      "type": "array"
+                    },
+                    "skipped": {
+                      "type": "integer"
+                    }
+                  },
+                  "required": [
+                    "created",
+                    "skipped",
+                    "conflicts",
+                    "questionIds"
+                  ],
+                  "type": "object"
+                }
+              }
+            },
+            "description": "确认结果"
+          },
+          "400": {
+            "description": "条目校验失败（带 issues），本次零写入"
+          },
+          "401": {
+            "description": "未登录"
+          },
+          "404": {
+            "description": "草稿不存在，或不属于当前用户"
+          },
+          "409": {
+            "description": "草稿已丢弃，或正在识别（识别结果会重建条目）"
+          }
+        },
+        "summary": "确认入库（单事务）"
+      }
+    },
+    "/api/drafts/{id}/items/{idx}": {
+      "patch": {
+        "description": "只改传了的字段；`confirmed` 由前端显式置位；`deleted=true` 删除该条（idx 不重排）。",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "minLength": 1,
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "idx",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "properties": {
+                  "answer": {
+                    "type": "string"
+                  },
+                  "confirmed": {
+                    "type": "boolean"
+                  },
+                  "content": {
+                    "type": "string"
+                  },
+                  "deleted": {
+                    "type": "boolean"
+                  },
+                  "explanation": {
+                    "type": "string"
+                  },
+                  "material_html": {
+                    "nullable": true,
+                    "type": "string"
+                  },
+                  "options": {
+                    "items": {
+                      "type": "string"
+                    },
+                    "type": "array"
+                  },
+                  "tags": {
+                    "items": {
+                      "type": "string"
+                    },
+                    "type": "array"
+                  },
+                  "type": {
+                    "type": "string"
+                  }
+                },
+                "type": "object"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "properties": {
+                    "draft": {
+                      "properties": {
+                        "ai_model": {
+                          "nullable": true,
+                          "type": "string"
+                        },
+                        "ai_prompt_version": {
+                          "nullable": true,
+                          "type": "string"
+                        },
+                        "ai_provider": {
+                          "nullable": true,
+                          "type": "string"
+                        },
+                        "ai_raw_json": {
+                          "nullable": true,
+                          "type": "string"
+                        },
+                        "created_at": {
+                          "nullable": true,
+                          "type": "string"
+                        },
+                        "error_code": {
+                          "nullable": true,
+                          "type": "string"
+                        },
+                        "expires_at": {
+                          "nullable": true,
+                          "type": "integer"
+                        },
+                        "id": {
+                          "type": "string"
+                        },
+                        "image_rel_path": {
+                          "nullable": true,
+                          "type": "string"
+                        },
+                        "image_sha256": {
+                          "nullable": true,
+                          "type": "string"
+                        },
+                        "source": {
+                          "enum": ["camera", "gallery", "text", "pdf"],
+                          "type": "string"
+                        },
+                        "status": {
+                          "enum": [
+                            "captured",
+                            "analyzing",
+                            "ready",
+                            "failed",
+                            "confirmed",
+                            "discarded"
+                          ],
+                          "type": "string"
+                        },
+                        "user_id": {
+                          "type": "integer"
+                        }
+                      },
+                      "required": [
+                        "id",
+                        "user_id",
+                        "source",
+                        "status",
+                        "image_sha256",
+                        "image_rel_path",
+                        "ai_provider",
+                        "ai_model",
+                        "ai_prompt_version",
+                        "ai_raw_json",
+                        "error_code",
+                        "created_at",
+                        "expires_at"
+                      ],
+                      "type": "object"
+                    },
+                    "items": {
+                      "items": {
+                        "properties": {
+                          "answer": {
+                            "type": "string"
+                          },
+                          "confirmed": {
+                            "type": "boolean"
+                          },
+                          "content": {
+                            "type": "string"
+                          },
+                          "explanation": {
+                            "type": "string"
+                          },
+                          "idx": {
+                            "type": "integer"
+                          },
+                          "material_html": {
+                            "nullable": true,
+                            "type": "string"
+                          },
+                          "options": {
+                            "items": {
+                              "type": "string"
+                            },
+                            "type": "array"
+                          },
+                          "tags": {
+                            "items": {
+                              "type": "string"
+                            },
+                            "type": "array"
+                          },
+                          "type": {
+                            "type": "string"
+                          }
+                        },
+                        "required": [
+                          "idx",
+                          "content",
+                          "options",
+                          "answer",
+                          "explanation",
+                          "tags",
+                          "type",
+                          "material_html",
+                          "confirmed"
+                        ],
+                        "type": "object"
+                      },
+                      "type": "array"
+                    }
+                  },
+                  "required": ["draft", "items"],
+                  "type": "object"
+                }
+              }
+            },
+            "description": "更新后的草稿"
+          },
+          "400": {
+            "description": "参数不合法"
+          },
+          "401": {
+            "description": "未登录"
+          },
+          "404": {
+            "description": "草稿/条目不存在，或不属于当前用户"
+          },
+          "409": {
+            "description": "草稿已确认/已丢弃，或正在识别，条目不可改"
+          }
+        },
+        "summary": "修改/删除单条草稿条目"
+      }
+    },
+    "/api/exam/attempts/{sessionId}": {
+      "get": {
+        "parameters": [
+          {
+            "in": "path",
+            "name": "sessionId",
+            "required": true,
+            "schema": {
+              "minLength": 1,
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "properties": {
+                    "answers": {
+                      "items": {
+                        "properties": {
+                          "questionId": {
+                            "type": "number"
+                          },
+                          "userAnswer": {
+                            "type": "string"
+                          }
+                        },
+                        "required": ["questionId", "userAnswer"],
+                        "type": "object"
+                      },
+                      "type": "array"
+                    },
+                    "deadlineAt": {
+                      "nullable": true,
+                      "type": "string"
+                    },
+                    "paper": {
+                      "properties": {
+                        "attemptCount": {
+                          "type": "number"
+                        },
+                        "bestScore": {
+                          "nullable": true,
+                          "type": "number"
+                        },
+                        "createdAt": {
+                          "nullable": true,
+                          "type": "string"
+                        },
+                        "durationMinutes": {
+                          "nullable": true,
+                          "type": "number"
+                        },
+                        "id": {
+                          "type": "number"
+                        },
+                        "kind": {
+                          "enum": ["fixed", "timed"],
+                          "type": "string"
+                        },
+                        "lastAttemptAt": {
+                          "nullable": true,
+                          "type": "string"
+                        },
+                        "lastScore": {
+                          "nullable": true,
+                          "type": "number"
+                        },
+                        "source": {
+                          "enum": ["manual", "auto", "agent"],
+                          "type": "string"
+                        },
+                        "title": {
+                          "type": "string"
+                        },
+                        "totalQuestions": {
+                          "type": "number"
+                        },
+                        "updatedAt": {
+                          "nullable": true,
+                          "type": "string"
+                        }
+                      },
+                      "required": [
+                        "id",
+                        "title",
+                        "kind",
+                        "durationMinutes",
+                        "source",
+                        "totalQuestions",
+                        "createdAt",
+                        "updatedAt",
+                        "attemptCount",
+                        "bestScore",
+                        "lastScore",
+                        "lastAttemptAt"
+                      ],
+                      "type": "object"
+                    },
+                    "questions": {
+                      "items": {
+                        "properties": {
+                          "answer": {
+                            "type": "string"
+                          },
+                          "content": {
+                            "type": "string"
+                          },
+                          "dimension": {
+                            "nullable": true,
+                            "type": "string"
+                          },
+                          "explanation": {
+                            "type": "string"
+                          },
+                          "id": {
+                            "type": "number"
+                          },
+                          "material": {
+                            "nullable": true,
+                            "type": "string"
+                          },
+                          "options": {
+                            "items": {
+                              "type": "string"
+                            },
+                            "type": "array"
+                          },
+                          "tags": {
+                            "items": {
+                              "type": "string"
+                            },
+                            "type": "array"
+                          },
+                          "type": {
+                            "nullable": true,
+                            "type": "string"
+                          }
+                        },
+                        "required": [
+                          "id",
+                          "content",
+                          "options",
+                          "answer",
+                          "explanation",
+                          "tags",
+                          "dimension",
+                          "type",
+                          "material"
+                        ],
+                        "type": "object"
+                      },
+                      "type": "array"
+                    },
+                    "result": {
+                      "properties": {
+                        "correctCount": {
+                          "type": "number"
+                        },
+                        "duplicate": {
+                          "type": "boolean"
+                        },
+                        "durationMs": {
+                          "type": "number"
+                        },
+                        "overtime": {
+                          "type": "boolean"
+                        },
+                        "overtimeMs": {
+                          "type": "number"
+                        },
+                        "perQuestion": {
+                          "items": {
+                            "properties": {
+                              "correctAnswer": {
+                                "type": "string"
+                              },
+                              "explanation": {
+                                "type": "string"
+                              },
+                              "isCorrect": {
+                                "type": "boolean"
+                              },
+                              "questionId": {
+                                "type": "number"
+                              }
+                            },
+                            "required": [
+                              "questionId",
+                              "isCorrect",
+                              "correctAnswer",
+                              "explanation"
+                            ],
+                            "type": "object"
+                          },
+                          "type": "array"
+                        },
+                        "score": {
+                          "type": "number"
+                        },
+                        "totalQuestions": {
+                          "type": "number"
+                        }
+                      },
+                      "required": [
+                        "score",
+                        "correctCount",
+                        "totalQuestions",
+                        "durationMs",
+                        "overtimeMs",
+                        "overtime",
+                        "duplicate",
+                        "perQuestion"
+                      ],
+                      "type": "object"
+                    },
+                    "sessionId": {
+                      "type": "string"
+                    },
+                    "submittedAt": {
+                      "nullable": true,
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "sessionId",
+                    "paper",
+                    "deadlineAt",
+                    "submittedAt",
+                    "questions",
+                    "answers"
+                  ],
+                  "type": "object"
+                }
+              }
+            },
+            "description": "作答态（answer 置空）或结果态（含 result/answers）"
+          },
+          "404": {
+            "description": "作答不存在（或不属于当前用户 / 不是试卷作答）"
+          }
+        }
+      }
+    },
+    "/api/exam/attempts/{sessionId}/submit": {
+      "post": {
+        "parameters": [
+          {
+            "in": "path",
+            "name": "sessionId",
+            "required": true,
+            "schema": {
+              "minLength": 1,
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "properties": {
+                  "answers": {
+                    "items": {
+                      "properties": {
+                        "durationMs": {
+                          "minimum": 0,
+                          "nullable": true,
+                          "type": "integer"
+                        },
+                        "questionId": {
+                          "exclusiveMinimum": true,
+                          "minimum": 0,
+                          "type": "integer"
+                        },
+                        "userAnswer": {
+                          "nullable": true,
+                          "type": "string"
+                        }
+                      },
+                      "required": ["questionId"],
+                      "type": "object"
+                    },
+                    "maxItems": 500,
+                    "type": "array"
+                  },
+                  "clientKey": {
+                    "maxLength": 200,
+                    "type": "string"
+                  }
+                },
+                "required": ["answers"],
+                "type": "object"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "properties": {
+                    "correctCount": {
+                      "type": "number"
+                    },
+                    "duplicate": {
+                      "type": "boolean"
+                    },
+                    "durationMs": {
+                      "type": "number"
+                    },
+                    "overtime": {
+                      "type": "boolean"
+                    },
+                    "overtimeMs": {
+                      "type": "number"
+                    },
+                    "perQuestion": {
+                      "items": {
+                        "properties": {
+                          "correctAnswer": {
+                            "type": "string"
+                          },
+                          "explanation": {
+                            "type": "string"
+                          },
+                          "isCorrect": {
+                            "type": "boolean"
+                          },
+                          "questionId": {
+                            "type": "number"
+                          }
+                        },
+                        "required": [
+                          "questionId",
+                          "isCorrect",
+                          "correctAnswer",
+                          "explanation"
+                        ],
+                        "type": "object"
+                      },
+                      "type": "array"
+                    },
+                    "score": {
+                      "type": "number"
+                    },
+                    "totalQuestions": {
+                      "type": "number"
+                    }
+                  },
+                  "required": [
+                    "score",
+                    "correctCount",
+                    "totalQuestions",
+                    "durationMs",
+                    "overtimeMs",
+                    "overtime",
+                    "duplicate",
+                    "perQuestion"
+                  ],
+                  "type": "object"
+                }
+              }
+            },
+            "description": "已交卷（重复提交回 duplicate:true，不写库）"
+          },
+          "404": {
+            "description": "作答不存在（或不属于当前用户 / 不是试卷作答）"
+          }
+        }
+      }
+    },
+    "/api/exam/papers": {
+      "get": {
+        "parameters": [
+          {
+            "in": "query",
+            "name": "limit",
+            "required": false,
+            "schema": {
+              "default": 20,
+              "maximum": 100,
+              "minimum": 1,
+              "type": "integer"
+            }
+          },
+          {
+            "in": "query",
+            "name": "offset",
+            "required": false,
+            "schema": {
+              "default": 0,
+              "minimum": 0,
+              "nullable": true,
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "properties": {
+                    "data": {
+                      "items": {
+                        "properties": {
+                          "attemptCount": {
+                            "type": "number"
+                          },
+                          "bestScore": {
+                            "nullable": true,
+                            "type": "number"
+                          },
+                          "createdAt": {
+                            "nullable": true,
+                            "type": "string"
+                          },
+                          "durationMinutes": {
+                            "nullable": true,
+                            "type": "number"
+                          },
+                          "id": {
+                            "type": "number"
+                          },
+                          "kind": {
+                            "enum": ["fixed", "timed"],
+                            "type": "string"
+                          },
+                          "lastAttemptAt": {
+                            "nullable": true,
+                            "type": "string"
+                          },
+                          "lastScore": {
+                            "nullable": true,
+                            "type": "number"
+                          },
+                          "source": {
+                            "enum": ["manual", "auto", "agent"],
+                            "type": "string"
+                          },
+                          "title": {
+                            "type": "string"
+                          },
+                          "totalQuestions": {
+                            "type": "number"
+                          },
+                          "updatedAt": {
+                            "nullable": true,
+                            "type": "string"
+                          }
+                        },
+                        "required": [
+                          "id",
+                          "title",
+                          "kind",
+                          "durationMinutes",
+                          "source",
+                          "totalQuestions",
+                          "createdAt",
+                          "updatedAt",
+                          "attemptCount",
+                          "bestScore",
+                          "lastScore",
+                          "lastAttemptAt"
+                        ],
+                        "type": "object"
+                      },
+                      "type": "array"
+                    },
+                    "meta": {
+                      "properties": {
+                        "limit": {
+                          "type": "number"
+                        },
+                        "offset": {
+                          "type": "number"
+                        },
+                        "total": {
+                          "type": "number"
+                        }
+                      },
+                      "required": ["limit", "offset", "total"],
+                      "type": "object"
+                    }
+                  },
+                  "required": ["data", "meta"],
+                  "type": "object"
+                }
+              }
+            },
+            "description": "试卷列表（含作答统计；形状与 recall/external 列表一致）"
+          },
+          "401": {
+            "description": "未授权 - 缺少 / 无效 / 已过期的 JWT"
+          }
+        }
+      },
+      "post": {
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "properties": {
+                  "durationMinutes": {
+                    "maximum": 600,
+                    "minimum": 1,
+                    "nullable": true,
+                    "type": "integer"
+                  },
+                  "kind": {
+                    "default": "fixed",
+                    "enum": ["fixed", "timed"],
+                    "type": "string"
+                  },
+                  "questionIds": {
+                    "items": {
+                      "exclusiveMinimum": true,
+                      "minimum": 0,
+                      "type": "integer"
+                    },
+                    "maxItems": 300,
+                    "minItems": 1,
+                    "type": "array"
+                  },
+                  "title": {
+                    "maxLength": 200,
+                    "minLength": 1,
+                    "type": "string"
+                  }
+                },
+                "required": ["title", "questionIds"],
+                "type": "object"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "properties": {
+                    "items": {
+                      "items": {
+                        "properties": {
+                          "position": {
+                            "type": "number"
+                          },
+                          "questionId": {
+                            "type": "number"
+                          }
+                        },
+                        "required": ["position", "questionId"],
+                        "type": "object"
+                      },
+                      "type": "array"
+                    },
+                    "paper": {
+                      "properties": {
+                        "attemptCount": {
+                          "type": "number"
+                        },
+                        "bestScore": {
+                          "nullable": true,
+                          "type": "number"
+                        },
+                        "createdAt": {
+                          "nullable": true,
+                          "type": "string"
+                        },
+                        "durationMinutes": {
+                          "nullable": true,
+                          "type": "number"
+                        },
+                        "id": {
+                          "type": "number"
+                        },
+                        "kind": {
+                          "enum": ["fixed", "timed"],
+                          "type": "string"
+                        },
+                        "lastAttemptAt": {
+                          "nullable": true,
+                          "type": "string"
+                        },
+                        "lastScore": {
+                          "nullable": true,
+                          "type": "number"
+                        },
+                        "source": {
+                          "enum": ["manual", "auto", "agent"],
+                          "type": "string"
+                        },
+                        "title": {
+                          "type": "string"
+                        },
+                        "totalQuestions": {
+                          "type": "number"
+                        },
+                        "updatedAt": {
+                          "nullable": true,
+                          "type": "string"
+                        }
+                      },
+                      "required": [
+                        "id",
+                        "title",
+                        "kind",
+                        "durationMinutes",
+                        "source",
+                        "totalQuestions",
+                        "createdAt",
+                        "updatedAt",
+                        "attemptCount",
+                        "bestScore",
+                        "lastScore",
+                        "lastAttemptAt"
+                      ],
+                      "type": "object"
+                    }
+                  },
+                  "required": ["paper", "items"],
+                  "type": "object"
+                }
+              }
+            },
+            "description": "试卷已创建"
+          },
+          "400": {
+            "description": "参数不合法 / questionIds 含不存在或非客观题的题目（body 含 missingQuestionIds、unsupportedQuestionIds）"
+          }
+        }
+      }
+    },
+    "/api/exam/papers/generate": {
+      "post": {
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "properties": {
+                  "count": {
+                    "maximum": 300,
+                    "minimum": 1,
+                    "type": "integer"
+                  },
+                  "dimensions": {
+                    "items": {
+                      "enum": ["knowledge", "understanding", "application"],
+                      "type": "string"
+                    },
+                    "maxItems": 3,
+                    "type": "array"
+                  },
+                  "durationMinutes": {
+                    "maximum": 600,
+                    "minimum": 1,
+                    "nullable": true,
+                    "type": "integer"
+                  },
+                  "excludeRecentDays": {
+                    "maximum": 365,
+                    "minimum": 0,
+                    "type": "integer"
+                  },
+                  "kind": {
+                    "default": "fixed",
+                    "enum": ["fixed", "timed"],
+                    "type": "string"
+                  },
+                  "tags": {
+                    "items": {
+                      "maxLength": 50,
+                      "minLength": 1,
+                      "type": "string"
+                    },
+                    "maxItems": 30,
+                    "type": "array"
+                  },
+                  "title": {
+                    "maxLength": 200,
+                    "minLength": 1,
+                    "type": "string"
+                  },
+                  "types": {
+                    "items": {
+                      "enum": ["single", "multi", "truefalse", "fill_blank"],
+                      "type": "string"
+                    },
+                    "maxItems": 4,
+                    "type": "array"
+                  },
+                  "weights": {
+                    "properties": {
+                      "fresh": {
+                        "maximum": 1,
+                        "minimum": 0,
+                        "type": "number"
+                      },
+                      "weak": {
+                        "maximum": 1,
+                        "minimum": 0,
+                        "type": "number"
+                      },
+                      "wrong": {
+                        "maximum": 1,
+                        "minimum": 0,
+                        "type": "number"
+                      }
+                    },
+                    "type": "object"
+                  }
+                },
+                "required": ["title", "count"],
+                "type": "object"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "properties": {
+                    "items": {
+                      "items": {
+                        "properties": {
+                          "position": {
+                            "type": "number"
+                          },
+                          "question": {
+                            "properties": {
+                              "content": {
+                                "type": "string"
+                              },
+                              "dimension": {
+                                "nullable": true,
+                                "type": "string"
+                              },
+                              "id": {
+                                "type": "number"
+                              },
+                              "material": {
+                                "nullable": true,
+                                "type": "string"
+                              },
+                              "options": {
+                                "items": {
+                                  "type": "string"
+                                },
+                                "type": "array"
+                              },
+                              "tags": {
+                                "items": {
+                                  "type": "string"
+                                },
+                                "type": "array"
+                              },
+                              "type": {
+                                "nullable": true,
+                                "type": "string"
+                              }
+                            },
+                            "required": [
+                              "id",
+                              "content",
+                              "options",
+                              "tags",
+                              "dimension",
+                              "type",
+                              "material"
+                            ],
+                            "type": "object"
+                          }
+                        },
+                        "required": ["position", "question"],
+                        "type": "object"
+                      },
+                      "type": "array"
+                    },
+                    "lastAttempt": {
+                      "nullable": true,
+                      "properties": {
+                        "score": {
+                          "type": "number"
+                        },
+                        "sessionId": {
+                          "type": "string"
+                        },
+                        "submittedAt": {
+                          "type": "string"
+                        }
+                      },
+                      "required": ["sessionId", "score", "submittedAt"],
+                      "type": "object"
+                    },
+                    "paper": {
+                      "properties": {
+                        "attemptCount": {
+                          "type": "number"
+                        },
+                        "bestScore": {
+                          "nullable": true,
+                          "type": "number"
+                        },
+                        "createdAt": {
+                          "nullable": true,
+                          "type": "string"
+                        },
+                        "durationMinutes": {
+                          "nullable": true,
+                          "type": "number"
+                        },
+                        "id": {
+                          "type": "number"
+                        },
+                        "kind": {
+                          "enum": ["fixed", "timed"],
+                          "type": "string"
+                        },
+                        "lastAttemptAt": {
+                          "nullable": true,
+                          "type": "string"
+                        },
+                        "lastScore": {
+                          "nullable": true,
+                          "type": "number"
+                        },
+                        "source": {
+                          "enum": ["manual", "auto", "agent"],
+                          "type": "string"
+                        },
+                        "title": {
+                          "type": "string"
+                        },
+                        "totalQuestions": {
+                          "type": "number"
+                        },
+                        "updatedAt": {
+                          "nullable": true,
+                          "type": "string"
+                        }
+                      },
+                      "required": [
+                        "id",
+                        "title",
+                        "kind",
+                        "durationMinutes",
+                        "source",
+                        "totalQuestions",
+                        "createdAt",
+                        "updatedAt",
+                        "attemptCount",
+                        "bestScore",
+                        "lastScore",
+                        "lastAttemptAt"
+                      ],
+                      "type": "object"
+                    }
+                  },
+                  "required": ["paper", "items", "lastAttempt"],
+                  "type": "object"
+                }
+              }
+            },
+            "description": "自动组卷完成（source=auto 的普通试卷；响应与 GET /papers/{id} 完全同形）"
+          },
+          "400": {
+            "description": "参数不合法 / 候选不足（body 含 requested、available、shortfall）"
+          }
+        }
+      }
+    },
+    "/api/exam/papers/{id}": {
+      "delete": {
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "exclusiveMinimum": true,
+              "minimum": 0,
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "properties": {
+                    "deleted": {
+                      "type": "boolean"
+                    }
+                  },
+                  "required": ["deleted"],
+                  "type": "object"
+                }
+              }
+            },
+            "description": "试卷已删除（items 级联删除）"
+          },
+          "404": {
+            "description": "试卷不存在（或不属于当前用户）"
+          },
+          "409": {
+            "description": "试卷已有作答记录，不能删除"
+          }
+        }
+      },
+      "get": {
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "exclusiveMinimum": true,
+              "minimum": 0,
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "properties": {
+                    "items": {
+                      "items": {
+                        "properties": {
+                          "position": {
+                            "type": "number"
+                          },
+                          "question": {
+                            "properties": {
+                              "content": {
+                                "type": "string"
+                              },
+                              "dimension": {
+                                "nullable": true,
+                                "type": "string"
+                              },
+                              "id": {
+                                "type": "number"
+                              },
+                              "material": {
+                                "nullable": true,
+                                "type": "string"
+                              },
+                              "options": {
+                                "items": {
+                                  "type": "string"
+                                },
+                                "type": "array"
+                              },
+                              "tags": {
+                                "items": {
+                                  "type": "string"
+                                },
+                                "type": "array"
+                              },
+                              "type": {
+                                "nullable": true,
+                                "type": "string"
+                              }
+                            },
+                            "required": [
+                              "id",
+                              "content",
+                              "options",
+                              "tags",
+                              "dimension",
+                              "type",
+                              "material"
+                            ],
+                            "type": "object"
+                          }
+                        },
+                        "required": ["position", "question"],
+                        "type": "object"
+                      },
+                      "type": "array"
+                    },
+                    "lastAttempt": {
+                      "nullable": true,
+                      "properties": {
+                        "score": {
+                          "type": "number"
+                        },
+                        "sessionId": {
+                          "type": "string"
+                        },
+                        "submittedAt": {
+                          "type": "string"
+                        }
+                      },
+                      "required": ["sessionId", "score", "submittedAt"],
+                      "type": "object"
+                    },
+                    "paper": {
+                      "properties": {
+                        "attemptCount": {
+                          "type": "number"
+                        },
+                        "bestScore": {
+                          "nullable": true,
+                          "type": "number"
+                        },
+                        "createdAt": {
+                          "nullable": true,
+                          "type": "string"
+                        },
+                        "durationMinutes": {
+                          "nullable": true,
+                          "type": "number"
+                        },
+                        "id": {
+                          "type": "number"
+                        },
+                        "kind": {
+                          "enum": ["fixed", "timed"],
+                          "type": "string"
+                        },
+                        "lastAttemptAt": {
+                          "nullable": true,
+                          "type": "string"
+                        },
+                        "lastScore": {
+                          "nullable": true,
+                          "type": "number"
+                        },
+                        "source": {
+                          "enum": ["manual", "auto", "agent"],
+                          "type": "string"
+                        },
+                        "title": {
+                          "type": "string"
+                        },
+                        "totalQuestions": {
+                          "type": "number"
+                        },
+                        "updatedAt": {
+                          "nullable": true,
+                          "type": "string"
+                        }
+                      },
+                      "required": [
+                        "id",
+                        "title",
+                        "kind",
+                        "durationMinutes",
+                        "source",
+                        "totalQuestions",
+                        "createdAt",
+                        "updatedAt",
+                        "attemptCount",
+                        "bestScore",
+                        "lastScore",
+                        "lastAttemptAt"
+                      ],
+                      "type": "object"
+                    }
+                  },
+                  "required": ["paper", "items", "lastAttempt"],
+                  "type": "object"
+                }
+              }
+            },
+            "description": "试卷详情（预览：不含 answer/explanation）与最近一次作答"
+          },
+          "404": {
+            "description": "试卷不存在（或不属于当前用户）"
+          }
+        }
+      },
+      "patch": {
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "exclusiveMinimum": true,
+              "minimum": 0,
+              "type": "integer"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "properties": {
+                  "durationMinutes": {
+                    "maximum": 600,
+                    "minimum": 1,
+                    "nullable": true,
+                    "type": "integer"
+                  },
+                  "kind": {
+                    "enum": ["fixed", "timed"],
+                    "type": "string"
+                  },
+                  "title": {
+                    "maxLength": 200,
+                    "minLength": 1,
+                    "type": "string"
+                  }
+                },
+                "type": "object"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "properties": {
+                    "paper": {
+                      "properties": {
+                        "attemptCount": {
+                          "type": "number"
+                        },
+                        "bestScore": {
+                          "nullable": true,
+                          "type": "number"
+                        },
+                        "createdAt": {
+                          "nullable": true,
+                          "type": "string"
+                        },
+                        "durationMinutes": {
+                          "nullable": true,
+                          "type": "number"
+                        },
+                        "id": {
+                          "type": "number"
+                        },
+                        "kind": {
+                          "enum": ["fixed", "timed"],
+                          "type": "string"
+                        },
+                        "lastAttemptAt": {
+                          "nullable": true,
+                          "type": "string"
+                        },
+                        "lastScore": {
+                          "nullable": true,
+                          "type": "number"
+                        },
+                        "source": {
+                          "enum": ["manual", "auto", "agent"],
+                          "type": "string"
+                        },
+                        "title": {
+                          "type": "string"
+                        },
+                        "totalQuestions": {
+                          "type": "number"
+                        },
+                        "updatedAt": {
+                          "nullable": true,
+                          "type": "string"
+                        }
+                      },
+                      "required": [
+                        "id",
+                        "title",
+                        "kind",
+                        "durationMinutes",
+                        "source",
+                        "totalQuestions",
+                        "createdAt",
+                        "updatedAt",
+                        "attemptCount",
+                        "bestScore",
+                        "lastScore",
+                        "lastAttemptAt"
+                      ],
+                      "type": "object"
+                    }
+                  },
+                  "required": ["paper"],
+                  "type": "object"
+                }
+              }
+            },
+            "description": "试卷元信息已更新"
+          },
+          "400": {
+            "description": "参数不合法（如 timed 缺 durationMinutes）"
+          },
+          "404": {
+            "description": "试卷不存在（或不属于当前用户）"
+          }
+        }
+      }
+    },
+    "/api/exam/papers/{id}/attempts": {
+      "post": {
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "exclusiveMinimum": true,
+              "minimum": 0,
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "properties": {
+                    "deadlineAt": {
+                      "nullable": true,
+                      "type": "string"
+                    },
+                    "paperId": {
+                      "type": "number"
+                    },
+                    "questions": {
+                      "items": {
+                        "properties": {
+                          "answer": {
+                            "type": "string"
+                          },
+                          "content": {
+                            "type": "string"
+                          },
+                          "dimension": {
+                            "nullable": true,
+                            "type": "string"
+                          },
+                          "explanation": {
+                            "type": "string"
+                          },
+                          "id": {
+                            "type": "number"
+                          },
+                          "material": {
+                            "nullable": true,
+                            "type": "string"
+                          },
+                          "options": {
+                            "items": {
+                              "type": "string"
+                            },
+                            "type": "array"
+                          },
+                          "tags": {
+                            "items": {
+                              "type": "string"
+                            },
+                            "type": "array"
+                          },
+                          "type": {
+                            "nullable": true,
+                            "type": "string"
+                          }
+                        },
+                        "required": [
+                          "id",
+                          "content",
+                          "options",
+                          "answer",
+                          "explanation",
+                          "tags",
+                          "dimension",
+                          "type",
+                          "material"
+                        ],
+                        "type": "object"
+                      },
+                      "type": "array"
+                    },
+                    "sessionId": {
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "sessionId",
+                    "paperId",
+                    "deadlineAt",
+                    "questions"
+                  ],
+                  "type": "object"
+                }
+              }
+            },
+            "description": "作答已开始（题目里的 answer 已置空）"
+          },
+          "400": {
+            "description": "试卷没有题目"
+          },
+          "404": {
+            "description": "试卷不存在（或不属于当前用户）"
+          }
+        }
+      }
+    },
+    "/api/external/agent/question-sets": {
+      "get": {
+        "description": "只读接口，**需 admin 作用域且 key 绑定 userId**。返回该 key 所属用户的题集（含批次题量、已做数、待处理报错数）；分页口径 `limit`（默认 20、上限 100）/ `offset`（默认 0），`meta` 回显夹取后的实际值。",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "limit",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "offset",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "properties": {
+                    "data": {
+                      "items": {
+                        "$ref": "#/components/schemas/AgentQuestionSetSummary"
+                      },
+                      "type": "array"
+                    },
+                    "meta": {
+                      "properties": {
+                        "limit": {
+                          "type": "integer"
+                        },
+                        "offset": {
+                          "type": "integer"
+                        },
+                        "total": {
+                          "type": "integer"
+                        }
+                      },
+                      "required": ["limit", "offset", "total"],
+                      "type": "object"
+                    }
+                  },
+                  "required": ["data", "meta"],
+                  "type": "object"
+                }
+              }
+            },
+            "description": "题集列表（分页）"
+          },
+          "401": {
+            "description": "未授权 - 缺少 / 无效 / 已停用的 API Key"
+          },
+          "403": {
+            "description": "已禁止 - 作用域不足（需要 admin）/ 该 key 没有绑定 userId"
+          },
+          "429": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "properties": {
+                    "error": {
+                      "description": "可读错误信息",
+                      "type": "string"
+                    },
+                    "retryAfter": {
+                      "description": "建议等待的秒数，与 Retry-After 头一致",
+                      "type": "integer"
+                    }
+                  },
+                  "required": ["error", "retryAfter"],
+                  "type": "object"
+                }
+              }
+            },
+            "description": "请求过于频繁 - 超过该 API Key 的限额；按 Retry-After 头或 body.retryAfter 退避后重试",
+            "headers": {
+              "Retry-After": {
+                "description": "建议等待的秒数",
+                "required": true,
+                "schema": {
+                  "description": "建议等待的秒数",
+                  "type": "string"
+                }
+              },
+              "X-RateLimit-Limit": {
+                "description": "该桶的额度",
+                "required": true,
+                "schema": {
+                  "description": "该桶的额度",
+                  "type": "string"
+                }
+              },
+              "X-RateLimit-Remaining": {
+                "description": "剩余额度（超限时为 0）",
+                "required": true,
+                "schema": {
+                  "description": "剩余额度（超限时为 0）",
+                  "type": "string"
+                }
+              },
+              "X-RateLimit-Reset": {
+                "description": "窗口重置时间（Unix 秒）",
+                "required": true,
+                "schema": {
+                  "description": "窗口重置时间（Unix 秒）",
+                  "type": "string"
+                }
+              }
+            }
+          }
+        },
+        "summary": "我的题集列表"
+      },
+      "post": {
+        "description": "写接口，**需 admin 作用域且 key 绑定 userId**（题集是用户私有资源，全局 key 一律 403）。整批原子：逐条复用 `QuestionSchema`，任一条不合法返回 400 且一条都不写（`issues` 逐条列出）。幂等：`(userId, batchKey)` 唯一，重推返回既有批次 `duplicate=true` 且不新增；批次不可变，新内容只能新建批次。单批上限 100 题。预演传 `?dryRun=true`：只校验不写库（此时 `id=null`、`dryRun=true`）。",
+        "parameters": [
+          {
+            "description": "true = 预演：走完真实校验与计算后回滚，返回\"如果真执行会怎样\"，库内零变更",
+            "in": "query",
+            "name": "dryRun",
+            "required": false,
+            "schema": {
+              "description": "true = 预演：走完真实校验与计算后回滚，返回\"如果真执行会怎样\"，库内零变更",
+              "enum": ["true", "false"],
+              "example": "true",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AgentQuestionSetCreateRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AgentQuestionSetCreateResponse"
+                }
+              }
+            },
+            "description": "批次已创建（或幂等命中既有批次）"
+          },
+          "400": {
+            "description": "请求体校验失败 / 任一条题目不合法（整批未写入，body 含 issues、issueCount）"
+          },
+          "401": {
+            "description": "未授权 - 缺少 / 无效 / 已停用的 API Key"
+          },
+          "403": {
+            "description": "已禁止 - 作用域不足（需要 admin）/ 该 key 没有绑定 userId"
+          },
+          "429": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "properties": {
+                    "error": {
+                      "description": "可读错误信息",
+                      "type": "string"
+                    },
+                    "retryAfter": {
+                      "description": "建议等待的秒数，与 Retry-After 头一致",
+                      "type": "integer"
+                    }
+                  },
+                  "required": ["error", "retryAfter"],
+                  "type": "object"
+                }
+              }
+            },
+            "description": "请求过于频繁 - 超过该 API Key 的限额；按 Retry-After 头或 body.retryAfter 退避后重试",
+            "headers": {
+              "Retry-After": {
+                "description": "建议等待的秒数",
+                "required": true,
+                "schema": {
+                  "description": "建议等待的秒数",
+                  "type": "string"
+                }
+              },
+              "X-RateLimit-Limit": {
+                "description": "该桶的额度",
+                "required": true,
+                "schema": {
+                  "description": "该桶的额度",
+                  "type": "string"
+                }
+              },
+              "X-RateLimit-Remaining": {
+                "description": "剩余额度（超限时为 0）",
+                "required": true,
+                "schema": {
+                  "description": "剩余额度（超限时为 0）",
+                  "type": "string"
+                }
+              },
+              "X-RateLimit-Reset": {
+                "description": "窗口重置时间（Unix 秒）",
+                "required": true,
+                "schema": {
+                  "description": "窗口重置时间（Unix 秒）",
+                  "type": "string"
+                }
+              }
+            }
+          }
+        },
+        "summary": "推送一批题（需 admin 作用域，key 必须绑定 userId）"
+      }
+    },
+    "/api/external/agent/question-sets/{id}": {
+      "get": {
+        "description": "只读接口，**需 admin 作用域且 key 绑定 userId**。Agent 需要看自己推了什么，因此**含答案与解析**；他人的题集一律 404。",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "exclusiveMinimum": true,
+              "minimum": 0,
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "properties": {
+                    "questions": {
+                      "items": {
+                        "$ref": "#/components/schemas/AgentQuestionSetQuestion"
+                      },
+                      "type": "array"
+                    },
+                    "set": {
+                      "$ref": "#/components/schemas/AgentQuestionSetSummary"
+                    }
+                  },
+                  "required": ["set", "questions"],
+                  "type": "object"
+                }
+              }
+            },
+            "description": "题集详情"
+          },
+          "401": {
+            "description": "未授权 - 缺少 / 无效 / 已停用的 API Key"
+          },
+          "403": {
+            "description": "已禁止 - 作用域不足（需要 admin）/ 该 key 没有绑定 userId"
+          },
+          "404": {
+            "description": "题集不存在（或不属于该 key 的用户）"
+          },
+          "429": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "properties": {
+                    "error": {
+                      "description": "可读错误信息",
+                      "type": "string"
+                    },
+                    "retryAfter": {
+                      "description": "建议等待的秒数，与 Retry-After 头一致",
+                      "type": "integer"
+                    }
+                  },
+                  "required": ["error", "retryAfter"],
+                  "type": "object"
+                }
+              }
+            },
+            "description": "请求过于频繁 - 超过该 API Key 的限额；按 Retry-After 头或 body.retryAfter 退避后重试",
+            "headers": {
+              "Retry-After": {
+                "description": "建议等待的秒数",
+                "required": true,
+                "schema": {
+                  "description": "建议等待的秒数",
+                  "type": "string"
+                }
+              },
+              "X-RateLimit-Limit": {
+                "description": "该桶的额度",
+                "required": true,
+                "schema": {
+                  "description": "该桶的额度",
+                  "type": "string"
+                }
+              },
+              "X-RateLimit-Remaining": {
+                "description": "剩余额度（超限时为 0）",
+                "required": true,
+                "schema": {
+                  "description": "剩余额度（超限时为 0）",
+                  "type": "string"
+                }
+              },
+              "X-RateLimit-Reset": {
+                "description": "窗口重置时间（Unix 秒）",
+                "required": true,
+                "schema": {
+                  "description": "窗口重置时间（Unix 秒）",
+                  "type": "string"
+                }
+              }
+            }
+          }
+        },
+        "summary": "题集详情（含题目与答案）"
+      }
+    },
+    "/api/external/agent/question-sets/{id}/archive": {
+      "post": {
+        "description": "写接口，**需 admin 作用域且 key 绑定 userId**。归档后该批次不能再作答 / 成卷 / 转正，列表与结果仍可读。幂等：重复归档不报错。",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "exclusiveMinimum": true,
+              "minimum": 0,
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AgentQuestionSetSummary"
+                }
+              }
+            },
+            "description": "已归档（重复归档同样返回 200）"
+          },
+          "401": {
+            "description": "未授权 - 缺少 / 无效 / 已停用的 API Key"
+          },
+          "403": {
+            "description": "已禁止 - 作用域不足（需要 admin）/ 该 key 没有绑定 userId"
+          },
+          "404": {
+            "description": "题集不存在（或不属于该 key 的用户）"
+          },
+          "429": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "properties": {
+                    "error": {
+                      "description": "可读错误信息",
+                      "type": "string"
+                    },
+                    "retryAfter": {
+                      "description": "建议等待的秒数，与 Retry-After 头一致",
+                      "type": "integer"
+                    }
+                  },
+                  "required": ["error", "retryAfter"],
+                  "type": "object"
+                }
+              }
+            },
+            "description": "请求过于频繁 - 超过该 API Key 的限额；按 Retry-After 头或 body.retryAfter 退避后重试",
+            "headers": {
+              "Retry-After": {
+                "description": "建议等待的秒数",
+                "required": true,
+                "schema": {
+                  "description": "建议等待的秒数",
+                  "type": "string"
+                }
+              },
+              "X-RateLimit-Limit": {
+                "description": "该桶的额度",
+                "required": true,
+                "schema": {
+                  "description": "该桶的额度",
+                  "type": "string"
+                }
+              },
+              "X-RateLimit-Remaining": {
+                "description": "剩余额度（超限时为 0）",
+                "required": true,
+                "schema": {
+                  "description": "剩余额度（超限时为 0）",
+                  "type": "string"
+                }
+              },
+              "X-RateLimit-Reset": {
+                "description": "窗口重置时间（Unix 秒）",
+                "required": true,
+                "schema": {
+                  "description": "窗口重置时间（Unix 秒）",
+                  "type": "string"
+                }
+              }
+            }
+          }
+        },
+        "summary": "归档题集（不影响历史作答）"
+      }
+    },
+    "/api/external/agent/question-sets/{id}/results": {
+      "get": {
+        "description": "只读接口，**需 admin 作用域且 key 绑定 userId**。只统计**该批次自己的作答会话**（普通练习里答过同一道题不算）。每题取最近一次非空作答；`flagged[]` 列出被用户报「这题有问题」的题与理由，供修正后推新批次。分数一律 0–1 小数，`durationMs` 为整数毫秒。他人的题集一律 404。",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "exclusiveMinimum": true,
+              "minimum": 0,
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AgentQuestionSetResults"
+                }
+              }
+            },
+            "description": "结果回流"
+          },
+          "401": {
+            "description": "未授权 - 缺少 / 无效 / 已停用的 API Key"
+          },
+          "403": {
+            "description": "已禁止 - 作用域不足（需要 admin）/ 该 key 没有绑定 userId"
+          },
+          "404": {
+            "description": "题集不存在（或不属于该 key 的用户）"
+          },
+          "429": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "properties": {
+                    "error": {
+                      "description": "可读错误信息",
+                      "type": "string"
+                    },
+                    "retryAfter": {
+                      "description": "建议等待的秒数，与 Retry-After 头一致",
+                      "type": "integer"
+                    }
+                  },
+                  "required": ["error", "retryAfter"],
+                  "type": "object"
+                }
+              }
+            },
+            "description": "请求过于频繁 - 超过该 API Key 的限额；按 Retry-After 头或 body.retryAfter 退避后重试",
+            "headers": {
+              "Retry-After": {
+                "description": "建议等待的秒数",
+                "required": true,
+                "schema": {
+                  "description": "建议等待的秒数",
+                  "type": "string"
+                }
+              },
+              "X-RateLimit-Limit": {
+                "description": "该桶的额度",
+                "required": true,
+                "schema": {
+                  "description": "该桶的额度",
+                  "type": "string"
+                }
+              },
+              "X-RateLimit-Remaining": {
+                "description": "剩余额度（超限时为 0）",
+                "required": true,
+                "schema": {
+                  "description": "剩余额度（超限时为 0）",
+                  "type": "string"
+                }
+              },
+              "X-RateLimit-Reset": {
+                "description": "窗口重置时间（Unix 秒）",
+                "required": true,
+                "schema": {
+                  "description": "窗口重置时间（Unix 秒）",
+                  "type": "string"
+                }
+              }
+            }
+          }
+        },
+        "summary": "结果回流：逐题对错/耗时/报错，聚合正确率与考点分布"
       }
     },
     "/api/external/knowledge/cards": {
@@ -3462,6 +7607,115 @@
           }
         },
         "summary": "新建一道题（内容指纹幂等，需 admin 作用域）"
+      }
+    },
+    "/api/external/questions/batch": {
+      "post": {
+        "description": "写接口，**需 admin 作用域**：题库是全局共享资产，write key 不能写。逐条校验复用 `QuestionSchema`（与后台导入、单题建题同一口径），**整批原子**：任一条不合法返回 400 且一条都不写。幂等：每条优先用 `externalId`，省略则退回内容指纹 `api:`+（题干+选项+答案）；命中既有题按 `skipped` 返回既有 `questionId`，**不更新内容**（改内容走 `PATCH /questions/{id}`）。预演传 `?dryRun=true`：只查不写，`created` 表示「会新建几条」。",
+        "parameters": [
+          {
+            "description": "true = 预演：走完真实校验与计算后回滚，返回\"如果真执行会怎样\"，库内零变更",
+            "in": "query",
+            "name": "dryRun",
+            "required": false,
+            "schema": {
+              "description": "true = 预演：走完真实校验与计算后回滚，返回\"如果真执行会怎样\"，库内零变更",
+              "enum": ["true", "false"],
+              "example": "true",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ExternalQuestionBatchRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ExternalQuestionBatchResponse"
+                }
+              }
+            },
+            "description": "逐条结果（幂等命中按 skipped 返回，不报错）"
+          },
+          "400": {
+            "description": "请求体校验失败 / 任一条内容不合法（整批未写入，带 issues）"
+          },
+          "401": {
+            "description": "未授权 - 缺少 / 无效 / 已停用的 API Key"
+          },
+          "403": {
+            "description": "已禁止 - 该 API Key 的作用域不足（需要 admin）"
+          },
+          "429": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "properties": {
+                    "error": {
+                      "description": "可读错误信息",
+                      "type": "string"
+                    },
+                    "retryAfter": {
+                      "description": "建议等待的秒数，与 Retry-After 头一致",
+                      "type": "integer"
+                    }
+                  },
+                  "required": ["error", "retryAfter"],
+                  "type": "object"
+                }
+              }
+            },
+            "description": "请求过于频繁 - 超过该 API Key 的限额；按 Retry-After 头或 body.retryAfter 退避后重试",
+            "headers": {
+              "Retry-After": {
+                "description": "建议等待的秒数",
+                "required": true,
+                "schema": {
+                  "description": "建议等待的秒数",
+                  "type": "string"
+                }
+              },
+              "X-RateLimit-Limit": {
+                "description": "该桶的额度",
+                "required": true,
+                "schema": {
+                  "description": "该桶的额度",
+                  "type": "string"
+                }
+              },
+              "X-RateLimit-Remaining": {
+                "description": "剩余额度（超限时为 0）",
+                "required": true,
+                "schema": {
+                  "description": "剩余额度（超限时为 0）",
+                  "type": "string"
+                }
+              },
+              "X-RateLimit-Reset": {
+                "description": "窗口重置时间（Unix 秒）",
+                "required": true,
+                "schema": {
+                  "description": "窗口重置时间（Unix 秒）",
+                  "type": "string"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "服务器内部错误"
+          }
+        },
+        "summary": "批量建题（上游 externalId 幂等，需 admin 作用域）"
       }
     },
     "/api/external/questions/{id}": {
@@ -5772,6 +10026,11 @@
                             "description": "最近一次答错时间",
                             "type": "string"
                           },
+                          "origin": {
+                            "description": "题目来源：import=题库题，agent=AI 题集推来的题（错题本照收，标出来便于辨认）",
+                            "enum": ["import", "agent"],
+                            "type": "string"
+                          },
                           "questionId": {
                             "description": "题目 ID",
                             "type": "integer"
@@ -5812,6 +10071,7 @@
                           "questionId",
                           "content",
                           "tags",
+                          "origin",
                           "wrongCount",
                           "lastWrongAt",
                           "srs"
@@ -6089,6 +10349,364 @@
           }
         },
         "summary": "提交题目纠错反馈"
+      }
+    },
+    "/api/fenbi/link": {
+      "delete": {
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "properties": {
+                    "ok": {
+                      "enum": [true],
+                      "type": "boolean"
+                    }
+                  },
+                  "required": ["ok"],
+                  "type": "object"
+                }
+              }
+            },
+            "description": "解绑成功"
+          },
+          "400": {
+            "description": "参数错误 / 未绑定 / 登录态失效 / 未配置加密密钥"
+          },
+          "429": {
+            "description": "粉笔风控（430）或本地同步限频（每用户 60 秒）"
+          },
+          "500": {
+            "description": "服务器内部错误"
+          },
+          "502": {
+            "description": "粉笔不可达或返回异常"
+          }
+        },
+        "summary": "解绑粉笔账号并清除密码/cookie"
+      },
+      "post": {
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "properties": {
+                  "password": {
+                    "maxLength": 64,
+                    "minLength": 1,
+                    "type": "string"
+                  },
+                  "phone": {
+                    "maxLength": 20,
+                    "minLength": 5,
+                    "type": "string"
+                  }
+                },
+                "required": ["phone", "password"],
+                "type": "object"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "properties": {
+                    "ok": {
+                      "enum": [true],
+                      "type": "boolean"
+                    }
+                  },
+                  "required": ["ok"],
+                  "type": "object"
+                }
+              }
+            },
+            "description": "绑定成功"
+          },
+          "400": {
+            "description": "参数错误 / 未绑定 / 登录态失效 / 未配置加密密钥"
+          },
+          "429": {
+            "description": "粉笔风控（430）或本地同步限频（每用户 60 秒）"
+          },
+          "500": {
+            "description": "服务器内部错误"
+          },
+          "502": {
+            "description": "粉笔不可达或返回异常"
+          }
+        },
+        "summary": "手机号 + 密码绑定粉笔账号"
+      }
+    },
+    "/api/fenbi/qrcode": {
+      "post": {
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "properties": {
+                    "lgtoken": {
+                      "type": "string"
+                    },
+                    "qrContent": {
+                      "type": "string"
+                    }
+                  },
+                  "required": ["lgtoken", "qrContent"],
+                  "type": "object"
+                }
+              }
+            },
+            "description": "二维码"
+          },
+          "400": {
+            "description": "参数错误 / 未绑定 / 登录态失效 / 未配置加密密钥"
+          },
+          "429": {
+            "description": "粉笔风控（430）或本地同步限频（每用户 60 秒）"
+          },
+          "500": {
+            "description": "服务器内部错误"
+          },
+          "502": {
+            "description": "粉笔不可达或返回异常"
+          }
+        },
+        "summary": "生成扫码登录二维码"
+      }
+    },
+    "/api/fenbi/qrcode/status": {
+      "get": {
+        "parameters": [
+          {
+            "in": "query",
+            "name": "lgtoken",
+            "required": true,
+            "schema": {
+              "minLength": 1,
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "properties": {
+                    "linked": {
+                      "type": "boolean"
+                    },
+                    "status": {
+                      "enum": ["pending", "scanned", "confirmed", "expired"],
+                      "type": "string"
+                    }
+                  },
+                  "required": ["status", "linked"],
+                  "type": "object"
+                }
+              }
+            },
+            "description": "扫码状态"
+          },
+          "400": {
+            "description": "参数错误 / 未绑定 / 登录态失效 / 未配置加密密钥"
+          },
+          "429": {
+            "description": "粉笔风控（430）或本地同步限频（每用户 60 秒）"
+          },
+          "500": {
+            "description": "服务器内部错误"
+          },
+          "502": {
+            "description": "粉笔不可达或返回异常"
+          }
+        },
+        "summary": "轮询扫码状态"
+      }
+    },
+    "/api/fenbi/status": {
+      "get": {
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "properties": {
+                    "fenbiUserId": {
+                      "nullable": true,
+                      "type": "string"
+                    },
+                    "lastResult": {
+                      "nullable": true,
+                      "properties": {
+                        "failed": {
+                          "items": {
+                            "properties": {
+                              "exerciseId": {
+                                "type": "string"
+                              },
+                              "reason": {
+                                "type": "string"
+                              }
+                            },
+                            "required": ["exerciseId", "reason"],
+                            "type": "object"
+                          },
+                          "type": "array"
+                        },
+                        "imported": {
+                          "type": "number"
+                        },
+                        "newQuestions": {
+                          "type": "number"
+                        },
+                        "skipped": {
+                          "type": "number"
+                        }
+                      },
+                      "required": [
+                        "imported",
+                        "skipped",
+                        "newQuestions",
+                        "failed"
+                      ],
+                      "type": "object"
+                    },
+                    "lastSyncAt": {
+                      "nullable": true,
+                      "type": "string"
+                    },
+                    "linked": {
+                      "type": "boolean"
+                    },
+                    "phoneMasked": {
+                      "nullable": true,
+                      "type": "string"
+                    },
+                    "status": {
+                      "enum": ["active", "expired", "revoked", null],
+                      "nullable": true,
+                      "type": "string"
+                    },
+                    "syncable": {
+                      "enum": [true],
+                      "type": "boolean"
+                    },
+                    "unsupported": {
+                      "items": {
+                        "type": "string"
+                      },
+                      "type": "array"
+                    }
+                  },
+                  "required": [
+                    "linked",
+                    "phoneMasked",
+                    "fenbiUserId",
+                    "lastSyncAt",
+                    "lastResult",
+                    "status",
+                    "syncable",
+                    "unsupported"
+                  ],
+                  "type": "object"
+                }
+              }
+            },
+            "description": "绑定状态"
+          },
+          "400": {
+            "description": "参数错误 / 未绑定 / 登录态失效 / 未配置加密密钥"
+          },
+          "429": {
+            "description": "粉笔风控（430）或本地同步限频（每用户 60 秒）"
+          },
+          "500": {
+            "description": "服务器内部错误"
+          },
+          "502": {
+            "description": "粉笔不可达或返回异常"
+          }
+        },
+        "summary": "粉笔绑定状态与上次同步摘要"
+      }
+    },
+    "/api/fenbi/sync": {
+      "post": {
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "properties": {
+                  "full": {
+                    "type": "boolean"
+                  }
+                },
+                "type": "object"
+              }
+            }
+          },
+          "required": false
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "properties": {
+                    "failed": {
+                      "items": {
+                        "properties": {
+                          "exerciseId": {
+                            "type": "string"
+                          },
+                          "reason": {
+                            "type": "string"
+                          }
+                        },
+                        "required": ["exerciseId", "reason"],
+                        "type": "object"
+                      },
+                      "type": "array"
+                    },
+                    "imported": {
+                      "type": "number"
+                    },
+                    "newQuestions": {
+                      "type": "number"
+                    },
+                    "skipped": {
+                      "type": "number"
+                    }
+                  },
+                  "required": ["imported", "skipped", "newQuestions", "failed"],
+                  "type": "object"
+                }
+              }
+            },
+            "description": "同步结果"
+          },
+          "400": {
+            "description": "参数错误 / 未绑定 / 登录态失效 / 未配置加密密钥"
+          },
+          "429": {
+            "description": "粉笔风控（430）或本地同步限频（每用户 60 秒）"
+          },
+          "500": {
+            "description": "服务器内部错误"
+          },
+          "502": {
+            "description": "粉笔不可达或返回异常"
+          }
+        },
+        "summary": "立即同步粉笔做题记录"
       }
     },
     "/api/generate": {
@@ -6867,6 +11485,57 @@
         }
       }
     },
+    "/api/meta": {
+      "get": {
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "properties": {
+                    "contractVersion": {
+                      "description": "契约版本（整数，不兼容变更才 +1）",
+                      "minimum": 1,
+                      "type": "integer"
+                    },
+                    "downloadUrl": {
+                      "description": "APK 下载地址；未配置时为 null（不是空字符串）",
+                      "nullable": true,
+                      "type": "string"
+                    },
+                    "features": {
+                      "description": "服务端具备的能力名（只增不减）",
+                      "items": {
+                        "type": "string"
+                      },
+                      "type": "array"
+                    },
+                    "latestClientVersion": {
+                      "description": "当前最新客户端版本",
+                      "type": "string"
+                    },
+                    "minClientVersion": {
+                      "description": "服务端仍愿意服务的最低客户端版本",
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "contractVersion",
+                    "minClientVersion",
+                    "latestClientVersion",
+                    "downloadUrl",
+                    "features"
+                  ],
+                  "type": "object"
+                }
+              }
+            },
+            "description": "服务端契约信息"
+          }
+        },
+        "summary": "契约协商（版本 + 能力列表，公开无鉴权）"
+      }
+    },
     "/api/pdf-import/cleanup": {
       "post": {
         "requestBody": {
@@ -7233,11 +11902,20 @@
                     "inserted": {
                       "type": "integer"
                     },
+                    "regraded": {
+                      "description": "客户端 isCorrect 与服务端重新判分不一致的条数（幂等命中时为 0）",
+                      "type": "integer"
+                    },
                     "sessionId": {
                       "type": "string"
                     }
                   },
-                  "required": ["sessionId", "inserted", "duplicated"],
+                  "required": [
+                    "sessionId",
+                    "inserted",
+                    "duplicated",
+                    "regraded"
+                  ],
                   "type": "object"
                 }
               }
@@ -7263,6 +11941,10 @@
                   },
                   "mode": {
                     "enum": ["random", "wrong", "tag", "first-principles"],
+                    "type": "string"
+                  },
+                  "tag": {
+                    "maxLength": 50,
                     "type": "string"
                   }
                 },
@@ -7625,7 +12307,12 @@
                             "type": "array"
                           },
                           "type": {
-                            "enum": ["single", "multi"],
+                            "enum": [
+                              "single",
+                              "multi",
+                              "truefalse",
+                              "fill_blank"
+                            ],
                             "type": "string"
                           }
                         },
@@ -7646,6 +12333,121 @@
             "description": "List of questions"
           }
         }
+      },
+      "post": {
+        "description": "幂等键 = `manual:<userId>:<内容指纹>`：同一用户重复提交同一内容返回既有题（`created=false`），不新增行。写操作进 `admin_logs`（action=QUESTION_CREATE）。",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "properties": {
+                  "answer": {
+                    "description": "正确答案：单选 \"A\"、多选 [\"A\",\"B\"]（JSON 字符串）、判断题 A/B、填空为文本",
+                    "minLength": 1,
+                    "type": "string"
+                  },
+                  "content": {
+                    "description": "题干，至少 5 个字符",
+                    "minLength": 5,
+                    "type": "string"
+                  },
+                  "dimension": {
+                    "enum": ["knowledge", "understanding", "application"],
+                    "type": "string"
+                  },
+                  "explanation": {
+                    "minLength": 5,
+                    "type": "string"
+                  },
+                  "material": {
+                    "type": "string"
+                  },
+                  "material_html": {
+                    "type": "string"
+                  },
+                  "options": {
+                    "default": [],
+                    "items": {
+                      "minLength": 1,
+                      "type": "string"
+                    },
+                    "maxItems": 10,
+                    "type": "array"
+                  },
+                  "tags": {
+                    "items": {
+                      "minLength": 1,
+                      "type": "string"
+                    },
+                    "minItems": 1,
+                    "type": "array"
+                  },
+                  "type": {
+                    "default": "single",
+                    "enum": ["single", "multi", "truefalse", "fill_blank"],
+                    "type": "string"
+                  }
+                },
+                "required": [
+                  "content",
+                  "answer",
+                  "explanation",
+                  "tags",
+                  "dimension"
+                ],
+                "type": "object"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "properties": {
+                    "created": {
+                      "type": "boolean"
+                    },
+                    "id": {
+                      "type": "integer"
+                    }
+                  },
+                  "required": ["id", "created"],
+                  "type": "object"
+                }
+              }
+            },
+            "description": "幂等命中既有题（created=false）"
+          },
+          "201": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "properties": {
+                    "created": {
+                      "type": "boolean"
+                    },
+                    "id": {
+                      "type": "integer"
+                    }
+                  },
+                  "required": ["id", "created"],
+                  "type": "object"
+                }
+              }
+            },
+            "description": "已新建"
+          },
+          "400": {
+            "description": "内容校验失败（带 issues）"
+          },
+          "401": {
+            "description": "未登录"
+          }
+        },
+        "summary": "新建一道题（登录即可）"
       }
     },
     "/api/questions/:id": {
@@ -7681,6 +12483,14 @@
                     "id": {
                       "type": "number"
                     },
+                    "material": {
+                      "nullable": true,
+                      "type": "string"
+                    },
+                    "material_html": {
+                      "nullable": true,
+                      "type": "string"
+                    },
                     "options": {
                       "items": {
                         "type": "string"
@@ -7694,7 +12504,7 @@
                       "type": "array"
                     },
                     "type": {
-                      "enum": ["single", "multi"],
+                      "enum": ["single", "multi", "truefalse", "fill_blank"],
                       "type": "string"
                     }
                   },
@@ -7709,6 +12519,924 @@
             "description": "Question not found"
           }
         }
+      }
+    },
+    "/api/questions/{id}": {
+      "patch": {
+        "description": "部分更新，合并后仍要整体满足 `QuestionSchema`。答案/选项/题型变化时在同一事务里回刷历史判分（`regradeQuestionLogs`）。只能改自己建的题（`manual:`/`draft:` 归属），全局题登录用户均可维护。",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "properties": {
+                  "answer": {
+                    "minLength": 1,
+                    "type": "string"
+                  },
+                  "content": {
+                    "minLength": 5,
+                    "type": "string"
+                  },
+                  "dimension": {
+                    "enum": ["knowledge", "understanding", "application"],
+                    "type": "string"
+                  },
+                  "explanation": {
+                    "minLength": 5,
+                    "type": "string"
+                  },
+                  "material": {
+                    "nullable": true,
+                    "type": "string"
+                  },
+                  "material_html": {
+                    "nullable": true,
+                    "type": "string"
+                  },
+                  "options": {
+                    "items": {
+                      "minLength": 1,
+                      "type": "string"
+                    },
+                    "maxItems": 10,
+                    "type": "array"
+                  },
+                  "tags": {
+                    "items": {
+                      "minLength": 1,
+                      "type": "string"
+                    },
+                    "minItems": 1,
+                    "type": "array"
+                  },
+                  "type": {
+                    "enum": ["single", "multi", "truefalse", "fill_blank"],
+                    "type": "string"
+                  }
+                },
+                "type": "object"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "properties": {
+                    "changed": {
+                      "items": {
+                        "type": "string"
+                      },
+                      "type": "array"
+                    },
+                    "id": {
+                      "type": "integer"
+                    },
+                    "question": {
+                      "properties": {
+                        "answer": {
+                          "nullable": true,
+                          "type": "string"
+                        },
+                        "content": {
+                          "type": "string"
+                        },
+                        "dimension": {
+                          "type": "string"
+                        },
+                        "explanation": {
+                          "nullable": true,
+                          "type": "string"
+                        },
+                        "id": {
+                          "type": "number"
+                        },
+                        "material": {
+                          "nullable": true,
+                          "type": "string"
+                        },
+                        "material_html": {
+                          "nullable": true,
+                          "type": "string"
+                        },
+                        "options": {
+                          "items": {
+                            "type": "string"
+                          },
+                          "type": "array"
+                        },
+                        "tags": {
+                          "items": {
+                            "type": "string"
+                          },
+                          "type": "array"
+                        },
+                        "type": {
+                          "enum": [
+                            "single",
+                            "multi",
+                            "truefalse",
+                            "fill_blank"
+                          ],
+                          "type": "string"
+                        }
+                      },
+                      "required": ["id", "content", "options", "tags"],
+                      "type": "object"
+                    },
+                    "regrade": {
+                      "nullable": true,
+                      "properties": {
+                        "logsFlipped": {
+                          "type": "integer"
+                        },
+                        "logsScanned": {
+                          "type": "integer"
+                        },
+                        "sessionsUpdated": {
+                          "type": "integer"
+                        },
+                        "usersReset": {
+                          "type": "integer"
+                        }
+                      },
+                      "required": [
+                        "logsScanned",
+                        "logsFlipped",
+                        "usersReset",
+                        "sessionsUpdated"
+                      ],
+                      "type": "object"
+                    }
+                  },
+                  "required": ["id", "changed", "regrade", "question"],
+                  "type": "object"
+                }
+              }
+            },
+            "description": "已更新（或没有实际变更）"
+          },
+          "400": {
+            "description": "ID 非法/合并后校验失败（带 issues）"
+          },
+          "401": {
+            "description": "未登录"
+          },
+          "403": {
+            "description": "非本人创建的题目"
+          },
+          "404": {
+            "description": "题目不存在"
+          }
+        },
+        "summary": "修改一道题（登录即可）"
+      }
+    },
+    "/api/recall/cards/{cardId}": {
+      "get": {
+        "description": "`cardId` 是数字主键。`mode` 为 `retest` 时界面只呈现 `pendingItems` 里的条目；`state` 为 null 表示当前用户从未复习过这张卡。卡片不存在返回 404。",
+        "parameters": [
+          {
+            "description": "卡片数字主键",
+            "in": "path",
+            "name": "cardId",
+            "required": true,
+            "schema": {
+              "description": "卡片数字主键",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "properties": {
+                    "blanks": {
+                      "items": {
+                        "properties": {
+                          "answers": {
+                            "description": "该空可接受的答案（1–3 个）",
+                            "items": {
+                              "type": "string"
+                            },
+                            "type": "array"
+                          }
+                        },
+                        "required": ["answers"],
+                        "type": "object"
+                      },
+                      "nullable": true,
+                      "type": "array"
+                    },
+                    "cardId": {
+                      "type": "integer"
+                    },
+                    "cardKey": {
+                      "type": "string"
+                    },
+                    "deckKey": {
+                      "type": "string"
+                    },
+                    "deckTitle": {
+                      "type": "string"
+                    },
+                    "groupKey": {
+                      "nullable": true,
+                      "type": "string"
+                    },
+                    "items": {
+                      "items": {
+                        "properties": {
+                          "keywords": {
+                            "description": "关键词，任一命中即判「已写」",
+                            "items": {
+                              "type": "string"
+                            },
+                            "type": "array"
+                          },
+                          "text": {
+                            "description": "条目文本",
+                            "type": "string"
+                          }
+                        },
+                        "required": ["text", "keywords"],
+                        "type": "object"
+                      },
+                      "nullable": true,
+                      "type": "array"
+                    },
+                    "kind": {
+                      "description": "卡片类型：list = 列举卡，cloze = 填空卡",
+                      "enum": ["list", "cloze"],
+                      "type": "string"
+                    },
+                    "mode": {
+                      "description": "first = 首次作答整卡；retest = 只重测待重测条目",
+                      "enum": ["first", "retest"],
+                      "type": "string"
+                    },
+                    "pendingItems": {
+                      "description": "待重测条目下标；null 表示没有（与 mode 联动）",
+                      "items": {
+                        "type": "integer"
+                      },
+                      "nullable": true,
+                      "type": "array"
+                    },
+                    "prompt": {
+                      "type": "string"
+                    },
+                    "state": {
+                      "description": "当前用户在这张卡上的进度；null = 从未复习过（新卡）",
+                      "nullable": true,
+                      "properties": {
+                        "archived": {
+                          "description": "是否已归档（移出队列）",
+                          "type": "boolean"
+                        },
+                        "difficulty": {
+                          "description": "FSRS 难度",
+                          "type": "number"
+                        },
+                        "due": {
+                          "description": "下次到期时间（ISO 8601 UTC）",
+                          "type": "string"
+                        },
+                        "lapses": {
+                          "description": "累计遗忘次数",
+                          "type": "integer"
+                        },
+                        "last_review": {
+                          "description": "最近一次复习时间，未知为 null",
+                          "nullable": true,
+                          "type": "string"
+                        },
+                        "pendingItems": {
+                          "description": "待重测的条目下标；null 表示没有待重测条目",
+                          "items": {
+                            "type": "integer"
+                          },
+                          "nullable": true,
+                          "type": "array"
+                        },
+                        "reps": {
+                          "description": "累计复习次数",
+                          "type": "integer"
+                        },
+                        "stability": {
+                          "description": "FSRS 记忆稳定度",
+                          "type": "number"
+                        },
+                        "state": {
+                          "description": "FSRS 状态：0 New / 1 Learning / 2 Review / 3 Relearning",
+                          "type": "integer"
+                        }
+                      },
+                      "required": [
+                        "due",
+                        "stability",
+                        "difficulty",
+                        "state",
+                        "reps",
+                        "lapses",
+                        "last_review",
+                        "pendingItems",
+                        "archived"
+                      ],
+                      "type": "object"
+                    },
+                    "verbatim": {
+                      "type": "boolean"
+                    }
+                  },
+                  "required": [
+                    "cardId",
+                    "cardKey",
+                    "deckKey",
+                    "deckTitle",
+                    "kind",
+                    "groupKey",
+                    "prompt",
+                    "items",
+                    "blanks",
+                    "verbatim",
+                    "state",
+                    "mode",
+                    "pendingItems"
+                  ],
+                  "type": "object"
+                }
+              }
+            },
+            "description": "卡片详情"
+          },
+          "400": {
+            "description": "cardId 不是正整数"
+          },
+          "401": {
+            "description": "未授权 - 缺少 / 无效 / 已过期的 JWT"
+          },
+          "404": {
+            "description": "卡片不存在"
+          }
+        },
+        "summary": "获取单张回忆卡详情（含呈现模式与待重测条目）"
+      }
+    },
+    "/api/recall/cards/{cardId}/archive": {
+      "delete": {
+        "description": "只影响**当前登录用户**。天然幂等：没归档过时返回 `restored: false`（没有可恢复的状态行），不算错误。",
+        "parameters": [
+          {
+            "description": "卡片数字主键",
+            "in": "path",
+            "name": "cardId",
+            "required": true,
+            "schema": {
+              "description": "卡片数字主键",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "properties": {
+                    "cardId": {
+                      "type": "integer"
+                    },
+                    "restored": {
+                      "description": "true = 恢复了一条状态行；false = 本来就没有归档记录",
+                      "type": "boolean"
+                    }
+                  },
+                  "required": ["cardId", "restored"],
+                  "type": "object"
+                }
+              }
+            },
+            "description": "已取消归档（或本来就没有归档）"
+          },
+          "400": {
+            "description": "cardId 不是正整数"
+          },
+          "401": {
+            "description": "未授权 - 缺少 / 无效 / 已过期的 JWT"
+          }
+        },
+        "summary": "把一张回忆卡放回复习队列（取消归档）"
+      },
+      "post": {
+        "description": "只影响**当前登录用户**的队列，不改卡片内容与别人的进度。天然幂等：重复归档仍是同一个结果。卡片不存在返回 404。",
+        "parameters": [
+          {
+            "description": "卡片数字主键",
+            "in": "path",
+            "name": "cardId",
+            "required": true,
+            "schema": {
+              "description": "卡片数字主键",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "properties": {
+                    "archived": {
+                      "description": "恒为 true",
+                      "enum": [true],
+                      "type": "boolean"
+                    },
+                    "cardId": {
+                      "type": "integer"
+                    }
+                  },
+                  "required": ["cardId", "archived"],
+                  "type": "object"
+                }
+              }
+            },
+            "description": "已归档"
+          },
+          "400": {
+            "description": "cardId 不是正整数"
+          },
+          "401": {
+            "description": "未授权 - 缺少 / 无效 / 已过期的 JWT"
+          },
+          "404": {
+            "description": "卡片不存在"
+          }
+        },
+        "summary": "把一张回忆卡移出当前用户的复习队列（归档）"
+      }
+    },
+    "/api/recall/decks": {
+      "get": {
+        "description": "卡组内容全局共享，`activeCount` / `archivedCount` / `dueCount` 只统计当前登录用户的数据。按卡组标题升序。",
+        "parameters": [
+          {
+            "description": "返回条数，默认 20，上限 100",
+            "in": "query",
+            "name": "limit",
+            "required": false,
+            "schema": {
+              "default": "20",
+              "description": "返回条数，默认 20，上限 100",
+              "type": "string"
+            }
+          },
+          {
+            "description": "偏移量，默认 0",
+            "in": "query",
+            "name": "offset",
+            "required": false,
+            "schema": {
+              "default": "0",
+              "description": "偏移量，默认 0",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "properties": {
+                    "data": {
+                      "items": {
+                        "properties": {
+                          "activeCount": {
+                            "description": "该用户未归档、已有复习状态的卡片数（含未到期）",
+                            "type": "integer"
+                          },
+                          "archivedCount": {
+                            "description": "该用户已归档（移出队列）的卡片数",
+                            "type": "integer"
+                          },
+                          "cardCount": {
+                            "description": "卡组内卡片总数",
+                            "type": "integer"
+                          },
+                          "deckKey": {
+                            "description": "卡组标识（导入导出文件里的 deckId）",
+                            "type": "string"
+                          },
+                          "dueCount": {
+                            "description": "该用户当前到期可复习的卡片数",
+                            "type": "integer"
+                          },
+                          "title": {
+                            "description": "卡组标题",
+                            "type": "string"
+                          }
+                        },
+                        "required": [
+                          "deckKey",
+                          "title",
+                          "cardCount",
+                          "activeCount",
+                          "archivedCount",
+                          "dueCount"
+                        ],
+                        "type": "object"
+                      },
+                      "type": "array"
+                    },
+                    "meta": {
+                      "properties": {
+                        "limit": {
+                          "description": "本次请求的实际条数上限（已被截到 100 以内）",
+                          "type": "integer"
+                        },
+                        "offset": {
+                          "description": "本次请求的偏移量",
+                          "type": "integer"
+                        },
+                        "total": {
+                          "description": "符合条件的总条数",
+                          "type": "integer"
+                        }
+                      },
+                      "required": ["limit", "offset", "total"],
+                      "type": "object"
+                    }
+                  },
+                  "required": ["data", "meta"],
+                  "type": "object"
+                }
+              }
+            },
+            "description": "卡组列表"
+          },
+          "401": {
+            "description": "未授权 - 缺少 / 无效 / 已过期的 JWT"
+          }
+        },
+        "summary": "列出回忆自测卡组（含当前用户的进度统计）"
+      }
+    },
+    "/api/recall/decks/{deckKey}": {
+      "get": {
+        "description": "卡片内容全局共享，`state` 只反映当前用户的进度（无记录为 null）。按卡片主键升序分页，默认 20、上限 100。卡组不存在返回 404。",
+        "parameters": [
+          {
+            "description": "卡组标识",
+            "in": "path",
+            "name": "deckKey",
+            "required": true,
+            "schema": {
+              "description": "卡组标识",
+              "type": "string"
+            }
+          },
+          {
+            "description": "返回条数，默认 20，上限 100",
+            "in": "query",
+            "name": "limit",
+            "required": false,
+            "schema": {
+              "default": "20",
+              "description": "返回条数，默认 20，上限 100",
+              "type": "string"
+            }
+          },
+          {
+            "description": "偏移量，默认 0",
+            "in": "query",
+            "name": "offset",
+            "required": false,
+            "schema": {
+              "default": "0",
+              "description": "偏移量，默认 0",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "properties": {
+                    "data": {
+                      "items": {
+                        "properties": {
+                          "blanks": {
+                            "items": {
+                              "properties": {
+                                "answers": {
+                                  "description": "该空可接受的答案（1–3 个）",
+                                  "items": {
+                                    "type": "string"
+                                  },
+                                  "type": "array"
+                                }
+                              },
+                              "required": ["answers"],
+                              "type": "object"
+                            },
+                            "nullable": true,
+                            "type": "array"
+                          },
+                          "cardId": {
+                            "type": "integer"
+                          },
+                          "cardKey": {
+                            "type": "string"
+                          },
+                          "groupKey": {
+                            "nullable": true,
+                            "type": "string"
+                          },
+                          "items": {
+                            "items": {
+                              "properties": {
+                                "keywords": {
+                                  "description": "关键词，任一命中即判「已写」",
+                                  "items": {
+                                    "type": "string"
+                                  },
+                                  "type": "array"
+                                },
+                                "text": {
+                                  "description": "条目文本",
+                                  "type": "string"
+                                }
+                              },
+                              "required": ["text", "keywords"],
+                              "type": "object"
+                            },
+                            "nullable": true,
+                            "type": "array"
+                          },
+                          "kind": {
+                            "description": "卡片类型：list = 列举卡，cloze = 填空卡",
+                            "enum": ["list", "cloze"],
+                            "type": "string"
+                          },
+                          "prompt": {
+                            "type": "string"
+                          },
+                          "state": {
+                            "description": "当前用户在这张卡上的进度；null = 从未复习过（新卡）",
+                            "nullable": true,
+                            "properties": {
+                              "archived": {
+                                "description": "是否已归档（移出队列）",
+                                "type": "boolean"
+                              },
+                              "difficulty": {
+                                "description": "FSRS 难度",
+                                "type": "number"
+                              },
+                              "due": {
+                                "description": "下次到期时间（ISO 8601 UTC）",
+                                "type": "string"
+                              },
+                              "lapses": {
+                                "description": "累计遗忘次数",
+                                "type": "integer"
+                              },
+                              "last_review": {
+                                "description": "最近一次复习时间，未知为 null",
+                                "nullable": true,
+                                "type": "string"
+                              },
+                              "pendingItems": {
+                                "description": "待重测的条目下标；null 表示没有待重测条目",
+                                "items": {
+                                  "type": "integer"
+                                },
+                                "nullable": true,
+                                "type": "array"
+                              },
+                              "reps": {
+                                "description": "累计复习次数",
+                                "type": "integer"
+                              },
+                              "stability": {
+                                "description": "FSRS 记忆稳定度",
+                                "type": "number"
+                              },
+                              "state": {
+                                "description": "FSRS 状态：0 New / 1 Learning / 2 Review / 3 Relearning",
+                                "type": "integer"
+                              }
+                            },
+                            "required": [
+                              "due",
+                              "stability",
+                              "difficulty",
+                              "state",
+                              "reps",
+                              "lapses",
+                              "last_review",
+                              "pendingItems",
+                              "archived"
+                            ],
+                            "type": "object"
+                          },
+                          "verbatim": {
+                            "type": "boolean"
+                          }
+                        },
+                        "required": [
+                          "cardId",
+                          "cardKey",
+                          "kind",
+                          "groupKey",
+                          "prompt",
+                          "items",
+                          "blanks",
+                          "verbatim",
+                          "state"
+                        ],
+                        "type": "object"
+                      },
+                      "type": "array"
+                    },
+                    "deck": {
+                      "properties": {
+                        "deckKey": {
+                          "type": "string"
+                        },
+                        "groups": {
+                          "items": {
+                            "properties": {
+                              "groupId": {
+                                "type": "string"
+                              },
+                              "order": {
+                                "type": "integer"
+                              },
+                              "title": {
+                                "type": "string"
+                              }
+                            },
+                            "required": ["groupId", "title"],
+                            "type": "object"
+                          },
+                          "type": "array"
+                        },
+                        "title": {
+                          "type": "string"
+                        }
+                      },
+                      "required": ["deckKey", "title", "groups"],
+                      "type": "object"
+                    },
+                    "meta": {
+                      "properties": {
+                        "limit": {
+                          "description": "本次请求的实际条数上限（已被截到 100 以内）",
+                          "type": "integer"
+                        },
+                        "offset": {
+                          "description": "本次请求的偏移量",
+                          "type": "integer"
+                        },
+                        "total": {
+                          "description": "符合条件的总条数",
+                          "type": "integer"
+                        }
+                      },
+                      "required": ["limit", "offset", "total"],
+                      "type": "object"
+                    }
+                  },
+                  "required": ["deck", "data", "meta"],
+                  "type": "object"
+                }
+              }
+            },
+            "description": "卡组详情 + 卡片列表"
+          },
+          "401": {
+            "description": "未授权 - 缺少 / 无效 / 已过期的 JWT"
+          },
+          "404": {
+            "description": "卡组不存在"
+          }
+        },
+        "summary": "获取卡组详情与卡片列表（含当前用户的复习状态）"
+      }
+    },
+    "/api/recall/queue": {
+      "get": {
+        "description": "`ids` 是本次要做的卡片主键序列（到期优先、按 due 升序，其后是今天投放的新卡）；`due` / `fresh` 是**条数**而不是 id 数组，编号一律从 `ids` 取。纯查询，同一时刻重复调用结果一致。",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "properties": {
+                    "due": {
+                      "description": "到期卡条数（含重测卡）",
+                      "type": "integer"
+                    },
+                    "estimatedMinutes": {
+                      "description": "展示用估时（分钟）",
+                      "type": "integer"
+                    },
+                    "fresh": {
+                      "description": "今日投放的新卡条数",
+                      "type": "integer"
+                    },
+                    "ids": {
+                      "description": "本次要做的卡片主键，顺序即建议作答顺序",
+                      "items": {
+                        "type": "integer"
+                      },
+                      "type": "array"
+                    },
+                    "streakDays": {
+                      "description": "连续学习天数（学习日 04:00 切换）",
+                      "type": "integer"
+                    },
+                    "total": {
+                      "description": "队列总条数 = due + fresh",
+                      "type": "integer"
+                    }
+                  },
+                  "required": [
+                    "ids",
+                    "due",
+                    "fresh",
+                    "total",
+                    "estimatedMinutes",
+                    "streakDays"
+                  ],
+                  "type": "object"
+                }
+              }
+            },
+            "description": "今日队列"
+          },
+          "401": {
+            "description": "未授权 - 缺少 / 无效 / 已过期的 JWT"
+          }
+        },
+        "summary": "获取今日回忆队列（到期优先 + 新卡额度）"
+      }
+    },
+    "/api/recall/reviews": {
+      "post": {
+        "description": "服务端按卡片内容判分、推导评分并推进 FSRS 调度。带 `clientKey` 时按 `(user_id, clientKey)` 幂等：重试命中返回 `duplicate: true` 与首次结果，**不会二次推进调度**。卡片不存在返回 404。",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/MobileRecallReviewRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MobileRecallReviewResponse"
+                }
+              }
+            },
+            "description": "判分结果（或幂等重放，见 duplicate）"
+          },
+          "400": {
+            "description": "请求体校验失败 / 改判下标非法"
+          },
+          "401": {
+            "description": "未授权 - 缺少 / 无效 / 已过期的 JWT"
+          },
+          "404": {
+            "description": "卡片不存在"
+          }
+        },
+        "summary": "提交一次回忆作答（判分 + 调度 + 落日志）"
       }
     },
     "/api/stats": {
@@ -8023,6 +13751,9 @@
                       "lastWrongAt": {
                         "type": "string"
                       },
+                      "origin": {
+                        "type": "string"
+                      },
                       "questionContent": {
                         "type": "string"
                       },
@@ -8046,6 +13777,7 @@
                       "questionId",
                       "questionContent",
                       "tags",
+                      "origin",
                       "wrongCount",
                       "lastWrongAt",
                       "correctAnswer",
@@ -8113,6 +13845,9 @@
                       },
                       "type": "array"
                     },
+                    "origin": {
+                      "type": "string"
+                    },
                     "questionContent": {
                       "type": "string"
                     },
@@ -8139,6 +13874,7 @@
                     "questionId",
                     "questionContent",
                     "tags",
+                    "origin",
                     "wrongCount",
                     "lastWrongAt",
                     "correctAnswer",
@@ -8249,6 +13985,9 @@
                             "lastWrongAt": {
                               "type": "string"
                             },
+                            "origin": {
+                              "type": "string"
+                            },
                             "questionContent": {
                               "type": "string"
                             },
@@ -8272,6 +14011,7 @@
                             "questionId",
                             "questionContent",
                             "tags",
+                            "origin",
                             "wrongCount",
                             "lastWrongAt",
                             "correctAnswer",
@@ -8394,6 +14134,9 @@
                       "lastWrongAt": {
                         "type": "string"
                       },
+                      "origin": {
+                        "type": "string"
+                      },
                       "questionContent": {
                         "type": "string"
                       },
@@ -8417,6 +14160,7 @@
                       "questionId",
                       "questionContent",
                       "tags",
+                      "origin",
                       "wrongCount",
                       "lastWrongAt",
                       "correctAnswer",

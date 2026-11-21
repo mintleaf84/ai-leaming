@@ -92,7 +92,8 @@ const listRoute = createRoute({
 
 app.openapi(listRoute, async (c) => {
   const { category, limit, format, ids } = c.req.valid("query");
-  const limitNum = parseInt(limit);
+  // 非法 limit 会回落到默认值（此前 parseInt('abc') 会把 NaN 传给 SQL）
+  const limitNum = parsePagination({ limit }).limit;
   const idList = ids
     ? ids
         .split(",")
@@ -232,6 +233,7 @@ import {
   buildPrompt,
   DEFAULT_KNOWLEDGE_EXTRACT_PROMPT,
 } from "@/lib/ai/prompts";
+import { parsePagination } from "@/lib/api/pagination";
 
 app.openapi(extractRoute, async (c) => {
   const { content, sessionId, instruction, save } = c.req.valid("json");

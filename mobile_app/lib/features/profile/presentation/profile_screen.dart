@@ -1,9 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
-import 'package:go_router/go_router.dart';
+import '../../../core/navigation/app_nav.dart';
 import 'profile_provider.dart';
 import '../domain/user_profile.dart';
+import '../../../core/theme/app_icons.dart';
+import '../../../core/theme/app_colors.dart';
+import '../../../shared/widgets/state_views.dart';
 
 /// 个人中心页面
 class ProfileScreen extends ConsumerStatefulWidget {
@@ -28,25 +31,26 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
     final theme = Theme.of(context);
 
     return Scaffold(
-      backgroundColor: const Color(0xFFF7F7F5),
+      backgroundColor: context.colors.background,
       appBar: AppBar(
-        backgroundColor: Colors.white,
         elevation: 0,
         leading: IconButton(
-          icon: Icon(Icons.arrow_back, color: theme.colorScheme.onSurface),
-          onPressed: () => context.go('/dashboard'),
+          tooltip: '返回',
+          icon: Icon(AppIcons.arrowBack, color: theme.colorScheme.onSurface),
+          onPressed: () => context.backOrHome(),
         ),
         title: Text(
           '个人中心',
           style: TextStyle(
             fontSize: 18.sp,
             fontWeight: FontWeight.w600,
-            color: const Color(0xFF37352F),
+            color: context.colors.text,
           ),
         ),
         actions: [
           IconButton(
-            icon: const Icon(Icons.refresh, color: Color(0xFF37352F)),
+            tooltip: '刷新个人信息',
+            icon: Icon(AppIcons.refresh, color: context.colors.text),
             onPressed: () =>
                 ref.read(profileControllerProvider.notifier).load(),
           ),
@@ -55,39 +59,14 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
       body: state.isLoading
           ? const Center(child: CircularProgressIndicator())
           : state.error != null
-          ? _buildErrorView(state.error!)
+          ? AppErrorView(
+              message: state.error!,
+              onRetry: () =>
+                  ref.read(profileControllerProvider.notifier).load(),
+            )
           : state.profile != null
           ? _buildContent(state.profile!)
           : const SizedBox.shrink(),
-    );
-  }
-
-  Widget _buildErrorView(String error) {
-    return Center(
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          Icon(Icons.error_outline, size: 48.sp, color: Colors.red[300]),
-          SizedBox(height: 16.h),
-          Text(
-            '加载失败',
-            style: TextStyle(fontSize: 16.sp, fontWeight: FontWeight.bold),
-          ),
-          SizedBox(height: 8.h),
-          Text(
-            error,
-            style: TextStyle(fontSize: 12.sp, color: Colors.grey),
-            textAlign: TextAlign.center,
-          ),
-          SizedBox(height: 24.h),
-          ElevatedButton.icon(
-            onPressed: () =>
-                ref.read(profileControllerProvider.notifier).load(),
-            icon: const Icon(Icons.refresh, size: 18),
-            label: const Text('重试'),
-          ),
-        ],
-      ),
     );
   }
 
@@ -129,9 +108,9 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
     return Container(
       padding: EdgeInsets.all(20.w),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: context.colors.surface,
         borderRadius: BorderRadius.circular(16.r),
-        border: Border.all(color: const Color(0xFFE8E8E5)),
+        border: Border.all(color: context.colors.border),
       ),
       child: Row(
         children: [
@@ -140,7 +119,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
             width: 64.w,
             height: 64.w,
             decoration: BoxDecoration(
-              color: const Color(0xFF37352F).withValues(alpha: 0.08),
+              color: context.colors.text.withValues(alpha: 0.08),
               shape: BoxShape.circle,
             ),
             alignment: Alignment.center,
@@ -157,7 +136,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                   style: TextStyle(
                     fontSize: 20.sp,
                     fontWeight: FontWeight.bold,
-                    color: const Color(0xFF37352F),
+                    color: context.colors.text,
                   ),
                 ),
                 SizedBox(height: 4.h),
@@ -169,14 +148,14 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                         vertical: 2.h,
                       ),
                       decoration: BoxDecoration(
-                        color: const Color(0xFFE8F3FF),
+                        color: context.colors.accentContainer,
                         borderRadius: BorderRadius.circular(4.r),
                       ),
                       child: Text(
                         roleLabel,
                         style: TextStyle(
-                          fontSize: 11.sp,
-                          color: const Color(0xFF135BEC),
+                          fontSize: 12.sp,
+                          color: context.colors.accent,
                           fontWeight: FontWeight.w500,
                         ),
                       ),
@@ -188,7 +167,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                   '加入于 $joinDate',
                   style: TextStyle(
                     fontSize: 12.sp,
-                    color: const Color(0xFF9B9A97),
+                    color: context.colors.textSecondary,
                   ),
                 ),
               ],
@@ -205,7 +184,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
       style: TextStyle(
         fontSize: 12.sp,
         fontWeight: FontWeight.w600,
-        color: const Color(0xFF9B9A97),
+        color: context.colors.textSecondary,
         letterSpacing: 0.5,
       ),
     );
@@ -244,9 +223,9 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
     return Container(
       padding: EdgeInsets.all(14.w),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: context.colors.surface,
         borderRadius: BorderRadius.circular(12.r),
-        border: Border.all(color: const Color(0xFFE8E8E5)),
+        border: Border.all(color: context.colors.border),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -260,8 +239,8 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                 child: Text(
                   label,
                   style: TextStyle(
-                    fontSize: 11.sp,
-                    color: const Color(0xFF9B9A97),
+                    fontSize: 12.sp,
+                    color: context.colors.textSecondary,
                   ),
                   overflow: TextOverflow.ellipsis,
                 ),
@@ -276,14 +255,14 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                 style: TextStyle(
                   fontSize: 20.sp,
                   fontWeight: FontWeight.bold,
-                  color: const Color(0xFF37352F),
+                  color: context.colors.text,
                 ),
               ),
               Text(
                 subtitle,
                 style: TextStyle(
-                  fontSize: 11.sp,
-                  color: const Color(0xFF9B9A97),
+                  fontSize: 12.sp,
+                  color: context.colors.textSecondary,
                 ),
               ),
             ],
@@ -295,19 +274,23 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
 
   Widget _buildQuickActions() {
     final items = [
-      (icon: Icons.history, label: '练习历史', route: '/history'),
-      (icon: Icons.book_outlined, label: '错题本', route: '/wrong-book'),
-      (icon: Icons.style_outlined, label: '知识卡片', route: '/knowledge'),
-      (icon: Icons.hub_outlined, label: '掌握度', route: '/mastery'),
-      (icon: Icons.workspace_premium_outlined, label: '订阅套餐', route: '/pricing'),
-      (icon: Icons.settings_outlined, label: '设置', route: '/settings'),
+      (icon: AppIcons.history, label: '练习历史', route: '/history'),
+      (icon: AppIcons.bookOutlined, label: '错题本', route: '/wrong-book'),
+      (icon: AppIcons.styleOutlined, label: '知识卡片', route: '/knowledge'),
+      (icon: AppIcons.hubOutlined, label: '掌握度', route: '/mastery'),
+      // 底部导航换成四个高频入口（首页/练习/记忆卡/错题本）后，
+      // 教材库与 AI 助手不再占常驻位置，改从这里进（不丢功能）。
+      (icon: AppIcons.libraryBooks, label: '教材库', route: AppRoutes.textbooks),
+      (icon: AppIcons.smartToy, label: 'AI 助手', route: AppRoutes.chat),
+      (icon: AppIcons.workspacePremiumOutlined, label: '订阅套餐', route: '/pricing'),
+      (icon: AppIcons.settingsOutlined, label: '设置', route: '/settings'),
     ];
 
     return Container(
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: context.colors.surface,
         borderRadius: BorderRadius.circular(12.r),
-        border: Border.all(color: const Color(0xFFE8E8E5)),
+        border: Border.all(color: context.colors.border),
       ),
       child: Column(
         children: items
@@ -333,27 +316,32 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
     return Column(
       children: [
         InkWell(
-          onTap: () => context.go(route),
+          onTap: () => context.pushDetail(
+            route,
+            // 返回后刷新统计：知识卡片页新建的卡不会自己通知 profile，
+            // 不刷新的话"知识卡片 N 张"会一直是进页面时的旧值
+            onReturn: () => ref.read(profileControllerProvider.notifier).load(),
+          ),
           borderRadius: BorderRadius.circular(12.r),
           child: Padding(
             padding: EdgeInsets.symmetric(horizontal: 16.w, vertical: 14.h),
             child: Row(
               children: [
-                Icon(icon, size: 20.sp, color: const Color(0xFF37352F)),
+                Icon(icon, size: 20.sp, color: context.colors.text),
                 SizedBox(width: 12.w),
                 Expanded(
                   child: Text(
                     label,
                     style: TextStyle(
                       fontSize: 15.sp,
-                      color: const Color(0xFF37352F),
+                      color: context.colors.text,
                     ),
                   ),
                 ),
                 Icon(
-                  Icons.chevron_right,
+                  AppIcons.chevronRight,
                   size: 20.sp,
-                  color: const Color(0xFF9B9A97),
+                  color: context.colors.textSecondary,
                 ),
               ],
             ),
@@ -362,7 +350,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
         if (showDivider)
           Divider(
             height: 1.h,
-            color: const Color(0xFFE8E8E5),
+            color: context.colors.border,
             indent: 16.w,
             endIndent: 16.w,
           ),

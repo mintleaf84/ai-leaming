@@ -267,13 +267,31 @@ export function usePracticeController(
             ? (parsed as string[])
             : val.split(",").map((s) => s.trim());
         };
-        const correctArr = parseAnswer(currentQuestion.answer).sort();
-        const answerArr = parseAnswer(answer).sort();
+        // 与服务端 checkAnswerCorrectness 同一规则：先把两侧元素统一成选项标号，
+        // 再排序比较——否则用户写选项文本、标准答案存标号时两边结论会漂移。
+        const toOptionKey = (value: string): string => {
+          const v = value.trim();
+          if (/^[A-Za-z]$/.test(v)) {
+            const idx = v.toUpperCase().charCodeAt(0) - 65;
+            if (
+              currentQuestion.options.length === 0 ||
+              idx < currentQuestion.options.length
+            ) {
+              return v.toUpperCase();
+            }
+          }
+          const idx = currentQuestion.options.findIndex(
+            (option) => option.trim() === v,
+          );
+          return idx >= 0 ? String.fromCharCode(65 + idx) : v;
+        };
+        const correctArr = parseAnswer(currentQuestion.answer)
+          .map(toOptionKey)
+          .sort();
+        const answerArr = parseAnswer(answer).map(toOptionKey).sort();
 
         if (correctArr.length === answerArr.length) {
-          isCorrect = answerArr.every((v, i) =>
-            checkCorrect(v, correctArr[i], currentQuestion.options),
-          );
+          isCorrect = answerArr.every((v, i) => v === correctArr[i]);
         }
       } else {
         isCorrect = checkCorrect(

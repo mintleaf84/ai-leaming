@@ -1,10 +1,43 @@
 name: CI
 
+# 快慢闸分层（2026-11 CI 时长治理）。
+#
+# 为什么分层：2026-11-19 实测一次 PR run 的 job 时长 —— Lint 2min、Vitest 3.6min、
+# 契约 1.2min、MCP 1.0min、next build 2min、E2E 4~5min，且每个 job 各跑一次 npm ci。
+# 串起来 PR 的墙钟被 E2E 链拖到 7min 以上，反馈慢；而慢闸（浏览器级验证）在 PR
+# 阶段的边际收益远低于它在 main 上的价值。
+#
+# 分层不是降级：慢闸只改**触发时机**，main push 与每晚 schedule 仍然全量跑。
+#   · 快闸（每个 PR 必跑）：lint / typecheck / 契约快照 / MCP / vitest / next build
+#   · 慢闸（main push + PR 标签 run-e2e + 每晚 schedule）：E2E · Playwright
+#
+# 为什么 PR 不用 `paths-ignore` 而用 changes job：
+# 本仓库分支保护的必需检查是「Lint & Type Check / 单元测试 (Vitest) / Next.js 构建校验」。
+# 按 GitHub 文档（Troubleshooting required status checks），被 paths/paths-ignore 过滤掉的
+# 工作流**不会创建 check run**，必需检查会永远停在 "Expected — waiting for status to be
+# reported"。
+#
+# 2026-11-20 修正：曾以为"被 job 级 if: 跳过的 job 报 Success"，实测**不是**——
+# 跳过报 `skipped`，而 `skipped` **不能**满足必需检查。结果：纯移动端/docs 的 PR
+# （如 #272）三项必需检查全部 skipped，PR 永远合不进去（连 --admin 也被拒）。
+#
+# 因此三条必需检查 job **一律 always() 运行**；changes job 只留给 E2E 这类
+# 非必需检查做范围判断。移动端 PR 会因此多跑约 5 分钟 web 检查——这是可接受的
+# 代价：可合并性优先于 PR 墙钟。若将来要恢复"跳过"，必须让这三条检查**始终产出
+# success**（例如把重活抽成 reusable workflow，job 内用 step 级 if: 调用），
+# 不能靠 job 级 if:。
 on:
   push:
     branches: ["master", "main"]
   pull_request:
     branches: ["master", "main"]
+    # labeled 必须显式列出：pull_request 默认只触发 opened/synchronize/reopened，
+    # 否则给 PR 打 run-e2e 标签不会启动任何 run（re-run 用的是旧事件载荷，也看不到新标签）。
+    types: [opened, synchronize, reopened, labeled]
+  schedule:
+    # 每天 03:00（Asia/Shanghai）全量跑一次，兜住"PR 阶段没跑慢闸"的存量漂移。
+    - cron: "0 19 * * *"
+  workflow_dispatch:
 
 permissions:
   contents: read
@@ -19,8 +52,63 @@ defaults:
     working-directory: my-next-app
 
 jobs:
+  # 变更范围判定：纯文档（docs/**、**/*.md）与移动端（mobile_app/**，由 android.yml 管）
+  # 的 PR 不值得为 web 侧检查付 5~7 分钟 —— 2026-11-19 的 docs/coverage-gate-plan 分支
+  # 曾把 8 项 web 检查跑满。main push / schedule / dispatch 一律按全量处理。
+  changes:
+    name: 变更范围判定
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    outputs:
+      web: ${{ steps.filter.outputs.web }}
+    # 覆盖全局的 my-next-app 工作目录：这里要跑仓库根的 git diff
+    defaults:
+      run:
+        working-directory: ${{ github.workspace }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
+          # 需要 merge-base 才能做三点 diff，浅克隆会缺祖先
+          fetch-depth: 0
+          persist-credentials: false
+
+      - id: filter
+        name: 判断是否涉及 web 侧代码
+        run: |
+          set -euo pipefail
+          if [ "${{ github.event_name }}" != "pull_request" ]; then
+            echo "非 PR 触发，按全量处理"
+            echo "web=true" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+          base="${{ github.base_ref }}"
+          git fetch --no-tags origin "+refs/heads/${base}:refs/remotes/origin/${base}"
+          changed=$(git diff --name-only "origin/${base}...HEAD")
+          echo "本次改动文件："
+          printf '%s\n' "$changed"
+          web=false
+          while IFS= read -r f; do
+            [ -z "$f" ] && continue
+            case "$f" in
+              docs/*|*.md|mobile_app/*) continue ;;
+              *) web=true; echo "涉及 web 侧改动：$f" >&2; break ;;
+            esac
+          done <<< "$changed"
+          echo "web=$web" >> "$GITHUB_OUTPUT"
+
+  # 快闸 1：静态检查 + 契约 + MCP。
+  #
+  # 2026-11 合并了原来的「OpenAPI 契约快照」「MCP 构建与文档任务验收」两个 job：
+  # 三者都只要 my-next-app 的 node_modules，拆成三个 job 等于三份 npm ci（各 ~40s）
+  # 加三次 checkout/setup-node。合并后 web 侧 npm ci 从 5 次降到 3 次。
+  # job 名保持不变（分支保护的必需检查按名字匹配）。
   lint:
     name: Lint & Type Check
+    needs: [changes]
+    # 必需检查不能靠 job 级 if: 跳过（skipped ≠ success，PR 会永远合不进去）：
+    # 这三条一律运行，范围判断只留给 E2E。见文件头 2026-11-20 说明。
+    if: always()
     runs-on: ${{ (github.event_name == 'push' && vars.SELF_HOSTED == 'true') && 'self-hosted' || 'ubuntu-latest' }}
     timeout-minutes: 20
     steps:
@@ -33,7 +121,9 @@ jobs:
         with:
           node-version: 20
           cache: npm
-          cache-dependency-path: my-next-app/package-lock.json
+          cache-dependency-path: |
+            my-next-app/package-lock.json
+            mcp-server/package-lock.json
 
       - name: 安装依赖
         run: npm ci
@@ -48,20 +138,80 @@ jobs:
       - name: catch 形态审计（logged / fallback / silent 不得增加）
         run: npm run audit:catches
 
+      - name: 分层门禁（路由层禁止直连 db，白名单只减不增）
+        run: npm run audit:layering
+
+      # 失败证据：关键步骤输出 tee 到 $RUNNER_TEMP/ci-logs/，失败时随 artifact 保留 14 天。
+      # 起因是 gh run --log-failed 取回空内容、线上日志过期后完全无法复盘。
       - name: ESLint（warning 棘轮）与类型检查（并行）
         run: |
-          npm run lint:ci &
+          mkdir -p "$RUNNER_TEMP/ci-logs"
+          npm run lint:ci > "$RUNNER_TEMP/ci-logs/eslint.log" 2>&1 &
           lint_pid=$!
-          npm run typecheck &
+          npm run typecheck > "$RUNNER_TEMP/ci-logs/tsc.log" 2>&1 &
           tsc_pid=$!
           wait "$lint_pid"
           lint_status=$?
           wait "$tsc_pid"
           tsc_status=$?
+          if [ "$lint_status" -ne 0 ] || [ "$tsc_status" -ne 0 ]; then
+            cat "$RUNNER_TEMP/ci-logs/eslint.log" "$RUNNER_TEMP/ci-logs/tsc.log"
+          fi
           exit $((lint_status || tsc_status))
+
+      # 契约护栏：Flutter（mobile_app）与 Next.js 各自手写客户端，历史上出现过 7 处
+      # 「一端改字段、另一端不知道」的漂移。docs/openapi.json 是两端契约的快照，
+      # 任何路由改动都必须同步更新快照，否则这里红。
+      # 有意改接口时：npm run contract:dump 并提交 docs/openapi.json
+      - name: 校验契约快照
+        run: |
+          set -o pipefail
+          npm run contract:check 2>&1 | tee "$RUNNER_TEMP/ci-logs/contract.log"
+
+      # MCP 工具表是 agent 眼里的"世界"，与快照漂移只会在运行时炸成 404
+      - name: 校验 MCP 工具表
+        run: |
+          set -o pipefail
+          npm run mcp:check 2>&1 | tee "$RUNNER_TEMP/ci-logs/mcp-check.log"
+
+      # 文档任务要打真实后端，所以 mcp-server 依赖也要装（它有自己的 lockfile）
+      - name: 安装 MCP 依赖
+        working-directory: mcp-server
+        run: npm install --no-audit --no-fund
+
+      - name: 构建 MCP server
+        working-directory: mcp-server
+        run: |
+          set -o pipefail
+          npm run build 2>&1 | tee "$RUNNER_TEMP/ci-logs/mcp-build.log"
+
+      # 起 stub 后端 + stdio 握手，验证工具表能真的打到 /api/external
+      - name: MCP 冒烟测试
+        working-directory: mcp-server
+        run: |
+          set -o pipefail
+          npm run smoke 2>&1 | tee "$RUNNER_TEMP/ci-logs/mcp-smoke.log"
+
+      # 验收：4 个文档任务分别走 HTTP（P1）与 MCP（P3），真实迁移 + 真实数据
+      - name: 文档任务验收（HTTP + MCP）
+        run: |
+          set -o pipefail
+          npm run doc-tasks 2>&1 | tee "$RUNNER_TEMP/ci-logs/doc-tasks.log"
+
+      - name: 上传失败证据（日志，保留 14 天）
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: ci-failure-${{ github.job }}
+          path: ${{ runner.temp }}/ci-logs/
+          retention-days: 14
 
   unit-test:
     name: 单元测试 (Vitest)
+    needs: [changes]
+    # 必需检查不能靠 job 级 if: 跳过（skipped ≠ success，PR 会永远合不进去）：
+    # 这三条一律运行，范围判断只留给 E2E。见文件头 2026-11-20 说明。
+    if: always()
     runs-on: ${{ (github.event_name == 'push' && vars.SELF_HOSTED == 'true') && 'self-hosted' || 'ubuntu-latest' }}
     timeout-minutes: 30
     steps:
@@ -82,23 +232,46 @@ jobs:
       # 注意：这里不做路径过滤。历史上用 paths-filter 跳过纯文档/配置改动，
       # 会让「单元测试 (Vitest)」这个必需检查在不跑测试的情况下报绿，
       # 等于闸门形同虚设（见 docs/engineering.md 第 4 条）。
+      # 现在由 changes job 判定：只有"整个 PR 不含任何 web 侧文件"才会跳过，
+      # 文档与代码混改的 PR 照常全跑。
       - name: 运行单元测试（含覆盖率）
-        run: npx vitest run --coverage
+        run: |
+          set -o pipefail
+          mkdir -p "$RUNNER_TEMP/ci-logs"
+          npx vitest run --coverage 2>&1 | tee "$RUNNER_TEMP/ci-logs/vitest.log"
         env:
           BACKUP_ENCRYPTION_KEY: ci-backup-encryption-key-for-testing-only
 
       - name: 上传覆盖率报告
+        if: always()
         uses: actions/upload-artifact@v4
         with:
           name: coverage-report
           path: coverage/
           retention-days: 7
 
+      - name: 上传失败证据（日志，保留 14 天）
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: ci-failure-${{ github.job }}
+          path: ${{ runner.temp }}/ci-logs/
+          retention-days: 14
+
+  # 慢闸：浏览器级关键路径验证。
+  # 只在 main push、PR 打 run-e2e 标签、每晚 schedule（或手动 dispatch）时跑。
+  # 只跑 10 条关键路径，控制时长；其余 spec 仍可本地全量执行。
   e2e:
     name: E2E (Playwright · chromium)
     runs-on: ${{ (github.event_name == 'push' && vars.SELF_HOSTED == 'true') && 'self-hosted' || 'ubuntu-latest' }}
     timeout-minutes: 40
-    needs: [lint]
+    needs: [changes, lint]
+    if: >-
+      needs.changes.outputs.web == 'true' &&
+      (github.event_name == 'push' ||
+      github.event_name == 'schedule' ||
+      github.event_name == 'workflow_dispatch' ||
+      contains(github.event.pull_request.labels.*.name, 'run-e2e'))
     env:
       JWT_SECRET: ci-placeholder-secret
       AI_API_KEY: ci-placeholder-key
@@ -140,9 +313,10 @@ jobs:
       - name: 安装 Playwright 浏览器（chromium）
         run: npx playwright install chromium
 
-      # 只跑 10 条关键路径，控制时长；其余 spec 仍可本地全量执行。
       - name: 运行关键路径 E2E
         run: |
+          set -o pipefail
+          mkdir -p "$RUNNER_TEMP/ci-logs"
           npx playwright test \
             tests/e2e/auth.spec.ts \
             tests/e2e/practice-flow.spec.ts \
@@ -154,25 +328,31 @@ jobs:
             tests/e2e/recall.spec.ts \
             tests/e2e/recall-deck-import.spec.ts \
             tests/e2e/admin.spec.ts \
-            --project=chromium
+            --project=chromium 2>&1 | tee "$RUNNER_TEMP/ci-logs/e2e.log"
 
-      - name: 上传 Playwright 报告
-        if: failure()
+      - name: 上传 Playwright 报告与失败日志（保留 14 天）
+        if: always()
         uses: actions/upload-artifact@v4
         with:
           name: playwright-report
-          path: my-next-app/playwright-report/
-          retention-days: 7
+          path: |
+            my-next-app/playwright-report/
+            my-next-app/test-results/
+            ${{ runner.temp }}/ci-logs/
+          retention-days: 14
 
-  # 布局护栏：只断言几何量（无横向溢出 / 主容器可见），不依赖截图基线，
-  # 因此不需要维护"正确截图"，也不会被字体渲染差异搞 flaky。
-  # 复用与 e2e 相同的生产服务流程（playwright.config.ts 的 webServer：
-  # db:migrate + build + start），视口 375/768/1440 三档由用例内 test.use 指定。
+  # Next.js 构建校验（生产编译 + 迁移 + 性能预算）。
+  # 只依赖 changes（不再等 lint / unit-test）：build 是纯编译校验，与静态检查、单测结果
+  # 都无关，三者并行后 PR 墙钟 = max(三条链) 而不是它们的和。
+  # 代价是 lint 失败时 build 仍会跑完（浪费几分钟 runner）—— 相比"反馈慢 3 分钟"可以接受。
   build:
     name: Next.js 构建校验
     runs-on: ${{ (github.event_name == 'push' && vars.SELF_HOSTED == 'true') && 'self-hosted' || 'ubuntu-latest' }}
     timeout-minutes: 30
-    needs: [lint, unit-test]
+    needs: [changes]
+    # 必需检查不能靠 job 级 if: 跳过（skipped ≠ success，PR 会永远合不进去）：
+    # 这三条一律运行，范围判断只留给 E2E。见文件头 2026-11-20 说明。
+    if: always()
     env:
       NEXT_PUBLIC_APP_URL: http://localhost:3000
       JWT_SECRET: ci-placeholder-secret
@@ -198,82 +378,24 @@ jobs:
         run: npm run db:migrate
 
       - name: 构建 Next.js
-        run: npm run build
+        run: |
+          set -o pipefail
+          mkdir -p "$RUNNER_TEMP/ci-logs"
+          npm run build 2>&1 | tee "$RUNNER_TEMP/ci-logs/next-build.log"
 
       # 性能预算（docs/performance.md T-05/T-06）：复用上面已经产出的 .next，
       # 不二次构建。检查两件事：单路由 first-load JS（gzip，≤180KB 且环比 +5% 内）
       # 与 public/ 单文件（>100KB 需进白名单）。基线在 perf-baseline.json，
       # 收紧基线用 npm run perf:baseline 并在 PR 里说明原因。
       - name: 性能预算（路由 JS + public 大文件）
-        run: npm run perf:budget
+        run: |
+          set -o pipefail
+          npm run perf:budget 2>&1 | tee "$RUNNER_TEMP/ci-logs/perf-budget.log"
 
-  # 契约护栏：Flutter（mobile_app）与 Next.js 各自手写客户端，历史上出现过 7 处
-  # 「一端改字段、另一端不知道」的漂移。docs/openapi.json 是两端契约的快照，
-  # 任何路由改动都必须同步更新快照，否则这里红。
-  mcp:
-    name: MCP 构建与文档任务验收
-    runs-on: ubuntu-latest
-    timeout-minutes: 20
-    steps:
-      - uses: actions/checkout@v4
+      - name: 上传失败证据（日志，保留 14 天）
+        if: failure()
+        uses: actions/upload-artifact@v4
         with:
-          ref: ${{ github.event.pull_request.head.sha || github.sha }}
-          persist-credentials: false
-
-      - uses: actions/setup-node@v4
-        with:
-          node-version: 20
-          cache: npm
-          cache-dependency-path: |
-            my-next-app/package-lock.json
-            mcp-server/package-lock.json
-
-      # 文档任务要打真实后端，所以两边依赖都装
-      - name: 安装应用依赖
-        working-directory: my-next-app
-        run: npm ci
-
-      - name: 安装 MCP 依赖
-        working-directory: mcp-server
-        run: npm install --no-audit --no-fund
-
-      - name: 构建
-        working-directory: mcp-server
-        run: npm run build
-
-      # 起 stub 后端 + stdio 握手，验证工具表能真的打到 /api/external
-      - name: 冒烟测试
-        working-directory: mcp-server
-        run: npm run smoke
-
-      # 验收：4 个文档任务分别走 HTTP（P1）与 MCP（P3），真实迁移 + 真实数据
-      - name: 文档任务验收（HTTP + MCP）
-        working-directory: my-next-app
-        run: npm run doc-tasks
-
-  contract:
-    name: OpenAPI 契约快照
-    runs-on: ubuntu-latest
-    timeout-minutes: 10
-    steps:
-      - uses: actions/checkout@v4
-        with:
-          ref: ${{ github.event.pull_request.head.sha || github.sha }}
-          persist-credentials: false
-
-      - uses: actions/setup-node@v4
-        with:
-          node-version: 20
-          cache: npm
-          cache-dependency-path: my-next-app/package-lock.json
-
-      - name: 安装依赖
-        run: npm ci
-
-      # 有意改接口时：npm run contract:dump 并提交 docs/openapi.json
-      - name: 校验契约快照
-        run: npm run contract:check
-
-      # MCP 工具表是 agent 眼里的"世界"，与快照漂移只会在运行时炸成 404
-      - name: 校验 MCP 工具表
-        run: npm run mcp:check
+          name: ci-failure-${{ github.job }}
+          path: ${{ runner.temp }}/ci-logs/
+          retention-days: 14

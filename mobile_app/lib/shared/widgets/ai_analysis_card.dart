@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_markdown/flutter_markdown.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
-import 'package:shimmer/shimmer.dart';
+import 'package:skeletonizer/skeletonizer.dart';
+import '../../core/theme/app_icons.dart';
+import '../../core/theme/app_colors.dart';
 
 class AiAnalysisCard extends StatelessWidget {
   final String? content;
@@ -69,15 +71,20 @@ class AiAnalysisCard extends StatelessWidget {
                 ),
               ),
               if (onCollapse != null)
-                InkWell(
-                  onTap: onCollapse,
-                  borderRadius: BorderRadius.circular(12.r),
-                  child: Padding(
-                    padding: EdgeInsets.all(4.w),
-                    child: Icon(
-                      Icons.keyboard_arrow_up,
-                      size: 20.sp,
-                      color: headerColor,
+                // 纯图标（收起箭头）：无可见文字，补语义标签。
+                Semantics(
+                  button: true,
+                  label: '收起分析',
+                  child: InkWell(
+                    onTap: onCollapse,
+                    borderRadius: BorderRadius.circular(12.r),
+                    child: Padding(
+                      padding: EdgeInsets.all(4.w),
+                      child: Icon(
+                        AppIcons.keyboardArrowUp,
+                        size: 20.sp,
+                        color: headerColor,
+                      ),
                     ),
                   ),
                 ),
@@ -87,7 +94,7 @@ class AiAnalysisCard extends StatelessWidget {
           if (isLoading)
             _buildShimmer(isDark)
           else if (error != null)
-            _buildError(error!, theme.colorScheme.error)
+            _buildError(context, error!, theme.colorScheme.error)
           else
             MarkdownBody(
               data: content!,
@@ -111,26 +118,23 @@ class AiAnalysisCard extends StatelessWidget {
   }
 
   Widget _buildShimmer(bool isDark) {
-    final baseColor = isDark ? Colors.grey[800]! : Colors.grey[300]!;
-    final highlightColor = isDark ? Colors.grey[700]! : Colors.grey[100]!;
-
-    return Shimmer.fromColors(
-      baseColor: baseColor,
-      highlightColor: highlightColor,
+    // 骨架与 skeletonizer 全线一致：用 Bone 撑出 4 行正文的占位（见 docs/mobile-ui-kit.md M-05）。
+    // 行高沿用真实 Markdown 正文的 1.6 倍行距，避免加载完成后卡片高度跳动。
+    return Skeletonizer.zone(
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Container(width: double.infinity, height: 14.h, color: Colors.white),
+          const Bone.text(words: 8),
           SizedBox(height: 8.h),
-          Container(width: double.infinity, height: 14.h, color: Colors.white),
+          const Bone.text(words: 8),
           SizedBox(height: 8.h),
-          Container(width: 200.w, height: 14.h, color: Colors.white),
+          const Bone.text(words: 4),
         ],
       ),
     );
   }
 
-  Widget _buildError(String error, Color errorColor) {
+  Widget _buildError(BuildContext context, String error, Color errorColor) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -148,7 +152,7 @@ class AiAnalysisCard extends StatelessWidget {
                 '点击重试',
                 style: TextStyle(
                   fontSize: 13.sp,
-                  color: Colors.blue,
+                  color: context.colors.accent,
                   decoration: TextDecoration.underline,
                 ),
               ),

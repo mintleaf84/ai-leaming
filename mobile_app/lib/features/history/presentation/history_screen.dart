@@ -1,11 +1,14 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
-import 'package:go_router/go_router.dart';
+import '../../../core/navigation/app_nav.dart';
+import 'package:skeletonizer/skeletonizer.dart';
 import 'history_provider.dart';
 import '../domain/history_item.dart';
-import '../../../shared/widgets/skeleton_loading.dart';
+import '../../../shared/skeletons/skeleton_fakes.dart';
 import '../../../shared/widgets/empty_state.dart';
+import '../../../core/theme/app_icons.dart';
+import '../../../core/theme/app_colors.dart';
 
 /// 历史记录列表页
 class HistoryScreen extends ConsumerStatefulWidget {
@@ -47,20 +50,20 @@ class _HistoryScreenState extends ConsumerState<HistoryScreen> {
     final state = ref.watch(historyControllerProvider);
 
     return Scaffold(
-      backgroundColor: const Color(0xFFF7F7F5),
+      backgroundColor: context.colors.background,
       appBar: AppBar(
-        backgroundColor: Colors.white,
         elevation: 0,
         leading: IconButton(
-          icon: const Icon(Icons.arrow_back, color: Color(0xFF37352F)),
-          onPressed: () => context.go('/dashboard'),
+          tooltip: '返回',
+          icon: Icon(AppIcons.arrowBack, color: context.colors.text),
+          onPressed: () => context.backOrHome(),
         ),
         title: Text(
           '练习历史',
           style: TextStyle(
             fontSize: 18.sp,
             fontWeight: FontWeight.w600,
-            color: const Color(0xFF37352F),
+            color: context.colors.text,
           ),
         ),
         centerTitle: true,
@@ -75,7 +78,7 @@ class _HistoryScreenState extends ConsumerState<HistoryScreen> {
   Widget _buildBody(HistoryListState state) {
     // 加载状态：显示骨架屏
     if (state.isLoading && state.items.isEmpty) {
-      return const HistorySkeletonList();
+      return _buildSkeleton();
     }
 
     if (state.error != null && state.items.isEmpty) {
@@ -83,7 +86,11 @@ class _HistoryScreenState extends ConsumerState<HistoryScreen> {
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Icon(Icons.error_outline, size: 48.sp, color: Colors.red),
+            Icon(
+              AppIcons.errorOutline,
+              size: 48.sp,
+              color: context.colors.error,
+            ),
             SizedBox(height: 16.h),
             Text('加载失败', style: TextStyle(fontSize: 18.sp)),
             SizedBox(height: 8.h),
@@ -104,7 +111,7 @@ class _HistoryScreenState extends ConsumerState<HistoryScreen> {
         title: '暂无练习记录',
         subtitle: '完成一次练习后会显示在这里',
         actionLabel: '开始练习',
-        onAction: () => context.go('/practice'),
+        onAction: () => context.pushDetail(AppRoutes.practice),
       );
     }
 
@@ -124,6 +131,19 @@ class _HistoryScreenState extends ConsumerState<HistoryScreen> {
     );
   }
 
+  /// 加载骨架：用真实卡片撑出布局，由 Skeletonizer 统一涂成灰块
+  Widget _buildSkeleton() {
+    return Skeletonizer(
+      enabled: true,
+      child: ListView.builder(
+        padding: EdgeInsets.symmetric(horizontal: 16.w, vertical: 12.h),
+        itemCount: 3,
+        itemBuilder: (context, index) =>
+            _buildHistoryCard(fakeHistoryItem(index: index)),
+      ),
+    );
+  }
+
   Widget _buildHistoryCard(HistoryItem item) {
     final date = DateTime.tryParse(item.createdAt);
     final dateStr = date != null
@@ -135,9 +155,9 @@ class _HistoryScreenState extends ConsumerState<HistoryScreen> {
       child: Container(
         margin: EdgeInsets.only(bottom: 12.h),
         decoration: BoxDecoration(
-          color: Colors.white,
+          color: context.colors.surface,
           borderRadius: BorderRadius.circular(12.r),
-          border: Border.all(color: const Color(0xFFE0E0E0)),
+          border: Border.all(color: context.colors.border),
           boxShadow: [
             BoxShadow(
               color: Colors.black.withValues(alpha: 0.02),
@@ -151,7 +171,7 @@ class _HistoryScreenState extends ConsumerState<HistoryScreen> {
           child: InkWell(
             borderRadius: BorderRadius.circular(12.r),
             onTap: () {
-              context.go('/history/${item.id}');
+              context.pushDetail(AppRoutes.historyDetail(item.id));
             },
             child: Padding(
               padding: EdgeInsets.all(16.w),
@@ -168,11 +188,18 @@ class _HistoryScreenState extends ConsumerState<HistoryScreen> {
                           SizedBox(width: 8.w),
                           Text(
                             dateStr,
-                            style: TextStyle(fontSize: 12.sp, color: Colors.grey),
+                            style: TextStyle(
+                              fontSize: 12.sp,
+                              color: context.colors.textSecondary,
+                            ),
                           ),
                         ],
                       ),
-                      Icon(Icons.chevron_right, size: 20.sp, color: Colors.grey),
+                      Icon(
+                        AppIcons.chevronRight,
+                        size: 20.sp,
+                        color: context.colors.textSecondary,
+                      ),
                     ],
                   ),
                   SizedBox(height: 12.h),
@@ -191,7 +218,7 @@ class _HistoryScreenState extends ConsumerState<HistoryScreen> {
                         style: TextStyle(
                           fontSize: 14.sp,
                           fontWeight: FontWeight.w500,
-                          color: const Color(0xFF37352F),
+                          color: context.colors.text,
                         ),
                       ),
                     ],
@@ -202,7 +229,7 @@ class _HistoryScreenState extends ConsumerState<HistoryScreen> {
                     borderRadius: BorderRadius.circular(4.r),
                     child: LinearProgressIndicator(
                       value: item.accuracy / 100,
-                      backgroundColor: const Color(0xFFF0F0F0),
+                      backgroundColor: context.colors.surfaceAlt,
                       color: _getAccuracyColor(item.accuracy),
                       minHeight: 6.h,
                     ),
@@ -218,9 +245,21 @@ class _HistoryScreenState extends ConsumerState<HistoryScreen> {
 
   Widget _buildModeTag(String mode) {
     final modeMap = {
-      'random': ('随机练习', const Color(0xFF135BEC), const Color(0xFFE8F3FF)),
-      'wrong': ('错题复习', const Color(0xFFDC2626), const Color(0xFFFEF2F2)),
-      'tag': ('专项练习', const Color(0xFFFF9500), const Color(0xFFFFF4E5)),
+      'random': (
+        '随机练习',
+        context.colors.accent,
+        context.colors.accentContainer,
+      ),
+      'wrong': (
+        '错题复习',
+        context.colors.error,
+        context.colors.errorContainer,
+      ),
+      'tag': (
+        '专项练习',
+        context.colors.warning,
+        context.colors.warningContainer,
+      ),
     };
     final config = modeMap[mode] ?? modeMap['random']!;
 
@@ -233,7 +272,7 @@ class _HistoryScreenState extends ConsumerState<HistoryScreen> {
       child: Text(
         config.$1,
         style: TextStyle(
-          fontSize: 10.sp,
+          fontSize: 12.sp,
           fontWeight: FontWeight.w600,
           color: config.$2,
         ),
@@ -260,8 +299,8 @@ class _HistoryScreenState extends ConsumerState<HistoryScreen> {
   }
 
   Color _getAccuracyColor(int accuracy) {
-    if (accuracy >= 80) return const Color(0xFF4EA05E);
-    if (accuracy >= 60) return const Color(0xFFFF9500);
-    return const Color(0xFFD95656);
+    if (accuracy >= 80) return context.colors.success;
+    if (accuracy >= 60) return context.colors.warning;
+    return context.colors.error;
   }
 }

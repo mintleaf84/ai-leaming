@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+
+import 'app_colors.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 
 /// 应用主题定义
@@ -53,6 +55,27 @@ class AppTheme {
         onError: Colors.white,
       ),
 
+      // 页面转场：显式写死，不依赖 Flutter 默认值（默认值会随 SDK 版本漂移，
+      // 导致同一份代码在升级后观感突变）。
+      // Android 用预测性返回（Android 15+ 对 targetSdk 35+ 的应用默认启用返回手势预览；
+      // 非返回手势时该 builder 自身回落 FadeForwards，所以"推入"观感与 M3 一致）。
+      // iOS/macOS 保持系统横向滑动；桌面其余平台走 Android 规则。
+      pageTransitionsTheme: const PageTransitionsTheme(
+        builders: {
+          TargetPlatform.android: PredictiveBackPageTransitionsBuilder(),
+          // 桌面端同样显式指定：Flutter 对未列出的平台会用"默认值"，
+          // 而默认值随 SDK 版本变化，桌面构建就会出现与移动端不同的转场
+          TargetPlatform.windows: FadeForwardsPageTransitionsBuilder(),
+          TargetPlatform.linux: FadeForwardsPageTransitionsBuilder(),
+          TargetPlatform.iOS: CupertinoPageTransitionsBuilder(),
+          TargetPlatform.macOS: CupertinoPageTransitionsBuilder(),
+        },
+      ),
+
+      // 语义色层：页面通过 context.colors 取色（见 app_colors.dart）
+      // 语义色层：页面通过 context.colors 取色（见 app_colors.dart）
+      extensions: const <ThemeExtension<dynamic>>[AppColors.light],
+
       // AppBar 主题
       appBarTheme: AppBarTheme(
         backgroundColor: _lightSurface,
@@ -102,6 +125,10 @@ class AppTheme {
         selectedItemColor: primaryColor,
         unselectedItemColor: _lightTextSecondary,
       ),
+
+      // 页面过渡：跟随平台默认。Android 走预测性返回（Android 15+ 对
+      // targetSdk 35+ 的应用默认启用，开发者选项开关已移除），其余平台保持
+      // 各自的默认过渡，不再全站套自定义 SharedAxis（见 docs/mobile-ui-kit.md D-1）。
     );
   }
 
@@ -127,6 +154,26 @@ class AppTheme {
         onSurface: _darkText,
         onError: Colors.white,
       ),
+
+      // 页面转场：显式写死，不依赖 Flutter 默认值（默认值会随 SDK 版本漂移，
+      // 导致同一份代码在升级后观感突变）。
+      // Android 用预测性返回（Android 15+ 对 targetSdk 35+ 的应用默认启用返回手势预览；
+      // 非返回手势时该 builder 自身回落 FadeForwards，所以"推入"观感与 M3 一致）。
+      // iOS/macOS 保持系统横向滑动；桌面其余平台走 Android 规则。
+      pageTransitionsTheme: const PageTransitionsTheme(
+        builders: {
+          TargetPlatform.android: PredictiveBackPageTransitionsBuilder(),
+          // 桌面端同样显式指定：Flutter 对未列出的平台会用"默认值"，
+          // 而默认值随 SDK 版本变化，桌面构建就会出现与移动端不同的转场
+          TargetPlatform.windows: FadeForwardsPageTransitionsBuilder(),
+          TargetPlatform.linux: FadeForwardsPageTransitionsBuilder(),
+          TargetPlatform.iOS: CupertinoPageTransitionsBuilder(),
+          TargetPlatform.macOS: CupertinoPageTransitionsBuilder(),
+        },
+      ),
+
+      // 语义色层
+      extensions: const <ThemeExtension<dynamic>>[AppColors.dark],
 
       // AppBar 主题
       appBarTheme: AppBarTheme(
@@ -177,8 +224,11 @@ class AppTheme {
         selectedItemColor: _darkText,
         unselectedItemColor: _darkTextSecondary,
       ),
+
     );
   }
+
+  // ==================== 共用配置 ====================
 
   // ==================== 辅助方法 ====================
 
@@ -237,20 +287,3 @@ class AppTheme {
 }
 
 /// 扩展方法：获取自适应颜色
-extension ThemeExtension on BuildContext {
-  /// 获取当前是否为暗色模式
-  bool get isDarkMode => Theme.of(this).brightness == Brightness.dark;
-
-  /// 获取主要文字颜色
-  Color get textColor => Theme.of(this).colorScheme.onSurface;
-
-  /// 获取次要文字颜色
-  Color get secondaryTextColor =>
-      isDarkMode ? const Color(0xFF8A8A8A) : const Color(0xFF9B9A97);
-
-  /// 获取卡片背景色
-  Color get cardBackgroundColor => Theme.of(this).cardColor;
-
-  /// 获取边框颜色
-  Color get borderColor => Theme.of(this).dividerColor;
-}

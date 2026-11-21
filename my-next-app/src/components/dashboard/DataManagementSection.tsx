@@ -7,6 +7,7 @@ import {
   exportUserDataAction,
   importUserDataAction,
 } from "@/server/actions/data";
+import { getBeijingDateString } from "@/lib/utils/datetime";
 
 interface DataManagementSectionProps {
   onDataChange: () => void;
@@ -31,7 +32,7 @@ export function DataManagementSection({
       const url = URL.createObjectURL(blob);
       const a = document.createElement("a");
       a.href = url;
-      a.download = `ai-learning-backup-${new Date().toISOString().split("T")[0]}.json`;
+      a.download = `ai-learning-backup-${getBeijingDateString()}.json`;
 
       if (typeof window !== "undefined" && document.body) {
         requestAnimationFrame(() => {
@@ -66,9 +67,21 @@ export function DataManagementSection({
 
     const reader = new FileReader();
     reader.onload = async (event) => {
+      const content = event.target?.result as string;
+      let backupData: Parameters<typeof importUserDataAction>[0];
       try {
-        const content = event.target?.result as string;
-        const backupData = JSON.parse(content);
+        backupData = JSON.parse(content) as Parameters<
+          typeof importUserDataAction
+        >[0];
+      } catch (error) {
+        // 只把"文件本身不是 JSON"报成格式错误；
+        // 以前服务端失败也落进同一个 catch，用户会去反复检查一个其实没问题的文件
+        toast.error("无效的 JSON 备份文件");
+        console.error(error);
+        return;
+      }
+
+      try {
         const result = await importUserDataAction(backupData);
 
         if (result.serverError) {
@@ -80,7 +93,7 @@ export function DataManagementSection({
           if (fileInputRef.current) fileInputRef.current.value = "";
         }
       } catch (error) {
-        toast.error("无效的 JSON 备份文件");
+        toast.error("导入失败，请稍后重试");
         console.error(error);
         return;
       }

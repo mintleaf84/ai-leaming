@@ -137,7 +137,6 @@ describe("History Actions", () => {
             reviewData: null,
             aiMnemonic: null,
             material: null,
-            materialHtml: null,
           },
         ],
       });

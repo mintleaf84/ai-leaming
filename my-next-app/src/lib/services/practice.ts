@@ -5,14 +5,17 @@ import {
   questions,
   question_srs,
   session_reviews,
+  mastered_questions,
+  first_principles_cache,
 } from "@/lib/db/drizzle-schema";
-import { eq, and, desc, gt, sql, inArray } from "drizzle-orm";
+import { eq, and, desc, gt, sql, inArray, notInArray } from "drizzle-orm";
 import { Question, Dimension } from "@/types";
 import { PracticeMode, PracticeConfig } from "@/types/practice";
 import { QuestionRowSchema } from "@/lib/schemas";
 import logger from "@/lib/logger";
 import { DemoService } from "@/lib/practice/demo";
 import { safeParseJson } from "@/lib/utils/json";
+import { checkAnswerCorrectness } from "@/lib/services/answer-check";
 import { generateId, generateSessionId } from "@/lib/utils/id";
 import { NotFoundError } from "@/lib/errors/app-error";
 import { withTransaction } from "@/lib/db/executor";
@@ -44,8 +47,11 @@ export interface PracticeSessionConfig {
 
 /**
  * 将数据库原始行映射为业务 Question 类型
+ *
+ * 导出给试卷服务复用：题目行 → Question 的修复/校验规则必须只有一份，
+ * 否则试卷详情与练习会话会出现"同一道题两个形状"。
  */
-function mapQuestion(q: unknown): Question {
+export function mapQuestion(q: unknown): Question {
   const data = q as Record<string, unknown>;
   try {
     return QuestionRowSchema.parse(data);
@@ -65,62 +71,77 @@ function mapQuestion(q: unknown): Question {
 }
 
 /**
- * 增强型答案比对函数，支持标号(A/B/C)与文本的双向匹配
- * 与前端 use-practice-controller.ts 保持逻辑一致
+ * 已掌握题目子查询（tag / wrong 模式统一排除）。
+ * 与错题本列表（`routes/wrong-book.ts`）同一口径：掌握了就不再推。
  */
-function checkAnswerCorrectness(
-  userAnswer: string,
-  correctAnswer: string,
-  options: string[],
-  questionType?: string,
-): boolean {
-  // 填空题：按中文分号分割，逐空匹配（支持单空多答案用 | 分隔）
-  if (questionType === "fill_blank") {
-    const userBlanks = userAnswer.split("；").map((s) => s.trim());
-    const correctBlanks = correctAnswer.split("；").map((s) => s.trim());
-    if (userBlanks.length !== correctBlanks.length) return false;
-    return userBlanks.every((ub, i) => {
-      if (!ub) return false; // 拒绝空白用户输入
-      const acceptedAnswers = correctBlanks[i]
-        .split("|")
-        .map((s) => s.trim())
-        .filter(Boolean);
-      return acceptedAnswers.some((ans) => ans === ub);
+function masteredQuestionIdsSubquery(userId: number) {
+  return drizzleDb
+    .select({ id: mastered_questions.question_id })
+    .from(mastered_questions)
+    .where(eq(mastered_questions.user_id, userId));
+}
+
+/**
+ * 把一组题目固化成练习会话行（random / tag / wrong 共用）。
+ *
+ * 题目集为空时**不建会话行**：返回空 `sessionId`，让路由层回
+ * `{ sessionId: "", questions: [] }`（空结果不是错误，不能炸成 500）。
+ */
+async function persistPracticeSession(
+  userId: number,
+  practiceMode: string,
+  questionData: Question[],
+): Promise<{ questions: Question[]; sessionId: string }> {
+  if (questionData.length === 0) {
+    return { questions: [], sessionId: "" };
+  }
+
+  const sessionId = generateSessionId();
+
+  await drizzleDb.insert(practice_sessions).values({
+    id: sessionId,
+    user_id: userId,
+    total_questions: questionData.length,
+    questions_json: JSON.stringify(questionData),
+    practice_mode: practiceMode,
+    is_demo: 0,
+  });
+
+  return { questions: questionData, sessionId };
+}
+
+/**
+ * 第一性原理分析缓存表的兜底建表。
+ *
+ * 表与索引**已经由迁移创建**（`drizzle/0001_old_bishop.sql`：
+ * `first_principles_cache` + `idx_fp_cache_hash`），原先每来一次请求就在路由里
+ * 跑一遍 `CREATE TABLE IF NOT EXISTS`，既有 DDL 在请求路径上的问题，也多一次
+ * 无谓的写事务。这里把兜底 memo 成"每进程最多一次"：即便某套环境跳过了迁移
+ * （例如只 `drizzle-kit push` 了部分表），第一次请求仍能自愈，语义不变。
+ */
+let fpCacheTableReady: Promise<void> | null = null;
+
+async function ensureFirstPrinciplesCacheTable(): Promise<void> {
+  if (!fpCacheTableReady) {
+    fpCacheTableReady = (async () => {
+      await drizzleDb.run(sql`
+        CREATE TABLE IF NOT EXISTS first_principles_cache (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            question_hash TEXT UNIQUE NOT NULL,
+            analysis TEXT NOT NULL,
+            created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+        );
+      `);
+      await drizzleDb.run(
+        sql`CREATE INDEX IF NOT EXISTS idx_fp_cache_hash ON first_principles_cache(question_hash);`,
+      );
+    })().catch((e) => {
+      // 建表失败不阻塞本次分析：下方按"无缓存"路径继续
+      logger.error({ err: e }, "[FirstPrinciples] 创建缓存表失败");
+      fpCacheTableReady = null;
     });
   }
-
-  // 1. 精确匹配
-  if (userAnswer === correctAnswer) return true;
-
-  // 2. 用户提交标号(A/B/C...) → 对比选项文本
-  if (userAnswer.length === 1 && userAnswer >= "A" && userAnswer <= "Z") {
-    const idx = userAnswer.charCodeAt(0) - 65;
-    if (options[idx] === correctAnswer) return true;
-  }
-
-  // 3. 正确答案标号 → 对比用户提交文本
-  if (
-    correctAnswer.length === 1 &&
-    correctAnswer >= "A" &&
-    correctAnswer <= "Z"
-  ) {
-    const idx = correctAnswer.charCodeAt(0) - 65;
-    if (options[idx] === userAnswer) return true;
-  }
-
-  // 4. 判断题特殊处理：A=正确, B=错误
-  if (options.length === 2) {
-    if (
-      (userAnswer === "A" && correctAnswer === "正确") ||
-      (userAnswer === "B" && correctAnswer === "错误") ||
-      (userAnswer === "正确" && correctAnswer === "A") ||
-      (userAnswer === "错误" && correctAnswer === "B")
-    ) {
-      return true;
-    }
-  }
-
-  return false;
+  return fpCacheTableReady;
 }
 
 export const practiceService = {
@@ -250,30 +271,95 @@ export const practiceService = {
     questions: Question[];
     sessionId: string;
   }> {
-    const sessionId = generateSessionId();
-
     const rawQuestions = await drizzleDb
       .select()
       .from(questions)
       .orderBy(sql`RANDOM()`)
       .limit(limit);
 
-    if (!rawQuestions || rawQuestions.length === 0) {
-      return { questions: [], sessionId: "" };
-    }
+    return persistPracticeSession(
+      userId,
+      "random",
+      rawQuestions.map(mapQuestion),
+    );
+  },
 
-    const questionData = rawQuestions.map((q) => mapQuestion(q));
+  /**
+   * 按知识点创建练习会话（§32 `mode=tag`）。
+   *
+   * tags 是 JSON 文本列，用 `json_each` 逐元素精确比对：`tags LIKE '%"X"%'`
+   * 会被「同前缀的更长 tag」和转义差异坑到，仓库里其余知识点筛选
+   * （`question.ts` / `wrong-book.ts` / `practice-scheduling.ts`）一律用 json_each。
+   * 已掌握题目排除，口径与错题本列表一致。
+   */
+  async createTagSession(
+    userId: number,
+    tag: string,
+    limit: number = 10,
+  ): Promise<{
+    questions: Question[];
+    sessionId: string;
+  }> {
+    const normalizedTag = tag.trim();
+    // 空 tag 不落到 SQL（`value = ''` 只会白跑一次全表扫）
+    if (normalizedTag === "") return { questions: [], sessionId: "" };
 
-    await drizzleDb.insert(practice_sessions).values({
-      id: sessionId,
-      user_id: userId,
-      total_questions: questionData.length,
-      questions_json: JSON.stringify(questionData),
-      practice_mode: "random",
-      is_demo: 0,
-    });
+    const rawQuestions = await drizzleDb
+      .select()
+      .from(questions)
+      .where(
+        and(
+          sql`EXISTS (SELECT 1 FROM json_each(${questions.tags}) WHERE value = ${normalizedTag})`,
+          notInArray(questions.id, masteredQuestionIdsSubquery(userId)),
+        ),
+      )
+      .orderBy(sql`RANDOM()`)
+      .limit(limit);
 
-    return { questions: questionData, sessionId };
+    return persistPracticeSession(userId, "tag", rawQuestions.map(mapQuestion));
+  },
+
+  /**
+   * 创建「做错过的题」练习会话（§32 `mode=wrong`）。
+   *
+   * 取 `practice_logs.is_correct = 0` 的 distinct question_id，排除已掌握；
+   * 用子查询而不是把 id 列表拉回内存再 `inArray`：错题可能上千条，会撞
+   * SQLite 的变量上限（999）。
+   */
+  async createWrongSession(
+    userId: number,
+    limit: number = 10,
+  ): Promise<{
+    questions: Question[];
+    sessionId: string;
+  }> {
+    const wrongQuestionIds = drizzleDb
+      .selectDistinct({ id: practice_logs.question_id })
+      .from(practice_logs)
+      .where(
+        and(
+          eq(practice_logs.user_id, userId),
+          eq(practice_logs.is_correct, false),
+        ),
+      );
+
+    const rawQuestions = await drizzleDb
+      .select()
+      .from(questions)
+      .where(
+        and(
+          inArray(questions.id, wrongQuestionIds),
+          notInArray(questions.id, masteredQuestionIdsSubquery(userId)),
+        ),
+      )
+      .orderBy(sql`RANDOM()`)
+      .limit(limit);
+
+    return persistPracticeSession(
+      userId,
+      "wrong",
+      rawQuestions.map(mapQuestion),
+    );
   },
 
   /**
@@ -287,13 +373,33 @@ export const practiceService = {
     isCorrect: boolean,
     duration: number,
     totalDurationMs?: number,
+    origin: "web" | "agent" | "import" = "web",
+    // true = 在写日志的同一事务内重新读题判分（用于 submitAnswerWithValidation）
+    revalidateAnswer = false,
   ) {
+    // 空答案=未作答（skipped）：保留日志用于还原作答过程，但不算对错、不进 SRS、
+    // 不计入掌握度（P0-3：历史上 348 条空答案被当成「做错」喂进了 FSRS）
+    const skipped = userAnswer.trim() === "";
+
+    // `duration` 的单位是**毫秒**（原样写进 practice_logs.duration_ms / FSRS 排期）。
+    // D1：移动端历史上按秒上报（`inSeconds`），库里因此混入 2~60 的错值。
+    // 这里只告警、不改写数据（改写会抹掉真实作答时长，历史值是否修由单独的数据
+    // 修整决定），目的是让「还在按秒发」的调用方在日志里现形。
+    if (duration > 0 && duration < 1000) {
+      logger.warn(
+        { userId, sessionId, questionId, duration },
+        "[Practice] 作答时长疑似按秒上报（协议单位是毫秒，<1000ms 视为可疑）",
+      );
+    }
+
     // 1+2. 归属校验、答题日志写入、会话统计更新必须在**同一个事务**里。
     //
     // 只在写库前单独 SELECT 一次归属，会留下 TOCTOU 窗口：校验通过后会话被删除
     // 或转给别的用户，日志照样会写进一个不再属于当前用户的 session。放进事务后，
     // 校验与写入看到的是同一个快照（SQLite 写事务串行化），窗口消失。
     // 顺带把"日志"与"统计"绑成原子：任何一步失败都不会留下有日志无统计的脏数据。
+    let gradedIsCorrect = isCorrect;
+
     await withTransaction(async (exec) => {
       if (sessionId) {
         const [owned] = await exec
@@ -311,20 +417,48 @@ export const practiceService = {
         if (!owned) throw new PracticeSessionNotFoundError(sessionId);
       }
 
+      // 判分与写入同一快照：事务外读到的答案可能已被改题回刷更新，
+      // 迟到的日志会按旧答案落库且回刷扫描不到（评审指出的竞争窗口）。
+      if (revalidateAnswer) {
+        const [current] = await exec
+          .select({
+            answer: questions.answer,
+            options: questions.options,
+            type: questions.type,
+          })
+          .from(questions)
+          .where(eq(questions.id, questionId))
+          .limit(1);
+        if (current) {
+          const currentOptions: string[] =
+            typeof current.options === "string"
+              ? safeParseJson<string[]>(current.options, [])
+              : current.options || [];
+          gradedIsCorrect = checkAnswerCorrectness(
+            userAnswer,
+            current.answer ?? "",
+            currentOptions,
+            current.type ?? undefined,
+          );
+        }
+      }
+
       await exec.insert(practice_logs).values({
         session_id: sessionId,
         user_id: userId,
         question_id: questionId,
         user_answer: userAnswer,
-        is_correct: isCorrect,
+        is_correct: gradedIsCorrect,
         duration_ms: duration,
+        origin,
+        status: skipped ? "skipped" : "answered",
       });
 
       if (sessionId) {
         await exec
           .update(practice_sessions)
           .set({
-            correct_count: sql`${practice_sessions.correct_count} + ${isCorrect ? 1 : 0}`,
+            correct_count: sql`${practice_sessions.correct_count} + ${gradedIsCorrect && !skipped ? 1 : 0}`,
             total_duration_ms: totalDurationMs ?? undefined,
           })
           .where(
@@ -342,12 +476,18 @@ export const practiceService = {
         tags: questions.tags,
         dimension: questions.dimension,
         type: questions.type,
+        // 隔离过滤（docs/agent-question-set-plan.md §2）：只有正常题库题（origin='import'）
+        // 才计入掌握度聚合。Agent 题集题与已报错的题作答后只留 practice_logs
+        // （错题本/历史照常可见），不污染掌握度曲线；转正（origin 改 import）后才开始计入。
+        origin: questions.origin,
       })
       .from(questions)
       .where(eq(questions.id, questionId))
       .limit(1);
 
-    if (q && q.tags) {
+    const countsTowardMastery = q?.origin === "import";
+
+    if (q && q.tags && !skipped && countsTowardMastery) {
       const tags = safeParseJson<string[]>(q.tags, []);
 
       const { masteryService } = await import("@/lib/services/mastery");
@@ -357,32 +497,38 @@ export const practiceService = {
             userId,
             tag,
             q.dimension as Dimension,
-            isCorrect,
+            gradedIsCorrect,
           );
         }),
       );
     }
 
     // 4. 更新 FSRS 状态（错题强化逻辑）
+    // 跳过的不排期；agent 来源的对错由调用方判定、服务端不复核，同样不排期
+    // （P0-2/P0-3；agent 记录只作历史统计，见 docs/audit 报告）
+    // 隔离过滤：非正常题库题（Agent 题集题 / 已报错题）也不排期 —— 它们不在题库
+    // 与复习队列里出现，排期只会让 FSRS 队列指向看不见的题。
     let updatedSrs = undefined;
-    try {
-      const { srsService } = await import("@/lib/services/srs");
-      // 填空题传入用户答案长度，用于计算打字时间
-      const userAnswerLength =
-        q?.type === "fill_blank" ? userAnswer.length : undefined;
-      updatedSrs = await srsService.updateQuestionSrs(
-        userId,
-        questionId,
-        isCorrect,
-        duration,
-        undefined,
-        undefined,
-        userAnswerLength,
-      );
-    } catch (e) {
-      logger.error({ err: e }, "Failed to update SRS state in submitAnswer");
-      // 显式降级：SRS 更新失败不影响答题结果落库，返回无 SRS 数据的成功结果
-      return { success: true, srs: undefined };
+    if (!skipped && origin !== "agent" && countsTowardMastery) {
+      try {
+        const { srsService } = await import("@/lib/services/srs");
+        // 填空题传入用户答案长度，用于计算打字时间
+        const userAnswerLength =
+          q?.type === "fill_blank" ? userAnswer.length : undefined;
+        updatedSrs = await srsService.updateQuestionSrs(
+          userId,
+          questionId,
+          gradedIsCorrect,
+          duration,
+          undefined,
+          undefined,
+          userAnswerLength,
+        );
+      } catch (e) {
+        logger.error({ err: e }, "Failed to update SRS state in submitAnswer");
+        // 显式降级：SRS 更新失败不影响答题结果落库，返回无 SRS 数据的成功结果
+        return { success: true, srs: undefined };
+      }
     }
 
     return {
@@ -444,6 +590,9 @@ export const practiceService = {
       userAnswer,
       isCorrect,
       duration,
+      undefined,
+      "web",
+      true,
     );
 
     return { isCorrect, correctAnswer };
@@ -626,5 +775,59 @@ export const practiceService = {
     });
 
     return sessionId;
+  },
+
+  /**
+   * 第一性原理分析缓存键。
+   *
+   * 口径必须稳定：内容 trim + 截断 100 字符 + **原始长度**（截断后长度会撞车），
+   * 再拼上正确答案与用户错答。改口径等于让所有历史缓存失效，别顺手"优化"。
+   */
+  buildFirstPrinciplesCacheKey(
+    questionContent: string,
+    correctAnswer: string,
+    wrongAnswer?: string,
+  ): string {
+    const content = questionContent + correctAnswer + (wrongAnswer || "");
+    const normalized = content.trim().slice(0, 100) + content.length;
+    let hash = 0;
+    for (let i = 0; i < normalized.length; i++) {
+      const char = normalized.charCodeAt(i);
+      hash = (hash << 5) - hash + char;
+      hash = hash & hash;
+    }
+    return hash.toString(36);
+  },
+
+  /** 命中返回缓存的解析文本，未命中返回 null */
+  async getCachedFirstPrinciplesAnalysis(
+    cacheKey: string,
+  ): Promise<string | null> {
+    await ensureFirstPrinciplesCacheTable();
+
+    const [cached] = await drizzleDb
+      .select({ analysis: first_principles_cache.analysis })
+      .from(first_principles_cache)
+      .where(eq(first_principles_cache.question_hash, cacheKey))
+      .limit(1);
+
+    return cached?.analysis ?? null;
+  },
+
+  /** 写入/覆盖缓存（question_hash 唯一，冲突即更新） */
+  async saveFirstPrinciplesAnalysis(
+    cacheKey: string,
+    analysis: string,
+  ): Promise<void> {
+    await drizzleDb
+      .insert(first_principles_cache)
+      .values({
+        question_hash: cacheKey,
+        analysis,
+      })
+      .onConflictDoUpdate({
+        target: first_principles_cache.question_hash,
+        set: { analysis },
+      });
   },
 };

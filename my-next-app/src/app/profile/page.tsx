@@ -30,6 +30,7 @@ import { getUserProfileAction } from "@/server/actions/profile";
 import { ErrorState } from "@/components/ui/error-state";
 import { getErrorMessage } from "@/lib/utils/error";
 import type { UserProfile } from "@/types/profile";
+import { formatBeijingDate } from "@/lib/utils/datetime";
 
 // 用量类型标签
 const USAGE_LABELS: Record<string, string> = {
@@ -117,11 +118,7 @@ export default function ProfilePage() {
   // 格式化日期
   const formatDate = (dateStr: string) => {
     if (!dateStr) return "未知";
-    return new Date(dateStr).toLocaleDateString("zh-CN", {
-      year: "numeric",
-      month: "long",
-      day: "numeric",
-    });
+    return formatBeijingDate(dateStr, "YYYY年M月D日");
   };
 
   // 计算用量百分比
@@ -141,7 +138,9 @@ export default function ProfilePage() {
                 {profile.username.charAt(0).toUpperCase()}
               </div>
               <div>
-                <h1 className="text-2xl font-bold">{profile.username}</h1>
+                <h1 className="text-2xl font-semibold tracking-tight md:text-3xl">
+                  {profile.username}
+                </h1>
                 <p className="text-muted-foreground flex items-center gap-2 mt-1">
                   <Calendar className="w-4 h-4" />
                   {formatDate(profile.created_at)} 加入

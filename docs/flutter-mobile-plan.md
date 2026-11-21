@@ -6,6 +6,42 @@
 
 ---
 
+## 0. 目录与状态
+
+| 段     | 内容                                            | 状态                                                     |
+| ------ | ----------------------------------------------- | -------------------------------------------------------- |
+| §1–§10 | 复用分析、现状基线、P0–P5 阶段规划、工期        | 历史方案（部分已被 §11 覆盖）                            |
+| §11    | 执行进度（2026-11-18）                          | **[已完成]**                                             |
+| §12    | 覆盖率门禁与测试补强                            | **[已完成]**（PR #248）                                  |
+| §13    | 覆盖率门禁第二轮（PR 作用域 / 豁免 / 净变化）   | **[已完成]**（PR #250）                                  |
+| §14    | 覆盖率后续（P5 与 §12.7 分级）                  | P5 已完成，见 §17                                        |
+| §15    | #247 收口                                       | **[已完成]**（#247）                                     |
+| §16    | P0 缺陷修复（登录漏发 token / logout 无 guard） | **[已完成]**（PR #251）                                  |
+| §17    | P5 逐屏冒烟清单                                 | **[已完成]**（PR #255）                                  |
+| §18    | 门禁第三轮（diff coverage）                     | **[不做]**                                               |
+| §19    | 设置持久化                                      | **[已完成]**（PR #253）                                  |
+| §20    | 离线边界与提示                                  | 方案 A 已完成，B 待反馈                                  |
+| §21    | 移动端可访问性                                  | **[已完成]**（PR #252）                                  |
+| §22    | P5 测试基建与反模式                             | **[已完成]**（随 PR #255）                               |
+| §23    | 真机验收闭环                                    | 待真机（唯一需要你手机的一步）                           |
+| §24    | 错误文案统一                                    | **[已完成]**（PR #253）                                  |
+| §25    | 备考主路径摩擦（F1–F5）                         | **[已完成]**（首页真实数值、待办直开练、续练、底部导航） |
+| §26    | APK 发布链路（R1–R6）                           | **[已完成]**（版本派生 / Release / 回滚 / 密钥备份）     |
+| §27    | CI 时长与测试预算                               | 计划                                                     |
+| §28    | SRS 积压治理（先量再定）                        | 计划（待 4 条 SQL 结果）                                 |
+| §29    | 移动端诊断日志（本地环形缓冲）                  | **[已完成]**（PR #263）                                  |
+| §30    | 移动端数据备份与换机                            | 计划（P1 换机检查优先）                                  |
+| §31    | 多设备一致性（服务端重判离线作答）              | 计划                                                     |
+| §32    | 专项练习（tag / wrong 模式）                    | 计划                                                     |
+| §33    | 材料题在移动端的渲染                            | **[已完成]**（PR #264）                                  |
+| §34    | AI 草稿校对流（服务端草稿 + 移动端校对）        | 计划                                                     |
+| §35    | 移动端建题/改题                                 | 计划                                                     |
+| §36    | 整库备份与恢复（升级 §30）                      | 计划                                                     |
+
+> 维护约定：新增段落追加到末尾并在此表登记；状态只有四种——`[已完成]` / `计划` / `[不做]` / `待决策`。
+
+---
+
 ## 1. 结论：现在这套 Next.js 代码，能复用什么
 
 **一句话**：不能复用一行 UI 代码，但**后端已经把该复用的都分离好了**——Flutter 端要做的不是重写 Next.js，而是把已存在的第二个客户端接到同一份契约上，并补它接错的口。
@@ -181,7 +217,7 @@ jobs:
 
 配套前置改动（都在 `mobile_app/`）：
 
-1. **baseURL 参数化**：`ApiConstants.baseUrl` 改为 `String.fromEnvironment('API_BASE_URL', defaultValue: 'http://127.0.0.1:3000/api')`。现在硬编码 `localhost:3000`，装到手机上必然连不上。
+1. **baseURL 参数化**：`ApiConstants.compileTimeBaseUrl` 取 `String.fromEnvironment('API_BASE_URL')`（无默认值）。三级回落：运行时设置（App 内「设置 → 服务器地址」，存 flutter_secure_storage）> 编译期 `--dart-define` > 都没有则进入「需要配置服务器地址」页，不发请求。早期硬编码 `localhost:3000`，装到手机上必然连不上。
 2. **applicationId 改掉**：`com.example.mobile_app` → `com.mintleaf84.aileaming`（`android/app/build.gradle.kts:22`）。`com.example.*` 无法上架，且与别的 demo 冲突。
 3. **签名**：现在 release 用 debug 签名（`:35`）。要长期自用升级，**必须**生成一个固定 keystore，`key.properties` 走 secrets（`ANDROID_KEYSTORE_BASE64` / `_PASSWORD` / `_KEY_ALIAS`），`key.properties` 与 `*.jks` 加进 `.gitignore`。否则每次换签名都得卸载重装、丢本地数据。
 4. **版本号单一事实来源**：`pubspec.yaml` 的 `version: 1.0.0+1` 为唯一来源（`versionCode` 由 Flutter 从 `+N` 推），tag `v1.0.0` 与之一致。
@@ -288,11 +324,13 @@ npm run typecheck && npm run lint:ci && npx vitest run --maxWorkers=8 && npm run
 
 ### CI 现状（PR #210）
 
-`flutter analyze`、`lint:ci`、`typecheck`、`vitest`（210 文件 / 1716 用例）、`next build`、`OpenAPI 契约快照`、UI 护栏全部通过。APK 打包 job 仍未真正跑过一次——它需要仓库变量 `API_BASE_URL`，见下。
+`flutter analyze`、`lint:ci`、`typecheck`、`vitest`（210 文件 / 1716 用例）、`next build`、`OpenAPI 契约快照`、UI 护栏全部通过。APK 打包 job 仍未真正跑过一次。
 
-### 唯一阻塞项
+### API_BASE_URL 是可选配置
 
-`android.yml` 的 `apk` job 会先检查 `vars.API_BASE_URL`，为空则直接失败（避免产出连不上后端的废包）。仓库里没有部署域名记录，需要提供实际地址后设置变量并触发一次打包。
+`android.yml` 的 `apk` job 只在 `vars.API_BASE_URL` 为空时给 `::warning::` 并继续出包——
+产物启动后进入「需要配置服务器地址」页，用户可在 App 内填写并持久化（三级回落：运行时设置 >
+编译期 dart-define > 未配置）。因此它不阻塞出包；有部署域名时设置变量只是为了省掉用户首次配置。
 
 ### 最终收口（2026-11-18）
 
@@ -312,6 +350,929 @@ P3 全部完成：
 
 ### 未做（明确记录，不是遗漏）
 
-- **APK 实际打包**：按用户决定暂不出包。`android.yml` 的 `apk` job 已就绪（含 `API_BASE_URL` 空值提前失败），
-  需要时设置仓库变量并触发一次即可，无需改代码。
+- **APK 实际打包**：按用户决定暂不出包。`android.yml` 的 `apk` job 已就绪（`API_BASE_URL` 未配置时只告警，
+  产物由用户在 App 内填服务器地址），需要时设置仓库变量并触发一次即可，无需改代码。
 - `cached_questions` 未存 `dimension`；离线只覆盖练习，recall 与 AI 聊天仍是在线专属。
+
+## 12. 覆盖率门禁与测试补强（2026-11-20）
+
+### 12.1 为什么先立门禁
+
+改之前 Flutter 端只有 182 个用例、全部落在纯逻辑层，`android.yml` 里 `flutter test` 是硬闸但**没有覆盖率环节**，
+所以"补测试"是一次性努力：谁都可以加代码不加测试，数字只会往下漂。因此先落门禁，再补测试。
+
+口径有三条是刻意的：
+
+1. **分母来自文件系统枚举 `lib/**/*.dart`**，不是 lcov 里出现的文件。`flutter test --coverage` 只上报被测试
+   传递 import 到的文件——按 lcov 当分母，"新增一个没人 import 的文件"反而会让全局数字变好看。
+   未出现在 lcov 的手写文件按"非空非注释行数"补 LF 代理、命中记 0（本次有 7 个，含
+   `shared/widgets/server_config_gate.dart`、`features/recall/data/recall_providers.dart`）。
+2. **生成代码不计入**（`*.g.dart` / `*.freezed.dart`）与 `lib/main.dart` 排除，避免拿生成物冲数字。
+3. **分 scope 设底线**，因为单一全局数字会被最好的模块掩盖：`domain_data`（features/*/domain|data）、
+   `core`、`shared`、`providers`、`screens`、`other` 六个互斥 scope 各有 floor。
+
+### 12.2 落地物
+
+| 文件                                 | 作用                                                                                             |
+| ------------------------------------ | ------------------------------------------------------------------------------------------------ |
+| `mobile_app/tool/coverage_gate.dart` | 纯 Dart（仅 `dart:io`），解析 lcov + 枚举分母 + 四条拦截规则 + markdown 报告                     |
+| `mobile_app/coverage_baseline.json`  | 各 scope 的 floor 与逐文件 measured，**只升不降**                                                |
+| `.github/workflows/android.yml`      | `flutter test --coverage` → 覆盖率门禁 → 上传 `coverage/lcov.info`（`if: always()`，保留 14 天） |
+
+四条拦截规则：全局 < floor、任一 scope < floor、基线内单文件回退 > 2pp、基线外新增文件落在
+domain/data/core/shared 且 < 60%。
+
+用法：
+
+```bash
+dart run tool/coverage_gate.dart                    # 判定（CI 跑的就是这条）
+dart run tool/coverage_gate.dart --update           # 只升不降地抬底线（floor = max(旧, 实测-1pp)）
+dart run tool/coverage_gate.dart --update --allow-lower   # 确需下调，并在 PR 描述写理由
+```
+
+### 12.3 前后对比（P0–P4 已落地）
+
+| 指标          | 改前（2026-11-19，origin/main） | 改后（2026-11-20）                       |
+| ------------- | ------------------------------- | ---------------------------------------- |
+| 用例数        | 182 passed / 2 skipped          | **429 passed / 2 skipped**               |
+| 全局行覆盖    | 21.7%（1628 / 7499）            | **34.2%（2574 / 7528）**                 |
+| `domain_data` | 44.5%                           | **80.7%**                                |
+| `core`        | 35.3%                           | **74.1%**                                |
+| `shared`      | 4.6%                            | **20.5%**（P5 未做）                     |
+| `providers`   | 24.5%                           | **84.4%**                                |
+| `screens`     | 17.8%                           | 17.8%（P5 未做；其中 recall 贡献大部分） |
+
+分阶段：P0–P2 → 26.5%；P3（9 个 provider）→ 33.0%；P4（本地库/同步）→ 33.6%（P4 的分母主要落在 `screens`，所以全局涨幅小但风险降得最多）。
+
+关键文件（单文件覆盖率）：
+
+| 文件                                                   |            改前 |       改后 |
+| ------------------------------------------------------ | --------------: | ---------: |
+| `core/auth/token_util.dart`                            |              0% |      95.2% |
+| `core/navigation/app_nav.dart`                         |              0% |      83.3% |
+| `core/theme/theme_provider.dart`                       |              0% |       100% |
+| `core/utils/haptic_util.dart`                          |              0% |      93.3% |
+| `shared/widgets/server_config_gate.dart`               | 0%（未进 lcov） |       100% |
+| `features/practice/data/practice_repository_impl.dart` |            2.3% |      83.0% |
+| `features/wrong_book/data/wrong_book_repository.dart`  |              0% |      92.6% |
+| `features/chat/data/chat_repository_impl.dart`         |              0% |      77.8% |
+| `features/auth/data/auth_repository_impl.dart`         |              0% |      81.2% |
+| `features/practice/data/local_practice_store.dart`     |              0% |      99.3% |
+| `core/local/local_schema.dart`（本次抽出）             |               — |      90.9% |
+| `core/sync/sync_service.dart`                          |            2.7% |      80.0% |
+| 9 个 `*_provider.dart`                                 |         0–15.6% | 87.5%–100% |
+
+新增 22 个文件（20 个测试文件 + 2 个共享桩 `test/support/{recording_adapter,ffi_db}.dart`），
+另在既有 `textbook_provider_test.dart` 追加 211 行（零删除）。测试文件数 18 → 38。
+全部沿用既有写法（手写 fake、`ProviderContainer` override、断言"发出去的请求"而不是服务端实现），
+未引入除 `sqflite_common_ffi` 之外的新依赖。
+
+### 12.4 本机跑测试的配方
+
+```bash
+export PATH=~/local/sdk/flutter/bin:$PATH PUB_CACHE=~/local/sdk/pubcache
+cd mobile_app && flutter test --coverage && dart run tool/coverage_gate.dart
+```
+
+本机 glibc 2.17，`flutter_tester.real` 需要 2.18，`bin/cache/artifacts/engine/linux-x64/flutter_tester`
+是一个 loader 包装脚本。**注意**：以 loader 直接执行时 `/proc/self/exe` 指向 loader，引擎按它找不到
+`icudtl.dat`，所以包装脚本必须显式传 `--icu-data-file-path=<engine>/icudtl.dat`（2026-11-20 修复，
+缺这一条时所有测试都会以 `icu_util.cc Check failed` 崩溃）。重建 SDK 后要重新打这个补丁。
+
+`flutter test` 会改 3 个 plugin registrant（macos / windows），提交前 `git checkout --` 还原。
+
+### 12.5 后续阶段（只剩 P5）
+
+| 阶段 | 范围                                                                                                                                                                                | 预计增量                                       |
+| ---- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------- |
+| P5   | 6 个高风险屏的 widget 冒烟（practice 367、history_detail 401、wrong_book 332、settings 341、dashboard 332、chat 254）+ `shared/widgets` 的 5 个自建组件，只断言渲染/关键交互/不溢出 | +10pp，全局到 ~43%，`screens` 从 17.8% 到 ~30% |
+
+P3（9 个 provider）与 P4（本地库/同步）已完成，见 12.3。
+
+不做的：14 个屏全铺 widget 测试、给生成代码写测试、追 80% 这个数字本身。
+
+### 12.5.1 P4 的环境坑：`sqflite_common_ffi` 必须锁 2.3.7+1
+
+`sqflite_common_ffi` 2.4.x 起依赖 `package:sqlite3` 3.x，用 Dart build hooks 下载官方预编译
+`libsqlite3.so`——那个二进制要求 **GLIBC 2.33**，本机 CentOS 7（glibc 2.17）加载即失败
+（`version 'GLIBC_2.33' not found`），且到 `release-assets.githubusercontent.com` 也不通。
+因此锁 `sqflite_common_ffi: 2.3.7+1`（走系统 `libsqlite3.so.0`），并在 `test/support/ffi_db.dart` 里：
+
+- `open.overrideFor(OperatingSystem.linux, () => DynamicLibrary.open('libsqlite3.so.0'))`——本机只有运行时库，没有 `-dev` 的 `.so` 软链；
+- 用 `databaseFactoryFfiNoIsolate`——`overrideFor` 只作用于当前 isolate，isolate 版本会重新 dlopen 丢掉 override。
+
+CI（ubuntu-latest）两样都有，不受影响；但**不要**顺手升级这个依赖，会直接打挂本机测试。
+
+### 12.6 补测试时发现、**已修**的缺陷（2026-11-20 第二轮）
+
+这些是补测试时"按当前行为锁定"的问题，随后单独修掉，测试断言同步改严（没有删用例、没有放宽）：
+
+| 缺陷                                                                                                                                      | 修法                                                                                                                                                                                                                                        | 回归护栏                                                                                                                         |
+| ----------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------- |
+| `chat_provider.retryLastMessage` 重试会再追加一条相同的用户消息，且 `_streamSubscription` 单字段被覆盖，`stopGeneration` 只能取消最后一次 | `sendMessage` 加 generation 令牌（`_generation`）+ `appendUserMessage` 开关；流回调、`onDone`、`onError` 全部先比对令牌；`clearMessages` 复位生成标志                                                                                       | 重试后 `role=='user'` 恰好 1 条；"连续两次 sendMessage，第一次流的迟到回调不污染第二次"（用可迟到的假流构造）                    |
+| 登出后旧账号的历史与对话仍留在内存；`history.loadMore` 会把新账号第 2 页拼到旧账号第 1 页之后                                             | 新增 `authEpochProvider`（登录/注册成功、登出各 +1），`history`/`chat` 改 watch 版本号并重建。**不能**直接 watch `authControllerProvider`：它的 state 是 `AsyncValue<void>`，登出写入的 `AsyncData(null)` 与旧值相等，Riverpod 判等后不通知 | 登出后列表/对话清空、`currentSessionId == null`；loadMore 不含旧账号数据；变异验证：注释掉 `logout` 里的 `bump()` → 4 条用例变红 |
+| `history` / `knowledge` / `textbook` 无请求序号防护，先发后到的旧响应覆盖新结果                                                           | 三个 controller 统一 `int _requestSeq`，成功与失败分支都在写 state 前比对                                                                                                                                                                   | 并发用例改为"最新请求胜出"；另加"旧请求的 500 不能盖掉新结果"                                                                    |
+| `wrong_book.startPractice` 抛异常/服务端 `success=false` 时静默返回 null（界面"点了没反应"）；`markAsMastered` 失败无提示                 | 两条失败路径都写 `error`；标记掌握/取消掌握失败也写 `error` 且不清空列表                                                                                                                                                                    | 断言 `error` 文案存在且列表长度不变                                                                                              |
+| `SyncService.startAutoSync` 的连通性回调无并发闸，网络抖动可并发跑多个 `flush()`                                                          | `bool _flushing` + `try/finally`，重复调用直接返回 `SyncResult.empty()`                                                                                                                                                                     | 用 `Completer` 卡住第一次响应构造并发，断言 `adapter.requests` 只有 1 条                                                         |
+
+### 12.7 仍未修（需产品/lib 决策）
+
+1. `AuthRepositoryImpl.login/register`：服务端漏发 `token` 时 `_storage.write(value: null)` 静默不写并正常返回，
+   用户看到"登录成功"但下一个请求 401。建议加 `if (token == null) throw ...`。
+2. `ChatRepositoryImpl` 的 `if (response.statusCode != 200)` 不可达（Dio 对非 2xx 先抛），是死代码。
+3. `PracticeRepositoryImpl.submitAnswer` 在线路径 `int.parse(questionId)`：非数字题号抛 `FormatException`
+   而不是可读业务错误。
+4. `chatRepositoryProvider` 的"克隆 dio + 剔除 LogInterceptor"逻辑无测试（provider 级）。
+5. `AppNav.replace` 与 go_router 的 `GoRouterHelper.replace` 签名相同：任何同时 import 两者并调
+   `context.replace(...)` 的文件会报 "defined in multiple extensions"。当前生产代码没踩到。
+6. `auth_provider.logout` 没有 `AsyncValue.guard`：仓库抛异常时异常冒到调用方、状态不变，
+   界面无法提示"登出失败"。
+7. `createLocalSession` 用 `microsecondsSinceEpoch` 生成 localId，同一微秒内建两个会话会主键冲突（概率极低）。
+8. `settings_provider`（复习模式）与 `theme_provider`（主题）都没有持久化层，重启回默认。
+9. 三个状态类的 `copyWith` 里 `error` 是无条件覆盖，无法"保留错误 + 更新其他字段"；
+   反过来说任何一次 `copyWith(isLoading: ...)` 都会顺手吞掉错误。
+
+## 13. 覆盖率门禁第二轮：PR 作用域（2026-11-20）
+
+### 13.1 为什么要改：第一轮当天误伤两个 PR
+
+§12 的门禁把两条规则当成**全局**规则，而 CI 跑的是「分支 + 最新 main」的合并结果：
+
+| PR   | 误报                                                        | 根因                                                |
+| ---- | ----------------------------------------------------------- | --------------------------------------------------- |
+| #248 | `lib/core/compat/app_version.dart` 被拦"新增文件 <60%"      | 文件是 main 新增的，不在基线里，被当成"本 PR 新增"  |
+| #247 | `lib/shared/skeletons/skeleton_fakes.dart` 被拦单文件回退   | 本 PR 改了这个文件（行数变化 → 95.5% vs 基线 100%） |
+| #247 | `lib/core/theme/app_colors.dart`（50 行配色常量）被要求 60% | 口径过宽：常量文件没有行为可测                      |
+
+结论：规则本身没错，缺的是**作用域**——"这个文件是不是本 PR 引入/改动的"必须问 git，而不是问基线。
+
+### 13.2 六条口径（G1–G6）
+
+| #   | 口径                                                                                                                                                                     | 实现位置                                                          |
+| --- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------ | ----------------------------------------------------------------- |
+| G1  | 默认基线 `git merge-base HEAD origin/main`，回退 `origin/master`；都失败则**降级**并明确警告，只跳过 G2/G4，global/scope 底线与"基线外文件"规则照旧；支持 `--base=<sha>` | `coverage_gate.dart::_resolveBase` + `runGate` 的 `degraded` 分支 |
+| G2  | "新增文件 <60%"只看 `git diff --diff-filter=A <base>...HEAD -- lib`                                                                                                      | `runGate` 第 4 段                                                 |
+| G3  | 该规则再收窄到逻辑层：`features/*/{data,domain}/**`、`lib/core/**`（排除 `lib/core/theme/**`）、`lib/shared/datasources/**`                                              | `requiresNewFileCoverage`                                         |
+| G4  | 单文件回退（>2pp）只对本 PR **未触碰**的文件生效（`git diff --name-only <base>...HEAD -- lib`）                                                                          | `runGate` 第 3 段                                                 |
+| G5  | 报告"本 PR 净变化"：`git diff -U0` 的 `@@` 头取 `+` 侧行号，与 lcov `DA:` 行号求交；再报 global − 基线 measured                                                          | `parseAddedLineRanges` + `_netChange`                             |
+| G6  | 基线新增 `exempt` 清单：跳过两条拦截，但**仍计入分母**                                                                                                                   | `exemptPathsOf` / `applyUpdate` 原样保留                          |
+
+### 13.3 代码结构
+
+门禁拆成三层，判定逻辑全部可单测（不读 git、不依赖 cwd）：
+
+- `tool/coverage_lib.dart`：`parseLcov` / `enumerateLibFiles` / `proxyLineCount` / `scopeOf` /
+  `requiresNewFileCoverage` / `parseAddedLineRanges` / `runGate(GateInput) → GateResult` /
+  `applyUpdate` / `buildReport`。输入（`coverage`、`baseline`、`addedFiles`、`touchedFiles`、
+  `addedLineRanges`、`proxyLineCounts`、`exemptPaths`、`base`）全部显式传入。
+- `tool/coverage_gate.dart`：只剩参数解析 → 读 lcov/基线 → 调 git → `runGate` → 输出与退出码。
+- `test/tool/coverage_lib_test.dart`：8 条纯 Dart 用例，覆盖上表每一条（含两次误报的最小复现）。
+
+### 13.4 验收结果（本机，2026-11-20）
+
+| 项                                                | 结果                                                                       |
+| ------------------------------------------------- | -------------------------------------------------------------------------- |
+| `dart analyze tool/`                              | No issues found                                                            |
+| `flutter analyze`                                 | 0 error / 0 warning（29 info 为存量）                                      |
+| `flutter test test/tool`                          | 8 passed                                                                   |
+| `flutter test --coverage`                         | 521 passed、2 skipped                                                      |
+| `dart run tool/coverage_gate.dart`                | PASS；103 文件 / 7837 行 / 36.6%（floor 35.6%），7 个 LF 代理，exempt 1 个 |
+| `--base=HEAD~6`（演示非零净变化）                 | 新增可执行行 403 行、覆盖 384 行（95.3%）                                  |
+| 变异 a（清空 `addedFiles`，基线外低覆盖文件存在） | 不再报"新增文件"，exit 0                                                   |
+| 变异 b（把 touched 文件从 `touchedFiles` 移除）   | 报单文件回退（81.3% vs 99.0%），exit 1                                     |
+| 变异 c（`--base=deadbeef`）                       | 打印"无法解析成 commit，已跳过 PR 作用域规则（G2/G4）"，exit 0             |
+| `--update`（对基线副本）                          | 只升不降逻辑不变，`exempt` 原样保留                                        |
+
+### 13.5 与计划不一致处
+
+1. 计划说"在 §13 末尾追加 13.6"，但本分支文档只到 §12，没有 §13；本次新建 §13 并把实施记录放在 13.6。
+2. 计划用 `lib/core/theme/app_colors.dart` 当 G3 的反例，该文件在本分支**不存在**（属 PR #247 的另一处改动），
+   因此 G3 只用纯路径单测锁定口径，未对真实文件断言。
+3. G5 需要可解析的 base：本分支改动未提交时 `merge-base HEAD origin/main == HEAD`，净变化自然是 0 行；
+   验收里另用 `--base=HEAD~6` 演示非零统计（403 行 / 95.3%）。
+4. G1 降级不是"完全跳过新增文件规则"：按计划原文，它退化为"基线外文件全量检查"，报告里以警告说明。
+5. `*.g.dart` / `*.freezed.dart` / `lib/main.dart` 的排除仍写在 `enumerateLibFiles` 内部（未参数化）。
+
+### 13.6 实施记录（2026-11-20）
+
+- 新增 `mobile_app/tool/coverage_lib.dart`（判定逻辑）、`mobile_app/test/tool/coverage_lib_test.dart`（8 条用例）。
+- 重写 `mobile_app/tool/coverage_gate.dart` 为薄 CLI：`--update` / `--allow-lower` / `--lcov=` / `--baseline=`
+  语义不变，新增 `--base=<sha>`。
+- `mobile_app/coverage_baseline.json` 增加 `exempt`，初值 `lib/core/theme/app_icons.dart`（lcov 只认 1 行、实测 0%）。
+- `.github/workflows/android.yml` 的 analyze job 改为 `fetch-depth: 0`（`merge-base` 需要完整历史）。
+- 未改 `lib/` 下任何生产代码；未 commit。
+
+## 14. 覆盖率后续（P5 与 §12.7 分级）
+
+| 阶段 | 范围                                                                                                                                                                    | 预计                            | 前置                |
+| ---- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------- | ------------------- |
+| P5   | 6 个高风险屏（practice 367 / history_detail 401 / wrong_book 332 / settings 341 / dashboard 332 / chat 254）+ `shared/widgets` 5 个自建组件，只断言渲染/关键交互/不溢出 | global → ~43%，`screens` → ~30% | 无（可与 §13 并行） |
+| P5b  | 4 个最大屏的"错误态/空态"分支（配合 #247 引入的 `state_views`）                                                                                                         | `screens` → ~35%                | #247 合入           |
+
+§12.7 的 9 条按影响分级，不做一次性清理：
+
+| 级别 | 条目                                                                                       | 理由                                              |
+| ---- | ------------------------------------------------------------------------------------------ | ------------------------------------------------- |
+| P0   | ①登录漏发 token 静默成功 ⑥`auth.logout` 无 guard                                           | 用户可见的错误被吞掉，且会让人误以为已登录/已登出 |
+| P1   | ⑧settings/theme 无持久化 ③`int.parse(questionId)` 抛 `FormatException`                     | 体验问题；后者是错误文案不可读                    |
+| P2   | ②死代码 ④provider 无测试 ⑤`AppNav.replace` 扩展冲突 ⑦localId 微秒冲突 ⑨`copyWith` 吞 error | 无当前触发路径，随相关改动顺带处理                |
+
+## 15. #247 收口（计划）
+
+### 15.1 现状
+
+- 分支 `fix/mobile-ui-tokens`（worktree `~/ai-leaming-wt-mobile`），37 文件 +1482/−842
+- CI 红 7 项：global 34.5%<35.6、core 69.3<75.5、shared 41.4<46.0、screens 16.6<16.8、
+  `skeleton_fakes.dart` 回退 4.5pp、`app_colors.dart` 2%、`state_views.dart` 1.3%
+- **该 worktree 里已有 4 个未提交测试（493 行）**：`test/shared/state_views_test.dart`、
+  `test/core/theme/app_colors_test.dart`、`test/features/recall/recall_widgets_test.dart`、
+  改过的 `test/shared/skeleton_fakes_test.dart` —— 正好对应上面两条"新增文件"和一条"回退"
+
+### 15.2 步骤
+
+| #   | 动作                                                                                 | 判据                                                                      |
+| --- | ------------------------------------------------------------------------------------ | ------------------------------------------------------------------------- |
+| 1   | 确认那 4 个测试的归属（另一个会话在写就等它收尾，不并发改）                          | 文件 mtime 与 git status 稳定                                             |
+| 2   | 在 wt-mobile 跑 `flutter test test/shared test/core/theme test/features/recall`      | 全绿；`state_views`/`app_colors` 覆盖 ≥60%                                |
+| 3   | rebase 到含门禁第二轮的 main                                                         | 无冲突；`flutter pub get` 后全量 `flutter test` 绿                        |
+| 4   | 本地跑 `flutter test --coverage && dart run tool/coverage_gate.dart`                 | 只剩"真该拦"项：不得再出现 touched 文件的单文件回退、常量文件的"新增"违规 |
+| 5   | 若 global 仍低于 floor：二选一 —— 补测 / `--update --allow-lower` 并在 PR 描述写理由 | 二选一必须显式记录，不许静默改基线                                        |
+| 6   | push → CI 全绿 → squash 合并                                                         | 12 项检查                                                                 |
+
+### 15.3 不做
+
+- 不给 20 个屏补 widget 测试（那是 P5，不是这个 PR 的职责）
+- 不把 `app_colors.dart` 塞进 `exempt` 来"绕过"——既然已有测试，就让它正常计入
+
+## 16. P0 缺陷修复（计划）
+
+两条都属于"错误被吞掉、用户误以为成功"：
+
+| 缺陷                                                            | 修法                                                                                     | 新增测试                                                                            | UI 影响                                      |
+| --------------------------------------------------------------- | ---------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------- | -------------------------------------------- |
+| `AuthRepositoryImpl.login/register` 在响应无 `token` 时静默成功 | 取到 token 后判空，抛 `AuthException('登录响应缺少 token')`（消息面向用户）              | 3 条：无 token → 抛错且**不写** `jwt_token`；有 token → 写入；空串 token 同无 token | 登录页已有 error 展示，无需改 UI             |
+| `auth_provider.logout` 无 `AsyncValue.guard`                    | `state = await AsyncValue.guard(() => repo.logout())`；`authEpoch.bump()` 只在成功后调用 | 2 条：仓库抛错 → `state.hasError` 且 epoch 不变、界面不跳转；成功 → epoch +1        | 设置页目前不显示登出失败，**是否加提示待定** |
+
+顺序：先登录 token（纯数据层，零 UI 风险），再 logout（要决定 UI）。
+
+### 16.1 修复时发现的两个补充点
+
+1. **`state.hasValue` 不能用**：Riverpod 3 的 `AsyncError` 会合并上一次的 `AsyncData` 的值，
+   因此 `AsyncValue.guard` 失败后 `hasValue == true`。判据必须写 `!state.hasError`（已用变异测试证明
+   原写法会把失败当成功）。
+2. **第三个 logout 调用点**：`splash_screen.dart:36` 直接调 `repo.logout()`（不经过 controller），
+   没有 guard 也没有 epoch。它不在本次 5 文件范围内，列为 P0 尾项一并处理（改走 controller 即可）。
+
+## 17. P5 逐屏冒烟（计划）
+
+原则：**只断言"渲染不崩 + 关键状态可见 + 不溢出"**，不追像素、不断言长文案原文（文案会改）。
+统一用假 repository / override provider 喂数据，禁止打真实网络。
+
+| 屏                       | 行数 | 必须覆盖的状态                                    | 断言什么                                                   | 不做什么                      |
+| ------------------------ | ---: | ------------------------------------------------- | ---------------------------------------------------------- | ----------------------------- |
+| `practice_screen`        |  367 | loading / 作答中 / 判分反馈 / 提交失败（断网）    | 题干与选项渲染；选中态切换；失败时停在当前题且有可重试入口 | 不测计时器精度、不测音效/触感 |
+| `history_detail_screen`  |  401 | 有 logs / 空 logs / 加载失败                      | 会话摘要与 log 行数；空态文案；失败可重试                  | 不测图表像素                  |
+| `wrong_book_screen`      |  332 | 列表 / 按标签 / 已掌握 / 多选                     | 三视图切换后列表内容正确；多选计数；"开始练习"按钮可用性   | 不测动画                      |
+| `settings_screen`        |  341 | 服务器地址已配/未配 / 清理缓存                    | 表单回填；清理后题数归零提示；登出入口存在                 | 不测键盘行为                  |
+| `dashboard_screen`       |  332 | 有待办 / 无待办                                   | 三张待办卡按 `LearningStats` 显示；无数据时不出现假数字    | 不测下拉刷新动画              |
+| `chat_screen`            |  254 | 空对话 / 生成中 / 失败可重试                      | 发送后出现占位；停止按钮出现；失败消息带重试               | 不测流式逐字动画              |
+| `shared/widgets`（5 个） |  449 | 四态（loading/empty/error/data）、选中/禁用、折叠 | 每个组件 2–4 条渲染断言                                    | 不测配色像素值                |
+
+预计：全局 → ~43%，`screens` 17.8% → ~30%。**前置**：#247 合入（它引入了 `state_views` 统一四态，P5 直接复用）。
+
+## 18. 门禁第三轮（明确不做，记录理由）
+
+"只统计本 PR 新增行被覆盖的比例"（diff coverage）是业界标准做法，但在 G5 已给出净变化、
+G1–G4 已修掉两类误报的前提下，收益递减：需要把 lcov 行号与 diff hunk 精确对齐，误判成本高于收益。
+等出现"G5 报告看不懂"或"PR 反复因 1 行未覆盖卡住"再考虑。
+
+## 19. 设置持久化（计划）
+
+### 19.1 现状
+
+- `mobile_app/lib` 里 **0 处 `shared_preferences`**（`pubspec.yaml` 也没有该依赖）
+- `theme_provider.dart`：`build()` 恒返回 `ThemeMode.system`，切了只活在内存
+- `settings_provider.dart`：复习模式默认 `ReviewMode.list`，重启回默认
+- 后果：每次冷启动主题跳回浅色、复习模式重置——用户每天要重设一次，且会以为"设置没生效"
+
+### 19.2 修法
+
+| #   | 动作                                                                                                                     | 判据                                           |
+| --- | ------------------------------------------------------------------------------------------------------------------------ | ---------------------------------------------- |
+| 1   | `pubspec.yaml` 加 `shared_preferences`                                                                                   | `flutter pub get` 后 `pubspec.lock` 有对应条目 |
+| 2   | 新增 `core/storage/preferences.dart`：`PreferencesStore` 抽象（`readString/writeString`）+ `SharedPreferencesStore` 实现 | 便于测试注入，不在 provider 里直接调静态 API   |
+| 3   | `theme_provider` 启动读 `theme_mode`（`system/light/dark`），非法值或读失败 → 回 `system`                                | 单测：往返、非法值兜底、读抛错兜底             |
+| 4   | `settings_provider` 同理读写 `review_mode`                                                                               | 单测：同上                                     |
+| 5   | 写入失败**不能**让 UI 报错或回滚（设置仍然生效，只是下次启动丢）                                                         | 单测：写抛错 → 状态仍更新，仅 `debugPrint`     |
+
+### 19.3 验收
+
+- `flutter test` 全绿（新增 6 条）；`flutter analyze` error/warning = 0
+- 门禁：`domain_data`/`providers` 不应下降（新增代码都有测）
+- 手工：改主题 → 杀进程 → 重开仍是暗色
+
+工作量：0.5 天。
+
+## 20. 离线边界与提示（计划）
+
+### 20.1 现状
+
+- 离线只覆盖练习（`cached_questions` + `pending_answers` + `SyncService`）
+- recall（记忆卡）与聊天**没有本地层**：断网进入 recall 会先转圈再报错，聊天发送后卡在占位
+- 没有统一的"当前无网"信号（`connectivity_plus` 只被 `SyncService` 用）
+
+### 20.2 两个方案
+
+| 方案          | 范围                                                                                                                                       | 判据                                                                               | 工作量 |
+| ------------- | ------------------------------------------------------------------------------------------------------------------------------------------ | ---------------------------------------------------------------------------------- | ------ |
+| **A（先做）** | 断网时给明确提示并禁用入口：recall/chat 的入口按钮显示"需要联网"，点进去显示统一离线态（复用 #247 的 `state_views`）；聊天发送前拦截并提示 | 断网 → recall 入口禁用且文案明确；聊天点发送不产生空占位；恢复网络后入口自动可用   | 0.5 天 |
+| B（后续）     | recall 队列本地缓存 + 提交入队，复用 `pending_answers` 的幂等键模式                                                                        | 断网可打开缓存的队列、可提交（入队）、回网 flush 幂等；`pendingCount` 覆盖两类数据 | 1–2 天 |
+
+### 20.3 决策点
+
+- 是否值得为 recall 做离线（备考场景地铁/教室无网）—— 取决于真实使用里"无网时是否想背卡"
+- 若做 B，需要给 `pending_answers` 加 `kind` 列（`practice` / `recall`），涉及 v2→v3 迁移，**必须**有迁移测试（`local_schema_test.dart` 已有 v1→v2 先例）
+
+先做 A；B 等 A 上线后用真实反馈决定。
+
+## 21. 移动端可访问性（计划）
+
+### 21.1 现状（`grep` 实测，main）
+
+| 指标                                      |                  数量 | 含义                                                 |
+| ----------------------------------------- | --------------------: | ---------------------------------------------------- |
+| `Semantics(`                              | 3（116 个 dart 文件） | 几乎为零                                             |
+| `IconButton(`                             |                    33 | 只有 4 处有 `tooltip:` → 约 29 个图标按钮读屏无标签  |
+| `SemanticsService`                        |                     0 | 判分对错、同步完成、加载失败全靠视觉，读屏用户全静默 |
+| 可点容器（`GestureDetector(`/`InkWell(`） |                    30 | 多半没有 `button: true` 与 label                     |
+| `ExcludeSemantics`                        |                     0 | 装饰性图标没被排除，读屏会念出无意义内容             |
+
+Web 侧已有 a11y 棘轮（`eslint jsx-a11y` + 交互类命中 45→0），移动端目前**一条护栏都没有**。
+
+### 21.2 分三批
+
+| 批次        | 范围                                                                                                               | 判据                                                                                        | 工作量 |
+| ----------- | ------------------------------------------------------------------------------------------------------------------ | ------------------------------------------------------------------------------------------- | ------ |
+| B1 图标按钮 | 33 处 `IconButton` 补 `tooltip:`（同时作为语义标签）；装饰性 `Icon` 包 `ExcludeSemantics`                          | 静态扫描测试：每个 `IconButton(` 附近必须有 `tooltip:` 或 `semanticsLabel:`，白名单只减不增 | 0.5d   |
+| B2 可点容器 | 30 处 `GestureDetector`/`InkWell` 加 `Semantics(button: true, label: ...)`，或换成带语义的 `InkWell` + `Semantics` | 同上：可点容器必须有 label；白名单只减不增                                                  | 0.5d   |
+| B3 状态播报 | 判分结果、同步完成、加载失败三处 `SemanticsService.announce`                                                       | 单测：调用发生时播报文案正确（mock `SemanticsService`）                                     | 0.5d   |
+
+### 21.3 验收
+
+- TalkBack（Android）/ VoiceOver（iOS）走查 5 条关键流：登录 → 刷题 → 错题本 → 设置 → recall
+- `flutter analyze` 0 error/warning；新增静态扫描测试进 `flutter test`（与 `navigation_rules_test.dart` 同一套路）
+
+## 22. P5 的测试基建与反模式（计划）
+
+P5 要新增约 20 个 widget 测试文件，先定基建，否则每个文件各写一套、且容易变成脆测试。
+
+### 22.1 基建（写进 `test/support/`）
+
+| 文件                  | 内容                                                                                                                                              |
+| --------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `pump_screen.dart`    | `pumpScreen(tester, Widget child, {overrides})`：统一 `ScreenUtil.init`（375×667，`textScaler` 1.0 与 1.3 两档）+ `MaterialApp` + `ProviderScope` |
+| `fake_providers.dart` | 每个 provider 一个 override 工厂（`fakePractice(questions: ...)`），集中管理，避免每个测试自己拼                                                  |
+
+### 22.2 反模式（写进文件头，review 时逐条核）
+
+1. 不断言文案原文——用 `find.byKey` 或语义标签（文案会改，测试不该跟着改）
+2. 不断言像素/颜色值——那是 golden 的活，P5 不做 golden
+3. 不用 `Future.delayed` 等待——用 `pumpAndSettle` + 可控的假流/假 Completer
+4. 不测第三方组件内部（`Skeletonizer`/`flutter_markdown` 自己渲染成什么）
+5. 每个测试只锁一件事，名字写"行为 + 理由"
+
+### 22.3 覆盖率目标曲线与性能预算
+
+| 阶段                 | global | `screens` | `shared` |
+| -------------------- | -----: | --------: | -------: |
+| 现状                 |  36.6% |     17.8% |    47.0% |
+| P5 完成              |   ~43% |      ~30% |     ~55% |
+| P5b（错误/空态分支） |   ~46% |      ~35% |     ~60% |
+
+- 单测耗时预算：每条 < 300ms；`flutter test` 总时长 < 90s。超预算时的处理顺序：先查 `pumpAndSettle` 次数与用例粒度 → 再考虑 `--concurrency`。**不要**把慢用例打 `integration` 标签——`dart_test.yaml` 默认跳过该标签、CI 也不带 `--run-skipped`，等于让它退出 CI
+
+## 23. 真机验收闭环（计划）
+
+### 23.1 现状
+
+`mobile_app` 从未在真机验收：暗色 20 屏、Android 15 返回手势、iOS 侧滑、三处图标差异都只有"代码层结论"。
+`android.yml` 的 `apk` job 已就绪（`workflow_dispatch` / tag 触发），但产物没有形成验收记录。
+
+### 23.2 流程
+
+| #   | 动作                                                                                                             | 产物                           |
+| --- | ---------------------------------------------------------------------------------------------------------------- | ------------------------------ |
+| 1   | 触发 `Android` workflow（`workflow_dispatch`）                                                                   | APK artifact（约 53MB）        |
+| 2   | 装到你的手机                                                                                                     | —                              |
+| 3   | 按 12 项清单逐条截图：暗色下 6 屏 / 浅色下 2 屏 / 返回手势 / 侧滑 / 长文本 1.3 倍字号 / 键盘弹出 / 空态 / 错误态 | `docs/verify/2026-11-xx/*.png` |
+| 4   | 结论写回 `docs/mobile-ui-kit.md` 的"未完成事项"                                                                  | 逐条"已验/未验 + 结论"         |
+
+### 23.3 判据
+
+清单 12 项逐条有截图或明确标"未验"，不允许只写"应该没问题"。
+工作量：清单 0.5d + 你的手机时间；每次 UI PR 合入后复用同一清单。
+
+## 24. 错误文案统一（计划）
+
+### 24.1 现状
+
+用户会直接看到：`'服务器打盹了 (${statusCode ?? "未知"})'`（`login_screen.dart:39`）、
+`FormatException: ...` 原文（`practice_repository_impl.dart` 的 `int.parse`）、各 provider 的 `e.toString()`。
+
+### 24.2 修法
+
+1. 新增 `core/error/user_message.dart`：`String userMessageOf(Object error)`，按类型映射：
+   超时 / 断网 / 401 / 403 / 404 / 5xx / 解析失败 / 未知，未知兜底「出了点问题，请重试」
+2. 所有 UI 侧 `error.toString()` 改为 `userMessageOf(error)`；`debugPrint` 保留原始异常
+3. 顺带修 §12.7 ③：`submitAnswer` 的 `int.parse` 改为校验后抛业务错误（`'题目编号异常，请刷新后重试'`）
+
+### 24.3 判据
+
+- 单测 8 条（每种映射一条 + 未知兜底 + 不泄漏堆栈）
+- 静态扫描：UI 层（`presentation/**`）不得出现 `error.toString()`，白名单只减不增
+- 工作量：0.5d
+
+## 25. 备考主路径摩擦（计划）
+
+前提：这个 App 的真实用法是「每天 45 分钟、4 月考试」，所以判断标准是**从打开到开始今天的第一道题要几步**，
+而不是功能有多少。
+
+### 25.1 已核实的摩擦点
+
+| #   | 现象                                       | 证据                                                                                  | 后果                                                   |
+| --- | ------------------------------------------ | ------------------------------------------------------------------------------------- | ------------------------------------------------------ |
+| F1  | 首页三张功能卡的数值是字面量占位           | `dashboard_screen.dart:178` `trailingValue: '几分钟'`、`:190` `'--'`、`:201` `'回顾'` | 用户看到"累计 --"，会以为数据没加载/坏了               |
+| F2  | 没有底部导航，所有功能都从首页卡片进入     | 全仓无 `BottomNavigationBar`（只有 `wrong_book_screen` 内部用过一次槽位）             | 从记忆卡深处回首页要连按返回；切换功能必须回首页       |
+| F3  | 待办条目点击进的是"练习设置"，不是直接开练 | `dashboard_screen.dart:148` `onTap → AppRoutes.practiceSetup`                         | 多一步选择（模式/题量），而待办已经知道"还差 N 题"     |
+| F4  | 记忆卡入口不显示"今天到期多少张"           | `:178` 只有"每次/几分钟"                                                              | 用户不知道今天要不要做、要做几张，容易跳过             |
+| F5  | 练习中断后没有"继续上次"                   | 当前 sessionId 不持久化（`practice_provider` 只在内存）；离线队列只兜住"已提交的作答" | 中途杀进程/切走太久 → 这场的剩余题目丢失，只能重开一场 |
+
+### 25.2 修法与判据
+
+| #   | 修法                                                                                                    | 判据                                                                    | 工作量 |
+| --- | ------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------- | ------ |
+| F1  | 三张卡接真实数据：记忆卡→到期张数、错题→累计条数、历史→最近一次练习时间（都有现成 provider/repository） | widget test 断言三处不再是字面量；无数据时显示"暂无"而不是 `--`         | 0.5d   |
+| F4  | 记忆卡卡面显示"今日到期 N 张"（`recall` 队列 provider 已有该数）                                        | 到期 0 → 显示"今天已完成"；>0 → 显示数字                                | 0.5d   |
+| F3  | 待办条目直接开练（带 `limit=remaining`、模式沿用上次）                                                  | 点击 → 直接进 `practice_screen` 第 1 题；不再经过 setup                 | 0.5d   |
+| F2  | 4 个高频入口做底部导航：首页 / 练习 / 记忆卡 / 错题本；tab 切换不堆栈                                   | 4 个 tab 两两互达 ≤1 次点击；返回键在 tab 根页退出 App 而不是回上一 tab | 1d     |
+| F5  | 把当前 `sessionId` + 进度存 `preferences`，首页出现"继续上次练习"                                       | 杀进程重开 → 首页出现"继续"；进入后从第 N 题开始；完成后清除            | 1d     |
+
+### 25.3 顺序与前置
+
+F1 → F4 → F3 → F2 → F5。
+
+- F1/F4 只读现有数据，可与任何批次并行
+- F2 会动 `app_router.dart` 与导航结构，**必须在 #247 合入后做**（它改了 20 屏的顶栏/底色）
+- F5 依赖 §19 的 `PreferencesStore`，排在 §19 之后
+
+### 25.4 不做
+
+- 不做"智能推荐今天该练什么"（当前没有足够数据支撑，且会掩盖 F1–F4 这些更基础的问题）
+- 不重排首页视觉层级（#247 刚统一了颜色层，等真机验收后再谈）
+
+## 26. APK 发布链路（计划）
+
+### 26.1 现状（读 `android.yml` 实测）
+
+| 项     | 现状                                                           | 问题                                                                          |
+| ------ | -------------------------------------------------------------- | ----------------------------------------------------------------------------- |
+| 触发   | `workflow_dispatch` + `push: tags v*`；`needs: [analyze]`      | 合理，保持                                                                    |
+| 版本号 | `pubspec.yaml` 固定 `1.0.0+1`；gradle 取 `flutter.versionCode` | **每次构建 versionCode 都是 1**，系统里版本号永远不变，无法从用户上报区分构建 |
+| 签名   | secrets 里的固定 keystore，缺配置直接失败                      | 已做对（debug keystore 会导致装不上旧包）                                     |
+| 产物   | `upload-artifact: app-release`，未设 retention                 | 名字不含版本；默认 90 天                                                      |
+| 发布   | 无 GitHub Release、无 changelog                                | 只能去 Actions 页面翻 run                                                     |
+| 指纹   | 无                                                             | APK 内不知道对应哪个 commit                                                   |
+
+### 26.2 修法
+
+| #   | 动作                                                                                                                                                            | 判据                                                                  | 工作量 |
+| --- | --------------------------------------------------------------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------- | ------ |
+| R1  | 版本号由 CI 派生：`flutter build apk --build-name=<pubspec 语义版本> --build-number=${{ github.run_number }}`                                                   | 连续两次 dispatch → versionCode 1→2；设置页"关于"显示 `1.0.0 (2)`     | 0.5d   |
+| R2  | artifact 改名 `app-release-<name>+<code>`，`retention-days: 30`                                                                                                 | 两次构建的 artifact 名不同、可在下载页区分                            | 同上   |
+| R3  | 打 tag 时创建 GitHub Release，APK 作为 release asset（正文取 commit 列表或 `CHANGELOG.md` 对应段）                                                              | `git tag v1.1.0 && git push --tags` → Release 自动出现且带 APK        | 0.5d   |
+| R4  | 构建指纹：`--dart-define=BUILD_SHA=${{ github.sha }}`，设置页"关于"显示前 8 位                                                                                  | 设置页可见；与 `git rev-parse --short HEAD` 一致                      | 0.5d   |
+| R5  | 密钥备份：keystore 只存在 secrets，**丢失即无法覆盖升级**（只能换包名重发）。文档写明离线备份位置（密码管理器/加密介质），不入库                                | `docs/deploy.md` 增一节"Android 签名密钥备份"                         | 0.2d   |
+| R6  | **回滚**：Android 不允许 versionCode 降级安装，所以回滚 ≠ 装旧包。正确做法是从旧 tag 重新构建，但 build-number 继续用当前 `run_number`（旧代码 + 更大的版本号） | 回滚演练一次：旧 tag 构建 → 能覆盖安装 → 设置页版本号更高、功能是旧版 | 0.5d   |
+| R7  | ABI 拆分（**不做**）：`--split-per-abi` 可把 53MB 拆成三个约 20MB 的包                                                                                          | 只有一个真机，多维护 3 个产物不划算                                   | —      |
+
+### 26.3 顺序
+
+R1+R2（先让包可区分）→ R3 → R4 → R5（文档）→ R6（演练一次）。
+
+前置：无。与 §23 真机验收互补——§23 用 APK 做验收，§26 让"哪个 APK"这件事可追溯。
+
+### 26.4 判据汇总
+
+1. 连续两次 `workflow_dispatch`：versionCode 递增、artifact 名不同
+2. 打 tag：Release 自动创建且附 APK
+3. 回滚演练：旧 tag 重建的包能覆盖安装（`aapt dump badging` 比对 versionCode 更大；versionName 显示旧版本是预期——回滚只保证能装回去）
+4. 文档：密钥备份位置写清，且仓库内不出现 keystore
+
+## 27. CI 时长与测试预算（计划）
+
+### 27.1 实测（`gh run view --json jobs`）
+
+| job                                        |           时长 | 备注                                                      |
+| ------------------------------------------ | -------------: | --------------------------------------------------------- |
+| Lint & Type Check                          |         2.0min | 含 `npm ci`                                               |
+| 单元测试 (Vitest)                          |         3.6min | 含 `npm ci`                                               |
+| OpenAPI 契约快照                           |         1.2min | 含 `npm ci`                                               |
+| MCP 构建与文档任务验收                     |         1.0min | 含 `npm ci`                                               |
+| Flutter 静态分析与测试（android.yml）      |         2.4min | pub get + build_runner + analyze + test --coverage + 门禁 |
+| Playwright layout-guard / perf-guard / E2E |         未取到 | 与 CI 并行，`ui-guard.yml` 独立 workflow                  |
+| 构建 Release APK                           | 45min 超时上限 | 仅 dispatch/tag 触发，实测待测                            |
+
+### 27.2 四个问题
+
+1. **`ci.yml` 没有路径过滤**：本次纯文档 PR #249 也跑了全套 8 个 web 检查（lint / vitest / openapi / mcp / 2×playwright / e2e / next build）
+2. **每个 job 各自 `npm ci`**：lint、vitest、openapi、mcp、playwright×2、e2e ≈ 7 次安装，是墙钟时间的主要构成
+3. **快闸与慢闸同层**：Playwright 61 条与 typecheck 平级，PR 反馈被最慢的拖住
+4. **失败日志会过期**：#243 / #222 的失败原因现在已查不到（`--log-failed` 返回空），排障只能重跑
+
+### 27.3 方案
+
+| #   | 动作                                                                                                                                                                | 判据                                                 | 工作量 |
+| --- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------- | ------ |
+| C1  | **已落地**：`ui-guard.yml` 用 `paths-ignore`；`ci.yml` **不能**用 `paths-ignore`（被路径过滤的必需检查会永远 Pending），改用 `changes` job + job 级 `if`（PR #257） | 只改 docs 的 PR：web 快闸 <30s 且不产生 Pending 卡点 | 已完成 |
+| C2  | 分层：PR 只跑快闸（lint/typecheck/vitest/openapi/mcp/next build）；Playwright 与 E2E 改为 **main push + label `run-e2e` + 每晚定时**                                | PR 反馈 p50 < 4min；main 仍全量                      | 0.5d   |
+| C3  | 合并安装：openapi / mcp 并进 lint job（共用 node_modules），或抽 composite action + `cache`                                                                         | CI 总时长下降 ≥30%                                   | 0.5d   |
+| C4  | Flutter 测试预算：518 条 48s → 目标 <90s；单条 <300ms；超预算先查 `pumpAndSettle` 次数与 `--concurrency`                                                            | `flutter test` 超过 90s 即视为需要拆分               | 0.2d   |
+| C5  | 失败证据：`if: always()` 上传关键日志 artifact                                                                                                                      | 30 天后仍能取到失败原因                              | 0.3d   |
+| C6  | 文档：`AGENTS.md` 写"PR 最小闸门清单"（哪些挡合并、哪些只是信号）                                                                                                   | 新 PR 能自答"我该等哪些检查"                         | 0.1d   |
+
+### 27.4 不做
+
+- 自建 runner 承接 web CI（`SELF_HOSTED` 开关已有，但本机 glibc 2.17 跑不了 Chromium）
+- 删掉 Playwright：61 条 layout-guard 是 UI 回归的唯一护栏，只是不该挡每个 PR
+
+## 28. SRS 积压治理（计划，先量再定）
+
+### 28.1 现状与口径
+
+两套 SRS 并存，**不要混谈**：
+
+| 表                   | 粒度             | 规模（审计快照）           | 备注                                        |
+| -------------------- | ---------------- | -------------------------- | ------------------------------------------- |
+| `question_srs`       | 题级（每题一条） | 2482 行，**2473 条已到期** | 审计里说的"2473 张"是这一套；用户 1 占 1993 |
+| `recall_card_states` | 卡级（记忆卡）   | 未统计                     | 有 `archived` 列，可批量归档                |
+
+积压的时间背景：快照前最后活动是 8 月底，积压约 2.5 个月。
+
+### 28.2 第一步：量（不写代码，先跑 4 条 SQL）
+
+在线上库**只读副本**上执行（`VACUUM INTO` 出来的快照即可，不要直连生产写）：
+
+```sql
+-- Q1 到期分桶：决定"今日/本周/积压"怎么切
+SELECT CASE
+         WHEN julianday('now') - julianday(due_date) <= 0  THEN '0-未到期'
+         WHEN julianday('now') - julianday(due_date) <= 1  THEN '1-今天'
+         WHEN julianday('now') - julianday(due_date) <= 7  THEN '2-一周内'
+         WHEN julianday('now') - julianday(due_date) <= 30 THEN '3-一月内'
+         ELSE '4-超过一月'
+       END AS bucket,
+       COUNT(*) AS n
+FROM question_srs
+WHERE user_id = 1
+GROUP BY bucket ORDER BY bucket;
+
+-- Q2 积压集中在哪些标签（questions 表没有 knowledge_point 列，只有 tags JSON 与 dimension）
+SELECT q.tags, COUNT(*) AS n
+FROM question_srs s JOIN questions q ON q.id = s.question_id
+WHERE s.user_id = 1 AND julianday(s.due_date) < julianday('now')
+GROUP BY q.tags ORDER BY n DESC LIMIT 15;
+-- 若要按单个标签聚合，SQLite 需要 json_each：
+-- SELECT j.value AS tag, COUNT(*) n FROM question_srs s
+--   JOIN questions q ON q.id = s.question_id, json_each(q.tags) j
+--   WHERE s.user_id = 1 AND julianday(s.due_date) < julianday('now')
+--   GROUP BY j.value ORDER BY n DESC LIMIT 15;
+
+-- Q3 从未复习过的（reps=0）占比：这批是"生题"，策略与"复习过的"不同
+SELECT CASE WHEN reps = 0 THEN 'never' ELSE 'reviewed' END AS kind,
+       state, COUNT(*) AS n
+FROM question_srs WHERE user_id = 1
+GROUP BY kind, state;
+
+-- Q4 卡级积压（记忆卡，另一套）
+SELECT CASE WHEN archived = 1 THEN 'archived' ELSE 'active' END AS kind,
+       COUNT(*) AS n,
+       SUM(CASE WHEN due IS NOT NULL AND julianday(due) < julianday('now') THEN 1 ELSE 0 END) AS due_now
+FROM recall_card_states WHERE user_id = 1 GROUP BY kind;
+```
+
+**产出**：把 4 条结果贴回来，据此定策略。没有这组数之前不写任何治理代码。
+
+### 28.3 策略候选（等数据后三选一或组合）
+
+| 候选       | 做法                                                                                                                | 前提数据                       | 判据                                            | 工作量 |
+| ---------- | ------------------------------------------------------------------------------------------------------------------- | ------------------------------ | ----------------------------------------------- | ------ |
+| A 分桶展示 | 复习入口从"到期 N 张"改成"今天 N / 积压 M"，积压单独入口且默认不混入今日队列                                        | Q1 显示积压占比高              | 首页不再出现三位数总到期数；今日队列 ≤ 每日上限 | 1d     |
+| B 批量归档 | 对"超过 X 天未复习且 reps 高"的题批量 `archived`/降优先级（`recall_card_states` 已有 `archived`；题级需加列或映射） | Q1+Q3 显示老积压以已复习题为主 | 归档后今日队列可被清空；归档可撤销              | 1–1.5d |
+| C 每日上限 | 队列按每日上限截断（如 30 题/20 卡），剩余顺延                                                                      | 任意                           | 单日不会出现"永远背不完"                        | 0.5d   |
+
+### 28.4 不做
+
+- 不改 FSRS 参数（`stability`/`difficulty` 的历史值不可重建，调参等于用错数据训练）
+- 不重建调度、不批量 `UPDATE due_date`
+- 不删存量行（归档是软操作，可撤销）
+
+## 29. 移动端诊断日志（计划）
+
+### 29.1 为什么
+
+现在 `lib` 里 0 处 `FlutterError.onError`、0 处 `PlatformDispatcher.onError`、无 Sentry/Crashlytics。
+用户遇到闪退只能描述"刚才卡了一下"，无法定位。不接第三方（无账号/无 DSN/不想引依赖）也能拿到可用信息。
+
+### 29.2 设计
+
+| 层              | 内容                                                                                                                                                            |
+| --------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `ErrorLogEntry` | `at / kind / message / stack`，`toJson`/`fromJson`（坏数据返回 null）                                                                                           |
+| `ErrorLog`      | 内存环形缓冲 **200 条**（丢最旧）；`add/entries/exportText/clear`；`load/persist` 走既有 `PreferencesStore`（key `diagnostics_log`），**读写失败只 debugPrint** |
+| 全局钩子        | `FlutterError.onError`（kind=flutter，仍调用 `presentError`）、`PlatformDispatcher.onError`（platform）、`runZonedGuarded` 包 `runApp`（zone）                  |
+| 启动顺序        | `await ErrorLog.load()` 再 `runApp`；加载失败不阻塞启动                                                                                                         |
+| 设置页          | 「数据管理」加「诊断日志 N 条」→ 弹窗显示最近 20 条 + 「复制全部」（`Clipboard.setData`）+ 「清空」；无记录显示「暂无记录」                                     |
+
+### 29.3 判据
+
+- 单测 5 条：环形丢最旧、最新在前、JSON 往返、坏 JSON 返回 null、落盘失败不影响 `add`
+- widget 测试 2 条：有日志显示条数并可打开弹窗、无日志显示「暂无记录」
+- 变异验证：注释掉 `FlutterError.onError` 赋值 → 对应用例变红
+- `flutter analyze` error/warning = 0；门禁 PASS（新增 lib 文件 ≥60%）
+- 工作量：0.5d
+
+### 29.4 不做
+
+- 不做自动上传（无后端接收端，且涉及隐私）
+- 不记录用户内容（题干、答案不进日志，只记异常与堆栈）
+
+## 30. 移动端数据备份与换机（计划）
+
+### 30.1 现状：哪些数据只在这台手机上
+
+| 数据                         | 位置              | 丢了会怎样                 | 能否重建             |
+| ---------------------------- | ----------------- | -------------------------- | -------------------- |
+| 待同步作答 `pending_answers` | 本地 SQLite       | **永久丢失**（服务端没有） | 否                   |
+| 离线会话 `local_sessions`    | 本地 SQLite       | 会话结构丢失，作答失去归属 | 否                   |
+| 练习断点 `practice_resume`   | SharedPreferences | 丢掉"继续上次练习"         | 否                   |
+| 设置（主题/复习模式）        | SharedPreferences | 回默认                     | 可重设               |
+| 题库缓存 `cached_questions`  | 本地 SQLite       | 离线时无题可出             | **是**（联网重新拉） |
+| 诊断日志                     | SharedPreferences | 无影响                     | 否（也无价值）       |
+
+服务端持有：已同步的作答、SRS、记忆卡状态、笔记等——**这些不需要备份**。
+
+关键事实：**`SyncService.flush()` 本来就能把待同步数据推上去**。所以"换机"的第一版根本不需要导出文件，只需要保证"换机前同步干净"。
+
+### 30.2 分三阶段
+
+| 阶段                     | 做什么                                                                                                                                                                                                                          | 判据                                                                                                                                     | 工作量 |
+| ------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------- | ------ |
+| P1 换机检查（先做）      | 设置页「换机前检查」：显示待同步条数；点「立即同步」调 `SyncService.flush()`；同步干净后显示「可以换机了」。有未同步数据时明确警告"换机前必须同步，否则这部分作答会丢"                                                          | 待同步 3 条 → 显示 3；flush 成功 → 显示 0 且提示可换机；flush 失败 → 保留条数并显示失败原因（不谎报成功）                                | 0.5d   |
+| P2 导出/导入（离线兜底） | 导出**只含不可重建的数据**：`pending_answers` + `local_sessions` + 断点 + 设置。JSON 走**剪贴板**（不引 path_provider/share_plus），格式 `{version:1, exportedAt, userId, pendingAnswers[], localSessions[], resume, settings}` | 导出后剪贴板是合法 JSON；导入时 `userId` 与当前登录不一致 → 拒绝（防串账号）；`client_key` 已存在 → 跳过；导入结束报告 `新增 N / 跳过 M` | 1d     |
+| P3 完整备份              | 含 `cached_questions` 的整库导出                                                                                                                                                                                                | **不做**：题库可联网重建，文件会从 KB 级涨到 MB 级，还要处理 schema 版本                                                                 | —      |
+
+### 30.3 安全与隐私
+
+- 导出内容含作答记录（题号/对错/时长），**不含** token、密码、题干正文
+- 导出/导入**不写日志**（避免诊断日志里留下数据）
+- 明文 JSON：设置页导出时明确提示"包含你的作答记录，请勿分享给他人"
+- 不引入加密依赖；若以后要加密，另立计划（需要密钥管理方案）
+
+### 30.4 判据汇总
+
+1. P1：`flutter test` 覆盖"有待同步 → 同步 → 清零"与"同步失败不谎报"
+2. P2：单测覆盖导出 JSON 结构、导入 userId 不匹配拒绝、幂等跳过、坏 JSON 不崩
+3. 手工：导出 → 清空本地库 → 导入 → `pendingCount` 恢复且 flush 后服务端条数正确
+4. 门禁 PASS；`flutter analyze` error/warning = 0
+
+### 30.5 不做
+
+- 不做自动云备份（无存储后端，且涉及隐私）
+- 不做整库导出（P3）
+- 不在导出里放题库缓存（可重建，且体积大）
+
+## 31. 多设备一致性（计划）
+
+### 31.1 先把"不一致"逐条判定，不要笼统谈同步
+
+| #   | 场景                                              | 现状                                                                                                                                                                                              | 是否需要修                       |
+| --- | ------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | -------------------------------- |
+| 1   | 手机离线判分用了 7 天内的旧答案，服务端答案已更正 | **服务端信任客户端传来的 `isCorrect`**（`import-service.ts:417` 直接写 `is_correct: a.isCorrect`），只有"改题"时才 `regradeQuestionLogs` 回刷——如果改题发生在离线作答**之前**，这批作答不会被回刷 | **要修（唯一真问题）**           |
+| 2   | 手机与网页同时开练                                | 服务端 session 各自独立，互不影响                                                                                                                                                                 | 不用修                           |
+| 3   | 两台设备各自离线练习后各自 flush                  | 幂等键 `sessionKey = localId:batchStart` 含本机 localId → 各自成场，不冲突但会多出两场"离线练习"                                                                                                  | 接受（写入文档即可）             |
+| 4   | 练习断点跨设备                                    | 断点只存本机 `SharedPreferences`，另一台看不到"继续上次"                                                                                                                                          | 明确**不支持**（写进设置页说明） |
+| 5   | 设置（主题/复习模式）跨设备                       | 各机独立                                                                                                                                                                                          | 接受                             |
+
+### 31.2 唯一要修的：服务端不能信任客户端判分
+
+| 项     | 内容                                                                                                                                                                                                                                                                                 |
+| ------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| 证据   | 在线提交走 `practice.ts:282` 的 `checkAnswerCorrectness`（服务端重判）；离线导入 `import-service.ts:417` 直接落客户端给的 `is_correct`                                                                                                                                               |
+| 后果   | 手机缓存陈旧（最长 7 天）时，错的判分被永久写库；若题目更正发生在这之前，`regradeQuestionLogs` 不会覆盖这批 → 掌握度与错题本被污染，且无法追溯                                                                                                                                       |
+| 修法   | `importAgentAnswers` 收到每条作答后，用 `checkAnswerCorrectness(question, userAnswer)` **重判**，以服务端结果为准；把 `requestedIsCorrect != gradedIsCorrect` 的条数计入返回（`regraded: N`），客户端可提示"服务端纠正了 N 题"；**保留**客户端原值到日志字段（便于排查，不参与统计） |
+| 判据   | 单测：客户端传 `isCorrect=true` 但答案错 → 入库 `is_correct=0` 且 `regraded=1`；传对 → 不变、`regraded=0`；幂等重发同 `sessionKey` 不重复计数；`answers` 里含题库不存在的 questionId 仍走原 400                                                                                      |
+| 客户端 | `SyncService` 读 `regraded > 0` 时 `debugPrint` 并在同步结果里带一句（不弹窗，避免打扰）                                                                                                                                                                                             |
+| 工作量 | 0.5d（服务端 0.2 + 测试 0.2 + 客户端 0.1）                                                                                                                                                                                                                                           |
+
+### 31.3 明确接受的三件事（写进文档，不再讨论）
+
+1. 断点不跨设备：换设备就是重新开始一场，本地断点只在原机有效
+2. 两台设备离线各成一场：服务端会看到两场 `offline-resume`/`random` 会话，这是幂等键的必然结果，不算 bug
+3. 设置不同步：主题/复习模式各机独立
+
+### 31.4 不做
+
+- 不做断点上云（需要服务端新表 + 冲突合并，收益低于成本）
+- 不做设备间实时同步（单人备考场景不需要）
+- 不做"离线作答冲突合并"（服务端按 sessionKey 幂等已足够）
+
+## 32. 专项练习（tag / wrong 模式，计划）
+
+### 32.1 现状：四种模式只实现了一种
+
+| 事实                                                          | 证据                                                                                                       |
+| ------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------- |
+| 路由枚举了 `random / wrong / tag / first-principles` 四种模式 | `src/lib/api/routes/practice.ts:15`                                                                        |
+| 但非 `random` 一律 400                                        | `practice.ts:74` `if (mode !== "random") return { error: "Only random mode supported currently via API" }` |
+| 服务层只有 `createRandomSession`                              | `src/lib/services/practice.ts:188`（`ORDER BY RANDOM() LIMIT n`）                                          |
+| Web 练习页会读 `?mode=` 并传下去                              | `use-practice-controller.tsx:86-96` → 传了也被 400，等于无效参数                                           |
+
+结论：**「按知识点专项练」和「只练错题」在 API 层是关闭的**，而这正是备考最需要的两条。
+
+### 32.2 数据现实（决定实现方式）
+
+| 想按什么筛 | 实际可用字段                                                    | 注意                                                                             |
+| ---------- | --------------------------------------------------------------- | -------------------------------------------------------------------------------- |
+| 知识点     | `questions.tags`（JSON 数组字符串）                             | **没有 `knowledge_point` 列**；只能 `tags LIKE '%"<tag>"%'`（2169 行全扫也够快） |
+| 维度       | `questions.dimension`（knowledge/understanding/application）    | 可选，先不做                                                                     |
+| 错题       | `practice_logs.is_correct = 0` 反查 + `mastered_questions` 排除 | 没有独立错题表（`getWrongQuestions` 就是这么算的，`question-recommend.ts:47`）   |
+
+### 32.3 后端（0.5d）
+
+| #   | 动作                                                                                                                       | 判据                                                                                                    |
+| --- | -------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------- |
+| B1  | 新增 `createTagSession(userId, tag, limit)`：`tags LIKE '%"tag"%'` + 排除 `mastered_questions` + `ORDER BY RANDOM() LIMIT` | 单测：只返回含该 tag 的题；已掌握的题不出现；无匹配时返回空 `questions` 且 `sessionId` 为空（不是 500） |
+| B2  | 新增 `createWrongSession(userId, limit)`：从 `practice_logs.is_correct=0` 取 distinct question_id、排除已掌握、再随机截断  | 单测：只含做错过的题；掌握后不再出现；题量不足时返回全部                                                |
+| B3  | 路由放行 `tag`/`wrong`（`first-principles` 仍 400，并在错误文案里说明"暂未开放"）                                          | 契约测试：`mode=tag` 缺 `tag` 参数 → 400 且文案可读；`mode=wrong` 正常 200                              |
+| B4  | 请求体加可选 `tag` 字段（`z.string().max(50).optional()`）                                                                 | OpenAPI 快照更新，`contract:check` 绿                                                                   |
+
+### 32.4 客户端（1d）
+
+| #   | 动作                                                                                                                                                                       | 判据                                               |
+| --- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | -------------------------------------------------- |
+| C1  | `practice_setup_screen` 加模式选择（随机 / 按知识点 / 只练错题）+ 知识点选择器                                                                                             | widget test：三种模式都能选中并带上参数发起        |
+| C2  | 知识点数据源：优先用 `/knowledge/cards` 返回的 `categories`；为空时回落到「从题库 tags 聚合」（后端加一个轻量 `GET /practice/tags`，只 `SELECT DISTINCT json_each(tags)`） | 无标签时选择器显示「题库还没有标签」且禁用「开始」 |
+| C3  | 首页「今日还需练习 N 题」仍走 random；错题本「开始练习」保持现有 `/wrong-book/practice` 路径不动（已能用）                                                                 | 不回归                                             |
+
+### 32.5 判据汇总
+
+1. `mode=tag` + `tag=教育目的` → 返回的题全部含该标签，且不含已掌握
+2. `mode=wrong` → 只返回做错过的题；把某题标记掌握后不再出现
+3. 无匹配（标签拼错/题库无标签）→ 空态文案「这个标签下暂时没有题目」，不是错误页
+4. 移动端三种模式各一条 widget test；`flutter analyze` 0 error/warning；门禁 PASS
+5. 服务端 `npx tsc --noEmit` 0 error；相关 vitest 全绿；OpenAPI 契约不漂移
+
+### 32.6 不做
+
+- 不做 `first-principles` 模式（枚举里留着，明确 400 + 文案说明）
+- 不做"按掌握度加权组卷"（需要掌握度算法先可信；等 §28 的 SRS 治理有数据再说）
+- 不做多标签组合筛选（先用单标签，够用再加）
+
+## 33. 材料题在移动端的渲染（P0，最小改动）
+
+### 33.1 现状
+
+- 服务端返回：`practice.ts:50-51` 的 `material` / `material_html`（列表与详情都带）
+- 移动端：`Question` 模型**没有这两个字段**（`lib/features/practice/domain/question.dart`），`lib` 里 0 处渲染 → **材料题在手机上只剩题干**
+- `material_html` 是 DOMPurify 清洗后的 HTML，白名单含 `img/table/sub/sup/code`（`src/lib/utils/security.ts:19-40`），所以不是纯文本
+
+### 33.2 先量
+
+```sql
+SELECT COUNT(*) AS total,
+       SUM(CASE WHEN material IS NOT NULL AND material != '' THEN 1 ELSE 0 END) AS with_material,
+       SUM(CASE WHEN material_html LIKE '%<img%' THEN 1 ELSE 0 END) AS with_img,
+       SUM(CASE WHEN material_html LIKE '%<table%' THEN 1 ELSE 0 END) AS with_table
+FROM questions;
+```
+
+结论决定渲染器：只有文字 → 纯文本/Markdown 足够；有 `<img>`/`<table>` → 需要 HTML 渲染。
+
+### 33.3 方案
+
+| #   | 动作                                                                                            | 判据                                                    | 工作量 |
+| --- | ----------------------------------------------------------------------------------------------- | ------------------------------------------------------- | ------ |
+| M1  | `Question` 加 `material`/`materialHtml`（`fromJson` 兼容缺字段）                                | 单测：带材料解析成功；无材料为 null                     | 0.2d   |
+| M2  | 练习页题干上方渲染材料卡片（可折叠，默认展开；材料长时限制高度 + 展开）                         | widget test：有材料显示、无材料不占位；1.3 倍字号不溢出 | 0.3d   |
+| M3  | 渲染器按 33.2 结果定：纯文字 → `Text`/markdown；含 img/table → `flutter_html`（新依赖，需批准） | 含 img 的材料能显示图片；表格不塌                       | 0.3d   |
+
+### 33.4 不做
+
+- 不做材料题的分屏/左右对照（先保证能读）
+- 不把 `material_html` 落本地离线缓存（缓存只有题干，见 `LocalPracticeStore`；离线材料题先不支持，明确提示）
+
+## 34. AI 草稿校对流（计划）
+
+参照 MathRecall 的 `DraftStatus{captured,analyzing,ready,failed,confirmed,discarded}` + `aiProvider/aiModel/aiPromptVersion/aiRawJson/errorCode`，
+但**放服务端**（多端一致、AI key 在服务端、留痕可查）。
+
+### 34.1 数据模型
+
+```sql
+question_drafts(
+  id TEXT PRIMARY KEY, user_id INTEGER NOT NULL,
+  source TEXT NOT NULL,              -- camera | gallery | text | pdf
+  status TEXT NOT NULL,              -- captured|analyzing|ready|failed|confirmed|discarded
+  image_sha256 TEXT, image_rel_path TEXT,
+  ai_provider TEXT, ai_model TEXT, ai_prompt_version TEXT,
+  ai_raw_json TEXT, error_code TEXT,
+  created_at TEXT, expires_at INTEGER
+);
+question_draft_items(
+  draft_id TEXT NOT NULL, idx INTEGER NOT NULL,
+  content TEXT, options TEXT, answer TEXT, explanation TEXT,
+  tags TEXT, type TEXT, material_html TEXT,
+  confirmed INTEGER DEFAULT 0,
+  PRIMARY KEY (draft_id, idx)
+);
+```
+
+要点：
+
+- `ai_raw_json` 保存模型原始返回，便于复现与排障
+- `prompt_version` 与 provider/model 一起落库 → 出了问题能定位是哪版 prompt
+- `expires_at` + 定时清理（与 O1 的日志保留同一套 scheduler）
+
+### 34.2 接口
+
+| 方法   | 路径                         | 说明                                                                                     |
+| ------ | ---------------------------- | ---------------------------------------------------------------------------------------- |
+| POST   | `/api/drafts`                | 创建草稿（可带图片，落 `image_sha256` + `rel_path`，按 sha256 去重）                     |
+| POST   | `/api/drafts/:id/analyze`    | 触发 AI 识别；写 `analyzing` → 成功 `ready` + items，失败 `failed` + `error_code`        |
+| GET    | `/api/drafts/:id`            | 草稿 + items（供校对页）                                                                 |
+| PATCH  | `/api/drafts/:id/items/:idx` | 单条修改/删除（`confirmed` 由前端显式置位）                                              |
+| POST   | `/api/drafts/:id/confirm`    | **事务内**把 `confirmed=1` 的 items 写成 questions，返回 `{created, skipped, conflicts}` |
+| DELETE | `/api/drafts/:id`            | 丢弃（软：status=discarded）                                                             |
+
+判据：
+
+- `confirm` 是单事务：任一 item 失败 → 全部回滚，草稿仍 `ready`
+- 重复 `confirm` 幂等（第二次 `created=0`）
+- 识别失败可重试，`error_code` 保留上一次原因
+
+### 34.3 移动端
+
+拍照/相册（`image_picker`，新依赖）→ 上传 → 识别中（可离开页面，回来看状态）→ 校对页逐条编辑/删除 → 确认入库。
+
+判据：上传失败可重试；识别中退出再进能看到进度；校对页长文本 1.3 倍字号不溢出。
+
+工作量：服务端 2d + 移动端 2d。
+
+## 35. 移动端建题/改题（计划）
+
+### 35.1 现状
+
+- 内部 API 只有 `GET /api/questions` 与 `GET /api/questions/:id`（`questions.ts` 里没有写方法）
+- 批量建题在未合并的 PR #233（`POST /api/external/questions`，write 作用域 + externalId 幂等）
+- Web 有 `/questions/import`，无通用编辑页
+
+### 35.2 方案
+
+| #   | 动作                                                                                 | 判据                                                                                                  | 工作量 |
+| --- | ------------------------------------------------------------------------------------ | ----------------------------------------------------------------------------------------------------- | ------ |
+| Q1  | 抽 `questionService.create/update`，internal 路由复用（不复制 external 的校验逻辑）  | 单测：创建/更新走同一校验                                                                             | 0.5d   |
+| Q2  | `POST /api/questions`、`PATCH /api/questions/:id`（登录即可；写操作进 `admin_logs`） | 契约测试：创建后 `GET /:id` 可读到；更新后 `correct_ratio`/历史判分回刷（复用 `regradeQuestionLogs`） | 0.5d   |
+| Q3  | 移动端建题/改题表单（题干/选项/答案/解析/标签/类型/材料）                            | widget test：必填校验、保存后返回详情、材料为空不报错                                                 | 1d     |
+
+### 35.3 不做
+
+- 不做批量导入 UI（Web 已有 `/questions/import`）
+- 不做富文本编辑器（先纯文本 + 材料 HTML 只读）
+
+## 36. 移动端整库备份与恢复（升级 §30 的 P2/P3）
+
+§30 原方案是"剪贴板只导不可重建数据"，只够保命。整库备份参照 MathRecall：
+
+### 36.1 备份包结构
+
+```
+manifest.json        # version, exportedAt, userId, counts{表:行数}, sha256(database.sqlite)
+database.sqlite      # 直接拷贝本地库文件（WAL 需先 checkpoint）
+prefs.json           # 主题/复习模式/断点
+```
+
+### 36.2 恢复方式（关键）
+
+**不替换正在使用的数据库文件**，而是在一个事务里整表复制：父表→子表顺序（`local_sessions` → `pending_answers` → `cached_questions` → `sync_meta`），失败由 SQLite 回滚。
+理由：替换文件需要关库/重启 App，且失败后无法回退。
+
+### 36.3 通道
+
+- 导出：`path_provider` 写临时文件 → `share_plus` 分享（**两个新依赖**）
+- 导入：`file_picker` 选择文件（**第三个新依赖**）→ 校验 manifest → 事务恢复
+- 判据：导出后可被系统分享；恢复前后行数一致；manifest 与库文件 sha256 不符时拒绝；恢复失败时原库不变
+
+### 36.4 与 §30 的关系
+
+§30 P1（换机前检查 + 强制同步）仍先做——它解决 90% 场景；§36 是"服务器不可用/长期离线"时的兜底。
+工作量：2d（含三个依赖引入与平台权限）。

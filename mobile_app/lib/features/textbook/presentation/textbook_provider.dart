@@ -1,4 +1,6 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:flutter/foundation.dart';
+import '../../../core/error/user_message.dart';
 import '../../../core/network/dio_client.dart';
 import '../../../shared/datasources/api_client.dart';
 import '../domain/textbook.dart';
@@ -30,16 +32,24 @@ class TextbookListState {
 
 /// 教材列表控制器
 class TextbookListController extends Notifier<TextbookListState> {
+  /// 请求序号：每发起一次加载自增，回调落地前比对，避免「先发后到」的旧响应
+  /// 覆盖新响应（连点刷新时会出现）。
+  int _requestSeq = 0;
+
   @override
   TextbookListState build() => const TextbookListState();
 
   ApiClient get _apiClient {
-    final dio = ref.watch(dioProvider);
+    // 用 read 而不是 watch：这里在控制器方法里取一次用，不参与 build 的依赖图。
+    // watch 会把「后端地址变了」变成对本控制器的 invalidateSelf，正在加载的
+    // 列表被重建回空态，方法里随后落地的 state 也就写不回去了。
+    final dio = ref.read(dioProvider);
     return ApiClient(dio);
   }
 
   /// 加载教材列表
   Future<void> load() async {
+    final seq = ++_requestSeq;
     state = state.copyWith(isLoading: true, error: null);
 
     try {
@@ -47,9 +57,16 @@ class TextbookListController extends Notifier<TextbookListState> {
       final list = (response as List<dynamic>)
           .map((e) => Textbook.fromJson(e as Map<String, dynamic>))
           .toList();
+
+      // 已经有更新的请求发出，这份旧结果（含其失败）必须整体丢弃。
+      if (seq != _requestSeq) return;
+
       state = state.copyWith(isLoading: false, textbooks: list);
     } catch (e) {
-      state = state.copyWith(isLoading: false, error: e.toString());
+      if (seq != _requestSeq) return;
+      // 原始异常只进日志，界面用统一文案（审计 #24）。
+      debugPrint('[Textbook] 加载教材列表失败: $e');
+      state = state.copyWith(isLoading: false, error: userMessageOf(e));
     }
   }
 }
@@ -91,7 +108,8 @@ final textbookDetailProvider =
               TextbookDetail.fromJson(response as Map<String, dynamic>);
           return TextbookDetailState(isLoading: false, detail: detail);
         } catch (e) {
-          return TextbookDetailState(isLoading: false, error: e.toString());
+          debugPrint('[Textbook] 加载教材详情失败: $e');
+          return TextbookDetailState(isLoading: false, error: userMessageOf(e));
         }
       },
     );

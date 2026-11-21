@@ -1,0 +1,384 @@
+import 'dart:async';
+
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:flutter_test/flutter_test.dart';
+import 'package:mobile_app/features/auth/data/auth_repository_impl.dart';
+import 'package:mobile_app/features/auth/domain/auth_repository.dart';
+import 'package:mobile_app/features/auth/presentation/auth_provider.dart';
+import 'package:mobile_app/features/practice/presentation/practice_resume_provider.dart';
+import 'package:mobile_app/core/storage/preferences.dart';
+
+import '../../../support/fake_preferences_store.dart';
+import '../../../support/fake_providers.dart';
+
+/// 这个测试守的是登录/注册的**异步状态机**和**错误可见性**：
+///
+/// 1. **loading → data/error 三态齐全**：`login/register` 走 `AsyncValue.guard`，
+///    成功必须回到 `AsyncData`（否则按钮永远转圈），失败必须是 `AsyncError`
+///    且保留原始异常——登录失败的文案在界面层决定，provider 不能把它换成 null。
+/// 2. **失败后能重试**：一次失败不该让 controller 停在不可用状态；再调一次
+///    login 成功即可恢复 `AsyncData`，错误态被清掉。
+/// 3. **登出清掉错误态**：登出后是干净的 `AsyncData(null)`，界面不会残留
+///    上一次登录失败的提示。
+/// 4. **登出失败只进 state**：`logout` 用 `AsyncValue.guard` 兜住仓库异常，
+///    失败时状态是 `AsyncError` 且 `authEpoch` 不变（用户其实还在登录态，
+///    清掉历史/对话等于让用户丢数据）；成功才 bump 版本号。
+class FakeAuthRepository implements AuthRepository {
+  final List<List<String>> loginCalls = [];
+  final List<List<String>> registerCalls = [];
+  int logoutCalls = 0;
+
+  Object? loginError;
+  Object? registerError;
+  Object? logoutError;
+
+  /// 非 null 时 login 挂在这里，用于观察 loading 中间态。
+  Completer<void>? loginGate;
+
+  @override
+  Future<void> login(String username, String password) async {
+    loginCalls.add([username, password]);
+    final gate = loginGate;
+    if (gate != null) await gate.future;
+    final error = loginError;
+    if (error != null) throw error;
+  }
+
+  @override
+  Future<void> register(String username, String password) async {
+    registerCalls.add([username, password]);
+    final error = registerError;
+    if (error != null) throw error;
+  }
+
+  @override
+  Future<String?> getToken() async => null;
+
+  @override
+  Future<void> logout() async {
+    logoutCalls++;
+    final error = logoutError;
+    if (error != null) throw error;
+  }
+}
+
+void main() {
+  late FakeAuthRepository repository;
+
+  // 断点在登录态变化时会被清理，那条链路要读 `jwt_token` 与本地键值存储：
+  // 用内存桩，别让平台通道异常盖住真正的断言。
+  setUpAll(useFakeSecureStorage);
+
+  setUp(() {
+    repository = FakeAuthRepository();
+  });
+
+  ProviderContainer makeContainer() {
+    final container = ProviderContainer(
+      retry: (_, _) => null,
+      overrides: [
+        authRepositoryProvider.overrideWithValue(repository),
+        preferencesStoreProvider.overrideWithValue(FakePreferencesStore()),
+      ],
+    );
+    addTearDown(container.dispose);
+    return container;
+  }
+
+  group('初始状态', () {
+    test('初始是 AsyncData(null)：不转圈、无错误', () {
+      final container = makeContainer();
+
+      final state = container.read(authControllerProvider);
+
+      expect(state, isA<AsyncData<void>>());
+      expect(state.hasError, isFalse);
+      expect(state.isLoading, isFalse);
+    });
+  });
+
+  group('login', () {
+    test('成功：凭据原样交给仓库，状态回到 AsyncData', () async {
+      final container = makeContainer();
+
+      await container
+          .read(authControllerProvider.notifier)
+          .login('cjb', 'pwd123');
+
+      expect(repository.loginCalls.single, ['cjb', 'pwd123']);
+      final state = container.read(authControllerProvider);
+      expect(state, isA<AsyncData<void>>());
+      expect(state.hasError, isFalse);
+    });
+
+    test('请求进行中处于 loading', () async {
+      repository.loginGate = Completer<void>();
+      final container = makeContainer();
+
+      final future = container
+          .read(authControllerProvider.notifier)
+          .login('cjb', 'pwd');
+      await pumpEventQueue();
+      expect(container.read(authControllerProvider).isLoading, isTrue);
+
+      repository.loginGate!.complete();
+      await future;
+      expect(container.read(authControllerProvider).isLoading, isFalse);
+    });
+
+    test('失败：状态是 AsyncError 且保留原始异常（不吞成 null）', () async {
+      repository.loginError = Exception('用户名或密码错误');
+      final container = makeContainer();
+
+      await container.read(authControllerProvider.notifier).login('cjb', 'bad');
+
+      final state = container.read(authControllerProvider);
+      expect(state, isA<AsyncError<void>>());
+      expect(state.isLoading, isFalse);
+      expect(
+        state.error.toString(),
+        contains('用户名或密码错误'),
+        reason: '界面要靠原始异常区分「密码错」和「网络断」',
+      );
+    });
+
+    test('失败后重试成功，错误态被清掉', () async {
+      repository.loginError = Exception('密码错');
+      final container = makeContainer();
+      final notifier = container.read(authControllerProvider.notifier);
+      await notifier.login('cjb', 'bad');
+      expect(container.read(authControllerProvider).hasError, isTrue);
+
+      repository.loginError = null;
+      await notifier.login('cjb', 'good');
+
+      final state = container.read(authControllerProvider);
+      expect(state.hasError, isFalse);
+      expect(state, isA<AsyncData<void>>());
+    });
+
+    test('响应缺 token（AuthException）：状态是 AsyncError 且保留 AuthException', () async {
+      repository.loginError = const AuthException('登录响应缺少 token，请重试');
+      final container = makeContainer();
+
+      await container.read(authControllerProvider.notifier).login('cjb', 'pwd');
+
+      final state = container.read(authControllerProvider);
+      expect(state, isA<AsyncError<void>>());
+      expect(state.error, isA<AuthException>());
+      expect(state.error.toString(), contains('缺少 token'));
+    });
+  });
+
+  group('register', () {
+    test('成功：凭据原样交给仓库并回到 AsyncData', () async {
+      final container = makeContainer();
+
+      await container
+          .read(authControllerProvider.notifier)
+          .register('newbie', 'pwd');
+
+      expect(repository.registerCalls.single, ['newbie', 'pwd']);
+      expect(container.read(authControllerProvider), isA<AsyncData<void>>());
+    });
+
+    test('失败：AsyncError 且保留异常信息', () async {
+      repository.registerError = Exception('用户名已存在');
+      final container = makeContainer();
+
+      await container
+          .read(authControllerProvider.notifier)
+          .register('dup', 'pwd');
+
+      final state = container.read(authControllerProvider);
+      expect(state, isA<AsyncError<void>>());
+      expect(state.error.toString(), contains('用户名已存在'));
+    });
+  });
+
+  group('logout', () {
+    test('成功：调用仓库并清掉之前的错误态', () async {
+      repository.loginError = Exception('密码错');
+      final container = makeContainer();
+      final notifier = container.read(authControllerProvider.notifier);
+      await notifier.login('cjb', 'bad');
+      expect(container.read(authControllerProvider).hasError, isTrue);
+
+      await notifier.logout();
+
+      expect(repository.logoutCalls, 1);
+      final state = container.read(authControllerProvider);
+      expect(state, isA<AsyncData<void>>());
+      expect(state.hasError, isFalse, reason: '登出后不该还挂着上次登录失败的提示');
+    });
+
+    test('仓库抛异常：状态是 AsyncError，异常不再冒到调用方', () async {
+      repository.logoutError = Exception('本地 token 删除失败');
+      final container = makeContainer();
+      final notifier = container.read(authControllerProvider.notifier);
+
+      await notifier.logout();
+
+      expect(repository.logoutCalls, 1);
+      final state = container.read(authControllerProvider);
+      expect(state, isA<AsyncError<void>>());
+      expect(state.error.toString(), contains('本地 token 删除失败'));
+    });
+  });
+
+  /// `authEpochProvider` 是 history / chat 判断「账号私有数据该清空」的唯一信号：
+  /// `authControllerProvider` 的 state 是 `AsyncValue<void>`，登出写回的
+  /// `AsyncData(null)` 与旧值相等，Riverpod 判等后不会通知依赖方。
+  group('authEpoch（登出通知的唯一信号）', () {    test('登录成功：版本号 +1', () async {
+      final container = makeContainer();
+      expect(container.read(authEpochProvider), 0);
+
+      await container.read(authControllerProvider.notifier).login('cjb', 'pwd');
+
+      expect(container.read(authEpochProvider), 1);
+    });
+
+    test('登录失败：版本号不变（失败不是登录态变化）', () async {
+      repository.loginError = Exception('用户名或密码错误');
+      final container = makeContainer();
+      expect(container.read(authEpochProvider), 0);
+
+      await container.read(authControllerProvider.notifier).login('cjb', 'bad');
+
+      expect(container.read(authEpochProvider), 0);
+    });
+
+    test('登出：版本号 +1，重复登出继续 +1', () async {
+      final container = makeContainer();
+      final notifier = container.read(authControllerProvider.notifier);
+      expect(container.read(authEpochProvider), 0);
+
+      await notifier.logout();
+      expect(
+        container.read(authEpochProvider),
+        1,
+        reason: '从未登录过也要通知：幂等且无害',
+      );
+
+      await notifier.logout();
+      expect(container.read(authEpochProvider), 2);
+    });
+
+    test('登出失败：版本号不变（还在登录态，不该清历史/对话）', () async {
+      repository.logoutError = Exception('本地 token 删除失败');
+      final container = makeContainer();
+      final notifier = container.read(authControllerProvider.notifier);
+      await notifier.login('cjb', 'pwd');
+      expect(container.read(authEpochProvider), 1);
+
+      await notifier.logout();
+
+      expect(container.read(authControllerProvider).hasError, isTrue);
+      expect(
+        container.read(authEpochProvider),
+        1,
+        reason: '清理失败说明用户其实还在登录态，bump 会把历史/对话清空',
+      );
+    });
+  });
+
+  /// 断点（`practice_resume`）是设备级 key，内容带上一账号的进度：
+  /// 登录态一变就必须清，否则 B 首页会看到 A 的「继续上次练习」。
+  ///
+  /// 清理的**执行者**是 practice 侧：`PracticeResumeController` watch
+  /// `authEpochProvider`，登录态版本号一变就清断点（以前写在 `AuthController`
+  /// 里，等于让 auth 反向 import practice）。所以这里的用例要先把断点控制器
+  /// 唤醒——没有监听者，版本号变化不会有人响应。
+  group('登录态变化清掉练习断点（review 二轮 3）', () {
+    const rawResume =
+        '{"sessionId":"session_9","answers":[],"nextIndex":1,"total":8,'
+        '"mode":"random","userId":"1"}';
+
+    // 用内存版 secure storage：`fakeJwt()` 的 `userId` 是 1，与 rawResume 的
+    // 归属一致，断点才能被正常恢复（否则读盘时就被当成「别人的断点」丢掉）。
+    setUp(useFakeSecureStorage);
+
+    ProviderContainer makeContainerWithPrefs(FakePreferencesStore prefs) {
+      final container = ProviderContainer(
+        retry: (_, _) => null,
+        overrides: [
+          authRepositoryProvider.overrideWithValue(repository),
+          preferencesStoreProvider.overrideWithValue(prefs),
+        ],
+      );
+      addTearDown(container.dispose);
+      return container;
+    }
+
+    /// 唤醒断点控制器并完成读盘（它是 watch `authEpochProvider` 的监听方）。
+    Future<void> wakeResume(ProviderContainer container) async {
+      await container.read(practiceResumeControllerProvider.notifier).restore();
+    }
+
+    test('登出：断点被清空（B 登录后看不到 A 的进度）', () async {
+      final prefs = FakePreferencesStore(
+        initial: <String, String>{PreferencesKeys.practiceResume: rawResume},
+      );
+      final container = makeContainerWithPrefs(prefs);
+      await wakeResume(container);
+      expect(
+        container.read(practiceResumeControllerProvider),
+        isNotNull,
+        reason: '唤醒后归属匹配（userId=1），断点应先恢复出来',
+      );
+
+      await container.read(authControllerProvider.notifier).logout();
+      await pumpEventQueue();
+
+      expect(
+        prefs.values[PreferencesKeys.practiceResume],
+        '',
+        reason: '空串等价于「没有断点」（见 PracticeResumeController.clear）',
+      );
+      expect(container.read(practiceResumeControllerProvider), isNull);
+    });
+
+    test('登录：同样清空（换账号不能沿用上一位用户的断点）', () async {
+      final prefs = FakePreferencesStore(
+        initial: <String, String>{PreferencesKeys.practiceResume: rawResume},
+      );
+      final container = makeContainerWithPrefs(prefs);
+      await wakeResume(container);
+
+      await container.read(authControllerProvider.notifier).login('cjb', 'pwd');
+      await pumpEventQueue();
+
+      expect(prefs.values[PreferencesKeys.practiceResume], '');
+      expect(container.read(practiceResumeControllerProvider), isNull);
+    });
+
+    test('登出失败：断点保留（用户其实还在登录态，别丢他的进度）', () async {
+      final prefs = FakePreferencesStore(
+        initial: <String, String>{PreferencesKeys.practiceResume: rawResume},
+      );
+      final container = makeContainerWithPrefs(prefs);
+      await wakeResume(container);
+      repository.logoutError = Exception('本地 token 删除失败');
+
+      await container.read(authControllerProvider.notifier).logout();
+      await pumpEventQueue();
+
+      expect(prefs.values[PreferencesKeys.practiceResume], rawResume);
+      expect(container.read(practiceResumeControllerProvider), isNotNull);
+    });
+
+    test('版本号变化即清断点（practice 侧监听的就绪信号）', () async {
+      final prefs = FakePreferencesStore(
+        initial: <String, String>{PreferencesKeys.practiceResume: rawResume},
+      );
+      final container = makeContainerWithPrefs(prefs);
+      await wakeResume(container);
+
+      container.read(authEpochProvider.notifier).bump();
+      await pumpEventQueue();
+
+      expect(prefs.values[PreferencesKeys.practiceResume], '');
+      expect(container.read(practiceResumeControllerProvider), isNull);
+    });
+  });
+}

@@ -18,6 +18,7 @@ import { StudyModeOverlay } from "./components/StudyModeOverlay";
 import { KnowledgeModal } from "./components/KnowledgeModal";
 import { AIGenerateModal } from "./components/AIGenerateModal";
 import { KnowledgeCardExpanded } from "./components/KnowledgeCardExpanded";
+import { ErrorState } from "@/components/ui/error-state";
 import type { KnowledgeCard } from "@/lib/services/knowledge";
 
 export default function KnowledgePage() {
@@ -27,6 +28,8 @@ export default function KnowledgePage() {
     categories,
     stats,
     loading,
+    isError,
+    error,
     selectedCategory,
     setSelectedCategory,
     searchQuery,
@@ -127,6 +130,19 @@ export default function KnowledgePage() {
               加载知识库中...
             </p>
           </div>
+        ) : isError ? (
+          // 顺序要紧：error 必须排在空态之前。接口 500 时 data 是空的，
+          // 若先判长度 0 就会显示"未找到匹配的卡片"——把服务端故障说成用户的筛选结果
+          <ErrorState
+            title="知识库加载失败"
+            description={
+              error instanceof Error && error.message
+                ? `知识卡片没加载出来，可能是服务端异常。你的筛选条件没有变。（${error.message}）`
+                : "知识卡片没加载出来，可能是服务端异常。你的筛选条件没有变。"
+            }
+            onRetry={loadCards}
+            className="py-24 bg-card/40 backdrop-blur-sm rounded-3xl border-2 border-dashed border-border"
+          />
         ) : filteredCards.length === 0 ? (
           // 分类/搜索筛到 0 张时，页面上只剩这块空态——挂 role="status" 让
           // "没有匹配的卡片 + 下一步怎么办"被读到，而不是静默变成一片空白

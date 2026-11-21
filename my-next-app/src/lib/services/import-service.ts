@@ -1,11 +1,18 @@
 import { drizzleDb, drizzleSchema } from "../db";
 import { and, eq, inArray, sql } from "drizzle-orm";
 import { FenbiImportResult } from "../import/fenbi-parser";
+import {
+  contentHash,
+  findQuestionIdByContent,
+  normalizeQuestionContent,
+} from "@/lib/services/question-dedup";
 import { sanitizeHtml } from "../utils/security";
 import { safeParseJson } from "../utils/json";
 import { generateId } from "../utils/id";
-import { log } from "@/lib/logger";
+import { log, logger } from "@/lib/logger";
+import { checkAnswerCorrectness } from "@/lib/services/answer-check";
 import { withTransaction } from "@/lib/db/executor";
+import { ValidationError } from "@/lib/errors/app-error";
 import { DryRunRollback, isDryRunRollback } from "./dry-run";
 
 const { practice_sessions, questions, practice_logs, user_mastery } =
@@ -99,6 +106,8 @@ function duplicatedAgentResult(sessionId: string) {
     sessionId: base.sessionId,
     inserted: base.importedCount,
     duplicated: base.duplicated,
+    // 幂等命中不重新判分（也没有新记录可判），差异数恒为 0
+    regraded: 0,
   };
 }
 
@@ -186,11 +195,54 @@ async function writeImport(
         ? (q.dimension as "knowledge" | "understanding" | "application")
         : "knowledge";
 
+      const sanitizedContent = sanitizeHtml(q.content);
+
+      // 先按 external_id 判断：已存在则走下面的 upsert（刷新解析），
+      // 不能被内容查重劫持到一条内容相同的旧副本上。
+      const externalIdExists = q.externalId
+        ? (
+            await exec
+              .select({ id: questions.id })
+              .from(questions)
+              .where(eq(questions.external_id, q.externalId))
+              .limit(1)
+          ).length > 0
+        : false;
+
+      // 内容级去重：仅在 external_id 不存在时，跨来源复用同题干+同选项的已有题
+      if (!externalIdExists) {
+        const existingByContent = await findQuestionIdByContent(
+          sanitizedContent,
+          exec,
+          { options: q.options },
+        );
+        if (existingByContent) {
+          // 题干+选项相同但答案不同：不能静默复用（否则导入的新答案被丢弃，
+          // 判分继续按旧答案）。这种少见冲突按新题落库，交人工/清理裁决。
+          const [existingRow] = await exec
+            .select({ answer: questions.answer })
+            .from(questions)
+            .where(eq(questions.id, existingByContent))
+            .limit(1);
+          const sameAnswer =
+            normalizeQuestionContent(existingRow?.answer ?? "") ===
+            normalizeQuestionContent(q.answer ?? "");
+          if (sameAnswer) {
+            questionIdMap.set(q.externalId, existingByContent);
+            continue;
+          }
+          log.error(
+            `[Import] 同题干+选项但答案不同，按新题导入（不复用旧题）：existing=${existingByContent} external=${q.externalId}`,
+          );
+        }
+      }
+
       const result = await exec
         .insert(questions)
         .values({
           external_id: q.externalId,
-          content: sanitizeHtml(q.content),
+          content_hash: contentHash(sanitizedContent, q.options),
+          content: sanitizedContent,
           options: JSON.stringify(q.options),
           answer: q.answer,
           explanation: sanitizeHtml(q.explanation),
@@ -212,6 +264,8 @@ async function writeImport(
             material_html: sql`excluded.material_html`,
             correct_ratio: sql`excluded.correct_ratio`,
             most_wrong_answer: sql`excluded.most_wrong_answer`,
+            content_hash: sql`excluded.content_hash`,
+            options: sql`excluded.options`,
           },
         })
         .returning({ id: questions.id });
@@ -235,6 +289,8 @@ async function writeImport(
           user_answer: r.userAnswer,
           is_correct: r.isCorrect,
           duration_ms: r.durationMs,
+          origin: "import",
+          status: (r.userAnswer ?? "").trim() === "" ? "skipped" : "answered",
         };
       })
       .filter((v): v is NonNullable<typeof v> => v !== null);
@@ -247,6 +303,7 @@ async function writeImport(
   // 4. 汇总并更新 Mastery
   const masteryChanges = new Map<string, MasteryDelta>();
   for (const record of data.records) {
+    if ((record.userAnswer ?? "").trim() === "") continue; // 空答案=未作答，不计掌握度
     const question = data.questions.find(
       (q) => q.externalId === record.externalId,
     );
@@ -267,10 +324,11 @@ async function writeImport(
 
 // ==================== agent 答题记录导入（P3a） ====================
 
-/** 单条答题记录（对错由调用方 agent 判定，服务端不重算） */
+/** 单条答题记录（来自客户端，`isCorrect` 仅作参考：服务端一律重新判分） */
 export interface AgentAnswerInput {
   questionId: number;
   userAnswer?: string | null;
+  /** 客户端自报的对错。**不参与入库与统计**，只用于比对出 `regraded` 并打日志 */
   isCorrect: boolean;
   durationMs?: number | null;
 }
@@ -286,6 +344,11 @@ export interface AgentAnswersImportResult {
   sessionId: string;
   inserted: number;
   duplicated: boolean;
+  /**
+   * 客户端自报 `isCorrect` 与服务端重新判分不一致的条数（`requested != graded`）。
+   * 幂等命中时为 0：这次没有重新判分任何记录。
+   */
+  regraded: number;
   /** 仅 dry-run 时出现：true 表示这次没有真正写库（计数是"如果真执行会写入多少"） */
   dryRun?: true;
 }
@@ -293,12 +356,18 @@ export interface AgentAnswersImportResult {
 /**
  * 题目不可见（不存在 / 已被删除）时抛出，由路由层映射成 400。
  * 带上全部非法 ID，路由只回前 5 个，避免错误响应体被刷爆。
+ *
+ * 继承 `ValidationError` 只是**兜底**：路由里的 `instanceof` 分支优先命中，
+ * 响应逐字节不变；万一某条路由漏写了分支，`toErrorResponse` 会给 400 + 可读文案，
+ * 而不是把调用方输入错误报成 500。
  */
-export class InvalidQuestionIdsError extends Error {
+export class InvalidQuestionIdsError extends ValidationError {
   readonly invalidQuestionIds: number[];
 
   constructor(invalidQuestionIds: number[]) {
-    super(`以下题目不存在或不可见: ${invalidQuestionIds.join(", ")}`);
+    super(`以下题目不存在或不可见: ${invalidQuestionIds.join(", ")}`, {
+      code: "questions.ids.invalid",
+    });
     this.name = "InvalidQuestionIdsError";
     this.invalidQuestionIds = invalidQuestionIds;
   }
@@ -312,6 +381,11 @@ const AGENT_SOURCE_KEY_PREFIX = "agent:";
  *
  * 题目预检也放在事务内（而不是事务外先查一遍）：这样"校验通过"与"写入"
  * 之间不存在题目被删除的时间窗；预检失败时事务整体回滚，不会留下半截会话。
+ *
+ * **对错一律由服务端重新判分**（§31）：离线复用同一份题库，客户端没有理由
+ * 权威判定；历史实现直接落 `a.isCorrect`，客户端传 true 就能刷高正确率与掌握度。
+ * 判分复用 `checkAnswerCorrectness`，与在线提交（`submitAnswerWithValidation`）
+ * 完全同一套口径（单选标号/文本互认、多选集合比较、填空逐空）。
  */
 async function writeAgentAnswers(
   exec: typeof drizzleDb,
@@ -319,11 +393,17 @@ async function writeAgentAnswers(
   data: AgentAnswersImportInput,
   sessionId: string,
   sourceKey: string,
-): Promise<number> {
+): Promise<{ inserted: number; regraded: number }> {
   // 1. 题目预检：去重后一次查完，缺任何一道都整批拒绝（不静默跳过）
   const uniqueIds = Array.from(new Set(data.answers.map((a) => a.questionId)));
   const rows = await exec
-    .select({ id: questions.id, tags: questions.tags })
+    .select({
+      id: questions.id,
+      tags: questions.tags,
+      answer: questions.answer,
+      options: questions.options,
+      type: questions.type,
+    })
     .from(questions)
     .where(inArray(questions.id, uniqueIds));
 
@@ -332,6 +412,36 @@ async function writeAgentAnswers(
   if (missing.length > 0) {
     throw new InvalidQuestionIdsError(missing);
   }
+
+  // 1.5 服务端重新判分；客户端自报值只用于比对差异与记日志，不参与统计
+  const graded = data.answers.map((answer) => {
+    const question = found.get(answer.questionId);
+    const parsedOptions = safeParseJson<unknown>(question?.options, []);
+    const options = Array.isArray(parsedOptions)
+      ? parsedOptions.map((option) => String(option))
+      : [];
+    return checkAnswerCorrectness(
+      answer.userAnswer ?? "",
+      question?.answer ?? "",
+      options,
+      question?.type ?? undefined,
+    );
+  });
+
+  let regraded = 0;
+  data.answers.forEach((answer, index) => {
+    if (answer.isCorrect === graded[index]) return;
+    regraded += 1;
+    logger.debug(
+      {
+        sessionKey: data.sessionKey,
+        questionId: answer.questionId,
+        requested: answer.isCorrect,
+        graded: graded[index],
+      },
+      "[Import] 离线作答对错与服务端重判不一致，以服务端结果入库",
+    );
+  });
 
   // 2. 创建练习会话（与粉笔导入共用 practice_mode = "import"）
   const durationMs = data.answers.reduce(
@@ -344,7 +454,9 @@ async function writeAgentAnswers(
     session_name: data.sessionName ?? "由 agent 导入",
     source_key: sourceKey,
     total_questions: data.answers.length,
-    correct_count: data.answers.filter((a) => a.isCorrect).length,
+    correct_count: data.answers.filter(
+      (a, i) => graded[i] && (a.userAnswer ?? "").trim() !== "",
+    ).length,
     practice_mode: "import",
     // 存纯 id 数组：getSessionById 只对「数字/字符串数组」走 id 分支，
     // 存对象数组会落到"完整对象"分支，详情页解析直接坏掉
@@ -354,19 +466,23 @@ async function writeAgentAnswers(
 
   // 3. 逐题写日志（单条 INSERT ... VALUES (...), (...) 多行插入）
   await exec.insert(practice_logs).values(
-    data.answers.map((a) => ({
+    data.answers.map((a, i) => ({
       session_id: sessionId,
       user_id: userId,
       question_id: a.questionId,
       user_answer: a.userAnswer ?? null,
-      is_correct: a.isCorrect,
+      is_correct: graded[i],
       duration_ms: a.durationMs ?? null,
+      // 一律标 agent 来源（SRS 同步会跳过）：离线作答仍不进 FSRS 排期
+      origin: "agent",
+      status: (a.userAnswer ?? "").trim() === "" ? "skipped" : "answered",
     })),
   );
 
   // 4. 按题目 tags 增量累加掌握度（与粉笔导入同一段逻辑）
   const masteryChanges = new Map<string, MasteryDelta>();
-  for (const answer of data.answers) {
+  data.answers.forEach((answer, i) => {
+    if ((answer.userAnswer ?? "").trim() === "") return; // 空答案=未作答，不计掌握度
     const parsedTags = safeParseJson<unknown>(
       found.get(answer.questionId)?.tags,
       [],
@@ -377,13 +493,13 @@ async function writeAgentAnswers(
       if (typeof tag !== "string" || tag.length === 0) continue;
       const current = masteryChanges.get(tag) || { correct: 0, total: 0 };
       current.total += 1;
-      if (answer.isCorrect) current.correct += 1;
+      if (graded[i]) current.correct += 1;
       masteryChanges.set(tag, current);
     }
-  }
+  });
   await applyMasteryDeltas(exec, userId, masteryChanges);
 
-  return data.answers.length;
+  return { inserted: data.answers.length, regraded };
 }
 
 export const importService = {
@@ -445,10 +561,14 @@ export const importService = {
   },
 
   /**
-   * 导入 agent 判定的答题记录。
+   * 导入 agent/离线端的答题记录。
+   *
+   * **入参里的 `isCorrect` 不可信**（§31）：服务端按题库重新判分后入库，
+   * 客户端自报值只用于统计差异数 `regraded` 与打 debug 日志。
    *
    * 幂等键是 `sessionKey`（由 agent 生成、跨重试稳定），落库时加 `agent:` 前缀
    * 写进 `practice_sessions.source_key`，与粉笔导入共用同一套「先查后写 + 唯一索引兜并发」。
+   * 幂等命中时 `regraded` 恒为 0（没有重新判分任何记录，也不重复计数）。
    *
    * `options.dryRun` 为 true 时走完真实写入路径后强制回滚：题目不存在仍抛
    * `InvalidQuestionIdsError`（预演必须能暴露 400），返回值多一个 `dryRun: true`。
@@ -473,12 +593,12 @@ export const importService = {
       return options.dryRun ? { ...duplicated, dryRun: true } : duplicated;
     }
 
-    let inserted: number;
+    let outcome: { inserted: number; regraded: number };
     try {
-      inserted = await withImportLock(() =>
+      outcome = await withImportLock(() =>
         withTransaction(async (exec) => {
           // 事务内所有写操作都必须走 tx（理由见 importFenbiData 同位置注释）
-          const count = await writeAgentAnswers(
+          const result = await writeAgentAnswers(
             exec,
             userId,
             data,
@@ -487,16 +607,17 @@ export const importService = {
           );
           // 预演：写入已经发生过（含题目预检与掌握度累加），这里抛哨兵让事务整体回滚，
           // 只把计数带出去 —— 这样"会写多少条"与"真写多少条"永远同一段代码算出来
-          if (options.dryRun) throw new DryRunRollback({ inserted: count });
-          return count;
+          if (options.dryRun) throw new DryRunRollback(result);
+          return result;
         }),
       );
     } catch (e) {
-      if (isDryRunRollback<{ inserted: number }>(e)) {
+      if (isDryRunRollback<{ inserted: number; regraded: number }>(e)) {
         return {
           sessionId,
           inserted: e.value.inserted,
           duplicated: false,
+          regraded: e.value.regraded,
           dryRun: true,
         };
       }
@@ -509,7 +630,12 @@ export const importService = {
       throw e;
     }
 
-    return { sessionId, inserted, duplicated: false };
+    return {
+      sessionId,
+      inserted: outcome.inserted,
+      duplicated: false,
+      regraded: outcome.regraded,
+    };
   },
 };
 

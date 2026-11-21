@@ -111,7 +111,11 @@ export default function HistoryPage() {
   }, [loadHistory]);
 
   useEffect(() => {
-    getAvailableModesAction().then((res) => setAvailableModes(res?.data || []));
+    getAvailableModesAction()
+      .then((res) => setAvailableModes(res?.data || []))
+      // 模式列表只是筛选项：拿不到就不显示筛选按钮组，不影响主列表，
+      // 但要吞掉 rejection，避免 unhandled rejection 噪声。
+      .catch(() => setAvailableModes([]));
   }, []);
 
   // Actions
@@ -187,7 +191,7 @@ export default function HistoryPage() {
               <div className="w-12 h-12 bg-emerald-100 rounded-2xl flex items-center justify-center text-emerald-700 shadow-sm">
                 <HistoryIcon className="w-6 h-6" />
               </div>
-              <h1 className="text-3xl md:text-4xl font-serif font-black text-foreground tracking-tight">
+              <h1 className="text-3xl md:text-4xl font-serif font-semibold text-foreground tracking-tight">
                 练习记录
               </h1>
             </div>

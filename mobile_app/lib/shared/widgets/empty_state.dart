@@ -1,21 +1,25 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_screenutil/flutter_screenutil.dart';
-import '../../core/theme/app_theme.dart';
 
-/// 通用空状态组件
+import 'state_views.dart';
+
+/// 通用空状态组件（`AppEmptyView` 的薄壳，保留原调用点签名）。
 ///
-/// 用于在列表为空时显示引导性内容，支持：
-/// - 自定义 Emoji 图标 (带轻微悬浮动画)
-/// - 主标题和副标题
-/// - 可选的行动按钮 (CTA)
+/// 为什么只剩一层壳：空态原来有三套实现——本文件的 80sp 表情 + `titleLarge`、
+/// `AppEmptyView` 的 64sp + 18sp 粗体、以及历史详情页手写的一版 48sp。
+/// 三套都没有 `Semantics`，字号和间距也各不相同。现在统一由 `AppEmptyView`
+/// 渲染（有 `Semantics`、图标 64sp、标题 18sp 粗体 + 14sp 说明），
+/// 本类只负责把旧参数名映射过去，调用方一行不用改。
+///
+/// 观感差异仅有：表情 80sp → 64sp、标题改用 18sp 粗体、入场悬浮动画去掉
+/// （与全仓其它空态保持一致，避免同一屏两个空态一个动一个静）。
 class EmptyState extends StatelessWidget {
-  /// Emoji 图标，如 '📚'、'🧠'
+  /// Emoji 图标，如 '📚'、'🧠'（映射到 `AppEmptyView.emoji`）。
   final String icon;
 
   /// 主标题文字
   final String title;
 
-  /// 副标题/描述文字
+  /// 副标题/描述文字（映射到 `AppEmptyView.hint`）
   final String subtitle;
 
   /// 行动按钮文字（可选）
@@ -35,83 +39,12 @@ class EmptyState extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return TweenAnimationBuilder<double>(
-      tween: Tween(begin: 0.0, end: 1.0),
-      duration: const Duration(milliseconds: 600),
-      curve: Curves.easeOutCubic,
-      builder: (context, value, child) {
-        return Opacity(
-          opacity: value,
-          child: Transform.translate(
-            offset: Offset(0, 20 * (1 - value)),
-            child: child,
-          ),
-        );
-      },
-      child: Center(
-        child: Padding(
-          padding: EdgeInsets.symmetric(horizontal: 48.w),
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              // Emoji 图标 (可考虑加入悬浮动画)
-              Text(
-                icon,
-                style: TextStyle(fontSize: 80.sp, height: 1.0),
-              ),
-              SizedBox(height: 32.h),
-              // 主标题
-              Text(
-                title,
-                style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                  fontWeight: FontWeight.bold,
-                  letterSpacing: -0.5,
-                ),
-                textAlign: TextAlign.center,
-              ),
-              SizedBox(height: 12.h),
-              // 副标题
-              Text(
-                subtitle,
-                style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                  color: context.secondaryTextColor,
-                  height: 1.6,
-                ),
-                textAlign: TextAlign.center,
-              ),
-              // 行动按钮（如果提供）
-              if (actionLabel != null && onAction != null) ...[
-                SizedBox(height: 40.h),
-                SizedBox(
-                  width: double.infinity,
-                  child: Padding(
-                    padding: EdgeInsets.symmetric(horizontal: 24.w),
-                    child: ElevatedButton(
-                      onPressed: onAction,
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: Theme.of(context).colorScheme.primary,
-                        foregroundColor: Theme.of(context).colorScheme.onPrimary,
-                        padding: EdgeInsets.symmetric(vertical: 16.h),
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(12.r),
-                        ),
-                        elevation: 0,
-                      ),
-                      child: Text(
-                        actionLabel!,
-                        style: TextStyle(
-                          fontSize: 15.sp,
-                          fontWeight: FontWeight.w600,
-                        ),
-                      ),
-                    ),
-                  ),
-                ),
-              ],
-            ],
-          ),
-        ),
-      ),
+    return AppEmptyView(
+      emoji: icon,
+      title: title,
+      hint: subtitle,
+      actionLabel: actionLabel,
+      onAction: onAction,
     );
   }
 }

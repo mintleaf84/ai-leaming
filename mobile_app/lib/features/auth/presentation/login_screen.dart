@@ -1,10 +1,13 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_hooks/flutter_hooks.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
-import 'package:go_router/go_router.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:dio/dio.dart';
+import '../../../core/navigation/app_nav.dart';
+import '../../../core/error/user_message.dart';
 import 'auth_provider.dart';
+import '../../../core/theme/app_colors.dart';
+import '../../../core/theme/app_icons.dart';
 
 class LoginScreen extends HookConsumerWidget {
   const LoginScreen({super.key});
@@ -19,36 +22,28 @@ class LoginScreen extends HookConsumerWidget {
     // Listen to Auth State changes for navigation & error handling
     ref.listen<AsyncValue<void>>(authControllerProvider, (previous, next) {
       if (next is AsyncData) {
-        context.go('/dashboard');
+        context.replace(AppRoutes.dashboard);
       } else if (next is AsyncError) {
-        String errorMessage = '发生未知错误，请稍后重试';
         final error = next.error;
-        if (error is DioException) {
-          if (error.type == DioExceptionType.connectionTimeout ||
-              error.type == DioExceptionType.receiveTimeout) {
-            errorMessage = '网络连接超时，请检查您的网络';
-          } else if (error.response?.statusCode == 401) {
-            errorMessage = '账号或密码错误';
-          } else if (error.type == DioExceptionType.connectionError) {
-            errorMessage = '网络开了小差，请检查网络设置';
-          } else {
-            errorMessage = '服务器打盹了 (${error.response?.statusCode ?? "未知"})';
-          }
-        } else {
-          errorMessage = error.toString();
-        }
+        // 登录页的 401 是「账号或密码错误」，不是通用的「登录已过期」，
+        // 所以这一条在统一文案之前单独拦下（审计 #24 的唯一例外）。
+        final String errorMessage =
+            error is DioException && error.response?.statusCode == 401
+            ? '账号或密码错误'
+            : userMessageOf(error);
+        debugPrint('[Login] 登录失败: $error');
 
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text(errorMessage),
-            backgroundColor: const Color(0xFFEB5757),
+            backgroundColor: context.colors.error,
           ),
         );
       }
     });
 
     return Scaffold(
-      backgroundColor: Colors.white,
+      backgroundColor: context.colors.background,
       body: SafeArea(
         child: Padding(
           padding: EdgeInsets.symmetric(horizontal: 32.w),
@@ -71,23 +66,24 @@ class LoginScreen extends HookConsumerWidget {
                           style: TextStyle(
                             fontSize: 28.sp,
                             fontWeight: FontWeight.bold,
-                            color: const Color(0xFF1A1A1A),
-                            fontFamily: 'Inter',
+                            color: context.colors.text,
                           ),
                         ),
                         SizedBox(height: 40.h),
 
                         // Form
                         _buildInputGroup(
+                          context,
                           '邮箱/用户名',
-                          Icons.person_outline,
+                          AppIcons.personOutline,
                           usernameController,
                           hint: '邮箱/用户名',
                         ),
                         SizedBox(height: 16.h),
                         _buildInputGroup(
+                          context,
                           '密码',
-                          Icons.lock_outline,
+                          AppIcons.lockOutline,
                           passwordController,
                           isPassword: true,
                           obscureText: !isPasswordVisible.value,
@@ -101,11 +97,25 @@ class LoginScreen extends HookConsumerWidget {
                         Align(
                           alignment: Alignment.centerRight,
                           child: TextButton(
-                            onPressed: () {},
+                            // 后端目前没有找回密码接口（/api/auth 只有
+                            // login / register / logout），点进新页面只会再
+                            // 造一个死页面，所以这里如实告知，不做假跳转。
+                            onPressed: () {
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                const SnackBar(
+                                  content: Text('暂未开放：请联系管理员重置密码'),
+                                ),
+                              );
+                            },
+                            style: TextButton.styleFrom(
+                              // 13sp 字只有约 17dp 高，撑到 44dp 命中区。
+                              minimumSize: const Size(44, 44),
+                              padding: EdgeInsets.symmetric(horizontal: 8.w),
+                            ),
                             child: Text(
                               '忘记密码？',
                               style: TextStyle(
-                                color: Colors.grey,
+                                color: context.colors.textSecondary,
                                 fontSize: 13.sp,
                               ),
                             ),
@@ -151,8 +161,8 @@ class LoginScreen extends HookConsumerWidget {
                                         .login(username, password);
                                   },
                             style: FilledButton.styleFrom(
-                              backgroundColor: const Color(0xFF135BEC),
-                              foregroundColor: Colors.white,
+                              backgroundColor: context.colors.accent,
+                              foregroundColor: context.colors.onAccent,
                               shape: RoundedRectangleBorder(
                                 borderRadius: BorderRadius.circular(8.r),
                               ),
@@ -161,8 +171,8 @@ class LoginScreen extends HookConsumerWidget {
                                 ? SizedBox(
                                     width: 20.w,
                                     height: 20.h,
-                                    child: const CircularProgressIndicator(
-                                      color: Colors.white,
+                                    child: CircularProgressIndicator(
+                                      color: context.colors.onAccent,
                                       strokeWidth: 2,
                                     ),
                                   )
@@ -177,7 +187,7 @@ class LoginScreen extends HookConsumerWidget {
                                         ),
                                       ),
                                       SizedBox(width: 8.w),
-                                      Icon(Icons.arrow_forward, size: 18.sp),
+                                      Icon(AppIcons.arrowForward, size: 18.sp),
                                     ],
                                   ),
                           ),
@@ -188,66 +198,42 @@ class LoginScreen extends HookConsumerWidget {
                 ),
               ),
 
-              // Bottom Section: Divider, Social, Register
+              // Bottom Section: Register
               Padding(
                 padding: EdgeInsets.only(bottom: 24.h),
                 child: Column(
                   children: [
-                    // Divider
-                    Row(
-                      children: [
-                        Expanded(child: Divider(color: Colors.grey[200])),
-                        Padding(
-                          padding: EdgeInsets.symmetric(horizontal: 16.w),
-                          child: Text(
-                            '或者',
-                            style: TextStyle(
-                              color: Colors.grey[400],
-                              fontSize: 12.sp,
-                            ),
-                          ),
-                        ),
-                        Expanded(child: Divider(color: Colors.grey[200])),
-                      ],
+                    Text(
+                      '更多登录方式即将开放',
+                      style: TextStyle(
+                        color: context.colors.textSecondary,
+                        fontSize: 12.sp,
+                      ),
                     ),
 
-                    SizedBox(height: 24.h),
-
-                    // Social Logins
-                    Row(
-                      children: [
-                        Expanded(
-                          child: _buildSocialButton('Apple', Icons.apple),
-                        ),
-                        SizedBox(width: 12.w),
-                        Expanded(
-                          child: _buildSocialButton(
-                            '微信',
-                            Icons.chat_bubble_outline,
-                            color: const Color(0xFF07C160),
-                          ),
-                        ),
-                      ],
-                    ),
-
-                    SizedBox(height: 32.h),
+                    SizedBox(height: 8.h),
 
                     // Register Link
                     Center(
-                      child: GestureDetector(
-                        onTap: () => context.go('/register'),
+                      child: TextButton(
+                        onPressed: () => context.replace(AppRoutes.register),
+                        style: TextButton.styleFrom(
+                          // 13sp 富文本只有约 17dp 高，撑到 44dp 命中区。
+                          minimumSize: const Size(44, 44),
+                          padding: EdgeInsets.symmetric(horizontal: 8.w),
+                        ),
                         child: RichText(
                           text: TextSpan(
                             text: '还没有账号？ ',
                             style: TextStyle(
-                              color: Colors.grey,
+                              color: context.colors.textSecondary,
                               fontSize: 13.sp,
                             ),
-                            children: const [
+                            children: [
                               TextSpan(
                                 text: '立即注册',
                                 style: TextStyle(
-                                  color: Color(0xFF135BEC),
+                                  color: context.colors.accent,
                                   fontWeight: FontWeight.w500,
                                   decoration: TextDecoration.underline,
                                 ),
@@ -268,6 +254,7 @@ class LoginScreen extends HookConsumerWidget {
   }
 
   Widget _buildInputGroup(
+    BuildContext context,
     String label,
     IconData icon,
     TextEditingController controller, {
@@ -279,9 +266,9 @@ class LoginScreen extends HookConsumerWidget {
     return Container(
       height: 52.h,
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: context.colors.surface,
         borderRadius: BorderRadius.circular(8.r),
-        border: Border.all(color: Colors.grey[200]!),
+        border: Border.all(color: context.colors.border),
         boxShadow: [
           BoxShadow(
             color: Colors.black.withValues(alpha: 0.05),
@@ -293,7 +280,7 @@ class LoginScreen extends HookConsumerWidget {
       child: Row(
         children: [
           SizedBox(width: 14.w),
-          Icon(icon, color: Colors.grey[400], size: 20.sp),
+          Icon(icon, color: context.colors.textSecondary, size: 20.sp),
           SizedBox(width: 12.w),
           Expanded(
             child: TextField(
@@ -303,55 +290,33 @@ class LoginScreen extends HookConsumerWidget {
               decoration: InputDecoration(
                 border: InputBorder.none,
                 hintText: hint ?? label,
-                hintStyle: TextStyle(color: Colors.grey[400], fontSize: 16.sp),
+                hintStyle: TextStyle(
+                  color: context.colors.textSecondary,
+                  fontSize: 16.sp,
+                ),
                 contentPadding: isPassword
                     ? EdgeInsets.only(top: 14.h)
                     : EdgeInsets.zero,
                 isDense: true,
                 suffixIcon: isPassword
                     ? IconButton(
+                      tooltip: (obscureText ?? true) ? '显示密码' : '隐藏密码',
                         icon: Icon(
                           (obscureText ?? true)
-                              ? Icons.visibility_off
-                              : Icons.visibility,
-                          color: Colors.grey[400],
+                              ? AppIcons.visibilityOff
+                              : AppIcons.visibility,
+                          color: context.colors.textSecondary,
                           size: 20.sp,
                         ),
                         onPressed: onToggleVisibility,
                       )
                     : null,
               ),
-              style: TextStyle(fontSize: 16.sp, color: const Color(0xFF1A1A1A)),
-              cursorColor: const Color(0xFF135BEC),
+              style: TextStyle(fontSize: 16.sp, color: context.colors.text),
+              cursorColor: context.colors.accent,
             ),
           ),
           if (!isPassword) SizedBox(width: 14.w),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildSocialButton(String label, IconData icon, {Color? color}) {
-    return Container(
-      height: 44.h,
-      decoration: BoxDecoration(
-        border: Border.all(color: Colors.grey[200]!),
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(8.r),
-      ),
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          Icon(icon, size: 20.sp, color: color ?? Colors.black),
-          SizedBox(width: 8.w),
-          Text(
-            label,
-            style: TextStyle(
-              fontSize: 14.sp,
-              fontWeight: FontWeight.normal,
-              color: const Color(0xFF37352F), // Notion-like text color
-            ),
-          ),
         ],
       ),
     );

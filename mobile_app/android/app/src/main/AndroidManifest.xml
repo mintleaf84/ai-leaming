@@ -2,10 +2,19 @@
     <!-- release 构建不会合并 debug/profile 清单的权限，缺这条会导致装到手机上
          之后所有网络请求失败（登录都过不去）。 -->
     <uses-permission android:name="android.permission.INTERNET"/>
+    <!-- Android 13+ 发本地通知要运行时授权（「AI 题集」有新题时提醒一次）。
+         插件在首次初始化时会请求；用户拒绝也不影响做题，只是收不到提醒。 -->
+    <uses-permission android:name="android.permission.POST_NOTIFICATIONS"/>
+    <!-- 自建 HTTP 后端是受支持场景：App 内的「服务器地址」允许用户填
+         http://局域网IP:3000 这类明文地址，而 Android 9+ 默认禁止 cleartext，
+         不放开的话登录请求会直接抛 CLEARTEXT communication not permitted。
+         用整包开关（而非 networkSecurityConfig 白名单）：服务器地址是运行时
+         用户可配的，编译期无法枚举域名。 -->
     <application
         android:label="mobile_app"
         android:name="${applicationName}"
-        android:icon="@mipmap/ic_launcher">
+        android:icon="@mipmap/ic_launcher"
+        android:usesCleartextTraffic="true">
         <activity
             android:name=".MainActivity"
             android:exported="true"

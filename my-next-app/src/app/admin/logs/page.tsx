@@ -15,6 +15,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
 import { ErrorState } from "@/components/ui/error-state";
+import { formatBeijingDate } from "@/lib/utils/datetime";
 
 export default function LogsPage() {
   const [logs, setLogs] = useState<AdminLogEntry[]>([]);
@@ -91,22 +92,16 @@ export default function LogsPage() {
 
   // 格式化时间
   const formatTime = (timestamp: string): string => {
-    return new Date(timestamp).toLocaleString("zh-CN", {
-      month: "long",
-      day: "numeric",
-      hour: "2-digit",
-      minute: "2-digit",
-      second: "2-digit",
-    });
+    return formatBeijingDate(timestamp, "M月D日 HH:mm:ss");
   };
 
   return (
     <div className="p-4 md:p-8 space-y-6">
       <div className="flex items-center justify-between">
         <div>
-          <h2 className="text-2xl md:text-3xl font-bold tracking-tight">
+          <h1 className="text-2xl font-semibold tracking-tight md:text-3xl">
             操作日志
-          </h2>
+          </h1>
           <p className="text-muted-foreground mt-2">
             记录管理员的所有操作，便于审计和问题追溯。
           </p>

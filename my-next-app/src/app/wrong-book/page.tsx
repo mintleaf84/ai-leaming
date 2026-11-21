@@ -45,6 +45,7 @@ import { FolderQuestionList } from "./components/FolderQuestionList";
 import { AddToFolderDialog } from "./components/AddToFolderDialog";
 import { AddQuestionDialog } from "./components/AddQuestionDialog";
 import { PageJumpInput } from "@/components/ui/page-jump-input";
+import { formatBeijingDate } from "@/lib/utils/datetime";
 
 export default function WrongBookPage() {
   // 复练排序模式：priority = 按错误频次+遗忘权重，random = 纯随机
@@ -148,7 +149,7 @@ export default function WrongBookPage() {
               <ChevronLeft className="h-4 w-4" />
               返回练习
             </Link>
-            <h1 className="text-3xl font-bold text-foreground flex items-center gap-3">
+            <h1 className="text-2xl font-semibold tracking-tight text-foreground md:text-3xl flex items-center gap-3">
               <BookOpen className="text-red-500 h-8 w-8" />
               错题本
             </h1>
@@ -182,7 +183,7 @@ export default function WrongBookPage() {
             返回练习
           </Link>
           <div className="flex items-center justify-between">
-            <h1 className="text-3xl font-bold text-foreground flex items-center gap-3">
+            <h1 className="text-2xl font-semibold tracking-tight text-foreground md:text-3xl flex items-center gap-3">
               <BookOpen className="text-red-500 h-8 w-8" />
               错题本
             </h1>
@@ -569,7 +570,7 @@ export default function WrongBookPage() {
                               <CheckCircle2 className="w-3 h-3 text-success" />
                               掌握于{" "}
                               {q.lastWrongAt
-                                ? new Date(q.lastWrongAt).toLocaleDateString()
+                                ? formatBeijingDate(q.lastWrongAt)
                                 : "未知"}
                             </span>
                           </div>

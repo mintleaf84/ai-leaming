@@ -1,36 +1,31 @@
 import { OpenAPIHono, createRoute, z } from "@hono/zod-openapi";
 import { getErrorMessage } from "@/lib/utils/error";
-import { drizzleDb, drizzleSchema, closeDb, reinitDb } from "@/lib/db";
-import { resolveDbFilePath, findMissingCoreTables } from "@/lib/db/db-file";
 import { requireRole } from "@/lib/auth/auth";
-import { eq, and, sql, desc, like } from "drizzle-orm";
 import os from "os";
 import fs from "fs";
 import path from "path";
 import { logAdminAction } from "@/lib/admin/audit";
 import { getApiCallStats } from "@/lib/admin/api-stats-service";
 import { questionFeedbackService } from "@/lib/services/question-feedback-service";
-import type { Dimension } from "@/types";
+import { getDedupeStatus } from "@/lib/services/question-dedupe-cleanup";
 import { logger } from "@/lib/logger";
-import { safeParseJson } from "@/lib/utils/json";
+import Papa from "papaparse";
+import { getBeijingDateString } from "@/lib/utils/datetime";
 
 export const adminRoute = new OpenAPIHono();
 
 // --- Helper Functions ---
 
-async function getDemoModeStatus(): Promise<boolean> {
-  try {
-    const row = await drizzleDb.query.system_settings.findFirst({
-      where: and(
-        eq(drizzleSchema.system_settings.key, "demo_mode_enabled"),
-        eq(drizzleSchema.system_settings.user_id, 0),
-      ),
-    });
-    return row?.value === "true";
-  } catch (err) {
-    logger.warn({ err }, "读取演示模式开关失败，按关闭处理");
-    return false;
-  }
+/**
+ * 数据访问全部下沉在 `services/admin-service.ts`。
+ *
+ * 这里用动态 import 而不是顶层 import：admin-service 静态依赖向量索引
+ * （`question-vector-index` → `ai/rag`），顶层引入会让所有加载本路由的进程
+ * 顺带拉起重模块；同一个文件里 SQL 脚本服务已经是这个写法，保持一致。
+ */
+async function adminDb() {
+  const { adminService } = await import("@/lib/services/admin-service");
+  return adminService;
 }
 
 /** 鉴权类错误：只有这类才应转换成 401，数据库/网络故障必须冒泡 */
@@ -41,18 +36,17 @@ function isAuthError(err: unknown): boolean {
   );
 }
 
-function escapeCsv(field: unknown): string {
-  if (field === null || field === undefined) return "";
-  const str = String(field);
-  if (
-    str.includes('"') ||
-    str.includes(",") ||
-    str.includes("\n") ||
-    str.includes("\r")
-  ) {
-    return `"${str.replace(/"/g, '""')}"`;
-  }
-  return str;
+/**
+ * 公式注入防护（OWASP CSV Injection）：以 = + - @ 或制表符开头的单元格，
+ * 在 Excel/WPS 里会被当成公式执行。加一个前导单引号让它们变成纯文本。
+ *
+ * 转义本身交给 papaparse（引号/逗号/换行的规则容易写错，且它处理 BOM 与换行更稳）。
+ */
+const CSV_INJECTION_PREFIX = /^[=+\-@\t\r]/;
+
+function neutralizeCsvFormula(value: unknown): unknown {
+  if (typeof value !== "string") return value;
+  return CSV_INJECTION_PREFIX.test(value) ? `'${value}` : value;
 }
 
 // --- Routes ---
@@ -77,14 +71,8 @@ adminRoute.openapi(systemStatusDef, async (c) => {
     throw err;
   }
 
-  const dbPath = resolveDbFilePath();
-  let dbSize = 0;
-  try {
-    dbSize = fs.statSync(dbPath).size;
-  } catch (err) {
-    // audit-allow: 可选元信息，失败按 0 返回；debug 级留痕便于排查
-    logger.debug({ err, dbPath }, "读取数据库文件大小失败，使用 0");
-  }
+  const adminService = await adminDb();
+  const dbSize = await adminService.getDatabaseFileSize();
 
   const pkgPath = path.resolve(process.cwd(), "package.json");
   let appVersion = "v1.0.0";
@@ -112,7 +100,7 @@ adminRoute.openapi(systemStatusDef, async (c) => {
       version: process.version,
     },
     ai: await getApiCallStats(),
-    demoMode: await getDemoModeStatus(),
+    demoMode: await adminService.getDemoModeStatus(),
     appVersion,
     timestamp: Date.now(),
   });
@@ -139,35 +127,17 @@ adminRoute.openapi(systemActionDef, async (c) => {
     throw err;
   }
   const { action } = await c.req.json();
+  const adminService = await adminDb();
 
   if (action === "toggle_demo_mode") {
-    const current = await getDemoModeStatus();
+    const current = await adminService.getDemoModeStatus();
     const newValue = !current;
-    await drizzleDb
-      .insert(drizzleSchema.system_settings)
-      .values({
-        user_id: 0,
-        key: "demo_mode_enabled",
-        value: String(newValue),
-      })
-      .onConflictDoUpdate({
-        target: [
-          drizzleSchema.system_settings.user_id,
-          drizzleSchema.system_settings.key,
-        ],
-        set: { value: String(newValue), updated_at: sql`CURRENT_TIMESTAMP` },
-      });
+    await adminService.setDemoMode(newValue);
     return c.json({ success: true, demoMode: newValue });
   }
 
   if (action === "reset_demo_session") {
-    // 批量删除：先删 practice_logs，再删 practice_sessions（使用子查询避免 N+1）
-    await drizzleDb.run(sql`
-            DELETE FROM practice_logs WHERE session_id IN (SELECT id FROM practice_sessions WHERE is_demo = 1)
-        `);
-    await drizzleDb
-      .delete(drizzleSchema.practice_sessions)
-      .where(eq(sql`is_demo`, 1));
+    await adminService.resetDemoSession();
     return c.json({ success: true, message: "演示数据集已重置" });
   }
 
@@ -195,39 +165,14 @@ adminRoute.openapi(backupDef, async (c) => {
     if (isAuthError(err)) return c.json({ error: "Unauthorized" }, 401);
     throw err;
   }
-  const timestamp = new Date().toISOString().replace(/[:.]/g, "-");
-  const filename = `ai-learning-backup-${timestamp}.db`;
-  const tempDir = path.resolve(process.cwd(), "temp_backups");
-  const tempPath = path.resolve(tempDir, filename);
 
-  try {
-    if (!fs.existsSync(tempDir)) fs.mkdirSync(tempDir, { recursive: true });
-    await drizzleDb.run(sql`VACUUM INTO ${tempPath}`);
-    await logAdminAction(
-      user.id,
-      user.username,
-      "BACKUP_DATABASE",
-      "system",
-      "database",
-      { filename },
-    );
-    const fileBuffer = fs.readFileSync(tempPath);
-    fs.unlinkSync(tempPath);
+  const snapshot = await (await adminDb()).createBackupSnapshot(user);
+  if (!snapshot) return c.json({ error: "Backup failed" }, 500);
 
-    return c.body(fileBuffer, 200, {
-      "Content-Disposition": `attachment; filename="${filename}"`,
-      "Content-Type": "application/x-sqlite3",
-    });
-  } catch (_error) {
-    if (fs.existsSync(tempPath))
-      try {
-        fs.unlinkSync(tempPath);
-      } catch (cleanupErr) {
-        // audit-allow: 回滚路径的清理是尽力而为，失败不影响返回的错误语义
-        logger.debug({ err: cleanupErr, tempPath }, "回滚时删除临时文件失败");
-      }
-    return c.json({ error: "Backup failed" }, 500);
-  }
+  return c.body(snapshot.data, 200, {
+    "Content-Disposition": `attachment; filename="${snapshot.filename}"`,
+    "Content-Type": "application/x-sqlite3",
+  });
 });
 
 /** POST /api/admin/restore - 数据库还原 */
@@ -252,6 +197,7 @@ adminRoute.openapi(restoreDef, async (c) => {
     if (isAuthError(err)) return c.json({ error: "Unauthorized" }, 401);
     throw err;
   }
+
   try {
     const body = await c.req.parseBody();
     const file = body["file"] as File;
@@ -268,116 +214,27 @@ adminRoute.openapi(restoreDef, async (c) => {
       );
     }
 
-    // 恢复目标必须与 initDatabase()/reinitDb() 连的是同一个文件（唯一来源：
-    // resolveDbFilePath）。否则改了 DB_FILENAME 的部署会把备份恢复到
-    // data/ai-learning.db，随后 reinitDb() 又在 DB_FILENAME 处新建一个空库 ——
-    // 接口报成功，应用在空库上空转。
-    const dbPath = resolveDbFilePath();
-    const backupPath = `${dbPath}.bak-${Date.now()}`;
-    const tempPath = path.resolve(process.cwd(), "data", "temp_restore.db");
+    // 校验、关连接、换文件、回滚的编排在 service：那条路径有进程级副作用，
+    // 只允许在「已鉴权的管理员」入口触发（见 admin-service.restoreDatabase）。
+    const result = await (
+      await adminDb()
+    ).restoreDatabase({
+      buffer: Buffer.from(await file.arrayBuffer()),
+      fileName: file.name,
+      actor: user,
+    });
 
-    const buffer = Buffer.from(await file.arrayBuffer());
-    if (!buffer.subarray(0, 16).toString().startsWith("SQLite format 3")) {
-      return c.json({ error: "无效的 SQLite 数据库文件" }, 400);
+    if (!result.ok) {
+      return result.backup
+        ? c.json({ error: result.error, backup: result.backup }, result.status)
+        : c.json({ error: result.error }, result.status);
     }
 
-    fs.writeFileSync(tempPath, buffer);
-
-    // 结构校验：magic header 只能证明"是 SQLite"，不能证明"是本应用的库"。
-    // 缺核心表的库一旦被接受，线上库会被替换成应用跑不起来的东西 —— 必须在
-    // closeDb()/覆盖之前拒绝，且不碰线上库一个字节。
-    let missingTables: string[];
-    try {
-      missingTables = findMissingCoreTables(tempPath);
-    } catch (probeErr) {
-      // 命中明确业务错误：文件读不出 SQLite 结构 = 上传的不是可用备份，转 400
-      fs.rmSync(tempPath, { force: true });
-      logger.warn(
-        { err: probeErr, fileName: file.name },
-        "备份文件结构无法读取，拒绝恢复",
-      );
-      return c.json({ error: "无效的备份文件：无法读取 SQLite 结构" }, 400);
-    }
-    if (missingTables.length > 0) {
-      fs.rmSync(tempPath, { force: true });
-      logger.warn(
-        { fileName: file.name, missingTables },
-        "备份文件缺少核心表，拒绝恢复",
-      );
-      return c.json(
-        {
-          error: `无效的备份文件：缺少关键数据表（${missingTables.join("、")}）`,
-        },
-        400,
-      );
-    }
-
-    closeDb();
-
-    try {
-      if (fs.existsSync(dbPath)) fs.copyFileSync(dbPath, backupPath);
-      if (fs.existsSync(dbPath)) fs.unlinkSync(dbPath);
-      fs.renameSync(tempPath, dbPath);
-      reinitDb();
-      await logAdminAction(
-        user.id,
-        user.username,
-        "RESTORE_DATABASE",
-        "system",
-        "database",
-        {
-          filename: file.name,
-          backupCreated: path.basename(backupPath),
-        },
-      );
-      return c.json({
-        success: true,
-        backupCreated: path.basename(backupPath),
-      });
-    } catch (e: unknown) {
-      try {
-        if (fs.existsSync(backupPath) && !fs.existsSync(dbPath)) {
-          fs.copyFileSync(backupPath, dbPath);
-        }
-      } catch (rollbackErr) {
-        // 恢复备份本身失败：保留备份文件、明确报错，绝不重连到新建的空库
-        logger.error(
-          { err: rollbackErr, backupPath, dbPath },
-          "回滚恢复备份失败，已保留备份文件",
-        );
-        return c.json(
-          {
-            error:
-              "Restore failed and rollback failed. Database backup preserved at " +
-              path.basename(backupPath),
-            backup: path.basename(backupPath),
-          },
-          500,
-        );
-      }
-      try {
-        reinitDb();
-      } catch (reinitErr) {
-        // audit-allow: 数据已恢复，重连失败时进程重启即可，错误已记录
-        logger.error({ err: reinitErr }, "回滚后重连数据库失败");
-      }
-      if (fs.existsSync(tempPath)) fs.unlinkSync(tempPath);
-      return c.json(
-        {
-          error:
-            "Restore failed: " +
-            ((e instanceof Error ? e.message : null) || "Unknown error"),
-        },
-        500,
-      );
-    }
+    return c.json({ success: true, backupCreated: result.backupCreated });
   } catch (error: unknown) {
-    try {
-      reinitDb();
-    } catch (reinitErr) {
-      // audit-allow: 失败后的重连是尽力而为，错误语义已由返回值表达
-      logger.error({ err: reinitErr }, "重连数据库失败");
-    }
+    // audit-allow: 上传体解析失败（非 SQLite/表单损坏）统一 500 并附可读原因；
+    //   库连接的重连已由 service 内部完成
+    logger.error({ err: error }, "[Admin] 数据库恢复请求处理失败");
     return c.json({ error: "Restore failed: " + getErrorMessage(error) }, 500);
   }
 });
@@ -402,34 +259,7 @@ adminRoute.openapi(backupHistoryDef, async (c) => {
     throw err;
   }
 
-  const logs = await drizzleDb
-    .select({
-      id: drizzleSchema.admin_logs.id,
-      action: drizzleSchema.admin_logs.action,
-      username: drizzleSchema.admin_logs.username,
-      details: drizzleSchema.admin_logs.details,
-      created_at: drizzleSchema.admin_logs.created_at,
-    })
-    .from(drizzleSchema.admin_logs)
-    .where(
-      sql`${drizzleSchema.admin_logs.action} IN ('BACKUP_DATABASE', 'RESTORE_DATABASE')`,
-    )
-    .orderBy(desc(drizzleSchema.admin_logs.created_at))
-    .limit(50);
-
-  const history = logs.map((log) => {
-    // details 是历史 JSON 快照；脏数据回退为空对象（复用统一的安全解析）
-    const details =
-      safeParseJson<Record<string, unknown> | null>(log.details, null) ?? {};
-    return {
-      id: log.id,
-      action: log.action,
-      username: log.username,
-      filename: (details.filename as string) || null,
-      backupCreated: (details.backupCreated as string) || null,
-      created_at: log.created_at,
-    };
-  });
+  const history = await (await adminDb()).getBackupHistory();
 
   return c.json({ history, total: history.length });
 });
@@ -466,25 +296,9 @@ adminRoute.openapi(exportQuestionsDef, async (c) => {
   }
   const { search, tag, dimension } = c.req.valid("query");
 
-  let query = drizzleDb.select().from(drizzleSchema.questions);
-  const conditions = [];
-
-  if (search)
-    conditions.push(like(drizzleSchema.questions.content, `%${search}%`));
-  if (tag)
-    conditions.push(
-      sql`EXISTS (SELECT 1 FROM json_each(${drizzleSchema.questions.tags}) WHERE value = ${tag})`,
-    );
-  if (dimension)
-    conditions.push(
-      eq(drizzleSchema.questions.dimension, dimension as Dimension),
-    );
-
-  if (conditions.length > 0) {
-    query = query.where(and(...conditions)) as unknown as typeof query;
-  }
-
-  const questions = await query.orderBy(desc(drizzleSchema.questions.id)).all();
+  const questions = await (
+    await adminDb()
+  ).listQuestionsForExport({ search, tag, dimension });
 
   const headers = [
     "ID",
@@ -498,10 +312,9 @@ adminRoute.openapi(exportQuestionsDef, async (c) => {
     "正确率(%)",
     "创建时间",
   ];
-  let csvContent = "\uFEFF" + headers.map(escapeCsv).join(",") + "\n";
-
-  for (const q of questions) {
-    const row = [
+  const rows: unknown[][] = [
+    headers,
+    ...questions.map((q) => [
       q.id,
       q.type,
       q.dimension,
@@ -512,11 +325,22 @@ adminRoute.openapi(exportQuestionsDef, async (c) => {
       q.tags,
       q.correct_ratio,
       q.created_at,
-    ];
-    csvContent += row.map(escapeCsv).join(",") + "\n";
-  }
+    ]),
+  ];
 
-  const fileName = `questions_export_${new Date().toISOString().split("T")[0]}.csv`;
+  // BOM 必须放在最前面：没有它 Excel 打开中文会乱码
+  const csvContent =
+    "\uFEFF" +
+    Papa.unparse(
+      rows.map((row) => row.map(neutralizeCsvFormula)),
+      {
+        quotes: false,
+        newline: "\n",
+      },
+    ) +
+    "\n";
+
+  const fileName = `questions_export_${getBeijingDateString()}.csv`;
   return c.text(csvContent, 200, {
     "Content-Type": "text/csv; charset=utf-8",
     "Content-Disposition": `attachment; filename="${fileName}"`,
@@ -901,4 +725,74 @@ adminRoute.openapi(cleanupSqlBackupsDef, async (c) => {
   const result = await SqlScriptService.cleanupOldBackups();
 
   return c.json(result, 200);
+});
+
+/** GET /api/admin/maintenance/dedupe - 数据维护状态（重复题/兜底题/未回填哈希） */
+const dedupeStatusDef = createRoute({
+  method: "get",
+  path: "/maintenance/dedupe",
+  summary: "数据维护状态",
+  responses: {
+    200: { description: "返回待处理项计数" },
+    401: { description: "未授权" },
+  },
+});
+
+adminRoute.openapi(dedupeStatusDef, async (c) => {
+  try {
+    await requireRole(["admin"]);
+  } catch (err) {
+    // audit-allow: 仅把鉴权类错误转换为 401
+    if (isAuthError(err)) return c.json({ error: "Unauthorized" }, 401);
+    throw err;
+  }
+  return c.json(await getDedupeStatus(), 200);
+});
+
+/**
+ * POST /api/admin/maintenance/dedupe - 兜底题重复清理
+ *
+ * body: { apply?: boolean }——默认 false 只预检；true 时先 VACUUM INTO 备份再执行。
+ * 幂等：重复执行不会二次迁移/删除（见 question-dedupe-cleanup.ts）。
+ */
+const dedupeRunDef = createRoute({
+  method: "post",
+  path: "/maintenance/dedupe",
+  summary: "执行兜底题重复清理（apply 前自动备份）",
+  request: {
+    body: {
+      required: true,
+      content: {
+        "application/json": {
+          schema: z.object({ apply: z.boolean().optional().default(false) }),
+        },
+      },
+    },
+  },
+  responses: {
+    200: { description: "返回清理报告与备份路径" },
+    401: { description: "未授权" },
+    500: { description: "清理失败（数据库未按预期变更时请先查日志）" },
+  },
+});
+
+adminRoute.openapi(dedupeRunDef, async (c) => {
+  let user;
+  try {
+    user = await requireRole(["admin"]);
+  } catch (err) {
+    // audit-allow: 仅把鉴权类错误转换为 401
+    if (isAuthError(err)) return c.json({ error: "Unauthorized" }, 401);
+    throw err;
+  }
+
+  const { apply } = c.req.valid("json");
+  const result = await (await adminDb()).runDedupe({ apply, actor: user });
+
+  if (!result.ok) return c.json({ error: result.error }, result.status);
+
+  return c.json(
+    { ok: true, report: result.report, backupPath: result.backupPath },
+    200,
+  );
 });

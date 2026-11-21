@@ -1,8 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
-import 'package:go_router/go_router.dart';
+import '../../../core/navigation/app_nav.dart';
 import 'practice_provider.dart';
+import '../../../core/theme/app_icons.dart';
+import '../../../core/theme/app_colors.dart';
 
 /// 练习配置页面（与 Web /practice/setup 功能对齐）
 class PracticeSetupScreen extends ConsumerStatefulWidget {
@@ -31,20 +33,20 @@ class _PracticeSetupScreenState extends ConsumerState<PracticeSetupScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xFFF7F7F5),
+      backgroundColor: context.colors.background,
       appBar: AppBar(
-        backgroundColor: Colors.white,
         elevation: 0,
         leading: IconButton(
-          icon: const Icon(Icons.arrow_back, color: Color(0xFF37352F)),
-          onPressed: () => context.go('/dashboard'),
+          tooltip: '返回',
+          icon: Icon(AppIcons.arrowBack, color: context.colors.text),
+          onPressed: () => context.backOrHome(),
         ),
         title: Text(
           '配置练习',
           style: TextStyle(
             fontSize: 18.sp,
             fontWeight: FontWeight.w600,
-            color: const Color(0xFF37352F),
+            color: context.colors.text,
           ),
         ),
         centerTitle: true,
@@ -58,12 +60,12 @@ class _PracticeSetupScreenState extends ConsumerState<PracticeSetupScreen> {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   // 模式选择
-                  _buildSectionTitle('选择练习模式', Icons.tune),
+                  _buildSectionTitle('选择练习模式', AppIcons.tune),
                   SizedBox(height: 12.h),
                   _buildModeGrid(),
                   SizedBox(height: 28.h),
                   // 题目数量
-                  _buildSectionTitle('题目数量', Icons.format_list_numbered),
+                  _buildSectionTitle('题目数量', AppIcons.formatListNumbered),
                   SizedBox(height: 12.h),
                   _buildLimitSelector(),
                   SizedBox(height: 40.h),
@@ -81,14 +83,14 @@ class _PracticeSetupScreenState extends ConsumerState<PracticeSetupScreen> {
   Widget _buildSectionTitle(String title, IconData icon) {
     return Row(
       children: [
-        Icon(icon, size: 18.sp, color: const Color(0xFF37352F)),
+        Icon(icon, size: 18.sp, color: context.colors.text),
         SizedBox(width: 8.w),
         Text(
           title,
           style: TextStyle(
             fontSize: 16.sp,
             fontWeight: FontWeight.w600,
-            color: const Color(0xFF37352F),
+            color: context.colors.text,
           ),
         ),
       ],
@@ -109,12 +111,14 @@ class _PracticeSetupScreenState extends ConsumerState<PracticeSetupScreen> {
           duration: const Duration(milliseconds: 150),
           padding: EdgeInsets.all(12.w),
           decoration: BoxDecoration(
-            color: isSelected ? const Color(0xFF37352F) : Colors.white,
+            color: isSelected
+                ? context.colors.primary
+                : context.colors.surface,
             borderRadius: BorderRadius.circular(12.r),
             border: Border.all(
               color: isSelected
-                  ? const Color(0xFF37352F)
-                  : const Color(0xFFE8E8E5),
+                  ? context.colors.primary
+                  : context.colors.border,
               width: isSelected ? 2 : 1,
             ),
             boxShadow: isSelected
@@ -138,10 +142,10 @@ class _PracticeSetupScreenState extends ConsumerState<PracticeSetupScreen> {
                   fontSize: 13.sp,
                   fontWeight: FontWeight.w600,
                   color: isSelected
-                      ? Colors.white
+                      ? context.colors.onPrimary
                       : mode.enabled
-                      ? const Color(0xFF37352F)
-                      : const Color(0xFF9B9B94),
+                      ? context.colors.text
+                      : context.colors.textSecondary,
                 ),
               ),
             ],
@@ -170,12 +174,14 @@ class _PracticeSetupScreenState extends ConsumerState<PracticeSetupScreen> {
             duration: const Duration(milliseconds: 150),
             padding: EdgeInsets.symmetric(horizontal: 18.w, vertical: 10.h),
             decoration: BoxDecoration(
-              color: isSelected ? const Color(0xFF37352F) : Colors.white,
+              color: isSelected
+                  ? context.colors.primary
+                  : context.colors.surface,
               borderRadius: BorderRadius.circular(8.r),
               border: Border.all(
                 color: isSelected
-                    ? const Color(0xFF37352F)
-                    : const Color(0xFFE8E8E5),
+                    ? context.colors.primary
+                    : context.colors.border,
               ),
             ),
             child: Text(
@@ -183,7 +189,9 @@ class _PracticeSetupScreenState extends ConsumerState<PracticeSetupScreen> {
               style: TextStyle(
                 fontSize: 14.sp,
                 fontWeight: FontWeight.w500,
-                color: isSelected ? Colors.white : const Color(0xFF37352F),
+                color: isSelected
+                    ? context.colors.onPrimary
+                    : context.colors.text,
               ),
             ),
           ),
@@ -196,9 +204,11 @@ class _PracticeSetupScreenState extends ConsumerState<PracticeSetupScreen> {
     return Container(
       padding: EdgeInsets.fromLTRB(20.w, 16.h, 20.w, 32.h),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: context.colors.surface,
         border: Border(
-          top: BorderSide(color: Colors.black.withValues(alpha: 0.05)),
+          top: BorderSide(
+            color: context.colors.border.withValues(alpha: 0.5),
+          ),
         ),
       ),
       child: SizedBox(
@@ -207,8 +217,8 @@ class _PracticeSetupScreenState extends ConsumerState<PracticeSetupScreen> {
         child: ElevatedButton(
           onPressed: _startPractice,
           style: ElevatedButton.styleFrom(
-            backgroundColor: const Color(0xFF37352F),
-            foregroundColor: Colors.white,
+            backgroundColor: context.colors.primary,
+            foregroundColor: context.colors.onPrimary,
             shape: RoundedRectangleBorder(
               borderRadius: BorderRadius.circular(10.r),
             ),
@@ -233,14 +243,22 @@ class _PracticeSetupScreenState extends ConsumerState<PracticeSetupScreen> {
     );
   }
 
+  /// 防止"开始练习"被连点：连点会 push 出多条 /practice 路由，
+  /// 每条的 initState 都会 createSession，最后落到哪个会话取决于返回顺序。
+  bool _navigating = false;
+
   void _startPractice() {
+    if (_navigating) return;
+    _navigating = true;
     // 重置练习状态，再跳转到练习页
     ref.read(practiceControllerProvider.notifier).reset();
     // 携带配置参数跳转练习页面（limit 通过路由参数传递）
-    context.go('/practice', extra: {
-      'mode': _selectedMode,
-      'limit': _selectedLimit,
-    });
+    context.pushDetail(
+      AppRoutes.practice,
+      extra: {'mode': _selectedMode, 'limit': _selectedLimit},
+      // 从练习页回来（或返回键取消）时解锁，否则这个页面就再也点不动了
+      onReturn: () => _navigating = false,
+    );
   }
 }
 

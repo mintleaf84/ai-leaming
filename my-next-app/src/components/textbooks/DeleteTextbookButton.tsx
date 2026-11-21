@@ -56,7 +56,7 @@ export function DeleteTextbookButton({ id, title }: DeleteTextbookButtonProps) {
         <Button
           variant="destructive"
           size="icon"
-          className="h-8 w-8 opacity-0 group-hover:opacity-100 transition-opacity absolute top-2 right-2 shadow-sm z-10"
+          className="hover-reveal h-11 w-11 transition-opacity absolute top-2 right-2 shadow-sm z-10"
           onClick={(e) => e.stopPropagation()}
         >
           <Trash2 className="h-4 w-4" />

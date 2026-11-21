@@ -88,7 +88,7 @@ export default function DocsPage() {
             >
               Documentation
             </Badge>
-            <h1 className="text-4xl md:text-5xl font-bold text-neutral-800 font-serif mb-6 tracking-tight">
+            <h1 className="text-4xl md:text-5xl font-semibold text-neutral-800 font-serif mb-6 tracking-tight">
               使用指南
             </h1>
             <p className="text-xl text-neutral-500 leading-relaxed max-w-3xl">

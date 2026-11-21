@@ -23,16 +23,28 @@ export const users = sqliteTable("users", {
 });
 
 // --- 笔记表 ---
-export const notes = sqliteTable("notes", {
-  id: integer("id").primaryKey({ autoIncrement: true }),
-  user_id: integer("user_id")
-    .notNull()
-    .references(() => users.id, { onDelete: "cascade" }),
-  title: text("title").notNull(),
-  content: text("content"),
-  created_at: text("created_at").default(sql`CURRENT_TIMESTAMP`),
-  updated_at: text("updated_at").default(sql`CURRENT_TIMESTAMP`),
-});
+export const notes = sqliteTable(
+  "notes",
+  {
+    id: integer("id").primaryKey({ autoIncrement: true }),
+    user_id: integer("user_id")
+      .notNull()
+      .references(() => users.id, { onDelete: "cascade" }),
+    title: text("title").notNull(),
+    content: text("content"),
+    created_at: text("created_at").default(sql`CURRENT_TIMESTAMP`),
+    updated_at: text("updated_at").default(sql`CURRENT_TIMESTAMP`),
+  },
+  (table) => ({
+    // 笔记列表的唯一过滤条件是 user_id，排序键是 updated_at（见
+    // knowledge.ts 的 getNoteList）。复合索引的 user_id 是最左前缀，
+    // 等值查询与单列索引等价，同时消掉 ORDER BY 的临时 B 树。
+    idx_user_updated: index("idx_notes_user_updated").on(
+      table.user_id,
+      sql`${table.updated_at} DESC`,
+    ),
+  }),
+);
 
 // --- 题目表 ---
 
@@ -68,6 +80,61 @@ export const pdf_import_tasks = sqliteTable(
   }),
 );
 
+// --- Agent 推题 / 题集（docs/agent-question-set-plan.md §2–§3） ---
+
+/**
+ * Agent 一次推送 = 一批题（题集本体）。
+ *
+ * 题目本体**不在**这里，直接落 `questions`（`agent_set_id` + `agent_position`
+ * 关联），因此错题本 / 历史对 Agent 题天然生效（§2 的取舍）。
+ *
+ * - 幂等键 `(user_id, batch_key)`：同一批重推返回既有批次，批次不可变；
+ * - 状态：`active`（可做/可成卷）→ `archived`（归档，历史仍可查）
+ *   或 `promoted`（题已转正成 `origin='import'` 的普通题库题）；
+ * - `target_tags` 存 JSON 数组原样：它是 Agent 声称的考点，只作展示，
+ *   不参与任何过滤（过滤只看 `questions.tags`）。
+ */
+export const agent_question_sets = sqliteTable(
+  "agent_question_sets",
+  {
+    id: integer("id").primaryKey({ autoIncrement: true }),
+    user_id: integer("user_id")
+      .notNull()
+      .references(() => users.id, { onDelete: "cascade" }),
+    /** Agent 生成的幂等键（跨重试稳定）；批次不可变 */
+    batch_key: text("batch_key").notNull(),
+    title: text("title").notNull(),
+    /** 哪个工具推的（如 claude-code），留痕用 */
+    agent: text("agent"),
+    /** 可选：哪个模型生成 */
+    model: text("model"),
+    prompt_version: text("prompt_version"),
+    /** JSON 数组：它声称针对的考点 */
+    target_tags: text("target_tags"),
+    /** 「为什么给你出这些」 */
+    note: text("note"),
+    status: text("status", { enum: ["active", "archived", "promoted"] })
+      .notNull()
+      .default("active"),
+    /**
+     * 首次打开时间（§4.3 Web lane 冻结：`GET /agent-sets/{id}` 视为「打开即已读」）。
+     * NULL = 从未打开过；消费侧 `unreadCount` 据此归零。列表接口不写该列。
+     */
+    read_at: text("read_at"),
+    created_at: text("created_at").default(sql`CURRENT_TIMESTAMP`),
+  },
+  (table) => ({
+    uq_user_batch: unique("agent_question_sets_user_batch_unique").on(
+      table.user_id,
+      table.batch_key,
+    ),
+    idx_user_created: index("idx_agent_question_sets_user_created").on(
+      table.user_id,
+      sql`${table.created_at} DESC`,
+    ),
+  }),
+);
+
 export const questions = sqliteTable(
   "questions",
   {
@@ -88,10 +155,182 @@ export const questions = sqliteTable(
     material_html: text("material_html"),
     ai_mnemonic: text("ai_mnemonic"),
     external_id: text("external_id"),
+    // 内容级去重键 = sha256(归一化题干)，导入时用于跨来源/无 external_id 的去重
+    content_hash: text("content_hash"),
+    // --- Agent 题集隔离标记（docs/agent-question-set-plan.md §2）---
+    // import  = 正常题库题（进题库列表 / 自动组卷 / 掌握度）
+    // agent   = Agent 题集题的可用态（上述三处过滤，但可进错题本与历史）
+    // flagged = 用户报「这题有问题」后移出可用集（消费侧查询一律过滤）
+    // 默认 import：历史行与既有写入路径不传该列，落库即正常题库题，语义零变化。
+    origin: text("origin", { enum: ["import", "agent", "flagged"] })
+      .notNull()
+      .default("import"),
+    agent_set_id: integer("agent_set_id").references(
+      () => agent_question_sets.id,
+    ),
+    /** 批次内顺序（1..n），决定题集练习与成卷的题序 */
+    agent_position: integer("agent_position"),
+    /** 报错理由（用户填的原文）；只有 origin='flagged' 时才可能非空 */
+    agent_flag_reason: text("agent_flag_reason"),
     created_at: text("created_at").default(sql`CURRENT_TIMESTAMP`),
   },
   (table) => ({
     unq_ext: unique("questions_external_id_unique").on(table.external_id),
+    idx_content_hash: index("idx_questions_content_hash").on(
+      table.content_hash,
+    ),
+    // 题库列表 / 自动组卷 / 掌握度三处隔离过滤与 promote 都按它
+    idx_origin: index("idx_questions_origin").on(table.origin),
+  }),
+);
+
+// --- 试卷 / 模考（docs/exam-paper-plan.md §1） ---
+
+/**
+ * 试卷本体。
+ *
+ * 一次作答**不是**新表：复用 `practice_sessions`（`practice_mode='exam'` +
+ * `paper_id` 指向本表），因此错题本、历史、统计、掌握度都自动生效
+ * （见 docs/exam-paper-plan.md §1 的取舍说明）。
+ *
+ * 自动卷把当时生效的规则存进 `rules_json`：题目可以后续被改/删，但"这张卷是
+ * 按什么规则组的"必须可追溯。`kind='fixed'` 时 `duration_minutes` 强制为 NULL。
+ */
+export const exam_papers = sqliteTable(
+  "exam_papers",
+  {
+    id: integer("id").primaryKey({ autoIncrement: true }),
+    user_id: integer("user_id")
+      .notNull()
+      .references(() => users.id, { onDelete: "cascade" }),
+    title: text("title").notNull(),
+    kind: text("kind", { enum: ["fixed", "timed"] })
+      .notNull()
+      .default("fixed"),
+    duration_minutes: integer("duration_minutes"),
+    source: text("source", { enum: ["manual", "auto", "agent"] })
+      .notNull()
+      .default("manual"),
+    rules_json: text("rules_json"),
+    total_questions: integer("total_questions").notNull().default(0),
+    created_at: text("created_at").default(sql`CURRENT_TIMESTAMP`),
+    updated_at: text("updated_at").default(sql`CURRENT_TIMESTAMP`),
+  },
+  (table) => ({
+    idx_user_created: index("idx_exam_papers_user_created").on(
+      table.user_id,
+      sql`${table.created_at} DESC`,
+    ),
+  }),
+);
+
+/**
+ * 试卷内的题目（有序）。
+ *
+ * `UNIQUE(paper_id, question_id)` 把"同一张卷重复出现同一题"变成数据库级约束，
+ * `UNIQUE(paper_id, position)` 保证答题顺序没有空洞/重复。
+ */
+export const exam_paper_items = sqliteTable(
+  "exam_paper_items",
+  {
+    id: integer("id").primaryKey({ autoIncrement: true }),
+    paper_id: integer("paper_id")
+      .notNull()
+      .references(() => exam_papers.id, { onDelete: "cascade" }),
+    question_id: integer("question_id")
+      .notNull()
+      .references(() => questions.id),
+    /** 从 1 开始，决定答题顺序 */
+    position: integer("position").notNull(),
+  },
+  (table) => ({
+    uq_paper_question: unique("uq_exam_paper_items_question").on(
+      table.paper_id,
+      table.question_id,
+    ),
+    uq_paper_position: unique("uq_exam_paper_items_position").on(
+      table.paper_id,
+      table.position,
+    ),
+  }),
+);
+
+// --- AI 草稿校对流（docs/flutter-mobile-plan.md §34） ---
+
+/**
+ * 草稿本体（拍照/相册/文本 → AI 识别 → 人工校对 → 确认入库）。
+ *
+ * 状态机：captured → analyzing → ready/failed；ready → confirmed；任意 → discarded。
+ * `ai_raw_json` 保留模型原始返回，`ai_prompt_version` 与 provider/model 一起落库，
+ * 出问题时能定位到"哪一版 prompt、哪个模型、当时的原始输出"。
+ */
+export const question_drafts = sqliteTable(
+  "question_drafts",
+  {
+    id: text("id").primaryKey(),
+    user_id: integer("user_id")
+      .notNull()
+      .references(() => users.id, { onDelete: "cascade" }),
+    source: text("source", {
+      enum: ["camera", "gallery", "text", "pdf"],
+    }).notNull(),
+    status: text("status", {
+      enum: [
+        "captured",
+        "analyzing",
+        "ready",
+        "failed",
+        "confirmed",
+        "discarded",
+      ],
+    }).notNull(),
+    /** 图片内容指纹；同一个 sha256 只落一份文件（与 pdf-import 的任务态不同，草稿要长期可校对） */
+    image_sha256: text("image_sha256"),
+    /** 相对 `data/` 的路径，如 `drafts/<sha256>` */
+    image_rel_path: text("image_rel_path"),
+    ai_provider: text("ai_provider"),
+    ai_model: text("ai_model"),
+    ai_prompt_version: text("ai_prompt_version"),
+    ai_raw_json: text("ai_raw_json"),
+    error_code: text("error_code"),
+    /**
+     * 本次识别任务的令牌：每次 analyze 写入自己的 token，结果落地前在同一事务里
+     * 与状态一起校验。没有它，两个并发识别都能把状态改成 `analyzing`，
+     * 后完成的那次会覆盖先完成的那次（items 被重建、状态被改写）。
+     */
+    analyze_token: text("analyze_token"),
+    created_at: text("created_at").default(sql`CURRENT_TIMESTAMP`),
+    /** 毫秒时间戳；过期草稿在写入路径上机会式清理（不依赖定时器） */
+    expires_at: integer("expires_at"),
+  },
+  (table) => ({
+    idx_user_created: index("idx_question_drafts_user_created").on(
+      table.user_id,
+      sql`${table.created_at} DESC`,
+    ),
+    idx_expires: index("idx_question_drafts_expires").on(table.expires_at),
+  }),
+);
+
+/** 草稿识别出的单条题目（未确认前只是文本，不参与判分/检索） */
+export const question_draft_items = sqliteTable(
+  "question_draft_items",
+  {
+    draft_id: text("draft_id")
+      .notNull()
+      .references(() => question_drafts.id, { onDelete: "cascade" }),
+    idx: integer("idx").notNull(),
+    content: text("content"),
+    options: text("options"), // JSON string
+    answer: text("answer"),
+    explanation: text("explanation"),
+    tags: text("tags"), // JSON string
+    type: text("type"),
+    material_html: text("material_html"),
+    confirmed: integer("confirmed").notNull().default(0),
+  },
+  (table) => ({
+    pk: primaryKey({ columns: [table.draft_id, table.idx] }),
   }),
 );
 
@@ -135,12 +374,31 @@ export const practice_sessions = sqliteTable(
     is_demo: integer("is_demo").default(0),
     analysis_report: text("analysis_report"), // AI 深度分析报告（JSON）
     total_duration_ms: integer("total_duration_ms").default(0),
+    // --- 试卷作答（docs/exam-paper-plan.md §1）---
+    // 历史行（普通练习）这些列全为 NULL，语义不变。
+    paper_id: integer("paper_id").references(() => exam_papers.id),
+    /** ISO 时间串；不限时（kind=fixed）为 NULL */
+    deadline_at: text("deadline_at"),
+    /** 交卷时间（ISO）；NULL = 未交卷。非空即幂等：重放不再写库 */
+    exam_submitted_at: text("exam_submitted_at"),
+    /** 每题 1 分：correct/total */
+    exam_score: real("exam_score"),
+    // --- Agent 题集作答（docs/agent-question-set-plan.md §4.2）---
+    // `practice_mode='agent_set'` 时指向题集；普通练习 / 试卷该列为 NULL。
+    // `getResults` 用它把「这批题的作答」与用户其它练习日志隔开。
+    agent_set_id: integer("agent_set_id"),
     created_at: text("created_at").default(sql`CURRENT_TIMESTAMP`),
   },
   (table) => ({
     idx_user_ts: index("idx_practice_sessions_user_ts").on(
       table.user_id,
       sql`${table.created_at} DESC`,
+    ),
+    // 试卷列表聚合（attemptCount/bestScore）与"有作答禁止删卷"检查都按 paper_id 过滤
+    idx_paper: index("idx_practice_sessions_paper").on(table.paper_id),
+    // 题集结果回流按 agent_set_id 取该批的作答会话
+    idx_agent_set: index("idx_practice_sessions_agent_set").on(
+      table.agent_set_id,
     ),
     // SQLite 中 NULL 互不相等，故历史数据（source_key 为空）不受影响
     uq_user_source: uniqueIndex("uq_practice_sessions_user_source").on(
@@ -168,7 +426,14 @@ export const practice_logs = sqliteTable(
     is_monitored_correct: integer("is_monitored_correct", {
       mode: "boolean",
     }).default(false),
+    // D1：作答时长，单位**毫秒**（移动端历史上按秒上报，历史值可能偏小 1000 倍；
+    // 服务端对 <1000 的新提交打 warn 作为兜底信号，不改写历史数据）
     duration_ms: integer("duration_ms"),
+    // 来源：web=用户练习，agent=外部 Agent 导入（对错由调用方判定），import=文件导入，
+    // exam=试卷交卷（判定由服务端 `checkAnswerCorrectness` 统一完成）
+    origin: text("origin").notNull().default("web"),
+    // 作答状态：answered=正常作答，skipped=未作答/空答案（不进 SRS），wrong_book=错题本收藏
+    status: text("status").notNull().default("answered"),
     timestamp: text("timestamp").default(sql`CURRENT_TIMESTAMP`),
   },
   (table) => ({
@@ -185,19 +450,27 @@ export const practice_logs = sqliteTable(
     // 按会话取日志（历史详情 / 学习报告 / 续做计数）的唯一过滤条件，
     // 见 drizzle/0016 的说明：没它这三处都是全表扫。
     idx_session: index("idx_practice_logs_session").on(table.session_id),
+    idx_origin: index("idx_practice_logs_origin").on(table.origin),
   }),
 );
 
 // --- 错题/回顾表 ---
-export const session_reviews = sqliteTable("session_reviews", {
-  id: integer("id").primaryKey({ autoIncrement: true }),
-  session_id: text("session_id")
-    .notNull()
-    .references(() => practice_sessions.id),
-  question_id: integer("question_id").notNull(),
-  review_data: text("review_data"), // JSON string
-  created_at: text("created_at").default(sql`CURRENT_TIMESTAMP`),
-});
+export const session_reviews = sqliteTable(
+  "session_reviews",
+  {
+    id: integer("id").primaryKey({ autoIncrement: true }),
+    session_id: text("session_id")
+      .notNull()
+      .references(() => practice_sessions.id),
+    question_id: integer("question_id").notNull(),
+    review_data: text("review_data"), // JSON string
+    created_at: text("created_at").default(sql`CURRENT_TIMESTAMP`),
+  },
+  (table) => ({
+    // 会话详情左连接 / 删会话时按 session_id 取回顾，此前是零索引全表扫。
+    idx_session: index("idx_session_reviews_session").on(table.session_id),
+  }),
+);
 
 // --- 观察区 ---
 export const observation_zone = sqliteTable(
@@ -339,6 +612,12 @@ export const knowledge_cards = sqliteTable(
       sql`${table.created_at} DESC`,
     ),
     idx_user: index("idx_knowledge_cards_user").on(table.user_id),
+    // 卡片列表恒按 user_id 过滤 + created_at 倒序（knowledge.ts:getAllKnowledgeCards）。
+    // 单列 idx_user 只能命中过滤，排序仍要临时 B 树把该用户所有卡片物化一遍。
+    idx_user_created: index("idx_knowledge_cards_user_created").on(
+      table.user_id,
+      sql`${table.created_at} DESC`,
+    ),
   }),
 );
 
@@ -402,6 +681,11 @@ export const api_call_logs = sqliteTable(
  * 只存 p75 需要的原始点：route + name + value。INP 是"跟手"的唯一官方指标，
  * 没有它就只能靠体感判断优化是否有效。单用户场景不采样、不聚合写入，
  * 直接一行一个指标；量级为每天百行，查询用 (route, name, created_at) 索引。
+ *
+ * 保留期 90 天，由 `scheduler.ts` 的日志保留任务按 `created_at < cutoff` 删除。
+ * 注意：本表两个索引都以 `route` 打头，**没有** `created_at` 前缀索引，所以那条
+ * DELETE 是全表扫（日增百行 × 90 天窗口，成本可忽略）。真要按时间批量删再补
+ * `idx_web_vitals_created`，属于独立迁移，别在业务 PR 里顺手加。
  */
 export const web_vitals = sqliteTable(
   "web_vitals",
@@ -548,19 +832,30 @@ export const textbooks = sqliteTable("textbooks", {
 });
 
 // --- 教材章节表 ---
-export const textbook_chapters = sqliteTable("textbook_chapters", {
-  id: integer("id").primaryKey({ autoIncrement: true }),
-  textbook_id: integer("textbook_id")
-    .notNull()
-    .references(() => textbooks.id, { onDelete: "cascade" }),
-  title: text("title").notNull(),
-  content: text("content").notNull(),
-  order_index: integer("order_index").default(0),
-  parent_id: integer("parent_id"),
-  level: integer("level").default(1),
-  created_at: text("created_at").default(sql`CURRENT_TIMESTAMP`),
-  updated_at: text("updated_at").default(sql`CURRENT_TIMESTAMP`),
-});
+export const textbook_chapters = sqliteTable(
+  "textbook_chapters",
+  {
+    id: integer("id").primaryKey({ autoIncrement: true }),
+    textbook_id: integer("textbook_id")
+      .notNull()
+      .references(() => textbooks.id, { onDelete: "cascade" }),
+    title: text("title").notNull(),
+    content: text("content").notNull(),
+    order_index: integer("order_index").default(0),
+    parent_id: integer("parent_id"),
+    level: integer("level").default(1),
+    created_at: text("created_at").default(sql`CURRENT_TIMESTAMP`),
+    updated_at: text("updated_at").default(sql`CURRENT_TIMESTAMP`),
+  },
+  (table) => ({
+    // 章节列表按 textbook_id 过滤 + order_index 排序（textbook.ts:157），
+    // 此前零索引，打开任意教材都是全表扫 + 临时排序。
+    idx_textbook_order: index("idx_textbook_chapters_textbook").on(
+      table.textbook_id,
+      table.order_index,
+    ),
+  }),
+);
 
 // --- 文本标注表 ---
 export const text_annotations = sqliteTable(
@@ -935,5 +1230,64 @@ export const recall_review_logs = sqliteTable(
     unq_user_client_key: uniqueIndex(
       "recall_review_logs_user_client_key_unique",
     ).on(table.user_id, table.client_key),
+  }),
+);
+
+// --- 粉笔账号同步：绑定关系（docs/fenbi-sync-design.md §3） ---
+// 一个用户最多绑定一个粉笔账号（uq_fenbi_accounts_user）。
+// password_enc / cookie_enc 都是 AES-256-GCM 密文（密钥 FENBI_SECRET，见
+// src/lib/fenbi/crypto.ts）；密钥缺失时这两列恒为 NULL，只允许扫码绑定。
+export const fenbi_accounts = sqliteTable(
+  "fenbi_accounts",
+  {
+    id: integer("id").primaryKey({ autoIncrement: true }),
+    user_id: integer("user_id")
+      .notNull()
+      .references(() => users.id, { onDelete: "cascade" }),
+    // 粉笔侧用户 id：登录返回 data.id，数字但按 text 存（跨端 JSON 里可能是字符串）
+    fenbi_user_id: text("fenbi_user_id"),
+    // 明文手机号（仅用于掩码展示与重新登录；不进日志）
+    phone: text("phone"),
+    password_enc: text("password_enc"),
+    cookie_enc: text("cookie_enc"),
+    linked_at: text("linked_at").default(sql`CURRENT_TIMESTAMP`),
+    last_sync_at: text("last_sync_at"),
+    // 上次同步摘要 JSON（imported/skipped/newQuestions/failed/at）
+    last_sync_result: text("last_sync_result"),
+    // active|expired|revoked：expired/revoked 时不自动重试，等用户重新绑定
+    status: text("status", { enum: ["active", "expired", "revoked"] })
+      .notNull()
+      .default("active"),
+    created_at: text("created_at").default(sql`CURRENT_TIMESTAMP`),
+    updated_at: text("updated_at").default(sql`CURRENT_TIMESTAMP`),
+  },
+  (table) => ({
+    unq_user: uniqueIndex("uq_fenbi_accounts_user").on(table.user_id),
+  }),
+);
+
+// --- 粉笔账号同步：已同步的练习（第三层去重，§4.3） ---
+// 增量同步先查 (user_id, exercise_id)，命中即跳过，避免每次把历史重放一遍。
+// exercise_id 用 text：粉笔 id 已到 2.1e9（int32 边界附近），未来可能越界。
+export const fenbi_synced_exercises = sqliteTable(
+  "fenbi_synced_exercises",
+  {
+    id: integer("id").primaryKey({ autoIncrement: true }),
+    user_id: integer("user_id")
+      .notNull()
+      .references(() => users.id, { onDelete: "cascade" }),
+    exercise_id: text("exercise_id").notNull(),
+    // 落库用的幂等键（fenbi:exercise:{id}），便于反查 practice_sessions
+    source_key: text("source_key"),
+    // 命中既有会话时的 sessionId（重复导入时也填，方便排查）
+    session_id: text("session_id"),
+    imported_at: text("imported_at").default(sql`CURRENT_TIMESTAMP`),
+    // 原始 {exercise, questions} 的 sha256：内容变了（补作答）时能看出来
+    payload_sha256: text("payload_sha256"),
+  },
+  (table) => ({
+    unq_user_exercise: uniqueIndex(
+      "uq_fenbi_synced_exercises_user_exercise",
+    ).on(table.user_id, table.exercise_id),
   }),
 );

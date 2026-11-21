@@ -4,6 +4,11 @@ import '../data/wrong_book_repository.dart';
 import '../domain/wrong_question.dart';
 
 /// 视图模式
+///
+/// `mastered` 不再出现在页签里：服务端没有「已掌握列表」接口
+/// （只有 `POST/DELETE /wrong-book/:id/master`，而 `GET /wrong-book` 会排除已掌握
+/// 题目），接上去就是永远空的视图。值先保留，等 `GET /wrong-book/mastered`
+/// 落地（服务端 `wrong-question.ts` 已有 `getMasteredQuestions`）再接 UI。
 enum WrongBookViewMode { list, byTag, mastered }
 
 /// 错题本状态
@@ -120,10 +125,12 @@ class WrongBookController extends Notifier<WrongBookState> {
       if (result['success'] == true) {
         return result['sessionId'] as String?;
       }
+      // 服务端明确拒绝时也要可见，否则界面表现为「点了没反应」。
+      state = state.copyWith(error: '创建练习失败，请重试');
       return null;
     } catch (e) {
       debugPrint('创建错题练习失败: $e');
-      state = state.copyWith(isCreatingPractice: false);
+      state = state.copyWith(isCreatingPractice: false, error: '创建练习失败，请重试');
       return null;
     }
   }
@@ -135,6 +142,8 @@ class WrongBookController extends Notifier<WrongBookState> {
       await loadData();
     } catch (e) {
       debugPrint('标记已掌握失败: $e');
+      // 只补错误提示，不动已加载的列表（loadData 没跑，列表本来就没被清）。
+      state = state.copyWith(error: '操作失败，请重试');
     }
   }
 
@@ -145,6 +154,7 @@ class WrongBookController extends Notifier<WrongBookState> {
       await loadData();
     } catch (e) {
       debugPrint('取消掌握失败: $e');
+      state = state.copyWith(error: '操作失败，请重试');
     }
   }
 }

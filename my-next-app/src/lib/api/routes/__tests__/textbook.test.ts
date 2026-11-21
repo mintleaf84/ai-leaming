@@ -24,6 +24,9 @@ const { mockTextbookService } = vi.hoisted(() => {
       getAllTextbooks: vi.fn(),
       getTextbook: vi.fn(),
       getChapters: vi.fn(),
+      // 章节计数已下沉到 textbookService（路由不再直连 db）；
+      // 列表断言里的 chapterCount=3 由这里提供
+      countChapters: vi.fn().mockResolvedValue(3),
     },
   };
 });

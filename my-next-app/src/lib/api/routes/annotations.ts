@@ -1,7 +1,6 @@
 import { OpenAPIHono, createRoute, z } from "@hono/zod-openapi";
 import { authMiddleware, getCurrentUser } from "@/lib/api/middlewares/auth";
-import { drizzleDb, drizzleSchema } from "@/lib/db";
-import { eq, and, asc } from "drizzle-orm";
+import { annotationService } from "@/lib/services/annotation";
 import { log } from "@/lib/logger";
 
 const app = new OpenAPIHono();
@@ -35,23 +34,10 @@ app.openapi(listAnnotationsDef, async (c) => {
   if (!user) return c.json({ error: "Unauthorized" }, 401);
 
   const { questionId } = c.req.valid("query");
-  const annotations = await drizzleDb
-    .select({
-      id: drizzleSchema.text_annotations.id,
-      startOffset: drizzleSchema.text_annotations.start_offset,
-      endOffset: drizzleSchema.text_annotations.end_offset,
-      tag: drizzleSchema.text_annotations.tag,
-      color: drizzleSchema.text_annotations.color,
-      created_at: drizzleSchema.text_annotations.created_at,
-    })
-    .from(drizzleSchema.text_annotations)
-    .where(
-      and(
-        eq(drizzleSchema.text_annotations.user_id, user.id),
-        eq(drizzleSchema.text_annotations.question_id, parseInt(questionId)),
-      ),
-    )
-    .orderBy(asc(drizzleSchema.text_annotations.start_offset));
+  const annotations = await annotationService.list(
+    Number(user.id),
+    parseInt(questionId),
+  );
 
   return c.json({ annotations });
 });
@@ -90,31 +76,17 @@ app.openapi(createAnnotationDef, async (c) => {
     const { questionId, startOffset, endOffset, tag, color } =
       c.req.valid("json");
 
-    const result = await drizzleDb
-      .insert(drizzleSchema.text_annotations)
-      .values({
-        user_id: user.id,
-        question_id: questionId,
-        start_offset: startOffset,
-        end_offset: endOffset,
-        tag: tag,
-        color: color || null,
-      })
-      .onConflictDoUpdate({
-        target: [
-          drizzleSchema.text_annotations.user_id,
-          drizzleSchema.text_annotations.question_id,
-          drizzleSchema.text_annotations.start_offset,
-          drizzleSchema.text_annotations.end_offset,
-        ],
-        set: {
-          tag: tag,
-          color: color || null,
-        },
-      });
+    const id = await annotationService.upsert({
+      userId: Number(user.id),
+      questionId,
+      startOffset,
+      endOffset,
+      tag,
+      color,
+    });
 
     return c.json({
-      id: Number(result.lastInsertRowid),
+      id,
       message: "标注已保存",
     });
   } catch (err) {
@@ -144,17 +116,9 @@ app.openapi(deleteAnnotationDef, async (c) => {
   if (!user) return c.json({ error: "Unauthorized" }, 401);
 
   const { id } = c.req.valid("query");
-  const result = await drizzleDb
-    .delete(drizzleSchema.text_annotations)
-    .where(
-      and(
-        eq(drizzleSchema.text_annotations.id, parseInt(id)),
-        eq(drizzleSchema.text_annotations.user_id, user.id),
-      ),
-    );
+  const deleted = await annotationService.remove(Number(user.id), parseInt(id));
 
-  if (result.rowsAffected === 0)
-    return c.json({ error: "标注不存在或无权删除" }, 404);
+  if (!deleted) return c.json({ error: "标注不存在或无权删除" }, 404);
   return c.json({ message: "标注已删除" });
 });
 

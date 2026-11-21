@@ -1,7 +1,8 @@
 "use client";
 
 import React from "react";
-import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { useAppQuery } from "@/hooks/useAppQuery";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
 import { SystemStatus } from "./_components/types";
@@ -10,6 +11,8 @@ import { ServerResources } from "./_components/ServerResources";
 import { ModelRanking } from "./_components/ModelRanking";
 import { DemoModePanel } from "./_components/DemoModePanel";
 import { FeatureFlagsPanel } from "./_components/FeatureFlagsPanel";
+import { ErrorState } from "@/components/ui/error-state";
+import { MaintenancePanel } from "./_components/MaintenancePanel";
 
 const STATUS_KEY = "admin-system-status";
 
@@ -17,7 +20,13 @@ export default function SystemPage() {
   const queryClient = useQueryClient();
 
   // 5 秒轮询系统状态，React Query 自动管理缓存与重试
-  const { data: status, isLoading: loading } = useQuery({
+  const {
+    data: status,
+    isLoading: loading,
+    isError,
+    error,
+    refetch,
+  } = useAppQuery({
     queryKey: [STATUS_KEY],
     queryFn: async () => {
       const res = await fetch("/api/admin/system");
@@ -44,35 +53,55 @@ export default function SystemPage() {
   const refresh = () =>
     queryClient.invalidateQueries({ queryKey: [STATUS_KEY] });
 
-  if (loading && !status) return <div className="p-8">加载中...</div>;
-  if (!status) return <div className="p-8">无法获取系统状态</div>;
-
   return (
     <div className="p-8 space-y-8">
-      <div className="flex justify-between items-center">
-        <div>
-          <h2 className="text-3xl font-bold tracking-tight">系统监控</h2>
-          <p className="text-muted-foreground mt-2">
-            实时服务器资源、AI 成本与健康状态
-          </p>
-        </div>
-        <Button variant="outline" onClick={refresh}>
-          刷新
-        </Button>
-      </div>
+      {/* 数据维护独立于监控接口：/system 失败时仍要能预检/执行清理 */}
+      <MaintenancePanel />
 
-      <AICostCards status={status} />
-
-      <div className="grid gap-4 md:grid-cols-7">
-        <ServerResources status={status} />
-        <ModelRanking byModel={status.ai?.byModel} />
-        <DemoModePanel
-          demoMode={status.demoMode ?? false}
-          onToggleDemoMode={() => toggleDemoMode.mutate()}
-          onRefresh={refresh}
+      {loading && !status ? (
+        <div>加载中...</div>
+      ) : isError ? (
+        <ErrorState
+          title="系统信息加载失败"
+          description={
+            error instanceof Error && error.message
+              ? `系统信息读取失败。（${error.message}）`
+              : "系统信息读取失败。"
+          }
+          onRetry={() => void refetch()}
         />
-        <FeatureFlagsPanel />
-      </div>
+      ) : !status ? (
+        <div>无法获取系统状态</div>
+      ) : (
+        <>
+          <div className="flex justify-between items-center">
+            <div>
+              <h1 className="text-2xl font-semibold tracking-tight md:text-3xl">
+                系统监控
+              </h1>
+              <p className="text-muted-foreground mt-2">
+                实时服务器资源、AI 成本与健康状态
+              </p>
+            </div>
+            <Button variant="outline" onClick={refresh}>
+              刷新
+            </Button>
+          </div>
+
+          <AICostCards status={status} />
+
+          <div className="grid gap-4 md:grid-cols-7">
+            <ServerResources status={status} />
+            <ModelRanking byModel={status.ai?.byModel} />
+            <DemoModePanel
+              demoMode={status.demoMode ?? false}
+              onToggleDemoMode={() => toggleDemoMode.mutate()}
+              onRefresh={refresh}
+            />
+            <FeatureFlagsPanel />
+          </div>
+        </>
+      )}
     </div>
   );
 }

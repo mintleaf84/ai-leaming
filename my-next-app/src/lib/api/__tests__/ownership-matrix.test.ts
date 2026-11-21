@@ -44,7 +44,12 @@ interface ModuleRule {
  * 七条全部补齐（见各条目的 `crossUserTest`），本清单已清空。
  * 将来新增用户私有模块时：要么直接补跨用户测试，要么写进这里并说明拿什么 id 定位资源。
  */
-const KNOWN_UNCOVERED: Record<string, string> = {};
+const KNOWN_UNCOVERED: Record<string, string> = {
+  // 粉笔绑定是"每用户一条"的单例（fenbi_accounts.user_id 唯一），没有资源 id；
+  // 隔离由 user_id 唯一索引 + 路由层 getCurrentUser 保证。待补一条双 JWT 的
+  // 行为用例（CI 环境可跑真实 SQLite，本地 glibc 2.17 跑不了 libsql）。
+  fenbi: "单例绑定无资源 id，隔离由 user_id 唯一索引保证",
+};
 
 /** 每个路由模块的归属语义。新增模块时必须在这里登记，否则测试失败。 */
 const MODULES: Record<string, ModuleRule> = {
@@ -84,6 +89,10 @@ const MODULES: Record<string, ModuleRule> = {
     scope: "user",
     crossUserTest: "src/lib/api/routes/__tests__/knowledge-ownership.test.ts",
   },
+  fenbi: {
+    mount: "/api/fenbi",
+    scope: "user",
+  },
   mastery: {
     mount: "/api/mastery",
     scope: "user",
@@ -94,10 +103,42 @@ const MODULES: Record<string, ModuleRule> = {
     scope: "user",
     crossUserTest: "src/lib/api/routes/__tests__/pdf-import-ownership.test.ts",
   },
+  drafts: {
+    mount: "/api/drafts",
+    scope: "user",
+    crossUserTest: "src/lib/api/routes/__tests__/drafts.test.ts",
+  },
   practice: {
     mount: "/api/practice",
     scope: "user",
     crossUserTest: "src/lib/api/routes/__tests__/practice-ownership.test.ts",
+  },
+  // AI 题集（docs/agent-question-set-plan.md §4.2）：题集归属用户
+  // （agent_question_sets.user_id），他人题集/结果一律 404；
+  // Agent 侧同一批数据的写读接口（API key 必须绑 userId）也按 user 域登记。
+  "agent-sets": {
+    mount: "/api/agent-sets",
+    scope: "user",
+    crossUserTest: "src/lib/api/routes/__tests__/agent-sets.test.ts",
+  },
+  "external-agent-sets": {
+    mount: "/api/external/agent",
+    scope: "user",
+    crossUserTest: "src/lib/api/routes/__tests__/agent-sets.test.ts",
+  },
+  // 试卷归属用户（exam_papers.user_id）；他人试卷 / 他人的 exam session 一律 404，
+  // 跨用户断言见 exam.test.ts 的「跨用户」段
+  exam: {
+    mount: "/api/exam",
+    scope: "user",
+    crossUserTest: "src/lib/api/routes/__tests__/exam.test.ts",
+  },
+  // 回忆卡的复习进度/日志按用户隔离（卡组内容全局共享，但不是越权面）；
+  // 跨用户断言见测试文件里的「用户隔离」段：另一个用户读同一 cardId 必须 state=null。
+  recall: {
+    mount: "/api/recall",
+    scope: "user",
+    crossUserTest: "src/lib/api/routes/__tests__/recall-jwt.test.ts",
   },
   profile: {
     mount: "/api/profile",
@@ -143,6 +184,9 @@ const MODULES: Record<string, ModuleRule> = {
 
   // ---- 公开（无需登录） ----
   auth: { mount: "/api/auth", scope: "public" },
+  // 契约协商：只回版本号与能力名，不含任何用户数据；老客户端可能在登录前调用，
+  // 因此必须匿名可用（见 routes/meta.ts 文件头）。
+  meta: { mount: "/api/meta", scope: "public" },
   // 前端性能指标上报（docs/performance.md T-01）：匿名、只写不读，
   // 入参固定为 name/value/route/rating，不含任何可以定位到"谁的数据"的标识符，
   // 因此没有越权面，也不需要跨用户测试。
@@ -151,9 +195,20 @@ const MODULES: Record<string, ModuleRule> = {
 
 function moduleFiles(): string[] {
   return fs
-    .readdirSync(ROUTES_DIR)
-    .filter((f) => f.endsWith(".ts"))
-    .map((f) => f.replace(/\.ts$/, ""))
+    .readdirSync(ROUTES_DIR, { withFileTypes: true })
+    .flatMap((entry) => {
+      if (entry.isFile() && entry.name.endsWith(".ts")) {
+        return [entry.name.replace(/\.ts$/, "")];
+      }
+      // 目录形式的路由模块（如 `external/`，聚合入口是 `index.ts`）按目录名登记
+      if (
+        entry.isDirectory() &&
+        fs.existsSync(path.join(ROUTES_DIR, entry.name, "index.ts"))
+      ) {
+        return [entry.name];
+      }
+      return [];
+    })
     .sort();
 }
 
@@ -240,7 +295,23 @@ describe("归属矩阵：每个路由模块都要被归类", () => {
 });
 
 describe("外部 API：写路由必须声明 write 作用域", () => {
-  const source = fs.readFileSync(path.join(ROUTES_DIR, "external.ts"), "utf8");
+  /**
+   * 外部 API 已按资源拆成 `routes/external/*.ts`（聚合入口 `external/index.ts`）。
+   * 静态门禁只需要"全部 createRoute 源码"，拼回一个串即可，无需关心文件边界。
+   */
+  function readExternalSource(): string {
+    const single = path.join(ROUTES_DIR, "external.ts");
+    if (fs.existsSync(single)) return fs.readFileSync(single, "utf8");
+    const dir = path.join(ROUTES_DIR, "external");
+    return fs
+      .readdirSync(dir)
+      .filter((name) => name.endsWith(".ts"))
+      .sort()
+      .map((name) => fs.readFileSync(path.join(dir, name), "utf8"))
+      .join("\n");
+  }
+
+  const source = readExternalSource();
 
   /**
    * 粗粒度切分 `createRoute({ ... })` 块：从 `createRoute({` 到下一个
@@ -293,6 +364,7 @@ describe("外部 API：写路由必须声明 write 作用域", () => {
     expect(adminOnly.sort()).toEqual([
       "PATCH /questions/{id}",
       "POST /questions",
+      "POST /questions/batch",
     ]);
   });
 

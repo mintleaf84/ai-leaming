@@ -8,6 +8,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog";
 import { isImeComposing } from "@/lib/utils/ime";
+import { ErrorState } from "@/components/ui/error-state";
 
 interface QuestionPickerProps {
   isOpen: boolean;
@@ -31,6 +32,7 @@ export default function QuestionPicker({
   const [questions, setQuestions] = useState<QuestionSummary[]>([]);
   const [loading, setLoading] = useState(false);
   const [searched, setSearched] = useState(false);
+  const [searchError, setSearchError] = useState<string | null>(null);
   const searchInputRef = useRef<HTMLInputElement>(null);
   // Radix 关闭时默认把焦点还给 DialogTrigger；本组件由外部状态驱动、没有
   // Trigger，不兜底焦点会落到 body（读屏回到页首）。
@@ -47,13 +49,29 @@ export default function QuestionPicker({
   const handleSearch = useCallback(async () => {
     setLoading(true);
     setSearched(true);
-    const result = await searchQuestionsAction(query, 15);
-    setLoading(false);
-
-    if (result.success && result.questions) {
-      setQuestions(result.questions);
-    } else {
+    try {
+      const result = await searchQuestionsAction(query, 15);
+      if (result.success && result.questions) {
+        setQuestions(result.questions);
+        setSearchError(null);
+      } else {
+        // 失败不能落到"未找到匹配的题目"：那是"搜到了但没有"的意思，
+        // 与"搜索请求失败"是两件事。
+        setQuestions([]);
+        setSearchError(result.message || "搜索题目失败");
+      }
+    } catch (error) {
+      // 搜索失败要可见：degraded（日志 + 错误态 + 显式 return）
+      console.error("[QuestionPicker] 搜索题目失败", error);
       setQuestions([]);
+      setSearchError(
+        error instanceof Error && error.message
+          ? error.message
+          : "搜索题目失败",
+      );
+      return;
+    } finally {
+      setLoading(false);
     }
   }, [query]);
 
@@ -72,6 +90,7 @@ export default function QuestionPicker({
       setQuery("");
       setQuestions([]);
       setSearched(false);
+      setSearchError(null);
     }
   }, [isOpen]);
 
@@ -174,6 +193,13 @@ export default function QuestionPicker({
               <Loader2 className="h-6 w-6 animate-spin mr-2" />
               搜索中...
             </div>
+          ) : searchError ? (
+            <ErrorState
+              title="搜索题目失败"
+              description={searchError}
+              onRetry={() => void handleSearch()}
+              className="py-10"
+            />
           ) : questions.length === 0 ? (
             <div className="flex flex-col items-center justify-center py-12 text-muted-foreground">
               <BookOpen className="h-10 w-10 mb-3 opacity-50" />

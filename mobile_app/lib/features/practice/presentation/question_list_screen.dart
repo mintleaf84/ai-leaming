@@ -1,11 +1,20 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
-import 'package:go_router/go_router.dart';
-import '../domain/question.dart';
-import 'questions_provider.dart';
-import '../../../shared/widgets/skeleton_widgets.dart';
+import 'package:skeletonizer/skeletonizer.dart';
 
+import '../../../core/navigation/app_nav.dart';
+import '../../../core/theme/app_colors.dart';
+import '../../../core/theme/app_icons.dart';
+import '../../../shared/skeletons/skeleton_fakes.dart';
+import '../../../shared/widgets/empty_state.dart';
+import 'questions_provider.dart';
+import 'widgets/question_list_card.dart';
+
+/// 全量题库列表页。
+///
+/// 卡片与「题目预览」弹层在 `widgets/` 下（纯搬移）；本文件只保留搜索、分页
+/// 触底加载与三态（骨架 / 空 / 失败）。
 class QuestionListScreen extends ConsumerStatefulWidget {
   const QuestionListScreen({super.key});
 
@@ -15,6 +24,9 @@ class QuestionListScreen extends ConsumerStatefulWidget {
 
 class _QuestionListScreenState extends ConsumerState<QuestionListScreen> {
   final ScrollController _scrollController = ScrollController();
+  /// 搜索框的输入：空态里的「清空搜索」要同时清掉输入框与查询词，
+  /// 否则框里还留着旧词、列表却是全部的，看起来像没生效。
+  final TextEditingController _searchController = TextEditingController();
 
   @override
   void initState() {
@@ -25,6 +37,7 @@ class _QuestionListScreenState extends ConsumerState<QuestionListScreen> {
   @override
   void dispose() {
     _scrollController.dispose();
+    _searchController.dispose();
     super.dispose();
   }
 
@@ -39,15 +52,10 @@ class _QuestionListScreenState extends ConsumerState<QuestionListScreen> {
   Widget build(BuildContext context) {
     final questionsState = ref.watch(questionsControllerProvider);
     final theme = Theme.of(context);
-    final isDarkMode = theme.brightness == Brightness.dark;
 
     final bgColor = theme.scaffoldBackgroundColor;
-    final cardColor = theme.cardColor;
     final textColor = theme.colorScheme.onSurface;
-    final secondaryColor = isDarkMode
-        ? const Color(0xFF8A8A8A)
-        : const Color(0xFF787774);
-    final borderColor = theme.dividerColor;
+    final secondaryColor = context.colors.textSecondary;
 
     return Scaffold(
       backgroundColor: bgColor,
@@ -60,8 +68,9 @@ class _QuestionListScreenState extends ConsumerState<QuestionListScreen> {
               child: Row(
                 children: [
                   IconButton(
-                    onPressed: () => context.go('/dashboard'),
-                    icon: Icon(Icons.arrow_back, color: textColor),
+                    tooltip: '返回',
+                    onPressed: () => context.backOrHome(),
+                    icon: Icon(AppIcons.arrowBack, color: textColor),
                   ),
                   Text('📚', style: TextStyle(fontSize: 28.sp)),
                   SizedBox(width: 8.w),
@@ -85,12 +94,11 @@ class _QuestionListScreenState extends ConsumerState<QuestionListScreen> {
               child: Container(
                 height: 44.h,
                 decoration: BoxDecoration(
-                  color: isDarkMode
-                      ? const Color(0xFF2F2F2F)
-                      : const Color(0xFFF1F1EF),
+                  color: context.colors.surfaceAlt,
                   borderRadius: BorderRadius.circular(8.r),
                 ),
                 child: TextField(
+                  controller: _searchController,
                   decoration: InputDecoration(
                     hintText: '搜索题目内容或标签...',
                     hintStyle: TextStyle(
@@ -98,7 +106,7 @@ class _QuestionListScreenState extends ConsumerState<QuestionListScreen> {
                       fontSize: 14.sp,
                     ),
                     prefixIcon: Icon(
-                      Icons.search,
+                      AppIcons.search,
                       color: secondaryColor,
                       size: 20.sp,
                     ),
@@ -120,9 +128,9 @@ class _QuestionListScreenState extends ConsumerState<QuestionListScreen> {
               child: RefreshIndicator(
                 onRefresh: () =>
                     ref.read(questionsControllerProvider.notifier).refresh(),
-                color: const Color(0xFF135BEC),
+                color: context.colors.accent,
                 child: questionsState.items.isEmpty && questionsState.isLoading
-                    ? const QuestionListSkeleton()
+                    ? _buildSkeleton()
                     : questionsState.items.isEmpty &&
                           questionsState.error != null
                     ? Center(
@@ -130,9 +138,9 @@ class _QuestionListScreenState extends ConsumerState<QuestionListScreen> {
                           mainAxisAlignment: MainAxisAlignment.center,
                           children: [
                             Icon(
-                              Icons.error_outline,
+                              AppIcons.errorOutline,
                               size: 48.sp,
-                              color: const Color(0xFFEB5757),
+                              color: context.colors.error,
                             ),
                             SizedBox(height: 16.h),
                             Text(
@@ -150,6 +158,8 @@ class _QuestionListScreenState extends ConsumerState<QuestionListScreen> {
                           ],
                         ),
                       )
+                    : questionsState.items.isEmpty
+                    ? _buildEmptyState(questionsState.search)
                     : ListView.separated(
                         controller: _scrollController,
                         padding: EdgeInsets.symmetric(
@@ -166,122 +176,16 @@ class _QuestionListScreenState extends ConsumerState<QuestionListScreen> {
                           if (index == questionsState.items.length) {
                             return Padding(
                               padding: EdgeInsets.symmetric(vertical: 24.h),
-                              child: const Center(
+                              child: Center(
                                 child: CircularProgressIndicator(
-                                  color: Color(0xFF135BEC),
+                                  color: context.colors.accent,
                                 ),
                               ),
                             );
                           }
 
                           final question = questionsState.items[index];
-                          return Container(
-                            decoration: BoxDecoration(
-                              color: cardColor,
-                              borderRadius: BorderRadius.circular(8.r),
-                              border: Border.all(color: borderColor),
-                            ),
-                            child: Material(
-                              color: Colors.transparent,
-                              child: InkWell(
-                                onTap: () {
-                                  _showQuestionPreview(context, question);
-                                },
-                                borderRadius: BorderRadius.circular(8.r),
-                                child: Padding(
-                                  padding: EdgeInsets.all(16.w),
-                                  child: Column(
-                                    crossAxisAlignment:
-                                        CrossAxisAlignment.start,
-                                    children: [
-                                      Row(
-                                        children: [
-                                          Container(
-                                            padding: EdgeInsets.symmetric(
-                                              horizontal: 6.w,
-                                              vertical: 2.h,
-                                            ),
-                                            decoration: BoxDecoration(
-                                              color: question.type == 'single'
-                                                  ? const Color(0xFFE3F2FD)
-                                                  : const Color(0xFFF3E5F5),
-                                              borderRadius:
-                                                  BorderRadius.circular(4.r),
-                                            ),
-                                            child: Text(
-                                              question.type == 'single'
-                                                  ? '单选'
-                                                  : '多选',
-                                              style: TextStyle(
-                                                fontSize: 10.sp,
-                                                color: question.type == 'single'
-                                                    ? const Color(0xFF1976D2)
-                                                    : const Color(0xFF7B1FA2),
-                                                fontWeight: FontWeight.bold,
-                                              ),
-                                            ),
-                                          ),
-                                          SizedBox(width: 8.w),
-                                          Expanded(
-                                            child: Text(
-                                              question.dimension ?? '综合能力',
-                                              style: TextStyle(
-                                                fontSize: 12.sp,
-                                                color: secondaryColor,
-                                              ),
-                                              maxLines: 1,
-                                              overflow: TextOverflow.ellipsis,
-                                            ),
-                                          ),
-                                          Text(
-                                            'ID: ${question.id}',
-                                            style: TextStyle(
-                                              fontSize: 10.sp,
-                                              color: secondaryColor.withValues(
-                                                alpha: 0.5,
-                                              ),
-                                              fontFamily: 'monospace',
-                                            ),
-                                          ),
-                                        ],
-                                      ),
-                                      SizedBox(height: 12.h),
-                                      Text(
-                                        question.content,
-                                        style: TextStyle(
-                                          fontSize: 15.sp,
-                                          color: textColor,
-                                          height: 1.4,
-                                        ),
-                                        maxLines: 3,
-                                        overflow: TextOverflow.ellipsis,
-                                      ),
-                                      if (question.tags.isNotEmpty) ...[
-                                        SizedBox(height: 12.h),
-                                        Wrap(
-                                          spacing: 8.w,
-                                          runSpacing: 4.h,
-                                          children: question.tags
-                                              .map(
-                                                (tag) => Text(
-                                                  '#$tag',
-                                                  style: TextStyle(
-                                                    fontSize: 12.sp,
-                                                    color: const Color(
-                                                      0xFF135BEC,
-                                                    ),
-                                                  ),
-                                                ),
-                                              )
-                                              .toList(),
-                                        ),
-                                      ],
-                                    ],
-                                  ),
-                                ),
-                              ),
-                            ),
-                          );
+                          return QuestionListCard(question: question);
                         },
                       ),
               ),
@@ -292,245 +196,48 @@ class _QuestionListScreenState extends ConsumerState<QuestionListScreen> {
     );
   }
 
-  void _showQuestionPreview(BuildContext context, Question question) {
-    showModalBottomSheet(
-      context: context,
-      isScrollControlled: true,
-      backgroundColor: Colors.transparent,
-      builder: (context) {
-        final theme = Theme.of(context);
-        final isDarkMode = theme.brightness == Brightness.dark;
-        return DraggableScrollableSheet(
-          initialChildSize: 0.8,
-          minChildSize: 0.4,
-          maxChildSize: 0.95,
-          builder: (context, scrollController) {
-            return Container(
-              decoration: BoxDecoration(
-                color: theme.scaffoldBackgroundColor,
-                borderRadius: BorderRadius.vertical(top: Radius.circular(20.r)),
-              ),
-              child: Column(
-                children: [
-                  // 拖拽手柄（Drag Handle）
-                  GestureDetector(
-                    behavior: HitTestBehavior.opaque,
-                    child: Container(
-                      width: double.infinity,
-                      padding: EdgeInsets.symmetric(vertical: 12.h),
-                      alignment: Alignment.center,
-                      child: Container(
-                        width: 40.w,
-                        height: 4.h,
-                        decoration: BoxDecoration(
-                          color: isDarkMode
-                              ? const Color(0xFF424242)
-                              : const Color(0xFFD0D0D0),
-                          borderRadius: BorderRadius.circular(2.r),
-                        ),
-                      ),
-                    ),
-                  ),
-                  // 可滚动内容（使用 DraggableScrollableSheet 的 scrollController）
-                  Expanded(
-                    child: ListView(
-                      controller: scrollController,
-                      padding: EdgeInsets.all(24.w),
-                      children: [
-                        Row(
-                          children: [
-                            Container(
-                              padding: EdgeInsets.symmetric(
-                                horizontal: 8.w,
-                                vertical: 4.h,
-                              ),
-                              decoration: BoxDecoration(
-                                color: question.type == 'single'
-                                    ? const Color(0xFFE3F2FD)
-                                    : const Color(0xFFF3E5F5),
-                                borderRadius: BorderRadius.circular(6.r),
-                              ),
-                              child: Text(
-                                question.type == 'single' ? '单选' : '多选',
-                                style: TextStyle(
-                                  fontSize: 12.sp,
-                                  color: question.type == 'single'
-                                      ? const Color(0xFF1976D2)
-                                      : const Color(0xFF7B1FA2),
-                                  fontWeight: FontWeight.bold,
-                                ),
-                              ),
-                            ),
-                            SizedBox(width: 12.w),
-                            Expanded(
-                              child: Text(
-                                question.dimension ?? '综合',
-                                style: TextStyle(
-                                  fontSize: 14.sp,
-                                  color: isDarkMode
-                                      ? Colors.grey[400]
-                                      : Colors.grey[600],
-                                ),
-                              ),
-                            ),
-                          ],
-                        ),
-                        SizedBox(height: 24.h),
-                        Text(
-                          question.content,
-                          style: TextStyle(
-                            fontSize: 20.sp,
-                            fontWeight: FontWeight.w600,
-                            height: 1.5,
-                            color: theme.colorScheme.onSurface,
-                          ),
-                        ),
-                        SizedBox(height: 32.h),
-                        ...question.options.asMap().entries.map((e) {
-                          return Container(
-                            width: double.infinity,
-                            margin: EdgeInsets.only(bottom: 12.h),
-                            padding: EdgeInsets.all(16.w),
-                            decoration: BoxDecoration(
-                              color: isDarkMode
-                                  ? const Color(0xFF2C2C2C)
-                                  : const Color(0xFFF8F9FA),
-                              borderRadius: BorderRadius.circular(12.r),
-                              border: Border.all(
-                                color: isDarkMode
-                                    ? const Color(0xFF424242)
-                                    : const Color(0xFFEEEEEE),
-                              ),
-                            ),
-                            child: Text(
-                              '${String.fromCharCode(65 + e.key)}. ${e.value}',
-                              style: TextStyle(
-                                fontSize: 16.sp,
-                                color: theme.colorScheme.onSurface,
-                              ),
-                            ),
-                          );
-                        }),
-                        if (question.explanation != null) ...[
-                          SizedBox(height: 24.h),
-                          Container(
-                            width: double.infinity,
-                            padding: EdgeInsets.all(16.w),
-                            decoration: BoxDecoration(
-                              color: isDarkMode
-                                  ? const Color(
-                                      0xFF1E3A8A,
-                                    ).withValues(alpha: 0.2)
-                                  : const Color(0xFFEDF2FF),
-                              borderRadius: BorderRadius.circular(12.r),
-                            ),
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                Row(
-                                  children: [
-                                    Icon(
-                                      Icons.lightbulb_outline,
-                                      color: const Color(0xFF135BEC),
-                                      size: 20.sp,
-                                    ),
-                                    SizedBox(width: 8.w),
-                                    Text(
-                                      '解析',
-                                      style: TextStyle(
-                                        fontSize: 16.sp,
-                                        fontWeight: FontWeight.bold,
-                                        color: const Color(0xFF135BEC),
-                                      ),
-                                    ),
-                                  ],
-                                ),
-                                SizedBox(height: 12.h),
-                                Text(
-                                  question.explanation!,
-                                  style: TextStyle(
-                                    fontSize: 15.sp,
-                                    height: 1.5,
-                                    color: theme.colorScheme.onSurface
-                                        .withValues(alpha: 0.8),
-                                  ),
-                                ),
-                              ],
-                            ),
-                          ),
-                        ],
-                        SizedBox(height: 48.h),
-                      ],
-                    ),
-                  ),
-                  // 底部按钮
-                  Container(
-                    padding: EdgeInsets.all(24.w),
-                    decoration: BoxDecoration(
-                      color: theme.scaffoldBackgroundColor,
-                      boxShadow: [
-                        BoxShadow(
-                          color: Colors.black.withValues(alpha: 0.05),
-                          offset: const Offset(0, -4),
-                          blurRadius: 8,
-                        ),
-                      ],
-                    ),
-                    child: Row(
-                      children: [
-                        Expanded(
-                          child: OutlinedButton(
-                            onPressed: () => Navigator.pop(context),
-                            style: OutlinedButton.styleFrom(
-                              padding: EdgeInsets.symmetric(vertical: 16.h),
-                              shape: RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(12.r),
-                              ),
-                            ),
-                            child: Text(
-                              '关闭',
-                              style: TextStyle(fontSize: 16.sp),
-                            ),
-                          ),
-                        ),
-                        SizedBox(width: 16.w),
-                        Expanded(
-                          flex: 2,
-                          child: ElevatedButton(
-                            onPressed: () {
-                              Navigator.pop(context);
-                              ScaffoldMessenger.of(context).showSnackBar(
-                                const SnackBar(
-                                  content: Text('单题练习跳转功能准备接管...'),
-                                ),
-                              );
-                            },
-                            style: ElevatedButton.styleFrom(
-                              backgroundColor: const Color(0xFF135BEC),
-                              foregroundColor: Colors.white,
-                              padding: EdgeInsets.symmetric(vertical: 16.h),
-                              shape: RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(12.r),
-                              ),
-                            ),
-                            child: Text(
-                              '加入练习',
-                              style: TextStyle(
-                                fontSize: 16.sp,
-                                fontWeight: FontWeight.bold,
-                              ),
-                            ),
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                ],
-              ),
-            );
-          },
-        );
-      },
+  /// 空列表：区分「没有搜到」与「题库本身没有题」。
+  ///
+  /// 之前这里直接渲染一个空的 `ListView`，整片空白，用户既不知道是没有匹配
+  /// 还是加载失败。现在给出文案；有搜索词时再给「清空搜索」一键回到全部。
+  Widget _buildEmptyState(String search) {
+    final hasSearch = search.isNotEmpty;
+
+    return LayoutBuilder(
+      builder: (context, constraints) => SingleChildScrollView(
+        // 空态也要能下拉刷新：列表空了正是最需要重新拉一次的时候。
+        physics: const AlwaysScrollableScrollPhysics(),
+        child: ConstrainedBox(
+          constraints: BoxConstraints(minHeight: constraints.maxHeight),
+          child: EmptyState(
+            icon: '📚',
+            title: hasSearch ? '没有找到相关题目' : '这里还没有题目',
+            subtitle: hasSearch ? '换个关键词试试，或清空搜索查看全部' : '题库暂时没有内容，稍后再来看看',
+            actionLabel: hasSearch ? '清空搜索' : null,
+            onAction: hasSearch ? _clearSearch : null,
+          ),
+        ),
+      ),
+    );
+  }
+
+  /// 清空搜索词：输入框与查询状态一起复位，再从第 1 页重新拉全部题目。
+  void _clearSearch() {
+    _searchController.clear();
+    ref.read(questionsControllerProvider.notifier).applySearch('');
+  }
+
+  /// 列表骨架：3 张假题卡片复刻真实版式，再由 Skeletonizer 抹成骨块。
+  Widget _buildSkeleton() {
+    return Skeletonizer(
+      enabled: true,
+      child: ListView.separated(
+        padding: EdgeInsets.symmetric(horizontal: 20.w, vertical: 12.h),
+        itemCount: 3,
+        separatorBuilder: (context, index) => SizedBox(height: 12.h),
+        itemBuilder: (context, index) =>
+            QuestionListCard(question: fakeQuestion(index: index)),
+      ),
     );
   }
 }

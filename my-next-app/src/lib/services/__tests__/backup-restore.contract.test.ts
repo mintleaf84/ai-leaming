@@ -61,8 +61,22 @@ vi.mock("webdav", () => ({
       remote.dirs.add(p);
       return true;
     },
-    putFileContents: async (p: string, buf: Buffer) => {
-      remote.files.set(p, Buffer.from(buf));
+    // 生产代码已改为**流式上传**（大库不再整份读进内存）：假服务器必须能收流
+    putFileContents: async (
+      p: string,
+      data: string | Buffer | AsyncIterable<Buffer | string>,
+    ) => {
+      const chunks: Buffer[] = [];
+      if (typeof data === "string") {
+        chunks.push(Buffer.from(data));
+      } else if (Buffer.isBuffer(data)) {
+        chunks.push(data);
+      } else {
+        for await (const chunk of data) {
+          chunks.push(Buffer.isBuffer(chunk) ? chunk : Buffer.from(chunk));
+        }
+      }
+      remote.files.set(p, Buffer.concat(chunks));
       return true;
     },
     getDirectoryContents: async () => remote.listed,

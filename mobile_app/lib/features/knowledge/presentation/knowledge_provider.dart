@@ -1,4 +1,6 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import '../../../core/error/user_message.dart';
 import '../../../core/network/dio_client.dart';
 import '../../../shared/datasources/api_client.dart';
 
@@ -87,16 +89,24 @@ class KnowledgeListState {
 
 /// 知识卡片控制器
 class KnowledgeController extends Notifier<KnowledgeListState> {
+  /// 请求序号：每发起一次加载自增，回调落地前比对，避免「先发后到」的旧响应
+  /// 覆盖新响应（快速切分类时会出现）。
+  int _requestSeq = 0;
+
   @override
   KnowledgeListState build() => const KnowledgeListState();
 
   ApiClient get _apiClient {
-    final dio = ref.watch(dioProvider);
+    // 用 read 而不是 watch：这里在控制器方法里取一次用，不参与 build 的依赖图。
+    // watch 会把「后端地址变了」变成对本控制器的 invalidateSelf，正在加载的
+    // 列表被重建回空态，方法里随后落地的 state 也就写不回去了。
+    final dio = ref.read(dioProvider);
     return ApiClient(dio);
   }
 
   /// 加载卡片列表
   Future<void> loadCards({String? category}) async {
+    final seq = ++_requestSeq;
     state = state.copyWith(isLoading: true, error: null);
 
     try {
@@ -113,13 +123,19 @@ class KnowledgeController extends Notifier<KnowledgeListState> {
           .map((e) => e as String)
           .toList();
 
+      // 已经有更新的请求发出，这份旧结果（含其失败）必须整体丢弃。
+      if (seq != _requestSeq) return;
+
       state = state.copyWith(
         isLoading: false,
         cards: cards,
         categories: categories,
       );
     } catch (e) {
-      state = state.copyWith(isLoading: false, error: e.toString());
+      if (seq != _requestSeq) return;
+      // 原始异常只进日志，界面用统一文案（审计 #24）。
+      debugPrint('[Knowledge] 加载知识库失败: $e');
+      state = state.copyWith(isLoading: false, error: userMessageOf(e));
     }
   }
 

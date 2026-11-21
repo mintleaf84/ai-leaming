@@ -1,6 +1,6 @@
 import { drizzleDb } from "@/lib/db";
 import { textbooks, textbook_chapters } from "@/lib/db/drizzle-schema";
-import { eq, desc, asc } from "drizzle-orm";
+import { eq, desc, asc, count } from "drizzle-orm";
 import { ragService } from "@/lib/ai/rag";
 import { splitText } from "@/lib/utils/text-splitter";
 import fs from "fs";
@@ -146,6 +146,22 @@ export const textbookService = {
     }
 
     return chapterId;
+  },
+
+  /**
+   * 某本教材的章节数量（列表页 `chapterCount` 用）。
+   *
+   * 与 `getChapters(...).length` 的区别：这里只 `COUNT(*)`，不把章节正文
+   * （`content` 可能是整章文字）搬进内存；列表页每本书各调一次。
+   */
+  countChapters: async (textbookId: number): Promise<number> => {
+    const row = await drizzleDb
+      .select({ value: count() })
+      .from(textbook_chapters)
+      .where(eq(textbook_chapters.textbook_id, textbookId))
+      .get();
+
+    return row?.value || 0;
   },
 
   /**

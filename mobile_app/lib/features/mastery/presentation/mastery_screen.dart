@@ -1,8 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
-import 'package:go_router/go_router.dart';
+import '../../../core/navigation/app_nav.dart';
 import 'mastery_provider.dart';
+import '../../../core/theme/app_icons.dart';
+import '../../../core/theme/app_colors.dart';
+import '../../../shared/widgets/state_views.dart';
 
 class MasteryScreen extends ConsumerStatefulWidget {
   const MasteryScreen({super.key});
@@ -25,73 +28,40 @@ class _MasteryScreenState extends ConsumerState<MasteryScreen> {
     final state = ref.watch(masteryControllerProvider);
 
     return Scaffold(
-      backgroundColor: const Color(0xFFF7F7F5),
+      backgroundColor: context.colors.background,
       appBar: AppBar(
         title: const Text('学习掌握度'),
-        backgroundColor: Colors.white,
         elevation: 0,
         leading: IconButton(
-          icon: const Icon(Icons.arrow_back, color: Color(0xFF37352F)),
-          onPressed: () => context.go('/dashboard'),
+          tooltip: '返回',
+          icon: Icon(AppIcons.arrowBack, color: context.colors.text),
+          onPressed: () => context.backOrHome(),
         ),
         titleTextStyle: TextStyle(
-          color: const Color(0xFF37352F),
+          color: context.colors.text,
           fontSize: 18.sp,
           fontWeight: FontWeight.bold,
         ),
-        iconTheme: const IconThemeData(color: Color(0xFF37352F)),
+        iconTheme: IconThemeData(color: context.colors.text),
         actions: [
           IconButton(
-            icon: const Icon(Icons.refresh),
+            tooltip: '刷新掌握度',
+            icon: const Icon(AppIcons.refresh),
             onPressed: () =>
                 ref.read(masteryControllerProvider.notifier).loadTree(),
           ),
         ],
       ),
       body: state.isLoading
-          ? const Center(
-              child: CircularProgressIndicator(color: Color(0xFF135BEC)),
+          ? Center(
+              child: CircularProgressIndicator(color: context.colors.accent),
             )
           : state.error != null
-          ? Center(
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  Icon(
-                    Icons.error_outline,
-                    size: 48.sp,
-                    color: Colors.red[300],
-                  ),
-                  SizedBox(height: 16.h),
-                  Text(
-                    '加载失败',
-                    style: TextStyle(
-                      fontSize: 18.sp,
-                      fontWeight: FontWeight.w600,
-                      color: const Color(0xFF37352F),
-                    ),
-                  ),
-                  SizedBox(height: 8.h),
-                  Text(
-                    '请检查网络后重试',
-                    style: TextStyle(fontSize: 14.sp, color: Colors.grey),
-                  ),
-                  SizedBox(height: 24.h),
-                  ElevatedButton.icon(
-                    onPressed: () =>
-                        ref.read(masteryControllerProvider.notifier).loadTree(),
-                    icon: const Icon(Icons.refresh, size: 18),
-                    label: const Text('重试'),
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: const Color(0xFF135BEC),
-                      foregroundColor: Colors.white,
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(8.r),
-                      ),
-                    ),
-                  ),
-                ],
-              ),
+          // 统一错误态（审计 #9）：原来本屏字号 16/18 混用、按钮尺寸自定义。
+          ? AppErrorView(
+              message: '掌握度数据没加载出来',
+              onRetry: () =>
+                  ref.read(masteryControllerProvider.notifier).loadTree(),
             )
           : state.tree.isEmpty
           ? const Center(child: Text('暂无数据'))
@@ -117,13 +87,13 @@ class _MasteryScreenState extends ConsumerState<MasteryScreen> {
       margin: EdgeInsets.only(bottom: 8.h),
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(8.r),
-        side: BorderSide(color: Colors.grey[200]!),
+        side: BorderSide(color: context.colors.border),
       ),
       child: ExpansionTile(
         initiallyExpanded: node.level < 1, // Expand top level by default
         leading: CircularProgressIndicator(
           value: score / 100,
-          backgroundColor: Colors.grey[100],
+          backgroundColor: context.colors.surfaceAlt,
           color: color,
           strokeWidth: 4,
         ),
@@ -143,7 +113,10 @@ class _MasteryScreenState extends ConsumerState<MasteryScreen> {
         ),
         subtitle: Text(
           '层级: ${node.level}',
-          style: TextStyle(fontSize: 10.sp, color: Colors.grey),
+          style: TextStyle(
+            fontSize: 12.sp,
+            color: context.colors.textSecondary,
+          ),
         ),
         children: hasChildren
             ? node.children
@@ -160,8 +133,8 @@ class _MasteryScreenState extends ConsumerState<MasteryScreen> {
   }
 
   Color _getScoreColor(double score) {
-    if (score >= 80) return Colors.green;
-    if (score >= 60) return Colors.orange;
-    return Colors.red;
+    if (score >= 80) return context.colors.success;
+    if (score >= 60) return context.colors.warning;
+    return context.colors.error;
   }
 }

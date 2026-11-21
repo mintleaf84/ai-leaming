@@ -8,6 +8,7 @@ import {
 import { createQuestionScheduler } from "@/lib/srs/fsrs-config";
 import dayjs from "dayjs";
 import utc from "dayjs/plugin/utc";
+import { logger } from "@/lib/logger";
 
 dayjs.extend(utc);
 import { drizzleDb } from "@/lib/db";
@@ -20,8 +21,10 @@ import {
   practice_logs,
   system_settings,
 } from "@/lib/db/drizzle-schema";
-import { eq, and, or, sql, lte, isNull, count, gte } from "drizzle-orm";
+import { eq, and, or, sql, lte, isNull, count, gte, ne } from "drizzle-orm";
 import { withTransaction } from "@/lib/db/executor";
+import { getBeijingDateString } from "@/lib/utils/datetime";
+import { safeParseJson } from "@/lib/utils/json";
 
 // 批量同步配置
 const SYNC_BATCH_SIZE = 100;
@@ -104,13 +107,16 @@ async function getReadingSpeed(
  * 解析失败（脏数据/非 JSON 字符串）时按原文处理，属于数据兼容降级。
  */
 function parseOptionsText(optionsJson: string): string {
-  try {
-    const options = JSON.parse(optionsJson);
-    return Array.isArray(options) ? options.join("") : "";
-  } catch (e) {
-    console.warn("[SRS] 选项 JSON 解析失败，按纯文本估算字数:", e);
+  const options = safeParseJson<unknown>(optionsJson, null);
+  if (options === null) {
+    // 脏数据/非 JSON：按原文估算字数（不阻断，但要留痕）
+    logger.warn(
+      { optionsLength: optionsJson.length },
+      "[SRS] 选项 JSON 解析失败，按纯文本估算字数",
+    );
     return optionsJson || "";
   }
+  return Array.isArray(options) ? options.join("") : "";
 }
 
 /**
@@ -471,7 +477,7 @@ export const srsService = {
     const futureDays = Array.from({ length: 7 }, (_, i) => {
       const d = new Date();
       d.setDate(d.getDate() + i);
-      return d.toISOString().split("T")[0];
+      return getBeijingDateString(d);
     });
 
     const rawFutureRows = await drizzleDb
@@ -666,6 +672,9 @@ export const srsService = {
         .where(
           and(
             eq(practice_logs.user_id, userId),
+            // 跳过未作答记录；agent 导入的对错由调用方判定、服务端不复核，不排期
+            eq(practice_logs.status, "answered"),
+            ne(practice_logs.origin, "agent"),
             or(
               // 尚无 SRS 卡片：首次同步
               isNull(question_srs.question_id),

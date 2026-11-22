@@ -242,6 +242,35 @@ class LocalPracticeStore {
     }
   }
 
+  /// 某个本地会话的练习模式（`local_sessions.mode`）；会话不存在时返回 null。
+  ///
+  /// 离线续练要把模式如实还原：本地会话创建时就带了模式，缺了它练习屏
+  /// 只能猜「随机」（断点也会跟着记错）。
+  ///
+  /// `offline-resume` 是降级路径的内部标记（「这一场是从在线会话中途断网掉下来的」），
+  /// 不是练习模式：把它当模式返回，界面会显示一个谁都不认识的取值，断点也会
+  /// 跟着记脏。这里归一成 null（= 不知道），界面走中性「其它练习」。
+  static const String offlineResumeMarker = 'offline-resume';
+
+  Future<String?> localSessionMode(String localId) async {
+    final db = await _resolveDb();
+    final rows = await db.query(
+      'local_sessions',
+      columns: <String>['mode'],
+      where: 'local_id = ?',
+      whereArgs: <Object?>[localId],
+      limit: 1,
+    );
+    if (rows.isEmpty) {
+      return null;
+    }
+    final mode = rows.first['mode'];
+    if (mode is! String || mode.isEmpty || mode == offlineResumeMarker) {
+      return null;
+    }
+    return mode;
+  }
+
   /// 某个本地会话的归属账号；会话不存在（或没写 user_id）时返回 null。
   ///
   /// 离线续练必须先比对归属：`local_sessions` 是按设备共享的，退出登录并不会

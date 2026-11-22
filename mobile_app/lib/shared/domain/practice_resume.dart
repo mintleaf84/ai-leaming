@@ -49,7 +49,7 @@ class PracticeResume {
     required this.answers,
     required this.nextIndex,
     required this.total,
-    this.mode = 'random',
+    this.mode,
     this.userId,
     this.legacyAnswered = 0,
     required this.savedAt,
@@ -67,8 +67,11 @@ class PracticeResume {
   /// 本场总题数。
   final int total;
 
-  /// 练习模式（后端目前只支持 `random`，字段留着以免以后换模式时又改一次格式）。
-  final String mode;
+  /// 练习模式（`practice_sessions.practice_mode` 原值）。
+  ///
+  /// `null` = 不知道这一场是什么模式（老会话没存、入口也没传）：续练时界面
+  /// 显示中性「其它练习」，**不**补成 `random` 冒充随机练习。
+  final String? mode;
 
   /// 断点归属的账号 id（`TokenUtil.userIdOf(jwt_token)`）。
   ///
@@ -104,7 +107,7 @@ class PracticeResume {
     ],
     'nextIndex': nextIndex,
     'total': total,
-    'mode': mode,
+    if (mode != null) 'mode': mode,
     if (userId != null) 'userId': userId,
     if (legacyAnswered > 0) 'legacyAnswered': legacyAnswered,
     'savedAt': savedAt.toIso8601String(),
@@ -167,7 +170,9 @@ class PracticeResume {
       answers: answers,
       nextIndex: nextIndex,
       total: total,
-      mode: mode is String && mode.isNotEmpty ? mode : 'random',
+      // 缺失/空值 = 「不知道这一场的模式」，保留 null：补成 `random` 会让
+      // 首页续练把一场 AI 题集/试卷练习说成随机（假话，不进备份也不该进断点）。
+      mode: mode is String && mode.isNotEmpty ? mode : null,
       userId: userId is String && userId.isNotEmpty ? userId : null,
       legacyAnswered: legacyAnswered,
       savedAt: savedAt is String

@@ -102,6 +102,8 @@ void main() {
           userAnswer: any(named: 'userAnswer'),
           duration: any(named: 'duration'),
           sessionQuestionIds: any(named: 'sessionQuestionIds'),
+          // 控制器现在会把当前模式一起带上（断网降级建本地会话要用）
+          mode: any(named: 'mode'),
         ),
       ).thenAnswer((_) async => {'isCorrect': true, 'correctAnswer': 'A'});
 

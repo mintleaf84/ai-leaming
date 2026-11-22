@@ -39,8 +39,14 @@ class PracticeController extends Notifier<PracticeSessionState> {
   /// 都没有记录，重启后必须回到那道题重练，不能被「已答过」挡在后面。
   final Set<String> _persistedQuestionIds = <String>{};
 
-  /// 本场练习的模式，只用于写断点（后端目前只支持 `random`）。
-  String _mode = 'random';
+  /// 本场练习的模式（`practice_sessions.practice_mode` 原值）。
+  ///
+  /// `null` = 还不知道：界面按中性标签显示，断点落 `random`（会话创建接口的
+  /// 默认值）也不是凭空编的。真实来源有三处，按优先级取：
+  /// 1. `createSession(mode:)` 的入参；
+  /// 2. `loadSession` 里服务端会话自带的 `practiceMode`（断点续练/错题本/AI 题集/试卷）；
+  /// 3. 调用方传进来的兜底 `mode`（老会话没有这个字段时）。
+  String? _mode;
 
   /// 当前账号 id（`TokenUtil.userIdOf(jwt_token)`）：断点必须带归属，
   /// 否则账号 B 能接着做 A 的练习（review 二轮 3）。
@@ -91,6 +97,8 @@ class PracticeController extends Notifier<PracticeSessionState> {
               ],
               nextIndex: _firstUnansweredIndex(),
               total: state.questions.length,
+              // 不知道就留 null：补成 `random` 会让「首页继续上次练习」把一场
+              // 考试/题集练习说成随机（假话），下次续练还会把它当真。
               mode: _mode,
               userId: userId,
               legacyAnswered: _legacyAnswered,
@@ -152,6 +160,8 @@ class PracticeController extends Notifier<PracticeSessionState> {
         correctAnswers: {},
         explanations: {},
         isOffline: sessionResponse.sessionId.startsWith('local_'),
+        // 界面读这个字段出面包屑：不写的话整场都会显示「其它练习」。
+        mode: _mode,
       );
 
       _questionStartTime = DateTime.now();
@@ -190,11 +200,14 @@ class PracticeController extends Notifier<PracticeSessionState> {
   /// [startIndex] 是续练的兜底起点（没有已答记录时用）。
   /// [answered] 是断点里持久化的已答记录：恢复时一并回填 `results`，
   /// 落点则取「第一道未答题」——比传进来的下标更准（跳题作答时两者不同）。
+  /// [mode] 是调用方知道的模式（错题本入口传 `review`、首页续练传断点里的值），
+  /// 只在会话自己没带 `practiceMode` 时兜底。
   Future<void> loadSession(
     String sessionId, {
     int startIndex = 0,
     List<ResumeAnswer> answered = const <ResumeAnswer>[],
     int legacyAnswered = 0,
+    String? mode,
   }) async {
     // 代次：`reset()` / 新的 createSession 已经让这次加载失效时，
     // 迟到的响应（含异常分支）必须整体丢弃，不能把旧会话写回来。
@@ -232,6 +245,14 @@ class PracticeController extends Notifier<PracticeSessionState> {
         ..clear()
         ..addAll(restored.keys);
 
+      // 模式如实恢复：会话自带的值最可信（服务端 `practiceMode`，离线会话由
+      // local_sessions.mode 还原）；老会话没有这个字段时才用调用方兜底。
+      // 不回写 `_mode` 的话，从错题本/AI 题集/试卷进来的断点全被记成 random。
+      final sessionMode = sessionResponse.practiceMode?.trim();
+      _mode = (sessionMode != null && sessionMode.isNotEmpty)
+          ? sessionMode
+          : mode;
+
       state = state.copyWith(
         isLoading: false,
         sessionId: sessionResponse.sessionId,
@@ -242,6 +263,7 @@ class PracticeController extends Notifier<PracticeSessionState> {
         correctAnswers: {},
         explanations: {},
         isOffline: sessionResponse.sessionId.startsWith('local_'),
+        mode: _mode,
       );
 
       _questionStartTime = DateTime.now();
@@ -338,6 +360,9 @@ class PracticeController extends Notifier<PracticeSessionState> {
         sessionQuestionIds: <String>[
           for (final q in state.questions) q.id,
         ],
+        // 中途断网降级会建 `local_<服务端 id>` 这一场：模式得跟着写进去，
+        // 否则续练只能读到内部标记 `offline-resume`。
+        mode: _mode,
       );
 
       // 从后端响应获取正确性和正确答案

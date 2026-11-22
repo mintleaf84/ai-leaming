@@ -130,7 +130,11 @@ class PracticeRepositoryImpl implements PracticeRepository {
         mode: mode,
         questionIds: questions.map((question) => question.id).toList(),
       );
-      return PracticeSession(sessionId: localId, questions: questions);
+      return PracticeSession(
+        sessionId: localId,
+        questions: questions,
+        practiceMode: mode,
+      );
     } on OfflineCacheUnavailable {
       rethrow;
     } catch (error) {
@@ -194,7 +198,12 @@ class PracticeRepositoryImpl implements PracticeRepository {
       }
       questions.add(question);
     }
-    return PracticeSession(sessionId: localId, questions: questions);
+    return PracticeSession(
+      sessionId: localId,
+      questions: questions,
+      // 模式从本地会话记录还原：缺了它，离线续练会把自己记成随机。
+      practiceMode: await _localStore.localSessionMode(localId),
+    );
   }
 
   @override
@@ -204,6 +213,7 @@ class PracticeRepositoryImpl implements PracticeRepository {
     required String userAnswer,
     required int duration,
     List<String>? sessionQuestionIds,
+    String? mode,
   }) async {
     // 本地会话（local_ 前缀）没有服务端记录：本地判分 + 落待同步队列。
     if (sessionId.startsWith('local_')) {
@@ -242,6 +252,7 @@ class PracticeRepositoryImpl implements PracticeRepository {
         userAnswer: userAnswer,
         duration: duration,
         sessionQuestionIds: sessionQuestionIds,
+        mode: mode,
       );
     }
   }
@@ -259,6 +270,7 @@ class PracticeRepositoryImpl implements PracticeRepository {
     required String userAnswer,
     required int duration,
     List<String>? sessionQuestionIds,
+    String? mode,
   }) async {
     final localId = 'local_$serverSessionId';
     final userId = await _currentUserId();
@@ -275,7 +287,9 @@ class PracticeRepositoryImpl implements PracticeRepository {
       await _localStore.ensureLocalSession(
         localId: localId,
         userId: userId,
-        mode: 'offline-resume',
+        // 真实模式优先；不知道时才落内部标记（`localSessionMode` 不会把它当
+        // 练习模式返回，续练会走「未知 → 其它练习」这条路）。
+        mode: mode ?? 'offline-resume',
         questionIds: questionIds,
       );
     } catch (error) {

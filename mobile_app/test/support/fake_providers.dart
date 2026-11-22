@@ -201,6 +201,7 @@ class FakePracticeRepository implements PracticeRepository {
     this.sessionId = 'session_1',
     this.createError,
     this.createGate,
+    this.sessionMode,
     this.submitResponse = const <String, dynamic>{
       'isCorrect': true,
       'correctAnswer': 'A',
@@ -213,6 +214,11 @@ class FakePracticeRepository implements PracticeRepository {
   String sessionId;
   Object? createError;
   Completer<void>? createGate;
+
+  /// 假仓库返回的会话模式（服务端 `practiceMode` / 本地会话 mode 的替身）。
+  ///
+  /// `null` = 老会话没有这个字段，续练只能靠调用方兜底。
+  String? sessionMode;
   /// 挂住 `getSession`：用来观察续练的迟到响应（竞态用例）。
   Completer<void>? getSessionGate;
   Map<String, dynamic> submitResponse;
@@ -223,8 +229,14 @@ class FakePracticeRepository implements PracticeRepository {
   int submitCalls = 0;
   final List<String> submittedAnswers = <String>[];
 
+  /// 每次 `createSession` 带上来的模式（断言「模式在入口就传下去了」）。
+  final List<String> createdModes = <String>[];
+
   /// 每次提交带上来的「整场题序」（降级成本地会话时用来记全题序）。
   final List<List<String>?> submittedSessionQuestionIds = <List<String>?>[];
+
+  /// 每次提交带上来的练习模式（降级建本地会话时写进去的那个值）。
+  final List<String?> submittedModes = <String?>[];
 
   /// 被 `getSession` 加载过的会话 id（续练/错题本入口据此断言「进的是这一场」）。
   final List<String> loadedSessions = <String>[];
@@ -235,12 +247,17 @@ class FakePracticeRepository implements PracticeRepository {
     String mode = 'random',
   }) async {
     createCalls++;
+    createdModes.add(mode);
     if (createGate != null) {
       await createGate!.future;
     }
     final error = createError;
     if (error != null) throw error;
-    return PracticeSession(sessionId: sessionId, questions: questions);
+    return PracticeSession(
+      sessionId: sessionId,
+      questions: questions,
+      practiceMode: sessionMode ?? mode,
+    );
   }
 
   @override
@@ -252,7 +269,11 @@ class FakePracticeRepository implements PracticeRepository {
     }
     final error = createError;
     if (error != null) throw error;
-    return PracticeSession(sessionId: sessionId, questions: questions);
+    return PracticeSession(
+      sessionId: sessionId,
+      questions: questions,
+      practiceMode: sessionMode,
+    );
   }
 
   @override
@@ -262,10 +283,12 @@ class FakePracticeRepository implements PracticeRepository {
     required String userAnswer,
     required int duration,
     List<String>? sessionQuestionIds,
+    String? mode,
   }) async {
     submitCalls++;
     submittedAnswers.add(userAnswer);
     submittedSessionQuestionIds.add(sessionQuestionIds);
+    submittedModes.add(mode);
     final error = submitError;
     if (error != null) throw error;
     return submitResponse;

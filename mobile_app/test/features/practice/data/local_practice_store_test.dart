@@ -277,6 +277,46 @@ void main() {
       expect(await store.localSessionOwner(localId), 'u1');
       expect(await store.localSessionOwner('local_missing'), isNull);
     });
+
+    test('localSessionMode 还原开练时的模式；缺失/空串返回 null', () async {
+      final localId = await store.createLocalSession(
+        userId: 'u1',
+        mode: 'review',
+        questionIds: const <String>['1'],
+      );
+
+      expect(
+        await store.localSessionMode(localId),
+        'review',
+        reason: '离线续练靠它还原模式，丢了就会把自己记成随机',
+      );
+
+      await db.insert('local_sessions', <String, Object?>{
+        'local_id': 'local_empty_mode',
+        'user_id': 'u1',
+        'mode': '',
+        'question_ids': '["1"]',
+        'started_at': nowMs(),
+      });
+      expect(await store.localSessionMode('local_empty_mode'), isNull);
+      expect(await store.localSessionMode('local_missing'), isNull);
+    });
+
+    test('降级标记 offline-resume 不算练习模式（归一成 null）', () async {
+      await db.insert('local_sessions', <String, Object?>{
+        'local_id': 'local_agent_42',
+        'user_id': 'u1',
+        'mode': 'offline-resume',
+        'question_ids': '["1"]',
+        'started_at': nowMs(),
+      });
+
+      expect(
+        await store.localSessionMode('local_agent_42'),
+        isNull,
+        reason: '内部标记不能当模式上屏（界面会显示一个谁都不认识的取值）',
+      );
+    });
   });
 
   group('recordAnswer', () {

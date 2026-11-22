@@ -1291,3 +1291,97 @@ export const fenbi_synced_exercises = sqliteTable(
     ).on(table.user_id, table.exercise_id),
   }),
 );
+
+// --- 教综知识图谱（docs/kg-product-plan.md §2） ---
+//
+// 图谱内容全局共享（节点 / 边没有 user_id）：它是"教材结构"这一客观资产，
+// 与题库同域。用户私有的是「谁做错了什么」（practice_logs）以及题→节点的映射
+// 结果（question_nodes，映射本身也是客观事实）。
+//
+// node_key 采用 `<chapter>:<名称>`（如 `ch1:教育学的创立阶段`），章内唯一；
+// 迁移与导入都只认这一个形态，读接口的 `?node=` 也用同一串。
+
+/** 图谱节点：概念 / 划分标准(facet) / 著作 / 人物 / 政策 */
+export const kg_nodes = sqliteTable(
+  "kg_nodes",
+  {
+    id: integer("id").primaryKey({ autoIncrement: true }),
+    chapter: text("chapter").notNull(),
+    node_key: text("node_key").notNull(),
+    name: text("name").notNull(),
+    kind: text("kind", {
+      enum: ["concept", "facet", "work", "person", "policy"],
+    })
+      .notNull()
+      .default("concept"),
+    printed_page: integer("printed_page"),
+    created_at: text("created_at").default(sql`CURRENT_TIMESTAMP`),
+  },
+  (table) => ({
+    unq_chapter_key: uniqueIndex("kg_nodes_chapter_node_key_unique").on(
+      table.chapter,
+      table.node_key,
+    ),
+    idx_chapter: index("idx_kg_nodes_chapter").on(table.chapter),
+  }),
+);
+
+/**
+ * 图谱边：`evidence` 是原句（NOT NULL，硬约束）。
+ *
+ * 幂等键 `(chapter, from_key, to_key, type)`；`schema_version` 记录建边时的
+ * 关系类型登记表版本，重新导入时用于判断"这条边要不要更新"。
+ */
+export const kg_edges = sqliteTable(
+  "kg_edges",
+  {
+    id: integer("id").primaryKey({ autoIncrement: true }),
+    chapter: text("chapter").notNull(),
+    from_key: text("from_key").notNull(),
+    to_key: text("to_key").notNull(),
+    type: text("type").notNull(),
+    evidence: text("evidence").notNull(),
+    printed_page: integer("printed_page"),
+    schema_version: text("schema_version").notNull(),
+    created_at: text("created_at").default(sql`CURRENT_TIMESTAMP`),
+  },
+  (table) => ({
+    unq_edge: uniqueIndex("kg_edges_unique").on(
+      table.chapter,
+      table.from_key,
+      table.to_key,
+      table.type,
+    ),
+    idx_chapter: index("idx_kg_edges_chapter").on(table.chapter),
+    idx_from: index("idx_kg_edges_from").on(table.from_key),
+  }),
+);
+
+/**
+ * 题→节点映射（离线映射器算好后回传，产品不做匹配算法）。
+ *
+ * `method` / `score` 落库是为了可复核（docs/kg-product-plan.md §5）：
+ * match(score=n) | alias:xxx | manual。幂等键 `(question_id, node_key)`。
+ */
+export const question_nodes = sqliteTable(
+  "question_nodes",
+  {
+    question_id: integer("question_id")
+      .notNull()
+      .references(() => questions.id, { onDelete: "cascade" }),
+    chapter: text("chapter").notNull(),
+    node_key: text("node_key").notNull(),
+    method: text("method"),
+    score: integer("score"),
+    created_at: text("created_at").default(sql`CURRENT_TIMESTAMP`),
+  },
+  (table) => ({
+    unq_question_node: uniqueIndex(
+      "question_nodes_question_node_unique",
+    ).on(table.question_id, table.node_key),
+    idx_chapter_node: index("idx_question_nodes_chapter_node").on(
+      table.chapter,
+      table.node_key,
+    ),
+  }),
+);

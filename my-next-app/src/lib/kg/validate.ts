@@ -96,13 +96,26 @@ export interface KgValidationResult {
  * 节点 key 的唯一规范化入口。
  *
  * 离线产物里有两种写法：完整 key（`ch1:广义的教育`）与裸名称（`广义的教育`）。
- * 入库前一律补上 `<chapter>:` 前缀，保证 UNIQUE(chapter,node_key)、
- * 边端点引用与 `?node=` 过滤用的是同一串。
+ * 入库前给裸名称补上 `<chapter>:` 前缀，保证 UNIQUE(chapter,node_key)、
+ * 边端点引用与 `?node=` 过滤用的是同一串；完整 key 原样保留，**归属校验**
+ * 交给 `isNodeKeyInChapter`（跨章 key 不能在别的章导入/映射，否则
+ * `ch1:A` 与 `ch2:A` 会以不同记录共存，而映射唯一键只有 `(question_id,node_key)`）。
  */
 export function normalizeNodeKey(chapter: string, raw: string): string {
   const key = raw.trim();
   if (!key) return key;
   return key.includes(":") ? key : `${chapter}:${key}`;
+}
+
+/**
+ * 完整 key 的章前缀是否与当前 `chapter` 一致；裸名称视为当前章（会补前缀）。
+ * 导入与题→节点映射都必须用这一条规则，避免同一节点名跨章撞 key。
+ */
+export function isNodeKeyInChapter(chapter: string, raw: string): boolean {
+  const key = (raw ?? "").trim();
+  const separator = key.indexOf(":");
+  if (separator < 0) return true;
+  return key.slice(0, separator) === chapter.trim();
 }
 
 function toPage(value: number | null | undefined): number | null {
@@ -128,6 +141,63 @@ export function computeCoverage(
     total: sections.length,
     missing,
   };
+}
+
+/**
+ * prerequisite 成环检测（迭代 DFS，返回环路径或 null）。
+ *
+ * 导入（本批）与落库（本批 + 库内既有边）共用这一份实现：只校验本批会漏掉
+ * 「先导 A→B、再导 B→A」这类跨批成环。迭代 + 显式栈避免大链上 `[...stack, node]`
+ * 的平方级复制与调用栈上限。
+ */
+export function findPrerequisiteCycle(
+  edges: ReadonlyArray<{ from: string; to: string }>,
+): string[] | null {
+  const graph = new Map<string, string[]>();
+  for (const edge of edges) {
+    const bucket = graph.get(edge.from);
+    if (bucket) bucket.push(edge.to);
+    else graph.set(edge.from, [edge.to]);
+  }
+
+  const WHITE = 0;
+  const GRAY = 1;
+  const BLACK = 2;
+  const color = new Map<string, number>();
+
+  for (const start of graph.keys()) {
+    if ((color.get(start) ?? WHITE) !== WHITE) continue;
+
+    const path: string[] = [start];
+    color.set(start, GRAY);
+    const stack: Array<{ node: string; next: number }> = [{ node: start, next: 0 }];
+
+    while (stack.length > 0) {
+      const frame = stack[stack.length - 1];
+      const neighbors = graph.get(frame.node) ?? [];
+      if (frame.next >= neighbors.length) {
+        color.set(frame.node, BLACK);
+        stack.pop();
+        path.pop();
+        continue;
+      }
+      const next = neighbors[frame.next];
+      frame.next += 1;
+
+      const state = color.get(next) ?? WHITE;
+      if (state === GRAY) {
+        const from = path.indexOf(next);
+        return [...path.slice(from >= 0 ? from : 0), next];
+      }
+      if (state === WHITE) {
+        color.set(next, GRAY);
+        path.push(next);
+        stack.push({ node: next, next: 0 });
+      }
+    }
+  }
+
+  return null;
 }
 
 export function validateKgImport(input: KgImportInput): KgValidationResult {
@@ -162,6 +232,13 @@ export function validateKgImport(input: KgImportInput): KgValidationResult {
     const tag = `nodes[${index}] ${nodeKey || "<空 key>"}`;
     if (!nodeKey) {
       issues.push({ code: "empty_node_key", message: `${tag}: nodeKey 为空` });
+      continue;
+    }
+    if (!isNodeKeyInChapter(chapter, node.nodeKey ?? "")) {
+      issues.push({
+        code: "node_key_chapter_mismatch",
+        message: `${tag}: key 的章前缀与 chapter ${JSON.stringify(chapter)} 不一致（跨章节点必须在所属章导入，否则会与同名节点并存并串掉题→节点映射）`,
+      });
       continue;
     }
     if (!node.name || !node.name.trim()) {
@@ -209,6 +286,16 @@ export function validateKgImport(input: KgImportInput): KgValidationResult {
       issues.push({
         code: "empty_endpoint",
         message: `${tag}: from/to 为空`,
+      });
+      continue;
+    }
+    if (
+      !isNodeKeyInChapter(chapter, edge.from ?? "") ||
+      !isNodeKeyInChapter(chapter, edge.to ?? "")
+    ) {
+      issues.push({
+        code: "node_key_chapter_mismatch",
+        message: `${tag}: 端点 key 的章前缀与 chapter ${JSON.stringify(chapter)} 不一致（跨章引用必须在各自章内导入）`,
       });
       continue;
     }
@@ -293,28 +380,16 @@ export function validateKgImport(input: KgImportInput): KgValidationResult {
   }
 
   // ---------- prerequisite 成环（DFS） ----------
-  const WHITE = 0;
-  const GRAY = 1;
-  const BLACK = 2;
-  const color = new Map<string, number>();
-
-  const visit = (node: string, stack: string[]): void => {
-    color.set(node, GRAY);
-    for (const next of prerequisiteGraph.get(node) ?? []) {
-      if (color.get(next) === GRAY) {
-        issues.push({
-          code: "prerequisite_cycle",
-          message: `prerequisite 成环：${[...stack, node, next].join(" → ")}`,
-        });
-      } else if ((color.get(next) ?? WHITE) === WHITE) {
-        visit(next, [...stack, node]);
-      }
-    }
-    color.set(node, BLACK);
-  };
-
-  for (const start of prerequisiteGraph.keys()) {
-    if ((color.get(start) ?? WHITE) === WHITE) visit(start, []);
+  const cycle = findPrerequisiteCycle(
+    Array.from(prerequisiteGraph).flatMap(([from, targets]) =>
+      Array.from(targets, (to) => ({ from, to })),
+    ),
+  );
+  if (cycle) {
+    issues.push({
+      code: "prerequisite_cycle",
+      message: `prerequisite 成环：${cycle.join(" → ")}`,
+    });
   }
 
   const coverage = computeCoverage(input.sections ?? [], edges);

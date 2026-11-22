@@ -231,6 +231,28 @@ describe("硬失败：一条不合格整章不写", () => {
     );
     expect(codes(input)).toContain("unknown_endpoint");
   });
+
+  it("节点完整 key 的章前缀与 chapter 不一致 → 拒绝（否则 ch1:A 与 ch2:A 并存）", () => {
+    const input = baseInput();
+    input.nodes.push({ nodeKey: "ch2:跨章节点", name: "跨章节点", kind: "concept" });
+    input.edges = [
+      {
+        from: "ch2:跨章节点",
+        to: fixture.edges[0].to,
+        type: "subclass",
+        evidence: "原句",
+        printed_page: 3,
+      },
+    ];
+    const result = validateKgImport(input);
+    expect(result.issues.map((i) => i.code)).toContain(
+      "node_key_chapter_mismatch",
+    );
+    expect(result.issues.map((i) => i.message).join("\n")).toContain("ch2:跨章节点");
+    // 跨章节点/边不进入规范化结果，避免被后续逻辑当作本章数据
+    expect(result.nodes.map((n) => n.nodeKey)).not.toContain("ch2:跨章节点");
+    expect(result.edges).toHaveLength(0);
+  });
 });
 
 describe("覆盖率计算", () => {

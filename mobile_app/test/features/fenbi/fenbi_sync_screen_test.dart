@@ -47,6 +47,8 @@ class _FakeFenbiApi extends FenbiApi {
     return const FenbiQrSession(
       lgtoken: 'lgtoken-test',
       qrContent: 'https://www.fenbi.com/scan?lgtoken=lgtoken-test',
+      qrPngDataUrl:
+          'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8z8BQDwAEhQGAhKmMIQAAAABJRU5ErkJggg==',
     );
   }
 

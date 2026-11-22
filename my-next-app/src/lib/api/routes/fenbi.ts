@@ -27,7 +27,7 @@
 import { OpenAPIHono, createRoute, z } from "@hono/zod-openapi";
 import type { Context } from "hono";
 
-import { buildQrDataUrl } from "@/lib/fenbi/qr-image";
+import { buildQrDataUrl, buildQrPngDataUrl } from "@/lib/fenbi/qr-image";
 import { authMiddleware, getCurrentUser } from "@/lib/api/middlewares/auth";
 import { toErrorResponse } from "@/lib/api/error-response";
 import { BusinessError, isAppError } from "@/lib/errors/app-error";
@@ -308,6 +308,11 @@ const QrCodeSchema = z.object({
    * 发给第三方。见 `lib/fenbi/qr-image.ts`。
    */
   qrDataUrl: z.string(),
+  /**
+   * 同一张二维码的 PNG data URL（`data:image/png;base64,…`）。
+   * 移动端 Flutter 的 `Image.memory` 只认位图，不能直接用上面的 SVG。
+   */
+  qrPngDataUrl: z.string(),
 });
 
 const qrcodeDef = createRoute({
@@ -327,8 +332,11 @@ const qrcodeDef = createRoute({
 app.openapi(qrcodeDef, async (c) => {
   try {
     const qr = await genQrCode();
-    const qrDataUrl = await buildQrDataUrl(qr.qrContent);
-    return c.json({ ...qr, qrDataUrl }, 200);
+    const [qrDataUrl, qrPngDataUrl] = await Promise.all([
+      buildQrDataUrl(qr.qrContent),
+      buildQrPngDataUrl(qr.qrContent),
+    ]);
+    return c.json({ ...qr, qrDataUrl, qrPngDataUrl }, 200);
   } catch (error) {
     // audit-allow: 已交给 respondError 统一映射（它内部会记结构化日志并回中文文案）
     return respondError(c, error, "fenbi.qrcode");

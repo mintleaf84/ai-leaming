@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:convert';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -748,37 +749,7 @@ class _FenbiQrSheetState extends ConsumerState<_FenbiQrSheet> {
             child: Semantics(
               label: '粉笔登录二维码',
               image: true,
-              child: Image.network(
-                _qrImageUrl(session.qrContent),
-                width: 200.w,
-                height: 200.w,
-                fit: BoxFit.contain,
-                // 临时方案：pubspec 里没有 qr_flutter，先用公共二维码渲染服务出图。
-                // 接入本地二维码绘制后要换掉——这里会把 codeContent（含 lgtoken）
-                // 发给第三方服务。
-                loadingBuilder: (context, child, progress) {
-                  if (progress == null) return child;
-                  return SizedBox(
-                    width: 200.w,
-                    height: 200.w,
-                    child: const Center(child: CircularProgressIndicator()),
-                  );
-                },
-                errorBuilder: (context, error, stackTrace) => SizedBox(
-                  width: 200.w,
-                  height: 200.w,
-                  child: Center(
-                    child: Text(
-                      '二维码图片加载失败，点下方「重新生成」',
-                      textAlign: TextAlign.center,
-                      style: TextStyle(
-                        fontSize: 12.sp,
-                        color: colors.textSecondary,
-                      ),
-                    ),
-                  ),
-                ),
-              ),
+              child: _QrImage(session: session, colors: colors),
             ),
           ),
         ),
@@ -811,8 +782,62 @@ class _FenbiQrSheetState extends ConsumerState<_FenbiQrSheet> {
     );
   }
 
-  /// 临时：公共二维码渲染服务。`data` 必须整体 URL 编码（含 `?` `&` `=`）。
-  String _qrImageUrl(String data) {
+}
+
+/// 二维码图片。
+///
+/// 首选服务端下发的 PNG data URL：受限网络下 api.qrserver.com 不可达，
+/// 而且把含 lgtoken 的登录内容发给第三方服务没有必要（真实故障）。
+/// 旧服务端没有该字段时才回退到公共渲染服务。
+class _QrImage extends StatelessWidget {
+  const _QrImage({required this.session, required this.colors});
+
+  final FenbiQrSession session;
+  final AppColors colors;
+
+  @override
+  Widget build(BuildContext context) {
+    final dataUrl = session.qrPngDataUrl;
+    final Widget image;
+    if (dataUrl.startsWith('data:image/png;base64,')) {
+      image = Image.memory(
+        base64Decode(dataUrl.substring('data:image/png;base64,'.length)),
+        width: 200.w,
+        height: 200.w,
+        fit: BoxFit.contain,
+      );
+    } else {
+      image = Image.network(
+        _legacyQrUrl(session.qrContent),
+        width: 200.w,
+        height: 200.w,
+        fit: BoxFit.contain,
+        loadingBuilder: (context, child, progress) {
+          if (progress == null) return child;
+          return SizedBox(
+            width: 200.w,
+            height: 200.w,
+            child: const Center(child: CircularProgressIndicator()),
+          );
+        },
+        errorBuilder: (context, error, stackTrace) => Center(
+          child: Text(
+            '二维码图片加载失败，点下方「重新生成」',
+            textAlign: TextAlign.center,
+            style: TextStyle(fontSize: 12.sp, color: colors.textSecondary),
+          ),
+        ),
+      );
+    }
+    return SizedBox(
+      width: 200.w,
+      height: 200.w,
+      child: image,
+    );
+  }
+
+  /// 仅用于兼容不返回 qrPngDataUrl 的旧服务端；`data` 必须整体 URL 编码。
+  String _legacyQrUrl(String data) {
     final encoded = Uri.encodeComponent(data);
     return 'https://api.qrserver.com/v1/create-qr-code/?size=240x240&data=$encoded';
   }

@@ -22,3 +22,18 @@ export async function buildQrDataUrl(text: string): Promise<string> {
   });
   return `data:image/svg+xml;base64,${Buffer.from(svg, "utf8").toString("base64")}`;
 }
+
+/**
+ * PNG 版本的 data URL，供移动端 `Image.memory` 使用。
+ *
+ * Flutter 不渲染 SVG 数据 URL（除非引入 flutter_svg），而 `qrcode` 在 Node 侧
+ * 自带 pngjs，可以直接出 PNG，不必给 App 增加依赖。
+ */
+export async function buildQrPngDataUrl(text: string): Promise<string> {
+  return QRCode.toDataURL(text, {
+    type: "image/png",
+    margin: 1,
+    width: QR_IMAGE_SIZE,
+    errorCorrectionLevel: "M",
+  });
+}

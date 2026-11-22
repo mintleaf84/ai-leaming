@@ -197,13 +197,16 @@ async function fenbiRequest(
     // 而 FenbiNetworkError 在路由层又不打日志，真实原因完全不可见。
     // 只记错误类型/消息与去掉 query 的 URL；不记 headers / cookie / token。
     const cause = (error as { cause?: unknown } | null)?.cause;
-    log.error("[fenbi] fetch 同步异常:", JSON.stringify({
-      errorName: name ?? "unknown",
-      message: (error as Error)?.message ?? String(error),
-      causeName: cause instanceof Error ? cause.name : null,
-      causeMessage: cause instanceof Error ? cause.message : null,
-      endpoint: url.split("?")[0],
-    }));
+    log.error(
+      "[fenbi] fetch 同步异常:",
+      JSON.stringify({
+        errorName: name ?? "unknown",
+        message: (error as Error)?.message ?? String(error),
+        causeName: cause instanceof Error ? cause.name : null,
+        causeMessage: cause instanceof Error ? cause.message : null,
+        endpoint: url.split("?")[0],
+      }),
+    );
     throw new FenbiNetworkError("无法连接粉笔服务器");
   }
 

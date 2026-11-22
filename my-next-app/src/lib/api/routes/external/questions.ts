@@ -27,10 +27,9 @@ import { touchesEmbeddingText } from "@/lib/services/question-index-policy";
 import { parsePageParams } from "@/lib/api/pagination";
 import {
   attachQuestionNodes,
-  findForbiddenQuestionIds,
   findMissingKgNodeKeys,
 } from "@/lib/services/kg";
-import { normalizeNodeKey } from "@/lib/kg/validate";
+import { isNodeKeyInChapter, normalizeNodeKey } from "@/lib/kg/validate";
 import {
   DryRunQuerySchema,
   RateLimitedResponse,
@@ -929,6 +928,7 @@ const questionNodesRoute = createRoute({
   description: `写接口，**需 admin 作用域且 API Key 必须绑定 userId**。产品**不做**匹配算法：映射由离线脚本算好后回传。单批 ≤${QUESTION_NODE_BATCH_MAX} 条，整批原子；幂等键 \`(question_id, node_key)\`，命中即 skipped。题目不存在 / 已报错 / 属于他人的 Agent 题集 → 404；节点不存在 → 400。`,
   request: {
     body: {
+      required: true,
       content: { "application/json": { schema: QuestionNodesBodySchema } },
     },
   },
@@ -973,25 +973,22 @@ app.openapi(questionNodesRoute, async (c) => {
     score: item.score ?? null,
   }));
 
-  // 1) 整批先校验题目（不存在 / flagged / 他人 Agent 题集），一条不合格整批不写
-  const questionIds = Array.from(
-    new Set(normalized.map((item) => item.questionId)),
-  );
-  const forbidden = await findForbiddenQuestionIds(
-    identity.effectiveUserId,
-    questionIds,
-  );
-  if (forbidden.length > 0) {
+  // 0) 节点 key 的章前缀必须与 item.chapter 一致：完整 key 也好、裸名称也好，
+  //    落库前都归一到同一章，避免 ch1:A 与 ch2:A 并存后串掉映射。
+  const foreignChapterKeys = normalized
+    .filter((item) => !isNodeKeyInChapter(item.chapter, item.nodeKey))
+    .map((item) => item.nodeKey);
+  if (foreignChapterKeys.length > 0) {
     return c.json(
       {
-        error: "部分题目不存在或无权写入（整批未写入）",
-        questionIds: forbidden,
+        error: "节点 key 的章前缀与 chapter 不一致（整批未写入）：按所属章分开映射",
+        nodeKeys: foreignChapterKeys,
       },
-      404,
+      400,
     );
   }
 
-  // 2) 再校验节点（按 chapter 分组，节点必须已通过 /kg/import 入库）
+  // 1) 再校验节点（按 chapter 分组，节点必须已通过 /kg/import 入库）
   const nodesByChapter = new Map<string, Set<string>>();
   for (const item of normalized) {
     const bucket = nodesByChapter.get(item.chapter) ?? new Set<string>();
@@ -1013,8 +1010,19 @@ app.openapi(questionNodesRoute, async (c) => {
     );
   }
 
-  const result = await attachQuestionNodes(normalized);
-  return c.json(result, 200);
+  // 2) 题目状态/归属检查与写入同一事务：检查通过后题目被标 flagged 也写不进去
+  const result = await attachQuestionNodes(identity.effectiveUserId, normalized);
+  if (result.forbidden.length > 0) {
+    return c.json(
+      {
+        error: "部分题目不存在或无权写入（整批未写入）",
+        questionIds: result.forbidden,
+      },
+      404,
+    );
+  }
+
+  return c.json({ created: result.created, skipped: result.skipped }, 200);
 });
 
 // ==================== 工具函数 ====================

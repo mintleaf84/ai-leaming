@@ -293,6 +293,32 @@ describe("知识图谱读接口 · 真实库", () => {
     expect(n2).toMatchObject({ answered: 0, correctRate: 0 });
   });
 
+  it("掌握度 by=node 排除 wrong_book 收藏（收藏不是作答，不拉低正确率）", async () => {
+    // 错题本收藏由 PDF 导入写入 status=wrong_book；若计进分母，
+    // 已答对 1 次的节点会从 100% 掉到 50%。
+    await dbm.drizzleDb.run(
+      sql`INSERT INTO practice_logs (question_id, user_id, user_answer, is_correct, status)
+          VALUES (${Q1}, ${A}, '', 0, 'wrong_book')`,
+    );
+    try {
+      const res = await request(
+        masteryApp,
+        masteryByNode("ch1"),
+        await tokenFor(A),
+      );
+      expect(res.status).toBe(200);
+      const body = (await res.json()) as { data: NodeMastery[] };
+      const n1 = body.data.find((row) => row.nodeKey === N1);
+      // 仍只有 Q1 对 + Q2 错 → 2 题 50%；收藏行不计
+      expect(n1).toMatchObject({ answered: 2, correctRate: 50 });
+    } finally {
+      await dbm.drizzleDb.run(
+        sql`DELETE FROM practice_logs
+            WHERE question_id = ${Q1} AND user_id = ${A} AND status = 'wrong_book'`,
+      );
+    }
+  });
+
   it("跨用户：B 的节点掌握度只由 B 的作答决定", async () => {
     const res = await request(
       masteryApp,

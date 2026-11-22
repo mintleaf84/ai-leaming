@@ -7,13 +7,14 @@
  * - kg_edges      (chapter, from_key, to_key, type)
  * - question_nodes(question_id, node_key)
  */
-import { and, asc, desc, eq, inArray, ne, sql } from "drizzle-orm";
+import { and, asc, desc, eq, inArray, sql } from "drizzle-orm";
 import { drizzleDb, drizzleSchema } from "@/lib/db";
 import type { KgNodeKind } from "@/lib/kg/relation-types";
-import type {
-  KgCoverage,
-  NormalizedKgEdge,
-  NormalizedKgNode,
+import {
+  findPrerequisiteCycle,
+  type KgCoverage,
+  type NormalizedKgEdge,
+  type NormalizedKgNode,
 } from "@/lib/kg/validate";
 
 const {
@@ -51,11 +52,91 @@ function sameNode(row: typeof kg_nodes.$inferSelect, node: NormalizedKgNode) {
   );
 }
 
-function sameEdge(row: typeof kg_edges.$inferSelect, edge: NormalizedKgEdge) {
+function sameEdge(
+  row: typeof kg_edges.$inferSelect,
+  edge: NormalizedKgEdge,
+  schemaVersion: string,
+) {
   return (
     row.evidence === edge.evidence &&
-    (row.printed_page ?? null) === edge.printedPage
+    (row.printed_page ?? null) === edge.printedPage &&
+    // 登记表升级后重导旧边：证据/页码没变也要更新 schema_version，
+    // 否则同一章会混着 1.1 与 1.2 的边。
+    row.schema_version === schemaVersion
   );
+}
+
+/** 落库侧门禁（纯校验看不到库内既有数据的那部分）→ 路由转 400 */
+export class KgImportRuleError extends Error {
+  readonly code: string;
+
+  constructor(code: string, message: string) {
+    super(message);
+    this.name = "KgImportRuleError";
+    this.code = code;
+  }
+}
+
+/**
+ * 本批 + 库内既有边的合并校验，preview 与 apply 共用：
+ * - 已有 prerequisite 端点的节点不得改成 facet（否则旧先修边会挂在 facet 上）；
+ * - 本批保留的先修边与新增先修边合并后不得成环（跨批成环只有这里能看见）。
+ *
+ * 边只会 upsert、不会删，所以"库内保留的边"就是"不在本批幂等键里的边"。
+ */
+function assertImportMergesCleanly(input: {
+  nodeRows: ReadonlyArray<{ node_key: string; kind: string }>;
+  edgeRows: ReadonlyArray<{
+    from_key: string;
+    to_key: string;
+    type: string;
+  }>;
+  nodes: ReadonlyArray<NormalizedKgNode>;
+  edges: ReadonlyArray<NormalizedKgEdge>;
+}): void {
+  const existingByKey = new Map(input.nodeRows.map((row) => [row.node_key, row]));
+  const incomingEdgeKeys = new Set(
+    input.edges.map((edge) => `${edge.from}\u0000${edge.to}\u0000${edge.type}`),
+  );
+
+  const mergedPrerequisite: Array<{ from: string; to: string }> = [];
+  for (const row of input.edgeRows) {
+    if (row.type !== "prerequisite") continue;
+    if (incomingEdgeKeys.has(`${row.from_key}\u0000${row.to_key}\u0000${row.type}`)) {
+      continue; // 本批覆盖这条边，以本批为准
+    }
+    mergedPrerequisite.push({ from: row.from_key, to: row.to_key });
+  }
+  for (const edge of input.edges) {
+    if (edge.type === "prerequisite") {
+      mergedPrerequisite.push({ from: edge.from, to: edge.to });
+    }
+  }
+
+  const facetChanges = input.nodes.filter(
+    (node) =>
+      node.kind === "facet" && existingByKey.get(node.nodeKey)?.kind !== "facet",
+  );
+  if (facetChanges.length > 0) {
+    const changing = new Set(facetChanges.map((node) => node.nodeKey));
+    const conflict = mergedPrerequisite.find(
+      (edge) => changing.has(edge.from) || changing.has(edge.to),
+    );
+    if (conflict) {
+      throw new KgImportRuleError(
+        "facet_prerequisite",
+        `节点 ${Array.from(changing).join("、")} 仍被 prerequisite 边 ${conflict.from} → ${conflict.to} 引用，不能改成 facet（先删该边再改类型）`,
+      );
+    }
+  }
+
+  const cycle = findPrerequisiteCycle(mergedPrerequisite);
+  if (cycle) {
+    throw new KgImportRuleError(
+      "prerequisite_cycle",
+      `与库内既有 prerequisite 边合并后成环：${cycle.join(" → ")}`,
+    );
+  }
 }
 
 /** dryRun 用的只读预演：统计"会新建 / 会更新"多少，不写库 */
@@ -83,6 +164,14 @@ export async function previewKgImport(input: {
     ]),
   );
 
+  // 预演与实际导入走同一套落库侧规则：会拒绝的批次，dryRun 也要拒绝
+  assertImportMergesCleanly({
+    nodeRows,
+    edgeRows,
+    nodes: input.nodes,
+    edges: input.edges,
+  });
+
   let wouldCreateNodes = 0;
   let wouldUpdateNodes = 0;
   for (const node of input.nodes) {
@@ -98,7 +187,7 @@ export async function previewKgImport(input: {
       `${edge.from}\u0000${edge.to}\u0000${edge.type}`,
     );
     if (!existing) wouldCreateEdges += 1;
-    else if (!sameEdge(existing, edge)) wouldUpdateEdges += 1;
+    else if (!sameEdge(existing, edge, input.schemaVersion)) wouldUpdateEdges += 1;
   }
 
   return {
@@ -134,6 +223,25 @@ export async function applyKgImport(input: {
       .where(eq(kg_nodes.chapter, input.chapter));
     const nodeMap = new Map(nodeRows.map((row) => [row.node_key, row]));
 
+    const edgeRows = await tx
+      .select()
+      .from(kg_edges)
+      .where(eq(kg_edges.chapter, input.chapter));
+    const edgeMap = new Map(
+      edgeRows.map((row) => [
+        `${row.from_key}\u0000${row.to_key}\u0000${row.type}`,
+        row,
+      ]),
+    );
+
+    // 写之前先按"本批 + 库内既有边"合并校验；抛错 → 事务整体回滚
+    assertImportMergesCleanly({
+      nodeRows,
+      edgeRows,
+      nodes: input.nodes,
+      edges: input.edges,
+    });
+
     for (const node of input.nodes) {
       const existing = nodeMap.get(node.nodeKey);
       if (!existing) {
@@ -165,17 +273,6 @@ export async function applyKgImport(input: {
       }
     }
 
-    const edgeRows = await tx
-      .select()
-      .from(kg_edges)
-      .where(eq(kg_edges.chapter, input.chapter));
-    const edgeMap = new Map(
-      edgeRows.map((row) => [
-        `${row.from_key}\u0000${row.to_key}\u0000${row.type}`,
-        row,
-      ]),
-    );
-
     for (const edge of input.edges) {
       const key = `${edge.from}\u0000${edge.to}\u0000${edge.type}`;
       const existing = edgeMap.get(key);
@@ -190,7 +287,7 @@ export async function applyKgImport(input: {
           schema_version: input.schemaVersion,
         });
         outcome.created.edges += 1;
-      } else if (!sameEdge(existing, edge)) {
+      } else if (!sameEdge(existing, edge, input.schemaVersion)) {
         await tx
           .update(kg_edges)
           .set({
@@ -290,20 +387,35 @@ export interface QuestionNodeInput {
   score?: number | null;
 }
 
+export interface AttachQuestionNodesResult {
+  created: number;
+  skipped: number;
+  forbidden: number[];
+}
+
 /**
  * 批量写题→节点（离线映射器回传，产品不做匹配算法）。
  *
- * 调用方（路由）已保证 question / node 存在且归属合法；这里只做幂等写入：
- * `(question_id, node_key)` 命中即跳过，返回 created/skipped。
+ * 归属 / flagged / 题存在性检查与插入放在**同一个事务**里：先查后写会给
+ * 「检查通过后题目被标 flagged」留窗口，并发下仍能写进映射。
+ * `(question_id, node_key)` 命中即跳过；有任何题目不可写时整批不写并返回
+ * `forbidden`，由路由转 404。
  */
-export async function attachQuestionNodes(items: QuestionNodeInput[]): Promise<{
-  created: number;
-  skipped: number;
-}> {
+export async function attachQuestionNodes(
+  userId: number,
+  items: QuestionNodeInput[],
+): Promise<AttachQuestionNodesResult> {
   let created = 0;
   let skipped = 0;
+  let forbidden: number[] = [];
 
   await drizzleDb.transaction(async (tx) => {
+    const questionIds = Array.from(
+      new Set(items.map((item) => item.questionId)),
+    );
+    forbidden = await findForbiddenQuestionIds(userId, questionIds, tx);
+    if (forbidden.length > 0) return;
+
     for (const item of items) {
       const inserted = await tx
         .insert(question_nodes)
@@ -323,7 +435,7 @@ export async function attachQuestionNodes(items: QuestionNodeInput[]): Promise<{
     }
   });
 
-  return { created, skipped };
+  return { created, skipped, forbidden };
 }
 
 /** 本次映射引用的节点里，库里不存在的 key（用于 400 报错） */
@@ -342,18 +454,25 @@ export async function findMissingKgNodeKeys(
   return nodeKeys.filter((key) => !present.has(key));
 }
 
+/** 导入/映射共用的 DB 执行器：真库或事务句柄 */
+type KgDbExecutor =
+  | typeof drizzleDb
+  | Parameters<Parameters<typeof drizzleDb.transaction>[0]>[0];
+
 /**
  * 题目归属检查：返回"当前用户不可写的题目 id"。
  *
  * 题库题（origin=import）全局可写；Agent 题集题（origin=agent）属于创建者，
  * 别的用户的 key 不能把它的作答映射到节点上（否则错题归因会串用户）。
+ * 传入事务句柄时与写入同批生效（见 `attachQuestionNodes`）。
  */
 export async function findForbiddenQuestionIds(
   userId: number,
   questionIds: number[],
+  executor: KgDbExecutor = drizzleDb,
 ): Promise<number[]> {
   if (questionIds.length === 0) return [];
-  const rows = await drizzleDb
+  const rows = await (executor as typeof drizzleDb)
     .select({
       id: questions.id,
       origin: questions.origin,
@@ -387,7 +506,8 @@ export interface NodeMasteryItem {
  * 节点级掌握度：直接聚合 `practice_logs`（不读 `user_mastery`）。
  *
  * 口径（与 tag 掌握度的差异，写进 docs 也算契约）：
- * - 分母 = 该节点下 `status != 'skipped'` 的作答条数（同一道题挂多个节点，
+ * - 分母 = 该节点下 `status = 'answered'` 的作答条数（skipped=空答案、
+ *   wrong_book=错题本收藏都**不是**作答，不计入；同一道题挂多个节点，
  *   会在每个节点各计一次；tag 口径按"题×标签"经 user_mastery 累计）；
  * - 分子 = `is_correct = 1` 的条数；`origin=flagged` 的题不计；
  * - 列出章内全部节点（answered=0 也给），供地图/薄弱点视图直接消费。
@@ -423,7 +543,9 @@ export async function getNodeMastery(
         and(
           eq(practice_logs.question_id, question_nodes.question_id),
           eq(practice_logs.user_id, userId),
-          ne(practice_logs.status, "skipped"),
+          // 分母只算真实作答：skipped=空答案，wrong_book=错题本收藏（pdf-import 写入），
+          // 两者都不是"作答"，计进分母会把节点正确率错误拉低。
+          eq(practice_logs.status, "answered"),
           sql`${practice_logs.question_id} NOT IN (SELECT id FROM questions WHERE origin = 'flagged')`,
         ),
       )

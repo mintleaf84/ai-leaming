@@ -10,6 +10,7 @@
  */
 import { describe, it, expect, beforeEach, afterEach, vi } from "vitest";
 import { Hono } from "hono";
+import { eq } from "drizzle-orm";
 import fs from "node:fs";
 import path from "node:path";
 import { setupTestDb, type TestDbHelper } from "@/lib/__tests__/test-db-utils";
@@ -358,6 +359,145 @@ describe("POST /api/external/kg/import", () => {
     });
     expect(await rowCounts()).toEqual({ nodes: 0, edges: 0 });
   });
+
+  it("结构校验失败（缺 evidence 字段）→ 400 且与业务 400 同一形状", async () => {
+    const base = chapterOneBody();
+    const firstEdge: Record<string, unknown> = { ...base.edges[0] };
+    delete firstEdge.evidence;
+    const res = await postBody(IMPORT_PATH, {
+      ...base,
+      edges: [firstEdge, ...base.edges.slice(1)],
+    });
+    expect(res.status).toBe(400);
+    const payload = (await res.json()) as {
+      error: string;
+      issues: string[];
+      codes: string[];
+    };
+    expect(payload.codes).toEqual(["invalid_request"]);
+    expect(payload.error).toContain("结构");
+    expect(payload.issues.join("\n")).toContain("evidence");
+    expect(await rowCounts()).toEqual({ nodes: 0, edges: 0 });
+  });
+
+  it("跨批 prerequisite 成环 → 400（库内既有边也参与环检测）", async () => {
+    const base = {
+      chapter: "ch9",
+      schemaVersion: RELATION_TYPES_VERSION,
+      sections: [{ key: "考点一", title: "测试", startPage: 1, endPage: 10 }],
+      nodes: [
+        { nodeKey: "甲", name: "甲", kind: "concept" },
+        { nodeKey: "乙", name: "乙", kind: "concept" },
+      ],
+    };
+    const first = await postBody(IMPORT_PATH, {
+      ...base,
+      edges: [
+        {
+          from: "甲",
+          to: "乙",
+          type: "prerequisite",
+          evidence: "先学甲再学乙",
+          printed_page: 1,
+        },
+      ],
+    });
+    expect(first.status).toBe(200);
+
+    const second = await postBody(IMPORT_PATH, {
+      ...base,
+      edges: [
+        {
+          from: "乙",
+          to: "甲",
+          type: "prerequisite",
+          evidence: "先学乙再学甲",
+          printed_page: 1,
+        },
+      ],
+    });
+    expect(second.status).toBe(400);
+    const payload = (await second.json()) as { codes: string[]; issues: string[] };
+    expect(payload.codes).toContain("prerequisite_cycle");
+    expect(payload.issues.join("\n")).toContain("→");
+    // 第二批一条都没写：仍只有第一次导入的 2 节点 1 边
+    expect(await rowCounts()).toEqual({ nodes: 2, edges: 1 });
+  });
+
+  it("已有 prerequisite 端点的节点改成 facet → 400 且不改类型", async () => {
+    const base = {
+      chapter: "ch9",
+      schemaVersion: RELATION_TYPES_VERSION,
+      sections: [{ key: "考点一", title: "测试", startPage: 1, endPage: 10 }],
+    };
+    const first = await postBody(IMPORT_PATH, {
+      ...base,
+      nodes: [
+        { nodeKey: "甲", name: "甲", kind: "concept" },
+        { nodeKey: "乙", name: "乙", kind: "concept" },
+      ],
+      edges: [
+        {
+          from: "甲",
+          to: "乙",
+          type: "prerequisite",
+          evidence: "先学甲再学乙",
+          printed_page: 1,
+        },
+      ],
+    });
+    expect(first.status).toBe(200);
+
+    const second = await postBody(IMPORT_PATH, {
+      ...base,
+      nodes: [
+        { nodeKey: "甲", name: "甲", kind: "facet" },
+        { nodeKey: "乙", name: "乙", kind: "concept" },
+      ],
+      edges: [
+        {
+          from: "甲",
+          to: "乙",
+          type: "subclass",
+          evidence: "甲属于乙",
+          printed_page: 1,
+        },
+      ],
+    });
+    expect(second.status).toBe(400);
+    const payload = (await second.json()) as { codes: string[]; issues: string[] };
+    expect(payload.codes).toContain("facet_prerequisite");
+    expect(payload.issues.join("\n")).toContain("甲");
+
+    const nodes = (await testDbHelper.db
+      .select()
+      .from(schema.kg_nodes)) as Array<{ node_key: string; kind: string }>;
+    expect(nodes.find((n) => n.node_key === "ch9:甲")?.kind).toBe("concept");
+  });
+
+  it("登记表版本升级后重导旧边 → 记为 updated（schema_version 参与比较）", async () => {
+    const body = tinyGraphBody();
+    expect((await postBody(IMPORT_PATH, body)).status).toBe(200);
+
+    // 模拟登记表升级前落库的旧边
+    await testDbHelper.db
+      .update(schema.kg_edges)
+      .set({ schema_version: "1.0" });
+
+    const second = await postBody(IMPORT_PATH, body);
+    expect(second.status).toBe(200);
+    const payload = (await second.json()) as {
+      updated: { nodes: number; edges: number };
+    };
+    expect(payload.updated.edges).toBe(1);
+
+    const rows = (await testDbHelper.db
+      .select()
+      .from(schema.kg_edges)) as Array<{ schema_version: string }>;
+    expect(rows.map((row) => row.schema_version)).toEqual([
+      RELATION_TYPES_VERSION,
+    ]);
+  });
 });
 
 describe("POST /api/external/questions/nodes", () => {
@@ -467,6 +607,40 @@ describe("POST /api/external/questions/nodes", () => {
     expect(await res.json()).toMatchObject({
       questionIds: [agentQuestion.id],
     });
+    const rows = await testDbHelper.db.select().from(schema.question_nodes);
+    expect(rows).toHaveLength(0);
+  });
+
+  it("节点 key 的章前缀与 chapter 不一致 → 400，整批不写（不跨章撞 key）", async () => {
+    const importRes = await postBody(IMPORT_PATH, tinyGraphBody());
+    expect(importRes.status).toBe(200);
+    const [q1] = await seedQuestions();
+
+    const res = await postBody(QUESTION_NODES_PATH, {
+      items: [{ questionId: q1, chapter: "ch1", nodeKey: "ch2:广义的教育" }],
+    });
+    expect(res.status).toBe(400);
+    expect(await res.json()).toMatchObject({
+      nodeKeys: ["ch2:广义的教育"],
+    });
+    const rows = await testDbHelper.db.select().from(schema.question_nodes);
+    expect(rows).toHaveLength(0);
+  });
+
+  it("flagged 题 → 404 且不写（状态检查与插入在同一事务）", async () => {
+    const importRes = await postBody(IMPORT_PATH, tinyGraphBody());
+    expect(importRes.status).toBe(200);
+    const [q1] = await seedQuestions();
+    await testDbHelper.db
+      .update(schema.questions)
+      .set({ origin: "flagged" })
+      .where(eq(schema.questions.id, q1));
+
+    const res = await postBody(QUESTION_NODES_PATH, {
+      items: [{ questionId: q1, chapter: "ch1", nodeKey: "广义的教育" }],
+    });
+    expect(res.status).toBe(404);
+    expect(await res.json()).toMatchObject({ questionIds: [q1] });
     const rows = await testDbHelper.db.select().from(schema.question_nodes);
     expect(rows).toHaveLength(0);
   });

@@ -10,7 +10,11 @@
  * 任何门禁失败一律 400 且一条都不写；`?dryRun=true` 只算不写。
  */
 import { OpenAPIHono, createRoute, z } from "@hono/zod-openapi";
-import { applyKgImport, previewKgImport } from "@/lib/services/kg";
+import {
+  applyKgImport,
+  KgImportRuleError,
+  previewKgImport,
+} from "@/lib/services/kg";
 import { validateKgImport } from "@/lib/kg/validate";
 import { RELATION_TYPES_VERSION } from "@/lib/kg/relation-types";
 import {
@@ -21,7 +25,24 @@ import {
   wantsDryRun,
 } from "./shared";
 
-const app = new OpenAPIHono();
+const app = new OpenAPIHono({
+  // 结构校验（Zod）失败也要走本路由声明的 400 形状：error + issues + codes。
+  // 默认实现返回 { success:false, error:{...} }，按声明解析的客户端读不到。
+  defaultHook: (result, c) => {
+    if (result.success) return;
+    return c.json(
+      {
+        error: "请求结构不合法（未写入任何数据）",
+        issues: result.error.issues.map(
+          (issue) =>
+            `${issue.path.length > 0 ? issue.path.join(".") : "(body)"}: ${issue.message}`,
+        ),
+        codes: ["invalid_request"],
+      },
+      400,
+    );
+  },
+});
 
 const SectionSchema = z.object({
   key: z.string().describe("考点标识（如 考点一）"),
@@ -83,7 +104,7 @@ const ImportRoute = createRoute({
   middleware: [requireScopeMiddleware("admin")] as const,
   summary: "导入一章知识图谱（门禁 + 幂等，需绑定用户的 admin Key）",
   description:
-    "写接口，**需 admin 作用域且 API Key 必须绑定 userId**（图谱是全局资产，但写入必须能追溯到具体用户）。导入前跑门禁：schemaVersion 必须等于当前登记表版本；节点 key 章内唯一；边类型已登记、evidence 非空、无自环、无重复、prerequisite 无环且 facet 不作先修端点；每个 section 至少命中一条边。**任一门禁失败返回 400 且一条都不写。** 幂等键 `(chapter,node_key)` 与 `(chapter,from,to,type)`：重导同一份数据返回 skipped=全部。预演传 `?dryRun=true`，只返回 wouldCreate / coverage / warnings，库内零变更。",
+    "写接口，**需 admin 作用域且 API Key 必须绑定 userId**（图谱是全局资产，但写入必须能追溯到具体用户）。导入前跑门禁：schemaVersion 必须等于当前登记表版本；节点 key 章内唯一且完整 key 的章前缀必须等于 chapter；边类型已登记、evidence 非空、无自环、无重复、prerequisite 无环且 facet 不作先修端点；每个 section 至少命中一条边。**任一门禁失败返回 400 且一条都不写。** 幂等键 `(chapter,node_key)` 与 `(chapter,from,to,type)`：重导同一份数据返回 skipped=全部；登记表版本升级后重导旧边会按新 schema_version 更新。`?dryRun=true` 是**只读预演**：查询图谱表并返回 wouldCreateNodes / wouldCreateEdges / wouldUpdateNodes / wouldUpdateEdges / coverage / warnings，不做写入也不需要回滚（聚合路由仍会记录这次 POST 的审计日志，所以「零变更」仅指图谱业务表）。",
   request: {
     query: DryRunQuerySchema,
     body: { content: { "application/json": { schema: ImportBodySchema } } },
@@ -152,6 +173,9 @@ app.openapi(ImportRoute, async (c) => {
 
   const body = c.req.valid("json");
   const dryRun = wantsDryRun(c.req.valid("query"));
+  // validateKgImport 内部会 trim；落库/预演必须用同一个规范化后的 chapter，
+  // 否则预览按 " ch1 " 查空表（报 0 更新），写入却按 "ch1" 生效。
+  const chapter = body.chapter.trim();
 
   const result = validateKgImport(body);
 
@@ -170,39 +194,57 @@ app.openapi(ImportRoute, async (c) => {
     );
   }
 
-  if (dryRun) {
-    const preview = await previewKgImport({
-      chapter: body.chapter,
+  try {
+    if (dryRun) {
+      const preview = await previewKgImport({
+        chapter,
+        schemaVersion: body.schemaVersion,
+        nodes: result.nodes,
+        edges: result.edges,
+      });
+      return c.json(
+        {
+          dryRun: true as const,
+          ...preview,
+          coverage: result.coverage,
+          warnings: result.warnings,
+        },
+        200,
+      );
+    }
+
+    const outcome = await applyKgImport({
+      chapter,
       schemaVersion: body.schemaVersion,
       nodes: result.nodes,
       edges: result.edges,
     });
+
     return c.json(
       {
-        dryRun: true as const,
-        ...preview,
+        ...outcome,
         coverage: result.coverage,
         warnings: result.warnings,
       },
       200,
     );
+  } catch (error) {
+    // 落库侧规则（库内既有先修边 / 节点类型变更）预演与写入都会抛，
+    // 与纯校验失败保持同一个 400 形状，客户端只解析一种错误体。
+    if (error instanceof KgImportRuleError) {
+      return c.json(
+        {
+          error: "图谱校验失败（未写入任何数据）",
+          issues: [`[${error.code}] ${error.message}`],
+          codes: [error.code],
+          coverage: result.coverage,
+          warnings: result.warnings,
+        },
+        400,
+      );
+    }
+    throw error;
   }
-
-  const outcome = await applyKgImport({
-    chapter: body.chapter,
-    schemaVersion: body.schemaVersion,
-    nodes: result.nodes,
-    edges: result.edges,
-  });
-
-  return c.json(
-    {
-      ...outcome,
-      coverage: result.coverage,
-      warnings: result.warnings,
-    },
-    200,
-  );
 });
 
 export default app;

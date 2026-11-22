@@ -69,6 +69,8 @@ export const FEATURES = [
   // AI 题集（docs/agent-question-set-plan.md §4.2）：客户端据此决定是否显示
   // 「AI 题集」入口与未读角标（能力名与挂载前缀一致，不能写成下划线）
   "agent-sets",
+  // 教综知识图谱（docs/kg-product-plan.md §3）：章节地图 + 按节点筛错题/掌握度
+  "kg",
 ] as const;
 
 export type ContractFeature = (typeof FEATURES)[number];

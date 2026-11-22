@@ -308,7 +308,8 @@ export async function createFenbiQrcode(): Promise<FenbiQrcodeTicket> {
     qrContent: payload.qrContent,
     qrDataUrl: payload.qrDataUrl,
     // 旧服务端可能还没下发 PNG 字段，空串会让移动端回退到兼容路径。
-    qrPngDataUrl: typeof payload.qrPngDataUrl === "string" ? payload.qrPngDataUrl : "",
+    qrPngDataUrl:
+      typeof payload.qrPngDataUrl === "string" ? payload.qrPngDataUrl : "",
   };
 }
 

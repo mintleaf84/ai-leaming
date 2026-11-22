@@ -1,0 +1,125 @@
+{
+  "version": "1.1",
+  "updated": "2026-11-22",
+  "note": "教综知识图谱关系类型登记表。借鉴 SKOS（broader/narrower/related/exactMatch）与 EduKG（前驱/后继）的命名，但只借词汇不借 RDF 基础设施。规则：只增不改不删；改名或弃用一律标 deprecated，存量边不迁移。",
+  "node_kinds": {
+    "concept": "知识点/概念（如 广义的教育）",
+    "facet": "划分标准（如 教育形态·按空间划分）；facet 只做父节点，不参与先修",
+    "work": "著作（如《大教学论》）",
+    "person": "人物（如 赫尔巴特）",
+    "policy": "法规/政策文件"
+  },
+  "relation_types": [
+    {
+      "name": "subclass",
+      "label": "上下位 / 分类",
+      "skos": "skos:broader",
+      "definition": "from 是 to 的一个子类/子项（同一次划分标准下）",
+      "direction": "child -> parent",
+      "inverse": "superclass",
+      "status": "active",
+      "example": "社会教育 --subclass--> 广义的教育"
+    },
+    {
+      "name": "part_of",
+      "label": "组成",
+      "skos": "无直接对应（用 partOf 扩展）",
+      "definition": "from 是 to 的组成部分（整体-部分，不是分类）",
+      "direction": "part -> whole",
+      "inverse": "has_part",
+      "status": "active",
+      "example": "教育内容 --part_of--> 教育影响"
+    },
+    {
+      "name": "exact_match",
+      "label": "同义",
+      "skos": "skos:exactMatch",
+      "definition": "两个节点在同一语境下指同一事物",
+      "direction": "symmetric（只存一次，from < to 字典序）",
+      "inverse": "exact_match",
+      "status": "active",
+      "example": "狭义的教育 --exact_match--> 学校教育"
+    },
+    {
+      "name": "prerequisite",
+      "label": "前驱（先修）",
+      "skos": "无（EduKG 的 prerequisite）",
+      "definition": "理解 from 是理解 to 的前提；有方向，禁止成环",
+      "direction": "prereq -> dependent",
+      "inverse": "requires",
+      "status": "active",
+      "example": "教育活动的三要素 --prerequisite--> 教育的形态"
+    },
+    {
+      "name": "marks",
+      "label": "标志",
+      "definition": "from 是 to 的标志物/里程碑，但不是其组成部分",
+      "direction": "marker -> marked",
+      "inverse": "marked_by",
+      "status": "active",
+      "example": "《大教学论》--marks--> 教育学的创立阶段"
+    },
+    {
+      "name": "related",
+      "label": "相关（弱边）",
+      "skos": "skos:related",
+      "definition": "无法归入上述五类的关联；不进先修排序，仅用于提示",
+      "direction": "symmetric",
+      "inverse": "related",
+      "status": "active",
+      "example": "教育目的 --related--> 教育制度"
+    },
+    {
+      "name": "represented_by",
+      "label": "代表人物 / 称号",
+      "definition": "from 由 to 代表，或 to 是 from 的代表人物/著作",
+      "direction": "concept -> person/work",
+      "inverse": "represents",
+      "status": "proposed",
+      "example": "现代教育学之父 --represented_by--> 赫尔巴特"
+    },
+    {
+      "name": "contrast",
+      "label": "对比",
+      "definition": "两者在理论上相对立或被教材并置对比",
+      "direction": "symmetric",
+      "inverse": "contrast",
+      "status": "proposed",
+      "example": "传统教育派 --contrast--> 现代教育派"
+    },
+    {
+      "name": "attribute",
+      "label": "属性",
+      "definition": "to 是 from 的一个属性/特征（不是子类）",
+      "direction": "subject -> attribute",
+      "inverse": "attribute_of",
+      "status": "proposed",
+      "example": "教育 --attribute--> 永恒性"
+    },
+    {
+      "name": "example_of",
+      "label": "例证",
+      "definition": "from 是 to 的一个例子/案例（不是子类，不参与划分）",
+      "direction": "example -> concept",
+      "inverse": "has_example",
+      "status": "proposed",
+      "example": "苏格拉底法 --example_of--> 启发式教学"
+    },
+    {
+      "name": "chronology",
+      "label": "时间先后",
+      "definition": "from 在时间上早于 to；只表示朝代/年代的先后，不表示先修或因果",
+      "direction": "earlier -> later",
+      "inverse": "later_than",
+      "status": "proposed",
+      "example": "察举制 --chronology--> 九品中正制 --chronology--> 科举制"
+    }
+  ],
+  "rules": {
+    "evidence_required": true,
+    "no_self_loop": true,
+    "one_type_per_edge": true,
+    "facet_cannot_be_prerequisite_endpoint": true,
+    "symmetric_stored_once": true
+  }
+}

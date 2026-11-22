@@ -84,6 +84,10 @@ app.route("/knowledge", knowledgeRoute);
 import masteryRoute from "@/lib/api/routes/mastery";
 app.route("/mastery", masteryRoute);
 
+// 知识图谱（docs/kg-product-plan.md §3）：只读；写入走 /api/external/kg/import
+import kgRoute from "@/lib/api/routes/kg";
+app.route("/kg", kgRoute);
+
 import wrongBookRoute from "@/lib/api/routes/wrong-book";
 app.route("/wrong-book", wrongBookRoute);
 

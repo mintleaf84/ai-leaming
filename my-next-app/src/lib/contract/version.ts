@@ -22,7 +22,7 @@ export const CONTRACT_VERSION = 1;
 export const MIN_CLIENT_VERSION = "1.0.0";
 
 /** 当前最新客户端版本；有新版 APK 时更新它。 */
-export const LATEST_CLIENT_VERSION = "1.0.0";
+export const LATEST_CLIENT_VERSION = "1.1.0";
 
 /**
  * 读取 APK 下载地址。
@@ -69,6 +69,8 @@ export const FEATURES = [
   // AI 题集（docs/agent-question-set-plan.md §4.2）：客户端据此决定是否显示
   // 「AI 题集」入口与未读角标（能力名与挂载前缀一致，不能写成下划线）
   "agent-sets",
+  // 教综知识图谱（docs/kg-product-plan.md §3）：章节地图 + 按节点筛错题/掌握度
+  "kg",
 ] as const;
 
 export type ContractFeature = (typeof FEATURES)[number];

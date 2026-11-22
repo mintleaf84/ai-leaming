@@ -96,6 +96,7 @@ class RecordingPracticeRepository extends FakePracticeRepository {
     required String userAnswer,
     required int duration,
     List<String>? sessionQuestionIds,
+    String? mode,
   }) {
     submittedSessionIds.add(sessionId);
     return super.submitAnswer(
@@ -104,6 +105,7 @@ class RecordingPracticeRepository extends FakePracticeRepository {
       userAnswer: userAnswer,
       duration: duration,
       sessionQuestionIds: sessionQuestionIds,
+      mode: mode,
     );
   }
 }

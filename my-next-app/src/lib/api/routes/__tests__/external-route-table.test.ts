@@ -49,6 +49,7 @@ const EXTERNAL_PATHS = [
   "/agent/question-sets/{id}",
   "/agent/question-sets/{id}/archive",
   "/agent/question-sets/{id}/results",
+  "/kg/import",
   "/knowledge/cards",
   "/mastery",
   "/mindmaps",
@@ -60,6 +61,7 @@ const EXTERNAL_PATHS = [
   "/practice/sessions/{id}",
   "/questions",
   "/questions/batch",
+  "/questions/nodes",
   "/questions/{id}",
   "/recall/cards",
   "/recall/cards/{cardId}",
@@ -78,6 +80,7 @@ const EXTERNAL_PATHS = [
 
 /** 每个路径上注册的方法（OpenAPI 文档里的键，小写） */
 const EXTERNAL_OPERATIONS: Record<string, string[]> = {
+  "/kg/import": ["post"],
   "/knowledge/cards": ["get"],
   "/mastery": ["get"],
   "/mindmaps": ["get"],
@@ -89,6 +92,7 @@ const EXTERNAL_OPERATIONS: Record<string, string[]> = {
   "/practice/sessions/{id}": ["get"],
   "/questions": ["get", "post"],
   "/questions/batch": ["post"],
+  "/questions/nodes": ["post"],
   "/questions/{id}": ["get", "patch"],
   "/recall/cards": ["post"],
   "/recall/cards/{cardId}": ["get"],
@@ -148,7 +152,7 @@ describe("外部 API 路由表", () => {
     const paths = Object.keys(operations);
 
     expect(paths).toEqual([...EXTERNAL_PATHS]);
-    expect(paths.length).toBe(29);
+    expect(paths.length).toBe(31);
     expect(paths[0]).toBe("/agent/question-sets");
     expect(paths.at(-1)).toBe("/wrong-book/stats");
 
@@ -163,7 +167,7 @@ describe("外部 API 路由表", () => {
       (sum, path) => sum + operations[path].length,
       0,
     );
-    expect(operationCount).toBe(34);
+    expect(operationCount).toBe(36);
   });
 
   it("每个路径都被真正挂载（不是框架默认 404）", async () => {
@@ -211,11 +215,13 @@ describe("外部 API 路由表", () => {
       }
     }
 
-    expect(reachability).toHaveLength(34);
+    expect(reachability).toHaveLength(36);
+    // 排序后首个是 /kg/import（'g' < 'n'）；空 body 由 zod 结构校验挡下 → 400，
+    // 能拿到业务 400 就说明路径确实挂上了（框架默认 404 是纯文本）
     expect(reachability[0]).toEqual({
-      method: "GET",
-      path: "/knowledge/cards",
-      status: 200,
+      method: "POST",
+      path: "/kg/import",
+      status: 400,
     });
   });
 });

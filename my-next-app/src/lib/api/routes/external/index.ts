@@ -16,6 +16,7 @@ import srsRoutes from "./srs";
 import recallRoutes from "./recall";
 import notesRoutes from "./notes";
 import miscRoutes from "./misc";
+import kgRoutes from "./kg";
 import agentSetsRoute from "../external-agent-sets";
 
 const app = new OpenAPIHono();
@@ -45,6 +46,9 @@ app.route("/", miscRoutes);
 app.route("/", recallRoutes);
 app.route("/", notesRoutes);
 app.route("/", srsRoutes);
+// 知识图谱导入（docs/kg-product-plan.md §3）：admin + 绑定用户的 Key，
+// 门禁与幂等都在子路由内；最终路径 `/api/external/kg/import`
+app.route("/", kgRoutes);
 // Agent 推题 / 题集（docs/agent-question-set-plan.md §4.1）：最终路径
 // `/api/external/agent/question-sets...`；作用域与 key 绑定由子路由自己校验
 app.route("/agent", agentSetsRoute);

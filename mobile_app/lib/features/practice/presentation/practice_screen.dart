@@ -46,7 +46,9 @@ class _PracticeScreenState extends ConsumerState<PracticeScreen> {
     // 落盘会把进度写回 0。
     final legacyAnswered = (widget.config?['legacyAnswered'] as int?) ?? 0;
     final limit = (widget.config?['limit'] as int?) ?? 10;
-    final mode = (widget.config?['mode'] as String?) ?? 'random';
+    // 配置里没有模式就**别猜**：给 null，由会话自己（服务端 `practiceMode` /
+    // 断点里的值）决定，只有新建会话时才用平台默认的 random。
+    final mode = widget.config?['mode'] as String?;
     Future.microtask(() {
       final controller = ref.read(practiceControllerProvider.notifier);
       if (sessionId != null && sessionId.isNotEmpty) {
@@ -55,9 +57,10 @@ class _PracticeScreenState extends ConsumerState<PracticeScreen> {
           startIndex: startIndex,
           answered: answered,
           legacyAnswered: legacyAnswered,
+          mode: mode,
         );
       } else {
-        controller.createSession(limit: limit, mode: mode);
+        controller.createSession(limit: limit, mode: mode ?? 'random');
       }
     });
   }

@@ -62,6 +62,11 @@ const MIGRATION_ONLY_TABLES = new Set([
   // 试卷的归属、级联删除、组卷过滤都依赖真实索引与约束，内存夹具替不了
   "exam_papers",
   "exam_paper_items",
+  // 教综知识图谱（0028）同样走真实迁移 + 文件库：导入门禁（覆盖率/成环/证据）
+  // 与 question_nodes 的归属校验都依赖真实约束，内存夹具替不了（kg-import/kg-read.test.ts）
+  "kg_nodes",
+  "kg_edges",
+  "question_nodes",
   "recall_card_states",
   "recall_cards",
   "recall_decks",

@@ -53,6 +53,16 @@ const getListRoute = createRoute({
   method: "get",
   path: "/",
   middleware: [authMiddleware] as const,
+  request: {
+    query: z.object({
+      node: z
+        .string()
+        .optional()
+        .describe(
+          "按知识图谱节点筛选（如 ch1:教育学的创立阶段）；不传时行为与响应形状不变",
+        ),
+    }),
+  },
   responses: {
     200: {
       content: { "application/json": { schema: z.array(WrongQuestionSchema) } },
@@ -63,7 +73,10 @@ const getListRoute = createRoute({
 
 app.openapi(getListRoute, async (c) => {
   const user = getCurrentUser(c);
-  const result = await wrongQuestionService.listWrongBook(Number(user.id));
+  const { node } = c.req.valid("query");
+  const result = await wrongQuestionService.listWrongBook(Number(user.id), {
+    node: node?.trim() || undefined,
+  });
 
   return c.json(result, 200);
 });

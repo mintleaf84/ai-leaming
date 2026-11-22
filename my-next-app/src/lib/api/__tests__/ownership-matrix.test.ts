@@ -155,6 +155,14 @@ const MODULES: Record<string, ModuleRule> = {
     scope: "user",
     crossUserTest: "src/lib/api/routes/__tests__/wrong-book-ownership.test.ts",
   },
+  // 知识图谱（docs/kg-product-plan.md §3）：图内容全局共享，但读写都经由用户鉴权，
+  // 且按节点筛错题 / 节点级掌握度都只聚合当前用户的数据；
+  // 跨用户断言见 kg-read.test.ts 的「跨用户」段。
+  kg: {
+    mount: "/api/kg",
+    scope: "user",
+    crossUserTest: "src/lib/api/routes/__tests__/kg-read.test.ts",
+  },
 
   // ---- 管理端 ----
   admin: { mount: "/api/admin", scope: "admin" },
@@ -350,7 +358,7 @@ describe("外部 API：写路由必须声明 write 作用域", () => {
     ).toEqual([]);
   });
 
-  it("admin 作用域的写路由只出现在题库写接口（别把普通写逻辑升级成 admin）", () => {
+  it("admin 作用域的写路由只出现在题库与图谱导入（别把普通写逻辑升级成 admin）", () => {
     const adminOnly: string[] = [];
     for (const block of routeBlocks()) {
       const method = /method:\s*"([a-z]+)"/.exec(block)?.[1];
@@ -363,8 +371,10 @@ describe("外部 API：写路由必须声明 write 作用域", () => {
     }
     expect(adminOnly.sort()).toEqual([
       "PATCH /questions/{id}",
+      "POST /kg/import",
       "POST /questions",
       "POST /questions/batch",
+      "POST /questions/nodes",
     ]);
   });
 

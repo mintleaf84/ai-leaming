@@ -241,13 +241,50 @@ jobs:
             echo
           } > release-notes.md
 
+          # 显式发布（历史事故：gh release create 建出 draft，且旧版本 APK 一直留在同一个 Release 上）
           if gh release view "$TAG" >/dev/null 2>&1; then
-            echo "Release $TAG 已存在：覆盖资产并更新正文"
-            gh release upload "$TAG" "$APK" --clobber
-            gh release edit "$TAG" --notes-file release-notes.md
+            echo "Release $TAG 已存在：更新正文并确保已发布"
+            gh release edit "$TAG" --notes-file release-notes.md --draft=false --latest
           else
-            gh release create "$TAG" "$APK" \
-              --title "$TAG" \
-              --notes-file release-notes.md
+            echo "创建新 Release $TAG"
+            gh release create "$TAG" --title "$TAG" --notes-file release-notes.md \
+              --draft=false --latest
           fi
+
+          # 资产列表端点是 releases/{id}/assets（不是 releases/tags/{tag}/assets）；
+          # 先按 tag 查 release id，再分页取全部资产，避免漏掉后续页。
+          REL_ID="$(gh api "repos/${GITHUB_REPOSITORY}/releases/tags/${TAG}" --jq '.id')"
+          if [ -z "$REL_ID" ] || [ "$REL_ID" = "null" ]; then
+            echo "::error::找不到 Release $TAG 的 id，无法校验资产"
+            exit 1
+          fi
+          list_assets() {
+            gh api "repos/${GITHUB_REPOSITORY}/releases/${REL_ID}/assets?per_page=100" --paginate
+          }
+
+          # 顺序很重要：先上传，再删旧。上传失败时旧包仍在，用户不会没有可下载的版本。
+          KEEP="$(basename "$APK")"
+          echo "上传本次 APK：$KEEP"
+          gh release upload "$TAG" "$APK" --clobber
+
+          # 上传成功后删除不同名的旧 APK（gh release upload --clobber 只覆盖同名文件）
+          OLD_IDS="$(list_assets | jq -s -r --arg keep "$KEEP" \
+            '.[] | .[] | select(.name | startswith("app-release-")) | select(.name != $keep) | .id')"
+          if [ -n "$OLD_IDS" ]; then
+            for id in $OLD_IDS; do
+              echo "删除旧 APK 资产 id=$id"
+              gh api -X DELETE "repos/${GITHUB_REPOSITORY}/releases/assets/$id"
+            done
+          else
+            echo "没有旧 APK 资产需要清理"
+          fi
+
+          # 资产校验：所有分页里恰好一个 app-release-* 资产，且是本次文件
+          FINAL="$(list_assets | jq -s -c '[.[][] | select(.name | startswith("app-release-")) | .name]')"
+          EXPECT="[\"$KEEP\"]"
+          if [ "$FINAL" != "$EXPECT" ]; then
+            echo "::error::发布资产校验失败：期望 $EXPECT，实际 $FINAL"
+            exit 1
+          fi
+          echo "资产校验通过：$FINAL"
 

@@ -277,6 +277,30 @@ void main() {
       expect(await store.localSessionOwner(localId), 'u1');
       expect(await store.localSessionOwner('local_missing'), isNull);
     });
+
+    test('localSessionMode 还原开练时的模式；缺失/空串返回 null', () async {
+      final localId = await store.createLocalSession(
+        userId: 'u1',
+        mode: 'review',
+        questionIds: const <String>['1'],
+      );
+
+      expect(
+        await store.localSessionMode(localId),
+        'review',
+        reason: '离线续练靠它还原模式，丢了就会把自己记成随机',
+      );
+
+      await db.insert('local_sessions', <String, Object?>{
+        'local_id': 'local_empty_mode',
+        'user_id': 'u1',
+        'mode': '',
+        'question_ids': '["1"]',
+        'started_at': nowMs(),
+      });
+      expect(await store.localSessionMode('local_empty_mode'), isNull);
+      expect(await store.localSessionMode('local_missing'), isNull);
+    });
   });
 
   group('recordAnswer', () {

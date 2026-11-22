@@ -46,6 +46,9 @@ class FakeLocalStore implements LocalPracticeStore {
   /// 本地会话的归属账号（默认与 `makeJwt()` 的 user id 一致）。
   String? localOwner = '7';
 
+  /// 本地会话的模式（离线续练要如实还原；null = 老记录没存）。
+  String? localMode = 'wrong';
+
   List<Question>? cachedQuestions;
   Object? cacheError;
 
@@ -88,6 +91,11 @@ class FakeLocalStore implements LocalPracticeStore {
   @override
   Future<String?> localSessionOwner(String localId) async {
     return localQuestionIds == null ? null : localOwner;
+  }
+
+  @override
+  Future<String?> localSessionMode(String localId) async {
+    return localMode;
   }
 
   @override
@@ -615,6 +623,11 @@ void main() {
 
       expect(adapter.requests, isEmpty, reason: '本地会话在服务端不存在，不该打请求');
       expect(session.sessionId, 'local_123');
+      expect(
+        session.practiceMode,
+        'wrong',
+        reason: '离线会话的模式要跟着本地记录还原，不能丢成 random',
+      );
       expect(
         session.questions.map((q) => q.content),
         <String>['本地题一', '本地题二'],

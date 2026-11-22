@@ -12,10 +12,12 @@ _PracticeSession _$PracticeSessionFromJson(Map<String, dynamic> json) =>
       questions: (json['questions'] as List<dynamic>)
           .map((e) => Question.fromJson(e as Map<String, dynamic>))
           .toList(),
+      practiceMode: json['practiceMode'] as String?,
     );
 
 Map<String, dynamic> _$PracticeSessionToJson(_PracticeSession instance) =>
     <String, dynamic>{
       'sessionId': instance.sessionId,
       'questions': instance.questions,
+      'practiceMode': instance.practiceMode,
     };

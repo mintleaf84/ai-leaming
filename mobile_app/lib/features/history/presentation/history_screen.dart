@@ -9,6 +9,7 @@ import '../../../shared/skeletons/skeleton_fakes.dart';
 import '../../../shared/widgets/empty_state.dart';
 import '../../../core/theme/app_icons.dart';
 import '../../../core/theme/app_colors.dart';
+import '../../../core/utils/practice_mode_labels.dart';
 
 /// 历史记录列表页
 class HistoryScreen extends ConsumerStatefulWidget {
@@ -263,11 +264,13 @@ class _HistoryScreenState extends ConsumerState<HistoryScreen> {
     );
   }
 
-  /// 练习模式 → 标签文案 + 配色（`practice_sessions.practice_mode` 的有限集）。
+  /// 练习模式 → 标签文案 + 配色。
   ///
-  /// 兜底必须是**中性**的「其它练习」。以前未知模式一律回落成「随机练习」：
-  /// 外部导入（`import`，教综/粉笔批量导入）、AI 题集（`agent_set`）以及试卷
-  /// 模考（`exam`）的会话在历史里全标成随机，用户会以为系统把自己的练习记错。
+  /// 文案来自 [practiceModeTagOf]（与练习屏面包屑共用同一张表，避免两份漂移）；
+  /// 这里只负责把语义色调映射成本屏用的主题色。
+  ///
+  /// 兜底是**中性**的「其它练习」：外部导入（`import`）、AI 题集（`agent_set`）、
+  /// 试卷模考（`exam`）以前在历史里全被标成随机，用户会以为系统把自己的练习记错。
   /// 未知值宁可显示中性标签，也不要冒充某一种已知模式。
   ///
   /// 语义色只有四组，颜色只是辅助（同一组色会出现在两种模式上），区分靠文案。
@@ -275,57 +278,16 @@ class _HistoryScreenState extends ConsumerState<HistoryScreen> {
     BuildContext context,
     String? mode,
   ) {
+    final tag = practiceModeTagOf(mode);
     final colors = context.colors;
-    switch (mode?.trim()) {
-      case 'random':
-        return (
-          label: '随机练习',
-          foreground: colors.accent,
-          background: colors.accentContainer,
-        );
-      case 'wrong':
-        return (
-          label: '错题复习',
-          foreground: colors.error,
-          background: colors.errorContainer,
-        );
-      case 'tag':
-        return (
-          label: '专项练习',
-          foreground: colors.warning,
-          background: colors.warningContainer,
-        );
-      case 'exam':
-        return (
-          label: '模拟考试',
-          foreground: colors.success,
-          background: colors.successContainer,
-        );
-      case 'import':
-        return (
-          label: '外部导入',
-          foreground: colors.textSecondary,
-          background: colors.surfaceAlt,
-        );
-      case 'agent_set':
-        return (
-          label: 'AI 题集',
-          foreground: colors.accent,
-          background: colors.accentContainer,
-        );
-      case 'review':
-        return (
-          label: '记忆复习',
-          foreground: colors.success,
-          background: colors.successContainer,
-        );
-      default:
-        return (
-          label: '其它练习',
-          foreground: colors.textSecondary,
-          background: colors.surfaceAlt,
-        );
-    }
+    final (Color foreground, Color background) = switch (tag.tone) {
+      PracticeModeTone.accent => (colors.accent, colors.accentContainer),
+      PracticeModeTone.danger => (colors.error, colors.errorContainer),
+      PracticeModeTone.warning => (colors.warning, colors.warningContainer),
+      PracticeModeTone.success => (colors.success, colors.successContainer),
+      PracticeModeTone.neutral => (colors.textSecondary, colors.surfaceAlt),
+    };
+    return (label: tag.label, foreground: foreground, background: background);
   }
 
   Widget _buildStatBadge(String text, Color color) {

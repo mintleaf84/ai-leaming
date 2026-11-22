@@ -667,6 +667,62 @@ void main() {
     });
   });
 
+  group('断点里的模式如实回写（后遗症 1）', () {
+    test('createSession 的模式原样进状态与断点', () async {
+      await container
+          .read(practiceControllerProvider.notifier)
+          .createSession(limit: 3, mode: 'tag');
+      await flush();
+
+      expect(repository.createdModes, <String>['tag']);
+      expect(container.read(practiceControllerProvider).mode, 'tag');
+      expect(persisted()!.mode, 'tag', reason: '断点不能把专项练习记成 random');
+    });
+
+    test('loadSession 从会话数据恢复模式（服务端 practiceMode 为准）', () async {
+      // 断点续练：调用方只知道 sessionId，靠会话自带的模式还原
+      repository.sessionMode = 'wrong';
+      await container
+          .read(practiceControllerProvider.notifier)
+          .loadSession('session_9');
+      await flush();
+
+      expect(repository.loadedSessions, <String>['session_9']);
+      expect(container.read(practiceControllerProvider).mode, 'wrong');
+      expect(
+        persisted()!.mode,
+        'wrong',
+        reason: '续练重写断点时必须沿用这一场真实的模式，不能退回 random',
+      );
+    });
+
+    test('老会话没有 practiceMode 时用入口兜底模式，仍不记成 random', () async {
+      // 错题本入口：sessionId + mode=review，但会话是旧的、没存 practice_mode
+      repository.sessionMode = null;
+      await container
+          .read(practiceControllerProvider.notifier)
+          .loadSession('session_legacy', mode: 'review');
+      await flush();
+
+      expect(container.read(practiceControllerProvider).mode, 'review');
+      expect(persisted()!.mode, 'review');
+    });
+
+    test('两边都没有模式时：状态是「未知」（界面显示其它练习），不冒充随机', () async {
+      repository.sessionMode = null;
+      await container
+          .read(practiceControllerProvider.notifier)
+          .loadSession('session_unknown');
+      await flush();
+
+      expect(
+        container.read(practiceControllerProvider).mode,
+        isNull,
+        reason: '不知道就是不知道，界面按中性标签渲染',
+      );
+    });
+  });
+
   group('断点解析（格式漂移一律当没有断点）', () {
     PracticeResume? parse(Map<String, dynamic> json) =>
         PracticeResume.fromJson(json);

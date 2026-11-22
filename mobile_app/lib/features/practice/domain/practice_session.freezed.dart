@@ -15,7 +15,12 @@ T _$identity<T>(T value) => value;
 /// @nodoc
 mixin _$PracticeSession {
 
- String get sessionId; List<Question> get questions;
+ String get sessionId; List<Question> get questions;/// 这一场的练习模式（`practice_sessions.practice_mode`）。
+///
+/// 服务端 `GET /practice/session/:id` 会返回 `practiceMode`；老会话可能没有，
+/// 所以是可空的。断点续练/错题本入口靠它恢复真实模式——只靠调用方传参，
+/// 断点就会被记成 `random`（数据脏，不只是显示错）。
+ String? get practiceMode;
 /// Create a copy of PracticeSession
 /// with the given fields replaced by the non-null parameter values.
 @JsonKey(includeFromJson: false, includeToJson: false)
@@ -28,16 +33,16 @@ $PracticeSessionCopyWith<PracticeSession> get copyWith => _$PracticeSessionCopyW
 
 @override
 bool operator ==(Object other) {
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is PracticeSession&&(identical(other.sessionId, sessionId) || other.sessionId == sessionId)&&const DeepCollectionEquality().equals(other.questions, questions));
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is PracticeSession&&(identical(other.sessionId, sessionId) || other.sessionId == sessionId)&&const DeepCollectionEquality().equals(other.questions, questions)&&(identical(other.practiceMode, practiceMode) || other.practiceMode == practiceMode));
 }
 
 @JsonKey(includeFromJson: false, includeToJson: false)
 @override
-int get hashCode => Object.hash(runtimeType,sessionId,const DeepCollectionEquality().hash(questions));
+int get hashCode => Object.hash(runtimeType,sessionId,const DeepCollectionEquality().hash(questions),practiceMode);
 
 @override
 String toString() {
-  return 'PracticeSession(sessionId: $sessionId, questions: $questions)';
+  return 'PracticeSession(sessionId: $sessionId, questions: $questions, practiceMode: $practiceMode)';
 }
 
 
@@ -48,7 +53,7 @@ abstract mixin class $PracticeSessionCopyWith<$Res>  {
   factory $PracticeSessionCopyWith(PracticeSession value, $Res Function(PracticeSession) _then) = _$PracticeSessionCopyWithImpl;
 @useResult
 $Res call({
- String sessionId, List<Question> questions
+ String sessionId, List<Question> questions, String? practiceMode
 });
 
 
@@ -65,11 +70,12 @@ class _$PracticeSessionCopyWithImpl<$Res>
 
 /// Create a copy of PracticeSession
 /// with the given fields replaced by the non-null parameter values.
-@pragma('vm:prefer-inline') @override $Res call({Object? sessionId = null,Object? questions = null,}) {
+@pragma('vm:prefer-inline') @override $Res call({Object? sessionId = null,Object? questions = null,Object? practiceMode = freezed,}) {
   return _then(_self.copyWith(
 sessionId: null == sessionId ? _self.sessionId : sessionId // ignore: cast_nullable_to_non_nullable
 as String,questions: null == questions ? _self.questions : questions // ignore: cast_nullable_to_non_nullable
-as List<Question>,
+as List<Question>,practiceMode: freezed == practiceMode ? _self.practiceMode : practiceMode // ignore: cast_nullable_to_non_nullable
+as String?,
   ));
 }
 
@@ -154,10 +160,10 @@ return $default(_that);case _:
 /// }
 /// ```
 
-@optionalTypeArgs TResult maybeWhen<TResult extends Object?>(TResult Function( String sessionId,  List<Question> questions)?  $default,{required TResult orElse(),}) {final _that = this;
+@optionalTypeArgs TResult maybeWhen<TResult extends Object?>(TResult Function( String sessionId,  List<Question> questions,  String? practiceMode)?  $default,{required TResult orElse(),}) {final _that = this;
 switch (_that) {
 case _PracticeSession() when $default != null:
-return $default(_that.sessionId,_that.questions);case _:
+return $default(_that.sessionId,_that.questions,_that.practiceMode);case _:
   return orElse();
 
 }
@@ -175,10 +181,10 @@ return $default(_that.sessionId,_that.questions);case _:
 /// }
 /// ```
 
-@optionalTypeArgs TResult when<TResult extends Object?>(TResult Function( String sessionId,  List<Question> questions)  $default,) {final _that = this;
+@optionalTypeArgs TResult when<TResult extends Object?>(TResult Function( String sessionId,  List<Question> questions,  String? practiceMode)  $default,) {final _that = this;
 switch (_that) {
 case _PracticeSession():
-return $default(_that.sessionId,_that.questions);case _:
+return $default(_that.sessionId,_that.questions,_that.practiceMode);case _:
   throw StateError('Unexpected subclass');
 
 }
@@ -195,10 +201,10 @@ return $default(_that.sessionId,_that.questions);case _:
 /// }
 /// ```
 
-@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>(TResult? Function( String sessionId,  List<Question> questions)?  $default,) {final _that = this;
+@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>(TResult? Function( String sessionId,  List<Question> questions,  String? practiceMode)?  $default,) {final _that = this;
 switch (_that) {
 case _PracticeSession() when $default != null:
-return $default(_that.sessionId,_that.questions);case _:
+return $default(_that.sessionId,_that.questions,_that.practiceMode);case _:
   return null;
 
 }
@@ -210,7 +216,7 @@ return $default(_that.sessionId,_that.questions);case _:
 @JsonSerializable()
 
 class _PracticeSession implements PracticeSession {
-  const _PracticeSession({required this.sessionId, required final  List<Question> questions}): _questions = questions;
+  const _PracticeSession({required this.sessionId, required final  List<Question> questions, this.practiceMode}): _questions = questions;
   factory _PracticeSession.fromJson(Map<String, dynamic> json) => _$PracticeSessionFromJson(json);
 
 @override final  String sessionId;
@@ -221,6 +227,12 @@ class _PracticeSession implements PracticeSession {
   return EqualUnmodifiableListView(_questions);
 }
 
+/// 这一场的练习模式（`practice_sessions.practice_mode`）。
+///
+/// 服务端 `GET /practice/session/:id` 会返回 `practiceMode`；老会话可能没有，
+/// 所以是可空的。断点续练/错题本入口靠它恢复真实模式——只靠调用方传参，
+/// 断点就会被记成 `random`（数据脏，不只是显示错）。
+@override final  String? practiceMode;
 
 /// Create a copy of PracticeSession
 /// with the given fields replaced by the non-null parameter values.
@@ -235,16 +247,16 @@ Map<String, dynamic> toJson() {
 
 @override
 bool operator ==(Object other) {
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is _PracticeSession&&(identical(other.sessionId, sessionId) || other.sessionId == sessionId)&&const DeepCollectionEquality().equals(other._questions, _questions));
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is _PracticeSession&&(identical(other.sessionId, sessionId) || other.sessionId == sessionId)&&const DeepCollectionEquality().equals(other._questions, _questions)&&(identical(other.practiceMode, practiceMode) || other.practiceMode == practiceMode));
 }
 
 @JsonKey(includeFromJson: false, includeToJson: false)
 @override
-int get hashCode => Object.hash(runtimeType,sessionId,const DeepCollectionEquality().hash(_questions));
+int get hashCode => Object.hash(runtimeType,sessionId,const DeepCollectionEquality().hash(_questions),practiceMode);
 
 @override
 String toString() {
-  return 'PracticeSession(sessionId: $sessionId, questions: $questions)';
+  return 'PracticeSession(sessionId: $sessionId, questions: $questions, practiceMode: $practiceMode)';
 }
 
 
@@ -255,7 +267,7 @@ abstract mixin class _$PracticeSessionCopyWith<$Res> implements $PracticeSession
   factory _$PracticeSessionCopyWith(_PracticeSession value, $Res Function(_PracticeSession) _then) = __$PracticeSessionCopyWithImpl;
 @override @useResult
 $Res call({
- String sessionId, List<Question> questions
+ String sessionId, List<Question> questions, String? practiceMode
 });
 
 
@@ -272,11 +284,12 @@ class __$PracticeSessionCopyWithImpl<$Res>
 
 /// Create a copy of PracticeSession
 /// with the given fields replaced by the non-null parameter values.
-@override @pragma('vm:prefer-inline') $Res call({Object? sessionId = null,Object? questions = null,}) {
+@override @pragma('vm:prefer-inline') $Res call({Object? sessionId = null,Object? questions = null,Object? practiceMode = freezed,}) {
   return _then(_PracticeSession(
 sessionId: null == sessionId ? _self.sessionId : sessionId // ignore: cast_nullable_to_non_nullable
 as String,questions: null == questions ? _self._questions : questions // ignore: cast_nullable_to_non_nullable
-as List<Question>,
+as List<Question>,practiceMode: freezed == practiceMode ? _self.practiceMode : practiceMode // ignore: cast_nullable_to_non_nullable
+as String?,
   ));
 }
 

@@ -46,8 +46,8 @@ class PracticeQuestionContent extends ConsumerWidget {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           SizedBox(height: 16.h),
-          // Breadcrumb (placeholder)
-          const PracticeBreadcrumb(),
+          // Breadcrumb (真实模式，见 PracticeBreadcrumb)
+          PracticeBreadcrumb(mode: state.mode),
           SizedBox(height: 24.h),
           // 题型标签
           Container(

@@ -242,6 +242,26 @@ class LocalPracticeStore {
     }
   }
 
+  /// 某个本地会话的练习模式（`local_sessions.mode`）；会话不存在时返回 null。
+  ///
+  /// 离线续练要把模式如实还原：本地会话创建时就带了模式，缺了它练习屏
+  /// 只能猜「随机」（断点也会跟着记错）。
+  Future<String?> localSessionMode(String localId) async {
+    final db = await _resolveDb();
+    final rows = await db.query(
+      'local_sessions',
+      columns: <String>['mode'],
+      where: 'local_id = ?',
+      whereArgs: <Object?>[localId],
+      limit: 1,
+    );
+    if (rows.isEmpty) {
+      return null;
+    }
+    final mode = rows.first['mode'];
+    return mode is String && mode.isNotEmpty ? mode : null;
+  }
+
   /// 某个本地会话的归属账号；会话不存在（或没写 user_id）时返回 null。
   ///
   /// 离线续练必须先比对归属：`local_sessions` 是按设备共享的，退出登录并不会

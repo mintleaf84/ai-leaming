@@ -130,7 +130,11 @@ class PracticeRepositoryImpl implements PracticeRepository {
         mode: mode,
         questionIds: questions.map((question) => question.id).toList(),
       );
-      return PracticeSession(sessionId: localId, questions: questions);
+      return PracticeSession(
+        sessionId: localId,
+        questions: questions,
+        practiceMode: mode,
+      );
     } on OfflineCacheUnavailable {
       rethrow;
     } catch (error) {
@@ -194,7 +198,12 @@ class PracticeRepositoryImpl implements PracticeRepository {
       }
       questions.add(question);
     }
-    return PracticeSession(sessionId: localId, questions: questions);
+    return PracticeSession(
+      sessionId: localId,
+      questions: questions,
+      // 模式从本地会话记录还原：缺了它，离线续练会把自己记成随机。
+      practiceMode: await _localStore.localSessionMode(localId),
+    );
   }
 
   @override

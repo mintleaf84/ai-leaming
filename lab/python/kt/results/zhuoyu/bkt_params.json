@@ -1,174 +1,174 @@
 {
- "identifiability": {
-  "time|tag_chapter": {
-   "n_skills": 5,
-   "T_at_upper_bound": 1,
-   "L0_at_bound": 5,
-   "T_median": 0.2,
-   "T_mean": 0.28200000000000003,
-   "skills_n_lt5": 0,
-   "skills_n_lt10": 0
+  "identifiability": {
+    "time|tag_chapter": {
+      "n_skills": 5,
+      "T_at_upper_bound": 1,
+      "L0_at_bound": 5,
+      "T_median": 0.2,
+      "T_mean": 0.28200000000000003,
+      "skills_n_lt5": 0,
+      "skills_n_lt10": 0
+    },
+    "skill_strat|tag_chapter": {
+      "n_skills": 5,
+      "T_at_upper_bound": 1,
+      "L0_at_bound": 5,
+      "T_median": 0.26,
+      "T_mean": 0.298,
+      "skills_n_lt5": 0,
+      "skills_n_lt10": 0
+    },
+    "item_holdout|tag_chapter": {
+      "n_skills": 5,
+      "T_at_upper_bound": 1,
+      "L0_at_bound": 5,
+      "T_median": 0.23,
+      "T_mean": 0.288,
+      "skills_n_lt5": 0,
+      "skills_n_lt10": 0
+    }
   },
-  "skill_strat|tag_chapter": {
-   "n_skills": 5,
-   "T_at_upper_bound": 1,
-   "L0_at_bound": 5,
-   "T_median": 0.26,
-   "T_mean": 0.298,
-   "skills_n_lt5": 0,
-   "skills_n_lt10": 0
-  },
-  "item_holdout|tag_chapter": {
-   "n_skills": 5,
-   "T_at_upper_bound": 1,
-   "L0_at_bound": 5,
-   "T_median": 0.23,
-   "T_mean": 0.288,
-   "skills_n_lt5": 0,
-   "skills_n_lt10": 0
+  "per_skill": {
+    "time|tag_chapter": [
+      {
+        "skill": "教育学",
+        "n": 771,
+        "L0": 0.95,
+        "T": 0.6,
+        "loglik": -410.52873736380667,
+        "T_at_bound": true,
+        "L0_at_bound": true
+      },
+      {
+        "skill": "心理学",
+        "n": 138,
+        "L0": 0.05,
+        "T": 0.2,
+        "loglik": -67.45217423366606,
+        "T_at_bound": false,
+        "L0_at_bound": true
+      },
+      {
+        "skill": "教育心理学",
+        "n": 382,
+        "L0": 0.05,
+        "T": 0.01,
+        "loglik": -218.98187881965006,
+        "T_at_bound": false,
+        "L0_at_bound": true
+      },
+      {
+        "skill": "时政",
+        "n": 351,
+        "L0": 0.05,
+        "T": 0.02,
+        "loglik": -183.3605868306353,
+        "T_at_bound": false,
+        "L0_at_bound": true
+      },
+      {
+        "skill": "其他",
+        "n": 219,
+        "L0": 0.05,
+        "T": 0.58,
+        "loglik": -108.01048051976572,
+        "T_at_bound": false,
+        "L0_at_bound": true
+      }
+    ],
+    "skill_strat|tag_chapter": [
+      {
+        "skill": "教育学",
+        "n": 714,
+        "L0": 0.95,
+        "T": 0.58,
+        "loglik": -364.52563517974323,
+        "T_at_bound": false,
+        "L0_at_bound": true
+      },
+      {
+        "skill": "心理学",
+        "n": 114,
+        "L0": 0.05,
+        "T": 0.26,
+        "loglik": -59.05978765499277,
+        "T_at_bound": false,
+        "L0_at_bound": true
+      },
+      {
+        "skill": "教育心理学",
+        "n": 334,
+        "L0": 0.05,
+        "T": 0.03,
+        "loglik": -185.42395132313183,
+        "T_at_bound": false,
+        "L0_at_bound": true
+      },
+      {
+        "skill": "时政",
+        "n": 306,
+        "L0": 0.05,
+        "T": 0.02,
+        "loglik": -160.40085919576524,
+        "T_at_bound": false,
+        "L0_at_bound": true
+      },
+      {
+        "skill": "其他",
+        "n": 394,
+        "L0": 0.05,
+        "T": 0.6,
+        "loglik": -211.73597116389138,
+        "T_at_bound": true,
+        "L0_at_bound": true
+      }
+    ],
+    "item_holdout|tag_chapter": [
+      {
+        "skill": "教育学",
+        "n": 709,
+        "L0": 0.95,
+        "T": 0.6,
+        "loglik": -367.5816555990198,
+        "T_at_bound": true,
+        "L0_at_bound": true
+      },
+      {
+        "skill": "心理学",
+        "n": 113,
+        "L0": 0.05,
+        "T": 0.23,
+        "loglik": -54.62750325225981,
+        "T_at_bound": false,
+        "L0_at_bound": true
+      },
+      {
+        "skill": "教育心理学",
+        "n": 337,
+        "L0": 0.05,
+        "T": 0.01,
+        "loglik": -188.04799625834804,
+        "T_at_bound": false,
+        "L0_at_bound": true
+      },
+      {
+        "skill": "时政",
+        "n": 325,
+        "L0": 0.05,
+        "T": 0.02,
+        "loglik": -162.5840367651491,
+        "T_at_bound": false,
+        "L0_at_bound": true
+      },
+      {
+        "skill": "其他",
+        "n": 402,
+        "L0": 0.05,
+        "T": 0.58,
+        "loglik": -222.31935154804182,
+        "T_at_bound": false,
+        "L0_at_bound": true
+      }
+    ]
   }
- },
- "per_skill": {
-  "time|tag_chapter": [
-   {
-    "skill": "教育学",
-    "n": 771,
-    "L0": 0.95,
-    "T": 0.6,
-    "loglik": -410.52873736380667,
-    "T_at_bound": true,
-    "L0_at_bound": true
-   },
-   {
-    "skill": "心理学",
-    "n": 138,
-    "L0": 0.05,
-    "T": 0.2,
-    "loglik": -67.45217423366606,
-    "T_at_bound": false,
-    "L0_at_bound": true
-   },
-   {
-    "skill": "教育心理学",
-    "n": 382,
-    "L0": 0.05,
-    "T": 0.01,
-    "loglik": -218.98187881965006,
-    "T_at_bound": false,
-    "L0_at_bound": true
-   },
-   {
-    "skill": "时政",
-    "n": 351,
-    "L0": 0.05,
-    "T": 0.02,
-    "loglik": -183.3605868306353,
-    "T_at_bound": false,
-    "L0_at_bound": true
-   },
-   {
-    "skill": "其他",
-    "n": 219,
-    "L0": 0.05,
-    "T": 0.58,
-    "loglik": -108.01048051976572,
-    "T_at_bound": false,
-    "L0_at_bound": true
-   }
-  ],
-  "skill_strat|tag_chapter": [
-   {
-    "skill": "教育学",
-    "n": 714,
-    "L0": 0.95,
-    "T": 0.58,
-    "loglik": -364.52563517974323,
-    "T_at_bound": false,
-    "L0_at_bound": true
-   },
-   {
-    "skill": "心理学",
-    "n": 114,
-    "L0": 0.05,
-    "T": 0.26,
-    "loglik": -59.05978765499277,
-    "T_at_bound": false,
-    "L0_at_bound": true
-   },
-   {
-    "skill": "教育心理学",
-    "n": 334,
-    "L0": 0.05,
-    "T": 0.03,
-    "loglik": -185.42395132313183,
-    "T_at_bound": false,
-    "L0_at_bound": true
-   },
-   {
-    "skill": "时政",
-    "n": 306,
-    "L0": 0.05,
-    "T": 0.02,
-    "loglik": -160.40085919576524,
-    "T_at_bound": false,
-    "L0_at_bound": true
-   },
-   {
-    "skill": "其他",
-    "n": 394,
-    "L0": 0.05,
-    "T": 0.6,
-    "loglik": -211.73597116389138,
-    "T_at_bound": true,
-    "L0_at_bound": true
-   }
-  ],
-  "item_holdout|tag_chapter": [
-   {
-    "skill": "教育学",
-    "n": 709,
-    "L0": 0.95,
-    "T": 0.6,
-    "loglik": -367.5816555990198,
-    "T_at_bound": true,
-    "L0_at_bound": true
-   },
-   {
-    "skill": "心理学",
-    "n": 113,
-    "L0": 0.05,
-    "T": 0.23,
-    "loglik": -54.62750325225981,
-    "T_at_bound": false,
-    "L0_at_bound": true
-   },
-   {
-    "skill": "教育心理学",
-    "n": 337,
-    "L0": 0.05,
-    "T": 0.01,
-    "loglik": -188.04799625834804,
-    "T_at_bound": false,
-    "L0_at_bound": true
-   },
-   {
-    "skill": "时政",
-    "n": 325,
-    "L0": 0.05,
-    "T": 0.02,
-    "loglik": -162.5840367651491,
-    "T_at_bound": false,
-    "L0_at_bound": true
-   },
-   {
-    "skill": "其他",
-    "n": 402,
-    "L0": 0.05,
-    "T": 0.58,
-    "loglik": -222.31935154804182,
-    "T_at_bound": false,
-    "L0_at_bound": true
-   }
-  ]
- }
 }

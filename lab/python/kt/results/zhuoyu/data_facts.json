@@ -1,274 +1,191 @@
 {
- "source": "zhuoyu",
- "sessions_listed": 181,
- "sessions_fetched": 181,
- "sessions_empty_or_partial": [
-  {
-   "session": "924dcbe442ee424",
-   "mode": "random",
-   "declared": 10,
-   "returned": 0,
-   "name": null
-  },
-  {
-   "session": "fenbi_1788011407187_3i1llj",
-   "mode": "import",
-   "declared": 15,
-   "returned": 0,
-   "name": "专项智能练习（心理学）"
-  },
-  {
-   "session": "4de7f347cb5c455",
-   "mode": "review",
-   "declared": 30,
-   "returned": 24,
-   "name": null
-  },
-  {
-   "session": "df1022eac28144d",
-   "mode": "review",
-   "declared": 10,
-   "returned": 1,
-   "name": null
-  },
-  {
-   "session": "9cdff9c09a0c44a",
-   "mode": "review",
-   "declared": 10,
-   "returned": 7,
-   "name": null
-  },
-  {
-   "session": "69e4b6e221a543e",
-   "mode": "review",
-   "declared": 20,
-   "returned": 5,
-   "name": null
-  }
- ],
- "fetch_failures": [],
- "attempts_api_declared": 4644,
- "attempts_received": 4586,
- "by_mode": {
-  "import": 2250,
-  "review": 2306,
-  "random": 20,
-  "null": 10
- },
- "real_attempts": 2326,
- "real_sessions": 100,
- "import_attempts": 2250,
- "other_mode_attempts": 10,
- "other_mode_sessions": [
-  {
-   "id": "0nio307k6jm",
-   "mode": null,
-   "name": "错题复习"
-  },
-  {
-   "id": "0nio307k6jm",
-   "mode": null,
-   "name": "错题复习"
-  },
-  {
-   "id": "0nio307k6jm",
-   "mode": null,
-   "name": "错题复习"
-  },
-  {
-   "id": "0nio307k6jm",
-   "mode": null,
-   "name": "错题复习"
-  },
-  {
-   "id": "0nio307k6jm",
-   "mode": null,
-   "name": "错题复习"
-  }
- ],
- "date_span_real": [
-  "2026-05-07T12:55:16.000Z",
-  "2026-08-29T13:26:23.000Z"
- ],
- "active_days": 19,
- "has_absolute_timestamp": true,
- "duration_ms": {
-  "median": 7478,
-  "p90": 21301,
-  "max": 397598,
-  "eq_60000": 0,
-  "zero": 0
- },
- "unique_items": 772,
- "repeat_attempts": 1554,
- "repeat_distribution": {
-  "1": 111,
-  "2": 323,
-  "3": 133,
-  "4": 78,
-  "5": 38,
-  "6": 45,
-  "7": 21,
-  "8": 10,
-  "9": 1,
-  "10": 3,
-  "11": 1,
-  "12": 1,
-  "15": 3,
-  "16": 4
- },
- "items_repeated": 661,
- "items_ge5": 127,
- "accuracy_overall": 0.7653,
- "accuracy_by_type": {
-  "judgment": 0.8107,
-  "multi": 0.7018,
-  "other": 0.7642,
-  "single": 0.7899
- },
- "tag_rows_mixed": {
-  "rows_with_path_tag": 1628,
-  "rows_all_flat": 698,
-  "rows_multi_leaf": 717
- },
- "skill_obs": {
-  "tag": {
-   "n": 315,
-   "median": 2.0,
-   "mean": 7.38,
-   "min": 1,
-   "max": 363,
-   "lt5": 223,
-   "lt10": 270,
-   "ge50": 6
-  },
-  "tag_chapter": {
-   "n": 5,
-   "median": 417.0,
-   "mean": 465.2,
-   "min": 142,
-   "max": 893,
-   "lt5": 0,
-   "lt10": 0,
-   "ge50": 5
-  }
- },
- "graph_mapping": {
-  "rows_mapped": 0,
-  "items_mapped": 0,
-  "coverage_pct": 0.0,
-  "kaodian_only_rows": 0
- },
- "top_skills": {
-  "tag": [
-   [
-    "时政/总书记关于教育的重要论述",
-    363
-   ],
-   [
-    "教育学/教育目的/教育目的概述",
-    84
-   ],
-   [
-    "教育学/教育与教育学/教育学的产生与发展/教育学的创立阶段",
-    79
-   ],
-   [
-    "教育心理学/学习心理/学习策略",
-    70
-   ],
-   [
-    "教育心理学/教育心理学概述/教育心理学的基本内涵",
-    58
-   ],
-   [
-    "教育学/教育与教育学/教育学的产生与发展/教育学的发展阶段",
-    57
-   ],
-   [
-    "教育学/教育与个体发展/个体身心发展的规律",
-    48
-   ],
-   [
-    "教育学/教育制度/我国的学校教育制度",
-    48
-   ],
-   [
-    "教育学/教育与个体发展/影响人身心发展的因素",
-    46
-   ],
-   [
-    "教育心理学/学习心理/态度与品德",
-    39
-   ],
-   [
-    "教育心理学/学习心理/技能的学习",
-    38
-   ],
-   [
-    "教育心理学/学习心理/学习迁移",
-    36
-   ],
-   [
-    "教育心理学/学习与学习理论/行为主义学习理论",
-    34
-   ],
-   [
-    "心理学/认知发展/注意与意识",
-    30
-   ],
-   [
-    "教育学/教育制度/学校教育制度概述",
-    27
-   ],
-   [
-    "心理学/认知发展/思维",
-    25
-   ],
-   [
-    "教育心理学/学习与学习理论/认知主义学习理论",
-    25
-   ],
-   [
-    "教育研究方法",
-    24
-   ],
-   [
-    "教育学/教育与社会发展/教育与社会文化",
-    22
-   ],
-   [
-    "教育心理学/学习心理/知识的学习",
-    21
-   ]
+  "source": "zhuoyu",
+  "sessions_listed": 181,
+  "sessions_fetched": 181,
+  "sessions_empty_or_partial": [
+    {
+      "session": "924dcbe442ee424",
+      "mode": "random",
+      "declared": 10,
+      "returned": 0,
+      "name": null
+    },
+    {
+      "session": "fenbi_1788011407187_3i1llj",
+      "mode": "import",
+      "declared": 15,
+      "returned": 0,
+      "name": "专项智能练习（心理学）"
+    },
+    {
+      "session": "4de7f347cb5c455",
+      "mode": "review",
+      "declared": 30,
+      "returned": 24,
+      "name": null
+    },
+    {
+      "session": "df1022eac28144d",
+      "mode": "review",
+      "declared": 10,
+      "returned": 1,
+      "name": null
+    },
+    {
+      "session": "9cdff9c09a0c44a",
+      "mode": "review",
+      "declared": 10,
+      "returned": 7,
+      "name": null
+    },
+    {
+      "session": "69e4b6e221a543e",
+      "mode": "review",
+      "declared": 20,
+      "returned": 5,
+      "name": null
+    }
   ],
-  "tag_chapter": [
-   [
-    "教育学",
-    893
-   ],
-   [
-    "其他",
-    492
-   ],
-   [
-    "教育心理学",
-    417
-   ],
-   [
-    "时政",
-    382
-   ],
-   [
-    "心理学",
-    142
-   ]
+  "fetch_failures": [],
+  "attempts_api_declared": 4644,
+  "attempts_received": 4586,
+  "by_mode": {
+    "import": 2250,
+    "review": 2306,
+    "random": 20,
+    "null": 10
+  },
+  "real_attempts": 2326,
+  "real_sessions": 100,
+  "import_attempts": 2250,
+  "other_mode_attempts": 10,
+  "other_mode_sessions": [
+    {
+      "id": "0nio307k6jm",
+      "mode": null,
+      "name": "错题复习"
+    },
+    {
+      "id": "0nio307k6jm",
+      "mode": null,
+      "name": "错题复习"
+    },
+    {
+      "id": "0nio307k6jm",
+      "mode": null,
+      "name": "错题复习"
+    },
+    {
+      "id": "0nio307k6jm",
+      "mode": null,
+      "name": "错题复习"
+    },
+    {
+      "id": "0nio307k6jm",
+      "mode": null,
+      "name": "错题复习"
+    }
   ],
-  "node": [
-   [
-    "__unmapped__",
-    2326
-   ]
-  ]
- }
+  "date_span_real": ["2026-05-07T12:55:16.000Z", "2026-08-29T13:26:23.000Z"],
+  "active_days": 19,
+  "has_absolute_timestamp": true,
+  "duration_ms": {
+    "median": 7478,
+    "p90": 21301,
+    "max": 397598,
+    "eq_60000": 0,
+    "zero": 0
+  },
+  "unique_items": 772,
+  "repeat_attempts": 1554,
+  "repeat_distribution": {
+    "1": 111,
+    "2": 323,
+    "3": 133,
+    "4": 78,
+    "5": 38,
+    "6": 45,
+    "7": 21,
+    "8": 10,
+    "9": 1,
+    "10": 3,
+    "11": 1,
+    "12": 1,
+    "15": 3,
+    "16": 4
+  },
+  "items_repeated": 661,
+  "items_ge5": 127,
+  "accuracy_overall": 0.7653,
+  "accuracy_by_type": {
+    "judgment": 0.8107,
+    "multi": 0.7018,
+    "other": 0.7642,
+    "single": 0.7899
+  },
+  "tag_rows_mixed": {
+    "rows_with_path_tag": 1628,
+    "rows_all_flat": 698,
+    "rows_multi_leaf": 717
+  },
+  "skill_obs": {
+    "tag": {
+      "n": 315,
+      "median": 2.0,
+      "mean": 7.38,
+      "min": 1,
+      "max": 363,
+      "lt5": 223,
+      "lt10": 270,
+      "ge50": 6
+    },
+    "tag_chapter": {
+      "n": 5,
+      "median": 417.0,
+      "mean": 465.2,
+      "min": 142,
+      "max": 893,
+      "lt5": 0,
+      "lt10": 0,
+      "ge50": 5
+    }
+  },
+  "graph_mapping": {
+    "rows_mapped": 0,
+    "items_mapped": 0,
+    "coverage_pct": 0.0,
+    "kaodian_only_rows": 0
+  },
+  "top_skills": {
+    "tag": [
+      ["时政/总书记关于教育的重要论述", 363],
+      ["教育学/教育目的/教育目的概述", 84],
+      ["教育学/教育与教育学/教育学的产生与发展/教育学的创立阶段", 79],
+      ["教育心理学/学习心理/学习策略", 70],
+      ["教育心理学/教育心理学概述/教育心理学的基本内涵", 58],
+      ["教育学/教育与教育学/教育学的产生与发展/教育学的发展阶段", 57],
+      ["教育学/教育与个体发展/个体身心发展的规律", 48],
+      ["教育学/教育制度/我国的学校教育制度", 48],
+      ["教育学/教育与个体发展/影响人身心发展的因素", 46],
+      ["教育心理学/学习心理/态度与品德", 39],
+      ["教育心理学/学习心理/技能的学习", 38],
+      ["教育心理学/学习心理/学习迁移", 36],
+      ["教育心理学/学习与学习理论/行为主义学习理论", 34],
+      ["心理学/认知发展/注意与意识", 30],
+      ["教育学/教育制度/学校教育制度概述", 27],
+      ["心理学/认知发展/思维", 25],
+      ["教育心理学/学习与学习理论/认知主义学习理论", 25],
+      ["教育研究方法", 24],
+      ["教育学/教育与社会发展/教育与社会文化", 22],
+      ["教育心理学/学习心理/知识的学习", 21]
+    ],
+    "tag_chapter": [
+      ["教育学", 893],
+      ["其他", 492],
+      ["教育心理学", 417],
+      ["时政", 382],
+      ["心理学", 142]
+    ],
+    "node": [["__unmapped__", 2326]]
+  }
 }

@@ -33,12 +33,19 @@ const SectionSchema = z.object({
 const NodeSchema = z.object({
   nodeKey: z
     .string()
-    .describe("节点 key，章内唯一；`ch1:名称` 或裸名称（导入时补 `<chapter>:` 前缀）"),
+    .describe(
+      "节点 key，章内唯一；`ch1:名称` 或裸名称（导入时补 `<chapter>:` 前缀）",
+    ),
   name: z.string().describe("节点名称"),
   kind: z
     .string()
     .describe("节点类型：concept | facet | work | person | policy"),
-  printedPage: z.number().int().nullable().optional().describe("首个出现的印刷页"),
+  printedPage: z
+    .number()
+    .int()
+    .nullable()
+    .optional()
+    .describe("首个出现的印刷页"),
 });
 
 const EdgeSchema = z.object({
@@ -51,7 +58,9 @@ const EdgeSchema = z.object({
 });
 
 const ImportBodySchema = z.object({
-  chapter: z.string().describe("章节标识（如 ch1），用于节点 key 前缀与读接口过滤"),
+  chapter: z
+    .string()
+    .describe("章节标识（如 ch1），用于节点 key 前缀与读接口过滤"),
   schemaVersion: z
     .string()
     .describe(`关系类型登记表版本，必须等于 ${RELATION_TYPES_VERSION}`),
@@ -103,10 +112,12 @@ const ImportRoute = createRoute({
           }),
         },
       },
-      description: "导入结果（预演时只含 wouldCreate*，真导时含 created/updated/skipped）",
+      description:
+        "导入结果（预演时只含 wouldCreate*，真导时含 created/updated/skipped）",
     },
     400: {
-      description: "门禁失败（issues 逐条说明；coverage.missing 列出未覆盖考点）",
+      description:
+        "门禁失败（issues 逐条说明；coverage.missing 列出未覆盖考点）",
       content: {
         "application/json": {
           schema: z.object({
@@ -148,7 +159,9 @@ app.openapi(ImportRoute, async (c) => {
     return c.json(
       {
         error: "图谱校验失败（未写入任何数据）",
-        issues: result.issues.map((issue) => `[${issue.code}] ${issue.message}`),
+        issues: result.issues.map(
+          (issue) => `[${issue.code}] ${issue.message}`,
+        ),
         codes: Array.from(new Set(result.issues.map((issue) => issue.code))),
         coverage: result.coverage,
         warnings: result.warnings,

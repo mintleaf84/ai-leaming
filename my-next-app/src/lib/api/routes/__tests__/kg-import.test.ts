@@ -170,7 +170,11 @@ function tinyGraphBody() {
     schemaVersion: RELATION_TYPES_VERSION,
     sections: [{ key: "考点一", title: "测试", startPage: 1, endPage: 10 }],
     nodes: [
-      { nodeKey: "教育学的创立阶段", name: "教育学的创立阶段", kind: "concept" },
+      {
+        nodeKey: "教育学的创立阶段",
+        name: "教育学的创立阶段",
+        kind: "concept",
+      },
       { nodeKey: "广义的教育", name: "广义的教育", kind: "concept" },
     ],
     edges: [
@@ -282,8 +286,20 @@ describe("POST /api/external/kg/import", () => {
         { nodeKey: "贯通", name: "贯通", kind: "concept" },
       ],
       edges: [
-        { from: "贯穿", to: "贯通", type: "prerequisite", evidence: "A", printed_page: 1 },
-        { from: "贯通", to: "贯穿", type: "prerequisite", evidence: "B", printed_page: 1 },
+        {
+          from: "贯穿",
+          to: "贯通",
+          type: "prerequisite",
+          evidence: "A",
+          printed_page: 1,
+        },
+        {
+          from: "贯通",
+          to: "贯穿",
+          type: "prerequisite",
+          evidence: "B",
+          printed_page: 1,
+        },
       ],
     };
     const res = await postBody(IMPORT_PATH, body);
@@ -304,7 +320,11 @@ describe("POST /api/external/kg/import", () => {
     const payload = (await res.json()) as {
       codes: string[];
       issues: string[];
-      coverage: { covered: number; total: number; missing: Array<{ key: string }> };
+      coverage: {
+        covered: number;
+        total: number;
+        missing: Array<{ key: string }>;
+      };
     };
     expect(payload.codes).toContain("uncovered_section");
     expect(payload.issues.join("\n")).toContain("考点十五");
@@ -363,7 +383,12 @@ describe("POST /api/external/questions/nodes", () => {
         method: "match",
         score: 3,
       },
-      { questionId: q2, chapter: "ch1", nodeKey: "广义的教育", method: "manual" },
+      {
+        questionId: q2,
+        chapter: "ch1",
+        nodeKey: "广义的教育",
+        method: "manual",
+      },
     ];
 
     const first = await postBody(QUESTION_NODES_PATH, { items });

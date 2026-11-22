@@ -175,7 +175,12 @@ describe("知识图谱读接口 · 真实库", () => {
     const res = await request(kgApp, "/graph?chapter=ch1", await tokenFor(A));
     expect(res.status).toBe(200);
     const body = (await res.json()) as {
-      nodes: Array<{ nodeKey: string; name: string; kind: string; page: number }>;
+      nodes: Array<{
+        nodeKey: string;
+        name: string;
+        kind: string;
+        page: number;
+      }>;
       edges: Array<{
         from: string;
         to: string;
@@ -212,10 +217,21 @@ describe("知识图谱读接口 · 真实库", () => {
       data: [{ nodeKey: N2 }, { nodeKey: N1 }],
     });
 
-    const filtered = await request(kgApp, "/nodes?chapter=ch1&kind=work", token);
-    expect(await filtered.json()).toMatchObject({ data: [], meta: { total: 0 } });
+    const filtered = await request(
+      kgApp,
+      "/nodes?chapter=ch1&kind=work",
+      token,
+    );
+    expect(await filtered.json()).toMatchObject({
+      data: [],
+      meta: { total: 0 },
+    });
 
-    const paged = await request(kgApp, "/nodes?chapter=ch1&limit=1&offset=1", token);
+    const paged = await request(
+      kgApp,
+      "/nodes?chapter=ch1&limit=1&offset=1",
+      token,
+    );
     const pagedBody = (await paged.json()) as {
       data: Array<{ nodeKey: string }>;
       meta: { limit: number; offset: number; total: number };

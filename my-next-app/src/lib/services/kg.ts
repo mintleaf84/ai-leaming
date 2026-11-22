@@ -66,12 +66,21 @@ export async function previewKgImport(input: {
   edges: NormalizedKgEdge[];
 }): Promise<KgImportPreview> {
   const [nodeRows, edgeRows] = await Promise.all([
-    drizzleDb.select().from(kg_nodes).where(eq(kg_nodes.chapter, input.chapter)),
-    drizzleDb.select().from(kg_edges).where(eq(kg_edges.chapter, input.chapter)),
+    drizzleDb
+      .select()
+      .from(kg_nodes)
+      .where(eq(kg_nodes.chapter, input.chapter)),
+    drizzleDb
+      .select()
+      .from(kg_edges)
+      .where(eq(kg_edges.chapter, input.chapter)),
   ]);
   const nodeMap = new Map(nodeRows.map((row) => [row.node_key, row]));
   const edgeMap = new Map(
-    edgeRows.map((row) => [`${row.from_key}\u0000${row.to_key}\u0000${row.type}`, row]),
+    edgeRows.map((row) => [
+      `${row.from_key}\u0000${row.to_key}\u0000${row.type}`,
+      row,
+    ]),
   );
 
   let wouldCreateNodes = 0;
@@ -85,7 +94,9 @@ export async function previewKgImport(input: {
   let wouldCreateEdges = 0;
   let wouldUpdateEdges = 0;
   for (const edge of input.edges) {
-    const existing = edgeMap.get(`${edge.from}\u0000${edge.to}\u0000${edge.type}`);
+    const existing = edgeMap.get(
+      `${edge.from}\u0000${edge.to}\u0000${edge.type}`,
+    );
     if (!existing) wouldCreateEdges += 1;
     else if (!sameEdge(existing, edge)) wouldUpdateEdges += 1;
   }

@@ -16,7 +16,13 @@
 /** 登记表版本：导入接口的 `schemaVersion` 必须与它完全相等 */
 export const RELATION_TYPES_VERSION = "1.1";
 
-export const NODE_KINDS = ["concept", "facet", "work", "person", "policy"] as const;
+export const NODE_KINDS = [
+  "concept",
+  "facet",
+  "work",
+  "person",
+  "policy",
+] as const;
 export type KgNodeKind = (typeof NODE_KINDS)[number];
 
 export interface RelationTypeDefinition {
@@ -131,8 +137,7 @@ export const RELATION_TYPES: readonly RelationTypeDefinition[] = [
   {
     name: "chronology",
     label: "时间先后",
-    definition:
-      "from 在时间上早于 to；只表示朝代/年代的先后，不表示先修或因果",
+    definition: "from 在时间上早于 to；只表示朝代/年代的先后，不表示先修或因果",
     direction: "earlier -> later",
     inverse: "later_than",
     status: "proposed",

@@ -926,8 +926,7 @@ const questionNodesRoute = createRoute({
   path: "/questions/nodes",
   middleware: [requireScopeMiddleware("admin")] as const,
   summary: "批量写题→知识图谱节点（幂等，需绑定用户的 admin Key）",
-  description:
-    `写接口，**需 admin 作用域且 API Key 必须绑定 userId**。产品**不做**匹配算法：映射由离线脚本算好后回传。单批 ≤${QUESTION_NODE_BATCH_MAX} 条，整批原子；幂等键 \`(question_id, node_key)\`，命中即 skipped。题目不存在 / 已报错 / 属于他人的 Agent 题集 → 404；节点不存在 → 400。`,
+  description: `写接口，**需 admin 作用域且 API Key 必须绑定 userId**。产品**不做**匹配算法：映射由离线脚本算好后回传。单批 ≤${QUESTION_NODE_BATCH_MAX} 条，整批原子；幂等键 \`(question_id, node_key)\`，命中即 skipped。题目不存在 / 已报错 / 属于他人的 Agent 题集 → 404；节点不存在 → 400。`,
   request: {
     body: {
       content: { "application/json": { schema: QuestionNodesBodySchema } },

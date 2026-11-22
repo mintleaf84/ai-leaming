@@ -1376,9 +1376,10 @@ export const question_nodes = sqliteTable(
     created_at: text("created_at").default(sql`CURRENT_TIMESTAMP`),
   },
   (table) => ({
-    unq_question_node: uniqueIndex(
-      "question_nodes_question_node_unique",
-    ).on(table.question_id, table.node_key),
+    unq_question_node: uniqueIndex("question_nodes_question_node_unique").on(
+      table.question_id,
+      table.node_key,
+    ),
     idx_chapter_node: index("idx_question_nodes_chapter_node").on(
       table.chapter,
       table.node_key,

@@ -42,11 +42,7 @@
                 },
                 "dimension": {
                   "description": "能力维度，省略时按 knowledge 落库",
-                  "enum": [
-                    "knowledge",
-                    "understanding",
-                    "application"
-                  ],
+                  "enum": ["knowledge", "understanding", "application"],
                   "type": "string"
                 },
                 "explanation": {
@@ -79,21 +75,11 @@
                 },
                 "type": {
                   "description": "题型，省略时按 single 落库",
-                  "enum": [
-                    "single",
-                    "multi",
-                    "truefalse",
-                    "fill_blank"
-                  ],
+                  "enum": ["single", "multi", "truefalse", "fill_blank"],
                   "type": "string"
                 }
               },
-              "required": [
-                "content",
-                "answer",
-                "explanation",
-                "tags"
-              ],
+              "required": ["content", "answer", "explanation", "tags"],
               "type": "object"
             },
             "maxItems": 100,
@@ -113,11 +99,7 @@
             "type": "string"
           }
         },
-        "required": [
-          "batchKey",
-          "title",
-          "questions"
-        ],
+        "required": ["batchKey", "title", "questions"],
         "type": "object"
       },
       "AgentQuestionSetCreateResponse": {
@@ -143,12 +125,7 @@
             "type": "integer"
           }
         },
-        "required": [
-          "id",
-          "batchKey",
-          "duplicate",
-          "questionCount"
-        ],
+        "required": ["id", "batchKey", "duplicate", "questionCount"],
         "type": "object"
       },
       "AgentQuestionSetQuestion": {
@@ -269,11 +246,7 @@
                   "type": "string"
                 }
               },
-              "required": [
-                "questionId",
-                "content",
-                "reason"
-              ],
+              "required": ["questionId", "content", "reason"],
               "type": "object"
             },
             "type": "array"
@@ -315,11 +288,7 @@
                       "type": "string"
                     }
                   },
-                  "required": [
-                    "tag",
-                    "answered",
-                    "correctRate"
-                  ],
+                  "required": ["tag", "answered", "correctRate"],
                   "type": "object"
                 },
                 "type": "array"
@@ -339,12 +308,7 @@
             "type": "object"
           }
         },
-        "required": [
-          "setId",
-          "summary",
-          "items",
-          "flagged"
-        ],
+        "required": ["setId", "summary", "items", "flagged"],
         "type": "object"
       },
       "AgentQuestionSetSummary": {
@@ -391,11 +355,7 @@
             "type": "integer"
           },
           "status": {
-            "enum": [
-              "active",
-              "archived",
-              "promoted"
-            ],
+            "enum": ["active", "archived", "promoted"],
             "type": "string"
           },
           "targetTags": {
@@ -454,10 +414,7 @@
             "type": "string"
           }
         },
-        "required": [
-          "questionId",
-          "isCorrect"
-        ],
+        "required": ["questionId", "isCorrect"],
         "type": "object"
       },
       "ExternalAgentAnswersRequest": {
@@ -485,10 +442,7 @@
             "type": "string"
           }
         },
-        "required": [
-          "sessionKey",
-          "answers"
-        ],
+        "required": ["sessionKey", "answers"],
         "type": "object"
       },
       "ExternalAgentAnswersResponse": {
@@ -510,11 +464,7 @@
             "type": "string"
           }
         },
-        "required": [
-          "sessionId",
-          "inserted",
-          "duplicated"
-        ],
+        "required": ["sessionId", "inserted", "duplicated"],
         "type": "object"
       },
       "ExternalQuestionBatchItem": {
@@ -529,11 +479,7 @@
           },
           "dimension": {
             "description": "能力维度，省略时按 knowledge 落库",
-            "enum": [
-              "knowledge",
-              "understanding",
-              "application"
-            ],
+            "enum": ["knowledge", "understanding", "application"],
             "type": "string"
           },
           "explanation": {
@@ -572,21 +518,11 @@
           },
           "type": {
             "description": "题型，省略时按 single 落库",
-            "enum": [
-              "single",
-              "multi",
-              "truefalse",
-              "fill_blank"
-            ],
+            "enum": ["single", "multi", "truefalse", "fill_blank"],
             "type": "string"
           }
         },
-        "required": [
-          "content",
-          "answer",
-          "explanation",
-          "tags"
-        ],
+        "required": ["content", "answer", "explanation", "tags"],
         "type": "object"
       },
       "ExternalQuestionBatchItemResult": {
@@ -606,19 +542,11 @@
           },
           "status": {
             "description": "created = 本次新建；skipped = 命中既有题或批内重复（内容未被修改）",
-            "enum": [
-              "created",
-              "skipped"
-            ],
+            "enum": ["created", "skipped"],
             "type": "string"
           }
         },
-        "required": [
-          "index",
-          "externalId",
-          "questionId",
-          "status"
-        ],
+        "required": ["index", "externalId", "questionId", "status"],
         "type": "object"
       },
       "ExternalQuestionBatchRequest": {
@@ -633,9 +561,7 @@
             "type": "array"
           }
         },
-        "required": [
-          "questions"
-        ],
+        "required": ["questions"],
         "type": "object"
       },
       "ExternalQuestionBatchResponse": {
@@ -664,12 +590,7 @@
             "type": "integer"
           }
         },
-        "required": [
-          "created",
-          "skipped",
-          "items",
-          "duplicate"
-        ],
+        "required": ["created", "skipped", "items", "duplicate"],
         "type": "object"
       },
       "ExternalQuestionPatchBody": {
@@ -683,11 +604,7 @@
             "type": "string"
           },
           "dimension": {
-            "enum": [
-              "knowledge",
-              "understanding",
-              "application"
-            ],
+            "enum": ["knowledge", "understanding", "application"],
             "type": "string"
           },
           "explanation": {
@@ -711,12 +628,7 @@
             "type": "array"
           },
           "type": {
-            "enum": [
-              "single",
-              "multi",
-              "truefalse",
-              "fill_blank"
-            ],
+            "enum": ["single", "multi", "truefalse", "fill_blank"],
             "type": "string"
           }
         },
@@ -736,11 +648,7 @@
           },
           "dimension": {
             "description": "能力维度",
-            "enum": [
-              "knowledge",
-              "understanding",
-              "application"
-            ],
+            "enum": ["knowledge", "understanding", "application"],
             "type": "string"
           },
           "explanation": {
@@ -770,22 +678,11 @@
           "type": {
             "default": "single",
             "description": "题型，默认 single",
-            "enum": [
-              "single",
-              "multi",
-              "truefalse",
-              "fill_blank"
-            ],
+            "enum": ["single", "multi", "truefalse", "fill_blank"],
             "type": "string"
           }
         },
-        "required": [
-          "content",
-          "answer",
-          "explanation",
-          "tags",
-          "dimension"
-        ],
+        "required": ["content", "answer", "explanation", "tags", "dimension"],
         "type": "object"
       },
       "ExternalQuestionWriteResponse": {
@@ -808,11 +705,7 @@
             "type": "integer"
           }
         },
-        "required": [
-          "id",
-          "externalId",
-          "duplicate"
-        ],
+        "required": ["id", "externalId", "duplicate"],
         "type": "object"
       },
       "ExternalRecallCardUpsertRequest": {
@@ -829,9 +722,7 @@
                   "type": "array"
                 }
               },
-              "required": [
-                "answers"
-              ],
+              "required": ["answers"],
               "type": "object"
             },
             "minItems": 1,
@@ -874,10 +765,7 @@
                   "type": "string"
                 }
               },
-              "required": [
-                "text",
-                "keywords"
-              ],
+              "required": ["text", "keywords"],
               "type": "object"
             },
             "maxItems": 6,
@@ -886,10 +774,7 @@
           },
           "kind": {
             "description": "list = 列举卡（用 items）/ cloze = 填空卡（用 blanks）",
-            "enum": [
-              "list",
-              "cloze"
-            ],
+            "enum": ["list", "cloze"],
             "type": "string"
           },
           "prompt": {
@@ -902,12 +787,7 @@
             "type": "boolean"
           }
         },
-        "required": [
-          "deckKey",
-          "cardId",
-          "prompt",
-          "kind"
-        ],
+        "required": ["deckKey", "cardId", "prompt", "kind"],
         "type": "object"
       },
       "ExternalRecallCardUpsertResponse": {
@@ -929,11 +809,7 @@
             "type": "boolean"
           }
         },
-        "required": [
-          "cardId",
-          "cardKey",
-          "created"
-        ],
+        "required": ["cardId", "cardKey", "created"],
         "type": "object"
       },
       "ExternalRecallDeckImportRequest": {
@@ -946,16 +822,11 @@
           },
           "onConflict": {
             "description": "内容冲突策略：keep（默认，保留库内内容）/ accept（采用文件内容，进度不受影响）",
-            "enum": [
-              "keep",
-              "accept"
-            ],
+            "enum": ["keep", "accept"],
             "type": "string"
           }
         },
-        "required": [
-          "json"
-        ],
+        "required": ["json"],
         "type": "object"
       },
       "ExternalRecallDeckImportResponse": {
@@ -966,10 +837,7 @@
               "properties": {
                 "action": {
                   "description": "该冲突的处理方式",
-                  "enum": [
-                    "keep",
-                    "accept"
-                  ],
+                  "enum": ["keep", "accept"],
                   "type": "string"
                 },
                 "cardId": {
@@ -977,10 +845,7 @@
                   "type": "string"
                 }
               },
-              "required": [
-                "cardId",
-                "action"
-              ],
+              "required": ["cardId", "action"],
               "type": "object"
             },
             "type": "array"
@@ -1054,17 +919,11 @@
                 },
                 "to": {
                   "description": "改判结果",
-                  "enum": [
-                    "ok",
-                    "miss"
-                  ],
+                  "enum": ["ok", "miss"],
                   "type": "string"
                 }
               },
-              "required": [
-                "index",
-                "to"
-              ],
+              "required": ["index", "to"],
               "type": "object"
             },
             "type": "array"
@@ -1075,10 +934,7 @@
             "type": "string"
           }
         },
-        "required": [
-          "cardId",
-          "typed"
-        ],
+        "required": ["cardId", "typed"],
         "type": "object"
       },
       "ExternalRecallReviewResponse": {
@@ -1109,20 +965,13 @@
           },
           "rating": {
             "description": "推导出的 FSRS 评分（用户不直接选择）",
-            "enum": [
-              "again",
-              "hard",
-              "good"
-            ],
+            "enum": ["again", "hard", "good"],
             "type": "string"
           },
           "verdicts": {
             "description": "最终判分（已应用改判），与本次呈现的条目一一对应",
             "items": {
-              "enum": [
-                "ok",
-                "miss"
-              ],
+              "enum": ["ok", "miss"],
               "type": "string"
             },
             "type": "array"
@@ -1165,10 +1014,7 @@
             "type": "integer"
           }
         },
-        "required": [
-          "questionId",
-          "isCorrect"
-        ],
+        "required": ["questionId", "isCorrect"],
         "type": "object"
       },
       "ExternalSrsReviewResponse": {
@@ -1248,17 +1094,11 @@
                 },
                 "to": {
                   "description": "改判结果",
-                  "enum": [
-                    "ok",
-                    "miss"
-                  ],
+                  "enum": ["ok", "miss"],
                   "type": "string"
                 }
               },
-              "required": [
-                "index",
-                "to"
-              ],
+              "required": ["index", "to"],
               "type": "object"
             },
             "type": "array"
@@ -1269,10 +1109,7 @@
             "type": "string"
           }
         },
-        "required": [
-          "cardId",
-          "typed"
-        ],
+        "required": ["cardId", "typed"],
         "type": "object"
       },
       "MobileRecallReviewResponse": {
@@ -1299,20 +1136,13 @@
           },
           "rating": {
             "description": "推导出的 FSRS 评分（用户不直接选择）",
-            "enum": [
-              "again",
-              "hard",
-              "good"
-            ],
+            "enum": ["again", "hard", "good"],
             "type": "string"
           },
           "verdicts": {
             "description": "最终判分（已应用改判），与本次呈现的条目一一对应",
             "items": {
-              "enum": [
-                "ok",
-                "miss"
-              ],
+              "enum": ["ok", "miss"],
               "type": "string"
             },
             "type": "array"
@@ -1420,11 +1250,7 @@
             "name": "status",
             "required": false,
             "schema": {
-              "enum": [
-                "pending",
-                "resolved",
-                "dismissed"
-              ],
+              "enum": ["pending", "resolved", "dismissed"],
               "type": "string"
             }
           },
@@ -1530,10 +1356,7 @@
                       "type": "number"
                     }
                   },
-                  "required": [
-                    "items",
-                    "total"
-                  ],
+                  "required": ["items", "total"],
                   "type": "object"
                 }
               }
@@ -1565,11 +1388,7 @@
                       "type": "number"
                     }
                   },
-                  "required": [
-                    "pending",
-                    "resolved",
-                    "dismissed"
-                  ],
+                  "required": ["pending", "resolved", "dismissed"],
                   "type": "object"
                 }
               }
@@ -1606,9 +1425,7 @@
                       "type": "boolean"
                     }
                   },
-                  "required": [
-                    "success"
-                  ],
+                  "required": ["success"],
                   "type": "object"
                 }
               }
@@ -1645,9 +1462,7 @@
                       "type": "boolean"
                     }
                   },
-                  "required": [
-                    "success"
-                  ],
+                  "required": ["success"],
                   "type": "object"
                 }
               }
@@ -1738,9 +1553,7 @@
                       "type": "string"
                     }
                   },
-                  "required": [
-                    "deleted"
-                  ],
+                  "required": ["deleted"],
                   "type": "object"
                 }
               }
@@ -1770,10 +1583,7 @@
                     "type": "string"
                   }
                 },
-                "required": [
-                  "sql",
-                  "description"
-                ],
+                "required": ["sql", "description"],
                 "type": "object"
               }
             }
@@ -1801,9 +1611,7 @@
                       "type": "boolean"
                     }
                   },
-                  "required": [
-                    "success"
-                  ],
+                  "required": ["success"],
                   "type": "object"
                 }
               }
@@ -1884,9 +1692,7 @@
                       "type": "array"
                     }
                   },
-                  "required": [
-                    "history"
-                  ],
+                  "required": ["history"],
                   "type": "object"
                 }
               }
@@ -1915,9 +1721,7 @@
                     "type": "string"
                   }
                 },
-                "required": [
-                  "sql"
-                ],
+                "required": ["sql"],
                 "type": "object"
               }
             }
@@ -1946,9 +1750,7 @@
                       "type": "array"
                     }
                   },
-                  "required": [
-                    "valid"
-                  ],
+                  "required": ["valid"],
                   "type": "object"
                 }
               }
@@ -2048,11 +1850,7 @@
                           },
                           "status": {
                             "description": "active=可练；promoted=已转正入库；archived=已归档",
-                            "enum": [
-                              "active",
-                              "promoted",
-                              "archived"
-                            ],
+                            "enum": ["active", "promoted", "archived"],
                             "type": "string"
                           },
                           "targetTags": {
@@ -2098,18 +1896,11 @@
                           "type": "integer"
                         }
                       },
-                      "required": [
-                        "limit",
-                        "offset",
-                        "total"
-                      ],
+                      "required": ["limit", "offset", "total"],
                       "type": "object"
                     }
                   },
-                  "required": [
-                    "data",
-                    "meta"
-                  ],
+                  "required": ["data", "meta"],
                   "type": "object"
                 }
               }
@@ -2225,11 +2016,7 @@
                         },
                         "status": {
                           "description": "active=可练；promoted=已转正入库；archived=已归档",
-                          "enum": [
-                            "active",
-                            "promoted",
-                            "archived"
-                          ],
+                          "enum": ["active", "promoted", "archived"],
                           "type": "string"
                         },
                         "targetTags": {
@@ -2262,11 +2049,7 @@
                       "type": "object"
                     }
                   },
-                  "required": [
-                    "set",
-                    "questions",
-                    "flaggedCount"
-                  ],
+                  "required": ["set", "questions", "flaggedCount"],
                   "type": "object"
                 }
               }
@@ -2354,10 +2137,7 @@
                       "type": "string"
                     }
                   },
-                  "required": [
-                    "sessionId",
-                    "questions"
-                  ],
+                  "required": ["sessionId", "questions"],
                   "type": "object"
                 }
               }
@@ -2408,10 +2188,7 @@
                   },
                   "kind": {
                     "default": "fixed",
-                    "enum": [
-                      "fixed",
-                      "timed"
-                    ],
+                    "enum": ["fixed", "timed"],
                     "type": "string"
                   },
                   "title": {
@@ -2483,10 +2260,7 @@
                             "type": "object"
                           }
                         },
-                        "required": [
-                          "position",
-                          "question"
-                        ],
+                        "required": ["position", "question"],
                         "type": "object"
                       },
                       "type": "array"
@@ -2505,11 +2279,7 @@
                           "type": "string"
                         }
                       },
-                      "required": [
-                        "sessionId",
-                        "score",
-                        "submittedAt"
-                      ],
+                      "required": ["sessionId", "score", "submittedAt"],
                       "type": "object"
                     },
                     "paper": {
@@ -2533,10 +2303,7 @@
                           "type": "integer"
                         },
                         "kind": {
-                          "enum": [
-                            "fixed",
-                            "timed"
-                          ],
+                          "enum": ["fixed", "timed"],
                           "type": "string"
                         },
                         "lastAttemptAt": {
@@ -2548,11 +2315,7 @@
                           "type": "number"
                         },
                         "source": {
-                          "enum": [
-                            "manual",
-                            "auto",
-                            "agent"
-                          ],
+                          "enum": ["manual", "auto", "agent"],
                           "type": "string"
                         },
                         "title": {
@@ -2583,11 +2346,7 @@
                       "type": "object"
                     }
                   },
-                  "required": [
-                    "paper",
-                    "items",
-                    "lastAttempt"
-                  ],
+                  "required": ["paper", "items", "lastAttempt"],
                   "type": "object"
                 }
               }
@@ -2643,11 +2402,7 @@
                       "type": "integer"
                     }
                   },
-                  "required": [
-                    "setId",
-                    "promoted",
-                    "promotedCount"
-                  ],
+                  "required": ["setId", "promoted", "promotedCount"],
                   "type": "object"
                 }
               }
@@ -2727,11 +2482,7 @@
                       "type": "integer"
                     }
                   },
-                  "required": [
-                    "questionId",
-                    "flagged",
-                    "remaining"
-                  ],
+                  "required": ["questionId", "flagged", "remaining"],
                   "type": "object"
                 }
               }
@@ -2815,20 +2566,11 @@
                     "type": "number"
                   },
                   "tag": {
-                    "enum": [
-                      "highlight",
-                      "underline",
-                      "wavy"
-                    ],
+                    "enum": ["highlight", "underline", "wavy"],
                     "type": "string"
                   }
                 },
-                "required": [
-                  "questionId",
-                  "startOffset",
-                  "endOffset",
-                  "tag"
-                ],
+                "required": ["questionId", "startOffset", "endOffset", "tag"],
                 "type": "object"
               }
             }
@@ -2858,10 +2600,7 @@
                     "type": "string"
                   }
                 },
-                "required": [
-                  "username",
-                  "password"
-                ],
+                "required": ["username", "password"],
                 "type": "object"
               }
             }
@@ -2888,18 +2627,11 @@
                           "type": "string"
                         }
                       },
-                      "required": [
-                        "id",
-                        "username",
-                        "role"
-                      ],
+                      "required": ["id", "username", "role"],
                       "type": "object"
                     }
                   },
-                  "required": [
-                    "token",
-                    "user"
-                  ],
+                  "required": ["token", "user"],
                   "type": "object"
                 }
               }
@@ -2927,9 +2659,7 @@
                       "type": "boolean"
                     }
                   },
-                  "required": [
-                    "success"
-                  ],
+                  "required": ["success"],
                   "type": "object"
                 }
               }
@@ -2955,10 +2685,7 @@
                     "type": "string"
                   }
                 },
-                "required": [
-                  "username",
-                  "password"
-                ],
+                "required": ["username", "password"],
                 "type": "object"
               }
             }
@@ -2985,18 +2712,11 @@
                           "type": "string"
                         }
                       },
-                      "required": [
-                        "id",
-                        "username",
-                        "role"
-                      ],
+                      "required": ["id", "username", "role"],
                       "type": "object"
                     }
                   },
-                  "required": [
-                    "token",
-                    "user"
-                  ],
+                  "required": ["token", "user"],
                   "type": "object"
                 }
               }
@@ -3054,9 +2774,7 @@
                       "type": "array"
                     }
                   },
-                  "required": [
-                    "plans"
-                  ],
+                  "required": ["plans"],
                   "type": "object"
                 }
               }
@@ -3095,19 +2813,14 @@
                     "type": "array"
                   },
                   "mode": {
-                    "enum": [
-                      "standard",
-                      "socratic"
-                    ],
+                    "enum": ["standard", "socratic"],
                     "type": "string"
                   },
                   "sessionId": {
                     "type": "number"
                   }
                 },
-                "required": [
-                  "messages"
-                ],
+                "required": ["messages"],
                 "type": "object"
               }
             }
@@ -3181,9 +2894,7 @@
                       "type": "array"
                     }
                   },
-                  "required": [
-                    "sessions"
-                  ],
+                  "required": ["sessions"],
                   "type": "object"
                 }
               }
@@ -3225,9 +2936,7 @@
                       "type": "number"
                     }
                   },
-                  "required": [
-                    "sessionId"
-                  ],
+                  "required": ["sessionId"],
                   "type": "object"
                 }
               }
@@ -3266,9 +2975,7 @@
                       "type": "boolean"
                     }
                   },
-                  "required": [
-                    "success"
-                  ],
+                  "required": ["success"],
                   "type": "object"
                 }
               }
@@ -3320,11 +3027,7 @@
                             "type": "number"
                           },
                           "role": {
-                            "enum": [
-                              "user",
-                              "assistant",
-                              "system"
-                            ],
+                            "enum": ["user", "assistant", "system"],
                             "type": "string"
                           },
                           "session_id": {
@@ -3371,10 +3074,7 @@
                       "type": "object"
                     }
                   },
-                  "required": [
-                    "session",
-                    "messages"
-                  ],
+                  "required": ["session", "messages"],
                   "type": "object"
                 }
               }
@@ -3439,12 +3139,7 @@
                             "type": "integer"
                           },
                           "source": {
-                            "enum": [
-                              "camera",
-                              "gallery",
-                              "text",
-                              "pdf"
-                            ],
+                            "enum": ["camera", "gallery", "text", "pdf"],
                             "type": "string"
                           },
                           "status": {
@@ -3471,9 +3166,7 @@
                       "type": "array"
                     }
                   },
-                  "required": [
-                    "items"
-                  ],
+                  "required": ["items"],
                   "type": "object"
                 }
               }
@@ -3504,21 +3197,14 @@
                     "type": "string"
                   },
                   "source": {
-                    "enum": [
-                      "camera",
-                      "gallery",
-                      "text",
-                      "pdf"
-                    ],
+                    "enum": ["camera", "gallery", "text", "pdf"],
                     "type": "string"
                   },
                   "text": {
                     "type": "string"
                   }
                 },
-                "required": [
-                  "source"
-                ],
+                "required": ["source"],
                 "type": "object"
               }
             }
@@ -3573,12 +3259,7 @@
                           "type": "string"
                         },
                         "source": {
-                          "enum": [
-                            "camera",
-                            "gallery",
-                            "text",
-                            "pdf"
-                          ],
+                          "enum": ["camera", "gallery", "text", "pdf"],
                           "type": "string"
                         },
                         "status": {
@@ -3667,10 +3348,7 @@
                       "type": "array"
                     }
                   },
-                  "required": [
-                    "draft",
-                    "items"
-                  ],
+                  "required": ["draft", "items"],
                   "type": "object"
                 }
               }
@@ -3710,16 +3388,11 @@
                       "type": "string"
                     },
                     "status": {
-                      "enum": [
-                        "discarded"
-                      ],
+                      "enum": ["discarded"],
                       "type": "string"
                     }
                   },
-                  "required": [
-                    "id",
-                    "status"
-                  ],
+                  "required": ["id", "status"],
                   "type": "object"
                 }
               }
@@ -3795,12 +3468,7 @@
                           "type": "string"
                         },
                         "source": {
-                          "enum": [
-                            "camera",
-                            "gallery",
-                            "text",
-                            "pdf"
-                          ],
+                          "enum": ["camera", "gallery", "text", "pdf"],
                           "type": "string"
                         },
                         "status": {
@@ -3889,10 +3557,7 @@
                       "type": "array"
                     }
                   },
-                  "required": [
-                    "draft",
-                    "items"
-                  ],
+                  "required": ["draft", "items"],
                   "type": "object"
                 }
               }
@@ -3971,12 +3636,7 @@
                           "type": "string"
                         },
                         "source": {
-                          "enum": [
-                            "camera",
-                            "gallery",
-                            "text",
-                            "pdf"
-                          ],
+                          "enum": ["camera", "gallery", "text", "pdf"],
                           "type": "string"
                         },
                         "status": {
@@ -4068,11 +3728,7 @@
                       "type": "boolean"
                     }
                   },
-                  "required": [
-                    "draft",
-                    "items",
-                    "ok"
-                  ],
+                  "required": ["draft", "items", "ok"],
                   "type": "object"
                 }
               }
@@ -4272,12 +3928,7 @@
                           "type": "string"
                         },
                         "source": {
-                          "enum": [
-                            "camera",
-                            "gallery",
-                            "text",
-                            "pdf"
-                          ],
+                          "enum": ["camera", "gallery", "text", "pdf"],
                           "type": "string"
                         },
                         "status": {
@@ -4366,10 +4017,7 @@
                       "type": "array"
                     }
                   },
-                  "required": [
-                    "draft",
-                    "items"
-                  ],
+                  "required": ["draft", "items"],
                   "type": "object"
                 }
               }
@@ -4421,10 +4069,7 @@
                             "type": "string"
                           }
                         },
-                        "required": [
-                          "questionId",
-                          "userAnswer"
-                        ],
+                        "required": ["questionId", "userAnswer"],
                         "type": "object"
                       },
                       "type": "array"
@@ -4454,10 +4099,7 @@
                           "type": "number"
                         },
                         "kind": {
-                          "enum": [
-                            "fixed",
-                            "timed"
-                          ],
+                          "enum": ["fixed", "timed"],
                           "type": "string"
                         },
                         "lastAttemptAt": {
@@ -4469,11 +4111,7 @@
                           "type": "number"
                         },
                         "source": {
-                          "enum": [
-                            "manual",
-                            "auto",
-                            "agent"
-                          ],
+                          "enum": ["manual", "auto", "agent"],
                           "type": "string"
                         },
                         "title": {
@@ -4684,9 +4322,7 @@
                           "type": "string"
                         }
                       },
-                      "required": [
-                        "questionId"
-                      ],
+                      "required": ["questionId"],
                       "type": "object"
                     },
                     "maxItems": 500,
@@ -4697,9 +4333,7 @@
                     "type": "string"
                   }
                 },
-                "required": [
-                  "answers"
-                ],
+                "required": ["answers"],
                 "type": "object"
               }
             }
@@ -4836,10 +4470,7 @@
                             "type": "number"
                           },
                           "kind": {
-                            "enum": [
-                              "fixed",
-                              "timed"
-                            ],
+                            "enum": ["fixed", "timed"],
                             "type": "string"
                           },
                           "lastAttemptAt": {
@@ -4851,11 +4482,7 @@
                             "type": "number"
                           },
                           "source": {
-                            "enum": [
-                              "manual",
-                              "auto",
-                              "agent"
-                            ],
+                            "enum": ["manual", "auto", "agent"],
                             "type": "string"
                           },
                           "title": {
@@ -4899,18 +4526,11 @@
                           "type": "number"
                         }
                       },
-                      "required": [
-                        "limit",
-                        "offset",
-                        "total"
-                      ],
+                      "required": ["limit", "offset", "total"],
                       "type": "object"
                     }
                   },
-                  "required": [
-                    "data",
-                    "meta"
-                  ],
+                  "required": ["data", "meta"],
                   "type": "object"
                 }
               }
@@ -4936,10 +4556,7 @@
                   },
                   "kind": {
                     "default": "fixed",
-                    "enum": [
-                      "fixed",
-                      "timed"
-                    ],
+                    "enum": ["fixed", "timed"],
                     "type": "string"
                   },
                   "questionIds": {
@@ -4958,10 +4575,7 @@
                     "type": "string"
                   }
                 },
-                "required": [
-                  "title",
-                  "questionIds"
-                ],
+                "required": ["title", "questionIds"],
                 "type": "object"
               }
             }
@@ -4984,10 +4598,7 @@
                             "type": "number"
                           }
                         },
-                        "required": [
-                          "position",
-                          "questionId"
-                        ],
+                        "required": ["position", "questionId"],
                         "type": "object"
                       },
                       "type": "array"
@@ -5013,10 +4624,7 @@
                           "type": "number"
                         },
                         "kind": {
-                          "enum": [
-                            "fixed",
-                            "timed"
-                          ],
+                          "enum": ["fixed", "timed"],
                           "type": "string"
                         },
                         "lastAttemptAt": {
@@ -5028,11 +4636,7 @@
                           "type": "number"
                         },
                         "source": {
-                          "enum": [
-                            "manual",
-                            "auto",
-                            "agent"
-                          ],
+                          "enum": ["manual", "auto", "agent"],
                           "type": "string"
                         },
                         "title": {
@@ -5063,10 +4667,7 @@
                       "type": "object"
                     }
                   },
-                  "required": [
-                    "paper",
-                    "items"
-                  ],
+                  "required": ["paper", "items"],
                   "type": "object"
                 }
               }
@@ -5093,11 +4694,7 @@
                   },
                   "dimensions": {
                     "items": {
-                      "enum": [
-                        "knowledge",
-                        "understanding",
-                        "application"
-                      ],
+                      "enum": ["knowledge", "understanding", "application"],
                       "type": "string"
                     },
                     "maxItems": 3,
@@ -5116,10 +4713,7 @@
                   },
                   "kind": {
                     "default": "fixed",
-                    "enum": [
-                      "fixed",
-                      "timed"
-                    ],
+                    "enum": ["fixed", "timed"],
                     "type": "string"
                   },
                   "tags": {
@@ -5138,12 +4732,7 @@
                   },
                   "types": {
                     "items": {
-                      "enum": [
-                        "single",
-                        "multi",
-                        "truefalse",
-                        "fill_blank"
-                      ],
+                      "enum": ["single", "multi", "truefalse", "fill_blank"],
                       "type": "string"
                     },
                     "maxItems": 4,
@@ -5170,10 +4759,7 @@
                     "type": "object"
                   }
                 },
-                "required": [
-                  "title",
-                  "count"
-                ],
+                "required": ["title", "count"],
                 "type": "object"
               }
             }
@@ -5237,10 +4823,7 @@
                             "type": "object"
                           }
                         },
-                        "required": [
-                          "position",
-                          "question"
-                        ],
+                        "required": ["position", "question"],
                         "type": "object"
                       },
                       "type": "array"
@@ -5258,11 +4841,7 @@
                           "type": "string"
                         }
                       },
-                      "required": [
-                        "sessionId",
-                        "score",
-                        "submittedAt"
-                      ],
+                      "required": ["sessionId", "score", "submittedAt"],
                       "type": "object"
                     },
                     "paper": {
@@ -5286,10 +4865,7 @@
                           "type": "number"
                         },
                         "kind": {
-                          "enum": [
-                            "fixed",
-                            "timed"
-                          ],
+                          "enum": ["fixed", "timed"],
                           "type": "string"
                         },
                         "lastAttemptAt": {
@@ -5301,11 +4877,7 @@
                           "type": "number"
                         },
                         "source": {
-                          "enum": [
-                            "manual",
-                            "auto",
-                            "agent"
-                          ],
+                          "enum": ["manual", "auto", "agent"],
                           "type": "string"
                         },
                         "title": {
@@ -5336,11 +4908,7 @@
                       "type": "object"
                     }
                   },
-                  "required": [
-                    "paper",
-                    "items",
-                    "lastAttempt"
-                  ],
+                  "required": ["paper", "items", "lastAttempt"],
                   "type": "object"
                 }
               }
@@ -5377,9 +4945,7 @@
                       "type": "boolean"
                     }
                   },
-                  "required": [
-                    "deleted"
-                  ],
+                  "required": ["deleted"],
                   "type": "object"
                 }
               }
@@ -5464,10 +5030,7 @@
                             "type": "object"
                           }
                         },
-                        "required": [
-                          "position",
-                          "question"
-                        ],
+                        "required": ["position", "question"],
                         "type": "object"
                       },
                       "type": "array"
@@ -5485,11 +5048,7 @@
                           "type": "string"
                         }
                       },
-                      "required": [
-                        "sessionId",
-                        "score",
-                        "submittedAt"
-                      ],
+                      "required": ["sessionId", "score", "submittedAt"],
                       "type": "object"
                     },
                     "paper": {
@@ -5513,10 +5072,7 @@
                           "type": "number"
                         },
                         "kind": {
-                          "enum": [
-                            "fixed",
-                            "timed"
-                          ],
+                          "enum": ["fixed", "timed"],
                           "type": "string"
                         },
                         "lastAttemptAt": {
@@ -5528,11 +5084,7 @@
                           "type": "number"
                         },
                         "source": {
-                          "enum": [
-                            "manual",
-                            "auto",
-                            "agent"
-                          ],
+                          "enum": ["manual", "auto", "agent"],
                           "type": "string"
                         },
                         "title": {
@@ -5563,11 +5115,7 @@
                       "type": "object"
                     }
                   },
-                  "required": [
-                    "paper",
-                    "items",
-                    "lastAttempt"
-                  ],
+                  "required": ["paper", "items", "lastAttempt"],
                   "type": "object"
                 }
               }
@@ -5604,10 +5152,7 @@
                     "type": "integer"
                   },
                   "kind": {
-                    "enum": [
-                      "fixed",
-                      "timed"
-                    ],
+                    "enum": ["fixed", "timed"],
                     "type": "string"
                   },
                   "title": {
@@ -5649,10 +5194,7 @@
                           "type": "number"
                         },
                         "kind": {
-                          "enum": [
-                            "fixed",
-                            "timed"
-                          ],
+                          "enum": ["fixed", "timed"],
                           "type": "string"
                         },
                         "lastAttemptAt": {
@@ -5664,11 +5206,7 @@
                           "type": "number"
                         },
                         "source": {
-                          "enum": [
-                            "manual",
-                            "auto",
-                            "agent"
-                          ],
+                          "enum": ["manual", "auto", "agent"],
                           "type": "string"
                         },
                         "title": {
@@ -5699,9 +5237,7 @@
                       "type": "object"
                     }
                   },
-                  "required": [
-                    "paper"
-                  ],
+                  "required": ["paper"],
                   "type": "object"
                 }
               }
@@ -5869,18 +5405,11 @@
                           "type": "integer"
                         }
                       },
-                      "required": [
-                        "limit",
-                        "offset",
-                        "total"
-                      ],
+                      "required": ["limit", "offset", "total"],
                       "type": "object"
                     }
                   },
-                  "required": [
-                    "data",
-                    "meta"
-                  ],
+                  "required": ["data", "meta"],
                   "type": "object"
                 }
               }
@@ -5907,10 +5436,7 @@
                       "type": "integer"
                     }
                   },
-                  "required": [
-                    "error",
-                    "retryAfter"
-                  ],
+                  "required": ["error", "retryAfter"],
                   "type": "object"
                 }
               }
@@ -5964,10 +5490,7 @@
             "required": false,
             "schema": {
               "description": "true = 预演：走完真实校验与计算后回滚，返回\"如果真执行会怎样\"，库内零变更",
-              "enum": [
-                "true",
-                "false"
-              ],
+              "enum": ["true", "false"],
               "example": "true",
               "type": "string"
             }
@@ -6017,10 +5540,7 @@
                       "type": "integer"
                     }
                   },
-                  "required": [
-                    "error",
-                    "retryAfter"
-                  ],
+                  "required": ["error", "retryAfter"],
                   "type": "object"
                 }
               }
@@ -6096,10 +5616,7 @@
                       "$ref": "#/components/schemas/AgentQuestionSetSummary"
                     }
                   },
-                  "required": [
-                    "set",
-                    "questions"
-                  ],
+                  "required": ["set", "questions"],
                   "type": "object"
                 }
               }
@@ -6129,10 +5646,7 @@
                       "type": "integer"
                     }
                   },
-                  "required": [
-                    "error",
-                    "retryAfter"
-                  ],
+                  "required": ["error", "retryAfter"],
                   "type": "object"
                 }
               }
@@ -6226,10 +5740,7 @@
                       "type": "integer"
                     }
                   },
-                  "required": [
-                    "error",
-                    "retryAfter"
-                  ],
+                  "required": ["error", "retryAfter"],
                   "type": "object"
                 }
               }
@@ -6323,10 +5834,7 @@
                       "type": "integer"
                     }
                   },
-                  "required": [
-                    "error",
-                    "retryAfter"
-                  ],
+                  "required": ["error", "retryAfter"],
                   "type": "object"
                 }
               }
@@ -6382,10 +5890,7 @@
             "required": false,
             "schema": {
               "description": "true = 预演：走完真实校验与计算后回滚，返回\"如果真执行会怎样\"，库内零变更",
-              "enum": [
-                "true",
-                "false"
-              ],
+              "enum": ["true", "false"],
               "example": "true",
               "type": "string"
             }
@@ -6429,12 +5934,7 @@
                           "type": "string"
                         }
                       },
-                      "required": [
-                        "from",
-                        "to",
-                        "type",
-                        "evidence"
-                      ],
+                      "required": ["from", "to", "type", "evidence"],
                       "type": "object"
                     },
                     "type": "array"
@@ -6460,11 +5960,7 @@
                           "type": "integer"
                         }
                       },
-                      "required": [
-                        "nodeKey",
-                        "name",
-                        "kind"
-                      ],
+                      "required": ["nodeKey", "name", "kind"],
                       "type": "object"
                     },
                     "type": "array"
@@ -6494,12 +5990,7 @@
                           "type": "string"
                         }
                       },
-                      "required": [
-                        "key",
-                        "title",
-                        "startPage",
-                        "endPage"
-                      ],
+                      "required": ["key", "title", "startPage", "endPage"],
                       "type": "object"
                     },
                     "type": "array"
@@ -6562,11 +6053,7 @@
                           "type": "integer"
                         }
                       },
-                      "required": [
-                        "covered",
-                        "total",
-                        "missing"
-                      ],
+                      "required": ["covered", "total", "missing"],
                       "type": "object"
                     },
                     "created": {
@@ -6578,10 +6065,7 @@
                           "type": "integer"
                         }
                       },
-                      "required": [
-                        "nodes",
-                        "edges"
-                      ],
+                      "required": ["nodes", "edges"],
                       "type": "object"
                     },
                     "dryRun": {
@@ -6596,10 +6080,7 @@
                           "type": "integer"
                         }
                       },
-                      "required": [
-                        "nodes",
-                        "edges"
-                      ],
+                      "required": ["nodes", "edges"],
                       "type": "object"
                     },
                     "updated": {
@@ -6611,10 +6092,7 @@
                           "type": "integer"
                         }
                       },
-                      "required": [
-                        "nodes",
-                        "edges"
-                      ],
+                      "required": ["nodes", "edges"],
                       "type": "object"
                     },
                     "warnings": {
@@ -6636,10 +6114,7 @@
                       "type": "integer"
                     }
                   },
-                  "required": [
-                    "coverage",
-                    "warnings"
-                  ],
+                  "required": ["coverage", "warnings"],
                   "type": "object"
                 }
               }
@@ -6696,11 +6171,7 @@
                           "type": "integer"
                         }
                       },
-                      "required": [
-                        "covered",
-                        "total",
-                        "missing"
-                      ],
+                      "required": ["covered", "total", "missing"],
                       "type": "object"
                     },
                     "error": {
@@ -6719,11 +6190,7 @@
                       "type": "array"
                     }
                   },
-                  "required": [
-                    "error",
-                    "issues",
-                    "codes"
-                  ],
+                  "required": ["error", "issues", "codes"],
                   "type": "object"
                 }
               }
@@ -6750,10 +6217,7 @@
                       "type": "integer"
                     }
                   },
-                  "required": [
-                    "error",
-                    "retryAfter"
-                  ],
+                  "required": ["error", "retryAfter"],
                   "type": "object"
                 }
               }
@@ -6878,10 +6342,7 @@
                                   "type": "string"
                                 }
                               },
-                              "required": [
-                                "term",
-                                "definition"
-                              ],
+                              "required": ["term", "definition"],
                               "type": "object"
                             },
                             "type": "array"
@@ -6927,18 +6388,11 @@
                           "type": "integer"
                         }
                       },
-                      "required": [
-                        "limit",
-                        "offset",
-                        "total"
-                      ],
+                      "required": ["limit", "offset", "total"],
                       "type": "object"
                     }
                   },
-                  "required": [
-                    "data",
-                    "meta"
-                  ],
+                  "required": ["data", "meta"],
                   "type": "object"
                 }
               }
@@ -6965,10 +6419,7 @@
                       "type": "integer"
                     }
                   },
-                  "required": [
-                    "error",
-                    "retryAfter"
-                  ],
+                  "required": ["error", "retryAfter"],
                   "type": "object"
                 }
               }
@@ -7102,18 +6553,11 @@
                           "type": "integer"
                         }
                       },
-                      "required": [
-                        "limit",
-                        "offset",
-                        "total"
-                      ],
+                      "required": ["limit", "offset", "total"],
                       "type": "object"
                     }
                   },
-                  "required": [
-                    "data",
-                    "meta"
-                  ],
+                  "required": ["data", "meta"],
                   "type": "object"
                 }
               }
@@ -7140,10 +6584,7 @@
                       "type": "integer"
                     }
                   },
-                  "required": [
-                    "error",
-                    "retryAfter"
-                  ],
+                  "required": ["error", "retryAfter"],
                   "type": "object"
                 }
               }
@@ -7238,11 +6679,7 @@
                             "type": "string"
                           }
                         },
-                        "required": [
-                          "id",
-                          "title",
-                          "updatedAt"
-                        ],
+                        "required": ["id", "title", "updatedAt"],
                         "type": "object"
                       },
                       "type": "array"
@@ -7262,18 +6699,11 @@
                           "type": "integer"
                         }
                       },
-                      "required": [
-                        "limit",
-                        "offset",
-                        "total"
-                      ],
+                      "required": ["limit", "offset", "total"],
                       "type": "object"
                     }
                   },
-                  "required": [
-                    "data",
-                    "meta"
-                  ],
+                  "required": ["data", "meta"],
                   "type": "object"
                 }
               }
@@ -7300,10 +6730,7 @@
                       "type": "integer"
                     }
                   },
-                  "required": [
-                    "error",
-                    "retryAfter"
-                  ],
+                  "required": ["error", "retryAfter"],
                   "type": "object"
                 }
               }
@@ -7430,10 +6857,7 @@
                       "type": "integer"
                     }
                   },
-                  "required": [
-                    "error",
-                    "retryAfter"
-                  ],
+                  "required": ["error", "retryAfter"],
                   "type": "object"
                 }
               }
@@ -7546,12 +6970,7 @@
                             "type": "string"
                           }
                         },
-                        "required": [
-                          "id",
-                          "title",
-                          "preview",
-                          "updatedAt"
-                        ],
+                        "required": ["id", "title", "preview", "updatedAt"],
                         "type": "object"
                       },
                       "type": "array"
@@ -7571,18 +6990,11 @@
                           "type": "integer"
                         }
                       },
-                      "required": [
-                        "limit",
-                        "offset",
-                        "total"
-                      ],
+                      "required": ["limit", "offset", "total"],
                       "type": "object"
                     }
                   },
-                  "required": [
-                    "data",
-                    "meta"
-                  ],
+                  "required": ["data", "meta"],
                   "type": "object"
                 }
               }
@@ -7612,10 +7024,7 @@
                       "type": "integer"
                     }
                   },
-                  "required": [
-                    "error",
-                    "retryAfter"
-                  ],
+                  "required": ["error", "retryAfter"],
                   "type": "object"
                 }
               }
@@ -7742,10 +7151,7 @@
                       "type": "integer"
                     }
                   },
-                  "required": [
-                    "error",
-                    "retryAfter"
-                  ],
+                  "required": ["error", "retryAfter"],
                   "type": "object"
                 }
               }
@@ -7803,10 +7209,7 @@
             "required": false,
             "schema": {
               "description": "true = 预演：走完真实校验与计算后回滚，返回\"如果真执行会怎样\"，库内零变更",
-              "enum": [
-                "true",
-                "false"
-              ],
+              "enum": ["true", "false"],
               "example": "true",
               "type": "string"
             }
@@ -7856,10 +7259,7 @@
                       "type": "integer"
                     }
                   },
-                  "required": [
-                    "error",
-                    "retryAfter"
-                  ],
+                  "required": ["error", "retryAfter"],
                   "type": "object"
                 }
               }
@@ -8011,18 +7411,11 @@
                           "type": "integer"
                         }
                       },
-                      "required": [
-                        "limit",
-                        "offset",
-                        "total"
-                      ],
+                      "required": ["limit", "offset", "total"],
                       "type": "object"
                     }
                   },
-                  "required": [
-                    "data",
-                    "meta"
-                  ],
+                  "required": ["data", "meta"],
                   "type": "object"
                 }
               }
@@ -8049,10 +7442,7 @@
                       "type": "integer"
                     }
                   },
-                  "required": [
-                    "error",
-                    "retryAfter"
-                  ],
+                  "required": ["error", "retryAfter"],
                   "type": "object"
                 }
               }
@@ -8246,11 +7636,7 @@
                       "type": "object"
                     }
                   },
-                  "required": [
-                    "session",
-                    "questions",
-                    "summary"
-                  ],
+                  "required": ["session", "questions", "summary"],
                   "type": "object"
                 }
               }
@@ -8280,10 +7666,7 @@
                       "type": "integer"
                     }
                   },
-                  "required": [
-                    "error",
-                    "retryAfter"
-                  ],
+                  "required": ["error", "retryAfter"],
                   "type": "object"
                 }
               }
@@ -8427,19 +7810,11 @@
                           "type": "number"
                         }
                       },
-                      "required": [
-                        "page",
-                        "limit",
-                        "total",
-                        "totalPages"
-                      ],
+                      "required": ["page", "limit", "total", "totalPages"],
                       "type": "object"
                     }
                   },
-                  "required": [
-                    "data",
-                    "pagination"
-                  ],
+                  "required": ["data", "pagination"],
                   "type": "object"
                 }
               }
@@ -8466,10 +7841,7 @@
                       "type": "integer"
                     }
                   },
-                  "required": [
-                    "error",
-                    "retryAfter"
-                  ],
+                  "required": ["error", "retryAfter"],
                   "type": "object"
                 }
               }
@@ -8522,10 +7894,7 @@
             "required": false,
             "schema": {
               "description": "true = 预演：走完真实校验与计算后回滚，返回\"如果真执行会怎样\"，库内零变更",
-              "enum": [
-                "true",
-                "false"
-              ],
+              "enum": ["true", "false"],
               "example": "true",
               "type": "string"
             }
@@ -8575,10 +7944,7 @@
                       "type": "integer"
                     }
                   },
-                  "required": [
-                    "error",
-                    "retryAfter"
-                  ],
+                  "required": ["error", "retryAfter"],
                   "type": "object"
                 }
               }
@@ -8637,10 +8003,7 @@
             "required": false,
             "schema": {
               "description": "true = 预演：走完真实校验与计算后回滚，返回\"如果真执行会怎样\"，库内零变更",
-              "enum": [
-                "true",
-                "false"
-              ],
+              "enum": ["true", "false"],
               "example": "true",
               "type": "string"
             }
@@ -8690,10 +8053,7 @@
                       "type": "integer"
                     }
                   },
-                  "required": [
-                    "error",
-                    "retryAfter"
-                  ],
+                  "required": ["error", "retryAfter"],
                   "type": "object"
                 }
               }
@@ -8777,11 +8137,7 @@
                           "type": "integer"
                         }
                       },
-                      "required": [
-                        "questionId",
-                        "chapter",
-                        "nodeKey"
-                      ],
+                      "required": ["questionId", "chapter", "nodeKey"],
                       "type": "object"
                     },
                     "maxItems": 2000,
@@ -8789,9 +8145,7 @@
                     "type": "array"
                   }
                 },
-                "required": [
-                  "items"
-                ],
+                "required": ["items"],
                 "type": "object"
               }
             }
@@ -8810,10 +8164,7 @@
                       "type": "integer"
                     }
                   },
-                  "required": [
-                    "created",
-                    "skipped"
-                  ],
+                  "required": ["created", "skipped"],
                   "type": "object"
                 }
               }
@@ -8846,10 +8197,7 @@
                       "type": "integer"
                     }
                   },
-                  "required": [
-                    "error",
-                    "retryAfter"
-                  ],
+                  "required": ["error", "retryAfter"],
                   "type": "object"
                 }
               }
@@ -8946,13 +8294,7 @@
                       "type": "string"
                     }
                   },
-                  "required": [
-                    "id",
-                    "content",
-                    "options",
-                    "answer",
-                    "tags"
-                  ],
+                  "required": ["id", "content", "options", "answer", "tags"],
                   "type": "object"
                 }
               }
@@ -8982,10 +8324,7 @@
                       "type": "integer"
                     }
                   },
-                  "required": [
-                    "error",
-                    "retryAfter"
-                  ],
+                  "required": ["error", "retryAfter"],
                   "type": "object"
                 }
               }
@@ -9048,10 +8387,7 @@
             "required": false,
             "schema": {
               "description": "true = 预演：走完真实校验与计算后回滚，返回\"如果真执行会怎样\"，库内零变更",
-              "enum": [
-                "true",
-                "false"
-              ],
+              "enum": ["true", "false"],
               "example": "true",
               "type": "string"
             }
@@ -9092,11 +8428,7 @@
                       "type": "integer"
                     }
                   },
-                  "required": [
-                    "id",
-                    "externalId",
-                    "changed"
-                  ],
+                  "required": ["id", "externalId", "changed"],
                   "type": "object"
                 }
               }
@@ -9132,9 +8464,7 @@
                       "type": "string"
                     }
                   },
-                  "required": [
-                    "error"
-                  ],
+                  "required": ["error"],
                   "type": "object"
                 }
               }
@@ -9155,10 +8485,7 @@
                       "type": "integer"
                     }
                   },
-                  "required": [
-                    "error",
-                    "retryAfter"
-                  ],
+                  "required": ["error", "retryAfter"],
                   "type": "object"
                 }
               }
@@ -9217,10 +8544,7 @@
             "required": false,
             "schema": {
               "description": "true = 预演：走完真实校验与计算后回滚，返回\"如果真执行会怎样\"，库内零变更",
-              "enum": [
-                "true",
-                "false"
-              ],
+              "enum": ["true", "false"],
               "example": "true",
               "type": "string"
             }
@@ -9273,10 +8597,7 @@
                       "type": "integer"
                     }
                   },
-                  "required": [
-                    "error",
-                    "retryAfter"
-                  ],
+                  "required": ["error", "retryAfter"],
                   "type": "object"
                 }
               }
@@ -9356,9 +8677,7 @@
                             "type": "array"
                           }
                         },
-                        "required": [
-                          "answers"
-                        ],
+                        "required": ["answers"],
                         "type": "object"
                       },
                       "nullable": true,
@@ -9395,10 +8714,7 @@
                             "type": "string"
                           }
                         },
-                        "required": [
-                          "text",
-                          "keywords"
-                        ],
+                        "required": ["text", "keywords"],
                         "type": "object"
                       },
                       "nullable": true,
@@ -9406,18 +8722,12 @@
                     },
                     "kind": {
                       "description": "卡片类型：list = 列举卡，cloze = 填空卡",
-                      "enum": [
-                        "list",
-                        "cloze"
-                      ],
+                      "enum": ["list", "cloze"],
                       "type": "string"
                     },
                     "mode": {
                       "description": "first = 首次作答整卡；retest = 只重测待重测条目",
-                      "enum": [
-                        "first",
-                        "retest"
-                      ],
+                      "enum": ["first", "retest"],
                       "type": "string"
                     },
                     "pendingItems": {
@@ -9541,10 +8851,7 @@
                       "type": "integer"
                     }
                   },
-                  "required": [
-                    "error",
-                    "retryAfter"
-                  ],
+                  "required": ["error", "retryAfter"],
                   "type": "object"
                 }
               }
@@ -9618,10 +8925,7 @@
                       "type": "boolean"
                     }
                   },
-                  "required": [
-                    "cardId",
-                    "restored"
-                  ],
+                  "required": ["cardId", "restored"],
                   "type": "object"
                 }
               }
@@ -9651,10 +8955,7 @@
                       "type": "integer"
                     }
                   },
-                  "required": [
-                    "error",
-                    "retryAfter"
-                  ],
+                  "required": ["error", "retryAfter"],
                   "type": "object"
                 }
               }
@@ -9723,19 +9024,14 @@
                   "properties": {
                     "archived": {
                       "description": "恒为 true",
-                      "enum": [
-                        true
-                      ],
+                      "enum": [true],
                       "type": "boolean"
                     },
                     "cardId": {
                       "type": "integer"
                     }
                   },
-                  "required": [
-                    "cardId",
-                    "archived"
-                  ],
+                  "required": ["cardId", "archived"],
                   "type": "object"
                 }
               }
@@ -9768,10 +9064,7 @@
                       "type": "integer"
                     }
                   },
-                  "required": [
-                    "error",
-                    "retryAfter"
-                  ],
+                  "required": ["error", "retryAfter"],
                   "type": "object"
                 }
               }
@@ -9907,18 +9200,11 @@
                           "type": "integer"
                         }
                       },
-                      "required": [
-                        "limit",
-                        "offset",
-                        "total"
-                      ],
+                      "required": ["limit", "offset", "total"],
                       "type": "object"
                     }
                   },
-                  "required": [
-                    "data",
-                    "meta"
-                  ],
+                  "required": ["data", "meta"],
                   "type": "object"
                 }
               }
@@ -9945,10 +9231,7 @@
                       "type": "integer"
                     }
                   },
-                  "required": [
-                    "error",
-                    "retryAfter"
-                  ],
+                  "required": ["error", "retryAfter"],
                   "type": "object"
                 }
               }
@@ -10002,10 +9285,7 @@
             "required": false,
             "schema": {
               "description": "true = 预演：走完真实校验与计算后回滚，返回\"如果真执行会怎样\"，库内零变更",
-              "enum": [
-                "true",
-                "false"
-              ],
+              "enum": ["true", "false"],
               "example": "true",
               "type": "string"
             }
@@ -10055,10 +9335,7 @@
                       "type": "integer"
                     }
                   },
-                  "required": [
-                    "error",
-                    "retryAfter"
-                  ],
+                  "required": ["error", "retryAfter"],
                   "type": "object"
                 }
               }
@@ -10164,9 +9441,7 @@
                                   "type": "array"
                                 }
                               },
-                              "required": [
-                                "answers"
-                              ],
+                              "required": ["answers"],
                               "type": "object"
                             },
                             "nullable": true,
@@ -10201,10 +9476,7 @@
                                   "type": "string"
                                 }
                               },
-                              "required": [
-                                "text",
-                                "keywords"
-                              ],
+                              "required": ["text", "keywords"],
                               "type": "object"
                             },
                             "nullable": true,
@@ -10212,10 +9484,7 @@
                           },
                           "kind": {
                             "description": "卡片类型：list = 列举卡，cloze = 填空卡",
-                            "enum": [
-                              "list",
-                              "cloze"
-                            ],
+                            "enum": ["list", "cloze"],
                             "type": "string"
                           },
                           "prompt": {
@@ -10319,10 +9588,7 @@
                                 "type": "string"
                               }
                             },
-                            "required": [
-                              "groupId",
-                              "title"
-                            ],
+                            "required": ["groupId", "title"],
                             "type": "object"
                           },
                           "type": "array"
@@ -10331,11 +9597,7 @@
                           "type": "string"
                         }
                       },
-                      "required": [
-                        "deckKey",
-                        "title",
-                        "groups"
-                      ],
+                      "required": ["deckKey", "title", "groups"],
                       "type": "object"
                     },
                     "meta": {
@@ -10353,19 +9615,11 @@
                           "type": "integer"
                         }
                       },
-                      "required": [
-                        "limit",
-                        "offset",
-                        "total"
-                      ],
+                      "required": ["limit", "offset", "total"],
                       "type": "object"
                     }
                   },
-                  "required": [
-                    "deck",
-                    "data",
-                    "meta"
-                  ],
+                  "required": ["deck", "data", "meta"],
                   "type": "object"
                 }
               }
@@ -10395,10 +9649,7 @@
                       "type": "integer"
                     }
                   },
-                  "required": [
-                    "error",
-                    "retryAfter"
-                  ],
+                  "required": ["error", "retryAfter"],
                   "type": "object"
                 }
               }
@@ -10474,10 +9725,7 @@
             "required": false,
             "schema": {
               "description": "true = 预演：走完真实校验与计算后回滚，返回\"如果真执行会怎样\"，库内零变更",
-              "enum": [
-                "true",
-                "false"
-              ],
+              "enum": ["true", "false"],
               "example": "true",
               "type": "string"
             }
@@ -10553,10 +9801,7 @@
                       "type": "integer"
                     }
                   },
-                  "required": [
-                    "error",
-                    "retryAfter"
-                  ],
+                  "required": ["error", "retryAfter"],
                   "type": "object"
                 }
               }
@@ -10675,10 +9920,7 @@
                       "type": "integer"
                     }
                   },
-                  "required": [
-                    "error",
-                    "retryAfter"
-                  ],
+                  "required": ["error", "retryAfter"],
                   "type": "object"
                 }
               }
@@ -10734,10 +9976,7 @@
             "required": false,
             "schema": {
               "description": "true = 预演：走完真实校验与计算后回滚，返回\"如果真执行会怎样\"，库内零变更",
-              "enum": [
-                "true",
-                "false"
-              ],
+              "enum": ["true", "false"],
               "example": "true",
               "type": "string"
             }
@@ -10790,10 +10029,7 @@
                       "type": "integer"
                     }
                   },
-                  "required": [
-                    "error",
-                    "retryAfter"
-                  ],
+                  "required": ["error", "retryAfter"],
                   "type": "object"
                 }
               }
@@ -10891,10 +10127,7 @@
                       "type": "integer"
                     }
                   },
-                  "required": [
-                    "error",
-                    "retryAfter"
-                  ],
+                  "required": ["error", "retryAfter"],
                   "type": "object"
                 }
               }
@@ -10968,11 +10201,7 @@
                             "type": "integer"
                           }
                         },
-                        "required": [
-                          "date",
-                          "count",
-                          "minutes"
-                        ],
+                        "required": ["date", "count", "minutes"],
                         "type": "object"
                       },
                       "type": "array"
@@ -10993,10 +10222,7 @@
                           "type": "integer"
                         }
                       },
-                      "required": [
-                        "count",
-                        "minutes"
-                      ],
+                      "required": ["count", "minutes"],
                       "type": "object"
                     },
                     "retention": {
@@ -11011,10 +10237,7 @@
                           "type": "number"
                         }
                       },
-                      "required": [
-                        "trueRetention",
-                        "totalReviews"
-                      ],
+                      "required": ["trueRetention", "totalReviews"],
                       "type": "object"
                     },
                     "stateDistribution": {
@@ -11032,12 +10255,7 @@
                           "type": "integer"
                         }
                       },
-                      "required": [
-                        "new",
-                        "learning",
-                        "review",
-                        "relearning"
-                      ],
+                      "required": ["new", "learning", "review", "relearning"],
                       "type": "object"
                     },
                     "totalCards": {
@@ -11079,10 +10297,7 @@
                       "type": "integer"
                     }
                   },
-                  "required": [
-                    "error",
-                    "retryAfter"
-                  ],
+                  "required": ["error", "retryAfter"],
                   "type": "object"
                 }
               }
@@ -11191,10 +10406,7 @@
                             "type": "string"
                           }
                         },
-                        "required": [
-                          "tag",
-                          "score"
-                        ],
+                        "required": ["tag", "score"],
                         "type": "object"
                       },
                       "type": "array"
@@ -11239,10 +10451,7 @@
                       "type": "integer"
                     }
                   },
-                  "required": [
-                    "error",
-                    "retryAfter"
-                  ],
+                  "required": ["error", "retryAfter"],
                   "type": "object"
                 }
               }
@@ -11343,10 +10552,7 @@
                           },
                           "origin": {
                             "description": "题目来源：import=题库题，agent=AI 题集推来的题（错题本照收，标出来便于辨认）",
-                            "enum": [
-                              "import",
-                              "agent"
-                            ],
+                            "enum": ["import", "agent"],
                             "type": "string"
                           },
                           "questionId": {
@@ -11370,11 +10576,7 @@
                                 "type": "number"
                               }
                             },
-                            "required": [
-                              "stability",
-                              "difficulty",
-                              "dueDate"
-                            ],
+                            "required": ["stability", "difficulty", "dueDate"],
                             "type": "object"
                           },
                           "tags": {
@@ -11417,18 +10619,11 @@
                           "type": "integer"
                         }
                       },
-                      "required": [
-                        "limit",
-                        "offset",
-                        "total"
-                      ],
+                      "required": ["limit", "offset", "total"],
                       "type": "object"
                     }
                   },
-                  "required": [
-                    "data",
-                    "meta"
-                  ],
+                  "required": ["data", "meta"],
                   "type": "object"
                 }
               }
@@ -11455,10 +10650,7 @@
                       "type": "integer"
                     }
                   },
-                  "required": [
-                    "error",
-                    "retryAfter"
-                  ],
+                  "required": ["error", "retryAfter"],
                   "type": "object"
                 }
               }
@@ -11524,10 +10716,7 @@
                             "type": "string"
                           }
                         },
-                        "required": [
-                          "dimension",
-                          "count"
-                        ],
+                        "required": ["dimension", "count"],
                         "type": "object"
                       },
                       "type": "array"
@@ -11544,10 +10733,7 @@
                             "type": "string"
                           }
                         },
-                        "required": [
-                          "tag",
-                          "count"
-                        ],
+                        "required": ["tag", "count"],
                         "type": "object"
                       },
                       "type": "array"
@@ -11557,11 +10743,7 @@
                       "type": "integer"
                     }
                   },
-                  "required": [
-                    "total",
-                    "byTag",
-                    "byDimension"
-                  ],
+                  "required": ["total", "byTag", "byDimension"],
                   "type": "object"
                 }
               }
@@ -11588,10 +10770,7 @@
                       "type": "integer"
                     }
                   },
-                  "required": [
-                    "error",
-                    "retryAfter"
-                  ],
+                  "required": ["error", "retryAfter"],
                   "type": "object"
                 }
               }
@@ -11660,10 +10839,7 @@
                     "type": "number"
                   }
                 },
-                "required": [
-                  "question_id",
-                  "feedback_type"
-                ],
+                "required": ["question_id", "feedback_type"],
                 "type": "object"
               }
             }
@@ -11682,10 +10858,7 @@
                       "type": "boolean"
                     }
                   },
-                  "required": [
-                    "success",
-                    "id"
-                  ],
+                  "required": ["success", "id"],
                   "type": "object"
                 }
               }
@@ -11711,15 +10884,11 @@
                 "schema": {
                   "properties": {
                     "ok": {
-                      "enum": [
-                        true
-                      ],
+                      "enum": [true],
                       "type": "boolean"
                     }
                   },
-                  "required": [
-                    "ok"
-                  ],
+                  "required": ["ok"],
                   "type": "object"
                 }
               }
@@ -11758,10 +10927,7 @@
                     "type": "string"
                   }
                 },
-                "required": [
-                  "phone",
-                  "password"
-                ],
+                "required": ["phone", "password"],
                 "type": "object"
               }
             }
@@ -11774,15 +10940,11 @@
                 "schema": {
                   "properties": {
                     "ok": {
-                      "enum": [
-                        true
-                      ],
+                      "enum": [true],
                       "type": "boolean"
                     }
                   },
-                  "required": [
-                    "ok"
-                  ],
+                  "required": ["ok"],
                   "type": "object"
                 }
               }
@@ -11823,11 +10985,7 @@
                       "type": "string"
                     }
                   },
-                  "required": [
-                    "lgtoken",
-                    "qrContent",
-                    "qrDataUrl"
-                  ],
+                  "required": ["lgtoken", "qrContent", "qrDataUrl"],
                   "type": "object"
                 }
               }
@@ -11873,19 +11031,11 @@
                       "type": "boolean"
                     },
                     "status": {
-                      "enum": [
-                        "pending",
-                        "scanned",
-                        "confirmed",
-                        "expired"
-                      ],
+                      "enum": ["pending", "scanned", "confirmed", "expired"],
                       "type": "string"
                     }
                   },
-                  "required": [
-                    "status",
-                    "linked"
-                  ],
+                  "required": ["status", "linked"],
                   "type": "object"
                 }
               }
@@ -11933,10 +11083,7 @@
                                 "type": "string"
                               }
                             },
-                            "required": [
-                              "exerciseId",
-                              "reason"
-                            ],
+                            "required": ["exerciseId", "reason"],
                             "type": "object"
                           },
                           "type": "array"
@@ -11971,19 +11118,12 @@
                       "type": "string"
                     },
                     "status": {
-                      "enum": [
-                        "active",
-                        "expired",
-                        "revoked",
-                        null
-                      ],
+                      "enum": ["active", "expired", "revoked", null],
                       "nullable": true,
                       "type": "string"
                     },
                     "syncable": {
-                      "enum": [
-                        true
-                      ],
+                      "enum": [true],
                       "type": "boolean"
                     },
                     "unsupported": {
@@ -12058,10 +11198,7 @@
                             "type": "string"
                           }
                         },
-                        "required": [
-                          "exerciseId",
-                          "reason"
-                        ],
+                        "required": ["exerciseId", "reason"],
                         "type": "object"
                       },
                       "type": "array"
@@ -12076,12 +11213,7 @@
                       "type": "number"
                     }
                   },
-                  "required": [
-                    "imported",
-                    "skipped",
-                    "newQuestions",
-                    "failed"
-                  ],
+                  "required": ["imported", "skipped", "newQuestions", "failed"],
                   "type": "object"
                 }
               }
@@ -12129,10 +11261,7 @@
                     "type": "string"
                   }
                 },
-                "required": [
-                  "prompt",
-                  "option"
-                ],
+                "required": ["prompt", "option"],
                 "type": "object"
               }
             }
@@ -12370,10 +11499,7 @@
                       "type": "object"
                     }
                   },
-                  "required": [
-                    "session",
-                    "logs"
-                  ],
+                  "required": ["session", "logs"],
                   "type": "object"
                 }
               }
@@ -12403,10 +11529,7 @@
                     "type": "string"
                   }
                 },
-                "required": [
-                  "exerciseJson",
-                  "solutionsJson"
-                ],
+                "required": ["exerciseJson", "solutionsJson"],
                 "type": "object"
               }
             }
@@ -12443,10 +11566,7 @@
                       "type": "boolean"
                     }
                   },
-                  "required": [
-                    "success",
-                    "message"
-                  ],
+                  "required": ["success", "message"],
                   "type": "object"
                 }
               }
@@ -12500,13 +11620,7 @@
                             "type": "string"
                           }
                         },
-                        "required": [
-                          "from",
-                          "to",
-                          "type",
-                          "evidence",
-                          "page"
-                        ],
+                        "required": ["from", "to", "type", "evidence", "page"],
                         "type": "object"
                       },
                       "type": "array"
@@ -12528,21 +11642,13 @@
                             "type": "integer"
                           }
                         },
-                        "required": [
-                          "nodeKey",
-                          "name",
-                          "kind",
-                          "page"
-                        ],
+                        "required": ["nodeKey", "name", "kind", "page"],
                         "type": "object"
                       },
                       "type": "array"
                     }
                   },
-                  "required": [
-                    "nodes",
-                    "edges"
-                  ],
+                  "required": ["nodes", "edges"],
                   "type": "object"
                 }
               }
@@ -12624,12 +11730,7 @@
                             "type": "integer"
                           }
                         },
-                        "required": [
-                          "nodeKey",
-                          "name",
-                          "kind",
-                          "page"
-                        ],
+                        "required": ["nodeKey", "name", "kind", "page"],
                         "type": "object"
                       },
                       "type": "array"
@@ -12646,18 +11747,11 @@
                           "type": "integer"
                         }
                       },
-                      "required": [
-                        "limit",
-                        "offset",
-                        "total"
-                      ],
+                      "required": ["limit", "offset", "total"],
                       "type": "object"
                     }
                   },
-                  "required": [
-                    "data",
-                    "meta"
-                  ],
+                  "required": ["data", "meta"],
                   "type": "object"
                 }
               }
@@ -12745,10 +11839,7 @@
                                   "type": "string"
                                 }
                               },
-                              "required": [
-                                "term",
-                                "definition"
-                              ],
+                              "required": ["term", "definition"],
                               "type": "object"
                             },
                             "type": "array"
@@ -12802,10 +11893,7 @@
                                 "type": "number"
                               }
                             },
-                            "required": [
-                              "category",
-                              "count"
-                            ],
+                            "required": ["category", "count"],
                             "type": "object"
                           },
                           "type": "array"
@@ -12814,18 +11902,11 @@
                           "type": "number"
                         }
                       },
-                      "required": [
-                        "total",
-                        "byCategory"
-                      ],
+                      "required": ["total", "byCategory"],
                       "type": "object"
                     }
                   },
-                  "required": [
-                    "cards",
-                    "categories",
-                    "stats"
-                  ],
+                  "required": ["cards", "categories", "stats"],
                   "type": "object"
                 }
               },
@@ -12864,10 +11945,7 @@
                           "type": "string"
                         }
                       },
-                      "required": [
-                        "term",
-                        "definition"
-                      ],
+                      "required": ["term", "definition"],
                       "type": "object"
                     },
                     "type": "array"
@@ -12906,10 +11984,7 @@
                       "type": "string"
                     }
                   },
-                  "required": [
-                    "id",
-                    "message"
-                  ],
+                  "required": ["id", "message"],
                   "type": "object"
                 }
               }
@@ -12943,9 +12018,7 @@
                     "type": "number"
                   }
                 },
-                "required": [
-                  "content"
-                ],
+                "required": ["content"],
                 "type": "object"
               }
             }
@@ -12984,10 +12057,7 @@
                                 "type": "string"
                               }
                             },
-                            "required": [
-                              "term",
-                              "definition"
-                            ],
+                            "required": ["term", "definition"],
                             "type": "object"
                           },
                           "type": "array"
@@ -13034,10 +12104,7 @@
                       "type": "array"
                     }
                   },
-                  "required": [
-                    "card",
-                    "message"
-                  ],
+                  "required": ["card", "message"],
                   "type": "object"
                 }
               }
@@ -13065,10 +12132,7 @@
             "schema": {
               "default": "tag",
               "description": "聚合口径：tag（默认，读 user_mastery）| node（聚合 practice_logs）",
-              "enum": [
-                "tag",
-                "node"
-              ],
+              "enum": ["tag", "node"],
               "type": "string"
             }
           },
@@ -13186,18 +12250,11 @@
                           "type": "integer"
                         }
                       },
-                      "required": [
-                        "limit",
-                        "offset",
-                        "total"
-                      ],
+                      "required": ["limit", "offset", "total"],
                       "type": "object"
                     }
                   },
-                  "required": [
-                    "data",
-                    "meta"
-                  ],
+                  "required": ["data", "meta"],
                   "type": "object"
                 }
               }
@@ -13236,10 +12293,7 @@
                       "type": "number"
                     }
                   },
-                  "required": [
-                    "avgScore",
-                    "count"
-                  ],
+                  "required": ["avgScore", "count"],
                   "type": "object"
                 }
               }
@@ -13280,13 +12334,7 @@
                         "type": "number"
                       }
                     },
-                    "required": [
-                      "name",
-                      "path",
-                      "score",
-                      "level",
-                      "children"
-                    ],
+                    "required": ["name", "path", "score", "level", "children"],
                     "type": "object"
                   },
                   "type": "array"
@@ -13360,9 +12408,7 @@
                     "type": "string"
                   }
                 },
-                "required": [
-                  "taskId"
-                ],
+                "required": ["taskId"],
                 "type": "object"
               }
             }
@@ -13378,9 +12424,7 @@
                       "type": "boolean"
                     }
                   },
-                  "required": [
-                    "ok"
-                  ],
+                  "required": ["ok"],
                   "type": "object"
                 }
               }
@@ -13432,11 +12476,7 @@
                           "type": "array"
                         },
                         "type": {
-                          "enum": [
-                            "single",
-                            "multi",
-                            "truefalse"
-                          ],
+                          "enum": ["single", "multi", "truefalse"],
                           "type": "string"
                         }
                       },
@@ -13454,9 +12494,7 @@
                     "type": "array"
                   }
                 },
-                "required": [
-                  "questions"
-                ],
+                "required": ["questions"],
                 "type": "object"
               }
             }
@@ -13494,10 +12532,7 @@
                     "type": "string"
                   }
                 },
-                "required": [
-                  "taskId",
-                  "chunkIndex"
-                ],
+                "required": ["taskId", "chunkIndex"],
                 "type": "object"
               }
             }
@@ -13574,9 +12609,7 @@
                     "type": "string"
                   }
                 },
-                "required": [
-                  "text"
-                ],
+                "required": ["text"],
                 "type": "object"
               }
             }
@@ -13595,10 +12628,7 @@
                       "type": "number"
                     }
                   },
-                  "required": [
-                    "taskId",
-                    "totalChunks"
-                  ],
+                  "required": ["taskId", "totalChunks"],
                   "type": "object"
                 }
               }
@@ -13634,10 +12664,7 @@
                     "type": "string"
                   }
                 },
-                "required": [
-                  "questionContent",
-                  "correctAnswer"
-                ],
+                "required": ["questionContent", "correctAnswer"],
                 "type": "object"
               }
             }
@@ -13656,10 +12683,7 @@
                       "type": "boolean"
                     }
                   },
-                  "required": [
-                    "analysis",
-                    "cached"
-                  ],
+                  "required": ["analysis", "cached"],
                   "type": "object"
                 }
               }
@@ -13703,10 +12727,7 @@
                           "type": "string"
                         }
                       },
-                      "required": [
-                        "questionId",
-                        "isCorrect"
-                      ],
+                      "required": ["questionId", "isCorrect"],
                       "type": "object"
                     },
                     "maxItems": 500,
@@ -13723,10 +12744,7 @@
                     "type": "string"
                   }
                 },
-                "required": [
-                  "sessionKey",
-                  "answers"
-                ],
+                "required": ["sessionKey", "answers"],
                 "type": "object"
               }
             }
@@ -13783,12 +12801,7 @@
                     "type": "number"
                   },
                   "mode": {
-                    "enum": [
-                      "random",
-                      "wrong",
-                      "tag",
-                      "first-principles"
-                    ],
+                    "enum": ["random", "wrong", "tag", "first-principles"],
                     "type": "string"
                   },
                   "tag": {
@@ -13796,9 +12809,7 @@
                     "type": "string"
                   }
                 },
-                "required": [
-                  "mode"
-                ],
+                "required": ["mode"],
                 "type": "object"
               }
             }
@@ -13837,11 +12848,7 @@
                             "type": "string"
                           }
                         },
-                        "required": [
-                          "id",
-                          "content",
-                          "options"
-                        ],
+                        "required": ["id", "content", "options"],
                         "type": "object"
                       },
                       "type": "array"
@@ -13850,10 +12857,7 @@
                       "type": "string"
                     }
                   },
-                  "required": [
-                    "sessionId",
-                    "questions"
-                  ],
+                  "required": ["sessionId", "questions"],
                   "type": "object"
                 }
               }
@@ -13869,9 +12873,7 @@
                       "type": "string"
                     }
                   },
-                  "required": [
-                    "error"
-                  ],
+                  "required": ["error"],
                   "type": "object"
                 }
               }
@@ -13932,11 +12934,7 @@
                             "type": "string"
                           }
                         },
-                        "required": [
-                          "id",
-                          "content",
-                          "options"
-                        ],
+                        "required": ["id", "content", "options"],
                         "type": "object"
                       },
                       "type": "array"
@@ -13945,11 +12943,7 @@
                       "type": "string"
                     }
                   },
-                  "required": [
-                    "sessionId",
-                    "questions",
-                    "completedCount"
-                  ],
+                  "required": ["sessionId", "questions", "completedCount"],
                   "type": "object"
                 }
               }
@@ -13965,9 +12959,7 @@
                       "type": "string"
                     }
                   },
-                  "required": [
-                    "error"
-                  ],
+                  "required": ["error"],
                   "type": "object"
                 }
               }
@@ -14004,11 +12996,7 @@
                     "type": "string"
                   }
                 },
-                "required": [
-                  "questionId",
-                  "userAnswer",
-                  "duration"
-                ],
+                "required": ["questionId", "userAnswer", "duration"],
                 "type": "object"
               }
             }
@@ -14027,10 +13015,7 @@
                       "type": "boolean"
                     }
                   },
-                  "required": [
-                    "isCorrect",
-                    "correctAnswer"
-                  ],
+                  "required": ["isCorrect", "correctAnswer"],
                   "type": "object"
                 }
               }
@@ -14101,13 +13086,7 @@
                       "type": "string"
                     }
                   },
-                  "required": [
-                    "id",
-                    "username",
-                    "role",
-                    "createdAt",
-                    "stats"
-                  ],
+                  "required": ["id", "username", "role", "createdAt", "stats"],
                   "type": "object"
                 }
               }
@@ -14198,12 +13177,7 @@
                             "type": "string"
                           }
                         },
-                        "required": [
-                          "id",
-                          "content",
-                          "options",
-                          "tags"
-                        ],
+                        "required": ["id", "content", "options", "tags"],
                         "type": "object"
                       },
                       "type": "array"
@@ -14212,10 +13186,7 @@
                       "type": "number"
                     }
                   },
-                  "required": [
-                    "items",
-                    "total"
-                  ],
+                  "required": ["items", "total"],
                   "type": "object"
                 }
               }
@@ -14242,11 +13213,7 @@
                     "type": "string"
                   },
                   "dimension": {
-                    "enum": [
-                      "knowledge",
-                      "understanding",
-                      "application"
-                    ],
+                    "enum": ["knowledge", "understanding", "application"],
                     "type": "string"
                   },
                   "explanation": {
@@ -14278,12 +13245,7 @@
                   },
                   "type": {
                     "default": "single",
-                    "enum": [
-                      "single",
-                      "multi",
-                      "truefalse",
-                      "fill_blank"
-                    ],
+                    "enum": ["single", "multi", "truefalse", "fill_blank"],
                     "type": "string"
                   }
                 },
@@ -14313,10 +13275,7 @@
                       "type": "integer"
                     }
                   },
-                  "required": [
-                    "id",
-                    "created"
-                  ],
+                  "required": ["id", "created"],
                   "type": "object"
                 }
               }
@@ -14335,10 +13294,7 @@
                       "type": "integer"
                     }
                   },
-                  "required": [
-                    "id",
-                    "created"
-                  ],
+                  "required": ["id", "created"],
                   "type": "object"
                 }
               }
@@ -14409,21 +13365,11 @@
                       "type": "array"
                     },
                     "type": {
-                      "enum": [
-                        "single",
-                        "multi",
-                        "truefalse",
-                        "fill_blank"
-                      ],
+                      "enum": ["single", "multi", "truefalse", "fill_blank"],
                       "type": "string"
                     }
                   },
-                  "required": [
-                    "id",
-                    "content",
-                    "options",
-                    "tags"
-                  ],
+                  "required": ["id", "content", "options", "tags"],
                   "type": "object"
                 }
               }
@@ -14463,11 +13409,7 @@
                     "type": "string"
                   },
                   "dimension": {
-                    "enum": [
-                      "knowledge",
-                      "understanding",
-                      "application"
-                    ],
+                    "enum": ["knowledge", "understanding", "application"],
                     "type": "string"
                   },
                   "explanation": {
@@ -14499,12 +13441,7 @@
                     "type": "array"
                   },
                   "type": {
-                    "enum": [
-                      "single",
-                      "multi",
-                      "truefalse",
-                      "fill_blank"
-                    ],
+                    "enum": ["single", "multi", "truefalse", "fill_blank"],
                     "type": "string"
                   }
                 },
@@ -14578,12 +13515,7 @@
                           "type": "string"
                         }
                       },
-                      "required": [
-                        "id",
-                        "content",
-                        "options",
-                        "tags"
-                      ],
+                      "required": ["id", "content", "options", "tags"],
                       "type": "object"
                     },
                     "regrade": {
@@ -14611,12 +13543,7 @@
                       "type": "object"
                     }
                   },
-                  "required": [
-                    "id",
-                    "changed",
-                    "regrade",
-                    "question"
-                  ],
+                  "required": ["id", "changed", "regrade", "question"],
                   "type": "object"
                 }
               }
@@ -14671,9 +13598,7 @@
                             "type": "array"
                           }
                         },
-                        "required": [
-                          "answers"
-                        ],
+                        "required": ["answers"],
                         "type": "object"
                       },
                       "nullable": true,
@@ -14710,10 +13635,7 @@
                             "type": "string"
                           }
                         },
-                        "required": [
-                          "text",
-                          "keywords"
-                        ],
+                        "required": ["text", "keywords"],
                         "type": "object"
                       },
                       "nullable": true,
@@ -14721,18 +13643,12 @@
                     },
                     "kind": {
                       "description": "卡片类型：list = 列举卡，cloze = 填空卡",
-                      "enum": [
-                        "list",
-                        "cloze"
-                      ],
+                      "enum": ["list", "cloze"],
                       "type": "string"
                     },
                     "mode": {
                       "description": "first = 首次作答整卡；retest = 只重测待重测条目",
-                      "enum": [
-                        "first",
-                        "retest"
-                      ],
+                      "enum": ["first", "retest"],
                       "type": "string"
                     },
                     "pendingItems": {
@@ -14872,10 +13788,7 @@
                       "type": "boolean"
                     }
                   },
-                  "required": [
-                    "cardId",
-                    "restored"
-                  ],
+                  "required": ["cardId", "restored"],
                   "type": "object"
                 }
               }
@@ -14913,19 +13826,14 @@
                   "properties": {
                     "archived": {
                       "description": "恒为 true",
-                      "enum": [
-                        true
-                      ],
+                      "enum": [true],
                       "type": "boolean"
                     },
                     "cardId": {
                       "type": "integer"
                     }
                   },
-                  "required": [
-                    "cardId",
-                    "archived"
-                  ],
+                  "required": ["cardId", "archived"],
                   "type": "object"
                 }
               }
@@ -15033,18 +13941,11 @@
                           "type": "integer"
                         }
                       },
-                      "required": [
-                        "limit",
-                        "offset",
-                        "total"
-                      ],
+                      "required": ["limit", "offset", "total"],
                       "type": "object"
                     }
                   },
-                  "required": [
-                    "data",
-                    "meta"
-                  ],
+                  "required": ["data", "meta"],
                   "type": "object"
                 }
               }
@@ -15115,9 +14016,7 @@
                                   "type": "array"
                                 }
                               },
-                              "required": [
-                                "answers"
-                              ],
+                              "required": ["answers"],
                               "type": "object"
                             },
                             "nullable": true,
@@ -15148,10 +14047,7 @@
                                   "type": "string"
                                 }
                               },
-                              "required": [
-                                "text",
-                                "keywords"
-                              ],
+                              "required": ["text", "keywords"],
                               "type": "object"
                             },
                             "nullable": true,
@@ -15159,10 +14055,7 @@
                           },
                           "kind": {
                             "description": "卡片类型：list = 列举卡，cloze = 填空卡",
-                            "enum": [
-                              "list",
-                              "cloze"
-                            ],
+                            "enum": ["list", "cloze"],
                             "type": "string"
                           },
                           "prompt": {
@@ -15264,10 +14157,7 @@
                                 "type": "string"
                               }
                             },
-                            "required": [
-                              "groupId",
-                              "title"
-                            ],
+                            "required": ["groupId", "title"],
                             "type": "object"
                           },
                           "type": "array"
@@ -15276,11 +14166,7 @@
                           "type": "string"
                         }
                       },
-                      "required": [
-                        "deckKey",
-                        "title",
-                        "groups"
-                      ],
+                      "required": ["deckKey", "title", "groups"],
                       "type": "object"
                     },
                     "meta": {
@@ -15298,19 +14184,11 @@
                           "type": "integer"
                         }
                       },
-                      "required": [
-                        "limit",
-                        "offset",
-                        "total"
-                      ],
+                      "required": ["limit", "offset", "total"],
                       "type": "object"
                     }
                   },
-                  "required": [
-                    "deck",
-                    "data",
-                    "meta"
-                  ],
+                  "required": ["deck", "data", "meta"],
                   "type": "object"
                 }
               }
@@ -15518,11 +14396,7 @@
                         "type": "string"
                       }
                     },
-                    "required": [
-                      "id",
-                      "title",
-                      "chapterCount"
-                    ],
+                    "required": ["id", "title", "chapterCount"],
                     "type": "object"
                   },
                   "type": "array"
@@ -15651,12 +14525,7 @@
                       "type": "string"
                     }
                   },
-                  "required": [
-                    "id",
-                    "title",
-                    "chapterCount",
-                    "chapters"
-                  ],
+                  "required": ["id", "title", "chapterCount", "chapters"],
                   "type": "object"
                 }
               }
@@ -15686,11 +14555,7 @@
                     "type": "string"
                   },
                   "kind": {
-                    "enum": [
-                      "vital",
-                      "launch",
-                      "nav"
-                    ],
+                    "enum": ["vital", "launch", "nav"],
                     "type": "string"
                   },
                   "name": {
@@ -15699,11 +14564,7 @@
                     "type": "string"
                   },
                   "rating": {
-                    "enum": [
-                      "good",
-                      "needs-improvement",
-                      "poor"
-                    ],
+                    "enum": ["good", "needs-improvement", "poor"],
                     "type": "string"
                   },
                   "route": {
@@ -15716,11 +14577,7 @@
                     "type": "number"
                   }
                 },
-                "required": [
-                  "name",
-                  "value",
-                  "route"
-                ],
+                "required": ["name", "value", "route"],
                 "type": "object"
               }
             }
@@ -15847,11 +14704,7 @@
                             "type": "string"
                           }
                         },
-                        "required": [
-                          "timestamp",
-                          "userAnswer",
-                          "isCorrect"
-                        ],
+                        "required": ["timestamp", "userAnswer", "isCorrect"],
                         "type": "object"
                       },
                       "type": "array"
@@ -15941,9 +14794,7 @@
                       "type": "boolean"
                     }
                   },
-                  "required": [
-                    "success"
-                  ],
+                  "required": ["success"],
                   "type": "object"
                 }
               }
@@ -15976,9 +14827,7 @@
                       "type": "boolean"
                     }
                   },
-                  "required": [
-                    "success"
-                  ],
+                  "required": ["success"],
                   "type": "object"
                 }
               }
@@ -16049,11 +14898,7 @@
                         "type": "string"
                       }
                     },
-                    "required": [
-                      "tag",
-                      "count",
-                      "questions"
-                    ],
+                    "required": ["tag", "count", "questions"],
                     "type": "object"
                   },
                   "type": "array"
@@ -16080,9 +14925,7 @@
                     "type": "array"
                   }
                 },
-                "required": [
-                  "questionIds"
-                ],
+                "required": ["questionIds"],
                 "type": "object"
               }
             }
@@ -16104,9 +14947,7 @@
                       "type": "boolean"
                     }
                   },
-                  "required": [
-                    "success"
-                  ],
+                  "required": ["success"],
                   "type": "object"
                 }
               }
@@ -16148,10 +14989,7 @@
             "schema": {
               "default": "priority",
               "description": "抽题模式: priority=加权优先, random=纯随机",
-              "enum": [
-                "priority",
-                "random"
-              ],
+              "enum": ["priority", "random"],
               "type": "string"
             }
           }
@@ -16230,11 +15068,7 @@
                       "type": "number"
                     }
                   },
-                  "required": [
-                    "total",
-                    "recent",
-                    "frequent"
-                  ],
+                  "required": ["total", "recent", "frequent"],
                   "type": "object"
                 }
               }

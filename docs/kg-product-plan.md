@@ -55,14 +55,14 @@ question_nodes(
 
 ## 3. 接口
 
-| 方法 | 路径 | 说明 |
-|---|---|---|
-| POST | `/api/external/kg/import` | admin + 绑 userId；`{chapter, schemaVersion, nodes[], edges[]}`；**导入前跑门禁**（类型已登记 / evidence 非空 / 覆盖率 / 先修无环）；`dryRun`；幂等键 `(chapter,node_key)` 与 `(chapter,from,to,type)` |
-| GET | `/api/kg/graph?chapter=` | 节点 + 边（含 evidence），供地图页 |
-| GET | `/api/kg/nodes?chapter=&kind=` | 平铺节点（筛选用） |
-| GET | `/api/wrong-book?node=ch1:教育学的创立阶段` | 错题按节点筛（join question_nodes） |
-| GET | `/api/mastery?by=node&chapter=` | 节点级正确率（分子分母都来自 practice_logs） |
-| POST | `/api/external/questions/nodes` | 批量写题→节点（离线映射器回传，幂等） |
+| 方法 | 路径                                        | 说明                                                                                                                                                                                                   |
+| ---- | ------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| POST | `/api/external/kg/import`                   | admin + 绑 userId；`{chapter, schemaVersion, nodes[], edges[]}`；**导入前跑门禁**（类型已登记 / evidence 非空 / 覆盖率 / 先修无环）；`dryRun`；幂等键 `(chapter,node_key)` 与 `(chapter,from,to,type)` |
+| GET  | `/api/kg/graph?chapter=`                    | 节点 + 边（含 evidence），供地图页                                                                                                                                                                     |
+| GET  | `/api/kg/nodes?chapter=&kind=`              | 平铺节点（筛选用）                                                                                                                                                                                     |
+| GET  | `/api/wrong-book?node=ch1:教育学的创立阶段` | 错题按节点筛（join question_nodes）                                                                                                                                                                    |
+| GET  | `/api/mastery?by=node&chapter=`             | 节点级正确率（分子分母都来自 practice_logs）                                                                                                                                                           |
+| POST | `/api/external/questions/nodes`             | 批量写题→节点（离线映射器回传，幂等）                                                                                                                                                                  |
 
 现有 `/api/meta` 的 `features` 追加 `kg`。
 
@@ -73,21 +73,21 @@ question_nodes(
 
 ## 5. 门禁（产品化后仍然要的）
 
-| 门禁 | 位置 | 作用 |
-|---|---|---|
-| 边类型/证据/覆盖率/无环 | 导入接口内（复用 `kg_validate.py` 的规则，搬到 TS） | 图歪了进不来 |
-| schema_version | 导入必填；`relation_types.json` 版本不一致拒绝 | 防止半新半旧 |
-| 覆盖率报告 | 导入后返回 `{chapters, nodes, edges, coveredSections, missing[]}` | 缺口当场可见 |
-| 题→节点映射可复核 | `question_nodes.method/score` 落库 | 错题归因可解释 |
+| 门禁                    | 位置                                                              | 作用           |
+| ----------------------- | ----------------------------------------------------------------- | -------------- |
+| 边类型/证据/覆盖率/无环 | 导入接口内（复用 `kg_validate.py` 的规则，搬到 TS）               | 图歪了进不来   |
+| schema_version          | 导入必填；`relation_types.json` 版本不一致拒绝                    | 防止半新半旧   |
+| 覆盖率报告              | 导入后返回 `{chapters, nodes, edges, coveredSections, missing[]}` | 缺口当场可见   |
+| 题→节点映射可复核       | `question_nodes.method/score` 落库                                | 错题归因可解释 |
 
 ## 6. 分期与成本
 
-| 期 | 内容 | 成本 | 可独立交付 |
-|---|---|---|---|
-| **P0** | 3 表迁移 + 导入接口（含门禁）+ 快照 + 集成测试 | 0.5 会话 | ✅ 导入第一章 153 边 |
-| **P1** | 题→节点批量写入 + 错题本 `?node=` + 节点级掌握度接口 | 1 会话 | ✅ 错题本可按节点筛 |
-| **P2** | Web 知识地图页 + 移动端节点筛选 | 1 会话 | ✅ 可视化 |
-| **P3** | 组卷按节点薄弱抽题、recall 卡片挂 node | 0.5 会话 | 可选 |
+| 期     | 内容                                                 | 成本     | 可独立交付           |
+| ------ | ---------------------------------------------------- | -------- | -------------------- |
+| **P0** | 3 表迁移 + 导入接口（含门禁）+ 快照 + 集成测试       | 0.5 会话 | ✅ 导入第一章 153 边 |
+| **P1** | 题→节点批量写入 + 错题本 `?node=` + 节点级掌握度接口 | 1 会话   | ✅ 错题本可按节点筛  |
+| **P2** | Web 知识地图页 + 移动端节点筛选                      | 1 会话   | ✅ 可视化            |
+| **P3** | 组卷按节点薄弱抽题、recall 卡片挂 node               | 0.5 会话 | 可选                 |
 
 **备考期建议只做 P0 + P1**（1.5 会话），P2 等 4 月考完。
 

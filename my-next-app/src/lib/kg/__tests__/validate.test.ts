@@ -19,10 +19,7 @@ import {
 } from "../validate";
 import { RELATION_TYPES_VERSION } from "../relation-types";
 
-const FIXTURE = path.resolve(
-  process.cwd(),
-  "../fixtures/kg/ch1-edges-v3.json",
-);
+const FIXTURE = path.resolve(process.cwd(), "../fixtures/kg/ch1-edges-v3.json");
 
 const fixture = JSON.parse(fs.readFileSync(FIXTURE, "utf8")) as {
   chapter: string;
@@ -101,7 +98,11 @@ describe("第一章真实产物（ch1-edges-v3.json）", () => {
     expect(result.issues).toEqual([]);
     expect(result.edges).toHaveLength(153);
     expect(result.nodes).toHaveLength(166);
-    expect(result.coverage).toMatchObject({ covered: 15, total: 15, missing: [] });
+    expect(result.coverage).toMatchObject({
+      covered: 15,
+      total: 15,
+      missing: [],
+    });
     // attribute / contrast / chronology / represented_by 共 34 条 → 只进 warnings
     expect(result.warnings.length).toBe(34);
     expect(result.warnings.every((w) => w.includes("proposed"))).toBe(true);
@@ -159,8 +160,20 @@ describe("硬失败：一条不合格整章不写", () => {
       sections: [{ key: "考点一", title: "测试", startPage: 1, endPage: 10 }],
       nodes,
       edges: [
-        { from: "贯穿", to: "贯通", type: "prerequisite", evidence: "原句 A", printed_page: 1 },
-        { from: "贯通", to: "贯穿", type: "prerequisite", evidence: "原句 B", printed_page: 1 },
+        {
+          from: "贯穿",
+          to: "贯通",
+          type: "prerequisite",
+          evidence: "原句 A",
+          printed_page: 1,
+        },
+        {
+          from: "贯通",
+          to: "贯穿",
+          type: "prerequisite",
+          evidence: "原句 B",
+          printed_page: 1,
+        },
       ],
     });
     expect(result.issues.map((i) => i.code)).toContain("prerequisite_cycle");
@@ -197,7 +210,8 @@ describe("硬失败：一条不合格整章不写", () => {
     const input = baseInput();
     // 删掉所有落在 考点十五（p30-32）的边
     input.edges = input.edges.filter(
-      (edge) => !((edge.printed_page ?? 0) >= 30 && (edge.printed_page ?? 0) <= 32),
+      (edge) =>
+        !((edge.printed_page ?? 0) >= 30 && (edge.printed_page ?? 0) <= 32),
     );
     const result = validateKgImport(input);
     expect(result.issues.map((i) => i.code)).toEqual(["uncovered_section"]);

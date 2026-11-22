@@ -78,7 +78,9 @@ const getMasteryRoute = createRoute({
         .enum(["tag", "node"])
         .optional()
         .default("tag")
-        .describe("聚合口径：tag（默认，读 user_mastery）| node（聚合 practice_logs）"),
+        .describe(
+          "聚合口径：tag（默认，读 user_mastery）| node（聚合 practice_logs）",
+        ),
       chapter: z
         .string()
         .optional()

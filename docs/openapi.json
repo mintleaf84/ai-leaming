@@ -42,7 +42,11 @@
                 },
                 "dimension": {
                   "description": "能力维度，省略时按 knowledge 落库",
-                  "enum": ["knowledge", "understanding", "application"],
+                  "enum": [
+                    "knowledge",
+                    "understanding",
+                    "application"
+                  ],
                   "type": "string"
                 },
                 "explanation": {
@@ -75,11 +79,21 @@
                 },
                 "type": {
                   "description": "题型，省略时按 single 落库",
-                  "enum": ["single", "multi", "truefalse", "fill_blank"],
+                  "enum": [
+                    "single",
+                    "multi",
+                    "truefalse",
+                    "fill_blank"
+                  ],
                   "type": "string"
                 }
               },
-              "required": ["content", "answer", "explanation", "tags"],
+              "required": [
+                "content",
+                "answer",
+                "explanation",
+                "tags"
+              ],
               "type": "object"
             },
             "maxItems": 100,
@@ -99,7 +113,11 @@
             "type": "string"
           }
         },
-        "required": ["batchKey", "title", "questions"],
+        "required": [
+          "batchKey",
+          "title",
+          "questions"
+        ],
         "type": "object"
       },
       "AgentQuestionSetCreateResponse": {
@@ -125,7 +143,12 @@
             "type": "integer"
           }
         },
-        "required": ["id", "batchKey", "duplicate", "questionCount"],
+        "required": [
+          "id",
+          "batchKey",
+          "duplicate",
+          "questionCount"
+        ],
         "type": "object"
       },
       "AgentQuestionSetQuestion": {
@@ -246,7 +269,11 @@
                   "type": "string"
                 }
               },
-              "required": ["questionId", "content", "reason"],
+              "required": [
+                "questionId",
+                "content",
+                "reason"
+              ],
               "type": "object"
             },
             "type": "array"
@@ -288,7 +315,11 @@
                       "type": "string"
                     }
                   },
-                  "required": ["tag", "answered", "correctRate"],
+                  "required": [
+                    "tag",
+                    "answered",
+                    "correctRate"
+                  ],
                   "type": "object"
                 },
                 "type": "array"
@@ -308,7 +339,12 @@
             "type": "object"
           }
         },
-        "required": ["setId", "summary", "items", "flagged"],
+        "required": [
+          "setId",
+          "summary",
+          "items",
+          "flagged"
+        ],
         "type": "object"
       },
       "AgentQuestionSetSummary": {
@@ -355,7 +391,11 @@
             "type": "integer"
           },
           "status": {
-            "enum": ["active", "archived", "promoted"],
+            "enum": [
+              "active",
+              "archived",
+              "promoted"
+            ],
             "type": "string"
           },
           "targetTags": {
@@ -414,7 +454,10 @@
             "type": "string"
           }
         },
-        "required": ["questionId", "isCorrect"],
+        "required": [
+          "questionId",
+          "isCorrect"
+        ],
         "type": "object"
       },
       "ExternalAgentAnswersRequest": {
@@ -442,7 +485,10 @@
             "type": "string"
           }
         },
-        "required": ["sessionKey", "answers"],
+        "required": [
+          "sessionKey",
+          "answers"
+        ],
         "type": "object"
       },
       "ExternalAgentAnswersResponse": {
@@ -464,7 +510,11 @@
             "type": "string"
           }
         },
-        "required": ["sessionId", "inserted", "duplicated"],
+        "required": [
+          "sessionId",
+          "inserted",
+          "duplicated"
+        ],
         "type": "object"
       },
       "ExternalQuestionBatchItem": {
@@ -479,7 +529,11 @@
           },
           "dimension": {
             "description": "能力维度，省略时按 knowledge 落库",
-            "enum": ["knowledge", "understanding", "application"],
+            "enum": [
+              "knowledge",
+              "understanding",
+              "application"
+            ],
             "type": "string"
           },
           "explanation": {
@@ -518,11 +572,21 @@
           },
           "type": {
             "description": "题型，省略时按 single 落库",
-            "enum": ["single", "multi", "truefalse", "fill_blank"],
+            "enum": [
+              "single",
+              "multi",
+              "truefalse",
+              "fill_blank"
+            ],
             "type": "string"
           }
         },
-        "required": ["content", "answer", "explanation", "tags"],
+        "required": [
+          "content",
+          "answer",
+          "explanation",
+          "tags"
+        ],
         "type": "object"
       },
       "ExternalQuestionBatchItemResult": {
@@ -542,11 +606,19 @@
           },
           "status": {
             "description": "created = 本次新建；skipped = 命中既有题或批内重复（内容未被修改）",
-            "enum": ["created", "skipped"],
+            "enum": [
+              "created",
+              "skipped"
+            ],
             "type": "string"
           }
         },
-        "required": ["index", "externalId", "questionId", "status"],
+        "required": [
+          "index",
+          "externalId",
+          "questionId",
+          "status"
+        ],
         "type": "object"
       },
       "ExternalQuestionBatchRequest": {
@@ -561,7 +633,9 @@
             "type": "array"
           }
         },
-        "required": ["questions"],
+        "required": [
+          "questions"
+        ],
         "type": "object"
       },
       "ExternalQuestionBatchResponse": {
@@ -590,7 +664,12 @@
             "type": "integer"
           }
         },
-        "required": ["created", "skipped", "items", "duplicate"],
+        "required": [
+          "created",
+          "skipped",
+          "items",
+          "duplicate"
+        ],
         "type": "object"
       },
       "ExternalQuestionPatchBody": {
@@ -604,7 +683,11 @@
             "type": "string"
           },
           "dimension": {
-            "enum": ["knowledge", "understanding", "application"],
+            "enum": [
+              "knowledge",
+              "understanding",
+              "application"
+            ],
             "type": "string"
           },
           "explanation": {
@@ -628,7 +711,12 @@
             "type": "array"
           },
           "type": {
-            "enum": ["single", "multi", "truefalse", "fill_blank"],
+            "enum": [
+              "single",
+              "multi",
+              "truefalse",
+              "fill_blank"
+            ],
             "type": "string"
           }
         },
@@ -648,7 +736,11 @@
           },
           "dimension": {
             "description": "能力维度",
-            "enum": ["knowledge", "understanding", "application"],
+            "enum": [
+              "knowledge",
+              "understanding",
+              "application"
+            ],
             "type": "string"
           },
           "explanation": {
@@ -678,11 +770,22 @@
           "type": {
             "default": "single",
             "description": "题型，默认 single",
-            "enum": ["single", "multi", "truefalse", "fill_blank"],
+            "enum": [
+              "single",
+              "multi",
+              "truefalse",
+              "fill_blank"
+            ],
             "type": "string"
           }
         },
-        "required": ["content", "answer", "explanation", "tags", "dimension"],
+        "required": [
+          "content",
+          "answer",
+          "explanation",
+          "tags",
+          "dimension"
+        ],
         "type": "object"
       },
       "ExternalQuestionWriteResponse": {
@@ -705,7 +808,11 @@
             "type": "integer"
           }
         },
-        "required": ["id", "externalId", "duplicate"],
+        "required": [
+          "id",
+          "externalId",
+          "duplicate"
+        ],
         "type": "object"
       },
       "ExternalRecallCardUpsertRequest": {
@@ -722,7 +829,9 @@
                   "type": "array"
                 }
               },
-              "required": ["answers"],
+              "required": [
+                "answers"
+              ],
               "type": "object"
             },
             "minItems": 1,
@@ -765,7 +874,10 @@
                   "type": "string"
                 }
               },
-              "required": ["text", "keywords"],
+              "required": [
+                "text",
+                "keywords"
+              ],
               "type": "object"
             },
             "maxItems": 6,
@@ -774,7 +886,10 @@
           },
           "kind": {
             "description": "list = 列举卡（用 items）/ cloze = 填空卡（用 blanks）",
-            "enum": ["list", "cloze"],
+            "enum": [
+              "list",
+              "cloze"
+            ],
             "type": "string"
           },
           "prompt": {
@@ -787,7 +902,12 @@
             "type": "boolean"
           }
         },
-        "required": ["deckKey", "cardId", "prompt", "kind"],
+        "required": [
+          "deckKey",
+          "cardId",
+          "prompt",
+          "kind"
+        ],
         "type": "object"
       },
       "ExternalRecallCardUpsertResponse": {
@@ -809,7 +929,11 @@
             "type": "boolean"
           }
         },
-        "required": ["cardId", "cardKey", "created"],
+        "required": [
+          "cardId",
+          "cardKey",
+          "created"
+        ],
         "type": "object"
       },
       "ExternalRecallDeckImportRequest": {
@@ -822,11 +946,16 @@
           },
           "onConflict": {
             "description": "内容冲突策略：keep（默认，保留库内内容）/ accept（采用文件内容，进度不受影响）",
-            "enum": ["keep", "accept"],
+            "enum": [
+              "keep",
+              "accept"
+            ],
             "type": "string"
           }
         },
-        "required": ["json"],
+        "required": [
+          "json"
+        ],
         "type": "object"
       },
       "ExternalRecallDeckImportResponse": {
@@ -837,7 +966,10 @@
               "properties": {
                 "action": {
                   "description": "该冲突的处理方式",
-                  "enum": ["keep", "accept"],
+                  "enum": [
+                    "keep",
+                    "accept"
+                  ],
                   "type": "string"
                 },
                 "cardId": {
@@ -845,7 +977,10 @@
                   "type": "string"
                 }
               },
-              "required": ["cardId", "action"],
+              "required": [
+                "cardId",
+                "action"
+              ],
               "type": "object"
             },
             "type": "array"
@@ -919,11 +1054,17 @@
                 },
                 "to": {
                   "description": "改判结果",
-                  "enum": ["ok", "miss"],
+                  "enum": [
+                    "ok",
+                    "miss"
+                  ],
                   "type": "string"
                 }
               },
-              "required": ["index", "to"],
+              "required": [
+                "index",
+                "to"
+              ],
               "type": "object"
             },
             "type": "array"
@@ -934,7 +1075,10 @@
             "type": "string"
           }
         },
-        "required": ["cardId", "typed"],
+        "required": [
+          "cardId",
+          "typed"
+        ],
         "type": "object"
       },
       "ExternalRecallReviewResponse": {
@@ -965,13 +1109,20 @@
           },
           "rating": {
             "description": "推导出的 FSRS 评分（用户不直接选择）",
-            "enum": ["again", "hard", "good"],
+            "enum": [
+              "again",
+              "hard",
+              "good"
+            ],
             "type": "string"
           },
           "verdicts": {
             "description": "最终判分（已应用改判），与本次呈现的条目一一对应",
             "items": {
-              "enum": ["ok", "miss"],
+              "enum": [
+                "ok",
+                "miss"
+              ],
               "type": "string"
             },
             "type": "array"
@@ -1014,7 +1165,10 @@
             "type": "integer"
           }
         },
-        "required": ["questionId", "isCorrect"],
+        "required": [
+          "questionId",
+          "isCorrect"
+        ],
         "type": "object"
       },
       "ExternalSrsReviewResponse": {
@@ -1094,11 +1248,17 @@
                 },
                 "to": {
                   "description": "改判结果",
-                  "enum": ["ok", "miss"],
+                  "enum": [
+                    "ok",
+                    "miss"
+                  ],
                   "type": "string"
                 }
               },
-              "required": ["index", "to"],
+              "required": [
+                "index",
+                "to"
+              ],
               "type": "object"
             },
             "type": "array"
@@ -1109,7 +1269,10 @@
             "type": "string"
           }
         },
-        "required": ["cardId", "typed"],
+        "required": [
+          "cardId",
+          "typed"
+        ],
         "type": "object"
       },
       "MobileRecallReviewResponse": {
@@ -1136,13 +1299,20 @@
           },
           "rating": {
             "description": "推导出的 FSRS 评分（用户不直接选择）",
-            "enum": ["again", "hard", "good"],
+            "enum": [
+              "again",
+              "hard",
+              "good"
+            ],
             "type": "string"
           },
           "verdicts": {
             "description": "最终判分（已应用改判），与本次呈现的条目一一对应",
             "items": {
-              "enum": ["ok", "miss"],
+              "enum": [
+                "ok",
+                "miss"
+              ],
               "type": "string"
             },
             "type": "array"
@@ -1250,7 +1420,11 @@
             "name": "status",
             "required": false,
             "schema": {
-              "enum": ["pending", "resolved", "dismissed"],
+              "enum": [
+                "pending",
+                "resolved",
+                "dismissed"
+              ],
               "type": "string"
             }
           },
@@ -1356,7 +1530,10 @@
                       "type": "number"
                     }
                   },
-                  "required": ["items", "total"],
+                  "required": [
+                    "items",
+                    "total"
+                  ],
                   "type": "object"
                 }
               }
@@ -1388,7 +1565,11 @@
                       "type": "number"
                     }
                   },
-                  "required": ["pending", "resolved", "dismissed"],
+                  "required": [
+                    "pending",
+                    "resolved",
+                    "dismissed"
+                  ],
                   "type": "object"
                 }
               }
@@ -1425,7 +1606,9 @@
                       "type": "boolean"
                     }
                   },
-                  "required": ["success"],
+                  "required": [
+                    "success"
+                  ],
                   "type": "object"
                 }
               }
@@ -1462,7 +1645,9 @@
                       "type": "boolean"
                     }
                   },
-                  "required": ["success"],
+                  "required": [
+                    "success"
+                  ],
                   "type": "object"
                 }
               }
@@ -1553,7 +1738,9 @@
                       "type": "string"
                     }
                   },
-                  "required": ["deleted"],
+                  "required": [
+                    "deleted"
+                  ],
                   "type": "object"
                 }
               }
@@ -1583,7 +1770,10 @@
                     "type": "string"
                   }
                 },
-                "required": ["sql", "description"],
+                "required": [
+                  "sql",
+                  "description"
+                ],
                 "type": "object"
               }
             }
@@ -1611,7 +1801,9 @@
                       "type": "boolean"
                     }
                   },
-                  "required": ["success"],
+                  "required": [
+                    "success"
+                  ],
                   "type": "object"
                 }
               }
@@ -1692,7 +1884,9 @@
                       "type": "array"
                     }
                   },
-                  "required": ["history"],
+                  "required": [
+                    "history"
+                  ],
                   "type": "object"
                 }
               }
@@ -1721,7 +1915,9 @@
                     "type": "string"
                   }
                 },
-                "required": ["sql"],
+                "required": [
+                  "sql"
+                ],
                 "type": "object"
               }
             }
@@ -1750,7 +1946,9 @@
                       "type": "array"
                     }
                   },
-                  "required": ["valid"],
+                  "required": [
+                    "valid"
+                  ],
                   "type": "object"
                 }
               }
@@ -1850,7 +2048,11 @@
                           },
                           "status": {
                             "description": "active=可练；promoted=已转正入库；archived=已归档",
-                            "enum": ["active", "promoted", "archived"],
+                            "enum": [
+                              "active",
+                              "promoted",
+                              "archived"
+                            ],
                             "type": "string"
                           },
                           "targetTags": {
@@ -1896,11 +2098,18 @@
                           "type": "integer"
                         }
                       },
-                      "required": ["limit", "offset", "total"],
+                      "required": [
+                        "limit",
+                        "offset",
+                        "total"
+                      ],
                       "type": "object"
                     }
                   },
-                  "required": ["data", "meta"],
+                  "required": [
+                    "data",
+                    "meta"
+                  ],
                   "type": "object"
                 }
               }
@@ -2016,7 +2225,11 @@
                         },
                         "status": {
                           "description": "active=可练；promoted=已转正入库；archived=已归档",
-                          "enum": ["active", "promoted", "archived"],
+                          "enum": [
+                            "active",
+                            "promoted",
+                            "archived"
+                          ],
                           "type": "string"
                         },
                         "targetTags": {
@@ -2049,7 +2262,11 @@
                       "type": "object"
                     }
                   },
-                  "required": ["set", "questions", "flaggedCount"],
+                  "required": [
+                    "set",
+                    "questions",
+                    "flaggedCount"
+                  ],
                   "type": "object"
                 }
               }
@@ -2137,7 +2354,10 @@
                       "type": "string"
                     }
                   },
-                  "required": ["sessionId", "questions"],
+                  "required": [
+                    "sessionId",
+                    "questions"
+                  ],
                   "type": "object"
                 }
               }
@@ -2188,7 +2408,10 @@
                   },
                   "kind": {
                     "default": "fixed",
-                    "enum": ["fixed", "timed"],
+                    "enum": [
+                      "fixed",
+                      "timed"
+                    ],
                     "type": "string"
                   },
                   "title": {
@@ -2260,7 +2483,10 @@
                             "type": "object"
                           }
                         },
-                        "required": ["position", "question"],
+                        "required": [
+                          "position",
+                          "question"
+                        ],
                         "type": "object"
                       },
                       "type": "array"
@@ -2279,7 +2505,11 @@
                           "type": "string"
                         }
                       },
-                      "required": ["sessionId", "score", "submittedAt"],
+                      "required": [
+                        "sessionId",
+                        "score",
+                        "submittedAt"
+                      ],
                       "type": "object"
                     },
                     "paper": {
@@ -2303,7 +2533,10 @@
                           "type": "integer"
                         },
                         "kind": {
-                          "enum": ["fixed", "timed"],
+                          "enum": [
+                            "fixed",
+                            "timed"
+                          ],
                           "type": "string"
                         },
                         "lastAttemptAt": {
@@ -2315,7 +2548,11 @@
                           "type": "number"
                         },
                         "source": {
-                          "enum": ["manual", "auto", "agent"],
+                          "enum": [
+                            "manual",
+                            "auto",
+                            "agent"
+                          ],
                           "type": "string"
                         },
                         "title": {
@@ -2346,7 +2583,11 @@
                       "type": "object"
                     }
                   },
-                  "required": ["paper", "items", "lastAttempt"],
+                  "required": [
+                    "paper",
+                    "items",
+                    "lastAttempt"
+                  ],
                   "type": "object"
                 }
               }
@@ -2402,7 +2643,11 @@
                       "type": "integer"
                     }
                   },
-                  "required": ["setId", "promoted", "promotedCount"],
+                  "required": [
+                    "setId",
+                    "promoted",
+                    "promotedCount"
+                  ],
                   "type": "object"
                 }
               }
@@ -2482,7 +2727,11 @@
                       "type": "integer"
                     }
                   },
-                  "required": ["questionId", "flagged", "remaining"],
+                  "required": [
+                    "questionId",
+                    "flagged",
+                    "remaining"
+                  ],
                   "type": "object"
                 }
               }
@@ -2566,11 +2815,20 @@
                     "type": "number"
                   },
                   "tag": {
-                    "enum": ["highlight", "underline", "wavy"],
+                    "enum": [
+                      "highlight",
+                      "underline",
+                      "wavy"
+                    ],
                     "type": "string"
                   }
                 },
-                "required": ["questionId", "startOffset", "endOffset", "tag"],
+                "required": [
+                  "questionId",
+                  "startOffset",
+                  "endOffset",
+                  "tag"
+                ],
                 "type": "object"
               }
             }
@@ -2600,7 +2858,10 @@
                     "type": "string"
                   }
                 },
-                "required": ["username", "password"],
+                "required": [
+                  "username",
+                  "password"
+                ],
                 "type": "object"
               }
             }
@@ -2627,11 +2888,18 @@
                           "type": "string"
                         }
                       },
-                      "required": ["id", "username", "role"],
+                      "required": [
+                        "id",
+                        "username",
+                        "role"
+                      ],
                       "type": "object"
                     }
                   },
-                  "required": ["token", "user"],
+                  "required": [
+                    "token",
+                    "user"
+                  ],
                   "type": "object"
                 }
               }
@@ -2659,7 +2927,9 @@
                       "type": "boolean"
                     }
                   },
-                  "required": ["success"],
+                  "required": [
+                    "success"
+                  ],
                   "type": "object"
                 }
               }
@@ -2685,7 +2955,10 @@
                     "type": "string"
                   }
                 },
-                "required": ["username", "password"],
+                "required": [
+                  "username",
+                  "password"
+                ],
                 "type": "object"
               }
             }
@@ -2712,11 +2985,18 @@
                           "type": "string"
                         }
                       },
-                      "required": ["id", "username", "role"],
+                      "required": [
+                        "id",
+                        "username",
+                        "role"
+                      ],
                       "type": "object"
                     }
                   },
-                  "required": ["token", "user"],
+                  "required": [
+                    "token",
+                    "user"
+                  ],
                   "type": "object"
                 }
               }
@@ -2774,7 +3054,9 @@
                       "type": "array"
                     }
                   },
-                  "required": ["plans"],
+                  "required": [
+                    "plans"
+                  ],
                   "type": "object"
                 }
               }
@@ -2813,14 +3095,19 @@
                     "type": "array"
                   },
                   "mode": {
-                    "enum": ["standard", "socratic"],
+                    "enum": [
+                      "standard",
+                      "socratic"
+                    ],
                     "type": "string"
                   },
                   "sessionId": {
                     "type": "number"
                   }
                 },
-                "required": ["messages"],
+                "required": [
+                  "messages"
+                ],
                 "type": "object"
               }
             }
@@ -2894,7 +3181,9 @@
                       "type": "array"
                     }
                   },
-                  "required": ["sessions"],
+                  "required": [
+                    "sessions"
+                  ],
                   "type": "object"
                 }
               }
@@ -2936,7 +3225,9 @@
                       "type": "number"
                     }
                   },
-                  "required": ["sessionId"],
+                  "required": [
+                    "sessionId"
+                  ],
                   "type": "object"
                 }
               }
@@ -2975,7 +3266,9 @@
                       "type": "boolean"
                     }
                   },
-                  "required": ["success"],
+                  "required": [
+                    "success"
+                  ],
                   "type": "object"
                 }
               }
@@ -3027,7 +3320,11 @@
                             "type": "number"
                           },
                           "role": {
-                            "enum": ["user", "assistant", "system"],
+                            "enum": [
+                              "user",
+                              "assistant",
+                              "system"
+                            ],
                             "type": "string"
                           },
                           "session_id": {
@@ -3074,7 +3371,10 @@
                       "type": "object"
                     }
                   },
-                  "required": ["session", "messages"],
+                  "required": [
+                    "session",
+                    "messages"
+                  ],
                   "type": "object"
                 }
               }
@@ -3139,7 +3439,12 @@
                             "type": "integer"
                           },
                           "source": {
-                            "enum": ["camera", "gallery", "text", "pdf"],
+                            "enum": [
+                              "camera",
+                              "gallery",
+                              "text",
+                              "pdf"
+                            ],
                             "type": "string"
                           },
                           "status": {
@@ -3166,7 +3471,9 @@
                       "type": "array"
                     }
                   },
-                  "required": ["items"],
+                  "required": [
+                    "items"
+                  ],
                   "type": "object"
                 }
               }
@@ -3197,14 +3504,21 @@
                     "type": "string"
                   },
                   "source": {
-                    "enum": ["camera", "gallery", "text", "pdf"],
+                    "enum": [
+                      "camera",
+                      "gallery",
+                      "text",
+                      "pdf"
+                    ],
                     "type": "string"
                   },
                   "text": {
                     "type": "string"
                   }
                 },
-                "required": ["source"],
+                "required": [
+                  "source"
+                ],
                 "type": "object"
               }
             }
@@ -3259,7 +3573,12 @@
                           "type": "string"
                         },
                         "source": {
-                          "enum": ["camera", "gallery", "text", "pdf"],
+                          "enum": [
+                            "camera",
+                            "gallery",
+                            "text",
+                            "pdf"
+                          ],
                           "type": "string"
                         },
                         "status": {
@@ -3348,7 +3667,10 @@
                       "type": "array"
                     }
                   },
-                  "required": ["draft", "items"],
+                  "required": [
+                    "draft",
+                    "items"
+                  ],
                   "type": "object"
                 }
               }
@@ -3388,11 +3710,16 @@
                       "type": "string"
                     },
                     "status": {
-                      "enum": ["discarded"],
+                      "enum": [
+                        "discarded"
+                      ],
                       "type": "string"
                     }
                   },
-                  "required": ["id", "status"],
+                  "required": [
+                    "id",
+                    "status"
+                  ],
                   "type": "object"
                 }
               }
@@ -3468,7 +3795,12 @@
                           "type": "string"
                         },
                         "source": {
-                          "enum": ["camera", "gallery", "text", "pdf"],
+                          "enum": [
+                            "camera",
+                            "gallery",
+                            "text",
+                            "pdf"
+                          ],
                           "type": "string"
                         },
                         "status": {
@@ -3557,7 +3889,10 @@
                       "type": "array"
                     }
                   },
-                  "required": ["draft", "items"],
+                  "required": [
+                    "draft",
+                    "items"
+                  ],
                   "type": "object"
                 }
               }
@@ -3636,7 +3971,12 @@
                           "type": "string"
                         },
                         "source": {
-                          "enum": ["camera", "gallery", "text", "pdf"],
+                          "enum": [
+                            "camera",
+                            "gallery",
+                            "text",
+                            "pdf"
+                          ],
                           "type": "string"
                         },
                         "status": {
@@ -3728,7 +4068,11 @@
                       "type": "boolean"
                     }
                   },
-                  "required": ["draft", "items", "ok"],
+                  "required": [
+                    "draft",
+                    "items",
+                    "ok"
+                  ],
                   "type": "object"
                 }
               }
@@ -3928,7 +4272,12 @@
                           "type": "string"
                         },
                         "source": {
-                          "enum": ["camera", "gallery", "text", "pdf"],
+                          "enum": [
+                            "camera",
+                            "gallery",
+                            "text",
+                            "pdf"
+                          ],
                           "type": "string"
                         },
                         "status": {
@@ -4017,7 +4366,10 @@
                       "type": "array"
                     }
                   },
-                  "required": ["draft", "items"],
+                  "required": [
+                    "draft",
+                    "items"
+                  ],
                   "type": "object"
                 }
               }
@@ -4069,7 +4421,10 @@
                             "type": "string"
                           }
                         },
-                        "required": ["questionId", "userAnswer"],
+                        "required": [
+                          "questionId",
+                          "userAnswer"
+                        ],
                         "type": "object"
                       },
                       "type": "array"
@@ -4099,7 +4454,10 @@
                           "type": "number"
                         },
                         "kind": {
-                          "enum": ["fixed", "timed"],
+                          "enum": [
+                            "fixed",
+                            "timed"
+                          ],
                           "type": "string"
                         },
                         "lastAttemptAt": {
@@ -4111,7 +4469,11 @@
                           "type": "number"
                         },
                         "source": {
-                          "enum": ["manual", "auto", "agent"],
+                          "enum": [
+                            "manual",
+                            "auto",
+                            "agent"
+                          ],
                           "type": "string"
                         },
                         "title": {
@@ -4322,7 +4684,9 @@
                           "type": "string"
                         }
                       },
-                      "required": ["questionId"],
+                      "required": [
+                        "questionId"
+                      ],
                       "type": "object"
                     },
                     "maxItems": 500,
@@ -4333,7 +4697,9 @@
                     "type": "string"
                   }
                 },
-                "required": ["answers"],
+                "required": [
+                  "answers"
+                ],
                 "type": "object"
               }
             }
@@ -4470,7 +4836,10 @@
                             "type": "number"
                           },
                           "kind": {
-                            "enum": ["fixed", "timed"],
+                            "enum": [
+                              "fixed",
+                              "timed"
+                            ],
                             "type": "string"
                           },
                           "lastAttemptAt": {
@@ -4482,7 +4851,11 @@
                             "type": "number"
                           },
                           "source": {
-                            "enum": ["manual", "auto", "agent"],
+                            "enum": [
+                              "manual",
+                              "auto",
+                              "agent"
+                            ],
                             "type": "string"
                           },
                           "title": {
@@ -4526,11 +4899,18 @@
                           "type": "number"
                         }
                       },
-                      "required": ["limit", "offset", "total"],
+                      "required": [
+                        "limit",
+                        "offset",
+                        "total"
+                      ],
                       "type": "object"
                     }
                   },
-                  "required": ["data", "meta"],
+                  "required": [
+                    "data",
+                    "meta"
+                  ],
                   "type": "object"
                 }
               }
@@ -4556,7 +4936,10 @@
                   },
                   "kind": {
                     "default": "fixed",
-                    "enum": ["fixed", "timed"],
+                    "enum": [
+                      "fixed",
+                      "timed"
+                    ],
                     "type": "string"
                   },
                   "questionIds": {
@@ -4575,7 +4958,10 @@
                     "type": "string"
                   }
                 },
-                "required": ["title", "questionIds"],
+                "required": [
+                  "title",
+                  "questionIds"
+                ],
                 "type": "object"
               }
             }
@@ -4598,7 +4984,10 @@
                             "type": "number"
                           }
                         },
-                        "required": ["position", "questionId"],
+                        "required": [
+                          "position",
+                          "questionId"
+                        ],
                         "type": "object"
                       },
                       "type": "array"
@@ -4624,7 +5013,10 @@
                           "type": "number"
                         },
                         "kind": {
-                          "enum": ["fixed", "timed"],
+                          "enum": [
+                            "fixed",
+                            "timed"
+                          ],
                           "type": "string"
                         },
                         "lastAttemptAt": {
@@ -4636,7 +5028,11 @@
                           "type": "number"
                         },
                         "source": {
-                          "enum": ["manual", "auto", "agent"],
+                          "enum": [
+                            "manual",
+                            "auto",
+                            "agent"
+                          ],
                           "type": "string"
                         },
                         "title": {
@@ -4667,7 +5063,10 @@
                       "type": "object"
                     }
                   },
-                  "required": ["paper", "items"],
+                  "required": [
+                    "paper",
+                    "items"
+                  ],
                   "type": "object"
                 }
               }
@@ -4694,7 +5093,11 @@
                   },
                   "dimensions": {
                     "items": {
-                      "enum": ["knowledge", "understanding", "application"],
+                      "enum": [
+                        "knowledge",
+                        "understanding",
+                        "application"
+                      ],
                       "type": "string"
                     },
                     "maxItems": 3,
@@ -4713,7 +5116,10 @@
                   },
                   "kind": {
                     "default": "fixed",
-                    "enum": ["fixed", "timed"],
+                    "enum": [
+                      "fixed",
+                      "timed"
+                    ],
                     "type": "string"
                   },
                   "tags": {
@@ -4732,7 +5138,12 @@
                   },
                   "types": {
                     "items": {
-                      "enum": ["single", "multi", "truefalse", "fill_blank"],
+                      "enum": [
+                        "single",
+                        "multi",
+                        "truefalse",
+                        "fill_blank"
+                      ],
                       "type": "string"
                     },
                     "maxItems": 4,
@@ -4759,7 +5170,10 @@
                     "type": "object"
                   }
                 },
-                "required": ["title", "count"],
+                "required": [
+                  "title",
+                  "count"
+                ],
                 "type": "object"
               }
             }
@@ -4823,7 +5237,10 @@
                             "type": "object"
                           }
                         },
-                        "required": ["position", "question"],
+                        "required": [
+                          "position",
+                          "question"
+                        ],
                         "type": "object"
                       },
                       "type": "array"
@@ -4841,7 +5258,11 @@
                           "type": "string"
                         }
                       },
-                      "required": ["sessionId", "score", "submittedAt"],
+                      "required": [
+                        "sessionId",
+                        "score",
+                        "submittedAt"
+                      ],
                       "type": "object"
                     },
                     "paper": {
@@ -4865,7 +5286,10 @@
                           "type": "number"
                         },
                         "kind": {
-                          "enum": ["fixed", "timed"],
+                          "enum": [
+                            "fixed",
+                            "timed"
+                          ],
                           "type": "string"
                         },
                         "lastAttemptAt": {
@@ -4877,7 +5301,11 @@
                           "type": "number"
                         },
                         "source": {
-                          "enum": ["manual", "auto", "agent"],
+                          "enum": [
+                            "manual",
+                            "auto",
+                            "agent"
+                          ],
                           "type": "string"
                         },
                         "title": {
@@ -4908,7 +5336,11 @@
                       "type": "object"
                     }
                   },
-                  "required": ["paper", "items", "lastAttempt"],
+                  "required": [
+                    "paper",
+                    "items",
+                    "lastAttempt"
+                  ],
                   "type": "object"
                 }
               }
@@ -4945,7 +5377,9 @@
                       "type": "boolean"
                     }
                   },
-                  "required": ["deleted"],
+                  "required": [
+                    "deleted"
+                  ],
                   "type": "object"
                 }
               }
@@ -5030,7 +5464,10 @@
                             "type": "object"
                           }
                         },
-                        "required": ["position", "question"],
+                        "required": [
+                          "position",
+                          "question"
+                        ],
                         "type": "object"
                       },
                       "type": "array"
@@ -5048,7 +5485,11 @@
                           "type": "string"
                         }
                       },
-                      "required": ["sessionId", "score", "submittedAt"],
+                      "required": [
+                        "sessionId",
+                        "score",
+                        "submittedAt"
+                      ],
                       "type": "object"
                     },
                     "paper": {
@@ -5072,7 +5513,10 @@
                           "type": "number"
                         },
                         "kind": {
-                          "enum": ["fixed", "timed"],
+                          "enum": [
+                            "fixed",
+                            "timed"
+                          ],
                           "type": "string"
                         },
                         "lastAttemptAt": {
@@ -5084,7 +5528,11 @@
                           "type": "number"
                         },
                         "source": {
-                          "enum": ["manual", "auto", "agent"],
+                          "enum": [
+                            "manual",
+                            "auto",
+                            "agent"
+                          ],
                           "type": "string"
                         },
                         "title": {
@@ -5115,7 +5563,11 @@
                       "type": "object"
                     }
                   },
-                  "required": ["paper", "items", "lastAttempt"],
+                  "required": [
+                    "paper",
+                    "items",
+                    "lastAttempt"
+                  ],
                   "type": "object"
                 }
               }
@@ -5152,7 +5604,10 @@
                     "type": "integer"
                   },
                   "kind": {
-                    "enum": ["fixed", "timed"],
+                    "enum": [
+                      "fixed",
+                      "timed"
+                    ],
                     "type": "string"
                   },
                   "title": {
@@ -5194,7 +5649,10 @@
                           "type": "number"
                         },
                         "kind": {
-                          "enum": ["fixed", "timed"],
+                          "enum": [
+                            "fixed",
+                            "timed"
+                          ],
                           "type": "string"
                         },
                         "lastAttemptAt": {
@@ -5206,7 +5664,11 @@
                           "type": "number"
                         },
                         "source": {
-                          "enum": ["manual", "auto", "agent"],
+                          "enum": [
+                            "manual",
+                            "auto",
+                            "agent"
+                          ],
                           "type": "string"
                         },
                         "title": {
@@ -5237,7 +5699,9 @@
                       "type": "object"
                     }
                   },
-                  "required": ["paper"],
+                  "required": [
+                    "paper"
+                  ],
                   "type": "object"
                 }
               }
@@ -5405,11 +5869,18 @@
                           "type": "integer"
                         }
                       },
-                      "required": ["limit", "offset", "total"],
+                      "required": [
+                        "limit",
+                        "offset",
+                        "total"
+                      ],
                       "type": "object"
                     }
                   },
-                  "required": ["data", "meta"],
+                  "required": [
+                    "data",
+                    "meta"
+                  ],
                   "type": "object"
                 }
               }
@@ -5436,7 +5907,10 @@
                       "type": "integer"
                     }
                   },
-                  "required": ["error", "retryAfter"],
+                  "required": [
+                    "error",
+                    "retryAfter"
+                  ],
                   "type": "object"
                 }
               }
@@ -5490,7 +5964,10 @@
             "required": false,
             "schema": {
               "description": "true = 预演：走完真实校验与计算后回滚，返回\"如果真执行会怎样\"，库内零变更",
-              "enum": ["true", "false"],
+              "enum": [
+                "true",
+                "false"
+              ],
               "example": "true",
               "type": "string"
             }
@@ -5540,7 +6017,10 @@
                       "type": "integer"
                     }
                   },
-                  "required": ["error", "retryAfter"],
+                  "required": [
+                    "error",
+                    "retryAfter"
+                  ],
                   "type": "object"
                 }
               }
@@ -5616,7 +6096,10 @@
                       "$ref": "#/components/schemas/AgentQuestionSetSummary"
                     }
                   },
-                  "required": ["set", "questions"],
+                  "required": [
+                    "set",
+                    "questions"
+                  ],
                   "type": "object"
                 }
               }
@@ -5646,7 +6129,10 @@
                       "type": "integer"
                     }
                   },
-                  "required": ["error", "retryAfter"],
+                  "required": [
+                    "error",
+                    "retryAfter"
+                  ],
                   "type": "object"
                 }
               }
@@ -5740,7 +6226,10 @@
                       "type": "integer"
                     }
                   },
-                  "required": ["error", "retryAfter"],
+                  "required": [
+                    "error",
+                    "retryAfter"
+                  ],
                   "type": "object"
                 }
               }
@@ -5834,7 +6323,10 @@
                       "type": "integer"
                     }
                   },
-                  "required": ["error", "retryAfter"],
+                  "required": [
+                    "error",
+                    "retryAfter"
+                  ],
                   "type": "object"
                 }
               }
@@ -5877,6 +6369,433 @@
           }
         },
         "summary": "结果回流：逐题对错/耗时/报错，聚合正确率与考点分布"
+      }
+    },
+    "/api/external/kg/import": {
+      "post": {
+        "description": "写接口，**需 admin 作用域且 API Key 必须绑定 userId**（图谱是全局资产，但写入必须能追溯到具体用户）。导入前跑门禁：schemaVersion 必须等于当前登记表版本；节点 key 章内唯一；边类型已登记、evidence 非空、无自环、无重复、prerequisite 无环且 facet 不作先修端点；每个 section 至少命中一条边。**任一门禁失败返回 400 且一条都不写。** 幂等键 `(chapter,node_key)` 与 `(chapter,from,to,type)`：重导同一份数据返回 skipped=全部。预演传 `?dryRun=true`，只返回 wouldCreate / coverage / warnings，库内零变更。",
+        "parameters": [
+          {
+            "description": "true = 预演：走完真实校验与计算后回滚，返回\"如果真执行会怎样\"，库内零变更",
+            "in": "query",
+            "name": "dryRun",
+            "required": false,
+            "schema": {
+              "description": "true = 预演：走完真实校验与计算后回滚，返回\"如果真执行会怎样\"，库内零变更",
+              "enum": [
+                "true",
+                "false"
+              ],
+              "example": "true",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "properties": {
+                  "chapter": {
+                    "description": "章节标识（如 ch1），用于节点 key 前缀与读接口过滤",
+                    "type": "string"
+                  },
+                  "edges": {
+                    "items": {
+                      "properties": {
+                        "evidence": {
+                          "description": "教材原句（硬约束，不得为空）",
+                          "type": "string"
+                        },
+                        "from": {
+                          "description": "起点（节点 key 或裸名称）",
+                          "type": "string"
+                        },
+                        "note": {
+                          "description": "离线管线备注，不入库",
+                          "type": "string"
+                        },
+                        "printed_page": {
+                          "description": "印刷页",
+                          "nullable": true,
+                          "type": "integer"
+                        },
+                        "to": {
+                          "description": "终点（节点 key 或裸名称）",
+                          "type": "string"
+                        },
+                        "type": {
+                          "description": "关系类型（必须已登记）",
+                          "type": "string"
+                        }
+                      },
+                      "required": [
+                        "from",
+                        "to",
+                        "type",
+                        "evidence"
+                      ],
+                      "type": "object"
+                    },
+                    "type": "array"
+                  },
+                  "nodes": {
+                    "items": {
+                      "properties": {
+                        "kind": {
+                          "description": "节点类型：concept | facet | work | person | policy",
+                          "type": "string"
+                        },
+                        "name": {
+                          "description": "节点名称",
+                          "type": "string"
+                        },
+                        "nodeKey": {
+                          "description": "节点 key，章内唯一；`ch1:名称` 或裸名称（导入时补 `<chapter>:` 前缀）",
+                          "type": "string"
+                        },
+                        "printedPage": {
+                          "description": "首个出现的印刷页",
+                          "nullable": true,
+                          "type": "integer"
+                        }
+                      },
+                      "required": [
+                        "nodeKey",
+                        "name",
+                        "kind"
+                      ],
+                      "type": "object"
+                    },
+                    "type": "array"
+                  },
+                  "schemaVersion": {
+                    "description": "关系类型登记表版本，必须等于 1.1",
+                    "type": "string"
+                  },
+                  "sections": {
+                    "description": "考点清单：覆盖率门禁按它逐节检查，空清单直接拒绝",
+                    "items": {
+                      "properties": {
+                        "endPage": {
+                          "description": "结束页码（闭区间）",
+                          "type": "integer"
+                        },
+                        "key": {
+                          "description": "考点标识（如 考点一）",
+                          "type": "string"
+                        },
+                        "startPage": {
+                          "description": "起始页码（教材印刷页，闭区间）",
+                          "type": "integer"
+                        },
+                        "title": {
+                          "description": "考点标题",
+                          "type": "string"
+                        }
+                      },
+                      "required": [
+                        "key",
+                        "title",
+                        "startPage",
+                        "endPage"
+                      ],
+                      "type": "object"
+                    },
+                    "type": "array"
+                  }
+                },
+                "required": [
+                  "chapter",
+                  "schemaVersion",
+                  "sections",
+                  "nodes",
+                  "edges"
+                ],
+                "type": "object"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "properties": {
+                    "coverage": {
+                      "properties": {
+                        "covered": {
+                          "type": "integer"
+                        },
+                        "missing": {
+                          "items": {
+                            "properties": {
+                              "endPage": {
+                                "description": "结束页码（闭区间）",
+                                "type": "integer"
+                              },
+                              "key": {
+                                "description": "考点标识（如 考点一）",
+                                "type": "string"
+                              },
+                              "startPage": {
+                                "description": "起始页码（教材印刷页，闭区间）",
+                                "type": "integer"
+                              },
+                              "title": {
+                                "description": "考点标题",
+                                "type": "string"
+                              }
+                            },
+                            "required": [
+                              "key",
+                              "title",
+                              "startPage",
+                              "endPage"
+                            ],
+                            "type": "object"
+                          },
+                          "type": "array"
+                        },
+                        "total": {
+                          "type": "integer"
+                        }
+                      },
+                      "required": [
+                        "covered",
+                        "total",
+                        "missing"
+                      ],
+                      "type": "object"
+                    },
+                    "created": {
+                      "properties": {
+                        "edges": {
+                          "type": "integer"
+                        },
+                        "nodes": {
+                          "type": "integer"
+                        }
+                      },
+                      "required": [
+                        "nodes",
+                        "edges"
+                      ],
+                      "type": "object"
+                    },
+                    "dryRun": {
+                      "type": "boolean"
+                    },
+                    "skipped": {
+                      "properties": {
+                        "edges": {
+                          "type": "integer"
+                        },
+                        "nodes": {
+                          "type": "integer"
+                        }
+                      },
+                      "required": [
+                        "nodes",
+                        "edges"
+                      ],
+                      "type": "object"
+                    },
+                    "updated": {
+                      "properties": {
+                        "edges": {
+                          "type": "integer"
+                        },
+                        "nodes": {
+                          "type": "integer"
+                        }
+                      },
+                      "required": [
+                        "nodes",
+                        "edges"
+                      ],
+                      "type": "object"
+                    },
+                    "warnings": {
+                      "items": {
+                        "type": "string"
+                      },
+                      "type": "array"
+                    },
+                    "wouldCreateEdges": {
+                      "type": "integer"
+                    },
+                    "wouldCreateNodes": {
+                      "type": "integer"
+                    },
+                    "wouldUpdateEdges": {
+                      "type": "integer"
+                    },
+                    "wouldUpdateNodes": {
+                      "type": "integer"
+                    }
+                  },
+                  "required": [
+                    "coverage",
+                    "warnings"
+                  ],
+                  "type": "object"
+                }
+              }
+            },
+            "description": "导入结果（预演时只含 wouldCreate*，真导时含 created/updated/skipped）"
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "properties": {
+                    "codes": {
+                      "items": {
+                        "type": "string"
+                      },
+                      "type": "array"
+                    },
+                    "coverage": {
+                      "properties": {
+                        "covered": {
+                          "type": "integer"
+                        },
+                        "missing": {
+                          "items": {
+                            "properties": {
+                              "endPage": {
+                                "description": "结束页码（闭区间）",
+                                "type": "integer"
+                              },
+                              "key": {
+                                "description": "考点标识（如 考点一）",
+                                "type": "string"
+                              },
+                              "startPage": {
+                                "description": "起始页码（教材印刷页，闭区间）",
+                                "type": "integer"
+                              },
+                              "title": {
+                                "description": "考点标题",
+                                "type": "string"
+                              }
+                            },
+                            "required": [
+                              "key",
+                              "title",
+                              "startPage",
+                              "endPage"
+                            ],
+                            "type": "object"
+                          },
+                          "type": "array"
+                        },
+                        "total": {
+                          "type": "integer"
+                        }
+                      },
+                      "required": [
+                        "covered",
+                        "total",
+                        "missing"
+                      ],
+                      "type": "object"
+                    },
+                    "error": {
+                      "type": "string"
+                    },
+                    "issues": {
+                      "items": {
+                        "type": "string"
+                      },
+                      "type": "array"
+                    },
+                    "warnings": {
+                      "items": {
+                        "type": "string"
+                      },
+                      "type": "array"
+                    }
+                  },
+                  "required": [
+                    "error",
+                    "issues",
+                    "codes"
+                  ],
+                  "type": "object"
+                }
+              }
+            },
+            "description": "门禁失败（issues 逐条说明；coverage.missing 列出未覆盖考点）"
+          },
+          "401": {
+            "description": "未授权 - 缺少 / 无效 / 已停用的 API Key"
+          },
+          "403": {
+            "description": "已禁止 - 需要 admin 作用域，且 Key 必须绑定用户"
+          },
+          "429": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "properties": {
+                    "error": {
+                      "description": "可读错误信息",
+                      "type": "string"
+                    },
+                    "retryAfter": {
+                      "description": "建议等待的秒数，与 Retry-After 头一致",
+                      "type": "integer"
+                    }
+                  },
+                  "required": [
+                    "error",
+                    "retryAfter"
+                  ],
+                  "type": "object"
+                }
+              }
+            },
+            "description": "请求过于频繁 - 超过该 API Key 的限额；按 Retry-After 头或 body.retryAfter 退避后重试",
+            "headers": {
+              "Retry-After": {
+                "description": "建议等待的秒数",
+                "required": true,
+                "schema": {
+                  "description": "建议等待的秒数",
+                  "type": "string"
+                }
+              },
+              "X-RateLimit-Limit": {
+                "description": "该桶的额度",
+                "required": true,
+                "schema": {
+                  "description": "该桶的额度",
+                  "type": "string"
+                }
+              },
+              "X-RateLimit-Remaining": {
+                "description": "剩余额度（超限时为 0）",
+                "required": true,
+                "schema": {
+                  "description": "剩余额度（超限时为 0）",
+                  "type": "string"
+                }
+              },
+              "X-RateLimit-Reset": {
+                "description": "窗口重置时间（Unix 秒）",
+                "required": true,
+                "schema": {
+                  "description": "窗口重置时间（Unix 秒）",
+                  "type": "string"
+                }
+              }
+            }
+          }
+        },
+        "summary": "导入一章知识图谱（门禁 + 幂等，需绑定用户的 admin Key）"
       }
     },
     "/api/external/knowledge/cards": {
@@ -5959,7 +6878,10 @@
                                   "type": "string"
                                 }
                               },
-                              "required": ["term", "definition"],
+                              "required": [
+                                "term",
+                                "definition"
+                              ],
                               "type": "object"
                             },
                             "type": "array"
@@ -6005,11 +6927,18 @@
                           "type": "integer"
                         }
                       },
-                      "required": ["limit", "offset", "total"],
+                      "required": [
+                        "limit",
+                        "offset",
+                        "total"
+                      ],
                       "type": "object"
                     }
                   },
-                  "required": ["data", "meta"],
+                  "required": [
+                    "data",
+                    "meta"
+                  ],
                   "type": "object"
                 }
               }
@@ -6036,7 +6965,10 @@
                       "type": "integer"
                     }
                   },
-                  "required": ["error", "retryAfter"],
+                  "required": [
+                    "error",
+                    "retryAfter"
+                  ],
                   "type": "object"
                 }
               }
@@ -6170,11 +7102,18 @@
                           "type": "integer"
                         }
                       },
-                      "required": ["limit", "offset", "total"],
+                      "required": [
+                        "limit",
+                        "offset",
+                        "total"
+                      ],
                       "type": "object"
                     }
                   },
-                  "required": ["data", "meta"],
+                  "required": [
+                    "data",
+                    "meta"
+                  ],
                   "type": "object"
                 }
               }
@@ -6201,7 +7140,10 @@
                       "type": "integer"
                     }
                   },
-                  "required": ["error", "retryAfter"],
+                  "required": [
+                    "error",
+                    "retryAfter"
+                  ],
                   "type": "object"
                 }
               }
@@ -6296,7 +7238,11 @@
                             "type": "string"
                           }
                         },
-                        "required": ["id", "title", "updatedAt"],
+                        "required": [
+                          "id",
+                          "title",
+                          "updatedAt"
+                        ],
                         "type": "object"
                       },
                       "type": "array"
@@ -6316,11 +7262,18 @@
                           "type": "integer"
                         }
                       },
-                      "required": ["limit", "offset", "total"],
+                      "required": [
+                        "limit",
+                        "offset",
+                        "total"
+                      ],
                       "type": "object"
                     }
                   },
-                  "required": ["data", "meta"],
+                  "required": [
+                    "data",
+                    "meta"
+                  ],
                   "type": "object"
                 }
               }
@@ -6347,7 +7300,10 @@
                       "type": "integer"
                     }
                   },
-                  "required": ["error", "retryAfter"],
+                  "required": [
+                    "error",
+                    "retryAfter"
+                  ],
                   "type": "object"
                 }
               }
@@ -6474,7 +7430,10 @@
                       "type": "integer"
                     }
                   },
-                  "required": ["error", "retryAfter"],
+                  "required": [
+                    "error",
+                    "retryAfter"
+                  ],
                   "type": "object"
                 }
               }
@@ -6587,7 +7546,12 @@
                             "type": "string"
                           }
                         },
-                        "required": ["id", "title", "preview", "updatedAt"],
+                        "required": [
+                          "id",
+                          "title",
+                          "preview",
+                          "updatedAt"
+                        ],
                         "type": "object"
                       },
                       "type": "array"
@@ -6607,11 +7571,18 @@
                           "type": "integer"
                         }
                       },
-                      "required": ["limit", "offset", "total"],
+                      "required": [
+                        "limit",
+                        "offset",
+                        "total"
+                      ],
                       "type": "object"
                     }
                   },
-                  "required": ["data", "meta"],
+                  "required": [
+                    "data",
+                    "meta"
+                  ],
                   "type": "object"
                 }
               }
@@ -6641,7 +7612,10 @@
                       "type": "integer"
                     }
                   },
-                  "required": ["error", "retryAfter"],
+                  "required": [
+                    "error",
+                    "retryAfter"
+                  ],
                   "type": "object"
                 }
               }
@@ -6768,7 +7742,10 @@
                       "type": "integer"
                     }
                   },
-                  "required": ["error", "retryAfter"],
+                  "required": [
+                    "error",
+                    "retryAfter"
+                  ],
                   "type": "object"
                 }
               }
@@ -6826,7 +7803,10 @@
             "required": false,
             "schema": {
               "description": "true = 预演：走完真实校验与计算后回滚，返回\"如果真执行会怎样\"，库内零变更",
-              "enum": ["true", "false"],
+              "enum": [
+                "true",
+                "false"
+              ],
               "example": "true",
               "type": "string"
             }
@@ -6876,7 +7856,10 @@
                       "type": "integer"
                     }
                   },
-                  "required": ["error", "retryAfter"],
+                  "required": [
+                    "error",
+                    "retryAfter"
+                  ],
                   "type": "object"
                 }
               }
@@ -7028,11 +8011,18 @@
                           "type": "integer"
                         }
                       },
-                      "required": ["limit", "offset", "total"],
+                      "required": [
+                        "limit",
+                        "offset",
+                        "total"
+                      ],
                       "type": "object"
                     }
                   },
-                  "required": ["data", "meta"],
+                  "required": [
+                    "data",
+                    "meta"
+                  ],
                   "type": "object"
                 }
               }
@@ -7059,7 +8049,10 @@
                       "type": "integer"
                     }
                   },
-                  "required": ["error", "retryAfter"],
+                  "required": [
+                    "error",
+                    "retryAfter"
+                  ],
                   "type": "object"
                 }
               }
@@ -7253,7 +8246,11 @@
                       "type": "object"
                     }
                   },
-                  "required": ["session", "questions", "summary"],
+                  "required": [
+                    "session",
+                    "questions",
+                    "summary"
+                  ],
                   "type": "object"
                 }
               }
@@ -7283,7 +8280,10 @@
                       "type": "integer"
                     }
                   },
-                  "required": ["error", "retryAfter"],
+                  "required": [
+                    "error",
+                    "retryAfter"
+                  ],
                   "type": "object"
                 }
               }
@@ -7427,11 +8427,19 @@
                           "type": "number"
                         }
                       },
-                      "required": ["page", "limit", "total", "totalPages"],
+                      "required": [
+                        "page",
+                        "limit",
+                        "total",
+                        "totalPages"
+                      ],
                       "type": "object"
                     }
                   },
-                  "required": ["data", "pagination"],
+                  "required": [
+                    "data",
+                    "pagination"
+                  ],
                   "type": "object"
                 }
               }
@@ -7458,7 +8466,10 @@
                       "type": "integer"
                     }
                   },
-                  "required": ["error", "retryAfter"],
+                  "required": [
+                    "error",
+                    "retryAfter"
+                  ],
                   "type": "object"
                 }
               }
@@ -7511,7 +8522,10 @@
             "required": false,
             "schema": {
               "description": "true = 预演：走完真实校验与计算后回滚，返回\"如果真执行会怎样\"，库内零变更",
-              "enum": ["true", "false"],
+              "enum": [
+                "true",
+                "false"
+              ],
               "example": "true",
               "type": "string"
             }
@@ -7561,7 +8575,10 @@
                       "type": "integer"
                     }
                   },
-                  "required": ["error", "retryAfter"],
+                  "required": [
+                    "error",
+                    "retryAfter"
+                  ],
                   "type": "object"
                 }
               }
@@ -7620,7 +8637,10 @@
             "required": false,
             "schema": {
               "description": "true = 预演：走完真实校验与计算后回滚，返回\"如果真执行会怎样\"，库内零变更",
-              "enum": ["true", "false"],
+              "enum": [
+                "true",
+                "false"
+              ],
               "example": "true",
               "type": "string"
             }
@@ -7670,7 +8690,10 @@
                       "type": "integer"
                     }
                   },
-                  "required": ["error", "retryAfter"],
+                  "required": [
+                    "error",
+                    "retryAfter"
+                  ],
                   "type": "object"
                 }
               }
@@ -7716,6 +8739,159 @@
           }
         },
         "summary": "批量建题（上游 externalId 幂等，需 admin 作用域）"
+      }
+    },
+    "/api/external/questions/nodes": {
+      "post": {
+        "description": "写接口，**需 admin 作用域且 API Key 必须绑定 userId**。产品**不做**匹配算法：映射由离线脚本算好后回传。单批 ≤2000 条，整批原子；幂等键 `(question_id, node_key)`，命中即 skipped。题目不存在 / 已报错 / 属于他人的 Agent 题集 → 404；节点不存在 → 400。",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "properties": {
+                  "items": {
+                    "items": {
+                      "properties": {
+                        "chapter": {
+                          "description": "章节标识（如 ch1）",
+                          "type": "string"
+                        },
+                        "method": {
+                          "description": "映射方法：match(score=n) | alias:xxx | manual",
+                          "type": "string"
+                        },
+                        "nodeKey": {
+                          "description": "节点 key；`ch1:名称` 或裸名称（服务端补 `<chapter>:` 前缀）",
+                          "type": "string"
+                        },
+                        "questionId": {
+                          "description": "题目数字主键",
+                          "exclusiveMinimum": true,
+                          "minimum": 0,
+                          "type": "integer"
+                        },
+                        "score": {
+                          "description": "匹配置信（题干 3 / 选项 2 / 解析 1）",
+                          "maximum": 3,
+                          "minimum": 0,
+                          "type": "integer"
+                        }
+                      },
+                      "required": [
+                        "questionId",
+                        "chapter",
+                        "nodeKey"
+                      ],
+                      "type": "object"
+                    },
+                    "maxItems": 2000,
+                    "minItems": 1,
+                    "type": "array"
+                  }
+                },
+                "required": [
+                  "items"
+                ],
+                "type": "object"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "properties": {
+                    "created": {
+                      "type": "integer"
+                    },
+                    "skipped": {
+                      "type": "integer"
+                    }
+                  },
+                  "required": [
+                    "created",
+                    "skipped"
+                  ],
+                  "type": "object"
+                }
+              }
+            },
+            "description": "写入结果"
+          },
+          "400": {
+            "description": "节点不存在 / 请求结构不合法（整批未写入）"
+          },
+          "401": {
+            "description": "未授权 - 缺少 / 无效 / 已停用的 API Key"
+          },
+          "403": {
+            "description": "已禁止 - 需要 admin 作用域，且 Key 必须绑定用户"
+          },
+          "404": {
+            "description": "部分题目不存在或不属于当前用户（整批未写入）"
+          },
+          "429": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "properties": {
+                    "error": {
+                      "description": "可读错误信息",
+                      "type": "string"
+                    },
+                    "retryAfter": {
+                      "description": "建议等待的秒数，与 Retry-After 头一致",
+                      "type": "integer"
+                    }
+                  },
+                  "required": [
+                    "error",
+                    "retryAfter"
+                  ],
+                  "type": "object"
+                }
+              }
+            },
+            "description": "请求过于频繁 - 超过该 API Key 的限额；按 Retry-After 头或 body.retryAfter 退避后重试",
+            "headers": {
+              "Retry-After": {
+                "description": "建议等待的秒数",
+                "required": true,
+                "schema": {
+                  "description": "建议等待的秒数",
+                  "type": "string"
+                }
+              },
+              "X-RateLimit-Limit": {
+                "description": "该桶的额度",
+                "required": true,
+                "schema": {
+                  "description": "该桶的额度",
+                  "type": "string"
+                }
+              },
+              "X-RateLimit-Remaining": {
+                "description": "剩余额度（超限时为 0）",
+                "required": true,
+                "schema": {
+                  "description": "剩余额度（超限时为 0）",
+                  "type": "string"
+                }
+              },
+              "X-RateLimit-Reset": {
+                "description": "窗口重置时间（Unix 秒）",
+                "required": true,
+                "schema": {
+                  "description": "窗口重置时间（Unix 秒）",
+                  "type": "string"
+                }
+              }
+            }
+          }
+        },
+        "summary": "批量写题→知识图谱节点（幂等，需绑定用户的 admin Key）"
       }
     },
     "/api/external/questions/{id}": {
@@ -7770,7 +8946,13 @@
                       "type": "string"
                     }
                   },
-                  "required": ["id", "content", "options", "answer", "tags"],
+                  "required": [
+                    "id",
+                    "content",
+                    "options",
+                    "answer",
+                    "tags"
+                  ],
                   "type": "object"
                 }
               }
@@ -7800,7 +8982,10 @@
                       "type": "integer"
                     }
                   },
-                  "required": ["error", "retryAfter"],
+                  "required": [
+                    "error",
+                    "retryAfter"
+                  ],
                   "type": "object"
                 }
               }
@@ -7863,7 +9048,10 @@
             "required": false,
             "schema": {
               "description": "true = 预演：走完真实校验与计算后回滚，返回\"如果真执行会怎样\"，库内零变更",
-              "enum": ["true", "false"],
+              "enum": [
+                "true",
+                "false"
+              ],
               "example": "true",
               "type": "string"
             }
@@ -7904,7 +9092,11 @@
                       "type": "integer"
                     }
                   },
-                  "required": ["id", "externalId", "changed"],
+                  "required": [
+                    "id",
+                    "externalId",
+                    "changed"
+                  ],
                   "type": "object"
                 }
               }
@@ -7940,7 +9132,9 @@
                       "type": "string"
                     }
                   },
-                  "required": ["error"],
+                  "required": [
+                    "error"
+                  ],
                   "type": "object"
                 }
               }
@@ -7961,7 +9155,10 @@
                       "type": "integer"
                     }
                   },
-                  "required": ["error", "retryAfter"],
+                  "required": [
+                    "error",
+                    "retryAfter"
+                  ],
                   "type": "object"
                 }
               }
@@ -8020,7 +9217,10 @@
             "required": false,
             "schema": {
               "description": "true = 预演：走完真实校验与计算后回滚，返回\"如果真执行会怎样\"，库内零变更",
-              "enum": ["true", "false"],
+              "enum": [
+                "true",
+                "false"
+              ],
               "example": "true",
               "type": "string"
             }
@@ -8073,7 +9273,10 @@
                       "type": "integer"
                     }
                   },
-                  "required": ["error", "retryAfter"],
+                  "required": [
+                    "error",
+                    "retryAfter"
+                  ],
                   "type": "object"
                 }
               }
@@ -8153,7 +9356,9 @@
                             "type": "array"
                           }
                         },
-                        "required": ["answers"],
+                        "required": [
+                          "answers"
+                        ],
                         "type": "object"
                       },
                       "nullable": true,
@@ -8190,7 +9395,10 @@
                             "type": "string"
                           }
                         },
-                        "required": ["text", "keywords"],
+                        "required": [
+                          "text",
+                          "keywords"
+                        ],
                         "type": "object"
                       },
                       "nullable": true,
@@ -8198,12 +9406,18 @@
                     },
                     "kind": {
                       "description": "卡片类型：list = 列举卡，cloze = 填空卡",
-                      "enum": ["list", "cloze"],
+                      "enum": [
+                        "list",
+                        "cloze"
+                      ],
                       "type": "string"
                     },
                     "mode": {
                       "description": "first = 首次作答整卡；retest = 只重测待重测条目",
-                      "enum": ["first", "retest"],
+                      "enum": [
+                        "first",
+                        "retest"
+                      ],
                       "type": "string"
                     },
                     "pendingItems": {
@@ -8327,7 +9541,10 @@
                       "type": "integer"
                     }
                   },
-                  "required": ["error", "retryAfter"],
+                  "required": [
+                    "error",
+                    "retryAfter"
+                  ],
                   "type": "object"
                 }
               }
@@ -8401,7 +9618,10 @@
                       "type": "boolean"
                     }
                   },
-                  "required": ["cardId", "restored"],
+                  "required": [
+                    "cardId",
+                    "restored"
+                  ],
                   "type": "object"
                 }
               }
@@ -8431,7 +9651,10 @@
                       "type": "integer"
                     }
                   },
-                  "required": ["error", "retryAfter"],
+                  "required": [
+                    "error",
+                    "retryAfter"
+                  ],
                   "type": "object"
                 }
               }
@@ -8500,14 +9723,19 @@
                   "properties": {
                     "archived": {
                       "description": "恒为 true",
-                      "enum": [true],
+                      "enum": [
+                        true
+                      ],
                       "type": "boolean"
                     },
                     "cardId": {
                       "type": "integer"
                     }
                   },
-                  "required": ["cardId", "archived"],
+                  "required": [
+                    "cardId",
+                    "archived"
+                  ],
                   "type": "object"
                 }
               }
@@ -8540,7 +9768,10 @@
                       "type": "integer"
                     }
                   },
-                  "required": ["error", "retryAfter"],
+                  "required": [
+                    "error",
+                    "retryAfter"
+                  ],
                   "type": "object"
                 }
               }
@@ -8676,11 +9907,18 @@
                           "type": "integer"
                         }
                       },
-                      "required": ["limit", "offset", "total"],
+                      "required": [
+                        "limit",
+                        "offset",
+                        "total"
+                      ],
                       "type": "object"
                     }
                   },
-                  "required": ["data", "meta"],
+                  "required": [
+                    "data",
+                    "meta"
+                  ],
                   "type": "object"
                 }
               }
@@ -8707,7 +9945,10 @@
                       "type": "integer"
                     }
                   },
-                  "required": ["error", "retryAfter"],
+                  "required": [
+                    "error",
+                    "retryAfter"
+                  ],
                   "type": "object"
                 }
               }
@@ -8761,7 +10002,10 @@
             "required": false,
             "schema": {
               "description": "true = 预演：走完真实校验与计算后回滚，返回\"如果真执行会怎样\"，库内零变更",
-              "enum": ["true", "false"],
+              "enum": [
+                "true",
+                "false"
+              ],
               "example": "true",
               "type": "string"
             }
@@ -8811,7 +10055,10 @@
                       "type": "integer"
                     }
                   },
-                  "required": ["error", "retryAfter"],
+                  "required": [
+                    "error",
+                    "retryAfter"
+                  ],
                   "type": "object"
                 }
               }
@@ -8917,7 +10164,9 @@
                                   "type": "array"
                                 }
                               },
-                              "required": ["answers"],
+                              "required": [
+                                "answers"
+                              ],
                               "type": "object"
                             },
                             "nullable": true,
@@ -8952,7 +10201,10 @@
                                   "type": "string"
                                 }
                               },
-                              "required": ["text", "keywords"],
+                              "required": [
+                                "text",
+                                "keywords"
+                              ],
                               "type": "object"
                             },
                             "nullable": true,
@@ -8960,7 +10212,10 @@
                           },
                           "kind": {
                             "description": "卡片类型：list = 列举卡，cloze = 填空卡",
-                            "enum": ["list", "cloze"],
+                            "enum": [
+                              "list",
+                              "cloze"
+                            ],
                             "type": "string"
                           },
                           "prompt": {
@@ -9064,7 +10319,10 @@
                                 "type": "string"
                               }
                             },
-                            "required": ["groupId", "title"],
+                            "required": [
+                              "groupId",
+                              "title"
+                            ],
                             "type": "object"
                           },
                           "type": "array"
@@ -9073,7 +10331,11 @@
                           "type": "string"
                         }
                       },
-                      "required": ["deckKey", "title", "groups"],
+                      "required": [
+                        "deckKey",
+                        "title",
+                        "groups"
+                      ],
                       "type": "object"
                     },
                     "meta": {
@@ -9091,11 +10353,19 @@
                           "type": "integer"
                         }
                       },
-                      "required": ["limit", "offset", "total"],
+                      "required": [
+                        "limit",
+                        "offset",
+                        "total"
+                      ],
                       "type": "object"
                     }
                   },
-                  "required": ["deck", "data", "meta"],
+                  "required": [
+                    "deck",
+                    "data",
+                    "meta"
+                  ],
                   "type": "object"
                 }
               }
@@ -9125,7 +10395,10 @@
                       "type": "integer"
                     }
                   },
-                  "required": ["error", "retryAfter"],
+                  "required": [
+                    "error",
+                    "retryAfter"
+                  ],
                   "type": "object"
                 }
               }
@@ -9201,7 +10474,10 @@
             "required": false,
             "schema": {
               "description": "true = 预演：走完真实校验与计算后回滚，返回\"如果真执行会怎样\"，库内零变更",
-              "enum": ["true", "false"],
+              "enum": [
+                "true",
+                "false"
+              ],
               "example": "true",
               "type": "string"
             }
@@ -9277,7 +10553,10 @@
                       "type": "integer"
                     }
                   },
-                  "required": ["error", "retryAfter"],
+                  "required": [
+                    "error",
+                    "retryAfter"
+                  ],
                   "type": "object"
                 }
               }
@@ -9396,7 +10675,10 @@
                       "type": "integer"
                     }
                   },
-                  "required": ["error", "retryAfter"],
+                  "required": [
+                    "error",
+                    "retryAfter"
+                  ],
                   "type": "object"
                 }
               }
@@ -9452,7 +10734,10 @@
             "required": false,
             "schema": {
               "description": "true = 预演：走完真实校验与计算后回滚，返回\"如果真执行会怎样\"，库内零变更",
-              "enum": ["true", "false"],
+              "enum": [
+                "true",
+                "false"
+              ],
               "example": "true",
               "type": "string"
             }
@@ -9505,7 +10790,10 @@
                       "type": "integer"
                     }
                   },
-                  "required": ["error", "retryAfter"],
+                  "required": [
+                    "error",
+                    "retryAfter"
+                  ],
                   "type": "object"
                 }
               }
@@ -9603,7 +10891,10 @@
                       "type": "integer"
                     }
                   },
-                  "required": ["error", "retryAfter"],
+                  "required": [
+                    "error",
+                    "retryAfter"
+                  ],
                   "type": "object"
                 }
               }
@@ -9677,7 +10968,11 @@
                             "type": "integer"
                           }
                         },
-                        "required": ["date", "count", "minutes"],
+                        "required": [
+                          "date",
+                          "count",
+                          "minutes"
+                        ],
                         "type": "object"
                       },
                       "type": "array"
@@ -9698,7 +10993,10 @@
                           "type": "integer"
                         }
                       },
-                      "required": ["count", "minutes"],
+                      "required": [
+                        "count",
+                        "minutes"
+                      ],
                       "type": "object"
                     },
                     "retention": {
@@ -9713,7 +11011,10 @@
                           "type": "number"
                         }
                       },
-                      "required": ["trueRetention", "totalReviews"],
+                      "required": [
+                        "trueRetention",
+                        "totalReviews"
+                      ],
                       "type": "object"
                     },
                     "stateDistribution": {
@@ -9731,7 +11032,12 @@
                           "type": "integer"
                         }
                       },
-                      "required": ["new", "learning", "review", "relearning"],
+                      "required": [
+                        "new",
+                        "learning",
+                        "review",
+                        "relearning"
+                      ],
                       "type": "object"
                     },
                     "totalCards": {
@@ -9773,7 +11079,10 @@
                       "type": "integer"
                     }
                   },
-                  "required": ["error", "retryAfter"],
+                  "required": [
+                    "error",
+                    "retryAfter"
+                  ],
                   "type": "object"
                 }
               }
@@ -9882,7 +11191,10 @@
                             "type": "string"
                           }
                         },
-                        "required": ["tag", "score"],
+                        "required": [
+                          "tag",
+                          "score"
+                        ],
                         "type": "object"
                       },
                       "type": "array"
@@ -9927,7 +11239,10 @@
                       "type": "integer"
                     }
                   },
-                  "required": ["error", "retryAfter"],
+                  "required": [
+                    "error",
+                    "retryAfter"
+                  ],
                   "type": "object"
                 }
               }
@@ -10028,7 +11343,10 @@
                           },
                           "origin": {
                             "description": "题目来源：import=题库题，agent=AI 题集推来的题（错题本照收，标出来便于辨认）",
-                            "enum": ["import", "agent"],
+                            "enum": [
+                              "import",
+                              "agent"
+                            ],
                             "type": "string"
                           },
                           "questionId": {
@@ -10052,7 +11370,11 @@
                                 "type": "number"
                               }
                             },
-                            "required": ["stability", "difficulty", "dueDate"],
+                            "required": [
+                              "stability",
+                              "difficulty",
+                              "dueDate"
+                            ],
                             "type": "object"
                           },
                           "tags": {
@@ -10095,11 +11417,18 @@
                           "type": "integer"
                         }
                       },
-                      "required": ["limit", "offset", "total"],
+                      "required": [
+                        "limit",
+                        "offset",
+                        "total"
+                      ],
                       "type": "object"
                     }
                   },
-                  "required": ["data", "meta"],
+                  "required": [
+                    "data",
+                    "meta"
+                  ],
                   "type": "object"
                 }
               }
@@ -10126,7 +11455,10 @@
                       "type": "integer"
                     }
                   },
-                  "required": ["error", "retryAfter"],
+                  "required": [
+                    "error",
+                    "retryAfter"
+                  ],
                   "type": "object"
                 }
               }
@@ -10192,7 +11524,10 @@
                             "type": "string"
                           }
                         },
-                        "required": ["dimension", "count"],
+                        "required": [
+                          "dimension",
+                          "count"
+                        ],
                         "type": "object"
                       },
                       "type": "array"
@@ -10209,7 +11544,10 @@
                             "type": "string"
                           }
                         },
-                        "required": ["tag", "count"],
+                        "required": [
+                          "tag",
+                          "count"
+                        ],
                         "type": "object"
                       },
                       "type": "array"
@@ -10219,7 +11557,11 @@
                       "type": "integer"
                     }
                   },
-                  "required": ["total", "byTag", "byDimension"],
+                  "required": [
+                    "total",
+                    "byTag",
+                    "byDimension"
+                  ],
                   "type": "object"
                 }
               }
@@ -10246,7 +11588,10 @@
                       "type": "integer"
                     }
                   },
-                  "required": ["error", "retryAfter"],
+                  "required": [
+                    "error",
+                    "retryAfter"
+                  ],
                   "type": "object"
                 }
               }
@@ -10315,7 +11660,10 @@
                     "type": "number"
                   }
                 },
-                "required": ["question_id", "feedback_type"],
+                "required": [
+                  "question_id",
+                  "feedback_type"
+                ],
                 "type": "object"
               }
             }
@@ -10334,7 +11682,10 @@
                       "type": "boolean"
                     }
                   },
-                  "required": ["success", "id"],
+                  "required": [
+                    "success",
+                    "id"
+                  ],
                   "type": "object"
                 }
               }
@@ -10360,11 +11711,15 @@
                 "schema": {
                   "properties": {
                     "ok": {
-                      "enum": [true],
+                      "enum": [
+                        true
+                      ],
                       "type": "boolean"
                     }
                   },
-                  "required": ["ok"],
+                  "required": [
+                    "ok"
+                  ],
                   "type": "object"
                 }
               }
@@ -10403,7 +11758,10 @@
                     "type": "string"
                   }
                 },
-                "required": ["phone", "password"],
+                "required": [
+                  "phone",
+                  "password"
+                ],
                 "type": "object"
               }
             }
@@ -10416,11 +11774,15 @@
                 "schema": {
                   "properties": {
                     "ok": {
-                      "enum": [true],
+                      "enum": [
+                        true
+                      ],
                       "type": "boolean"
                     }
                   },
-                  "required": ["ok"],
+                  "required": [
+                    "ok"
+                  ],
                   "type": "object"
                 }
               }
@@ -10461,7 +11823,11 @@
                       "type": "string"
                     }
                   },
-                  "required": ["lgtoken", "qrContent", "qrDataUrl"],
+                  "required": [
+                    "lgtoken",
+                    "qrContent",
+                    "qrDataUrl"
+                  ],
                   "type": "object"
                 }
               }
@@ -10507,11 +11873,19 @@
                       "type": "boolean"
                     },
                     "status": {
-                      "enum": ["pending", "scanned", "confirmed", "expired"],
+                      "enum": [
+                        "pending",
+                        "scanned",
+                        "confirmed",
+                        "expired"
+                      ],
                       "type": "string"
                     }
                   },
-                  "required": ["status", "linked"],
+                  "required": [
+                    "status",
+                    "linked"
+                  ],
                   "type": "object"
                 }
               }
@@ -10559,7 +11933,10 @@
                                 "type": "string"
                               }
                             },
-                            "required": ["exerciseId", "reason"],
+                            "required": [
+                              "exerciseId",
+                              "reason"
+                            ],
                             "type": "object"
                           },
                           "type": "array"
@@ -10594,12 +11971,19 @@
                       "type": "string"
                     },
                     "status": {
-                      "enum": ["active", "expired", "revoked", null],
+                      "enum": [
+                        "active",
+                        "expired",
+                        "revoked",
+                        null
+                      ],
                       "nullable": true,
                       "type": "string"
                     },
                     "syncable": {
-                      "enum": [true],
+                      "enum": [
+                        true
+                      ],
                       "type": "boolean"
                     },
                     "unsupported": {
@@ -10674,7 +12058,10 @@
                             "type": "string"
                           }
                         },
-                        "required": ["exerciseId", "reason"],
+                        "required": [
+                          "exerciseId",
+                          "reason"
+                        ],
                         "type": "object"
                       },
                       "type": "array"
@@ -10689,7 +12076,12 @@
                       "type": "number"
                     }
                   },
-                  "required": ["imported", "skipped", "newQuestions", "failed"],
+                  "required": [
+                    "imported",
+                    "skipped",
+                    "newQuestions",
+                    "failed"
+                  ],
                   "type": "object"
                 }
               }
@@ -10737,7 +12129,10 @@
                     "type": "string"
                   }
                 },
-                "required": ["prompt", "option"],
+                "required": [
+                  "prompt",
+                  "option"
+                ],
                 "type": "object"
               }
             }
@@ -10975,7 +12370,10 @@
                       "type": "object"
                     }
                   },
-                  "required": ["session", "logs"],
+                  "required": [
+                    "session",
+                    "logs"
+                  ],
                   "type": "object"
                 }
               }
@@ -11005,7 +12403,10 @@
                     "type": "string"
                   }
                 },
-                "required": ["exerciseJson", "solutionsJson"],
+                "required": [
+                  "exerciseJson",
+                  "solutionsJson"
+                ],
                 "type": "object"
               }
             }
@@ -11042,7 +12443,10 @@
                       "type": "boolean"
                     }
                   },
-                  "required": ["success", "message"],
+                  "required": [
+                    "success",
+                    "message"
+                  ],
                   "type": "object"
                 }
               }
@@ -11053,6 +12457,218 @@
             "description": "Server error"
           }
         }
+      }
+    },
+    "/api/kg/graph": {
+      "get": {
+        "description": "读接口，登录 JWT。返回该章全部节点与边（含 evidence 原句与印刷页），供地图页渲染；图谱内容全局共享，不含个人数据。",
+        "parameters": [
+          {
+            "description": "章节标识（如 ch1）",
+            "in": "query",
+            "name": "chapter",
+            "required": true,
+            "schema": {
+              "description": "章节标识（如 ch1）",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "properties": {
+                    "edges": {
+                      "items": {
+                        "properties": {
+                          "evidence": {
+                            "type": "string"
+                          },
+                          "from": {
+                            "type": "string"
+                          },
+                          "page": {
+                            "nullable": true,
+                            "type": "integer"
+                          },
+                          "to": {
+                            "type": "string"
+                          },
+                          "type": {
+                            "type": "string"
+                          }
+                        },
+                        "required": [
+                          "from",
+                          "to",
+                          "type",
+                          "evidence",
+                          "page"
+                        ],
+                        "type": "object"
+                      },
+                      "type": "array"
+                    },
+                    "nodes": {
+                      "items": {
+                        "properties": {
+                          "kind": {
+                            "type": "string"
+                          },
+                          "name": {
+                            "type": "string"
+                          },
+                          "nodeKey": {
+                            "type": "string"
+                          },
+                          "page": {
+                            "nullable": true,
+                            "type": "integer"
+                          }
+                        },
+                        "required": [
+                          "nodeKey",
+                          "name",
+                          "kind",
+                          "page"
+                        ],
+                        "type": "object"
+                      },
+                      "type": "array"
+                    }
+                  },
+                  "required": [
+                    "nodes",
+                    "edges"
+                  ],
+                  "type": "object"
+                }
+              }
+            },
+            "description": "章节图谱"
+          },
+          "400": {
+            "description": "缺少 chapter"
+          }
+        },
+        "summary": "章节知识地图（节点 + 边，边含教材原句）"
+      }
+    },
+    "/api/kg/nodes": {
+      "get": {
+        "description": "读接口，登录 JWT。按 `node_key` 升序返回平铺节点，供筛选器 / 下拉框使用；`kind` 可选（concept|facet|work|person|policy）。",
+        "parameters": [
+          {
+            "description": "章节标识（如 ch1）",
+            "in": "query",
+            "name": "chapter",
+            "required": true,
+            "schema": {
+              "description": "章节标识（如 ch1）",
+              "type": "string"
+            }
+          },
+          {
+            "description": "节点类型过滤：concept|facet|work|person|policy",
+            "in": "query",
+            "name": "kind",
+            "required": false,
+            "schema": {
+              "description": "节点类型过滤：concept|facet|work|person|policy",
+              "type": "string"
+            }
+          },
+          {
+            "description": "返回条数，默认 20，上限 100",
+            "in": "query",
+            "name": "limit",
+            "required": false,
+            "schema": {
+              "description": "返回条数，默认 20，上限 100",
+              "type": "string"
+            }
+          },
+          {
+            "description": "偏移量，默认 0",
+            "in": "query",
+            "name": "offset",
+            "required": false,
+            "schema": {
+              "description": "偏移量，默认 0",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "properties": {
+                    "data": {
+                      "items": {
+                        "properties": {
+                          "kind": {
+                            "type": "string"
+                          },
+                          "name": {
+                            "type": "string"
+                          },
+                          "nodeKey": {
+                            "type": "string"
+                          },
+                          "page": {
+                            "nullable": true,
+                            "type": "integer"
+                          }
+                        },
+                        "required": [
+                          "nodeKey",
+                          "name",
+                          "kind",
+                          "page"
+                        ],
+                        "type": "object"
+                      },
+                      "type": "array"
+                    },
+                    "meta": {
+                      "properties": {
+                        "limit": {
+                          "type": "integer"
+                        },
+                        "offset": {
+                          "type": "integer"
+                        },
+                        "total": {
+                          "type": "integer"
+                        }
+                      },
+                      "required": [
+                        "limit",
+                        "offset",
+                        "total"
+                      ],
+                      "type": "object"
+                    }
+                  },
+                  "required": [
+                    "data",
+                    "meta"
+                  ],
+                  "type": "object"
+                }
+              }
+            },
+            "description": "节点列表"
+          },
+          "400": {
+            "description": "缺少 chapter"
+          }
+        },
+        "summary": "平铺节点列表（可筛 kind，limit/offset 分页）"
       }
     },
     "/api/knowledge/cards": {
@@ -11129,7 +12745,10 @@
                                   "type": "string"
                                 }
                               },
-                              "required": ["term", "definition"],
+                              "required": [
+                                "term",
+                                "definition"
+                              ],
                               "type": "object"
                             },
                             "type": "array"
@@ -11183,7 +12802,10 @@
                                 "type": "number"
                               }
                             },
-                            "required": ["category", "count"],
+                            "required": [
+                              "category",
+                              "count"
+                            ],
                             "type": "object"
                           },
                           "type": "array"
@@ -11192,11 +12814,18 @@
                           "type": "number"
                         }
                       },
-                      "required": ["total", "byCategory"],
+                      "required": [
+                        "total",
+                        "byCategory"
+                      ],
                       "type": "object"
                     }
                   },
-                  "required": ["cards", "categories", "stats"],
+                  "required": [
+                    "cards",
+                    "categories",
+                    "stats"
+                  ],
                   "type": "object"
                 }
               },
@@ -11235,7 +12864,10 @@
                           "type": "string"
                         }
                       },
-                      "required": ["term", "definition"],
+                      "required": [
+                        "term",
+                        "definition"
+                      ],
                       "type": "object"
                     },
                     "type": "array"
@@ -11274,7 +12906,10 @@
                       "type": "string"
                     }
                   },
-                  "required": ["id", "message"],
+                  "required": [
+                    "id",
+                    "message"
+                  ],
                   "type": "object"
                 }
               }
@@ -11308,7 +12943,9 @@
                     "type": "number"
                   }
                 },
-                "required": ["content"],
+                "required": [
+                  "content"
+                ],
                 "type": "object"
               }
             }
@@ -11347,7 +12984,10 @@
                                 "type": "string"
                               }
                             },
-                            "required": ["term", "definition"],
+                            "required": [
+                              "term",
+                              "definition"
+                            ],
                             "type": "object"
                           },
                           "type": "array"
@@ -11394,7 +13034,10 @@
                       "type": "array"
                     }
                   },
-                  "required": ["card", "message"],
+                  "required": [
+                    "card",
+                    "message"
+                  ],
                   "type": "object"
                 }
               }
@@ -11408,6 +13051,164 @@
             "description": "Server error"
           }
         }
+      }
+    },
+    "/api/mastery": {
+      "get": {
+        "description": "登录 JWT。`by` 缺省（或 `tag`）时返回按标签的掌握度，形状与既有外部接口一致；`by=node` 时按知识图谱节点聚合 practice_logs，需同时传 `chapter`。两个口径互不覆盖。",
+        "parameters": [
+          {
+            "description": "聚合口径：tag（默认，读 user_mastery）| node（聚合 practice_logs）",
+            "in": "query",
+            "name": "by",
+            "required": false,
+            "schema": {
+              "default": "tag",
+              "description": "聚合口径：tag（默认，读 user_mastery）| node（聚合 practice_logs）",
+              "enum": [
+                "tag",
+                "node"
+              ],
+              "type": "string"
+            }
+          },
+          {
+            "description": "章节标识（by=node 时必填，如 ch1）",
+            "in": "query",
+            "name": "chapter",
+            "required": false,
+            "schema": {
+              "description": "章节标识（by=node 时必填，如 ch1）",
+              "type": "string"
+            }
+          },
+          {
+            "description": "返回条数，默认 20，上限 100",
+            "in": "query",
+            "name": "limit",
+            "required": false,
+            "schema": {
+              "description": "返回条数，默认 20，上限 100",
+              "type": "string"
+            }
+          },
+          {
+            "description": "偏移量，默认 0",
+            "in": "query",
+            "name": "offset",
+            "required": false,
+            "schema": {
+              "description": "偏移量，默认 0",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "properties": {
+                    "data": {
+                      "anyOf": [
+                        {
+                          "items": {
+                            "properties": {
+                              "accuracy": {
+                                "type": "integer"
+                              },
+                              "correctCount": {
+                                "type": "integer"
+                              },
+                              "lastUpdated": {
+                                "nullable": true,
+                                "type": "string"
+                              },
+                              "score": {
+                                "type": "number"
+                              },
+                              "tag": {
+                                "type": "string"
+                              },
+                              "totalCount": {
+                                "type": "integer"
+                              }
+                            },
+                            "required": [
+                              "tag",
+                              "score",
+                              "correctCount",
+                              "totalCount",
+                              "accuracy",
+                              "lastUpdated"
+                            ],
+                            "type": "object"
+                          },
+                          "type": "array"
+                        },
+                        {
+                          "items": {
+                            "properties": {
+                              "answered": {
+                                "type": "integer"
+                              },
+                              "correctRate": {
+                                "type": "integer"
+                              },
+                              "name": {
+                                "type": "string"
+                              },
+                              "nodeKey": {
+                                "type": "string"
+                              }
+                            },
+                            "required": [
+                              "nodeKey",
+                              "name",
+                              "answered",
+                              "correctRate"
+                            ],
+                            "type": "object"
+                          },
+                          "type": "array"
+                        }
+                      ]
+                    },
+                    "meta": {
+                      "properties": {
+                        "limit": {
+                          "type": "integer"
+                        },
+                        "offset": {
+                          "type": "integer"
+                        },
+                        "total": {
+                          "type": "integer"
+                        }
+                      },
+                      "required": [
+                        "limit",
+                        "offset",
+                        "total"
+                      ],
+                      "type": "object"
+                    }
+                  },
+                  "required": [
+                    "data",
+                    "meta"
+                  ],
+                  "type": "object"
+                }
+              }
+            },
+            "description": "掌握度列表（by=tag 或 by=node）"
+          },
+          "400": {
+            "description": "by=node 时缺少 chapter"
+          }
+        },
+        "summary": "掌握度列表（by=tag 或缺省 / by=node）"
       }
     },
     "/api/mastery/stats": {
@@ -11435,7 +13236,10 @@
                       "type": "number"
                     }
                   },
-                  "required": ["avgScore", "count"],
+                  "required": [
+                    "avgScore",
+                    "count"
+                  ],
                   "type": "object"
                 }
               }
@@ -11476,7 +13280,13 @@
                         "type": "number"
                       }
                     },
-                    "required": ["name", "path", "score", "level", "children"],
+                    "required": [
+                      "name",
+                      "path",
+                      "score",
+                      "level",
+                      "children"
+                    ],
                     "type": "object"
                   },
                   "type": "array"
@@ -11550,7 +13360,9 @@
                     "type": "string"
                   }
                 },
-                "required": ["taskId"],
+                "required": [
+                  "taskId"
+                ],
                 "type": "object"
               }
             }
@@ -11566,7 +13378,9 @@
                       "type": "boolean"
                     }
                   },
-                  "required": ["ok"],
+                  "required": [
+                    "ok"
+                  ],
                   "type": "object"
                 }
               }
@@ -11618,7 +13432,11 @@
                           "type": "array"
                         },
                         "type": {
-                          "enum": ["single", "multi", "truefalse"],
+                          "enum": [
+                            "single",
+                            "multi",
+                            "truefalse"
+                          ],
                           "type": "string"
                         }
                       },
@@ -11636,7 +13454,9 @@
                     "type": "array"
                   }
                 },
-                "required": ["questions"],
+                "required": [
+                  "questions"
+                ],
                 "type": "object"
               }
             }
@@ -11674,7 +13494,10 @@
                     "type": "string"
                   }
                 },
-                "required": ["taskId", "chunkIndex"],
+                "required": [
+                  "taskId",
+                  "chunkIndex"
+                ],
                 "type": "object"
               }
             }
@@ -11751,7 +13574,9 @@
                     "type": "string"
                   }
                 },
-                "required": ["text"],
+                "required": [
+                  "text"
+                ],
                 "type": "object"
               }
             }
@@ -11770,7 +13595,10 @@
                       "type": "number"
                     }
                   },
-                  "required": ["taskId", "totalChunks"],
+                  "required": [
+                    "taskId",
+                    "totalChunks"
+                  ],
                   "type": "object"
                 }
               }
@@ -11806,7 +13634,10 @@
                     "type": "string"
                   }
                 },
-                "required": ["questionContent", "correctAnswer"],
+                "required": [
+                  "questionContent",
+                  "correctAnswer"
+                ],
                 "type": "object"
               }
             }
@@ -11825,7 +13656,10 @@
                       "type": "boolean"
                     }
                   },
-                  "required": ["analysis", "cached"],
+                  "required": [
+                    "analysis",
+                    "cached"
+                  ],
                   "type": "object"
                 }
               }
@@ -11869,7 +13703,10 @@
                           "type": "string"
                         }
                       },
-                      "required": ["questionId", "isCorrect"],
+                      "required": [
+                        "questionId",
+                        "isCorrect"
+                      ],
                       "type": "object"
                     },
                     "maxItems": 500,
@@ -11886,7 +13723,10 @@
                     "type": "string"
                   }
                 },
-                "required": ["sessionKey", "answers"],
+                "required": [
+                  "sessionKey",
+                  "answers"
+                ],
                 "type": "object"
               }
             }
@@ -11943,7 +13783,12 @@
                     "type": "number"
                   },
                   "mode": {
-                    "enum": ["random", "wrong", "tag", "first-principles"],
+                    "enum": [
+                      "random",
+                      "wrong",
+                      "tag",
+                      "first-principles"
+                    ],
                     "type": "string"
                   },
                   "tag": {
@@ -11951,7 +13796,9 @@
                     "type": "string"
                   }
                 },
-                "required": ["mode"],
+                "required": [
+                  "mode"
+                ],
                 "type": "object"
               }
             }
@@ -11990,7 +13837,11 @@
                             "type": "string"
                           }
                         },
-                        "required": ["id", "content", "options"],
+                        "required": [
+                          "id",
+                          "content",
+                          "options"
+                        ],
                         "type": "object"
                       },
                       "type": "array"
@@ -11999,7 +13850,10 @@
                       "type": "string"
                     }
                   },
-                  "required": ["sessionId", "questions"],
+                  "required": [
+                    "sessionId",
+                    "questions"
+                  ],
                   "type": "object"
                 }
               }
@@ -12015,7 +13869,9 @@
                       "type": "string"
                     }
                   },
-                  "required": ["error"],
+                  "required": [
+                    "error"
+                  ],
                   "type": "object"
                 }
               }
@@ -12076,7 +13932,11 @@
                             "type": "string"
                           }
                         },
-                        "required": ["id", "content", "options"],
+                        "required": [
+                          "id",
+                          "content",
+                          "options"
+                        ],
                         "type": "object"
                       },
                       "type": "array"
@@ -12085,7 +13945,11 @@
                       "type": "string"
                     }
                   },
-                  "required": ["sessionId", "questions", "completedCount"],
+                  "required": [
+                    "sessionId",
+                    "questions",
+                    "completedCount"
+                  ],
                   "type": "object"
                 }
               }
@@ -12101,7 +13965,9 @@
                       "type": "string"
                     }
                   },
-                  "required": ["error"],
+                  "required": [
+                    "error"
+                  ],
                   "type": "object"
                 }
               }
@@ -12138,7 +14004,11 @@
                     "type": "string"
                   }
                 },
-                "required": ["questionId", "userAnswer", "duration"],
+                "required": [
+                  "questionId",
+                  "userAnswer",
+                  "duration"
+                ],
                 "type": "object"
               }
             }
@@ -12157,7 +14027,10 @@
                       "type": "boolean"
                     }
                   },
-                  "required": ["isCorrect", "correctAnswer"],
+                  "required": [
+                    "isCorrect",
+                    "correctAnswer"
+                  ],
                   "type": "object"
                 }
               }
@@ -12228,7 +14101,13 @@
                       "type": "string"
                     }
                   },
-                  "required": ["id", "username", "role", "createdAt", "stats"],
+                  "required": [
+                    "id",
+                    "username",
+                    "role",
+                    "createdAt",
+                    "stats"
+                  ],
                   "type": "object"
                 }
               }
@@ -12319,7 +14198,12 @@
                             "type": "string"
                           }
                         },
-                        "required": ["id", "content", "options", "tags"],
+                        "required": [
+                          "id",
+                          "content",
+                          "options",
+                          "tags"
+                        ],
                         "type": "object"
                       },
                       "type": "array"
@@ -12328,7 +14212,10 @@
                       "type": "number"
                     }
                   },
-                  "required": ["items", "total"],
+                  "required": [
+                    "items",
+                    "total"
+                  ],
                   "type": "object"
                 }
               }
@@ -12355,7 +14242,11 @@
                     "type": "string"
                   },
                   "dimension": {
-                    "enum": ["knowledge", "understanding", "application"],
+                    "enum": [
+                      "knowledge",
+                      "understanding",
+                      "application"
+                    ],
                     "type": "string"
                   },
                   "explanation": {
@@ -12387,7 +14278,12 @@
                   },
                   "type": {
                     "default": "single",
-                    "enum": ["single", "multi", "truefalse", "fill_blank"],
+                    "enum": [
+                      "single",
+                      "multi",
+                      "truefalse",
+                      "fill_blank"
+                    ],
                     "type": "string"
                   }
                 },
@@ -12417,7 +14313,10 @@
                       "type": "integer"
                     }
                   },
-                  "required": ["id", "created"],
+                  "required": [
+                    "id",
+                    "created"
+                  ],
                   "type": "object"
                 }
               }
@@ -12436,7 +14335,10 @@
                       "type": "integer"
                     }
                   },
-                  "required": ["id", "created"],
+                  "required": [
+                    "id",
+                    "created"
+                  ],
                   "type": "object"
                 }
               }
@@ -12507,11 +14409,21 @@
                       "type": "array"
                     },
                     "type": {
-                      "enum": ["single", "multi", "truefalse", "fill_blank"],
+                      "enum": [
+                        "single",
+                        "multi",
+                        "truefalse",
+                        "fill_blank"
+                      ],
                       "type": "string"
                     }
                   },
-                  "required": ["id", "content", "options", "tags"],
+                  "required": [
+                    "id",
+                    "content",
+                    "options",
+                    "tags"
+                  ],
                   "type": "object"
                 }
               }
@@ -12551,7 +14463,11 @@
                     "type": "string"
                   },
                   "dimension": {
-                    "enum": ["knowledge", "understanding", "application"],
+                    "enum": [
+                      "knowledge",
+                      "understanding",
+                      "application"
+                    ],
                     "type": "string"
                   },
                   "explanation": {
@@ -12583,7 +14499,12 @@
                     "type": "array"
                   },
                   "type": {
-                    "enum": ["single", "multi", "truefalse", "fill_blank"],
+                    "enum": [
+                      "single",
+                      "multi",
+                      "truefalse",
+                      "fill_blank"
+                    ],
                     "type": "string"
                   }
                 },
@@ -12657,7 +14578,12 @@
                           "type": "string"
                         }
                       },
-                      "required": ["id", "content", "options", "tags"],
+                      "required": [
+                        "id",
+                        "content",
+                        "options",
+                        "tags"
+                      ],
                       "type": "object"
                     },
                     "regrade": {
@@ -12685,7 +14611,12 @@
                       "type": "object"
                     }
                   },
-                  "required": ["id", "changed", "regrade", "question"],
+                  "required": [
+                    "id",
+                    "changed",
+                    "regrade",
+                    "question"
+                  ],
                   "type": "object"
                 }
               }
@@ -12740,7 +14671,9 @@
                             "type": "array"
                           }
                         },
-                        "required": ["answers"],
+                        "required": [
+                          "answers"
+                        ],
                         "type": "object"
                       },
                       "nullable": true,
@@ -12777,7 +14710,10 @@
                             "type": "string"
                           }
                         },
-                        "required": ["text", "keywords"],
+                        "required": [
+                          "text",
+                          "keywords"
+                        ],
                         "type": "object"
                       },
                       "nullable": true,
@@ -12785,12 +14721,18 @@
                     },
                     "kind": {
                       "description": "卡片类型：list = 列举卡，cloze = 填空卡",
-                      "enum": ["list", "cloze"],
+                      "enum": [
+                        "list",
+                        "cloze"
+                      ],
                       "type": "string"
                     },
                     "mode": {
                       "description": "first = 首次作答整卡；retest = 只重测待重测条目",
-                      "enum": ["first", "retest"],
+                      "enum": [
+                        "first",
+                        "retest"
+                      ],
                       "type": "string"
                     },
                     "pendingItems": {
@@ -12930,7 +14872,10 @@
                       "type": "boolean"
                     }
                   },
-                  "required": ["cardId", "restored"],
+                  "required": [
+                    "cardId",
+                    "restored"
+                  ],
                   "type": "object"
                 }
               }
@@ -12968,14 +14913,19 @@
                   "properties": {
                     "archived": {
                       "description": "恒为 true",
-                      "enum": [true],
+                      "enum": [
+                        true
+                      ],
                       "type": "boolean"
                     },
                     "cardId": {
                       "type": "integer"
                     }
                   },
-                  "required": ["cardId", "archived"],
+                  "required": [
+                    "cardId",
+                    "archived"
+                  ],
                   "type": "object"
                 }
               }
@@ -13083,11 +15033,18 @@
                           "type": "integer"
                         }
                       },
-                      "required": ["limit", "offset", "total"],
+                      "required": [
+                        "limit",
+                        "offset",
+                        "total"
+                      ],
                       "type": "object"
                     }
                   },
-                  "required": ["data", "meta"],
+                  "required": [
+                    "data",
+                    "meta"
+                  ],
                   "type": "object"
                 }
               }
@@ -13158,7 +15115,9 @@
                                   "type": "array"
                                 }
                               },
-                              "required": ["answers"],
+                              "required": [
+                                "answers"
+                              ],
                               "type": "object"
                             },
                             "nullable": true,
@@ -13189,7 +15148,10 @@
                                   "type": "string"
                                 }
                               },
-                              "required": ["text", "keywords"],
+                              "required": [
+                                "text",
+                                "keywords"
+                              ],
                               "type": "object"
                             },
                             "nullable": true,
@@ -13197,7 +15159,10 @@
                           },
                           "kind": {
                             "description": "卡片类型：list = 列举卡，cloze = 填空卡",
-                            "enum": ["list", "cloze"],
+                            "enum": [
+                              "list",
+                              "cloze"
+                            ],
                             "type": "string"
                           },
                           "prompt": {
@@ -13299,7 +15264,10 @@
                                 "type": "string"
                               }
                             },
-                            "required": ["groupId", "title"],
+                            "required": [
+                              "groupId",
+                              "title"
+                            ],
                             "type": "object"
                           },
                           "type": "array"
@@ -13308,7 +15276,11 @@
                           "type": "string"
                         }
                       },
-                      "required": ["deckKey", "title", "groups"],
+                      "required": [
+                        "deckKey",
+                        "title",
+                        "groups"
+                      ],
                       "type": "object"
                     },
                     "meta": {
@@ -13326,11 +15298,19 @@
                           "type": "integer"
                         }
                       },
-                      "required": ["limit", "offset", "total"],
+                      "required": [
+                        "limit",
+                        "offset",
+                        "total"
+                      ],
                       "type": "object"
                     }
                   },
-                  "required": ["deck", "data", "meta"],
+                  "required": [
+                    "deck",
+                    "data",
+                    "meta"
+                  ],
                   "type": "object"
                 }
               }
@@ -13538,7 +15518,11 @@
                         "type": "string"
                       }
                     },
-                    "required": ["id", "title", "chapterCount"],
+                    "required": [
+                      "id",
+                      "title",
+                      "chapterCount"
+                    ],
                     "type": "object"
                   },
                   "type": "array"
@@ -13667,7 +15651,12 @@
                       "type": "string"
                     }
                   },
-                  "required": ["id", "title", "chapterCount", "chapters"],
+                  "required": [
+                    "id",
+                    "title",
+                    "chapterCount",
+                    "chapters"
+                  ],
                   "type": "object"
                 }
               }
@@ -13697,7 +15686,11 @@
                     "type": "string"
                   },
                   "kind": {
-                    "enum": ["vital", "launch", "nav"],
+                    "enum": [
+                      "vital",
+                      "launch",
+                      "nav"
+                    ],
                     "type": "string"
                   },
                   "name": {
@@ -13706,7 +15699,11 @@
                     "type": "string"
                   },
                   "rating": {
-                    "enum": ["good", "needs-improvement", "poor"],
+                    "enum": [
+                      "good",
+                      "needs-improvement",
+                      "poor"
+                    ],
                     "type": "string"
                   },
                   "route": {
@@ -13719,7 +15716,11 @@
                     "type": "number"
                   }
                 },
-                "required": ["name", "value", "route"],
+                "required": [
+                  "name",
+                  "value",
+                  "route"
+                ],
                 "type": "object"
               }
             }
@@ -13741,6 +15742,18 @@
     },
     "/api/wrong-book": {
       "get": {
+        "parameters": [
+          {
+            "description": "按知识图谱节点筛选（如 ch1:教育学的创立阶段）；不传时行为与响应形状不变",
+            "in": "query",
+            "name": "node",
+            "required": false,
+            "schema": {
+              "description": "按知识图谱节点筛选（如 ch1:教育学的创立阶段）；不传时行为与响应形状不变",
+              "type": "string"
+            }
+          }
+        ],
         "responses": {
           "200": {
             "content": {
@@ -13834,7 +15847,11 @@
                             "type": "string"
                           }
                         },
-                        "required": ["timestamp", "userAnswer", "isCorrect"],
+                        "required": [
+                          "timestamp",
+                          "userAnswer",
+                          "isCorrect"
+                        ],
                         "type": "object"
                       },
                       "type": "array"
@@ -13924,7 +15941,9 @@
                       "type": "boolean"
                     }
                   },
-                  "required": ["success"],
+                  "required": [
+                    "success"
+                  ],
                   "type": "object"
                 }
               }
@@ -13957,7 +15976,9 @@
                       "type": "boolean"
                     }
                   },
-                  "required": ["success"],
+                  "required": [
+                    "success"
+                  ],
                   "type": "object"
                 }
               }
@@ -14028,7 +16049,11 @@
                         "type": "string"
                       }
                     },
-                    "required": ["tag", "count", "questions"],
+                    "required": [
+                      "tag",
+                      "count",
+                      "questions"
+                    ],
                     "type": "object"
                   },
                   "type": "array"
@@ -14055,7 +16080,9 @@
                     "type": "array"
                   }
                 },
-                "required": ["questionIds"],
+                "required": [
+                  "questionIds"
+                ],
                 "type": "object"
               }
             }
@@ -14077,7 +16104,9 @@
                       "type": "boolean"
                     }
                   },
-                  "required": ["success"],
+                  "required": [
+                    "success"
+                  ],
                   "type": "object"
                 }
               }
@@ -14119,7 +16148,10 @@
             "schema": {
               "default": "priority",
               "description": "抽题模式: priority=加权优先, random=纯随机",
-              "enum": ["priority", "random"],
+              "enum": [
+                "priority",
+                "random"
+              ],
               "type": "string"
             }
           }
@@ -14198,7 +16230,11 @@
                       "type": "number"
                     }
                   },
-                  "required": ["total", "recent", "frequent"],
+                  "required": [
+                    "total",
+                    "recent",
+                    "frequent"
+                  ],
                   "type": "object"
                 }
               }

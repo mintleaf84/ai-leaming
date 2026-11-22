@@ -592,11 +592,24 @@ export const wrongQuestionService = {
    *   `MAX(user_answer)`（字典序最大值，语义不同）；
    * - 不带 SRS 字段（列表页不渲染，多一次 leftJoin 只是白花钱）。
    */
-  async listWrongBook(userId: number): Promise<WrongBookListItem[]> {
+  async listWrongBook(
+    userId: number,
+    options: { node?: string } = {},
+  ): Promise<WrongBookListItem[]> {
     const masteredSubquery = drizzleDb
       .select({ id: mastered_questions.question_id })
       .from(mastered_questions)
       .where(eq(mastered_questions.user_id, userId));
+
+    // 可选：按知识图谱节点筛选（docs/kg-product-plan.md §3）。
+    // 不传 node 时 where 与过去逐字相同 —— 回归测试（wrong-book-ownership）守着这一点。
+    // 用 EXISTS 而不是 join：同一题挂多个节点时不会把分组行翻倍。
+    const node = options.node?.trim();
+    const nodeFilter = node
+      ? sql`EXISTS (SELECT 1 FROM question_nodes AS qn
+                       WHERE qn.question_id = ${practice_logs.question_id}
+                         AND qn.node_key = ${node})`
+      : undefined;
 
     const rows = await drizzleDb
       .select({
@@ -620,6 +633,7 @@ export const wrongQuestionService = {
           // （origin='agent'），但用户已报「这题有问题」的（origin='flagged'）
           // 不再出现在错题本里 —— 题面本身有问题，留着只会反复误导。
           ne(questions.origin, "flagged"),
+          nodeFilter,
         ),
       )
       .groupBy(practice_logs.question_id)

@@ -26,10 +26,17 @@ import { indexQuestion } from "@/lib/services/question-vector-index";
 import { touchesEmbeddingText } from "@/lib/services/question-index-policy";
 import { parsePageParams } from "@/lib/api/pagination";
 import {
+  attachQuestionNodes,
+  findForbiddenQuestionIds,
+  findMissingKgNodeKeys,
+} from "@/lib/services/kg";
+import { normalizeNodeKey } from "@/lib/kg/validate";
+import {
   DryRunQuerySchema,
   RateLimitedResponse,
   formatIssues,
   parsePositiveInt,
+  requireIdentity,
   requireScopeMiddleware,
   wantsDryRun,
 } from "./shared";
@@ -885,6 +892,131 @@ app.openapi(
     );
   },
 );
+
+// ==================== 题→节点（知识图谱，admin 作用域） ====================
+
+/** 单批上限：与批量建题同一量级（离线映射器一次回传一章几十~上千条） */
+const QUESTION_NODE_BATCH_MAX = 2000;
+
+const QuestionNodeItemSchema = z.object({
+  questionId: z.number().int().positive().describe("题目数字主键"),
+  chapter: z.string().describe("章节标识（如 ch1）"),
+  nodeKey: z
+    .string()
+    .describe("节点 key；`ch1:名称` 或裸名称（服务端补 `<chapter>:` 前缀）"),
+  method: z
+    .string()
+    .optional()
+    .describe("映射方法：match(score=n) | alias:xxx | manual"),
+  score: z
+    .number()
+    .int()
+    .min(0)
+    .max(3)
+    .optional()
+    .describe("匹配置信（题干 3 / 选项 2 / 解析 1）"),
+});
+
+const QuestionNodesBodySchema = z.object({
+  items: z.array(QuestionNodeItemSchema).min(1).max(QUESTION_NODE_BATCH_MAX),
+});
+
+const questionNodesRoute = createRoute({
+  method: "post",
+  path: "/questions/nodes",
+  middleware: [requireScopeMiddleware("admin")] as const,
+  summary: "批量写题→知识图谱节点（幂等，需绑定用户的 admin Key）",
+  description:
+    `写接口，**需 admin 作用域且 API Key 必须绑定 userId**。产品**不做**匹配算法：映射由离线脚本算好后回传。单批 ≤${QUESTION_NODE_BATCH_MAX} 条，整批原子；幂等键 \`(question_id, node_key)\`，命中即 skipped。题目不存在 / 已报错 / 属于他人的 Agent 题集 → 404；节点不存在 → 400。`,
+  request: {
+    body: {
+      content: { "application/json": { schema: QuestionNodesBodySchema } },
+    },
+  },
+  responses: {
+    200: {
+      content: {
+        "application/json": {
+          schema: z.object({
+            created: z.number().int(),
+            skipped: z.number().int(),
+          }),
+        },
+      },
+      description: "写入结果",
+    },
+    400: { description: "节点不存在 / 请求结构不合法（整批未写入）" },
+    404: { description: "部分题目不存在或不属于当前用户（整批未写入）" },
+    401: { description: "未授权 - 缺少 / 无效 / 已停用的 API Key" },
+    403: { description: "已禁止 - 需要 admin 作用域，且 Key 必须绑定用户" },
+    429: RateLimitedResponse,
+  },
+});
+
+app.openapi(questionNodesRoute, async (c) => {
+  const identity = requireIdentity(c);
+  if (identity.isGlobal || identity.userId === null) {
+    return c.json(
+      {
+        error:
+          "该接口要求 API Key 绑定用户（全局 Key 无 userId，无法确认 Agent 题集归属）",
+      },
+      403,
+    );
+  }
+
+  const { items } = c.req.valid("json");
+  const normalized = items.map((item) => ({
+    questionId: item.questionId,
+    chapter: item.chapter.trim(),
+    nodeKey: normalizeNodeKey(item.chapter.trim(), item.nodeKey),
+    method: item.method ?? null,
+    score: item.score ?? null,
+  }));
+
+  // 1) 整批先校验题目（不存在 / flagged / 他人 Agent 题集），一条不合格整批不写
+  const questionIds = Array.from(
+    new Set(normalized.map((item) => item.questionId)),
+  );
+  const forbidden = await findForbiddenQuestionIds(
+    identity.effectiveUserId,
+    questionIds,
+  );
+  if (forbidden.length > 0) {
+    return c.json(
+      {
+        error: "部分题目不存在或无权写入（整批未写入）",
+        questionIds: forbidden,
+      },
+      404,
+    );
+  }
+
+  // 2) 再校验节点（按 chapter 分组，节点必须已通过 /kg/import 入库）
+  const nodesByChapter = new Map<string, Set<string>>();
+  for (const item of normalized) {
+    const bucket = nodesByChapter.get(item.chapter) ?? new Set<string>();
+    bucket.add(item.nodeKey);
+    nodesByChapter.set(item.chapter, bucket);
+  }
+  const missingNodeKeys: string[] = [];
+  for (const [chapter, keys] of nodesByChapter) {
+    const missing = await findMissingKgNodeKeys(chapter, Array.from(keys));
+    missingNodeKeys.push(...missing);
+  }
+  if (missingNodeKeys.length > 0) {
+    return c.json(
+      {
+        error: "部分节点不存在（整批未写入）：先导入该章图谱",
+        missingNodeKeys,
+      },
+      400,
+    );
+  }
+
+  const result = await attachQuestionNodes(normalized);
+  return c.json(result, 200);
+});
 
 // ==================== 工具函数 ====================
 

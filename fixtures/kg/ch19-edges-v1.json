@@ -1,0 +1,440 @@
+{
+  "chapter": "普通心理学 第五章 社会心理与行为",
+  "schema_version": "1.1",
+  "edges": [
+    {
+      "from": "社会态度的功能",
+      "type": "part_of",
+      "to": "社会态度",
+      "evidence": "一、社会态度的功能",
+      "printed_page": 77
+    },
+    {
+      "from": "适应功能",
+      "type": "part_of",
+      "to": "社会态度的功能",
+      "evidence": "人的态度都是在适应环境的过程中形成的",
+      "printed_page": 77
+    },
+    {
+      "from": "自我防御功能",
+      "type": "part_of",
+      "to": "社会态度的功能",
+      "evidence": "态度作为一种自卫机制，能让人在受到贬抑时用来保护自己。",
+      "printed_page": 77
+    },
+    {
+      "from": "价值表现功能",
+      "type": "part_of",
+      "to": "社会态度的功能",
+      "evidence": "（三）价值表现功能",
+      "printed_page": 78
+    },
+    {
+      "from": "认识或理解功能",
+      "type": "part_of",
+      "to": "社会态度的功能",
+      "evidence": "（四）认识或理解功能",
+      "printed_page": 79
+    },
+    {
+      "from": "心理防御机制",
+      "type": "part_of",
+      "to": "自我防御功能",
+      "evidence": "常见的心理防御机制有以下几种",
+      "printed_page": 77
+    },
+    {
+      "from": "升华",
+      "type": "subclass",
+      "to": "心理防御机制",
+      "evidence": "升华是指把被压抑的无意识冲动，通过某种途径或方式转变为人们可接受的或为社会所赞许的活动。",
+      "printed_page": 77
+    },
+    {
+      "from": "补偿",
+      "type": "subclass",
+      "to": "心理防御机制",
+      "evidence": "补偿分为消极性补偿和积极性补偿",
+      "printed_page": 77
+    },
+    {
+      "from": "退行",
+      "type": "subclass",
+      "to": "心理防御机制",
+      "evidence": "退行是指在遭受外部压力和内心冲突不能处理时，借此退回到幼稚行为",
+      "printed_page": 77
+    },
+    {
+      "from": "转移",
+      "type": "subclass",
+      "to": "心理防御机制",
+      "evidence": "转移是指在一种情境下将危险的情感或行动转移到另一个较为安全的情境下释放出来",
+      "printed_page": 77
+    },
+    {
+      "from": "合理化",
+      "type": "subclass",
+      "to": "心理防御机制",
+      "evidence": "合理化又称文饰作用",
+      "printed_page": 78
+    },
+    {
+      "from": "投射",
+      "type": "subclass",
+      "to": "心理防御机制",
+      "evidence": "投射是指自我将不能接受的冲动、欲望或观念归因（投射）于客观或别人。",
+      "printed_page": 78
+    },
+    {
+      "from": "社会刻板效应",
+      "type": "subclass",
+      "to": "印象形成效应",
+      "evidence": "对一群人的特征或动机加以概括",
+      "printed_page": 79
+    },
+    {
+      "from": "晕轮效应",
+      "type": "subclass",
+      "to": "印象形成效应",
+      "evidence": "当认知者对一个人的某种特征形成好或坏的印象后，他还倾向于据此推断该人其他方面的特征",
+      "printed_page": 79
+    },
+    {
+      "from": "首因效应",
+      "type": "subclass",
+      "to": "印象形成效应",
+      "evidence": "最初获得的信息比后来获得的信息影响更大的现象称为首因效应",
+      "printed_page": 79
+    },
+    {
+      "from": "近因效应",
+      "type": "subclass",
+      "to": "印象形成效应",
+      "evidence": "近因效应是指在总体印象形成上，新近获得的信息比原来获得的信息影响更大的现象",
+      "printed_page": 79
+    },
+    {
+      "from": "投射效应",
+      "type": "subclass",
+      "to": "印象形成效应",
+      "evidence": "投射效应是指因个体具有某种特性而推断他人也具有与自己相同特性的社会心理现象",
+      "printed_page": 79
+    },
+    {
+      "from": "人际需要三维理论",
+      "type": "related",
+      "to": "人际关系",
+      "evidence": "社会心理学家舒茨于 1958 年提出人际需要的三维理论。",
+      "printed_page": 79
+    },
+    {
+      "from": "舒茨",
+      "type": "marks",
+      "to": "人际需要三维理论",
+      "evidence": "社会心理学家舒茨于 1958 年提出人际需要的三维理论。",
+      "printed_page": 79
+    },
+    {
+      "from": "包容需要",
+      "type": "subclass",
+      "to": "人际需要三维理论",
+      "evidence": "即包容需要、支配需要和情感需要。",
+      "printed_page": 79
+    },
+    {
+      "from": "支配需要",
+      "type": "subclass",
+      "to": "人际需要三维理论",
+      "evidence": "即包容需要、支配需要和情感需要。",
+      "printed_page": 79
+    },
+    {
+      "from": "情感需要",
+      "type": "subclass",
+      "to": "人际需要三维理论",
+      "evidence": "即包容需要、支配需要和情感需要。",
+      "printed_page": 79
+    },
+    {
+      "from": "人际关系的心理成分",
+      "type": "part_of",
+      "to": "人际关系",
+      "evidence": "（二）人际关系的心理成分",
+      "printed_page": 80
+    },
+    {
+      "from": "认知成分",
+      "type": "part_of",
+      "to": "人际关系的心理成分",
+      "evidence": "个体对人际关系状况的认知，是人际知觉的结果",
+      "printed_page": 80
+    },
+    {
+      "from": "情感成分",
+      "type": "part_of",
+      "to": "人际关系的心理成分",
+      "evidence": "情感成分是交往双方在情感上满意的程度和亲疏关系",
+      "printed_page": 80
+    },
+    {
+      "from": "行为成分",
+      "type": "part_of",
+      "to": "人际关系的心理成分",
+      "evidence": "行为成分是指双方外显的行为表现",
+      "printed_page": 80
+    },
+    {
+      "from": "情感成分",
+      "type": "related",
+      "to": "人际关系",
+      "evidence": "情感成分是人际关系的核心成分。",
+      "printed_page": 80
+    },
+    {
+      "from": "人际吸引",
+      "type": "part_of",
+      "to": "人际关系",
+      "evidence": "（三）人际吸引的影响因素",
+      "printed_page": 80
+    },
+    {
+      "from": "熟悉与邻近",
+      "type": "subclass",
+      "to": "人际吸引",
+      "evidence": "熟悉能增加吸引的程度。",
+      "printed_page": 80
+    },
+    {
+      "from": "相似性",
+      "type": "subclass",
+      "to": "人际吸引",
+      "evidence": "相似是指人与人之间在背景",
+      "printed_page": 80
+    },
+    {
+      "from": "互补性",
+      "type": "subclass",
+      "to": "人际吸引",
+      "evidence": "互补性会影响人与人之间的互相吸引",
+      "printed_page": 80
+    },
+    {
+      "from": "外貌",
+      "type": "subclass",
+      "to": "人际吸引",
+      "evidence": "容貌、体态、服饰、举止、风度等个人外在因素在人际情感中的作用",
+      "printed_page": 81
+    },
+    {
+      "from": "才能",
+      "type": "subclass",
+      "to": "人际吸引",
+      "evidence": "个人的能力与特长如果比较突出，与众不同，就会有一种吸引力",
+      "printed_page": 81
+    },
+    {
+      "from": "人格品质",
+      "type": "subclass",
+      "to": "人际吸引",
+      "evidence": "人格品质是影响吸引力的比较稳定的因素",
+      "printed_page": 81
+    },
+    {
+      "from": "正式群体",
+      "type": "subclass",
+      "to": "群体·按构成原则划分",
+      "evidence": "根据群体的构成原则，可将群体分为正式群体和非正式群体。",
+      "printed_page": 81
+    },
+    {
+      "from": "非正式群体",
+      "type": "subclass",
+      "to": "群体·按构成原则划分",
+      "evidence": "根据群体的构成原则，可将群体分为正式群体和非正式群体。",
+      "printed_page": 81
+    },
+    {
+      "from": "社会助长",
+      "type": "subclass",
+      "to": "群体的影响",
+      "evidence": "社会助长又叫社会促进，是指他人在场时，可以促进个人活动效率的提高。",
+      "printed_page": 82
+    },
+    {
+      "from": "社会抑制",
+      "type": "subclass",
+      "to": "群体的影响",
+      "evidence": "与社会助长相反，如果别人在场或与别人一起活动，造成活动效率或行为效率的下降，就称为社会干扰或社会抑制。",
+      "printed_page": 83
+    },
+    {
+      "from": "社会惰化",
+      "type": "subclass",
+      "to": "群体的影响",
+      "evidence": "社会惰化又称社会逍遥，是指许多人在一起工作，会降低个人活动积极性的现象",
+      "printed_page": 83
+    },
+    {
+      "from": "社会标准化倾向",
+      "type": "subclass",
+      "to": "群体的影响",
+      "evidence": "多数人在一个群体中进行共同学习或工作往往在完成速度和质量上有渐趋一致的倾向，这个倾向称为社会标准化倾向。",
+      "printed_page": 83
+    },
+    {
+      "from": "从众",
+      "type": "subclass",
+      "to": "群体的影响",
+      "evidence": "群体成员在真实的或想象的群体压力下，其行为或信念上的改变及其伴随的行为方式的改变就是从众。",
+      "printed_page": 83
+    },
+    {
+      "from": "服从",
+      "type": "subclass",
+      "to": "群体的影响",
+      "evidence": "服从是个人按照社会要求、群体规范或他人的意志而做出相应行为的社会现象。",
+      "printed_page": 83
+    },
+    {
+      "from": "去个性化",
+      "type": "subclass",
+      "to": "群体的影响",
+      "evidence": "去个性化是指在某些情境下，个体的自我认同被团体认同取代",
+      "printed_page": 83
+    },
+    {
+      "from": "谢里夫",
+      "type": "marks",
+      "to": "社会标准化倾向",
+      "evidence": "社会标准化倾向最早由谢里夫发现。",
+      "printed_page": 83
+    },
+    {
+      "from": "费斯汀格",
+      "type": "marks",
+      "to": "去个性化",
+      "evidence": "去个性化也叫去个体化或个性消失，是由费斯汀格提出的。",
+      "printed_page": 83
+    },
+    {
+      "from": "社会助长",
+      "type": "contrast",
+      "to": "社会抑制",
+      "evidence": "与社会助长相反，如果别人在场或与别人一起活动，造成活动效率或行为效率的下降",
+      "printed_page": 83
+    },
+    {
+      "from": "从众",
+      "type": "contrast",
+      "to": "服从",
+      "evidence": "服从与从众有着本质不同。从众情况下个体是自愿的，服从情况下个体不是自愿的",
+      "printed_page": 83
+    },
+    {
+      "from": "社会惰化",
+      "type": "contrast",
+      "to": "社会抑制",
+      "evidence": "与社会干扰（社会抑制）不同的是，社会惰化的作用往往发生在那些为一个共同目标而合作",
+      "printed_page": 83
+    },
+    {
+      "from": "群体·按构成原则划分",
+      "type": "part_of",
+      "to": "群体的分类",
+      "evidence": "根据群体的构成原则，可将群体分为正式群体和非正式群体。",
+      "printed_page": 81
+    },
+    {
+      "from": "群体·按个体内心倾向和行为动机划分",
+      "type": "part_of",
+      "to": "群体的分类",
+      "evidence": "根据个体内心倾向和行为动机，可将群体分为实属群体和参照群体。",
+      "printed_page": 82
+    },
+    {
+      "from": "群体·按成员相互关系的程度和发展水平划分",
+      "type": "part_of",
+      "to": "群体的分类",
+      "evidence": "根据群体成员相互关系的程度和发展水平，可将群体分为松散群体、联合群体和集体。",
+      "printed_page": 82
+    },
+    {
+      "from": "积极型",
+      "type": "subclass",
+      "to": "非正式群体",
+      "evidence": "非正式群体有四种类型：积极型、娱乐型、消极型、破坏型。",
+      "printed_page": 82
+    },
+    {
+      "from": "娱乐型",
+      "type": "subclass",
+      "to": "非正式群体",
+      "evidence": "非正式群体有四种类型：积极型、娱乐型、消极型、破坏型。",
+      "printed_page": 82
+    },
+    {
+      "from": "消极型",
+      "type": "subclass",
+      "to": "非正式群体",
+      "evidence": "非正式群体有四种类型：积极型、娱乐型、消极型、破坏型。",
+      "printed_page": 82
+    },
+    {
+      "from": "破坏型",
+      "type": "subclass",
+      "to": "非正式群体",
+      "evidence": "非正式群体有四种类型：积极型、娱乐型、消极型、破坏型。",
+      "printed_page": 82
+    },
+    {
+      "from": "实属群体",
+      "type": "subclass",
+      "to": "群体·按个体内心倾向和行为动机划分",
+      "evidence": "实属群体是个体实际归属的群体。",
+      "printed_page": 82
+    },
+    {
+      "from": "参照群体",
+      "type": "subclass",
+      "to": "群体·按个体内心倾向和行为动机划分",
+      "evidence": "参照群体是个体在心理上“向往”的群体，又称榜样群体",
+      "printed_page": 82
+    },
+    {
+      "from": "松散群体",
+      "type": "subclass",
+      "to": "群体·按成员相互关系的程度和发展水平划分",
+      "evidence": "松散群体是低层次的，是人们由于时间和空间上的接近而结成的集合体。",
+      "printed_page": 82
+    },
+    {
+      "from": "联合群体",
+      "type": "subclass",
+      "to": "群体·按成员相互关系的程度和发展水平划分",
+      "evidence": "联合群体是中间层次的，其特点是成员之间存在共同的目标、共同的利益和共同的活动目的",
+      "printed_page": 82
+    },
+    {
+      "from": "集体",
+      "type": "subclass",
+      "to": "群体·按成员相互关系的程度和发展水平划分",
+      "evidence": "集体是群体发展的高级阶段，是为了实现有公益价值的社会目标，严密组织起来的有纪律、有心理凝聚力的群体。",
+      "printed_page": 82
+    },
+    {
+      "from": "结伴效应",
+      "type": "subclass",
+      "to": "社会助长",
+      "evidence": "第一，结伴效应，即在结伴活动中，个体会感到社会比较的压力",
+      "printed_page": 83
+    },
+    {
+      "from": "观众效应",
+      "type": "subclass",
+      "to": "社会助长",
+      "evidence": "第二，观众效应，即个体从事活动时，是否有观众在场、观众的多少及观众的表现对其活动的效率有明显影响",
+      "printed_page": 83
+    }
+  ]
+}

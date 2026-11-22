@@ -1,0 +1,475 @@
+{
+  "chapter": "第一篇第四章 教育制度",
+  "schema_version": "1.1",
+  "edges": [
+    {
+      "from": "广义的教育制度",
+      "type": "subclass",
+      "to": "教育制度",
+      "evidence": "广义的教育制度指国民教育制度，是一个国家为实现其国民教育目的",
+      "printed_page": 63
+    },
+    {
+      "from": "学校教育制度",
+      "type": "subclass",
+      "to": "教育制度",
+      "evidence": "狭义的教育制度指学校教育制度，简称学制",
+      "printed_page": 63
+    },
+    {
+      "from": "国民教育制度",
+      "type": "exact_match",
+      "to": "广义的教育制度",
+      "evidence": "广义的教育制度指国民教育制度",
+      "printed_page": 63
+    },
+    {
+      "from": "学制",
+      "type": "exact_match",
+      "to": "学校教育制度",
+      "evidence": "学校教育制度，简称学制",
+      "printed_page": 63
+    },
+    {
+      "from": "学校教育制度",
+      "type": "part_of",
+      "to": "国民教育制度",
+      "evidence": "学校教育制度处于国民教育制度的核心和主体地位",
+      "printed_page": 63
+    },
+    {
+      "from": "学校的类型",
+      "type": "part_of",
+      "to": "学校教育制度",
+      "evidence": "一般来说，它是由三个基本要素构成的，即学校的类型、学校的级别、学校的结构。",
+      "printed_page": 63
+    },
+    {
+      "from": "学校的级别",
+      "type": "part_of",
+      "to": "学校教育制度",
+      "evidence": "一般来说，它是由三个基本要素构成的，即学校的类型、学校的级别、学校的结构。",
+      "printed_page": 63
+    },
+    {
+      "from": "学校的结构",
+      "type": "part_of",
+      "to": "学校教育制度",
+      "evidence": "一般来说，它是由三个基本要素构成的，即学校的类型、学校的级别、学校的结构。",
+      "printed_page": 63
+    },
+    {
+      "from": "客观性（教育制度）",
+      "type": "subclass",
+      "to": "教育制度的特点",
+      "evidence": "教育制度的客观基础和规律性主要由社会生产力发展水平决定。",
+      "printed_page": 63
+    },
+    {
+      "from": "规范性（教育制度）",
+      "type": "subclass",
+      "to": "教育制度的特点",
+      "evidence": "教育制度的规范性主要表现在入学条件即受教育权的限定和各级各类学校培养目标的确定上。",
+      "printed_page": 63
+    },
+    {
+      "from": "历史性（教育制度）",
+      "type": "subclass",
+      "to": "教育制度的特点",
+      "evidence": "教育制度是随着时代和文化背景的变化而不断创新的。",
+      "printed_page": 63
+    },
+    {
+      "from": "强制性（教育制度）",
+      "type": "subclass",
+      "to": "教育制度的特点",
+      "evidence": "教育制度作为教育系统活动的规范是面向整个教育系统的，对个体的行为具有一定的强制作用。",
+      "printed_page": 64
+    },
+    {
+      "from": "前制度化教育",
+      "type": "part_of",
+      "to": "教育制度在形式上的发展",
+      "evidence": "前制度化教育始于人类早期的原始社会教育，到奴隶社会后逐渐出现了定型的形式化教育（实体化教育）。",
+      "printed_page": 64
+    },
+    {
+      "from": "制度化教育",
+      "type": "part_of",
+      "to": "教育制度在形式上的发展",
+      "evidence": "制度化教育主要指的是正规教育，也就是指具有层次结构的、按年龄分级的教育制度。",
+      "printed_page": 64
+    },
+    {
+      "from": "制度化教育兴起的标志",
+      "type": "part_of",
+      "to": "制度化教育",
+      "evidence": "中国近代制度化教育兴起的标志是清朝末年的“废科举、兴学堂”及颁布了全国统一的教育宗旨和近代学制。",
+      "printed_page": 64
+    },
+    {
+      "from": "废科举兴学堂",
+      "type": "part_of",
+      "to": "制度化教育兴起的标志",
+      "evidence": "中国近代制度化教育兴起的标志是清朝末年的“废科举、兴学堂”及颁布了全国统一的教育宗旨和近代学制。",
+      "printed_page": 64
+    },
+    {
+      "from": "颁布统一教育宗旨和近代学制",
+      "type": "part_of",
+      "to": "制度化教育兴起的标志",
+      "evidence": "中国近代制度化教育兴起的标志是清朝末年的“废科举、兴学堂”及颁布了全国统一的教育宗旨和近代学制。",
+      "printed_page": 64
+    },
+    {
+      "from": "近代学校系统的出现",
+      "type": "marks",
+      "to": "制度化教育",
+      "evidence": "近代学校系统的出现，开启了制度化教育的新阶段。",
+      "printed_page": 64
+    },
+    {
+      "from": "非制度化教育",
+      "type": "part_of",
+      "to": "教育制度在形式上的发展",
+      "evidence": "非制度化教育提倡的理想是“教育不应再限于学校的围墙之内”",
+      "printed_page": 64
+    },
+    {
+      "from": "库姆斯",
+      "type": "part_of",
+      "to": "非制度化教育",
+      "evidence": "库姆斯等人主张的非正规教育的概念和伊里奇所主张的非学校化观念都是非制度化教育思潮的代表。",
+      "printed_page": 64
+    },
+    {
+      "from": "伊里奇",
+      "type": "part_of",
+      "to": "非制度化教育",
+      "evidence": "库姆斯等人主张的非正规教育的概念和伊里奇所主张的非学校化观念都是非制度化教育思潮的代表。",
+      "printed_page": 64
+    },
+    {
+      "from": "双轨学制",
+      "type": "subclass",
+      "to": "西方现代学制的类型",
+      "evidence": "双轨学制出现于 18、19 世纪的西欧，以英国为典型代表。",
+      "printed_page": 65
+    },
+    {
+      "from": "单轨学制",
+      "type": "subclass",
+      "to": "西方现代学制的类型",
+      "evidence": "单轨学制出现于 19 世纪末的美国。",
+      "printed_page": 65
+    },
+    {
+      "from": "分支型学制",
+      "type": "subclass",
+      "to": "西方现代学制的类型",
+      "evidence": "分支型学制以苏联和我国为典型代表。",
+      "printed_page": 65
+    },
+    {
+      "from": "义务教育年限的延长",
+      "type": "part_of",
+      "to": "现代教育制度的发展趋势",
+      "evidence": "（一）义务教育年限的延长",
+      "printed_page": 66
+    },
+    {
+      "from": "普通教育与职业教育的综合化",
+      "type": "part_of",
+      "to": "现代教育制度的发展趋势",
+      "evidence": "（二）普通教育与职业教育的综合化",
+      "printed_page": 66
+    },
+    {
+      "from": "高等教育的大众化",
+      "type": "part_of",
+      "to": "现代教育制度的发展趋势",
+      "evidence": "（三）高等教育的大众化",
+      "printed_page": 66
+    },
+    {
+      "from": "终身教育体系的建构",
+      "type": "part_of",
+      "to": "现代教育制度的发展趋势",
+      "evidence": "（四）终身教育体系的建构",
+      "printed_page": 67
+    },
+    {
+      "from": "义务教育的强制性免费性普及性",
+      "type": "part_of",
+      "to": "义务教育",
+      "evidence": "义务教育是强迫教育，具有强制性、免费性（免学费、杂费）、普及性。",
+      "printed_page": 66
+    },
+    {
+      "from": "《中华人民共和国义务教育法》",
+      "type": "marks",
+      "to": "义务教育",
+      "evidence": "以国家立法形式正式确立我国实行九年义务教育，标志着中国义务教育制度的确立。",
+      "printed_page": 66
+    },
+    {
+      "from": "普通教育",
+      "type": "part_of",
+      "to": "普通教育与职业教育的综合化",
+      "evidence": "普通教育是以升学为主要目标、以基础知识为主要内容的教育。",
+      "printed_page": 66
+    },
+    {
+      "from": "职业教育",
+      "type": "part_of",
+      "to": "普通教育与职业教育的综合化",
+      "evidence": "职业教育是以就业为主要目标，以从事某种现代职业所需的知识和技能为主要教学内容的教育。",
+      "printed_page": 66
+    },
+    {
+      "from": "高等教育",
+      "type": "related",
+      "to": "高等教育的大众化",
+      "evidence": "高等教育从精英到大众进而走向普及阶段是世界高等教育发展的共同趋势。",
+      "printed_page": 66
+    },
+    {
+      "from": "精英高等教育阶段",
+      "type": "subclass",
+      "to": "高等教育的发展阶段",
+      "evidence": "高等教育的发展划分为精英高等教育阶段（毛入学率 15% 以下）",
+      "printed_page": 67
+    },
+    {
+      "from": "大众化高等教育阶段",
+      "type": "subclass",
+      "to": "高等教育的发展阶段",
+      "evidence": "大众化高等教育阶段（毛入学率 15% ～ 50%）",
+      "printed_page": 67
+    },
+    {
+      "from": "普及化高等教育阶段",
+      "type": "subclass",
+      "to": "高等教育的发展阶段",
+      "evidence": "普及化高等教育阶段（毛入学率 50% 以上）",
+      "printed_page": 67
+    },
+    {
+      "from": "马丁·特罗",
+      "type": "related",
+      "to": "高等教育的发展阶段",
+      "evidence": "罗指出，高等教育的发展划分为精英高等教育阶段",
+      "printed_page": 67
+    },
+    {
+      "from": "终身教育",
+      "type": "part_of",
+      "to": "终身教育体系的建构",
+      "evidence": "终身教育是指人们在一生中都应当和需要受到各种教育培养。",
+      "printed_page": 67
+    },
+    {
+      "from": "终身教育",
+      "type": "attribute",
+      "to": "终身教育的特点",
+      "evidence": "终身性、全民性、实用性、广泛性、灵活性。",
+      "printed_page": 67
+    },
+    {
+      "from": "耶克斯利",
+      "type": "attribute",
+      "to": "《终身教育》",
+      "evidence": "1929 年英国成人教育家耶克斯利出版了世界上第一本终身教育专著《终身教育》。",
+      "printed_page": 67
+    },
+    {
+      "from": "《终身教育》",
+      "type": "marks",
+      "to": "终身教育体系的建构",
+      "evidence": "1929 年英国成人教育家耶克斯利出版了世界上第一本终身教育专著《终身教育》。",
+      "printed_page": 67
+    },
+    {
+      "from": "保罗·朗格朗",
+      "type": "attribute",
+      "to": "《论终身教育》",
+      "evidence": "其标志是法国成人教育家保罗 · 朗格朗的《论终身教育》的发表。",
+      "printed_page": 67
+    },
+    {
+      "from": "《论终身教育》",
+      "type": "marks",
+      "to": "终身教育体系的建构",
+      "evidence": "终身教育的概念化和体系化始于 20 世纪 60 年代",
+      "printed_page": 67
+    },
+    {
+      "from": "《教育——财富蕴藏其中》",
+      "type": "marks",
+      "to": "终身教育体系的建构",
+      "evidence": "1996 年联合国教科文组织发表的报告《教育——财富蕴藏其中》标志着终身教育体系的最终形成。",
+      "printed_page": 67
+    },
+    {
+      "from": "终身教育四大支柱",
+      "type": "part_of",
+      "to": "终身教育",
+      "evidence": "这“4 个支柱”是指“学会认知”“学会做事”“学会共同生活”“学会生存”。",
+      "printed_page": 67
+    },
+    {
+      "from": "壬寅学制",
+      "type": "part_of",
+      "to": "我国学制的发展历程",
+      "evidence": "中国颁布的第一个……学制，但只颁布而……没有实施",
+      "printed_page": 68
+    },
+    {
+      "from": "《钦定学堂章程》",
+      "type": "part_of",
+      "to": "壬寅学制",
+      "evidence": "壬寅学制（《钦……定学堂章程》）",
+      "printed_page": 68
+    },
+    {
+      "from": "癸卯学制",
+      "type": "part_of",
+      "to": "我国学制的发展历程",
+      "evidence": "中国正式实施的……第一个学制或实行……新学制的开端",
+      "printed_page": 68
+    },
+    {
+      "from": "《奏定学堂章程》",
+      "type": "part_of",
+      "to": "癸卯学制",
+      "evidence": "癸卯学制（《奏……定学堂章程》）",
+      "printed_page": 68
+    },
+    {
+      "from": "壬子癸丑学制",
+      "type": "part_of",
+      "to": "我国学制的发展历程",
+      "evidence": "我国教育史上第一……个资本主义性质的……学制",
+      "printed_page": 68
+    },
+    {
+      "from": "壬戌学制",
+      "type": "part_of",
+      "to": "我国学制的发展历程",
+      "evidence": "以美国学制为蓝本。规定小学……六年，初中三年，高中三年",
+      "printed_page": 69
+    },
+    {
+      "from": "《关于改革学制的决定》",
+      "type": "part_of",
+      "to": "我国学制的发展历程",
+      "evidence": "《关于改革学制……的决定》",
+      "printed_page": 69
+    },
+    {
+      "from": "张百熙",
+      "type": "part_of",
+      "to": "壬寅学制",
+      "evidence": "清政府……（张百熙）",
+      "printed_page": 68
+    },
+    {
+      "from": "张之洞",
+      "type": "part_of",
+      "to": "癸卯学制",
+      "evidence": "清政府……（张之洞）",
+      "printed_page": 68
+    },
+    {
+      "from": "蔡元培",
+      "type": "part_of",
+      "to": "壬子癸丑学制",
+      "evidence": "南京临时政……府（蔡元培）",
+      "printed_page": 68
+    },
+    {
+      "from": "中学为体西学为用",
+      "type": "part_of",
+      "to": "癸卯学制",
+      "evidence": "反映了“中学为体，西学为用”的思想",
+      "printed_page": 68
+    },
+    {
+      "from": "男女同校",
+      "type": "part_of",
+      "to": "壬子癸丑学制",
+      "evidence": "第一次规定男女同校，废除读经，充实了自然科学的内容，并将学堂改为学校",
+      "printed_page": 68
+    },
+    {
+      "from": "壬寅学制",
+      "type": "related",
+      "to": "义务教育",
+      "evidence": "最早规定了义务教育阶段",
+      "printed_page": 69
+    },
+    {
+      "from": "癸卯学制",
+      "type": "related",
+      "to": "义务教育",
+      "evidence": "首次明确提出了义务教育的……思想观念",
+      "printed_page": 69
+    },
+    {
+      "from": "壬子癸丑学制",
+      "type": "related",
+      "to": "义务教育",
+      "evidence": "中国政府法令中首次明确规……定义务教育",
+      "printed_page": 69
+    },
+    {
+      "from": "各级学校系统",
+      "type": "part_of",
+      "to": "我国现行学校教育制度的结构",
+      "evidence": "各级学校是按照教育的纵向等级划分的",
+      "printed_page": 69
+    },
+    {
+      "from": "基础教育",
+      "type": "subclass",
+      "to": "我国现行学校教育制度的结构",
+      "evidence": "我国现行学校教育的类别结构可划分为基础教育、职业技术教育、高等教育、成人教育和特殊教育五大类。",
+      "printed_page": 69
+    },
+    {
+      "from": "职业技术教育",
+      "type": "subclass",
+      "to": "我国现行学校教育制度的结构",
+      "evidence": "我国现行学校教育的类别结构可划分为基础教育、职业技术教育、高等教育、成人教育和特殊教育五大类。",
+      "printed_page": 69
+    },
+    {
+      "from": "高等教育",
+      "type": "subclass",
+      "to": "我国现行学校教育制度的结构",
+      "evidence": "我国现行学校教育的类别结构可划分为基础教育、职业技术教育、高等教育、成人教育和特殊教育五大类。",
+      "printed_page": 69
+    },
+    {
+      "from": "成人教育",
+      "type": "subclass",
+      "to": "我国现行学校教育制度的结构",
+      "evidence": "我国现行学校教育的类别结构可划分为基础教育、职业技术教育、高等教育、成人教育和特殊教育五大类。",
+      "printed_page": 69
+    },
+    {
+      "from": "特殊教育",
+      "type": "subclass",
+      "to": "我国现行学校教育制度的结构",
+      "evidence": "我国现行学校教育的类别结构可划分为基础教育、职业技术教育、高等教育、成人教育和特殊教育五大类。",
+      "printed_page": 69
+    },
+    {
+      "from": "分支型学制",
+      "type": "related",
+      "to": "我国现行学校教育制度的结构",
+      "evidence": "从类型上看，我国现行学制是从单轨学制发展而来的分支型学制。",
+      "printed_page": 69
+    }
+  ]
+}

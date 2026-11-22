@@ -1,0 +1,741 @@
+{
+  "chapter": "第四篇第三章 教材教法",
+  "schema_version": "1.1",
+  "edges": [
+    {
+      "from": "教学技能",
+      "type": "exact_match",
+      "to": "教学行为和心智活动方式",
+      "evidence": "教学技能是教师在已有知识经验基础上，通过实践练习和反思体悟而形成的一系列教学行为和心智活动方式。",
+      "printed_page": 220
+    },
+    {
+      "from": "备课技能",
+      "type": "subclass",
+      "to": "教学技能的构成",
+      "evidence": "教学技能包括备课技能、教学设计技能、课堂教学技能、检查学习效果技能、教学语言表达技能、学法指导技能、说课与听评课技能、教学反思技能等。",
+      "printed_page": 220
+    },
+    {
+      "from": "教学设计技能",
+      "type": "subclass",
+      "to": "教学技能的构成",
+      "evidence": "教学技能包括备课技能、教学设计技能、课堂教学技能、检查学习效果技能、教学语言表达技能、学法指导技能、说课与听评课技能、教学反思技能等。",
+      "printed_page": 220
+    },
+    {
+      "from": "课堂教学技能",
+      "type": "subclass",
+      "to": "教学技能的构成",
+      "evidence": "教学技能包括备课技能、教学设计技能、课堂教学技能、检查学习效果技能、教学语言表达技能、学法指导技能、说课与听评课技能、教学反思技能等。",
+      "printed_page": 220
+    },
+    {
+      "from": "检查学习效果技能",
+      "type": "subclass",
+      "to": "教学技能的构成",
+      "evidence": "教学技能包括备课技能、教学设计技能、课堂教学技能、检查学习效果技能、教学语言表达技能、学法指导技能、说课与听评课技能、教学反思技能等。",
+      "printed_page": 220
+    },
+    {
+      "from": "教学语言表达技能",
+      "type": "subclass",
+      "to": "教学技能的构成",
+      "evidence": "教学技能包括备课技能、教学设计技能、课堂教学技能、检查学习效果技能、教学语言表达技能、学法指导技能、说课与听评课技能、教学反思技能等。",
+      "printed_page": 220
+    },
+    {
+      "from": "学法指导技能",
+      "type": "subclass",
+      "to": "教学技能的构成",
+      "evidence": "教学技能包括备课技能、教学设计技能、课堂教学技能、检查学习效果技能、教学语言表达技能、学法指导技能、说课与听评课技能、教学反思技能等。",
+      "printed_page": 220
+    },
+    {
+      "from": "说课与听评课技能",
+      "type": "subclass",
+      "to": "教学技能的构成",
+      "evidence": "教学技能包括备课技能、教学设计技能、课堂教学技能、检查学习效果技能、教学语言表达技能、学法指导技能、说课与听评课技能、教学反思技能等。",
+      "printed_page": 220
+    },
+    {
+      "from": "教学反思技能",
+      "type": "subclass",
+      "to": "教学技能的构成",
+      "evidence": "教学技能包括备课技能、教学设计技能、课堂教学技能、检查学习效果技能、教学语言表达技能、学法指导技能、说课与听评课技能、教学反思技能等。",
+      "printed_page": 220
+    },
+    {
+      "from": "教学技能的核心",
+      "type": "exact_match",
+      "to": "课堂教学技能",
+      "evidence": "其中，课堂教学技能是整个教学技能的核心。",
+      "printed_page": 220
+    },
+    {
+      "from": "教学技能的发展形态",
+      "type": "part_of",
+      "to": "教学技能",
+      "evidence": "教学技能发展阶段的三种形态",
+      "printed_page": 220
+    },
+    {
+      "from": "教学技巧",
+      "type": "subclass",
+      "to": "教学技能的发展形态",
+      "evidence": "教师在不断的自我反思过程中使教学技能发展成教学技巧。",
+      "printed_page": 220
+    },
+    {
+      "from": "教学技艺",
+      "type": "subclass",
+      "to": "教学技能的发展形态",
+      "evidence": "教学技艺是指在“巧教”的基础上，教师有意识地积累教学经验、自觉探索、不断完善自身的教学技巧并有所创新，使教学呈现美感的一种技能形态。",
+      "printed_page": 221
+    },
+    {
+      "from": "教学艺术",
+      "type": "subclass",
+      "to": "教学技能的发展形态",
+      "evidence": "教学艺术是教学技能发展的最高形态",
+      "printed_page": 221
+    },
+    {
+      "from": "按参与备课的人数划分",
+      "type": "part_of",
+      "to": "备课",
+      "evidence": "1. 根据参与备课的人数的多少，分为个人备课和集体备课",
+      "printed_page": 221
+    },
+    {
+      "from": "个人备课",
+      "type": "subclass",
+      "to": "按参与备课的人数划分",
+      "evidence": "个人备课是教师对自己教学活动的内容、时间和空间结构的组织、规范和优化的过程。",
+      "printed_page": 221
+    },
+    {
+      "from": "集体备课",
+      "type": "subclass",
+      "to": "按参与备课的人数划分",
+      "evidence": "集体备课是在个人备课的基础上，同级同科的教师互相合作",
+      "printed_page": 221
+    },
+    {
+      "from": "备课的内容",
+      "type": "part_of",
+      "to": "备课",
+      "evidence": "（三）备课的内容",
+      "printed_page": 222
+    },
+    {
+      "from": "备课程标准与教材",
+      "type": "subclass",
+      "to": "备课的内容",
+      "evidence": "1. 备课程标准与教材",
+      "printed_page": 222
+    },
+    {
+      "from": "备学生",
+      "type": "subclass",
+      "to": "备课的内容",
+      "evidence": "2. 备学生 基本方法",
+      "printed_page": 222
+    },
+    {
+      "from": "备教法与学法",
+      "type": "subclass",
+      "to": "备课的内容",
+      "evidence": "3. 备教法与学法",
+      "printed_page": 223
+    },
+    {
+      "from": "教案",
+      "type": "exact_match",
+      "to": "课时教学进度计划",
+      "evidence": "通常以一节课为单位编写，也称课时教学进度计划。",
+      "printed_page": 223
+    },
+    {
+      "from": "教案的基本内容",
+      "type": "part_of",
+      "to": "教案",
+      "evidence": "一般来说，教案的内容主要由概况、教学过程、板书设计、教学后记或教学反思四部分组成。",
+      "printed_page": 224
+    },
+    {
+      "from": "概况",
+      "type": "part_of",
+      "to": "教案的基本内容",
+      "evidence": "其中，概况主要包括课题、教学目标、教学重难点、课时安排、课型、教法学法、媒体选择等。",
+      "printed_page": 224
+    },
+    {
+      "from": "教学过程（教案）",
+      "type": "part_of",
+      "to": "教案的基本内容",
+      "evidence": "教学过程是教案最重要的部分，是教案的核心。",
+      "printed_page": 224
+    },
+    {
+      "from": "板书设计",
+      "type": "part_of",
+      "to": "教案的基本内容",
+      "evidence": "一般来说，教案的内容主要由概况、教学过程、板书设计、教学后记或教学反思四部分组成。",
+      "printed_page": 224
+    },
+    {
+      "from": "教学后记或教学反思",
+      "type": "part_of",
+      "to": "教案的基本内容",
+      "evidence": "一般来说，教案的内容主要由概况、教学过程、板书设计、教学后记或教学反思四部分组成。",
+      "printed_page": 224
+    },
+    {
+      "from": "教学过程（教案）",
+      "type": "exact_match",
+      "to": "教案的核心",
+      "evidence": "教学过程是教案最重要的部分，是教案的核心。",
+      "printed_page": 224
+    },
+    {
+      "from": "教案的基本形式",
+      "type": "part_of",
+      "to": "教案",
+      "evidence": "（三）教案的基本形式",
+      "printed_page": 224
+    },
+    {
+      "from": "记叙式教案",
+      "type": "subclass",
+      "to": "教案的基本形式",
+      "evidence": "记叙式教案即文字表达式教案",
+      "printed_page": 224
+    },
+    {
+      "from": "表格式教案",
+      "type": "subclass",
+      "to": "教案的基本形式",
+      "evidence": "表格式教案是指以表格形式呈现备课内容的教案。",
+      "printed_page": 224
+    },
+    {
+      "from": "卡片式教案",
+      "type": "subclass",
+      "to": "教案的基本形式",
+      "evidence": "卡片式教案就是教师将教案的纲要、重点、难点和易忘记的教学内容以及需要补充的材料等以卡片的形式呈现的一种教案。",
+      "printed_page": 225
+    },
+    {
+      "from": "课堂导入技能",
+      "type": "part_of",
+      "to": "课堂教学技能",
+      "evidence": "课堂导入是教师在新的教学内容和教学活动开始时，通过简短的言语或行为",
+      "printed_page": 226
+    },
+    {
+      "from": "导入的类型",
+      "type": "part_of",
+      "to": "课堂导入技能",
+      "evidence": "（二）课堂导入的类型",
+      "printed_page": 226
+    },
+    {
+      "from": "直接导入",
+      "type": "subclass",
+      "to": "导入的类型",
+      "evidence": "直接导入是指教师在上课伊始直接阐明本节课的学习目标和要求",
+      "printed_page": 226
+    },
+    {
+      "from": "复习导入（温故导入）",
+      "type": "subclass",
+      "to": "导入的类型",
+      "evidence": "复习导入（温故导入）也称旧知识导入",
+      "printed_page": 226
+    },
+    {
+      "from": "直观导入",
+      "type": "subclass",
+      "to": "导入的类型",
+      "evidence": "直观导入是指教师借助实物、标本、挂图等直观教具",
+      "printed_page": 226
+    },
+    {
+      "from": "问题导入",
+      "type": "subclass",
+      "to": "导入的类型",
+      "evidence": "问题导入是指教师通过提出富有启发性的问题",
+      "printed_page": 226
+    },
+    {
+      "from": "实例导入",
+      "type": "subclass",
+      "to": "导入的类型",
+      "evidence": "实例导入是指教师从学生实际生活中选择与教学内容有密切联系的实例开讲",
+      "printed_page": 227
+    },
+    {
+      "from": "审题导入",
+      "type": "subclass",
+      "to": "导入的类型",
+      "evidence": "审题导入是指教师在新课开始时先板书课题或标题",
+      "printed_page": 227
+    },
+    {
+      "from": "故事导入",
+      "type": "subclass",
+      "to": "导入的类型",
+      "evidence": "故事导入是指教师利用中小学生普遍爱听故事的心理",
+      "printed_page": 227
+    },
+    {
+      "from": "情境导入",
+      "type": "subclass",
+      "to": "导入的类型",
+      "evidence": "情境导入是指教师运用满怀激情的朗读、演讲",
+      "printed_page": 227
+    },
+    {
+      "from": "悬念导入",
+      "type": "subclass",
+      "to": "导入的类型",
+      "evidence": "悬念导入是指教师在讲授新知识前结合所讲内容设置悬念",
+      "printed_page": 227
+    },
+    {
+      "from": "课堂讲授技能",
+      "type": "part_of",
+      "to": "课堂教学技能",
+      "evidence": "课堂讲授是教师运用系统的口头语言，通过分析、解释、说明、论证、叙述、描绘",
+      "printed_page": 229
+    },
+    {
+      "from": "课堂提问",
+      "type": "part_of",
+      "to": "课堂教学技能",
+      "evidence": "课堂提问是教师在课堂教学中，通过创设问题情境、设置疑问",
+      "printed_page": 229
+    },
+    {
+      "from": "按布卢姆认知目标层次划分",
+      "type": "part_of",
+      "to": "课堂提问",
+      "evidence": "根据布卢姆认知目标层次，可以将课堂提问分为以下六种：",
+      "printed_page": 229
+    },
+    {
+      "from": "回忆（知识）提问",
+      "type": "subclass",
+      "to": "按布卢姆认知目标层次划分",
+      "evidence": "回忆（知识）提问是从巩固所学知识出发设计的提问。",
+      "printed_page": 229
+    },
+    {
+      "from": "理解提问",
+      "type": "subclass",
+      "to": "按布卢姆认知目标层次划分",
+      "evidence": "理解提问是检查学生对事物本质和内部联系的把握程度的提问。",
+      "printed_page": 230
+    },
+    {
+      "from": "应用提问",
+      "type": "subclass",
+      "to": "按布卢姆认知目标层次划分",
+      "evidence": "应用提问要求学生对问题进行分类、选择，以研究正确答案。",
+      "printed_page": 230
+    },
+    {
+      "from": "分析提问",
+      "type": "subclass",
+      "to": "按布卢姆认知目标层次划分",
+      "evidence": "分析提问是要求学生通过分析知识结构，弄清概念之间的关系，进而得出结论的提问。",
+      "printed_page": 230
+    },
+    {
+      "from": "综合提问",
+      "type": "subclass",
+      "to": "按布卢姆认知目标层次划分",
+      "evidence": "综合提问是要求学生发现知识之间的内在联系",
+      "printed_page": 230
+    },
+    {
+      "from": "评价提问",
+      "type": "subclass",
+      "to": "按布卢姆认知目标层次划分",
+      "evidence": "评价提问是让学生运用一定的准则和标准对观念、作品等做出价值判断的提问。",
+      "printed_page": 230
+    },
+    {
+      "from": "课堂提问的基本环节",
+      "type": "part_of",
+      "to": "课堂提问",
+      "evidence": "课堂提问一般经过“发问—候答—叫答—理答”四个基本环节。",
+      "printed_page": 230
+    },
+    {
+      "from": "发问",
+      "type": "subclass",
+      "to": "课堂提问的基本环节",
+      "evidence": "发问，也称“诱发”",
+      "printed_page": 230
+    },
+    {
+      "from": "候答",
+      "type": "subclass",
+      "to": "课堂提问的基本环节",
+      "evidence": "候答，又称“待答”",
+      "printed_page": 231
+    },
+    {
+      "from": "叫答",
+      "type": "subclass",
+      "to": "课堂提问的基本环节",
+      "evidence": "叫答是学生经过充分思考的“候答”之后",
+      "printed_page": 231
+    },
+    {
+      "from": "理答",
+      "type": "subclass",
+      "to": "课堂提问的基本环节",
+      "evidence": "理答是教师对学生回答问题情况的反应和处理",
+      "printed_page": 231
+    },
+    {
+      "from": "课堂对话",
+      "type": "part_of",
+      "to": "课堂教学技能",
+      "evidence": "课堂对话是指在课堂教学中，通过教师、学生、文本材料之间的相互交流和沟通",
+      "printed_page": 232
+    },
+    {
+      "from": "课堂板书",
+      "type": "part_of",
+      "to": "课堂教学技能",
+      "evidence": "课堂板书是指教师在课堂教学中，为了帮助学生理解和掌握知识",
+      "printed_page": 234
+    },
+    {
+      "from": "课堂板书的类型",
+      "type": "part_of",
+      "to": "课堂板书",
+      "evidence": "（三）课堂板书的类型",
+      "printed_page": 236
+    },
+    {
+      "from": "文字板书",
+      "type": "subclass",
+      "to": "课堂板书的类型",
+      "evidence": "1. 文字板书……（1）纲要式板书（提纲式板书）",
+      "printed_page": 236
+    },
+    {
+      "from": "图画板书",
+      "type": "subclass",
+      "to": "课堂板书的类型",
+      "evidence": "2. 图画板书……（1）示意图式板书",
+      "printed_page": 236
+    },
+    {
+      "from": "综合式板书",
+      "type": "subclass",
+      "to": "课堂板书的类型",
+      "evidence": "3. 综合式板书",
+      "printed_page": 236
+    },
+    {
+      "from": "纲要式板书（提纲式板书）",
+      "type": "subclass",
+      "to": "文字板书",
+      "evidence": "纲要式板书是指教师以讲授内容的内在逻辑关系为线索",
+      "printed_page": 236
+    },
+    {
+      "from": "语词式板书",
+      "type": "subclass",
+      "to": "文字板书",
+      "evidence": "语词式板书是指教师从讲授内容中选择或概括一些关键性的词语",
+      "printed_page": 236
+    },
+    {
+      "from": "表格式板书",
+      "type": "subclass",
+      "to": "文字板书",
+      "evidence": "表格式板书是指教师把讲解过程中提炼出的关键词以表格形式绘制在黑板上的板书形式。",
+      "printed_page": 236
+    },
+    {
+      "from": "线索式板书",
+      "type": "subclass",
+      "to": "文字板书",
+      "evidence": "线索式板书是指教师在黑板上书写教材内容行文线索的板书形式。",
+      "printed_page": 236
+    },
+    {
+      "from": "演算式板书",
+      "type": "subclass",
+      "to": "文字板书",
+      "evidence": "演算式板书是指教师在黑板上用文字、数字、数学符号表述演算内容和证明演算过程的一种板书形式。",
+      "printed_page": 236
+    },
+    {
+      "from": "结课",
+      "type": "part_of",
+      "to": "课堂教学技能",
+      "evidence": "结课是指在完成课堂教学活动时",
+      "printed_page": 237
+    },
+    {
+      "from": "结课的形式",
+      "type": "part_of",
+      "to": "结课",
+      "evidence": "（三）结课的形式",
+      "printed_page": 237
+    },
+    {
+      "from": "自然式结课",
+      "type": "subclass",
+      "to": "结课的形式",
+      "evidence": "自然式结课是指教师讲课的最后一个问题的最后一句话刚一落地",
+      "printed_page": 237
+    },
+    {
+      "from": "归纳式（提纲挈领式）结课",
+      "type": "subclass",
+      "to": "结课的形式",
+      "evidence": "归纳式结课是指教师用总结性的语言提纲挈领地再现一节课或一个章节的知识结构体系",
+      "printed_page": 237
+    },
+    {
+      "from": "悬念式结课",
+      "type": "subclass",
+      "to": "结课的形式",
+      "evidence": "悬念式结课是指教师通过设置疑问，留下悬念启发学生思考的结课方式。",
+      "printed_page": 237
+    },
+    {
+      "from": "比较式结课",
+      "type": "subclass",
+      "to": "结课的形式",
+      "evidence": "比较式结课是指教师通过分析和比较，使学生掌握新旧知识之间的关系",
+      "printed_page": 238
+    },
+    {
+      "from": "练习式结课",
+      "type": "subclass",
+      "to": "结课的形式",
+      "evidence": "练习式结课是最常用、最简便的一种结课方式",
+      "printed_page": 238
+    },
+    {
+      "from": "拓展延伸式结课",
+      "type": "subclass",
+      "to": "结课的形式",
+      "evidence": "拓展延伸式结课是指教师对教学内容做进一步延伸和拓展的结课方式。",
+      "printed_page": 238
+    },
+    {
+      "from": "活动式结课",
+      "type": "subclass",
+      "to": "结课的形式",
+      "evidence": "活动式结课是指教师采用讨论、试验、演示、竞赛等形式进行结课的方法。",
+      "printed_page": 238
+    },
+    {
+      "from": "游戏式结课",
+      "type": "subclass",
+      "to": "结课的形式",
+      "evidence": "游戏式结课是指教师根据学生的年龄与心理特点，运用游戏结束课堂教学",
+      "printed_page": 238
+    },
+    {
+      "from": "教学口语",
+      "type": "subclass",
+      "to": "教学语言",
+      "evidence": "广义的教学语言是指教学过程中教师使用的教学口语、书面语言",
+      "printed_page": 239
+    },
+    {
+      "from": "书面语言",
+      "type": "subclass",
+      "to": "教学语言",
+      "evidence": "广义的教学语言是指教学过程中教师使用的教学口语、书面语言",
+      "printed_page": 239
+    },
+    {
+      "from": "体态语言",
+      "type": "subclass",
+      "to": "教学语言",
+      "evidence": "广义的教学语言是指教学过程中教师使用的教学口语、书面语言（如板书、作业批语等）、体态语言（如示范性或示意性动作等）。",
+      "printed_page": 239
+    },
+    {
+      "from": "教态语言表达技能",
+      "type": "part_of",
+      "to": "教学语言表达技能",
+      "evidence": "（四）教态语言表达技能",
+      "printed_page": 240
+    },
+    {
+      "from": "备课",
+      "type": "prerequisite",
+      "to": "说课",
+      "evidence": "说课是介于备课和上课之间的一种教学研究活动。",
+      "printed_page": 242
+    },
+    {
+      "from": "说课",
+      "type": "prerequisite",
+      "to": "上课",
+      "evidence": "说课是介于备课和上课之间的一种教学研究活动。",
+      "printed_page": 242
+    },
+    {
+      "from": "说课的类型",
+      "type": "part_of",
+      "to": "说课",
+      "evidence": "从说课的功能角度划分，说课主要有研究性说课、示范性说课、检查性说课和评比性说课四种类型。",
+      "printed_page": 244
+    },
+    {
+      "from": "研究性说课",
+      "type": "subclass",
+      "to": "说课的类型",
+      "evidence": "研究性说课是指以教研组或年级组为单位",
+      "printed_page": 244
+    },
+    {
+      "from": "示范性说课",
+      "type": "subclass",
+      "to": "说课的类型",
+      "evidence": "示范性说课是指选择专业素质好的优秀教师",
+      "printed_page": 244
+    },
+    {
+      "from": "检查性说课",
+      "type": "subclass",
+      "to": "说课的类型",
+      "evidence": "检查性说课是由学校组织的，以检查考核教师业务水平和工作状况为目的的一种说课形式。",
+      "printed_page": 244
+    },
+    {
+      "from": "评比性说课",
+      "type": "subclass",
+      "to": "说课的类型",
+      "evidence": "评比性说课是以评价教师的教学水平、认定等级、比较优劣为主要目的的一种说课形式。",
+      "printed_page": 244
+    },
+    {
+      "from": "说课的内容",
+      "type": "part_of",
+      "to": "说课",
+      "evidence": "（四）说课的内容",
+      "printed_page": 244
+    },
+    {
+      "from": "说教材",
+      "type": "subclass",
+      "to": "说课的内容",
+      "evidence": "一般来说，说教材主要包括剖析教材与课时安排。",
+      "printed_page": 244
+    },
+    {
+      "from": "说目标",
+      "type": "subclass",
+      "to": "说课的内容",
+      "evidence": "说目标时不仅要说清楚“知识与能力目标”",
+      "printed_page": 245
+    },
+    {
+      "from": "说学情",
+      "type": "subclass",
+      "to": "说课的内容",
+      "evidence": "3. 说学情……（1）教师要分析学生的知识准备状态",
+      "printed_page": 245
+    },
+    {
+      "from": "说教法、学法",
+      "type": "subclass",
+      "to": "说课的内容",
+      "evidence": "4. 说教法、学法",
+      "printed_page": 245
+    },
+    {
+      "from": "说教学程序",
+      "type": "subclass",
+      "to": "说课的内容",
+      "evidence": "5. 说教学程序（教学过程）",
+      "printed_page": 245
+    },
+    {
+      "from": "听课",
+      "type": "part_of",
+      "to": "教学研究",
+      "evidence": "听课是教学研究的重要手段",
+      "printed_page": 245
+    },
+    {
+      "from": "教学反思",
+      "type": "part_of",
+      "to": "教学反思技能",
+      "evidence": "教学反思是指教师为了实现有效教学",
+      "printed_page": 247
+    },
+    {
+      "from": "教学反思的类型",
+      "type": "part_of",
+      "to": "教学反思",
+      "evidence": "按照教学反思时间的前后，教学反思分为课前反思、课中反思与课后反思。",
+      "printed_page": 247
+    },
+    {
+      "from": "课前反思（前瞻性反思）",
+      "type": "subclass",
+      "to": "教学反思的类型",
+      "evidence": "课前反思主要是指教师在备课过程中的反思。",
+      "printed_page": 247
+    },
+    {
+      "from": "课中反思（同步反思）",
+      "type": "subclass",
+      "to": "教学反思的类型",
+      "evidence": "课中反思是指教师在教学过程中对自我讲授情况",
+      "printed_page": 247
+    },
+    {
+      "from": "课后反思（回顾性反思）",
+      "type": "subclass",
+      "to": "教学反思的类型",
+      "evidence": "课后反思是指教师上完某节课之后对整个教学过程的总体反思。",
+      "printed_page": 247
+    },
+    {
+      "from": "教学反思的形式",
+      "type": "part_of",
+      "to": "教学反思",
+      "evidence": "（三）教学反思的形式",
+      "printed_page": 248
+    },
+    {
+      "from": "课后备课",
+      "type": "subclass",
+      "to": "教学反思的形式",
+      "evidence": "1. 课后备课……课后备课是指课后教师要根据教学中所获得的反馈信息",
+      "printed_page": 248
+    },
+    {
+      "from": "反思日记",
+      "type": "subclass",
+      "to": "教学反思的形式",
+      "evidence": "反思日记是指教师在一天的教育教学工作结束后",
+      "printed_page": 248
+    },
+    {
+      "from": "课堂观摩",
+      "type": "subclass",
+      "to": "教学反思的形式",
+      "evidence": "课堂观摩是指校内外教师之间相互观摩彼此的教育教学情况",
+      "printed_page": 248
+    }
+  ]
+}

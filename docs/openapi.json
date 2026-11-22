@@ -5881,7 +5881,7 @@
     },
     "/api/external/kg/import": {
       "post": {
-        "description": "写接口，**需 admin 作用域且 API Key 必须绑定 userId**（图谱是全局资产，但写入必须能追溯到具体用户）。导入前跑门禁：schemaVersion 必须等于当前登记表版本；节点 key 章内唯一；边类型已登记、evidence 非空、无自环、无重复、prerequisite 无环且 facet 不作先修端点；每个 section 至少命中一条边。**任一门禁失败返回 400 且一条都不写。** 幂等键 `(chapter,node_key)` 与 `(chapter,from,to,type)`：重导同一份数据返回 skipped=全部。预演传 `?dryRun=true`，只返回 wouldCreate / coverage / warnings，库内零变更。",
+        "description": "写接口，**需 admin 作用域且 API Key 必须绑定 userId**（图谱是全局资产，但写入必须能追溯到具体用户）。导入前跑门禁：schemaVersion 必须等于当前登记表版本；节点 key 章内唯一且完整 key 的章前缀必须等于 chapter；边类型已登记、evidence 非空、无自环、无重复、prerequisite 无环且 facet 不作先修端点；每个 section 至少命中一条边。**任一门禁失败返回 400 且一条都不写。** 幂等键 `(chapter,node_key)` 与 `(chapter,from,to,type)`：重导同一份数据返回 skipped=全部；登记表版本升级后重导旧边会按新 schema_version 更新。`?dryRun=true` 是**只读预演**：查询图谱表并返回 wouldCreateNodes / wouldCreateEdges / wouldUpdateNodes / wouldUpdateEdges / coverage / warnings，不做写入也不需要回滚（聚合路由仍会记录这次 POST 的审计日志，所以「零变更」仅指图谱业务表）。",
         "parameters": [
           {
             "description": "true = 预演：走完真实校验与计算后回滚，返回\"如果真执行会怎样\"，库内零变更",
@@ -8149,7 +8149,8 @@
                 "type": "object"
               }
             }
-          }
+          },
+          "required": true
         },
         "responses": {
           "200": {

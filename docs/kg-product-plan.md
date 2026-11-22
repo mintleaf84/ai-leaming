@@ -55,14 +55,56 @@ question_nodes(
 
 ## 3. 接口
 
-| 方法 | 路径                                        | 说明                                                                                                                                                                                                   |
-| ---- | ------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| POST | `/api/external/kg/import`                   | admin + 绑 userId；`{chapter, schemaVersion, nodes[], edges[]}`；**导入前跑门禁**（类型已登记 / evidence 非空 / 覆盖率 / 先修无环）；`dryRun`；幂等键 `(chapter,node_key)` 与 `(chapter,from,to,type)` |
-| GET  | `/api/kg/graph?chapter=`                    | 节点 + 边（含 evidence），供地图页                                                                                                                                                                     |
-| GET  | `/api/kg/nodes?chapter=&kind=`              | 平铺节点（筛选用）                                                                                                                                                                                     |
-| GET  | `/api/wrong-book?node=ch1:教育学的创立阶段` | 错题按节点筛（join question_nodes）                                                                                                                                                                    |
-| GET  | `/api/mastery?by=node&chapter=`             | 节点级正确率（分子分母都来自 practice_logs）                                                                                                                                                           |
-| POST | `/api/external/questions/nodes`             | 批量写题→节点（离线映射器回传，幂等）                                                                                                                                                                  |
+<<<<<<< HEAD
+
+| 方法    | 路径                                        | 说明                                                                                                                                                                                                                                                                                                    |
+| ------- | ------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| POST    | `/api/external/kg/import`                   | admin + 绑 userId；`{chapter, schemaVersion, nodes[], edges[]}`；**导入前跑门禁**（类型已登记 / evidence 非空 / 覆盖率 / 先修无环）；`dryRun`；幂等键 `(chapter,node_key)` 与 `(chapter,from,to,type)`                                                                                                  |
+| GET     | `/api/kg/graph?chapter=`                    | 节点 + 边（含 evidence），供地图页                                                                                                                                                                                                                                                                      |
+| GET     | `/api/kg/nodes?chapter=&kind=`              | 平铺节点（筛选用）                                                                                                                                                                                                                                                                                      |
+| GET     | `/api/wrong-book?node=ch1:教育学的创立阶段` | 错题按节点筛（join question_nodes）                                                                                                                                                                                                                                                                     |
+| GET     | `/api/mastery?by=node&chapter=`             | 节点级正确率（分子分母都来自 practice_logs）                                                                                                                                                                                                                                                            |
+| POST    | `/api/external/questions/nodes`             | 批量写题→节点（离线映射器回传，幂等）                                                                                                                                                                                                                                                                   |
+| ======= |
+| 方法    | 路径                                        | 说明                                                                                                                                                                                                                                                                                                    |
+| ---     | ---                                         | ---                                                                                                                                                                                                                                                                                                     |
+| POST    | `/api/external/kg/import`                   | admin + 绑 userId；`{chapter, schemaVersion, sections[], nodes[], edges[]}`（`sections` **必填且非空**，覆盖率门禁靠它逐节检查，示例见下）；**导入前跑门禁**（类型已登记 / evidence 非空 / 覆盖率 / 先修无环 / 完整 key 章前缀一致）；`dryRun`；幂等键 `(chapter,node_key)` 与 `(chapter,from,to,type)` |
+| GET     | `/api/kg/graph?chapter=`                    | 节点 + 边（含 evidence），供地图页                                                                                                                                                                                                                                                                      |
+| GET     | `/api/kg/nodes?chapter=&kind=`              | 平铺节点（筛选用）                                                                                                                                                                                                                                                                                      |
+| GET     | `/api/wrong-book?node=ch1:教育学的创立阶段` | 错题按节点筛（join question_nodes）                                                                                                                                                                                                                                                                     |
+| GET     | `/api/mastery?by=node&chapter=`             | 节点级正确率（分子分母都来自 practice_logs）                                                                                                                                                                                                                                                            |
+| POST    | `/api/external/questions/nodes`             | 批量写题→节点（离线映射器回传，幂等）                                                                                                                                                                                                                                                                   |
+
+> > > > > > > 6b0542cd (docs(kg): 对齐导入接口说明与 OpenAPI 快照（sections 必填示例/只读预演/wouldUpdate）)
+
+导入请求体最小形状（`sections` 每项都必填，缺省或空数组会以 `sections_required` 拒绝）：
+
+```json
+{
+  "chapter": "ch1",
+  "schemaVersion": "1.1",
+  "sections": [
+    {
+      "key": "考点一",
+      "title": "教育的定义与要素",
+      "startPage": 3,
+      "endPage": 4
+    }
+  ],
+  "nodes": [
+    { "nodeKey": "广义的教育", "name": "广义的教育", "kind": "concept" }
+  ],
+  "edges": [
+    {
+      "from": "广义的教育",
+      "to": "教育",
+      "type": "subclass",
+      "evidence": "教育有广义和狭义之分。",
+      "printed_page": 3
+    }
+  ]
+}
+```
 
 现有 `/api/meta` 的 `features` 追加 `kg`。
 

@@ -1,0 +1,685 @@
+{
+ "identifiability": {
+  "time": {
+   "n_skills": 33,
+   "T_at_upper_bound": 23,
+   "L0_at_bound": 33,
+   "T_median": 0.6,
+   "T_mean": 0.43757575757575734,
+   "skills_n_lt5": 10,
+   "skills_n_lt10": 18
+  },
+  "skill_strat": {
+   "n_skills": 40,
+   "T_at_upper_bound": 29,
+   "L0_at_bound": 40,
+   "T_median": 0.6,
+   "T_mean": 0.49974999999999997,
+   "skills_n_lt5": 10,
+   "skills_n_lt10": 22
+  }
+ },
+ "per_skill": {
+  "time": [
+   {
+    "skill": "ch1:考点八:教育学的萌芽阶段 1- 孔子与孟子",
+    "n": 24,
+    "L0": 0.95,
+    "T": 0.6,
+    "loglik": -10.943182160004614,
+    "T_at_bound": true,
+    "L0_at_bound": true
+   },
+   {
+    "skill": "ch1:考点一:教育的定义与要素",
+    "n": 24,
+    "L0": 0.05,
+    "T": 0.37,
+    "loglik": -9.492727952001571,
+    "T_at_bound": false,
+    "L0_at_bound": true
+   },
+   {
+    "skill": "ch1:考点二:教育的形态及属性",
+    "n": 5,
+    "L0": 0.95,
+    "T": 0.19,
+    "loglik": -3.9240956336907566,
+    "T_at_bound": false,
+    "L0_at_bound": true
+   },
+   {
+    "skill": "__chapter_ch1__",
+    "n": 7,
+    "L0": 0.95,
+    "T": 0.6,
+    "loglik": -1.6045644692704377,
+    "T_at_bound": true,
+    "L0_at_bound": true
+   },
+   {
+    "skill": "ch1:考点三:教育的功能和起源",
+    "n": 4,
+    "L0": 0.95,
+    "T": 0.6,
+    "loglik": -0.9351294718589996,
+    "T_at_bound": true,
+    "L0_at_bound": true
+   },
+   {
+    "skill": "ch1:考点十五:现代教育学流派与当代教育发展",
+    "n": 2,
+    "L0": 0.95,
+    "T": 0.6,
+    "loglik": -0.4884120289290905,
+    "T_at_bound": true,
+    "L0_at_bound": true
+   },
+   {
+    "skill": "ch1:考点五:中国封建社会教育的发展历程",
+    "n": 7,
+    "L0": 0.95,
+    "T": 0.6,
+    "loglik": -1.6045644692704377,
+    "T_at_bound": true,
+    "L0_at_bound": true
+   },
+   {
+    "skill": "ch1:考点四:中国奴隶社会教育的发展历程",
+    "n": 1,
+    "L0": 0.95,
+    "T": 0.01,
+    "loglik": -0.2613647641344075,
+    "T_at_bound": false,
+    "L0_at_bound": true
+   },
+   {
+    "skill": "ch1:考点六:外国教育的发展历程",
+    "n": 3,
+    "L0": 0.05,
+    "T": 0.01,
+    "loglik": -2.1013017852171423,
+    "T_at_bound": false,
+    "L0_at_bound": true
+   },
+   {
+    "skill": "ch1:考点七:教育的总体特征",
+    "n": 1,
+    "L0": 0.95,
+    "T": 0.01,
+    "loglik": -0.2613647641344075,
+    "T_at_bound": false,
+    "L0_at_bound": true
+   },
+   {
+    "skill": "ch1:考点十二:教育学的创立阶段 2- 赫尔巴特",
+    "n": 1,
+    "L0": 0.95,
+    "T": 0.01,
+    "loglik": -0.2613647641344075,
+    "T_at_bound": false,
+    "L0_at_bound": true
+   },
+   {
+    "skill": "ch1:考点十一:教育学的创立阶段 1- 夸美纽斯",
+    "n": 9,
+    "L0": 0.05,
+    "T": 0.01,
+    "loglik": -6.245345361749477,
+    "T_at_bound": false,
+    "L0_at_bound": true
+   },
+   {
+    "skill": "ch1:考点十三:教育学的创立阶段 3- 杜威、卢梭与",
+    "n": 1,
+    "L0": 0.05,
+    "T": 0.01,
+    "loglik": -0.2613647641344075,
+    "T_at_bound": false,
+    "L0_at_bound": true
+   },
+   {
+    "skill": "ch2:考点一:个体身心发展的规律",
+    "n": 12,
+    "L0": 0.95,
+    "T": 0.6,
+    "loglik": -5.491567452430297,
+    "T_at_bound": true,
+    "L0_at_bound": true
+   },
+   {
+    "skill": "ch2:考点三:影响人身心发展的因素",
+    "n": 23,
+    "L0": 0.95,
+    "T": 0.6,
+    "loglik": -9.33374437800516,
+    "T_at_bound": true,
+    "L0_at_bound": true
+   },
+   {
+    "skill": "ch2:考点二:个体身心发展的动因",
+    "n": 6,
+    "L0": 0.95,
+    "T": 0.6,
+    "loglik": -1.3814208788257942,
+    "T_at_bound": true,
+    "L0_at_bound": true
+   },
+   {
+    "skill": "ch2:考点四:教育与生产力及政治的关系",
+    "n": 16,
+    "L0": 0.05,
+    "T": 0.6,
+    "loglik": -6.780099349685932,
+    "T_at_bound": true,
+    "L0_at_bound": true
+   },
+   {
+    "skill": "ch2:考点五:教育与文化的关系及教育与社会的主要理",
+    "n": 16,
+    "L0": 0.95,
+    "T": 0.6,
+    "loglik": -9.157903448222784,
+    "T_at_bound": true,
+    "L0_at_bound": true
+   },
+   {
+    "skill": "__chapter_ch2__",
+    "n": 2,
+    "L0": 0.95,
+    "T": 0.6,
+    "loglik": -0.4884120289290905,
+    "T_at_bound": true,
+    "L0_at_bound": true
+   },
+   {
+    "skill": "ch3:考点一:教育目的概述与分类",
+    "n": 25,
+    "L0": 0.95,
+    "T": 0.6,
+    "loglik": -7.007429715000734,
+    "T_at_bound": true,
+    "L0_at_bound": true
+   },
+   {
+    "skill": "ch3:考点二:教育目的的特征、功能及层次结构",
+    "n": 8,
+    "L0": 0.05,
+    "T": 0.6,
+    "loglik": -2.2223621679041656,
+    "T_at_bound": true,
+    "L0_at_bound": true
+   },
+   {
+    "skill": "ch3:考点四:我国的教育目的与素质教育",
+    "n": 16,
+    "L0": 0.95,
+    "T": 0.6,
+    "loglik": -7.771608549991291,
+    "T_at_bound": true,
+    "L0_at_bound": true
+   },
+   {
+    "skill": "ch3:考点三:有关教育目的的理论",
+    "n": 7,
+    "L0": 0.95,
+    "T": 0.6,
+    "loglik": -2.9908574608260556,
+    "T_at_bound": true,
+    "L0_at_bound": true
+   },
+   {
+    "skill": "ch3:考点五:全面发展教育",
+    "n": 19,
+    "L0": 0.95,
+    "T": 0.6,
+    "loglik": -11.213758740282788,
+    "T_at_bound": true,
+    "L0_at_bound": true
+   },
+   {
+    "skill": "ch4:考点一:教育制度的概念、特点、发展及类型",
+    "n": 29,
+    "L0": 0.95,
+    "T": 0.6,
+    "loglik": -13.443682508149049,
+    "T_at_bound": true,
+    "L0_at_bound": true
+   },
+   {
+    "skill": "ch4:考点二:现代教育制度的发展趋势",
+    "n": 13,
+    "L0": 0.95,
+    "T": 0.6,
+    "loglik": -7.102307506237613,
+    "T_at_bound": true,
+    "L0_at_bound": true
+   },
+   {
+    "skill": "ch4:考点三:我国学制的发展",
+    "n": 16,
+    "L0": 0.95,
+    "T": 0.6,
+    "loglik": -6.3854451563815635,
+    "T_at_bound": true,
+    "L0_at_bound": true
+   },
+   {
+    "skill": "ch5:考点一:学生",
+    "n": 31,
+    "L0": 0.95,
+    "T": 0.6,
+    "loglik": -12.50518714950842,
+    "T_at_bound": true,
+    "L0_at_bound": true
+   },
+   {
+    "skill": "ch5:考点二:教师职业的发展与教师的职业角色和形象",
+    "n": 13,
+    "L0": 0.05,
+    "T": 0.6,
+    "loglik": -7.359520413537444,
+    "T_at_bound": true,
+    "L0_at_bound": true
+   },
+   {
+    "skill": "ch5:考点三:教师劳动的特点",
+    "n": 4,
+    "L0": 0.95,
+    "T": 0.01,
+    "loglik": -3.6659057408141345,
+    "T_at_bound": false,
+    "L0_at_bound": true
+   },
+   {
+    "skill": "ch5:考点四:教师的专业素养",
+    "n": 6,
+    "L0": 0.95,
+    "T": 0.6,
+    "loglik": -1.3814208788257942,
+    "T_at_bound": true,
+    "L0_at_bound": true
+   },
+   {
+    "skill": "ch5:考点五:教师的威信、权利和义务",
+    "n": 26,
+    "L0": 0.95,
+    "T": 0.6,
+    "loglik": -16.934579001230926,
+    "T_at_bound": true,
+    "L0_at_bound": true
+   },
+   {
+    "skill": "ch5:考点六:师生关系",
+    "n": 1,
+    "L0": 0.95,
+    "T": 0.01,
+    "loglik": -0.2613647641344075,
+    "T_at_bound": false,
+    "L0_at_bound": true
+   }
+  ],
+  "skill_strat": [
+   {
+    "skill": "ch1:考点八:教育学的萌芽阶段 1- 孔子与孟子",
+    "n": 19,
+    "L0": 0.95,
+    "T": 0.6,
+    "loglik": -9.827463229520772,
+    "T_at_bound": true,
+    "L0_at_bound": true
+   },
+   {
+    "skill": "ch1:考点一:教育的定义与要素",
+    "n": 19,
+    "L0": 0.95,
+    "T": 0.58,
+    "loglik": -7.041890011094109,
+    "T_at_bound": false,
+    "L0_at_bound": true
+   },
+   {
+    "skill": "ch1:考点二:教育的形态及属性",
+    "n": 4,
+    "L0": 0.95,
+    "T": 0.6,
+    "loglik": -2.3200552107069794,
+    "T_at_bound": true,
+    "L0_at_bound": true
+   },
+   {
+    "skill": "__chapter_ch1__",
+    "n": 6,
+    "L0": 0.95,
+    "T": 0.6,
+    "loglik": -1.3814208788257942,
+    "T_at_bound": true,
+    "L0_at_bound": true
+   },
+   {
+    "skill": "ch1:考点三:教育的功能和起源",
+    "n": 4,
+    "L0": 0.95,
+    "T": 0.6,
+    "loglik": -0.9351294718589996,
+    "T_at_bound": true,
+    "L0_at_bound": true
+   },
+   {
+    "skill": "ch1:考点十五:现代教育学流派与当代教育发展",
+    "n": 2,
+    "L0": 0.95,
+    "T": 0.6,
+    "loglik": -0.4884120289290905,
+    "T_at_bound": true,
+    "L0_at_bound": true
+   },
+   {
+    "skill": "ch1:考点五:中国封建社会教育的发展历程",
+    "n": 6,
+    "L0": 0.95,
+    "T": 0.6,
+    "loglik": -1.3814208788257942,
+    "T_at_bound": true,
+    "L0_at_bound": true
+   },
+   {
+    "skill": "ch1:考点四:中国奴隶社会教育的发展历程",
+    "n": 1,
+    "L0": 0.95,
+    "T": 0.01,
+    "loglik": -0.2613647641344075,
+    "T_at_bound": false,
+    "L0_at_bound": true
+   },
+   {
+    "skill": "ch1:考点六:外国教育的发展历程",
+    "n": 3,
+    "L0": 0.05,
+    "T": 0.01,
+    "loglik": -2.1013017852171423,
+    "T_at_bound": false,
+    "L0_at_bound": true
+   },
+   {
+    "skill": "ch1:考点七:教育的总体特征",
+    "n": 1,
+    "L0": 0.95,
+    "T": 0.01,
+    "loglik": -0.2613647641344075,
+    "T_at_bound": false,
+    "L0_at_bound": true
+   },
+   {
+    "skill": "ch1:考点十二:教育学的创立阶段 2- 赫尔巴特",
+    "n": 1,
+    "L0": 0.95,
+    "T": 0.01,
+    "loglik": -0.2613647641344075,
+    "T_at_bound": false,
+    "L0_at_bound": true
+   },
+   {
+    "skill": "ch1:考点十一:教育学的创立阶段 1- 夸美纽斯",
+    "n": 7,
+    "L0": 0.05,
+    "T": 0.01,
+    "loglik": -4.392730097429972,
+    "T_at_bound": false,
+    "L0_at_bound": true
+   },
+   {
+    "skill": "ch1:考点十三:教育学的创立阶段 3- 杜威、卢梭与",
+    "n": 1,
+    "L0": 0.05,
+    "T": 0.01,
+    "loglik": -0.2613647641344075,
+    "T_at_bound": false,
+    "L0_at_bound": true
+   },
+   {
+    "skill": "ch2:考点一:个体身心发展的规律",
+    "n": 10,
+    "L0": 0.95,
+    "T": 0.58,
+    "loglik": -5.033598047466585,
+    "T_at_bound": false,
+    "L0_at_bound": true
+   },
+   {
+    "skill": "ch2:考点三:影响人身心发展的因素",
+    "n": 18,
+    "L0": 0.95,
+    "T": 0.6,
+    "loglik": -6.831732260183896,
+    "T_at_bound": true,
+    "L0_at_bound": true
+   },
+   {
+    "skill": "ch2:考点二:个体身心发展的动因",
+    "n": 5,
+    "L0": 0.95,
+    "T": 0.6,
+    "loglik": -1.1582769362073304,
+    "T_at_bound": true,
+    "L0_at_bound": true
+   },
+   {
+    "skill": "ch2:考点四:教育与生产力及政治的关系",
+    "n": 13,
+    "L0": 0.05,
+    "T": 0.6,
+    "loglik": -4.72437433447242,
+    "T_at_bound": true,
+    "L0_at_bound": true
+   },
+   {
+    "skill": "ch2:考点五:教育与文化的关系及教育与社会的主要理",
+    "n": 13,
+    "L0": 0.95,
+    "T": 0.6,
+    "loglik": -7.102308830898951,
+    "T_at_bound": true,
+    "L0_at_bound": true
+   },
+   {
+    "skill": "__chapter_ch2__",
+    "n": 2,
+    "L0": 0.95,
+    "T": 0.6,
+    "loglik": -0.4884120289290905,
+    "T_at_bound": true,
+    "L0_at_bound": true
+   },
+   {
+    "skill": "ch3:考点一:教育目的概述与分类",
+    "n": 20,
+    "L0": 0.95,
+    "T": 0.6,
+    "loglik": -4.50543064070299,
+    "T_at_bound": true,
+    "L0_at_bound": true
+   },
+   {
+    "skill": "ch3:考点四:我国的教育目的与素质教育",
+    "n": 13,
+    "L0": 0.95,
+    "T": 0.6,
+    "loglik": -5.715883868797047,
+    "T_at_bound": true,
+    "L0_at_bound": true
+   },
+   {
+    "skill": "ch3:考点二:教育目的的特征、功能及层次结构",
+    "n": 6,
+    "L0": 0.95,
+    "T": 0.6,
+    "loglik": -1.3814208788257942,
+    "T_at_bound": true,
+    "L0_at_bound": true
+   },
+   {
+    "skill": "ch3:考点三:有关教育目的的理论",
+    "n": 6,
+    "L0": 0.95,
+    "T": 0.6,
+    "loglik": -2.7677132834259455,
+    "T_at_bound": true,
+    "L0_at_bound": true
+   },
+   {
+    "skill": "ch3:考点五:全面发展教育",
+    "n": 15,
+    "L0": 0.95,
+    "T": 0.6,
+    "loglik": -8.934890286013871,
+    "T_at_bound": true,
+    "L0_at_bound": true
+   },
+   {
+    "skill": "ch4:考点一:教育制度的概念、特点、发展及类型",
+    "n": 23,
+    "L0": 0.95,
+    "T": 0.58,
+    "loglik": -7.934464498121179,
+    "T_at_bound": false,
+    "L0_at_bound": true
+   },
+   {
+    "skill": "ch4:考点二:现代教育制度的发展趋势",
+    "n": 10,
+    "L0": 0.95,
+    "T": 0.6,
+    "loglik": -5.046570596601542,
+    "T_at_bound": true,
+    "L0_at_bound": true
+   },
+   {
+    "skill": "ch4:考点三:我国学制的发展",
+    "n": 13,
+    "L0": 0.95,
+    "T": 0.6,
+    "loglik": -5.7160145024357565,
+    "T_at_bound": true,
+    "L0_at_bound": true
+   },
+   {
+    "skill": "ch5:考点一:学生",
+    "n": 25,
+    "L0": 0.95,
+    "T": 0.6,
+    "loglik": -11.16632584044925,
+    "T_at_bound": true,
+    "L0_at_bound": true
+   },
+   {
+    "skill": "ch5:考点二:教师职业的发展与教师的职业角色和形象",
+    "n": 10,
+    "L0": 0.05,
+    "T": 0.6,
+    "loglik": -5.30379857293237,
+    "T_at_bound": true,
+    "L0_at_bound": true
+   },
+   {
+    "skill": "ch5:考点三:教师劳动的特点",
+    "n": 6,
+    "L0": 0.95,
+    "T": 0.6,
+    "loglik": -1.3814208788257942,
+    "T_at_bound": true,
+    "L0_at_bound": true
+   },
+   {
+    "skill": "ch5:考点四:教师的专业素养",
+    "n": 6,
+    "L0": 0.95,
+    "T": 0.6,
+    "loglik": -1.3814208788257942,
+    "T_at_bound": true,
+    "L0_at_bound": true
+   },
+   {
+    "skill": "ch5:考点五:教师的威信、权利和义务",
+    "n": 24,
+    "L0": 0.95,
+    "T": 0.6,
+    "loglik": -16.488322478095483,
+    "T_at_bound": true,
+    "L0_at_bound": true
+   },
+   {
+    "skill": "ch5:考点六:师生关系",
+    "n": 2,
+    "L0": 0.95,
+    "T": 0.6,
+    "loglik": -0.4884120289290905,
+    "T_at_bound": true,
+    "L0_at_bound": true
+   },
+   {
+    "skill": "ch6:考点一:课程的类型（上）",
+    "n": 11,
+    "L0": 0.95,
+    "T": 0.6,
+    "loglik": -2.4971386788746677,
+    "T_at_bound": true,
+    "L0_at_bound": true
+   },
+   {
+    "skill": "ch6:考点二:课程的类型（下）",
+    "n": 5,
+    "L0": 0.05,
+    "T": 0.58,
+    "loglik": -2.0329904757494535,
+    "T_at_bound": false,
+    "L0_at_bound": true
+   },
+   {
+    "skill": "ch6:考点三:课程理论",
+    "n": 8,
+    "L0": 0.95,
+    "T": 0.6,
+    "loglik": -3.2139893357027374,
+    "T_at_bound": true,
+    "L0_at_bound": true
+   },
+   {
+    "skill": "__chapter_ch6__",
+    "n": 6,
+    "L0": 0.05,
+    "T": 0.21,
+    "loglik": -5.121354510766995,
+    "T_at_bound": false,
+    "L0_at_bound": true
+   },
+   {
+    "skill": "ch6:考点四:课程设计的模式与目标取向",
+    "n": 13,
+    "L0": 0.95,
+    "T": 0.6,
+    "loglik": -4.329707099230148,
+    "T_at_bound": true,
+    "L0_at_bound": true
+   },
+   {
+    "skill": "ch6:考点五:课程内容",
+    "n": 17,
+    "L0": 0.95,
+    "T": 0.6,
+    "loglik": -7.994883070119357,
+    "T_at_bound": true,
+    "L0_at_bound": true
+   },
+   {
+    "skill": "ch6:考点六:课程实施与评价",
+    "n": 8,
+    "L0": 0.05,
+    "T": 0.6,
+    "loglik": -2.2223621679041656,
+    "T_at_bound": true,
+    "L0_at_bound": true
+   }
+  ]
+ }
+}

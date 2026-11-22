@@ -22,7 +22,7 @@ export const CONTRACT_VERSION = 1;
 export const MIN_CLIENT_VERSION = "1.0.0";
 
 /** 当前最新客户端版本；有新版 APK 时更新它。 */
-export const LATEST_CLIENT_VERSION = "1.0.0";
+export const LATEST_CLIENT_VERSION = "1.1.0";
 
 /**
  * 读取 APK 下载地址。

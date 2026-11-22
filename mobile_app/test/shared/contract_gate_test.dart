@@ -5,6 +5,7 @@ import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:mobile_app/core/compat/app_version.dart';
 import 'package:mobile_app/core/compat/contract_compat.dart';
 import 'package:mobile_app/core/compat/contract_meta.dart';
 import 'package:mobile_app/core/compat/contract_meta_repository.dart';
@@ -208,7 +209,8 @@ void main() {
 
       expect(find.text('需要更新 App'), findsOneWidget);
       expect(find.text('≥ 1.2.0'), findsOneWidget);
-      expect(find.text('1.0.0'), findsOneWidget);
+      // 显示的是当前客户端的真实版本；引用常量，避免每次发版都要改测试。
+      expect(find.text(appVersion), findsOneWidget);
 
       await tester.tap(find.text('复制下载地址'));
       await tester.pump();

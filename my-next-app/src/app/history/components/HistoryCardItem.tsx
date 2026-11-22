@@ -12,6 +12,8 @@ import {
   FileCheck,
   Shuffle,
   Upload,
+  Bot,
+  XCircle,
 } from "lucide-react";
 
 import { cn } from "@/lib/utils";
@@ -56,6 +58,25 @@ export const MODE_CONFIG: Record<
     label: "外部导入",
     icon: <Upload className="w-3.5 h-3.5" />,
     className: "bg-sky-50 text-sky-700 border-sky-200",
+  },
+  // 下面三个是 `practice_sessions.practice_mode` 里实际存在、但以前没进这张表的
+  // 取值：`tag`（专项）/`wrong`（错题本开练）/`agent_set`（AI 题集）。
+  // 漏了它们时历史筛选条会直接印出英文原名（`MODE_CONFIG[mode]?.label || mode`），
+  // 卡片上则整块不显示。补上后不再露内部词。
+  tag: {
+    label: "专项练习",
+    icon: <Target className="w-3.5 h-3.5" />,
+    className: "bg-teal-50 text-teal-700 border-teal-200",
+  },
+  wrong: {
+    label: "错题复习",
+    icon: <XCircle className="w-3.5 h-3.5" />,
+    className: "bg-rose-50 text-rose-700 border-rose-200",
+  },
+  agent_set: {
+    label: "AI 题集",
+    icon: <Bot className="w-3.5 h-3.5" />,
+    className: "bg-violet-50 text-violet-700 border-violet-200",
   },
 };
 

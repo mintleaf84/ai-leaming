@@ -20,10 +20,7 @@ import { RELATION_TYPES_VERSION } from "../relation-types";
 const KG_DIR = path.resolve(process.cwd(), "../fixtures/kg");
 const chapters = JSON.parse(
   fs.readFileSync(path.join(KG_DIR, "chapters.json"), "utf8"),
-) as Record<
-  string,
-  { kaodian: Array<[string, string, number]>; end: number }
->;
+) as Record<string, { kaodian: Array<[string, string, number]>; end: number }>;
 
 type Edge = {
   from: string;
@@ -48,8 +45,7 @@ function load(chapterNo: number) {
       key,
       title,
       startPage,
-      endPage:
-        i + 1 < toc.kaodian.length ? toc.kaodian[i + 1][2] - 1 : toc.end,
+      endPage: i + 1 < toc.kaodian.length ? toc.kaodian[i + 1][2] - 1 : toc.end,
     }),
   );
   const names = new Set<string>();
@@ -76,7 +72,9 @@ function load(chapterNo: number) {
 
 describe("25 章真实图谱 fixture", () => {
   it("fixtures/kg 里恰好有 25 份边表和一份考点目录", () => {
-    const files = fs.readdirSync(KG_DIR).filter((f) => /^ch\d+-edges-v\d+\.json$/.test(f));
+    const files = fs
+      .readdirSync(KG_DIR)
+      .filter((f) => /^ch\d+-edges-v\d+\.json$/.test(f));
     expect(files).toHaveLength(25);
     expect(Object.keys(chapters).sort((a, b) => Number(a) - Number(b))).toEqual(
       Array.from({ length: 25 }, (_, i) => String(i + 1)),
@@ -88,7 +86,10 @@ describe("25 章真实图谱 fixture", () => {
       const { input, raw } = load(c);
       expect(raw.edges.length).toBeGreaterThan(0);
       const result = validateKgImport(input);
-      expect(result.issues, `ch${c}: ${JSON.stringify(result.issues).slice(0, 500)}`).toEqual([]);
+      expect(
+        result.issues,
+        `ch${c}: ${JSON.stringify(result.issues).slice(0, 500)}`,
+      ).toEqual([]);
       expect(result.coverage.covered).toBe(input.sections.length);
       expect(result.coverage.total).toBe(input.sections.length);
     });

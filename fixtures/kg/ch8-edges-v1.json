@@ -1,881 +1,881 @@
 {
- "chapter": "第一篇第八章 德育",
- "schema_version": "1.1",
- "edges": [
-  {
-   "from": "广义的德育",
-   "type": "subclass",
-   "to": "德育",
-   "evidence": "广义的德育泛指所有有目的、有计划地对社会成员在政治、思想与道德等方面施加影响的活动",
-   "printed_page": 139
-  },
-  {
-   "from": "狭义的德育",
-   "type": "subclass",
-   "to": "德育",
-   "evidence": "狭义的德育则指学校德育",
-   "printed_page": 139
-  },
-  {
-   "from": "学校德育",
-   "type": "exact_match",
-   "to": "狭义的德育",
-   "evidence": "学校德育是指教育者依据一定社会或阶级的要求和受教育者的思想品德形成规律",
-   "printed_page": 139
-  },
-  {
-   "from": "德育的功能",
-   "type": "part_of",
-   "to": "德育",
-   "evidence": "德育作为一种相对独立的社会实践活动，对个体的发展、整个教育活动的实施和社会的进步都具有重要功能",
-   "printed_page": 139
-  },
-  {
-   "from": "德育的个体性功能",
-   "type": "part_of",
-   "to": "德育的功能",
-   "evidence": "（一）德育的个体性功能——基本功能",
-   "printed_page": 139
-  },
-  {
-   "from": "享用性功能",
-   "type": "part_of",
-   "to": "德育的个体性功能",
-   "evidence": "其中享用性功能是德育个体性功能的最高境界",
-   "printed_page": 139
-  },
-  {
-   "from": "德育的社会性功能",
-   "type": "part_of",
-   "to": "德育的功能",
-   "evidence": "（二）德育的社会性功能",
-   "printed_page": 140
-  },
-  {
-   "from": "政治功能",
-   "type": "subclass",
-   "to": "德育的社会性功能",
-   "evidence": "主要包括德育对社会政治、经济、文化及生态环境等产生作用的政治功能、经济功能、文化功能、生态功能等",
-   "printed_page": 140
-  },
-  {
-   "from": "经济功能",
-   "type": "subclass",
-   "to": "德育的社会性功能",
-   "evidence": "主要包括德育对社会政治、经济、文化及生态环境等产生作用的政治功能、经济功能、文化功能、生态功能等",
-   "printed_page": 140
-  },
-  {
-   "from": "文化功能",
-   "type": "subclass",
-   "to": "德育的社会性功能",
-   "evidence": "主要包括德育对社会政治、经济、文化及生态环境等产生作用的政治功能、经济功能、文化功能、生态功能等",
-   "printed_page": 140
-  },
-  {
-   "from": "生态功能",
-   "type": "subclass",
-   "to": "德育的社会性功能",
-   "evidence": "主要包括德育对社会政治、经济、文化及生态环境等产生作用的政治功能、经济功能、文化功能、生态功能等",
-   "printed_page": 140
-  },
-  {
-   "from": "德育的教育性功能",
-   "type": "part_of",
-   "to": "德育的功能",
-   "evidence": "（三）德育的教育性功能",
-   "printed_page": 140
-  },
-  {
-   "from": "德育内容",
-   "type": "part_of",
-   "to": "德育",
-   "evidence": "三、德育的内容",
-   "printed_page": 140
-  },
-  {
-   "from": "选择德育内容的依据",
-   "type": "part_of",
-   "to": "德育内容",
-   "evidence": "（一）选择德育内容的依据",
-   "printed_page": 140
-  },
-  {
-   "from": "德育目标",
-   "type": "part_of",
-   "to": "选择德育内容的依据",
-   "evidence": "德育目标——直接决定德育内容",
-   "printed_page": 140
-  },
-  {
-   "from": "受教育者的身心发展特征",
-   "type": "part_of",
-   "to": "选择德育内容的依据",
-   "evidence": "受教育者的身心发展特征——决定德育内容的深度和广度",
-   "printed_page": 140
-  },
-  {
-   "from": "我国学校德育内容",
-   "type": "part_of",
-   "to": "德育内容",
-   "evidence": "（二）我国学校德育内容",
-   "printed_page": 140
-  },
-  {
-   "from": "政治教育",
-   "type": "subclass",
-   "to": "我国学校德育内容",
-   "evidence": "政治教育：主要包括正确的立场、观点、态度、信念、理想等要素",
-   "printed_page": 140
-  },
-  {
-   "from": "思想教育",
-   "type": "subclass",
-   "to": "我国学校德育内容",
-   "evidence": "思想教育：主要指思想认识和思想方法",
-   "printed_page": 140
-  },
-  {
-   "from": "道德教育",
-   "type": "subclass",
-   "to": "我国学校德育内容",
-   "evidence": "道德教育：道德被划分为私德、公德和职业道德三个类型",
-   "printed_page": 140
-  },
-  {
-   "from": "民主法制教育",
-   "type": "subclass",
-   "to": "我国学校德育内容",
-   "evidence": "民主法制教育：我国现阶段对学生进行的社会主义法制观点教育主要包括社会主义民主、社会主义法制和纪律的教育",
-   "printed_page": 140
-  },
-  {
-   "from": "心理健康教育",
-   "type": "subclass",
-   "to": "我国学校德育内容",
-   "evidence": "心理健康教育：主要有三方面的内容，即学习辅导、生活辅导和择业指导",
-   "printed_page": 140
-  },
-  {
-   "from": "按道德类型划分",
-   "type": "part_of",
-   "to": "道德教育",
-   "evidence": "道德教育：道德被划分为私德、公德和职业道德三个类型",
-   "printed_page": 140
-  },
-  {
-   "from": "私德",
-   "type": "subclass",
-   "to": "按道德类型划分",
-   "evidence": "道德教育：道德被划分为私德、公德和职业道德三个类型",
-   "printed_page": 140
-  },
-  {
-   "from": "公德",
-   "type": "subclass",
-   "to": "按道德类型划分",
-   "evidence": "道德教育：道德被划分为私德、公德和职业道德三个类型",
-   "printed_page": 140
-  },
-  {
-   "from": "职业道德",
-   "type": "subclass",
-   "to": "按道德类型划分",
-   "evidence": "道德教育：道德被划分为私德、公德和职业道德三个类型",
-   "printed_page": 140
-  },
-  {
-   "from": "家庭美德",
-   "type": "part_of",
-   "to": "私德",
-   "evidence": "其中，“家庭美德”是私德的核心",
-   "printed_page": 140
-  },
-  {
-   "from": "爱国主义教育",
-   "type": "related",
-   "to": "德育内容",
-   "evidence": "爱国主义教育——德育的永恒主题",
-   "printed_page": 140
-  },
-  {
-   "from": "德育过程",
-   "type": "part_of",
-   "to": "德育",
-   "evidence": "德育过程是教育者按照一定的社会要求和受教育者品德形成规律",
-   "printed_page": 141
-  },
-  {
-   "from": "思想品德形成过程",
-   "type": "related",
-   "to": "德育过程",
-   "evidence": "德育过程是促进人的思想品德形成与发展的重要因素，但不是唯一因素，二者既相互联系，又相互区别",
-   "printed_page": 141
-  },
-  {
-   "from": "德育过程的结构",
-   "type": "part_of",
-   "to": "德育过程",
-   "evidence": "德育过程通常由教育者、受教育者、德育内容和德育方法四个相互制约的要素构成",
-   "printed_page": 142
-  },
-  {
-   "from": "教育者",
-   "type": "part_of",
-   "to": "德育过程的结构",
-   "evidence": "教育者是德育过程的组织者、领导者",
-   "printed_page": 142
-  },
-  {
-   "from": "受教育者",
-   "type": "part_of",
-   "to": "德育过程的结构",
-   "evidence": "受教育者包括受教育者个体和群体，他们都是德育的对象",
-   "printed_page": 142
-  },
-  {
-   "from": "德育内容",
-   "type": "part_of",
-   "to": "德育过程的结构",
-   "evidence": "德育内容是用以形成受教育者品德的社会思想政治准则和法纪道德规范",
-   "printed_page": 142
-  },
-  {
-   "from": "德育方法",
-   "type": "part_of",
-   "to": "德育过程的结构",
-   "evidence": "德育方法是教育者施教传道和受教育者受教修养的相互作用的活动方式的总和",
-   "printed_page": 142
-  },
-  {
-   "from": "德育过程的矛盾",
-   "type": "part_of",
-   "to": "德育过程",
-   "evidence": "德育过程的矛盾是指德育过程中各要素、各部分之间和各要素、各部分内部各方面之间的对立统一关系",
-   "printed_page": 142
-  },
-  {
-   "from": "德育过程的基本矛盾",
-   "type": "subclass",
-   "to": "德育过程的矛盾",
-   "evidence": "德育过程的基本矛盾是社会通过教师向学生提出的道德要求与学生已有品德水平之间的矛盾",
-   "printed_page": 142
-  },
-  {
-   "from": "德育过程的基本规律",
-   "type": "part_of",
-   "to": "德育过程",
-   "evidence": "五、德育过程的基本规律",
-   "printed_page": 142
-  },
-  {
-   "from": "知情意行统一发展规律",
-   "type": "subclass",
-   "to": "德育过程的基本规律",
-   "evidence": "德育过程是促使学生的知、情、意、行互动发展的过程",
-   "printed_page": 142
-  },
-  {
-   "from": "组织活动和交往规律",
-   "type": "subclass",
-   "to": "德育过程的基本规律",
-   "evidence": "德育过程是组织学生的活动和交往、统一多方面教育影响的过程",
-   "printed_page": 143
-  },
-  {
-   "from": "内部矛盾转化规律",
-   "type": "subclass",
-   "to": "德育过程的基本规律",
-   "evidence": "德育过程是促进学生的思想品德内部矛盾积极转化的过程",
-   "printed_page": 143
-  },
-  {
-   "from": "长期反复逐步提高规律",
-   "type": "subclass",
-   "to": "德育过程的基本规律",
-   "evidence": "德育过程是一个长期的、反复的、逐步提高的过程",
-   "printed_page": 144
-  },
-  {
-   "from": "品德的知、情、意、行",
-   "type": "part_of",
-   "to": "知情意行统一发展规律",
-   "evidence": "学生的思想品德是知、情、意、行的统一体",
-   "printed_page": 142
-  },
-  {
-   "from": "道德认识",
-   "type": "part_of",
-   "to": "品德的知、情、意、行",
-   "evidence": "道德认识是指对道德行为准则及其执行意义的认识，是个体品德中的核心部分",
-   "printed_page": 142
-  },
-  {
-   "from": "道德情感",
-   "type": "part_of",
-   "to": "品德的知、情、意、行",
-   "evidence": "道德情感是根据道德观念来评价他人或自己行为时产生的内心体验",
-   "printed_page": 143
-  },
-  {
-   "from": "道德意志",
-   "type": "part_of",
-   "to": "品德的知、情、意、行",
-   "evidence": "道德意志是个体自觉地调节道德行为，克服困难",
-   "printed_page": 143
-  },
-  {
-   "from": "道德行为",
-   "type": "part_of",
-   "to": "品德的知、情、意、行",
-   "evidence": "道德行为是实现道德动机的行为意向及外部表现",
-   "printed_page": 143
-  },
-  {
-   "from": "活动和交往",
-   "type": "part_of",
-   "to": "组织活动和交往规律",
-   "evidence": "活动和交往是德育过程的基础",
-   "printed_page": 143
-  },
-  {
-   "from": "德育过程的长期性反复性渐进性",
-   "type": "part_of",
-   "to": "长期反复逐步提高规律",
-   "evidence": "德育过程的长期性、反复性、渐进性特点要求教育者要根据学生的年龄阶段特点",
-   "printed_page": 144
-  },
-  {
-   "from": "导向性原则",
-   "type": "subclass",
-   "to": "德育原则",
-   "evidence": "导向性原则是指进行德育时要有一定的理想性和方向性，以指导学生向正确的方向发展",
-   "printed_page": 144
-  },
-  {
-   "from": "疏导原则",
-   "type": "subclass",
-   "to": "德育原则",
-   "evidence": "疏导原则是指进行德育要循循善诱、以理服人，从提高学生的认识入手",
-   "printed_page": 144
-  },
-  {
-   "from": "尊重学生与严格要求学生相结合的原则",
-   "type": "subclass",
-   "to": "德育原则",
-   "evidence": "尊重学生与严格要求学生相结合的原则是指，进行德育要把对学生的思想和行为的严格要求与对他们个人的尊重和信赖结合起来",
-   "printed_page": 145
-  },
-  {
-   "from": "知行统一原则",
-   "type": "subclass",
-   "to": "德育原则",
-   "evidence": "知行统一原则是指既要重视思想道德的理论教育，又要重视组织学生参加实践锻炼",
-   "printed_page": 145
-  },
-  {
-   "from": "正面教育与纪律约束相结合的原则",
-   "type": "subclass",
-   "to": "德育原则",
-   "evidence": "正面教育与纪律约束相结合的原则是指，德育工作既要正面引导、说服教育、启发自觉",
-   "printed_page": 146
-  },
-  {
-   "from": "依靠积极因素，克服消极因素的原则",
-   "type": "subclass",
-   "to": "德育原则",
-   "evidence": "依靠积极因素，克服消极因素的原则是指，在德育工作中，教育者要善于依靠和发扬学生自身的积极因素",
-   "printed_page": 146
-  },
-  {
-   "from": "教育影响的一致性与连贯性原则",
-   "type": "subclass",
-   "to": "德育原则",
-   "evidence": "教育影响的一致性与连贯性原则是指，进行德育应当有目的、有计划地把来自各方面的对学生的教育影响加以组织、调节、整合",
-   "printed_page": 147
-  },
-  {
-   "from": "因材施教原则",
-   "type": "subclass",
-   "to": "德育原则",
-   "evidence": "因材施教原则是指进行德育要从学生品德发展的实际出发",
-   "printed_page": 147
-  },
-  {
-   "from": "集体教育和个别教育相结合的原则",
-   "type": "subclass",
-   "to": "德育原则",
-   "evidence": "集体教育和个别教育相结合的原则是指，在德育过程中，教育者要善于组织和教育学生热爱集体",
-   "printed_page": 147
-  },
-  {
-   "from": "严慈相济原则",
-   "type": "exact_match",
-   "to": "尊重学生与严格要求学生相结合的原则",
-   "evidence": "尊重学生与严格要求学生相结合的原则（严慈相济原则）",
-   "printed_page": 145
-  },
-  {
-   "from": "长善救失原则",
-   "type": "exact_match",
-   "to": "依靠积极因素，克服消极因素的原则",
-   "evidence": "依靠积极因素，克服消极因素的原则（长善救失原则）",
-   "printed_page": 146
-  },
-  {
-   "from": "平行教育原则",
-   "type": "exact_match",
-   "to": "集体教育和个别教育相结合的原则",
-   "evidence": "集体教育和个别教育相结合的原则（平行教育原则）",
-   "printed_page": 147
-  },
-  {
-   "from": "疏导原则的贯彻要求",
-   "type": "part_of",
-   "to": "疏导原则",
-   "evidence": "讲明道理，疏导思想",
-   "printed_page": 145
-  },
-  {
-   "from": "尊重学生与严格要求学生相结合原则的贯彻要求",
-   "type": "part_of",
-   "to": "尊重学生与严格要求学生相结合的原则",
-   "evidence": "1. 尊重和信赖学生。2. 严格要求学生。",
-   "printed_page": 145
-  },
-  {
-   "from": "因材施教原则的贯彻要求",
-   "type": "part_of",
-   "to": "因材施教原则",
-   "evidence": "深入了解学生的个性特点和内心世界",
-   "printed_page": 147
-  },
-  {
-   "from": "依靠积极因素，克服消极因素原则的贯彻要求",
-   "type": "part_of",
-   "to": "依靠积极因素，克服消极因素的原则",
-   "evidence": "1.“一分为二”地看待学生。2. 发扬积极因素，克服消极因素。",
-   "printed_page": 147
-  },
-  {
-   "from": "马卡连柯",
-   "type": "marks",
-   "to": "尊重学生与严格要求学生相结合的原则",
-   "evidence": "要尽量多地要求一个人，也要尽可能地尊重一个人。——马卡连柯",
-   "printed_page": 145
-  },
-  {
-   "from": "王阳明",
-   "type": "marks",
-   "to": "知行统一原则",
-   "evidence": "知是行之始，行是知之成。——王阳明",
-   "printed_page": 146
-  },
-  {
-   "from": "《学记》",
-   "type": "marks",
-   "to": "依靠积极因素，克服消极因素的原则",
-   "evidence": "教也者，长善而救其失者也。——《学记》",
-   "printed_page": 146
-  },
-  {
-   "from": "《论语》",
-   "type": "marks",
-   "to": "疏导原则",
-   "evidence": "夫子循循然善诱人，博我以文，约我以礼，欲罢不能。——《论语 · 子罕》",
-   "printed_page": 145
-  },
-  {
-   "from": "我国常用的德育方法",
-   "type": "part_of",
-   "to": "德育方法",
-   "evidence": "一、我国常用的德育方法 1",
-   "printed_page": 148
-  },
-  {
-   "from": "说服教育法",
-   "type": "subclass",
-   "to": "我国常用的德育方法",
-   "evidence": "说服教育法是指通过摆事实、讲道理使学生提高认识、形成正确观点的方法",
-   "printed_page": 148
-  },
-  {
-   "from": "语言说服",
-   "type": "subclass",
-   "to": "说服教育法",
-   "evidence": "语言说服：是指用文字语言进行说服教育的方式",
-   "printed_page": 148
-  },
-  {
-   "from": "事实说服",
-   "type": "subclass",
-   "to": "说服教育法",
-   "evidence": "事实说服：是指用事实进行说服教育的方式",
-   "printed_page": 148
-  },
-  {
-   "from": "榜样示范法",
-   "type": "subclass",
-   "to": "我国常用的德育方法",
-   "evidence": "榜样示范法是指用榜样人物的高尚思想、模范行为、优异成就来影响学生的思想、情感和行为的方法",
-   "printed_page": 149
-  },
-  {
-   "from": "典范",
-   "type": "subclass",
-   "to": "榜样示范法",
-   "evidence": "典范：主要包括历史伟人、民族英雄、革命导师、科学家、思想家和文学家等各行各业的杰出人物",
-   "printed_page": 149
-  },
-  {
-   "from": "示范",
-   "type": "subclass",
-   "to": "榜样示范法",
-   "evidence": "示范：主要是指家长与教师",
-   "printed_page": 149
-  },
-  {
-   "from": "典型",
-   "type": "subclass",
-   "to": "榜样示范法",
-   "evidence": "典型：主要是学生中涌现出来的优秀个人",
-   "printed_page": 149
-  },
-  {
-   "from": "实际锻炼法",
-   "type": "subclass",
-   "to": "我国常用的德育方法",
-   "evidence": "实际锻炼法是指教师指导学生参加各种实践活动，以形成一定的道德品质和行为习惯的方法",
-   "printed_page": 149
-  },
-  {
-   "from": "常规训练",
-   "type": "subclass",
-   "to": "实际锻炼法",
-   "evidence": "常规训练是指教师指导学生按照一定的规章制度进行经常性的行为练习",
-   "printed_page": 149
-  },
-  {
-   "from": "实践锻炼",
-   "type": "subclass",
-   "to": "实际锻炼法",
-   "evidence": "实践锻炼是指让学生参加各种实践活动，在活动中形成优良品德和行为习惯的方法",
-   "printed_page": 149
-  },
-  {
-   "from": "情感陶冶法",
-   "type": "subclass",
-   "to": "我国常用的德育方法",
-   "evidence": "情感陶冶法是指教师利用高尚的情感、美好的事物和优美的环境感染和熏陶学生",
-   "printed_page": 150
-  },
-  {
-   "from": "陶冶教育法",
-   "type": "exact_match",
-   "to": "情感陶冶法",
-   "evidence": "（四）情感陶冶法（陶冶教育法）",
-   "printed_page": 150
-  },
-  {
-   "from": "人格感化",
-   "type": "subclass",
-   "to": "情感陶冶法",
-   "evidence": "（1）人格感化。（2）环境陶冶。（3）艺术陶冶。",
-   "printed_page": 150
-  },
-  {
-   "from": "环境陶冶",
-   "type": "subclass",
-   "to": "情感陶冶法",
-   "evidence": "（1）人格感化。（2）环境陶冶。（3）艺术陶冶。",
-   "printed_page": 150
-  },
-  {
-   "from": "艺术陶冶",
-   "type": "subclass",
-   "to": "情感陶冶法",
-   "evidence": "（1）人格感化。（2）环境陶冶。（3）艺术陶冶。",
-   "printed_page": 150
-  },
-  {
-   "from": "道德修养法",
-   "type": "subclass",
-   "to": "我国常用的德育方法",
-   "evidence": "道德修养法是指教师指导学生自觉主动地进行学习、自我反省，以实现思想转化及行为控制的方法",
-   "printed_page": 150
-  },
-  {
-   "from": "道德指导法",
-   "type": "exact_match",
-   "to": "道德修养法",
-   "evidence": "（五）道德修养法（道德指导法、自我指导修养法）",
-   "printed_page": 150
-  },
-  {
-   "from": "自我指导修养法",
-   "type": "exact_match",
-   "to": "道德修养法",
-   "evidence": "（五）道德修养法（道德指导法、自我指导修养法）",
-   "printed_page": 150
-  },
-  {
-   "from": "立志",
-   "type": "subclass",
-   "to": "道德修养法",
-   "evidence": "道德修养法包括立志、学习、反思、箴言、慎独等",
-   "printed_page": 150
-  },
-  {
-   "from": "反思",
-   "type": "subclass",
-   "to": "道德修养法",
-   "evidence": "道德修养法包括立志、学习、反思、箴言、慎独等",
-   "printed_page": 150
-  },
-  {
-   "from": "箴言",
-   "type": "subclass",
-   "to": "道德修养法",
-   "evidence": "道德修养法包括立志、学习、反思、箴言、慎独等",
-   "printed_page": 150
-  },
-  {
-   "from": "慎独",
-   "type": "subclass",
-   "to": "道德修养法",
-   "evidence": "道德修养法包括立志、学习、反思、箴言、慎独等",
-   "printed_page": 150
-  },
-  {
-   "from": "品德评价法",
-   "type": "subclass",
-   "to": "我国常用的德育方法",
-   "evidence": "品德评价法是指通过对学生的品德进行肯定或否定的评价而予以激励或抑制",
-   "printed_page": 151
-  },
-  {
-   "from": "奖惩法",
-   "type": "exact_match",
-   "to": "品德评价法",
-   "evidence": "（六）品德评价法（奖惩法）",
-   "printed_page": 151
-  },
-  {
-   "from": "奖励",
-   "type": "subclass",
-   "to": "品德评价法",
-   "evidence": "品德评价法包括奖励、惩罚、评比和操行评定",
-   "printed_page": 151
-  },
-  {
-   "from": "惩罚",
-   "type": "subclass",
-   "to": "品德评价法",
-   "evidence": "品德评价法包括奖励、惩罚、评比和操行评定",
-   "printed_page": 151
-  },
-  {
-   "from": "评比",
-   "type": "subclass",
-   "to": "品德评价法",
-   "evidence": "品德评价法包括奖励、惩罚、评比和操行评定",
-   "printed_page": 151
-  },
-  {
-   "from": "操行评定",
-   "type": "subclass",
-   "to": "品德评价法",
-   "evidence": "品德评价法包括奖励、惩罚、评比和操行评定",
-   "printed_page": 151
-  },
-  {
-   "from": "角色扮演法",
-   "type": "subclass",
-   "to": "我国常用的德育方法",
-   "evidence": "角色扮演法是指通过让学生扮演处境特别的求助者或其他有异于自己的社会角色",
-   "printed_page": 151
-  },
-  {
-   "from": "德育途径",
-   "type": "part_of",
-   "to": "德育",
-   "evidence": "德育途径是指学校教育者对学生实施德育时可供选择和利用的渠道，又称为德育组织形式",
-   "printed_page": 151
-  },
-  {
-   "from": "思想品德课与其他学科教学",
-   "type": "part_of",
-   "to": "德育途径",
-   "evidence": "（一）思想品德课与其他学科教学——基本途径",
-   "printed_page": 151
-  },
-  {
-   "from": "直接的道德教育",
-   "type": "subclass",
-   "to": "思想品德课与其他学科教学",
-   "evidence": "其中，直接的道德教育即开设专门的道德课",
-   "printed_page": 151
-  },
-  {
-   "from": "间接的道德教育",
-   "type": "subclass",
-   "to": "思想品德课与其他学科教学",
-   "evidence": "间接的道德教育是在学科教学、学校与课程管理、辅助性服务工作和学校集体生活各个层面对学生进行道德渗透",
-   "printed_page": 151
-  },
-  {
-   "from": "社会实践活动",
-   "type": "part_of",
-   "to": "德育途径",
-   "evidence": "社会实践活动是学校德育不可缺少的重要途径",
-   "printed_page": 151
-  },
-  {
-   "from": "课外、校外活动",
-   "type": "part_of",
-   "to": "德育途径",
-   "evidence": "课外、校外活动是整个教育体系中必不可少的组成部分",
-   "printed_page": 152
-  },
-  {
-   "from": "共青团及少先队组织的活动",
-   "type": "part_of",
-   "to": "德育途径",
-   "evidence": "共青团、少先队是青少年学生自己的集体组织",
-   "printed_page": 152
-  },
-  {
-   "from": "校会、班会、周会、晨会、时事政策学习",
-   "type": "part_of",
-   "to": "德育途径",
-   "evidence": "校会、班会是全校师生或全班同学参加的活动",
-   "printed_page": 152
-  },
-  {
-   "from": "班主任工作",
-   "type": "part_of",
-   "to": "德育途径",
-   "evidence": "班主任工作是学校对学生进行德育的一个重要而又特殊的途径",
-   "printed_page": 152
-  },
-  {
-   "from": "认知模式",
-   "type": "part_of",
-   "to": "德育模式",
-   "evidence": "当代教育理论中流行最为广泛且占据主导地位的德育学说",
-   "printed_page": 152
-  },
-  {
-   "from": "皮亚杰",
-   "type": "marks",
-   "to": "认知模式",
-   "evidence": "代表人物：皮亚杰、科尔伯格",
-   "printed_page": 152
-  },
-  {
-   "from": "科尔伯格",
-   "type": "marks",
-   "to": "认知模式",
-   "evidence": "代表人物：皮亚杰、科尔伯格",
-   "printed_page": 152
-  },
-  {
-   "from": "体谅模式",
-   "type": "part_of",
-   "to": "德育模式",
-   "evidence": "把道德情感置于中心地位",
-   "printed_page": 153
-  },
-  {
-   "from": "麦克费尔",
-   "type": "marks",
-   "to": "体谅模式",
-   "evidence": "代表人物：彼得 · 麦克费尔",
-   "printed_page": 153
-  },
-  {
-   "from": "《生命线丛书》",
-   "type": "part_of",
-   "to": "体谅模式",
-   "evidence": "围绕人际社会情境问题的道德教育——《生命线丛书》",
-   "printed_page": 153
-  },
-  {
-   "from": "设身处地",
-   "type": "part_of",
-   "to": "《生命线丛书》",
-   "evidence": "设身处地。其目的在于发展个体体谅他人的动机",
-   "printed_page": 153
-  },
-  {
-   "from": "证明规则",
-   "type": "part_of",
-   "to": "《生命线丛书》",
-   "evidence": "证明规则。其一般目的在于给学生机会",
-   "printed_page": 153
-  },
-  {
-   "from": "付诸行动",
-   "type": "part_of",
-   "to": "《生命线丛书》",
-   "evidence": "付诸行动。其宗旨在于回答这样一个问题：如果是你，会怎样做",
-   "printed_page": 153
-  },
-  {
-   "from": "社会模仿模式",
-   "type": "part_of",
-   "to": "德育模式",
-   "evidence": "建立在替代基础上的观察学习是人类学习的重要形式，是品德教育的主要渠道",
-   "printed_page": 153
-  },
-  {
-   "from": "班杜拉",
-   "type": "marks",
-   "to": "社会模仿模式",
-   "evidence": "代表人物：班杜拉",
-   "printed_page": 153
-  },
-  {
-   "from": "价值澄清模式",
-   "type": "part_of",
-   "to": "德育模式",
-   "evidence": "着眼于价值观教育，试图帮助人们减少价值混乱",
-   "printed_page": 154
-  },
-  {
-   "from": "拉斯",
-   "type": "marks",
-   "to": "价值澄清模式",
-   "evidence": "代表人物：拉斯、哈明",
-   "printed_page": 154
-  },
-  {
-   "from": "哈明",
-   "type": "marks",
-   "to": "价值澄清模式",
-   "evidence": "代表人物：拉斯、哈明",
-   "printed_page": 154
-  },
-  {
-   "from": "集体教育模式",
-   "type": "part_of",
-   "to": "德育模式",
-   "evidence": "集体是一个社会的有机体，他主张在集体中，通过集体和为了集体进行教育",
-   "printed_page": 154
-  },
-  {
-   "from": "马卡连柯",
-   "type": "marks",
-   "to": "集体教育模式",
-   "evidence": "代表人物：马卡连柯",
-   "printed_page": 154
-  },
-  {
-   "from": "前景教育原则",
-   "type": "part_of",
-   "to": "集体教育模式",
-   "evidence": "尊重与要求相结合的原则。……平行教育原则。……前景教育原则",
-   "printed_page": 154
-  }
- ]
+  "chapter": "第一篇第八章 德育",
+  "schema_version": "1.1",
+  "edges": [
+    {
+      "from": "广义的德育",
+      "type": "subclass",
+      "to": "德育",
+      "evidence": "广义的德育泛指所有有目的、有计划地对社会成员在政治、思想与道德等方面施加影响的活动",
+      "printed_page": 139
+    },
+    {
+      "from": "狭义的德育",
+      "type": "subclass",
+      "to": "德育",
+      "evidence": "狭义的德育则指学校德育",
+      "printed_page": 139
+    },
+    {
+      "from": "学校德育",
+      "type": "exact_match",
+      "to": "狭义的德育",
+      "evidence": "学校德育是指教育者依据一定社会或阶级的要求和受教育者的思想品德形成规律",
+      "printed_page": 139
+    },
+    {
+      "from": "德育的功能",
+      "type": "part_of",
+      "to": "德育",
+      "evidence": "德育作为一种相对独立的社会实践活动，对个体的发展、整个教育活动的实施和社会的进步都具有重要功能",
+      "printed_page": 139
+    },
+    {
+      "from": "德育的个体性功能",
+      "type": "part_of",
+      "to": "德育的功能",
+      "evidence": "（一）德育的个体性功能——基本功能",
+      "printed_page": 139
+    },
+    {
+      "from": "享用性功能",
+      "type": "part_of",
+      "to": "德育的个体性功能",
+      "evidence": "其中享用性功能是德育个体性功能的最高境界",
+      "printed_page": 139
+    },
+    {
+      "from": "德育的社会性功能",
+      "type": "part_of",
+      "to": "德育的功能",
+      "evidence": "（二）德育的社会性功能",
+      "printed_page": 140
+    },
+    {
+      "from": "政治功能",
+      "type": "subclass",
+      "to": "德育的社会性功能",
+      "evidence": "主要包括德育对社会政治、经济、文化及生态环境等产生作用的政治功能、经济功能、文化功能、生态功能等",
+      "printed_page": 140
+    },
+    {
+      "from": "经济功能",
+      "type": "subclass",
+      "to": "德育的社会性功能",
+      "evidence": "主要包括德育对社会政治、经济、文化及生态环境等产生作用的政治功能、经济功能、文化功能、生态功能等",
+      "printed_page": 140
+    },
+    {
+      "from": "文化功能",
+      "type": "subclass",
+      "to": "德育的社会性功能",
+      "evidence": "主要包括德育对社会政治、经济、文化及生态环境等产生作用的政治功能、经济功能、文化功能、生态功能等",
+      "printed_page": 140
+    },
+    {
+      "from": "生态功能",
+      "type": "subclass",
+      "to": "德育的社会性功能",
+      "evidence": "主要包括德育对社会政治、经济、文化及生态环境等产生作用的政治功能、经济功能、文化功能、生态功能等",
+      "printed_page": 140
+    },
+    {
+      "from": "德育的教育性功能",
+      "type": "part_of",
+      "to": "德育的功能",
+      "evidence": "（三）德育的教育性功能",
+      "printed_page": 140
+    },
+    {
+      "from": "德育内容",
+      "type": "part_of",
+      "to": "德育",
+      "evidence": "三、德育的内容",
+      "printed_page": 140
+    },
+    {
+      "from": "选择德育内容的依据",
+      "type": "part_of",
+      "to": "德育内容",
+      "evidence": "（一）选择德育内容的依据",
+      "printed_page": 140
+    },
+    {
+      "from": "德育目标",
+      "type": "part_of",
+      "to": "选择德育内容的依据",
+      "evidence": "德育目标——直接决定德育内容",
+      "printed_page": 140
+    },
+    {
+      "from": "受教育者的身心发展特征",
+      "type": "part_of",
+      "to": "选择德育内容的依据",
+      "evidence": "受教育者的身心发展特征——决定德育内容的深度和广度",
+      "printed_page": 140
+    },
+    {
+      "from": "我国学校德育内容",
+      "type": "part_of",
+      "to": "德育内容",
+      "evidence": "（二）我国学校德育内容",
+      "printed_page": 140
+    },
+    {
+      "from": "政治教育",
+      "type": "subclass",
+      "to": "我国学校德育内容",
+      "evidence": "政治教育：主要包括正确的立场、观点、态度、信念、理想等要素",
+      "printed_page": 140
+    },
+    {
+      "from": "思想教育",
+      "type": "subclass",
+      "to": "我国学校德育内容",
+      "evidence": "思想教育：主要指思想认识和思想方法",
+      "printed_page": 140
+    },
+    {
+      "from": "道德教育",
+      "type": "subclass",
+      "to": "我国学校德育内容",
+      "evidence": "道德教育：道德被划分为私德、公德和职业道德三个类型",
+      "printed_page": 140
+    },
+    {
+      "from": "民主法制教育",
+      "type": "subclass",
+      "to": "我国学校德育内容",
+      "evidence": "民主法制教育：我国现阶段对学生进行的社会主义法制观点教育主要包括社会主义民主、社会主义法制和纪律的教育",
+      "printed_page": 140
+    },
+    {
+      "from": "心理健康教育",
+      "type": "subclass",
+      "to": "我国学校德育内容",
+      "evidence": "心理健康教育：主要有三方面的内容，即学习辅导、生活辅导和择业指导",
+      "printed_page": 140
+    },
+    {
+      "from": "按道德类型划分",
+      "type": "part_of",
+      "to": "道德教育",
+      "evidence": "道德教育：道德被划分为私德、公德和职业道德三个类型",
+      "printed_page": 140
+    },
+    {
+      "from": "私德",
+      "type": "subclass",
+      "to": "按道德类型划分",
+      "evidence": "道德教育：道德被划分为私德、公德和职业道德三个类型",
+      "printed_page": 140
+    },
+    {
+      "from": "公德",
+      "type": "subclass",
+      "to": "按道德类型划分",
+      "evidence": "道德教育：道德被划分为私德、公德和职业道德三个类型",
+      "printed_page": 140
+    },
+    {
+      "from": "职业道德",
+      "type": "subclass",
+      "to": "按道德类型划分",
+      "evidence": "道德教育：道德被划分为私德、公德和职业道德三个类型",
+      "printed_page": 140
+    },
+    {
+      "from": "家庭美德",
+      "type": "part_of",
+      "to": "私德",
+      "evidence": "其中，“家庭美德”是私德的核心",
+      "printed_page": 140
+    },
+    {
+      "from": "爱国主义教育",
+      "type": "related",
+      "to": "德育内容",
+      "evidence": "爱国主义教育——德育的永恒主题",
+      "printed_page": 140
+    },
+    {
+      "from": "德育过程",
+      "type": "part_of",
+      "to": "德育",
+      "evidence": "德育过程是教育者按照一定的社会要求和受教育者品德形成规律",
+      "printed_page": 141
+    },
+    {
+      "from": "思想品德形成过程",
+      "type": "related",
+      "to": "德育过程",
+      "evidence": "德育过程是促进人的思想品德形成与发展的重要因素，但不是唯一因素，二者既相互联系，又相互区别",
+      "printed_page": 141
+    },
+    {
+      "from": "德育过程的结构",
+      "type": "part_of",
+      "to": "德育过程",
+      "evidence": "德育过程通常由教育者、受教育者、德育内容和德育方法四个相互制约的要素构成",
+      "printed_page": 142
+    },
+    {
+      "from": "教育者",
+      "type": "part_of",
+      "to": "德育过程的结构",
+      "evidence": "教育者是德育过程的组织者、领导者",
+      "printed_page": 142
+    },
+    {
+      "from": "受教育者",
+      "type": "part_of",
+      "to": "德育过程的结构",
+      "evidence": "受教育者包括受教育者个体和群体，他们都是德育的对象",
+      "printed_page": 142
+    },
+    {
+      "from": "德育内容",
+      "type": "part_of",
+      "to": "德育过程的结构",
+      "evidence": "德育内容是用以形成受教育者品德的社会思想政治准则和法纪道德规范",
+      "printed_page": 142
+    },
+    {
+      "from": "德育方法",
+      "type": "part_of",
+      "to": "德育过程的结构",
+      "evidence": "德育方法是教育者施教传道和受教育者受教修养的相互作用的活动方式的总和",
+      "printed_page": 142
+    },
+    {
+      "from": "德育过程的矛盾",
+      "type": "part_of",
+      "to": "德育过程",
+      "evidence": "德育过程的矛盾是指德育过程中各要素、各部分之间和各要素、各部分内部各方面之间的对立统一关系",
+      "printed_page": 142
+    },
+    {
+      "from": "德育过程的基本矛盾",
+      "type": "subclass",
+      "to": "德育过程的矛盾",
+      "evidence": "德育过程的基本矛盾是社会通过教师向学生提出的道德要求与学生已有品德水平之间的矛盾",
+      "printed_page": 142
+    },
+    {
+      "from": "德育过程的基本规律",
+      "type": "part_of",
+      "to": "德育过程",
+      "evidence": "五、德育过程的基本规律",
+      "printed_page": 142
+    },
+    {
+      "from": "知情意行统一发展规律",
+      "type": "subclass",
+      "to": "德育过程的基本规律",
+      "evidence": "德育过程是促使学生的知、情、意、行互动发展的过程",
+      "printed_page": 142
+    },
+    {
+      "from": "组织活动和交往规律",
+      "type": "subclass",
+      "to": "德育过程的基本规律",
+      "evidence": "德育过程是组织学生的活动和交往、统一多方面教育影响的过程",
+      "printed_page": 143
+    },
+    {
+      "from": "内部矛盾转化规律",
+      "type": "subclass",
+      "to": "德育过程的基本规律",
+      "evidence": "德育过程是促进学生的思想品德内部矛盾积极转化的过程",
+      "printed_page": 143
+    },
+    {
+      "from": "长期反复逐步提高规律",
+      "type": "subclass",
+      "to": "德育过程的基本规律",
+      "evidence": "德育过程是一个长期的、反复的、逐步提高的过程",
+      "printed_page": 144
+    },
+    {
+      "from": "品德的知、情、意、行",
+      "type": "part_of",
+      "to": "知情意行统一发展规律",
+      "evidence": "学生的思想品德是知、情、意、行的统一体",
+      "printed_page": 142
+    },
+    {
+      "from": "道德认识",
+      "type": "part_of",
+      "to": "品德的知、情、意、行",
+      "evidence": "道德认识是指对道德行为准则及其执行意义的认识，是个体品德中的核心部分",
+      "printed_page": 142
+    },
+    {
+      "from": "道德情感",
+      "type": "part_of",
+      "to": "品德的知、情、意、行",
+      "evidence": "道德情感是根据道德观念来评价他人或自己行为时产生的内心体验",
+      "printed_page": 143
+    },
+    {
+      "from": "道德意志",
+      "type": "part_of",
+      "to": "品德的知、情、意、行",
+      "evidence": "道德意志是个体自觉地调节道德行为，克服困难",
+      "printed_page": 143
+    },
+    {
+      "from": "道德行为",
+      "type": "part_of",
+      "to": "品德的知、情、意、行",
+      "evidence": "道德行为是实现道德动机的行为意向及外部表现",
+      "printed_page": 143
+    },
+    {
+      "from": "活动和交往",
+      "type": "part_of",
+      "to": "组织活动和交往规律",
+      "evidence": "活动和交往是德育过程的基础",
+      "printed_page": 143
+    },
+    {
+      "from": "德育过程的长期性反复性渐进性",
+      "type": "part_of",
+      "to": "长期反复逐步提高规律",
+      "evidence": "德育过程的长期性、反复性、渐进性特点要求教育者要根据学生的年龄阶段特点",
+      "printed_page": 144
+    },
+    {
+      "from": "导向性原则",
+      "type": "subclass",
+      "to": "德育原则",
+      "evidence": "导向性原则是指进行德育时要有一定的理想性和方向性，以指导学生向正确的方向发展",
+      "printed_page": 144
+    },
+    {
+      "from": "疏导原则",
+      "type": "subclass",
+      "to": "德育原则",
+      "evidence": "疏导原则是指进行德育要循循善诱、以理服人，从提高学生的认识入手",
+      "printed_page": 144
+    },
+    {
+      "from": "尊重学生与严格要求学生相结合的原则",
+      "type": "subclass",
+      "to": "德育原则",
+      "evidence": "尊重学生与严格要求学生相结合的原则是指，进行德育要把对学生的思想和行为的严格要求与对他们个人的尊重和信赖结合起来",
+      "printed_page": 145
+    },
+    {
+      "from": "知行统一原则",
+      "type": "subclass",
+      "to": "德育原则",
+      "evidence": "知行统一原则是指既要重视思想道德的理论教育，又要重视组织学生参加实践锻炼",
+      "printed_page": 145
+    },
+    {
+      "from": "正面教育与纪律约束相结合的原则",
+      "type": "subclass",
+      "to": "德育原则",
+      "evidence": "正面教育与纪律约束相结合的原则是指，德育工作既要正面引导、说服教育、启发自觉",
+      "printed_page": 146
+    },
+    {
+      "from": "依靠积极因素，克服消极因素的原则",
+      "type": "subclass",
+      "to": "德育原则",
+      "evidence": "依靠积极因素，克服消极因素的原则是指，在德育工作中，教育者要善于依靠和发扬学生自身的积极因素",
+      "printed_page": 146
+    },
+    {
+      "from": "教育影响的一致性与连贯性原则",
+      "type": "subclass",
+      "to": "德育原则",
+      "evidence": "教育影响的一致性与连贯性原则是指，进行德育应当有目的、有计划地把来自各方面的对学生的教育影响加以组织、调节、整合",
+      "printed_page": 147
+    },
+    {
+      "from": "因材施教原则",
+      "type": "subclass",
+      "to": "德育原则",
+      "evidence": "因材施教原则是指进行德育要从学生品德发展的实际出发",
+      "printed_page": 147
+    },
+    {
+      "from": "集体教育和个别教育相结合的原则",
+      "type": "subclass",
+      "to": "德育原则",
+      "evidence": "集体教育和个别教育相结合的原则是指，在德育过程中，教育者要善于组织和教育学生热爱集体",
+      "printed_page": 147
+    },
+    {
+      "from": "严慈相济原则",
+      "type": "exact_match",
+      "to": "尊重学生与严格要求学生相结合的原则",
+      "evidence": "尊重学生与严格要求学生相结合的原则（严慈相济原则）",
+      "printed_page": 145
+    },
+    {
+      "from": "长善救失原则",
+      "type": "exact_match",
+      "to": "依靠积极因素，克服消极因素的原则",
+      "evidence": "依靠积极因素，克服消极因素的原则（长善救失原则）",
+      "printed_page": 146
+    },
+    {
+      "from": "平行教育原则",
+      "type": "exact_match",
+      "to": "集体教育和个别教育相结合的原则",
+      "evidence": "集体教育和个别教育相结合的原则（平行教育原则）",
+      "printed_page": 147
+    },
+    {
+      "from": "疏导原则的贯彻要求",
+      "type": "part_of",
+      "to": "疏导原则",
+      "evidence": "讲明道理，疏导思想",
+      "printed_page": 145
+    },
+    {
+      "from": "尊重学生与严格要求学生相结合原则的贯彻要求",
+      "type": "part_of",
+      "to": "尊重学生与严格要求学生相结合的原则",
+      "evidence": "1. 尊重和信赖学生。2. 严格要求学生。",
+      "printed_page": 145
+    },
+    {
+      "from": "因材施教原则的贯彻要求",
+      "type": "part_of",
+      "to": "因材施教原则",
+      "evidence": "深入了解学生的个性特点和内心世界",
+      "printed_page": 147
+    },
+    {
+      "from": "依靠积极因素，克服消极因素原则的贯彻要求",
+      "type": "part_of",
+      "to": "依靠积极因素，克服消极因素的原则",
+      "evidence": "1.“一分为二”地看待学生。2. 发扬积极因素，克服消极因素。",
+      "printed_page": 147
+    },
+    {
+      "from": "马卡连柯",
+      "type": "marks",
+      "to": "尊重学生与严格要求学生相结合的原则",
+      "evidence": "要尽量多地要求一个人，也要尽可能地尊重一个人。——马卡连柯",
+      "printed_page": 145
+    },
+    {
+      "from": "王阳明",
+      "type": "marks",
+      "to": "知行统一原则",
+      "evidence": "知是行之始，行是知之成。——王阳明",
+      "printed_page": 146
+    },
+    {
+      "from": "《学记》",
+      "type": "marks",
+      "to": "依靠积极因素，克服消极因素的原则",
+      "evidence": "教也者，长善而救其失者也。——《学记》",
+      "printed_page": 146
+    },
+    {
+      "from": "《论语》",
+      "type": "marks",
+      "to": "疏导原则",
+      "evidence": "夫子循循然善诱人，博我以文，约我以礼，欲罢不能。——《论语 · 子罕》",
+      "printed_page": 145
+    },
+    {
+      "from": "我国常用的德育方法",
+      "type": "part_of",
+      "to": "德育方法",
+      "evidence": "一、我国常用的德育方法 1",
+      "printed_page": 148
+    },
+    {
+      "from": "说服教育法",
+      "type": "subclass",
+      "to": "我国常用的德育方法",
+      "evidence": "说服教育法是指通过摆事实、讲道理使学生提高认识、形成正确观点的方法",
+      "printed_page": 148
+    },
+    {
+      "from": "语言说服",
+      "type": "subclass",
+      "to": "说服教育法",
+      "evidence": "语言说服：是指用文字语言进行说服教育的方式",
+      "printed_page": 148
+    },
+    {
+      "from": "事实说服",
+      "type": "subclass",
+      "to": "说服教育法",
+      "evidence": "事实说服：是指用事实进行说服教育的方式",
+      "printed_page": 148
+    },
+    {
+      "from": "榜样示范法",
+      "type": "subclass",
+      "to": "我国常用的德育方法",
+      "evidence": "榜样示范法是指用榜样人物的高尚思想、模范行为、优异成就来影响学生的思想、情感和行为的方法",
+      "printed_page": 149
+    },
+    {
+      "from": "典范",
+      "type": "subclass",
+      "to": "榜样示范法",
+      "evidence": "典范：主要包括历史伟人、民族英雄、革命导师、科学家、思想家和文学家等各行各业的杰出人物",
+      "printed_page": 149
+    },
+    {
+      "from": "示范",
+      "type": "subclass",
+      "to": "榜样示范法",
+      "evidence": "示范：主要是指家长与教师",
+      "printed_page": 149
+    },
+    {
+      "from": "典型",
+      "type": "subclass",
+      "to": "榜样示范法",
+      "evidence": "典型：主要是学生中涌现出来的优秀个人",
+      "printed_page": 149
+    },
+    {
+      "from": "实际锻炼法",
+      "type": "subclass",
+      "to": "我国常用的德育方法",
+      "evidence": "实际锻炼法是指教师指导学生参加各种实践活动，以形成一定的道德品质和行为习惯的方法",
+      "printed_page": 149
+    },
+    {
+      "from": "常规训练",
+      "type": "subclass",
+      "to": "实际锻炼法",
+      "evidence": "常规训练是指教师指导学生按照一定的规章制度进行经常性的行为练习",
+      "printed_page": 149
+    },
+    {
+      "from": "实践锻炼",
+      "type": "subclass",
+      "to": "实际锻炼法",
+      "evidence": "实践锻炼是指让学生参加各种实践活动，在活动中形成优良品德和行为习惯的方法",
+      "printed_page": 149
+    },
+    {
+      "from": "情感陶冶法",
+      "type": "subclass",
+      "to": "我国常用的德育方法",
+      "evidence": "情感陶冶法是指教师利用高尚的情感、美好的事物和优美的环境感染和熏陶学生",
+      "printed_page": 150
+    },
+    {
+      "from": "陶冶教育法",
+      "type": "exact_match",
+      "to": "情感陶冶法",
+      "evidence": "（四）情感陶冶法（陶冶教育法）",
+      "printed_page": 150
+    },
+    {
+      "from": "人格感化",
+      "type": "subclass",
+      "to": "情感陶冶法",
+      "evidence": "（1）人格感化。（2）环境陶冶。（3）艺术陶冶。",
+      "printed_page": 150
+    },
+    {
+      "from": "环境陶冶",
+      "type": "subclass",
+      "to": "情感陶冶法",
+      "evidence": "（1）人格感化。（2）环境陶冶。（3）艺术陶冶。",
+      "printed_page": 150
+    },
+    {
+      "from": "艺术陶冶",
+      "type": "subclass",
+      "to": "情感陶冶法",
+      "evidence": "（1）人格感化。（2）环境陶冶。（3）艺术陶冶。",
+      "printed_page": 150
+    },
+    {
+      "from": "道德修养法",
+      "type": "subclass",
+      "to": "我国常用的德育方法",
+      "evidence": "道德修养法是指教师指导学生自觉主动地进行学习、自我反省，以实现思想转化及行为控制的方法",
+      "printed_page": 150
+    },
+    {
+      "from": "道德指导法",
+      "type": "exact_match",
+      "to": "道德修养法",
+      "evidence": "（五）道德修养法（道德指导法、自我指导修养法）",
+      "printed_page": 150
+    },
+    {
+      "from": "自我指导修养法",
+      "type": "exact_match",
+      "to": "道德修养法",
+      "evidence": "（五）道德修养法（道德指导法、自我指导修养法）",
+      "printed_page": 150
+    },
+    {
+      "from": "立志",
+      "type": "subclass",
+      "to": "道德修养法",
+      "evidence": "道德修养法包括立志、学习、反思、箴言、慎独等",
+      "printed_page": 150
+    },
+    {
+      "from": "反思",
+      "type": "subclass",
+      "to": "道德修养法",
+      "evidence": "道德修养法包括立志、学习、反思、箴言、慎独等",
+      "printed_page": 150
+    },
+    {
+      "from": "箴言",
+      "type": "subclass",
+      "to": "道德修养法",
+      "evidence": "道德修养法包括立志、学习、反思、箴言、慎独等",
+      "printed_page": 150
+    },
+    {
+      "from": "慎独",
+      "type": "subclass",
+      "to": "道德修养法",
+      "evidence": "道德修养法包括立志、学习、反思、箴言、慎独等",
+      "printed_page": 150
+    },
+    {
+      "from": "品德评价法",
+      "type": "subclass",
+      "to": "我国常用的德育方法",
+      "evidence": "品德评价法是指通过对学生的品德进行肯定或否定的评价而予以激励或抑制",
+      "printed_page": 151
+    },
+    {
+      "from": "奖惩法",
+      "type": "exact_match",
+      "to": "品德评价法",
+      "evidence": "（六）品德评价法（奖惩法）",
+      "printed_page": 151
+    },
+    {
+      "from": "奖励",
+      "type": "subclass",
+      "to": "品德评价法",
+      "evidence": "品德评价法包括奖励、惩罚、评比和操行评定",
+      "printed_page": 151
+    },
+    {
+      "from": "惩罚",
+      "type": "subclass",
+      "to": "品德评价法",
+      "evidence": "品德评价法包括奖励、惩罚、评比和操行评定",
+      "printed_page": 151
+    },
+    {
+      "from": "评比",
+      "type": "subclass",
+      "to": "品德评价法",
+      "evidence": "品德评价法包括奖励、惩罚、评比和操行评定",
+      "printed_page": 151
+    },
+    {
+      "from": "操行评定",
+      "type": "subclass",
+      "to": "品德评价法",
+      "evidence": "品德评价法包括奖励、惩罚、评比和操行评定",
+      "printed_page": 151
+    },
+    {
+      "from": "角色扮演法",
+      "type": "subclass",
+      "to": "我国常用的德育方法",
+      "evidence": "角色扮演法是指通过让学生扮演处境特别的求助者或其他有异于自己的社会角色",
+      "printed_page": 151
+    },
+    {
+      "from": "德育途径",
+      "type": "part_of",
+      "to": "德育",
+      "evidence": "德育途径是指学校教育者对学生实施德育时可供选择和利用的渠道，又称为德育组织形式",
+      "printed_page": 151
+    },
+    {
+      "from": "思想品德课与其他学科教学",
+      "type": "part_of",
+      "to": "德育途径",
+      "evidence": "（一）思想品德课与其他学科教学——基本途径",
+      "printed_page": 151
+    },
+    {
+      "from": "直接的道德教育",
+      "type": "subclass",
+      "to": "思想品德课与其他学科教学",
+      "evidence": "其中，直接的道德教育即开设专门的道德课",
+      "printed_page": 151
+    },
+    {
+      "from": "间接的道德教育",
+      "type": "subclass",
+      "to": "思想品德课与其他学科教学",
+      "evidence": "间接的道德教育是在学科教学、学校与课程管理、辅助性服务工作和学校集体生活各个层面对学生进行道德渗透",
+      "printed_page": 151
+    },
+    {
+      "from": "社会实践活动",
+      "type": "part_of",
+      "to": "德育途径",
+      "evidence": "社会实践活动是学校德育不可缺少的重要途径",
+      "printed_page": 151
+    },
+    {
+      "from": "课外、校外活动",
+      "type": "part_of",
+      "to": "德育途径",
+      "evidence": "课外、校外活动是整个教育体系中必不可少的组成部分",
+      "printed_page": 152
+    },
+    {
+      "from": "共青团及少先队组织的活动",
+      "type": "part_of",
+      "to": "德育途径",
+      "evidence": "共青团、少先队是青少年学生自己的集体组织",
+      "printed_page": 152
+    },
+    {
+      "from": "校会、班会、周会、晨会、时事政策学习",
+      "type": "part_of",
+      "to": "德育途径",
+      "evidence": "校会、班会是全校师生或全班同学参加的活动",
+      "printed_page": 152
+    },
+    {
+      "from": "班主任工作",
+      "type": "part_of",
+      "to": "德育途径",
+      "evidence": "班主任工作是学校对学生进行德育的一个重要而又特殊的途径",
+      "printed_page": 152
+    },
+    {
+      "from": "认知模式",
+      "type": "part_of",
+      "to": "德育模式",
+      "evidence": "当代教育理论中流行最为广泛且占据主导地位的德育学说",
+      "printed_page": 152
+    },
+    {
+      "from": "皮亚杰",
+      "type": "marks",
+      "to": "认知模式",
+      "evidence": "代表人物：皮亚杰、科尔伯格",
+      "printed_page": 152
+    },
+    {
+      "from": "科尔伯格",
+      "type": "marks",
+      "to": "认知模式",
+      "evidence": "代表人物：皮亚杰、科尔伯格",
+      "printed_page": 152
+    },
+    {
+      "from": "体谅模式",
+      "type": "part_of",
+      "to": "德育模式",
+      "evidence": "把道德情感置于中心地位",
+      "printed_page": 153
+    },
+    {
+      "from": "麦克费尔",
+      "type": "marks",
+      "to": "体谅模式",
+      "evidence": "代表人物：彼得 · 麦克费尔",
+      "printed_page": 153
+    },
+    {
+      "from": "《生命线丛书》",
+      "type": "part_of",
+      "to": "体谅模式",
+      "evidence": "围绕人际社会情境问题的道德教育——《生命线丛书》",
+      "printed_page": 153
+    },
+    {
+      "from": "设身处地",
+      "type": "part_of",
+      "to": "《生命线丛书》",
+      "evidence": "设身处地。其目的在于发展个体体谅他人的动机",
+      "printed_page": 153
+    },
+    {
+      "from": "证明规则",
+      "type": "part_of",
+      "to": "《生命线丛书》",
+      "evidence": "证明规则。其一般目的在于给学生机会",
+      "printed_page": 153
+    },
+    {
+      "from": "付诸行动",
+      "type": "part_of",
+      "to": "《生命线丛书》",
+      "evidence": "付诸行动。其宗旨在于回答这样一个问题：如果是你，会怎样做",
+      "printed_page": 153
+    },
+    {
+      "from": "社会模仿模式",
+      "type": "part_of",
+      "to": "德育模式",
+      "evidence": "建立在替代基础上的观察学习是人类学习的重要形式，是品德教育的主要渠道",
+      "printed_page": 153
+    },
+    {
+      "from": "班杜拉",
+      "type": "marks",
+      "to": "社会模仿模式",
+      "evidence": "代表人物：班杜拉",
+      "printed_page": 153
+    },
+    {
+      "from": "价值澄清模式",
+      "type": "part_of",
+      "to": "德育模式",
+      "evidence": "着眼于价值观教育，试图帮助人们减少价值混乱",
+      "printed_page": 154
+    },
+    {
+      "from": "拉斯",
+      "type": "marks",
+      "to": "价值澄清模式",
+      "evidence": "代表人物：拉斯、哈明",
+      "printed_page": 154
+    },
+    {
+      "from": "哈明",
+      "type": "marks",
+      "to": "价值澄清模式",
+      "evidence": "代表人物：拉斯、哈明",
+      "printed_page": 154
+    },
+    {
+      "from": "集体教育模式",
+      "type": "part_of",
+      "to": "德育模式",
+      "evidence": "集体是一个社会的有机体，他主张在集体中，通过集体和为了集体进行教育",
+      "printed_page": 154
+    },
+    {
+      "from": "马卡连柯",
+      "type": "marks",
+      "to": "集体教育模式",
+      "evidence": "代表人物：马卡连柯",
+      "printed_page": 154
+    },
+    {
+      "from": "前景教育原则",
+      "type": "part_of",
+      "to": "集体教育模式",
+      "evidence": "尊重与要求相结合的原则。……平行教育原则。……前景教育原则",
+      "printed_page": 154
+    }
+  ]
 }

@@ -1,706 +1,706 @@
 {
- "chapter": "第一篇第三章 教育目的",
- "schema_version": "1.1",
- "edges": [
-  {
-   "from": "教育目的",
-   "type": "part_of",
-   "to": "教育方针",
-   "evidence": "教育目的与……教育方针……部分与整体……的关系",
-   "printed_page": 47
-  },
-  {
-   "from": "按实现特点划分",
-   "type": "part_of",
-   "to": "教育目的的分类",
-   "evidence": "教育目的的分类……分类标准……实现特点",
-   "printed_page": 48
-  },
-  {
-   "from": "按作用特点划分",
-   "type": "part_of",
-   "to": "教育目的的分类",
-   "evidence": "教育目的的分类……分类标准……作用特点",
-   "printed_page": 48
-  },
-  {
-   "from": "按体现范围划分",
-   "type": "part_of",
-   "to": "教育目的的分类",
-   "evidence": "教育目的的分类……分类标准……体现范围",
-   "printed_page": 48
-  },
-  {
-   "from": "按存在形态划分",
-   "type": "part_of",
-   "to": "教育目的的分类",
-   "evidence": "教育目的的分类……分类标准……存在形态",
-   "printed_page": 48
-  },
-  {
-   "from": "按制定方式划分",
-   "type": "part_of",
-   "to": "教育目的的分类",
-   "evidence": "教育目的的分类……分类标准……制定方式",
-   "printed_page": 48
-  },
-  {
-   "from": "理想（终极性）的教育目的",
-   "type": "subclass",
-   "to": "按实现特点划分",
-   "evidence": "具有终极结果的教育目的。",
-   "printed_page": 48
-  },
-  {
-   "from": "现实（发展性）的教育目的",
-   "type": "subclass",
-   "to": "按实现特点划分",
-   "evidence": "具有连续性的教育目的。",
-   "printed_page": 48
-  },
-  {
-   "from": "价值性的教育目的",
-   "type": "subclass",
-   "to": "按作用特点划分",
-   "evidence": "含有一定价值观实现要求的教育目的。",
-   "printed_page": 48
-  },
-  {
-   "from": "操作性（功用性）的教育目的",
-   "type": "subclass",
-   "to": "按作用特点划分",
-   "evidence": "具有实践操作意义的教育目的。",
-   "printed_page": 48
-  },
-  {
-   "from": "内在的教育目的",
-   "type": "subclass",
-   "to": "按体现范围划分",
-   "evidence": "在教育过程中产生的对教育预期结果的要求。",
-   "printed_page": 48
-  },
-  {
-   "from": "外在的教育目的",
-   "type": "subclass",
-   "to": "按体现范围划分",
-   "evidence": "在教育过程之外对教育的预期结果所提出的要求。",
-   "printed_page": 48
-  },
-  {
-   "from": "应然的教育目的",
-   "type": "subclass",
-   "to": "按存在形态划分",
-   "evidence": "以成文的、合乎规范的形式所规定并表述。",
-   "printed_page": 48
-  },
-  {
-   "from": "实然的教育目的",
-   "type": "subclass",
-   "to": "按存在形态划分",
-   "evidence": "教育过程的当事人在理论层面进行理解、贯彻、执行。",
-   "printed_page": 48
-  },
-  {
-   "from": "正式决策的教育目的",
-   "type": "subclass",
-   "to": "按制定方式划分",
-   "evidence": "被社会一定权力机构确定并要求所属各级各类教育都必须遵循。",
-   "printed_page": 48
-  },
-  {
-   "from": "非正式决策的教育目的",
-   "type": "subclass",
-   "to": "按制定方式划分",
-   "evidence": "蕴含在教育思想、教育理论中的教育目的。",
-   "printed_page": 48
-  },
-  {
-   "from": "宏观性",
-   "type": "subclass",
-   "to": "教育目的的特征",
-   "evidence": "教育目的是国家指导全国教育事业的总的要求。",
-   "printed_page": 49
-  },
-  {
-   "from": "预期性",
-   "type": "subclass",
-   "to": "教育目的的特征",
-   "evidence": "教育目的是指社会或个人对教育对象未来发展状况的期望，展现的是一种预期状态，具有预期性和理想化色彩",
-   "printed_page": 49
-  },
-  {
-   "from": "强制性",
-   "type": "subclass",
-   "to": "教育目的的特征",
-   "evidence": "教育目的从内容上体现了国家的意志、政府的主张和政党的利益。",
-   "printed_page": 49
-  },
-  {
-   "from": "时代性",
-   "type": "subclass",
-   "to": "教育目的的特征",
-   "evidence": "任何一个教育目的都具有时代气息。",
-   "printed_page": 49
-  },
-  {
-   "from": "导向功能",
-   "type": "subclass",
-   "to": "教育目的的功能",
-   "evidence": "教育目的一经确立，就成为人们行动的指南。",
-   "printed_page": 49
-  },
-  {
-   "from": "选择功能",
-   "type": "subclass",
-   "to": "教育目的的功能",
-   "evidence": "教育者会根据这样的标准选择教育内容和教育方法。",
-   "printed_page": 49
-  },
-  {
-   "from": "调控功能",
-   "type": "subclass",
-   "to": "教育目的的功能",
-   "evidence": "教育目的是社会根据自身或人的发展需要对教育活动进行调节、控制的一种重要手段",
-   "printed_page": 50
-  },
-  {
-   "from": "激励功能",
-   "type": "subclass",
-   "to": "教育目的的功能",
-   "evidence": "最终目的就可以反过来成为一种激励的力量。",
-   "printed_page": 50
-  },
-  {
-   "from": "评价功能",
-   "type": "subclass",
-   "to": "教育目的的功能",
-   "evidence": "教育目的是衡量和评价教育实施效果的根本依据和标准。",
-   "printed_page": 50
-  },
-  {
-   "from": "国家的教育目的",
-   "type": "part_of",
-   "to": "教育目的的层次结构",
-   "evidence": "国家的教育目的居于第一个层次。",
-   "printed_page": 50
-  },
-  {
-   "from": "培养目标",
-   "type": "part_of",
-   "to": "教育目的的层次结构",
-   "evidence": "培养目标是教育目的的具体化。",
-   "printed_page": 50
-  },
-  {
-   "from": "课程目标",
-   "type": "part_of",
-   "to": "教育目的的层次结构",
-   "evidence": "课程目标是对特定教育阶段的课程进行的价值和任务界定。",
-   "printed_page": 50
-  },
-  {
-   "from": "教学目标",
-   "type": "part_of",
-   "to": "教育目的的层次结构",
-   "evidence": "教学目标是教育者在教育教学的过程中……希望受教育者达到的要求。",
-   "printed_page": 51
-  },
-  {
-   "from": "培养目标",
-   "type": "prerequisite",
-   "to": "国家的教育目的",
-   "evidence": "培养目标是教育目的的具体化。",
-   "printed_page": 50
-  },
-  {
-   "from": "教学目标",
-   "type": "prerequisite",
-   "to": "培养目标",
-   "evidence": "教学目标与教育目的、培养目标的关系是具体与抽象的关系。",
-   "printed_page": 51
-  },
-  {
-   "from": "宗教本位论",
-   "type": "subclass",
-   "to": "有关教育目的的理论",
-   "evidence": "（一）宗教本位论……宗教本位论的代表人物有奥古斯丁、托马斯·阿奎那等",
-   "printed_page": 51
-  },
-  {
-   "from": "社会本位论",
-   "type": "subclass",
-   "to": "有关教育目的的理论",
-   "evidence": "（二）社会本位论……社会本位论的代表人物有巴格莱",
-   "printed_page": 51
-  },
-  {
-   "from": "个人本位论",
-   "type": "subclass",
-   "to": "有关教育目的的理论",
-   "evidence": "（三）个人本位论……个人本位论的代表人物有孟子",
-   "printed_page": 51
-  },
-  {
-   "from": "教育无目的论",
-   "type": "subclass",
-   "to": "有关教育目的的理论",
-   "evidence": "（四）教育无目的论……教育无目的论的代表人物是杜威",
-   "printed_page": 52
-  },
-  {
-   "from": "生活本位论",
-   "type": "subclass",
-   "to": "有关教育目的的理论",
-   "evidence": "（五）生活本位论……生活本位论的代表人物有斯宾塞和杜威",
-   "printed_page": 52
-  },
-  {
-   "from": "辩证统一论",
-   "type": "subclass",
-   "to": "有关教育目的的理论",
-   "evidence": "（六）辩证统一论……辩证统一论的代表人物是马克思",
-   "printed_page": 52
-  },
-  {
-   "from": "社会本位论",
-   "type": "contrast",
-   "to": "个人本位论",
-   "evidence": "从社会发展的需要出发，注重教育的社会价值",
-   "printed_page": 51
-  },
-  {
-   "from": "奥古斯丁",
-   "type": "part_of",
-   "to": "宗教本位论",
-   "evidence": "宗教本位论的代表人物。",
-   "printed_page": 51
-  },
-  {
-   "from": "托马斯·阿奎那",
-   "type": "part_of",
-   "to": "宗教本位论",
-   "evidence": "宗教本位论的代表人物。",
-   "printed_page": 51
-  },
-  {
-   "from": "孔德",
-   "type": "part_of",
-   "to": "社会本位论",
-   "evidence": "社会本位论的代表人物。",
-   "printed_page": 51
-  },
-  {
-   "from": "赫尔巴特",
-   "type": "part_of",
-   "to": "社会本位论",
-   "evidence": "社会本位论的代表人物。",
-   "printed_page": 51
-  },
-  {
-   "from": "涂尔干",
-   "type": "part_of",
-   "to": "社会本位论",
-   "evidence": "社会本位论的代表人物。",
-   "printed_page": 51
-  },
-  {
-   "from": "凯兴斯泰纳",
-   "type": "part_of",
-   "to": "社会本位论",
-   "evidence": "社会本位论的代表人物。",
-   "printed_page": 51
-  },
-  {
-   "from": "孔子",
-   "type": "part_of",
-   "to": "社会本位论",
-   "evidence": "社会本位论的代表人物。",
-   "printed_page": 51
-  },
-  {
-   "from": "荀子",
-   "type": "part_of",
-   "to": "社会本位论",
-   "evidence": "社会本位论的代表人物。",
-   "printed_page": 51
-  },
-  {
-   "from": "柏拉图",
-   "type": "part_of",
-   "to": "社会本位论",
-   "evidence": "社会本位论的代表人物。",
-   "printed_page": 51
-  },
-  {
-   "from": "巴格莱",
-   "type": "part_of",
-   "to": "社会本位论",
-   "evidence": "社会本位论的代表人物。",
-   "printed_page": 51
-  },
-  {
-   "from": "孟子",
-   "type": "part_of",
-   "to": "个人本位论",
-   "evidence": "个人本位论的代表人物。",
-   "printed_page": 51
-  },
-  {
-   "from": "卢梭",
-   "type": "part_of",
-   "to": "个人本位论",
-   "evidence": "个人本位论的代表人物。",
-   "printed_page": 51
-  },
-  {
-   "from": "马斯洛",
-   "type": "part_of",
-   "to": "个人本位论",
-   "evidence": "个人本位论的代表人物。",
-   "printed_page": 51
-  },
-  {
-   "from": "罗杰斯",
-   "type": "part_of",
-   "to": "个人本位论",
-   "evidence": "个人本位论的代表人物。",
-   "printed_page": 51
-  },
-  {
-   "from": "福禄贝尔",
-   "type": "part_of",
-   "to": "个人本位论",
-   "evidence": "个人本位论的代表人物。",
-   "printed_page": 51
-  },
-  {
-   "from": "裴斯泰洛齐",
-   "type": "part_of",
-   "to": "个人本位论",
-   "evidence": "个人本位论的代表人物。",
-   "printed_page": 51
-  },
-  {
-   "from": "萨特",
-   "type": "part_of",
-   "to": "个人本位论",
-   "evidence": "个人本位论的代表人物。",
-   "printed_page": 51
-  },
-  {
-   "from": "奈勒",
-   "type": "part_of",
-   "to": "个人本位论",
-   "evidence": "个人本位论的代表人物。",
-   "printed_page": 51
-  },
-  {
-   "from": "杜威",
-   "type": "part_of",
-   "to": "教育无目的论",
-   "evidence": "教育无目的论的代表人物。",
-   "printed_page": 52
-  },
-  {
-   "from": "斯宾塞",
-   "type": "part_of",
-   "to": "生活本位论",
-   "evidence": "生活本位论的代表人物。",
-   "printed_page": 52
-  },
-  {
-   "from": "马克思",
-   "type": "part_of",
-   "to": "辩证统一论",
-   "evidence": "辩证统一论的代表人物。",
-   "printed_page": 52
-  },
-  {
-   "from": "培养社会主义建设者和接班人",
-   "type": "part_of",
-   "to": "我国教育目的的基本精神",
-   "evidence": "培养社会主义事业的建设者和接班人。",
-   "printed_page": 53
-  },
-  {
-   "from": "培养德智体美全面发展的人",
-   "type": "part_of",
-   "to": "我国教育目的的基本精神",
-   "evidence": "培养德、智、体、美等全面发展的人。",
-   "printed_page": 53
-  },
-  {
-   "from": "培养具有创新精神与实践能力的人",
-   "type": "part_of",
-   "to": "我国教育目的的基本精神",
-   "evidence": "培养具有创新精神、实践能力和独立个性的人。",
-   "printed_page": 53
-  },
-  {
-   "from": "教育与生产劳动相结合",
-   "type": "part_of",
-   "to": "我国教育目的的基本精神",
-   "evidence": "教育必须与生产劳动相结合，这是教育目的实现的根本途径。",
-   "printed_page": 53
-  },
-  {
-   "from": "社会政治经济文化背景",
-   "type": "part_of",
-   "to": "确立我国教育目的的依据",
-   "evidence": "特定的社会政治、经济、文化背景。",
-   "printed_page": 53
-  },
-  {
-   "from": "受教育者身心发展规律",
-   "type": "part_of",
-   "to": "确立我国教育目的的依据",
-   "evidence": "受教育者的身心发展规律。",
-   "printed_page": 54
-  },
-  {
-   "from": "人们的教育思想",
-   "type": "part_of",
-   "to": "确立我国教育目的的依据",
-   "evidence": "人们的教育思想。",
-   "printed_page": 54
-  },
-  {
-   "from": "马克思主义人的全面发展学说",
-   "type": "part_of",
-   "to": "确立我国教育目的的依据",
-   "evidence": "我国确立教育目的的理论依据是马克思主义关于人的全面发展学说。",
-   "printed_page": 54
-  },
-  {
-   "from": "提高国民素质",
-   "type": "part_of",
-   "to": "素质教育的基本内涵",
-   "evidence": "素质教育以提高国民素质为目的。",
-   "printed_page": 55
-  },
-  {
-   "from": "面向全体学生",
-   "type": "part_of",
-   "to": "素质教育的基本内涵",
-   "evidence": "素质教育是面向全体学生的教育。",
-   "printed_page": 55
-  },
-  {
-   "from": "全面性主体性可持续性",
-   "type": "part_of",
-   "to": "素质教育的基本内涵",
-   "evidence": "素质教育是全面性、主体性和可持续性的教育。",
-   "printed_page": 55
-  },
-  {
-   "from": "促进个性发展",
-   "type": "part_of",
-   "to": "素质教育的基本内涵",
-   "evidence": "素质教育是促进学生个性发展的教育。",
-   "printed_page": 55
-  },
-  {
-   "from": "社会责任感创新精神实践能力",
-   "type": "part_of",
-   "to": "素质教育的基本内涵",
-   "evidence": "素质教育要着力提高学生的社会责任感、创新精神和社会实践能力。",
-   "printed_page": 55
-  },
-  {
-   "from": "全体性",
-   "type": "part_of",
-   "to": "素质教育的特点",
-   "evidence": "教育对象的全体性。",
-   "printed_page": 56
-  },
-  {
-   "from": "基础性",
-   "type": "part_of",
-   "to": "素质教育的特点",
-   "evidence": "教育内容的基础性。",
-   "printed_page": 56
-  },
-  {
-   "from": "开放性",
-   "type": "part_of",
-   "to": "素质教育的特点",
-   "evidence": "教育空间的开放性。",
-   "printed_page": 56
-  },
-  {
-   "from": "全面性",
-   "type": "part_of",
-   "to": "素质教育的特点",
-   "evidence": "教育目标的全面性。",
-   "printed_page": 56
-  },
-  {
-   "from": "多元化",
-   "type": "part_of",
-   "to": "素质教育的特点",
-   "evidence": "教育价值的多元化。",
-   "printed_page": 56
-  },
-  {
-   "from": "创新精神与实践能力",
-   "type": "part_of",
-   "to": "素质教育的特点",
-   "evidence": "重视学生创新精神和实践能力的培养。",
-   "printed_page": 56
-  },
-  {
-   "from": "素质教育",
-   "type": "related",
-   "to": "我国的教育目的",
-   "evidence": "素质教育是依据人的发展和社会发展的需要……的教育。",
-   "printed_page": 55
-  },
-  {
-   "from": "德育",
-   "type": "part_of",
-   "to": "全面发展教育",
-   "evidence": "它是全面发展教育的重要组成部分",
-   "printed_page": 57
-  },
-  {
-   "from": "智育",
-   "type": "part_of",
-   "to": "全面发展教育",
-   "evidence": "智育在全面发展教育中起着前提和支持作用",
-   "printed_page": 57
-  },
-  {
-   "from": "体育",
-   "type": "part_of",
-   "to": "全面发展教育",
-   "evidence": "体育是全面发展教育的重要物质基础",
-   "printed_page": 58
-  },
-  {
-   "from": "美育",
-   "type": "part_of",
-   "to": "全面发展教育",
-   "evidence": "美育是情操教育和心灵教育，在全面发展教育中起着动力作用",
-   "printed_page": 59
-  },
-  {
-   "from": "劳动技术教育",
-   "type": "part_of",
-   "to": "全面发展教育",
-   "evidence": "劳动技术教育具有树德、增智、强体、育美的综合育人价值",
-   "printed_page": 61
-  },
-  {
-   "from": "德育",
-   "type": "attribute",
-   "to": "灵魂与统率",
-   "evidence": "德育在全面发展教育中是灵魂与统率。",
-   "printed_page": 57
-  },
-  {
-   "from": "智育",
-   "type": "attribute",
-   "to": "前提与支持",
-   "evidence": "智育在全面发展教育中起着前提和支持作用。",
-   "printed_page": 57
-  },
-  {
-   "from": "体育",
-   "type": "attribute",
-   "to": "物质基础",
-   "evidence": "体育是全面发展教育的重要物质基础。",
-   "printed_page": 58
-  },
-  {
-   "from": "美育",
-   "type": "attribute",
-   "to": "动力作用",
-   "evidence": "美育是情操教育和心灵教育，在全面发展教育中起着动力作用。",
-   "printed_page": 59
-  },
-  {
-   "from": "劳动技术教育",
-   "type": "attribute",
-   "to": "综合育人价值",
-   "evidence": "劳动技术教育具有树德、增智、强体、育美的综合育人价值。",
-   "printed_page": 61
-  },
-  {
-   "from": "艺术美",
-   "type": "subclass",
-   "to": "美育的内容",
-   "evidence": "艺术教育是美育的核心内容。",
-   "printed_page": 59
-  },
-  {
-   "from": "社会美",
-   "type": "subclass",
-   "to": "美育的内容",
-   "evidence": "作为社会实践主体的人之美是社会美的核心。",
-   "printed_page": 59
-  },
-  {
-   "from": "科学美",
-   "type": "subclass",
-   "to": "美育的内容",
-   "evidence": "通过艺术与科学的联系和比较。",
-   "printed_page": 59
-  },
-  {
-   "from": "自然美",
-   "type": "subclass",
-   "to": "美育的内容",
-   "evidence": "引导观察、欣赏和体验自然界事物。",
-   "printed_page": 59
-  },
-  {
-   "from": "形象性",
-   "type": "subclass",
-   "to": "美育的特点",
-   "evidence": "形象性是美育的显著特点。",
-   "printed_page": 59
-  },
-  {
-   "from": "娱乐性",
-   "type": "subclass",
-   "to": "美育的特点",
-   "evidence": "娱乐性是美育的鲜明特点。",
-   "printed_page": 59
-  },
-  {
-   "from": "自由性",
-   "type": "subclass",
-   "to": "美育的特点",
-   "evidence": "自由性是美育的重要特点。",
-   "printed_page": 59
-  },
-  {
-   "from": "普遍性",
-   "type": "subclass",
-   "to": "美育的特点",
-   "evidence": "美的普遍性决定了美育的普遍性。",
-   "printed_page": 60
-  },
-  {
-   "from": "五育不平衡性",
-   "type": "attribute",
-   "to": "全面发展教育",
-   "evidence": "“五育”在全面发展中的地位存在不平衡性。",
-   "printed_page": 61
-  },
-  {
-   "from": "五育相对独立性",
-   "type": "attribute",
-   "to": "全面发展教育",
-   "evidence": "“五育”各有其相对独立性。",
-   "printed_page": 62
-  },
-  {
-   "from": "五育内在联系",
-   "type": "attribute",
-   "to": "全面发展教育",
-   "evidence": "“五育”之间具有内在联系。",
-   "printed_page": 62
-  }
- ]
+  "chapter": "第一篇第三章 教育目的",
+  "schema_version": "1.1",
+  "edges": [
+    {
+      "from": "教育目的",
+      "type": "part_of",
+      "to": "教育方针",
+      "evidence": "教育目的与……教育方针……部分与整体……的关系",
+      "printed_page": 47
+    },
+    {
+      "from": "按实现特点划分",
+      "type": "part_of",
+      "to": "教育目的的分类",
+      "evidence": "教育目的的分类……分类标准……实现特点",
+      "printed_page": 48
+    },
+    {
+      "from": "按作用特点划分",
+      "type": "part_of",
+      "to": "教育目的的分类",
+      "evidence": "教育目的的分类……分类标准……作用特点",
+      "printed_page": 48
+    },
+    {
+      "from": "按体现范围划分",
+      "type": "part_of",
+      "to": "教育目的的分类",
+      "evidence": "教育目的的分类……分类标准……体现范围",
+      "printed_page": 48
+    },
+    {
+      "from": "按存在形态划分",
+      "type": "part_of",
+      "to": "教育目的的分类",
+      "evidence": "教育目的的分类……分类标准……存在形态",
+      "printed_page": 48
+    },
+    {
+      "from": "按制定方式划分",
+      "type": "part_of",
+      "to": "教育目的的分类",
+      "evidence": "教育目的的分类……分类标准……制定方式",
+      "printed_page": 48
+    },
+    {
+      "from": "理想（终极性）的教育目的",
+      "type": "subclass",
+      "to": "按实现特点划分",
+      "evidence": "具有终极结果的教育目的。",
+      "printed_page": 48
+    },
+    {
+      "from": "现实（发展性）的教育目的",
+      "type": "subclass",
+      "to": "按实现特点划分",
+      "evidence": "具有连续性的教育目的。",
+      "printed_page": 48
+    },
+    {
+      "from": "价值性的教育目的",
+      "type": "subclass",
+      "to": "按作用特点划分",
+      "evidence": "含有一定价值观实现要求的教育目的。",
+      "printed_page": 48
+    },
+    {
+      "from": "操作性（功用性）的教育目的",
+      "type": "subclass",
+      "to": "按作用特点划分",
+      "evidence": "具有实践操作意义的教育目的。",
+      "printed_page": 48
+    },
+    {
+      "from": "内在的教育目的",
+      "type": "subclass",
+      "to": "按体现范围划分",
+      "evidence": "在教育过程中产生的对教育预期结果的要求。",
+      "printed_page": 48
+    },
+    {
+      "from": "外在的教育目的",
+      "type": "subclass",
+      "to": "按体现范围划分",
+      "evidence": "在教育过程之外对教育的预期结果所提出的要求。",
+      "printed_page": 48
+    },
+    {
+      "from": "应然的教育目的",
+      "type": "subclass",
+      "to": "按存在形态划分",
+      "evidence": "以成文的、合乎规范的形式所规定并表述。",
+      "printed_page": 48
+    },
+    {
+      "from": "实然的教育目的",
+      "type": "subclass",
+      "to": "按存在形态划分",
+      "evidence": "教育过程的当事人在理论层面进行理解、贯彻、执行。",
+      "printed_page": 48
+    },
+    {
+      "from": "正式决策的教育目的",
+      "type": "subclass",
+      "to": "按制定方式划分",
+      "evidence": "被社会一定权力机构确定并要求所属各级各类教育都必须遵循。",
+      "printed_page": 48
+    },
+    {
+      "from": "非正式决策的教育目的",
+      "type": "subclass",
+      "to": "按制定方式划分",
+      "evidence": "蕴含在教育思想、教育理论中的教育目的。",
+      "printed_page": 48
+    },
+    {
+      "from": "宏观性",
+      "type": "subclass",
+      "to": "教育目的的特征",
+      "evidence": "教育目的是国家指导全国教育事业的总的要求。",
+      "printed_page": 49
+    },
+    {
+      "from": "预期性",
+      "type": "subclass",
+      "to": "教育目的的特征",
+      "evidence": "教育目的是指社会或个人对教育对象未来发展状况的期望，展现的是一种预期状态，具有预期性和理想化色彩",
+      "printed_page": 49
+    },
+    {
+      "from": "强制性",
+      "type": "subclass",
+      "to": "教育目的的特征",
+      "evidence": "教育目的从内容上体现了国家的意志、政府的主张和政党的利益。",
+      "printed_page": 49
+    },
+    {
+      "from": "时代性",
+      "type": "subclass",
+      "to": "教育目的的特征",
+      "evidence": "任何一个教育目的都具有时代气息。",
+      "printed_page": 49
+    },
+    {
+      "from": "导向功能",
+      "type": "subclass",
+      "to": "教育目的的功能",
+      "evidence": "教育目的一经确立，就成为人们行动的指南。",
+      "printed_page": 49
+    },
+    {
+      "from": "选择功能",
+      "type": "subclass",
+      "to": "教育目的的功能",
+      "evidence": "教育者会根据这样的标准选择教育内容和教育方法。",
+      "printed_page": 49
+    },
+    {
+      "from": "调控功能",
+      "type": "subclass",
+      "to": "教育目的的功能",
+      "evidence": "教育目的是社会根据自身或人的发展需要对教育活动进行调节、控制的一种重要手段",
+      "printed_page": 50
+    },
+    {
+      "from": "激励功能",
+      "type": "subclass",
+      "to": "教育目的的功能",
+      "evidence": "最终目的就可以反过来成为一种激励的力量。",
+      "printed_page": 50
+    },
+    {
+      "from": "评价功能",
+      "type": "subclass",
+      "to": "教育目的的功能",
+      "evidence": "教育目的是衡量和评价教育实施效果的根本依据和标准。",
+      "printed_page": 50
+    },
+    {
+      "from": "国家的教育目的",
+      "type": "part_of",
+      "to": "教育目的的层次结构",
+      "evidence": "国家的教育目的居于第一个层次。",
+      "printed_page": 50
+    },
+    {
+      "from": "培养目标",
+      "type": "part_of",
+      "to": "教育目的的层次结构",
+      "evidence": "培养目标是教育目的的具体化。",
+      "printed_page": 50
+    },
+    {
+      "from": "课程目标",
+      "type": "part_of",
+      "to": "教育目的的层次结构",
+      "evidence": "课程目标是对特定教育阶段的课程进行的价值和任务界定。",
+      "printed_page": 50
+    },
+    {
+      "from": "教学目标",
+      "type": "part_of",
+      "to": "教育目的的层次结构",
+      "evidence": "教学目标是教育者在教育教学的过程中……希望受教育者达到的要求。",
+      "printed_page": 51
+    },
+    {
+      "from": "培养目标",
+      "type": "prerequisite",
+      "to": "国家的教育目的",
+      "evidence": "培养目标是教育目的的具体化。",
+      "printed_page": 50
+    },
+    {
+      "from": "教学目标",
+      "type": "prerequisite",
+      "to": "培养目标",
+      "evidence": "教学目标与教育目的、培养目标的关系是具体与抽象的关系。",
+      "printed_page": 51
+    },
+    {
+      "from": "宗教本位论",
+      "type": "subclass",
+      "to": "有关教育目的的理论",
+      "evidence": "（一）宗教本位论……宗教本位论的代表人物有奥古斯丁、托马斯·阿奎那等",
+      "printed_page": 51
+    },
+    {
+      "from": "社会本位论",
+      "type": "subclass",
+      "to": "有关教育目的的理论",
+      "evidence": "（二）社会本位论……社会本位论的代表人物有巴格莱",
+      "printed_page": 51
+    },
+    {
+      "from": "个人本位论",
+      "type": "subclass",
+      "to": "有关教育目的的理论",
+      "evidence": "（三）个人本位论……个人本位论的代表人物有孟子",
+      "printed_page": 51
+    },
+    {
+      "from": "教育无目的论",
+      "type": "subclass",
+      "to": "有关教育目的的理论",
+      "evidence": "（四）教育无目的论……教育无目的论的代表人物是杜威",
+      "printed_page": 52
+    },
+    {
+      "from": "生活本位论",
+      "type": "subclass",
+      "to": "有关教育目的的理论",
+      "evidence": "（五）生活本位论……生活本位论的代表人物有斯宾塞和杜威",
+      "printed_page": 52
+    },
+    {
+      "from": "辩证统一论",
+      "type": "subclass",
+      "to": "有关教育目的的理论",
+      "evidence": "（六）辩证统一论……辩证统一论的代表人物是马克思",
+      "printed_page": 52
+    },
+    {
+      "from": "社会本位论",
+      "type": "contrast",
+      "to": "个人本位论",
+      "evidence": "从社会发展的需要出发，注重教育的社会价值",
+      "printed_page": 51
+    },
+    {
+      "from": "奥古斯丁",
+      "type": "part_of",
+      "to": "宗教本位论",
+      "evidence": "宗教本位论的代表人物。",
+      "printed_page": 51
+    },
+    {
+      "from": "托马斯·阿奎那",
+      "type": "part_of",
+      "to": "宗教本位论",
+      "evidence": "宗教本位论的代表人物。",
+      "printed_page": 51
+    },
+    {
+      "from": "孔德",
+      "type": "part_of",
+      "to": "社会本位论",
+      "evidence": "社会本位论的代表人物。",
+      "printed_page": 51
+    },
+    {
+      "from": "赫尔巴特",
+      "type": "part_of",
+      "to": "社会本位论",
+      "evidence": "社会本位论的代表人物。",
+      "printed_page": 51
+    },
+    {
+      "from": "涂尔干",
+      "type": "part_of",
+      "to": "社会本位论",
+      "evidence": "社会本位论的代表人物。",
+      "printed_page": 51
+    },
+    {
+      "from": "凯兴斯泰纳",
+      "type": "part_of",
+      "to": "社会本位论",
+      "evidence": "社会本位论的代表人物。",
+      "printed_page": 51
+    },
+    {
+      "from": "孔子",
+      "type": "part_of",
+      "to": "社会本位论",
+      "evidence": "社会本位论的代表人物。",
+      "printed_page": 51
+    },
+    {
+      "from": "荀子",
+      "type": "part_of",
+      "to": "社会本位论",
+      "evidence": "社会本位论的代表人物。",
+      "printed_page": 51
+    },
+    {
+      "from": "柏拉图",
+      "type": "part_of",
+      "to": "社会本位论",
+      "evidence": "社会本位论的代表人物。",
+      "printed_page": 51
+    },
+    {
+      "from": "巴格莱",
+      "type": "part_of",
+      "to": "社会本位论",
+      "evidence": "社会本位论的代表人物。",
+      "printed_page": 51
+    },
+    {
+      "from": "孟子",
+      "type": "part_of",
+      "to": "个人本位论",
+      "evidence": "个人本位论的代表人物。",
+      "printed_page": 51
+    },
+    {
+      "from": "卢梭",
+      "type": "part_of",
+      "to": "个人本位论",
+      "evidence": "个人本位论的代表人物。",
+      "printed_page": 51
+    },
+    {
+      "from": "马斯洛",
+      "type": "part_of",
+      "to": "个人本位论",
+      "evidence": "个人本位论的代表人物。",
+      "printed_page": 51
+    },
+    {
+      "from": "罗杰斯",
+      "type": "part_of",
+      "to": "个人本位论",
+      "evidence": "个人本位论的代表人物。",
+      "printed_page": 51
+    },
+    {
+      "from": "福禄贝尔",
+      "type": "part_of",
+      "to": "个人本位论",
+      "evidence": "个人本位论的代表人物。",
+      "printed_page": 51
+    },
+    {
+      "from": "裴斯泰洛齐",
+      "type": "part_of",
+      "to": "个人本位论",
+      "evidence": "个人本位论的代表人物。",
+      "printed_page": 51
+    },
+    {
+      "from": "萨特",
+      "type": "part_of",
+      "to": "个人本位论",
+      "evidence": "个人本位论的代表人物。",
+      "printed_page": 51
+    },
+    {
+      "from": "奈勒",
+      "type": "part_of",
+      "to": "个人本位论",
+      "evidence": "个人本位论的代表人物。",
+      "printed_page": 51
+    },
+    {
+      "from": "杜威",
+      "type": "part_of",
+      "to": "教育无目的论",
+      "evidence": "教育无目的论的代表人物。",
+      "printed_page": 52
+    },
+    {
+      "from": "斯宾塞",
+      "type": "part_of",
+      "to": "生活本位论",
+      "evidence": "生活本位论的代表人物。",
+      "printed_page": 52
+    },
+    {
+      "from": "马克思",
+      "type": "part_of",
+      "to": "辩证统一论",
+      "evidence": "辩证统一论的代表人物。",
+      "printed_page": 52
+    },
+    {
+      "from": "培养社会主义建设者和接班人",
+      "type": "part_of",
+      "to": "我国教育目的的基本精神",
+      "evidence": "培养社会主义事业的建设者和接班人。",
+      "printed_page": 53
+    },
+    {
+      "from": "培养德智体美全面发展的人",
+      "type": "part_of",
+      "to": "我国教育目的的基本精神",
+      "evidence": "培养德、智、体、美等全面发展的人。",
+      "printed_page": 53
+    },
+    {
+      "from": "培养具有创新精神与实践能力的人",
+      "type": "part_of",
+      "to": "我国教育目的的基本精神",
+      "evidence": "培养具有创新精神、实践能力和独立个性的人。",
+      "printed_page": 53
+    },
+    {
+      "from": "教育与生产劳动相结合",
+      "type": "part_of",
+      "to": "我国教育目的的基本精神",
+      "evidence": "教育必须与生产劳动相结合，这是教育目的实现的根本途径。",
+      "printed_page": 53
+    },
+    {
+      "from": "社会政治经济文化背景",
+      "type": "part_of",
+      "to": "确立我国教育目的的依据",
+      "evidence": "特定的社会政治、经济、文化背景。",
+      "printed_page": 53
+    },
+    {
+      "from": "受教育者身心发展规律",
+      "type": "part_of",
+      "to": "确立我国教育目的的依据",
+      "evidence": "受教育者的身心发展规律。",
+      "printed_page": 54
+    },
+    {
+      "from": "人们的教育思想",
+      "type": "part_of",
+      "to": "确立我国教育目的的依据",
+      "evidence": "人们的教育思想。",
+      "printed_page": 54
+    },
+    {
+      "from": "马克思主义人的全面发展学说",
+      "type": "part_of",
+      "to": "确立我国教育目的的依据",
+      "evidence": "我国确立教育目的的理论依据是马克思主义关于人的全面发展学说。",
+      "printed_page": 54
+    },
+    {
+      "from": "提高国民素质",
+      "type": "part_of",
+      "to": "素质教育的基本内涵",
+      "evidence": "素质教育以提高国民素质为目的。",
+      "printed_page": 55
+    },
+    {
+      "from": "面向全体学生",
+      "type": "part_of",
+      "to": "素质教育的基本内涵",
+      "evidence": "素质教育是面向全体学生的教育。",
+      "printed_page": 55
+    },
+    {
+      "from": "全面性主体性可持续性",
+      "type": "part_of",
+      "to": "素质教育的基本内涵",
+      "evidence": "素质教育是全面性、主体性和可持续性的教育。",
+      "printed_page": 55
+    },
+    {
+      "from": "促进个性发展",
+      "type": "part_of",
+      "to": "素质教育的基本内涵",
+      "evidence": "素质教育是促进学生个性发展的教育。",
+      "printed_page": 55
+    },
+    {
+      "from": "社会责任感创新精神实践能力",
+      "type": "part_of",
+      "to": "素质教育的基本内涵",
+      "evidence": "素质教育要着力提高学生的社会责任感、创新精神和社会实践能力。",
+      "printed_page": 55
+    },
+    {
+      "from": "全体性",
+      "type": "part_of",
+      "to": "素质教育的特点",
+      "evidence": "教育对象的全体性。",
+      "printed_page": 56
+    },
+    {
+      "from": "基础性",
+      "type": "part_of",
+      "to": "素质教育的特点",
+      "evidence": "教育内容的基础性。",
+      "printed_page": 56
+    },
+    {
+      "from": "开放性",
+      "type": "part_of",
+      "to": "素质教育的特点",
+      "evidence": "教育空间的开放性。",
+      "printed_page": 56
+    },
+    {
+      "from": "全面性",
+      "type": "part_of",
+      "to": "素质教育的特点",
+      "evidence": "教育目标的全面性。",
+      "printed_page": 56
+    },
+    {
+      "from": "多元化",
+      "type": "part_of",
+      "to": "素质教育的特点",
+      "evidence": "教育价值的多元化。",
+      "printed_page": 56
+    },
+    {
+      "from": "创新精神与实践能力",
+      "type": "part_of",
+      "to": "素质教育的特点",
+      "evidence": "重视学生创新精神和实践能力的培养。",
+      "printed_page": 56
+    },
+    {
+      "from": "素质教育",
+      "type": "related",
+      "to": "我国的教育目的",
+      "evidence": "素质教育是依据人的发展和社会发展的需要……的教育。",
+      "printed_page": 55
+    },
+    {
+      "from": "德育",
+      "type": "part_of",
+      "to": "全面发展教育",
+      "evidence": "它是全面发展教育的重要组成部分",
+      "printed_page": 57
+    },
+    {
+      "from": "智育",
+      "type": "part_of",
+      "to": "全面发展教育",
+      "evidence": "智育在全面发展教育中起着前提和支持作用",
+      "printed_page": 57
+    },
+    {
+      "from": "体育",
+      "type": "part_of",
+      "to": "全面发展教育",
+      "evidence": "体育是全面发展教育的重要物质基础",
+      "printed_page": 58
+    },
+    {
+      "from": "美育",
+      "type": "part_of",
+      "to": "全面发展教育",
+      "evidence": "美育是情操教育和心灵教育，在全面发展教育中起着动力作用",
+      "printed_page": 59
+    },
+    {
+      "from": "劳动技术教育",
+      "type": "part_of",
+      "to": "全面发展教育",
+      "evidence": "劳动技术教育具有树德、增智、强体、育美的综合育人价值",
+      "printed_page": 61
+    },
+    {
+      "from": "德育",
+      "type": "attribute",
+      "to": "灵魂与统率",
+      "evidence": "德育在全面发展教育中是灵魂与统率。",
+      "printed_page": 57
+    },
+    {
+      "from": "智育",
+      "type": "attribute",
+      "to": "前提与支持",
+      "evidence": "智育在全面发展教育中起着前提和支持作用。",
+      "printed_page": 57
+    },
+    {
+      "from": "体育",
+      "type": "attribute",
+      "to": "物质基础",
+      "evidence": "体育是全面发展教育的重要物质基础。",
+      "printed_page": 58
+    },
+    {
+      "from": "美育",
+      "type": "attribute",
+      "to": "动力作用",
+      "evidence": "美育是情操教育和心灵教育，在全面发展教育中起着动力作用。",
+      "printed_page": 59
+    },
+    {
+      "from": "劳动技术教育",
+      "type": "attribute",
+      "to": "综合育人价值",
+      "evidence": "劳动技术教育具有树德、增智、强体、育美的综合育人价值。",
+      "printed_page": 61
+    },
+    {
+      "from": "艺术美",
+      "type": "subclass",
+      "to": "美育的内容",
+      "evidence": "艺术教育是美育的核心内容。",
+      "printed_page": 59
+    },
+    {
+      "from": "社会美",
+      "type": "subclass",
+      "to": "美育的内容",
+      "evidence": "作为社会实践主体的人之美是社会美的核心。",
+      "printed_page": 59
+    },
+    {
+      "from": "科学美",
+      "type": "subclass",
+      "to": "美育的内容",
+      "evidence": "通过艺术与科学的联系和比较。",
+      "printed_page": 59
+    },
+    {
+      "from": "自然美",
+      "type": "subclass",
+      "to": "美育的内容",
+      "evidence": "引导观察、欣赏和体验自然界事物。",
+      "printed_page": 59
+    },
+    {
+      "from": "形象性",
+      "type": "subclass",
+      "to": "美育的特点",
+      "evidence": "形象性是美育的显著特点。",
+      "printed_page": 59
+    },
+    {
+      "from": "娱乐性",
+      "type": "subclass",
+      "to": "美育的特点",
+      "evidence": "娱乐性是美育的鲜明特点。",
+      "printed_page": 59
+    },
+    {
+      "from": "自由性",
+      "type": "subclass",
+      "to": "美育的特点",
+      "evidence": "自由性是美育的重要特点。",
+      "printed_page": 59
+    },
+    {
+      "from": "普遍性",
+      "type": "subclass",
+      "to": "美育的特点",
+      "evidence": "美的普遍性决定了美育的普遍性。",
+      "printed_page": 60
+    },
+    {
+      "from": "五育不平衡性",
+      "type": "attribute",
+      "to": "全面发展教育",
+      "evidence": "“五育”在全面发展中的地位存在不平衡性。",
+      "printed_page": 61
+    },
+    {
+      "from": "五育相对独立性",
+      "type": "attribute",
+      "to": "全面发展教育",
+      "evidence": "“五育”各有其相对独立性。",
+      "printed_page": 62
+    },
+    {
+      "from": "五育内在联系",
+      "type": "attribute",
+      "to": "全面发展教育",
+      "evidence": "“五育”之间具有内在联系。",
+      "printed_page": 62
+    }
+  ]
 }

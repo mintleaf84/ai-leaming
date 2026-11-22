@@ -1,1154 +1,1154 @@
 {
- "chapter": "第四篇 教育心理学 第四章 学习心理",
- "schema_version": "1.1",
- "edges": [
-  {
-   "from": "学习需要",
-   "type": "part_of",
-   "to": "学习动机",
-   "evidence": "学习动机有两个基本成分：学习需要和学习期待。",
-   "printed_page": 150
-  },
-  {
-   "from": "学习期待",
-   "type": "part_of",
-   "to": "学习动机",
-   "evidence": "学习动机有两个基本成分：学习需要和学习期待。",
-   "printed_page": 150
-  },
-  {
-   "from": "学习动机",
-   "type": "attribute",
-   "to": "激活功能",
-   "evidence": "当学生对于某些知识或技能产生迫切的学习需要时，就会引发学习内驱力",
-   "printed_page": 150
-  },
-  {
-   "from": "学习动机",
-   "type": "attribute",
-   "to": "强化功能",
-   "evidence": "在学习过程中，学生的学习是认真还是马虎，是勤奋还是懒惰，是持之以恒还是半途而废，在很大程度上取决于学习动机的水平。",
-   "printed_page": 151
-  },
-  {
-   "from": "学习动机",
-   "type": "related",
-   "to": "学习效率",
-   "evidence": "动机强度与工作效率之间的关系并不是一种线性关系，而是倒 U 形曲线关系。",
-   "printed_page": 151
-  },
-  {
-   "from": "耶克斯—多德森定律",
-   "type": "marks",
-   "to": "耶克斯",
-   "evidence": "心理学家耶克斯和多德森的研究表明，各种活动都存在一个最佳的动机水平。",
-   "printed_page": 151
-  },
-  {
-   "from": "最佳动机水平",
-   "type": "related",
-   "to": "任务难度",
-   "evidence": "在学习较复杂的问题时，动机强度的最佳水平点会低些；在学习任务比较简单时，动机强度的最佳水平点会高些。",
-   "printed_page": 151
-  },
-  {
-   "from": "内部学习动机",
-   "type": "subclass",
-   "to": "学习动机·按动力来源划分",
-   "evidence": "内部学习动机 往往由内在需要引起，与对学习本身的兴趣相联系 …… 外部学习动机 往往由外部诱因引起，与外部奖励相联系",
-   "printed_page": 152
-  },
-  {
-   "from": "外部学习动机",
-   "type": "subclass",
-   "to": "学习动机·按动力来源划分",
-   "evidence": "内部学习动机 往往由内在需要引起，与对学习本身的兴趣相联系 …… 外部学习动机 往往由外部诱因引起，与外部奖励相联系",
-   "printed_page": 152
-  },
-  {
-   "from": "远景性动机",
-   "type": "subclass",
-   "to": "学习动机·按作用与学习活动的远近关系划分",
-   "evidence": "远景性动机 与长远目标相联系的一类动机 …… 近景性动机 与近期目标相联系的一类动机",
-   "printed_page": 152
-  },
-  {
-   "from": "近景性动机",
-   "type": "subclass",
-   "to": "学习动机·按作用与学习活动的远近关系划分",
-   "evidence": "远景性动机 与长远目标相联系的一类动机 …… 近景性动机 与近期目标相联系的一类动机",
-   "printed_page": 152
-  },
-  {
-   "from": "直接动机",
-   "type": "subclass",
-   "to": "学习动机·按与学习活动的关系划分",
-   "evidence": "与学习活动直接联系，是由对学习的直接兴趣",
-   "printed_page": 152
-  },
-  {
-   "from": "间接动机",
-   "type": "subclass",
-   "to": "学习动机·按与学习活动的关系划分",
-   "evidence": "与社会意义相联系",
-   "printed_page": 152
-  },
-  {
-   "from": "认知内驱力",
-   "type": "subclass",
-   "to": "成就动机",
-   "evidence": "即认知内驱力、自我提高内驱力、附属内驱力。",
-   "printed_page": 152
-  },
-  {
-   "from": "自我提高内驱力",
-   "type": "subclass",
-   "to": "成就动机",
-   "evidence": "即认知内驱力、自我提高内驱力、附属内驱力。",
-   "printed_page": 152
-  },
-  {
-   "from": "附属内驱力",
-   "type": "subclass",
-   "to": "成就动机",
-   "evidence": "即认知内驱力、自我提高内驱力、附属内驱力。",
-   "printed_page": 152
-  },
-  {
-   "from": "成就动机",
-   "type": "marks",
-   "to": "奥苏贝尔",
-   "evidence": "奥苏贝尔认为成就动机属于社会动机的一种",
-   "printed_page": 152
-  },
-  {
-   "from": "强化理论",
-   "type": "subclass",
-   "to": "学习动机理论",
-   "evidence": "（一）强化理论 1. 代表人物 巴甫洛夫、斯金纳。",
-   "printed_page": 153
-  },
-  {
-   "from": "强化理论",
-   "type": "marks",
-   "to": "巴甫洛夫",
-   "evidence": "巴甫洛夫、斯金纳。",
-   "printed_page": 153
-  },
-  {
-   "from": "需要层次理论",
-   "type": "subclass",
-   "to": "学习动机理论",
-   "evidence": "（二）需要层次理论 1. 代表人物 马斯洛。",
-   "printed_page": 154
-  },
-  {
-   "from": "需要层次理论",
-   "type": "marks",
-   "to": "马斯洛",
-   "evidence": "（二）需要层次理论 1. 代表人物 马斯洛。",
-   "printed_page": 154
-  },
-  {
-   "from": "成就动机理论",
-   "type": "subclass",
-   "to": "学习动机理论",
-   "evidence": "（三）成就动机理论 1. 代表人物 麦克里兰、阿特金森。",
-   "printed_page": 154
-  },
-  {
-   "from": "控制点理论",
-   "type": "subclass",
-   "to": "学习动机理论",
-   "evidence": "（四）控制点理论 1. 代表人物 罗特。",
-   "printed_page": 155
-  },
-  {
-   "from": "控制点理论",
-   "type": "marks",
-   "to": "罗特",
-   "evidence": "（四）控制点理论 1. 代表人物 罗特。",
-   "printed_page": 155
-  },
-  {
-   "from": "内控者",
-   "type": "subclass",
-   "to": "控制点理论",
-   "evidence": "内控者的控制点在个体内部。",
-   "printed_page": 155
-  },
-  {
-   "from": "外控者",
-   "type": "subclass",
-   "to": "控制点理论",
-   "evidence": "外控者的控制点在个体外部。",
-   "printed_page": 155
-  },
-  {
-   "from": "成败归因理论",
-   "type": "subclass",
-   "to": "学习动机理论",
-   "evidence": "（五）成败归因理论 1. 代表人物 韦纳。",
-   "printed_page": 155
-  },
-  {
-   "from": "成败归因理论",
-   "type": "marks",
-   "to": "韦纳",
-   "evidence": "（五）成败归因理论 1. 代表人物 韦纳。",
-   "printed_page": 155
-  },
-  {
-   "from": "内外性维度",
-   "type": "part_of",
-   "to": "成败归因理论",
-   "evidence": "他把归因分为三个维度：内部归因与外部归因；稳定性归因与非稳定性归因；可控制归因与不可控制归因。",
-   "printed_page": 155
-  },
-  {
-   "from": "稳定性维度",
-   "type": "part_of",
-   "to": "成败归因理论",
-   "evidence": "他把归因分为三个维度：内部归因与外部归因；稳定性归因与非稳定性归因；可控制归因与不可控制归因。",
-   "printed_page": 155
-  },
-  {
-   "from": "可控性维度",
-   "type": "part_of",
-   "to": "成败归因理论",
-   "evidence": "他把归因分为三个维度：内部归因与外部归因；稳定性归因与非稳定性归因；可控制归因与不可控制归因。",
-   "printed_page": 155
-  },
-  {
-   "from": "习得性无助",
-   "type": "related",
-   "to": "能力",
-   "evidence": "一个总是失败并把失败归于内部的、稳定的和不可控的因素（能力低）的学生会形成一种习得性无助的自我感觉。",
-   "printed_page": 156
-  },
-  {
-   "from": "习得性无助",
-   "type": "marks",
-   "to": "塞利格曼",
-   "evidence": "习得性无助感的概念最初是由美国学者塞利格曼提出的",
-   "printed_page": 156
-  },
-  {
-   "from": "自我效能感理论",
-   "type": "subclass",
-   "to": "学习动机理论",
-   "evidence": "（一）自我效能感理论 1. 代表人物 班杜拉。",
-   "printed_page": 157
-  },
-  {
-   "from": "自我效能感理论",
-   "type": "marks",
-   "to": "班杜拉",
-   "evidence": "（一）自我效能感理论 1. 代表人物 班杜拉。",
-   "printed_page": 157
-  },
-  {
-   "from": "结果期待",
-   "type": "subclass",
-   "to": "期待",
-   "evidence": "期待包括结果期待和效能期待。",
-   "printed_page": 157
-  },
-  {
-   "from": "效能期待",
-   "type": "subclass",
-   "to": "期待",
-   "evidence": "期待包括结果期待和效能期待。",
-   "printed_page": 157
-  },
-  {
-   "from": "成就目标理论",
-   "type": "subclass",
-   "to": "学习动机理论",
-   "evidence": "（二）成就目标理论 1. 代表人物 德韦克、平特里奇。",
-   "printed_page": 158
-  },
-  {
-   "from": "能力实体观",
-   "type": "related",
-   "to": "表现目标",
-   "evidence": "这种学生倾向于建立表现目标，学习是为了做给别人看，证明自己的能力",
-   "printed_page": 158
-  },
-  {
-   "from": "能力增长观",
-   "type": "related",
-   "to": "掌握目标",
-   "evidence": "这类学生更倾向于设置掌握目标，寻求那些能真正锻炼自己的能力",
-   "printed_page": 158
-  },
-  {
-   "from": "自我价值理论",
-   "type": "subclass",
-   "to": "学习动机理论",
-   "evidence": "（四）自我价值理论 1. 代表人物 科温顿。",
-   "printed_page": 158
-  },
-  {
-   "from": "高趋高避型",
-   "type": "subclass",
-   "to": "自我价值理论",
-   "evidence": "科温顿关注人们如何评估自身的价值，将学生分为四类：高趋低避型、低趋高避型、高趋高避型、低趋低避型。",
-   "printed_page": 158
-  },
-  {
-   "from": "低趋高避型",
-   "type": "subclass",
-   "to": "自我价值理论",
-   "evidence": "科温顿关注人们如何评估自身的价值，将学生分为四类：高趋低避型、低趋高避型、高趋高避型、低趋低避型。",
-   "printed_page": 158
-  },
-  {
-   "from": "高趋高避型",
-   "type": "related",
-   "to": "过度努力者",
-   "evidence": "这类学生被称作“过度努力者”",
-   "printed_page": 159
-  },
-  {
-   "from": "正迁移",
-   "type": "subclass",
-   "to": "学习迁移·按性质和结果划分",
-   "evidence": "正迁移 一种学习对另一种学习起到积极的促进作用",
-   "printed_page": 161
-  },
-  {
-   "from": "负迁移",
-   "type": "subclass",
-   "to": "学习迁移·按性质和结果划分",
-   "evidence": "两种学习之间相互干扰、阻碍，即一种学习对另一种学习产生",
-   "printed_page": 161
-  },
-  {
-   "from": "水平迁移",
-   "type": "subclass",
-   "to": "学习迁移·按内容的抽象概括水平划分",
-   "evidence": "处于同一抽象和概括水平的经验之间的相互影响",
-   "printed_page": 161
-  },
-  {
-   "from": "垂直迁移",
-   "type": "subclass",
-   "to": "学习迁移·按内容的抽象概括水平划分",
-   "evidence": "处于不同抽象、概括水平的经验之间的相互影响",
-   "printed_page": 161
-  },
-  {
-   "from": "一般迁移",
-   "type": "subclass",
-   "to": "学习迁移·按内容划分",
-   "evidence": "也称“非特殊迁移”“普遍迁移”",
-   "printed_page": 161
-  },
-  {
-   "from": "同化性迁移",
-   "type": "subclass",
-   "to": "学习迁移·按内在心理机制划分",
-   "evidence": "不改变原有的认知结构",
-   "printed_page": 161
-  },
-  {
-   "from": "顺应性迁移",
-   "type": "subclass",
-   "to": "学习迁移·按内在心理机制划分",
-   "evidence": "将原有认知经验应用于新情境中时",
-   "printed_page": 161
-  },
-  {
-   "from": "重组性迁移",
-   "type": "subclass",
-   "to": "学习迁移·按内在心理机制划分",
-   "evidence": "重新组合原有认知系统中某些构成要素或成分",
-   "printed_page": 161
-  },
-  {
-   "from": "形式训练说",
-   "type": "subclass",
-   "to": "学习迁移理论",
-   "evidence": "1. 形式训练说 代表人物：18 世纪德国心理学家沃尔夫。",
-   "printed_page": 162
-  },
-  {
-   "from": "共同要素说",
-   "type": "subclass",
-   "to": "学习迁移理论",
-   "evidence": "2. 共同要素说 代表人物：桑代克、伍德沃斯。",
-   "printed_page": 163
-  },
-  {
-   "from": "共同要素说",
-   "type": "related",
-   "to": "形状知觉实验",
-   "evidence": "桑代克在 1901 年的“形状知觉”实验中证实了共同要素说。",
-   "printed_page": 163
-  },
-  {
-   "from": "经验类化说",
-   "type": "subclass",
-   "to": "学习迁移理论",
-   "evidence": "3. 经验类化说 代表人物：贾德。",
-   "printed_page": 163
-  },
-  {
-   "from": "经验类化说",
-   "type": "related",
-   "to": "水下击靶实验",
-   "evidence": "贾德在 1908 年所做的“水下击靶”实验是概括说理论的经典实验。",
-   "printed_page": 163
-  },
-  {
-   "from": "关系转换说",
-   "type": "subclass",
-   "to": "学习迁移理论",
-   "evidence": "4. 关系转化说 代表人物：苛勒。",
-   "printed_page": 163
-  },
-  {
-   "from": "关系转换说",
-   "type": "related",
-   "to": "小鸡啄米实验",
-   "evidence": "苛勒用“小鸡啄米”实验证明了关系转换的学习迁移理论",
-   "printed_page": 163
-  },
-  {
-   "from": "认知结构迁移理论",
-   "type": "subclass",
-   "to": "学习迁移理论",
-   "evidence": "奥苏贝尔把迁移放在学习者的整个认知结构的背景下进行研究",
-   "printed_page": 163
-  },
-  {
-   "from": "定势",
-   "type": "related",
-   "to": "学习迁移",
-   "evidence": "定势也叫心向，即先于一定的活动而指向该活动的一种动力准备状态。",
-   "printed_page": 165
-  },
-  {
-   "from": "定势",
-   "type": "related",
-   "to": "量杯实验",
-   "evidence": "陆钦斯的“量杯”实验是定势影响迁移的一个典型例证。",
-   "printed_page": 165
-  },
-  {
-   "from": "认知策略",
-   "type": "subclass",
-   "to": "学习策略·按涵盖成分划分",
-   "evidence": "根据学习策略涵盖的成分，迈克卡等人将学习策略分为认知策略、元认知策略、资源管理策略。",
-   "printed_page": 168
-  },
-  {
-   "from": "元认知策略",
-   "type": "subclass",
-   "to": "学习策略·按涵盖成分划分",
-   "evidence": "根据学习策略涵盖的成分，迈克卡等人将学习策略分为认知策略、元认知策略、资源管理策略。",
-   "printed_page": 168
-  },
-  {
-   "from": "资源管理策略",
-   "type": "subclass",
-   "to": "学习策略·按涵盖成分划分",
-   "evidence": "根据学习策略涵盖的成分，迈克卡等人将学习策略分为认知策略、元认知策略、资源管理策略。",
-   "printed_page": 168
-  },
-  {
-   "from": "复述策略",
-   "type": "subclass",
-   "to": "认知策略",
-   "evidence": "1. 复述策略 复述策略是指为了在记忆中保持所学信息而对信息进行重复识记的策略。",
-   "printed_page": 168
-  },
-  {
-   "from": "精加工策略",
-   "type": "subclass",
-   "to": "认知策略",
-   "evidence": "2. 精加工策略 精加工策略是一种通过形成新旧知识之间的联系，使新信息更有意义",
-   "printed_page": 169
-  },
-  {
-   "from": "组织策略",
-   "type": "subclass",
-   "to": "认知策略",
-   "evidence": "3. 组织策略 组织是对相关内容进行归纳整理的过程。",
-   "printed_page": 171
-  },
-  {
-   "from": "元认知",
-   "type": "related",
-   "to": "弗拉维尔",
-   "evidence": "“元认知”是美国心理学家弗拉维尔于 20 世纪 70 年代提出的。",
-   "printed_page": 172
-  },
-  {
-   "from": "元认知知识",
-   "type": "part_of",
-   "to": "元认知",
-   "evidence": "元认知由三个既相互独立又相互联系的成分组成，即元认知知识、元认知体验和元认知监控。",
-   "printed_page": 173
-  },
-  {
-   "from": "元认知监控",
-   "type": "part_of",
-   "to": "元认知",
-   "evidence": "元认知由三个既相互独立又相互联系的成分组成，即元认知知识、元认知体验和元认知监控。",
-   "printed_page": 173
-  },
-  {
-   "from": "监控策略",
-   "type": "subclass",
-   "to": "元认知策略",
-   "evidence": "元认知策略包括计划策略、监控策略和调节策略。",
-   "printed_page": 173
-  },
-  {
-   "from": "调节策略",
-   "type": "subclass",
-   "to": "元认知策略",
-   "evidence": "元认知策略包括计划策略、监控策略和调节策略。",
-   "printed_page": 173
-  },
-  {
-   "from": "感性知识",
-   "type": "subclass",
-   "to": "知识·按反映深度划分",
-   "evidence": "根据反映活动的深度可划分为感性知识和理性知识",
-   "printed_page": 176
-  },
-  {
-   "from": "理性知识",
-   "type": "subclass",
-   "to": "知识·按反映深度划分",
-   "evidence": "根据反映活动的深度可划分为感性知识和理性知识",
-   "printed_page": 176
-  },
-  {
-   "from": "陈述性知识",
-   "type": "subclass",
-   "to": "知识·按功能划分",
-   "evidence": "根据知识的功能可划分为陈述性知识和程序性知识（安德森）",
-   "printed_page": 177
-  },
-  {
-   "from": "程序性知识",
-   "type": "subclass",
-   "to": "知识·按功能划分",
-   "evidence": "根据知识的功能可划分为陈述性知识和程序性知识（安德森）",
-   "printed_page": 177
-  },
-  {
-   "from": "显性知识",
-   "type": "subclass",
-   "to": "知识·按表现形式划分",
-   "evidence": "根据知识的表现形式可划分为显性知识和隐性知识（波兰尼）",
-   "printed_page": 178
-  },
-  {
-   "from": "隐性知识",
-   "type": "subclass",
-   "to": "知识·按表现形式划分",
-   "evidence": "根据知识的表现形式可划分为显性知识和隐性知识（波兰尼）",
-   "printed_page": 178
-  },
-  {
-   "from": "知识的理解",
-   "type": "part_of",
-   "to": "陈述性知识的学习过程",
-   "evidence": "陈述性知识的学习过程可分为知识的理解、巩固和应用三个彼此相互联系又相对独立的阶段。",
-   "printed_page": 179
-  },
-  {
-   "from": "知识的巩固",
-   "type": "part_of",
-   "to": "陈述性知识的学习过程",
-   "evidence": "陈述性知识的学习过程可分为知识的理解、巩固和应用三个彼此相互联系又相对独立的阶段。",
-   "printed_page": 179
-  },
-  {
-   "from": "知识的应用",
-   "type": "part_of",
-   "to": "陈述性知识的学习过程",
-   "evidence": "陈述性知识的学习过程可分为知识的理解、巩固和应用三个彼此相互联系又相对独立的阶段。",
-   "printed_page": 179
-  },
-  {
-   "from": "概念形成",
-   "type": "subclass",
-   "to": "概念学习",
-   "evidence": "概念学习有两种主要方式：概念形成和概念同化。",
-   "printed_page": 180
-  },
-  {
-   "from": "概念同化",
-   "type": "subclass",
-   "to": "概念学习",
-   "evidence": "概念学习有两种主要方式：概念形成和概念同化。",
-   "printed_page": 180
-  },
-  {
-   "from": "变式",
-   "type": "related",
-   "to": "知识的理解",
-   "evidence": "变式指概念的正例在无关特征方面的具体变化",
-   "printed_page": 181
-  },
-  {
-   "from": "陈述性阶段",
-   "type": "subclass",
-   "to": "程序性知识的学习过程",
-   "evidence": "行为程序以陈述性知识的形式被学生学习",
-   "printed_page": 184
-  },
-  {
-   "from": "转化阶段",
-   "type": "subclass",
-   "to": "程序性知识的学习过程",
-   "evidence": "练习使用某种规则，使规则的陈述性形式向程序性形式转化。",
-   "printed_page": 184
-  },
-  {
-   "from": "自动化阶段",
-   "type": "subclass",
-   "to": "程序性知识的学习过程",
-   "evidence": "学习者常常无须意识的控制或努力就能够自动完成有关的活动步骤。",
-   "printed_page": 184
-  },
-  {
-   "from": "操作技能",
-   "type": "subclass",
-   "to": "技能·按性质和特点划分",
-   "evidence": "根据技能的性质和特点，通常把技能分为操作技能和心智技能。",
-   "printed_page": 185
-  },
-  {
-   "from": "心智技能",
-   "type": "subclass",
-   "to": "技能·按性质和特点划分",
-   "evidence": "根据技能的性质和特点，通常把技能分为操作技能和心智技能。",
-   "printed_page": 185
-  },
-  {
-   "from": "冯忠良四阶段",
-   "type": "related",
-   "to": "操作技能",
-   "evidence": "（二）冯忠良关于操作技能形成阶段的理论",
-   "printed_page": 187
-  },
-  {
-   "from": "操作定向",
-   "type": "subclass",
-   "to": "冯忠良四阶段",
-   "evidence": "操作定向也称操作的认知阶段，即了解操作活动的结构与要求",
-   "printed_page": 187
-  },
-  {
-   "from": "操作模仿",
-   "type": "subclass",
-   "to": "冯忠良四阶段",
-   "evidence": "操作模仿是指学习者通过观察实际再现特定的示范动作或行为模式。",
-   "printed_page": 188
-  },
-  {
-   "from": "操作整合",
-   "type": "subclass",
-   "to": "冯忠良四阶段",
-   "evidence": "操作整合是把模仿阶段习得的动作依据其内在联系联结起来",
-   "printed_page": 188
-  },
-  {
-   "from": "操作熟练",
-   "type": "subclass",
-   "to": "冯忠良四阶段",
-   "evidence": "操作熟练是操作技能掌握的高级阶段",
-   "printed_page": 188
-  },
-  {
-   "from": "加里培林五阶段",
-   "type": "related",
-   "to": "心智技能",
-   "evidence": "加里培林将心智动作的形成分为以下五个阶段",
-   "printed_page": 190
-  },
-  {
-   "from": "活动的定向阶段",
-   "type": "subclass",
-   "to": "加里培林五阶段",
-   "evidence": "（1）活动的定向阶段（准备阶段）。",
-   "printed_page": 190
-  },
-  {
-   "from": "原型定向",
-   "type": "subclass",
-   "to": "冯忠良心智技能三阶段论",
-   "evidence": "提出了原型定向、原型操作、原型内化的心智技能形成的三阶段论。",
-   "printed_page": 191
-  },
-  {
-   "from": "原型内化",
-   "type": "subclass",
-   "to": "冯忠良心智技能三阶段论",
-   "evidence": "提出了原型定向、原型操作、原型内化的心智技能形成的三阶段论。",
-   "printed_page": 191
-  },
-  {
-   "from": "情感成分",
-   "type": "subclass",
-   "to": "态度结构",
-   "evidence": "态度结构包含认知成分、情感成分和行为成分。",
-   "printed_page": 192
-  },
-  {
-   "from": "道德认识",
-   "type": "part_of",
-   "to": "品德",
-   "evidence": "品德的心理结构包括四种基本心理成分：道德认识、道德情感、道德意志和道德行为。",
-   "printed_page": 192
-  },
-  {
-   "from": "道德情感",
-   "type": "part_of",
-   "to": "品德",
-   "evidence": "品德的心理结构包括四种基本心理成分：道德认识、道德情感、道德意志和道德行为。",
-   "printed_page": 192
-  },
-  {
-   "from": "道德意志",
-   "type": "part_of",
-   "to": "品德",
-   "evidence": "品德的心理结构包括四种基本心理成分：道德认识、道德情感、道德意志和道德行为。",
-   "printed_page": 192
-  },
-  {
-   "from": "道德行为",
-   "type": "part_of",
-   "to": "品德",
-   "evidence": "品德的心理结构包括四种基本心理成分：道德认识、道德情感、道德意志和道德行为。",
-   "printed_page": 192
-  },
-  {
-   "from": "道德行为",
-   "type": "marks",
-   "to": "品德",
-   "evidence": "道德行为是衡量品德的重要标志。",
-   "printed_page": 193
-  },
-  {
-   "from": "品德",
-   "type": "contrast",
-   "to": "道德",
-   "evidence": "道德是一种社会现象，而品德是一种个体现象。",
-   "printed_page": 193
-  },
-  {
-   "from": "权威阶段",
-   "type": "subclass",
-   "to": "皮亚杰的道德发展阶段论",
-   "evidence": "（2）权威阶段（5 ～ 8 岁）：又称他律道德阶段、道德实在论阶段。",
-   "printed_page": 194
-  },
-  {
-   "from": "可逆性阶段",
-   "type": "subclass",
-   "to": "皮亚杰的道德发展阶段论",
-   "evidence": "（3）可逆性阶段（9 ～ 11 岁）：又称自律道德阶段、道德相对论阶段。",
-   "printed_page": 194
-  },
-  {
-   "from": "他律道德",
-   "type": "prerequisite",
-   "to": "自律道德",
-   "evidence": "儿童道德的发展经历了一个从他律到自律的发展过程。",
-   "printed_page": 194
-  },
-  {
-   "from": "对偶故事法",
-   "type": "related",
-   "to": "皮亚杰的道德发展阶段论",
-   "evidence": "皮亚杰采用“对偶故事法”研究儿童道德判断发展的水平。",
-   "printed_page": 194
-  },
-  {
-   "from": "前习俗水平",
-   "type": "subclass",
-   "to": "科尔伯格的道德发展阶段论",
-   "evidence": "三水平六阶段含义道德判断的理由",
-   "printed_page": 195
-  },
-  {
-   "from": "习俗水平",
-   "type": "subclass",
-   "to": "科尔伯格的道德发展阶段论",
-   "evidence": "三水平六阶段含义道德判断的理由",
-   "printed_page": 196
-  },
-  {
-   "from": "后习俗水平",
-   "type": "subclass",
-   "to": "科尔伯格的道德发展阶段论",
-   "evidence": "三水平六阶段含义道德判断的理由",
-   "printed_page": 196
-  },
-  {
-   "from": "惩罚与服从道德定向阶段",
-   "type": "subclass",
-   "to": "前习俗水平",
-   "evidence": "他们服从权威或规则只是为了避免",
-   "printed_page": 195
-  },
-  {
-   "from": "相对功利道德定向阶段",
-   "type": "subclass",
-   "to": "前习俗水平",
-   "evidence": "主要看是否符合自己的利益",
-   "printed_page": 195
-  },
-  {
-   "from": "寻求认可定向阶段",
-   "type": "subclass",
-   "to": "习俗水平",
-   "evidence": "处在该阶段的儿童，个体的道德价值以人际关系的和谐为导向",
-   "printed_page": 196
-  },
-  {
-   "from": "普遍原则的道德定向阶段",
-   "type": "subclass",
-   "to": "后习俗水平",
-   "evidence": "这是进行道德判断的最高阶段",
-   "printed_page": 196
-  },
-  {
-   "from": "有结构的问题",
-   "type": "subclass",
-   "to": "问题·按结构划分",
-   "evidence": "有结构的问题是指已知条件和要达到的目标都非常明确",
-   "printed_page": 201
-  },
-  {
-   "from": "无结构的问题",
-   "type": "subclass",
-   "to": "问题·按结构划分",
-   "evidence": "无结构的问题是指已知条件与要达到的目标都比较模糊",
-   "printed_page": 201
-  },
-  {
-   "from": "问题解决",
-   "type": "attribute",
-   "to": "目的性",
-   "evidence": "①目的性：问题解决具有明确的目的性，它总是要达到某个特定的目标状态。",
-   "printed_page": 201
-  },
-  {
-   "from": "问题解决",
-   "type": "attribute",
-   "to": "认知性",
-   "evidence": "②认知性：问题解决活动是通过内在的心理加工实现的、自动化的操作",
-   "printed_page": 201
-  },
-  {
-   "from": "算法式",
-   "type": "subclass",
-   "to": "寻求答案·策略",
-   "evidence": "在寻求答案时，可能存在两种一般的途径：一是算法式；二是启发式。",
-   "printed_page": 202
-  },
-  {
-   "from": "启发式",
-   "type": "subclass",
-   "to": "寻求答案·策略",
-   "evidence": "在寻求答案时，可能存在两种一般的途径：一是算法式；二是启发式。",
-   "printed_page": 202
-  },
-  {
-   "from": "功能固着",
-   "type": "subclass",
-   "to": "影响问题解决的因素",
-   "evidence": "人们把某种功能赋予某物体的倾向称为功能固着。",
-   "printed_page": 204
-  },
-  {
-   "from": "酝酿效应",
-   "type": "subclass",
-   "to": "影响问题解决的因素",
-   "evidence": "这种现象称为酝酿效应。",
-   "printed_page": 204
-  },
-  {
-   "from": "原型启发",
-   "type": "subclass",
-   "to": "影响问题解决的因素",
-   "evidence": "原型启发是指从其他事物或现象中获得的信息对解决当前问题的启发。",
-   "printed_page": 205
-  },
-  {
-   "from": "流畅性",
-   "type": "subclass",
-   "to": "创造性·基本特征",
-   "evidence": "流畅性是指个人面对问题情境时，在规定的时间内产生不同观念的数量的多少。",
-   "printed_page": 206
-  },
-  {
-   "from": "变通性",
-   "type": "subclass",
-   "to": "创造性·基本特征",
-   "evidence": "变通性即灵活性，是指个人面对问题情境时，不墨守成规",
-   "printed_page": 206
-  },
-  {
-   "from": "独创性",
-   "type": "subclass",
-   "to": "创造性·基本特征",
-   "evidence": "独创性是指个人面对问题情境时，能独具慧眼",
-   "printed_page": 206
-  },
-  {
-   "from": "发散思维",
-   "type": "related",
-   "to": "创造性",
-   "evidence": "研究者认为，发散思维是创造性思维的核心。",
-   "printed_page": 206
-  },
-  {
-   "from": "智力",
-   "type": "related",
-   "to": "创造性",
-   "evidence": "因此，智力是创造性的必要不充分条件。",
-   "printed_page": 207
-  },
-  {
-   "from": "头脑风暴法",
-   "type": "related",
-   "to": "创造性",
-   "evidence": "集体讨论又称头脑风暴法或脑激励法，是由奥斯本于 1939 年提出来的一种培养创造力的方法。",
-   "printed_page": 208
-  },
-  {
-   "from": "成就动机",
-   "type": "subclass",
-   "to": "学习动机",
-   "evidence": "学校情境中的成就动机至少应包括三方面的内驱力",
-   "printed_page": 152
-  },
-  {
-   "from": "成就动机理论",
-   "type": "related",
-   "to": "成就动机",
-   "evidence": "阿特金森将麦克里兰的理论进行了进一步深化",
-   "printed_page": 154
-  },
-  {
-   "from": "定势",
-   "type": "related",
-   "to": "功能固着",
-   "evidence": "功能固着也可以看成是一种定势，即从物体通常的功能角度来考虑问题的定势。",
-   "printed_page": 204
-  },
-  {
-   "from": "元认知策略",
-   "type": "related",
-   "to": "元认知",
-   "evidence": "元认知策略是学习者对自己的认知过程的认知策略，是对自己的认知过程的理解和控制的策略",
-   "printed_page": 172
-  },
-  {
-   "from": "程序性知识",
-   "type": "related",
-   "to": "技能",
-   "evidence": "程序性知识学习的一般过程是指从陈述性知识转化为自动化的技能的过程。",
-   "printed_page": 184
-  },
-  {
-   "from": "道德情感",
-   "type": "related",
-   "to": "态度",
-   "evidence": "伴随态度的认知成分而产生的情绪或情感体验，是态度的核心成分。",
-   "printed_page": 192
-  },
-  {
-   "from": "皮亚杰的道德发展阶段论",
-   "type": "related",
-   "to": "科尔伯格的道德发展阶段论",
-   "evidence": "根据皮亚杰和科尔伯格的研究，要改变或提高个体的道德水平",
-   "printed_page": 199
-  },
-  {
-   "from": "创造性",
-   "type": "related",
-   "to": "问题解决",
-   "evidence": "它有两种类型：常规问题解决和创造性问题解决。",
-   "printed_page": 201
-  },
-  {
-   "from": "问题解决",
-   "type": "related",
-   "to": "学习迁移",
-   "evidence": "经验水平或实践知识影响问题解决。",
-   "printed_page": 205
-  },
-  {
-   "from": "心智技能",
-   "type": "related",
-   "to": "操作技能",
-   "evidence": "心智技能是操作技能的调节者和必要的组成部分",
-   "printed_page": 186
-  },
-  {
-   "from": "创造性思维四阶段",
-   "type": "related",
-   "to": "创造性",
-   "evidence": "瓦拉斯于 1926 年提出了创造性思维的四阶段。",
-   "printed_page": 206
-  },
-  {
-   "from": "算法式",
-   "type": "contrast",
-   "to": "启发式",
-   "evidence": "算法式策略能确保成功，但耗时，耗费精力；启发式策略简单省时，但往往不能确保成功。",
-   "printed_page": 203
-  },
-  {
-   "from": "复述策略",
-   "type": "related",
-   "to": "精加工策略",
-   "evidence": "精加工策略是一种理解性的记忆策略，和复述策略结合使用，可以显著提高记忆效果。",
-   "printed_page": 169
-  },
-  {
-   "from": "陈述性知识",
-   "type": "related",
-   "to": "程序性知识",
-   "evidence": "陈述性知识与程序性知识的联系。",
-   "printed_page": 177
-  },
-  {
-   "from": "知识的理解",
-   "type": "related",
-   "to": "知识的巩固",
-   "evidence": "知识的巩固与理解相互依存",
-   "printed_page": 181
-  },
-  {
-   "from": "知识的巩固",
-   "type": "related",
-   "to": "知识的应用",
-   "evidence": "知识的巩固是知识应用的前提",
-   "printed_page": 181
-  },
-  {
-   "from": "酝酿效应",
-   "type": "related",
-   "to": "定势",
-   "evidence": "酝酿效应打破了解决问题不恰当思路的定势，从而促进了新思路的产生。",
-   "printed_page": 204
-  },
-  {
-   "from": "需要层次理论",
-   "type": "related",
-   "to": "学习动机",
-   "evidence": "人的行为动机都是在需要的基础上被激发出来的。",
-   "printed_page": 154
-  },
-  {
-   "from": "品德",
-   "type": "related",
-   "to": "皮亚杰的道德发展阶段论",
-   "evidence": "根据皮亚杰和科尔伯格的研究，要改变或提高个体的道德水平",
-   "printed_page": 199
-  },
-  {
-   "from": "学习迁移",
-   "type": "related",
-   "to": "学习迁移·按性质和结果划分",
-   "evidence": "学习迁移也称训练迁移，是指一种学习对另一种学习的影响",
-   "printed_page": 160
-  },
-  {
-   "from": "学习策略",
-   "type": "related",
-   "to": "学习策略·按涵盖成分划分",
-   "evidence": "学习策略是指学习者在学习活动中，为了达到有效的学习目的而采用的规则、方法、技巧及其调控方式的综合。",
-   "printed_page": 167
-  },
-  {
-   "from": "知识",
-   "type": "related",
-   "to": "知识·按功能划分",
-   "evidence": "根据知识的功能可划分为陈述性知识和程序性知识（安德森）",
-   "printed_page": 177
-  },
-  {
-   "from": "自我效能感",
-   "type": "related",
-   "to": "自我效能感理论",
-   "evidence": "自我效能感是指人们对自己是否能够成功地从事某一成就行为的主观判断。",
-   "printed_page": 157
-  },
-  {
-   "from": "前道德阶段",
-   "type": "subclass",
-   "to": "皮亚杰的道德发展阶段论",
-   "evidence": "（1）前道德阶段（2 ～ 5 岁）：也叫作自我中心阶段。",
-   "printed_page": 194
-  },
-  {
-   "from": "公正阶段",
-   "type": "subclass",
-   "to": "皮亚杰的道德发展阶段论",
-   "evidence": "（4）公正阶段（11 岁以后）：儿童开始倾向于主持公正、平等",
-   "printed_page": 195
-  },
-  {
-   "from": "维护权威或秩序的道德定向阶段",
-   "type": "subclass",
-   "to": "习俗水平",
-   "evidence": "他们服从社会规范，遵守",
-   "printed_page": 196
-  },
-  {
-   "from": "社会契约定向阶段",
-   "type": "subclass",
-   "to": "后习俗水平",
-   "evidence": "处于这一阶段的人认为法律和规范是",
-   "printed_page": 196
-  },
-  {
-   "from": "成就动机理论",
-   "type": "marks",
-   "to": "阿特金森",
-   "evidence": "（三）成就动机理论 1. 代表人物 麦克里兰、阿特金森。",
-   "printed_page": 154
-  },
-  {
-   "from": "皮亚杰的道德发展阶段论",
-   "type": "marks",
-   "to": "皮亚杰",
-   "evidence": "皮亚杰采用“对偶故事法”研究儿童道德判断发展的水平。",
-   "printed_page": 194
-  },
-  {
-   "from": "科尔伯格的道德发展阶段论",
-   "type": "marks",
-   "to": "科尔伯格",
-   "evidence": "科尔伯格采用 “道德两难故事法” 进行研究",
-   "printed_page": 195
-  },
-  {
-   "from": "物质活动或物质化活动阶段",
-   "type": "subclass",
-   "to": "加里培林五阶段",
-   "evidence": "（2）物质活动或物质化活动阶段。物质活动是指借助实物进行活动。",
-   "printed_page": 190
-  },
-  {
-   "from": "出声的外部言语活动阶段",
-   "type": "subclass",
-   "to": "加里培林五阶段",
-   "evidence": "（3）出声的外部言语活动阶段。",
-   "printed_page": 190
-  }
- ]
+  "chapter": "第四篇 教育心理学 第四章 学习心理",
+  "schema_version": "1.1",
+  "edges": [
+    {
+      "from": "学习需要",
+      "type": "part_of",
+      "to": "学习动机",
+      "evidence": "学习动机有两个基本成分：学习需要和学习期待。",
+      "printed_page": 150
+    },
+    {
+      "from": "学习期待",
+      "type": "part_of",
+      "to": "学习动机",
+      "evidence": "学习动机有两个基本成分：学习需要和学习期待。",
+      "printed_page": 150
+    },
+    {
+      "from": "学习动机",
+      "type": "attribute",
+      "to": "激活功能",
+      "evidence": "当学生对于某些知识或技能产生迫切的学习需要时，就会引发学习内驱力",
+      "printed_page": 150
+    },
+    {
+      "from": "学习动机",
+      "type": "attribute",
+      "to": "强化功能",
+      "evidence": "在学习过程中，学生的学习是认真还是马虎，是勤奋还是懒惰，是持之以恒还是半途而废，在很大程度上取决于学习动机的水平。",
+      "printed_page": 151
+    },
+    {
+      "from": "学习动机",
+      "type": "related",
+      "to": "学习效率",
+      "evidence": "动机强度与工作效率之间的关系并不是一种线性关系，而是倒 U 形曲线关系。",
+      "printed_page": 151
+    },
+    {
+      "from": "耶克斯—多德森定律",
+      "type": "marks",
+      "to": "耶克斯",
+      "evidence": "心理学家耶克斯和多德森的研究表明，各种活动都存在一个最佳的动机水平。",
+      "printed_page": 151
+    },
+    {
+      "from": "最佳动机水平",
+      "type": "related",
+      "to": "任务难度",
+      "evidence": "在学习较复杂的问题时，动机强度的最佳水平点会低些；在学习任务比较简单时，动机强度的最佳水平点会高些。",
+      "printed_page": 151
+    },
+    {
+      "from": "内部学习动机",
+      "type": "subclass",
+      "to": "学习动机·按动力来源划分",
+      "evidence": "内部学习动机 往往由内在需要引起，与对学习本身的兴趣相联系 …… 外部学习动机 往往由外部诱因引起，与外部奖励相联系",
+      "printed_page": 152
+    },
+    {
+      "from": "外部学习动机",
+      "type": "subclass",
+      "to": "学习动机·按动力来源划分",
+      "evidence": "内部学习动机 往往由内在需要引起，与对学习本身的兴趣相联系 …… 外部学习动机 往往由外部诱因引起，与外部奖励相联系",
+      "printed_page": 152
+    },
+    {
+      "from": "远景性动机",
+      "type": "subclass",
+      "to": "学习动机·按作用与学习活动的远近关系划分",
+      "evidence": "远景性动机 与长远目标相联系的一类动机 …… 近景性动机 与近期目标相联系的一类动机",
+      "printed_page": 152
+    },
+    {
+      "from": "近景性动机",
+      "type": "subclass",
+      "to": "学习动机·按作用与学习活动的远近关系划分",
+      "evidence": "远景性动机 与长远目标相联系的一类动机 …… 近景性动机 与近期目标相联系的一类动机",
+      "printed_page": 152
+    },
+    {
+      "from": "直接动机",
+      "type": "subclass",
+      "to": "学习动机·按与学习活动的关系划分",
+      "evidence": "与学习活动直接联系，是由对学习的直接兴趣",
+      "printed_page": 152
+    },
+    {
+      "from": "间接动机",
+      "type": "subclass",
+      "to": "学习动机·按与学习活动的关系划分",
+      "evidence": "与社会意义相联系",
+      "printed_page": 152
+    },
+    {
+      "from": "认知内驱力",
+      "type": "subclass",
+      "to": "成就动机",
+      "evidence": "即认知内驱力、自我提高内驱力、附属内驱力。",
+      "printed_page": 152
+    },
+    {
+      "from": "自我提高内驱力",
+      "type": "subclass",
+      "to": "成就动机",
+      "evidence": "即认知内驱力、自我提高内驱力、附属内驱力。",
+      "printed_page": 152
+    },
+    {
+      "from": "附属内驱力",
+      "type": "subclass",
+      "to": "成就动机",
+      "evidence": "即认知内驱力、自我提高内驱力、附属内驱力。",
+      "printed_page": 152
+    },
+    {
+      "from": "成就动机",
+      "type": "marks",
+      "to": "奥苏贝尔",
+      "evidence": "奥苏贝尔认为成就动机属于社会动机的一种",
+      "printed_page": 152
+    },
+    {
+      "from": "强化理论",
+      "type": "subclass",
+      "to": "学习动机理论",
+      "evidence": "（一）强化理论 1. 代表人物 巴甫洛夫、斯金纳。",
+      "printed_page": 153
+    },
+    {
+      "from": "强化理论",
+      "type": "marks",
+      "to": "巴甫洛夫",
+      "evidence": "巴甫洛夫、斯金纳。",
+      "printed_page": 153
+    },
+    {
+      "from": "需要层次理论",
+      "type": "subclass",
+      "to": "学习动机理论",
+      "evidence": "（二）需要层次理论 1. 代表人物 马斯洛。",
+      "printed_page": 154
+    },
+    {
+      "from": "需要层次理论",
+      "type": "marks",
+      "to": "马斯洛",
+      "evidence": "（二）需要层次理论 1. 代表人物 马斯洛。",
+      "printed_page": 154
+    },
+    {
+      "from": "成就动机理论",
+      "type": "subclass",
+      "to": "学习动机理论",
+      "evidence": "（三）成就动机理论 1. 代表人物 麦克里兰、阿特金森。",
+      "printed_page": 154
+    },
+    {
+      "from": "控制点理论",
+      "type": "subclass",
+      "to": "学习动机理论",
+      "evidence": "（四）控制点理论 1. 代表人物 罗特。",
+      "printed_page": 155
+    },
+    {
+      "from": "控制点理论",
+      "type": "marks",
+      "to": "罗特",
+      "evidence": "（四）控制点理论 1. 代表人物 罗特。",
+      "printed_page": 155
+    },
+    {
+      "from": "内控者",
+      "type": "subclass",
+      "to": "控制点理论",
+      "evidence": "内控者的控制点在个体内部。",
+      "printed_page": 155
+    },
+    {
+      "from": "外控者",
+      "type": "subclass",
+      "to": "控制点理论",
+      "evidence": "外控者的控制点在个体外部。",
+      "printed_page": 155
+    },
+    {
+      "from": "成败归因理论",
+      "type": "subclass",
+      "to": "学习动机理论",
+      "evidence": "（五）成败归因理论 1. 代表人物 韦纳。",
+      "printed_page": 155
+    },
+    {
+      "from": "成败归因理论",
+      "type": "marks",
+      "to": "韦纳",
+      "evidence": "（五）成败归因理论 1. 代表人物 韦纳。",
+      "printed_page": 155
+    },
+    {
+      "from": "内外性维度",
+      "type": "part_of",
+      "to": "成败归因理论",
+      "evidence": "他把归因分为三个维度：内部归因与外部归因；稳定性归因与非稳定性归因；可控制归因与不可控制归因。",
+      "printed_page": 155
+    },
+    {
+      "from": "稳定性维度",
+      "type": "part_of",
+      "to": "成败归因理论",
+      "evidence": "他把归因分为三个维度：内部归因与外部归因；稳定性归因与非稳定性归因；可控制归因与不可控制归因。",
+      "printed_page": 155
+    },
+    {
+      "from": "可控性维度",
+      "type": "part_of",
+      "to": "成败归因理论",
+      "evidence": "他把归因分为三个维度：内部归因与外部归因；稳定性归因与非稳定性归因；可控制归因与不可控制归因。",
+      "printed_page": 155
+    },
+    {
+      "from": "习得性无助",
+      "type": "related",
+      "to": "能力",
+      "evidence": "一个总是失败并把失败归于内部的、稳定的和不可控的因素（能力低）的学生会形成一种习得性无助的自我感觉。",
+      "printed_page": 156
+    },
+    {
+      "from": "习得性无助",
+      "type": "marks",
+      "to": "塞利格曼",
+      "evidence": "习得性无助感的概念最初是由美国学者塞利格曼提出的",
+      "printed_page": 156
+    },
+    {
+      "from": "自我效能感理论",
+      "type": "subclass",
+      "to": "学习动机理论",
+      "evidence": "（一）自我效能感理论 1. 代表人物 班杜拉。",
+      "printed_page": 157
+    },
+    {
+      "from": "自我效能感理论",
+      "type": "marks",
+      "to": "班杜拉",
+      "evidence": "（一）自我效能感理论 1. 代表人物 班杜拉。",
+      "printed_page": 157
+    },
+    {
+      "from": "结果期待",
+      "type": "subclass",
+      "to": "期待",
+      "evidence": "期待包括结果期待和效能期待。",
+      "printed_page": 157
+    },
+    {
+      "from": "效能期待",
+      "type": "subclass",
+      "to": "期待",
+      "evidence": "期待包括结果期待和效能期待。",
+      "printed_page": 157
+    },
+    {
+      "from": "成就目标理论",
+      "type": "subclass",
+      "to": "学习动机理论",
+      "evidence": "（二）成就目标理论 1. 代表人物 德韦克、平特里奇。",
+      "printed_page": 158
+    },
+    {
+      "from": "能力实体观",
+      "type": "related",
+      "to": "表现目标",
+      "evidence": "这种学生倾向于建立表现目标，学习是为了做给别人看，证明自己的能力",
+      "printed_page": 158
+    },
+    {
+      "from": "能力增长观",
+      "type": "related",
+      "to": "掌握目标",
+      "evidence": "这类学生更倾向于设置掌握目标，寻求那些能真正锻炼自己的能力",
+      "printed_page": 158
+    },
+    {
+      "from": "自我价值理论",
+      "type": "subclass",
+      "to": "学习动机理论",
+      "evidence": "（四）自我价值理论 1. 代表人物 科温顿。",
+      "printed_page": 158
+    },
+    {
+      "from": "高趋高避型",
+      "type": "subclass",
+      "to": "自我价值理论",
+      "evidence": "科温顿关注人们如何评估自身的价值，将学生分为四类：高趋低避型、低趋高避型、高趋高避型、低趋低避型。",
+      "printed_page": 158
+    },
+    {
+      "from": "低趋高避型",
+      "type": "subclass",
+      "to": "自我价值理论",
+      "evidence": "科温顿关注人们如何评估自身的价值，将学生分为四类：高趋低避型、低趋高避型、高趋高避型、低趋低避型。",
+      "printed_page": 158
+    },
+    {
+      "from": "高趋高避型",
+      "type": "related",
+      "to": "过度努力者",
+      "evidence": "这类学生被称作“过度努力者”",
+      "printed_page": 159
+    },
+    {
+      "from": "正迁移",
+      "type": "subclass",
+      "to": "学习迁移·按性质和结果划分",
+      "evidence": "正迁移 一种学习对另一种学习起到积极的促进作用",
+      "printed_page": 161
+    },
+    {
+      "from": "负迁移",
+      "type": "subclass",
+      "to": "学习迁移·按性质和结果划分",
+      "evidence": "两种学习之间相互干扰、阻碍，即一种学习对另一种学习产生",
+      "printed_page": 161
+    },
+    {
+      "from": "水平迁移",
+      "type": "subclass",
+      "to": "学习迁移·按内容的抽象概括水平划分",
+      "evidence": "处于同一抽象和概括水平的经验之间的相互影响",
+      "printed_page": 161
+    },
+    {
+      "from": "垂直迁移",
+      "type": "subclass",
+      "to": "学习迁移·按内容的抽象概括水平划分",
+      "evidence": "处于不同抽象、概括水平的经验之间的相互影响",
+      "printed_page": 161
+    },
+    {
+      "from": "一般迁移",
+      "type": "subclass",
+      "to": "学习迁移·按内容划分",
+      "evidence": "也称“非特殊迁移”“普遍迁移”",
+      "printed_page": 161
+    },
+    {
+      "from": "同化性迁移",
+      "type": "subclass",
+      "to": "学习迁移·按内在心理机制划分",
+      "evidence": "不改变原有的认知结构",
+      "printed_page": 161
+    },
+    {
+      "from": "顺应性迁移",
+      "type": "subclass",
+      "to": "学习迁移·按内在心理机制划分",
+      "evidence": "将原有认知经验应用于新情境中时",
+      "printed_page": 161
+    },
+    {
+      "from": "重组性迁移",
+      "type": "subclass",
+      "to": "学习迁移·按内在心理机制划分",
+      "evidence": "重新组合原有认知系统中某些构成要素或成分",
+      "printed_page": 161
+    },
+    {
+      "from": "形式训练说",
+      "type": "subclass",
+      "to": "学习迁移理论",
+      "evidence": "1. 形式训练说 代表人物：18 世纪德国心理学家沃尔夫。",
+      "printed_page": 162
+    },
+    {
+      "from": "共同要素说",
+      "type": "subclass",
+      "to": "学习迁移理论",
+      "evidence": "2. 共同要素说 代表人物：桑代克、伍德沃斯。",
+      "printed_page": 163
+    },
+    {
+      "from": "共同要素说",
+      "type": "related",
+      "to": "形状知觉实验",
+      "evidence": "桑代克在 1901 年的“形状知觉”实验中证实了共同要素说。",
+      "printed_page": 163
+    },
+    {
+      "from": "经验类化说",
+      "type": "subclass",
+      "to": "学习迁移理论",
+      "evidence": "3. 经验类化说 代表人物：贾德。",
+      "printed_page": 163
+    },
+    {
+      "from": "经验类化说",
+      "type": "related",
+      "to": "水下击靶实验",
+      "evidence": "贾德在 1908 年所做的“水下击靶”实验是概括说理论的经典实验。",
+      "printed_page": 163
+    },
+    {
+      "from": "关系转换说",
+      "type": "subclass",
+      "to": "学习迁移理论",
+      "evidence": "4. 关系转化说 代表人物：苛勒。",
+      "printed_page": 163
+    },
+    {
+      "from": "关系转换说",
+      "type": "related",
+      "to": "小鸡啄米实验",
+      "evidence": "苛勒用“小鸡啄米”实验证明了关系转换的学习迁移理论",
+      "printed_page": 163
+    },
+    {
+      "from": "认知结构迁移理论",
+      "type": "subclass",
+      "to": "学习迁移理论",
+      "evidence": "奥苏贝尔把迁移放在学习者的整个认知结构的背景下进行研究",
+      "printed_page": 163
+    },
+    {
+      "from": "定势",
+      "type": "related",
+      "to": "学习迁移",
+      "evidence": "定势也叫心向，即先于一定的活动而指向该活动的一种动力准备状态。",
+      "printed_page": 165
+    },
+    {
+      "from": "定势",
+      "type": "related",
+      "to": "量杯实验",
+      "evidence": "陆钦斯的“量杯”实验是定势影响迁移的一个典型例证。",
+      "printed_page": 165
+    },
+    {
+      "from": "认知策略",
+      "type": "subclass",
+      "to": "学习策略·按涵盖成分划分",
+      "evidence": "根据学习策略涵盖的成分，迈克卡等人将学习策略分为认知策略、元认知策略、资源管理策略。",
+      "printed_page": 168
+    },
+    {
+      "from": "元认知策略",
+      "type": "subclass",
+      "to": "学习策略·按涵盖成分划分",
+      "evidence": "根据学习策略涵盖的成分，迈克卡等人将学习策略分为认知策略、元认知策略、资源管理策略。",
+      "printed_page": 168
+    },
+    {
+      "from": "资源管理策略",
+      "type": "subclass",
+      "to": "学习策略·按涵盖成分划分",
+      "evidence": "根据学习策略涵盖的成分，迈克卡等人将学习策略分为认知策略、元认知策略、资源管理策略。",
+      "printed_page": 168
+    },
+    {
+      "from": "复述策略",
+      "type": "subclass",
+      "to": "认知策略",
+      "evidence": "1. 复述策略 复述策略是指为了在记忆中保持所学信息而对信息进行重复识记的策略。",
+      "printed_page": 168
+    },
+    {
+      "from": "精加工策略",
+      "type": "subclass",
+      "to": "认知策略",
+      "evidence": "2. 精加工策略 精加工策略是一种通过形成新旧知识之间的联系，使新信息更有意义",
+      "printed_page": 169
+    },
+    {
+      "from": "组织策略",
+      "type": "subclass",
+      "to": "认知策略",
+      "evidence": "3. 组织策略 组织是对相关内容进行归纳整理的过程。",
+      "printed_page": 171
+    },
+    {
+      "from": "元认知",
+      "type": "related",
+      "to": "弗拉维尔",
+      "evidence": "“元认知”是美国心理学家弗拉维尔于 20 世纪 70 年代提出的。",
+      "printed_page": 172
+    },
+    {
+      "from": "元认知知识",
+      "type": "part_of",
+      "to": "元认知",
+      "evidence": "元认知由三个既相互独立又相互联系的成分组成，即元认知知识、元认知体验和元认知监控。",
+      "printed_page": 173
+    },
+    {
+      "from": "元认知监控",
+      "type": "part_of",
+      "to": "元认知",
+      "evidence": "元认知由三个既相互独立又相互联系的成分组成，即元认知知识、元认知体验和元认知监控。",
+      "printed_page": 173
+    },
+    {
+      "from": "监控策略",
+      "type": "subclass",
+      "to": "元认知策略",
+      "evidence": "元认知策略包括计划策略、监控策略和调节策略。",
+      "printed_page": 173
+    },
+    {
+      "from": "调节策略",
+      "type": "subclass",
+      "to": "元认知策略",
+      "evidence": "元认知策略包括计划策略、监控策略和调节策略。",
+      "printed_page": 173
+    },
+    {
+      "from": "感性知识",
+      "type": "subclass",
+      "to": "知识·按反映深度划分",
+      "evidence": "根据反映活动的深度可划分为感性知识和理性知识",
+      "printed_page": 176
+    },
+    {
+      "from": "理性知识",
+      "type": "subclass",
+      "to": "知识·按反映深度划分",
+      "evidence": "根据反映活动的深度可划分为感性知识和理性知识",
+      "printed_page": 176
+    },
+    {
+      "from": "陈述性知识",
+      "type": "subclass",
+      "to": "知识·按功能划分",
+      "evidence": "根据知识的功能可划分为陈述性知识和程序性知识（安德森）",
+      "printed_page": 177
+    },
+    {
+      "from": "程序性知识",
+      "type": "subclass",
+      "to": "知识·按功能划分",
+      "evidence": "根据知识的功能可划分为陈述性知识和程序性知识（安德森）",
+      "printed_page": 177
+    },
+    {
+      "from": "显性知识",
+      "type": "subclass",
+      "to": "知识·按表现形式划分",
+      "evidence": "根据知识的表现形式可划分为显性知识和隐性知识（波兰尼）",
+      "printed_page": 178
+    },
+    {
+      "from": "隐性知识",
+      "type": "subclass",
+      "to": "知识·按表现形式划分",
+      "evidence": "根据知识的表现形式可划分为显性知识和隐性知识（波兰尼）",
+      "printed_page": 178
+    },
+    {
+      "from": "知识的理解",
+      "type": "part_of",
+      "to": "陈述性知识的学习过程",
+      "evidence": "陈述性知识的学习过程可分为知识的理解、巩固和应用三个彼此相互联系又相对独立的阶段。",
+      "printed_page": 179
+    },
+    {
+      "from": "知识的巩固",
+      "type": "part_of",
+      "to": "陈述性知识的学习过程",
+      "evidence": "陈述性知识的学习过程可分为知识的理解、巩固和应用三个彼此相互联系又相对独立的阶段。",
+      "printed_page": 179
+    },
+    {
+      "from": "知识的应用",
+      "type": "part_of",
+      "to": "陈述性知识的学习过程",
+      "evidence": "陈述性知识的学习过程可分为知识的理解、巩固和应用三个彼此相互联系又相对独立的阶段。",
+      "printed_page": 179
+    },
+    {
+      "from": "概念形成",
+      "type": "subclass",
+      "to": "概念学习",
+      "evidence": "概念学习有两种主要方式：概念形成和概念同化。",
+      "printed_page": 180
+    },
+    {
+      "from": "概念同化",
+      "type": "subclass",
+      "to": "概念学习",
+      "evidence": "概念学习有两种主要方式：概念形成和概念同化。",
+      "printed_page": 180
+    },
+    {
+      "from": "变式",
+      "type": "related",
+      "to": "知识的理解",
+      "evidence": "变式指概念的正例在无关特征方面的具体变化",
+      "printed_page": 181
+    },
+    {
+      "from": "陈述性阶段",
+      "type": "subclass",
+      "to": "程序性知识的学习过程",
+      "evidence": "行为程序以陈述性知识的形式被学生学习",
+      "printed_page": 184
+    },
+    {
+      "from": "转化阶段",
+      "type": "subclass",
+      "to": "程序性知识的学习过程",
+      "evidence": "练习使用某种规则，使规则的陈述性形式向程序性形式转化。",
+      "printed_page": 184
+    },
+    {
+      "from": "自动化阶段",
+      "type": "subclass",
+      "to": "程序性知识的学习过程",
+      "evidence": "学习者常常无须意识的控制或努力就能够自动完成有关的活动步骤。",
+      "printed_page": 184
+    },
+    {
+      "from": "操作技能",
+      "type": "subclass",
+      "to": "技能·按性质和特点划分",
+      "evidence": "根据技能的性质和特点，通常把技能分为操作技能和心智技能。",
+      "printed_page": 185
+    },
+    {
+      "from": "心智技能",
+      "type": "subclass",
+      "to": "技能·按性质和特点划分",
+      "evidence": "根据技能的性质和特点，通常把技能分为操作技能和心智技能。",
+      "printed_page": 185
+    },
+    {
+      "from": "冯忠良四阶段",
+      "type": "related",
+      "to": "操作技能",
+      "evidence": "（二）冯忠良关于操作技能形成阶段的理论",
+      "printed_page": 187
+    },
+    {
+      "from": "操作定向",
+      "type": "subclass",
+      "to": "冯忠良四阶段",
+      "evidence": "操作定向也称操作的认知阶段，即了解操作活动的结构与要求",
+      "printed_page": 187
+    },
+    {
+      "from": "操作模仿",
+      "type": "subclass",
+      "to": "冯忠良四阶段",
+      "evidence": "操作模仿是指学习者通过观察实际再现特定的示范动作或行为模式。",
+      "printed_page": 188
+    },
+    {
+      "from": "操作整合",
+      "type": "subclass",
+      "to": "冯忠良四阶段",
+      "evidence": "操作整合是把模仿阶段习得的动作依据其内在联系联结起来",
+      "printed_page": 188
+    },
+    {
+      "from": "操作熟练",
+      "type": "subclass",
+      "to": "冯忠良四阶段",
+      "evidence": "操作熟练是操作技能掌握的高级阶段",
+      "printed_page": 188
+    },
+    {
+      "from": "加里培林五阶段",
+      "type": "related",
+      "to": "心智技能",
+      "evidence": "加里培林将心智动作的形成分为以下五个阶段",
+      "printed_page": 190
+    },
+    {
+      "from": "活动的定向阶段",
+      "type": "subclass",
+      "to": "加里培林五阶段",
+      "evidence": "（1）活动的定向阶段（准备阶段）。",
+      "printed_page": 190
+    },
+    {
+      "from": "原型定向",
+      "type": "subclass",
+      "to": "冯忠良心智技能三阶段论",
+      "evidence": "提出了原型定向、原型操作、原型内化的心智技能形成的三阶段论。",
+      "printed_page": 191
+    },
+    {
+      "from": "原型内化",
+      "type": "subclass",
+      "to": "冯忠良心智技能三阶段论",
+      "evidence": "提出了原型定向、原型操作、原型内化的心智技能形成的三阶段论。",
+      "printed_page": 191
+    },
+    {
+      "from": "情感成分",
+      "type": "subclass",
+      "to": "态度结构",
+      "evidence": "态度结构包含认知成分、情感成分和行为成分。",
+      "printed_page": 192
+    },
+    {
+      "from": "道德认识",
+      "type": "part_of",
+      "to": "品德",
+      "evidence": "品德的心理结构包括四种基本心理成分：道德认识、道德情感、道德意志和道德行为。",
+      "printed_page": 192
+    },
+    {
+      "from": "道德情感",
+      "type": "part_of",
+      "to": "品德",
+      "evidence": "品德的心理结构包括四种基本心理成分：道德认识、道德情感、道德意志和道德行为。",
+      "printed_page": 192
+    },
+    {
+      "from": "道德意志",
+      "type": "part_of",
+      "to": "品德",
+      "evidence": "品德的心理结构包括四种基本心理成分：道德认识、道德情感、道德意志和道德行为。",
+      "printed_page": 192
+    },
+    {
+      "from": "道德行为",
+      "type": "part_of",
+      "to": "品德",
+      "evidence": "品德的心理结构包括四种基本心理成分：道德认识、道德情感、道德意志和道德行为。",
+      "printed_page": 192
+    },
+    {
+      "from": "道德行为",
+      "type": "marks",
+      "to": "品德",
+      "evidence": "道德行为是衡量品德的重要标志。",
+      "printed_page": 193
+    },
+    {
+      "from": "品德",
+      "type": "contrast",
+      "to": "道德",
+      "evidence": "道德是一种社会现象，而品德是一种个体现象。",
+      "printed_page": 193
+    },
+    {
+      "from": "权威阶段",
+      "type": "subclass",
+      "to": "皮亚杰的道德发展阶段论",
+      "evidence": "（2）权威阶段（5 ～ 8 岁）：又称他律道德阶段、道德实在论阶段。",
+      "printed_page": 194
+    },
+    {
+      "from": "可逆性阶段",
+      "type": "subclass",
+      "to": "皮亚杰的道德发展阶段论",
+      "evidence": "（3）可逆性阶段（9 ～ 11 岁）：又称自律道德阶段、道德相对论阶段。",
+      "printed_page": 194
+    },
+    {
+      "from": "他律道德",
+      "type": "prerequisite",
+      "to": "自律道德",
+      "evidence": "儿童道德的发展经历了一个从他律到自律的发展过程。",
+      "printed_page": 194
+    },
+    {
+      "from": "对偶故事法",
+      "type": "related",
+      "to": "皮亚杰的道德发展阶段论",
+      "evidence": "皮亚杰采用“对偶故事法”研究儿童道德判断发展的水平。",
+      "printed_page": 194
+    },
+    {
+      "from": "前习俗水平",
+      "type": "subclass",
+      "to": "科尔伯格的道德发展阶段论",
+      "evidence": "三水平六阶段含义道德判断的理由",
+      "printed_page": 195
+    },
+    {
+      "from": "习俗水平",
+      "type": "subclass",
+      "to": "科尔伯格的道德发展阶段论",
+      "evidence": "三水平六阶段含义道德判断的理由",
+      "printed_page": 196
+    },
+    {
+      "from": "后习俗水平",
+      "type": "subclass",
+      "to": "科尔伯格的道德发展阶段论",
+      "evidence": "三水平六阶段含义道德判断的理由",
+      "printed_page": 196
+    },
+    {
+      "from": "惩罚与服从道德定向阶段",
+      "type": "subclass",
+      "to": "前习俗水平",
+      "evidence": "他们服从权威或规则只是为了避免",
+      "printed_page": 195
+    },
+    {
+      "from": "相对功利道德定向阶段",
+      "type": "subclass",
+      "to": "前习俗水平",
+      "evidence": "主要看是否符合自己的利益",
+      "printed_page": 195
+    },
+    {
+      "from": "寻求认可定向阶段",
+      "type": "subclass",
+      "to": "习俗水平",
+      "evidence": "处在该阶段的儿童，个体的道德价值以人际关系的和谐为导向",
+      "printed_page": 196
+    },
+    {
+      "from": "普遍原则的道德定向阶段",
+      "type": "subclass",
+      "to": "后习俗水平",
+      "evidence": "这是进行道德判断的最高阶段",
+      "printed_page": 196
+    },
+    {
+      "from": "有结构的问题",
+      "type": "subclass",
+      "to": "问题·按结构划分",
+      "evidence": "有结构的问题是指已知条件和要达到的目标都非常明确",
+      "printed_page": 201
+    },
+    {
+      "from": "无结构的问题",
+      "type": "subclass",
+      "to": "问题·按结构划分",
+      "evidence": "无结构的问题是指已知条件与要达到的目标都比较模糊",
+      "printed_page": 201
+    },
+    {
+      "from": "问题解决",
+      "type": "attribute",
+      "to": "目的性",
+      "evidence": "①目的性：问题解决具有明确的目的性，它总是要达到某个特定的目标状态。",
+      "printed_page": 201
+    },
+    {
+      "from": "问题解决",
+      "type": "attribute",
+      "to": "认知性",
+      "evidence": "②认知性：问题解决活动是通过内在的心理加工实现的、自动化的操作",
+      "printed_page": 201
+    },
+    {
+      "from": "算法式",
+      "type": "subclass",
+      "to": "寻求答案·策略",
+      "evidence": "在寻求答案时，可能存在两种一般的途径：一是算法式；二是启发式。",
+      "printed_page": 202
+    },
+    {
+      "from": "启发式",
+      "type": "subclass",
+      "to": "寻求答案·策略",
+      "evidence": "在寻求答案时，可能存在两种一般的途径：一是算法式；二是启发式。",
+      "printed_page": 202
+    },
+    {
+      "from": "功能固着",
+      "type": "subclass",
+      "to": "影响问题解决的因素",
+      "evidence": "人们把某种功能赋予某物体的倾向称为功能固着。",
+      "printed_page": 204
+    },
+    {
+      "from": "酝酿效应",
+      "type": "subclass",
+      "to": "影响问题解决的因素",
+      "evidence": "这种现象称为酝酿效应。",
+      "printed_page": 204
+    },
+    {
+      "from": "原型启发",
+      "type": "subclass",
+      "to": "影响问题解决的因素",
+      "evidence": "原型启发是指从其他事物或现象中获得的信息对解决当前问题的启发。",
+      "printed_page": 205
+    },
+    {
+      "from": "流畅性",
+      "type": "subclass",
+      "to": "创造性·基本特征",
+      "evidence": "流畅性是指个人面对问题情境时，在规定的时间内产生不同观念的数量的多少。",
+      "printed_page": 206
+    },
+    {
+      "from": "变通性",
+      "type": "subclass",
+      "to": "创造性·基本特征",
+      "evidence": "变通性即灵活性，是指个人面对问题情境时，不墨守成规",
+      "printed_page": 206
+    },
+    {
+      "from": "独创性",
+      "type": "subclass",
+      "to": "创造性·基本特征",
+      "evidence": "独创性是指个人面对问题情境时，能独具慧眼",
+      "printed_page": 206
+    },
+    {
+      "from": "发散思维",
+      "type": "related",
+      "to": "创造性",
+      "evidence": "研究者认为，发散思维是创造性思维的核心。",
+      "printed_page": 206
+    },
+    {
+      "from": "智力",
+      "type": "related",
+      "to": "创造性",
+      "evidence": "因此，智力是创造性的必要不充分条件。",
+      "printed_page": 207
+    },
+    {
+      "from": "头脑风暴法",
+      "type": "related",
+      "to": "创造性",
+      "evidence": "集体讨论又称头脑风暴法或脑激励法，是由奥斯本于 1939 年提出来的一种培养创造力的方法。",
+      "printed_page": 208
+    },
+    {
+      "from": "成就动机",
+      "type": "subclass",
+      "to": "学习动机",
+      "evidence": "学校情境中的成就动机至少应包括三方面的内驱力",
+      "printed_page": 152
+    },
+    {
+      "from": "成就动机理论",
+      "type": "related",
+      "to": "成就动机",
+      "evidence": "阿特金森将麦克里兰的理论进行了进一步深化",
+      "printed_page": 154
+    },
+    {
+      "from": "定势",
+      "type": "related",
+      "to": "功能固着",
+      "evidence": "功能固着也可以看成是一种定势，即从物体通常的功能角度来考虑问题的定势。",
+      "printed_page": 204
+    },
+    {
+      "from": "元认知策略",
+      "type": "related",
+      "to": "元认知",
+      "evidence": "元认知策略是学习者对自己的认知过程的认知策略，是对自己的认知过程的理解和控制的策略",
+      "printed_page": 172
+    },
+    {
+      "from": "程序性知识",
+      "type": "related",
+      "to": "技能",
+      "evidence": "程序性知识学习的一般过程是指从陈述性知识转化为自动化的技能的过程。",
+      "printed_page": 184
+    },
+    {
+      "from": "道德情感",
+      "type": "related",
+      "to": "态度",
+      "evidence": "伴随态度的认知成分而产生的情绪或情感体验，是态度的核心成分。",
+      "printed_page": 192
+    },
+    {
+      "from": "皮亚杰的道德发展阶段论",
+      "type": "related",
+      "to": "科尔伯格的道德发展阶段论",
+      "evidence": "根据皮亚杰和科尔伯格的研究，要改变或提高个体的道德水平",
+      "printed_page": 199
+    },
+    {
+      "from": "创造性",
+      "type": "related",
+      "to": "问题解决",
+      "evidence": "它有两种类型：常规问题解决和创造性问题解决。",
+      "printed_page": 201
+    },
+    {
+      "from": "问题解决",
+      "type": "related",
+      "to": "学习迁移",
+      "evidence": "经验水平或实践知识影响问题解决。",
+      "printed_page": 205
+    },
+    {
+      "from": "心智技能",
+      "type": "related",
+      "to": "操作技能",
+      "evidence": "心智技能是操作技能的调节者和必要的组成部分",
+      "printed_page": 186
+    },
+    {
+      "from": "创造性思维四阶段",
+      "type": "related",
+      "to": "创造性",
+      "evidence": "瓦拉斯于 1926 年提出了创造性思维的四阶段。",
+      "printed_page": 206
+    },
+    {
+      "from": "算法式",
+      "type": "contrast",
+      "to": "启发式",
+      "evidence": "算法式策略能确保成功，但耗时，耗费精力；启发式策略简单省时，但往往不能确保成功。",
+      "printed_page": 203
+    },
+    {
+      "from": "复述策略",
+      "type": "related",
+      "to": "精加工策略",
+      "evidence": "精加工策略是一种理解性的记忆策略，和复述策略结合使用，可以显著提高记忆效果。",
+      "printed_page": 169
+    },
+    {
+      "from": "陈述性知识",
+      "type": "related",
+      "to": "程序性知识",
+      "evidence": "陈述性知识与程序性知识的联系。",
+      "printed_page": 177
+    },
+    {
+      "from": "知识的理解",
+      "type": "related",
+      "to": "知识的巩固",
+      "evidence": "知识的巩固与理解相互依存",
+      "printed_page": 181
+    },
+    {
+      "from": "知识的巩固",
+      "type": "related",
+      "to": "知识的应用",
+      "evidence": "知识的巩固是知识应用的前提",
+      "printed_page": 181
+    },
+    {
+      "from": "酝酿效应",
+      "type": "related",
+      "to": "定势",
+      "evidence": "酝酿效应打破了解决问题不恰当思路的定势，从而促进了新思路的产生。",
+      "printed_page": 204
+    },
+    {
+      "from": "需要层次理论",
+      "type": "related",
+      "to": "学习动机",
+      "evidence": "人的行为动机都是在需要的基础上被激发出来的。",
+      "printed_page": 154
+    },
+    {
+      "from": "品德",
+      "type": "related",
+      "to": "皮亚杰的道德发展阶段论",
+      "evidence": "根据皮亚杰和科尔伯格的研究，要改变或提高个体的道德水平",
+      "printed_page": 199
+    },
+    {
+      "from": "学习迁移",
+      "type": "related",
+      "to": "学习迁移·按性质和结果划分",
+      "evidence": "学习迁移也称训练迁移，是指一种学习对另一种学习的影响",
+      "printed_page": 160
+    },
+    {
+      "from": "学习策略",
+      "type": "related",
+      "to": "学习策略·按涵盖成分划分",
+      "evidence": "学习策略是指学习者在学习活动中，为了达到有效的学习目的而采用的规则、方法、技巧及其调控方式的综合。",
+      "printed_page": 167
+    },
+    {
+      "from": "知识",
+      "type": "related",
+      "to": "知识·按功能划分",
+      "evidence": "根据知识的功能可划分为陈述性知识和程序性知识（安德森）",
+      "printed_page": 177
+    },
+    {
+      "from": "自我效能感",
+      "type": "related",
+      "to": "自我效能感理论",
+      "evidence": "自我效能感是指人们对自己是否能够成功地从事某一成就行为的主观判断。",
+      "printed_page": 157
+    },
+    {
+      "from": "前道德阶段",
+      "type": "subclass",
+      "to": "皮亚杰的道德发展阶段论",
+      "evidence": "（1）前道德阶段（2 ～ 5 岁）：也叫作自我中心阶段。",
+      "printed_page": 194
+    },
+    {
+      "from": "公正阶段",
+      "type": "subclass",
+      "to": "皮亚杰的道德发展阶段论",
+      "evidence": "（4）公正阶段（11 岁以后）：儿童开始倾向于主持公正、平等",
+      "printed_page": 195
+    },
+    {
+      "from": "维护权威或秩序的道德定向阶段",
+      "type": "subclass",
+      "to": "习俗水平",
+      "evidence": "他们服从社会规范，遵守",
+      "printed_page": 196
+    },
+    {
+      "from": "社会契约定向阶段",
+      "type": "subclass",
+      "to": "后习俗水平",
+      "evidence": "处于这一阶段的人认为法律和规范是",
+      "printed_page": 196
+    },
+    {
+      "from": "成就动机理论",
+      "type": "marks",
+      "to": "阿特金森",
+      "evidence": "（三）成就动机理论 1. 代表人物 麦克里兰、阿特金森。",
+      "printed_page": 154
+    },
+    {
+      "from": "皮亚杰的道德发展阶段论",
+      "type": "marks",
+      "to": "皮亚杰",
+      "evidence": "皮亚杰采用“对偶故事法”研究儿童道德判断发展的水平。",
+      "printed_page": 194
+    },
+    {
+      "from": "科尔伯格的道德发展阶段论",
+      "type": "marks",
+      "to": "科尔伯格",
+      "evidence": "科尔伯格采用 “道德两难故事法” 进行研究",
+      "printed_page": 195
+    },
+    {
+      "from": "物质活动或物质化活动阶段",
+      "type": "subclass",
+      "to": "加里培林五阶段",
+      "evidence": "（2）物质活动或物质化活动阶段。物质活动是指借助实物进行活动。",
+      "printed_page": 190
+    },
+    {
+      "from": "出声的外部言语活动阶段",
+      "type": "subclass",
+      "to": "加里培林五阶段",
+      "evidence": "（3）出声的外部言语活动阶段。",
+      "printed_page": 190
+    }
+  ]
 }

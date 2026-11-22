@@ -1,951 +1,951 @@
 {
- "chapter": "第一篇第五章 学生与教师",
- "schema_version": "1.1",
- "edges": [
-  {
-   "from": "学生的特点",
-   "type": "part_of",
-   "to": "学生",
-   "evidence": "一、学生的特点",
-   "printed_page": 70
-  },
-  {
-   "from": "学生的主要权利",
-   "type": "part_of",
-   "to": "学生",
-   "evidence": "二、学生的主要权利",
-   "printed_page": 71
-  },
-  {
-   "from": "学生的义务",
-   "type": "part_of",
-   "to": "学生",
-   "evidence": "三、学生的义务",
-   "printed_page": 73
-  },
-  {
-   "from": "学生是教育的对象",
-   "type": "part_of",
-   "to": "学生的特点",
-   "evidence": "从教师方面看，学生是教师教育实践活动的作用对象，是被教育者、被组织者和被领导者。",
-   "printed_page": 70
-  },
-  {
-   "from": "学生是自我教育和发展的主体",
-   "type": "part_of",
-   "to": "学生的特点",
-   "evidence": "学生是自我教育和发展的主体",
-   "printed_page": 70
-  },
-  {
-   "from": "学生是发展中的人",
-   "type": "part_of",
-   "to": "学生的特点",
-   "evidence": "学生具有很大的发展的可能性与可塑性",
-   "printed_page": 71
-  },
-  {
-   "from": "可塑性",
-   "type": "subclass",
-   "to": "学生是教育的对象",
-   "evidence": "学生处于身心发展的形成时期，各方面尚未成熟，具有很大的潜力",
-   "printed_page": 70
-  },
-  {
-   "from": "依赖性",
-   "type": "subclass",
-   "to": "学生是教育的对象",
-   "evidence": "学生多属未成年人，还不具备完全独立的生活能力。",
-   "printed_page": 70
-  },
-  {
-   "from": "向师性",
-   "type": "subclass",
-   "to": "学生是教育的对象",
-   "evidence": "学生入学后，会自然地亲近、信赖、尊敬甚至崇拜教师",
-   "printed_page": 70
-  },
-  {
-   "from": "学生的主观能动性",
-   "type": "part_of",
-   "to": "学生是自我教育和发展的主体",
-   "evidence": "学生是具有主观能动性的人。",
-   "printed_page": 70
-  },
-  {
-   "from": "自觉性",
-   "type": "subclass",
-   "to": "学生的主观能动性",
-   "evidence": "它表现为学生能根据一定的目标或要求，或在某种情境的激发下，自行采取相应的态度或行动。",
-   "printed_page": 70
-  },
-  {
-   "from": "独立性",
-   "type": "subclass",
-   "to": "学生的主观能动性",
-   "evidence": "能自行确定或选择符合自身发展需要、特点和条件的目标和行动方式",
-   "printed_page": 71
-  },
-  {
-   "from": "创造性",
-   "type": "subclass",
-   "to": "学生的主观能动性",
-   "evidence": "这是学生主观能动性的最高表现。",
-   "printed_page": 71
-  },
-  {
-   "from": "和成人不同的身心发展特征",
-   "type": "subclass",
-   "to": "学生是发展中的人",
-   "evidence": "学生具有和成人不同的身心发展特征。",
-   "printed_page": 71
-  },
-  {
-   "from": "发展的巨大潜能",
-   "type": "subclass",
-   "to": "学生是发展中的人",
-   "evidence": "学生具有发展的巨大潜能。",
-   "printed_page": 71
-  },
-  {
-   "from": "发展的需要",
-   "type": "subclass",
-   "to": "学生是发展中的人",
-   "evidence": "学生有发展的需要。",
-   "printed_page": 71
-  },
-  {
-   "from": "受教育权",
-   "type": "subclass",
-   "to": "学生的主要权利",
-   "evidence": "青少年享有受教育权、人身权、财产权等。",
-   "printed_page": 71
-  },
-  {
-   "from": "人身权",
-   "type": "subclass",
-   "to": "学生的主要权利",
-   "evidence": "人身权是公民权利中最基本、最重要、内涵最为丰富的一项权利。",
-   "printed_page": 72
-  },
-  {
-   "from": "参加教育教学权",
-   "type": "subclass",
-   "to": "受教育权",
-   "evidence": "学生享有“参加教育教学计划安排的各种活动，使用教育教学设施、设备、图书资料”的权利",
-   "printed_page": 71
-  },
-  {
-   "from": "获得经济资助权",
-   "type": "subclass",
-   "to": "受教育权",
-   "evidence": "按照国家有关规定获得奖学金、贷学金、助学金",
-   "printed_page": 71
-  },
-  {
-   "from": "获得学业证书权",
-   "type": "subclass",
-   "to": "受教育权",
-   "evidence": "在学业成绩和品行上获得公正评价，完成规定的学业后获得相应的学业证书、学位证书",
-   "printed_page": 71
-  },
-  {
-   "from": "申诉起诉权",
-   "type": "subclass",
-   "to": "受教育权",
-   "evidence": "对学校给予的处分不服向有关部门提出申诉",
-   "printed_page": 71
-  },
-  {
-   "from": "身心健康权",
-   "type": "subclass",
-   "to": "人身权",
-   "evidence": "身心健康权是人身权中最基本的权利",
-   "printed_page": 72
-  },
-  {
-   "from": "人身自由权",
-   "type": "subclass",
-   "to": "人身权",
-   "evidence": "不得非法拘禁、搜查和逮捕",
-   "printed_page": 72
-  },
-  {
-   "from": "人格尊严权",
-   "type": "subclass",
-   "to": "人身权",
-   "evidence": "学校、教师应当尊重学生的人格，不得对学生实施体罚、变相体罚",
-   "printed_page": 72
-  },
-  {
-   "from": "隐私权",
-   "type": "subclass",
-   "to": "人身权",
-   "evidence": "隐私权是指学生有权要求他人尊重自己个人的、不愿或不方便让他人获知或干涉的",
-   "printed_page": 72
-  },
-  {
-   "from": "遵守法律法规",
-   "type": "subclass",
-   "to": "学生的义务",
-   "evidence": "遵守法律、法规。",
-   "printed_page": 73
-  },
-  {
-   "from": "遵守学生行为规范",
-   "type": "subclass",
-   "to": "学生的义务",
-   "evidence": "遵守学生行为规范，尊敬师长，养成良好的思想品德和行为习惯。",
-   "printed_page": 73
-  },
-  {
-   "from": "努力学习完成学习任务",
-   "type": "subclass",
-   "to": "学生的义务",
-   "evidence": "努力学习，完成规定的学习任务。",
-   "printed_page": 73
-  },
-  {
-   "from": "遵守学校管理制度",
-   "type": "subclass",
-   "to": "学生的义务",
-   "evidence": "遵守所在学校或者其他教育机构的管理制度。",
-   "printed_page": 73
-  },
-  {
-   "from": "教师职业的非专门化阶段",
-   "type": "part_of",
-   "to": "教师职业的产生与发展",
-   "evidence": "教师职业的非专门化阶段可以分为非职业化和职业化两个阶段。",
-   "printed_page": 74
-  },
-  {
-   "from": "教师职业的专门化阶段",
-   "type": "part_of",
-   "to": "教师职业的产生与发展",
-   "evidence": "以专门培养教师的教育机构的出现为标志。",
-   "printed_page": 74
-  },
-  {
-   "from": "教师职业的专业化阶段",
-   "type": "part_of",
-   "to": "教师职业的产生与发展",
-   "evidence": "专业化是指一个职业在一定时期内逐渐发展成熟，具备鲜明的专业标准",
-   "printed_page": 74
-  },
-  {
-   "from": "拉·萨尔",
-   "type": "part_of",
-   "to": "教师职业的专门化阶段",
-   "evidence": "1681 年，法国天主教神父拉·萨尔创立了第一所师资训练学校",
-   "printed_page": 74
-  },
-  {
-   "from": "《关于教师地位的建议》",
-   "type": "marks",
-   "to": "教师职业的专业化阶段",
-   "evidence": "1966 年，国际劳工组织、联合国教科文组织在《关于教师地位的建议》",
-   "printed_page": 74
-  },
-  {
-   "from": "《中华人民共和国教师法》",
-   "type": "marks",
-   "to": "教师职业的专业化阶段",
-   "evidence": "这是第一次以法律的形式确定了教师的专业地位。",
-   "printed_page": 75
-  },
-  {
-   "from": "传道者的角色",
-   "type": "subclass",
-   "to": "教师的职业角色",
-   "evidence": "教师负有传递社会传统道德、价值观念的使命",
-   "printed_page": 75
-  },
-  {
-   "from": "授业解惑者的角色",
-   "type": "subclass",
-   "to": "教师的职业角色",
-   "evidence": "教师要将自己获得的知识经验、技能进行精心加工整理",
-   "printed_page": 75
-  },
-  {
-   "from": "示范者的角色",
-   "type": "subclass",
-   "to": "教师的职业角色",
-   "evidence": "教师的言行是学生学习和模仿的榜样",
-   "printed_page": 75
-  },
-  {
-   "from": "教育教学活动的设计者、组织者和管理者",
-   "type": "subclass",
-   "to": "教师的职业角色",
-   "evidence": "教师是教学活动的设计者。",
-   "printed_page": 75
-  },
-  {
-   "from": "朋友的角色",
-   "type": "subclass",
-   "to": "教师的职业角色",
-   "evidence": "教师要在学习、生活、人生等方面给予学生指导",
-   "printed_page": 75
-  },
-  {
-   "from": "研究者的角色",
-   "type": "subclass",
-   "to": "教师的职业角色",
-   "evidence": "教师要以一种变化发展的态度来对待自己的工作对象",
-   "printed_page": 76
-  },
-  {
-   "from": "班集体的领导者的角色",
-   "type": "subclass",
-   "to": "教师的职业角色",
-   "evidence": "教师是教育教学活动的组织者和领导者",
-   "printed_page": 76
-  },
-  {
-   "from": "心理辅导者的角色",
-   "type": "subclass",
-   "to": "教师的职业角色",
-   "evidence": "担当好学生的心理辅导者的角色",
-   "printed_page": 76
-  },
-  {
-   "from": "教师的道德形象",
-   "type": "part_of",
-   "to": "教师的职业形象",
-   "evidence": "教师的道德形象被视为教师的最基本形象。",
-   "printed_page": 76
-  },
-  {
-   "from": "教师的文化形象",
-   "type": "part_of",
-   "to": "教师的职业形象",
-   "evidence": "教师的文化形象是教师形象的核心。",
-   "printed_page": 76
-  },
-  {
-   "from": "教师的人格形象",
-   "type": "part_of",
-   "to": "教师的职业形象",
-   "evidence": "教师的人格形象是学生亲近或疏远教师的首要因素。",
-   "printed_page": 76
-  },
-  {
-   "from": "教师劳动的复杂性",
-   "type": "subclass",
-   "to": "教师劳动的特点",
-   "evidence": "教师劳动的综合性主要体现为教师劳动的复杂性。",
-   "printed_page": 77
-  },
-  {
-   "from": "教育目的的全面性",
-   "type": "subclass",
-   "to": "教师劳动的复杂性",
-   "evidence": "教育目的的全面性。教师劳动的目的是培养德、智、体等全面发展的人",
-   "printed_page": 77
-  },
-  {
-   "from": "教育任务的多样性",
-   "type": "subclass",
-   "to": "教师劳动的复杂性",
-   "evidence": "教育任务的多样性。教师不仅要传授科学文化知识和训练学生的技能",
-   "printed_page": 77
-  },
-  {
-   "from": "劳动对象的差异性",
-   "type": "subclass",
-   "to": "教师劳动的复杂性",
-   "evidence": "还要根据每个学生的实际情况因材施教。",
-   "printed_page": 77
-  },
-  {
-   "from": "教师劳动的创造性",
-   "type": "subclass",
-   "to": "教师劳动的特点",
-   "evidence": "教师劳动的创造性主要表现在以下三个方面",
-   "printed_page": 77
-  },
-  {
-   "from": "因材施教",
-   "type": "subclass",
-   "to": "教师劳动的创造性",
-   "evidence": "教师必须灵活地针对每个学生的特点，对他们提出不同的要求",
-   "printed_page": 77
-  },
-  {
-   "from": "教学方法的不断更新",
-   "type": "subclass",
-   "to": "教师劳动的创造性",
-   "evidence": "教师还要尝试新的教学方法，进行教学方法的变换或改革。",
-   "printed_page": 77
-  },
-  {
-   "from": "教育机智",
-   "type": "subclass",
-   "to": "教师劳动的创造性",
-   "evidence": "教师需要教育机智。",
-   "printed_page": 77
-  },
-  {
-   "from": "教师劳动的连续性",
-   "type": "subclass",
-   "to": "教师劳动的特点",
-   "evidence": "连续性是指时间的连续性。",
-   "printed_page": 78
-  },
-  {
-   "from": "教师劳动的广延性",
-   "type": "subclass",
-   "to": "教师劳动的特点",
-   "evidence": "广延性是指空间的广延性。",
-   "printed_page": 78
-  },
-  {
-   "from": "教师劳动的长期性",
-   "type": "subclass",
-   "to": "教师劳动的特点",
-   "evidence": "长期性是指人才培养的周期比较长，教育的影响具有迟效性。",
-   "printed_page": 78
-  },
-  {
-   "from": "教师劳动的间接性",
-   "type": "subclass",
-   "to": "教师劳动的特点",
-   "evidence": "教师的劳动并没有直接服务于社会",
-   "printed_page": 78
-  },
-  {
-   "from": "教师劳动的主体性",
-   "type": "subclass",
-   "to": "教师劳动的特点",
-   "evidence": "主体性是指教师自身可以成为活生生的教育因素和具有影响力的榜样。",
-   "printed_page": 78
-  },
-  {
-   "from": "教师劳动的示范性",
-   "type": "subclass",
-   "to": "教师劳动的特点",
-   "evidence": "示范性是指教师的言行举止会成为学生学习的对象。",
-   "printed_page": 78
-  },
-  {
-   "from": "教师劳动手段的特殊性",
-   "type": "prerequisite",
-   "to": "教师劳动的示范性",
-   "evidence": "学生的向师性和教师劳动手段（工具）的特殊性，决定了教师劳动具有示范性的特点。",
-   "printed_page": 78
-  },
-  {
-   "from": "向师性",
-   "type": "prerequisite",
-   "to": "教师劳动的示范性",
-   "evidence": "学生的向师性和教师劳动手段（工具）的特殊性，决定了教师劳动具有示范性的特点。",
-   "printed_page": 78
-  },
-  {
-   "from": "教师劳动方式的个体性",
-   "type": "subclass",
-   "to": "教师劳动的特点",
-   "evidence": "虽然教师的劳动主要是以个体劳动的形式进行的",
-   "printed_page": 78
-  },
-  {
-   "from": "劳动成果的群体性",
-   "type": "subclass",
-   "to": "教师劳动的特点",
-   "evidence": "但同时教师的劳动成果又是集体劳动和多方面影响的结果。",
-   "printed_page": 78
-  },
-  {
-   "from": "劳动任务的综合性",
-   "type": "subclass",
-   "to": "教师劳动的特点",
-   "evidence": "教师需要同时完成培养学生多方面发展的任务",
-   "printed_page": 78
-  },
-  {
-   "from": "道德素养",
-   "type": "part_of",
-   "to": "教师的专业素养",
-   "evidence": "中小学教师职业道德规范有以下四个方面的要求",
-   "printed_page": 79
-  },
-  {
-   "from": "知识素养",
-   "type": "part_of",
-   "to": "教师的专业素养",
-   "evidence": "教师应具有人文科学知识、社会科学知识、自然科学知识和生活知识。",
-   "printed_page": 80
-  },
-  {
-   "from": "能力素养",
-   "type": "part_of",
-   "to": "教师的专业素养",
-   "evidence": "此外，教师还应该具备教育科研能力、学习能力、观察学生的能力",
-   "printed_page": 80
-  },
-  {
-   "from": "职业心理素养",
-   "type": "part_of",
-   "to": "教师的专业素养",
-   "evidence": "（四）职业心理素养",
-   "printed_page": 80
-  },
-  {
-   "from": "忠诚于人民的教育事业",
-   "type": "subclass",
-   "to": "道德素养",
-   "evidence": "对待事业——忠诚于人民的教育事业",
-   "printed_page": 79
-  },
-  {
-   "from": "热爱学生",
-   "type": "subclass",
-   "to": "道德素养",
-   "evidence": "对待学生——热爱学生",
-   "printed_page": 79
-  },
-  {
-   "from": "团结协作",
-   "type": "subclass",
-   "to": "道德素养",
-   "evidence": "对待集体——具有团结协作精神",
-   "printed_page": 79
-  },
-  {
-   "from": "以身作则为人师表",
-   "type": "subclass",
-   "to": "道德素养",
-   "evidence": "对待自己——以身作则，为人师表",
-   "printed_page": 79
-  },
-  {
-   "from": "政治理论修养",
-   "type": "subclass",
-   "to": "知识素养",
-   "evidence": "教师要认真学习马列主义、毛泽东思想和邓小平理论",
-   "printed_page": 79
-  },
-  {
-   "from": "精深的学科专业知识",
-   "type": "subclass",
-   "to": "知识素养",
-   "evidence": "掌握该学科的基本知识和基本技能。",
-   "printed_page": 79
-  },
-  {
-   "from": "广博的科学文化知识",
-   "type": "subclass",
-   "to": "知识素养",
-   "evidence": "3. 广博的科学文化知识",
-   "printed_page": 79
-  },
-  {
-   "from": "必备的教育科学知识",
-   "type": "subclass",
-   "to": "知识素养",
-   "evidence": "教育学、心理学及各学科教材教法是教师首先要掌握的最为基本的教育科学知识。",
-   "printed_page": 80
-  },
-  {
-   "from": "语言表达能力",
-   "type": "subclass",
-   "to": "能力素养",
-   "evidence": "准确、简练，具有科学性。",
-   "printed_page": 80
-  },
-  {
-   "from": "教育教学能力",
-   "type": "subclass",
-   "to": "能力素养",
-   "evidence": "教师要善于组织课堂教学",
-   "printed_page": 80
-  },
-  {
-   "from": "组织管理能力",
-   "type": "subclass",
-   "to": "能力素养",
-   "evidence": "教师要有确定合理目标和计划的能力。",
-   "printed_page": 80
-  },
-  {
-   "from": "自我调控和自我反思能力",
-   "type": "subclass",
-   "to": "能力素养",
-   "evidence": "也要求教师具备自我反思能力，不断提高自己的素养。",
-   "printed_page": 80
-  },
-  {
-   "from": "权力威信",
-   "type": "subclass",
-   "to": "教师威信",
-   "evidence": "教师威信有两种：一种是权力威信；另一种是信服威信。",
-   "printed_page": 81
-  },
-  {
-   "from": "信服威信",
-   "type": "subclass",
-   "to": "教师威信",
-   "evidence": "教师威信有两种：一种是权力威信；另一种是信服威信。",
-   "printed_page": 81
-  },
-  {
-   "from": "人格威信",
-   "type": "subclass",
-   "to": "教师威信",
-   "evidence": "教师威信主要包括人格威信、学识威信和情感威信三个方面的内容。",
-   "printed_page": 81
-  },
-  {
-   "from": "学识威信",
-   "type": "subclass",
-   "to": "教师威信",
-   "evidence": "教师威信主要包括人格威信、学识威信和情感威信三个方面的内容。",
-   "printed_page": 81
-  },
-  {
-   "from": "情感威信",
-   "type": "subclass",
-   "to": "教师威信",
-   "evidence": "教师威信主要包括人格威信、学识威信和情感威信三个方面的内容。",
-   "printed_page": 81
-  },
-  {
-   "from": "教师威信",
-   "type": "related",
-   "to": "师生关系",
-   "evidence": "教师威信实质上反映了一种良好的师生关系",
-   "printed_page": 81
-  },
-  {
-   "from": "培养自身良好的道德品质",
-   "type": "part_of",
-   "to": "教师威信",
-   "evidence": "良好的道德品质是教师获得威信的基本条件。",
-   "printed_page": 82
-  },
-  {
-   "from": "培养良好的认知能力和性格特征",
-   "type": "part_of",
-   "to": "教师威信",
-   "evidence": "良好的认知能力和性格特征是教师获得威信所必需的心理品质。",
-   "printed_page": 82
-  },
-  {
-   "from": "注重良好仪表、风度和行为习惯的养成",
-   "type": "part_of",
-   "to": "教师威信",
-   "evidence": "教师良好的仪表、风度和行为习惯对威信的获得也有重要影响。",
-   "printed_page": 82
-  },
-  {
-   "from": "给学生以良好的第一印象",
-   "type": "part_of",
-   "to": "教师威信",
-   "evidence": "教师应高度重视与学生的第一次见面",
-   "printed_page": 82
-  },
-  {
-   "from": "做学生的朋友与知己",
-   "type": "part_of",
-   "to": "教师威信",
-   "evidence": "教师除了扮演权威者角色，还应当扮演朋友和知己的角色",
-   "printed_page": 82
-  },
-  {
-   "from": "教育教学权",
-   "type": "subclass",
-   "to": "教师的权利",
-   "evidence": "教育教学权是指教师进行教育教学活动，开展教育教学改革和实验的权利。",
-   "printed_page": 82
-  },
-  {
-   "from": "学术交流权",
-   "type": "subclass",
-   "to": "教师的权利",
-   "evidence": "学术交流权也称科学研究权、学术研究权、学术自由权",
-   "printed_page": 82
-  },
-  {
-   "from": "指导评价权",
-   "type": "subclass",
-   "to": "教师的权利",
-   "evidence": "指导评价权也称管理学生权",
-   "printed_page": 83
-  },
-  {
-   "from": "获取报酬待遇权",
-   "type": "subclass",
-   "to": "教师的权利",
-   "evidence": "获取报酬待遇权是指教师按时获取工资报酬",
-   "printed_page": 83
-  },
-  {
-   "from": "民主管理权",
-   "type": "subclass",
-   "to": "教师的权利",
-   "evidence": "民主管理权是指教师对学校教育教学、管理工作和教育行政部门的工作提出意见",
-   "printed_page": 83
-  },
-  {
-   "from": "进修培训权",
-   "type": "subclass",
-   "to": "教师的权利",
-   "evidence": "进修培训权是指教师参加进修或者其他方式的培训的权利。",
-   "printed_page": 83
-  },
-  {
-   "from": "遵守宪法法律和职业道德",
-   "type": "subclass",
-   "to": "教师的义务",
-   "evidence": "遵守宪法、法律和职业道德，为人师表。",
-   "printed_page": 83
-  },
-  {
-   "from": "贯彻国家教育方针完成教育教学任务",
-   "type": "subclass",
-   "to": "教师的义务",
-   "evidence": "贯彻国家的教育方针，遵守规章制度，执行学校的教学计划，履行教师聘约",
-   "printed_page": 83
-  },
-  {
-   "from": "对学生进行思想品德等教育",
-   "type": "subclass",
-   "to": "教师的义务",
-   "evidence": "对学生进行宪法所确定的基本原则的教育和爱国主义、民族团结的教育",
-   "printed_page": 83
-  },
-  {
-   "from": "关心爱护全体学生尊重学生人格",
-   "type": "subclass",
-   "to": "教师的义务",
-   "evidence": "关心、爱护全体学生，尊重学生人格，促进学生在品德、智力、体质等方面全面发展。",
-   "printed_page": 83
-  },
-  {
-   "from": "制止有害于学生的行为",
-   "type": "subclass",
-   "to": "教师的义务",
-   "evidence": "制止有害于学生的行为或者其他侵犯学生合法权益的行为",
-   "printed_page": 83
-  },
-  {
-   "from": "不断提高思想政治觉悟和业务水平",
-   "type": "subclass",
-   "to": "教师的义务",
-   "evidence": "不断提高思想政治觉悟和教育教学业务水平。",
-   "printed_page": 83
-  },
-  {
-   "from": "社会关系",
-   "type": "subclass",
-   "to": "师生关系",
-   "evidence": "社会关系以年青一代的成长为目标",
-   "printed_page": 84
-  },
-  {
-   "from": "教育关系",
-   "type": "subclass",
-   "to": "师生关系",
-   "evidence": "教育关系以直接促进学生发展为目标",
-   "printed_page": 84
-  },
-  {
-   "from": "心理关系",
-   "type": "subclass",
-   "to": "师生关系",
-   "evidence": "心理关系以维持和发展教育关系为目标",
-   "printed_page": 84
-  },
-  {
-   "from": "伦理关系",
-   "type": "subclass",
-   "to": "师生关系",
-   "evidence": "伦理关系是指在教育教学活动中，教师与学生构成一个特殊的道德共同体",
-   "printed_page": 85
-  },
-  {
-   "from": "师生关系的两种对立观点",
-   "type": "part_of",
-   "to": "师生关系",
-   "evidence": "（二）师生关系的两种对立观点",
-   "printed_page": 85
-  },
-  {
-   "from": "教师中心论",
-   "type": "subclass",
-   "to": "师生关系的两种对立观点",
-   "evidence": "教师中心论强调教师的权威",
-   "printed_page": 85
-  },
-  {
-   "from": "学生中心论",
-   "type": "subclass",
-   "to": "师生关系的两种对立观点",
-   "evidence": "他把学生视为教育过程的中心",
-   "printed_page": 85
-  },
-  {
-   "from": "赫尔巴特",
-   "type": "part_of",
-   "to": "教师中心论",
-   "evidence": "教师中心论的代表人物是德国教育家赫尔巴特。",
-   "printed_page": 85
-  },
-  {
-   "from": "杜威",
-   "type": "part_of",
-   "to": "学生中心论",
-   "evidence": "学生中心论是美国进步主义教育思想家杜威针对赫尔巴特的传统教育理念与思想而提出的。",
-   "printed_page": 85
-  },
-  {
-   "from": "教师中心论",
-   "type": "contrast",
-   "to": "学生中心论",
-   "evidence": "教师中心论认为学生是船，教师是舵手。",
-   "printed_page": 85
-  },
-  {
-   "from": "新型师生关系",
-   "type": "part_of",
-   "to": "师生关系",
-   "evidence": "四、新型师生关系的特点",
-   "printed_page": 87
-  },
-  {
-   "from": "尊师爱生",
-   "type": "subclass",
-   "to": "新型师生关系",
-   "evidence": "教师通过对学生的尊重和关爱换取学生发自内心的尊敬与信赖",
-   "printed_page": 87
-  },
-  {
-   "from": "民主平等",
-   "type": "subclass",
-   "to": "新型师生关系",
-   "evidence": "一方面是师生关系的民主平等，另一方面是学生之间的民主平等。",
-   "printed_page": 87
-  },
-  {
-   "from": "教学相长",
-   "type": "subclass",
-   "to": "新型师生关系",
-   "evidence": "教师的教可以促进学生的学",
-   "printed_page": 87
-  },
-  {
-   "from": "心理相容",
-   "type": "subclass",
-   "to": "新型师生关系",
-   "evidence": "心理相容指的是教师与学生之间在心理上协调一致",
-   "printed_page": 87
-  },
-  {
-   "from": "按教师领导方式划分",
-   "type": "part_of",
-   "to": "师生关系",
-   "evidence": "勒温曾在 1939 年将教师的领导方式分为：专制型、民主型和放任型。",
-   "printed_page": 85
-  },
-  {
-   "from": "专制型师生关系",
-   "type": "subclass",
-   "to": "按教师领导方式划分",
-   "evidence": "这一类型的师生关系模式以命令、权威、疏远为其主要心态和行为特征。",
-   "printed_page": 85
-  },
-  {
-   "from": "放任型师生关系",
-   "type": "subclass",
-   "to": "按教师领导方式划分",
-   "evidence": "以无序、随意、放纵为其心态和行为特征。",
-   "printed_page": 85
-  },
-  {
-   "from": "民主型师生关系",
-   "type": "subclass",
-   "to": "按教师领导方式划分",
-   "evidence": "以开放、平等、互助为其主要心态和行为特征。",
-   "printed_page": 86
-  },
-  {
-   "from": "李皮特和怀特的教师领导方式分类",
-   "type": "part_of",
-   "to": "师生关系",
-   "evidence": "李皮特和怀特对教师领导方式进行研究分类，将其分成强硬专断型、仁慈专断型、放任型和民主型。",
-   "printed_page": 86
-  },
-  {
-   "from": "良好师生关系建立的途径与方法",
-   "type": "part_of",
-   "to": "师生关系",
-   "evidence": "六、良好师生关系建立的途径与方法",
-   "printed_page": 88
-  },
-  {
-   "from": "建立途径·教师方面",
-   "type": "part_of",
-   "to": "良好师生关系建立的途径与方法",
-   "evidence": "教师可以通过观察、谈话，更全面地了解学生的思想、个性、兴趣",
-   "printed_page": 88
-  },
-  {
-   "from": "了解和研究学生",
-   "type": "subclass",
-   "to": "建立途径·教师方面",
-   "evidence": "1. 了解和研究学生",
-   "printed_page": 88
-  },
-  {
-   "from": "学生观",
-   "type": "part_of",
-   "to": "建立途径·教师方面",
-   "evidence": "2. 树立正确的学生观",
-   "printed_page": 89
-  },
-  {
-   "from": "提高自身素质",
-   "type": "subclass",
-   "to": "建立途径·教师方面",
-   "evidence": "教师的道德素养、知识素养和能力素养是学生尊重教师的重要条件",
-   "printed_page": 89
-  },
-  {
-   "from": "发扬教育民主",
-   "type": "subclass",
-   "to": "建立途径·教师方面",
-   "evidence": "教师对学生应一视同仁，特别是教师能与学生心理换位",
-   "printed_page": 89
-  },
-  {
-   "from": "热爱尊重学生公平对待学生",
-   "type": "subclass",
-   "to": "建立途径·教师方面",
-   "evidence": "教师应牢固树立民主思想，热爱所有学生，尊重学生的人格",
-   "printed_page": 89
-  },
-  {
-   "from": "主动与学生沟通善于与学生交往",
-   "type": "subclass",
-   "to": "建立途径·教师方面",
-   "evidence": "良好的师生关系是在交往中形成的",
-   "printed_page": 89
-  },
-  {
-   "from": "正确处理师生矛盾",
-   "type": "subclass",
-   "to": "建立途径·教师方面",
-   "evidence": "教师要善于驾驭自己的情绪，冷静全面地分析矛盾",
-   "printed_page": 89
-  },
-  {
-   "from": "提高法治意识保护学生的合法权利",
-   "type": "subclass",
-   "to": "建立途径·教师方面",
-   "evidence": "教师一定要提高法治意识，明确师生的权利义务关系",
-   "printed_page": 89
-  }
- ]
+  "chapter": "第一篇第五章 学生与教师",
+  "schema_version": "1.1",
+  "edges": [
+    {
+      "from": "学生的特点",
+      "type": "part_of",
+      "to": "学生",
+      "evidence": "一、学生的特点",
+      "printed_page": 70
+    },
+    {
+      "from": "学生的主要权利",
+      "type": "part_of",
+      "to": "学生",
+      "evidence": "二、学生的主要权利",
+      "printed_page": 71
+    },
+    {
+      "from": "学生的义务",
+      "type": "part_of",
+      "to": "学生",
+      "evidence": "三、学生的义务",
+      "printed_page": 73
+    },
+    {
+      "from": "学生是教育的对象",
+      "type": "part_of",
+      "to": "学生的特点",
+      "evidence": "从教师方面看，学生是教师教育实践活动的作用对象，是被教育者、被组织者和被领导者。",
+      "printed_page": 70
+    },
+    {
+      "from": "学生是自我教育和发展的主体",
+      "type": "part_of",
+      "to": "学生的特点",
+      "evidence": "学生是自我教育和发展的主体",
+      "printed_page": 70
+    },
+    {
+      "from": "学生是发展中的人",
+      "type": "part_of",
+      "to": "学生的特点",
+      "evidence": "学生具有很大的发展的可能性与可塑性",
+      "printed_page": 71
+    },
+    {
+      "from": "可塑性",
+      "type": "subclass",
+      "to": "学生是教育的对象",
+      "evidence": "学生处于身心发展的形成时期，各方面尚未成熟，具有很大的潜力",
+      "printed_page": 70
+    },
+    {
+      "from": "依赖性",
+      "type": "subclass",
+      "to": "学生是教育的对象",
+      "evidence": "学生多属未成年人，还不具备完全独立的生活能力。",
+      "printed_page": 70
+    },
+    {
+      "from": "向师性",
+      "type": "subclass",
+      "to": "学生是教育的对象",
+      "evidence": "学生入学后，会自然地亲近、信赖、尊敬甚至崇拜教师",
+      "printed_page": 70
+    },
+    {
+      "from": "学生的主观能动性",
+      "type": "part_of",
+      "to": "学生是自我教育和发展的主体",
+      "evidence": "学生是具有主观能动性的人。",
+      "printed_page": 70
+    },
+    {
+      "from": "自觉性",
+      "type": "subclass",
+      "to": "学生的主观能动性",
+      "evidence": "它表现为学生能根据一定的目标或要求，或在某种情境的激发下，自行采取相应的态度或行动。",
+      "printed_page": 70
+    },
+    {
+      "from": "独立性",
+      "type": "subclass",
+      "to": "学生的主观能动性",
+      "evidence": "能自行确定或选择符合自身发展需要、特点和条件的目标和行动方式",
+      "printed_page": 71
+    },
+    {
+      "from": "创造性",
+      "type": "subclass",
+      "to": "学生的主观能动性",
+      "evidence": "这是学生主观能动性的最高表现。",
+      "printed_page": 71
+    },
+    {
+      "from": "和成人不同的身心发展特征",
+      "type": "subclass",
+      "to": "学生是发展中的人",
+      "evidence": "学生具有和成人不同的身心发展特征。",
+      "printed_page": 71
+    },
+    {
+      "from": "发展的巨大潜能",
+      "type": "subclass",
+      "to": "学生是发展中的人",
+      "evidence": "学生具有发展的巨大潜能。",
+      "printed_page": 71
+    },
+    {
+      "from": "发展的需要",
+      "type": "subclass",
+      "to": "学生是发展中的人",
+      "evidence": "学生有发展的需要。",
+      "printed_page": 71
+    },
+    {
+      "from": "受教育权",
+      "type": "subclass",
+      "to": "学生的主要权利",
+      "evidence": "青少年享有受教育权、人身权、财产权等。",
+      "printed_page": 71
+    },
+    {
+      "from": "人身权",
+      "type": "subclass",
+      "to": "学生的主要权利",
+      "evidence": "人身权是公民权利中最基本、最重要、内涵最为丰富的一项权利。",
+      "printed_page": 72
+    },
+    {
+      "from": "参加教育教学权",
+      "type": "subclass",
+      "to": "受教育权",
+      "evidence": "学生享有“参加教育教学计划安排的各种活动，使用教育教学设施、设备、图书资料”的权利",
+      "printed_page": 71
+    },
+    {
+      "from": "获得经济资助权",
+      "type": "subclass",
+      "to": "受教育权",
+      "evidence": "按照国家有关规定获得奖学金、贷学金、助学金",
+      "printed_page": 71
+    },
+    {
+      "from": "获得学业证书权",
+      "type": "subclass",
+      "to": "受教育权",
+      "evidence": "在学业成绩和品行上获得公正评价，完成规定的学业后获得相应的学业证书、学位证书",
+      "printed_page": 71
+    },
+    {
+      "from": "申诉起诉权",
+      "type": "subclass",
+      "to": "受教育权",
+      "evidence": "对学校给予的处分不服向有关部门提出申诉",
+      "printed_page": 71
+    },
+    {
+      "from": "身心健康权",
+      "type": "subclass",
+      "to": "人身权",
+      "evidence": "身心健康权是人身权中最基本的权利",
+      "printed_page": 72
+    },
+    {
+      "from": "人身自由权",
+      "type": "subclass",
+      "to": "人身权",
+      "evidence": "不得非法拘禁、搜查和逮捕",
+      "printed_page": 72
+    },
+    {
+      "from": "人格尊严权",
+      "type": "subclass",
+      "to": "人身权",
+      "evidence": "学校、教师应当尊重学生的人格，不得对学生实施体罚、变相体罚",
+      "printed_page": 72
+    },
+    {
+      "from": "隐私权",
+      "type": "subclass",
+      "to": "人身权",
+      "evidence": "隐私权是指学生有权要求他人尊重自己个人的、不愿或不方便让他人获知或干涉的",
+      "printed_page": 72
+    },
+    {
+      "from": "遵守法律法规",
+      "type": "subclass",
+      "to": "学生的义务",
+      "evidence": "遵守法律、法规。",
+      "printed_page": 73
+    },
+    {
+      "from": "遵守学生行为规范",
+      "type": "subclass",
+      "to": "学生的义务",
+      "evidence": "遵守学生行为规范，尊敬师长，养成良好的思想品德和行为习惯。",
+      "printed_page": 73
+    },
+    {
+      "from": "努力学习完成学习任务",
+      "type": "subclass",
+      "to": "学生的义务",
+      "evidence": "努力学习，完成规定的学习任务。",
+      "printed_page": 73
+    },
+    {
+      "from": "遵守学校管理制度",
+      "type": "subclass",
+      "to": "学生的义务",
+      "evidence": "遵守所在学校或者其他教育机构的管理制度。",
+      "printed_page": 73
+    },
+    {
+      "from": "教师职业的非专门化阶段",
+      "type": "part_of",
+      "to": "教师职业的产生与发展",
+      "evidence": "教师职业的非专门化阶段可以分为非职业化和职业化两个阶段。",
+      "printed_page": 74
+    },
+    {
+      "from": "教师职业的专门化阶段",
+      "type": "part_of",
+      "to": "教师职业的产生与发展",
+      "evidence": "以专门培养教师的教育机构的出现为标志。",
+      "printed_page": 74
+    },
+    {
+      "from": "教师职业的专业化阶段",
+      "type": "part_of",
+      "to": "教师职业的产生与发展",
+      "evidence": "专业化是指一个职业在一定时期内逐渐发展成熟，具备鲜明的专业标准",
+      "printed_page": 74
+    },
+    {
+      "from": "拉·萨尔",
+      "type": "part_of",
+      "to": "教师职业的专门化阶段",
+      "evidence": "1681 年，法国天主教神父拉·萨尔创立了第一所师资训练学校",
+      "printed_page": 74
+    },
+    {
+      "from": "《关于教师地位的建议》",
+      "type": "marks",
+      "to": "教师职业的专业化阶段",
+      "evidence": "1966 年，国际劳工组织、联合国教科文组织在《关于教师地位的建议》",
+      "printed_page": 74
+    },
+    {
+      "from": "《中华人民共和国教师法》",
+      "type": "marks",
+      "to": "教师职业的专业化阶段",
+      "evidence": "这是第一次以法律的形式确定了教师的专业地位。",
+      "printed_page": 75
+    },
+    {
+      "from": "传道者的角色",
+      "type": "subclass",
+      "to": "教师的职业角色",
+      "evidence": "教师负有传递社会传统道德、价值观念的使命",
+      "printed_page": 75
+    },
+    {
+      "from": "授业解惑者的角色",
+      "type": "subclass",
+      "to": "教师的职业角色",
+      "evidence": "教师要将自己获得的知识经验、技能进行精心加工整理",
+      "printed_page": 75
+    },
+    {
+      "from": "示范者的角色",
+      "type": "subclass",
+      "to": "教师的职业角色",
+      "evidence": "教师的言行是学生学习和模仿的榜样",
+      "printed_page": 75
+    },
+    {
+      "from": "教育教学活动的设计者、组织者和管理者",
+      "type": "subclass",
+      "to": "教师的职业角色",
+      "evidence": "教师是教学活动的设计者。",
+      "printed_page": 75
+    },
+    {
+      "from": "朋友的角色",
+      "type": "subclass",
+      "to": "教师的职业角色",
+      "evidence": "教师要在学习、生活、人生等方面给予学生指导",
+      "printed_page": 75
+    },
+    {
+      "from": "研究者的角色",
+      "type": "subclass",
+      "to": "教师的职业角色",
+      "evidence": "教师要以一种变化发展的态度来对待自己的工作对象",
+      "printed_page": 76
+    },
+    {
+      "from": "班集体的领导者的角色",
+      "type": "subclass",
+      "to": "教师的职业角色",
+      "evidence": "教师是教育教学活动的组织者和领导者",
+      "printed_page": 76
+    },
+    {
+      "from": "心理辅导者的角色",
+      "type": "subclass",
+      "to": "教师的职业角色",
+      "evidence": "担当好学生的心理辅导者的角色",
+      "printed_page": 76
+    },
+    {
+      "from": "教师的道德形象",
+      "type": "part_of",
+      "to": "教师的职业形象",
+      "evidence": "教师的道德形象被视为教师的最基本形象。",
+      "printed_page": 76
+    },
+    {
+      "from": "教师的文化形象",
+      "type": "part_of",
+      "to": "教师的职业形象",
+      "evidence": "教师的文化形象是教师形象的核心。",
+      "printed_page": 76
+    },
+    {
+      "from": "教师的人格形象",
+      "type": "part_of",
+      "to": "教师的职业形象",
+      "evidence": "教师的人格形象是学生亲近或疏远教师的首要因素。",
+      "printed_page": 76
+    },
+    {
+      "from": "教师劳动的复杂性",
+      "type": "subclass",
+      "to": "教师劳动的特点",
+      "evidence": "教师劳动的综合性主要体现为教师劳动的复杂性。",
+      "printed_page": 77
+    },
+    {
+      "from": "教育目的的全面性",
+      "type": "subclass",
+      "to": "教师劳动的复杂性",
+      "evidence": "教育目的的全面性。教师劳动的目的是培养德、智、体等全面发展的人",
+      "printed_page": 77
+    },
+    {
+      "from": "教育任务的多样性",
+      "type": "subclass",
+      "to": "教师劳动的复杂性",
+      "evidence": "教育任务的多样性。教师不仅要传授科学文化知识和训练学生的技能",
+      "printed_page": 77
+    },
+    {
+      "from": "劳动对象的差异性",
+      "type": "subclass",
+      "to": "教师劳动的复杂性",
+      "evidence": "还要根据每个学生的实际情况因材施教。",
+      "printed_page": 77
+    },
+    {
+      "from": "教师劳动的创造性",
+      "type": "subclass",
+      "to": "教师劳动的特点",
+      "evidence": "教师劳动的创造性主要表现在以下三个方面",
+      "printed_page": 77
+    },
+    {
+      "from": "因材施教",
+      "type": "subclass",
+      "to": "教师劳动的创造性",
+      "evidence": "教师必须灵活地针对每个学生的特点，对他们提出不同的要求",
+      "printed_page": 77
+    },
+    {
+      "from": "教学方法的不断更新",
+      "type": "subclass",
+      "to": "教师劳动的创造性",
+      "evidence": "教师还要尝试新的教学方法，进行教学方法的变换或改革。",
+      "printed_page": 77
+    },
+    {
+      "from": "教育机智",
+      "type": "subclass",
+      "to": "教师劳动的创造性",
+      "evidence": "教师需要教育机智。",
+      "printed_page": 77
+    },
+    {
+      "from": "教师劳动的连续性",
+      "type": "subclass",
+      "to": "教师劳动的特点",
+      "evidence": "连续性是指时间的连续性。",
+      "printed_page": 78
+    },
+    {
+      "from": "教师劳动的广延性",
+      "type": "subclass",
+      "to": "教师劳动的特点",
+      "evidence": "广延性是指空间的广延性。",
+      "printed_page": 78
+    },
+    {
+      "from": "教师劳动的长期性",
+      "type": "subclass",
+      "to": "教师劳动的特点",
+      "evidence": "长期性是指人才培养的周期比较长，教育的影响具有迟效性。",
+      "printed_page": 78
+    },
+    {
+      "from": "教师劳动的间接性",
+      "type": "subclass",
+      "to": "教师劳动的特点",
+      "evidence": "教师的劳动并没有直接服务于社会",
+      "printed_page": 78
+    },
+    {
+      "from": "教师劳动的主体性",
+      "type": "subclass",
+      "to": "教师劳动的特点",
+      "evidence": "主体性是指教师自身可以成为活生生的教育因素和具有影响力的榜样。",
+      "printed_page": 78
+    },
+    {
+      "from": "教师劳动的示范性",
+      "type": "subclass",
+      "to": "教师劳动的特点",
+      "evidence": "示范性是指教师的言行举止会成为学生学习的对象。",
+      "printed_page": 78
+    },
+    {
+      "from": "教师劳动手段的特殊性",
+      "type": "prerequisite",
+      "to": "教师劳动的示范性",
+      "evidence": "学生的向师性和教师劳动手段（工具）的特殊性，决定了教师劳动具有示范性的特点。",
+      "printed_page": 78
+    },
+    {
+      "from": "向师性",
+      "type": "prerequisite",
+      "to": "教师劳动的示范性",
+      "evidence": "学生的向师性和教师劳动手段（工具）的特殊性，决定了教师劳动具有示范性的特点。",
+      "printed_page": 78
+    },
+    {
+      "from": "教师劳动方式的个体性",
+      "type": "subclass",
+      "to": "教师劳动的特点",
+      "evidence": "虽然教师的劳动主要是以个体劳动的形式进行的",
+      "printed_page": 78
+    },
+    {
+      "from": "劳动成果的群体性",
+      "type": "subclass",
+      "to": "教师劳动的特点",
+      "evidence": "但同时教师的劳动成果又是集体劳动和多方面影响的结果。",
+      "printed_page": 78
+    },
+    {
+      "from": "劳动任务的综合性",
+      "type": "subclass",
+      "to": "教师劳动的特点",
+      "evidence": "教师需要同时完成培养学生多方面发展的任务",
+      "printed_page": 78
+    },
+    {
+      "from": "道德素养",
+      "type": "part_of",
+      "to": "教师的专业素养",
+      "evidence": "中小学教师职业道德规范有以下四个方面的要求",
+      "printed_page": 79
+    },
+    {
+      "from": "知识素养",
+      "type": "part_of",
+      "to": "教师的专业素养",
+      "evidence": "教师应具有人文科学知识、社会科学知识、自然科学知识和生活知识。",
+      "printed_page": 80
+    },
+    {
+      "from": "能力素养",
+      "type": "part_of",
+      "to": "教师的专业素养",
+      "evidence": "此外，教师还应该具备教育科研能力、学习能力、观察学生的能力",
+      "printed_page": 80
+    },
+    {
+      "from": "职业心理素养",
+      "type": "part_of",
+      "to": "教师的专业素养",
+      "evidence": "（四）职业心理素养",
+      "printed_page": 80
+    },
+    {
+      "from": "忠诚于人民的教育事业",
+      "type": "subclass",
+      "to": "道德素养",
+      "evidence": "对待事业——忠诚于人民的教育事业",
+      "printed_page": 79
+    },
+    {
+      "from": "热爱学生",
+      "type": "subclass",
+      "to": "道德素养",
+      "evidence": "对待学生——热爱学生",
+      "printed_page": 79
+    },
+    {
+      "from": "团结协作",
+      "type": "subclass",
+      "to": "道德素养",
+      "evidence": "对待集体——具有团结协作精神",
+      "printed_page": 79
+    },
+    {
+      "from": "以身作则为人师表",
+      "type": "subclass",
+      "to": "道德素养",
+      "evidence": "对待自己——以身作则，为人师表",
+      "printed_page": 79
+    },
+    {
+      "from": "政治理论修养",
+      "type": "subclass",
+      "to": "知识素养",
+      "evidence": "教师要认真学习马列主义、毛泽东思想和邓小平理论",
+      "printed_page": 79
+    },
+    {
+      "from": "精深的学科专业知识",
+      "type": "subclass",
+      "to": "知识素养",
+      "evidence": "掌握该学科的基本知识和基本技能。",
+      "printed_page": 79
+    },
+    {
+      "from": "广博的科学文化知识",
+      "type": "subclass",
+      "to": "知识素养",
+      "evidence": "3. 广博的科学文化知识",
+      "printed_page": 79
+    },
+    {
+      "from": "必备的教育科学知识",
+      "type": "subclass",
+      "to": "知识素养",
+      "evidence": "教育学、心理学及各学科教材教法是教师首先要掌握的最为基本的教育科学知识。",
+      "printed_page": 80
+    },
+    {
+      "from": "语言表达能力",
+      "type": "subclass",
+      "to": "能力素养",
+      "evidence": "准确、简练，具有科学性。",
+      "printed_page": 80
+    },
+    {
+      "from": "教育教学能力",
+      "type": "subclass",
+      "to": "能力素养",
+      "evidence": "教师要善于组织课堂教学",
+      "printed_page": 80
+    },
+    {
+      "from": "组织管理能力",
+      "type": "subclass",
+      "to": "能力素养",
+      "evidence": "教师要有确定合理目标和计划的能力。",
+      "printed_page": 80
+    },
+    {
+      "from": "自我调控和自我反思能力",
+      "type": "subclass",
+      "to": "能力素养",
+      "evidence": "也要求教师具备自我反思能力，不断提高自己的素养。",
+      "printed_page": 80
+    },
+    {
+      "from": "权力威信",
+      "type": "subclass",
+      "to": "教师威信",
+      "evidence": "教师威信有两种：一种是权力威信；另一种是信服威信。",
+      "printed_page": 81
+    },
+    {
+      "from": "信服威信",
+      "type": "subclass",
+      "to": "教师威信",
+      "evidence": "教师威信有两种：一种是权力威信；另一种是信服威信。",
+      "printed_page": 81
+    },
+    {
+      "from": "人格威信",
+      "type": "subclass",
+      "to": "教师威信",
+      "evidence": "教师威信主要包括人格威信、学识威信和情感威信三个方面的内容。",
+      "printed_page": 81
+    },
+    {
+      "from": "学识威信",
+      "type": "subclass",
+      "to": "教师威信",
+      "evidence": "教师威信主要包括人格威信、学识威信和情感威信三个方面的内容。",
+      "printed_page": 81
+    },
+    {
+      "from": "情感威信",
+      "type": "subclass",
+      "to": "教师威信",
+      "evidence": "教师威信主要包括人格威信、学识威信和情感威信三个方面的内容。",
+      "printed_page": 81
+    },
+    {
+      "from": "教师威信",
+      "type": "related",
+      "to": "师生关系",
+      "evidence": "教师威信实质上反映了一种良好的师生关系",
+      "printed_page": 81
+    },
+    {
+      "from": "培养自身良好的道德品质",
+      "type": "part_of",
+      "to": "教师威信",
+      "evidence": "良好的道德品质是教师获得威信的基本条件。",
+      "printed_page": 82
+    },
+    {
+      "from": "培养良好的认知能力和性格特征",
+      "type": "part_of",
+      "to": "教师威信",
+      "evidence": "良好的认知能力和性格特征是教师获得威信所必需的心理品质。",
+      "printed_page": 82
+    },
+    {
+      "from": "注重良好仪表、风度和行为习惯的养成",
+      "type": "part_of",
+      "to": "教师威信",
+      "evidence": "教师良好的仪表、风度和行为习惯对威信的获得也有重要影响。",
+      "printed_page": 82
+    },
+    {
+      "from": "给学生以良好的第一印象",
+      "type": "part_of",
+      "to": "教师威信",
+      "evidence": "教师应高度重视与学生的第一次见面",
+      "printed_page": 82
+    },
+    {
+      "from": "做学生的朋友与知己",
+      "type": "part_of",
+      "to": "教师威信",
+      "evidence": "教师除了扮演权威者角色，还应当扮演朋友和知己的角色",
+      "printed_page": 82
+    },
+    {
+      "from": "教育教学权",
+      "type": "subclass",
+      "to": "教师的权利",
+      "evidence": "教育教学权是指教师进行教育教学活动，开展教育教学改革和实验的权利。",
+      "printed_page": 82
+    },
+    {
+      "from": "学术交流权",
+      "type": "subclass",
+      "to": "教师的权利",
+      "evidence": "学术交流权也称科学研究权、学术研究权、学术自由权",
+      "printed_page": 82
+    },
+    {
+      "from": "指导评价权",
+      "type": "subclass",
+      "to": "教师的权利",
+      "evidence": "指导评价权也称管理学生权",
+      "printed_page": 83
+    },
+    {
+      "from": "获取报酬待遇权",
+      "type": "subclass",
+      "to": "教师的权利",
+      "evidence": "获取报酬待遇权是指教师按时获取工资报酬",
+      "printed_page": 83
+    },
+    {
+      "from": "民主管理权",
+      "type": "subclass",
+      "to": "教师的权利",
+      "evidence": "民主管理权是指教师对学校教育教学、管理工作和教育行政部门的工作提出意见",
+      "printed_page": 83
+    },
+    {
+      "from": "进修培训权",
+      "type": "subclass",
+      "to": "教师的权利",
+      "evidence": "进修培训权是指教师参加进修或者其他方式的培训的权利。",
+      "printed_page": 83
+    },
+    {
+      "from": "遵守宪法法律和职业道德",
+      "type": "subclass",
+      "to": "教师的义务",
+      "evidence": "遵守宪法、法律和职业道德，为人师表。",
+      "printed_page": 83
+    },
+    {
+      "from": "贯彻国家教育方针完成教育教学任务",
+      "type": "subclass",
+      "to": "教师的义务",
+      "evidence": "贯彻国家的教育方针，遵守规章制度，执行学校的教学计划，履行教师聘约",
+      "printed_page": 83
+    },
+    {
+      "from": "对学生进行思想品德等教育",
+      "type": "subclass",
+      "to": "教师的义务",
+      "evidence": "对学生进行宪法所确定的基本原则的教育和爱国主义、民族团结的教育",
+      "printed_page": 83
+    },
+    {
+      "from": "关心爱护全体学生尊重学生人格",
+      "type": "subclass",
+      "to": "教师的义务",
+      "evidence": "关心、爱护全体学生，尊重学生人格，促进学生在品德、智力、体质等方面全面发展。",
+      "printed_page": 83
+    },
+    {
+      "from": "制止有害于学生的行为",
+      "type": "subclass",
+      "to": "教师的义务",
+      "evidence": "制止有害于学生的行为或者其他侵犯学生合法权益的行为",
+      "printed_page": 83
+    },
+    {
+      "from": "不断提高思想政治觉悟和业务水平",
+      "type": "subclass",
+      "to": "教师的义务",
+      "evidence": "不断提高思想政治觉悟和教育教学业务水平。",
+      "printed_page": 83
+    },
+    {
+      "from": "社会关系",
+      "type": "subclass",
+      "to": "师生关系",
+      "evidence": "社会关系以年青一代的成长为目标",
+      "printed_page": 84
+    },
+    {
+      "from": "教育关系",
+      "type": "subclass",
+      "to": "师生关系",
+      "evidence": "教育关系以直接促进学生发展为目标",
+      "printed_page": 84
+    },
+    {
+      "from": "心理关系",
+      "type": "subclass",
+      "to": "师生关系",
+      "evidence": "心理关系以维持和发展教育关系为目标",
+      "printed_page": 84
+    },
+    {
+      "from": "伦理关系",
+      "type": "subclass",
+      "to": "师生关系",
+      "evidence": "伦理关系是指在教育教学活动中，教师与学生构成一个特殊的道德共同体",
+      "printed_page": 85
+    },
+    {
+      "from": "师生关系的两种对立观点",
+      "type": "part_of",
+      "to": "师生关系",
+      "evidence": "（二）师生关系的两种对立观点",
+      "printed_page": 85
+    },
+    {
+      "from": "教师中心论",
+      "type": "subclass",
+      "to": "师生关系的两种对立观点",
+      "evidence": "教师中心论强调教师的权威",
+      "printed_page": 85
+    },
+    {
+      "from": "学生中心论",
+      "type": "subclass",
+      "to": "师生关系的两种对立观点",
+      "evidence": "他把学生视为教育过程的中心",
+      "printed_page": 85
+    },
+    {
+      "from": "赫尔巴特",
+      "type": "part_of",
+      "to": "教师中心论",
+      "evidence": "教师中心论的代表人物是德国教育家赫尔巴特。",
+      "printed_page": 85
+    },
+    {
+      "from": "杜威",
+      "type": "part_of",
+      "to": "学生中心论",
+      "evidence": "学生中心论是美国进步主义教育思想家杜威针对赫尔巴特的传统教育理念与思想而提出的。",
+      "printed_page": 85
+    },
+    {
+      "from": "教师中心论",
+      "type": "contrast",
+      "to": "学生中心论",
+      "evidence": "教师中心论认为学生是船，教师是舵手。",
+      "printed_page": 85
+    },
+    {
+      "from": "新型师生关系",
+      "type": "part_of",
+      "to": "师生关系",
+      "evidence": "四、新型师生关系的特点",
+      "printed_page": 87
+    },
+    {
+      "from": "尊师爱生",
+      "type": "subclass",
+      "to": "新型师生关系",
+      "evidence": "教师通过对学生的尊重和关爱换取学生发自内心的尊敬与信赖",
+      "printed_page": 87
+    },
+    {
+      "from": "民主平等",
+      "type": "subclass",
+      "to": "新型师生关系",
+      "evidence": "一方面是师生关系的民主平等，另一方面是学生之间的民主平等。",
+      "printed_page": 87
+    },
+    {
+      "from": "教学相长",
+      "type": "subclass",
+      "to": "新型师生关系",
+      "evidence": "教师的教可以促进学生的学",
+      "printed_page": 87
+    },
+    {
+      "from": "心理相容",
+      "type": "subclass",
+      "to": "新型师生关系",
+      "evidence": "心理相容指的是教师与学生之间在心理上协调一致",
+      "printed_page": 87
+    },
+    {
+      "from": "按教师领导方式划分",
+      "type": "part_of",
+      "to": "师生关系",
+      "evidence": "勒温曾在 1939 年将教师的领导方式分为：专制型、民主型和放任型。",
+      "printed_page": 85
+    },
+    {
+      "from": "专制型师生关系",
+      "type": "subclass",
+      "to": "按教师领导方式划分",
+      "evidence": "这一类型的师生关系模式以命令、权威、疏远为其主要心态和行为特征。",
+      "printed_page": 85
+    },
+    {
+      "from": "放任型师生关系",
+      "type": "subclass",
+      "to": "按教师领导方式划分",
+      "evidence": "以无序、随意、放纵为其心态和行为特征。",
+      "printed_page": 85
+    },
+    {
+      "from": "民主型师生关系",
+      "type": "subclass",
+      "to": "按教师领导方式划分",
+      "evidence": "以开放、平等、互助为其主要心态和行为特征。",
+      "printed_page": 86
+    },
+    {
+      "from": "李皮特和怀特的教师领导方式分类",
+      "type": "part_of",
+      "to": "师生关系",
+      "evidence": "李皮特和怀特对教师领导方式进行研究分类，将其分成强硬专断型、仁慈专断型、放任型和民主型。",
+      "printed_page": 86
+    },
+    {
+      "from": "良好师生关系建立的途径与方法",
+      "type": "part_of",
+      "to": "师生关系",
+      "evidence": "六、良好师生关系建立的途径与方法",
+      "printed_page": 88
+    },
+    {
+      "from": "建立途径·教师方面",
+      "type": "part_of",
+      "to": "良好师生关系建立的途径与方法",
+      "evidence": "教师可以通过观察、谈话，更全面地了解学生的思想、个性、兴趣",
+      "printed_page": 88
+    },
+    {
+      "from": "了解和研究学生",
+      "type": "subclass",
+      "to": "建立途径·教师方面",
+      "evidence": "1. 了解和研究学生",
+      "printed_page": 88
+    },
+    {
+      "from": "学生观",
+      "type": "part_of",
+      "to": "建立途径·教师方面",
+      "evidence": "2. 树立正确的学生观",
+      "printed_page": 89
+    },
+    {
+      "from": "提高自身素质",
+      "type": "subclass",
+      "to": "建立途径·教师方面",
+      "evidence": "教师的道德素养、知识素养和能力素养是学生尊重教师的重要条件",
+      "printed_page": 89
+    },
+    {
+      "from": "发扬教育民主",
+      "type": "subclass",
+      "to": "建立途径·教师方面",
+      "evidence": "教师对学生应一视同仁，特别是教师能与学生心理换位",
+      "printed_page": 89
+    },
+    {
+      "from": "热爱尊重学生公平对待学生",
+      "type": "subclass",
+      "to": "建立途径·教师方面",
+      "evidence": "教师应牢固树立民主思想，热爱所有学生，尊重学生的人格",
+      "printed_page": 89
+    },
+    {
+      "from": "主动与学生沟通善于与学生交往",
+      "type": "subclass",
+      "to": "建立途径·教师方面",
+      "evidence": "良好的师生关系是在交往中形成的",
+      "printed_page": 89
+    },
+    {
+      "from": "正确处理师生矛盾",
+      "type": "subclass",
+      "to": "建立途径·教师方面",
+      "evidence": "教师要善于驾驭自己的情绪，冷静全面地分析矛盾",
+      "printed_page": 89
+    },
+    {
+      "from": "提高法治意识保护学生的合法权利",
+      "type": "subclass",
+      "to": "建立途径·教师方面",
+      "evidence": "教师一定要提高法治意识，明确师生的权利义务关系",
+      "printed_page": 89
+    }
+  ]
 }

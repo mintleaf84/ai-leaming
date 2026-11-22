@@ -1,1085 +1,1085 @@
 {
- "chapter": "第一篇第一章 教育与教育学",
- "schema_version": "1.1",
- "edges": [
-  {
-   "from": "教育形态·按空间划分",
-   "type": "part_of",
-   "to": "教育的形态",
-   "evidence": "从教育系统所赖以运行的空间特性来看，可以将教育形态划分为家庭教育、学校教育与社会教育。",
-   "printed_page": 5
-  },
-  {
-   "from": "教育形态·按时间划分",
-   "type": "part_of",
-   "to": "教育的形态",
-   "evidence": "从教育系统所赖以运行的时间标准以及建立于其上的产业技术和社会形态出发，可以将教育形态划分为农业社会的教育、工业社会的教育与信息社会的教育。",
-   "printed_page": 5
-  },
-  {
-   "from": "教育形态·按形式化程度划分",
-   "type": "part_of",
-   "to": "教育的形态",
-   "evidence": "根据教育系统自身形式化的程度，可以将教育形态划分为非制度化教育与制度化教育。",
-   "printed_page": 6
-  },
-  {
-   "from": "功能·按对象划分",
-   "type": "part_of",
-   "to": "教育的功能",
-   "evidence": "按教育功能作用的对象划分——个体发展功能与社会发展功能。",
-   "printed_page": 8
-  },
-  {
-   "from": "功能·按方向划分",
-   "type": "part_of",
-   "to": "教育的功能",
-   "evidence": "按教育的作用方向划分——正向功能与负向功能。",
-   "printed_page": 8
-  },
-  {
-   "from": "功能·按形式划分",
-   "type": "part_of",
-   "to": "教育的功能",
-   "evidence": "按教育功能呈现的形式划分——显性功能与隐性功能。",
-   "printed_page": 8
-  },
-  {
-   "from": "功能·按性质划分",
-   "type": "part_of",
-   "to": "教育的功能",
-   "evidence": "按教育功能的性质划分——保守功能与超越功能。",
-   "printed_page": 9
-  },
-  {
-   "from": "广义教育·社会教育",
-   "type": "subclass",
-   "to": "广义的教育",
-   "evidence": "其包括社会教育、家庭教育和学校教育。",
-   "printed_page": 3
-  },
-  {
-   "from": "广义教育·家庭教育",
-   "type": "subclass",
-   "to": "广义的教育",
-   "evidence": "其包括社会教育、家庭教育和学校教育。",
-   "printed_page": 3
-  },
-  {
-   "from": "广义教育·学校教育",
-   "type": "subclass",
-   "to": "广义的教育",
-   "evidence": "其包括社会教育、家庭教育和学校教育。",
-   "printed_page": 3
-  },
-  {
-   "from": "狭义的教育",
-   "type": "exact_match",
-   "to": "广义教育·学校教育",
-   "evidence": "狭义的教育主要指学校教育。",
-   "printed_page": 3
-  },
-  {
-   "from": "更狭义的教育",
-   "type": "exact_match",
-   "to": "德育",
-   "evidence": "更狭义的教育……与学校中常说的“德育”是同义词。",
-   "printed_page": 3
-  },
-  {
-   "from": "描述性定义",
-   "type": "subclass",
-   "to": "教育术语",
-   "evidence": "根据教育定义的陈述方式将其划分为描述性定义、规定性定义与纲领性定义。",
-   "printed_page": 4
-  },
-  {
-   "from": "规定性定义",
-   "type": "subclass",
-   "to": "教育术语",
-   "evidence": "②规定性定义，即作者自己所创制的定义，也就是说，不管其他人是如何定义某个词语的，“我”就是这么定义的。",
-   "printed_page": 4
-  },
-  {
-   "from": "纲领性定义",
-   "type": "subclass",
-   "to": "教育术语",
-   "evidence": "③纲领性定义，是一种关于定义对象应该是什么的界定。",
-   "printed_page": 4
-  },
-  {
-   "from": "教育者",
-   "type": "part_of",
-   "to": "教育活动的三要素",
-   "evidence": "教育者、受教育者（学习者）和教育影响（教育中介系统、教育措施）是构成教育活动的基本要素。",
-   "printed_page": 4
-  },
-  {
-   "from": "受教育者",
-   "type": "part_of",
-   "to": "教育活动的三要素",
-   "evidence": "教育者、受教育者（学习者）和教育影响（教育中介系统、教育措施）是构成教育活动的基本要素。",
-   "printed_page": 4
-  },
-  {
-   "from": "教育影响",
-   "type": "part_of",
-   "to": "教育活动的三要素",
-   "evidence": "教育者、受教育者（学习者）和教育影响（教育中介系统、教育措施）是构成教育活动的基本要素。",
-   "printed_page": 4
-  },
-  {
-   "from": "教育内容",
-   "type": "part_of",
-   "to": "教育影响",
-   "evidence": "教育影响是连接教育者与受教育者的纽带或者说中介，主要包括教育内容和教育手",
-   "printed_page": 4
-  },
-  {
-   "from": "教育手段",
-   "type": "part_of",
-   "to": "教育影响",
-   "evidence": "教育手段包括物质手段（教育的活动场所和设施、教育媒体及教育辅助手段）和精神手段（教育方法、教育途径）等。",
-   "printed_page": 5
-  },
-  {
-   "from": "形态·家庭教育",
-   "type": "subclass",
-   "to": "教育形态·按空间划分",
-   "evidence": "……可以将教育形态划分为家庭教育、学校教育与社会教育。",
-   "printed_page": 5
-  },
-  {
-   "from": "形态·学校教育",
-   "type": "subclass",
-   "to": "教育形态·按空间划分",
-   "evidence": "从教育系统所赖以运行的空间特性来看，可以将教育形态划分为家庭教育、学校教育与社会教育。",
-   "printed_page": 5
-  },
-  {
-   "from": "形态·社会教育",
-   "type": "subclass",
-   "to": "教育形态·按空间划分",
-   "evidence": "从教育系统所赖以运行的空间特性来看，可以将教育形态划分为家庭教育、学校教育与社会教育。",
-   "printed_page": 5
-  },
-  {
-   "from": "农业社会的教育",
-   "type": "subclass",
-   "to": "教育形态·按时间划分",
-   "evidence": "从教育系统所赖以运行的时间标准以及建立于其上的产业技术和社会形态出发，可以将教育形态划分为农业社会的教育、工业社会的教育与信息社会的教育。",
-   "printed_page": 5
-  },
-  {
-   "from": "工业社会的教育",
-   "type": "subclass",
-   "to": "教育形态·按时间划分",
-   "evidence": "从教育系统所赖以运行的时间标准以及建立于其上的产业技术和社会形态出发，可以将教育形态划分为农业社会的教育、工业社会的教育与信息社会的教育。",
-   "printed_page": 5
-  },
-  {
-   "from": "信息社会的教育",
-   "type": "subclass",
-   "to": "教育形态·按时间划分",
-   "evidence": "从教育系统所赖以运行的时间标准以及建立于其上的产业技术和社会形态出发，可以将教育形态划分为农业社会的教育、工业社会的教育与信息社会的教育。",
-   "printed_page": 5
-  },
-  {
-   "from": "非制度化教育",
-   "type": "subclass",
-   "to": "教育形态·按形式化程度划分",
-   "evidence": "……可以将教育形态划分为非制度化教育与制度化教育。",
-   "printed_page": 6
-  },
-  {
-   "from": "制度化教育",
-   "type": "subclass",
-   "to": "教育形态·按形式化程度划分",
-   "evidence": "根据教育系统自身形式化的程度，可以将教育形态划分为非制度化教育与制度化教育。",
-   "printed_page": 6
-  },
-  {
-   "from": "非制度化教育",
-   "type": "prerequisite",
-   "to": "制度化教育",
-   "evidence": "制度化教育是从非制度化教育中演化而来的。",
-   "printed_page": 6,
-   "note": "先有非制度化，才有制度化"
-  },
-  {
-   "from": "有目的地培养人的社会活动",
-   "type": "exact_match",
-   "to": "教育的本质属性",
-   "evidence": "教育是一种有目的地培养人的社会活动。这是教育区别于其他事物现象的根本特征。",
-   "printed_page": 6
-  },
-  {
-   "from": "个体发展功能",
-   "type": "subclass",
-   "to": "功能·按对象划分",
-   "evidence": "按教育功能作用的对象划分——个体发展功能与社会发展功能。",
-   "printed_page": 8
-  },
-  {
-   "from": "社会发展功能",
-   "type": "subclass",
-   "to": "功能·按对象划分",
-   "evidence": "（一）按教育功能作用的对象划分——个体发展功能与社会发展功能",
-   "printed_page": 8
-  },
-  {
-   "from": "个体个性化功能",
-   "type": "subclass",
-   "to": "个体发展功能",
-   "evidence": "教育的个体发展功能包括个体个性化功能和个体社会化功能。",
-   "printed_page": 8
-  },
-  {
-   "from": "个体社会化功能",
-   "type": "subclass",
-   "to": "个体发展功能",
-   "evidence": "教育的个体发展功能包括个体个性化功能和个体社会化功能。",
-   "printed_page": 8
-  },
-  {
-   "from": "正向功能",
-   "type": "subclass",
-   "to": "功能·按方向划分",
-   "evidence": "按教育的作用方向划分——正向功能与负向功能。",
-   "printed_page": 8
-  },
-  {
-   "from": "负向功能",
-   "type": "subclass",
-   "to": "功能·按方向划分",
-   "evidence": "2. 负向（消极）功能：教育阻碍社会进步和个体发展的消极影响和作用。",
-   "printed_page": 8
-  },
-  {
-   "from": "显性功能",
-   "type": "subclass",
-   "to": "功能·按形式划分",
-   "evidence": "按教育功能呈现的形式划分——显性功能与隐性功能。",
-   "printed_page": 8
-  },
-  {
-   "from": "隐性功能",
-   "type": "subclass",
-   "to": "功能·按形式划分",
-   "evidence": "（2）隐性功能：伴随显性功能所出现的非预期性的功能。",
-   "printed_page": 8
-  },
-  {
-   "from": "保守功能",
-   "type": "subclass",
-   "to": "功能·按性质划分",
-   "evidence": "按教育功能的性质划分——保守功能与超越功能。",
-   "printed_page": 9
-  },
-  {
-   "from": "超越功能",
-   "type": "subclass",
-   "to": "功能·按性质划分",
-   "evidence": "2. 超越功能：通过教育的自我更新和变革，促进和引领人类社会的发展。",
-   "printed_page": 9
-  },
-  {
-   "from": "教育平等",
-   "type": "part_of",
-   "to": "教育民主化",
-   "evidence": "教育民主化的中心内容是实现教育平等。",
-   "printed_page": 19
-  },
-  {
-   "from": "教育机会均等",
-   "type": "subclass",
-   "to": "教育平等",
-   "evidence": "教育平等包括教育机会均等、教育过程平等和教育结果平等。",
-   "printed_page": 19
-  },
-  {
-   "from": "教育过程平等",
-   "type": "subclass",
-   "to": "教育平等",
-   "evidence": "教育平等包括教育机会均等、教育过程平等和教育结果平等",
-   "printed_page": 19
-  },
-  {
-   "from": "教育结果平等",
-   "type": "subclass",
-   "to": "教育平等",
-   "evidence": "教育平等包括教育机会均等、教育过程平等和教育结果平等",
-   "printed_page": 19
-  },
-  {
-   "from": "教育活动的三要素",
-   "type": "prerequisite",
-   "to": "教育的形态",
-   "evidence": "教育的形态是指由教育者、受教育者和教育影响这三个基本要素所构成的教育系统……的变化形式。",
-   "printed_page": 5
-  },
-  {
-   "from": "《大教学论》",
-   "type": "marks",
-   "to": "教育学的创立阶段",
-   "evidence": "①《大教学论》：近代第一本教育学著作，标志着教育学成为一门独立学科。",
-   "printed_page": 24
-  },
-  {
-   "from": "《普通教育学》",
-   "type": "marks",
-   "to": "教育学的创立阶段",
-   "evidence": "《普通教育学》……标志着教育学作为一门规范的、独立的学科正式诞生。",
-   "printed_page": 24
-  },
-  {
-   "from": "教育学的萌芽阶段",
-   "type": "prerequisite",
-   "to": "教育学的创立阶段",
-   "evidence": "考点八 教育学的萌芽阶段 1- 孔子与孟子",
-   "printed_page": 20,
-   "note": "结构顺序证据"
-  },
-  {
-   "from": "教育学的创立阶段",
-   "type": "prerequisite",
-   "to": "教育学的发展阶段",
-   "evidence": "考点十一 教育学的创立阶段 1- 夸美纽斯",
-   "printed_page": 23,
-   "note": "结构顺序证据"
-  },
-  {
-   "from": "夏商教育",
-   "type": "subclass",
-   "to": "中国奴隶社会教育",
-   "evidence": "（1）夏商 ①教育场所：夏代已有学校的设置……商代的学校名称有“大学”“小学”“瞽宗”“庠”“序”等。",
-   "printed_page": 11
-  },
-  {
-   "from": "西周教育",
-   "type": "subclass",
-   "to": "中国奴隶社会教育",
-   "evidence": "（2）西周 ①教育场所：国学——在王城和诸侯国都内；乡学——设置在地方。",
-   "printed_page": 11
-  },
-  {
-   "from": "国学",
-   "type": "subclass",
-   "to": "西周教育",
-   "evidence": "国学——在王城和诸侯国都内。",
-   "printed_page": 11
-  },
-  {
-   "from": "乡学",
-   "type": "subclass",
-   "to": "西周教育",
-   "evidence": "乡学——设置在地方。",
-   "printed_page": 11
-  },
-  {
-   "from": "六艺",
-   "type": "part_of",
-   "to": "西周教育",
-   "evidence": "“六艺”是西周各级各类学校教育的基本学科，具体指礼、乐、射、御、书、数。",
-   "printed_page": 12
-  },
-  {
-   "from": "西周教育",
-   "type": "attribute",
-   "to": "学在官府",
-   "evidence": "教育特点：学在官府，政教合一。",
-   "printed_page": 12
-  },
-  {
-   "from": "私学兴起",
-   "type": "contrast",
-   "to": "学在官府",
-   "evidence": "春秋时期，官学衰微，私学兴起，冲破了“学在官府”的限制。",
-   "printed_page": 12,
-   "note": "工具性关系：私学兴起与学在官府的对照；可在后续改为 contrast 的正式定义"
-  },
-  {
-   "from": "中国封建社会教育",
-   "type": "subclass",
-   "to": "中国教育发展历程",
-   "evidence": "考点五 中国封建社会教育的发展历程",
-   "printed_page": 12,
-   "note": "顶层归类，后续可与 V0 的 D 组对齐"
-  },
-  {
-   "from": "稷下学宫",
-   "type": "subclass",
-   "to": "中国封建社会教育",
-   "evidence": "（1）战国时期 教育场所：稷下学宫是战国时期齐国著名的学府。",
-   "printed_page": 12
-  },
-  {
-   "from": "学术自由",
-   "type": "attribute",
-   "to": "稷下学宫",
-   "evidence": "②特点：• 学术自由——基本特点，表现为“不治而议论”。",
-   "printed_page": 12
-  },
-  {
-   "from": "弟子职",
-   "type": "part_of",
-   "to": "稷下学宫",
-   "evidence": "尊师重道，诞生了第一个学生守则——《弟子职》。",
-   "printed_page": 12
-  },
-  {
-   "from": "两汉教育",
-   "type": "subclass",
-   "to": "中国封建社会教育",
-   "evidence": "（2）两汉时期 ①教育场所：官学和私学。",
-   "printed_page": 12
-  },
-  {
-   "from": "察举制",
-   "type": "part_of",
-   "to": "两汉教育",
-   "evidence": "③选士制度：察举制和征辟制。",
-   "printed_page": 13
-  },
-  {
-   "from": "九品中正制",
-   "type": "part_of",
-   "to": "魏晋南北朝教育",
-   "evidence": "②选士制度：九品中正制。",
-   "printed_page": 13
-  },
-  {
-   "from": "魏晋南北朝教育",
-   "type": "subclass",
-   "to": "中国封建社会教育",
-   "evidence": "（3）魏晋南北朝 ①教育场所：……国子学与太学并列。",
-   "printed_page": 13
-  },
-  {
-   "from": "六学二馆",
-   "type": "part_of",
-   "to": "隋唐教育",
-   "evidence": "（4）隋唐时期 ①教育场所：六学（……）、二馆（崇文馆、弘文馆）。",
-   "printed_page": 13
-  },
-  {
-   "from": "科举制",
-   "type": "part_of",
-   "to": "隋唐教育",
-   "evidence": "②选士制度：科举制。",
-   "printed_page": 13
-  },
-  {
-   "from": "隋唐教育",
-   "type": "subclass",
-   "to": "中国封建社会教育",
-   "evidence": "（4）隋唐时期 ①教育场所：六学（国子学、太学、四门学、律学、书学、算学）、二馆（崇文馆、弘文馆）",
-   "printed_page": 13
-  },
-  {
-   "from": "宋元明清教育",
-   "type": "subclass",
-   "to": "中国封建社会教育",
-   "evidence": "（5）宋元明清时期 ①教育场所：国子监——实行积分法",
-   "printed_page": 14
-  },
-  {
-   "from": "书院",
-   "type": "subclass",
-   "to": "宋元明清教育",
-   "evidence": "书院……性质：非官非私……特点：学术自由，学生自学",
-   "printed_page": 14
-  },
-  {
-   "from": "四书五经",
-   "type": "part_of",
-   "to": "宋元明清教育",
-   "evidence": "②教育内容：程朱理学（“四书”…“五经”…）。",
-   "printed_page": 14
-  },
-  {
-   "from": "察举制",
-   "type": "chronology",
-   "to": "九品中正制",
-   "evidence": "察举制、征辟制……魏晋南北朝……九品中正制",
-   "printed_page": 15,
-   "note": "朝代先后，非先修"
-  },
-  {
-   "from": "九品中正制",
-   "type": "chronology",
-   "to": "科举制",
-   "evidence": "九品中正制……隋唐……六学二馆……科举制",
-   "printed_page": 15,
-   "note": "朝代先后，非先修"
-  },
-  {
-   "from": "古埃及教育",
-   "type": "subclass",
-   "to": "外国古代社会教育",
-   "evidence": "1. 古埃及的教育。",
-   "printed_page": 15
-  },
-  {
-   "from": "古印度教育",
-   "type": "subclass",
-   "to": "外国古代社会教育",
-   "evidence": "2. 古印度的教育。",
-   "printed_page": 15
-  },
-  {
-   "from": "古希腊教育",
-   "type": "subclass",
-   "to": "外国古代社会教育",
-   "evidence": "3. 古希腊的教育。",
-   "printed_page": 15
-  },
-  {
-   "from": "斯巴达教育",
-   "type": "subclass",
-   "to": "古希腊教育",
-   "evidence": "在希腊的众多城邦中，影响最大的是斯巴达和雅典。",
-   "printed_page": 15
-  },
-  {
-   "from": "雅典教育",
-   "type": "subclass",
-   "to": "古希腊教育",
-   "evidence": "在希腊的众多城邦中，影响最大的是斯巴达和雅典。",
-   "printed_page": 15
-  },
-  {
-   "from": "西欧中世纪教育",
-   "type": "subclass",
-   "to": "外国古代社会教育",
-   "evidence": "4. 西欧中世纪的教育。",
-   "printed_page": 16
-  },
-  {
-   "from": "教会教育",
-   "type": "subclass",
-   "to": "西欧中世纪教育",
-   "evidence": "西欧中世纪的教育主要体现为教会教育与世俗封建主教育。",
-   "printed_page": 16
-  },
-  {
-   "from": "世俗封建主教育",
-   "type": "subclass",
-   "to": "西欧中世纪教育",
-   "evidence": "西欧中世纪的教育主要体现为教会教育与世俗封建主教育。",
-   "printed_page": 16
-  },
-  {
-   "from": "骑士教育",
-   "type": "subclass",
-   "to": "世俗封建主教育",
-   "evidence": "世俗封建主教育——骑士教育：重点学习“骑士七技”。",
-   "printed_page": 16
-  },
-  {
-   "from": "七艺",
-   "type": "part_of",
-   "to": "教会教育",
-   "evidence": "修道院主要课程体系为“七艺”，包括“三科”……和“四学”……",
-   "printed_page": 16
-  },
-  {
-   "from": "人文主义教育",
-   "type": "subclass",
-   "to": "文艺复兴与宗教改革时期教育",
-   "evidence": "人文主义教育……文艺复兴和……宗教改革",
-   "printed_page": 16
-  },
-  {
-   "from": "新教教育",
-   "type": "subclass",
-   "to": "文艺复兴与宗教改革时期教育",
-   "evidence": "①主张用一个新的宗教来代替天主教……新教教育",
-   "printed_page": 16
-  },
-  {
-   "from": "天主教教育",
-   "type": "subclass",
-   "to": "文艺复兴与宗教改革时期教育",
-   "evidence": "①兴办教育被视为实现其政治和宗教目的的手段……天主教教育",
-   "printed_page": 16
-  },
-  {
-   "from": "外国近现代社会教育",
-   "type": "subclass",
-   "to": "外国教育发展历程",
-   "evidence": "二、外国近现代社会教育的发展。",
-   "printed_page": 16
-  },
-  {
-   "from": "新教育运动",
-   "type": "subclass",
-   "to": "19世纪末20世纪初教育改革",
-   "evidence": "新教育运动（欧洲）……19世纪末20……世纪初教育……改革",
-   "printed_page": 17
-  },
-  {
-   "from": "进步教育",
-   "type": "subclass",
-   "to": "19世纪末20世纪初教育改革",
-   "evidence": "19世纪末20……世纪初教育……改革……进步教育……美国",
-   "printed_page": 17
-  },
-  {
-   "from": "要素主义",
-   "type": "subclass",
-   "to": "新传统教育派",
-   "evidence": "新传统教育……要素主义……巴格莱",
-   "printed_page": 17
-  },
-  {
-   "from": "永恒主义",
-   "type": "subclass",
-   "to": "新传统教育派",
-   "evidence": "永恒主义……教育的主要目的是培养永恒的理性……永恒的古典学科应该在学校课程中占中心地位",
-   "printed_page": 18
-  },
-  {
-   "from": "新托马斯主义",
-   "type": "subclass",
-   "to": "新传统教育派",
-   "evidence": "①教育应该以宗教为基础……新托马斯主义……教育目的在于培养真正的基督徒和有用的公民",
-   "printed_page": 18
-  },
-  {
-   "from": "存在主义",
-   "type": "subclass",
-   "to": "20世纪30—70年代教育思潮",
-   "evidence": "①教育的目的在于使学生实现自我生成……存在主义……萨特、奈勒……20世纪30—70……年代教育思潮",
-   "printed_page": 18
-  },
-  {
-   "from": "分析教育哲学",
-   "type": "subclass",
-   "to": "20世纪30—70年代教育思潮",
-   "evidence": "20世纪30—70……年代教育思潮……①教育哲学是一种“清思”活动……分析教育哲学",
-   "printed_page": 18
-  },
-  {
-   "from": "分析教育哲学",
-   "type": "represented_by",
-   "to": "谢弗勒",
-   "evidence": "分析教育哲学……教育哲学的任务是澄清教育领域的概念和命题……谢弗勒",
-   "printed_page": 18,
-   "note": "proposed 类型首次使用"
-  },
-  {
-   "from": "荀子",
-   "type": "part_of",
-   "to": "教育学的萌芽阶段",
-   "evidence": "考点九 教育学的萌芽阶段 2- 荀子、墨子与《学记》",
-   "printed_page": 21
-  },
-  {
-   "from": "墨子",
-   "type": "part_of",
-   "to": "教育学的萌芽阶段",
-   "evidence": "考点九 教育学的萌芽阶段 2- 荀子、墨子与《学记》",
-   "printed_page": 21
-  },
-  {
-   "from": "《学记》",
-   "type": "marks",
-   "to": "教育学的萌芽阶段",
-   "evidence": "《学记》是中国古代也是世界上最早的一篇专门论述教育、教学问题的论著。",
-   "printed_page": 21
-  },
-  {
-   "from": "荀子",
-   "type": "attribute",
-   "to": "性恶论",
-   "evidence": "人性论 性恶论：“今人之性，生而有好利焉……”。",
-   "printed_page": 21
-  },
-  {
-   "from": "荀子",
-   "type": "attribute",
-   "to": "化性起伪",
-   "evidence": "教育作用 “化性起伪”。",
-   "printed_page": 21
-  },
-  {
-   "from": "墨子",
-   "type": "attribute",
-   "to": "人性素丝说",
-   "evidence": "人性论 人性素丝说：“染于苍则苍，染于黄则黄”。",
-   "printed_page": 21
-  },
-  {
-   "from": "墨子",
-   "type": "attribute",
-   "to": "三表法",
-   "evidence": "三表法：“上本之于古者圣王之事”“下原察百姓耳目之实”“观其中国家百姓人民之利”。",
-   "printed_page": 21
-  },
-  {
-   "from": "《学记》",
-   "type": "attribute",
-   "to": "启发性原则",
-   "evidence": "“道而弗牵，强而弗抑，开而弗达”——启发性原则",
-   "printed_page": 22
-  },
-  {
-   "from": "《学记》",
-   "type": "attribute",
-   "to": "循序渐进原则",
-   "evidence": "“杂施而不孙，则坏乱而不修”——循序渐进原则",
-   "printed_page": 22
-  },
-  {
-   "from": "《学记》",
-   "type": "attribute",
-   "to": "教学相长原则",
-   "evidence": "“是故学然后知不足，教然后知困”……教学相长原则",
-   "printed_page": 22
-  },
-  {
-   "from": "《学记》",
-   "type": "attribute",
-   "to": "长善救失原则",
-   "evidence": "或失则多，或失则寡……长善救失原则",
-   "printed_page": 22
-  },
-  {
-   "from": "苏格拉底",
-   "type": "part_of",
-   "to": "教育学的萌芽阶段",
-   "evidence": "考点十 教育学的萌芽阶段 3- 古希腊三贤。",
-   "printed_page": 22
-  },
-  {
-   "from": "柏拉图",
-   "type": "part_of",
-   "to": "教育学的萌芽阶段",
-   "evidence": "①代表作：《理想国》《法律篇》……柏拉图",
-   "printed_page": 23
-  },
-  {
-   "from": "亚里士多德",
-   "type": "part_of",
-   "to": "教育学的萌芽阶段",
-   "evidence": "①代表作：《论灵魂》《政治学》……亚里士多德",
-   "printed_page": 23
-  },
-  {
-   "from": "苏格拉底",
-   "type": "attribute",
-   "to": "苏格拉底法",
-   "evidence": "教育方法：苏格拉底法、问答法或产婆术，这是西方最早的启发式教学思想。",
-   "printed_page": 22
-  },
-  {
-   "from": "柏拉图",
-   "type": "attribute",
-   "to": "《理想国》",
-   "evidence": "代表作：《理想国》《法律篇》。",
-   "printed_page": 23
-  },
-  {
-   "from": "亚里士多德",
-   "type": "attribute",
-   "to": "教育遵循自然",
-   "evidence": "教育原则：首次提出“教育遵循自然”的原则。",
-   "printed_page": 23
-  },
-  {
-   "from": "亚里士多德",
-   "type": "attribute",
-   "to": "《论灵魂》",
-   "evidence": "代表作：《论灵魂》《政治学》。",
-   "printed_page": 23
-  },
-  {
-   "from": "杜威",
-   "type": "part_of",
-   "to": "教育学的创立阶段",
-   "evidence": "考点十三 教育学的创立阶段 3- 杜威、卢梭与裴斯泰洛齐。",
-   "printed_page": 26
-  },
-  {
-   "from": "卢梭",
-   "type": "part_of",
-   "to": "教育学的创立阶段",
-   "evidence": "考点十三 教育学的创立阶段 3- 杜威、卢梭与裴斯泰洛齐。",
-   "printed_page": 26
-  },
-  {
-   "from": "裴斯泰洛齐",
-   "type": "part_of",
-   "to": "教育学的创立阶段",
-   "evidence": "考点十三 教育学的创立阶段 3- 杜威、卢梭与裴斯泰洛齐。",
-   "printed_page": 26
-  },
-  {
-   "from": "杜威",
-   "type": "attribute",
-   "to": "教育即生活",
-   "evidence": "教育的本质：①教育即生活。",
-   "printed_page": 26
-  },
-  {
-   "from": "杜威",
-   "type": "attribute",
-   "to": "新三中心",
-   "evidence": "“学生（儿童）中心”“经验中心”“活动中心”的“新三中心”论。",
-   "printed_page": 26
-  },
-  {
-   "from": "杜威",
-   "type": "attribute",
-   "to": "《民主主义与教育》",
-   "evidence": "教育著作：《民主主义与教育》……等。",
-   "printed_page": 26
-  },
-  {
-   "from": "卢梭",
-   "type": "attribute",
-   "to": "自然主义教育",
-   "evidence": "自然主义教育理论……教育应遵循自然天性",
-   "printed_page": 27
-  },
-  {
-   "from": "卢梭",
-   "type": "attribute",
-   "to": "《爱弥儿》",
-   "evidence": "《爱弥儿》是第一部小说体裁的教育著作。",
-   "printed_page": 27
-  },
-  {
-   "from": "裴斯泰洛齐",
-   "type": "attribute",
-   "to": "教育心理学化",
-   "evidence": "最早提出“教育心理学化”的主张。",
-   "printed_page": 27
-  },
-  {
-   "from": "蔡元培",
-   "type": "part_of",
-   "to": "教育学的发展阶段",
-   "evidence": "考点十四 教育学的发展阶段 - 蔡元培、陈鹤琴与陶行知。",
-   "printed_page": 28
-  },
-  {
-   "from": "陈鹤琴",
-   "type": "part_of",
-   "to": "教育学的发展阶段",
-   "evidence": "考点十四 教育学的发展阶段 - 蔡元培、陈鹤琴与陶行知。",
-   "printed_page": 28
-  },
-  {
-   "from": "陶行知",
-   "type": "part_of",
-   "to": "教育学的发展阶段",
-   "evidence": "考点十四 教育学的发展阶段 - 蔡元培、陈鹤琴与陶行知。",
-   "printed_page": 28
-  },
-  {
-   "from": "蔡元培",
-   "type": "attribute",
-   "to": "五育并举",
-   "evidence": "②“五育”并举：军国民教育、实利主义教育、公民道德教育、世界观教育和美感教育。",
-   "printed_page": 28
-  },
-  {
-   "from": "陈鹤琴",
-   "type": "attribute",
-   "to": "活教育",
-   "evidence": "主张“活教育”……陈鹤琴……中国幼教之父……“活教育”……思想体系",
-   "printed_page": 28
-  },
-  {
-   "from": "陶行知",
-   "type": "attribute",
-   "to": "生活教育理论",
-   "evidence": "陶行知……①生活即教育（生活教育理论的核心）……②社会即学校……③教学做合一",
-   "printed_page": 29
-  },
-  {
-   "from": "实验教育学",
-   "type": "part_of",
-   "to": "现代教育学流派",
-   "evidence": "一、现代教育学流派……实验教育学",
-   "printed_page": 30
-  },
-  {
-   "from": "文化教育学",
-   "type": "part_of",
-   "to": "现代教育学流派",
-   "evidence": "一、现代教育学流派……文化教育学",
-   "printed_page": 30
-  },
-  {
-   "from": "实用主义教育学",
-   "type": "part_of",
-   "to": "现代教育学流派",
-   "evidence": "一、现代教育学流派……实用主义……教育学",
-   "printed_page": 30
-  },
-  {
-   "from": "批判教育学",
-   "type": "part_of",
-   "to": "现代教育学流派",
-   "evidence": "批判教育学……阿普尔……布迪尔……教育目的就是要对师生进行“启蒙”",
-   "printed_page": 31
-  },
-  {
-   "from": "马克思主义教育学",
-   "type": "part_of",
-   "to": "现代教育学流派",
-   "evidence": "马克思主义……教育学……凯洛夫……杨贤江",
-   "printed_page": 31
-  },
-  {
-   "from": "梅伊曼",
-   "type": "part_of",
-   "to": "实验教育学",
-   "evidence": "梅伊曼……《实验教育学讲义》……提倡把实验心理学的研究成果和方法应用于教育研究",
-   "printed_page": 30
-  },
-  {
-   "from": "拉伊",
-   "type": "part_of",
-   "to": "实验教育学",
-   "evidence": "拉伊……《实验教育学》……主张用实验、统计和比较等方法探索儿童心理发展过程的特点",
-   "printed_page": 30
-  },
-  {
-   "from": "狄尔泰",
-   "type": "part_of",
-   "to": "文化教育学",
-   "evidence": "狄尔泰、……斯普朗格、……利特……教育的目的就是要培养完整的人格",
-   "printed_page": 30
-  },
-  {
-   "from": "杜威",
-   "type": "part_of",
-   "to": "实用主义教育学",
-   "evidence": "实用主义……杜威、……教育学……克伯屈",
-   "printed_page": 30
-  },
-  {
-   "from": "鲍尔斯",
-   "type": "part_of",
-   "to": "批判教育学",
-   "evidence": "鲍尔斯、……批判教育学……阿普尔……布迪尔",
-   "printed_page": 31
-  },
-  {
-   "from": "凯洛夫",
-   "type": "part_of",
-   "to": "马克思主义教育学",
-   "evidence": "马克思主义……教育学……凯洛夫……忽视学生在教学中的主体地位",
-   "printed_page": 31
-  },
-  {
-   "from": "杨贤江",
-   "type": "part_of",
-   "to": "马克思主义教育学",
-   "evidence": "《新教育大纲》……杨贤江……全人生指导",
-   "printed_page": 31
-  },
-  {
-   "from": "赞科夫",
-   "type": "part_of",
-   "to": "当代教育发展",
-   "evidence": "二、当代教育发展……赞科夫……《教学与发展》",
-   "printed_page": 32
-  },
-  {
-   "from": "赞科夫",
-   "type": "attribute",
-   "to": "发展性教学理论",
-   "evidence": "①发展性教学理论 ②五条教学原则",
-   "printed_page": 32
-  },
-  {
-   "from": "布鲁纳",
-   "type": "part_of",
-   "to": "当代教育发展",
-   "evidence": "二、当代教育发展……布鲁纳……《教育过程》",
-   "printed_page": 32
-  },
-  {
-   "from": "布鲁纳",
-   "type": "attribute",
-   "to": "结构主义与发现教学法",
-   "evidence": "提出结构主义学说和发现教学法",
-   "printed_page": 32
-  },
-  {
-   "from": "瓦根舍因",
-   "type": "part_of",
-   "to": "当代教育发展",
-   "evidence": "二、当代教育发展……瓦根舍因……《范例教学原理》",
-   "printed_page": 32
-  },
-  {
-   "from": "瓦根舍因",
-   "type": "attribute",
-   "to": "范例教学理论",
-   "evidence": "提出范例教学理论",
-   "printed_page": 32
-  },
-  {
-   "from": "布卢姆",
-   "type": "part_of",
-   "to": "当代教育发展",
-   "evidence": "二、当代教育发展……布卢姆……《教育目标分类学》",
-   "printed_page": 32
-  },
-  {
-   "from": "布卢姆",
-   "type": "attribute",
-   "to": "掌握学习理论",
-   "evidence": "提出掌握学习理论",
-   "printed_page": 32
-  },
-  {
-   "from": "苏霍姆林斯基",
-   "type": "part_of",
-   "to": "当代教育发展",
-   "evidence": "苏霍姆林斯基……《把整个心灵献给孩子》",
-   "printed_page": 32
-  },
-  {
-   "from": "苏霍姆林斯基",
-   "type": "attribute",
-   "to": "全面和谐教育理论",
-   "evidence": "提出全面和谐教育理论",
-   "printed_page": 32
-  },
-  {
-   "from": "巴班斯基",
-   "type": "part_of",
-   "to": "当代教育发展",
-   "evidence": "二、当代教育发展……巴班斯基……《教学过程最优化》",
-   "printed_page": 32
-  },
-  {
-   "from": "巴班斯基",
-   "type": "attribute",
-   "to": "教学过程最优化理论",
-   "evidence": "提出教学过程最优化理论",
-   "printed_page": 32
-  },
-  {
-   "from": "儒墨显学",
-   "type": "attribute",
-   "to": "私学兴起",
-   "evidence": "春秋战国……私学……儒墨显学……两汉……察举制",
-   "printed_page": 15
-  },
-  {
-   "from": "私学兴起",
-   "type": "part_of",
-   "to": "中国奴隶社会教育",
-   "evidence": "春秋时期，官学衰微，私学兴起，冲破了“学在官府”的限制。",
-   "printed_page": 12
-  }
- ]
+  "chapter": "第一篇第一章 教育与教育学",
+  "schema_version": "1.1",
+  "edges": [
+    {
+      "from": "教育形态·按空间划分",
+      "type": "part_of",
+      "to": "教育的形态",
+      "evidence": "从教育系统所赖以运行的空间特性来看，可以将教育形态划分为家庭教育、学校教育与社会教育。",
+      "printed_page": 5
+    },
+    {
+      "from": "教育形态·按时间划分",
+      "type": "part_of",
+      "to": "教育的形态",
+      "evidence": "从教育系统所赖以运行的时间标准以及建立于其上的产业技术和社会形态出发，可以将教育形态划分为农业社会的教育、工业社会的教育与信息社会的教育。",
+      "printed_page": 5
+    },
+    {
+      "from": "教育形态·按形式化程度划分",
+      "type": "part_of",
+      "to": "教育的形态",
+      "evidence": "根据教育系统自身形式化的程度，可以将教育形态划分为非制度化教育与制度化教育。",
+      "printed_page": 6
+    },
+    {
+      "from": "功能·按对象划分",
+      "type": "part_of",
+      "to": "教育的功能",
+      "evidence": "按教育功能作用的对象划分——个体发展功能与社会发展功能。",
+      "printed_page": 8
+    },
+    {
+      "from": "功能·按方向划分",
+      "type": "part_of",
+      "to": "教育的功能",
+      "evidence": "按教育的作用方向划分——正向功能与负向功能。",
+      "printed_page": 8
+    },
+    {
+      "from": "功能·按形式划分",
+      "type": "part_of",
+      "to": "教育的功能",
+      "evidence": "按教育功能呈现的形式划分——显性功能与隐性功能。",
+      "printed_page": 8
+    },
+    {
+      "from": "功能·按性质划分",
+      "type": "part_of",
+      "to": "教育的功能",
+      "evidence": "按教育功能的性质划分——保守功能与超越功能。",
+      "printed_page": 9
+    },
+    {
+      "from": "广义教育·社会教育",
+      "type": "subclass",
+      "to": "广义的教育",
+      "evidence": "其包括社会教育、家庭教育和学校教育。",
+      "printed_page": 3
+    },
+    {
+      "from": "广义教育·家庭教育",
+      "type": "subclass",
+      "to": "广义的教育",
+      "evidence": "其包括社会教育、家庭教育和学校教育。",
+      "printed_page": 3
+    },
+    {
+      "from": "广义教育·学校教育",
+      "type": "subclass",
+      "to": "广义的教育",
+      "evidence": "其包括社会教育、家庭教育和学校教育。",
+      "printed_page": 3
+    },
+    {
+      "from": "狭义的教育",
+      "type": "exact_match",
+      "to": "广义教育·学校教育",
+      "evidence": "狭义的教育主要指学校教育。",
+      "printed_page": 3
+    },
+    {
+      "from": "更狭义的教育",
+      "type": "exact_match",
+      "to": "德育",
+      "evidence": "更狭义的教育……与学校中常说的“德育”是同义词。",
+      "printed_page": 3
+    },
+    {
+      "from": "描述性定义",
+      "type": "subclass",
+      "to": "教育术语",
+      "evidence": "根据教育定义的陈述方式将其划分为描述性定义、规定性定义与纲领性定义。",
+      "printed_page": 4
+    },
+    {
+      "from": "规定性定义",
+      "type": "subclass",
+      "to": "教育术语",
+      "evidence": "②规定性定义，即作者自己所创制的定义，也就是说，不管其他人是如何定义某个词语的，“我”就是这么定义的。",
+      "printed_page": 4
+    },
+    {
+      "from": "纲领性定义",
+      "type": "subclass",
+      "to": "教育术语",
+      "evidence": "③纲领性定义，是一种关于定义对象应该是什么的界定。",
+      "printed_page": 4
+    },
+    {
+      "from": "教育者",
+      "type": "part_of",
+      "to": "教育活动的三要素",
+      "evidence": "教育者、受教育者（学习者）和教育影响（教育中介系统、教育措施）是构成教育活动的基本要素。",
+      "printed_page": 4
+    },
+    {
+      "from": "受教育者",
+      "type": "part_of",
+      "to": "教育活动的三要素",
+      "evidence": "教育者、受教育者（学习者）和教育影响（教育中介系统、教育措施）是构成教育活动的基本要素。",
+      "printed_page": 4
+    },
+    {
+      "from": "教育影响",
+      "type": "part_of",
+      "to": "教育活动的三要素",
+      "evidence": "教育者、受教育者（学习者）和教育影响（教育中介系统、教育措施）是构成教育活动的基本要素。",
+      "printed_page": 4
+    },
+    {
+      "from": "教育内容",
+      "type": "part_of",
+      "to": "教育影响",
+      "evidence": "教育影响是连接教育者与受教育者的纽带或者说中介，主要包括教育内容和教育手",
+      "printed_page": 4
+    },
+    {
+      "from": "教育手段",
+      "type": "part_of",
+      "to": "教育影响",
+      "evidence": "教育手段包括物质手段（教育的活动场所和设施、教育媒体及教育辅助手段）和精神手段（教育方法、教育途径）等。",
+      "printed_page": 5
+    },
+    {
+      "from": "形态·家庭教育",
+      "type": "subclass",
+      "to": "教育形态·按空间划分",
+      "evidence": "……可以将教育形态划分为家庭教育、学校教育与社会教育。",
+      "printed_page": 5
+    },
+    {
+      "from": "形态·学校教育",
+      "type": "subclass",
+      "to": "教育形态·按空间划分",
+      "evidence": "从教育系统所赖以运行的空间特性来看，可以将教育形态划分为家庭教育、学校教育与社会教育。",
+      "printed_page": 5
+    },
+    {
+      "from": "形态·社会教育",
+      "type": "subclass",
+      "to": "教育形态·按空间划分",
+      "evidence": "从教育系统所赖以运行的空间特性来看，可以将教育形态划分为家庭教育、学校教育与社会教育。",
+      "printed_page": 5
+    },
+    {
+      "from": "农业社会的教育",
+      "type": "subclass",
+      "to": "教育形态·按时间划分",
+      "evidence": "从教育系统所赖以运行的时间标准以及建立于其上的产业技术和社会形态出发，可以将教育形态划分为农业社会的教育、工业社会的教育与信息社会的教育。",
+      "printed_page": 5
+    },
+    {
+      "from": "工业社会的教育",
+      "type": "subclass",
+      "to": "教育形态·按时间划分",
+      "evidence": "从教育系统所赖以运行的时间标准以及建立于其上的产业技术和社会形态出发，可以将教育形态划分为农业社会的教育、工业社会的教育与信息社会的教育。",
+      "printed_page": 5
+    },
+    {
+      "from": "信息社会的教育",
+      "type": "subclass",
+      "to": "教育形态·按时间划分",
+      "evidence": "从教育系统所赖以运行的时间标准以及建立于其上的产业技术和社会形态出发，可以将教育形态划分为农业社会的教育、工业社会的教育与信息社会的教育。",
+      "printed_page": 5
+    },
+    {
+      "from": "非制度化教育",
+      "type": "subclass",
+      "to": "教育形态·按形式化程度划分",
+      "evidence": "……可以将教育形态划分为非制度化教育与制度化教育。",
+      "printed_page": 6
+    },
+    {
+      "from": "制度化教育",
+      "type": "subclass",
+      "to": "教育形态·按形式化程度划分",
+      "evidence": "根据教育系统自身形式化的程度，可以将教育形态划分为非制度化教育与制度化教育。",
+      "printed_page": 6
+    },
+    {
+      "from": "非制度化教育",
+      "type": "prerequisite",
+      "to": "制度化教育",
+      "evidence": "制度化教育是从非制度化教育中演化而来的。",
+      "printed_page": 6,
+      "note": "先有非制度化，才有制度化"
+    },
+    {
+      "from": "有目的地培养人的社会活动",
+      "type": "exact_match",
+      "to": "教育的本质属性",
+      "evidence": "教育是一种有目的地培养人的社会活动。这是教育区别于其他事物现象的根本特征。",
+      "printed_page": 6
+    },
+    {
+      "from": "个体发展功能",
+      "type": "subclass",
+      "to": "功能·按对象划分",
+      "evidence": "按教育功能作用的对象划分——个体发展功能与社会发展功能。",
+      "printed_page": 8
+    },
+    {
+      "from": "社会发展功能",
+      "type": "subclass",
+      "to": "功能·按对象划分",
+      "evidence": "（一）按教育功能作用的对象划分——个体发展功能与社会发展功能",
+      "printed_page": 8
+    },
+    {
+      "from": "个体个性化功能",
+      "type": "subclass",
+      "to": "个体发展功能",
+      "evidence": "教育的个体发展功能包括个体个性化功能和个体社会化功能。",
+      "printed_page": 8
+    },
+    {
+      "from": "个体社会化功能",
+      "type": "subclass",
+      "to": "个体发展功能",
+      "evidence": "教育的个体发展功能包括个体个性化功能和个体社会化功能。",
+      "printed_page": 8
+    },
+    {
+      "from": "正向功能",
+      "type": "subclass",
+      "to": "功能·按方向划分",
+      "evidence": "按教育的作用方向划分——正向功能与负向功能。",
+      "printed_page": 8
+    },
+    {
+      "from": "负向功能",
+      "type": "subclass",
+      "to": "功能·按方向划分",
+      "evidence": "2. 负向（消极）功能：教育阻碍社会进步和个体发展的消极影响和作用。",
+      "printed_page": 8
+    },
+    {
+      "from": "显性功能",
+      "type": "subclass",
+      "to": "功能·按形式划分",
+      "evidence": "按教育功能呈现的形式划分——显性功能与隐性功能。",
+      "printed_page": 8
+    },
+    {
+      "from": "隐性功能",
+      "type": "subclass",
+      "to": "功能·按形式划分",
+      "evidence": "（2）隐性功能：伴随显性功能所出现的非预期性的功能。",
+      "printed_page": 8
+    },
+    {
+      "from": "保守功能",
+      "type": "subclass",
+      "to": "功能·按性质划分",
+      "evidence": "按教育功能的性质划分——保守功能与超越功能。",
+      "printed_page": 9
+    },
+    {
+      "from": "超越功能",
+      "type": "subclass",
+      "to": "功能·按性质划分",
+      "evidence": "2. 超越功能：通过教育的自我更新和变革，促进和引领人类社会的发展。",
+      "printed_page": 9
+    },
+    {
+      "from": "教育平等",
+      "type": "part_of",
+      "to": "教育民主化",
+      "evidence": "教育民主化的中心内容是实现教育平等。",
+      "printed_page": 19
+    },
+    {
+      "from": "教育机会均等",
+      "type": "subclass",
+      "to": "教育平等",
+      "evidence": "教育平等包括教育机会均等、教育过程平等和教育结果平等。",
+      "printed_page": 19
+    },
+    {
+      "from": "教育过程平等",
+      "type": "subclass",
+      "to": "教育平等",
+      "evidence": "教育平等包括教育机会均等、教育过程平等和教育结果平等",
+      "printed_page": 19
+    },
+    {
+      "from": "教育结果平等",
+      "type": "subclass",
+      "to": "教育平等",
+      "evidence": "教育平等包括教育机会均等、教育过程平等和教育结果平等",
+      "printed_page": 19
+    },
+    {
+      "from": "教育活动的三要素",
+      "type": "prerequisite",
+      "to": "教育的形态",
+      "evidence": "教育的形态是指由教育者、受教育者和教育影响这三个基本要素所构成的教育系统……的变化形式。",
+      "printed_page": 5
+    },
+    {
+      "from": "《大教学论》",
+      "type": "marks",
+      "to": "教育学的创立阶段",
+      "evidence": "①《大教学论》：近代第一本教育学著作，标志着教育学成为一门独立学科。",
+      "printed_page": 24
+    },
+    {
+      "from": "《普通教育学》",
+      "type": "marks",
+      "to": "教育学的创立阶段",
+      "evidence": "《普通教育学》……标志着教育学作为一门规范的、独立的学科正式诞生。",
+      "printed_page": 24
+    },
+    {
+      "from": "教育学的萌芽阶段",
+      "type": "prerequisite",
+      "to": "教育学的创立阶段",
+      "evidence": "考点八 教育学的萌芽阶段 1- 孔子与孟子",
+      "printed_page": 20,
+      "note": "结构顺序证据"
+    },
+    {
+      "from": "教育学的创立阶段",
+      "type": "prerequisite",
+      "to": "教育学的发展阶段",
+      "evidence": "考点十一 教育学的创立阶段 1- 夸美纽斯",
+      "printed_page": 23,
+      "note": "结构顺序证据"
+    },
+    {
+      "from": "夏商教育",
+      "type": "subclass",
+      "to": "中国奴隶社会教育",
+      "evidence": "（1）夏商 ①教育场所：夏代已有学校的设置……商代的学校名称有“大学”“小学”“瞽宗”“庠”“序”等。",
+      "printed_page": 11
+    },
+    {
+      "from": "西周教育",
+      "type": "subclass",
+      "to": "中国奴隶社会教育",
+      "evidence": "（2）西周 ①教育场所：国学——在王城和诸侯国都内；乡学——设置在地方。",
+      "printed_page": 11
+    },
+    {
+      "from": "国学",
+      "type": "subclass",
+      "to": "西周教育",
+      "evidence": "国学——在王城和诸侯国都内。",
+      "printed_page": 11
+    },
+    {
+      "from": "乡学",
+      "type": "subclass",
+      "to": "西周教育",
+      "evidence": "乡学——设置在地方。",
+      "printed_page": 11
+    },
+    {
+      "from": "六艺",
+      "type": "part_of",
+      "to": "西周教育",
+      "evidence": "“六艺”是西周各级各类学校教育的基本学科，具体指礼、乐、射、御、书、数。",
+      "printed_page": 12
+    },
+    {
+      "from": "西周教育",
+      "type": "attribute",
+      "to": "学在官府",
+      "evidence": "教育特点：学在官府，政教合一。",
+      "printed_page": 12
+    },
+    {
+      "from": "私学兴起",
+      "type": "contrast",
+      "to": "学在官府",
+      "evidence": "春秋时期，官学衰微，私学兴起，冲破了“学在官府”的限制。",
+      "printed_page": 12,
+      "note": "工具性关系：私学兴起与学在官府的对照；可在后续改为 contrast 的正式定义"
+    },
+    {
+      "from": "中国封建社会教育",
+      "type": "subclass",
+      "to": "中国教育发展历程",
+      "evidence": "考点五 中国封建社会教育的发展历程",
+      "printed_page": 12,
+      "note": "顶层归类，后续可与 V0 的 D 组对齐"
+    },
+    {
+      "from": "稷下学宫",
+      "type": "subclass",
+      "to": "中国封建社会教育",
+      "evidence": "（1）战国时期 教育场所：稷下学宫是战国时期齐国著名的学府。",
+      "printed_page": 12
+    },
+    {
+      "from": "学术自由",
+      "type": "attribute",
+      "to": "稷下学宫",
+      "evidence": "②特点：• 学术自由——基本特点，表现为“不治而议论”。",
+      "printed_page": 12
+    },
+    {
+      "from": "弟子职",
+      "type": "part_of",
+      "to": "稷下学宫",
+      "evidence": "尊师重道，诞生了第一个学生守则——《弟子职》。",
+      "printed_page": 12
+    },
+    {
+      "from": "两汉教育",
+      "type": "subclass",
+      "to": "中国封建社会教育",
+      "evidence": "（2）两汉时期 ①教育场所：官学和私学。",
+      "printed_page": 12
+    },
+    {
+      "from": "察举制",
+      "type": "part_of",
+      "to": "两汉教育",
+      "evidence": "③选士制度：察举制和征辟制。",
+      "printed_page": 13
+    },
+    {
+      "from": "九品中正制",
+      "type": "part_of",
+      "to": "魏晋南北朝教育",
+      "evidence": "②选士制度：九品中正制。",
+      "printed_page": 13
+    },
+    {
+      "from": "魏晋南北朝教育",
+      "type": "subclass",
+      "to": "中国封建社会教育",
+      "evidence": "（3）魏晋南北朝 ①教育场所：……国子学与太学并列。",
+      "printed_page": 13
+    },
+    {
+      "from": "六学二馆",
+      "type": "part_of",
+      "to": "隋唐教育",
+      "evidence": "（4）隋唐时期 ①教育场所：六学（……）、二馆（崇文馆、弘文馆）。",
+      "printed_page": 13
+    },
+    {
+      "from": "科举制",
+      "type": "part_of",
+      "to": "隋唐教育",
+      "evidence": "②选士制度：科举制。",
+      "printed_page": 13
+    },
+    {
+      "from": "隋唐教育",
+      "type": "subclass",
+      "to": "中国封建社会教育",
+      "evidence": "（4）隋唐时期 ①教育场所：六学（国子学、太学、四门学、律学、书学、算学）、二馆（崇文馆、弘文馆）",
+      "printed_page": 13
+    },
+    {
+      "from": "宋元明清教育",
+      "type": "subclass",
+      "to": "中国封建社会教育",
+      "evidence": "（5）宋元明清时期 ①教育场所：国子监——实行积分法",
+      "printed_page": 14
+    },
+    {
+      "from": "书院",
+      "type": "subclass",
+      "to": "宋元明清教育",
+      "evidence": "书院……性质：非官非私……特点：学术自由，学生自学",
+      "printed_page": 14
+    },
+    {
+      "from": "四书五经",
+      "type": "part_of",
+      "to": "宋元明清教育",
+      "evidence": "②教育内容：程朱理学（“四书”…“五经”…）。",
+      "printed_page": 14
+    },
+    {
+      "from": "察举制",
+      "type": "chronology",
+      "to": "九品中正制",
+      "evidence": "察举制、征辟制……魏晋南北朝……九品中正制",
+      "printed_page": 15,
+      "note": "朝代先后，非先修"
+    },
+    {
+      "from": "九品中正制",
+      "type": "chronology",
+      "to": "科举制",
+      "evidence": "九品中正制……隋唐……六学二馆……科举制",
+      "printed_page": 15,
+      "note": "朝代先后，非先修"
+    },
+    {
+      "from": "古埃及教育",
+      "type": "subclass",
+      "to": "外国古代社会教育",
+      "evidence": "1. 古埃及的教育。",
+      "printed_page": 15
+    },
+    {
+      "from": "古印度教育",
+      "type": "subclass",
+      "to": "外国古代社会教育",
+      "evidence": "2. 古印度的教育。",
+      "printed_page": 15
+    },
+    {
+      "from": "古希腊教育",
+      "type": "subclass",
+      "to": "外国古代社会教育",
+      "evidence": "3. 古希腊的教育。",
+      "printed_page": 15
+    },
+    {
+      "from": "斯巴达教育",
+      "type": "subclass",
+      "to": "古希腊教育",
+      "evidence": "在希腊的众多城邦中，影响最大的是斯巴达和雅典。",
+      "printed_page": 15
+    },
+    {
+      "from": "雅典教育",
+      "type": "subclass",
+      "to": "古希腊教育",
+      "evidence": "在希腊的众多城邦中，影响最大的是斯巴达和雅典。",
+      "printed_page": 15
+    },
+    {
+      "from": "西欧中世纪教育",
+      "type": "subclass",
+      "to": "外国古代社会教育",
+      "evidence": "4. 西欧中世纪的教育。",
+      "printed_page": 16
+    },
+    {
+      "from": "教会教育",
+      "type": "subclass",
+      "to": "西欧中世纪教育",
+      "evidence": "西欧中世纪的教育主要体现为教会教育与世俗封建主教育。",
+      "printed_page": 16
+    },
+    {
+      "from": "世俗封建主教育",
+      "type": "subclass",
+      "to": "西欧中世纪教育",
+      "evidence": "西欧中世纪的教育主要体现为教会教育与世俗封建主教育。",
+      "printed_page": 16
+    },
+    {
+      "from": "骑士教育",
+      "type": "subclass",
+      "to": "世俗封建主教育",
+      "evidence": "世俗封建主教育——骑士教育：重点学习“骑士七技”。",
+      "printed_page": 16
+    },
+    {
+      "from": "七艺",
+      "type": "part_of",
+      "to": "教会教育",
+      "evidence": "修道院主要课程体系为“七艺”，包括“三科”……和“四学”……",
+      "printed_page": 16
+    },
+    {
+      "from": "人文主义教育",
+      "type": "subclass",
+      "to": "文艺复兴与宗教改革时期教育",
+      "evidence": "人文主义教育……文艺复兴和……宗教改革",
+      "printed_page": 16
+    },
+    {
+      "from": "新教教育",
+      "type": "subclass",
+      "to": "文艺复兴与宗教改革时期教育",
+      "evidence": "①主张用一个新的宗教来代替天主教……新教教育",
+      "printed_page": 16
+    },
+    {
+      "from": "天主教教育",
+      "type": "subclass",
+      "to": "文艺复兴与宗教改革时期教育",
+      "evidence": "①兴办教育被视为实现其政治和宗教目的的手段……天主教教育",
+      "printed_page": 16
+    },
+    {
+      "from": "外国近现代社会教育",
+      "type": "subclass",
+      "to": "外国教育发展历程",
+      "evidence": "二、外国近现代社会教育的发展。",
+      "printed_page": 16
+    },
+    {
+      "from": "新教育运动",
+      "type": "subclass",
+      "to": "19世纪末20世纪初教育改革",
+      "evidence": "新教育运动（欧洲）……19世纪末20……世纪初教育……改革",
+      "printed_page": 17
+    },
+    {
+      "from": "进步教育",
+      "type": "subclass",
+      "to": "19世纪末20世纪初教育改革",
+      "evidence": "19世纪末20……世纪初教育……改革……进步教育……美国",
+      "printed_page": 17
+    },
+    {
+      "from": "要素主义",
+      "type": "subclass",
+      "to": "新传统教育派",
+      "evidence": "新传统教育……要素主义……巴格莱",
+      "printed_page": 17
+    },
+    {
+      "from": "永恒主义",
+      "type": "subclass",
+      "to": "新传统教育派",
+      "evidence": "永恒主义……教育的主要目的是培养永恒的理性……永恒的古典学科应该在学校课程中占中心地位",
+      "printed_page": 18
+    },
+    {
+      "from": "新托马斯主义",
+      "type": "subclass",
+      "to": "新传统教育派",
+      "evidence": "①教育应该以宗教为基础……新托马斯主义……教育目的在于培养真正的基督徒和有用的公民",
+      "printed_page": 18
+    },
+    {
+      "from": "存在主义",
+      "type": "subclass",
+      "to": "20世纪30—70年代教育思潮",
+      "evidence": "①教育的目的在于使学生实现自我生成……存在主义……萨特、奈勒……20世纪30—70……年代教育思潮",
+      "printed_page": 18
+    },
+    {
+      "from": "分析教育哲学",
+      "type": "subclass",
+      "to": "20世纪30—70年代教育思潮",
+      "evidence": "20世纪30—70……年代教育思潮……①教育哲学是一种“清思”活动……分析教育哲学",
+      "printed_page": 18
+    },
+    {
+      "from": "分析教育哲学",
+      "type": "represented_by",
+      "to": "谢弗勒",
+      "evidence": "分析教育哲学……教育哲学的任务是澄清教育领域的概念和命题……谢弗勒",
+      "printed_page": 18,
+      "note": "proposed 类型首次使用"
+    },
+    {
+      "from": "荀子",
+      "type": "part_of",
+      "to": "教育学的萌芽阶段",
+      "evidence": "考点九 教育学的萌芽阶段 2- 荀子、墨子与《学记》",
+      "printed_page": 21
+    },
+    {
+      "from": "墨子",
+      "type": "part_of",
+      "to": "教育学的萌芽阶段",
+      "evidence": "考点九 教育学的萌芽阶段 2- 荀子、墨子与《学记》",
+      "printed_page": 21
+    },
+    {
+      "from": "《学记》",
+      "type": "marks",
+      "to": "教育学的萌芽阶段",
+      "evidence": "《学记》是中国古代也是世界上最早的一篇专门论述教育、教学问题的论著。",
+      "printed_page": 21
+    },
+    {
+      "from": "荀子",
+      "type": "attribute",
+      "to": "性恶论",
+      "evidence": "人性论 性恶论：“今人之性，生而有好利焉……”。",
+      "printed_page": 21
+    },
+    {
+      "from": "荀子",
+      "type": "attribute",
+      "to": "化性起伪",
+      "evidence": "教育作用 “化性起伪”。",
+      "printed_page": 21
+    },
+    {
+      "from": "墨子",
+      "type": "attribute",
+      "to": "人性素丝说",
+      "evidence": "人性论 人性素丝说：“染于苍则苍，染于黄则黄”。",
+      "printed_page": 21
+    },
+    {
+      "from": "墨子",
+      "type": "attribute",
+      "to": "三表法",
+      "evidence": "三表法：“上本之于古者圣王之事”“下原察百姓耳目之实”“观其中国家百姓人民之利”。",
+      "printed_page": 21
+    },
+    {
+      "from": "《学记》",
+      "type": "attribute",
+      "to": "启发性原则",
+      "evidence": "“道而弗牵，强而弗抑，开而弗达”——启发性原则",
+      "printed_page": 22
+    },
+    {
+      "from": "《学记》",
+      "type": "attribute",
+      "to": "循序渐进原则",
+      "evidence": "“杂施而不孙，则坏乱而不修”——循序渐进原则",
+      "printed_page": 22
+    },
+    {
+      "from": "《学记》",
+      "type": "attribute",
+      "to": "教学相长原则",
+      "evidence": "“是故学然后知不足，教然后知困”……教学相长原则",
+      "printed_page": 22
+    },
+    {
+      "from": "《学记》",
+      "type": "attribute",
+      "to": "长善救失原则",
+      "evidence": "或失则多，或失则寡……长善救失原则",
+      "printed_page": 22
+    },
+    {
+      "from": "苏格拉底",
+      "type": "part_of",
+      "to": "教育学的萌芽阶段",
+      "evidence": "考点十 教育学的萌芽阶段 3- 古希腊三贤。",
+      "printed_page": 22
+    },
+    {
+      "from": "柏拉图",
+      "type": "part_of",
+      "to": "教育学的萌芽阶段",
+      "evidence": "①代表作：《理想国》《法律篇》……柏拉图",
+      "printed_page": 23
+    },
+    {
+      "from": "亚里士多德",
+      "type": "part_of",
+      "to": "教育学的萌芽阶段",
+      "evidence": "①代表作：《论灵魂》《政治学》……亚里士多德",
+      "printed_page": 23
+    },
+    {
+      "from": "苏格拉底",
+      "type": "attribute",
+      "to": "苏格拉底法",
+      "evidence": "教育方法：苏格拉底法、问答法或产婆术，这是西方最早的启发式教学思想。",
+      "printed_page": 22
+    },
+    {
+      "from": "柏拉图",
+      "type": "attribute",
+      "to": "《理想国》",
+      "evidence": "代表作：《理想国》《法律篇》。",
+      "printed_page": 23
+    },
+    {
+      "from": "亚里士多德",
+      "type": "attribute",
+      "to": "教育遵循自然",
+      "evidence": "教育原则：首次提出“教育遵循自然”的原则。",
+      "printed_page": 23
+    },
+    {
+      "from": "亚里士多德",
+      "type": "attribute",
+      "to": "《论灵魂》",
+      "evidence": "代表作：《论灵魂》《政治学》。",
+      "printed_page": 23
+    },
+    {
+      "from": "杜威",
+      "type": "part_of",
+      "to": "教育学的创立阶段",
+      "evidence": "考点十三 教育学的创立阶段 3- 杜威、卢梭与裴斯泰洛齐。",
+      "printed_page": 26
+    },
+    {
+      "from": "卢梭",
+      "type": "part_of",
+      "to": "教育学的创立阶段",
+      "evidence": "考点十三 教育学的创立阶段 3- 杜威、卢梭与裴斯泰洛齐。",
+      "printed_page": 26
+    },
+    {
+      "from": "裴斯泰洛齐",
+      "type": "part_of",
+      "to": "教育学的创立阶段",
+      "evidence": "考点十三 教育学的创立阶段 3- 杜威、卢梭与裴斯泰洛齐。",
+      "printed_page": 26
+    },
+    {
+      "from": "杜威",
+      "type": "attribute",
+      "to": "教育即生活",
+      "evidence": "教育的本质：①教育即生活。",
+      "printed_page": 26
+    },
+    {
+      "from": "杜威",
+      "type": "attribute",
+      "to": "新三中心",
+      "evidence": "“学生（儿童）中心”“经验中心”“活动中心”的“新三中心”论。",
+      "printed_page": 26
+    },
+    {
+      "from": "杜威",
+      "type": "attribute",
+      "to": "《民主主义与教育》",
+      "evidence": "教育著作：《民主主义与教育》……等。",
+      "printed_page": 26
+    },
+    {
+      "from": "卢梭",
+      "type": "attribute",
+      "to": "自然主义教育",
+      "evidence": "自然主义教育理论……教育应遵循自然天性",
+      "printed_page": 27
+    },
+    {
+      "from": "卢梭",
+      "type": "attribute",
+      "to": "《爱弥儿》",
+      "evidence": "《爱弥儿》是第一部小说体裁的教育著作。",
+      "printed_page": 27
+    },
+    {
+      "from": "裴斯泰洛齐",
+      "type": "attribute",
+      "to": "教育心理学化",
+      "evidence": "最早提出“教育心理学化”的主张。",
+      "printed_page": 27
+    },
+    {
+      "from": "蔡元培",
+      "type": "part_of",
+      "to": "教育学的发展阶段",
+      "evidence": "考点十四 教育学的发展阶段 - 蔡元培、陈鹤琴与陶行知。",
+      "printed_page": 28
+    },
+    {
+      "from": "陈鹤琴",
+      "type": "part_of",
+      "to": "教育学的发展阶段",
+      "evidence": "考点十四 教育学的发展阶段 - 蔡元培、陈鹤琴与陶行知。",
+      "printed_page": 28
+    },
+    {
+      "from": "陶行知",
+      "type": "part_of",
+      "to": "教育学的发展阶段",
+      "evidence": "考点十四 教育学的发展阶段 - 蔡元培、陈鹤琴与陶行知。",
+      "printed_page": 28
+    },
+    {
+      "from": "蔡元培",
+      "type": "attribute",
+      "to": "五育并举",
+      "evidence": "②“五育”并举：军国民教育、实利主义教育、公民道德教育、世界观教育和美感教育。",
+      "printed_page": 28
+    },
+    {
+      "from": "陈鹤琴",
+      "type": "attribute",
+      "to": "活教育",
+      "evidence": "主张“活教育”……陈鹤琴……中国幼教之父……“活教育”……思想体系",
+      "printed_page": 28
+    },
+    {
+      "from": "陶行知",
+      "type": "attribute",
+      "to": "生活教育理论",
+      "evidence": "陶行知……①生活即教育（生活教育理论的核心）……②社会即学校……③教学做合一",
+      "printed_page": 29
+    },
+    {
+      "from": "实验教育学",
+      "type": "part_of",
+      "to": "现代教育学流派",
+      "evidence": "一、现代教育学流派……实验教育学",
+      "printed_page": 30
+    },
+    {
+      "from": "文化教育学",
+      "type": "part_of",
+      "to": "现代教育学流派",
+      "evidence": "一、现代教育学流派……文化教育学",
+      "printed_page": 30
+    },
+    {
+      "from": "实用主义教育学",
+      "type": "part_of",
+      "to": "现代教育学流派",
+      "evidence": "一、现代教育学流派……实用主义……教育学",
+      "printed_page": 30
+    },
+    {
+      "from": "批判教育学",
+      "type": "part_of",
+      "to": "现代教育学流派",
+      "evidence": "批判教育学……阿普尔……布迪尔……教育目的就是要对师生进行“启蒙”",
+      "printed_page": 31
+    },
+    {
+      "from": "马克思主义教育学",
+      "type": "part_of",
+      "to": "现代教育学流派",
+      "evidence": "马克思主义……教育学……凯洛夫……杨贤江",
+      "printed_page": 31
+    },
+    {
+      "from": "梅伊曼",
+      "type": "part_of",
+      "to": "实验教育学",
+      "evidence": "梅伊曼……《实验教育学讲义》……提倡把实验心理学的研究成果和方法应用于教育研究",
+      "printed_page": 30
+    },
+    {
+      "from": "拉伊",
+      "type": "part_of",
+      "to": "实验教育学",
+      "evidence": "拉伊……《实验教育学》……主张用实验、统计和比较等方法探索儿童心理发展过程的特点",
+      "printed_page": 30
+    },
+    {
+      "from": "狄尔泰",
+      "type": "part_of",
+      "to": "文化教育学",
+      "evidence": "狄尔泰、……斯普朗格、……利特……教育的目的就是要培养完整的人格",
+      "printed_page": 30
+    },
+    {
+      "from": "杜威",
+      "type": "part_of",
+      "to": "实用主义教育学",
+      "evidence": "实用主义……杜威、……教育学……克伯屈",
+      "printed_page": 30
+    },
+    {
+      "from": "鲍尔斯",
+      "type": "part_of",
+      "to": "批判教育学",
+      "evidence": "鲍尔斯、……批判教育学……阿普尔……布迪尔",
+      "printed_page": 31
+    },
+    {
+      "from": "凯洛夫",
+      "type": "part_of",
+      "to": "马克思主义教育学",
+      "evidence": "马克思主义……教育学……凯洛夫……忽视学生在教学中的主体地位",
+      "printed_page": 31
+    },
+    {
+      "from": "杨贤江",
+      "type": "part_of",
+      "to": "马克思主义教育学",
+      "evidence": "《新教育大纲》……杨贤江……全人生指导",
+      "printed_page": 31
+    },
+    {
+      "from": "赞科夫",
+      "type": "part_of",
+      "to": "当代教育发展",
+      "evidence": "二、当代教育发展……赞科夫……《教学与发展》",
+      "printed_page": 32
+    },
+    {
+      "from": "赞科夫",
+      "type": "attribute",
+      "to": "发展性教学理论",
+      "evidence": "①发展性教学理论 ②五条教学原则",
+      "printed_page": 32
+    },
+    {
+      "from": "布鲁纳",
+      "type": "part_of",
+      "to": "当代教育发展",
+      "evidence": "二、当代教育发展……布鲁纳……《教育过程》",
+      "printed_page": 32
+    },
+    {
+      "from": "布鲁纳",
+      "type": "attribute",
+      "to": "结构主义与发现教学法",
+      "evidence": "提出结构主义学说和发现教学法",
+      "printed_page": 32
+    },
+    {
+      "from": "瓦根舍因",
+      "type": "part_of",
+      "to": "当代教育发展",
+      "evidence": "二、当代教育发展……瓦根舍因……《范例教学原理》",
+      "printed_page": 32
+    },
+    {
+      "from": "瓦根舍因",
+      "type": "attribute",
+      "to": "范例教学理论",
+      "evidence": "提出范例教学理论",
+      "printed_page": 32
+    },
+    {
+      "from": "布卢姆",
+      "type": "part_of",
+      "to": "当代教育发展",
+      "evidence": "二、当代教育发展……布卢姆……《教育目标分类学》",
+      "printed_page": 32
+    },
+    {
+      "from": "布卢姆",
+      "type": "attribute",
+      "to": "掌握学习理论",
+      "evidence": "提出掌握学习理论",
+      "printed_page": 32
+    },
+    {
+      "from": "苏霍姆林斯基",
+      "type": "part_of",
+      "to": "当代教育发展",
+      "evidence": "苏霍姆林斯基……《把整个心灵献给孩子》",
+      "printed_page": 32
+    },
+    {
+      "from": "苏霍姆林斯基",
+      "type": "attribute",
+      "to": "全面和谐教育理论",
+      "evidence": "提出全面和谐教育理论",
+      "printed_page": 32
+    },
+    {
+      "from": "巴班斯基",
+      "type": "part_of",
+      "to": "当代教育发展",
+      "evidence": "二、当代教育发展……巴班斯基……《教学过程最优化》",
+      "printed_page": 32
+    },
+    {
+      "from": "巴班斯基",
+      "type": "attribute",
+      "to": "教学过程最优化理论",
+      "evidence": "提出教学过程最优化理论",
+      "printed_page": 32
+    },
+    {
+      "from": "儒墨显学",
+      "type": "attribute",
+      "to": "私学兴起",
+      "evidence": "春秋战国……私学……儒墨显学……两汉……察举制",
+      "printed_page": 15
+    },
+    {
+      "from": "私学兴起",
+      "type": "part_of",
+      "to": "中国奴隶社会教育",
+      "evidence": "春秋时期，官学衰微，私学兴起，冲破了“学在官府”的限制。",
+      "printed_page": 12
+    }
+  ]
 }

@@ -1,566 +1,566 @@
 {
- "chapter": "第一篇第十章 教育研究",
- "schema_version": "1.1",
- "edges": [
-  {
-   "from": "选择研究课题",
-   "type": "part_of",
-   "to": "教育研究的基本过程",
-   "evidence": "选择和确定研究课题是进行教育研究的起始环节。",
-   "printed_page": 167
-  },
-  {
-   "from": "查阅文献资料",
-   "type": "part_of",
-   "to": "教育研究的基本过程",
-   "evidence": "文献检索是必不可少的步骤，它贯穿研究的全过程，是进行教育科学研究的基础。",
-   "printed_page": 167
-  },
-  {
-   "from": "设计研究方案",
-   "type": "part_of",
-   "to": "教育研究的基本过程",
-   "evidence": "三、设计研究方案",
-   "printed_page": 169
-  },
-  {
-   "from": "收集整理分析资料",
-   "type": "part_of",
-   "to": "教育研究的基本过程",
-   "evidence": "收集研究资料是指研究者在实施研究计划过程中收集现实资料。",
-   "printed_page": 171
-  },
-  {
-   "from": "教育研究结果的表现形式",
-   "type": "part_of",
-   "to": "教育研究的基本过程",
-   "evidence": "教师教育研究结果的表现形式主要有三类：研究报告、经验总结和教育教学案例。",
-   "printed_page": 171
-  },
-  {
-   "from": "教育文献的分类",
-   "type": "part_of",
-   "to": "查阅文献资料",
-   "evidence": "（一）教育文献的分类",
-   "printed_page": 167
-  },
-  {
-   "from": "按文献的等级分类",
-   "type": "part_of",
-   "to": "教育文献的分类",
-   "evidence": "1. 按照教育文献的等级分类",
-   "printed_page": 167
-  },
-  {
-   "from": "零次文献",
-   "type": "subclass",
-   "to": "按文献的等级分类",
-   "evidence": "零次文献是记录在非正规物理载体上的未经正式发表或尚未形成正规载体的一种文献形式",
-   "printed_page": 167
-  },
-  {
-   "from": "一次文献",
-   "type": "subclass",
-   "to": "按文献的等级分类",
-   "evidence": "一次文献包括专著、论文、调查报告、档案材料等以作者本人的实践为依据而创作的原始文献",
-   "printed_page": 168
-  },
-  {
-   "from": "二次文献",
-   "type": "subclass",
-   "to": "按文献的等级分类",
-   "evidence": "二次文献是对原始文献进行加工整理，使之系统化、条理化的文献",
-   "printed_page": 168
-  },
-  {
-   "from": "三次文献",
-   "type": "subclass",
-   "to": "按文献的等级分类",
-   "evidence": "三次文献是在利用二次文献的基础上对某一范围内的一次文献进行广泛、深入的分析研究之后综合浓缩而成的参考性文献",
-   "printed_page": 168
-  },
-  {
-   "from": "按文献的功能分类",
-   "type": "part_of",
-   "to": "教育文献的分类",
-   "evidence": "2. 按文献的功能分类",
-   "printed_page": 168
-  },
-  {
-   "from": "事实性文献",
-   "type": "subclass",
-   "to": "按文献的功能分类",
-   "evidence": "事实性文献指专门为教育科学研究提供事实证据的文献",
-   "printed_page": 168
-  },
-  {
-   "from": "工具性文献",
-   "type": "subclass",
-   "to": "按文献的功能分类",
-   "evidence": "工具性文献指专门为教育科学研究提供检索咨询的文献",
-   "printed_page": 168
-  },
-  {
-   "from": "理论性文献",
-   "type": "subclass",
-   "to": "按文献的功能分类",
-   "evidence": "理论性文献指专门为教育科学研究提供理性认识的文献",
-   "printed_page": 168
-  },
-  {
-   "from": "政策性文献",
-   "type": "subclass",
-   "to": "按文献的功能分类",
-   "evidence": "政策性文献指专门为教育科学研究提供政策依据的文献",
-   "printed_page": 168
-  },
-  {
-   "from": "经验性文献",
-   "type": "subclass",
-   "to": "按文献的功能分类",
-   "evidence": "经验性文献指专门为教育科学研究提供感性认识的文献",
-   "printed_page": 168
-  },
-  {
-   "from": "文献检索的方法",
-   "type": "part_of",
-   "to": "查阅文献资料",
-   "evidence": "1. 文献检索的主要方法",
-   "printed_page": 169
-  },
-  {
-   "from": "顺查法",
-   "type": "subclass",
-   "to": "文献检索的方法",
-   "evidence": "顺查法是指按时间范围，以课题研究的发生时间为检索始点",
-   "printed_page": 169
-  },
-  {
-   "from": "逆查法",
-   "type": "subclass",
-   "to": "文献检索的方法",
-   "evidence": "逆查法是指以课题研究的时间作为检索的始点，按由近及远、由新到旧的顺序查找",
-   "printed_page": 169
-  },
-  {
-   "from": "引文查找法",
-   "type": "subclass",
-   "to": "文献检索的方法",
-   "evidence": "引文查找法又称跟踪法，是以已掌握的文献中所列的引用文献、附录的参考文献作……为线索",
-   "printed_page": 169
-  },
-  {
-   "from": "引文查找法",
-   "type": "exact_match",
-   "to": "跟踪法",
-   "evidence": "引文查找法又称跟踪法",
-   "printed_page": 169
-  },
-  {
-   "from": "综合查找法",
-   "type": "subclass",
-   "to": "文献检索的方法",
-   "evidence": "综合查找法是指将各种方法结合起来加以使用以达到检索目的的方法。",
-   "printed_page": 169
-  },
-  {
-   "from": "研究假设",
-   "type": "part_of",
-   "to": "设计研究方案",
-   "evidence": "研究假设是研究课题确定后依据一定的知识、事实和资料，对所研究问题的规律或原因做出的推测性论断和假定性说明",
-   "printed_page": 169
-  },
-  {
-   "from": "描述性假设",
-   "type": "subclass",
-   "to": "研究假设",
-   "evidence": "根据研究的假设的性质与复杂程度，研究假设可以分为描述性假设、解释性假设和预测性假设。",
-   "printed_page": 169
-  },
-  {
-   "from": "解释性假设",
-   "type": "subclass",
-   "to": "研究假设",
-   "evidence": "解释性假设是揭示事物的内部联系，指出现象质的方面，说明事物原因的一种更复杂、更重要的假设",
-   "printed_page": 170
-  },
-  {
-   "from": "预测性假设",
-   "type": "subclass",
-   "to": "研究假设",
-   "evidence": "预测性假设是对事物未来的发展趋势的科学推测",
-   "printed_page": 170
-  },
-  {
-   "from": "选择研究对象",
-   "type": "part_of",
-   "to": "设计研究方案",
-   "evidence": "1. 选择研究对象",
-   "printed_page": 170
-  },
-  {
-   "from": "抽样",
-   "type": "part_of",
-   "to": "选择研究对象",
-   "evidence": "③抽样：遵循一定的规则，从一个总体中抽取有代表性的、一定数量的个体进行研究的过程。",
-   "printed_page": 170
-  },
-  {
-   "from": "抽样的基本方法",
-   "type": "part_of",
-   "to": "抽样",
-   "evidence": "（2）抽样的基本方法",
-   "printed_page": 170
-  },
-  {
-   "from": "简单随机抽样",
-   "type": "subclass",
-   "to": "抽样的基本方法",
-   "evidence": "抽签，随机数码……表抽样",
-   "printed_page": 170
-  },
-  {
-   "from": "系统随机抽样",
-   "type": "subclass",
-   "to": "抽样的基本方法",
-   "evidence": "先将各单位按一……定顺序排队，再……按照固定间隔抽",
-   "printed_page": 170
-  },
-  {
-   "from": "分层随机抽样",
-   "type": "subclass",
-   "to": "抽样的基本方法",
-   "evidence": "先分层，后按各……层所占比例抽取",
-   "printed_page": 170
-  },
-  {
-   "from": "整群随机抽样",
-   "type": "subclass",
-   "to": "抽样的基本方法",
-   "evidence": "把整群看作个体……再抽取样本",
-   "printed_page": 171
-  },
-  {
-   "from": "等距随机抽样",
-   "type": "exact_match",
-   "to": "系统随机抽样",
-   "evidence": "系统随机抽样……等距随机抽样",
-   "printed_page": 170
-  },
-  {
-   "from": "研究报告",
-   "type": "subclass",
-   "to": "教育研究结果的表现形式",
-   "evidence": "教师教育研究结果的表现形式主要有三类：研究报告、经验总结和教育教学案例。",
-   "printed_page": 171
-  },
-  {
-   "from": "常用的教育研究方法",
-   "type": "part_of",
-   "to": "教育研究方法",
-   "evidence": "一、常用的教育研究方法",
-   "printed_page": 173
-  },
-  {
-   "from": "新兴的教育研究方法",
-   "type": "part_of",
-   "to": "教育研究方法",
-   "evidence": "二、新兴的教育研究方法",
-   "printed_page": 175
-  },
-  {
-   "from": "教育观察研究法",
-   "type": "subclass",
-   "to": "常用的教育研究方法",
-   "evidence": "教育观察研究法是研究者在自然条件下，通过感官或借助一定的科学仪器，有目的、有计划地对研究对象进行系统考察",
-   "printed_page": 173
-  },
-  {
-   "from": "观察法的分类",
-   "type": "part_of",
-   "to": "教育观察研究法",
-   "evidence": "分类标准……类型……含义",
-   "printed_page": 173
-  },
-  {
-   "from": "按观察的环境条件是否进行控制和改变",
-   "type": "subclass",
-   "to": "观察法的分类",
-   "evidence": "对观察的环境条……件是否进行控制……和改变",
-   "printed_page": 173
-  },
-  {
-   "from": "按观察时是否借助仪器设备",
-   "type": "subclass",
-   "to": "观察法的分类",
-   "evidence": "观察时是否借助仪器设备",
-   "printed_page": 173
-  },
-  {
-   "from": "按观察者是否直接参与被观察者所从事的活动",
-   "type": "subclass",
-   "to": "观察法的分类",
-   "evidence": "观察者是否直接……参与被观察者所……从事的活动",
-   "printed_page": 173
-  },
-  {
-   "from": "按观察是否预先有严密的计划和程序",
-   "type": "subclass",
-   "to": "观察法的分类",
-   "evidence": "观察是否预先有……严密的计划和……程序",
-   "printed_page": 173
-  },
-  {
-   "from": "自然情境中的观察",
-   "type": "subclass",
-   "to": "按观察的环境条件是否进行控制和改变",
-   "evidence": "自然情境中……的观察",
-   "printed_page": 173
-  },
-  {
-   "from": "实验室中的观察",
-   "type": "subclass",
-   "to": "按观察的环境条件是否进行控制和改变",
-   "evidence": "实验室中的……是研究者根据研究的目的，在对观察对象发生的环境和条件",
-   "printed_page": 173
-  },
-  {
-   "from": "直接观察",
-   "type": "subclass",
-   "to": "按观察时是否借助仪器设备",
-   "evidence": "凭借人的感官，在现场直接对观察对象进行感知和描述",
-   "printed_page": 173
-  },
-  {
-   "from": "间接观察",
-   "type": "subclass",
-   "to": "按观察时是否借助仪器设备",
-   "evidence": "利用一定的仪器或其他技术手段作为中介对观察对象进行考……察。它突破了直接观察受到人的主观能力的局限",
-   "printed_page": 173
-  },
-  {
-   "from": "参与性观察",
-   "type": "subclass",
-   "to": "按观察者是否直接参与被观察者所从事的活动",
-   "evidence": "是研究者直接参加到所观察的群体和活动中去，不暴露研究……者真正身份",
-   "printed_page": 173
-  },
-  {
-   "from": "非参与性观察",
-   "type": "subclass",
-   "to": "按观察者是否直接参与被观察者所从事的活动",
-   "evidence": "不要求研究人员站到与被观察对象同一地位上，而是以旁……观者身份进行观察",
-   "printed_page": 173
-  },
-  {
-   "from": "结构式观察",
-   "type": "subclass",
-   "to": "按观察是否预先有严密的计划和程序",
-   "evidence": "是有明确的目标、问题和范围，有详细的观察计划、步骤和……合理设计的可控制性观察",
-   "printed_page": 173
-  },
-  {
-   "from": "非结构式观察",
-   "type": "subclass",
-   "to": "按观察是否预先有严密的计划和程序",
-   "evidence": "是对研究问题的范围目标采取弹性态度，观察内容项目与观……察步骤没有预先确定",
-   "printed_page": 173
-  },
-  {
-   "from": "调查研究法",
-   "type": "subclass",
-   "to": "常用的教育研究方法",
-   "evidence": "调查研究法是研究者通过问卷、访谈等方式，有目的、有计划地搜集研究对象的有关资料",
-   "printed_page": 174
-  },
-  {
-   "from": "调查法的分类",
-   "type": "part_of",
-   "to": "调查研究法",
-   "evidence": "分类标准……类型……含义",
-   "printed_page": 174
-  },
-  {
-   "from": "按调查对象的选择范围",
-   "type": "subclass",
-   "to": "调查法的分类",
-   "evidence": "调查对象的……选择范围",
-   "printed_page": 174
-  },
-  {
-   "from": "按调查内容",
-   "type": "subclass",
-   "to": "调查法的分类",
-   "evidence": "调查内容……发展调查",
-   "printed_page": 174
-  },
-  {
-   "from": "按调查方法和手段",
-   "type": "subclass",
-   "to": "调查法的分类",
-   "evidence": "调查方法和手段……测量调查",
-   "printed_page": 174
-  },
-  {
-   "from": "普遍调查",
-   "type": "subclass",
-   "to": "按调查对象的选择范围",
-   "evidence": "普遍调查……对某一范围内所有被研究对象进行调查",
-   "printed_page": 174
-  },
-  {
-   "from": "抽样调查",
-   "type": "subclass",
-   "to": "按调查对象的选择范围",
-   "evidence": "是从被调查对象的全体范围（总体）中，抽取一部分单位（样本）……进行调查，并以样本特征值推断总体特征值的一种调查方法",
-   "printed_page": 174
-  },
-  {
-   "from": "个案调查",
-   "type": "subclass",
-   "to": "按调查对象的选择范围",
-   "evidence": "在对被调查的教育现象或教育对象进行具体分析的基础上有意识……地从其中选择某个教育现象或教育对象进行调查与描述",
-   "printed_page": 174
-  },
-  {
-   "from": "现状调查",
-   "type": "subclass",
-   "to": "按调查内容",
-   "evidence": "现状调查……对某一教育现象或教育对象的现状进行调查",
-   "printed_page": 174
-  },
-  {
-   "from": "发展调查",
-   "type": "subclass",
-   "to": "按调查内容",
-   "evidence": "对教育现象在一个较长时间内的特征变化进行调查，以找出其前……后的变化与差异",
-   "printed_page": 174
-  },
-  {
-   "from": "问卷调查",
-   "type": "subclass",
-   "to": "按调查方法和手段",
-   "evidence": "问卷调查……以书面提出问题的方式搜集资料的一种研究方法",
-   "printed_page": 174
-  },
-  {
-   "from": "访谈调查",
-   "type": "subclass",
-   "to": "按调查方法和手段",
-   "evidence": "研究者通过与研究对象进行面对面的交谈，以口头问答的形式搜……集资料的一种调查研究方法",
-   "printed_page": 174
-  },
-  {
-   "from": "测量调查",
-   "type": "subclass",
-   "to": "按调查方法和手段",
-   "evidence": "用一组测试题（标准化试题或自编试题）去测定某种教育现象的……实际情况，从而搜集数据资料进行量化研究的一种方法",
-   "printed_page": 174
-  },
-  {
-   "from": "实验研究法",
-   "type": "subclass",
-   "to": "常用的教育研究方法",
-   "evidence": "实验研究法是研究者按照研究目的，合理地控制或创设一定的条件，人为地影响研究对象，从而验证假设",
-   "printed_page": 174
-  },
-  {
-   "from": "实验研究法",
-   "type": "attribute",
-   "to": "实验法的基本特征",
-   "evidence": "其共同的基本特征是：有理论假说、有控制、有变革、可重复操作。",
-   "printed_page": 174
-  },
-  {
-   "from": "个案研究法",
-   "type": "subclass",
-   "to": "常用的教育研究方法",
-   "evidence": "个案研究法是指研究者在自然状态下，对特殊或典型的案例进行全面、深入的调查和分析",
-   "printed_page": 175
-  },
-  {
-   "from": "比较研究法",
-   "type": "subclass",
-   "to": "常用的教育研究方法",
-   "evidence": "教育科学的比较研究是对某类教育现象在不同时期、不同地点、不同情况下的不同表现进行比较分析",
-   "printed_page": 175
-  },
-  {
-   "from": "历史研究法",
-   "type": "subclass",
-   "to": "常用的教育研究方法",
-   "evidence": "教育科学的历史研究法，是通过搜集某种教育现象发生、发展和演变的历史事实",
-   "printed_page": 175
-  },
-  {
-   "from": "行动研究法",
-   "type": "subclass",
-   "to": "新兴的教育研究方法",
-   "evidence": "是指教师在现实教育教学情境中自主进行反思性探索，并以解决工作情境中特定的实际问题为主要目的，强调研究与活动一体化",
-   "printed_page": 175
-  },
-  {
-   "from": "教师行动研究",
-   "type": "exact_match",
-   "to": "行动研究法",
-   "evidence": "行动研究法，即教育行动研究，亦称“教师行动研究”",
-   "printed_page": 175
-  },
-  {
-   "from": "勒温的螺旋循环模式",
-   "type": "part_of",
-   "to": "行动研究法",
-   "evidence": "德金的行动研究模式以勒温的螺旋循环模式（计划、行动、观察、考察、反思）为基础",
-   "printed_page": 175
-  },
-  {
-   "from": "勒温的螺旋循环模式",
-   "type": "prerequisite",
-   "to": "德金的行动研究模式",
-   "evidence": "德金的行动研究模式以勒温的螺旋循环模式（计划、行动、观察、考察、反思）为基础",
-   "printed_page": 175
-  },
-  {
-   "from": "行动研究模式的具体过程",
-   "type": "part_of",
-   "to": "德金的行动研究模式",
-   "evidence": "其具体过程为：计划—行动—观察—反思—调整—再行动—再观察—再反思—再调整。",
-   "printed_page": 175
-  },
-  {
-   "from": "以解决问题改进实践为目的",
-   "type": "part_of",
-   "to": "行动研究法",
-   "evidence": "（1）以解决问题、改进实践为目的。",
-   "printed_page": 175
-  },
-  {
-   "from": "教育叙事研究法",
-   "type": "subclass",
-   "to": "新兴的教育研究方法",
-   "evidence": "教育叙事研究是指以叙事、讲故事的方式开展的教育研究",
-   "printed_page": 176
-  },
-  {
-   "from": "教育质性研究",
-   "type": "subclass",
-   "to": "新兴的教育研究方法",
-   "evidence": "教育质性研究是以研究者本人作为研究工具，在自然情境下，采用多种资料收集方法",
-   "printed_page": 176
-  },
-  {
-   "from": "校本研究",
-   "type": "subclass",
-   "to": "新兴的教育研究方法",
-   "evidence": "校本研究是指以学校自身条件为基础，以学校校长、教师为主力军，针对学校所存在的突出问题而开展的有计划的研究活动。",
-   "printed_page": 176
-  },
-  {
-   "from": "校本研究",
-   "type": "attribute",
-   "to": "校本研究的基本要素",
-   "evidence": "教师个人、教师集体、专业研究人员是校本教研的三个核心要素。",
-   "printed_page": 176
-  }
- ]
+  "chapter": "第一篇第十章 教育研究",
+  "schema_version": "1.1",
+  "edges": [
+    {
+      "from": "选择研究课题",
+      "type": "part_of",
+      "to": "教育研究的基本过程",
+      "evidence": "选择和确定研究课题是进行教育研究的起始环节。",
+      "printed_page": 167
+    },
+    {
+      "from": "查阅文献资料",
+      "type": "part_of",
+      "to": "教育研究的基本过程",
+      "evidence": "文献检索是必不可少的步骤，它贯穿研究的全过程，是进行教育科学研究的基础。",
+      "printed_page": 167
+    },
+    {
+      "from": "设计研究方案",
+      "type": "part_of",
+      "to": "教育研究的基本过程",
+      "evidence": "三、设计研究方案",
+      "printed_page": 169
+    },
+    {
+      "from": "收集整理分析资料",
+      "type": "part_of",
+      "to": "教育研究的基本过程",
+      "evidence": "收集研究资料是指研究者在实施研究计划过程中收集现实资料。",
+      "printed_page": 171
+    },
+    {
+      "from": "教育研究结果的表现形式",
+      "type": "part_of",
+      "to": "教育研究的基本过程",
+      "evidence": "教师教育研究结果的表现形式主要有三类：研究报告、经验总结和教育教学案例。",
+      "printed_page": 171
+    },
+    {
+      "from": "教育文献的分类",
+      "type": "part_of",
+      "to": "查阅文献资料",
+      "evidence": "（一）教育文献的分类",
+      "printed_page": 167
+    },
+    {
+      "from": "按文献的等级分类",
+      "type": "part_of",
+      "to": "教育文献的分类",
+      "evidence": "1. 按照教育文献的等级分类",
+      "printed_page": 167
+    },
+    {
+      "from": "零次文献",
+      "type": "subclass",
+      "to": "按文献的等级分类",
+      "evidence": "零次文献是记录在非正规物理载体上的未经正式发表或尚未形成正规载体的一种文献形式",
+      "printed_page": 167
+    },
+    {
+      "from": "一次文献",
+      "type": "subclass",
+      "to": "按文献的等级分类",
+      "evidence": "一次文献包括专著、论文、调查报告、档案材料等以作者本人的实践为依据而创作的原始文献",
+      "printed_page": 168
+    },
+    {
+      "from": "二次文献",
+      "type": "subclass",
+      "to": "按文献的等级分类",
+      "evidence": "二次文献是对原始文献进行加工整理，使之系统化、条理化的文献",
+      "printed_page": 168
+    },
+    {
+      "from": "三次文献",
+      "type": "subclass",
+      "to": "按文献的等级分类",
+      "evidence": "三次文献是在利用二次文献的基础上对某一范围内的一次文献进行广泛、深入的分析研究之后综合浓缩而成的参考性文献",
+      "printed_page": 168
+    },
+    {
+      "from": "按文献的功能分类",
+      "type": "part_of",
+      "to": "教育文献的分类",
+      "evidence": "2. 按文献的功能分类",
+      "printed_page": 168
+    },
+    {
+      "from": "事实性文献",
+      "type": "subclass",
+      "to": "按文献的功能分类",
+      "evidence": "事实性文献指专门为教育科学研究提供事实证据的文献",
+      "printed_page": 168
+    },
+    {
+      "from": "工具性文献",
+      "type": "subclass",
+      "to": "按文献的功能分类",
+      "evidence": "工具性文献指专门为教育科学研究提供检索咨询的文献",
+      "printed_page": 168
+    },
+    {
+      "from": "理论性文献",
+      "type": "subclass",
+      "to": "按文献的功能分类",
+      "evidence": "理论性文献指专门为教育科学研究提供理性认识的文献",
+      "printed_page": 168
+    },
+    {
+      "from": "政策性文献",
+      "type": "subclass",
+      "to": "按文献的功能分类",
+      "evidence": "政策性文献指专门为教育科学研究提供政策依据的文献",
+      "printed_page": 168
+    },
+    {
+      "from": "经验性文献",
+      "type": "subclass",
+      "to": "按文献的功能分类",
+      "evidence": "经验性文献指专门为教育科学研究提供感性认识的文献",
+      "printed_page": 168
+    },
+    {
+      "from": "文献检索的方法",
+      "type": "part_of",
+      "to": "查阅文献资料",
+      "evidence": "1. 文献检索的主要方法",
+      "printed_page": 169
+    },
+    {
+      "from": "顺查法",
+      "type": "subclass",
+      "to": "文献检索的方法",
+      "evidence": "顺查法是指按时间范围，以课题研究的发生时间为检索始点",
+      "printed_page": 169
+    },
+    {
+      "from": "逆查法",
+      "type": "subclass",
+      "to": "文献检索的方法",
+      "evidence": "逆查法是指以课题研究的时间作为检索的始点，按由近及远、由新到旧的顺序查找",
+      "printed_page": 169
+    },
+    {
+      "from": "引文查找法",
+      "type": "subclass",
+      "to": "文献检索的方法",
+      "evidence": "引文查找法又称跟踪法，是以已掌握的文献中所列的引用文献、附录的参考文献作……为线索",
+      "printed_page": 169
+    },
+    {
+      "from": "引文查找法",
+      "type": "exact_match",
+      "to": "跟踪法",
+      "evidence": "引文查找法又称跟踪法",
+      "printed_page": 169
+    },
+    {
+      "from": "综合查找法",
+      "type": "subclass",
+      "to": "文献检索的方法",
+      "evidence": "综合查找法是指将各种方法结合起来加以使用以达到检索目的的方法。",
+      "printed_page": 169
+    },
+    {
+      "from": "研究假设",
+      "type": "part_of",
+      "to": "设计研究方案",
+      "evidence": "研究假设是研究课题确定后依据一定的知识、事实和资料，对所研究问题的规律或原因做出的推测性论断和假定性说明",
+      "printed_page": 169
+    },
+    {
+      "from": "描述性假设",
+      "type": "subclass",
+      "to": "研究假设",
+      "evidence": "根据研究的假设的性质与复杂程度，研究假设可以分为描述性假设、解释性假设和预测性假设。",
+      "printed_page": 169
+    },
+    {
+      "from": "解释性假设",
+      "type": "subclass",
+      "to": "研究假设",
+      "evidence": "解释性假设是揭示事物的内部联系，指出现象质的方面，说明事物原因的一种更复杂、更重要的假设",
+      "printed_page": 170
+    },
+    {
+      "from": "预测性假设",
+      "type": "subclass",
+      "to": "研究假设",
+      "evidence": "预测性假设是对事物未来的发展趋势的科学推测",
+      "printed_page": 170
+    },
+    {
+      "from": "选择研究对象",
+      "type": "part_of",
+      "to": "设计研究方案",
+      "evidence": "1. 选择研究对象",
+      "printed_page": 170
+    },
+    {
+      "from": "抽样",
+      "type": "part_of",
+      "to": "选择研究对象",
+      "evidence": "③抽样：遵循一定的规则，从一个总体中抽取有代表性的、一定数量的个体进行研究的过程。",
+      "printed_page": 170
+    },
+    {
+      "from": "抽样的基本方法",
+      "type": "part_of",
+      "to": "抽样",
+      "evidence": "（2）抽样的基本方法",
+      "printed_page": 170
+    },
+    {
+      "from": "简单随机抽样",
+      "type": "subclass",
+      "to": "抽样的基本方法",
+      "evidence": "抽签，随机数码……表抽样",
+      "printed_page": 170
+    },
+    {
+      "from": "系统随机抽样",
+      "type": "subclass",
+      "to": "抽样的基本方法",
+      "evidence": "先将各单位按一……定顺序排队，再……按照固定间隔抽",
+      "printed_page": 170
+    },
+    {
+      "from": "分层随机抽样",
+      "type": "subclass",
+      "to": "抽样的基本方法",
+      "evidence": "先分层，后按各……层所占比例抽取",
+      "printed_page": 170
+    },
+    {
+      "from": "整群随机抽样",
+      "type": "subclass",
+      "to": "抽样的基本方法",
+      "evidence": "把整群看作个体……再抽取样本",
+      "printed_page": 171
+    },
+    {
+      "from": "等距随机抽样",
+      "type": "exact_match",
+      "to": "系统随机抽样",
+      "evidence": "系统随机抽样……等距随机抽样",
+      "printed_page": 170
+    },
+    {
+      "from": "研究报告",
+      "type": "subclass",
+      "to": "教育研究结果的表现形式",
+      "evidence": "教师教育研究结果的表现形式主要有三类：研究报告、经验总结和教育教学案例。",
+      "printed_page": 171
+    },
+    {
+      "from": "常用的教育研究方法",
+      "type": "part_of",
+      "to": "教育研究方法",
+      "evidence": "一、常用的教育研究方法",
+      "printed_page": 173
+    },
+    {
+      "from": "新兴的教育研究方法",
+      "type": "part_of",
+      "to": "教育研究方法",
+      "evidence": "二、新兴的教育研究方法",
+      "printed_page": 175
+    },
+    {
+      "from": "教育观察研究法",
+      "type": "subclass",
+      "to": "常用的教育研究方法",
+      "evidence": "教育观察研究法是研究者在自然条件下，通过感官或借助一定的科学仪器，有目的、有计划地对研究对象进行系统考察",
+      "printed_page": 173
+    },
+    {
+      "from": "观察法的分类",
+      "type": "part_of",
+      "to": "教育观察研究法",
+      "evidence": "分类标准……类型……含义",
+      "printed_page": 173
+    },
+    {
+      "from": "按观察的环境条件是否进行控制和改变",
+      "type": "subclass",
+      "to": "观察法的分类",
+      "evidence": "对观察的环境条……件是否进行控制……和改变",
+      "printed_page": 173
+    },
+    {
+      "from": "按观察时是否借助仪器设备",
+      "type": "subclass",
+      "to": "观察法的分类",
+      "evidence": "观察时是否借助仪器设备",
+      "printed_page": 173
+    },
+    {
+      "from": "按观察者是否直接参与被观察者所从事的活动",
+      "type": "subclass",
+      "to": "观察法的分类",
+      "evidence": "观察者是否直接……参与被观察者所……从事的活动",
+      "printed_page": 173
+    },
+    {
+      "from": "按观察是否预先有严密的计划和程序",
+      "type": "subclass",
+      "to": "观察法的分类",
+      "evidence": "观察是否预先有……严密的计划和……程序",
+      "printed_page": 173
+    },
+    {
+      "from": "自然情境中的观察",
+      "type": "subclass",
+      "to": "按观察的环境条件是否进行控制和改变",
+      "evidence": "自然情境中……的观察",
+      "printed_page": 173
+    },
+    {
+      "from": "实验室中的观察",
+      "type": "subclass",
+      "to": "按观察的环境条件是否进行控制和改变",
+      "evidence": "实验室中的……是研究者根据研究的目的，在对观察对象发生的环境和条件",
+      "printed_page": 173
+    },
+    {
+      "from": "直接观察",
+      "type": "subclass",
+      "to": "按观察时是否借助仪器设备",
+      "evidence": "凭借人的感官，在现场直接对观察对象进行感知和描述",
+      "printed_page": 173
+    },
+    {
+      "from": "间接观察",
+      "type": "subclass",
+      "to": "按观察时是否借助仪器设备",
+      "evidence": "利用一定的仪器或其他技术手段作为中介对观察对象进行考……察。它突破了直接观察受到人的主观能力的局限",
+      "printed_page": 173
+    },
+    {
+      "from": "参与性观察",
+      "type": "subclass",
+      "to": "按观察者是否直接参与被观察者所从事的活动",
+      "evidence": "是研究者直接参加到所观察的群体和活动中去，不暴露研究……者真正身份",
+      "printed_page": 173
+    },
+    {
+      "from": "非参与性观察",
+      "type": "subclass",
+      "to": "按观察者是否直接参与被观察者所从事的活动",
+      "evidence": "不要求研究人员站到与被观察对象同一地位上，而是以旁……观者身份进行观察",
+      "printed_page": 173
+    },
+    {
+      "from": "结构式观察",
+      "type": "subclass",
+      "to": "按观察是否预先有严密的计划和程序",
+      "evidence": "是有明确的目标、问题和范围，有详细的观察计划、步骤和……合理设计的可控制性观察",
+      "printed_page": 173
+    },
+    {
+      "from": "非结构式观察",
+      "type": "subclass",
+      "to": "按观察是否预先有严密的计划和程序",
+      "evidence": "是对研究问题的范围目标采取弹性态度，观察内容项目与观……察步骤没有预先确定",
+      "printed_page": 173
+    },
+    {
+      "from": "调查研究法",
+      "type": "subclass",
+      "to": "常用的教育研究方法",
+      "evidence": "调查研究法是研究者通过问卷、访谈等方式，有目的、有计划地搜集研究对象的有关资料",
+      "printed_page": 174
+    },
+    {
+      "from": "调查法的分类",
+      "type": "part_of",
+      "to": "调查研究法",
+      "evidence": "分类标准……类型……含义",
+      "printed_page": 174
+    },
+    {
+      "from": "按调查对象的选择范围",
+      "type": "subclass",
+      "to": "调查法的分类",
+      "evidence": "调查对象的……选择范围",
+      "printed_page": 174
+    },
+    {
+      "from": "按调查内容",
+      "type": "subclass",
+      "to": "调查法的分类",
+      "evidence": "调查内容……发展调查",
+      "printed_page": 174
+    },
+    {
+      "from": "按调查方法和手段",
+      "type": "subclass",
+      "to": "调查法的分类",
+      "evidence": "调查方法和手段……测量调查",
+      "printed_page": 174
+    },
+    {
+      "from": "普遍调查",
+      "type": "subclass",
+      "to": "按调查对象的选择范围",
+      "evidence": "普遍调查……对某一范围内所有被研究对象进行调查",
+      "printed_page": 174
+    },
+    {
+      "from": "抽样调查",
+      "type": "subclass",
+      "to": "按调查对象的选择范围",
+      "evidence": "是从被调查对象的全体范围（总体）中，抽取一部分单位（样本）……进行调查，并以样本特征值推断总体特征值的一种调查方法",
+      "printed_page": 174
+    },
+    {
+      "from": "个案调查",
+      "type": "subclass",
+      "to": "按调查对象的选择范围",
+      "evidence": "在对被调查的教育现象或教育对象进行具体分析的基础上有意识……地从其中选择某个教育现象或教育对象进行调查与描述",
+      "printed_page": 174
+    },
+    {
+      "from": "现状调查",
+      "type": "subclass",
+      "to": "按调查内容",
+      "evidence": "现状调查……对某一教育现象或教育对象的现状进行调查",
+      "printed_page": 174
+    },
+    {
+      "from": "发展调查",
+      "type": "subclass",
+      "to": "按调查内容",
+      "evidence": "对教育现象在一个较长时间内的特征变化进行调查，以找出其前……后的变化与差异",
+      "printed_page": 174
+    },
+    {
+      "from": "问卷调查",
+      "type": "subclass",
+      "to": "按调查方法和手段",
+      "evidence": "问卷调查……以书面提出问题的方式搜集资料的一种研究方法",
+      "printed_page": 174
+    },
+    {
+      "from": "访谈调查",
+      "type": "subclass",
+      "to": "按调查方法和手段",
+      "evidence": "研究者通过与研究对象进行面对面的交谈，以口头问答的形式搜……集资料的一种调查研究方法",
+      "printed_page": 174
+    },
+    {
+      "from": "测量调查",
+      "type": "subclass",
+      "to": "按调查方法和手段",
+      "evidence": "用一组测试题（标准化试题或自编试题）去测定某种教育现象的……实际情况，从而搜集数据资料进行量化研究的一种方法",
+      "printed_page": 174
+    },
+    {
+      "from": "实验研究法",
+      "type": "subclass",
+      "to": "常用的教育研究方法",
+      "evidence": "实验研究法是研究者按照研究目的，合理地控制或创设一定的条件，人为地影响研究对象，从而验证假设",
+      "printed_page": 174
+    },
+    {
+      "from": "实验研究法",
+      "type": "attribute",
+      "to": "实验法的基本特征",
+      "evidence": "其共同的基本特征是：有理论假说、有控制、有变革、可重复操作。",
+      "printed_page": 174
+    },
+    {
+      "from": "个案研究法",
+      "type": "subclass",
+      "to": "常用的教育研究方法",
+      "evidence": "个案研究法是指研究者在自然状态下，对特殊或典型的案例进行全面、深入的调查和分析",
+      "printed_page": 175
+    },
+    {
+      "from": "比较研究法",
+      "type": "subclass",
+      "to": "常用的教育研究方法",
+      "evidence": "教育科学的比较研究是对某类教育现象在不同时期、不同地点、不同情况下的不同表现进行比较分析",
+      "printed_page": 175
+    },
+    {
+      "from": "历史研究法",
+      "type": "subclass",
+      "to": "常用的教育研究方法",
+      "evidence": "教育科学的历史研究法，是通过搜集某种教育现象发生、发展和演变的历史事实",
+      "printed_page": 175
+    },
+    {
+      "from": "行动研究法",
+      "type": "subclass",
+      "to": "新兴的教育研究方法",
+      "evidence": "是指教师在现实教育教学情境中自主进行反思性探索，并以解决工作情境中特定的实际问题为主要目的，强调研究与活动一体化",
+      "printed_page": 175
+    },
+    {
+      "from": "教师行动研究",
+      "type": "exact_match",
+      "to": "行动研究法",
+      "evidence": "行动研究法，即教育行动研究，亦称“教师行动研究”",
+      "printed_page": 175
+    },
+    {
+      "from": "勒温的螺旋循环模式",
+      "type": "part_of",
+      "to": "行动研究法",
+      "evidence": "德金的行动研究模式以勒温的螺旋循环模式（计划、行动、观察、考察、反思）为基础",
+      "printed_page": 175
+    },
+    {
+      "from": "勒温的螺旋循环模式",
+      "type": "prerequisite",
+      "to": "德金的行动研究模式",
+      "evidence": "德金的行动研究模式以勒温的螺旋循环模式（计划、行动、观察、考察、反思）为基础",
+      "printed_page": 175
+    },
+    {
+      "from": "行动研究模式的具体过程",
+      "type": "part_of",
+      "to": "德金的行动研究模式",
+      "evidence": "其具体过程为：计划—行动—观察—反思—调整—再行动—再观察—再反思—再调整。",
+      "printed_page": 175
+    },
+    {
+      "from": "以解决问题改进实践为目的",
+      "type": "part_of",
+      "to": "行动研究法",
+      "evidence": "（1）以解决问题、改进实践为目的。",
+      "printed_page": 175
+    },
+    {
+      "from": "教育叙事研究法",
+      "type": "subclass",
+      "to": "新兴的教育研究方法",
+      "evidence": "教育叙事研究是指以叙事、讲故事的方式开展的教育研究",
+      "printed_page": 176
+    },
+    {
+      "from": "教育质性研究",
+      "type": "subclass",
+      "to": "新兴的教育研究方法",
+      "evidence": "教育质性研究是以研究者本人作为研究工具，在自然情境下，采用多种资料收集方法",
+      "printed_page": 176
+    },
+    {
+      "from": "校本研究",
+      "type": "subclass",
+      "to": "新兴的教育研究方法",
+      "evidence": "校本研究是指以学校自身条件为基础，以学校校长、教师为主力军，针对学校所存在的突出问题而开展的有计划的研究活动。",
+      "printed_page": 176
+    },
+    {
+      "from": "校本研究",
+      "type": "attribute",
+      "to": "校本研究的基本要素",
+      "evidence": "教师个人、教师集体、专业研究人员是校本教研的三个核心要素。",
+      "printed_page": 176
+    }
+  ]
 }

@@ -41,7 +41,11 @@ ANKi9PWuvDOsagwIVvrPx77mXNV0APmjySsYjB1/GtUTY6cyKNRl2RCTt608m9nYk5VeCG2EAZRQmQNQ
 
 ```
 GET  https://ke.fenbi.com/qrcode-login/api/gen_code
-  -> {"lgtoken":"...","codeContent":"https://www.fenbi.com/depot/fenbi-scan-login/index.html?lgtoken=...&app=web"}
+  -> {"code":1,"msg":"","data":{"lgtoken":"...","codeContent":"https://www.fenbi.com/depot/fenbi-scan-login/index.html?lgtoken=...&app=web"}}
+
+注意：`gen_code` 的两个字段在 **`data` 包裹层**里（2026-11-22 服务端容器内与本地 curl 实测，
+脱敏样例见 `my-next-app/src/lib/fenbi/__tests__/fixtures/gen_code.response.json`）。
+早期本文件把字段记在顶层，`genQrCode` 按顶层读取，导致正常响应被判为缺字段并稳定返回 502。
 
 POST https://ke.fenbi.com/qrcode-login/api/query_code_status
   body {"lgtoken":"..."}

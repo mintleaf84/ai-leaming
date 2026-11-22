@@ -241,13 +241,39 @@ jobs:
             echo
           } > release-notes.md
 
+          # 显式发布（历史事故：gh release create 建出 draft，且旧版本 APK 一直留在同一个 Release 上）
           if gh release view "$TAG" >/dev/null 2>&1; then
-            echo "Release $TAG 已存在：覆盖资产并更新正文"
-            gh release upload "$TAG" "$APK" --clobber
-            gh release edit "$TAG" --notes-file release-notes.md
+            echo "Release $TAG 已存在：更新正文并确保已发布"
+            gh release edit "$TAG" --notes-file release-notes.md --draft=false --latest
           else
-            gh release create "$TAG" "$APK" \
-              --title "$TAG" \
-              --notes-file release-notes.md
+            echo "创建新 Release $TAG"
+            gh release create "$TAG" --title "$TAG" --notes-file release-notes.md \
+              --draft=false --latest
           fi
+
+          # 清理本 Release 里不属于本次版本的 APK（gh release upload --clobber 只覆盖同名文件）
+          ASSETS_JSON="$(gh api "repos/${GITHUB_REPOSITORY}/releases/tags/${TAG}/assets")"
+          OLD_IDS="$(echo "$ASSETS_JSON" | jq -r --arg keep "$(basename "$APK")" \
+            '.[] | select(.name | startswith("app-release-")) | select(.name != $keep) | .id')"
+          if [ -n "$OLD_IDS" ]; then
+            for id in $OLD_IDS; do
+              echo "删除旧 APK 资产 id=$id"
+              gh api -X DELETE "repos/${GITHUB_REPOSITORY}/releases/assets/$id"
+            done
+          else
+            echo "没有旧 APK 资产需要清理"
+          fi
+
+          echo "上传本次 APK：$(basename "$APK")"
+          gh release upload "$TAG" "$APK" --clobber
+
+          # 资产校验：只保留本次一个 app-release-* 资产，不符就让 CI 红
+          FINAL="$(gh api "repos/${GITHUB_REPOSITORY}/releases/tags/${TAG}/assets" \
+            --jq '[.[].name | select(startswith("app-release-"))]')"
+          EXPECT="[\"$(basename "$APK")\"]"
+          if [ "$FINAL" != "$EXPECT" ]; then
+            echo "::error::发布资产校验失败：期望 $EXPECT，实际 $FINAL"
+            exit 1
+          fi
+          echo "资产校验通过：$FINAL"
 

@@ -1,28 +1,34 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
-"""教综 1680 · 知识追踪（KT）离线回测：数据集构建。
+"""知识追踪（KT）离线回测：数据集构建。
 
-产出 long-format（一次作答一行）attempts.csv，以及多标签展开表 item_skills.csv。
+两个数据源：
 
-数据来源（全部只读）：
-  /public/home/cjb/data/jiaozong_1680/
-    output/questions.jsonl                     题库（1834 条，教育学篇 851 条）
-    output/api/p1c{1..6}_answers_plan.json     作答（共 472 条客观题）
-    kg/ch{N}/ch{N}-edges-v*.json               图谱边（技能定义）
-    source/lecture/ch{N}_marked.txt            讲义正文（[[P印刷页]]，考点页区间）
+  --source offline   （默认）本地导出的教综1680 answers plan
+      /public/home/cjb/data/jiaozong_1680/output/questions.jsonl
+      /public/home/cjb/data/jiaozong_1680/output/api/p1c{1..6}_answers_plan.json
+      → 472 次作答 / 472 道不同题 / 无时间戳 / 零重复（导入产物）
 
-三个技能粒度：
-  tag      题库 tags —— 实测每题只有 1 个章级标签（不是树形路径），等价于「章」粒度。
-  kaodian  章 × 考点 —— 由命中图谱节点的 printed_page 落到讲义考点页区间得到；
-           推不出就退化为章级伪技能 `__chapter_chN__`。
-  node     图谱节点 —— 词面匹配（题干 3 / 选项 2 / 解析 1，长名优先），取 top-2。
+  --source zhuoyu    线上实例（真实作答）
+      GET /api/external/practice/sessions?limit=100&offset=...
+      GET /api/external/practice/sessions/{id}
+      需要环境变量 ZY_KEY（Bearer token）；不提供默认值，避免把密钥写进仓库。
+      原始 JSON 缓存在 --cache-dir（默认 /tmp/opencode/zy_cache），不进仓库；
+      仓库里只落脱敏 CSV。
 
-映射逻辑复制自 kg/map_wrong.py（2026-11-22 版本），**有意不 import**：那个文件正被
-另一个会话修改，import 会让本次回测不可复现。复制部分仅含词面匹配/伞节点过滤/别名，
-不含任何回测逻辑。
+技能粒度：
+  tag          题库 tags 的**最深路径**（叶子）。线上 tags 是「树路径 + 扁平关键词」混装，
+               348 条是路径、472 条是扁平概念，所以叶子才是唯一不重复计数的口径。
+  tag_chapter  顶层桶（教育学/教育心理学/心理学/时政/其他）—— 线上唯一有足够观测的粗层。
+  kaodian      章 × 考点：题目 → 图谱节点 → 节点讲义印刷页 → 考点页区间。
+  node         图谱节点：词面匹配（题干 3 / 选项 2 / 解析 1），取 top-2。
+
+  图谱只有「教育学篇 ch1–ch6」；线上真实作答的题大多不是这 1834 道题，
+  映射不上的行一律标 `__unmapped__`，由 backtest 判定是否可评估（不静默丢弃）。
 
 用法：
-  /public/apps/anaconda3/bin/python build_dataset.py [--data-root ...] [--out ...]
+  ZY_KEY=... /public/apps/anaconda3/bin/python build_dataset.py --source zhuoyu
+  /public/apps/anaconda3/bin/python build_dataset.py --source offline
 """
 
 import argparse
@@ -31,16 +37,20 @@ import json
 import os
 import re
 import sys
-from collections import Counter, defaultdict
+import time
+import urllib.request
+from collections import Counter
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 DEFAULT_DATA = "/public/home/cjb/data/jiaozong_1680"
 DEFAULT_OUT = os.path.join(HERE, "results")
+ZY_BASE = "https://zhuoyu.887780.xyz"
+ZY_UA = "Mozilla/5.0 ai-leaming-import/1.0"
+ZY_CACHE = "/tmp/opencode/zy_cache"
 
-CN_NUM = "一二三四五六七八九十"
 USER = "cjb"
 
-# 题库 tags 是章级单标签；这份映射按 create_questions.json 实测得出。
+# 题库 tags 是章级单标签（offline）；这份映射按 create_questions.json 实测得出。
 CHAPTER_TAG = {
     1: "教育与教育学",
     2: "教育的基本规律",
@@ -50,8 +60,8 @@ CHAPTER_TAG = {
     6: "课程",
 }
 
-TYPE_NUM = {"single_choice": 1, "multi_choice": 2, "judgment": 5}
 TYPE_ORDER = {"单项选择题": 0, "多项选择题": 1, "判断题": 2}
+CANON_CHAPTERS = ("教育学", "教育心理学", "心理学", "时政")
 
 
 # --------------------------------------------------------------------------
@@ -59,10 +69,7 @@ TYPE_ORDER = {"单项选择题": 0, "多项选择题": 1, "判断题": 2}
 # --------------------------------------------------------------------------
 
 def load_kaodian_ranges(data_root):
-    """返回 {chapter: [(code, title, start, end), ...]}。
-
-    chapter_end 用下一章考点一起始页 - 1，最后一章用 107（第六章末页，实测）。
-    """
+    """返回 {chapter: [(code, title, start, end), ...]}。"""
     starts = {}
     for ch in range(1, 7):
         path = os.path.join(data_root, "source", "lecture", f"ch{ch}_marked.txt")
@@ -131,7 +138,6 @@ def latest_edges(data_root, chapter):
 
 
 def load_chapter_graph(data_root, chapter):
-    """返回 (nodes, node_page)：node_page 取该节点出现的最小讲义印刷页。"""
     d = json.load(open(latest_edges(data_root, chapter), encoding="utf-8"))
     nodes, node_page = set(), {}
     for e in d["edges"]:
@@ -154,9 +160,10 @@ def load_umbrella(data_root, chapter):
 
 
 def match_nodes(q, nodes, umbrella, max_hits=2):
-    """词面匹配：题干 3 / 选项 2 / 解析 1。返回 [(node, score), ...]（已过滤伞节点与父名吞噬）。"""
+    """词面匹配：题干 3 / 选项 2 / 解析 1。返回 [(node, score), ...]。"""
     stem = q.get("stem") or ""
-    opts = " ".join((q.get("options") or {}).values())
+    opts = " ".join((q.get("options") or {}).values()) if isinstance(q.get("options"), dict) \
+        else " ".join(q.get("options") or [])
     expl = q.get("explanation") or ""
 
     def score_of(name, s, o, e):
@@ -195,7 +202,6 @@ def match_nodes(q, nodes, umbrella, max_hits=2):
 
     score = {n: sc for n, sc in score.items() if n not in umbrella}
 
-    # 父名 ⊂ 子名且子节点强命中时删父名（「学制」vs「癸卯学制」）
     matched = list(score)
     drop = {a for a in matched for b in matched
             if a != b and len(a) < len(b) and a in b and score.get(b, 0) >= 2}
@@ -205,9 +211,8 @@ def match_nodes(q, nodes, umbrella, max_hits=2):
     if not score:
         return []
     top = max(score.values())
-    hits = [(n, sc) for n, sc in sorted(score.items(), key=lambda kv: (-kv[1], kv[0]))
+    return [(n, sc) for n, sc in sorted(score.items(), key=lambda kv: (-kv[1], kv[0]))
             if sc >= max(1, top - 1)][:max_hits]
-    return hits
 
 
 def kaodian_of_page(chapter, page, ranges):
@@ -218,20 +223,11 @@ def kaodian_of_page(chapter, page, ranges):
 
 
 # --------------------------------------------------------------------------
-# 主流程
+# offline：本地 answers plan
 # --------------------------------------------------------------------------
 
-def main():
-    ap = argparse.ArgumentParser()
-    ap.add_argument("--data-root", default=DEFAULT_DATA)
-    ap.add_argument("--out", default=DEFAULT_OUT)
-    args = ap.parse_args()
-
-    data_root, out = args.data_root, args.out
-    os.makedirs(out, exist_ok=True)
-
+def build_offline(data_root, out):
     ranges = load_kaodian_ranges(data_root)
-
     questions = {}
     with open(os.path.join(data_root, "output", "questions.jsonl"), encoding="utf-8") as f:
         for line in f:
@@ -240,7 +236,6 @@ def main():
                 continue
             questions[q["id"]] = q
 
-    # 作答：每个 externalId 只会出现一次（实测 472 条 / 472 唯一题）
     plans = []
     for ch in range(1, 7):
         p = os.path.join(data_root, "output", "api", f"p1c{ch}_answers_plan.json")
@@ -248,19 +243,16 @@ def main():
         m = re.match(r"jz1680-p1c(\d+)-(\d{4}-\d{2}-\d{2})", d.get("sessionKey", ""))
         session_date = m.group(2) if m else ""
         for a in d["answers"]:
-            ext = a["externalId"]                       # jz1680_jz00001
-            qid = ext.split("_", 1)[1].upper()          # JZ00001
+            ext = a["externalId"]
+            qid = ext.split("_", 1)[1].upper()
             plans.append({
-                "chapter": ch,
-                "externalId": ext,
-                "item": qid,
+                "chapter": ch, "externalId": ext, "item": qid,
                 "session_date": session_date,
                 "userAnswer": a.get("userAnswer"),
                 "correct": 1 if a.get("isCorrect") else 0,
                 "duration_ms": a.get("durationMs"),
             })
 
-    # 伪时间：章序 → 题型序 → 题号（章节顺序反映学习推进；见 RESULTS.md 的时间戳说明）
     def pseudo_key(p):
         q = questions[p["item"]]
         return (p["chapter"], TYPE_ORDER.get(q["section_type"], 9), q["number"])
@@ -271,9 +263,12 @@ def main():
     graphs = {ch: load_chapter_graph(data_root, ch) for ch in range(1, 7)}
     umbrellas = {ch: load_umbrella(data_root, ch) for ch in range(1, 7)}
 
-    rows, skill_rows, no_node, ambig = [], [], [], 0
+    rows, skill_rows, no_node = [], [], []
     node_hits, kaodian_hits = Counter(), Counter()
-    skill_item_count = defaultdict(set)
+    skill_item_count = {}
+
+    def _add(g, s, item):
+        skill_item_count.setdefault((g, s), set()).add(item)
 
     for p in plans:
         q = questions[p["item"]]
@@ -283,39 +278,38 @@ def main():
 
         tag = CHAPTER_TAG.get(ch, f"ch{ch}")
         if hits:
-            node_primary, node_score = hits[0][0], hits[0][1]
+            node_primary = hits[0][0]
             node_list = [h[0] for h in hits]
             pages = [node_page[n] for n in node_list if n in node_page]
             kd = kaodian_of_page(ch, min(pages), ranges) if pages else None
-            if kd is None:
-                kd = f"__chapter_ch{ch}__"
+            kd = kd or f"__chapter_ch{ch}__"
         else:
-            node_primary, node_list, node_score = f"__chapter_ch{ch}__", [], 0
-            kd = f"__chapter_ch{ch}__"
-            no_node.append({"item": p["item"], "chapter": ch,
-                            "section_type": q["section_type"], "number": q["number"],
+            node_primary, node_list, kd = f"__chapter_ch{ch}__", [], f"__chapter_ch{ch}__"
+            no_node.append({"item": p["item"], "chapter": ch, "number": q["number"],
                             "stem": (q.get("stem") or "")[:60]})
 
         node_hits[node_primary] += 1
         kaodian_hits[kd] += 1
-        skill_item_count[("node", node_primary)].add(p["item"])
-        skill_item_count[("kaodian", kd)].add(p["item"])
-        skill_item_count[("tag", tag)].add(p["item"])
+        for g, s in (("tag", tag), ("kaodian", kd), ("node", node_primary)):
+            _add(g, s, p["item"])
 
         rows.append({
             "user": USER, "item": p["item"], "chapter": ch,
             "section_type": q["section_type"],
-            "skill_tag": tag, "skill_kaodian": kd, "skill_node": node_primary,
+            "skill_tag": tag, "skill_tag_chapter": tag,
+            "skill_kaodian": kd, "skill_node": node_primary,
             "correct": p["correct"], "order_index": p["order_index"],
             "duration_ms": p["duration_ms"], "has_timestamp": 0,
-            "session_date": p["session_date"],
+            "session_date": p["session_date"], "session_id": f"offline-ch{ch}",
+            "mode": "offline", "started_at": "",
             "question_type": q["question_type"],
             "n_nodes": len(node_list), "node_list": "|".join(node_list),
-            "node_score": node_score,
+            "n_tag_leaves": 1, "tag_leaf_list": tag,
+            "source": "offline",
         })
 
-        # 多标签展开：节点层按 1/n 均摊（单标签模型可忽略 weight）
-        for g, skill, w in (("tag", tag, 1.0), ("kaodian", kd, 1.0)):
+        for g, skill, w in (("tag", tag, 1.0), ("tag_chapter", tag, 1.0),
+                            ("kaodian", kd, 1.0)):
             skill_rows.append({"user": USER, "item": p["item"], "granularity": g,
                                "skill": skill, "weight": w, "correct": p["correct"],
                                "order_index": p["order_index"]})
@@ -324,23 +318,14 @@ def main():
                                "skill": n, "weight": 1.0 / len(node_list),
                                "correct": p["correct"], "order_index": p["order_index"]})
 
-    cols = ["user", "item", "chapter", "section_type", "skill_tag", "skill_kaodian",
-            "skill_node", "correct", "order_index", "duration_ms", "has_timestamp",
-            "session_date", "question_type", "n_nodes", "node_list", "node_score"]
-    with open(os.path.join(out, "attempts.csv"), "w", newline="", encoding="utf-8") as f:
-        w = csv.DictWriter(f, fieldnames=cols)
-        w.writeheader()
-        w.writerows(rows)
+    _write(out, rows, skill_rows, "offline")
 
-    with open(os.path.join(out, "item_skills.csv"), "w", newline="", encoding="utf-8") as f:
-        w = csv.DictWriter(f, fieldnames=["user", "item", "granularity", "skill",
-                                          "weight", "correct", "order_index"])
-        w.writeheader()
-        w.writerows(skill_rows)
+    def _items_per(sizes):
+        v = sorted(sizes)
+        return {"min": v[0], "median": v[len(v) // 2], "max": v[-1]}
 
-    # 数据事实
-    n_nodes_dist = Counter(r["n_nodes"] for r in rows)
     facts = {
+        "source": "offline",
         "attempts": len(rows),
         "unique_items": len({r["item"] for r in rows}),
         "repeat_attempts": len(rows) - len({r["item"] for r in rows}),
@@ -350,20 +335,19 @@ def main():
             "durationMs_unique_values": sorted({r["duration_ms"] for r in rows}),
             "session_dates": dict(Counter(r["session_date"] for r in rows)),
             "note": "answers plan 只有常量 durationMs=60000，无绝对时间；"
-                    "sessionKey 只到日期粒度；生产 practice_logs 有 timestamp 列，但本机无该库导出。",
+                    "sessionKey 只到日期粒度；生产 practice_logs 有 timestamp 列，但离线导出未包含。",
         },
         "skills": {
             g: {"n_skills": len({s for (gg, s) in skill_item_count if gg == g}),
-                "items_per_skill": {
-                    "min": min(len(v) for (gg, s), v in skill_item_count.items() if gg == g),
-                    "median": sorted(len(v) for (gg, s), v in skill_item_count.items() if gg == g)[
-                        len([1 for (gg, _) in skill_item_count if gg == g]) // 2],
-                    "max": max(len(v) for (gg, s), v in skill_item_count.items() if gg == g),
-                }}
+                "items_per_skill": _items_per([len(v) for (gg, _), v in skill_item_count.items()
+                                               if gg == g])}
             for g in ("tag", "kaodian", "node")
+            if any(gg == g for (gg, _) in skill_item_count)
         },
-        "node_count_distribution": {str(k): v for k, v in sorted(n_nodes_dist.items())},
-        "items_without_node": {"count": len(no_node), "pct": round(len(no_node) / len(rows), 4),
+        "node_count_distribution": {str(k): c for k, c in
+                                    sorted(Counter(r["n_nodes"] for r in rows).items())},
+        "items_without_node": {"count": len(no_node),
+                               "pct": round(len(no_node) / len(rows), 4),
                                "detail": no_node},
         "accuracy_overall": round(sum(r["correct"] for r in rows) / len(rows), 4),
         "accuracy_by_chapter": {
@@ -375,20 +359,338 @@ def main():
                 "acc": round(sum(r["correct"] for r in rows if r["question_type"] == t)
                              / max(1, sum(1 for r in rows if r["question_type"] == t)), 4)}
             for t in sorted({r["question_type"] for r in rows})},
-        "kaodian_ranges": {str(ch): [[c, t, s, e] for c, t, s, e in rs]
+        "kaodian_ranges": {str(ch): [[c, t, s0, e] for c, t, s0, e in rs]
                            for ch, rs in ranges.items()},
         "top_kaodian_skills": kaodian_hits.most_common(40),
         "top_node_skills": node_hits.most_common(30),
     }
-    with open(os.path.join(out, "data_facts.json"), "w", encoding="utf-8") as f:
-        json.dump(facts, f, ensure_ascii=False, indent=1)
+    json.dump(facts, open(os.path.join(out, "data_facts.json"), "w", encoding="utf-8"),
+              ensure_ascii=False, indent=1)
+    return rows, skill_rows, facts
+
+
+# --------------------------------------------------------------------------
+# zhuoyu：线上真实作答
+# --------------------------------------------------------------------------
+
+def _zy_get(url, key, tries=6):
+    """带 UA 与 Bearer 的 GET；Cloudflare 偶发空响应，重试直到拿到合法 JSON。"""
+    last = None
+    for i in range(tries):
+        req = urllib.request.Request(url, headers={
+            "Authorization": f"Bearer {key}",
+            "User-Agent": ZY_UA,
+            "Accept": "application/json",
+        })
+        try:
+            with urllib.request.urlopen(req, timeout=60) as resp:
+                raw = resp.read()
+            return json.loads(raw.decode("utf-8"))
+        except Exception as e:  # 网络抖动/空 body/非 JSON
+            last = e
+            time.sleep(1.5 * (i + 1))
+    raise RuntimeError(f"GET 失败 {url}: {last}")
+
+
+def fetch_zhuoyu(cache_dir, key):
+    """拉全部会话列表 + 详情，缓存到 cache_dir。返回 (sessions, failures)。"""
+    os.makedirs(cache_dir, exist_ok=True)
+    list_path = os.path.join(cache_dir, "sessions.json")
+    sessions, failures = [], []
+    if os.path.exists(list_path):
+        sessions = json.load(open(list_path, encoding="utf-8"))
+    else:
+        off = 0
+        while True:
+            d = _zy_get(f"{ZY_BASE}/api/external/practice/sessions?limit=100&offset={off}", key)
+            batch = d.get("data") or []
+            sessions += batch
+            total = (d.get("meta") or {}).get("total", len(sessions))
+            off += len(batch)
+            if not batch or len(sessions) >= total:
+                break
+        json.dump(sessions, open(list_path, "w", encoding="utf-8"), ensure_ascii=False)
+
+    for s in sessions:
+        path = os.path.join(cache_dir, f"d_{s['id']}.json")
+        if os.path.exists(path):
+            try:
+                if "questions" in json.load(open(path, encoding="utf-8")):
+                    continue
+            except Exception:
+                pass
+        try:
+            d = _zy_get(f"{ZY_BASE}/api/external/practice/sessions/{s['id']}", key)
+            if "questions" not in d:
+                raise RuntimeError("响应缺 questions")
+            json.dump(d, open(path, "w", encoding="utf-8"), ensure_ascii=False)
+        except Exception as e:
+            failures.append({"session": s["id"], "error": str(e)})
+    return sessions, failures
+
+
+def zy_leaf_tags(tags):
+    ts = set(tags or [])
+    return sorted({t for t in ts if not any(o != t and o.startswith(t + "/") for o in ts)})
+
+
+def zy_tag_chapter(tags):
+    tops = {t.split("/")[0] for t in (tags or [])}
+    for c in CANON_CHAPTERS:
+        if c in tops:
+            return c
+    return "其他"
+
+
+def zy_question_type(correct_answer, user_answer):
+    """只用于 type-prior 参考基线；**判分一律用服务端 isCorrect**，不重算。"""
+    ca = str(correct_answer if correct_answer is not None else "")
+    if ca in ("正确", "错误"):
+        return "judgment"
+    if ca.startswith("["):
+        try:
+            return "multi" if len(json.loads(ca)) > 1 else "single"
+        except Exception:
+            return "multi"
+    s = ca.strip()
+    if "," in s or "，" in s:
+        return "multi"
+    if len(s) == 1 and s in "ABCDEF":
+        return "single"
+    if len(s) > 1 and all(ch in "ABCDEF" for ch in s):
+        return "multi"
+    return "other"
+
+
+def _norm(x):
+    return re.sub(r"[\s\u3000]", "", x or "")
+
+
+def build_zhuoyu(data_root, out, cache_dir, key):
+    ranges = load_kaodian_ranges(data_root)
+
+    # 1680 题库：内容 → 题目（仅第一篇 ch1–6 有图谱）
+    bank = {}
+    with open(os.path.join(data_root, "output", "questions.jsonl"), encoding="utf-8") as f:
+        for line in f:
+            q = json.loads(line)
+            bank[_norm(q.get("stem") or "")] = q
+    graphs = {ch: load_chapter_graph(data_root, ch) for ch in range(1, 7)}
+    umbrellas = {ch: load_umbrella(data_root, ch) for ch in range(1, 7)}
+
+    sessions, failures = fetch_zhuoyu(cache_dir, key)
+    raw = []
+    fetch_report = []
+    for s in sessions:
+        path = os.path.join(cache_dir, f"d_{s['id']}.json")
+        if not os.path.exists(path):
+            continue
+        d = json.load(open(path, encoding="utf-8"))
+        qs = d.get("questions") or []
+        fetch_report.append({"session": s["id"], "mode": s.get("mode"),
+                             "declared": s.get("totalQuestions"), "returned": len(qs),
+                             "name": s.get("name")})
+        for i, q in enumerate(qs):
+            raw.append({"q": q, "s": s, "idx": i})
+
+    real_modes = {"review", "random"}
+    real = [r for r in raw if r["s"].get("mode") in real_modes]
+    imp = [r for r in raw if r["s"].get("mode") == "import"]
+    other = [r for r in raw if r["s"].get("mode") not in real_modes and r["s"].get("mode") != "import"]
+
+    real.sort(key=lambda r: (r["s"]["startedAt"], r["s"]["id"], r["idx"]))
+    rows, skill_rows, mapped_stats = [], [], Counter()
+    tag_leaf_counts, tag_ch_counts = Counter(), Counter()
+    node_hits = Counter()
+
+    for order, r in enumerate(real):
+        q, s = r["q"], r["s"]
+        leaves = zy_leaf_tags(q.get("tags"))
+        primary = sorted(leaves, key=lambda t: (-t.count("/"), -len(t), t))[0] if leaves else "未分类"
+        chap = zy_tag_chapter(q.get("tags"))
+
+        # 图谱映射：内容必须精确命中 1680 题库（仅第一篇）
+        bq = bank.get(_norm(q.get("content")))
+        ch, node_list, kd = 0, [], "__unmapped__"
+        if bq is not None and bq.get("part", {}).get("index") == 1:
+            ch = bq["chapter"]["index"]
+            nodes, node_page = graphs[ch]
+            hits = match_nodes(bq, nodes, umbrellas[ch])
+            if hits:
+                node_list = [h[0] for h in hits]
+                pages = [node_page[n] for n in node_list if n in node_page]
+                kd = (kaodian_of_page(ch, min(pages), ranges) if pages else None) \
+                    or f"__chapter_ch{ch}__"
+        node_primary = node_list[0] if node_list else "__unmapped__"
+
+        tag_leaf_counts[primary] += 1
+        tag_ch_counts[chap] += 1
+        node_hits[node_primary] += 1
+        mapped_stats["kaodian" if kd != "__unmapped__" else "kaodian_unmapped"] += 1
+
+        rows.append({
+            "user": "prod", "item": str(q.get("questionId")), "chapter": ch,
+            "section_type": zy_question_type(q.get("correctAnswer"), q.get("userAnswer")),
+            "skill_tag": primary, "skill_tag_chapter": chap,
+            "skill_kaodian": kd, "skill_node": node_primary,
+            "correct": 1 if q.get("isCorrect") else 0,
+            "order_index": order,
+            "duration_ms": q.get("durationMs"), "has_timestamp": 1,
+            "session_date": s["startedAt"][:10], "session_id": s["id"],
+            "mode": s.get("mode"), "started_at": s["startedAt"],
+            "question_type": zy_question_type(q.get("correctAnswer"), q.get("userAnswer")),
+            "n_nodes": len(node_list), "node_list": "|".join(node_list),
+            "n_tag_leaves": len(leaves), "tag_leaf_list": "|".join(leaves),
+            "source": "zhuoyu",
+        })
+
+        for g, skill, w in (("tag", primary, 1.0), ("tag_chapter", chap, 1.0)):
+            skill_rows.append({"user": "prod", "item": str(q.get("questionId")),
+                               "granularity": g, "skill": skill, "weight": w,
+                               "correct": rows[-1]["correct"], "order_index": order})
+        if node_list:
+            for n in node_list:
+                skill_rows.append({"user": "prod", "item": str(q.get("questionId")),
+                                   "granularity": "node", "skill": n,
+                                   "weight": 1.0 / len(node_list),
+                                   "correct": rows[-1]["correct"], "order_index": order})
+        if kd != "__unmapped__":
+            skill_rows.append({"user": "prod", "item": str(q.get("questionId")),
+                               "granularity": "kaodian", "skill": kd, "weight": 1.0,
+                               "correct": rows[-1]["correct"], "order_index": order})
+
+    os.makedirs(out, exist_ok=True)
+    _write(out, rows, skill_rows, "zhuoyu")
+
+    # import 会话单独落盘：只能当「题目覆盖/初始能力」，不能当时间序列
+    imp_rows = []
+    for r in imp:
+        q, s = r["q"], s
+        leaves = zy_leaf_tags(q.get("tags"))
+        imp_rows.append({
+            "item": str(q.get("questionId")), "session_id": s["id"], "mode": "import",
+            "started_at": s["startedAt"], "tags": "|".join(q.get("tags") or []),
+            "skill_tag": sorted(leaves, key=lambda t: (-t.count("/"), -len(t), t))[0] if leaves else "未分类",
+            "skill_tag_chapter": zy_tag_chapter(q.get("tags")),
+            "correct": 1 if q.get("isCorrect") else 0,
+            "duration_ms": q.get("durationMs"),
+            "question_type": zy_question_type(q.get("correctAnswer"), q.get("userAnswer")),
+        })
+    with open(os.path.join(out, "attempts_import.csv"), "w", newline="", encoding="utf-8") as f:
+        w = csv.DictWriter(f, fieldnames=list(imp_rows[0].keys()) if imp_rows else ["item"])
+        w.writeheader()
+        w.writerows(imp_rows)
+
+    # 数据事实
+    item_counts = Counter(r["item"] for r in rows)
+    def dist(c):
+        v = sorted(c.values())
+        return {"n": len(c), "median": float(v[len(v) // 2]), "mean": round(sum(v) / len(v), 2),
+                "min": v[0], "max": v[-1],
+                "lt5": sum(1 for x in v if x < 5), "lt10": sum(1 for x in v if x < 10),
+                "ge50": sum(1 for x in v if x >= 50)}
+    durs = sorted(int(r["duration_ms"] or 0) for r in rows)
+    repeat_hist = Counter(item_counts.values())
+    facts = {
+        "source": "zhuoyu",
+        "sessions_listed": len(sessions),
+        "sessions_fetched": len(fetch_report),
+        "sessions_empty_or_partial": [x for x in fetch_report
+                                      if x["returned"] != x["declared"]],
+        "fetch_failures": failures,
+        "attempts_api_declared": sum(s.get("totalQuestions") or 0 for s in sessions),
+        "attempts_received": len(raw),
+        "by_mode": dict(Counter(r["s"].get("mode") for r in raw)),
+        "real_attempts": len(rows),
+        "real_sessions": len({r["session_id"] for r in rows}),
+        "import_attempts": len(imp_rows),
+        "other_mode_attempts": len(other),
+        "other_mode_sessions": [{"id": r["s"]["id"], "mode": r["s"].get("mode"),
+                                 "name": r["s"].get("name")} for r in other[:5]],
+        "date_span_real": [rows[0]["started_at"], rows[-1]["started_at"]] if rows else [],
+        "active_days": len({r["session_date"] for r in rows}),
+        "has_absolute_timestamp": True,
+        "duration_ms": {"median": durs[len(durs) // 2], "p90": durs[int(len(durs) * 0.9)],
+                        "max": durs[-1], "eq_60000": sum(1 for x in durs if x == 60000),
+                        "zero": sum(1 for x in durs if x == 0)},
+        "unique_items": len(item_counts),
+        "repeat_attempts": len(rows) - len(item_counts),
+        "repeat_distribution": {str(k): v for k, v in sorted(repeat_hist.items())},
+        "items_repeated": sum(v for k, v in repeat_hist.items() if k >= 2),
+        "items_ge5": sum(v for k, v in repeat_hist.items() if k >= 5),
+        "accuracy_overall": round(sum(r["correct"] for r in rows) / len(rows), 4),
+        "accuracy_by_type": {t: round(sum(r["correct"] for r in rows if r["question_type"] == t)
+                                      / max(1, sum(1 for r in rows if r["question_type"] == t)), 4)
+                             for t in sorted({r["question_type"] for r in rows})},
+        "tag_rows_mixed": {
+            "rows_with_path_tag": sum(1 for r in rows if "/" in r["tag_leaf_list"]),
+            "rows_all_flat": sum(1 for r in rows if r["n_tag_leaves"] and "/" not in r["tag_leaf_list"]),
+            "rows_multi_leaf": sum(1 for r in rows if r["n_tag_leaves"] > 1),
+        },
+        "skill_obs": {"tag": dist(tag_leaf_counts), "tag_chapter": dist(tag_ch_counts)},
+        "graph_mapping": {
+            "rows_mapped": sum(1 for r in rows if r["skill_node"] != "__unmapped__"),
+            "items_mapped": len({r["item"] for r in rows if r["skill_node"] != "__unmapped__"}),
+            "coverage_pct": round(100 * sum(1 for r in rows if r["skill_node"] != "__unmapped__")
+                                  / max(1, len(rows)), 2),
+            "kaodian_only_rows": mapped_stats["kaodian"],
+        },
+        "top_skills": {"tag": tag_leaf_counts.most_common(20),
+                       "tag_chapter": tag_ch_counts.most_common(),
+                       "node": node_hits.most_common(10)},
+    }
+    json.dump(facts, open(os.path.join(out, "data_facts.json"), "w", encoding="utf-8"),
+              ensure_ascii=False, indent=1)
 
     print(json.dumps({k: facts[k] for k in
-                      ("attempts", "unique_items", "repeat_attempts", "has_absolute_timestamp",
-                       "skills", "node_count_distribution", "accuracy_overall")},
+                      ("sessions_listed", "sessions_fetched", "attempts_received", "by_mode",
+                       "real_attempts", "unique_items", "repeat_attempts", "date_span_real",
+                       "skill_obs", "graph_mapping", "accuracy_overall")},
                      ensure_ascii=False, indent=1))
-    print(f"\n未命中节点：{len(no_node)}/{len(rows)} ({len(no_node)/len(rows):.1%})")
-    print("写出：", os.path.join(out, "attempts.csv"))
+    return rows, skill_rows, facts
+
+
+# --------------------------------------------------------------------------
+# 落盘
+# --------------------------------------------------------------------------
+
+COLS = ["user", "item", "chapter", "section_type", "skill_tag", "skill_tag_chapter",
+        "skill_kaodian", "skill_node", "correct", "order_index", "duration_ms",
+        "has_timestamp", "session_date", "session_id", "mode", "started_at",
+        "question_type", "n_nodes", "node_list", "n_tag_leaves", "tag_leaf_list", "source"]
+
+
+def _write(out, rows, skill_rows, name):
+    os.makedirs(out, exist_ok=True)
+    with open(os.path.join(out, "attempts.csv"), "w", newline="", encoding="utf-8") as f:
+        w = csv.DictWriter(f, fieldnames=COLS)
+        w.writeheader()
+        w.writerows(rows)
+    with open(os.path.join(out, "item_skills.csv"), "w", newline="", encoding="utf-8") as f:
+        w = csv.DictWriter(f, fieldnames=["user", "item", "granularity", "skill",
+                                          "weight", "correct", "order_index"])
+        w.writeheader()
+        w.writerows(skill_rows)
+    print(f"写出：{os.path.join(out, 'attempts.csv')}（{len(rows)} 行）")
+
+
+def main():
+    ap = argparse.ArgumentParser()
+    ap.add_argument("--source", choices=["offline", "zhuoyu"], default="offline")
+    ap.add_argument("--data-root", default=DEFAULT_DATA)
+    ap.add_argument("--out", default=None)
+    ap.add_argument("--cache-dir", default=ZY_CACHE)
+    args = ap.parse_args()
+
+    if args.source == "offline":
+        out = args.out or DEFAULT_OUT
+        build_offline(args.data_root, out)
+    else:
+        key = os.environ.get("ZY_KEY", "").strip()
+        if not key:
+            raise SystemExit("缺少环境变量 ZY_KEY（Bearer token）。不要把密钥写进仓库。")
+        out = args.out or os.path.join(DEFAULT_OUT, "zhuoyu")
+        build_zhuoyu(args.data_root, out, args.cache_dir, key)
     return 0
 
 

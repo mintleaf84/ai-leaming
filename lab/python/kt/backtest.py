@@ -15,6 +15,7 @@
   /public/apps/anaconda3/bin/python backtest.py
 """
 
+import argparse
 import json
 import os
 import sys
@@ -29,8 +30,8 @@ HERE = os.path.dirname(os.path.abspath(__file__))
 RES = os.path.join(HERE, "results")
 SEED = 20261122
 BOOT = 1000
-GRANS = ["tag", "kaodian", "node"]
-SKILL_COL = {"tag": "skill_tag", "kaodian": "skill_kaodian", "node": "skill_node"}
+SKILL_COL = {"tag": "skill_tag", "tag_chapter": "skill_tag_chapter",
+             "kaodian": "skill_kaodian", "node": "skill_node"}
 
 
 # --------------------------------------------------------------------------
@@ -126,6 +127,22 @@ def predict_type_prior(train, test, col=None, alpha=1.0, **_):
     m = train.groupby("question_type")["correct"].agg(["sum", "count"])
     p = {t: (r["sum"] + alpha * prior) / (r["count"] + alpha) for t, r in m.iterrows()}
     return np.array([p.get(r["question_type"], prior) for _, r in test.iterrows()])
+
+
+def predict_global_recency(train, test, col=None, k=10, beta=2.0, **_):
+    """对照项：不看技能，只看「最近 k 次全局作答」的正确率（在线更新）。
+
+    用来回答：Elo/BKT 的提升到底来自「技能掌握」，还是只是「用户最近状态」？
+    """
+    prior = float(train["correct"].mean())
+    hist = [int(x) for x in train.sort_values("order_index")["correct"].tolist()]
+    out = []
+    for _, r in test.sort_values("order_index").iterrows():
+        seq = hist[-k:]
+        p = (sum(seq) + beta * prior) / (len(seq) + beta)
+        out.append(p)
+        hist.append(int(r["correct"]))
+    return np.array(out)
 
 
 def _sigmoid(x):
@@ -393,42 +410,121 @@ def compute_skill_ceiling(df):
     return out
 
 
+def _delta_row(y, base_p, p, split_name, gran, name, reference):
+    m = metrics(y, p)
+    bm = metrics(y, base_p)
+    if np.isnan(m["auc"]) or np.isnan(bm["auc"]):
+        return {}
+    auc_ci = paired_delta_ci(y, base_p, p, lambda a, b: roc_auc_score(a, b))
+    ll_ci = paired_delta_ci(y, base_p, p,
+                            lambda a, b: log_loss(a, np.clip(b, 1e-6, 1 - 1e-6), labels=[0, 1]))
+    br_ci = paired_delta_ci(y, base_p, p, lambda a, b: float(np.mean((b - a) ** 2)))
+    return {
+        "split": split_name, "granularity": gran, "model": name, "reference": reference,
+        "delta_auc": m["auc"] - bm["auc"], "d_auc_lo": auc_ci[0], "d_auc_hi": auc_ci[1],
+        "delta_logloss": m["logloss"] - bm["logloss"], "d_ll_lo": ll_ci[0], "d_ll_hi": ll_ci[1],
+        "delta_brier": m["brier"] - bm["brier"], "d_br_lo": br_ci[0], "d_br_hi": br_ci[1],
+        "verdict": ("无显著差异" if (auc_ci[0] <= 0 <= auc_ci[1]) else
+                    ("显著更好" if auc_ci[0] > 0 else "显著更差")),
+    }
+
+
+def split_item_holdout(df, col, frac=0.2, seed=SEED):
+    """按题目（item）整组留出：同一道题不会同时出现在训练与测试。
+
+    线上数据里 661/772 道题有重复作答；若按行随机切分，模型可以靠「记住这道题」
+    而不是「估技能」取胜。这个切分专门防这种泄漏。
+    """
+    rng = np.random.RandomState(seed)
+    items = df.groupby("item")[col].agg(lambda s: s.iloc[0])
+    chosen = []
+    for s, grp in items.groupby(items):
+        n = len(grp)
+        k = max(1, int(round(n * frac))) if n >= 5 else (1 if rng.rand() < frac else 0)
+        chosen.extend(rng.choice(grp.index.values, k, replace=False).tolist())
+    test = df[df["item"].isin(set(chosen))].sort_values("order_index")
+    train = df[~df["item"].isin(set(chosen))].sort_values("order_index")
+    return train.copy(), test.copy()
+
+
+def _evaluable(df, col, min_coverage=0.5):
+    n = len(df)
+    mapped = int((df[col] != "__unmapped__").sum())
+    return mapped / max(1, n) >= min_coverage, mapped, n
+
+
 def main():
-    if "--ceiling-only" in sys.argv:
-        df = pd.read_csv(os.path.join(RES, "attempts.csv"))
-        df["correct"] = df["correct"].astype(int)
+    ap = argparse.ArgumentParser()
+    ap.add_argument("--attempts", default=os.path.join(RES, "attempts.csv"))
+    ap.add_argument("--out", default=RES)
+    ap.add_argument("--grans", default="tag,kaodian,node")
+    ap.add_argument("--splits", default="time,skill_strat")
+    ap.add_argument("--ceiling-only", action="store_true")
+    ap.add_argument("--tag", default="", help="结果文件前缀，用于区分数据源")
+    args = ap.parse_args()
+
+    out = args.out
+    os.makedirs(out, exist_ok=True)
+    prefix = args.tag
+
+    df = pd.read_csv(args.attempts)
+    df["correct"] = df["correct"].astype(int)
+    for c in ("skill_tag", "skill_tag_chapter", "skill_kaodian", "skill_node"):
+        if c not in df.columns:
+            df[c] = "__unmapped__"
+
+    if args.ceiling_only:
         ceiling = compute_skill_ceiling(df)
-        json.dump(ceiling, open(os.path.join(RES, "skill_ceiling.json"), "w", encoding="utf-8"),
+        json.dump(ceiling, open(os.path.join(out, "skill_ceiling.json"), "w", encoding="utf-8"),
                   ensure_ascii=False, indent=1)
         print(json.dumps(ceiling.get("detectability"), ensure_ascii=False, indent=1))
         return 0
 
-    df = pd.read_csv(os.path.join(RES, "attempts.csv"))
-    df["correct"] = df["correct"].astype(int)
-    rows, deltas, bkt_diag, meta = [], [], {}, {"splits": {}, "inner_selection": {}}
+    grans = [g for g in args.grans.split(",") if g]
+    splits = [s for s in args.splits.split(",") if s]
+    rows, deltas, bkt_diag, meta = [], [], {}, {"splits": {}, "inner_selection": {},
+                                                "args": {"attempts": args.attempts,
+                                                         "grans": grans, "splits": splits}}
 
-    for split_name in ("time", "skill_strat"):
-        for gran in GRANS:
+    BKT_GRANS = ("kaodian", "tag_chapter")
+
+    for split_name in splits:
+        for gran in grans:
             col = SKILL_COL[gran]
+            ok, mapped, n_rows = _evaluable(df, col)
+            if not ok:
+                rows.append({
+                    "split": split_name, "granularity": gran, "model": "—",
+                    "n_test": 0, "auc": float("nan"), "auc_lo": float("nan"),
+                    "auc_hi": float("nan"), "logloss": float("nan"), "ll_lo": float("nan"),
+                    "ll_hi": float("nan"), "brier": float("nan"), "brier_lo": float("nan"),
+                    "brier_hi": float("nan"), "params": "",
+                    "status": f"不可评估：技能映射覆盖 {mapped}/{n_rows} ({mapped/max(1,n_rows):.1%})",
+                })
+                continue
+
             if split_name == "time":
                 train, test = split_time(df)
+            elif split_name == "item_holdout":
+                train, test = split_item_holdout(df, col)
             else:
                 train, test = split_skill_strat(df, col)
+
             meta["splits"][f"{split_name}|{gran}"] = {
                 "n_train": int(len(train)), "n_test": int(len(test)),
                 "test_pos_rate": float(test["correct"].mean()),
-                "test_chapters": test.groupby("chapter").size().to_dict(),
                 "test_skill_seen_in_train": float(test[col].isin(set(train[col])).mean()),
+                "test_items_seen_in_train": float(test["item"].isin(set(train["item"])).mean()),
+                "n_test_skills": int(test[col].nunique()),
             }
 
             preds = {}
             for name, (fn, grid) in MODELS.items():
                 if name == "bkt-lite":
-                    # BKT 只在考点层跑（任务规格），且无超参可扫
-                    if gran != "kaodian":
+                    if gran not in BKT_GRANS:
                         continue
                     p, diag = fn(train.sort_values("order_index"), test.sort_values("order_index"), col)
-                    bkt_diag[split_name] = diag
+                    bkt_diag[f"{split_name}|{gran}"] = diag
                     best_params, inner = {}, []
                 else:
                     best_params, inner = select_params(fn, train, split_name, col, grid)
@@ -438,8 +534,8 @@ def main():
                 meta["inner_selection"][f"{split_name}|{gran}|{name}"] = {
                     "chosen": best_params, "candidates": inner}
 
-            # 题目层 Elo 只跑一次（与技能粒度无关），作为参考行；题型先验同理
-            if gran == "tag":
+            # 题目层 Elo / 题型先验只跑一次（与技能粒度无关），作为参考行
+            if gran == grans[0]:
                 bp, inner = select_params(predict_elo_item, train, split_name, "item", ELO_ITEM_GRID)
                 preds["elo-item(ref)"] = (
                     predict_elo_item(train.sort_values("order_index"),
@@ -453,54 +549,71 @@ def main():
                                        test.sort_values("order_index"), **tp), tp)
                 meta["inner_selection"][f"{split_name}|type-prior(ref)"] = {
                     "chosen": tp, "candidates": tinner}
+                gp, ginner = select_params(predict_global_recency, train, split_name, "item",
+                                           [{"k": k} for k in (5, 10, 20, 50)])
+                preds["global-recency(ref)"] = (
+                    predict_global_recency(train.sort_values("order_index"),
+                                           test.sort_values("order_index"), **gp), gp)
+                meta["inner_selection"][f"{split_name}|global-recency(ref)"] = {
+                    "chosen": gp, "candidates": ginner}
 
             y = test["correct"].values.astype(int)
             for name, (p, params) in preds.items():
                 m = metrics(y, p)
+                if np.isnan(m["auc"]):
+                    # 测试集单一类别：AUC 无定义，logloss/Brier 仍可算
+                    auc_ci = (float("nan"), float("nan"))
+                    ll_ci = bootstrap_ci(y, p, lambda a, b: float("nan"))
+                    br_ci = bootstrap_ci(y, p, lambda a, b: float("nan"))
+                else:
+                    auc_ci = (bootstrap_ci(y, p, lambda a, b: roc_auc_score(a, b))[0],
+                              bootstrap_ci(y, p, lambda a, b: roc_auc_score(a, b))[1])
+                    ll_ci = (bootstrap_ci(y, p, lambda a, b: log_loss(a, np.clip(b, 1e-6, 1 - 1e-6), labels=[0, 1]))[0],
+                             bootstrap_ci(y, p, lambda a, b: log_loss(a, np.clip(b, 1e-6, 1 - 1e-6), labels=[0, 1]))[1])
+                    br_ci = (bootstrap_ci(y, p, lambda a, b: float(np.mean((b - a) ** 2)))[0],
+                             bootstrap_ci(y, p, lambda a, b: float(np.mean((b - a) ** 2)))[1])
+
                 rows.append({
                     "split": split_name, "granularity": gran, "model": name,
                     "n_test": len(y), "auc": m["auc"],
-                    "auc_lo": bootstrap_ci(y, p, lambda a, b: roc_auc_score(a, b))[0],
-                    "auc_hi": bootstrap_ci(y, p, lambda a, b: roc_auc_score(a, b))[1],
-                    "logloss": m["logloss"],
-                    "ll_lo": bootstrap_ci(y, p, lambda a, b: log_loss(a, np.clip(b, 1e-6, 1 - 1e-6), labels=[0, 1]))[0],
-                    "ll_hi": bootstrap_ci(y, p, lambda a, b: log_loss(a, np.clip(b, 1e-6, 1 - 1e-6), labels=[0, 1]))[1],
-                    "brier": m["brier"],
-                    "brier_lo": bootstrap_ci(y, p, lambda a, b: float(np.mean((b - a) ** 2)))[0],
-                    "brier_hi": bootstrap_ci(y, p, lambda a, b: float(np.mean((b - a) ** 2)))[1],
-                    "params": json.dumps(params, ensure_ascii=False),
+                    "auc_lo": auc_ci[0], "auc_hi": auc_ci[1],
+                    "logloss": m["logloss"], "ll_lo": ll_ci[0], "ll_hi": ll_ci[1],
+                    "brier": m["brier"], "brier_lo": br_ci[0], "brier_hi": br_ci[1],
+                    "params": json.dumps(params, ensure_ascii=False), "status": "ok",
                 })
 
-                if name != "baseline-acc":
-                    base_p = preds["baseline-acc"][0]
-                    d_auc = (m["auc"] - metrics(y, base_p)["auc"]) if len(set(y)) == 2 else float("nan")
-                    d_ll = m["logloss"] - metrics(y, base_p)["logloss"]
-                    d_br = m["brier"] - metrics(y, base_p)["brier"]
-                    auc_ci = paired_delta_ci(y, base_p, p, lambda a, b: roc_auc_score(a, b))
-                    ll_ci = paired_delta_ci(y, base_p, p,
-                                            lambda a, b: log_loss(a, np.clip(b, 1e-6, 1 - 1e-6), labels=[0, 1]))
-                    br_ci = paired_delta_ci(y, base_p, p, lambda a, b: float(np.mean((b - a) ** 2)))
-                    deltas.append({
-                        "split": split_name, "granularity": gran, "model": name,
-                        "delta_auc": d_auc, "d_auc_lo": auc_ci[0], "d_auc_hi": auc_ci[1],
-                        "delta_logloss": d_ll, "d_ll_lo": ll_ci[0], "d_ll_hi": ll_ci[1],
-                        "delta_brier": d_br, "d_br_lo": br_ci[0], "d_br_hi": br_ci[1],
-                        "verdict": ("无显著差异" if (auc_ci[0] <= 0 <= auc_ci[1]) else
-                                    ("显著更好" if auc_ci[0] > 0 else "显著更差")),
-                    })
+            # 差值放在第二遍算：此时 refs（global-recency）已就位
+            y = test["correct"].values.astype(int)
+            for name, (p, _params) in preds.items():
+                if name == "baseline-acc" or name.startswith("global-recency"):
+                    continue
+                base_p = preds["baseline-acc"][0]
+                deltas.append(_delta_row(y, base_p, p, split_name, gran, name, "vs_baseline-acc"))
+                if "global-recency(ref)" in preds:
+                    grec_p = preds["global-recency(ref)"][0]
+                    deltas.append(_delta_row(y, grec_p, p, split_name, gran, name,
+                                             "vs_global-recency"))
+            # global-recency 自己相对 baseline 的增益也要报
+            if "global-recency(ref)" in preds:
+                deltas.append(_delta_row(y, preds["baseline-acc"][0],
+                                         preds["global-recency(ref)"][0],
+                                         split_name, gran, "global-recency(ref)",
+                                         "vs_baseline-acc"))
 
-    pd.DataFrame(rows).to_csv(os.path.join(RES, "metrics.csv"), index=False)
-    pd.DataFrame(deltas).to_csv(os.path.join(RES, "deltas.csv"), index=False)
+    pd.DataFrame(rows).to_csv(os.path.join(out, f"{prefix}metrics.csv"), index=False)
+    deltas = [x for x in deltas if x]
+    pd.DataFrame(deltas).to_csv(os.path.join(out, f"{prefix}deltas.csv"), index=False)
 
     ceiling = compute_skill_ceiling(df)
-    json.dump(ceiling, open(os.path.join(RES, "skill_ceiling.json"), "w", encoding="utf-8"),
+    json.dump(ceiling, open(os.path.join(out, f"{prefix}skill_ceiling.json"), "w", encoding="utf-8"),
               ensure_ascii=False, indent=1)
 
     if bkt_diag:
-        ident = {}
-        for split_name, diag in bkt_diag.items():
+        ident, per_skill = {}, {}
+        for key, diag in bkt_diag.items():
             d = pd.DataFrame(diag)
-            ident[split_name] = {
+            per_skill[key] = diag
+            ident[key] = {
                 "n_skills": int(len(d)),
                 "T_at_upper_bound": int(d["T_at_bound"].sum()),
                 "L0_at_bound": int(d["L0_at_bound"].sum()),
@@ -509,25 +622,25 @@ def main():
                 "skills_n_lt5": int((d["n"] < 5).sum()),
                 "skills_n_lt10": int((d["n"] < 10).sum()),
             }
-        json.dump({"identifiability": ident, "per_skill": bkt_diag},
-                  open(os.path.join(RES, "bkt_params.json"), "w", encoding="utf-8"),
+        json.dump({"identifiability": ident, "per_skill": per_skill},
+                  open(os.path.join(out, f"{prefix}bkt_params.json"), "w", encoding="utf-8"),
                   ensure_ascii=False, indent=1)
 
-    json.dump(meta, open(os.path.join(RES, "run_meta.json"), "w", encoding="utf-8"),
+    json.dump(meta, open(os.path.join(out, f"{prefix}run_meta.json"), "w", encoding="utf-8"),
               ensure_ascii=False, indent=1)
 
-    print(pd.DataFrame(rows)[["split", "granularity", "model", "n_test", "auc", "logloss",
-                              "brier", "params"]].to_string(index=False))
+    cols = ["split", "granularity", "model", "n_test", "auc", "logloss", "brier", "params", "status"]
+    print(pd.DataFrame(rows)[cols].to_string(index=False))
     print("\n--- deltas vs baseline-acc ---")
-    print(pd.DataFrame(deltas)[["split", "granularity", "model", "delta_auc", "d_auc_lo",
-                                "d_auc_hi", "delta_logloss", "verdict"]].to_string(index=False))
+    print(pd.DataFrame(deltas)[["split", "granularity", "model", "reference", "delta_auc",
+                                "d_auc_lo", "d_auc_hi", "delta_logloss", "verdict"]].to_string(index=False))
     if bkt_diag:
         print("\n--- BKT identifiability ---")
-        print(json.dumps(json.load(open(os.path.join(RES, "bkt_params.json")))["identifiability"],
+        print(json.dumps(json.load(open(os.path.join(out, f"{prefix}bkt_params.json")))["identifiability"],
                          ensure_ascii=False, indent=1))
     print("\n--- skill ceiling ---")
-    print(json.dumps({k: v for k, v in ceiling.items() if k != "overall_acc"},
-                     ensure_ascii=False, indent=1)[:2500])
+    print(json.dumps({k: v for k, v in ceiling.items()
+                      if k not in ("overall_acc", "type_only_auc")}, ensure_ascii=False, indent=1)[:1800])
     return 0
 
 

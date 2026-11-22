@@ -1,684 +1,672 @@
 {
-  "splits": {
-    "time|tag": {
-      "n_train": 378,
-      "n_test": 94,
-      "test_pos_rate": 0.8085106382978723,
-      "test_chapters": {
-        "5": 10,
-        "6": 84
-      },
-      "test_skill_seen_in_train": 0.10638297872340426
-    },
-    "time|kaodian": {
-      "n_train": 378,
-      "n_test": 94,
-      "test_pos_rate": 0.8085106382978723,
-      "test_chapters": {
-        "5": 10,
-        "6": 84
-      },
-      "test_skill_seen_in_train": 0.10638297872340426
-    },
-    "time|node": {
-      "n_train": 378,
-      "n_test": 94,
-      "test_pos_rate": 0.8085106382978723,
-      "test_chapters": {
-        "5": 10,
-        "6": 84
-      },
-      "test_skill_seen_in_train": 0.05319148936170213
-    },
-    "skill_strat|tag": {
-      "n_train": 377,
-      "n_test": 95,
-      "test_pos_rate": 0.8421052631578947,
-      "test_chapters": {
-        "1": 18,
-        "2": 15,
-        "3": 15,
-        "4": 12,
-        "5": 18,
-        "6": 17
-      },
-      "test_skill_seen_in_train": 1.0
-    },
-    "skill_strat|kaodian": {
-      "n_train": 382,
-      "n_test": 90,
-      "test_pos_rate": 0.7333333333333333,
-      "test_chapters": {
-        "1": 15,
-        "2": 14,
-        "3": 15,
-        "4": 12,
-        "5": 18,
-        "6": 16
-      },
-      "test_skill_seen_in_train": 1.0
-    },
-    "skill_strat|node": {
-      "n_train": 439,
-      "n_test": 33,
-      "test_pos_rate": 0.8181818181818182,
-      "test_chapters": {
-        "1": 6,
-        "2": 7,
-        "3": 7,
-        "4": 4,
-        "5": 5,
-        "6": 4
-      },
-      "test_skill_seen_in_train": 1.0
-    }
+ "splits": {
+  "time|tag": {
+   "n_train": 378,
+   "n_test": 94,
+   "test_pos_rate": 0.8085106382978723,
+   "test_skill_seen_in_train": 0.10638297872340426,
+   "test_items_seen_in_train": 0.0,
+   "n_test_skills": 2
   },
-  "inner_selection": {
-    "time|tag|baseline-acc": {
-      "chosen": {
-        "alpha": 5.0
-      },
-      "candidates": [
-        {
-          "logloss": 0.6527370206014823,
-          "params": {
-            "alpha": 5.0
-          }
-        },
-        {
-          "logloss": 0.755694884195243,
-          "params": {
-            "alpha": 2.0
-          }
-        },
-        {
-          "logloss": 0.8673994644737428,
-          "params": {
-            "alpha": 1.0
-          }
-        },
-        {
-          "logloss": 1.00097727719608,
-          "params": {
-            "alpha": 0.5
-          }
-        }
-      ]
-    },
-    "time|tag|rolling-beta": {
-      "chosen": {
-        "k": 10
-      },
-      "candidates": [
-        {
-          "logloss": 0.6065725128398666,
-          "params": {
-            "k": 10
-          }
-        },
-        {
-          "logloss": 0.6650241856882397,
-          "params": {
-            "k": 3
-          }
-        },
-        {
-          "logloss": 0.6820666327405135,
-          "params": {
-            "k": 5
-          }
-        }
-      ]
-    },
-    "time|tag|elo-skill": {
-      "chosen": {
-        "K": 8.0
-      },
-      "candidates": [
-        {
-          "logloss": 0.5557974359400294,
-          "params": {
-            "K": 8.0
-          }
-        },
-        {
-          "logloss": 0.5637016828957914,
-          "params": {
-            "K": 16.0
-          }
-        },
-        {
-          "logloss": 0.5779254696019619,
-          "params": {
-            "K": 32.0
-          }
-        }
-      ]
-    },
-    "time|elo-item(ref)": {
-      "chosen": {
-        "K": 8.0
-      },
-      "candidates": [
-        {
-          "logloss": 0.5557101448235584,
-          "params": {
-            "K": 8.0
-          }
-        },
-        {
-          "logloss": 0.5617331495313272,
-          "params": {
-            "K": 16.0
-          }
-        },
-        {
-          "logloss": 0.5664017559956964,
-          "params": {
-            "K": 32.0
-          }
-        }
-      ]
-    },
-    "time|type-prior(ref)": {
-      "chosen": {
-        "alpha": 5.0
-      },
-      "candidates": [
-        {
-          "logloss": 0.5941458310532542,
-          "params": {
-            "alpha": 5.0
-          }
-        },
-        {
-          "logloss": 0.5959760652506805,
-          "params": {
-            "alpha": 2.0
-          }
-        },
-        {
-          "logloss": 0.5966322125174769,
-          "params": {
-            "alpha": 1.0
-          }
-        },
-        {
-          "logloss": 0.596969661002661,
-          "params": {
-            "alpha": 0.5
-          }
-        }
-      ]
-    },
-    "time|kaodian|baseline-acc": {
-      "chosen": {
-        "alpha": 5.0
-      },
-      "candidates": [
-        {
-          "logloss": 2.7005912420135756,
-          "params": {
-            "alpha": 5.0
-          }
-        },
-        {
-          "logloss": 2.7188236736622504,
-          "params": {
-            "alpha": 2.0
-          }
-        },
-        {
-          "logloss": 2.741140967697072,
-          "params": {
-            "alpha": 1.0
-          }
-        },
-        {
-          "logloss": 2.769257081827339,
-          "params": {
-            "alpha": 0.5
-          }
-        }
-      ]
-    },
-    "time|kaodian|rolling-beta": {
-      "chosen": {
-        "k": 10
-      },
-      "candidates": [
-        {
-          "logloss": 0.6075561166132399,
-          "params": {
-            "k": 10
-          }
-        },
-        {
-          "logloss": 0.6083226966545507,
-          "params": {
-            "k": 3
-          }
-        },
-        {
-          "logloss": 0.6277139761015614,
-          "params": {
-            "k": 5
-          }
-        }
-      ]
-    },
-    "time|kaodian|elo-skill": {
-      "chosen": {
-        "K": 8.0
-      },
-      "candidates": [
-        {
-          "logloss": 0.5544462286819469,
-          "params": {
-            "K": 8.0
-          }
-        },
-        {
-          "logloss": 0.561286975774935,
-          "params": {
-            "K": 16.0
-          }
-        },
-        {
-          "logloss": 0.5710757907628796,
-          "params": {
-            "K": 32.0
-          }
-        }
-      ]
-    },
-    "time|kaodian|bkt-lite": {
-      "chosen": {},
-      "candidates": []
-    },
-    "time|node|baseline-acc": {
-      "chosen": {
-        "alpha": 0.5
-      },
-      "candidates": [
-        {
-          "logloss": 3.2763590738116135,
-          "params": {
-            "alpha": 0.5
-          }
-        },
-        {
-          "logloss": 3.2786613271320255,
-          "params": {
-            "alpha": 1.0
-          }
-        },
-        {
-          "logloss": 3.2811139266262876,
-          "params": {
-            "alpha": 2.0
-          }
-        },
-        {
-          "logloss": 3.2837649578344563,
-          "params": {
-            "alpha": 5.0
-          }
-        }
-      ]
-    },
-    "time|node|rolling-beta": {
-      "chosen": {
-        "k": 5
-      },
-      "candidates": [
-        {
-          "logloss": 0.5300083870654652,
-          "params": {
-            "k": 5
-          }
-        },
-        {
-          "logloss": 0.5359367490422366,
-          "params": {
-            "k": 10
-          }
-        },
-        {
-          "logloss": 0.5478967342554408,
-          "params": {
-            "k": 3
-          }
-        }
-      ]
-    },
-    "time|node|elo-skill": {
-      "chosen": {
-        "K": 8.0
-      },
-      "candidates": [
-        {
-          "logloss": 0.5540364531949158,
-          "params": {
-            "K": 8.0
-          }
-        },
-        {
-          "logloss": 0.5586874852744587,
-          "params": {
-            "K": 16.0
-          }
-        },
-        {
-          "logloss": 0.5621954384692184,
-          "params": {
-            "K": 32.0
-          }
-        }
-      ]
-    },
-    "skill_strat|tag|baseline-acc": {
-      "chosen": {
-        "alpha": 5.0
-      },
-      "candidates": [
-        {
-          "logloss": 0.4870631420816823,
-          "params": {
-            "alpha": 5.0
-          }
-        },
-        {
-          "logloss": 0.48713615358373624,
-          "params": {
-            "alpha": 2.0
-          }
-        },
-        {
-          "logloss": 0.48716696449826175,
-          "params": {
-            "alpha": 1.0
-          }
-        },
-        {
-          "logloss": 0.4871838061743599,
-          "params": {
-            "alpha": 0.5
-          }
-        }
-      ]
-    },
-    "skill_strat|tag|rolling-beta": {
-      "chosen": {
-        "k": 10
-      },
-      "candidates": [
-        {
-          "logloss": 0.5595564723418189,
-          "params": {
-            "k": 10
-          }
-        },
-        {
-          "logloss": 0.5641853742561643,
-          "params": {
-            "k": 3
-          }
-        },
-        {
-          "logloss": 0.5885949622019105,
-          "params": {
-            "k": 5
-          }
-        }
-      ]
-    },
-    "skill_strat|tag|elo-skill": {
-      "chosen": {
-        "K": 8.0
-      },
-      "candidates": [
-        {
-          "logloss": 0.49422739469197136,
-          "params": {
-            "K": 8.0
-          }
-        },
-        {
-          "logloss": 0.5007046710206681,
-          "params": {
-            "K": 16.0
-          }
-        },
-        {
-          "logloss": 0.5129395382660676,
-          "params": {
-            "K": 32.0
-          }
-        }
-      ]
-    },
-    "skill_strat|elo-item(ref)": {
-      "chosen": {
-        "K": 8.0
-      },
-      "candidates": [
-        {
-          "logloss": 0.4927557845650294,
-          "params": {
-            "K": 8.0
-          }
-        },
-        {
-          "logloss": 0.4940475004738228,
-          "params": {
-            "K": 16.0
-          }
-        },
-        {
-          "logloss": 0.497990565846856,
-          "params": {
-            "K": 32.0
-          }
-        }
-      ]
-    },
-    "skill_strat|type-prior(ref)": {
-      "chosen": {
-        "alpha": 5.0
-      },
-      "candidates": [
-        {
-          "logloss": 0.477278423322325,
-          "params": {
-            "alpha": 5.0
-          }
-        },
-        {
-          "logloss": 0.4782316580439335,
-          "params": {
-            "alpha": 2.0
-          }
-        },
-        {
-          "logloss": 0.47861618853647797,
-          "params": {
-            "alpha": 1.0
-          }
-        },
-        {
-          "logloss": 0.4788233848085895,
-          "params": {
-            "alpha": 0.5
-          }
-        }
-      ]
-    },
-    "skill_strat|kaodian|baseline-acc": {
-      "chosen": {
-        "alpha": 5.0
-      },
-      "candidates": [
-        {
-          "logloss": 0.42742036395998423,
-          "params": {
-            "alpha": 5.0
-          }
-        },
-        {
-          "logloss": 0.43038038170827464,
-          "params": {
-            "alpha": 2.0
-          }
-        },
-        {
-          "logloss": 0.43616082922020327,
-          "params": {
-            "alpha": 1.0
-          }
-        },
-        {
-          "logloss": 0.44408789732565934,
-          "params": {
-            "alpha": 0.5
-          }
-        }
-      ]
-    },
-    "skill_strat|kaodian|rolling-beta": {
-      "chosen": {
-        "k": 10
-      },
-      "candidates": [
-        {
-          "logloss": 0.45394338704865955,
-          "params": {
-            "k": 10
-          }
-        },
-        {
-          "logloss": 0.47843060207621246,
-          "params": {
-            "k": 5
-          }
-        },
-        {
-          "logloss": 0.4973335067891984,
-          "params": {
-            "k": 3
-          }
-        }
-      ]
-    },
-    "skill_strat|kaodian|elo-skill": {
-      "chosen": {
-        "K": 16.0
-      },
-      "candidates": [
-        {
-          "logloss": 0.44638842718972455,
-          "params": {
-            "K": 16.0
-          }
-        },
-        {
-          "logloss": 0.44677929952133455,
-          "params": {
-            "K": 32.0
-          }
-        },
-        {
-          "logloss": 0.44791740040343353,
-          "params": {
-            "K": 8.0
-          }
-        }
-      ]
-    },
-    "skill_strat|kaodian|bkt-lite": {
-      "chosen": {},
-      "candidates": []
-    },
-    "skill_strat|node|baseline-acc": {
-      "chosen": {
-        "alpha": 5.0
-      },
-      "candidates": [
-        {
-          "logloss": 0.46695860633617714,
-          "params": {
-            "alpha": 5.0
-          }
-        },
-        {
-          "logloss": 0.4766516593209859,
-          "params": {
-            "alpha": 2.0
-          }
-        },
-        {
-          "logloss": 0.4982236114318062,
-          "params": {
-            "alpha": 1.0
-          }
-        },
-        {
-          "logloss": 0.5338381907154385,
-          "params": {
-            "alpha": 0.5
-          }
-        }
-      ]
-    },
-    "skill_strat|node|rolling-beta": {
-      "chosen": {
-        "k": 10
-      },
-      "candidates": [
-        {
-          "logloss": 0.4776822039895925,
-          "params": {
-            "k": 10
-          }
-        },
-        {
-          "logloss": 0.4796514029887245,
-          "params": {
-            "k": 3
-          }
-        },
-        {
-          "logloss": 0.4802292581046224,
-          "params": {
-            "k": 5
-          }
-        }
-      ]
-    },
-    "skill_strat|node|elo-skill": {
-      "chosen": {
-        "K": 32.0
-      },
-      "candidates": [
-        {
-          "logloss": 0.47546492540073143,
-          "params": {
-            "K": 32.0
-          }
-        },
-        {
-          "logloss": 0.47680574134453835,
-          "params": {
-            "K": 16.0
-          }
-        },
-        {
-          "logloss": 0.4784812961806987,
-          "params": {
-            "K": 8.0
-          }
-        }
-      ]
-    }
+  "time|kaodian": {
+   "n_train": 378,
+   "n_test": 94,
+   "test_pos_rate": 0.8085106382978723,
+   "test_skill_seen_in_train": 0.10638297872340426,
+   "test_items_seen_in_train": 0.0,
+   "n_test_skills": 11
+  },
+  "time|node": {
+   "n_train": 378,
+   "n_test": 94,
+   "test_pos_rate": 0.8085106382978723,
+   "test_skill_seen_in_train": 0.05319148936170213,
+   "test_items_seen_in_train": 0.0,
+   "n_test_skills": 53
+  },
+  "skill_strat|tag": {
+   "n_train": 377,
+   "n_test": 95,
+   "test_pos_rate": 0.8421052631578947,
+   "test_skill_seen_in_train": 1.0,
+   "test_items_seen_in_train": 0.0,
+   "n_test_skills": 6
+  },
+  "skill_strat|kaodian": {
+   "n_train": 382,
+   "n_test": 90,
+   "test_pos_rate": 0.7333333333333333,
+   "test_skill_seen_in_train": 1.0,
+   "test_items_seen_in_train": 0.0,
+   "n_test_skills": 31
+  },
+  "skill_strat|node": {
+   "n_train": 439,
+   "n_test": 33,
+   "test_pos_rate": 0.8181818181818182,
+   "test_skill_seen_in_train": 1.0,
+   "test_items_seen_in_train": 0.0,
+   "n_test_skills": 24
   }
+ },
+ "inner_selection": {
+  "time|tag|baseline-acc": {
+   "chosen": {
+    "alpha": 5.0
+   },
+   "candidates": [
+    {
+     "logloss": 0.6527370206014823,
+     "params": {
+      "alpha": 5.0
+     }
+    },
+    {
+     "logloss": 0.755694884195243,
+     "params": {
+      "alpha": 2.0
+     }
+    },
+    {
+     "logloss": 0.8673994644737428,
+     "params": {
+      "alpha": 1.0
+     }
+    },
+    {
+     "logloss": 1.00097727719608,
+     "params": {
+      "alpha": 0.5
+     }
+    }
+   ]
+  },
+  "time|tag|rolling-beta": {
+   "chosen": {
+    "k": 10
+   },
+   "candidates": [
+    {
+     "logloss": 0.6065725128398666,
+     "params": {
+      "k": 10
+     }
+    },
+    {
+     "logloss": 0.6650241856882397,
+     "params": {
+      "k": 3
+     }
+    },
+    {
+     "logloss": 0.6820666327405135,
+     "params": {
+      "k": 5
+     }
+    }
+   ]
+  },
+  "time|tag|elo-skill": {
+   "chosen": {
+    "K": 8.0
+   },
+   "candidates": [
+    {
+     "logloss": 0.5557974359400294,
+     "params": {
+      "K": 8.0
+     }
+    },
+    {
+     "logloss": 0.5637016828957914,
+     "params": {
+      "K": 16.0
+     }
+    },
+    {
+     "logloss": 0.5779254696019619,
+     "params": {
+      "K": 32.0
+     }
+    }
+   ]
+  },
+  "time|elo-item(ref)": {
+   "chosen": {
+    "K": 8.0
+   },
+   "candidates": [
+    {
+     "logloss": 0.5557101448235584,
+     "params": {
+      "K": 8.0
+     }
+    },
+    {
+     "logloss": 0.5617331495313272,
+     "params": {
+      "K": 16.0
+     }
+    },
+    {
+     "logloss": 0.5664017559956964,
+     "params": {
+      "K": 32.0
+     }
+    }
+   ]
+  },
+  "time|type-prior(ref)": {
+   "chosen": {
+    "alpha": 5.0
+   },
+   "candidates": [
+    {
+     "logloss": 0.5941458310532542,
+     "params": {
+      "alpha": 5.0
+     }
+    },
+    {
+     "logloss": 0.5959760652506805,
+     "params": {
+      "alpha": 2.0
+     }
+    },
+    {
+     "logloss": 0.5966322125174769,
+     "params": {
+      "alpha": 1.0
+     }
+    },
+    {
+     "logloss": 0.596969661002661,
+     "params": {
+      "alpha": 0.5
+     }
+    }
+   ]
+  },
+  "time|kaodian|baseline-acc": {
+   "chosen": {
+    "alpha": 5.0
+   },
+   "candidates": [
+    {
+     "logloss": 2.7005912420135756,
+     "params": {
+      "alpha": 5.0
+     }
+    },
+    {
+     "logloss": 2.7188236736622504,
+     "params": {
+      "alpha": 2.0
+     }
+    },
+    {
+     "logloss": 2.741140967697072,
+     "params": {
+      "alpha": 1.0
+     }
+    },
+    {
+     "logloss": 2.769257081827339,
+     "params": {
+      "alpha": 0.5
+     }
+    }
+   ]
+  },
+  "time|kaodian|rolling-beta": {
+   "chosen": {
+    "k": 10
+   },
+   "candidates": [
+    {
+     "logloss": 0.6075561166132399,
+     "params": {
+      "k": 10
+     }
+    },
+    {
+     "logloss": 0.6083226966545507,
+     "params": {
+      "k": 3
+     }
+    },
+    {
+     "logloss": 0.6277139761015614,
+     "params": {
+      "k": 5
+     }
+    }
+   ]
+  },
+  "time|kaodian|elo-skill": {
+   "chosen": {
+    "K": 8.0
+   },
+   "candidates": [
+    {
+     "logloss": 0.5544462286819469,
+     "params": {
+      "K": 8.0
+     }
+    },
+    {
+     "logloss": 0.561286975774935,
+     "params": {
+      "K": 16.0
+     }
+    },
+    {
+     "logloss": 0.5710757907628796,
+     "params": {
+      "K": 32.0
+     }
+    }
+   ]
+  },
+  "time|kaodian|bkt-lite": {
+   "chosen": {},
+   "candidates": []
+  },
+  "time|node|baseline-acc": {
+   "chosen": {
+    "alpha": 0.5
+   },
+   "candidates": [
+    {
+     "logloss": 3.2763590738116135,
+     "params": {
+      "alpha": 0.5
+     }
+    },
+    {
+     "logloss": 3.2786613271320255,
+     "params": {
+      "alpha": 1.0
+     }
+    },
+    {
+     "logloss": 3.2811139266262876,
+     "params": {
+      "alpha": 2.0
+     }
+    },
+    {
+     "logloss": 3.2837649578344563,
+     "params": {
+      "alpha": 5.0
+     }
+    }
+   ]
+  },
+  "time|node|rolling-beta": {
+   "chosen": {
+    "k": 5
+   },
+   "candidates": [
+    {
+     "logloss": 0.5300083870654652,
+     "params": {
+      "k": 5
+     }
+    },
+    {
+     "logloss": 0.5359367490422366,
+     "params": {
+      "k": 10
+     }
+    },
+    {
+     "logloss": 0.5478967342554408,
+     "params": {
+      "k": 3
+     }
+    }
+   ]
+  },
+  "time|node|elo-skill": {
+   "chosen": {
+    "K": 8.0
+   },
+   "candidates": [
+    {
+     "logloss": 0.5540364531949158,
+     "params": {
+      "K": 8.0
+     }
+    },
+    {
+     "logloss": 0.5586874852744587,
+     "params": {
+      "K": 16.0
+     }
+    },
+    {
+     "logloss": 0.5621954384692184,
+     "params": {
+      "K": 32.0
+     }
+    }
+   ]
+  },
+  "skill_strat|tag|baseline-acc": {
+   "chosen": {
+    "alpha": 5.0
+   },
+   "candidates": [
+    {
+     "logloss": 0.4870631420816823,
+     "params": {
+      "alpha": 5.0
+     }
+    },
+    {
+     "logloss": 0.48713615358373624,
+     "params": {
+      "alpha": 2.0
+     }
+    },
+    {
+     "logloss": 0.48716696449826175,
+     "params": {
+      "alpha": 1.0
+     }
+    },
+    {
+     "logloss": 0.4871838061743599,
+     "params": {
+      "alpha": 0.5
+     }
+    }
+   ]
+  },
+  "skill_strat|tag|rolling-beta": {
+   "chosen": {
+    "k": 10
+   },
+   "candidates": [
+    {
+     "logloss": 0.5595564723418189,
+     "params": {
+      "k": 10
+     }
+    },
+    {
+     "logloss": 0.5641853742561643,
+     "params": {
+      "k": 3
+     }
+    },
+    {
+     "logloss": 0.5885949622019105,
+     "params": {
+      "k": 5
+     }
+    }
+   ]
+  },
+  "skill_strat|tag|elo-skill": {
+   "chosen": {
+    "K": 8.0
+   },
+   "candidates": [
+    {
+     "logloss": 0.49422739469197136,
+     "params": {
+      "K": 8.0
+     }
+    },
+    {
+     "logloss": 0.5007046710206681,
+     "params": {
+      "K": 16.0
+     }
+    },
+    {
+     "logloss": 0.5129395382660676,
+     "params": {
+      "K": 32.0
+     }
+    }
+   ]
+  },
+  "skill_strat|elo-item(ref)": {
+   "chosen": {
+    "K": 8.0
+   },
+   "candidates": [
+    {
+     "logloss": 0.4927557845650294,
+     "params": {
+      "K": 8.0
+     }
+    },
+    {
+     "logloss": 0.4940475004738228,
+     "params": {
+      "K": 16.0
+     }
+    },
+    {
+     "logloss": 0.497990565846856,
+     "params": {
+      "K": 32.0
+     }
+    }
+   ]
+  },
+  "skill_strat|type-prior(ref)": {
+   "chosen": {
+    "alpha": 5.0
+   },
+   "candidates": [
+    {
+     "logloss": 0.477278423322325,
+     "params": {
+      "alpha": 5.0
+     }
+    },
+    {
+     "logloss": 0.4782316580439335,
+     "params": {
+      "alpha": 2.0
+     }
+    },
+    {
+     "logloss": 0.47861618853647797,
+     "params": {
+      "alpha": 1.0
+     }
+    },
+    {
+     "logloss": 0.4788233848085895,
+     "params": {
+      "alpha": 0.5
+     }
+    }
+   ]
+  },
+  "skill_strat|kaodian|baseline-acc": {
+   "chosen": {
+    "alpha": 5.0
+   },
+   "candidates": [
+    {
+     "logloss": 0.42742036395998423,
+     "params": {
+      "alpha": 5.0
+     }
+    },
+    {
+     "logloss": 0.43038038170827464,
+     "params": {
+      "alpha": 2.0
+     }
+    },
+    {
+     "logloss": 0.43616082922020327,
+     "params": {
+      "alpha": 1.0
+     }
+    },
+    {
+     "logloss": 0.44408789732565934,
+     "params": {
+      "alpha": 0.5
+     }
+    }
+   ]
+  },
+  "skill_strat|kaodian|rolling-beta": {
+   "chosen": {
+    "k": 10
+   },
+   "candidates": [
+    {
+     "logloss": 0.45394338704865955,
+     "params": {
+      "k": 10
+     }
+    },
+    {
+     "logloss": 0.47843060207621246,
+     "params": {
+      "k": 5
+     }
+    },
+    {
+     "logloss": 0.4973335067891984,
+     "params": {
+      "k": 3
+     }
+    }
+   ]
+  },
+  "skill_strat|kaodian|elo-skill": {
+   "chosen": {
+    "K": 16.0
+   },
+   "candidates": [
+    {
+     "logloss": 0.44638842718972455,
+     "params": {
+      "K": 16.0
+     }
+    },
+    {
+     "logloss": 0.44677929952133455,
+     "params": {
+      "K": 32.0
+     }
+    },
+    {
+     "logloss": 0.44791740040343353,
+     "params": {
+      "K": 8.0
+     }
+    }
+   ]
+  },
+  "skill_strat|kaodian|bkt-lite": {
+   "chosen": {},
+   "candidates": []
+  },
+  "skill_strat|node|baseline-acc": {
+   "chosen": {
+    "alpha": 5.0
+   },
+   "candidates": [
+    {
+     "logloss": 0.46695860633617714,
+     "params": {
+      "alpha": 5.0
+     }
+    },
+    {
+     "logloss": 0.4766516593209859,
+     "params": {
+      "alpha": 2.0
+     }
+    },
+    {
+     "logloss": 0.4982236114318062,
+     "params": {
+      "alpha": 1.0
+     }
+    },
+    {
+     "logloss": 0.5338381907154385,
+     "params": {
+      "alpha": 0.5
+     }
+    }
+   ]
+  },
+  "skill_strat|node|rolling-beta": {
+   "chosen": {
+    "k": 10
+   },
+   "candidates": [
+    {
+     "logloss": 0.4776822039895925,
+     "params": {
+      "k": 10
+     }
+    },
+    {
+     "logloss": 0.4796514029887245,
+     "params": {
+      "k": 3
+     }
+    },
+    {
+     "logloss": 0.4802292581046224,
+     "params": {
+      "k": 5
+     }
+    }
+   ]
+  },
+  "skill_strat|node|elo-skill": {
+   "chosen": {
+    "K": 32.0
+   },
+   "candidates": [
+    {
+     "logloss": 0.47546492540073143,
+     "params": {
+      "K": 32.0
+     }
+    },
+    {
+     "logloss": 0.47680574134453835,
+     "params": {
+      "K": 16.0
+     }
+    },
+    {
+     "logloss": 0.4784812961806987,
+     "params": {
+      "K": 8.0
+     }
+    }
+   ]
+  }
+ },
+ "args": {
+  "attempts": "results/attempts.csv",
+  "grans": [
+   "tag",
+   "kaodian",
+   "node"
+  ],
+  "splits": [
+   "time",
+   "skill_strat"
+  ]
+ }
 }

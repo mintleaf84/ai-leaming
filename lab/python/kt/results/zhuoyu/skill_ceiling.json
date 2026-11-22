@@ -1,0 +1,122 @@
+{
+ "overall_acc": 0.765262252794497,
+ "type_only_auc": 0.5561236983989792,
+ "tag": {
+  "min3_items": {
+   "n_skills": 155,
+   "rows": 2053,
+   "chi2": 151.7397301773771,
+   "df": 154,
+   "p_dispersion": 0.5364051095985433,
+   "overdispersed": false,
+   "sd_observed": 0.11522634631542505,
+   "sd_binomial": 0.11645764042321195,
+   "sd_true_est": 0.0,
+   "loo_eb_auc": 0.5
+  },
+  "min5_items": {
+   "n_skills": 92,
+   "rows": 1833,
+   "chi2": 101.2749385707316,
+   "df": 91,
+   "p_dispersion": 0.2166053841347207,
+   "overdispersed": false,
+   "sd_observed": 0.09962455025925213,
+   "sd_binomial": 0.09495313176522328,
+   "sd_true_est": 0.030148860382017716,
+   "loo_eb_auc": 0.5180135155515481
+  }
+ },
+ "tag_chapter": {
+  "min3_items": {
+   "n_skills": 5,
+   "rows": 2326,
+   "chi2": 9.730657483909914,
+   "df": 4,
+   "p_dispersion": 0.04521754019821624,
+   "overdispersed": true,
+   "sd_observed": 0.027413396637031327,
+   "sd_binomial": 0.01965064269876712,
+   "sd_true_est": 0.019114040826172546,
+   "loo_eb_auc": 0.4138597357698481
+  },
+  "min5_items": {
+   "n_skills": 5,
+   "rows": 2326,
+   "chi2": 9.730657483909914,
+   "df": 4,
+   "p_dispersion": 0.04521754019821624,
+   "overdispersed": true,
+   "sd_observed": 0.027413396637031327,
+   "sd_binomial": 0.01965064269876712,
+   "sd_true_est": 0.019114040826172546,
+   "loo_eb_auc": 0.4138597357698481
+  }
+ },
+ "kaodian": {
+  "min3_items": {
+   "n_skills": 1,
+   "rows": 2326,
+   "chi2": 0.0,
+   "df": 0,
+   "p_dispersion": NaN,
+   "overdispersed": false,
+   "sd_observed": 0.0,
+   "sd_binomial": 0.00878803457520064,
+   "sd_true_est": 0.0,
+   "loo_eb_auc": 0.5
+  },
+  "min5_items": {
+   "n_skills": 1,
+   "rows": 2326,
+   "chi2": 0.0,
+   "df": 0,
+   "p_dispersion": NaN,
+   "overdispersed": false,
+   "sd_observed": 0.0,
+   "sd_binomial": 0.00878803457520064,
+   "sd_true_est": 0.0,
+   "loo_eb_auc": 0.5
+  }
+ },
+ "node": {
+  "min3_items": {
+   "n_skills": 1,
+   "rows": 2326,
+   "chi2": 0.0,
+   "df": 0,
+   "p_dispersion": NaN,
+   "overdispersed": false,
+   "sd_observed": 0.0,
+   "sd_binomial": 0.00878803457520064,
+   "sd_true_est": 0.0,
+   "loo_eb_auc": 0.5
+  },
+  "min5_items": {
+   "n_skills": 1,
+   "rows": 2326,
+   "chi2": 0.0,
+   "df": 0,
+   "p_dispersion": NaN,
+   "overdispersed": false,
+   "sd_observed": 0.0,
+   "sd_binomial": 0.00878803457520064,
+   "sd_true_est": 0.0,
+   "loo_eb_auc": 0.5
+  }
+ },
+ "detectability": {
+  "n_test_at_20pct": 465.2,
+  "n_pos": 356.0,
+  "n_neg": 109.2,
+  "se_auc_hanley_mcneil": 0.03161252555275648,
+  "se_auc_gap_paired_approx": 0.04470686237757424,
+  "min_detectable_auc_gap_95pct": 0.08762545026004552,
+  "n_test_needed_for_gap": {
+   "0.03": 3969,
+   "0.05": 1429,
+   "0.1": 358
+  },
+  "note": "差值检验的 SE≈单模型 SE×√2（同测试集配对）；SE 按 1/√n 缩放，n_test_needed_for_gap 由当前 SE 线性外推，只作数量级参考。"
+ }
+}

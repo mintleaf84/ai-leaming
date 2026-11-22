@@ -15,6 +15,8 @@
  * 只带状态码、contextId 与粉笔返回的 msg，手机号由路由层自行掩码。
  */
 
+import { log } from "@/lib/logger";
+
 const REQUEST_TIMEOUT_MS = 8_000;
 
 const LOGIN_BASE = "https://login.fenbi.com";
@@ -190,6 +192,18 @@ async function fenbiRequest(
         `访问粉笔超时（${REQUEST_TIMEOUT_MS / 1000}s）`,
       );
     }
+    // 诊断（2026-11-22 扫码接口 502）：Next.js server 运行时下 fetch 可能同步抛
+    // 非 TimeoutError 异常，此前被无差别吞成「无法连接粉笔服务器」，
+    // 而 FenbiNetworkError 在路由层又不打日志，真实原因完全不可见。
+    // 只记错误类型/消息与去掉 query 的 URL；不记 headers / cookie / token。
+    const cause = (error as { cause?: unknown } | null)?.cause;
+    log.error("[fenbi] fetch 同步异常:", JSON.stringify({
+      errorName: name ?? "unknown",
+      message: (error as Error)?.message ?? String(error),
+      causeName: cause instanceof Error ? cause.name : null,
+      causeMessage: cause instanceof Error ? cause.message : null,
+      endpoint: url.split("?")[0],
+    }));
     throw new FenbiNetworkError("无法连接粉笔服务器");
   }
 

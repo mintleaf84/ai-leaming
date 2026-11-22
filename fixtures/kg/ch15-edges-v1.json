@@ -1,0 +1,370 @@
+{
+  "chapter": "普通心理学 第一章 心理学概述",
+  "schema_version": "1.1",
+  "edges": [
+    {
+      "from": "心理活动",
+      "type": "exact_match",
+      "to": "心理现象",
+      "evidence": "心理现象又称为心理活动，包括心理过程和个性心理。",
+      "printed_page": 3
+    },
+    {
+      "from": "心理过程",
+      "type": "subclass",
+      "to": "心理现象",
+      "evidence": "心理现象又称为心理活动，包括心理过程和个性心理。",
+      "printed_page": 3
+    },
+    {
+      "from": "个性心理",
+      "type": "subclass",
+      "to": "心理现象",
+      "evidence": "心理现象又称为心理活动，包括心理过程和个性心理。",
+      "printed_page": 3
+    },
+    {
+      "from": "认知过程",
+      "type": "subclass",
+      "to": "心理过程",
+      "evidence": "它包括认知过程、情绪情感过程和意志过程三个方面。",
+      "printed_page": 3
+    },
+    {
+      "from": "情绪情感过程",
+      "type": "subclass",
+      "to": "心理过程",
+      "evidence": "它包括认知过程、情绪情感过程和意志过程三个方面。",
+      "printed_page": 3
+    },
+    {
+      "from": "意志过程",
+      "type": "subclass",
+      "to": "心理过程",
+      "evidence": "它包括认知过程、情绪情感过程和意志过程三个方面。",
+      "printed_page": 3
+    },
+    {
+      "from": "感知觉",
+      "type": "subclass",
+      "to": "认知过程",
+      "evidence": "认知过程是指人脑对客观事物的现象和本质进行反映的过程，包括感知觉、记忆、思维和想象等心理现象。",
+      "printed_page": 3
+    },
+    {
+      "from": "记忆",
+      "type": "subclass",
+      "to": "认知过程",
+      "evidence": "认知过程是指人脑对客观事物的现象和本质进行反映的过程，包括感知觉、记忆、思维和想象等心理现象。",
+      "printed_page": 3
+    },
+    {
+      "from": "思维",
+      "type": "subclass",
+      "to": "认知过程",
+      "evidence": "认知过程是指人脑对客观事物的现象和本质进行反映的过程，包括感知觉、记忆、思维和想象等心理现象。",
+      "printed_page": 3
+    },
+    {
+      "from": "想象",
+      "type": "subclass",
+      "to": "认知过程",
+      "evidence": "认知过程是指人脑对客观事物的现象和本质进行反映的过程，包括感知觉、记忆、思维和想象等心理现象。",
+      "printed_page": 3
+    },
+    {
+      "from": "注意",
+      "type": "subclass",
+      "to": "心理状态",
+      "evidence": "注意不是独立的心理过程，而是伴随认知过程的一种心理状态，是认识事物的必要条件。",
+      "printed_page": 3
+    },
+    {
+      "from": "个性倾向性",
+      "type": "subclass",
+      "to": "个性心理",
+      "evidence": "个性心理主要包括个性倾向性和个性心理特征两个方面。",
+      "printed_page": 4
+    },
+    {
+      "from": "个性心理特征",
+      "type": "subclass",
+      "to": "个性心理",
+      "evidence": "个性心理主要包括个性倾向性和个性心理特征两个方面。",
+      "printed_page": 4
+    },
+    {
+      "from": "人格",
+      "type": "subclass",
+      "to": "个性心理特征",
+      "evidence": "包括能力和人格（性格、气质和自我调控系统）。",
+      "printed_page": 4
+    },
+    {
+      "from": "能力",
+      "type": "subclass",
+      "to": "个性心理特征",
+      "evidence": "包括能力和人格（性格、气质和自我调控系统）。",
+      "printed_page": 4
+    },
+    {
+      "from": "性格",
+      "type": "subclass",
+      "to": "人格",
+      "evidence": "包括能力和人格（性格、气质和自我调控系统）。",
+      "printed_page": 4
+    },
+    {
+      "from": "气质",
+      "type": "subclass",
+      "to": "人格",
+      "evidence": "包括能力和人格（性格、气质和自我调控系统）。",
+      "printed_page": 4
+    },
+    {
+      "from": "世界观",
+      "type": "subclass",
+      "to": "个性倾向性",
+      "evidence": "包括需要、动机、兴趣、信念、理想、人生观、价值观和世界观等。",
+      "printed_page": 4
+    },
+    {
+      "from": "心理过程",
+      "type": "prerequisite",
+      "to": "个性心理",
+      "evidence": "心理过程是从心理现象的组成来看的，着重研究心理现象的共同性，是个性心理形成的基础。",
+      "printed_page": 4
+    },
+    {
+      "from": "心理学",
+      "type": "related",
+      "to": "心理现象",
+      "evidence": "心理学是研究心理现象及其发生、发展规律的一门科学。",
+      "printed_page": 3
+    },
+    {
+      "from": "心理是脑的机能",
+      "type": "subclass",
+      "to": "心理的本质",
+      "evidence": "从心理产生的物质基础看，心理是脑的机能；从心理活动产生的方式看，心理活动是反射；从心理反映的内容看，心理是人脑对客观现实的反映。",
+      "printed_page": 5
+    },
+    {
+      "from": "心理活动是反射",
+      "type": "subclass",
+      "to": "心理的本质",
+      "evidence": "从心理产生的物质基础看，心理是脑的机能；从心理活动产生的方式看，心理活动是反射；从心理反映的内容看，心理是人脑对客观现实的反映。",
+      "printed_page": 5
+    },
+    {
+      "from": "心理是人脑对客观现实的反映",
+      "type": "subclass",
+      "to": "心理的本质",
+      "evidence": "从心理产生的物质基础看，心理是脑的机能；从心理活动产生的方式看，心理活动是反射；从心理反映的内容看，心理是人脑对客观现实的反映。",
+      "printed_page": 5
+    },
+    {
+      "from": "神经系统",
+      "type": "prerequisite",
+      "to": "心理是脑的机能",
+      "evidence": "神经系统是心理活动的主要物质基础。人的心理活动，都要通过神经系统的活动来实现。",
+      "printed_page": 5
+    },
+    {
+      "from": "神经元",
+      "type": "part_of",
+      "to": "神经系统",
+      "evidence": "神经元的复杂连接构成了神经系统。",
+      "printed_page": 6
+    },
+    {
+      "from": "中枢神经系统",
+      "type": "subclass",
+      "to": "神经系统",
+      "evidence": "神经系统分周围神经系统和中枢神经系统两大部分。",
+      "printed_page": 6
+    },
+    {
+      "from": "周围神经系统",
+      "type": "subclass",
+      "to": "神经系统",
+      "evidence": "神经系统分周围神经系统和中枢神经系统两大部分。",
+      "printed_page": 6
+    },
+    {
+      "from": "脑",
+      "type": "part_of",
+      "to": "中枢神经系统",
+      "evidence": "中枢神经系统包括脊髓和脑",
+      "printed_page": 6
+    },
+    {
+      "from": "脑干",
+      "type": "part_of",
+      "to": "脑",
+      "evidence": "脑：大脑、脑干、间脑、小脑、边缘系统。",
+      "printed_page": 6
+    },
+    {
+      "from": "延脑",
+      "type": "part_of",
+      "to": "脑干",
+      "evidence": "脑干：包括延脑（延髓）、桥脑（脑桥）、中脑。",
+      "printed_page": 6
+    },
+    {
+      "from": "额叶",
+      "type": "attribute",
+      "to": "躯体运动中枢",
+      "evidence": "额叶上分布着躯体运动中枢，负责人们的思维、计划功能。",
+      "printed_page": 7
+    },
+    {
+      "from": "顶叶",
+      "type": "attribute",
+      "to": "躯体感觉中枢",
+      "evidence": "顶叶上分布着躯体感觉中枢，响应疼痛、触摸、味觉、温度、压力等感觉。",
+      "printed_page": 7
+    },
+    {
+      "from": "枕叶",
+      "type": "attribute",
+      "to": "视觉中枢",
+      "evidence": "枕叶上分布着视觉中枢，若枕叶受损，人的视觉便会发生障碍，甚至失明。",
+      "printed_page": 7
+    },
+    {
+      "from": "颞叶",
+      "type": "attribute",
+      "to": "听觉中枢",
+      "evidence": "颞叶上分布着听觉中枢，若颞叶受损，人的听觉便会发生障碍，甚至失聪。",
+      "printed_page": 7
+    },
+    {
+      "from": "反射弧",
+      "type": "part_of",
+      "to": "反射",
+      "evidence": "执行反射的全部神经结构称为反射弧。",
+      "printed_page": 8
+    },
+    {
+      "from": "心理反映的主观性",
+      "type": "part_of",
+      "to": "心理是人脑对客观现实的反映",
+      "evidence": "人对客观现实的反映具有能动性、主观性。",
+      "printed_page": 9
+    },
+    {
+      "from": "冯特",
+      "type": "marks",
+      "to": "科学心理学的诞生",
+      "evidence": "冯特于 1879 年在德国莱比锡大学建立了世界上第一个正式的心理学实验室，标志着科学心理学的诞生",
+      "printed_page": 9
+    },
+    {
+      "from": "《生理心理学原理》",
+      "type": "marks",
+      "to": "科学心理学的诞生",
+      "evidence": "其《生理心理学原理》一书被心理学界认为是“心理学的独立宣言”。",
+      "printed_page": 9
+    },
+    {
+      "from": "构造主义心理学",
+      "type": "subclass",
+      "to": "心理学的主要流派",
+      "evidence": "（一）构造主义心理学",
+      "printed_page": 10
+    },
+    {
+      "from": "机能主义心理学",
+      "type": "subclass",
+      "to": "心理学的主要流派",
+      "evidence": "（二）机能主义心理学",
+      "printed_page": 10
+    },
+    {
+      "from": "行为主义心理学",
+      "type": "subclass",
+      "to": "心理学的主要流派",
+      "evidence": "（三）行为主义心理学",
+      "printed_page": 10
+    },
+    {
+      "from": "格式塔心理学",
+      "type": "subclass",
+      "to": "心理学的主要流派",
+      "evidence": "（四）格式塔心理学（完形心理学）",
+      "printed_page": 10
+    },
+    {
+      "from": "精神分析学派",
+      "type": "subclass",
+      "to": "心理学的主要流派",
+      "evidence": "（五）精神分析学派",
+      "printed_page": 10
+    },
+    {
+      "from": "现代认知心理学",
+      "type": "subclass",
+      "to": "心理学的主要流派",
+      "evidence": "（六）现代认知心理学",
+      "printed_page": 11
+    },
+    {
+      "from": "人本主义心理学",
+      "type": "subclass",
+      "to": "心理学的主要流派",
+      "evidence": "（七）人本主义心理学",
+      "printed_page": 11
+    },
+    {
+      "from": "冯特",
+      "type": "marks",
+      "to": "构造主义心理学",
+      "evidence": "1. 代表人物：冯特、铁钦纳。",
+      "printed_page": 10
+    },
+    {
+      "from": "杜威",
+      "type": "marks",
+      "to": "机能主义心理学",
+      "evidence": "1. 代表人物：詹姆斯、杜威、安吉尔。",
+      "printed_page": 10
+    },
+    {
+      "from": "华生",
+      "type": "marks",
+      "to": "行为主义心理学",
+      "evidence": "1. 代表人物：华生。",
+      "printed_page": 10
+    },
+    {
+      "from": "韦特海默",
+      "type": "marks",
+      "to": "格式塔心理学",
+      "evidence": "1. 代表人物：韦特海默、苛勒、考夫卡。",
+      "printed_page": 10
+    },
+    {
+      "from": "弗洛伊德",
+      "type": "marks",
+      "to": "精神分析学派",
+      "evidence": "1. 代表人物：弗洛伊德。",
+      "printed_page": 10
+    },
+    {
+      "from": "奈瑟",
+      "type": "marks",
+      "to": "现代认知心理学",
+      "evidence": "1. 代表人物：奈瑟、西蒙。",
+      "printed_page": 11
+    },
+    {
+      "from": "马斯洛",
+      "type": "marks",
+      "to": "人本主义心理学",
+      "evidence": "1. 代表人物：罗杰斯、马斯洛。",
+      "printed_page": 11
+    }
+  ]
+}

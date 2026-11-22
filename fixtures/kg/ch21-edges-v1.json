@@ -1,0 +1,811 @@
+{
+  "chapter": "第四篇 教育心理学 第二章 学生心理",
+  "schema_version": "1.1",
+  "edges": [
+    {
+      "from": "认知发展",
+      "type": "part_of",
+      "to": "心理发展",
+      "evidence": "心理发展包括认知发展和社会性发展。",
+      "printed_page": 94
+    },
+    {
+      "from": "社会性发展",
+      "type": "part_of",
+      "to": "心理发展",
+      "evidence": "心理发展包括认知发展和社会性发展。",
+      "printed_page": 94
+    },
+    {
+      "from": "连续性与阶段性",
+      "type": "subclass",
+      "to": "心理发展的一般特征",
+      "evidence": "连续性特征是指在心理发展过程中，后一阶段的发展总是以前一阶段的发展为基础",
+      "printed_page": 94
+    },
+    {
+      "from": "定向性与顺序性",
+      "type": "subclass",
+      "to": "心理发展的一般特征",
+      "evidence": "在正常条件下，心理的发展总是具有一定的方向性和先后顺序。",
+      "printed_page": 94
+    },
+    {
+      "from": "不平衡性",
+      "type": "subclass",
+      "to": "心理发展的一般特征",
+      "evidence": "心理的发展可以因进行的速度、到达的时间和最终达到的水平而表现出多样化的发展模式。",
+      "printed_page": 94
+    },
+    {
+      "from": "差异性",
+      "type": "subclass",
+      "to": "心理发展的一般特征",
+      "evidence": "任何一个正常学生的心理发展总要经历一些共同的基本阶段，但在发展的速度、最终达到的水平以及发展的优势领域上往往不尽相同",
+      "printed_page": 95
+    },
+    {
+      "from": "转折期",
+      "type": "contrast",
+      "to": "危机期",
+      "evidence": "转折期与危机期是有所区别的，转折期是必然出现的，而“危机”并非一定会出现",
+      "printed_page": 95
+    },
+    {
+      "from": "敏感期",
+      "type": "related",
+      "to": "关键期",
+      "evidence": "敏感期的提出与关键期这一概念有着密切关系。",
+      "printed_page": 95
+    },
+    {
+      "from": "劳伦兹",
+      "type": "marks",
+      "to": "关键期",
+      "evidence": "关键期最早出现在生态学中，由奥地利生态学家劳伦兹在研究动物心理的印刻现象时提出。",
+      "printed_page": 95
+    },
+    {
+      "from": "转折期",
+      "type": "part_of",
+      "to": "心理发展的基本概念",
+      "evidence": "（一）转折期与危机期",
+      "printed_page": 95
+    },
+    {
+      "from": "关键期",
+      "type": "part_of",
+      "to": "心理发展的基本概念",
+      "evidence": "（二）敏感期（关键期）",
+      "printed_page": 95
+    },
+    {
+      "from": "学习准备",
+      "type": "part_of",
+      "to": "心理发展的基本概念",
+      "evidence": "学习准备是指学生原有的知识水平或心理发展水平对新的学习的适应性",
+      "printed_page": 95
+    },
+    {
+      "from": "图式",
+      "type": "part_of",
+      "to": "认知发展的结构",
+      "evidence": "皮亚杰认为心理结构涉及图式、同化、顺应、平衡四个概念。",
+      "printed_page": 96
+    },
+    {
+      "from": "同化（皮亚杰）",
+      "type": "part_of",
+      "to": "认知发展的结构",
+      "evidence": "皮亚杰认为心理结构涉及图式、同化、顺应、平衡四个概念。",
+      "printed_page": 96
+    },
+    {
+      "from": "顺应",
+      "type": "part_of",
+      "to": "认知发展的结构",
+      "evidence": "皮亚杰认为心理结构涉及图式、同化、顺应、平衡四个概念。",
+      "printed_page": 96
+    },
+    {
+      "from": "平衡",
+      "type": "part_of",
+      "to": "认知发展的结构",
+      "evidence": "皮亚杰认为心理结构涉及图式、同化、顺应、平衡四个概念。",
+      "printed_page": 96
+    },
+    {
+      "from": "同化（皮亚杰）",
+      "type": "contrast",
+      "to": "顺应",
+      "evidence": "适应分为两种不同的类型：同化和顺应。",
+      "printed_page": 96
+    },
+    {
+      "from": "皮亚杰",
+      "type": "marks",
+      "to": "认知发展阶段理论",
+      "evidence": "他提出了认知发展的阶段理论，将个体的认知发展分为以下四个阶段",
+      "printed_page": 97
+    },
+    {
+      "from": "感知运动阶段",
+      "type": "subclass",
+      "to": "认知发展阶段理论",
+      "evidence": "1. 感知运动阶段（0 ～ 2 岁）",
+      "printed_page": 97
+    },
+    {
+      "from": "前运算阶段",
+      "type": "subclass",
+      "to": "认知发展阶段理论",
+      "evidence": "2. 前运算阶段（2 ～ 7 岁）",
+      "printed_page": 97
+    },
+    {
+      "from": "具体运算阶段",
+      "type": "subclass",
+      "to": "认知发展阶段理论",
+      "evidence": "1. 具体运算阶段（7 ～ 11 岁）",
+      "printed_page": 98
+    },
+    {
+      "from": "形式运算阶段",
+      "type": "subclass",
+      "to": "认知发展阶段理论",
+      "evidence": "2. 形式运算阶段（11 岁以后）",
+      "printed_page": 99
+    },
+    {
+      "from": "客体永久性",
+      "type": "part_of",
+      "to": "感知运动阶段",
+      "evidence": "“客体永久性”（9 ～ 12 个月）（即知道某人或某物虽然现在看不见但仍然是存在的）的形成。",
+      "printed_page": 97
+    },
+    {
+      "from": "泛灵论",
+      "type": "part_of",
+      "to": "前运算阶段",
+      "evidence": "前运算阶段儿童的思维具有泛灵论的特点，即将人类的特征赋予无生命的物体。",
+      "printed_page": 97
+    },
+    {
+      "from": "自我中心性",
+      "type": "part_of",
+      "to": "前运算阶段",
+      "evidence": "所谓自我中心就是指儿童往往只注意主观的观点，不能向客观事物集中",
+      "printed_page": 97
+    },
+    {
+      "from": "不守恒",
+      "type": "part_of",
+      "to": "前运算阶段",
+      "evidence": "⑤不守恒。守恒指物体不论其形态如何变化，其物质总量是恒定不变的。",
+      "printed_page": 98
+    },
+    {
+      "from": "守恒",
+      "type": "part_of",
+      "to": "具体运算阶段",
+      "evidence": "儿童能够认识到客体在外形上发生了变化，但特有的属性不变。",
+      "printed_page": 99
+    },
+    {
+      "from": "去自我中心性",
+      "type": "part_of",
+      "to": "具体运算阶段",
+      "evidence": "去自我中心是儿童社会化发展的重要标志。",
+      "printed_page": 99
+    },
+    {
+      "from": "可逆性",
+      "type": "part_of",
+      "to": "具体运算阶段",
+      "evidence": "②可逆性。皮亚杰提出，在儿童思维发展的所有特征中最重要的是可逆性。",
+      "printed_page": 99
+    },
+    {
+      "from": "假设—演绎推理",
+      "type": "part_of",
+      "to": "形式运算阶段",
+      "evidence": "②假设—演绎推理。本阶段的儿童不仅能够运用经验归纳的方式进行逻辑推理，而且能够运用假设—演绎推理的方式来解决问题。",
+      "printed_page": 99
+    },
+    {
+      "from": "三山实验",
+      "type": "related",
+      "to": "自我中心性",
+      "evidence": "在皮亚杰的“三山实验”任务中，2 ～ 7 岁的儿童只能够注意到一种情境的一个方面，从自己的角度理解问题。",
+      "printed_page": 97
+    },
+    {
+      "from": "维果斯基",
+      "type": "marks",
+      "to": "文化—历史发展理论",
+      "evidence": "维果斯基从种系和个体发展的角度分析了心理发展的实质，提出了文化—历史发展理论。",
+      "printed_page": 101
+    },
+    {
+      "from": "文化—历史发展理论",
+      "type": "part_of",
+      "to": "维果斯基的心理发展观",
+      "evidence": "（一）维果斯基发展观的基本内容",
+      "printed_page": 101
+    },
+    {
+      "from": "两种心理机能",
+      "type": "part_of",
+      "to": "维果斯基的心理发展观",
+      "evidence": "维果斯基区分了两种心理机能",
+      "printed_page": 101
+    },
+    {
+      "from": "低级心理机能",
+      "type": "subclass",
+      "to": "两种心理机能",
+      "evidence": "一种是作为动物进化结果的低级心理机能",
+      "printed_page": 101
+    },
+    {
+      "from": "高级心理机能",
+      "type": "subclass",
+      "to": "两种心理机能",
+      "evidence": "另一种则是作为历史发展结果的高级心理机能，即以符号系统为中介的心理机能",
+      "printed_page": 101
+    },
+    {
+      "from": "内化学说",
+      "type": "part_of",
+      "to": "维果斯基的心理发展观",
+      "evidence": "2. 内化学说（核心思想）",
+      "printed_page": 101
+    },
+    {
+      "from": "内化",
+      "type": "part_of",
+      "to": "内化学说",
+      "evidence": "内化是指个体将从社会环境中吸收的知识转化到心理结构中的过程。",
+      "printed_page": 101
+    },
+    {
+      "from": "教学和发展的关系",
+      "type": "part_of",
+      "to": "维果斯基的心理发展观",
+      "evidence": "4. 教学和发展的关系",
+      "printed_page": 102
+    },
+    {
+      "from": "最近发展区",
+      "type": "part_of",
+      "to": "教学和发展的关系",
+      "evidence": "这两种水平之间的差异就是最近发展区。",
+      "printed_page": 102
+    },
+    {
+      "from": "教学应当走在发展的前面",
+      "type": "part_of",
+      "to": "教学和发展的关系",
+      "evidence": "根据上述思想，维果斯基提出教学应当走在发展的前面。",
+      "printed_page": 102
+    },
+    {
+      "from": "学习的最佳期限",
+      "type": "part_of",
+      "to": "教学和发展的关系",
+      "evidence": "维果斯基强调学习的最佳期限。",
+      "printed_page": 102
+    },
+    {
+      "from": "支架式教学",
+      "type": "related",
+      "to": "最近发展区",
+      "evidence": "维果斯基的思想体系是当今建构主义发展的重要基石，其中值得注意的是支架式教学。",
+      "printed_page": 102
+    },
+    {
+      "from": "埃里克森",
+      "type": "marks",
+      "to": "埃里克森的人格发展八阶段",
+      "evidence": "埃里克森认为，人格的发展贯穿于个体的一生，整个发展过程可以划分为八个阶段",
+      "printed_page": 103
+    },
+    {
+      "from": "婴儿期",
+      "type": "subclass",
+      "to": "埃里克森的人格发展八阶段",
+      "evidence": "婴儿期……（0 ～ 1.5 岁）",
+      "printed_page": 103
+    },
+    {
+      "from": "儿童早期",
+      "type": "subclass",
+      "to": "埃里克森的人格发展八阶段",
+      "evidence": "儿童早期……（1.5 ～ 3 岁）",
+      "printed_page": 103
+    },
+    {
+      "from": "学前期",
+      "type": "subclass",
+      "to": "埃里克森的人格发展八阶段",
+      "evidence": "学前期……（3 ～ 6、7 岁）",
+      "printed_page": 103
+    },
+    {
+      "from": "学龄期",
+      "type": "subclass",
+      "to": "埃里克森的人格发展八阶段",
+      "evidence": "学龄期……（6、7 ～ 12 岁）",
+      "printed_page": 104
+    },
+    {
+      "from": "青年期",
+      "type": "subclass",
+      "to": "埃里克森的人格发展八阶段",
+      "evidence": "青年期……（12 ～ 18 岁）",
+      "printed_page": 104
+    },
+    {
+      "from": "成年早期",
+      "type": "subclass",
+      "to": "埃里克森的人格发展八阶段",
+      "evidence": "成年早期……（18 ～ 30 岁）",
+      "printed_page": 104
+    },
+    {
+      "from": "成年中期",
+      "type": "subclass",
+      "to": "埃里克森的人格发展八阶段",
+      "evidence": "成年中期……（30 ～ 60 岁）",
+      "printed_page": 104
+    },
+    {
+      "from": "成年晚期",
+      "type": "subclass",
+      "to": "埃里克森的人格发展八阶段",
+      "evidence": "成年晚期……（60 岁之后）",
+      "printed_page": 104
+    },
+    {
+      "from": "信任对不信任",
+      "type": "part_of",
+      "to": "婴儿期",
+      "evidence": "信任对……不信任",
+      "printed_page": 103
+    },
+    {
+      "from": "自主对羞怯、怀疑",
+      "type": "part_of",
+      "to": "儿童早期",
+      "evidence": "自主对……羞怯、怀疑",
+      "printed_page": 103
+    },
+    {
+      "from": "主动对内疚",
+      "type": "part_of",
+      "to": "学前期",
+      "evidence": "学前期……主动对……内疚",
+      "printed_page": 103
+    },
+    {
+      "from": "勤奋感对自卑感",
+      "type": "part_of",
+      "to": "学龄期",
+      "evidence": "勤奋感对……自卑感",
+      "printed_page": 104
+    },
+    {
+      "from": "同一性对角色混乱",
+      "type": "part_of",
+      "to": "青年期",
+      "evidence": "同一性对……角色混乱",
+      "printed_page": 104
+    },
+    {
+      "from": "亲密对孤独",
+      "type": "part_of",
+      "to": "成年早期",
+      "evidence": "成年早期……亲密对……孤独",
+      "printed_page": 104
+    },
+    {
+      "from": "能力的个体差异",
+      "type": "part_of",
+      "to": "个别差异",
+      "evidence": "一、能力的个体差异",
+      "printed_page": 105
+    },
+    {
+      "from": "能力发展水平的差异",
+      "type": "subclass",
+      "to": "能力的个体差异",
+      "evidence": "能力发展水平的差异主要体现在智力上。",
+      "printed_page": 105
+    },
+    {
+      "from": "能力发展类型的差异",
+      "type": "subclass",
+      "to": "能力的个体差异",
+      "evidence": "能力发展类型的差异是指构成能力的各种因素存在质的差异，主要表现在知觉、记忆、想象、思维的类型和品质方面。",
+      "printed_page": 105
+    },
+    {
+      "from": "能力表现早晚的差异",
+      "type": "subclass",
+      "to": "能力的个体差异",
+      "evidence": "能力表现早晚的差异主要体现在能力早期的显露和大器晚成两个方面。",
+      "printed_page": 105
+    },
+    {
+      "from": "能力的群体差异",
+      "type": "part_of",
+      "to": "个别差异",
+      "evidence": "二、能力的群体差异",
+      "printed_page": 105
+    },
+    {
+      "from": "智力的性别差异",
+      "type": "part_of",
+      "to": "能力的群体差异",
+      "evidence": "能力的群体差异是指不同群体之间的智力差异，包括能力的性别差异、年龄差异、种族差异等。",
+      "printed_page": 105
+    },
+    {
+      "from": "认知风格",
+      "type": "part_of",
+      "to": "学习风格",
+      "evidence": "科尔勃对学习风格中的认知风格进行了综合性探讨。",
+      "printed_page": 107
+    },
+    {
+      "from": "科尔勃",
+      "type": "marks",
+      "to": "科尔勃的两维坐标理论",
+      "evidence": "他由这两个维度构成了一个坐标系，确定出四种学习风格：发散者方式、同化者方式、聚合者方式和顺应者方式。",
+      "printed_page": 107
+    },
+    {
+      "from": "科尔勃的两维坐标理论",
+      "type": "part_of",
+      "to": "学习风格",
+      "evidence": "他从两个维度来考虑认知风格，即具体体验—抽象概括维度和反省性观察—主动实验维度。",
+      "printed_page": 107
+    },
+    {
+      "from": "视觉型学习者",
+      "type": "subclass",
+      "to": "学习风格·按感觉通道划分",
+      "evidence": "1. 视觉型学习者。这类学习者对视觉刺激较为敏感，习惯于通过视觉接受学习材料",
+      "printed_page": 106
+    },
+    {
+      "from": "听觉型学习者",
+      "type": "subclass",
+      "to": "学习风格·按感觉通道划分",
+      "evidence": "2. 听觉型学习者。这类学习者较为偏重听觉刺激，他们对语言、声响和音乐的接受力和理解力较强",
+      "printed_page": 106
+    },
+    {
+      "from": "动觉型学习者",
+      "type": "subclass",
+      "to": "学习风格·按感觉通道划分",
+      "evidence": "3. 动觉型学习者。这类学习者喜欢接触和操作物体，对自己能够动手参与的认知活动更感兴趣。",
+      "printed_page": 107
+    },
+    {
+      "from": "发散者方式",
+      "type": "subclass",
+      "to": "科尔勃的两维坐标理论",
+      "evidence": "第一阶段与发散者学习风格相对应。该种方式的学习者关注发散的思想，富有想象力。",
+      "printed_page": 107
+    },
+    {
+      "from": "同化者方式",
+      "type": "subclass",
+      "to": "科尔勃的两维坐标理论",
+      "evidence": "第二阶段与同化者学习风格相对应。该种方式的学习者喜欢处理抽象的观点和概念，具有理性或逻辑性。",
+      "printed_page": 107
+    },
+    {
+      "from": "聚合者方式",
+      "type": "subclass",
+      "to": "科尔勃的两维坐标理论",
+      "evidence": "第三阶段与聚合者学习风格相对应。该种方式的学习者擅长把理论应用于实践",
+      "printed_page": 107
+    },
+    {
+      "from": "顺应者方式",
+      "type": "subclass",
+      "to": "科尔勃的两维坐标理论",
+      "evidence": "第四阶段与顺应者学习风格相对应。该种方式的学习者强调主动探索和具体体验。",
+      "printed_page": 107
+    },
+    {
+      "from": "场独立型",
+      "type": "subclass",
+      "to": "认知风格·按场定向划分",
+      "evidence": "场独立型的学生是“内部定向者”，对客观事物做出判断时，常常利用内在的参照（主体感觉）",
+      "printed_page": 108
+    },
+    {
+      "from": "场依存型",
+      "type": "subclass",
+      "to": "认知风格·按场定向划分",
+      "evidence": "场依存型的学生是“外部定向者”，对事物做出判断时倾向于以外部参照（身外的客观事物）作为信息加工的依据",
+      "printed_page": 108
+    },
+    {
+      "from": "威特金",
+      "type": "marks",
+      "to": "场独立型",
+      "evidence": "著名代表人物：美国心理学家赫尔曼 · 威特金。",
+      "printed_page": 108
+    },
+    {
+      "from": "场独立型",
+      "type": "contrast",
+      "to": "场依存型",
+      "evidence": "场独立型            场依存型",
+      "printed_page": 108
+    },
+    {
+      "from": "沉思型",
+      "type": "subclass",
+      "to": "认知风格·按速度与成绩划分",
+      "evidence": "沉思型的学生在做出回答之前倾向于进行深思熟虑的、计算的、分析性的和逻辑的思考",
+      "printed_page": 109
+    },
+    {
+      "from": "冲动型",
+      "type": "subclass",
+      "to": "认知风格·按速度与成绩划分",
+      "evidence": "冲动型的学生倾向于根据几个线索做出很大的直觉的跃进，往往以很快的速度形成自己的看法",
+      "printed_page": 109
+    },
+    {
+      "from": "卡根",
+      "type": "marks",
+      "to": "沉思型",
+      "evidence": "著名代表人物：杰罗姆 · 卡根。",
+      "printed_page": 108
+    },
+    {
+      "from": "整体型",
+      "type": "subclass",
+      "to": "认知风格·按逻辑推理方式划分",
+      "evidence": "整体型的学生倾向于使用比较复杂的假设，每个假设同时涉及若干属性，从全盘上考虑如何解决问题。",
+      "printed_page": 109
+    },
+    {
+      "from": "系列型",
+      "type": "subclass",
+      "to": "认知风格·按逻辑推理方式划分",
+      "evidence": "系列型的学生把精力集中在一步一步的策略上，提出的假设一般比较简单，每个假设只包括一个属性",
+      "printed_page": 109
+    },
+    {
+      "from": "心理健康",
+      "type": "part_of",
+      "to": "健康",
+      "evidence": "健康不仅是没有疾病，而且包括躯体健康、心理健康、社会适应良好和道德健康。",
+      "printed_page": 110
+    },
+    {
+      "from": "心理健康的标准",
+      "type": "part_of",
+      "to": "心理健康",
+      "evidence": "世界卫生组织界定的心理健康标准包括以下几方面：",
+      "printed_page": 110
+    },
+    {
+      "from": "智力正常",
+      "type": "subclass",
+      "to": "心理健康的标准",
+      "evidence": "正常的智力活动是一个人学习、工作、生活所必需的基本心理条件",
+      "printed_page": 110
+    },
+    {
+      "from": "情绪适中",
+      "type": "subclass",
+      "to": "心理健康的标准",
+      "evidence": "情绪健康、稳定是心理健康的主要标志。",
+      "printed_page": 110
+    },
+    {
+      "from": "人格稳定协调",
+      "type": "subclass",
+      "to": "心理健康的标准",
+      "evidence": "健全的人格一般具有稳定协调的特点。",
+      "printed_page": 111
+    },
+    {
+      "from": "人际关系和谐",
+      "type": "subclass",
+      "to": "心理健康的标准",
+      "evidence": "人际关系和谐不只表现为个体具有正确的交往意识和态度，也体现在良好的社交技能上。",
+      "printed_page": 111
+    },
+    {
+      "from": "学生常见的心理健康问题",
+      "type": "part_of",
+      "to": "心理健康",
+      "evidence": "二、学生常见的心理健康问题",
+      "printed_page": 111
+    },
+    {
+      "from": "小学生常见的心理障碍",
+      "type": "part_of",
+      "to": "学生常见的心理健康问题",
+      "evidence": "（一）小学生常见的心理障碍",
+      "printed_page": 111
+    },
+    {
+      "from": "中学生常见的心理障碍",
+      "type": "part_of",
+      "to": "学生常见的心理健康问题",
+      "evidence": "（二）中学生常见的心理障碍",
+      "printed_page": 113
+    },
+    {
+      "from": "多动症",
+      "type": "subclass",
+      "to": "小学生常见的心理障碍",
+      "evidence": "多动症也称“儿童多动综合征”，是一种以行为障碍为特征的儿童综合征",
+      "printed_page": 111
+    },
+    {
+      "from": "学习困难综合征",
+      "type": "subclass",
+      "to": "小学生常见的心理障碍",
+      "evidence": "学习困难综合征是指某些智力正常或接近正常的儿童，因神经系统的某种或某些功能性失调",
+      "printed_page": 112
+    },
+    {
+      "from": "儿童厌学症",
+      "type": "subclass",
+      "to": "小学生常见的心理障碍",
+      "evidence": "厌学是人为因素所造成的儿童情绪上的失调状态",
+      "printed_page": 112
+    },
+    {
+      "from": "焦虑症",
+      "type": "subclass",
+      "to": "中学生常见的心理障碍",
+      "evidence": "焦虑症是以与客观威胁不相适合的焦虑反应为特征的神经症。",
+      "printed_page": 113
+    },
+    {
+      "from": "抑郁症",
+      "type": "subclass",
+      "to": "中学生常见的心理障碍",
+      "evidence": "抑郁症是以持久性的心境低落为特征的神经症。",
+      "printed_page": 113
+    },
+    {
+      "from": "强迫症",
+      "type": "subclass",
+      "to": "中学生常见的心理障碍",
+      "evidence": "强迫症是一种以强迫症状（主要包括强迫观念和强迫行为）为主要临床表现的神经症。",
+      "printed_page": 114
+    },
+    {
+      "from": "恐怖症",
+      "type": "subclass",
+      "to": "中学生常见的心理障碍",
+      "evidence": "恐怖症是对特定的无实在危害的事物与场景的非理性惧怕。",
+      "printed_page": 114
+    },
+    {
+      "from": "考试焦虑",
+      "type": "part_of",
+      "to": "焦虑症",
+      "evidence": "中学生常见的焦虑反应是考试焦虑。",
+      "printed_page": 113
+    },
+    {
+      "from": "学会调适",
+      "type": "subclass",
+      "to": "心理辅导的目标",
+      "evidence": "学会调适是基本目标，以此为主要目标的心理辅导可称为调适性辅导",
+      "printed_page": 115
+    },
+    {
+      "from": "寻求发展",
+      "type": "subclass",
+      "to": "心理辅导的目标",
+      "evidence": "寻求发展是高级目标，以此为主要目标的心理辅导可称为发展性辅导。",
+      "printed_page": 115
+    },
+    {
+      "from": "行为改变的方法",
+      "type": "subclass",
+      "to": "心理辅导的方法",
+      "evidence": "心理辅导的方法主要有三类：行为改变的方法、行为演练的方法和改善认知的方法。",
+      "printed_page": 116
+    },
+    {
+      "from": "行为演练的方法",
+      "type": "subclass",
+      "to": "心理辅导的方法",
+      "evidence": "心理辅导的方法主要有三类：行为改变的方法、行为演练的方法和改善认知的方法。",
+      "printed_page": 116
+    },
+    {
+      "from": "改善认知的方法",
+      "type": "subclass",
+      "to": "心理辅导的方法",
+      "evidence": "心理辅导的方法主要有三类：行为改变的方法、行为演练的方法和改善认知的方法。",
+      "printed_page": 116
+    },
+    {
+      "from": "强化法",
+      "type": "subclass",
+      "to": "行为改变的方法",
+      "evidence": "强化法用来培养新的适应行为。",
+      "printed_page": 117
+    },
+    {
+      "from": "代币奖励法",
+      "type": "subclass",
+      "to": "行为改变的方法",
+      "evidence": "代币是一种象征性强化物。",
+      "printed_page": 117
+    },
+    {
+      "from": "全身松弛法",
+      "type": "subclass",
+      "to": "行为演练的方法",
+      "evidence": "全身松弛法，或称松弛训练，是通过改变肌肉紧张，减轻肌肉紧张引起的酸痛",
+      "printed_page": 117
+    },
+    {
+      "from": "系统脱敏法",
+      "type": "subclass",
+      "to": "行为演练的方法",
+      "evidence": "系统脱敏是指当某些人对某事物、某环境产生敏感反应（害怕、焦虑、不安）时",
+      "printed_page": 118
+    },
+    {
+      "from": "雅各布松",
+      "type": "marks",
+      "to": "全身松弛法",
+      "evidence": "全身松弛法由美国的雅各布松在 20 世纪 20 年代首创。",
+      "printed_page": 117
+    },
+    {
+      "from": "沃尔朴",
+      "type": "marks",
+      "to": "系统脱敏法",
+      "evidence": "系统脱敏法由沃尔朴于 1958 年首创。",
+      "printed_page": 118
+    },
+    {
+      "from": "认知疗法",
+      "type": "subclass",
+      "to": "改善认知的方法",
+      "evidence": "艾利斯提出理性—情绪辅导方法。",
+      "printed_page": 118
+    },
+    {
+      "from": "来访者中心疗法",
+      "type": "subclass",
+      "to": "改善认知的方法",
+      "evidence": "来访者中心疗法又称患者中心疗法，是著名的人本主义心理学家罗杰斯创立的。",
+      "printed_page": 119
+    },
+    {
+      "from": "艾利斯",
+      "type": "marks",
+      "to": "认知疗法",
+      "evidence": "艾利斯提出理性—情绪辅导方法。",
+      "printed_page": 118
+    },
+    {
+      "from": "罗杰斯",
+      "type": "marks",
+      "to": "来访者中心疗法",
+      "evidence": "来访者中心疗法又称患者中心疗法，是著名的人本主义心理学家罗杰斯创立的。",
+      "printed_page": 119
+    }
+  ]
+}

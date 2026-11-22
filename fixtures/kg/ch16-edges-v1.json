@@ -1,0 +1,1000 @@
+{
+  "chapter": "普通心理学 第二章 心理过程——认知过程",
+  "schema_version": "1.1",
+  "edges": [
+    {
+      "from": "外部感觉",
+      "type": "subclass",
+      "to": "感觉",
+      "evidence": "根据感觉所接受信息的来源和感受器在个体身上所处的位置不同，可以把感觉分为外部感觉、内部感觉两大类。",
+      "printed_page": 12
+    },
+    {
+      "from": "内部感觉",
+      "type": "subclass",
+      "to": "感觉",
+      "evidence": "根据感觉所接受信息的来源和感受器在个体身上所处的位置不同，可以把感觉分为外部感觉、内部感觉两大类。",
+      "printed_page": 12
+    },
+    {
+      "from": "视觉",
+      "type": "subclass",
+      "to": "外部感觉",
+      "evidence": "包括视觉、听觉、味觉、嗅觉和肤觉（触觉、压觉、温度觉等）等。",
+      "printed_page": 12
+    },
+    {
+      "from": "听觉",
+      "type": "subclass",
+      "to": "外部感觉",
+      "evidence": "包括视觉、听觉、味觉、嗅觉和肤觉（触觉、压觉、温度觉等）等。",
+      "printed_page": 12
+    },
+    {
+      "from": "机体觉",
+      "type": "subclass",
+      "to": "内部感觉",
+      "evidence": "包括机体觉、运动觉和平衡觉。",
+      "printed_page": 12
+    },
+    {
+      "from": "感受性",
+      "type": "related",
+      "to": "感觉阈限",
+      "evidence": "感受性与感觉阈限成反比关系，感觉阈限越高，感受性越差。",
+      "printed_page": 13
+    },
+    {
+      "from": "绝对感受性",
+      "type": "subclass",
+      "to": "感受性",
+      "evidence": "绝对感受性：感觉出最小刺激量的能力。",
+      "printed_page": 13
+    },
+    {
+      "from": "差别感受性",
+      "type": "subclass",
+      "to": "感受性",
+      "evidence": "差别感受性：在感觉上，能觉察出两个同类刺激物之间的最小差别量的能力。",
+      "printed_page": 13
+    },
+    {
+      "from": "绝对感觉阈限",
+      "type": "subclass",
+      "to": "感觉阈限",
+      "evidence": "绝对感觉阈限：也叫绝对阈限，是指刚刚能引起感觉的最小刺激量。",
+      "printed_page": 13
+    },
+    {
+      "from": "差别感觉阈限",
+      "type": "subclass",
+      "to": "感觉阈限",
+      "evidence": "差别感觉阈限：也叫差别阈限，又称最小可觉差，是指刚刚能引起差别感觉的刺激的最小变化量",
+      "printed_page": 13
+    },
+    {
+      "from": "差别感觉阈限",
+      "type": "exact_match",
+      "to": "最小可觉差",
+      "evidence": "差别感觉阈限：也叫差别阈限，又称最小可觉差",
+      "printed_page": 13
+    },
+    {
+      "from": "感觉适应",
+      "type": "part_of",
+      "to": "同一感觉的相互作用",
+      "evidence": "由于刺激物持续作用于同一感受器，从而使感受性发生变化的现象叫感觉适应。",
+      "printed_page": 13
+    },
+    {
+      "from": "感觉对比",
+      "type": "part_of",
+      "to": "同一感觉的相互作用",
+      "evidence": "不同刺激作用于同一感觉器官，使感受性发生变化的现象叫感觉对比。",
+      "printed_page": 14
+    },
+    {
+      "from": "感觉后效",
+      "type": "part_of",
+      "to": "同一感觉的相互作用",
+      "evidence": "在刺激作用停止后暂时保留的感觉现象称为感觉后效，也叫感觉后像。",
+      "printed_page": 14
+    },
+    {
+      "from": "同时对比",
+      "type": "subclass",
+      "to": "感觉对比",
+      "evidence": "感觉对比分为两种：同时对比和继时对比。",
+      "printed_page": 14
+    },
+    {
+      "from": "继时对比",
+      "type": "subclass",
+      "to": "感觉对比",
+      "evidence": "感觉对比分为两种：同时对比和继时对比。",
+      "printed_page": 14
+    },
+    {
+      "from": "暗适应",
+      "type": "subclass",
+      "to": "感觉适应",
+      "evidence": "暗适应是在光刺激由强变弱的情况下发生的感受性提高的过程。",
+      "printed_page": 13
+    },
+    {
+      "from": "明适应",
+      "type": "subclass",
+      "to": "感觉适应",
+      "evidence": "明适应是在光刺激由弱变强的情况下发生的感受性降低的过程。",
+      "printed_page": 14
+    },
+    {
+      "from": "联觉",
+      "type": "subclass",
+      "to": "不同感觉的相互作用",
+      "evidence": "（2）联觉：一个刺激不仅引起一种感觉，同时还引起另一种感觉的现象。",
+      "printed_page": 14
+    },
+    {
+      "from": "痛觉",
+      "type": "related",
+      "to": "感觉适应",
+      "evidence": "其中痛觉是最难适应的，因为痛觉具有保护作用。",
+      "printed_page": 14
+    },
+    {
+      "from": "空间知觉",
+      "type": "subclass",
+      "to": "知觉",
+      "evidence": "根据知觉反映的客观对象的不同，可将知觉分为空间知觉、时间知觉、运动知觉。",
+      "printed_page": 15
+    },
+    {
+      "from": "运动知觉",
+      "type": "subclass",
+      "to": "知觉",
+      "evidence": "根据知觉反映的客观对象的不同，可将知觉分为空间知觉、时间知觉、运动知觉。",
+      "printed_page": 15
+    },
+    {
+      "from": "形状知觉",
+      "type": "part_of",
+      "to": "空间知觉",
+      "evidence": "它包括形状知觉、大小知觉、方位知觉和深度知觉。",
+      "printed_page": 15
+    },
+    {
+      "from": "大小知觉",
+      "type": "part_of",
+      "to": "空间知觉",
+      "evidence": "它包括形状知觉、大小知觉、方位知觉和深度知觉。",
+      "printed_page": 15
+    },
+    {
+      "from": "方位知觉",
+      "type": "part_of",
+      "to": "空间知觉",
+      "evidence": "它包括形状知觉、大小知觉、方位知觉和深度知觉。",
+      "printed_page": 15
+    },
+    {
+      "from": "深度知觉",
+      "type": "part_of",
+      "to": "空间知觉",
+      "evidence": "它包括形状知觉、大小知觉、方位知觉和深度知觉。",
+      "printed_page": 15
+    },
+    {
+      "from": "深度知觉",
+      "type": "exact_match",
+      "to": "距离知觉",
+      "evidence": "深度知觉：又称距离知觉或立体知觉",
+      "printed_page": 15
+    },
+    {
+      "from": "真动知觉",
+      "type": "subclass",
+      "to": "运动知觉",
+      "evidence": "运动知觉分为真动知觉和似动知觉。",
+      "printed_page": 16
+    },
+    {
+      "from": "似动知觉",
+      "type": "subclass",
+      "to": "运动知觉",
+      "evidence": "运动知觉分为真动知觉和似动知觉。",
+      "printed_page": 16
+    },
+    {
+      "from": "动景运动",
+      "type": "subclass",
+      "to": "似动知觉",
+      "evidence": "动景运动是指当两个刺激物按一定的空间距离和时间间隔相继呈现时",
+      "printed_page": 16
+    },
+    {
+      "from": "诱导运动",
+      "type": "subclass",
+      "to": "似动知觉",
+      "evidence": "诱导运动是指由于一个物体的运动使相邻的一个静止的物体产生运动的印象。",
+      "printed_page": 16
+    },
+    {
+      "from": "错觉",
+      "type": "related",
+      "to": "知觉",
+      "evidence": "错觉是人脑不能正确地表达外界事物的特征，而出现的种种歪曲的知觉。",
+      "printed_page": 17
+    },
+    {
+      "from": "知觉的选择性",
+      "type": "subclass",
+      "to": "知觉的基本特征",
+      "evidence": "人在知觉过程中把知觉对象从背景中区分出来优先加以清晰地反映的特性就叫知觉的选择性。",
+      "printed_page": 18
+    },
+    {
+      "from": "知觉的理解性",
+      "type": "subclass",
+      "to": "知觉的基本特征",
+      "evidence": "人们总是根据已有的知识经验来解释当前知觉的对象，并用语言来描述它，使它具有一定的意义，这就是知觉的理解性。",
+      "printed_page": 18
+    },
+    {
+      "from": "知觉的整体性",
+      "type": "subclass",
+      "to": "知觉的基本特征",
+      "evidence": "但我们总是把客观事物作为整体来感知，即把客观事物的个别特性综合为整体来反映，这就是知觉的整体性。",
+      "printed_page": 19
+    },
+    {
+      "from": "知觉的恒常性",
+      "type": "subclass",
+      "to": "知觉的基本特征",
+      "evidence": "但是对它的知觉却保持相对稳定性，这就是知觉的恒常性。",
+      "printed_page": 19
+    },
+    {
+      "from": "接近原则",
+      "type": "subclass",
+      "to": "知觉的组织原则",
+      "evidence": "接近原则：在时间或空间上接近的刺激物容易被知觉为一个整体。",
+      "printed_page": 19
+    },
+    {
+      "from": "相似性原则",
+      "type": "subclass",
+      "to": "知觉的组织原则",
+      "evidence": "相似性原则：物理属性相似的客体",
+      "printed_page": 19
+    },
+    {
+      "from": "闭合原则",
+      "type": "subclass",
+      "to": "知觉的组织原则",
+      "evidence": "闭合原则：人们倾向于将图形刺激中的特征聚合成形",
+      "printed_page": 19
+    },
+    {
+      "from": "知觉的组织原则",
+      "type": "part_of",
+      "to": "知觉的整体性",
+      "evidence": "知觉的整体性往往取决于四种因素",
+      "printed_page": 19
+    },
+    {
+      "from": "亮度恒常性",
+      "type": "subclass",
+      "to": "知觉的恒常性",
+      "evidence": "知觉恒常性的主要成分有四种，即亮度恒常性、颜色恒常性、形状恒常性、大小恒常性。",
+      "printed_page": 20
+    },
+    {
+      "from": "颜色恒常性",
+      "type": "subclass",
+      "to": "知觉的恒常性",
+      "evidence": "知觉恒常性的主要成分有四种，即亮度恒常性、颜色恒常性、形状恒常性、大小恒常性。",
+      "printed_page": 20
+    },
+    {
+      "from": "观察",
+      "type": "subclass",
+      "to": "知觉",
+      "evidence": "观察是人的一种有目的、有计划、持久的知觉活动，是知觉的高级形式",
+      "printed_page": 20
+    },
+    {
+      "from": "观察",
+      "type": "attribute",
+      "to": "观察的目的性",
+      "evidence": "观察的目的性是指善于组织知觉活动达到预期观察目的的品质。",
+      "printed_page": 20
+    },
+    {
+      "from": "观察",
+      "type": "attribute",
+      "to": "观察的敏锐性",
+      "evidence": "观察的敏锐性是指善于迅速地发现事物重要特征的品质。",
+      "printed_page": 21
+    },
+    {
+      "from": "强度律",
+      "type": "subclass",
+      "to": "感知觉规律的教学应用",
+      "evidence": "作用于感觉器官的刺激物必须达到一定的强度，才能被我们清晰地感知。",
+      "printed_page": 22
+    },
+    {
+      "from": "差异律",
+      "type": "subclass",
+      "to": "感知觉规律的教学应用",
+      "evidence": "当知觉的对象与背景在颜色、形态、声音等方面有较大差别时，知觉的对象容易被感知。",
+      "printed_page": 22
+    },
+    {
+      "from": "活动律",
+      "type": "subclass",
+      "to": "感知觉规律的教学应用",
+      "evidence": "在静止的背景上，活动的对象容易被感知",
+      "printed_page": 22
+    },
+    {
+      "from": "知觉",
+      "type": "prerequisite",
+      "to": "感觉",
+      "evidence": "没有反映事物个别属性的感觉，就不可能有反映事物整体属性的知觉。",
+      "printed_page": 21
+    },
+    {
+      "from": "形象记忆",
+      "type": "subclass",
+      "to": "记忆",
+      "evidence": "根据记忆内容和经验对象划分：形象记忆、逻辑记忆、情绪记忆和动作记忆",
+      "printed_page": 23
+    },
+    {
+      "from": "逻辑记忆",
+      "type": "subclass",
+      "to": "记忆",
+      "evidence": "根据记忆内容和经验对象划分：形象记忆、逻辑记忆、情绪记忆和动作记忆",
+      "printed_page": 23
+    },
+    {
+      "from": "情绪记忆",
+      "type": "subclass",
+      "to": "记忆",
+      "evidence": "根据记忆内容和经验对象划分：形象记忆、逻辑记忆、情绪记忆和动作记忆",
+      "printed_page": 23
+    },
+    {
+      "from": "瞬时记忆",
+      "type": "subclass",
+      "to": "记忆",
+      "evidence": "根据记忆内容保持时间的长短划分：瞬时记忆（感觉记忆、感觉登记）、短时记忆（工作记忆）和长时记忆",
+      "printed_page": 23
+    },
+    {
+      "from": "短时记忆",
+      "type": "subclass",
+      "to": "记忆",
+      "evidence": "根据记忆内容保持时间的长短划分：瞬时记忆（感觉记忆、感觉登记）、短时记忆（工作记忆）和长时记忆",
+      "printed_page": 23
+    },
+    {
+      "from": "长时记忆",
+      "type": "subclass",
+      "to": "记忆",
+      "evidence": "根据记忆内容保持时间的长短划分：瞬时记忆（感觉记忆、感觉登记）、短时记忆（工作记忆）和长时记忆",
+      "printed_page": 23
+    },
+    {
+      "from": "感觉记忆",
+      "type": "exact_match",
+      "to": "瞬时记忆",
+      "evidence": "根据记忆内容保持时间的长短划分：瞬时记忆（感觉记忆、感觉登记）、短时记忆（工作记忆）和长时记忆",
+      "printed_page": 23
+    },
+    {
+      "from": "工作记忆",
+      "type": "exact_match",
+      "to": "短时记忆",
+      "evidence": "根据记忆内容保持时间的长短划分：瞬时记忆（感觉记忆、感觉登记）、短时记忆（工作记忆）和长时记忆",
+      "printed_page": 23
+    },
+    {
+      "from": "情景记忆",
+      "type": "subclass",
+      "to": "长时记忆",
+      "evidence": "图尔文将长时记忆分为两类：情景记忆和语义记忆",
+      "printed_page": 25
+    },
+    {
+      "from": "语义记忆",
+      "type": "subclass",
+      "to": "长时记忆",
+      "evidence": "图尔文将长时记忆分为两类：情景记忆和语义记忆",
+      "printed_page": 25
+    },
+    {
+      "from": "识记",
+      "type": "part_of",
+      "to": "记忆的过程",
+      "evidence": "识记是记忆过程的开端，是个体获得知识和经验的过程，具有选择性。",
+      "printed_page": 26
+    },
+    {
+      "from": "保持",
+      "type": "part_of",
+      "to": "记忆的过程",
+      "evidence": "保持是指已获得的知识经验在人脑中的巩固过程，它是记忆过程的第二个环节。",
+      "printed_page": 27
+    },
+    {
+      "from": "回忆",
+      "type": "part_of",
+      "to": "记忆的过程",
+      "evidence": "回忆：对不在眼前的过去经历过的事物，在脑中重新呈现出来的过程。",
+      "printed_page": 27
+    },
+    {
+      "from": "再认",
+      "type": "part_of",
+      "to": "记忆的过程",
+      "evidence": "再认：对过去经历过的事物，当它再度出现时能识别出是以前经历过的。",
+      "printed_page": 27
+    },
+    {
+      "from": "无意识记",
+      "type": "subclass",
+      "to": "识记",
+      "evidence": "根据识记有无目的性和是否需要意志努力，可分为无意识记和有意识记",
+      "printed_page": 26
+    },
+    {
+      "from": "有意识记",
+      "type": "subclass",
+      "to": "识记",
+      "evidence": "根据识记有无目的性和是否需要意志努力，可分为无意识记和有意识记",
+      "printed_page": 26
+    },
+    {
+      "from": "机械记忆",
+      "type": "subclass",
+      "to": "识记",
+      "evidence": "根据识记的方法，可分为机械记忆和意义记忆",
+      "printed_page": 26
+    },
+    {
+      "from": "意义记忆",
+      "type": "subclass",
+      "to": "识记",
+      "evidence": "根据识记的方法，可分为机械记忆和意义记忆",
+      "printed_page": 26
+    },
+    {
+      "from": "有意回忆",
+      "type": "subclass",
+      "to": "回忆",
+      "evidence": "根据是否有目的划分：有意回忆、无意回忆。",
+      "printed_page": 27
+    },
+    {
+      "from": "记忆痕迹衰退说",
+      "type": "subclass",
+      "to": "遗忘的原因",
+      "evidence": "遗忘是记忆痕迹得不到强化而逐渐衰退，以致最后消退的结果。",
+      "printed_page": 28
+    },
+    {
+      "from": "干扰抑制说",
+      "type": "subclass",
+      "to": "遗忘的原因",
+      "evidence": "遗忘是因为在学习和回忆之间受到其他刺激的干扰。",
+      "printed_page": 28
+    },
+    {
+      "from": "同化说",
+      "type": "subclass",
+      "to": "遗忘的原因",
+      "evidence": "遗忘实际上是知识的组织与认知结构简化的过程",
+      "printed_page": 28
+    },
+    {
+      "from": "动机说",
+      "type": "subclass",
+      "to": "遗忘的原因",
+      "evidence": "遗忘是由情绪或动机的压抑作用引起的",
+      "printed_page": 28
+    },
+    {
+      "from": "提取失败说",
+      "type": "subclass",
+      "to": "遗忘的原因",
+      "evidence": "储存在长时记忆中的信息是永远不会丢失的，其被遗忘是失去了线索或线索错误所致",
+      "printed_page": 28
+    },
+    {
+      "from": "巴甫洛夫",
+      "type": "marks",
+      "to": "记忆痕迹衰退说",
+      "evidence": "代表人物：巴甫洛夫和桑代克。",
+      "printed_page": 28
+    },
+    {
+      "from": "奥苏贝尔",
+      "type": "marks",
+      "to": "同化说",
+      "evidence": "代表人物：奥苏贝尔。",
+      "printed_page": 28
+    },
+    {
+      "from": "弗洛伊德",
+      "type": "marks",
+      "to": "动机说",
+      "evidence": "代表人物：弗洛伊德。",
+      "printed_page": 28
+    },
+    {
+      "from": "图尔文",
+      "type": "marks",
+      "to": "提取失败说",
+      "evidence": "代表人物：图尔文。",
+      "printed_page": 28
+    },
+    {
+      "from": "前摄抑制",
+      "type": "subclass",
+      "to": "干扰抑制说",
+      "evidence": "前摄抑制：先前学习的材料对后来学习的材料的回忆或再认产生的干扰。",
+      "printed_page": 28
+    },
+    {
+      "from": "倒摄抑制",
+      "type": "subclass",
+      "to": "干扰抑制说",
+      "evidence": "倒摄抑制：后来学习的材料对先前学习的材料的回忆或再认产生的干扰。",
+      "printed_page": 28
+    },
+    {
+      "from": "艾宾浩斯",
+      "type": "marks",
+      "to": "遗忘曲线",
+      "evidence": "19 世纪末，德国心理学家艾宾浩斯最早对遗忘进行了实验研究，并绘制了“遗忘曲线”",
+      "printed_page": 29
+    },
+    {
+      "from": "系列位置效应",
+      "type": "subclass",
+      "to": "影响遗忘进程的因素",
+      "evidence": "系列位置效应是指记忆材料在系列位置中所处的位置对记忆效果发生的影响",
+      "printed_page": 30
+    },
+    {
+      "from": "首因效应",
+      "type": "part_of",
+      "to": "系列位置效应",
+      "evidence": "包括首因效应和近因效应，即材料的开头和结尾记忆效果较好。",
+      "printed_page": 30
+    },
+    {
+      "from": "记忆品质",
+      "type": "part_of",
+      "to": "记忆",
+      "evidence": "良好记忆品质的特点",
+      "printed_page": 30
+    },
+    {
+      "from": "敏捷性",
+      "type": "subclass",
+      "to": "记忆品质",
+      "evidence": "敏捷性是指记忆的速度和效率特征，即识记的快慢。",
+      "printed_page": 30
+    },
+    {
+      "from": "持久性",
+      "type": "subclass",
+      "to": "记忆品质",
+      "evidence": "持久性是指记忆的保持特征，即记忆内容保持的时间长短。",
+      "printed_page": 30
+    },
+    {
+      "from": "准确性",
+      "type": "subclass",
+      "to": "记忆品质",
+      "evidence": "准确性是指记忆的正确和精确特征。",
+      "printed_page": 31
+    },
+    {
+      "from": "准备性",
+      "type": "subclass",
+      "to": "记忆品质",
+      "evidence": "准备性是指记忆的提取和应用特征",
+      "printed_page": 31
+    },
+    {
+      "from": "组块化策略",
+      "type": "subclass",
+      "to": "提高记忆能力的方法",
+      "evidence": "运用组块化策略，合理组织材料。",
+      "printed_page": 31
+    },
+    {
+      "from": "过度学习",
+      "type": "subclass",
+      "to": "提高记忆能力的方法",
+      "evidence": "②适当过度学习，即学习的熟练程度达到 150%，过度学习 50%。",
+      "printed_page": 32
+    },
+    {
+      "from": "思维",
+      "type": "attribute",
+      "to": "思维的间接性",
+      "evidence": "思维是人脑对客观事物的间接的、概括的反映。",
+      "printed_page": 32
+    },
+    {
+      "from": "思维",
+      "type": "attribute",
+      "to": "思维的概括性",
+      "evidence": "思维是人脑对客观事物的间接的、概括的反映。",
+      "printed_page": 32
+    },
+    {
+      "from": "思维的品质",
+      "type": "part_of",
+      "to": "思维",
+      "evidence": "思维的品质是衡量人的思维水平高低的主要标志。",
+      "printed_page": 32
+    },
+    {
+      "from": "思维的深刻性",
+      "type": "subclass",
+      "to": "思维的品质",
+      "evidence": "思维的深刻性即思维的深度",
+      "printed_page": 33
+    },
+    {
+      "from": "直观动作思维",
+      "type": "subclass",
+      "to": "思维",
+      "evidence": "根据思维的凭借物（思维的内容和发展水平）划分：直观动作思维、具体形象思维、抽象逻辑思维",
+      "printed_page": 33
+    },
+    {
+      "from": "具体形象思维",
+      "type": "subclass",
+      "to": "思维",
+      "evidence": "根据思维的凭借物（思维的内容和发展水平）划分：直观动作思维、具体形象思维、抽象逻辑思维",
+      "printed_page": 33
+    },
+    {
+      "from": "抽象逻辑思维",
+      "type": "subclass",
+      "to": "思维",
+      "evidence": "根据思维的凭借物（思维的内容和发展水平）划分：直观动作思维、具体形象思维、抽象逻辑思维",
+      "printed_page": 33
+    },
+    {
+      "from": "发散思维",
+      "type": "subclass",
+      "to": "思维",
+      "evidence": "根据思维的指向性划分：辐合思维、发散思维",
+      "printed_page": 34
+    },
+    {
+      "from": "创造性思维",
+      "type": "subclass",
+      "to": "思维",
+      "evidence": "根据思维的创新性程度划分：常规思维、创造性思维",
+      "printed_page": 34
+    },
+    {
+      "from": "分析",
+      "type": "part_of",
+      "to": "思维的过程",
+      "evidence": "思维的过程包括分析、综合、比较、分类、抽象、概括、具体化与系统化等。",
+      "printed_page": 34
+    },
+    {
+      "from": "综合",
+      "type": "part_of",
+      "to": "思维的过程",
+      "evidence": "思维的过程包括分析、综合、比较、分类、抽象、概括、具体化与系统化等。",
+      "printed_page": 34
+    },
+    {
+      "from": "比较",
+      "type": "part_of",
+      "to": "思维的过程",
+      "evidence": "思维的过程包括分析、综合、比较、分类、抽象、概括、具体化与系统化等。",
+      "printed_page": 34
+    },
+    {
+      "from": "抽象",
+      "type": "part_of",
+      "to": "思维的过程",
+      "evidence": "思维的过程包括分析、综合、比较、分类、抽象、概括、具体化与系统化等。",
+      "printed_page": 34
+    },
+    {
+      "from": "概括",
+      "type": "part_of",
+      "to": "思维的过程",
+      "evidence": "思维的过程包括分析、综合、比较、分类、抽象、概括、具体化与系统化等。",
+      "printed_page": 34
+    },
+    {
+      "from": "概念",
+      "type": "part_of",
+      "to": "思维的基本形式",
+      "evidence": "思维的基本形式包括概念、判断、推理。",
+      "printed_page": 35
+    },
+    {
+      "from": "判断",
+      "type": "part_of",
+      "to": "思维的基本形式",
+      "evidence": "思维的基本形式包括概念、判断、推理。",
+      "printed_page": 35
+    },
+    {
+      "from": "推理",
+      "type": "part_of",
+      "to": "思维的基本形式",
+      "evidence": "思维的基本形式包括概念、判断、推理。",
+      "printed_page": 35
+    },
+    {
+      "from": "合取概念",
+      "type": "subclass",
+      "to": "概念",
+      "evidence": "①合取概念是根据一类事物中单个或多个相同属性形成的概念。",
+      "printed_page": 35
+    },
+    {
+      "from": "析取概念",
+      "type": "subclass",
+      "to": "概念",
+      "evidence": "②析取概念是根据不同的标准，结合单个或多个属性所形成的概念。",
+      "printed_page": 35
+    },
+    {
+      "from": "归纳推理",
+      "type": "subclass",
+      "to": "推理",
+      "evidence": "推理可分为归纳推理和演绎推理。",
+      "printed_page": 35
+    },
+    {
+      "from": "演绎推理",
+      "type": "subclass",
+      "to": "推理",
+      "evidence": "推理可分为归纳推理和演绎推理。",
+      "printed_page": 35
+    },
+    {
+      "from": "表象",
+      "type": "attribute",
+      "to": "表象的直观性",
+      "evidence": "表象是以生动具体的形象在头脑中出现的。",
+      "printed_page": 37
+    },
+    {
+      "from": "表象",
+      "type": "attribute",
+      "to": "表象的概括性",
+      "evidence": "因此表象具有概括性。",
+      "printed_page": 37
+    },
+    {
+      "from": "表象",
+      "type": "attribute",
+      "to": "表象的可操作性",
+      "evidence": "表象是知觉的类似物，因此人们可以在头脑中对表象进行操作",
+      "printed_page": 37
+    },
+    {
+      "from": "无意想象",
+      "type": "subclass",
+      "to": "想象",
+      "evidence": "按照想象活动是否具有目的性，想象可以分为无意想象和有意想象。",
+      "printed_page": 37
+    },
+    {
+      "from": "有意想象",
+      "type": "subclass",
+      "to": "想象",
+      "evidence": "按照想象活动是否具有目的性，想象可以分为无意想象和有意想象。",
+      "printed_page": 37
+    },
+    {
+      "from": "再造想象",
+      "type": "subclass",
+      "to": "有意想象",
+      "evidence": "根据想象内容的新颖程度及形成方式的不同，可以分为再造想象、创造想象。",
+      "printed_page": 37
+    },
+    {
+      "from": "创造想象",
+      "type": "subclass",
+      "to": "有意想象",
+      "evidence": "根据想象内容的新颖程度及形成方式的不同，可以分为再造想象、创造想象。",
+      "printed_page": 37
+    },
+    {
+      "from": "幻想",
+      "type": "subclass",
+      "to": "创造想象",
+      "evidence": "幻想是创造想象的特殊形式。",
+      "printed_page": 37
+    },
+    {
+      "from": "理想",
+      "type": "subclass",
+      "to": "幻想",
+      "evidence": "如果幻想以现实为依据，并指向行动，经过努力最终可以实现，那么它就变成了理想",
+      "printed_page": 38
+    },
+    {
+      "from": "想象的综合过程",
+      "type": "part_of",
+      "to": "想象",
+      "evidence": "（四）想象的综合过程",
+      "printed_page": 39
+    },
+    {
+      "from": "黏合",
+      "type": "subclass",
+      "to": "想象的综合过程",
+      "evidence": "黏合是指把客观事物从未结合过的属性、特征、部分在头脑中结合在一起形成新的形象。",
+      "printed_page": 39
+    },
+    {
+      "from": "典型化",
+      "type": "subclass",
+      "to": "想象的综合过程",
+      "evidence": "典型化是根据一类事物的共同特征创造新形象的过程。",
+      "printed_page": 39
+    },
+    {
+      "from": "注意",
+      "type": "attribute",
+      "to": "注意的指向性",
+      "evidence": "注意的指向性是指心理活动有选择地反映一定的对象，而离开其他对象。",
+      "printed_page": 40
+    },
+    {
+      "from": "注意",
+      "type": "attribute",
+      "to": "注意的集中性",
+      "evidence": "注意的集中性是指心理活动停留在被选择的对象上的强度和紧张度。",
+      "printed_page": 40
+    },
+    {
+      "from": "注意的功能",
+      "type": "part_of",
+      "to": "注意",
+      "evidence": "三、注意的功能",
+      "printed_page": 40
+    },
+    {
+      "from": "选择功能",
+      "type": "part_of",
+      "to": "注意的功能",
+      "evidence": "选择功能是注意最基本的功能。",
+      "printed_page": 40
+    },
+    {
+      "from": "调节和监督功能",
+      "type": "part_of",
+      "to": "注意的功能",
+      "evidence": "心理学认为注意最重要的功能是对活动进行调节和监督。",
+      "printed_page": 40
+    },
+    {
+      "from": "无意注意",
+      "type": "subclass",
+      "to": "注意",
+      "evidence": "没有预定目的、不需要任何意志努力、自然发生的注意就是无意注意，也叫不随意注意。",
+      "printed_page": 41
+    },
+    {
+      "from": "有意注意",
+      "type": "subclass",
+      "to": "注意",
+      "evidence": "有意注意是自觉的、有目的的、需要做出一定意志努力的注意，又叫随意注意。",
+      "printed_page": 42
+    },
+    {
+      "from": "有意后注意",
+      "type": "subclass",
+      "to": "注意",
+      "evidence": "有意后注意是事先有预定目的，但不需要付出意志努力的注意，也叫随意后注意。",
+      "printed_page": 42
+    },
+    {
+      "from": "不随意注意",
+      "type": "exact_match",
+      "to": "无意注意",
+      "evidence": "没有预定目的、不需要任何意志努力、自然发生的注意就是无意注意，也叫不随意注意。",
+      "printed_page": 41
+    },
+    {
+      "from": "有意注意",
+      "type": "prerequisite",
+      "to": "有意后注意",
+      "evidence": "有意后注意是在一定条件下，由有意注意发展而成的更高级的注意。",
+      "printed_page": 42
+    },
+    {
+      "from": "适应性运动",
+      "type": "part_of",
+      "to": "注意的外部表现",
+      "evidence": "人在注意听一个声音时，常把耳朵转向声音的方向，即所谓“侧耳细听”",
+      "printed_page": 43
+    },
+    {
+      "from": "注意的外部表现",
+      "type": "part_of",
+      "to": "注意",
+      "evidence": "注意的最显著的外部表现有以下几种：",
+      "printed_page": 43
+    },
+    {
+      "from": "注意的广度",
+      "type": "exact_match",
+      "to": "注意的范围",
+      "evidence": "注意的范围也称注意的广度，是指在瞬间被人的意识所把握的客体的数目。",
+      "printed_page": 43
+    },
+    {
+      "from": "注意的持久性",
+      "type": "exact_match",
+      "to": "注意的稳定性",
+      "evidence": "注意的稳定性也称注意的持久性，是指注意集中在一定对象上的持续时间。",
+      "printed_page": 43
+    },
+    {
+      "from": "注意的范围",
+      "type": "subclass",
+      "to": "注意的品质",
+      "evidence": "（一）注意的范围",
+      "printed_page": 43
+    },
+    {
+      "from": "注意的稳定性",
+      "type": "subclass",
+      "to": "注意的品质",
+      "evidence": "（二）注意的稳定性",
+      "printed_page": 43
+    },
+    {
+      "from": "注意的分配",
+      "type": "subclass",
+      "to": "注意的品质",
+      "evidence": "注意的分配是指在同一时间内把注意力集中于两种或两种以上对象或活动上的特性。",
+      "printed_page": 44
+    },
+    {
+      "from": "注意的转移",
+      "type": "subclass",
+      "to": "注意的品质",
+      "evidence": "注意的转移是指人有意识地把注意力从一事物转到另一事物上去。",
+      "printed_page": 44
+    },
+    {
+      "from": "注意的品质",
+      "type": "part_of",
+      "to": "注意",
+      "evidence": "二、注意的品质",
+      "printed_page": 43
+    },
+    {
+      "from": "注意的分散",
+      "type": "contrast",
+      "to": "注意的稳定性",
+      "evidence": "与注意稳定性相反的状态是注意的分散，又称“分心”。",
+      "printed_page": 44
+    }
+  ]
+}

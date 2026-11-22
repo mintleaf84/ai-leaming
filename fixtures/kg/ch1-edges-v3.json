@@ -199,9 +199,9 @@
       "printed_page": 6
     },
     {
-      "from": "制度化教育",
+      "from": "非制度化教育",
       "type": "prerequisite",
-      "to": "非制度化教育",
+      "to": "制度化教育",
       "evidence": "制度化教育是从非制度化教育中演化而来的。",
       "printed_page": 6,
       "note": "先有非制度化，才有制度化"

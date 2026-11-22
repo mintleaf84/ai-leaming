@@ -1,0 +1,496 @@
+{
+  "chapter": "第四篇 教育心理学 第六章 教学心理",
+  "schema_version": "1.1",
+  "edges": [
+    {
+      "from": "教学目标",
+      "type": "part_of",
+      "to": "教学设计",
+      "evidence": "教学目标是教学设计的核心",
+      "printed_page": 224
+    },
+    {
+      "from": "教学内容",
+      "type": "part_of",
+      "to": "教学设计",
+      "evidence": "教学内容是教学设计的最关键环节",
+      "printed_page": 224
+    },
+    {
+      "from": "教学评价",
+      "type": "part_of",
+      "to": "教学设计",
+      "evidence": "这个过程包括对教学目标、教学内容、教学组织形式、教学模式、教学方法、教学媒体以及教学评价等活动过程的策划",
+      "printed_page": 224
+    },
+    {
+      "from": "教学设计的依据",
+      "type": "part_of",
+      "to": "教学设计",
+      "evidence": "教学设计的依据包括",
+      "printed_page": 224
+    },
+    {
+      "from": "理论依据",
+      "type": "part_of",
+      "to": "教学设计的依据",
+      "evidence": "1. 理论依据：①系统科学的原理与方法",
+      "printed_page": 224
+    },
+    {
+      "from": "现实依据",
+      "type": "part_of",
+      "to": "教学设计的依据",
+      "evidence": "2. 现实依据：①教学的实际需要",
+      "printed_page": 224
+    },
+    {
+      "from": "教学设计的特点",
+      "type": "part_of",
+      "to": "教学设计",
+      "evidence": "（二）教学设计的特点",
+      "printed_page": 224
+    },
+    {
+      "from": "教学设计的原则",
+      "type": "part_of",
+      "to": "教学设计",
+      "evidence": "（三）教学设计的原则",
+      "printed_page": 225
+    },
+    {
+      "from": "以学生为主体的原则",
+      "type": "subclass",
+      "to": "教学设计的原则",
+      "evidence": "1. 以学生为主体的原则。",
+      "printed_page": 225
+    },
+    {
+      "from": "以教师为主导的原则",
+      "type": "subclass",
+      "to": "教学设计的原则",
+      "evidence": "2. 以教师为主导的原则。",
+      "printed_page": 225
+    },
+    {
+      "from": "布卢姆教学目标分类",
+      "type": "part_of",
+      "to": "教学目标",
+      "evidence": "（二）布卢姆教学目标分类的理论",
+      "printed_page": 225
+    },
+    {
+      "from": "认知目标",
+      "type": "subclass",
+      "to": "布卢姆教学目标分类",
+      "evidence": "布卢姆等人在其教育目标分类系统中将教学目标分为认知、情感和动作技能三大领域。",
+      "printed_page": 226
+    },
+    {
+      "from": "情感目标",
+      "type": "subclass",
+      "to": "布卢姆教学目标分类",
+      "evidence": "情感领域的教学目标根据价值内化的程度分为接受、反应、评价、组织和个性化五个等级。",
+      "printed_page": 226
+    },
+    {
+      "from": "动作技能目标",
+      "type": "subclass",
+      "to": "布卢姆教学目标分类",
+      "evidence": "动作技能教学目标指预期教学后学生在动作技能方面所应达到的目标",
+      "printed_page": 227
+    },
+    {
+      "from": "知识（认知目标）",
+      "type": "subclass",
+      "to": "认知目标",
+      "evidence": "（1）知识：学生所获得的实际信息",
+      "printed_page": 226
+    },
+    {
+      "from": "领会",
+      "type": "subclass",
+      "to": "认知目标",
+      "evidence": "（2）领会：把握所学知识的意义。",
+      "printed_page": 226
+    },
+    {
+      "from": "应用",
+      "type": "subclass",
+      "to": "认知目标",
+      "evidence": "（3）应用：将所学材料应用于新的情境之中",
+      "printed_page": 226
+    },
+    {
+      "from": "分析",
+      "type": "subclass",
+      "to": "认知目标",
+      "evidence": "（4）分析：将整体材料分解成其若干构成成分并理解组织结构",
+      "printed_page": 226
+    },
+    {
+      "from": "综合",
+      "type": "subclass",
+      "to": "认知目标",
+      "evidence": "（5）综合：将所学的零碎知识整合为知识系统。",
+      "printed_page": 226
+    },
+    {
+      "from": "评价（认知目标）",
+      "type": "subclass",
+      "to": "认知目标",
+      "evidence": "（6）评价：对所学材料（论点的陈述、小说、诗歌以及研究报告等）做价值判断的能力",
+      "printed_page": 226
+    },
+    {
+      "from": "接受",
+      "type": "subclass",
+      "to": "情感目标",
+      "evidence": "（1）接受：学生愿意主动注意特殊的现象或刺激",
+      "printed_page": 226
+    },
+    {
+      "from": "反应",
+      "type": "subclass",
+      "to": "情感目标",
+      "evidence": "（2）反应：学生主动参与学习活动并从中得到满足。",
+      "printed_page": 226
+    },
+    {
+      "from": "评价（情感目标）",
+      "type": "subclass",
+      "to": "情感目标",
+      "evidence": "（3）评价：学生将特殊对象、现象或行为与一定的价值标准联系起来",
+      "printed_page": 227
+    },
+    {
+      "from": "组织",
+      "type": "subclass",
+      "to": "情感目标",
+      "evidence": "（4）组织：将许多不同的价值标准组合在一起",
+      "printed_page": 227
+    },
+    {
+      "from": "个性化",
+      "type": "subclass",
+      "to": "情感目标",
+      "evidence": "（5）个性化：个体通过学习，经由前四个阶段的内化之后",
+      "printed_page": 227
+    },
+    {
+      "from": "以教师为中心的教学策略",
+      "type": "subclass",
+      "to": "教学策略",
+      "evidence": "1. 以教师为中心的教学策略",
+      "printed_page": 229
+    },
+    {
+      "from": "以学生为中心的教学策略",
+      "type": "subclass",
+      "to": "教学策略",
+      "evidence": "2. 以学生为中心的教学策略",
+      "printed_page": 229
+    },
+    {
+      "from": "个别化教学策略",
+      "type": "subclass",
+      "to": "教学策略",
+      "evidence": "3. 个别化教学策略",
+      "printed_page": 230
+    },
+    {
+      "from": "直接教学",
+      "type": "subclass",
+      "to": "以教师为中心的教学策略",
+      "evidence": "直接教学是以学习成绩为中心",
+      "printed_page": 229
+    },
+    {
+      "from": "接受学习",
+      "type": "subclass",
+      "to": "以教师为中心的教学策略",
+      "evidence": "接受学习的教学过程主要有三个环节",
+      "printed_page": 229
+    },
+    {
+      "from": "发现教学",
+      "type": "subclass",
+      "to": "以学生为中心的教学策略",
+      "evidence": "发现教学经过的阶段",
+      "printed_page": 229
+    },
+    {
+      "from": "合作学习",
+      "type": "subclass",
+      "to": "以学生为中心的教学策略",
+      "evidence": "合作学习是指学生以主动合作学习的方式代替教师主导教学的一种策略。",
+      "printed_page": 229
+    },
+    {
+      "from": "基于问题的学习（PBL）",
+      "type": "subclass",
+      "to": "以学生为中心的教学策略",
+      "evidence": "基于问题的学习（PBL）是指一种让学生通过解决不一定具有正确答案的真实性问题来获取知识的教学",
+      "printed_page": 230
+    },
+    {
+      "from": "程序教学",
+      "type": "subclass",
+      "to": "个别化教学策略",
+      "evidence": "程序教学是指一种能让学生以自己的速度和水平自学",
+      "printed_page": 230
+    },
+    {
+      "from": "掌握学习",
+      "type": "subclass",
+      "to": "个别化教学策略",
+      "evidence": "掌握学习的基本理念是，只要给了足够的时间和适当的教学",
+      "printed_page": 230
+    },
+    {
+      "from": "课堂空间",
+      "type": "part_of",
+      "to": "教学环境设计",
+      "evidence": "四、教学环境设计",
+      "printed_page": 231
+    },
+    {
+      "from": "基本的课堂空间设计",
+      "type": "subclass",
+      "to": "课堂空间",
+      "evidence": "基本的课堂座次排列是传统的纵横排列模式",
+      "printed_page": 231
+    },
+    {
+      "from": "特殊的课堂空间设计",
+      "type": "subclass",
+      "to": "课堂空间",
+      "evidence": "非正式座次模式，如矩形、环形、马蹄形等。",
+      "printed_page": 231
+    },
+    {
+      "from": "教学媒体",
+      "type": "part_of",
+      "to": "教学环境设计",
+      "evidence": "教学媒体是指在教学过程中传递信息的物质工具。",
+      "printed_page": 231
+    },
+    {
+      "from": "课堂管理的阶段",
+      "type": "part_of",
+      "to": "课堂管理",
+      "evidence": "布罗菲和伊伏特逊划分了课堂管理的四个阶段",
+      "printed_page": 233
+    },
+    {
+      "from": "幼儿园和小学低年级阶段的管理",
+      "type": "subclass",
+      "to": "课堂管理的阶段",
+      "evidence": "1. 幼儿园和小学低年级阶段的管理",
+      "printed_page": 233
+    },
+    {
+      "from": "小学中年级阶段的管理",
+      "type": "subclass",
+      "to": "课堂管理的阶段",
+      "evidence": "2. 小学中年级阶段的管理",
+      "printed_page": 234
+    },
+    {
+      "from": "小学高年级和初中阶段的管理",
+      "type": "subclass",
+      "to": "课堂管理的阶段",
+      "evidence": "3. 小学高年级和初中阶段的管理",
+      "printed_page": 234
+    },
+    {
+      "from": "高中阶段的管理",
+      "type": "subclass",
+      "to": "课堂管理的阶段",
+      "evidence": "4. 高中阶段的管理",
+      "printed_page": 234
+    },
+    {
+      "from": "影响课堂管理的因素",
+      "type": "part_of",
+      "to": "课堂管理",
+      "evidence": "（四）影响课堂管理的因素",
+      "printed_page": 234
+    },
+    {
+      "from": "教师的领导风格",
+      "type": "part_of",
+      "to": "影响课堂管理的因素",
+      "evidence": "教师的领导风格对课堂管理有直接影响。",
+      "printed_page": 234
+    },
+    {
+      "from": "班级规模",
+      "type": "part_of",
+      "to": "影响课堂管理的因素",
+      "evidence": "2. 班级规模（班级的大小）",
+      "printed_page": 234
+    },
+    {
+      "from": "对教师的期望",
+      "type": "part_of",
+      "to": "影响课堂管理的因素",
+      "evidence": "4. 对教师的期望",
+      "printed_page": 235
+    },
+    {
+      "from": "积极的课堂气氛",
+      "type": "subclass",
+      "to": "课堂气氛",
+      "evidence": "1. 积极的课堂气氛",
+      "printed_page": 235
+    },
+    {
+      "from": "消极的课堂气氛",
+      "type": "subclass",
+      "to": "课堂气氛",
+      "evidence": "2. 消极的课堂气氛",
+      "printed_page": 235
+    },
+    {
+      "from": "对抗的课堂气氛",
+      "type": "subclass",
+      "to": "课堂气氛",
+      "evidence": "3. 对抗的课堂气氛",
+      "printed_page": 235
+    },
+    {
+      "from": "课堂纪律的类型",
+      "type": "part_of",
+      "to": "课堂纪律",
+      "evidence": "根据课堂纪律形成的原因，可以将课堂纪律分为以下四种类型",
+      "printed_page": 236
+    },
+    {
+      "from": "教师促成的纪律",
+      "type": "subclass",
+      "to": "课堂纪律的类型",
+      "evidence": "1. 教师促成的纪律",
+      "printed_page": 236
+    },
+    {
+      "from": "集体促成的纪律",
+      "type": "subclass",
+      "to": "课堂纪律的类型",
+      "evidence": "2. 集体促成的纪律",
+      "printed_page": 236
+    },
+    {
+      "from": "任务促成的纪律",
+      "type": "subclass",
+      "to": "课堂纪律的类型",
+      "evidence": "3. 任务促成的纪律",
+      "printed_page": 236
+    },
+    {
+      "from": "自我促成的纪律",
+      "type": "subclass",
+      "to": "课堂纪律的类型",
+      "evidence": "4. 自我促成的纪律",
+      "printed_page": 236
+    },
+    {
+      "from": "课堂纪律的发展水平",
+      "type": "part_of",
+      "to": "课堂纪律",
+      "evidence": "课堂纪律的形成不是一蹴而就的，它往往要经历一个发展过程。",
+      "printed_page": 236
+    },
+    {
+      "from": "反抗行为阶段",
+      "type": "subclass",
+      "to": "课堂纪律的发展水平",
+      "evidence": "阶段 1：反抗行为阶段",
+      "printed_page": 236
+    },
+    {
+      "from": "自我服务行为阶段",
+      "type": "subclass",
+      "to": "课堂纪律的发展水平",
+      "evidence": "阶段 2：自我服务行为阶段",
+      "printed_page": 237
+    },
+    {
+      "from": "人际纪律阶段",
+      "type": "subclass",
+      "to": "课堂纪律的发展水平",
+      "evidence": "阶段 3：人际纪律阶段",
+      "printed_page": 237
+    },
+    {
+      "from": "自我约束阶段",
+      "type": "subclass",
+      "to": "课堂纪律的发展水平",
+      "evidence": "阶段 4：自我约束阶段",
+      "printed_page": 237
+    },
+    {
+      "from": "课堂情境结构",
+      "type": "part_of",
+      "to": "课堂结构",
+      "evidence": "（一）课堂情境结构",
+      "printed_page": 237
+    },
+    {
+      "from": "课堂教学结构",
+      "type": "part_of",
+      "to": "课堂结构",
+      "evidence": "（二）课堂教学结构",
+      "printed_page": 237
+    },
+    {
+      "from": "课堂问题行为产生的原因",
+      "type": "part_of",
+      "to": "课堂问题行为",
+      "evidence": "（二）课堂问题行为产生的原因",
+      "printed_page": 239
+    },
+    {
+      "from": "教师因素",
+      "type": "part_of",
+      "to": "课堂问题行为产生的原因",
+      "evidence": "如教师缺乏正确的教育理念，重智轻德",
+      "printed_page": 239
+    },
+    {
+      "from": "学生因素",
+      "type": "part_of",
+      "to": "课堂问题行为产生的原因",
+      "evidence": "学生的生理障碍是诱发课堂问题行为的重要原因之一。",
+      "printed_page": 239
+    },
+    {
+      "from": "环境因素",
+      "type": "part_of",
+      "to": "课堂问题行为产生的原因",
+      "evidence": "家庭环境、社会环境、校园课堂内部环境等因素也会导致问题行为的出现。",
+      "printed_page": 239
+    },
+    {
+      "from": "预防",
+      "type": "part_of",
+      "to": "课堂问题行为",
+      "evidence": "每个人都有可能表现出不良行为",
+      "printed_page": 240
+    },
+    {
+      "from": "干预",
+      "type": "part_of",
+      "to": "课堂问题行为",
+      "evidence": "处理常规的课堂行为问题时，最重要的原则是",
+      "printed_page": 240
+    },
+    {
+      "from": "矫正",
+      "type": "part_of",
+      "to": "课堂问题行为",
+      "evidence": "行为矫正是系统地应用先前事件和后果来改变和调节行为的方式。",
+      "printed_page": 241
+    }
+  ]
+}

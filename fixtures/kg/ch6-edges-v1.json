@@ -1,0 +1,909 @@
+{
+ "chapter": "第一篇第六章 课程",
+ "schema_version": "1.1",
+ "edges": [
+  {
+   "from": "按课程内容划分",
+   "type": "part_of",
+   "to": "课程的类型",
+   "evidence": "（一）根据课程内容固有属性，课程分为学科课程和经验课程",
+   "printed_page": 91
+  },
+  {
+   "from": "学科课程",
+   "type": "subclass",
+   "to": "按课程内容划分",
+   "evidence": "学科课程是一种主张以学科为中心来编制的课程",
+   "printed_page": 91
+  },
+  {
+   "from": "经验课程",
+   "type": "subclass",
+   "to": "按课程内容划分",
+   "evidence": "经验课程又叫活动课程，是从学生的兴趣和需要出发",
+   "printed_page": 91
+  },
+  {
+   "from": "活动课程",
+   "type": "exact_match",
+   "to": "经验课程",
+   "evidence": "经验课程又叫活动课程",
+   "printed_page": 91
+  },
+  {
+   "from": "孔子",
+   "type": "marks",
+   "to": "学科课程",
+   "evidence": "（2）代表人物：孔子、夸美纽斯、赫尔巴特、斯宾塞等。",
+   "printed_page": 91
+  },
+  {
+   "from": "赫尔巴特",
+   "type": "marks",
+   "to": "学科课程",
+   "evidence": "（2）代表人物：孔子、夸美纽斯、赫尔巴特、斯宾塞等。",
+   "printed_page": 91
+  },
+  {
+   "from": "杜威",
+   "type": "marks",
+   "to": "经验课程",
+   "evidence": "（2）代表人物：杜威、克伯屈。",
+   "printed_page": 91
+  },
+  {
+   "from": "克伯屈",
+   "type": "marks",
+   "to": "经验课程",
+   "evidence": "（2）代表人物：杜威、克伯屈。",
+   "printed_page": 91
+  },
+  {
+   "from": "按课程内容的组织方式划分",
+   "type": "part_of",
+   "to": "课程的类型",
+   "evidence": "（二）根据课程内容的组织方式，课程分为分科课程和综合课程",
+   "printed_page": 92
+  },
+  {
+   "from": "分科课程",
+   "type": "subclass",
+   "to": "按课程内容的组织方式划分",
+   "evidence": "分科课程是指从不同门类的学科中选取知识",
+   "printed_page": 92
+  },
+  {
+   "from": "综合课程",
+   "type": "subclass",
+   "to": "按课程内容的组织方式划分",
+   "evidence": "综合课程是指打破传统分科课程的知识领域",
+   "printed_page": 92
+  },
+  {
+   "from": "分科课程",
+   "type": "related",
+   "to": "学科课程",
+   "evidence": "分科课程与学科课程基本上是一致的。",
+   "printed_page": 92
+  },
+  {
+   "from": "按课程综合程度划分",
+   "type": "part_of",
+   "to": "综合课程",
+   "evidence": "根据课程……综合的程……度不同",
+   "printed_page": 92
+  },
+  {
+   "from": "相关课程",
+   "type": "subclass",
+   "to": "按课程综合程度划分",
+   "evidence": "由具有科际联系的各学科组成的课程，同时保持原来学科的划分",
+   "printed_page": 92
+  },
+  {
+   "from": "融合课程",
+   "type": "subclass",
+   "to": "按课程综合程度划分",
+   "evidence": "由若干相关学科组合成的新学科",
+   "printed_page": 92
+  },
+  {
+   "from": "广域课程",
+   "type": "subclass",
+   "to": "按课程综合程度划分",
+   "evidence": "组合数门相邻学科内容而形成的综合性课程",
+   "printed_page": 92
+  },
+  {
+   "from": "核心课程",
+   "type": "subclass",
+   "to": "按课程综合程度划分",
+   "evidence": "以问题为核心，将几门学科结合起来",
+   "printed_page": 92
+  },
+  {
+   "from": "怀特海",
+   "type": "marks",
+   "to": "综合课程",
+   "evidence": "（2）代表人物：怀特海。",
+   "printed_page": 92
+  },
+  {
+   "from": "按实施要求划分",
+   "type": "part_of",
+   "to": "课程的类型",
+   "evidence": "（三）根据课程计划对课程设置实施的要求，课程分为必修课程和选修课程",
+   "printed_page": 93
+  },
+  {
+   "from": "必修课程",
+   "type": "subclass",
+   "to": "按实施要求划分",
+   "evidence": "必修课程是指国家、地方或学校规定，学生必须学习的公共课程",
+   "printed_page": 93
+  },
+  {
+   "from": "选修课程",
+   "type": "subclass",
+   "to": "按实施要求划分",
+   "evidence": "选修课程是指依据不同学生的特点与发展方向，允许个人选择的课程",
+   "printed_page": 93
+  },
+  {
+   "from": "按管理主体划分",
+   "type": "part_of",
+   "to": "课程的类型",
+   "evidence": "（四）根据课程设计、开发和管理主体，课程分为国家课程、地方课程和校本课程",
+   "printed_page": 93
+  },
+  {
+   "from": "国家课程",
+   "type": "subclass",
+   "to": "按管理主体划分",
+   "evidence": "国家课程是指由国家教育行政部门负责编制、实施和评价的课程",
+   "printed_page": 93
+  },
+  {
+   "from": "地方课程",
+   "type": "subclass",
+   "to": "按管理主体划分",
+   "evidence": "地方课程是指由地方教育行政部门根据国家课程标准及各地发展需要而开发的课程",
+   "printed_page": 93
+  },
+  {
+   "from": "校本课程",
+   "type": "subclass",
+   "to": "按管理主体划分",
+   "evidence": "校本课程是指由学生所在学校的教师编制、实施和评价的课程",
+   "printed_page": 93
+  },
+  {
+   "from": "按呈现形式划分",
+   "type": "part_of",
+   "to": "课程的类型",
+   "evidence": "（五）根据课程呈现形式，课程分为显性课程和隐性课程",
+   "printed_page": 94
+  },
+  {
+   "from": "显性课程",
+   "type": "subclass",
+   "to": "按呈现形式划分",
+   "evidence": "显性课程也叫显在课程、正规课程、官方课程、公开课程",
+   "printed_page": 94
+  },
+  {
+   "from": "隐性课程",
+   "type": "subclass",
+   "to": "按呈现形式划分",
+   "evidence": "隐性课程也叫非正式课程、潜在课程、隐蔽课程",
+   "printed_page": 94
+  },
+  {
+   "from": "杰克逊",
+   "type": "marks",
+   "to": "隐性课程",
+   "evidence": "隐性课程一词是由杰克逊在其1968年出版的《班级生活》一书中首……先提出的。",
+   "printed_page": 94
+  },
+  {
+   "from": "隐性课程的表现形式",
+   "type": "part_of",
+   "to": "隐性课程",
+   "evidence": "（4）表现形式：①观念性隐性课程：包括隐藏于显性课程之中的意识形态",
+   "printed_page": 94
+  },
+  {
+   "from": "观念性隐性课程",
+   "type": "subclass",
+   "to": "隐性课程的表现形式",
+   "evidence": "①观念性隐性课程：包括隐藏于显性课程之中的意识形态",
+   "printed_page": 94
+  },
+  {
+   "from": "物质性隐性课程",
+   "type": "subclass",
+   "to": "隐性课程的表现形式",
+   "evidence": "②物质性隐性课程：包括学校建筑、教室的布置、校园环境等",
+   "printed_page": 94
+  },
+  {
+   "from": "制度性隐性课程",
+   "type": "subclass",
+   "to": "隐性课程的表现形式",
+   "evidence": "③制度性隐性课程：包括学校管理体制、学校组织机构、班级管理方式",
+   "printed_page": 94
+  },
+  {
+   "from": "心理性隐性课程",
+   "type": "subclass",
+   "to": "隐性课程的表现形式",
+   "evidence": "④心理性隐性课程：包括学校人际关系状况，师生特有的心态、行为方式等",
+   "printed_page": 94
+  },
+  {
+   "from": "显性课程",
+   "type": "contrast",
+   "to": "隐性课程",
+   "evidence": "两者之间最主要的区别就是有无计划性",
+   "printed_page": 95
+  },
+  {
+   "from": "按课程任务划分",
+   "type": "part_of",
+   "to": "课程的类型",
+   "evidence": "（六）根据课程任务，课程分为基础型课程、拓展型课程、研究型课程",
+   "printed_page": 95
+  },
+  {
+   "from": "基础型课程",
+   "type": "subclass",
+   "to": "按课程任务划分",
+   "evidence": "基础型课程：培养学生的基础能力。",
+   "printed_page": 95
+  },
+  {
+   "from": "拓展型课程",
+   "type": "subclass",
+   "to": "按课程任务划分",
+   "evidence": "拓展型课程：拓展学生的知识与能力，开阔学生的视野，发展学生的特殊能力。",
+   "printed_page": 95
+  },
+  {
+   "from": "研究型课程",
+   "type": "subclass",
+   "to": "按课程任务划分",
+   "evidence": "研究型课程：培养学生的探究态度与能力。",
+   "printed_page": 95
+  },
+  {
+   "from": "古德莱德关于课程的分类",
+   "type": "part_of",
+   "to": "课程的类型",
+   "evidence": "（八）古德莱德关于课程的分类",
+   "printed_page": 95
+  },
+  {
+   "from": "理想的课程",
+   "type": "subclass",
+   "to": "古德莱德关于课程的分类",
+   "evidence": "理想的课程：由一些研究机构、学术团体与课程专家提出的应该开设的课程。",
+   "printed_page": 95
+  },
+  {
+   "from": "正式的课程",
+   "type": "subclass",
+   "to": "古德莱德关于课程的分类",
+   "evidence": "正式的课程：由教育行政部门所规定的课程。",
+   "printed_page": 95
+  },
+  {
+   "from": "领悟的课程",
+   "type": "subclass",
+   "to": "古德莱德关于课程的分类",
+   "evidence": "领悟的课程：任课教师所领悟的课程。",
+   "printed_page": 95
+  },
+  {
+   "from": "运作的课程",
+   "type": "subclass",
+   "to": "古德莱德关于课程的分类",
+   "evidence": "运作的课程：教师在课堂上实际实施的课程。",
+   "printed_page": 95
+  },
+  {
+   "from": "经验的课程",
+   "type": "subclass",
+   "to": "古德莱德关于课程的分类",
+   "evidence": "经验的课程：学生在课程学习过程中实际体验到的东西",
+   "printed_page": 95
+  },
+  {
+   "from": "学科中心课程理论",
+   "type": "part_of",
+   "to": "典型的课程理论流派",
+   "evidence": "典型的课程理论流派……学科……中心……课程……理论",
+   "printed_page": 96
+  },
+  {
+   "from": "学习者中心课程理论",
+   "type": "part_of",
+   "to": "典型的课程理论流派",
+   "evidence": "典型的课程理论流派……学习……者中……心课……程理……理论",
+   "printed_page": 96
+  },
+  {
+   "from": "社会中心课程理论",
+   "type": "part_of",
+   "to": "典型的课程理论流派",
+   "evidence": "社会中心课程……理论",
+   "printed_page": 97
+  },
+  {
+   "from": "后现代主义课程理论",
+   "type": "part_of",
+   "to": "典型的课程理论流派",
+   "evidence": "后现代主义……课程理论",
+   "printed_page": 97
+  },
+  {
+   "from": "结构主义课程理论",
+   "type": "subclass",
+   "to": "学科中心课程理论",
+   "evidence": "①学校教学以分科教学为核心",
+   "printed_page": 96
+  },
+  {
+   "from": "要素主义课程理论",
+   "type": "subclass",
+   "to": "学科中心课程理论",
+   "evidence": "①课程的内容应该是人类文化的共同要……素（新三艺：数学、自然科学和外语）",
+   "printed_page": 96
+  },
+  {
+   "from": "永恒主义课程理论",
+   "type": "subclass",
+   "to": "学科中心课程理论",
+   "evidence": "①教育的性质永恒不变",
+   "printed_page": 96
+  },
+  {
+   "from": "经验主义课程理论",
+   "type": "subclass",
+   "to": "学习者中心课程理论",
+   "evidence": "①课程应以儿童的活动为中心",
+   "printed_page": 96
+  },
+  {
+   "from": "存在主义课程理论",
+   "type": "subclass",
+   "to": "学习者中心课程理论",
+   "evidence": "①要承认学生本人为他自己的存在负责",
+   "printed_page": 97
+  },
+  {
+   "from": "人本主义课程理论",
+   "type": "subclass",
+   "to": "学习者中心课程理论",
+   "evidence": "①课程目的：培育“自我实现”的人或“完……整的人”",
+   "printed_page": 97
+  },
+  {
+   "from": "布鲁纳",
+   "type": "marks",
+   "to": "结构主义课程理论",
+   "evidence": "布鲁纳……⑤任何学科都能够采用在智育上正确的",
+   "printed_page": 96
+  },
+  {
+   "from": "巴格莱",
+   "type": "marks",
+   "to": "要素主义课程理论",
+   "evidence": "巴格莱……学科课程是向学生提供经验的最佳方法",
+   "printed_page": 96
+  },
+  {
+   "from": "赫钦斯",
+   "type": "marks",
+   "to": "永恒主义课程理论",
+   "evidence": "赫钦斯……④提倡通过教学进行学习",
+   "printed_page": 96
+  },
+  {
+   "from": "杜威",
+   "type": "marks",
+   "to": "经验主义课程理论",
+   "evidence": "杜威……③课程要考虑到儿童的需要与兴趣",
+   "printed_page": 96
+  },
+  {
+   "from": "奈勒",
+   "type": "marks",
+   "to": "存在主义课程理论",
+   "evidence": "奈勒……②教材是自我发展和自我实现的手段",
+   "printed_page": 97
+  },
+  {
+   "from": "马斯洛",
+   "type": "marks",
+   "to": "人本主义课程理论",
+   "evidence": "马斯洛……②课程的实施",
+   "printed_page": 97
+  },
+  {
+   "from": "布拉梅尔德",
+   "type": "marks",
+   "to": "社会中心课程理论",
+   "evidence": "①教育应该以“改造社会”为目标……布拉梅……尔德",
+   "printed_page": 97
+  },
+  {
+   "from": "多尔",
+   "type": "marks",
+   "to": "后现代主义课程理论",
+   "evidence": "多尔……③后现代课程标准：4R",
+   "printed_page": 97
+  },
+  {
+   "from": "4R",
+   "type": "part_of",
+   "to": "后现代主义课程理论",
+   "evidence": "③后现代课程标准：4R，即丰富性、循环……性、关联性和严密性",
+   "printed_page": 97
+  },
+  {
+   "from": "目标模式",
+   "type": "part_of",
+   "to": "课程设计的模式",
+   "evidence": "一、课程设计的模式……（一）目标模式",
+   "printed_page": 98
+  },
+  {
+   "from": "过程模式",
+   "type": "part_of",
+   "to": "课程设计的模式",
+   "evidence": "（二）过程模式……1. 代表人物……斯腾豪斯。",
+   "printed_page": 99
+  },
+  {
+   "from": "泰勒",
+   "type": "marks",
+   "to": "目标模式",
+   "evidence": "1. 代表人物……泰勒。",
+   "printed_page": 98
+  },
+  {
+   "from": "斯腾豪斯",
+   "type": "marks",
+   "to": "过程模式",
+   "evidence": "（二）过程模式……斯腾豪斯。",
+   "printed_page": 99
+  },
+  {
+   "from": "泰勒原理",
+   "type": "part_of",
+   "to": "目标模式",
+   "evidence": "泰勒提出了关于课程编制的四个问题，即“泰勒原理”",
+   "printed_page": 98
+  },
+  {
+   "from": "确定目标",
+   "type": "part_of",
+   "to": "泰勒原理",
+   "evidence": "（1）确定目标——学校应该达到哪些教育目标？",
+   "printed_page": 98
+  },
+  {
+   "from": "选择经验",
+   "type": "part_of",
+   "to": "泰勒原理",
+   "evidence": "（2）选择经验——提供哪些教育经验才能实现这些目标？",
+   "printed_page": 98
+  },
+  {
+   "from": "组织经验",
+   "type": "part_of",
+   "to": "泰勒原理",
+   "evidence": "（3）组织经验——怎样才能有效地组织这些教育经验？",
+   "printed_page": 98
+  },
+  {
+   "from": "评价结果",
+   "type": "part_of",
+   "to": "泰勒原理",
+   "evidence": "（4）评价结果——我们怎样才能确定这些目标真正得到实现？",
+   "printed_page": 99
+  },
+  {
+   "from": "确定目标",
+   "type": "prerequisite",
+   "to": "选择经验",
+   "evidence": "泰勒提出了关于课程编制的四个问题，即“泰勒原理”，可概括为目标、内容、方法、评价。",
+   "printed_page": 98
+  },
+  {
+   "from": "教育目标的三个来源",
+   "type": "part_of",
+   "to": "确定目标",
+   "evidence": "①教育目标的三个来源：对学生的研究、对当代社会生活的研究、学科专家对目标的建议。",
+   "printed_page": 98
+  },
+  {
+   "from": "教育目标的两个筛选原则",
+   "type": "part_of",
+   "to": "确定目标",
+   "evidence": "②教育目标的两个筛选原则：一是学校信奉的教育和社会的哲学",
+   "printed_page": 98
+  },
+  {
+   "from": "连续性顺序性整合性",
+   "type": "part_of",
+   "to": "组织经验",
+   "evidence": "泰勒提出了组织学习经验的主要准则，即连续性、顺序性和整合性。",
+   "printed_page": 98
+  },
+  {
+   "from": "活动分析法",
+   "type": "part_of",
+   "to": "目标模式",
+   "evidence": "2. 方法论基础……博比特的“活动分析法”。",
+   "printed_page": 98
+  },
+  {
+   "from": "博比特",
+   "type": "marks",
+   "to": "活动分析法",
+   "evidence": "博比特的“活动分析法”",
+   "printed_page": 98
+  },
+  {
+   "from": "按目标取向划分",
+   "type": "part_of",
+   "to": "课程目标",
+   "evidence": "二、课程目标的取向",
+   "printed_page": 99
+  },
+  {
+   "from": "普遍性目标取向",
+   "type": "subclass",
+   "to": "按目标取向划分",
+   "evidence": "1. 普遍性目标取向……普遍性目标是指根据一定的哲学或伦理观、意识形态、社会政治需要",
+   "printed_page": 99
+  },
+  {
+   "from": "行为性目标取向",
+   "type": "subclass",
+   "to": "按目标取向划分",
+   "evidence": "行为性目标是以设计课程行为结果的方式对课程进行规范与指导的目标",
+   "printed_page": 100
+  },
+  {
+   "from": "生成性目标取向",
+   "type": "subclass",
+   "to": "按目标取向划分",
+   "evidence": "生成性目标不是由外部事先规定的目标",
+   "printed_page": 100
+  },
+  {
+   "from": "表现性目标取向",
+   "type": "subclass",
+   "to": "按目标取向划分",
+   "evidence": "表现性目标是指在教育情境中每一位学生个性化的表现",
+   "printed_page": 100
+  },
+  {
+   "from": "课程内容的组织方式",
+   "type": "part_of",
+   "to": "课程内容",
+   "evidence": "一、课程内容的组织方式",
+   "printed_page": 101
+  },
+  {
+   "from": "纵向组织",
+   "type": "part_of",
+   "to": "课程内容的组织方式",
+   "evidence": "纵向组织（垂直组织）是指按照知识的逻辑序列",
+   "printed_page": 101
+  },
+  {
+   "from": "横向组织",
+   "type": "part_of",
+   "to": "课程内容的组织方式",
+   "evidence": "横向组织（水平组织）是指打破学科的知识界限和传统的知识体系",
+   "printed_page": 101
+  },
+  {
+   "from": "直线式",
+   "type": "part_of",
+   "to": "课程内容的组织方式",
+   "evidence": "直线式是指把课程内容组织成一条在逻辑上前后联系的“直线”",
+   "printed_page": 101
+  },
+  {
+   "from": "螺旋式",
+   "type": "part_of",
+   "to": "课程内容的组织方式",
+   "evidence": "螺旋式是指在不同阶段、单元或不同课程门类中，使课程内容重复出现",
+   "printed_page": 101
+  },
+  {
+   "from": "课程内容的文本表现形式",
+   "type": "part_of",
+   "to": "课程内容",
+   "evidence": "课程内容的文本表现形式包括课程计划、课程标准、教材三个层次。",
+   "printed_page": 101
+  },
+  {
+   "from": "课程计划",
+   "type": "part_of",
+   "to": "课程内容的文本表现形式",
+   "evidence": "课程内容的文本表现形式包括课程计划、课程标准、教材三个层次。",
+   "printed_page": 101
+  },
+  {
+   "from": "课程标准",
+   "type": "part_of",
+   "to": "课程内容的文本表现形式",
+   "evidence": "课程内容的文本表现形式包括课程计划、课程标准、教材三个层次。",
+   "printed_page": 101
+  },
+  {
+   "from": "教材",
+   "type": "part_of",
+   "to": "课程内容的文本表现形式",
+   "evidence": "课程内容的文本表现形式包括课程计划、课程标准、教材三个层次。",
+   "printed_page": 101
+  },
+  {
+   "from": "课程计划的构成",
+   "type": "part_of",
+   "to": "课程计划",
+   "evidence": "（3）课程计划的构成",
+   "printed_page": 102
+  },
+  {
+   "from": "培养目标",
+   "type": "part_of",
+   "to": "课程计划的构成",
+   "evidence": "①培养目标。课程计划不仅要反映国家的教育目的",
+   "printed_page": 102
+  },
+  {
+   "from": "教学科目的设置",
+   "type": "part_of",
+   "to": "课程计划的构成",
+   "evidence": "②教学科目的设置（中心和首要问题）。开设哪些学科是课程计划的中心。",
+   "printed_page": 102
+  },
+  {
+   "from": "学科顺序",
+   "type": "part_of",
+   "to": "课程计划的构成",
+   "evidence": "③学科顺序。学科顺序是指根据学科规定的年限",
+   "printed_page": 102
+  },
+  {
+   "from": "课时分配",
+   "type": "part_of",
+   "to": "课程计划的构成",
+   "evidence": "④课时分配。课时分配包括各学科的总时数",
+   "printed_page": 102
+  },
+  {
+   "from": "学年编制与学周安排",
+   "type": "part_of",
+   "to": "课程计划的构成",
+   "evidence": "⑤学年编制与学周安排。学年编制与学周安排是指学年阶段的划分",
+   "printed_page": 102
+  },
+  {
+   "from": "课程标准",
+   "type": "related",
+   "to": "课程计划",
+   "evidence": "课程标准是课程计划的具体化",
+   "printed_page": 102
+  },
+  {
+   "from": "课程标准的构成（旧版）",
+   "type": "part_of",
+   "to": "课程标准",
+   "evidence": "旧版：前言、课程目标、内容标准、实施建议、附录。",
+   "printed_page": 103
+  },
+  {
+   "from": "课程标准的构成（新版）",
+   "type": "part_of",
+   "to": "课程标准",
+   "evidence": "新版：课程性质、课程理念、课程目标、课程内容、学业质量、课程实施、附录。",
+   "printed_page": 103
+  },
+  {
+   "from": "教材的构成",
+   "type": "part_of",
+   "to": "教材",
+   "evidence": "教材是教师和学生据以进行教学活动的材料，包括教科书、讲义、讲授提纲、参考书、活动指导书以及各种视听材料。",
+   "printed_page": 103
+  },
+  {
+   "from": "教科书",
+   "type": "part_of",
+   "to": "教材的构成",
+   "evidence": "其中，教科书和讲义是教材的主体部分。",
+   "printed_page": 103
+  },
+  {
+   "from": "影响课程实施的因素",
+   "type": "part_of",
+   "to": "课程实施",
+   "evidence": "2. 影响课程实施的因素",
+   "printed_page": 104
+  },
+  {
+   "from": "课程计划本身的特点",
+   "type": "part_of",
+   "to": "影响课程实施的因素",
+   "evidence": "（1）课程计划本身的特点",
+   "printed_page": 104
+  },
+  {
+   "from": "教师的特征",
+   "type": "part_of",
+   "to": "影响课程实施的因素",
+   "evidence": "（2）教师的特征",
+   "printed_page": 104
+  },
+  {
+   "from": "学校的影响",
+   "type": "part_of",
+   "to": "影响课程实施的因素",
+   "evidence": "（3）学校的影响",
+   "printed_page": 104
+  },
+  {
+   "from": "校外环境",
+   "type": "part_of",
+   "to": "影响课程实施的因素",
+   "evidence": "（4）校外环境……校外环境包括政府机构和社会各界。",
+   "printed_page": 104
+  },
+  {
+   "from": "课程实施的结构",
+   "type": "part_of",
+   "to": "课程实施",
+   "evidence": "（二）课程实施的结构……课程实施的结构",
+   "printed_page": 104
+  },
+  {
+   "from": "安排课程表",
+   "type": "part_of",
+   "to": "课程实施的结构",
+   "evidence": "课程实施的结构……安排课程表",
+   "printed_page": 104
+  },
+  {
+   "from": "安排课程表",
+   "type": "attribute",
+   "to": "整体性原则",
+   "evidence": "①整体性原则。从全局着眼，统筹安排好课程计划所规定的每一门课程",
+   "printed_page": 104
+  },
+  {
+   "from": "安排课程表",
+   "type": "attribute",
+   "to": "迁移性原则",
+   "evidence": "②迁移性原则。充分考虑各门学科之间相互影响的性质和特点，利用心理学上的迁移规律，促使课程之间产生正迁移，防止负迁移现象的发生",
+   "printed_page": 104
+  },
+  {
+   "from": "安排课程表",
+   "type": "attribute",
+   "to": "生理适宜原则",
+   "evidence": "③生理适宜原则。考虑到学生的生理特点，使学生的大脑功能和……体能处于高度优化状态",
+   "printed_page": 105
+  },
+  {
+   "from": "课程实施的取向",
+   "type": "part_of",
+   "to": "课程实施",
+   "evidence": "辛德等人将课程实施或研究课程实施的取向分为三种：忠实取向、相互调适取向、课程缔造取向（课程创生取向）。",
+   "printed_page": 105
+  },
+  {
+   "from": "忠实取向",
+   "type": "subclass",
+   "to": "课程实施的取向",
+   "evidence": "忠实取向认为，课程实施过程是忠实地执行课程计划的过程。",
+   "printed_page": 105
+  },
+  {
+   "from": "相互调适取向",
+   "type": "subclass",
+   "to": "课程实施的取向",
+   "evidence": "相互调适取向认为，课程实施过程是课程变革计划与班级或学校实际情境在课程目标、内容、方法、组织模式诸方面相互调整、改变与适应的过程。",
+   "printed_page": 105
+  },
+  {
+   "from": "课程缔造取向",
+   "type": "subclass",
+   "to": "课程实施的取向",
+   "evidence": "课程缔造取向认为，真正的课程是教师与学生联合缔造的教育经验",
+   "printed_page": 106
+  },
+  {
+   "from": "课程评价的模式",
+   "type": "part_of",
+   "to": "课程评价",
+   "evidence": "二、课程评价……1. 目标评价模式",
+   "printed_page": 106
+  },
+  {
+   "from": "目标评价模式",
+   "type": "part_of",
+   "to": "课程评价的模式",
+   "evidence": "目标评价模式是泰勒在“八年研究”基础上提出的评价模式",
+   "printed_page": 106
+  },
+  {
+   "from": "目的游离评价模式",
+   "type": "part_of",
+   "to": "课程评价的模式",
+   "evidence": "主张把评价的重点从“课程计划预期的结果”转向“课程计划实际的结果”",
+   "printed_page": 106
+  },
+  {
+   "from": "斯克里文",
+   "type": "marks",
+   "to": "目的游离评价模式",
+   "evidence": "（1）代表人物：斯克里文。",
+   "printed_page": 106
+  },
+  {
+   "from": "目标评价模式",
+   "type": "contrast",
+   "to": "目的游离评价模式",
+   "evidence": "主张把评价的重点从“课程计划预期的结果”转向“课程计划实际的结果”",
+   "printed_page": 106
+  },
+  {
+   "from": "CIPP评价模式",
+   "type": "part_of",
+   "to": "课程评价的模式",
+   "evidence": "背景、输入、过程、成果（CIPP）评价模式",
+   "printed_page": 107
+  },
+  {
+   "from": "斯塔弗尔比姆",
+   "type": "marks",
+   "to": "CIPP评价模式",
+   "evidence": "（1）代表人物：斯塔弗尔比姆。",
+   "printed_page": 107
+  },
+  {
+   "from": "背景评价",
+   "type": "part_of",
+   "to": "CIPP评价模式",
+   "evidence": "①背景评价。要确定课程计划实施机构的背景",
+   "printed_page": 107
+  },
+  {
+   "from": "输入评价",
+   "type": "part_of",
+   "to": "CIPP评价模式",
+   "evidence": "②输入评价。主要是为了帮助决策者选择达到目标的最佳手段",
+   "printed_page": 107
+  },
+  {
+   "from": "过程评价",
+   "type": "part_of",
+   "to": "CIPP评价模式",
+   "evidence": "③过程评价。主要通过描述实际过程来确定或预测课程计划本身或实施过程中存在的问题",
+   "printed_page": 107
+  },
+  {
+   "from": "成果评价",
+   "type": "part_of",
+   "to": "CIPP评价模式",
+   "evidence": "④成果评价。要测量、解释和评判课程计划的成绩",
+   "printed_page": 107
+  }
+ ]
+}

@@ -1,0 +1,706 @@
+{
+ "chapter": "普通心理学 第四章 个性心理",
+ "schema_version": "1.1",
+ "edges": [
+  {
+   "from": "生理需要",
+   "type": "subclass",
+   "to": "需要层次理论",
+   "evidence": "生理需要是指人类维持生存和种族延续的需要",
+   "printed_page": 57
+  },
+  {
+   "from": "安全需要",
+   "type": "subclass",
+   "to": "需要层次理论",
+   "evidence": "安全需要是指人类期盼稳定、安全、保障而避免灾害、威胁、混乱的需要。",
+   "printed_page": 57
+  },
+  {
+   "from": "归属与爱的需要",
+   "type": "subclass",
+   "to": "需要层次理论",
+   "evidence": "归属与爱的需要是指一个人要求与其他人建立感情的联系或关系的需要。",
+   "printed_page": 57
+  },
+  {
+   "from": "尊重需要",
+   "type": "subclass",
+   "to": "需要层次理论",
+   "evidence": "尊重需要是指个体基于自我评价而产生的自尊和期望受到他人尊重的需要",
+   "printed_page": 57
+  },
+  {
+   "from": "求知需要",
+   "type": "subclass",
+   "to": "需要层次理论",
+   "evidence": "求知需要是指人探求知识、理解知识的需要",
+   "printed_page": 58
+  },
+  {
+   "from": "审美需要",
+   "type": "subclass",
+   "to": "需要层次理论",
+   "evidence": "审美需要是指欣赏、享受美好事物的需要",
+   "printed_page": 58
+  },
+  {
+   "from": "自我实现的需要",
+   "type": "subclass",
+   "to": "需要层次理论",
+   "evidence": "自我实现的需要是创造的需要，是追求实现自我理想的需要",
+   "printed_page": 58
+  },
+  {
+   "from": "生理需要",
+   "type": "subclass",
+   "to": "匮乏性需要",
+   "evidence": "匮乏性需要，也叫基本需要或缺失性需要，包括生理需要、安全需要、归属与爱的需要、尊重需要",
+   "printed_page": 58
+  },
+  {
+   "from": "安全需要",
+   "type": "subclass",
+   "to": "匮乏性需要",
+   "evidence": "匮乏性需要，也叫基本需要或缺失性需要，包括生理需要、安全需要、归属与爱的需要、尊重需要",
+   "printed_page": 58
+  },
+  {
+   "from": "归属与爱的需要",
+   "type": "subclass",
+   "to": "匮乏性需要",
+   "evidence": "匮乏性需要，也叫基本需要或缺失性需要，包括生理需要、安全需要、归属与爱的需要、尊重需要",
+   "printed_page": 58
+  },
+  {
+   "from": "尊重需要",
+   "type": "subclass",
+   "to": "匮乏性需要",
+   "evidence": "匮乏性需要，也叫基本需要或缺失性需要，包括生理需要、安全需要、归属与爱的需要、尊重需要",
+   "printed_page": 58
+  },
+  {
+   "from": "求知需要",
+   "type": "subclass",
+   "to": "成长性需要",
+   "evidence": "成长性需要包括求知需要、审美需要和自我实现的需要",
+   "printed_page": 59
+  },
+  {
+   "from": "审美需要",
+   "type": "subclass",
+   "to": "成长性需要",
+   "evidence": "成长性需要包括求知需要、审美需要和自我实现的需要",
+   "printed_page": 59
+  },
+  {
+   "from": "自我实现的需要",
+   "type": "subclass",
+   "to": "成长性需要",
+   "evidence": "成长性需要包括求知需要、审美需要和自我实现的需要",
+   "printed_page": 59
+  },
+  {
+   "from": "马斯洛",
+   "type": "marks",
+   "to": "需要层次理论",
+   "evidence": "他提出了需要层次论。",
+   "printed_page": 57
+  },
+  {
+   "from": "自尊",
+   "type": "part_of",
+   "to": "尊重需要",
+   "evidence": "自尊就是个体对自己的尊重，包括对获得信心、能力、本领、成就、独立等的愿望。",
+   "printed_page": 58
+  },
+  {
+   "from": "他尊",
+   "type": "part_of",
+   "to": "尊重需要",
+   "evidence": "他尊是指别人对自己的尊重，包括威望、承认、地位、名誉等。",
+   "printed_page": 58
+  },
+  {
+   "from": "动机产生的条件",
+   "type": "part_of",
+   "to": "动机",
+   "evidence": "（二）动机产生的条件",
+   "printed_page": 59
+  },
+  {
+   "from": "诱因",
+   "type": "part_of",
+   "to": "动机产生的条件",
+   "evidence": "能够满足个体需要、引起个体动机的外在刺激即诱因。",
+   "printed_page": 59
+  },
+  {
+   "from": "动机的功能",
+   "type": "part_of",
+   "to": "动机",
+   "evidence": "（三）动机的功能",
+   "printed_page": 60
+  },
+  {
+   "from": "激励功能",
+   "type": "part_of",
+   "to": "动机的功能",
+   "evidence": "1. 激励功能（激活功能、激发功能、引发功能）",
+   "printed_page": 60
+  },
+  {
+   "from": "指向功能",
+   "type": "part_of",
+   "to": "动机的功能",
+   "evidence": "动机不仅能激发行为，而且能将行为指向一定的对象或目标。",
+   "printed_page": 60
+  },
+  {
+   "from": "维持和调整功能",
+   "type": "part_of",
+   "to": "动机的功能",
+   "evidence": "3. 维持和调整功能",
+   "printed_page": 60
+  },
+  {
+   "from": "兴趣",
+   "type": "related",
+   "to": "动机",
+   "evidence": "兴趣是动机的重要表现形式，也是动机中最活跃的成分",
+   "printed_page": 60
+  },
+  {
+   "from": "直接兴趣",
+   "type": "subclass",
+   "to": "兴趣",
+   "evidence": "直接兴趣是指由事物或活动过程本身所引起的兴趣。",
+   "printed_page": 60
+  },
+  {
+   "from": "间接兴趣",
+   "type": "subclass",
+   "to": "兴趣",
+   "evidence": "间接兴趣是指由活动目的或结果所引起的兴趣。",
+   "printed_page": 60
+  },
+  {
+   "from": "兴趣的品质",
+   "type": "part_of",
+   "to": "兴趣",
+   "evidence": "（三）兴趣的品质",
+   "printed_page": 61
+  },
+  {
+   "from": "兴趣的广度",
+   "type": "part_of",
+   "to": "兴趣的品质",
+   "evidence": "兴趣的广度是指兴趣的范围大小",
+   "printed_page": 61
+  },
+  {
+   "from": "兴趣的中心",
+   "type": "part_of",
+   "to": "兴趣的品质",
+   "evidence": "兴趣的中心是指对某个特定领域的事物形成更浓厚、更强烈的兴趣",
+   "printed_page": 61
+  },
+  {
+   "from": "兴趣的稳定性",
+   "type": "part_of",
+   "to": "兴趣的品质",
+   "evidence": "兴趣的稳定性是指对事物具有持续、稳定的兴趣",
+   "printed_page": 61
+  },
+  {
+   "from": "兴趣的效能",
+   "type": "part_of",
+   "to": "兴趣的品质",
+   "evidence": "兴趣的效能是指兴趣能积极推动人的活动",
+   "printed_page": 61
+  },
+  {
+   "from": "一般能力",
+   "type": "subclass",
+   "to": "能力·按构造划分",
+   "evidence": "根据能力的构造（性质、倾向性、适用范围），可分为一般能力与特殊能力",
+   "printed_page": 62
+  },
+  {
+   "from": "特殊能力",
+   "type": "subclass",
+   "to": "能力·按构造划分",
+   "evidence": "根据能力的构造（性质、倾向性、适用范围），可分为一般能力与特殊能力",
+   "printed_page": 62
+  },
+  {
+   "from": "一般能力",
+   "type": "exact_match",
+   "to": "智力",
+   "evidence": "一般能力又称为智力",
+   "printed_page": 62
+  },
+  {
+   "from": "思维力",
+   "type": "part_of",
+   "to": "一般能力",
+   "evidence": "其中，思维力（尤其是抽象概括能力）是一般能力的核心",
+   "printed_page": 62
+  },
+  {
+   "from": "创造力",
+   "type": "part_of",
+   "to": "一般能力",
+   "evidence": "创造力是能力的高级表现",
+   "printed_page": 62
+  },
+  {
+   "from": "认知能力",
+   "type": "subclass",
+   "to": "能力·按领域划分",
+   "evidence": "根据能力所涉及的领域，可分为认知能力、操作能力和社交能力",
+   "printed_page": 62
+  },
+  {
+   "from": "操作能力",
+   "type": "subclass",
+   "to": "能力·按领域划分",
+   "evidence": "根据能力所涉及的领域，可分为认知能力、操作能力和社交能力",
+   "printed_page": 62
+  },
+  {
+   "from": "社交能力",
+   "type": "subclass",
+   "to": "能力·按领域划分",
+   "evidence": "根据能力所涉及的领域，可分为认知能力、操作能力和社交能力",
+   "printed_page": 62
+  },
+  {
+   "from": "模仿能力",
+   "type": "subclass",
+   "to": "能力·按创造性程度划分",
+   "evidence": "根据从事活动时创造性程度的高低，可分为模仿能力和创造能力",
+   "printed_page": 62
+  },
+  {
+   "from": "创造能力",
+   "type": "subclass",
+   "to": "能力·按创造性程度划分",
+   "evidence": "根据从事活动时创造性程度的高低，可分为模仿能力和创造能力",
+   "printed_page": 62
+  },
+  {
+   "from": "流体能力",
+   "type": "subclass",
+   "to": "能力·按发展趋势划分",
+   "evidence": "根据能力在人的一生中不同的发展趋势，可分为流体能力（流体智力）和晶体能力（晶体智力）。",
+   "printed_page": 63
+  },
+  {
+   "from": "晶体能力",
+   "type": "subclass",
+   "to": "能力·按发展趋势划分",
+   "evidence": "根据能力在人的一生中不同的发展趋势，可分为流体能力（流体智力）和晶体能力（晶体智力）。",
+   "printed_page": 63
+  },
+  {
+   "from": "智力",
+   "type": "part_of",
+   "to": "能力",
+   "evidence": "智力指人们顺利地解决某种活动所必需的各种认知能力的有机结合。",
+   "printed_page": 63
+  },
+  {
+   "from": "智力测验",
+   "type": "part_of",
+   "to": "智力",
+   "evidence": "1. 智力测验的方式",
+   "printed_page": 64
+  },
+  {
+   "from": "比纳—西蒙智力量表",
+   "type": "subclass",
+   "to": "智力测验",
+   "evidence": "比纳—西蒙智力量表：世界上第一个智力测验量表",
+   "printed_page": 64
+  },
+  {
+   "from": "斯坦福—比纳量表",
+   "type": "subclass",
+   "to": "智力测验",
+   "evidence": "改为斯坦福—比纳量表",
+   "printed_page": 64
+  },
+  {
+   "from": "韦克斯勒智力量表",
+   "type": "subclass",
+   "to": "智力测验",
+   "evidence": "韦克斯勒智力量表（韦氏智力量表）：分为三个相互衔接的智力量表",
+   "printed_page": 64
+  },
+  {
+   "from": "瑞文测验",
+   "type": "subclass",
+   "to": "智力测验",
+   "evidence": "瑞文测验：由英国心理学家瑞文于 1938 年创制",
+   "printed_page": 64
+  },
+  {
+   "from": "智龄",
+   "type": "part_of",
+   "to": "比率智商",
+   "evidence": "心理年龄除以实际年龄所得商数，即为比率智商。",
+   "printed_page": 64
+  },
+  {
+   "from": "离差智商",
+   "type": "related",
+   "to": "韦克斯勒智力量表",
+   "evidence": "美国心理学家韦克斯勒提出了离差智商。",
+   "printed_page": 65
+  },
+  {
+   "from": "智力理论",
+   "type": "part_of",
+   "to": "智力",
+   "evidence": "二、智力理论……1. 斯皮尔曼的智力二因素论",
+   "printed_page": 65
+  },
+  {
+   "from": "斯皮尔曼的智力二因素论",
+   "type": "subclass",
+   "to": "智力理论",
+   "evidence": "智力二因素论认为，人类智力包括两种因素",
+   "printed_page": 65
+  },
+  {
+   "from": "一般因素（G因素）",
+   "type": "part_of",
+   "to": "斯皮尔曼的智力二因素论",
+   "evidence": "人类智力包括两种因素，即一般因素（G 因素）和特殊因素（S 因素）。",
+   "printed_page": 65
+  },
+  {
+   "from": "特殊因素（S因素）",
+   "type": "part_of",
+   "to": "斯皮尔曼的智力二因素论",
+   "evidence": "人类智力包括两种因素，即一般因素（G 因素）和特殊因素（S 因素）。",
+   "printed_page": 65
+  },
+  {
+   "from": "吉尔福特的智力三维结构论",
+   "type": "subclass",
+   "to": "智力理论",
+   "evidence": "智力三维结构论认为智力可以区分为三个维度，即内容、操作和产物。",
+   "printed_page": 66
+  },
+  {
+   "from": "加德纳多元智能理论",
+   "type": "subclass",
+   "to": "智力理论",
+   "evidence": "人的智力结构中存在着九种相对独立的智力。",
+   "printed_page": 66
+  },
+  {
+   "from": "瑟斯顿的群因素论",
+   "type": "subclass",
+   "to": "智力理论",
+   "evidence": "瑟斯顿认为，智力是由几个彼此无关的“原始心理能力”组成的。",
+   "printed_page": 67
+  },
+  {
+   "from": "卡特尔的智力形态论",
+   "type": "subclass",
+   "to": "智力理论",
+   "evidence": "美国心理学家卡特尔将人的智力分为流体智力和晶体智力两种不同形态。",
+   "printed_page": 67
+  },
+  {
+   "from": "斯腾伯格的三元智力理论",
+   "type": "subclass",
+   "to": "智力理论",
+   "evidence": "智力成分亚理论、智力情境亚理论、智力经验亚理论。",
+   "printed_page": 67
+  },
+  {
+   "from": "性格",
+   "type": "subclass",
+   "to": "人格",
+   "evidence": "人格是一个复杂的系统结构，主要包括性格、气质和自我调控等方面。",
+   "printed_page": 69
+  },
+  {
+   "from": "气质",
+   "type": "subclass",
+   "to": "人格",
+   "evidence": "人格是一个复杂的系统结构，主要包括性格、气质和自我调控等方面。",
+   "printed_page": 69
+  },
+  {
+   "from": "自我调控系统",
+   "type": "subclass",
+   "to": "人格",
+   "evidence": "人格是一个复杂的系统结构，主要包括性格、气质和自我调控等方面。",
+   "printed_page": 69
+  },
+  {
+   "from": "人格的特征",
+   "type": "part_of",
+   "to": "人格",
+   "evidence": "（二）人格的特征",
+   "printed_page": 69
+  },
+  {
+   "from": "独特性",
+   "type": "part_of",
+   "to": "人格的特征",
+   "evidence": "不同的遗传、生存及教育环境，造就了各自独特的心理特点。",
+   "printed_page": 69
+  },
+  {
+   "from": "稳定性",
+   "type": "part_of",
+   "to": "人格的特征",
+   "evidence": "人格特征是指一个人经常表现出来的稳定的心理与行为特征",
+   "printed_page": 69
+  },
+  {
+   "from": "统合性",
+   "type": "part_of",
+   "to": "人格的特征",
+   "evidence": "人格是由多种成分构成的一个有机整体，具有内在的一致性，受自我意识的调控。",
+   "printed_page": 69
+  },
+  {
+   "from": "功能性",
+   "type": "part_of",
+   "to": "人格的特征",
+   "evidence": "人格在一定程度上会影响到一个人的生活方式",
+   "printed_page": 70
+  },
+  {
+   "from": "本我",
+   "type": "subclass",
+   "to": "弗洛伊德的人格理论",
+   "evidence": "弗洛伊德将人格结构分为三个层次：本我、自我、超我。",
+   "printed_page": 70
+  },
+  {
+   "from": "自我",
+   "type": "subclass",
+   "to": "弗洛伊德的人格理论",
+   "evidence": "弗洛伊德将人格结构分为三个层次：本我、自我、超我。",
+   "printed_page": 70
+  },
+  {
+   "from": "超我",
+   "type": "subclass",
+   "to": "弗洛伊德的人格理论",
+   "evidence": "弗洛伊德将人格结构分为三个层次：本我、自我、超我。",
+   "printed_page": 70
+  },
+  {
+   "from": "本我",
+   "type": "attribute",
+   "to": "快乐原则",
+   "evidence": "①本我：遵循快乐原则",
+   "printed_page": 70
+  },
+  {
+   "from": "自我",
+   "type": "attribute",
+   "to": "现实原则",
+   "evidence": "②自我：遵循现实原则",
+   "printed_page": 70
+  },
+  {
+   "from": "超我",
+   "type": "attribute",
+   "to": "道德原则",
+   "evidence": "③超我：遵循道德原则",
+   "printed_page": 70
+  },
+  {
+   "from": "共同特质",
+   "type": "subclass",
+   "to": "奥尔波特的人格特质理论",
+   "evidence": "奥尔波特把人格特质区分为共同特质和个人特质",
+   "printed_page": 71
+  },
+  {
+   "from": "个人特质",
+   "type": "subclass",
+   "to": "奥尔波特的人格特质理论",
+   "evidence": "奥尔波特把人格特质区分为共同特质和个人特质",
+   "printed_page": 71
+  },
+  {
+   "from": "性格的结构特征",
+   "type": "part_of",
+   "to": "性格",
+   "evidence": "2. 性格的结构特征",
+   "printed_page": 71
+  },
+  {
+   "from": "性格的态度特征",
+   "type": "part_of",
+   "to": "性格的结构特征",
+   "evidence": "个体对自己……学习的态度特征……核心意义",
+   "printed_page": 71
+  },
+  {
+   "from": "性格的意志特征",
+   "type": "part_of",
+   "to": "性格的结构特征",
+   "evidence": "个体自觉地确定目……为从而达到目标",
+   "printed_page": 71
+  },
+  {
+   "from": "性格的情绪特征",
+   "type": "part_of",
+   "to": "性格的结构特征",
+   "evidence": "个体稳定而独特的……情绪活动方式",
+   "printed_page": 72
+  },
+  {
+   "from": "性格的理智特征",
+   "type": "part_of",
+   "to": "性格的结构特征",
+   "evidence": "个体在感知思……维记忆想象等……认知过程中表现出",
+   "printed_page": 72
+  },
+  {
+   "from": "希波克拉底",
+   "type": "marks",
+   "to": "体液说",
+   "evidence": "古希腊医生希波克拉底在前人研究的基础上提出了体液说。",
+   "printed_page": 73
+  },
+  {
+   "from": "盖伦",
+   "type": "marks",
+   "to": "气质",
+   "evidence": "首次使用了“气质”这个概念，进一步确定了气质类型",
+   "printed_page": 73
+  },
+  {
+   "from": "巴甫洛夫的高级神经活动类型说",
+   "type": "related",
+   "to": "气质",
+   "evidence": "他认为气质的生理基础不在于体液，而在于高级神经活动的类型",
+   "printed_page": 73
+  },
+  {
+   "from": "胆汁质",
+   "type": "subclass",
+   "to": "气质",
+   "evidence": "提出人的四种气质类型是胆汁质、多血质、黏液质和抑郁质。",
+   "printed_page": 73
+  },
+  {
+   "from": "多血质",
+   "type": "subclass",
+   "to": "气质",
+   "evidence": "提出人的四种气质类型是胆汁质、多血质、黏液质和抑郁质。",
+   "printed_page": 73
+  },
+  {
+   "from": "黏液质",
+   "type": "subclass",
+   "to": "气质",
+   "evidence": "提出人的四种气质类型是胆汁质、多血质、黏液质和抑郁质。",
+   "printed_page": 73
+  },
+  {
+   "from": "抑郁质",
+   "type": "subclass",
+   "to": "气质",
+   "evidence": "提出人的四种气质类型是胆汁质、多血质、黏液质和抑郁质。",
+   "printed_page": 73
+  },
+  {
+   "from": "胆汁质",
+   "type": "related",
+   "to": "不可遏制型",
+   "evidence": "胆汁质不可遏制型一刚强但暴躁易怒",
+   "printed_page": 74
+  },
+  {
+   "from": "多血质",
+   "type": "related",
+   "to": "活泼型",
+   "evidence": "多血质平衡活泼型王熙凤贾宝玉",
+   "printed_page": 74
+  },
+  {
+   "from": "黏液质",
+   "type": "related",
+   "to": "安静型",
+   "evidence": "黏液质平衡安静型话少",
+   "printed_page": 74
+  },
+  {
+   "from": "抑郁质",
+   "type": "related",
+   "to": "抑制型",
+   "evidence": "抑郁质弱抑制型感反应迟缓",
+   "printed_page": 74
+  },
+  {
+   "from": "气质",
+   "type": "contrast",
+   "to": "性格",
+   "evidence": "（1）气质受生理影响大，性格受社会影响大。",
+   "printed_page": 75
+  },
+  {
+   "from": "自我意识",
+   "type": "related",
+   "to": "自我调控系统",
+   "evidence": "自我调控系统是以自我意识为核心的人格测控系统",
+   "printed_page": 76
+  },
+  {
+   "from": "自我认知",
+   "type": "part_of",
+   "to": "自我调控系统",
+   "evidence": "具有自我认知、自我体验和自我控制三个子系统。",
+   "printed_page": 76
+  },
+  {
+   "from": "自我体验",
+   "type": "part_of",
+   "to": "自我调控系统",
+   "evidence": "具有自我认知、自我体验和自我控制三个子系统。",
+   "printed_page": 76
+  },
+  {
+   "from": "自我控制",
+   "type": "part_of",
+   "to": "自我调控系统",
+   "evidence": "具有自我认知、自我体验和自我控制三个子系统。",
+   "printed_page": 76
+  },
+  {
+   "from": "生理自我",
+   "type": "subclass",
+   "to": "自我意识",
+   "evidence": "生理自我是自我意识的原始形态。",
+   "printed_page": 76
+  },
+  {
+   "from": "社会自我",
+   "type": "subclass",
+   "to": "自我意识",
+   "evidence": "自我意识的发展进入社会自我阶段",
+   "printed_page": 76
+  },
+  {
+   "from": "心理自我",
+   "type": "subclass",
+   "to": "自我意识",
+   "evidence": "心理自我是从青春期开始形成和发展的。",
+   "printed_page": 76
+  }
+ ]
+}

@@ -1,0 +1,531 @@
+{
+ "chapter": "第四篇 教育心理学 第五章 教师心理",
+ "schema_version": "1.1",
+ "edges": [
+  {
+   "from": "教师的认知特征",
+   "type": "subclass",
+   "to": "教师的职业心理特征",
+   "evidence": "教师的认知特征包括其知识结构和教学能力。",
+   "printed_page": 210
+  },
+  {
+   "from": "知识结构",
+   "type": "part_of",
+   "to": "教师的认知特征",
+   "evidence": "教师的知识结构分为四个方面：本体性知识、条件性知识、实践性知识和文化知识。",
+   "printed_page": 210
+  },
+  {
+   "from": "本体性知识",
+   "type": "subclass",
+   "to": "知识结构",
+   "evidence": "教师的本体性知识是指教师所具有的特定的学科知识。",
+   "printed_page": 210
+  },
+  {
+   "from": "条件性知识",
+   "type": "subclass",
+   "to": "知识结构",
+   "evidence": "条件性知识是指教师所具有的具体的教育科学知识。",
+   "printed_page": 210
+  },
+  {
+   "from": "实践性知识",
+   "type": "subclass",
+   "to": "知识结构",
+   "evidence": "实践性知识是教师积累的教学经验",
+   "printed_page": 210
+  },
+  {
+   "from": "文化知识（通用性知识）",
+   "type": "subclass",
+   "to": "知识结构",
+   "evidence": "具体地说，教师的文化知识有：基本哲学理论知识",
+   "printed_page": 210
+  },
+  {
+   "from": "教学能力",
+   "type": "part_of",
+   "to": "教师的认知特征",
+   "evidence": "教师的教学能力是教师从事教学活动、完成教学任务的能力",
+   "printed_page": 211
+  },
+  {
+   "from": "教学认知能力",
+   "type": "subclass",
+   "to": "教学能力",
+   "evidence": "教学认知能力主要是指教师对教学目标、教学任务、学习者的特点",
+   "printed_page": 211
+  },
+  {
+   "from": "教学设计能力",
+   "type": "subclass",
+   "to": "教学能力",
+   "evidence": "教学设计能力是指教师事先对课堂教学的目标、内容、方法等重要的教学因素进行",
+   "printed_page": 211
+  },
+  {
+   "from": "教学操作能力",
+   "type": "subclass",
+   "to": "教学能力",
+   "evidence": "教学操作能力主要是指教师在实现教学目标过程中解决具体教学问题的能力。",
+   "printed_page": 211
+  },
+  {
+   "from": "教学监控能力",
+   "type": "subclass",
+   "to": "教学能力",
+   "evidence": "教学监控能力是指教师为了保证教学成功，达到预期的教学目标",
+   "printed_page": 211
+  },
+  {
+   "from": "教师的人格特征",
+   "type": "subclass",
+   "to": "教师的职业心理特征",
+   "evidence": "教师的人格特征是影响教学的重要因素",
+   "printed_page": 211
+  },
+  {
+   "from": "职业信念",
+   "type": "part_of",
+   "to": "教师的人格特征",
+   "evidence": "教师的职业信念是指教师对成为一个成熟的教育教学专业工作者的向往和追求。",
+   "printed_page": 211
+  },
+  {
+   "from": "教学效能感",
+   "type": "part_of",
+   "to": "职业信念",
+   "evidence": "教学效能感一般指教师对自己影响学生行为和学习结果的能力的一种主观判断。",
+   "printed_page": 211
+  },
+  {
+   "from": "教师的行为特征",
+   "type": "subclass",
+   "to": "教师的职业心理特征",
+   "evidence": "教师通过行为表达出来的对学生的期望，也是影响学生的一种教学行为。",
+   "printed_page": 212
+  },
+  {
+   "from": "教师期望效应",
+   "type": "subclass",
+   "to": "教师的行为特征",
+   "evidence": "会使学生按照教师所期望的方向来塑造自己的行为，即罗森塔尔效应",
+   "printed_page": 212
+  },
+  {
+   "from": "教师期望效应",
+   "type": "exact_match",
+   "to": "皮格马利翁效应",
+   "evidence": "也叫皮格马利翁效应或教师期待效应",
+   "printed_page": 212
+  },
+  {
+   "from": "教师职业角色的形成过程",
+   "type": "part_of",
+   "to": "教师的角色心理",
+   "evidence": "（一）教师职业角色的形成过程",
+   "printed_page": 212
+  },
+  {
+   "from": "角色认知阶段",
+   "type": "subclass",
+   "to": "教师职业角色的形成过程",
+   "evidence": "角色认知是指角色扮演者对某角色行为规范的认识和了解",
+   "printed_page": 212
+  },
+  {
+   "from": "角色认同阶段",
+   "type": "subclass",
+   "to": "教师职业角色的形成过程",
+   "evidence": "教师角色认同是指通过亲身体验接受教师角色所承担的社会职责",
+   "printed_page": 212
+  },
+  {
+   "from": "角色信念阶段",
+   "type": "subclass",
+   "to": "教师职业角色的形成过程",
+   "evidence": "教师角色中的社会期望与要求转化为个体的心理需要。",
+   "printed_page": 213
+  },
+  {
+   "from": "角色认知阶段",
+   "type": "prerequisite",
+   "to": "角色认同阶段",
+   "evidence": "2. 角色认同阶段",
+   "printed_page": 212
+  },
+  {
+   "from": "角色认同阶段",
+   "type": "prerequisite",
+   "to": "角色信念阶段",
+   "evidence": "3. 角色信念阶段",
+   "printed_page": 213
+  },
+  {
+   "from": "角色失调",
+   "type": "part_of",
+   "to": "教师的角色心理",
+   "evidence": "角色失调的主要表现形式有角色冲突、角色不清、角色中断、角色失败。",
+   "printed_page": 213
+  },
+  {
+   "from": "角色冲突",
+   "type": "subclass",
+   "to": "角色失调",
+   "evidence": "角色之间或角色内部发生了矛盾、对立和抵触",
+   "printed_page": 213
+  },
+  {
+   "from": "角色不清",
+   "type": "subclass",
+   "to": "角色失调",
+   "evidence": "角色不清是指社会大众或角色的扮演者对于某一角色的行为标准不清楚",
+   "printed_page": 213
+  },
+  {
+   "from": "角色中断",
+   "type": "subclass",
+   "to": "角色失调",
+   "evidence": "角色中断是指在一个人前后相继所承担的两种角色之间发生了矛盾的现象。",
+   "printed_page": 213
+  },
+  {
+   "from": "角色失败",
+   "type": "subclass",
+   "to": "角色失调",
+   "evidence": "角色失败是指由于多种原因，角色扮演者没有完成角色任务或不得不终止承担角色",
+   "printed_page": 213
+  },
+  {
+   "from": "教师专业发展",
+   "type": "exact_match",
+   "to": "教师专业成长",
+   "evidence": "教师专业发展，又称教师专业成长",
+   "printed_page": 213
+  },
+  {
+   "from": "教师个体的专业发展",
+   "type": "subclass",
+   "to": "教师专业发展",
+   "evidence": "教师个体的专业发展是指教师在整个专业生涯中，通过终身专业训练",
+   "printed_page": 214
+  },
+  {
+   "from": "专业理想",
+   "type": "part_of",
+   "to": "教师个体的专业发展",
+   "evidence": "专业理想是教师专业素质的核心和灵魂。",
+   "printed_page": 214
+  },
+  {
+   "from": "理性取向",
+   "type": "subclass",
+   "to": "教师专业发展的取向",
+   "evidence": "教师的专业发展就是教师接受充足的学科知识与教育知识。",
+   "printed_page": 214
+  },
+  {
+   "from": "实践—反思取向",
+   "type": "subclass",
+   "to": "教师专业发展的取向",
+   "evidence": "实践—反思取向主张教师通过实践反思，发现教育教学意义，获得实践智慧",
+   "printed_page": 214
+  },
+  {
+   "from": "生态取向",
+   "type": "subclass",
+   "to": "教师专业发展的取向",
+   "evidence": "教师实现专业发展不仅要通过教师个人的学习与实践反思",
+   "printed_page": 214
+  },
+  {
+   "from": "教师成长阶段",
+   "type": "part_of",
+   "to": "教师专业发展的阶段",
+   "evidence": "（三）教师专业发展的阶段",
+   "printed_page": 214
+  },
+  {
+   "from": "关注生存阶段",
+   "type": "subclass",
+   "to": "教师成长阶段",
+   "evidence": "处于这一阶段的一般是新教师，他们非常关注自己的生存适应性",
+   "printed_page": 215
+  },
+  {
+   "from": "关注情境阶段",
+   "type": "subclass",
+   "to": "教师成长阶段",
+   "evidence": "当教师感到自己能够完全适应时，便把关注的焦点投向提高学生的成绩",
+   "printed_page": 215
+  },
+  {
+   "from": "关注学生阶段",
+   "type": "subclass",
+   "to": "教师成长阶段",
+   "evidence": "教师将考虑学生的个别差异，认识到不同发展水平的学生有不同的需要",
+   "printed_page": 215
+  },
+  {
+   "from": "关注生存阶段",
+   "type": "prerequisite",
+   "to": "关注情境阶段",
+   "evidence": "（2）关注情境阶段",
+   "printed_page": 215
+  },
+  {
+   "from": "关注情境阶段",
+   "type": "prerequisite",
+   "to": "关注学生阶段",
+   "evidence": "（3）关注学生阶段",
+   "printed_page": 215
+  },
+  {
+   "from": "福勒和布朗",
+   "type": "marks",
+   "to": "教师成长阶段",
+   "evidence": "福勒和布朗根据教师的需要和不同时期所关注的焦点问题",
+   "printed_page": 214
+  },
+  {
+   "from": "师范教育",
+   "type": "subclass",
+   "to": "教师专业发展的途径",
+   "evidence": "职前师范教育阶段是师范生进行专业准备与学习",
+   "printed_page": 217
+  },
+  {
+   "from": "入职培训",
+   "type": "subclass",
+   "to": "教师专业发展的途径",
+   "evidence": "新教师都会面临一个角色适应问题。",
+   "printed_page": 218
+  },
+  {
+   "from": "在职培训",
+   "type": "subclass",
+   "to": "教师专业发展的途径",
+   "evidence": "在职培训是为了适应教育改革与发展的需要",
+   "printed_page": 218
+  },
+  {
+   "from": "自我教育",
+   "type": "subclass",
+   "to": "教师专业发展的途径",
+   "evidence": "教师的自我教育就是专业化的自我建构。",
+   "printed_page": 218
+  },
+  {
+   "from": "微格教学",
+   "type": "subclass",
+   "to": "教师成长的方法",
+   "evidence": "微格教学指以少数的学生为对象",
+   "printed_page": 218
+  },
+  {
+   "from": "反思教学经验",
+   "type": "subclass",
+   "to": "教师成长的方法",
+   "evidence": "教学经验的反思又称反思性实践或反思性教学",
+   "printed_page": 218
+  },
+  {
+   "from": "反思性教学",
+   "type": "exact_match",
+   "to": "教学反思",
+   "evidence": "教学经验的反思又称反思性实践或反思性教学",
+   "printed_page": 218
+  },
+  {
+   "from": "专家型教师",
+   "type": "contrast",
+   "to": "新手型教师",
+   "evidence": "专家型教师和新手型教师在课时计划、课堂教学过程和课后教学评价三个方面都存",
+   "printed_page": 220
+  },
+  {
+   "from": "课时计划",
+   "type": "part_of",
+   "to": "专家—新手差异维度",
+   "evidence": "（一）课时计划的差异",
+   "printed_page": 220
+  },
+  {
+   "from": "课堂教学过程",
+   "type": "part_of",
+   "to": "专家—新手差异维度",
+   "evidence": "（二）课堂教学过程的差异",
+   "printed_page": 220
+  },
+  {
+   "from": "课后评价",
+   "type": "part_of",
+   "to": "专家—新手差异维度",
+   "evidence": "（三）课后评价的差异",
+   "printed_page": 221
+  },
+  {
+   "from": "课时计划的内容",
+   "type": "part_of",
+   "to": "课时计划",
+   "evidence": "专家型教师只是突出了课程的主要步骤和教学内容，并未涉及一些细节",
+   "printed_page": 220
+  },
+  {
+   "from": "课时计划的修改",
+   "type": "part_of",
+   "to": "课时计划",
+   "evidence": "专家型教师课时计划的修改与预演所需的大部分时间都是在正式计划的时间之外",
+   "printed_page": 220
+  },
+  {
+   "from": "课时计划的实施",
+   "type": "part_of",
+   "to": "课时计划",
+   "evidence": "专家型教师在制订课时计划时，有很大的灵活性",
+   "printed_page": 220
+  },
+  {
+   "from": "课时计划的预见性",
+   "type": "part_of",
+   "to": "课时计划",
+   "evidence": "专家型教师表现出一定的预见性，能够预测计划的执行情况",
+   "printed_page": 220
+  },
+  {
+   "from": "课堂规则的制定与执行",
+   "type": "part_of",
+   "to": "课堂教学过程",
+   "evidence": "专家型教师制定的课堂规则明确，执行力强",
+   "printed_page": 220
+  },
+  {
+   "from": "吸引学生注意力",
+   "type": "part_of",
+   "to": "课堂教学过程",
+   "evidence": "专家型教师有一套完善的维持学生注意力的方法",
+   "printed_page": 220
+  },
+  {
+   "from": "教材的呈现",
+   "type": "part_of",
+   "to": "课堂教学过程",
+   "evidence": "专家型教师在教学时注重回顾先前的知识",
+   "printed_page": 220
+  },
+  {
+   "from": "课堂练习",
+   "type": "part_of",
+   "to": "课堂教学过程",
+   "evidence": "专家型教师将练习看作检查学生学习的手段",
+   "printed_page": 220
+  },
+  {
+   "from": "家庭作业的检查",
+   "type": "part_of",
+   "to": "课堂教学过程",
+   "evidence": "专家型教师具有一套检查学生家庭作业的规范化、自动化的常规程序",
+   "printed_page": 220
+  },
+  {
+   "from": "教学策略的运用",
+   "type": "part_of",
+   "to": "课堂教学过程",
+   "evidence": "专家型教师具有丰富的教学策略，并能灵活运用",
+   "printed_page": 221
+  },
+  {
+   "from": "职业压力",
+   "type": "part_of",
+   "to": "教师心理健康",
+   "evidence": "教师的职业压力主要是由工作引起的，是教师对来自教学情境的刺激产生的情绪反应。",
+   "printed_page": 221
+  },
+  {
+   "from": "职业倦怠",
+   "type": "part_of",
+   "to": "教师心理健康",
+   "evidence": "职业倦怠是个体在长期的职业压力下，缺乏应对资源和应对能力而产生的身心耗竭状态。",
+   "printed_page": 221
+  },
+  {
+   "from": "情绪耗竭",
+   "type": "part_of",
+   "to": "职业倦怠",
+   "evidence": "一是情绪耗竭，主要表现在生理耗竭和心理耗竭两个方面",
+   "printed_page": 221
+  },
+  {
+   "from": "去人性化（人格解体）",
+   "type": "part_of",
+   "to": "职业倦怠",
+   "evidence": "二是去人性化（人格解体）",
+   "printed_page": 221
+  },
+  {
+   "from": "低个人成就感",
+   "type": "part_of",
+   "to": "职业倦怠",
+   "evidence": "三是低个人成就感，表现为消极地评价自己",
+   "printed_page": 221
+  },
+  {
+   "from": "精疲力竭型",
+   "type": "subclass",
+   "to": "职业倦怠",
+   "evidence": "一是精疲力竭型。这类教师在高压力下的表现是放弃努力",
+   "printed_page": 221
+  },
+  {
+   "from": "狂热型",
+   "type": "subclass",
+   "to": "职业倦怠",
+   "evidence": "二是狂热型。这类教师有着极强的成功信念",
+   "printed_page": 221
+  },
+  {
+   "from": "低挑战型",
+   "type": "subclass",
+   "to": "职业倦怠",
+   "evidence": "三是低挑战型。对于这类教师而言，工作本身缺乏刺激",
+   "printed_page": 221
+  },
+  {
+   "from": "认识自我、加强个性修养",
+   "type": "subclass",
+   "to": "教师职业倦怠的应对策略",
+   "evidence": "（1）教师要认识自我，加强个性修养。",
+   "printed_page": 223
+  },
+  {
+   "from": "树立正确的职业观念",
+   "type": "subclass",
+   "to": "教师职业倦怠的应对策略",
+   "evidence": "（2）教师要树立正确的职业观念。",
+   "printed_page": 223
+  },
+  {
+   "from": "调节心理状态、增强角色适应能力",
+   "type": "subclass",
+   "to": "教师职业倦怠的应对策略",
+   "evidence": "（3）教师要善于调节心理状态，增强角色适应能力。",
+   "printed_page": 223
+  },
+  {
+   "from": "学校给予教师帮助",
+   "type": "subclass",
+   "to": "教师职业倦怠的应对策略",
+   "evidence": "（4）学校要给予教师帮助。",
+   "printed_page": 223
+  },
+  {
+   "from": "社会给予教师支持",
+   "type": "subclass",
+   "to": "教师职业倦怠的应对策略",
+   "evidence": "（5）社会要给予教师支持。",
+   "printed_page": 223
+  }
+ ]
+}

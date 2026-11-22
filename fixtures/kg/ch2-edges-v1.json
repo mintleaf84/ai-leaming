@@ -1,0 +1,503 @@
+{
+ "chapter": "第一篇第二章 教育的基本规律",
+ "schema_version": "1.1",
+ "edges": [
+  {
+   "from": "顺序性",
+   "type": "subclass",
+   "to": "个体身心发展的规律",
+   "evidence": "（一）个体身心发展的顺序性。",
+   "printed_page": 33
+  },
+  {
+   "from": "阶段性",
+   "type": "subclass",
+   "to": "个体身心发展的规律",
+   "evidence": "（二）个体身心发展的阶段性。",
+   "printed_page": 33
+  },
+  {
+   "from": "不平衡性",
+   "type": "subclass",
+   "to": "个体身心发展的规律",
+   "evidence": "（三）个体身心发展的不平衡性。",
+   "printed_page": 34
+  },
+  {
+   "from": "互补性",
+   "type": "subclass",
+   "to": "个体身心发展的规律",
+   "evidence": "（四）个体身心发展的互补性。",
+   "printed_page": 34
+  },
+  {
+   "from": "个别差异性",
+   "type": "subclass",
+   "to": "个体身心发展的规律",
+   "evidence": "（五）个体身心发展的个别差异性。",
+   "printed_page": 34
+  },
+  {
+   "from": "顺序性",
+   "type": "attribute",
+   "to": "循序渐进",
+   "evidence": "教育工作者应按照个体身心发展的顺序施教，做到循序渐进。",
+   "printed_page": 33
+  },
+  {
+   "from": "阶段性",
+   "type": "attribute",
+   "to": "分阶段教育",
+   "evidence": "必须根据不同年龄阶段的特点分阶段进行教育。",
+   "printed_page": 33
+  },
+  {
+   "from": "不平衡性",
+   "type": "attribute",
+   "to": "关键期",
+   "evidence": "教育要遵循儿童身心发展的不平衡性，要适时而教，即要在儿童发展的关键期或最佳期及时地进行教育。",
+   "printed_page": 34
+  },
+  {
+   "from": "关键期",
+   "type": "represented_by",
+   "to": "劳伦兹",
+   "evidence": "“关键期”这一概念最早是由奥地利生态学家劳伦兹提出的。",
+   "printed_page": 34
+  },
+  {
+   "from": "互补性",
+   "type": "attribute",
+   "to": "长善救失",
+   "evidence": "教育应结合学生的实际，扬长避短、长善救失。",
+   "printed_page": 34
+  },
+  {
+   "from": "个别差异性",
+   "type": "attribute",
+   "to": "因材施教",
+   "evidence": "教育必须因材施教。",
+   "printed_page": 34
+  },
+  {
+   "from": "内发论",
+   "type": "subclass",
+   "to": "个体身心发展的动因",
+   "evidence": "（一）内发论（遗传决定论、自然成熟论、预成论）。",
+   "printed_page": 35
+  },
+  {
+   "from": "外铄论",
+   "type": "subclass",
+   "to": "个体身心发展的动因",
+   "evidence": "（二）外铄论（环境决定论、经验论、塑造论、外塑论）。",
+   "printed_page": 35
+  },
+  {
+   "from": "二因素论",
+   "type": "subclass",
+   "to": "个体身心发展的动因",
+   "evidence": "（三）二因素论（辐合论）。",
+   "printed_page": 36
+  },
+  {
+   "from": "多因素相互作用论",
+   "type": "subclass",
+   "to": "个体身心发展的动因",
+   "evidence": "（四）多因素相互作用论。",
+   "printed_page": 36
+  },
+  {
+   "from": "内发论",
+   "type": "contrast",
+   "to": "外铄论",
+   "evidence": "由于内发论和外铄论的片面性都比较明显，在争论中就发展出了另一种观点",
+   "printed_page": 36
+  },
+  {
+   "from": "孟子",
+   "type": "part_of",
+   "to": "内发论",
+   "evidence": "（1）孟子：“仁义礼智，非由外铄我也，我固有之也”",
+   "printed_page": 35
+  },
+  {
+   "from": "弗洛伊德",
+   "type": "part_of",
+   "to": "内发论",
+   "evidence": "（2）弗洛伊德：人的性本能是最基本的自然本能，是推动人发展的根本动因。",
+   "printed_page": 35
+  },
+  {
+   "from": "格赛尔",
+   "type": "part_of",
+   "to": "内发论",
+   "evidence": "（4）格赛尔：成熟机制对人的身心发展起决定作用。",
+   "printed_page": 35
+  },
+  {
+   "from": "格赛尔",
+   "type": "attribute",
+   "to": "成熟势力说",
+   "evidence": "格赛尔提出“成熟势力说”……并通过双生子的爬梯实验来证明。",
+   "printed_page": 35
+  },
+  {
+   "from": "荀子",
+   "type": "part_of",
+   "to": "外铄论",
+   "evidence": "（1）荀子：“人之性恶，其善者伪也”",
+   "printed_page": 36
+  },
+  {
+   "from": "洛克",
+   "type": "part_of",
+   "to": "外铄论",
+   "evidence": "（2）洛克：提出“白板说”。",
+   "printed_page": 36
+  },
+  {
+   "from": "华生",
+   "type": "part_of",
+   "to": "外铄论",
+   "evidence": "（3）华生：“给我一打健康的婴儿……”。",
+   "printed_page": 36
+  },
+  {
+   "from": "墨子",
+   "type": "part_of",
+   "to": "外铄论",
+   "evidence": "（4）墨子：人性素丝说。",
+   "printed_page": 36
+  },
+  {
+   "from": "施泰伦",
+   "type": "part_of",
+   "to": "二因素论",
+   "evidence": "（1）施泰伦：在《早期儿童心理学》一书中，明确提出儿童的心理发展是受环境和遗传共同影响的，提出“发展等于遗传和环境之和”",
+   "printed_page": 36
+  },
+  {
+   "from": "吴伟士",
+   "type": "part_of",
+   "to": "二因素论",
+   "evidence": "（2）吴伟士（伍德沃斯）：提出“相乘说”，认为人的心理发展等于遗传和环境的乘积。",
+   "printed_page": 36
+  },
+  {
+   "from": "皮亚杰",
+   "type": "part_of",
+   "to": "多因素相互作用论",
+   "evidence": "皮亚杰：人的自然属性决定了人的发展必然受到先天遗传及生理成熟发展的影响，这是人的发展的先天因素；实践活动是内因和外因对个体身心发展综合作用的汇合点",
+   "printed_page": 36
+  },
+  {
+   "from": "遗传",
+   "type": "subclass",
+   "to": "影响人身心发展的因素",
+   "evidence": "考点三 影响人身心发展的因素……（一）遗传",
+   "printed_page": 37
+  },
+  {
+   "from": "环境",
+   "type": "subclass",
+   "to": "影响人身心发展的因素",
+   "evidence": "考点三 影响人身心发展的因素……（二）环境",
+   "printed_page": 37
+  },
+  {
+   "from": "学校教育",
+   "type": "subclass",
+   "to": "影响人身心发展的因素",
+   "evidence": "考点三 影响人身心发展的因素……（三）学校教育",
+   "printed_page": 37
+  },
+  {
+   "from": "个体主观能动性",
+   "type": "subclass",
+   "to": "影响人身心发展的因素",
+   "evidence": "（四）个体的主观能动性。",
+   "printed_page": 38
+  },
+  {
+   "from": "遗传",
+   "type": "attribute",
+   "to": "生理前提",
+   "evidence": "遗传素质是人的身心发展的生理前提，为人的身心发展提供了可能性。",
+   "printed_page": 37
+  },
+  {
+   "from": "环境",
+   "type": "attribute",
+   "to": "可能性变现实",
+   "evidence": "环境使遗传提供的发展可能性变成现实。",
+   "printed_page": 37
+  },
+  {
+   "from": "学校教育",
+   "type": "attribute",
+   "to": "主导作用",
+   "evidence": "学校教育在人的身心发展中起主导作用。",
+   "printed_page": 37
+  },
+  {
+   "from": "个体主观能动性",
+   "type": "attribute",
+   "to": "内在动力",
+   "evidence": "主观能动性是推动人的身心发展的内在动力。",
+   "printed_page": 38
+  },
+  {
+   "from": "个体主观能动性",
+   "type": "attribute",
+   "to": "社会实践活动",
+   "evidence": "个体的社会实践活动，这是个体主观能动性的最高层次。",
+   "printed_page": 38
+  },
+  {
+   "from": "生产力对教育的制约",
+   "type": "part_of",
+   "to": "教育与生产力的关系",
+   "evidence": "（一）生产力对教育的制约。",
+   "printed_page": 39
+  },
+  {
+   "from": "教育对生产力的反作用",
+   "type": "part_of",
+   "to": "教育与生产力的关系",
+   "evidence": "（二）教育对生产力的反作用——经济功能。",
+   "printed_page": 40
+  },
+  {
+   "from": "生产力发展水平",
+   "type": "attribute",
+   "to": "教育事业发展的速度与规模",
+   "evidence": "生产力的发展水平决定（制约）教育事业发展的速度和规模。",
+   "printed_page": 39
+  },
+  {
+   "from": "生产力发展水平",
+   "type": "attribute",
+   "to": "人才培养规格与教育结构",
+   "evidence": "生产力的发展水平制约着人才培养的规格和教育结构。",
+   "printed_page": 40
+  },
+  {
+   "from": "生产力发展水平",
+   "type": "attribute",
+   "to": "教学内容与方法手段",
+   "evidence": "生产力的发展水平制约着教学的内容、方法、组织形式与手段。",
+   "printed_page": 40
+  },
+  {
+   "from": "教育",
+   "type": "attribute",
+   "to": "劳动力再生产",
+   "evidence": "教育是劳动力再生产的基本途径。",
+   "printed_page": 40
+  },
+  {
+   "from": "教育",
+   "type": "attribute",
+   "to": "科学知识再生产",
+   "evidence": "教育是科学知识再生产的最有效形式。",
+   "printed_page": 40
+  },
+  {
+   "from": "政治经济制度对教育的制约",
+   "type": "part_of",
+   "to": "教育与社会政治经济制度的关系",
+   "evidence": "（一）社会政治经济制度对教育的制约。",
+   "printed_page": 40
+  },
+  {
+   "from": "教育对政治的反作用",
+   "type": "part_of",
+   "to": "教育与社会政治经济制度的关系",
+   "evidence": "（二）教育对社会政治经济制度的反作用——政治功能。",
+   "printed_page": 41
+  },
+  {
+   "from": "政治经济制度",
+   "type": "attribute",
+   "to": "教育性质",
+   "evidence": "社会政治经济制度的性质决定着教育的性质。",
+   "printed_page": 40
+  },
+  {
+   "from": "政治经济制度",
+   "type": "attribute",
+   "to": "教育宗旨与目的",
+   "evidence": "社会政治经济制度决定教育的宗旨与目的。",
+   "printed_page": 41
+  },
+  {
+   "from": "政治经济制度",
+   "type": "attribute",
+   "to": "受教育权",
+   "evidence": "社会政治经济制度决定受教育权。",
+   "printed_page": 41
+  },
+  {
+   "from": "教育",
+   "type": "attribute",
+   "to": "政治民主化",
+   "evidence": "教育促进政治民主化。",
+   "printed_page": 41
+  },
+  {
+   "from": "教育",
+   "type": "attribute",
+   "to": "政治社会化",
+   "evidence": "教育……完成年青一代的政治社会化。",
+   "printed_page": 41
+  },
+  {
+   "from": "文化对教育的制约",
+   "type": "part_of",
+   "to": "教育与文化的关系",
+   "evidence": "（一）文化对教育的制约与影响。",
+   "printed_page": 42
+  },
+  {
+   "from": "教育对文化的反作用",
+   "type": "part_of",
+   "to": "教育与文化的关系",
+   "evidence": "（二）教育对文化的反作用——文化功能。",
+   "printed_page": 43
+  },
+  {
+   "from": "文化",
+   "type": "attribute",
+   "to": "价值定向",
+   "evidence": "文化对教育具有价值定向作用。",
+   "printed_page": 42
+  },
+  {
+   "from": "文化",
+   "type": "attribute",
+   "to": "教育内容与水平",
+   "evidence": "文化影响教育的内容与水平。",
+   "printed_page": 42
+  },
+  {
+   "from": "文化",
+   "type": "attribute",
+   "to": "教育目的",
+   "evidence": "文化影响教育目的的确立。",
+   "printed_page": 42
+  },
+  {
+   "from": "教育",
+   "type": "attribute",
+   "to": "文化传承",
+   "evidence": "传递和保存文化的功能（教育的文化传承功能）。",
+   "printed_page": 43
+  },
+  {
+   "from": "教育",
+   "type": "attribute",
+   "to": "文化选择与提升",
+   "evidence": "选择、提升文化的功能。",
+   "printed_page": 43
+  },
+  {
+   "from": "教育",
+   "type": "attribute",
+   "to": "文化创造",
+   "evidence": "更新、创造文化的功能。",
+   "printed_page": 43
+  },
+  {
+   "from": "学校文化",
+   "type": "subclass",
+   "to": "文化",
+   "evidence": "（三）学校文化……学校文化是指学校全体成员或部分成员习得且共同具有的思想观念和行为方式",
+   "printed_page": 43
+  },
+  {
+   "from": "校园文化",
+   "type": "part_of",
+   "to": "学校文化",
+   "evidence": "（4）校园文化是学校文化的缩影。",
+   "printed_page": 43
+  },
+  {
+   "from": "校园物质文化",
+   "type": "subclass",
+   "to": "校园文化",
+   "evidence": "校园文化可以再细分为校园物质文化、校园精神文化、校园制度文化等。",
+   "printed_page": 44
+  },
+  {
+   "from": "校园精神文化",
+   "type": "subclass",
+   "to": "校园文化",
+   "evidence": "（2）校园精神文化……校园精神文化是校园中教师、学生等学校主体的意识形态",
+   "printed_page": 44
+  },
+  {
+   "from": "校园制度文化",
+   "type": "subclass",
+   "to": "校园文化",
+   "evidence": "（3）校园制度文化……校园制度文化（规范文化）主要是指保证校园运行的组织形态、规章制度和角色规范",
+   "printed_page": 44
+  },
+  {
+   "from": "教育万能论",
+   "type": "subclass",
+   "to": "教育与社会关系的主要理论",
+   "evidence": "（一）教育万能论。",
+   "printed_page": 45
+  },
+  {
+   "from": "人力资本理论",
+   "type": "subclass",
+   "to": "教育与社会关系的主要理论",
+   "evidence": "（二）人力资本理论。",
+   "printed_page": 46
+  },
+  {
+   "from": "筛选假设理论",
+   "type": "subclass",
+   "to": "教育与社会关系的主要理论",
+   "evidence": "（三）筛选假设理论。",
+   "printed_page": 46
+  },
+  {
+   "from": "洛克",
+   "type": "part_of",
+   "to": "教育万能论",
+   "evidence": "（1）洛克：反对天赋论观点，提出著名的“白板说”",
+   "printed_page": 45
+  },
+  {
+   "from": "爱尔维修",
+   "type": "part_of",
+   "to": "教育万能论",
+   "evidence": "（2）爱尔维修：完整地、系统地阐述了教育万能论",
+   "printed_page": 45
+  },
+  {
+   "from": "康德",
+   "type": "part_of",
+   "to": "教育万能论",
+   "evidence": "（3）康德：人之所以成为人，完全是教育的结果。",
+   "printed_page": 45
+  },
+  {
+   "from": "舒尔茨",
+   "type": "part_of",
+   "to": "人力资本理论",
+   "evidence": "（二）人力资本理论……1. 代表人物……舒尔茨",
+   "printed_page": 46
+  },
+  {
+   "from": "史潘斯",
+   "type": "part_of",
+   "to": "筛选假设理论",
+   "evidence": "（三）筛选假设理论……1. 代表人物……迈克尔·史潘斯",
+   "printed_page": 46
+  }
+ ]
+}

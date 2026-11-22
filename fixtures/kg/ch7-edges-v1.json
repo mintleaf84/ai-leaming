@@ -1,0 +1,1231 @@
+{
+ "chapter": "第一篇第七章 教学",
+ "schema_version": "1.1",
+ "edges": [
+  {
+   "from": "教学",
+   "type": "attribute",
+   "to": "教学的本质",
+   "evidence": "教学是一种特殊的认识、交往和实践活动，这是教学的本质。",
+   "printed_page": 108
+  },
+  {
+   "from": "教学的本质",
+   "type": "exact_match",
+   "to": "特殊的认识、交往和实践活动",
+   "evidence": "教学是一种特殊的认识、交往和实践活动，这是教学的本质。",
+   "printed_page": 108
+  },
+  {
+   "from": "教学",
+   "type": "part_of",
+   "to": "广义的教育",
+   "evidence": "教育包括教学，教学工作是学校教育工作的一个组成部分。",
+   "printed_page": 108
+  },
+  {
+   "from": "教学",
+   "type": "related",
+   "to": "智育",
+   "evidence": "教学是智育的主要途径，但不是唯一途径",
+   "printed_page": 108
+  },
+  {
+   "from": "孔子·学思行",
+   "type": "subclass",
+   "to": "教学阶段理论",
+   "evidence": "1. 孔子：学、思、行。",
+   "printed_page": 109
+  },
+  {
+   "from": "赫尔巴特·四段教学法",
+   "type": "subclass",
+   "to": "教学阶段理论",
+   "evidence": "5. 赫尔巴特：明了（清楚）、联想、系统、方法。",
+   "printed_page": 109
+  },
+  {
+   "from": "席勒·五段教学法",
+   "type": "subclass",
+   "to": "教学阶段理论",
+   "evidence": "6. 席勒：预备、提示、联想、系统、方法。",
+   "printed_page": 109
+  },
+  {
+   "from": "形式教育论",
+   "type": "contrast",
+   "to": "实质教育论",
+   "evidence": "（一）形式教育与实质教育",
+   "printed_page": 109
+  },
+  {
+   "from": "洛克",
+   "type": "marks",
+   "to": "形式教育论",
+   "evidence": "（2）代表人物：洛克、裴斯泰洛齐。",
+   "printed_page": 109
+  },
+  {
+   "from": "裴斯泰洛齐",
+   "type": "marks",
+   "to": "形式教育论",
+   "evidence": "（2）代表人物：洛克、裴斯泰洛齐。",
+   "printed_page": 109
+  },
+  {
+   "from": "赫尔巴特",
+   "type": "marks",
+   "to": "实质教育论",
+   "evidence": "（2）代表人物：赫尔巴特、斯宾塞。",
+   "printed_page": 109
+  },
+  {
+   "from": "我国现阶段的教学任务",
+   "type": "part_of",
+   "to": "教学",
+   "evidence": "（二）我国现阶段的教学任务",
+   "printed_page": 109
+  },
+  {
+   "from": "传授系统的科学基础知识和基本技能",
+   "type": "part_of",
+   "to": "我国现阶段的教学任务",
+   "evidence": "1. 传授系统的科学基础知识和基本技能，这是教学的首要任务。",
+   "printed_page": 109
+  },
+  {
+   "from": "发展学生的智力、体力和创造才能",
+   "type": "part_of",
+   "to": "我国现阶段的教学任务",
+   "evidence": "2. 发展学生的智力、体力和创造才能。",
+   "printed_page": 109
+  },
+  {
+   "from": "教学过程",
+   "type": "part_of",
+   "to": "教学",
+   "evidence": "教学过程是由教师的教和学生的学所构成的一种双边活动过程",
+   "printed_page": 110
+  },
+  {
+   "from": "教学过程主要是一种认识过程",
+   "type": "part_of",
+   "to": "教学过程",
+   "evidence": "（一）教学过程主要是一种认识过程",
+   "printed_page": 110
+  },
+  {
+   "from": "特殊的认识过程",
+   "type": "subclass",
+   "to": "教学过程主要是一种认识过程",
+   "evidence": "（二）教学过程是一种特殊的认识过程",
+   "printed_page": 110
+  },
+  {
+   "from": "间接性",
+   "type": "subclass",
+   "to": "特殊的认识过程",
+   "evidence": "1. 间接性。主要以掌握人类长期积累的科学文化知识为中介间接地认识世界。",
+   "printed_page": 110
+  },
+  {
+   "from": "引导性",
+   "type": "subclass",
+   "to": "特殊的认识过程",
+   "evidence": "2. 引导性。需要在富有知识的教师的引导下进行认识，而不能独立完成。",
+   "printed_page": 110
+  },
+  {
+   "from": "简捷性",
+   "type": "subclass",
+   "to": "特殊的认识过程",
+   "evidence": "3. 简捷性。走的是一条认识的捷径，是一种科学文化知识的再生产。",
+   "printed_page": 110
+  },
+  {
+   "from": "教育性",
+   "type": "subclass",
+   "to": "特殊的认识过程",
+   "evidence": "4. 教育性。教学中既要传授知识，又要对学生的品德进行培养",
+   "printed_page": 110
+  },
+  {
+   "from": "交往性",
+   "type": "subclass",
+   "to": "特殊的认识过程",
+   "evidence": "5. 交往性。教学活动是发生在师生之间及学生之间的一种特殊的交往活动。",
+   "printed_page": 110
+  },
+  {
+   "from": "教学过程的基本规律",
+   "type": "part_of",
+   "to": "教学过程",
+   "evidence": "三、教学过程的基本规律",
+   "printed_page": 111
+  },
+  {
+   "from": "间接经验与直接经验相统一",
+   "type": "subclass",
+   "to": "教学过程的基本规律",
+   "evidence": "（一）间接经验与直接经验相统一",
+   "printed_page": 111
+  },
+  {
+   "from": "掌握知识与发展能力相统一",
+   "type": "subclass",
+   "to": "教学过程的基本规律",
+   "evidence": "（二）掌握知识与发展能力相统一",
+   "printed_page": 111
+  },
+  {
+   "from": "教师的主导与学生的主体相统一",
+   "type": "subclass",
+   "to": "教学过程的基本规律",
+   "evidence": "（三）教师的主导与学生的主体相统一",
+   "printed_page": 111
+  },
+  {
+   "from": "传授知识与思想教育相统一（教育性规律）",
+   "type": "subclass",
+   "to": "教学过程的基本规律",
+   "evidence": "（四）传授知识与思想教育相统一（教育性规律）",
+   "printed_page": 112
+  },
+  {
+   "from": "教学过程的结构",
+   "type": "part_of",
+   "to": "教学过程",
+   "evidence": "教学过程的结构指教学进程的基本阶段。",
+   "printed_page": 112
+  },
+  {
+   "from": "引发学习动机",
+   "type": "part_of",
+   "to": "教学过程的结构",
+   "evidence": "（一）引发学习动机（起始阶段）",
+   "printed_page": 112
+  },
+  {
+   "from": "领会知识",
+   "type": "part_of",
+   "to": "教学过程的结构",
+   "evidence": "这是教学的中心环节。领会知识包括使学生感知教材和理解教材。",
+   "printed_page": 112
+  },
+  {
+   "from": "巩固知识",
+   "type": "part_of",
+   "to": "教学过程的结构",
+   "evidence": "巩固知识就是学生通过各种各样的复习",
+   "printed_page": 113
+  },
+  {
+   "from": "运用知识",
+   "type": "part_of",
+   "to": "教学过程的结构",
+   "evidence": "学生掌握知识的目的在于运用",
+   "printed_page": 113
+  },
+  {
+   "from": "检查知识",
+   "type": "part_of",
+   "to": "教学过程的结构",
+   "evidence": "检查学习效果的目的在于",
+   "printed_page": 113
+  },
+  {
+   "from": "教学原则",
+   "type": "part_of",
+   "to": "教学",
+   "evidence": "考点三 教学原则（上）",
+   "printed_page": 113
+  },
+  {
+   "from": "直观性原则",
+   "type": "subclass",
+   "to": "教学原则",
+   "evidence": "（一）直观性原则",
+   "printed_page": 113
+  },
+  {
+   "from": "启发性原则",
+   "type": "subclass",
+   "to": "教学原则",
+   "evidence": "（二）启发性原则",
+   "printed_page": 114
+  },
+  {
+   "from": "循序渐进原则",
+   "type": "subclass",
+   "to": "教学原则",
+   "evidence": "（三）循序渐进原则（系统性原则）",
+   "printed_page": 115
+  },
+  {
+   "from": "巩固性原则",
+   "type": "subclass",
+   "to": "教学原则",
+   "evidence": "（四）巩固性原则",
+   "printed_page": 115
+  },
+  {
+   "from": "量力性原则",
+   "type": "subclass",
+   "to": "教学原则",
+   "evidence": "（五）量力性原则（可接受性原则、发展性原则）",
+   "printed_page": 116
+  },
+  {
+   "from": "科学性与思想性相统一原则",
+   "type": "subclass",
+   "to": "教学原则",
+   "evidence": "（六）科学性与思想性相统一原则",
+   "printed_page": 116
+  },
+  {
+   "from": "理论联系实际原则",
+   "type": "subclass",
+   "to": "教学原则",
+   "evidence": "（七）理论联系实际原则",
+   "printed_page": 117
+  },
+  {
+   "from": "因材施教原则",
+   "type": "subclass",
+   "to": "教学原则",
+   "evidence": "（八）因材施教原则",
+   "printed_page": 117
+  },
+  {
+   "from": "循序渐进原则",
+   "type": "exact_match",
+   "to": "系统性原则",
+   "evidence": "（三）循序渐进原则（系统性原则）",
+   "printed_page": 115
+  },
+  {
+   "from": "可接受性原则",
+   "type": "exact_match",
+   "to": "量力性原则",
+   "evidence": "（五）量力性原则（可接受性原则、发展性原则）",
+   "printed_page": 116
+  },
+  {
+   "from": "实物直观",
+   "type": "subclass",
+   "to": "直观的种类",
+   "evidence": "实物直观即直接感知要学习的实际事物的一种直观方式",
+   "printed_page": 113
+  },
+  {
+   "from": "模象直观",
+   "type": "subclass",
+   "to": "直观的种类",
+   "evidence": "模象直观是对事物的模拟形象进行直接感知的一种直观方式",
+   "printed_page": 114
+  },
+  {
+   "from": "言语直观",
+   "type": "subclass",
+   "to": "直观的种类",
+   "evidence": "言语直观是在形象化语言的作用下",
+   "printed_page": 114
+  },
+  {
+   "from": "夸美纽斯",
+   "type": "marks",
+   "to": "直观性原则",
+   "evidence": "（2）夸美纽斯在《大教学论》中指出，凡是需要知道的事物",
+   "printed_page": 113
+  },
+  {
+   "from": "孔子",
+   "type": "marks",
+   "to": "启发性原则",
+   "evidence": "（1）孔子提出“不愤不启，不悱不发”。",
+   "printed_page": 114
+  },
+  {
+   "from": "《学记》",
+   "type": "marks",
+   "to": "启发性原则",
+   "evidence": "（5）《学记》中提出“道而弗牵，强而弗抑，开而弗达”。",
+   "printed_page": 115
+  },
+  {
+   "from": "《学记》",
+   "type": "marks",
+   "to": "循序渐进原则",
+   "evidence": "（1）《学记》中提出，“不陵节而施之谓孙”“学不躐等”。",
+   "printed_page": 115
+  },
+  {
+   "from": "荀子",
+   "type": "marks",
+   "to": "循序渐进原则",
+   "evidence": "（2）荀子提出“不积跬步，无以至千里",
+   "printed_page": 115
+  },
+  {
+   "from": "乌申斯基",
+   "type": "marks",
+   "to": "巩固性原则",
+   "evidence": "（2）乌申斯基认为“复习是学习之母”。",
+   "printed_page": 116
+  },
+  {
+   "from": "墨子",
+   "type": "marks",
+   "to": "量力性原则",
+   "evidence": "（2）墨子：“夫知者必量其力所能至而从事焉”",
+   "printed_page": 116
+  },
+  {
+   "from": "赫尔巴特",
+   "type": "marks",
+   "to": "科学性与思想性相统一原则",
+   "evidence": "“我想不到有任何无教学的教育，正如在相反的方面，我不承认有任何无教育的教学",
+   "printed_page": 117
+  },
+  {
+   "from": "裴斯泰洛齐",
+   "type": "marks",
+   "to": "理论联系实际原则",
+   "evidence": "（1）裴斯泰洛齐重视“知识与知识的应用”",
+   "printed_page": 117
+  },
+  {
+   "from": "朱熹",
+   "type": "marks",
+   "to": "因材施教原则",
+   "evidence": "（2）孔子施教，各因其材。——朱熹",
+   "printed_page": 118
+  },
+  {
+   "from": "教学方法",
+   "type": "part_of",
+   "to": "教学",
+   "evidence": "（一）教学方法的概念",
+   "printed_page": 118
+  },
+  {
+   "from": "教学方法的指导思想",
+   "type": "part_of",
+   "to": "教学方法",
+   "evidence": "（二）教学方法的指导思想",
+   "printed_page": 118
+  },
+  {
+   "from": "注入式",
+   "type": "subclass",
+   "to": "教学方法的指导思想",
+   "evidence": "注入式教学即教师不管学生的具体情况",
+   "printed_page": 118
+  },
+  {
+   "from": "启发式",
+   "type": "subclass",
+   "to": "教学方法的指导思想",
+   "evidence": "启发式教学即视学生为认识活动的主体",
+   "printed_page": 118
+  },
+  {
+   "from": "注入式",
+   "type": "contrast",
+   "to": "启发式",
+   "evidence": "当代运用教学方法的指导思想是倡导启发式，反对注入式。",
+   "printed_page": 119
+  },
+  {
+   "from": "以语言传递为主的教学方法",
+   "type": "part_of",
+   "to": "教学方法",
+   "evidence": "（一）以语言传递为主的教学方法",
+   "printed_page": 119
+  },
+  {
+   "from": "以直观感知为主的教学方法",
+   "type": "part_of",
+   "to": "教学方法",
+   "evidence": "（二）以直观感知为主的教学方法",
+   "printed_page": 121
+  },
+  {
+   "from": "以实际训练为主的教学方法",
+   "type": "part_of",
+   "to": "教学方法",
+   "evidence": "（三）以实际训练为主的教学方法",
+   "printed_page": 122
+  },
+  {
+   "from": "以情感陶冶为主的教学方法",
+   "type": "part_of",
+   "to": "教学方法",
+   "evidence": "（四）以情感陶冶为主的教学方法",
+   "printed_page": 123
+  },
+  {
+   "from": "以引导探究为主的教学方法",
+   "type": "part_of",
+   "to": "教学方法",
+   "evidence": "（五）以引导探究为主的教学方法——发现法",
+   "printed_page": 123
+  },
+  {
+   "from": "讲授法",
+   "type": "subclass",
+   "to": "以语言传递为主的教学方法",
+   "evidence": "讲授法是教师运用口头语言系统地向学生传授知识的方法",
+   "printed_page": 119
+  },
+  {
+   "from": "谈话法",
+   "type": "subclass",
+   "to": "以语言传递为主的教学方法",
+   "evidence": "谈话法也叫问答法",
+   "printed_page": 120
+  },
+  {
+   "from": "讨论法",
+   "type": "subclass",
+   "to": "以语言传递为主的教学方法",
+   "evidence": "讨论法是学生在教师的指导下为解决某个问题而进行探讨、辩论",
+   "printed_page": 120
+  },
+  {
+   "from": "读书指导法",
+   "type": "subclass",
+   "to": "以语言传递为主的教学方法",
+   "evidence": "读书指导法是指教师指导学生通过阅读教科书和参考书",
+   "printed_page": 120
+  },
+  {
+   "from": "演示法",
+   "type": "subclass",
+   "to": "以直观感知为主的教学方法",
+   "evidence": "演示法是指教师通过展示实物、直观教具进行示范性的实验",
+   "printed_page": 121
+  },
+  {
+   "from": "参观法",
+   "type": "subclass",
+   "to": "以直观感知为主的教学方法",
+   "evidence": "参观法是指教师根据教学目的和要求，组织学生对实物进行实地观察、研究",
+   "printed_page": 121
+  },
+  {
+   "from": "练习法",
+   "type": "subclass",
+   "to": "以实际训练为主的教学方法",
+   "evidence": "练习法是指学生在教师的指导下，运用所学知识独立地进行实际操作",
+   "printed_page": 122
+  },
+  {
+   "from": "实验法",
+   "type": "subclass",
+   "to": "以实际训练为主的教学方法",
+   "evidence": "实验法是指学生在教师的指导下，使用一定的仪器和设备",
+   "printed_page": 122
+  },
+  {
+   "from": "实习作业法",
+   "type": "subclass",
+   "to": "以实际训练为主的教学方法",
+   "evidence": "实习作业法，又称实习法",
+   "printed_page": 122
+  },
+  {
+   "from": "实践活动法",
+   "type": "subclass",
+   "to": "以实际训练为主的教学方法",
+   "evidence": "实践活动法是指让学生参加社会实践活动",
+   "printed_page": 122
+  },
+  {
+   "from": "情境教学法",
+   "type": "subclass",
+   "to": "以情感陶冶为主的教学方法",
+   "evidence": "情境教学法是指教师有目的地引入或创设以形象为主题的具有一定情绪色彩的生动",
+   "printed_page": 123
+  },
+  {
+   "from": "发现法",
+   "type": "subclass",
+   "to": "以引导探究为主的教学方法",
+   "evidence": "是指学生在教师的支持和帮助下，主动发现问题，寻求问题解决的方法",
+   "printed_page": 123
+  },
+  {
+   "from": "谈话法",
+   "type": "exact_match",
+   "to": "问答法",
+   "evidence": "谈话法也叫问答法",
+   "printed_page": 120
+  },
+  {
+   "from": "教学组织形式",
+   "type": "part_of",
+   "to": "教学",
+   "evidence": "考点六 教学组织形式",
+   "printed_page": 123
+  },
+  {
+   "from": "个别教学制",
+   "type": "subclass",
+   "to": "教学组织形式",
+   "evidence": "个别教学制是最古老的教学组织形式。",
+   "printed_page": 123
+  },
+  {
+   "from": "班级授课制",
+   "type": "subclass",
+   "to": "教学组织形式",
+   "evidence": "（二）班级授课制——最基本的教学组织形式",
+   "printed_page": 124
+  },
+  {
+   "from": "昆体良",
+   "type": "marks",
+   "to": "班级授课制的萌芽",
+   "evidence": "①思想萌芽：昆体良的分班教学思想是班级授课制的萌芽。",
+   "printed_page": 124
+  },
+  {
+   "from": "《大教学论》",
+   "type": "marks",
+   "to": "班级授课制的系统论述",
+   "evidence": "捷克教育家夸美纽斯在《大教学论》中首次从理论上对班级授课制进行了论述",
+   "printed_page": 124
+  },
+  {
+   "from": "赫尔巴特",
+   "type": "marks",
+   "to": "班级授课制的基本定型",
+   "evidence": "③基本定型：赫尔巴特的教学形式阶段理论使班级授课制得以进一步完善而基本定型。",
+   "printed_page": 124
+  },
+  {
+   "from": "凯洛夫",
+   "type": "marks",
+   "to": "班级授课制的完整体系",
+   "evidence": "④完整体系：凯洛夫关于课的类型与结构的分析使班级授课制形成一个完整的体系。",
+   "printed_page": 124
+  },
+  {
+   "from": "京师同文馆",
+   "type": "marks",
+   "to": "班级授课制在我国的首次使用",
+   "evidence": "1862 年，京师同文馆率先采用班级授课制这种教学组织形式。",
+   "printed_page": 124
+  },
+  {
+   "from": "癸卯学制",
+   "type": "marks",
+   "to": "班级授课制在我国的普遍推广",
+   "evidence": "1904 年，癸卯学制的颁布",
+   "printed_page": 124
+  },
+  {
+   "from": "班级授课制的优点",
+   "type": "part_of",
+   "to": "班级授课制",
+   "evidence": "4. 班级授课制的优缺点",
+   "printed_page": 125
+  },
+  {
+   "from": "有利于大面积培养人才",
+   "type": "part_of",
+   "to": "班级授课制的优点",
+   "evidence": "②有利于大面积培养人才。",
+   "printed_page": 125
+  },
+  {
+   "from": "能够充分发挥教师的主导作用",
+   "type": "part_of",
+   "to": "班级授课制的优点",
+   "evidence": "③能够充分发挥教师的主导作用。",
+   "printed_page": 125
+  },
+  {
+   "from": "有利于学生获得系统的科学知识",
+   "type": "part_of",
+   "to": "班级授课制的优点",
+   "evidence": "⑤有利于学生获得系统的科学知识。",
+   "printed_page": 125
+  },
+  {
+   "from": "班级授课制的缺点",
+   "type": "part_of",
+   "to": "班级授课制",
+   "evidence": "4. 班级授课制的优缺点",
+   "printed_page": 125
+  },
+  {
+   "from": "难以因材施教",
+   "type": "part_of",
+   "to": "班级授课制的缺点",
+   "evidence": "①难以因材施教。",
+   "printed_page": 125
+  },
+  {
+   "from": "难以形成学生的探索精神、创造能力和实践能力",
+   "type": "part_of",
+   "to": "班级授课制的缺点",
+   "evidence": "②难以形成学生的探索精神、创造能力和实践能力。",
+   "printed_page": 125
+  },
+  {
+   "from": "缺乏灵活性",
+   "type": "part_of",
+   "to": "班级授课制的缺点",
+   "evidence": "③缺乏灵活性。",
+   "printed_page": 125
+  },
+  {
+   "from": "复式教学",
+   "type": "subclass",
+   "to": "班级授课制",
+   "evidence": "6. 班级授课制的特殊形式——复式教学",
+   "printed_page": 125
+  },
+  {
+   "from": "个别辅导",
+   "type": "subclass",
+   "to": "班级授课制的辅助形式",
+   "evidence": "5. 班级授课制的辅助形式——个别辅导与现场教学",
+   "printed_page": 125
+  },
+  {
+   "from": "现场教学",
+   "type": "subclass",
+   "to": "班级授课制的辅助形式",
+   "evidence": "现场教学是指根据一定的教学任务",
+   "printed_page": 125
+  },
+  {
+   "from": "西方教学组织形式的改革",
+   "type": "part_of",
+   "to": "教学组织形式",
+   "evidence": "（三）西方教学组织形式的改革",
+   "printed_page": 126
+  },
+  {
+   "from": "其他教学组织形式",
+   "type": "part_of",
+   "to": "教学组织形式",
+   "evidence": "（四）其他教学组织形式",
+   "printed_page": 127
+  },
+  {
+   "from": "分组教学",
+   "type": "part_of",
+   "to": "西方教学组织形式的改革",
+   "evidence": "分组教学是指按学生的能力或学习成绩把他们分为水平不同的组进行教学的组织形式",
+   "printed_page": 126
+  },
+  {
+   "from": "设计教学法",
+   "type": "part_of",
+   "to": "西方教学组织形式的改革",
+   "evidence": "设计教学法又叫单元教学法",
+   "printed_page": 126
+  },
+  {
+   "from": "克伯屈",
+   "type": "marks",
+   "to": "设计教学法",
+   "evidence": "（1）代表人物：克伯屈。",
+   "printed_page": 126
+  },
+  {
+   "from": "道尔顿制",
+   "type": "part_of",
+   "to": "西方教学组织形式的改革",
+   "evidence": "3. 道尔顿制——最早对班级授课制进行改造",
+   "printed_page": 126
+  },
+  {
+   "from": "柏克赫斯特",
+   "type": "marks",
+   "to": "道尔顿制",
+   "evidence": "（1）代表人物：柏克赫斯特。",
+   "printed_page": 126
+  },
+  {
+   "from": "特朗普制",
+   "type": "part_of",
+   "to": "其他教学组织形式",
+   "evidence": "特朗普制又称“灵活的课程表”",
+   "printed_page": 127
+  },
+  {
+   "from": "贝尔—兰卡斯特制",
+   "type": "part_of",
+   "to": "其他教学组织形式",
+   "evidence": "2. 贝尔—兰卡斯特制",
+   "printed_page": 127
+  },
+  {
+   "from": "导生制",
+   "type": "exact_match",
+   "to": "贝尔—兰卡斯特制",
+   "evidence": "贝尔—兰卡斯特制也称“导生制”",
+   "printed_page": 127
+  },
+  {
+   "from": "教学工作的基本环节",
+   "type": "part_of",
+   "to": "教学",
+   "evidence": "教师教学工作包括五个基本环节：备课、上课、课外作业的布置与批改、课外辅导、学生学业成绩的评价。",
+   "printed_page": 128
+  },
+  {
+   "from": "备课",
+   "type": "part_of",
+   "to": "教学工作的基本环节",
+   "evidence": "（一）备课——上课前的准备工作，是上好课的前提",
+   "printed_page": 128
+  },
+  {
+   "from": "上课",
+   "type": "part_of",
+   "to": "教学工作的基本环节",
+   "evidence": "（二）上课——教学工作的中心环节",
+   "printed_page": 129
+  },
+  {
+   "from": "课外作业的布置与批改",
+   "type": "part_of",
+   "to": "教学工作的基本环节",
+   "evidence": "（三）课外作业的布置与批改",
+   "printed_page": 130
+  },
+  {
+   "from": "课外辅导",
+   "type": "part_of",
+   "to": "教学工作的基本环节",
+   "evidence": "课外辅导是指在课堂教学规定的时间以外，教师对学生的辅导。",
+   "printed_page": 130
+  },
+  {
+   "from": "学生学业成绩的评价",
+   "type": "part_of",
+   "to": "教学工作的基本环节",
+   "evidence": "（五）学生学业成绩的评价",
+   "printed_page": 130
+  },
+  {
+   "from": "钻研教材",
+   "type": "part_of",
+   "to": "备课",
+   "evidence": "（1）钻研教材——备课的核心工作",
+   "printed_page": 128
+  },
+  {
+   "from": "了解学生",
+   "type": "part_of",
+   "to": "备课",
+   "evidence": "备课要“吃透两头”，即除了钻研教材，还要了解学生",
+   "printed_page": 129
+  },
+  {
+   "from": "设计教法",
+   "type": "part_of",
+   "to": "备课",
+   "evidence": "设计教法即如何把已掌握的教材知识传授给学生。",
+   "printed_page": 129
+  },
+  {
+   "from": "课的结构",
+   "type": "part_of",
+   "to": "上课",
+   "evidence": "课的基本组成部分：①组织教学；②检查复习；③讲授新教材；④巩固新教材；⑤布置课外作业。",
+   "printed_page": 129
+  },
+  {
+   "from": "组织教学",
+   "type": "part_of",
+   "to": "课的结构",
+   "evidence": "课的基本组成部分：①组织教学；②检查复习；③讲授新教材；④巩固新教材；⑤布置课外作业。",
+   "printed_page": 129
+  },
+  {
+   "from": "检查复习",
+   "type": "part_of",
+   "to": "课的结构",
+   "evidence": "课的基本组成部分：①组织教学；②检查复习；③讲授新教材；④巩固新教材；⑤布置课外作业。",
+   "printed_page": 129
+  },
+  {
+   "from": "讲授新教材",
+   "type": "part_of",
+   "to": "课的结构",
+   "evidence": "课的基本组成部分：①组织教学；②检查复习；③讲授新教材；④巩固新教材；⑤布置课外作业。",
+   "printed_page": 129
+  },
+  {
+   "from": "巩固新教材",
+   "type": "part_of",
+   "to": "课的结构",
+   "evidence": "课的基本组成部分：①组织教学；②检查复习；③讲授新教材；④巩固新教材；⑤布置课外作业。",
+   "printed_page": 129
+  },
+  {
+   "from": "布置课外作业",
+   "type": "part_of",
+   "to": "课的结构",
+   "evidence": "课的基本组成部分：①组织教学；②检查复习；③讲授新教材；④巩固新教材；⑤布置课外作业。",
+   "printed_page": 129
+  },
+  {
+   "from": "课的类型",
+   "type": "part_of",
+   "to": "上课",
+   "evidence": "2. 课的类型（课的分类）",
+   "printed_page": 129
+  },
+  {
+   "from": "单一课",
+   "type": "subclass",
+   "to": "课的类型",
+   "evidence": "（2）根据一节课所完成的任务数量划分：单一课和综合课。",
+   "printed_page": 129
+  },
+  {
+   "from": "综合课",
+   "type": "subclass",
+   "to": "课的类型",
+   "evidence": "（2）根据一节课所完成的任务数量划分：单一课和综合课。",
+   "printed_page": 129
+  },
+  {
+   "from": "上好一堂课的标准",
+   "type": "part_of",
+   "to": "上课",
+   "evidence": "3. 上好一堂课的标准",
+   "printed_page": 129
+  },
+  {
+   "from": "目的明确",
+   "type": "part_of",
+   "to": "上好一堂课的标准",
+   "evidence": "（1）目的明确：一是目标制定得当，符合课程标准的要求及学生的实际",
+   "printed_page": 129
+  },
+  {
+   "from": "内容正确",
+   "type": "part_of",
+   "to": "上好一堂课的标准",
+   "evidence": "（2）内容正确：保证教学内容的科学性和思想性。",
+   "printed_page": 129
+  },
+  {
+   "from": "方法得当",
+   "type": "part_of",
+   "to": "上好一堂课的标准",
+   "evidence": "（3）方法得当：教师根据教学任务、内容和学生的特点选择较佳的方法进行教学",
+   "printed_page": 130
+  },
+  {
+   "from": "结构合理",
+   "type": "part_of",
+   "to": "上好一堂课的标准",
+   "evidence": "（4）结构合理：要有严密的计划性和组织性。",
+   "printed_page": 130
+  },
+  {
+   "from": "语言艺术",
+   "type": "part_of",
+   "to": "上好一堂课的标准",
+   "evidence": "（5）语言艺术：讲普通话，发音要清楚，注意抑扬顿挫等。",
+   "printed_page": 130
+  },
+  {
+   "from": "气氛热烈",
+   "type": "part_of",
+   "to": "上好一堂课的标准",
+   "evidence": "（6）气氛热烈：课应该自始至终在教师的指导下进行",
+   "printed_page": 130
+  },
+  {
+   "from": "态度从容",
+   "type": "part_of",
+   "to": "上好一堂课的标准",
+   "evidence": "（8）态度从容：充满自信，适当运用肢体语言。",
+   "printed_page": 130
+  },
+  {
+   "from": "教学评价",
+   "type": "part_of",
+   "to": "教学",
+   "evidence": "考点八 教学评价",
+   "printed_page": 131
+  },
+  {
+   "from": "按评价功能划分",
+   "type": "part_of",
+   "to": "教学评价",
+   "evidence": "（一）根据实施功能的不同，可分为诊断性评价、形成性评价和总结性评价",
+   "printed_page": 131
+  },
+  {
+   "from": "按评价标准划分",
+   "type": "part_of",
+   "to": "教学评价",
+   "evidence": "（二）根据运用的标准不同，可分为相对性评价、绝对性评价和个体内差异评价",
+   "printed_page": 132
+  },
+  {
+   "from": "按评价主体划分",
+   "type": "part_of",
+   "to": "教学评价",
+   "evidence": "（三）根据评价主体的不同，可分为外部评价与内部评价",
+   "printed_page": 133
+  },
+  {
+   "from": "诊断性评价",
+   "type": "subclass",
+   "to": "按评价功能划分",
+   "evidence": "诊断性评价是指在学期教学开始或单元教学开始时",
+   "printed_page": 131
+  },
+  {
+   "from": "形成性评价",
+   "type": "subclass",
+   "to": "按评价功能划分",
+   "evidence": "形成性评价是指在教学进程中对学生的知识掌握和能力发展的比较",
+   "printed_page": 131
+  },
+  {
+   "from": "总结性评价",
+   "type": "subclass",
+   "to": "按评价功能划分",
+   "evidence": "总结性评价是指在一个大的学习阶段",
+   "printed_page": 131
+  },
+  {
+   "from": "相对性评价",
+   "type": "subclass",
+   "to": "按评价标准划分",
+   "evidence": "相对性评价又称为常模参照性评价",
+   "printed_page": 132
+  },
+  {
+   "from": "绝对性评价",
+   "type": "subclass",
+   "to": "按评价标准划分",
+   "evidence": "绝对性评价又称目标参照性评价",
+   "printed_page": 132
+  },
+  {
+   "from": "个体内差异评价",
+   "type": "subclass",
+   "to": "按评价标准划分",
+   "evidence": "个体内差异评价是指对被评价者的过去和现在进行比较",
+   "printed_page": 132
+  },
+  {
+   "from": "外部评价",
+   "type": "subclass",
+   "to": "按评价主体划分",
+   "evidence": "外部评价是指被评价者之外的专业人员对评价对象进行明显的",
+   "printed_page": 133
+  },
+  {
+   "from": "内部评价",
+   "type": "subclass",
+   "to": "按评价主体划分",
+   "evidence": "内部评价也就是自我评价",
+   "printed_page": 133
+  },
+  {
+   "from": "常模参照性评价",
+   "type": "exact_match",
+   "to": "相对性评价",
+   "evidence": "相对性评价又称为常模参照性评价",
+   "printed_page": 132
+  },
+  {
+   "from": "目标参照性评价",
+   "type": "exact_match",
+   "to": "绝对性评价",
+   "evidence": "绝对性评价又称目标参照性评价",
+   "printed_page": 132
+  },
+  {
+   "from": "内部评价",
+   "type": "exact_match",
+   "to": "自我评价",
+   "evidence": "内部评价也就是自我评价",
+   "printed_page": 133
+  },
+  {
+   "from": "教学评价的方法",
+   "type": "part_of",
+   "to": "教学评价",
+   "evidence": "二、教学评价的方法",
+   "printed_page": 133
+  },
+  {
+   "from": "测验法",
+   "type": "subclass",
+   "to": "教学评价的方法",
+   "evidence": "测验主要以笔试方式进行，是考核、测定学生成绩的基本方法",
+   "printed_page": 133
+  },
+  {
+   "from": "测验的质量指标",
+   "type": "part_of",
+   "to": "测验法",
+   "evidence": "测验的质量指标有效度、信度、难度和区分度",
+   "printed_page": 133
+  },
+  {
+   "from": "效度",
+   "type": "part_of",
+   "to": "测验的质量指标",
+   "evidence": "效度是指一个测验或测量工具能真实地测量出所要测量的事物的程度",
+   "printed_page": 133
+  },
+  {
+   "from": "信度",
+   "type": "part_of",
+   "to": "测验的质量指标",
+   "evidence": "信度是表明评价工具质量的又一重要指标",
+   "printed_page": 133
+  },
+  {
+   "from": "教学模式",
+   "type": "part_of",
+   "to": "教学",
+   "evidence": "教学模式是指在一定教学思想的指导下和丰富教学实践经验的基础上",
+   "printed_page": 134
+  },
+  {
+   "from": "当代国外主要教学模式",
+   "type": "part_of",
+   "to": "教学模式",
+   "evidence": "二、当代国外主要教学模式",
+   "printed_page": 134
+  },
+  {
+   "from": "程序教学模式",
+   "type": "subclass",
+   "to": "当代国外主要教学模式",
+   "evidence": "程序教学模式         斯金纳    运用联结主义的原理",
+   "printed_page": 134
+  },
+  {
+   "from": "发现教学模式",
+   "type": "subclass",
+   "to": "当代国外主要教学模式",
+   "evidence": "发现教学模式         布鲁纳",
+   "printed_page": 134
+  },
+  {
+   "from": "掌握学习教学模式",
+   "type": "subclass",
+   "to": "当代国外主要教学模式",
+   "evidence": "掌握学习教学卡罗尔为每个学生提供他们所需的学习",
+   "printed_page": 135
+  },
+  {
+   "from": "暗示教学模式",
+   "type": "subclass",
+   "to": "当代国外主要教学模式",
+   "evidence": "暗示教学模式洛扎诺夫的途径和艺术的途径",
+   "printed_page": 135
+  },
+  {
+   "from": "范例教学模式",
+   "type": "subclass",
+   "to": "当代国外主要教学模式",
+   "evidence": "瓦根舍因选择经典案例作为教学内容必范例教学模式",
+   "printed_page": 135
+  },
+  {
+   "from": "非指导性教学模式",
+   "type": "subclass",
+   "to": "当代国外主要教学模式",
+   "evidence": "非指导性教学重视学生的情感因素",
+   "printed_page": 135
+  },
+  {
+   "from": "抛锚式教学模式",
+   "type": "subclass",
+   "to": "当代国外主要教学模式",
+   "evidence": "抛锚式教学约翰布根据确定的真实事件或问题来确",
+   "printed_page": 135
+  },
+  {
+   "from": "斯金纳",
+   "type": "marks",
+   "to": "程序教学模式",
+   "evidence": "程序教学模式         斯金纳    运用联结主义的原理",
+   "printed_page": 134
+  },
+  {
+   "from": "布鲁纳",
+   "type": "marks",
+   "to": "发现教学模式",
+   "evidence": "发现教学模式         布鲁纳",
+   "printed_page": 134
+  },
+  {
+   "from": "布卢姆",
+   "type": "marks",
+   "to": "掌握学习教学模式",
+   "evidence": "掌握学习教学卡罗尔为每个学生提供他们所需的学习……模式布卢姆",
+   "printed_page": 135
+  },
+  {
+   "from": "洛扎诺夫",
+   "type": "marks",
+   "to": "暗示教学模式",
+   "evidence": "暗示教学模式洛扎诺夫的途径和艺术的途径",
+   "printed_page": 135
+  },
+  {
+   "from": "瓦根舍因",
+   "type": "marks",
+   "to": "范例教学模式",
+   "evidence": "瓦根舍因选择经典案例作为教学内容必范例教学模式……克拉夫基",
+   "printed_page": 135
+  },
+  {
+   "from": "罗杰斯",
+   "type": "marks",
+   "to": "非指导性教学模式",
+   "evidence": "非指导性教学重视学生的情感因素教师是引罗杰斯",
+   "printed_page": 135
+  },
+  {
+   "from": "约翰·布兰斯福德",
+   "type": "marks",
+   "to": "抛锚式教学模式",
+   "evidence": "抛锚式教学约翰布根据确定的真实事件或问题来确……模式兰斯福德",
+   "printed_page": 135
+  },
+  {
+   "from": "当代我国主要教学模式",
+   "type": "part_of",
+   "to": "教学模式",
+   "evidence": "三、当代我国主要教学模式",
+   "printed_page": 135
+  },
+  {
+   "from": "尝试教学模式",
+   "type": "subclass",
+   "to": "当代我国主要教学模式",
+   "evidence": "尝试教学法是由江苏常州特级教师邱学华首创的",
+   "printed_page": 135
+  },
+  {
+   "from": "情境教学模式",
+   "type": "subclass",
+   "to": "当代我国主要教学模式",
+   "evidence": "情境教学法是由江苏省特级教师李吉林首创的",
+   "printed_page": 135
+  }
+ ]
+}

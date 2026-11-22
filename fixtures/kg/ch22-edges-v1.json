@@ -1,0 +1,1021 @@
+{
+ "chapter": "第四篇 教育心理学 第三章 学习与学习理论",
+ "schema_version": "1.1",
+ "edges": [
+  {
+   "from": "学习",
+   "type": "attribute",
+   "to": "学习的实质",
+   "evidence": "学习是个体在特定的情境下由于经验或反复练习而产生的行为或行为潜能的比较持久的改变。",
+   "printed_page": 120
+  },
+  {
+   "from": "学习的实质",
+   "type": "exact_match",
+   "to": "行为或行为潜能的比较持久的改变",
+   "evidence": "学习是个体在特定的情境下由于经验或反复练习而产生的行为或行为潜能的比较持久的改变。",
+   "printed_page": 120
+  },
+  {
+   "from": "学习",
+   "type": "attribute",
+   "to": "后天性",
+   "evidence": "“反复练习”强调学习是后天的，不是先天的，因此如果是药物、自然成熟、受伤、疲劳或本能引起的就不属于学习。",
+   "printed_page": 120
+  },
+  {
+   "from": "学生学习的特点",
+   "type": "part_of",
+   "to": "学习",
+   "evidence": "（二）学生学习的特点",
+   "printed_page": 120
+  },
+  {
+   "from": "学生学习的特点",
+   "type": "attribute",
+   "to": "以掌握间接知识经验为主",
+   "evidence": "1. 学生的学习是以掌握间接知识经验为主的。",
+   "printed_page": 120
+  },
+  {
+   "from": "学习·按水平划分",
+   "type": "subclass",
+   "to": "学习",
+   "evidence": "按照学习水平划分，加涅提出了八类学习",
+   "printed_page": 121
+  },
+  {
+   "from": "信号学习",
+   "type": "subclass",
+   "to": "学习·按水平划分",
+   "evidence": "信号学习是学习对某种信号做出某种反应。",
+   "printed_page": 121
+  },
+  {
+   "from": "刺激—反应学习",
+   "type": "subclass",
+   "to": "学习·按水平划分",
+   "evidence": "刺激—反应学习主要指操作性条件作用或工具性条件作用。",
+   "printed_page": 121
+  },
+  {
+   "from": "连锁学习",
+   "type": "subclass",
+   "to": "学习·按水平划分",
+   "evidence": "连锁学习是一系列刺激—反应的联合。",
+   "printed_page": 121
+  },
+  {
+   "from": "言语联想学习",
+   "type": "subclass",
+   "to": "学习·按水平划分",
+   "evidence": "言语联想学习的实质是连锁学习，只不过它是语言单位的联结",
+   "printed_page": 121
+  },
+  {
+   "from": "辨别学习",
+   "type": "subclass",
+   "to": "学习·按水平划分",
+   "evidence": "辨别学习指能识别各种刺激特征的异同并做出相应的不同的反应。",
+   "printed_page": 122
+  },
+  {
+   "from": "概念学习",
+   "type": "subclass",
+   "to": "学习·按水平划分",
+   "evidence": "概念学习是对刺激进行分类，并对同类刺激做出相同的反应。",
+   "printed_page": 122
+  },
+  {
+   "from": "规则学习",
+   "type": "subclass",
+   "to": "学习·按水平划分",
+   "evidence": "规则学习亦称原理学习，是指了解概念之间的关系，学习概念间的联合。",
+   "printed_page": 122
+  },
+  {
+   "from": "解决问题的学习",
+   "type": "subclass",
+   "to": "学习·按水平划分",
+   "evidence": "解决问题的学习亦称高级规则学习，是指在各种条件下运用规则或规则的组合去解决问题。",
+   "printed_page": 122
+  },
+  {
+   "from": "学习·按结果划分",
+   "type": "subclass",
+   "to": "学习",
+   "evidence": "按照学习结果分类，加涅将学习分为五种类型",
+   "printed_page": 122
+  },
+  {
+   "from": "言语信息",
+   "type": "subclass",
+   "to": "学习·按结果划分",
+   "evidence": "言语信息的学习即掌握以言语信息传递的内容",
+   "printed_page": 122
+  },
+  {
+   "from": "智慧技能",
+   "type": "subclass",
+   "to": "学习·按结果划分",
+   "evidence": "智慧技能的学习帮助学生解决“怎么做”的问题",
+   "printed_page": 123
+  },
+  {
+   "from": "认知策略",
+   "type": "subclass",
+   "to": "学习·按结果划分",
+   "evidence": "认知策略是学习者用以支配自己的注意、学习、记忆和思维的有内在组织的才能",
+   "printed_page": 123
+  },
+  {
+   "from": "态度",
+   "type": "subclass",
+   "to": "学习·按结果划分",
+   "evidence": "态度是指个体对人、事物及事件所采取行动的内部状态。",
+   "printed_page": 123
+  },
+  {
+   "from": "动作技能",
+   "type": "subclass",
+   "to": "学习·按结果划分",
+   "evidence": "动作技能又称运动技能，是指习得的平稳而流畅的、精确而适时的操作动作能力",
+   "printed_page": 123
+  },
+  {
+   "from": "学习·按意识水平划分",
+   "type": "subclass",
+   "to": "学习",
+   "evidence": "按照学习意识水平，美国心理学家阿瑟 · 雷伯将学习分为内隐学习和外显学习。",
+   "printed_page": 123
+  },
+  {
+   "from": "内隐学习",
+   "type": "subclass",
+   "to": "学习·按意识水平划分",
+   "evidence": "内隐学习是指有机体在与环境接触的过程中不知不觉地获得了一些经验",
+   "printed_page": 123
+  },
+  {
+   "from": "外显学习",
+   "type": "subclass",
+   "to": "学习·按意识水平划分",
+   "evidence": "外显学习类似于有意识的问题解决",
+   "printed_page": 123
+  },
+  {
+   "from": "学习·按性质与形式划分",
+   "type": "subclass",
+   "to": "学习",
+   "evidence": "按照学习性质与形式，奥苏贝尔从以下两个维度对认知领域的学习进行分类",
+   "printed_page": 123
+  },
+  {
+   "from": "接受学习",
+   "type": "subclass",
+   "to": "学习·按性质与形式划分",
+   "evidence": "接受学习是将学生要学习的概念、原理等内容以结论的方式呈现在学生面前，教师传授，学生接受。",
+   "printed_page": 124
+  },
+  {
+   "from": "发现学习",
+   "type": "subclass",
+   "to": "学习·按性质与形式划分",
+   "evidence": "发现学习是指学生要学习的概念、原理等内容不直接呈现，需要学生通过独立思考、探索、发现而获得。",
+   "printed_page": 124
+  },
+  {
+   "from": "机械学习",
+   "type": "subclass",
+   "to": "学习·按性质与形式划分",
+   "evidence": "机械学习是指当前的学习没有与已有知识建立某种有意义的联系。",
+   "printed_page": 124
+  },
+  {
+   "from": "有意义学习",
+   "type": "subclass",
+   "to": "学习·按性质与形式划分",
+   "evidence": "有意义学习是指当前的学习与已有知识建立起实质性的、有意义的联系。",
+   "printed_page": 124
+  },
+  {
+   "from": "行为主义学习理论",
+   "type": "subclass",
+   "to": "学习理论",
+   "evidence": "斯金纳是著名的行为主义心理学家，他的理论也是建立在动物学习实验的基础之上的。",
+   "printed_page": 128
+  },
+  {
+   "from": "认知主义学习理论",
+   "type": "subclass",
+   "to": "学习理论",
+   "evidence": "在吸取了认知学习理论观点后",
+   "printed_page": 131
+  },
+  {
+   "from": "经典性条件作用",
+   "type": "subclass",
+   "to": "行为主义学习理论",
+   "evidence": "由此引起的唾液分泌就是条件反射，后人称之为“经典性条件作用”",
+   "printed_page": 125
+  },
+  {
+   "from": "巴甫洛夫",
+   "type": "marks",
+   "to": "经典性条件作用",
+   "evidence": "巴甫洛夫的经典实验：经典条件反射实验（狗进食的摇铃实验，见下图）",
+   "printed_page": 125
+  },
+  {
+   "from": "经典条件反射实验",
+   "type": "part_of",
+   "to": "经典性条件作用",
+   "evidence": "巴甫洛夫在研究狗的进食行为时发现，狗吃到食物时，会分泌唾液，这是自然的生理反应，不需要学习，这种反应叫无条件反射。",
+   "printed_page": 125
+  },
+  {
+   "from": "无条件反射",
+   "type": "subclass",
+   "to": "反射",
+   "evidence": "反射一般分为两大类：无条件反射和条件反射。",
+   "printed_page": 126
+  },
+  {
+   "from": "条件反射",
+   "type": "subclass",
+   "to": "反射",
+   "evidence": "反射一般分为两大类：无条件反射和条件反射。",
+   "printed_page": 126
+  },
+  {
+   "from": "条件刺激",
+   "type": "part_of",
+   "to": "经典条件反射实验",
+   "evidence": "这是作为中性刺激的铃声由于与无条件刺激联结而成了条件刺激",
+   "printed_page": 125
+  },
+  {
+   "from": "经典性条件作用的基本规律",
+   "type": "part_of",
+   "to": "经典性条件作用",
+   "evidence": "（二）经典性条件反射的基本规律",
+   "printed_page": 126
+  },
+  {
+   "from": "获得",
+   "type": "part_of",
+   "to": "经典性条件作用的基本规律",
+   "evidence": "条件反射的获得是指条件刺激（如铃声）反复与无条件刺激（如食物）相匹配",
+   "printed_page": 126
+  },
+  {
+   "from": "消退",
+   "type": "subclass",
+   "to": "经典性条件作用的基本规律",
+   "evidence": "条件反射的消退是指在条件反射形成后，如果条件刺激重复出现多次而没有无条件刺激相伴随",
+   "printed_page": 126
+  },
+  {
+   "from": "刺激泛化",
+   "type": "subclass",
+   "to": "经典性条件作用的基本规律",
+   "evidence": "刺激泛化指的是人和动物一旦学会对某一特定的条件刺激做出条件反射以后",
+   "printed_page": 126
+  },
+  {
+   "from": "刺激分化",
+   "type": "subclass",
+   "to": "经典性条件作用的基本规律",
+   "evidence": "刺激分化指的是通过选择性强化和消退使有机体学会对条件刺激和与条件刺激相类似的刺激做出不同的反应。",
+   "printed_page": 126
+  },
+  {
+   "from": "刺激泛化",
+   "type": "contrast",
+   "to": "刺激分化",
+   "evidence": "刺激泛化和刺激分化是互补的过程，泛化是对事物的相似的反应，分化则是对事物的差异的反应。",
+   "printed_page": 126
+  },
+  {
+   "from": "试误说",
+   "type": "subclass",
+   "to": "行为主义学习理论",
+   "evidence": "因此他把自己的观点称为试误说。",
+   "printed_page": 127
+  },
+  {
+   "from": "桑代克",
+   "type": "marks",
+   "to": "试误说",
+   "evidence": "桑代克认为，学习的过程是刺激与反应之间建立联结的过程",
+   "printed_page": 127
+  },
+  {
+   "from": "猫开笼取食实验",
+   "type": "part_of",
+   "to": "试误说",
+   "evidence": "桑代克的经典实验：猫开笼取食实验（见下图）",
+   "printed_page": 127
+  },
+  {
+   "from": "准备律",
+   "type": "part_of",
+   "to": "试误说",
+   "evidence": "在进入某种学习活动之前，如果学习者做好了与相应的学习活动相关的预备性反应",
+   "printed_page": 127
+  },
+  {
+   "from": "练习律",
+   "type": "part_of",
+   "to": "试误说",
+   "evidence": "对于学习者已形成的某种联结，在实践中正确重复这种反应会有效地增强这种联结。",
+   "printed_page": 127
+  },
+  {
+   "from": "效果律",
+   "type": "part_of",
+   "to": "试误说",
+   "evidence": "学习者在学习过程中所得到的各种正或负的反馈意见会加强或减弱学习者在头脑中已经形成的某种联结。",
+   "printed_page": 127
+  },
+  {
+   "from": "操作性条件作用",
+   "type": "subclass",
+   "to": "行为主义学习理论",
+   "evidence": "斯金纳认为，学习实质上是一种反应概率上的变化，而强化是增强反应概率的手段。",
+   "printed_page": 128
+  },
+  {
+   "from": "斯金纳",
+   "type": "marks",
+   "to": "操作性条件作用",
+   "evidence": "斯金纳是著名的行为主义心理学家，他的理论也是建立在动物学习实验的基础之上的。",
+   "printed_page": 128
+  },
+  {
+   "from": "迷箱实验",
+   "type": "part_of",
+   "to": "操作性条件作用",
+   "evidence": "（一）斯金纳的经典实验：迷箱实验",
+   "printed_page": 128
+  },
+  {
+   "from": "应答性行为",
+   "type": "contrast",
+   "to": "操作性行为",
+   "evidence": "应答性行为是由特定刺激所引起的，是经典条件作用的研究对象。",
+   "printed_page": 128
+  },
+  {
+   "from": "操作性条件作用的基本规律",
+   "type": "part_of",
+   "to": "操作性条件作用",
+   "evidence": "（二）操作性条件作用的基本规律",
+   "printed_page": 128
+  },
+  {
+   "from": "强化",
+   "type": "part_of",
+   "to": "操作性条件作用的基本规律",
+   "evidence": "而强化是增强反应概率的手段",
+   "printed_page": 128
+  },
+  {
+   "from": "正强化",
+   "type": "subclass",
+   "to": "强化",
+   "evidence": "（1）正强化：给予一个愉快刺激，从而增强其行为出现的概率。",
+   "printed_page": 129
+  },
+  {
+   "from": "负强化",
+   "type": "subclass",
+   "to": "强化",
+   "evidence": "（2）负强化：摆脱一个厌恶刺激，从而增强其行为出现的概率。",
+   "printed_page": 129
+  },
+  {
+   "from": "普雷马克原理",
+   "type": "related",
+   "to": "正强化",
+   "evidence": "在使用正强化时，可以使用这样一个原则——普雷马克原理",
+   "printed_page": 129
+  },
+  {
+   "from": "逃避条件作用",
+   "type": "subclass",
+   "to": "负强化",
+   "evidence": "①逃避条件作用：当厌恶刺激出现时，有机体做出某种反应，从而逃避了厌恶刺激",
+   "printed_page": 129
+  },
+  {
+   "from": "回避条件作用",
+   "type": "subclass",
+   "to": "负强化",
+   "evidence": "②回避条件作用：当预示厌恶刺激即将出现的刺激信号呈现时",
+   "printed_page": 129
+  },
+  {
+   "from": "消退",
+   "type": "part_of",
+   "to": "操作性条件作用的基本规律",
+   "evidence": "有机体做出以前曾被强化过的反应，如果在这一反应之后不再有强化物相伴",
+   "printed_page": 129
+  },
+  {
+   "from": "惩罚",
+   "type": "subclass",
+   "to": "操作性条件作用的基本规律",
+   "evidence": "惩罚分为正惩罚和负惩罚。",
+   "printed_page": 129
+  },
+  {
+   "from": "正惩罚",
+   "type": "subclass",
+   "to": "惩罚",
+   "evidence": "（1）正惩罚（呈现性惩罚、Ⅰ型惩罚）：给予一个厌恶刺激，从而降低其行为出现的概率。",
+   "printed_page": 129
+  },
+  {
+   "from": "负惩罚",
+   "type": "subclass",
+   "to": "惩罚",
+   "evidence": "（2）负惩罚（移除性惩罚、Ⅱ型惩罚）：撤销一个愉快刺激，从而降低其行为出现的概率。",
+   "printed_page": 129
+  },
+  {
+   "from": "惩罚",
+   "type": "contrast",
+   "to": "强化",
+   "evidence": "强化、惩罚、消退的区别",
+   "printed_page": 130
+  },
+  {
+   "from": "程序教学",
+   "type": "related",
+   "to": "操作性条件作用",
+   "evidence": "程序教学是一种使用程序教材并以个人自学形式进行的教学。",
+   "printed_page": 131
+  },
+  {
+   "from": "程序教学原则",
+   "type": "part_of",
+   "to": "程序教学",
+   "evidence": "程序教学主要由教学机器的发明人普莱西首创，对程序教学贡献最大的当属斯金纳。",
+   "printed_page": 131
+  },
+  {
+   "from": "小步子",
+   "type": "subclass",
+   "to": "程序教学原则",
+   "evidence": "（1）小步子：教材上的知识项目应该是许多具有逻辑联系的小步子",
+   "printed_page": 131
+  },
+  {
+   "from": "积极反应",
+   "type": "subclass",
+   "to": "程序教学原则",
+   "evidence": "（2）积极反应：强调教学中学生的积极反应，主张以问题的形式呈现",
+   "printed_page": 131
+  },
+  {
+   "from": "自定步调",
+   "type": "subclass",
+   "to": "程序教学原则",
+   "evidence": "（3）自定步调：学生可以根据自己的实际情况确定学习的进度",
+   "printed_page": 131
+  },
+  {
+   "from": "及时反馈",
+   "type": "subclass",
+   "to": "程序教学原则",
+   "evidence": "（4）及时反馈：对学生的反应及时给出反馈信息，进行强化。",
+   "printed_page": 131
+  },
+  {
+   "from": "低错误率",
+   "type": "subclass",
+   "to": "程序教学原则",
+   "evidence": "（5）低错误率：将错误率降到最低限度，使学生有可能每次都做出正确反应。",
+   "printed_page": 131
+  },
+  {
+   "from": "社会学习理论",
+   "type": "subclass",
+   "to": "行为主义学习理论",
+   "evidence": "形成了一种认知—行为主义模式，形成了很有特色的社会学习理论。",
+   "printed_page": 131
+  },
+  {
+   "from": "班杜拉",
+   "type": "marks",
+   "to": "社会学习理论",
+   "evidence": "美国心理学家班杜拉不满于极端行为主义的观点",
+   "printed_page": 131
+  },
+  {
+   "from": "观察学习",
+   "type": "subclass",
+   "to": "社会学习理论",
+   "evidence": "另一种是观察学习，其又称替代学习、模仿学习",
+   "printed_page": 132
+  },
+  {
+   "from": "替代学习",
+   "type": "exact_match",
+   "to": "观察学习",
+   "evidence": "另一种是观察学习，其又称替代学习、模仿学习",
+   "printed_page": 132
+  },
+  {
+   "from": "注意过程",
+   "type": "part_of",
+   "to": "观察学习",
+   "evidence": "观察学习包括注意、保持、复制和动机四个子过程。",
+   "printed_page": 132
+  },
+  {
+   "from": "保持过程",
+   "type": "part_of",
+   "to": "观察学习",
+   "evidence": "（2）保持过程：观察者记住从榜样情景中了解的行为，以表象和言语形式将它们在记忆中进行表征、编码及存储。",
+   "printed_page": 133
+  },
+  {
+   "from": "复制过程",
+   "type": "part_of",
+   "to": "观察学习",
+   "evidence": "（3）复制过程：观察者将头脑中有关榜样情景的表象和符号概念转为外显的行为。",
+   "printed_page": 133
+  },
+  {
+   "from": "动机过程",
+   "type": "part_of",
+   "to": "观察学习",
+   "evidence": "（4）动机过程：学习者是否会表现出已习得的行为受强化的影响。",
+   "printed_page": 133
+  },
+  {
+   "from": "直接强化",
+   "type": "subclass",
+   "to": "强化",
+   "evidence": "①直接强化。观察者因表现出观察行为而受到强化。",
+   "printed_page": 133
+  },
+  {
+   "from": "替代性强化",
+   "type": "subclass",
+   "to": "强化",
+   "evidence": "②替代性强化。观察者因看到榜样的行为被强化而受到强化。",
+   "printed_page": 133
+  },
+  {
+   "from": "自我强化",
+   "type": "subclass",
+   "to": "强化",
+   "evidence": "③自我强化。观察者能观察自己的行为，并根据自己的标准进行判断，由此强化或处罚自己。",
+   "printed_page": 133
+  },
+  {
+   "from": "完形—顿悟说",
+   "type": "subclass",
+   "to": "认知主义学习理论",
+   "evidence": "苛勒认为，学习是个体利用本身的智慧与理解力对情境及情境与自身关系的顿悟",
+   "printed_page": 134
+  },
+  {
+   "from": "苛勒",
+   "type": "marks",
+   "to": "完形—顿悟说",
+   "evidence": "（一）苛勒的经典实验：黑猩猩叠箱实验（见下图）",
+   "printed_page": 134
+  },
+  {
+   "from": "顿悟",
+   "type": "part_of",
+   "to": "完形—顿悟说",
+   "evidence": "1. 学习是通过顿悟过程实现的",
+   "printed_page": 134
+  },
+  {
+   "from": "完形—顿悟说",
+   "type": "contrast",
+   "to": "试误说",
+   "evidence": "苛勒的完形—顿悟学习与桑代克的尝试—错误学习并不是互相排斥和绝对对立的。",
+   "printed_page": 134
+  },
+  {
+   "from": "符号学习理论",
+   "type": "subclass",
+   "to": "认知主义学习理论",
+   "evidence": "托尔曼认为，在外部刺激（S）与行为反应（R）之间存在中介变量（O）",
+   "printed_page": 135
+  },
+  {
+   "from": "托尔曼",
+   "type": "marks",
+   "to": "符号学习理论",
+   "evidence": "二、托尔曼的符号学习理论",
+   "printed_page": 134
+  },
+  {
+   "from": "认知地图",
+   "type": "part_of",
+   "to": "符号学习理论",
+   "evidence": "建立一个完整的“符号—完形”模式，即“认知地图”。",
+   "printed_page": 135
+  },
+  {
+   "from": "S—O—R",
+   "type": "part_of",
+   "to": "符号学习理论",
+   "evidence": "他主张将行为主义 S—R 公式改为 S—O—R，其中 O 代表机体的内部变化。",
+   "printed_page": 135
+  },
+  {
+   "from": "潜伏学习",
+   "type": "part_of",
+   "to": "符号学习理论",
+   "evidence": "潜伏学习是指一种无明显的强化，其结果在一定时间后通过作业才显示出来的学习过程。",
+   "printed_page": 135
+  },
+  {
+   "from": "认知—发现说",
+   "type": "subclass",
+   "to": "认知主义学习理论",
+   "evidence": "他的理论常被称为认知—结构论或认知—发现说。",
+   "printed_page": 135
+  },
+  {
+   "from": "布鲁纳",
+   "type": "marks",
+   "to": "认知—发现说",
+   "evidence": "布鲁纳是一位在西方教育界和心理学界都享有盛誉的学者。",
+   "printed_page": 135
+  },
+  {
+   "from": "认知结构",
+   "type": "part_of",
+   "to": "认知—发现说",
+   "evidence": "布鲁纳认为，学习的本质不是被动地形成刺激—反应的联结，而是主动地形成认知结构。",
+   "printed_page": 136
+  },
+  {
+   "from": "学科的基本结构",
+   "type": "part_of",
+   "to": "认知—发现说",
+   "evidence": "所谓学科的基本结构，是指学科的基本概念、基本原理、基本态度和方法。",
+   "printed_page": 136
+  },
+  {
+   "from": "发现学习",
+   "type": "related",
+   "to": "认知—发现说",
+   "evidence": "他主张学习的目的在于以发现学习的方式，使学科的基本结构转变为学生头脑中的认知结构。",
+   "printed_page": 135
+  },
+  {
+   "from": "掌握学科基本结构的教学原则",
+   "type": "part_of",
+   "to": "认知—发现说",
+   "evidence": "3. 掌握学科基本结构的教学原则",
+   "printed_page": 137
+  },
+  {
+   "from": "动机原则",
+   "type": "subclass",
+   "to": "掌握学科基本结构的教学原则",
+   "evidence": "（1）动机原则：所有学生都有内在的学习愿望，内部动机是维持学习的基本动力。",
+   "printed_page": 137
+  },
+  {
+   "from": "结构原则",
+   "type": "subclass",
+   "to": "掌握学科基本结构的教学原则",
+   "evidence": "（2）结构原则：任何知识结构都可以用动作、图像和符号三种表象形式来呈现。",
+   "printed_page": 137
+  },
+  {
+   "from": "程序原则",
+   "type": "subclass",
+   "to": "掌握学科基本结构的教学原则",
+   "evidence": "（3）程序原则：教材的难度与逻辑上的先后顺序",
+   "printed_page": 137
+  },
+  {
+   "from": "强化原则",
+   "type": "subclass",
+   "to": "掌握学科基本结构的教学原则",
+   "evidence": "（4）强化原则：教师在教学过程中应注意通过反馈使儿童知道自己的学习结果",
+   "printed_page": 137
+  },
+  {
+   "from": "有意义学习理论",
+   "type": "subclass",
+   "to": "认知主义学习理论",
+   "evidence": "奥苏贝尔认为，学生能否习得新知识，主要取决于他们认知结构中已有的有关观念",
+   "printed_page": 139
+  },
+  {
+   "from": "奥苏贝尔",
+   "type": "marks",
+   "to": "有意义学习理论",
+   "evidence": "奥苏贝尔认为，学生能否习得新知识，主要取决于他们认知结构中已有的有关观念",
+   "printed_page": 139
+  },
+  {
+   "from": "有意义学习",
+   "type": "part_of",
+   "to": "有意义学习理论",
+   "evidence": "有意义学习的实质是将新知识与已有知识建立起非人为的（内在的）和实质性（非字面）的联系。",
+   "printed_page": 138
+  },
+  {
+   "from": "有意义学习的实质",
+   "type": "exact_match",
+   "to": "非人为的（内在的）和实质性（非字面）的联系",
+   "evidence": "有意义学习的实质是将新知识与已有知识建立起非人为的（内在的）和实质性（非字面）的联系。",
+   "printed_page": 138
+  },
+  {
+   "from": "有意义学习的条件",
+   "type": "part_of",
+   "to": "有意义学习",
+   "evidence": "有意义学习的产生既受客观条件（学习材料的性质）的影响，也受主观条件（学习者自身因素）的影响。",
+   "printed_page": 138
+  },
+  {
+   "from": "有意义学习的心向",
+   "type": "subclass",
+   "to": "有意义学习的条件",
+   "evidence": "①学习者要有有意义学习的心向或倾向性。",
+   "printed_page": 138
+  },
+  {
+   "from": "有意义学习的类型",
+   "type": "part_of",
+   "to": "有意义学习",
+   "evidence": "（二）有意义学习的类型",
+   "printed_page": 138
+  },
+  {
+   "from": "表征学习",
+   "type": "subclass",
+   "to": "有意义学习的类型",
+   "evidence": "表征学习是最低层次的一种学习方式，指学习一个符号或一组符号所代表的事物和意义。",
+   "printed_page": 138
+  },
+  {
+   "from": "概念学习",
+   "type": "subclass",
+   "to": "有意义学习的类型",
+   "evidence": "概念学习是有意义学习的核心",
+   "printed_page": 138
+  },
+  {
+   "from": "命题学习",
+   "type": "subclass",
+   "to": "有意义学习的类型",
+   "evidence": "命题学习必须以概念学习为前提，比一般的概念学习更复杂，水平更高。",
+   "printed_page": 139
+  },
+  {
+   "from": "同化",
+   "type": "part_of",
+   "to": "有意义学习理论",
+   "evidence": "这种相互作用的结果导致新旧知识的意义的同化",
+   "printed_page": 139
+  },
+  {
+   "from": "下位学习",
+   "type": "subclass",
+   "to": "同化",
+   "evidence": "下位学习是指将概括程度或包容范围较低的新概念或命题，归属到认知结构中原有的概括程度或包容范围较高的适当概念或命题之下",
+   "printed_page": 139
+  },
+  {
+   "from": "上位学习",
+   "type": "subclass",
+   "to": "同化",
+   "evidence": "上位学习是指新概念、新命题具有较广的包容面或较高的概括水平",
+   "printed_page": 139
+  },
+  {
+   "from": "并列组合学习",
+   "type": "subclass",
+   "to": "同化",
+   "evidence": "当新概念或新命题与学习者认知结构中已有的观念既不产生下位关系，又不产生上位关系时",
+   "printed_page": 139
+  },
+  {
+   "from": "先行组织者",
+   "type": "part_of",
+   "to": "有意义学习理论",
+   "evidence": "所谓“先行组织者”，是先于学习任务本身呈现的一种引导性材料",
+   "printed_page": 140
+  },
+  {
+   "from": "陈述性组织者",
+   "type": "subclass",
+   "to": "先行组织者",
+   "evidence": "一类是陈述性“组织者”，其目的在于为新的学习提供最适当的类属者",
+   "printed_page": 140
+  },
+  {
+   "from": "比较性组织者",
+   "type": "subclass",
+   "to": "先行组织者",
+   "evidence": "另一类是比较性“组织者”，用于比较熟悉的学习材料中",
+   "printed_page": 140
+  },
+  {
+   "from": "接受学习",
+   "type": "contrast",
+   "to": "发现学习",
+   "evidence": "与布鲁纳的发现学习观点相反，奥苏贝尔认为，学生的学习主要是接受学习",
+   "printed_page": 141
+  },
+  {
+   "from": "学习的信息加工论",
+   "type": "subclass",
+   "to": "认知主义学习理论",
+   "evidence": "加涅根据现代信息加工理论提出了学习过程的基本模式",
+   "printed_page": 141
+  },
+  {
+   "from": "学习过程的八个阶段",
+   "type": "part_of",
+   "to": "学习的信息加工论",
+   "evidence": "（二）学习过程的八个阶段",
+   "printed_page": 142
+  },
+  {
+   "from": "动机阶段",
+   "type": "part_of",
+   "to": "学习过程的八个阶段",
+   "evidence": "动机阶段是指把学习者的期望与实际学习活动联系起来，并激起学生学习的兴趣。",
+   "printed_page": 142
+  },
+  {
+   "from": "获得阶段",
+   "type": "part_of",
+   "to": "学习过程的八个阶段",
+   "evidence": "获得阶段指的是所学的东西进入了短时记忆",
+   "printed_page": 142
+  },
+  {
+   "from": "反馈阶段",
+   "type": "part_of",
+   "to": "学习过程的八个阶段",
+   "evidence": "通过操作活动，学习者认识到自己的学习是否达到了预定的目标。",
+   "printed_page": 142
+  },
+  {
+   "from": "建构主义学习理论",
+   "type": "subclass",
+   "to": "学习理论",
+   "evidence": "建构主义学习理论不是一个特定的学习理论，而是许多理论观点的统称。",
+   "printed_page": 143
+  },
+  {
+   "from": "建构主义知识观",
+   "type": "part_of",
+   "to": "建构主义学习理论",
+   "evidence": "知识并不是对现实的准确表征，也不是最终答案，而只是一种解释、一种假设。",
+   "printed_page": 143
+  },
+  {
+   "from": "建构主义学生观",
+   "type": "part_of",
+   "to": "建构主义学习理论",
+   "evidence": "建构主义强调学生经验世界的丰富性，强调学生的巨大潜能。",
+   "printed_page": 143
+  },
+  {
+   "from": "建构主义学习观",
+   "type": "part_of",
+   "to": "建构主义学习理论",
+   "evidence": "建构主义强调学习不是由教师向学生传递知识，而是学生构建自己的知识的过程",
+   "printed_page": 143
+  },
+  {
+   "from": "主动建构性",
+   "type": "part_of",
+   "to": "建构主义学习观",
+   "evidence": "建构主义在学习观上强调主动建构性、社会互动性和情境性。",
+   "printed_page": 143
+  },
+  {
+   "from": "社会互动性",
+   "type": "part_of",
+   "to": "建构主义学习观",
+   "evidence": "建构主义在学习观上强调主动建构性、社会互动性和情境性。",
+   "printed_page": 143
+  },
+  {
+   "from": "情境性",
+   "type": "part_of",
+   "to": "建构主义学习观",
+   "evidence": "建构主义在学习观上强调主动建构性、社会互动性和情境性。",
+   "printed_page": 143
+  },
+  {
+   "from": "建构主义教学模式",
+   "type": "part_of",
+   "to": "建构主义学习理论",
+   "evidence": "建构主义学习理论在教学中的运用",
+   "printed_page": 145
+  },
+  {
+   "from": "抛锚式教学",
+   "type": "subclass",
+   "to": "建构主义教学模式",
+   "evidence": "抛锚式教学也称情境教学或实例式教学。",
+   "printed_page": 145
+  },
+  {
+   "from": "支架式教学",
+   "type": "subclass",
+   "to": "建构主义教学模式",
+   "evidence": "建构主义者提出并强调支架式教学。",
+   "printed_page": 146
+  },
+  {
+   "from": "人本主义学习理论",
+   "type": "subclass",
+   "to": "学习理论",
+   "evidence": "人本主义学习理论强调人的潜能、个性与创造性的发展",
+   "printed_page": 148
+  },
+  {
+   "from": "马斯洛学习理论",
+   "type": "part_of",
+   "to": "人本主义学习理论",
+   "evidence": "他以人性论、潜能论和动机论为理论基础，创建了理论化、系统化的自我实现心理学。",
+   "printed_page": 146
+  },
+  {
+   "from": "马斯洛",
+   "type": "marks",
+   "to": "马斯洛学习理论",
+   "evidence": "美国心理学家马斯洛被公认为人本主义心理学的领导人物之一",
+   "printed_page": 146
+  },
+  {
+   "from": "内在学习",
+   "type": "subclass",
+   "to": "马斯洛学习理论",
+   "evidence": "所谓内在学习，就是依靠学生的内在驱动，充分开发潜能，达到自我实现的学习。",
+   "printed_page": 147
+  },
+  {
+   "from": "外在学习",
+   "type": "subclass",
+   "to": "马斯洛学习理论",
+   "evidence": "马斯洛认为，外在学习是单纯依赖强化和条件作用的学习",
+   "printed_page": 147
+  },
+  {
+   "from": "内在学习",
+   "type": "contrast",
+   "to": "外在学习",
+   "evidence": "马斯洛认为，理想学校应反对外在学习，倡导内在学习。",
+   "printed_page": 147
+  },
+  {
+   "from": "罗杰斯学习理论",
+   "type": "part_of",
+   "to": "人本主义学习理论",
+   "evidence": "罗杰斯的教育理想就是要培养既用认知的方式也用情感的方式行事的知情合一的人。",
+   "printed_page": 147
+  },
+  {
+   "from": "有意义的自由学习观",
+   "type": "part_of",
+   "to": "罗杰斯学习理论",
+   "evidence": "罗杰斯提倡有意义的自由学习。",
+   "printed_page": 147
+  },
+  {
+   "from": "有意义的自由学习观",
+   "type": "contrast",
+   "to": "有意义学习",
+   "evidence": "有意义学习不是指那种仅仅涉及事实积累的学习，而是一种使个体的行为、态度、个性以及在未来选择行动方针时发生重大变化的学习。",
+   "printed_page": 147
+  },
+  {
+   "from": "学生中心的教学观",
+   "type": "part_of",
+   "to": "罗杰斯学习理论",
+   "evidence": "罗杰斯主张用“学习的促进者”代替“教师”这个称谓。",
+   "printed_page": 148
+  },
+  {
+   "from": "非指导模式",
+   "type": "part_of",
+   "to": "学生中心的教学观",
+   "evidence": "创立了非指导模式（学生中心模式）",
+   "printed_page": 148
+  }
+ ]
+}

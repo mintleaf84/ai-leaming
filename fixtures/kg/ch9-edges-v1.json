@@ -1,0 +1,601 @@
+{
+ "chapter": "第一篇第九章 学校、班级管理与班主任工作",
+ "schema_version": "1.1",
+ "edges": [
+  {
+   "from": "学校管理",
+   "type": "attribute",
+   "to": "学校管理的特性",
+   "evidence": "学校管理是管理者通过一定的组织形式以实现学校教育目标的活动。它具有以下特性",
+   "printed_page": 155
+  },
+  {
+   "from": "教育性（学校管理）",
+   "type": "subclass",
+   "to": "学校管理的特性",
+   "evidence": "学校管理以育人为中心，具有教育性",
+   "printed_page": 155
+  },
+  {
+   "from": "服务性（学校管理）",
+   "type": "subclass",
+   "to": "学校管理的特性",
+   "evidence": "学校管理的实质是为师生服务，具有服务性",
+   "printed_page": 155
+  },
+  {
+   "from": "文化性（学校管理）",
+   "type": "subclass",
+   "to": "学校管理的特性",
+   "evidence": "学校管理在特定的文化环境中进行，具有文化性",
+   "printed_page": 155
+  },
+  {
+   "from": "创造性（学校管理）",
+   "type": "subclass",
+   "to": "学校管理的特性",
+   "evidence": "学校管理是对校内外各种资源的有效整合，具有创造性",
+   "printed_page": 155
+  },
+  {
+   "from": "学校管理的内容",
+   "type": "part_of",
+   "to": "学校管理",
+   "evidence": "（三）学校管理的内容",
+   "printed_page": 156
+  },
+  {
+   "from": "教学管理",
+   "type": "subclass",
+   "to": "学校管理的内容",
+   "evidence": "教学是学校工作的中心，教学的质量与效率直接决定着学校的办学水平和效益",
+   "printed_page": 156
+  },
+  {
+   "from": "教师管理",
+   "type": "subclass",
+   "to": "学校管理的内容",
+   "evidence": "教师管理主要包括教师的选拔、教师的任用、教师的培养和教师考评",
+   "printed_page": 156
+  },
+  {
+   "from": "学生管理",
+   "type": "subclass",
+   "to": "学校管理的内容",
+   "evidence": "学生管理主要包括思想品德管理、学习管理、健康管理、组织管理和课外活动管理",
+   "printed_page": 156
+  },
+  {
+   "from": "总务管理",
+   "type": "subclass",
+   "to": "学校管理的内容",
+   "evidence": "学校总务管理主要包括财务管理、生活管理、校产管理和环境管理",
+   "printed_page": 156
+  },
+  {
+   "from": "埃拉斯莫斯",
+   "type": "marks",
+   "to": "班级",
+   "evidence": "率先正式使用“班级”一词的是 16 世纪文艺复兴时期的著名教育家埃拉斯莫斯",
+   "printed_page": 156
+  },
+  {
+   "from": "班级的功能",
+   "type": "part_of",
+   "to": "班级",
+   "evidence": "班级的功能是由其结构和特点决定的",
+   "printed_page": 157
+  },
+  {
+   "from": "社会化功能",
+   "type": "subclass",
+   "to": "班级的功能",
+   "evidence": "这就决定了班级组织既具有社会化功能，又具有个体化功能",
+   "printed_page": 157
+  },
+  {
+   "from": "个体化功能",
+   "type": "subclass",
+   "to": "班级的功能",
+   "evidence": "这就决定了班级组织既具有社会化功能，又具有个体化功能",
+   "printed_page": 157
+  },
+  {
+   "from": "按正式性划分（班级组织）",
+   "type": "part_of",
+   "to": "班级",
+   "evidence": "根据帕森斯的社会组织理论，可以把班级组织分为正式组织和非正式组织",
+   "printed_page": 157
+  },
+  {
+   "from": "正式组织",
+   "type": "subclass",
+   "to": "按正式性划分（班级组织）",
+   "evidence": "正式组织是由正式文件明文规定而构成的群体",
+   "printed_page": 157
+  },
+  {
+   "from": "非正式组织",
+   "type": "subclass",
+   "to": "按正式性划分（班级组织）",
+   "evidence": "非正式组织是指没有正式文件规定而构成的群体",
+   "printed_page": 157
+  },
+  {
+   "from": "积极型（非正式组织）",
+   "type": "subclass",
+   "to": "非正式组织",
+   "evidence": "非正式组织可以分为：①积极型；②消极型；③娱乐型；④破坏型",
+   "printed_page": 157
+  },
+  {
+   "from": "消极型（非正式组织）",
+   "type": "subclass",
+   "to": "非正式组织",
+   "evidence": "非正式组织可以分为：①积极型；②消极型；③娱乐型；④破坏型",
+   "printed_page": 157
+  },
+  {
+   "from": "娱乐型（非正式组织）",
+   "type": "subclass",
+   "to": "非正式组织",
+   "evidence": "非正式组织可以分为：①积极型；②消极型；③娱乐型；④破坏型",
+   "printed_page": 157
+  },
+  {
+   "from": "破坏型（非正式组织）",
+   "type": "subclass",
+   "to": "非正式组织",
+   "evidence": "非正式组织可以分为：①积极型；②消极型；③娱乐型；④破坏型",
+   "printed_page": 157
+  },
+  {
+   "from": "班级组织建构的原则",
+   "type": "part_of",
+   "to": "班级",
+   "evidence": "（五）班级组织建构的原则",
+   "printed_page": 157
+  },
+  {
+   "from": "有利于教育的原则（首要）",
+   "type": "subclass",
+   "to": "班级组织建构的原则",
+   "evidence": "有利于教育的原则——首要原则",
+   "printed_page": 157
+  },
+  {
+   "from": "目标一致的原则",
+   "type": "subclass",
+   "to": "班级组织建构的原则",
+   "evidence": "目标一致的原则",
+   "printed_page": 157
+  },
+  {
+   "from": "有利于身心发展的原则",
+   "type": "subclass",
+   "to": "班级组织建构的原则",
+   "evidence": "有利于身心发展的原则",
+   "printed_page": 157
+  },
+  {
+   "from": "班级管理",
+   "type": "attribute",
+   "to": "班级管理的目的",
+   "evidence": "班级管理的根本目的是实现教育目标",
+   "printed_page": 158
+  },
+  {
+   "from": "班级管理的环节",
+   "type": "part_of",
+   "to": "班级管理",
+   "evidence": "班级管理过程包括制定计划、组织实施、评价总结三个基本环节",
+   "printed_page": 158
+  },
+  {
+   "from": "制定计划",
+   "type": "subclass",
+   "to": "班级管理的环节",
+   "evidence": "班级管理过程包括制定计划、组织实施、评价总结三个基本环节",
+   "printed_page": 158
+  },
+  {
+   "from": "组织实施",
+   "type": "subclass",
+   "to": "班级管理的环节",
+   "evidence": "班级管理过程包括制定计划、组织实施、评价总结三个基本环节",
+   "printed_page": 158
+  },
+  {
+   "from": "评价总结",
+   "type": "subclass",
+   "to": "班级管理的环节",
+   "evidence": "班级管理过程包括制定计划、组织实施、评价总结三个基本环节",
+   "printed_page": 158
+  },
+  {
+   "from": "班级管理的功能",
+   "type": "part_of",
+   "to": "班级管理",
+   "evidence": "（二）班级管理的功能",
+   "printed_page": 158
+  },
+  {
+   "from": "提高学习效率（主要功能）",
+   "type": "subclass",
+   "to": "班级管理的功能",
+   "evidence": "提高学习效率，实现教学目标——主要功能",
+   "printed_page": 158
+  },
+  {
+   "from": "维持班级秩序（基本功能）",
+   "type": "subclass",
+   "to": "班级管理的功能",
+   "evidence": "维持班级秩序，形成良好班风——基本功能",
+   "printed_page": 158
+  },
+  {
+   "from": "锻炼学生能力（最终目的）",
+   "type": "subclass",
+   "to": "班级管理的功能",
+   "evidence": "锻炼学生能力，提高自治水平——重要功能、最终目的",
+   "printed_page": 158
+  },
+  {
+   "from": "班级管理的原则",
+   "type": "part_of",
+   "to": "班级管理",
+   "evidence": "（三）班级管理的原则",
+   "printed_page": 158
+  },
+  {
+   "from": "科学性原则",
+   "type": "subclass",
+   "to": "班级管理的原则",
+   "evidence": "科学性原则是指班主任必须按照班级管理的规律开展班级教育和管理工作",
+   "printed_page": 158
+  },
+  {
+   "from": "民主性原则",
+   "type": "subclass",
+   "to": "班级管理的原则",
+   "evidence": "民主性原则是指班主任发扬民主，吸收学生及相关人员参与班级管理工作",
+   "printed_page": 158
+  },
+  {
+   "from": "自觉性原则",
+   "type": "subclass",
+   "to": "班级管理的原则",
+   "evidence": "自觉性原则是指班主任启发学生的自觉性",
+   "printed_page": 158
+  },
+  {
+   "from": "整体性原则",
+   "type": "subclass",
+   "to": "班级管理的原则",
+   "evidence": "整体性原则是指班主任协调各方面的教育力量",
+   "printed_page": 159
+  },
+  {
+   "from": "班级管理的模式",
+   "type": "part_of",
+   "to": "班级管理",
+   "evidence": "（四）班级管理的模式",
+   "printed_page": 159
+  },
+  {
+   "from": "班级常规管理",
+   "type": "subclass",
+   "to": "班级管理的模式",
+   "evidence": "班级常规管理是指通过制定和执行规章制度管理班级的经常性活动",
+   "printed_page": 159
+  },
+  {
+   "from": "班级平行管理",
+   "type": "subclass",
+   "to": "班级管理的模式",
+   "evidence": "班级平行管理是指班主任既通过对集体的管理去间接影响个人",
+   "printed_page": 159
+  },
+  {
+   "from": "班级民主管理",
+   "type": "subclass",
+   "to": "班级管理的模式",
+   "evidence": "班级民主管理是指班级成员在服从班集体的正确决定和承担责任的前提下参与班级全程管理的一种管理方式",
+   "printed_page": 159
+  },
+  {
+   "from": "班级目标管理",
+   "type": "subclass",
+   "to": "班级管理的模式",
+   "evidence": "班级目标管理是指班主任与学生共同确定班集体总体目标",
+   "printed_page": 159
+  },
+  {
+   "from": "班集体的发展阶段",
+   "type": "part_of",
+   "to": "班集体",
+   "evidence": "一个优秀班集体的形成，一般要经过组建阶段、核心形成阶段、发展阶段和成熟阶段",
+   "printed_page": 160
+  },
+  {
+   "from": "组建阶段",
+   "type": "subclass",
+   "to": "班集体的发展阶段",
+   "evidence": "这一阶段学生初进学校，同学们尽管形式上同属一个班级，实际上都是一个个孤立的个体",
+   "printed_page": 160
+  },
+  {
+   "from": "核心形成阶段",
+   "type": "subclass",
+   "to": "班集体的发展阶段",
+   "evidence": "这一阶段同学之间开始相互了解，在班主任的引导培养下，涌现出了一批积极分子",
+   "printed_page": 160
+  },
+  {
+   "from": "发展阶段",
+   "type": "subclass",
+   "to": "班集体的发展阶段",
+   "evidence": "这一阶段班集体已成为教育主体，多数学生能相互严格要求",
+   "printed_page": 161
+  },
+  {
+   "from": "成熟阶段",
+   "type": "subclass",
+   "to": "班集体的发展阶段",
+   "evidence": "这一阶段是班集体趋向成熟的时期，集体的特征得到充分的体现",
+   "printed_page": 161
+  },
+  {
+   "from": "良好班集体的形成与培养",
+   "type": "part_of",
+   "to": "班集体",
+   "evidence": "（四）良好班集体的形成与培养",
+   "printed_page": 161
+  },
+  {
+   "from": "确定班集体的发展目标",
+   "type": "subclass",
+   "to": "良好班集体的形成与培养",
+   "evidence": "1. 确定班集体的发展目标",
+   "printed_page": 161
+  },
+  {
+   "from": "建立得力的班集体核心",
+   "type": "subclass",
+   "to": "良好班集体的形成与培养",
+   "evidence": "2. 建立得力的班集体核心",
+   "printed_page": 161
+  },
+  {
+   "from": "建立班集体的正常秩序",
+   "type": "subclass",
+   "to": "良好班集体的形成与培养",
+   "evidence": "3. 建立班集体的正常秩序",
+   "printed_page": 161
+  },
+  {
+   "from": "组织形式多样的教育活动",
+   "type": "subclass",
+   "to": "良好班集体的形成与培养",
+   "evidence": "4. 组织形式多样的教育活动",
+   "printed_page": 161
+  },
+  {
+   "from": "培养正确的集体舆论与良好的班风",
+   "type": "subclass",
+   "to": "良好班集体的形成与培养",
+   "evidence": "5. 培养正确的集体舆论与良好的班风",
+   "printed_page": 161
+  },
+  {
+   "from": "正确的集体舆论与良好的班风",
+   "type": "marks",
+   "to": "班集体",
+   "evidence": "正确的集体舆论与良好的班风是班集体形成的重要标志",
+   "printed_page": 161
+  },
+  {
+   "from": "常规工作",
+   "type": "part_of",
+   "to": "班主任的工作内容",
+   "evidence": "班主任的工作内容主要包括常规工作和个别教育工作两大方面",
+   "printed_page": 162
+  },
+  {
+   "from": "个别教育工作",
+   "type": "part_of",
+   "to": "班主任的工作内容",
+   "evidence": "班主任的工作内容主要包括常规工作和个别教育工作两大方面",
+   "printed_page": 162
+  },
+  {
+   "from": "了解和研究学生",
+   "type": "subclass",
+   "to": "常规工作",
+   "evidence": "1. 了解和研究学生（班主任工作的前提和基础）",
+   "printed_page": 162
+  },
+  {
+   "from": "组织和培养班集体",
+   "type": "subclass",
+   "to": "常规工作",
+   "evidence": "2. 组织和培养班集体（班主任工作的中心环节）",
+   "printed_page": 162
+  },
+  {
+   "from": "建立学生成长档案",
+   "type": "subclass",
+   "to": "常规工作",
+   "evidence": "3. 建立学生成长档案",
+   "printed_page": 162
+  },
+  {
+   "from": "组织班会活动和课外活动",
+   "type": "subclass",
+   "to": "常规工作",
+   "evidence": "4. 组织班会活动和课外活动",
+   "printed_page": 162
+  },
+  {
+   "from": "协调各种教育影响",
+   "type": "subclass",
+   "to": "常规工作",
+   "evidence": "5. 协调各种教育影响",
+   "printed_page": 163
+  },
+  {
+   "from": "操行评定",
+   "type": "subclass",
+   "to": "常规工作",
+   "evidence": "6. 操行评定 操行评定是以教育目的为指导思想",
+   "printed_page": 163
+  },
+  {
+   "from": "写好班主任工作计划与总结",
+   "type": "subclass",
+   "to": "常规工作",
+   "evidence": "7. 写好班主任工作计划与总结",
+   "printed_page": 163
+  },
+  {
+   "from": "了解和研究学生",
+   "type": "exact_match",
+   "to": "班主任工作的前提和基础",
+   "evidence": "1. 了解和研究学生（班主任工作的前提和基础）",
+   "printed_page": 162
+  },
+  {
+   "from": "班主任工作的中心环节",
+   "type": "exact_match",
+   "to": "组织和培养班集体",
+   "evidence": "2. 组织和培养班集体（班主任工作的中心环节）",
+   "printed_page": 162
+  },
+  {
+   "from": "了解和研究学生的方法",
+   "type": "part_of",
+   "to": "了解和研究学生",
+   "evidence": "班主任一般采取以下四种方法了解和研究学生",
+   "printed_page": 162
+  },
+  {
+   "from": "观察法",
+   "type": "subclass",
+   "to": "了解和研究学生的方法",
+   "evidence": "观察法。这是班主任了解学生最基本的方法",
+   "printed_page": 162
+  },
+  {
+   "from": "谈话法",
+   "type": "subclass",
+   "to": "了解和研究学生的方法",
+   "evidence": "谈话法。这是深入了解学生的基本方法",
+   "printed_page": 162
+  },
+  {
+   "from": "书面材料和学生作品分析法",
+   "type": "subclass",
+   "to": "了解和研究学生的方法",
+   "evidence": "书面材料和学生作品分析法",
+   "printed_page": 162
+  },
+  {
+   "from": "调查访问",
+   "type": "subclass",
+   "to": "了解和研究学生的方法",
+   "evidence": "调查访问。这是一种间接了解学生的方法",
+   "printed_page": 162
+  },
+  {
+   "from": "操行评定的步骤",
+   "type": "part_of",
+   "to": "操行评定",
+   "evidence": "学生自评—小组评议—班主任评价—信息反馈",
+   "printed_page": 163
+  },
+  {
+   "from": "优等生",
+   "type": "subclass",
+   "to": "个别教育工作",
+   "evidence": "1. 优等生的个别教育",
+   "printed_page": 164
+  },
+  {
+   "from": "中等生",
+   "type": "subclass",
+   "to": "个别教育工作",
+   "evidence": "2. 中等生的个别教育",
+   "printed_page": 164
+  },
+  {
+   "from": "后进生",
+   "type": "subclass",
+   "to": "个别教育工作",
+   "evidence": "3. 后进生的个别教育",
+   "printed_page": 164
+  },
+  {
+   "from": "对优等生的教育",
+   "type": "part_of",
+   "to": "优等生",
+   "evidence": "（2）对优等生的教育",
+   "printed_page": 164
+  },
+  {
+   "from": "对中等生的教育",
+   "type": "part_of",
+   "to": "中等生",
+   "evidence": "（2）对中等生的教育",
+   "printed_page": 164
+  },
+  {
+   "from": "对后进生的教育",
+   "type": "part_of",
+   "to": "后进生",
+   "evidence": "（2）对后进生的教育",
+   "printed_page": 164
+  },
+  {
+   "from": "班级突发事件处理的原则",
+   "type": "part_of",
+   "to": "班级突发事件",
+   "evidence": "（二）班级突发事件处理的原则",
+   "printed_page": 165
+  },
+  {
+   "from": "教育性原则",
+   "type": "subclass",
+   "to": "班级突发事件处理的原则",
+   "evidence": "教师要以让学生受教育，促进每个学生的成长为目的",
+   "printed_page": 165
+  },
+  {
+   "from": "客观性原则",
+   "type": "subclass",
+   "to": "班级突发事件处理的原则",
+   "evidence": "教师在处理问题时，要了解事情的真相，公平公正地分析和处理问题",
+   "printed_page": 165
+  },
+  {
+   "from": "有效性原则",
+   "type": "subclass",
+   "to": "班级突发事件处理的原则",
+   "evidence": "教师在处理突发事件时要讲究效果，尽快解决问题",
+   "printed_page": 165
+  },
+  {
+   "from": "可接受原则",
+   "type": "subclass",
+   "to": "班级突发事件处理的原则",
+   "evidence": "使涉事双方心悦诚服地接受处理意见",
+   "printed_page": 165
+  },
+  {
+   "from": "冷处理原则",
+   "type": "subclass",
+   "to": "班级突发事件处理的原则",
+   "evidence": "教师在处理突发事件时，应保持冷静、公平、宽容的心态",
+   "printed_page": 165
+  }
+ ]
+}

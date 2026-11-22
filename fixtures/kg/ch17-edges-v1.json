@@ -1,0 +1,461 @@
+{
+ "chapter": "普通心理学 第三章 心理过程——情绪情感与意志过程",
+ "schema_version": "1.1",
+ "edges": [
+  {
+   "from": "主观体验",
+   "type": "part_of",
+   "to": "情绪",
+   "evidence": "情绪由主观体验、外部表现和生理唤醒三部分组成。",
+   "printed_page": 46
+  },
+  {
+   "from": "外部表现",
+   "type": "part_of",
+   "to": "情绪",
+   "evidence": "情绪由主观体验、外部表现和生理唤醒三部分组成。",
+   "printed_page": 46
+  },
+  {
+   "from": "生理唤醒",
+   "type": "part_of",
+   "to": "情绪",
+   "evidence": "情绪由主观体验、外部表现和生理唤醒三部分组成。",
+   "printed_page": 46
+  },
+  {
+   "from": "外部表现",
+   "type": "exact_match",
+   "to": "表情",
+   "evidence": "从表达层面看，情绪有外部表现，通常称之为表情",
+   "printed_page": 46
+  },
+  {
+   "from": "面部表情",
+   "type": "subclass",
+   "to": "表情",
+   "evidence": "包括面部表情、姿态表情和语调表情",
+   "printed_page": 46
+  },
+  {
+   "from": "姿态表情",
+   "type": "subclass",
+   "to": "表情",
+   "evidence": "包括面部表情、姿态表情和语调表情",
+   "printed_page": 46
+  },
+  {
+   "from": "语调表情",
+   "type": "subclass",
+   "to": "表情",
+   "evidence": "包括面部表情、姿态表情和语调表情",
+   "printed_page": 46
+  },
+  {
+   "from": "情绪",
+   "type": "part_of",
+   "to": "情绪情感过程",
+   "evidence": "（一）情绪的概念",
+   "printed_page": 46
+  },
+  {
+   "from": "情绪的两极性",
+   "type": "attribute",
+   "to": "情绪",
+   "evidence": "情绪的两极性是指情绪维度各个特征的变化幅度具有两种对立的状态。",
+   "printed_page": 46
+  },
+  {
+   "from": "四种基本情绪",
+   "type": "part_of",
+   "to": "情绪",
+   "evidence": "情绪一般分为快乐、悲哀、愤怒、恐惧四种基本形式。",
+   "printed_page": 48
+  },
+  {
+   "from": "情绪状态",
+   "type": "part_of",
+   "to": "情绪",
+   "evidence": "二、情绪的状态",
+   "printed_page": 47
+  },
+  {
+   "from": "心境",
+   "type": "subclass",
+   "to": "情绪状态",
+   "evidence": "心境是一种微弱的、持久的、带有弥散性的心理状态。",
+   "printed_page": 47
+  },
+  {
+   "from": "激情",
+   "type": "subclass",
+   "to": "情绪状态",
+   "evidence": "激情是一种爆发式的、强烈而短暂的情绪状态",
+   "printed_page": 47
+  },
+  {
+   "from": "应激",
+   "type": "subclass",
+   "to": "情绪状态",
+   "evidence": "应激是在出乎意料的紧迫情况下所引起的急速而紧张的情绪状态",
+   "printed_page": 47
+  },
+  {
+   "from": "情绪理论",
+   "type": "part_of",
+   "to": "情绪",
+   "evidence": "情绪理论主要试图解释情绪体验的生理和心理方面的关系。",
+   "printed_page": 48
+  },
+  {
+   "from": "詹姆斯—兰格理论",
+   "type": "subclass",
+   "to": "情绪理论",
+   "evidence": "强调情绪是植物性神经系统的产物……肌肉活动在脑内引起的感觉",
+   "printed_page": 48
+  },
+  {
+   "from": "坎农—巴德学说",
+   "type": "subclass",
+   "to": "情绪理论",
+   "evidence": "情绪并非外界变化的必然结果……而在中枢神经系统的丘脑",
+   "printed_page": 48
+  },
+  {
+   "from": "阿诺德的评定—兴奋说",
+   "type": "subclass",
+   "to": "情绪理论",
+   "evidence": "强调情绪的产生来源于大脑皮层对情境的评估",
+   "printed_page": 48
+  },
+  {
+   "from": "沙赫特—辛格情绪理论",
+   "type": "subclass",
+   "to": "情绪理论",
+   "evidence": "对于特定的情绪来说，有三个因素必不可少",
+   "printed_page": 48
+  },
+  {
+   "from": "拉扎勒斯的认知—评价理论",
+   "type": "subclass",
+   "to": "情绪理论",
+   "evidence": "情绪是人与环境相互作用的产物。",
+   "printed_page": 48
+  },
+  {
+   "from": "情绪调节方法",
+   "type": "part_of",
+   "to": "情绪",
+   "evidence": "教会学生情绪调节的方法，包括认知调节法、合理宣泄法、意志调节法、转移注意法、幽默法。",
+   "printed_page": 49
+  },
+  {
+   "from": "认知调节法",
+   "type": "subclass",
+   "to": "情绪调节方法",
+   "evidence": "教会学生情绪调节的方法，包括认知调节法、合理宣泄法、意志调节法、转移注意法、幽默法。",
+   "printed_page": 49
+  },
+  {
+   "from": "合理宣泄法",
+   "type": "subclass",
+   "to": "情绪调节方法",
+   "evidence": "教会学生情绪调节的方法，包括认知调节法、合理宣泄法、意志调节法、转移注意法、幽默法。",
+   "printed_page": 49
+  },
+  {
+   "from": "意志调节法",
+   "type": "subclass",
+   "to": "情绪调节方法",
+   "evidence": "教会学生情绪调节的方法，包括认知调节法、合理宣泄法、意志调节法、转移注意法、幽默法。",
+   "printed_page": 49
+  },
+  {
+   "from": "转移注意法",
+   "type": "subclass",
+   "to": "情绪调节方法",
+   "evidence": "教会学生情绪调节的方法，包括认知调节法、合理宣泄法、意志调节法、转移注意法、幽默法。",
+   "printed_page": 49
+  },
+  {
+   "from": "幽默法",
+   "type": "subclass",
+   "to": "情绪调节方法",
+   "evidence": "教会学生情绪调节的方法，包括认知调节法、合理宣泄法、意志调节法、转移注意法、幽默法。",
+   "printed_page": 49
+  },
+  {
+   "from": "情感",
+   "type": "contrast",
+   "to": "情绪",
+   "evidence": "情绪具有情境性和动摇性，情感则具有稳定性和深刻性。",
+   "printed_page": 51
+  },
+  {
+   "from": "情感的品质",
+   "type": "part_of",
+   "to": "情感",
+   "evidence": "（二）情感的品质",
+   "printed_page": 50
+  },
+  {
+   "from": "情感的倾向性",
+   "type": "part_of",
+   "to": "情感的品质",
+   "evidence": "情感的倾向性是指情感经常指向什么和由什么所引起。",
+   "printed_page": 50
+  },
+  {
+   "from": "情感的深刻性",
+   "type": "part_of",
+   "to": "情感的品质",
+   "evidence": "情感的深刻性是指情感在个人的思想行为中表现的程度深浅。",
+   "printed_page": 50
+  },
+  {
+   "from": "情感的稳定性",
+   "type": "part_of",
+   "to": "情感的品质",
+   "evidence": "情感的稳定性是指情感持久的程度。",
+   "printed_page": 50
+  },
+  {
+   "from": "情感的效能性",
+   "type": "part_of",
+   "to": "情感的品质",
+   "evidence": "情感的效能性是指情感对人的实际行动发生鼓舞作用的程度。",
+   "printed_page": 50
+  },
+  {
+   "from": "道德感",
+   "type": "subclass",
+   "to": "情感",
+   "evidence": "道德感是用一定的道德标准去评价自己或他人的思想和言行时产生的情感体验。",
+   "printed_page": 50
+  },
+  {
+   "from": "理智感",
+   "type": "subclass",
+   "to": "情感",
+   "evidence": "理智感是在智力活动中，认识、探求或维护真理的需要是否得到满足而产生的情感体验。",
+   "printed_page": 50
+  },
+  {
+   "from": "美感",
+   "type": "subclass",
+   "to": "情感",
+   "evidence": "美感是按照一定的审美标准在欣赏自然美、社会美和艺术美时体验到的一种情感体验。",
+   "printed_page": 51
+  },
+  {
+   "from": "信号功能",
+   "type": "subclass",
+   "to": "情绪与情感的功能",
+   "evidence": "情绪的信号功能体现在个体将自己的愿望、要求、观点、态度通过一定的情感表达方式传递给别人并加以影响。",
+   "printed_page": 51
+  },
+  {
+   "from": "动机功能",
+   "type": "subclass",
+   "to": "情绪与情感的功能",
+   "evidence": "情绪和情感是动机的源泉之一，是动机系统的一个基本成分。",
+   "printed_page": 51
+  },
+  {
+   "from": "感染功能",
+   "type": "subclass",
+   "to": "情绪与情感的功能",
+   "evidence": "情绪的感染功能是指人与人之间的情绪可以相互影响和产生共鸣。",
+   "printed_page": 52
+  },
+  {
+   "from": "适应功能",
+   "type": "subclass",
+   "to": "情绪与情感的功能",
+   "evidence": "情绪和情感是有机体适应生存和发展的一种重要方式。",
+   "printed_page": 52
+  },
+  {
+   "from": "健康功能",
+   "type": "subclass",
+   "to": "情绪与情感的功能",
+   "evidence": "人对社会的适应是通过调节情绪来进行的",
+   "printed_page": 52
+  },
+  {
+   "from": "组织功能",
+   "type": "subclass",
+   "to": "情绪与情感的功能",
+   "evidence": "情绪的组织功能表现在积极情绪的协调作用和消极情绪的破坏、瓦解作用。",
+   "printed_page": 52
+  },
+  {
+   "from": "迁移功能",
+   "type": "subclass",
+   "to": "情绪与情感的功能",
+   "evidence": "情绪情感的迁移功能是指个人把对他人的情感状态迁移到与他人有关的对象上。",
+   "printed_page": 52
+  },
+  {
+   "from": "意志的基本特征",
+   "type": "part_of",
+   "to": "意志",
+   "evidence": "（二）意志的基本特征",
+   "printed_page": 52
+  },
+  {
+   "from": "意志的目的性",
+   "type": "part_of",
+   "to": "意志的基本特征",
+   "evidence": "意志有明确的目的性。",
+   "printed_page": 52
+  },
+  {
+   "from": "克服困难",
+   "type": "part_of",
+   "to": "意志的基本特征",
+   "evidence": "克服困难是意志行动最重要的特征。",
+   "printed_page": 53
+  },
+  {
+   "from": "随意动作",
+   "type": "part_of",
+   "to": "意志的基本特征",
+   "evidence": "意志以随意动作为基础。",
+   "printed_page": 53
+  },
+  {
+   "from": "意志行动的基本阶段",
+   "type": "part_of",
+   "to": "意志行动",
+   "evidence": "二、意志行动的基本阶段",
+   "printed_page": 53
+  },
+  {
+   "from": "采取决定阶段",
+   "type": "part_of",
+   "to": "意志行动的基本阶段",
+   "evidence": "（一）采取决定阶段（准备阶段）",
+   "printed_page": 53
+  },
+  {
+   "from": "执行决定阶段",
+   "type": "part_of",
+   "to": "意志行动的基本阶段",
+   "evidence": "（二）执行决定阶段",
+   "printed_page": 54
+  },
+  {
+   "from": "动机冲突",
+   "type": "part_of",
+   "to": "采取决定阶段",
+   "evidence": "1. 动机冲突……（1）双趋冲突",
+   "printed_page": 53
+  },
+  {
+   "from": "双趋冲突",
+   "type": "subclass",
+   "to": "动机冲突",
+   "evidence": "双趋冲突也叫接近—接近型冲突，是指同时存在两种能满足需要的目标",
+   "printed_page": 53
+  },
+  {
+   "from": "双避冲突",
+   "type": "subclass",
+   "to": "动机冲突",
+   "evidence": "双避冲突也叫回避—回避型冲突",
+   "printed_page": 53
+  },
+  {
+   "from": "趋避冲突",
+   "type": "subclass",
+   "to": "动机冲突",
+   "evidence": "趋避冲突也叫接近—回避型冲突，是指同一目标既有吸引力，又有排斥力",
+   "printed_page": 53
+  },
+  {
+   "from": "多重趋避冲突",
+   "type": "subclass",
+   "to": "动机冲突",
+   "evidence": "多重趋避冲突也叫多重接近—回避型冲突",
+   "printed_page": 53
+  },
+  {
+   "from": "意志品质",
+   "type": "part_of",
+   "to": "意志",
+   "evidence": "三、意志品质……（一）意志的自觉性",
+   "printed_page": 54
+  },
+  {
+   "from": "意志的自觉性",
+   "type": "part_of",
+   "to": "意志品质",
+   "evidence": "意志的自觉性是指对行动的目标有深刻的认识，能自觉地支配自己的行动",
+   "printed_page": 54
+  },
+  {
+   "from": "意志的果断性",
+   "type": "part_of",
+   "to": "意志品质",
+   "evidence": "意志的果断性是指一个人善于明辨是非",
+   "printed_page": 54
+  },
+  {
+   "from": "意志的坚持性",
+   "type": "part_of",
+   "to": "意志品质",
+   "evidence": "意志的坚持性是指在意志行动中能坚持决定",
+   "printed_page": 55
+  },
+  {
+   "from": "意志的自制性",
+   "type": "part_of",
+   "to": "意志品质",
+   "evidence": "意志的自制性是指善于控制和支配自己行动方面的意志品质。",
+   "printed_page": 55
+  },
+  {
+   "from": "易受暗示性",
+   "type": "contrast",
+   "to": "意志的自觉性",
+   "evidence": "与自觉性相反的意志品质是易受暗示性与独断性。",
+   "printed_page": 54
+  },
+  {
+   "from": "优柔寡断",
+   "type": "contrast",
+   "to": "意志的果断性",
+   "evidence": "与果断性相反的意志品质是优柔寡断和草率决定。",
+   "printed_page": 55
+  },
+  {
+   "from": "顽固执拗",
+   "type": "contrast",
+   "to": "意志的坚持性",
+   "evidence": "与坚持性相反的意志品质是顽固执拗和见异思迁。",
+   "printed_page": 55
+  },
+  {
+   "from": "怯懦",
+   "type": "contrast",
+   "to": "意志的自制性",
+   "evidence": "与自制性相反的意志品质是任性和怯懦。",
+   "printed_page": 55
+  },
+  {
+   "from": "任性",
+   "type": "contrast",
+   "to": "意志的自制性",
+   "evidence": "与自制性相反的意志品质是任性和怯懦。",
+   "printed_page": 55
+  },
+  {
+   "from": "独断性",
+   "type": "contrast",
+   "to": "意志的自觉性",
+   "evidence": "与自觉性相反的意志品质是易受暗示性与独断性。",
+   "printed_page": 54
+  }
+ ]
+}

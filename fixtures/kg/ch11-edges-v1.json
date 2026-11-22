@@ -1,0 +1,447 @@
+{
+ "chapter": "第二篇第一章 新课程改革",
+ "schema_version": "1.1",
+ "edges": [
+  {
+   "from": "第八次基础教育课程改革",
+   "type": "part_of",
+   "to": "课程改革",
+   "evidence": "本次新一轮课程改革是指 1999 年正式启动的第八次基础教育课程改革。",
+   "printed_page": 179
+  },
+  {
+   "from": "《基础教育课程改革纲要（试行）》",
+   "type": "marks",
+   "to": "第八次基础教育课程改革",
+   "evidence": "2001 年 2 月，国务院批准《基础教育课程改革纲要（试行）》，标志着此次基础教育课程改革全面启动。",
+   "printed_page": 179
+  },
+  {
+   "from": "建构主义理论",
+   "type": "part_of",
+   "to": "新课程改革的理论基础",
+   "evidence": "新课程改革的主要理论基础是建构主义理论、多元智能理论。",
+   "printed_page": 179
+  },
+  {
+   "from": "多元智能理论",
+   "type": "part_of",
+   "to": "新课程改革的理论基础",
+   "evidence": "新课程改革的主要理论基础是建构主义理论、多元智能理论。",
+   "printed_page": 179
+  },
+  {
+   "from": "关注学生发展",
+   "type": "part_of",
+   "to": "新课改的基本理念",
+   "evidence": "（1）关注学生发展",
+   "printed_page": 179
+  },
+  {
+   "from": "强调教师成长",
+   "type": "part_of",
+   "to": "新课改的基本理念",
+   "evidence": "（2）强调教师成长",
+   "printed_page": 180
+  },
+  {
+   "from": "重视以学定教",
+   "type": "part_of",
+   "to": "新课改的基本理念",
+   "evidence": "（3）重视以学定教",
+   "printed_page": 180
+  },
+  {
+   "from": "以人为本",
+   "type": "subclass",
+   "to": "新课改的核心理念",
+   "evidence": "新课程改革的核心理念是“以人为本”（育人为本）和“以学生发展为本”",
+   "printed_page": 180
+  },
+  {
+   "from": "以学生发展为本",
+   "type": "subclass",
+   "to": "新课改的核心理念",
+   "evidence": "新课程改革的核心理念是“以人为本”（育人为本）和“以学生发展为本”",
+   "printed_page": 180
+  },
+  {
+   "from": "全人教育",
+   "type": "part_of",
+   "to": "以人为本",
+   "evidence": "它包含三层含义：①以人（学生）的发展为本；②倡导全人教育；③追求学生个性化发展。",
+   "printed_page": 180
+  },
+  {
+   "from": "学生个性化发展",
+   "type": "part_of",
+   "to": "以人为本",
+   "evidence": "它包含三层含义：①以人（学生）的发展为本；②倡导全人教育；③追求学生个性化发展。",
+   "printed_page": 180
+  },
+  {
+   "from": "学校文化的重建",
+   "type": "related",
+   "to": "课程改革",
+   "evidence": "学校文化的重建是课程改革的直接诉求和终极目标。",
+   "printed_page": 180
+  },
+  {
+   "from": "九年一贯的义务教育课程",
+   "type": "part_of",
+   "to": "课程结构",
+   "evidence": "整体设置九年一贯的义务教育课程。",
+   "printed_page": 180
+  },
+  {
+   "from": "综合实践活动",
+   "type": "part_of",
+   "to": "课程结构",
+   "evidence": "从小学至高中设置综合实践活动并作为必修课程。",
+   "printed_page": 181
+  },
+  {
+   "from": "综合实践活动",
+   "type": "subclass",
+   "to": "必修课程",
+   "evidence": "从小学至高中设置综合实践活动并作为必修课程。",
+   "printed_page": 181
+  },
+  {
+   "from": "综合实践活动",
+   "type": "attribute",
+   "to": "综合实践活动的特点",
+   "evidence": "③特点：整体性（综合性）、实践性、开放性、生成性、自主性。",
+   "printed_page": 181
+  },
+  {
+   "from": "整体性",
+   "type": "subclass",
+   "to": "综合实践活动的特点",
+   "evidence": "③特点：整体性（综合性）、实践性、开放性、生成性、自主性。",
+   "printed_page": 181
+  },
+  {
+   "from": "实践性",
+   "type": "subclass",
+   "to": "综合实践活动的特点",
+   "evidence": "③特点：整体性（综合性）、实践性、开放性、生成性、自主性。",
+   "printed_page": 181
+  },
+  {
+   "from": "开放性（综合实践活动）",
+   "type": "subclass",
+   "to": "综合实践活动的特点",
+   "evidence": "③特点：整体性（综合性）、实践性、开放性、生成性、自主性。",
+   "printed_page": 181
+  },
+  {
+   "from": "实现课程功能的转变",
+   "type": "subclass",
+   "to": "新课程改革的具体目标",
+   "evidence": "一、实现课程功能的转变（核心目标）",
+   "printed_page": 181
+  },
+  {
+   "from": "体现课程结构的均衡性综合性和选择性",
+   "type": "subclass",
+   "to": "新课程改革的具体目标",
+   "evidence": "二、体现课程结构的均衡性、综合性和选择性",
+   "printed_page": 182
+  },
+  {
+   "from": "密切课程内容与生活和时代的联系",
+   "type": "subclass",
+   "to": "新课程改革的具体目标",
+   "evidence": "三、密切课程内容与生活和时代的联系",
+   "printed_page": 182
+  },
+  {
+   "from": "改善学生的学习方式",
+   "type": "subclass",
+   "to": "新课程改革的具体目标",
+   "evidence": "四、改善学生的学习方式",
+   "printed_page": 182
+  },
+  {
+   "from": "建立与素质教育理念相一致的评价与考试制度",
+   "type": "subclass",
+   "to": "新课程改革的具体目标",
+   "evidence": "五、建立与素质教育理念相一致的评价与考试制度",
+   "printed_page": 183
+  },
+  {
+   "from": "实行三级课程管理制度",
+   "type": "subclass",
+   "to": "新课程改革的具体目标",
+   "evidence": "六、实行三级课程管理制度",
+   "printed_page": 183
+  },
+  {
+   "from": "三维目标",
+   "type": "part_of",
+   "to": "实现课程功能的转变",
+   "evidence": "新课程改革背景下的课堂教学所倡导的目标为三维目标：知识与技能、过程与方法、情感态度与价值观。",
+   "printed_page": 181
+  },
+  {
+   "from": "知识与技能",
+   "type": "part_of",
+   "to": "三维目标",
+   "evidence": "新课程改革背景下的课堂教学所倡导的目标为三维目标：知识与技能、过程与方法、情感态度与价值观。",
+   "printed_page": 181
+  },
+  {
+   "from": "过程与方法",
+   "type": "part_of",
+   "to": "三维目标",
+   "evidence": "新课程改革背景下的课堂教学所倡导的目标为三维目标：知识与技能、过程与方法、情感态度与价值观。",
+   "printed_page": 181
+  },
+  {
+   "from": "情感态度与价值观",
+   "type": "part_of",
+   "to": "三维目标",
+   "evidence": "新课程改革背景下的课堂教学所倡导的目标为三维目标：知识与技能、过程与方法、情感态度与价值观。",
+   "printed_page": 181
+  },
+  {
+   "from": "自主学习",
+   "type": "subclass",
+   "to": "现代学习方式",
+   "evidence": "具体来讲，新课程改革在学习方式上强调自主、合作、探究学习。",
+   "printed_page": 182
+  },
+  {
+   "from": "合作学习",
+   "type": "subclass",
+   "to": "现代学习方式",
+   "evidence": "具体来讲，新课程改革在学习方式上强调自主、合作、探究学习。",
+   "printed_page": 182
+  },
+  {
+   "from": "探究学习",
+   "type": "subclass",
+   "to": "现代学习方式",
+   "evidence": "具体来讲，新课程改革在学习方式上强调自主、合作、探究学习。",
+   "printed_page": 182
+  },
+  {
+   "from": "独立性（自主学习）",
+   "type": "attribute",
+   "to": "自主学习",
+   "evidence": "（2）特点：能动性、独立性、有效性、相对性。其中，独立性是自主学习的灵魂。",
+   "printed_page": 182
+  },
+  {
+   "from": "探究学习",
+   "type": "contrast",
+   "to": "接受学习",
+   "evidence": "探究学习是相对于“接受学习”而言的",
+   "printed_page": 183
+  },
+  {
+   "from": "国家课程",
+   "type": "part_of",
+   "to": "三级课程管理",
+   "evidence": "为改变课程管理过于集中的状况，实行国家、地方、学校三级课程管理",
+   "printed_page": 183
+  },
+  {
+   "from": "地方课程",
+   "type": "part_of",
+   "to": "三级课程管理",
+   "evidence": "为改变课程管理过于集中的状况，实行国家、地方、学校三级课程管理",
+   "printed_page": 183
+  },
+  {
+   "from": "校本课程",
+   "type": "part_of",
+   "to": "三级课程管理",
+   "evidence": "学校在执行国家课程和地方课程的同时，开发或选用适合本校特点的课程。",
+   "printed_page": 183
+  },
+  {
+   "from": "学生是发展的人",
+   "type": "subclass",
+   "to": "学生观",
+   "evidence": "学生是发展的人，学生是独特的人，学生是具有独立意义的人。",
+   "printed_page": 183
+  },
+  {
+   "from": "学生是独特的人",
+   "type": "subclass",
+   "to": "学生观",
+   "evidence": "学生是发展的人，学生是独特的人，学生是具有独立意义的人。",
+   "printed_page": 183
+  },
+  {
+   "from": "学生是具有独立意义的人",
+   "type": "subclass",
+   "to": "学生观",
+   "evidence": "学生是发展的人，学生是独特的人，学生是具有独立意义的人。",
+   "printed_page": 183
+  },
+  {
+   "from": "教师角色",
+   "type": "part_of",
+   "to": "教师观",
+   "evidence": "1. 新课改倡导的教师角色",
+   "printed_page": 184
+  },
+  {
+   "from": "学生学习的引导者和发展的促进者",
+   "type": "subclass",
+   "to": "教师角色",
+   "evidence": "（1）从教师与学生的关系看，教师应该是学生学习的引导者和发展的促进者",
+   "printed_page": 184
+  },
+  {
+   "from": "教育教学的研究者",
+   "type": "subclass",
+   "to": "教师角色",
+   "evidence": "（2）从教学与研究的关系看，教师应该是教育教学的研究者",
+   "printed_page": 184
+  },
+  {
+   "from": "课程的建设者和开发者",
+   "type": "subclass",
+   "to": "教师角色",
+   "evidence": "（3）从教学与课程的关系看，教师应该是课程的建设者和开发者",
+   "printed_page": 184
+  },
+  {
+   "from": "社区型的开放教师",
+   "type": "subclass",
+   "to": "教师角色",
+   "evidence": "（4）从学校与社区的关系看，教师应该是社区型的开放教师",
+   "printed_page": 184
+  },
+  {
+   "from": "教师教学行为的转变",
+   "type": "part_of",
+   "to": "教师观",
+   "evidence": "2. 教师教学行为的转变",
+   "printed_page": 184
+  },
+  {
+   "from": "尊重赞赏",
+   "type": "subclass",
+   "to": "教师教学行为的转变",
+   "evidence": "（1）在对待师生关系上，强调尊重、赞赏",
+   "printed_page": 184
+  },
+  {
+   "from": "帮助引导",
+   "type": "subclass",
+   "to": "教师教学行为的转变",
+   "evidence": "（2）在对待教学关系上，强调帮助、引导",
+   "printed_page": 184
+  },
+  {
+   "from": "反思（教师教学行为）",
+   "type": "subclass",
+   "to": "教师教学行为的转变",
+   "evidence": "（3）在对待自我上，强调反思",
+   "printed_page": 184
+  },
+  {
+   "from": "合作",
+   "type": "subclass",
+   "to": "教师教学行为的转变",
+   "evidence": "（4）在对待与其他教育者的关系上，强调合作",
+   "printed_page": 185
+  },
+  {
+   "from": "以学习者为中心",
+   "type": "subclass",
+   "to": "教学观",
+   "evidence": "教学从“以教育者为中心”转向“以学习者为中心”",
+   "printed_page": 185
+  },
+  {
+   "from": "教会学生学习",
+   "type": "subclass",
+   "to": "教学观",
+   "evidence": "2. 教学从“教会学生知识”转向“教会学生学习”",
+   "printed_page": 185
+  },
+  {
+   "from": "重结论的同时更重过程",
+   "type": "subclass",
+   "to": "教学观",
+   "evidence": "3. 教学从“重结论轻过程”转向“重结论的同时更重过程”",
+   "printed_page": 185
+  },
+  {
+   "from": "关注人",
+   "type": "subclass",
+   "to": "教学观",
+   "evidence": "4. 教学从“关注学科”转向“关注人”",
+   "printed_page": 185
+  },
+  {
+   "from": "发展性评价",
+   "type": "part_of",
+   "to": "评价观",
+   "evidence": "新课程改革所倡导的评价是发展性评价",
+   "printed_page": 185
+  },
+  {
+   "from": "发展性评价",
+   "type": "attribute",
+   "to": "发展性评价的基本内涵",
+   "evidence": "2. 发展性评价的基本内涵",
+   "printed_page": 186
+  },
+  {
+   "from": "评价的根本目的在于促进发展",
+   "type": "part_of",
+   "to": "发展性评价的基本内涵",
+   "evidence": "（1）评价的根本目的在于促进发展。",
+   "printed_page": 186
+  },
+  {
+   "from": "评价内容综合化",
+   "type": "part_of",
+   "to": "发展性评价的基本内涵",
+   "evidence": "（3）评价内容综合化。",
+   "printed_page": 186
+  },
+  {
+   "from": "评价标准分层化",
+   "type": "part_of",
+   "to": "发展性评价的基本内涵",
+   "evidence": "（4）评价标准分层化。",
+   "printed_page": 186
+  },
+  {
+   "from": "评价方式多样化",
+   "type": "part_of",
+   "to": "发展性评价的基本内涵",
+   "evidence": "（5）评价方式多样化。",
+   "printed_page": 186
+  },
+  {
+   "from": "评价主体多元化",
+   "type": "part_of",
+   "to": "发展性评价的基本内涵",
+   "evidence": "（6）评价主体多元化。",
+   "printed_page": 186
+  },
+  {
+   "from": "关注发展过程",
+   "type": "part_of",
+   "to": "发展性评价的基本内涵",
+   "evidence": "（7）关注发展过程。",
+   "printed_page": 186
+  },
+  {
+   "from": "发展性评价",
+   "type": "related",
+   "to": "素质教育",
+   "evidence": "五、建立与素质教育理念相一致的评价与考试制度",
+   "printed_page": 183
+  }
+ ]
+}

@@ -184,7 +184,7 @@ class _HistoryScreenState extends ConsumerState<HistoryScreen> {
                     children: [
                       Row(
                         children: [
-                          _buildModeTag(item.practiceMode ?? 'random'),
+                          _buildModeTag(item.practiceMode),
                           SizedBox(width: 8.w),
                           Text(
                             dateStr,
@@ -243,41 +243,89 @@ class _HistoryScreenState extends ConsumerState<HistoryScreen> {
     );
   }
 
-  Widget _buildModeTag(String mode) {
-    final modeMap = {
-      'random': (
-        '随机练习',
-        context.colors.accent,
-        context.colors.accentContainer,
-      ),
-      'wrong': (
-        '错题复习',
-        context.colors.error,
-        context.colors.errorContainer,
-      ),
-      'tag': (
-        '专项练习',
-        context.colors.warning,
-        context.colors.warningContainer,
-      ),
-    };
-    final config = modeMap[mode] ?? modeMap['random']!;
+  Widget _buildModeTag(String? mode) {
+    final tag = _modeTag(context, mode);
 
     return Container(
       padding: EdgeInsets.symmetric(horizontal: 8.w, vertical: 4.h),
       decoration: BoxDecoration(
-        color: config.$3,
+        color: tag.background,
         borderRadius: BorderRadius.circular(4.r),
       ),
       child: Text(
-        config.$1,
+        tag.label,
         style: TextStyle(
           fontSize: 12.sp,
           fontWeight: FontWeight.w600,
-          color: config.$2,
+          color: tag.foreground,
         ),
       ),
     );
+  }
+
+  /// 练习模式 → 标签文案 + 配色（`practice_sessions.practice_mode` 的有限集）。
+  ///
+  /// 兜底必须是**中性**的「其它练习」。以前未知模式一律回落成「随机练习」：
+  /// 外部导入（`import`，教综/粉笔批量导入）、AI 题集（`agent_set`）以及试卷
+  /// 模考（`exam`）的会话在历史里全标成随机，用户会以为系统把自己的练习记错。
+  /// 未知值宁可显示中性标签，也不要冒充某一种已知模式。
+  ///
+  /// 语义色只有四组，颜色只是辅助（同一组色会出现在两种模式上），区分靠文案。
+  ({String label, Color foreground, Color background}) _modeTag(
+    BuildContext context,
+    String? mode,
+  ) {
+    final colors = context.colors;
+    switch (mode?.trim()) {
+      case 'random':
+        return (
+          label: '随机练习',
+          foreground: colors.accent,
+          background: colors.accentContainer,
+        );
+      case 'wrong':
+        return (
+          label: '错题复习',
+          foreground: colors.error,
+          background: colors.errorContainer,
+        );
+      case 'tag':
+        return (
+          label: '专项练习',
+          foreground: colors.warning,
+          background: colors.warningContainer,
+        );
+      case 'exam':
+        return (
+          label: '模拟考试',
+          foreground: colors.success,
+          background: colors.successContainer,
+        );
+      case 'import':
+        return (
+          label: '外部导入',
+          foreground: colors.textSecondary,
+          background: colors.surfaceAlt,
+        );
+      case 'agent_set':
+        return (
+          label: 'AI 题集',
+          foreground: colors.accent,
+          background: colors.accentContainer,
+        );
+      case 'review':
+        return (
+          label: '记忆复习',
+          foreground: colors.success,
+          background: colors.successContainer,
+        );
+      default:
+        return (
+          label: '其它练习',
+          foreground: colors.textSecondary,
+          background: colors.surfaceAlt,
+        );
+    }
   }
 
   Widget _buildStatBadge(String text, Color color) {

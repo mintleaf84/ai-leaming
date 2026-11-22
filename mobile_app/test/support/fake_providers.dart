@@ -235,6 +235,9 @@ class FakePracticeRepository implements PracticeRepository {
   /// 每次提交带上来的「整场题序」（降级成本地会话时用来记全题序）。
   final List<List<String>?> submittedSessionQuestionIds = <List<String>?>[];
 
+  /// 每次提交带上来的练习模式（降级建本地会话时写进去的那个值）。
+  final List<String?> submittedModes = <String?>[];
+
   /// 被 `getSession` 加载过的会话 id（续练/错题本入口据此断言「进的是这一场」）。
   final List<String> loadedSessions = <String>[];
 
@@ -280,10 +283,12 @@ class FakePracticeRepository implements PracticeRepository {
     required String userAnswer,
     required int duration,
     List<String>? sessionQuestionIds,
+    String? mode,
   }) async {
     submitCalls++;
     submittedAnswers.add(userAnswer);
     submittedSessionQuestionIds.add(sessionQuestionIds);
+    submittedModes.add(mode);
     final error = submitError;
     if (error != null) throw error;
     return submitResponse;

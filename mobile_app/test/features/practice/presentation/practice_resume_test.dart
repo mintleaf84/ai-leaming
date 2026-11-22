@@ -708,7 +708,7 @@ void main() {
       expect(persisted()!.mode, 'review');
     });
 
-    test('两边都没有模式时：状态是「未知」（界面显示其它练习），不冒充随机', () async {
+    test('两边都没有模式时：状态是「未知」，断点也不写成 random', () async {
       repository.sessionMode = null;
       await container
           .read(practiceControllerProvider.notifier)
@@ -720,6 +720,28 @@ void main() {
         isNull,
         reason: '不知道就是不知道，界面按中性标签渲染',
       );
+      expect(
+        persisted()!.mode,
+        isNull,
+        reason: '断点里也不能补成 random：下次从首页续练会把假话当真',
+      );
+      expect(
+        persisted()!.toJson().containsKey('mode'),
+        isFalse,
+        reason: '未知模式连字段都不写，语义上就是「没记录」',
+      );
+    });
+
+    test('作答上报时带上当前模式（断网降级建本地会话要用）', () async {
+      final controller = container.read(practiceControllerProvider.notifier);
+      await controller.createSession(limit: 3, mode: 'review');
+      await flush();
+
+      controller.toggleAnswer('A');
+      await controller.submitCurrentAnswer();
+      await flush();
+
+      expect(repository.submittedModes, <String?>['review']);
     });
   });
 
@@ -821,7 +843,7 @@ void main() {
       expect(PracticeResume.decode(null), isNull);
     });
 
-    test('缺 savedAt / mode 时给默认值，不影响恢复', () {
+    test('缺 savedAt / mode 时不影响恢复：模式留 null（未知，不冒充 random）', () {
       final parsed = parse(<String, dynamic>{
         'sessionId': 's1',
         'answers': <Map<String, dynamic>>[],
@@ -829,9 +851,26 @@ void main() {
         'total': 8,
       });
       expect(parsed, isNotNull);
-      expect(parsed!.mode, 'random');
+      expect(
+        parsed!.mode,
+        isNull,
+        reason: '老断点不知道模式；补成 random 就是假话，续练会跟着显示随机',
+      );
       expect(parsed.answeredCount, 0);
       expect(parsed.startIndex, 1);
     });
+
+    test('未知模式不写进 JSON（避免下一步又被当成 random）', () {
+      final resume = PracticeResume(
+        sessionId: 's1',
+        answers: const <ResumeAnswer>[],
+        nextIndex: 0,
+        total: 3,
+        savedAt: DateTime(2026, 11, 22),
+      );
+      expect(resume.toJson().containsKey('mode'), isFalse);
+      expect(PracticeResume.fromJson(resume.toJson())!.mode, isNull);
+    });
+
   });
 }

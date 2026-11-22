@@ -301,6 +301,22 @@ void main() {
       expect(await store.localSessionMode('local_empty_mode'), isNull);
       expect(await store.localSessionMode('local_missing'), isNull);
     });
+
+    test('降级标记 offline-resume 不算练习模式（归一成 null）', () async {
+      await db.insert('local_sessions', <String, Object?>{
+        'local_id': 'local_agent_42',
+        'user_id': 'u1',
+        'mode': 'offline-resume',
+        'question_ids': '["1"]',
+        'started_at': nowMs(),
+      });
+
+      expect(
+        await store.localSessionMode('local_agent_42'),
+        isNull,
+        reason: '内部标记不能当模式上屏（界面会显示一个谁都不认识的取值）',
+      );
+    });
   });
 
   group('recordAnswer', () {

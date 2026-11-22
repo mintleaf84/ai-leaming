@@ -97,7 +97,9 @@ class PracticeController extends Notifier<PracticeSessionState> {
               ],
               nextIndex: _firstUnansweredIndex(),
               total: state.questions.length,
-              mode: _mode ?? 'random',
+              // 不知道就留 null：补成 `random` 会让「首页继续上次练习」把一场
+              // 考试/题集练习说成随机（假话），下次续练还会把它当真。
+              mode: _mode,
               userId: userId,
               legacyAnswered: _legacyAnswered,
               savedAt: DateTime.now(),
@@ -358,6 +360,9 @@ class PracticeController extends Notifier<PracticeSessionState> {
         sessionQuestionIds: <String>[
           for (final q in state.questions) q.id,
         ],
+        // 中途断网降级会建 `local_<服务端 id>` 这一场：模式得跟着写进去，
+        // 否则续练只能读到内部标记 `offline-resume`。
+        mode: _mode,
       );
 
       // 从后端响应获取正确性和正确答案

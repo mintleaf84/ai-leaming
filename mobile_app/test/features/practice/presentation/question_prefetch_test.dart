@@ -280,6 +280,7 @@ class _PagedPracticeRepository implements PracticeRepository {
     required String userAnswer,
     required int duration,
     List<String>? sessionQuestionIds,
+    String? mode,
   }) async {
     throw UnimplementedError();
   }

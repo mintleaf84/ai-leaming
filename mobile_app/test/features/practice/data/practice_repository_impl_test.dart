@@ -466,7 +466,11 @@ void main() {
 
       final ensured = store.ensuredSessions.single;
       expect(ensured['localId'], 'local_agent_42');
-      expect(ensured['mode'], 'offline-resume');
+      expect(
+        ensured['mode'],
+        'offline-resume',
+        reason: '调用方没说模式时才落内部标记（续练会归一成「未知」）',
+      );
       expect(
         ensured['questionIds'],
         <String>['1', '3', '5'],
@@ -487,6 +491,25 @@ void main() {
       );
 
       expect(store.ensuredSessions.single['questionIds'], <String>['3']);
+    });
+
+    test('降级建本地会话时写入真实模式（不是内部标记）', () async {
+      adapter.handler = (options) => offlineException(options);
+      store.questions['3'] = cachedQuestion;
+
+      await repository.submitAnswer(
+        sessionId: 'agent_42',
+        questionId: '3',
+        userAnswer: 'A',
+        duration: 0,
+        mode: 'review',
+      );
+
+      expect(
+        store.ensuredSessions.single['mode'],
+        'review',
+        reason: '断网续练时要能把「这一场是错题复习」还原出来，而不是只知道「降级过」',
+      );
     });
 
     test('同一题再次断网降级，幂等键保持不变', () async {

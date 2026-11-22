@@ -415,16 +415,30 @@ export async function genQrCode(): Promise<{
   qrContent: string;
 }> {
   const res = await fenbiRequest(`${QRCODE_BASE}/qrcode-login/api/gen_code`);
-  const json = await readJson<{ lgtoken?: string; codeContent?: string }>(
-    res,
-    `${QRCODE_BASE}/qrcode-login/api/gen_code`,
-  );
-  if (!json.lgtoken || !json.codeContent) {
+  // 实测响应是 { code:1, data:{ lgtoken, codeContent } }，字段在 data 包裹层里。
+  // 此前误读顶层，导致每个正常响应都被判为缺字段 → FenbiProtocolError → 502。
+  const json = await readJson<{
+    code?: number;
+    msg?: string;
+    data?: { lgtoken?: string; codeContent?: string };
+  }>(res, `${QRCODE_BASE}/qrcode-login/api/gen_code`);
+  const data = json.data;
+  if (!data?.lgtoken || !data?.codeContent) {
+    // 这次日志加在真正会出错的地方（读响应结构），不记 token 本身。
+    log.error(
+      "[fenbi] 二维码响应结构异常:",
+      JSON.stringify({
+        code: json.code ?? null,
+        hasData: Boolean(data),
+        hasLgtoken: Boolean(data?.lgtoken),
+        hasCodeContent: Boolean(data?.codeContent),
+      }),
+    );
     throw new FenbiProtocolError(
       "粉笔二维码接口返回缺少 lgtoken / codeContent",
     );
   }
-  return { lgtoken: json.lgtoken, qrContent: json.codeContent };
+  return { lgtoken: data.lgtoken, qrContent: data.codeContent };
 }
 
 /**

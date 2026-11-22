@@ -16,11 +16,14 @@ afterEach(() => {
 function stubFetch(payload: unknown) {
   vi.stubGlobal(
     "fetch",
-    vi.fn(async () => ({
-      ok: true,
-      status: 200,
-      text: async () => JSON.stringify(payload),
-    }) as Response),
+    vi.fn(
+      async () =>
+        ({
+          ok: true,
+          status: 200,
+          text: async () => JSON.stringify(payload),
+        }) as Response,
+    ),
   );
 }
 
@@ -31,7 +34,8 @@ describe("genQrCode", () => {
       msg: "",
       data: {
         lgtoken: "tok-123",
-        codeContent: "https://www.fenbi.com/depot/fenbi-scan-login/index.html?lgtoken=tok-123",
+        codeContent:
+          "https://www.fenbi.com/depot/fenbi-scan-login/index.html?lgtoken=tok-123",
       },
     });
 

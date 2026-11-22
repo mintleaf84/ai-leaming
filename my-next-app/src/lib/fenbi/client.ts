@@ -421,19 +421,19 @@ export async function genQrCode(): Promise<{
     code?: number;
     msg?: string;
     data?: { lgtoken?: string; codeContent?: string };
-  }>(
-    res,
-    `${QRCODE_BASE}/qrcode-login/api/gen_code`,
-  );
+  }>(res, `${QRCODE_BASE}/qrcode-login/api/gen_code`);
   const data = json.data;
   if (!data?.lgtoken || !data?.codeContent) {
     // 这次日志加在真正会出错的地方（读响应结构），不记 token 本身。
-    log.error("[fenbi] 二维码响应结构异常:", JSON.stringify({
-      code: json.code ?? null,
-      hasData: Boolean(data),
-      hasLgtoken: Boolean(data?.lgtoken),
-      hasCodeContent: Boolean(data?.codeContent),
-    }));
+    log.error(
+      "[fenbi] 二维码响应结构异常:",
+      JSON.stringify({
+        code: json.code ?? null,
+        hasData: Boolean(data),
+        hasLgtoken: Boolean(data?.lgtoken),
+        hasCodeContent: Boolean(data?.codeContent),
+      }),
+    );
     throw new FenbiProtocolError(
       "粉笔二维码接口返回缺少 lgtoken / codeContent",
     );

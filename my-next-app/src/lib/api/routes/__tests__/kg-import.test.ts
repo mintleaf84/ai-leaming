@@ -417,7 +417,10 @@ describe("POST /api/external/kg/import", () => {
       ],
     });
     expect(second.status).toBe(400);
-    const payload = (await second.json()) as { codes: string[]; issues: string[] };
+    const payload = (await second.json()) as {
+      codes: string[];
+      issues: string[];
+    };
     expect(payload.codes).toContain("prerequisite_cycle");
     expect(payload.issues.join("\n")).toContain("→");
     // 第二批一条都没写：仍只有第一次导入的 2 节点 1 边
@@ -465,7 +468,10 @@ describe("POST /api/external/kg/import", () => {
       ],
     });
     expect(second.status).toBe(400);
-    const payload = (await second.json()) as { codes: string[]; issues: string[] };
+    const payload = (await second.json()) as {
+      codes: string[];
+      issues: string[];
+    };
     expect(payload.codes).toContain("facet_prerequisite");
     expect(payload.issues.join("\n")).toContain("甲");
 

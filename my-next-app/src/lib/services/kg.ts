@@ -94,7 +94,9 @@ function assertImportMergesCleanly(input: {
   nodes: ReadonlyArray<NormalizedKgNode>;
   edges: ReadonlyArray<NormalizedKgEdge>;
 }): void {
-  const existingByKey = new Map(input.nodeRows.map((row) => [row.node_key, row]));
+  const existingByKey = new Map(
+    input.nodeRows.map((row) => [row.node_key, row]),
+  );
   const incomingEdgeKeys = new Set(
     input.edges.map((edge) => `${edge.from}\u0000${edge.to}\u0000${edge.type}`),
   );
@@ -102,7 +104,11 @@ function assertImportMergesCleanly(input: {
   const mergedPrerequisite: Array<{ from: string; to: string }> = [];
   for (const row of input.edgeRows) {
     if (row.type !== "prerequisite") continue;
-    if (incomingEdgeKeys.has(`${row.from_key}\u0000${row.to_key}\u0000${row.type}`)) {
+    if (
+      incomingEdgeKeys.has(
+        `${row.from_key}\u0000${row.to_key}\u0000${row.type}`,
+      )
+    ) {
       continue; // 本批覆盖这条边，以本批为准
     }
     mergedPrerequisite.push({ from: row.from_key, to: row.to_key });
@@ -115,7 +121,8 @@ function assertImportMergesCleanly(input: {
 
   const facetChanges = input.nodes.filter(
     (node) =>
-      node.kind === "facet" && existingByKey.get(node.nodeKey)?.kind !== "facet",
+      node.kind === "facet" &&
+      existingByKey.get(node.nodeKey)?.kind !== "facet",
   );
   if (facetChanges.length > 0) {
     const changing = new Set(facetChanges.map((node) => node.nodeKey));
@@ -187,7 +194,8 @@ export async function previewKgImport(input: {
       `${edge.from}\u0000${edge.to}\u0000${edge.type}`,
     );
     if (!existing) wouldCreateEdges += 1;
-    else if (!sameEdge(existing, edge, input.schemaVersion)) wouldUpdateEdges += 1;
+    else if (!sameEdge(existing, edge, input.schemaVersion))
+      wouldUpdateEdges += 1;
   }
 
   return {
@@ -456,8 +464,7 @@ export async function findMissingKgNodeKeys(
 
 /** 导入/映射共用的 DB 执行器：真库或事务句柄 */
 type KgDbExecutor =
-  | typeof drizzleDb
-  | Parameters<Parameters<typeof drizzleDb.transaction>[0]>[0];
+  typeof drizzleDb | Parameters<Parameters<typeof drizzleDb.transaction>[0]>[0];
 
 /**
  * 题目归属检查：返回"当前用户不可写的题目 id"。

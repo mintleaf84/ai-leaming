@@ -25,10 +25,7 @@ import {
 import { indexQuestion } from "@/lib/services/question-vector-index";
 import { touchesEmbeddingText } from "@/lib/services/question-index-policy";
 import { parsePageParams } from "@/lib/api/pagination";
-import {
-  attachQuestionNodes,
-  findMissingKgNodeKeys,
-} from "@/lib/services/kg";
+import { attachQuestionNodes, findMissingKgNodeKeys } from "@/lib/services/kg";
 import { isNodeKeyInChapter, normalizeNodeKey } from "@/lib/kg/validate";
 import {
   DryRunQuerySchema,
@@ -981,7 +978,8 @@ app.openapi(questionNodesRoute, async (c) => {
   if (foreignChapterKeys.length > 0) {
     return c.json(
       {
-        error: "节点 key 的章前缀与 chapter 不一致（整批未写入）：按所属章分开映射",
+        error:
+          "节点 key 的章前缀与 chapter 不一致（整批未写入）：按所属章分开映射",
         nodeKeys: foreignChapterKeys,
       },
       400,
@@ -1011,7 +1009,10 @@ app.openapi(questionNodesRoute, async (c) => {
   }
 
   // 2) 题目状态/归属检查与写入同一事务：检查通过后题目被标 flagged 也写不进去
-  const result = await attachQuestionNodes(identity.effectiveUserId, normalized);
+  const result = await attachQuestionNodes(
+    identity.effectiveUserId,
+    normalized,
+  );
   if (result.forbidden.length > 0) {
     return c.json(
       {

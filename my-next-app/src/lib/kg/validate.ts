@@ -170,7 +170,9 @@ export function findPrerequisiteCycle(
 
     const path: string[] = [start];
     color.set(start, GRAY);
-    const stack: Array<{ node: string; next: number }> = [{ node: start, next: 0 }];
+    const stack: Array<{ node: string; next: number }> = [
+      { node: start, next: 0 },
+    ];
 
     while (stack.length > 0) {
       const frame = stack[stack.length - 1];

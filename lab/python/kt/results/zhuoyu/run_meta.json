@@ -1,818 +1,547 @@
 {
-  "splits": {
-    "time|tag": {
-      "n_train": 1861,
-      "n_test": 465,
-      "test_pos_rate": 0.7827956989247312,
-      "test_skill_seen_in_train": 0.7161290322580646,
-      "test_items_seen_in_train": 0.6731182795698925,
-      "n_test_skills": 230
-    },
-    "time|tag_chapter": {
-      "n_train": 1861,
-      "n_test": 465,
-      "test_pos_rate": 0.7827956989247312,
-      "test_skill_seen_in_train": 1.0,
-      "test_items_seen_in_train": 0.6731182795698925,
-      "n_test_skills": 5
-    },
-    "skill_strat|tag": {
-      "n_train": 1964,
-      "n_test": 362,
-      "test_pos_rate": 0.7624309392265194,
-      "test_skill_seen_in_train": 1.0,
-      "test_items_seen_in_train": 0.9502762430939227,
-      "n_test_skills": 92
-    },
-    "skill_strat|tag_chapter": {
-      "n_train": 1862,
-      "n_test": 464,
-      "test_pos_rate": 0.771551724137931,
-      "test_skill_seen_in_train": 1.0,
-      "test_items_seen_in_train": 0.9073275862068966,
-      "n_test_skills": 5
-    },
-    "item_holdout|tag": {
-      "n_train": 1851,
-      "n_test": 475,
-      "test_pos_rate": 0.7389473684210527,
-      "test_skill_seen_in_train": 0.76,
-      "test_items_seen_in_train": 0.0,
-      "n_test_skills": 96
-    },
-    "item_holdout|tag_chapter": {
-      "n_train": 1886,
-      "n_test": 440,
-      "test_pos_rate": 0.7886363636363637,
-      "test_skill_seen_in_train": 1.0,
-      "test_items_seen_in_train": 0.0,
-      "n_test_skills": 5
-    }
+ "splits": {
+  "time|tag": {
+   "n_train": 1861,
+   "n_test": 465,
+   "test_pos_rate": 0.7827956989247312,
+   "test_skill_seen_in_train": 0.7161290322580646,
+   "test_items_seen_in_train": 0.6731182795698925,
+   "n_test_skills": 230
   },
-  "inner_selection": {
-    "time|tag|baseline-acc": {
-      "chosen": {
-        "alpha": 5.0
-      },
-      "candidates": [
-        {
-          "logloss": 0.4885123962627393,
-          "params": {
-            "alpha": 5.0
-          }
-        },
-        {
-          "logloss": 0.4909093868152534,
-          "params": {
-            "alpha": 2.0
-          }
-        },
-        {
-          "logloss": 0.4958591839328039,
-          "params": {
-            "alpha": 1.0
-          }
-        },
-        {
-          "logloss": 0.5043694638986079,
-          "params": {
-            "alpha": 0.5
-          }
-        }
-      ]
-    },
-    "time|tag|rolling-beta": {
-      "chosen": {
-        "k": 5
-      },
-      "candidates": [
-        {
-          "logloss": 0.49572334356389547,
-          "params": {
-            "k": 5
-          }
-        },
-        {
-          "logloss": 0.4971703349651144,
-          "params": {
-            "k": 10
-          }
-        },
-        {
-          "logloss": 0.507211680318924,
-          "params": {
-            "k": 3
-          }
-        }
-      ]
-    },
-    "time|tag|elo-skill": {
-      "chosen": {
-        "K": 32.0
-      },
-      "candidates": [
-        {
-          "logloss": 0.46802948676256173,
-          "params": {
-            "K": 32.0
-          }
-        },
-        {
-          "logloss": 0.46887369276502194,
-          "params": {
-            "K": 16.0
-          }
-        },
-        {
-          "logloss": 0.47137251032268784,
-          "params": {
-            "K": 8.0
-          }
-        }
-      ]
-    },
-    "time|elo-item(ref)": {
-      "chosen": {
-        "K": 32.0
-      },
-      "candidates": [
-        {
-          "logloss": 0.46596965896489,
-          "params": {
-            "K": 32.0
-          }
-        },
-        {
-          "logloss": 0.46625199195060935,
-          "params": {
-            "K": 16.0
-          }
-        },
-        {
-          "logloss": 0.46900416984298876,
-          "params": {
-            "K": 8.0
-          }
-        }
-      ]
-    },
-    "time|type-prior(ref)": {
-      "chosen": {
-        "alpha": 5.0
-      },
-      "candidates": [
-        {
-          "logloss": 0.4857957480934301,
-          "params": {
-            "alpha": 5.0
-          }
-        },
-        {
-          "logloss": 0.48591933048999714,
-          "params": {
-            "alpha": 2.0
-          }
-        },
-        {
-          "logloss": 0.4859618754807493,
-          "params": {
-            "alpha": 1.0
-          }
-        },
-        {
-          "logloss": 0.4859834119861509,
-          "params": {
-            "alpha": 0.5
-          }
-        }
-      ]
-    },
-    "time|global-recency(ref)": {
-      "chosen": {
-        "k": 50
-      },
-      "candidates": [
-        {
-          "logloss": 0.4704060904297921,
-          "params": {
-            "k": 50
-          }
-        },
-        {
-          "logloss": 0.4759295820009342,
-          "params": {
-            "k": 20
-          }
-        },
-        {
-          "logloss": 0.5031181192479399,
-          "params": {
-            "k": 10
-          }
-        },
-        {
-          "logloss": 0.5155538381689588,
-          "params": {
-            "k": 5
-          }
-        }
-      ]
-    },
-    "time|tag_chapter|baseline-acc": {
-      "chosen": {
-        "alpha": 5.0
-      },
-      "candidates": [
-        {
-          "logloss": 0.5091683460984086,
-          "params": {
-            "alpha": 5.0
-          }
-        },
-        {
-          "logloss": 0.5127385338738294,
-          "params": {
-            "alpha": 2.0
-          }
-        },
-        {
-          "logloss": 0.5141099913264401,
-          "params": {
-            "alpha": 1.0
-          }
-        },
-        {
-          "logloss": 0.5148351701007768,
-          "params": {
-            "alpha": 0.5
-          }
-        }
-      ]
-    },
-    "time|tag_chapter|rolling-beta": {
-      "chosen": {
-        "k": 10
-      },
-      "candidates": [
-        {
-          "logloss": 0.48397955940118226,
-          "params": {
-            "k": 10
-          }
-        },
-        {
-          "logloss": 0.49627871091952613,
-          "params": {
-            "k": 5
-          }
-        },
-        {
-          "logloss": 0.5076296210904055,
-          "params": {
-            "k": 3
-          }
-        }
-      ]
-    },
-    "time|tag_chapter|elo-skill": {
-      "chosen": {
-        "K": 8.0
-      },
-      "candidates": [
-        {
-          "logloss": 0.46473335598472326,
-          "params": {
-            "K": 8.0
-          }
-        },
-        {
-          "logloss": 0.46491529562276523,
-          "params": {
-            "K": 16.0
-          }
-        },
-        {
-          "logloss": 0.4696086893324448,
-          "params": {
-            "K": 32.0
-          }
-        }
-      ]
-    },
-    "time|tag_chapter|bkt-lite": {
-      "chosen": {},
-      "candidates": []
-    },
-    "skill_strat|tag|baseline-acc": {
-      "chosen": {
-        "alpha": 5.0
-      },
-      "candidates": [
-        {
-          "logloss": 0.5337230095204052,
-          "params": {
-            "alpha": 5.0
-          }
-        },
-        {
-          "logloss": 0.5415865675692187,
-          "params": {
-            "alpha": 2.0
-          }
-        },
-        {
-          "logloss": 0.5548242501702754,
-          "params": {
-            "alpha": 1.0
-          }
-        },
-        {
-          "logloss": 0.5752211246151246,
-          "params": {
-            "alpha": 0.5
-          }
-        }
-      ]
-    },
-    "skill_strat|tag|rolling-beta": {
-      "chosen": {
-        "k": 10
-      },
-      "candidates": [
-        {
-          "logloss": 0.5871120197334546,
-          "params": {
-            "k": 10
-          }
-        },
-        {
-          "logloss": 0.5984343431116287,
-          "params": {
-            "k": 3
-          }
-        },
-        {
-          "logloss": 0.5991146081731865,
-          "params": {
-            "k": 5
-          }
-        }
-      ]
-    },
-    "skill_strat|tag|elo-skill": {
-      "chosen": {
-        "K": 32.0
-      },
-      "candidates": [
-        {
-          "logloss": 0.5161259808693238,
-          "params": {
-            "K": 32.0
-          }
-        },
-        {
-          "logloss": 0.5224702509657536,
-          "params": {
-            "K": 16.0
-          }
-        },
-        {
-          "logloss": 0.5341084411539616,
-          "params": {
-            "K": 8.0
-          }
-        }
-      ]
-    },
-    "skill_strat|elo-item(ref)": {
-      "chosen": {
-        "K": 32.0
-      },
-      "candidates": [
-        {
-          "logloss": 0.5137499358662229,
-          "params": {
-            "K": 32.0
-          }
-        },
-        {
-          "logloss": 0.5228396605493858,
-          "params": {
-            "K": 16.0
-          }
-        },
-        {
-          "logloss": 0.534678506979085,
-          "params": {
-            "K": 8.0
-          }
-        }
-      ]
-    },
-    "skill_strat|type-prior(ref)": {
-      "chosen": {
-        "alpha": 5.0
-      },
-      "candidates": [
-        {
-          "logloss": 0.5405170774307931,
-          "params": {
-            "alpha": 5.0
-          }
-        },
-        {
-          "logloss": 0.5405358522477751,
-          "params": {
-            "alpha": 2.0
-          }
-        },
-        {
-          "logloss": 0.5405427140644804,
-          "params": {
-            "alpha": 1.0
-          }
-        },
-        {
-          "logloss": 0.5405462651101244,
-          "params": {
-            "alpha": 0.5
-          }
-        }
-      ]
-    },
-    "skill_strat|global-recency(ref)": {
-      "chosen": {
-        "k": 50
-      },
-      "candidates": [
-        {
-          "logloss": 0.5262934014001417,
-          "params": {
-            "k": 50
-          }
-        },
-        {
-          "logloss": 0.5327885370914431,
-          "params": {
-            "k": 20
-          }
-        },
-        {
-          "logloss": 0.5448243748168913,
-          "params": {
-            "k": 10
-          }
-        },
-        {
-          "logloss": 0.5552394802893177,
-          "params": {
-            "k": 5
-          }
-        }
-      ]
-    },
-    "skill_strat|tag_chapter|baseline-acc": {
-      "chosen": {
-        "alpha": 5.0
-      },
-      "candidates": [
-        {
-          "logloss": 0.544155177095272,
-          "params": {
-            "alpha": 5.0
-          }
-        },
-        {
-          "logloss": 0.5441560458381492,
-          "params": {
-            "alpha": 2.0
-          }
-        },
-        {
-          "logloss": 0.5441564679426734,
-          "params": {
-            "alpha": 1.0
-          }
-        },
-        {
-          "logloss": 0.5441567047534814,
-          "params": {
-            "alpha": 0.5
-          }
-        }
-      ]
-    },
-    "skill_strat|tag_chapter|rolling-beta": {
-      "chosen": {
-        "k": 10
-      },
-      "candidates": [
-        {
-          "logloss": 0.5600272552797211,
-          "params": {
-            "k": 10
-          }
-        },
-        {
-          "logloss": 0.5603919091544848,
-          "params": {
-            "k": 3
-          }
-        },
-        {
-          "logloss": 0.563721105847344,
-          "params": {
-            "k": 5
-          }
-        }
-      ]
-    },
-    "skill_strat|tag_chapter|elo-skill": {
-      "chosen": {
-        "K": 32.0
-      },
-      "candidates": [
-        {
-          "logloss": 0.5289272627505797,
-          "params": {
-            "K": 32.0
-          }
-        },
-        {
-          "logloss": 0.531196322595034,
-          "params": {
-            "K": 16.0
-          }
-        },
-        {
-          "logloss": 0.5416741625110747,
-          "params": {
-            "K": 8.0
-          }
-        }
-      ]
-    },
-    "skill_strat|tag_chapter|bkt-lite": {
-      "chosen": {},
-      "candidates": []
-    },
-    "item_holdout|tag|baseline-acc": {
-      "chosen": {
-        "alpha": 5.0
-      },
-      "candidates": [
-        {
-          "logloss": 0.5291691355330347,
-          "params": {
-            "alpha": 5.0
-          }
-        },
-        {
-          "logloss": 0.5391274473882361,
-          "params": {
-            "alpha": 2.0
-          }
-        },
-        {
-          "logloss": 0.5537264093553702,
-          "params": {
-            "alpha": 1.0
-          }
-        },
-        {
-          "logloss": 0.5749577817717226,
-          "params": {
-            "alpha": 0.5
-          }
-        }
-      ]
-    },
-    "item_holdout|tag|rolling-beta": {
-      "chosen": {
-        "k": 10
-      },
-      "candidates": [
-        {
-          "logloss": 0.5916961489970569,
-          "params": {
-            "k": 10
-          }
-        },
-        {
-          "logloss": 0.5958885450507581,
-          "params": {
-            "k": 3
-          }
-        },
-        {
-          "logloss": 0.6025894218825336,
-          "params": {
-            "k": 5
-          }
-        }
-      ]
-    },
-    "item_holdout|tag|elo-skill": {
-      "chosen": {
-        "K": 32.0
-      },
-      "candidates": [
-        {
-          "logloss": 0.5079224136740768,
-          "params": {
-            "K": 32.0
-          }
-        },
-        {
-          "logloss": 0.5148085549810031,
-          "params": {
-            "K": 16.0
-          }
-        },
-        {
-          "logloss": 0.5270068588361139,
-          "params": {
-            "K": 8.0
-          }
-        }
-      ]
-    },
-    "item_holdout|elo-item(ref)": {
-      "chosen": {
-        "K": 32.0
-      },
-      "candidates": [
-        {
-          "logloss": 0.5067001402482829,
-          "params": {
-            "K": 32.0
-          }
-        },
-        {
-          "logloss": 0.516683631178735,
-          "params": {
-            "K": 16.0
-          }
-        },
-        {
-          "logloss": 0.5286870311497616,
-          "params": {
-            "K": 8.0
-          }
-        }
-      ]
-    },
-    "item_holdout|type-prior(ref)": {
-      "chosen": {
-        "alpha": 5.0
-      },
-      "candidates": [
-        {
-          "logloss": 0.532122208044558,
-          "params": {
-            "alpha": 5.0
-          }
-        },
-        {
-          "logloss": 0.532141763441355,
-          "params": {
-            "alpha": 2.0
-          }
-        },
-        {
-          "logloss": 0.5321487497624918,
-          "params": {
-            "alpha": 1.0
-          }
-        },
-        {
-          "logloss": 0.532152336643298,
-          "params": {
-            "alpha": 0.5
-          }
-        }
-      ]
-    },
-    "item_holdout|global-recency(ref)": {
-      "chosen": {
-        "k": 50
-      },
-      "candidates": [
-        {
-          "logloss": 0.5182821384970826,
-          "params": {
-            "k": 50
-          }
-        },
-        {
-          "logloss": 0.522311829344652,
-          "params": {
-            "k": 20
-          }
-        },
-        {
-          "logloss": 0.5381642575180811,
-          "params": {
-            "k": 10
-          }
-        },
-        {
-          "logloss": 0.5536593690732264,
-          "params": {
-            "k": 5
-          }
-        }
-      ]
-    },
-    "item_holdout|tag_chapter|baseline-acc": {
-      "chosen": {
-        "alpha": 5.0
-      },
-      "candidates": [
-        {
-          "logloss": 0.5493838463535965,
-          "params": {
-            "alpha": 5.0
-          }
-        },
-        {
-          "logloss": 0.5493842364388126,
-          "params": {
-            "alpha": 2.0
-          }
-        },
-        {
-          "logloss": 0.5493845031170368,
-          "params": {
-            "alpha": 1.0
-          }
-        },
-        {
-          "logloss": 0.549384663760757,
-          "params": {
-            "alpha": 0.5
-          }
-        }
-      ]
-    },
-    "item_holdout|tag_chapter|rolling-beta": {
-      "chosen": {
-        "k": 10
-      },
-      "candidates": [
-        {
-          "logloss": 0.5573445608216386,
-          "params": {
-            "k": 10
-          }
-        },
-        {
-          "logloss": 0.5628863804275035,
-          "params": {
-            "k": 5
-          }
-        },
-        {
-          "logloss": 0.5683644271449895,
-          "params": {
-            "k": 3
-          }
-        }
-      ]
-    },
-    "item_holdout|tag_chapter|elo-skill": {
-      "chosen": {
-        "K": 32.0
-      },
-      "candidates": [
-        {
-          "logloss": 0.5291443790090774,
-          "params": {
-            "K": 32.0
-          }
-        },
-        {
-          "logloss": 0.5329372091836376,
-          "params": {
-            "K": 16.0
-          }
-        },
-        {
-          "logloss": 0.5437497394678543,
-          "params": {
-            "K": 8.0
-          }
-        }
-      ]
-    },
-    "item_holdout|tag_chapter|bkt-lite": {
-      "chosen": {},
-      "candidates": []
-    }
+  "skill_strat|tag": {
+   "n_train": 1964,
+   "n_test": 362,
+   "test_pos_rate": 0.7624309392265194,
+   "test_skill_seen_in_train": 1.0,
+   "test_items_seen_in_train": 0.9502762430939227,
+   "n_test_skills": 92
   },
-  "args": {
-    "attempts": "results/zhuoyu/attempts.csv",
-    "grans": ["tag", "tag_chapter", "kaodian", "node"],
-    "splits": ["time", "skill_strat", "item_holdout"]
+  "item_holdout|tag": {
+   "n_train": 1851,
+   "n_test": 475,
+   "test_pos_rate": 0.7389473684210527,
+   "test_skill_seen_in_train": 0.76,
+   "test_items_seen_in_train": 0.0,
+   "n_test_skills": 96
   }
+ },
+ "inner_selection": {
+  "time|tag|baseline-acc": {
+   "chosen": {
+    "alpha": 5.0
+   },
+   "candidates": [
+    {
+     "logloss": 0.4885123962627393,
+     "params": {
+      "alpha": 5.0
+     }
+    },
+    {
+     "logloss": 0.4909093868152534,
+     "params": {
+      "alpha": 2.0
+     }
+    },
+    {
+     "logloss": 0.49585918393280387,
+     "params": {
+      "alpha": 1.0
+     }
+    },
+    {
+     "logloss": 0.5043694638986079,
+     "params": {
+      "alpha": 0.5
+     }
+    }
+   ]
+  },
+  "time|tag|rolling-beta": {
+   "chosen": {
+    "k": 5
+   },
+   "candidates": [
+    {
+     "logloss": 0.49572334356389547,
+     "params": {
+      "k": 5
+     }
+    },
+    {
+     "logloss": 0.4971703349651144,
+     "params": {
+      "k": 10
+     }
+    },
+    {
+     "logloss": 0.507211680318924,
+     "params": {
+      "k": 3
+     }
+    }
+   ]
+  },
+  "time|tag|elo-skill": {
+   "chosen": {
+    "K": 32.0
+   },
+   "candidates": [
+    {
+     "logloss": 0.46802948676256173,
+     "params": {
+      "K": 32.0
+     }
+    },
+    {
+     "logloss": 0.468873692765022,
+     "params": {
+      "K": 16.0
+     }
+    },
+    {
+     "logloss": 0.47137251032268795,
+     "params": {
+      "K": 8.0
+     }
+    }
+   ]
+  },
+  "time|elo-item(ref)": {
+   "chosen": {
+    "K": 32.0
+   },
+   "candidates": [
+    {
+     "logloss": 0.46596965896489,
+     "params": {
+      "K": 32.0
+     }
+    },
+    {
+     "logloss": 0.46625199195060935,
+     "params": {
+      "K": 16.0
+     }
+    },
+    {
+     "logloss": 0.4690041698429888,
+     "params": {
+      "K": 8.0
+     }
+    }
+   ]
+  },
+  "time|type-prior(ref)": {
+   "chosen": {
+    "alpha": 5.0
+   },
+   "candidates": [
+    {
+     "logloss": 0.4857957480934301,
+     "params": {
+      "alpha": 5.0
+     }
+    },
+    {
+     "logloss": 0.48591933048999714,
+     "params": {
+      "alpha": 2.0
+     }
+    },
+    {
+     "logloss": 0.4859618754807493,
+     "params": {
+      "alpha": 1.0
+     }
+    },
+    {
+     "logloss": 0.4859834119861509,
+     "params": {
+      "alpha": 0.5
+     }
+    }
+   ]
+  },
+  "time|global-recency(ref)": {
+   "chosen": {
+    "k": 50
+   },
+   "candidates": [
+    {
+     "logloss": 0.4704060904297921,
+     "params": {
+      "k": 50
+     }
+    },
+    {
+     "logloss": 0.4759295820009342,
+     "params": {
+      "k": 20
+     }
+    },
+    {
+     "logloss": 0.5031181192479399,
+     "params": {
+      "k": 10
+     }
+    },
+    {
+     "logloss": 0.5155538381689588,
+     "params": {
+      "k": 5
+     }
+    }
+   ]
+  },
+  "skill_strat|tag|baseline-acc": {
+   "chosen": {
+    "alpha": 5.0
+   },
+   "candidates": [
+    {
+     "logloss": 0.5337230095204052,
+     "params": {
+      "alpha": 5.0
+     }
+    },
+    {
+     "logloss": 0.5415865675692187,
+     "params": {
+      "alpha": 2.0
+     }
+    },
+    {
+     "logloss": 0.5548242501702754,
+     "params": {
+      "alpha": 1.0
+     }
+    },
+    {
+     "logloss": 0.5752211246151246,
+     "params": {
+      "alpha": 0.5
+     }
+    }
+   ]
+  },
+  "skill_strat|tag|rolling-beta": {
+   "chosen": {
+    "k": 10
+   },
+   "candidates": [
+    {
+     "logloss": 0.5871120197334546,
+     "params": {
+      "k": 10
+     }
+    },
+    {
+     "logloss": 0.5984343431116288,
+     "params": {
+      "k": 3
+     }
+    },
+    {
+     "logloss": 0.5991146081731865,
+     "params": {
+      "k": 5
+     }
+    }
+   ]
+  },
+  "skill_strat|tag|elo-skill": {
+   "chosen": {
+    "K": 32.0
+   },
+   "candidates": [
+    {
+     "logloss": 0.5161259808693238,
+     "params": {
+      "K": 32.0
+     }
+    },
+    {
+     "logloss": 0.5224702509657536,
+     "params": {
+      "K": 16.0
+     }
+    },
+    {
+     "logloss": 0.5341084411539616,
+     "params": {
+      "K": 8.0
+     }
+    }
+   ]
+  },
+  "skill_strat|elo-item(ref)": {
+   "chosen": {
+    "K": 32.0
+   },
+   "candidates": [
+    {
+     "logloss": 0.5137499358662229,
+     "params": {
+      "K": 32.0
+     }
+    },
+    {
+     "logloss": 0.5228396605493858,
+     "params": {
+      "K": 16.0
+     }
+    },
+    {
+     "logloss": 0.534678506979085,
+     "params": {
+      "K": 8.0
+     }
+    }
+   ]
+  },
+  "skill_strat|type-prior(ref)": {
+   "chosen": {
+    "alpha": 5.0
+   },
+   "candidates": [
+    {
+     "logloss": 0.5405170774307931,
+     "params": {
+      "alpha": 5.0
+     }
+    },
+    {
+     "logloss": 0.5405358522477751,
+     "params": {
+      "alpha": 2.0
+     }
+    },
+    {
+     "logloss": 0.5405427140644804,
+     "params": {
+      "alpha": 1.0
+     }
+    },
+    {
+     "logloss": 0.5405462651101245,
+     "params": {
+      "alpha": 0.5
+     }
+    }
+   ]
+  },
+  "skill_strat|global-recency(ref)": {
+   "chosen": {
+    "k": 50
+   },
+   "candidates": [
+    {
+     "logloss": 0.5262934014001417,
+     "params": {
+      "k": 50
+     }
+    },
+    {
+     "logloss": 0.5327885370914431,
+     "params": {
+      "k": 20
+     }
+    },
+    {
+     "logloss": 0.5448243748168913,
+     "params": {
+      "k": 10
+     }
+    },
+    {
+     "logloss": 0.5552394802893178,
+     "params": {
+      "k": 5
+     }
+    }
+   ]
+  },
+  "item_holdout|tag|baseline-acc": {
+   "chosen": {
+    "alpha": 5.0
+   },
+   "candidates": [
+    {
+     "logloss": 0.5433104928502083,
+     "params": {
+      "alpha": 5.0
+     }
+    },
+    {
+     "logloss": 0.5549275329187782,
+     "params": {
+      "alpha": 2.0
+     }
+    },
+    {
+     "logloss": 0.5683058457173551,
+     "params": {
+      "alpha": 1.0
+     }
+    },
+    {
+     "logloss": 0.5852646684474311,
+     "params": {
+      "alpha": 0.5
+     }
+    }
+   ]
+  },
+  "item_holdout|tag|rolling-beta": {
+   "chosen": {
+    "k": 3
+   },
+   "candidates": [
+    {
+     "logloss": 0.5768799423553255,
+     "params": {
+      "k": 3
+     }
+    },
+    {
+     "logloss": 0.5826248784813497,
+     "params": {
+      "k": 10
+     }
+    },
+    {
+     "logloss": 0.5859612736929363,
+     "params": {
+      "k": 5
+     }
+    }
+   ]
+  },
+  "item_holdout|tag|elo-skill": {
+   "chosen": {
+    "K": 32.0
+   },
+   "candidates": [
+    {
+     "logloss": 0.5127844423958802,
+     "params": {
+      "K": 32.0
+     }
+    },
+    {
+     "logloss": 0.5177163056108081,
+     "params": {
+      "K": 16.0
+     }
+    },
+    {
+     "logloss": 0.5283334263668396,
+     "params": {
+      "K": 8.0
+     }
+    }
+   ]
+  },
+  "item_holdout|elo-item(ref)": {
+   "chosen": {
+    "K": 32.0
+   },
+   "candidates": [
+    {
+     "logloss": 0.5118958466851753,
+     "params": {
+      "K": 32.0
+     }
+    },
+    {
+     "logloss": 0.5191710214562925,
+     "params": {
+      "K": 16.0
+     }
+    },
+    {
+     "logloss": 0.5295749261876653,
+     "params": {
+      "K": 8.0
+     }
+    }
+   ]
+  },
+  "item_holdout|type-prior(ref)": {
+   "chosen": {
+    "alpha": 5.0
+   },
+   "candidates": [
+    {
+     "logloss": 0.5348274396410093,
+     "params": {
+      "alpha": 5.0
+     }
+    },
+    {
+     "logloss": 0.5350177605639257,
+     "params": {
+      "alpha": 2.0
+     }
+    },
+    {
+     "logloss": 0.5350895776672904,
+     "params": {
+      "alpha": 1.0
+     }
+    },
+    {
+     "logloss": 0.5351273070561645,
+     "params": {
+      "alpha": 0.5
+     }
+    }
+   ]
+  },
+  "item_holdout|global-recency(ref)": {
+   "chosen": {
+    "k": 50
+   },
+   "candidates": [
+    {
+     "logloss": 0.5181305587077965,
+     "params": {
+      "k": 50
+     }
+    },
+    {
+     "logloss": 0.5215762333960867,
+     "params": {
+      "k": 20
+     }
+    },
+    {
+     "logloss": 0.5413815987037537,
+     "params": {
+      "k": 10
+     }
+    },
+    {
+     "logloss": 0.5506883350914195,
+     "params": {
+      "k": 5
+     }
+    }
+   ]
+  }
+ },
+ "args": {
+  "attempts": "results/zhuoyu/attempts.csv",
+  "grans": [
+   "tag",
+   "kaodian",
+   "node"
+  ],
+  "splits": [
+   "time",
+   "skill_strat",
+   "item_holdout"
+  ]
+ }
 }

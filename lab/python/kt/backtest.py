@@ -17,6 +17,7 @@
 
 import argparse
 import json
+import math
 import os
 import sys
 import itertools
@@ -24,7 +25,7 @@ import numpy as np
 import pandas as pd
 
 from sklearn.metrics import roc_auc_score, log_loss
-from sklearn.model_selection import StratifiedKFold
+from sklearn.model_selection import StratifiedKFold, GroupKFold
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 RES = os.path.join(HERE, "results")
@@ -299,6 +300,14 @@ def inner_folds(train, mode, col, seed=SEED):
     if mode == "time":
         cut = int(round(len(train) * 0.8))
         return [(train.iloc[:cut], train.iloc[cut:])]
+    if mode == "item_holdout":
+        # 同一道题的多次作答不能同时进内层训练/验证：否则 elo-item 选参时
+        # 已经见过验证题的难度，与外层"题目从未出现"的口径不一致。
+        n_groups = train["item"].nunique() if "item" in train.columns else 0
+        if n_groups >= 5:
+            gkf = GroupKFold(n_splits=5)
+            groups = train["item"].astype(str) if "item" in train.columns else train.index.astype(str)
+            return [(train.iloc[tr], train.iloc[va]) for tr, va in gkf.split(train, groups=groups)]
     skf = StratifiedKFold(n_splits=5, shuffle=True, random_state=seed)
     folds, y = [], train["correct"].astype(int).values
     strat = train[col].astype(str) + "|" + train["correct"].astype(str)
@@ -580,6 +589,9 @@ def main():
                     "logloss": m["logloss"], "ll_lo": ll_ci[0], "ll_hi": ll_ci[1],
                     "brier": m["brier"], "brier_lo": br_ci[0], "brier_hi": br_ci[1],
                     "params": json.dumps(params, ensure_ascii=False), "status": "ok",
+                    # 动态模型在非 time 切分上会消费训练段里"未来"的作答，
+                    # 只能当离线非在线口径；Go/No-Go 只看 time 切分。
+                    "online_valid": bool(split_name == "time" or name in ("baseline-acc", "type-prior(ref)")),
                 })
 
             # 差值放在第二遍算：此时 refs（global-recency）已就位
@@ -600,13 +612,23 @@ def main():
                                          split_name, gran, "global-recency(ref)",
                                          "vs_baseline-acc"))
 
+    def _json_clean(obj):
+        """非有限浮点（NaN/Inf）写成 null，标准 JSON 消费者才不会整文件解析失败。"""
+        if isinstance(obj, float):
+            return obj if math.isfinite(obj) else None
+        if isinstance(obj, dict):
+            return {k: _json_clean(v) for k, v in obj.items()}
+        if isinstance(obj, (list, tuple)):
+            return [_json_clean(v) for v in obj]
+        return obj
+
     pd.DataFrame(rows).to_csv(os.path.join(out, f"{prefix}metrics.csv"), index=False)
     deltas = [x for x in deltas if x]
     pd.DataFrame(deltas).to_csv(os.path.join(out, f"{prefix}deltas.csv"), index=False)
 
     ceiling = compute_skill_ceiling(df)
-    json.dump(ceiling, open(os.path.join(out, f"{prefix}skill_ceiling.json"), "w", encoding="utf-8"),
-              ensure_ascii=False, indent=1)
+    json.dump(_json_clean(ceiling), open(os.path.join(out, f"{prefix}skill_ceiling.json"), "w", encoding="utf-8"),
+              ensure_ascii=False, indent=1, allow_nan=False)
 
     if bkt_diag:
         ident, per_skill = {}, {}
@@ -622,12 +644,12 @@ def main():
                 "skills_n_lt5": int((d["n"] < 5).sum()),
                 "skills_n_lt10": int((d["n"] < 10).sum()),
             }
-        json.dump({"identifiability": ident, "per_skill": per_skill},
+        json.dump(_json_clean({"identifiability": ident, "per_skill": per_skill}),
                   open(os.path.join(out, f"{prefix}bkt_params.json"), "w", encoding="utf-8"),
-                  ensure_ascii=False, indent=1)
+                  ensure_ascii=False, indent=1, allow_nan=False)
 
-    json.dump(meta, open(os.path.join(out, f"{prefix}run_meta.json"), "w", encoding="utf-8"),
-              ensure_ascii=False, indent=1)
+    json.dump(_json_clean(meta), open(os.path.join(out, f"{prefix}run_meta.json"), "w", encoding="utf-8"),
+              ensure_ascii=False, indent=1, allow_nan=False)
 
     cols = ["split", "granularity", "model", "n_test", "auc", "logloss", "brier", "params", "status"]
     print(pd.DataFrame(rows)[cols].to_string(index=False))

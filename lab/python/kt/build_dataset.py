@@ -498,6 +498,8 @@ def build_zhuoyu(data_root, out, cache_dir, key):
     imp = [r for r in raw if r["s"].get("mode") == "import"]
     other = [r for r in raw if r["s"].get("mode") not in real_modes and r["s"].get("mode") != "import"]
 
+    # order_index 的依据：会话 startedAt（服务器只有会话级时间）+ 会话 id + API questions[]
+    # 数组下标。接口没有逐题时间戳，所以同一会话内的先后只能用它返回的顺序，不能解释成精确时刻。
     real.sort(key=lambda r: (r["s"]["startedAt"], r["s"]["id"], r["idx"]))
     rows, skill_rows, mapped_stats = [], [], Counter()
     tag_leaf_counts, tag_ch_counts = Counter(), Counter()
@@ -565,7 +567,7 @@ def build_zhuoyu(data_root, out, cache_dir, key):
     # import 会话单独落盘：只能当「题目覆盖/初始能力」，不能当时间序列
     imp_rows = []
     for r in imp:
-        q, s = r["q"], s
+        q, s = r["q"], r["s"]   # 必须取本条记录自己的会话，不能用上一轮遗留的 s
         leaves = zy_leaf_tags(q.get("tags"))
         imp_rows.append({
             "item": str(q.get("questionId")), "session_id": s["id"], "mode": "import",

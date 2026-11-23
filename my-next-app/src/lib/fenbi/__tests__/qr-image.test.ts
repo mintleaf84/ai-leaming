@@ -10,7 +10,7 @@
  */
 import { describe, it, expect } from "vitest";
 
-import { buildQrDataUrl, QR_IMAGE_SIZE } from "../qr-image";
+import { buildQrDataUrl, buildQrPngDataUrl, QR_IMAGE_SIZE } from "../qr-image";
 
 function decode(dataUrl: string): string {
   const prefix = "data:image/svg+xml;base64,";
@@ -51,5 +51,26 @@ describe("buildQrDataUrl", () => {
     const text = `https://fenbi.example.com/s?t=${"x".repeat(200)}&note=${encodeURIComponent("教师招聘")}`;
     const svg = decode(await buildQrDataUrl(text));
     expect(svg).toContain("<svg");
+  });
+});
+
+describe("buildQrPngDataUrl（移动端）", () => {
+  it("返回 PNG data URL：Flutter Image.memory 可直接解码，无外部依赖", async () => {
+    const url = await buildQrPngDataUrl("https://fenbi.example.com/s?t=abc123");
+    expect(url.startsWith("data:image/png;base64,")).toBe(true);
+    expect(url).not.toContain("qrserver");
+    const bytes = Buffer.from(
+      url.slice("data:image/png;base64,".length),
+      "base64",
+    );
+    expect(bytes.subarray(0, 8).toString("hex")).toBe("89504e470d0a1a0a"); // PNG magic
+  });
+
+  it("PNG 与 SVG 编码的是同一段内容（同一张二维码）", async () => {
+    const content = "https://fenbi.example.com/s?t=abc123";
+    expect(await buildQrPngDataUrl(content)).toBe(
+      await buildQrPngDataUrl(content),
+    );
+    expect(await buildQrDataUrl(content)).toContain("svg");
   });
 });

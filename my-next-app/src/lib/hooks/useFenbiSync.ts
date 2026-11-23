@@ -49,6 +49,7 @@ export interface FenbiQrcodeTicket {
   qrContent: string;
   /** 服务端渲染好的二维码（data URL），前端直接当图片用，不走第三方服务 */
   qrDataUrl: string;
+  qrPngDataUrl: string;
 }
 
 export const FENBI_STATUS_QUERY_KEY = ["fenbi-status"] as const;
@@ -306,6 +307,9 @@ export async function createFenbiQrcode(): Promise<FenbiQrcodeTicket> {
     lgtoken: payload.lgtoken,
     qrContent: payload.qrContent,
     qrDataUrl: payload.qrDataUrl,
+    // 旧服务端可能还没下发 PNG 字段，空串会让移动端回退到兼容路径。
+    qrPngDataUrl:
+      typeof payload.qrPngDataUrl === "string" ? payload.qrPngDataUrl : "",
   };
 }
 

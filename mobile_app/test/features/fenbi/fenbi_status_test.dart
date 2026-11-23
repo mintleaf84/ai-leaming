@@ -220,4 +220,23 @@ void main() {
       expect(FenbiQrPhase.unknown.label, isNotEmpty);
     });
   });
+group('FenbiQrSession 二维码图片字段', () {
+  test('fromJson 读取服务端下发的 PNG data URL', () {
+    final s = FenbiQrSession.fromJson(<String, dynamic>{
+      'lgtoken': 'abc',
+      'qrContent': 'content',
+      'qrPngDataUrl': 'data:image/png;base64,AAAA',
+    });
+    expect(s.qrPngDataUrl, 'data:image/png;base64,AAAA');
+  });
+
+  test('旧服务端没有该字段时为空串，界面才回退公共渲染服务', () {
+    final s = FenbiQrSession.fromJson(<String, dynamic>{
+      'lgtoken': 'abc',
+      'qrContent': 'content',
+    });
+    expect(s.qrPngDataUrl, isEmpty);
+    expect(s.isUsable, isTrue);
+  });
+});
 }

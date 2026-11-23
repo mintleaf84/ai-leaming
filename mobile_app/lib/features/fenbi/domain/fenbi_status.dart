@@ -200,17 +200,26 @@ class FenbiSyncStatus {
 
 /// 一次扫码会话（`POST /api/fenbi/qrcode`）。
 class FenbiQrSession {
-  const FenbiQrSession({required this.lgtoken, required this.qrContent});
+  const FenbiQrSession({
+    required this.lgtoken,
+    required this.qrContent,
+    this.qrPngDataUrl = '',
+  });
 
   final String lgtoken;
 
   /// 粉笔登录页的内容（`qrcode-login` 链路里的 `codeContent`）。
   final String qrContent;
 
+  /// 服务端渲染的 PNG data URL（`data:image/png;base64,…`）。
+  /// 默认空串以兼容旧服务端；为空时界面才回退到公共渲染服务。
+  final String qrPngDataUrl;
+
   factory FenbiQrSession.fromJson(Map<String, dynamic> json) {
     return FenbiQrSession(
       lgtoken: _readString(json['lgtoken']),
       qrContent: _readString(json['qrContent']),
+      qrPngDataUrl: _readString(json['qrPngDataUrl']),
     );
   }
 

@@ -115,7 +115,9 @@ function collectEnums(doc) {
 
       for (const param of op.parameters || []) {
         if (param?.schema?.enum) {
-          walk(param.schema, `${base} :: query.${param.name}`, [], 0, new Set());
+          // chain 必须带参数名：walk 只在 chain 非空时收集枚举，传 [] 会让
+          // query 上的 enum 永远不出现在 --report 里（映射键格式也会对不上）。
+          walk(param.schema, `${base} :: query.${param.name}`, [param.name], 0, new Set());
         }
       }
     }
@@ -123,9 +125,20 @@ function collectEnums(doc) {
   return found;
 }
 
+/**
+ * 去掉 Dart 注释。**文本近似**：字符串里的 "//"（如 URL）会被误截——
+ * 我们比对的契约取值都是不含 "/" 的词，误删只影响不参与比对的 token。
+ * 不先去掉注释的话，被注释掉的 `// case 'canceled':` 会被当成「已处理」，
+ * 门禁在最需要它响的时候反而绿。
+ */
+function stripDartComments(src) {
+  return src.replace(/\/\*[\s\S]*?\*\//g, " ").replace(/\/\/[^\n]*/g, " ");
+}
+
 /** Dart 里「显式处理了某个字符串」的写法 */
 function dartHandledTokens(absFile) {
-  const src = fs.readFileSync(absFile, "utf8");
+  // 注释掉的分支不算处理（见 stripDartComments）
+  const src = stripDartComments(fs.readFileSync(absFile, "utf8"));
   const tokens = new Set();
   const patterns = [
     /\bcase\s+'([^']+)'\s*:/g, // switch 语句
@@ -139,9 +152,9 @@ function dartHandledTokens(absFile) {
     for (const m of src.matchAll(re)) tokens.add(m[1]);
   }
   // enum 成员名：RecallVerdict { ok, miss } 里的 miss 不会以字符串出现，但确实被处理了。
-  // 注意两点：Dart 的枚举成员之间常夹 /// 注释（先去注释，否则成员名被注释吞掉）；
+  // 注意两点：Dart 的枚举成员之间常夹 /// 注释（src 已去注释，否则成员名被注释吞掉）；
   // 成员常带构造参数 single('single', '单选')，括号里的 wire 值本身也是有效 token。
-  const noComments = src.replace(/\/\*[\s\S]*?\*\//g, " ").replace(/\/\/[^\n]*/g, " ");
+  const noComments = src;
   const skip = new Set(["static", "const", "final", "var", "get", "set", "return", "factory", "true", "false"]);
   for (const m of noComments.matchAll(/\benum\s+\w+\s*\{([\s\S]*?)\}/g)) {
     const memberList = m[1].split(";")[0]; // 分号之后是方法，不是成员
@@ -163,7 +176,9 @@ function dartHandledTokens(absFile) {
  * 而那恰好就是我们要抓的错。指定区域后，「有没有分支」必须显式存在。
  */
 function regionTokens(absFile, regionPatterns) {
-  const src = fs.readFileSync(absFile, "utf8");
+  // 与 dartHandledTokens 同口径：先去注释（被注释掉的分支不算处理），
+  // 单双引号两种写法都收（Dart 允许 case "x":，只认单引号会误报缺失）。
+  const src = stripDartComments(fs.readFileSync(absFile, "utf8"));
   let text = "";
   for (const source of regionPatterns) {
     for (const m of src.matchAll(new RegExp(source, "g"))) text += `\n${m[0]}`;
@@ -173,6 +188,9 @@ function regionTokens(absFile, regionPatterns) {
     /\bcase\s+'([^']+)'\s*:/g,
     /'([^']+)'\s*=>/g,
     /==\s*'([^']+)'/g,
+    /\bcase\s+"([^"]+)"\s*:/g,
+    /"([^"]+)"\s*=>/g,
+    /==\s*"([^"]+)"/g,
   ]) {
     for (const m of text.matchAll(re)) tokens.add(m[1]);
   }

@@ -162,6 +162,10 @@ function mapFenbiError(c: Context, error: unknown) {
     error instanceof FenbiNetworkError ||
     error instanceof FenbiProtocolError
   ) {
+    // 502 必须留痕：上游改版导致字段缺失时（FenbiProtocolError 的 message 里带
+    // 缺失字段名，FenbiNetworkError 的 message 是固定文案，URL 已去掉 query），
+    // 线上要能一眼看出是哪一种。两处都不含 token / cookie。
+    log.warn(`[fenbi] 上游不可用 ${error.name} ${error.message}`);
     return errorBody(
       c,
       "暂时无法连接粉笔，请稍后再试",

@@ -25,6 +25,17 @@ export function toErrorResponse(
 ) {
   if (isAppError(error)) {
     const maxIssues = options.maxIssues ?? DEFAULT_MAX_ISSUES;
+    // 已归类的业务错误也要留痕：只记 code / status / scope，
+    // 不记 publicMessage 与原始对象（可能含用户输入）。
+    logger.warn(
+      {
+        code: error.code,
+        status: error.status,
+        scope: options.scope ?? "api",
+        issueCount: error.issues?.length ?? 0,
+      },
+      "[API] 业务错误",
+    );
     const body = error.issues
       ? {
           error: error.publicMessage,

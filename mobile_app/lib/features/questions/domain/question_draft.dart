@@ -76,7 +76,9 @@ class QuestionDraftSummary {
     'camera' => '拍照',
     'gallery' => '相册',
     'pdf' => 'PDF',
-    _ => '文本',
+    'text' => '文本',
+    // 服务端新增了来源而当前包不认识：如实说不知道，不要伪装成「文本」。
+    _ => '未知来源',
   };
 }
 

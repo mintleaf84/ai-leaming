@@ -34,6 +34,8 @@ class _ResultScreenState extends ConsumerState<ResultScreen> {
 
     // 页面加载后延迟触发庆祝
     Future.delayed(const Duration(milliseconds: 500), () {
+      // 500 ms 内离开本页时 dispose 已执行，这里不能再碰 controller。
+      if (!mounted) return;
       final state = ref.read(practiceControllerProvider);
       final totalQuestions = state.questions.length;
       final correctCount = state.results.values.where((v) => v).length;

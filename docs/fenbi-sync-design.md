@@ -49,10 +49,41 @@ GET  https://ke.fenbi.com/qrcode-login/api/gen_code
 
 POST https://ke.fenbi.com/qrcode-login/api/query_code_status
   body {"lgtoken":"..."}
-  -> 未扫: {"code":1,"msg":"创建新二维码","data":1}
+  -> {"code":1,"msg":"创建新二维码","data":1}      // 状态是 data 里的一个数字
 ```
 
-（扫码成功后 cookie 落地方式未验证——实现时先落地到「会话 cookie 存库」，并在状态机里留 `confirmed` 分支。）
+#### `query_code_status` 的 `data` 取值（2026-11-23 实测 + 官方枚举）
+
+| `data` | 官方枚举         | 本地 `FenbiQrStatus` | 实测情况                                                                    |
+| ------ | ---------------- | -------------------- | --------------------------------------------------------------------------- |
+| -1     | `Initial`        | `pending`            |                                                                             |
+| **0**  | **`Expired`**    | **`expired`**        | ✔ 本机 curl：生成后约 100 秒返回 `{"code":1,"msg":"二维码已失效","data":0}` |
+| 1      | `WaitingForScan` | `pending`            | ✔ `{"code":1,"msg":"创建新二维码","data":1}`                                |
+| 2      | `Scanned`        | `scanned`            | 未实测                                                                      |
+| 3      | `Authorized`     | `confirmed`          | 未实测                                                                      |
+| 4      | **`Canceled`**   | `canceled`           | 未实测                                                                      |
+| 5      | **`Failed`**     | `failed`             | 未实测                                                                      |
+
+枚举是粉笔 PC 端登录组件自带的定义，2026-11-23 取自
+`https://nodestatic.fbstatic.cn/weblts_spa_online/page/chunk-JARPR5VL.js`：
+`Initial=-1, Expired=0, WaitingForScan=1, Scanned=2, Authorized=3, Canceled=4, Failed=5, NetworkError=6`
+（`NetworkError` 是它前端自己造的状态，不会来自上游）。
+
+两个曾经踩过的坑：
+
+1. 早先实现按「常见惯例」把 **4 当成 expired**，而真实失效码是 **0**；`0` 落进 `default` 被当成
+   「还在等扫码」。二维码实测只有 **约 100 秒**有效期（两次观测 102 s / 121 s 后变 `data:0`），
+   于是「用户手机上点确认时码早已过期，界面却毫无提示」。**过期是常态**，前端必须在
+   `expired` 时给出重新获取入口，不能继续显示「等待扫码」。
+2. **手机端是另一套状态码**，别和 PC 轮询混用。H5 页 `fenbi-scan-login/js/all-*.js` 的
+   `handleStatus` 里：`1=登录成功 / 2=二维码已失效 / 3=请勿重复扫码 / 4=无权登录 / 5=登录失败`；
+   手机端页面自己调 `POST /qrcode-login/api/scan_code`（扫码）与 `POST /qrcode-login/api/confirm`
+   （点确认），二者都**要求手机端登录 cookie**，服务端直接调用会 401
+   `{"code":-1,"msg":"请先登录"}`。
+
+**cookie 落地方式仍未实测**：`data:1` 与 `data:0` 两种响应的 `Set-Cookie` 都是空。实现按
+「确认成功时读 `Set-Cookie`」处理；取不到就返回 `linked:false`，前端显示「已确认但没取到凭证，
+绑定未生效」，**不谎报绑定成功**。若后续实测发现凭证另有来源，改这里再改实现。
 
 ### 2.3 练习记录列表
 

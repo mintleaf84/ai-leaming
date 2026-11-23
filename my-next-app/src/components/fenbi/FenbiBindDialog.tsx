@@ -18,14 +18,29 @@ import {
   createFenbiQrcode,
   describeFenbiError,
   fetchFenbiQrcodeState,
+  isTerminalQrcodeState,
   linkFenbiAccount,
   type FenbiQrcodeState,
   type FenbiQrcodeTicket,
+  type TerminalQrcodeState,
 } from "@/lib/hooks/useFenbiSync";
 
 export type FenbiBindMode = "qrcode" | "password";
 
 const QRCODE_POLL_INTERVAL_MS = 2000;
+
+/**
+ * 终态文案。上游二维码实测只有 100 秒左右有效期，「过期」是常态而不是异常，
+ * 所以文案要直接给出下一步动作；这些状态下停止轮询并提供重新获取入口。
+ */
+const TERMINAL_QRCODE_COPY: Record<TerminalQrcodeState, string> = {
+  expired:
+    "二维码已过期（有效期只有 100 秒左右）。重新获取一张，扫上后请尽快在手机上点确认。",
+  canceled: "你在手机上取消了登录。需要的话重新获取一张再试。",
+  failed: "粉笔返回登录失败。重新获取一张再试；多次失败可改用手机号绑定。",
+  noCredential:
+    "粉笔那边已确认，但我们没能取到登录凭证，绑定没有生效。请再试一次，或改用手机号绑定。",
+};
 
 interface FenbiBindDialogProps {
   open: boolean;
@@ -150,7 +165,7 @@ function QrcodePanel({
  *
  * 轮询实现：`qrState` 变化后 effect 重新排一个 2 秒的定时器，
  * 所以「请求中」不会和「下一次请求」重叠；关闭弹窗或状态变成
- * confirmed / expired 时定时器被清掉。
+ * confirmed / 终态（expired、canceled、failed、noCredential）时定时器被清掉。
  */
 function QrcodeSession({
   onRetry,
@@ -188,19 +203,22 @@ function QrcodeSession({
 
   React.useEffect(() => {
     if (!ticket) return;
-    if (qrState === "confirmed" || qrState === "expired") return;
+    if (qrState === "confirmed" || isTerminalQrcodeState(qrState)) return;
 
     let cancelled = false;
     const timer = window.setTimeout(async () => {
       try {
         const next = await fetchFenbiQrcodeState(ticket.lgtoken);
         if (cancelled) return;
-        setQrState(next);
-        if (next === "confirmed") {
+        // 只有 linked=true 才是绑定成功；没取到凭证时 fetchFenbiQrcodeState
+        // 已转成 noCredential，这里不能再弹「已绑定」。
+        if (next.state === "confirmed") {
           toast.success("粉笔账号已绑定");
           onLinked();
           onClose();
+          return;
         }
+        setQrState(next.state);
       } catch (error) {
         // audit-allow: 轮询失败转成弹层内可读文案（setQrError），组件卸载时静默退出
         if (cancelled) return;
@@ -250,10 +268,11 @@ function QrcodeSession({
               重新获取
             </Button>
           </div>
-        ) : qrState === "expired" ? (
+        ) : isTerminalQrcodeState(qrState) ? (
           <div className="flex h-56 w-56 flex-col items-center justify-center gap-3 text-center">
-            <p className="text-sm text-muted-foreground">
-              二维码已过期，重新获取一张就行。
+            <ShieldAlert className="h-6 w-6 text-destructive" aria-hidden />
+            <p role="alert" className="text-sm text-muted-foreground">
+              {TERMINAL_QRCODE_COPY[qrState]}
             </p>
             <Button
               type="button"

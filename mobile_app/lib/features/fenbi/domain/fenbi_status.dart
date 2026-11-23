@@ -218,11 +218,18 @@ class FenbiQrSession {
 }
 
 /// 二维码状态机（`GET /api/fenbi/qrcode/status`）。
+///
+/// 取值与服务端 `FenbiQrStatus` 一一对应，语义见 docs/fenbi-sync-design.md §2.2：
+/// 上游 `query_code_status` 的 data 是粉笔 PC 端枚举
+/// （`0=Expired / 1=WaitingForScan / 2=Scanned / 3=Authorized / 4=Canceled / 5=Failed`），
+/// 二维码实测只有约 100 秒有效期，所以 `expired` 是常态而不是异常。
 enum FenbiQrPhase {
   pending,
   scanned,
   confirmed,
   expired,
+  canceled,
+  failed,
   unknown;
 
   static FenbiQrPhase parse(String? raw) {
@@ -235,6 +242,10 @@ enum FenbiQrPhase {
         return FenbiQrPhase.confirmed;
       case 'expired':
         return FenbiQrPhase.expired;
+      case 'canceled':
+        return FenbiQrPhase.canceled;
+      case 'failed':
+        return FenbiQrPhase.failed;
       default:
         return FenbiQrPhase.unknown;
     }
@@ -249,13 +260,22 @@ enum FenbiQrPhase {
       case FenbiQrPhase.confirmed:
         return '已确认，正在绑定';
       case FenbiQrPhase.expired:
-        return '二维码已过期，请重新生成';
+        return '二维码已过期（有效期约 100 秒），请重新生成';
+      case FenbiQrPhase.canceled:
+        return '已在手机上取消登录，需要请重新生成二维码';
+      case FenbiQrPhase.failed:
+        return '粉笔返回登录失败，请重新生成，或改用手机号绑定';
       case FenbiQrPhase.unknown:
         return '正在确认扫码状态…';
     }
   }
 
-  bool get isTerminal => this == FenbiQrPhase.confirmed || this == FenbiQrPhase.expired;
+  /// 终态：继续轮询同一个 token 没有意义，必须让用户重新生成二维码。
+  bool get isTerminal =>
+      this == FenbiQrPhase.confirmed ||
+      this == FenbiQrPhase.expired ||
+      this == FenbiQrPhase.canceled ||
+      this == FenbiQrPhase.failed;
 }
 
 // ---------------------------------------------------------------------------

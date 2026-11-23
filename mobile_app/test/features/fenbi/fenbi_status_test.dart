@@ -122,20 +122,33 @@ void main() {
   });
 
   group('FenbiQrPhase.parse', () {
-    test('四个已知状态', () {
+    test('六个已知状态', () {
       expect(FenbiQrPhase.parse('pending'), FenbiQrPhase.pending);
       expect(FenbiQrPhase.parse(' SCANNED '), FenbiQrPhase.scanned);
       expect(FenbiQrPhase.parse('confirmed'), FenbiQrPhase.confirmed);
       expect(FenbiQrPhase.parse('expired'), FenbiQrPhase.expired);
+      // 上游真实失效码是 0（服务端已按官方枚举映射成 expired），
+      // 「取消 / 失败」同样是终态，界面必须停下并给重新生成入口。
+      expect(FenbiQrPhase.parse('canceled'), FenbiQrPhase.canceled);
+      expect(FenbiQrPhase.parse('failed'), FenbiQrPhase.failed);
     });
 
-    test('未知 / 空值落到 unknown，且只有 confirmed/expired 是终态', () {
+    test('未知 / 空值落到 unknown，终态含 confirmed/expired/canceled/failed', () {
       expect(FenbiQrPhase.parse(null), FenbiQrPhase.unknown);
       expect(FenbiQrPhase.parse('weird'), FenbiQrPhase.unknown);
       expect(FenbiQrPhase.pending.isTerminal, isFalse);
       expect(FenbiQrPhase.scanned.isTerminal, isFalse);
+      expect(FenbiQrPhase.unknown.isTerminal, isFalse);
       expect(FenbiQrPhase.confirmed.isTerminal, isTrue);
       expect(FenbiQrPhase.expired.isTerminal, isTrue);
+      expect(FenbiQrPhase.canceled.isTerminal, isTrue);
+      expect(FenbiQrPhase.failed.isTerminal, isTrue);
+    });
+
+    test('终态文案给出下一步动作，不是空泛的「出错了」', () {
+      expect(FenbiQrPhase.expired.label, contains('重新生成'));
+      expect(FenbiQrPhase.canceled.label, contains('重新生成'));
+      expect(FenbiQrPhase.failed.label, contains('手机号'));
     });
   });
 

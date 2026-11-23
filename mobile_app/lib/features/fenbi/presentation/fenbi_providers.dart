@@ -326,9 +326,9 @@ class FenbiQrController extends Notifier<FenbiQrScanState> {
       _consecutiveFailures = 0;
       _polls++;
 
-      if (phase == FenbiQrPhase.confirmed ||
-          phase == FenbiQrPhase.expired ||
-          _polls >= maxPolls) {
+      // 终态一律停止：上游二维码约 100 秒就失效，继续轮询同一个 token 只会
+      // 一直拿到 0，界面停在「正在确认扫码状态…」。
+      if (phase.isTerminal || _polls >= maxPolls) {
         _stopPolling();
         state = state.copyWith(
           phase: _polls >= maxPolls && phase != FenbiQrPhase.confirmed

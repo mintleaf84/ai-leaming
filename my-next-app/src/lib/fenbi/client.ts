@@ -290,7 +290,35 @@ export interface FenbiQuestionsPayload {
   questions: FenbiQuestionRaw[];
 }
 
-export type FenbiQrStatus = "pending" | "scanned" | "confirmed" | "expired";
+/**
+ * 扫码状态，对应上游 `query_code_status` 的 data 取值（见 `QR_STATUS_BY_CODE`）。
+ *
+ * - `canceled`：用户在手机上点了「取消」
+ * - `failed`：粉笔侧登录失败（原因在 msg 里）
+ */
+export type FenbiQrStatus =
+  "pending" | "scanned" | "confirmed" | "expired" | "canceled" | "failed";
+
+/**
+ * `query_code_status` 的 data → 本地状态。
+ *
+ * 取值来自粉笔 PC 端登录组件自带的枚举（2026-11-23 与线上 bundle
+ * `nodestatic.fbstatic.cn/weblts_spa_online/page/chunk-JARPR5VL.js` 一致）：
+ * `-1 Initial / 0 Expired / 1 WaitingForScan / 2 Scanned / 3 Authorized / 4 Canceled / 5 Failed`。
+ * 其中 0=已失效、1=待扫码已在本机 curl 实测（二维码有效期约 100 秒）。
+ *
+ * 此前按「常见惯例」把 4 当成 expired：真实的失效码 0 会落进 default 被当作
+ * 「还在等扫码」，于是用户手机上点确认时码早已过期，界面上却毫无提示。
+ */
+const QR_STATUS_BY_CODE: Record<number, FenbiQrStatus> = {
+  [-1]: "pending",
+  0: "expired",
+  1: "pending",
+  2: "scanned",
+  3: "confirmed",
+  4: "canceled",
+  5: "failed",
+};
 
 // ==================== 归一化 ====================
 
@@ -461,34 +489,24 @@ export async function queryQrStatus(lgtoken: string): Promise<{
     },
   );
 
-  const json = await readJson<{ code?: number; data?: unknown }>(
+  const json = await readJson<{ code?: number; msg?: string; data?: unknown }>(
     res,
     `${QRCODE_BASE}/qrcode-login/api/query_code_status`,
   );
 
   const code = toNumber(json.data);
-  let status: FenbiQrStatus;
-  switch (code) {
-    case 1:
-      status = "pending";
-      break;
-    case 2:
-      status = "scanned";
-      break;
-    case 3:
-      status = "confirmed";
-      break;
-    case 4:
-      status = "expired";
-      break;
-    default:
-      // 未知码不谎报成功：按 pending 处理，由前端超时兜底
-      status = "pending";
-      break;
+  const status = code === null ? undefined : QR_STATUS_BY_CODE[code];
+  if (status === undefined) {
+    // 上游改版时不猜语义、不谎报成功：按 pending 继续轮询（最终会变成 0=已失效），
+    // 但把真实取值记一行日志，改版能第一时间被发现。不记 lgtoken。
+    log.warn(
+      "[fenbi] 二维码状态取值未登记:",
+      JSON.stringify({ data: json.data ?? null, msg: json.msg ?? null }),
+    );
   }
 
   return {
-    status,
+    status: status ?? "pending",
     cookies: parseCookieJar(readSetCookies(res)),
   };
 }

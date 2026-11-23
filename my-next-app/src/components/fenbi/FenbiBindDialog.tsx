@@ -18,14 +18,29 @@ import {
   createFenbiQrcode,
   describeFenbiError,
   fetchFenbiQrcodeState,
+  isTerminalQrcodeState,
   linkFenbiAccount,
   type FenbiQrcodeState,
   type FenbiQrcodeTicket,
+  type TerminalQrcodeState,
 } from "@/lib/hooks/useFenbiSync";
 
 export type FenbiBindMode = "qrcode" | "password";
 
 const QRCODE_POLL_INTERVAL_MS = 2000;
+
+/**
+ * 终态文案。上游二维码实测只有 100 秒左右有效期，「过期」是常态而不是异常，
+ * 所以文案要直接给出下一步动作；这些状态下停止轮询并提供重新获取入口。
+ */
+const TERMINAL_QRCODE_COPY: Record<TerminalQrcodeState, string> = {
+  expired:
+    "二维码已过期（有效期只有 100 秒左右）。重新获取一张，扫上后请尽快在手机上点确认。",
+  canceled: "你在手机上取消了登录。需要的话重新获取一张再试。",
+  failed: "粉笔返回登录失败。重新获取一张再试；多次失败可改用手机号绑定。",
+  noCredential:
+    "粉笔那边已确认，但我们没能取到登录凭证，绑定没有生效。请再试一次，或改用手机号绑定。",
+};
 
 interface FenbiBindDialogProps {
   open: boolean;
@@ -148,9 +163,12 @@ function QrcodePanel({
 /**
  * 一次扫码会话。
  *
- * 轮询实现：`qrState` 变化后 effect 重新排一个 2 秒的定时器，
- * 所以「请求中」不会和「下一次请求」重叠；关闭弹窗或状态变成
- * confirmed / expired 时定时器被清掉。
+ * 轮询实现：一条**自调度**的定时器链（每次查询完成后再排下一次），
+ * 不用「`qrState` 变化」当触发条件。首次查询必然还是 `pending`，
+ * `setQrState` 收到相同值时 React 会跳过渲染，依赖 `qrState` 的 effect 也就
+ * 不会重跑——那样定时器只执行一次，之后无论用户扫码还是二维码过期，
+ * 页面都再也收不到新状态（这正是「手机上点了确认，网页端毫无反应」的成因）。
+ * 关闭弹窗、查询失败、拿到 confirmed 或终态时停止续期。
  */
 function QrcodeSession({
   onRetry,
@@ -186,33 +204,53 @@ function QrcodeSession({
     };
   }, []);
 
+  // 回调存 ref：父组件用内联箭头函数传进来，放进下面 effect 的依赖数组会让
+  // 每次父渲染都重启轮询。渲染期不能写 ref（react-hooks/refs），所以在单独
+  // 的 effect 里同步最新值——首次的 useRef 初值已经可用，定时器回调最早也要
+  // 2 秒后才读它。
+  const callbacks = React.useRef({ onLinked, onClose });
+  React.useEffect(() => {
+    callbacks.current = { onLinked, onClose };
+  }, [onLinked, onClose]);
+
   React.useEffect(() => {
     if (!ticket) return;
-    if (qrState === "confirmed" || qrState === "expired") return;
 
     let cancelled = false;
-    const timer = window.setTimeout(async () => {
-      try {
-        const next = await fetchFenbiQrcodeState(ticket.lgtoken);
-        if (cancelled) return;
-        setQrState(next);
-        if (next === "confirmed") {
-          toast.success("粉笔账号已绑定");
-          onLinked();
-          onClose();
+    let timer: number | undefined;
+
+    const scheduleNext = () => {
+      timer = window.setTimeout(async () => {
+        try {
+          const next = await fetchFenbiQrcodeState(ticket.lgtoken);
+          if (cancelled) return;
+          // 只有 linked=true 才是绑定成功；没取到凭证时 fetchFenbiQrcodeState
+          // 已转成 noCredential，这里不能再弹「已绑定」。
+          if (next.state === "confirmed") {
+            toast.success("粉笔账号已绑定");
+            callbacks.current.onLinked();
+            callbacks.current.onClose();
+            return;
+          }
+          setQrState(next.state);
+          // 终态不再续期：同一个 lgtoken 不会再有新结果，界面已给出重新入口。
+          if (!isTerminalQrcodeState(next.state)) scheduleNext();
+        } catch (error) {
+          // audit-allow: 轮询失败转成弹层内可读文案（setQrError）并停止轮询，
+          // 由用户在弹层里点「重新获取」重来；组件卸载时静默退出。
+          if (cancelled) return;
+          setQrError(describeFenbiError(error));
         }
-      } catch (error) {
-        // audit-allow: 轮询失败转成弹层内可读文案（setQrError），组件卸载时静默退出
-        if (cancelled) return;
-        setQrError(describeFenbiError(error));
-      }
-    }, QRCODE_POLL_INTERVAL_MS);
+      }, QRCODE_POLL_INTERVAL_MS);
+    };
+
+    scheduleNext();
 
     return () => {
       cancelled = true;
-      window.clearTimeout(timer);
+      if (timer !== undefined) window.clearTimeout(timer);
     };
-  }, [ticket, qrState, onLinked, onClose]);
+  }, [ticket]);
 
   // 二维码由服务端渲染成 data URL：第三方图片服务在受限网络下不可达
   // （曾导致这里是一块空白），也没必要把登录 token 发给别人。
@@ -250,10 +288,11 @@ function QrcodeSession({
               重新获取
             </Button>
           </div>
-        ) : qrState === "expired" ? (
+        ) : isTerminalQrcodeState(qrState) ? (
           <div className="flex h-56 w-56 flex-col items-center justify-center gap-3 text-center">
-            <p className="text-sm text-muted-foreground">
-              二维码已过期，重新获取一张就行。
+            <ShieldAlert className="h-6 w-6 text-destructive" aria-hidden />
+            <p role="alert" className="text-sm text-muted-foreground">
+              {TERMINAL_QRCODE_COPY[qrState]}
             </p>
             <Button
               type="button"

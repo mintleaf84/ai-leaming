@@ -11032,7 +11032,14 @@
                       "type": "boolean"
                     },
                     "status": {
-                      "enum": ["pending", "scanned", "confirmed", "expired"],
+                      "enum": [
+                        "pending",
+                        "scanned",
+                        "confirmed",
+                        "expired",
+                        "canceled",
+                        "failed"
+                      ],
                       "type": "string"
                     }
                   },

@@ -729,7 +729,10 @@ class _FenbiQrSheetState extends ConsumerState<_FenbiQrSheet> {
     final session = state.session!;
     final phaseColor = switch (state.phase) {
       FenbiQrPhase.confirmed => colors.success,
-      FenbiQrPhase.expired => colors.error,
+      FenbiQrPhase.expired ||
+      FenbiQrPhase.canceled ||
+      FenbiQrPhase.failed =>
+        colors.error,
       _ => colors.textSecondary,
     };
 

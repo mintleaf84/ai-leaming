@@ -351,8 +351,15 @@ const qrStatusDef = createRoute({
       content: {
         "application/json": {
           schema: z.object({
-            status: z.enum(["pending", "scanned", "confirmed", "expired"]),
-            /** confirmed 且已成功落地 cookie 时为 true */
+            status: z.enum([
+              "pending",
+              "scanned",
+              "confirmed",
+              "expired",
+              "canceled",
+              "failed",
+            ]),
+            /** confirmed 且已成功落地 cookie 时为 true；其余一律 false */
             linked: z.boolean(),
           }),
         },

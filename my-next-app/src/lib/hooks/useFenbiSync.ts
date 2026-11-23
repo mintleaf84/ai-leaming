@@ -42,7 +42,38 @@ export interface FenbiStatus {
   unsupported?: string[];
 }
 
-export type FenbiQrcodeState = "pending" | "scanned" | "confirmed" | "expired";
+/**
+ * 扫码状态。前六个与后端 `/qrcode/status` 的 status 一致；
+ * `noCredential` 是前端派生态：上游确认了，但服务端没取到登录凭证，
+ * 绑定并没有生效，所以不能按 confirmed 展示成成功。
+ */
+export type FenbiQrcodeState =
+  | "pending"
+  | "scanned"
+  | "confirmed"
+  | "expired"
+  | "canceled"
+  | "failed"
+  | "noCredential";
+
+/** 「停止轮询、需要用户重新获取二维码」的状态。 */
+export type TerminalQrcodeState = Exclude<
+  FenbiQrcodeState,
+  "pending" | "scanned" | "confirmed"
+>;
+
+const TERMINAL_QRCODE_STATES: readonly string[] = [
+  "expired",
+  "canceled",
+  "failed",
+  "noCredential",
+];
+
+export function isTerminalQrcodeState(
+  state: FenbiQrcodeState,
+): state is TerminalQrcodeState {
+  return TERMINAL_QRCODE_STATES.includes(state);
+}
 
 export interface FenbiQrcodeTicket {
   lgtoken: string;
@@ -310,19 +341,35 @@ export async function createFenbiQrcode(): Promise<FenbiQrcodeTicket> {
 }
 
 function normalizeQrcodeState(value: unknown): FenbiQrcodeState {
-  if (value === "scanned" || value === "confirmed" || value === "expired") {
+  if (
+    value === "scanned" ||
+    value === "confirmed" ||
+    value === "expired" ||
+    value === "canceled" ||
+    value === "failed"
+  ) {
     return value;
   }
   return "pending";
 }
 
-/** 查询扫码状态。后端约定 `{ status }`，兼容包一层 `data` 的写法。 */
+/**
+ * 查询扫码状态。后端约定 `{ status, linked }`，兼容包一层 `data` 的写法。
+ *
+ * `confirmed` 且 `linked !== true` 时返回 `noCredential`：绑定未生效，
+ * 若按 confirmed 处理会弹「已绑定」的成功提示，属于谎报。
+ */
 export async function fetchFenbiQrcodeState(
   lgtoken: string,
-): Promise<FenbiQrcodeState> {
+): Promise<{ state: FenbiQrcodeState; linked: boolean }> {
   const payload = await requestJson<{
     status?: unknown;
-    data?: { status?: unknown };
+    linked?: unknown;
+    data?: { status?: unknown; linked?: unknown };
   }>(`/api/fenbi/qrcode/status?lgtoken=${encodeURIComponent(lgtoken)}`);
-  return normalizeQrcodeState(payload.status ?? payload.data?.status);
+  const state = normalizeQrcodeState(payload.status ?? payload.data?.status);
+  const linked = payload.linked === true || payload.data?.linked === true;
+  if (state === "confirmed" && !linked)
+    return { state: "noCredential", linked };
+  return { state, linked };
 }

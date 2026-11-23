@@ -5,6 +5,7 @@ import 'package:flutter_screenutil/flutter_screenutil.dart';
 import '../../../../core/navigation/app_nav.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_icons.dart';
+import '../../../../shared/domain/question_practicability.dart';
 import '../practice_provider.dart';
 
 /// 练习屏底部导航：上一题 / 确认（或下一题）/ 下一题。
@@ -55,13 +56,16 @@ class PracticeBottomNav extends ConsumerWidget {
                       .prevQuestion()
                 : null,
           ),
-          // 确认/下一题
+          // 确认/下一题（不可作答的题不给「确认」：没有作答交互就没有可提交的东西）
           _CenterButton(
             selectedAnswers: selectedAnswers,
             result: result,
             hasNext: state.hasNext,
             isConfirming: state.isLoading,
             isMulti: state.currentQuestion?.type == 'multi',
+            isUnanswerable:
+                state.currentQuestion != null &&
+                !state.currentQuestion!.isPracticable,
             onConfirm: onConfirm,
           ),
           // 下一题
@@ -148,6 +152,7 @@ class _CenterButton extends ConsumerWidget {
     required this.isConfirming,
     required this.onConfirm,
     this.isMulti = false,
+    this.isUnanswerable = false,
   });
 
   final List<String> selectedAnswers;
@@ -156,12 +161,15 @@ class _CenterButton extends ConsumerWidget {
   final bool isConfirming;
   final VoidCallback onConfirm;
   final bool isMulti;
+  final bool isUnanswerable;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    // 判断是否可以提交
+    // 判断是否可以提交（不可作答的题永远不可提交，与是否选中无关）
     final bool canSubmit;
-    if (isMulti) {
+    if (isUnanswerable) {
+      canSubmit = false;
+    } else if (isMulti) {
       canSubmit = selectedAnswers.length >= 2; // 多选至少选2项
     } else {
       canSubmit = selectedAnswers.isNotEmpty;

@@ -6,6 +6,7 @@ import 'package:flutter_screenutil/flutter_screenutil.dart';
 
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_icons.dart';
+import '../../../../shared/domain/question_practicability.dart';
 import '../../../../shared/widgets/animated_option_card.dart';
 import '../../domain/question.dart';
 import '../practice_provider.dart';
@@ -29,6 +30,9 @@ class PracticeQuestionContent extends ConsumerWidget {
     final result = state.results[question.id];
     final isMulti = question.type == 'multi';
     final isTrueFalse = question.type == 'truefalse';
+    // 契约里合法但本版本不支持作答的题型（如新加的填空）：不可作答 + 提示更新，
+    // 不再按单选渲染空选项让用户白挨一个错。判定只在 isPracticable 一处定义。
+    final isPracticable = question.isPracticable;
     // 正确答案列表（多选可能是 JSON 数组）
     final correctAnswerRaw = state.correctAnswers[question.id];
     List<String> correctAnswerList = [];
@@ -49,27 +53,40 @@ class PracticeQuestionContent extends ConsumerWidget {
           // Breadcrumb (真实模式，见 PracticeBreadcrumb)
           PracticeBreadcrumb(mode: state.mode),
           SizedBox(height: 24.h),
-          // 题型标签
+          // 题型标签（未知题型给中性灰，不冒充「单选题」）
           Container(
             padding: EdgeInsets.symmetric(horizontal: 8.w, vertical: 3.h),
             decoration: BoxDecoration(
-              color: isTrueFalse
-                  ? context.colors.warningContainer // 判断题：橙色背景
-                  : isMulti
-                      ? const Color(0xFFF3E5F5)
-                      : const Color(0xFFE3F2FD),
+              color: !isPracticable
+                  ? context.colors.surface
+                  : isTrueFalse
+                      ? context.colors.warningContainer // 判断题：橙色背景
+                      : isMulti
+                          ? const Color(0xFFF3E5F5)
+                          : const Color(0xFFE3F2FD),
               borderRadius: BorderRadius.circular(4.r),
+              border: !isPracticable
+                  ? Border.all(color: context.colors.text.withValues(alpha: 0.15))
+                  : null,
             ),
             child: Text(
-              isTrueFalse ? '判断题' : isMulti ? '多选题' : '单选题',
+              !isPracticable
+                  ? '未知题型'
+                  : isTrueFalse
+                      ? '判断题'
+                      : isMulti
+                          ? '多选题'
+                          : '单选题',
               style: TextStyle(
                 fontSize: 12.sp,
                 fontWeight: FontWeight.w600,
-                color: isTrueFalse
-                    ? context.colors.warning // 判断题：橙色文字
-                    : isMulti
-                        ? const Color(0xFF7B1FA2)
-                        : const Color(0xFF1976D2),
+                color: !isPracticable
+                    ? context.colors.text.withValues(alpha: 0.55)
+                    : isTrueFalse
+                        ? context.colors.warning // 判断题：橙色文字
+                        : isMulti
+                            ? const Color(0xFF7B1FA2)
+                            : const Color(0xFF1976D2),
               ),
             ),
           ),
@@ -92,8 +109,46 @@ class PracticeQuestionContent extends ConsumerWidget {
             ),
           ),
           SizedBox(height: 32.h),
-          // 选项卡片（带动效）
-          ...question.options.asMap().entries.map((entry) {
+          if (!isPracticable)
+            // 未知题型的兜底：给原因、给出路，而不是让用户对着一片空白挨错。
+            Container(
+              width: double.infinity,
+              padding: EdgeInsets.all(16.w),
+              decoration: BoxDecoration(
+                color: context.colors.surface.withValues(alpha: 0.6),
+                borderRadius: BorderRadius.circular(8.r),
+                border: Border.all(
+                  color: context.colors.text.withValues(alpha: 0.12),
+                ),
+              ),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    '此题型需要更新 App 后才能练习',
+                    style: TextStyle(
+                      fontSize: 14.sp,
+                      fontWeight: FontWeight.w600,
+                      height: 1.5,
+                      color: context.colors.text,
+                    ),
+                  ),
+                  SizedBox(height: 6.h),
+                  Text(
+                    '当前版本还不认识这道题的题型，已跳过判分。'
+                    '用「下一题」继续练习，或到应用商店检查更新。',
+                    style: TextStyle(
+                      fontSize: 13.sp,
+                      height: 1.6,
+                      color: context.colors.text.withValues(alpha: 0.7),
+                    ),
+                  ),
+                ],
+              ),
+            )
+          else
+            // 选项卡片（带动效）
+            ...question.options.asMap().entries.map((entry) {
             final index = entry.key;
             final option = entry.value;
             final optionLabel = String.fromCharCode(65 + index); // A, B, C, D

@@ -379,7 +379,7 @@ void main() {
       expect(result.isPersisted, isFalse);
     });
 
-    test('未知 rating 退化为 again，未知 verdict 退化为 miss', () {
+    test('未知取值解析为 unknown：不猜成 miss/again（2026-11 口径：保持未知，不写回）', () {
       final result = RecallReviewResult.fromJson({
         'verdicts': ['yes', 'ok'],
         'rating': 'easy',
@@ -389,7 +389,21 @@ void main() {
         'duplicate': false,
       });
 
-      expect(result.verdicts, [RecallVerdict.miss, RecallVerdict.ok]);
+      expect(result.verdicts, [RecallVerdict.unknown, RecallVerdict.ok]);
+      expect(result.rating, RecallRating.unknown);
+    });
+
+    test('契约内取值逐条精确解析（含 again——它曾被当作未知值的兜底）', () {
+      final result = RecallReviewResult.fromJson({
+        'verdicts': ['ok', 'miss'],
+        'rating': 'again',
+        'nextDue': '',
+        'pendingItems': null,
+        'nextReviewText': '',
+        'duplicate': false,
+      });
+
+      expect(result.verdicts, [RecallVerdict.ok, RecallVerdict.miss]);
       expect(result.rating, RecallRating.again);
     });
 

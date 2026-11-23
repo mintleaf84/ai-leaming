@@ -163,9 +163,12 @@ function QrcodePanel({
 /**
  * 一次扫码会话。
  *
- * 轮询实现：`qrState` 变化后 effect 重新排一个 2 秒的定时器，
- * 所以「请求中」不会和「下一次请求」重叠；关闭弹窗或状态变成
- * confirmed / 终态（expired、canceled、failed、noCredential）时定时器被清掉。
+ * 轮询实现：一条**自调度**的定时器链（每次查询完成后再排下一次），
+ * 不用「`qrState` 变化」当触发条件。首次查询必然还是 `pending`，
+ * `setQrState` 收到相同值时 React 会跳过渲染，依赖 `qrState` 的 effect 也就
+ * 不会重跑——那样定时器只执行一次，之后无论用户扫码还是二维码过期，
+ * 页面都再也收不到新状态（这正是「手机上点了确认，网页端毫无反应」的成因）。
+ * 关闭弹窗、查询失败、拿到 confirmed 或终态时停止续期。
  */
 function QrcodeSession({
   onRetry,
@@ -201,36 +204,53 @@ function QrcodeSession({
     };
   }, []);
 
+  // 回调存 ref：父组件用内联箭头函数传进来，放进下面 effect 的依赖数组会让
+  // 每次父渲染都重启轮询。渲染期不能写 ref（react-hooks/refs），所以在单独
+  // 的 effect 里同步最新值——首次的 useRef 初值已经可用，定时器回调最早也要
+  // 2 秒后才读它。
+  const callbacks = React.useRef({ onLinked, onClose });
+  React.useEffect(() => {
+    callbacks.current = { onLinked, onClose };
+  }, [onLinked, onClose]);
+
   React.useEffect(() => {
     if (!ticket) return;
-    if (qrState === "confirmed" || isTerminalQrcodeState(qrState)) return;
 
     let cancelled = false;
-    const timer = window.setTimeout(async () => {
-      try {
-        const next = await fetchFenbiQrcodeState(ticket.lgtoken);
-        if (cancelled) return;
-        // 只有 linked=true 才是绑定成功；没取到凭证时 fetchFenbiQrcodeState
-        // 已转成 noCredential，这里不能再弹「已绑定」。
-        if (next.state === "confirmed") {
-          toast.success("粉笔账号已绑定");
-          onLinked();
-          onClose();
-          return;
+    let timer: number | undefined;
+
+    const scheduleNext = () => {
+      timer = window.setTimeout(async () => {
+        try {
+          const next = await fetchFenbiQrcodeState(ticket.lgtoken);
+          if (cancelled) return;
+          // 只有 linked=true 才是绑定成功；没取到凭证时 fetchFenbiQrcodeState
+          // 已转成 noCredential，这里不能再弹「已绑定」。
+          if (next.state === "confirmed") {
+            toast.success("粉笔账号已绑定");
+            callbacks.current.onLinked();
+            callbacks.current.onClose();
+            return;
+          }
+          setQrState(next.state);
+          // 终态不再续期：同一个 lgtoken 不会再有新结果，界面已给出重新入口。
+          if (!isTerminalQrcodeState(next.state)) scheduleNext();
+        } catch (error) {
+          // audit-allow: 轮询失败转成弹层内可读文案（setQrError）并停止轮询，
+          // 由用户在弹层里点「重新获取」重来；组件卸载时静默退出。
+          if (cancelled) return;
+          setQrError(describeFenbiError(error));
         }
-        setQrState(next.state);
-      } catch (error) {
-        // audit-allow: 轮询失败转成弹层内可读文案（setQrError），组件卸载时静默退出
-        if (cancelled) return;
-        setQrError(describeFenbiError(error));
-      }
-    }, QRCODE_POLL_INTERVAL_MS);
+      }, QRCODE_POLL_INTERVAL_MS);
+    };
+
+    scheduleNext();
 
     return () => {
       cancelled = true;
-      window.clearTimeout(timer);
+      if (timer !== undefined) window.clearTimeout(timer);
     };
-  }, [ticket, qrState, onLinked, onClose]);
+  }, [ticket]);
 
   // 二维码由服务端渲染成 data URL：第三方图片服务在受限网络下不可达
   // （曾导致这里是一块空白），也没必要把登录 token 发给别人。

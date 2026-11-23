@@ -201,12 +201,27 @@ void main() {
         }).sourceLabel,
         'PDF',
       );
+      // text 是服务端合法取值（z.enum 里的四项之一），单独一条而不是靠兜底。
       expect(
         QuestionDraftSummary.fromJson(<String, dynamic>{
-          'source': 'whatever',
+          'source': 'text',
         }).sourceLabel,
         '文本',
       );
+    });
+
+    test('未知 source 如实说「未知来源」，不伪装成「文本」', () {
+      // 服务端新增来源（如 voice）而当前包不认识时，界面要能看出来是版本落后，
+      // 而不是让用户以为这题是文本录入的。
+      expect(
+        QuestionDraftSummary.fromJson(<String, dynamic>{
+          'source': 'voice',
+        }).sourceLabel,
+        '未知来源',
+      );
+      const summary = QuestionDraftSummary(id: 'd5', status: DraftStatus.ready);
+      expect(summary.source, 'text');
+      expect(summary.sourceLabel, '文本');
     });
   });
 

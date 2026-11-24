@@ -72,13 +72,14 @@
 
 ## 6. 门禁
 
-| 门禁                 | 位置                                                         | 拦住什么                                     |
-| -------------------- | ------------------------------------------------------------ | -------------------------------------------- |
-| OpenAPI 快照一致性   | CI `contract` job（`npm run contract:check`）                | 后端改了路由却没更新快照                     |
-| Dart 契约断言        | `mobile_app/test/contract/openapi_contract_test.dart`        | 后端**删/改名**了 Flutter 用到的 path 或字段 |
-| 归属矩阵             | `my-next-app/src/lib/api/__tests__/ownership-matrix.test.ts` | 新路由没想清归属/越权面                      |
-| `/meta` 形状与免鉴权 | `meta.test.ts` / `contract-version.test.ts`                  | 协商端点被人"顺手加鉴权"或字段漂移           |
-| 版本常量一致性       | `test/core/compat/*`                                         | `appVersion` 与 `pubspec.yaml` 漂移          |
+| 门禁                 | 位置                                                         | 拦住什么                                                                                                                                                |
+| -------------------- | ------------------------------------------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| OpenAPI 快照一致性   | CI `contract` job（`npm run contract:check`）                | 后端改了路由却没更新快照                                                                                                                                |
+| Flutter 枚举一致性   | CI `Lint & Type Check`（`npm run contract:mobile`）          | 契约给枚举加取值，Flutter 解析器没补分支（映射表：`my-next-app/scripts/contract-mobile-map.json`，归类与理由都在表内；`--report` 列出当前全部契约枚举） |
+| Dart 契约断言        | `mobile_app/test/contract/openapi_contract_test.dart`        | 后端**删/改名**了 Flutter 用到的 path 或字段                                                                                                            |
+| 归属矩阵             | `my-next-app/src/lib/api/__tests__/ownership-matrix.test.ts` | 新路由没想清归属/越权面                                                                                                                                 |
+| `/meta` 形状与免鉴权 | `meta.test.ts` / `contract-version.test.ts`                  | 协商端点被人"顺手加鉴权"或字段漂移                                                                                                                      |
+| 版本常量一致性       | `test/core/compat/*`                                         | `appVersion` 与 `pubspec.yaml` 漂移                                                                                                                     |
 
 ## 7. 兼容矩阵（每次部署后手工加一行）
 

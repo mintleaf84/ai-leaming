@@ -68,9 +68,12 @@ export function PracticeCard({
   const [isHistoryOpen, setIsHistoryOpen] = useState(false);
   const [fillBlankAnswers, setFillBlankAnswers] = useState<string[]>([]);
 
-  // 填空题：根据答案中的分号推断空数，支持中英文分号
+  // 填空题：根据答案推断空数。
+  // 分隔符必须与判分口径完全一致（见 lib/services/answer-check.ts 的 fill_blank 分支）：
+  // 只有中文「；」是空位分隔符，半角「;」是答案正文的一部分（如英文释义、代码片段）。
+  // 若这里多认半角分号，「甲；乙;丙」会渲染 3 个输入框，提交串永远比正确答案多一截，整题必错。
   const blankCount = isFillBlank
-    ? Math.max(1, question.answer.split(/[；;]/).filter(Boolean).length)
+    ? Math.max(1, question.answer.split("；").filter(Boolean).length)
     : 0;
 
   // 当题目更换时，重置排除状态和填空答案

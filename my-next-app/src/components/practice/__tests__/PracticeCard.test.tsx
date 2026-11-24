@@ -2,6 +2,7 @@ import userEvent from "@testing-library/user-event";
 import { render, screen, fireEvent } from "@testing-library/react";
 import { describe, expect, it, vi, beforeEach } from "vitest";
 import { PracticeCard } from "../PracticeCard";
+import { checkAnswerCorrectness } from "@/lib/services/answer-check";
 
 const mockQuestionSingle = {
   id: 1,
@@ -316,5 +317,89 @@ describe("PracticeCard 键盘操作（a11y B5）", () => {
 
     await user.keyboard("{Enter}");
     expect(mockOnOptionClick).not.toHaveBeenCalled();
+  });
+});
+
+/**
+ * 填空题「空数推导」与判分口径对齐。
+ *
+ * 判分的唯一口径（`lib/services/answer-check.ts` 的 fill_blank 分支）只把中文「；」
+ * 当空位分隔符，半角「;」属于答案正文。此前这里用 `split(/[；;]/)` 多认了半角分号：
+ * 答案 `甲；乙;丙` 会渲染 3 个输入框，提交串恒为 3 段，而正确答案只有 2 段，
+ * 空数不一致 → 整题必错，用户无从作答。
+ */
+describe("PracticeCard 填空题空数推导（与判分同口径）", () => {
+  const mixedSeparatorAnswer = "甲；乙;丙";
+
+  const mixedQuestion = {
+    id: 910,
+    content: "第一空_____，第二空_____。",
+    answer: mixedSeparatorAnswer,
+    options: [],
+    type: "fill_blank",
+    dimension: "knowledge",
+  };
+
+  function renderFillBlank(onFillBlankSubmit: (answer: string) => void) {
+    render(
+      <PracticeCard
+        question={mixedQuestion}
+        isMulti={false}
+        selectedOptions={[]}
+        onOptionClick={vi.fn()}
+        onSubmitMulti={vi.fn()}
+        isFillBlank
+        onFillBlankSubmit={onFillBlankSubmit}
+      />,
+    );
+  }
+
+  it("半角分号不算空位分隔符：只渲染 2 个输入框", () => {
+    renderFillBlank(vi.fn((_answer: string) => {}));
+
+    const first = screen.getByPlaceholderText("请输入第 1 个空的答案");
+    const second = screen.getByPlaceholderText("请输入第 2 个空的答案");
+    expect(first).toBeInTheDocument();
+    expect(second).toBeInTheDocument();
+    expect(
+      screen.queryByPlaceholderText("请输入第 3 个空的答案"),
+    ).not.toBeInTheDocument();
+    expect(screen.queryAllByPlaceholderText(/个空的答案/)).toHaveLength(2);
+  });
+
+  it("第 2 空含半角分号时提交串与正确答案逐空一致，判对", () => {
+    const onFillBlankSubmit = vi.fn((_answer: string) => {});
+    renderFillBlank(onFillBlankSubmit);
+
+    fireEvent.change(screen.getByPlaceholderText("请输入第 1 个空的答案"), {
+      target: { value: "甲" },
+    });
+    fireEvent.change(screen.getByPlaceholderText("请输入第 2 个空的答案"), {
+      target: { value: "乙;丙" },
+    });
+    fireEvent.click(screen.getByText("确认提交"));
+
+    expect(onFillBlankSubmit).toHaveBeenCalledTimes(1);
+    const submitted = onFillBlankSubmit.mock.calls[0][0] as string;
+    expect(submitted).toBe(mixedSeparatorAnswer);
+    expect(
+      checkAnswerCorrectness(submitted, mixedQuestion.answer, [], "fill_blank"),
+    ).toBe(true);
+  });
+});
+
+/**
+ * 判分侧的口径本身也要锁住：半角「;」不是空位分隔符。
+ * 组件的空数推导必须以这里为准，两边任何一侧改动都要同步。
+ */
+describe("checkAnswerCorrectness 填空分隔符口径", () => {
+  it("半角分号属于答案正文，不是空位分隔符", () => {
+    expect(
+      checkAnswerCorrectness("甲；乙;丙", "甲；乙;丙", [], "fill_blank"),
+    ).toBe(true);
+    // 反证：若按半角分号也切分（3 段），这条会误判为对
+    expect(
+      checkAnswerCorrectness("甲；乙；丙", "甲；乙;丙", [], "fill_blank"),
+    ).toBe(false);
   });
 });

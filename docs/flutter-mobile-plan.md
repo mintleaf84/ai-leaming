@@ -39,8 +39,9 @@
 | §36    | 整库备份与恢复（升级 §30）                      | 计划                                                     |
 | §37    | `.apkg` 卡组导出（2026-11-24 立项）             | 计划（待选型：引入 `apkexport` 或手写格式）              |
 | §38    | SRS 基线 SQL（§28.2 的执行载体）                | 脚本已备，待部署机执行                                   |
-| §39    | 移动端填空题作答控件                            | **[已完成]**（PR #320）                                  |
-| §40    | 错题本「已掌握」视图（待读接口）                | 计划（考后做）                                           |
+| §39    | 移动端填空题作答控件                            | **[已完成]**（PR #320）                                 |
+| §40    | 错题本「已掌握」视图（待读接口）                  | 计划（考后做）                                            |
+| §41    | 管理面双轨鉴权（把 `/api/admin/*` 开放给 API Key） | 计划（考后做，含 Key 存储加固）                          |
 
 > 维护约定：新增段落追加到末尾并在此表登记；状态只有四种——`[已完成]` / `计划` / `[不做]` / `待决策`。
 
@@ -1323,12 +1324,10 @@ prefs.json           # 主题/复习模式/断点
 §16 曾把 `fill_blank` 排除在可练习集合外（无作答控件，走 #317 的「更新 App」提示）。2026-11-24 用户拍板补齐，已合并（PR #320）。
 
 **口径（唯一事实来源：`lib/features/practice/domain/fill_blank_answer.dart`）**
-
 - 分隔符**只有中文 `；`**，与判分侧同源（服务端 `answer-check.ts` 与本地 `fillBlanksMatch` 都只按 `；` 切）；半角 `;` 属于空内文本。渲染空数、逐空展示、提交串、离线判分四处必须一致——CodeRabbit 抓到过一次分叉（端上多认半角分号会让混用答案永远判错），已在 #320 内修正。网页端 `PracticeCard.tsx` 的同型口子由 PR #321 收口（未合并）。
 - 空数推导：有答案 → 按 `；` 计数；无答案 → 题干 `_{3,}` 计数；都没有 → 1。
 
 **覆盖范围（实测，不是估计）**
-
 - 教综 1680 的 1834 题里 `fill_blank` **为 0**（只有单选/多选/判断与分析、简答、材料、论述）；
 - 线上题库 2820 题里 `fill_blank` **共 24 道**（早期导入，不在 1680），全部单空、答案不含分号、**题干连 `___` 占位都没有**（如「学校教育的基本要素有：教育者、、教育影响。」）。
 - 所以本控件的实际作用是：解锁那 24 题 + 把「多空怎么算」的口径先钉死，避免将来出现多空题时出现不可判对的题。
@@ -1338,15 +1337,32 @@ prefs.json           # 主题/复习模式/断点
 ## 40. 错题本「已掌握」视图（待读接口，考后做）
 
 **现状（代码事实）**
-
 - `mastered_questions` 表已存在（`drizzle-schema.ts:800`，带 user 索引）；`POST /api/wrong-book/:id/master`（幂等 upsert）与 `DELETE /api/wrong-book/:id/master` 都在（`routes/wrong-book.ts:255/289`）。
 - 但**没有任何「已掌握列表」读接口**：`GET /api/wrong-book` 反而把已掌握题**排除**掉（`services/wrong-question.ts:177-181` 取 mastered ids 做 excludeIds）。即掌握状态**可写不可读**。
 - 因此 App 里任何「已掌握」视图点了都必然空——页签与 🏆 占位页已在 split-screens 那批 PR 中移除，`WrongBookViewMode.mastered` 枚举值保留（`wrong_book_view_tabs.dart:42` 留有原因注释）。
 
 **要做什么（顺序固定）**
-
 1. 服务端 `GET /api/wrong-book/mastered`：分页与 `by-tag` 同口径（`limit`/`offset` + `parsePagination`），返回题目 + `mastered_at`；补 OpenAPI 契约快照与真实库集成测试（不许 mock 库）。
 2. 端上接页签：列表 = 已掌握题；行内按钮从「标记已掌握」变「取消已掌握」（`DELETE` 已可用）；空态文案说明这是归档区而不是成就页。
 3. `wrong_book_view_tabs.dart` 恢复第三个页签，删掉那段「不可达」注释。
 
 **为什么排在考后**：备考期纪律是「不加新界面」；且已掌握题=已经不丢分的题，这个界面对提分没有直接作用。工作量：服务端 0.2d + 端上 0.3d。
+
+## 41. 管理面双轨鉴权（把 `/api/admin/*` 开放给 API Key，考后做）
+
+**动机（2026-11-25 实测引出）**：管理面板 12 个页面对外部脚本/agent 全部封闭，这是图谱导入（建 Key 只有 Web 一条路）、SRS 基线 SQL、备份下载三件事卡住的同一根因——不是缺功能，是缺一条鉴权通路。
+
+**现状（代码事实）**
+- `/api/admin/*`（`routes/admin.ts`，16 条路由：system、backup/restore/backup-history、export/questions、feedback、sql-scripts、maintenance/dedupe）全部经 `requireRole → requireUser → session cookie`（`lib/auth/auth.ts:84`），不读 `Authorization` 头；线上实测外部 Bearer Key 一律 401。
+- 其余管理页（users、api-keys、logs、activity、plans、ai 配置、QuestionManager）走 **Server Actions**（`server/actions/{admin,config,prompts,api-keys,logs,activity}.ts`）——绑定 cookie 会话的 RPC，无稳定 URL/JSON 契约，外部无从调起。
+- Key 侧短板（现状即有，拆墙只会放大）：`api_keys.key_string` **明文存储、明文比对**（`middlewares/api-key.ts`），**无过期字段**（只有手动 `is_active`）。
+- 已有可复用的控制：绑定用户 admin Key 的校验口径（`external/kg.ts`）；`api_audit_logs` 按 `key_id` 记录全部外部写操作（删 Key 不抹历史，`set null`）。
+
+**要做什么（分级开放，顺序固定）**
+1. **加固先行**（不拆墙也该做）：`key_string` 改 SHA-256 哈希比对；`api_keys` 加可选 `expires_at`。运维 Key 用完即停或限期自动失效，泄露失分半径随时间收敛。
+2. **新增独立作用域 `admin:ops`**（只发给绑定用户的 admin Key；全局 Key 对 admin 路由无效）——与现有 `admin` scope 分开，"kg-import 那把 Key"读不了备份。
+3. **第一批开放（低风险、正是被卡的事）**：`GET /backup`、`GET /backup-history`、`GET /export/questions`、`GET /feedback/counts`、sql-scripts 的**只读 SELECT**（新增只读模式，与 execute 分开）。
+4. **保守不开放**：`POST /restore`（整库替换）、`sql-scripts/execute` 的 DML 写（黑名单只挡 DDL/PRAGMA，错误 UPDATE 带 WHERE 也照跑）、`/system` 配置变更、`maintenance/dedupe`——"一次失误不可逆"的操作留在交互登录后面。Key 建 Key 也最后再开（权限传递不易收敛）。
+5. 契约要求同工程红线：OpenAPI 契约快照 + 真实库集成测试（含"普通 Key 403、全局 Key 403、过期 Key 401"三条负例）。
+
+**为什么排在考后**：这是鉴权面改动，动的是所有 API 的门；备考期只跑已被 CI 绿闸验证过的东西。立项价值：解锁以后全部自动化运维（备份巡检、题库导出、只读诊断脚本），并把"谁在操作"从 cookie 的不可归因变成 Key 级可审计。工作量：鉴权中间件 0.3d + Key 表两字段 0.2d + 契约与测试 0.3d。

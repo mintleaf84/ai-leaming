@@ -168,6 +168,15 @@ jobs:
           set -o pipefail
           npm run contract:check 2>&1 | tee "$RUNNER_TEMP/ci-logs/contract.log"
 
+      # Flutter 侧解析器与 OpenAPI 枚举的一致性：#312 给 /qrcode/status 加了
+      # canceled/failed，App 靠人工才想起同步，停在「正在确认扫码状态…」。
+      # 映射表是人工评审过的契约面（scripts/contract-mobile-map.json），
+      # 契约变更时先改 docs/openapi.json，再按报错把 Dart 分支或映射补上。
+      - name: 校验 Flutter 解析器与契约枚举
+        run: |
+          set -o pipefail
+          npm run contract:mobile 2>&1 | tee "$RUNNER_TEMP/ci-logs/contract-mobile.log"
+
       # MCP 工具表是 agent 眼里的"世界"，与快照漂移只会在运行时炸成 404
       - name: 校验 MCP 工具表
         run: |

@@ -21,7 +21,8 @@ import '../../../support/recording_adapter.dart';
 ///    4xx/5xx 是服务端明确拒绝（鉴权失效、参数错），必须原样抛出。静默换成本地
 ///    出题会让用户永远看不到真正原因，也会把「服务端挂了」伪装成「你没网」。
 /// 2. **离线判分口径与后端一致**：多选题忽略顺序（`["B","A"]` 对 `AB`），
-///    填空题按整串比较（`CAT` 对 `ACT` 是错的，不能按字母集合比），空答案判错。
+///    填空（`fill_blank`）逐空比（每空接受 `|` 多答案、空数不一致判错），
+///    简答按整串比较（`CAT` 对 `ACT` 是错的，不能按字母集合比），空答案判错。
 /// 3. **作答入队失败不等于判分失败**：`recordAnswer` 抛异常时返回
 ///    `persisted: false`，但 `isCorrect` 仍然要给用户——判分结果不能因为
 ///    存储故障而丢。
@@ -402,6 +403,68 @@ void main() {
         isFalse,
         reason: '若退化成字母集合比较，CAT 会被误判成 ACT 的正确答案',
       );
+    });
+
+    test('填空逐空判：每空接受 `|` 分隔的多个可接受答案', () async {
+      store.questions['9'] = const Question(
+        id: '9',
+        content: '两空填空',
+        options: <String>[],
+        type: 'fill_blank',
+        answer: '主体性|主体；全体性',
+      );
+
+      final result = await repository.submitAnswer(
+        sessionId: 'local_x',
+        questionId: '9',
+        userAnswer: '主体；全体性',
+        duration: 0,
+      );
+
+      expect(
+        result['isCorrect'],
+        isTrue,
+        reason: '服务端认「主体」是第一个空的可接受答案；离线判成错就会出现'
+            '「本地判错、补交后服务端判对」两个结论',
+      );
+    });
+
+    test('填空空数不一致判错：只答一空不算对', () async {
+      store.questions['9'] = const Question(
+        id: '9',
+        content: '两空填空',
+        options: <String>[],
+        type: 'fill_blank',
+        answer: '主体性；全体性',
+      );
+
+      final result = await repository.submitAnswer(
+        sessionId: 'local_x',
+        questionId: '9',
+        userAnswer: '主体性',
+        duration: 0,
+      );
+
+      expect(result['isCorrect'], isFalse);
+    });
+
+    test('填空某一空为空判错（去噪声后整串相等会漏掉这种）', () async {
+      store.questions['9'] = const Question(
+        id: '9',
+        content: '两空填空',
+        options: <String>[],
+        type: 'fill_blank',
+        answer: '主体性；全体性',
+      );
+
+      final result = await repository.submitAnswer(
+        sessionId: 'local_x',
+        questionId: '9',
+        userAnswer: '；全体性',
+        duration: 0,
+      );
+
+      expect(result['isCorrect'], isFalse);
     });
 
     test('空答案判错（不能让"没作答"变成正确）', () async {

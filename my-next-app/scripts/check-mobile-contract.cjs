@@ -55,6 +55,10 @@ function collectEnums(doc) {
   const found = new Map();
 
   const walk = (schema, location, chain, depth, seenRefs) => {
+    // 入口先解 $ref：anyOf/oneOf/allOf 的分支允许写成引用对象，
+    // 不解引用会让引用组件里的枚举永远收集不到（subset 检查会漏报）。
+    // 自引用组件靠 depth 上限终止；properties 路径另有 seenRefs 防环。
+    schema = deref(doc, schema);
     if (!schema || typeof schema !== "object" || depth > 12) return;
     if (Array.isArray(schema.anyOf)) {
       for (const sub of schema.anyOf) walk(sub, location, chain, depth + 1, seenRefs);

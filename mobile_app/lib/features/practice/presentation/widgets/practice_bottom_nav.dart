@@ -6,6 +6,7 @@ import '../../../../core/navigation/app_nav.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_icons.dart';
 import '../../../../shared/domain/question_practicability.dart';
+import '../../domain/fill_blank_answer.dart';
 import '../practice_provider.dart';
 
 /// 练习屏底部导航：上一题 / 确认（或下一题）/ 下一题。
@@ -30,6 +31,7 @@ class PracticeBottomNav extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    final question = state.currentQuestion;
     return Container(
       padding: EdgeInsets.only(
         left: 24.w,
@@ -63,6 +65,9 @@ class PracticeBottomNav extends ConsumerWidget {
             hasNext: state.hasNext,
             isConfirming: state.isLoading,
             isMulti: state.currentQuestion?.type == 'multi',
+            isFillBlank: question != null && question.isFillBlank,
+            // 填空要填满几个空才能提交（与题面渲染用的是同一个口径函数）。
+            blankSlots: question == null ? 0 : fillBlankSlotsFor(question),
             isUnanswerable:
                 state.currentQuestion != null &&
                 !state.currentQuestion!.isPracticable,
@@ -152,6 +157,8 @@ class _CenterButton extends ConsumerWidget {
     required this.isConfirming,
     required this.onConfirm,
     this.isMulti = false,
+    this.isFillBlank = false,
+    this.blankSlots = 0,
     this.isUnanswerable = false,
   });
 
@@ -161,6 +168,10 @@ class _CenterButton extends ConsumerWidget {
   final bool isConfirming;
   final VoidCallback onConfirm;
   final bool isMulti;
+  final bool isFillBlank;
+
+  /// 填空题要填满的空数（0 = 不是填空题）。
+  final int blankSlots;
   final bool isUnanswerable;
 
   @override
@@ -169,6 +180,13 @@ class _CenterButton extends ConsumerWidget {
     final bool canSubmit;
     if (isUnanswerable) {
       canSubmit = false;
+    } else if (isFillBlank) {
+      // 填空：**每一空都填了**才提交（与网页端的 disabled 条件一致）。
+      // 少一空就送上去，服务端按「空数不一致」判错——那是「还没填完」，
+      // 不是「答错了」，会白白污染错题本与掌握度。
+      canSubmit =
+          selectedAnswers.length == blankSlots &&
+          fillBlanksComplete(selectedAnswers);
     } else if (isMulti) {
       canSubmit = selectedAnswers.length >= 2; // 多选至少选2项
     } else {

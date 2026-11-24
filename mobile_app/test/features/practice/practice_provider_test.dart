@@ -346,4 +346,144 @@ void main() {
       );
     });
   });
+
+  group('填空题（fill_blank）逐空作答与提交', () {
+    const fillBlankQuestions = [
+      Question(
+        id: '20',
+        content: '素质教育强调人的____和____。',
+        options: <String>[],
+        type: 'fill_blank',
+        answer: '主体性；全体性',
+      ),
+    ];
+
+    /// 造一场只有一道填空题的练习（`setBlankAnswer` 需要会话里有这道题）。
+    Future<ProviderContainer> readyContainer() async {
+      final container = makeProviderContainer(mockRepository);
+      when(() => mockRepository.createSession(limit: any(named: 'limit')))
+          .thenAnswer(
+            (_) async => const PracticeSession(
+              sessionId: 'session_fill',
+              questions: fillBlankQuestions,
+            ),
+          );
+      await container.read(practiceControllerProvider.notifier).createSession();
+      return container;
+    }
+
+    test('setBlankAnswer 按空序写入，先填后面的空也保留位置', () async {
+      final container = await readyContainer();
+      final notifier = container.read(practiceControllerProvider.notifier);
+
+      notifier.setBlankAnswer(1, '全体性');
+      expect(
+        container.read(practiceControllerProvider).userAnswers['20'],
+        ['', '全体性'],
+        reason: 'list 下标必须与「第几空」一致，否则提交串会错位',
+      );
+
+      notifier.setBlankAnswer(0, '主体性');
+      expect(
+        container.read(practiceControllerProvider).userAnswers['20'],
+        ['主体性', '全体性'],
+      );
+    });
+
+    test(
+      '提交把各空按中文分号拼成一条 userAnswer（服务端按它逐空比对）',
+      () async {
+        final container = await readyContainer();
+        when(
+          () => mockRepository.submitAnswer(
+            sessionId: any(named: 'sessionId'),
+            questionId: any(named: 'questionId'),
+            userAnswer: any(named: 'userAnswer'),
+            duration: any(named: 'duration'),
+            sessionQuestionIds: any(named: 'sessionQuestionIds'),
+            mode: any(named: 'mode'),
+          ),
+        ).thenAnswer(
+          (_) async => {'isCorrect': true, 'correctAnswer': '主体性；全体性'},
+        );
+        when(() => mockRepository.getQuestionDetail(any())).thenAnswer(
+          (_) async => const Question(
+            id: '20',
+            content: '',
+            options: [],
+            explanation: '这里是权威解析',
+          ),
+        );
+
+        final notifier = container.read(practiceControllerProvider.notifier);
+        notifier.setBlankAnswer(0, '主体性');
+        notifier.setBlankAnswer(1, '全体性');
+        await notifier.submitCurrentAnswer();
+
+        verify(
+          () => mockRepository.submitAnswer(
+            sessionId: 'session_fill',
+            questionId: '20',
+            // 英文分号会让服务端把两空看成一空，所以必须是中文 `；`。
+            userAnswer: '主体性；全体性',
+            duration: any(named: 'duration'),
+            sessionQuestionIds: any(named: 'sessionQuestionIds'),
+            mode: any(named: 'mode'),
+          ),
+        ).called(1);
+
+        final state = container.read(practiceControllerProvider);
+        expect(state.results['20'], isTrue);
+        expect(state.correctAnswers['20'], '主体性；全体性');
+      },
+    );
+
+    test('有空没填时不提交（不把「还没填完」写成「答错了」）', () async {
+      final container = await readyContainer();
+      final notifier = container.read(practiceControllerProvider.notifier);
+
+      notifier.setBlankAnswer(0, '主体性');
+      await notifier.submitCurrentAnswer();
+
+      verifyNever(
+        () => mockRepository.submitAnswer(
+          sessionId: any(named: 'sessionId'),
+          questionId: any(named: 'questionId'),
+          userAnswer: any(named: 'userAnswer'),
+          duration: any(named: 'duration'),
+          sessionQuestionIds: any(named: 'sessionQuestionIds'),
+          mode: any(named: 'mode'),
+        ),
+      );
+      expect(
+        container.read(practiceControllerProvider).results['20'],
+        isNull,
+        reason: '少一空送去必然被按「空数不一致」判错，那是假错题',
+      );
+    });
+
+    test('AI 第一性原理拿到的是与提交同形式的已答内容', () async {
+      final container = await readyContainer();
+      String? sentWrongAnswer;
+      when(
+        () => mockRepository.analyzeFirstPrinciples(
+          questionContent: any(named: 'questionContent'),
+          correctAnswer: any(named: 'correctAnswer'),
+          explanation: any(named: 'explanation'),
+          wrongAnswer: any(named: 'wrongAnswer'),
+        ),
+      ).thenAnswer((invocation) async {
+        sentWrongAnswer = invocation.namedArguments[#wrongAnswer] as String?;
+        return const FirstPrinciplesResponse(analysis: '正文', cached: false);
+      });
+
+      final notifier = container.read(practiceControllerProvider.notifier);
+      notifier.setBlankAnswer(0, '主体性');
+      notifier.setBlankAnswer(1, '个别性');
+      await notifier.fetchFirstPrinciples('20');
+
+      // 用 `,` 拼会把两空拆成互不相关的答案，模型看不出用户哪一空答偏了。
+      expect(sentWrongAnswer, '主体性；个别性');
+    });
+  });
 }

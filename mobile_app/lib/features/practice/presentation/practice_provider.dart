@@ -9,6 +9,7 @@ import '../domain/practice_repository.dart';
 import '../domain/practice_resume.dart';
 import '../domain/first_principles_response.dart';
 import '../domain/question.dart';
+import '../../../shared/domain/question_practicability.dart';
 import '../../../shared/events/data_change_events.dart';
 import '../../../shared/repositories/wrong_book_repository.dart';
 import 'practice_resume_provider.dart';
@@ -332,6 +333,12 @@ class PracticeController extends Notifier<PracticeSessionState> {
 
     final question = state.currentQuestion;
     if (question == null || state.sessionId == null) return;
+
+    // 未知题型不提交：服务端只会按不可达的答案判错，把「App 不认识」误记成「用户答错」。
+    if (!question.isPracticable) {
+      debugPrint('[Practice] 跳过提交：不支持的题型 ${question.type}');
+      return;
+    }
 
     final selectedList = state.userAnswers[question.id];
     if (selectedList == null || selectedList.isEmpty) return;

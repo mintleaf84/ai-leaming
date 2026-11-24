@@ -32,10 +32,53 @@ class RecallResultCard extends StatelessWidget {
   Widget build(BuildContext context) {
     final scheme = Theme.of(context).colorScheme;
     final secondary = scheme.onSurface.withValues(alpha: 0.62);
+    final isUnknownRating = result.rating == RecallRating.unknown;
     final good = result.rating == RecallRating.good;
     final tone = RecallTone.of(context, ok: good);
     final pendingCount = pendingItems?.length ?? 0;
     final text = result.nextReviewText;
+
+    // 服务端给出了本版本不认识的评分：不猜「没记住」也不猜「记住了」。
+    // 中性呈现、不冒充任何一档结论；实践数据没有丢（调度以服务端为准）。
+    if (isUnknownRating) {
+      return Container(
+        width: double.infinity,
+        padding: EdgeInsets.symmetric(
+          horizontal: dense ? 12.w : 16.w,
+          vertical: dense ? 12.h : 16.h,
+        ),
+        decoration: BoxDecoration(
+          color: scheme.onSurface.withValues(alpha: 0.04),
+          borderRadius: BorderRadius.circular(dense ? 12.r : 14.r),
+          border: Border.all(color: scheme.onSurface.withValues(alpha: 0.12)),
+        ),
+        child: Row(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Padding(
+              padding: EdgeInsets.only(top: 1.h),
+              child: Icon(
+                AppIcons.infoOutline,
+                size: (dense ? 16 : 18).sp,
+                color: secondary,
+              ),
+            ),
+            SizedBox(width: 8.w),
+            Expanded(
+              child: Text(
+                '这次复习已提交，结论需要新版 App 才能显示。'
+                '练习记录不会丢；若反复出现请检查更新。',
+                style: TextStyle(
+                  fontSize: (dense ? 13 : 14).sp,
+                  height: 1.45,
+                  color: scheme.onSurface.withValues(alpha: 0.85),
+                ),
+              ),
+            ),
+          ],
+        ),
+      );
+    }
 
     // 服务端的文案有时是「明天只重测这 3 条」，有时是「下次 11 月 20 日」。
     // 下面这行只在「下一句还能补充信息」时才出现——否则同一件事会被说两遍。

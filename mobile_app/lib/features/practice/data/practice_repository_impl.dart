@@ -9,6 +9,7 @@ import '../../../core/error/user_message.dart';
 import '../../../core/network/dio_client.dart';
 import '../../../core/sync/sync_providers.dart';
 import '../../../shared/datasources/api_client.dart';
+import '../domain/fill_blank_answer.dart';
 import '../domain/practice_exceptions.dart';
 import '../domain/practice_repository.dart';
 import '../domain/question.dart';
@@ -364,12 +365,20 @@ class PracticeRepositoryImpl implements PracticeRepository {
   ///
   /// 多选题的提交值是 `jsonEncode(["A","B"])`，必须先解出选项再比；
   /// 选项类题型（单选/多选/判断）按字母集合比较（忽略顺序），
-  /// 填空/简答按规范化后的整串比较——否则 `CAT` 与 `ACT` 会被误判为相同。
+  /// 填空按服务端同一套逐空规则（`fillBlanksMatch`），
+  /// 简答题退化为去噪声后的字符串相等——否则 `CAT` 与 `ACT` 会被误判为相同。
   bool _judgeLocally({
     required String userAnswer,
     required String correctAnswer,
     required String questionType,
   }) {
+    // 填空先走自己的分支：它的「空数一致 + 每空可接受多答案」规则在
+    // `answer-check.ts` 里是明确的，本地不能比服务端更宽松（同一道题
+    // 离线判对、补交后服务端判错，比判错更难解释）。
+    if (questionType == 'fill_blank') {
+      return fillBlanksMatch(userAnswer, correctAnswer);
+    }
+
     final user = _normalizeAnswer(userAnswer);
     final correct = _normalizeAnswer(correctAnswer);
     if (user.isEmpty || correct.isEmpty) {

@@ -5,6 +5,7 @@ import '../../../core/auth/token_util.dart';
 import '../../../core/error/user_message.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../data/practice_repository_impl.dart';
+import '../domain/fill_blank_answer.dart';
 import '../domain/practice_repository.dart';
 import '../domain/practice_resume.dart';
 import '../domain/first_principles_response.dart';
@@ -326,6 +327,32 @@ class PracticeController extends Notifier<PracticeSessionState> {
   /// 向后兼容的别名
   void selectAnswer(String answer) => toggleAnswer(answer);
 
+  /// 填空题：写第 [index] 空的文本（其它空原样保留）。
+  ///
+  /// 与 [toggleAnswer] 分开：填空的作答是**逐空文本**，不是选项字母的增删。
+  /// 两者共用 `userAnswers`，但填空题那条 list 的下标就是空的序号，
+  /// 没填的空是空串——完整性由 [submitCurrentAnswer] 检查（少一空不提交）。
+  void setBlankAnswer(int index, String text) {
+    final question = state.currentQuestion;
+    if (question == null || index < 0) return;
+
+    final blanks = List<String>.from(
+      state.userAnswers[question.id] ?? const <String>[],
+    );
+    // 允许先填第二空：跳过的空补空串，list 下标才与空序号一致。
+    while (blanks.length <= index) {
+      blanks.add('');
+    }
+    blanks[index] = text;
+
+    final newAnswers = Map<String, List<String>>.from(
+      state.userAnswers.map((k, v) => MapEntry(k, List<String>.from(v))),
+    );
+    newAnswers[question.id] = blanks;
+
+    state = state.copyWith(userAnswers: newAnswers);
+  }
+
   /// 提交当前题目答案 (服务端校验)
   Future<void> submitCurrentAnswer() async {
     // 防重复提交
@@ -343,11 +370,23 @@ class PracticeController extends Notifier<PracticeSessionState> {
     final selectedList = state.userAnswers[question.id];
     if (selectedList == null || selectedList.isEmpty) return;
 
-    // 单选取首个，多选排序后 JSON 序列化
+    // 单选取首个，多选排序后 JSON 序列化，填空按中文分号拼成单串
     final String userAnswer;
     if (question.type == 'multi') {
       final sorted = List<String>.from(selectedList)..sort();
       userAnswer = jsonEncode(sorted);
+    } else if (question.isFillBlank) {
+      // 逐空文本按中文 `；` 拼成单串（服务端按同一个分隔符逐空比对，
+      // 见 `answer-check.ts`）。没填完就送上去只会得到「空数不一致 → 判错」，
+      // 那是「还没填完」而不是「答错了」，不该进错题本与掌握度。
+      final slots = fillBlankSlotsFor(question);
+      if (selectedList.length != slots || !fillBlanksComplete(selectedList)) {
+        debugPrint(
+          '[Practice] 填空题未填完，跳过提交：${selectedList.length}/$slots 空',
+        );
+        return;
+      }
+      userAnswer = encodeFillBlanks(selectedList);
     } else {
       userAnswer = selectedList.first;
     }
@@ -456,7 +495,7 @@ class PracticeController extends Notifier<PracticeSessionState> {
   /// 获取第一性原理分析
   Future<void> fetchFirstPrinciples(String questionId) async {
     final question = state.questions.firstWhere((q) => q.id == questionId);
-    
+
     // 如果已经有缓存，则不再请求
     if (state.firstPrinciples.containsKey(questionId)) return;
 
@@ -470,7 +509,11 @@ class PracticeController extends Notifier<PracticeSessionState> {
         correctAnswer: state.correctAnswers[questionId] ?? question.answer ?? '',
         explanation: question.explanation,
         wrongAnswer: (selectedList?.isNotEmpty ?? false)
-            ? selectedList!.join(',')
+            // 填空按提交串的形式给模型：用 `,` 拼会把「甲；乙」拆成两个不相干的
+            // 答案，模型就看不出用户到底是哪一空答偏了。
+            ? (question.isFillBlank
+                  ? encodeFillBlanks(selectedList!)
+                  : selectedList!.join(','))
             : null,
       );
 

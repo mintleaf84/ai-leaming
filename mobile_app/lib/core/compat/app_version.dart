@@ -10,7 +10,7 @@
 library;
 
 /// 当前 App 版本号（`MAJOR.MINOR.PATCH`，不含构建号）。
-const String appVersion = '1.1.0';
+const String appVersion = '1.2.0';
 
 /// 这版 App 至少要求服务端达到的契约版本。
 ///

@@ -43,15 +43,15 @@ npm run db:migrate   # 执行数据库迁移
 CI 分两层：**快闸**每个 PR 必跑（p50 目标 < 4 分钟），**慢闸**只在 main / 标签 / 夜间跑。
 分层只改触发时机，不降低强度：main 与夜间仍然全量。
 
-| 检查（check 名）               | 挡合并       | 什么时候跑                                        | 内容                                                                                         |
-| ------------------------------ | ------------ | ------------------------------------------------- | -------------------------------------------------------------------------------------------- |
-| `Lint & Type Check`            | ✅ 必需      | 每个 PR                                           | `audit:catches` / `lint:ci` / `typecheck` / 契约快照 / MCP 工具表 / MCP 构建+冒烟 / 文档任务 |
-| `单元测试 (Vitest)`            | ✅ 必需      | 每个 PR                                           | `vitest run --coverage`                                                                      |
-| `Next.js 构建校验`             | ✅ 必需      | 每个 PR（与 lint 并行）                           | `db:migrate` + `next build` + `perf:budget`                                                  |
-| `E2E (Playwright · chromium)`  | ⬜ 信号      | main push / PR 标签 `run-e2e` / 每晚 03:00 / 手动 | 10 条关键路径                                                                                |
-| `UI 布局护栏 (layout-guard)`   | ⬜ 信号      | 同上（每晚 03:10）                                | 61 条几何断言                                                                                |
-| `UI 交互性能护栏 (perf-guard)` | ⬜ 观察期    | 同上                                              | LoAF / 点击延迟，`continue-on-error`                                                         |
-| `Flutter 静态分析与测试`       | ✅（移动端） | 仅 `mobile_app/**` 改动                           | analyze + test + 覆盖率门禁                                                                  |
+| 检查（check 名）               | 挡合并       | 什么时候跑                                        | 内容                                                                                                              |
+| ------------------------------ | ------------ | ------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------- |
+| `Lint & Type Check`            | ✅ 必需      | 每个 PR                                           | `audit:catches` / `lint:ci` / `typecheck` / 契约快照 / Flutter 枚举一致性 / MCP 工具表 / MCP 构建+冒烟 / 文档任务 |
+| `单元测试 (Vitest)`            | ✅ 必需      | 每个 PR                                           | `vitest run --coverage`                                                                                           |
+| `Next.js 构建校验`             | ✅ 必需      | 每个 PR（与 lint 并行）                           | `db:migrate` + `next build` + `perf:budget`                                                                       |
+| `E2E (Playwright · chromium)`  | ⬜ 信号      | main push / PR 标签 `run-e2e` / 每晚 03:00 / 手动 | 10 条关键路径                                                                                                     |
+| `UI 布局护栏 (layout-guard)`   | ⬜ 信号      | 同上（每晚 03:10）                                | 61 条几何断言                                                                                                     |
+| `UI 交互性能护栏 (perf-guard)` | ⬜ 观察期    | 同上                                              | LoAF / 点击延迟，`continue-on-error`                                                                              |
+| `Flutter 静态分析与测试`       | ✅（移动端） | 仅 `mobile_app/**` 改动                           | analyze + test + 覆盖率门禁                                                                                       |
 
 要点：
 

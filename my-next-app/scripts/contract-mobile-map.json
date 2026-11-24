@@ -1,0 +1,81 @@
+{
+  "comment": "Flutter 解析器与 OpenAPI 枚举的对照面（人工评审过，npm run contract:mobile 校验）。\n取值：subset=App 声称完整处理该字段，契约每加一个取值这里必须跟着加，否则红灯；\npartial=App 只处理 consume 列出的几个，其余在 note 里说明依据；\nunused=App 不消费该字段（反过来要求 Dart 里一个都不出现，防止一半的处理藏在默认分支里）。\n没列出的枚举表示 App 当前不消费、也未评审，不判定；新增消费时必须补条目。\n局限：按字符串/枚举成员比对，只能证明「该值在这个文件里被显式处理过」，不能证明分支语义正确——\n它防的是『新取值没人管』，『处理错了』仍要靠单测与真机。",
+  "entries": [
+    {
+      "endpoint": "GET /api/fenbi/qrcode/status :: res.200 :: status",
+      "dart": "mobile_app/lib/features/fenbi/domain/fenbi_status.dart",
+      "mode": "subset",
+      "note": "扫码状态机 FenbiQrPhase。#312 给 Web 加了 canceled/failed，当时靠人工才想起同步这里；漏一个 App 就停在「正在确认扫码状态…」。取值语义见 docs/fenbi-sync-design.md §2.2。 校验范围限定在 parse() 函数体（parseIn）：枚举里有成员但 switch 少了分支，同样算缺——这正是 #312 漏给 App 的形态。",
+      "parseIn": ["static FenbiQrPhase parse\\([\\s\\S]*?\\n  \\}"]
+    },
+    {
+      "endpoint": "GET /api/drafts :: res.200 :: status",
+      "dart": "mobile_app/lib/features/questions/domain/question_draft.dart",
+      "mode": "subset",
+      "note": "DraftStatus，草稿列表按状态分组的唯一依据。"
+    },
+    {
+      "endpoint": "GET /api/drafts :: res.200 :: source",
+      "dart": "mobile_app/lib/features/questions/domain/question_draft.dart",
+      "mode": "subset",
+      "note": "来源标签。#313 修的就是它把未知值伪装成合法值「文本」——现在显式列出四项，未知走「未知来源」。"
+    },
+    {
+      "endpoint": "GET /api/questions :: res.200 :: type",
+      "dart": "mobile_app/lib/features/questions/domain/question_form.dart",
+      "mode": "subset",
+      "note": "题型决定作答区渲染。新题型若没分支会落回单选，多选/填空静默判错——已确认的口径是：未知题型改为不可作答并提示需更新 App。"
+    },
+    {
+      "endpoint": "POST /api/external/recall/reviews :: body :: to",
+      "dart": "mobile_app/lib/features/recall/domain/recall_review.dart",
+      "mode": "subset",
+      "note": "复习判定会写回服务端并影响掌握度。已确认的口径是：未知判定不写回、保持未知，不能默认成 miss。"
+    },
+    {
+      "endpoint": "POST /api/external/recall/reviews :: res.200 :: rating",
+      "dart": "mobile_app/lib/features/recall/domain/recall_review.dart",
+      "mode": "subset",
+      "note": "同上，RecallRating 未知不能默认成 again（会污染排期）。"
+    },
+    {
+      "endpoint": "POST /api/external/recall/cards :: body :: kind",
+      "dart": "mobile_app/lib/features/recall/domain/recall_card.dart",
+      "mode": "subset",
+      "note": "卡片类型决定作答交互。注意 fromWire 还额外接受契约外的 'blank'，那属于「客户端比契约宽」，契约清理时要一并处理。"
+    },
+    {
+      "endpoint": "GET /api/external/recall/cards/{cardId} :: res.200 :: mode",
+      "dart": "mobile_app/lib/features/recall/domain/recall_card.dart",
+      "mode": "subset",
+      "note": "first/retest 决定是呈现整卡还是只呈现待复测条目，弄错会让用户重复做已会的条目。"
+    },
+    {
+      "endpoint": "POST /api/practice/session :: body :: mode",
+      "dart": "mobile_app/lib/core/utils/practice_mode_labels.dart",
+      "mode": "partial",
+      "consume": ["random", "wrong", "tag"],
+      "note": "first-principles 在 Web 侧固定返回 400「暂未开放」（见 routes/practice.ts 的 default 分支），所以 App 现在不需要标签；Web 真开放那天必须回来补。另：该文件还处理了契约里没有的 'exam'，属反向漂移，待确认它只走 /api/exam/*。"
+    },
+    {
+      "endpoint": "GET /api/agent-sets :: res.200 :: status",
+      "dart": "mobile_app/lib/features/agent_sets/domain/agent_question_set.dart",
+      "mode": "partial",
+      "consume": ["promoted", "archived"],
+      "note": "App 用两个布尔标志表达，active 就是「两者皆否」，因此不单独出现字符串 active。新状态会被并进 active，需要人工确认是否可接受。"
+    },
+    {
+      "endpoint": "GET /api/exam/papers :: res.200 :: kind",
+      "dart": "mobile_app/lib/features/exam/domain/exam_paper.dart",
+      "mode": "partial",
+      "note": "App 只显式判 timed（exam_paper.dart 的 isTimed => kind == 'timed' && durationMinutes != null），其余一律按不限时。风险写在明面：将来若出现「按题限时」这类新 kind，会被静默当成不限时——加值时必须回来把它列进 consume。作答侧另有 deadlineAt 作为事实来源（exam_attempt.dart）。",
+      "consume": ["timed"]
+    }
+  ],
+  "notChecked": [
+    {
+      "endpoint": "GET /api/fenbi/status :: res.200 :: status",
+      "reason": "App 不按 status 分支，只读服务端派生的 syncable 布尔（fenbi_status.dart 的 FenbiSyncStatus.fromJson）。新绑定状态由服务端映射，App 无需同步——所以这里刻意不检查。（注意不能用 unused 表达：同文件的 FenbiQrPhase 里合法地出现 expired，字符串比对分不出字段归属。）"
+    }
+  ]
+}

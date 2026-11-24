@@ -1,15 +1,40 @@
+import 'dart:developer' as developer;
 import 'dart:math';
 
 import 'recall_json.dart';
 
+/// 判分解析遇到契约外取值时留一行日志。
+///
+/// 为什么只留日志而不是上报服务端：客户端没有上报通道，而为一条罕见契约漂移
+/// 开新端点不成比例；日志前缀固定为 `recall.contract`，本地抓日志或后续加
+/// 上报都从这一处改。
+void _noteUnknownWire(String field, Object? value) {
+  developer.log(
+    '契约外取值：$field=$value（按 unknown 处理，不猜测、不写回）',
+    name: 'recall.contract',
+  );
+}
+
 /// 单条判分（后端 `verdicts[]` 的取值）。
 enum RecallVerdict {
   ok,
-  miss;
+  miss,
+
+  /// 契约外的新取值。**只出现在解析方向**：客户端产生的判定永远是 ok/miss，
+  /// 本地界面按「未记录」呈现；把它猜成 miss 会污染用户的复习历史（2026-11 口径）。
+  unknown;
 
   static RecallVerdict fromWire(Object? value) {
     final raw = value is String ? value.trim().toLowerCase() : '';
-    return raw == 'ok' ? RecallVerdict.ok : RecallVerdict.miss;
+    switch (raw) {
+      case 'ok':
+        return RecallVerdict.ok;
+      case 'miss':
+        return RecallVerdict.miss;
+      default:
+        _noteUnknownWire('verdict', value);
+        return RecallVerdict.unknown;
+    }
   }
 
   String get wire => name;
@@ -21,16 +46,25 @@ enum RecallVerdict {
 enum RecallRating {
   again,
   hard,
-  good;
+  good,
 
-  /// 未知取值退化到 [again]：宁可当成「没记住」也不要虚报记忆强度。
+  /// 契约外的新取值。**只出现在解析方向**（同上）：结果卡按「未记录」呈现，
+  /// 不再按 again 显示「没记住」——排期以服务端为准，客户端不替它下结论。
+  unknown;
+
   static RecallRating fromWire(Object? value) {
     final raw = value is String ? value.trim().toLowerCase() : '';
-    return switch (raw) {
-      'hard' => RecallRating.hard,
-      'good' => RecallRating.good,
-      _ => RecallRating.again,
-    };
+    switch (raw) {
+      case 'again':
+        return RecallRating.again;
+      case 'hard':
+        return RecallRating.hard;
+      case 'good':
+        return RecallRating.good;
+      default:
+        _noteUnknownWire('rating', value);
+        return RecallRating.unknown;
+    }
   }
 
   String get wire => name;

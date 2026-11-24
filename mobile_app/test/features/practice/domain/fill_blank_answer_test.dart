@@ -1,10 +1,12 @@
 // 填空题的空数推导 / 提交串 / 逐空判分（纯 domain 单测，不 pump Widget）。
 //
-// 这里钉住的是三方共用的口径，改任何一条都会让某一端悄悄分叉：
-// - 空数推导 = 网页端 `my-next-app/src/components/practice/PracticeCard.tsx` 的
-//   `Math.max(1, answer.split(/[；;]/).filter(Boolean).length)`；
-// - 提交串与逐空判分 = 服务端 `my-next-app/src/lib/services/answer-check.ts`
-//   的 `fill_blank` 分支。
+// 这里钉住的是各方共用的口径（渲染、展示、判分），改任何一条都会让某一端悄悄分叉：
+// - 判分 = 服务端 `my-next-app/src/lib/services/answer-check.ts` 的
+//   `checkAnswerCorrectness` 的 `fill_blank` 分支，本地 `fillBlanksMatch` 逐字镜像；
+// - 空数推导与逐空展示 = **与判分同一个分隔符**（只按中文 `；` 切）。
+//   半角 `;` 是空内文本，不是空位分隔：切法一旦比判分宽，端上就会多渲染一个
+//   输入框，用户照界面填必被判错（CodeRabbit major）。
+// - 提交串 = 各空文本 `join('；')`。
 import 'package:flutter_test/flutter_test.dart';
 
 import 'package:mobile_app/features/practice/domain/fill_blank_answer.dart';
@@ -19,15 +21,17 @@ Question _fillBlank({String content = '题干', String? answer}) => Question(
 );
 
 void main() {
-  group('fillBlankCountFromAnswer（与网页端逐字同口径）', () {
+  group('fillBlankCountFromAnswer（与判分同分隔符：只按 `；`）', () {
     test('中文分号逐空计数', () {
       expect(fillBlankCountFromAnswer('主体性；全体性'), 2);
       expect(fillBlankCountFromAnswer('甲；乙；丙'), 3);
     });
 
-    test('英文分号同样算分隔符（含混用）', () {
-      expect(fillBlankCountFromAnswer('cat;dog'), 2);
-      expect(fillBlankCountFromAnswer('甲；乙;丙'), 3);
+    test('半角分号不算分隔符：判分只按 `；` 切，多切一刀就多一个填不上的框', () {
+      // 服务端 `userAnswer.split("；")`：`cat;dog` 是一空，`甲；乙;丙` 是两空
+      // （第二空的文本是「乙;丙」）。渲染若按 [；;] 切会多要一空，用户必被判错。
+      expect(fillBlankCountFromAnswer('cat;dog'), 1);
+      expect(fillBlankCountFromAnswer('甲；乙;丙'), 2);
     });
 
     test('没有分号就是单空', () {
@@ -47,8 +51,10 @@ void main() {
   });
 
   group('fillBlankSlotsFor（这道题渲染几个输入框）', () {
-    test('题面带答案时按答案推导（离线续练走这条，与网页端一致）', () {
+    test('题面带答案时按答案推导（离线续练走这条，与判分同源）', () {
       expect(fillBlankSlotsFor(_fillBlank(answer: '甲；乙；丙')), 3);
+      // 半角分号不增加空数（与 fillBlankCountFromAnswer 同一实现）。
+      expect(fillBlankSlotsFor(_fillBlank(answer: '甲；乙;丙')), 2);
     });
 
     test('练习接口不带答案：按题干里画出的空位（三个及以上下划线）', () {
@@ -82,10 +88,15 @@ void main() {
   });
 
   group('逐空展示（回顾/解析面板）', () {
-    test('decodeFillBlanks 中英文分号都拆，逐项去空白', () {
+    test('decodeFillBlanks 只按 `；` 拆，逐项去空白；半角分号留在空内文本', () {
       expect(decodeFillBlanks('甲； 乙'), <String>['甲', '乙']);
-      expect(decodeFillBlanks('cat; dog'), <String>['cat', 'dog']);
+      expect(decodeFillBlanks('cat; dog'), <String>['cat; dog']);
+      expect(decodeFillBlanks('甲；乙;丙'), <String>['甲', '乙;丙']);
       expect(decodeFillBlanks('单空'), <String>['单空']);
+    });
+
+    test('逐空展示与判分同分隔符：混用分号时显示的空数 = 判分认的空数', () {
+      expect(formatFillBlankAnswer('甲；乙;丙'), '空 1：甲\n空 2：乙;丙');
     });
 
     test('多空按空序逐行，单空只留文本', () {
@@ -100,6 +111,13 @@ void main() {
     test('逐空相等判对', () {
       expect(fillBlanksMatch('主体性；全体性', '主体性；全体性'), isTrue);
       expect(fillBlanksMatch(' 主体性 ； 全体性 ', '主体性；全体性'), isTrue);
+    });
+
+    test('半角分号是空内文本：混用分号时逐空仍判对', () {
+      // 渲染侧按同一个分隔符切（只 `；`），所以界面是两空：「甲」「乙;丙」。
+      expect(fillBlanksMatch('甲；乙;丙', '甲；乙;丙'), isTrue);
+      // 反过来，少填一空（把半角分号当分隔符只答了两段之一）判错。
+      expect(fillBlanksMatch('甲；乙', '甲；乙;丙'), isFalse);
     });
 
     test('每空接受 `|` 分隔的多个可接受答案', () {

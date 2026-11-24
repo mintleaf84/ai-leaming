@@ -62,7 +62,7 @@ void main() {
   setUpAll(useFakeSecureStorage);
 
   group('空数：题面里几个空就渲染几个输入框', () {
-    testWidgets('答案里的分号决定空数（中英文分号都算）', (tester) async {
+    testWidgets('答案里的 `；` 决定空数，半角分号不额外加空', (tester) async {
       await openPractice(
         tester,
         FakePracticeRepository(
@@ -71,9 +71,12 @@ void main() {
       );
 
       expect(find.text('填空题'), findsOneWidget);
-      expect(find.byType(TextFormField), findsNWidgets(3));
+      // 判分只按 `；` 切（服务端 answer-check.ts），这里必须同样切两刀：
+      // 半角分号是第二空的文本「乙;丙」，不是第三个空。
+      expect(find.byType(TextFormField), findsNWidgets(2));
       expect(find.text('空 1'), findsOneWidget);
-      expect(find.text('空 3'), findsOneWidget);
+      expect(find.text('空 2'), findsOneWidget);
+      expect(find.text('空 3'), findsNothing);
       // 填空没有选项，不再按单选渲染空卡片让用户白挨一个错。
       expect(find.text('此题型需要更新 App 后才能练习'), findsNothing);
       expectNoLayoutError(tester);
@@ -130,6 +133,36 @@ void main() {
 
       expect(repository.submitCalls, 1);
       expect(repository.submittedAnswers, <String>['主体性；全体性']);
+    });
+
+    testWidgets('混用分号的答案：按界面填两空提交 `甲；乙;丙` 判对', (tester) async {
+      // 钉的是「渲染切法 == 判分切法」这条闭环：端上渲染两空（半角分号属于第二空
+      // 的文本），用户照着填就该判对。若渲染多切一刀，这里会多要一个空而判错。
+      final repository = FakePracticeRepository(
+        questions: <Question>[
+          _fillBlankWithAnswer(
+            content: '第一空____，第二空____。',
+            answer: '甲；乙;丙',
+          ),
+        ],
+        submitResponse: const <String, dynamic>{
+          'isCorrect': true,
+          'correctAnswer': '甲；乙;丙',
+        },
+      );
+      await openPractice(tester, repository);
+
+      expect(find.byType(TextFormField), findsNWidgets(2));
+      await tester.enterText(find.byType(TextFormField).first, '甲');
+      await tester.enterText(find.byType(TextFormField).at(1), '乙;丙');
+      await tester.pump();
+      await tapConfirm(tester);
+
+      expect(repository.submitCalls, 1);
+      expect(repository.submittedAnswers, <String>['甲；乙;丙']);
+      expect(find.text('正确答案：空 1：甲\n空 2：乙;丙'), findsOneWidget);
+      expect(find.text('你的答案：空 1：甲\n空 2：乙;丙'), findsOneWidget);
+      expectNoLayoutError(tester);
     });
 
     testWidgets('判分后输入框只读，解析面板按空序列出双方答案', (tester) async {

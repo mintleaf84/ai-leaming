@@ -1,16 +1,22 @@
 import 'dart:async';
 
+import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:go_router/go_router.dart';
 import 'package:skeletonizer/skeletonizer.dart';
 
+import 'package:mobile_app/core/navigation/app_nav.dart';
 import 'package:mobile_app/core/theme/app_icons.dart';
 import 'package:mobile_app/features/practice/domain/question.dart';
 import 'package:mobile_app/features/practice/presentation/practice_screen.dart';
 import 'package:mobile_app/features/practice/presentation/widgets/question_material_card.dart';
+import 'package:mobile_app/shared/domain/practice_resume.dart';
 import 'package:mobile_app/shared/widgets/animated_option_card.dart';
 import 'package:mobile_app/shared/widgets/state_views.dart';
 
 import '../../../support/fake_providers.dart';
+import '../../../support/pump_router.dart';
 import '../../../support/pump_screen.dart';
 
 /// 练习屏冒烟：只守**渲染与状态切换**，不守判卷逻辑（那是
@@ -282,5 +288,208 @@ void main() {
     await settleMaterial(tester);
     expect(find.text('收起'), findsOneWidget);
     expect(tester.takeException(), isNull);
+  });
+
+  // ---------------------------------------------------------------------
+  // 屏自身的收口路径：续练入口 / 离线提示条 / 判分播报 / 退出确认 / 系统返回键
+  //
+  // 后四条必须带 GoRouter：屏的出口走 `context.backOrHome()` /
+  // `context.replace(...)`（= `GoRouter.go`），在 `pumpScreen` 那棵树里没有
+  // Router，点了只会抛 `No GoRouter found in context`。
+  // ---------------------------------------------------------------------
+
+  /// 练习屏 + 一个可断言的落地页桩（「返回首页」/「确认退出」的目的地）。
+  Future<GoRouter> pumpPracticeWithRouter(
+    WidgetTester tester,
+    FakePracticeRepository repository,
+  ) {
+    return pumpRouter(
+      tester,
+      initialLocation: AppRoutes.practice,
+      routes: <String, WidgetBuilder>{
+        AppRoutes.practice: (BuildContext context) => const PracticeScreen(),
+        AppRoutes.dashboard: (BuildContext context) =>
+            routeStub(AppRoutes.dashboard),
+      },
+      overrides: fakePractice(repository: repository),
+    );
+  }
+
+  testWidgets('带 sessionId 的入口：复用那一场（loadSession），不新建会话、落到第一道未答题', (tester) async {
+    final repository = FakePracticeRepository(
+      sessionId: 'session_resume',
+      questions: <Question>[
+        fakeQuestion(id: '1', content: '第一题：断点里已经答过了。'),
+        fakeQuestion(id: '2', content: '第二题：这道题还没答。'),
+      ],
+    );
+
+    await pumpScreen(
+      tester,
+      const PracticeScreen(
+        config: <String, dynamic>{
+          'sessionId': 'session_resume',
+          // 兜底下标故意给 0：真实落点应由已答记录算出来（第一道未答题）。
+          'startIndex': 0,
+          'answered': <ResumeAnswer>[
+            ResumeAnswer(questionId: '1', isCorrect: true),
+          ],
+          'limit': 10,
+          'mode': 'review',
+        },
+      ),
+      overrides: fakePractice(repository: repository),
+    );
+    await settle(tester);
+
+    expect(repository.createCalls, 0, reason: '续练不能再建一场（会重复消耗一次会话）');
+    expect(repository.loadedSessions, <String>['session_resume']);
+    expect(find.text('第二题：这道题还没答。'), findsOneWidget);
+    expect(find.text('第一题：断点里已经答过了。'), findsNothing);
+  });
+
+  testWidgets('离线会话：题面上方给出「先存本地、恢复网络后自动同步」的提示条', (tester) async {
+    final question = fakeQuestion(content: '断网了，这道题照样能做。');
+    final repository = FakePracticeRepository(
+      sessionId: 'local_offline_7',
+      questions: <Question>[question],
+    );
+
+    await pumpScreen(
+      tester,
+      const PracticeScreen(),
+      overrides: fakePractice(repository: repository),
+    );
+    await settle(tester);
+
+    expect(find.text(question.content), findsOneWidget);
+    expect(
+      find.text('离线模式：作答会先存在本地，恢复网络后自动同步'),
+      findsOneWidget,
+    );
+    expect(find.byIcon(AppIcons.cloudOffOutlined), findsOneWidget);
+    expect(tester.takeException(), isNull);
+  });
+
+  testWidgets('提交成功：把判分结果播报给读屏用户（对错只在选项颜色上）', (tester) async {
+    // 播报走 `SystemChannels.accessibility`（`BasicMessageChannel` +
+    // `StandardMessageCodec`）：桩住这一条通道就能读到实际文案，既不用打开
+    // 语义树，也不依赖任何平台实现。
+    final announcements = <Object?>[];
+    tester.binding.defaultBinaryMessenger.setMockMessageHandler(
+      SystemChannels.accessibility.name,
+      (ByteData? message) async {
+        if (message != null) {
+          announcements.add(
+            const StandardMessageCodec().decodeMessage(message),
+          );
+        }
+        return null;
+      },
+    );
+
+    final question = fakeQuestion(id: '1', content: '题干丙：这道题答对了。');
+    final repository = FakePracticeRepository(
+      questions: <Question>[question, fakeQuestion(id: '2')],
+      submitResponse: const <String, dynamic>{
+        'isCorrect': true,
+        'correctAnswer': 'A',
+      },
+    );
+
+    await pumpScreen(
+      tester,
+      const PracticeScreen(),
+      overrides: fakePractice(repository: repository),
+    );
+    await settle(tester);
+
+    await tapCard(tester, find.byType(AnimatedOptionCard).first);
+    await tester.tap(find.byIcon(AppIcons.check));
+    await settle(tester);
+
+    expect(repository.submitCalls, 1);
+    // 通道里的事件形状是 `{type: 'announce', data: {message: …}}`。
+    bool announced(Object? argument) =>
+        argument is Map &&
+        argument['type'] == 'announce' &&
+        (argument['data'] as Map?)?['message'] == '回答正确';
+    expect(
+      announcements.where(announced),
+      isNotEmpty,
+      reason: '判分只体现在选项颜色上，读屏用户必须能听见结论',
+    );
+  });
+
+  testWidgets('点顶栏退出：先确认「进度会丢失」，选「继续练习」就留在原页', (tester) async {
+    final question = fakeQuestion(content: '正在做的这道题不能被打断。');
+    final repository = FakePracticeRepository(questions: <Question>[question]);
+    final router = await pumpPracticeWithRouter(tester, repository);
+    await settle(tester);
+
+    await tester.tap(find.byIcon(AppIcons.close));
+    await tester.pump();
+
+    expect(find.text('退出练习'), findsOneWidget);
+    expect(
+      find.text('当前的练习进度将会丢失，确认退出吗？'),
+      findsOneWidget,
+      reason: '退出是有代价的操作，必须先说清代价',
+    );
+
+    await tester.tap(find.text('继续练习'));
+    await tester.pumpAndSettle();
+
+    expect(find.text('退出练习'), findsNothing);
+    expect(find.text(question.content), findsOneWidget);
+    expectLocation(router, AppRoutes.practice);
+  });
+
+  testWidgets('系统返回键：同样先弹确认；确认退出后离开这一屏（不硬退到桌面）', (tester) async {
+    final repository = FakePracticeRepository();
+    final router = await pumpPracticeWithRouter(tester, repository);
+    await settle(tester);
+
+    // 系统返回键：PopScope(canPop:false) 必须把它变成一次确认，而不是直接离场。
+    await tester.binding.handlePopRoute();
+    await tester.pump();
+
+    expect(find.text('当前的练习进度将会丢失，确认退出吗？'), findsOneWidget);
+
+    await tester.tap(find.text('确认退出'));
+    await tester.pumpAndSettle();
+
+    expect(find.text('当前的练习进度将会丢失，确认退出吗？'), findsNothing);
+    expectLocation(router, AppRoutes.dashboard);
+    expect(stubPage(AppRoutes.dashboard), findsOneWidget);
+  });
+
+  testWidgets('建会话失败的「返回首页」：真的落到首页，不是停在错误态', (tester) async {
+    final repository = FakePracticeRepository(createError: StateError('offline'));
+    final router = await pumpPracticeWithRouter(tester, repository);
+    await settle(tester);
+
+    expect(find.byType(AppErrorView), findsOneWidget);
+
+    await tester.tap(find.text('返回首页'));
+    await tester.pumpAndSettle();
+
+    expectLocation(router, AppRoutes.dashboard);
+    expect(stubPage(AppRoutes.dashboard), findsOneWidget);
+  });
+
+  testWidgets('题库为空的「返回首页」：同样落到首页', (tester) async {
+    final repository = FakePracticeRepository(questions: <Question>[]);
+    final router = await pumpPracticeWithRouter(tester, repository);
+    await settle(tester);
+
+    expect(find.byType(AppEmptyView), findsOneWidget);
+    expect(find.text('题库中暂无题目'), findsOneWidget);
+
+    await tester.tap(find.text('返回首页'));
+    await tester.pumpAndSettle();
+
+    expectLocation(router, AppRoutes.dashboard);
+    expect(stubPage(AppRoutes.dashboard), findsOneWidget);
   });
 }

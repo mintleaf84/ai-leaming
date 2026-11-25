@@ -387,6 +387,14 @@ void main() {
         return null;
       },
     );
+    // 必须撤桩：否则这条 mock 会一直挂在该通道上，吞掉后续测试的播报，
+    // 让别人的公告断言变成假通过。
+    addTearDown(
+      () => tester.binding.defaultBinaryMessenger.setMockMessageHandler(
+        SystemChannels.accessibility.name,
+        null,
+      ),
+    );
 
     final question = fakeQuestion(id: '1', content: '题干丙：这道题答对了。');
     final repository = FakePracticeRepository(

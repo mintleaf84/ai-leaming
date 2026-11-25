@@ -373,14 +373,21 @@ Future<void> flushAfterPop(WidgetTester tester) async {
 void takeKnownDialogExitErrors(WidgetTester tester) {
   final Object? error = tester.takeException();
   if (error == null) return;
-  expect(
-    error.toString(),
-    anyOf(
-      contains('TextEditingController'),
-      contains('Multiple exceptions'),
-    ),
-    reason: '只允许吞掉「对话框退场期间复用已释放的控制器」这一条已知缺陷',
-  );
+  // 同一批帧里多条异常时 takeException 返回聚合 List；必须逐成员核验，
+  // 不能只看「Multiple exceptions」这个标题放行——那会把无关的框架错误
+  // 一起吞掉，出现假通过。
+  final members = error is List ? error : <Object>[error];
+  for (final member in members) {
+    expect(
+      member.toString(),
+      anyOf(
+        contains('TextEditingController'),
+        contains("'attached': is not true"),
+        contains("Looking up a deactivated widget's ancestor"),
+      ),
+      reason: '只允许吞掉「对话框退场期间复用已释放的控制器」及其连带断言（lib 缺陷，见 issue #326）',
+    );
+  }
 }
 
 /// 接住 `Clipboard.setData`，返回写入过的文本列表。

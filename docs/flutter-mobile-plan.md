@@ -1358,8 +1358,8 @@ prefs.json           # 主题/复习模式/断点
 
 **现状（代码事实）**
 
-- `/api/admin/*`（`routes/admin.ts`，16 条路由：system、backup/restore/backup-history、export/questions、feedback、sql-scripts、maintenance/dedupe）全部经 `requireRole → requireUser → session cookie`（`lib/auth/auth.ts:84`），不读 `Authorization` 头；线上实测外部 Bearer Key 一律 401。
-- 其余管理页（users、api-keys、logs、activity、plans、ai 配置、QuestionManager）走 **Server Actions**（`server/actions/{admin,config,prompts,api-keys,logs,activity}.ts`）——绑定 cookie 会话的 RPC，无稳定 URL/JSON 契约，外部无从调起。
+- `/api/admin/*`（`routes/admin.ts`，16 条路由：system、backup/restore/backup-history、export/questions、feedback、sql-scripts、maintenance/dedupe）全部经 `requireRole → requireUser → getSession`。`getSession` 的真实口径（`auth.ts:38-47`）：先读 cookie；无 cookie 时把 `Authorization: Bearer` 的值**当作加密会话令牌**解密（移动端 App 正是这样调用受保护接口的）。外部 API Key 永远不是会话令牌，解密必失败 → 401（与线上实测一致）。**所以这道墙守的是"加密会话"，不是 cookie 本身**：App 要接管理功能不需要任何鉴权工程（它已有会话令牌），缺的只是界面；需要新开支线的只有 API Key（脚本/agent）这一条路。
+- 其余管理页（users、api-keys、logs、activity、plans、ai 配置、QuestionManager）走 **Server Actions**（`server/actions/{admin,config,prompts,api-keys,logs,activity}.ts`）——绑定 Next.js 会话的 RPC，无稳定 URL/JSON 契约，外部无从调起。
 - Key 侧短板（现状即有，拆墙只会放大）：`api_keys.key_string` **明文存储、明文比对**（`middlewares/api-key.ts`），**无过期字段**（只有手动 `is_active`）。
 - 已有可复用的控制：绑定用户 admin Key 的校验口径（`external/kg.ts`）；`api_audit_logs` 按 `key_id` 记录全部外部写操作（删 Key 不抹历史，`set null`）。
 
